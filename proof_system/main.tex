@@ -1,0 +1,39 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage[utf8]{inputenc}
+
+\newtheorem{prop}{Proposition}
+
+\title{Towards an Efficient and Economic Deductive System of Matching Logic}
+\author{FSL group}
+
+\begin{document}
+\maketitle
+We aim for a Hilbert style deductive system which has a relatively large number of axioms but only a few inference rules. 
+
+\begin{itemize}
+\item (K1) $P \to (Q \to P)$
+\item (K2) $(P \to (Q \to R)) \to ((P \to Q) \to (P \to R))$
+\item (K3) $(\neg P \to \neg Q) \to (Q \to P)$
+\item (K4) $\forall x . (P \to Q) \to (P \to \forall x . Q)$ if $x$ does not occur free in $P$
+\item (K5) $\forall x . P \to P$ if $x$ does not occur free in $P$
+\item (K6) $\forall x . P(x) \to P(y)$
+\item (K7) $P = P$
+\item (K8) $P_1 = P_2 \to (Q[P_1/x] \to Q[P_2/x])$
+\item (K9) $\exists y . Q = y \to (\forall x . P(x) \to P[Q/x])$ if $Q$ is free for $x$ in $P$
+\end{itemize}
+
+Inference rules include
+\begin{itemize}
+\item (Modus Ponens) From $P$ and $P \to Q$, deduce $Q$.
+\item (Universal Generalization) From $P$, deduce $\forall x . P$. 
+\end{itemize}
+
+\begin{prop}[Deduction Theorem]
+If $\Gamma \cup \{P\} \vdash Q$ and the proof does not use $\forall x$-Generalization where $x$ is free in $P$, then $\Gamma \vdash P \to Q$. 
+\end{prop}
+
+
+\end{document}
