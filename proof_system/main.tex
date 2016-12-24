@@ -134,17 +134,6 @@ $$
       {\Gamma \vdash P}
 $$
 
-\paragraph{Existential Instantiation}
-$$
-\infer[(\exists x)]{\Gamma \vdash \exists x . P}
-{\Gamma \vdash P[Q/x]
-	&\Gamma \vdash \exists y . Q = y}
-$$
-
-
-
-
-
 \paragraph{Conjunction Splitting}
 $$
 \infer{\Gamma \vdash P \wedge Q}
