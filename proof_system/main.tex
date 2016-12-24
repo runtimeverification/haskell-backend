@@ -26,6 +26,7 @@ We aim for a Hilbert style deductive system which has a relatively large number 
 
 \section{Grammar and extended grammar}
 
+The formal language $\mathcal{L}$ we use to write matching logic patterns is defined as follows.
 \begin{align*}
 P \Coloneqq\  & x \\
        \mid\  & P_1 \to P_2 \\
@@ -38,16 +39,32 @@ P \Coloneqq\  & x \\
        \mid\  & P_1 \wedge P_2 \\
        \mid\  & P_1 \leftrightarrow P_2 \\
        \mid\  & \exists x . P \\
+       \mid\  & P_1 \neq P_2 \\
        \mid\  & \top \\
        \mid\  & \bot \\
        \mid\  & \ceil*{P} \\
        \mid\  & \floor*{P} \\
-       \mid\  & P_1 \subseteq P_2 
+       \mid\  & P_1 \subseteq P_2 \\
+       \mid\  & x \in P
+\end{align*}
+with the extended grammar defined as
+\begin{align*}
+&P_1 \vee P_2 \coloneqq \neg P_2 \to P_1 \\
+&P_1 \wedge P_2 \coloneqq \neg (\neg P_1 \vee \neg P_2) \\
+&P_1 \leftrightarrow P_2 \coloneqq (P_1 \to P_2) \wedge (P_2 \to P_1) \\
+&\exists x . P \coloneqq \neg \forall x . \neg P \\
+&P_1 \neq P_2 \coloneqq \neg (P_1 = P_2) \\
+&\top \coloneqq x_1 = x_1 \\
+&\bot \coloneqq x_1 \neq x_1 \\
+&\ceil*{P} \coloneqq P \neq \bot \\
+&\floor*{P} \coloneqq P = \top \\
+&P_1 \subseteq P_2 \coloneqq \floor*{P_1 \to P_2} \\
+&x \in P \coloneqq x \subseteq P
 \end{align*}
 
 
 \section{Hilbert proof system}
-
+Axioms in $\mathcal{L}$ are given by the following nine axiom schemata where $P, Q, R$ are arbitrary patterns and $x, y$ are variables.
 \begin{itemize}
 \item (K1) $P \to (Q \to P)$
 \item (K2) $(P \to (Q \to R)) \to ((P \to Q) \to (P \to R))$
@@ -70,6 +87,19 @@ Inference rules include
 If $\Gamma \cup \{P\} \vdash Q$ and the proof does not use $\forall x$-Generalization where $x$ is free in $P$, then $\Gamma \vdash P \to Q$. 
 \end{prop}
 
+\begin{prop}[Tautology]
+For any tautology $\mathcal{A}(p_1,\dots,p_n)$ where $p_1,\dots,p_n$ are propositional variables, $$ \vdash \mathcal{A}(P_1,\dots,P_n).$$
+\end{prop}
+
+\begin{prop}[More Theorems in $\mathcal{L}$]
+\begin{align*}
+&\vdash \exists x . x \\
+&\vdash \ceil*{x} \\
+&\vdash \exists y . x = y \\
+&\vdash P_1 = P_2 \to Q[P_1 / x] = Q[P_2 / x]
+\end{align*}
+\end{prop}
+
 \section{Inference rules}
 
 \paragraph{Axioms}
@@ -78,6 +108,12 @@ $$
 $$
 where $A$ is an axiom. 
 
+\paragraph{Inclusion}
+$$
+\infer{\Gamma \vdash P}{\cdot}
+$$
+where $P \in \Gamma$.
+
 \paragraph{Modus Ponens}
 $$
 \infer{\Gamma \vdash P}
@@ -85,31 +121,39 @@ $$
       &\Gamma \vdash Q}
 $$
 
+\paragraph{Closed-Form Deduction Theorem}
+$$
+\infer{\Gamma \vdash P \to Q}
+{\Gamma \cup \{P\} \vdash Q}
+$$
+where $P$ is closed.
+
 \paragraph{Universal Generalization}
 $$
 \infer[(\forall x)]{\Gamma \vdash \forall x . P}
       {\Gamma \vdash P}
 $$
 
-\paragraph{Closed-Form Deduction Theorem}
+\paragraph{Existential Instantiation}
 $$
-\infer{\Gamma \vdash P \to Q}
-      {\Gamma \cup \{P\} \vdash Q}
+\infer[(\exists x)]{\Gamma \vdash \exists x . P}
+{\Gamma \vdash P[Q/x]
+	&\Gamma \vdash \exists y . Q = y}
 $$
-where $P$ is closed.
 
-\paragraph{Inclusion}
-$$
-\infer{\Gamma \vdash P}{\cdot}
-$$
-where $P \in \Gamma$.
 
-\paragraph{Conjunction Introduction}
+
+
+
+\paragraph{Conjunction Splitting}
 $$
 \infer{\Gamma \vdash P \wedge Q}
       {\Gamma \vdash P
       &\Gamma \vdash Q}
 $$
+
+
+
 \section*{Examples of proof.sty}
 
 \verb|\infer| draws beautiful proof figures easily:
