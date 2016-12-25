@@ -1,0 +1,271 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage[utf8]{inputenc}
+\usepackage{proof}
+\usepackage{txfonts}
+\usepackage{mathtools}
+
+\newtheorem{prop}{Proposition}
+
+\DeclarePairedDelimiter\ceil{\lceil}{\rceil}
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+
+\def\imp{\to}
+\def\land{\mathbin\&}
+
+\title{Towards an Efficient and Economic Deductive System of Matching Logic}
+\author{FSL group}
+
+
+
+\begin{document}
+\maketitle
+We aim for a Hilbert style deductive system which has a relatively large number of axioms but only a few inference rules. 
+
+\section{Grammar and extended grammar}
+
+The formal language $\mathcal{L}$ we use to write matching logic patterns is defined as follows.
+\begin{align*}
+P \Coloneqq\  & x \\
+       \mid\  & P_1 \to P_2 \\
+       \mid\  & \neg P \\
+       \mid\  & \forall x . P \\
+       \mid\  & \sigma(P_1,\dots,P_n) \\
+       \mid\  & P_1 = P_2 \\
+ {\tt (*** }\ & \ {\tt  extended  ***)} \\
+       \mid\  & P_1 \vee P_2 \\
+       \mid\  & P_1 \wedge P_2 \\
+       \mid\  & P_1 \leftrightarrow P_2 \\
+       \mid\  & \exists x . P \\
+       \mid\  & P_1 \neq P_2 \\
+       \mid\  & \top \\
+       \mid\  & \bot \\
+       \mid\  & \ceil*{P} \\
+       \mid\  & \floor*{P} \\
+       \mid\  & P_1 \subseteq P_2 \\
+       \mid\  & x \in P
+\end{align*}
+with the extended grammar defined as
+\begin{align*}
+&P_1 \vee P_2 \coloneqq \neg P_2 \to P_1 \\
+&P_1 \wedge P_2 \coloneqq \neg (\neg P_1 \vee \neg P_2) \\
+&P_1 \leftrightarrow P_2 \coloneqq (P_1 \to P_2) \wedge (P_2 \to P_1) \\
+&\exists x . P \coloneqq \neg \forall x . \neg P \\
+&P_1 \neq P_2 \coloneqq \neg (P_1 = P_2) \\
+&\top \coloneqq x_1 = x_1 \\
+&\bot \coloneqq x_1 \neq x_1 \\
+&\ceil*{P} \coloneqq P \neq \bot \\
+&\floor*{P} \coloneqq P = \top \\
+&P_1 \subseteq P_2 \coloneqq \floor*{P_1 \to P_2} \\
+&x \in P \coloneqq x \subseteq P
+\end{align*}
+
+
+\section{Hilbert proof system}
+Axioms in $\mathcal{L}$ are given by the following nine axiom schemata where $P, Q, R$ are arbitrary patterns and $x, y$ are variables.
+\begin{itemize}
+\item (K1) $P \to (Q \to P)$
+\item (K2) $(P \to (Q \to R)) \to ((P \to Q) \to (P \to R))$
+\item (K3) $(\neg P \to \neg Q) \to (Q \to P)$
+\item (K4) $\forall x . (P \to Q) \to (P \to \forall x . Q)$ if $x$ does not occur free in $P$
+\item (K5) $\forall x . P \to P$ if $x$ does not occur free in $P$
+\item (K6) $\forall x . P(x) \to P(y)$
+\item (K7) $P = P$
+\item (K8) $P_1 = P_2 \to (Q[P_1/x] \to Q[P_2/x])$
+\item (K9) $\exists y . Q = y \to (\forall x . P(x) \to P[Q/x])$ if $Q$ is free for $x$ in $P$
+\end{itemize}
+
+Inference rules include
+\begin{itemize}
+\item (Modus Ponens) From $P$ and $P \to Q$, deduce $Q$.
+\item (Universal Generalization) From $P$, deduce $\forall x . P$. 
+\end{itemize}
+
+\begin{prop}[Deduction Theorem]
+If $\Gamma \cup \{P\} \vdash Q$ and the proof does not use \mbox{$\forall x$-Generalization} where $x$ is free in $P$, then $\Gamma \vdash P \to Q$. 
+\end{prop}
+
+\begin{prop}[Tautology]
+For any tautology $\mathcal{A}(p_1,\dots,p_n)$ where $p_1,\dots,p_n$ are propositional variables, $$ \vdash \mathcal{A}(P_1,\dots,P_n).$$
+\end{prop}
+
+\begin{prop}[More Theorems in $\mathcal{L}$]
+\begin{align*}
+&\vdash \exists x . x \\
+&\vdash \ceil*{x} \\
+&\vdash \exists y . x = y \\
+&\vdash P_1 = P_2 \to Q[P_1 / x] = Q[P_2 / x]
+\end{align*}
+\end{prop}
+
+\section{Inference rules}
+
+\paragraph{Axioms}
+$$
+\infer{\Gamma \vdash A}{\cdot}
+$$
+where $A$ is an axiom. 
+
+\paragraph{Inclusion}
+$$
+\infer{\Gamma \vdash P}{\cdot}
+$$
+where $P \in \Gamma$.
+
+\paragraph{Modus Ponens}
+$$
+\infer{\Gamma \vdash P}
+      {\Gamma \vdash Q \to P
+      &\Gamma \vdash Q}
+$$
+
+\paragraph{Closed-Form Deduction Theorem}
+$$
+\infer{\Gamma \vdash P \to Q}
+{\Gamma \cup \{P\} \vdash Q}
+$$
+where $P$ is closed.
+
+\paragraph{Universal Generalization}
+$$
+\infer[(\forall x)]{\Gamma \vdash \forall x . P}
+      {\Gamma \vdash P}
+$$
+
+\paragraph{Conjunction Splitting}
+$$
+\infer{\Gamma \vdash P \wedge Q}
+      {\Gamma \vdash P
+      &\Gamma \vdash Q}
+$$
+
+
+
+\section*{Examples of proof.sty}
+
+\verb|\infer| draws beautiful proof figures easily:
+
+\noindent (1)
+$$
+\infer{A}{
+	\infer{B}{
+		B11\land B12\land B13
+		&
+		B21\land B22\land B23
+	}
+	&
+	C
+}
+$$
+
+\noindent (2)
+$$
+\infer{A1\land A2\land A3\land A4\land A5\land A6}{
+	\infer{B}{
+		B11\land B12\land B13
+		&
+		B21\land B22\land B23
+	}
+	&
+	C
+}
+$$
+
+\noindent (3)
+$$
+\infer{A1\land A2\land A3\land A4\land A5\land A6}{
+	C
+	&
+	\infer{B}{
+		B11\land B12\land B13
+		&
+		B21\land B22\land B23
+	}
+}
+$$
+
+You can use also some variations:
+
+\noindent (4)
+$$
+\infer[(1)]{A}{
+	\infer*{B}{
+		B11\land B12\land B13
+		&
+		B21\land B22\land B23
+	}
+	&
+	C
+}
+$$
+
+\noindent (5)
+$$
+\infer*[(1)]{A1\land A2\land A3\land A4\land A5\land A6}{
+	\deduce[{\displaystyle \sum}]{B}{
+		B11\land B12\land B13
+		&
+		B21\land B22\land B23
+	}
+	&
+	\deduce{C}{(2)}
+}
+$$
+
+\noindent (6)
+$$
+\infer={A}{A \land B \land C}
+$$
+
+Here are more practical examples:
+
+\noindent (7)
+$$
+\infer[(\land I)]{A \land B}{A & B}
+\qquad
+\infer[(\land E_l)]A{A\land B}
+\qquad
+\infer[(\land E_r)]B{A\land B}
+$$
+
+$$
+\infer[(\imp I)]{A \imp B}{
+	\infer*{B}{[A]}
+}
+\qquad
+\infer[(\imp E)]{B}{
+	A \imp B
+	&
+	A
+}
+$$
+
+Some techniques:
+Use \verb|\vcenter| for an equation of proofs.
+
+\noindent (8)
+$$
+\pi = \vcenter{
+	\infer{E}{
+		A
+		&
+		\infer{D}{B & C}
+	}
+}
+$$
+
+Use \verb|\kern| to adjust the form of a proof.
+
+\noindent (9)
+$$
+\infer{E}{
+	A
+	&
+	\infer{D}{B & C} \kern 0.5cm
+}
+$$
+
+
+\end{document}
