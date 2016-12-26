@@ -7,7 +7,9 @@
 \usepackage{txfonts}
 \usepackage{mathtools}
 
-\newtheorem{prop}{Proposition}
+\newtheorem{thm}{Theorem}
+\newtheorem{prop}[thm]{Proposition}
+\newtheorem{defn}[thm]{Definition}
 
 \DeclarePairedDelimiter\ceil{\lceil}{\rceil}
 \DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
@@ -62,6 +64,7 @@ with the extended grammar defined as
 &x \in P \coloneqq x \subseteq P
 \end{align*}
 
+We will extend the grammar to a many-sorted one in the future.
 
 \section{Hilbert proof system}
 Axioms in $\mathcal{L}$ are given by the following nine axiom schemata where $P, Q, R$ are arbitrary patterns and $x, y$ are variables.
@@ -75,6 +78,7 @@ Axioms in $\mathcal{L}$ are given by the following nine axiom schemata where $P,
 \item (K7) $P = P$
 \item (K8) $P_1 = P_2 \to (Q[P_1/x] \to Q[P_2/x])$
 \item (K9) $\exists y . Q = y \to (\forall x . P(x) \to P[Q/x])$ if $Q$ is free for $x$ in $P$
+\item (K10) $\exists x . x$
 \end{itemize}
 
 Inference rules include
@@ -83,8 +87,12 @@ Inference rules include
 \item (Universal Generalization) From $P$, deduce $\forall x . P$. 
 \end{itemize}
 
+\begin{thm}[Soundness of $K_\mathcal{L}$]
+Theorems of $K_\mathcal{L}$ are valid.
+\end{thm}
+
 \begin{prop}[Deduction Theorem]
-If $\Gamma \cup \{P\} \vdash Q$ and the proof does not use \mbox{$\forall x$-Generalization} where $x$ is free in $P$, then $\Gamma \vdash P \to Q$. 
+If $\Gamma \cup \{P\} \vdash Q$ and the proof does not use \mbox{$\forall x$-Generalization} where $x$ is free in $P$, then $\Gamma \vdash P \to Q$. In particular, when $P$ is closed, $\Gamma \cup \{P\} \vdash Q$ implies $\Gamma \vdash P \to Q$.
 \end{prop}
 
 \begin{prop}[Tautology]
@@ -98,6 +106,52 @@ For any tautology $\mathcal{A}(p_1,\dots,p_n)$ where $p_1,\dots,p_n$ are proposi
 &\vdash \exists y . x = y \\
 &\vdash P_1 = P_2 \to Q[P_1 / x] = Q[P_2 / x]
 \end{align*}
+\end{prop}
+\begin{proof}
+(1)
+$$
+\infer[^{\tt (DEF)}]{\vdash \exists x . x}
+{\infer[^{\tt (MP)}]{\vdash \neg \forall x . \neg x}
+	{\infer[^{\tt (TAUT)}]{\vdash \neg (x \to \neg x)}{\cdot}
+		&{\infer[^{\tt (MP\&K3)}] 
+	{\vdash \neg (x \to \neg x) \to \neg \forall x . \neg x}
+	{\infer[^{\tt (DEDUCT)}]
+	{\vdash (\forall x . \neg x) \to (x \to \neg x)}
+	{\infer[^{\tt (MP)}]{\forall x . \neg x \vdash x \to \neg x}
+		{{\infer{\forall x . \neg x \vdash \neg x}
+{\forall x . \neg x \vdash \neg x
+&\forall x . \neg x \vdash \neg x}}
+	    &{\infer[^{\tt (K1)}]{\forall x . \neg x \vdash \neg x \to (x \to \neg x)}{\cdot}}
+}}}}}}
+$$
+(3)
+$$
+\infer[^{\tt (DEF)}]{\vdash \exists y . x = y}
+      {\infer[^{\tt (MP)}]{\vdash \neg \forall y . \neg (x = y)}
+      	     {\infer[^{\tt (MP\&TAUT)}]{\vdash \neg \neg (x = x)}
+      	     	    {\infer[^{\tt (K7)}]{x = x}{\cdot}}
+             &\infer[^{\tt (MP\&K3)}]{\vdash \neg \neg (x = x) \to  \neg \forall y . \neg (x = y)}
+                    {\infer[^{\tt {(K6)}}]{\vdash \forall y . \neg (x = y) \to  \neg (x = x)}{\cdot}}}}
+$$
+
+\end{proof}
+
+Before we prove the adequacy theorem of $K_\mathcal{L}$, we prove some lemmas.
+
+\begin{prop}
+If a pattern is valid, then its closure is valid.
+\end{prop}
+
+\begin{prop}
+If a pattern's closure is a theorem of $K_\mathcal{L}$, then itself is a theorem of $K_\mathcal{L}$, too.
+\end{prop}
+
+\begin{prop}
+If $P$ is not a theorem of $K_\mathcal{L}$, then $K_\mathcal{L}$ extended with adding $\neg P$ as an axiom is consistent.
+\end{prop}
+
+\begin{prop}
+If $S$ is a consistent extended system of $K_\mathcal{L}$, then for any theorem $P$ of $S$, there exists a model $M$ and an $M$-evaluation $\rho$ such that $M,\rho \vDash P$.
 \end{prop}
 
 \section{Inference rules}
