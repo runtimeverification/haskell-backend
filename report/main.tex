@@ -167,11 +167,11 @@ $\vdash x \in \ceil*{y}$.
 \end{align*}
 \end{proof}
 
-\begin{prop}
+\begin{prop} \label{prop:p->ceilp}
 $\vdash P \to \ceil*{P}$.
 \end{prop}
 \begin{proof}
-\begin{align*}
+\begin{align*} 
 &\vdash P \to \ceil*{P} \\
 {\text{iff}}& \vdash \forall x . (x \in P \to \ceil*{P}) \\
 {\text{if}}&  \vdash x \in P \to \ceil*{P} \\
@@ -187,7 +187,7 @@ $\vdash P \to \ceil*{P}$.
 \paragraph{Remark} Similarly we can show $\vdash \floor*{P} \to P$.
 \end{proof}
 
-\begin{prop}
+\begin{prop} \label{prop:floor}
 $\vdash \forall x . (x \in P) = \floor*{P}$, where $x$ occurs free in $P$.
 \end{prop}
 \begin{proof}
@@ -240,66 +240,66 @@ We proved~\eqref{eq:prop11-2}.
 \paragraph{Remark} If $x$ occurs free in $P$, the result does not hold. For example, let $P$ be $upto(x)$ where $upto(\cdot)$ is interpreted to $upto(n) = \{0, 1, \dots, n\}$ on $\mathbb{N}$. 
 \end{proof}
 
-\begin{prop}[Deduction Theorem]
-If $\Gamma \cup \{P\} \vdash Q$ and the proof does not use \mbox{$\forall x$-Generalization} where $x$ is free in $P$, then $\Gamma \vdash P \to Q$. In particular, when $P$ is closed, $\Gamma \cup \{P\} \vdash Q$ implies $\Gamma \vdash P \to Q$.
-\end{prop}
+\paragraph{Remark} From Membership Introduction and Elimination inference rules and Proposition~\ref{prop:floor}, $\vdash P$ iff $\vdash \floor*{P}$.
 
+\begin{defn}[Predicate Pattern]
+A pattern $P$ is called a predicate pattern or a predicate if $\vdash (P = \top) \vee (P = \bot)$.
+\end{defn}
+\paragraph{Remark} Predicate patterns are closed under all logic connectives.
+\paragraph{Remark} For any $P$, $\ceil*{P}$ is a predicate pattern.
 
-
-\begin{prop}[More Theorems in $\mathcal{L}$]
-\begin{align*}
-&\vdash \exists x . x \\
-&\vdash \ceil*{x} \\
-&\vdash \exists y . x = y \\
-&\vdash P_1 = P_2 \to Q[P_1 / x] = Q[P_2 / x]
-\end{align*}
+\begin{prop} \label{prop:predicatevee}
+For any pattern $Q$ and any predicate pattern $P$, $\vdash P \vee Q$ iff $\vdash P \vee \floor*{Q}$.
 \end{prop}
 \begin{proof}
-(1)
-$$
-\infer[^{\tt (DEF)}]{\vdash \exists x . x}
-{\infer[^{\tt (MP)}]{\vdash \neg \forall x . \neg x}
-	{\infer[^{\tt (TAUT)}]{\vdash \neg (x \to \neg x)}{\cdot}
-		&{\infer[^{\tt (MP\&K3)}] 
-	{\vdash \neg (x \to \neg x) \to \neg \forall x . \neg x}
-	{\infer[^{\tt (DEDUCT)}]
-	{\vdash (\forall x . \neg x) \to (x \to \neg x)}
-	{\infer[^{\tt (MP)}]{\forall x . \neg x \vdash x \to \neg x}
-		{{\infer{\forall x . \neg x \vdash \neg x}
-{\forall x . \neg x \vdash \neg x
-&\forall x . \neg x \vdash \neg x}}
-	    &{\infer[^{\tt (K1)}]{\forall x . \neg x \vdash \neg x \to (x \to \neg x)}{\cdot}}
-}}}}}}
-$$
-(3)
-$$
-\infer[^{\tt (DEF)}]{\vdash \exists y . x = y}
-      {\infer[^{\tt (MP)}]{\vdash \neg \forall y . \neg (x = y)}
-      	     {\infer[^{\tt (MP\&TAUT)}]{\vdash \neg \neg (x = x)}
-      	     	    {\infer[^{\tt (K7)}]{x = x}{\cdot}}
-             &\infer[^{\tt (MP\&K3)}]{\vdash \neg \neg (x = x) \to  \neg \forall y . \neg (x = y)}
-                    {\infer[^{\tt {(K6)}}]{\vdash \forall y . \neg (x = y) \to  \neg (x = x)}{\cdot}}}}
-$$
-
+($\Rightarrow$) is obtained immediately by the remark of Proposition~\ref{prop:p->ceilp}. We now prove ($\Leftarrow$).
 \end{proof}
 
-Before we prove the adequacy theorem of $K_\mathcal{L}$, we prove some lemmas.
-
-\begin{prop}
-If a pattern is valid, then its closure is valid.
+\begin{prop}[Deduction Theorem]
+If $\Gamma \cup \{P\} \vdash Q$ and the derivation does not use \mbox{$\forall x$-Generalization} where $x$ is free in $P$, then $\Gamma \vdash \floor*{P} \to Q$. 
 \end{prop}
+\begin{proof}
+The proof is by induction on $n$, the length of the derivation of $Q$ from $\Gamma \cup \{P\}$.
 
-\begin{prop}
-If a pattern's closure is a theorem of $K_\mathcal{L}$, then itself is a theorem of $K_\mathcal{L}$, too.
-\end{prop}
+Base step: $n = 1$, and $Q$ is an axiom, or $P$, or a member of $\Gamma$. If $Q$ is an axiom or a member of $\Gamma$, then $\Gamma \vdash Q$ and as a result, $\Gamma \vdash \floor*{P} \to Q$. If $Q$ is $P$, then $\Gamma \vdash \floor*{P} \to Q$ by Proposition~\ref{prop:p->ceilp}.
 
-\begin{prop}
-If $P$ is not a theorem of $K_\mathcal{L}$, then $K_\mathcal{L}$ extended with adding $\neg P$ as an axiom is consistent.
-\end{prop}
+Induction step: Let $n > 1$. Suppose that if $P'$ can be deduced from $\Gamma \cup \{P\}$ without using $\forall x$-Generalization where $x$ is free in $P$, in a derivation containing fewer than $n$ steps, then $\Gamma \vdash \floor*{P} \to P'$.
 
-\begin{prop}
-If $S$ is a consistent extended system of $K_\mathcal{L}$, then for any theorem $P$ of $S$, there exists a model $M$ and an $M$-evaluation $\rho$ such that $M,\rho \vDash P$.
-\end{prop}
+Case 1: $Q$ is an axiom, or $P$, or a member of $\Gamma$. Precisely as in the Base step, we show that $\vdash \floor*{P} \to Q$.
+
+Case 2: $Q$ follows from two previous patterns in the derivation by an application of Modus Ponens. These two patterns must have the forms $Q_1$ and $Q_1 \to Q$, and each one can certainly be deduced from $\Gamma \cup \{P\}$ by a derivation with fewer than $n$ steps, by just omitting the subsequent members from the original derivation from $\Gamma \cup \{P\} \vdash Q$. So we have $\Gamma \cup \{P\} \vdash Q_1$ and $\Gamma \cup \{P\} \vdash Q_1 \to Q$, and, applying the hypothesis of induction, $\Gamma \vdash \floor*{P} \to Q_1$ and $\Gamma \vdash \floor*{P} \to (Q_1 \to Q)$. It follows immediately that $\Gamma \vdash \floor*{P} \to Q$.
+
+Case 3: $Q$ follows from a previous pattern in the derivation by an application of $\forall x_i$-Generalization where $x_i$ does not occur free in $P$. So $Q$ is $\forall x_i . Q_1$, say, and $Q_1$ appears previously in the derivation. Thus $\Gamma \cup \{P\} \vdash Q_1$, and the derivation has fewer than $n$ steps, so $\Gamma \vdash \floor*{P} \to Q_1$, since there is no application of Universal Generalization involving a free variable of $P$. Also $x_i$ cannot occur free in $P$, as it is involved in an application of Universal Generalization in the deduction of $Q$ from $\Gamma \cup \{P\}$. So we have a derivation of $\Gamma \vdash \floor*{P} \to Q$ as follows.
+\begin{align*}
+\Gamma &\vdash \floor*{P} \to Q \\
+{\text{iff} \quad} \Gamma &\vdash \floor*{P} \to \forall x_i . Q_1 \\
+{\text{if} \quad} \Gamma &\vdash \forall x_i . (\floor*{P} \to Q_1) \\
+{\text{if} \quad} \Gamma &\vdash \floor*{P} \to Q_1. \\
+\end{align*}
+So $\Gamma \vdash \floor*{P} \to Q$ as required.
+
+Case 4: Q follows from a previous pattern in the derivation by an application of Membership Introduction. So $Q$ is $\forall x_i . (x_i \in Q_1)$ with $x_i$ is free in $Q_1$, say, and $Q_1$ appears previously in the derivation. Thus $\Gamma \cup \{P\} \vdash Q_1$, and the derivation has fewer than $n$ steps, so $\Gamma \vdash \floor*{P} \to Q_1$, since there is no application of Universal Generalization involving a free variable of $P$. So we have a derivation of $\Gamma \vdash \floor*{P} \to Q$ as follows.
+\begin{align*}
+\Gamma &\vdash \floor*{P} \to Q \\
+{\text{iff} \quad} \Gamma &\vdash \floor*{P} \to \forall x_i . (x_i \in Q_1) \\
+{\text{iff} \quad} \Gamma &\vdash \floor*{P} \to \floor*{Q_1}, \\
+\end{align*}
+which follows by the hypothesis of induction $\Gamma \vdash \floor*{P} \to Q_1$ and the fact that $\Gamma \vdash Q_1 \to \floor*{Q_1}$ (by the Remark in Proposition~\ref{prop:p->ceilp}).
+
+Case 5: Q follows from a previous pattern in the derivation by an application of Membership Elimination. The previous pattern must have the form $\forall x_i . (x_i \in Q)$, and can be deduced from $\Gamma \cup \{P\}$ by a derivation with fewer than $n$ steps, by just omitting the subsequent members from the original derivation from $\Gamma \cup \{P\} \vdash Q$. So we have $\Gamma \cup \{P\} \vdash \forall x_i . (x_i \in Q)$, and, applying the hypothesis of induction, $\Gamma \vdash \floor*{P} \to \forall x_i . (x_i \in Q)$. So we have a derivation of $\Gamma \vdash \floor*{P} \to Q$ as follows.
+\begin{align*}
+\Gamma &\vdash \floor*{P} \to Q \\
+{\text{iff} \quad} \Gamma &\vdash \neg \floor*{P} \vee Q \\
+{\text{iff} \quad} \Gamma &\vdash \neg \floor*{P} \vee \floor*{Q} \tag{Proposition~\ref{prop:predicatevee}} \\
+{\text{iff} \quad} \Gamma &\vdash \neg \floor*{P} \vee \forall x_i . (x_i \in Q) \\
+{\text{iff} \quad} \Gamma &\vdash \floor*{P} \to \forall x_i . (x_i \in Q),
+\end{align*}
+which is the hypothesis of induction. And this concludes our inductive proof.
+\end{proof}
+
+\begin{cor}[Closed-form Deduction Theorem]
+If $P$ is closed, $\Gamma \cup \{P\} \vdash Q$ implies $\Gamma \vdash \floor*{P} \to Q$.
+\end{cor}
 
 \section{Inference rules}
 
