@@ -114,7 +114,7 @@ We provide some metatheorems of $K_\mathcal{L}$.
 \begin{prop}[Functional Substitution]
 	$\vdash \exists y . (Q = y) \to (P[Q / x] \to \exists x . P(x))$.
 \end{prop}
-\begin{prop}[$\vee$-Introduction]
+\begin{prop}[$\vee$-Introduction] \label{prop:vee-introduction}
 	$\vdash P$ implies $\vdash P \vee Q$.
 \end{prop}
 \begin{proof}
@@ -247,12 +247,20 @@ A pattern $P$ is called a predicate pattern or a predicate if $\vdash (P = \top)
 \end{defn}
 \paragraph{Remark} Predicate patterns are closed under all logic connectives.
 \paragraph{Remark} For any $P$, $\ceil*{P}$ is a predicate pattern.
+\begin{prop} \label{prop:predicateor}
+For any predicate patterns $P_1$ and $P_2$, $\vdash P_1 \vee P_2$ iff $\vdash P_1$ or $\vdash P_2$. 
+\end{prop}
+\begin{proof}
+($\Leftarrow$) is obtained by Proposition~\ref{prop:vee-introduction}. We now prove ($\Rightarrow$).
+\end{proof}
 
 \begin{prop} \label{prop:predicatevee}
 For any pattern $Q$ and any predicate pattern $P$, $\vdash P \vee Q$ iff $\vdash P \vee \floor*{Q}$.
 \end{prop}
 \begin{proof}
-($\Rightarrow$) is obtained immediately by the remark of Proposition~\ref{prop:p->ceilp}. We now prove ($\Leftarrow$).
+($\Rightarrow$) is obtained immediately by the remark of Proposition~\ref{prop:p->ceilp}. We now prove ($\Leftarrow$). 
+
+Because $\vdash P \vee \floor*{Q}$ and by Proposition~\ref{prop:predicateor}, either $\vdash P$ or $\vdash \floor*{Q}$. That $\vdash P$ implies $\vdash P \vee Q$ is by Proposition~\ref{prop:vee-introduction}. That $\vdash \floor*{Q}$ implies $\vdash Q$ is by Proposition~\ref{prop:floor} and the Membership Elimination.
 \end{proof}
 
 \begin{prop}[Deduction Theorem]
