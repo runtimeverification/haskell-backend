@@ -9,6 +9,7 @@
 
 \newtheorem{thm}{Theorem}
 \newtheorem{prop}[thm]{Proposition}
+\newtheorem{cor}[thm]{Corollary}
 \newtheorem{defn}[thm]{Definition}
 
 \DeclarePairedDelimiter\ceil{\lceil}{\rceil}
@@ -35,17 +36,17 @@ P \Coloneqq\  & x \\
        \mid\  & \neg P \\
        \mid\  & \forall x . P \\
        \mid\  & \sigma(P_1,\dots,P_n) \\
-       \mid\  & P_1 = P_2 \\
  {\tt (*** }\ & \ {\tt  extended  ***)} \\
        \mid\  & P_1 \vee P_2 \\
        \mid\  & P_1 \wedge P_2 \\
        \mid\  & P_1 \leftrightarrow P_2 \\
        \mid\  & \exists x . P \\
+       \mid\  & \ceil*{P} \\
+	   \mid\  & \floor*{P} \\
+       \mid\  & P_1 = P_2 \\
        \mid\  & P_1 \neq P_2 \\
        \mid\  & \top \\
        \mid\  & \bot \\
-       \mid\  & \ceil*{P} \\
-       \mid\  & \floor*{P} \\
        \mid\  & P_1 \subseteq P_2 \\
        \mid\  & x \in P
 \end{align*}
@@ -55,13 +56,13 @@ with the extended grammar defined as
 &P_1 \wedge P_2 \coloneqq \neg (\neg P_1 \vee \neg P_2) \\
 &P_1 \leftrightarrow P_2 \coloneqq (P_1 \to P_2) \wedge (P_2 \to P_1) \\
 &\exists x . P \coloneqq \neg \forall x . \neg P \\
+&\floor*{P} \coloneqq {\neg} \ceil*{\neg P} \\
+&P_1 = P_2 \coloneqq \floor*{P_1 \leftrightarrow P_2} \\
 &P_1 \neq P_2 \coloneqq \neg (P_1 = P_2) \\
-&\top \coloneqq x_1 = x_1 \\
-&\bot \coloneqq x_1 \neq x_1 \\
-&\ceil*{P} \coloneqq P \neq \bot \\
-&\floor*{P} \coloneqq P = \top \\
+&\bot \coloneqq x_1 \wedge \neg x_1 \\
+&\top \coloneqq {\neg} \bot \\
 &P_1 \subseteq P_2 \coloneqq \floor*{P_1 \to P_2} \\
-&x \in P \coloneqq x \subseteq P
+&x \in P \coloneqq \ceil*{x \wedge P}
 \end{align*}
 
 We will extend the grammar to a many-sorted one in the future.
@@ -73,31 +74,177 @@ Axioms in $\mathcal{L}$ are given by the following nine axiom schemata where $P,
 \item (K2) $(P \to (Q \to R)) \to ((P \to Q) \to (P \to R))$
 \item (K3) $(\neg P \to \neg Q) \to (Q \to P)$
 \item (K4) $\forall x . (P \to Q) \to (P \to \forall x . Q)$ if $x$ does not occur free in $P$
-\item (K5) $\forall x . P \to P$ if $x$ does not occur free in $P$
-\item (K6) $\forall x . P(x) \to P(y)$
-\item (K7) $P = P$
-\item (K8) $P_1 = P_2 \to (Q[P_1/x] \to Q[P_2/x])$
-\item (K9) $\exists y . Q = y \to (\forall x . P(x) \to P[Q/x])$ if $Q$ is free for $x$ in $P$
-\item (K10) $\exists x . x$
+\item (K5) $\exists y . x = y$
+\item (K6) $\exists y . Q = y \to (\forall x . P(x) \to P[Q/x])$ if $Q$ is free for $x$ in $P$
+\item (K7) $P_1 = P_2 \to (Q[P_1/x] \to Q[P_2/x])$
+\item (M1) $x \in y = (x = y)$
+\item (M2) $x \in \neg P = \neg (x \in P)$
+\item (M3) $x \in P \wedge Q = (x \in P) \wedge (x \in Q)$
+\item (M4) $x \in \exists y . P = \exists y . x \in P$ where $x$ is distinct from $y$
+\item (M5) $x \in \sigma(\dots,P_i,\dots) = \exists y . y \in P_i \wedge x \in \sigma(\dots,y,\dots)$
 \end{itemize}
 
 Inference rules include
 \begin{itemize}
 \item (Modus Ponens) From $P$ and $P \to Q$, deduce $Q$.
 \item (Universal Generalization) From $P$, deduce $\forall x . P$. 
+\item (Membership Introduction) From $P$, deduce $\forall x . x \in P$, where $x$ occurs free in $P$.
+\item (Membership Elimination) From $\forall x . x \in P$, deduce $P$, where $x$ occurs free in $P$.
 \end{itemize}
 
 \begin{thm}[Soundness of $K_\mathcal{L}$]
 Theorems of $K_\mathcal{L}$ are valid.
 \end{thm}
+\begin{proof}
+	Trivial.
+\end{proof}
+
+We provide some metatheorems of $K_\mathcal{L}$.
+
+\begin{prop}[Tautology] \label{prop:taut}
+	For any propositional tautology $\mathcal{A}(p_1,\dots,p_n)$ where $p_1,\dots,p_n$ are propositional variables, $$ \vdash \mathcal{A}(P_1,\dots,P_n).$$
+\end{prop}
+\begin{proof}
+	Omit proof here.
+\end{proof}
+\paragraph{Remark} Proposition~\ref{prop:taut} makes any metatheorem of propositional logic a metatheorem of $K_\mathcal{L}$.
+\begin{prop} [Variable Substitution]
+	$\vdash \forall x . P \to P[y / x]$.
+\end{prop}
+\begin{prop}[Functional Substitution]
+	$\vdash \exists y . (Q = y) \to (P[Q / x] \to \exists x . P(x))$.
+\end{prop}
+\begin{prop}[$\vee$-Introduction]
+	$\vdash P$ implies $\vdash P \vee Q$.
+\end{prop}
+\begin{proof}
+Use Proposition~\ref{prop:taut} and Modus Ponens.
+Note that in general, $\vdash P \vee Q$ does not imply $\vdash P$ or $\vdash Q$.
+\end{proof}
+
+\begin{prop}[$\wedge$-Introduction and Elimination]
+\label{prop:wedge}
+$\vdash P$ and $\vdash Q$ iff $\vdash P \wedge Q$.
+\end{prop}
+\begin{proof}
+Use Proposition~\ref{prop:taut} and Modus Ponens.
+\end{proof}
+
+\begin{prop}[Equality Introduction]
+	$\vdash P = P$.
+\end{prop}
+\begin{proof}
+	Use Membership Introduction and Proposition~\ref{prop:taut}.
+\end{proof}
+
+\begin{prop}[Equality Replacement]
+\label{prop:ereplacement}
+$\vdash P_1 = P_2$ and $\vdash Q[P_1 / x]$ implies $\vdash Q[P_2 / x]$.
+\end{prop}
+\begin{proof}
+	Use Axiom~(K7) and Modus Ponens.
+\end{proof}
+
+\begin{prop}[Equality Establishment]
+\label{prop:eestablish}
+$\vdash P \leftrightarrow Q$ implies $\vdash P = Q$.
+\end{prop}
+\begin{proof}
+	Use Membership Axoims and $\vee$-Introduction.
+\end{proof}
+\begin{cor} \label{cor:top}
+$\vdash P$ implies $\vdash P = \top$ .
+\end{cor}
+
+\begin{prop} \label{prop:var1}
+$\vdash x \in \ceil*{y}$.
+\end{prop}
+\begin{proof}
+\begin{align*}
+&\vdash x \in \ceil*{y} \\
+{\text{if}}& \vdash \forall x . (x \in \ceil*{y}) \tag{$K5$, $K6$, and Modus Ponens} \\
+{\text{iff}}& \vdash \ceil*{y}.
+\end{align*}
+\end{proof}
+
+\begin{prop}
+$\vdash P \to \ceil*{P}$.
+\end{prop}
+\begin{proof}
+\begin{align*}
+&\vdash P \to \ceil*{P} \\
+{\text{iff}}& \vdash \forall x . (x \in P \to \ceil*{P}) \\
+{\text{if}}&  \vdash x \in P \to \ceil*{P} \\
+{\text{iff}}& \vdash x \in P \to x \in \ceil*{P} \\
+{\text{iff}}& \vdash x \in P \to \exists y . (y \in P \wedge x \in \ceil*{y}) \\
+{\text{iff}}& \vdash x \in P \to \neg \forall y . (y \not \in P \vee x \not \in \ceil*{y}) \\
+{\text{iff}}& \vdash \forall y . (y \not \in P \vee x \not \in \ceil*{y}) \to x \not \in P \\
+{\text{if}}&  \vdash x \not \in P \vee x \not \in \ceil*{x} \to x \not \in P \\
+{\text{iff}}& \vdash x \in P \to x \in P \wedge x \in \ceil*{x} \\
+{\text{iff}}& \vdash x \in P \to x \in \ceil*{x} \\
+{\text{if}}&  \vdash x \in \ceil*{x} \\
+\end{align*}
+\paragraph{Remark} Similarly we can show $\vdash \floor*{P} \to P$.
+\end{proof}
+
+\begin{prop}
+$\vdash \forall x . (x \in P) = \floor*{P}$, where $x$ occurs free in $P$.
+\end{prop}
+\begin{proof}
+By Proposition~\ref{prop:eestablish} and~\ref{prop:wedge}, it suffices to show \begin{equation} \label{eq:prop11-1}
+\vdash \forall x . (x \in P) \to \floor*{P}
+\end{equation}
+and
+\begin{equation} \label{eq:prop11-2}
+\vdash \floor*{P} \to \forall x . (x \in P).
+\end{equation}
+
+To show~\eqref{eq:prop11-1},
+
+\begin{align*}
+&\vdash \forall x . (x \in P) \to \floor*{P} \\
+{\text{iff}}& \vdash \forall x . \ceil*{x \wedge P} \to \neg \ceil*{\neg P} \\
+{\text{iff}}& \vdash \ceil*{\neg P} \to \exists x . \neg \ceil*{x \wedge P} \\
+{\text{iff}}& \vdash \forall y . (y \in ( \ceil*{\neg P} \to \exists x . \neg \ceil*{x \wedge P})) \\
+{\text{if}}& \vdash y \in ( \ceil*{\neg P} \to \exists x . \neg \ceil*{x \wedge P} \\
+{\text{iff}}& \vdash \exists z_1 . (z_1 \not \in P \wedge y \in \ceil*{z_1}) \to \\ & \quad \quad \exists x . \neg (\exists z_2 . (z_2 = x \wedge z_2 \in P \wedge y \in \ceil*{z_2})) \\
+{\text{iff}}& \vdash \exists z_1 . (z_1 \not \in P \wedge \top) \to \tag{Proposition~\ref{prop:var1}, \ref{prop:ereplacement}, and Corollary~\ref{cor:top}}\\
+& \quad \quad \exists x . \neg (\exists z_2 . (z_2 = x \wedge z_2 \in P \wedge \top)) \\
+{\text{iff}}& \vdash \exists z_1 . (z_1 \not \in P) \to \exists x . \neg (\exists z_2 . (z_2 = x \wedge z_2 \in P)) \\
+{\text{iff}}& \vdash \forall x . (\exists z_2 . (z_2 = x \wedge z_2 \in P)) \to \forall z_1 . (z_1 \in P) \\
+{\text{if}}& \vdash \forall z_1 . (\forall x . (\exists z_2 . (z_2 = x \wedge z_2 \in P)) \to (z_1 \in P)) \\
+{\text{if}}& \vdash \forall x . (\exists z_2 . (z_2 = x \wedge z_2 \in P)) \to (z_1 \in P).
+\end{align*}
+Since $\vdash \forall x . (\exists z_2 . (z_2 = x \wedge z_2 \in P)) \to \exists z_2 . (z_2 = z_1 \wedge z_2 \in P) $, it suffices to show
+\begin{align*}
+&\vdash \exists z_2 . (z_2 = z_1 \wedge z_2 \in P) \to (z_1 \in P) \\
+{\text{iff}}& \vdash z_1 \not \in P \to \forall z_2 . (z_2 \neq z_1 \vee z_2 \not \in P) \\
+{\text{if}}& \vdash \forall z_2 . (z_1 \not \in P \to z_2 \neq z_1 \vee z_2 \not \in P) \\
+{\text{if}}& \vdash z_1 \not \in P \to z_2 \neq z_1 \vee z_2 \not \in P \\
+{\text{if}}& \vdash z_2 = z_1 \wedge z_2 \in P \to z_1 \in P.
+\end{align*}
+And we proved~\eqref{eq:prop11-1}.
+
+Similarly, to show~\eqref{eq:prop11-2}, 
+\begin{align*}
+&\vdash \floor*{P} \to \forall x . (x \in P)  \\
+{\text{iff}}& \vdash \exists x . \neg \ceil*{x \wedge P} \to \ceil*{\neg P} \\
+{\text{iff}}& \vdash \forall y . (y \in \exists x . \neg \ceil*{x \wedge P} \to \ceil*{\neg P}) \\
+{\text{if}}& \vdash y \in \exists x . \neg \ceil*{x \wedge P} \to \ceil*{\neg P} \\
+{\text{iff}}& \vdash \exists x . \neg \exists z_2 . (z_2 = x \wedge z_2 \in P) \to \exists z_1 . (z_1 \not \in P) \\
+{\text{iff}}& \vdash \forall z_1 . (z_1 \in P) \to \exists z_2 . (z_2 = x \wedge z_2 \in P)\\
+{\text{iff}}& \vdash x \in P \to \exists z_2 . (z_2 = x \wedge z_2 \in P).
+\end{align*}
+We proved~\eqref{eq:prop11-2}.
+
+\paragraph{Remark} If $x$ occurs free in $P$, the result does not hold. For example, let $P$ be $upto(x)$ where $upto(\cdot)$ is interpreted to $upto(n) = \{0, 1, \dots, n\}$ on $\mathbb{N}$. 
+\end{proof}
 
 \begin{prop}[Deduction Theorem]
 If $\Gamma \cup \{P\} \vdash Q$ and the proof does not use \mbox{$\forall x$-Generalization} where $x$ is free in $P$, then $\Gamma \vdash P \to Q$. In particular, when $P$ is closed, $\Gamma \cup \{P\} \vdash Q$ implies $\Gamma \vdash P \to Q$.
 \end{prop}
 
-\begin{prop}[Tautology]
-For any tautology $\mathcal{A}(p_1,\dots,p_n)$ where $p_1,\dots,p_n$ are propositional variables, $$ \vdash \mathcal{A}(P_1,\dots,P_n).$$
-\end{prop}
+
 
 \begin{prop}[More Theorems in $\mathcal{L}$]
 \begin{align*}
