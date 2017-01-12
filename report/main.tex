@@ -242,25 +242,58 @@ We proved~\eqref{eq:prop11-2}.
 
 \paragraph{Remark} From Membership Introduction and Elimination inference rules and Proposition~\ref{prop:floor}, $\vdash P$ iff $\vdash \floor*{P}$.
 
+\begin{prop}[Classification Reasoning] \label{prop:classificationreasoning}
+	For any $P$ and $Q$, from $\vdash P \to Q$ and $\vdash \neg P \to Q$ deduce $\vdash Q$.
+\end{prop}
+\begin{proof}
+	From $\vdash \neg P \to Q$ deduce $\vdash \neg Q \to P$. Notice that $\vdash P \to Q$, so we have $\vdash \neg Q \to Q$, i.e., $\vdash \neg \neg Q \vee Q$ which concludes the proof.
+\end{proof}
+\begin{cor} \label{cor:classificationreasoning}
+	For any $P_1$, $P_2$, and $Q$ are patterns with $\vdash P_1 \vee P_2$, from $\vdash P_1 \to Q$ and $\vdash P_2 \to Q$, deduce $\vdash Q$.
+\end{cor}
+
 \begin{defn}[Predicate Pattern]
 A pattern $P$ is called a predicate pattern or a predicate if $\vdash (P = \top) \vee (P = \bot)$.
 \end{defn}
 \paragraph{Remark} Predicate patterns are closed under all logic connectives.
 \paragraph{Remark} For any $P$, $\ceil*{P}$ is a predicate pattern.
-\begin{prop} \label{prop:predicateor}
-For any predicate patterns $P_1$ and $P_2$, $\vdash P_1 \vee P_2$ iff $\vdash P_1$ or $\vdash P_2$. 
-\end{prop}
-\begin{proof}
-($\Leftarrow$) is obtained by Proposition~\ref{prop:vee-introduction}. We now prove ($\Rightarrow$).
-\end{proof}
 
+\begin{prop} \label{prop:predicateabsorb}
+For any predicate $P$, $\vdash (P \neq \top) = (P = \bot)$ and $\vdash (P \neq \bot) = (P = \top)$.
+\end{prop}
 \begin{prop} \label{prop:predicatevee}
 For any pattern $Q$ and any predicate pattern $P$, $\vdash P \vee Q$ iff $\vdash P \vee \floor*{Q}$.
 \end{prop}
 \begin{proof}
 ($\Rightarrow$) is obtained immediately by the remark of Proposition~\ref{prop:p->ceilp}. We now prove ($\Leftarrow$). 
 
-Because $\vdash P \vee \floor*{Q}$ and by Proposition~\ref{prop:predicateor}, either $\vdash P$ or $\vdash \floor*{Q}$. That $\vdash P$ implies $\vdash P \vee Q$ is by Proposition~\ref{prop:vee-introduction}. That $\vdash \floor*{Q}$ implies $\vdash Q$ is by Proposition~\ref{prop:floor} and the Membership Elimination.
+Because $\vdash Q = \top \vee Q \neq \top$, it suffices to show
+\begin{equation} \label{eq:predicatevee-01}
+\vdash Q = \top \to (P \vee \floor*{Q} = \top)
+\end{equation}
+and
+\begin{equation} \label{eq:predicatevee-02}
+\vdash Q \neq \top \to (P \vee \floor*{Q} = \top)
+\end{equation}
+by Corollary~\ref{cor:classificationreasoning}, and the fact that $\vdash P \vee \floor*{Q} = \top$ and $\vdash \top$ imply $\vdash P \vee \floor*{Q}$. 
+
+The proof of~\eqref{eq:predicatevee-01} is straightforward as follows.
+\begin{align*}
+&\vdash Q = \top \to (P \vee \floor*{Q} = \top) \\
+\text{if} \quad &\vdash Q = \top \to (P \vee \floor*{\top} = \top) \\
+\text{if} \quad &\vdash Q = \top \to (\top = \top) \\
+\text{if} \quad &\vdash \top.
+\end{align*}
+
+The proof of~\eqref{eq:predicatevee-02} needs more effort. We first show that $\vdash (Q \neq \top) = (\floor*{Q} = \bot)$. Since $\floor*{Q}$ is a predicate pattern, it suffices to show $\vdash (Q = \top) = (\floor*{Q} = \top)$.
+
+It is trivial to show $\vdash (Q = \top) \to (\floor*{Q} = \top)$. We show the other direction $\vdash (\floor*{Q} = \top) \to (Q = \top)$ through the following backward reasoning.
+
+have the backward reasoning as follows.
+\begin{align*}
+&\vdash Q \neq \top \to (P \vee \floor*{Q} = \top) \\
+\text{if} \quad &\vdash
+\end{align*}
 \end{proof}
 
 \begin{prop}[Deduction Theorem]
