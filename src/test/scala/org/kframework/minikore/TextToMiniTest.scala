@@ -52,6 +52,8 @@ class TextToMiniTest {
     parseFromString(s)
   }
 
+  // TODO(Daejun): compare error messages
+
   @Test def parseTestFail1(): Unit = {
     val s =
       """
@@ -65,6 +67,12 @@ class TextToMiniTest {
       assert(false)
     } catch {
       case _: Throwable => ()
+        val msg =
+          """
+            |ERROR: Line 4: Column 8: Expected 't', but ' '
+            |  impor t B []
+            |       ^
+          """.stripMargin
     }
   }
 
@@ -81,6 +89,12 @@ class TextToMiniTest {
       assert(false)
     } catch {
       case _: Throwable => ()
+        val msg =
+          """
+            |ERROR: Line 4: Column 12: Expected '[', but 'O'
+            |  import B OOL []
+            |           ^
+          """.stripMargin
     }
   }
 
@@ -97,6 +111,12 @@ class TextToMiniTest {
       assert(false)
     } catch {
       case _: Throwable => ()
+        val msg =
+          """
+            |ERROR: Line 4: Column 12: Expected ':' or '(', but 'o'
+            |  axiom fo o() []
+            |           ^
+          """.stripMargin
     }
   }
 
@@ -113,6 +133,12 @@ class TextToMiniTest {
       assert(false)
     } catch {
       case _: Throwable => ()
+        val msg =
+          """
+            |ERROR: Line 4: Column 16: Expected ':' or '(', but '.'
+            |  axiom ` ...\`... `() []
+            |               ^
+          """.stripMargin
     }
   }
 
@@ -129,6 +155,12 @@ class TextToMiniTest {
       assert(false)
     } catch {
       case _: Throwable => ()
+        val msg =
+          """
+            |ERROR: Line 4: Column 23: Expected <Symbol>, but ')'
+            |  axiom foo(X:K, Y:K, ) []
+            |                      ^
+          """.stripMargin
     }
   }
 
@@ -145,6 +177,12 @@ class TextToMiniTest {
       assert(false)
     } catch {
       case _: Throwable => ()
+        val msg =
+          """
+            |ERROR: Line 4: Column 13: Expected <Symbol>, but ','
+            |  axiom foo(, Y:K) []
+            |            ^
+          """.stripMargin
     }
   }
 
@@ -161,6 +199,12 @@ class TextToMiniTest {
       assert(false)
     } catch {
       case _: Throwable => ()
+        val msg =
+          """
+            |ERROR: Line 4: Column 11: Expected \true, \false, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equal, but (m,y)
+            |  axiom \my()
+            |          ^
+          """.stripMargin
     }
   }
 
@@ -177,6 +221,12 @@ class TextToMiniTest {
       assert(false)
     } catch {
       case _: Throwable => ()
+        val msg =
+          """
+            |ERROR: Line 4: Column 4: Expected 'm', but ' '
+            |  i mport B []
+            |   ^
+          """.stripMargin
     }
   }
 
@@ -193,6 +243,12 @@ class TextToMiniTest {
       assert(false)
     } catch {
       case _: Throwable => ()
+        val msg =
+          """
+            |ERROR: Line 4: Column 12: Expected 'u', but ' '
+            |  axiom \tr ue() []
+            |           ^
+          """.stripMargin
     }
   }
 
