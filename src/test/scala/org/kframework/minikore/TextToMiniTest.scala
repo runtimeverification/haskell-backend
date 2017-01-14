@@ -265,7 +265,7 @@ class TextToMiniTest {
   def parseFromFile(file: String): Unit = {
     val src1 = io.Source.fromResource(file)
     val src2 = io.Source.fromResource(file)
-    parseTest(src1, src2.mkString, false)
+    parseTest(src1, src2.mkString, true)
   }
 
   def parseTest(src: io.Source, expected: String, ignoreSpaces: Boolean): Unit = {
