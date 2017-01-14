@@ -30,7 +30,7 @@ class TextToMiniTest {
         |  axiom ` f o o `() []
         |  axiom ` _,_( ) `() []
         |endmodule []
-      """.stripMargin
+        |""".stripMargin
     parseFromString(s)
   }
 
@@ -38,7 +38,7 @@ class TextToMiniTest {
     val s =
       """
         |[]
-      """.stripMargin
+        |""".stripMargin
     parseFromString(s)
   }
 
@@ -48,7 +48,7 @@ class TextToMiniTest {
         |[]
         |module A
         |endmodule []
-      """.stripMargin
+        |""".stripMargin
     parseFromString(s)
   }
 
@@ -61,18 +61,19 @@ class TextToMiniTest {
         |module A
         |  impor t B []
         |endmodule []
-      """.stripMargin
+        |""".stripMargin
     try {
       parseFromString(s)
       assert(false)
     } catch {
-      case _: Throwable => ()
-        val msg =
+      case ParseError(msg) =>
+        assertEquals(
           """
             |ERROR: Line 4: Column 8: Expected 't', but ' '
             |  impor t B []
             |       ^
-          """.stripMargin
+            |""".stripMargin.stripPrefix("\n").stripSuffix("\n"),
+          msg)
     }
   }
 
@@ -83,18 +84,19 @@ class TextToMiniTest {
         |module A
         |  import B OOL []
         |endmodule []
-      """.stripMargin
+        |""".stripMargin
     try {
       parseFromString(s)
       assert(false)
     } catch {
-      case _: Throwable => ()
-        val msg =
+      case ParseError(msg) =>
+        assertEquals(
           """
             |ERROR: Line 4: Column 12: Expected '[', but 'O'
             |  import B OOL []
             |           ^
-          """.stripMargin
+            |""".stripMargin.stripPrefix("\n").stripSuffix("\n"),
+          msg)
     }
   }
 
@@ -105,18 +107,19 @@ class TextToMiniTest {
         |module A
         |  axiom fo o() []
         |endmodule []
-      """.stripMargin
+        |""".stripMargin
     try {
       parseFromString(s)
       assert(false)
     } catch {
-      case _: Throwable => ()
-        val msg =
+      case ParseError(msg) =>
+        assertEquals(
           """
             |ERROR: Line 4: Column 12: Expected ':' or '(', but 'o'
             |  axiom fo o() []
             |           ^
-          """.stripMargin
+            |""".stripMargin.stripPrefix("\n").stripSuffix("\n"),
+          msg)
     }
   }
 
@@ -127,18 +130,19 @@ class TextToMiniTest {
         |module A
         |  axiom ` ...\`... `() []
         |endmodule []
-      """.stripMargin
+        |""".stripMargin
     try {
       parseFromString(s)
       assert(false)
     } catch {
-      case _: Throwable => ()
-        val msg =
+      case ParseError(msg) =>
+        assertEquals(
           """
             |ERROR: Line 4: Column 16: Expected ':' or '(', but '.'
             |  axiom ` ...\`... `() []
             |               ^
-          """.stripMargin
+            |""".stripMargin.stripPrefix("\n").stripSuffix("\n"),
+          msg)
     }
   }
 
@@ -149,18 +153,19 @@ class TextToMiniTest {
         |module A
         |  axiom foo(X:K, Y:K, ) []
         |endmodule []
-      """.stripMargin
+        |""".stripMargin
     try {
       parseFromString(s)
       assert(false)
     } catch {
-      case _: Throwable => ()
-        val msg =
+      case ParseError(msg) =>
+        assertEquals(
           """
             |ERROR: Line 4: Column 23: Expected <Symbol>, but ')'
             |  axiom foo(X:K, Y:K, ) []
             |                      ^
-          """.stripMargin
+            |""".stripMargin.stripPrefix("\n").stripSuffix("\n"),
+          msg)
     }
   }
 
@@ -171,18 +176,19 @@ class TextToMiniTest {
         |module A
         |  axiom foo(, Y:K) []
         |endmodule []
-      """.stripMargin
+        |""".stripMargin
     try {
       parseFromString(s)
       assert(false)
     } catch {
-      case _: Throwable => ()
-        val msg =
+      case ParseError(msg) =>
+        assertEquals(
           """
             |ERROR: Line 4: Column 13: Expected <Symbol>, but ','
             |  axiom foo(, Y:K) []
             |            ^
-          """.stripMargin
+            |""".stripMargin.stripPrefix("\n").stripSuffix("\n"),
+          msg)
     }
   }
 
@@ -193,18 +199,19 @@ class TextToMiniTest {
         |module A
         |  axiom \my()
         |endmodule []
-      """.stripMargin
+        |""".stripMargin
     try {
       parseFromString(s)
       assert(false)
     } catch {
-      case _: Throwable => ()
-        val msg =
+      case ParseError(msg) =>
+        assertEquals(
           """
-            |ERROR: Line 4: Column 11: Expected \true, \false, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equal, but (m,y)
+            |ERROR: Line 4: Column 11: Expected \true, \false, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equal, but 'my'
             |  axiom \my()
             |          ^
-          """.stripMargin
+            |""".stripMargin.stripPrefix("\n").stripSuffix("\n"),
+          msg)
     }
   }
 
@@ -215,18 +222,19 @@ class TextToMiniTest {
         |module A
         |  i mport B []
         |endmodule []
-      """.stripMargin
+        |""".stripMargin
     try {
       parseFromString(s)
       assert(false)
     } catch {
-      case _: Throwable => ()
-        val msg =
+      case ParseError(msg) =>
+        assertEquals(
           """
             |ERROR: Line 4: Column 4: Expected 'm', but ' '
             |  i mport B []
             |   ^
-          """.stripMargin
+            |""".stripMargin.stripPrefix("\n").stripSuffix("\n"),
+          msg)
     }
   }
 
@@ -237,18 +245,19 @@ class TextToMiniTest {
         |module A
         |  axiom \tr ue() []
         |endmodule []
-      """.stripMargin
+        |""".stripMargin
     try {
       parseFromString(s)
       assert(false)
     } catch {
-      case _: Throwable => ()
-        val msg =
+      case ParseError(msg) =>
+        assertEquals(
           """
             |ERROR: Line 4: Column 12: Expected 'u', but ' '
             |  axiom \tr ue() []
             |           ^
-          """.stripMargin
+            |""".stripMargin.stripPrefix("\n").stripSuffix("\n"),
+          msg)
     }
   }
 
@@ -259,18 +268,19 @@ class TextToMiniTest {
         |module A
         |  axiom \t rue() []
         |endmodule []
-      """.stripMargin
+        |""".stripMargin
     try {
       parseFromString(s)
       assert(false)
     } catch {
-      case _: Throwable => ()
-        val msg =
+      case ParseError(msg) =>
+        assertEquals(
           """
-            |ERROR: Line 4: Column 11: Expected \true, \false, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equal, but (t, )
+            |ERROR: Line 4: Column 11: Expected \true, \false, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equal, but 't '
             |  axiom \t rue() []
             |          ^
-          """.stripMargin
+            |""".stripMargin.stripPrefix("\n").stripSuffix("\n"),
+          msg)
     }
   }
 
@@ -279,18 +289,20 @@ class TextToMiniTest {
       """
         |[]
         |module A
-        |  axiom \t""".stripMargin
+        |  axiom \t
+        |""".stripMargin
     try {
       parseFromString(s)
       assert(false)
     } catch {
-      case _: Throwable => ()
-        val msg =
+      case ParseError(msg) =>
+        assertEquals(
           """
-            |ERROR: Line 4: Column 12: Expected 'u', but ' '
-            |  axiom \tr ue() []
-            |           ^
-          """.stripMargin
+            |ERROR: Line 4: Column 11: Expected \true, \false, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equal, but 't\n'
+            |  axiom \t
+            |          ^
+            |""".stripMargin.stripPrefix("\n").stripSuffix("\n"),
+          msg)
     }
   }
 
