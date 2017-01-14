@@ -52,8 +52,6 @@ class TextToMiniTest {
     parseFromString(s)
   }
 
-  // TODO(Daejun): compare error messages
-
   @Test def parseTestFail1(): Unit = {
     val s =
       """
@@ -308,28 +306,40 @@ class TextToMiniTest {
 
   def parseFromStringWithExpected(s: String, expected: String): Unit = {
     val src = io.Source.fromString(s)
-    parseTest(src, s, true)
+    try {
+      parseTest(src, s, true)
+    } finally {
+      src.close()
+    }
   }
 
   def parseFromString(s: String): Unit = {
     val src = io.Source.fromString(s)
-    parseTest(src, s, true)
+    try {
+      parseTest(src, s, true)
+    } finally {
+      src.close()
+    }
   }
 
   def parseFromFile(file: String): Unit = {
     val src1 = io.Source.fromResource(file)
     val src2 = io.Source.fromResource(file)
-    parseTest(src1, src2.mkString, true)
+    try {
+      parseTest(src1, src2.mkString, true)
+    } finally {
+      src1.close()
+      src2.close()
+    }
   }
 
   def parseTest(src: io.Source, expected: String, ignoreSpaces: Boolean): Unit = {
     val begin = java.lang.System.nanoTime()
     val minikore = new TextToMini().parse(src)
     val end = java.lang.System.nanoTime(); println(end - begin)
-    src.close()
     val text = MiniToText.apply(minikore)
-//    val outputfile = new java.io.File("/tmp/x")
-//    FileUtils.writeStringToFile(outputfile, text)
+    // val outputfile = new java.io.File("/tmp/x")
+    // FileUtils.writeStringToFile(outputfile, text)
     if (ignoreSpaces) {
       assertEquals(expected.replaceAll("\\s+", ""), text.replaceAll("\\s+", ""))
     } else {
