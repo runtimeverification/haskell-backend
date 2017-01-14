@@ -70,7 +70,7 @@ class TextToMiniTest {
             |ERROR: Line 4: Column 8: Expected 't', but ' '
             |  impor t B []
             |       ^
-            |""".stripMargin.stripPrefix("\n").stripSuffix("\n"),
+            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
           msg)
     }
   }
@@ -93,7 +93,7 @@ class TextToMiniTest {
             |ERROR: Line 4: Column 12: Expected '[', but 'O'
             |  import B OOL []
             |           ^
-            |""".stripMargin.stripPrefix("\n").stripSuffix("\n"),
+            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
           msg)
     }
   }
@@ -116,7 +116,7 @@ class TextToMiniTest {
             |ERROR: Line 4: Column 12: Expected ':' or '(', but 'o'
             |  axiom fo o() []
             |           ^
-            |""".stripMargin.stripPrefix("\n").stripSuffix("\n"),
+            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
           msg)
     }
   }
@@ -139,7 +139,7 @@ class TextToMiniTest {
             |ERROR: Line 4: Column 16: Expected ':' or '(', but '.'
             |  axiom ` ...\`... `() []
             |               ^
-            |""".stripMargin.stripPrefix("\n").stripSuffix("\n"),
+            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
           msg)
     }
   }
@@ -162,7 +162,7 @@ class TextToMiniTest {
             |ERROR: Line 4: Column 23: Expected <Symbol>, but ')'
             |  axiom foo(X:K, Y:K, ) []
             |                      ^
-            |""".stripMargin.stripPrefix("\n").stripSuffix("\n"),
+            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
           msg)
     }
   }
@@ -185,7 +185,7 @@ class TextToMiniTest {
             |ERROR: Line 4: Column 13: Expected <Symbol>, but ','
             |  axiom foo(, Y:K) []
             |            ^
-            |""".stripMargin.stripPrefix("\n").stripSuffix("\n"),
+            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
           msg)
     }
   }
@@ -208,7 +208,7 @@ class TextToMiniTest {
             |ERROR: Line 4: Column 11: Expected \true, \false, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equal, but 'my'
             |  axiom \my()
             |          ^
-            |""".stripMargin.stripPrefix("\n").stripSuffix("\n"),
+            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
           msg)
     }
   }
@@ -231,7 +231,7 @@ class TextToMiniTest {
             |ERROR: Line 4: Column 4: Expected 'm', but ' '
             |  i mport B []
             |   ^
-            |""".stripMargin.stripPrefix("\n").stripSuffix("\n"),
+            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
           msg)
     }
   }
@@ -254,7 +254,7 @@ class TextToMiniTest {
             |ERROR: Line 4: Column 12: Expected 'u', but ' '
             |  axiom \tr ue() []
             |           ^
-            |""".stripMargin.stripPrefix("\n").stripSuffix("\n"),
+            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
           msg)
     }
   }
@@ -277,7 +277,7 @@ class TextToMiniTest {
             |ERROR: Line 4: Column 11: Expected \true, \false, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equal, but 't '
             |  axiom \t rue() []
             |          ^
-            |""".stripMargin.stripPrefix("\n").stripSuffix("\n"),
+            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
           msg)
     }
   }
@@ -299,7 +299,7 @@ class TextToMiniTest {
             |ERROR: Line 4: Column 11: Expected \true, \false, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equal, but 't\n'
             |  axiom \t
             |          ^
-            |""".stripMargin.stripPrefix("\n").stripSuffix("\n"),
+            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
           msg)
     }
   }
