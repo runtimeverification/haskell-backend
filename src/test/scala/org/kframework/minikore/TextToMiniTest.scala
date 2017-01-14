@@ -252,6 +252,48 @@ class TextToMiniTest {
     }
   }
 
+  @Test def parseTestFail10(): Unit = {
+    val s =
+      """
+        |[]
+        |module A
+        |  axiom \t rue() []
+        |endmodule []
+      """.stripMargin
+    try {
+      parseFromString(s)
+      assert(false)
+    } catch {
+      case _: Throwable => ()
+        val msg =
+          """
+            |ERROR: Line 4: Column 11: Expected \true, \false, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equal, but (t, )
+            |  axiom \t rue() []
+            |          ^
+          """.stripMargin
+    }
+  }
+
+  @Test def parseTestFail11(): Unit = {
+    val s =
+      """
+        |[]
+        |module A
+        |  axiom \t""".stripMargin
+    try {
+      parseFromString(s)
+      assert(false)
+    } catch {
+      case _: Throwable => ()
+        val msg =
+          """
+            |ERROR: Line 4: Column 12: Expected 'u', but ' '
+            |  axiom \tr ue() []
+            |           ^
+          """.stripMargin
+    }
+  }
+
   def parseFromStringWithExpected(s: String, expected: String): Unit = {
     val src = io.Source.fromString(s)
     parseTest(src, s, true)
