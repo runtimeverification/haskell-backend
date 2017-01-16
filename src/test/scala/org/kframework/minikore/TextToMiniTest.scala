@@ -27,6 +27,8 @@ class TextToMiniTest {
         |  import B []
         |  axiom \true ( ) [ ]
         |  axiom \and  (  \true (   ) ,   \false (  )  )  [   ]
+        |  axiom \or  (  \true (   ) ,   \false (  )  )  [   ]
+        |  axiom \forall  ( X:K, \true() ) [ ]
         |  axiom ` f o o `() []
         |  axiom ` _,_( ) `() []
         |endmodule []
@@ -49,6 +51,11 @@ class TextToMiniTest {
         |module A
         |endmodule []
         |""".stripMargin
+    parseFromString(s)
+  }
+
+  @Test def parseTest7(): Unit = {
+    val s = "[] \t"
     parseFromString(s)
   }
 
@@ -299,6 +306,97 @@ class TextToMiniTest {
             |ERROR: Line 4: Column 11: Expected \true, \false, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equal, but 't\n'
             |  axiom \t
             |          ^
+            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
+          msg)
+    }
+  }
+
+  @Test def parseTestFail12(): Unit = {
+    val s =
+      """
+        |[]
+        |module A
+        |  syntax X
+        |endmodule
+        |""".stripMargin
+    try {
+      parseFromString(s)
+      assert(false)
+    } catch {
+      case ParseError(msg) =>
+        assertEquals(
+          """
+            |ERROR: Line 5: Column 1: Expected '[' or ':', but 'e'
+            |endmodule
+            |^
+            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
+          msg)
+    }
+  }
+
+  @Test def parseTestFail13(): Unit = {
+    val s =
+      """
+        |[]
+        |module A
+        |  dummy
+        |endmodule
+        |""".stripMargin
+    try {
+      parseFromString(s)
+      assert(false)
+    } catch {
+      case ParseError(msg) =>
+        assertEquals(
+          """
+            |ERROR: Line 4: Column 3: Expected import, syntax, rule, axiom, or endmodule, but 'd'
+            |  dummy
+            |  ^
+            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
+          msg)
+    }
+  }
+
+  @Test def parseTestFail14(): Unit = {
+    val s =
+      """
+        |[]
+        |module _A
+        |endmodule
+        |""".stripMargin
+    try {
+      parseFromString(s)
+      assert(false)
+    } catch {
+      case ParseError(msg) =>
+        assertEquals(
+          """
+            |ERROR: Line 3: Column 8: Expected <ModuleName>, but '_'
+            |module _A
+            |       ^
+            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
+          msg)
+    }
+  }
+
+  @Test def parseTestFail15(): Unit = {
+    val s =
+      """
+        |[]
+        |module A
+        |  syntax X ::= x(Y Z) []
+        |endmodule
+        |""".stripMargin
+    try {
+      parseFromString(s)
+      assert(false)
+    } catch {
+      case ParseError(msg) =>
+        assertEquals(
+          """
+            |ERROR: Line 4: Column 20: Expected ')' or ',', but 'Z'
+            |  syntax X ::= x(Y Z) []
+            |                   ^
             |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
           msg)
     }
