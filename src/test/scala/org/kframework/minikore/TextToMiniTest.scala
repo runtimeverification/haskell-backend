@@ -405,7 +405,7 @@ class TextToMiniTest {
   def parseFromStringWithExpected(s: String, expected: String): Unit = {
     val src = io.Source.fromString(s)
     try {
-      parseTest(src, s, true)
+      parseTest(SourceFOS(src), s, true)
     } finally {
       src.close()
     }
@@ -414,26 +414,27 @@ class TextToMiniTest {
   def parseFromString(s: String): Unit = {
     val src = io.Source.fromString(s)
     try {
-      parseTest(src, s, true)
+      parseTest(SourceFOS(src), s, true)
     } finally {
       src.close()
     }
   }
 
   def parseFromFile(file: String): Unit = {
-    val src1 = io.Source.fromResource(file)
-    val src2 = io.Source.fromResource(file)
-    try {
-      parseTest(src1, src2.mkString, true)
-    } finally {
-      src1.close()
-      src2.close()
-    }
+    val f = FileUtils.toFile(getClass.getResource("/" + file))
+    parseTest(FileFOS(f), FileUtils.readFileToString(f), true)
   }
 
-  def parseTest(src: io.Source, expected: String, ignoreSpaces: Boolean): Unit = {
+  sealed trait FileOrSource
+  case class FileFOS(x: java.io.File) extends FileOrSource
+  case class SourceFOS(x: io.Source) extends FileOrSource
+
+  def parseTest(src: FileOrSource, expected: String, ignoreSpaces: Boolean): Unit = {
     val begin = java.lang.System.nanoTime()
-    val minikore = new TextToMini().parse(src)
+    val minikore = src match {
+      case src: FileFOS => new TextToMini().parse(src.x)
+      case src: SourceFOS => new TextToMini().parse(src.x)
+    }
     val end = java.lang.System.nanoTime(); println(end - begin)
     val text = MiniToText.apply(minikore)
     // val outputfile = new java.io.File("/tmp/x")
