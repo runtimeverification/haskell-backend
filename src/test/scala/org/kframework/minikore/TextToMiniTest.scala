@@ -303,8 +303,7 @@ class TextToMiniTest {
       case ParseError(msg) =>
         assertEquals(
           strip("""
-            |ERROR: Line 3: Column 11: Expected \true, \false, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equal, but '\t
-            |'
+            |ERROR: Line 3: Column 11: Expected \true, \false, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equal, but '\t '
             |  axiom \t
             |          ^
             |"""),
