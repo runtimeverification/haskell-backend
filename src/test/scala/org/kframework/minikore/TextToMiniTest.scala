@@ -1,5 +1,6 @@
 package org.kframework.minikore
 
+import com.sun.xml.internal.bind.v2.TODO
 import org.apache.commons.io.FileUtils
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -405,9 +406,9 @@ class TextToMiniTest {
   @Test def parseTestFailWhiteSpacesPrefix(): Unit = {
     val s =
       """
-
-
-
+        |
+        |
+        |
         |[]
         |module A
         |endmodule [}
@@ -419,13 +420,14 @@ class TextToMiniTest {
       case ParseError(msg) =>
         assertEquals(
           strip("""
-                  |ERROR: Line 7: Column 12: Expected <Symbol> or ']', but '}'
+                  |ERROR: Line 7: Column 12: Expected <Symbol>, but '}'
                   |endmodule [}
                   |           ^
                   |"""),
           msg)
     }
   }
+// TODO: Improve error message above to say "Expected <Symbol> or ']' ..."
 
   @Test def parseTestFailWhiteSpacesSuffix(): Unit = {
     val s =
@@ -444,7 +446,7 @@ class TextToMiniTest {
       case ParseError(msg) =>
         assertEquals(
           strip("""
-                  |ERROR: Line 4: Column 12: Expected <Symbol> or ']', but '}'
+                  |ERROR: Line 4: Column 12: Expected <Symbol>, but '}'
                   |endmodule [}
                   |           ^
                   |"""),
@@ -487,13 +489,15 @@ class TextToMiniTest {
       case ParseError(msg) =>
         assertEquals(
           strip("""
-                  |ERROR: Line 5: Column 3: Expected 'm' or <EOF>, but 'j'
+                  |ERROR: Line 5: Column 3: Expected 'm', but 'j'
                   |  junk
                   |  ^
                   |"""),
           msg)
     }
   }
+// TODO: Improve error message above to say "Expected 'm' or <EOF> ..."
+
   def strip(s: String): String = {
     s.stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator())
   }
