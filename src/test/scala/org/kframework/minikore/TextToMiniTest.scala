@@ -21,7 +21,7 @@ class TextToMiniTest {
 
   @Test def parseTest4(): Unit = {
     val s =
-      """
+      strip("""
         |[]
         |module A
         |  import B []
@@ -32,25 +32,25 @@ class TextToMiniTest {
         |  axiom ` f o o `() []
         |  axiom ` _,_( ) `() []
         |endmodule []
-        |""".stripMargin
+        |""")
     parseFromString(s)
   }
 
   @Test def parseTest5(): Unit = {
     val s =
-      """
+      strip("""
         |[]
-        |""".stripMargin
+        |""")
     parseFromString(s)
   }
 
   @Test def parseTest6(): Unit = {
     val s =
-      """
+      strip("""
         |[]
         |module A
         |endmodule []
-        |""".stripMargin
+        |""")
     parseFromString(s)
   }
 
@@ -61,330 +61,402 @@ class TextToMiniTest {
 
   @Test def parseTestFail1(): Unit = {
     val s =
-      """
+      strip("""
         |[]
         |module A
         |  impor t B []
         |endmodule []
-        |""".stripMargin
+        |""")
     try {
       parseFromString(s)
       assert(false)
     } catch {
       case ParseError(msg) =>
         assertEquals(
-          """
-            |ERROR: Line 4: Column 8: Expected 't', but ' '
+          strip("""
+            |ERROR: Line 3: Column 8: Expected 't', but ' '
             |  impor t B []
             |       ^
-            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
+            |"""),
           msg)
     }
   }
 
   @Test def parseTestFail2(): Unit = {
     val s =
-      """
+      strip("""
         |[]
         |module A
         |  import B OOL []
         |endmodule []
-        |""".stripMargin
+        |""")
     try {
       parseFromString(s)
       assert(false)
     } catch {
       case ParseError(msg) =>
         assertEquals(
-          """
-            |ERROR: Line 4: Column 12: Expected '[', but 'O'
+          strip("""
+            |ERROR: Line 3: Column 12: Expected '[', but 'O'
             |  import B OOL []
             |           ^
-            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
+            |"""),
           msg)
     }
   }
 
   @Test def parseTestFail3(): Unit = {
     val s =
-      """
+      strip("""
         |[]
         |module A
         |  axiom fo o() []
         |endmodule []
-        |""".stripMargin
+        |""")
     try {
       parseFromString(s)
       assert(false)
     } catch {
       case ParseError(msg) =>
         assertEquals(
-          """
-            |ERROR: Line 4: Column 12: Expected ':' or '(', but 'o'
+          strip("""
+            |ERROR: Line 3: Column 12: Expected ':' or '(', but 'o'
             |  axiom fo o() []
             |           ^
-            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
+            |"""),
           msg)
     }
   }
 
   @Test def parseTestFail4(): Unit = {
     val s =
-      """
+      strip("""
         |[]
         |module A
         |  axiom ` ...\`... `() []
         |endmodule []
-        |""".stripMargin
+        |""")
     try {
       parseFromString(s)
       assert(false)
     } catch {
       case ParseError(msg) =>
         assertEquals(
-          """
-            |ERROR: Line 4: Column 16: Expected ':' or '(', but '.'
+          strip("""
+            |ERROR: Line 3: Column 16: Expected ':' or '(', but '.'
             |  axiom ` ...\`... `() []
             |               ^
-            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
+            |"""),
           msg)
     }
   }
 
   @Test def parseTestFail5(): Unit = {
     val s =
-      """
+      strip("""
         |[]
         |module A
         |  axiom foo(X:K, Y:K, ) []
         |endmodule []
-        |""".stripMargin
+        |""")
     try {
       parseFromString(s)
       assert(false)
     } catch {
       case ParseError(msg) =>
         assertEquals(
-          """
-            |ERROR: Line 4: Column 23: Expected <Symbol>, but ')'
+          strip("""
+            |ERROR: Line 3: Column 23: Expected <Symbol>, but ')'
             |  axiom foo(X:K, Y:K, ) []
             |                      ^
-            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
+            |"""),
           msg)
     }
   }
 
   @Test def parseTestFail6(): Unit = {
     val s =
-      """
+      strip("""
         |[]
         |module A
         |  axiom foo(, Y:K) []
         |endmodule []
-        |""".stripMargin
+        |""")
     try {
       parseFromString(s)
       assert(false)
     } catch {
       case ParseError(msg) =>
         assertEquals(
-          """
-            |ERROR: Line 4: Column 13: Expected <Symbol>, but ','
+          strip("""
+            |ERROR: Line 3: Column 13: Expected <Symbol>, but ','
             |  axiom foo(, Y:K) []
             |            ^
-            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
+            |"""),
           msg)
     }
   }
 
   @Test def parseTestFail7(): Unit = {
     val s =
-      """
+      strip("""
         |[]
         |module A
         |  axiom \my()
         |endmodule []
-        |""".stripMargin
+        |""")
     try {
       parseFromString(s)
       assert(false)
     } catch {
       case ParseError(msg) =>
         assertEquals(
-          """
-            |ERROR: Line 4: Column 11: Expected \true, \false, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equal, but 'my'
+          strip("""
+            |ERROR: Line 3: Column 11: Expected \true, \false, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equal, but 'my'
             |  axiom \my()
             |          ^
-            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
+            |"""),
           msg)
     }
   }
 
   @Test def parseTestFail8(): Unit = {
     val s =
-      """
+      strip("""
         |[]
         |module A
         |  i mport B []
         |endmodule []
-        |""".stripMargin
+        |""")
     try {
       parseFromString(s)
       assert(false)
     } catch {
       case ParseError(msg) =>
         assertEquals(
-          """
-            |ERROR: Line 4: Column 4: Expected 'm', but ' '
+          strip("""
+            |ERROR: Line 3: Column 4: Expected 'm', but ' '
             |  i mport B []
             |   ^
-            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
+            |"""),
           msg)
     }
   }
 
   @Test def parseTestFail9(): Unit = {
     val s =
-      """
+      strip("""
         |[]
         |module A
         |  axiom \tr ue() []
         |endmodule []
-        |""".stripMargin
+        |""")
     try {
       parseFromString(s)
       assert(false)
     } catch {
       case ParseError(msg) =>
         assertEquals(
-          """
-            |ERROR: Line 4: Column 12: Expected 'u', but ' '
+          strip("""
+            |ERROR: Line 3: Column 12: Expected 'u', but ' '
             |  axiom \tr ue() []
             |           ^
-            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
+            |"""),
           msg)
     }
   }
 
   @Test def parseTestFail10(): Unit = {
     val s =
-      """
+      strip("""
         |[]
         |module A
         |  axiom \t rue() []
         |endmodule []
-        |""".stripMargin
+        |""")
     try {
       parseFromString(s)
       assert(false)
     } catch {
       case ParseError(msg) =>
         assertEquals(
-          """
-            |ERROR: Line 4: Column 11: Expected \true, \false, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equal, but 't '
+          strip("""
+            |ERROR: Line 3: Column 11: Expected \true, \false, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equal, but 't '
             |  axiom \t rue() []
             |          ^
-            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
+            |"""),
           msg)
     }
   }
 
   @Test def parseTestFail11(): Unit = {
     val s =
-      """
+      strip("""
         |[]
         |module A
         |  axiom \t
-        |""".stripMargin
+        |""")
     try {
       parseFromString(s)
       assert(false)
     } catch {
       case ParseError(msg) =>
         assertEquals(
-          """
-            |ERROR: Line 4: Column 11: Expected \true, \false, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equal, but 't\n'
+          strip("""
+            |ERROR: Line 3: Column 11: Expected \true, \false, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equal, but 't\n'
             |  axiom \t
             |          ^
-            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
+            |"""),
           msg)
     }
   }
 
   @Test def parseTestFail12(): Unit = {
     val s =
-      """
+      strip("""
         |[]
         |module A
         |  syntax X
         |endmodule
-        |""".stripMargin
+        |""")
     try {
       parseFromString(s)
       assert(false)
     } catch {
       case ParseError(msg) =>
         assertEquals(
-          """
-            |ERROR: Line 5: Column 1: Expected '[' or ':', but 'e'
+          strip("""
+            |ERROR: Line 4: Column 1: Expected '[' or ':', but 'e'
             |endmodule
             |^
-            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
+            |"""),
           msg)
     }
   }
 
   @Test def parseTestFail13(): Unit = {
     val s =
-      """
+      strip("""
         |[]
         |module A
         |  dummy
         |endmodule
-        |""".stripMargin
+        |""")
     try {
       parseFromString(s)
       assert(false)
     } catch {
       case ParseError(msg) =>
         assertEquals(
-          """
-            |ERROR: Line 4: Column 3: Expected import, syntax, rule, axiom, or endmodule, but 'd'
+          strip("""
+            |ERROR: Line 3: Column 3: Expected import, syntax, rule, axiom, or endmodule, but 'd'
             |  dummy
             |  ^
-            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
+            |"""),
           msg)
     }
   }
 
   @Test def parseTestFail14(): Unit = {
     val s =
-      """
+      strip("""
         |[]
         |module _A
         |endmodule
-        |""".stripMargin
+        |""")
     try {
       parseFromString(s)
       assert(false)
     } catch {
       case ParseError(msg) =>
         assertEquals(
-          """
-            |ERROR: Line 3: Column 8: Expected <ModuleName>, but '_'
+          strip("""
+            |ERROR: Line 2: Column 8: Expected <ModuleName>, but '_'
             |module _A
             |       ^
-            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
+            |"""),
           msg)
     }
   }
 
   @Test def parseTestFail15(): Unit = {
     val s =
-      """
+      strip("""
         |[]
         |module A
         |  syntax X ::= x(Y Z) []
+        |endmodule
+        |""")
+    try {
+      parseFromString(s)
+      assert(false)
+    } catch {
+      case ParseError(msg) =>
+        assertEquals(
+          strip("""
+            |ERROR: Line 3: Column 20: Expected ')' or ',', but 'Z'
+            |  syntax X ::= x(Y Z) []
+            |                   ^
+            |"""),
+          msg)
+    }
+  }
+
+  @Test def parseTestFailWhiteSpacesPrefix(): Unit = {
+    val s =
+      """
+
+
+
+        |[]
+        |module A
+        |endmodule [}
+        |""".stripMargin
+    try {
+      parseFromString(s)
+      assert(false)
+    } catch {
+      case ParseError(msg) =>
+        assertEquals(
+          strip("""
+                  |ERROR: Line 7: Column 12: Expected <Symbol> or ']', but '}'
+                  |endmodule [}
+                  |           ^
+                  |"""),
+          msg)
+    }
+  }
+
+  @Test def parseTestFailWhiteSpacesSuffix(): Unit = {
+    val s =
+      """
+        |[]
+        |module A
+        |endmodule [}
+        |
+        |
+        |
+        |""".stripMargin
+    try {
+      parseFromString(s)
+      assert(false)
+    } catch {
+      case ParseError(msg) =>
+        assertEquals(
+          strip("""
+                  |ERROR: Line 4: Column 12: Expected <Symbol> or ']', but '}'
+                  |endmodule [}
+                  |           ^
+                  |"""),
+          msg)
+    }
+  }
+
+  @Test def parseTestFailUnfinishedModule(): Unit = {
+    val s =
+      """
+        |[]
+        |module A
         |endmodule
         |""".stripMargin
     try {
@@ -393,13 +465,37 @@ class TextToMiniTest {
     } catch {
       case ParseError(msg) =>
         assertEquals(
-          """
-            |ERROR: Line 4: Column 20: Expected ')' or ',', but 'Z'
-            |  syntax X ::= x(Y Z) []
-            |                   ^
-            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
+          strip("""
+                  | add corresponding error message
+                  |"""),
           msg)
     }
+  }
+
+  @Test def parseTestFailJunkAfterModule(): Unit = {
+    val s =
+      """
+        |[]
+        |module A
+        |endmodule []
+        |  junk
+        |""".stripMargin
+    try {
+      parseFromString(s)
+      assert(false)
+    } catch {
+      case ParseError(msg) =>
+        assertEquals(
+          strip("""
+                  |ERROR: Line 5: Column 3: Expected 'm' or <EOF>, but 'j'
+                  |  junk
+                  |  ^
+                  |"""),
+          msg)
+    }
+  }
+  def strip(s: String): String = {
+    s.stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator())
   }
 
   def parseFromStringWithExpected(s: String, expected: String): Unit = {
@@ -450,11 +546,11 @@ class TextToMiniTest {
     new TextToMini().error('a', "abc") match {
       case ParseError(msg) =>
         assertEquals(
-          """
+          strip("""
             |ERROR: Line 0: Column 0: Expected 'a', but abc
             |null
             |^
-            |""".stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator()),
+            |"""),
           msg)
       case _ => assert(false)
     }
