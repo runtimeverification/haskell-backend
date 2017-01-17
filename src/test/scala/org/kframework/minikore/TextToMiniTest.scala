@@ -466,7 +466,7 @@ class TextToMiniTest {
       case ParseError(msg) =>
         assertEquals(
           strip("""
-                  | add corresponding error message
+                  |ERROR: Unexpected end of file while parsing
                   |"""),
           msg)
     }
