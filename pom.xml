@@ -28,8 +28,8 @@
     </developer>
   </developers>
   <scm>
-    <connection>https://github.com/kframework/kore.git</connection>
-    <developerConnection>https://github.com/kframework/kore.git</developerConnection>
+    <connection>scm:https://github.com/kframework/kore.git</connection>
+    <developerConnection>scm:https://github.com/kframework/kore.git</developerConnection>
     <url>https://github.com/kframework/kore</url>
   </scm>
 
