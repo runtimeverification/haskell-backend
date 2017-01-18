@@ -32,7 +32,7 @@ We aim for a Hilbert style deductive system which has a relatively large number 
 The formal language $\mathcal{L}$ we use to write matching logic patterns is defined as follows.
 \begin{align*}
 P \Coloneqq\  & x \\
-       \mid\  & P_1 \to P_2 \\
+       \mid\  & P_1 \wedge P_2 \\
        \mid\  & \neg P \\
        \mid\  & \forall x . P \\
        \mid\  & \sigma(P_1,\dots,P_n) \\
@@ -88,8 +88,8 @@ Inference rules include
 \begin{itemize}
 \item (Modus Ponens) From $P$ and $P \to Q$, deduce $Q$.
 \item (Universal Generalization) From $P$, deduce $\forall x . P$. 
-\item (Membership Introduction) From $P$, deduce $\forall x . x \in P$, where $x$ occurs free in $P$.
-\item (Membership Elimination) From $\forall x . x \in P$, deduce $P$, where $x$ occurs free in $P$.
+\item (Membership Introduction) From $P$, deduce $\forall x . (x \in P)$, where $x$ does not occur free in $P$.
+\item (Membership Elimination) From $\forall x . (x \in P)$, deduce $P$, where $x$ does not occur free in $P$.
 \end{itemize}
 
 \begin{thm}[Soundness of $K_\mathcal{L}$]
@@ -257,6 +257,22 @@ A pattern $P$ is called a predicate pattern or a predicate if $\vdash (P = \top)
 \end{defn}
 \paragraph{Remark} Predicate patterns are closed under all logic connectives.
 \paragraph{Remark} For any $P$, $\ceil*{P}$ is a predicate pattern.
+
+\begin{prop} \label{prop:017}
+	$\vdash (\floor*{P} = \neg \top) = (P = \bot)$.
+\end{prop}
+\begin{proof}
+	It suffices to prove
+	\begin{equation} \label{eq:prop:017:a}
+	\vdash (\floor*{P} \to \neg \top) = (P = \bot)
+	\end{equation}
+	and
+	\begin{equation} \label{eq:prop:017:b}
+	\vdash (P = \bot) \to (\floor*{P} = \neg \top)
+	\end{equation}
+	
+	Let us first prove~\eqref{eq:prop:017:b}. 
+\end{proof}
 
 \begin{prop} \label{prop:predicateabsorb}
 For any predicate $P$, $\vdash (P \neq \top) = (P = \bot)$ and $\vdash (P \neq \bot) = (P = \top)$.
