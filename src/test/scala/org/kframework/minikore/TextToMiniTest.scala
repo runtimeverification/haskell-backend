@@ -19,6 +19,10 @@ class TextToMiniTest {
     parseFromFile("imp.kore")
   }
 
+  @Test def parseFileTest4(): Unit = {
+    parseFromFile("p4.kore")
+  }
+
   @Test def parseTest4(): Unit = {
     val s =
       strip("""
@@ -501,10 +505,14 @@ class TextToMiniTest {
     s.stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator())
   }
 
+  def trim(s: String): String = {
+    s.replaceAll("^\\s+|\\s+$", "") // s.replaceAll("^\\s+", "").replaceAll("\\s+$", "")
+  }
+
   def parseFromStringWithExpected(s: String, expected: String): Unit = {
     val src = io.Source.fromString(s)
     try {
-      parseTest(SourceFOS(src), s, true)
+      parseTest(SourceFOS(src), s)
     } finally {
       src.close()
     }
@@ -513,7 +521,7 @@ class TextToMiniTest {
   def parseFromString(s: String): Unit = {
     val src = io.Source.fromString(s)
     try {
-      parseTest(SourceFOS(src), s, true)
+      parseTest(SourceFOS(src), s)
     } finally {
       src.close()
     }
@@ -521,14 +529,29 @@ class TextToMiniTest {
 
   def parseFromFile(file: String): Unit = {
     val f = FileUtils.toFile(getClass.getResource("/" + file))
-    parseTest(FileFOS(f), FileUtils.readFileToString(f), true)
+    parseTest(FileFOS(f), FileUtils.readFileToString(f))
   }
 
   sealed trait FileOrSource
   case class FileFOS(x: java.io.File) extends FileOrSource
   case class SourceFOS(x: io.Source) extends FileOrSource
 
-  def parseTest(src: FileOrSource, expected: String, ignoreSpaces: Boolean): Unit = {
+  /** Tests if parse is correct.
+    *
+    * Check:
+    *   t == u(p(t))
+    * otherwise,
+    *   t == u(p(t)) modulo whitespaces
+    *     and
+    *   p(t) == p(u(p(t)))
+    *
+    * where:
+    *   e in MiniKore
+    *   t in String
+    *   p : String -> MiniKore
+    *   u : MiniKore -> String
+    */
+  def parseTest(src: FileOrSource, expected: String): Unit = {
     val begin = java.lang.System.nanoTime()
     val minikore = src match {
       case src: FileFOS => new TextToMini().parse(src.x)
@@ -538,10 +561,11 @@ class TextToMiniTest {
     val text = MiniToText.apply(minikore)
     // val outputfile = new java.io.File("/tmp/x")
     // FileUtils.writeStringToFile(outputfile, text)
-    if (ignoreSpaces) {
-      assertEquals(expected.replaceAll("\\s+", ""), text.replaceAll("\\s+", ""))
-    } else {
-      assertEquals(expected, text)
+    if (expected == text) () // t == u(p(t))
+    else if (trim(expected) == trim(text)) () // t == u(p(t)) modulo leading/trailing whitespaces
+    else {
+      assertEquals(expected.replaceAll("\\s+", ""), text.replaceAll("\\s+", "")) //   t  ==   u(p(t))  modulo whitespaces
+      assertEquals(minikore, new TextToMini().parse(io.Source.fromString(text))) // p(t) == p(u(p(t)))
     }
   }
 
