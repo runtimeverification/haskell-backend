@@ -545,18 +545,18 @@ class TextToMiniTest {
     }
   }
 
-  @Test def errorTest(): Unit = {
-    new TextToMini().error('a', "abc") match {
-      case ParseError(msg) =>
-        assertEquals(
-          strip("""
-            |ERROR: Line 0: Column 0: Expected 'a', but abc
-            |null
-            |^
-            |"""),
-          msg)
-      case _ => assert(false)
-    }
-  }
+//  @Test def errorTest(): Unit = {
+//    new TextToMini().error('a', "abc") match {
+//      case ParseError(msg) =>
+//        assertEquals(
+//          strip("""
+//            |ERROR: Line 0: Column 0: Expected 'a', but abc
+//            |null
+//            |^
+//            |"""),
+//          msg)
+//      case _ => assert(false)
+//    }
+//  }
 
 }
