@@ -502,7 +502,7 @@ class TextToMiniTest {
 // TODO: Improve error message above to say "Expected 'm' or <EOF> ..."
 
   def strip(s: String): String = {
-    s.stripMargin.stripPrefix(System.lineSeparator()).stripSuffix(System.lineSeparator())
+    trim(s.stripMargin)
   }
 
   def trim(s: String): String = {
