@@ -264,14 +264,15 @@ A pattern $P$ is called a predicate pattern or a predicate if $\vdash (P = \top)
 \begin{proof}
 	It suffices to prove
 	\begin{equation} \label{eq:prop:017:a}
-	\vdash (\floor*{P} \to \neg \top) = (P = \bot)
+	\vdash (\floor*{P} \to \neg \top) \to (P = \bot)
 	\end{equation}
 	and
 	\begin{equation} \label{eq:prop:017:b}
 	\vdash (P = \bot) \to (\floor*{P} = \neg \top)
 	\end{equation}
 	
-	Let us first prove~\eqref{eq:prop:017:b}. 
+	The proof of~\eqref{eq:prop:017:b} is trivial and we left it as an exercise. We now prove~\eqref{eq:prop:017:a}.
+	
 \end{proof}
 
 \begin{prop} \label{prop:predicateabsorb}
