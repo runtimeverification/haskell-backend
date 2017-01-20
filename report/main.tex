@@ -259,25 +259,64 @@ A pattern $P$ is called a predicate pattern or a predicate if $\vdash (P = \top)
 \paragraph{Remark} For any $P$, $\ceil*{P}$ is a predicate pattern.
 
 \begin{prop} \label{prop:017}
-	$\vdash (\floor*{P} = \neg \top) = (P = \bot)$.
+	$\vdash (\ceil*{P} = \bot) = (P = \bot)$ and $\vdash (\floor*{P} = \top) = (P = \top)$.
 \end{prop}
 \begin{proof}
-	It suffices to prove
+	It is easy to prove one derivation from the other, so we only prove the first one. By Proposition~\ref{prop:eestablish}, it suffices to prove
 	\begin{equation} \label{eq:prop:017:a}
-	\vdash (\floor*{P} \to \neg \top) \to (P = \bot)
+	\vdash (\ceil*{P} = \bot) \to (P = \bot)
 	\end{equation}
 	and
 	\begin{equation} \label{eq:prop:017:b}
-	\vdash (P = \bot) \to (\floor*{P} = \neg \top)
+	\vdash (P = \bot) \to (\ceil*{P} = \bot)
 	\end{equation}
 	
-	The proof of~\eqref{eq:prop:017:b} is trivial and we left it as an exercise. We now prove~\eqref{eq:prop:017:a}.
+	The proof of~\eqref{eq:prop:017:b} is trivial and we left it as an exercise. We now prove~\eqref{eq:prop:017:a} through the following backward reasoning.
+	
+	\begin{align}
+	&\vdash (\ceil*{P} = \bot) \to (P = \bot)  \nonumber \\
+	\text{iff} \quad &\vdash \forall y . (y \in ((\ceil*{P} = \bot) \to (P = \bot))) \nonumber \\
+	\text{if} \quad &\vdash y \in ((\ceil*{P} = \bot) \to (P = \bot)) \nonumber \\
+	\text{iff} \quad &\vdash (y \in (\ceil*{P} = \bot) \to (y \in (P = \bot)). \label{eq:prop:017:a:1}
+	\end{align}
+	While for any pattern $Q$, 
+	\begin{align*}
+	&\vdash y \in (Q = \bot) \\
+	\text{iff} \quad &\vdash y \in \neg \ceil*{\neg (Q \leftrightarrow \bot)} \\
+	\text{iff} \quad &\vdash y \in \neg \ceil*{Q}\\
+	\text{iff} \quad &\vdash \neg \exists z . (z \in Q \wedge y \in \ceil*{z}) \\
+	\text{iff} \quad &\vdash \neg \exists z . (z \in Q) 
+	\end{align*}
+	So we continue to prove~\eqref{eq:prop:017:a:1} by showing
+	\begin{align*}
+&\vdash (y \in (\ceil*{P} = \bot)) \to (y \in (P = \bot))  \\
+\text{iff} \quad &\vdash \neg \exists z . (z \in \ceil*{P}) \to \neg \exists z . (z \in P) \\
+\text{iff} \quad &\vdash \exists z . (z \in P) \to  \exists z . (z \in \ceil*{P}) \\
+\text{iff} \quad &\vdash \exists z . (z \in P) \to \exists z . (\exists z_1 . (z_1 \in P \wedge z \in \ceil*{z_1}))\\
+\text{iff} \quad &\vdash \exists z . (z \in P) \to \exists z . \exists z_1 . (z_1 \in P) \\
+\text{iff} \quad &\vdash \exists z_1 . (z_1 \in P) \to \exists z . \exists z_1 . (z_1 \in P).
+	\end{align*}
+	And we finish the proof by noticing the fact that for any pattern $Q$ and variable $x$, 
+	$$ \vdash Q \to \exists x . Q.$$
 	
 \end{proof}
+
+
 
 \begin{prop} \label{prop:predicateabsorb}
 For any predicate $P$, $\vdash (P \neq \top) = (P = \bot)$ and $\vdash (P \neq \bot) = (P = \top)$.
 \end{prop}
+\begin{proof}
+We only prove the first derivation, by showing both
+\begin{equation}\label{eq:predicateabsort1}
+\vdash (P \neq \top) \to (P = \bot)
+\end{equation}
+and
+\begin{equation}\label{eq:predicateabsort2}
+\vdash (P = \bot) \to (P \neq \top).
+\end{equation}
+Proving~\eqref{eq:predicateabsort2} is trivial. We now prove~\eqref{eq:predicateabsort1}, which is also trivial by transforming disjunction to implication.
+\end{proof}
 \begin{prop} \label{prop:predicatevee}
 For any pattern $Q$ and any predicate pattern $P$, $\vdash P \vee Q$ iff $\vdash P \vee \floor*{Q}$.
 \end{prop}
@@ -302,16 +341,11 @@ The proof of~\eqref{eq:predicatevee-01} is straightforward as follows.
 \text{if} \quad &\vdash \top.
 \end{align*}
 
-The proof of~\eqref{eq:predicatevee-02} needs more effort. We first show that $\vdash (Q \neq \top) = (\floor*{Q} = \bot)$. Since $\floor*{Q}$ is a predicate pattern, it suffices to show $\vdash (Q = \top) = (\floor*{Q} = \top)$.
+The proof of~\eqref{eq:predicatevee-02} needs more effort. 
 
-It is trivial to show $\vdash (Q = \top) \to (\floor*{Q} = \top)$. We show the other direction $\vdash (\floor*{Q} = \top) \to (Q = \top)$ through the following backward reasoning.
-
-have the backward reasoning as follows.
-\begin{align*}
-&\vdash Q \neq \top \to (P \vee \floor*{Q} = \top) \\
-\text{if} \quad &\vdash
-\end{align*}
+TODO
 \end{proof}
+
 
 \begin{prop}[Deduction Theorem]
 If $\Gamma \cup \{P\} \vdash Q$ and the derivation does not use \mbox{$\forall x$-Generalization} where $x$ is free in $P$, then $\Gamma \vdash \floor*{P} \to Q$. 
