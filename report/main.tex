@@ -321,7 +321,7 @@ Proving~\eqref{eq:predicateabsort2} is trivial. We now prove~\eqref{eq:predicate
 For any pattern $Q$ and any predicate pattern $P$, $\vdash P \vee Q$ iff $\vdash P \vee \floor*{Q}$.
 \end{prop}
 \begin{proof}
-($\Rightarrow$) is obtained immediately by the remark of Proposition~\ref{prop:p->ceilp}. We now prove ($\Leftarrow$). 
+($\Leftarrow$) is obtained immediately by the remark of Proposition~\ref{prop:p->ceilp}. We now prove ($\Rightarrow$). 
 
 Because $\vdash Q = \top \vee Q \neq \top$, it suffices to show
 \begin{equation} \label{eq:predicatevee-01}
@@ -341,9 +341,46 @@ The proof of~\eqref{eq:predicatevee-01} is straightforward as follows.
 \text{if} \quad &\vdash \top.
 \end{align*}
 
-The proof of~\eqref{eq:predicatevee-02} needs more effort. 
-
-TODO
+The proof of~\eqref{eq:predicatevee-02} needs more effort:
+\begin{align*}
+&\vdash Q \neq \top \to (P \vee \floor*{Q} = \top) \\
+\text{iff} \quad &\vdash (Q = \top) \vee (P \vee \floor*{Q} = \top) \\
+\text{iff} \quad &\vdash (\floor*{Q} = \top) \vee (P \vee \floor*{Q} = \top) \\
+\text{iff} \quad &\vdash \floor*{Q} \neq \top \to (P \vee \floor*{Q} = \top) \\
+\text{iff} \quad &\vdash \floor*{Q} = \bot \to (P \vee \floor*{Q} = \top) \\
+\text{if} \quad &\vdash \floor*{Q} = \bot \to (P \vee \bot = \top) \\
+\text{iff} \quad &\vdash \floor*{Q} = \bot \to (P = \top) \\
+\text{if} \quad &\vdash Q = \top \vee P = \top.
+\end{align*}
+Notice that $P$ is a predicate pattern, so it suffices to show
+\begin{equation*}
+\vdash P = \top \to (Q = \top \vee P = \top),
+\end{equation*}
+whose validity is obvious, and
+\begin{equation*}
+\vdash P = \bot \to (Q = \top \vee P = \top),
+\end{equation*}
+which is proved by showing
+\begin{equation} 
+\vdash P = \bot \to Q = \top.
+\end{equation}
+Because $\vdash P \vee Q$, it suffices to show
+\begin{align*}
+&\vdash P = \bot \to (P \vee Q) \to (Q = \top) \\
+\text{if} \quad &\vdash P = \bot \to (\bot \vee Q) \to (Q = \top) \\
+\text{iff} \quad &\vdash P = \bot \to Q \to (Q = \top) \\
+\text{if} \quad &\vdash Q \to (Q = \top) \\
+\text{iff} \quad &\vdash (Q \neq \top) \to \neg Q \\
+\text{iff} \quad &\vdash (\floor*{Q} = \bot) \to \neg Q.
+\end{align*}
+Notice we have $\vdash Q \to \floor*{Q}$, which means $\vdash \neg \floor*{Q} \to \neg Q$, so it suffices to show
+\begin{align*}
+&\vdash (\floor*{Q} = \bot) \to \neg \floor*{Q} \\
+\text{iff} \quad &\vdash (\floor*{Q} = \bot) \to \neg \bot \\
+\text{iff} \quad &\vdash (\floor*{Q} = \bot) \to \top \\
+\text{iff} \quad &\vdash \top.
+\end{align*}
+And this concludes the proof.
 \end{proof}
 
 
