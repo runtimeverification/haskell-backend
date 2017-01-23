@@ -18,24 +18,33 @@
 \def\imp{\to}
 \def\land{\mathbin\&}
 
-\title{Towards an Efficient and Economic Deductive System of Matching Logic}
+\title{Towards an Efficient Deductive System of Matching Logic}
 \author{FSL group}
 
 
 
 \begin{document}
 \maketitle
-We aim for a Hilbert style deductive system which has a relatively large number of axioms but only a few inference rules. 
 
-\section{Grammar and extended grammar}
+Recent success in building very fast automated theorem provers (especially for first-order theories) makes us look forward to an highly efficient automated deductive system for matching logic. This project aims at that.
 
-The formal language $\mathcal{L}$ we use to write matching logic patterns is defined as follows.
+\section{Grammar}
+
+As in most logic, formulas of matching logic, called \emph{patterns}, are written in a formal language, denoted as $\mathcal{L}$, who has a very similar grammar as first order logic. 
+
+The language $\mathcal{L}$ in general is a many-sorted language. A signature of $\mathcal{L}$ contains not only a finite set $\Sigma$ of symbols, but also a finite nonempyty set $S$ of sorts. Each symbol $\sigma \in \Sigma$ is, of course, sorted, with a fixed nonempty arity. We write $\sigma \in \Sigma_{s_1,\dots,s_n,s}$ when we want to emphasize that $\sigma$ takes $n$ arguments (with suggested sorts) and returns a pattern in sort $s$, but we hope in most cases sorting is clear from context.
+
+The basic grammar for $\mathcal{L}$, as defined below, is almost identical to first-order logic, except that in $\mathcal{L}$ there is no difference between relational and functional symbols, and we accept terms as patterns in matching logic. 
 \begin{align*}
 P \Coloneqq\  & x \\
-       \mid\  & P_1 \wedge P_2 \\
+       \mid\  & P_1 \to P_2 \\
        \mid\  & \neg P \\
        \mid\  & \forall x . P \\
-       \mid\  & \sigma(P_1,\dots,P_n) \\
+       \mid\  & \sigma(P_1,\dots,P_n).
+\end{align*}
+For simplicity, we did not mention sorting in the grammar definition, and assume it should be clear to all readers. For example, in $P_1 \to P_2$, both patterns $P_1$ and $P_2$ 
+
+\begin{align*}
  {\tt (*** }\ & \ {\tt  extended  ***)} \\
        \mid\  & P_1 \vee P_2 \\
        \mid\  & P_1 \wedge P_2 \\
@@ -428,6 +437,28 @@ which is the hypothesis of induction. And this concludes our inductive proof.
 
 \begin{cor}[Closed-form Deduction Theorem]
 If $P$ is closed, $\Gamma \cup \{P\} \vdash Q$ implies $\Gamma \vdash \floor*{P} \to Q$.
+\end{cor}
+
+\begin{thm} [Frame Rule]
+	Let $\sigma \in \Sigma$ be a symbol in the signature. From $P_1 \to P_2$, deduce $\sigma(P_1) \to \sigma(P_2)$. In its most general form, $P_1 \to P_2$ deduces $\sigma(Q_1,\dots,P_1,\dots,Q_n) \to \sigma(Q_1,\dots, P_2, \dots, Q_n)$.
+\end{thm}
+\begin{proof}
+	we write $\sigma(Q_1,\dots,P_i,\dots,Q_n)$ as $\sigma(P_i,\vec{Q})$ for short, for any $i \in \{1,2\}$.
+	\begin{align*}
+	&\vdash \sigma(P_1, \vec{Q}) \to \sigma(P_2,\vec{Q}) \\
+	\text{iff} \quad &\vdash y \in (\sigma(P_1, \vec{Q}) \to \sigma(P_2,\vec{Q})) \\
+	\text{iff} \quad &\vdash (y \in \sigma(P_1, \vec{Q})) \to (y \in \sigma(P_2, \vec{Q})) \\
+	\text{iff} \quad &\vdash \exists z_1 . \exists \vec{z} . (z_1 \in P_1 \wedge \vec{z} \in \vec{Q} \wedge y \in \sigma(z_1, \vec{z})) \\
+	&\to \exists z_2 . \exists \vec{z} . (z_2 \in P_2 \wedge \vec{z} \in \vec{Q} \wedge y \in \sigma(z_2, \vec{z})) \\
+	\text{iff} \quad &\vdash \exists z_1 . \exists \vec{z} . (z_1 \in P_1 \wedge \vec{z} \in \vec{Q} \wedge y \in \sigma(z_1, \vec{z}) \\
+	 &\quad \quad \quad \to z_1 \in P_2 \wedge \vec{z} \in \vec{Q} \wedge y \in \sigma(z_1, \vec{z})) \\
+	\text{iff} \quad &\vdash \exists z_1. \exists \vec{z} . (z_1 \in P_1 \to z_1 \in P_2) \\
+	\text{if} \quad &\vdash \exists z_1 .  (z_1 \in P_1 \to z_1 \in P_2) \\
+	\text{if} \quad &\vdash P_1 \to P_2.
+	\end{align*}
+\end{proof}
+\begin{cor} [Frame Rule as Implication]
+	$\vdash \floor*{P \to Q} \to (\sigma(P) \to \sigma(Q))$
 \end{cor}
 
 \section{Inference rules}
