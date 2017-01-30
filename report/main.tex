@@ -63,7 +63,12 @@ and provides convenient ways to write \emph{predicate patterns}, patterns that i
 \subsection{Polymorphism}
 Predicate symbols are often polymorphic sorting. As a result, many predicate connectives are of polymorphic types, too. Predicate pattern $P_1 = P_2$ only requires $P_1$ and $P_2$ have the same sort, and its result can be of any sort. If $P_1$ and $P_2$ have different sorts, $P_1 = P_2$ is \emph{ill-sorted}.
 
-Polymorphism means in mathematics a mapping from $\mathcal{Patterns}$
+Polymorphism means in mathematics a mapping $\tau$ from pattern set $\mathcal{P}$ to a sort algebra $\mathcal{S}$ built from $S$. The sort algebra $\mathcal{S}$ is obtained by adding two special elements, called the top-sort $s_\top$ and bottom-sort $s_\bot$, to the set $S$, and define a partial order relation by which $s_\top$ is the largest element in $\mathcal{S}$, $s_\bot$ is the smallest, and every other elements in $S$ is in between, incomparable to each other. $\mathcal{S}$ is a lattice.
+
+Let $P$ be a pattern. Intuitively, if $\tau(P) = s_\bot$ then $P$ is ill-sorted. Most patterns have a normal sort in $S$. Predicate patterns have sort $s_\top$, which makes them fit in any context.
+
+\begin{defn}[Polymorphism]
+\end{defn}
 
 
 \section{Hilbert proof system}
