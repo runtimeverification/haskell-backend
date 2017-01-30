@@ -1,7 +1,8 @@
 package org.kframework.minikore
 
 import org.apache.commons.lang3.StringEscapeUtils
-import org.kframework.minikore.MiniKore._
+import org.kframework.minikore.KoreConstructor._
+import org.kframework.minikore.NewKore._
 
 /** Parsing error exception. */
 case class ParseError(msg: String) extends Exception(msg) // ParseError.msg eq Exception.detailMessage, i.e., msg() == getMessage()
