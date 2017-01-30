@@ -2,7 +2,7 @@ package org.kframework.minikore
 
 import org.apache.commons.io.FileUtils
 
-import org.kframework.minikore.NewKore.Definition
+import org.kframework.minikore.MiniKore.Definition
 
 // TODO(Daejun): drop this file
 

@@ -1,6 +1,6 @@
 package org.kframework.minikore
 
-import org.kframework.minikore.NewKore._
+import org.kframework.minikore.MiniKore._
 
 
 abstract class Constructors {
@@ -9,7 +9,7 @@ abstract class Constructors {
 
   def application(label: String, args: Seq[Pattern]): Application
 
-  def domainValue(label: String, sort: String): DomainValue
+  def domainValue(label: String, value: String): DomainValue
 
   def mlTrue(): True
 
@@ -54,7 +54,7 @@ object KoreConstructor extends Constructors {
 
   override def application(label: String, args: Seq[Pattern]): Application = DefaultImplementation.ConcreteApplication(label, args)
 
-  override def domainValue(label: String, sort: String): DomainValue = DefaultImplementation.ConcreteDomainValue(label, sort)
+  override def domainValue(label: String, value: String): DomainValue = DefaultImplementation.ConcreteDomainValue(label, value)
 
   override def mlTrue(): True = DefaultImplementation.ConcreteTrue()
 
