@@ -31,6 +31,7 @@ object MiniKoreOuterUtils {
 
 }
 
+
 object MiniKorePatternUtils {
 
   // Map
