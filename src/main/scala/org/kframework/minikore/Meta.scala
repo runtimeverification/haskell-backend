@@ -20,8 +20,8 @@ object MiniKoreMeta {
   val upSymbol: String => Application = (value => DomainValue("KSymbol@KTOKENS", value)) andThen upDomainValue
   val downSymbol: Pattern => String   = downDomainValue andThen { case DomainValue("KSymbol@KTOKENS", value) => value }
 
-  def upSymbolList: Seq[String] => Pattern   = concrete => consListLeft("KSymbolList", ".KSymbolList")(concrete map upSymbol)
-  def downSymbolList: Pattern => Seq[String] = parsed => flattenByLabels("KSymbolList", ".KSymbolList")(parsed) map downSymbol
+  def upSymbolList(concrete: Seq[String]): Pattern = consListLeft("KSymbolList", ".KSymbolList")(concrete map upSymbol)
+  def downSymbolList(parsed: Pattern): Seq[String] = flattenByLabels("KSymbolList", ".KSymbolList")(parsed) map downSymbol
 
   val upVariable: Variable => Application = { case Variable(name, sort) => Application("KMLVariable", Seq(Application(name), Application(sort))) }
   val downVariable: Pattern => Variable   = { case Application("KMLVariable", Application(name, Nil) :: Application(sort, Nil) :: Nil) => Variable(name, sort) }
