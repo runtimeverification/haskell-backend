@@ -27,7 +27,7 @@ object MiniKoreMeta {
   val downVariable: Pattern => Variable   = { case Application("KMLVariable", Application(name, Nil) :: Application(sort, Nil) :: Nil) => Variable(name, sort) }
 
   val upPattern: Pattern => Application = {
-    case Application(label, Nil)  => Application("KMLApplication", Seq(Application(label, Seq.empty)))
+    case Application(label, Nil)  => Application("KMLApplication", Seq(upSymbol(label)))
     case Application(label, args) => Application("KMLApplication", Seq(upSymbol(label), upPatternList(args)))
     case And(p, q)                => Application("KMLAnd", Seq(upPattern(p), upPattern(q)))
     case Or(p, q)                 => Application("KMLOr",  Seq(upPattern(p), upPattern(q)))
@@ -42,21 +42,21 @@ object MiniKoreMeta {
     case dv@DomainValue(_, _)     => upDomainValue(dv)
   }
   val downPattern: Pattern => Pattern = {
-    case Application("KMLApplication", Application(label, Nil) :: Nil) => Application(label, Seq.empty)
-    case Application("KMLApplication", label :: pList :: Nil)          => Application(downSymbol(label), downPatternList(pList))
-    case Application("KMLTrue", Nil)                                   => True()
-    case Application("KMLFalse", Nil)                                  => False()
-    case Application("KMLAnd", p1 :: p2 :: Nil)                        => And(downPattern(p1), downPattern(p2))
-    case Application("KMLOr", p1 :: p2 :: Nil)                         => Or(downPattern(p1), downPattern(p2))
-    case Application("KMLNot", p :: Nil)                               => Not(downPattern(p))
-    case Application("KMLImplies", p1 :: p2 :: Nil)                    => Implies(downPattern(p1), downPattern(p2))
-    case Application("KMLExists", v :: p :: Nil)                       => Exists(downVariable(v), downPattern(p))
-    case Application("KMLForall", v :: p :: Nil)                       => ForAll(downVariable(v), downPattern(p))
-    case Application("KMLNext", p :: Nil)                              => Next(downPattern(p))
-    case Application("KMLRewrite", p1 :: p2 :: Nil)                    => Rewrite(downPattern(p1), downPattern(p2))
-    case Application("KMLEqual", p1 :: p2 :: Nil)                      => Equal(downPattern(p1), downPattern(p2))
-    case vb@Application("KMLVariable", _)                              => downVariable(vb)
-    case dv@Application("KMLDomainValue", _)                           => downDomainValue(dv)
+    case Application("KMLApplication", label :: Nil)          => Application(downSymbol(label), Seq.empty)
+    case Application("KMLApplication", label :: pList :: Nil) => Application(downSymbol(label), downPatternList(pList))
+    case Application("KMLTrue", Nil)                          => True()
+    case Application("KMLFalse", Nil)                         => False()
+    case Application("KMLAnd", p1 :: p2 :: Nil)               => And(downPattern(p1), downPattern(p2))
+    case Application("KMLOr", p1 :: p2 :: Nil)                => Or(downPattern(p1), downPattern(p2))
+    case Application("KMLNot", p :: Nil)                      => Not(downPattern(p))
+    case Application("KMLImplies", p1 :: p2 :: Nil)           => Implies(downPattern(p1), downPattern(p2))
+    case Application("KMLExists", v :: p :: Nil)              => Exists(downVariable(v), downPattern(p))
+    case Application("KMLForall", v :: p :: Nil)              => ForAll(downVariable(v), downPattern(p))
+    case Application("KMLNext", p :: Nil)                     => Next(downPattern(p))
+    case Application("KMLRewrite", p1 :: p2 :: Nil)           => Rewrite(downPattern(p1), downPattern(p2))
+    case Application("KMLEqual", p1 :: p2 :: Nil)             => Equal(downPattern(p1), downPattern(p2))
+    case vb@Application("KMLVariable", _)                     => downVariable(vb)
+    case dv@Application("KMLDomainValue", _)                  => downDomainValue(dv)
   }
 
   def upPatternList(concretes: Seq[Pattern]): Pattern = consListLeft("KMLPatternList", ".KMLPatternList")(concretes map upPattern)
