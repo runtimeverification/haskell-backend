@@ -37,13 +37,44 @@ object NewKore {
     def unapply(arg: Import): Option[(String, Attributes)] = Some((arg.name, arg.att))
   }
 
-  case class SortDeclaration(sort: String, att: Attributes) extends Sentence
+  abstract class SortDeclaration extends Sentence {
+    val sort: String
+    val att: Attributes
+  }
 
-  case class SymbolDeclaration(sort: String, label: String, args: Seq[String], att: Attributes) extends Sentence
+  object SortDeclaration {
+    def unapply(arg: SortDeclaration): Option[(String, Attributes)] = Some((arg.sort, arg.att))
+  }
 
-  case class Rule(pattern: Pattern, att: Attributes) extends Sentence
+  abstract class SymbolDeclaration extends Sentence {
+    val sort: String
+    val label: String
+    val args: Seq[String]
+    val att: Attributes
+  }
 
-  case class Axiom(pattern: Pattern, att: Attributes) extends Sentence
+  object SymbolDeclaration {
+    def unapply(arg: SymbolDeclaration): Option[(String, String, Seq[String], Attributes)] = Some((arg.sort, arg.label, arg.args, arg.att))
+  }
+
+  abstract class Rule extends Sentence {
+    val p: Pattern
+    val att: Attributes
+  }
+
+  object Rule {
+    def unapply(arg: Rule): Option[(Pattern, Attributes)] = Some((arg.p, arg.att))
+  }
+
+
+  abstract class Axiom extends Sentence {
+    val p: Pattern
+    val att: Attributes
+  }
+
+  object Axiom {
+    def unapply(arg: Axiom): Option[(Pattern, Attributes)] = Some((arg.p, arg.att))
+  }
 
 
   // Pattern trait + abstract classes
@@ -80,13 +111,13 @@ object NewKore {
   abstract class True extends Pattern
 
   object True {
-    def unapply(arg: True): Option[()] = Some()
+    def unapply(arg: True): Boolean = true
   }
 
   abstract class False extends Pattern
 
   object False {
-    def unapply(arg: True): Option[()] = Some()
+    def unapply(arg: False): Boolean = true
   }
 
 
@@ -181,6 +212,14 @@ object DefaultImplementation {
 
   case class ConcreteImport(name: String, att: Attributes) extends Import
 
+  case class ConcreteSortDeclaration(sort: String, att: Attributes) extends SortDeclaration
+
+  case class ConcreteSymbolDeclaration(sort: String, label: String, args: Seq[String], att: Attributes) extends SymbolDeclaration
+
+  case class ConcreteRule(p: Pattern, att: Attributes) extends Rule
+
+  case class ConcreteAxiom(p: Pattern, att: Attributes) extends Axiom
+
   case class ConcreteVariable(name: String, sort: String) extends Variable
 
   case class ConcreteApplication(label: String, args: Attributes) extends Application
@@ -208,4 +247,5 @@ object DefaultImplementation {
   case class ConcreteEquals(p: Pattern, q: Pattern) extends Equals
 
   case class ConcreteImplies(p: Pattern, q: Pattern) extends Implies
+
 }

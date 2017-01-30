@@ -1,7 +1,6 @@
 package org.kframework.minikore
 
 import org.apache.commons.lang3.StringEscapeUtils
-import org.kframework.minikore.KoreConstructor._
 import org.kframework.minikore.NewKore._
 
 /** Parsing error exception. */
@@ -39,7 +38,8 @@ class TextToMini {
   private def parseDefinition(): Definition = {
     val att = parseAttributes()
     val modules = parseModules(Seq())
-    Definition(modules, att)
+
+    KoreConstructor.definition(modules, att)
   }
 
   // Attributes = [ List{Pattern, ',', ']'} ]
@@ -67,7 +67,7 @@ class TextToMini {
     val sentences = parseSentences(Seq())
     consumeWithLeadingWhitespaces("endmodule")
     val att = parseAttributes()
-    Module(name, sentences, att)
+    KoreConstructor.module(name, sentences, att)
   }
 
   // Sentences = <lookahead>(e) // <empty>
@@ -89,11 +89,11 @@ class TextToMini {
         scanner.nextWithSkippingWhitespaces() match {
           case '[' => scanner.putback('[')
             val att = parseAttributes()
-            val sen = SortDeclaration(sort, att)
+            val sen = KoreConstructor.sortDeclaration(sort, att)
             parseSentences(sentences :+ sen)
           case ':' => consume(":=")
             val (symbol, args, att) = parseSymbolDeclaration()
-            val sen = SymbolDeclaration(sort, symbol, args, att)
+            val sen = KoreConstructor.symbolDeclaration(sort, symbol, args, att)
             parseSentences(sentences :+ sen)
           case err => throw error("'[' or ':'", err)
         }
@@ -124,21 +124,21 @@ class TextToMini {
   private def parseImport(): Import = {
     val name = parseModuleName()
     val att = parseAttributes()
-    Import(name, att)
+    KoreConstructor.defImport(name, att)
   }
 
   // Rule = Pattern Attributes
   private def parseRule(): Rule = {
     val pattern = parsePattern()
     val att = parseAttributes()
-    Rule(pattern, att)
+    KoreConstructor.rule(pattern, att)
   }
 
   // Axiom = Pattern Attributes
   private def parseAxiom(): Axiom = {
     val pattern = parsePattern()
     val att = parseAttributes()
-    Axiom(pattern, att)
+    KoreConstructor.axiom(pattern, att)
   }
 
   // Pattern = Variable
@@ -162,43 +162,43 @@ class TextToMini {
         val c2 = scanner.next()
         (c1, c2) match {
           case ('t', 'r') => consume("ue"); consumeWithLeadingWhitespaces("("); consumeWithLeadingWhitespaces(")")
-            True()
+            KoreConstructor.mlTrue()
           case ('f', 'a') => consume("lse"); consumeWithLeadingWhitespaces("("); consumeWithLeadingWhitespaces(")")
-            False()
+            KoreConstructor.mlFalse()
           case ('a', 'n') => consume("d"); consumeWithLeadingWhitespaces("(")
             val p1 = parsePattern(); consumeWithLeadingWhitespaces(",")
             val p2 = parsePattern(); consumeWithLeadingWhitespaces(")")
-            And(p1, p2)
+            KoreConstructor.and(p1, p2)
           case ('o', 'r') => consumeWithLeadingWhitespaces("(")
             val p1 = parsePattern(); consumeWithLeadingWhitespaces(",")
             val p2 = parsePattern(); consumeWithLeadingWhitespaces(")")
-            Or(p1, p2)
+            KoreConstructor.or(p1, p2)
           case ('n', 'o') => consume("t"); consumeWithLeadingWhitespaces("(")
             val p = parsePattern(); consumeWithLeadingWhitespaces(")")
-            Not(p)
+            KoreConstructor.not(p)
           case ('i', 'm') => consume("plies"); consumeWithLeadingWhitespaces("(")
             val p1 = parsePattern(); consumeWithLeadingWhitespaces(",")
             val p2 = parsePattern(); consumeWithLeadingWhitespaces(")")
-            Implies(p1, p2)
+            KoreConstructor.implies(p1, p2)
           case ('e', 'x') => consume("ists"); consumeWithLeadingWhitespaces("(")
             val v = parseVariable(); consumeWithLeadingWhitespaces(",")
             val p = parsePattern(); consumeWithLeadingWhitespaces(")")
-            Exists(v, p)
+            KoreConstructor.exists(v, p)
           case ('f', 'o') => consume("rall"); consumeWithLeadingWhitespaces("(")
             val v = parseVariable(); consumeWithLeadingWhitespaces(",")
             val p = parsePattern(); consumeWithLeadingWhitespaces(")")
-            ForAll(v, p)
+            KoreConstructor.forAll(v, p)
           case ('n', 'e') => consume("xt"); consumeWithLeadingWhitespaces("(")
             val p = parsePattern(); consumeWithLeadingWhitespaces(")")
-            Next(p)
+            KoreConstructor.next(p)
           case ('r', 'e') => consume("write"); consumeWithLeadingWhitespaces("(")
             val p1 = parsePattern(); consumeWithLeadingWhitespaces(",")
             val p2 = parsePattern(); consumeWithLeadingWhitespaces(")")
-            Rewrite(p1, p2)
+            KoreConstructor.rewrite(p1, p2)
           case ('e', 'q') => consume("ual"); consumeWithLeadingWhitespaces("(")
             val p1 = parsePattern(); consumeWithLeadingWhitespaces(",")
             val p2 = parsePattern(); consumeWithLeadingWhitespaces(")")
-            Equal(p1, p2)
+            KoreConstructor.equals(p1, p2)
           case (err1, err2) => throw error("\\true, \\false, \\and, \\or, \\not, \\implies, \\exists, \\forall, \\next, \\rewrite, or \\equal",
                                            "'\\" + err1 + err2 + "'")
         }
@@ -207,17 +207,17 @@ class TextToMini {
         scanner.nextWithSkippingWhitespaces() match {
           case ':' => // TODO(Daejun): check if symbol is Name
             val sort = parseSort()
-            Variable(symbol, sort)
+            KoreConstructor.variable(symbol, sort)
           case '(' =>
             scanner.nextWithSkippingWhitespaces() match {
               case '"' => scanner.putback('"')
                 val value = parseString()
                 consumeWithLeadingWhitespaces(")")
-                DomainValue(symbol, value)
+                KoreConstructor.domainValue(symbol, value)
               case c => scanner.putback(c)
                 val args = parseList(parsePattern, ',', ')')
                 consumeWithLeadingWhitespaces(")")
-                Application(symbol, args)
+                KoreConstructor.application(symbol, args)
             }
           case err => throw error("':' or '('", err)
         }
@@ -229,7 +229,7 @@ class TextToMini {
     val name = parseName()
     consumeWithLeadingWhitespaces(":")
     val sort = parseSort()
-    Variable(name, sort)
+    KoreConstructor.variable(name, sort)
   }
 
   //////////////////////////////////////////////////////////

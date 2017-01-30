@@ -33,6 +33,20 @@ abstract class Constructors {
 
   def equals(p: Pattern, q: Pattern): Equals
 
+  def definition(modules: Seq[Module], att: Attributes): Definition
+
+  def defImport(name: String, att: Attributes): Import
+
+  def module(name: String, args: Seq[Sentence], att: Attributes): Module
+
+  def sortDeclaration(sort: String, att: Attributes): SortDeclaration
+
+  def symbolDeclaration(sort: String, label: String, args: Seq[String], att: Attributes): SymbolDeclaration
+
+  def rule(p: Pattern, att: Attributes): Rule
+
+  def axiom(p: Pattern, att: Attributes): Axiom
+
 }
 
 object KoreConstructor extends Constructors {
@@ -63,4 +77,18 @@ object KoreConstructor extends Constructors {
   override def rewrite(p: Pattern, q: Pattern): Rewrite = DefaultImplementation.ConcreteRewrite(p, q)
 
   override def equals(p: Pattern, q: Pattern): Equals = DefaultImplementation.ConcreteEquals(p, q)
+
+  override def definition(modules: Seq[Module], att: Attributes): Definition = DefaultImplementation.ConcreteDefinition(modules, att)
+
+  override def defImport(name: String, att: Attributes): Import = DefaultImplementation.ConcreteImport(name, att)
+
+  override def module(name: String, args: Seq[Sentence], att: Attributes): Module = DefaultImplementation.ConcreteModule(name, args, att)
+
+  override def sortDeclaration(sort: String, att: Attributes): SortDeclaration = DefaultImplementation.ConcreteSortDeclaration(sort, att)
+
+  override def symbolDeclaration(sort: String, label: String, args: Seq[String], att: Attributes): SymbolDeclaration = DefaultImplementation.ConcreteSymbolDeclaration(sort, label, args, att)
+
+  override def rule(p: Pattern, att: Attributes): Rule = DefaultImplementation.ConcreteRule(p, att)
+
+  override def axiom(p: Pattern, att: Attributes): Axiom = DefaultImplementation.ConcreteAxiom(p, att)
 }
