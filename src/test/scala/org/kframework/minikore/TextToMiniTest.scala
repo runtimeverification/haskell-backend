@@ -3,7 +3,6 @@ package org.kframework.minikore
 import org.apache.commons.io.FileUtils
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import org.kframework.minikore.MiniKore._
 
 class TextToMiniTest {
 
