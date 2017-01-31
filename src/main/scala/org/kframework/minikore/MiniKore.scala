@@ -3,6 +3,7 @@ package org.kframework.minikore
 import org.kframework.minikore.MiniKore._
 
 
+// The main Kore Interface.
 object MiniKore {
 
   trait AST
@@ -223,6 +224,8 @@ object MiniKore {
 
 }
 
+
+// Provided Implementation for the Kore Interface
 object DefaultImplementation {
 
   case class ConcreteDefinition(modules: Seq[Module], att: Attributes) extends Definition

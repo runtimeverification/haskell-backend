@@ -3,6 +3,7 @@ package org.kframework.minikore
 import org.kframework.minikore.MiniKore._
 
 
+// Constructor Factory.
 abstract class Constructors {
 
   def variable(name: String, sort: String): Variable
@@ -48,6 +49,8 @@ abstract class Constructors {
   def axiom(p: Pattern, att: Attributes): Axiom
 
 }
+
+// Provided Constructors over default objects.
 
 object KoreConstructor extends Constructors {
   override def variable(name: String, sort: String): Variable = DefaultImplementation.ConcreteVariable(name, sort)
