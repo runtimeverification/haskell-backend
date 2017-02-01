@@ -11,7 +11,8 @@
 \usepackage{xcolor}
 \lstdefinelanguage{maude}
 {
-    keywords={sort, sorts, op, ops, var, vars, eq, ceq, mb , endfm, fmod, is, endm}
+    keywords={sort, sorts, op, ops, var, vars, eq, ceq, mb , endfm, fmod, is, endm, including},
+    morecomment=[l]{---}
 }
 \lstset{
 	language=maude,
@@ -98,7 +99,7 @@ Let $\sigma \colon s_1 \times \dots s_n \Rightarrow s$ be a polymorphic symbol.
 \begin{equation*}
 \tau(\sigma(P_1,\dots,P_n)) =
 \begin{cases}
-s \quad &\text{if \ $\min(\tau(P_i), s_i) \neq s_\bot$} \\
+s \quad &\text{if \ $\min(\tau(P_i), s_i) \neq s_\bot$ \ for all $i$} \\
 s_\bot \quad &\text{otherwise}
 \end{cases}
 \end{equation*}
@@ -108,17 +109,21 @@ s_\bot \quad &\text{otherwise}
 Algebra $\mathcal{S}$ has a neat implementation in Maude.
 
 \begin{lstlisting}
-fmod SORT-ALGEBRA is
-  sort S .
-  op Hi : -> S .
-  eq Hi Hi = Hi .
+fmod POLYSORT is
+  including PATTERN .
+  sort Sort .  op topsort : -> S [ctor] .
+  --- some normal symbols
+  ops Nat Seq Map : -> S [ctor] .
+  --- tau-polymorphism
+  op tau : Pattern -> [Sort] .
 endfm
 \end{lstlisting}
 
+Notice how we take use of Maude's ``kind'' type to indicate ill-sorted patterns.
 
 
-\section{Hilbert proof system}
-Axioms in $\mathcal{L}$ are given by the following nine axiom schemata where $P, Q, R$ are arbitrary patterns and $x, y$ are variables.
+\section{Deductive system}
+Axioms in $\mathcal{L}$ are given by the following axiom schemata where $P, Q, R$ are arbitrary patterns and $x, y$ are variables.
 \begin{itemize}
 \item (K1) $P \to (Q \to P)$
 \item (K2) $(P \to (Q \to R)) \to ((P \to Q) \to (P \to R))$
