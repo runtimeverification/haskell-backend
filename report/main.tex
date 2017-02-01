@@ -7,6 +7,18 @@
 \usepackage{txfonts}
 \usepackage{mathtools}
 
+\usepackage{listings}
+\usepackage{xcolor}
+\lstdefinelanguage{maude}
+{
+    keywords={sort, sorts, op, ops, var, vars, eq, ceq, mb , endfm, fmod, is, endm}
+}
+\lstset{
+	language=maude,
+	basicstyle=\ttfamily,
+	keywordstyle=\color{blue}
+}
+
 \newtheorem{thm}{Theorem}
 \newtheorem{prop}[thm]{Proposition}
 \newtheorem{cor}[thm]{Corollary}
@@ -94,6 +106,15 @@ s_\bot \quad &\text{otherwise}
 
 \subsubsection{Polymorphism in Maude}
 Algebra $\mathcal{S}$ has a neat implementation in Maude.
+
+\begin{lstlisting}
+fmod SORT-ALGEBRA is
+  sort S .
+  op Hi : -> S .
+  eq Hi Hi = Hi .
+endfm
+\end{lstlisting}
+
 
 
 \section{Hilbert proof system}
