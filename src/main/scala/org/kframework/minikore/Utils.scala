@@ -29,6 +29,15 @@ object MiniKoreOuterUtils {
 
   def getAttributeKey(key: String, atts: Attributes): Seq[Seq[Pattern]] = atts collect { case Application(`key`, args) => args }
 
+  // Definitions
+  // ===========
+
+  def allSentences(d: Definition): Seq[Sentence] = d.modules flatMap _.sentences
+
+  def allSorts(d: Definition): Seq[String] = allSentences(d) collect {
+    case SortDeclaration(sort, _)         => sort
+    case SymbolDeclaration(sort, _, _, _) => sort
+  }
 }
 
 
