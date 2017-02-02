@@ -100,7 +100,7 @@ class MiniKoreInterfaceTest {
       case Node(t1,t2) => Plus2(AstToExp2(t1),AstToExp2(t2))
     }
 
-    @Test def test(): Unit = {
+    def test(): Unit = {
       val e1 = Plus1(Val1(1),Mult1(Val1(2),Val1(3)))                // Implementation 1
       val e2 = Plus2(Mult2(Val2(1),Mult2(Val2(2),Val2(3))),Val2(4)) // Implementation 2
       val e3 = Plus2(Mult2(Val1(1),Mult1(Val1(2),Val1(3))),Val2(4)) // Mixed
