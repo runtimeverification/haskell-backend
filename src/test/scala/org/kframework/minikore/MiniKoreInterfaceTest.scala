@@ -69,8 +69,8 @@ class MiniKoreInterfaceTest {
     def size(t:Ast): Int = t match {
       case _:Leaf => 1
       //case Node(e1,e2) => size(e1) + size(e2)
-      case t:Plus => size(t.e1) + size(t.e2)
-      //case t:Node => size(t.e1) + size(t.e2)
+      //case t:Plus => size(t.e1) + size(t.e2)
+      case t:Node => size(t.e1) + size(t.e2)
     }
 
     // Specific eval
