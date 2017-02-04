@@ -1,8 +1,6 @@
 package org.kframework.minikore
 
-import org.junit.Assert.assertEquals
 import org.junit.Test
-import org.kframework.minikore.{MiniKoreInterface => i}
 
 class MiniKoreTraverseTest {
 
