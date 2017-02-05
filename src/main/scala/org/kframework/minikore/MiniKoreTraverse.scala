@@ -5,39 +5,18 @@ import org.kframework.minikore.{MiniKoreInterface => i}
 object MiniKoreTraverse {
 
   def size(p: i.Pattern): Int = p match {
-    case p:i.Leaf        => 1
-    case p:i.Node0[_]    => 1
-    case p:i.Node1[_]    => size(p.p)
-    case p:i.Node2[_]    => size(p.p) + size(p.q)
-    case p:i.NodeV[_]    => size(p.p)
-    case p:i.Application => p.args.map(size).sum
+    case p:i.Leaf => 1
+    case p:i.Node[i.Pattern] => p.children.map(size).sum
   }
 
   def iter(f: i.Pattern => Unit)(p: i.Pattern): Unit = p match {
-    case p:i.Leaf        => f(p)
-    case p:i.Node0[_]    => f(p)
-    case p:i.Node1[_]    => iter(f)(p.p)
-    case p:i.Node2[_]    => iter(f)(p.p); iter(f)(p.q)
-    case p:i.NodeV[_]    => f(p.v); iter(f)(p.p)
-    case p:i.Application => p.args.foreach(iter(f))
+    case p:i.Leaf => f(p)
+    case p:i.Node[i.Pattern] => p.children.foreach(iter(f))
   }
 
   def map(f: i.Pattern => i.Pattern)(p: i.Pattern): i.Pattern = p match {
-    case p:i.Leaf        => f(p)
-    case p:i.Node0[_]    => f(p)
-    case p:i.Node1[_]    => p.constructor(map(f)(p.p))
-    case p:i.Node2[_]    => p.constructor(map(f)(p.p), map(f)(p.q))
-    case p:i.NodeV[_]    => p.constructor(f(p.v).asInstanceOf[i.Variable], map(f)(p.p))
-    case p:i.Application => p.constructor(p.label, p.args.map(map(f)))
-  }
-
-  def mapShallow(f: i.Pattern => i.Pattern)(p: i.Pattern): i.Pattern = p match {
-    case p:i.Leaf        => p
-    case p:i.Node0[_]    => p
-    case p:i.Node1[_]    => p.constructor(f(p.p))
-    case p:i.Node2[_]    => p.constructor(f(p.p), f(p.q))
-    case p:i.NodeV[_]    => p.constructor(p.v, f(p.p))
-    case p:i.Application => p.constructor(p.label, p.args.map(f))
+    case p:i.Leaf => f(p)
+    case p:i.Node[i.Pattern] => p.build(p.data, p.children.map(map(f)))
   }
 
   def fold
@@ -70,10 +49,12 @@ object MiniKoreTraverse {
     }
     p match {
       case v:i.Variable => if (m.contains(v)) m(v) else p
-      case p:i.NodeV[_] =>
+      case p:i.MLV[_] =>
         val x = fresh(p.v)
         p.constructor(x, subst(m + (p.v -> x))(p.p))
-      case _ => mapShallow(subst(m))(p)
+      case p:i.Node[i.Pattern] =>
+        p.build(p.data, p.children.map(subst(m)))
+      case _:i.Leaf => p
     }
   }
 

@@ -25,4 +25,28 @@ class MiniKoreTraverseTest {
     assertEquals(MiniKoreTraverse.fold(c)(x => x, x => x, x => x, x => x, x => x, x => x)(p), p)
   }
 
+  @Test def test3(): Unit = {
+    val v = MiniKore.Variable("x", "K")
+    v match {
+      case vv:i.Leaf =>
+        assertEquals(v, vv)
+        val vvv = vv.constructor(vv.data._1, vv.data._2)
+        assertEquals(vv, vvv)
+        assertEquals(v, vvv)
+    }
+  }
+
+  @Test def test4(): Unit = {
+    val v1 = MiniKore.Variable("x", "K")
+    val v2 = MiniKore.Variable("y", "K")
+    val p = MiniKore.And(v1,v2)
+    p match {
+      case pp:i.Node[i.Pattern] =>
+        assertEquals(p, pp)
+        val ppp = pp.build(pp.data, pp.children)
+        assertEquals(pp, ppp)
+        assertEquals(p, ppp)
+    }
+  }
+
 }
