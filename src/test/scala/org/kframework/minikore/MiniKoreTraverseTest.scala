@@ -5,17 +5,18 @@ import org.junit.Test
 class MiniKoreTraverseTest {
 
   @Test def test(): Unit = {
-//    val p = MiniKore.True()
-//    val v = MiniKore.False()
-//    val x = MiniKore.Variable("x", "K")
-//    val e = MiniKore.Exists(x, x)
-//    val x1 = MiniKore.Variable("x!new!", "K")
-//    val e1 = MiniKore.Exists(x1, x1)
+    val p = MiniKore.True()
+    val v = MiniKore.False()
+    val x = MiniKore.Variable("x", "K")
+    val e = MiniKore.Exists(x, x)
+    val x1 = MiniKore.Variable("x!new!", "K")
+    val e1 = MiniKore.Exists(x1, x1)
 //    val m = Map(x.asInstanceOf[i.Variable] -> v)
 //    assertEquals(MiniKoreTraverse.subst(m)(p), p)
 //    assertEquals(MiniKoreTraverse.subst(m)(x), v)
 //    assertEquals(MiniKoreTraverse.subst(m)(e), e1)
-    assert(true)
+
+    println(MiniKoreTraverse.size(e1))
   }
 
   @Test def test2(): Unit = {
