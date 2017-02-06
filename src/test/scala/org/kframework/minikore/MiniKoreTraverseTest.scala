@@ -1,29 +1,30 @@
 package org.kframework.minikore
 
 import org.junit.Test
+import org.kframework.minikore.PatternInterface.{DomainValue, Pattern}
+import org.kframework.minikore.TreeInterface.{Leaf, Node, NodeApply}
+import org.kframework.minikore.{Constructors => c}
 
 class MiniKoreTraverseTest {
 
-  @Test def test(): Unit = {
-    val p = MiniKore.True()
-    val v = MiniKore.False()
-    val x = MiniKore.Variable("x", "K")
-    val e = MiniKore.Exists(x, x)
+  @Test def testSize(): Unit = {
     val x1 = MiniKore.Variable("x!new!", "K")
     val e1 = MiniKore.Exists(x1, x1)
-//    val m = Map(x.asInstanceOf[i.Variable] -> v)
-//    assertEquals(MiniKoreTraverse.subst(m)(p), p)
-//    assertEquals(MiniKoreTraverse.subst(m)(x), v)
-//    assertEquals(MiniKoreTraverse.subst(m)(e), e1)
-
-    println(MiniKoreTraverse.size(e1))
+    assert(MiniKoreTraverse.size(e1) == 2)
   }
 
-  @Test def test2(): Unit = {
-//    val p = MiniKore.And(MiniKore.True(), MiniKore.False())
-//    val c = MiniKore
-//    assertEquals(MiniKoreTraverse.fold(c)(x => x, x => x, x => x, x => x, x => x, x => x)(p), p)
-    assert(true)
+  @Test def testMapIdentity(): Unit = {
+    val p = MiniKore.And(MiniKore.True(), MiniKore.False())
+
+    def identity: Pattern => Pattern = { (p) =>
+      p match {
+        case p: Leaf[Pattern] => p
+        case p: Node[Pattern] => p.construct(p.children)
+        case p: NodeApply[Pattern] => p.construct(p.label, p.children)
+      }
+    }
+
+    assert(MiniKoreTraverse.map(identity)(p) == p)
   }
 
 }
