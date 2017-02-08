@@ -20,16 +20,20 @@
 	keywordstyle=\color{blue}
 }
 
+\theoremstyle{plain}
 \newtheorem{thm}{Theorem}
 \newtheorem{prop}[thm]{Proposition}
 \newtheorem{cor}[thm]{Corollary}
 \newtheorem{defn}[thm]{Definition}
+\newtheorem{eg}[thm]{Example}
+\newtheorem{rmk}[thm]{Remark}
 
 \DeclarePairedDelimiter\ceil{\lceil}{\rceil}
 \DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
 
 \def\imp{\to}
 \def\land{\mathbin\&}
+\def\ml2pl{\textsf{ml2pl}}
 
 
 
@@ -81,21 +85,21 @@ Polymorphism means in mathematics a mapping $\tau$ from pattern set $\mathcal{P}
 
 Let $P$ be a pattern. Intuitively, if $\tau(P) = s_\bot$ then $P$ is ill-sorted. Most patterns have their normal sorts in $S$. Predicate patterns have sort $s_\top$, which makes them fit in any context. However, nothing prevents one having a non-predicate pattern of sort $s_\top$. All that matters is the \emph{sorting signature} of a symbol $\sigma \in \Sigma$.
 
-Normal symbols have regular sorting signatures. A symbol $\sigma \in \Sigma_{s_1,\dots,s_n, s}$ expects $n$ arguments of the sorts $s_1, \dots, s_n$ respectively, and results in a pattern of sort $s$. This fact is denoted as $\sigma \colon s_1 \times \dots \times s_n \Rightarrow s$.
+Normal symbols have regular sorting signatures. A symbol $\sigma \in \Sigma_{s_1,\dots,s_n, s}$ expects $n$ arguments of the sorts $s_1, \dots, s_n$ respectively, and results in a pattern of sort $s$. 
 
 The same notation can be used to polymorphic symbols, most of which are predicates. For example, $\mathtt{primeQ} \colon \mathtt{Nat} \Rightarrow s_\top$ checks whether its argument is a prime number or not, and returns either $\top$ (if the argument is a prime number) or $\bot$ (otherwise). A two-arity example is $\mathtt{ge}(x,y)$ that checks whether $x > y$, where $\mathtt{ge} \colon \mathtt{Nat} \times \mathtt{Nat} \Rightarrow s_\top$. Predicates can appear in any context, for instance, $\forall x . \exists y . (\mathtt{ge}(y, x) \wedge \mathtt{primeQ}(y))$.
 
 Symbols can take arguments of the top sort $s_\top$, too. One example is the definedness symbol $\ceil*{\_} \colon s_\top \Rightarrow s_\top$, a predicate over \emph{all sorts} of patterns. It sounds more ``polymorphic'' than $\mathtt{ge}$ and $\mathtt{primeQ}$, in the sense that not only it can be plugged in any context, but also any patterns can be plugged in it. The above discussion leads us to the following definition of polymorphism.
 
-\begin{defn}[Polymorphism]
-	Polymorphic sort of patterns is a mapping $\tau \colon \mathcal{P} \to \mathcal{S}$, defined recursively by
+\begin{defn}[Polymorphic sorting]
+	Polymorphic sorts of patterns is a mapping $\tau \colon \mathcal{P} \to \mathcal{S}$, defined recursively by
 \begin{align*}
   &\tau(x) = s \quad \text{if $x$ is a variable of sort $s$} \\
   &\tau(\neg P) = \tau(P) \\
   &\tau(P_1 \to P_2) = \min(\tau(P_1), \tau(P_2)) \\
   &\tau(\exists x . P) = \tau(P).
 \end{align*}
-Let $\sigma \colon s_1 \times \dots s_n \Rightarrow s$ be a polymorphic symbol. 
+Let $\sigma \in \Sigma_{s_1,\dots,s_n,s}$ be a polymorphic symbol, then
 \begin{equation*}
 \tau(\sigma(P_1,\dots,P_n)) =
 \begin{cases}
@@ -105,21 +109,39 @@ s_\bot \quad &\text{otherwise}
 \end{equation*}
 \end{defn}
 
-\subsubsection{Polymorphism in Maude}
-Algebra $\mathcal{S}$ has a neat implementation in Maude.
+The above definition, though, does not provide a connection between poly-sorted matching logic with many-sorted matching logic. On one hand, we often write patterns such as $(x \mapsto 1 * y \mapsto 2) \wedge x + 1 = y$, which are in fact poly-sorted (in the equality symbol ``$=$''). On the other hand, such polymorphism is regarded as nothing more than just syntactic sugar. The semantics and the inference system of matching logic are all for many-sorted matching logic. And we do not want to define a duplicate just for the poly-sorted case.
 
-\begin{lstlisting}
-fmod POLYSORT is
-  including PATTERN .
-  sort Sort .  op topsort : -> S [ctor] .
-  --- some normal symbols
-  ops Nat Seq Map : -> S [ctor] .
-  --- tau-polymorphism
-  op tau : Pattern -> [Sort] .
-endfm
-\end{lstlisting}
+Therefore, we provide here a viewpoint to regard poly-sorted patterns \emph{as} many-sorted patterns. By doing so, we treat poly-sorted patterns \emph{as} nothing but just syntactic sugar for many-sorted patterns. This viewpoint is much useful in practice than Definition~1, and may eventually replace it.
 
-Notice how we take use of Maude's ``kind'' type to indicate ill-sorted patterns.
+\begin{defn} (Poly-sorted symbols and patterns)
+Poly-sorted symbols are symbols whose signatures have sort $s_\top$. A regular symbol is said to \emph{instantiates} a poly-sorted symbol if it instantiates all $s_\top$ to some regular sorts.
+	Poly-sorted patterns are built from many-sorted variables, logical connectives and quantifiers, and symbol applications, the same as many-sorted patterns, with the only exception that symbols can be polymorphic. A poly-sorted pattern $P$ is a set of many-sorted patterns by instantiating all poly-sorted symbols in $P$ in all possible ways such that the instances are well-sorted.
+\end{defn}
+
+\subsection{\textsf{ml2pl}-Translation}
+
+Let us assume a polymorphic matching logic signature $(S,\Sigma)$ with some symbols in $\Sigma$ having polymorphic types, such as the definedness symbol $\ceil*{\_} \colon s_\top \leadsto s_\top$ that we have seen. We define the first-order logic theory $T = \mathsf{ml2pl}(S,\Sigma)$ as follows.
+
+\textbf{Step 1 (Add sorts.)} For each $s \in S$, add one-arity predicate symbol $s$. For each $s, s' \in S$ are distinct sorts, add the axiom
+\begin{equation}
+\forall x . \neg (s(x) \wedge s'(x)). \tag{Distinct sorts}
+\end{equation}
+Finally, add the axiom
+\begin{equation}
+\forall x . \left(s_1(x) \vee s_2(x) \vee \dots \vee s_n(x)\right), \tag{Complete sorts}
+\end{equation}
+where $s_1,\dots,s_n$ are all sorts in $S$. Let $s_\top(x) = s_1(x) \vee s_2(x) \vee \dots \vee s_n(x)$.
+
+\textbf{Step 2 (Add symbols.)} For any $n$-arity symbol $\sigma \in \Sigma$, add $(n+1)$-arity predicate symbol $\pi_\sigma$.
+
+\textbf{Step 3 (Recursive translation.)}
+
+Intuition: $\ml2pl(P,r)$ means $r$ matches $P$, where $r$ range over the $s$-universe, given $P$ has sort $s$. 
+
+\begin{align*}
+&PL(x : s, r) \equiv s(x) \to x = r \\
+&PL(\neg P , r) \equiv  \neg PL(P, r) \\
+\end{align*}
 
 
 \section{Deductive system}
