@@ -23,8 +23,8 @@ object MiniKoreMeta {
   def upSymbolList(concrete: Seq[String]): Pattern = consListLeft("KSymbolList", ".KSymbolList")(concrete map upSymbol)
   def downSymbolList(parsed: Pattern): Seq[String] = flattenByLabels("KSymbolList", ".KSymbolList")(parsed) map downSymbol
 
-  val upVariable: Variable => Application = { case Variable(name, sort) => Application("KMLVariable", Seq(Application(name, Nil), Application(sort, Nil))) }
-  val downVariable: Pattern => Variable   = { case Application("KMLVariable", Application(name, Nil) :: Application(sort, Nil) :: Nil) => Variable(name, sort) }
+  val upVariable: Variable => Application = { case Variable(name, sort) => Application("KMLVariable", Seq(upSymbol(name), upSymbol(sort))) }
+  val downVariable: Pattern => Variable   = { case Application("KMLVariable", name :: sort :: Nil) => Variable(downSymbol(name), downSymbol(sort)) }
 
   val upPattern: Pattern => Application = {
     case Application(label, Nil)  => Application("KMLApplication", Seq(upSymbol(label)))
