@@ -51,7 +51,7 @@ object MiniKoreMeta {
     case Application("KMLNot", p :: Nil)                      => Not(downPattern(p))
     case Application("KMLImplies", p1 :: p2 :: Nil)           => Implies(downPattern(p1), downPattern(p2))
     case Application("KMLExists", v :: p :: Nil)              => Exists(downVariable(v), downPattern(p))
-    case Application("KMLForall", v :: p :: Nil)              => ForAll(downVariable(v), downPattern(p))
+    case Application("KMLForAll", v :: p :: Nil)              => ForAll(downVariable(v), downPattern(p))
     case Application("KMLNext", p :: Nil)                     => Next(downPattern(p))
     case Application("KMLRewrite", p1 :: p2 :: Nil)           => Rewrite(downPattern(p1), downPattern(p2))
     case Application("KMLEqual", p1 :: p2 :: Nil)             => Equal(downPattern(p1), downPattern(p2))
