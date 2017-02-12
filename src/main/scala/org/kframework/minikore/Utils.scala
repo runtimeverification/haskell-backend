@@ -82,7 +82,12 @@ object MiniKorePatternUtils {
   // consListRight("apply", "0")(Seq("1","2","3")) => apply(apply(apply(0,1),2),3)
 
   def consListLeft(cons: String, nil: String)(ps: Seq[Pattern]): Pattern = ps.foldRight(Application(nil, Seq.empty))((acc, next) => Application(cons, Seq(acc, next)))
-  def consListRight(cons: String, nil: String)(ps: Seq[Pattern]): Pattern = ps.foldLeft(Application(nil, Seq.empty))((acc, next) => Application(cons, Seq(acc, next)))
+  def consListLeftSubsort(cons: String, nil: String)(ps: Seq[Pattern]): Pattern = ps.size match {
+    case 0 => Application(nil, Seq.empty)
+    case 1 => ps.head
+    case _ => Application(cons, Seq(ps.head, consListLeftSubsort(cons, nil)(ps.tail)))
+  }
+  //def consListRight(cons: String, nil: String)(ps: Seq[Pattern]): Pattern = ps.foldLeft(Application(nil, Seq.empty))((acc, next) => Application(cons, Seq(acc, next)))
 
   // Flatten parse-trees
   // ===================
