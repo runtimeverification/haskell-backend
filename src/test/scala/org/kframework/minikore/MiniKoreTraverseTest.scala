@@ -3,7 +3,7 @@ package org.kframework.minikore
 import org.junit.Test
 import org.kframework.minikore.PatternInterface.{DomainValue, Pattern}
 import org.kframework.minikore.TreeInterface.{Leaf, Node}
-import org.kframework.minikore.{Builders => c}
+import org.kframework.minikore.{DefaultBuilders$ => c}
 
 class MiniKoreTraverseTest {
 
