@@ -5,7 +5,6 @@ import org.kframework.minikore.PatternInterface._
 import org.kframework.minikore.TreeInterface._
 
 
-
 class NodeTest {
 
   object TestFunctions {
@@ -17,11 +16,18 @@ class NodeTest {
       }
     }
 
-    def getLabelledNodesCount(p: Pattern): Int =  {
+    def getLabelledNodesCount(p: Pattern): Int = {
       p.asInstanceOf[AST[Pattern]] match {
         case LabelledNode(_, c: Seq[Pattern]) => c.map(x => getLabelledNodesCount(x)).sum + 1
         case Node(c: Seq[Pattern]) => c map getLabelledNodesCount sum
         case _ => 0
+      }
+    }
+
+    def identity(p: Pattern): Pattern = {
+      p.asInstanceOf[AST[Pattern]] match {
+        case n: Node[Pattern] => n.build(n.children.map(identity)).asInstanceOf[Pattern]
+        case l: Leaf[Pattern, (String, String)] => l.build(l.contents).asInstanceOf[Pattern]
       }
     }
 
@@ -58,9 +64,14 @@ class NodeTest {
   @Test def sizeTest2(): Unit = {
     assert(TestFunctions.size(b.Equals(t.plusApp, t.int1)) == 3)
   }
+
   @Test def labelledNodeCountTest(): Unit = {
     assert(TestFunctions.getLabelledNodesCount(t.b.Equals(t.intVar, t.plusApp)) == 1)
   }
 
+  @Test def identityFunctionTest(): Unit = {
+    val pList: Seq[Pattern] = Seq(t.plusApp, t.e1, t.e2, t.b.And(t.e1, t.e2))
+    assert(pList.map(TestFunctions.identity).equals(pList))
+  }
 
 }
