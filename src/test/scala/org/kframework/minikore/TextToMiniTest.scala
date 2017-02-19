@@ -552,10 +552,12 @@ class TextToMiniTest {
     *   u : MiniKore -> String
     */
   def parseTest(src: FileOrSource, expected: String): Unit = {
+    //TODO: Make test file parametric over builders.
+    val builder: Builders = DefaultBuilders.build
     val begin = java.lang.System.nanoTime()
     val minikore = src match {
-      case src: FileFOS => new TextToMini().parse(src.x)
-      case src: SourceFOS => new TextToMini().parse(src.x)
+      case src: FileFOS => new TextToMini(builder).parse(src.x)
+      case src: SourceFOS => new TextToMini(builder).parse(src.x)
     }
     val end = java.lang.System.nanoTime(); println(end - begin)
     val text = MiniToText.apply(minikore)
@@ -565,7 +567,7 @@ class TextToMiniTest {
     else if (trim(expected) == trim(text)) () // t == u(p(t)) modulo leading/trailing whitespaces
     else {
       assertEquals(expected.replaceAll("\\s+", ""), text.replaceAll("\\s+", "")) //   t  ==   u(p(t))  modulo whitespaces
-      assertEquals(minikore, new TextToMini().parse(io.Source.fromString(text))) // p(t) == p(u(p(t)))
+      assertEquals(minikore, new TextToMini(builder).parse(io.Source.fromString(text))) // p(t) == p(u(p(t)))
     }
   }
 
