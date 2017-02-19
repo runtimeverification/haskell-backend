@@ -30,8 +30,6 @@ class NodeTest {
         case l: Leaf[Pattern, (String, String)] => l.build(l.contents).asInstanceOf[Pattern]
       }
     }
-
-
   }
 
   object TestPatterns {
