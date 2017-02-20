@@ -9,25 +9,25 @@ class NodeTest {
 
   object TestFunctions {
 
-    def size(p: Pattern): Int = {
-      p.asInstanceOf[AST[Pattern]] match {
+    def size(p: AST[Pattern]): Int = {
+      p match {
         case Node(c: Seq[Pattern]) => c.map(x => size(x)).sum
         case Leaf(_) => 1
       }
     }
 
-    def getLabelledNodesCount(p: Pattern): Int = {
-      p.asInstanceOf[AST[Pattern]] match {
+    def getLabelledNodesCount(p: AST[Pattern]): Int = {
+      p match {
         case LabelledNode(_, c: Seq[Pattern]) => c.map(x => getLabelledNodesCount(x)).sum + 1
         case Node(c: Seq[Pattern]) => c map getLabelledNodesCount sum
         case _ => 0
       }
     }
 
-    def identity(p: Pattern): Pattern = {
+    def map(f: (Pattern) => Pattern)(p: Pattern): Pattern = {
       p.asInstanceOf[AST[Pattern]] match {
-        case n: Node[Pattern] => n.build(n.children.map(identity)).asInstanceOf[Pattern]
-        case l: Leaf[Pattern, (String, String)] => l.build(l.contents).asInstanceOf[Pattern]
+        case n: Node[Pattern] => n.build(n.children.map(x => f(x))).asInstanceOf[Pattern]
+        case l: Leaf[Pattern, _] => f(l.asInstanceOf[Pattern])
       }
     }
   }
@@ -38,6 +38,8 @@ class NodeTest {
     val int1: Pattern = b.DomainValue("1", "Int")
 
     val int2: Pattern = b.DomainValue("2", "Int")
+
+    val int4: Pattern = b.DomainValue("4", "Int")
 
     val stringFoo: Pattern = b.DomainValue("Foo", "String")
 
@@ -69,7 +71,27 @@ class NodeTest {
 
   @Test def identityFunctionTest(): Unit = {
     val pList: Seq[Pattern] = Seq(t.plusApp, t.e1, t.e2, t.b.And(t.e1, t.e2))
-    assert(pList.map(TestFunctions.identity).equals(pList))
+
+    def identityF: (Pattern) => Pattern = (x) => x
+
+    assert(pList.map(TestFunctions.map(identityF)).equals(pList))
+  }
+
+  @Test def mapTest1(): Unit = {
+    val e1: Pattern = t.b.Application("IntContainer", Seq(t.int1, t.int2))
+    val intSort: String = "Int"
+
+    def doubleInt: (Pattern) => Pattern = { (p) =>
+      p match {
+        case DomainValue(intString: String, `intSort`) => t.b.DomainValue((intString.toInt * 2) toString, intSort)
+        case other => other
+      }
+    }
+
+    val e2: Pattern = t.b.Application("IntContainer", Seq(t.int2, t.int4))
+
+    assert(TestFunctions.map(doubleInt)(e1) == e2)
+
   }
 
 }
