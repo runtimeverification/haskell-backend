@@ -9,25 +9,25 @@ class NodeTest {
 
   object TestFunctions {
 
-    def size(p: AST[Pattern]): Int = {
+    def size(p: Pattern): Int = {
       p match {
-        case Node(c: Seq[Pattern]) => c.map(x => size(x)).sum
+        case Node(c: Seq[Pattern]) => c.map(size).sum
         case Leaf(_) => 1
       }
     }
 
-    def getLabelledNodesCount(p: AST[Pattern]): Int = {
+    def getLabelledNodesCount(p: Pattern): Int = {
       p match {
-        case LabelledNode(_, c: Seq[Pattern]) => c.map(x => getLabelledNodesCount(x)).sum + 1
-        case Node(c: Seq[Pattern]) => c map getLabelledNodesCount sum
+        case LabelledNode(_, c: Seq[Pattern]) => c.map(getLabelledNodesCount).sum + 1
+        case Node(c: Seq[Pattern]) => c.map(getLabelledNodesCount).sum
         case _ => 0
       }
     }
 
     def map(f: (Pattern) => Pattern)(p: Pattern): Pattern = {
-      p.asInstanceOf[AST[Pattern]] match {
-        case n: Node[Pattern] => n.build(n.children.map(x => f(x))).asInstanceOf[Pattern]
-        case l: Leaf[Pattern, _] => f(l.asInstanceOf[Pattern])
+      p match {
+        case n: Node[Pattern] => n.build(n.children.map(f))
+        case l: Leaf[Pattern, _] => f(l)
       }
     }
   }
