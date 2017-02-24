@@ -9,26 +9,20 @@ class NodeTest {
 
   object TestFunctions {
 
-    def size(p: Pattern): Int = {
-      p match {
-        case Node(c: Seq[Pattern]) => c.map(size).sum
-        case Leaf(_) => 1
-      }
+    def size(p: Pattern): Int = p match {
+      case Node(c: Seq[Pattern]) => c.map(size).sum
+      case Leaf(_) => 1
     }
 
-    def getLabelledNodesCount(p: Pattern): Int = {
-      p match {
-        case LabelledNode(_, c: Seq[Pattern]) => c.map(getLabelledNodesCount).sum + 1
-        case Node(c: Seq[Pattern]) => c.map(getLabelledNodesCount).sum
-        case _ => 0
-      }
+    def getLabelledNodesCount(p: Pattern): Int = p match {
+      case LabelledNode(_, c: Seq[Pattern]) => c.map(getLabelledNodesCount).sum + 1
+      case Node(c: Seq[Pattern]) => c.map(getLabelledNodesCount).sum
+      case _ => 0
     }
 
-    def map(f: (Pattern) => Pattern)(p: Pattern): Pattern = {
-      p match {
-        case n: Node[Pattern] => n.build(n.children.map(f))
-        case l: Leaf[Pattern, _] => f(l)
-      }
+    def map(f: Pattern => Pattern)(p: Pattern): Pattern = p match {
+      case n: Node[Pattern] => n.build(n.children.map(f))
+      case l: Leaf[Pattern, _] => f(l)
     }
   }
 
@@ -81,11 +75,9 @@ class NodeTest {
     val e1: Pattern = t.b.Application("IntContainer", Seq(t.int1, t.int2))
     val intSort: String = "Int"
 
-    def doubleInt: (Pattern) => Pattern = { (p) =>
-      p match {
-        case DomainValue(intString: String, `intSort`) => t.b.DomainValue((intString.toInt * 2) toString, intSort)
-        case other => other
-      }
+    def doubleInt(p: Pattern): Pattern = p match {
+      case DomainValue(intString: String, `intSort`) => t.b.DomainValue((intString.toInt * 2) toString, intSort)
+      case other => other
     }
 
     val e2: Pattern = t.b.Application("IntContainer", Seq(t.int2, t.int4))
