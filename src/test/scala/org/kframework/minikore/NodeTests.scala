@@ -26,7 +26,7 @@ class NodeTest {
 
     def map(f: (Pattern) => Pattern)(p: Pattern): Pattern = {
       p match {
-        case n: Node[Pattern] => n.build(n.children.map(f))
+        case n: Node[Pattern] => n.build(n.children.map(f)).asInstanceOf[Pattern]
         case l: Leaf[Pattern, _] => f(l)
       }
     }
