@@ -26,7 +26,10 @@ class NodeTest {
 
     def map(f: (Pattern) => Pattern)(p: Pattern): Pattern = {
       p match {
-        case n: Node => n.build(n.children.map(f)).asInstanceOf[Pattern]
+        case n: Node => {
+          val c: Seq[Pattern] = n.children.map(map(f))
+          n.build(c)
+        }
         case l: Leaf[_] => f(l)
       }
     }
@@ -51,11 +54,40 @@ class NodeTest {
 
     val plusApp: Pattern = b.Application("Plus", Seq(int1, int2))
 
+    val simpleVariable: Variable = b.Variable("X", "Test")
+
+    val simpleDomainValue: DomainValue = b.DomainValue("test", "String")
+
+    val top: Top = b.Top()
+
+    val bottom: Bottom = b.Bottom()
+
+    val simpleAnd: And = b.And(top, bottom)
+
+    val simpleOr: Or = b.Or(top, bottom)
+
+    val simpleNot: Not = b.Not(top)
+
+    val simpleImplies: Implies = b.Implies(bottom, top)
+
+    val simpleIntVar: Variable = b.Variable("A", "Int")
+
+    val simpleExists: Exists = b.Exists(simpleIntVar, b.Equals(simpleIntVar, int1))
+
+    val simpleForAll: ForAll = b.ForAll(simpleIntVar, b.Equals(simpleIntVar, b.Variable("Y", "Int")))
+
+    val simpleEquals: Equals = b.Equals(simpleOr, top)
+
+    val simpleList: Seq[Pattern] = Seq(top, bottom, simpleAnd, simpleOr, simpleNot, simpleImplies,
+      simpleIntVar, simpleExists, simpleForAll, simpleEquals)
   }
+
 
   def b: Build.Builders = DefaultBuilders
 
   def t = TestPatterns
+
+  def identityF: (Pattern) => Pattern = (x) => x
 
   @Test def sizeTest1(): Unit = {
     assert(TestFunctions.size(TestPatterns.e1) == 2)
@@ -70,28 +102,27 @@ class NodeTest {
   }
 
   @Test def identityFunctionTest(): Unit = {
-    val pList: Seq[Pattern] = Seq(t.plusApp, t.e1, t.e2, t.b.And(t.e1, t.e2))
-
-    def identityF: (Pattern) => Pattern = (x) => x
+    val pList: Seq[Pattern] = TestPatterns.simpleList
 
     assert(pList.map(TestFunctions.map(identityF)).equals(pList))
   }
 
-  @Test def mapTest1(): Unit = {
-    val e1: Pattern = t.b.Application("IntContainer", Seq(t.int1, t.int2))
-    val intSort: String = "Int"
+  @Test def simpleQuantifierTests(): Unit = {
 
-    def doubleInt: (Pattern) => Pattern = { (p) =>
+    def changeVar: (Pattern) => Pattern = { p =>
       p match {
-        case DomainValue(intString: String, `intSort`) => t.b.DomainValue((intString.toInt * 2) toString, intSort)
-        case other => other
+        case Variable(name, sort) => b.Variable("#" + name, sort)
+        case n@_ => n
       }
     }
 
-    val e2: Pattern = t.b.Application("IntContainer", Seq(t.int2, t.int4))
+    val changedVar: Variable = b.Variable("#A", "Int")
 
-    assert(TestFunctions.map(doubleInt)(e1) == e2)
+    val changedExists: Exists = b.Exists(changedVar, b.Equals(changedVar, TestPatterns.int1))
+
+    assert(TestFunctions.map(changeVar)(TestPatterns.simpleExists) == changedExists)
 
   }
+
 
 }
