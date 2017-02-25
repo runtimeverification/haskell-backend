@@ -18,7 +18,7 @@ class NodeTest {
 
     def getLabelledNodesCount(p: Pattern): Int = {
       p match {
-        case LabelledNode(_, c: Seq[Pattern]) => c.map(getLabelledNodesCount).sum + 1
+        case LabeledNode(_, c: Seq[Pattern]) => c.map(getLabelledNodesCount).sum + 1
         case Node(c: Seq[Pattern]) => c.map(getLabelledNodesCount).sum
         case _ => 0
       }
