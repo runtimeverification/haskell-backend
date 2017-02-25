@@ -26,14 +26,14 @@ class NodeTest {
 
     def map(f: (Pattern) => Pattern)(p: Pattern): Pattern = {
       p match {
-        case n: Node[Pattern] => n.build(n.children.map(f)).asInstanceOf[Pattern]
-        case l: Leaf[Pattern, _] => f(l)
+        case n: Node => n.build(n.children.map(f)).asInstanceOf[Pattern]
+        case l: Leaf[_] => f(l)
       }
     }
   }
 
   object TestPatterns {
-    val b: Builders = DefaultBuilders.build
+    val b: Build.Builders = DefaultBuilders
 
     val int1: Pattern = b.DomainValue("1", "Int")
 
@@ -53,7 +53,7 @@ class NodeTest {
 
   }
 
-  def b: Builders = DefaultBuilders.build
+  def b: Build.Builders = DefaultBuilders
 
   def t = TestPatterns
 

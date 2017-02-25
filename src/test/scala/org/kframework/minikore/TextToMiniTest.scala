@@ -3,6 +3,7 @@ package org.kframework.minikore
 import org.apache.commons.io.FileUtils
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.kframework.minikore.Build.Builders
 
 class TextToMiniTest {
 
@@ -552,7 +553,7 @@ class TextToMiniTest {
     */
   def parseTest(src: FileOrSource, expected: String): Unit = {
     //TODO: Make test file parametric over builders.
-    val builder: Builders = DefaultBuilders.build
+    val builder: Builders = DefaultBuilders
     val begin = java.lang.System.nanoTime()
     val minikore = src match {
       case src: FileFOS => new TextToMini(builder).parse(src.x)
