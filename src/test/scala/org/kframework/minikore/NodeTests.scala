@@ -27,7 +27,7 @@ class NodeTest {
     def map(f: (Pattern) => Pattern)(p: Pattern): Pattern = {
       p match {
         case n: Node => {
-          val c: Seq[Pattern] = n.children.map(map(f))
+          val c: Seq[Pattern] = n.args.map(map(f))
           n.build(c)
         }
         case l: Leaf[_] => f(l)
