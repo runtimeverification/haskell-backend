@@ -9,30 +9,22 @@ class NodeTest {
 
   object TestFunctions {
 
-    def size(p: Pattern): Int = {
-      p match {
-        case Node(c: Seq[Pattern]) => c.map(size).sum
-        case Leaf(_) => 1
-      }
+    def size(p: Pattern): Int = p match {
+      case Node(c: Seq[Pattern]) => c.map(size).sum
+      case Leaf(_) => 1
     }
 
-    def getLabelledNodesCount(p: Pattern): Int = {
-      p match {
-        case LabeledNode(_, c: Seq[Pattern]) => c.map(getLabelledNodesCount).sum + 1
-        case Node(c: Seq[Pattern]) => c.map(getLabelledNodesCount).sum
-        case _ => 0
-      }
+    def getLabelledNodesCount(p: Pattern): Int = p match {
+      case LabeledNode(_, c: Seq[Pattern]) => c.map(getLabelledNodesCount).sum + 1
+      case Node(c: Seq[Pattern]) => c.map(getLabelledNodesCount).sum
+      case _ => 0
     }
 
-    def map(f: (Pattern) => Pattern)(p: Pattern): Pattern = {
-      p match {
-        case n: Node => {
-          val c: Seq[Pattern] = n.args.map(map(f))
-          n.build(c)
-        }
-        case l: Leaf[_] => f(l)
-      }
+    def map(f: Pattern => Pattern)(p: Pattern): Pattern = p match {
+      case n@Node(c: Seq[AST]) => n.build(c.map(map(f)))
+      case l@Leaf(_) => f(l)
     }
+
   }
 
   object TestPatterns {
@@ -109,11 +101,9 @@ class NodeTest {
 
   @Test def simpleQuantifierTests(): Unit = {
 
-    def changeVar: (Pattern) => Pattern = { p =>
-      p match {
-        case Variable(name, sort) => b.Variable("#" + name, sort)
-        case n@_ => n
-      }
+    def changeVar: (Pattern) => Pattern = {
+      case Variable(name, sort) => b.Variable("#" + name, sort)
+      case n@_ => n
     }
 
     val changedVar: Variable = b.Variable("#A", "Int")
