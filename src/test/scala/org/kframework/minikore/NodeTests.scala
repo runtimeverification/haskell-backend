@@ -54,16 +54,17 @@ class NodeTest {
 
     def renameVariable(p: Pattern): Pattern = p match {
       case n@BinderNode(v: Variable, p: Pattern) => {
-        val freshVar: Pattern = v.build(("#" + v._1, v._2))
-        n.build(Seq(freshVar, renameVariable(p)))
+        val freshVar: Pattern = v(("#" + v._1, v._2))
+        n(Seq(freshVar, renameVariable(p)))
       }
-      case n@Node(c: Seq[Pattern]) => n.build(c.map(renameVariable))
+      case n@Node(c: Seq[Pattern]) => n(c.map(renameVariable))
       case Variable(name: String, sort: String) => b.Variable("#" + name, sort)
       case other@_ => other
     }
 
     def map(f: Pattern => Pattern)(p: Pattern): Pattern = p match {
-      case n@Node(c: Seq[AST]) => n.build(c.map(map(f)))
+      case n@Node2(p: Pattern, q: Pattern) => n(map(f)(p), map(f)(q))
+      case n@Node(c: Seq[AST]) => n(c.map(map(f)))
       case l@Leaf(_) => f(l)
     }
 
