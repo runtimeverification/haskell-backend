@@ -1,8 +1,10 @@
 package org.kframework.minikore
 
 import org.junit.Test
-import org.kframework.minikore.PatternInterface._
-import org.kframework.minikore.TreeInterface._
+import org.kframework.minikore.interfaces.PatternInterface._
+import org.kframework.minikore.interfaces.TreeInterface._
+import org.kframework.minikore.implementation.DefaultBuilders
+import org.kframework.minikore.interfaces.BuilderInterface
 
 
 class NodeTest {
@@ -17,7 +19,7 @@ class NodeTest {
     def getNode0Count(p: Pattern): Int = p match {
       case Node0() => 1
       case Node(c: Seq[Pattern]) => c.map(getNode0Count) sum
-      case other => 0
+      case _ => 0
     }
 
     def getLabelledNodesCount(p: Pattern): Int = p match {
@@ -45,7 +47,7 @@ class NodeTest {
     }
 
     def getLeaf2Count(p: Pattern): Int = p match {
-      case Leaf2(_, _) => 1
+      case Leaf2(_ , _) => 1
       case Node(c: Seq[Pattern]) => c.map(getLeaf2Count) sum
       case _ => 0
     }
@@ -68,7 +70,7 @@ class NodeTest {
   }
 
   object TestPatterns {
-    val b: Build.Builders = DefaultBuilders
+    val b: BuilderInterface.Builders = DefaultBuilders
 
     val int1: Pattern = b.DomainValue("1", "Int")
 
@@ -115,7 +117,7 @@ class NodeTest {
   }
 
 
-  def b: Build.Builders = DefaultBuilders
+  def b: BuilderInterface.Builders = DefaultBuilders
 
   def t = TestPatterns
 
@@ -193,10 +195,6 @@ class NodeTest {
       case n@Node2(x: Pattern, y: Pattern) => n(x, y)
     })
 
-    println(collectedPatterns)
-
     assert(node2Patterns == collectedPatterns)
   }
-
-
 }
