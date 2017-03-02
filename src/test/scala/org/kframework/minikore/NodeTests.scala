@@ -1,10 +1,10 @@
 package org.kframework.minikore
 
 import org.junit.Test
-import org.kframework.minikore.interfaces.PatternInterface._
-import org.kframework.minikore.interfaces.TreeInterface._
+import org.kframework.minikore.interfaces.pattern._
+import org.kframework.minikore.interfaces.tree._
 import org.kframework.minikore.implementation.DefaultBuilders
-import org.kframework.minikore.interfaces.BuilderInterface
+import org.kframework.minikore.interfaces.build
 
 
 class NodeTest {
@@ -70,7 +70,7 @@ class NodeTest {
   }
 
   object TestPatterns {
-    val b: BuilderInterface.Builders = DefaultBuilders
+    val b: build.Builders = DefaultBuilders
 
     val int1: Pattern = b.DomainValue("1", "Int")
 
@@ -117,7 +117,7 @@ class NodeTest {
   }
 
 
-  def b: BuilderInterface.Builders = DefaultBuilders
+  def b: build.Builders = DefaultBuilders
 
   def t = TestPatterns
 

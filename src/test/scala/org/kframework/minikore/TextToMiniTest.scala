@@ -3,7 +3,7 @@ package org.kframework.minikore
 import org.apache.commons.io.FileUtils
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import org.kframework.minikore.interfaces.BuilderInterface.Builders
+import org.kframework.minikore.interfaces.build.Builders
 import org.kframework.minikore.implementation.DefaultBuilders
 import org.kframework.minikore.parser.{MiniToText, ParseError, TextToMini}
 
