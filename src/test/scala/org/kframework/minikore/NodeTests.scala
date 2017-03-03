@@ -54,17 +54,17 @@ class NodeTest {
 
     def renameVariable(p: Pattern): Pattern = p match {
       case n@BinderNode(v: Variable, p: Pattern) => {
-        val freshVar: Pattern = v(("#" + v._1, v._2))
-        n(Seq(freshVar, renameVariable(p)))
+        val freshVar: Pattern = v.build(("#" + v._1, v._2))
+        n.build(Seq(freshVar, renameVariable(p)))
       }
-      case n@Node(c: Seq[Pattern]) => n(c.map(renameVariable))
+      case n@Node(c: Seq[Pattern]) => n.build(c.map(renameVariable))
       case Variable(name: String, sort: String) => b.Variable("#" + name, sort)
       case other@_ => other
     }
 
     def map(f: Pattern => Pattern)(p: Pattern): Pattern = p match {
-      case n@Node2(p: Pattern, q: Pattern) => n(map(f)(p), map(f)(q))
-      case n@Node(c: Seq[AST]) => n(c.map(map(f)))
+      case n@Node2(p: Pattern, q: Pattern) => n.build(map(f)(p), map(f)(q))
+      case n@Node(c: Seq[AST]) => n.build(c.map(map(f)))
       case l@Leaf(_) => f(l)
     }
 
@@ -193,7 +193,7 @@ class NodeTest {
     val notNode2Patterns: Seq[Pattern] = Seq(TestPatterns.plusApp, TestPatterns.int1)
 
     val collectedPatterns: Seq[Pattern] = (node2Patterns :+ notNode2Patterns).collect({
-      case n@Node2(x: Pattern, y: Pattern) => n(x, y)
+      case n@Node2(x: Pattern, y: Pattern) => n.build(x, y)
     })
 
     assert(node2Patterns == collectedPatterns)
