@@ -3,6 +3,9 @@ package org.kframework.minikore
 import org.apache.commons.io.FileUtils
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.kframework.minikore.interfaces.build.Builders
+import org.kframework.minikore.implementation.DefaultBuilders
+import org.kframework.minikore.parser.{MiniToText, ParseError, TextToMini}
 
 class TextToMiniTest {
 
@@ -28,10 +31,10 @@ class TextToMiniTest {
         |[]
         |module A
         |  import B []
-        |  axiom \true ( ) [ ]
-        |  axiom \and  (  \true (   ) ,   \false (  )  )  [   ]
-        |  axiom \or  (  \true (   ) ,   \false (  )  )  [   ]
-        |  axiom \forall  ( X:K, \true() ) [ ]
+        |  axiom \top ( ) [ ]
+        |  axiom \and  (  \top (   ) ,   \bottom (  )  )  [   ]
+        |  axiom \or  (  \top (   ) ,   \bottom (  )  )  [   ]
+        |  axiom \forall  ( X:K, \top() ) [ ]
         |  axiom ` f o o `() []
         |  axiom ` _,_( ) `() []
         |endmodule []
@@ -215,7 +218,7 @@ class TextToMiniTest {
       case ParseError(msg) =>
         assertEquals(
           strip("""
-            |ERROR: Line 3: Column 11: Expected \true, \false, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equal, but '\my'
+            |ERROR: Line 3: Column 11: Expected \top, \bottom, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equals, but '\my'
             |  axiom \my()
             |          ^
             |"""),
@@ -251,7 +254,7 @@ class TextToMiniTest {
       strip("""
         |[]
         |module A
-        |  axiom \tr ue() []
+        |  axiom \to p() []
         |endmodule []
         |""")
     try {
@@ -261,8 +264,8 @@ class TextToMiniTest {
       case ParseError(msg) =>
         assertEquals(
           strip("""
-            |ERROR: Line 3: Column 12: Expected 'u', but ' '
-            |  axiom \tr ue() []
+            |ERROR: Line 3: Column 12: Expected 'p', but ' '
+            |  axiom \to p() []
             |           ^
             |"""),
           msg)
@@ -274,7 +277,7 @@ class TextToMiniTest {
       strip("""
         |[]
         |module A
-        |  axiom \t rue() []
+        |  axiom \t op() []
         |endmodule []
         |""")
     try {
@@ -284,8 +287,8 @@ class TextToMiniTest {
       case ParseError(msg) =>
         assertEquals(
           strip("""
-            |ERROR: Line 3: Column 11: Expected \true, \false, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equal, but '\t '
-            |  axiom \t rue() []
+            |ERROR: Line 3: Column 11: Expected \top, \bottom, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equals, but '\t '
+            |  axiom \t op() []
             |          ^
             |"""),
           msg)
@@ -306,7 +309,7 @@ class TextToMiniTest {
       case ParseError(msg) =>
         assertEquals(
           strip("""
-            |ERROR: Line 3: Column 11: Expected \true, \false, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equal, but '\t '
+            |ERROR: Line 3: Column 11: Expected \top, \bottom, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equals, but '\t '
             |  axiom \t
             |          ^
             |"""),
@@ -552,7 +555,7 @@ class TextToMiniTest {
     */
   def parseTest(src: FileOrSource, expected: String): Unit = {
     //TODO: Make test file parametric over builders.
-    val builder: Builders = DefaultBuilders.build
+    val builder: Builders = DefaultBuilders
     val begin = java.lang.System.nanoTime()
     val minikore = src match {
       case src: FileFOS => new TextToMini(builder).parse(src.x)

@@ -1,26 +1,28 @@
-package org.kframework.minikore
+package org.kframework.minikore.parser
 
 import org.apache.commons.lang3.StringEscapeUtils
-import org.kframework.minikore.MiniKore.{Definition, DomainValue, Rule, Axiom, SortDeclaration, SymbolDeclaration, Import, Module, Attributes, Sentence}
-import org.kframework.minikore.PatternInterface._
+import org.kframework.minikore.implementation.MiniKore.{Definition, Module, Sentence, SortDeclaration, SymbolDeclaration, Rule, Axiom, Attributes, Import}
+import org.kframework.minikore.interfaces.pattern._
+import org.kframework.minikore.interfaces.build.Builders
 
 /** Parsing error exception. */
 case class ParseError(msg: String) extends Exception(msg) // ParseError.msg eq Exception.detailMessage, i.e., msg() == getMessage()
 
-/** A parser for [[MiniKore]].
+/** A parser for [[org.kframework.minikore.interfaces.pattern]].
   *
   * @constructor Creates a new parser.
   */
 class TextToMini(b: Builders) {
+  import b._
   private val scanner = new Scanner()
 
-  /** Parses the file and returns [[MiniKore.Definition]]. */
+  /** Parses the file and returns [[org.kframework.minikore.implementation.MiniKore.Definition]]. */
   @throws(classOf[ParseError])
   def parse(file: java.io.File): Definition = {
     parse(io.Source.fromFile(file))
   }
 
-  /** Parses from the stream and returns [[MiniKore.Definition]]. */
+  /** Parses from the stream and returns [[org.kframework.minikore.implementation.MiniKore.Definition]]. */
   @throws(classOf[ParseError])
   def parse(src: io.Source): Definition = {
     try {
@@ -161,45 +163,45 @@ class TextToMini(b: Builders) {
         val c1 = scanner.next()
         val c2 = scanner.next()
         (c1, c2) match {
-          case ('t', 'r') => consume("ue"); consumeWithLeadingWhitespaces("("); consumeWithLeadingWhitespaces(")")
-            b.True()
-          case ('f', 'a') => consume("lse"); consumeWithLeadingWhitespaces("("); consumeWithLeadingWhitespaces(")")
-            b.False()
+          case ('t', 'o') => consume("p"); consumeWithLeadingWhitespaces("("); consumeWithLeadingWhitespaces(")")
+            Top()
+          case ('b', 'o') => consume("ttom"); consumeWithLeadingWhitespaces("("); consumeWithLeadingWhitespaces(")")
+            Bottom()
           case ('a', 'n') => consume("d"); consumeWithLeadingWhitespaces("(")
             val p1 = parsePattern(); consumeWithLeadingWhitespaces(",")
             val p2 = parsePattern(); consumeWithLeadingWhitespaces(")")
-            b.And(p1, p2)
+            And(p1, p2)
           case ('o', 'r') => consumeWithLeadingWhitespaces("(")
             val p1 = parsePattern(); consumeWithLeadingWhitespaces(",")
             val p2 = parsePattern(); consumeWithLeadingWhitespaces(")")
-            b.Or(p1, p2)
+            Or(p1, p2)
           case ('n', 'o') => consume("t"); consumeWithLeadingWhitespaces("(")
             val p = parsePattern(); consumeWithLeadingWhitespaces(")")
-            b.Not(p)
+            Not(p)
           case ('i', 'm') => consume("plies"); consumeWithLeadingWhitespaces("(")
             val p1 = parsePattern(); consumeWithLeadingWhitespaces(",")
             val p2 = parsePattern(); consumeWithLeadingWhitespaces(")")
-            b.Implies(p1, p2)
+            Implies(p1, p2)
           case ('e', 'x') => consume("ists"); consumeWithLeadingWhitespaces("(")
             val v = parseVariable(); consumeWithLeadingWhitespaces(",")
             val p = parsePattern(); consumeWithLeadingWhitespaces(")")
-            b.Exists(v, p)
+            Exists(v, p)
           case ('f', 'o') => consume("rall"); consumeWithLeadingWhitespaces("(")
             val v = parseVariable(); consumeWithLeadingWhitespaces(",")
             val p = parsePattern(); consumeWithLeadingWhitespaces(")")
-            b.ForAll(v, p)
+            ForAll(v, p)
           case ('n', 'e') => consume("xt"); consumeWithLeadingWhitespaces("(")
             val p = parsePattern(); consumeWithLeadingWhitespaces(")")
-            b.Next(p)
+            Next(p)
           case ('r', 'e') => consume("write"); consumeWithLeadingWhitespaces("(")
             val p1 = parsePattern(); consumeWithLeadingWhitespaces(",")
             val p2 = parsePattern(); consumeWithLeadingWhitespaces(")")
-            b.Rewrite(p1, p2)
-          case ('e', 'q') => consume("ual"); consumeWithLeadingWhitespaces("(")
+            Rewrite(p1, p2)
+          case ('e', 'q') => consume("uals"); consumeWithLeadingWhitespaces("(")
             val p1 = parsePattern(); consumeWithLeadingWhitespaces(",")
             val p2 = parsePattern(); consumeWithLeadingWhitespaces(")")
-            b.Equals(p1, p2)
-          case (err1, err2) => throw error("\\true, \\false, \\and, \\or, \\not, \\implies, \\exists, \\forall, \\next, \\rewrite, or \\equal",
+            Equals(p1, p2)
+          case (err1, err2) => throw error("\\top, \\bottom, \\and, \\or, \\not, \\implies, \\exists, \\forall, \\next, \\rewrite, or \\equals",
                                            "'\\" + err1 + err2 + "'")
         }
       case c => scanner.putback(c)
@@ -207,7 +209,7 @@ class TextToMini(b: Builders) {
         scanner.nextWithSkippingWhitespaces() match {
           case ':' => // TODO(Daejun): check if symbol is Name
             val sort = parseSort()
-            b.Variable(symbol, sort).asInstanceOf[Variable]
+            Variable(symbol, sort).asInstanceOf[Variable]
           case '(' =>
             scanner.nextWithSkippingWhitespaces() match {
               case '"' => scanner.putback('"')
@@ -217,7 +219,7 @@ class TextToMini(b: Builders) {
               case c => scanner.putback(c)
                 val args = parseList(parsePattern, ',', ')')
                 consumeWithLeadingWhitespaces(")")
-                b.Application(symbol, args)
+                Application(symbol, args)
             }
           case err => throw error("':' or '('", err)
         }
@@ -229,7 +231,7 @@ class TextToMini(b: Builders) {
     val name = parseName()
     consumeWithLeadingWhitespaces(":")
     val sort = parseSort()
-    b.Variable(name, sort)
+    Variable(name, sort)
   }
 
   //////////////////////////////////////////////////////////
