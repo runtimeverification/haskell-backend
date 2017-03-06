@@ -47,18 +47,18 @@ class NodeTest {
     }
 
     def getLeaf2Count(p: Pattern): Int = p match {
-      case Leaf2(_ , _) => 1
+      case Leaf2(_, _) => 1
       case Node(c: Seq[Pattern]) => c.map(getLeaf2Count) sum
       case _ => 0
     }
 
     def renameVariable(p: Pattern): Pattern = p match {
-      case n@BinderNode(v: Variable, p: Pattern) => {
-        val freshVar: Pattern = v.build(("#" + v._1, v._2))
-        n.build(Seq(freshVar, renameVariable(p)))
+      case n@BinderNode(v@Variable(Name(name), _), p: Pattern) => {
+        val freshVar: Pattern = v.build(Name("#" + name), v._2)
+        n.build(freshVar, renameVariable(p))
       }
       case n@Node(c: Seq[Pattern]) => n.build(c.map(renameVariable))
-      case Variable(name: String, sort: String) => b.Variable("#" + name, sort)
+      case Variable(Name(name: String), s: Sort) => b.Variable(Name("#" + name), s)
       case other@_ => other
     }
 
@@ -73,25 +73,25 @@ class NodeTest {
   object TestPatterns {
     val b: build.Builders = DefaultBuilders
 
-    val int1: Pattern = b.DomainValue("1", "Int")
+    val int1: Pattern = b.DomainValue(Label("Int"), Value("1"))
 
-    val int2: Pattern = b.DomainValue("2", "Int")
+    val int2: Pattern = b.DomainValue(Label("Int"), Value("2"))
 
-    val int4: Pattern = b.DomainValue("4", "Int")
+    val int4: Pattern = b.DomainValue(Label("Int"), Value("4"))
 
-    val stringFoo: Pattern = b.DomainValue("Foo", "String")
+    val stringFoo: Pattern = b.DomainValue(Label("String"), Value("foo"))
 
-    val intVar = b.Variable("A", "Int")
+    val intVar = b.Variable(Name("A"), Sort("Int"))
 
     val e1: Pattern = b.And(intVar, int1)
 
-    val e2: Pattern = b.And(b.Variable("C", "String"), stringFoo)
+    val e2: Pattern = b.And(b.Variable(Name("C"), Sort("String")), stringFoo)
 
-    val plusApp: Pattern = b.Application("Plus", Seq(int1, int2))
+    val plusApp: Pattern = b.Application(Label("Plus"), Seq(int1, int2))
 
-    val simpleVariable: Variable = b.Variable("X", "Test")
+    val simpleVariable: Variable = b.Variable(Name("X"), Sort("Test"))
 
-    val simpleDomainValue: DomainValue = b.DomainValue("test", "String")
+    val simpleDomainValue: DomainValue = b.DomainValue(Label("test"), Value("String"))
 
     val top: Top = b.Top()
 
@@ -105,11 +105,11 @@ class NodeTest {
 
     val simpleImplies: Implies = b.Implies(bottom, top)
 
-    val simpleIntVar: Variable = b.Variable("A", "Int")
+    val simpleIntVar: Variable = b.Variable(Name("A"), Sort("Int"))
 
     val simpleExists: Exists = b.Exists(simpleIntVar, b.Equals(simpleIntVar, int1))
 
-    val simpleForAll: ForAll = b.ForAll(simpleIntVar, b.Equals(simpleIntVar, b.Variable("Y", "Int")))
+    val simpleForAll: ForAll = b.ForAll(simpleIntVar, b.Equals(simpleIntVar, b.Variable(Name("Y"), Sort("Int"))))
 
     val simpleEquals: Equals = b.Equals(simpleOr, top)
 
@@ -167,11 +167,11 @@ class NodeTest {
 
   @Test def simpleQuantifierTests(): Unit = {
     def changeVar: (Pattern) => Pattern = {
-      case Variable(name, sort) => b.Variable("#" + name, sort)
+      case Variable(Name(name), sort) => b.Variable(Name("#" + name), sort)
       case n@_ => n
     }
 
-    val changedVar: Variable = b.Variable("#A", "Int")
+    val changedVar: Variable = b.Variable(Name("#A"), Sort("Int"))
 
     val changedExists: Exists = b.Exists(changedVar, b.Equals(changedVar, TestPatterns.int1))
 
@@ -182,8 +182,9 @@ class NodeTest {
     def binder: Seq[Pattern] = Seq(t.simpleExists, t.simpleForAll)
 
     val changedVars: Seq[Pattern] = binder.map(TestFunctions.renameVariable)
-    assert(Seq(b.Exists(b.Variable("#A", "Int"), b.Equals(b.Variable("#A", "Int"), TestPatterns.int1)),
-      b.ForAll(b.Variable("#A", "Int"), b.Equals(b.Variable("#A", "Int"), b.Variable("#Y", "Int")))) == changedVars)
+    assert(Seq(b.Exists(b.Variable(Name("#A"), Sort("Int")),
+      b.Equals(b.Variable(Name("#A"), Sort("Int")), TestPatterns.int1)), b.ForAll(b.Variable(Name("#A"), Sort("Int")),
+      b.Equals(b.Variable(Name("#A"), Sort("Int")), b.Variable(Name("#Y"), Sort("Int"))))) == changedVars)
   }
 
   @Test def binderAsNode2Test(): Unit = {
