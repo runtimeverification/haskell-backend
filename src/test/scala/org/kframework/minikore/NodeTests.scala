@@ -55,10 +55,10 @@ class NodeTest {
     def renameVariable(p: Pattern): Pattern = p match {
       case n@BinderNode(v@Variable(name, _), p: Pattern) => {
         val freshVar: Pattern = v.build("#" + name, v._2)
-        n.build(freshVar, renameVariable(p))
+        n.build(Seq(freshVar, renameVariable(p)))
       }
       case n@Node(c: Seq[Pattern]) => n.build(c.map(renameVariable))
-      case Variable(name, s: Sort) => b.Variable("#" + name, s)
+      case v@Variable(name, s: Sort) => v.asInstanceOf[Leaf2[Name, Sort]].build(("#" + name, s))
       case other@_ => other
     }
 
@@ -71,13 +71,16 @@ class NodeTest {
   }
 
   object TestPatterns {
+
     val b: build.Builders = DefaultBuilders
 
-    val int1: Pattern = b.DomainValue(Symbol("Int"), "1")
+    private val symbol = interfaces.pattern.Symbol("Int")
 
-    val int2: Pattern = b.DomainValue(Symbol("Int"), "2")
+    val int1: Pattern = b.DomainValue(symbol, "1")
 
-    val int4: Pattern = b.DomainValue(Symbol("Int"), "4")
+    val int2: Pattern = b.DomainValue(symbol, "2")
+
+    val int4: Pattern = b.DomainValue(symbol, "4")
 
     val stringFoo: Pattern = b.DomainValue(Symbol("String"), "foo")
 
@@ -167,7 +170,7 @@ class NodeTest {
 
   @Test def simpleQuantifierTests(): Unit = {
     def changeVar: (Pattern) => Pattern = {
-      case Variable(name, sort) => b.Variable("#" + name, sort)
+      case Variable(name, Sort(s)) => b.Variable("#" + name, Sort(s))
       case n@_ => n
     }
 
