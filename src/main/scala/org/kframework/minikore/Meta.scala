@@ -1,10 +1,15 @@
 package org.kframework.minikore
 
-import org.kframework.minikore.MiniKore._
+import org.kframework.minikore.interfaces.pattern._
+import org.kframework.minikore.interfaces.build.Builders
 
 
-object MiniKoreMeta {
-  import MiniKorePatternUtils._
+case class MiniKoreMeta(b: Builders) {
+
+  import b._
+  import org.kframework.minikore.implementation.MiniKore.{Definition, Module, Sentence, Import, SortDeclaration, SymbolDeclaration, Attributes, Rule, Axiom}
+  val patternUtils = MiniKorePatternUtils(b)
+  import patternUtils._
 
   // TODO: I would like to make the downers take things of type Application (instead of Pattern), but that
   // means that all of the recursively downed parts of the matched patterns have to be type annotated, which
@@ -29,6 +34,8 @@ object MiniKoreMeta {
   val upPattern: Pattern => Application = {
     case Application(label, Nil)  => Application("KMLApplication", Seq(upSymbol(label)))
     case Application(label, args) => Application("KMLApplication", Seq(upSymbol(label), upPatternList(args)))
+    case Top()                    => Application("KMLTop", Nil)
+    case Bottom()                 => Application("KMLBottom", Nil)
     case And(p, q)                => Application("KMLAnd", Seq(upPattern(p), upPattern(q)))
     case Or(p, q)                 => Application("KMLOr",  Seq(upPattern(p), upPattern(q)))
     case Not(p)                   => Application("KMLNot",  Seq(upPattern(p)))
@@ -37,15 +44,15 @@ object MiniKoreMeta {
     case ForAll(v, p)             => Application("KMLForAll",  Seq(upPattern(p)))
     case Next(p)                  => Application("KMLNext",  Seq(upPattern(p)))
     case Rewrite(p, q)            => Application("KMLRewrite",  Seq(upPattern(p), upPattern(q)))
-    case Equal(p, q)              => Application("KMLEqual",  Seq(upPattern(p), upPattern(q)))
+    case Equals(p, q)             => Application("KMLEquals",  Seq(upPattern(p), upPattern(q)))
     case vb@Variable(_, _)        => upVariable(vb)
     case dv@DomainValue(_, _)     => upDomainValue(dv)
   }
   val downPattern: Pattern => Pattern = {
     case Application("KMLApplication", label :: Nil)          => Application(downSymbol(label), Seq.empty)
     case Application("KMLApplication", label :: pList :: Nil) => Application(downSymbol(label), downPatternList(pList))
-    case Application("KMLTrue", Nil)                          => True()
-    case Application("KMLFalse", Nil)                         => False()
+    case Application("KMLTop", Nil)                           => Top()
+    case Application("KMLBottom", Nil)                        => Bottom()
     case Application("KMLAnd", p1 :: p2 :: Nil)               => And(downPattern(p1), downPattern(p2))
     case Application("KMLOr", p1 :: p2 :: Nil)                => Or(downPattern(p1), downPattern(p2))
     case Application("KMLNot", p :: Nil)                      => Not(downPattern(p))
@@ -54,7 +61,7 @@ object MiniKoreMeta {
     case Application("KMLForAll", v :: p :: Nil)              => ForAll(downVariable(v), downPattern(p))
     case Application("KMLNext", p :: Nil)                     => Next(downPattern(p))
     case Application("KMLRewrite", p1 :: p2 :: Nil)           => Rewrite(downPattern(p1), downPattern(p2))
-    case Application("KMLEqual", p1 :: p2 :: Nil)             => Equal(downPattern(p1), downPattern(p2))
+    case Application("KMLEquals", p1 :: p2 :: Nil)            => Equals(downPattern(p1), downPattern(p2))
     case vb@Application("KMLVariable", _)                     => downVariable(vb)
     case dv@Application("KMLDomainValue", _)                  => downDomainValue(dv)
   }

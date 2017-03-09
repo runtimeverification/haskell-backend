@@ -1,9 +1,14 @@
 package org.kframework.minikore
 
-import org.kframework.minikore.MiniKore._
+import org.kframework.minikore.interfaces.pattern._
+import org.kframework.minikore.interfaces.build.Builders
 
+case class MiniKoreOuterUtils(b: Builders) {
 
-object MiniKoreOuterUtils {
+  import b._
+
+  // TODO: These should be abstracted
+  import org.kframework.minikore.implementation.MiniKore.{Definition, Module, Sentence, Import, SortDeclaration, SymbolDeclaration, Attributes, Rule, Axiom}
 
   // Attributes
   // ==========
@@ -46,7 +51,9 @@ object MiniKoreOuterUtils {
 }
 
 
-object MiniKorePatternUtils {
+case class MiniKorePatternUtils(b: Builders) {
+
+  import b._
 
   // Map
   // ===
@@ -61,7 +68,7 @@ object MiniKorePatternUtils {
     case ForAll(v, p)             => ForAll(v, f(p))
     case Next(p)                  => Next(f(p))
     case Rewrite(p, q)            => Rewrite(f(p), f(q))
-    case Equal(p, q)              => Equal(f(p), f(q))
+    case Equals(p, q)             => Equals(f(p), f(q))
     case p                        => p
   }
 
