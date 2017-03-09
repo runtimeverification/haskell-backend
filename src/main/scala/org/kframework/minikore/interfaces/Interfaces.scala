@@ -9,6 +9,7 @@ object tree {
     */
   sealed trait AST
 
+
   /**
     * Specifies Node behavior of [[pattern.Pattern]].
     *
@@ -26,6 +27,7 @@ object tree {
     def unapply(arg: Node): Option[Seq[Pattern]] = Some(arg.args)
   }
 
+
   /**
     * Specifies Leaf Behavior of Patterns.
     *
@@ -41,6 +43,7 @@ object tree {
   object Leaf {
     def unapply[C](arg: Leaf[C]): Option[C] = Some(arg.contents)
   }
+
 
   /**
     * A Leaf with Product2[CC1, CC2] as its contents. [[pattern.DomainValue]], [[pattern.Variable]] extend this trait.
@@ -95,6 +98,7 @@ object tree {
     def unapply(arg: Node0): Boolean = true
   }
 
+
   /**
     * A Node with a single pattern in its args list. Extended by [[pattern.Next]], [[pattern.Not]].
     */
@@ -109,10 +113,10 @@ object tree {
     }
   }
 
-
   object Node1 {
     def unapply(arg: Node1): Option[Pattern] = Some(arg._1)
   }
+
 
   /**
     * A Node with two Patterns in its args list. Extended by [[pattern.Or]], [[pattern.And]], [[pattern.Implies]], [[pattern.Equals]], [[pattern.Rewrite]].
@@ -163,9 +167,6 @@ object pattern {
   /* ML Pattern Type */
   sealed trait Pattern extends AST
 
-  type Name = String
-
-  type Sort = String
 
   /**
     * Matching Logic Variable.
@@ -187,9 +188,14 @@ object pattern {
   }
 
 
-  type Label = String
+  case class Symbol(symbol: String)
+
+  case class Sort(sort: String)
 
   type Value = String
+
+  type Name = String
+
 
   /**
     * Matching Logic DomainValue.
@@ -198,17 +204,18 @@ object pattern {
     *    - contents of type Product2[Label, Value].
     *
     * Requires (Implementation for members)
-    *    - _1 of type [[Label]].
+    *    - _1 of type [[Symbol]].
     *    - _2 of type [[Value]].
-    *    - build method taking arguments ([[Label]], [[Value]]) and returning [[DomainValue]].
+    *    - build method taking arguments ([[Symbol]], [[Value]]) and returning [[DomainValue]].
     */
-  trait DomainValue extends Pattern with Leaf2[Label, Value] {
-    def build(_1: Label, _2: Value): DomainValue
+  trait DomainValue extends Pattern with Leaf2[Symbol, Value] {
+    def build(_1: Symbol, _2: Value): DomainValue
   }
 
   object DomainValue {
-    def unapply(arg: DomainValue): Option[(Label, Value)] = Some(arg._1, arg._2)
+    def unapply(arg: DomainValue): Option[(Symbol, Value)] = Some(arg._1, arg._2)
   }
+
 
   /**
     * Matching Logic Top.
@@ -227,6 +234,7 @@ object pattern {
     def unapply(arg: Top): Boolean = true
   }
 
+
   /**
     * Matching Logic Bottom.
     *
@@ -243,6 +251,7 @@ object pattern {
   object Bottom {
     def unapply(arg: Bottom): Boolean = true
   }
+
 
   /**
     * Matching Logic And.
@@ -307,16 +316,16 @@ object pattern {
     * Matching Logic Symbol Application.
     *
     * Requires (Implementation for members)
-    *    - _1 of type [[Label]], representing symbol from Matching Logic Algebra.
+    *    - _1 of type [[Symbol]], representing symbol from Matching Logic Algebra.
     *    - args of type Seq[Pattern].
-    *    - build method taking arguments ([[Label]], Seq[Pattern]) and returning [[Application]].
+    *    - build method taking arguments ([[Symbol]], Seq[Pattern]) and returning [[Application]].
     */
-  trait Application extends Pattern with LabeledNode[Label] {
-    override def build(_1: Label, args: Seq[Pattern]): Application
+  trait Application extends Pattern with LabeledNode[Symbol] {
+    override def build(_1: Symbol, args: Seq[Pattern]): Application
   }
 
   object Application {
-    def unapply(arg: Application): Option[(Label, Seq[Pattern])] = Some(arg._1, arg.args)
+    def unapply(arg: Application): Option[(Symbol, Seq[Pattern])] = Some(arg._1, arg.args)
   }
 
 
@@ -453,7 +462,7 @@ object build {
 
     def Variable(_1: Name, _2: Sort): Variable
 
-    def DomainValue(_1: Label, _2: Sort): DomainValue
+    def DomainValue(_1: Symbol, _2: Value): DomainValue
 
     def Top(): Top
 
@@ -477,7 +486,7 @@ object build {
 
     def Rewrite(_1: Pattern, _2: Pattern): Rewrite
 
-    def Application(_1: Label, args: Seq[Pattern]): Application
+    def Application(_1: Symbol, args: Seq[Pattern]): Application
   }
 
 }
