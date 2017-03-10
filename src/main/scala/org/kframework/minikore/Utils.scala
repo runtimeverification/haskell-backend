@@ -32,9 +32,9 @@ case class MiniKoreOuterUtils(b: Builders) {
     case Definition(modules, att) => Definition(modules map onAttributesMod(f), att map f)
   }
 
-  def getAttributeKey(key: String, atts: Attributes): Seq[Seq[Pattern]] = atts collect { case Application(`key`, args) => args }
+  def getAttributeKey(key: Symbol, atts: Attributes): Seq[Seq[Pattern]] = atts collect { case Application(`key`, args) => args }
 
-  def updateAttribute(key: String, value: Pattern*): Attributes => Attributes = _ map {
+  def updateAttribute(key: Symbol, value: Pattern*): Attributes => Attributes = _ map {
     case Application(`key`, _) => Application(key, value)
     case pattern               => pattern
   }
@@ -44,7 +44,7 @@ case class MiniKoreOuterUtils(b: Builders) {
 
   def allSentences(d: Definition): Seq[Sentence] = d.modules flatMap (_.sentences)
 
-  def allSorts(d: Definition): Set[String] = allSentences(d) collect {
+  def allSorts(d: Definition): Set[Sort] = allSentences(d) collect {
     case SortDeclaration(sort, _)         => sort
     case SymbolDeclaration(sort, _, _, _) => sort
   } toSet
@@ -85,24 +85,24 @@ case class MiniKorePatternUtils(b: Builders) {
   // Cons Lists
   // ==========
   // Create cons-lists given the klabel for the `cons` operator and the `nil` operator.
-  // consListLeft("apply", "4")(Seq("1","2","3")) => apply(1,apply(2,apply(3,4)))
-  // consListRight("apply", "0")(Seq("1","2","3")) => apply(apply(apply(0,1),2),3)
+  // consListLeft( Symbol("apply"), Symbol("4"))(Seq(Symbol("1"),Symbol("2"),Symbol("3"))) => apply(1,apply(2,apply(3,4)))
+  // consListRight(Symbol("apply"), Symbol("0"))(Seq(Symbol("1"),Symbol("2"),Symbol("3"))) => apply(apply(apply(0,1),2),3)
 
-  def consListLeft(cons: String, nil: String)(ps: Seq[Pattern]): Pattern = ps.foldRight(Application(nil, Seq.empty))((acc, next) => Application(cons, Seq(acc, next)))
-  def consListLeftSubsort(cons: String, nil: String)(ps: Seq[Pattern]): Pattern = ps.size match {
+  def consListLeft(cons: Symbol, nil: Symbol)(ps: Seq[Pattern]): Pattern = ps.foldRight(Application(nil, Seq.empty))((acc, next) => Application(cons, Seq(acc, next)))
+  def consListLeftSubsort(cons: Symbol, nil: Symbol)(ps: Seq[Pattern]): Pattern = ps.size match {
     case 0 => Application(nil, Seq.empty)
     case 1 => ps.head
     case _ => Application(cons, Seq(ps.head, consListLeftSubsort(cons, nil)(ps.tail)))
   }
-  //def consListRight(cons: String, nil: String)(ps: Seq[Pattern]): Pattern = ps.foldLeft(Application(nil, Seq.empty))((acc, next) => Application(cons, Seq(acc, next)))
+  //def consListRight(cons: Symbol, nil: Symbol)(ps: Seq[Pattern]): Pattern = ps.foldLeft(Application(nil, Seq.empty))((acc, next) => Application(cons, Seq(acc, next)))
 
   // Flatten parse-trees
   // ===================
-  // flattenByLabels(apply(apply(apply(0,1),2),3)) => Seq("0","1","2","3")
-  // flattenByLabels(apply(1,apply(2,apply(3,4)))) => Seq("1","2","3","4")
+  // flattenBySymbols(apply(apply(apply(0,1),2),3)) => Seq(Symbol("0"),Symbol("1"),Symbol("2"),Symbol("3"))
+  // flattenBySymbols(apply(1,apply(2,apply(3,4)))) => Seq(Symbol("1"),Symbol("2"),Symbol("3"),Symbol("4"))
 
-  def flattenByLabels(labels: String*): Pattern => Seq[Pattern] = {
-    case Application(label, args) if labels contains label => args flatMap flattenByLabels(labels:_*)
+  def flattenBySymbols(labels: Symbol*): Pattern => Seq[Pattern] = {
+    case Application(label, args) if labels contains label => args flatMap flattenBySymbols(labels:_*)
     case parsed                                            => Seq(parsed)
   }
 }
