@@ -14,9 +14,7 @@ case class MiniKoreMeta(b: Builders) {
   // Meta KLabels
   // ============
 
-  val KSymbol       = Symbol("KSymbol")
-  val KSymbolList   = Symbol("KSymbolList")
-  val KSymbolListMt = Symbol(".KSymbolList")
+  val KSymbol = Symbol("KSymbol")
 
   val KMLVariable    = Symbol("KMLVariable")
   val KMLDomainValue = Symbol("KMLDomainValue")
@@ -40,6 +38,7 @@ case class MiniKoreMeta(b: Builders) {
   val KSort              = Symbol("KSort")
   val KSortList          = Symbol("KSortList")
   val KSortListMt        = Symbol(".KSortList")
+
   val KImport            = Symbol("KImport")
   val KSortDeclaration   = Symbol("KSortDeclaration")
   val KSymbolDeclaration = Symbol("KSymbolDeclaration")
