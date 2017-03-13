@@ -14,9 +14,9 @@ case class MiniKoreMeta(b: Builders) {
   // Meta KLabels
   // ============
 
-  val KSymbol        = Symbol("KSymbol")
-  val KSymbolList    = Symbol("KSymbolList")
-  val KSymbolListMt  = Symbol(".KSymbolList")
+  val KSymbol       = Symbol("KSymbol")
+  val KSymbolList   = Symbol("KSymbolList")
+  val KSymbolListMt = Symbol(".KSymbolList")
 
   val KMLVariable    = Symbol("KMLVariable")
   val KMLDomainValue = Symbol("KMLDomainValue")
@@ -46,47 +46,44 @@ case class MiniKoreMeta(b: Builders) {
   val KRule              = Symbol("KRule")
   val KAxiom             = Symbol("KAxiom")
 
-  val KAttributes        = Symbol("KAttributes")
-  val KAttributesMt      = Symbol(".KAttributes")
-  val KSentenceList      = Symbol("KSentenceList")
-  val KSentenceListMt    = Symbol(".KSentenceList")
+  val KAttributes     = Symbol("KAttributes")
+  val KAttributesMt   = Symbol(".KAttributes")
+  val KSentenceList   = Symbol("KSentenceList")
+  val KSentenceListMt = Symbol(".KSentenceList")
 
   val KModule       = Symbol("KModule")
   val KModuleList   = Symbol("KModuleList")
   val KModuleListMt = Symbol(".KModuleList")
   val KDefinition   = Symbol("KDefinition")
 
-  // Patterns
-  // ========
+  // Leaf Data
+  // =========
 
-  // TODO: I would like to make the downers take things of type Application (instead of Pattern), but that
-  // means that all of the recursively downed parts of the matched patterns have to be type annotated, which
-  // is quite verbose and ugly. Should we make a new subsort of just Application in a trait called "MetaPattern"
-  // or something like that?
+  val upDomainValue: DomainValue => Application = { case DomainValue(name, value) => Application(KMLDomainValue, Seq(upName(name), upValue(value))) }
+  val downDomainValue: Pattern => DomainValue   = { case Application(`KMLDomainValue`, name :: value :: Nil) => DomainValue(downName(name), downValue(value)) }
 
-  val upDomainValue: DomainValue => Application = { case DomainValue(name, value) => Application(KMLDomainValue, Seq(upSymbol(name), upValue(value))) }
-  val downDomainValue: Pattern => DomainValue   = { case Application(`KMLDomainValue`, name :: value :: Nil) => DomainValue(downSymbol(name), downValue(value)) }
+  val upVariable: Variable => Application = { case Variable(name, sort) => Application(KMLVariable, Seq(upName(name), upSort(sort))) }
+  val downVariable: Pattern => Variable   = { case Application(KMLVariable, name :: sort :: Nil) => Variable(downName(name), downSort(sort)) }
+
+  // specific uppers/downer helpers for various pieces of data
 
   val upSymbol: Symbol => Application = { case Symbol(value) => upDomainValue(DomainValue(KSymbol, value)) }
   val downSymbol: Pattern => Symbol   = downDomainValue andThen { case DomainValue(`KSymbol`, value) => Symbol(value) }
 
-  val upValue: Value => Application = (value: Value) => Application(Symbol(value), Seq.empty)
-  val downValue: Pattern => Value   = { case Application(Symbol(value), Nil) => value }
+  val upSort: Sort => Application = { case Sort(value) => upDomainValue(DomainValue(KSort, value)) }
+  val downSort: Pattern => Sort   = downDomainValue andThen { case DomainValue(`KSort`, value) => Sort(value) }
 
   val upName: Name => Application = (name: Name) => Application(Symbol(name), Seq.empty)
   val downName: Pattern => Name   = { case Application(Symbol(name), Nil) => name }
 
-  val upSort: Sort => Application = { case Sort(value) => upDomainValue(DomainValue(KSort, value)) }
-  val downSort: Pattern => Sort   = downDomainValue andThen { case DomainValue(`KSort`, value) => Sort(value) }
-
-//  def upSymbolList(concrete: Seq[Symbol]): Pattern = consListLeft(KSymbolList, KSymbolListMt)(concrete map upSymbol)
-//  def downSymbolList(parsed: Pattern): Seq[Symbol] = flattenBySymbols(KSymbolList, KSymbolListMt)(parsed) map downSymbol
+  val upValue: Value => Application = (value: Value) => Application(Symbol(value), Seq.empty)
+  val downValue: Pattern => Value   = { case Application(Symbol(value), Nil) => value }
 
   def upSortList(concrete: Seq[Sort]): Pattern = consListLeft(KSortList, KSortListMt)(concrete map upSort)
   def downSortList(parsed: Pattern): Seq[Sort] = flattenBySymbols(KSortList, KSortListMt)(parsed) map downSort
 
-  val upVariable: Variable => Application = { case Variable(name, sort) => Application(KMLVariable, Seq(upName(name), upSort(sort))) }
-  val downVariable: Pattern => Variable   = { case Application(KMLVariable, name :: sort :: Nil) => Variable(downName(name), downSort(sort)) }
+  // Pattern Structure
+  // =================
 
   val upPattern: Pattern => Application = {
     case Application(label, Nil)  => Application(KMLApplication, Seq(upSymbol(label)))
