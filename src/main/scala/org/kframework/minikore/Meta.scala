@@ -136,14 +136,14 @@ case class MiniKoreMeta(b: Builders) {
   val upSentence: Sentence => Pattern = {
     case Import(name, atts)                         => Application(KImport, Seq(upName(name), upAttributes(atts)))
     case SortDeclaration(sort, atts)                => Application(KSortDeclaration, Seq(upSort(sort), upAttributes(atts)))
-    // case SymbolDeclaration(sort, label, args, atts) => Application(KSymbolDeclaration, Seq(upSort(sort), upSymbol(label), upSortList(args), upAttributes(atts)))
+    case SymbolDeclaration(sort, label, args, atts) => Application(KSymbolDeclaration, Seq(upSort(sort), upSymbol(label), upSortList(args), upAttributes(atts)))
     case Rule(pattern, atts)                        => Application(KRule, Seq(upPattern(pattern), upAttributes(atts)))
     case Axiom(pattern, atts)                       => Application(KAxiom, Seq(upPattern(pattern), upAttributes(atts)))
   }
   val downSentence: Pattern => Sentence = {
     case Application(`KImport`, name :: atts :: Nil)                             => Import(downName(name), downAttributes(atts))
     case Application(`KSortDeclaration`, sort :: atts :: Nil)                    => SortDeclaration(downSort(sort), downAttributes(atts))
-    // case Application(`KSymbolDeclaration`, sort :: label :: args :: atts :: Nil) => SymbolDeclaration(downSort(sort), downSymbol(label), downSortList(args), downAttributes(atts))
+    case Application(`KSymbolDeclaration`, sort :: label :: args :: atts :: Nil) => SymbolDeclaration(downSort(sort), downSymbol(label), downSortList(args), downAttributes(atts))
     case Application(`KRule`, rule :: atts :: Nil)                               => Rule(downPattern(rule), downAttributes(atts))
     case Application(`KAxiom`, rule :: atts :: Nil)                              => Axiom(downPattern(rule), downAttributes(atts))
   }
