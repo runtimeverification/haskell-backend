@@ -13,19 +13,20 @@ class MetaTest {
   val b: build.Builders = DefaultBuilders
   import b._
 
-  def testMetaLevel(ioPairs: Seq[(Pattern, Pattern)], up: Pattern => Pattern, down: Pattern => Pattern): Unit = {
+  def testMetaLevel[A](ioPairs: Seq[(A, Application)], up: A => Application, down: Pattern => A): Unit = {
     ioPairs forEach ((input, output) => {
 
-      // test one level of up/down
+      // test inverse of up/down functions
       assertEquals(output, up(input))
       assertEquals(input, down(output))
 
-      // test stability of up/down
-      assertEquals(input, down(down(up(up(input)))))
-      assertEquals(input, down(down(down(up(up(up(input)))))))
-      assertEquals(output, down(up(up(input))))
-      assertEquals(output, down(down(up(up(up(input))))))
-
+      // test stability of representation wrt upPattern/downPattern
+      val upP2   : Pattern => Pattern = upPattern   andThen upPattern
+      val downP2 : Pattern => Pattern = downPattern andThen downPattern
+      assertEquals(input, down(downP2(upP2(up(input)))))
+      assertEquals(output, downP2(upP2(up(input))))
+      assertEquals(input, down(downPattern(downP2(upPattern(upP2(up(input)))))))
+      assertEquals(output, downPattern(downP2(upPattern(upP2(up(input))))))
     })
   }
 
@@ -50,8 +51,7 @@ class MetaTest {
         = Seq( (Symbol("mySym")  , Application(KMLDomainValue, Seq(Application(KSymbol, Seq.empty), Application(Symbol("mySym"), Seq.empty))))
              , (Symbol("mySym2") , Application(KMLDomainValue, Seq(Application(KSymbol, Seq.empty), Application(Symbol("mySym2"), Seq.empty))))
              )
-    // doesn't type-check
-    // testMetaLevel(symbolTests, upSymbol, downSymbol)
+    testMetaLevel(symbolTests, upSymbol, downSymbol)
   }
 
   def sortTest(): Unit = ???
