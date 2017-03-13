@@ -64,7 +64,7 @@ case class MiniKoreMeta(b: Builders) {
   val downDomainValue: Pattern => DomainValue   = { case Application(`KDomainValue`, symbol :: value :: Nil) => DomainValue(downSymbol(symbol), downValue(value)) }
 
   val upVariable: Variable => Application = { case Variable(name, sort) => Application(KVariable, Seq(upName(name), upSort(sort))) }
-  val downVariable: Pattern => Variable   = { case Application(KVariable, name :: sort :: Nil) => Variable(downName(name), downSort(sort)) }
+  val downVariable: Pattern => Variable   = { case Application(`KVariable`, name :: sort :: Nil) => Variable(downName(name), downSort(sort)) }
 
   // specific uppers/downer helpers for various pieces of data
 
