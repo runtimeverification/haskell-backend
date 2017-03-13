@@ -54,10 +54,41 @@ class MetaTest {
     testMetaLevel(symbolTests, upSymbol, downSymbol)
   }
 
-  def sortTest(): Unit = ???
-  def nameTest(): Unit = ???
-  def valueTest(): Unit = ???
-  def sortListTest(): Unit = ???
+  @Test def sortTest(): Unit = {
+    val sortTests: Seq[(Sort, Application)]
+        = Seq( (Sort("Int")   , Application(KMLDomainValue, Seq(Application(KSort, Seq.empty), Application(Symbol("Int"), Seq.empty))))
+             , (Sort("Float") , Application(KMLDomainValue, Seq(Application(KSort, Seq.empty), Application(Symbol("Float"), Seq.empty))))
+             )
+    testMetaLevel(sortTests, upSort, downSort)
+  }
+
+  @Test def nameTest(): Unit = {
+    val nameTests: Seq[(Name, Application)]
+        = Seq( ("x"     , Application(Symbol("x"), Seq.empty))
+             , ("zoenu" , Application(Symbol("zoenu"), Seq.empty))
+             )
+    testMetaLevel(nameTests, upName, downName)
+  }
+
+  @Test def valueTest(): Unit = {
+    val valueTests: Seq[(Value, Application)]
+        = Seq( ("x"     , Application(Symbol("x"), Seq.empty))
+             , ("zoenu" , Application(Symbol("zoenu"), Seq.empty))
+             )
+    testMetaLevel(valueTests, upValue, downValue)
+  }
+
+  @Test def sortListTest(): Unit = {
+    val sortListTests: Seq[(Seq[Sort], Application)]
+        = Seq( (Seq.empty                                          , Application(KSortListMt, Seq.empty)                                                       )
+             , (Seq(Sort("Int"))                                   , Application(KSortList, Seq(upSort(Sort("Int")), Application(KSentenceListMt, Seq.empty))) )
+             , (Seq(Sort("Int"), Sort("Float"), Sort("List{Int}")) , Application(KSortList, Seq(upSort(Sort("Int")),
+                                                                     Application(KSortList, Seq(upSort(Sort("Float")),
+                                                                     Application(KSortList, Seq(upSort(Sort("List{Int}")),
+                                                                     Application(KSortListMt, Seq.empty)))))))                                                 )
+             )
+    testMetaLevel(sortListTests, upSortList, downSortList)
+  }
 
   def patternTest(): Unit = ???
   def patternListTest(): Unit = ???
