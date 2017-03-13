@@ -59,8 +59,8 @@ case class MiniKoreMeta(b: Builders) {
   // Leaf Data
   // =========
 
-  val upDomainValue: DomainValue => Application = { case DomainValue(name, value) => Application(KMLDomainValue, Seq(upName(name), upValue(value))) }
-  val downDomainValue: Pattern => DomainValue   = { case Application(`KMLDomainValue`, name :: value :: Nil) => DomainValue(downName(name), downValue(value)) }
+  val upDomainValue: DomainValue => Application = { case DomainValue(Symbol(name), value) => Application(KMLDomainValue, Seq(upName(name), upValue(value))) }
+  val downDomainValue: Pattern => DomainValue   = { case Application(`KMLDomainValue`, name :: value :: Nil) => DomainValue(Symbol(downName(name)), downValue(value)) }
 
   val upVariable: Variable => Application = { case Variable(name, sort) => Application(KMLVariable, Seq(upName(name), upSort(sort))) }
   val downVariable: Pattern => Variable   = { case Application(KMLVariable, name :: sort :: Nil) => Variable(downName(name), downSort(sort)) }
