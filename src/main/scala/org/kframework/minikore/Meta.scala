@@ -79,8 +79,8 @@ case class MiniKoreMeta(b: Builders) {
   val upValue: Value => Application = (value: Value) => Application(Symbol(value), Seq.empty)
   val downValue: Pattern => Value   = { case Application(Symbol(value), Nil) => value }
 
-  def upSortList(concrete: Seq[Sort]): Pattern = consListLeft(KSortList, KSortListMt)(concrete map upSort)
-  def downSortList(parsed: Pattern): Seq[Sort] = flattenBySymbols(KSortList, KSortListMt)(parsed) map downSort
+  def upSortList(concrete: Seq[Sort]): Application = consListLeft(KSortList, KSortListMt)(concrete map upSort)
+  def downSortList(parsed: Pattern): Seq[Sort]     = flattenBySymbols(KSortList, KSortListMt)(parsed) map downSort
 
   // Pattern Structure
   // =================
@@ -121,7 +121,7 @@ case class MiniKoreMeta(b: Builders) {
   }
 
   def upPatternList(concretes: Seq[Pattern]): Pattern = consListLeft(KMLPatternList, KMLPatternListMt)(concretes map upPattern)
-  def downPatternList(parsed: Pattern): Seq[Pattern] = flattenBySymbols(KMLPatternList, KMLPatternListMt)(parsed) map downPattern
+  def downPatternList(parsed: Pattern): Seq[Pattern]  = flattenBySymbols(KMLPatternList, KMLPatternListMt)(parsed) map downPattern
 
   // Sentences
   // =========

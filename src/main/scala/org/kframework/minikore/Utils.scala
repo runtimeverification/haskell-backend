@@ -88,7 +88,7 @@ case class MiniKorePatternUtils(b: Builders) {
   // consListLeft( Symbol("apply"), Symbol("4"))(Seq(Symbol("1"),Symbol("2"),Symbol("3"))) => apply(1,apply(2,apply(3,4)))
   // consListRight(Symbol("apply"), Symbol("0"))(Seq(Symbol("1"),Symbol("2"),Symbol("3"))) => apply(apply(apply(0,1),2),3)
 
-  def consListLeft(cons: Symbol, nil: Symbol)(ps: Seq[Pattern]): Pattern = ps.foldRight(Application(nil, Seq.empty))((acc, next) => Application(cons, Seq(acc, next)))
+  def consListLeft(cons: Symbol, nil: Symbol)(ps: Seq[Pattern]): Application = ps.foldRight(Application(nil, Seq.empty))((acc, next) => Application(cons, Seq(acc, next)))
   def consListLeftSubsort(cons: Symbol, nil: Symbol)(ps: Seq[Pattern]): Pattern = ps.size match {
     case 0 => Application(nil, Seq.empty)
     case 1 => ps.head
