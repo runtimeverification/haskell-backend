@@ -101,10 +101,6 @@ object ASTTestUtils {
   }
 
   def renameAllVariables(p: Pattern): Pattern = p match {
-    case n@BinderNode(v@Variable(name, s), p: Pattern) => {
-      val freshVar: Pattern = v.build("#" + name, s)
-      n.build(Seq(freshVar, renameAllVariables(p)))
-    }
     case n@Node(c: Seq[Pattern]) => n.build(c.map(renameAllVariables))
     case l@Leaf2(x: Name, y: Sort) => l match {
       case _: Variable => l.build("#" + x, y)
@@ -131,7 +127,6 @@ object ASTTestUtils {
       case _ => map(subst(m))(p)
     }
   }
-
 
 }
 
