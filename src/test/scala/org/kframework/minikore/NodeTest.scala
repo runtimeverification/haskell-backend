@@ -100,12 +100,12 @@ object ASTTestUtils {
     case Node(c: Seq[Pattern]) => c.map(getLeaf2Count).sum
   }
 
-  def renameAllVariable(p: Pattern): Pattern = p match {
+  def renameAllVariables(p: Pattern): Pattern = p match {
     case n@BinderNode(v@Variable(name, s), p: Pattern) => {
       val freshVar: Pattern = v.build("#" + name, s)
-      n.build(Seq(freshVar, renameAllVariable(p)))
+      n.build(Seq(freshVar, renameAllVariables(p)))
     }
-    case n@Node(c: Seq[Pattern]) => n.build(c.map(renameAllVariable))
+    case n@Node(c: Seq[Pattern]) => n.build(c.map(renameAllVariables))
     case l@Leaf2(x: Name, y: Sort) => l match {
       case _: Variable => l.build("#" + x, y)
       case other@_ => other
@@ -118,6 +118,20 @@ object ASTTestUtils {
     case n@Node(c: Seq[AST]) => n.build(c.map(map(f)))
     case l@Leaf(_) => f(l)
   }
+
+  def subst(m: Map[Variable, Pattern])(p: Pattern): Pattern = {
+    def fresh(v: Variable): Variable = v.build(v._1 + "!new!", v._2)
+
+    p match {
+      case v@Variable(_, _) => if (m.contains(v)) m(v) else p
+      case bn@BinderNode(boundVar, boundPattern) => {
+        val freshVar: Variable = fresh(boundVar)
+        bn.build(freshVar, subst(m + (boundVar -> freshVar))(boundPattern))
+      }
+      case _ => map(subst(m))(p)
+    }
+  }
+
 
 }
 
@@ -180,13 +194,13 @@ class NodeTest {
 
     val changedExists: Exists = Exists(changedVar, Equals(changedVar, int1))
 
-    assertEquals(changedExists, map(renameAllVariable)(simpleExists))
+    assertEquals(changedExists, map(renameAllVariables)(simpleExists))
   }
 
   @Test def binderTest(): Unit = {
     def binder: Seq[Pattern] = Seq(simpleExists, simpleForAll)
 
-    val changedVars: Seq[Pattern] = binder.map(renameAllVariable)
+    val changedVars: Seq[Pattern] = binder.map(renameAllVariables)
     assertEquals(Seq(Exists(Variable("#A", Sort("Int")),
       Equals(Variable("#A", Sort("Int")), int1)), ForAll(Variable("#A", Sort("Int")),
       Equals(Variable("#A", Sort("Int")), Variable("#Y", Sort("Int"))))), changedVars)
@@ -202,6 +216,19 @@ class NodeTest {
     })
 
     assertEquals(node2Patterns, collectedPatterns)
+  }
+
+  @Test def testSubstitution(): Unit = {
+    val p = Top()
+    val v = Bottom()
+    val x = Variable("x", Sort("K"))
+    val e = Exists(x, x)
+    val x1 = Variable("x!new!", Sort("K"))
+    val e1 = Exists(x1, x1)
+    val m = Map(x -> v)
+    assertEquals(subst(m)(p), p)
+    assertEquals(subst(m)(x), v)
+    assertEquals(subst(m)(e), e1)
   }
 
 }
