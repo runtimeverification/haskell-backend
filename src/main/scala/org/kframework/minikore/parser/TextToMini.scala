@@ -1,25 +1,28 @@
-package org.kframework.minikore
+package org.kframework.minikore.parser
 
 import org.apache.commons.lang3.StringEscapeUtils
-import org.kframework.minikore.MiniKore._
+import org.kframework.minikore.implementation.MiniKore.{Definition, Module, Sentence, SortDeclaration, SymbolDeclaration, Rule, Axiom, Attributes, Import}
+import org.kframework.minikore.interfaces.pattern._
+import org.kframework.minikore.interfaces.build.Builders
 
 /** Parsing error exception. */
 case class ParseError(msg: String) extends Exception(msg) // ParseError.msg eq Exception.detailMessage, i.e., msg() == getMessage()
 
-/** A parser for [[MiniKore]].
+/** A parser for [[org.kframework.minikore.interfaces.pattern]].
   *
   * @constructor Creates a new parser.
   */
-class TextToMini {
+class TextToMini(b: Builders) {
+  import b._
   private val scanner = new Scanner()
 
-  /** Parses the file and returns [[MiniKore.Definition]]. */
+  /** Parses the file and returns [[org.kframework.minikore.implementation.MiniKore.Definition]]. */
   @throws(classOf[ParseError])
   def parse(file: java.io.File): Definition = {
     parse(io.Source.fromFile(file))
   }
 
-  /** Parses from the stream and returns [[MiniKore.Definition]]. */
+  /** Parses from the stream and returns [[org.kframework.minikore.implementation.MiniKore.Definition]]. */
   @throws(classOf[ParseError])
   def parse(src: io.Source): Definition = {
     try {
@@ -88,11 +91,11 @@ class TextToMini {
         scanner.nextWithSkippingWhitespaces() match {
           case '[' => scanner.putback('[')
             val att = parseAttributes()
-            val sen = SortDeclaration(sort, att)
+            val sen = SortDeclaration(Sort(sort), att)
             parseSentences(sentences :+ sen)
           case ':' => consume(":=")
             val (symbol, args, att) = parseSymbolDeclaration()
-            val sen = SymbolDeclaration(sort, symbol, args, att)
+            val sen = SymbolDeclaration(Sort(sort), Symbol(symbol), args, att)
             parseSentences(sentences :+ sen)
           case err => throw error("'[' or ':'", err)
         }
@@ -110,13 +113,13 @@ class TextToMini {
 
   // SymbolDeclaration = Symbol ( List{Sort, ',', ')'} ) Attributes
   // Sort = Name
-  private def parseSymbolDeclaration(): Tuple3[String, Seq[String], Attributes] = {
+  private def parseSymbolDeclaration(): Tuple3[String, Seq[Sort], Attributes] = {
     val symbol = parseSymbol()
     consumeWithLeadingWhitespaces("(")
     val args = parseList(parseSort, ',', ')')
     consumeWithLeadingWhitespaces(")")
     val att = parseAttributes()
-    (symbol, args, att)
+    (symbol, args.map(Sort.apply), att)
   }
 
   // Import = ModuleName Attributes
@@ -160,10 +163,10 @@ class TextToMini {
         val c1 = scanner.next()
         val c2 = scanner.next()
         (c1, c2) match {
-          case ('t', 'r') => consume("ue"); consumeWithLeadingWhitespaces("("); consumeWithLeadingWhitespaces(")")
-            True()
-          case ('f', 'a') => consume("lse"); consumeWithLeadingWhitespaces("("); consumeWithLeadingWhitespaces(")")
-            False()
+          case ('t', 'o') => consume("p"); consumeWithLeadingWhitespaces("("); consumeWithLeadingWhitespaces(")")
+            Top()
+          case ('b', 'o') => consume("ttom"); consumeWithLeadingWhitespaces("("); consumeWithLeadingWhitespaces(")")
+            Bottom()
           case ('a', 'n') => consume("d"); consumeWithLeadingWhitespaces("(")
             val p1 = parsePattern(); consumeWithLeadingWhitespaces(",")
             val p2 = parsePattern(); consumeWithLeadingWhitespaces(")")
@@ -194,11 +197,11 @@ class TextToMini {
             val p1 = parsePattern(); consumeWithLeadingWhitespaces(",")
             val p2 = parsePattern(); consumeWithLeadingWhitespaces(")")
             Rewrite(p1, p2)
-          case ('e', 'q') => consume("ual"); consumeWithLeadingWhitespaces("(")
+          case ('e', 'q') => consume("uals"); consumeWithLeadingWhitespaces("(")
             val p1 = parsePattern(); consumeWithLeadingWhitespaces(",")
             val p2 = parsePattern(); consumeWithLeadingWhitespaces(")")
-            Equal(p1, p2)
-          case (err1, err2) => throw error("\\true, \\false, \\and, \\or, \\not, \\implies, \\exists, \\forall, \\next, \\rewrite, or \\equal",
+            Equals(p1, p2)
+          case (err1, err2) => throw error("\\top, \\bottom, \\and, \\or, \\not, \\implies, \\exists, \\forall, \\next, \\rewrite, or \\equals",
                                            "'\\" + err1 + err2 + "'")
         }
       case c => scanner.putback(c)
@@ -206,17 +209,17 @@ class TextToMini {
         scanner.nextWithSkippingWhitespaces() match {
           case ':' => // TODO(Daejun): check if symbol is Name
             val sort = parseSort()
-            Variable(symbol, sort)
+            Variable(symbol, Sort(sort))
           case '(' =>
             scanner.nextWithSkippingWhitespaces() match {
               case '"' => scanner.putback('"')
                 val value = parseString()
                 consumeWithLeadingWhitespaces(")")
-                DomainValue(symbol, value)
+                DomainValue(Symbol(symbol), value)
               case c => scanner.putback(c)
                 val args = parseList(parsePattern, ',', ')')
                 consumeWithLeadingWhitespaces(")")
-                Application(symbol, args)
+                Application(Symbol(symbol), args)
             }
           case err => throw error("':' or '('", err)
         }
@@ -228,7 +231,7 @@ class TextToMini {
     val name = parseName()
     consumeWithLeadingWhitespaces(":")
     val sort = parseSort()
-    Variable(name, sort)
+    Variable(name, Sort(sort))
   }
 
   //////////////////////////////////////////////////////////
@@ -412,8 +415,12 @@ class TextToMini {
 object TextToMini {
   /** Check if the character is among symbol characters.
     *
+    * Requires Link To Builder Class.
     * {{{ SymbolChar = [a-zA-Z0-9.@#$%^_-]+ }}}
     */
+
+  def apply(b: Builders): TextToMini = new TextToMini(b)
+
   def isSymbolChar(c: Char): Boolean = {
     ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9') ||
       c == '.' || c == '@' || c == '#' || c == '$' || c == '%' || c == '^' || c == '_' || c == '-'

@@ -3,7 +3,9 @@ package org.kframework.minikore
 import org.apache.commons.io.FileUtils
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import org.kframework.minikore.MiniKore._
+import org.kframework.minikore.interfaces.build.Builders
+import org.kframework.minikore.implementation.DefaultBuilders
+import org.kframework.minikore.parser.{MiniToText, ParseError, TextToMini}
 
 class TextToMiniTest {
 
@@ -29,10 +31,10 @@ class TextToMiniTest {
         |[]
         |module A
         |  import B []
-        |  axiom \true ( ) [ ]
-        |  axiom \and  (  \true (   ) ,   \false (  )  )  [   ]
-        |  axiom \or  (  \true (   ) ,   \false (  )  )  [   ]
-        |  axiom \forall  ( X:K, \true() ) [ ]
+        |  axiom \top ( ) [ ]
+        |  axiom \and  (  \top (   ) ,   \bottom (  )  )  [   ]
+        |  axiom \or  (  \top (   ) ,   \bottom (  )  )  [   ]
+        |  axiom \forall  ( X:K, \top() ) [ ]
         |  axiom ` f o o `() []
         |  axiom ` _,_( ) `() []
         |endmodule []
@@ -216,7 +218,7 @@ class TextToMiniTest {
       case ParseError(msg) =>
         assertEquals(
           strip("""
-            |ERROR: Line 3: Column 11: Expected \true, \false, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equal, but '\my'
+            |ERROR: Line 3: Column 11: Expected \top, \bottom, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equals, but '\my'
             |  axiom \my()
             |          ^
             |"""),
@@ -252,7 +254,7 @@ class TextToMiniTest {
       strip("""
         |[]
         |module A
-        |  axiom \tr ue() []
+        |  axiom \to p() []
         |endmodule []
         |""")
     try {
@@ -262,8 +264,8 @@ class TextToMiniTest {
       case ParseError(msg) =>
         assertEquals(
           strip("""
-            |ERROR: Line 3: Column 12: Expected 'u', but ' '
-            |  axiom \tr ue() []
+            |ERROR: Line 3: Column 12: Expected 'p', but ' '
+            |  axiom \to p() []
             |           ^
             |"""),
           msg)
@@ -275,7 +277,7 @@ class TextToMiniTest {
       strip("""
         |[]
         |module A
-        |  axiom \t rue() []
+        |  axiom \t op() []
         |endmodule []
         |""")
     try {
@@ -285,8 +287,8 @@ class TextToMiniTest {
       case ParseError(msg) =>
         assertEquals(
           strip("""
-            |ERROR: Line 3: Column 11: Expected \true, \false, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equal, but '\t '
-            |  axiom \t rue() []
+            |ERROR: Line 3: Column 11: Expected \top, \bottom, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equals, but '\t '
+            |  axiom \t op() []
             |          ^
             |"""),
           msg)
@@ -307,7 +309,7 @@ class TextToMiniTest {
       case ParseError(msg) =>
         assertEquals(
           strip("""
-            |ERROR: Line 3: Column 11: Expected \true, \false, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equal, but '\t '
+            |ERROR: Line 3: Column 11: Expected \top, \bottom, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equals, but '\t '
             |  axiom \t
             |          ^
             |"""),
@@ -552,10 +554,12 @@ class TextToMiniTest {
     *   u : MiniKore -> String
     */
   def parseTest(src: FileOrSource, expected: String): Unit = {
+    //TODO: Make test file parametric over builders.
+    val builder: Builders = DefaultBuilders
     val begin = java.lang.System.nanoTime()
     val minikore = src match {
-      case src: FileFOS => new TextToMini().parse(src.x)
-      case src: SourceFOS => new TextToMini().parse(src.x)
+      case src: FileFOS => new TextToMini(builder).parse(src.x)
+      case src: SourceFOS => new TextToMini(builder).parse(src.x)
     }
     val end = java.lang.System.nanoTime(); println(end - begin)
     val text = MiniToText.apply(minikore)
@@ -565,7 +569,7 @@ class TextToMiniTest {
     else if (trim(expected) == trim(text)) () // t == u(p(t)) modulo leading/trailing whitespaces
     else {
       assertEquals(expected.replaceAll("\\s+", ""), text.replaceAll("\\s+", "")) //   t  ==   u(p(t))  modulo whitespaces
-      assertEquals(minikore, new TextToMini().parse(io.Source.fromString(text))) // p(t) == p(u(p(t)))
+      assertEquals(minikore, new TextToMini(builder).parse(io.Source.fromString(text))) // p(t) == p(u(p(t)))
     }
   }
 
