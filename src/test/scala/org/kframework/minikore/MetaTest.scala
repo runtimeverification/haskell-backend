@@ -33,22 +33,6 @@ class MetaTest {
     }
   }
 
-  @Test def domainValueTest(): Unit = {
-    val dvTests: Seq[(DomainValue, Application)]
-        = Seq( ( DomainValue(Symbol("Sym1"), "mySymbol") , Application(KDomainValue, Seq(upSymbol(Symbol("Sym1")), upValue("mySymbol"))) )
-             , ( DomainValue(Symbol("Sym2"), "_+_")      , Application(KDomainValue, Seq(upSymbol(Symbol("Sym2")), upValue("_+_"))) )
-             )
-    testMetaLevel(dvTests, upDomainValue, downDomainValue)
-  }
-
-  @Test def variableTest(): Unit = {
-    val varTests: Seq[(Variable, Application)]
-        = Seq( ( Variable("x", Sort("Int"))   , Application(KVariable, Seq(upName("x"), upSort(Sort("Int"))))   )
-             , ( Variable("y", Sort("Float")) , Application(KVariable, Seq(upName("y"), upSort(Sort("Float")))) )
-             )
-    testMetaLevel(varTests, upVariable, downVariable)
-  }
-
   @Test def symbolTest(): Unit = {
     val symbolTests: Seq[(Symbol, DomainValue)]
         = Seq( ( Symbol("mySym")  , DomainValue(KSymbol, "mySym")  )
@@ -92,6 +76,22 @@ class MetaTest {
                                                                                                                                                         ))))))                                )
              )
     testMetaLevel(sortListTests, upSortList, downSortList)
+  }
+
+  @Test def domainValueTest(): Unit = {
+    val dvTests: Seq[(DomainValue, Application)]
+        = Seq( ( DomainValue(Symbol("Sym1"), "mySymbol") , Application(KDomainValue, Seq(upSymbol(Symbol("Sym1")), upValue("mySymbol"))) )
+             , ( DomainValue(Symbol("Sym2"), "_+_")      , Application(KDomainValue, Seq(upSymbol(Symbol("Sym2")), upValue("_+_")))      )
+             )
+    testMetaLevel(dvTests, upDomainValue, downDomainValue)
+  }
+
+  @Test def variableTest(): Unit = {
+    val varTests: Seq[(Variable, Application)]
+        = Seq( ( Variable("x", Sort("Int"))   , Application(KVariable, Seq(upName("x"), upSort(Sort("Int"))))   )
+             , ( Variable("y", Sort("Float")) , Application(KVariable, Seq(upName("y"), upSort(Sort("Float")))) )
+             )
+    testMetaLevel(varTests, upVariable, downVariable)
   }
 
   @Test def patternTest(): Unit = {

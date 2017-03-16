@@ -105,4 +105,21 @@ case class MiniKorePatternUtils(b: Builders) {
     case Application(label, args) if labels contains label => args flatMap flattenBySymbols(labels:_*)
     case parsed                                            => Seq(parsed)
   }
+  
+  def rebuildWith(b: Builders): Pattern => Pattern = {
+    case Application(label, args)   => b.Application(label, args)
+    case And(p, q)                  => b.And(p, q)
+    case Or(p, q)                   => b.Or(p, q)
+    case Not(p)                     => b.Not(p)
+    case Implies(p, q)              => b.Implies(p, q)
+    case Exists(v, p)               => b.Exists(v, p)
+    case ForAll(v, p)               => b.ForAll(v, p)
+    case Next(p)                    => b.Next(p)
+    case Rewrite(p, q)              => b.Rewrite(p, q)
+    case Equals(p, q)               => b.Equals(p, q)
+    case Variable(name, sort)       => b.Variable(name, sort)
+    case DomainValue(symbol, value) => b.DomainValue(symbol, value)
+  }
+
+  def rebuildAllWith(b: Builders): Pattern => Pattern = traverseBottomUp(rebuildWith(b))
 }

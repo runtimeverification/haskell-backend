@@ -57,22 +57,16 @@ case class MiniKoreMeta(b: Builders) {
   val KModuleListMt = Symbol("#.ModuleList")
   val KDefinition   = Symbol("#Definition")
 
-  // Leaf Data
-  // =========
-
-  val upDomainValue: DomainValue => Application = { case DomainValue(symbol, value) => Application(KDomainValue, Seq(upSymbol(symbol), upValue(value))) }
-  val downDomainValue: Pattern => DomainValue   = { case Application(`KDomainValue`, symbol :: value :: Nil) => DomainValue(downSymbol(symbol), downValue(value)) }
-
-  val upVariable: Variable => Application = { case Variable(name, sort) => Application(KVariable, Seq(upName(name), upSort(sort))) }
-  val downVariable: Pattern => Variable   = { case Application(`KVariable`, name :: sort :: Nil) => Variable(downName(name), downSort(sort)) }
-
-  // specific uppers/downer helpers for various pieces of data
+  // Primitive Data
+  // ==============
 
   val upSymbol: Symbol => DomainValue = { case Symbol(symbol) => DomainValue(KSymbol, symbol) }
   val downSymbol: Pattern => Symbol   = { case DomainValue(`KSymbol`, symbol) => Symbol(symbol) }
 
   val upSort: Sort => DomainValue = { case Sort(sort) => DomainValue(KSort, sort) }
   val downSort: Pattern => Sort   = { case DomainValue(`KSort`, sort) => Sort(sort) }
+
+  // TODO: Perhaps we should wrap Name and Value like we do Symbols and Sorts instead of using type aliases
 
   val upName: Name => DomainValue = { case name => DomainValue(KName, name) }
   val downName: Pattern => Name   = { case DomainValue(`KName`, name) => name }
@@ -82,6 +76,15 @@ case class MiniKoreMeta(b: Builders) {
 
   def upSortList(concrete: Seq[Sort]): Application = consListLeft(KSortList, KSortListMt)(concrete map upSort)
   def downSortList(parsed: Pattern): Seq[Sort]     = flattenBySymbols(KSortList, KSortListMt)(parsed) map downSort
+
+  // Leaf Data
+  // =========
+
+  val upDomainValue: DomainValue => Application = { case DomainValue(symbol, value) => Application(KDomainValue, Seq(upSymbol(symbol), upValue(value))) }
+  val downDomainValue: Pattern => DomainValue   = { case Application(`KDomainValue`, symbol :: value :: Nil) => DomainValue(downSymbol(symbol), downValue(value)) }
+
+  val upVariable: Variable => Application = { case Variable(name, sort) => Application(KVariable, Seq(upName(name), upSort(sort))) }
+  val downVariable: Pattern => Variable   = { case Application(`KVariable`, name :: sort :: Nil) => Variable(downName(name), downSort(sort)) }
 
   // Pattern Structure
   // =================
