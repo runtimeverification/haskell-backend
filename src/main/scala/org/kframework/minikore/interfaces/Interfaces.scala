@@ -1,11 +1,28 @@
 package org.kframework.minikore.interfaces
 
+/**
+  * Provides a collection of [[tree.AST]] types, allowing for viewing [[pattern.Pattern]]s as ASTs.
+  *
+  * Sample Usage -
+  * {{{def printVariableNames(pattern: Pattern): Unit = p match {
+  *     case BinderNode(Variable(str: Name, Sort(sortName)), p: Pattern) => {
+  *       println(Name +"@" + sortName)
+  *       printVariableName(p)
+  *     }
+  *     case Node(args: Seq[Pattern]) => args.map(printVariableNames)
+  *     case Variable(str: Name, Sort(sortName)) => println(str + "@" sortName)
+  *   }
+  * }}}
+  *
+  *
+  */
 object tree {
 
   import pattern._
 
   /**
     * Base type of the Tree interface. [[pattern.Pattern]] extends AST.
+    * Represents a Pattern in Matching Logic.
     */
   sealed trait AST
 
@@ -47,6 +64,10 @@ object tree {
 
   /**
     * A Leaf with Product2[CC1, CC2] as its contents. [[pattern.DomainValue]], [[pattern.Variable]] extend this trait.
+    *
+    * [[Leaf2]] extends [[Leaf]], with Product[CC1, CC2] as its type parameter.
+    * This allows for creating a Leaf[Product[CC1, CC2]], directly using the build method, of
+    * type (CC1, CC2) => Pattern.
     *
     * @tparam CC1 Type of First Field.
     * @tparam CC2 Type of Second Field.
@@ -139,6 +160,9 @@ object tree {
 
   /**
     * Extends [[Node2]], and only allows [[pattern.Variable]] as the first element, and [[pattern.Pattern]] in its args list. Extended by [[pattern.Exists]], [[pattern.ForAll]].
+    *
+    * TODO: An extension of Binder Node may be provided in the future, to allow user defined symbols to have binder-like behavior.
+    *       These symbols may allow multiple arguments, with the variable bound in some, but not all of them.
     */
   sealed trait BinderNode extends Node2 {
     def build(_1: Variable, _2: Pattern): Pattern
@@ -159,7 +183,17 @@ object tree {
 
 }
 
-
+/**
+  * Provides all Pattern types, and destructors for matching on [[pattern.Pattern]]s.
+  *
+  * Sample Usage -
+  * {{{
+  *   def filterAndConstructs(patterns: Seq[Pattern]): Seq[Pattern] = patterns collect {
+  *     case a@And(x: Pattern, y: Pattern) => a
+  *   }
+  * }}}
+  *
+  */
 object pattern {
 
   import tree._
@@ -188,9 +222,9 @@ object pattern {
   }
 
 
-  case class Symbol(symbol: String)
+  case class Symbol(str: String)
 
-  case class Sort(sort: String)
+  case class Sort(str: String)
 
   type Value = String
 
@@ -201,7 +235,7 @@ object pattern {
     * Matching Logic DomainValue.
     *
     * Provides (Implementations for members)
-    *    - contents of type Product2[Label, Value].
+    *    - contents of type Product2[Symbol, Value].
     *
     * Requires (Implementation for members)
     *    - _1 of type [[Symbol]].
@@ -449,6 +483,20 @@ object pattern {
 
 }
 
+/**
+  * Provides a Builder type that allows building Pattern types in [[pattern]].
+  *
+  * Sample Usage -
+  *
+  * Given a concrete implementation of [[build.Builders]], one can create new patters -
+  * {{{
+  *   /* Given Concrete Implementation */
+  *   val builder: Builders = ConcreteBuilders
+  *   /* A Pattern Or(X:Int, Y:Int) can be constructed in the following way */
+  *   val or: Or = builder.Or(builder.Variable("X", Sort("Int")), builder."Y", Sort("Int"))
+  * }}}
+  *
+  */
 object build {
 
   import pattern._
