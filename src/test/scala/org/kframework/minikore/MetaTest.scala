@@ -111,12 +111,17 @@ class MetaTest {
     def mDV(s: Symbol, v: Value): Application         = upDomainValue(DomainValue(s, v))
 
     val patternTests: Seq[(Pattern, Pattern)]
-        = Seq( ( Bottom()                                  , mBot                                  )
-             , ( Top()                                     , mTop                                  )
-             , ( And(Bottom(), Top())                      , mAnd(mBot, mTop)                      )
-             , ( Or(Top(), Top())                          , mOr(mTop, mTop)                       )
-             , ( Implies(Top(), Bottom())                  , mImplies(mTop, mBot)                  )
-             , ( Exists(Variable("x", Sort("Int")), Top()) , mExists(mVar("x", Sort("Int")), mTop) )
+        = Seq( ( Bottom()                                     , mBot                                   )
+             , ( Top()                                        , mTop                                   )
+             , ( And(Bottom(), Top())                         , mAnd(mBot, mTop)                       )
+             , ( Or(Top(), Top())                             , mOr(mTop, mTop)                        )
+             , ( Implies(Top(), Bottom())                     , mImplies(mTop, mBot)                   )
+             , ( Exists(Variable("x", Sort("Int")), Top())    , mExists(mVar("x", Sort("Int")), mTop)  )
+             , ( ForAll(Variable("y", Sort("Bool")), Bottom()), mForAll(mVar("y", Sort("Bool")), mBot) )
+             , ( Next(Top())                                  , mNext(mTop)                            )
+             , ( Rewrite(Bottom(), Top())                     , mRewrite(mBot, mTop)                   )
+             , ( Variable("x", Sort("Int"))                   , mVar("x", Sort("Int"))                 )
+             , ( DomainValue(Symbol("dec"), "10")             , mDV(Symbol("dec"), "10")               )
              )
     testMetaLevel(patternTests, upPattern, downPattern)
   }
@@ -137,7 +142,16 @@ class MetaTest {
 //    case vb@Variable(_, _)        => upVariable(vb)
 //    case dv@DomainValue(_, _)     => upDomainValue(dv)
 
-  def patternListTest(): Unit = ???
+  @Test def patternListTest(): Unit = {
+    val patternListTests: Seq[(Seq[Pattern], Application)]
+        = Seq( ( Seq.empty, Application(KPatternListMt, Seq.empty) )
+             , ( Seq(Top()), Application(KPatternList, Seq(upPattern(Top()), Application(KPatternListMt, Seq.empty))) )
+             , ( Seq(Top(), Next(Top()), Bottom()), Application(KPatternList, Seq(upPattern(Top()),
+                    Application(KPatternList, Seq(upPattern(Next(Top())),
+                      Application(KPatternList, Seq(upPattern(Bottom()),
+                        Application(KPatternListMt, Seq.empty)))))))))
+    testMetaLevel(patternListTests, upPatternList, downPatternList)
+}
 
   def attributesTest(): Unit = ???
   def sentenceTest(): Unit = ???
