@@ -12,7 +12,7 @@ case class TestPatterns(b: Builders) {
 
   import b._
 
-  private val symbol = interfaces.pattern.Symbol("Int")
+  private val symbol = Symbol("Int")
 
   val int1: Pattern = DomainValue(symbol, "1")
 
@@ -38,21 +38,21 @@ case class TestPatterns(b: Builders) {
 
   val bottom: Bottom = Bottom()
 
-  val simpleAnd: And = And(top, bottom)
+  val simpleAnd: Pattern = And(top, bottom)
 
-  val simpleOr: Or = Or(top, bottom)
+  val simpleOr: Pattern = Or(top, bottom)
 
-  val simpleNot: Not = Not(top)
+  val simpleNot: Pattern = Not(top)
 
-  val simpleImplies: Implies = Implies(bottom, top)
+  val simpleImplies: Pattern = Implies(bottom, top)
 
   val simpleIntVar: Variable = Variable("A", Sort("Int"))
 
-  val simpleExists: Exists = Exists(simpleIntVar, Equals(simpleIntVar, int1))
+  val simpleExists: Pattern = Exists(simpleIntVar, Equals(simpleIntVar, int1))
 
-  val simpleForAll: ForAll = ForAll(simpleIntVar, Equals(simpleIntVar, Variable("Y", Sort("Int"))))
+   val simpleForAll: Pattern = ForAll(simpleIntVar, Equals(simpleIntVar, Variable("Y", Sort("Int"))))
 
-  val simpleEquals: Equals = Equals(simpleOr, top)
+  val simpleEquals: Pattern = Equals(simpleOr, top)
 
   val simpleList: Seq[Pattern] = Seq(top, bottom, simpleAnd, simpleOr, simpleNot, simpleImplies,
     simpleIntVar, simpleExists, simpleForAll, simpleEquals, plusApp, e1, e2)
@@ -187,7 +187,7 @@ class NodeTest {
   @Test def simpleQuantifierTests(): Unit = {
     val changedVar: Variable = Variable("#A", Sort("Int"))
 
-    val changedExists: Exists = Exists(changedVar, Equals(changedVar, int1))
+    val changedExists: Pattern = Exists(changedVar, Equals(changedVar, int1))
 
     assertEquals(changedExists, map(renameAllVariables)(simpleExists))
   }
