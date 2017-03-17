@@ -85,6 +85,59 @@ object MiniKore {
 
 }
 
+
+/** Helpers for building MiniKore definitions **/
+object MiniKoreDSL {
+
+  import MiniKore._
+
+  // Show Name and Value have wrappers? What exactly are their roles?
+  implicit def asSort(s: String): i.Sort = i.Sort(s)
+  implicit def asSymbol(s: String): i.Symbol = i.Symbol(s)
+  //implicit def asName(s: String): i.Name = i.Name(s)
+  //implicit def asValue(s: String): i.Value = i.Value(s)
+
+  case class definition(modules: Module*) {
+    def att(atts: i.Pattern*): Definition = Definition(modules, atts)
+  }
+  implicit def asDefinition(d: definition): Definition = d.att()
+
+  case class module(name: i.Name, sentences: Sentence*) {
+    def att(atts: i.Pattern*): Module = Module(name, sentences, atts)
+  }
+  implicit def asModule(m: module): Module = m.att()
+
+  case class imports(name: i.Name) {
+    def att(atts: i.Pattern*): Import = Import(name, atts)
+  }
+  implicit def asImport(i: imports): Import = i.att()
+
+  case class sort(sort: i.Sort) {
+    def att(atts: i.Pattern*): SortDeclaration = SortDeclaration(sort, atts)
+  }
+  implicit def asSortDeclaration(s: sort): SortDeclaration = s.att()
+
+  case class symbol(sort: i.Sort, symbol: i.Symbol, args: i.Sort*) {
+    def att(atts: i.Pattern*): SymbolDeclaration = SymbolDeclaration(sort, symbol, args, atts)
+  }
+  implicit def asSymbolDeclaration(s: symbol): SymbolDeclaration = s.att()
+
+  case class axiom(p: i.Pattern) {
+    def att(atts: i.Pattern*): Axiom = Axiom(p, atts)
+  }
+  implicit def asAxiom(a: axiom): Axiom = a.att()
+
+  // Why have both Rule and Axiom?
+  case class rule(l: i.Pattern, r: i.Pattern) {
+    def att(atts: i.Pattern*): Axiom = Axiom(Rewrite(l, r), atts)
+  }
+  implicit def asAxiom(r: rule): Axiom = r.att()
+
+  // building terms
+  def term(symbol: i.Symbol, args: i.Pattern*): Application = Application(symbol, args)
+}
+
+
 /** Implementation of the [[org.kframework.minikore.interfaces.build.Builders]] **/
 object DefaultBuilders extends build.Builders {
 
