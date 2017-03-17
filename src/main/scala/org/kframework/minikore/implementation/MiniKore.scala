@@ -92,7 +92,7 @@ object MiniKoreDSL {
   import MiniKore._
 
   // Show Name and Value have wrappers? What exactly are their roles?
-  implicit def asSort(s: String): i.Sort = i.Sort(s)
+  implicit def asSort(s: String): i.Sort     = i.Sort(s)
   implicit def asSymbol(s: String): i.Symbol = i.Symbol(s)
   //implicit def asName(s: String): i.Name = i.Name(s)
   //implicit def asValue(s: String): i.Value = i.Value(s)

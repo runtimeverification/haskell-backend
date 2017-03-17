@@ -19,6 +19,9 @@ case class MiniKoreMeta(b: Builders) {
   val KName   = Symbol("#Name")
   val KValue  = Symbol("#Value")
 
+  val KSymbolList   = Symbol("#SymbolList")
+  val KSymbolListMt = Symbol("#.SymbolList")
+
   val KSortList   = Symbol("#SortList")
   val KSortListMt = Symbol("#.SortList")
 
