@@ -3,9 +3,9 @@ package org.kframework.minikore
 import org.junit.Test
 import org.junit.Assert._
 import org.kframework.minikore.interfaces.pattern._
-import org.kframework.minikore.interfaces.tree._
 import org.kframework.minikore.implementation.DefaultBuilders
 import org.kframework.minikore.interfaces.build
+import org.kframework.minikore.implementation.MiniKore.{Attributes, Sentence, Import, SortDeclaration, SymbolDeclaration, Rule, Axiom, Module, Definition}
 
 
 class MetaTest {
@@ -147,16 +147,66 @@ class MetaTest {
         = Seq( ( Seq.empty, Application(KPatternListMt, Seq.empty) )
              , ( Seq(Top()), Application(KPatternList, Seq(upPattern(Top()), Application(KPatternListMt, Seq.empty))) )
              , ( Seq(Top(), Next(Top()), Bottom()), Application(KPatternList, Seq(upPattern(Top()),
-                    Application(KPatternList, Seq(upPattern(Next(Top())),
-                      Application(KPatternList, Seq(upPattern(Bottom()),
-                        Application(KPatternListMt, Seq.empty)))))))))
+                   Application(KPatternList, Seq(upPattern(Next(Top())),
+                     Application(KPatternList, Seq(upPattern(Bottom()),
+                       Application(KPatternListMt, Seq.empty)))))))                                                    )
+             )
     testMetaLevel(patternListTests, upPatternList, downPatternList)
-}
+  }
 
-  def attributesTest(): Unit = ???
-  def sentenceTest(): Unit = ???
+  @Test def attributesTest(): Unit = {
+    val attributesTest: Seq[(Attributes, Pattern)]
+        = Seq( ( Seq.empty, Application(KAttributesMt, Seq.empty)                                                                   )
+             , ( Seq(Top()), Application(KAttributes, Seq(upPatternList(Seq(Top()))))                                               )
+             , ( Seq(Top(), Next(Top()), Bottom()), Application(KAttributes, Seq(upPatternList(Seq(Top(), Next(Top()), Bottom())))) )
+             )
+    testMetaLevel(attributesTest, upAttributes, downAttributes)
+  }
 
-  def moduleTest(): Unit = ???
-  def definitionTest(): Unit = ???
+  @Test def sentenceTest(): Unit = {
+    val sentenceTest: Seq[(Sentence, Application)]
+        = Seq ( ( Import("EXP", Seq(Top()))              , Application(KImport, Seq(upName("EXP"), upAttributes(Seq(Top()))))               )
+              , ( SortDeclaration(Sort("Int"), Seq.empty), Application(KSortDeclaration, Seq(upSort(Sort("Int")), upAttributes(Seq.empty))) )
+              , ( SymbolDeclaration(Sort("Exp"), Symbol("myExp"), Seq(Sort("Exp"), Sort("Int")), Seq.empty),
+                    Application(KSymbolDeclaration, Seq(upSort(Sort("Exp")), upSymbol(Symbol("myExp")),
+                      upSortList(Seq(Sort("Exp"), Sort("Int"))), upAttributes(Seq.empty)))                                                  )
+              , ( Rule(Top(), Seq(Bottom()))             , Application(KRule, Seq(upPattern(Top()), upAttributes(Seq(Bottom()))))           )
+              , ( Axiom(Bottom(), Seq(Top()))            , Application(KAxiom, Seq(upPattern(Bottom()), upAttributes(Seq(Top()))))          )
+              )
+    testMetaLevel(sentenceTest, upSentence, downSentence)
+  }
+
+  @Test def moduleTest(): Unit = {
+    val importSent = Import("BOOL", Seq(Top()))
+    val symbolDecSent = SymbolDeclaration(Sort("Exp"), Symbol("myExp"), Seq(Sort("Exp"), Sort("Int")), Seq.empty)
+    val moduleTest: Seq[(Module, Application)]
+        = Seq( ( Module("BOOL", Seq.empty, Seq.empty),
+                   Application(KModule, Seq(upName("BOOL"), Application(KSentenceListMt, Seq.empty), upAttributes(Seq.empty))) )
+             , ( Module("EXP", Seq(importSent, symbolDecSent), Seq(Top())),
+                   Application(KModule, Seq(upName("EXP"),
+                     Application(KSentenceList, Seq(upSentence(importSent),
+                       Application(KSentenceList, Seq(upSentence(symbolDecSent),
+                         Application(KSentenceListMt, Seq.empty))))),
+                     upAttributes(Seq(Top())))) )
+             )
+    testMetaLevel(moduleTest, upModule, downModule)
+  }
+
+  @Test def definitionTest(): Unit = {
+    val importSent = Import("BOOL", Seq(Top()))
+    val symbolDecSent = SymbolDeclaration(Sort("Exp"), Symbol("myExp"), Seq(Sort("Exp"), Sort("Int")), Seq.empty)
+    val emptyModule = Module("BOOL", Seq.empty, Seq.empty)
+    val nonEmptyModule = Module("EXP", Seq(importSent, symbolDecSent), Seq(Top()))
+    val definitionTest: Seq[(Definition, Application)]
+        = Seq( ( Definition(Seq.empty, Seq.empty),
+                   Application(KDefinition, Seq(upAttributes(Seq.empty), Application(KModuleListMt, Seq.empty))) )
+             , ( Definition(Seq(emptyModule, nonEmptyModule), Seq(Bottom())),
+                   Application(KDefinition, Seq(upAttributes(Seq(Bottom())),
+                     Application(KModuleList, Seq(upModule(emptyModule),
+                       Application(KModuleList, Seq(upModule(nonEmptyModule),
+                         Application(KModuleListMt, Seq.empty))))))) )
+             )
+    testMetaLevel(definitionTest, upDefinition, downDefinition)
+  }
 
 }
