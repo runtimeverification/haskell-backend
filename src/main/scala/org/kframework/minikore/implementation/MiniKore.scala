@@ -11,9 +11,16 @@ object MiniKore {
 
   type Attributes = Seq[i.Pattern]
 
-  case class Definition(modules: Seq[Module], att: Attributes)
+  case class Definition(modules: Seq[Module], att: Attributes) {
+    val sorts: Seq[i.Sort] = modules flatMap (_.sorts)
+  }
 
-  case class Module(name: i.Name, sentences: Seq[Sentence], att: Attributes)
+  case class Module(name: i.Name, sentences: Seq[Sentence], att: Attributes) {
+    val sorts: Seq[i.Sort] = sentences collect {
+      case SortDeclaration(sort, _)         => sort
+      case SymbolDeclaration(sort, _, _, _) => sort
+    }
+  }
 
   sealed trait Sentence
 
