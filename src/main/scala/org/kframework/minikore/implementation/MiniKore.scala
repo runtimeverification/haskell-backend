@@ -9,13 +9,34 @@ object MiniKore {
 
   /** A collection of classes that serve as the default implementation of the [[org.kframework.minikore.interfaces.pattern]] **/
 
+  // Outer
+  // =====
+
   type Attributes = Seq[i.Pattern]
 
+  def getAttributeKey(key: i.Symbol, atts: Attributes): Seq[Seq[i.Pattern]] = atts collect { case Application(`key`, args) => args }
+
+  def onAttributeByKey(key: i.Symbol, f: i.Pattern => i.Pattern): i.Pattern => i.Pattern = {
+    case app@Application(`key`, _) => f(app)
+    case pattern                   => pattern
+  }
+
+  // Should this use `onAttributeByKey`?
+  def updateAttribute(key: i.Symbol, value: i.Pattern*): i.Pattern => i.Pattern = {
+    case Application(`key`, _) => Application(key, value)
+    case pattern               => pattern
+  }
+
+  // TODO: Perhaps `onAttributes` should be `updateAttributes`, and there should be
+  // an `updateAttributesByKey(key: i.Symbol, f: i.Pattern => i.Pattern)` function
+  // which allows focusing on particular attributes
+
   case class Definition(modules: Seq[Module], att: Attributes) {
-
     val sorts: Set[i.Sort] = modules flatMap (_.sorts) toSet
-
     val symbols: Set[i.Symbol] = modules flatMap (_.symbols) toSet
+    val syntences: Seq[Sentence] = modules flatMap (_.sentences)
+
+    def onAttributes(f: i.Pattern => i.Pattern): Definition = Definition(modules map (_.onAttributes(f)), att map f)
   }
 
   case class Module(name: i.Name, sentences: Seq[Sentence], att: Attributes) {
@@ -28,19 +49,37 @@ object MiniKore {
     val symbols: Set[i.Symbol] = sentences collect {
       case SymbolDeclaration(_, symbol, _, _) => symbol
     } toSet
+
+    def onAttributes(f: i.Pattern => i.Pattern): Module = Module(name, sentences map (_.onAttributes(f)), att map f)
   }
 
-  sealed trait Sentence
+  // TODO: Could we provide the implementation of onAttributes at the trait level somehow?
+  sealed trait Sentence {
+    def onAttributes(f: i.Pattern => i.Pattern): Sentence
+  }
 
-  case class Import(name: i.Name, att: Attributes) extends Sentence
+  case class Import(name: i.Name, att: Attributes) extends Sentence {
+    override def onAttributes(f: i.Pattern => i.Pattern): Import = Import(name, att map f)
+  }
 
-  case class SortDeclaration(sort: i.Sort, att: Attributes) extends Sentence
+  case class SortDeclaration(sort: i.Sort, att: Attributes) extends Sentence {
+    override def onAttributes(f: i.Pattern => i.Pattern): SortDeclaration = SortDeclaration(sort, att map f)
+  }
 
-  case class SymbolDeclaration(sort: i.Sort, symbol: i.Symbol, args: Seq[i.Sort], att: Attributes) extends Sentence
+  case class SymbolDeclaration(sort: i.Sort, symbol: i.Symbol, args: Seq[i.Sort], att: Attributes) extends Sentence {
+    override def onAttributes(f: i.Pattern => i.Pattern): SymbolDeclaration = SymbolDeclaration(sort, symbol, args, att map f)
+  }
 
-  case class Rule(pattern: i.Pattern, att: Attributes) extends Sentence
+  case class Rule(pattern: i.Pattern, att: Attributes) extends Sentence {
+    override def onAttributes(f: i.Pattern => i.Pattern): Rule = Rule(pattern, att map f)
+  }
 
-  case class Axiom(pattern: i.Pattern, att: Attributes) extends Sentence
+  case class Axiom(pattern: i.Pattern, att: Attributes) extends Sentence {
+    override def onAttributes(f: i.Pattern => i.Pattern): Axiom = Axiom(pattern, att map f)
+  }
+
+  // Pattern Implementations
+  // =======================
 
   case class Variable(_1: i.Name, _2: i.Sort) extends i.Variable {
     def build(_1: i.Name, _2: i.Sort): Variable = Variable(_1, _2)
