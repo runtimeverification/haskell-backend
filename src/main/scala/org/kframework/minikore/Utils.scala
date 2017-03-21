@@ -3,56 +3,9 @@ package org.kframework.minikore
 import org.kframework.minikore.interfaces.pattern._
 import org.kframework.minikore.interfaces.build.Builders
 
-case class MiniKoreOuterUtils(b: Builders) {
-
-  import b._
-
-  // TODO: These should be abstracted
-  import org.kframework.minikore.implementation.MiniKore.{Definition, Module, Sentence, Import, SortDeclaration, SymbolDeclaration, Attributes, Rule, Axiom}
-
-  // Attributes
-  // ==========
-
-  // Apply Transformation to Attributes (Should be moved into MiniKore data-structures)
-  // So each outer data-structure would implement "HasAttributes" or something, which would have
-  // function `onAttributes` among others
-  def onAttributesSent(f: Pattern => Pattern): Sentence => Sentence = {
-    case Import(name, att)                         => Import(name, att map f)
-    case SortDeclaration(sort, att)                => SortDeclaration(sort, att map f)
-    case SymbolDeclaration(sort, label, args, att) => SymbolDeclaration(sort, label, args, att map f)
-    case Rule(pattern, att)                        => Rule(pattern, att map f)
-    case Axiom(pattern, att)                       => Axiom(pattern, att map f)
-  }
-  
-  def onAttributesMod(f: Pattern => Pattern): Module => Module = {
-    case Module(name, sentences, att) => Module(name, sentences map onAttributesSent(f), att map f)
-  }
-  
-  def onAttributesDef(f: Pattern => Pattern): Definition => Definition = {
-    case Definition(modules, att) => Definition(modules map onAttributesMod(f), att map f)
-  }
-
-  def getAttributeKey(key: Symbol, atts: Attributes): Seq[Seq[Pattern]] = atts collect { case Application(`key`, args) => args }
-
-  def updateAttribute(key: Symbol, value: Pattern*): Attributes => Attributes = _ map {
-    case Application(`key`, _) => Application(key, value)
-    case pattern               => pattern
-  }
-
-  // Definitions
-  // ===========
-
-  def allSentences(d: Definition): Seq[Sentence] = d.modules flatMap (_.sentences)
-
-  def allSorts(d: Definition): Set[Sort] = allSentences(d) collect {
-    case SortDeclaration(sort, _)         => sort
-    case SymbolDeclaration(sort, _, _, _) => sort
-  } toSet
-}
-
 
 case class MiniKorePatternUtils(b: Builders) {
-
+    
   import b._
 
   // Map
