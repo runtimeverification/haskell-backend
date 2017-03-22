@@ -9,23 +9,77 @@ object MiniKore {
 
   /** A collection of classes that serve as the default implementation of the [[org.kframework.minikore.interfaces.pattern]] **/
 
+  // Outer
+  // =====
+
   type Attributes = Seq[i.Pattern]
 
-  case class Definition(modules: Seq[Module], att: Attributes)
+  def getAttributeKey(key: i.Symbol, atts: Attributes): Seq[Seq[i.Pattern]] = atts collect { case Application(`key`, args) => args }
 
-  case class Module(name: i.Name, sentences: Seq[Sentence], att: Attributes)
+  def onAttributeByKey(key: i.Symbol, f: i.Pattern => i.Pattern): i.Pattern => i.Pattern = {
+    case app@Application(`key`, _) => f(app)
+    case pattern                   => pattern
+  }
 
-  sealed trait Sentence
+  // Should this use `onAttributeByKey`?
+  def updateAttribute(key: i.Symbol, value: i.Pattern*): i.Pattern => i.Pattern = {
+    case Application(`key`, _) => Application(key, value)
+    case pattern               => pattern
+  }
 
-  case class Import(name: i.Name, att: Attributes) extends Sentence
+  // TODO: Perhaps `onAttributes` should be `updateAttributes`, and there should be
+  // an `updateAttributesByKey(key: i.Symbol, f: i.Pattern => i.Pattern)` function
+  // which allows focusing on particular attributes
 
-  case class SortDeclaration(sort: i.Sort, att: Attributes) extends Sentence
+  case class Definition(modules: Seq[Module], att: Attributes) {
+    val sorts: Set[i.Sort] = modules flatMap (_.sorts) toSet
+    val symbols: Set[i.Symbol] = modules flatMap (_.symbols) toSet
+    val syntences: Seq[Sentence] = modules flatMap (_.sentences)
 
-  case class SymbolDeclaration(sort: i.Sort, symbol: i.Symbol, args: Seq[i.Sort], att: Attributes) extends Sentence
+    def onAttributes(f: i.Pattern => i.Pattern): Definition = Definition(modules map (_.onAttributes(f)), att map f)
+  }
 
-  case class Rule(pattern: i.Pattern, att: Attributes) extends Sentence
+  case class Module(name: i.Name, sentences: Seq[Sentence], att: Attributes) {
 
-  case class Axiom(pattern: i.Pattern, att: Attributes) extends Sentence
+    val sorts: Set[i.Sort] = sentences collect {
+      case SortDeclaration(sort, _)         => sort
+      case SymbolDeclaration(sort, _, _, _) => sort
+    } toSet
+
+    val symbols: Set[i.Symbol] = sentences collect {
+      case SymbolDeclaration(_, symbol, _, _) => symbol
+    } toSet
+
+    def onAttributes(f: i.Pattern => i.Pattern): Module = Module(name, sentences map (_.onAttributes(f)), att map f)
+  }
+
+  // TODO: Could we provide the implementation of onAttributes at the trait level somehow?
+  sealed trait Sentence {
+    def onAttributes(f: i.Pattern => i.Pattern): Sentence
+  }
+
+  case class Import(name: i.Name, att: Attributes) extends Sentence {
+    override def onAttributes(f: i.Pattern => i.Pattern): Import = Import(name, att map f)
+  }
+
+  case class SortDeclaration(sort: i.Sort, att: Attributes) extends Sentence {
+    override def onAttributes(f: i.Pattern => i.Pattern): SortDeclaration = SortDeclaration(sort, att map f)
+  }
+
+  case class SymbolDeclaration(sort: i.Sort, symbol: i.Symbol, args: Seq[i.Sort], att: Attributes) extends Sentence {
+    override def onAttributes(f: i.Pattern => i.Pattern): SymbolDeclaration = SymbolDeclaration(sort, symbol, args, att map f)
+  }
+
+  case class Rule(pattern: i.Pattern, att: Attributes) extends Sentence {
+    override def onAttributes(f: i.Pattern => i.Pattern): Rule = Rule(pattern, att map f)
+  }
+
+  case class Axiom(pattern: i.Pattern, att: Attributes) extends Sentence {
+    override def onAttributes(f: i.Pattern => i.Pattern): Axiom = Axiom(pattern, att map f)
+  }
+
+  // Pattern Implementations
+  // =======================
 
   case class Variable(_1: i.Name, _2: i.Sort) extends i.Variable {
     def build(_1: i.Name, _2: i.Sort): Variable = Variable(_1, _2)
@@ -84,6 +138,59 @@ object MiniKore {
   }
 
 }
+
+
+/** Helpers for building MiniKore definitions **/
+object MiniKoreDSL {
+
+  import MiniKore._
+
+  // Show Name and Value have wrappers? What exactly are their roles?
+  implicit def asSort(s: String): i.Sort     = i.Sort(s)
+  implicit def asSymbol(s: String): i.Symbol = i.Symbol(s)
+  //implicit def asName(s: String): i.Name = i.Name(s)
+  //implicit def asValue(s: String): i.Value = i.Value(s)
+
+  case class definition(modules: Module*) {
+    def att(atts: i.Pattern*): Definition = Definition(modules, atts)
+  }
+  implicit def asDefinition(d: definition): Definition = d.att()
+
+  case class module(name: i.Name, sentences: Sentence*) {
+    def att(atts: i.Pattern*): Module = Module(name, sentences, atts)
+  }
+  implicit def asModule(m: module): Module = m.att()
+
+  case class imports(name: i.Name) {
+    def att(atts: i.Pattern*): Import = Import(name, atts)
+  }
+  implicit def asImport(i: imports): Import = i.att()
+
+  case class sort(sort: i.Sort) {
+    def att(atts: i.Pattern*): SortDeclaration = SortDeclaration(sort, atts)
+  }
+  implicit def asSortDeclaration(s: sort): SortDeclaration = s.att()
+
+  case class symbol(sort: i.Sort, symbol: i.Symbol, args: i.Sort*) {
+    def att(atts: i.Pattern*): SymbolDeclaration = SymbolDeclaration(sort, symbol, args, atts)
+  }
+  implicit def asSymbolDeclaration(s: symbol): SymbolDeclaration = s.att()
+
+  case class axiom(p: i.Pattern) {
+    def att(atts: i.Pattern*): Axiom = Axiom(p, atts)
+  }
+  implicit def asAxiom(a: axiom): Axiom = a.att()
+
+  // Why have both Rule and Axiom?
+  case class rule(l: i.Pattern, r: i.Pattern) {
+    def att(atts: i.Pattern*): Axiom = Axiom(Rewrite(l, r), atts)
+  }
+  implicit def asAxiom(r: rule): Axiom = r.att()
+
+  // building terms
+  def term(symbol: i.Symbol, args: i.Pattern*): Application = Application(symbol, args)
+}
+
 
 /** Implementation of the [[org.kframework.minikore.interfaces.build.Builders]] **/
 object DefaultBuilders extends build.Builders {
