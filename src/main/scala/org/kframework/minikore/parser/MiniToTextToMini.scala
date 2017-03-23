@@ -2,7 +2,7 @@ package org.kframework.minikore.parser
 
 import org.apache.commons.io.FileUtils
 import org.kframework.minikore.implementation.DefaultBuilders
-import org.kframework.minikore.implementation.MiniKore.Definition
+import org.kframework.minikore.interfaces.outer.Definition
 import org.kframework.minikore.interfaces.build.Builders
 
 // TODO(Daejun): drop this file

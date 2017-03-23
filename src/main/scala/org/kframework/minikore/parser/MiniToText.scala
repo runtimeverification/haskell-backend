@@ -1,27 +1,28 @@
 package org.kframework.minikore.parser
 
 import org.apache.commons.lang3.StringEscapeUtils
-import org.kframework.minikore.implementation.MiniKore.{Definition, Import, Rule, Axiom, Module, Attributes, Sentence, SymbolDeclaration, SortDeclaration}
+import org.kframework.minikore.interfaces.outer.{Definition, Module, Sentence, Attributes}
+import org.kframework.minikore.implementation.outer.{Import, Rule, Axiom, SymbolDeclaration, SortDeclaration}
 import org.kframework.minikore.interfaces.pattern._
 
 /** Function (i.e., unparser) from MiniKore to String. */
 object MiniToText {
   // TODO(Daejun): more efficient implementation using StringBuilder instead of string concatenation
 
-  /** Returns a string from [[org.kframework.minikore.implementation.MiniKore.Definition]]. */
+  /** Returns a string from [[org.kframework.minikore.interfaces.outer.Definition]]. */
   def apply(d: Definition): String = {
     apply(d.att) + System.lineSeparator() + System.lineSeparator() +
       d.modules.map(apply).mkString(System.lineSeparator() + System.lineSeparator()) + System.lineSeparator()
   }
 
-  /** Returns a string from [[org.kframework.minikore.implementation.MiniKore.Module]]. */
+  /** Returns a string from [[org.kframework.minikore.interfaces.outer.Module]]. */
   def apply(m: Module): String = {
     "module " + m.name + System.lineSeparator() +
       m.sentences.map(s => "  " + apply(s)).mkString(System.lineSeparator()) + System.lineSeparator() +
       "endmodule " + apply(m.att)
   }
 
-  /** Returns a string from [[org.kframework.minikore.implementation.MiniKore.Sentence]]. */
+  /** Returns a string from [[org.kframework.minikore.interfaces.outer.Sentence]]. */
   def apply(s: Sentence): String = s match {
     case Import(name, att) =>
       "import " + name + " " + apply(att)
@@ -53,7 +54,7 @@ object MiniToText {
     case Equals(p, q) => "\\equals(" + apply(p) + "," + apply(q) + ")"
   }
 
-  /** Returns a string from [[org.kframework.minikore.implementation.MiniKore.Attributes]]. */
+  /** Returns a string from [[org.kframework.minikore.interfaces.outer.Attributes]]. */
   def apply(att: Attributes): String = {
     "[" + att.map(apply).mkString(",") + "]"
   }

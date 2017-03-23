@@ -1,7 +1,11 @@
 package org.kframework.minikore.parser
 
 import org.apache.commons.lang3.StringEscapeUtils
-import org.kframework.minikore.implementation.MiniKore.{Definition, Module, Sentence, SortDeclaration, SymbolDeclaration, Rule, Axiom, Attributes, Import}
+import org.kframework.minikore.interfaces.outer.{Sentence, Attributes}
+
+// TODO: Implementation is used because we need to build Definitions, Modules, can't do abstractly (add build method in interface?)
+import org.kframework.minikore.implementation.outer.{Definition, Module, Import, Rule, Axiom, SymbolDeclaration, SortDeclaration}
+
 import org.kframework.minikore.interfaces.pattern._
 import org.kframework.minikore.interfaces.build.Builders
 
@@ -16,13 +20,13 @@ class TextToMini(b: Builders) {
   import b._
   private val scanner = new Scanner()
 
-  /** Parses the file and returns [[org.kframework.minikore.implementation.MiniKore.Definition]]. */
+  /** Parses the file and returns [[org.kframework.minikore.implementation.outer.Definition]]. */
   @throws(classOf[ParseError])
   def parse(file: java.io.File): Definition = {
     parse(io.Source.fromFile(file))
   }
 
-  /** Parses from the stream and returns [[org.kframework.minikore.implementation.MiniKore.Definition]]. */
+  /** Parses from the stream and returns [[org.kframework.minikore.implementation.outer.Definition]]. */
   @throws(classOf[ParseError])
   def parse(src: io.Source): Definition = {
     try {
