@@ -1,9 +1,6 @@
 package org.kframework.minikore.implementation
 
 
-/**
-  * Created by lpena on 3/23/17.
-  */
 object outer {
 
   import org.kframework.minikore.interfaces.{pattern => p}
@@ -37,4 +34,19 @@ object outer {
     override def onAttributes(f: p.Pattern => p.Pattern): Axiom = Axiom(pattern, att.map(f))
   }
 
+  object DefaultBuilders extends o.Builders {
+    def Definition(modules: Seq[o.Module], att: o.Attributes): o.Definition = Definition(modules, att)
+
+    def Module(name: p.Name, sentences: Seq[o.Sentence], att: o.Attributes): o.Module = Module(name, sentences, att)
+
+    def Import(name: p.Name, att: o.Attributes): o.Import = Import(name, att)
+
+    def SortDeclaration(sort: p.Sort, att: o.Attributes): o.SortDeclaration = SortDeclaration(sort, att)
+
+    def SymbolDeclaration(sort: p.Sort, symbol: p.Symbol, args: Seq[p.Sort], att: o.Attributes): o.SymbolDeclaration = SymbolDeclaration(sort, symbol, args, att)
+
+    def Rule(pattern: p.Pattern, att: o.Attributes): o.Rule = Rule(pattern, att)
+
+    def Axiom(pattern: p.Pattern, att: o.Attributes): o.Axiom = Axiom(pattern, att)
+  }
 }

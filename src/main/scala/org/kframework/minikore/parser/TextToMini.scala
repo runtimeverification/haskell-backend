@@ -1,13 +1,11 @@
 package org.kframework.minikore.parser
 
 import org.apache.commons.lang3.StringEscapeUtils
-import org.kframework.minikore.interfaces.outer.{Sentence, Attributes}
 
-// TODO: Implementation is used because we need to build Definitions, Modules, can't do abstractly (add build method in interface?)
-import org.kframework.minikore.implementation.outer.{Definition, Module, Import, Rule, Axiom, SymbolDeclaration, SortDeclaration}
-
+import org.kframework.minikore.interfaces.outer.{Builders => OuterBuilders, _}
 import org.kframework.minikore.interfaces.pattern._
-import org.kframework.minikore.interfaces.build.Builders
+
+import org.kframework.minikore.interfaces.build.{Builders => PatternBuilders}
 
 /** Parsing error exception. */
 case class ParseError(msg: String) extends Exception(msg) // ParseError.msg eq Exception.detailMessage, i.e., msg() == getMessage()
@@ -16,8 +14,10 @@ case class ParseError(msg: String) extends Exception(msg) // ParseError.msg eq E
   *
   * @constructor Creates a new parser.
   */
-class TextToMini(b: Builders) {
-  import b._
+class TextToMini(ob: OuterBuilders, pb: PatternBuilders) {
+  import ob._
+  import pb._
+
   private val scanner = new Scanner()
 
   /** Parses the file and returns [[org.kframework.minikore.implementation.outer.Definition]]. */
@@ -423,7 +423,7 @@ object TextToMini {
     * {{{ SymbolChar = [a-zA-Z0-9.@#$%^_-]+ }}}
     */
 
-  def apply(b: Builders): TextToMini = new TextToMini(b)
+  def apply(ob: OuterBuilders, pb: PatternBuilders): TextToMini = new TextToMini(ob, pb)
 
   def isSymbolChar(c: Char): Boolean = {
     ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9') ||
