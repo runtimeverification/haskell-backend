@@ -15,6 +15,7 @@ object outer {
     def onAttributes(f: p.Pattern => p.Pattern): HasAttributes
 
     // Derived operations
+    // TODO: Do we want `collect` written with dotless notation as well?
     def getBySymbol(key: p.Symbol): Seq[Seq[p.Pattern]] = att collect { case p.Application(`key`, args) => args }
 
     def onAttributeBySymbol(key: p.Symbol)(f: p.Pattern => p.Pattern): HasAttributes = onAttributes {
@@ -31,9 +32,9 @@ object outer {
     val modules: Seq[Module]
 
     // Derived operations
-    val sorts: Set[p.Sort] = modules flatMap (_.sorts) toSet
-    val symbols: Set[p.Symbol] = modules flatMap (_.symbols) toSet
-    val sentences: Seq[Sentence] = modules flatMap (_.sentences)
+    lazy val sorts: Set[p.Sort] = modules.flatMap(_.sorts).toSet
+    lazy val symbols: Set[p.Symbol] = modules.flatMap(_.symbols).toSet
+    lazy val sentences: Seq[Sentence] = modules.flatMap(_.sentences)
 
     override def onAttributes(f: p.Pattern => p.Pattern): Definition
   }
@@ -43,15 +44,15 @@ object outer {
     val sentences: Seq[Sentence]
 
     // Derived operations
-    val sorts: Set[p.Sort] = sentences flatMap (_.sorts) toSet
-    val symbols: Set[p.Symbol] = sentences flatMap (_.symbols) toSet
+    lazy val sorts: Set[p.Sort] = sentences.flatMap(_.sorts).toSet
+    lazy val symbols: Set[p.Symbol] = sentences.flatMap(_.symbols).toSet
 
     override def onAttributes(f: p.Pattern => p.Pattern): Module
   }
 
   trait Sentence extends HasAttributes {
-    val sorts: Set[p.Sort] = Set.empty
-    val symbols: Set[p.Symbol] = Set.empty
+    lazy val sorts: Set[p.Sort] = Set.empty
+    lazy val symbols: Set[p.Symbol] = Set.empty
 
     override def onAttributes(f: p.Pattern => p.Pattern): Sentence
   }
@@ -65,7 +66,7 @@ object outer {
   trait SortDeclaration extends Sentence {
     val sort: p.Sort
 
-    override val sorts = Set(sort)
+    override lazy val sorts = Set(sort)
 
     override def onAttributes(f: p.Pattern => p.Pattern): SortDeclaration
   }
@@ -75,9 +76,9 @@ object outer {
     val symbol: p.Symbol
     val args: Seq[p.Sort]
 
-    // TODO: Should sorts = args.toSet :+ sort?
-    override val sorts = Set(sort)
-    override val symbols = Set(symbol)
+    // TODO: Should `sorts` include the `args` here as well?
+    override lazy val sorts = Set(sort)
+    override lazy val symbols = Set(symbol)
 
     override def onAttributes(f: p.Pattern => p.Pattern): SymbolDeclaration
   }
@@ -94,12 +95,12 @@ object outer {
     override def onAttributes(f: p.Pattern => p.Pattern): Axiom
   }
 
-//  val sorts: Definition => Set[p.Sort] = d => d.modules flatMap sorts toSet
-//  val sorts: Module => Set[p.Sort] = m => m.sentences flatMap sorts toSet
-//  val sorts: Sentence => Set[p.Sort] = {
-//    case SortDeclaration(sort, _) => Set(sort)
-//    case SymbolDeclaration(sort, _, _, _) => Set(sort)
-//    case _ => Set.empty
-//  }
-
 }
+
+//object build {
+//  import outer._
+//
+//  trait Builders {
+//
+//  }
+//}
