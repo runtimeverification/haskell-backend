@@ -17,28 +17,28 @@ object outer {
     override def onAttributes(f: p.Pattern => p.Pattern): Module = Module(name, sentences map (_.onAttributes(f)), att map f)
   }
   
-  case class Import(name: p.Name, att: o.Attributes) extends o.Sentence {
+  case class Import(name: p.Name, att: o.Attributes) extends o.Import {
     override def onAttributes(f: p.Pattern => p.Pattern): Import = Import(name, att map f)
   }
 
-  case class SortDeclaration(sort: p.Sort, att: o.Attributes) extends o.Sentence {
+  case class SortDeclaration(sort: p.Sort, att: o.Attributes) extends o.SortDeclaration {
     override val sorts: Set[p.Sort] = Set(sort)
 
     override def onAttributes(f: p.Pattern => p.Pattern): SortDeclaration = SortDeclaration(sort, att map f)
   }
 
-  case class SymbolDeclaration(sort: p.Sort, symbol: p.Symbol, args: Seq[p.Sort], att: o.Attributes) extends o.Sentence {
+  case class SymbolDeclaration(sort: p.Sort, symbol: p.Symbol, args: Seq[p.Sort], att: o.Attributes) extends o.SymbolDeclaration {
     override val sorts: Set[p.Sort] = Set(sort)
     override val symbols: Set[p.Symbol] = Set(symbol)
 
     override def onAttributes(f: p.Pattern => p.Pattern): SymbolDeclaration = SymbolDeclaration(sort, symbol, args, att map f)
   }
 
-  case class Rule(pattern: p.Pattern, att: o.Attributes) extends o.Sentence {
+  case class Rule(pattern: p.Pattern, att: o.Attributes) extends o.Rule {
     override def onAttributes(f: p.Pattern => p.Pattern): Rule = Rule(pattern, att map f)
   }
 
-  case class Axiom(pattern: p.Pattern, att: o.Attributes) extends o.Sentence {
+  case class Axiom(pattern: p.Pattern, att: o.Attributes) extends o.Axiom {
     override def onAttributes(f: p.Pattern => p.Pattern): Axiom = Axiom(pattern, att map f)
   }
 

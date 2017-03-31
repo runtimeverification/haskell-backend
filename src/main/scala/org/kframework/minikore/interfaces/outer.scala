@@ -56,6 +56,44 @@ object outer {
     override def onAttributes(f: p.Pattern => p.Pattern): Sentence
   }
 
+  trait Import extends Sentence {
+    val name: p.Name
+
+    override def onAttributes(f: p.Pattern => p.Pattern): Import
+  }
+
+  trait SortDeclaration extends Sentence {
+    val sort: p.Sort
+
+    override val sorts = Set(sort)
+
+    override def onAttributes(f: p.Pattern => p.Pattern): SortDeclaration
+  }
+
+  trait SymbolDeclaration extends Sentence {
+    val sort: p.Sort
+    val symbol: p.Symbol
+    val args: Seq[p.Sort]
+
+    // TODO: Should sorts = args.toSet :+ sort?
+    override val sorts = Set(sort)
+    override val symbols = Set(symbol)
+
+    override def onAttributes(f: p.Pattern => p.Pattern): SymbolDeclaration
+  }
+
+  trait Rule extends Sentence {
+    val pattern: p.Pattern
+
+    override def onAttributes(f: p.Pattern => p.Pattern): Rule
+  }
+
+  trait Axiom extends Sentence {
+    val pattern: p.Pattern
+
+    override def onAttributes(f: p.Pattern => p.Pattern): Axiom
+  }
+
 //  val sorts: Definition => Set[p.Sort] = d => d.modules flatMap sorts toSet
 //  val sorts: Module => Set[p.Sort] = m => m.sentences flatMap sorts toSet
 //  val sorts: Sentence => Set[p.Sort] = {
