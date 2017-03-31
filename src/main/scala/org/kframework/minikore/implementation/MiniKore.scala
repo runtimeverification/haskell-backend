@@ -68,34 +68,36 @@ object pattern {
     def build(_1: p.Pattern, _2: p.Pattern): Equals = Equals(_1, _2)
   }
 
-  /** Implementation of the [[org.kframework.minikore.interfaces.build.Builders]] **/
+  /** Implementation of the [[org.kframework.minikore.interfaces.pattern.PatternBuilders]] **/
   object DefaultPatternBuilders extends p.PatternBuilders {
-    def Variable(_1: p.Name, _2: p.Sort): p.Variable = Variable(_1, _2)
 
-    def DomainValue(_1: p.Symbol, _2: p.Value): p.DomainValue = DomainValue(_1, _2)
+    def Variable(_1: p.Name, _2: p.Sort): p.Variable = pattern.Variable(_1, _2)
 
-    def Top(): p.Top = Top()
+    def DomainValue(_1: p.Symbol, _2: p.Value): p.DomainValue = pattern.DomainValue(_1, _2)
 
-    def Bottom(): p.Bottom = Bottom()
+    def Top(): p.Top = pattern.Top()
 
-    def Not(_1: p.Pattern): p.Not = Not(_1)
+    def Bottom(): p.Bottom = pattern.Bottom()
 
-    def Next(_1: p.Pattern): p.Next = Next(_1)
+    def Not(_1: p.Pattern): p.Not = pattern.Not(_1)
 
-    def And(_1: p.Pattern, _2: p.Pattern): p.And = And(_1, _2)
+    def Next(_1: p.Pattern): p.Next = pattern.Next(_1)
 
-    def Or(_1: p.Pattern, _2: p.Pattern): p.Or = Or(_1, _2)
+    def And(_1: p.Pattern, _2: p.Pattern): p.And = pattern.And(_1, _2)
 
-    def Implies(_1: p.Pattern, _2: p.Pattern): p.Implies = Implies(_1, _2)
+    def Or(_1: p.Pattern, _2: p.Pattern): p.Or = pattern.Or(_1, _2)
 
-    def Equals(_1: p.Pattern, _2: p.Pattern): p.Equals = Equals(_1, _2)
+    def Implies(_1: p.Pattern, _2: p.Pattern): p.Implies = pattern.Implies(_1, _2)
 
-    def Exists(_1: p.Variable, _2: p.Pattern): p.Exists = Exists(_1, _2)
+    def Equals(_1: p.Pattern, _2: p.Pattern): p.Equals = pattern.Equals(_1, _2)
 
-    def ForAll(_1: p.Variable, _2: p.Pattern): p.ForAll = ForAll(_1, _2)
+    def Exists(_1: p.Variable, _2: p.Pattern): p.Exists = pattern.Exists(_1, _2)
 
-    def Rewrite(_1: p.Pattern, _2: p.Pattern): p.Rewrite = Rewrite(_1, _2)
+    def ForAll(_1: p.Variable, _2: p.Pattern): p.ForAll = pattern.ForAll(_1, _2)
 
-    def Application(_1: p.Symbol, args: Seq[p.Pattern]): p.Application = Application(_1, args)
+    def Rewrite(_1: p.Pattern, _2: p.Pattern): p.Rewrite = pattern.Rewrite(_1, _2)
+
+    def Application(_1: p.Symbol, args: Seq[p.Pattern]): p.Application = pattern.Application(_1, args)
   }
+
 }

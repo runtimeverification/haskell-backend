@@ -5,8 +5,8 @@ import org.kframework.minikore.interfaces.pattern.PatternBuilders
 
 object outer {
 
-  import org.kframework.minikore.interfaces.{pattern => p}
   import org.kframework.minikore.interfaces.{outer => o}
+  import org.kframework.minikore.interfaces.{pattern => p}
 
   case class Definition(modules: Seq[o.Module], att: o.Attributes) extends o.Definition {
     override def onAttributes(f: p.Pattern => p.Pattern): Definition = Definition(modules.map(_.onAttributes(f)), att.map(f))
@@ -37,19 +37,19 @@ object outer {
   }
 
   object DefaultOuterBuilders extends o.OuterBuilders {
-    def Definition(modules: Seq[o.Module], att: o.Attributes): o.Definition = Definition(modules, att)
+    def Definition(modules: Seq[o.Module], att: o.Attributes): o.Definition = outer.Definition(modules, att)
 
-    def Module(name: p.Name, sentences: Seq[o.Sentence], att: o.Attributes): o.Module = Module(name, sentences, att)
+    def Module(name: p.Name, sentences: Seq[o.Sentence], att: o.Attributes): o.Module = outer.Module(name, sentences, att)
 
-    def Import(name: p.Name, att: o.Attributes): o.Import = Import(name, att)
+    def Import(name: p.Name, att: o.Attributes): o.Import = outer.Import(name, att)
 
-    def SortDeclaration(sort: p.Sort, att: o.Attributes): o.SortDeclaration = SortDeclaration(sort, att)
+    def SortDeclaration(sort: p.Sort, att: o.Attributes): o.SortDeclaration = outer.SortDeclaration(sort, att)
 
-    def SymbolDeclaration(sort: p.Sort, symbol: p.Symbol, args: Seq[p.Sort], att: o.Attributes): o.SymbolDeclaration = SymbolDeclaration(sort, symbol, args, att)
+    def SymbolDeclaration(sort: p.Sort, symbol: p.Symbol, args: Seq[p.Sort], att: o.Attributes): o.SymbolDeclaration = outer.SymbolDeclaration(sort, symbol, args, att)
 
-    def Rule(pattern: p.Pattern, att: o.Attributes): o.Rule = Rule(pattern, att)
+    def Rule(pattern: p.Pattern, att: o.Attributes): o.Rule = outer.Rule(pattern, att)
 
-    def Axiom(pattern: p.Pattern, att: o.Attributes): o.Axiom = Axiom(pattern, att)
+    def Axiom(pattern: p.Pattern, att: o.Attributes): o.Axiom = outer.Axiom(pattern, att)
   }
 }
 
