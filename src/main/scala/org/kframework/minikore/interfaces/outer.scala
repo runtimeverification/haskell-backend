@@ -95,12 +95,21 @@ object outer {
     override def onAttributes(f: p.Pattern => p.Pattern): Axiom
   }
 
-}
+  // TODO: Is there a reason that Builders is outside the `pattern` object in the pattern interface?
+  trait Builders {
+    def Definition(modules: Seq[Module], att: Attributes): Definition
 
-//object build {
-//  import outer._
-//
-//  trait Builders {
-//
-//  }
-//}
+    def Module(name: p.Name, sentences: Seq[Sentence], att: Attributes): Module
+
+    def Import(name: p.Name, att: Attributes): Import
+
+    def SortDeclaration(sort: p.Sort, att: Attributes): SortDeclaration
+
+    def SymbolDeclaration(sort: p.Sort, symbol: p.Symbol, args: Seq[p.Sort], att: Attributes): SymbolDeclaration
+
+    def Rule(pattern: p.Pattern, att: Attributes): Rule
+
+    def Axiom(pattern: p.Pattern, att: Attributes): Axiom
+  }
+
+}
