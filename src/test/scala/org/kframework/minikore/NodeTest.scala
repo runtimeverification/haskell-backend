@@ -2,13 +2,12 @@ package org.kframework.minikore
 
 import org.junit.Test
 import org.junit.Assert.assertEquals
-import org.kframework.minikore.implementation.DefaultBuilders
-import org.kframework.minikore.interfaces.build.Builders
+import org.kframework.minikore.implementation.pattern.DefaultPatternBuilders
 import org.kframework.minikore.interfaces.pattern._
 import org.kframework.minikore.interfaces.tree._
 
 
-case class TestPatterns(b: Builders) {
+case class TestPatterns(b: PatternBuilders) {
 
   import b._
 
@@ -135,7 +134,7 @@ class NodeTest {
   import ASTTestUtils._
 
   //TODO: Make Tests Parametric Over Builders.
-  val builder: Builders = DefaultBuilders
+  val builder: PatternBuilders = DefaultPatternBuilders
 
   import builder._
 

@@ -2,10 +2,9 @@ package org.kframework.minikore.parser
 
 import org.apache.commons.lang3.StringEscapeUtils
 
-import org.kframework.minikore.interfaces.outer.{Builders => OuterBuilders, _}
+import org.kframework.minikore.interfaces.outer._
 import org.kframework.minikore.interfaces.pattern._
 
-import org.kframework.minikore.interfaces.build.{Builders => PatternBuilders}
 
 /** Parsing error exception. */
 case class ParseError(msg: String) extends Exception(msg) // ParseError.msg eq Exception.detailMessage, i.e., msg() == getMessage()

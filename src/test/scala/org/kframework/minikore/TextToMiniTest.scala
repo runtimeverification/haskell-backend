@@ -3,8 +3,10 @@ package org.kframework.minikore
 import org.apache.commons.io.FileUtils
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import org.kframework.minikore.interfaces.build.Builders
-import org.kframework.minikore.implementation.DefaultBuilders
+import org.kframework.minikore.interfaces.outer._
+import org.kframework.minikore.interfaces.pattern._
+import org.kframework.minikore.implementation.outer.DefaultOuterBuilders
+import org.kframework.minikore.implementation.pattern.DefaultPatternBuilders
 import org.kframework.minikore.parser.{MiniToText, ParseError, TextToMini}
 
 class TextToMiniTest {
@@ -555,11 +557,12 @@ class TextToMiniTest {
     */
   def parseTest(src: FileOrSource, expected: String): Unit = {
     //TODO: Make test file parametric over builders.
-    val builder: Builders = DefaultBuilders
+    val patternBuilder: PatternBuilders = DefaultPatternBuilders
+    val outerBuilder: OuterBuilders = DefaultOuterBuilders
     val begin = java.lang.System.nanoTime()
     val minikore = src match {
-      case src: FileFOS => new TextToMini(builder).parse(src.x)
-      case src: SourceFOS => new TextToMini(builder).parse(src.x)
+      case src: FileFOS => new TextToMini(outerBuilder, patternBuilder).parse(src.x)
+      case src: SourceFOS => new TextToMini(outerBuilder, patternBuilder).parse(src.x)
     }
     val end = java.lang.System.nanoTime(); println(end - begin)
     val text = MiniToText.apply(minikore)
@@ -569,7 +572,7 @@ class TextToMiniTest {
     else if (trim(expected) == trim(text)) () // t == u(p(t)) modulo leading/trailing whitespaces
     else {
       assertEquals(expected.replaceAll("\\s+", ""), text.replaceAll("\\s+", "")) //   t  ==   u(p(t))  modulo whitespaces
-      assertEquals(minikore, new TextToMini(builder).parse(io.Source.fromString(text))) // p(t) == p(u(p(t)))
+      assertEquals(minikore, new TextToMini(outerBuilder, patternBuilder).parse(io.Source.fromString(text))) // p(t) == p(u(p(t)))
     }
   }
 
