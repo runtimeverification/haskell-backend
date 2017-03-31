@@ -117,7 +117,7 @@ object outer {
   }
 
   // TODO: Is there a reason that Builders is outside the `pattern` object in the pattern interface?
-  trait Builders {
+  trait OuterBuilders {
     def Definition(modules: Seq[Module], att: Attributes): Definition
 
     def Module(name: p.Name, sentences: Seq[Sentence], att: Attributes): Module

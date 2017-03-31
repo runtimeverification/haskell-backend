@@ -481,61 +481,41 @@ object pattern {
     def unapply(arg: Equals): Option[(Pattern, Pattern)] = Some(arg._1, arg._2)
   }
 
-}
 
-/**
-  * Provides a Builder type that allows building Pattern types in [[pattern]].
-  *
-  * Sample Usage -
-  *
-  * Given a concrete implementation of [[build.Builders]], one can create new patters -
-  * {{{
-  *   /* Given Concrete Implementation */
-  *   val builder: Builders = ConcreteBuilders
-  *   /* A Pattern Or(X:Int, Y:Int) can be constructed in the following way */
-  *   val or: Or = builder.Or(builder.Variable("X", Sort("Int")), builder."Y", Sort("Int"))
-  * }}}
-  *
-  */
-object build {
-
-  import pattern._
+  /**
+    * Provides a Builder type that allows building Pattern types in [[pattern]].
+    *
+    * Sample Usage -
+    *
+    * Given a concrete implementation of [[build.Builders]], one can create new patters -
+    * {{{
+    *   /* Given Concrete Implementation */
+    *   val builder: Builders = ConcreteBuilders
+    *   /* A Pattern Or(X:Int, Y:Int) can be constructed in the following way */
+    *   val or: Or = builder.Or(builder.Variable("X", Sort("Int")), builder."Y", Sort("Int"))
+    * }}}
+    *
+    */
 
   /**
     * The Builders trait has one method for every [[pattern.Pattern]], with the same name.
     * Implementations are expected to implement the methods, allowing tools to
     * build patterns in an implementation independent manner.
     */
-  trait Builders {
-
+  trait PatternBuilders {
     def Variable(_1: Name, _2: Sort): Variable
-
     def DomainValue(_1: Symbol, _2: Value): DomainValue
-
     def Top(): Top
-
     def Bottom(): Bottom
-
     def Not(_1: Pattern): Not
-
     def Next(_1: Pattern): Next
-
     def And(_1: Pattern, _2: Pattern): And
-
     def Or(_1: Pattern, _2: Pattern): Or
-
     def Implies(_1: Pattern, _2: Pattern): Implies
-
     def Equals(_1: Pattern, _2: Pattern): Equals
-
     def Exists(_1: Variable, _2: Pattern): Exists
-
     def ForAll(_1: Variable, _2: Pattern): ForAll
-
     def Rewrite(_1: Pattern, _2: Pattern): Rewrite
-
     def Application(_1: Symbol, args: Seq[Pattern]): Application
   }
-
 }
-

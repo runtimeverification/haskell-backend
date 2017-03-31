@@ -1,11 +1,11 @@
 package org.kframework.minikore.implementation
 
-import org.kframework.minikore.interfaces.{build, pattern => p}
+import org.kframework.minikore.interfaces.{pattern => p}
 
 import scala.collection._
 
 /** Algebraic data type of MiniKore. */ // TODO: should rename to "pattern"
-object MiniKore {
+object pattern {
 
   /** A collection of classes that serve as the default implementation of the [[org.kframework.minikore.interfaces.pattern]] **/
 
@@ -68,96 +68,34 @@ object MiniKore {
     def build(_1: p.Pattern, _2: p.Pattern): Equals = Equals(_1, _2)
   }
 
+  /** Implementation of the [[org.kframework.minikore.interfaces.build.Builders]] **/
+  object DefaultPatternBuilders extends p.PatternBuilders {
+    def Variable(_1: p.Name, _2: p.Sort): p.Variable = Variable(_1, _2)
+
+    def DomainValue(_1: p.Symbol, _2: p.Value): p.DomainValue = DomainValue(_1, _2)
+
+    def Top(): p.Top = Top()
+
+    def Bottom(): p.Bottom = Bottom()
+
+    def Not(_1: p.Pattern): p.Not = Not(_1)
+
+    def Next(_1: p.Pattern): p.Next = Next(_1)
+
+    def And(_1: p.Pattern, _2: p.Pattern): p.And = And(_1, _2)
+
+    def Or(_1: p.Pattern, _2: p.Pattern): p.Or = Or(_1, _2)
+
+    def Implies(_1: p.Pattern, _2: p.Pattern): p.Implies = Implies(_1, _2)
+
+    def Equals(_1: p.Pattern, _2: p.Pattern): p.Equals = Equals(_1, _2)
+
+    def Exists(_1: p.Variable, _2: p.Pattern): p.Exists = Exists(_1, _2)
+
+    def ForAll(_1: p.Variable, _2: p.Pattern): p.ForAll = ForAll(_1, _2)
+
+    def Rewrite(_1: p.Pattern, _2: p.Pattern): p.Rewrite = Rewrite(_1, _2)
+
+    def Application(_1: p.Symbol, args: Seq[p.Pattern]): p.Application = Application(_1, args)
+  }
 }
-
-
-/** Helpers for building MiniKore definitions **/
-object MiniKoreDSL {
-
-  import MiniKore._
-
-  import org.kframework.minikore.interfaces.outer.Sentence
-  import org.kframework.minikore.implementation.outer._
-
-  // Show Name and Value have wrappers? What exactly are their roles?
-  implicit def asSort(s: String): p.Sort     = p.Sort(s)
-  implicit def asSymbol(s: String): p.Symbol = p.Symbol(s)
-  //implicit def asName(s: String): p.Name = p.Name(s)
-  //implicit def asValue(s: String): p.Value = p.Value(s)
-
-  case class definition(modules: Module*) {
-    def att(atts: p.Pattern*): Definition = Definition(modules, atts)
-  }
-  implicit def asDefinition(d: definition): Definition = d.att()
-
-  case class module(name: p.Name, sentences: Sentence*) {
-    def att(atts: p.Pattern*): Module = Module(name, sentences, atts)
-  }
-  implicit def asModule(m: module): Module = m.att()
-
-  case class imports(name: p.Name) {
-    def att(atts: p.Pattern*): Import = Import(name, atts)
-  }
-  implicit def asImport(i: imports): Import = i.att()
-
-  case class sort(sort: p.Sort) {
-    def att(atts: p.Pattern*): SortDeclaration = SortDeclaration(sort, atts)
-  }
-  implicit def asSortDeclaration(s: sort): SortDeclaration = s.att()
-
-  case class symbol(sort: p.Sort, symbol: p.Symbol, args: p.Sort*) {
-    def att(atts: p.Pattern*): SymbolDeclaration = SymbolDeclaration(sort, symbol, args, atts)
-  }
-  implicit def asSymbolDeclaration(s: symbol): SymbolDeclaration = s.att()
-
-  case class axiom(a: p.Pattern) {
-    def att(atts: p.Pattern*): Axiom = Axiom(a, atts)
-  }
-  implicit def asAxiom(a: axiom): Axiom = a.att()
-
-  // Why have both Rule and Axiom?
-  case class rule(l: p.Pattern, r: p.Pattern) {
-    def att(atts: p.Pattern*): Axiom = Axiom(Rewrite(l, r), atts)
-  }
-  implicit def asAxiom(r: rule): Axiom = r.att()
-
-  // building terms
-  def term(symbol: p.Symbol, args: p.Pattern*): Application = Application(symbol, args)
-}
-
-
-/** Implementation of the [[org.kframework.minikore.interfaces.build.Builders]] **/
-object DefaultBuilders extends build.Builders {
-
-  import org.kframework.minikore.implementation.{MiniKore => m}
-
-  def Variable(_1: p.Name, _2: p.Sort): p.Variable = m.Variable(_1, _2)
-
-  def DomainValue(_1: p.Symbol, _2: p.Value): p.DomainValue = m.DomainValue(_1, _2)
-
-  def Top(): p.Top = m.Top()
-
-  def Bottom(): p.Bottom = m.Bottom()
-
-  def Not(_1: p.Pattern): p.Not = m.Not(_1)
-
-  def Next(_1: p.Pattern): p.Next = m.Next(_1)
-
-  def And(_1: p.Pattern, _2: p.Pattern): p.And = m.And(_1, _2)
-
-  def Or(_1: p.Pattern, _2: p.Pattern): p.Or = m.Or(_1, _2)
-
-  def Implies(_1: p.Pattern, _2: p.Pattern): p.Implies = m.Implies(_1, _2)
-
-  def Equals(_1: p.Pattern, _2: p.Pattern): p.Equals = m.Equals(_1, _2)
-
-  def Exists(_1: p.Variable, _2: p.Pattern): p.Exists = m.Exists(_1, _2)
-
-  def ForAll(_1: p.Variable, _2: p.Pattern): p.ForAll = m.ForAll(_1, _2)
-
-  def Rewrite(_1: p.Pattern, _2: p.Pattern): p.Rewrite = m.Rewrite(_1, _2)
-
-  def Application(_1: p.Symbol, args: Seq[p.Pattern]): p.Application = m.Application(_1, args)
-}
-
-
