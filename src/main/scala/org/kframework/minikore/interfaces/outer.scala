@@ -38,6 +38,9 @@ object outer {
 
     override def onAttributes(f: p.Pattern => p.Pattern): Definition
   }
+  object Definition {
+    def unapply(arg: Definition): Option[(Seq[Module], Attributes)] = Some(arg.modules, arg.att)
+  }
 
   trait Module extends HasAttributes {
     val name: p.Name
@@ -48,6 +51,9 @@ object outer {
     lazy val symbols: Set[p.Symbol] = sentences.flatMap(_.symbols).toSet
 
     override def onAttributes(f: p.Pattern => p.Pattern): Module
+  }
+  object Module {
+    def unapply(arg: Module): Option[(p.Name, Seq[Sentence], Attributes)] = Some(arg.name, arg.sentences, arg.att)
   }
 
   trait Sentence extends HasAttributes {
@@ -62,6 +68,9 @@ object outer {
 
     override def onAttributes(f: p.Pattern => p.Pattern): Import
   }
+  object Import {
+    def unapply(arg: Import): Option[(p.Name, Attributes)] = Some(arg.name, arg.att)
+  }
 
   trait SortDeclaration extends Sentence {
     val sort: p.Sort
@@ -69,6 +78,9 @@ object outer {
     override lazy val sorts = Set(sort)
 
     override def onAttributes(f: p.Pattern => p.Pattern): SortDeclaration
+  }
+  object SortDeclaration {
+    def unapply(arg: SortDeclaration): Option[(p.Sort, Attributes)] = Some(arg.sort, arg.att)
   }
 
   trait SymbolDeclaration extends Sentence {
@@ -82,17 +94,26 @@ object outer {
 
     override def onAttributes(f: p.Pattern => p.Pattern): SymbolDeclaration
   }
+  object SymbolDeclaration {
+    def unapply(arg: SymbolDeclaration): Option[(p.Sort, p.Symbol, Seq[p.Sort], Attributes)] = Some(arg.sort, arg.symbol, arg.args, arg.att)
+  }
 
   trait Rule extends Sentence {
     val pattern: p.Pattern
 
     override def onAttributes(f: p.Pattern => p.Pattern): Rule
   }
+  object Rule {
+    def unapply(arg: Rule): Option[(p.Pattern, Attributes)] = Some(arg.pattern, arg.att)
+  }
 
   trait Axiom extends Sentence {
     val pattern: p.Pattern
 
     override def onAttributes(f: p.Pattern => p.Pattern): Axiom
+  }
+  object Axiom {
+    def unapply(arg: Axiom): Option[(p.Pattern, Attributes)] = Some(arg.pattern, arg.att)
   }
 
   // TODO: Is there a reason that Builders is outside the `pattern` object in the pattern interface?
