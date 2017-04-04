@@ -1,27 +1,27 @@
-package org.kframework.minikore.parser
+package org.kframework.kore.parser
 
 import org.apache.commons.lang3.StringEscapeUtils
-import org.kframework.minikore.interfaces.outer._
-import org.kframework.minikore.interfaces.pattern._
+import org.kframework.kore.interfaces.pattern._
+import org.kframework.kore.interfaces.outer._
 
 /** Function (i.e., unparser) from MiniKore to String. */
 object MiniToText {
   // TODO(Daejun): more efficient implementation using StringBuilder instead of string concatenation
 
-  /** Returns a string from [[org.kframework.minikore.interfaces.outer.Definition]]. */
+  /** Returns a string from [[org.kframework.kore.interfaces.outer.Definition]]. */
   def apply(d: Definition): String = {
     apply(d.att) + System.lineSeparator() + System.lineSeparator() +
       d.modules.map(apply).mkString(System.lineSeparator() + System.lineSeparator()) + System.lineSeparator()
   }
 
-  /** Returns a string from [[org.kframework.minikore.interfaces.outer.Module]]. */
+  /** Returns a string from [[org.kframework.kore.interfaces.outer.Module]]. */
   def apply(m: Module): String = {
     "module " + m.name + System.lineSeparator() +
       m.sentences.map(s => "  " + apply(s)).mkString(System.lineSeparator()) + System.lineSeparator() +
       "endmodule " + apply(m.att)
   }
 
-  /** Returns a string from [[org.kframework.minikore.interfaces.outer.Sentence]]. */
+  /** Returns a string from [[org.kframework.kore.interfaces.outer.Sentence]]. */
   def apply(s: Sentence): String = s match {
     case Import(name, att) =>
       "import " + name + " " + apply(att)
@@ -35,7 +35,7 @@ object MiniToText {
       "axiom " + apply(pattern) + " " + apply(att)
   }
 
-  /** Returns a string from [[org.kframework.minikore.interfaces.pattern.Pattern]]. */
+  /** Returns a string from [[org.kframework.kore.interfaces.pattern.Pattern]]. */
   def apply(pat: Pattern): String = pat match {
     case Variable(name, Sort(sort)) => apply(name) + ":" + apply(sort)
     case Application(Symbol(label), args) => apply(label) + "(" + args.map(apply).mkString(",") + ")"
@@ -53,7 +53,7 @@ object MiniToText {
     case Equals(p, q) => "\\equals(" + apply(p) + "," + apply(q) + ")"
   }
 
-  /** Returns a string from [[org.kframework.minikore.interfaces.outer.Attributes]]. */
+  /** Returns a string from [[org.kframework.kore.interfaces.outer.Attributes]]. */
   def apply(att: Attributes): String = {
     "[" + att.map(apply).mkString(",") + "]"
   }

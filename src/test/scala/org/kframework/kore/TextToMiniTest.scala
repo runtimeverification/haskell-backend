@@ -1,13 +1,13 @@
-package org.kframework.minikore
+package org.kframework.kore
 
 import org.apache.commons.io.FileUtils
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import org.kframework.minikore.interfaces.outer._
-import org.kframework.minikore.interfaces.pattern._
-import org.kframework.minikore.implementation.outer.DefaultOuterBuilders
-import org.kframework.minikore.implementation.pattern.DefaultPatternBuilders
-import org.kframework.minikore.parser.{MiniToText, ParseError, TextToMini}
+import org.kframework.kore.interfaces.builders.OuterBuilders
+import org.kframework.kore.interfaces.builders.PatternBuilders
+import org.kframework.kore.implementation.builders.DefaultOuterBuilders
+import org.kframework.kore.implementation.builders.DefaultPatternBuilders
+import org.kframework.kore.parser.{MiniToText, ParseError, TextToMini}
 
 class TextToMiniTest {
 

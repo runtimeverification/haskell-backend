@@ -1,10 +1,11 @@
-package org.kframework.minikore.parser
+package org.kframework.kore.parser
 
 import org.apache.commons.io.FileUtils
-import org.kframework.minikore.implementation.outer.DefaultOuterBuilders
-import org.kframework.minikore.implementation.pattern.DefaultPatternBuilders
-import org.kframework.minikore.interfaces.outer._
-import org.kframework.minikore.interfaces.pattern._
+import org.kframework.kore.implementation.builders.DefaultOuterBuilders
+import org.kframework.kore.implementation.builders.DefaultPatternBuilders
+import org.kframework.kore.interfaces.builders.OuterBuilders
+import org.kframework.kore.interfaces.builders.PatternBuilders
+import org.kframework.kore.interfaces.outer._
 
 // TODO(Daejun): drop this file
 
