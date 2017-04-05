@@ -1,13 +1,8 @@
-package org.kframework.kore
+package org.kframework.kore.utils
 
-import org.kframework.kore.interfaces.builders.OuterBuilders
-import org.kframework.kore.interfaces.builders.PatternBuilders
-import org.kframework.kore.interfaces.{pattern => p}
-import org.kframework.kore.interfaces.{outer => o}
+import org.kframework.kore.interfaces.builders.{OuterBuilders, PatternBuilders}
+import org.kframework.kore.interfaces.{outer => o, pattern => p}
 
-/**
-  * Created by lpena on 4/4/17.
-  */
 /** Helpers for building MiniKore definitions **/
 case class KoreDSL(ob: OuterBuilders, pb: PatternBuilders) {
 
@@ -47,11 +42,10 @@ case class KoreDSL(ob: OuterBuilders, pb: PatternBuilders) {
   }
   implicit def asAxiom(a: axiom): o.Axiom = a.att()
 
-  // Why have both Rule and Axiom?
   case class rule(l: p.Pattern, r: p.Pattern) {
-    def att(atts: p.Pattern*): o.Axiom = ob.Axiom(pb.Rewrite(l, r), atts)
+    def att(atts: p.Pattern*): o.Rule = ob.Rule(pb.Rewrite(l, r), atts)
   }
-  implicit def asAxiom(r: rule): o.Axiom = r.att()
+  implicit def asRule(r: rule): o.Rule = r.att()
 
   // building terms
   def term(symbol: p.Symbol, args: p.Pattern*): p.Application = pb.Application(symbol, args)

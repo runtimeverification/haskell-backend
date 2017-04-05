@@ -7,7 +7,7 @@ import org.kframework.kore.interfaces.builders.PatternBuilders
 
 import scala.collection._
 
-/** Algebraic data type of MiniKore. */ // TODO: should rename to "pattern"
+/** Algebraic data type of MiniKore. */
 object DefaultPattern {
 
   /** A collection of classes that serve as the default implementation of the [[org.kframework.kore.interfaces.pattern]] **/

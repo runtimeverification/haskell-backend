@@ -3,10 +3,8 @@ package org.kframework.kore
 import org.apache.commons.io.FileUtils
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import org.kframework.kore.interfaces.builders.OuterBuilders
-import org.kframework.kore.interfaces.builders.PatternBuilders
-import org.kframework.kore.implementation.builders.DefaultOuterBuilders
-import org.kframework.kore.implementation.builders.DefaultPatternBuilders
+import org.kframework.kore.implementation.builders.{DefaultOuterBuilders, DefaultPatternBuilders}
+import org.kframework.kore.interfaces.builders.{OuterBuilders, PatternBuilders}
 import org.kframework.kore.parser.{MiniToText, ParseError, TextToMini}
 
 class TextToMiniTest {
