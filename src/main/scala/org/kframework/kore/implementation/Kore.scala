@@ -107,6 +107,7 @@ object DefaultOuter {
 
 object builders {
 
+  /** Implementation of the [[org.kframework.kore.interfaces.builders.OuterBuilders]] **/
   object DefaultOuterBuilders extends OuterBuilders {
     def Definition(modules: Seq[o.Module], att: o.Attributes): o.Definition = DefaultOuter.Definition(modules, att)
     def Module(name: p.Name, sentences: Seq[o.Sentence], att: o.Attributes): o.Module = DefaultOuter.Module(name, sentences, att)
