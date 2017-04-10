@@ -515,8 +515,6 @@ object outer {
 
     def onAttributes(f: p.Pattern => p.Pattern): HasAttributes
 
-    // Derived operations
-    // TODO: Do we want `collect` written with dotless notation as well?
     def getBySymbol(key: p.Symbol): Seq[Seq[p.Pattern]] = att collect { case p.Application(`key`, args) => args }
 
     def onAttributeBySymbol(key: p.Symbol)(f: p.Pattern => p.Pattern): HasAttributes = onAttributes {
