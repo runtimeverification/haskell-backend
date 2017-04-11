@@ -515,16 +515,7 @@ object outer {
 
     def onAttributes(f: p.Pattern => p.Pattern): HasAttributes
 
-    def getBySymbol(key: p.Symbol): Seq[Seq[p.Pattern]] = att collect { case p.Application(`key`, args) => args }
-
-    def onAttributeBySymbol(key: p.Symbol)(f: p.Pattern => p.Pattern): HasAttributes = onAttributes {
-      case app@p.Application(`key`, _) => f(app)
-      case pattern => pattern
-    }
-
-    def updateAttribute(key: p.Symbol, value: p.Pattern*): HasAttributes = onAttributeBySymbol(key) {
-      case a@p.Application(`key`, _) => a.build(key, value)
-    }
+    def getBySymbol(key: p.Symbol): Seq[p.Pattern] = att.collect({ case p.Application(`key`, args) => args }).flatten
   }
 
   trait Definition extends HasAttributes {

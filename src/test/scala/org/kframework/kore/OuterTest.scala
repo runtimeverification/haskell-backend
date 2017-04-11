@@ -35,6 +35,8 @@ case class OuterStructures(b: OuterBuilders, p: PatternBuilders) {
 
   val axiom: Axiom = Axiom(int1, Seq.empty)
 
+  val emptyModuleWithAtt: Module = Module("A", Seq.empty, Seq(Application(Symbol("ModuleAtt"), Seq.empty)))
+
   val emptyModule: Module = Module("A", Seq.empty, Seq.empty)
 
   val importModule: Module = Module("A", Seq(import1), Seq.empty)
@@ -52,6 +54,8 @@ case class OuterStructures(b: OuterBuilders, p: PatternBuilders) {
   val combinedModule2 = Module("C", Seq(import1, symbolDec, rule, axiom), Seq.empty)
 
   val emptyModuleDef: Definition = Definition(Seq(emptyModule), Seq.empty)
+
+  val emptyModuleDefWithAtt: Definition = Definition(Seq(emptyModuleWithAtt), Seq(Application(Symbol("DefinitionAtt"), Seq(Application(Symbol("SampleAtt"), Seq())))))
 
   val importDef: Definition = Definition(Seq(importModule), Seq.empty)
 
@@ -197,6 +201,10 @@ class OuterTest {
   @Test def sentencesFromDefinitionTest(): Unit = {
     val sentences: Seq[Sentence] = combinedDef.sentences
     val expected: Seq[Sentence] = Seq(sortIntDec, sortExpDec, symbolDec, import1, rule, axiom)
+  }
+
+  @Test def attTestOnDefinition(): Unit = {
+    assertEquals(Seq(patternBuilder.Application(Symbol("SampleAtt"), Seq())), emptyModuleDefWithAtt.getBySymbol(Symbol("DefinitionAtt")))
   }
 
 }
