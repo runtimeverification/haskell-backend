@@ -482,6 +482,208 @@ object pattern {
   }
 
 
+}
+
+object outer {
+
+  import org.kframework.kore.interfaces.{pattern => p}
+
+  type Attributes = Seq[p.Pattern]
+
+  /**
+    * Trait That is Extended by Every Outer Construct that Attributes.
+    */
+  trait HasAttributes {
+    val att: Attributes
+
+    def onAttributes(f: p.Pattern => p.Pattern): HasAttributes
+
+    def getBySymbol(key: p.Symbol): Seq[p.Pattern] = att.collect({ case p.Application(`key`, args) => args }).flatten
+  }
+
+
+  /** Kore Definition.
+    *
+    * Provides (Implementation for members)
+    *   - sorts, a set of all [[pattern.Sort]]s, obtained recursively.
+    *   - symbols, a set of all [[pattern.Symbol]]s, obtained recursively.
+    *   - sentences, a set of all [[Sentence]]s, obtained recursively.
+    *
+    *   Requires (Implementation for members)
+    *   - modules, a Seq of [[Module]]s
+   */
+  trait Definition extends HasAttributes {
+    val modules: Seq[Module]
+
+    // Derived operations
+    lazy val sorts: Set[p.Sort] = modules.flatMap(_.sorts).toSet
+    lazy val symbols: Set[p.Symbol] = modules.flatMap(_.symbols).toSet
+    lazy val sentences: Seq[Sentence] = modules.flatMap(_.sentences)
+
+    override def onAttributes(f: p.Pattern => p.Pattern): Definition
+  }
+
+  object Definition {
+    def unapply(arg: Definition): Option[(Seq[Module], Attributes)] = Some(arg.modules, arg.att)
+  }
+
+  /** Kore Module.
+    *
+    * Provides (Implementation for members)
+    *   - sorts, a set of all [[pattern.Sort]]s, obtained recursively.
+    *   - symbols, a set of all [[pattern.Symbol]]s, obtained recursively.
+    *
+    *   Requires (Implementation for members)
+    *   - modules, a Seq of [[Sentence]]s
+    */
+  trait Module extends HasAttributes {
+    val name: p.Name
+    val sentences: Seq[Sentence]
+
+    // Derived operations
+    lazy val sorts: Set[p.Sort] = sentences.flatMap(_.sorts).toSet
+    lazy val symbols: Set[p.Symbol] = sentences.flatMap(_.symbols).toSet
+
+    override def onAttributes(f: p.Pattern => p.Pattern): Module
+  }
+
+  object Module {
+    def unapply(arg: Module): Option[(p.Name, Seq[Sentence], Attributes)] = Some(arg.name, arg.sentences, arg.att)
+  }
+
+
+  /** Kore Sentence. Extended by [[Import]], [[SymbolDeclaration]], [[SortDeclaration]], [[Axiom]], and [[Rule]]
+    */
+  trait Sentence extends HasAttributes {
+    lazy val sorts: Set[p.Sort] = Set.empty
+    lazy val symbols: Set[p.Symbol] = Set.empty
+
+    override def onAttributes(f: p.Pattern => p.Pattern): Sentence
+  }
+
+
+  /** Kore Import.
+    *
+    *   Requires (Implementation for members)
+    *   - name, of type [[pattern.Name]]
+    */
+  trait Import extends Sentence {
+    val name: p.Name
+
+    override def onAttributes(f: p.Pattern => p.Pattern): Import
+  }
+
+  object Import {
+    def unapply(arg: Import): Option[(p.Name, Attributes)] = Some(arg.name, arg.att)
+  }
+
+
+  /** Kore Sort Declaration.
+    *
+    *  Requires (Implementation for members)
+    *  - sort, of type [[pattern.Sort]]
+    */
+  trait SortDeclaration extends Sentence {
+    val sort: p.Sort
+
+    override lazy val sorts = Set(sort)
+
+    override def onAttributes(f: p.Pattern => p.Pattern): SortDeclaration
+  }
+
+  object SortDeclaration {
+    def unapply(arg: SortDeclaration): Option[(p.Sort, Attributes)] = Some(arg.sort, arg.att)
+  }
+
+
+  /** Kore Sort Declaration.
+    *
+    *  Requires (Implementation for members)
+    *  - sort, of type [[pattern.Sort]]
+    */
+  trait SymbolDeclaration extends Sentence {
+    val sort: p.Sort
+    val symbol: p.Symbol
+    val args: Seq[p.Sort]
+
+    override lazy val sorts = Set(sort)
+    override lazy val symbols = Set(symbol)
+
+    override def onAttributes(f: p.Pattern => p.Pattern): SymbolDeclaration
+  }
+
+  object SymbolDeclaration {
+    def unapply(arg: SymbolDeclaration): Option[(p.Sort, p.Symbol, Seq[p.Sort], Attributes)] = Some(arg.sort, arg.symbol, arg.args, arg.att)
+  }
+
+
+  /** Kore Rule
+    *
+    * Requires (Implementation for members)
+    *   - pattern, the rule's [[pattern.Pattern]]
+    */
+  trait Rule extends Sentence {
+    val pattern: p.Pattern
+
+    override def onAttributes(f: p.Pattern => p.Pattern): Rule
+  }
+
+  object Rule {
+    def unapply(arg: Rule): Option[(p.Pattern, Attributes)] = Some(arg.pattern, arg.att)
+  }
+
+  /** Kore Axiom
+    *
+    * Requires (Implementation for members)
+    *   - Axiom, the axiom's [[pattern.Pattern]]
+    */
+  trait Axiom extends Sentence {
+    val pattern: p.Pattern
+
+    override def onAttributes(f: p.Pattern => p.Pattern): Axiom
+  }
+
+  object Axiom {
+    def unapply(arg: Axiom): Option[(p.Pattern, Attributes)] = Some(arg.pattern, arg.att)
+  }
+
+}
+
+object builders {
+
+  /**
+    * Builder type that allows building types in [[outer]].
+    *
+    * Sample Usage -
+    *
+    * Given a concrete implementation of [[builders.OuterBuilders]], one can create new outer types-
+    * {{{
+    *   /* Given Concrete Implementation */
+    *   val builder: OuterBuilders = ConcreteBuilders
+    *   /* A SymbolDeclaration can made in the following way */
+    *   val symbolDec: SymbolDeclaration = builder.SymbolDeclaration(Sort("Exp"), Symbol("Plus"), Seq(Sort("Int"), Sort("Int")), Seq.empty())
+    * }}}
+    *
+    */
+
+  /**
+    * The Builders trait has one method for every construct in [[outer]], with the same name.
+    * Implementations are expected to implement the methods, allowing tools to
+    * build patterns in an implementation independent manner.
+    */
+  trait OuterBuilders {
+    import outer._
+    import pattern.{Name, Sort, Symbol, Pattern}
+
+    def Definition(modules: Seq[Module], att: Attributes): Definition
+    def Module(name: Name, sentences: Seq[Sentence], att: Attributes): Module
+    def Import(name: Name, att: Attributes): Import
+    def SortDeclaration(sort: Sort, att: Attributes): SortDeclaration
+    def SymbolDeclaration(sort: Sort, symbol: Symbol, args: Seq[Sort], att: Attributes): SymbolDeclaration
+    def Rule(pattern: Pattern, att: Attributes): Rule
+    def Axiom(pattern: Pattern, att: Attributes): Axiom
+  }
+
   /**
     * Provides a Builder type that allows building Pattern types in [[pattern]].
     *
@@ -502,133 +704,6 @@ object pattern {
     * Implementations are expected to implement the methods, allowing tools to
     * build patterns in an implementation independent manner.
     */
-}
-
-object outer {
-
-  import org.kframework.kore.interfaces.{pattern => p}
-
-  type Attributes = Seq[p.Pattern]
-
-  trait HasAttributes {
-    val att: Attributes
-
-    def onAttributes(f: p.Pattern => p.Pattern): HasAttributes
-
-    def getBySymbol(key: p.Symbol): Seq[p.Pattern] = att.collect({ case p.Application(`key`, args) => args }).flatten
-  }
-
-  trait Definition extends HasAttributes {
-    val modules: Seq[Module]
-
-    // Derived operations
-    lazy val sorts: Set[p.Sort] = modules.flatMap(_.sorts).toSet
-    lazy val symbols: Set[p.Symbol] = modules.flatMap(_.symbols).toSet
-    lazy val sentences: Seq[Sentence] = modules.flatMap(_.sentences)
-
-    override def onAttributes(f: p.Pattern => p.Pattern): Definition
-  }
-
-  object Definition {
-    def unapply(arg: Definition): Option[(Seq[Module], Attributes)] = Some(arg.modules, arg.att)
-  }
-
-  trait Module extends HasAttributes {
-    val name: p.Name
-    val sentences: Seq[Sentence]
-
-    // Derived operations
-    lazy val sorts: Set[p.Sort] = sentences.flatMap(_.sorts).toSet
-    lazy val symbols: Set[p.Symbol] = sentences.flatMap(_.symbols).toSet
-
-    override def onAttributes(f: p.Pattern => p.Pattern): Module
-  }
-
-  object Module {
-    def unapply(arg: Module): Option[(p.Name, Seq[Sentence], Attributes)] = Some(arg.name, arg.sentences, arg.att)
-  }
-
-  trait Sentence extends HasAttributes {
-    lazy val sorts: Set[p.Sort] = Set.empty
-    lazy val symbols: Set[p.Symbol] = Set.empty
-
-    override def onAttributes(f: p.Pattern => p.Pattern): Sentence
-  }
-
-  trait Import extends Sentence {
-    val name: p.Name
-
-    override def onAttributes(f: p.Pattern => p.Pattern): Import
-  }
-
-  object Import {
-    def unapply(arg: Import): Option[(p.Name, Attributes)] = Some(arg.name, arg.att)
-  }
-
-  trait SortDeclaration extends Sentence {
-    val sort: p.Sort
-
-    override lazy val sorts = Set(sort)
-
-    override def onAttributes(f: p.Pattern => p.Pattern): SortDeclaration
-  }
-
-  object SortDeclaration {
-    def unapply(arg: SortDeclaration): Option[(p.Sort, Attributes)] = Some(arg.sort, arg.att)
-  }
-
-  trait SymbolDeclaration extends Sentence {
-    val sort: p.Sort
-    val symbol: p.Symbol
-    val args: Seq[p.Sort]
-
-    // TODO: Should `sorts` include the `args` here as well?
-    override lazy val sorts = Set(sort)
-    override lazy val symbols = Set(symbol)
-
-    override def onAttributes(f: p.Pattern => p.Pattern): SymbolDeclaration
-  }
-
-  object SymbolDeclaration {
-    def unapply(arg: SymbolDeclaration): Option[(p.Sort, p.Symbol, Seq[p.Sort], Attributes)] = Some(arg.sort, arg.symbol, arg.args, arg.att)
-  }
-
-  trait Rule extends Sentence {
-    val pattern: p.Pattern
-
-    override def onAttributes(f: p.Pattern => p.Pattern): Rule
-  }
-
-  object Rule {
-    def unapply(arg: Rule): Option[(p.Pattern, Attributes)] = Some(arg.pattern, arg.att)
-  }
-
-  trait Axiom extends Sentence {
-    val pattern: p.Pattern
-
-    override def onAttributes(f: p.Pattern => p.Pattern): Axiom
-  }
-
-  object Axiom {
-    def unapply(arg: Axiom): Option[(p.Pattern, Attributes)] = Some(arg.pattern, arg.att)
-  }
-
-}
-
-object builders {
-
-  trait OuterBuilders {
-    import outer._
-    import pattern.{Name, Sort, Symbol, Pattern}
-
-    def Definition(modules: Seq[Module], att: Attributes): Definition
-    def Module(name: Name, sentences: Seq[Sentence], att: Attributes): Module
-    def Import(name: Name, att: Attributes): Import
-    def SortDeclaration(sort: Sort, att: Attributes): SortDeclaration
-    def SymbolDeclaration(sort: Sort, symbol: Symbol, args: Seq[Sort], att: Attributes): SymbolDeclaration
-    def Rule(pattern: Pattern, att: Attributes): Rule
-    def Axiom(pattern: Pattern, att: Attributes): Axiom
-  }
 
   trait PatternBuilders {
     import pattern._
