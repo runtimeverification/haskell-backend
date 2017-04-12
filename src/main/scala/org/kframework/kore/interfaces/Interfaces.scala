@@ -491,7 +491,7 @@ object outer {
   type Attributes = Seq[p.Pattern]
 
   /**
-    * Trait That is Extended by Every Outer Construct that Attributes.
+    * Trait That is Extended by Every Outer Construct.
     */
   trait Outer {
     val att: Attributes
