@@ -493,12 +493,15 @@ object outer {
   /**
     * Trait That is Extended by Every Outer Construct that Attributes.
     */
-  trait HasAttributes {
+  trait Outer {
     val att: Attributes
+    val sorts: Set[p.Sort]
+    val symbols: Set[p.Symbol]
+    val sentences: Seq[Sentence]
 
-    def onAttributes(f: p.Pattern => p.Pattern): HasAttributes
+    def onAttributes(f: p.Pattern => p.Pattern): Outer
 
-    def getBySymbol(key: p.Symbol): Seq[p.Pattern] = att.collect({ case p.Application(`key`, args) => args }).flatten
+    def getBySymbol(key: p.Symbol): Seq[Seq[p.Pattern]] = att.collect({ case p.Application(`key`, args) => args })
   }
 
 
@@ -511,8 +514,8 @@ object outer {
     *
     *   Requires (Implementation for members)
     *   - modules, a Seq of [[Module]]s
-   */
-  trait Definition extends HasAttributes {
+    */
+  trait Definition extends Outer {
     val modules: Seq[Module]
 
     // Derived operations
@@ -536,7 +539,7 @@ object outer {
     *   Requires (Implementation for members)
     *   - modules, a Seq of [[Sentence]]s
     */
-  trait Module extends HasAttributes {
+  trait Module extends Outer {
     val name: p.Name
     val sentences: Seq[Sentence]
 
@@ -554,9 +557,10 @@ object outer {
 
   /** Kore Sentence. Extended by [[Import]], [[SymbolDeclaration]], [[SortDeclaration]], [[Axiom]], and [[Rule]]
     */
-  trait Sentence extends HasAttributes {
+  trait Sentence extends Outer {
     lazy val sorts: Set[p.Sort] = Set.empty
     lazy val symbols: Set[p.Symbol] = Set.empty
+    val sentences: Seq[Sentence] = Seq(this)
 
     override def onAttributes(f: p.Pattern => p.Pattern): Sentence
   }

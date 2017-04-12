@@ -204,7 +204,7 @@ class OuterTest {
   }
 
   @Test def attTestOnDefinition(): Unit = {
-    assertEquals(Seq(patternBuilder.Application(Symbol("SampleAtt"), Seq())), emptyModuleDefWithAtt.getBySymbol(Symbol("DefinitionAtt")))
+    assertEquals(Seq(Seq(patternBuilder.Application(Symbol("SampleAtt"), Seq()))), emptyModuleDefWithAtt.getBySymbol(Symbol("DefinitionAtt")))
   }
 
 }
