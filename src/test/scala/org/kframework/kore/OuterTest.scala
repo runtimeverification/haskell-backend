@@ -2,26 +2,19 @@ package org.kframework.kore
 
 import org.junit.Test
 import org.junit.Assert.assertEquals
-import org.kframework.kore.implementation.builders.DefaultOuterBuilders
-import org.kframework.kore.implementation.builders.DefaultPatternBuilders
-import org.kframework.kore.interfaces.builders.OuterBuilders
-import org.kframework.kore.interfaces.builders.PatternBuilders
+import org.kframework.kore.implementation.builders.DefaultKOREBuilders
+import org.kframework.kore.interfaces.builders.KOREBuilders
 import org.kframework.kore.interfaces.outer._
 import org.kframework.kore.interfaces.pattern._
 import org.kframework.kore.parser.TextToMini
 
-case class OuterStructures(b: OuterBuilders, p: PatternBuilders) {
+case class OuterStructures(k: KOREBuilders) {
 
-  import b._
-  import p._
+  import k._
   import org.kframework.kore.interfaces.pattern.Symbol
 
 
   val int1: DomainValue = DomainValue(Symbol("Int"), "1")
-
-  val patternBuilder: PatternBuilders = DefaultPatternBuilders
-
-  val outerBuilder: OuterBuilders = DefaultOuterBuilders
 
   val import1: Import = Import("B", Seq.empty)
 
@@ -146,15 +139,14 @@ case class OuterStructures(b: OuterBuilders, p: PatternBuilders) {
 
 class OuterTest {
 
-  val outerBuilder = DefaultOuterBuilders
-  val patternBuilder = DefaultPatternBuilders
+  val koreBuilder: KOREBuilders = DefaultKOREBuilders
 
-  val testStructures: OuterStructures = OuterStructures(outerBuilder, patternBuilder)
+  val testStructures: OuterStructures = OuterStructures(koreBuilder)
 
   import testStructures._
 
   def parseAndTest(source: String, expected: Definition): Unit = {
-    val parser = TextToMini(outerBuilder, patternBuilder)
+    val parser = TextToMini(koreBuilder)
     assertEquals(parser.parse(io.Source.fromString(source)), expected)
   }
 
@@ -204,7 +196,7 @@ class OuterTest {
   }
 
   @Test def attTestOnDefinition(): Unit = {
-    assertEquals(Seq(Seq(patternBuilder.Application(Symbol("SampleAtt"), Seq()))), emptyModuleDefWithAtt.getBySymbol(Symbol("DefinitionAtt")))
+    assertEquals(Seq(Seq(koreBuilder.Application(Symbol("SampleAtt"), Seq()))), emptyModuleDefWithAtt.getBySymbol(Symbol("DefinitionAtt")))
   }
 
 }

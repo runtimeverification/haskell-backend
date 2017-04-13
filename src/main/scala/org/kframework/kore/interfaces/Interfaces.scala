@@ -728,4 +728,5 @@ object builders {
     def Application(_1: Symbol, args: Seq[Pattern]): Application
   }
 
+  trait KOREBuilders extends OuterBuilders with PatternBuilders
 }

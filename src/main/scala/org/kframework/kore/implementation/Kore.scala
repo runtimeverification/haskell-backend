@@ -4,6 +4,7 @@ import org.kframework.kore.interfaces.{outer => o}
 import org.kframework.kore.interfaces.{pattern => p}
 import org.kframework.kore.interfaces.builders.OuterBuilders
 import org.kframework.kore.interfaces.builders.PatternBuilders
+import org.kframework.kore.interfaces.builders.KOREBuilders
 
 import scala.collection._
 
@@ -120,6 +121,31 @@ object builders {
 
   /** Implementation of the [[org.kframework.kore.interfaces.builders.PatternBuilders]] **/
   object DefaultPatternBuilders extends PatternBuilders {
+    def Variable(_1: p.Name, _2: p.Sort): p.Variable = DefaultPattern.Variable(_1, _2)
+    def DomainValue(_1: p.Symbol, _2: p.Value): p.DomainValue = DefaultPattern.DomainValue(_1, _2)
+    def Top(): p.Top = DefaultPattern.Top()
+    def Bottom(): p.Bottom = DefaultPattern.Bottom()
+    def Not(_1: p.Pattern): p.Not = DefaultPattern.Not(_1)
+    def Next(_1: p.Pattern): p.Next = DefaultPattern.Next(_1)
+    def And(_1: p.Pattern, _2: p.Pattern): p.And = DefaultPattern.And(_1, _2)
+    def Or(_1: p.Pattern, _2: p.Pattern): p.Or = DefaultPattern.Or(_1, _2)
+    def Implies(_1: p.Pattern, _2: p.Pattern): p.Implies = DefaultPattern.Implies(_1, _2)
+    def Equals(_1: p.Pattern, _2: p.Pattern): p.Equals = DefaultPattern.Equals(_1, _2)
+    def Exists(_1: p.Variable, _2: p.Pattern): p.Exists = DefaultPattern.Exists(_1, _2)
+    def ForAll(_1: p.Variable, _2: p.Pattern): p.ForAll = DefaultPattern.ForAll(_1, _2)
+    def Rewrite(_1: p.Pattern, _2: p.Pattern): p.Rewrite = DefaultPattern.Rewrite(_1, _2)
+    def Application(_1: p.Symbol, args: Seq[p.Pattern]): p.Application = DefaultPattern.Application(_1, args)
+  }
+
+  object DefaultKOREBuilders extends KOREBuilders {
+    def Definition(modules: Seq[o.Module], att: o.Attributes): o.Definition = DefaultOuter.Definition(modules, att)
+    def Module(name: p.Name, sentences: Seq[o.Sentence], att: o.Attributes): o.Module = DefaultOuter.Module(name, sentences, att)
+    def Import(name: p.Name, att: o.Attributes): o.Import = DefaultOuter.Import(name, att)
+    def SortDeclaration(sort: p.Sort, att: o.Attributes): o.SortDeclaration = DefaultOuter.SortDeclaration(sort, att)
+    def SymbolDeclaration(sort: p.Sort, symbol: p.Symbol, args: Seq[p.Sort], att: o.Attributes): o.SymbolDeclaration = DefaultOuter.SymbolDeclaration(sort, symbol, args, att)
+    def Rule(pattern: p.Pattern, att: o.Attributes): o.Rule = DefaultOuter.Rule(pattern, att)
+    def Axiom(pattern: p.Pattern, att: o.Attributes): o.Axiom = DefaultOuter.Axiom(pattern, att)
+
     def Variable(_1: p.Name, _2: p.Sort): p.Variable = DefaultPattern.Variable(_1, _2)
     def DomainValue(_1: p.Symbol, _2: p.Value): p.DomainValue = DefaultPattern.DomainValue(_1, _2)
     def Top(): p.Top = DefaultPattern.Top()

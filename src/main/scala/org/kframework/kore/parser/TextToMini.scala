@@ -1,8 +1,7 @@
 package org.kframework.kore.parser
 
 import org.apache.commons.lang3.StringEscapeUtils
-import org.kframework.kore.interfaces.builders.OuterBuilders
-import org.kframework.kore.interfaces.builders.PatternBuilders
+import org.kframework.kore.interfaces.builders.KOREBuilders
 import org.kframework.kore.interfaces.outer._
 import org.kframework.kore.interfaces.pattern._
 
@@ -14,9 +13,8 @@ case class ParseError(msg: String) extends Exception(msg) // ParseError.msg eq E
   *
   * @constructor Creates a new parser.
   */
-class TextToMini(ob: OuterBuilders, pb: PatternBuilders) {
-  import ob._
-  import pb._
+class TextToMini(kb: KOREBuilders) {
+  import kb._
 
   private val scanner = new Scanner()
 
@@ -423,7 +421,7 @@ object TextToMini {
     * {{{ SymbolChar = [a-zA-Z0-9.@#$%^_-]+ }}}
     */
 
-  def apply(ob: OuterBuilders, pb: PatternBuilders): TextToMini = new TextToMini(ob, pb)
+  def apply(kb: KOREBuilders): TextToMini = new TextToMini(kb)
 
   def isSymbolChar(c: Char): Boolean = {
     ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9') ||
