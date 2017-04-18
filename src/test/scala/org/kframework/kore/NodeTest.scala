@@ -1,11 +1,11 @@
-package org.kframework.minikore
+package org.kframework.kore
 
 import org.junit.Test
 import org.junit.Assert.assertEquals
-import org.kframework.minikore.implementation.DefaultBuilders
-import org.kframework.minikore.interfaces.build.Builders
-import org.kframework.minikore.interfaces.pattern._
-import org.kframework.minikore.interfaces.tree._
+import org.kframework.kore.implementation.DefaultBuilders
+import org.kframework.kore.interfaces.build.Builders
+import org.kframework.kore.interfaces.pattern._
+import org.kframework.kore.interfaces.tree._
 
 
 case class TestPatterns(b: Builders) {
