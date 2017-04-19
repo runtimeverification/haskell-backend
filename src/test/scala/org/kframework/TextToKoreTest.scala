@@ -1,10 +1,10 @@
-package org.kframework.kore
+package org.kframework
 
 import org.apache.commons.io.FileUtils
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import org.kframework.kore.implementation.DefaultBuilders
-import org.kframework.kore.interfaces.Builders
+import org.kframework.kore.Builders
+import org.kframework.kore.default.DefaultBuilders
 import org.kframework.kore.parser.{KoreToText, ParseError, TextToKore}
 
 class TextToKoreTest {
@@ -555,7 +555,7 @@ class TextToKoreTest {
     */
   def parseTest(src: FileOrSource, expected: String): Unit = {
     //TODO: Make test file parametric over builders.
-    val builder: Builders = DefaultBuilders()
+    val builder: Builders = DefaultBuilders
     val begin = java.lang.System.nanoTime()
     val minikore = src match {
       case src: FileFOS => TextToKore(builder).parse(src.x)
