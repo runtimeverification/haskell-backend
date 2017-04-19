@@ -1,11 +1,13 @@
 package org.kframework.minikore
 
-import org.kframework.minikore.implementation.{MiniKore => m}
-import org.kframework.minikore.interfaces.{pattern => i}
+import org.kframework.kore.implementation.DefaultBuilders
+import org.kframework.kore.interfaces.{Kore => i}
 
 import scala.collection.Iterable
 
 object Imp {
+
+  val m = DefaultBuilders()
 
   import m._
 
@@ -69,8 +71,6 @@ object Imp {
 
   // rules
 
-  import i.Sort
-
   val X = Variable("X", Sort("Id"))
   val Xs = Variable("X", Sort("List{Id}"))
   val M = Variable("M", Sort("Map{Id,Int}"))
@@ -99,7 +99,7 @@ object Imp {
 
 //  import scala.language.implicitConversions
 //  implicit def intDomainValue(x: Int): DomainValue = DomainValue(Symbol("Int"), x.toString)
-  def Int(x: Int) = DomainValue(Symbol("Int"), x.toString)
+  def Int(x: Int) = DomainValue(Symbol("Int"), Value(x.toString))
 
   implicit class infixPattern(p: i.Pattern) {
     def ->(q: i.Pattern): i.Pattern = Rewrite(p, q)
