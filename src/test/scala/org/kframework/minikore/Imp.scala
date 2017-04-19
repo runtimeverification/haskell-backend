@@ -1,21 +1,21 @@
 package org.kframework.minikore
 
-import org.kframework.kore.implementation.DefaultBuilders
-import org.kframework.kore.interfaces.{Kore => i}
+import org.kframework.kore.default.DefaultBuilders
+import org.kframework.kore
 
 import scala.collection.Iterable
 
 object Imp {
 
-  val m = DefaultBuilders()
+  val m = DefaultBuilders
 
   import m._
 
-  case class Symbol(str: String) extends i.Symbol {
-    def apply(children: Iterable[i.Pattern]): i.Pattern = {
+  case class Symbol(str: String) extends kore.Symbol {
+    def apply(children: Iterable[kore.Pattern]): kore.Pattern = {
       m.Application(m.Symbol(str), children.toSeq)
     }
-    def apply(children: i.Pattern*): i.Pattern = {
+    def apply(children: kore.Pattern*): kore.Pattern = {
       apply(children)
     }
 
@@ -71,21 +71,21 @@ object Imp {
 
   // rules
 
-  val X = Variable("X", Sort("Id"))
-  val Xs = Variable("X", Sort("List{Id}"))
-  val M = Variable("M", Sort("Map{Id,Int}"))
-  val I = Variable("I", Sort("Int"))
-  val I1 = Variable("I1", Sort("Int"))
-  val I2 = Variable("I2", Sort("Int"))
-  val B = Variable("B", Sort("Bool"))
-  val S = Variable("S", Sort("Stmt"))
-  val S1 = Variable("S1", Sort("Stmt"))
-  val S2 = Variable("S2", Sort("Stmt"))
-  val Ks = Variable("Ks", Sort("List{K}"))
-  val Be = Variable("Be", Sort("BExp"))
-  val Blk = Variable("Blk", Sort("Block"))
-  val Blk1 = Variable("Blk1", Sort("Block"))
-  val Blk2 = Variable("Blk2", Sort("Block"))
+  val X = Variable(Name("X"), Sort("Id"))
+  val Xs = Variable(Name("X"), Sort("List{Id}"))
+  val M = Variable(Name("M"), Sort("Map{Id,Int}"))
+  val I = Variable(Name("I"), Sort("Int"))
+  val I1 = Variable(Name("I1"), Sort("Int"))
+  val I2 = Variable(Name("I2"), Sort("Int"))
+  val B = Variable(Name("B"), Sort("Bool"))
+  val S = Variable(Name("S"), Sort("Stmt"))
+  val S1 = Variable(Name("S1"), Sort("Stmt"))
+  val S2 = Variable(Name("S2"), Sort("Stmt"))
+  val Ks = Variable(Name("Ks"), Sort("List{K}"))
+  val Be = Variable(Name("Be"), Sort("BExp"))
+  val Blk = Variable(Name("Blk"), Sort("Block"))
+  val Blk1 = Variable(Name("Blk1"), Sort("Block"))
+  val Blk2 = Variable(Name("Blk2"), Sort("Block"))
 
   val IntDiv = Symbol("_/Int_:Int*Int->Int")
   val IntPlus = Symbol("_+Int_:Int*Int->Int")
@@ -101,10 +101,10 @@ object Imp {
 //  implicit def intDomainValue(x: Int): DomainValue = DomainValue(Symbol("Int"), x.toString)
   def Int(x: Int) = DomainValue(Symbol("Int"), Value(x.toString))
 
-  implicit class infixPattern(p: i.Pattern) {
-    def ->(q: i.Pattern): i.Pattern = Rewrite(p, q)
-    def ~>(q: i.Pattern): i.Pattern = kCons(p, q)
-    def /\(q: i.Pattern): i.Pattern = And(p, q)
+  implicit class infixPattern(p: kore.Pattern) {
+    def ->(q: kore.Pattern): kore.Pattern = Rewrite(p, q)
+    def ~>(q: kore.Pattern): kore.Pattern = kCons(p, q)
+    def /\(q: kore.Pattern): kore.Pattern = And(p, q)
   }
 
   val rules = Seq(
