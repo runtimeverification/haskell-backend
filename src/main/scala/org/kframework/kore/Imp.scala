@@ -1,7 +1,7 @@
-package org.kframework.minikore
+package org.kframework.kore
 
-import org.kframework.kore.default.DefaultBuilders
 import org.kframework.kore
+import org.kframework.kore.default.DefaultBuilders
 
 import scala.collection.Iterable
 
