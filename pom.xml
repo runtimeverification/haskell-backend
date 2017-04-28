@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.kframework.k</groupId>
-  <artifactId>kore</artifactId>
+  <artifactId>kore_2.12</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
