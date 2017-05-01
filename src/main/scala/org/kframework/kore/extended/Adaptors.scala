@@ -14,7 +14,7 @@ object Adaptors {
       case kore.Import(n, _) => n
     })
 
-    val relevantImports = d.modules.filter(x => importDecs.contains(x.name))
+    val relevantImports = d.modules.filter(x => importDecs.contains(x.name)).map(asRichModule)
 
     RichModule(m, relevantImports)
   }
