@@ -5,6 +5,7 @@ import org.kframework.kore
 
 class RichDefinition(val koreDefinition: kore.Definition) {
 
+
 }
 
 object RichDefinition {
@@ -19,22 +20,6 @@ object RichModule {
   def apply(koreModule: kore.Module, imports: Seq[kore.Module]): RichModule = new RichModule(koreModule, imports)
 }
 
-
-object Adaptors {
-
-  implicit def asRichDefinition(d: kore.Definition): RichDefinition = RichDefinition(d)
-
-  implicit def asRichModule(m: kore.Module)(implicit d: kore.Definition): RichModule = {
-
-    val importDecs = m.sentences.collect({
-      case kore.Import(n, _) => n
-    })
-
-    val relevantImports = d.modules.filter(x => importDecs.contains(x.name))
-
-    RichModule(m, relevantImports)
-  }
-}
 
 
 
