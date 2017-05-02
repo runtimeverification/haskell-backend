@@ -18,5 +18,7 @@ object Adaptors {
 
     RichModule(m, relevantImports)
   }
+
+
 }
 
