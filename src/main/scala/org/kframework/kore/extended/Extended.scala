@@ -1,26 +1,18 @@
 package org.kframework.kore.extended
 
 import org.kframework.kore
-
-import Adaptors._
 // Each Construct only has the minimal information required to derive everything.
 
 object implicits {
 
   implicit class RichDefinition(val koreDefinition: kore.Definition) {
-    val mainModule = ???
-  }
-
-  object RichDefinition {
-    def apply(koreDefinition: kore.Definition): RichDefinition = new RichDefinition(koreDefinition)
+    lazy val modulesMap: Map[kore.ModuleName, kore.Module] = koreDefinition.modules.groupBy(_.name).mapValues(_.head)
   }
 
   implicit class RichModule(val koreModule: kore.Module)(implicit val d: kore.Definition) {
 
-    lazy val moduleImportsMap: Map[kore.ModuleName, kore.Module] = d.modules.groupBy(_.name).mapValues(_.head)
-
     lazy val imports: Seq[kore.Module] = koreModule.sentences.collect({
-      case kore.Import(m, _) => moduleImportsMap(m)
+      case kore.Import(m, _) => d.modulesMap(m)
     })
 
     lazy val localSentences = koreModule.sentences
@@ -36,8 +28,14 @@ object implicits {
 
   }
 
-  class RichAttributes(val attributes: kore.Attributes) {
+  implicit class RichAttributes(val attributes: kore.Attributes) {
 
+    def findSymbol(symbol: kore.Symbol): Option[kore.Pattern] = {
+      attributes.patterns.collect({
+        case p@kore.Application(`symbol`, _) => Some(p)
+        case _ => None
+      }).head
+    }
   }
 
 }
