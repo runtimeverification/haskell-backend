@@ -316,3 +316,11 @@ trait Builders {
   def Value(str: String): Value
 
 }
+
+trait Rewriter {
+  def step(t: Pattern): Pattern
+}
+
+trait Backend extends Definition with Builders with Rewriter
+
+trait MakeBackend extends ((Definition, ModuleName) => Backend)
