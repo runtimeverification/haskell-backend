@@ -1,6 +1,7 @@
 package org.kframework.kore.extended
 
 import org.kframework.kore
+import org.kframework.kore.Application
 // Each Construct only has the minimal information required to derive everything.
 
 object implicits {
@@ -31,18 +32,32 @@ object implicits {
   implicit class RichAttributes(val attributes: kore.Attributes) {
 
     def findSymbol(symbol: kore.Symbol): Option[kore.Pattern] = {
-      attributes.patterns.collect({
-        case p@kore.Application(`symbol`, _) => Some(p)
-        case _ => None
-      }).head
+      var collection = {
+        attributes.patterns.collect({
+          case p@kore.Application(`symbol`, _) => p
+        })
+      }
+      if (collection.isEmpty) None else Some(collection(0))
     }
+
+    def getSymbolValue(s: kore.Symbol): Option[kore.Value] = {
+      findSymbol(s) match {
+        case Some(p) => p match {
+          case kore.Application(_, Seq(kore.DomainValue(_, value))) => Some(value)
+          case _ => None
+        }
+        case _ => None
+      }
+    }
+
   }
 
 }
+
 //Rewriter may need a module to begin with. Still a WIP.
 //Needs a definition and a Module to start with.
 trait Rewriter {
-  def step(p: kore.Pattern, steps: Int=1): kore.Pattern
+  def step(p: kore.Pattern, steps: Int = 1): kore.Pattern
 }
 
 //Backend provides access to the definition (after its conversion) and it's set of Builders
