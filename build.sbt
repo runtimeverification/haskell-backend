@@ -1,11 +1,11 @@
 
-organization := "org.kframework.k"
+organization := "org.kframework"
 
 name := "kore"
 
 scalaVersion := "2.12.2"
 
-version := "1.0-SNAPSHOT"
+version := "0.5-SNAPSHOT"
 
 resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
