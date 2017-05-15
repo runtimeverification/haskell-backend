@@ -27,6 +27,13 @@ object implicits {
       case kore.SortDeclaration(s, _) => s
     })
 
+    lazy val localRules: Seq[kore.Rule] = localSentences.collect({
+      case r@kore.Rule(_, _) => r
+    })
+
+    lazy val rules: Seq[kore.Rule] = localRules ++ importedRules
+
+    lazy val importedRules: Seq[kore.Rule] = imports.flatMap(_.rules)
   }
 
   implicit class RichAttributes(val attributes: kore.Attributes) {
@@ -60,12 +67,15 @@ trait Rewriter {
   def step(p: kore.Pattern, steps: Int = 1): kore.Pattern
 }
 
-//Backend provides access to the definition (after its conversion) and it's set of Builders
-trait Backend extends kore.Definition with kore.Builders
+// Backend provides access to the definition (after its conversion) and it's set of Builders.
+// Also acts as the Rewriter.
+trait Backend extends kore.Definition with kore.Builders with Rewriter
 
 
 //Way to Create a backend give a Kore Definition. Since Backends need the entire definition to
 //Function, they can only provide Builders once they've processed the definition
 trait BackendCreator extends (kore.Definition => Backend)
+
+
 
 
