@@ -12,9 +12,13 @@ object implicits {
 
   implicit class RichModule(val koreModule: kore.Module)(implicit val d: kore.Definition) {
 
-    lazy val imports: Seq[kore.Module] = koreModule.sentences.collect({
+    import org.kframework.kore.implementation.{DefaultBuilders => db}
+
+    lazy val localImports: Seq[kore.Module] = koreModule.sentences.collect({
       case kore.Import(m, _) => d.modulesMap(m)
     })
+
+    lazy val imports: Seq[kore.Module] = localImports.flatMap(_.imports).toSet.toList ++ localImports
 
     lazy val localSentences = koreModule.sentences
 
@@ -34,6 +38,7 @@ object implicits {
     lazy val rules: Seq[kore.Rule] = localRules ++ importedRules
 
     lazy val importedRules: Seq[kore.Rule] = imports.flatMap(_.rules)
+
   }
 
   implicit class RichAttributes(val attributes: kore.Attributes) {
@@ -61,6 +66,7 @@ object implicits {
 
 }
 
+
 //Rewriter may need a module to begin with. Still a WIP.
 //Needs a definition and a Module to start with.
 trait Rewriter {
@@ -74,7 +80,7 @@ trait Backend extends kore.Definition with kore.Builders with Rewriter
 
 //Way to Create a backend give a Kore Definition. Since Backends need the entire definition to
 //Function, they can only provide Builders once they've processed the definition
-trait BackendCreator extends (kore.Definition => Backend)
+trait BackendCreator extends ((kore.Definition, kore.Module) => Backend)
 
 
 
