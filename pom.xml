@@ -6,7 +6,7 @@
 
   <groupId>org.kframework.k</groupId>
   <artifactId>kore_2.12</artifactId>
-  <version>0.5-SNAPSHOT</version>
+  <version>0.6-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>${project.groupId}:${project.artifactId}</name>
