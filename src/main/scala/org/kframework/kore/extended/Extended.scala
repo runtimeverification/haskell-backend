@@ -71,6 +71,8 @@ object implicits {
 //Needs a definition and a Module to start with.
 trait Rewriter {
   def step(p: kore.Pattern, steps: Int = 1): kore.Pattern
+
+  def execute(p: kore.Pattern): kore.Pattern
 }
 
 // Backend provides access to the definition (after its conversion) and it's set of Builders.
