@@ -5,7 +5,7 @@ name := "kore"
 
 scalaVersion := "2.12.2"
 
-version := "0.5-SNAPSHOT"
+version := "0.6-SNAPSHOT"
 
 resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
