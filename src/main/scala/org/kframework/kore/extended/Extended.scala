@@ -43,25 +43,20 @@ object implicits {
 
   implicit class RichAttributes(val attributes: kore.Attributes) {
 
+    def is(symbol: kore.Symbol): Boolean = findSymbol(symbol).isDefined
+
     def findSymbol(symbol: kore.Symbol): Option[kore.Pattern] = {
-      var collection = {
-        attributes.patterns.collect({
-          case p@kore.Application(`symbol`, _) => p
-        })
-      }
-      if (collection.isEmpty) None else Some(collection(0))
+      attributes.patterns.toStream.collect({
+        case p@kore.Application(`symbol`, _) => p
+      }).headOption
     }
 
     def getSymbolValue(s: kore.Symbol): Option[kore.Value] = {
-      findSymbol(s) match {
-        case Some(p) => p match {
-          case kore.Application(_, Seq(kore.DomainValue(_, value))) => Some(value)
-          case _ => None
-        }
+      findSymbol(s) flatMap {
+        case kore.Application(_, Seq(kore.DomainValue(_, value))) => Some(value)
         case _ => None
       }
     }
-
   }
 
 }
