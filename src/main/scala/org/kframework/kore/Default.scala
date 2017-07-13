@@ -122,6 +122,9 @@ object implementation {
     
     object knownSymbols {
       val PatternWithAttributes = Symbol("#")
+      val Map = Symbol("Map@MAP")
+      val List = Symbol("List@LIST")
+      val Set = Symbol("Set@SET")
     }
   }
 
