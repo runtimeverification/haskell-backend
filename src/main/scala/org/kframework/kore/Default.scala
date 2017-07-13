@@ -121,7 +121,7 @@ object implementation {
     def Value(str: String): i.Value = d.Value(str)
     
     object knownSymbols {
-      val PatternWithAttributes = kore.implementation.DefaultBuilders.Symbol("#")
+      val PatternWithAttributes = Symbol("#")
     }
   }
 
