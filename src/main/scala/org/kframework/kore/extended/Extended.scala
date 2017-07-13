@@ -4,10 +4,6 @@ import org.kframework.kore
 import org.kframework.kore.Application
 // Each Construct only has the minimal information required to derive everything.
 
-object KnownSymbols {
-  val PatternWithAttributes = kore.implementation.DefaultBuilders.Symbol("#")
-}
-
 object implicits {
 
   implicit class RichDefinition(val koreDefinition: kore.Definition) {
