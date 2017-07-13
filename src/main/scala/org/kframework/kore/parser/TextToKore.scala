@@ -155,7 +155,7 @@ class TextToKore(b: Builders) {
   //         | \next ( Pattern )
   //         | \rewrite ( Pattern , Pattern )
   //         | \equal ( Pattern , Pattern )
-  private def parsePattern(): Pattern = {
+  def parsePattern(): Pattern = {
     scanner.nextWithSkippingWhitespaces() match {
       case '\\' =>
         val c1 = scanner.next()
