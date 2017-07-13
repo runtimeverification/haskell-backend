@@ -21,7 +21,7 @@ class TextToKore(b: Builders) {
   }
 
   @throws(classOf[ParseError])
-  def innerParse[T](f: () => T): T = {
+  def innerParse[T](src: io.Source, f: () => T): T = {
     try {
       scanner.init(src)
       f()
@@ -36,11 +36,11 @@ class TextToKore(b: Builders) {
  
   /** Parses from the stream and returns [[kore.Definition]]. */
   @throws(classOf[ParseError])
-  def parse(src: io.Source): Definition = innerParse[Definition](parseDefinition)
+  def parse(src: io.Source): Definition = innerParse[Definition](src, parseDefinition)
  
    /** Parses from the stream and returns [[kore.Pattern]]. */
   @throws(classOf[ParseError])
-  def parsePattern(src: io.Source): Pattern = innerParse[Pattern](parsePattern)
+  def parsePattern(src: io.Source): Pattern = innerParse[Pattern](src, parsePattern)
 
   // Definition = Attributes Modules
   private def parseDefinition(): Definition = {
