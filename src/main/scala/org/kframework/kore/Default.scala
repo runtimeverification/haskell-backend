@@ -119,6 +119,10 @@ object implementation {
     def Symbol(str: String): i.Symbol = d.Symbol(str)
 
     def Value(str: String): i.Value = d.Value(str)
+    
+    object knownSymbols {
+      val PatternWithAttributes = Symbol("#")
+    }
   }
 
 }
