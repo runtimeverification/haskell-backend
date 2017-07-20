@@ -1,5 +1,5 @@
 
-organization := "org.kframework"
+organization := "org.kframework.k"
 
 name := "kore"
 
