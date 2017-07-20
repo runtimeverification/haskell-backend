@@ -1,5 +1,5 @@
 *.cache
 *.class
 *.iml
-target/*
+target/
 .idea
