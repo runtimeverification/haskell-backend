@@ -1,0 +1,90 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{wasysym}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage[utf8]{inputenc}
+\usepackage{proof}
+\usepackage{txfonts}
+\usepackage{mathtools}
+\usepackage{authblk}
+\usepackage{todonotes}
+\usepackage{comment}
+\usepackage[]{algorithm2e}
+% Import packages for syntax highlight code.
+\usepackage{listings}
+\usepackage{xcolor}
+
+
+\lstdefinestyle{smt}{
+    basicstyle=\footnotesize\ttfamily,
+    breaklines=true
+}
+
+\theoremstyle{plain}
+\newtheorem{thm}{Theorem}
+\newtheorem{prop}[thm]{Proposition}
+\newtheorem{cor}[thm]{Corollary}
+\newtheorem{defn}[thm]{Definition}
+\newtheorem{eg}[thm]{Example}
+\newtheorem{rmk}[thm]{Remark}
+\newtheorem{lemma}[thm]{Lemma}
+
+\DeclarePairedDelimiter\ceil{\lceil}{\rceil}
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+
+\def\imp{\rightarrow}
+\def\land{\mathbin\&}
+
+\def\I{\textsf{I}}
+\def\snext{\fullmoon}
+\def\prev{\odot}
+\def\eventually{\lozenge}
+\def\wnext{\newmoon}
+
+% Sf keywords used in math mode.
+
+\def\fol{\mathsf{fol}}
+\def\foltwo{\mathsf{fol_2}}
+
+% Small capital letters
+
+\def\MLFOL{\text{\small ML2FOL}}
+\def\ML{\text{\small ML}}
+\def\FOL{\text{\small FOL}}
+
+% Italic keywords used in math mode.
+\def\fv{\textit{freevars}}
+\def\Nat{\textit{Nat}}
+\def\Cfg{\textit{Cfg}}
+\def\pre{\textit{pre}}
+\def\post{\textit{post}}
+\def\ite{\textit{ite}}
+\def\true{\textit{true}}
+\def\false{\textit{false}}
+
+% Rewriting
+\def\To1{\Rightarrow^{\forall}_1}
+
+
+
+% Label inference rules.
+\newcommand{\rl}[1]{\text{\scriptsize{(#1)}}}
+
+
+% Title and authors
+
+\title{Technical Report\\ 
+	   The Semantics of K}
+\author[1]{Formal Systems Laboratory}
+\affil[1]{University of Illinois, Urbana-Champaign, USA}
+
+
+\begin{document}
+
+\maketitle
+
+Hi
+
+\end{document}
