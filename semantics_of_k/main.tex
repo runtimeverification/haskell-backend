@@ -1,90 +1,88 @@
 \documentclass{article}
+  \usepackage{xcolor}
 
-\usepackage{amsmath}
-\usepackage{wasysym}
-\usepackage{amsthm}
-\usepackage{amssymb}
-\usepackage[utf8]{inputenc}
-\usepackage{proof}
-\usepackage{txfonts}
-\usepackage{mathtools}
-\usepackage{authblk}
-\usepackage{todonotes}
-\usepackage{comment}
-\usepackage[]{algorithm2e}
-% Import packages for syntax highlight code.
-\usepackage{listings}
-\usepackage{xcolor}
+  % Select what to do with todonotes: 
+  % \usepackage[disable]{todonotes} % notes not showed
+  \usepackage[draft]{todonotes} % notes showed
 
-
-\lstdefinestyle{smt}{
-    basicstyle=\footnotesize\ttfamily,
-    breaklines=true
-}
-
-\theoremstyle{plain}
-\newtheorem{thm}{Theorem}
-\newtheorem{prop}[thm]{Proposition}
-\newtheorem{cor}[thm]{Corollary}
-\newtheorem{defn}[thm]{Definition}
-\newtheorem{eg}[thm]{Example}
-\newtheorem{rmk}[thm]{Remark}
-\newtheorem{lemma}[thm]{Lemma}
-
-\DeclarePairedDelimiter\ceil{\lceil}{\rceil}
-\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
-
-\def\imp{\rightarrow}
-\def\land{\mathbin\&}
-
-\def\I{\textsf{I}}
-\def\snext{\fullmoon}
-\def\prev{\odot}
-\def\eventually{\lozenge}
-\def\wnext{\newmoon}
-
-% Sf keywords used in math mode.
-
-\def\fol{\mathsf{fol}}
-\def\foltwo{\mathsf{fol_2}}
-
-% Small capital letters
-
-\def\MLFOL{\text{\small ML2FOL}}
-\def\ML{\text{\small ML}}
-\def\FOL{\text{\small FOL}}
-
-% Italic keywords used in math mode.
-\def\fv{\textit{freevars}}
-\def\Nat{\textit{Nat}}
-\def\Cfg{\textit{Cfg}}
-\def\pre{\textit{pre}}
-\def\post{\textit{post}}
-\def\ite{\textit{ite}}
-\def\true{\textit{true}}
-\def\false{\textit{false}}
-
-% Rewriting
-\def\To1{\Rightarrow^{\forall}_1}
+  % Select what to do with command \comment:  
+  % \newcommand{\comment}[1]
+      {} %comment not showed
+  \newcommand{\comment}[1]
+    {\par {\bfseries \color{blue} #1 \par}} %comment showed
+    
+  \usepackage{amsmath}
+  \usepackage{amssymb}
+  
+  \usepackage{amsthm}
+  
+  % Declare a global counter for theorem environments:
+  \newcounter{thmcounter}
+  
+  % Define new theorem styles:
+  \newtheorem{definition}[thmcounter]{Definition}
+  \newtheorem{example}[thmcounter]{Example}
+  
+  % Define serif fonts for ML theories used in math mode:
+  \newcommand{\PA}{\mathsf{PA}}
+  \newcommand{\SEQ}{\mathsf{SEQ}}
+  \newcommand{\HEAP}{\mathsf{HEAP}}
+  \newcommand{\IMP}{\mathsf{IMP}}
+  \newcommand{\FIX}{\mathsf{FIX}}
+  \newcommand{\LAMBDA}{\mathsf{LAMBDA}}
+  \newcommand{\CTXT}{\mathsf{CTXT}}
+  \newcommand{\DEF}{\mathsf{DEF}}
 
 
 
-% Label inference rules.
-\newcommand{\rl}[1]{\text{\scriptsize{(#1)}}}
 
-
-% Title and authors
-
-\title{Technical Report\\ 
-	   The Semantics of K}
-\author[1]{Formal Systems Laboratory}
-\affil[1]{University of Illinois, Urbana-Champaign, USA}
-
+  % Title and authors
+  \title{The Semantics of K}
+  \author{Formal Systems Laboratory \\
+          University of Illinois}
 
 \begin{document}
 
 \maketitle
 
-Hi
+\comment{Please feel free to contribute to this report in all ways. You could add new contents, remove redundant ones, refactor and organize the texts, and correct typos.} 
+
+\begin{definition}[Matching Logic Theory]
+\label{ML_theory}
+A matching logic theory $(S, \Sigma, A)$ is a triple that contains a nonempty finite set of sorts, a finite set of symbols, and a recursive set of axioms.
+\end{definition}
+
+\begin{example}
+We use {\sf serif fonts} to denote matching logic theories. Some of the commonly used ones are the theory (theories) of definedness $\DEF$, the theory of Presburger arithmetic $\PA$, the theory of sequences of natural numbers $\SEQ$, the theory of memory heaps $\HEAP$, the theory of {IMP} programs $\IMP$, the theory (theories) of fixed-points $\FIX$, and the theory (theories) of contexts $\CTXT$.
+\end{example}
+
+
+\begin{definition}[The Kore Language]
+\comment{We haven't come to an agreement on the syntax of the Kore language yet. One could, though, refer to the Kore text representation at the wiki page at kframework repos on Github, whose link I cannot find, which is considered as the first step towards that direction.}
+The Kore language is a language to write matching logic theories. The outcomes are called Kore definitions. Kore definitions are mainly served as the interface between a K frontend and a K backend, but a human should be able to read and write Kore definitions of simple theories, too. The Kore language is designed in a way that:
+\begin{itemize}
+\item Every Kore definition defines exactly one matching logic theory;
+\item Every matching logic theory can be defined as a Kore definition;
+\item There is no parsing ambiguity.
+\item The least amount of inferring is needed;
+\item And more \dots
+\end{itemize}
+\end{definition}
+
+\begin{definition}[Frontend]
+A K frontend is an artifact that generates Kore definitions.
+\end{definition}
+
+\begin{definition}[Backend]
+A K backend is an artifact that consumes a Kore definition of a theory $\mathsf{T}$ and does some work. Whatever it does can and should be algorithmically reduced to the task of proving $\mathsf{T} \vdash \varphi$ where $\varphi$ ``encodes'' that work. A K backend should justify its results by generating formal proofs that can be proof-checked by the oracle matching logic proof checker.
+\end{definition}
+
+\todo[inline]{Discussion about metavariables.}
+\todo[inline]{Rewriting logic}
+\todo[inline]{Contexts}
+\todo[inline]{Fixed points}
+\todo[inline]{Lambda Calculus}
+
+
 
 \end{document}
