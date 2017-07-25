@@ -66,13 +66,15 @@ We use {\sf serif fonts} to denote matching logic theories. Some of the commonly
 
 
 \begin{definition}[The Kore Language]
-\comment{We haven't come to an agreement on the syntax of the Kore language yet. One could, though, refer to the Kore text representation at the wiki page at kframework repos on Github, whose link I cannot find, which is considered as the first step towards that direction.}
+\comment{We haven't come to an agreement on the syntax of the Kore language yet. One could, though, refer to the Kore text representation at the wiki page at kframework repos on Github, whose link I cannot find any more, which is considered as the first step towards that direction.}
 The Kore language is a language to write matching logic theories. The outcomes are called Kore definitions. Kore definitions are mainly served as the interface between a K frontend and a K backend, but a human should be able to read and write Kore definitions of simple theories, too. The Kore language is designed in a way that:
 \begin{itemize}
 \item Every Kore definition defines exactly one matching logic theory;
 \item Every matching logic theory can be defined as a Kore definition;
 \item There is no parsing ambiguity.
 \item The least amount of inferring is needed;
+\item Symbols are decorated with their argument sorts and result sort;
+\item No polymorphic symbols, so $\DEF$ will have $n^2$ definedness symbols if there are $n$ sorts;
 \item And more \dots
 \end{itemize}
 \end{definition}
@@ -85,11 +87,13 @@ A K frontend is an artifact that generates Kore definitions.
 A K backend is an artifact that consumes a Kore definition of a theory $\mathsf{T}$ and does some work. Whatever it does can and should be algorithmically reduced to the task of proving $\mathsf{T} \vdash \varphi$ where $\varphi$ ``encodes'' that work. A K backend should justify its results by generating formal proofs that can be proof-checked by the oracle matching logic proof checker.
 \end{definition}
 
-\paragraph{Object-level and meta-level}
-It is an aspect of life in mathematical logics to distinguish the \emph{object-level} and \emph{meta-level} concepts. The basic principle is to use serif fonts letters ($\mathsf{Nat}, \mathsf{x:Nat}, \mathsf{plus(0, x:Nat)}$) for object-level concepts and normal math fonts letters for meta-level concepts ($s, x:s, \sigma(\sigma_0, x:s)$). 
+\section{Object-level and meta-level}
 
-\paragraph*{Variables and metavariables for variables}
-This paragraph includes some discussions and observations about the usage of variables and metavariables in writing matching logic theories and Kore definitions. For any matching logic theory $\mathsf{T} = (S, \Sigma, A)$, it comes for each sort $s \in S$ a countably infinite set $V_s$ of variables. We use $\mathsf{x:s}, \mathsf{y:s}, \mathsf{z:s}, \dots$ for variables in $V_s$, and omit their sorts when that is clear from the contexts. Different sorts have disjoint sets of variables, so $V_s \cap V_{s'} = \emptyset$ if $s \neq s'$.
+It is an aspect of life in mathematical logics to distinguish the \emph{object-level} and \emph{meta-level} concepts. The basic principle is to use serif fonts letters ($\mathsf{x}$) for object-level concepts and normal math fonts letters for meta-level concepts ($x$). 
+
+\paragraph{Variables and metavariables for variables}
+
+For any matching logic theory $\mathsf{T} = (S, \Sigma, A)$, it comes for each sort $s \in S$ a countably infinite set $V_s$ of variables. We use $\mathsf{x:s}, \mathsf{y:s}, \mathsf{z:s}, \dots$ for variables in $V_s$, and omit their sorts when that is clear from the contexts. Different sorts have disjoint sets of variables, so $V_s \cap V_{s'} = \emptyset$ if $s \neq s'$.
 
 
 
@@ -117,6 +121,18 @@ The free variables appearing in the axioms of a theory can be regarded as implic
   
   All the eight theories are equal. Theories $A_4, A_5, A_6$ are finite representations of theories $A_7, A_8, A_8$ respectively. 
 \end{example}
+
+\begin{remark}
+\label{no_need_to_have_metavariables_for_variables}
+There is no need to have metavariables for variables in the Kore language, because (1) if they are used as bound variables, then replacing them with any (matching logic) variables will result in the same theories, thanks to alpha-renaming; and (2) if they are used as free variables, then it makes no difference to consider the universal quantification closure of them and we get to the case (1). 
+\comment{Given said that, there are cases when metavariables for variables make sense. In those cases we often want our metavariables to range over all variables of all sorts, in order to make our Kore definitions compact. The next example shows that.}
+\end{remark}
+
+\paragraph{Patterns and metavariables for patterns}
+
+It is in practice more common to use metavariables that range over all patterns. One typical example is axiom schemata. For example, $\vdash \varphi \to \varphi$ in which $\varphi$ is the metavariable that ranges all well-formed patterns. 
+
+\comment{There has been an argument on whether metavariables for patterns should be sorted or not. One important observation is that one may indeed want }
 
 
 \todo[inline]{Rewriting logic}
