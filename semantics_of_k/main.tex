@@ -20,8 +20,16 @@
   \newcounter{thmcounter}
   
   % Define new theorem styles:
+  \theoremstyle{plain}
+  \newtheorem{theorem}[thmcounter]{Theorem}
+  \newtheorem{lemma}[thmcounter]{Lemma}
+  \newtheorem{proposition}[thmcounter]{Proposition}
+  \theoremstyle{definition}
   \newtheorem{definition}[thmcounter]{Definition}
   \newtheorem{example}[thmcounter]{Example}
+  \theoremstyle{remark}
+  \newtheorem{remark}[thmcounter]{Remark}
+  \newtheorem{notation}[thmcounter]{Notation}
   
   % Define serif fonts for ML theories used in math mode:
   \newcommand{\PA}{\mathsf{PA}}
@@ -49,7 +57,7 @@
 
 \begin{definition}[Matching Logic Theory]
 \label{ML_theory}
-A matching logic theory $(S, \Sigma, A)$ is a triple that contains a nonempty finite set of sorts, a finite set of symbols, and a recursive set of axioms.
+A matching logic theory $(S, \Sigma, A)$ is a triple that contains a nonempty finite set of sorts, a finite set of symbols, and a recursive set of axioms. Two theories are \emph{equal} if they have the same set of sorts and symbols, and they deduce the same set of theorems.
 \end{definition}
 
 \begin{example}
@@ -77,7 +85,40 @@ A K frontend is an artifact that generates Kore definitions.
 A K backend is an artifact that consumes a Kore definition of a theory $\mathsf{T}$ and does some work. Whatever it does can and should be algorithmically reduced to the task of proving $\mathsf{T} \vdash \varphi$ where $\varphi$ ``encodes'' that work. A K backend should justify its results by generating formal proofs that can be proof-checked by the oracle matching logic proof checker.
 \end{definition}
 
-\todo[inline]{Discussion about metavariables.}
+\paragraph{Object-level and meta-level}
+It is an aspect of life in mathematical logics to distinguish the \emph{object-level} and \emph{meta-level} concepts. The basic principle is to use serif fonts letters ($\mathsf{Nat}, \mathsf{x:Nat}, \mathsf{plus(0, x:Nat)}$) for object-level concepts and normal math fonts letters for meta-level concepts ($s, x:s, \sigma(\sigma_0, x:s)$). 
+
+\paragraph*{Variables and metavariables for variables}
+This paragraph includes some discussions and observations about the usage of variables and metavariables in writing matching logic theories and Kore definitions. For any matching logic theory $\mathsf{T} = (S, \Sigma, A)$, it comes for each sort $s \in S$ a countably infinite set $V_s$ of variables. We use $\mathsf{x:s}, \mathsf{y:s}, \mathsf{z:s}, \dots$ for variables in $V_s$, and omit their sorts when that is clear from the contexts. Different sorts have disjoint sets of variables, so $V_s \cap V_{s'} = \emptyset$ if $s \neq s'$.
+
+
+
+\begin{proposition}
+\label{prop:explicitly_universal_quantified_justification}
+Let $A$ be a set of axioms and $\bar{A} = \forall A$ be the universal quantification closure of $A$, then for any pattern $\varphi$, $A \vdash \varphi$ iff $\bar{A} \vdash \varphi$.
+\end{proposition}
+
+\begin{remark}[Free variables in axioms]
+\label{rmk:free_variables_in_axioms_are_universal_quantified}
+The free variables appearing in the axioms of a theory can be regarded as implicitly universal quantified, because a theory and its universal quantification closure are equal.
+\end{remark}
+
+\begin{example}
+  \begin{align*}
+  A_1 &= \{{\sf mult(x, 0) = 0}\} \\
+  A_2 &= \{{\sf \forall x . mult(x, 0) = 0}\} \\
+  A_3 &= \{{\sf \forall y . mult(y, 0) = 0}\} \\
+  A_4 &= \{\mathsf{mult}(x, \mathsf{0}) = \mathsf{0}\} \\
+  A_5 &= \{\forall x . \mathsf{mult}(x, \mathsf{0}) = \mathsf{0}\} \\
+  A_6 &= \{\forall y . \mathsf{mult}(y, \mathsf{0}) = \mathsf{0}\} \\
+  A_7 &= \{{\sf mult(x, 0) = 0, mult(y, 0) = 0, mult(z, 0) = 0, \dots}\} \\
+  A_8 &= \{{\sf \forall x . mult(x, 0) = 0, \forall y . mult(y, 0) = 0, \forall z . mult(z, 0) = 0, \dots}\}
+  \end{align*}
+  
+  All the eight theories are equal. Theories $A_4, A_5, A_6$ are finite representations of theories $A_7, A_8, A_8$ respectively. 
+\end{example}
+
+
 \todo[inline]{Rewriting logic}
 \todo[inline]{Contexts}
 \todo[inline]{Fixed points}
