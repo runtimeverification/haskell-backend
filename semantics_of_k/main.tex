@@ -40,8 +40,17 @@
   \newcommand{\LAMBDA}{\mathsf{LAMBDA}}
   \newcommand{\CTXT}{\mathsf{CTXT}}
   \newcommand{\DEF}{\mathsf{DEF}}
+  
+  % Define the colon ":" that is used in "x:s"
+  % with less spacing around.
+  \newcommand{\cln}{{:}}
+  
+  % Define ceiling and flooring symbols:
+  \usepackage{mathtools}
+  \DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
 
-
+  % Package for underlining and strikethrough texts.
+  \usepackage[normalem]{ulem}
 
 
   % Title and authors
@@ -74,7 +83,9 @@ The Kore language is a language to write matching logic theories. The outcomes a
 \item There is no parsing ambiguity.
 \item The least amount of inferring is needed;
 \item Symbols are decorated with their argument sorts and result sort;
-\item No polymorphic symbols, so $\DEF$ will have $n^2$ definedness symbols if there are $n$ sorts;
+\item There is no polymorphic or overloaded symbols, so every symbol has a unique name (reference). 
+\comment{The above two points will lead to some redundancy in Kore definitions, though. For example, there will be $n^2$ definedness symbol if there are $n$ sorts in the theory. Similarly, $n^2$ equalities are need, too.}
+\item User-defined (matching logic) variables are allowed as in theory $\LAMBDA$. We shouldn't fix a syntax for variables. Please refer to later sections about theory $\LAMBDA$ for more discussions.
 \item And more \dots
 \end{itemize}
 \end{definition}
@@ -125,14 +136,21 @@ The free variables appearing in the axioms of a theory can be regarded as implic
 \begin{remark}
 \label{no_need_to_have_metavariables_for_variables}
 There is no need to have metavariables for variables in the Kore language, because (1) if they are used as bound variables, then replacing them with any (matching logic) variables will result in the same theories, thanks to alpha-renaming; and (2) if they are used as free variables, then it makes no difference to consider the universal quantification closure of them and we get to the case (1). 
-\comment{Given said that, there are cases when metavariables for variables make sense. In those cases we often want our metavariables to range over all variables of all sorts, in order to make our Kore definitions compact. The next example shows that.}
+\comment{\sout{Given said that, there are cases when metavariables for variables make sense. In those cases we often want our metavariables to range over all variables of all sorts, in order to make our Kore definitions compact.} No, we do not need metavariables over variables. I was thinking of the definedness symbols. We might want to write only one axiom schema of $\ceil{x}$ instead many $\ceil{x \cln s}_s^{s'}$'s, but we cannot do that unless we allow polymorphic and overloaded symbols in Kore definitions.}
 \end{remark}
 
 \paragraph{Patterns and metavariables for patterns}
 
 It is in practice more common to use metavariables that range over all patterns. One typical example is axiom schemata. For example, $\vdash \varphi \to \varphi$ in which $\varphi$ is the metavariable that ranges all well-formed patterns. 
 
-\comment{There has been an argument on whether metavariables for patterns should be sorted or not. One important observation is that one may indeed want }
+\comment{There has been an argument on whether metavariables for patterns should be sorted or not. Here are some observations. Firstly, since all symbols are decorated and not overloaded, in most cases, the sort of a metavariable for patterns can be inferred from its context. Secondly, the only counterexample against the first point that I can think of is when they appear alone, which is not an interesting case anyway. Thirdly, we do want the least amount of reasoning and inferring in using Kore definitions, so it breaks nothing if not helping things to have metavariables for patterns carrying their sorts.}
+
+\begin{example}
+\begin{align*}
+A_1 = \{{\sf merge(h1, h2) = merge(h2, h1)}\} \\
+A_2 = \{{\sf \forall h1 h2 . merge(h1, h2) = merge(h2, h1)}\}
+\end{align*}
+\end{example}
 
 
 \todo[inline]{Rewriting logic}
