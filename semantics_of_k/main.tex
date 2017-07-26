@@ -147,16 +147,27 @@ It is in practice more common to use metavariables that range over all patterns.
 
 \begin{example}
 \begin{align*}
-A_1 = \{{\sf merge(h1, h2) = merge(h2, h1)}\} \\
-A_2 = \{{\sf \forall h1 h2 . merge(h1, h2) = merge(h2, h1)}\}
+A_1 &= \{{\sf merge(h1, h2) = merge(h2, h1)}\} \\
+A_2 &= \{{\sf \forall h1 \forall h2 . merge(h1, h2) = merge(h2, h1)}\} \\
+A_3 &= \{\mathsf{merge}(\varphi, \psi) = \mathsf{merge}(\psi, \varphi)\}
 \end{align*}
+All three theories are equal. It is easier to see that fact from a model theoretic point of view, since all theories require that the interpretation of $\mathsf{merge}$ is commutative and nothing more. On the other hand, it is not straightforward to obtain that conclusion from a proof theoretic point of view. For example, to deduce $\mathsf{merge}(\mathsf{list}(\mathsf{one}, \mathsf{cons}(\mathsf{two}, \mathsf{epsilon})), \mathsf{top}) = \mathsf{merge}(\mathsf{top}, \mathsf{list}(\mathsf{one}, \mathsf{cons}(\mathsf{two}, \mathsf{epsilon})))$ needs only one step in $A_3$, but will need a lot more in either $A_1$ or $A_2$, because one cannot simply substitute any patterns for universal quantified variables in matching logic.
+\comment{This is a nice example that shows the power of metavariables and how they greatly shorten formal proofs, but this is not a good example to convince people that we need metavariables for patterns in order to embrace more expressiveness. There is an example in the theory $\LAMBDA$ that clearly shows metavariables give us more expressiveness power, and we will cover that example in later sections.}
 \end{example}
 
+\section{Binders}
+
+In matching logic there is a unified representation of binders. We will be using the theory of lambda calculus $\LAMBDA$ as an example in this section. Recall that the syntax for untyped lambda calculus is
+\begin{align*}
+\Lambda \Coloneqq V \mid \lambda V . \Lambda \mid \Lambda \ \Lambda
+\end{align*}
+where $V$ is a countably infinite set of atomic $\lambda$-terms.
+
+The theory $\LAMBDA$ in matching logic has one sort $\mathsf{Exp}$ for lambda expressions. It also has in its signature a binary symbol $\mathsf{\#lambda}$ that builds a $\lambda$-terms, and a binary symbol $\mathsf{app}$ for lambda applications. To mimic the binding behavior of $\lambda$ in lambda calculus, we define syntactic sugar $\mathsf{lambda}x . e = \exists x . \mathsf{\#lambda}(x, e)$  and $e_1\ e_2 = \mathsf{app}$ in theory $\LAMBDA$.
 
 \todo[inline]{Rewriting logic}
 \todo[inline]{Contexts}
 \todo[inline]{Fixed points}
-\todo[inline]{Lambda Calculus}
 
 
 
