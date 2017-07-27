@@ -41,6 +41,9 @@
   \newcommand{\CTXT}{\mathsf{CTXT}}
   \newcommand{\DEF}{\mathsf{DEF}}
   
+  % Define identity context
+  \newcommand{\I}{\mathsf{I}}
+  
   % Define the colon ":" that is used in "x:s"
   % with less spacing around.
   \newcommand{\cln}{{:}}
@@ -214,7 +217,117 @@ We have not proved that matching logic is a conservative extension of untyped la
 \end{remark}
 
 \todo[inline]{Rewriting logic}
-\todo[inline]{Contexts}
+
+\section{Contexts}
+
+Fix a signature $(S, \Sigma)$. For each sort $s \in S$, introduce an infinite number of \emph{hole} variables, written as $\square_1, \square_2, \cdots$. Think of hole variables as normal matching logic variables, but lie in a disjoint namespace. Extend the grammar by adding the following.
+
+\begin{align}
+\label{ml_grammar}
+P \Coloneqq\  & \cdots \nonumber \\
+\mid\  & \square \nonumber \\
+\mid\  & \gamma \square . P \nonumber \\
+\mid\  & P[P'] . \nonumber
+\end{align}
+
+The sort of $\gamma \square . P$ is the sort of $P$. The sort of $P[P']$ is the sort of $P$, too. Think of $\gamma \square$ as a binder. Alpha-renaming is always assumed. Patterns of the form $\gamma \square . P$ are often called \emph{contexts}, denoted by $C, C_0, C_1, \dots$. The pattern $P[P']$ is often called an \emph{application}. The $\_[\_]$ operator is left associative.
+
+\begin{definition}
+	The context $\gamma \square . \square$ is called the identity context, denoted as $\I$. Identity context has the axiom schema $\I[P]=P$ where $P$ is any pattern.
+\end{definition}
+
+\begin{example}
+	$\I[\I] = \I$.
+\end{example}
+
+\begin{example}
+	Consider a signature $(S,\Sigma)$ of a simple imperative programming language, with $S = \{{BExp},{Pgm}\}$, and $\Sigma = \{skip, {ite}, {seq}, true, false\}$. Add axiom schemata $${ite}(C_1[B], P, Q) = (\gamma \square . {ite}(C_1[\square], P, Q))[B]$$ and $${seq}(C_2[P],Q) = (\gamma \square . {seq}(C_2[\square], Q))[P],$$ where $P, Q$ are ${Pgm}$ patterns, $B$ is a ${BExp}$ pattern, $C_1$ is a ${BExp}$ context, and $C_2$ is a ${Pgm}$ context.
+	
+	Suppose we have the rewrite rules (schemata):
+	\begin{itemize}
+		\item $C[{ite}({true}, P, Q)] \Rightarrow C[P]$,
+		\item $C[{ite}({false}, P, Q)] \Rightarrow C[Q]$,
+		\item $C[{seq}({skip},Q)] \Rightarrow C[Q]$.
+	\end{itemize}
+	
+	Example (a). Rewrite $seq(skip,skip)$.
+	\begin{align*}
+	seq(skip,skip)
+	&= \mathsf{I}[seq(skip,skip)] \\
+	&\Rightarrow \mathsf{I}[skip] \\
+	&= skip.
+	\end{align*}
+	
+	Example (b). Rewrite $ite(true, P, Q); R$.
+	\begin{align*}
+	seq(ite(true, P, Q), R) 
+	&= seq(\I[ite(true, P, Q)], R) \\
+	&= (\gamma \square . seq(\I[\square], R))[ite(true, P, Q)] \\
+	&\Rightarrow (\gamma \square . seq(\I[\square], R))[P] \\
+	&= seq(\I[P], R) \\
+	&= seq(P, R).
+	\end{align*}
+\end{example}
+
+\begin{definition}
+	Let $\sigma \in \Sigma_{s_1\dots s_n, s}$ is an $n$-arity symbol. We say $\sigma$ is \emph{active} on its $i$th argument ($1 \le i \le n$), if
+	$\sigma(P_1,\dots, C[P_i], \dots, P_n)
+	= (\gamma \square . \sigma(P_1,\dots,C[\square], \dots, P_n))[P_i]$. Orienting the equation from the left to the right is often called \emph{heating}, while orienting from the right to the left is called \emph{cooling}.
+\end{definition}
+
+\begin{example}
+	Suppose $f$ and $g$ are binary symbols who are active on their first argument. Suppose $a, b$ are constants, and $x$ is a variable. Let $\square_1$ and $\square_2$ be two hole variables. Define two contexts $C_1 = \gamma \square_1 . f(\square_1, a)$ and $C_2 = \gamma \square_2 . g(\square_2, b)$. 
+	
+	Because $f$ is active on the first argument, 
+	\begin{align*}
+       C_1[\varphi]
+       &= (\gamma \square_1 . f(\square_1, a)) [\varphi] \\
+       &= (\gamma \square_1 . f(\I[\square_1], a)) [\varphi] \\
+       &= f(\I[\varphi], a) \\
+       &= f(\varphi, a), \text{ for any pattern $\varphi$.}
+	\end{align*}
+	And for the same reason, $C_2[\varphi] = g(\varphi, b)$. Then we have
+	\begin{align*}
+	C_1[C_2[x]]
+	&= C_1[f(x,a)] \\
+	&= g(f(x,a), b).
+	\end{align*}
+	On the other hand, 
+	\begin{align*}
+    g(f(x,a), b)
+    &= g(C_1[x], b) \\
+    &= (\gamma \square . g(C_1[\square], b))[x] \\
+    &= (\gamma \square . g(f(\square, a), b))[x].
+	\end{align*}
+	Therefore, the context $\gamma \square . g(f(\square, a), b))$ is often called the \emph{composition} of $C_1$ and $C_2$, denoted as $C_1 \circ C_2$.
+
+\end{example}
+
+\begin{example}
+	Suppose $f$ is a binary symbol with all its two arguments active. Suppose $C_1$ and $C_2$ are two contexts and $a, b$ are constants. Then easily we get
+	\begin{align*}
+	f(C_1[a],C_2[b])
+	&= (\gamma \square_2 . f(C_1[a], C_2[\square_2]))[b] \\
+	&= (\gamma \square_2 . ((\gamma \square_1 . f(C_1[\square_1], C_2[\square_2])) [a] )) [b].
+	\end{align*}
+	What happens above is similar to \emph{curring} a function that takes two arguments. It says that there exists a context $C_a$, related with $C_1, C_2, f$ and $a$ of course, such that $C_a[b]$ returns $f(C_1[a],C_2[b])$. The context $C_a$ has a binding hole $\square_2$, and a body that itself is another context $C_a'$ applied to $a$. In other words, there exists $C_a$ and $C_a'$ such that 
+	\begin{itemize}
+	\item $f(C_1[a],C_2[b]) = C_a[b]$,
+	\item $C_a = \gamma \square_2 . (C_a'[a])$,
+	\item $C_a' = \gamma \square_1 . f(C_1[\square_1], C_2[\square_2])$.
+	\end{itemize}
+	
+	A natural question is whether there is a context $C$ such that $C[a][b] = f(C_1[a],C_2[b])$. 
+\end{example}
+
+\begin{proposition}
+	$C_1[C_2[\varphi]] = C [\varphi], \text{ where } C = \gamma \square . C_1[C_2[\square]].$
+\end{proposition}
+
+\subsubsection{Normal forms}
+
+In this section, we consider \emph{decomposition} of patterns. A decomposition of a pattern $P$ is a pair $\langle C, R \rangle $ such that $C[R] = P$. Let us now consider patterns that do not have logical connectives.
+
 \todo[inline]{Fixed points}
 
 
