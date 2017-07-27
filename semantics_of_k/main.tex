@@ -41,6 +41,16 @@
   \newcommand{\CTXT}{\mathsf{CTXT}}
   \newcommand{\DEF}{\mathsf{DEF}}
   
+  % Define serif fonts for IMP program constructors:
+  \newcommand{\impite}{\mathsf{ite}}
+  \newcommand{\impwhile}{\mathsf{while}}
+  \newcommand{\imptt}{\mathsf{tt}}
+  \newcommand{\impff}{\mathsf{ff}}
+  \newcommand{\impskip}{\mathsf{skip}}
+  \newcommand{\impseq}{\mathsf{seq}}
+  \newcommand{\impasgn}{\mathsf{asgn}}
+
+  
   % Define identity context
   \newcommand{\I}{\mathsf{I}}
   
@@ -201,12 +211,16 @@ Let $\varphi$ be a metavariable of sort $s \in S$. The range of $\varphi$ is a s
 \begin{definition}[Common ranges of metavariables]
 \quad
 \begin{itemize}
-\item The full range $\mathrm{Pattern}_s$;
-\item The logic-free range (variables plus symbols without logic connectives);
-\item The ground logic-free range (symbols only); 
-\item The variable range $\mathrm{Var}_s$;
+\item Full range $\mathrm{Pattern}_s$;
+\item Syntactic terms range (variables plus symbols without logic connectives);
+\item Ground syntactic terms range (symbols only); 
+\item Variable range $\mathrm{Var}_s$ (metavariables for variables).
 \end{itemize}
 \end{definition}
+
+\begin{remark}
+Syntactic terms (and ground syntactic terms) are purely defined syntactically and not equal to terms or functional patterns. When all symbols are functional symbols, the set of syntactic terms equals the set of terms, and both of them are included in the set of all functional patterns. 
+\end{remark}
 
 \begin{remark}
 We need to design a syntax for specifying ranges of metavariables in the Kore language. 
@@ -220,60 +234,55 @@ We have not proved that matching logic is a conservative extension of untyped la
 
 \section{Contexts}
 
-Fix a signature $(S, \Sigma)$. For each sort $s \in S$, introduce an infinite number of \emph{hole} variables, written as $\square_1, \square_2, \cdots$. Think of hole variables as normal matching logic variables, but lie in a disjoint namespace. Extend the grammar by adding the following.
-
-\begin{align}
-\label{ml_grammar}
-P \Coloneqq\  & \cdots \nonumber \\
-\mid\  & \square \nonumber \\
-\mid\  & \gamma \square . P \nonumber \\
-\mid\  & P[P'] . \nonumber
-\end{align}
-
-The sort of $\gamma \square . P$ is the sort of $P$. The sort of $P[P']$ is the sort of $P$, too. Think of $\gamma \square$ as a binder. Alpha-renaming is always assumed. Patterns of the form $\gamma \square . P$ are often called \emph{contexts}, denoted by $C, C_0, C_1, \dots$. The pattern $P[P']$ is often called an \emph{application}. The $\_[\_]$ operator is left associative.
-
+Introduce a binder $\gamma$ together with its application symbol which we write as~$\_[\_]$. Binding variables of the binder $\gamma$ are often written as $\square$, but in this proposal and hopefully in future work we will use regular variables $x, y, z, \dots$ instead of $\square$, in order to show that there is nothing special about contexts but simply a theory in matching logic. Patterns of the form $\gamma x . \varphi$ are often called \emph{contexts}, denoted by metavariables $C, C_0, C_1, \dots$. Patterns of the form $\varphi[\psi]$ are often called \emph{applications}. 
 \begin{definition}
-	The context $\gamma \square . \square$ is called the identity context, denoted as $\I$. Identity context has the axiom schema $\I[P]=P$ where $P$ is any pattern.
+	The context $\gamma x . x$ is called the identity context, denoted as $\I$. Identity context has the axiom schema $\I[\varphi]=\varphi$ where $\varphi$ is any pattern.
 \end{definition}
 
 \begin{example}
 	$\I[\I] = \I$.
 \end{example}
 
-\begin{example}
-	Consider a signature $(S,\Sigma)$ of a simple imperative programming language, with $S = \{{BExp},{Pgm}\}$, and $\Sigma = \{skip, {ite}, {seq}, true, false\}$. Add axiom schemata $${ite}(C_1[B], P, Q) = (\gamma \square . {ite}(C_1[\square], P, Q))[B]$$ and $${seq}(C_2[P],Q) = (\gamma \square . {seq}(C_2[\square], Q))[P],$$ where $P, Q$ are ${Pgm}$ patterns, $B$ is a ${BExp}$ pattern, $C_1$ is a ${BExp}$ context, and $C_2$ is a ${Pgm}$ context.
-	
-	Suppose we have the rewrite rules (schemata):
-	\begin{itemize}
-		\item $C[{ite}({true}, P, Q)] \Rightarrow C[P]$,
-		\item $C[{ite}({false}, P, Q)] \Rightarrow C[Q]$,
-		\item $C[{seq}({skip},Q)] \Rightarrow C[Q]$.
-	\end{itemize}
-	
-	Example (a). Rewrite $seq(skip,skip)$.
+\begin{definition}
+	Let $\sigma \in \Sigma_{s_1\dots s_n, s}$ is an $n$-arity symbol. We say $\sigma$ is \emph{active} on its $i$th argument ($1 \le i \le n$), if
+	$$\sigma(\varphi_1,\dots, C[\varphi_i], \dots, \varphi_n)
+	= (\gamma x . \sigma(\varphi_1,\dots,C[x], \dots, \varphi_n))[\varphi_i],$$
+	where $\varphi_1,\dots,\varphi_n$, and $C$ are any patterns. Orienting the equation from the left to the right is often called \emph{heating}, while orienting it from the right to the left is called \emph{cooling}.
+\end{definition}
+
+\begin{example} Assume the next theory of $\IMP$.
+\label{example:IMP}
+
+\begin{align*}
+  A = \{&\impite(C[\varphi], \psi_1, \psi_2) = (\gamma x . \impite(C[x], \psi_1, \psi_2))[\varphi], \\
+        &\impwhile(C[\varphi], \psi) = (\gamma x . \impwhile(C[x], \psi))[\varphi], \\
+        &\impseq(C[\varphi], \psi) = (\gamma x . \impseq(C[x], \psi))[\varphi], \\
+        &C[\impite(\imptt, \psi_1, \psi_2)] \Rightarrow C[\psi_1], \\
+        &C[\impite(\impff, \psi_1, \psi_2)] \Rightarrow C[\psi_2], \\
+        &C[\impwhile(\varphi, \psi)] \Rightarrow C[\impite(\varphi, \impseq(\psi, \impwhile(\varphi, \psi)), \impskip)], \\
+        &C[\impseq(\impskip,\psi)] \Rightarrow C[\psi] \}.
+\end{align*}
+
+\paragraph{Example \ref{example:IMP}(a).} 
 	\begin{align*}
-	seq(skip,skip)
-	&= \mathsf{I}[seq(skip,skip)] \\
-	&\Rightarrow \mathsf{I}[skip] \\
-	&= skip.
+	\impseq(\impskip,\impskip)
+	&= \mathsf{I}[\impseq(\impskip,\impskip)] \\
+	&\Rightarrow \mathsf{I}[\impskip] \\
+	&= \impskip.
 	\end{align*}
 	
-	Example (b). Rewrite $ite(true, P, Q); R$.
+\paragraph{Example \ref{example:IMP}(b).} 
 	\begin{align*}
-	seq(ite(true, P, Q), R) 
-	&= seq(\I[ite(true, P, Q)], R) \\
-	&= (\gamma \square . seq(\I[\square], R))[ite(true, P, Q)] \\
-	&\Rightarrow (\gamma \square . seq(\I[\square], R))[P] \\
-	&= seq(\I[P], R) \\
-	&= seq(P, R).
+	\impseq(\impite(\imptt, \psi_1, \psi_2), \psi_3) 
+	&= \impseq(\I[\impite(\imptt, \psi_1, \psi_2)], \psi_3) \\
+	&= (\gamma x . \impseq(\I[x], \psi_3))[\impite(\imptt, \psi_1, \psi_2)] \\
+	&\Rightarrow (\gamma x . \impseq(\I[x], \psi_3))[\psi_1] \\
+	&= \impseq(\I[\psi_1], \psi_3) \\
+	&= \impseq(\psi_1, \psi_3).
 	\end{align*}
 \end{example}
 
-\begin{definition}
-	Let $\sigma \in \Sigma_{s_1\dots s_n, s}$ is an $n$-arity symbol. We say $\sigma$ is \emph{active} on its $i$th argument ($1 \le i \le n$), if
-	$\sigma(P_1,\dots, C[P_i], \dots, P_n)
-	= (\gamma \square . \sigma(P_1,\dots,C[\square], \dots, P_n))[P_i]$. Orienting the equation from the left to the right is often called \emph{heating}, while orienting from the right to the left is called \emph{cooling}.
-\end{definition}
+
 
 \begin{example}
 	Suppose $f$ and $g$ are binary symbols who are active on their first argument. Suppose $a, b$ are constants, and $x$ is a variable. Let $\square_1$ and $\square_2$ be two hole variables. Define two contexts $C_1 = \gamma \square_1 . f(\square_1, a)$ and $C_2 = \gamma \square_2 . g(\square_2, b)$. 
