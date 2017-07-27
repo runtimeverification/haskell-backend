@@ -51,6 +51,11 @@
 
   % Package for underlining and strikethrough texts.
   \usepackage[normalem]{ulem}
+  
+  % Define text over equality
+  \usepackage{mathtools}
+  \newcommand\xeq[1]
+    {\stackrel{\mathclap{\normalfont\tiny\mbox{#1}}}{=}}
 
 
   % Title and authors
@@ -161,9 +166,52 @@ In matching logic there is a unified representation of binders. We will be using
 \begin{align*}
 \Lambda \Coloneqq V \mid \lambda V . \Lambda \mid \Lambda \ \Lambda
 \end{align*}
-where $V$ is a countably infinite set of atomic $\lambda$-terms.
+where $V$ is a countably infinite set of atomic $\lambda$-terms. The set of all $\lambda$-terms is the smallest set satisfying the above grammar.
 
-The theory $\LAMBDA$ in matching logic has one sort $\mathsf{Exp}$ for lambda expressions. It also has in its signature a binary symbol $\mathsf{\#lambda}$ that builds a $\lambda$-terms, and a binary symbol $\mathsf{app}$ for lambda applications. To mimic the binding behavior of $\lambda$ in lambda calculus, we define syntactic sugar $\mathsf{lambda}x . e = \exists x . \mathsf{\#lambda}(x, e)$  and $e_1\ e_2 = \mathsf{app}$ in theory $\LAMBDA$.
+The theory $\LAMBDA$ in matching logic has one sort $\mathsf{Exp}$ for lambda expressions. It also has in its signature a binary symbol $\mathsf{\#lambda}$ that builds a $\lambda$-terms, and a binary symbol $\mathsf{app}$ for lambda applications. To mimic the binding behavior of $\lambda$ in lambda calculus, we define syntactic sugar $\mathsf{lambda}x . e = \exists x . \mathsf{\#lambda}(x, e)$  and $e_1e_2 = \mathsf{app}(e_1, e_2)$ in theory $\LAMBDA$. Notice that by defining $\mathsf{lambda}$ as a syntactic sugar using existential quantifier, we get alpha-renaming for free. The $\beta$-reduction is captured in $\LAMBDA$ by the next ($\beta$) axiom:
+\begin{equation*}
+(\mathsf{lambda} x . e)e' = e[e'/x] \quad \text{, where $e$ and $e'$ are metavariables for $\lambda$-terms.}
+\end{equation*}
+
+We have two important observations about the ($\beta$) axiom. Firstly, metavaraibles $e$ and $e'$ cannot be replaced by matching logic variables, because $\lambda$-terms in matching logic are (often) not functional patterns. Secondly, metavariables $e$ and $e'$ cannot range over all patterns of sort $\mathsf{Exp}$, but only those which are (syntactic sugar) of $\lambda$-terms. Allowing $e$ and $e'$ range over all patterns of $\mathsf{Exp}$ in the ($\beta$) axiom will quickly lead to an inconsistent theory, because the next contradiction becomes an instance of the ($\beta$) axiom.
+\begin{equation*}
+\bot 
+\xeq{(N)} \mathsf{app}((\mathsf{lambda} x . \top), \bot)
+\xeq{($\beta$)} \top.
+\end{equation*}
+
+\comment{The above example is a strong evidence that we need metavariables that range over only a restricted set of patterns instead of all of them. Such a restricted set of patterns is called the \emph{range} (or maybe \emph{domain}?) of metavariables, which we will formally define later in this section. However, before we get into that, here are some observations that against having such restricted metavariables.
+\begin{enumerate}
+\item We found no example that has such inconsistency issue except theories that contain binders and applications. Therefore, restricted metavariables, even if we do introduce them in the Kore language, will be used in a quite limited way in defining theories that have binders, such as the lambda calculus and the theory of contexts, and will hardly be used in theories that don't have binders;
+\item The reason why we need metavariables is because binding structures, such as $\lambda$-terms, are defined in matching logic as syntactic sugar with existential quantification. This makes those binding structures, such as $\lambda$-terms, no longer matching logic terms, and thus cannot substitute for matching logic variables, while they can (and should) be able to substitute for variables in their original calculus.
+\item Introducing restrictive metavariables does solve the inconsistency issue, but it is apparently not the only solution. An alternative solution requires us to reexamine binders and binding structures in matching logic. If we could find a way to encode, say $\lambda$-terms, as \emph{functional patterns} in matching logic, then using variables is sufficient, and we can get rid of restrictive metavariables.
+\item Having a unified theory of binders in matching logic is a good idea. Splitting binding structures into the process of constructing a term and the process of create a binding is also a promising way to go. We know how to construct a term in matching logic by simply using symbols. The issue is how to create a binding between variables and terms (or patterns in general).
+\item A quantifier, given it a universal or existential one, creates a binding between a variable and a pattern \emph{and does something more}. According the semantics of matching logic, A universal quantifier creates the binding and calculates the big conjunction of all instances while an existential quantifier creates the binding and calculates the big disjunction of them. 
+\item On the other hand, most binders that we use simply construct a term and create a binding between a variable and the term, and we should not pour any semantics upon them. However, when we use the existential quantifier to create a binding relation, we do put extra semantics upon those user-defined binders. That is the fundamental reason why $\lambda$-terms, even though they should be terms, become nonfunctional patterns in matching logic as we have seen, and thus we need to design the Kore language to support restricted metavariables.
+\item Why not introduce a ``pure'' binder that creates a binding between variables and patterns and does nothing else at all? All other binders such as the $\lambda$ in the lambda calculus, the $\mu$ and $\nu$ in theories of fixed point, the $\gamma$ in theory of contexts, and even the universal quantifier $\forall$ and existential quantifier $\exists$, can all be defined using that ``pure'' binder.
+\end{enumerate}
+}
+\begin{definition}[Restricted metavariables]
+Let $\varphi$ be a metavariable of sort $s \in S$. The range of $\varphi$ is a subset of all patterns of the sort $s$. We write $\varphi :: R$ if the range of $\varphi$ is $R \subseteq \mathrm{Pattern}_s$.
+\end{definition}
+
+\begin{definition}[Common ranges of metavariables]
+\quad
+\begin{itemize}
+\item The full range $\mathrm{Pattern}_s$;
+\item The logic-free range (variables plus symbols without logic connectives);
+\item The ground logic-free range (symbols only); 
+\item The variable range $\mathrm{Var}_s$;
+\end{itemize}
+\end{definition}
+
+\begin{remark}
+We need to design a syntax for specifying ranges of metavariables in the Kore language. 
+\end{remark}
+
+\begin{remark}
+We have not proved that matching logic is a conservative extension of untyped lambda calculus, which bothers me a lot. I will remain skeptical about everything we do in this section until we prove that conservative extension result. 
+\end{remark}
 
 \todo[inline]{Rewriting logic}
 \todo[inline]{Contexts}
