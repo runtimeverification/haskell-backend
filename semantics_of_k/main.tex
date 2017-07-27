@@ -49,7 +49,10 @@
   \newcommand{\impskip}{\mathsf{skip}}
   \newcommand{\impseq}{\mathsf{seq}}
   \newcommand{\impasgn}{\mathsf{asgn}}
-
+  
+  \newcommand{\impmapsto}{\mathsf{mapsto}}
+  \newcommand{\impmerge}{\mathsf{merge}}
+  
   
   % Define identity context
   \newcommand{\I}{\mathsf{I}}
@@ -287,9 +290,12 @@ Introduce a binder $\gamma$ together with its application symbol which we write 
 \begin{example}
 Following the above example, extend $A$ with the next axioms:
 \begin{align*}
-Somethig about configurations goes here. Use lookup rule as an example!
+  \{&C[x][\impmapsto(x, v)] \Rightarrow C[v][\impmapsto(x, v)], \\
+    &C[\impasgn(x, v)][\impmapsto(x, v')] \Rightarrow C[\impskip][\impmapsto(x,v)], \\
+    &C[\impasgn(x, v)][\varphi] \Rightarrow C[\impskip][\impmerge(\varphi, \impmapsto(x, v))]\}
 \end{align*}
 \end{example}
+\comment{The above example is meant to show the loopup rule, but it does not work because the third axiom is incorrect. Instead of simply writing $\varphi$, we should say that $\varphi$ does not assign any value to $x$. One solution (that is used in the current K backend) is to introduce a strategy language and to extend theories with strategies. }
 
 \begin{example}
 	Suppose $f$ and $g$ are binary symbols who are active on their first argument. Suppose $a, b$ are constants, and $x$ is a variable. Let $\square_1$ and $\square_2$ be two hole variables. Define two contexts $C_1 = \gamma \square_1 . f(\square_1, a)$ and $C_2 = \gamma \square_2 . g(\square_2, b)$. 
