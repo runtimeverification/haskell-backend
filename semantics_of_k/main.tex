@@ -295,12 +295,20 @@ We have not proved that matching logic is a conservative extension of untyped la
 \quad
 \begin{Verbatim}[fontsize=\small]
 module LAMBDA
-  import ...
+  import ID
   syntax Exp
   syntax Exp ::= ExpAsId(Id)
   syntax Exp ::= app(Exp, Exp)
   syntax Exp ::= lambda0(Exp, Exp)
+  
+  axiom app(\exists(id:Id, lambda0(ExpAsId(id:Id), E:SyntacticTerms(Exp))), 
+            E':SyntacticTerms(Exp))
+      = E:SyntacticTerms(Exp)(E':SyntacticTerms(Exp) / ExpAsId(id:Id))
   ...
+endmodule
+
+module ID
+  syntax Id 
 endmodule
 \end{Verbatim}
 \end{example}
