@@ -31,6 +31,12 @@
   \newtheorem{remark}[thmcounter]{Remark}
   \newtheorem{notation}[thmcounter]{Notation}
   
+  % Package for changing fonts in the Verbatim environment:
+  \usepackage{fancyvrb}
+  
+  % Package for URLs:
+  \usepackage{hyperref}  
+  
   % Define serif fonts for ML theories used in math mode:
   \newcommand{\PA}{\mathsf{PA}}
   \newcommand{\SEQ}{\mathsf{SEQ}}
@@ -85,9 +91,9 @@
 
 \comment{Please feel free to contribute to this report in all ways. You could add new contents, remove redundant ones, refactor and organize the texts, and correct typos.} 
 
-\begin{definition}[Matching Logic Theory]
+\begin{definition}[Matching logic theory]
 \label{ML_theory}
-A matching logic theory $(S, \Sigma, A)$ is a triple that contains a nonempty finite set of sorts, a finite set of symbols, and a recursive set of axioms. Two theories are \emph{equal} if they have the same set of sorts and symbols, and they deduce the same set of theorems.
+A matching logic theory $(S, \Sigma, A)$ is a triple that contains a nonempty finite set of sorts, a finite or countably infinite set of symbols, and a recursive set of axioms. Two theories are \emph{equal} if they have the same set of sorts and symbols, and they deduce the same set of theorems.
 \end{definition}
 
 \begin{example}
@@ -96,7 +102,6 @@ We use {\sf serif fonts} to denote matching logic theories. Some of the commonly
 
 
 \begin{definition}[The Kore Language]
-\comment{We haven't come to an agreement on the syntax of the Kore language yet. One could, though, refer to the Kore text representation at the wiki page at kframework repos on Github, whose link I cannot find any more, which is considered as the first step towards that direction.}
 The Kore language is a language to write matching logic theories. The outcomes are called Kore definitions. Kore definitions are mainly served as the interface between a K frontend and a K backend, but a human should be able to read and write Kore definitions of simple theories, too. The Kore language is designed in a way that:
 \begin{itemize}
 \item Every Kore definition defines exactly one matching logic theory;
@@ -109,6 +114,57 @@ The Kore language is a language to write matching logic theories. The outcomes a
 \item User-defined (matching logic) variables are allowed as in theory $\LAMBDA$. We shouldn't fix a syntax for variables. Please refer to later sections about theory $\LAMBDA$ for more discussions.
 \item And more \dots
 \end{itemize}
+
+The next grammar is the firstly-proposed Kore language at \href{https://github.com/kframework/kore/wiki/KORE-Language-Syntax}{\underline{here}}.
+\begin{Verbatim}[fontsize=\small]
+
+Definition = Attributes
+             Set{Module}
+
+Module = module ModuleName
+           Set{Sentence}
+         endmodule
+         Attributes
+
+Sentence =  import ModuleName Attributes
+          | syntax Sort Attributes                           // sort declarations
+          | syntax Sort ::= Symbol(List{Sort}) Attributes    // symbol declarations
+          | rule Pattern Attributes
+          | axiom Pattern Attributes
+
+Attributes = [ List{Pattern} ]
+
+Pattern =  Variable
+         | Symbol(List{Pattern})                             // symbol applications
+         | Symbol(Value)                                     // domain values
+         | \top()
+         | \bottom()
+         | \and(Pattern, Pattern)
+         | \or(Pattern, Pattern)
+         | \not(Pattern)
+         | \implies(Pattern, Pattern)
+         | \exists(Variable, Pattern)
+         | \forall(Variable, Pattern)
+         | \next(Pattern)
+         | \rewrite(Pattern, Pattern)
+         | \equals(Pattern, Pattern)
+
+Variable =  Name:Sort                                        // variables
+
+ModuleName = RegEx1
+Sort       = RegEx2
+Name       = RegEx2
+Symbol     = RegEx2
+Value      = RegEx3
+
+RegEx1 == [A-Z][A-Z0-9-]*
+RegEx2 == [a-zA-Z0-9.@#$%^_-]+ | ` [^`]* `
+RegEx3 == <Strings>   // Java-style string literals, enclosed in quotes
+
+\end{Verbatim}
+
+In the grammar above, List{X} is a special non-terminal corresponding to possibly empty comma-separated lists of X words (trivial to define in any syntax formalism). Set{X}, on the other hand, is a special non-terminal corresponding to possibly empty space-separated sets of X words. Syntactically, there is no difference between the two (except for the separator), but KORE tools may choose to implement them differently.
+
 \end{definition}
 
 \begin{definition}[Frontend]
@@ -233,6 +289,22 @@ We need to design a syntax for specifying ranges of metavariables in the Kore la
 We have not proved that matching logic is a conservative extension of untyped lambda calculus, which bothers me a lot. I will remain skeptical about everything we do in this section until we prove that conservative extension result. 
 \end{remark}
 
+\comment{The only benefit of trying to have such a unified theory of binders and binding structures is of theoretical interest. In practice, one will never want to implement the lambda calculus by desugaring it as $\exists x . \#lambda(x, \varphi)$ but rather dealing with $\lambda x . \varphi$ directly. }
+
+\begin{example}[Lambda calculus in Kore]
+\quad
+\begin{Verbatim}[fontsize=\small]
+module LAMBDA
+  import ...
+  syntax Exp
+  syntax Exp ::= ExpAsId(Id)
+  syntax Exp ::= app(Exp, Exp)
+  syntax Exp ::= lambda0(Exp, Exp)
+  ...
+endmodule
+\end{Verbatim}
+\end{example}
+
 \todo[inline]{Rewriting logic}
 
 \section{Contexts}
@@ -286,6 +358,31 @@ Introduce a binder $\gamma$ together with its application symbol which we write 
 	&= \impseq(\psi_1, \psi_3).
 	\end{align*}
 \end{example}
+
+\begin{example}
+Consider the following theory written in the Kore language:
+\begin{Verbatim}
+module IMP
+  import ...
+  syntax AExp
+  syntax AExp ::= plusAExp(AExp, AExp)
+  syntax AExp ::= minusAExp(AExp, AExp)
+  syntax AExp ::= AExpAsNat(Nat)
+  syntax BExp
+  syntax BExp ::= geBExp(AExp, AExp)
+  syntax BExp ::= BExpAsBool(Bool)
+  syntax Pgm
+  syntax Pgm  ::= skip()
+  syntax Pgm  ::= seq(Pgm Pgm)
+  syntax Pgm  ::= 
+  syntax Heap
+  syntax Cfg
+  
+endmodule
+\end{Verbatim}
+
+\end{example}
+
 
 \begin{example}
 Following the above example, extend $A$ with the next axioms:
