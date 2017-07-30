@@ -22,6 +22,7 @@
   % Define new theorem styles:
   \theoremstyle{plain}
   \newtheorem{theorem}[thmcounter]{Theorem}
+  \newtheorem{corollary}[thmcounter]{Corollary}
   \newtheorem{lemma}[thmcounter]{Lemma}
   \newtheorem{proposition}[thmcounter]{Proposition}
   \theoremstyle{definition}
@@ -167,6 +168,14 @@ In the grammar above, List{X} is a special non-terminal corresponding to possibl
 
 \end{definition}
 
+\comment{The above Kore language needs to be extended in order to support the following features at least. Most of the features arise in lambda calculus.
+\begin{itemize}
+	\item Restricted metavariables;
+	\item Notations for substitution;
+	\item User-defined variable syntaxes;
+	\item Defining and using syntactic sugars;
+\end{itemize}}
+
 \begin{definition}[Frontend]
 A K frontend is an artifact that generates Kore definitions.
 \end{definition}
@@ -263,6 +272,20 @@ We have two important observations about the ($\beta$) axiom. Firstly, metavarai
 \item Why not introduce a ``pure'' binder that creates a binding between variables and patterns and does nothing else at all? All other binders such as the $\lambda$ in the lambda calculus, the $\mu$ and $\nu$ in theories of fixed point, the $\gamma$ in theory of contexts, and even the universal quantifier $\forall$ and existential quantifier $\exists$, can all be defined using that ``pure'' binder.
 \end{enumerate}
 }
+\begin{theorem}[Consistency]
+	Consider a theory of a binder $\alpha$, with a sort $S$ and two binary symbols $\alpha_0$ and $\_ \ \_$. Define $\alpha x . e$ as syntactic sugar of $\exists x . \alpha (x, e)$ where $x$ is a variable and $e$ is a pattern. Define $\alpha$-terms be patterns satisfying the next grammar 
+	\begin{align*}
+      T_\alpha &\Coloneqq V_s \mid \alpha x .T_\alpha \mid T_\alpha T_\alpha.
+	\end{align*}
+	If a theory contains only axioms of the form $e = e'$ where $e$ and $e'$ are $\alpha$-terms, then the theory is consistent.
+\end{theorem}
+\begin{proof}
+	The final model $M$ exists, in which the carrier set is a singleton set, and the two symbols are interpreted as the total function over the singleton set. One can then prove that all $\alpha$-terms interpret to the total set, so all axioms hold in the final model.
+\end{proof}
+
+\begin{corollary}
+	The theory of lambda calculus $\LAMBDA$ is consistent.
+\end{corollary}
 \begin{definition}[Restricted metavariables]
 Let $\varphi$ be a metavariable of sort $s \in S$. The range of $\varphi$ is a subset of all patterns of the sort $s$. We write $\varphi :: R$ if the range of $\varphi$ is $R \subseteq \mathrm{Pattern}_s$.
 \end{definition}
