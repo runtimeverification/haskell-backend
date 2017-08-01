@@ -32,6 +32,7 @@
   \newtheorem{remark}[thmcounter]{Remark}
   \newtheorem{notation}[thmcounter]{Notation}
   
+  
   % Package for changing fonts in the Verbatim environment:
   \usepackage{fancyvrb}
   
@@ -67,6 +68,7 @@
   % Define the colon ":" that is used in "x:s"
   % with less spacing around.
   \newcommand{\cln}{{:}}
+ 
   
   % Define ceiling and flooring symbols:
   \usepackage{mathtools}
@@ -77,7 +79,7 @@
   
   % Define text over equality
   \usepackage{mathtools}
-  \newcommand\xeq[1]
+  \newcommand{\xeq}[1]
     {\stackrel{\mathclap{\normalfont\tiny\mbox{#1}}}{=}}
 
 
@@ -91,6 +93,8 @@
 \maketitle
 
 \comment{Please feel free to contribute to this report in all ways. You could add new contents, remove redundant ones, refactor and organize the texts, and correct typos.} 
+
+\section{Preliminary}
 
 \begin{definition}[Matching logic theory]
 \label{ML_theory}
@@ -111,10 +115,10 @@ The Kore language is a language to write matching logic theories. The outcomes a
 \item The least amount of inferring is needed;
 \item Symbols are decorated with their argument sorts and result sort;
 \item There is no polymorphic or overloaded symbols, so every symbol has a unique name (reference). 
-\comment{The above two points will lead to some redundancy in Kore definitions, though. For example, there will be $n^2$ definedness symbol if there are $n$ sorts in the theory. Similarly, $n^2$ equalities are need, too.}
-\item User-defined (matching logic) variables are allowed as in theory $\LAMBDA$. We shouldn't fix a syntax for variables. Please refer to later sections about theory $\LAMBDA$ for more discussions.
 \item And more \dots
 \end{itemize}
+
+\subsection{The current Kore language}
 
 The next grammar is the firstly-proposed Kore language at \href{https://github.com/kframework/kore/wiki/KORE-Language-Syntax}{\underline{here}}.
 \begin{Verbatim}[fontsize=\small]
@@ -164,25 +168,64 @@ RegEx3 == <Strings>   // Java-style string literals, enclosed in quotes
 
 \end{Verbatim}
 
-In the grammar above, List{X} is a special non-terminal corresponding to possibly empty comma-separated lists of X words (trivial to define in any syntax formalism). Set{X}, on the other hand, is a special non-terminal corresponding to possibly empty space-separated sets of X words. Syntactically, there is no difference between the two (except for the separator), but KORE tools may choose to implement them differently.
+In the grammar above, {\small\verb|List{X}|} is a special non-terminal corresponding to possibly empty comma-separated lists of {\small\verb|X|} words (trivial to define in any syntax formalism). {\small\verb|Set{X}|}, on the other hand, is a special non-terminal corresponding to possibly empty space-separated sets of X words. Syntactically, there is no difference between the two (except for the separator), but Kore tools may choose to implement them differently.
 
 \end{definition}
-
-\comment{The above Kore language needs to be extended in order to support the following features at least. Most of the features arise in lambda calculus.
-\begin{itemize}
-	\item Restricted metavariables;
-	\item Notations for substitution;
-	\item User-defined variable syntaxes;
-	\item Defining and using syntactic sugars;
-\end{itemize}}
 
 \begin{definition}[Frontend]
 A K frontend is an artifact that generates Kore definitions.
 \end{definition}
 
 \begin{definition}[Backend]
-A K backend is an artifact that consumes a Kore definition of a theory $\mathsf{T}$ and does some work. Whatever it does can and should be algorithmically reduced to the task of proving $\mathsf{T} \vdash \varphi$ where $\varphi$ ``encodes'' that work. A K backend should justify its results by generating formal proofs that can be proof-checked by the oracle matching logic proof checker.
+A K backend is an artifact that consumes a Kore definition of a theory $\mathsf{T}$ and does some work. Whatever it does can and should be algorithmically reduced to the task of proving $\mathsf{T} \vdash \varphi$ where $\varphi$ ``encodes'' that work. A K backend should justify its results by generating formal proofs that can be proof-checked by the oracle matching logic proof checker. Examples of K backends include concrete execution engines, symbolic executions engines, matching logic provers, verification tools, etc.
 \end{definition}
+
+\section{The Kore language}
+
+We start by showing some builtin Kore definitions.
+
+\begin{Verbatim}
+module BOOL
+  syntax Bool
+  syntax Bool ::= true | false | notBool(Bool)
+                | andBool(Bool, Bool) | orBool(Bool, Bool)
+  
+  // axioms for functional symbols
+  axiom \exists(T:Bool, \equals(T:Bool, true))
+  axiom \exists(T:Bool, \equals(T:Bool, false))
+  axiom \exists(T:Bool, \equals(T:Bool, \notBool(X:Bool)))
+  axiom \exists(T:Bool, \equals(T:Bool, andBool(X:Bool, Y:Bool)))
+  axiom \exists(T:Bool, \equals(T:Bool, orBool(X:Bool, Y:Bool)))
+  
+  // axioms for commutativity
+  axiom \equals(andBool(X:Bool, Y:Bool), andBool(Y:Bool, X:Bool))
+  axiom \equals(orBool(X:Bool, Y:Bool), orBool(Y:Bool, X:Bool))
+  
+  // the no-junk axiom for constructors
+  axiom \or(true, false)
+  
+  axiom \equals(notBool(true), false)
+  axiom \equals(notBool(false), true)
+  axiom \equals(andBool(true, T:Bool), T:Bool)
+  axiom \equals(andBool(false, T:Bool), false)
+  axiom \equals(orBool(true, T:Bool), true)
+  axiom \equals(orBool(false, T:Bool), T:Bool)
+endmodule
+\end{Verbatim}
+
+\begin{Verbatim}
+module META-LEVEL
+  syntax 
+endmodule
+\end{Verbatim}
+
+\begin{Verbatim}
+module LAMBDA
+  syntax Exp
+  syntax Exp ::= lambda0(Exp, Exp) | app(Exp, Exp)
+  
+endmodule
+\end{Verbatim}
 
 \section{Object-level and meta-level}
 
