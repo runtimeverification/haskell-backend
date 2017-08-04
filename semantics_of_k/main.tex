@@ -242,25 +242,68 @@ The only way to prevent such inconsistency issue is to prevent equations propaga
 \end{align*}
 which is a strong evidence that $\up$ is not part of the logic. 
 
+We provide the Kore definition of the $\METALEVEL$ module.
+
+\begin{Verbatim}
+module META-LEVEL
+  import STRING
+  
+  syntax Sort
+  syntax SortList
+  syntax Symbol
+  syntax Name
+  
+  syntax Sort ::= #sort(String)
+  syntax Name ::= #name(String)
+  syntax Symbol ::= #symbol(Name, SortList, Sort)
+  syntax SortList ::= #nilSortList()
+                    | SortListAsSort(Sort)
+                    | #appendSortList(SortList, SortList)
+  syntax Pattern
+  syntax Pattern ::= #variable(Name, Sort)
+                   | #and(Pattern, Pattern)
+                   | #not(Pattern)
+                   | #exists(Name, Sort, Pattern)
+                   | #application(Symbol, PatternList)
+  
+  syntax PatternList
+  syntax PatternList ::= #nil()
+                       | #PatternListAsPattern(Pattern)
+                       | #append(PatternList, PatternList)
+  
+  syntax SortSet SymbolSet PatternSet // defined in the usual way
+  
+  syntax Module
+  syntax Module ::= #module(SortSet, SymbolSet, PatternSet)
+                       
+  syntax Bool ::= #wellFormed(Pattern)
+  syntax Sort ::= #getSort(Pattern)
+  // more to go
+  
+endmodule
+\end{Verbatim}
+
 \section{Binders}
 
 In matching logic there is a unified representation of binders. We will be using the theory of lambda calculus $\LAMBDA$ as an example in this section. Recall that the syntax for untyped lambda calculus is
 \begin{align*}
 \Lambda \Coloneqq V \mid \lambda V . \Lambda \mid \Lambda \ \Lambda
 \end{align*}
-where $V$ is a countably infinite set of atomic $\lambda$-terms. The set of all $\lambda$-terms is the smallest set satisfying the above grammar.
+where $V$ is a countably infinite set of atomic $\lambda$-terms, a.k.a. variables in lambda calculus. The set of all $\lambda$-terms, denoted as $\Lambda$, is the smallest set satisfying the above grammar.
 
-The theory $\LAMBDA$ in matching logic has one sort $\mathsf{Exp}$ for lambda expressions. It also has in its signature a binary symbol $\mathsf{\#lambda}$ that builds a $\lambda$-terms, and a binary symbol $\mathsf{app}$ for lambda applications. To mimic the binding behavior of $\lambda$ in lambda calculus, we define syntactic sugar $\mathsf{lambda}x . e = \exists x . \mathsf{\#lambda}(x, e)$  and $e_1e_2 = \mathsf{app}(e_1, e_2)$ in theory $\LAMBDA$. Notice that by defining $\mathsf{lambda}$ as a syntactic sugar using existential quantifier, we get alpha-renaming for free. The $\beta$-reduction is captured in $\LAMBDA$ by the next ($\beta$) axiom:
+The matching logic theory $\LAMBDA$ has one sort $\mathsf{Exp}$ for lambda expressions. It also has in its signature a binary symbol $\mathsf{lambda}_0$ that builds a $\lambda$-terms, and a binary symbol $\mathsf{app}$ for lambda applications. To mimic the binding behavior of $\lambda$ in lambda calculus, we define syntactic sugar $\lambda x . e = \exists x . \mathsf{lambda}_0(x, e)$  and $e_1e_2 = \mathsf{app}(e_1, e_2)$ in theory $\LAMBDA$. Notice that by defining $\lambda$ as a syntactic sugar using the existential quantifier $\exists x$, we get alpha-renaming for free. The $\beta$-reduction is captured by the next axiom:
 \begin{equation*}
-(\mathsf{lambda} x . e)e' = e[e'/x] \quad \text{, where $e$ and $e'$ are metavariables for $\lambda$-terms.}
+(\lambda x . e)e' = e[e'/x] \quad \text{, where $e$ and $e'$ are metavariables for $\lambda$-terms.}
 \end{equation*}
 
-We have two important observations about the ($\beta$) axiom. Firstly, metavaraibles $e$ and $e'$ cannot be replaced by matching logic variables, because $\lambda$-terms in matching logic are (often) not functional patterns. Secondly, metavariables $e$ and $e'$ cannot range over all patterns of sort $\mathsf{Exp}$, but only those which are (syntactic sugar) of $\lambda$-terms. Allowing $e$ and $e'$ range over all patterns of $\mathsf{Exp}$ in the ($\beta$) axiom will quickly lead to an inconsistent theory, because the next contradiction becomes an instance of the ($\beta$) axiom.
+Two important observations are made about the ($\beta$) axiom. Firstly, $e$ and $e'$ cannot be replaced by logic variables, because $\lambda$-terms in matching logic are (often) not functional patterns. Secondly, metavariables $e$ and $e'$ cannot range over all patterns of sort $\mathsf{Exp}$, but only those which are (syntactic sugar of) $\lambda$-terms. Allowing $e$ and $e'$ to range over all patterns of $\mathsf{Exp}$ will quickly lead to an inconsistent theory, because of the next contradiction:
 \begin{equation*}
 \bot 
-\xeq{(N)} \mathsf{app}((\mathsf{lambda} x . \top), \bot)
+\xeq{(N)} (\lambda x . \top)[\bot]
 \xeq{($\beta$)} \top.
 \end{equation*}
+
+Therefore, when defining the lambda calculus, we need a way 
 
 \begin{theorem}[Consistency]
 	Consider a theory of a binder $\alpha$, with a sort $S$ and two binary symbols $\alpha_0$ and $\_ \ \_$. Define $\alpha x . e$ as syntactic sugar of $\exists x . \alpha (x, e)$ where $x$ is a variable and $e$ is a pattern. Define $\alpha$-terms be patterns satisfying the next grammar 
@@ -274,7 +317,7 @@ We have two important observations about the ($\beta$) axiom. Firstly, metavarai
 \end{proof}
 
 \begin{corollary}
-	The theory of lambda calculus $\LAMBDA$ is consistent.
+	The theory $\LAMBDA$ is consistent.
 \end{corollary}
 
 
