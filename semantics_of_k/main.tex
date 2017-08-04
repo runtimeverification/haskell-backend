@@ -48,8 +48,9 @@
   \newcommand{\LAMBDA}{\mathsf{LAMBDA}}
   \newcommand{\CTXT}{\mathsf{CTXT}}
   \newcommand{\DEF}{\mathsf{DEF}}
+  \newcommand{\METALEVEL}{\mathsf{META-LEVEL}}
   
-  % Define serif fonts for IMP program constructors:
+  % Define serif fonts for symbols:
   \newcommand{\impite}{\mathsf{ite}}
   \newcommand{\impwhile}{\mathsf{while}}
   \newcommand{\imptt}{\mathsf{tt}}
@@ -61,6 +62,11 @@
   \newcommand{\impmapsto}{\mathsf{mapsto}}
   \newcommand{\impmerge}{\mathsf{merge}}
   
+  \newcommand{\up}{\mathsf{\#up}}
+  \newcommand{\down}{\mathsf{\#down}}
+  \newcommand{\isGround}{\mathsf{isGround}}
+  \newcommand{\xfalse}{\mathsf{false}}
+  \newcommand{\xtrue}{\mathsf{true}}
   
   % Define identity context
   \newcommand{\I}{\mathsf{I}}
@@ -118,57 +124,7 @@ The Kore language is a language to write matching logic theories. The outcomes a
 \item And more \dots
 \end{itemize}
 
-\subsection{The current Kore language}
 
-The next grammar is the firstly-proposed Kore language at \href{https://github.com/kframework/kore/wiki/KORE-Language-Syntax}{\underline{here}}.
-\begin{Verbatim}[fontsize=\small]
-
-Definition = Attributes
-             Set{Module}
-
-Module = module ModuleName
-           Set{Sentence}
-         endmodule
-         Attributes
-
-Sentence =  import ModuleName Attributes
-          | syntax Sort Attributes                           // sort declarations
-          | syntax Sort ::= Symbol(List{Sort}) Attributes    // symbol declarations
-          | rule Pattern Attributes
-          | axiom Pattern Attributes
-
-Attributes = [ List{Pattern} ]
-
-Pattern =  Variable
-         | Symbol(List{Pattern})                             // symbol applications
-         | Symbol(Value)                                     // domain values
-         | \top()
-         | \bottom()
-         | \and(Pattern, Pattern)
-         | \or(Pattern, Pattern)
-         | \not(Pattern)
-         | \implies(Pattern, Pattern)
-         | \exists(Variable, Pattern)
-         | \forall(Variable, Pattern)
-         | \next(Pattern)
-         | \rewrite(Pattern, Pattern)
-         | \equals(Pattern, Pattern)
-
-Variable =  Name:Sort                                        // variables
-
-ModuleName = RegEx1
-Sort       = RegEx2
-Name       = RegEx2
-Symbol     = RegEx2
-Value      = RegEx3
-
-RegEx1 == [A-Z][A-Z0-9-]*
-RegEx2 == [a-zA-Z0-9.@#$%^_-]+ | ` [^`]* `
-RegEx3 == <Strings>   // Java-style string literals, enclosed in quotes
-
-\end{Verbatim}
-
-In the grammar above, {\small\verb|List{X}|} is a special non-terminal corresponding to possibly empty comma-separated lists of {\small\verb|X|} words (trivial to define in any syntax formalism). {\small\verb|Set{X}|}, on the other hand, is a special non-terminal corresponding to possibly empty space-separated sets of X words. Syntactically, there is no difference between the two (except for the separator), but Kore tools may choose to implement them differently.
 
 \end{definition}
 
@@ -180,52 +136,7 @@ A K frontend is an artifact that generates Kore definitions.
 A K backend is an artifact that consumes a Kore definition of a theory $\mathsf{T}$ and does some work. Whatever it does can and should be algorithmically reduced to the task of proving $\mathsf{T} \vdash \varphi$ where $\varphi$ ``encodes'' that work. A K backend should justify its results by generating formal proofs that can be proof-checked by the oracle matching logic proof checker. Examples of K backends include concrete execution engines, symbolic executions engines, matching logic provers, verification tools, etc.
 \end{definition}
 
-\section{The Kore language}
 
-We start by showing some builtin Kore definitions.
-
-\begin{Verbatim}
-module BOOL
-  syntax Bool
-  syntax Bool ::= true | false | notBool(Bool)
-                | andBool(Bool, Bool) | orBool(Bool, Bool)
-  
-  // axioms for functional symbols
-  axiom \exists(T:Bool, \equals(T:Bool, true))
-  axiom \exists(T:Bool, \equals(T:Bool, false))
-  axiom \exists(T:Bool, \equals(T:Bool, \notBool(X:Bool)))
-  axiom \exists(T:Bool, \equals(T:Bool, andBool(X:Bool, Y:Bool)))
-  axiom \exists(T:Bool, \equals(T:Bool, orBool(X:Bool, Y:Bool)))
-  
-  // axioms for commutativity
-  axiom \equals(andBool(X:Bool, Y:Bool), andBool(Y:Bool, X:Bool))
-  axiom \equals(orBool(X:Bool, Y:Bool), orBool(Y:Bool, X:Bool))
-  
-  // the no-junk axiom for constructors
-  axiom \or(true, false)
-  
-  axiom \equals(notBool(true), false)
-  axiom \equals(notBool(false), true)
-  axiom \equals(andBool(true, T:Bool), T:Bool)
-  axiom \equals(andBool(false, T:Bool), false)
-  axiom \equals(orBool(true, T:Bool), true)
-  axiom \equals(orBool(false, T:Bool), T:Bool)
-endmodule
-\end{Verbatim}
-
-\begin{Verbatim}
-module META-LEVEL
-  syntax 
-endmodule
-\end{Verbatim}
-
-\begin{Verbatim}
-module LAMBDA
-  syntax Exp
-  syntax Exp ::= lambda0(Exp, Exp) | app(Exp, Exp)
-  
-endmodule
-\end{Verbatim}
 
 \section{Object-level and meta-level}
 
@@ -306,6 +217,31 @@ All three theories are equal. It is easier to see that fact from a model theoret
 \comment{This is a nice example that shows the power of metavariables and how they greatly shorten formal proofs, but this is not a good example to convince people that we need metavariables for patterns in order to embrace more expressiveness. There is an example in the theory $\LAMBDA$ that clearly shows metavariables give us more expressiveness power, and we will cover that example in later sections.}
 \end{example}
 
+\subsection{The module $\METALEVEL$}
+
+The theory of meta-level in matching logic provides a universe of metarepresentation (abstract syntax trees) of object-level patterns. The theory of meta-level helps us specify the range of metavariables and much more. One important observation is that the connection between object-level modules and the meta-level module cannot be defined in the logic itself. More specifically, the operator $\up$ that takes object-level patterns to their metarepresentation in the meta-level module cannot be defined in the logic no matter how. Consider the next simple example where one defines a symbol $\isGround$ that checks whether a pattern is a ground pattern or not, using the meta-level module:
+\begin{align*}
+&\isGround(\up[X]) = \xfalse \\
+&\isGround(\up[\sigma]) = \xtrue \\
+&\isGround(\up[\sigma(\varphi_1,\dots,\varphi_n)]) = \\
+&\quad \mathsf{andBool}(\isGround(\up[\varphi_1]), \dots, \isGround(\up[\varphi_n])) \\
+&\isGround(\up[\varphi \wedge \psi]) = \\
+&\quad \mathsf{andBool}(\isGround(\up[\varphi]), \isGround(\up[\psi]))\\
+&\dots
+\end{align*}
+
+Unfortunately, the first two axioms lead us to inconsistency, as shown in the following:
+\begin{align*}
+&\isGround(\up[X - X]) = \xfalse \\
+&\isGround(\up[\mathsf{zero}]) = \xtrue
+\end{align*}
+
+The only way to prevent such inconsistency issue is to prevent equations propagating through $\up$, more specifically, to forbid the next inference rule:
+\begin{align*}
+\text{From } \varphi = \psi \text{ deduce } \up[\varphi] = \up[\psi],
+\end{align*}
+which is a strong evidence that $\up$ is not part of the logic. 
+
 \section{Binders}
 
 In matching logic there is a unified representation of binders. We will be using the theory of lambda calculus $\LAMBDA$ as an example in this section. Recall that the syntax for untyped lambda calculus is
@@ -326,17 +262,6 @@ We have two important observations about the ($\beta$) axiom. Firstly, metavarai
 \xeq{($\beta$)} \top.
 \end{equation*}
 
-\comment{The above example is a strong evidence that we need metavariables that range over only a restricted set of patterns instead of all of them. Such a restricted set of patterns is called the \emph{range} (or maybe \emph{domain}?) of metavariables, which we will formally define later in this section. However, before we get into that, here are some observations that against having such restricted metavariables.
-\begin{enumerate}
-\item We found no example that has such inconsistency issue except theories that contain binders and applications. Therefore, restricted metavariables, even if we do introduce them in the Kore language, will be used in a quite limited way in defining theories that have binders, such as the lambda calculus and the theory of contexts, and will hardly be used in theories that don't have binders;
-\item The reason why we need metavariables is because binding structures, such as $\lambda$-terms, are defined in matching logic as syntactic sugar with existential quantification. This makes those binding structures, such as $\lambda$-terms, no longer matching logic terms, and thus cannot substitute for matching logic variables, while they can (and should) be able to substitute for variables in their original calculus.
-\item Introducing restrictive metavariables does solve the inconsistency issue, but it is apparently not the only solution. An alternative solution requires us to reexamine binders and binding structures in matching logic. If we could find a way to encode, say $\lambda$-terms, as \emph{functional patterns} in matching logic, then using variables is sufficient, and we can get rid of restrictive metavariables.
-\item Having a unified theory of binders in matching logic is a good idea. Splitting binding structures into the process of constructing a term and the process of create a binding is also a promising way to go. We know how to construct a term in matching logic by simply using symbols. The issue is how to create a binding between variables and terms (or patterns in general).
-\item A quantifier, given it a universal or existential one, creates a binding between a variable and a pattern \emph{and does something more}. According the semantics of matching logic, A universal quantifier creates the binding and calculates the big conjunction of all instances while an existential quantifier creates the binding and calculates the big disjunction of them. 
-\item On the other hand, most binders that we use simply construct a term and create a binding between a variable and the term, and we should not pour any semantics upon them. However, when we use the existential quantifier to create a binding relation, we do put extra semantics upon those user-defined binders. That is the fundamental reason why $\lambda$-terms, even though they should be terms, become nonfunctional patterns in matching logic as we have seen, and thus we need to design the Kore language to support restricted metavariables.
-\item Why not introduce a ``pure'' binder that creates a binding between variables and patterns and does nothing else at all? All other binders such as the $\lambda$ in the lambda calculus, the $\mu$ and $\nu$ in theories of fixed point, the $\gamma$ in theory of contexts, and even the universal quantifier $\forall$ and existential quantifier $\exists$, can all be defined using that ``pure'' binder.
-\end{enumerate}
-}
 \begin{theorem}[Consistency]
 	Consider a theory of a binder $\alpha$, with a sort $S$ and two binary symbols $\alpha_0$ and $\_ \ \_$. Define $\alpha x . e$ as syntactic sugar of $\exists x . \alpha (x, e)$ where $x$ is a variable and $e$ is a pattern. Define $\alpha$-terms be patterns satisfying the next grammar 
 	\begin{align*}
@@ -542,6 +467,103 @@ Following the above example, extend $A$ with the next axioms:
 In this section, we consider \emph{decomposition} of patterns. A decomposition of a pattern $P$ is a pair $\langle C, R \rangle $ such that $C[R] = P$. Let us now consider patterns that do not have logical connectives.
 
 \todo[inline]{Fixed points}
+
+\section{The Kore language}
+
+The next grammar is the firstly-proposed Kore language at \href{https://github.com/kframework/kore/wiki/KORE-Language-Syntax}{\underline{here}}.
+
+\begin{Verbatim}[fontsize=\small]
+
+Definition = Attributes
+Set{Module}
+
+Module = module ModuleName
+Set{Sentence}
+endmodule
+Attributes
+
+Sentence =  import ModuleName Attributes
+| syntax Sort Attributes                           // sort declarations
+| syntax Sort ::= Symbol(List{Sort}) Attributes    // symbol declarations
+| rule Pattern Attributes
+| axiom Pattern Attributes
+
+Attributes = [ List{Pattern} ]
+
+Pattern =  Variable
+| Symbol(List{Pattern})                             // symbol applications
+| Symbol(Value)                                     // domain values
+| \top()
+| \bottom()
+| \and(Pattern, Pattern)
+| \or(Pattern, Pattern)
+| \not(Pattern)
+| \implies(Pattern, Pattern)
+| \exists(Variable, Pattern)
+| \forall(Variable, Pattern)
+| \next(Pattern)
+| \rewrite(Pattern, Pattern)
+| \equals(Pattern, Pattern)
+
+Variable =  Name:Sort                                        // variables
+
+ModuleName = RegEx1
+Sort       = RegEx2
+Name       = RegEx2
+Symbol     = RegEx2
+Value      = RegEx3
+
+RegEx1 == [A-Z][A-Z0-9-]*
+RegEx2 == [a-zA-Z0-9.@#$%^_-]+ | ` [^`]* `
+RegEx3 == <Strings>   // Java-style string literals, enclosed in quotes
+
+\end{Verbatim}
+In the grammar above, {\small\verb|List{X}|} is a special non-terminal corresponding to possibly empty comma-separated lists of {\small\verb|X|} words (trivial to define in any syntax formalism). {\small\verb|Set{X}|}, on the other hand, is a special non-terminal corresponding to possibly empty space-separated sets of X words. Syntactically, there is no difference between the two (except for the separator), but Kore tools may choose to implement them differently.
+
+\subsection{Builtin theories}
+
+\begin{Verbatim}
+module BOOL
+syntax Bool
+syntax Bool ::= true | false | notBool(Bool)
+| andBool(Bool, Bool) | orBool(Bool, Bool)
+
+// axioms for functional symbols
+axiom \exists(T:Bool, \equals(T:Bool, true))
+axiom \exists(T:Bool, \equals(T:Bool, false))
+axiom \exists(T:Bool, \equals(T:Bool, \notBool(X:Bool)))
+axiom \exists(T:Bool, \equals(T:Bool, andBool(X:Bool, Y:Bool)))
+axiom \exists(T:Bool, \equals(T:Bool, orBool(X:Bool, Y:Bool)))
+
+// axioms for commutativity
+axiom \equals(andBool(X:Bool, Y:Bool), andBool(Y:Bool, X:Bool))
+axiom \equals(orBool(X:Bool, Y:Bool), orBool(Y:Bool, X:Bool))
+
+// the no-junk axiom for constructors
+axiom \or(true, false)
+
+axiom \equals(notBool(true), false)
+axiom \equals(notBool(false), true)
+axiom \equals(andBool(true, T:Bool), T:Bool)
+axiom \equals(andBool(false, T:Bool), false)
+axiom \equals(orBool(true, T:Bool), true)
+axiom \equals(orBool(false, T:Bool), T:Bool)
+endmodule
+\end{Verbatim}
+
+\begin{Verbatim}
+module META-LEVEL
+syntax 
+endmodule
+\end{Verbatim}
+
+\begin{Verbatim}
+module LAMBDA
+syntax Exp
+syntax Exp ::= lambda0(Exp, Exp) | app(Exp, Exp)
+
+endmodule
+\end{Verbatim}
 
 
 
