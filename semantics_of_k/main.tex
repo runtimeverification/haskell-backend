@@ -229,7 +229,28 @@ endmodule
 
 \section{Object-level and meta-level}
 
-It is an aspect of life in mathematical logics to distinguish the \emph{object-level} and \emph{meta-level} concepts. The basic principle is to use serif fonts letters ($\mathsf{x}$) for object-level concepts and normal math fonts letters for meta-level concepts ($x$). 
+It is an aspect of life in mathematical logics to distinguish the \emph{object-level} and \emph{meta-level} concepts. In matching logic, we put more emphasize and care on metavariables and their range, that is, the set of patterns that they stand for. It turns out that having metavariables that range over all well-formed patterns will lead us to inconsistency theories immediately, for example, the ($\beta$) axiom in the matching logic theory $\LAMBDA$ of lambda calculus:
+\begin{equation*}
+(\lambda x . e) [e'] = e[e' / x].
+\end{equation*}
+If we do not put any restriction on the range of metavariables $e$ and $e'$, we have an inconsistency issue as the following reasoning shows:
+\begin{align*}
+\bot \xeq{(N)} (\lambda x . \top)[\bot] \xeq{($\beta$)} \top[\bot / x] = \top.
+\end{align*}
+
+Therefore, in matching logic, one should explicitly specify the range of metavariables whenever he uses them.
+
+\begin{definition}[Restricted metavariables]
+	Let $\varphi$ be a metavariable of sort $s \in S$. The range of $\varphi$ is a set of patterns of sort $s$. We write $\varphi :: R$ if the range of $\varphi$ is $R \subseteq \mathrm{Pattern}_s$.
+\end{definition}
+
+\begin{remark}[Metavariables in first-order logic]
+In first-order logic, one often uses metavariables in axiom schemata, but the inconsistency issue does not arise. This is because in first-order logic, we do not need to distinguish metavariables for terms from logic variables, thanks to the next (Substitution) rule:
+\begin{equation*}
+\forall x . \varphi(x) \to \varphi(t).
+\end{equation*}
+The predicate metavariables are not a problem because there are no object level symbols on top of them. \comment{I don't get the point of predicate metavariables.}
+\end{remark}
 
 \paragraph{Variables and metavariables for variables}
 
@@ -267,6 +288,7 @@ The free variables appearing in the axioms of a theory can be regarded as implic
 There is no need to have metavariables for variables in the Kore language, because (1) if they are used as bound variables, then replacing them with any (matching logic) variables will result in the same theories, thanks to alpha-renaming; and (2) if they are used as free variables, then it makes no difference to consider the universal quantification closure of them and we get to the case (1). 
 \comment{\sout{Given said that, there are cases when metavariables for variables make sense. In those cases we often want our metavariables to range over all variables of all sorts, in order to make our Kore definitions compact.} No, we do not need metavariables over variables. I was thinking of the definedness symbols. We might want to write only one axiom schema of $\ceil{x}$ instead many $\ceil{x \cln s}_s^{s'}$'s, but we cannot do that unless we allow polymorphic and overloaded symbols in Kore definitions.}
 \end{remark}
+
 
 \paragraph{Patterns and metavariables for patterns}
 
@@ -329,9 +351,7 @@ We have two important observations about the ($\beta$) axiom. Firstly, metavarai
 \begin{corollary}
 	The theory of lambda calculus $\LAMBDA$ is consistent.
 \end{corollary}
-\begin{definition}[Restricted metavariables]
-Let $\varphi$ be a metavariable of sort $s \in S$. The range of $\varphi$ is a subset of all patterns of the sort $s$. We write $\varphi :: R$ if the range of $\varphi$ is $R \subseteq \mathrm{Pattern}_s$.
-\end{definition}
+
 
 \begin{definition}[Common ranges of metavariables]
 \quad
