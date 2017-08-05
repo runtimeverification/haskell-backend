@@ -283,6 +283,8 @@ module META-LEVEL
 endmodule
 \end{Verbatim}
 
+Using the $\METALEVEL$ module, we can easily define the ranges of metavariables using \emph{side conditions}. The next section illustrates that.
+
 \section{Binders}
 
 In matching logic there is a unified representation of binders. We will be using the theory of lambda calculus $\LAMBDA$ as an example in this section. Recall that the syntax for untyped lambda calculus is
@@ -343,26 +345,36 @@ We need to design a syntax for specifying ranges of metavariables in the Kore la
 We have not proved that matching logic is a conservative extension of untyped lambda calculus, which bothers me a lot. I will remain skeptical about everything we do in this section until we prove that conservative extension result. 
 \end{remark}
 
-\comment{The only benefit of trying to have such a unified theory of binders and binding structures is of theoretical interest. In practice, one will never want to implement the lambda calculus by desugaring it as $\exists x . \#lambda(x, \varphi)$ but rather dealing with $\lambda x . \varphi$ directly. }
+\comment{The benefit of such a unified theory of binders and binding structures in matching logic is more of theoretical interest. In practice (K backends), one will never want to implement the lambda calculus by desugaring $\lambda x . e$ as $\exists x . \lambda_0(x, \varphi)$ but rather dealing with $\lambda x . \varphi$ directly. }
 
 \begin{example}[Lambda calculus in Kore]
 \quad
 \begin{Verbatim}[fontsize=\small]
 module LAMBDA
-  import ID
-  syntax Exp
-  syntax Exp ::= ExpAsId(Id)
-  syntax Exp ::= app(Exp, Exp)
-  syntax Exp ::= lambda0(Exp, Exp)
+  import BOOL
+  import META-LEVEL
   
-  axiom app(\exists(id:Id, lambda0(ExpAsId(id:Id), E:SyntacticTerms(Exp))), 
-            E':SyntacticTerms(Exp))
-      = E:SyntacticTerms(Exp)(E':SyntacticTerms(Exp) / ExpAsId(id:Id))
+  syntax Exp
+  syntax Exp ::= app(Exp, Exp)
+               | lambda0(Exp, Exp)
+  
+  axiom \implies(true = andBool(#isLTerm(#up(E:Exp)),
+                                #isLTerm(#up(E':Exp))), 
+    app(\exists(x:Exp, lambda0(x:Exp, E:Exp)), E':Exp)
+      = E:Exp(E':Exp / x:Exp)
+  
+  // Q1: what is substitution?
+  // Q2: we know #up is not a part of the logic, so what does
+  //     it mean?
+  
+  syntax Bool ::= #isLTerm(Pattern)
+  axiom #isLTerm(#variable(x:Name, s:Sort)) = true
+  axiom #isLTerm(#application(
+    #symbol(#name("app"), #appendSortList(...), #sort("Exp")))),
+    #appendPatternList(#PatternListAsPattern(#P),
+                       #PatternListAsPattern(#P')))))
+  = andBool(#isLTerm(#P), #isLTerm(#P'))
   ...
-endmodule
-
-module ID
-  syntax Id 
 endmodule
 \end{Verbatim}
 \end{example}
