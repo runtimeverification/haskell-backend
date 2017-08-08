@@ -159,8 +159,15 @@ A K frontend is an artifact that generates Kore definitions.
 A K backend is an artifact that consumes a Kore definition of a theory $\mathsf{T}$ and does some work. Whatever it does can and should be algorithmically reduced to the task of proving $\mathsf{T} \vdash \varphi$ where $\varphi$ ``encodes'' that work. A K backend should justify its results by generating formal proofs that can be proof-checked by the oracle matching logic proof checker. Examples of K backends include concrete execution engines, symbolic executions engines, matching logic provers, verification tools, etc.
 \end{definition}
 
+\paragraph{Some discussions.}
+We spent lots of time considering the design of the Kore language, with which we specify matching logic theories, and we decided to go for meta-logic. This paragraph is a summary that serves as a justification of our choice. 
 
+Suppose we allow users to write infinite axioms to specify theories. In that case, there is no need to go for a meta-logic, since one can always enumerate all axioms in Kore definitions, as long as they are recursively enumerable~(r.e.). Theories who do not have a r.e. set of axioms are not considered as of interest of practice. 
 
+However, we cannot afford our definitions to run forever. We look for a finite representation of them. This is when the concept of meta-variables comes in and plays a role. And soon one realizes that we do not only need meta-variables, but also some notations in the meta-level, too, serving as methods that help us finitely represent the infinite sets of axioms we want to specify. One typical such notation is the substitution $\varphi[\psi/x]$, where $\_[\_/\_]$ is the mathematical notation, in the meta-level, for substitution, which is not part of the object-logic. Other examples include side-conditions on meta-variables and context.
+
+We look for a generic way that helps us represent infinite axioms in a finite way. And there is a natural one. Since axioms are r.e. sets, by definition there are semi-decision procedures that define them, and semi-decision procedures have finite representation. Therefore, instead of enumerating all the axioms, one simply write down the corresponding semi-decision procedure. 
+\newline
 
 The next grammar of the Kore language is proposed to declare matching logic signatures, to write matching logic patterns, and to specify matching logic theories (as Kore modules). The grammar is supposed to be \emph{minimal} w.r.t. ``completeness'', in the sense that one is able to specify any ``interesting'' theories using the Kore language. Languages such as eKore will be proposed as syntactic sugar of the Kore language, and will (probably) include useful commands such as \texttt{import} and logic connectives such as \texttt{\char`\\forall}. 
 
