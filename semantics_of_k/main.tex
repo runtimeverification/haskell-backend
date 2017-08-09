@@ -254,11 +254,9 @@ A K frontend is an artifact that generates Kore definitions.
 A K backend is an artifact that consumes a Kore definition of a theory $\mathsf{T}$ and does some work. Whatever it does can and should be algorithmically reduced to the task of proving $\mathsf{T} \vdash \varphi$ where $\varphi$ ``encodes'' that work. A K backend should justify its results by generating formal proofs that can be proof-checked by the oracle matching logic proof checker. Examples of K backends include concrete execution engines, symbolic executions engines, matching logic provers, verification tools, etc.
 \end{definition}
 
-We proposed the next Kore language syntax.
+We proposed the next Kore language syntax. 
 
 \begin{Verbatim}
-// Not finalized. 
-
 // Namespaces for sorts, variables, metavariables,
 // symbols, and Kore modules.
 SortId         = ...
@@ -269,30 +267,24 @@ ModuleId       = ...
 
 Variable       = VariableId:SortId
 MetaVariable   = MetaVariableId::SortId
-// or MetaVariable = MetaVariableId:SortId
-// if two namespaces are disjoint
 
-Pattern   = Variable
-| MetaVariable
-| \and(Pattern, Pattern)
-| \not(Pattern)
-| \exists(Variable, Pattern)
-| \exists(MetaVariable, Pattern)
-| SymbolId(List{Pattern})
-| \up(Pattern)
-| \down(Pattern)
+Pattern        = Variable | MetaVariable
+               | \and(Pattern, Pattern)
+               | \not(Pattern)
+               | \exists(Variable, Pattern)
+               | SymbolId(List{Pattern})
 
-Signature = syntax SortId
-| syntax SortId ::= SymbolId(List{SortId})
-| Signature Signature
+Signature      = syntax SortId
+               | syntax SortId ::= SymbolId(List{SortId})
+               | Signature Signature
 
-Axioms    = axiom Pattern
-| Axioms Axioms
+Axioms         = axiom Pattern
+               | Axioms Axioms
 
-Module    = module ModuleId
-Signature
-Axioms
-endmodule
+Module         = module ModuleId
+                   Signature
+                   Axioms
+                 endmodule
 \end{Verbatim}
 
 \subsection{Semantics of Kore}
@@ -300,6 +292,20 @@ endmodule
 We give Kore definitions semantics by showing how to translate (desugar) them to meta-logic theories. 
 
 \todo[inline]{Desugaring Kore definitions to meta-logic theories. This has top priority now. Once we have that transformation, we can claim a formal semantics of Kore.}
+
+The following rules transform Kore objects to their meta-representations. The principle is that every object-level things in Kore become ground terms in the meta-logic. Every meta-level things in Kore, for example meta-variables, become variables in the meta-logic. 
+
+\todo[inline]{The next transformation needs to be nailed down a bit.}
+\begin{Verbatim}
+#up(X:Nat) => #variable("X", "Nat")
+#up(X::Nat) => X:Pattern "with" isSort(X:Pattern, "Nat")
+#up(\and(P, Q)) => #and(#up(P), #up(Q))
+#up(\not(P)) => #not(#up(P))
+#up(\exists(X:Nat, P)) => #exists("X", "Nat", #up(P))
+
+#up(axiom P) => cmb #up(P) : Theorem if isSort(...) /\ ... .
+
+\end{Verbatim} 
 
 \comment{Many discussions in the next section (Sec.4 Object-level and Meta-level) should be moved to Section 3 as examples. Sec.5 Binders and Sec.6 Contexts should also move to a subsection of Sec.3 as applications and examples. }
 
