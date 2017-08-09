@@ -130,14 +130,94 @@ A matching logic theory $(S, \Sigma, A)$ is a triple that contains a nonempty fi
 
 \comment{I am trying to capture the meta-level theory in the next definition.}
 \begin{definition}[The Meta-level Theory]
-	The meta-level theory, denoted as $U$, is a matching logic theory together with a lifting operator $\langle \ \cdot \ \rangle$, such that for any theory $T$ and pattern $\varphi$, 
+	The meta-level theory, denoted as $U$, is a meta-logic theory together with a lifting operator $\langle \ \cdot \ \rangle$, such that for any theory $T$ and pattern $\varphi$, 
 	\begin{equation*}
-	T \vdash \varphi \quad \text{iff} \quad U \cup \langle T \rangle \vdash \langle \varphi \rangle.
+	T \vdash \varphi \quad \text{iff} \quad U \vdash \langle T \vdash \varphi \rangle.
 	\end{equation*}
-	\todo{This is simply wrong.}
 \end{definition}
 
+The meta-logic needs not to be the matching logic. In fact, it can simply be a rewriting logic or even equational logic, and we can write it down as a Maude theory. We only use Maude's syntax to specify theories in the meta-logic, so those Maude modules (theories) need no to be executable. In fact, we assume every equations are labeled with the attribute \texttt{nonexe}.
+
+\begin{remark}
+	Think of the meta-level theory $U$ as \emph{the theory of ASTs of patterns.}
+\end{remark}
+
+\begin{Verbatim}
+  fth META-LEVEL
+    protecting STRING .
+    sorts Symbol Pattern PatternList StringList.
+    
+    subsort String < StringList .
+    op nilStringList : -> StringList .
+    op _,_ : StringList StringList -> StringList [assoc] .
+    
+    subsort Pattern < PatternList .
+    op nilPatternList : -> PatternList .
+    op _,_ : PatternList PatternList -> PatternList [assoc] .
+    
+    op #symbol : String StringList String -> Symbol .
+    
+    op #variable : String String -> Pattern .
+    op #and : Pattern Pattern -> Pattern .
+    op #not : Pattern -> Pattern .
+    op #exists : String String Pattern -> Pattern .
+    op #application : Symbol PatternList -> Pattern .
+    ---- more things to go ----
+    ---- well-formed, getSort, isSort, freshvar, substitution, etc. ----
+    
+    sort Theorem . ---- patterns that can be deducted
+    subsort Theorem < Pattern .
+    
+    ---- just an example of logic axioms
+    mb #not(#and(P:Pattern, #not(P:Pattern))) : Theorem . 
+  endth
+\end{Verbatim}
+
+The next example is (the meta-representation of) the theory of lambda calculus. Again, equations are assumed to have the attribute \texttt{nonexe}. 
+
+\begin{Verbatim}
+fmod LAMBDA
+  including META-LEVEL .
+  
+  ---- the following syntactic sugar is just for readability. 
+
+  ops app lambda0 : -> Symbol .
+  eq app = #symbol("app", ("Exp", "Exp"), "Exp") .
+  eq lambda0 = #symbol("lambda0", ("Exp", "Exp"), "Exp") .
+  
+  op lambda_._ : String Pattern -> Pattern .
+  eq lambda X:VariableId . E:Pattern
+   = #exists(X:VariableId, "Exp", 
+     #application(lambda0, (#variable(X:VariableId, "Exp"), 
+                           E:Pattern)))) .
+  op _[_] : Pattern Pattern -> Pattern .
+  eq E1:Pattern[E2:Pattern] 
+   = #application(app, (E1:Pattern, E2:Pattern))) .
+   
+  ---- side conditions checker
+  
+  op isLTerm : Pattern -> Bool .
+
+  eq isLTerm(#variable(X:VariableId, "Exp")) = true .
+  
+  eq isLTerm(E1:Pattern[E2:Pattern])
+   = isLTerm(E1:Pattern) and isLTerm(E2:Pattern) .
+   
+  eq isLTerm(lambda(X:VariableId, E:Pattern))
+   = isLTerm(E:Pattern) .
+  
+  ---- the (Beta) axiom
+  ---- we haven't defined #equal in the meta-logic yet
+  ---- nor #substitute
+  cmb #equal((lambda X:VariableId . E1:Pattern)[E2:Pattern],
+             #substitute(...)) : Theorem
+   if isLTerm(E1:Pattern) and isLTerm(E2:Pattern) .
+endfm
+\end{Verbatim}
+
 \subsection{The Kore Language}
+
+The Kore language simply provides users a friendly way to write theories in the object-level, which will eventually be desugared to the meta-logic. 
 
 \begin{definition}[The Kore Language]
 The Kore language is a language to write matching logic theories. The outcomes are called Kore definitions. Kore definitions are mainly served as the interface between a K frontend and a K backend, but a human should be able to read and write Kore definitions of simple theories, too. The Kore language is designed in a way that:
@@ -173,58 +253,6 @@ In this section, we will propose a meta-logic that serves as \emph{a logic for m
 
 
 
-\begin{Verbatim}
-module MATCHING-LOGIC or META-LEVEL
-
-  // This is the meta-logic module in which
-  // we define ASTs. Meta-logic needs not to
-  // be matching logic. 
-
-  import STRING 
-  
-  // namespaces for sorts, variables, symbols, and modules
-  SortId      ::= ...
-  VariableId  ::= ...
-  SymbolId    ::= ...
-  ModuleId    ::= ...
-
-  Symbol      ::= #symbol(SymbolId, SortIdList, SortId)
-  SymbolList  ::= nilSymbolList
-                | SymbolListAsSymbol(Symbol)
-                | appendSymbolList(SymbolList, SymbolList)
-   
-  Pattern     ::= #variable(VariableId, SortId)
-                | #and(Pattern, Pattern)
-                | #not(Pattern)
-                | #exists(VariableId, SortId, Pattern)
-                | #application(Symbol, PatternList)
-                | #domain(String, SortId)
-            
-  PatternList ::= nilPatternList
-                | PatternListAsPattern(Pattern)
-                | appendPatternList(PatternList, PatternList)
-                
-endmodule
-
-\end{Verbatim}
-
-The next example is lambda calculus. 
-
-\begin{Verbatim}
-module LAMBDA
-
-  axiom app = #symbol("app", ["Exp"; "Exp"], "Exp")
-  axiom lambda0 = #symbol("lambda0", ["Exp"; "Exp"], "Exp")
-  axiom isLTerm(#variable(X:VariableId, "Exp")) = true
-  axiom isLTerm(#application(app, [E1:Pattern; E2:Pattern]))
-      = isLTerm(E1:Pattern) and isLTerm(E2:Pattern)
-  axiom isLTerm(#exists(X:VariableId, "Exp", 
-                #application(lambda0, 
-                [#variable(X:VariableId, "Exp"); E:Pattern])))
-      = isLTerm(E:Pattern)
-
-endmodule
-\end{Verbatim}
 
 \section{Object-level and Meta-level}
 
