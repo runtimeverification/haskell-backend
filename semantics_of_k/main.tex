@@ -167,102 +167,55 @@ Suppose we allow users to write infinite axioms to specify theories. In that cas
 However, we cannot afford our definitions to run forever. We look for a finite representation of them. This is when the concept of meta-variables comes in and plays a role. And soon one realizes that we do not only need meta-variables, but also some notations in the meta-level, too, serving as methods that help us finitely represent the infinite sets of axioms we want to specify. One typical such notation is the substitution $\varphi[\psi/x]$, where $\_[\_/\_]$ is the mathematical notation, in the meta-level, for substitution, which is not part of the object-logic. Other examples include side-conditions on meta-variables and context.
 
 We look for a generic way that helps us represent infinite axioms in a finite way. And there is a natural one. Since axioms are r.e. sets, by definition there are semi-decision procedures that define them, and semi-decision procedures have finite representation. Therefore, instead of enumerating all the axioms, one simply write down the corresponding semi-decision procedure. 
+
+In this section, we will propose a meta-logic that serves as \emph{a logic for matching logic and its proof system.} We believe such as meta-logic will result in a direct implementation of Kore and matching logic provers. 
 \newline
 
-The next grammar of the Kore language is proposed to declare matching logic signatures, to write matching logic patterns, and to specify matching logic theories (as Kore modules). The grammar is supposed to be \emph{minimal} w.r.t. ``completeness'', in the sense that one is able to specify any ``interesting'' theories using the Kore language. Languages such as eKore will be proposed as syntactic sugar of the Kore language, and will (probably) include useful commands such as \texttt{import} and logic connectives such as \texttt{\char`\\forall}. 
-
 \begin{Verbatim}
-// Namespaces for sorts, variables, metavariables,
-// symbols, and Kore modules.
-SortId         = ...
-VariableId     = ...
-MetaVariableId = ...
-SymbolId       = ...
-ModuleId       = ...
+module MATCHING-LOGIC or META-LEVEL
 
-Variable       = VariableId:SortId
-MetaVariable   = MetaVariableId::SortId
-// or MetaVariable = MetaVariableId:SortId
-// if two namespaces are disjoint
+  // This is the meta-logic module in which
+  // we define ASTs. Meta-logic needs not to
+  // be matching logic. 
 
-Pattern   = Variable
-          | MetaVariable
-          | \and(Pattern, Pattern)
-          | \not(Pattern)
-          | \exists(Variable, Pattern)
-          | SymbolId(List{Pattern})
-          | #up(Pattern)
-          | #down(Pattern)
-          
-Signature = syntax SortId
-          | syntax SortId ::= SymbolId(List{SortId})
-          | Signature Signature
-          
-Axioms    = axiom Pattern
-          | Axioms Axioms
-          
-Module    = module ModuleId
-              Signature
-              Axioms
-            endmodule
+  import STRING 
+  
+  // namespaces for sorts, variables, symbols, and modules
+  SortId      ::= ...
+  VariableId  ::= ...
+  SymbolId    ::= ...
+  ModuleId    ::= ...
+
+  Symbol      ::= #symbol(SymbolId, SortIdList, SortId)
+  SymbolList  ::= nilSymbolList
+                | SymbolListAsSymbol(Symbol)
+                | appendSymbolList(SymbolList, SymbolList)
+   
+  Pattern     ::= #variable(VariableId, SortId)
+                | #and(Pattern, Pattern)
+                | #not(Pattern)
+                | #exists(VariableId, SortId, Pattern)
+                | #application(Symbol, PatternList)
+                | #domain(String, SortId)
+            
+  PatternList ::= nilPatternList
+                | PatternListAsPattern(Pattern)
+                | appendPatternList(PatternList, PatternList)
+                
+endmodule
+
 \end{Verbatim}
 
-\comment{(1) Is alpha-renaming assumed in Kore? In other words, are \texttt{exsits(x, x)} and \texttt{exists(y, y)} the same or not? If alpha-renaming is assumed (as in the matching logic paper), then they are \emph{the same thing}.} 
+The next example is lambda calculus. 
 
-\comment{(2) By ``the same thing'', we mean they are the same matching logic pattern, not that they can be proved equal or something like that. For example, an implementation of Kore is free to rename bound variables to prevent free variables capturing.}
+\begin{Verbatim}
+module LAMBDA
 
-\comment{(3) So far so good until we have \texttt{\#up}, a monster that lives outside the peaceful land of matching logic, because \texttt{exsits(x, x)} and \texttt{exists(y, y)} will have different metarepresentations. }
+  axiom isLTerm(#variable(X:VariableId, "Exp")) = true
+  axiom isLTerm(#application(...)) = ...
 
-\comment{(4) This will cause problems. For example, one writes a function \texttt{boundVars}, calls it on \texttt{exsits(x, x)}, expects seeing \texttt{\{x\}}, but gets surprised by seeing \texttt{\{y\}}, or even \texttt{\{\_\_fv\_\_\$142857\}}, simply because of alpha-renaming.}
-
-\comment{(5) It is not alpha-renaming but \texttt{\#up} the trouble maker I would say.}
-
-\comment{(6) I started to consider such problems when I tried to define \texttt{isLTerm} that checks lambda terms. Consider the next definition:
-\begin{enumerate}
-	\item $\mathsf{isLTerm}(\up(x)) = \xtrue$
-	\item $\mathsf{isLTerm}(\up(\exists x . \lambda_0(x,e))) = \mathsf{isLTerm}(e)$
-	\item \dots
-\end{enumerate}
-Axiom (1) is just wrong, because $\up(x)$ is $\mathsf{\#var}(``x")$, and the axiom becomes $\mathsf{isLTerm}(\mathsf{\#var}(``x")) = \xtrue$. So instead of writing (1), one should write $\mathsf{isLTerm}(\mathsf{\#var}(s\cln\mathsf{String})) = \xtrue.$
-
-Think of axiom (2), too. The l.h.s. is basically
-\begin{equation*}
-\sf isLTerm(\#exists(\#var(``x"), \#app(\#symbol(``lambda0"), \#append(\dots, \up(e))))).
-\end{equation*}
-Notice how variable $x$ becomes a domain value $\sf \#var(``x")$ in the meta-level. 
-
-(7) We need some ``formal semantics'' of $\up$, if we want to seriously incorporate our logic with it and not just regard it as an implementation trick. In Maude, the meta-level is a theory $U$ together with a lifting operator $\langle \ \cdot \ \rangle$ such that
-\begin{equation*}
-R \vdash t_1 \to t_2 \quad \text{iff} \quad U \vdash \langle R, t1 \rangle \to \langle R, t2 \rangle,
-\end{equation*}
-where $\langle \ \cdot \ \rangle$ is not defined in the logic. I am trying to come up with a similar thing in Definition 4 but failed.
-}
-
-Here we provide a list of potential questions and their quick answers. All questions will be addressed again and answered in full details in later sections, so if you do not satisfy the short answers listed below, please read the entire proposal before addressing a comment. 
-
-\paragraph{Question A: Why propose a minimal one?}\quad \\
-Answer: This is because matching logic and matching logic theories are the foundation of everything we do within the K framework. The Kore language is  designed as the universal language to specify all matching logic theories used in the K framework. By having a minimal such language, we require the minimal amount of common knowledge among all K tools, and leave the most amount of flexibility to their developers. 
-
-\paragraph{Question B: What are metavariables?}\quad \\
-Answer: They are mathematical variables for patterns. Check \href{https://en.wikipedia.org/wiki/Metavariable}{this}.
-
-\paragraph{Question C: Why do we need metavariables? They are not part of the grammar of matching logic.}\quad \\
-Answer: Metavariables are not part of the grammar. We need them in the Kore language because some theories have axiom schemata, which contain metavariables, and there is no way to define those schemata as a finite number of (object-level) axioms. If we do not have metavariables, we end up with theories which has an infinite list of axioms, and we cannot afford that. 
-
-\paragraph{Question D: What is $\up$?}\quad \\
-Answer: It takes a pattern to its metarepresentation. 
-
-\paragraph{Question E: Why do we need $\up$?}\quad \\
-Answer: In some important theories we need restricted metavariables, and we decided to go to meta-level for that, and $\up$ let us go to the meta-level. 
-
-\paragraph{Question F: Why does a minimal language have $\up$?}\quad \\
-Answer: This is because~$\up$ cannot be defined within the logic, no matter how. 
-
-\paragraph{Question G: Does it mean every K tools have to support the meta-level, since $\up$ is in Kore?}\quad \\
-Answer: No. K tools are free to support fragment of matching logic. A concrete execution engine will not bother with variables, and a theorem prover for quantifier free theories will not bother with \verb|\exsits|.
-
-\paragraph{Question H: What is the formal semantics of $\up$?}\quad \\
-Answer: Sounds like a good question. 
+endmodule
+\end{Verbatim}
 
 \section{Object-level and Meta-level}
 
