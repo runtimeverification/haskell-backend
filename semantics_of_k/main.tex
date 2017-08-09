@@ -171,6 +171,8 @@ We look for a generic way that helps us represent infinite axioms in a finite wa
 In this section, we will propose a meta-logic that serves as \emph{a logic for matching logic and its proof system.} We believe such as meta-logic will result in a direct implementation of Kore and matching logic provers. 
 \newline
 
+
+
 \begin{Verbatim}
 module MATCHING-LOGIC or META-LEVEL
 
@@ -211,8 +213,15 @@ The next example is lambda calculus.
 \begin{Verbatim}
 module LAMBDA
 
+  axiom app = #symbol("app", ["Exp"; "Exp"], "Exp")
+  axiom lambda0 = #symbol("lambda0", ["Exp"; "Exp"], "Exp")
   axiom isLTerm(#variable(X:VariableId, "Exp")) = true
-  axiom isLTerm(#application(...)) = ...
+  axiom isLTerm(#application(app, [E1:Pattern; E2:Pattern]))
+      = isLTerm(E1:Pattern) and isLTerm(E2:Pattern)
+  axiom isLTerm(#exists(X:VariableId, "Exp", 
+                #application(lambda0, 
+                [#variable(X:VariableId, "Exp"); E:Pattern])))
+      = isLTerm(E:Pattern)
 
 endmodule
 \end{Verbatim}
