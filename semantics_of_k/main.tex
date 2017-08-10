@@ -307,6 +307,25 @@ The following rules transform Kore objects to their meta-representations. The pr
 
 \end{Verbatim} 
 
+\subsection{Lambda Calculus}
+
+\begin{Verbatim}
+module LAMBDA
+  syntax Exp
+  syntax Exp  ::= lambda0(Exp, Exp)
+                | app(Exp, Exp)
+  syntax Bool ::= isLTerm(Pattern)
+  axiom isLTerm(X:Exp) = true
+  axiom isLTerm(\exists(X:Exp, lambda0(X:Exp, E:Exp)))
+      = isLTerm(E:Exp)
+  axiom isLTerm(app(E:Exp, E':Exp))
+      = isLTerm(E:Exp) andBool isLTerm(E':Exp)
+  axiom app(\exists(X:Exp, lambda0(X:Exp, E::Exp)), E'::Exp)
+      = E::Exp[E'::Exp / X:Exp]
+  requires isLTerm(E::Exp) andBool isLTerm(E'::Exp)
+endmodule
+\end{Verbatim}
+
 \comment{Many discussions in the next section (Sec.4 Object-level and Meta-level) should be moved to Section 3 as examples. Sec.5 Binders and Sec.6 Contexts should also move to a subsection of Sec.3 as applications and examples. }
 
 \section{Object-level and Meta-level}
