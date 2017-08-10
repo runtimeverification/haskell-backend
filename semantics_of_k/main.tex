@@ -100,6 +100,11 @@
     
   % Package for display-mode quotations.
   \usepackage{csquotes}
+  
+  % Package for double-bracket [[P]] (known as the semantics bracket)
+  \usepackage{stmaryrd}
+  \newcommand{\Bracket}[1]
+    {\llbracket#1\rrbracket}
 
 
   % Title and authors
@@ -362,7 +367,26 @@ Paulson's \emph{The Foundation of a Generic Theorem Prover}, especially Section
 It remains a question whether the meta-logic faithfully captures the 
 object-logic. 
 To answer this question, we introduce some notations.
-The double bracket 
+The double bracket $\Bracket{\_}$ is a function that maps object-patterns to 
+their meta-representation in the meta-logic $M$.
+The following definition is inspired by Paulson's paper (Definition 1). 
+\begin{definition}
+	Let $L$ be a matching logic theory and $\varphi_1,\dots,\varphi_n$ and 
+	$\psi$ be patterns of $L$.
+	Let $M_L$ be a meta-logic theory obtained from 	$M$ by adding operators and 
+	equational axioms. 
+	Then say
+	\begin{itemize}
+		\item $M_L$ is \emph{sound} for $L$, if for every $M_L$-proof of 
+		$\Bracket{\psi}$ from $\Bracket{\varphi_1}, \dots, 
+		\Bracket{\varphi_n}$, there is an $L$-proof of $\psi$ from 
+		$\varphi_1,\dots,\varphi_n$.
+		\item $M_L$ is \emph{complete} for $L$, if for every $L$-proof of 
+		$\psi$ from $\varphi_1,\dots,\varphi_n$, there is a $M_L$-proof of 
+		$\Bracket{\psi}$ from $\Bracket{\varphi_1}, \dots, \Bracket{\varphi_n}$.
+		\item $M_L$ is \emph{faithful} for $L$ if it is both sound and complete.
+	\end{itemize}
+\end{definition}
 
 \todo{I am working on a theorem that justifies the meta-logic. Xiaohong.}
 
