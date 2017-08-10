@@ -454,9 +454,9 @@ meta-level.
 Even if all reasoning in the object-logic $L$ can be faithfully lifted to the 
 meta-logic $M_L$, it does not mean one should always do so. 
 
-The Kore language is proposed to write theories in the object-level, whose 
-semantics is given by a transformation to the meta-logic. 
-
+The Kore language is proposed to write an object-logic $L$, whose 
+semantics is given by a transformation to the meta-logic $M_L$. 
+\comment{
 \begin{definition}[The Kore Language]
 The Kore language is a language to write matching logic theories. The outcomes are called Kore definitions. Kore definitions are mainly served as the interface between a K frontend and a K backend, but a human should be able to read and write Kore definitions of simple theories, too. The Kore language is designed in a way that it can be desugared to a theory in the meta-logic in a deterministic way.
 \end{definition}
@@ -468,17 +468,19 @@ A K frontend is an artifact that generates Kore definitions.
 \begin{definition}[Backend]
 A K backend is an artifact that consumes a Kore definition of a theory $\mathsf{T}$ and does some work. Whatever it does can and should be algorithmically reduced to the task of proving $\mathsf{T} \vdash \varphi$ where $\varphi$ ``encodes'' that work. A K backend should justify its results by generating formal proofs that can be proof-checked by the oracle matching logic proof checker. Examples of K backends include concrete execution engines, symbolic executions engines, matching logic provers, verification tools, etc.
 \end{definition}
+}
+We propose the next Kore syntax. 
 
-We proposed the next Kore language syntax. 
-
-\begin{Verbatim}
+\begin{Verbatim}[fontsize=\small]
 // Namespaces for sorts, variables, metavariables,
 // symbols, and Kore modules.
-SortId         = ...
-VariableId     = ...
-MetaVariableId = ...
-SymbolId       = ...
-ModuleId       = ...
+SortId         = String
+VariableId     = String
+MetaVariableId = MaudeId
+SymbolId       = String
+ModuleId       = String
+
+Sort           = SortId
 
 Variable       = VariableId:SortId
 MetaVariable   = MetaVariableId::SortId
@@ -500,6 +502,66 @@ Module         = module ModuleId
                    Signature
                    Axioms
                  endmodule
+\end{Verbatim}
+
+\subsection{Example Kore Definitions}
+
+\paragraph{The {\small BOOL} module.}\quad
+\begin{Verbatim}
+module BOOL
+  syntax Bool
+  syntax Bool ::= trueBool | falseBool | notBool(Bool)
+                | andBool(Bool, Bool) | orBool(Bool, Bool)
+  axiom  \or(trueBool, falseBool)
+  axiom  \exists(X:Bool, \equal(X:Bool, trueBool))
+  axiom  \exists(X:Bool, \equal(X:Bool, notBool(Y:Bool)))
+  axiom  ... ...
+endmodule
+\end{Verbatim}
+
+\paragraph{The {\small NAT} module.}\quad  
+\begin{Verbatim}
+module NAT
+  import BOOL
+  syntax Nat
+  syntax Nat ::= zero | succ(Nat) | plus(Nat, Nat) 
+               | mult(Nat, Nat)
+  syntax Bool ::= gt(Nat, Nat) | gte(Nat, Nat)
+  axiom  \equal(mult(X:Nat, zero), zero)
+  axiom  \equal(mult(X::Nat, Y::Nat), mult(Y::Nat, X::Nat))
+  axiom  ... ...
+  // hook to a model (not finished)
+  hook-sort Nat "external-model Naturals"
+  hook-symbol zero \value("0", Nat)
+  hook-symbol succ \value("succ", Nat)
+  ... ...
+endmodule
+\end{Verbatim}
+
+\paragraph{The {\small LAMBDA} module.}\quad
+\begin{Verbatim}
+module LAMBDA
+  syntax Exp ::= Id 
+               | Exp Exp 
+               | lambda Id . Exp [binder]
+  axiom  (lambda X . E) E' = E[E' / X]
+endmodule
+\end{Verbatim}
+
+\begin{Verbatim}
+module LAMBDA
+  syntax Exp
+  syntax Exp ::= app(Exp, Exp)
+               | lambda0(Exp, Exp)
+  axiom  \equals(app(\exists(X:Exp, lambda0(X:Exp, E::Exp)), E'::Exp),
+                 \replace(E::Exp, E'::Exp, X:Exp))
+  requires(?) \isLTerm(E::Exp) and(?) \isLTerm(E'::Exp)
+  
+  axiom \isLTerm(X:Exp) = true (or trueBool?)
+  axiom \isLTerm(app(...)) = \isLTerm() andBool(?) ...
+  ...
+      
+endmodule
 \end{Verbatim}
 
 \subsection{Semantics of Kore}
