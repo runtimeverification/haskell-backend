@@ -368,7 +368,10 @@ It remains a question whether the meta-logic faithfully captures the
 object-logic. 
 To answer this question, we introduce some notations.
 The double bracket $\Bracket{\_}$ is a function that maps object-patterns to 
-their meta-representation in the meta-logic $M$.
+their meta-representation $$\Bracket{\varphi} \quad \text{stands for} \quad 
+\varphi : \mathit{Theorem}$$ in 
+the meta-logic $M$, 
+which means that $\varphi$ is deducible. 
 The following definition is inspired by Paulson's paper (Definition 1). 
 \begin{definition}
 	Let $L$ be a matching logic theory and $\varphi_1,\dots,\varphi_n$ and 
@@ -388,14 +391,15 @@ The following definition is inspired by Paulson's paper (Definition 1).
 	\end{itemize}
 \end{definition}
 
-\todo{I am working on a theorem that justifies the meta-logic. Xiaohong.}
+For any syntactic matching logic theory $L$ whose axiom set is $A$, its 
+meta-logic $M_L$ is obtained by adding $\Bracket{A} = \{\Bracket{\varphi} \mid 
+\varphi \in A\}$ as axioms to $M$. 
+For example, the next Maude functional theory defines the meta-logic of lambda 
+calculus in matching logic:
 
-
-The next example is (the meta-representation of) the theory of lambda calculus. Again, equations are assumed to have the attribute \texttt{nonexe}. 
-
-\begin{Verbatim}
-fth LAMBDA
-  including META-LEVEL .
+\begin{Verbatim}[fontsize=\small]
+fth M-LAMBDA is
+  extending M .
   
   ---- the following syntactic sugar is just for readability. 
 
@@ -425,13 +429,17 @@ fth LAMBDA
    = isLTerm(E:Pattern) .
   
   ---- the (Beta) axiom
-  ---- we haven't defined #equal in the meta-logic yet
-  ---- nor #substitute
+
   cmb #equal((lambda X:VariableId . E1:Pattern)[E2:Pattern],
-             #substitute(...)) : Theorem
+              replace(...)) : Theorem
    if isLTerm(E1:Pattern) and isLTerm(E2:Pattern) .
 endth
 \end{Verbatim}
+
+One can see how complex it is to write meta-logic theories, but it is an aspect 
+of life. 
+
+
 
 \section{The Kore Language}
 
