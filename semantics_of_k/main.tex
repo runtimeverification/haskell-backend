@@ -6,13 +6,14 @@
 
   % Select what to do with todonotes: 
   % \usepackage[disable]{todonotes} % notes not showed
-%  \usepackage[draft]{todonotes} % notes showed
+  %  \usepackage[draft]{todonotes} % notes showed
 \usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
 \newcommandx{\unsure}[2][1=]{\todo[linecolor=red,backgroundcolor=red!25,bordercolor=red,#1]{#2}}
 \newcommandx{\change}[2][1=]{\todo[linecolor=blue,backgroundcolor=blue!25,bordercolor=blue,#1]{#2}}
 \newcommandx{\info}[2][1=]{\todo[linecolor=OliveGreen,backgroundcolor=OliveGreen!25,bordercolor=OliveGreen,#1]{#2}}
 \newcommandx{\improvement}[2][1=]{\todo[linecolor=Plum,backgroundcolor=Plum!25,bordercolor=Plum,#1]{#2}}
 \newcommandx{\thiswillnotshow}[2][1=]{\todo[disable,#1]{#2}}
+
   % Select what to do with command \comment:  
   % \newcommand{\comment}[1]
       {} %comment not showed
@@ -96,6 +97,9 @@
   \usepackage{mathtools}
   \newcommand{\xeq}[1]
     {\stackrel{\mathclap{\normalfont\tiny\mbox{#1}}}{=}}
+    
+  % Package for display-mode quotations.
+  \usepackage{csquotes}
 
 
   % Title and authors
@@ -199,13 +203,30 @@ $$
 ``Two theories are \emph{equal} if they have the same set of sorts and symbols, and they deduce the same set of theorems.''}
 
 
-\section{The Theory of Matching Logic}
+\section{A Calculus of Matching Logic}
+In this section, we propose a calculus of matching logic.
+\begin{displayquote}
+	Many people have developed calculi for mathematical reasoning. 
+	A calculus of logics is often called a \emph{logical framework}.
+	I prefer to speak of a \emph{meta-logic} and its \emph{object-logic}. \\
+	By L. Paulson, \emph{The Foundation of a Generic Theorem Prover}
+\end{displayquote}
 
-\begin{remark}
-	We call matching logic the \emph{object-logic}, in comparison to the meta-logic, in which we define a theory of matching logic and its proof system. 
-\end{remark}
+The family of equational logics have been thoroughly studied since the proposal 
+paper~\cite{}.
+In this proposal, we use a variant called \emph{order-sorted equational logic} 
+as the meta-logic. Order-sorted equational logic is well supported by 
+Maude~\cite{}, a fast rewriting engine. We use Maude's syntax to write 
+equational logic theories. 
+\emph{The theory of matching logic}, denoted as $M$, is an order-sorted 
+equational logic defined as the next Maude functional theory.
+Equations and membership equations are all labeled with the \texttt{nonexe} 
+attribute, because we do not care about the executability about $U$, but simply 
+use Maude's syntax to specify it. 
+For simplicity, we do not provide all equations and membership equations, but 
+only important ones. 
 
-\paragraph{Some discussions.}
+\comment{
 The main task of this proposal is to find a nice way to specify (and probably reason with) matching logic theories. We spent lots of time considering the design of the Kore language, with which we specify matching logic theories, and we decided to go for meta-logic. This paragraph is a summary that serves as a justification of our choice. 
 
 Suppose we allow users to write infinite axioms to specify theories. In that case, there is no need to go for a meta-logic, since one can always enumerate all axioms in Kore definitions, as long as they are recursively enumerable~(r.e.). Theories who do not have a r.e. set of axioms are not considered as of interest of practice. 
@@ -214,10 +235,15 @@ However, we cannot afford our definitions to run forever. We look for a finite r
 
 We look for a generic way that helps us represent infinite axioms in a finite way. And there is a natural one. Since axioms are r.e. sets, by definition there are semi-decision procedures that define them, and semi-decision procedures have finite representation. Therefore, instead of enumerating all the axioms, one simply write down the corresponding semi-decision procedure. 
 
-In this section, we will propose a meta-logic that serves as \emph{a logic for matching logic and its proof system.} We believe such as meta-logic will result in a direct implementation of Kore and matching logic provers. 
+In this section, we will propose a meta-logic that serves as \emph{a logic for 
+matching logic and its proof system.} We believe such as meta-logic will result 
+in a direct implementation of Kore and matching logic provers. 
 
-The meta-logic needs not to be the matching logic. In fact, it can simply be a rewriting logic or even equational logic, and we can write it down as a Maude theory. We only use Maude's syntax to specify theories in the meta-logic, so those Maude modules (theories) need no to be executable. In fact, we assume every equations are labeled with the attribute \texttt{nonexe}.
-\newline
+The meta-logic needs not to be the matching logic. In fact, it can simply be a 
+rewriting logic or even equational logic, and we can write it down as a Maude 
+theory. We only use Maude's syntax to specify theories in the meta-logic, so 
+those Maude modules (theories) need no to be executable. In fact, we assume 
+every equations are labeled with the attribute \texttt{nonexe}.
 
 \begin{definition}[Theory of Matching Logic]
 	The theory of matching logic, denoted as $U$, is a theory of meta-logic together with a lifting operator $\langle \ \cdot \ \rangle$, such that for any matching logic theory $T$ and pattern $\varphi$, 
@@ -235,32 +261,49 @@ The meta-logic needs not to be the matching logic. In fact, it can simply be a r
 \begin{remark}
 	The universal theory $U$ is like the universal Turing machine.
 \end{remark}
+}
 
-\begin{Verbatim}
-  fth META-LEVEL
+\begin{Verbatim}[fontsize=\small]
+  fth M is
     protecting STRING .
-    sorts Symbol Pattern PatternList StringList.
     
-    subsort String < StringList .
-    op nilStringList : -> StringList .
-    op _,_ : StringList StringList -> StringList [assoc] .
+    sort Sort . subsort String < Sort .
+    sort SortList .          ---- comma-separated lists
     
-    subsort Pattern < PatternList .
-    op nilPatternList : -> PatternList .
-    op _,_ : PatternList PatternList -> PatternList [assoc] .
+    sort Symbol .
+    op #symbol : String      ---- unique identity / name / reference
+                 SortList    ---- argument sorts
+                 Sort        ---- result sort
+                 -> Symbol .
     
-    op #symbol : String StringList String -> Symbol .
+    sorts Pattern
+          PatternList .      ---- comma-separated lists
     
-    op #variable : String String -> Pattern .
+    op #variable : String    ---- unique identity / name / reference
+                   Sort -> Pattern .
     op #and : Pattern Pattern -> Pattern .
     op #not : Pattern -> Pattern .
-    op #exists : String String Pattern -> Pattern .
+    op #exists : String      ---- id of binding variable
+                 Sort        ---- sort of binding variable
+                 Pattern -> Pattern .
     op #application : Symbol PatternList -> Pattern .
-    ---- more things to go ----
-    ---- well-formed, getSort, isSort, freshvar, substitution, etc. ----
+    op #value : String       ---- encoding of domain values
+                Sort         ---- sort of values
+                -> Pattern .
+    
+    op well-formed : Pattern -> Bool .
+    op getSort : Pattern -> [Sort] .
+    op isSort : Pattern Sort -> Bool .
+    
+    cmb getSort(P:Pattern) : Sort if well-formed(P:Pattern) [nonexe] .
+    eq isSort(P:Pattern, S:Sort) = (getSort(P:Pattern) = S:Sort) [nonexe] .
+    
+    op fresh
+    ---- freshvar, substitution, etc. ----
     
     sort Theorem . ---- patterns that can be deducted
     subsort Theorem < Pattern .
+    
     
     ---- just an example of logic axioms
     mb #not(#and(P:Pattern, #not(P:Pattern))) : Theorem . 
@@ -311,7 +354,13 @@ endth
 
 \section{The Kore Language}
 
-We have a meta-logic (the equational logic) to specify everything about matching logic theories, including whether a pattern is well-formed, what sort a patter has, which patterns are deducible, free variables, fresh variables generation, substitution, alpha-renaming, etc. This theory of meta-level we have just defined provides you a universe of (meta-representations of) patterns, together with all kinds of operations and functions that help you do whatever you want, so one has full control in the meta-logic. 
+We have a meta-logic (the equational logic) to specify everything about 
+matching logic theories, including whether a pattern is well-formed, what sort 
+a patter has, which patterns are deducible, free variables, fresh variables 
+generation, substitution, alpha-renaming, etc. This theory of meta-level we 
+have just defined provides you a universe of (meta-representations of) 
+patterns, together with all kinds of operations and functions that help you do 
+whatever you want, so one has full control in the meta-logic. 
 
 On the other hand, working in the object-level is always more intuitive and friendly than working in the meta-level. The meta-level exists so that we know we are able to do everything, but it does not necessarily mean one should always go to meta-level and work there. We propose the Kore language, which provides users a friendly way to write theories in the object-level, which will eventually be desugared to the meta-logic. 
 
