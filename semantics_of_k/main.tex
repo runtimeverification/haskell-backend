@@ -302,6 +302,10 @@ every equations are labeled with the attribute \texttt{nonexe}.
     
     sorts Pattern
           PatternList .      ---- comma-separated lists
+
+    ---- we might want to give each connectives / constructors
+    ---- a sort, and make Pattern the supersort of all of them.
+    ---- this will help to define some ops (e.g. getFreeVariables).
     
     op #variable : String    ---- unique identity / name / reference
                    Sort -> Pattern .
@@ -322,8 +326,14 @@ every equations are labeled with the attribute \texttt{nonexe}.
     cmb getSort(P:Pattern) : Sort if well-formed(P:Pattern) [nonexe] .
     eq isSort(P:Pattern, S:Sort) = (getSort(P:Pattern) = S:Sort) [nonexe] .
     
-    op fresh
-    ---- freshvar, substitution, etc. ----
+    op getFreeVariables : Pattern -> ... .
+    
+    ---- fine-grained-controlled substitution
+    op replace : Pattern     ---- the main pattern 
+                 Pattern     ---- the "replace" pattern
+                 Pattern     ---- the "find" pattern
+                   ...       ---- some controlling arguments
+                 -> Pattern .
     
     sort Theorem . ---- patterns that can be deducted
     subsort Theorem < Pattern .
