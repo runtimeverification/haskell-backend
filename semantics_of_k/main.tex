@@ -348,14 +348,24 @@ every equations are labeled with the attribute \texttt{nonexe}.
           Validation         ---- the "certificate" returned by a tactic
           Tactical .         ---- control structures applied on tactics
           
-    sort Theorem . ---- patterns that can be deducted
+    sort Theorem .           ---- patterns that can be deducted
     subsort Theorem < Pattern .
     
-    
-    ---- just an example of logic axioms
-    mb #not(#and(P:Pattern, #not(P:Pattern))) : Theorem . 
+    ---- not finished
   endth
 \end{Verbatim}
+
+\comment{It is strongly recommend that readers of this proposal read L. 
+Paulson's \emph{The Foundation of a Generic Theorem Prover}, especially Section 
+2, 3, and 4.}
+
+It remains a question whether the meta-logic faithfully captures the 
+object-logic. 
+To answer this question, we introduce some notations.
+The double bracket 
+
+\todo{I am working on a theorem that justifies the meta-logic. Xiaohong.}
+
 
 The next example is (the meta-representation of) the theory of lambda calculus. Again, equations are assumed to have the attribute \texttt{nonexe}. 
 
