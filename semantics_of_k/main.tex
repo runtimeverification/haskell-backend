@@ -326,7 +326,9 @@ every equations are labeled with the attribute \texttt{nonexe}.
     cmb getSort(P:Pattern) : Sort if well-formed(P:Pattern) [nonexe] .
     eq isSort(P:Pattern, S:Sort) = (getSort(P:Pattern) = S:Sort) [nonexe] .
     
-    op getFreeVariables : Pattern -> ... .
+    ---- getFreeVariables or getFreeVariable ?
+    op getFreeVariables : Pattern 
+                          -> ... .   ---- a collection of variables
     
     ---- fine-grained-controlled substitution
     op replace : Pattern     ---- the main pattern 
@@ -335,6 +337,17 @@ every equations are labeled with the attribute \texttt{nonexe}.
                    ...       ---- some controlling arguments
                  -> Pattern .
     
+    op freshName : StringList      ---- a collection of used names.
+                   -> String .
+    
+    ---- the following is about the proof system of matching logic.
+    ---- Reference: [L. Paulson] The Foundation of a Generic Theorem Prover
+    
+    sorts InferenceRule      ---- a function from theorems to theorems
+          Tactic             ---- the "reverse" of an inference rule
+          Validation         ---- the "certificate" returned by a tactic
+          Tactical .         ---- control structures applied on tactics
+          
     sort Theorem . ---- patterns that can be deducted
     subsort Theorem < Pattern .
     
