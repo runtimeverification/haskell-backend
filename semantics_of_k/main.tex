@@ -160,7 +160,8 @@ then we may write $(x + y)*z$ instead of
 $\_*\_(\_+\_(x\cln\Nat,y\cln\Nat),z\cln\Nat)$.
 
 \improvement{I think we also need to talk about: other logical connectives
-as derived, free variables, capture-free substitution; maybe more}
+as derived, free variables, capture-free substitution, equality.
+Add more as we need them.}
 
 \comment{
 \begin{remark}
@@ -181,9 +182,9 @@ reference}
 A matching logic \emph{theory} is a triple $(S, \Sigma, A)$ where
 $(S,\Sigma)$ is a signature and $A$ is a set of patterns called \emph{axioms}.
 %\end{definition}
-Like in many logics, axioms may be presented as \emph{axiom schemas} making
-use of meta-variables ranging over patterns, sometimes constrained to subsets
-of patterns using side conditions.
+Like in many logics, sets of patterns may be presented as \emph{schemas}
+making use of meta-variables ranging over patterns, sometimes constrained
+to subsets of patterns using side conditions.
 For example:
 $$
 \begin{array}{rl}
@@ -192,11 +193,34 @@ $$
 & \textrm{are any patterns of same sort as $x$}
 \\[2ex]
 (\lambda x . \varphi)\varphi' = \varphi[\varphi'/x]
-& \textrm{where $\varphi$, $\varphi'$ are syntactic patterns, that is,}
+& \textrm{where $\varphi$, $\varphi'$ are \emph{syntactic patterns}, that is,}
 \\
-& \textrm{patterns formed only with variables and symbols}
+& \textrm{ones formed only with variables and symbols}
+\\[2ex]
+\varphi_1 \mathrel{\texttt{+}} \varphi_2 = \varphi_1 +_\Nat \varphi_2
+& \textrm{where $\varphi$, $\varphi'$ are \emph{ground} syntactic patterns}
+\\
+&\textrm{of sort $\Nat$, that is, patterns built only}
+\\
+&\textrm{with symbols \texttt{zero} and \texttt{succ}}
+\\[2ex]
+(\varphi_1 \rightarrow \varphi_2) \rightarrow
+(\varphi[\varphi_1 / x] \rightarrow \varphi[\varphi_2 / x])
+& \textrm{where $\varphi$ is a \emph{positive context in $x$}, that is,}
+\\
+& \textrm{a pattern
+containing only one occurrence}
+\\
+&\textrm{of $x$ with no negation ($\neg$) on the path to}
+\\
+&\textrm{$x$, and where $\varphi_1$, $\varphi_2$ are any patterns}
+\\
+&\textrm{having the same sort}
 \end{array}
 $$
+
+One of the major goals of this paper is to propose a formal language
+and an implementation, that allows us to write such pattern schemas.
 
 \change{Let's introduce this when needed.  Also, ``equal'' is not a good word.
 
