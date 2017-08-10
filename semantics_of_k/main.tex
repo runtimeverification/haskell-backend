@@ -438,20 +438,24 @@ endth
 
 One can see how complex it is to write meta-logic theories, but it is an aspect 
 of life. 
-
-
+In the next section, we will introduce the Kore language that lets one define 
+theories in the object-level. 
 
 \section{The Kore Language}
 
-We have a meta-logic (the equational logic) to specify everything about 
+We have shown a meta-logic $M$ to specify everything about 
 matching logic theories, including whether a pattern is well-formed, what sort 
 a patter has, which patterns are deducible, free variables, fresh variables 
-generation, substitution, alpha-renaming, etc. This theory of meta-level we 
-have just defined provides you a universe of (meta-representations of) 
-patterns, together with all kinds of operations and functions that help you do 
-whatever you want, so one has full control in the meta-logic. 
+generation, substitution and replacement, alpha-renaming, etc. 
+This meta-logic provides a universe of (meta-representations of) patterns, 
+together with all kinds of operations and functions. 
+On the other hand, it is easier to work in the object-level rather than the 
+meta-level. 
+Even if all reasoning in the object-logic $L$ can be faithfully lifted to the 
+meta-logic $M_L$, it does not mean one should always do so. 
 
-On the other hand, working in the object-level is always more intuitive and friendly than working in the meta-level. The meta-level exists so that we know we are able to do everything, but it does not necessarily mean one should always go to meta-level and work there. We propose the Kore language, which provides users a friendly way to write theories in the object-level, which will eventually be desugared to the meta-logic. 
+The Kore language is proposed to write theories in the object-level, whose 
+semantics is given by a transformation to the meta-logic. 
 
 \begin{definition}[The Kore Language]
 The Kore language is a language to write matching logic theories. The outcomes are called Kore definitions. Kore definitions are mainly served as the interface between a K frontend and a K backend, but a human should be able to read and write Kore definitions of simple theories, too. The Kore language is designed in a way that it can be desugared to a theory in the meta-logic in a deterministic way.
