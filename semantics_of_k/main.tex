@@ -239,57 +239,14 @@ In this section, we propose a calculus of matching logic.
 	I prefer to speak of a \emph{meta-logic} and its \emph{object-logic}. \\
 	By L. Paulson, \emph{The Foundation of a Generic Theorem Prover}
 \end{displayquote}
-
-The family of equational logics have been thoroughly studied since the proposal 
-paper~\cite{}.
-In this proposal, we use a variant called \emph{many-sorted equational logic} 
-as the meta-logic. 
-Many-sorted equational logic is well supported by Maude~\cite{}, a fast 
-rewriting engine. 
-We use Maude's syntax to write equational logic theories. 
-\emph{The theory of matching logic}, denoted as $M$, is an order-sorted 
-equational logic defined as the next Maude functional theory.
-Equations are all labeled with the \texttt{nonexe} attribute, because we do not 
-care about the executability about $U$, but simply use Maude's syntax to 
-specify it. 
-For simplicity, we do not provide all equations but only important ones. 
-
-\comment{
-The main task of this proposal is to find a nice way to specify (and probably reason with) matching logic theories. We spent lots of time considering the design of the Kore language, with which we specify matching logic theories, and we decided to go for meta-logic. This paragraph is a summary that serves as a justification of our choice. 
-
-Suppose we allow users to write infinite axioms to specify theories. In that case, there is no need to go for a meta-logic, since one can always enumerate all axioms in Kore definitions, as long as they are recursively enumerable~(r.e.). Theories who do not have a r.e. set of axioms are not considered as of interest of practice. 
-
-However, we cannot afford our definitions to run forever. We look for a finite representation of them. This is when the concept of meta-variables comes in and plays a role. And soon one realizes that we do not only need meta-variables, but also some notations in the meta-level, too, serving as methods that help us finitely represent the infinite sets of axioms we want to specify. One typical such notation is the substitution $\varphi[\psi/x]$, where $\_[\_/\_]$ is the mathematical notation, in the meta-level, for substitution, which is not part of the object-logic. Other examples include side-conditions on meta-variables and context.
-
-We look for a generic way that helps us represent infinite axioms in a finite way. And there is a natural one. Since axioms are r.e. sets, by definition there are semi-decision procedures that define them, and semi-decision procedures have finite representation. Therefore, instead of enumerating all the axioms, one simply write down the corresponding semi-decision procedure. 
-
-In this section, we will propose a meta-logic that serves as \emph{a logic for 
-matching logic and its proof system.} We believe such as meta-logic will result 
-in a direct implementation of Kore and matching logic provers. 
-
-The meta-logic needs not to be the matching logic. In fact, it can simply be a 
-rewriting logic or even equational logic, and we can write it down as a Maude 
-theory. We only use Maude's syntax to specify theories in the meta-logic, so 
-those Maude modules (theories) need no to be executable. In fact, we assume 
-every equations are labeled with the attribute \texttt{nonexe}.
-
-\begin{definition}[Theory of Matching Logic]
-	The theory of matching logic, denoted as $U$, is a theory of meta-logic together with a lifting operator $\langle \ \cdot \ \rangle$, such that for any matching logic theory $T$ and pattern $\varphi$, 
-	\begin{equation*}
-	T \vdash \varphi \quad \text{iff} \quad U \vdash \langle T \vdash \varphi \rangle.
-	\end{equation*}
-	The theory $U$ is also called the \emph{universal theory}. 
-\end{definition}
-
-
-
-\begin{remark}
-	Think of the universal theory $U$ as \emph{the theory of ASTs of patterns.}
-\end{remark}
-\begin{remark}
-	The universal theory $U$ is like the universal Turing machine.
-\end{remark}
-}
+In this proposal, the \emph{object-logic} refers to matching logic,
+and we propose to use the many-sorted equational logic as the 
+\emph{meta-logic}\footnote{Coq and Isabelle use 
+fragments of higher-order logic as their meta-logics.}. 
+The calculus of matching logic, denoted as $M = (S_M, \Sigma_M, E_M)$, is a 
+many-sorted equational logic
+where $S_M$ is a set of sorts, $\Sigma_M$ is a set of functional and relational 
+symbols, and $E_M$ is a set of equations, defined as the next Maude theory:
 
 \begin{Verbatim}[fontsize=\small]
   fth M is
@@ -304,7 +261,8 @@ every equations are labeled with the attribute \texttt{nonexe}.
                  Sort        ---- result sort
                  -> Symbol .
     
-    sort K .
+    sorts K KList .          ---- Grigore proposed to name it K 
+                             ---- instead of Pattern
     
     op #variable : String    ---- unique identity / name / reference
                    Sort -> K .
@@ -313,9 +271,10 @@ every equations are labeled with the attribute \texttt{nonexe}.
     op #exists : String      ---- id of binding variable
                  Sort        ---- sort of binding variable
                  K -> K .
+    op #application : Symbol KList -> K .
     op #value : String       ---- encoding of domain values
                 Sort         ---- sort of values
-                -> K .
+                -> K .       ---- not sure about #value
     
     op well-formed : K -> Bool .
     op getSort : K -> [Sort] .
@@ -352,33 +311,36 @@ every equations are labeled with the attribute \texttt{nonexe}.
 \end{Verbatim}
 
 \comment{It is strongly recommend that readers of this proposal read L. 
-Paulson's \emph{The Foundation of a Generic Theorem Prover}, especially Section 
-2, 3, and 4.}
+	Paulson's \emph{The Foundation of a Generic Theorem Prover}, especially 
+	Section 
+	2, 3, and 4.}
 
-It remains a question whether the meta-logic faithfully captures the 
-object-logic. 
-To answer this question, we introduce some notations.
-The double bracket $\Bracket{\_}$ is a function that maps object-patterns to 
-their meta-representation
-$$\Bracket{\varphi} \quad \text{stands for} \quad \textit{deducible}(\varphi)$$
-in the meta-logic $M$, which means that $\varphi$ is deducible. 
+Suppose $L$ is a syntactic matching logic theory whose axiom set is~$A$.
+Let $\# L$ be the meta-level theory of $L$ obtained by adding 
+$$\Bracket{A} = 
+\{\textit{deducible}\left(\Bracket{\varphi}\right)
+\mid 
+\varphi \in A\}$$
+as axioms to the meta-logic theory $M$,
+where the double bracket $\Bracket{\_}$ is a function that maps object-patterns 
+to their meta-representations in $M$. 
 The following definition is inspired by Paulson's paper (Definition 1). 
 \begin{definition}
-	Let $L$ be a syntactic matching logic theory whose axiom set is~$A$. 
-	Let $\# L$ be the meta-level theory obtained by adding $\Bracket{A} = 
-	\{\Bracket{\varphi} 
-	\mid 
-	\varphi \in A\}$ as axioms to $M$. 
+	Let $L$ be a matching logic theory and $\#L$ is its meta-logic theory. 
 	Let	$\varphi_1,\dots,\varphi_n$ and $\psi$ be patterns of $L$.	
 	Then say
 	\begin{itemize}
 		\item $\#L$ is \emph{sound} for $L$, if for every $\#L$-proof of 
-		$\Bracket{\psi}$ from $\Bracket{\varphi_1}, \dots, 
-		\Bracket{\varphi_n}$, there is an $L$-proof of $\psi$ from 
+		$\mathit{deducible}\left(\Bracket{\psi}\right)$ from 
+		$\mathit{deducible}\left(\Bracket{\varphi_1}\right),\\ \dots, 
+		\mathit{deducible}\left(\Bracket{\varphi_n}\right)$, there is an 
+		$L$-proof of $\psi$ from 
 		$\varphi_1,\dots,\varphi_n$.
 		\item $\#L$ is \emph{complete} for $L$, if for every $L$-proof of 
 		$\psi$ from $\varphi_1,\dots,\varphi_n$, there is a $\#L$-proof of 
-		$\Bracket{\psi}$ from $\Bracket{\varphi_1}, \dots, \Bracket{\varphi_n}$.
+		$\mathit{deducible}\left(\Bracket{\psi}\right)$ from 
+		$\mathit{deducible}\left(\Bracket{\varphi_1}\right), \dots, 
+		\mathit{deducible}\left(\Bracket{\varphi_n}\right)$.
 		\item $\#L$ is \emph{faithful} for $L$ if it is both sound and complete.
 	\end{itemize}
     As a result of $\#L$ being faithful for $L$, for any pattern $\varphi$, 
