@@ -106,7 +106,6 @@
   \newcommand{\Bracket}[1]
     {\llbracket#1\rrbracket}
 
-
   % Title and authors
   \title{The Semantics of K}
   \author{Formal Systems Laboratory \\
@@ -243,17 +242,17 @@ In this section, we propose a calculus of matching logic.
 
 The family of equational logics have been thoroughly studied since the proposal 
 paper~\cite{}.
-In this proposal, we use a variant called \emph{order-sorted equational logic} 
-as the meta-logic. Order-sorted equational logic is well supported by 
-Maude~\cite{}, a fast rewriting engine. We use Maude's syntax to write 
-equational logic theories. 
+In this proposal, we use a variant called \emph{many-sorted equational logic} 
+as the meta-logic. 
+Many-sorted equational logic is well supported by Maude~\cite{}, a fast 
+rewriting engine. 
+We use Maude's syntax to write equational logic theories. 
 \emph{The theory of matching logic}, denoted as $M$, is an order-sorted 
 equational logic defined as the next Maude functional theory.
-Equations and membership equations are all labeled with the \texttt{nonexe} 
-attribute, because we do not care about the executability about $U$, but simply 
-use Maude's syntax to specify it. 
-For simplicity, we do not provide all equations and membership equations, but 
-only important ones. 
+Equations are all labeled with the \texttt{nonexe} attribute, because we do not 
+care about the executability about $U$, but simply use Maude's syntax to 
+specify it. 
+For simplicity, we do not provide all equations but only important ones. 
 
 \comment{
 The main task of this proposal is to find a nice way to specify (and probably reason with) matching logic theories. We spent lots of time considering the design of the Kore language, with which we specify matching logic theories, and we decided to go for meta-logic. This paragraph is a summary that serves as a justification of our choice. 
@@ -296,7 +295,7 @@ every equations are labeled with the attribute \texttt{nonexe}.
   fth M is
     protecting STRING .
     
-    sort Sort . subsort String < Sort .
+    sort Sort . op #sort : String -> Sort .
     sort SortList .          ---- comma-separated lists
     
     sort Symbol .
@@ -305,42 +304,35 @@ every equations are labeled with the attribute \texttt{nonexe}.
                  Sort        ---- result sort
                  -> Symbol .
     
-    sorts Pattern
-          PatternList .      ---- comma-separated lists
-
-    ---- we might want to give each connectives / constructors
-    ---- a sort, and make Pattern the supersort of all of them.
-    ---- this will help to define some ops (e.g. getFreeVariables).
+    sort K .
     
     op #variable : String    ---- unique identity / name / reference
-                   Sort -> Pattern .
-    op #and : Pattern Pattern -> Pattern .
-    op #not : Pattern -> Pattern .
+                   Sort -> K .
+    op #and : K K -> K .
+    op #not : K -> K .
     op #exists : String      ---- id of binding variable
                  Sort        ---- sort of binding variable
-                 Pattern -> Pattern .
-    op #application : Symbol PatternList -> Pattern .
+                 K -> K .
     op #value : String       ---- encoding of domain values
                 Sort         ---- sort of values
-                -> Pattern .
+                -> K .
     
-    op well-formed : Pattern -> Bool .
-    op getSort : Pattern -> [Sort] .
-    op isSort : Pattern Sort -> Bool .
+    op well-formed : K -> Bool .
+    op getSort : K -> [Sort] .
+    op isSort : K Sort -> Bool .
     
-    cmb getSort(P:Pattern) : Sort if well-formed(P:Pattern) [nonexe] .
-    eq isSort(P:Pattern, S:Sort) = (getSort(P:Pattern) = S:Sort) [nonexe] .
+    cmb getSort(K:K) : Sort if well-formed(K:K) [nonexe] .
+    eq isSort(K:K, S:Sort) = (getSort(K:K) = S:Sort) [nonexe] .
     
-    ---- getFreeVariables or getFreeVariable ?
-    op getFreeVariables : Pattern 
+    op getFreeVariables : K 
                           -> ... .   ---- a collection of variables
     
     ---- fine-grained-controlled substitution
-    op replace : Pattern     ---- the main pattern 
-                 Pattern     ---- the "replace" pattern
-                 Pattern     ---- the "find" pattern
-                   ...       ---- some controlling arguments
-                 -> Pattern .
+    op replace : K           ---- the main pattern 
+                 K           ---- the "replace" pattern
+                 K           ---- the "find" pattern
+                 ...         ---- some controlling arguments
+                 -> K .
     
     op freshName : StringList      ---- a collection of used names.
                    -> String .
@@ -352,9 +344,8 @@ every equations are labeled with the attribute \texttt{nonexe}.
           Tactic             ---- the "reverse" of an inference rule
           Validation         ---- the "certificate" returned by a tactic
           Tactical .         ---- control structures applied on tactics
-          
-    sort Theorem .           ---- patterns that can be deducted
-    subsort Theorem < Pattern .
+    
+    op deducible : K -> Bool .
     
     ---- not finished
   endth
@@ -368,32 +359,34 @@ It remains a question whether the meta-logic faithfully captures the
 object-logic. 
 To answer this question, we introduce some notations.
 The double bracket $\Bracket{\_}$ is a function that maps object-patterns to 
-their meta-representation $$\Bracket{\varphi} \quad \text{stands for} \quad 
-\varphi : \mathit{Theorem}$$ in 
-the meta-logic $M$, 
-which means that $\varphi$ is deducible. 
+their meta-representation
+$$\Bracket{\varphi} \quad \text{stands for} \quad \textit{deducible}(\varphi)$$
+in the meta-logic $M$, which means that $\varphi$ is deducible. 
 The following definition is inspired by Paulson's paper (Definition 1). 
 \begin{definition}
-	Let $L$ be a matching logic theory and $\varphi_1,\dots,\varphi_n$ and 
-	$\psi$ be patterns of $L$.
-	Let $M_L$ be a meta-logic theory obtained from 	$M$ by adding operators and 
-	equational axioms. 
+	Let $L$ be a syntactic matching logic theory whose axiom set is~$A$. 
+	Let $\# L$ be the meta-level theory obtained by adding $\Bracket{A} = 
+	\{\Bracket{\varphi} 
+	\mid 
+	\varphi \in A\}$ as axioms to $M$. 
+	Let	$\varphi_1,\dots,\varphi_n$ and $\psi$ be patterns of $L$.	
 	Then say
 	\begin{itemize}
-		\item $M_L$ is \emph{sound} for $L$, if for every $M_L$-proof of 
+		\item $\#L$ is \emph{sound} for $L$, if for every $\#L$-proof of 
 		$\Bracket{\psi}$ from $\Bracket{\varphi_1}, \dots, 
 		\Bracket{\varphi_n}$, there is an $L$-proof of $\psi$ from 
 		$\varphi_1,\dots,\varphi_n$.
-		\item $M_L$ is \emph{complete} for $L$, if for every $L$-proof of 
-		$\psi$ from $\varphi_1,\dots,\varphi_n$, there is a $M_L$-proof of 
+		\item $\#L$ is \emph{complete} for $L$, if for every $L$-proof of 
+		$\psi$ from $\varphi_1,\dots,\varphi_n$, there is a $\#L$-proof of 
 		$\Bracket{\psi}$ from $\Bracket{\varphi_1}, \dots, \Bracket{\varphi_n}$.
-		\item $M_L$ is \emph{faithful} for $L$ if it is both sound and complete.
+		\item $\#L$ is \emph{faithful} for $L$ if it is both sound and complete.
 	\end{itemize}
+    As a result of $\#L$ being faithful for $L$, for any pattern $\varphi$, 
+    $\varphi$ is deducible in $L$ iff $\mathit{deducible}(\varphi)$ is 
+    deducible in $\#L$.
 \end{definition}
 
-For any syntactic matching logic theory $L$ whose axiom set is $A$, its 
-meta-logic $M_L$ is obtained by adding $\Bracket{A} = \{\Bracket{\varphi} \mid 
-\varphi \in A\}$ as axioms to $M$. 
+
 For example, the next Maude functional theory defines the meta-logic of lambda 
 calculus in matching logic:
 
@@ -442,9 +435,6 @@ In the next section, we will introduce the Kore language that lets one define
 theories in the object-level. 
 
 \section{The Kore Language}
-
-\unsure{I propose we work with the meta-logic $U$ and use that as our 
-foundations. }
 
 We have shown a meta-logic $M$ to specify everything about 
 matching logic theories, including whether a pattern is well-formed, what sort 
