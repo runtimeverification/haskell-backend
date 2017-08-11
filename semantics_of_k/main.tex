@@ -366,27 +366,27 @@ fth M-LAMBDA is
   eq lambda X:VariableId . E:K
    = #exists(X:VariableId, "Exp", 
      #application(lambda0, (#variable(X:VariableId, "Exp"), E:K)))) .
-  op _[_] : Pattern Pattern -> Pattern .
-  eq E1:Pattern[E2:Pattern] 
-   = #application(app, (E1:Pattern, E2:Pattern))) .
+  op _[_] : K K -> K .
+  eq E1:K[E2:K] 
+   = #application(app, (E1:K, E2:K))) .
    
   ---- side conditions checker
   
-  op isLTerm : Pattern -> Bool .
+  op isLTerm : K -> Bool .
 
   eq isLTerm(#variable(X:VariableId, "Exp")) = true .
   
-  eq isLTerm(E1:Pattern[E2:Pattern])
-   = isLTerm(E1:Pattern) and isLTerm(E2:Pattern) .
+  eq isLTerm(E1:K[E2:K])
+   = isLTerm(E1:K) and isLTerm(E2:K) .
    
-  eq isLTerm(lambda(X:VariableId, E:Pattern))
-   = isLTerm(E:Pattern) .
+  eq isLTerm(lambda(X:VariableId, E:K))
+   = isLTerm(E:K) .
   
   ---- the (Beta) axiom
 
-  cmb #equal((lambda X:VariableId . E1:Pattern)[E2:Pattern],
+  cmb #equal((lambda X:VariableId . E1:K)[E2:K],
               replace(...)) : Theorem
-   if isLTerm(E1:Pattern) and isLTerm(E2:Pattern) .
+   if isLTerm(E1:K) and isLTerm(E2:K) .
 endth
 \end{Verbatim}
 
@@ -397,32 +397,27 @@ theories in the object-level.
 
 \section{The Kore Language}
 
-We have shown a meta-logic $M$ to specify everything about 
-matching logic theories, including whether a pattern is well-formed, what sort 
-a patter has, which patterns are deducible, free variables, fresh variables 
-generation, substitution and replacement, alpha-renaming, etc. 
-This meta-logic provides a universe of (meta-representations of) patterns, 
+We have shown a meta-logic theory $M$ in which we can specify everything about 
+matching logic theories, for example, whether a pattern is well-formed, what 
+sort a patter has, which patterns are deducible, free variables, fresh 
+variables generation, substitution and replacement, alpha-renaming, etc.
+This meta-logic theory provides a universe of (meta-representations of) 
+patterns, the proof system of matching logic, the entailment relation, etc. 
 together with all kinds of operations and functions. 
 On the other hand, it is easier to work in the object-level rather than the 
 meta-level. 
 Even if all reasoning in the object-logic $L$ can be faithfully lifted to the 
-meta-logic $M_L$, it does not mean one should always do so. 
+meta-logic theory $\#L$, it does not mean one should always do so. 
 
-The Kore language is proposed to write an object-logic $L$, whose 
-semantics is given by a transformation to the meta-logic $M_L$. 
-\comment{
-\begin{definition}[The Kore Language]
-The Kore language is a language to write matching logic theories. The outcomes are called Kore definitions. Kore definitions are mainly served as the interface between a K frontend and a K backend, but a human should be able to read and write Kore definitions of simple theories, too. The Kore language is designed in a way that it can be desugared to a theory in the meta-logic in a deterministic way.
-\end{definition}
+The Kore language is proposed to help writing a matching logic theory $L$ 
+mainly at the object-level, and only go to the meta-level if it is explicitly 
+required. The outcomes are called Kore definitions, whose semantics is given by 
+defining a transformation that maps a Kore definition \texttt{module.kore} 
+to a meta-logic theory $\#L$. In this case we say that \texttt{module.kore} 
+defines the matching logic theory $L$. 
 
-\begin{definition}[Frontend]
-A K frontend is an artifact that generates Kore definitions.
-\end{definition}
+\todo[inline]{The following becomes shaky ...}
 
-\begin{definition}[Backend]
-A K backend is an artifact that consumes a Kore definition of a theory $\mathsf{T}$ and does some work. Whatever it does can and should be algorithmically reduced to the task of proving $\mathsf{T} \vdash \varphi$ where $\varphi$ ``encodes'' that work. A K backend should justify its results by generating formal proofs that can be proof-checked by the oracle matching logic proof checker. Examples of K backends include concrete execution engines, symbolic executions engines, matching logic provers, verification tools, etc.
-\end{definition}
-}
 We propose the next Kore syntax. 
 
 \begin{Verbatim}[fontsize=\small]
@@ -495,24 +490,21 @@ endmodule
 \paragraph{The {\small LAMBDA} module.}\quad
 \begin{Verbatim}
 module LAMBDA
-  syntax Exp ::= Id 
-               | Exp Exp 
-               | lambda Id . Exp [binder]
-  axiom  (lambda X . E) E' = E[E' / X]
-endmodule
-\end{Verbatim}
-
-\begin{Verbatim}
-module LAMBDA
+  import M      ---- import the meta-logic theory M
+                ---- we can rename it to K ...
   syntax Exp
   syntax Exp ::= app(Exp, Exp)
                | lambda0(Exp, Exp)
+  syntax M.Bool ::= isLTerm(K)     ---- I think the Bool here is the
+                                   ---- one in the meta-logic M, not
+                                   ---- not one in the Kore module 
+                                   ---- BOOL
   axiom  \equals(app(\exists(X:Exp, lambda0(X:Exp, E::Exp)), E'::Exp),
                  \replace(E::Exp, E'::Exp, X:Exp))
-  requires(?) \isLTerm(E::Exp) and(?) \isLTerm(E'::Exp)
+  requires \isLTerm(E::Exp) M.and \isLTerm(E'::Exp) ---- requires is a sugar
   
-  axiom \isLTerm(X:Exp) = true (or trueBool?)
-  axiom \isLTerm(app(...)) = \isLTerm() andBool(?) ...
+  axiom isLTerm(X:Exp) = M.true
+  axiom isLTerm(app(E::Exp, E'::Exp)) = isLTerm(E::Exp) M.and isLTerm(E'::Exp)
   ...
       
 endmodule
