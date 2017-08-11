@@ -1,9 +1,8 @@
-package org.kframework
+package org.kframework.kore
 
 import org.apache.commons.io.FileUtils
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import org.kframework.kore.Builders
 import org.kframework.kore.implementation.DefaultBuilders
 import org.kframework.kore.parser.{KoreToText, ParseError, TextToKore}
 

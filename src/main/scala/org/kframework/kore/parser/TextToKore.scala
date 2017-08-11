@@ -20,12 +20,11 @@ class TextToKore(b: Builders) {
     parse(io.Source.fromFile(file))
   }
 
-  /** Parses from the stream and returns [[kore.Definition]]. */
   @throws(classOf[ParseError])
-  def parse(src: io.Source): Definition = {
+  def innerParse[T](src: io.Source, f: () => T): T = {
     try {
       scanner.init(src)
-      parseDefinition()
+      f()
     } catch {
       case _: java.io.EOFException => throw ParseError("ERROR: Unexpected end of file while parsing")
       case exc: ParseError => throw exc
@@ -34,6 +33,14 @@ class TextToKore(b: Builders) {
       scanner.close()
     }
   }
+ 
+  /** Parses from the stream and returns [[kore.Definition]]. */
+  @throws(classOf[ParseError])
+  def parse(src: io.Source): Definition = innerParse[Definition](src, parseDefinition)
+ 
+   /** Parses from the stream and returns [[kore.Pattern]]. */
+  @throws(classOf[ParseError])
+  def parsePattern(src: io.Source): Pattern = innerParse[Pattern](src, parsePattern)
 
   // Definition = Attributes Modules
   private def parseDefinition(): Definition = {

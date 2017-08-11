@@ -1,4 +1,5 @@
 package org.kframework.kore.parser
+import scala.io
 
 /** A scanner of an input stream.
   *
