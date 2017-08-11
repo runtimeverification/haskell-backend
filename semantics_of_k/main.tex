@@ -106,7 +106,6 @@
   \newcommand{\Bracket}[1]
     {\llbracket#1\rrbracket}
 
-
   % Title and authors
   \title{The Semantics of K}
   \author{Formal Systems Laboratory \\
@@ -223,63 +222,20 @@ In this section, we propose a calculus of matching logic.
 	I prefer to speak of a \emph{meta-logic} and its \emph{object-logic}. \\
 	By L. Paulson, \emph{The Foundation of a Generic Theorem Prover}
 \end{displayquote}
-
-The family of equational logics have been thoroughly studied since the proposal 
-paper~\cite{}.
-In this proposal, we use a variant called \emph{order-sorted equational logic} 
-as the meta-logic. Order-sorted equational logic is well supported by 
-Maude~\cite{}, a fast rewriting engine. We use Maude's syntax to write 
-equational logic theories. 
-\emph{The theory of matching logic}, denoted as $M$, is an order-sorted 
-equational logic defined as the next Maude functional theory.
-Equations and membership equations are all labeled with the \texttt{nonexe} 
-attribute, because we do not care about the executability about $U$, but simply 
-use Maude's syntax to specify it. 
-For simplicity, we do not provide all equations and membership equations, but 
-only important ones. 
-
-\comment{
-The main task of this proposal is to find a nice way to specify (and probably reason with) matching logic theories. We spent lots of time considering the design of the Kore language, with which we specify matching logic theories, and we decided to go for meta-logic. This paragraph is a summary that serves as a justification of our choice. 
-
-Suppose we allow users to write infinite axioms to specify theories. In that case, there is no need to go for a meta-logic, since one can always enumerate all axioms in Kore definitions, as long as they are recursively enumerable~(r.e.). Theories who do not have a r.e. set of axioms are not considered as of interest of practice. 
-
-However, we cannot afford our definitions to run forever. We look for a finite representation of them. This is when the concept of meta-variables comes in and plays a role. And soon one realizes that we do not only need meta-variables, but also some notations in the meta-level, too, serving as methods that help us finitely represent the infinite sets of axioms we want to specify. One typical such notation is the substitution $\varphi[\psi/x]$, where $\_[\_/\_]$ is the mathematical notation, in the meta-level, for substitution, which is not part of the object-logic. Other examples include side-conditions on meta-variables and context.
-
-We look for a generic way that helps us represent infinite axioms in a finite way. And there is a natural one. Since axioms are r.e. sets, by definition there are semi-decision procedures that define them, and semi-decision procedures have finite representation. Therefore, instead of enumerating all the axioms, one simply write down the corresponding semi-decision procedure. 
-
-In this section, we will propose a meta-logic that serves as \emph{a logic for 
-matching logic and its proof system.} We believe such as meta-logic will result 
-in a direct implementation of Kore and matching logic provers. 
-
-The meta-logic needs not to be the matching logic. In fact, it can simply be a 
-rewriting logic or even equational logic, and we can write it down as a Maude 
-theory. We only use Maude's syntax to specify theories in the meta-logic, so 
-those Maude modules (theories) need no to be executable. In fact, we assume 
-every equations are labeled with the attribute \texttt{nonexe}.
-
-\begin{definition}[Theory of Matching Logic]
-	The theory of matching logic, denoted as $U$, is a theory of meta-logic together with a lifting operator $\langle \ \cdot \ \rangle$, such that for any matching logic theory $T$ and pattern $\varphi$, 
-	\begin{equation*}
-	T \vdash \varphi \quad \text{iff} \quad U \vdash \langle T \vdash \varphi \rangle.
-	\end{equation*}
-	The theory $U$ is also called the \emph{universal theory}. 
-\end{definition}
-
-
-
-\begin{remark}
-	Think of the universal theory $U$ as \emph{the theory of ASTs of patterns.}
-\end{remark}
-\begin{remark}
-	The universal theory $U$ is like the universal Turing machine.
-\end{remark}
-}
+In this proposal, the \emph{object-logic} refers to matching logic,
+and we propose to use the many-sorted equational logic as the 
+\emph{meta-logic}\footnote{Coq and Isabelle use 
+fragments of higher-order logic as their meta-logics.}. 
+The calculus of matching logic, denoted as $M = (S_M, \Sigma_M, E_M)$, is a 
+many-sorted equational logic
+where $S_M$ is a set of sorts, $\Sigma_M$ is a set of functional and relational 
+symbols, and $E_M$ is a set of equations, defined as the next Maude theory:
 
 \begin{Verbatim}[fontsize=\small]
   fth M is
     protecting STRING .
     
-    sort Sort . subsort String < Sort .
+    sort Sort . op #sort : String -> Sort .
     sort SortList .          ---- comma-separated lists
     
     sort Symbol .
@@ -288,42 +244,37 @@ every equations are labeled with the attribute \texttt{nonexe}.
                  Sort        ---- result sort
                  -> Symbol .
     
-    sorts Pattern
-          PatternList .      ---- comma-separated lists
-
-    ---- we might want to give each connectives / constructors
-    ---- a sort, and make Pattern the supersort of all of them.
-    ---- this will help to define some ops (e.g. getFreeVariables).
+    sorts K KList .          ---- Grigore proposed to name it K 
+                             ---- instead of Pattern
     
     op #variable : String    ---- unique identity / name / reference
-                   Sort -> Pattern .
-    op #and : Pattern Pattern -> Pattern .
-    op #not : Pattern -> Pattern .
+                   Sort -> K .
+    op #and : K K -> K .
+    op #not : K -> K .
     op #exists : String      ---- id of binding variable
                  Sort        ---- sort of binding variable
-                 Pattern -> Pattern .
-    op #application : Symbol PatternList -> Pattern .
+                 K -> K .
+    op #application : Symbol KList -> K .
     op #value : String       ---- encoding of domain values
                 Sort         ---- sort of values
-                -> Pattern .
+                -> K .       ---- not sure about #value
     
-    op well-formed : Pattern -> Bool .
-    op getSort : Pattern -> [Sort] .
-    op isSort : Pattern Sort -> Bool .
+    op well-formed : K -> Bool .
+    op getSort : K -> [Sort] .
+    op isSort : K Sort -> Bool .
     
-    cmb getSort(P:Pattern) : Sort if well-formed(P:Pattern) [nonexe] .
-    eq isSort(P:Pattern, S:Sort) = (getSort(P:Pattern) = S:Sort) [nonexe] .
+    cmb getSort(K:K) : Sort if well-formed(K:K) [nonexe] .
+    eq isSort(K:K, S:Sort) = (getSort(K:K) = S:Sort) [nonexe] .
     
-    ---- getFreeVariables or getFreeVariable ?
-    op getFreeVariables : Pattern 
+    op getFreeVariables : K 
                           -> ... .   ---- a collection of variables
     
     ---- fine-grained-controlled substitution
-    op replace : Pattern     ---- the main pattern 
-                 Pattern     ---- the "replace" pattern
-                 Pattern     ---- the "find" pattern
-                   ...       ---- some controlling arguments
-                 -> Pattern .
+    op replace : K           ---- the main pattern 
+                 K           ---- the "replace" pattern
+                 K           ---- the "find" pattern
+                 ...         ---- some controlling arguments
+                 -> K .
     
     op freshName : StringList      ---- a collection of used names.
                    -> String .
@@ -335,48 +286,52 @@ every equations are labeled with the attribute \texttt{nonexe}.
           Tactic             ---- the "reverse" of an inference rule
           Validation         ---- the "certificate" returned by a tactic
           Tactical .         ---- control structures applied on tactics
-          
-    sort Theorem .           ---- patterns that can be deducted
-    subsort Theorem < Pattern .
+    
+    op deducible : K -> Bool .
     
     ---- not finished
   endth
 \end{Verbatim}
 
 \comment{It is strongly recommend that readers of this proposal read L. 
-Paulson's \emph{The Foundation of a Generic Theorem Prover}, especially Section 
-2, 3, and 4.}
+	Paulson's \emph{The Foundation of a Generic Theorem Prover}, especially 
+	Section 
+	2, 3, and 4.}
 
-It remains a question whether the meta-logic faithfully captures the 
-object-logic. 
-To answer this question, we introduce some notations.
-The double bracket $\Bracket{\_}$ is a function that maps object-patterns to 
-their meta-representation $$\Bracket{\varphi} \quad \text{stands for} \quad 
-\varphi : \mathit{Theorem}$$ in 
-the meta-logic $M$, 
-which means that $\varphi$ is deducible. 
+Suppose $L$ is a syntactic matching logic theory whose axiom set is~$A$.
+Let $\# L$ be the meta-level theory of $L$ obtained by adding 
+$$\Bracket{A} = 
+\{\textit{deducible}\left(\Bracket{\varphi}\right)
+\mid 
+\varphi \in A\}$$
+as axioms to the meta-logic theory $M$,
+where the double bracket $\Bracket{\_}$ is a function that maps object-patterns 
+to their meta-representations in $M$. 
 The following definition is inspired by Paulson's paper (Definition 1). 
 \begin{definition}
-	Let $L$ be a matching logic theory and $\varphi_1,\dots,\varphi_n$ and 
-	$\psi$ be patterns of $L$.
-	Let $M_L$ be a meta-logic theory obtained from 	$M$ by adding operators and 
-	equational axioms. 
+	Let $L$ be a matching logic theory and $\#L$ is its meta-logic theory. 
+	Let	$\varphi_1,\dots,\varphi_n$ and $\psi$ be patterns of $L$.	
 	Then say
 	\begin{itemize}
-		\item $M_L$ is \emph{sound} for $L$, if for every $M_L$-proof of 
-		$\Bracket{\psi}$ from $\Bracket{\varphi_1}, \dots, 
-		\Bracket{\varphi_n}$, there is an $L$-proof of $\psi$ from 
+		\item $\#L$ is \emph{sound} for $L$, if for every $\#L$-proof of 
+		$\mathit{deducible}\left(\Bracket{\psi}\right)$ from 
+		$\mathit{deducible}\left(\Bracket{\varphi_1}\right),\\ \dots, 
+		\mathit{deducible}\left(\Bracket{\varphi_n}\right)$, there is an 
+		$L$-proof of $\psi$ from 
 		$\varphi_1,\dots,\varphi_n$.
-		\item $M_L$ is \emph{complete} for $L$, if for every $L$-proof of 
-		$\psi$ from $\varphi_1,\dots,\varphi_n$, there is a $M_L$-proof of 
-		$\Bracket{\psi}$ from $\Bracket{\varphi_1}, \dots, \Bracket{\varphi_n}$.
-		\item $M_L$ is \emph{faithful} for $L$ if it is both sound and complete.
+		\item $\#L$ is \emph{complete} for $L$, if for every $L$-proof of 
+		$\psi$ from $\varphi_1,\dots,\varphi_n$, there is a $\#L$-proof of 
+		$\mathit{deducible}\left(\Bracket{\psi}\right)$ from 
+		$\mathit{deducible}\left(\Bracket{\varphi_1}\right), \dots, 
+		\mathit{deducible}\left(\Bracket{\varphi_n}\right)$.
+		\item $\#L$ is \emph{faithful} for $L$ if it is both sound and complete.
 	\end{itemize}
+    As a result of $\#L$ being faithful for $L$, for any pattern $\varphi$, 
+    $\varphi$ is deducible in $L$ iff $\mathit{deducible}(\varphi)$ is 
+    deducible in $\#L$.
 \end{definition}
 
-For any syntactic matching logic theory $L$ whose axiom set is $A$, its 
-meta-logic $M_L$ is obtained by adding $\Bracket{A} = \{\Bracket{\varphi} \mid 
-\varphi \in A\}$ as axioms to $M$. 
+
 For example, the next Maude functional theory defines the meta-logic of lambda 
 calculus in matching logic:
 
@@ -390,32 +345,31 @@ fth M-LAMBDA is
   eq app = #symbol("app", ("Exp", "Exp"), "Exp") .
   eq lambda0 = #symbol("lambda0", ("Exp", "Exp"), "Exp") .
   
-  op lambda_._ : String Pattern -> Pattern .
-  eq lambda X:VariableId . E:Pattern
+  op lambda_._ : String K -> K .
+  eq lambda X:VariableId . E:K
    = #exists(X:VariableId, "Exp", 
-     #application(lambda0, (#variable(X:VariableId, "Exp"), 
-                           E:Pattern)))) .
-  op _[_] : Pattern Pattern -> Pattern .
-  eq E1:Pattern[E2:Pattern] 
-   = #application(app, (E1:Pattern, E2:Pattern))) .
+     #application(lambda0, (#variable(X:VariableId, "Exp"), E:K)))) .
+  op _[_] : K K -> K .
+  eq E1:K[E2:K] 
+   = #application(app, (E1:K, E2:K))) .
    
   ---- side conditions checker
   
-  op isLTerm : Pattern -> Bool .
+  op isLTerm : K -> Bool .
 
   eq isLTerm(#variable(X:VariableId, "Exp")) = true .
   
-  eq isLTerm(E1:Pattern[E2:Pattern])
-   = isLTerm(E1:Pattern) and isLTerm(E2:Pattern) .
+  eq isLTerm(E1:K[E2:K])
+   = isLTerm(E1:K) and isLTerm(E2:K) .
    
-  eq isLTerm(lambda(X:VariableId, E:Pattern))
-   = isLTerm(E:Pattern) .
+  eq isLTerm(lambda(X:VariableId, E:K))
+   = isLTerm(E:K) .
   
   ---- the (Beta) axiom
 
-  cmb #equal((lambda X:VariableId . E1:Pattern)[E2:Pattern],
+  cmb #equal((lambda X:VariableId . E1:K)[E2:K],
               replace(...)) : Theorem
-   if isLTerm(E1:Pattern) and isLTerm(E2:Pattern) .
+   if isLTerm(E1:K) and isLTerm(E2:K) .
 endth
 \end{Verbatim}
 
@@ -426,35 +380,56 @@ theories in the object-level.
 
 \section{The Kore Language}
 
-\unsure{I propose we work with the meta-logic $U$ and use that as our 
-foundations. }
-
-We have shown a meta-logic $M$ to specify everything about 
-matching logic theories, including whether a pattern is well-formed, what sort 
-a patter has, which patterns are deducible, free variables, fresh variables 
-generation, substitution and replacement, alpha-renaming, etc. 
-This meta-logic provides a universe of (meta-representations of) patterns, 
+We have shown a meta-logic theory $M$ in which we can specify everything about 
+matching logic theories, for example, whether a pattern is well-formed, what 
+sort a patter has, which patterns are deducible, free variables, fresh 
+variables generation, substitution and replacement, alpha-renaming, etc.
+This meta-logic theory provides a universe of (meta-representations of) 
+patterns, the proof system of matching logic, the entailment relation, etc. 
 together with all kinds of operations and functions. 
 On the other hand, it is easier to work in the object-level rather than the 
 meta-level. 
 Even if all reasoning in the object-logic $L$ can be faithfully lifted to the 
-meta-logic $M_L$, it does not mean one should always do so. 
+meta-logic theory $\#L$, it does not mean one should always do so. 
 
-The Kore language is proposed to write an object-logic $L$, whose 
-semantics is given by a transformation to the meta-logic $M_L$. 
-\comment{
-\begin{definition}[The Kore Language]
-The Kore language is a language to write matching logic theories. The outcomes are called Kore definitions. Kore definitions are mainly served as the interface between a K frontend and a K backend, but a human should be able to read and write Kore definitions of simple theories, too. The Kore language is designed in a way that it can be desugared to a theory in the meta-logic in a deterministic way.
-\end{definition}
+The Kore language is proposed to help writing a matching logic theory $L$ 
+mainly at the object-level, and only go to the meta-level if it is explicitly 
+required. The outcomes are called Kore definitions, whose semantics is given by 
+defining a transformation that maps a Kore definition \texttt{module.kore} 
+to a meta-logic theory $\#L$. In this case we say that \texttt{module.kore} 
+defines the matching logic theory $L$. 
 
-\begin{definition}[Frontend]
-A K frontend is an artifact that generates Kore definitions.
-\end{definition}
+\comment{The following starts to become shaky.  
 
-\begin{definition}[Backend]
-A K backend is an artifact that consumes a Kore definition of a theory $\mathsf{T}$ and does some work. Whatever it does can and should be algorithmically reduced to the task of proving $\mathsf{T} \vdash \varphi$ where $\varphi$ ``encodes'' that work. A K backend should justify its results by generating formal proofs that can be proof-checked by the oracle matching logic proof checker. Examples of K backends include concrete execution engines, symbolic executions engines, matching logic provers, verification tools, etc.
-\end{definition}
+We have defined an equational theory $M$ as the calculus of matching logic,
+which means all reasoning about matching logic theories can be faithfully 
+lifted to $M$ (we haven't proved faithfulness, though.)
+In theory, by having (a faithful) $M$ with us, we are good to go.
+We can define whatever things we like and we want about object-level theories 
+in the meta-logic $M$, and we are not going to propose a language syntax to 
+write equational logic theories anyway. 
+
+What happens now is that in practice, we want to have a language, called Kore, 
+that allows us to work at the object-level (for convenience), while still 
+allows us to touch the meta-logic theory $M$ whenever we need, so that we are 
+in theory able to define everything. 
+
+Therefore, the Kore language is a mixture of object-level and meta-level.
+Remember that the object-level is matching logic, while meta-level is 
+equational logic, so we are proposing a language in which users can write some 
+matching logic things intertwined with equational logic things. 
+The two levels things can appear in the same line, such as:
+
+\texttt{isLterm(app(E::Exp, E'::Exp)) \\
+    = isLTerm(E::Exp) and isLTerm(E'::Exp)}
+
+in which \texttt{isLTerm} is a predicate symbol at meta-level, \texttt{app} is 
+a matching logic symbol, \texttt{E::Exp, E'::Exp} are meta-variables of 
+matching logic patterns (i.e., variables of meta-representations of patterns), 
+\texttt{"="} is the equality at meta-level, and \texttt{and} is at meta-level.
+
 }
+
 We propose the next Kore syntax. 
 
 \begin{Verbatim}[fontsize=\small]
@@ -527,24 +502,21 @@ endmodule
 \paragraph{The {\small LAMBDA} module.}\quad
 \begin{Verbatim}
 module LAMBDA
-  syntax Exp ::= Id 
-               | Exp Exp 
-               | lambda Id . Exp [binder]
-  axiom  (lambda X . E) E' = E[E' / X]
-endmodule
-\end{Verbatim}
-
-\begin{Verbatim}
-module LAMBDA
+  import M      ---- import the meta-logic theory M
+                ---- we can rename it to K ...
   syntax Exp
   syntax Exp ::= app(Exp, Exp)
                | lambda0(Exp, Exp)
+  syntax M.Bool ::= isLTerm(K)     ---- I think the Bool here is the
+                                   ---- one in the meta-logic M, not
+                                   ---- not one in the Kore module 
+                                   ---- BOOL
   axiom  \equals(app(\exists(X:Exp, lambda0(X:Exp, E::Exp)), E'::Exp),
                  \replace(E::Exp, E'::Exp, X:Exp))
-  requires(?) \isLTerm(E::Exp) and(?) \isLTerm(E'::Exp)
+  requires \isLTerm(E::Exp) M.and \isLTerm(E'::Exp) ---- requires is a sugar
   
-  axiom \isLTerm(X:Exp) = true (or trueBool?)
-  axiom \isLTerm(app(...)) = \isLTerm() andBool(?) ...
+  axiom isLTerm(X:Exp) = M.true
+  axiom isLTerm(app(E::Exp, E'::Exp)) = isLTerm(E::Exp) M.and isLTerm(E'::Exp)
   ...
       
 endmodule
