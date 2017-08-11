@@ -400,11 +400,10 @@ fth M-LAMBDA is
   eq app = #symbol("app", ("Exp", "Exp"), "Exp") .
   eq lambda0 = #symbol("lambda0", ("Exp", "Exp"), "Exp") .
   
-  op lambda_._ : String Pattern -> Pattern .
-  eq lambda X:VariableId . E:Pattern
+  op lambda_._ : String K -> K .
+  eq lambda X:VariableId . E:K
    = #exists(X:VariableId, "Exp", 
-     #application(lambda0, (#variable(X:VariableId, "Exp"), 
-                           E:Pattern)))) .
+     #application(lambda0, (#variable(X:VariableId, "Exp"), E:K)))) .
   op _[_] : Pattern Pattern -> Pattern .
   eq E1:Pattern[E2:Pattern] 
    = #application(app, (E1:Pattern, E2:Pattern))) .
