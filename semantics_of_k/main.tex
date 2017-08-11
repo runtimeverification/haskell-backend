@@ -168,25 +168,8 @@ $\_*\_(\_+\_(x\cln\Nat,y\cln\Nat),z\cln\Nat)$.
 as derived, free variables, capture-free substitution, equality.
 Add more as we need them.}
 
-\comment{
-\begin{remark}
-The above\unsure{I think we do not need all this discussion here;
-we want to keep the document clean and short, to serve as an authoritative
-reference}
-~\emph{is} a \href{https://en.wikipedia.org/wiki/Formal_grammar}{formal grammar}, whose semantics\footnote{Semantics as a formal grammar, not the matching logic semantics.} is well studied and crystal clear. The grammar defines for each sort $s$ exactly one set of well-formed patterns of sort $s$. We are defining a \emph{set}, that is to say, following the above grammar, one is able to (1) distinguish well-formed patterns from ill-formed ones; and (2) decide whether two well-formed patterns are the same pattern or not. The next remark provides an example of (2). 
-\end{remark}
-
-\begin{remark}
-	Assume $x, y\in N$ and $s \in S$, pattern $x\cln s \wedge y \cln s$ is a well-formed pattern of sort $s$, by definition. It is also \emph{distinct} from pattern $y\cln s \wedge x \cln s$, by definition. The fact that (after introducing equalities as syntactic sugar in the logic) one can use some proof systems of matching logic and establish $$\vdash x\cln s \wedge y \cln s = y\cln s \wedge x \cln s,$$ or use the semantics of matching logic and establish $$\vDash x\cln s \wedge y \cln s = y\cln s \wedge x \cln s,$$
-	has \emph{nothing} to do with the formal grammar itself and does not change the fact that $x\cln s \wedge y \cln s$ and $y\cln s \wedge x \cln s$ are two distinct patterns in matching logic. 
-\end{remark}
-}
-
-%\begin{definition}[Matching Logic Theory]
-%\label{ML_theory}
 A matching logic \emph{theory} is a triple $(S, \Sigma, A)$ where
 $(S,\Sigma)$ is a signature and $A$ is a set of patterns called \emph{axioms}.
-%\end{definition}
 Like in many logics, sets of patterns may be presented as \emph{schemas}
 making use of meta-variables ranging over patterns, sometimes constrained
 to subsets of patterns using side conditions.
