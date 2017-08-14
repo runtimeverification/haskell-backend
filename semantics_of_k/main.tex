@@ -399,37 +399,6 @@ defining a transformation that maps a Kore definition \texttt{module.kore}
 to a meta-logic theory $\#L$. In this case we say that \texttt{module.kore} 
 defines the matching logic theory $L$. 
 
-\comment{The following starts to become shaky.  
-
-We have defined an equational theory $M$ as the calculus of matching logic,
-which means all reasoning about matching logic theories can be faithfully 
-lifted to $M$ (we haven't proved faithfulness, though.)
-In theory, by having (a faithful) $M$ with us, we are good to go.
-We can define whatever things we like and we want about object-level theories 
-in the meta-logic $M$, and we are not going to propose a language syntax to 
-write equational logic theories anyway. 
-
-What happens now is that in practice, we want to have a language, called Kore, 
-that allows us to work at the object-level (for convenience), while still 
-allows us to touch the meta-logic theory $M$ whenever we need, so that we are 
-in theory able to define everything. 
-
-Therefore, the Kore language is a mixture of object-level and meta-level.
-Remember that the object-level is matching logic, while meta-level is 
-equational logic, so we are proposing a language in which users can write some 
-matching logic things intertwined with equational logic things. 
-The two levels things can appear in the same line, such as:
-
-\texttt{isLterm(app(E::Exp, E'::Exp)) \\
-    = isLTerm(E::Exp) and isLTerm(E'::Exp)}
-
-in which \texttt{isLTerm} is a predicate symbol at meta-level, \texttt{app} is 
-a matching logic symbol, \texttt{E::Exp, E'::Exp} are meta-variables of 
-matching logic patterns (i.e., variables of meta-representations of patterns), 
-\texttt{"="} is the equality at meta-level, and \texttt{and} is at meta-level.
-
-}
-
 We propose the next Kore syntax. 
 
 \begin{Verbatim}[fontsize=\small]
@@ -437,7 +406,7 @@ We propose the next Kore syntax.
 // symbols, and Kore modules.
 SortId         = String
 VariableId     = String
-MetaVariableId = MaudeId
+MetaVariableId = String
 SymbolId       = String
 ModuleId       = String
 
@@ -458,12 +427,42 @@ Signature      = syntax SortId
 
 Axioms         = axiom Pattern
                | Axioms Axioms
+               
+Imports        = import ModuleId
+               | import K
 
 Module         = module ModuleId
+                   Imports
                    Signature
                    Axioms
                  endmodule
 \end{Verbatim}
+
+\subsection{Semantics of Kore}
+
+Kore definitions semantics is given as a translation, denoted as \texttt{\#up},
+to meta-logic theories, as shown in the following rules.
+The main principle is that every object-level constructors are translated to 
+ground terms (ASTs) while meta-variables are translated to variables in the 
+meta-logic. The sorts of meta-variables are collected by \texttt{\#metacond} 
+and become the premises of the predicate \texttt{deducible(\#up)}. 
+
+\begin{Verbatim}
+#up(X:S) => #variable("X", #sort("S"))
+#up(X::S) => \and(X:Pattern, isSort(X:Pattern, #sort("S")))
+#up(\and(P, Q)) => #and(#up(P), #up(Q))
+#up(\not(P)) => #not(#up(P))
+#up(\exists(X:S, P)) => #exists("X", #sort("S"), #up(P))
+
+#metacond(X:S) => \top
+#metacond(X::S) => isSort(X:Pattern, #sort("S"))
+#metacond(\and(P, Q)) => \and(#metacond(P), #metacond(Q))
+#metacond(\not(P)) => #metacond(P)
+#metacond(\exists(X:S, P)) => #metacond(P)
+
+#up(axiom P) => \implies(#metacond(P), deducible(#up(P)))
+
+\end{Verbatim} 
 
 \subsection{Example Kore Definitions}
 
@@ -522,25 +521,7 @@ module LAMBDA
 endmodule
 \end{Verbatim}
 
-\subsection{Semantics of Kore}
 
-We give Kore definitions semantics by showing how to translate (desugar) them to meta-logic theories. 
-
-\todo[inline]{Desugaring Kore definitions to meta-logic theories. This has top priority now. Once we have that transformation, we can claim a formal semantics of Kore.}
-
-The following rules transform Kore objects to their meta-representations. The principle is that every object-level things in Kore become ground terms in the meta-logic. Every meta-level things in Kore, for example meta-variables, become variables in the meta-logic. 
-
-\todo[inline]{The next transformation needs to be nailed down a bit.}
-\begin{Verbatim}
-#up(X:Nat) => #variable("X", "Nat")
-#up(X::Nat) => X:Pattern "with" isSort(X:Pattern, "Nat")
-#up(\and(P, Q)) => #and(#up(P), #up(Q))
-#up(\not(P)) => #not(#up(P))
-#up(\exists(X:Nat, P)) => #exists("X", "Nat", #up(P))
-
-#up(axiom P) => cmb #up(P) : Theorem if isSort(...) /\ ... .
-
-\end{Verbatim} 
 
 \subsection{Lambda Calculus}
 
