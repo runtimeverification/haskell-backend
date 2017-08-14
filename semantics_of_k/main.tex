@@ -245,6 +245,34 @@ patterns and proof system infrastructure, beside built-in sorts.
 &\quad \mathit{StringList}, \mathit{PatternList}, \mathit{SymbolList}, \cdots 
 \}. \\
 \end{align*}
+In $\Sigma_M$, there are constructors of ASTs and the proof system 
+infrastructure, constructors of lists (on various sorts), and many other 
+symbols and built-in symbols, which we all conclude in the next figure, in which
+we feel free to use all kinds of conventional notations, overloading, and 
+syntactic sugar to make our lives easier. 
+\begin{align*}
+&\mathit{true}, \mathit{false} \colon \to \mathit{Bool} \\
+&\mathit{and}, \mathit{or}, \mathit{implies} \colon \mathit{Bool} \times 
+\mathit{Bool} \to \mathit{Bool} \\
+&\mathit{\#sort} \colon \mathit{String} \to \mathit{Sort} \\
+&\mathit{\#variable} \colon \mathit{String} \times \mathit{Sort} \to 
+\mathit{Pattern} \\
+&\mathit{\#and}, \mathit{\#or}, \mathit{\#implies}, \mathit{\#iff}, \\
+&\quad \mathit{\#equals}, \mathit{\#contains} \colon \mathit{Pattern} \times 
+\mathit{Pattern} \to \mathit{Pattern} \\
+&\mathit{\#not} \colon \mathit{Pattern} \to \mathit{Pattern} \\
+&\mathit{\#exists}, \mathit{\#forall} \colon \mathit{String} \times 
+\mathit{Sort} \times \mathit{Pattern} \to \mathit{Pattern} \\
+&\mathit{\#application} \colon \mathit{Symbol} \times \mathit{PatternList} \to 
+\mathit{Pattern} \\
+&\mathit{\#top}, \mathit{\#bottom} \colon \to \mathit{Pattern} \\
+&\mathit{wellFormed} \colon \mathit{Pattern} \to \mathit{Bool} \\
+&\mathit{getSort} \in \Sigma_{\mathit{Pattern}, \mathit{Sort}} \\
+&\mathit{replaceAll} \colon \mathit{Pattern} \times \mathit{Pattern} \times 
+\mathit{Pattern} \to \mathit{Pattern} \\
+&\qquad \cdots
+\end{align*}
+
 {\color{blue}
 \begin{Verbatim}[fontsize=\small,commandchars=\\\{\}]
 ---- This is a calculus of matching logic defined as a Maude theory.
