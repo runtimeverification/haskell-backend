@@ -215,7 +215,10 @@ and an implementation, that allows us to write such pattern schemas.
 
 
 \section{A Calculus of Matching Logic}
-In this section, we propose a calculus of matching logic.
+In this section, we propose a calculus of matching logic as a matching logic 
+theory. 
+\todo[inline, author = Xiaohong]{Defining the meta-level in matching logic 
+seems to be a good idea ... }
 \begin{displayquote}
 	Many people have developed calculi for mathematical reasoning. 
 	A calculus of logics is often called a \emph{logical framework}.
@@ -223,13 +226,14 @@ In this section, we propose a calculus of matching logic.
 	By L. Paulson, \emph{The Foundation of a Generic Theorem Prover}
 \end{displayquote}
 In this proposal, the \emph{object-logic} refers to matching logic,
-and we propose to use the many-sorted equational logic as the 
+and we propose to use matching logic itself as the 
 \emph{meta-logic}\footnote{Coq and Isabelle use 
 fragments of higher-order logic as their meta-logics.}. 
-The calculus of matching logic, denoted as $M = (S_M, \Sigma_M, E_M)$, is a 
-many-sorted equational logic
-where $S_M$ is a set of sorts, $\Sigma_M$ is a set of functional and relational 
-symbols, and $E_M$ is a set of equations, defined as the next Maude theory:
+The calculus of matching logic, denoted as $M = (S_M, \Sigma_M, A_M)$, is 
+matching logic theory
+where $S_M$ is a set of sorts, $\Sigma_M$ is a set of symbols, and $A_M$ is a 
+set of equations, defined as the next Maude theory: \todo{Change it to a ML 
+theory.}
 
 \begin{Verbatim}[fontsize=\small]
   fth M is
@@ -461,10 +465,19 @@ and become the premises of the predicate \texttt{deducible(\#up)}.
 #metacond(\exists(X:S, P)) => #metacond(P)
 
 #up(axiom P) => \implies(#metacond(P), deducible(#up(P)))
-
 \end{Verbatim} 
 
+Kore definitions without \texttt{import K} are considered as object-level 
+modules. Kore definitions with \texttt{import K} are considered as meta-level 
+modules, in which every patterns are at meta-level. Object-level patterns are 
+still allowed, but they are considered as syntactic sugar and are automatically 
+lifted to the meta-level. 
+the meta-level
+
 \subsection{Example Kore Definitions}
+
+\todo{I haven't checked the following paragraph so there might be inconsistency 
+between it with the previous.}
 
 \paragraph{The {\small BOOL} module.}\quad
 \begin{Verbatim}
