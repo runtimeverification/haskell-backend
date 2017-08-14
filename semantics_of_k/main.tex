@@ -43,6 +43,7 @@
   
   
   % Package for changing fonts in the Verbatim environment:
+  \usepackage{xcolor}
   \usepackage{fancyvrb}
   
   % Package for URLs:
@@ -232,8 +233,8 @@ fragments of higher-order logic as their meta-logics.}.
 The calculus of matching logic, denoted as $M = (S_M, \Sigma_M, A_M)$, is 
 matching logic theory
 where $S_M$ is a set of sorts, $\Sigma_M$ is a set of symbols, and $A_M$ is a 
-set of equations.
-In $S_M$ there are sorts for abstract syntax trees (ASTs) of matching logic 
+set of axioms.
+In $S_M$, there are sorts for abstract syntax trees (ASTs) of matching logic 
 patterns and proof system infrastructure, beside built-in sorts. 
 \begin{align*}
 &S_M = \{\mathit{Bool}, \mathit{String}, \mathit{Int}, \cdots, \\
@@ -244,8 +245,13 @@ patterns and proof system infrastructure, beside built-in sorts.
 &\quad \mathit{StringList}, \mathit{PatternList}, \mathit{SymbolList}, \cdots 
 \}. \\
 \end{align*}
+{\color{blue}
+\begin{Verbatim}[fontsize=\small,commandchars=\\\{\}]
+---- This is a calculus of matching logic defined as a Maude theory.
+---- Now we decided to go with matching logic being the meta-logic of itself,
+---- but this Maude theory is still of interest.
+---- It can be a starting point of the generic matching logic prover. 
 
-\begin{Verbatim}[fontsize=\small]
   fth M is
     protecting STRING .
     
@@ -306,6 +312,7 @@ patterns and proof system infrastructure, beside built-in sorts.
     ---- not finished
   endth
 \end{Verbatim}
+}
 
 \comment{It is strongly recommend that readers of this proposal read L. 
 	Paulson's \emph{The Foundation of a Generic Theorem Prover}, especially 
