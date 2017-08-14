@@ -232,8 +232,18 @@ fragments of higher-order logic as their meta-logics.}.
 The calculus of matching logic, denoted as $M = (S_M, \Sigma_M, A_M)$, is 
 matching logic theory
 where $S_M$ is a set of sorts, $\Sigma_M$ is a set of symbols, and $A_M$ is a 
-set of equations, defined as the next Maude theory: \todo{Change it to a ML 
-theory.}
+set of equations.
+In $S_M$ there are sorts for abstract syntax trees (ASTs) of matching logic 
+patterns and proof system infrastructure, beside built-in sorts. 
+\begin{align*}
+&S_M = \{\mathit{Bool}, \mathit{String}, \mathit{Int}, \cdots, \\
+&\quad \mathit{Pattern}, \mathit{Sort}, \mathit{Symbol}, \mathit{Signature}, 
+\mathit{Theory}, \\
+&\quad \mathit{Goal}, \mathit{InferenceRule}, \mathit{Tactic}, 
+\mathit{Validation}, \mathit{Tactical}, \\
+&\quad \mathit{StringList}, \mathit{PatternList}, \mathit{SymbolList}, \cdots 
+\}. \\
+\end{align*}
 
 \begin{Verbatim}[fontsize=\small]
   fth M is
