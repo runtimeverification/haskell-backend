@@ -231,6 +231,8 @@ and we propose to use matching logic itself as the
 \emph{meta-logic}\footnote{Coq and Isabelle use 
 fragments of higher-order logic as their meta-logics.}. 
 The calculus of matching logic, denoted as $M = (S_M, \Sigma_M, A_M)$, is 
+\change{We might want to use something other than the letter $M$ to
+denote the calculus of matching logic.}
 matching logic theory
 where $S_M$ is a set of sorts, $\Sigma_M$ is a set of symbols, and $A_M$ is a 
 set of axioms.
@@ -270,119 +272,59 @@ syntactic sugar to make our lives easier.
 &\mathit{getSort} \in \Sigma_{\mathit{Pattern}, \mathit{Sort}} \\
 &\mathit{replaceAll} \colon \mathit{Pattern} \times \mathit{Pattern} \times 
 \mathit{Pattern} \to \mathit{Pattern} \\
+&\mathit{deducible} \colon \mathit{Pattern} \to \mathit{Bool} \\
 &\qquad \cdots
 \end{align*}
 
-{\color{blue}
-\begin{Verbatim}[fontsize=\small,commandchars=\\\{\}]
----- This is a calculus of matching logic defined as a Maude theory.
----- Now we decided to go with matching logic being the meta-logic of itself,
----- but this Maude theory is still of interest.
----- It can be a starting point of the generic matching logic prover. 
-
-  fth M is
-    protecting STRING .
-    
-    sort Sort . op #sort : String -> Sort .
-    sort SortList .          ---- comma-separated lists
-    
-    sort Symbol .
-    op #symbol : String      ---- unique identity / name / reference
-                 SortList    ---- argument sorts
-                 Sort        ---- result sort
-                 -> Symbol .
-    
-    sorts K KList .          ---- Grigore proposed to name it K 
-                             ---- instead of Pattern
-    
-    op #variable : String    ---- unique identity / name / reference
-                   Sort -> K .
-    op #and : K K -> K .
-    op #not : K -> K .
-    op #exists : String      ---- id of binding variable
-                 Sort        ---- sort of binding variable
-                 K -> K .
-    op #application : Symbol KList -> K .
-    op #value : String       ---- encoding of domain values
-                Sort         ---- sort of values
-                -> K .       ---- not sure about #value
-    
-    op well-formed : K -> Bool .
-    op getSort : K -> [Sort] .
-    op isSort : K Sort -> Bool .
-    
-    cmb getSort(K:K) : Sort if well-formed(K:K) [nonexe] .
-    eq isSort(K:K, S:Sort) = (getSort(K:K) = S:Sort) [nonexe] .
-    
-    op getFreeVariables : K 
-                          -> ... .   ---- a collection of variables
-    
-    ---- fine-grained-controlled substitution
-    op replace : K           ---- the main pattern 
-                 K           ---- the "replace" pattern
-                 K           ---- the "find" pattern
-                 ...         ---- some controlling arguments
-                 -> K .
-    
-    op freshName : StringList      ---- a collection of used names.
-                   -> String .
-    
-    ---- the following is about the proof system of matching logic.
-    ---- Reference: [L. Paulson] The Foundation of a Generic Theorem Prover
-    
-    sorts InferenceRule      ---- a function from theorems to theorems
-          Tactic             ---- the "reverse" of an inference rule
-          Validation         ---- the "certificate" returned by a tactic
-          Tactical .         ---- control structures applied on tactics
-    
-    op deducible : K -> Bool .
-    
-    ---- not finished
-  endth
-\end{Verbatim}
-}
-
+\subsection{Faithfulness}
 \comment{It is strongly recommend that readers of this proposal read L. 
 	Paulson's \emph{The Foundation of a Generic Theorem Prover}, especially 
 	Section 
 	2, 3, and 4.}
 
-Suppose $L$ is a syntactic matching logic theory whose axiom set is~$A$.
-Let $\# L$ be the meta-level theory of $L$ obtained by adding 
-$$\Bracket{A} = 
-\{\textit{deducible}\left(\Bracket{\varphi}\right)
-\mid 
-\varphi \in A\}$$
+It remains a question whether the calculus of matching logic $M$ \emph{faithfully}
+captures the reasoning in matching logic. 
+Before we define faithfulness, let us introduce some useful notations.
+Suppose $T = (S, \Sigma, A)$ is a matching logic theory.
+The meta-theory of $T$, denoted as $\#T$, is a matching logic theory obtained by adding
+$$
+\textit{deducible}\left(\#{\varphi}\right) = true
+\quad \text{for any $\varphi \in A$}
+$$
 as axioms to the meta-logic theory $M$,
-where the double bracket $\Bracket{\_}$ is a function that maps object-patterns 
-to their meta-representations in $M$. 
+where the sharp $\#\_$ is a function that maps object-patterns 
+to their meta-representations~(ASTs) in $M$. 
+For simplicity, we denote $\textit{deducible}\left(\#{\varphi}\right) = true$ as $\Bracket{\varphi}$, a pattern of the sort $\mathit{Pattern}$.
+
 The following definition is inspired by Paulson's paper (Definition 1). 
 \begin{definition}
-	Let $L$ be a matching logic theory and $\#L$ is its meta-logic theory. 
-	Let	$\varphi_1,\dots,\varphi_n$ and $\psi$ be patterns of $L$.	
+	Let $T$ be a matching logic theory and $\#T$ is its meta-theory. 
+	Tet	$\varphi_1,\dots,\varphi_n$ and $\psi$ be patterns of $T$.	
 	Then say
 	\begin{itemize}
-		\item $\#L$ is \emph{sound} for $L$, if for every $\#L$-proof of 
-		$\mathit{deducible}\left(\Bracket{\psi}\right)$ from 
-		$\mathit{deducible}\left(\Bracket{\varphi_1}\right),\\ \dots, 
-		\mathit{deducible}\left(\Bracket{\varphi_n}\right)$, there is an 
-		$L$-proof of $\psi$ from 
+		\item $\#T$ is \emph{sound} for $T$, if for every $\#T$-proof of 
+		$\Bracket{\psi}$ from 
+		$\Bracket{\varphi_1}, \dots, 
+		\Bracket{\varphi_n}$, there is a 
+		$T$-proof of $\psi$ from 
 		$\varphi_1,\dots,\varphi_n$.
-		\item $\#L$ is \emph{complete} for $L$, if for every $L$-proof of 
-		$\psi$ from $\varphi_1,\dots,\varphi_n$, there is a $\#L$-proof of 
-		$\mathit{deducible}\left(\Bracket{\psi}\right)$ from 
-		$\mathit{deducible}\left(\Bracket{\varphi_1}\right), \dots, 
-		\mathit{deducible}\left(\Bracket{\varphi_n}\right)$.
-		\item $\#L$ is \emph{faithful} for $L$ if it is both sound and complete.
+		\item $\#T$ is \emph{complete} for $T$, if for every $T$-proof of 
+		$\psi$ from $\varphi_1,\dots,\varphi_n$, there is a $\#T$-proof of 
+		$\Bracket{\psi}$ from 
+		$\Bracket{\varphi_1}, \dots, 
+		\Bracket{\varphi_n}$.
+		\item $\#T$ is \emph{faithful} for $T$ if it is both sound and complete.
 	\end{itemize}
-    As a result of $\#L$ being faithful for $L$, for any pattern $\varphi$, 
-    $\varphi$ is deducible in $L$ iff $\mathit{deducible}(\varphi)$ is 
-    deducible in $\#L$.
+    As a result of $\#T$ being faithful for $T$, for any pattern $\varphi$, 
+    $\varphi$ is deducible in $T$ iff $\Bracket{\varphi}$ is 
+    deducible in $\#T$.
 \end{definition}
 
-
+\comment{
 For example, the next Maude functional theory defines the meta-logic of lambda 
-calculus in matching logic:
+calculus in matching logic:}
+
+
 
 \begin{Verbatim}[fontsize=\small]
 fth M-LAMBDA is
@@ -421,6 +363,7 @@ fth M-LAMBDA is
    if isLTerm(E1:K) and isLTerm(E2:K) .
 endth
 \end{Verbatim}
+
 
 One can see how complex it is to write meta-logic theories, but it is an aspect 
 of life. 
