@@ -119,10 +119,9 @@
 \maketitle
 
 \comment{Please feel free to contribute to this report in all ways.
-\info{Follow the FSL rules for editing, though; e.g., <80 characters per line,
-each sentence on a new line, etc.}
 You could add new contents, remove redundant ones, refactor and
-organize the texts, and correct typos.}
+organize the texts, and correct typos, but please follow the FSL rules for editing, though; e.g., $<$80 characters per line,
+each sentence on a new line, etc. }
 
 \section{Matching Logic}
 
@@ -132,11 +131,9 @@ organize the texts, and correct typos.}
 Let us recall the basic grammar of matching logic
 from~\cite{rosu-2017-lmcs}.\improvement{Add references.}
 ~
-Let $\Var$ be a countable set of
-\emph{variables}.\unsure{Not sure why you prefer to work with only one set of
-variables, instead of a set $\Var_s$ for each sort $s$.}
-~
-Assume a matching logic \emph{signature} $(S, \Sigma)$.
+Assume a matching logic \emph{signature} $(S, \Sigma)$, and
+let $\Var_s$ be a countable set of
+\emph{variables} of sort $s$.
 For simplicity, here we assume that the sets of \emph{sorts} $S$
 and of \emph{symbols} $\Sigma$ are finite.
 We partition $\Sigma$ in sets of symbols
@@ -211,11 +208,6 @@ $$
 
 One of the major goals of this paper is to propose a formal language
 and an implementation, that allows us to write such pattern schemas.
-
-\change{Let's introduce this when needed.  Also, ``equal'' is not a good word.
-
-``Two theories are \emph{equal} if they have the same set of sorts and symbols, and they deduce the same set of theorems.''}
-
 
 \section{A Calculus of Matching Logic}
 In this section, we propose a calculus of matching logic as a matching logic 
