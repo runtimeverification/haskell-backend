@@ -1,5 +1,7 @@
 \documentclass[UTF8]{article}
 
+\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+
 %\usepackage{xcolor}
 \usepackage[pdftex,dvipsnames]{xcolor}  % Coloured text etc.
 \usepackage{xargs}                      % Use more than one optional parameter in a new commands
@@ -230,16 +232,16 @@ In this proposal, the \emph{object-logic} refers to matching logic,
 and we propose to use matching logic itself as the 
 \emph{meta-logic}\footnote{Coq and Isabelle use 
 fragments of higher-order logic as their meta-logics.}. 
-The calculus of matching logic, denoted as $M = (S_M, \Sigma_M, A_M)$, is 
+The calculus of matching logic, denoted as $K = (S_K, \Sigma_K, A_K)$, is 
 \change{We might want to use something other than the letter $M$ to
 denote the calculus of matching logic.}
-matching logic theory
-where $S_M$ is a set of sorts, $\Sigma_M$ is a set of symbols, and $A_M$ is a 
+a matching logic theory
+where $S_K$ is a set of sorts, $\Sigma_K$ is a set of symbols, and $A_K$ is a 
 set of axioms.
-In $S_M$, there are sorts for abstract syntax trees (ASTs) of matching logic 
+In $S_K$, there are sorts for abstract syntax trees (ASTs) of matching logic 
 patterns and proof system infrastructure, beside built-in sorts. 
 \begin{align*}
-&S_M = \{\mathit{Bool}, \mathit{String}, \mathit{Int}, \cdots, \\
+&S_K = \{\mathit{Bool}, \mathit{String}, \mathit{Int}, \cdots, \\
 &\quad \mathit{Pattern}, \mathit{Sort}, \mathit{Symbol}, \mathit{Signature}, 
 \mathit{Theory}, \\
 &\quad \mathit{Goal}, \mathit{InferenceRule}, \mathit{Tactic}, 
@@ -247,7 +249,7 @@ patterns and proof system infrastructure, beside built-in sorts.
 &\quad \mathit{StringList}, \mathit{PatternList}, \mathit{SymbolList}, \cdots 
 \}. \\
 \end{align*}
-In $\Sigma_M$, there are constructors of ASTs and the proof system 
+In $\Sigma_K$, there are constructors of ASTs and the proof system 
 infrastructure, constructors of lists (on various sorts), and many other 
 symbols and built-in symbols, which we all conclude in the next figure, in which
 we feel free to use all kinds of conventional notations, overloading, and 
@@ -277,11 +279,10 @@ syntactic sugar to make our lives easier.
 \end{align*}
 
 \subsection{Faithfulness}
-\comment{It is strongly recommend that readers of this proposal read L. 
+\footnote{It is strongly recommend that readers of this proposal read L. 
 	Paulson's \emph{The Foundation of a Generic Theorem Prover}, especially 
 	Section 
 	2, 3, and 4.}
-
 It remains a question whether the calculus of matching logic $M$ \emph{faithfully}
 captures the reasoning in matching logic. 
 Before we define faithfulness, let us introduce some useful notations.
@@ -289,11 +290,11 @@ Suppose $T = (S, \Sigma, A)$ is a matching logic theory.
 The meta-theory of $T$, denoted as $\#T$, is a matching logic theory obtained by adding
 $$
 \textit{deducible}\left(\#{\varphi}\right) = true
-\quad \text{for any $\varphi \in A$}
+\quad \text{for all $\varphi \in A$}
 $$
 as axioms to the meta-logic theory $M$,
-where the sharp $\#\_$ is a function that maps object-patterns 
-to their meta-representations~(ASTs) in $M$. 
+where the sharp $\#\_$ is the lifting function that maps object-patterns 
+to their meta-representations~(ASTs) in $M$.
 For simplicity, we denote $\textit{deducible}\left(\#{\varphi}\right) = true$ as $\Bracket{\varphi}$, a pattern of the sort $\mathit{Pattern}$.
 
 The following definition is inspired by Paulson's paper (Definition 1). 
@@ -319,13 +320,12 @@ The following definition is inspired by Paulson's paper (Definition 1).
     $\varphi$ is deducible in $T$ iff $\Bracket{\varphi}$ is 
     deducible in $\#T$.
 \end{definition}
-
-\comment{
-For example, the next Maude functional theory defines the meta-logic of lambda 
-calculus in matching logic:}
-
+\begin{theorem}
+	For any matching logic theory $T$, its meta-theory $\#T$ is faithful for $T$.
+\end{theorem}
 
 
+{\color{blue}
 \begin{Verbatim}[fontsize=\small]
 fth M-LAMBDA is
   extending M .
@@ -363,35 +363,24 @@ fth M-LAMBDA is
    if isLTerm(E1:K) and isLTerm(E2:K) .
 endth
 \end{Verbatim}
+}
 
-
-One can see how complex it is to write meta-logic theories, but it is an aspect 
-of life. 
-In the next section, we will introduce the Kore language that lets one define 
-theories in the object-level. 
 
 \section{The Kore Language}
 
-We have shown a meta-logic theory $M$ in which we can specify everything about 
+We have shown a calculus of matching logic $M$ in which we can specify everything about 
 matching logic theories, for example, whether a pattern is well-formed, what 
 sort a patter has, which patterns are deducible, free variables, fresh 
 variables generation, substitution and replacement, alpha-renaming, etc.
-This meta-logic theory provides a universe of (meta-representations of) 
-patterns, the proof system of matching logic, the entailment relation, etc. 
-together with all kinds of operations and functions. 
-On the other hand, it is easier to work in the object-level rather than the 
+This meta-theory provides a universe of (meta-representations of) 
+patterns and the proof system of matching logic. 
+On the other hand, it is usually easier to work in the object-level rather than the 
 meta-level. 
-Even if all reasoning in the object-logic $L$ can be faithfully lifted to the 
-meta-logic theory $\#L$, it does not mean one should always do so. 
+Even if all reasoning in the object-level theory $T$ can be faithfully lifted to and conducted in the 
+meta-theory $\#T$, it does not mean one should always do so. 
 
-The Kore language is proposed to help writing a matching logic theory $L$ 
-mainly at the object-level, and only go to the meta-level if it is explicitly 
-required. The outcomes are called Kore definitions, whose semantics is given by 
-defining a transformation that maps a Kore definition \texttt{module.kore} 
-to a meta-logic theory $\#L$. In this case we say that \texttt{module.kore} 
-defines the matching logic theory $L$. 
-
-We propose the next Kore syntax. 
+\subsection{Syntax of Kore}
+We propose the next Kore syntax which allows the use of meta-variables at object-level. This is a syntactic sugar that lets users write compact axioms at object-level.
 
 \begin{Verbatim}[fontsize=\small]
 // Namespaces for sorts, variables, metavariables,
@@ -413,59 +402,58 @@ Pattern        = Variable | MetaVariable
                | \exists(Variable, Pattern)
                | SymbolId(List{Pattern})
 
-Signature      = syntax SortId
+Sentence       = import ModuleId
+               | syntax SortId
                | syntax SortId ::= SymbolId(List{SortId})
-               | Signature Signature
-
-Axioms         = axiom Pattern
-               | Axioms Axioms
-               
-Imports        = import ModuleId
-               | import K
+               | axiom Pattern
+Sentences      = Sentence | Sentences Sentences
 
 Module         = module ModuleId
-                   Imports
-                   Signature
-                   Axioms
+                   Sentences
                  endmodule
 \end{Verbatim}
 
 \subsection{Semantics of Kore}
 
-Kore definitions semantics is given as a translation, denoted as \texttt{\#up},
-to meta-logic theories, as shown in the following rules.
+The semantics of Kore is given as a translation from Kore definitions
+to meta-theories.
 The main principle is that every object-level constructors are translated to 
 ground terms (ASTs) while meta-variables are translated to variables in the 
-meta-logic. The sorts of meta-variables are collected by \texttt{\#metacond} 
-and become the premises of the predicate \texttt{deducible(\#up)}. 
+meta-theories. In other words, the sentence $\mathtt{axiom}\ \varphi$ when $\varphi$ is an object-pattern is a shorthand of $\mathtt{axiom}\ \Bracket{\varphi}$. Since we now allow $\varphi$ containing meta-variables, the notation $\Bracket{\varphi}$ now means that $\mathit{mvsc}(\varphi) \to (deducible\left(\#\varphi\right) = true)$, where the lifting function $\#\_$ and the meta-variable sort constraint $\mathit{mvsc}$ are defined in Algorithm~\ref{alg:liftingfunction} and~\ref{alg:mvsc}, respectively. 
 
-\begin{Verbatim}
-#up(X:S) => #variable("X", #sort("S"))
-#up(X::S) => \and(X:Pattern, isSort(X:Pattern, #sort("S")))
-#up(\and(P, Q)) => #and(#up(P), #up(Q))
-#up(\not(P)) => #not(#up(P))
-#up(\exists(X:S, P)) => #exists("X", #sort("S"), #up(P))
 
-#metacond(X:S) => \top
-#metacond(X::S) => isSort(X:Pattern, #sort("S"))
-#metacond(\and(P, Q)) => \and(#metacond(P), #metacond(Q))
-#metacond(\not(P)) => #metacond(P)
-#metacond(\exists(X:S, P)) => #metacond(P)
+\begin{algorithm}
+	\KwIn{An object-pattern $\varphi$}
+	\KwOut{The meta-representation of $\varphi$}
+	\uIf{$\varphi$ is $x \cln s$}{$\mathit{\#variable(x, \#sort(s))}$}
+	\uElseIf{$\varphi$ is $x \cln \cln s$}{$x \cln \mathit{Pattern} {\ \wedge\ } \mathit{\#sort(s)} \in \mathit{getSort}(x \cln \mathit{Pattern}) $}
+	\uElseIf{$\varphi$ is $\varphi_1 \wedge \varphi_2$}
+	{$\mathit{\#and}(\#\varphi_1, \#\varphi_2)$}
+	\uElseIf{$\varphi$ is $\neg \varphi_1$}
+	{$\mathit{\#not}(\#\varphi_1)$}
+	\uElseIf{$\varphi$ is $\exists x \cln s . \varphi$}
+	{$\mathit{\#exists}(x, \mathit{\#sort(s)}, \#\varphi)$}
+	\uElseIf{$\varphi$ is $\sigma(\varphi_1,\dots,\varphi_n)$}
+	{$\mathit{\#application}(\mathit{\#symbol(\sigma, \dots), \#\varphi_1,\dots,\#\varphi_n})$}
+	\caption{Lifting Function $\#\_$}
+	\label{alg:liftingfunction}
+\end{algorithm}
 
-#up(axiom P) => \implies(#metacond(P), deducible(#up(P)))
-\end{Verbatim} 
+\begin{algorithm}
+	\KwIn{An object-pattern $\varphi$}
+	\KwOut{The meta-variable sort constraint of $\varphi$}
+	Collect in set $W$ all meta-variables appearing in $\varphi$\;
+	Let $C = \emptyset$\;
+	\ForEach{$x \cln \cln s \in W$}
+	{$C = C \cup (\mathit{\#sort(s)} \in \mathit{getSort}(x \cln \mathit{Pattern}))$}
+	Return $\bigwedge C$\;
+	\caption{Meta-Variable Sort Constraint Collection $\mathit{mvsc}$}
+	\label{alg:mvsc}
+\end{algorithm}
 
-Kore definitions without \texttt{import K} are considered as object-level 
-modules. Kore definitions with \texttt{import K} are considered as meta-level 
-modules, in which every patterns are at meta-level. Object-level patterns are 
-still allowed, but they are considered as syntactic sugar and are automatically 
-lifted to the meta-level. 
-the meta-level
+\subsection{Examples of Kore}
 
-\subsection{Example Kore Definitions}
-
-\todo{I haven't checked the following paragraph so there might be inconsistency 
-between it with the previous.}
+\todo[inline]{The following examples may need some change.}
 
 \paragraph{The {\small BOOL} module.}\quad
 \begin{Verbatim}
@@ -543,7 +531,7 @@ module LAMBDA
 endmodule
 \end{Verbatim}
 
-\comment{Many discussions in the next section (Sec.4 Object-level and Meta-level) should be moved to Section 3 as examples. Sec.5 Binders and Sec.6 Contexts should also move to a subsection of Sec.3 as applications and examples. }
+\todo[inline]{Many discussions in the next section (Sec.4 Object-level and Meta-level) should be moved to Section 3 as examples. Sec.5 Binders and Sec.6 Contexts should also move to a subsection of Sec.3 as applications and examples. }
 
 \section{Object-level and Meta-level}
 
