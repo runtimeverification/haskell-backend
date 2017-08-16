@@ -212,8 +212,6 @@ and an implementation, that allows us to write such pattern schemas.
 \section{A Calculus of Matching Logic}
 In this section, we propose a calculus of matching logic as a matching logic 
 theory. 
-\todo[inline, author = Xiaohong]{Defining the meta-level in matching logic 
-seems to be a good idea ... }
 \begin{displayquote}
 	Many people have developed calculi for mathematical reasoning. 
 	A calculus of logics is often called a \emph{logical framework}.
@@ -227,9 +225,46 @@ fragments of higher-order logic as their meta-logics.}.
 The calculus of matching logic, denoted as $K = (S_K, \Sigma_K, A_K)$, is 
 a matching logic theory
 where $S_K$ is a set of sorts, $\Sigma_K$ is a set of symbols, and $A_K$ is a 
-set of axioms.
-In $S_K$, there are sorts for abstract syntax trees (ASTs) of matching logic 
-patterns and proof system infrastructure, beside built-in sorts. 
+set of axioms. The main goal of this section is to introduce the theory $K$, which mainly consists of built-in theories, abstract syntax trees (ASTs) of patterns, and proof system infrastructure. They are introduced in details in the following separate sections.
+\subsection{Built-ins}
+Two matching logic theories, {\small BOOL} for boolean algebra and {\small STRING} for strings, are included in the theory $K$. 
+Their definitions have been introduced elsewhere (e.g. in~\cite{???}) and will not be discussed in this proposal. 
+Sorts $\mathit{Bool}$ and $\mathit{String}$ are included in $S_K$, and the following symbols are included in $\Sigma_K$ with their usual axioms added to $A_K$.
+\begin{align*}
+&\mathit{true}, \mathit{false} \ \colon \to \mathit{Bool} \\
+&\mathit{not\_} \ \colon \mathit{Bool} \to \mathit{Bool} \\
+&\mathit{\_and\_}, \mathit{\_or\_} \ \colon \mathit{Bool} \times \mathit{Bool} \to \mathit{Bool}\\
+&\mathit{\_implies\_} \ \colon \mathit{Bool} \times \mathit{Bool} \to \mathit{Bool}
+\end{align*}
+
+\begin{remark}
+	Whenever we introduce a sort, say $\mathit{X}$, to $S_K$, we feel free to use $\mathit{XList}$ as the sort of comma-separated lists over $\mathit{X}$ without explicitly defining it. 
+\end{remark}
+
+\subsection{Abstract Syntax Trees}
+The sort $\mathit{Sort} \in S_K$ is the sort of matching logic sorts, whose only constructor symbol\footnote{A constructor symbol has its precise definition in matching logic. Please refer to~\cite{?}.} is $\mathit{\#sort}\ \colon \mathit{String} \to \mathit{Sort}$.
+The sort $\mathit{Symbol} \in S_K$ is the sort of matching logic symbols whose
+only constructor symbol is $\mathit{\#symbol} \ \colon \mathit{String} \times \mathit{SortList} \times \mathit{Sort} \to \mathit{Symbol}$. 
+The sort $\mathit{Pattern} \in S_K$ is the sort for ASTs of patterns, with the following functional symbols:
+\begin{align*}
+&\mathit{\#variable} \colon \mathit{String} \times \mathit{Sort} \to 
+\mathit{Pattern} \\
+&\mathit{\#and}, \mathit{\#or}, \mathit{\#implies}, \mathit{\#iff}, \\
+&\quad \mathit{\#equals}, \mathit{\#contains} \colon \mathit{Pattern} \times 
+\mathit{Pattern} \to \mathit{Pattern} \\
+&\mathit{\#not} \colon \mathit{Pattern} \to \mathit{Pattern} \\
+&\mathit{\#exists}, \mathit{\#forall} \colon \mathit{String} \times 
+\mathit{Sort} \times \mathit{Pattern} \to \mathit{Pattern} \\
+&\mathit{\#application} \colon \mathit{Symbol} \times \mathit{PatternList} \to 
+\mathit{Pattern} \\
+&\mathit{\#top}, \mathit{\#bottom} \colon \to \mathit{Pattern} \\
+\end{align*}
+There are also AST-related symbols included in $\Sigma_K$.
+For example, the symbol $\mathit{wellFormed} \colon \mathit{Pattern} \to \mathit{Bool}$ determines whether a pattern is well-formed (or more precisely, it determines whether an abstract syntax tree is a well-formed one of a pattern.)
+The symbol $\mathit{getSort} \in \Sigma_{\mathit{Pattern}, \mathit{Sort}}$ takes a pattern and returns its sort. If the pattern is not well-formed, then $\mathit{getSort}$ returns 
+
+\subsection{Todo}
+\todo{The next section is going to be divided in three subsections.}
 \begin{align*}
 &S_K = \{\mathit{Bool}, \mathit{String}, \mathit{Int}, \cdots, \\
 &\quad \mathit{Pattern}, \mathit{Sort}, \mathit{Symbol}, \mathit{Signature}, 
@@ -245,23 +280,9 @@ symbols and built-in symbols, which we all conclude in the next figure, in which
 we feel free to use all kinds of conventional notations, overloading, and 
 syntactic sugar to make our lives easier. 
 \begin{align*}
-&\mathit{true}, \mathit{false} \colon \to \mathit{Bool} \\
-&\mathit{and}, \mathit{or}, \mathit{implies} \colon \mathit{Bool} \times 
-\mathit{Bool} \to \mathit{Bool} \\
 &\mathit{\#sort} \colon \mathit{String} \to \mathit{Sort} \\
-&\mathit{\#variable} \colon \mathit{String} \times \mathit{Sort} \to 
-\mathit{Pattern} \\
-&\mathit{\#and}, \mathit{\#or}, \mathit{\#implies}, \mathit{\#iff}, \\
-&\quad \mathit{\#equals}, \mathit{\#contains} \colon \mathit{Pattern} \times 
-\mathit{Pattern} \to \mathit{Pattern} \\
-&\mathit{\#not} \colon \mathit{Pattern} \to \mathit{Pattern} \\
-&\mathit{\#exists}, \mathit{\#forall} \colon \mathit{String} \times 
-\mathit{Sort} \times \mathit{Pattern} \to \mathit{Pattern} \\
-&\mathit{\#application} \colon \mathit{Symbol} \times \mathit{PatternList} \to 
-\mathit{Pattern} \\
-&\mathit{\#top}, \mathit{\#bottom} \colon \to \mathit{Pattern} \\
 &\mathit{wellFormed} \colon \mathit{Pattern} \to \mathit{Bool} \\
-&\mathit{getSort} \in \Sigma_{\mathit{Pattern}, \mathit{Sort}} \\
+&\mathit{getSort} \in  \\
 &\mathit{replaceAll} \colon \mathit{Pattern} \times \mathit{Pattern} \times 
 \mathit{Pattern} \to \mathit{Pattern} \\
 &\mathit{deducible} \colon \mathit{Pattern} \to \mathit{Bool} \\
