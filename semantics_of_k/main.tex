@@ -183,6 +183,8 @@ $$
 & \textrm{where $\varphi$, $\varphi'$ are \emph{syntactic patterns}, that is,}
 \\
 & \textrm{ones formed only with variables and symbols}
+\\
+& \textrm{\color{blue} This is not true. Pattern $\varphi$ contains quantifiers.}
 \\[2ex]
 \varphi_1 \mathrel{\texttt{+}} \varphi_2 = \varphi_1 +_\Nat \varphi_2
 & \textrm{where $\varphi$, $\varphi'$ are \emph{ground} syntactic patterns}
@@ -259,35 +261,66 @@ The sort $\mathit{Pattern} \in S_K$ is the sort for ASTs of patterns, with the f
 \mathit{Pattern} \\
 &\mathit{\#top}, \mathit{\#bottom} \colon \to \mathit{Pattern} \\
 \end{align*}
+\unsure[inline, author=Xiaohong]{I am not sure whether we should have sort polymorphism in ASTs, that is, having \#top and \#bottom be of any sort (polymorphic). I think we should. Following the principle that ``Algorithms + Data Structures = Programs'', we should smartly choose the best data structures. In our case, ASTs is a very important data structure, and tools will spend plenty of time playing with them, so we should smartly choose the best data structure for ASTs. In my view, the best data structure is the one that (inherently) contains/reflects the most information about ASTs. }
+
 There are also AST-related symbols included in $\Sigma_K$.
 For example, the symbol $\mathit{wellFormed} \colon \mathit{Pattern} \to \mathit{Bool}$ determines whether a pattern is well-formed (or more precisely, it determines whether an abstract syntax tree is a well-formed one of a pattern.)
-The symbol $\mathit{getSort} \in \Sigma_{\mathit{Pattern}, \mathit{Sort}}$ takes a pattern and returns its sort. If the pattern is not well-formed, then $\mathit{getSort}$ returns 
+The symbol $\mathit{getSort} \in \Sigma_{\mathit{Pattern}, \mathit{Sort}}$ takes a pattern and returns its sort. 
+If the pattern is not well-formed, then $\mathit{getSort}$ returns $\bot_\mathit{Sort}$; 
+if the pattern is well-formed, then $\mathit{getSort}$ returns $\mathit{\#sort}(s)$ if the pattern is of the regular sort $s$, or returns $\top_\mathit{Sort}$ if the pattern is polymorphic sorted. 
+The symbol $\mathit{getFvs} \colon \mathit{Pattern} \to \mathit{PatternList}$ collects all free variables in a pattern. 
+The symbol $\mathit{replaceAll} \colon \mathit{Pattern} \times \mathit{Pattern} \times \mathit{Pattern} \to \mathit{Pattern}$ takes a target pattern $\varphi$, a ``find''-pattern $\psi_1$, and a ``replace''-pattern $\psi_2$, and returns $\varphi$ in which $\psi_2$ is substituted for $\psi_1$, denoted as $\varphi[\psi_2 / \psi_1]$.
 
-\subsection{Todo}
-\todo{The next section is going to be divided in three subsections.}
-\begin{align*}
-&S_K = \{\mathit{Bool}, \mathit{String}, \mathit{Int}, \cdots, \\
-&\quad \mathit{Pattern}, \mathit{Sort}, \mathit{Symbol}, \mathit{Signature}, 
-\mathit{Theory}, \\
-&\quad \mathit{Goal}, \mathit{InferenceRule}, \mathit{Tactic}, 
-\mathit{Validation}, \mathit{Tactical}, \\
-&\quad \mathit{StringList}, \mathit{PatternList}, \mathit{SymbolList}, \cdots 
-\}. \\
-\end{align*}
-In $\Sigma_K$, there are constructors of ASTs and the proof system 
-infrastructure, constructors of lists (on various sorts), and many other 
-symbols and built-in symbols, which we all conclude in the next figure, in which
-we feel free to use all kinds of conventional notations, overloading, and 
-syntactic sugar to make our lives easier. 
-\begin{align*}
-&\mathit{\#sort} \colon \mathit{String} \to \mathit{Sort} \\
-&\mathit{wellFormed} \colon \mathit{Pattern} \to \mathit{Bool} \\
-&\mathit{getSort} \in  \\
-&\mathit{replaceAll} \colon \mathit{Pattern} \times \mathit{Pattern} \times 
-\mathit{Pattern} \to \mathit{Pattern} \\
-&\mathit{deducible} \colon \mathit{Pattern} \to \mathit{Bool} \\
-&\qquad \cdots
-\end{align*}
+Side conditions can be defined as functional symbols from $\mathit{Pattern}$ to $\mathit{Bool}$. 
+For example, the symbol $\mathit{syntactic}$ determines whether a pattern contains only variables and symbol applications. 
+The symbol $\mathit{ground}$ determines whether a pattern is variable-free, no matter free or bound. 
+The symbol $\mathit{groundSyntactic}$ determines whether a pattern is both syntactic and ground.
+They all can be easily defined in $K$. 
+
+\todo[inline, author=Xiaohong]{I want to introduce the (beta) axiom of lambda calculus and show how $\mathit{lambdaTerm} \colon \mathit{Pattern} \to \mathit{Bool}$ can be defined in $K$ as an example.}
+
+{\color{blue}
+	\begin{Verbatim}[fontsize=\small]
+	fth M-LAMBDA is
+	extending M .
+	
+	---- the following syntactic sugar is just for readability. 
+	
+	ops app lambda0 : -> Symbol .
+	eq app = #symbol("app", ("Exp", "Exp"), "Exp") .
+	eq lambda0 = #symbol("lambda0", ("Exp", "Exp"), "Exp") .
+	
+	op lambda_._ : String K -> K .
+	eq lambda X:VariableId . E:K
+	= #exists(X:VariableId, "Exp", 
+	#application(lambda0, (#variable(X:VariableId, "Exp"), E:K)))) .
+	op _[_] : K K -> K .
+	eq E1:K[E2:K] 
+	= #application(app, (E1:K, E2:K))) .
+	
+	---- side conditions checker
+	
+	op isLTerm : K -> Bool .
+	
+	eq isLTerm(#variable(X:VariableId, "Exp")) = true .
+	
+	eq isLTerm(E1:K[E2:K])
+	= isLTerm(E1:K) and isLTerm(E2:K) .
+	
+	eq isLTerm(lambda(X:VariableId, E:K))
+	= isLTerm(E:K) .
+	
+	---- the (Beta) axiom
+	
+	cmb #equal((lambda X:VariableId . E1:K)[E2:K],
+	replace(...)) : Theorem
+	if isLTerm(E1:K) and isLTerm(E2:K) .
+	endth
+	\end{Verbatim}
+}
+
+\subsection{Proof System}
+
 
 \subsection{Faithfulness}
 \footnote{It is strongly recommend that readers of this proposal read L. 
@@ -334,47 +367,6 @@ The following definition is inspired by Paulson's paper (Definition 1).
 \begin{theorem}
 	For any matching logic theory $T$, its meta-theory $\#T$ is faithful for $T$.
 \end{theorem}
-
-
-{\color{blue}
-\begin{Verbatim}[fontsize=\small]
-fth M-LAMBDA is
-  extending M .
-  
-  ---- the following syntactic sugar is just for readability. 
-
-  ops app lambda0 : -> Symbol .
-  eq app = #symbol("app", ("Exp", "Exp"), "Exp") .
-  eq lambda0 = #symbol("lambda0", ("Exp", "Exp"), "Exp") .
-  
-  op lambda_._ : String K -> K .
-  eq lambda X:VariableId . E:K
-   = #exists(X:VariableId, "Exp", 
-     #application(lambda0, (#variable(X:VariableId, "Exp"), E:K)))) .
-  op _[_] : K K -> K .
-  eq E1:K[E2:K] 
-   = #application(app, (E1:K, E2:K))) .
-   
-  ---- side conditions checker
-  
-  op isLTerm : K -> Bool .
-
-  eq isLTerm(#variable(X:VariableId, "Exp")) = true .
-  
-  eq isLTerm(E1:K[E2:K])
-   = isLTerm(E1:K) and isLTerm(E2:K) .
-   
-  eq isLTerm(lambda(X:VariableId, E:K))
-   = isLTerm(E:K) .
-  
-  ---- the (Beta) axiom
-
-  cmb #equal((lambda X:VariableId . E1:K)[E2:K],
-              replace(...)) : Theorem
-   if isLTerm(E1:K) and isLTerm(E2:K) .
-endth
-\end{Verbatim}
-}
 
 
 \section{The Kore Language}
