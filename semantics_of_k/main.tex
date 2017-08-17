@@ -336,8 +336,7 @@ It is strongly recommended that readers read L. Paulson's \emph{The Foundation o
 
 A proof system is a theorem generator. 
 In $K$, the proof system of matching logic is captured by the functional symbol $\mathit{deducible} \colon \mathit{Pattern} \to \mathit{Bool}$, which returns $\mathit{ture}$ iff the argument pattern is a theorem. 
-Suppose $\varphi$ is a matching logic pattern. 
-Its abstract syntax tree is denoted as $\#\varphi$, where the sharp $\#\_$ is called the \emph{lifting function} that maps object-patterns to their meta-representations in~$K$.
+Given a matching logic pattern $\varphi$, we use $\#\varphi$ to denote its abstract syntax tree. The sharp $\#\_$ is called the \emph{lifting function} that maps object-patterns to their meta-representations in~$K$.
 It worths to point out that the lifting function \emph{cannot} be defined in $K$ no matter what.
 It is purely a mathematical notation and is not part of the theory $K$.
 
@@ -359,37 +358,23 @@ For any (syntactic) matching logic theory $T$ whose axiom set is $A$, we can add
 $$
 \Bracket{\varphi} \quad \text{for all $\varphi \in A$}
 $$
-as axioms to theory $K$. We sometimes denote the extended theory $\#T$ and call it the \emph{meta-theory for} $T$.
+as axioms to theory $K$. We sometimes denote the extended theory as $\#T$ and call it the \emph{meta-theory for} $T$.
 
 \subsection{Faithfulness}
-It remains a question whether the calculus $K$ {faithfully} captures the reasoning in matching logic. 
-
-The following definition is inspired by Paulson's paper (Definition 1). 
+It remains a question whether the calculus $K$ faithfully captures matching logic reasoning. 
+The following definition of \emph{faithfulness} is inspired by Paulson's paper (see Definition~1 in his paper).
 \begin{definition}
-	Let $T$ be a matching logic theory and $\#T$ is its meta-theory. 
-	Tet	$\varphi_1,\dots,\varphi_n$ and $\psi$ be patterns of $T$.	
-	Then say
-	\begin{itemize}
-		\item $\#T$ is \emph{sound} for $T$, if for every $\#T$-proof of 
-		$\Bracket{\psi}$ from 
-		$\Bracket{\varphi_1}, \dots, 
-		\Bracket{\varphi_n}$, there is a 
-		$T$-proof of $\psi$ from 
-		$\varphi_1,\dots,\varphi_n$.
-		\item $\#T$ is \emph{complete} for $T$, if for every $T$-proof of 
-		$\psi$ from $\varphi_1,\dots,\varphi_n$, there is a $\#T$-proof of 
-		$\Bracket{\psi}$ from 
-		$\Bracket{\varphi_1}, \dots, 
-		\Bracket{\varphi_n}$.
-		\item $\#T$ is \emph{faithful} for $T$ if it is both sound and complete.
-	\end{itemize}
-    As a result of $\#T$ being faithful for $T$, for any pattern $\varphi$, 
-    $\varphi$ is deducible in $T$ iff $\Bracket{\varphi}$ is 
-    deducible in $\#T$.
+	The calculus $K$ is said to be faithful for matching logic, if for any matching logic syntactic theory $T$ and its meta-theory $\#T$,
+	\begin{equation*}
+	  \text{$\varphi$ is a theorem in $T$ iff $\#\varphi$ is a theorem in $\#T$, for any pattern $\varphi$.}
+	\end{equation*}
 \end{definition}
 \begin{theorem}
-	For any matching logic theory $T$, its meta-theory $\#T$ is faithful for $T$.
+	The calculus $K$ is faithful for matching logic.
 \end{theorem}
+\begin{proof}
+	TBC.
+\end{proof}
 
 
 \section{The Kore Language}
