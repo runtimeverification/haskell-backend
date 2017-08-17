@@ -108,6 +108,11 @@
   \usepackage{stmaryrd}
   \newcommand{\Bracket}[1]
     {\llbracket#1\rrbracket}
+    
+  % Package for writing inference rules and formal proofs
+  \usepackage{proof}
+  % Writing labels about inference rules
+  \newcommand{\rl}[1]{\text{\scriptsize{(#1)}}}
 
   % Title and authors
   \title{The Semantics of K}
@@ -226,8 +231,9 @@ and we propose to use matching logic itself as the
 fragments of higher-order logic as their meta-logics.}. 
 The calculus of matching logic, denoted as $K = (S_K, \Sigma_K, A_K)$, is 
 a matching logic theory
-where $S_K$ is a set of sorts, $\Sigma_K$ is a set of symbols, and $A_K$ is a 
-set of axioms. The main goal of this section is to introduce the theory $K$, which mainly consists of built-in theories, abstract syntax trees (ASTs) of patterns, and proof system infrastructure. They are introduced in details in the following separate sections.
+where $S_K, \Sigma_K$, and $A_K$ are sets of sorts, symbols, and axioms respectively.,
+The main goal of this section is to present the theory $K$, which mainly consists of built-in theories, abstract syntax trees (ASTs) of patterns, and matching logic proof system. 
+They are introduced in details in the following separate sections.
 \subsection{Built-ins}
 Two matching logic theories, {\small BOOL} for boolean algebra and {\small STRING} for strings, are included in the theory $K$. 
 Their definitions have been introduced elsewhere (e.g. in~\cite{???}) and will not be discussed in this proposal. 
@@ -251,23 +257,29 @@ The sort $\mathit{Pattern} \in S_K$ is the sort for ASTs of patterns, with the f
 \begin{align*}
 &\mathit{\#variable} \colon \mathit{String} \times \mathit{Sort} \to 
 \mathit{Pattern} \\
-&\mathit{\#and}, \mathit{\#or}, \mathit{\#implies}, \mathit{\#iff}, \\
-&\quad \mathit{\#equals}, \mathit{\#contains} \colon \mathit{Pattern} \times 
-\mathit{Pattern} \to \mathit{Pattern} \\
+&\mathit{\#and}, \mathit{\#or}, \mathit{\#implies}, \mathit{\#iff} \colon \mathit{Pattern} \times \mathit{Pattern} \to \mathit{Pattern} \\
+&\mathit{\#equals}, \mathit{\#contains} \colon \mathit{Pattern} \times 
+\mathit{Pattern} \times \mathit{Sort} \to \mathit{Pattern} \\
 &\mathit{\#not} \colon \mathit{Pattern} \to \mathit{Pattern} \\
 &\mathit{\#exists}, \mathit{\#forall} \colon \mathit{String} \times 
 \mathit{Sort} \times \mathit{Pattern} \to \mathit{Pattern} \\
 &\mathit{\#application} \colon \mathit{Symbol} \times \mathit{PatternList} \to 
 \mathit{Pattern} \\
-&\mathit{\#top}, \mathit{\#bottom} \colon \to \mathit{Pattern} \\
+&\mathit{\#top}, \mathit{\#bottom} \colon \mathit{Sort} \to \mathit{Pattern} \\
 \end{align*}
-\unsure[inline, author=Xiaohong]{I am not sure whether we should have sort polymorphism in ASTs, that is, having \#top and \#bottom be of any sort (polymorphic). I think we should. Following the principle that ``Algorithms + Data Structures = Programs'', we should smartly choose the best data structures. In our case, ASTs is a very important data structure, and tools will spend plenty of time playing with them, so we should smartly choose the best data structure for ASTs. In my view, the best data structure is the one that (inherently) contains/reflects the most information about ASTs. }
+\unsure[inline, author=Xiaohong]{
+I am not sure whether we should have sort polymorphism in ASTs, that is, having \#equals, \#contains, \#top, and \#bottom be of any sort (polymorphic) instead of taking an argument $s \in \mathit{Sort}$. 
+In this proposal, I decided not to allow sort polymorphism, because we are proposing in theory a calculus of matching logic, and I want to make our foundations minimal and crystal clear. 
+Implementation, though, is a another story.
+Following the principle that ``Algorithms + Data Structures = Programs'', we should smartly choose the best data structures. 
+In our case, ASTs is a very important data structure, and tools will spend plenty of time playing with them, so we should smartly choose the best data structure for ASTs. 
+In my view, the best data structure is the one that (inherently) contains/reflects the most information about ASTs. }
 
 There are also AST-related symbols included in $\Sigma_K$.
 For example, the symbol $\mathit{wellFormed} \colon \mathit{Pattern} \to \mathit{Bool}$ determines whether a pattern is well-formed (or more precisely, it determines whether an abstract syntax tree is a well-formed one of a pattern.)
 The symbol $\mathit{getSort} \in \Sigma_{\mathit{Pattern}, \mathit{Sort}}$ takes a pattern and returns its sort. 
 If the pattern is not well-formed, then $\mathit{getSort}$ returns $\bot_\mathit{Sort}$; 
-if the pattern is well-formed, then $\mathit{getSort}$ returns $\mathit{\#sort}(s)$ if the pattern is of the regular sort $s$, or returns $\top_\mathit{Sort}$ if the pattern is polymorphic sorted. 
+otherwise, $\mathit{getSort}$ returns $\mathit{\#sort}(s)$ if the pattern has sort $s$.
 The symbol $\mathit{getFvs} \colon \mathit{Pattern} \to \mathit{PatternList}$ collects all free variables in a pattern. 
 The symbol $\mathit{replaceAll} \colon \mathit{Pattern} \times \mathit{Pattern} \times \mathit{Pattern} \to \mathit{Pattern}$ takes a target pattern $\varphi$, a ``find''-pattern $\psi_1$, and a ``replace''-pattern $\psi_2$, and returns $\varphi$ in which $\psi_2$ is substituted for $\psi_1$, denoted as $\varphi[\psi_2 / \psi_1]$.
 
@@ -277,7 +289,7 @@ The symbol $\mathit{ground}$ determines whether a pattern is variable-free, no m
 The symbol $\mathit{groundSyntactic}$ determines whether a pattern is both syntactic and ground.
 They all can be easily defined in $K$. 
 
-\todo[inline, author=Xiaohong]{I want to introduce the (beta) axiom of lambda calculus and show how $\mathit{lambdaTerm} \colon \mathit{Pattern} \to \mathit{Bool}$ can be defined in $K$ as an example.}
+\todo[inline, author=Xiaohong]{I want to introduce the (beta) axiom of lambda calculus and show how $\mathit{lambdaTerm} \colon \mathit{Pattern} \to \mathit{Bool}$ can be defined in $K$ as a (final) example.}
 
 {\color{blue}
 	\begin{Verbatim}[fontsize=\small]
@@ -320,26 +332,37 @@ They all can be easily defined in $K$.
 }
 
 \subsection{Proof System}
+It is strongly recommended that readers read L. Paulson's \emph{The Foundation of a Generic Theorem Prover}, especially Section 2, 3, and 4.
 
+A proof system is a theorem generator. 
+In $K$, the proof system of matching logic is captured by the functional symbol $\mathit{deducible} \colon \mathit{Pattern} \to \mathit{Bool}$, which returns $\mathit{ture}$ iff the argument pattern is a theorem. 
+Suppose $\varphi$ is a matching logic pattern. 
+Its abstract syntax tree is denoted as $\#\varphi$, where the sharp $\#\_$ is called the \emph{lifting function} that maps object-patterns to their meta-representations in~$K$.
+It worths to point out that the lifting function \emph{cannot} be defined in $K$ no matter what.
+It is purely a mathematical notation and is not part of the theory $K$.
+
+We introduce the double bracket $\Bracket{\_}$, known as the semantics bracket, as follows:
+\begin{equation*}
+\Bracket{\varphi} \equiv \left(\textit{deducible}\left(\#{\varphi}\right) = true\right).
+\end{equation*}
+Intuitively, whenever there is an inference rule (axioms are considered as rules with zero premises)
+$$
+	\infer{\psi}
+	{\varphi_1,\dots,\varphi_n}
+$$
+in matching logic, there is a corresponding axiom in $K$:
+$$
+	\Bracket{\varphi_1} \wedge \dots \wedge \Bracket{\varphi_n} \to \Bracket{\psi}.
+$$
+Inference modulo theories can be considered in the same way. 
+For any (syntactic) matching logic theory $T$ whose axiom set is $A$, we can add
+$$
+\Bracket{\varphi} \quad \text{for all $\varphi \in A$}
+$$
+as axioms to theory $K$. We sometimes denote the extended theory $\#T$ and call it the \emph{meta-theory for} $T$.
 
 \subsection{Faithfulness}
-\footnote{It is strongly recommend that readers of this proposal read L. 
-	Paulson's \emph{The Foundation of a Generic Theorem Prover}, especially 
-	Section 
-	2, 3, and 4.}
-It remains a question whether the calculus of matching logic $M$ \emph{faithfully}
-captures the reasoning in matching logic. 
-Before we define faithfulness, let us introduce some useful notations.
-Suppose $T = (S, \Sigma, A)$ is a matching logic theory.
-The meta-theory of $T$, denoted as $\#T$, is a matching logic theory obtained by adding
-$$
-\textit{deducible}\left(\#{\varphi}\right) = true
-\quad \text{for all $\varphi \in A$}
-$$
-as axioms to the meta-logic theory $M$,
-where the sharp $\#\_$ is the lifting function that maps object-patterns 
-to their meta-representations~(ASTs) in $M$.
-For simplicity, we denote $\textit{deducible}\left(\#{\varphi}\right) = true$ as $\Bracket{\varphi}$, a pattern of the sort $\mathit{Pattern}$.
+It remains a question whether the calculus $K$ {faithfully} captures the reasoning in matching logic. 
 
 The following definition is inspired by Paulson's paper (Definition 1). 
 \begin{definition}
