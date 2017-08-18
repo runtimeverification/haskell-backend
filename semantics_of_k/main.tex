@@ -232,10 +232,13 @@ fragments of higher-order logic as their meta-logics.}.
 The calculus of matching logic, denoted as $K = (S_K, \Sigma_K, A_K)$, is 
 a matching logic theory
 where $S_K, \Sigma_K$, and $A_K$ are sets of sorts, symbols, and axioms respectively.,
-The main goal of this section is to present the theory $K$, which mainly consists of built-in theories, abstract syntax trees (ASTs) of patterns, and matching logic proof system. 
+The main goal of this section is to present the calculus $K$, which mainly 
+consists of built-in theories, abstract syntax trees (ASTs) of patterns, and 
+matching logic proof system. 
 They are introduced in details in the following separate sections.
 \subsection{Built-ins}
-Two matching logic theories, {\small BOOL} for boolean algebra and {\small STRING} for strings, are included in the theory $K$. 
+Two matching logic theories, {\small BOOL} for boolean algebra and {\small 
+STRING} for strings, are included in the calculus $K$. 
 Their definitions have been introduced elsewhere (e.g. in~\cite{???}) and will not be discussed in this proposal. 
 Sorts $\mathit{Bool}$ and $\mathit{String}$ are included in $S_K$, and the following symbols are included in $\Sigma_K$ with their usual axioms added to $A_K$.
 \begin{align*}
@@ -289,7 +292,14 @@ The symbol $\mathit{ground}$ determines whether a pattern is variable-free, no m
 The symbol $\mathit{groundSyntactic}$ determines whether a pattern is both syntactic and ground.
 They all can be easily defined in $K$. 
 
-\todo[inline, author=Xiaohong]{I want to introduce the (beta) axiom of lambda calculus and show how $\mathit{lambdaTerm} \colon \mathit{Pattern} \to \mathit{Bool}$ can be defined in $K$ as a (final) example.}
+\todo[inline, author=Xiaohong]{I want to introduce the (beta) axiom of lambda 
+calculus and show how $\mathit{lambdaTerm} \colon \mathit{Pattern} \to 
+\mathit{Bool}$ can be defined in $K$ as a (final) example.}
+
+\begin{example}[Lambda Calculus]
+\label{eg:lambda-calculus-in-K}
+	content...
+\end{example}
 
 {\color{blue}
 	\begin{Verbatim}[fontsize=\small]
@@ -338,7 +348,7 @@ A proof system is a theorem generator.
 In $K$, the proof system of matching logic is captured by the functional symbol $\mathit{deducible} \colon \mathit{Pattern} \to \mathit{Bool}$, which returns $\mathit{ture}$ iff the argument pattern is a theorem. 
 Given a matching logic pattern $\varphi$, we use $\#\varphi$ to denote its abstract syntax tree. The sharp $\#\_$ is called the \emph{lifting function} that maps object-patterns to their meta-representations in~$K$.
 It worths to point out that the lifting function \emph{cannot} be defined in $K$ no matter what.
-It is purely a mathematical notation and is not part of the theory $K$.
+It is purely a mathematical notation and is not part of the calculus.
 
 We introduce the double bracket $\Bracket{\_}$, known as the semantics bracket, as follows:
 \begin{equation*}
@@ -358,7 +368,8 @@ For any (syntactic) matching logic theory $T$ whose axiom set is $A$, we can add
 $$
 \Bracket{\varphi} \quad \text{for all $\varphi \in A$}
 $$
-as axioms to theory $K$. We sometimes denote the extended theory as $\#T$ and call it the \emph{meta-theory for} $T$.
+as axioms to $K$. We sometimes denote the extended theory as $\#T$ and call it 
+the \emph{meta-theory for} $T$.
 
 \subsection{Faithfulness}
 It remains a question whether the calculus $K$ faithfully captures matching logic reasoning. 
@@ -366,7 +377,8 @@ The following definition of \emph{faithfulness} is inspired by Paulson's paper (
 \begin{definition}
 	The calculus $K$ is said to be faithful for matching logic, if for any matching logic syntactic theory $T$ and its meta-theory $\#T$,
 	\begin{equation*}
-	  \text{$\varphi$ is a theorem in $T$ iff $\#\varphi$ is a theorem in $\#T$, for any pattern $\varphi$.}
+	  \text{$\varphi$ is a theorem in $T$ iff $\Bracket{\varphi}$ is a theorem 
+	  in $\#T$, for any pattern $\varphi$.}
 	\end{equation*}
 \end{definition}
 \begin{theorem}
@@ -376,46 +388,75 @@ The following definition of \emph{faithfulness} is inspired by Paulson's paper (
 	TBC.
 \end{proof}
 
+\change[inline,author=Xiaohong]{The following paragraphs need revision.}
+Having a faithful calculus for matching logic has at least the following two 
+benefits. 
+Firstly, any implementation of the calculus is guaranteed to be able to conduct 
+any reasoning in matching logic. Secondly, it allows us to define a matching 
+logic theory $T$ by defining its meta-theory $\#T$ in the calculus. The second 
+point is of great importance if we want a formal language to define matching 
+logic theories. 
+We notice that there are many theories whose definitions involve notations that 
+do not belong to the logic itself. For example, in the ($\beta$) axiom
+$$
+\lambda x . e [e'] = e[e' / x] \quad \text{where $e$ and $e'$ are 
+$\lambda$-terms},
+$$
+we use the notation for substitution $\_[\_/\_]$, meta-variables $e$ and $e'$, 
+and their range ``$\lambda$-terms''. 
+None of those can be given a formal semantics in the object-logic, but can be 
+defined in the calculus $K$.
 
 \section{The Kore Language}
 
-We have shown a calculus of matching logic $M$ in which we can specify everything about 
-matching logic theories, for example, whether a pattern is well-formed, what 
-sort a patter has, which patterns are deducible, free variables, fresh 
-variables generation, substitution and replacement, alpha-renaming, etc.
-This meta-theory provides a universe of (meta-representations of) 
-patterns and the proof system of matching logic. 
+We have shown $K$, a calculus for matching logic in which we can specify 
+everything about matching logic and matching logic theories, for example, 
+whether a pattern is well-formed, what sort a patter has, which patterns are 
+deducible, free variables, fresh variables generation, substitution and 
+replacement, alpha-renaming, etc.
+This meta-theory provides a universe of (meta-representations of) patterns and 
+the proof system of matching logic. 
 On the other hand, it is usually easier to work in the object-level rather than the 
 meta-level. 
-Even if all reasoning in the object-level theory $T$ can be faithfully lifted to and conducted in the 
-meta-theory $\#T$, it does not mean one should always do so. 
+Even if all reasoning in the object-level theory $T$ can be faithfully lifted 
+to and conducted in its meta-theory $\#T$, it does not mean one should always 
+do so. 
+
+The Kore language is proposed to define matching logic theories using the 
+calculus $K$, while it also provides a nice surface syntax (syntactic sugar) to 
+write object-level patterns. 
+
+We will show the formal grammar of Kore in Section~\ref{sec:syntax-of-kore}, 
+followed by some informal explanation. 
+After that, we will introduce a transformation from Kore definitions to 
+meta-theories as the formal semantics of Kore in 
+Section~\ref{sec:semantics-of-kore}, and end this section with Kore definition 
+examples in Section~\ref{sec:examples-of-kore}.
 
 \subsection{Syntax of Kore}
-We propose the next Kore syntax which allows the use of meta-variables at object-level. This is a syntactic sugar that lets users write compact axioms at object-level.
+\label{sec:syntax-of-kore}
 
 \begin{Verbatim}[fontsize=\small]
 // Namespaces for sorts, variables, metavariables,
 // symbols, and Kore modules.
-SortId         = String
+Sort           = String
 VariableId     = String
 MetaVariableId = String
-SymbolId       = String
+Symbol         = String
 ModuleId       = String
 
-Sort           = SortId
-
-Variable       = VariableId:SortId
-MetaVariable   = MetaVariableId::SortId
+Variable       = VariableId:Sort
+MetaVariable   = MetaVariableId::Sort
 
 Pattern        = Variable | MetaVariable
                | \and(Pattern, Pattern)
                | \not(Pattern)
                | \exists(Variable, Pattern)
-               | SymbolId(List{Pattern})
+               | Symbol(PatternList)
 
 Sentence       = import ModuleId
-               | syntax SortId
-               | syntax SortId ::= SymbolId(List{SortId})
+               | syntax Sort
+               | syntax Sort ::= Symbol(SortList)
                | axiom Pattern
 Sentences      = Sentence | Sentences Sentences
 
@@ -425,6 +466,7 @@ Module         = module ModuleId
 \end{Verbatim}
 
 \subsection{Semantics of Kore}
+\label{sec:semantics-of-kore}
 
 The semantics of Kore is given as a translation from Kore definitions
 to meta-theories.
@@ -463,6 +505,7 @@ meta-theories. In other words, the sentence $\mathtt{axiom}\ \varphi$ when $\var
 \end{algorithm}
 
 \subsection{Examples of Kore}
+\label{sec:examples-of-kore}
 
 \todo[inline]{The following examples may need some change.}
 
