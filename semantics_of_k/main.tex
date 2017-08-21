@@ -240,7 +240,7 @@ They are introduced in details in the following separate sections.
 Two matching logic theories, {\small BOOL} for boolean algebra and {\small 
 STRING} for strings, are included in the calculus $K$. 
 Their definitions have been introduced elsewhere (e.g. in~\cite{???}) and will not be discussed in this proposal. 
-Sorts $\mathit{Bool}$ and $\mathit{String}$ are included in $S_K$, and the following symbols are included in $\Sigma_K$ with their usual axioms added to $A_K$.
+Sorts $\mathit{Bool}$ and $\mathit{String}$ are included in $S_K$, and the following symbols are included in $\Sigma_K$ with their usual axioms~\cite{?} added to $A_K$.
 \begin{align*}
 &\mathit{true}, \mathit{false} \ \colon \to \mathit{Bool} \\
 &\mathit{not\_} \ \colon \mathit{Bool} \to \mathit{Bool} \\
@@ -256,7 +256,8 @@ Sorts $\mathit{Bool}$ and $\mathit{String}$ are included in $S_K$, and the follo
 The sort $\mathit{Sort} \in S_K$ is the sort of matching logic sorts, whose only constructor symbol\footnote{A constructor symbol has its precise definition in matching logic. Please refer to~\cite{?}.} is $\mathit{\#sort}\ \colon \mathit{String} \to \mathit{Sort}$.
 The sort $\mathit{Symbol} \in S_K$ is the sort of matching logic symbols whose
 only constructor symbol is $\mathit{\#symbol} \ \colon \mathit{String} \times \mathit{SortList} \times \mathit{Sort} \to \mathit{Symbol}$. 
-The sort $\mathit{Pattern} \in S_K$ is the sort for ASTs of patterns, with the following functional symbols:
+The sort $\mathit{Pattern} \in S_K$ is the sort for ASTs of patterns, with the following functional constructor symbols:
+\change[inline,author=Xiaohong]{Lucas points out that the \#'s in the next constructors are confusing with the lifting function \#\_ that maps patterns to their ASTs.}
 \begin{align*}
 &\mathit{\#variable} \colon \mathit{String} \times \mathit{Sort} \to 
 \mathit{Pattern} \\
@@ -270,13 +271,6 @@ The sort $\mathit{Pattern} \in S_K$ is the sort for ASTs of patterns, with the f
 \mathit{Pattern} \\
 &\mathit{\#top}, \mathit{\#bottom} \colon \mathit{Sort} \to \mathit{Pattern} \\
 \end{align*}
-\unsure[inline, author=Xiaohong]{
-I am not sure whether we should have sort polymorphism in ASTs, that is, having \#equals, \#contains, \#top, and \#bottom be of any sort (polymorphic) instead of taking an argument $s \in \mathit{Sort}$. 
-In this proposal, I decided not to allow sort polymorphism, because we are proposing in theory a calculus of matching logic, and I want to make our foundations minimal and crystal clear. 
-Implementation, though, is a another story.
-Following the principle that ``Algorithms + Data Structures = Programs'', we should smartly choose the best data structures. 
-In our case, ASTs is a very important data structure, and tools will spend plenty of time playing with them, so we should smartly choose the best data structure for ASTs. 
-In my view, the best data structure is the one that (inherently) contains/reflects the most information about ASTs. }
 
 There are also AST-related symbols included in $\Sigma_K$.
 For example, the symbol $\mathit{wellFormed} \colon \mathit{Pattern} \to \mathit{Bool}$ determines whether a pattern is well-formed (or more precisely, it determines whether an abstract syntax tree is a well-formed one of a pattern.)
@@ -284,7 +278,7 @@ The symbol $\mathit{getSort} \in \Sigma_{\mathit{Pattern}, \mathit{Sort}}$ takes
 If the pattern is not well-formed, then $\mathit{getSort}$ returns $\bot_\mathit{Sort}$; 
 otherwise, $\mathit{getSort}$ returns $\mathit{\#sort}(s)$ if the pattern has sort $s$.
 The symbol $\mathit{getFvs} \colon \mathit{Pattern} \to \mathit{PatternList}$ collects all free variables in a pattern. 
-The symbol $\mathit{replaceAll} \colon \mathit{Pattern} \times \mathit{Pattern} \times \mathit{Pattern} \to \mathit{Pattern}$ takes a target pattern $\varphi$, a ``find''-pattern $\psi_1$, and a ``replace''-pattern $\psi_2$, and returns $\varphi$ in which $\psi_2$ is substituted for $\psi_1$, denoted as $\varphi[\psi_2 / \psi_1]$.
+The symbol $\mathit{substitute} \colon \mathit{Pattern} \times \mathit{Pattern} \times \mathit{Pattern} \to \mathit{Pattern}$ takes a target pattern $\varphi$, a ``find''-pattern $\psi_1$, and a ``replace''-pattern $\psi_2$, and returns $\varphi$ in which $\psi_2$ is substituted for $\psi_1$, denoted as $\varphi[\psi_2 / \psi_1]$.
 
 Side conditions can be defined as functional symbols from $\mathit{Pattern}$ to $\mathit{Bool}$. 
 For example, the symbol $\mathit{syntactic}$ determines whether a pattern contains only variables and symbol applications. 
@@ -301,54 +295,19 @@ calculus and show how $\mathit{lambdaTerm} \colon \mathit{Pattern} \to
 	content...
 \end{example}
 
-{\color{blue}
-	\begin{Verbatim}[fontsize=\small]
-	fth M-LAMBDA is
-	extending M .
-	
-	---- the following syntactic sugar is just for readability. 
-	
-	ops app lambda0 : -> Symbol .
-	eq app = #symbol("app", ("Exp", "Exp"), "Exp") .
-	eq lambda0 = #symbol("lambda0", ("Exp", "Exp"), "Exp") .
-	
-	op lambda_._ : String K -> K .
-	eq lambda X:VariableId . E:K
-	= #exists(X:VariableId, "Exp", 
-	#application(lambda0, (#variable(X:VariableId, "Exp"), E:K)))) .
-	op _[_] : K K -> K .
-	eq E1:K[E2:K] 
-	= #application(app, (E1:K, E2:K))) .
-	
-	---- side conditions checker
-	
-	op isLTerm : K -> Bool .
-	
-	eq isLTerm(#variable(X:VariableId, "Exp")) = true .
-	
-	eq isLTerm(E1:K[E2:K])
-	= isLTerm(E1:K) and isLTerm(E2:K) .
-	
-	eq isLTerm(lambda(X:VariableId, E:K))
-	= isLTerm(E:K) .
-	
-	---- the (Beta) axiom
-	
-	cmb #equal((lambda X:VariableId . E1:K)[E2:K],
-	replace(...)) : Theorem
-	if isLTerm(E1:K) and isLTerm(E2:K) .
-	endth
-	\end{Verbatim}
-}
-
 \subsection{Proof System}
 It is strongly recommended that readers read L. Paulson's \emph{The Foundation of a Generic Theorem Prover}, especially Section 2, 3, and 4.
 
 A proof system is a theorem generator. 
-In $K$, the proof system of matching logic is captured by the functional symbol $\mathit{deducible} \colon \mathit{Pattern} \to \mathit{Bool}$, which returns $\mathit{ture}$ iff the argument pattern is a theorem. 
+In $K$, the proof system of matching logic is captured by the functional symbol $\mathit{deducible} \colon \mathit{Pattern} \to \mathit{Bool}$, which returns $\mathit{true}$ iff the argument pattern is a theorem. 
 Given a matching logic pattern $\varphi$, we use $\#\varphi$ to denote its abstract syntax tree. The sharp $\#\_$ is called the \emph{lifting function} that maps object-patterns to their meta-representations in~$K$.
 It worths to point out that the lifting function \emph{cannot} be defined in $K$ no matter what.
 It is purely a mathematical notation and is not part of the calculus.
+A simple example is to consider $\# 0$ and $\#(x - x)$, where $0 = x - x$ but their ASTs are different.
+This means that the lifting function does not allow equational substitution, which is a strong evidence that it is not part of the logic, because in matching logic we can prove the next theorem:
+$$
+\psi_1 = \psi_2 \to \varphi[\psi_1] = \varphi[\psi_2].
+$$ 
 
 We introduce the double bracket $\Bracket{\_}$, known as the semantics bracket, as follows:
 \begin{equation*}
@@ -373,7 +332,7 @@ the \emph{meta-theory for} $T$.
 
 \subsection{Faithfulness}
 It remains a question whether the calculus $K$ faithfully captures matching logic reasoning. 
-The following definition of \emph{faithfulness} is inspired by Paulson's paper (see Definition~1 in his paper).
+The following definition of \emph{faithfulness} is inspired by~\cite{?}.
 \begin{definition}
 	The calculus $K$ is said to be faithful for matching logic, if for any matching logic syntactic theory $T$ and its meta-theory $\#T$,
 	\begin{equation*}
@@ -427,11 +386,10 @@ calculus $K$, while it also provides a nice surface syntax (syntactic sugar) to
 write object-level patterns. 
 
 We will show the formal grammar of Kore in Section~\ref{sec:syntax-of-kore}, 
-followed by some informal explanation. 
+followed by some examples in Section~\ref{sec:examples-of-kore}.
 After that, we will introduce a transformation from Kore definitions to 
 meta-theories as the formal semantics of Kore in 
-Section~\ref{sec:semantics-of-kore}, and end this section with Kore definition 
-examples in Section~\ref{sec:examples-of-kore}.
+Section~\ref{sec:semantics-of-kore}.
 
 \subsection{Syntax of Kore}
 \label{sec:syntax-of-kore}
@@ -465,6 +423,70 @@ Module         = module ModuleId
                  endmodule
 \end{Verbatim}
 
+\subsection{Examples of Kore}
+\label{sec:examples-of-kore}
+
+\paragraph{The {\small BOOL} module.}\quad
+\begin{Verbatim}
+module BOOL
+syntax Bool
+syntax Bool ::= true | false | notBool(Bool)
+| andBool(Bool, Bool) | orBool(Bool, Bool)
+axiom  \or(true, false)
+axiom  \exists(X:Bool, \equals(X:Bool, true))
+axiom  \exists(X:Bool, \equals(X:Bool, notBool(Y:Bool)))
+axiom  ... ...
+endmodule
+\end{Verbatim}
+
+\paragraph{The {\small NAT} module.}\quad  
+\begin{Verbatim}
+module NAT
+import BOOL
+syntax Nat
+syntax Nat ::= zero | succ(Nat) | plus(Nat, Nat) 
+| mult(Nat, Nat)
+syntax Bool ::= gt(Nat, Nat) | gte(Nat, Nat)
+axiom  \equal(mult(X:Nat, zero), zero)
+axiom  \equal(mult(X::Nat, Y::Nat), mult(Y::Nat, X::Nat))
+axiom  ... ...
+// hook to a model (not finished)
+hook-sort Nat "external-model Naturals"
+hook-symbol zero \value("0", Nat)
+hook-symbol succ \value("succ", Nat)
+... ...
+endmodule
+\end{Verbatim}
+
+\paragraph{The {\small LAMBDA} module.}\quad
+\begin{Verbatim}
+module LAMBDA
+syntax Exp
+syntax Exp ::= app(Exp, Exp) | lambda0(Exp, Exp)
+syntax K.Bool ::= isLTerm(K.Pattern)
+
+axiom \equals(isLTerm(#variable(X:K.String, #sort("Exp"))), K.true)
+axiom \equals(isLTerm(#application(#symbol("app", 
+(#sort("Exp"), #sort("Exp")),
+#sort("Exp")),
+(E:K.Pattern, E':K.Pattern))),
+K.andBool(isLTerm(E:K.Pattern), isLTerm(E':K.Pattern)))
+axiom \equals(isLTerm(#exists(X:K.String, #sort("Exp"),
+#application(#symbol("lambda0",
+(#sort("Exp"), #sort("Exp")),
+#sort("Exp")),
+(#variable(X:K.String, #sort("Exp")),
+E:K.Pattern))),
+isLTerm(E:K.Pattern))
+axiom \implies(\equals(K.true, 
+K.and(isLTerm(E:K.Pattern), isLTerm(E':K.Pattern))),
+\equals(K.true,
+K.deducible(#equals(...1,
+...2)))) 
+endmodule
+\end{Verbatim}
+
+
 \subsection{Semantics of Kore}
 \label{sec:semantics-of-kore}
 
@@ -473,7 +495,6 @@ to meta-theories.
 The main principle is that every object-level constructors are translated to 
 ground terms (ASTs) while meta-variables are translated to variables in the 
 meta-theories. In other words, the sentence $\mathtt{axiom}\ \varphi$ when $\varphi$ is an object-pattern is a shorthand of $\mathtt{axiom}\ \Bracket{\varphi}$. Since we now allow $\varphi$ containing meta-variables, the notation $\Bracket{\varphi}$ now means that $\mathit{mvsc}(\varphi) \to (deducible\left(\#\varphi\right) = true)$, where the lifting function $\#\_$ and the meta-variable sort constraint $\mathit{mvsc}$ are defined in Algorithm~\ref{alg:liftingfunction} and~\ref{alg:mvsc}, respectively. 
-
 
 \begin{algorithm}
 	\KwIn{An object-pattern $\varphi$}
@@ -579,7 +600,6 @@ module LAMBDA
 endmodule
 \end{Verbatim}
 
-\todo[inline]{Many discussions in the next section (Sec.4 Object-level and Meta-level) should be moved to Section 3 as examples. Sec.5 Binders and Sec.6 Contexts should also move to a subsection of Sec.3 as applications and examples. }
 
 \section{Object-level and Meta-level}
 
