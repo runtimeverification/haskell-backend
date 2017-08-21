@@ -433,8 +433,8 @@ syntax Bool
 syntax Bool ::= true | false | notBool(Bool)
 | andBool(Bool, Bool) | orBool(Bool, Bool)
 axiom  \or(true, false)
-axiom  \exists(X:Bool, \equals(X:Bool, true))
-axiom  \exists(X:Bool, \equals(X:Bool, notBool(Y:Bool)))
+axiom  \exists(X:Bool, \equal(X:Bool, true))
+axiom  \exists(X:Bool, \equal(X:Bool, notBool(Y:Bool)))
 axiom  ... ...
 endmodule
 \end{Verbatim}
@@ -445,16 +445,10 @@ module NAT
 import BOOL
 syntax Nat
 syntax Nat ::= zero | succ(Nat) | plus(Nat, Nat) 
-| mult(Nat, Nat)
 syntax Bool ::= gt(Nat, Nat) | gte(Nat, Nat)
 axiom  \equal(mult(X:Nat, zero), zero)
 axiom  \equal(mult(X::Nat, Y::Nat), mult(Y::Nat, X::Nat))
 axiom  ... ...
-// hook to a model (not finished)
-hook-sort Nat "external-model Naturals"
-hook-symbol zero \value("0", Nat)
-hook-symbol succ \value("succ", Nat)
-... ...
 endmodule
 \end{Verbatim}
 
@@ -524,81 +518,6 @@ meta-theories. In other words, the sentence $\mathtt{axiom}\ \varphi$ when $\var
 	\caption{Meta-Variable Sort Constraint Collection $\mathit{mvsc}$}
 	\label{alg:mvsc}
 \end{algorithm}
-
-\subsection{Examples of Kore}
-\label{sec:examples-of-kore}
-
-\todo[inline]{The following examples may need some change.}
-
-\paragraph{The {\small BOOL} module.}\quad
-\begin{Verbatim}
-module BOOL
-  syntax Bool
-  syntax Bool ::= true | false | notBool(Bool)
-                | andBool(Bool, Bool) | orBool(Bool, Bool)
-  axiom  \or(true, false)
-  axiom  \exists(X:Bool, \equal(X:Bool, true))
-  axiom  \exists(X:Bool, \equal(X:Bool, notBool(Y:Bool)))
-  axiom  ... ...
-endmodule
-\end{Verbatim}
-
-\paragraph{The {\small NAT} module.}\quad  
-\begin{Verbatim}
-module NAT
-  import BOOL
-  syntax Nat
-  syntax Nat ::= zero | succ(Nat) | plus(Nat, Nat) 
-  syntax Bool ::= gt(Nat, Nat) | gte(Nat, Nat)
-  axiom  \equal(mult(X:Nat, zero), zero)
-  axiom  \equal(mult(X::Nat, Y::Nat), mult(Y::Nat, X::Nat))
-  axiom  ... ...
-endmodule
-\end{Verbatim}
-
-\paragraph{The {\small LAMBDA} module.}\quad
-\begin{Verbatim}
-module LAMBDA
-  import M      ---- import the meta-logic theory M
-                ---- we can rename it to K ...
-  syntax Exp
-  syntax Exp ::= app(Exp, Exp)
-               | lambda0(Exp, Exp)
-  syntax M.Bool ::= isLTerm(K)     ---- I think the Bool here is the
-                                   ---- one in the meta-logic M, not
-                                   ---- not one in the Kore module 
-                                   ---- BOOL
-  axiom  \equals(app(\exists(X:Exp, lambda0(X:Exp, E::Exp)), E'::Exp),
-                 \replace(E::Exp, E'::Exp, X:Exp))
-  requires \isLTerm(E::Exp) M.and \isLTerm(E'::Exp) ---- requires is a sugar
-  
-  axiom isLTerm(X:Exp) = M.true
-  axiom isLTerm(app(E::Exp, E'::Exp)) = isLTerm(E::Exp) M.and isLTerm(E'::Exp)
-  ...
-      
-endmodule
-\end{Verbatim}
-
-
-
-\subsection{Lambda Calculus}
-
-\begin{Verbatim}
-module LAMBDA
-  syntax Exp
-  syntax Exp  ::= lambda0(Exp, Exp)
-                | app(Exp, Exp)
-  syntax Bool ::= isLTerm(Pattern)
-  axiom isLTerm(X:Exp) = true
-  axiom isLTerm(\exists(X:Exp, lambda0(X:Exp, E:Exp)))
-      = isLTerm(E:Exp)
-  axiom isLTerm(app(E:Exp, E':Exp))
-      = isLTerm(E:Exp) andBool isLTerm(E':Exp)
-  axiom app(\exists(X:Exp, lambda0(X:Exp, E::Exp)), E'::Exp)
-      = E::Exp[E'::Exp / X:Exp]
-  requires isLTerm(E::Exp) andBool isLTerm(E'::Exp)
-endmodule
-\end{Verbatim}
 
 
 \section{Object-level and Meta-level}
