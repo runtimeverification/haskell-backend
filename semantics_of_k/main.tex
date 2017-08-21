@@ -513,10 +513,10 @@ meta-theories. In other words, the sentence $\mathtt{axiom}\ \varphi$ when $\var
 \begin{Verbatim}
 module BOOL
   syntax Bool
-  syntax Bool ::= trueBool | falseBool | notBool(Bool)
+  syntax Bool ::= true | false | notBool(Bool)
                 | andBool(Bool, Bool) | orBool(Bool, Bool)
-  axiom  \or(trueBool, falseBool)
-  axiom  \exists(X:Bool, \equal(X:Bool, trueBool))
+  axiom  \or(true, false)
+  axiom  \exists(X:Bool, \equal(X:Bool, true))
   axiom  \exists(X:Bool, \equal(X:Bool, notBool(Y:Bool)))
   axiom  ... ...
 endmodule
@@ -528,16 +528,10 @@ module NAT
   import BOOL
   syntax Nat
   syntax Nat ::= zero | succ(Nat) | plus(Nat, Nat) 
-               | mult(Nat, Nat)
   syntax Bool ::= gt(Nat, Nat) | gte(Nat, Nat)
   axiom  \equal(mult(X:Nat, zero), zero)
   axiom  \equal(mult(X::Nat, Y::Nat), mult(Y::Nat, X::Nat))
   axiom  ... ...
-  // hook to a model (not finished)
-  hook-sort Nat "external-model Naturals"
-  hook-symbol zero \value("0", Nat)
-  hook-symbol succ \value("succ", Nat)
-  ... ...
 endmodule
 \end{Verbatim}
 
