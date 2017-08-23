@@ -231,7 +231,8 @@ theory.
 	Many people have developed calculi for mathematical reasoning. 
 	A calculus of logics is often called a \emph{logical framework}.
 	I prefer to speak of a \emph{meta-logic} and its \emph{object-logic}. \\
-	By L. Paulson, \emph{The Foundation of a Generic Theorem Prover}
+	By L. Paulson, \textit{The Foundation of a Generic Theorem Prover},
+	Journal of Automated Reasoning, 1989.
 \end{displayquote}
 In this proposal, the \emph{object-logic} refers to matching logic,
 and we propose to use matching logic itself as the 
@@ -243,7 +244,7 @@ where $S_K, \Sigma_K$, and $A_K$ are sets of sorts, symbols, and axioms respecti
 The main goal of this section is to present the calculus $K$, which mainly 
 consists of built-in theories, abstract syntax trees (ASTs) of patterns, and 
 matching logic proof system. 
-They are introduced in details in the following separate sections.
+They are introduced in detail in the following separate sections.
 \subsection{Built-ins}
 Two matching logic theories, {\small BOOL} for boolean algebra and {\small 
 STRING} for strings, are included in the calculus $K$. 
@@ -251,16 +252,30 @@ Their definitions have been introduced elsewhere (e.g. in~\cite{???}) and will n
 Sorts $\mathit{Bool}$ and $\mathit{String}$ are included in $S_K$, and the following symbols are included in $\Sigma_K$ with their usual axioms~\cite{?} added to $A_K$.
 \begin{align*}
 &\mathit{true}, \mathit{false} \ \colon \to \mathit{Bool} \\
-&\mathit{notBool\_} \ \colon \mathit{Bool} \to \mathit{Bool} \\
-&\mathit{\_andBool\_}, \mathit{\_orBool\_} \ \colon \mathit{Bool} \times 
+&\mathit{notBool} \ \colon \mathit{Bool} \to \mathit{Bool} \\
+&\mathit{andBool}, \mathit{orBool} \ \colon \mathit{Bool} \times 
 \mathit{Bool} \to \mathit{Bool}\\
-&\mathit{\_impliesBool\_} \ \colon \mathit{Bool} \times \mathit{Bool} \to 
-\mathit{Bool}
+&\mathit{impliesBool} \ \colon \mathit{Bool} \times \mathit{Bool} \to 
+\mathit{Bool}.
 \end{align*}
 
-\begin{remark}
-	Whenever we introduce a sort, say $\mathit{X}$, to $S_K$, we feel free to use $\mathit{XList}$ as the sort of comma-separated lists over $\mathit{X}$ without explicitly defining it. 
-\end{remark}
+Whenever we introduce a sort, say $\mathit{X}$, to $S_K$, we feel free to 
+use $\mathit{XList}$ as the sort of lists over $\mathit{X}$ 
+with the following symbols implicitly declared:
+\begin{align*}
+&\mathit{nilXList} \ \colon \to \mathit{XList} \\
+&\mathit{appendXList} \ \colon \mathit{XList} \times \mathit{XList} \to 
+  \mathit{XList}\\
+&\mathit{XListAsX} \ \colon \mathit{X} \to \mathit{XList}.
+\end{align*}
+For simplicity, we often write as a shorthand
+$\mathit{nil}$ for $\mathit{nilXList}$
+and
+$\mathit{\varphi_1,\varphi_2}$ for $\mathit{appendXList(\varphi_1, 
+\varphi_2)}$.
+We also omit the injection function $\mathit{XListAsX}$ and adopt an 
+``order-sorted like'' syntax as in~\cite{?}.
+
 
 \subsection{Abstract Syntax Trees}
 The sort $\mathit{Sort} \in S_K$ is the sort of matching logic sorts, whose only constructor symbol\footnote{A constructor symbol has its precise definition in matching logic. Please refer to~\cite{?}.} is $\mathit{sort} \colon \mathit{String} \to \mathit{Sort}$.
