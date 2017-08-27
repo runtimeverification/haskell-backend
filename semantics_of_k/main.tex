@@ -175,10 +175,7 @@ For example, if $\Nat \in S$ and
 $\_+\_, \_*\_ \in \Sigma_{\Nat \times \Nat, \Nat}$
 then we may write $(x + y)*z$ instead of
 $\_*\_(\_+\_(x\cln\Nat,y\cln\Nat),z\cln\Nat)$.
-
-\improvement{I think we also need to talk about: other logical connectives
-as derived, free variables, capture-free substitution, equality.
-Add more as we need them.}
+More notational convenience and conventions will be introduced along the way as use them. 
 
 A matching logic \emph{theory} is a triple $(S, \Sigma, A)$ where
 $(S,\Sigma)$ is a signature and $A$ is a set of patterns called \emph{axioms}.
@@ -288,7 +285,7 @@ following functional constructor symbols:
 \mathit{Pattern} \\
 &\mathit{and}, \mathit{or}, \mathit{implies}, \mathit{iff} \colon \mathit{Pattern} \times \mathit{Pattern} \to \mathit{Pattern} \\
 &\mathit{equals}, \mathit{contains} \colon \mathit{Pattern} \times 
-\mathit{Pattern} \times \mathit{Sort} \to \mathit{Pattern} \\
+\mathit{Pattern} \times \mathit{Sort} \times \mathit{Sort} \to \mathit{Pattern} \\
 &\mathit{not} \colon \mathit{Pattern} \to \mathit{Pattern} \\
 &\mathit{exists}, \mathit{forall} \colon \mathit{String} \times 
 \mathit{Sort} \times \mathit{Pattern} \to \mathit{Pattern} \\
@@ -296,6 +293,10 @@ following functional constructor symbols:
 \mathit{Pattern} \\
 &\mathit{top}, \mathit{bottom} \colon \mathit{Sort} \to \mathit{Pattern}. \\
 \end{align*}
+
+Recall that we often omit sorts when writing matching logic connectives for simplicity.
+For example, we write $\varphi = \psi$ instead of explicitly writing the sort $s$ and $s'$ as in $\varphi =_{s}^{s'} \psi$.
+This abbreviation is seen as a syntactic sugar, and all omitted sorts have to be explicitly written in ASTs, and that is the reason why $\mathit{equals}$ and many other AST constructors take some additional arguments of sort $\mathit{Sort}$.
 
 There are also AST-related symbols included in $\Sigma_K$.
 For example, the symbol $\mathit{wellFormed} \colon \mathit{Pattern} \to \mathit{Bool}$ determines whether a pattern is well-formed (or more precisely, it determines whether an abstract syntax tree is a well-formed one of a pattern.)
@@ -313,39 +314,38 @@ They all can be easily defined in $K$.
 We will provide examples in later sections. 
 
 \subsection{Proof System}
-It is strongly recommended that readers read L. Paulson's \emph{The Foundation of a Generic Theorem Prover}, especially Section 2, 3, and 4.
+\comment{It is strongly recommended that readers read L. Paulson's \emph{The Foundation of a Generic Theorem Prover}, especially Section 2, 3, and 4.}
 
 A proof system is a theorem generator. 
 In $K$, the proof system of matching logic is captured by the functional symbol $\mathit{deducible} \colon \mathit{Pattern} \to \mathit{Bool}$, which returns $\mathit{true}$ iff the argument pattern is a theorem. 
-Given a matching logic pattern $\varphi$, we use $\mathit{lift(\varphi)}$ to 
+Given a matching logic pattern $\varphi$, we use $\mathit{lift[\varphi]}$ to 
 denote its 
-abstract syntax tree, where $\mathit{lift}(\_)$ is called the \emph{lifting 
+abstract syntax tree, where $\mathit{lift}[\_]$ is called the \emph{lifting 
 function}
-\todo[inline, author=Xiaohong]{I am considering using brackets $\mathit{lift}[\_]$ instead of parenthesis to writing the lifting function, because it is in fact not a function. Just think this: what is the domain of the lifting ``function''?}
 that maps object-patterns to their meta-representations in~$K$.
-It worths to point out that the lifting function \emph{cannot} be defined in $K$ no matter what.
+It worths to point out that the lifting function $\mathit{lift}[\_]$  \emph{cannot} be defined in $K$ no matter what.
 It is purely a mathematical notation and is not part of the calculus.
-To see that, simply consider $\mathit{lift}(0)$ and $\mathit{lift}(x - x)$, 
+To see that, simply consider $\mathit{lift}[0]$ and $\mathit{lift}[x - x]$, 
 where $0 = 
 x - x$ but their ASTs are different:
 \begin{align*}
-\mathit{lift}(0) 
+\mathit{lift}[0]
 &= \mathit{application}(\mathit{symbol}(``\text{0}", \cdots),\dots) \\
-&\neq \mathit{lift}(x - x) \\
+&\neq \mathit{lift}[x - x] \\
 &= \mathit{application}(\mathit{symbol}(``\text{\_$-$\_}",\cdots), \dots)
 \end{align*}
 This means that the following equational substitution deduction
 $$
-\infer[\rl{WRONG}]{\mathit{lift}(\varphi_1) = \mathit{lift}(\varphi_2)}
+\infer[\rl{WRONG}]{\mathit{lift}[\varphi_1] = \mathit{lift}[\varphi_2]}
 {\varphi_1 = \varphi_2}
 $$
-does not hold. It is a strong evidence that $\mathit{lift}(\_)$ is not part of 
+does not hold. It is a strong evidence that $\mathit{lift}[\_]$ is not part of 
 the logic.
 
 We introduce the double bracket $\Bracket{\_}$, known as the semantics bracket, as follows:
 \begin{equation*}
 \Bracket{\varphi} \equiv 
-\left(\textit{deducible}\left(\mathit{lift}({\varphi})\right) = true\right).
+\left(\textit{deducible}\left(\mathit{lift}[\varphi]\right) = true\right).
 \end{equation*}
 Intuitively, $\Bracket{\varphi}$ means that ``$\varphi$ is deducible''.
 Whenever there is an inference rule (axioms are considered as rules with zero 
@@ -363,7 +363,7 @@ For any (syntactic) matching logic theory $T$ whose axiom set is $A$, we add
 $$
 \Bracket{\varphi} \quad \text{for all $\varphi \in A$}
 $$
-as axioms to $K$. We sometimes denote the extended theory as $\mathit{lift}(T)$ 
+as axioms to $K$. We sometimes denote the extended theory as $\mathit{lift}[T]$ 
 and call it 
 the \emph{meta-theory for} $T$.
 
@@ -372,10 +372,10 @@ It remains a question whether the calculus $K$ faithfully captures matching logi
 The following definition of \emph{faithfulness} is inspired by~\cite{?}.
 \begin{definition}
 	The calculus $K$ is said to be faithful for matching logic, if for any 
-	matching logic syntactic theory $T$ and its meta-theory $\mathit{lift}(T)$,
+	matching logic syntactic theory $T$ and its meta-theory $\mathit{lift}[T]$,
 	\begin{equation*}
 	  \text{$\varphi$ is a theorem in $T$ iff $\Bracket{\varphi}$ is a theorem 
-	  in $\mathit{lift}(T)$, for any pattern $\varphi$.}
+	  in $\mathit{lift}[T]$, for any pattern $\varphi$.}
 	\end{equation*}
 \end{definition}
 \begin{theorem}
@@ -389,7 +389,7 @@ Having a faithful calculus for matching logic has at least the following two
 benefits. 
 Firstly, any implementation of the calculus is guaranteed to be able to conduct 
 any reasoning in matching logic. Secondly, it allows us to define a matching 
-logic theory $T$ by defining its meta-theory $\mathit{lift}(T)$ in the 
+logic theory $T$ by defining its meta-theory $\mathit{lift}[T]$ in the 
 calculus $K$. 
 The second 
 point is of great importance if we want a formal language to define matching 
@@ -416,7 +416,7 @@ proof system of matching logic.
 On the other hand, it is usually easier to work at object-level rather than 
 meta-level. 
 Even if all reasoning in a matching logic theory $T$ can be faithfully lifted 
-to and conducted in its meta-theory $\mathit{lift}(T)$, it does not mean one 
+to and conducted in its meta-theory $\mathit{lift}[T]$, it does not mean one 
 should always do so. 
 
 The Kore language is proposed to define matching logic theories using the 
@@ -488,14 +488,14 @@ If the pattern $\varphi$ is an object-pattern, it adds $\Bracket{\varphi}$ as an
 Recall that we have defined the semantics bracket as
 \begin{equation*}
 \Bracket{\varphi} \equiv 
-\left(\textit{deducible}\left(\mathit{lift}({\varphi})\right) = true\right),
+\left(\textit{deducible}\left(\mathit{lift}[\varphi]\right) = true\right),
 \end{equation*}
 where $\varphi$ is a pattern of the grammar in Figure~\ref{ml-grammar}.
 However, here in Kore we allow $\varphi$ containing \emph{meta-variables}.
-As a result, we modify the definition of the semantics bracket as $$\Bracket{\varphi} \equiv \mathit{mvsc}(\varphi) \to (deducible\left(\mathit{lift}(\varphi)\right) = true),$$
-where the lifting function $\mathit{lift}(\_)$ and the meta-variable sort constraint $\mathit{mvsc}$ are implemented in Algorithm~\ref{alg:liftingfunction} and~\ref{alg:mvsc}, respectively.
+As a result, we modify the definition of the semantics bracket as $$\Bracket{\varphi} \equiv \mathit{mvsc}[\varphi] \to (deducible\left(\mathit{lift}[\varphi]\right) = true),$$
+where the lifting function $\mathit{lift}[\_]$ and the meta-variable sort constraint $\mathit{mvsc}[\_]$ are defined in Algorithm~\ref{alg:liftingfunction} and~\ref{alg:mvsc}, respectively.
 Intuitively, meta-variables in an object-pattern $\varphi$ are lifted to variables of the sort $\mathit{Pattern}$ with the corresponding sort constraints. 
-For example, the meta-variable $x \cln\cln s$ is lifted to a variable $x \cln \mathit{Pattern}$ in $K$ with the constraint that $\mathit{getSort}(x \cln \mathit{Pattern}) = sort(s)$. The function $\mathit{mvsc}$ collects all such meta-variable sort constraint in an object-pattern is implemented in Algorithm~\ref{alg:mvsc}.
+For example, the meta-variable $x \cln\cln s$ is lifted to a variable $x \cln \mathit{Pattern}$ in $K$ with the constraint that $\mathit{getSort}(x \cln \mathit{Pattern}) = sort(s)$. The function $\mathit{mvsc}[\_]$ collects all such meta-variable sort constraint in an object-pattern is implemented in Algorithm~\ref{alg:mvsc}.
 
 \begin{algorithm}
 	\KwIn{An object-pattern $\varphi$.}
@@ -503,14 +503,14 @@ For example, the meta-variable $x \cln\cln s$ is lifted to a variable $x \cln \m
 	\uIf{$\varphi$ is $x \cln s$}{Return $\mathit{variable(x, sort(s))}$}
 	\uElseIf{$\varphi$ is $x \cln \cln s$}{$x \cln \mathit{Pattern} {\ \wedge\ } (\mathit{sort(s)} = \mathit{getSort}(x \cln \mathit{Pattern})) $}
 	\uElseIf{$\varphi$ is $\varphi_1 \wedge \varphi_2$}
-	{$\mathit{and}(\mathit{lift}(\varphi_1), \mathit{lift}(\varphi_2)$}
+	{$\mathit{and}(\mathit{lift}[\varphi_1], \mathit{lift}[\varphi_2]$}
 	\uElseIf{$\varphi$ is $\neg \varphi_1$}
-	{$\mathit{not}(\mathit{lift}(\varphi_1))$}
+	{$\mathit{not}(\mathit{lift}[\varphi_1])$}
 	\uElseIf{$\varphi$ is $\exists x \cln s . \varphi_1$}
-	{$\mathit{exists}(x, \mathit{sort(s)}, \mathit{lift}(\varphi_1))$}
+	{$\mathit{exists}(x, \mathit{sort(s)}, \mathit{lift}[\varphi_1])$}
 	\uElseIf{$\varphi$ is $\sigma(\varphi_1,\dots,\varphi_n)$ and $\sigma \in \Sigma_{s_1,\dots,s_n,s}$}
-	{$\mathit{application}(\mathit{symbol(\sigma, (\mathit{sort}(s_1), \dots, \mathit{sort}(s_n)), \mathit{sort}(s)), \mathit{lift}(\varphi_1),\dots,\mathit{lift}(\varphi_n)})$}
-	\caption{Lifting Function $\mathit{lift}(\_)$}
+	{$\mathit{application}(\mathit{symbol(\sigma, (\mathit{sort}(s_1), \dots, \mathit{sort}(s_n)), \mathit{sort}(s)), \mathit{lift}[\varphi_1],\dots,\mathit{lift}[\varphi_n]})$}
+	\caption{Lifting Function $\mathit{lift}[\_]$}
 	\label{alg:liftingfunction}
 \end{algorithm}
 
