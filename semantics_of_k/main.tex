@@ -303,8 +303,23 @@ For example, the symbol $\mathit{wellFormed} \colon \mathit{Pattern} \to \mathit
 The symbol $\mathit{getSort} \in \Sigma_{\mathit{Pattern}, \mathit{Sort}}$ takes a pattern and returns its sort. 
 If the pattern is not well-formed, then $\mathit{getSort}$ returns $\bot_\mathit{Sort}$; 
 otherwise, $\mathit{getSort}$ returns $\mathit{sort}(s)$ if the pattern has sort $s$.
-The symbol $\mathit{getFvs} \colon \mathit{Pattern} \to \mathit{PatternList}$ collects all free variables in a pattern. 
+The symbol $\mathit{getFvs} \colon \mathit{Pattern} \to \mathit{PatternList}$ collects all free variables in a pattern.
+The symbol $\mathit{freshName} \colon \mathit{PatternList} \to \mathit{String}$ generates a deterministic variable name that does not occur free in patterns in the argument.
 The symbol $\mathit{substitute} \colon \mathit{Pattern} \times \mathit{Pattern} \times \mathit{Pattern} \to \mathit{Pattern}$ takes a target pattern $\varphi$, a ``find''-pattern $\psi_1$, and a ``replace''-pattern $\psi_2$, and returns $\varphi$ in which $\psi_2$ is substituted for $\psi_1$, denoted as $\varphi[\psi_2 / \psi_1]$.
+All such AST-related symbols can be axiomatized in $K$. We take $\mathit{substitute}$ as an example. Let $p, p_1, p_2, q, r$ be variables of $\mathit{Pattern}$, and $s, s_1, s_2$ be variables of $\mathit{Sort}$. The following axioms define $\mathit{substitution}$:
+\begin{align*}
+&\mathit{substitute}(r, q, r) = q\\
+&\mathit{substitute}(\mathit{and}(p_1, p_2), q, r) \\ 
+&\quad = \mathit{and}(\mathit{substitute}(p_1, q, r), \mathit{substitute}(p_2, q, r))\\
+&\mathit{substitute}(\mathit{or}(p_1, p_2), q, r) \\
+&\quad = \mathit{or}(\mathit{substitute}(p_1, q, r), \mathit{substitute}(p_2, q, r))\\
+&\dots\\
+&\mathit{substitute}(\mathit{exists}(x\cln\mathit{String}, s, p), q, r)\\
+&\quad = \mathit{exists}(\mathit{freshName}(p, q, r), s,\\
+&\qquad \quad \mathit{substitute}((\mathit{substitute}(p, variable(\mathit{freshName}(p, q, r), s), \\
+&\qquad \quad \quad variable(x\cln\mathit{String}, s), q, r))\\
+&\dots
+\end{align*}
 
 Side conditions can be defined as functional symbols from $\mathit{Pattern}$ to $\mathit{Bool}$. 
 For example, the symbol $\mathit{syntactic}$ determines whether a pattern contains only variables and symbol applications. 
