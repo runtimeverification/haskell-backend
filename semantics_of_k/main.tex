@@ -516,15 +516,16 @@ For example, the meta-variable $x \cln\cln s$ is lifted to a variable $x \cln \m
 	\KwIn{An object-pattern $\varphi$.}
 	\KwOut{The meta-representation (ASTs) of $\varphi$ in $K$}
 	\uIf{$\varphi$ is $x \cln s$}{Return $\mathit{variable(x, sort(s))}$}
-	\uElseIf{$\varphi$ is $x \cln \cln s$}{$x \cln \mathit{Pattern} {\ \wedge\ } (\mathit{sort(s)} = \mathit{getSort}(x \cln \mathit{Pattern})) $}
+	\uElseIf{$\varphi$ is $x \cln \cln s$}{Return $x \cln \mathit{Pattern} {\ \wedge\ } (\mathit{sort(s)} = \mathit{getSort}(x \cln \mathit{Pattern})) $}
 	\uElseIf{$\varphi$ is $\varphi_1 \wedge \varphi_2$}
-	{$\mathit{and}(\mathit{lift}[\varphi_1], \mathit{lift}[\varphi_2]$}
+	{Return $\mathit{and}(\mathit{lift}[\varphi_1], \mathit{lift}[\varphi_2]$}
 	\uElseIf{$\varphi$ is $\neg \varphi_1$}
-	{$\mathit{not}(\mathit{lift}[\varphi_1])$}
+	{Return $\mathit{not}(\mathit{lift}[\varphi_1])$}
 	\uElseIf{$\varphi$ is $\exists x \cln s . \varphi_1$}
-	{$\mathit{exists}(x, \mathit{sort(s)}, \mathit{lift}[\varphi_1])$}
+	{Return $\mathit{exists}(x, \mathit{sort(s)}, \mathit{lift}[\varphi_1])$}
 	\uElseIf{$\varphi$ is $\sigma(\varphi_1,\dots,\varphi_n)$ and $\sigma \in \Sigma_{s_1,\dots,s_n,s}$}
-	{$\mathit{application}(\mathit{symbol(\sigma, (\mathit{sort}(s_1), \dots, \mathit{sort}(s_n)), \mathit{sort}(s)), \mathit{lift}[\varphi_1],\dots,\mathit{lift}[\varphi_n]})$}
+	{Return $\mathit{application}(\mathit{symbol}(\sigma, (\mathit{sort}(s_1), \dots, \mathit{sort}(s_n)), \mathit{sort}(s)),$
+	$\mathit{lift}[\varphi_1],\dots,\mathit{lift}[\varphi_n])$}
 	\caption{Lifting Function $\mathit{lift}[\_]$}
 	\label{alg:liftingfunction}
 \end{algorithm}
@@ -584,7 +585,7 @@ module BOOL
       #deducible(#equals(#application(#symbol("andBool", 
                                               (#sort("Bool"), #sort("Bool"))
                                               #sort("Bool")), 
-                                      (B1:Patern, B2:Pattern)),
+                                      (B1:Patern, B2:Pattern)), ---- TODO
                          #application(#symbol("andBool", 
                                               (#sort("Bool"), #sort("Bool"))
                                               #sort("Bool")), 
