@@ -263,12 +263,15 @@ with the following symbols implicitly declared:
 &\mathit{nilXList} \ \colon \to \mathit{XList} \\
 &\mathit{appendXList} \ \colon \mathit{XList} \times \mathit{XList} \to 
   \mathit{XList}\\
-&\mathit{XListAsX} \ \colon \mathit{X} \to \mathit{XList}.
+&\mathit{XListAsX} \ \colon \mathit{X} \to \mathit{XList},
 \end{align*}
-For simplicity, we often write as a shorthand
-$\mathit{nil}$ for $\mathit{nilXList}$
-and
-$\mathit{\varphi_1,\varphi_2}$ for $\mathit{appendXList(\varphi_1, 
+with axioms saying that $\mathit{appendXList}$ is associative and $\mathit{nilXList}$ is its identity.
+As a notation convention, we often adopt the next shorthands:
+% TODO
+ $\mathit{nil}$ as a shorthand
+ of $\mathit{nilXList}$
+and 
+$\mathit{appendXList}(\varphi_1,\dots,\varphi_n)$ as a shorthand of $\mathit{appendXList(\varphi_1, 
 \varphi_2)}$.
 We also omit the injection function $\mathit{XListAsX}$ and adopt an 
 ``order-sorted like'' syntax as in~\cite{?}.
@@ -284,13 +287,13 @@ following functional constructor symbols:
 &\mathit{variable} \colon \mathit{String} \times \mathit{Sort} \to 
 \mathit{Pattern} \\
 &\mathit{and}, \mathit{or}, \mathit{implies}, \mathit{iff} \colon \mathit{Pattern} \times \mathit{Pattern} \to \mathit{Pattern} \\
-&\mathit{equals}, \mathit{contains} \colon \mathit{Pattern} \times 
-\mathit{Pattern} \times \mathit{Sort} \times \mathit{Sort} \to \mathit{Pattern} \\
 &\mathit{not} \colon \mathit{Pattern} \to \mathit{Pattern} \\
-&\mathit{exists}, \mathit{forall} \colon \mathit{String} \times 
-\mathit{Sort} \times \mathit{Pattern} \to \mathit{Pattern} \\
 &\mathit{application} \colon \mathit{Symbol} \times \mathit{PatternList} \to 
 \mathit{Pattern} \\
+&\mathit{exists}, \mathit{forall} \colon \mathit{String} \times 
+\mathit{Sort} \times \mathit{Pattern} \to \mathit{Pattern} \\
+&\mathit{equals}, \mathit{contains} \colon \mathit{Pattern} \times 
+\mathit{Pattern} \times \mathit{Sort} \times \mathit{Sort} \to \mathit{Pattern} \\
 &\mathit{top}, \mathit{bottom} \colon \mathit{Sort} \to \mathit{Pattern}. \\
 \end{align*}
 
@@ -298,15 +301,22 @@ Recall that we often omit sorts when writing matching logic connectives for simp
 For example, we write $\varphi = \psi$ instead of explicitly writing the sort $s$ and $s'$ as in $\varphi =_{s}^{s'} \psi$.
 This abbreviation is seen as a syntactic sugar, and all omitted sorts have to be explicitly written in ASTs, and that is the reason why $\mathit{equals}$ and many other AST constructors take some additional arguments of sort $\mathit{Sort}$.
 
+As a convention, we often use $x, y, z$ as variables of sort $\mathit{String}$, $s, s_1, s_2$ as variables of sort $\mathit{Sort}$, and $p, p_1, p_2, q, r$ as variables of sort $\mathit{Pattern}$. 
+
 There are also AST-related symbols included in $\Sigma_K$.
-For example, the symbol $\mathit{wellFormed} \colon \mathit{Pattern} \to \mathit{Bool}$ determines whether a pattern is well-formed (or more precisely, it determines whether an abstract syntax tree is a well-formed one of a pattern.)
+For example, the symbol $\mathit{wellFormed} \colon \mathit{Pattern} \to \mathit{Bool}$ determines whether a pattern is well-formed (or more precisely, it determines whether an abstract syntax tree is a well-formed one of a pattern.), with axioms:
+\begin{align*}
+\mathit{wellFormed}(\mathit{variable}(x, s))
+\end{align*}
 The symbol $\mathit{getSort} \in \Sigma_{\mathit{Pattern}, \mathit{Sort}}$ takes a pattern and returns its sort. 
 If the pattern is not well-formed, then $\mathit{getSort}$ returns $\bot_\mathit{Sort}$; 
 otherwise, $\mathit{getSort}$ returns $\mathit{sort}(s)$ if the pattern has sort $s$.
 The symbol $\mathit{getFvs} \colon \mathit{Pattern} \to \mathit{PatternList}$ collects all free variables in a pattern.
 The symbol $\mathit{freshName} \colon \mathit{PatternList} \to \mathit{String}$ generates a deterministic variable name that does not occur free in patterns in the argument.
 The symbol $\mathit{substitute} \colon \mathit{Pattern} \times \mathit{Pattern} \times \mathit{Pattern} \to \mathit{Pattern}$ takes a target pattern $\varphi$, a ``find''-pattern $\psi_1$, and a ``replace''-pattern $\psi_2$, and returns $\varphi$ in which $\psi_2$ is substituted for $\psi_1$, denoted as $\varphi[\psi_2 / \psi_1]$.
-All such AST-related symbols can be axiomatized in $K$. We take $\mathit{substitute}$ as an example. Let $p, p_1, p_2, q, r$ be variables of $\mathit{Pattern}$, and $s, s_1, s_2$ be variables of $\mathit{Sort}$. The following axioms define $\mathit{substitution}$:
+All such AST-related symbols can be axiomatized in $K$. 
+We take $\mathit{substitute}$ as an example. 
+The following axioms define $\mathit{substitution}$:
 \begin{align*}
 &\mathit{substitute}(r, q, r) = q\\
 &\mathit{substitute}(\mathit{and}(p_1, p_2), q, r) \\ 
@@ -492,7 +502,7 @@ Sorts declared by sort declarations are called \emph{object-sorts}, in compariso
 Symbols whose argument sorts and return sort are all object-sorts (meta-sorts) are called \emph{object-symbols} (\emph{meta-sorts}).
 
 Patterns are written in prefix forms. 
-A pattern is called an \emph{object-pattern} (or \emph{meta-pattern}) if all sorts and symbols in it are object (or meta) ones.
+A pattern is called an \emph{object-pattern} (\emph{meta-pattern}) if all sorts and symbols in it are object (meta) ones.
 Meta-symbols will be added to the calculus $K$, while object-sorts and object-symbols will not.
 They only serve for the purpose to parse an object pattern. 
 
