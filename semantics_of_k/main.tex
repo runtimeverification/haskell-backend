@@ -246,7 +246,7 @@ They are introduced in detail in the following separate sections.
 Two matching logic theories, {\small BOOL} for boolean algebra and {\small 
 STRING} for strings, are included in the calculus $K$. 
 Their definitions have been introduced elsewhere (e.g. in~\cite{???}) and will not be discussed in this proposal. 
-Sorts $\mathit{Bool}$ and $\mathit{String}$ are included in $S_K$, and the following symbols are included in $\Sigma_K$ with their usual axioms~\cite{?} added to $A_K$.
+Sorts $\mathit{Bool}$ and $\mathit{String}$ are included in $S_K$. The following symbols of {\small BOOL} are included in $\Sigma_K$ with their usual axioms~\cite{?} added to $A_K$.
 \begin{align*}
 &\mathit{true}, \mathit{false} \ \colon \to \mathit{Bool} \\
 &\mathit{notBool} \ \colon \mathit{Bool} \to \mathit{Bool} \\
@@ -255,6 +255,8 @@ Sorts $\mathit{Bool}$ and $\mathit{String}$ are included in $S_K$, and the follo
 &\mathit{impliesBool} \ \colon \mathit{Bool} \times \mathit{Bool} \to 
 \mathit{Bool}.
 \end{align*}
+
+As a notation convention, we use quotation marks to write patterns of the sort $\mathit{String}$. For example, $\mathit{``one"}$ denotes the string ``one''.
 
 Whenever we introduce a sort, say $\mathit{X}$, to $S_K$, we feel free to 
 use $\mathit{XList}$ as the sort of lists over $\mathit{X}$ 
@@ -266,18 +268,20 @@ with the following symbols implicitly declared:
 &\mathit{XListAsX} \ \colon \mathit{X} \to \mathit{XList},
 \end{align*}
 with axioms saying that $\mathit{appendXList}$ is associative and $\mathit{nilXList}$ is its identity.
-As a notation convention, we often adopt the next shorthands:
-% TODO
- $\mathit{nil}$ as a shorthand
- of $\mathit{nilXList}$
-and 
-$\mathit{appendXList}(\varphi_1,\dots,\varphi_n)$ as a shorthand of $\mathit{appendXList(\varphi_1, 
-\varphi_2)}$.
-We also omit the injection function $\mathit{XListAsX}$ and adopt an 
-``order-sorted like'' syntax as in~\cite{?}.
+We adopt the following shorthands:
+\begin{align*}
+&\mathit{nil}  \quad \text{as a shorthand of $\mathit{nilXList}$} \\
+&\mathit{appendXList}()  \quad \text{as a shorthand of $\mathit{nil}$} \\
+&\mathit{appendXList}(\varphi) \quad \text{as a shorthand of $\mathit{XListAsX}(\varphi)$}\\
+&\mathit{appendXList}(\varphi_1,\dots,\varphi_n) \quad \text{as a shorthand of}\\ 
+&\qquad \mathit{appendXList}(\mathit{XListAsX}(\varphi_1),\\
+&\qquad appendXList(\mathit{XListAsX}(\varphi_2), \dots))
+\text{ when $n\ge 2$.}
+\end{align*}
 
 
 \subsection{Abstract Syntax Trees}
+One important component in the calculus $K$ includes sorts and symbols that are related to abstract syntax trees (ASTs) of matching logic patterns and the matching logic proof system. 
 The sort $\mathit{Sort} \in S_K$ is the sort of matching logic sorts, whose only constructor symbol\footnote{A constructor symbol has its precise definition in matching logic. Please refer to~\cite{?}.} is $\mathit{sort} \colon \mathit{String} \to \mathit{Sort}$.
 The sort $\mathit{Symbol} \in S_K$ is the sort of matching logic symbols whose
 only constructor symbol is $\mathit{symbol} \colon \mathit{String} \times \mathit{SortList} \times \mathit{Sort} \to \mathit{Symbol}$. 
@@ -297,11 +301,11 @@ following functional constructor symbols:
 &\mathit{top}, \mathit{bottom} \colon \mathit{Sort} \to \mathit{Pattern}. \\
 \end{align*}
 
-Recall that we often omit sorts when writing matching logic connectives for simplicity.
-For example, we write $\varphi = \psi$ instead of explicitly writing the sort $s$ and $s'$ as in $\varphi =_{s}^{s'} \psi$.
-This abbreviation is seen as a syntactic sugar, and all omitted sorts have to be explicitly written in ASTs, and that is the reason why $\mathit{equals}$ and many other AST constructors take some additional arguments of sort $\mathit{Sort}$.
+Recall that we often omit sorts when writing some matching logic connectives for simplicity.
+For example, we write $\varphi = \psi$ instead of $\varphi =_{s}^{s'} \psi$, where we explicitly mention the sort $s$ and $s'$.
+This abbreviation is seen as a shorthand, and all omitted sorts have to be explicitly written in ASTs, and that is the reason why $\mathit{equals}$, $\mathit{contains}$, $top$, and $bottom$ take additional arguments of sort $\mathit{Sort}$.
 
-As a convention, we often use $x, y, z$ as variables of sort $\mathit{String}$, $s, s_1, s_2$ as variables of sort $\mathit{Sort}$, and $p, p_1, p_2, q, r$ as variables of sort $\mathit{Pattern}$. 
+From now on, we will use $x, y, z$ for variables of sort $\mathit{String}$, $s, s_1, s_2$ for variables of sort $\mathit{Sort}$, and $p, p_1, p_2, q, r$ for variables of sort $\mathit{Pattern}$. 
 
 There are also AST-related symbols included in $\Sigma_K$.
 For example, the symbol $\mathit{wellFormed} \colon \mathit{Pattern} \to \mathit{Bool}$ determines whether a pattern is well-formed (or more precisely, it determines whether an abstract syntax tree is a well-formed one of a pattern.), with axioms:
