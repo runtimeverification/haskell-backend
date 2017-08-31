@@ -141,9 +141,8 @@ from~\cite{rosu-2017-lmcs}.\improvement{Add references.}
 ~
 Assume a matching logic \emph{signature} $(S, \Sigma)$, and
 let $\Var_s$ be a countable set of
-\emph{variables} of sort $s$.
-For simplicity, here we assume that the sets of \emph{sorts} $S$
-and of \emph{symbols} $\Sigma$ are finite.
+\emph{variables} of sort $s$, where the sets of \emph{sorts} $S$
+and of \emph{symbols} $\Sigma$ are enumerable sets.
 We partition $\Sigma$ in sets of symbols
 $\Sigma_{s_1 \ldots s_n, s}$ of \emph{arity} $s_1\ldots s_n,s$, where
 $s_1,\ldots, s_n, s \in S$.
@@ -275,13 +274,15 @@ We adopt the following shorthands:
 &\mathit{appendXList}(\varphi) \quad \text{as a shorthand of $\mathit{XListAsX}(\varphi)$}\\
 &\mathit{appendXList}(\varphi_1,\dots,\varphi_n) \quad \text{as a shorthand of}\\ 
 &\qquad \mathit{appendXList}(\mathit{XListAsX}(\varphi_1),\\
-&\qquad appendXList(\mathit{XListAsX}(\varphi_2), \dots))
+&\qquad \mathit{appendXList}(\mathit{XListAsX}(\varphi_2), \\
+&\qquad \qquad \dots,\\
+&\qquad \mathit{appendXList}(\mathit{XListAsX}(\varphi_n), \mathit{nil})))
 \text{ when $n\ge 2$.}
 \end{align*}
 
 
-\subsection{Abstract Syntax Trees}
-One important component in the calculus $K$ includes sorts and symbols that are related to abstract syntax trees (ASTs) of matching logic patterns and the matching logic proof system. 
+\subsection{Patterns}
+One important component in the calculus $K$ contains sorts and symbols that are related to abstract syntax trees (ASTs) of matching logic patterns. 
 The sort $\mathit{Sort} \in S_K$ is the sort of matching logic sorts, whose only constructor symbol\footnote{A constructor symbol has its precise definition in matching logic. Please refer to~\cite{?}.} is $\mathit{sort} \colon \mathit{String} \to \mathit{Sort}$.
 The sort $\mathit{Symbol} \in S_K$ is the sort of matching logic symbols whose
 only constructor symbol is $\mathit{symbol} \colon \mathit{String} \times \mathit{SortList} \times \mathit{Sort} \to \mathit{Symbol}$. 
@@ -308,7 +309,7 @@ This abbreviation is seen as a shorthand, and all omitted sorts have to be expli
 From now on, we will use $x, y, z$ for variables of sort $\mathit{String}$, $s, s_1, s_2$ for variables of sort $\mathit{Sort}$, and $p, p_1, p_2, q, r$ for variables of sort $\mathit{Pattern}$. 
 
 There are also AST-related symbols included in $\Sigma_K$.
-For example, the symbol $\mathit{wellFormed} \colon \mathit{Pattern} \to \mathit{Bool}$ determines whether a pattern is well-formed (or more precisely, it determines whether an abstract syntax tree is a well-formed one of a pattern.), with axioms:
+For example, the symbol $\mathit{wellFormed} \colon \mathit{Pattern} \to \mathit{Bool}$ determines whether a pattern is well-formed (or more precisely, it determines whether an abstract syntax tree is a well-formed one of a pattern.), with axioms:\todo{Provide axioms for all AST-related symbols.}
 \begin{align*}
 \mathit{wellFormed}(\mathit{variable}(x, s))
 \end{align*}
@@ -342,8 +343,15 @@ The symbol $\mathit{groundSyntactic}$ determines whether a pattern is both synta
 They all can be easily defined in $K$.
 We will provide examples in later sections. 
 
+\subsection{Theories}
+
+The calculus $K$ contains sorts and symbols that are related to abstract syntax trees of matching logic theories. 
+The sort $\mathit{Signature} \in S_K$ is the sort of matching logic signatures whose only constructor symbol is $\mathit{signature} \colon \mathit{SortList} \times \mathit{SymbolList} \to \mathit{Signature}$. 
+The sort $\mathit{Theory}$ is the sort of matching logic theories whose only constructor symbol is $\mathit{theory} \colon \mathit{Signature} \times \mathit{PatternList} \to \mathit{Theory}$, which takes a signature and an axiom set as arguments.
+
+
+
 \subsection{Proof System}
-\comment{It is strongly recommended that readers read L. Paulson's \emph{The Foundation of a Generic Theorem Prover}, especially Section 2, 3, and 4.}
 
 A proof system is a theorem generator. 
 In $K$, the proof system of matching logic is captured by the functional symbol $\mathit{deducible} \colon \mathit{Pattern} \to \mathit{Bool}$, which returns $\mathit{true}$ iff the argument pattern is a theorem. 
