@@ -126,7 +126,20 @@
 
   % Define sorts and symbols in the calculus K.
   \newcommand{\KBool}{\mathit{KBool}}
+  \newcommand{\Ktrue}{\mathit{Ktrue}}
+  \newcommand{\Kfalse}{\mathit{Kfalse}}
+  \newcommand{\KandBool}{\mathit{KandBool}}
+  \newcommand{\KorBool}{\mathit{KorBool}}
+  \newcommand{\KnotBool}{\mathit{KnotBool}}
+  \newcommand{\KimpliesBool}{\mathit{KimpliesBool}}
+  
+  
   \newcommand{\KSort}{\mathit{KSort}}
+  \newcommand{\Ksort}{\mathit{Ksort}}
+  
+  \newcommand{\KSymbol}{\mathit{KSymbol}}
+  \newcommand{\Ksymbol}{\mathit{Ksymbol}}
+  
   \newcommand{\Kvariable}{\mathit{Kvariable}}
   \newcommand{\KString}{\mathit{KString}}
   \newcommand{\KPattern}{\mathit{KPattern}}
@@ -136,7 +149,7 @@
   \newcommand{\Kiff}{\mathit{Kiff}}
   \newcommand{\Knot}{\mathit{Knot}}
   \newcommand{\Kapplication}{\mathit{Kapplication}}
-  \newcommand{\KSymbol}{\mathit{KSymbol}}
+
   \newcommand{\KPatternList}{\mathit{KPatternList}}
   \newcommand{\Kexists}{\mathit{Kexists}}
   \newcommand{\Kforall}{\mathit{Kforall}}
@@ -258,32 +271,80 @@ respectively.
 
 \subsection{Boolean Algebra}
 
-The matching logic theory of Boolean algebra is included in $K$.
-Sort $\KBool$ is included in $S_K$. The following symbols of {\small 
-BOOL} are included in $\Sigma_K$ with their usual axioms~\cite{?} added to 
-$A_K$.
+The matching logic theory of Boolean algebra is included in $K$,
+and the corresponding sort is named $\KBool \in S_K$.
+Constructors of the sort $\KBool$ are two functional symbols
+\begin{equation*}
+\Ktrue \colon \to \KBool \qquad \Kfalse \colon \to \KBool.
+\end{equation*}
+Common Boolean operators are defined as functional symbols with their
+corresponding axioms
 \begin{align*}
-&\mathit{true}, \mathit{false} \ \colon \to \KBool \\
-&\mathit{notBool} \ \colon \KBool \to \KBool \\
-&\mathit{andBool}, \mathit{orBool} \ \colon \KBool \times 
-\KBool \to \KBool\\
-&\mathit{impliesBool} \ \colon \KBool \times \KBool \to 
-\KBool.
+&\KnotBool \colon \KBool \to \KBool
+&\KnotBool(\Ktrue) = \Kfalse
+\\
+&\KandBool \colon \KBool \times \KBool \to \KBool
+&\KnotBool(\Kfalse) = \Ktrue
+\\
+&\KorBool \colon \KBool \times \KBool \to \KBool
+&\KandBool(\Ktrue, b) = b
+\\
+&\KimpliesBool \colon \KBool \times \KBool \to \KBool
+&\KandBool(\Kfalse, b) = \Kfalse
+\end{align*}
+The symbols $\KorBool$ and $\KimpliesBool$ are defined in terms of the symbols
+$\KnotBool$ and $\KandBool$ in the usual way
+\begin{align*}
+&\KorBool(b_1, b_2) = \KnotBool(\KandBool(\KnotBool(b_1), \KnotBool(b_2)))
+\\
+&\KimpliesBool(b_1, b_2) = \KorBool(\KnotBool(b_1), b_2).
 \end{align*}
 
-As a notation convention, we often write abbreviate the predicate pattern 
-$\varphi = \mathit{true}$ as simply $\varphi$ for any pattern $\varphi$ of the 
-sort $\KBool$.  Also we use quotation marks to write patterns of the sort 
-$\mathit{String}$. For example, $\mathit{``one"}$ denotes the string ``one''.
+\begin{notation}
+	If $b$ is a term pattern of sort $\KBool$, then we will write just $b$ instead of $b = \Ktrue$ so that we can use Boolean expressions in any sort context.
+\end{notation}
+
+\begin{notation}
+	To write Boolean expressions compactly, we adopt the following abbreviations if there is no confusion
+	\begin{align*}
+	&\neg b \equiv \KnotBool(b)
+	\\
+	&b_1 \wedge b_2 \equiv \KandBool(b_1, b_2)
+	\\
+	&b_1 \vee b_2 \equiv \KorBool(b_1, b_2)
+	\\
+	&b_1 \to b_2 \equiv \KimpliesBool(b_1, b_2).
+	\end{align*}
+\end{notation}
+
+\subsection{Strings}
+Introduce the matching logic theory for strings here.
 
 
+
+\subsection{Matching Logic Sorts and Symbols}
+
+The sort $\KSort$ is the sort for matching logic sorts.
+The only constructor of the sort $\KSort$ is the functional symbol:
+\begin{equation*}
+\Ksort \colon \KString \to \KSort.
+\end{equation*}
+
+The sort $\KSymbol$ is the sort for matching logic symbols.
+The only constructor of the sort $\KSymbol$ is the functional symbol:
+\begin{equation*}
+\Ksymbol \colon \KString \to \KSymbol.
+\end{equation*}
+
+\subsection{Lists}
+\improvement{This is just a notation convention which allows us to have sorts like $\KPatternList$ and $\mathit{KSortList}$ without defining each of them. We are NOT introducing any parametric modules here.}
 Whenever we introduce a sort, say $\mathit{X}$, to $S_K$, we feel free to 
 use $\mathit{XList}$ as the sort of lists over $\mathit{X}$ 
 with the following symbols implicitly declared:
 \begin{align*}
 &\mathit{nilXList} \ \colon \to \mathit{XList} \\
 &\mathit{appendXList} \ \colon \mathit{XList} \times \mathit{XList} \to 
-  \mathit{XList}\\
+\mathit{XList}\\
 &\mathit{inXList} \ \colon \mathit{X} \times \mathit{XList} \to \KBool \\
 &\mathit{XListAsX} \ \colon \mathit{X} \to \mathit{XList},
 \end{align*}
@@ -291,8 +352,8 @@ with axioms saying that $\mathit{appendXList}$ is associative and $\mathit{nilXL
 We adopt the following shorthands:
 \begin{align*}
 &\mathit{nil}  \quad \text{as a shorthand of $\mathit{nilXList}$} \\
-&\varphi_e \in \varphi_l \quad \text{as a shorthand of $\mathit{inXList}(\varphi_e, \varphi_l) = \mathit{true}$}\\
-&\varphi_e \not\in \varphi_l \quad \text{as a shorthand of $\mathit{inXList}(\varphi_e, \varphi_l) = \mathit{false}$}\\
+&\varphi_e \in \varphi_l \quad \text{as a shorthand of $\mathit{inXList}(\varphi_e, \varphi_l) = \Ktrue$}\\
+&\varphi_e \not\in \varphi_l \quad \text{as a shorthand of $\mathit{inXList}(\varphi_e, \varphi_l) = \Kfalse$}\\
 &\mathit{appendXList}()  \quad \text{as a shorthand of $\mathit{nil}$} \\
 &\mathit{appendXList}(\varphi) \quad \text{as a shorthand of $\mathit{XListAsX}(\varphi)$}\\
 &\mathit{appendXList}(\varphi_1,\dots,\varphi_n) \quad \text{as a shorthand of}\\ 
@@ -303,33 +364,34 @@ We adopt the following shorthands:
 \text{ when $n\ge 2$.}
 \end{align*}
 
+\subsection{Matching Logic Patterns}
 
-\subsection{Patterns}
-One important component in the calculus $K$ contains sorts and symbols that are related to abstract syntax trees (ASTs) of matching logic patterns. 
-The sort $\KSort \in S_K$ is the sort of matching logic sorts, whose only constructor symbol\footnote{A constructor symbol has its precise definition in matching logic. Please refer to~\cite{?}.} is $\mathit{sort} \colon \KString \to \KSort$.
-The sort $\KSymbol \in S_K$ is the sort of matching logic symbols whose
-only constructor symbol is $\mathit{symbol} \colon \KString \times \mathit{SortList} \times \KSort \to \KSymbol$. 
-The sort $\KPattern \in S_K$ is the sort for ASTs of patterns, with the 
-following functional constructor symbols:
+The sort $\KPattern$ is the sort for matching logic patterns.
+Constructors of the sort $\KPattern$ are the following functional symbols:
 \begin{align*}
 &\Kvariable \colon \KString \times \KSort \to 
-\KPattern \\
-&\Kand, \Kor, \Kimplies, \Kiff \colon \KPattern \times \KPattern \to \KPattern \\
-&\Knot \colon \KPattern \to \KPattern \\
-&\Kapplication \colon \KSymbol \times \KPatternList \to 
-\KPattern \\
-&\Kexists, \Kforall \colon \KString \times 
-\KSort \times \KPattern \to \KPattern \\
+\KPattern
+\\
+&\Kand, \Kor, \Kimplies, \Kiff \colon \KPattern \times \KPattern \times \KSort \to \KPattern
+\\
+&\Knot \colon \KPattern \times \KSort \to \KPattern 
+\\
+&\Kapplication \colon \KSymbol \times \KPatternList \to \KPattern 
+\\
+&\Kexists, \Kforall \colon \KString \times \KSort \times \KPattern \times \KSort \to \KPattern 
+\\
 &\Kequals, \Kcontains \colon \KPattern \times 
 \KPattern \times \KSort \times \KSort \to \KPattern \\
 &\Ktop, \Kbottom \colon \KSort \to \KPattern. \\
 \end{align*}
 
-Recall that we often omit sorts when writing some matching logic connectives for simplicity.
-For example, we write $\varphi = \psi$ instead of $\varphi =_{s}^{s'} \psi$, where we explicitly mention the sort $s$ and $s'$.
-This abbreviation is seen as a shorthand, and all omitted sorts have to be explicitly written in ASTs, and that is the reason why $\Kequals$, $\Kcontains$, $top$, and $bottom$ take additional arguments of sort $\KSort$.
+\begin{notation}
+	As a convention, we use $b$ as $\KBool$ variables, $x, y, z$ for $\KString$ variables, $s$ for $\KSort$ variables, $\sigma$ for $\KSymbol$ variables, and $p, q, r$ for $\KPattern$ variables. 
+\end{notation}
 
-From now on, we will use $x, y, z$ for variables of sort $\KString$, $s, s_1, s_2$ for variables of sort $\KSort$, and $p, p_1, p_2, q, r$ for variables of sort $\KPattern$. 
+\subsection{Matching Logic Theories}
+
+\todo{WIP}
 
 There are also AST-related symbols included in $\Sigma_K$.
 For example, the symbol $\mathit{wellFormed} \colon \KPattern \to \KBool$ 
@@ -341,7 +403,7 @@ axioms:\todo{Provide axioms for all AST-related symbols.}
 \end{align*}
 The symbol $\mathit{getSort} \in \Sigma_{\KPattern, \KSort}$ takes a pattern and returns its sort. 
 If the pattern is not well-formed, then $\mathit{getSort}$ returns $\bot_\KSort$; 
-otherwise, $\mathit{getSort}$ returns $\mathit{sort}(s)$ if the pattern has sort $s$.
+otherwise, $\mathit{getSort}$ returns $\Ksort(s)$ if the pattern has sort $s$.
 The symbol $\mathit{getFvs} \colon \KPattern \to \KPatternList$ collects all free variables in a pattern.
 The symbol $\mathit{freshName} \colon \KPatternList \to \KString$ generates a deterministic variable name that does not occur free in patterns in the argument.
 The symbol $\Ksubstitute \colon \KPattern \times \KPattern \times \KPattern \to \KPattern$ takes a target pattern $\varphi$, a ``find''-pattern $\psi_1$, and a ``replace''-pattern $\psi_2$, and returns $\varphi$ in which $\psi_2$ is substituted for $\psi_1$, denoted as $\varphi[\psi_2 / \psi_1]$.
@@ -383,7 +445,7 @@ The sort $\mathit{Theory}$ is the sort of matching logic theories whose only con
 
 A proof system is a theorem generator. 
 In $K$, the proof system of matching logic is captured by the functional symbol 
-$\mathit{deducible} \colon \KPattern \to \KBool$, which returns $\mathit{true}$ 
+$\mathit{deducible} \colon \KPattern \to \KBool$, which returns $\Ktrue$ 
 iff the argument pattern is a theorem. 
 Given a matching logic pattern $\varphi$, we use $\mathit{lift[\varphi]}$ to 
 denote its 
@@ -578,7 +640,7 @@ For example, the meta-variable $x \cln\cln s$ is lifted to a variable $x \cln \K
 	\uElseIf{$\varphi$ is $\exists x \cln s . \varphi_1$}
 	{Return $\Kexists(x, \mathit{sort(s)}, \mathit{lift}[\varphi_1])$}
 	\uElseIf{$\varphi$ is $\sigma(\varphi_1,\dots,\varphi_n)$ and $\sigma \in \Sigma_{s_1,\dots,s_n,s}$}
-	{Return $\Kapplication(\mathit{symbol}(\sigma, (\mathit{sort}(s_1), \dots, \mathit{sort}(s_n)), \mathit{sort}(s)),$
+	{Return $\Kapplication(\mathit{symbol}(\sigma, (\Ksort(s_1), \dots, \Ksort(s_n)), \Ksort(s)),$
 	$\mathit{lift}[\varphi_1],\dots,\mathit{lift}[\varphi_n])$}
 	\caption{Lifting Function $\mathit{lift}[\_]$}
 	\label{alg:liftingfunction}
