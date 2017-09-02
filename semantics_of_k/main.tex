@@ -133,31 +133,47 @@
   \newcommand{\KnotBool}{\mathit{KnotBool}}
   \newcommand{\KimpliesBool}{\mathit{KimpliesBool}}
   
-  
+  \newcommand{\KString}{\mathit{KString}}
+    
   \newcommand{\KSort}{\mathit{KSort}}
+  \newcommand{\KSortList}{\mathit{KSortList}}
   \newcommand{\Ksort}{\mathit{Ksort}}
   
   \newcommand{\KSymbol}{\mathit{KSymbol}}
+  \newcommand{\KSymbolList}{\mathit{KSymbolList}}
   \newcommand{\Ksymbol}{\mathit{Ksymbol}}
   
-  \newcommand{\Kvariable}{\mathit{Kvariable}}
-  \newcommand{\KString}{\mathit{KString}}
   \newcommand{\KPattern}{\mathit{KPattern}}
+  \newcommand{\KPatternList}{\mathit{KPatternList}}
+  \newcommand{\Kvariable}{\mathit{Kvariable}}
   \newcommand{\Kand}{\mathit{Kand}}
   \newcommand{\Kor}{\mathit{Kor}}
   \newcommand{\Kimplies}{\mathit{Kimplies}}
   \newcommand{\Kiff}{\mathit{Kiff}}
   \newcommand{\Knot}{\mathit{Knot}}
   \newcommand{\Kapplication}{\mathit{Kapplication}}
-
-  \newcommand{\KPatternList}{\mathit{KPatternList}}
   \newcommand{\Kexists}{\mathit{Kexists}}
   \newcommand{\Kforall}{\mathit{Kforall}}
   \newcommand{\Kequals}{\mathit{Kequals}}
   \newcommand{\Kcontains}{\mathit{Kcontains}}
   \newcommand{\Ktop}{\mathit{Ktop}}
   \newcommand{\Kbottom}{\mathit{Kbottom}}
+  
+  \newcommand{\KgetFvs}{\mathit{KgetFvs}}
+  \newcommand{\KfreshName}{\mathit{KfreshName}}
+  
+  \newcommand{\KSignature}{\mathit{KSignature}}
+  \newcommand{\Ksignature}{\mathit{Ksignature}}
+  
+  \newcommand{\KwellFormed}{\mathit{KwellFormed}}
+  \newcommand{\KgetSort}{\mathit{KgetSort}}
+  \newcommand{\KisSort}{\mathit{KisSort}}
   \newcommand{\Ksubstitute}{\mathit{Ksubstitute}}
+  
+  \newcommand{\KTheory}{\mathit{KTheory}}
+  \newcommand{\Ktheory}{\mathit{Ktheory}}
+  
+  \newcommand{\Kdeduce}{\mathit{Kdeduce}}
 
   % Title and authors
   \title{The Semantics of K}
@@ -386,30 +402,21 @@ Constructors of the sort $\KPattern$ are the following functional symbols:
 \end{align*}
 
 \begin{notation}
-	As a convention, we use $b$ as $\KBool$ variables, $x, y, z$ for $\KString$ variables, $s$ for $\KSort$ variables, $\sigma$ for $\KSymbol$ variables, and $p, q, r$ for $\KPattern$ variables. 
+	As a convention, we use $b$ for $\KBool$ variables, $x, y, z$ for $\KString$ variables, $s$ for $\KSort$ variables, $\sigma$ for $\KSymbol$ variables, and $p, q, r$ for $\KPattern$ variables. 
 \end{notation}
 
-\subsection{Matching Logic Theories}
+The functional symbol 
+$$\KgetFvs \colon \KPattern \to \KPatternList$$
+collects all free variables in a pattern. \todo{Add corresponding axioms.}
 
-\todo{WIP}
+The functional symbol
+$$\KfreshName \colon \KPatternList \to \KString$$ 
+generates a variable name that does not occur free in the argument patterns. \todo{Add corresponding axioms.}
 
-There are also AST-related symbols included in $\Sigma_K$.
-For example, the symbol $\mathit{wellFormed} \colon \KPattern \to \KBool$ 
-determines whether a pattern is well-formed (or more precisely, it determines 
-whether an abstract syntax tree is a well-formed one of a pattern.), with 
-axioms:\todo{Provide axioms for all AST-related symbols.}
-\begin{align*}
-\mathit{wellFormed}(\Kvariable(x, s))
-\end{align*}
-The symbol $\mathit{getSort} \in \Sigma_{\KPattern, \KSort}$ takes a pattern and returns its sort. 
-If the pattern is not well-formed, then $\mathit{getSort}$ returns $\bot_\KSort$; 
-otherwise, $\mathit{getSort}$ returns $\Ksort(s)$ if the pattern has sort $s$.
-The symbol $\mathit{getFvs} \colon \KPattern \to \KPatternList$ collects all free variables in a pattern.
-The symbol $\mathit{freshName} \colon \KPatternList \to \KString$ generates a deterministic variable name that does not occur free in patterns in the argument.
-The symbol $\Ksubstitute \colon \KPattern \times \KPattern \times \KPattern \to \KPattern$ takes a target pattern $\varphi$, a ``find''-pattern $\psi_1$, and a ``replace''-pattern $\psi_2$, and returns $\varphi$ in which $\psi_2$ is substituted for $\psi_1$, denoted as $\varphi[\psi_2 / \psi_1]$.
-All such AST-related symbols can be axiomatized in $K$. 
-We take $\Ksubstitute$ as an example. 
-The following axioms define $\mathit{substitution}$:
+The symbol
+$$\Ksubstitute \colon \KPattern \times \KPattern \times \KPattern \to \KPattern$$
+takes a target pattern $\varphi$, a ``find''-pattern $\psi_1$, and a ``replace''-pattern $\psi_2$, and returns $\varphi[\psi_2 / \psi_1]$. 
+The following axioms define $\Ksubstitute$:\todo{Add corresponding axioms.}
 \begin{align*}
 &\Ksubstitute(r, q, r) = q\\
 &\Ksubstitute(\Kand(p_1, p_2), q, r) \\ 
@@ -418,58 +425,43 @@ The following axioms define $\mathit{substitution}$:
 &\quad = \Kor(\Ksubstitute(p_1, q, r), \Ksubstitute(p_2, q, r))\\
 &\dots\\
 &\Ksubstitute(\Kexists(x\cln\mathit{String}, s, p), q, r)\\
-&\quad = \Kexists(\mathit{freshName}(p, q, r), s,\\
-&\qquad \quad \Ksubstitute((\Ksubstitute(p, \Kvariable(\mathit{freshName}(p, q, r), s), \\
+&\quad = \Kexists(\KfreshName(p, q, r), s,\\
+&\qquad \quad \Ksubstitute((\Ksubstitute(p, \Kvariable(\KfreshName(p, q, r), s), \\
 &\qquad \quad \quad \Kvariable(x\cln\mathit{String}, s), q, r))\\
 &\dots
 \end{align*}
 
-Side conditions can be defined as functional symbols from $\KPattern$ to 
-$\KBool$. 
-For example, the symbol $\mathit{syntactic}$ determines whether a pattern contains only variables and symbol applications. 
-The symbol $\mathit{ground}$ determines whether a pattern is variable-free, no matter free or bound. 
-The symbol $\mathit{groundSyntactic}$ determines whether a pattern is both syntactic and ground.
-They all can be easily defined in $K$.
-We will provide examples in later sections. 
+\subsection{Matching Logic Signatures}
 
+The sort $\KSignature$ is the sort for matching logic signatures, and it has just one constructor symbol:
+\begin{equation*}
+\Ksignature \colon \KSortList \times \KSymbolList \to \KSignature.
+\end{equation*}
 
-\subsection{Theories}
+The functional symbol $\KwellFormed \colon \KPattern \times \KSignature \to \KBool$ return $\Ktrue$ if the argument pattern is well-formed in the argument signature. The corresponding axioms are:\todo{Add corresponding axioms.}
+\begin{equation*}
+TODO
+\end{equation*}
 
-The calculus $K$ contains sorts and symbols that are related to abstract syntax trees of matching logic theories. 
-The sort $\mathit{Signature} \in S_K$ is the sort of matching logic signatures whose only constructor symbol is $\mathit{signature} \colon \mathit{SortList} \times \mathit{SymbolList} \to \mathit{Signature}$. 
-The sort $\mathit{Theory}$ is the sort of matching logic theories whose only constructor symbol is $\mathit{theory} \colon \mathit{Signature} \times \KPatternList \to \mathit{Theory}$, which takes a signature and an axiom set as arguments.
+\subsection{Matching Logic Theories}
 
+\todo{WIP}
 
+The sort $\KTheory$ is the sort of matching logic theories. The only constructor symbol is 
+$$\Ktheory \colon \KSignature \times \KPatternList \to \KTheory.$$
 
-\subsection{Proof System}
+\subsection{Matching Logic Proof System}
+
+The functional symbol
+$$
+\Kdeduce \colon \KTheory \times \KPattern \to \KBool
+$$
+returns $\Ktrue$ if the argument pattern is deducible in the argument theory.
 
 A proof system is a theorem generator. 
 In $K$, the proof system of matching logic is captured by the functional symbol 
 $\mathit{deducible} \colon \KPattern \to \KBool$, which returns $\Ktrue$ 
 iff the argument pattern is a theorem. 
-Given a matching logic pattern $\varphi$, we use $\mathit{lift[\varphi]}$ to 
-denote its 
-abstract syntax tree, where $\mathit{lift}[\_]$ is called the \emph{lifting 
-function}
-that maps object-patterns to their meta-representations in~$K$.
-It worths to point out that the lifting function $\mathit{lift}[\_]$  \emph{cannot} be defined in $K$ no matter what.
-It is purely a mathematical notation and is not part of the calculus.
-To see that, simply consider $\mathit{lift}[0]$ and $\mathit{lift}[x - x]$, 
-where $0 = 
-x - x$ but their ASTs are different:
-\begin{align*}
-\mathit{lift}[0]
-&= \Kapplication(\mathit{symbol}(``\text{0}", \cdots),\dots) \\
-&\neq \mathit{lift}[x - x] \\
-&= \Kapplication(\mathit{symbol}(``\text{\_$-$\_}",\cdots), \dots)
-\end{align*}
-This means that the following equational substitution deduction
-$$
-\infer[\rl{WRONG}]{\mathit{lift}[\varphi_1] = \mathit{lift}[\varphi_2]}
-{\varphi_1 = \varphi_2}
-$$
-does not hold. It is a strong evidence that $\mathit{lift}[\_]$ is not part of 
-the logic.
 
 We introduce the double bracket $\Bracket{\_}$, known as the semantics bracket, as follows:
 \begin{equation*}
@@ -626,13 +618,13 @@ However, here in Kore we allow $\varphi$ containing \emph{meta-variables}.
 As a result, we modify the definition of the semantics bracket as $$\Bracket{\varphi} \equiv \mathit{mvsc}[\varphi] \to (deducible\left(\mathit{lift}[\varphi]\right) = true),$$
 where the lifting function $\mathit{lift}[\_]$ and the meta-variable sort constraint $\mathit{mvsc}[\_]$ are defined in Algorithm~\ref{alg:liftingfunction} and~\ref{alg:mvsc}, respectively.
 Intuitively, meta-variables in an object-pattern $\varphi$ are lifted to variables of the sort $\KPattern$ with the corresponding sort constraints. 
-For example, the meta-variable $x \cln\cln s$ is lifted to a variable $x \cln \KPattern$ in $K$ with the constraint that $\mathit{getSort}(x \cln \KPattern) = sort(s)$. The function $\mathit{mvsc}[\_]$ collects all such meta-variable sort constraint in an object-pattern is implemented in Algorithm~\ref{alg:mvsc}.
+For example, the meta-variable $x \cln\cln s$ is lifted to a variable $x \cln \KPattern$ in $K$ with the constraint that $\KgetSort(x \cln \KPattern) = sort(s)$. The function $\mathit{mvsc}[\_]$ collects all such meta-variable sort constraint in an object-pattern is implemented in Algorithm~\ref{alg:mvsc}.
 
 \begin{algorithm}
 	\KwIn{An object-pattern $\varphi$.}
 	\KwOut{The meta-representation (ASTs) of $\varphi$ in $K$}
 	\uIf{$\varphi$ is $x \cln s$}{Return $\mathit{variable(x, sort(s))}$}
-	\uElseIf{$\varphi$ is $x \cln \cln s$}{Return $x \cln \KPattern {\ \wedge\ } (\mathit{sort(s)} = \mathit{getSort}(x \cln \KPattern)) $}
+	\uElseIf{$\varphi$ is $x \cln \cln s$}{Return $x \cln \KPattern {\ \wedge\ } (\mathit{sort(s)} = \KgetSort(x \cln \KPattern)) $}
 	\uElseIf{$\varphi$ is $\varphi_1 \wedge \varphi_2$}
 	{Return $\Kand(\mathit{lift}[\varphi_1], \mathit{lift}[\varphi_2]$}
 	\uElseIf{$\varphi$ is $\neg \varphi_1$}
@@ -652,7 +644,7 @@ For example, the meta-variable $x \cln\cln s$ is lifted to a variable $x \cln \K
 	Collect in set $W$ all meta-variables appearing in $\varphi$\;
 	Let $C = \emptyset$\;
 	\ForEach{$x \cln \cln s \in W$}
-	{$C = C \cup (\mathit{sort(s)} = \mathit{getSort}(x \cln \KPattern))$}
+	{$C = C \cup (\mathit{sort(s)} = \KgetSort(x \cln \KPattern))$}
 	Return $\bigwedge C$\;
 	\caption{Meta-Variable Sort Constraint Collection $\mathit{mvsc}$}
 	\label{alg:mvsc}
