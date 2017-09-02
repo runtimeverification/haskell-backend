@@ -1,24 +1,30 @@
 \documentclass[UTF8]{article}
 
-\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+  \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
 
-%\usepackage{xcolor}
-\usepackage[pdftex,dvipsnames]{xcolor}  % Coloured text etc.
-\usepackage{xargs}                      % Use more than one optional parameter in a new commands
+  %\usepackage{xcolor}
+  \usepackage[pdftex,dvipsnames]{xcolor}  % Coloured text etc.
+  \usepackage{xargs}                      % Use more than one optional
+                                          % parameter in a new commands
 
   % Select what to do with todonotes: 
   % \usepackage[disable]{todonotes} % notes not showed
   %  \usepackage[draft]{todonotes} % notes showed
-\usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
-\newcommandx{\unsure}[2][1=]{\todo[linecolor=red,backgroundcolor=red!25,bordercolor=red,#1]{#2}}
-\newcommandx{\change}[2][1=]{\todo[linecolor=blue,backgroundcolor=blue!25,bordercolor=blue,#1]{#2}}
-\newcommandx{\info}[2][1=]{\todo[linecolor=OliveGreen,backgroundcolor=OliveGreen!25,bordercolor=OliveGreen,#1]{#2}}
-\newcommandx{\improvement}[2][1=]{\todo[linecolor=Plum,backgroundcolor=Plum!25,bordercolor=Plum,#1]{#2}}
-\newcommandx{\thiswillnotshow}[2][1=]{\todo[disable,#1]{#2}}
+  \usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
+  \newcommandx{\unsure}[2][1=]
+    {\todo[linecolor=red,backgroundcolor=red!25,bordercolor=red,#1]{#2}}
+  \newcommandx{\change}[2][1=]
+    {\todo[linecolor=blue,backgroundcolor=blue!25,bordercolor=blue,#1]{#2}}
+  \newcommandx{\info}[2][1=]
+    {\todo[linecolor=OliveGreen,backgroundcolor=OliveGreen!25,bordercolor=OliveGreen,#1]{#2}}
+  \newcommandx{\improvement}[2][1=]
+    {\todo[linecolor=Plum,backgroundcolor=Plum!25,bordercolor=Plum,#1]{#2}}
+  \newcommandx{\thiswillnotshow}[2][1=]
+    {\todo[disable,#1]{#2}}
 
   % Select what to do with command \comment:  
   % \newcommand{\comment}[1]
-      {} %comment not showed
+      {}                                    %comment not showed
   \newcommand{\comment}[1]
     {\par {\bfseries \color{blue} #1 \par}} %comment showed
     
@@ -107,7 +113,7 @@
   % Package for display-mode quotations.
   \usepackage{csquotes}
   
-  % Package for double-bracket [[P]] (known as the semantics bracket)
+  % Define double-bracket [[P]] (known as the semantics bracket)
   \usepackage{stmaryrd}
   \newcommand{\Bracket}[1]
     {\llbracket#1\rrbracket}
@@ -118,44 +124,27 @@
   \newcommand{\rl}[1]{\text{\scriptsize{(#1)}}}
 
 
-
-\newcommand{\KSort}{\mathit{KSort}}
-\newcommand{\Kvariable}{\mathit{Kvariable}}
-\newcommand{\KString}{\mathit{KString}}
-\newcommand{\KPattern}{\mathit{KPattern}}
-\newcommand{\Kand}{\mathit{Kand}}
-\newcommand{\Kor}{\mathit{Kor}}
-\newcommand{\Kimplies}{\mathit{Kimplies}}
-\newcommand{\Kiff}{\mathit{Kiff}}
-\newcommand{\Knot}{\mathit{Knot}}
-\newcommand{\Kapplication}{\mathit{Kapplication}}
-\newcommand{\KSymbol}{\mathit{KSymbol}}
-\newcommand{\KPatternList}{\mathit{KPatternList}}
-\newcommand{\Kexists}{\mathit{Kexists}}
-\newcommand{\Kforall}{\mathit{Kforall}}
-\newcommand{\Kequals}{\mathit{Kequals}}
-\newcommand{\Kcontains}{\mathit{Kcontains}}
-\newcommand{\Ktop}{\mathit{Ktop}}
-\newcommand{\Kbottom}{\mathit{Kbottom}}
-\newcommand{\Ksubstitute}{\mathit{Ksubstitute}}
-
-%\Kand
-%\Kor
-%\Kimplies
-%\Kiff
-%\Knot
-%\Kapplication
-%\KSymbol
-%\KPatternList
-%\Kexists
-%\Kforall
-%\Kequals
-%\Kcontains
-%\Ktop
-%\Kbottom
-
-
-
+  % Define sorts and symbols in the calculus K.
+  \newcommand{\KBool}{\mathit{KBool}}
+  \newcommand{\KSort}{\mathit{KSort}}
+  \newcommand{\Kvariable}{\mathit{Kvariable}}
+  \newcommand{\KString}{\mathit{KString}}
+  \newcommand{\KPattern}{\mathit{KPattern}}
+  \newcommand{\Kand}{\mathit{Kand}}
+  \newcommand{\Kor}{\mathit{Kor}}
+  \newcommand{\Kimplies}{\mathit{Kimplies}}
+  \newcommand{\Kiff}{\mathit{Kiff}}
+  \newcommand{\Knot}{\mathit{Knot}}
+  \newcommand{\Kapplication}{\mathit{Kapplication}}
+  \newcommand{\KSymbol}{\mathit{KSymbol}}
+  \newcommand{\KPatternList}{\mathit{KPatternList}}
+  \newcommand{\Kexists}{\mathit{Kexists}}
+  \newcommand{\Kforall}{\mathit{Kforall}}
+  \newcommand{\Kequals}{\mathit{Kequals}}
+  \newcommand{\Kcontains}{\mathit{Kcontains}}
+  \newcommand{\Ktop}{\mathit{Ktop}}
+  \newcommand{\Kbottom}{\mathit{Kbottom}}
+  \newcommand{\Ksubstitute}{\mathit{Ksubstitute}}
 
   % Title and authors
   \title{The Semantics of K}
@@ -261,41 +250,32 @@ One of the major goals of this paper is to propose a formal language
 and an implementation, that allows us to write such pattern schemas.
 
 \section{A Calculus of Matching Logic}
-In this section, we propose a calculus of matching logic as a matching logic 
-theory. 
-\begin{displayquote}
-	Many people have developed calculi for mathematical reasoning. 
-	A calculus of logics is often called a \emph{logical framework}.
-	I prefer to speak of a \emph{meta-logic} and its \emph{object-logic}. \\
-	By L. Paulson, \textit{The Foundation of a Generic Theorem Prover},
-	Journal of Automated Reasoning, 1989.
-\end{displayquote}
-In this proposal, the \emph{object-logic} refers to matching logic,
-and we propose to use matching logic itself as the 
-\emph{meta-logic}\footnote{Coq and Isabelle use 
-fragments of higher-order logic as their meta-logics.}. 
-The calculus of matching logic, denoted as $K = (S_K, \Sigma_K, A_K)$, is 
-a matching logic theory
-where $S_K, \Sigma_K$, and $A_K$ are sets of sorts, symbols, and axioms respectively.,
-The main goal of this section is to present the calculus $K$, which mainly 
-consists of built-in theories, abstract syntax trees (ASTs) of patterns, and 
-matching logic proof system. 
-They are introduced in detail in the following separate sections.
-\subsection{Built-ins}
-Two matching logic theories, {\small BOOL} for boolean algebra and {\small 
-STRING} for strings, are included in the calculus $K$. 
-Their definitions have been introduced elsewhere (e.g. in~\cite{???}) and will not be discussed in this proposal. 
-Sorts $\mathit{Bool}$ and $\KString$ are included in $S_K$. The following symbols of {\small BOOL} are included in $\Sigma_K$ with their usual axioms~\cite{?} added to $A_K$.
+
+In this section, we define a matching logic theory $K = (S_K, \Sigma_K, A_K)$ 
+as \emph{the calculus of matching logic},
+where $S_K, \Sigma_K$, and $A_K$ are sets of sorts, symbols, and axioms, 
+respectively.
+
+\subsection{Boolean Algebra}
+
+The matching logic theory of Boolean algebra is included in $K$.
+Sort $\KBool$ is included in $S_K$. The following symbols of {\small 
+BOOL} are included in $\Sigma_K$ with their usual axioms~\cite{?} added to 
+$A_K$.
 \begin{align*}
-&\mathit{true}, \mathit{false} \ \colon \to \mathit{Bool} \\
-&\mathit{notBool} \ \colon \mathit{Bool} \to \mathit{Bool} \\
-&\mathit{andBool}, \mathit{orBool} \ \colon \mathit{Bool} \times 
-\mathit{Bool} \to \mathit{Bool}\\
-&\mathit{impliesBool} \ \colon \mathit{Bool} \times \mathit{Bool} \to 
-\mathit{Bool}.
+&\mathit{true}, \mathit{false} \ \colon \to \KBool \\
+&\mathit{notBool} \ \colon \KBool \to \KBool \\
+&\mathit{andBool}, \mathit{orBool} \ \colon \KBool \times 
+\KBool \to \KBool\\
+&\mathit{impliesBool} \ \colon \KBool \times \KBool \to 
+\KBool.
 \end{align*}
 
-As a notation convention, we use quotation marks to write patterns of the sort $\KString$. For example, $\mathit{``one"}$ denotes the string ``one''.
+As a notation convention, we often write abbreviate the predicate pattern 
+$\varphi = \mathit{true}$ as simply $\varphi$ for any pattern $\varphi$ of the 
+sort $\KBool$.  Also we use quotation marks to write patterns of the sort 
+$\mathit{String}$. For example, $\mathit{``one"}$ denotes the string ``one''.
+
 
 Whenever we introduce a sort, say $\mathit{X}$, to $S_K$, we feel free to 
 use $\mathit{XList}$ as the sort of lists over $\mathit{X}$ 
@@ -304,12 +284,15 @@ with the following symbols implicitly declared:
 &\mathit{nilXList} \ \colon \to \mathit{XList} \\
 &\mathit{appendXList} \ \colon \mathit{XList} \times \mathit{XList} \to 
   \mathit{XList}\\
+&\mathit{inXList} \ \colon \mathit{X} \times \mathit{XList} \to \KBool \\
 &\mathit{XListAsX} \ \colon \mathit{X} \to \mathit{XList},
 \end{align*}
 with axioms saying that $\mathit{appendXList}$ is associative and $\mathit{nilXList}$ is its identity.
 We adopt the following shorthands:
 \begin{align*}
 &\mathit{nil}  \quad \text{as a shorthand of $\mathit{nilXList}$} \\
+&\varphi_e \in \varphi_l \quad \text{as a shorthand of $\mathit{inXList}(\varphi_e, \varphi_l) = \mathit{true}$}\\
+&\varphi_e \not\in \varphi_l \quad \text{as a shorthand of $\mathit{inXList}(\varphi_e, \varphi_l) = \mathit{false}$}\\
 &\mathit{appendXList}()  \quad \text{as a shorthand of $\mathit{nil}$} \\
 &\mathit{appendXList}(\varphi) \quad \text{as a shorthand of $\mathit{XListAsX}(\varphi)$}\\
 &\mathit{appendXList}(\varphi_1,\dots,\varphi_n) \quad \text{as a shorthand of}\\ 
@@ -349,7 +332,10 @@ This abbreviation is seen as a shorthand, and all omitted sorts have to be expli
 From now on, we will use $x, y, z$ for variables of sort $\KString$, $s, s_1, s_2$ for variables of sort $\KSort$, and $p, p_1, p_2, q, r$ for variables of sort $\KPattern$. 
 
 There are also AST-related symbols included in $\Sigma_K$.
-For example, the symbol $\mathit{wellFormed} \colon \KPattern \to \mathit{Bool}$ determines whether a pattern is well-formed (or more precisely, it determines whether an abstract syntax tree is a well-formed one of a pattern.), with axioms:\todo{Provide axioms for all AST-related symbols.}
+For example, the symbol $\mathit{wellFormed} \colon \KPattern \to \KBool$ 
+determines whether a pattern is well-formed (or more precisely, it determines 
+whether an abstract syntax tree is a well-formed one of a pattern.), with 
+axioms:\todo{Provide axioms for all AST-related symbols.}
 \begin{align*}
 \mathit{wellFormed}(\Kvariable(x, s))
 \end{align*}
@@ -376,12 +362,14 @@ The following axioms define $\mathit{substitution}$:
 &\dots
 \end{align*}
 
-Side conditions can be defined as functional symbols from $\KPattern$ to $\mathit{Bool}$. 
+Side conditions can be defined as functional symbols from $\KPattern$ to 
+$\KBool$. 
 For example, the symbol $\mathit{syntactic}$ determines whether a pattern contains only variables and symbol applications. 
 The symbol $\mathit{ground}$ determines whether a pattern is variable-free, no matter free or bound. 
 The symbol $\mathit{groundSyntactic}$ determines whether a pattern is both syntactic and ground.
 They all can be easily defined in $K$.
 We will provide examples in later sections. 
+
 
 \subsection{Theories}
 
@@ -394,7 +382,9 @@ The sort $\mathit{Theory}$ is the sort of matching logic theories whose only con
 \subsection{Proof System}
 
 A proof system is a theorem generator. 
-In $K$, the proof system of matching logic is captured by the functional symbol $\mathit{deducible} \colon \KPattern \to \mathit{Bool}$, which returns $\mathit{true}$ iff the argument pattern is a theorem. 
+In $K$, the proof system of matching logic is captured by the functional symbol 
+$\mathit{deducible} \colon \KPattern \to \KBool$, which returns $\mathit{true}$ 
+iff the argument pattern is a theorem. 
 Given a matching logic pattern $\varphi$, we use $\mathit{lift[\varphi]}$ to 
 denote its 
 abstract syntax tree, where $\mathit{lift}[\_]$ is called the \emph{lifting 
@@ -540,7 +530,9 @@ Module         = module ModuleId
 \end{Verbatim}
 
 In Kore syntax, the backslash ``\verb|\|'' is reserved for matching logic connectives and the sharp ``\verb|#|'' is reserved for the meta-level, i.e., the $K$ sorts and symbols. 
-Therefore, the sorts $\mathit{Bool}$, $\KString$, $\KSymbol$, $\KSort$, and $\KPattern$ in the calculus $K$ are denoted as \verb|#Bool|, \verb|#String|, \verb|#Symbol|, \verb|#Sort|, and \verb|#Pattern| in Kore respectively.
+Therefore, the sorts $\KBool$, $\KString$, $\KSymbol$, $\KSort$, and 
+$\KPattern$ in the calculus $K$ are denoted as \verb|#Bool|, \verb|#String|, 
+\verb|#Symbol|, \verb|#Sort|, and \verb|#Pattern| in Kore respectively.
 Symbols in $K$ are denoted in the similar way, too. 
 For example, the constructor symbol $\Kvariable \colon \KString \times \KSort \to \KPattern$ is denoted as \verb|#variable| in Kore. 
 
