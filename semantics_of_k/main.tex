@@ -104,6 +104,7 @@
   % Define ceiling and flooring symbols:
   \usepackage{mathtools}
   \DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+  \DeclarePairedDelimiter{\floor}{\lfloor}{\rfloor}
 
   % Package for underlining and strikethrough texts.
   \usepackage[normalem]{ulem}
@@ -138,6 +139,8 @@
   
   \newcommand{\KString}{\mathit{KString}}
   \newcommand{\Kconcat}{\mathit{Kconcat}}
+  
+  \newcommand{\Kdelete}{\mathit{delete}}
     
   \newcommand{\KSort}{\mathit{KSort}}
   \newcommand{\KSortList}{\mathit{KSortList}}
@@ -162,17 +165,24 @@
   \newcommand{\Kcontains}{\mathit{Kcontains}}
   \newcommand{\Ktop}{\mathit{Ktop}}
   \newcommand{\Kbottom}{\mathit{Kbottom}}
+  \newcommand{\Kfloor}{\mathit{Kfloor}}
   \newcommand{\Kceil}{\mathit{Kceil}}
   
   % Mifix symbols
-  \newcommand{\kand}{\wedge_k}
-  \newcommand{\kor}{\vee_k}
-  \newcommand{\kimplies}{\to_k}
-  \newcommand{\knot}{\neg_k}
-  \newcommand{\kexists}{\exists_k}
-  \newcommand{\kforall}{\forall_k}
-  \newcommand{\kequals}{=_k}
-  \newcommand{\kin}{\in_k}
+  \newcommand{\kand}{\wedge}
+  \newcommand{\kor}{\vee}
+  \newcommand{\kimplies}{\to}
+  \newcommand{\kiff}{\leftrightarrow}
+  \newcommand{\knot}{\neg}
+  \newcommand{\kexists}{\exists}
+  \newcommand{\kforall}{\forall}
+  \newcommand{\kequals}{=}
+  \newcommand{\kcontains}{\supseteq}
+  \newcommand{\kin}{\in}
+  \newcommand{\kfloor}{\floor}
+  \newcommand{\kceil}{\ceil}
+  \newcommand{\ktop}{\top}
+  \newcommand{\kbottom}{\bot}
   
   \newcommand{\KgetFvs}{\mathit{KgetFvs}}
   \newcommand{\KfreshName}{\mathit{KfreshName}}
@@ -360,7 +370,7 @@ The sort $\KString$ is the sort for strings. It has the following $26 + 26 + 10 
     $\cdots$ & $\cdots$ & $\cdots$ \\
     $\quot{X} \colon \to \KString$ & $\quot{Y} \colon \to \KString$ & $\quot{Z} \colon \to \KString$ \\
     $\quot{0} \colon \to \KString$ & $\cdots$ & $\quot{9} \colon \to \KString$ \\
-    $\epsilon \colon \to \KString$ & \multicolumn{2}{c}{$\Kconcat \colon \KString \times \KString \to \KString$}.
+    $\epsilon \colon \to \KString$ & \multicolumn{2}{c}{$\Kconcat \colon \KString \times \KString \to \KString$.}
 \end{tabular}
 \end{center}
 
@@ -401,12 +411,14 @@ If we do that, it means three things.
 Firstly, the sort $\mathit{XList}$ is in $S_K$.
 Secondly, the following functional symbols are in $\Sigma_K$:
 \begin{align*}
-&\mathit{nilXList} \ \colon \to \mathit{XList}
-&\mathit{inXList} \ \colon \mathit{X} \times \mathit{XList} \to \KBool
+&\mathit{nilXList} \colon \to \mathit{XList}
+&\mathit{inXList} \colon \mathit{X} \times \mathit{XList} \to \KBool
 \\
-&\mathit{appendXList} \ \colon \mathit{XList} \times \mathit{XList} \to 
+&\mathit{appendXList} \colon \mathit{XList} \times \mathit{XList} \to 
 \mathit{XList}
-&\mathit{XListAsX} \ \colon \mathit{X} \to \mathit{XList},
+&\mathit{XListAsX} \colon \mathit{X} \to \mathit{XList}
+\\
+&\mathit{deleteXList} \colon \mathit{X} \times \mathit{XList} \to \mathit{XList}
 \end{align*}
 where $\mathit{nilXList}$, $\mathit{XListAsX}$, and $\mathit{appendXList}$ are constructors of sort $\mathit{XList}$.
 Thirdly, the following axioms are in $A_K$:
@@ -421,30 +433,36 @@ Thirdly, the following axioms are in $A_K$:
 \\
 &x \neq y \to \mathit{inXList}(x, \mathit{XListAsX}(y)) = \Kfalse
 \\
-&\mathit{inXList}(x, \mathit{appendXList}(l_1, l_2)) = \mathit{inXList}(x, l_1) \vee \mathit{inXList}(x, l_2).
+&\mathit{inXList}(x, \mathit{appendXList}(l_1, l_2)) = \mathit{inXList}(x, l_1) \vee \mathit{inXList}(x, l_2)
+\\
+&\mathit{deleteXList}(x, \mathit{nilXList}) = \mathit{nilXList}
+\quad \mathit{deleteXList}(x, \mathit{XListAsX}(x)) = \mathit{nilXList}
+\\
+&x \neq y \to \mathit{deleteXList}(x, \mathit{XListAsX}(y)) = \mathit{XListAsX}(y)
+\\
+&\mathit{deleteXList}(x, \mathit{appendXList}(l_1, l_2)) = \mathit{appendXList}(\mathit{deleteXList}(x, l_1), \mathit{deleteXList}(x, l_2)).
 \end{align*}
 
 \begin{notation}
-We adopt the following shorthands:
+To write lists expressions compactly, we adopt the following shorthands for $\mathit{inXList}$ and $\mathit{deleteXList}$ when there is no confusion:
 \begin{align*}
-&\mathit{nil}  \quad \text{as a shorthand of $\mathit{nilXList}$} \\
-&\varphi_e \in \varphi_l \quad \text{as a shorthand of $\mathit{inXList}(\varphi_e, \varphi_l) = \Ktrue$}\\
-&\varphi_e \not\in \varphi_l \quad \text{as a shorthand of $\mathit{inXList}(\varphi_e, \varphi_l) = \Kfalse$}\\
-&\mathit{appendXList}()  \quad \text{as a shorthand of $\mathit{nil}$} \\
-&\mathit{appendXList}(\varphi) \quad \text{as a shorthand of $\mathit{XListAsX}(\varphi)$}\\
-&\mathit{appendXList}(\varphi_1,\dots,\varphi_n) \quad \text{as a shorthand of}\\ 
-&\qquad \mathit{appendXList}(\mathit{XListAsX}(\varphi_1),\\
-&\qquad \mathit{appendXList}(\mathit{XListAsX}(\varphi_2), \\
-&\qquad \qquad \dots,\\
-&\qquad \mathit{appendXList}(\mathit{XListAsX}(\varphi_n), \mathit{nil})))
-\text{ when $n\ge 2$.}
+&x \in l \equiv (\mathit{inXList}(x, l) = \Ktrue)
+\qquad x \not\in l \equiv (\mathit{inXList}(x, l) = \Kfalse)
+\\
+&\mathit{deleteXList}(x, l) \equiv \Kdelete(x, l).
+\end{align*}
+
+Constructors $\mathit{XListAsX}$ and $\mathit{appendXList}$ are often omitted, too:
+\begin{align*}
+x_1, \dots, x_n
+\equiv &\mathit{appendXList}(x_1, \mathit{appendXList}(\dots, \mathit{appendXList}(x_{n-1}, x_n)\dots)).
 \end{align*}
 \end{notation}
 
 \subsection{Matching Logic Patterns}
 
 The sort $\KPattern$ is the sort for matching logic patterns.
-Constructors of the sort $\KPattern$ are the following functional symbols:
+It has the following functional symbols:
 \begin{align*}
 &\Kvariable \colon \KString \times \KSort \to 
 \KPattern
@@ -459,38 +477,111 @@ Constructors of the sort $\KPattern$ are the following functional symbols:
 \\
 &\Kequals, \Kcontains \colon \KPattern \times 
 \KPattern \times \KSort \times \KSort \to \KPattern \\
-&\Ktop, \Kbottom \colon \KSort \to \KPattern. \\
+&\Kfloor, \Kceil \colon \KPattern \times \KSort \times \KSort \to \KPattern\\
+&\Ktop, \Kbottom \colon \KSort \to \KPattern,
 \end{align*}
+where $\Kvariable$, $\Kand$, $\Kor$, $\Kapplication$, and $\Kexists$ are constructors of sort~$\KPattern$. 
 
 \begin{notation}
 	As a convention, we use $b$ for $\KBool$ variables, $x, y, z$ for $\KString$ variables, $s$ for $\KSort$ variables, $\sigma$ for $\KSymbol$ variables, and $\varphi, \psi$ for $\KPattern$ variables. 
 \end{notation}
 
+\begin{notation}
+	Patterns of sort $\KPattern$ are easily getting huge quickly.
+	The following abbreviations are adopted to write compact $\KPattern$ patterns.
+	\begin{center}
+	\begin{tabular}{ll}
+    \multicolumn{2}{l}{$x \cln s \equiv \Kvariable(x, s)$, sometimes it abbreviates to just $x$}
+  \\
+	$\varphi \kand_s \psi \equiv \Kand(\varphi, \psi, s)$
+  & $\varphi \kor_s \psi \equiv \Kor(\varphi, \psi, s)$
+  \\
+    $\varphi \kimplies_s \psi \equiv \Kimplies(\varphi, \psi, s)$
+  &	$\varphi \kiff_s \psi \equiv \Kiff(\varphi, \psi, s)$
+  \\
+    $\knot_s \varphi \equiv \Knot(\varphi, x, s)$
+  & $\kexists_{s_1}^{s_2} x . \varphi \equiv \Kexists(x,s,\varphi,s')$
+  \\
+    $\kforall_{s_1}^{s_2} x . \varphi \equiv \Kforall(x,s,\varphi,s')$
+  & $\varphi \kequals_{s_1}^{s_2} \psi \equiv \Kequals(\varphi, \psi, s_1, s_2)$
+  \\
+    $\varphi \kcontains_{s_1}^{s_2} \psi \equiv \Kcontains(\varphi, \psi, s_1, s_2)$
+  & $x \in_{s_1}^{s_2} \varphi \equiv x \subseteq_{s_1}^{s_2} \varphi$.
+  \\
+    \multicolumn{2}{l}{$\sigma(\varphi_1,\dots,\varphi_n) \equiv \Kapplication(\sigma, (\varphi_1,\dots,\varphi_n))$}
+  \\
+    $\kfloor{\varphi}_{s_1}^{s_2} \equiv \Kfloor(\varphi, s_1, s_2)$
+  & $\kceil{\varphi}_{s_1}^{s_2} \equiv \Kceil(\varphi, s_1, s_2)$
+  \\
+    $\ktop_s \equiv \Ktop(s)$
+  & $\kbottom_s \equiv \Kbottom(s)$
+	\end{tabular}
+    \end{center}
+\end{notation}
+
+Apart from the five constructors of sort $\KPattern$, all the other symbols are derived connectives, which are defined by the following axioms:
+\begin{align*}
+&\varphi \kor_s \psi = \knot_s(\knot_s \varphi \kand_s \knot_s \psi)
+&\varphi \kimplies_s \psi = \knot_s \varphi \kor_s \psi
+\\
+&\varphi \kiff_s \psi = (\varphi \kimplies_s \psi) \kand_s (\psi \kimplies_s \varphi)
+&\kforall_{s_1}^{s_2}x.\varphi = \knot_{s_2} \kexists_{s_1}^{s_2} x. (\knot_{s_2} \varphi)
+\\
+&\varphi \kequals_{s_1}^{s_2} \psi = \kfloor{\varphi \kiff_{s_1} \psi}_{s_1}^{s_2}
+&\varphi \kcontains_{s_1}^{s_2} \psi = \kfloor{\psi \kimplies_{s_1} \varphi}_{s_1}^{s_2}
+\\
+&\ktop_s \equiv \kexists_s^s x . x
+&\kbottom_s \equiv \knot_s \ktop_s
+\\
+&\kfloor{\varphi}_{s_1}^{s_2} \equiv \knot_{s_2} \kceil{\knot_{s_1} \varphi}_{s_1}^{s_2}
+&\kceil{\varphi}_{s_1}^{s_2} \equiv \Kapplication(ceil, \varphi)??
+\end{align*}
+
 The functional symbol 
 $$\KgetFvs \colon \KPattern \to \KPatternList$$
-collects all free variables in a pattern. \todo{Add corresponding axioms.}
+collects all free variables in a pattern. 
+It has the following axioms:
+\begin{align*}
+&\KgetFvs(\Kvariable(x,s)) = \Kvariable(x,s) \quad \KgetFvs(\knot_s \varphi) = \KgetFvs(\varphi)
+\\
+&\KgetFvs(\varphi \kand_s \psi) = \KgetFvs(\varphi), \KgetFvs(\psi)
+\\
+&\KgetFvs(\sigma(\varphi_1, \dots, \varphi_n)) = \KgetFvs(\varphi_1), \dots, \KgetFvs(\varphi_n)
+\\
+&\KgetFvs(\kexists_{s_1}^{s_2} x . \varphi) = \mathit{delete}(\Kvariable(x, s_1), \KgetFvs(\varphi))
+\end{align*}
 
 The functional symbol
 $$\KfreshName \colon \KPatternList \to \KString$$ 
-generates a variable name that does not occur free in the argument patterns. \todo{Add corresponding axioms.}
-
-The symbol
-$$\Ksubstitute \colon \KPattern \times \KPattern \times \KPattern \to \KPattern$$
-takes a target pattern $\varphi$, a ``find''-pattern $\psi_1$, and a ``replace''-pattern $\psi_2$, and returns $\varphi[\psi_2 / \psi_1]$. 
-The following axioms define $\Ksubstitute$:\todo{Add corresponding axioms.}
+generates a variable name that does not occur free in the argument patterns.
+It has the following axiom:
 \begin{align*}
-&\Ksubstitute(r, q, r) = q\\
-&\Ksubstitute(\Kand(p_1, p_2), q, r) \\ 
-&\quad = \Kand(\Ksubstitute(p_1, q, r), \Ksubstitute(p_2, q, r))\\
-&\Ksubstitute(\Kor(p_1, p_2), q, r) \\
-&\quad = \Kor(\Ksubstitute(p_1, q, r), \Ksubstitute(p_2, q, r))\\
-&\dots\\
-&\Ksubstitute(\Kexists(x\cln\mathit{String}, s, p), q, r)\\
-&\quad = \Kexists(\KfreshName(p, q, r), s,\\
-&\qquad \quad \Ksubstitute((\Ksubstitute(p, \Kvariable(\KfreshName(p, q, r), s), \\
-&\qquad \quad \quad \Kvariable(x\cln\mathit{String}, s), q, r))\\
-&\dots
+\Kvariable(\KfreshName(\varphi_1,\dots,\varphi_n), s) \not\in \KgetFvs(\varphi_1),\dots,\KgetFvs(\varphi_n).
 \end{align*}
+
+The functional symbol
+$$\Ksubstitute \colon \KPattern \times \KPattern \times \KPattern \to \KPattern$$
+takes a target pattern $\varphi$, a ``find''-pattern $x$, and a ``replace''-pattern $\psi$, and returns $\varphi[\psi / x]$.
+
+\begin{notation}
+	We abbreviate $\Ksubstitute(\varphi, \psi, x)$ as $\varphi[\psi / x]$.
+\end{notation}
+
+The function $\Ksubstitute$ has the following axioms:
+\begin{center}
+\begin{tabular}{lr}
+  $x[\psi/x] = \psi$
+& $ x \neq y \to y[\psi/x] = y$
+\\
+  $(\varphi_1 \kand_s \varphi_2) [\psi/x] = \varphi_1[\psi/x] \kand_s \varphi_2[\psi/x]$
+& $(\knot_s \varphi)[\psi/x] = \knot_s \varphi[\psi/x]$
+\\
+  $\sigma(\varphi_1, \dots, \varphi_n)[\psi/x] = \sigma(\varphi_1[\psi/x], \dots, \varphi_n[\psi/x])$
+& $(\kexists_{s_1}^{s_2}x . \varphi)[\psi/x] = \kexists_{s_1}^{s_2}x . \varphi$
+\\
+  \multicolumn{2}{l}{$(\kexists_{s_1}^{s_2}x . \varphi)[\psi/y] = \exists z . z = \KfreshName(\varphi, \psi, x) \wedge \kexists_{s_1}^{s_2} z . (\varphi[z/x][\psi/y]).$}
+\end{tabular}
+\end{center}
 
 \subsection{Matching Logic Signatures}
 
@@ -499,24 +590,59 @@ The sort $\KSignature$ is the sort for matching logic signatures, and it has jus
 \Ksignature \colon \KSortList \times \KSymbolList \to \KSignature.
 \end{equation*}
 
-The functional symbol $\KwellFormed \colon \KPattern \times \KSignature \to \KBool$ return $\Ktrue$ if the argument pattern is well-formed in the argument signature. The corresponding axioms are:\todo{Add corresponding axioms.}
-\begin{equation*}
-TODO
-\end{equation*}
-
 \begin{notation}
 	As a convention, we use $\Sigma, \Psi$ for $\KSignature$ variables. 
+	We use~$S$ for~$\KSortList$ variables and $\Sigma$ for $\KSymbolList$ variables if they appear in~$\Ksignature$. 
 \end{notation}
 
-\subsection{Matching Logic Theories}
+\begin{notation}
+	We abbreviate $\Ksignature(S, \Sigma)$ as $(S, \Sigma)$.
+\end{notation}
 
-\todo{WIP}
+The functional symbol
+$$\KgetSort \colon \KPattern \times \KSignature \rightharpoonup \KSort$$
+returns the sort of the argument pattern in the argument signature if the argument pattern is well-formed.
+Otherwise, it returns $\bot_\KSort$.
+The following axioms define $\KgetSort$:
+\begin{align*}
+&\KgetSort(x \cln s, (S, \Sigma)) = (s \in S) \wedge s
+\\
+&\KgetSort(\varphi \kand_s \psi, \Sigma) = (\KgetSort(\varphi, \Sigma) = s) \wedge (\KgetSort(\psi, \Sigma) = s) \wedge s
+\\
+&\KgetSort(\knot_s \varphi, \Sigma) = (\KgetSort(\varphi, \Sigma) = s) \wedge s
+\\
+&\KgetSort(\sigma(\varphi_1,\dots,\varphi_n), (S, \Sigma)) = (\dots) \wedge s
+\\
+&\KgetSort(\kexists_{s_1}^{s_2} x . \varphi, \Sigma) = (s_1 \in S) \wedge (s_2 \in S) \wedge (\KgetSort(\varphi, \Sigma) = s_2) \wedge s_2
+\end{align*}
+
+The functional symbol 
+$$\KwellFormed \colon \KPattern \times \KSignature \to \KBool$$ returns $\Ktrue$ if the argument pattern is well-formed in the argument signature.
+It has the following axioms:
+\begin{align*}
+&\KwellFormed(x \cln s, (S, \Sigma)) = s \in S
+\\
+&\KwellFormed(\varphi \kand_s \psi, \Sigma) = \KgetSort(\varphi, \Sigma) = s \wedge \KgetSort(\psi, \Sigma) = s
+\\
+&\KwellFormed(\knot_s \varphi, \Sigma) = \KgetSort(\varphi, \Sigma) = s
+\\
+&\KwellFormed(\sigma(\varphi_1, \dots, \varphi_n), \Sigma) = \dots
+\\
+&\KwellFormed(\kexists_{s_1}^{s_2} x . \varphi, (S, \Sigma)) = s_1 \in S \wedge \KgetSort(\varphi, (S, \Sigma)) = s_2
+\end{align*}
+
+
+
+\subsection{Matching Logic Theories}
 
 The sort $\KTheory$ is the sort of matching logic theories. The only constructor symbol is 
 $$\Ktheory \colon \KSignature \times \KPatternList \to \KTheory.$$
 
 \begin{notation}
-	As a convention, we use $F, A$ for $\KPatternList$ variables if they appear in $\Ktheory$. We often use $T$ for $\Ktheory$ variables.
+	As a convention, we use $A, F$ for $\KPatternList$ variables if they appear in $\Ktheory$. We use $T$ for $\Ktheory$ variables.
+\end{notation}
+\begin{notation}
+	We abbreviate $\Ktheory(\Sigma, A)$ as $(\Sigma, A)$, and abbreviate $\Ktheory(\Ksignature(S, \Sigma), A)$ as $(S, \Sigma, A)$. 
 \end{notation}
 
 \subsection{Matching Logic Proof System}
