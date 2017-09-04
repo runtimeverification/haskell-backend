@@ -60,6 +60,9 @@
   % Package for URLs:
   \usepackage{hyperref}  
   
+  % Package for tables:
+  \usepackage[english]{babel}
+  
   % Define serif fonts for ML theories used in math mode:
   \newcommand{\PA}{\mathsf{PA}}
   \newcommand{\SEQ}{\mathsf{SEQ}}
@@ -134,6 +137,7 @@
   \newcommand{\KimpliesBool}{\mathit{KimpliesBool}}
   
   \newcommand{\KString}{\mathit{KString}}
+  \newcommand{\Kconcat}{\mathit{Kconcat}}
     
   \newcommand{\KSort}{\mathit{KSort}}
   \newcommand{\KSortList}{\mathit{KSortList}}
@@ -158,6 +162,17 @@
   \newcommand{\Kcontains}{\mathit{Kcontains}}
   \newcommand{\Ktop}{\mathit{Ktop}}
   \newcommand{\Kbottom}{\mathit{Kbottom}}
+  \newcommand{\Kceil}{\mathit{Kceil}}
+  
+  % Mifix symbols
+  \newcommand{\kand}{\wedge_k}
+  \newcommand{\kor}{\vee_k}
+  \newcommand{\kimplies}{\to_k}
+  \newcommand{\knot}{\neg_k}
+  \newcommand{\kexists}{\exists_k}
+  \newcommand{\kforall}{\forall_k}
+  \newcommand{\kequals}{=_k}
+  \newcommand{\kin}{\in_k}
   
   \newcommand{\KgetFvs}{\mathit{KgetFvs}}
   \newcommand{\KfreshName}{\mathit{KfreshName}}
@@ -174,6 +189,9 @@
   \newcommand{\Ktheory}{\mathit{Ktheory}}
   
   \newcommand{\Kdeduce}{\mathit{Kdeduce}}
+  
+  % Use quotation marks "..." in math mode.
+  \newcommand{\quot}[1]{\mathrm{``#1"}}
 
   % Title and authors
   \title{The Semantics of K}
@@ -288,7 +306,7 @@ respectively.
 \subsection{Boolean Algebra}
 
 The matching logic theory of Boolean algebra is included in $K$,
-and the corresponding sort is named $\KBool \in S_K$.
+and the corresponding sort is named $\KBool$.
 Constructors of the sort $\KBool$ are two functional symbols
 \begin{equation*}
 \Ktrue \colon \to \KBool \qquad \Kfalse \colon \to \KBool.
@@ -324,17 +342,40 @@ $\KnotBool$ and $\KandBool$ in the usual way
 	To write Boolean expressions compactly, we adopt the following abbreviations if there is no confusion
 	\begin{align*}
 	&\neg b \equiv \KnotBool(b)
-	\\
 	&b_1 \wedge b_2 \equiv \KandBool(b_1, b_2)
 	\\
 	&b_1 \vee b_2 \equiv \KorBool(b_1, b_2)
-	\\
 	&b_1 \to b_2 \equiv \KimpliesBool(b_1, b_2).
 	\end{align*}
 \end{notation}
 
 \subsection{Strings}
-Introduce the matching logic theory for strings here.
+The sort $\KString$ is the sort for strings. It has the following $26 + 26 + 10 + 2 = 64$ functional constructors:
+\begin{center}
+\begin{tabular}{c c c}
+	$\quot{a} \colon \to \KString$ & $\quot{b} \colon \to \KString$ & $\quot{c} \colon \to \KString$ \\
+	$\cdots$ & $\cdots$ & $\cdots$ \\
+	$\quot{x} \colon \to \KString$ & $\quot{y} \colon \to \KString$ & $\quot{z} \colon \to \KString$ \\
+	$\quot{A} \colon \to \KString$ & $\quot{B} \colon \to \KString$ & $\quot{C} \colon \to \KString$ \\
+    $\cdots$ & $\cdots$ & $\cdots$ \\
+    $\quot{X} \colon \to \KString$ & $\quot{Y} \colon \to \KString$ & $\quot{Z} \colon \to \KString$ \\
+    $\quot{0} \colon \to \KString$ & $\cdots$ & $\quot{9} \colon \to \KString$ \\
+    $\epsilon \colon \to \KString$ & \multicolumn{2}{c}{$\Kconcat \colon \KString \times \KString \to \KString$}.
+\end{tabular}
+\end{center}
+
+The associativity and identity of $\Kconcat$ are defined by the following axioms:
+\begin{align*}
+&\Kconcat(s_1, (\Kconcat(s_2, s_3))) = \Kconcat(\Kconcat(s_1, s_2), s_3)
+\\
+&\Kconcat(s, \epsilon) = s \quad \Kconcat(\epsilon, s) = s.
+\end{align*}
+
+\begin{notation}
+	As a convention, strings are often wrapped with quotation marks and the constructor $\Kconcat$ is often omitted.
+	Therefore, instead of writing $$\Kconcat(\quot{a}, \Kconcat(\quot{b}, \quot{c})),$$ we simply write $\quot{abc}$, thanks to the associativity of $\Kconcat$. 
+\end{notation}
+
 
 
 
@@ -352,19 +393,38 @@ The only constructor of the sort $\KSymbol$ is the functional symbol:
 \Ksymbol \colon \KString \to \KSymbol.
 \end{equation*}
 
-\subsection{Lists}
-\improvement{This is just a notation convention which allows us to have sorts like $\KPatternList$ and $\mathit{KSortList}$ without defining each of them. We are NOT introducing any parametric modules here.}
+\subsection{Finite Lists}
+\improvement{This is just a convention which allows us to use $\KPatternList$ and $\mathit{KSortList}$ (and many others) without verbosely defining each of them. We are NOT introducing any parametric modules here.}
 Whenever we introduce a sort, say $\mathit{X}$, to $S_K$, we feel free to 
-use $\mathit{XList}$ as the sort of lists over $\mathit{X}$ 
-with the following symbols implicitly declared:
+use $\mathit{XList}$ as the sort of finite lists whose elements are of sort $\mathit{X}$. 
+If we do that, it means three things.
+Firstly, the sort $\mathit{XList}$ is in $S_K$.
+Secondly, the following functional symbols are in $\Sigma_K$:
 \begin{align*}
-&\mathit{nilXList} \ \colon \to \mathit{XList} \\
+&\mathit{nilXList} \ \colon \to \mathit{XList}
+&\mathit{inXList} \ \colon \mathit{X} \times \mathit{XList} \to \KBool
+\\
 &\mathit{appendXList} \ \colon \mathit{XList} \times \mathit{XList} \to 
-\mathit{XList}\\
-&\mathit{inXList} \ \colon \mathit{X} \times \mathit{XList} \to \KBool \\
+\mathit{XList}
 &\mathit{XListAsX} \ \colon \mathit{X} \to \mathit{XList},
 \end{align*}
-with axioms saying that $\mathit{appendXList}$ is associative and $\mathit{nilXList}$ is its identity.
+where $\mathit{nilXList}$, $\mathit{XListAsX}$, and $\mathit{appendXList}$ are constructors of sort $\mathit{XList}$.
+Thirdly, the following axioms are in $A_K$:
+\begin{align*}
+&\mathit{appendXList}(l_1, \mathit{appendXList}(l_2, l_3)) = \mathit{appendXList}(\mathit{appendXList}(l_1, l_2), l_3)
+\\
+&\mathit{appendXList}(l, \mathit{nilXList}) = l
+\quad \mathit{appendXList}(\mathit{nilXList}, l) = l
+\\
+&\mathit{inXList}(x, \mathit{nilXList}) = \Kfalse
+\quad \mathit{inXList}(x, \mathit{XListAsX}(x)) = \Ktrue
+\\
+&x \neq y \to \mathit{inXList}(x, \mathit{XListAsX}(y)) = \Kfalse
+\\
+&\mathit{inXList}(x, \mathit{appendXList}(l_1, l_2)) = \mathit{inXList}(x, l_1) \vee \mathit{inXList}(x, l_2).
+\end{align*}
+
+\begin{notation}
 We adopt the following shorthands:
 \begin{align*}
 &\mathit{nil}  \quad \text{as a shorthand of $\mathit{nilXList}$} \\
@@ -379,6 +439,7 @@ We adopt the following shorthands:
 &\qquad \mathit{appendXList}(\mathit{XListAsX}(\varphi_n), \mathit{nil})))
 \text{ when $n\ge 2$.}
 \end{align*}
+\end{notation}
 
 \subsection{Matching Logic Patterns}
 
@@ -402,7 +463,7 @@ Constructors of the sort $\KPattern$ are the following functional symbols:
 \end{align*}
 
 \begin{notation}
-	As a convention, we use $b$ for $\KBool$ variables, $x, y, z$ for $\KString$ variables, $s$ for $\KSort$ variables, $\sigma$ for $\KSymbol$ variables, and $p, q, r$ for $\KPattern$ variables. 
+	As a convention, we use $b$ for $\KBool$ variables, $x, y, z$ for $\KString$ variables, $s$ for $\KSort$ variables, $\sigma$ for $\KSymbol$ variables, and $\varphi, \psi$ for $\KPattern$ variables. 
 \end{notation}
 
 The functional symbol 
@@ -443,6 +504,10 @@ The functional symbol $\KwellFormed \colon \KPattern \times \KSignature \to \KBo
 TODO
 \end{equation*}
 
+\begin{notation}
+	As a convention, we use $\Sigma, \Psi$ for $\KSignature$ variables. 
+\end{notation}
+
 \subsection{Matching Logic Theories}
 
 \todo{WIP}
@@ -450,81 +515,135 @@ TODO
 The sort $\KTheory$ is the sort of matching logic theories. The only constructor symbol is 
 $$\Ktheory \colon \KSignature \times \KPatternList \to \KTheory.$$
 
+\begin{notation}
+	As a convention, we use $F, A$ for $\KPatternList$ variables if they appear in $\Ktheory$. We often use $T$ for $\Ktheory$ variables.
+\end{notation}
+
 \subsection{Matching Logic Proof System}
+
+A sound and complete proof system has been introduced in~\cite{?}. 
 
 The functional symbol
 $$
 \Kdeduce \colon \KTheory \times \KPattern \to \KBool
 $$
 returns $\Ktrue$ if the argument pattern is deducible in the argument theory.
+The functional symbol $\Kdeduce$ has axioms in correspondence to the inference rules in the proof system.
+In the following, we are going to list all the inference rules in the matching logic proof system followed by the correspondent axioms of $\Kdeduce$.
 
-A proof system is a theorem generator. 
-In $K$, the proof system of matching logic is captured by the functional symbol 
-$\mathit{deducible} \colon \KPattern \to \KBool$, which returns $\Ktrue$ 
-iff the argument pattern is a theorem. 
+\paragraph{Rule (Axiom).}
+$F \vdash \varphi$ if $\varphi \in F$.
+\begin{align*}
+\varphi \in F \to \Kdeduce(\Ktheory(\Sigma, F), \varphi).
+\end{align*}
 
-We introduce the double bracket $\Bracket{\_}$, known as the semantics bracket, as follows:
-\begin{equation*}
-\Bracket{\varphi} \equiv 
-\left(\textit{deducible}\left(\mathit{lift}[\varphi]\right) = true\right).
-\end{equation*}
-Intuitively, $\Bracket{\varphi}$ means that ``$\varphi$ is deducible''.
-Whenever there is an inference rule (axioms are considered as rules with zero 
-premise)
-$$
-	\infer{\psi}
-	{\varphi_1,\dots,\varphi_n}
-$$
-in matching logic, there is a corresponding axiom in $K$:
-$$
-	\Bracket{\varphi_1} \wedge \dots \wedge \Bracket{\varphi_n} \to \Bracket{\psi}.
-$$
-Inference modulo theories can be considered in the same way. 
-For any (syntactic) matching logic theory $T$ whose axiom set is $A$, we add
-$$
-\Bracket{\varphi} \quad \text{for all $\varphi \in A$}
-$$
-as axioms to $K$. We sometimes denote the extended theory as $\mathit{lift}[T]$ 
-and call it 
-the \emph{meta-theory for} $T$.
+\paragraph{Rule (K1).}
+$\vdash \varphi \to (\psi \to \varphi)$.
+\begin{align*}
+\Kdeduce(T, \varphi \kimplies (\psi \kimplies \varphi)).
+\end{align*}
 
-\subsection{Faithfulness}
-It remains a question whether the calculus $K$ faithfully captures matching logic reasoning. 
-The following definition of \emph{faithfulness} is inspired by~\cite{?}.
-\begin{definition}
-	The calculus $K$ is said to be faithful for matching logic, if for any 
-	matching logic syntactic theory $T$ and its meta-theory $\mathit{lift}[T]$,
-	\begin{equation*}
-	  \text{$\varphi$ is a theorem in $T$ iff $\Bracket{\varphi}$ is a theorem 
-	  in $\mathit{lift}[T]$, for any pattern $\varphi$.}
-	\end{equation*}
-\end{definition}
-\begin{theorem}
-	The calculus $K$ is faithful for matching logic.
+\paragraph{Rule (K2).}
+$\vdash (\varphi_1 \to (\varphi_2 \to \varphi_3)) \to ((\varphi_1 \to \varphi_2) \to (\varphi_1 \to \varphi_3))$.
+\begin{align*}
+\Kdeduce(T, (\varphi_1 \kimplies (\varphi_2 \kimplies \varphi_3)) \kimplies ((\varphi_1 \kimplies \varphi_2) \kimplies (\varphi_1 \kimplies \varphi_3))).
+\end{align*}
+
+\paragraph{Rule (K3).}
+$\vdash (\neg \psi \to \neg \varphi) \to (\varphi \to \psi)$.
+\begin{align*}
+\Kdeduce(T, (\knot \psi \kimplies \knot \varphi) \kimplies (\varphi \kimplies \psi)).
+\end{align*}
+
+\paragraph{Rule (K4).}
+$\vdash \forall x . \varphi \to \varphi[y/x]$.
+\begin{align*}
+\Kdeduce(T, \kforall x . \varphi \kimplies \Ksubstitute(\varphi, y, x)).
+\end{align*}
+
+\paragraph{Rule (K5).}
+$\vdash \forall x . (\varphi \to \psi) \to (\varphi \to \forall x . \psi)$ if $x$ does not occur free in $\varphi$. 
+\begin{align*}
+x \not\in \KgetFvs(\varphi)
+\to \Kdeduce(T, \kforall x . (\varphi \kimplies \psi) \kimplies (\varphi \kimplies \kforall x . \psi)).
+\end{align*}
+
+\paragraph{Rule (K6).}
+$\vdash \varphi_1 = \varphi_2 \to (\psi[\varphi_1/x] \to \psi[\varphi_2/x])$.
+\begin{align*}
+\Kdeduce(T, \varphi_1 \kequals \varphi_2 \kimplies (\Ksubstitute(\psi, \varphi_1, x) \kimplies \Ksubstitute(\psi, \varphi_2, x))).
+\end{align*}
+
+\paragraph{Rule (Df).}
+$\vdash \ceil{x}$.
+\begin{align*}
+\Kdeduce(T, \Ksymbol(``ceil")(x)).
+\end{align*}
+
+\paragraph{Rule (M1).}
+$\vdash x \in y = (x = y)$.
+\begin{align*}
+\Kdeduce(T, x \kin y \kequals (x \kequals y)).
+\end{align*}
+
+\paragraph{Rule (M2).}
+$\vdash x \in (\varphi \wedge \psi) = (x \in \varphi) \wedge (x \in \psi).$
+\begin{align*}
+\Kdeduce(T, x \kin (\varphi \kand \psi) \kequals (x \kin \varphi) \kand (x \kin \psi)).
+\end{align*}
+
+\paragraph{Rule (M3).}
+$\vdash x \in \neg \varphi = \neg (x \in \varphi)$.
+\begin{align*}
+\Kdeduce(T, x \kin \knot \varphi \kequals \knot (x \kin \varphi)).
+\end{align*}
+
+\paragraph{Rule (M4).}
+$\vdash x \in \forall y . \varphi = \forall y . x \in \varphi$ if $x$ is distinct from $y$.
+\begin{align*}
+x \neq y \to \Kdeduce(T, x \kin \kforall y . \varphi \kequals \kforall y . x \kin \varphi).
+\end{align*}
+
+\paragraph{Rule (M5).}
+$\vdash x \in \sigma(\dots \varphi_i \dots) = \exists y . y \in \varphi_i \wedge x \in \sigma(\dots y \dots)$ where $y$ is distinct from $x$ and it does not occur free in $\sigma(\dots \varphi_i \dots)$.
+\begin{align*}
+&x \neq y \wedge y \not\in \KgetFvs(\Kapplication(\sigma, (l\cln\KPatternList, \varphi_i, r\cln\KPatternList)))
+\\
+\to&\Kdeduce(T, x \kin \Kapplication(\sigma, (l\cln\KPatternList, \varphi_i, r\cln\KPatternList))
+\\
+&\kequals \kexists y . y \kin \varphi_i \kand x \kin \Kapplication(\sigma, (l\cln\KPatternList, y, r\cln\KPatternList))).
+\end{align*}
+
+\paragraph{Rule (Modus Ponens).}
+If $\vdash \varphi$ and $\vdash \varphi \to \psi$, then $\vdash \psi$.
+\begin{align*}
+\Kdeduce(T, \varphi) \wedge \Kdeduce(T, \varphi \kimplies \psi) \to \Kdeduce(T, \psi).
+\end{align*}
+
+\paragraph{Rule (Universal Generalization).}
+If $\vdash \varphi$, then $\vdash \forall x . \varphi$.
+\begin{align*}
+\Kdeduce(T, \varphi) \to \Kdeduce(T, \kforall x . \varphi).
+\end{align*}
+
+\paragraph{Rule (Membership Introduction).}
+If $\vdash \varphi$ and $x$ does not occur free in $\varphi$, then $\vdash x \in \varphi$.
+\begin{align*}
+\Kdeduce(T, \varphi) \wedge x \not\in \KgetFvs(\varphi) \to \Kdeduce(T, x \kin \varphi).
+\end{align*}
+
+\paragraph{Rule (Membership Elimination).}
+If $\vdash x \in \varphi$ and $x$ does not occur free in $\varphi$, then $\vdash \varphi$.
+\begin{align*}
+\Kdeduce(T, x \kin \varphi) \wedge x \not\in \KgetFvs(\varphi) \to \Kdeduce(T, \varphi).
+\end{align*}
+
+\begin{theorem}[Faithfulness of $K$]
+	$T \vdash \varphi$ iff $K \vdash \Kdeduce(T, \varphi)$.
 \end{theorem}
 \begin{proof}
 	TBC.
 \end{proof}
-
-Having a faithful calculus for matching logic has at least the following two 
-benefits. 
-Firstly, any implementation of the calculus is guaranteed to be able to conduct 
-any reasoning in matching logic. Secondly, it allows us to define a matching 
-logic theory $T$ by defining its meta-theory $\mathit{lift}[T]$ in the 
-calculus $K$. 
-The second 
-point is of great importance if we want a formal language to define matching 
-logic theories. 
-We notice that there are many theories whose definitions involve notations that 
-do not belong to the logic itself. For example, in the ($\beta$) axiom
-$$
-\lambda x . e [e'] = e[e' / x] \quad \text{where $e$ and $e'$ are 
-$\lambda$-terms},
-$$
-we use the notation for substitution $\_[\_/\_]$, meta-variables $e$ and $e'$, 
-and their range ``$\lambda$-terms''. 
-None of those can be given a formal semantics in the object-logic, but can be 
-defined in the calculus $K$.
 
 \section{The Kore Language}
 
@@ -733,6 +852,37 @@ module LAMBDA
                                            ...2)))) 
 endmodule
 \end{Verbatim}
+
+\section{Ignore Me}
+A proof system is a theorem generator. 
+In $K$, the proof system of matching logic is captured by the functional symbol 
+$\mathit{deducible} \colon \KPattern \to \KBool$, which returns $\Ktrue$ 
+iff the argument pattern is a theorem. 
+
+We introduce the double bracket $\Bracket{\_}$, known as the semantics bracket, as follows:
+\begin{equation*}
+\Bracket{\varphi} \equiv 
+\left(\textit{deducible}\left(\mathit{lift}[\varphi]\right) = true\right).
+\end{equation*}
+Intuitively, $\Bracket{\varphi}$ means that ``$\varphi$ is deducible''.
+Whenever there is an inference rule (axioms are considered as rules with zero 
+premise)
+$$
+\infer{\psi}
+{\varphi_1,\dots,\varphi_n}
+$$
+in matching logic, there is a corresponding axiom in $K$:
+$$
+\Bracket{\varphi_1} \wedge \dots \wedge \Bracket{\varphi_n} \to \Bracket{\psi}.
+$$
+Inference modulo theories can be considered in the same way. 
+For any (syntactic) matching logic theory $T$ whose axiom set is $A$, we add
+$$
+\Bracket{\varphi} \quad \text{for all $\varphi \in A$}
+$$
+as axioms to $K$. We sometimes denote the extended theory as $\mathit{lift}[T]$ 
+and call it 
+the \emph{meta-theory for} $T$.
 
 
 \end{document}
