@@ -162,6 +162,7 @@
   \newcommand{\Kexists}{\mathit{Kexists}}
   \newcommand{\Kforall}{\mathit{Kforall}}
   \newcommand{\Kequals}{\mathit{Kequals}}
+  \newcommand{\Kin}{\mathit{Kin}}
   \newcommand{\Kcontains}{\mathit{Kcontains}}
   \newcommand{\Ktop}{\mathit{Ktop}}
   \newcommand{\Kbottom}{\mathit{Kbottom}}
@@ -322,7 +323,7 @@ Constructors of the sort $\KBool$ are two functional symbols
 \Ktrue \colon \to \KBool \qquad \Kfalse \colon \to \KBool.
 \end{equation*}
 Common Boolean operators are defined as functional symbols with their
-corresponding axioms
+corresponding axioms:
 \begin{align*}
 &\KnotBool \colon \KBool \to \KBool
 &\KnotBool(\Ktrue) = \Kfalse
@@ -337,7 +338,7 @@ corresponding axioms
 &\KandBool(\Kfalse, b) = \Kfalse
 \end{align*}
 The symbols $\KorBool$ and $\KimpliesBool$ are defined in terms of the symbols
-$\KnotBool$ and $\KandBool$ in the usual way
+$\KnotBool$ and $\KandBool$ in the usual way:
 \begin{align*}
 &\KorBool(b_1, b_2) = \KnotBool(\KandBool(\KnotBool(b_1), \KnotBool(b_2)))
 \\
@@ -404,7 +405,6 @@ The only constructor of the sort $\KSymbol$ is the functional symbol:
 \end{equation*}
 
 \subsection{Finite Lists}
-\improvement{This is just a convention which allows us to use $\KPatternList$ and $\mathit{KSortList}$ (and many others) without verbosely defining each of them. We are NOT introducing any parametric modules here.}
 Whenever we introduce a sort, say $\mathit{X}$, to $S_K$, we feel free to 
 use $\mathit{XList}$ as the sort of finite lists whose elements are of sort $\mathit{X}$. 
 If we do that, it means three things.
@@ -451,6 +451,13 @@ To write lists expressions compactly, we adopt the following shorthands for $\ma
 \\
 &\mathit{deleteXList}(x, l) \equiv \Kdelete(x, l).
 \end{align*}
+Note that one should not confuse the shorthand for $\mathit{inXList}$ with the 
+matching logic membership connective, which we all write as the belongs-to 
+symbol ``$\in$''. 
+If the two patterns before and after the belongs-to symbol are of the same 
+sort, it is the membership connective. 
+If the left of them is of sort $\mathit{X}$ and the right is of sort 
+$\mathit{XList}$, the belongs-to symbol is the shorthand of $\mathit{inXList}$.
 
 Constructors $\mathit{XListAsX}$ and $\mathit{appendXList}$ are often omitted, too:
 \begin{align*}
@@ -475,7 +482,7 @@ It has the following functional symbols:
 \\
 &\Kexists, \Kforall \colon \KString \times \KSort \times \KPattern \times \KSort \to \KPattern 
 \\
-&\Kequals, \Kcontains \colon \KPattern \times 
+&\Kequals, \Kin, \Kcontains \colon \KPattern \times 
 \KPattern \times \KSort \times \KSort \to \KPattern \\
 &\Kfloor, \Kceil \colon \KPattern \times \KSort \times \KSort \to \KPattern\\
 &\Ktop, \Kbottom \colon \KSort \to \KPattern,
@@ -483,7 +490,9 @@ It has the following functional symbols:
 where $\Kvariable$, $\Kand$, $\Kor$, $\Kapplication$, and $\Kexists$ are constructors of sort~$\KPattern$. 
 
 \begin{notation}
-	As a convention, we use $b$ for $\KBool$ variables, $x, y, z$ for $\KString$ variables, $s$ for $\KSort$ variables, $\sigma$ for $\KSymbol$ variables, and $\varphi, \psi$ for $\KPattern$ variables. 
+	As a convention, we use $b$ for $\KBool$ variables, $x, y, z$ for 
+	$\KString$ variables, $s$ for $\KSort$ variables, $\sigma$ for 
+	$\KSymbol$ variables, and $\varphi, \psi$ for $\KPattern$ variables. 
 \end{notation}
 
 \begin{notation}
@@ -491,7 +500,8 @@ where $\Kvariable$, $\Kand$, $\Kor$, $\Kapplication$, and $\Kexists$ are constru
 	The following abbreviations are adopted to write compact $\KPattern$ patterns.
 	\begin{center}
 	\begin{tabular}{ll}
-    \multicolumn{2}{l}{$x \cln s \equiv \Kvariable(x, s)$, sometimes it abbreviates to just $x$}
+    \multicolumn{2}{l}{$x \cln s \equiv \Kvariable(x, s)$. Sometimes it 
+    abbreviates to just $x$.}
   \\
 	$\varphi \kand_s \psi \equiv \Kand(\varphi, \psi, s)$
   & $\varphi \kor_s \psi \equiv \Kor(\varphi, \psi, s)$
@@ -506,7 +516,6 @@ where $\Kvariable$, $\Kand$, $\Kor$, $\Kapplication$, and $\Kexists$ are constru
   & $\varphi \kequals_{s_1}^{s_2} \psi \equiv \Kequals(\varphi, \psi, s_1, s_2)$
   \\
     $\varphi \kcontains_{s_1}^{s_2} \psi \equiv \Kcontains(\varphi, \psi, s_1, s_2)$
-  & $x \in_{s_1}^{s_2} \varphi \equiv x \subseteq_{s_1}^{s_2} \varphi$.
   \\
     \multicolumn{2}{l}{$\sigma(\varphi_1,\dots,\varphi_n) \equiv \Kapplication(\sigma, (\varphi_1,\dots,\varphi_n))$}
   \\
@@ -530,25 +539,30 @@ Apart from the five constructors of sort $\KPattern$, all the other symbols are 
 &\varphi \kequals_{s_1}^{s_2} \psi = \kfloor{\varphi \kiff_{s_1} \psi}_{s_1}^{s_2}
 &\varphi \kcontains_{s_1}^{s_2} \psi = \kfloor{\psi \kimplies_{s_1} \varphi}_{s_1}^{s_2}
 \\
+&x \in_{s_1}^{s_2} \varphi = x \subseteq_{s_1}^{s_2} \varphi
+\\
 &\ktop_s \equiv \kexists_s^s x . x
 &\kbottom_s \equiv \knot_s \ktop_s
 \\
 &\kfloor{\varphi}_{s_1}^{s_2} \equiv \knot_{s_2} \kceil{\knot_{s_1} \varphi}_{s_1}^{s_2}
-&\kceil{\varphi}_{s_1}^{s_2} \equiv \Kapplication(ceil, \varphi)??
+&\kceil{\varphi}_{s_1}^{s_2} \equiv \Ksymbol(\quot{ceil})(\varphi)
 \end{align*}
+\unsure{not sure about the last one ... the definedness symbol...}
 
 The functional symbol 
 $$\KgetFvs \colon \KPattern \to \KPatternList$$
 collects all free variables in a pattern. 
 It has the following axioms:
 \begin{align*}
-&\KgetFvs(\Kvariable(x,s)) = \Kvariable(x,s) \quad \KgetFvs(\knot_s \varphi) = \KgetFvs(\varphi)
+&\KgetFvs(x \cln s) = x \cln s \quad \KgetFvs(\knot_s \varphi) = 
+\KgetFvs(\varphi)
 \\
 &\KgetFvs(\varphi \kand_s \psi) = \KgetFvs(\varphi), \KgetFvs(\psi)
 \\
 &\KgetFvs(\sigma(\varphi_1, \dots, \varphi_n)) = \KgetFvs(\varphi_1), \dots, \KgetFvs(\varphi_n)
 \\
-&\KgetFvs(\kexists_{s_1}^{s_2} x . \varphi) = \mathit{delete}(\Kvariable(x, s_1), \KgetFvs(\varphi))
+&\KgetFvs(\kexists_{s_1}^{s_2} x . \varphi) = \mathit{delete}(\Kvariable(x, 
+s_1), \KgetFvs(\varphi)).
 \end{align*}
 
 The functional symbol
@@ -631,7 +645,11 @@ It has the following axioms:
 &\KwellFormed(\kexists_{s_1}^{s_2} x . \varphi, (S, \Sigma)) = s_1 \in S \wedge \KgetSort(\varphi, (S, \Sigma)) = s_2
 \end{align*}
 
-
+\begin{notation}\label{omit-well-formedness-premises}
+	The well-formedness is an important premise in axioms about the sort 
+	$\KPattern$. To keep our notation simple, we often omit the well-formedness 
+	premises when defining axioms in $\Sigma_K$.
+\end{notation}
 
 \subsection{Matching Logic Theories}
 
@@ -655,52 +673,60 @@ $$
 $$
 returns $\Ktrue$ if the argument pattern is deducible in the argument theory.
 The functional symbol $\Kdeduce$ has axioms in correspondence to the inference rules in the proof system.
-In the following, we are going to list all the inference rules in the matching logic proof system followed by the correspondent axioms of $\Kdeduce$.
+In the following, we are going to list all the inference rules in the matching 
+logic proof system followed by their correspondent axioms of $\Kdeduce$, in 
+which the well-formedness premises are omitted 
+(Notation~\ref{omit-well-formedness-premises}).
 
 \paragraph{Rule (Axiom).}
 $F \vdash \varphi$ if $\varphi \in F$.
 \begin{align*}
-\varphi \in F \to \Kdeduce(\Ktheory(\Sigma, F), \varphi).
+\varphi \in F \to \Kdeduce((\Sigma, F), \varphi).
 \end{align*}
 
 \paragraph{Rule (K1).}
 $\vdash \varphi \to (\psi \to \varphi)$.
 \begin{align*}
-\Kdeduce(T, \varphi \kimplies (\psi \kimplies \varphi)).
+\Kdeduce(T, \varphi \kimplies_s (\psi \kimplies_s \varphi)).
 \end{align*}
 
 \paragraph{Rule (K2).}
 $\vdash (\varphi_1 \to (\varphi_2 \to \varphi_3)) \to ((\varphi_1 \to \varphi_2) \to (\varphi_1 \to \varphi_3))$.
 \begin{align*}
-\Kdeduce(T, (\varphi_1 \kimplies (\varphi_2 \kimplies \varphi_3)) \kimplies ((\varphi_1 \kimplies \varphi_2) \kimplies (\varphi_1 \kimplies \varphi_3))).
+\Kdeduce(T, (\varphi_1 \kimplies_s (\varphi_2 \kimplies_s \varphi_3)) 
+\kimplies_s ((\varphi_1 \kimplies_s \varphi_2) \kimplies_s (\varphi_1 
+\kimplies_s \varphi_3))).
 \end{align*}
 
 \paragraph{Rule (K3).}
 $\vdash (\neg \psi \to \neg \varphi) \to (\varphi \to \psi)$.
 \begin{align*}
-\Kdeduce(T, (\knot \psi \kimplies \knot \varphi) \kimplies (\varphi \kimplies \psi)).
+\Kdeduce(T, (\knot_s \psi \kimplies_s \knot_s \varphi) \kimplies_s (\varphi 
+\kimplies_s \psi)).
 \end{align*}
 
 \paragraph{Rule (K4).}
 $\vdash \forall x . \varphi \to \varphi[y/x]$.
 \begin{align*}
-\Kdeduce(T, \kforall x . \varphi \kimplies \Ksubstitute(\varphi, y, x)).
+\Kdeduce(T, \kforall_{s_1}^{s_2}  x . \varphi \kimplies_{s_2} \varphi[y/x]).
 \end{align*}
 
 \paragraph{Rule (K5).}
 $\vdash \forall x . (\varphi \to \psi) \to (\varphi \to \forall x . \psi)$ if $x$ does not occur free in $\varphi$. 
 \begin{align*}
 x \not\in \KgetFvs(\varphi)
-\to \Kdeduce(T, \kforall x . (\varphi \kimplies \psi) \kimplies (\varphi \kimplies \kforall x . \psi)).
+\to \Kdeduce(T, \kforall_{s_1}^{s_2} x . (\varphi \kimplies_{s_2} \psi) 
+\kimplies_{s_2} (\varphi \kimplies_{s_2} \kforall_{s_1}^{s_2} x . \psi)).
 \end{align*}
 
 \paragraph{Rule (K6).}
 $\vdash \varphi_1 = \varphi_2 \to (\psi[\varphi_1/x] \to \psi[\varphi_2/x])$.
 \begin{align*}
-\Kdeduce(T, \varphi_1 \kequals \varphi_2 \kimplies (\Ksubstitute(\psi, \varphi_1, x) \kimplies \Ksubstitute(\psi, \varphi_2, x))).
+\Kdeduce(T, \varphi_1 \kequals_{s_1}^{s_2} \varphi_2 \kimplies_{s_2} 
+(\psi[\varphi_1/x] \kimplies_{s_2} \psi[\varphi_2/x])).
 \end{align*}
 
-\paragraph{Rule (Df).}
+\paragraph{Rule (Df).}\unsure{not sure...}
 $\vdash \ceil{x}$.
 \begin{align*}
 \Kdeduce(T, \Ksymbol(``ceil")(x)).
@@ -709,25 +735,32 @@ $\vdash \ceil{x}$.
 \paragraph{Rule (M1).}
 $\vdash x \in y = (x = y)$.
 \begin{align*}
-\Kdeduce(T, x \kin y \kequals (x \kequals y)).
+\Kdeduce(T, x \kin_{s_1}^{s_2} y \kequals_{s_2}^{s_3} (x \kequals_{s_1}^{s_2} 
+y)).
 \end{align*}
 
 \paragraph{Rule (M2).}
 $\vdash x \in (\varphi \wedge \psi) = (x \in \varphi) \wedge (x \in \psi).$
 \begin{align*}
-\Kdeduce(T, x \kin (\varphi \kand \psi) \kequals (x \kin \varphi) \kand (x \kin \psi)).
+\Kdeduce(T, x \kin_{s_1}^{s_2} (\varphi \kand_{s_1} \psi) \kequals_{s_2}^{s_3} 
+(x 
+\kin_{s_1}^{s_2} \varphi) \kand_{s_2} (x \kin_{s_1}^{s_2} \psi)).
 \end{align*}
 
 \paragraph{Rule (M3).}
 $\vdash x \in \neg \varphi = \neg (x \in \varphi)$.
 \begin{align*}
-\Kdeduce(T, x \kin \knot \varphi \kequals \knot (x \kin \varphi)).
+\Kdeduce(T, x \kin_{s_1}^{s_2} \knot_{s_1} \varphi \kequals_{s_2}^{s_3} 
+\knot_{s_2} 
+(x 
+\kin_{s_1}^{s_2} \varphi)).
 \end{align*}
 
 \paragraph{Rule (M4).}
 $\vdash x \in \forall y . \varphi = \forall y . x \in \varphi$ if $x$ is distinct from $y$.
 \begin{align*}
-x \neq y \to \Kdeduce(T, x \kin \kforall y . \varphi \kequals \kforall y . x \kin \varphi).
+x \neq y \to \Kdeduce(T, x \kin_{s_2}^{s_3} \kforall_{s_1}^{s_2} y . \varphi 
+\kequals_{s_3}^{s_4} \kforall_{s_1}^{s_3} y . x \kin_{s_2}^{s_3} \varphi).
 \end{align*}
 
 \paragraph{Rule (M5).}
@@ -735,33 +768,40 @@ $\vdash x \in \sigma(\dots \varphi_i \dots) = \exists y . y \in \varphi_i \wedge
 \begin{align*}
 &x \neq y \wedge y \not\in \KgetFvs(\Kapplication(\sigma, (l\cln\KPatternList, \varphi_i, r\cln\KPatternList)))
 \\
-\to&\Kdeduce(T, x \kin \Kapplication(\sigma, (l\cln\KPatternList, \varphi_i, r\cln\KPatternList))
+\to&\Kdeduce(T, x \kin_{s_1}^{s_2} \Kapplication(\sigma, (l\cln\KPatternList, 
+\varphi_i, r\cln\KPatternList))
 \\
-&\kequals \kexists y . y \kin \varphi_i \kand x \kin \Kapplication(\sigma, (l\cln\KPatternList, y, r\cln\KPatternList))).
+&\kequals_{s_2}^{s_4} \kexists_{s_3}^{s_4} y . y \kin_{s_3}^{s_2} \varphi_i 
+\kand x 
+\kin_{s_1}^{s_2} 
+\Kapplication(\sigma, (l\cln\KPatternList, y, r\cln\KPatternList))).
 \end{align*}
 
 \paragraph{Rule (Modus Ponens).}
 If $\vdash \varphi$ and $\vdash \varphi \to \psi$, then $\vdash \psi$.
 \begin{align*}
-\Kdeduce(T, \varphi) \wedge \Kdeduce(T, \varphi \kimplies \psi) \to \Kdeduce(T, \psi).
+\Kdeduce(T, \varphi) \wedge \Kdeduce(T, \varphi \kimplies_s \psi) \to 
+\Kdeduce(T, \psi).
 \end{align*}
 
 \paragraph{Rule (Universal Generalization).}
 If $\vdash \varphi$, then $\vdash \forall x . \varphi$.
 \begin{align*}
-\Kdeduce(T, \varphi) \to \Kdeduce(T, \kforall x . \varphi).
+\Kdeduce(T, \varphi) \to \Kdeduce(T, \kforall_{s_1}^{s_2} x . \varphi).
 \end{align*}
 
 \paragraph{Rule (Membership Introduction).}
 If $\vdash \varphi$ and $x$ does not occur free in $\varphi$, then $\vdash x \in \varphi$.
 \begin{align*}
-\Kdeduce(T, \varphi) \wedge x \not\in \KgetFvs(\varphi) \to \Kdeduce(T, x \kin \varphi).
+\Kdeduce(T, \varphi) \wedge x \not\in \KgetFvs(\varphi) \to \Kdeduce(T, x 
+\kin_{s_1}^{s_2} \varphi).
 \end{align*}
 
 \paragraph{Rule (Membership Elimination).}
 If $\vdash x \in \varphi$ and $x$ does not occur free in $\varphi$, then $\vdash \varphi$.
 \begin{align*}
-\Kdeduce(T, x \kin \varphi) \wedge x \not\in \KgetFvs(\varphi) \to \Kdeduce(T, \varphi).
+\Kdeduce(T, x \kin_{s_1}^{s_2} \varphi) \wedge x \not\in \KgetFvs(\varphi) \to 
+\Kdeduce(T, \varphi).
 \end{align*}
 
 \begin{theorem}[Faithfulness of $K$]
