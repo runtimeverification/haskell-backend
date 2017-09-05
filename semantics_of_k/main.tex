@@ -126,6 +126,9 @@
   \usepackage{proof}
   % Writing labels about inference rules
   \newcommand{\rl}[1]{\text{\scriptsize{(#1)}}}
+  
+  % Package for writing BNF syntax
+  \usepackage{syntax}
 
 
   % Define sorts and symbols in the calculus K.
@@ -821,9 +824,6 @@ The calculus $K$ provides a universe of pattern ASTs and the sound and complete
 proof system of matching logic. 
 On the other hand, it is usually easier to work at object-level rather than 
 meta-level. 
-Even if all reasoning in a matching logic theory $T$ can be faithfully lifted 
-to and conducted in its meta-theory $\mathit{lift}[T]$, it does not mean one 
-should always do so. 
 
 The Kore language is proposed to define matching logic theories using the 
 calculus $K$. 
@@ -835,6 +835,25 @@ Section~\ref{sec:examples-of-kore}.
 After that, we will introduce a transformation from Kore definitions to 
 meta-theories as the formal semantics of Kore in 
 Section~\ref{sec:semantics-of-kore}.
+
+\subsection{Kore Syntax}
+
+\begin{grammar}\small	
+	<definition>    ::= <definition-attribute> <module>*
+	
+	<module>       ::= <module-attribute> `module' <module-id> <module-body> `endmodule'
+	
+	<module-body>  ::= <module-sentence>*
+	
+	<module-sentence> ::= TODO
+	
+	<sentence-att> ::= <sentence> <attribute>
+	
+	<import>       ::= `import' <module-id>
+	
+	<sentence>     ::= `sort' <sort-id>
+	
+\end{grammar}
 
 \subsection{Syntax and Semantics of Kore}
 \label{sec:syntax-of-kore}
