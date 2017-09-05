@@ -839,19 +839,32 @@ Section~\ref{sec:semantics-of-kore}.
 \subsection{Kore Syntax}
 
 \begin{grammar}\small	
-	<definition>    ::= <definition-attribute> <module>*
+	<definition>    ::= <attribute> <module>*
 	
-	<module>       ::= <module-attribute> `module' <module-id> <module-body> `endmodule'
+	<module>       ::= "module" <module-id> <module-body> "endmodule" <attribute> 
 	
 	<module-body>  ::= <module-sentence>*
 	
-	<module-sentence> ::= TODO
+	<module-sentence> ::= "import" <module-id> <attribute>
+	\alt "sort" <sort-id> <attribute>
+	\alt "symbol" <symbol-id> "(" <sort-id-list> ")" ":" <sort-id> <attribute>
+	\alt "axiom" <pattern> <attribute>
 	
-	<sentence-att> ::= <sentence> <attribute>
+	<sort-id-list> ::= $\epsilon$ | <sort-id> <comma-sort-id>*
 	
-	<import>       ::= `import' <module-id>
+	<comma-sort-id> ::= "," <sort-id>
 	
-	<sentence>     ::= `sort' <sort-id>
+	<sort-id> ::= <sort-regexp> | <sort-id> "{" <sort-variable> "}"
+	
+	<pattern> ::= <pattern-variable> | "\\and" "(" <pattern> "," <pattern> ")"
+	\alt "\\not" "(" <pattern> ")" | "\\exists" "(" <pattern-variable> "," <pattern> ")"
+	\alt "\\equals" "(" <pattern> "," <pattern> ")"
+	\alt <symbol-id> "(" <pattern-list> ")" | <pattern> ":" <sort-id>
+	
+	<pattern-list> ::= $\epsilon$ | <pattern> <comma-pattern>*
+	
+	<comma-pattern> ::= "," <pattern>
+
 	
 \end{grammar}
 
