@@ -204,6 +204,9 @@
   
   \newcommand{\Kdeduce}{\mathit{Kdeduce}}
   
+  % The italic font of "ceil" used in math mode.
+  \newcommand{\cl}{\mathit{ceil}}
+  
   % Use quotation marks "..." in math mode.
   \newcommand{\quot}[1]{\mathrm{``#1"}}
 
@@ -814,59 +817,38 @@ If $\vdash x \in \varphi$ and $x$ does not occur free in $\varphi$, then $\vdash
 	TBC.
 \end{proof}
 
-\section{The Kore Language}
+\section{The Kore Syntax}
 
-We have shown $K$, a calculus for matching logic in which we can specify 
-everything about matching logic and matching logic theories, such as 
-whether a pattern is well-formed, what sort a patter has, which patterns are 
-deducible, free variables, fresh variables generation, substitution, etc.
-The calculus $K$ provides a universe of pattern ASTs and the sound and complete 
-proof system of matching logic. 
-On the other hand, it is usually easier to work at object-level rather than 
-meta-level. 
+The Kore syntax that we propose here is the \emph{minimal} one, in the sense that it supports only the five basic matching logic constructors (variables, symbol applications, conjunction, negation, and existential quantifications), plus parametricity, which allows to define matching logic theories with infinite sorts, symbols, and axioms.
 
-The Kore language is proposed to define matching logic theories using the 
-calculus $K$. 
-At the same time, it also provides a nice surface syntax 
-(syntactic sugar) to write object-level patterns. 
-We will firstly show the formal grammar of Kore in 
-Section~\ref{sec:syntax-of-kore}, followed by some examples in 
-Section~\ref{sec:examples-of-kore}.
-After that, we will introduce a transformation from Kore definitions to 
-meta-theories as the formal semantics of Kore in 
-Section~\ref{sec:semantics-of-kore}.
-
-\subsection{Kore Syntax}
-
-\begin{grammar}\small	
-	<definition>    ::= <attribute> <module>*
+\begin{grammar}\small
+	<definition>    ::= <declaration>$^*$
 	
-	<module>       ::= "module" <module-id> <module-body> "endmodule" <attribute> 
+	<declaration>   ::= "sort" <sort>
+	\alt "symbol" <symbol> "(" <sort>$^*$ ")" ":" <sort>
+	\alt "axiom" <pattern>
 	
-	<module-body>  ::= <module-sentence>*
+	<sort>          ::= <atomic-sort> | <parametric-sort>
 	
-	<module-sentence> ::= "import" <module-id> <attribute>
-	\alt "sort" <sort-id> <attribute>
-	\alt "symbol" <symbol-id> "(" <sort-id-list> ")" ":" <sort-id> <attribute>
-	\alt "axiom" <pattern> <attribute>
+	<parametric-sort> ::= "{" <sort-variable> "}"
+	\alt <sort-constructor> "{" <sort-variable>$^+$ "}"
 	
-	<sort-id-list> ::= $\epsilon$ | <sort-id> <comma-sort-id>*
-	
-	<comma-sort-id> ::= "," <sort-id>
-	
-	<sort-id> ::= <sort-regexp> | <sort-id> "{" <sort-variable> "}"
-	
-	<pattern> ::= <pattern-variable> | "\\and" "(" <pattern> "," <pattern> ")"
-	\alt "\\not" "(" <pattern> ")" | "\\exists" "(" <pattern-variable> "," <pattern> ")"
-	\alt "\\equals" "(" <pattern> "," <pattern> ")"
-	\alt <symbol-id> "(" <pattern-list> ")" | <pattern> ":" <sort-id>
-	
-	<pattern-list> ::= $\epsilon$ | <pattern> <comma-pattern>*
-	
-	<comma-pattern> ::= "," <pattern>
-
-	
+	<pattern> ::= <pattern-variable>
+	\alt <symbol-id> "(" <pattern-list> ")"
+	\alt "\\and" "(" <pattern> "," <pattern> ")"
+	\alt "\\not" "(" <pattern> ")" 
+	\alt "\\exists" "(" <pattern-variable> "," <pattern> ")"
 \end{grammar}
+
+The following is a running example, in which we define the definedness symbol~$\cl$. To declare the symbol $\cl$, we write
+
+\begin{Verbatim}[fontsize=\small]
+    symbol ceil({S}) : {S'}
+\end{Verbatim}
+
+
+
+\section{Ignore Me}
 
 \subsection{Syntax and Semantics of Kore}
 \label{sec:syntax-of-kore}
