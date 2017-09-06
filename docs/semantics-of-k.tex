@@ -1,0 +1,1164 @@
+\documentclass[UTF8]{article}
+
+  \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+
+  %\usepackage{xcolor}
+  \usepackage[pdftex,dvipsnames]{xcolor}  % Coloured text etc.
+  \usepackage{xargs}                      % Use more than one optional
+                                          % parameter in a new commands
+
+  % Select what to do with todonotes: 
+  % \usepackage[disable]{todonotes} % notes not showed
+  %  \usepackage[draft]{todonotes} % notes showed
+  \usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
+  \newcommandx{\unsure}[2][1=]
+    {\todo[linecolor=red,backgroundcolor=red!25,bordercolor=red,#1]{#2}}
+  \newcommandx{\change}[2][1=]
+    {\todo[linecolor=blue,backgroundcolor=blue!25,bordercolor=blue,#1]{#2}}
+  \newcommandx{\info}[2][1=]
+    {\todo[linecolor=OliveGreen,backgroundcolor=OliveGreen!25,bordercolor=OliveGreen,#1]{#2}}
+  \newcommandx{\improvement}[2][1=]
+    {\todo[linecolor=Plum,backgroundcolor=Plum!25,bordercolor=Plum,#1]{#2}}
+  \newcommandx{\thiswillnotshow}[2][1=]
+    {\todo[disable,#1]{#2}}
+
+  % Select what to do with command \comment:  
+  % \newcommand{\comment}[1]
+      {}                                    %comment not showed
+  \newcommand{\comment}[1]
+    {\par {\bfseries \color{blue} #1 \par}} %comment showed
+    
+  \usepackage{amsmath}
+  \usepackage{amssymb}
+  
+  \usepackage{amsthm}
+  
+  % Declare a global counter for theorem environments:
+  \newcounter{thmcounter}
+  
+  % Define new theorem styles:
+  \theoremstyle{plain}
+  \newtheorem{theorem}[thmcounter]{Theorem}
+  \newtheorem{corollary}[thmcounter]{Corollary}
+  \newtheorem{lemma}[thmcounter]{Lemma}
+  \newtheorem{proposition}[thmcounter]{Proposition}
+  \theoremstyle{definition}
+  \newtheorem{definition}[thmcounter]{Definition}
+  \newtheorem{example}[thmcounter]{Example}
+  \theoremstyle{remark}
+  \newtheorem{remark}[thmcounter]{Remark}
+  \newtheorem{notation}[thmcounter]{Notation}
+  
+  
+  % Package for changing fonts in the Verbatim environment:
+  \usepackage{xcolor}
+  \usepackage{fancyvrb}
+  
+  % Package for writing captions for align environment:
+  \usepackage{capt-of}
+  
+  % Package for URLs:
+  \usepackage{hyperref}  
+  
+  % Package for tables:
+  \usepackage[english]{babel}
+  
+  % Define serif fonts for ML theories used in math mode:
+  \newcommand{\PA}{\mathsf{PA}}
+  \newcommand{\SEQ}{\mathsf{SEQ}}
+  \newcommand{\HEAP}{\mathsf{HEAP}}
+  \newcommand{\IMP}{\mathsf{IMP}}
+  \newcommand{\FIX}{\mathsf{FIX}}
+  \newcommand{\LAMBDA}{\mathsf{LAMBDA}}
+  \newcommand{\CTXT}{\mathsf{CTXT}}
+  \newcommand{\DEF}{\mathsf{DEF}}
+  \newcommand{\METALEVEL}{\mathsf{META-LEVEL}}
+  
+  % Define serif fonts for symbols:
+  \newcommand{\impite}{\mathsf{ite}}
+  \newcommand{\impwhile}{\mathsf{while}}
+  \newcommand{\imptt}{\mathsf{tt}}
+  \newcommand{\impff}{\mathsf{ff}}
+  \newcommand{\impskip}{\mathsf{skip}}
+  \newcommand{\impseq}{\mathsf{seq}}
+  \newcommand{\impasgn}{\mathsf{asgn}}
+  
+  \newcommand{\impmapsto}{\mathsf{mapsto}}
+  \newcommand{\impmerge}{\mathsf{merge}}
+  
+  \newcommand{\up}{\mathsf{\#up}}
+  \newcommand{\down}{\mathsf{\#down}}
+  \newcommand{\isGround}{\mathsf{isGround}}
+  \newcommand{\xfalse}{\mathsf{false}}
+  \newcommand{\xtrue}{\mathsf{true}}
+  
+  
+  % Define identity context
+  \newcommand{\I}{\mathsf{I}}
+  
+  % Define the colon ":" that is used in "x:s"
+  % with less spacing around.
+  \newcommand{\cln}{{:}}
+ 
+  
+  % Define ceiling and flooring symbols:
+  \usepackage{mathtools}
+  \DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+  \DeclarePairedDelimiter{\floor}{\lfloor}{\rfloor}
+
+  % Package for underlining and strikethrough texts.
+  \usepackage[normalem]{ulem}
+  
+  % Define text over equality
+  \usepackage{mathtools}
+  \newcommand{\xeq}[1]
+    {\stackrel{\mathclap{\normalfont\tiny\mbox{#1}}}{=}}
+    
+  % Package for display-mode quotations.
+  \usepackage{csquotes}
+  
+  % Define double-bracket [[P]] (known as the semantics bracket)
+  \usepackage{stmaryrd}
+  \newcommand{\Bracket}[1]
+    {\llbracket#1\rrbracket}
+    
+  % Package for writing inference rules and formal proofs
+  \usepackage{proof}
+  % Writing labels about inference rules
+  \newcommand{\rl}[1]{\text{\scriptsize{(#1)}}}
+  
+  % Package for writing BNF syntax
+  \usepackage{syntax}
+
+
+  % Define sorts and symbols in the calculus K.
+  \newcommand{\KBool}{\mathit{KBool}}
+  \newcommand{\Ktrue}{\mathit{Ktrue}}
+  \newcommand{\Kfalse}{\mathit{Kfalse}}
+  \newcommand{\KandBool}{\mathit{KandBool}}
+  \newcommand{\KorBool}{\mathit{KorBool}}
+  \newcommand{\KnotBool}{\mathit{KnotBool}}
+  \newcommand{\KimpliesBool}{\mathit{KimpliesBool}}
+  
+  \newcommand{\KString}{\mathit{KString}}
+  \newcommand{\Kconcat}{\mathit{Kconcat}}
+  
+  \newcommand{\Kdelete}{\mathit{delete}}
+    
+  \newcommand{\KSort}{\mathit{KSort}}
+  \newcommand{\KSortList}{\mathit{KSortList}}
+  \newcommand{\Ksort}{\mathit{Ksort}}
+  
+  \newcommand{\KSymbol}{\mathit{KSymbol}}
+  \newcommand{\KSymbolList}{\mathit{KSymbolList}}
+  \newcommand{\Ksymbol}{\mathit{Ksymbol}}
+  
+  \newcommand{\KPattern}{\mathit{KPattern}}
+  \newcommand{\KPatternList}{\mathit{KPatternList}}
+  \newcommand{\Kvariable}{\mathit{Kvariable}}
+  \newcommand{\Kand}{\mathit{Kand}}
+  \newcommand{\Kor}{\mathit{Kor}}
+  \newcommand{\Kimplies}{\mathit{Kimplies}}
+  \newcommand{\Kiff}{\mathit{Kiff}}
+  \newcommand{\Knot}{\mathit{Knot}}
+  \newcommand{\Kapplication}{\mathit{Kapplication}}
+  \newcommand{\Kexists}{\mathit{Kexists}}
+  \newcommand{\Kforall}{\mathit{Kforall}}
+  \newcommand{\Kequals}{\mathit{Kequals}}
+  \newcommand{\Kin}{\mathit{Kin}}
+  \newcommand{\Kcontains}{\mathit{Kcontains}}
+  \newcommand{\Ktop}{\mathit{Ktop}}
+  \newcommand{\Kbottom}{\mathit{Kbottom}}
+  \newcommand{\Kfloor}{\mathit{Kfloor}}
+  \newcommand{\Kceil}{\mathit{Kceil}}
+  
+  % Mifix symbols
+  \newcommand{\kand}{\wedge}
+  \newcommand{\kor}{\vee}
+  \newcommand{\kimplies}{\to}
+  \newcommand{\kiff}{\leftrightarrow}
+  \newcommand{\knot}{\neg}
+  \newcommand{\kexists}{\exists}
+  \newcommand{\kforall}{\forall}
+  \newcommand{\kequals}{=}
+  \newcommand{\kcontains}{\supseteq}
+  \newcommand{\kin}{\in}
+  \newcommand{\kfloor}{\floor}
+  \newcommand{\kceil}{\ceil}
+  \newcommand{\ktop}{\top}
+  \newcommand{\kbottom}{\bot}
+  
+  \newcommand{\KgetFvs}{\mathit{KgetFvs}}
+  \newcommand{\KfreshName}{\mathit{KfreshName}}
+  
+  \newcommand{\KSignature}{\mathit{KSignature}}
+  \newcommand{\Ksignature}{\mathit{Ksignature}}
+  
+  \newcommand{\KwellFormed}{\mathit{KwellFormed}}
+  \newcommand{\KgetSort}{\mathit{KgetSort}}
+  \newcommand{\KisSort}{\mathit{KisSort}}
+  \newcommand{\Ksubstitute}{\mathit{Ksubstitute}}
+  
+  \newcommand{\KTheory}{\mathit{KTheory}}
+  \newcommand{\Ktheory}{\mathit{Ktheory}}
+  
+  \newcommand{\Kdeduce}{\mathit{Kdeduce}}
+  
+  % The italic font of "ceil" used in math mode.
+  \newcommand{\cl}{\mathit{ceil}}
+  
+  % Use quotation marks "..." in math mode.
+  \newcommand{\quot}[1]{\mathrm{``#1"}}
+
+  % Title and authors
+  \title{The Semantics of K}
+  \author{Formal Systems Laboratory \\
+          University of Illinois}
+
+\begin{document}
+
+\maketitle
+
+\comment{Please feel free to contribute to this report in all ways.
+You could add new contents, remove redundant ones, refactor and
+organize the texts, and correct typos, but please follow the FSL rules for editing, though; e.g., $<$80 characters per line,
+each sentence on a new line, etc. }
+
+\section{Matching Logic}
+
+\newcommand{\Var}{\textit{Var}}
+\newcommand{\Nat}{\textit{Nat}}
+
+Let us recall the basic grammar of matching logic
+from~\cite{rosu-2017-lmcs}.\improvement{Add references.}
+~
+Assume a matching logic \emph{signature} $(S, \Sigma)$, and
+let $\Var_s$ be a countable set of
+\emph{variables} of sort $s$, where the sets of \emph{sorts} $S$
+and of \emph{symbols} $\Sigma$ are enumerable sets.
+We partition $\Sigma$ in sets of symbols
+$\Sigma_{s_1 \ldots s_n, s}$ of \emph{arity} $s_1\ldots s_n,s$, where
+$s_1,\ldots, s_n, s \in S$.
+Then \emph{patterns} of sort $s \in S$ are generated by the following grammar:
+\begin{align*}
+\varphi_s \Coloneqq\  &x \cln s \quad \text{where $x \in \Var$} \\
+\mid\  &\varphi_s \wedge \varphi_s \\
+\mid\  &\neg \varphi_s \\
+\mid\  &\exists x \cln s' . \varphi_s \quad \text{where $x \in N$ and $s' \in S$} \\
+\mid\  &\sigma(\varphi_{s_1},\dots,\varphi_{s_n}) \quad \text{where $\sigma \in \Sigma$ has $n$ arguments, and \dots}
+\end{align*}
+\begingroup\vspace*{-\baselineskip}
+\captionof{figure}{The grammar of matching logic.}
+\label{ml-grammar}
+\vspace*{\baselineskip}\endgroup
+
+The grammar above only defines the syntax of (well-formed) patterns of sort
+$s$.
+It says nothing about their semantics.
+For example, patterns $x\cln s \wedge y \cln s$ and
+$y\cln s \wedge x \cln s$ are distinct elements in the language
+of the grammar, in spite of them being semantically/provably equal
+in matching logic.
+
+For notational convenience, we take the liberty to use mix-fix syntax for
+operators in $\Sigma$,
+parentheses for grouping, and omit variable sorts when understood.
+For example, if $\Nat \in S$ and
+$\_+\_, \_*\_ \in \Sigma_{\Nat \times \Nat, \Nat}$
+then we may write $(x + y)*z$ instead of
+$\_*\_(\_+\_(x\cln\Nat,y\cln\Nat),z\cln\Nat)$.
+More notational convenience and conventions will be introduced along the way as use them. 
+
+A matching logic \emph{theory} is a triple $(S, \Sigma, A)$ where
+$(S,\Sigma)$ is a signature and $A$ is a set of patterns called \emph{axioms}.
+Like in many logics, sets of patterns may be presented as \emph{schemas}
+making use of meta-variables ranging over patterns, sometimes constrained
+to subsets of patterns using side conditions.
+For example:
+$$
+\begin{array}{rl}
+\varphi[\varphi_1/x] \wedge (\varphi_1 = \varphi_2) \rightarrow \varphi[\varphi_2/x]
+&\textrm{where $\varphi$ is any pattern and $\varphi_1$, $\varphi_2$} \\
+& \textrm{are any patterns of same sort as $x$}
+\\[2ex]
+(\lambda x . \varphi)\varphi' = \varphi[\varphi'/x]
+& \textrm{where $\varphi$, $\varphi'$ are \emph{syntactic patterns}, that is,}
+\\
+& \textrm{ones formed only with variables and symbols}
+\\
+& \textrm{\color{blue} This is not true. Pattern $\varphi$ contains quantifiers.}
+\\[2ex]
+\varphi_1 \mathrel{\texttt{+}} \varphi_2 = \varphi_1 +_\Nat \varphi_2
+& \textrm{where $\varphi$, $\varphi'$ are \emph{ground} syntactic patterns}
+\\
+&\textrm{of sort $\Nat$, that is, patterns built only}
+\\
+&\textrm{with symbols \texttt{zero} and \texttt{succ}}
+\\[2ex]
+(\varphi_1 \rightarrow \varphi_2) \rightarrow
+(\varphi[\varphi_1 / x] \rightarrow \varphi[\varphi_2 / x])
+& \textrm{where $\varphi$ is a \emph{positive context in $x$}, that is,}
+\\
+& \textrm{a pattern
+containing only one occurrence}
+\\
+&\textrm{of $x$ with no negation ($\neg$) on the path to}
+\\
+&\textrm{$x$, and where $\varphi_1$, $\varphi_2$ are any patterns}
+\\
+&\textrm{having the same sort}
+\end{array}
+$$
+
+One of the major goals of this paper is to propose a formal language
+and an implementation, that allows us to write such pattern schemas.
+
+\section{A Calculus of Matching Logic}
+
+In this section, we define a matching logic theory $K = (S_K, \Sigma_K, A_K)$ 
+as \emph{the calculus of matching logic},
+where $S_K, \Sigma_K$, and $A_K$ are sets of sorts, symbols, and axioms, 
+respectively.
+
+\subsection{Boolean Algebra}
+
+The matching logic theory of Boolean algebra is included in $K$,
+and the corresponding sort is named $\KBool$.
+Constructors of the sort $\KBool$ are two functional symbols
+\begin{equation*}
+\Ktrue \colon \to \KBool \qquad \Kfalse \colon \to \KBool.
+\end{equation*}
+Common Boolean operators are defined as functional symbols with their
+corresponding axioms:
+\begin{align*}
+&\KnotBool \colon \KBool \to \KBool
+&\KnotBool(\Ktrue) = \Kfalse
+\\
+&\KandBool \colon \KBool \times \KBool \to \KBool
+&\KnotBool(\Kfalse) = \Ktrue
+\\
+&\KorBool \colon \KBool \times \KBool \to \KBool
+&\KandBool(\Ktrue, b) = b
+\\
+&\KimpliesBool \colon \KBool \times \KBool \to \KBool
+&\KandBool(\Kfalse, b) = \Kfalse
+\end{align*}
+The symbols $\KorBool$ and $\KimpliesBool$ are defined in terms of the symbols
+$\KnotBool$ and $\KandBool$ in the usual way:
+\begin{align*}
+&\KorBool(b_1, b_2) = \KnotBool(\KandBool(\KnotBool(b_1), \KnotBool(b_2)))
+\\
+&\KimpliesBool(b_1, b_2) = \KorBool(\KnotBool(b_1), b_2).
+\end{align*}
+
+\begin{notation}
+	If $b$ is a term pattern of sort $\KBool$, then we will write just $b$ instead of $b = \Ktrue$ so that we can use Boolean expressions in any sort context.
+\end{notation}
+
+\begin{notation}
+	To write Boolean expressions compactly, we adopt the following abbreviations if there is no confusion
+	\begin{align*}
+	&\neg b \equiv \KnotBool(b)
+	&b_1 \wedge b_2 \equiv \KandBool(b_1, b_2)
+	\\
+	&b_1 \vee b_2 \equiv \KorBool(b_1, b_2)
+	&b_1 \to b_2 \equiv \KimpliesBool(b_1, b_2).
+	\end{align*}
+\end{notation}
+
+\subsection{Strings}
+The sort $\KString$ is the sort for strings. It has the following $26 + 26 + 10 + 2 = 64$ functional constructors:
+\begin{center}
+\begin{tabular}{c c c}
+	$\quot{a} \colon \to \KString$ & $\quot{b} \colon \to \KString$ & $\quot{c} \colon \to \KString$ \\
+	$\cdots$ & $\cdots$ & $\cdots$ \\
+	$\quot{x} \colon \to \KString$ & $\quot{y} \colon \to \KString$ & $\quot{z} \colon \to \KString$ \\
+	$\quot{A} \colon \to \KString$ & $\quot{B} \colon \to \KString$ & $\quot{C} \colon \to \KString$ \\
+    $\cdots$ & $\cdots$ & $\cdots$ \\
+    $\quot{X} \colon \to \KString$ & $\quot{Y} \colon \to \KString$ & $\quot{Z} \colon \to \KString$ \\
+    $\quot{0} \colon \to \KString$ & $\cdots$ & $\quot{9} \colon \to \KString$ \\
+    $\epsilon \colon \to \KString$ & \multicolumn{2}{c}{$\Kconcat \colon \KString \times \KString \to \KString$.}
+\end{tabular}
+\end{center}
+
+The associativity and identity of $\Kconcat$ are defined by the following axioms:
+\begin{align*}
+&\Kconcat(s_1, (\Kconcat(s_2, s_3))) = \Kconcat(\Kconcat(s_1, s_2), s_3)
+\\
+&\Kconcat(s, \epsilon) = s \quad \Kconcat(\epsilon, s) = s.
+\end{align*}
+
+\begin{notation}
+	As a convention, strings are often wrapped with quotation marks and the constructor $\Kconcat$ is often omitted.
+	Therefore, instead of writing $$\Kconcat(\quot{a}, \Kconcat(\quot{b}, \quot{c})),$$ we simply write $\quot{abc}$, thanks to the associativity of $\Kconcat$. 
+\end{notation}
+
+
+
+
+\subsection{Matching Logic Sorts and Symbols}
+
+The sort $\KSort$ is the sort for matching logic sorts.
+The only constructor of the sort $\KSort$ is the functional symbol:
+\begin{equation*}
+\Ksort \colon \KString \to \KSort.
+\end{equation*}
+
+The sort $\KSymbol$ is the sort for matching logic symbols.
+The only constructor of the sort $\KSymbol$ is the functional symbol:
+\begin{equation*}
+\Ksymbol \colon \KString \to \KSymbol.
+\end{equation*}
+
+\subsection{Finite Lists}
+Whenever we introduce a sort, say $\mathit{X}$, to $S_K$, we feel free to 
+use $\mathit{XList}$ as the sort of finite lists whose elements are of sort $\mathit{X}$. 
+If we do that, it means three things.
+Firstly, the sort $\mathit{XList}$ is in $S_K$.
+Secondly, the following functional symbols are in $\Sigma_K$:
+\begin{align*}
+&\mathit{nilXList} \colon \to \mathit{XList}
+&\mathit{inXList} \colon \mathit{X} \times \mathit{XList} \to \KBool
+\\
+&\mathit{appendXList} \colon \mathit{XList} \times \mathit{XList} \to 
+\mathit{XList}
+&\mathit{XListAsX} \colon \mathit{X} \to \mathit{XList}
+\\
+&\mathit{deleteXList} \colon \mathit{X} \times \mathit{XList} \to \mathit{XList}
+\end{align*}
+where $\mathit{nilXList}$, $\mathit{XListAsX}$, and $\mathit{appendXList}$ are constructors of sort $\mathit{XList}$.
+Thirdly, the following axioms are in $A_K$:
+\begin{align*}
+&\mathit{appendXList}(l_1, \mathit{appendXList}(l_2, l_3)) = \mathit{appendXList}(\mathit{appendXList}(l_1, l_2), l_3)
+\\
+&\mathit{appendXList}(l, \mathit{nilXList}) = l
+\quad \mathit{appendXList}(\mathit{nilXList}, l) = l
+\\
+&\mathit{inXList}(x, \mathit{nilXList}) = \Kfalse
+\quad \mathit{inXList}(x, \mathit{XListAsX}(x)) = \Ktrue
+\\
+&x \neq y \to \mathit{inXList}(x, \mathit{XListAsX}(y)) = \Kfalse
+\\
+&\mathit{inXList}(x, \mathit{appendXList}(l_1, l_2)) = \mathit{inXList}(x, l_1) \vee \mathit{inXList}(x, l_2)
+\\
+&\mathit{deleteXList}(x, \mathit{nilXList}) = \mathit{nilXList}
+\quad \mathit{deleteXList}(x, \mathit{XListAsX}(x)) = \mathit{nilXList}
+\\
+&x \neq y \to \mathit{deleteXList}(x, \mathit{XListAsX}(y)) = \mathit{XListAsX}(y)
+\\
+&\mathit{deleteXList}(x, \mathit{appendXList}(l_1, l_2)) = \mathit{appendXList}(\mathit{deleteXList}(x, l_1), \mathit{deleteXList}(x, l_2)).
+\end{align*}
+
+\begin{notation}
+To write lists expressions compactly, we adopt the following shorthands for $\mathit{inXList}$ and $\mathit{deleteXList}$ when there is no confusion:
+\begin{align*}
+&x \in l \equiv (\mathit{inXList}(x, l) = \Ktrue)
+\qquad x \not\in l \equiv (\mathit{inXList}(x, l) = \Kfalse)
+\\
+&\mathit{deleteXList}(x, l) \equiv \Kdelete(x, l).
+\end{align*}
+Note that one should not confuse the shorthand for $\mathit{inXList}$ with the 
+matching logic membership connective, which we all write as the belongs-to 
+symbol ``$\in$''. 
+If the two patterns before and after the belongs-to symbol are of the same 
+sort, it is the membership connective. 
+If the left of them is of sort $\mathit{X}$ and the right is of sort 
+$\mathit{XList}$, the belongs-to symbol is the shorthand of $\mathit{inXList}$.
+
+Constructors $\mathit{XListAsX}$ and $\mathit{appendXList}$ are often omitted, too:
+\begin{align*}
+x_1, \dots, x_n
+\equiv &\mathit{appendXList}(x_1, \mathit{appendXList}(\dots, \mathit{appendXList}(x_{n-1}, x_n)\dots)).
+\end{align*}
+\end{notation}
+
+\subsection{Matching Logic Patterns}
+
+The sort $\KPattern$ is the sort for matching logic patterns.
+It has the following functional symbols:
+\begin{align*}
+&\Kvariable \colon \KString \times \KSort \to 
+\KPattern
+\\
+&\Kand, \Kor, \Kimplies, \Kiff \colon \KPattern \times \KPattern \times \KSort \to \KPattern
+\\
+&\Knot \colon \KPattern \times \KSort \to \KPattern 
+\\
+&\Kapplication \colon \KSymbol \times \KPatternList \to \KPattern 
+\\
+&\Kexists, \Kforall \colon \KString \times \KSort \times \KPattern \times \KSort \to \KPattern 
+\\
+&\Kequals, \Kin, \Kcontains \colon \KPattern \times 
+\KPattern \times \KSort \times \KSort \to \KPattern \\
+&\Kfloor, \Kceil \colon \KPattern \times \KSort \times \KSort \to \KPattern\\
+&\Ktop, \Kbottom \colon \KSort \to \KPattern,
+\end{align*}
+where $\Kvariable$, $\Kand$, $\Kor$, $\Kapplication$, and $\Kexists$ are constructors of sort~$\KPattern$. 
+
+\begin{notation}
+	As a convention, we use $b$ for $\KBool$ variables, $x, y, z$ for 
+	$\KString$ variables, $s$ for $\KSort$ variables, $\sigma$ for 
+	$\KSymbol$ variables, and $\varphi, \psi$ for $\KPattern$ variables. 
+\end{notation}
+
+\begin{notation}
+	Patterns of sort $\KPattern$ are easily getting huge quickly.
+	The following abbreviations are adopted to write compact $\KPattern$ patterns.
+	\begin{center}
+	\begin{tabular}{ll}
+    \multicolumn{2}{l}{$x \cln s \equiv \Kvariable(x, s)$. Sometimes it 
+    abbreviates to just $x$.}
+  \\
+	$\varphi \kand_s \psi \equiv \Kand(\varphi, \psi, s)$
+  & $\varphi \kor_s \psi \equiv \Kor(\varphi, \psi, s)$
+  \\
+    $\varphi \kimplies_s \psi \equiv \Kimplies(\varphi, \psi, s)$
+  &	$\varphi \kiff_s \psi \equiv \Kiff(\varphi, \psi, s)$
+  \\
+    $\knot_s \varphi \equiv \Knot(\varphi, x, s)$
+  & $\kexists_{s_1}^{s_2} x . \varphi \equiv \Kexists(x,s,\varphi,s')$
+  \\
+    $\kforall_{s_1}^{s_2} x . \varphi \equiv \Kforall(x,s,\varphi,s')$
+  & $\varphi \kequals_{s_1}^{s_2} \psi \equiv \Kequals(\varphi, \psi, s_1, s_2)$
+  \\
+    $\varphi \kcontains_{s_1}^{s_2} \psi \equiv \Kcontains(\varphi, \psi, s_1, s_2)$
+  \\
+    \multicolumn{2}{l}{$\sigma(\varphi_1,\dots,\varphi_n) \equiv \Kapplication(\sigma, (\varphi_1,\dots,\varphi_n))$}
+  \\
+    $\kfloor{\varphi}_{s_1}^{s_2} \equiv \Kfloor(\varphi, s_1, s_2)$
+  & $\kceil{\varphi}_{s_1}^{s_2} \equiv \Kceil(\varphi, s_1, s_2)$
+  \\
+    $\ktop_s \equiv \Ktop(s)$
+  & $\kbottom_s \equiv \Kbottom(s)$
+	\end{tabular}
+    \end{center}
+\end{notation}
+
+Apart from the five constructors of sort $\KPattern$, all the other symbols are derived connectives, which are defined by the following axioms:
+\begin{align*}
+&\varphi \kor_s \psi = \knot_s(\knot_s \varphi \kand_s \knot_s \psi)
+&\varphi \kimplies_s \psi = \knot_s \varphi \kor_s \psi
+\\
+&\varphi \kiff_s \psi = (\varphi \kimplies_s \psi) \kand_s (\psi \kimplies_s \varphi)
+&\kforall_{s_1}^{s_2}x.\varphi = \knot_{s_2} \kexists_{s_1}^{s_2} x. (\knot_{s_2} \varphi)
+\\
+&\varphi \kequals_{s_1}^{s_2} \psi = \kfloor{\varphi \kiff_{s_1} \psi}_{s_1}^{s_2}
+&\varphi \kcontains_{s_1}^{s_2} \psi = \kfloor{\psi \kimplies_{s_1} \varphi}_{s_1}^{s_2}
+\\
+&x \in_{s_1}^{s_2} \varphi = x \subseteq_{s_1}^{s_2} \varphi
+\\
+&\ktop_s \equiv \kexists_s^s x . x
+&\kbottom_s \equiv \knot_s \ktop_s
+\\
+&\kfloor{\varphi}_{s_1}^{s_2} \equiv \knot_{s_2} \kceil{\knot_{s_1} \varphi}_{s_1}^{s_2}
+&\kceil{\varphi}_{s_1}^{s_2} \equiv \Ksymbol(\quot{ceil})(\varphi)
+\end{align*}
+\unsure{not sure about the last one ... the definedness symbol...}
+
+The functional symbol 
+$$\KgetFvs \colon \KPattern \to \KPatternList$$
+collects all free variables in a pattern. 
+It has the following axioms:
+\begin{align*}
+&\KgetFvs(x \cln s) = x \cln s \quad \KgetFvs(\knot_s \varphi) = 
+\KgetFvs(\varphi)
+\\
+&\KgetFvs(\varphi \kand_s \psi) = \KgetFvs(\varphi), \KgetFvs(\psi)
+\\
+&\KgetFvs(\sigma(\varphi_1, \dots, \varphi_n)) = \KgetFvs(\varphi_1), \dots, \KgetFvs(\varphi_n)
+\\
+&\KgetFvs(\kexists_{s_1}^{s_2} x . \varphi) = \mathit{delete}(\Kvariable(x, 
+s_1), \KgetFvs(\varphi)).
+\end{align*}
+
+The functional symbol
+$$\KfreshName \colon \KPatternList \to \KString$$ 
+generates a variable name that does not occur free in the argument patterns.
+It has the following axiom:
+\begin{align*}
+\Kvariable(\KfreshName(\varphi_1,\dots,\varphi_n), s) \not\in \KgetFvs(\varphi_1),\dots,\KgetFvs(\varphi_n).
+\end{align*}
+
+The functional symbol
+$$\Ksubstitute \colon \KPattern \times \KPattern \times \KPattern \to \KPattern$$
+takes a target pattern $\varphi$, a ``find''-pattern $x$, and a ``replace''-pattern $\psi$, and returns $\varphi[\psi / x]$.
+
+\begin{notation}
+	We abbreviate $\Ksubstitute(\varphi, \psi, x)$ as $\varphi[\psi / x]$.
+\end{notation}
+
+The function $\Ksubstitute$ has the following axioms:
+\begin{center}
+\begin{tabular}{lr}
+  $x[\psi/x] = \psi$
+& $ x \neq y \to y[\psi/x] = y$
+\\
+  $(\varphi_1 \kand_s \varphi_2) [\psi/x] = \varphi_1[\psi/x] \kand_s \varphi_2[\psi/x]$
+& $(\knot_s \varphi)[\psi/x] = \knot_s \varphi[\psi/x]$
+\\
+  $\sigma(\varphi_1, \dots, \varphi_n)[\psi/x] = \sigma(\varphi_1[\psi/x], \dots, \varphi_n[\psi/x])$
+& $(\kexists_{s_1}^{s_2}x . \varphi)[\psi/x] = \kexists_{s_1}^{s_2}x . \varphi$
+\\
+  \multicolumn{2}{l}{$(\kexists_{s_1}^{s_2}x . \varphi)[\psi/y] = \exists z . z = \KfreshName(\varphi, \psi, x) \wedge \kexists_{s_1}^{s_2} z . (\varphi[z/x][\psi/y]).$}
+\end{tabular}
+\end{center}
+
+\subsection{Matching Logic Signatures}
+
+The sort $\KSignature$ is the sort for matching logic signatures, and it has just one constructor symbol:
+\begin{equation*}
+\Ksignature \colon \KSortList \times \KSymbolList \to \KSignature.
+\end{equation*}
+
+\begin{notation}
+	As a convention, we use $\Sigma, \Psi$ for $\KSignature$ variables. 
+	We use~$S$ for~$\KSortList$ variables and $\Sigma$ for $\KSymbolList$ variables if they appear in~$\Ksignature$. 
+\end{notation}
+
+\begin{notation}
+	We abbreviate $\Ksignature(S, \Sigma)$ as $(S, \Sigma)$.
+\end{notation}
+
+The functional symbol
+$$\KgetSort \colon \KPattern \times \KSignature \rightharpoonup \KSort$$
+returns the sort of the argument pattern in the argument signature if the argument pattern is well-formed.
+Otherwise, it returns $\bot_\KSort$.
+The following axioms define $\KgetSort$:
+\begin{align*}
+&\KgetSort(x \cln s, (S, \Sigma)) = (s \in S) \wedge s
+\\
+&\KgetSort(\varphi \kand_s \psi, \Sigma) = (\KgetSort(\varphi, \Sigma) = s) \wedge (\KgetSort(\psi, \Sigma) = s) \wedge s
+\\
+&\KgetSort(\knot_s \varphi, \Sigma) = (\KgetSort(\varphi, \Sigma) = s) \wedge s
+\\
+&\KgetSort(\sigma(\varphi_1,\dots,\varphi_n), (S, \Sigma)) = (\dots) \wedge s
+\\
+&\KgetSort(\kexists_{s_1}^{s_2} x . \varphi, \Sigma) = (s_1 \in S) \wedge (s_2 \in S) \wedge (\KgetSort(\varphi, \Sigma) = s_2) \wedge s_2
+\end{align*}
+
+The functional symbol 
+$$\KwellFormed \colon \KPattern \times \KSignature \to \KBool$$ returns $\Ktrue$ if the argument pattern is well-formed in the argument signature.
+It has the following axioms:
+\begin{align*}
+&\KwellFormed(x \cln s, (S, \Sigma)) = s \in S
+\\
+&\KwellFormed(\varphi \kand_s \psi, \Sigma) = \KgetSort(\varphi, \Sigma) = s \wedge \KgetSort(\psi, \Sigma) = s
+\\
+&\KwellFormed(\knot_s \varphi, \Sigma) = \KgetSort(\varphi, \Sigma) = s
+\\
+&\KwellFormed(\sigma(\varphi_1, \dots, \varphi_n), \Sigma) = \dots
+\\
+&\KwellFormed(\kexists_{s_1}^{s_2} x . \varphi, (S, \Sigma)) = s_1 \in S \wedge \KgetSort(\varphi, (S, \Sigma)) = s_2
+\end{align*}
+
+\begin{notation}\label{omit-well-formedness-premises}
+	The well-formedness is an important premise in axioms about the sort 
+	$\KPattern$. To keep our notation simple, we often omit the well-formedness 
+	premises when defining axioms in $\Sigma_K$.
+\end{notation}
+
+\subsection{Matching Logic Theories}
+
+The sort $\KTheory$ is the sort of matching logic theories. The only constructor symbol is 
+$$\Ktheory \colon \KSignature \times \KPatternList \to \KTheory.$$
+
+\begin{notation}
+	As a convention, we use $A, F$ for $\KPatternList$ variables if they appear in $\Ktheory$. We use $T$ for $\Ktheory$ variables.
+\end{notation}
+\begin{notation}
+	We abbreviate $\Ktheory(\Sigma, A)$ as $(\Sigma, A)$, and abbreviate $\Ktheory(\Ksignature(S, \Sigma), A)$ as $(S, \Sigma, A)$. 
+\end{notation}
+
+\subsection{Matching Logic Proof System}
+
+A sound and complete proof system has been introduced in~\cite{?}. 
+
+The functional symbol
+$$
+\Kdeduce \colon \KTheory \times \KPattern \to \KBool
+$$
+returns $\Ktrue$ if the argument pattern is deducible in the argument theory.
+The functional symbol $\Kdeduce$ has axioms in correspondence to the inference rules in the proof system.
+In the following, we are going to list all the inference rules in the matching 
+logic proof system followed by their correspondent axioms of $\Kdeduce$, in 
+which the well-formedness premises are omitted 
+(Notation~\ref{omit-well-formedness-premises}).
+
+\paragraph{Rule (Axiom).}
+$F \vdash \varphi$ if $\varphi \in F$.
+\begin{align*}
+\varphi \in F \to \Kdeduce((\Sigma, F), \varphi).
+\end{align*}
+
+\paragraph{Rule (K1).}
+$\vdash \varphi \to (\psi \to \varphi)$.
+\begin{align*}
+\Kdeduce(T, \varphi \kimplies_s (\psi \kimplies_s \varphi)).
+\end{align*}
+
+\paragraph{Rule (K2).}
+$\vdash (\varphi_1 \to (\varphi_2 \to \varphi_3)) \to ((\varphi_1 \to \varphi_2) \to (\varphi_1 \to \varphi_3))$.
+\begin{align*}
+\Kdeduce(T, (\varphi_1 \kimplies_s (\varphi_2 \kimplies_s \varphi_3)) 
+\kimplies_s ((\varphi_1 \kimplies_s \varphi_2) \kimplies_s (\varphi_1 
+\kimplies_s \varphi_3))).
+\end{align*}
+
+\paragraph{Rule (K3).}
+$\vdash (\neg \psi \to \neg \varphi) \to (\varphi \to \psi)$.
+\begin{align*}
+\Kdeduce(T, (\knot_s \psi \kimplies_s \knot_s \varphi) \kimplies_s (\varphi 
+\kimplies_s \psi)).
+\end{align*}
+
+\paragraph{Rule (K4).}
+$\vdash \forall x . \varphi \to \varphi[y/x]$.
+\begin{align*}
+\Kdeduce(T, \kforall_{s_1}^{s_2}  x . \varphi \kimplies_{s_2} \varphi[y/x]).
+\end{align*}
+
+\paragraph{Rule (K5).}
+$\vdash \forall x . (\varphi \to \psi) \to (\varphi \to \forall x . \psi)$ if $x$ does not occur free in $\varphi$. 
+\begin{align*}
+x \not\in \KgetFvs(\varphi)
+\to \Kdeduce(T, \kforall_{s_1}^{s_2} x . (\varphi \kimplies_{s_2} \psi) 
+\kimplies_{s_2} (\varphi \kimplies_{s_2} \kforall_{s_1}^{s_2} x . \psi)).
+\end{align*}
+
+\paragraph{Rule (K6).}
+$\vdash \varphi_1 = \varphi_2 \to (\psi[\varphi_1/x] \to \psi[\varphi_2/x])$.
+\begin{align*}
+\Kdeduce(T, \varphi_1 \kequals_{s_1}^{s_2} \varphi_2 \kimplies_{s_2} 
+(\psi[\varphi_1/x] \kimplies_{s_2} \psi[\varphi_2/x])).
+\end{align*}
+
+\paragraph{Rule (Df).}\unsure{not sure...}
+$\vdash \ceil{x}$.
+\begin{align*}
+\Kdeduce(T, \Ksymbol(``ceil")(x)).
+\end{align*}
+
+\paragraph{Rule (M1).}
+$\vdash x \in y = (x = y)$.
+\begin{align*}
+\Kdeduce(T, x \kin_{s_1}^{s_2} y \kequals_{s_2}^{s_3} (x \kequals_{s_1}^{s_2} 
+y)).
+\end{align*}
+
+\paragraph{Rule (M2).}
+$\vdash x \in (\varphi \wedge \psi) = (x \in \varphi) \wedge (x \in \psi).$
+\begin{align*}
+\Kdeduce(T, x \kin_{s_1}^{s_2} (\varphi \kand_{s_1} \psi) \kequals_{s_2}^{s_3} 
+(x 
+\kin_{s_1}^{s_2} \varphi) \kand_{s_2} (x \kin_{s_1}^{s_2} \psi)).
+\end{align*}
+
+\paragraph{Rule (M3).}
+$\vdash x \in \neg \varphi = \neg (x \in \varphi)$.
+\begin{align*}
+\Kdeduce(T, x \kin_{s_1}^{s_2} \knot_{s_1} \varphi \kequals_{s_2}^{s_3} 
+\knot_{s_2} 
+(x 
+\kin_{s_1}^{s_2} \varphi)).
+\end{align*}
+
+\paragraph{Rule (M4).}
+$\vdash x \in \forall y . \varphi = \forall y . x \in \varphi$ if $x$ is distinct from $y$.
+\begin{align*}
+x \neq y \to \Kdeduce(T, x \kin_{s_2}^{s_3} \kforall_{s_1}^{s_2} y . \varphi 
+\kequals_{s_3}^{s_4} \kforall_{s_1}^{s_3} y . x \kin_{s_2}^{s_3} \varphi).
+\end{align*}
+
+\paragraph{Rule (M5).}
+$\vdash x \in \sigma(\dots \varphi_i \dots) = \exists y . y \in \varphi_i \wedge x \in \sigma(\dots y \dots)$ where $y$ is distinct from $x$ and it does not occur free in $\sigma(\dots \varphi_i \dots)$.
+\begin{align*}
+&x \neq y \wedge y \not\in \KgetFvs(\Kapplication(\sigma, (l\cln\KPatternList, \varphi_i, r\cln\KPatternList)))
+\\
+\to&\Kdeduce(T, x \kin_{s_1}^{s_2} \Kapplication(\sigma, (l\cln\KPatternList, 
+\varphi_i, r\cln\KPatternList))
+\\
+&\kequals_{s_2}^{s_4} \kexists_{s_3}^{s_4} y . y \kin_{s_3}^{s_2} \varphi_i 
+\kand x 
+\kin_{s_1}^{s_2} 
+\Kapplication(\sigma, (l\cln\KPatternList, y, r\cln\KPatternList))).
+\end{align*}
+
+\paragraph{Rule (Modus Ponens).}
+If $\vdash \varphi$ and $\vdash \varphi \to \psi$, then $\vdash \psi$.
+\begin{align*}
+\Kdeduce(T, \varphi) \wedge \Kdeduce(T, \varphi \kimplies_s \psi) \to 
+\Kdeduce(T, \psi).
+\end{align*}
+
+\paragraph{Rule (Universal Generalization).}
+If $\vdash \varphi$, then $\vdash \forall x . \varphi$.
+\begin{align*}
+\Kdeduce(T, \varphi) \to \Kdeduce(T, \kforall_{s_1}^{s_2} x . \varphi).
+\end{align*}
+
+\paragraph{Rule (Membership Introduction).}
+If $\vdash \varphi$ and $x$ does not occur free in $\varphi$, then $\vdash x \in \varphi$.
+\begin{align*}
+\Kdeduce(T, \varphi) \wedge x \not\in \KgetFvs(\varphi) \to \Kdeduce(T, x 
+\kin_{s_1}^{s_2} \varphi).
+\end{align*}
+
+\paragraph{Rule (Membership Elimination).}
+If $\vdash x \in \varphi$ and $x$ does not occur free in $\varphi$, then $\vdash \varphi$.
+\begin{align*}
+\Kdeduce(T, x \kin_{s_1}^{s_2} \varphi) \wedge x \not\in \KgetFvs(\varphi) \to 
+\Kdeduce(T, \varphi).
+\end{align*}
+
+\begin{theorem}[Faithfulness of $K$]
+	$T \vdash \varphi$ iff $K \vdash \Kdeduce(T, \varphi)$.
+\end{theorem}
+\begin{proof}
+	TBC.
+\end{proof}
+
+\section{The Kore Syntax}
+
+The Kore syntax that we propose here is the \emph{minimal} one, in the sense that it supports only the five basic matching logic constructors (variables, symbol applications, conjunction, negation, and existential quantifications), plus parametricity, which allows to define matching logic theories with infinite sorts, symbols, and axioms.
+
+\begin{grammar}\small
+	<definition>    ::= <declaration>$^*$
+	
+	<declaration>   ::= "sort" <sort>
+	\alt "hooked-sort" <sort>
+	\alt "symbol" <symbol> "(" <sort>$^*$ ")" ":" <sort>
+	\alt "hooked-symbol" <symbol> "(" <sort>$^*$ ")" ":" <sort>
+	\alt "axiom" <pattern>
+	
+	<sort>          ::= <atomic-sort> | <parametric-sort>
+	
+	<parametric-sort> ::= "{" <sort-variable> "}"
+	\alt <sort-constructor> "{" <sort-variable>$^+$ "}"
+	
+	<pattern> ::= <pattern-variable>
+	\alt <symbol-id> "(" <pattern-list> ")"
+	\alt "\\and" "(" <pattern> "," <pattern> ")"
+	\alt "\\not" "(" <pattern> ")" 
+	\alt "\\exists" "(" <pattern-variable> "," <pattern> ")"
+\end{grammar}
+
+\newcommand{\smalltt}[1]{\texttt{\small #1} }
+\newcommand{\sort}{\smalltt{sort}}
+\newcommand{\symb}{\smalltt{symbol}}
+\newcommand{\axiom}{\smalltt{axiom}}
+
+
+Sorts are declared using the \sort keyword, symbols are declared using the \symb keyword, and axioms are defined using the \axiom keyword.
+
+\begin{Verbatim}[fontsize=\small]
+    /* Example 1: One-Element */
+    sort Element1
+    symbol e() : Element1
+    axiom  e()
+\end{Verbatim}
+
+\begin{Verbatim}[fontsize=\small]
+    /* Example 2: Two-Element */
+    sort Element2
+    symbol e1() : Element2
+    symbol e2() : Element2
+    axiom  \not(\and(\not(e1()), \not(e2())))
+    axiom  \not(\and(e1(), e2()))
+\end{Verbatim}
+
+Symbols can be parametric on sort variables, which are wrapped by curly brackets. 
+Sort variables can be instantiated by any sort.
+
+\begin{Verbatim}[fontsize=\small]
+    /* Example 3: Identity-Function */
+    symbol id({S}) : {S}
+    axiom  \not(\and(X:{S},     \not(id(X:{S}))))
+    axiom  \not(\and(id(X:{S}), \not(X:{S})))
+\end{Verbatim}
+
+Given the context where two sorts \smalltt{Element1} and \smalltt{Element2} are declared, the above is just a shorthand of
+
+\begin{Verbatim}[fontsize=\small]
+    /* Example 3': Identity-Function */
+    symbol id(Element1) : Element1
+    symbol id(Element2) : Element2
+    axiom  \not(\and(X:Element1,     \not(id(X:Element1))))
+    axiom  \not(\and(id(X:Element1), \not(X:Element1)))
+    axiom  \not(\and(X:Element2,     \not(id(X:Element2))))
+    axiom  \not(\and(id(X:Element1), \not(X:Element1)))
+\end{Verbatim}
+
+If a sort variable appears multiple times in a statement, only one of the appearances needs curly brackets.
+Therefore, an alternative way to write Example~3 is
+\begin{Verbatim}[fontsize=\small]
+    /* Example 3'': Identity-Function */
+    symbol id({S}) : S
+    axiom  \not(\and(X:{S},     \not(id(X:S))))
+    axiom  \not(\and(id(X:{S}), \not(X:S)))
+\end{Verbatim}
+
+If a variable is decorated with a sort variable, as in {\small\verb|X:{S}|}, the sort decoration can be omitted. Therefore, an alternative way to write Example 3 is
+\begin{Verbatim}[fontsize=\small]
+    /* Example 3''': Identity-Function */
+    symbol id({S}) : S
+    axiom  \not(\and(X,     \not(id(X))))
+    axiom  \not(\and(id(X), \not(X)))
+\end{Verbatim}
+
+Symbols can be parametric on more than one sort variables.
+\begin{Verbatim}[fontsize=\small]
+    /* Example 4: Definedness */
+    symbol ceil({S}) : {S'}
+    axiom  ceil(X)
+\end{Verbatim}
+
+Use sort constructors and sort variables to declare parametric sorts.
+\begin{Verbatim}[fontsize=\small]
+    /* Example 5: Lists */
+    sort List{S}
+    symbol nil() : List{S}
+    symbol cons(S, List{S}) : List{S}
+    symbol length(List{S}) : Nat
+\end{Verbatim}
+
+Parametric sorts can take multiple sort variables.
+\begin{Verbatim}[fontsize=\small]
+    /* Example 6: Pairs */
+    sort Pair{S, S'}
+    symbol pairOf(S, S') : Pair{S, S'}
+    symbol fst(Pair{S, S'}) : S
+    symbol snd(Pair{S, S'}) : S'  
+\end{Verbatim}
+
+\paragraph{Example (Boolean Algebra).}
+\begin{Verbatim}[fontsize=\small]
+    sort Bool
+    symbol true() : Bool
+    symbol false() : Bool
+    axiom  \or(true(), false())
+    axiom  \not(\and(true(), false()))
+    symbol andBool(Bool, Bool) : Bool
+    axiom  \equals(andBool(true(), B), B)
+    axiom  \equals(andBool(false(), B), false())
+\end{Verbatim}
+
+
+
+\section{Ignore Me}
+
+\subsection{Syntax and Semantics of Kore}
+\label{sec:syntax-of-kore}
+
+\begin{Verbatim}[fontsize=\small]
+// Namespaces for sorts, variables, metavariables,
+// symbols, and Kore modules.
+Sort           = String
+VariableId     = String
+MetaVariableId = String
+Symbol         = String
+ModuleId       = String
+
+Variable       = VariableId:Sort
+MetaVariable   = MetaVariableId::Sort
+
+Pattern        = Variable | MetaVariable
+               | \and(Pattern, Pattern)
+               | \not(Pattern)
+               | \exists(Variable, Pattern)
+               | Symbol(PatternList)
+
+Sentence       = import ModuleId
+               | syntax Sort
+               | syntax Sort ::= Symbol(SortList)
+               | axiom Pattern
+Sentences      = Sentence | Sentences Sentences
+
+Module         = module ModuleId
+                   Sentences
+                 endmodule
+\end{Verbatim}
+
+In Kore syntax, the backslash ``\verb|\|'' is reserved for matching logic connectives and the sharp ``\verb|#|'' is reserved for the meta-level, i.e., the $K$ sorts and symbols. 
+Therefore, the sorts $\KBool$, $\KString$, $\KSymbol$, $\KSort$, and 
+$\KPattern$ in the calculus $K$ are denoted as \verb|#Bool|, \verb|#String|, 
+\verb|#Symbol|, \verb|#Sort|, and \verb|#Pattern| in Kore respectively.
+Symbols in $K$ are denoted in the similar way, too. 
+For example, the constructor symbol $\Kvariable \colon \KString \times \KSort \to \KPattern$ is denoted as \verb|#variable| in Kore. 
+
+A Kore module definition begins with the keyword \verb|module| followed by the name of the module-being-defined, and ends with the keyword \verb|endmodule|. The body of the definition consists of some \emph{sentences}, whose meaning are introduced in the following.
+
+The keyword \verb|import| takes an argument as the name of the module-being-imported, and looks for that module in previous definitions. 
+If the module is found, the body of that module is copied to the current module.
+Otherwise, nothing happens. 
+The keyword \verb|syntax| leads a \emph{syntax declaration}, which can be either a \emph{sort declaration} or a \emph{symbol declaration}.
+Sorts declared by sort declarations are called \emph{object-sorts}, in comparison to the five \emph{meta-sorts}, \verb|#Bool|, \verb|#String|, \verb|#Symbol|, \verb|#Sort|, and \verb|#Pattern|, in $K$. 
+Symbols whose argument sorts and return sort are all object-sorts (meta-sorts) are called \emph{object-symbols} (\emph{meta-sorts}).
+
+Patterns are written in prefix forms. 
+A pattern is called an \emph{object-pattern} (\emph{meta-pattern}) if all sorts and symbols in it are object (meta) ones.
+Meta-symbols will be added to the calculus $K$, while object-sorts and object-symbols will not.
+They only serve for the purpose to parse an object pattern. 
+
+The keyword \verb|axiom| takes a pattern and adds an axiom to the calculus $K$.
+If the pattern is a meta-pattern, it adds the pattern itself as an axiom.
+If the pattern $\varphi$ is an object-pattern, it adds $\Bracket{\varphi}$ as an axiom to the calculus $K$.
+
+Recall that we have defined the semantics bracket as
+\begin{equation*}
+\Bracket{\varphi} \equiv 
+\left(\textit{deducible}\left(\mathit{lift}[\varphi]\right) = true\right),
+\end{equation*}
+where $\varphi$ is a pattern of the grammar in Figure~\ref{ml-grammar}.
+However, here in Kore we allow $\varphi$ containing \emph{meta-variables}.
+As a result, we modify the definition of the semantics bracket as $$\Bracket{\varphi} \equiv \mathit{mvsc}[\varphi] \to (deducible\left(\mathit{lift}[\varphi]\right) = true),$$
+where the lifting function $\mathit{lift}[\_]$ and the meta-variable sort constraint $\mathit{mvsc}[\_]$ are defined in Algorithm~\ref{alg:liftingfunction} and~\ref{alg:mvsc}, respectively.
+Intuitively, meta-variables in an object-pattern $\varphi$ are lifted to variables of the sort $\KPattern$ with the corresponding sort constraints. 
+For example, the meta-variable $x \cln\cln s$ is lifted to a variable $x \cln \KPattern$ in $K$ with the constraint that $\KgetSort(x \cln \KPattern) = sort(s)$. The function $\mathit{mvsc}[\_]$ collects all such meta-variable sort constraint in an object-pattern is implemented in Algorithm~\ref{alg:mvsc}.
+
+\begin{algorithm}
+	\KwIn{An object-pattern $\varphi$.}
+	\KwOut{The meta-representation (ASTs) of $\varphi$ in $K$}
+	\uIf{$\varphi$ is $x \cln s$}{Return $\mathit{variable(x, sort(s))}$}
+	\uElseIf{$\varphi$ is $x \cln \cln s$}{Return $x \cln \KPattern {\ \wedge\ } (\mathit{sort(s)} = \KgetSort(x \cln \KPattern)) $}
+	\uElseIf{$\varphi$ is $\varphi_1 \wedge \varphi_2$}
+	{Return $\Kand(\mathit{lift}[\varphi_1], \mathit{lift}[\varphi_2]$}
+	\uElseIf{$\varphi$ is $\neg \varphi_1$}
+	{Return $\Knot(\mathit{lift}[\varphi_1])$}
+	\uElseIf{$\varphi$ is $\exists x \cln s . \varphi_1$}
+	{Return $\Kexists(x, \mathit{sort(s)}, \mathit{lift}[\varphi_1])$}
+	\uElseIf{$\varphi$ is $\sigma(\varphi_1,\dots,\varphi_n)$ and $\sigma \in \Sigma_{s_1,\dots,s_n,s}$}
+	{Return $\Kapplication(\mathit{symbol}(\sigma, (\Ksort(s_1), \dots, \Ksort(s_n)), \Ksort(s)),$
+	$\mathit{lift}[\varphi_1],\dots,\mathit{lift}[\varphi_n])$}
+	\caption{Lifting Function $\mathit{lift}[\_]$}
+	\label{alg:liftingfunction}
+\end{algorithm}
+
+\begin{algorithm}
+	\KwIn{An object-pattern $\varphi$}
+	\KwOut{The meta-variable sort constraint of $\varphi$}
+	Collect in set $W$ all meta-variables appearing in $\varphi$\;
+	Let $C = \emptyset$\;
+	\ForEach{$x \cln \cln s \in W$}
+	{$C = C \cup (\mathit{sort(s)} = \KgetSort(x \cln \KPattern))$}
+	Return $\bigwedge C$\;
+	\caption{Meta-Variable Sort Constraint Collection $\mathit{mvsc}$}
+	\label{alg:mvsc}
+\end{algorithm}
+
+
+\subsection{Examples of Kore}
+\label{sec:examples-of-kore}
+
+\todo[inline, author=Xiaohong]{Add more examples and texts here.}
+
+\paragraph{The {\small BOOL} module.}\quad
+\begin{Verbatim}[fontsize=\small]
+module BOOL
+  syntax Bool
+  syntax Bool ::= true | false | notBool(Bool)
+                | andBool(Bool, Bool) | orBool(Bool, Bool)
+  axiom \or(true(), false())
+  axiom \exists(X:Bool, \equals(X:Bool, true()))
+  axiom \equals(andBool(B1::Bool, B2::Bool), 
+                andBool(B2::Bool, B1::Bool))
+  axiom ... ...
+endmodule
+\end{Verbatim}
+
+\paragraph{The {\small BOOL} module (desugared).}\quad
+\begin{Verbatim}[fontsize=\small]
+module BOOL
+  axiom \equals(
+    #true,
+    #deducible(#or(#application(#symbol("true", #nilSort, #sort("Bool")),
+                                #nilPattern), 
+                   #application(#symbol("false", #nilSort, #sort("Bool")),
+                                #nilPattern))))
+  axiom \equals(
+    #true,
+    #deducible(#exists("X", #sort("Bool"), 
+               #equals(#variable("X", #sort("Bool")), 
+                       #application(#symbol("true", #nilSort, #sort("Bool")),
+                                    #nilPattern)))))
+  axiom \implies(
+    \and(\equals(#getSort(B1:Pattern), #sort("Bool")), 
+         \equals(#getSort(B2:Pattern), #sort("Bool"))),
+    \equals(
+      #true,
+      #deducible(#equals(#application(#symbol("andBool", 
+                                              (#sort("Bool"), #sort("Bool"))
+                                              #sort("Bool")), 
+                                      (B1:Patern, B2:Pattern)), ---- TODO
+                         #application(#symbol("andBool", 
+                                              (#sort("Bool"), #sort("Bool"))
+                                              #sort("Bool")), 
+                                      (B2:Patern, B1:Pattern))))))
+  axiom ... ...
+endmodule
+\end{Verbatim}
+
+\paragraph{The {\small LAMBDA} module}\quad
+\begin{Verbatim}[fontsize=\small]
+module LAMBDA
+  syntax Exp
+  syntax Exp ::= app(Exp, Exp) | lambda0(Exp, Exp)
+  syntax #Bool ::= isLTerm(#Pattern)
+
+  axiom \equals(
+    isLTerm(#variable(X:String, #sort("Exp"))), 
+    true)
+  axiom \equals(
+    isLTerm(#application(
+              #symbol("app", (#sort("Exp"), #sort("Exp")), #sort("Exp")),
+              (E:Pattern, E':Pattern))),
+    andBool(isLTerm(E:Pattern), isLTerm(E':Pattern)))
+  axiom \equals(
+    isLTerm(#exists(X:String, #sort("Exp"),
+                    #application(#symbol("lambda0",
+                                         (#sort("Exp"), #sort("Exp")),
+                                         #sort("Exp")),
+                                 (#variable(X:String, #sort("Exp")),
+                                  E:Pattern))),
+    isLTerm(E:Pattern))
+  axiom \implies(\equals(true, 
+                         andBool(isLTerm(E:Pattern), 
+                                 isLTerm(E':Pattern))),
+                 \equals(true,
+                         deducible(#equals(...1,
+                                           ...2)))) 
+endmodule
+\end{Verbatim}
+
+\section{Ignore Me}
+A proof system is a theorem generator. 
+In $K$, the proof system of matching logic is captured by the functional symbol 
+$\mathit{deducible} \colon \KPattern \to \KBool$, which returns $\Ktrue$ 
+iff the argument pattern is a theorem. 
+
+We introduce the double bracket $\Bracket{\_}$, known as the semantics bracket, as follows:
+\begin{equation*}
+\Bracket{\varphi} \equiv 
+\left(\textit{deducible}\left(\mathit{lift}[\varphi]\right) = true\right).
+\end{equation*}
+Intuitively, $\Bracket{\varphi}$ means that ``$\varphi$ is deducible''.
+Whenever there is an inference rule (axioms are considered as rules with zero 
+premise)
+$$
+\infer{\psi}
+{\varphi_1,\dots,\varphi_n}
+$$
+in matching logic, there is a corresponding axiom in $K$:
+$$
+\Bracket{\varphi_1} \wedge \dots \wedge \Bracket{\varphi_n} \to \Bracket{\psi}.
+$$
+Inference modulo theories can be considered in the same way. 
+For any (syntactic) matching logic theory $T$ whose axiom set is $A$, we add
+$$
+\Bracket{\varphi} \quad \text{for all $\varphi \in A$}
+$$
+as axioms to $K$. We sometimes denote the extended theory as $\mathit{lift}[T]$ 
+and call it 
+the \emph{meta-theory for} $T$.
+
+
+\end{document}
