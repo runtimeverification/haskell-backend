@@ -888,7 +888,7 @@ Given the context where two sorts \smalltt{Element1} and \smalltt{Element2} are 
     axiom  \not(\and(id(X:Element1), \not(X:Element1)))
 \end{Verbatim}
 
-If a sort variable appears multiple times in a statement, only the first appearance of it needs curly brackets.
+If a sort variable appears multiple times in a statement, only one of the appearances needs curly brackets.
 Therefore, an alternative way to write Example~3 is
 \begin{Verbatim}[fontsize=\small]
     /* Example 3'': Identity-Function */
@@ -905,26 +905,29 @@ If a variable is decorated with a sort variable, as in {\small\verb|X:{S}|}, the
     axiom  \not(\and(id(X), \not(X)))
 \end{Verbatim}
 
-
-\paragraph{Example (Definedness Symbol).}
-
+Symbols can be parametric on more than one sort variables.
 \begin{Verbatim}[fontsize=\small]
+    /* Example 4: Definedness */
     symbol ceil({S}) : {S'}
     axiom  ceil(X)
 \end{Verbatim}
 
-\paragraph{Example (Derived Connectives as Syntactic Sugar).}
+Use sort constructors and sort variables to declare parametric sorts.
 \begin{Verbatim}[fontsize=\small]
-    syntax \or({P1}, {P2}) = \not(\and(\not(P1), \not(P2)))
-    syntax \implies({P1}, {P2}) = \or(\not(P1), P2)
-    syntax \iff({P1}, {P2}) = \and(\implies(P1, P2), 
-                                   \implies(P2, P1))
-    syntax \forall({X}, {P}) = \not(\exists(X, \not(P)))
-    syntax \top = \exists(X, X)
-    syntax \bottom = \not(\top)
-    syntax \ceil({P}) = ceil(P)
-    syntax \floor({P}) = \not(\floor(\not(P)))
-    syntax \equals({P1}, {P2}) = \floor(\iff(P1, P2))
+    /* Example 5: Lists */
+    sort List{S}
+    symbol nil() : List{S}
+    symbol cons(S, List{S}) : List{S}
+    symbol length(List{S}) : Nat
+\end{Verbatim}
+
+Parametric sorts can take multiple sort variables.
+\begin{Verbatim}[fontsize=\small]
+    /* Example 6: Pairs */
+    sort Pair{S, S'}
+    symbol pairOf(S, S') : Pair{S, S'}
+    symbol fst(Pair{S, S'}) : S
+    symbol snd(Pair{S, S'}) : S'  
 \end{Verbatim}
 
 \paragraph{Example (Boolean Algebra).}
@@ -939,12 +942,7 @@ If a variable is decorated with a sort variable, as in {\small\verb|X:{S}|}, the
     axiom  \equals(andBool(false(), B), false())
 \end{Verbatim}
 
-\paragraph{Example (Pairs).}
-\begin{Verbatim}[fontsize=\small]
-    sort Pair{S, S'}
-    symbol pairOf(S, S') : Pair{S, S'}
-    axiom  
-\end{Verbatim}
+
 
 \section{Ignore Me}
 
