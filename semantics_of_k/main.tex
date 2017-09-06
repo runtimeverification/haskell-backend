@@ -825,7 +825,9 @@ The Kore syntax that we propose here is the \emph{minimal} one, in the sense tha
 	<definition>    ::= <declaration>$^*$
 	
 	<declaration>   ::= "sort" <sort>
+	\alt "hooked-sort" <sort>
 	\alt "symbol" <symbol> "(" <sort>$^*$ ")" ":" <sort>
+	\alt "hooked-symbol" <symbol> "(" <sort>$^*$ ")" ":" <sort>
 	\alt "axiom" <pattern>
 	
 	<sort>          ::= <atomic-sort> | <parametric-sort>
@@ -840,13 +842,109 @@ The Kore syntax that we propose here is the \emph{minimal} one, in the sense tha
 	\alt "\\exists" "(" <pattern-variable> "," <pattern> ")"
 \end{grammar}
 
-The following is a running example, in which we define the definedness symbol~$\cl$. To declare the symbol $\cl$, we write
+\newcommand{\smalltt}[1]{\texttt{\small #1} }
+\newcommand{\sort}{\smalltt{sort}}
+\newcommand{\symb}{\smalltt{symbol}}
+\newcommand{\axiom}{\smalltt{axiom}}
+
+
+Sorts are declared using the \sort keyword, symbols are declared using the \symb keyword, and axioms are defined using the \axiom keyword.
 
 \begin{Verbatim}[fontsize=\small]
-    symbol ceil({S}) : {S'}
+    /* Example 1: One-Element */
+    sort Element1
+    symbol e() : Element1
+    axiom  e()
+\end{Verbatim}
+
+\begin{Verbatim}[fontsize=\small]
+    /* Example 2: Two-Element */
+    sort Element2
+    symbol e1() : Element2
+    symbol e2() : Element2
+    axiom  \not(\and(\not(e1()), \not(e2())))
+    axiom  \not(\and(e1(), e2()))
+\end{Verbatim}
+
+Symbols can be parametric on sort variables, which are wrapped by curly brackets. 
+Sort variables can be instantiated by any sort.
+
+\begin{Verbatim}[fontsize=\small]
+    /* Example 3: Identity-Function */
+    symbol id({S}) : {S}
+    axiom  \not(\and(X:{S},     \not(id(X:{S}))))
+    axiom  \not(\and(id(X:{S}), \not(X:{S})))
+\end{Verbatim}
+
+Given the context where two sorts \smalltt{Element1} and \smalltt{Element2} are declared, the above is just a shorthand of
+
+\begin{Verbatim}[fontsize=\small]
+    /* Example 3': Identity-Function */
+    symbol id(Element1) : Element1
+    symbol id(Element2) : Element2
+    axiom  \not(\and(X:Element1,     \not(id(X:Element1))))
+    axiom  \not(\and(id(X:Element1), \not(X:Element1)))
+    axiom  \not(\and(X:Element2,     \not(id(X:Element2))))
+    axiom  \not(\and(id(X:Element1), \not(X:Element1)))
+\end{Verbatim}
+
+If a sort variable appears multiple times in a statement, only the first appearance of it needs curly brackets.
+Therefore, an alternative way to write Example~3 is
+\begin{Verbatim}[fontsize=\small]
+    /* Example 3'': Identity-Function */
+    symbol id({S}) : S
+    axiom  \not(\and(X:{S},     \not(id(X:S))))
+    axiom  \not(\and(id(X:{S}), \not(X:S)))
+\end{Verbatim}
+
+If a variable is decorated with a sort variable, as in {\small\verb|X:{S}|}, the sort decoration can be omitted. Therefore, an alternative way to write Example 3 is
+\begin{Verbatim}[fontsize=\small]
+    /* Example 3''': Identity-Function */
+    symbol id({S}) : S
+    axiom  \not(\and(X,     \not(id(X))))
+    axiom  \not(\and(id(X), \not(X)))
 \end{Verbatim}
 
 
+\paragraph{Example (Definedness Symbol).}
+
+\begin{Verbatim}[fontsize=\small]
+    symbol ceil({S}) : {S'}
+    axiom  ceil(X)
+\end{Verbatim}
+
+\paragraph{Example (Derived Connectives as Syntactic Sugar).}
+\begin{Verbatim}[fontsize=\small]
+    syntax \or({P1}, {P2}) = \not(\and(\not(P1), \not(P2)))
+    syntax \implies({P1}, {P2}) = \or(\not(P1), P2)
+    syntax \iff({P1}, {P2}) = \and(\implies(P1, P2), 
+                                   \implies(P2, P1))
+    syntax \forall({X}, {P}) = \not(\exists(X, \not(P)))
+    syntax \top = \exists(X, X)
+    syntax \bottom = \not(\top)
+    syntax \ceil({P}) = ceil(P)
+    syntax \floor({P}) = \not(\floor(\not(P)))
+    syntax \equals({P1}, {P2}) = \floor(\iff(P1, P2))
+\end{Verbatim}
+
+\paragraph{Example (Boolean Algebra).}
+\begin{Verbatim}[fontsize=\small]
+    sort Bool
+    symbol true() : Bool
+    symbol false() : Bool
+    axiom  \or(true(), false())
+    axiom  \not(\and(true(), false()))
+    symbol andBool(Bool, Bool) : Bool
+    axiom  \equals(andBool(true(), B), B)
+    axiom  \equals(andBool(false(), B), false())
+\end{Verbatim}
+
+\paragraph{Example (Pairs).}
+\begin{Verbatim}[fontsize=\small]
+    sort Pair{S, S'}
+    symbol pairOf(S, S') : Pair{S, S'}
+    axiom  
+\end{Verbatim}
 
 \section{Ignore Me}
 
