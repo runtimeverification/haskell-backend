@@ -1,5 +1,6 @@
-\documentclass[UTF8]{article}
+\documentclass[UTF8,11pt]{article}
 
+  \usepackage{fullpage}
   \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
 
   %\usepackage{xcolor}
@@ -12,15 +13,15 @@
   %  \usepackage[draft]{todonotes} % notes showed
   \usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
   \newcommandx{\unsure}[2][1=]
-    {\todo[linecolor=red,backgroundcolor=red!25,bordercolor=red,#1]{#2}}
+    {\todo[linecolor=red,backgroundcolor=red!25,bordercolor=red,#1]{#2}\xspace{}}
   \newcommandx{\change}[2][1=]
-    {\todo[linecolor=blue,backgroundcolor=blue!25,bordercolor=blue,#1]{#2}}
+    {\todo[linecolor=blue,backgroundcolor=blue!25,bordercolor=blue,#1]{#2}\xspace{}}
   \newcommandx{\info}[2][1=]
     {\todo[linecolor=OliveGreen,backgroundcolor=OliveGreen!25,bordercolor=OliveGreen,#1]{#2}}
   \newcommandx{\improvement}[2][1=]
-    {\todo[linecolor=Plum,backgroundcolor=Plum!25,bordercolor=Plum,#1]{#2}}
+    {\todo[linecolor=Plum,backgroundcolor=Plum!25,bordercolor=Plum,#1]{#2}\xspace{}}
   \newcommandx{\thiswillnotshow}[2][1=]
-    {\todo[disable,#1]{#2}}
+    {\todo[disable,#1]{#2}\xspace{}}
 
   % Select what to do with command \comment:  
   % \newcommand{\comment}[1]
@@ -211,6 +212,10 @@
   % Use quotation marks "..." in math mode.
   \newcommand{\quot}[1]{\mathrm{``#1"}}
 
+\newcommand{\Nat}{\textit{Nat}}
+\newcommand{\List}{\textit{List}}
+\newcommand{\parametric}[2]{{#1}\raisebox{.2ex}{\texttt{\footnotesize{\{}}}#2\raisebox{.2ex}{\texttt{\footnotesize{\}}}}}
+
   % Title and authors
   \title{The Semantics of \K}
   \author{Formal Systems Laboratory \\
@@ -225,6 +230,9 @@ You could add new contents, remove redundant ones, refactor and
 organize the texts, and correct typos, but please follow the FSL
 rules for editing, though; e.g., $<$80 characters per line,
 each sentence on a new line, etc. }
+
+\section{Introduction}
+\label{sec:introduction}
 
 \K is a best effort realization of matching logic~\cite{rosu-2017-lmcs}.
 Matching logic allows us to mathematically define arbitrarily infinite
@@ -250,27 +258,30 @@ PHP~\cite{k-php},
 EVM~\cite{hiraidefining,hildenbrandt-saxena-zhu-rodrigues-daian-guth-rosu-2017-tr}.
 
 Matching logic allows us to define \emph{theories} $(S,\Sigma,A)$ consisting
-of potentially infinite sets of \emph{sorts} $S$, \emph{($S$-)symbols}
-$\Sigma$, and \emph{($\Sigma$-)patterns} $A$, respectively, and provides models
-that interpret the symbols relationally, which in turn yield a
-\emph{semantic validity} relation $(S,\Sigma,A)\models\varphi$ between
-theories $(S,\Sigma,A)$ and $\Sigma$-patterns $\varphi$.
-Matching logic admits \emph{complete} deduction, denoted
-$(S,\Sigma,A)\vdash\varphi$.
+of potentially infinite sets of \emph{sorts} $S$, of \emph{symbols}
+$\Sigma$ over sorts in $S$ (also called $S$-symbols), and of \emph{patterns}
+$A$ built with symbols in $\Sigma$ (also called $\Sigma$-patterns),
+respectively, and provides models that interpret the symbols
+relationally, which in turn yield a \emph{semantic validity} relation
+$(S,\Sigma,A)\models\varphi$ between theories $(S,\Sigma,A)$ and
+$\Sigma$-patterns $\varphi$.
+Matching logic also has a Hilbert-style complete proof system, which allows
+us to derive new patterns $\varphi$ from given theories $(S,\Sigma,A)$,
+written $(S,\Sigma,A)\vdash\varphi$.
+When the sorts and signature are understood, we omit them; for example,
+the completeness of matching logic then states that for any matching logic
+theory $(S,\Sigma,A)$ and any $\Sigma$-pattern $\varphi$, we have
+$A \models \varphi$ iff $A \vdash \varphi$.
 
+...\improvement{Will add more here as we finalize the notation.
+we need some convincing example.  Maybe parametric maps?}
 
 \section{Matching Logic}
+\label{sec:matching-logic}
 
 \newcommand{\Var}{\textit{Var}}
-\newcommand{\Nat}{\textit{Nat}}
 
 Here we recall basic matching logic notions from~\cite{rosu-2017-lmcs}.
-In this paper, unless otherwise specified, when we say \emph{set} we mean
-a \emph{recursively enumerable set}, i.e., a set that can be generated
-algorithmically (not to be confused with the weaker notion of a
-countable set, which only means that it has a cardinal no larger than
-$\aleph_0$---either finite or in bijection with the set
-of natural numbers).
 Assume a matching logic \emph{signature} $(S, \Sigma)$, where $S$ is the
 set of its \emph{sorts} $S$ and $\Sigma$ is the set of its \emph{symbols}.
 For each sort $s \in S$, assume a set $\Var_s$ of \emph{variables} of
@@ -364,7 +375,42 @@ infinite matching logic theories presented with finitely many pattern schemas.
 \improvement{We should also add the semantics here: models, $M \models_{(S,\Sigma)} A$,
 $(S,\Sigma,A) \models \varphi$.}
 
-\section{A Calculus of Matching Logic}
+\section{Matching Logic Theory of Matching Logic: Finite Case}
+
+\section{Matching Logic Theory of Matching Logic: With Meta-Variables}
+
+\section{Matching Logic Theory of Matching Logic: With Parameters}
+
+\section{Get Material From Here}
+
+Matching logic imposes no restrictions on the cardinality of the set of
+sorts $S$, of the set of symbols $\Sigma$, or of the set of patterns $A$
+in a theory $(S,\Sigma,A)$.
+In practice, however, we need a finite mechanism to describe such theories
+in order to mechanically reason about them using a computer.
+In the vast universe of possibilities, we here propose one particular approach
+that we found useful, convenient and sufficient in our semantics engineering
+efforts.
+Specifically:
+\begin{itemize}
+\item
+We restrict the infinite sets of sorts to ones which can be described with
+a finite set of \emph{parametric} sorts, where the parameters range over
+other sorts.
+For example, $S=\{\Nat,\parametric{\List}{X}\}$ describes the infinite set
+of sorts
+$S=\{\Nat, \parametric{\List}{\Nat}, \parametric{\List}{\parametric{\List}{\Nat}}, ...\}$.
+
+\end{itemize}
+
+From here on, unless otherwise specified, when we say \emph{set} we mean
+a \emph{recursively enumerable set}, i.e., a set that can be generated
+algorithmically (not to be confused with the weaker notion of a
+countable\unsure{countable may suffice, we'll need to understand how it is in FOL}
+set, which only means that it has a cardinal no larger than
+$\aleph_0$---either finite or in bijection with the set
+of natural numbers).
+
 
 In this section, we define a matching logic theory $K = (S_K, \Sigma_K, A_K)$ 
 as \emph{the (reflective) calculus of matching logic},
@@ -452,7 +498,7 @@ The associativity and identity of $\Kconcat$ are defined by the following axioms
 The sort $\KSort$ is the sort for matching logic sorts.
 The only constructor of the sort $\KSort$ is the functional symbol:
 \begin{equation*}
-\Ksort \colon \KString \times \KSortList \to \KSort.
+\Ksort \colon \KString \to \KSort.
 \end{equation*}
 
 The sort $\KSymbol$ is the sort for matching logic symbols.
