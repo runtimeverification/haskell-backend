@@ -417,14 +417,17 @@ The associativity and identity of $\Kconcat$ are defined by the following axioms
 The sort $\KSort$ is the sort for matching logic sorts.
 The only constructor of the sort $\KSort$ is the functional symbol:
 \begin{equation*}
-\Ksort \colon \KString \to \KSort.
+\Ksort \colon \KString \times \KSortList \to \KSort.
 \end{equation*}
 
 The sort $\KSymbol$ is the sort for matching logic symbols.
 The only constructor of the sort $\KSymbol$ is the functional symbol:
 \begin{equation*}
-\Ksymbol \colon \KString \to \KSymbol.
+\Ksymbol \colon \KString \times \KSortList \times \KSort \to \KSymbol.
 \end{equation*}
+
+\todo{Now sorts and symbols take sort parameters. Easy fix. But we need to go 
+through the rest and propagate this fix and make sure they make sense.}
 
 \subsection{Finite Lists}
 Whenever we introduce a sort, say $\mathit{X}$, to $S_K$, we feel free to 
@@ -511,7 +514,7 @@ It has the following functional symbols:
 \end{align*}
 where $\Kvariable$, $\Kand$, $\Kor$, $\Kapplication$, and $\Kexists$ are constructors of sort~$\KPattern$. 
 
-\begin{notation}
+\begin{notation}\label{notation:variables-about-KPattern}
 	As a convention, we use $b$ for $\KBool$ variables, $x, y, z$ for 
 	$\KString$ variables, $s$ for $\KSort$ variables, $\sigma$ for 
 	$\KSymbol$ variables, and $\varphi, \psi$ for $\KPattern$ variables. 
@@ -699,6 +702,11 @@ In the following, we are going to list all the inference rules in the matching
 logic proof system followed by their correspondent axioms of $\Kdeduce$, in 
 which the well-formedness premises are omitted 
 (Notation~\ref{omit-well-formedness-premises}).
+
+We also recall the readers in the following rules of 
+Notation~\ref{notation:variables-about-KPattern}, 
+that we use $s$ for $\KSort$ variables, $\varphi, \psi$ for $\KPattern$ 
+variables, and $x, y$ for $\KPattern$ variables. 
 
 \paragraph{Rule (Axiom).}
 $F \vdash \varphi$ if $\varphi \in F$.
