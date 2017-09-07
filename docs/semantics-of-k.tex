@@ -32,6 +32,7 @@
   \usepackage{amssymb}
   
   \usepackage{amsthm}
+  \usepackage{xspace}
   
   % Declare a global counter for theorem environments:
   \newcounter{thmcounter}
@@ -130,7 +131,7 @@
   % Package for writing BNF syntax
   \usepackage{syntax}
 
-
+\newcommand{\K}{\mbox{$\mathbb{K}$}\xspace}
   % Define sorts and symbols in the calculus K.
   \newcommand{\KBool}{\mathit{KBool}}
   \newcommand{\Ktrue}{\mathit{Ktrue}}
@@ -211,18 +212,52 @@
   \newcommand{\quot}[1]{\mathrm{``#1"}}
 
   % Title and authors
-  \title{The Semantics of K}
+  \title{The Semantics of \K}
   \author{Formal Systems Laboratory \\
-          University of Illinois}
+          University of Illinois at Urbana-Champaign}
 
 \begin{document}
 
 \maketitle
 
-\comment{Please feel free to contribute to this report in all ways.
+\info{Please feel free to contribute to this report in all ways.
 You could add new contents, remove redundant ones, refactor and
-organize the texts, and correct typos, but please follow the FSL rules for editing, though; e.g., $<$80 characters per line,
+organize the texts, and correct typos, but please follow the FSL
+rules for editing, though; e.g., $<$80 characters per line,
 each sentence on a new line, etc. }
+
+\K is a best effort realization of matching logic~\cite{rosu-2017-lmcs}.
+Matching logic allows us to mathematically define arbitrarily infinite
+theories, which are not in general possible to describe finitely.
+\K proposes a finitely describable subset of matching logic theories.
+Since its inception in 2003 as a notation within
+Maude~\cite{clavel-et-al99a} convenient for teaching programming
+languages~\cite{rosu-2003-cs322}, until recently \K's semantics was explained
+either by translation to rewriting logic \cite{meseguer-1992-tcs} or by
+translation to some form of graph rewriting~\cite{serbanuta-rosu-2012-icgt}.
+These translations not only added clutter and came at a loss of part of the
+intended meaning of \K, but eventually turned out to be a serious limiting
+factor in the types of theories and languages that could be defined.
+Matching logic was specifically created and developed to serve as a
+logical, semantic foundation for \K, after almost 15 years of experience
+with using \K to define the formal semantics of real-life programming
+languages, including
+C~\cite{ellison-rosu-2012-popl,hathhorn-ellison-rosu-2015-pldi},
+Java~\cite{bogdanas-rosu-2015-popl},
+JavaScript~\cite{park-stefanescu-rosu-2015-pldi},
+Python~\cite{guth-2013-thesis,pltredex-python},
+PHP~\cite{k-php},
+EVM~\cite{hiraidefining,hildenbrandt-saxena-zhu-rodrigues-daian-guth-rosu-2017-tr}.
+
+Matching logic allows us to define \emph{theories} $(S,\Sigma,A)$ consisting
+of potentially infinite sets of \emph{sorts} $S$, \emph{($S$-)symbols}
+$\Sigma$, and \emph{($\Sigma$-)patterns} $A$, respectively, and provides models
+that interpret the symbols relationally, which in turn yield a
+\emph{semantic validity} relation $(S,\Sigma,A)\models\varphi$ between
+theories $(S,\Sigma,A)$ and $\Sigma$-patterns $\varphi$.
+Matching logic admits \emph{complete} deduction, denoted
+$(S,\Sigma,A)\vdash\varphi$.
+
 
 \section{Matching Logic}
 
