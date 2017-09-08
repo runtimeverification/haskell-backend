@@ -98,6 +98,12 @@
   
   % Package for writing BNF syntax
   \usepackage{syntax}
+  
+  % Package for refering Section 3.1 as something like Section §3.1:
+  \usepackage[utf8]{inputenc}
+  \usepackage{cleveref}
+  \crefname{section}{§}{§§}
+  \Crefname{section}{§}{§§}
 
   \newcommand{\K}{\mbox{$\mathbb{K}$}\xspace}
   
@@ -125,7 +131,9 @@
   
   % Sec 3.3 Sorts and Symbols
   \newcommand{\KSort}{\mathit{KSort}}
+  \newcommand{\Ksort}{\mathit{Ksort}}
   \newcommand{\KSymbol}{\mathit{KSymbol}}
+  \newcommand{\Ksymbol}{\mathit{Ksymbol}}
   
   % Sec 3.4 Finite Lists
   \newcommand{\XList}{\mathit{XList}}
@@ -134,6 +142,18 @@
   \newcommand{\KappendXList}{\mathit{KappendXList}}
   \newcommand{\KinXList}{\mathit{KinXList}}
   \newcommand{\KdeleteXList}{\mathit{KdeleteXList}}
+  \newcommand{\KPatternList}{\mathit{KPatternList}}
+  \newcommand{\KnilKPatternList}{\mathit{KnilKPatternList}}
+  \newcommand{\KconsKPatternList}{\mathit{KconsKPatternList}}
+  \newcommand{\KappendKPatternList}{\mathit{KappendKPatternList}}
+  \newcommand{\KinKPatternList}{\mathit{KinKPatternList}}
+  \newcommand{\KdeleteKPatternList}{\mathit{KdeleteKPatternList}}
+  \newcommand{\KSortList}{\mathit{KSortList}}
+  \newcommand{\KnilKSortList}{\mathit{KnilKSortList}}
+  \newcommand{\KconsKSortList}{\mathit{KconsKSortList}}
+  \newcommand{\KappendKSortList}{\mathit{KappendKSortList}}
+  \newcommand{\KinKSortList}{\mathit{KinKSortList}}
+  \newcommand{\KdeleteKSortList}{\mathit{KdeleteKSortList}}
   %% Define l1 @ l2 for list concatenation.
   \newcommand{\at}{@}
   
@@ -141,15 +161,13 @@
   \newcommand{\Kdelete}{\mathit{delete}}
     
 
-  \newcommand{\KSortList}{\mathit{KSortList}}
-  \newcommand{\Ksort}{\mathit{Ksort}}
+  
   
 
   \newcommand{\KSymbolList}{\mathit{KSymbolList}}
-  \newcommand{\Ksymbol}{\mathit{Ksymbol}}
+  
   
   \newcommand{\KPattern}{\mathit{KPattern}}
-  \newcommand{\KPatternList}{\mathit{KPatternList}}
   \newcommand{\Kvariable}{\mathit{Kvariable}}
   \newcommand{\Kand}{\mathit{Kand}}
   \newcommand{\Kor}{\mathit{Kor}}
@@ -444,7 +462,7 @@ where the first argument is the \emph{name} of the symbol, and the rest argument
 \subsection{Finite Lists}
 
 For sorts $\KSort$, $\KSymbol$, and $\KPattern$
-\footnote{The sort $\KPattern$ will be defined in the next section.}
+\footnote{The sort $\KPattern$ is defined in Section~\cref{sec:matching-logic-patterns}.}
 in $S_K$,
 we define sorts $\KSortList$, $\KSymbolList$, and $\KPatternList$ to be the sorts of finite lists over them, respectively.
 For any sort $X$ where
@@ -466,10 +484,9 @@ the sort $\XList$ is in $S_K$, and the following functional constructors of sort
 \end{notation}
 
 Common operations on lists can be defined as functional symbols on $\XList$.
-The symbol $\KappendXList$ takes two lists and returns the concatenation of them:
+The symbol $$\KappendXList \colon \XList \times \XList \to \XList$$ 
+takes two lists and returns the concatenation of them, with two axioms:
 \begin{align*}
-  & \KappendXList \colon \XList \times \XList \to \XList,
-  \\
   & \KappendXList(\KnilXList, l) = l,
   \\
   & \KappendXList(\KconsXList(x, l_0), l) = \KconsXList(x, \KappendXList(l_0, l)).
@@ -481,169 +498,146 @@ The symbol $\KappendXList$ takes two lists and returns the concatenation of them
 	\end{equation*}
 \end{notation}
 
-The predicate symbol $\KinXList$ takes an element and a list, and decides whether the element is a member of the list or not:
+The predicate symbol $$\KinXList \colon \mathit{X} \times \XList \to \KPred$$
+takes an element and a list, and decides whether the element is a member of the list or not. The two axioms for $\KinXList$ are:
 \begin{align*}
-  & \KinXList \colon \mathit{X} \times \XList \to \KPred,
-  \\
   & \neg \KinXList(x, \KnilXList),
   \\
   & \KinXList(x, \KconsXList(y, l)) = (x = y) \vee \KinXList(x, l).
 \end{align*}
-\begin{align*}
-&\mathit{nilXList} \colon \to \mathit{XList}
-&\mathit{inXList} \colon \mathit{X} \times \mathit{XList} \to \KPred
-\\
-&\mathit{appendXList} \colon \mathit{XList} \times \mathit{XList} \to 
-\mathit{XList}
-&\mathit{XListAsX} \colon \mathit{X} \to \mathit{XList}
-\\
-&\mathit{deleteXList} \colon \mathit{X} \times \mathit{XList} \to \mathit{XList}
-\end{align*}
-where $\mathit{nilXList}$, $\mathit{XListAsX}$, and $\mathit{appendXList}$ are constructors of sort $\mathit{XList}$.
-Thirdly, the following axioms are in $A_K$:
-\begin{align*}
-&\mathit{appendXList}(l_1, \mathit{appendXList}(l_2, l_3)) = \mathit{appendXList}(\mathit{appendXList}(l_1, l_2), l_3)
-\\
-&\mathit{appendXList}(l, \mathit{nilXList}) = l
-\quad \mathit{appendXList}(\mathit{nilXList}, l) = l
-\\
-&\mathit{inXList}(x, \mathit{nilXList}) = \Kfalse
-\quad \mathit{inXList}(x, \mathit{XListAsX}(x)) = \Ktrue
-\\
-&x \neq y \to \mathit{inXList}(x, \mathit{XListAsX}(y)) = \Kfalse
-\\
-&\mathit{inXList}(x, \mathit{appendXList}(l_1, l_2)) = \mathit{inXList}(x, l_1) \vee \mathit{inXList}(x, l_2)
-\\
-&\mathit{deleteXList}(x, \mathit{nilXList}) = \mathit{nilXList}
-\quad \mathit{deleteXList}(x, \mathit{XListAsX}(x)) = \mathit{nilXList}
-\\
-&x \neq y \to \mathit{deleteXList}(x, \mathit{XListAsX}(y)) = \mathit{XListAsX}(y)
-\\
-&\mathit{deleteXList}(x, \mathit{appendXList}(l_1, l_2)) = \mathit{appendXList}(\mathit{deleteXList}(x, l_1), \mathit{deleteXList}(x, l_2)).
-\end{align*}
 
-In this proposal, we will be using sorts $\KPatternList$, $\KSymbolList$, and $\KSortList$ whose construction is defined above. 
-
-\begin{notation}
-	To write lists expressions compactly, we adopt the following shorthands for $\mathit{inXList}$ and $\mathit{deleteXList}$ when there is no confusion:
-	\begin{align*}
-	&x \in l \equiv (\mathit{inXList}(x, l) = \Ktrue)
-	\qquad x \not\in l \equiv (\mathit{inXList}(x, l) = \Kfalse)
-	\\
-	&\mathit{deleteXList}(x, l) \equiv \Kdelete(x, l).
-	\end{align*}
-	Note that one should not confuse the shorthand for $\mathit{inXList}$ with the 
-	matching logic membership connective, which we all write as the belongs-to 
-	symbol ``$\in$''. 
-	If the two patterns before and after the belongs-to symbol are of the same 
-	sort, it is the membership connective. 
-	If the left of them is of sort $\mathit{X}$ and the right is of sort 
-	$\mathit{XList}$, the belongs-to symbol is the shorthand of $\mathit{inXList}$.
-	
-	Constructors $\mathit{XListAsX}$ and $\mathit{appendXList}$ are often omitted, too:
-	\begin{align*}
-	x_1, \dots, x_n
-	\equiv &\mathit{appendXList}(x_1, \mathit{appendXList}(\dots, \mathit{appendXList}(x_{n-1}, x_n)\dots)).
-	\end{align*}
-\end{notation}
+The functional symbol $$\KdeleteXList \colon \mathit{X} \times \XList \to \KPred$$
+takes an element and a list, and returns the list in which all appearances of the element has been deleted, and the order of remaining elements does not change.
+It is axiomatized by the next two axioms:
+\begin{align*}
+  & \KdeleteXList(x, \KnilXList) = \KnilXList,
+  \\
+  & \KdeleteXList(x, \KconsXList(y, l))
+  \\
+  & = ((x = y) \wedge \KdeleteXList(x, l)) \vee ((x \neq y) \wedge \KconsXList(x, \KdeleteXList(x, l))).
+\end{align*}
 
 \subsection{Matching Logic Patterns}
+\label{sec:matching-logic-patterns}
 
 The sort $\KPattern$ is the sort for matching logic patterns.
-It has the following functional symbols:
+It has five constructors:
 \begin{align*}
-&\Kvariable \colon \KString \times \KSort \to 
-\KPattern
-\\
-&\Kand, \Kor, \Kimplies, \Kiff \colon \KPattern \times \KPattern \times \KSort \to \KPattern
-\\
-&\Knot \colon \KPattern \times \KSort \to \KPattern 
-\\
-&\Kapplication \colon \KSymbol \times \KPatternList \to \KPattern 
-\\
-&\Kexists, \Kforall \colon \KString \times \KSort \times \KPattern \times \KSort \to \KPattern 
-\\
-&\Kequals, \Kin, \Kcontains \colon \KPattern \times 
-\KPattern \times \KSort \times \KSort \to \KPattern \\
-&\Kfloor, \Kceil \colon \KPattern \times \KSort \times \KSort \to \KPattern\\
-&\Ktop, \Kbottom \colon \KSort \to \KPattern,
+  & \Kvariable \colon \KString \times \KSort \to \KPattern,
+  \\
+  & \Kapplication \colon \KSymbol \times \KPatternList \to \KPattern,
+  \\
+  & \Kand  \colon \KPattern \times \KPattern \times \KSort \to \KPattern,
+  \\
+  & \Knot \colon \KPattern \times \KSort \to \KPattern,
+  \\
+  & \Kexists \colon \KString \times \KSort \times \KPattern \times \KSort \to \KPattern. 
 \end{align*}
-where $\Kvariable$, $\Kand$, $\Kor$, $\Kapplication$, and $\Kexists$ are constructors of sort~$\KPattern$. 
+Apart from the five constructor symbols, the sort $\KSort$ also has the following functional symbols:
+\begin{align*}
+  & \Kor \colon \KPattern \times \KPattern \times \KSort \to \KPattern,
+  \\
+  & \Kimplies \colon \KPattern \times \KPattern \times \KSort \to \KPattern,
+  \\
+  & \Kiff \colon \KPattern \times \KPattern \times \KSort \to \KPattern,
+  \\
+  & \Kforall \colon \KString \times \KSort \times \KPattern \times \KSort \to \KPattern,
+  \\
+  & \Kceil \colon \KPattern \times \KSort \times \KSort \to \KPattern,
+  \\
+  & \Kfloor \colon \KPattern \times \KSort \times \KSort \to \KPattern,
+  \\
+  & \Kequals \colon \KPattern \times \KPattern \times \KSort \times \KSort \to \KPattern,
+  \\
+  & \Kin \colon \KPattern \times \KPattern \times \KSort \times \KSort \to \KPattern,
+  \\
+  & \Ktop \colon \KSort \to \KPattern,
+  \\
+  & \Kbottom \colon \KSort \to \KPattern.
+\end{align*}
 
 \begin{notation}\label{notation:variables-about-KPattern}
-	As a convention, we use $b$ for $\KPred$ variables, $x, y, z$ for 
-	$\KString$ variables, $s$ for $\KSort$ variables, $\sigma$ for 
-	$\KSymbol$ variables, and $\varphi, \psi$ for $\KPattern$ variables. 
+	As a convention, we use $\varphi$ and $\psi$ for $\KPattern$ variables, $x$ for $\KString$ variables, and $s$ for $\KSort$ variables.  
 \end{notation}
+
+Functional symbols that do not belong to the five constructors of $\KPattern$ are called \emph{derived connectives of $\KPattern$}, and they are axiomatized by the following axioms:
+\begin{align*}
+  & \Kor(\varphi, \psi, s) = \Knot(\Kand(\Knot(\varphi, s), \Knot(\psi, s), s), s),
+  \\
+  & \Kimplies(\varphi, \psi, s) = \Kor(\Knot(\varphi, s), \psi, s),
+  \\
+  & \Kiff(\varphi, \psi, s) = \Kand(\Kimplies(\varphi, \psi, s), \Kimplies(\psi, \varphi, s), s),
+  \\
+  & \Kforall(x, s_1, \varphi, s_2) = \Knot(\Kexists(x, s_1, \Knot(\varphi, s_2), s_2), s_2),
+  \\
+  & \Kceil(\varphi, s_1, s_2) =
+  \\
+  & \Kapplication(\Ksymbol(\quot{ceil}, \KconsKSortList(s_1, \KnilKSortList), s_2), \varphi),
+  \\
+  & \Kfloor(\varphi, s_1, s_2) = \Knot(\Kceil(\Knot(\varphi, s_1), s_1, s_2), s_2),
+  \\
+  & \Kequals(\varphi, \psi, s_1, s_2) = \Kfloor(\Kiff(\varphi, \psi, s_1), s_1, s_2),
+  \\
+  & \Kin(\varphi, \psi, s_1, s_2) = \Kfloor(\Kimplies(\varphi, \psi, s_1), s_1, s_2),
+  \\
+  & \Ktop(s) = \Kexists(x, s, \Kvariable(x, s), s),
+  \\
+  & \Kbottom(s) = \Knot(\Ktop(s), s).
+\end{align*}
 
 \begin{notation}
-	Patterns of sort $\KPattern$ are easily getting huge quickly.
-	The following abbreviations are adopted to write compact $\KPattern$ patterns.
-	\begin{center}
-		\begin{tabular}{ll}
-			\multicolumn{2}{l}{$x \cln s \equiv \Kvariable(x, s)$. Sometimes it 
-				abbreviates to just $x$.}
-			\\
-			$\varphi \kand_s \psi \equiv \Kand(\varphi, \psi, s)$
-			& $\varphi \kor_s \psi \equiv \Kor(\varphi, \psi, s)$
-			\\
-			$\varphi \kimplies_s \psi \equiv \Kimplies(\varphi, \psi, s)$
-			&	$\varphi \kiff_s \psi \equiv \Kiff(\varphi, \psi, s)$
-			\\
-			$\knot_s \varphi \equiv \Knot(\varphi, x, s)$
-			& $\kexists_{s_1}^{s_2} x . \varphi \equiv \Kexists(x,s,\varphi,s')$
-			\\
-			$\kforall_{s_1}^{s_2} x . \varphi \equiv \Kforall(x,s,\varphi,s')$
-			& $\varphi \kequals_{s_1}^{s_2} \psi \equiv \Kequals(\varphi, \psi, s_1, s_2)$
-			\\
-			$\varphi \kcontains_{s_1}^{s_2} \psi \equiv \Kcontains(\varphi, \psi, s_1, s_2)$
-			\\
-			\multicolumn{2}{l}{$\sigma(\varphi_1,\dots,\varphi_n) \equiv \Kapplication(\sigma, (\varphi_1,\dots,\varphi_n))$}
-			\\
-			$\kfloor{\varphi}_{s_1}^{s_2} \equiv \Kfloor(\varphi, s_1, s_2)$
-			& $\kceil{\varphi}_{s_1}^{s_2} \equiv \Kceil(\varphi, s_1, s_2)$
-			\\
-			$\ktop_s \equiv \Ktop(s)$
-			& $\kbottom_s \equiv \Kbottom(s)$
-		\end{tabular}
-	\end{center}
+	As one may have already noticed, patterns of sort $\KPattern$ get huge rather quickly.
+	The following notation conventions are adopted to write $\KPattern$ patterns in a more compact way, by putting a bar upon their normal mixfix forms:
+	\begin{align*}
+	  & \overline{x \cln s} \equiv \Kvariable(x, s),
+	  \\
+	  & \overline{\sigma(\varphi_1, \dots, \varphi_n)} \equiv \Kapplication(\sigma, (\varphi_1, \dots, \varphi_n)),
+	  \\
+	  & \overline{\varphi \wedge_s \psi} \equiv \Kand(\varphi, \psi, s),
+	  \\
+	  & \overline{\neg_s \varphi} \equiv \Knot(\varphi, s),
+	  \\
+	  & \overline{\exists_{s_1}^{s_2} x . \varphi} \equiv \Kexists(x, s_1, \varphi, s_2),
+	  \\
+	  & \overline{\varphi \vee_s \psi} \equiv \Kor(\varphi, \psi, s),
+	  \\
+	  & \overline{\varphi \to_s \psi} \equiv \Kimplies(\varphi, \psi, s),
+	  \\
+	  & \overline{\varphi \leftrightarrow_s \psi} \equiv \Kiff(\varphi, \psi, s),
+	  \\
+	  & \overline{\forall_{s_1}^{s_2} x . \varphi} \equiv \Kforall(x, s_1, \varphi, s_2),
+      \\
+      & \overline{\ceil{\varphi}_{s_1}^{s_2}} \equiv \Kceil(\varphi, s_1, s_2),
+      \\
+      & \overline{\floor{\varphi}_{s_1}^{s_2}} \equiv \Kfloor(\varphi, s_1, s_2),
+      \\
+      & \overline{\varphi =_{s_1}^{s_2} \psi} \equiv \Kequals(\varphi, \psi, s_1, s_2),
+      \\
+      & \overline{\varphi \in_{s_1}^{s_2} \psi} \equiv \Kin(\varphi, \psi, s_1, s_2),
+      \\
+      & \overline{\top_s} \equiv \Ktop(s),
+      \\
+      & \overline{\bot_s} \equiv \Kbottom(s).
+	\end{align*}
 \end{notation}
 
-Apart from the five constructors of sort $\KPattern$, all the other symbols are derived connectives, which are defined by the following axioms:
-\begin{align*}
-&\varphi \kor_s \psi = \knot_s(\knot_s \varphi \kand_s \knot_s \psi)
-&\varphi \kimplies_s \psi = \knot_s \varphi \kor_s \psi
-\\
-&\varphi \kiff_s \psi = (\varphi \kimplies_s \psi) \kand_s (\psi \kimplies_s \varphi)
-&\kforall_{s_1}^{s_2}x.\varphi = \knot_{s_2} \kexists_{s_1}^{s_2} x. (\knot_{s_2} \varphi)
-\\
-&\varphi \kequals_{s_1}^{s_2} \psi = \kfloor{\varphi \kiff_{s_1} \psi}_{s_1}^{s_2}
-&\varphi \kcontains_{s_1}^{s_2} \psi = \kfloor{\psi \kimplies_{s_1} \varphi}_{s_1}^{s_2}
-\\
-&x \in_{s_1}^{s_2} \varphi = x \subseteq_{s_1}^{s_2} \varphi
-\\
-&\ktop_s \equiv \kexists_s^s x . x
-&\kbottom_s \equiv \knot_s \ktop_s
-\\
-&\kfloor{\varphi}_{s_1}^{s_2} \equiv \knot_{s_2} \kceil{\knot_{s_1} \varphi}_{s_1}^{s_2}
-&\kceil{\varphi}_{s_1}^{s_2} \equiv \Ksymbol(\quot{ceil})(\varphi)
-\end{align*}
-\unsure{not sure about the last one ... the definedness symbol...}
+Apart from the five constructors and derived connectives introduced above, the sort $\KPattern$ also has some common operators defined as functional symbols.
+They are defined and axiomatized in this section, too.
 
 The functional symbol 
 $$\KgetFvs \colon \KPattern \to \KPatternList$$
-collects all free variables in a pattern. 
+traverses the argument pattern and collects all its free variables. 
 It has the following axioms:
 \begin{align*}
-&\KgetFvs(x \cln s) = x \cln s \quad \KgetFvs(\knot_s \varphi) = 
-\KgetFvs(\varphi)
-\\
-&\KgetFvs(\varphi \kand_s \psi) = \KgetFvs(\varphi), \KgetFvs(\psi)
-\\
-&\KgetFvs(\sigma(\varphi_1, \dots, \varphi_n)) = \KgetFvs(\varphi_1), \dots, \KgetFvs(\varphi_n)
-\\
-&\KgetFvs(\kexists_{s_1}^{s_2} x . \varphi) = \mathit{delete}(\Kvariable(x, 
-s_1), \KgetFvs(\varphi)).
+  & \KgetFvs(\overline{x \cln s}) = \overline{x \cln s},
+  \\
+  & \KgetFvs(\overline{\sigma(\varphi_1, \dots, \varphi_n)}) = \KgetFvs(\varphi_1), \dots, \KgetFvs(\varphi_n),
+  \\
+  & \KgetFvs(\overline{\varphi \kand_s \psi}) = \KgetFvs(\varphi), \KgetFvs(\psi),
+  \\
+  & \KgetFvs(\overline{\knot_s \varphi}) = \KgetFvs(\varphi),
+  \\
+  & \KgetFvs(\overline{\kexists_{s_1}^{s_2} x . \varphi}) = \KdeleteKPatternList(\overline{x \cln s_1}, \KgetFvs(\varphi)).
 \end{align*}
 
 The functional symbol
@@ -651,32 +645,30 @@ $$\KfreshName \colon \KPatternList \to \KString$$
 generates a variable name that does not occur free in the argument patterns.
 It has the following axiom:
 \begin{align*}
-\Kvariable(\KfreshName(\varphi_1,\dots,\varphi_n), s) \not\in \KgetFvs(\varphi_1),\dots,\KgetFvs(\varphi_n).
+\neg(\KinKPatternList(\Kvariable(\KfreshName(\varphi_1,\dots,\varphi_n), s), (\KgetFvs(\varphi_1),\dots,\KgetFvs(\varphi_n)))).
 \end{align*}
 
 The functional symbol
 $$\Ksubstitute \colon \KPattern \times \KPattern \times \KPattern \to \KPattern$$
-takes a target pattern $\varphi$, a ``find''-pattern $x$, and a ``replace''-pattern $\psi$, and returns $\varphi[\psi / x]$.
+takes a target pattern $\varphi$, a ``find''-pattern $\overline{x \cln s}$, and a ``replace''-pattern $\psi$, and returns $\varphi[\psi / x \cln s]$.
 
 \begin{notation}
-	We abbreviate $\Ksubstitute(\varphi, \psi, x)$ as $\varphi[\psi / x]$.
+	We abbreviate $\Ksubstitute(\varphi, \psi, x \cln s)$ as 
+	$\overline{\varphi[\psi / x \cln s]}$.
 \end{notation}
 
 The function $\Ksubstitute$ has the following axioms:
-\begin{center}
-	\begin{tabular}{lr}
-		$x[\psi/x] = \psi$
-		& $ x \neq y \to y[\psi/x] = y$
-		\\
-		$(\varphi_1 \kand_s \varphi_2) [\psi/x] = \varphi_1[\psi/x] \kand_s \varphi_2[\psi/x]$
-		& $(\knot_s \varphi)[\psi/x] = \knot_s \varphi[\psi/x]$
-		\\
-		$\sigma(\varphi_1, \dots, \varphi_n)[\psi/x] = \sigma(\varphi_1[\psi/x], \dots, \varphi_n[\psi/x])$
-		& $(\kexists_{s_1}^{s_2}x . \varphi)[\psi/x] = \kexists_{s_1}^{s_2}x . \varphi$
-		\\
-		\multicolumn{2}{l}{$(\kexists_{s_1}^{s_2}x . \varphi)[\psi/y] = \exists z . z = \KfreshName(\varphi, \psi, x) \wedge \kexists_{s_1}^{s_2} z . (\varphi[z/x][\psi/y]).$}
-	\end{tabular}
-\end{center}
+\begin{align*}
+  & \overline{x \cln s_1 [\psi / y \cln s_2]} = ((\overline{x \cln s_1} = \overline{y \cln s_2}) \wedge \psi) \vee ((\overline{x \cln s_1} \neq \overline{y \cln s_2}) \wedge \overline{x \cln s_1}),
+  \\
+  & \overline{\sigma(\varphi_1, \dots, \varphi_n) [\psi / x \cln s]} = \overline{\sigma(\varphi_1[\psi / x \cln s], \dots, \varphi_n[\psi / x \cln s])},
+  \\
+  & \overline{(\varphi_1 \wedge_s \varphi_2) [\psi / x \cln s']} = \overline{\varphi_1[\psi / x \cln s'] \wedge_s \varphi_2[\psi / x \cln s']},
+  \\
+  & \overline{(\neg_s \varphi)[\psi / x \cln s']} = \overline{\neg_s \varphi[\psi / x \cln s']},
+  \\
+  & \overline{(\kexists_{s_1}^{s_2}x . \varphi)[\psi/y \cln s_3]} = \exists z . (z = \KfreshName(\varphi, \psi, \overline{x \cln s_1})) \wedge \overline{\kexists_{s_1}^{s_2} z . (\varphi[z/x \cln s_1][\psi/y \cln s_3])}.
+\end{align*}
 
 \subsection{Matching Logic Signatures}
 
