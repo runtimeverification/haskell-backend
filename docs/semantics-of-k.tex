@@ -132,9 +132,10 @@
   % Package for writing BNF syntax
   \usepackage{syntax}
 
-\newcommand{\K}{\mbox{$\mathbb{K}$}\xspace}
+  \newcommand{\K}{\mbox{$\mathbb{K}$}\xspace}
+  
   % Define sorts and symbols in the calculus K.
-  \newcommand{\KBool}{\mathit{KBool}}
+  \newcommand{\KPred}{\mathit{KPred}}
   \newcommand{\Ktrue}{\mathit{Ktrue}}
   \newcommand{\Kfalse}{\mathit{Kfalse}}
   \newcommand{\KandBool}{\mathit{KandBool}}
@@ -142,7 +143,11 @@
   \newcommand{\KnotBool}{\mathit{KnotBool}}
   \newcommand{\KimpliesBool}{\mathit{KimpliesBool}}
   
+  \newcommand{\KChar}{\mathit{KChar}}
   \newcommand{\KString}{\mathit{KString}}
+  \newcommand{\Kepsilon}{\mathit{Kepsilon}}
+  \newcommand{\KconsKString}{\mathit{KconsKString}}
+  
   \newcommand{\Kconcat}{\mathit{Kconcat}}
   
   \newcommand{\Kdelete}{\mathit{delete}}
@@ -379,77 +384,54 @@ $(S,\Sigma,A) \models \varphi$.}
 
 \todo[inline, author=Xiaohong]{I am working on this section, so please don't touch it to prevent conflicts.}
 
-\subsection{Boolean Algebra}
-
-The matching logic theory of Boolean algebra is included in $K$,
-and the corresponding sort is named $\KBool$.
-Constructors of the sort $\KBool$ are two functional symbols
-\begin{equation*}
-\Ktrue \colon \to \KBool \qquad \Kfalse \colon \to \KBool.
-\end{equation*}
-Common Boolean operators are defined as functional symbols with their
-corresponding axioms:
-\begin{align*}
-&\KnotBool \colon \KBool \to \KBool
-&\KnotBool(\Ktrue) = \Kfalse
-\\
-&\KandBool \colon \KBool \times \KBool \to \KBool
-&\KnotBool(\Kfalse) = \Ktrue
-\\
-&\KorBool \colon \KBool \times \KBool \to \KBool
-&\KandBool(\Ktrue, b) = b
-\\
-&\KimpliesBool \colon \KBool \times \KBool \to \KBool
-&\KandBool(\Kfalse, b) = \Kfalse
-\end{align*}
-The symbols $\KorBool$ and $\KimpliesBool$ are defined in terms of the symbols
-$\KnotBool$ and $\KandBool$ in the usual way:
-\begin{align*}
-&\KorBool(b_1, b_2) = \KnotBool(\KandBool(\KnotBool(b_1), \KnotBool(b_2)))
-\\
-&\KimpliesBool(b_1, b_2) = \KorBool(\KnotBool(b_1), b_2).
-\end{align*}
+\subsection{Truth}
+\improvement
+{Xiaohong: I don't know what goes wrong but this section needs improvement.}
+A sort $\KPred$ is introduced, as in~\cite{rosu-2017-lmcs}, to capture predicate logic.
+Patterns of sort $\KPred$ are constructed using \emph{predicate symbols} together the regular matching logic connectives.
+A symbol is said to be a {predicate symbol} if its return sort is $\KPred$.
+Predicate symbols in $K$ will be defined in later sections when we introduce them.
 
 \begin{notation}
-	If $b$ is a term pattern of sort $\KBool$, then we will write just $b$ instead of $b = \Ktrue$ so that we can use Boolean expressions in any sort context.
+	If $b$ is a $\KPred$ pattern, we take the freedom to write $b$ instead of $b = \top_\KPred$, so that $\KPred$ patterns can be used in any sort context.
 \end{notation}
 
-\begin{notation}
-	To write Boolean expressions compactly, we adopt the following abbreviations if there is no confusion
-	\begin{align*}
-	&\neg b \equiv \KnotBool(b)
-	&b_1 \wedge b_2 \equiv \KandBool(b_1, b_2)
-	\\
-	&b_1 \vee b_2 \equiv \KorBool(b_1, b_2)
-	&b_1 \to b_2 \equiv \KimpliesBool(b_1, b_2).
-	\end{align*}
-\end{notation}
+
+
+
 
 \subsection{Strings}
-The sort $\KString$ is the sort for strings. It has the following $26 + 26 + 10 + 2 = 64$ functional constructors:
+The sort $\KChar$ is the sort for characters. It has the following $26 + 26 + 10 = 62$ functional symbols as constructors:
 \begin{center}
 	\begin{tabular}{c c c}
-		$\quot{a} \colon \to \KString$ & $\quot{b} \colon \to \KString$ & $\quot{c} \colon \to \KString$ \\
+		$\quot{a} \colon \to \KChar$ & $\quot{b} \colon \to \KChar$ & $\quot{c} \colon \to \KChar$ \\
 		$\cdots$ & $\cdots$ & $\cdots$ \\
-		$\quot{x} \colon \to \KString$ & $\quot{y} \colon \to \KString$ & $\quot{z} \colon \to \KString$ \\
-		$\quot{A} \colon \to \KString$ & $\quot{B} \colon \to \KString$ & $\quot{C} \colon \to \KString$ \\
+		$\quot{x} \colon \to \KChar$ & $\quot{y} \colon \to \KChar$ & $\quot{z} \colon \to \KChar$ \\
+		$\quot{A} \colon \to \KChar$ & $\quot{B} \colon \to \KChar$ & $\quot{C} \colon \to \KChar$ \\
 		$\cdots$ & $\cdots$ & $\cdots$ \\
-		$\quot{X} \colon \to \KString$ & $\quot{Y} \colon \to \KString$ & $\quot{Z} \colon \to \KString$ \\
-		$\quot{0} \colon \to \KString$ & $\cdots$ & $\quot{9} \colon \to \KString$ \\
-		$\epsilon \colon \to \KString$ & \multicolumn{2}{c}{$\Kconcat \colon \KString \times \KString \to \KString$.}
+		$\quot{X} \colon \to \KChar$ & $\quot{Y} \colon \to \KChar$ & $\quot{Z} \colon \to \KChar$ \\
+		$\quot{0} \colon \to \KChar$ & $\cdots$ & $\quot{9} \colon \to \KChar$. 
 	\end{tabular}
 \end{center}
 
-The associativity and identity of $\Kconcat$ are defined by the following axioms:
+The sort $\KString$ is the sort for strings, regarded as cons-lists of characters.
+The two constructors of sort $\KString$ are functional symbols:
 \begin{align*}
-&\Kconcat(s_1, (\Kconcat(s_2, s_3))) = \Kconcat(\Kconcat(s_1, s_2), s_3)
-\\
-&\Kconcat(s, \epsilon) = s \quad \Kconcat(\epsilon, s) = s.
+  &\Kepsilon \colon \to \KString
+  \\
+  &\mathit{KconsKString} \colon \KChar \times \KString \to \KString.
 \end{align*}
 
 \begin{notation}
-	As a convention, strings are often wrapped with quotation marks and the constructor $\Kconcat$ is often omitted.
-	Therefore, instead of writing $$\Kconcat(\quot{a}, \Kconcat(\quot{b}, \quot{c})),$$ we simply write $\quot{abc}$, thanks to the associativity of $\Kconcat$. 
+	As a convention, strings are often wrapped with quotation marks. 
+	For example, instead of writing
+	$$
+	\KconsKString(\quot{a}, \KconsKString(\quot{b}, \KconsKString(\quot{c}, \Kepsilon))),
+	$$
+	we simply write $\quot{abc}$.
+	The empty string $\Kepsilon$ is often written as $\quot{}$ or $\epsilon$.
+	\unsure
+	{Xiaohong: We may not need this abbreviation, though. Let's keep it here for a while. }
 \end{notation}
 
 
@@ -460,14 +442,16 @@ The associativity and identity of $\Kconcat$ are defined by the following axioms
 The sort $\KSort$ is the sort for matching logic sorts.
 The only constructor of the sort $\KSort$ is the functional symbol:
 \begin{equation*}
-\Ksort \colon \KString \to \KSort.
+\Ksort \colon \KString \to \KSort,
 \end{equation*}
+where the argument is called the \emph{name} or \emph{identity} of the sort. 
 
 The sort $\KSymbol$ is the sort for matching logic symbols.
 The only constructor of the sort $\KSymbol$ is the functional symbol:
 \begin{equation*}
-\Ksymbol \colon \KString \times \KSortList \times \KSort \to \KSymbol.
+\Ksymbol \colon \KString \times \KSortList \times \KSort \to \KSymbol,
 \end{equation*}
+where the first argument is the \emph{name} of the symbol, and the rest arguments are the \emph{argument sorts} and the \emph{return sort} of the symbol. 
 
 \subsection{Finite Lists}
 Whenever we introduce a sort, say $\mathit{X}$, to $S_K$, we feel free to 
@@ -477,7 +461,7 @@ Firstly, the sort $\mathit{XList}$ is in $S_K$.
 Secondly, the following functional symbols are in $\Sigma_K$:
 \begin{align*}
 &\mathit{nilXList} \colon \to \mathit{XList}
-&\mathit{inXList} \colon \mathit{X} \times \mathit{XList} \to \KBool
+&\mathit{inXList} \colon \mathit{X} \times \mathit{XList} \to \KPred
 \\
 &\mathit{appendXList} \colon \mathit{XList} \times \mathit{XList} \to 
 \mathit{XList}
@@ -557,7 +541,7 @@ It has the following functional symbols:
 where $\Kvariable$, $\Kand$, $\Kor$, $\Kapplication$, and $\Kexists$ are constructors of sort~$\KPattern$. 
 
 \begin{notation}\label{notation:variables-about-KPattern}
-	As a convention, we use $b$ for $\KBool$ variables, $x, y, z$ for 
+	As a convention, we use $b$ for $\KPred$ variables, $x, y, z$ for 
 	$\KString$ variables, $s$ for $\KSort$ variables, $\sigma$ for 
 	$\KSymbol$ variables, and $\varphi, \psi$ for $\KPattern$ variables. 
 \end{notation}
@@ -698,7 +682,7 @@ The following axioms define $\KgetSort$:
 \end{align*}
 
 The functional symbol 
-$$\KwellFormed \colon \KPattern \times \KSignature \to \KBool$$ returns $\Ktrue$ if the argument pattern is well-formed in the argument signature.
+$$\KwellFormed \colon \KPattern \times \KSignature \to \KPred$$ returns $\Ktrue$ if the argument pattern is well-formed in the argument signature.
 It has the following axioms:
 \begin{align*}
 &\KwellFormed(x \cln s, (S, \Sigma)) = s \in S
@@ -736,7 +720,7 @@ A sound and complete proof system has been introduced in~\cite{?}.
 
 The functional symbol
 $$
-\Kdeduce \colon \KTheory \times \KPattern \to \KBool
+\Kdeduce \colon \KTheory \times \KPattern \to \KPred
 $$
 returns $\Ktrue$ if the argument pattern is deducible in the argument theory.
 The functional symbol $\Kdeduce$ has axioms in correspondence to the inference rules in the proof system.
@@ -1087,7 +1071,7 @@ Module         = module ModuleId
 \end{Verbatim}
 
 In Kore syntax, the backslash ``\verb|\|'' is reserved for matching logic connectives and the sharp ``\verb|#|'' is reserved for the meta-level, i.e., the $K$ sorts and symbols. 
-Therefore, the sorts $\KBool$, $\KString$, $\KSymbol$, $\KSort$, and 
+Therefore, the sorts $\KPred$, $\KString$, $\KSymbol$, $\KSort$, and 
 $\KPattern$ in the calculus $K$ are denoted as \verb|#Bool|, \verb|#String|, 
 \verb|#Symbol|, \verb|#Sort|, and \verb|#Pattern| in Kore respectively.
 Symbols in $K$ are denoted in the similar way, too. 
@@ -1240,7 +1224,7 @@ endmodule
 \section{Ignore Me}
 A proof system is a theorem generator. 
 In $K$, the proof system of matching logic is captured by the functional symbol 
-$\mathit{deducible} \colon \KPattern \to \KBool$, which returns $\Ktrue$ 
+$\mathit{deducible} \colon \KPattern \to \KPred$, which returns $\Ktrue$ 
 iff the argument pattern is a theorem. 
 
 We introduce the double bracket $\Bracket{\_}$, known as the semantics bracket, as follows:
