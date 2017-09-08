@@ -377,45 +377,7 @@ $(S,\Sigma,A) \models \varphi$.}
 
 \section{Matching Logic Theory of Matching Logic: Finite Case}
 
-\section{Matching Logic Theory of Matching Logic: With Meta-Variables}
-
-\section{Matching Logic Theory of Matching Logic: With Parameters}
-
-\section{Get Material From Here}
-
-Matching logic imposes no restrictions on the cardinality of the set of
-sorts $S$, of the set of symbols $\Sigma$, or of the set of patterns $A$
-in a theory $(S,\Sigma,A)$.
-In practice, however, we need a finite mechanism to describe such theories
-in order to mechanically reason about them using a computer.
-In the vast universe of possibilities, we here propose one particular approach
-that we found useful, convenient and sufficient in our semantics engineering
-efforts.
-Specifically:
-\begin{itemize}
-\item
-We restrict the infinite sets of sorts to ones which can be described with
-a finite set of \emph{parametric} sorts, where the parameters range over
-other sorts.
-For example, $S=\{\Nat,\parametric{\List}{X}\}$ describes the infinite set
-of sorts
-$S=\{\Nat, \parametric{\List}{\Nat}, \parametric{\List}{\parametric{\List}{\Nat}}, ...\}$.
-
-\end{itemize}
-
-From here on, unless otherwise specified, when we say \emph{set} we mean
-a \emph{recursively enumerable set}, i.e., a set that can be generated
-algorithmically (not to be confused with the weaker notion of a
-countable\unsure{countable may suffice, we'll need to understand how it is in FOL}
-set, which only means that it has a cardinal no larger than
-$\aleph_0$---either finite or in bijection with the set
-of natural numbers).
-
-
-In this section, we define a matching logic theory $K = (S_K, \Sigma_K, A_K)$ 
-as \emph{the (reflective) calculus of matching logic},
-where $S_K, \Sigma_K$, and $A_K$ are \emph{finite} sets of sorts,
-symbols, and axioms,  respectively.
+\todo[inline, author=Xiaohong]{I am working on this section, so please don't touch it to prevent conflicts.}
 
 \subsection{Boolean Algebra}
 
@@ -466,16 +428,16 @@ $\KnotBool$ and $\KandBool$ in the usual way:
 \subsection{Strings}
 The sort $\KString$ is the sort for strings. It has the following $26 + 26 + 10 + 2 = 64$ functional constructors:
 \begin{center}
-\begin{tabular}{c c c}
-	$\quot{a} \colon \to \KString$ & $\quot{b} \colon \to \KString$ & $\quot{c} \colon \to \KString$ \\
-	$\cdots$ & $\cdots$ & $\cdots$ \\
-	$\quot{x} \colon \to \KString$ & $\quot{y} \colon \to \KString$ & $\quot{z} \colon \to \KString$ \\
-	$\quot{A} \colon \to \KString$ & $\quot{B} \colon \to \KString$ & $\quot{C} \colon \to \KString$ \\
-    $\cdots$ & $\cdots$ & $\cdots$ \\
-    $\quot{X} \colon \to \KString$ & $\quot{Y} \colon \to \KString$ & $\quot{Z} \colon \to \KString$ \\
-    $\quot{0} \colon \to \KString$ & $\cdots$ & $\quot{9} \colon \to \KString$ \\
-    $\epsilon \colon \to \KString$ & \multicolumn{2}{c}{$\Kconcat \colon \KString \times \KString \to \KString$.}
-\end{tabular}
+	\begin{tabular}{c c c}
+		$\quot{a} \colon \to \KString$ & $\quot{b} \colon \to \KString$ & $\quot{c} \colon \to \KString$ \\
+		$\cdots$ & $\cdots$ & $\cdots$ \\
+		$\quot{x} \colon \to \KString$ & $\quot{y} \colon \to \KString$ & $\quot{z} \colon \to \KString$ \\
+		$\quot{A} \colon \to \KString$ & $\quot{B} \colon \to \KString$ & $\quot{C} \colon \to \KString$ \\
+		$\cdots$ & $\cdots$ & $\cdots$ \\
+		$\quot{X} \colon \to \KString$ & $\quot{Y} \colon \to \KString$ & $\quot{Z} \colon \to \KString$ \\
+		$\quot{0} \colon \to \KString$ & $\cdots$ & $\quot{9} \colon \to \KString$ \\
+		$\epsilon \colon \to \KString$ & \multicolumn{2}{c}{$\Kconcat \colon \KString \times \KString \to \KString$.}
+	\end{tabular}
 \end{center}
 
 The associativity and identity of $\Kconcat$ are defined by the following axioms:
@@ -506,9 +468,6 @@ The only constructor of the sort $\KSymbol$ is the functional symbol:
 \begin{equation*}
 \Ksymbol \colon \KString \times \KSortList \times \KSort \to \KSymbol.
 \end{equation*}
-
-\todo{Now sorts and symbols take sort parameters. Easy fix. But we need to go 
-through the rest and propagate this fix and make sure they make sense.}
 
 \subsection{Finite Lists}
 Whenever we introduce a sort, say $\mathit{X}$, to $S_K$, we feel free to 
@@ -552,26 +511,26 @@ Thirdly, the following axioms are in $A_K$:
 In this proposal, we will be using sorts $\KPatternList$, $\KSymbolList$, and $\KSortList$ whose construction is defined above. 
 
 \begin{notation}
-To write lists expressions compactly, we adopt the following shorthands for $\mathit{inXList}$ and $\mathit{deleteXList}$ when there is no confusion:
-\begin{align*}
-&x \in l \equiv (\mathit{inXList}(x, l) = \Ktrue)
-\qquad x \not\in l \equiv (\mathit{inXList}(x, l) = \Kfalse)
-\\
-&\mathit{deleteXList}(x, l) \equiv \Kdelete(x, l).
-\end{align*}
-Note that one should not confuse the shorthand for $\mathit{inXList}$ with the 
-matching logic membership connective, which we all write as the belongs-to 
-symbol ``$\in$''. 
-If the two patterns before and after the belongs-to symbol are of the same 
-sort, it is the membership connective. 
-If the left of them is of sort $\mathit{X}$ and the right is of sort 
-$\mathit{XList}$, the belongs-to symbol is the shorthand of $\mathit{inXList}$.
-
-Constructors $\mathit{XListAsX}$ and $\mathit{appendXList}$ are often omitted, too:
-\begin{align*}
-x_1, \dots, x_n
-\equiv &\mathit{appendXList}(x_1, \mathit{appendXList}(\dots, \mathit{appendXList}(x_{n-1}, x_n)\dots)).
-\end{align*}
+	To write lists expressions compactly, we adopt the following shorthands for $\mathit{inXList}$ and $\mathit{deleteXList}$ when there is no confusion:
+	\begin{align*}
+	&x \in l \equiv (\mathit{inXList}(x, l) = \Ktrue)
+	\qquad x \not\in l \equiv (\mathit{inXList}(x, l) = \Kfalse)
+	\\
+	&\mathit{deleteXList}(x, l) \equiv \Kdelete(x, l).
+	\end{align*}
+	Note that one should not confuse the shorthand for $\mathit{inXList}$ with the 
+	matching logic membership connective, which we all write as the belongs-to 
+	symbol ``$\in$''. 
+	If the two patterns before and after the belongs-to symbol are of the same 
+	sort, it is the membership connective. 
+	If the left of them is of sort $\mathit{X}$ and the right is of sort 
+	$\mathit{XList}$, the belongs-to symbol is the shorthand of $\mathit{inXList}$.
+	
+	Constructors $\mathit{XListAsX}$ and $\mathit{appendXList}$ are often omitted, too:
+	\begin{align*}
+	x_1, \dots, x_n
+	\equiv &\mathit{appendXList}(x_1, \mathit{appendXList}(\dots, \mathit{appendXList}(x_{n-1}, x_n)\dots)).
+	\end{align*}
 \end{notation}
 
 \subsection{Matching Logic Patterns}
@@ -607,33 +566,33 @@ where $\Kvariable$, $\Kand$, $\Kor$, $\Kapplication$, and $\Kexists$ are constru
 	Patterns of sort $\KPattern$ are easily getting huge quickly.
 	The following abbreviations are adopted to write compact $\KPattern$ patterns.
 	\begin{center}
-	\begin{tabular}{ll}
-    \multicolumn{2}{l}{$x \cln s \equiv \Kvariable(x, s)$. Sometimes it 
-    abbreviates to just $x$.}
-  \\
-	$\varphi \kand_s \psi \equiv \Kand(\varphi, \psi, s)$
-  & $\varphi \kor_s \psi \equiv \Kor(\varphi, \psi, s)$
-  \\
-    $\varphi \kimplies_s \psi \equiv \Kimplies(\varphi, \psi, s)$
-  &	$\varphi \kiff_s \psi \equiv \Kiff(\varphi, \psi, s)$
-  \\
-    $\knot_s \varphi \equiv \Knot(\varphi, x, s)$
-  & $\kexists_{s_1}^{s_2} x . \varphi \equiv \Kexists(x,s,\varphi,s')$
-  \\
-    $\kforall_{s_1}^{s_2} x . \varphi \equiv \Kforall(x,s,\varphi,s')$
-  & $\varphi \kequals_{s_1}^{s_2} \psi \equiv \Kequals(\varphi, \psi, s_1, s_2)$
-  \\
-    $\varphi \kcontains_{s_1}^{s_2} \psi \equiv \Kcontains(\varphi, \psi, s_1, s_2)$
-  \\
-    \multicolumn{2}{l}{$\sigma(\varphi_1,\dots,\varphi_n) \equiv \Kapplication(\sigma, (\varphi_1,\dots,\varphi_n))$}
-  \\
-    $\kfloor{\varphi}_{s_1}^{s_2} \equiv \Kfloor(\varphi, s_1, s_2)$
-  & $\kceil{\varphi}_{s_1}^{s_2} \equiv \Kceil(\varphi, s_1, s_2)$
-  \\
-    $\ktop_s \equiv \Ktop(s)$
-  & $\kbottom_s \equiv \Kbottom(s)$
-	\end{tabular}
-    \end{center}
+		\begin{tabular}{ll}
+			\multicolumn{2}{l}{$x \cln s \equiv \Kvariable(x, s)$. Sometimes it 
+				abbreviates to just $x$.}
+			\\
+			$\varphi \kand_s \psi \equiv \Kand(\varphi, \psi, s)$
+			& $\varphi \kor_s \psi \equiv \Kor(\varphi, \psi, s)$
+			\\
+			$\varphi \kimplies_s \psi \equiv \Kimplies(\varphi, \psi, s)$
+			&	$\varphi \kiff_s \psi \equiv \Kiff(\varphi, \psi, s)$
+			\\
+			$\knot_s \varphi \equiv \Knot(\varphi, x, s)$
+			& $\kexists_{s_1}^{s_2} x . \varphi \equiv \Kexists(x,s,\varphi,s')$
+			\\
+			$\kforall_{s_1}^{s_2} x . \varphi \equiv \Kforall(x,s,\varphi,s')$
+			& $\varphi \kequals_{s_1}^{s_2} \psi \equiv \Kequals(\varphi, \psi, s_1, s_2)$
+			\\
+			$\varphi \kcontains_{s_1}^{s_2} \psi \equiv \Kcontains(\varphi, \psi, s_1, s_2)$
+			\\
+			\multicolumn{2}{l}{$\sigma(\varphi_1,\dots,\varphi_n) \equiv \Kapplication(\sigma, (\varphi_1,\dots,\varphi_n))$}
+			\\
+			$\kfloor{\varphi}_{s_1}^{s_2} \equiv \Kfloor(\varphi, s_1, s_2)$
+			& $\kceil{\varphi}_{s_1}^{s_2} \equiv \Kceil(\varphi, s_1, s_2)$
+			\\
+			$\ktop_s \equiv \Ktop(s)$
+			& $\kbottom_s \equiv \Kbottom(s)$
+		\end{tabular}
+	\end{center}
 \end{notation}
 
 Apart from the five constructors of sort $\KPattern$, all the other symbols are derived connectives, which are defined by the following axioms:
@@ -691,18 +650,18 @@ takes a target pattern $\varphi$, a ``find''-pattern $x$, and a ``replace''-patt
 
 The function $\Ksubstitute$ has the following axioms:
 \begin{center}
-\begin{tabular}{lr}
-  $x[\psi/x] = \psi$
-& $ x \neq y \to y[\psi/x] = y$
-\\
-  $(\varphi_1 \kand_s \varphi_2) [\psi/x] = \varphi_1[\psi/x] \kand_s \varphi_2[\psi/x]$
-& $(\knot_s \varphi)[\psi/x] = \knot_s \varphi[\psi/x]$
-\\
-  $\sigma(\varphi_1, \dots, \varphi_n)[\psi/x] = \sigma(\varphi_1[\psi/x], \dots, \varphi_n[\psi/x])$
-& $(\kexists_{s_1}^{s_2}x . \varphi)[\psi/x] = \kexists_{s_1}^{s_2}x . \varphi$
-\\
-  \multicolumn{2}{l}{$(\kexists_{s_1}^{s_2}x . \varphi)[\psi/y] = \exists z . z = \KfreshName(\varphi, \psi, x) \wedge \kexists_{s_1}^{s_2} z . (\varphi[z/x][\psi/y]).$}
-\end{tabular}
+	\begin{tabular}{lr}
+		$x[\psi/x] = \psi$
+		& $ x \neq y \to y[\psi/x] = y$
+		\\
+		$(\varphi_1 \kand_s \varphi_2) [\psi/x] = \varphi_1[\psi/x] \kand_s \varphi_2[\psi/x]$
+		& $(\knot_s \varphi)[\psi/x] = \knot_s \varphi[\psi/x]$
+		\\
+		$\sigma(\varphi_1, \dots, \varphi_n)[\psi/x] = \sigma(\varphi_1[\psi/x], \dots, \varphi_n[\psi/x])$
+		& $(\kexists_{s_1}^{s_2}x . \varphi)[\psi/x] = \kexists_{s_1}^{s_2}x . \varphi$
+		\\
+		\multicolumn{2}{l}{$(\kexists_{s_1}^{s_2}x . \varphi)[\psi/y] = \exists z . z = \KfreshName(\varphi, \psi, x) \wedge \kexists_{s_1}^{s_2} z . (\varphi[z/x][\psi/y]).$}
+	\end{tabular}
 \end{center}
 
 \subsection{Matching Logic Signatures}
@@ -923,6 +882,48 @@ If $\vdash x \in \varphi$ and $x$ does not occur free in $\varphi$, then $\vdash
 \begin{proof}
 	TBC.
 \end{proof}
+
+\section{Matching Logic Theory of Matching Logic: With Meta-Variables}
+
+\section{Matching Logic Theory of Matching Logic: With Parameters}
+
+\section{Get Material From Here}
+
+Matching logic imposes no restrictions on the cardinality of the set of
+sorts $S$, of the set of symbols $\Sigma$, or of the set of patterns $A$
+in a theory $(S,\Sigma,A)$.
+In practice, however, we need a finite mechanism to describe such theories
+in order to mechanically reason about them using a computer.
+In the vast universe of possibilities, we here propose one particular approach
+that we found useful, convenient and sufficient in our semantics engineering
+efforts.
+Specifically:
+\begin{itemize}
+\item
+We restrict the infinite sets of sorts to ones which can be described with
+a finite set of \emph{parametric} sorts, where the parameters range over
+other sorts.
+For example, $S=\{\Nat,\parametric{\List}{X}\}$ describes the infinite set
+of sorts
+$S=\{\Nat, \parametric{\List}{\Nat}, \parametric{\List}{\parametric{\List}{\Nat}}, ...\}$.
+
+\end{itemize}
+
+From here on, unless otherwise specified, when we say \emph{set} we mean
+a \emph{recursively enumerable set}, i.e., a set that can be generated
+algorithmically (not to be confused with the weaker notion of a
+countable\unsure{countable may suffice, we'll need to understand how it is in FOL}
+set, which only means that it has a cardinal no larger than
+$\aleph_0$---either finite or in bijection with the set
+of natural numbers).
+
+
+In this section, we define a matching logic theory $K = (S_K, \Sigma_K, A_K)$ 
+as \emph{the (reflective) calculus of matching logic},
+where $S_K, \Sigma_K$, and $A_K$ are \emph{finite} sets of sorts,
+symbols, and axioms,  respectively.
+
+
 
 \section{The Kore Syntax}
 
