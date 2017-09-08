@@ -63,40 +63,7 @@
   \usepackage{hyperref}  
   
   % Package for tables:
-  \usepackage[english]{babel}
-  
-  % Define serif fonts for ML theories used in math mode:
-  \newcommand{\PA}{\mathsf{PA}}
-  \newcommand{\SEQ}{\mathsf{SEQ}}
-  \newcommand{\HEAP}{\mathsf{HEAP}}
-  \newcommand{\IMP}{\mathsf{IMP}}
-  \newcommand{\FIX}{\mathsf{FIX}}
-  \newcommand{\LAMBDA}{\mathsf{LAMBDA}}
-  \newcommand{\CTXT}{\mathsf{CTXT}}
-  \newcommand{\DEF}{\mathsf{DEF}}
-  \newcommand{\METALEVEL}{\mathsf{META-LEVEL}}
-  
-  % Define serif fonts for symbols:
-  \newcommand{\impite}{\mathsf{ite}}
-  \newcommand{\impwhile}{\mathsf{while}}
-  \newcommand{\imptt}{\mathsf{tt}}
-  \newcommand{\impff}{\mathsf{ff}}
-  \newcommand{\impskip}{\mathsf{skip}}
-  \newcommand{\impseq}{\mathsf{seq}}
-  \newcommand{\impasgn}{\mathsf{asgn}}
-  
-  \newcommand{\impmapsto}{\mathsf{mapsto}}
-  \newcommand{\impmerge}{\mathsf{merge}}
-  
-  \newcommand{\up}{\mathsf{\#up}}
-  \newcommand{\down}{\mathsf{\#down}}
-  \newcommand{\isGround}{\mathsf{isGround}}
-  \newcommand{\xfalse}{\mathsf{false}}
-  \newcommand{\xtrue}{\mathsf{true}}
-  
-  
-  % Define identity context
-  \newcommand{\I}{\mathsf{I}}
+  \usepackage[english]{babel}  
   
   % Define the colon ":" that is used in "x:s"
   % with less spacing around.
@@ -135,7 +102,11 @@
   \newcommand{\K}{\mbox{$\mathbb{K}$}\xspace}
   
   % Define sorts and symbols in the calculus K.
+  
+  % Sec 3.1 Truth
   \newcommand{\KPred}{\mathit{KPred}}
+  
+  %% We shouldn't need the follows.
   \newcommand{\Ktrue}{\mathit{Ktrue}}
   \newcommand{\Kfalse}{\mathit{Kfalse}}
   \newcommand{\KandBool}{\mathit{KandBool}}
@@ -143,20 +114,37 @@
   \newcommand{\KnotBool}{\mathit{KnotBool}}
   \newcommand{\KimpliesBool}{\mathit{KimpliesBool}}
   
+  % Sec 3.2 Strings
   \newcommand{\KChar}{\mathit{KChar}}
   \newcommand{\KString}{\mathit{KString}}
   \newcommand{\Kepsilon}{\mathit{Kepsilon}}
   \newcommand{\KconsKString}{\mathit{KconsKString}}
   
+  %% We shouldn't need the follows.  
   \newcommand{\Kconcat}{\mathit{Kconcat}}
+  
+  % Sec 3.3 Sorts and Symbols
+  \newcommand{\KSort}{\mathit{KSort}}
+  \newcommand{\KSymbol}{\mathit{KSymbol}}
+  
+  % Sec 3.4 Finite Lists
+  \newcommand{\XList}{\mathit{XList}}
+  \newcommand{\KnilXList}{\mathit{KnilXList}}
+  \newcommand{\KconsXList}{\mathit{KconsXList}}
+  \newcommand{\KappendXList}{\mathit{KappendXList}}
+  \newcommand{\KinXList}{\mathit{KinXList}}
+  \newcommand{\KdeleteXList}{\mathit{KdeleteXList}}
+  %% Define l1 @ l2 for list concatenation.
+  \newcommand{\at}{@}
+  
   
   \newcommand{\Kdelete}{\mathit{delete}}
     
-  \newcommand{\KSort}{\mathit{KSort}}
+
   \newcommand{\KSortList}{\mathit{KSortList}}
   \newcommand{\Ksort}{\mathit{Ksort}}
   
-  \newcommand{\KSymbol}{\mathit{KSymbol}}
+
   \newcommand{\KSymbolList}{\mathit{KSymbolList}}
   \newcommand{\Ksymbol}{\mathit{Ksymbol}}
   
@@ -417,9 +405,9 @@ The sort $\KChar$ is the sort for characters. It has the following $26 + 26 + 10
 The sort $\KString$ is the sort for strings, regarded as cons-lists of characters.
 The two constructors of sort $\KString$ are functional symbols:
 \begin{align*}
-  &\Kepsilon \colon \to \KString
+  & \Kepsilon \colon \to \KString,
   \\
-  &\mathit{KconsKString} \colon \KChar \times \KString \to \KString.
+  & \mathit{KconsKString} \colon \KChar \times \KString \to \KString.
 \end{align*}
 
 \begin{notation}
@@ -454,11 +442,53 @@ The only constructor of the sort $\KSymbol$ is the functional symbol:
 where the first argument is the \emph{name} of the symbol, and the rest arguments are the \emph{argument sorts} and the \emph{return sort} of the symbol. 
 
 \subsection{Finite Lists}
-Whenever we introduce a sort, say $\mathit{X}$, to $S_K$, we feel free to 
-use $\mathit{XList}$ as the sort of finite lists whose elements are of sort $\mathit{X}$. 
-If we do that, it means three things.
-Firstly, the sort $\mathit{XList}$ is in $S_K$.
-Secondly, the following functional symbols are in $\Sigma_K$:
+
+For sorts $\KSort$, $\KSymbol$, and $\KPattern$
+\footnote{The sort $\KPattern$ will be defined in the next section.}
+in $S_K$,
+we define sorts $\KSortList$, $\KSymbolList$, and $\KPatternList$ to be the sorts of finite lists over them, respectively.
+For any sort $X$ where
+$$
+X \in \{\KSort, \KSymbol, \KPattern\},
+$$
+the sort $\XList$ is in $S_K$, and the following functional constructors of sort $\XList$ are in $\Sigma_K$:
+\begin{align*}
+  & \KnilXList \colon \to \XList,
+  \\
+  & \KconsXList \colon \mathit{X} \times \XList \to \XList.
+\end{align*}
+
+\begin{notation}
+	To write lists expression more compactly, we adopt the following abbreviations:
+	\begin{equation*}
+	  x_1, x_2, \dots, x_n \equiv \KconsXList(x_1, \KconsXList(x_2, \dots\KconsXList(x_n, \KnilXList)\dots)).
+	\end{equation*}
+\end{notation}
+
+Common operations on lists can be defined as functional symbols on $\XList$.
+The symbol $\KappendXList$ takes two lists and returns the concatenation of them:
+\begin{align*}
+  & \KappendXList \colon \XList \times \XList \to \XList,
+  \\
+  & \KappendXList(\KnilXList, l) = l,
+  \\
+  & \KappendXList(\KconsXList(x, l_0), l) = \KconsXList(x, \KappendXList(l_0, l)).
+\end{align*}
+\begin{notation}
+	We adopt the following notation abbreviation for list concatenation:
+	\begin{equation*}
+	  l_1 \at l_2 \equiv \KappendXList(l_1, l_2).
+	\end{equation*}
+\end{notation}
+
+The predicate symbol $\KinXList$ takes an element and a list, and decides whether the element is a member of the list or not:
+\begin{align*}
+  & \KinXList \colon \mathit{X} \times \XList \to \KPred,
+  \\
+  & \neg \KinXList(x, \KnilXList),
+  \\
+  & \KinXList(x, \KconsXList(y, l)) = (x = y) \vee \KinXList(x, l).
+\end{align*}
 \begin{align*}
 &\mathit{nilXList} \colon \to \mathit{XList}
 &\mathit{inXList} \colon \mathit{X} \times \mathit{XList} \to \KPred
