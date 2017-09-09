@@ -489,7 +489,7 @@ the sort $\XList$ is in $S_\Kfinite$, and the following functional constructors 
 \end{notation}
 
 Common operations on lists can be defined as functional symbols on $\XList$.
-The symbol $$\KappendXList \colon \XList \times \XList \to \XList$$ \unsure{We might not need $\KappendXList$ at all, but let us keep it here for while in case we need it later.}
+The symbol $$\KappendXList \colon \XList \times \XList \to \XList$$ 
 takes two lists and returns the concatenation of them, with two axioms:
 \begin{align*}
   & \KappendXList(\KnilXList, l) = l,
@@ -632,7 +632,7 @@ They are defined and axiomatized in this section, too.
 The functional symbol 
 $$\KgetFvs \colon \KPattern \to \KPatternList$$
 traverses the argument pattern and collects all its free variables. 
-It has the following axioms:
+It has the following axioms:\improvement{Aha! We can't write ``$\cdots$'' here in the second axiom because we want to make $\Kfinite$ a finite theory. Not only here, but also some places in later sections. I know how to get rid of it. }
 \begin{align*}
   & \KgetFvs(\overline{x \cln s}) = \overline{x \cln s},
   \\
@@ -648,7 +648,7 @@ It has the following axioms:
 The functional symbol
 $$\KfreshName \colon \KPatternList \to \KString$$ 
 generates a variable name that does not occur free in the argument patterns.
-It has the following axiom:
+It has the following axiom:\improvement{Same here. Get rid of the ``$\cdots$''.}
 \begin{align*}
 \neg(\KinKPatternList(\Kvariable(\KfreshName(\varphi_1,\dots,\varphi_n), s), (\KgetFvs(\varphi_1),\dots,\KgetFvs(\varphi_n)))).
 \end{align*}
@@ -664,7 +664,7 @@ The symbol $\Ksubstitute$ expects the third argument to be of the form $\Kvariab
 	$\overline{\varphi[\psi / x \cln s]}$.
 \end{notation}
 
-The function $\Ksubstitute$ has the following axioms:
+The function $\Ksubstitute$ has the following axioms:\improvement{Same here. Get rid of the ``$\cdots$''.}
 \begin{align*}
   & \overline{x \cln s_1 [\psi / y \cln s_2]} = ((\overline{x \cln s_1} = \overline{y \cln s_2}) \wedge \psi) \vee ((\overline{x \cln s_1} \neq \overline{y \cln s_2}) \wedge \overline{x \cln s_1}),
   \\
@@ -699,7 +699,7 @@ The partial function
 $$\KgetSort \colon \KPattern \times \KSignature \rightharpoonup \KSort$$
 takes a pattern and a finite signature, and returns the sort of the pattern in the given signature if the pattern is well-formed.
 Otherwise, it returns $\bot_\KSort$.
-The symbols $\KwellFormed$ and $\KgetSort$ are axiomatized by the following axioms:
+The symbols $\KwellFormed$ and $\KgetSort$ are axiomatized by the following axioms:\improvement{Fix TODO here. Note that we should not use the ``$\cdots$'' in $\Kfinite$.}
 \begin{align*}
   &\KwellFormed(\overline{x \cln s}, \langle S, \Sigma \rangle) = \KinKSortList(s, S),
   \\
