@@ -910,15 +910,45 @@ For that reason, we introduce the \emph{lifting and dropping morphisms}.
 	
 	Definition~(Symbol-lifting morphism $\liftsymbol$).
 	For any finite symbol set $\Sigma$,
-	$$\liftsymbol(\Sigma) \colon \Sigma \to \PATTERNS_\KSymbol$$ 
-
+	$$\liftsymbol(\Sigma) \colon \Sigma \to \PATTERNS_\KSymbol$$
+	is an injection function, such that for any symbol $\sigma \in \Sigma_{s_1 \dots s_n,s}$,
+	$$\liftsymbol(\Sigma)(\sigma) = \Ksymbol(\dots, )
+	$$
+TODO:: finish the definition of lifting.
 \end{definition}
+
+\begin{lemma}
+	Suppose $T = \langle S, \Sigma, F \rangle$ is a finite matching logic theory and $\varphi$ is a $\Sigma$-pattern.
+	The following proposition holds:
+	\begin{itemize}
+		\item If $\varphi$ is a logical axiom, then $K \vdash \Kdeduce(\hat{T}, \hat{\varphi});$
+		\item If $\varphi \in F$, then $K \vdash \Kdeduce(\hat{T}, \hat{\varphi});$
+		\item If
+		
+	\end{itemize}
+\end{lemma}
 
 Now we are in a good shape to prove Theorem~\ref{thm:faithfulness-finite}.
 
 \begin{proof}[Proof Sketch of Theorem~\ref{thm:faithfulness-finite}]\quad
 	
-	Step 1 (The ``$\Rightarrow$'' part). By mimicking the proof of $T \vdash \varphi$ in $\Kfinite$.
+	Step 1 (The ``$\Rightarrow$'' part). We prove this by mimicking the proof of $F \vdash \varphi$ in $\Kfinite$.
+	
+	Step 1.1. Suppose the proof of $F \vdash \varphi$ is a sequence $\varphi_1 , \dots,  \varphi_n$ with $\varphi_n = \varphi$. By definition, for each $i \in \{1,\dots, n\}$, one of the following holds:
+	\begin{itemize}
+		\item $\varphi_i$ is a logical axiom;
+		\item $\varphi_i \in F$;
+		\item There exist $i_1, i_2 < i$ such that $\varphi_{i_2} = \varphi_{i_1} \to \varphi_i$;
+		\item There exists $i_1 < i$ and a variable $x$ such that $\varphi_i = \forall x . \varphi_{i_1}$;
+		\item There exists $i_1 < i$ and a variable $x$ that does not occur free in $\varphi_{i_1}$ such that $\varphi_i = \forall x . (x \in \varphi_{i_1})$;
+		\item There exists $i_1 < i$ and a variable $x$ that does not occur free in $\varphi_i$ such that $\varphi_{i_1} = \forall x . (x \in \varphi_i)$. 
+	\end{itemize}
+
+    Step 1.2. By Lemma~\ref{?}, for each $i \in \{1, \dots, n\}$, one of the following holds:
+    \begin{itemize}
+    	\item $K \vdash \Kdeduce(\hat{T}, \hat{\varphi_i})$;
+    	\item $K \vdash \Kdeduce(\hat{T}, \hat{\varphi_i})$;
+    \end{itemize}
 	
 	Step 2 (The ``$\Leftarrow$'' part).
 	
