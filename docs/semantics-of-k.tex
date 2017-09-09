@@ -674,48 +674,45 @@ The function $\Ksubstitute$ has the following axioms:
 
 The sort $\KSignature$ is the sort for matching logic signatures, and it has just one constructor symbol:
 \begin{equation*}
-\Ksignature \colon \KSortList \times \KSymbolList \to \KSignature.
+\Ksignature \colon \KSortList \times \KSymbolList \to \KSignature,
 \end{equation*}
+which takes a finite list of sorts and a finite list of symbols as arguments, and returns the corresponding finite signature.
 
 \begin{notation}
-	As a convention, we use $\Sigma, \Psi$ for $\KSignature$ variables. 
-	We use~$S$ for~$\KSortList$ variables and $\Sigma$ for $\KSymbolList$ variables if they appear in~$\Ksignature$. 
+	As a convention, we use $\Sigma$ for $\KSignature$ variables. 
+	We use~$S$ for~$\KSortList$ variables and $\Sigma$ for $\KSymbolList$ variables if they appear as in~$\Ksignature(S, \Sigma)$.
+	We often abbreviate $\Ksignature(S, \Sigma)$ as $\langle S, \Sigma \rangle$. 
 \end{notation}
 
-\begin{notation}
-	We abbreviate $\Ksignature(S, \Sigma)$ as $(S, \Sigma)$.
-\end{notation}
-
-The functional symbol
+Common operators on $\KSignature$ and $\KPattern$ can then be easily defined.
+For example, the predicate symbol 
+$$\KwellFormed \colon \KPattern \times \KSignature \to \KPred$$ 
+takes a pattern and a finite signature, and decides whether the pattern is a \emph{well-formed} one in the given signature.
+The partial function
 $$\KgetSort \colon \KPattern \times \KSignature \rightharpoonup \KSort$$
-returns the sort of the argument pattern in the argument signature if the argument pattern is well-formed.
+takes a pattern and a finite signature, and returns the sort of the pattern in the given signature if the pattern is well-formed.
 Otherwise, it returns $\bot_\KSort$.
-The following axioms define $\KgetSort$:
+The symbols $\KwellFormed$ and $\KgetSort$ are axiomatized by the following axioms:
 \begin{align*}
-&\KgetSort(x \cln s, (S, \Sigma)) = (s \in S) \wedge s
-\\
-&\KgetSort(\varphi \kand_s \psi, \Sigma) = (\KgetSort(\varphi, \Sigma) = s) \wedge (\KgetSort(\psi, \Sigma) = s) \wedge s
-\\
-&\KgetSort(\knot_s \varphi, \Sigma) = (\KgetSort(\varphi, \Sigma) = s) \wedge s
-\\
-&\KgetSort(\sigma(\varphi_1,\dots,\varphi_n), (S, \Sigma)) = (\dots) \wedge s
-\\
-&\KgetSort(\kexists_{s_1}^{s_2} x . \varphi, \Sigma) = (s_1 \in S) \wedge (s_2 \in S) \wedge (\KgetSort(\varphi, \Sigma) = s_2) \wedge s_2
-\end{align*}
-
-The functional symbol 
-$$\KwellFormed \colon \KPattern \times \KSignature \to \KPred$$ returns $\Ktrue$ if the argument pattern is well-formed in the argument signature.
-It has the following axioms:
-\begin{align*}
-&\KwellFormed(x \cln s, (S, \Sigma)) = s \in S
-\\
-&\KwellFormed(\varphi \kand_s \psi, \Sigma) = \KgetSort(\varphi, \Sigma) = s \wedge \KgetSort(\psi, \Sigma) = s
-\\
-&\KwellFormed(\knot_s \varphi, \Sigma) = \KgetSort(\varphi, \Sigma) = s
-\\
-&\KwellFormed(\sigma(\varphi_1, \dots, \varphi_n), \Sigma) = \dots
-\\
-&\KwellFormed(\kexists_{s_1}^{s_2} x . \varphi, (S, \Sigma)) = s_1 \in S \wedge \KgetSort(\varphi, (S, \Sigma)) = s_2
+  &\KwellFormed(\overline{x \cln s}, \langle S, \Sigma \rangle) = \KinKSortList(s, S),
+  \\
+  & \KwellFormed(\overline{\varphi \kand_s \psi}, \Sigma) = (\KgetSort(\varphi, \Sigma) = s) \wedge (\KgetSort(\psi, \Sigma) = s),
+  \\
+  & \KwellFormed(\overline{\knot_s \varphi}, \Sigma) = (\KgetSort(\varphi, \Sigma) = s),
+  \\
+  & \KwellFormed(\overline{\sigma(\varphi_1, \dots, \varphi_n)}, \Sigma) = TODO,
+  \\
+  & \KwellFormed(\overline{\kexists_{s_1}^{s_2} x . \varphi}, \langle S, \Sigma \rangle) = \KinKSortList(s_1, S) \wedge (\KgetSort(\varphi, (S, \Sigma)) = s_2),
+  \\
+  & \KgetSort(\overline{x \cln s}, \langle S, \Sigma \rangle) = (s \in S) \wedge s,
+  \\
+  & \KgetSort(\overline{\varphi \kand_s \psi}, \Sigma) = (\KgetSort(\varphi, \Sigma) = s) \wedge (\KgetSort(\psi, \Sigma) = s) \wedge s,
+  \\
+  & \KgetSort(\overline{\knot_s \varphi}, \Sigma) = (\KgetSort(\varphi, \Sigma) = s) \wedge s,
+  \\
+  & \KgetSort(\overline{\sigma(\varphi_1,\dots,\varphi_n)}, \langle S, \Sigma \rangle) = (TODO) \wedge s,
+  \\
+  & \KgetSort(\overline{\kexists_{s_1}^{s_2} x . \varphi}, \Sigma) = \KinKSortList(s_1, S) \wedge (\KgetSort(\varphi, \Sigma) = s_2) \wedge s_2.
 \end{align*}
 
 \begin{notation}\label{omit-well-formedness-premises}
