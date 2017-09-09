@@ -107,6 +107,9 @@
 
   \newcommand{\K}{\mbox{$\mathbb{K}$}\xspace}
   
+  % Define PATTERNS with ATTERNS are small capitals:
+  \newcommand{\PATTERNS}{\text{P\textsc{atterns}}}
+  
   % Define sorts and symbols in the calculus K.
   
   % Sec 3.1 Truth
@@ -393,16 +396,17 @@ $(S,\Sigma,A) \models \varphi$.}
 \todo[inline, author=Xiaohong]{I am working on this section, so please don't touch it to prevent conflicts.}
 
 \emph{Finite matching logic theories} are theories that have a finite number of sorts, symbols, and axioms.
-In this section, we present a matching logic theory $\Kfinite = \langle S_\Kfinite, \Sigma_\Kfinite, F_\Kfinite \rangle$ as \emph{the theory of finite matching logic theories}, in which $S_\Kfinite$ is a finite set of sorts, $\Sigma_\Kfinite$ is a finite set of symbols, and $F_\Kfinite$ is a finite set of axioms.
-Notice that $\Kfinite$ itself is a finite matching logic theory.
+In this section, we present a matching logic theory $\Kfinite = \langle S_\Kfinite, \Sigma_\Kfinite, F_\Kfinite \rangle$ as \emph{the theory of finite matching logic theories}, in which $S_\Kfinite$ , $\Sigma_\Kfinite$, and $F_\Kfinite$ are finite sets of sorts, symbols, and axioms, respectively.
+
+Finite theories are very common in practice.
+Most theories for algebraic data structures introduced in~\cite{rosu-2017-lmcs} are finite. The theory $\Kfinite$ itself is a finite matching logic theory, too.
 
 \subsection{Truth}
 \improvement
-{Xiaohong: I don't know what goes wrong but this section needs improvement.}
-A sort $\KPred$ is introduced, as in~\cite{rosu-2017-lmcs}, to capture predicate logic.
-Patterns of sort $\KPred$ are constructed using \emph{predicate symbols} together the regular matching logic connectives.
-A symbol is said to be a {predicate symbol} if its return sort is $\KPred$.
-Predicate symbols in $\Kfinite$ will be defined in later sections when we introduce them.
+{Xiaohong: I don't know what goes wrong but this section does look good and needs improvement.}
+A sort $\KPred$ is introduced to capture predicates and the predicate logic.
+Patterns of sort $\KPred$ are called \emph{predicate patterns}, and symbols whose return sorts are $\KPred$ are called \emph{predicate symbols}. 
+Predicate symbols in $\Kfinite$ are defined in later sections when they firstly appear.
 
 \begin{notation}
 	If $b$ is a $\KPred$ pattern, we take the freedom to write $b$ instead of $b = \top_\KPred$, so that $\KPred$ patterns can be used in any sort context.
@@ -470,11 +474,11 @@ where the first argument is the \emph{name} of the symbol, and the rest argument
 For sorts $\KSort$, $\KSymbol$, and $\KPattern$\footnote{The sort $\KPattern$ is defined in Section~\cref{sec:matching-logic-patterns}.}
 in $S_\Kfinite$,
 we define sorts $\KSortList$, $\KSymbolList$, and $\KPatternList$ to be the sorts of finite lists over them, respectively.
-For any sort $X$ where
+Formally, for any sort $X$ where
 $$
 X \in \{\KSort, \KSymbol, \KPattern\},
 $$
-the sort $\XList$ is in $S_\Kfinite$, and the following functional constructors of sort $\XList$ are in $\Sigma_\Kfinite$:
+the sort $\XList$ is in $S_\Kfinite$, and the following functional constructors are in $\Sigma_\Kfinite$:
 \begin{align*}
   & \KnilXList \colon \to \XList,
   \\
@@ -869,12 +873,64 @@ If $\vdash x \in \varphi$ and $x$ does not occur free in $\varphi$, then $\vdash
 
 \subsection{Faithfulness: Finite Case}
 
-\begin{theorem}[Faithfulness Theorem]
+\begin{theorem}[Faithfulness Theorem]\label{thm:faithfulness-finite}
 	For any finite matching logic theory $T = (S, \Sigma, F)$ and a $\Sigma$-pattern $\varphi$, let us use $\hat{T}$ to denote the corresponding $\Sigma_\Kfinite$-pattern of the sort $\KTheory$ that represents the theory $T$, and use $\hat{\varphi}$ to denote the corresponding $\Sigma_\Kfinite$-pattern of the sort $\KPattern$ that represents the pattern $\varphi$, then
 	$$T \vdash \varphi \quad \text{iff} \quad \Kfinite \vdash \Kdeduce(\hat{T}, \hat{\varphi}).$$
 \end{theorem}
-\begin{proof}
-	TBC.
+
+Theorem~\ref{thm:faithfulness-finite} is an important theorem that justifies the design and usage of the theory $\Kfinite$. 
+It guarantees that the theory $\Kfinite$ does faithfully capture the matching logic reasoning in finite theories.
+Before we start to prove the theorem, we need to explain what ``the corresponding patterns'' $\hat{T}$ and $\hat{\varphi}$ are, as they appear in the theorem.
+For that reason, we introduce the \emph{lifting and dropping morphisms}.
+\unsure{I am truly not sure what the right word is here. Morphisms? Mappings? Operators? I don't know, but I am pretty it can't be Functions, because its domain is the set of all theories, which is not a set (or is it?).}
+
+\newcommand{\lift}{\mathit{lift}}
+\newcommand{\liftsort}{\mathit{lift_{sort}}}
+\newcommand{\liftsymbol}{\mathit{lift_{symbol}}}
+\newcommand{\liftpattern}{\mathit{lift_{pattern}}}
+\newcommand{\liftsignature}{\mathit{lift_{signature}}}
+\newcommand{\lifttheory}{\mathit{lift_{theory}}}
+
+
+\begin{definition}[Lifting morphism]
+	The lifting morphism \todo{WIP now.}
+	$$\lift = \{\liftsort, \liftsymbol, \liftpattern, \liftsignature, \lifttheory\}$$ 
+	is a family of five morphisms that have the following properties.
+	
+	Definition~(Sort-lifting morphism $\liftsort$).
+	The sort-lifting morphism $\liftsort$ is a morphism from the collection of all finite set of sorts to the collection of all functions from finite sets of sorts to $\PATTERNS_\KSort$, i.e. the set of all $\KSort$-patterns. 
+	For any finite set of sorts $S$, 
+	$$\liftsort(S) \colon S \to \PATTERNS_\KSort$$
+	is an injection function:
+	$$\liftsort(S)(s_1) \neq \liftsort(S)(s_2) \quad \text{for any distinct $s_1$ and $s_2$ in $S$}.$$
+	The \emph{lifting of $s$} where $s$ is a sort in $S$, denoted as $\hat{s}$, is defined as
+	$$\hat{s} = \liftsort(S)(s).$$
+	The \emph{lifting of $S$}, denoted as $\hat{S}$, is defined as
+	$$\hat{S} = \{\hat{s} \in \PATTERNS_\KSort \mid s \in S \}.$$
+	
+	Definition~(Symbol-lifting morphism $\liftsymbol$).
+	For any finite symbol set $\Sigma$,
+	$$\liftsymbol(\Sigma) \colon \Sigma \to \PATTERNS_\KSymbol$$ 
+
+\end{definition}
+
+Now we are in a good shape to prove Theorem~\ref{thm:faithfulness-finite}.
+
+\begin{proof}[Proof Sketch of Theorem~\ref{thm:faithfulness-finite}]\quad
+	
+	Step 1 (The ``$\Rightarrow$'' part). By mimicking the proof of $T \vdash \varphi$ in $\Kfinite$.
+	
+	Step 2 (The ``$\Leftarrow$'' part).
+	
+	Step 2.1. Fix a finite matching logic theory $T = (S, \Sigma, F)$ and a $\Sigma$-pattern $\varphi$. 
+	
+	Step 2.2. Build a model $M_{T}$ based on $T = (S, \Sigma, F)$.
+	
+	Step 2.3. Show that $M_T$ is a model of $\Kfinite$.
+	
+	Step 2.4. By hypothesis, $M_T \vDash \Kdeduce(\hat{T}, \hat{\varphi})$.
+	
+	Step 2.5. Interpret $\Kdeduce(\hat{T}, \hat{\varphi})$ in $M_T$ and get $T \vDash \varphi$.
 \end{proof}
 
 \section{Matching Logic Theory of Matching Logic: With Meta-Variables}
