@@ -227,8 +227,17 @@
   \newcommand{\quot}[1]{\mathrm{``#1"}}
 
 \newcommand{\Nat}{\textit{Nat}}
+\newcommand{\Int}{\textit{Int}}
+\newcommand{\Bool}{\textit{Bool}}
 \newcommand{\List}{\textit{List}}
+\newcommand{\nil}{\textit{nil}}
+\newcommand{\cons}{\textit{cons}}
+\newcommand{\append}{\textit{append}}
+\newcommand{\Bag}{\textit{Bag}}
+\newcommand{\Set}{\textit{Set}}
+\newcommand{\Map}{\textit{Map}}
 \newcommand{\parametric}[2]{{#1}\raisebox{.2ex}{\texttt{\footnotesize{\{}}}#2\raisebox{.2ex}{\texttt{\footnotesize{\}}}}}
+\newcommand{\parametricscript}[2]{{#1}\raisebox{.2ex}{\texttt{\tiny{\{}}}#2\raisebox{.2ex}{\texttt{\tiny{\}}}}}
 
   % Title and authors
   \title{The Semantics of \K}
@@ -295,7 +304,24 @@ we need some convincing example.  Maybe parametric maps?}
 
 \newcommand{\Var}{\textit{Var}}
 
-Here we recall basic matching logic notions from~\cite{rosu-2017-lmcs}.
+In this section we first recall basic matching logic syntax and semantics
+notions from~\cite{rosu-2017-lmcs} at a theoretical level.
+\improvement{
+We should make this paper self-contained in terms of definitions
+and only refer to \cite{rosu-2017-lmcs} for details and proofs.
+We want people who trust \cite{rosu-2017-lmcs} to not have to leave
+this paper in order to understand the semantics of \K.
+So we should define signatures, symbols, patterns, models,
+satisfaction, proof system, etc.
+}
+Then we discuss schematic/parametric ways to finitely define infinite
+matching logic theories.
+Finally, we introduce theoretical foundations underlying the
+notion of ``builtins''.
+
+\subsection{Syntax}
+\label{sec:ML-syntax}
+
 Assume a matching logic \emph{signature} $(S, \Sigma)$, where $S$ is the
 set of its \emph{sorts} $S$ and $\Sigma$ is the set of its \emph{symbols}.
 For each sort $s \in S$, assume a set $\Var_s$ of \emph{variables} of
@@ -326,8 +352,8 @@ $y\cln s \wedge x \cln s$ are distinct elements in the language
 of the grammar, in spite of them being semantically/provably equal
 in matching logic.
 Derived constructs like $\vee$, $\rightarrow$, $\leftrightarrow$,
-$\forall$, etc., can be defined as aliases as usual (e.g.,
-$\varphi_1 \vee \varphi_2 \equiv \neg(\neg \varphi_1 \wedge \neg\varphi_2)$).
+$\forall$, etc., can be defined as aliases as usual; for example,
+$\varphi_1 \vee \varphi_2 \equiv \neg(\neg \varphi_1 \wedge \neg\varphi_2)$.
 
 For notational convenience, we take the liberty to use mix-fix syntax for
 operators in $\Sigma$,
@@ -341,15 +367,95 @@ as we use them.
 
 A matching logic \emph{theory} is a triple $(S, \Sigma, A)$ where
 $(S,\Sigma)$ is a signature and $A$ is a set of patterns called \emph{axioms}.
-Like in many logics, sets of patterns may be presented as \emph{schemas}
-making use of meta-variables ranging over patterns, sometimes constrained
-to subsets of patterns using side conditions.
-For example:
+
+...
+
+\subsection{Semantics and Basic Properties}
+
+Models, satisfaction, some properties
+
+\subsection{Derived Symbols}
+
+Definedness, membership, equality
+
+\subsection{Sound and Complete Deduction}
+
+Proof system, soundness and completeness
+
+\subsection{Finite Mechanisms to Define Infinite Theories}
+
+Note that all the theoretical results discussed so far imposed no finiteness
+restrictions on the sets of sorts, symbols, or patterns that form a matching
+logic theory.
+In practice, however, like in many other logics or formalisms, we have to
+limit ourselves to finitely describable theories.
+The simplest approach to achieve that would be to require the theories to be
+finite; however, like in many other logics and formalisms, such a requirement
+would simply be too strong to be practical.
+Instead, we have to adopt or develop conventions, mechanisms or languages that
+allow us to describe potentially infinite theories using a finite amount of
+resources (paper, space, characters, etc.).
+For example, many logics allow \emph{axiom schemas} as a way to finitely
+define infinite theories.
+
+To prepare the ground for our proposal in Section~\ref{sec:syntax-of-kore},
+we here discuss, informally, some ways to finitely describe infinite theories.
+Let us start with sorts.
+Suppose that we have a finite set of \emph{basic sorts}, e.g.,
+$\Nat$, $\Int$, $\Bool$, etc.
+Here are several \emph{sort schemas} that allow us to extend the set of sorts
+with infinitely many new sorts:
 $$
 \begin{array}{rl}
-\varphi[\varphi_1/x] \wedge (\varphi_1 = \varphi_2) \rightarrow \varphi[\varphi_2/x]
-&\textrm{where $\varphi$ is any pattern and $\varphi_1$, $\varphi_2$} \\
-& \textrm{are any patterns of same sort as $x$}
+\parametric{\List}{s} &
+\textrm{for any sort $s$} \\
+\parametric{\Set}{s} &
+\textrm{for any sort $s$} \\
+\parametric{\Bag}{s} &
+\textrm{for any sort $s$} \\
+\parametric{\Bag_p}{s} &
+\textrm{for any sort $s$ which is not of the form $\parametric{\Bag_p}{\_}$} \\
+\parametric{\Map}{s,s'} &
+\textrm{for any sorts $s,s'$} \\
+\parametric{\Map_p}{s,s'} &
+\textrm{for any sorts $s,s'$ such that $s$ is not of the form $\parametric{\Map_p}{\_,\_}$}
+\end{array}
+$$
+
+Here are several \emph{symbol schemas}, each adding now infinitely many symbols:
+
+$$
+\begin{array}{rl}
+\parametric{\nil}{s} \in \Sigma_{*,\parametricscript{\List}{s}} &
+\textrm{for any sort $s$} \\
+\parametric{\cons}{s} \in \Sigma_{s\times\parametricscript{\List}{s},\parametricscript{\List}{s}} &
+\textrm{for any sort $s$} \\
+\parametric{\append}{s} \in \Sigma_{\parametricscript{\List}{s}\times\parametricscript{\List}{s},\parametricscript{\List}{s}} &
+\textrm{for any sort $s$} \\
+...
+\end{array}
+$$
+
+Here are some \emph{pattern schemas}, each defining infinitely many patters:
+$$
+\begin{array}{rl}
+\parametric{\append}{s}(\parametric{\nil}{s},l'\cln\parametric{\List}{s})
+=_{\parametricscript{\List}{s}}^{s'} l'\cln\parametric{\List}{s}
+& \textrm{for any sorts $s, s'$}
+\\[2ex]
+\begin{array}{@{}l@{}}
+\parametric{\append}{s}(\parametric{\cons}{s}(x\cln s,l\cln\parametric{\List}{s}),l'\cln\parametric{\List}{s})
+\ =_{\parametricscript{\List}{s}}^{s'} 
+\\
+\parametric{cons}{s}(x\cln s,\parametric{\append}{s}(l\cln\parametric{\List}{s},l'\cln\parametric{\List}{s})
+\end{array}
+& \textrm{for any sorts $s, s'$}
+\\[3ex]
+\varphi[\varphi_1/{x\cln s}] \wedge (\varphi_1 =_s^{s'} \varphi_2) \rightarrow \varphi[\varphi_2/{x\cln s}]
+&\textrm{where $s,s'$ are any sorts, $\varphi$ any pattern of} \\
+& \textrm{sort $s'$, and $\varphi_1,\varphi_2$ any patterns of sort $s$}
+\\[2ex]
+\textit{G: stopped here, we should add all sorts below}
 \\[2ex]
 \forall x . \varphi \rightarrow \varphi[t/x]
 &\textrm{where $t$ is any \emph{syntactic pattern}, or \emph{term}}, \\
