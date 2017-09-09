@@ -388,7 +388,13 @@ $(S,\Sigma,A) \models \varphi$.}
 
 \section{Matching Logic Theory of Matching Logic: Finite Case}
 
+\newcommand{\Kfinite}{{K_\text{finite}}}
+
 \todo[inline, author=Xiaohong]{I am working on this section, so please don't touch it to prevent conflicts.}
+
+\emph{Finite matching logic theories} are theories that have a finite number of sorts, symbols, and axioms.
+In this section, we present a matching logic theory $\Kfinite = \langle S_\Kfinite, \Sigma_\Kfinite, F_\Kfinite \rangle$ as \emph{the theory of finite matching logic theories}, in which $S_\Kfinite$ is a finite set of sorts, $\Sigma_\Kfinite$ is a finite set of symbols, and $F_\Kfinite$ is a finite set of axioms.
+Notice that $\Kfinite$ itself is a finite matching logic theory.
 
 \subsection{Truth}
 \improvement
@@ -396,7 +402,7 @@ $(S,\Sigma,A) \models \varphi$.}
 A sort $\KPred$ is introduced, as in~\cite{rosu-2017-lmcs}, to capture predicate logic.
 Patterns of sort $\KPred$ are constructed using \emph{predicate symbols} together the regular matching logic connectives.
 A symbol is said to be a {predicate symbol} if its return sort is $\KPred$.
-Predicate symbols in $K$ will be defined in later sections when we introduce them.
+Predicate symbols in $\Kfinite$ will be defined in later sections when we introduce them.
 
 \begin{notation}
 	If $b$ is a $\KPred$ pattern, we take the freedom to write $b$ instead of $b = \top_\KPred$, so that $\KPred$ patterns can be used in any sort context.
@@ -461,15 +467,14 @@ where the first argument is the \emph{name} of the symbol, and the rest argument
 
 \subsection{Finite Lists}
 
-For sorts $\KSort$, $\KSymbol$, and $\KPattern$
-\footnote{The sort $\KPattern$ is defined in Section~\cref{sec:matching-logic-patterns}.}
-in $S_K$,
+For sorts $\KSort$, $\KSymbol$, and $\KPattern$\footnote{The sort $\KPattern$ is defined in Section~\cref{sec:matching-logic-patterns}.}
+in $S_\Kfinite$,
 we define sorts $\KSortList$, $\KSymbolList$, and $\KPatternList$ to be the sorts of finite lists over them, respectively.
 For any sort $X$ where
 $$
 X \in \{\KSort, \KSymbol, \KPattern\},
 $$
-the sort $\XList$ is in $S_K$, and the following functional constructors of sort $\XList$ are in $\Sigma_K$:
+the sort $\XList$ is in $S_\Kfinite$, and the following functional constructors of sort $\XList$ are in $\Sigma_\Kfinite$:
 \begin{align*}
   & \KnilXList \colon \to \XList,
   \\
@@ -484,7 +489,7 @@ the sort $\XList$ is in $S_K$, and the following functional constructors of sort
 \end{notation}
 
 Common operations on lists can be defined as functional symbols on $\XList$.
-The symbol $$\KappendXList \colon \XList \times \XList \to \XList$$ 
+The symbol $$\KappendXList \colon \XList \times \XList \to \XList$$ \unsure{We might not need $\KappendXList$ at all, but let us keep it here for while in case we need it later.}
 takes two lists and returns the concatenation of them, with two axioms:
 \begin{align*}
   & \KappendXList(\KnilXList, l) = l,
@@ -650,7 +655,9 @@ It has the following axiom:
 
 The functional symbol
 $$\Ksubstitute \colon \KPattern \times \KPattern \times \KPattern \to \KPattern$$
-takes a target pattern $\varphi$, a ``find''-pattern $\overline{x \cln s}$, and a ``replace''-pattern $\psi$, and returns $\varphi[\psi / x \cln s]$.
+takes a target pattern $\varphi$, a ``replace''-pattern $\psi$, and a ``find''-pattern $\overline{x \cln s}$, and returns $\varphi[\psi / x \cln s]$.
+The symbol $\Ksubstitute$ expects the third argument to be of the form $\Kvariable(x, s)$, and will ``get stuck'' if otherwise.
+\improvement{Does not look good here. Need improvement.}
 
 \begin{notation}
 	We abbreviate $\Ksubstitute(\varphi, \psi, x \cln s)$ as 
@@ -670,9 +677,9 @@ The function $\Ksubstitute$ has the following axioms:
   & \overline{(\kexists_{s_1}^{s_2}x . \varphi)[\psi/y \cln s_3]} = \exists z . (z = \KfreshName(\varphi, \psi, \overline{x \cln s_1})) \wedge \overline{\kexists_{s_1}^{s_2} z . (\varphi[z/x \cln s_1][\psi/y \cln s_3])}.
 \end{align*}
 
-\subsection{Matching Logic Signatures}
+\subsection{Finite Matching Logic Signatures}
 
-The sort $\KSignature$ is the sort for matching logic signatures, and it has just one constructor symbol:
+The sort $\KSignature$ is the sort for finite matching logic signatures, and it has just one constructor symbol:
 \begin{equation*}
 \Ksignature \colon \KSortList \times \KSymbolList \to \KSignature,
 \end{equation*}
@@ -681,7 +688,7 @@ which takes a finite list of sorts and a finite list of symbols as arguments, an
 \begin{notation}
 	As a convention, we use $\Sigma$ for $\KSignature$ variables. 
 	We use~$S$ for~$\KSortList$ variables and $\Sigma$ for $\KSymbolList$ variables if they appear as in~$\Ksignature(S, \Sigma)$.
-	We often abbreviate $\Ksignature(S, \Sigma)$ as $\langle S, \Sigma \rangle$. 
+	We often abbreviate $\Ksignature(S, \Sigma)$ as $\langle S, \Sigma \rangle$. \unsure{I use the angle parenthesis here. Maybe should just use normal parenthesis.}
 \end{notation}
 
 Common operators on $\KSignature$ and $\KPattern$ can then be easily defined.
@@ -715,172 +722,156 @@ The symbols $\KwellFormed$ and $\KgetSort$ are axiomatized by the following axio
   & \KgetSort(\overline{\kexists_{s_1}^{s_2} x . \varphi}, \Sigma) = \KinKSortList(s_1, S) \wedge (\KgetSort(\varphi, \Sigma) = s_2) \wedge s_2.
 \end{align*}
 
-\begin{notation}\label{omit-well-formedness-premises}
-	The well-formedness is an important premise in axioms about the sort 
-	$\KPattern$. To keep our notation simple, we often omit the well-formedness 
-	premises when defining axioms in $\Sigma_K$.
-\end{notation}
+\subsection{Finite Matching Logic Theories}
 
-\subsection{Matching Logic Theories}
-
-The sort $\KTheory$ is the sort of matching logic theories. The only constructor symbol is 
-$$\Ktheory \colon \KSignature \times \KPatternList \to \KTheory.$$
+The sort $\KTheory$ is the sort of finite matching logic theories. The only constructor symbol is 
+$$\Ktheory \colon \KSignature \times \KPatternList \to \KTheory,$$
+which takes a finite signature and a finite list of patterns as axioms, and returns the finite matching logic theory. 
 
 \begin{notation}
-	As a convention, we use $A, F$ for $\KPatternList$ variables if they appear in $\Ktheory$. We use $T$ for $\Ktheory$ variables.
-\end{notation}
-\begin{notation}
-	We abbreviate $\Ktheory(\Sigma, A)$ as $(\Sigma, A)$, and abbreviate $\Ktheory(\Ksignature(S, \Sigma), A)$ as $(S, \Sigma, A)$. 
+	As a convention, we use $F$ for $\KPatternList$ variables as it appears in $\Ktheory(\Sigma, F)$, which is often abbreviated as $\langle \Sigma, F \rangle$. The theory $\langle \langle S, \Sigma \rangle, F \rangle$ is often abbreviated to just $\langle S, \Sigma, F \rangle$, too. We use $T$ for $\KTheory$ variables.  \unsure{Same here. Angle parenthesis versus regular parenthesis.}
 \end{notation}
 
 \subsection{Matching Logic Proof System}
 
-A sound and complete proof system has been introduced in~\cite{?}. 
-
-The functional symbol
+A sound and complete proof system has been introduced in~\cite{rosu-2017-lmcs}.
+In this section we define the predicate symbol $\Kdeduce$ that captures the sound and complete proof system of matching logic.
+The predicate symbol
 $$
 \Kdeduce \colon \KTheory \times \KPattern \to \KPred
 $$
-returns $\Ktrue$ if the argument pattern is deducible in the argument theory.
-The functional symbol $\Kdeduce$ has axioms in correspondence to the inference rules in the proof system.
-In the following, we are going to list all the inference rules in the matching 
-logic proof system followed by their correspondent axioms of $\Kdeduce$, in 
-which the well-formedness premises are omitted 
-(Notation~\ref{omit-well-formedness-premises}).
+takes a finite theory and a pattern as proof obligation, and decides if the obligation pattern is deducible in the given theory.
+The symbol $\Kdeduce$ has axioms in correspondence to the inference rules\footnote{Axioms are considered as inference rules with zero premises, so we do not distinguish axioms from inference rules anymore.} 
+of the matching logic proof system in~\cite{rosu-2017-lmcs}.
 
-We also recall the readers in the following rules of 
-Notation~\ref{notation:variables-about-KPattern}, 
-that we use $s$ for $\KSort$ variables, $\varphi, \psi$ for $\KPattern$ 
-variables, and $x, y$ for $\KPattern$ variables. 
+In the following, we list all the inference rules of the matching logic proof system and the correspondent axioms of $\Kdeduce$. \improvement{We should mention here that all the subterms that appear in the axioms are assumed to be well-formed. We omit them when writing the axioms because writing all of them down need a lot of space, and will make the axioms less readable.}
+
+We recall the readers our conventions of choosing variable names. 
+We use 
+$x$ and $y$ for $\KString$ variables,
+$s$ for $\KSort$ variables,
+$\varphi$ and $\psi$ for $\KPattern$ variables,
+$l$ and $r$ for $\KPatternList$ variables~(in \textbf{Rule~(M5)}),
+$\Sigma$ for $\KSignature$ variables, 
+$F$ for $\KPatternList$ variables~(in \textbf{Rule~(Axiom)}),
+and $T$ for $\KTheory$ variables.
 
 \paragraph{Rule (Axiom).}
 $F \vdash \varphi$ if $\varphi \in F$.
 \begin{align*}
-\varphi \in F \to \Kdeduce((\Sigma, F), \varphi).
+\KinKPatternList(\varphi, F) \to \Kdeduce(\langle \Sigma, F \rangle, \varphi).
 \end{align*}
 
 \paragraph{Rule (K1).}
 $\vdash \varphi \to (\psi \to \varphi)$.
 \begin{align*}
-\Kdeduce(T, \varphi \kimplies_s (\psi \kimplies_s \varphi)).
+\Kdeduce(T, \overline{\varphi \kimplies_s (\psi \kimplies_s \varphi)}).
 \end{align*}
 
 \paragraph{Rule (K2).}
 $\vdash (\varphi_1 \to (\varphi_2 \to \varphi_3)) \to ((\varphi_1 \to \varphi_2) \to (\varphi_1 \to \varphi_3))$.
-\begin{align*}
-\Kdeduce(T, (\varphi_1 \kimplies_s (\varphi_2 \kimplies_s \varphi_3)) 
-\kimplies_s ((\varphi_1 \kimplies_s \varphi_2) \kimplies_s (\varphi_1 
-\kimplies_s \varphi_3))).
-\end{align*}
+\begin{equation*}
+\Kdeduce(T, 
+\overline{(\varphi_1 \kimplies_s (\varphi_2 \kimplies_s \varphi_3)) \kimplies_s ((\varphi_1 \kimplies_s \varphi_2) \kimplies_s (\varphi_1 \kimplies_s \varphi_3))}).
+\end{equation*}
 
 \paragraph{Rule (K3).}
 $\vdash (\neg \psi \to \neg \varphi) \to (\varphi \to \psi)$.
-\begin{align*}
-\Kdeduce(T, (\knot_s \psi \kimplies_s \knot_s \varphi) \kimplies_s (\varphi 
-\kimplies_s \psi)).
-\end{align*}
+\begin{equation*}
+\Kdeduce(T, \overline{(\knot_s \psi \kimplies_s \knot_s \varphi) \kimplies_s (\varphi 
+\kimplies_s \psi)}).
+\end{equation*}
 
 \paragraph{Rule (K4).}
 $\vdash \forall x . \varphi \to \varphi[y/x]$.
-\begin{align*}
-\Kdeduce(T, \kforall_{s_1}^{s_2}  x . \varphi \kimplies_{s_2} \varphi[y/x]).
-\end{align*}
+\begin{equation*}
+\Kdeduce(T, \overline{\kforall_{s_1}^{s_2}  x . \varphi \kimplies_{s_2} \varphi[y \cln s_1 / x \cln s_1]}).
+\end{equation*}
 
 \paragraph{Rule (K5).}
 $\vdash \forall x . (\varphi \to \psi) \to (\varphi \to \forall x . \psi)$ if $x$ does not occur free in $\varphi$. 
-\begin{align*}
-x \not\in \KgetFvs(\varphi)
-\to \Kdeduce(T, \kforall_{s_1}^{s_2} x . (\varphi \kimplies_{s_2} \psi) 
-\kimplies_{s_2} (\varphi \kimplies_{s_2} \kforall_{s_1}^{s_2} x . \psi)).
-\end{align*}
+\begin{equation*}
+\neg\KinKPatternList(\overline{x \cln s_1}, \KgetFvs(\varphi))
+\to \Kdeduce(T, \overline{\kforall_{s_1}^{s_2} x . (\varphi \kimplies_{s_2} \psi) \kimplies_{s_2} (\varphi \kimplies_{s_2} \kforall_{s_1}^{s_2} x . \psi)}).
+\end{equation*}
 
 \paragraph{Rule (K6).}
-$\vdash \varphi_1 = \varphi_2 \to (\psi[\varphi_1/x] \to \psi[\varphi_2/x])$.
-\begin{align*}
-\Kdeduce(T, \varphi_1 \kequals_{s_1}^{s_2} \varphi_2 \kimplies_{s_2} 
-(\psi[\varphi_1/x] \kimplies_{s_2} \psi[\varphi_2/x])).
-\end{align*}
+$\vdash (\varphi_1 = \varphi_2) \to (\psi[\varphi_1/x] \to \psi[\varphi_2/x])$.
+\begin{equation*}
+\Kdeduce(T, \overline{(\varphi_1 \kequals_{s_1}^{s_2} \varphi_2) \kimplies_{s_2} (\psi[\varphi_1/x \cln s] \kimplies_{s_2} \psi[\varphi_2/x \cln s])}).
+\end{equation*}
 
-\paragraph{Rule (Df).}\unsure{not sure...}
+\paragraph{Rule (Df).}
 $\vdash \ceil{x}$.
-\begin{align*}
-\Kdeduce(T, \Ksymbol(``ceil")(x)).
-\end{align*}
+\begin{equation*}
+\Kdeduce(T, \Kapplication(\Ksymbol(\quot{ceil}, \KconsKSortList(s_1, \KnilKPatternList), s_2), x \cln s_1)).
+\end{equation*}
 
 \paragraph{Rule (M1).}
-$\vdash x \in y = (x = y)$.
-\begin{align*}
-\Kdeduce(T, x \kin_{s_1}^{s_2} y \kequals_{s_2}^{s_3} (x \kequals_{s_1}^{s_2} 
-y)).
-\end{align*}
+$\vdash (x \in y) = (x = y)$.
+\begin{equation*}
+\Kdeduce(T, \overline{(x \kin_{s_1}^{s_2} y) \kequals_{s_2}^{s_3} (x \kequals_{s_1}^{s_2} y)}).
+\end{equation*}
 
 \paragraph{Rule (M2).}
 $\vdash x \in (\varphi \wedge \psi) = (x \in \varphi) \wedge (x \in \psi).$
-\begin{align*}
-\Kdeduce(T, x \kin_{s_1}^{s_2} (\varphi \kand_{s_1} \psi) \kequals_{s_2}^{s_3} 
-(x 
-\kin_{s_1}^{s_2} \varphi) \kand_{s_2} (x \kin_{s_1}^{s_2} \psi)).
-\end{align*}
+\begin{equation*}
+\Kdeduce(T, \overline{x \kin_{s_1}^{s_2} (\varphi \kand_{s_1} \psi) \kequals_{s_2}^{s_3} (x \kin_{s_1}^{s_2} \varphi) \kand_{s_2} (x \kin_{s_1}^{s_2} \psi)}).
+\end{equation*}
 
 \paragraph{Rule (M3).}
 $\vdash x \in \neg \varphi = \neg (x \in \varphi)$.
-\begin{align*}
-\Kdeduce(T, x \kin_{s_1}^{s_2} \knot_{s_1} \varphi \kequals_{s_2}^{s_3} 
-\knot_{s_2} 
-(x 
-\kin_{s_1}^{s_2} \varphi)).
-\end{align*}
+\begin{equation*}
+\Kdeduce(T, \overline{x \kin_{s_1}^{s_2} \knot_{s_1} \varphi \kequals_{s_2}^{s_3} \knot_{s_2} (x \kin_{s_1}^{s_2} \varphi)}).
+\end{equation*}
 
 \paragraph{Rule (M4).}
 $\vdash x \in \forall y . \varphi = \forall y . x \in \varphi$ if $x$ is distinct from $y$.
-\begin{align*}
-x \neq y \to \Kdeduce(T, x \kin_{s_2}^{s_3} \kforall_{s_1}^{s_2} y . \varphi 
-\kequals_{s_3}^{s_4} \kforall_{s_1}^{s_3} y . x \kin_{s_2}^{s_3} \varphi).
-\end{align*}
+\begin{equation*}
+(\overline{x \cln s_1} \neq \overline{y \cln s_2})  \to \Kdeduce(T, \overline{(x \kin_{s_1}^{s_3} \kforall_{s_2}^{s_1} y . \varphi) \kequals_{s_3}^{s_4} (\kforall_{s_2}^{s_3} y . (x \kin_{s_1}^{s_3} \varphi))}).
+\end{equation*}
 
 \paragraph{Rule (M5).}
 $\vdash x \in \sigma(\dots \varphi_i \dots) = \exists y . y \in \varphi_i \wedge x \in \sigma(\dots y \dots)$ where $y$ is distinct from $x$ and it does not occur free in $\sigma(\dots \varphi_i \dots)$.
 \begin{align*}
-&x \neq y \wedge y \not\in \KgetFvs(\Kapplication(\sigma, (l\cln\KPatternList, \varphi_i, r\cln\KPatternList)))
+& (\overline{x \cln s_1} \neq \overline{y \cln s_2}) 
+  \wedge \neg \KinKPatternList(\overline{y \cln s_2}, \KgetFvs(\overline{\sigma(l, \varphi_i, r)}))
 \\
-\to&\Kdeduce(T, x \kin_{s_1}^{s_2} \Kapplication(\sigma, (l\cln\KPatternList, 
-\varphi_i, r\cln\KPatternList))
-\\
-&\kequals_{s_2}^{s_4} \kexists_{s_3}^{s_4} y . y \kin_{s_3}^{s_2} \varphi_i 
-\kand x 
-\kin_{s_1}^{s_2} 
-\Kapplication(\sigma, (l\cln\KPatternList, y, r\cln\KPatternList))).
+\to & \Kdeduce(T, \overline{x \cln s_1 \kin_{s_1}^{s_3} \sigma(l, 
+\varphi_i, r) \kequals_{s_3}^{s_4} \kexists_{s_2}^{s_4} y . (y \cln s_2 \kin_{s_2}^{s_3} \varphi_i \kand x \cln s_1 \kin_{s_1}^{s_3} \sigma(l, y, r))}),
 \end{align*}
+where $l$ and $r$ are $\KPatternList$ variables. 
 
 \paragraph{Rule (Modus Ponens).}
 If $\vdash \varphi$ and $\vdash \varphi \to \psi$, then $\vdash \psi$.
-\begin{align*}
-\Kdeduce(T, \varphi) \wedge \Kdeduce(T, \varphi \kimplies_s \psi) \to 
+\begin{equation*}
+\Kdeduce(T, \varphi) \wedge \Kdeduce(T, \overline{\varphi \kimplies_s \psi}) \to 
 \Kdeduce(T, \psi).
-\end{align*}
+\end{equation*}
 
 \paragraph{Rule (Universal Generalization).}
 If $\vdash \varphi$, then $\vdash \forall x . \varphi$.
-\begin{align*}
-\Kdeduce(T, \varphi) \to \Kdeduce(T, \kforall_{s_1}^{s_2} x . \varphi).
-\end{align*}
+\begin{equation*}
+\Kdeduce(T, \varphi) \to \Kdeduce(T, \overline{\kforall_{s_1}^{s_2} x . \varphi}).
+\end{equation*}
 
 \paragraph{Rule (Membership Introduction).}
 If $\vdash \varphi$ and $x$ does not occur free in $\varphi$, then $\vdash x \in \varphi$.
-\begin{align*}
-\Kdeduce(T, \varphi) \wedge x \not\in \KgetFvs(\varphi) \to \Kdeduce(T, x 
-\kin_{s_1}^{s_2} \varphi).
-\end{align*}
+\begin{equation*}
+\Kdeduce(T, \varphi) \wedge \neg \KinKPatternList(\overline{x \cln s_1}, \KgetFvs(\varphi)) \to \Kdeduce(T, \overline{x \cln s_1 \kin_{s_1}^{s_2} \varphi}).
+\end{equation*}
 
 \paragraph{Rule (Membership Elimination).}
 If $\vdash x \in \varphi$ and $x$ does not occur free in $\varphi$, then $\vdash \varphi$.
-\begin{align*}
-\Kdeduce(T, x \kin_{s_1}^{s_2} \varphi) \wedge x \not\in \KgetFvs(\varphi) \to 
-\Kdeduce(T, \varphi).
-\end{align*}
+\begin{equation*}
+\Kdeduce(T, \overline{x \cln s_1 \kin_{s_1}^{s_2} \varphi}) \wedge\neg \KinKPatternList(\overline{x \cln s_1}, \KgetFvs(\varphi)) \to \Kdeduce(T, \varphi).
+\end{equation*}
 
-\begin{theorem}[Faithfulness of $K$]
-	$T \vdash \varphi$ iff $K \vdash \Kdeduce(T, \varphi)$.
+\subsection{Faithfulness: Finite Case}
+
+\begin{theorem}[Faithfulness Theorem]
+	For any finite matching logic theory $T = (S, \Sigma, F)$ and a $\Sigma$-pattern $\varphi$, let us use $\hat{T}$ to denote the corresponding $\Sigma_\Kfinite$-pattern of the sort $\KTheory$ that represents the theory $T$, and use $\hat{\varphi}$ to denote the corresponding $\Sigma_\Kfinite$-pattern of the sort $\KPattern$ that represents the pattern $\varphi$, then
+	$$T \vdash \varphi \quad \text{iff} \quad \Kfinite \vdash \Kdeduce(\hat{T}, \hat{\varphi}).$$
 \end{theorem}
 \begin{proof}
 	TBC.
