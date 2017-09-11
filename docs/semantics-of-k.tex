@@ -161,11 +161,7 @@
   \newcommand{\at}{@}
   
   
-  \newcommand{\Kdelete}{\mathit{delete}}
-    
-
-  
-  
+  \newcommand{\Kdelete}{\mathit{delete}} 
 
   \newcommand{\KSymbolList}{\mathit{KSymbolList}}
   
@@ -205,6 +201,7 @@
   \newcommand{\kbottom}{\bot}
   
   \newcommand{\KgetFvs}{\mathit{KgetFvs}}
+  \newcommand{\KMapReduceKgetFvs}{\mathit{KMapReduceKgetFvs}}
   \newcommand{\KfreshName}{\mathit{KfreshName}}
   
   \newcommand{\KSignature}{\mathit{KSignature}}
@@ -214,6 +211,7 @@
   \newcommand{\KgetSort}{\mathit{KgetSort}}
   \newcommand{\KisSort}{\mathit{KisSort}}
   \newcommand{\Ksubstitute}{\mathit{Ksubstitute}}
+  \newcommand{\KMapKsubstitite}{\mathit{KMapKsubstitite}}
   
   \newcommand{\KTheory}{\mathit{KTheory}}
   \newcommand{\Ktheory}{\mathit{Ktheory}}
@@ -580,11 +578,11 @@ Most theories for algebraic data structures introduced in~\cite{rosu-2017-lmcs} 
 \improvement
 {Xiaohong: I don't know what goes wrong but this section does look good and needs improvement.}
 A sort $\KPred$ is introduced to capture predicates and the predicate logic.
-Patterns of sort $\KPred$ are called \emph{predicate patterns}, and symbols whose return sorts are $\KPred$ are called \emph{predicate symbols}. 
+Patterns of sort $\KPred$ are called \emph{predicate patterns} or just \emph{predicates}, and symbols whose return sort are $\KPred$ are called \emph{predicate symbols}. 
 Predicate symbols in $\Kfinite$ are defined in later sections when they firstly appear.
 
 \begin{notation}
-	If $b$ is a $\KPred$ pattern, we take the freedom to write $b$ instead of $b = \top_\KPred$, so that $\KPred$ patterns can be used in any sort context.
+	If $b$ is a predicate pattern, we take the freedom to write $b$ instead of $b = \top_\KPred$, so that $\KPred$ patterns can be used in any sort context.
 \end{notation}
 
 
@@ -614,7 +612,7 @@ The two constructors of sort $\KString$ are functional symbols:
 \end{align*}
 
 \begin{notation}
-	As a convention, strings are often wrapped with quotation marks. 
+	As a convention, strings are often represented by texts wrapped with quotation marks. 
 	For example, instead of writing
 	$$
 	\KconsKString(\quot{a}, \KconsKString(\quot{b}, \KconsKString(\quot{c}, \Kepsilon))),
@@ -635,16 +633,17 @@ The only constructor of the sort $\KSort$ is the functional symbol:
 \begin{equation*}
 \Ksort \colon \KString \to \KSort,
 \end{equation*}
-where the argument is called the \emph{name} or \emph{identity} of the sort. 
+where the argument is called the \emph{name} of the sort. 
 
 The sort $\KSymbol$ is the sort for matching logic symbols.
 The only constructor of the sort $\KSymbol$ is the functional symbol:
 \begin{equation*}
-\Ksymbol \colon \KString \times \KSortList \times \KSort \to \KSymbol,
+\Ksymbol \colon \KString \times \KSortList\footnote{The sort $\KSortList$ is defined in Section~\cref{sec:finite-lists}} \times \KSort \to \KSymbol,
 \end{equation*}
-where the first argument is the \emph{name} of the symbol, and the rest arguments are the \emph{argument sorts} and the \emph{return sort} of the symbol. 
+where the first argument is called the \emph{name} of the symbol, and the rest arguments are called the \emph{argument sorts} and the \emph{return sort} of the symbol. 
 
 \subsection{Finite Lists}
+\label{sec:finite-lists}
 
 For sorts $\KSort$, $\KSymbol$, and $\KPattern$\footnote{The sort $\KPattern$ is defined in Section~\cref{sec:matching-logic-patterns}.}
 in $S_\Kfinite$,
@@ -653,7 +652,7 @@ Formally, for any sort $X$ where
 $$
 X \in \{\KSort, \KSymbol, \KPattern\},
 $$
-the sort $\XList$ is in $S_\Kfinite$, and the following functional constructors are in $\Sigma_\Kfinite$:
+the sort $\XList$ is in $S_\Kfinite$, and the following functional constructors of the sort $\XList$ are in $\Sigma_\Kfinite$:
 \begin{align*}
   & \KnilXList \colon \to \XList,
   \\
@@ -663,7 +662,7 @@ the sort $\XList$ is in $S_\Kfinite$, and the following functional constructors 
 \begin{notation}
 	To write lists expression more compactly, we adopt the following abbreviations:
 	\begin{equation*}
-	  x_1, x_2, \dots, x_n \equiv \KconsXList(x_1, \KconsXList(x_2, \dots\KconsXList(x_n, \KnilXList)\dots)).
+	  (x_1, x_2, \dots, x_n) \equiv \KconsXList(x_1, \KconsXList(x_2, \dots\KconsXList(x_n, \KnilXList)\dots)).
 	\end{equation*}
 \end{notation}
 
@@ -671,9 +670,9 @@ Common operations on lists can be defined as functional symbols on $\XList$.
 The symbol $$\KappendXList \colon \XList \times \XList \to \XList$$ 
 takes two lists and returns the concatenation of them, with two axioms:
 \begin{align*}
-  & \KappendXList(\KnilXList, l) = l,
+  & \KappendXList(\KnilXList, L) = L,
   \\
-  & \KappendXList(\KconsXList(x, l_0), l) = \KconsXList(x, \KappendXList(l_0, l)).
+  & \KappendXList(\KconsXList(x, L_0), L) = \KconsXList(x, \KappendXList(L_0, L)).
 \end{align*}
 
 The predicate symbol $$\KinXList \colon \mathit{X} \times \XList \to \KPred$$
@@ -681,25 +680,25 @@ takes an element and a list, and decides whether the element is a member of the 
 \begin{align*}
   & \neg \KinXList(x, \KnilXList),
   \\
-  & \KinXList(x, \KconsXList(y, l)) = (x = y) \vee \KinXList(x, l).
+  & \KinXList(x, \KconsXList(y, L)) = (x = y) \vee \KinXList(x, L).
 \end{align*}
 
 The functional symbol $$\KdeleteXList \colon \mathit{X} \times \XList \to \KPred$$
-takes an element and a list, and returns the list in which all appearances of the element has been deleted, and the order of remaining elements does not change.
+takes an element and a list, and returns the list in which all appearances of the element has been deleted, and the order of the remaining elements does not change.
 It is axiomatized by the next two axioms:
 \begin{align*}
   & \KdeleteXList(x, \KnilXList) = \KnilXList,
   \\
-  & \KdeleteXList(x, \KconsXList(y, l))
+  & \KdeleteXList(x, \KconsXList(y, L))
   \\
-  & = ((x = y) \wedge \KdeleteXList(x, l)) \vee ((x \neq y) \wedge \KconsXList(x, \KdeleteXList(x, l))).
+  & = ((x = y) \wedge \KdeleteXList(x, L)) \vee ((x \neq y) \wedge \KconsXList(x, \KdeleteXList(x, L))).
 \end{align*}
 
 \subsection{Matching Logic Patterns}
 \label{sec:matching-logic-patterns}
 
 The sort $\KPattern$ is the sort for matching logic patterns.
-It has five constructors:
+It has five functional constructors:
 \begin{align*}
   & \Kvariable \colon \KString \times \KSort \to \KPattern,
   \\
@@ -711,7 +710,7 @@ It has five constructors:
   \\
   & \Kexists \colon \KString \times \KSort \times \KPattern \times \KSort \to \KPattern. 
 \end{align*}
-Apart from the five constructor symbols, the sort $\KSort$ also has the following functional symbols:
+Apart from the five constructor symbols, the sort $\KPattern$ also has the following functional symbols:
 \begin{align*}
   & \Kor \colon \KPattern \times \KPattern \times \KSort \to \KPattern,
   \\
@@ -734,6 +733,8 @@ Apart from the five constructor symbols, the sort $\KSort$ also has the followin
   & \Kbottom \colon \KSort \to \KPattern.
 \end{align*}
 
+
+
 \begin{notation}\label{notation:variables-about-KPattern}
 	As a convention, we use $\varphi$ and $\psi$ for $\KPattern$ variables, $x$ for $\KString$ variables, and $s$ for $\KSort$ variables.  
 \end{notation}
@@ -749,8 +750,7 @@ Functional symbols that do not belong to the five constructors of $\KPattern$ ar
   & \Kforall(x, s_1, \varphi, s_2) = \Knot(\Kexists(x, s_1, \Knot(\varphi, s_2), s_2), s_2),
   \\
   & \Kceil(\varphi, s_1, s_2) =
-  \\
-  & \Kapplication(\Ksymbol(\quot{ceil}, \KconsKSortList(s_1, \KnilKSortList), s_2), \varphi),
+    \Kapplication(\Ksymbol(\quot{ceil}, \KconsKSortList(s_1, \KnilKSortList), s_2), \varphi),
   \\
   & \Kfloor(\varphi, s_1, s_2) = \Knot(\Kceil(\Knot(\varphi, s_1), s_1, s_2), s_2),
   \\
@@ -799,55 +799,75 @@ Functional symbols that do not belong to the five constructors of $\KPattern$ ar
 	\end{align*}
 \end{notation}
 
-Apart from the five constructors and derived connectives introduced above, the sort $\KPattern$ also has some common operators defined as functional symbols.
-They are defined and axiomatized in this section, too.
+Apart from the five constructors and ten derived connectives introduced above, the sort $\KPattern$ also gets some common operators defined as functional symbols.
+Those functional symbols are defined and axiomatized in this section, too.
 
 The functional symbol 
 $$\KgetFvs \colon \KPattern \to \KPatternList$$
-traverses the argument pattern and collects all its free variables. 
-It has the following axioms:\improvement{Aha! We can't write ``$\cdots$'' here in the second axiom because we want to make $\Kfinite$ a finite theory. Not only here, but also some places in later sections. I know how to get rid of it. }
+traverses the argument pattern and collects all its free variables.
+The \emph{MapReduce of $\KgetFvs$} is a functional symbol
+$$ \KMapReduceKgetFvs \colon \KPatternList \to \KPatternList $$
+that takes a list of patterns and collects all the free variables that appear in them.
+The symbols $\KgetFvs$ and $\KMapReduceKgetFvs$ have the following axioms:
 \begin{align*}
   & \KgetFvs(\overline{x \cln s}) = \overline{x \cln s},
   \\
-  & \KgetFvs(\overline{\sigma(\varphi_1, \dots, \varphi_n)}) = \KgetFvs(\varphi_1), \dots, \KgetFvs(\varphi_n),
+  & \KgetFvs(\overline{\sigma(L)}) = \KMapReduceKgetFvs(L),
   \\
   & \KgetFvs(\overline{\varphi \kand_s \psi}) = \KgetFvs(\varphi), \KgetFvs(\psi),
   \\
   & \KgetFvs(\overline{\knot_s \varphi}) = \KgetFvs(\varphi),
   \\
-  & \KgetFvs(\overline{\kexists_{s_1}^{s_2} x . \varphi}) = \KdeleteKPatternList(\overline{x \cln s_1}, \KgetFvs(\varphi)).
+  & \KgetFvs(\overline{\kexists_{s_1}^{s_2} x . \varphi}) = \KdeleteKPatternList(\overline{x \cln s_1}, \KgetFvs(\varphi)),
+  \\
+  & \KMapReduceKgetFvs(\KnilKPatternList) = \KnilKPatternList,
+  \\
+  & \KMapReduceKgetFvs(\KconsKPatternList(\varphi, L))
+  \\
+  & = \KappendKPatternList(\KgetFvs(\varphi), \KMapReduceKgetFvs(L)),
 \end{align*}
+in which $L$ is a $\KPatternList$ variable.
+
+\begin{notation}
+	As a naming convention, we use $L$ and $R$ for $\KPatternList$ variables. 
+\end{notation}
 
 The functional symbol
 $$\KfreshName \colon \KPatternList \to \KString$$ 
-generates a variable name that does not occur free in the argument patterns.
-It has the following axiom:\improvement{Same here. Get rid of the ``$\cdots$''.}
+generates a variable name that does not occur free in the argument list of patterns.
+It has the following axiom:
 \begin{align*}
-\neg(\KinKPatternList(\Kvariable(\KfreshName(\varphi_1,\dots,\varphi_n), s), (\KgetFvs(\varphi_1),\dots,\KgetFvs(\varphi_n)))).
+\neg(\KinKPatternList(\Kvariable(\KfreshName(L), s), \KMapReduceKgetFvs(L))).
 \end{align*}
 
 The functional symbol
 $$\Ksubstitute \colon \KPattern \times \KPattern \times \KPattern \to \KPattern$$
-takes a target pattern $\varphi$, a ``replace''-pattern $\psi$, and a ``find''-pattern $\overline{x \cln s}$, and returns $\varphi[\psi / x \cln s]$.
-The symbol $\Ksubstitute$ expects the third argument to be of the form $\Kvariable(x, s)$, and will ``get stuck'' if otherwise.
-\improvement{Does not look good here. Need improvement.}
+takes a target pattern $\varphi$, a ``replace''-pattern $\psi$, and a ``find''-pattern $\overline{z \cln s}$, and returns $\varphi[\psi / z \cln s]$.
+\improvement{Does not look good here. Need improvement.}The symbol $\Ksubstitute$ expects the third argument to be of the form $\Kvariable(x, s)$, and will ``get stuck'' if otherwise.
+The \emph{map of} $\Ksubstitute$ is a functional symbol
+$$ \KMapKsubstitite \colon \KPatternList \times \KPattern \times \KPattern \to \KPatternList $$
+that takes a list of patterns and applies $\Ksubstitute$ to each element in the list, and returns a list of results in the same order.
 
 \begin{notation}
-	We abbreviate $\Ksubstitute(\varphi, \psi, x \cln s)$ as 
-	$\overline{\varphi[\psi / x \cln s]}$.
+	We abbreviate $\Ksubstitute(\varphi, \psi, z \cln s)$ as 
+	$\overline{\varphi[\psi / z \cln s]}$ and $\Ksubstitute(L, \psi, z \cln s)$ as $\overline{L[\psi / z \cln s]}$.
 \end{notation}
 
-The function $\Ksubstitute$ has the following axioms:\improvement{Same here. Get rid of the ``$\cdots$''.}
+The functional symbols $\Ksubstitute$ and $\KMapKsubstitite$ have the following axioms:
 \begin{align*}
-  & \overline{x \cln s_1 [\psi / y \cln s_2]} = ((\overline{x \cln s_1} = \overline{y \cln s_2}) \wedge \psi) \vee ((\overline{x \cln s_1} \neq \overline{y \cln s_2}) \wedge \overline{x \cln s_1}),
+  & \overline{x \cln s' [\psi / z \cln s]} = ((\overline{x \cln s'} = \overline{z \cln s}) \wedge \psi) \vee ((\overline{x \cln s'} \neq \overline{z \cln s}) \wedge \overline{x \cln s'}),
   \\
-  & \overline{\sigma(\varphi_1, \dots, \varphi_n) [\psi / x \cln s]} = \overline{\sigma(\varphi_1[\psi / x \cln s], \dots, \varphi_n[\psi / x \cln s])},
+  & \overline{\sigma(L) [\psi / z \cln s]} = \overline{\sigma(L[\psi / z \cln s])},
   \\
-  & \overline{(\varphi_1 \wedge_s \varphi_2) [\psi / x \cln s']} = \overline{\varphi_1[\psi / x \cln s'] \wedge_s \varphi_2[\psi / x \cln s']},
+  & \overline{(\varphi_1 \wedge_{s'} \varphi_2) [\psi / z \cln s]} = \overline{\varphi_1[\psi / z \cln s] \wedge_{s'} \varphi_2[\psi / z \cln s]},
   \\
-  & \overline{(\neg_s \varphi)[\psi / x \cln s']} = \overline{\neg_s \varphi[\psi / x \cln s']},
+  & \overline{(\neg_{s'} \varphi)[\psi / z \cln s]} = \overline{\neg_{s'} \varphi[\psi / z \cln s]},
   \\
-  & \overline{(\kexists_{s_1}^{s_2}x . \varphi)[\psi/y \cln s_3]} = \exists z . (z = \KfreshName(\varphi, \psi, \overline{x \cln s_1})) \wedge \overline{\kexists_{s_1}^{s_2} z . (\varphi[z/x \cln s_1][\psi/y \cln s_3])}.
+  & \overline{(\kexists_{s_1}^{s_2}x . \varphi)[\psi/z \cln s]} = \exists y . (y = \KfreshName(\varphi, \psi, \overline{x \cln s_1})) \wedge \overline{\kexists_{s_1}^{s_2} y . (\varphi[y/x \cln s_1][\psi/z \cln s])},
+  \\
+  & \overline{\KnilKPatternList[\psi / z \cln s]} = \KnilKPatternList,
+  \\
+  & \overline{\KconsKPatternList(\varphi, L)[\psi / z \cln s]} = \KconsKPatternList(\varphi[\psi / z \cln s], L[\psi / z \cln s]).
 \end{align*}
 
 \subsection{Finite Matching Logic Signatures}
@@ -861,7 +881,7 @@ which takes a finite list of sorts and a finite list of symbols as arguments, an
 \begin{notation}
 	As a convention, we use $\Sigma$ for $\KSignature$ variables. 
 	We use~$S$ for~$\KSortList$ variables and $\Sigma$ for $\KSymbolList$ variables if they appear as in~$\Ksignature(S, \Sigma)$.
-	We often abbreviate $\Ksignature(S, \Sigma)$ as $( S, \Sigma )$. \unsure{I use the angle parenthesis here. Maybe should just use normal parenthesis.}
+	We often abbreviate $\Ksignature(S, \Sigma)$ as $( S, \Sigma )$. 
 \end{notation}
 
 Common operators on $\KSignature$ and $\KPattern$ can then be easily defined.
@@ -902,7 +922,7 @@ $$\Ktheory \colon \KSignature \times \KPatternList \to \KTheory,$$
 which takes a finite signature and a finite list of patterns as axioms, and returns the finite matching logic theory. 
 
 \begin{notation}
-	As a convention, we use $F$ for $\KPatternList$ variables as it appears in $\Ktheory(\Sigma, F)$, which is often abbreviated as $( \Sigma, F )$. The theory $( ( S, \Sigma ), F )$ is often abbreviated to just $( S, \Sigma, F )$, too. We use $T$ for $\KTheory$ variables.  \unsure{Same here. Angle parenthesis versus regular parenthesis.}
+	As a convention, we use $F$ for $\KPatternList$ variables as it appears in $\Ktheory(\Sigma, F)$, which is often abbreviated as $( \Sigma, F )$. The theory $( ( S, \Sigma ), F )$ is often abbreviated to just $( S, \Sigma, F )$, too. We use $T$ for $\KTheory$ variables.  
 \end{notation}
 
 \subsection{Matching Logic Proof System}
@@ -918,7 +938,7 @@ takes a finite theory and a pattern as proof obligation, and decides if the obli
 The symbol $\Kdeduce$ has axioms in correspondence to the inference rules\footnote{Axioms are considered as inference rules with zero premises, so we do not distinguish axioms from inference rules anymore.} 
 of the matching logic proof system in~\cite{rosu-2017-lmcs}.
 
-In the following, we list all the inference rules of the matching logic proof system and the correspondent axioms of $\Kdeduce$. \improvement{We should mention here that all the subterms that appear in the axioms are assumed to be well-formed. We omit them when writing the axioms because writing all of them down need a lot of space, and will make the axioms less readable.}
+In the following, we list all the inference rules of the matching logic proof system and the correspondent axioms of $\Kdeduce$. \improvement{We should mention here that all the subterms / subpatterns that appear in the axioms are assumed to be well-formed. We omit them when writing the axioms because writing all of them down need a lot of space, and will make the axioms less readable.}
 
 We recall the readers our conventions of choosing variable names. 
 We use 
@@ -1009,12 +1029,13 @@ $\vdash x \in \forall y . \varphi = \forall y . x \in \varphi$ if $x$ is distinc
 $\vdash x \in \sigma(\dots \varphi_i \dots) = \exists y . y \in \varphi_i \wedge x \in \sigma(\dots y \dots)$ where $y$ is distinct from $x$ and it does not occur free in $\sigma(\dots \varphi_i \dots)$.
 \begin{align*}
 & (\overline{x \cln s_1} \neq \overline{y \cln s_2}) 
-  \wedge \neg \KinKPatternList(\overline{y \cln s_2}, \KgetFvs(\overline{\sigma(l, \varphi_i, r)}))
+  \wedge \neg \KinKPatternList(\overline{y \cln s_2}, \KgetFvs(\overline{\sigma(L, \varphi_i, R)}))
 \\
-\to & \Kdeduce(T, \overline{x \cln s_1 \kin_{s_1}^{s_3} \sigma(l, 
-\varphi_i, r) \kequals_{s_3}^{s_4} \kexists_{s_2}^{s_4} y . (y \cln s_2 \kin_{s_2}^{s_3} \varphi_i \kand x \cln s_1 \kin_{s_1}^{s_3} \sigma(l, y, r))}),
+\to & \Kdeduce(T, \overline{x \cln s_1 \kin_{s_1}^{s_3} \sigma(L, 
+\varphi_i, R) \kequals_{s_3}^{s_4} \kexists_{s_2}^{s_4} y . (y \cln s_2 \kin_{s_2}^{s_3} \varphi_i \kand x \cln s_1 \kin_{s_1}^{s_3} \sigma(L, y, R))}),
 \end{align*}
-where $l$ and $r$ are $\KPatternList$ variables. 
+where $L$ and $R$ are $\KPatternList$ variables, and we write $(L, \varphi, R)$ as a shorthand of
+$$(L, \varphi, R) \equiv \KappendKPatternList(L, \KconsKPatternList(\varphi, R)).$$
 
 \paragraph{Rule (Modus Ponens).}
 If $\vdash \varphi$ and $\vdash \varphi \to \psi$, then $\vdash \psi$.
