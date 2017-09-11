@@ -922,7 +922,7 @@ $$\Ktheory \colon \KSignature \times \KPatternList \to \KTheory,$$
 which takes a finite signature and a finite list of patterns as axioms, and returns the finite matching logic theory. 
 
 \begin{notation}
-	As a convention, we use $F$ for $\KPatternList$ variables as it appears in $\Ktheory(\Sigma, F)$, which is often abbreviated as $( \Sigma, F )$. The theory $( ( S, \Sigma ), F )$ is often abbreviated to just $( S, \Sigma, F )$, too. We use $T$ for $\KTheory$ variables.  
+	As a convention, we use $A$ for $\KPatternList$ variables as it appears in $\Ktheory(\Sigma, A)$, which is often abbreviated as $( \Sigma, A )$. The theory $( ( S, \Sigma ), A )$ is often abbreviated to just $( S, \Sigma, A )$, too. We use $T$ for $\KTheory$ variables.  
 \end{notation}
 
 \subsection{Matching Logic Proof System}
@@ -938,7 +938,7 @@ takes a finite theory and a pattern as proof obligation, and decides if the obli
 The symbol $\Kdeduce$ has axioms in correspondence to the inference rules\footnote{Axioms are considered as inference rules with zero premises, so we do not distinguish axioms from inference rules anymore.} 
 of the matching logic proof system in~\cite{rosu-2017-lmcs}.
 
-In the following, we list all the inference rules of the matching logic proof system and the correspondent axioms of $\Kdeduce$. \improvement{We should mention here that all the subterms / subpatterns that appear in the axioms are assumed to be well-formed. We omit them when writing the axioms because writing all of them down need a lot of space, and will make the axioms less readable.}
+In the following, we list all the inference rules of the matching logic proof system and the correspondent axioms of $\Kdeduce$. \improvement{We should mention here that all the subterms / subpatterns that appear in the axioms are assumed to be well-formed. Also, the theory $T$ itself must be well-formed, in the sense that all axioms in $T$ are well-formed. We omit those premises when writing the axioms because writing all of them down need a lot of space, and will make the axioms less readable.}
 
 We recall the readers our conventions of choosing variable names. 
 We use 
@@ -947,13 +947,13 @@ $s$ for $\KSort$ variables,
 $\varphi$ and $\psi$ for $\KPattern$ variables,
 $l$ and $r$ for $\KPatternList$ variables~(in \textbf{Rule~(M5)}),
 $\Sigma$ for $\KSignature$ variables, 
-$F$ for $\KPatternList$ variables~(in \textbf{Rule~(Axiom)}),
+$A$ for $\KPatternList$ variables~(in \textbf{Rule~(Axiom)}),
 and $T$ for $\KTheory$ variables.
 
 \paragraph{Rule (Axiom).}
-$F \vdash \varphi$ if $\varphi \in F$.
+$A \vdash \varphi$ if $\varphi \in A$.
 \begin{equation*}
-\KinKPatternList(\varphi, F) \to \Kdeduce(( \Sigma, F ), \varphi).
+\KinKPatternList(\varphi, A) \to \Kdeduce(( \Sigma, A ), \varphi).
 \end{equation*}
 
 \paragraph{Rule (K1).}
@@ -1065,7 +1065,7 @@ If $\vdash x \in \varphi$ and $x$ does not occur free in $\varphi$, then $\vdash
 \subsection{Faithfulness: Finite Case}
 
 \begin{theorem}[Faithfulness Theorem]\label{thm:faithfulness-finite}
-	For any finite matching logic theory $T = (S, \Sigma, F)$ and a $\Sigma$-pattern $\varphi$, let us use $\hat{T}$ to denote the corresponding $\Sigma_\Kfinite$-pattern of the sort $\KTheory$ that represents the theory $T$, and use $\hat{\varphi}$ to denote the corresponding $\Sigma_\Kfinite$-pattern of the sort $\KPattern$ that represents the pattern $\varphi$, then
+	For any finite matching logic theory $T = (S, \Sigma, A)$ and a $\Sigma$-pattern $\varphi$, let us use $\hat{T}$ to denote the corresponding $\Sigma_\Kfinite$-pattern of the sort $\KTheory$ that represents the theory $T$, and use $\hat{\varphi}$ to denote the corresponding $\Sigma_\Kfinite$-pattern of the sort $\KPattern$ that represents the pattern $\varphi$, then
 	$$T \vdash \varphi \quad \text{iff} \quad \Kfinite \vdash \Kdeduce(\hat{T}, \hat{\varphi}).$$
 \end{theorem}
 
@@ -1075,14 +1075,14 @@ Before we start to prove the theorem, we need to explain what ``the correspondin
 For that reason, we introduce the next definition.
 
 \begin{definition}[Encoding and Lifting]
-	Suppose $T = (S, \Sigma, F)$ is a finite matching logic theory, with $\Var = \bigcup_{s \in S} \Var_s$ is the set of all variables of $T$.
+	Suppose $T = (S, \Sigma, A)$ is a finite matching logic theory, with $\Var = \bigcup_{s \in S} \Var_s$ is the set of all variables of $T$.
 	The \emph{encoding of $S$, $\Sigma$, and $\Var$} consists of the following three functions:
 	\begin{itemize}
 		\item A function $e_S \colon S \to \PATTERNS_\KString$ that maps each sort $s$ in $S$ to a $\KString$ pattern in $K$, such that $K \vdash e_S(s_1) \neq e_S(s_2)$ for any distinct $s_1, s_2 \in S$;
 		\item A function $e_\Sigma \colon \Sigma \to \PATTERNS_\KString$ that maps each symbol $\sigma$ in $\Sigma$ to a $\KString$ pattern in $K$, such that $K \vdash e_\Sigma(\sigma_1) \neq e_\Sigma(\sigma_2)$ for any distinct $\sigma_1, \sigma_2 \in \Sigma$;
 		\item A function $e_\Var \colon \Var \to \PATTERNS_\KString$ that maps each variable in $T$ to a $\KString$ pattern in $K$, such that $K \vdash e_\Var(x) \neq e_\Var(y)$ for any distinct variables $x, y \in \Var$.
 	\end{itemize}
-    Given $e = \{e_S, e_\Sigma \}$ is an encoding of $S$ and $\Sigma$ in $K$, the \emph{lift of the theory $T = (S, \Sigma, F)$ with respect to the encoding $e$} is a family of lifting functions that are defined as follows.
+    Given $e = \{e_S, e_\Sigma \}$ is an encoding of $S$ and $\Sigma$ in $K$, the \emph{lift of the theory $T = (S, \Sigma, A)$ with respect to the encoding $e$} is a family of lifting functions that are defined as follows.
     
     Definition (Sort-lifting).
     For each sort $s$ in $S$, the lift of $s$, denoted as $\hat{s}$, is a $\KSort$ pattern defined as
@@ -1109,15 +1109,15 @@ For that reason, we introduce the next definition.
       \end{cases*}
     \end{equation*}
     
-    Definition (Theory-lifting). Since $T = (S, \Sigma, F)$ is a finite theory, let us suppose
+    Definition (Theory-lifting). Since $T = (S, \Sigma, A)$ is a finite theory, let us suppose
     \begin{equation*}
        S = \{ s_1, \dots, s_n \}, 
        \Sigma = \{ \sigma_1, \dots, \sigma_m \}, 
-       F = \{ \varphi_1, \dots, \varphi_k \},
+       A = \{ \varphi_1, \dots, \varphi_k \},
     \end{equation*}
     are three finite sets. The lift of theory $T$, denoted as $\hat{T}$, is a $\KTheory$ pattern defined as:
-    $$ \hat{T} = \Ktheory(\Ksignature(\hat{S}, \hat{\Sigma}), \hat{F}),$$
-    where the lifts of $S$, $\Sigma$, and $F$ are respectively defined as:
+    $$ \hat{T} = \Ktheory(\Ksignature(\hat{S}, \hat{\Sigma}), \hat{A}),$$
+    where the lifts of $S$, $\Sigma$, and $A$ are respectively defined as:
     \begin{align*}
     & \hat{S} = \hat{s_1},\dots,\hat{s_n} 
       \quad \text{is a $\KSortList$ pattern},
@@ -1125,7 +1125,7 @@ For that reason, we introduce the next definition.
     & \hat{\Sigma} = \hat{\sigma_1},\dots,\hat{\sigma_m}
       \quad \text{is a $\KSymbolList$ pattern},
     \\
-    & \hat{F} = \hat{\varphi_1}, \dots, \hat{\varphi_k}
+    & \hat{A} = \hat{\varphi_1}, \dots, \hat{\varphi_k}
       \quad \text{is a $\KPatternList$ pattern}.
     \end{align*}
 \end{definition}
@@ -1170,7 +1170,7 @@ We introduce a canonical model of $\Kfinite$. It helps in proving Theorem~\ref{t
 	Intuitively, $\Kdeduce_M(T, \varphi)$ holds if both $T$ and $\varphi$ are well-formed and $\varphi$ is deducible in the finite matching logic theory $T$.
 	This intuition is captured by the next formal definition.
 	
-	For any $T = (\Sigma, F) \in M_\KTheory$ and $\varphi \in M_\KPattern$:
+	For any $T = (\Sigma, A) \in M_\KTheory$ and $\varphi \in M_\KPattern$:
 	\begin{equation*}
 	  \Kdeduce_M(T, \varphi) =
 	  \begin{cases*}
@@ -1183,8 +1183,8 @@ We introduce a canonical model of $\Kfinite$. It helps in proving Theorem~\ref{t
 	\end{equation*}
 	where the \emph{semantics bracket} $\bracket{\_}$ is defined (only on well-formed $T$ and $\varphi$) as follows:
 	\begin{center}\begin{tabular}{l}
-		$\bracket{T}$ is the matching logic theory $(\Sigma, \bracket{F})$, \\
-		$\bracket{F} = \{ \bracket{\psi} | \mid \psi \in F \}$, \\
+		$\bracket{T}$ is the matching logic theory $(\Sigma, \bracket{A})$, \\
+		$\bracket{A} = \{ \bracket{\psi} | \mid \psi \in A \}$, \\
 		$\bracket{\varphi} =
 		 \begin{cases*}
 		   x \cln s & if $\varphi$ is $\Kvariable(x, s)$, \\
@@ -1227,7 +1227,7 @@ Now we are in a good shape to prove Theorem~\ref{thm:faithfulness-finite}.
 	
 	Step 2 (The ``$\Leftarrow$'' part).
 	
-	Let us fix a finite matching logic theory $T = (S, \Sigma, F)$, a $\Sigma$-pattern $\varphi$, and an encoding $e$, and assume that $\Kfinite \vdash \Kdeduce(\hat{T}, \hat{\varphi})$.
+	Let us fix a finite matching logic theory $T = (S, \Sigma, A)$, a $\Sigma$-pattern $\varphi$, and an encoding $e$, and assume that $\Kfinite \vdash \Kdeduce(\hat{T}, \hat{\varphi})$.
 	Since the matching logic proof system is sound, the interpretation of $\Kdeduce(\hat{T}, \hat{\varphi})$ should hold in the canonical model $M_K$:
 	$$ \Kdeduce_M(\hat{T}, \hat{\varphi}) = \{ \star \}. $$
 	By definition, this means that
@@ -1239,9 +1239,9 @@ Now we are in a good shape to prove Theorem~\ref{thm:faithfulness-finite}.
 	\fbox{\begin{minipage}{35em}\color{blue}\small
 	The following a snapshot of what we had on the board:
 	
-	Step 2.1. Fix a finite matching logic theory $T = (S, \Sigma, F)$ and a $\Sigma$-pattern $\varphi$. 
+	Step 2.1. Fix a finite matching logic theory $T = (S, \Sigma, A)$ and a $\Sigma$-pattern $\varphi$. 
 	
-	Step 2.2. Build a model $M_{T}$ based on $T = (S, \Sigma, F)$.
+	Step 2.2. Build a model $M_{T}$ based on $T = (S, \Sigma, A)$.
 	
 	Step 2.3. Show that $M_T$ is a model of $\Kfinite$.
 	
