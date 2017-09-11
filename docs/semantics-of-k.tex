@@ -845,6 +845,7 @@ which takes a finite signature and a finite list of patterns as axioms, and retu
 \end{notation}
 
 \subsection{Matching Logic Proof System}
+\label{sec:ml-proof-system-finite-case}
 
 A sound and complete proof system has been introduced in~\cite{rosu-2017-lmcs}.
 In this section we define the predicate symbol $\Kdeduce$ that captures the sound and complete proof system of matching logic.
@@ -870,15 +871,15 @@ and $T$ for $\KTheory$ variables.
 
 \paragraph{Rule (Axiom).}
 $F \vdash \varphi$ if $\varphi \in F$.
-\begin{align*}
+\begin{equation*}
 \KinKPatternList(\varphi, F) \to \Kdeduce(( \Sigma, F ), \varphi).
-\end{align*}
+\end{equation*}
 
 \paragraph{Rule (K1).}
 $\vdash \varphi \to (\psi \to \varphi)$.
-\begin{align*}
+\begin{equation*}
 \Kdeduce(T, \overline{\varphi \kimplies_s (\psi \kimplies_s \varphi)}).
-\end{align*}
+\end{equation*}
 
 \paragraph{Rule (K2).}
 $\vdash (\varphi_1 \to (\varphi_2 \to \varphi_3)) \to ((\varphi_1 \to \varphi_2) \to (\varphi_1 \to \varphi_3))$.
@@ -991,7 +992,7 @@ It guarantees that the theory $\Kfinite$ does faithfully capture the matching lo
 Before we start to prove the theorem, we need to explain what ``the corresponding patterns'' $\hat{T}$ and $\hat{\varphi}$ are, as they appear in the theorem.
 For that reason, we introduce the next definition.
 
-\begin{definition}[Encoding and Lift]
+\begin{definition}[Encoding and Lifting]
 	Suppose $T = (S, \Sigma, F)$ is a finite matching logic theory, with $\Var = \bigcup_{s \in S} \Var_s$ is the set of all variables of $T$.
 	The \emph{encoding of $S$, $\Sigma$, and $\Var$} consists of the following three functions:
 	\begin{itemize}
@@ -1047,37 +1048,111 @@ For that reason, we introduce the next definition.
     \end{align*}
 \end{definition}
 
+\newcommand{\bracket}[1]{\llbracket #1 \rrbracket}
+
+We introduce a canonical model of $\Kfinite$. It helps in proving Theorem~\ref{thm:faithfulness-finite} in Step 2.3 and 2.4.
+\begin{definition}[Canonical model of $\Kfinite$]
+	The canonical model of $\Kfinite$, denoted as $M_\Kfinite$, contains the following carrier sets and relations.
+	
+	The carrier set for $\KPred$ is a singleton set $M_\KPred = \{ \star \}$. 
+	
+	The carrier set for $\KString$ is the set of all syntactic patterns of the sort $\KString$, denoted as $M_\KString$.
+	
+	The carrier set for $\KSort$ is the set of all syntactic patterns of the sort $\KSort$ 
+	$$M_\KSort = \{ \Ksort(str) \mid str \in M_\KString \}.$$
+	
+	The carrier set for $\KSortList$ is the set of all finite lists of $M_\KSort$, denoted as 
+	$$M_\KSortList = (M_\KSort)^*.$$
+	
+	The carrier set for $\KSymbol$ is the set of all syntactic patterns of the sort $\KSymbol$
+	$$M_\KSymbol = \{ \Ksymbol(str, l, s) \mid str \in M_\KString, l \in M_\KSortList, s \in M_\KSort \}.$$
+	
+	The carrier set for $\KSymbolList$ is the set of all finite lists over $M_\KSymbol$, denoted as
+	$$M_\KSymbolList = (M_\KSymbol)^*.$$
+	
+	The carrier set for $\KPattern$ is the set of all syntactic patterns of the sort $\KPattern$, denoted as $M_\KPattern$.
+	
+	The carrier set for $\KPatternList$ is the set of all finite lists over $M_\KPattern$. 
+	
+	The carrier set for $\KSignature$ is a product set
+	$$ M_\KSignature = M_\KSortList \times M_\KSymbolList.$$
+	
+	The carrier set for $\KTheory$ is a product set
+	$$ M_\KTheory = M_\KSignature \times M_\KPattern. $$
+	
+	The interpretations of most symbols (except $\Kdeduce$) in $\Kfinite$ are so straightforward that they are trivial.\improvement{Basically I want to say that $M_K$ is almost (except how it interprets $\Kdeduce$) the initial algebra of $\Kfinite$.}
+	For example, $\KconsKSortList$ is interpreted as the cons function on $M_\KSortList$, and $\KdeleteKPatternList$ is interpreted as a function on $M_\KPattern \times M_\KPatternList$ that deletes the first argument from the second, etc.
+	
+	The only nontrivial interpretation is the one for $\Kdeduce$, as we would like to interpret it \emph{in terms of} matching logic reasoning.
+	The interpretation of $\Kdeduce$ in the canonical model is a predicate on $M_\KTheory$ and $M_\KPattern$.
+	Intuitively, $\Kdeduce_M(T, \varphi)$ holds if both $T$ and $\varphi$ are well-formed and $\varphi$ is deducible in the finite matching logic theory $T$.
+	This intuition is captured by the next formal definition.
+	
+	For any $T = (\Sigma, F) \in M_\KTheory$ and $\varphi \in M_\KPattern$:
+	\begin{equation*}
+	  \Kdeduce_M(T, \varphi) =
+	  \begin{cases*}
+	    \emptyset & if $\KwellFormed_M(\Sigma, \varphi) = \emptyset$,
+	    \\
+	    \{ \star \} & if $\bracket{T} \vdash \bracket{\varphi}$,
+	    \\
+	    \emptyset & if $\bracket{T} \not\vdash \bracket{\varphi}$,
+	  \end{cases*}
+	\end{equation*}
+	where the \emph{semantics bracket} $\bracket{\_}$ is defined (only on well-formed $T$ and $\varphi$) as follows:
+	\begin{center}\begin{tabular}{l}
+		$\bracket{T}$ is the matching logic theory $(\Sigma, \bracket{F})$, \\
+		$\bracket{F} = \{ \bracket{\psi} | \mid \psi \in F \}$, \\
+		$\bracket{\varphi} =
+		 \begin{cases*}
+		   x \cln s & if $\varphi$ is $\Kvariable(x, s)$, \\
+		   \sigma(\bracket{\varphi_1},\dots,\bracket{\varphi_n}) & if $\varphi$ is $\Kapplication(\sigma, (\varphi_1,\dots,\varphi_n))$,\\
+		   \bracket{\varphi_1} \wedge \bracket{\varphi_2} & if $\varphi$ is $\Kand(\varphi_1,\varphi_2,s)$,\\
+		   \neg \bracket{\varphi_1} & if $\varphi$ is $\Knot(\varphi_1, s)$,\\
+		   \exists x . \bracket{\varphi_1} & if $\varphi$ is $\Kexists(x, s_1, \varphi_1, s_2)$.
+		 \end{cases*}$
+	\end{tabular}\end{center}
+
+    It is tedious but straightforward to verify that $\Kdeduce_M$ satisfies all axioms about $\Kdeduce$ that we introduced in Section~\cref{sec:ml-proof-system-finite-case}.
+    For example, the Rule (K1)
+    \begin{equation*}
+    \Kdeduce(T, \overline{\varphi \kimplies_s (\psi \kimplies_s \varphi)}).
+    \end{equation*}
+    holds in $\Kfinite$ because
+    $$\bracket{T} \vdash \bracket{\varphi} \to (\bracket{\psi} \to \bracket{\varphi});$$
+    The Rule (Modus Ponens)
+    \begin{equation*}
+    \Kdeduce(T, \varphi) \wedge \Kdeduce(T, \overline{\varphi \kimplies_s \psi}) \to 
+    \Kdeduce(T, \psi).
+    \end{equation*}
+    holds in $\Kfinite$ because
+    $$\text{if $\bracket{T} \vdash \bracket{\varphi}$ and $\bracket{T} \vdash \bracket{\varphi} \to \bracket{\psi}$, then $\bracket{T} \vdash \bracket{\psi}$}.$$
+    
+    Readers are welcomed to verify the remaining axioms in $\Kfinite$ also hold in $M_K$.
+    We omit them here.
+    
+
+\end{definition}
+
 
 Now we are in a good shape to prove Theorem~\ref{thm:faithfulness-finite}.
-\newcommand{\bracket}[1]{\llbracket #1 \rrbracket}
 
 \begin{proof}[Proof Sketch of Theorem~\ref{thm:faithfulness-finite}]\quad
 	
-	Step 1 (The ``$\Rightarrow$'' part). We prove this by mimicking the proof of $F \vdash \varphi$ in $\Kfinite$.
+	Step 1 (The ``$\Rightarrow$'' part). 
 	
-	Step 1.1. Suppose the proof of $F \vdash \varphi$ is a sequence $\varphi_1 , \dots,  \varphi_n$ with $\varphi_n = \varphi$. 
-	Conduct mathematical induction on $n$.
-	By definition, for each $i \in \{1,\dots, n\}$, one of the following holds:
-	\begin{itemize}
-		\item $\varphi_i$ is a logical axiom;
-		\item $\varphi_i \in F$;
-		\item There exist $i_1, i_2 < i$ such that $\varphi_{i_2} = \varphi_{i_1} \to \varphi_i$;
-		\item There exists $i_1 < i$ and a variable $x$ such that $\varphi_i = \forall x . \varphi_{i_1}$;
-		\item There exists $i_1 < i$ and a variable $x$ that does not occur free in $\varphi_{i_1}$ such that $\varphi_i = \forall x . (x \in \varphi_{i_1})$;
-		\item There exists $i_1 < i$ and a variable $x$ that does not occur free in $\varphi_i$ such that $\varphi_{i_1} = \forall x . (x \in \varphi_i)$. 
-	\end{itemize}
+	We prove this by simply mimicking the proof of $T \vdash \varphi$ in $\Kfinite$.
 	
 	Step 2 (The ``$\Leftarrow$'' part).
 	
-	Step 2.1. Build a canonical model $M_K$ of $\Kfinite$.
+	Let us fix a finite matching logic theory $T = (S, \Sigma, F)$, a $\Sigma$-pattern $\varphi$, and an encoding $e$, and assume that $\Kfinite \vdash \Kdeduce(\hat{T}, \hat{\varphi})$.
+	Since the matching logic proof system is sound, the interpretation of $\Kdeduce(\hat{T}, \hat{\varphi})$ should hold in the canonical model $M_K$:
+	$$ \Kdeduce_M(\hat{T}, \hat{\varphi}) = \{ \star \}. $$
+	By definition, this means that
+	$$\bracket{\hat{T}} \vdash \bracket{\hat{\varphi}}.$$
 	
-	Step 2.2. Fix a finite matching logic theory $T = (S, \Sigma, F)$, a $\Sigma$-pattern $\varphi$, and an encoding $e$.
-	
-	Step 2.3. By hypothesis, $M_K \vDash \Kdeduce(\hat{T}, \hat{\varphi})$.
-	
-	Step 2.4. Interpret $\Kdeduce(\hat{T}, \hat{\varphi})$ in $M_K$ and get $ \bracket{\hat{T}} \vDash \bracket{\hat{\varphi}}$.
-	
-	Step 2.5. Establish an isomorphism between $T$ and $\bracket{\hat{T}}$, and get $T \vDash \varphi$.
+	Finally notice that by construction of encoding, lifting, and the semantics bracket, there is an isomorphism between $T$ and  $\bracket{\hat{T}}$, so from $\bracket{\hat{T}} \vdash \bracket{\hat{\varphi}}$ we have
+	$$T \vdash \varphi.$$
 	
 	\fbox{\begin{minipage}{35em}\color{blue}\small
 	The following a snapshot of what we had on the board:
