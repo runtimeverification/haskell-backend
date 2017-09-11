@@ -675,12 +675,6 @@ takes two lists and returns the concatenation of them, with two axioms:
   \\
   & \KappendXList(\KconsXList(x, l_0), l) = \KconsXList(x, \KappendXList(l_0, l)).
 \end{align*}
-\begin{notation}
-	We adopt the following notation abbreviation for list concatenation:
-	\begin{equation*}
-	  l_1 \at l_2 \equiv \KappendXList(l_1, l_2).
-	\end{equation*}
-\end{notation}
 
 The predicate symbol $$\KinXList \colon \mathit{X} \times \XList \to \KPred$$
 takes an element and a list, and decides whether the element is a member of the list or not. The two axioms for $\KinXList$ are:
