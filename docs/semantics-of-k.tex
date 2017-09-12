@@ -687,7 +687,7 @@ where the first argument is called the \emph{name} of the symbol, and the rest a
 For sorts $\KSort$, $\KSymbol$, and $\KPattern$\footnote{The sort $\KPattern$ is defined in Section~\cref{sec:matching-logic-patterns}.}
 in $S_\Kfinite$,
 we define sorts $\KSortList$, $\KSymbolList$, and $\KPatternList$ to be the sorts of finite lists over them, respectively.
-Formally, for any sort $X$ where
+Formally, for any sort $X$ where\info{Why not add $\KChar$ to this set and thus get rid of $\KString$, or just use $\KString$ as an alias for $\KChar$-lists?}
 $$
 X \in \{\KSort, \KSymbol, \KPattern\},
 $$
@@ -722,22 +722,25 @@ takes an element and a list, and decides whether the element is a member of the 
   & \KinXList(x, \KconsXList(y, L)) = (x = y) \vee \KinXList(x, L).
 \end{align*}
 
-The functional symbol $$\KdeleteXList \colon \mathit{X} \times \XList \to \KPred$$
-takes an element and a list, and returns the list in which all appearances of the element has been deleted, and the order of the remaining elements does not change.
+The functional symbol $$\KdeleteXList \colon \mathit{X} \times \XList \to \XList$$
+takes an element and a list, and returns the list in which all the occurrences
+of the element have been deleted, and the order of the remaining elements does not
+change.
 It is axiomatized by the next two axioms:
 \begin{align*}
   & \KdeleteXList(x, \KnilXList) = \KnilXList,
   \\
   & \KdeleteXList(x, \KconsXList(y, L))
   \\
-  & = ((x = y) \wedge \KdeleteXList(x, L)) \vee ((x \neq y) \wedge \KconsXList(x, \KdeleteXList(x, L))).
+  & = ((x = y) \wedge \KdeleteXList(x, L)) \vee ((x \neq y) \wedge \KconsXList(y, \KdeleteXList(x, L))).
 \end{align*}
 
 \subsection{Matching Logic Patterns}
 \label{sec:matching-logic-patterns}
 
 The sort $\KPattern$ is the sort for matching logic patterns.
-It has five functional constructors:
+It has five functional constructors:\info{Any reason why $\Kexists$ does
+not take a variable?}
 \begin{align*}
   & \Kvariable \colon \KString \times \KSort \to \KPattern,
   \\
@@ -749,7 +752,8 @@ It has five functional constructors:
   \\
   & \Kexists \colon \KString \times \KSort \times \KPattern \times \KSort \to \KPattern. 
 \end{align*}
-Apart from the five constructor symbols, the sort $\KPattern$ also has the following functional symbols:
+Apart from the five constructor symbols, the sort $\KPattern$ also has
+the following functional symbols:\info{Maybe use \textit{Kmembership} instead of $\Kin$?}
 \begin{align*}
   & \Kor \colon \KPattern \times \KPattern \times \KSort \to \KPattern,
   \\
@@ -804,7 +808,7 @@ Functional symbols that do not belong to the five constructors of $\KPattern$ ar
 
 \begin{notation}
 	As one may have already noticed, patterns of sort $\KPattern$ get huge rather quickly.
-	The following notation conventions are adopted to write $\KPattern$ patterns in a more compact way, by putting a bar upon their normal mixfix forms:
+	The following notation conventions are adopted to write $\KPattern$ patterns in a more compact way, by putting a bar upon their normal mixfix forms:\info{$\sigma$ is a $\Ksymbol(...)$ thing, isn't it?}
 	\begin{align*}
 	  & \overline{x \cln s} \equiv \Kvariable(x, s),
 	  \\
