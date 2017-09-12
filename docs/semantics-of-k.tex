@@ -241,6 +241,8 @@
 \newcommand{\denote}[1]{\llbracket{#1}\rrbracket}
 \newcommand{\reduct}[2]{\mbox{${#1}\!\!\upharpoonright_{#2}$}}
 
+\newcommand{\builtin}{\textit{builtin}}
+
   % Title and authors
   \title{The Semantics of \K}
   \author{Formal Systems Laboratory \\
@@ -377,6 +379,7 @@ When $S$ is understood, we write $(\Sigma,A)$ instead of $(S,\Sigma,A)$.
 ...
 
 \subsection{Semantics and Basic Properties}
+\label{sec:semantics}
 
 Models, satisfaction, some properties
 \improvement{We should also add the semantics here: models, $M \models_{(S,\Sigma)} A$,
@@ -409,8 +412,8 @@ We can think of signatures as interfaces and of models as
 Indeed, models provide concrete values for each sort, and concrete relations
 for symbols.
 Then the reduct $\reduct{M}{\Sigma'}$ can be regarded as a ``wrapper'' of
-the implementation $M$ of $\Sigma$ into an implementation of $\Sigma'$, or
-a reuse of a richer implementation in a smaller context.
+the implementation $M$ of $\Sigma$ turning it into an implementation of
+$\Sigma'$, or a reuse of a richer implementation in a smaller context.
 
 \subsection{Derived Symbols}
 
@@ -548,18 +551,54 @@ builtins to be hooked to an SMT solver like Z3, while a mechanical program
 verifier may prefer a rigorous definition of builtins using Coq, Isabelle,
 or Agda.
 
-...
+Recall from Section~\ref{sec:semantics} that the semantics of a matching
+logic theory $(\Sigma,A)$ was loosely defined as the collection of all
+$\Sigma$-models satisfying its axioms: $\denote{(\Sigma,A)} =
+\{M \ \mid \ M \in \Mod_{\Sigma},\ M \models_{\Sigma} A \}$.
+To allow all the builtin scenarios above and stay as abstract as possible
+w.r.t.~builtins, we generalize matching logic theories and their semantics
+as follows.
 
-Let $(S_B,\Sigma_B)$ be a subsignature of \emph{built-ins} of $(S,\Sigma)$.
-That is, $S_B \subseteq S$ and $\Sigma_B \subseteq \Sigma$.
+\begin{definition}
+A \emph{matching logic theory with builtins}
+$(S_\builtin,\Sigma_\builtin,S,\Sigma,A)$, written as a triple
+$(\Sigma_\builtin,\Sigma,A)$ and
+called just a \emph{matching logic theory} whenever there is no confusion,
+is an ordinary matching logic theory together with a
+\emph{subsignature of builtins}
+$(S_\builtin,\Sigma_\builtin)\hookrightarrow(S,\Sigma)$.
+Sorts in $S_\builtin \subseteq S$ are called \emph{builtin sorts} and symbols in
+$\Sigma_\builtin \subseteq \Sigma$ are called \emph{builtin symbols}.
+\end{definition}
 
-$\Mod(\Sigma_B,\Sigma) = \{(M_B,M)\ \mid\ M\upharpoonright_{\Sigma_B} = M_B \}$
+Therefore, signatures identify a subset of sorts and symbols as builtin,
+with the intuition that implementations are now \emph{parametric} in an
+implementation of their builtins.
+Or put differently, the semantics of a matching logic theory with builtins
+is parametric in a model for its builtins:
 
-$\Mod(\Sigma_B,\Sigma,A) =
-\denote{(\Sigma_B,\Sigma,A)} =
-\{M \ \mid \ M \in \Mod_{\Sigma},\ M \models_{(S,\Sigma)} A \}$
+\begin{definition}
+Given a matching logic theory with builtins $(\Sigma_\builtin,\Sigma,A)$ and
+a \emph{model of builtins} $B \in \Mod(\Sigma_\builtin)$, we define
+the \emph{$B$-semantics} of $(\Sigma_\builtin,\Sigma,A)$ loosely as follows:
+$$
+\denote{(\Sigma_\builtin,\Sigma,A)}_B = 
+\{M \ \mid \ M \in \Mod_{\Sigma},\ M \models_{\Sigma} A,\ \reduct{M}{\Sigma_\builtin} = B \}
+$$
+We may drop $B$ from $B$-semantics whenever the builtins model is
+understood from context.
+\end{definition}
 
-
+Note that $A$ may contain axioms over $\Sigma_\builtin$, which play a dual
+role: they filter out the candidates for the models of builtins on the one
+hand, and they can be used in reasoning on the other hand\info{For this,
+we may want to organize ML as an institution.}.
+Theoretically, we can always enrich $A$ with the set of \emph{all} patterns
+matched by $B$, and thus all the properties of the model of builtins are
+available for reasoning in any context, but note that in practice there may
+be no finite or algorithmic way to represent those
+(e.g., the set of properties of the ``builtin'' model of natural numbers is
+not r.e.).
 
 
 \section{Meta-Theory of Matching Logic: Finite Case}
