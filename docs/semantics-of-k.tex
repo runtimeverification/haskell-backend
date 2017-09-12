@@ -182,13 +182,15 @@
   \newcommand{\KappendKSortList}{\mathit{KappendKSortList}}
   \newcommand{\KinKSortList}{\mathit{KinKSortList}}
   \newcommand{\KdeleteKSortList}{\mathit{KdeleteKSortList}}
+  \newcommand{\KSymbolList}{\mathit{KSymbolList}}
+  \newcommand{\KinKSymbolList}{\mathit{KinKSymbolList}}
   %% Define l1 @ l2 for list concatenation.
   \newcommand{\at}{@}
   
   
   \newcommand{\Kdelete}{\mathit{delete}} 
 
-  \newcommand{\KSymbolList}{\mathit{KSymbolList}}
+
   
   
   \newcommand{\KPattern}{\mathit{KPattern}}
@@ -209,8 +211,6 @@
   \newcommand{\Kfloor}{\mathit{Kfloor}}
   \newcommand{\Kceil}{\mathit{Kceil}}
   
-
-  
   \newcommand{\KgetFvs}{\mathit{KgetFvs}}
   \newcommand{\KMapReduceKgetFvs}{\mathit{KMapReduceKgetFvs}}
   \newcommand{\KfreshName}{\mathit{KfreshName}}
@@ -219,15 +219,20 @@
   \newcommand{\Ksignature}{\mathit{Ksignature}}
   \newcommand{\KgetSorts}{\mathit{KgetSorts}}
   \newcommand{\KgetSymbols}{\mathit{KgetSymbols}}
+  \newcommand{\KsortDeclared}{\mathit{KsortDeclared}}
+  \newcommand{\KsymbolDeclared}{\mathit{KsymbolDeclared}}
   
   \newcommand{\KwellFormed}{\mathit{KwellFormed}}
+  \newcommand{\KMapReduceKwellFormed}{\mathit{KMapReduceKwellFormed}}
   \newcommand{\KgetSort}{\mathit{KgetSort}}
+  \newcommand{\KMapKgetSort}{\mathit{KMapKgetSort}}
   \newcommand{\KisSort}{\mathit{KisSort}}
   \newcommand{\Ksubstitute}{\mathit{Ksubstitute}}
   \newcommand{\KMapKsubstitite}{\mathit{KMapKsubstitite}}
   
   \newcommand{\KTheory}{\mathit{KTheory}}
   \newcommand{\Ktheory}{\mathit{Ktheory}}
+  \newcommand{\KwellFormedTheory}{\mathit{KwellFormedTheory}}
   
   \newcommand{\Kdeduce}{\mathit{Kdeduce}}
   
@@ -786,7 +791,7 @@ the following functional symbols:\info{Maybe use \textit{Kmembership} instead of
 
 
 \begin{notation}\label{notation:variables-about-KPattern}
-	As a convention, we use $\varphi$ and $\psi$ for $\KPattern$ variables, $x$ for $\KString$ variables, and $s$ for $\KSort$ variables.  
+	As a convention, we use $\varphi$ and $\psi$ for $\KPattern$ variables, $x$ for $\KString$ variables, $s$ for $\KSort$ variables, and $\sigma$ for $\KSymbol$ variables. 
 \end{notation}
 
 Functional symbols that do not belong to the five constructors of $\KPattern$ are called \emph{derived connectives of $\KPattern$}, and they are axiomatized by the following axioms:
@@ -815,7 +820,7 @@ Functional symbols that do not belong to the five constructors of $\KPattern$ ar
 
 \begin{notation}
 	As one may have already noticed, patterns of sort $\KPattern$ get huge rather quickly.
-	The following notation conventions are adopted to write $\KPattern$ patterns in a more compact way, by putting a bar upon their normal mixfix forms:\info{$\sigma$ is a $\Ksymbol(...)$ thing, isn't it? Xiaohong: Yes, it is. And $\sigma$ is a $\KSymbol$ variable. I will add that to the notation convention. }
+	The following notation conventions are adopted to write $\KPattern$ patterns in a more compact way, by putting a bar upon their normal mixfix forms:\info{$\sigma$ is a $\Ksymbol(...)$ thing, isn't it? Xiaohong: Yes, it is. And $\sigma$ is a $\KSymbol$ variable. I will add that to the notation convention. See Notation 6. }
 	\begin{align*}
 	  & \overline{x \cln s} \equiv \Kvariable(x, s),
 	  \\
@@ -941,12 +946,23 @@ with axioms
 \end{align*}
 
 \begin{notation}
-	As a convention, we use $\Sigma$ for $\KSignature$ variables. 
+	As a convention, we use $\Sigma$ for $\KSignature$ variables.\improvement{I found it confusing to use the same letter $\Sigma$ for both $\KSymbolList$ variables and $\KSignature$ variables. We should use $\Sigma$ only for $\KSymbolList$ variables, and find a new letter for $\KSignature$ variables.} 
 	We use~$S$ for~$\KSortList$ variables and $\Sigma$ for $\KSymbolList$ variables if they appear as in~$\Ksignature(S, \Sigma)$.
 	We often abbreviate $\Ksignature(S, \Sigma)$ as $( S, \Sigma )$. 
 \end{notation}
 
 Common operators on $\KSignature$ and $\KPattern$ can then be easily defined.
+Two basic ones are predicate symbols $\KsortDeclared$ and $\KsymbolDeclared$:
+\begin{align*}
+ & \KsortDeclared \colon \KSort \times \KSignature \to \KPred, \\
+ & \KsymbolDeclared \colon \KSymbol \times \KSignature \to \KPred,
+\end{align*}
+that decide whether sorts and symbols are declared in the given signature.
+They are axiomatized by the next two axioms:
+\begin{align*}
+ & \KsortDeclared(s, \Sigma) = \KinKSortList(s, \KgetSorts(\Sigma)), \\
+ & \KsymbolDeclared(\sigma, \Sigma) = \KinKSymbolList(\sigma, \KgetSymbols(\Sigma)).
+\end{align*}
 For example, the predicate symbol 
 $$\KwellFormed \colon \KPattern \times \KSignature \to \KPred$$ 
 takes a pattern and a finite signature, and decides whether the pattern is a \emph{well-formed} one in the given signature.
@@ -954,7 +970,11 @@ The partial function
 $$\KgetSort \colon \KPattern \times \KSignature \rightharpoonup \KSort$$
 takes a pattern and a finite signature, and returns the sort of the pattern in the given signature if the pattern is well-formed.
 Otherwise, it returns $\bot_\KSort$.
-The symbols $\KwellFormed$ and $\KgetSort$ are axiomatized by the following axioms:\improvement{Fix TODO here. Note that we should not use the ``$\cdots$'' in $\Kfinite$.}
+The map of $\KgetSort$ is a partial function
+$$ \KMapKgetSort \colon \KPatternList \times \KSignature \rightharpoonup \KSortList
+$$
+that takes a pattern lists and applies $\KgetSort$ on each element.
+The symbols $\KwellFormed$, $\KgetSort$, and $\KMapKgetSort$ are axiomatized by the following axioms:
 \begin{align*}
   &\KwellFormed(\overline{x \cln s}, ( S, \Sigma )) = \KinKSortList(s, S),
   \\
@@ -962,7 +982,7 @@ The symbols $\KwellFormed$ and $\KgetSort$ are axiomatized by the following axio
   \\
   & \KwellFormed(\overline{\neg_s \varphi}, \Sigma) = (\KgetSort(\varphi, \Sigma) = s),
   \\
-  & \KwellFormed(\overline{\sigma(\varphi_1, \dots, \varphi_n)}, \Sigma) = TODO,
+  & \KwellFormed(\overline{\sigma(L)}, \Sigma) = \KsymbolDeclared(\sigma, \Sigma) \wedge (\KMapKgetSort(L, \Sigma) = \KgetArgumentSorts(\sigma)),
   \\
   & \KwellFormed(\overline{\exists_{s_1}^{s_2} x . \varphi}, ( S, \Sigma )) = \KinKSortList(s_1, S) \wedge (\KgetSort(\varphi, (S, \Sigma)) = s_2),
   \\
@@ -972,9 +992,13 @@ The symbols $\KwellFormed$ and $\KgetSort$ are axiomatized by the following axio
   \\
   & \KgetSort(\overline{\neg_s \varphi}, \Sigma) = (\KgetSort(\varphi, \Sigma) = s) \wedge s,
   \\
-  & \KgetSort(\overline{\sigma(\varphi_1,\dots,\varphi_n)}, ( S, \Sigma )) = (TODO) \wedge s,
+  & \KgetSort(\overline{\sigma(L)}, \Sigma) = \KwellFormed(\overline{\sigma(L)}, \Sigma) \wedge \KgetReturnSort(\sigma),
   \\
-  & \KgetSort(\overline{\exists_{s_1}^{s_2} x . \varphi}, \Sigma) = \KinKSortList(s_1, S) \wedge (\KgetSort(\varphi, \Sigma) = s_2) \wedge s_2.
+  & \KgetSort(\overline{\exists_{s_1}^{s_2} x . \varphi}, \Sigma) = \KinKSortList(s_1, S) \wedge (\KgetSort(\varphi, \Sigma) = s_2) \wedge s_2
+  \\
+  & \KMapKgetSort(\KnilKPatternList, \Sigma) = \KnilKSortList,
+  \\
+  & \KMapKgetSort((\varphi, L), \Sigma) = (\KgetSort(\varphi, \Sigma), \KMapKgetSort(L, \Sigma)).
 \end{align*}
 
 \subsection{Finite Matching Logic Theories}
@@ -984,8 +1008,28 @@ $$\Ktheory \colon \KSignature \times \KPatternList \to \KTheory,$$
 which takes a finite signature and a finite list of patterns as axioms, and returns the finite matching logic theory. 
 
 \begin{notation}
-	As a convention, we use $A$ for $\KPatternList$ variables as it appears in $\Ktheory(\Sigma, A)$, which is often abbreviated as $( \Sigma, A )$. The theory $( ( S, \Sigma ), A )$ is often abbreviated to just $( S, \Sigma, A )$, too. We use $T$ for $\KTheory$ variables.  
+	As a convention, we use $A$ for $\KPatternList$ variables as it appears in $\Ktheory(\Sigma, A)$, which is often abbreviated as $( \Sigma, A )$. The theory $( ( S, \Sigma ), A )$ is often abbreviated to $( S, \Sigma, A )$. We use $T$ for $\KTheory$ variables.  
 \end{notation}
+
+Common operations on theories can be defined as functional symbols.
+The predicate symbol
+\begin{equation*}
+  \KwellFormedTheory \colon \KTheory \to \KPred
+\end{equation*}
+takes a theory and decides whether the theory is well-formed, in the sense that every axioms of the theory are well-formed with respect to the theory's signature.
+It is defined with the next axiom:
+\begin{equation*}
+\KwellFormedTheory(\Ktheory(\Sigma, A)) = \KMapReduceKwellFormed(A, \Sigma),
+\end{equation*}
+in which the predicate symbol
+$$ \KMapReduceKwellFormed \colon \KPatternList \times \KSignature \to \KPred$$
+takes a list of patterns and decides whether all patterns are well-formed in the given signature.
+The predicate symbol $\KMapReduceKwellFormed$ is defined by
+\begin{align*}
+ & \KMapReduceKwellFormed(\KnilKPatternList, \Sigma),\\
+ & \KMapReduceKwellFormed((\varphi, L), \Sigma) = \KwellFormed(\varphi, \Sigma) \wedge \KMapReduceKwellFormed(L, \Sigma).
+\end{align*}
+
 
 \subsection{Matching Logic Proof System}
 \label{sec:ml-proof-system-finite-case}
