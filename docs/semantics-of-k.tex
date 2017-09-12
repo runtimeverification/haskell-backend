@@ -1,59 +1,73 @@
 \documentclass[UTF8,11pt]{article}
 
+  % Package for using the full page.
   \usepackage{fullpage}
+  
+  % Package for writing algorithms (why do we need this one?).
   \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
 
-  %\usepackage{xcolor}
+  
   \usepackage[pdftex,dvipsnames]{xcolor}  % Coloured text etc.
   \usepackage{xargs}                      % Use more than one optional
                                           % parameter in a new commands
 
   % Select what to do with todonotes: 
   % \usepackage[disable]{todonotes} % notes not showed
-  %  \usepackage[draft]{todonotes} % notes showed
+  % \usepackage[draft]  {todonotes} % notes showed
   \usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
   \newcommandx{\unsure}[2][1=]
-    {\todo[linecolor=red,backgroundcolor=red!25,bordercolor=red,#1]{#2}\xspace{}}
+    {\todo[linecolor=red,backgroundcolor=red!25,
+    	   bordercolor=red,#1]
+     {#2}\xspace{}}
   \newcommandx{\change}[2][1=]
-    {\todo[linecolor=blue,backgroundcolor=blue!25,bordercolor=blue,#1]{#2}\xspace{}}
+    {\todo[linecolor=blue,backgroundcolor=blue!25,
+    	   bordercolor=blue,#1]
+     {#2}\xspace{}}
   \newcommandx{\info}[2][1=]
-    {\todo[linecolor=OliveGreen,backgroundcolor=OliveGreen!25,bordercolor=OliveGreen,#1]{#2}}
+    {\todo[linecolor=OliveGreen,backgroundcolor=OliveGreen!25,
+    	   bordercolor=OliveGreen,#1]
+     {#2}}
   \newcommandx{\improvement}[2][1=]
-    {\todo[linecolor=Plum,backgroundcolor=Plum!25,bordercolor=Plum,#1]{#2}\xspace{}}
+    {\todo[linecolor=Plum,backgroundcolor=Plum!25,bordercolor=Plum,#1]
+     {#2}\xspace{}}
   \newcommandx{\thiswillnotshow}[2][1=]
-    {\todo[disable,#1]{#2}\xspace{}}
+    {\todo[disable,#1]
+     {#2}\xspace{}}
 
   % Select what to do with command \comment:  
   % \newcommand{\comment}[1]
       {}                                    %comment not showed
   \newcommand{\comment}[1]
     {\par {\bfseries \color{blue} #1 \par}} %comment showed
-    
+  
+  % Use AMS Math package.
   \usepackage{amsmath}
   \usepackage{amssymb}
-  
   \usepackage{amsthm}
-  \usepackage{xspace}
   
   % Declare a global counter for theorem environments:
   \newcounter{thmcounter}
   
-  % Define new theorem styles:
+  % Define new theorem styles and theorem environments.
   \theoremstyle{plain}
-  \newtheorem{theorem}[thmcounter]{Theorem}
-  \newtheorem{corollary}[thmcounter]{Corollary}
-  \newtheorem{lemma}[thmcounter]{Lemma}
+  
+  \newtheorem{theorem}    [thmcounter]{Theorem}
+  \newtheorem{corollary}  [thmcounter]{Corollary}
+  \newtheorem{lemma}      [thmcounter]{Lemma}
   \newtheorem{proposition}[thmcounter]{Proposition}
+  
   \theoremstyle{definition}
-  \newtheorem{definition}[thmcounter]{Definition}
-  \newtheorem{example}[thmcounter]{Example}
+  
+  \newtheorem{definition} [thmcounter]{Definition}
+  \newtheorem{example}    [thmcounter]{Example}
+  
   \theoremstyle{remark}
-  \newtheorem{remark}[thmcounter]{Remark}
-  \newtheorem{notation}[thmcounter]{Notation}
+  
+  \newtheorem{remark}     [thmcounter]{Remark}
+  \newtheorem{notation}   [thmcounter]{Notation}
   
   
   % Package for changing fonts in the Verbatim environment:
-  \usepackage{xcolor}
   \usepackage{fancyvrb}
   
   % Package for writing captions for align environment:
@@ -78,24 +92,13 @@
   % Package for underlining and strikethrough texts.
   \usepackage[normalem]{ulem}
   
-  % Define text over equality
-  \usepackage{mathtools}
-  \newcommand{\xeq}[1]
-    {\stackrel{\mathclap{\normalfont\tiny\mbox{#1}}}{=}}
-    
   % Package for display-mode quotations.
   \usepackage{csquotes}
   
-  % Define double-bracket [[P]] (known as the semantics bracket)
+  % Define double-bracket [[P]]
   \usepackage{stmaryrd}
-  \newcommand{\Bracket}[1]
-    {\llbracket#1\rrbracket}
+  \newcommand{\Bracket}[1]{\llbracket#1\rrbracket}
     
-  % Package for writing inference rules and formal proofs
-  \usepackage{proof}
-  % Writing labels about inference rules
-  \newcommand{\rl}[1]{\text{\scriptsize{(#1)}}}
-  
   % Package for writing BNF syntax
   \usepackage{syntax}
   
@@ -103,9 +106,29 @@
   \usepackage[utf8]{inputenc}
   \usepackage{cleveref}
   \crefname{section}{§}{§§}
-  \Crefname{section}{§}{§§}
 
+  % Define the curly K:
   \newcommand{\K}{\mbox{$\mathbb{K}$}\xspace}
+  
+  % Define commands that are used in Sec 2.  
+  \newcommand{\Nat}{\textit{Nat}}
+  \newcommand{\Int}{\textit{Int}}
+  \newcommand{\Bool}{\textit{Bool}}
+  \newcommand{\List}{\textit{List}}
+  \newcommand{\nil}{\textit{nil}}
+  \newcommand{\cons}{\textit{cons}}
+  \newcommand{\append}{\textit{append}}
+  \newcommand{\Bag}{\textit{Bag}}
+  \newcommand{\Set}{\textit{Set}}
+  \newcommand{\Map}{\textit{Map}}
+  \newcommand{\parametric}[2]{{#1}\raisebox{.2ex}{\texttt{\footnotesize{\{}}}#2\raisebox{.2ex}{\texttt{\footnotesize{\}}}}}
+  \newcommand{\parametricscript}[2]{{#1}\raisebox{.2ex}{\texttt{\tiny{\{}}}#2\raisebox{.2ex}{\texttt{\tiny{\}}}}}
+  
+  \newcommand{\Mod}{\textit{Mod}}
+  \newcommand{\denote}[1]{\llbracket{#1}\rrbracket}
+  \newcommand{\reduct}[2]{\mbox{${#1}\!\!\upharpoonright_{#2}$}}
+  
+  \newcommand{\builtin}{\textit{builtin}}
   
   % Define PATTERNS with ATTERNS are small capitals:
   \newcommand{\PATTERNS}{\text{P\textsc{atterns}}}
@@ -137,6 +160,8 @@
   \newcommand{\Ksort}{\mathit{Ksort}}
   \newcommand{\KSymbol}{\mathit{KSymbol}}
   \newcommand{\Ksymbol}{\mathit{Ksymbol}}
+  \newcommand{\KgetArgumentSorts}{\mathit{KgetArgumentSorts}}
+  \newcommand{\KgetReturnSort}{\mathit{KgetReturnSort}}
   
   % Sec 3.4 Finite Lists
   \newcommand{\XList}{\mathit{XList}}
@@ -184,21 +209,7 @@
   \newcommand{\Kfloor}{\mathit{Kfloor}}
   \newcommand{\Kceil}{\mathit{Kceil}}
   
-  % Mifix symbols
-  \newcommand{\kand}{\wedge}
-  \newcommand{\kor}{\vee}
-  \newcommand{\kimplies}{\to}
-  \newcommand{\kiff}{\leftrightarrow}
-  \newcommand{\knot}{\neg}
-  \newcommand{\kexists}{\exists}
-  \newcommand{\kforall}{\forall}
-  \newcommand{\kequals}{=}
-  \newcommand{\kcontains}{\supseteq}
-  \newcommand{\kin}{\in}
-  \newcommand{\kfloor}{\floor}
-  \newcommand{\kceil}{\ceil}
-  \newcommand{\ktop}{\top}
-  \newcommand{\kbottom}{\bot}
+
   
   \newcommand{\KgetFvs}{\mathit{KgetFvs}}
   \newcommand{\KMapReduceKgetFvs}{\mathit{KMapReduceKgetFvs}}
@@ -206,6 +217,8 @@
   
   \newcommand{\KSignature}{\mathit{KSignature}}
   \newcommand{\Ksignature}{\mathit{Ksignature}}
+  \newcommand{\KgetSorts}{\mathit{KgetSorts}}
+  \newcommand{\KgetSymbols}{\mathit{KgetSymbols}}
   
   \newcommand{\KwellFormed}{\mathit{KwellFormed}}
   \newcommand{\KgetSort}{\mathit{KgetSort}}
@@ -224,24 +237,7 @@
   % Use quotation marks "..." in math mode.
   \newcommand{\quot}[1]{\mathrm{``#1"}}
 
-\newcommand{\Nat}{\textit{Nat}}
-\newcommand{\Int}{\textit{Int}}
-\newcommand{\Bool}{\textit{Bool}}
-\newcommand{\List}{\textit{List}}
-\newcommand{\nil}{\textit{nil}}
-\newcommand{\cons}{\textit{cons}}
-\newcommand{\append}{\textit{append}}
-\newcommand{\Bag}{\textit{Bag}}
-\newcommand{\Set}{\textit{Set}}
-\newcommand{\Map}{\textit{Map}}
-\newcommand{\parametric}[2]{{#1}\raisebox{.2ex}{\texttt{\footnotesize{\{}}}#2\raisebox{.2ex}{\texttt{\footnotesize{\}}}}}
-\newcommand{\parametricscript}[2]{{#1}\raisebox{.2ex}{\texttt{\tiny{\{}}}#2\raisebox{.2ex}{\texttt{\tiny{\}}}}}
 
-\newcommand{\Mod}{\textit{Mod}}
-\newcommand{\denote}[1]{\llbracket{#1}\rrbracket}
-\newcommand{\reduct}[2]{\mbox{${#1}\!\!\upharpoonright_{#2}$}}
-
-\newcommand{\builtin}{\textit{builtin}}
 
   % Title and authors
   \title{The Semantics of \K}
@@ -680,6 +676,17 @@ The only constructor of the sort $\KSymbol$ is the functional symbol:
 \Ksymbol \colon \KString \times \KSortList\footnote{The sort $\KSortList$ is defined in Section~\cref{sec:finite-lists}} \times \KSort \to \KSymbol,
 \end{equation*}
 where the first argument is called the \emph{name} of the symbol, and the rest arguments are called the \emph{argument sorts} and the \emph{return sort} of the symbol. 
+Two getter functions, $\KgetArgumentSorts$ and $\KgetReturnSort$, are defined as functional symbols:
+\begin{align*}
+ & \KgetArgumentSorts \colon \KSymbol \to \KSortList, \\
+ & \KgetReturnSort    \colon \KSymbol \to \KSort,
+\end{align*}
+with axioms
+\begin{align*}
+ & \KgetArgumentSorts(\Ksymbol(f, S, s)) = S,\\
+ & \KgetReturnSort(\Ksymbol(f, S, s)) = s,
+\end{align*}
+where $f$ is a $\KString$ variable, $S$ is a $\KSortList$ variable, and $s$ is a $\KSort$ variable.
 
 \subsection{Finite Lists}
 \label{sec:finite-lists}
@@ -740,7 +747,7 @@ It is axiomatized by the next two axioms:
 
 The sort $\KPattern$ is the sort for matching logic patterns.
 It has five functional constructors:\info{Any reason why $\Kexists$ does
-not take a variable?}
+not take a variable? Xiaohong: Because there isn't a sort $\mathit{KVariable}$ which is a subsort of $\KPattern$. }
 \begin{align*}
   & \Kvariable \colon \KString \times \KSort \to \KPattern,
   \\
@@ -808,7 +815,7 @@ Functional symbols that do not belong to the five constructors of $\KPattern$ ar
 
 \begin{notation}
 	As one may have already noticed, patterns of sort $\KPattern$ get huge rather quickly.
-	The following notation conventions are adopted to write $\KPattern$ patterns in a more compact way, by putting a bar upon their normal mixfix forms:\info{$\sigma$ is a $\Ksymbol(...)$ thing, isn't it?}
+	The following notation conventions are adopted to write $\KPattern$ patterns in a more compact way, by putting a bar upon their normal mixfix forms:\info{$\sigma$ is a $\Ksymbol(...)$ thing, isn't it? Xiaohong: Yes, it is. And $\sigma$ is a $\KSymbol$ variable. I will add that to the notation convention. }
 	\begin{align*}
 	  & \overline{x \cln s} \equiv \Kvariable(x, s),
 	  \\
@@ -857,11 +864,11 @@ The symbols $\KgetFvs$ and $\KMapReduceKgetFvs$ have the following axioms:
   \\
   & \KgetFvs(\overline{\sigma(L)}) = \KMapReduceKgetFvs(L),
   \\
-  & \KgetFvs(\overline{\varphi \kand_s \psi}) = \KgetFvs(\varphi), \KgetFvs(\psi),
+  & \KgetFvs(\overline{\varphi \wedge_s \psi}) = \KgetFvs(\varphi), \KgetFvs(\psi),
   \\
-  & \KgetFvs(\overline{\knot_s \varphi}) = \KgetFvs(\varphi),
+  & \KgetFvs(\overline{\neg_s \varphi}) = \KgetFvs(\varphi),
   \\
-  & \KgetFvs(\overline{\kexists_{s_1}^{s_2} x . \varphi}) = \KdeleteKPatternList(\overline{x \cln s_1}, \KgetFvs(\varphi)),
+  & \KgetFvs(\overline{\exists_{s_1}^{s_2} x . \varphi}) = \KdeleteKPatternList(\overline{x \cln s_1}, \KgetFvs(\varphi)),
   \\
   & \KMapReduceKgetFvs(\KnilKPatternList) = \KnilKPatternList,
   \\
@@ -906,7 +913,7 @@ The functional symbols $\Ksubstitute$ and $\KMapKsubstitite$ have the following 
   \\
   & \overline{(\neg_{s'} \varphi)[\psi / z \cln s]} = \overline{\neg_{s'} \varphi[\psi / z \cln s]},
   \\
-  & \overline{(\kexists_{s_1}^{s_2}x . \varphi)[\psi/z \cln s]} = \exists y . (y = \KfreshName(\varphi, \psi, \overline{x \cln s_1})) \wedge \overline{\kexists_{s_1}^{s_2} y . (\varphi[y/x \cln s_1][\psi/z \cln s])},
+  & \overline{(\exists_{s_1}^{s_2}x . \varphi)[\psi/z \cln s]} = \exists y . (y = \KfreshName(\varphi, \psi, \overline{x \cln s_1})) \wedge \overline{\exists_{s_1}^{s_2} y . (\varphi[y/x \cln s_1][\psi/z \cln s])},
   \\
   & \overline{\KnilKPatternList[\psi / z \cln s]} = \KnilKPatternList,
   \\
@@ -920,6 +927,18 @@ The sort $\KSignature$ is the sort for finite matching logic signatures, and it 
 \Ksignature \colon \KSortList \times \KSymbolList \to \KSignature,
 \end{equation*}
 which takes a finite list of sorts and a finite list of symbols as arguments, and returns the corresponding finite signature.
+Two getter functions, $\KgetSorts$ and $\KgetSymbols$, are defined as functional symbols:
+\begin{align*}
+  & \KgetSorts \colon \KSignature \to \KSortList,
+  \\
+  & \KgetSymbols \colon \KSignature \to \KSymbolList,
+\end{align*}
+with axioms
+\begin{align*}
+  & \KgetSorts(\Ksignature(S, \Sigma)) = S,
+  \\
+  & \KgetSymbols(\Ksignature(S, \Sigma)) = \Sigma.
+\end{align*}
 
 \begin{notation}
 	As a convention, we use $\Sigma$ for $\KSignature$ variables. 
@@ -939,23 +958,23 @@ The symbols $\KwellFormed$ and $\KgetSort$ are axiomatized by the following axio
 \begin{align*}
   &\KwellFormed(\overline{x \cln s}, ( S, \Sigma )) = \KinKSortList(s, S),
   \\
-  & \KwellFormed(\overline{\varphi \kand_s \psi}, \Sigma) = (\KgetSort(\varphi, \Sigma) = s) \wedge (\KgetSort(\psi, \Sigma) = s),
+  & \KwellFormed(\overline{\varphi \wedge_s \psi}, \Sigma) = (\KgetSort(\varphi, \Sigma) = s) \wedge (\KgetSort(\psi, \Sigma) = s),
   \\
-  & \KwellFormed(\overline{\knot_s \varphi}, \Sigma) = (\KgetSort(\varphi, \Sigma) = s),
+  & \KwellFormed(\overline{\neg_s \varphi}, \Sigma) = (\KgetSort(\varphi, \Sigma) = s),
   \\
   & \KwellFormed(\overline{\sigma(\varphi_1, \dots, \varphi_n)}, \Sigma) = TODO,
   \\
-  & \KwellFormed(\overline{\kexists_{s_1}^{s_2} x . \varphi}, ( S, \Sigma )) = \KinKSortList(s_1, S) \wedge (\KgetSort(\varphi, (S, \Sigma)) = s_2),
+  & \KwellFormed(\overline{\exists_{s_1}^{s_2} x . \varphi}, ( S, \Sigma )) = \KinKSortList(s_1, S) \wedge (\KgetSort(\varphi, (S, \Sigma)) = s_2),
   \\
   & \KgetSort(\overline{x \cln s}, ( S, \Sigma )) = (s \in S) \wedge s,
   \\
-  & \KgetSort(\overline{\varphi \kand_s \psi}, \Sigma) = (\KgetSort(\varphi, \Sigma) = s) \wedge (\KgetSort(\psi, \Sigma) = s) \wedge s,
+  & \KgetSort(\overline{\varphi \wedge_s \psi}, \Sigma) = (\KgetSort(\varphi, \Sigma) = s) \wedge (\KgetSort(\psi, \Sigma) = s) \wedge s,
   \\
-  & \KgetSort(\overline{\knot_s \varphi}, \Sigma) = (\KgetSort(\varphi, \Sigma) = s) \wedge s,
+  & \KgetSort(\overline{\neg_s \varphi}, \Sigma) = (\KgetSort(\varphi, \Sigma) = s) \wedge s,
   \\
   & \KgetSort(\overline{\sigma(\varphi_1,\dots,\varphi_n)}, ( S, \Sigma )) = (TODO) \wedge s,
   \\
-  & \KgetSort(\overline{\kexists_{s_1}^{s_2} x . \varphi}, \Sigma) = \KinKSortList(s_1, S) \wedge (\KgetSort(\varphi, \Sigma) = s_2) \wedge s_2.
+  & \KgetSort(\overline{\exists_{s_1}^{s_2} x . \varphi}, \Sigma) = \KinKSortList(s_1, S) \wedge (\KgetSort(\varphi, \Sigma) = s_2) \wedge s_2.
 \end{align*}
 
 \subsection{Finite Matching Logic Theories}
@@ -1002,40 +1021,40 @@ $A \vdash \varphi$ if $\varphi \in A$.
 \paragraph{Rule (K1).}
 $\vdash \varphi \to (\psi \to \varphi)$.
 \begin{equation*}
-\Kdeduce(T, \overline{\varphi \kimplies_s (\psi \kimplies_s \varphi)}).
+\Kdeduce(T, \overline{\varphi \implies_s (\psi \implies_s \varphi)}).
 \end{equation*}
 
 \paragraph{Rule (K2).}
 $\vdash (\varphi_1 \to (\varphi_2 \to \varphi_3)) \to ((\varphi_1 \to \varphi_2) \to (\varphi_1 \to \varphi_3))$.
 \begin{equation*}
 \Kdeduce(T, 
-\overline{(\varphi_1 \kimplies_s (\varphi_2 \kimplies_s \varphi_3)) \kimplies_s ((\varphi_1 \kimplies_s \varphi_2) \kimplies_s (\varphi_1 \kimplies_s \varphi_3))}).
+\overline{(\varphi_1 \implies_s (\varphi_2 \implies_s \varphi_3)) \implies_s ((\varphi_1 \implies_s \varphi_2) \implies_s (\varphi_1 \implies_s \varphi_3))}).
 \end{equation*}
 
 \paragraph{Rule (K3).}
 $\vdash (\neg \psi \to \neg \varphi) \to (\varphi \to \psi)$.
 \begin{equation*}
-\Kdeduce(T, \overline{(\knot_s \psi \kimplies_s \knot_s \varphi) \kimplies_s (\varphi 
-\kimplies_s \psi)}).
+\Kdeduce(T, \overline{(\neg_s \psi \implies_s \neg_s \varphi) \implies_s (\varphi 
+\implies_s \psi)}).
 \end{equation*}
 
 \paragraph{Rule (K4).}
 $\vdash \forall x . \varphi \to \varphi[y/x]$.
 \begin{equation*}
-\Kdeduce(T, \overline{\kforall_{s_1}^{s_2}  x . \varphi \kimplies_{s_2} \varphi[y \cln s_1 / x \cln s_1]}).
+\Kdeduce(T, \overline{\forall_{s_1}^{s_2}  x . \varphi \implies_{s_2} \varphi[y \cln s_1 / x \cln s_1]}).
 \end{equation*}
 
 \paragraph{Rule (K5).}
 $\vdash \forall x . (\varphi \to \psi) \to (\varphi \to \forall x . \psi)$ if $x$ does not occur free in $\varphi$. 
 \begin{equation*}
 \neg\KinKPatternList(\overline{x \cln s_1}, \KgetFvs(\varphi))
-\to \Kdeduce(T, \overline{\kforall_{s_1}^{s_2} x . (\varphi \kimplies_{s_2} \psi) \kimplies_{s_2} (\varphi \kimplies_{s_2} \kforall_{s_1}^{s_2} x . \psi)}).
+\to \Kdeduce(T, \overline{\forall_{s_1}^{s_2} x . (\varphi \implies_{s_2} \psi) \implies_{s_2} (\varphi \implies_{s_2} \forall_{s_1}^{s_2} x . \psi)}).
 \end{equation*}
 
 \paragraph{Rule (K6).}
 $\vdash (\varphi_1 = \varphi_2) \to (\psi[\varphi_1/x] \to \psi[\varphi_2/x])$.
 \begin{equation*}
-\Kdeduce(T, \overline{(\varphi_1 \kequals_{s_1}^{s_2} \varphi_2) \kimplies_{s_2} (\psi[\varphi_1/x \cln s] \kimplies_{s_2} \psi[\varphi_2/x \cln s])}).
+\Kdeduce(T, \overline{(\varphi_1 =_{s_1}^{s_2} \varphi_2) \implies_{s_2} (\psi[\varphi_1/x \cln s] \implies_{s_2} \psi[\varphi_2/x \cln s])}).
 \end{equation*}
 
 \paragraph{Rule (Df).}
@@ -1047,25 +1066,25 @@ $\vdash \ceil{x}$.
 \paragraph{Rule (M1).}
 $\vdash (x \in y) = (x = y)$.
 \begin{equation*}
-\Kdeduce(T, \overline{(x \kin_{s_1}^{s_2} y) \kequals_{s_2}^{s_3} (x \kequals_{s_1}^{s_2} y)}).
+\Kdeduce(T, \overline{(x \in_{s_1}^{s_2} y) =_{s_2}^{s_3} (x =_{s_1}^{s_2} y)}).
 \end{equation*}
 
 \paragraph{Rule (M2).}
 $\vdash x \in (\varphi \wedge \psi) = (x \in \varphi) \wedge (x \in \psi).$
 \begin{equation*}
-\Kdeduce(T, \overline{x \kin_{s_1}^{s_2} (\varphi \kand_{s_1} \psi) \kequals_{s_2}^{s_3} (x \kin_{s_1}^{s_2} \varphi) \kand_{s_2} (x \kin_{s_1}^{s_2} \psi)}).
+\Kdeduce(T, \overline{x \in_{s_1}^{s_2} (\varphi \wedge_{s_1} \psi) =_{s_2}^{s_3} (x \in_{s_1}^{s_2} \varphi) \wedge_{s_2} (x \in_{s_1}^{s_2} \psi)}).
 \end{equation*}
 
 \paragraph{Rule (M3).}
 $\vdash x \in \neg \varphi = \neg (x \in \varphi)$.
 \begin{equation*}
-\Kdeduce(T, \overline{x \kin_{s_1}^{s_2} \knot_{s_1} \varphi \kequals_{s_2}^{s_3} \knot_{s_2} (x \kin_{s_1}^{s_2} \varphi)}).
+\Kdeduce(T, \overline{x \in_{s_1}^{s_2} \neg_{s_1} \varphi =_{s_2}^{s_3} \neg_{s_2} (x \in_{s_1}^{s_2} \varphi)}).
 \end{equation*}
 
 \paragraph{Rule (M4).}
 $\vdash x \in \forall y . \varphi = \forall y . x \in \varphi$ if $x$ is distinct from $y$.
 \begin{equation*}
-(\overline{x \cln s_1} \neq \overline{y \cln s_2})  \to \Kdeduce(T, \overline{(x \kin_{s_1}^{s_3} \kforall_{s_2}^{s_1} y . \varphi) \kequals_{s_3}^{s_4} (\kforall_{s_2}^{s_3} y . (x \kin_{s_1}^{s_3} \varphi))}).
+(\overline{x \cln s_1} \neq \overline{y \cln s_2})  \to \Kdeduce(T, \overline{(x \in_{s_1}^{s_3} \forall_{s_2}^{s_1} y . \varphi) =_{s_3}^{s_4} (\forall_{s_2}^{s_3} y . (x \in_{s_1}^{s_3} \varphi))}).
 \end{equation*}
 
 \paragraph{Rule (M5).}
@@ -1074,8 +1093,8 @@ $\vdash x \in \sigma(\dots \varphi_i \dots) = \exists y . y \in \varphi_i \wedge
 & (\overline{x \cln s_1} \neq \overline{y \cln s_2}) 
   \wedge \neg \KinKPatternList(\overline{y \cln s_2}, \KgetFvs(\overline{\sigma(L, \varphi_i, R)}))
 \\
-\to & \Kdeduce(T, \overline{x \cln s_1 \kin_{s_1}^{s_3} \sigma(L, 
-\varphi_i, R) \kequals_{s_3}^{s_4} \kexists_{s_2}^{s_4} y . (y \cln s_2 \kin_{s_2}^{s_3} \varphi_i \kand x \cln s_1 \kin_{s_1}^{s_3} \sigma(L, y, R))}),
+\to & \Kdeduce(T, \overline{x \cln s_1 \in_{s_1}^{s_3} \sigma(L, 
+\varphi_i, R) =_{s_3}^{s_4} \exists_{s_2}^{s_4} y . (y \cln s_2 \in_{s_2}^{s_3} \varphi_i \wedge x \cln s_1 \in_{s_1}^{s_3} \sigma(L, y, R))}),
 \end{align*}
 where $L$ and $R$ are $\KPatternList$ variables, and we write $(L, \varphi, R)$ as a shorthand of
 $$(L, \varphi, R) \equiv \KappendKPatternList(L, \KconsKPatternList(\varphi, R)).$$
@@ -1083,26 +1102,26 @@ $$(L, \varphi, R) \equiv \KappendKPatternList(L, \KconsKPatternList(\varphi, R))
 \paragraph{Rule (Modus Ponens).}
 If $\vdash \varphi$ and $\vdash \varphi \to \psi$, then $\vdash \psi$.
 \begin{equation*}
-\Kdeduce(T, \varphi) \wedge \Kdeduce(T, \overline{\varphi \kimplies_s \psi}) \to 
+\Kdeduce(T, \varphi) \wedge \Kdeduce(T, \overline{\varphi \implies_s \psi}) \to 
 \Kdeduce(T, \psi).
 \end{equation*}
 
 \paragraph{Rule (Universal Generalization).}
 If $\vdash \varphi$, then $\vdash \forall x . \varphi$.
 \begin{equation*}
-\Kdeduce(T, \varphi) \to \Kdeduce(T, \overline{\kforall_{s_1}^{s_2} x . \varphi}).
+\Kdeduce(T, \varphi) \to \Kdeduce(T, \overline{\forall_{s_1}^{s_2} x . \varphi}).
 \end{equation*}
 
 \paragraph{Rule (Membership Introduction).}
 If $\vdash \varphi$ and $x$ does not occur free in $\varphi$, then $\vdash x \in \varphi$.
 \begin{equation*}
-\Kdeduce(T, \varphi) \wedge \neg \KinKPatternList(\overline{x \cln s_1}, \KgetFvs(\varphi)) \to \Kdeduce(T, \overline{x \cln s_1 \kin_{s_1}^{s_2} \varphi}).
+\Kdeduce(T, \varphi) \wedge \neg \KinKPatternList(\overline{x \cln s_1}, \KgetFvs(\varphi)) \to \Kdeduce(T, \overline{x \cln s_1 \in_{s_1}^{s_2} \varphi}).
 \end{equation*}
 
 \paragraph{Rule (Membership Elimination).}
 If $\vdash x \in \varphi$ and $x$ does not occur free in $\varphi$, then $\vdash \varphi$.
 \begin{equation*}
-\Kdeduce(T, \overline{x \cln s_1 \kin_{s_1}^{s_2} \varphi}) \wedge\neg \KinKPatternList(\overline{x \cln s_1}, \KgetFvs(\varphi)) \to \Kdeduce(T, \varphi).
+\Kdeduce(T, \overline{x \cln s_1 \in_{s_1}^{s_2} \varphi}) \wedge\neg \KinKPatternList(\overline{x \cln s_1}, \KgetFvs(\varphi)) \to \Kdeduce(T, \varphi).
 \end{equation*}
 
 \subsection{Faithfulness: Finite Case}
@@ -1174,8 +1193,6 @@ For that reason, we introduce the next definition.
     \end{align*}
 \end{definition}
 
-\newcommand{\bracket}[1]{\llbracket #1 \rrbracket}
-
 In order to prove Theorem~\ref{thm:faithfulness-finite}, we introduce a canonical model of $\Kfinite$.
 
 \begin{definition}[Canonical model of $\Kfinite$]
@@ -1224,39 +1241,39 @@ In order to prove Theorem~\ref{thm:faithfulness-finite}, we introduce a canonica
 	  \begin{cases*}
 	    \emptyset & if $\KwellFormed_M(\Sigma, \varphi) = \emptyset$,
 	    \\
-	    \{ \star \} & if $\bracket{T} \vdash \bracket{\varphi}$,
+	    \{ \star \} & if $\Bracket{T} \vdash \Bracket{\varphi}$,
 	    \\
-	    \emptyset & if $\bracket{T} \not\vdash \bracket{\varphi}$,
+	    \emptyset & if $\Bracket{T} \not\vdash \Bracket{\varphi}$,
 	  \end{cases*}
 	\end{equation*}
-	where the \emph{semantics bracket} $\bracket{\_}$ is defined (only on well-formed $T$ and $\varphi$) as follows:
+	where the \emph{semantics bracket} $\Bracket{\_}$ is defined (only on well-formed $T$ and $\varphi$) as follows:
 	\begin{center}\begin{tabular}{l}
-		$\bracket{T}$ is the matching logic theory $(\Sigma, \bracket{A})$, \\
-		$\bracket{A} = \{ \bracket{\psi} | \mid \psi \in A \}$, \\
-		$\bracket{\varphi} =
+		$\Bracket{T}$ is the matching logic theory $(\Sigma, \Bracket{A})$, \\
+		$\Bracket{A} = \{ \Bracket{\psi} | \mid \psi \in A \}$, \\
+		$\Bracket{\varphi} =
 		 \begin{cases*}
 		   x \cln s & if $\varphi$ is $\Kvariable(x, s)$, \\
-		   \sigma(\bracket{\varphi_1},\dots,\bracket{\varphi_n}) & if $\varphi$ is $\Kapplication(\sigma, (\varphi_1,\dots,\varphi_n))$,\\
-		   \bracket{\varphi_1} \wedge \bracket{\varphi_2} & if $\varphi$ is $\Kand(\varphi_1,\varphi_2,s)$,\\
-		   \neg \bracket{\varphi_1} & if $\varphi$ is $\Knot(\varphi_1, s)$,\\
-		   \exists x . \bracket{\varphi_1} & if $\varphi$ is $\Kexists(x, s_1, \varphi_1, s_2)$.
+		   \sigma(\Bracket{\varphi_1},\dots,\Bracket{\varphi_n}) & if $\varphi$ is $\Kapplication(\sigma, (\varphi_1,\dots,\varphi_n))$,\\
+		   \Bracket{\varphi_1} \wedge \Bracket{\varphi_2} & if $\varphi$ is $\Kand(\varphi_1,\varphi_2,s)$,\\
+		   \neg \Bracket{\varphi_1} & if $\varphi$ is $\Knot(\varphi_1, s)$,\\
+		   \exists x . \Bracket{\varphi_1} & if $\varphi$ is $\Kexists(x, s_1, \varphi_1, s_2)$.
 		 \end{cases*}$
 	\end{tabular}\end{center}
 
     It is tedious but straightforward to verify that $\Kdeduce_M$ satisfies all axioms about $\Kdeduce$ that we introduced in Section~\cref{sec:ml-proof-system-finite-case}.
     For example, the Rule (K1)
     \begin{equation*}
-    \Kdeduce(T, \overline{\varphi \kimplies_s (\psi \kimplies_s \varphi)}).
+    \Kdeduce(T, \overline{\varphi \implies_s (\psi \implies_s \varphi)}).
     \end{equation*}
     holds in $\Kfinite$ because
-    $$\bracket{T} \vdash \bracket{\varphi} \to (\bracket{\psi} \to \bracket{\varphi});$$
+    $$\Bracket{T} \vdash \Bracket{\varphi} \to (\Bracket{\psi} \to \Bracket{\varphi});$$
     The Rule (Modus Ponens)
     \begin{equation*}
-    \Kdeduce(T, \varphi) \wedge \Kdeduce(T, \overline{\varphi \kimplies_s \psi}) \to 
+    \Kdeduce(T, \varphi) \wedge \Kdeduce(T, \overline{\varphi \implies_s \psi}) \to 
     \Kdeduce(T, \psi).
     \end{equation*}
     holds in $\Kfinite$ because
-    $$\text{if $\bracket{T} \vdash \bracket{\varphi}$ and $\bracket{T} \vdash \bracket{\varphi} \to \bracket{\psi}$, then $\bracket{T} \vdash \bracket{\psi}$}.$$
+    $$\text{if $\Bracket{T} \vdash \Bracket{\varphi}$ and $\Bracket{T} \vdash \Bracket{\varphi} \to \Bracket{\psi}$, then $\Bracket{T} \vdash \Bracket{\psi}$}.$$
     
     Readers are welcomed to verify the remaining axioms in $\Kfinite$ also hold in $M_K$.
     We omit them here.
@@ -1279,9 +1296,9 @@ Now we are in a good shape to prove Theorem~\ref{thm:faithfulness-finite}.
 	Since the matching logic proof system is sound, the interpretation of $\Kdeduce(\hat{T}, \hat{\varphi})$ should hold in the canonical model $M_K$:
 	$$ \Kdeduce_M(\hat{T}, \hat{\varphi}) = \{ \star \}. $$
 	By definition, this means that
-	$$\bracket{\hat{T}} \vdash \bracket{\hat{\varphi}}.$$
+	$$\Bracket{\hat{T}} \vdash \Bracket{\hat{\varphi}}.$$
 	
-	Finally notice that by construction of encoding, lifting, and the semantics bracket, there is an isomorphism between $T$ and  $\bracket{\hat{T}}$, so from $\bracket{\hat{T}} \vdash \bracket{\hat{\varphi}}$ we have
+	Finally notice that by construction of encoding, lifting, and the semantics bracket, there is an isomorphism between $T$ and  $\Bracket{\hat{T}}$, so from $\Bracket{\hat{T}} \vdash \Bracket{\hat{\varphi}}$ we have
 	$$T \vdash \varphi.$$
 	
 	\fbox{\begin{minipage}{35em}\color{blue}\small
@@ -1653,36 +1670,6 @@ module LAMBDA
 endmodule
 \end{Verbatim}
 
-\section{Ignore Me}
-A proof system is a theorem generator. 
-In $K$, the proof system of matching logic is captured by the functional symbol 
-$\mathit{deducible} \colon \KPattern \to \KPred$, which returns $\Ktrue$ 
-iff the argument pattern is a theorem. 
-
-We introduce the double bracket $\Bracket{\_}$, known as the semantics bracket, as follows:
-\begin{equation*}
-\Bracket{\varphi} \equiv 
-\left(\textit{deducible}\left(\mathit{lift}[\varphi]\right) = true\right).
-\end{equation*}
-Intuitively, $\Bracket{\varphi}$ means that ``$\varphi$ is deducible''.
-Whenever there is an inference rule (axioms are considered as rules with zero 
-premise)
-$$
-\infer{\psi}
-{\varphi_1,\dots,\varphi_n}
-$$
-in matching logic, there is a corresponding axiom in $K$:
-$$
-\Bracket{\varphi_1} \wedge \dots \wedge \Bracket{\varphi_n} \to \Bracket{\psi}.
-$$
-Inference modulo theories can be considered in the same way. 
-For any (syntactic) matching logic theory $T$ whose axiom set is $A$, we add
-$$
-\Bracket{\varphi} \quad \text{for all $\varphi \in A$}
-$$
-as axioms to $K$. We sometimes denote the extended theory as $\mathit{lift}[T]$ 
-and call it 
-the \emph{meta-theory for} $T$.
 
 \bibliographystyle{abbrv}
 \bibliography{refs}
