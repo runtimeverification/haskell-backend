@@ -620,7 +620,6 @@ Most theories for algebraic data structures introduced in~\cite{rosu-2017-lmcs} 
 A sort $\KPred$ is introduced to capture predicates and the predicate logic.
 Patterns of sort $\KPred$ are called \emph{predicate patterns} or just \emph{predicates}, and symbols whose return sort are $\KPred$ are called \emph{predicate symbols}. 
 Predicate symbols in $\Kfinite$ are defined in later sections when they firstly appear.
-
 \begin{notation}
 	If $b$ is a predicate pattern, we take the freedom to write $b$ instead of $b = \top_\KPred$, so that $\KPred$ patterns can be used in any sort context.
 \end{notation}
@@ -650,7 +649,6 @@ The two constructors of sort $\KString$ are functional symbols:
   \\
   & \mathit{KconsKString} \colon \KChar \times \KString \to \KString.
 \end{align*}
-
 \begin{notation}
 	As a convention, strings are often represented by texts wrapped with quotation marks. 
 	For example, instead of writing
@@ -658,9 +656,6 @@ The two constructors of sort $\KString$ are functional symbols:
 	\KconsKString(\quot{a}, \KconsKString(\quot{b}, \KconsKString(\quot{c}, \Kepsilon))),
 	$$
 	we simply write $\quot{abc}$.
-	The empty string $\Kepsilon$ is often written as $\quot{}$ or $\epsilon$.
-	\unsure
-	{Xiaohong: We may not need this abbreviation, though. Let's keep it here for a while. }
 \end{notation}
 
 
@@ -699,7 +694,7 @@ where $f$ is a $\KString$ variable, $S$ is a $\KSortList$ variable, and $s$ is a
 For sorts $\KSort$, $\KSymbol$, and $\KPattern$\footnote{The sort $\KPattern$ is defined in Section~\cref{sec:matching-logic-patterns}.}
 in $S_\Kfinite$,
 we define sorts $\KSortList$, $\KSymbolList$, and $\KPatternList$ to be the sorts of finite lists over them, respectively.
-Formally, for any sort $X$ where\info{Why not add $\KChar$ to this set and thus get rid of $\KString$, or just use $\KString$ as an alias for $\KChar$-lists?}
+Formally, for any sort $X$ where\info{Why not add $\KChar$ to this set and thus get rid of $\KString$, or just use $\KString$ as an alias for $\KChar$-lists? Xiaohong: True. We could do that.}
 $$
 X \in \{\KSort, \KSymbol, \KPattern\},
 $$
@@ -752,7 +747,7 @@ It is axiomatized by the next two axioms:
 
 The sort $\KPattern$ is the sort for matching logic patterns.
 It has five functional constructors:\info{Any reason why $\Kexists$ does
-not take a variable? Xiaohong: Because there isn't a sort $\mathit{KVariable}$ which is a subsort of $\KPattern$. }
+not take a variable? Xiaohong: Because there isn't a sort $\mathit{KVariable}$.}
 \begin{align*}
   & \Kvariable \colon \KString \times \KSort \to \KPattern,
   \\
@@ -1065,40 +1060,40 @@ $A \vdash \varphi$ if $\varphi \in A$.
 \paragraph{Rule (K1).}
 $\vdash \varphi \to (\psi \to \varphi)$.
 \begin{equation*}
-\Kdeduce(T, \overline{\varphi \implies_s (\psi \implies_s \varphi)}).
+\Kdeduce(T, \overline{\varphi \leftrightarrow (\psi \leftrightarrow_s  \varphi)}).
 \end{equation*}
 
 \paragraph{Rule (K2).}
 $\vdash (\varphi_1 \to (\varphi_2 \to \varphi_3)) \to ((\varphi_1 \to \varphi_2) \to (\varphi_1 \to \varphi_3))$.
 \begin{equation*}
 \Kdeduce(T, 
-\overline{(\varphi_1 \implies_s (\varphi_2 \implies_s \varphi_3)) \implies_s ((\varphi_1 \implies_s \varphi_2) \implies_s (\varphi_1 \implies_s \varphi_3))}).
+\overline{(\varphi_1 \leftrightarrow_s (\varphi_2 \leftrightarrow_s \varphi_3)) \leftrightarrow_s ((\varphi_1 \leftrightarrow_s \varphi_2) \leftrightarrow_s (\varphi_1 \leftrightarrow_s \varphi_3))}).
 \end{equation*}
 
 \paragraph{Rule (K3).}
 $\vdash (\neg \psi \to \neg \varphi) \to (\varphi \to \psi)$.
 \begin{equation*}
-\Kdeduce(T, \overline{(\neg_s \psi \implies_s \neg_s \varphi) \implies_s (\varphi 
-\implies_s \psi)}).
+\Kdeduce(T, \overline{(\neg_s \psi \leftrightarrow_s \neg_s \varphi) \leftrightarrow_s (\varphi 
+\leftrightarrow_s \psi)}).
 \end{equation*}
 
 \paragraph{Rule (K4).}
 $\vdash \forall x . \varphi \to \varphi[y/x]$.
 \begin{equation*}
-\Kdeduce(T, \overline{\forall_{s_1}^{s_2}  x . \varphi \implies_{s_2} \varphi[y \cln s_1 / x \cln s_1]}).
+\Kdeduce(T, \overline{\forall_{s_1}^{s_2}  x . \varphi \leftrightarrow_{s_2} \varphi[y \cln s_1 / x \cln s_1]}).
 \end{equation*}
 
 \paragraph{Rule (K5).}
 $\vdash \forall x . (\varphi \to \psi) \to (\varphi \to \forall x . \psi)$ if $x$ does not occur free in $\varphi$. 
 \begin{equation*}
 \neg\KinKPatternList(\overline{x \cln s_1}, \KgetFvs(\varphi))
-\to \Kdeduce(T, \overline{\forall_{s_1}^{s_2} x . (\varphi \implies_{s_2} \psi) \implies_{s_2} (\varphi \implies_{s_2} \forall_{s_1}^{s_2} x . \psi)}).
+\to \Kdeduce(T, \overline{\forall_{s_1}^{s_2} x . (\varphi \leftrightarrow_{s_2} \psi) \leftrightarrow_{s_2} (\varphi \leftrightarrow_{s_2} \forall_{s_1}^{s_2} x . \psi)}).
 \end{equation*}
 
 \paragraph{Rule (K6).}
 $\vdash (\varphi_1 = \varphi_2) \to (\psi[\varphi_1/x] \to \psi[\varphi_2/x])$.
 \begin{equation*}
-\Kdeduce(T, \overline{(\varphi_1 =_{s_1}^{s_2} \varphi_2) \implies_{s_2} (\psi[\varphi_1/x \cln s] \implies_{s_2} \psi[\varphi_2/x \cln s])}).
+\Kdeduce(T, \overline{(\varphi_1 =_{s_1}^{s_2} \varphi_2) \leftrightarrow_{s_2} (\psi[\varphi_1/x \cln s] \leftrightarrow_{s_2} \psi[\varphi_2/x \cln s])}).
 \end{equation*}
 
 \paragraph{Rule (Df).}
@@ -1146,7 +1141,7 @@ $$(L, \varphi, R) \equiv \KappendKPatternList(L, \KconsKPatternList(\varphi, R))
 \paragraph{Rule (Modus Ponens).}
 If $\vdash \varphi$ and $\vdash \varphi \to \psi$, then $\vdash \psi$.
 \begin{equation*}
-\Kdeduce(T, \varphi) \wedge \Kdeduce(T, \overline{\varphi \implies_s \psi}) \to 
+\Kdeduce(T, \varphi) \wedge \Kdeduce(T, \overline{\varphi \leftrightarrow_s \psi}) \to 
 \Kdeduce(T, \psi).
 \end{equation*}
 
@@ -1307,13 +1302,13 @@ In order to prove Theorem~\ref{thm:faithfulness-finite}, we introduce a canonica
     It is tedious but straightforward to verify that $\Kdeduce_M$ satisfies all axioms about $\Kdeduce$ that we introduced in Section~\cref{sec:ml-proof-system-finite-case}.
     For example, the Rule (K1)
     \begin{equation*}
-    \Kdeduce(T, \overline{\varphi \implies_s (\psi \implies_s \varphi)}).
+    \Kdeduce(T, \overline{\varphi \leftrightarrow_s (\psi \leftrightarrow_s \varphi)}).
     \end{equation*}
     holds in $\Kfinite$ because
     $$\Bracket{T} \vdash \Bracket{\varphi} \to (\Bracket{\psi} \to \Bracket{\varphi});$$
     The Rule (Modus Ponens)
     \begin{equation*}
-    \Kdeduce(T, \varphi) \wedge \Kdeduce(T, \overline{\varphi \implies_s \psi}) \to 
+    \Kdeduce(T, \varphi) \wedge \Kdeduce(T, \overline{\varphi \leftrightarrow_s \psi}) \to 
     \Kdeduce(T, \psi).
     \end{equation*}
     holds in $\Kfinite$ because
@@ -1665,7 +1660,7 @@ module BOOL
                #equals(#variable("X", #sort("Bool")), 
                        #application(#symbol("true", #nilSort, #sort("Bool")),
                                     #nilPattern)))))
-  axiom \implies(
+  axiom \leftrightarrow(
     \and(\equals(#getSort(B1:Pattern), #sort("Bool")), 
          \equals(#getSort(B2:Pattern), #sort("Bool"))),
     \equals(
@@ -1705,7 +1700,7 @@ module LAMBDA
                                  (#variable(X:String, #sort("Exp")),
                                   E:Pattern))),
     isLTerm(E:Pattern))
-  axiom \implies(\equals(true, 
+  axiom \leftrightarrow(\equals(true, 
                          andBool(isLTerm(E:Pattern), 
                                  isLTerm(E':Pattern))),
                  \equals(true,
