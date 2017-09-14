@@ -226,6 +226,7 @@
   \newcommand{\KsymbolDeclared}{\mathit{KsymbolDeclared}}
   
   \newcommand{\KwellFormed}{\mathit{KwellFormed}}
+  \newcommand{\KwellFormedPatterns}{\mathit{KwellFormedPatterns}}
   \newcommand{\KMapReduceKwellFormed}{\mathit{KMapReduceKwellFormed}}
   \newcommand{\KgetSort}{\mathit{KgetSort}}
   \newcommand{\KgetSortsFromPatterns}{\mathit{KgetSortsFromPatterns}}
@@ -995,33 +996,47 @@ A related partial function is
 $$ \KgetSortsFromPatterns \colon \KPatternList \times \KSignature \rightharpoonup \KSortList
 $$
 that takes a pattern lists and applies $\KgetSort$ on each element, and finally returns the list of results.
-
-The partial function 
-The symbols $\KwellFormed$, $\KgetSort$, and $\KgetSortsFromPatterns$ are axiomatized by the following axioms
+It has two straightforward axioms
 \begin{align*}
-  &\KwellFormed(\overline{x \cln s}, ( S, \Sigma )) = \KinKSortList(s, S)
+  & \KgetSortsFromPatterns(\KnilKPatternList, \Sigma) = \KnilKSortList
+  \\
+  & \KgetSortsFromPatterns((\varphi, L), \Sigma) = (\KgetSort(\varphi, \Sigma), \KgetSortsFromPatterns(L, \Sigma))
+\end{align*}
+
+The partial functions $\KwellFormed$ and $\KgetSort$ are defined by the following axioms
+\begin{align*}
+  &\KwellFormed(\overline{x \cln s}, \Sigma) = \KsortDeclared(s, \Sigma)
+  \\
+  & \KwellFormed(\overline{\sigma(L)}, \Sigma) 
+  \\
+  & = \KsymbolDeclared(\sigma, \Sigma) \wedge (\KgetSortsFromPatterns(L, \Sigma) = \KgetArgumentSorts(\sigma))
   \\
   & \KwellFormed(\overline{\varphi \wedge_s \psi}, \Sigma) = (\KgetSort(\varphi, \Sigma) = s) \wedge (\KgetSort(\psi, \Sigma) = s)
   \\
   & \KwellFormed(\overline{\neg_s \varphi}, \Sigma) = (\KgetSort(\varphi, \Sigma) = s)
   \\
-  & \KwellFormed(\overline{\sigma(L)}, \Sigma) = \KsymbolDeclared(\sigma, \Sigma) \wedge (\KgetSortsFromPatterns(L, \Sigma) = \KgetArgumentSorts(\sigma))
+  & \KwellFormed(\overline{\exists_{s_1}^{s_2} x . \varphi}, \Sigma) = \KsortDeclared(s_1, \Sigma) \wedge (\KgetSort(\varphi, \Sigma) = s_2)
   \\
-  & \KwellFormed(\overline{\exists_{s_1}^{s_2} x . \varphi}, ( S, \Sigma )) = \KinKSortList(s_1, S) \wedge (\KgetSort(\varphi, (S, \Sigma)) = s_2)
+  & \KgetSort(\overline{x \cln s}, \Sigma) = \KsortDeclared(s, \Sigma) \wedge s
   \\
-  & \KgetSort(\overline{x \cln s}, ( S, \Sigma )) = (s \in S) \wedge s
+  & \KgetSort(\overline{\sigma(L)}, \Sigma) = \KwellFormed(\overline{\sigma(L)}, \Sigma) \wedge \KgetReturnSort(\sigma)
   \\
   & \KgetSort(\overline{\varphi \wedge_s \psi}, \Sigma) = (\KgetSort(\varphi, \Sigma) = s) \wedge (\KgetSort(\psi, \Sigma) = s) \wedge s
   \\
   & \KgetSort(\overline{\neg_s \varphi}, \Sigma) = (\KgetSort(\varphi, \Sigma) = s) \wedge s
   \\
-  & \KgetSort(\overline{\sigma(L)}, \Sigma) = \KwellFormed(\overline{\sigma(L)}, \Sigma) \wedge \KgetReturnSort(\sigma)
-  \\
-  & \KgetSort(\overline{\exists_{s_1}^{s_2} x . \varphi}, \Sigma) = \KinKSortList(s_1, S) \wedge (\KgetSort(\varphi, \Sigma) = s_2) \wedge s_2
-  \\
-  & \KgetSortsFromPatterns(\KnilKPatternList, \Sigma) = \KnilKSortList
-  \\
-  & \KgetSortsFromPatterns((\varphi, L), \Sigma) = (\KgetSort(\varphi, \Sigma), \KgetSortsFromPatterns(L, \Sigma))
+  & \KgetSort(\overline{\exists_{s_1}^{s_2} x . \varphi}, \Sigma) = \KsortDeclared(s_1, \Sigma) \wedge (\KgetSort(\varphi, \Sigma) = s_2) \wedge s_2
+\end{align*}
+
+It is often useful to check whether multiple patterns are all well-formed in a given signature.
+The predicate symbol
+$$ \KwellFormedPatterns \colon \KPatternList \times \KSignature \to \KPred$$
+does that.
+It applies $\KwellFormed$ on each pattern and returns $\bot_\KPred$ if one of the applications returns $\bot_\KPred$.
+It has two axioms
+\begin{align*}
+ & \KwellFormedPatterns(\KnilKPatternList, \Sigma) \\
+ & \KwellFormedPatterns((\varphi, L), \Sigma) = \KwellFormed(\varphi, \Sigma) \wedge \KwellFormedPatterns(L, \Sigma)
 \end{align*}
 
 \subsection{Finite Matching Logic Theories}
@@ -1039,20 +1054,10 @@ The predicate symbol
 \begin{equation*}
   \KwellFormedTheory \colon \KTheory \to \KPred
 \end{equation*}
-takes a theory and decides whether the theory is well-formed, in the sense that every axioms of the theory are well-formed with respect to the theory's signature.
-It is defined with the next axiom
+takes a theory and decides whether the theory is well-formed, in the sense that every axioms of the theory are well-formed with respect to the theory's signature
 \begin{equation*}
-\KwellFormedTheory(\Ktheory(\Sigma, A)) = \KMapReduceKwellFormed(A, \Sigma)
+\KwellFormedTheory(\Ktheory(\Sigma, A)) = \KwellFormedPatterns(A, \Sigma)
 \end{equation*}
-in which the predicate symbol
-$$ \KMapReduceKwellFormed \colon \KPatternList \times \KSignature \to \KPred$$
-takes a list of patterns and decides whether all patterns are well-formed in the given signature.
-The predicate symbol $\KMapReduceKwellFormed$ is defined by
-\begin{align*}
- & \KMapReduceKwellFormed(\KnilKPatternList, \Sigma)\\
- & \KMapReduceKwellFormed((\varphi, L), \Sigma) = \KwellFormed(\varphi, \Sigma) \wedge \KMapReduceKwellFormed(L, \Sigma)
-\end{align*}
-
 
 \subsection{Matching Logic Proof System}
 \label{sec:ml-proof-system-finite-case}
@@ -1127,7 +1132,7 @@ $\vdash (\varphi_1 = \varphi_2) \to (\psi[\varphi_1/x] \to \psi[\varphi_2/x])$.
 \paragraph{Rule (Df).}
 $\vdash \ceil{x}$.
 \begin{equation*}
-\Kdeduce(T, \Kapplication(\Ksymbol(\quot{ceil}, \KconsKSortList(s_1, \KnilKPatternList), s_2), x \cln s_1)).
+\Kdeduce(T, \Kapplication(\Ksymbol(\quot{ceil}, \KconsKSortList(s_1, \KnilKPatternList), s_2), \overline{x \cln s_1})).
 \end{equation*}
 
 \paragraph{Rule (M1).}
