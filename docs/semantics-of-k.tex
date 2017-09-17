@@ -1388,6 +1388,45 @@ Now we are in a good shape to prove Theorem~\ref{thm:faithfulness-finite}.
     \end{minipage}}
 \end{proof}
 
+\subsection{Kore Language for Finite Theories}
+The Kore language that we propose here is the finite and minimal one, in the 
+sense that
+\begin{itemize}
+	\item Every Kore definition defines one finite matching logic theory, by 
+	defining its (finite number of) sorts, symbols, and axioms;
+	\item It supports no module-level operations such as module importation, 
+	signature hiding, symbol renaming;
+	\item It supports only the five basic matching logic constructors 
+	(variables, symbol applications, conjunction, negation, and existential 
+	quantifications);
+\end{itemize}
+
+The following is the grammar of the Kore language for finite theories:
+
+\begin{grammar}\small
+	<definition>    ::= <declaration>$^*$
+	
+	<declaration>   ::= <sort-declaration> | <symbol-declaration> | 
+	<axiom-declaration>
+	
+	<sort-declaration> ::= 	`sort' <sort> | `hooked-sort' <sort>
+	
+	<symbol-declaration> ::= `symbol' <symbol> `(' <sortlist> `)' `:' <sort>
+	\alt `hooked-symbol' <symbol> `(' <sortlist> `)' `:' <sort>
+	
+	<axiom-declaration> ::= `axiom' <pattern>
+	
+	<sortlist>      ::= `' | <sort> | <sort> `,' <sortlist>
+	
+	<pattern> ::= <variable-name> `:' <sort>
+	\alt <symbol> `(' <patternlist> `)'
+	\alt `\\and' `(' <pattern> `,' <pattern> `,' <sort> `)'
+	\alt `\\not' `(' <pattern> `,' <sort> `)' 
+	\alt `\\exists' `(' <variable-name> `:' <sort> `,' <pattern> `,' <sort> `)'
+	
+	<patternlist> ::= `' | <pattern> | <pattern> `,' <patternlist>
+\end{grammar}
+
 \section{Matching Logic Theory of Matching Logic: With Meta-Variables}
 
 \section{Matching Logic Theory of Matching Logic: With Parameters}
@@ -1432,28 +1471,7 @@ symbols, and axioms,  respectively.
 
 \section{The Kore Syntax}
 
-The Kore syntax that we propose here is the \emph{minimal} one, in the sense that it supports only the five basic matching logic constructors (variables, symbol applications, conjunction, negation, and existential quantifications), plus parametricity, which allows to define matching logic theories with infinite sorts, symbols, and axioms.
 
-\begin{grammar}\small
-	<definition>    ::= <declaration>$^*$
-	
-	<declaration>   ::= "sort" <sort>
-	\alt "hooked-sort" <sort>
-	\alt "symbol" <symbol> "(" <sort>$^*$ ")" ":" <sort>
-	\alt "hooked-symbol" <symbol> "(" <sort>$^*$ ")" ":" <sort>
-	\alt "axiom" <pattern>
-	
-	<sort>          ::= <atomic-sort> | <parametric-sort>
-	
-	<parametric-sort> ::= "{" <sort-variable> "}"
-	\alt <sort-constructor> "{" <sort-variable>$^+$ "}"
-	
-	<pattern> ::= <pattern-variable>
-	\alt <symbol-id> "(" <pattern-list> ")"
-	\alt "\\and" "(" <pattern> "," <pattern> ")"
-	\alt "\\not" "(" <pattern> ")" 
-	\alt "\\exists" "(" <pattern-variable> "," <pattern> ")"
-\end{grammar}
 
 \newcommand{\smalltt}[1]{\texttt{\small #1} }
 \newcommand{\sort}{\smalltt{sort}}
