@@ -1388,7 +1388,7 @@ Now we are in a good shape to prove Theorem~\ref{thm:faithfulness-finite}.
     \end{minipage}}
 \end{proof}
 
-\subsection{Kore Language for Finite Theories}
+\subsection{Ignore Me: Kore Language for Finite Theories}
 The Kore language that we propose here is the finite and minimal one, in the 
 sense that
 \begin{itemize}
@@ -1471,7 +1471,75 @@ symbols, and axioms,  respectively.
 
 \section{The Kore Syntax}
 
+We propose a language called Kore to specify matching logic theories.
+The following is a list of a few features of Kore:
+\begin{itemize}
+	\item Kore does not support module-level operations such as module importation, 
+	signature hiding, symbol renaming;
+	\item Kore supports only the five basic matching logic constructors 
+	(variables, symbol applications, conjunction, negation, and existential 
+	quantifications), while it provides a keyword \textsf{alias} that allows to define other derivative connectives as syntactic sugar;
+	\item Kore supports sort parametricity;
+	\item more ...
+\end{itemize}
 
+The following is the grammar of the Kore language for finite theories:
+
+\begin{grammar}\small
+	<definition>    ::= \quad
+	\alt `module' <module-expression> <declaration>$^*$ `endmodule'
+	
+	<declaration>   ::= \quad
+	\alt <sort-declaration> 
+	\alt <symbol-declaration> 
+	\alt <axiom-declaration>
+	\alt <alias-declaration>
+	
+	<sort-declaration> ::= \quad
+	\alt `sort' <sort> 
+	\alt `hooked-sort' <sort>
+	
+	<sort> ::= \quad
+	\alt <atomic-sort> 
+	\alt <parametric-sort>
+	
+	<parametric-sort> ::= \quad
+	\alt <parametric-sort-constructor> `{' <sort-list> `}'
+	
+	<sort-list> ::= \quad 
+	\alt <sort> 
+	\alt <sort> `,' <sort-list>
+	
+	<atomic-sort> ::= "[A-Z][a-zA-Z0-9]"$^*$
+	
+	<sort-variable> ::= "[A-Z0-9]"$^*$
+	
+	<parametric-sort-constructor> ::= "[A-Z][a-zA-Z0-9]"$^*$
+	
+	<symbol-declaration> ::= \quad
+    \alt `symbol' <symbol> <symbol-signature> 
+    \alt `hooked-symbol' <symbol> <symbol-signature> 
+	
+	<symbol-expression> ::= \quad
+	\alt <symbol-expression> `(' <sort-list> `)' `:' <sort>
+	
+	<symbol-expression> ::= <nonparametric-symbol>
+	| <symbol-constructor> `{' <sort-variable-list> `}'
+	
+	<symbol-name> ::= "[a-zA-Z0-9]"$^*$
+	
+	<axiom-declaration> ::= `axiom' <pattern>
+	
+	<sortlist>      ::= `' | <sort> | <sort> `,' <sortlist>
+	
+	<pattern> ::= <variable-name> `:' <sort>
+	\alt <symbol> `(' <patternlist> `)'
+	\alt `\\and' `(' <pattern> `,' <pattern> `,' <sort> `)'
+	\alt `\\not' `(' <pattern> `,' <sort> `)' 
+	\alt `\\exists' `(' <variable-name> `:' <sort> `,' <pattern> `,' <sort> `)'
+	
+	<patternlist> ::= `' | <pattern> | <pattern> `,' <patternlist>
+\end{grammar}
 
 \newcommand{\smalltt}[1]{\texttt{\small #1} }
 \newcommand{\sort}{\smalltt{sort}}
