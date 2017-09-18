@@ -189,13 +189,9 @@
   \newcommand{\KconsKCharList}{\mathit{KconsKCharList}}
   %% Define l1 @ l2 for list concatenation.
   \newcommand{\at}{@}
-  
-  
+    
   \newcommand{\Kdelete}{\mathit{delete}} 
 
-
-  
-  
   \newcommand{\KPattern}{\mathit{KPattern}}
   \newcommand{\Kvariable}{\mathit{Kvariable}}
   \newcommand{\Kand}{\mathit{Kand}}
@@ -216,6 +212,7 @@
   
   \newcommand{\KgetFvs}{\mathit{KgetFvs}}
   \newcommand{\KgetFvsFromPatterns}{\mathit{KgetFvsFromPatterns}}
+  \newcommand{\KoccurFree}{\mathit{KoccurFree}}
   \newcommand{\KfreshName}{\mathit{KfreshName}}
   
   \newcommand{\KSignature}{\mathit{KSignature}}
@@ -227,7 +224,6 @@
   
   \newcommand{\KwellFormed}{\mathit{KwellFormed}}
   \newcommand{\KwellFormedPatterns}{\mathit{KwellFormedPatterns}}
-  \newcommand{\KMapReduceKwellFormed}{\mathit{KMapReduceKwellFormed}}
   \newcommand{\KgetSort}{\mathit{KgetSort}}
   \newcommand{\KgetSortsFromPatterns}{\mathit{KgetSortsFromPatterns}}
   \newcommand{\KisSort}{\mathit{KisSort}}
@@ -889,6 +885,13 @@ The next seven axioms define $\KgetFvs$ and $\KgetFvsFromPatterns$, with the fir
 & = \KappendKPatternList(\KgetFvs(\varphi), \KgetFvsFromPatterns(L))
 \end{align*}
 
+The predicate symbol
+$$ \KoccurFree \colon \KString \times \KSort \times \KPattern \to \KPred $$
+decides whether a variable (whose name is the first argument and sort is the second argument) occurs free in a given pattern
+\begin{align*}
+  \KoccurFree(x, s, \varphi) = \KinKPatternList(\overline{x \cln s}, \KgetFvs(\varphi))
+\end{align*}
+
 \paragraph{Fresh Variable Generation.}
 The functional symbol
 $$\KfreshName \colon \KPatternList \to \KString$$ 
@@ -938,7 +941,8 @@ This means that the pattern set of a matching logic theory is the one that is ge
 In other words, matching logic patterns are equivalence classes with respect to alpha-equivalence.
 This fact is captured in $\Kfinite$ by the next axiom
 $$
-\overline{\exists_{s_1}^{s_2} x . \varphi} = \overline{\exists_{s_1}^{s_2} y . \varphi[y \cln s_1 / x \cln s_1]}
+\KoccurFree(x, s_1, \varphi) \wedge \KoccurFree(y, s_1, \varphi) \to 
+\overline{\exists_{s_1}^{s_2} x .(\varphi[x \cln s_1 / z \cln s_1])} = \overline{\exists_{s_1}^{s_2} y .(\varphi[y \cln s_1 / z \cln s_1])}
 $$
 
 \subsection{Finite Matching Logic Signatures}
@@ -1517,7 +1521,7 @@ The following is the grammar of the Kore language for finite theories:
 
 The IMP programming language defined in Kore:
 
-\begin{Verbatim}[fontsize=\small]
+\begin{Verbatim}[fontsize=\small,numbers=left,xleftmargin=5mm]
     /* Define the definedness symbol ceil(),
      * which is parametric on sorts S1 and S2 */
     symbol ceil{S1, S2}({S1}) : {S2}
@@ -1626,12 +1630,31 @@ The IMP programming language defined in Kore:
     axiom  \not(\and(nil{S}, \exists(X:S, \exists(L:List{S}, 
                              cons{S}(X:S, L:List{S}), List{S}), List{S}), List{S}), List{S})
                              
-    /* Define Map */
+    /* Define parametric maps */
     sort   Map{S1, S2}
     symbol emptyMap{S1, S2}()                      : Map{S1, S2}
     symbol bind{S1, S2}({S1}, {S2})                : Map{S1, S2}
     symbol merge{S1, S2}(Map{S1, S2}, Map{S1, S2}) : Map{S1, S2}
     
+    /* Axioms of functional symbols, partial functional symbols,
+     * and constructors:
+     *  - emptyMap is functional
+     *  - bind     is functional
+     *  - merge    is partial
+     *  - merge    is assoc-comm
+     *  - emptyMap, bind, and merge modulo AC are constructors
+     *  - merge(bind(X, Y), bind(X, Z)) = bottom
+     */
+    ... ...
+    
+    /* Define parametric contexts */
+    sort   Ctxt{S1, S2}
+    symbol gamma0({S1}, {S2})            : Ctxt{S1, S2}
+    symbol ctxtapp(Ctxt{S1, S2}, {S1})   : {S2}
+    
+    /* Define alias gamma(HOLE:S1, BODY, Ctxt{S1, S2}) */
+    alias  gamma(_:_,_,_,_) := \exists(#1:#2,gamma0(#1:#2,#3),#4)
+        
     /* In the following we show how to define the semantics of IMP */
     
     /* Define all IMP program variables */
@@ -1677,7 +1700,7 @@ The IMP programming language defined in Kore:
                     {S})
 
     /* Axiom of strictness: AExp "+" AExp [strict] */
-    ??? ???
+    /* UNSURE */ 
     
     /* Define Boolean expressions */
     sort   BExp
