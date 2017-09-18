@@ -106,6 +106,55 @@
   \usepackage[utf8]{inputenc}
   \usepackage{cleveref}
   \crefname{section}{§}{§§}
+  
+  % Package for lstlisting and definition of Kore
+  \usepackage{listings}
+  % Define colors
+  \definecolor{codegray}{rgb}{0.5,0.5,0.5}
+  \definecolor{backgray}{RGB}{250,250,250}
+  \definecolor{codegreen}{RGB}{50,205,50}
+  \definecolor{codeblue}{RGB}{50,50,255}
+  % Define Kore Language style
+  \lstdefinelanguage{kore}
+  {
+  	% print whole listing small and in serif fonts
+  	basicstyle=\ttfamily\footnotesize,
+  	% use /* */ for comments
+  	morecomment=[s]{/*}{*/},
+  	% print white for comments
+  	commentstyle=\color{codegray},
+  	% print line number in the left, in tiny fonts
+  	numbers=left,
+  	numberstyle=\tiny,
+  	% print all characters at their natural width
+  	columns=fullflexible,
+  	% print background color grey
+  	backgroundcolor=\color{backgray},
+  	% regard some characters as letters
+  	alsoletter={-\\},
+  	% list of declaration keywords
+  	keywordstyle=[1]\color{codeblue},
+  	morekeywords=[1]{
+  		hooked-sort,
+  		sort,
+  		symbol,
+  		hooked-symbol,
+  		alias,
+  		axiom
+  	},
+    % list of connectives
+    keywordstyle=[2]\color{codegreen},
+    morekeywords=[2]{
+    	\\not,
+    	\\or,
+    	\\implies,
+    	\\and,
+    	\\equals,
+    	\\exists,
+    	\\forall,
+    	\\iff
+    }
+  }
 
   % Define the curly K:
   \newcommand{\K}{\mbox{$\mathbb{K}$}\xspace}
@@ -1517,7 +1566,7 @@ The following is the grammar of the Kore language for finite theories:
 
 The IMP programming language defined in Kore:
 
-\begin{Verbatim}[fontsize=\small]
+\begin{lstlisting}[language=kore]
     /* Define the definedness symbol ceil(),
      * which is parametric on sorts S1 and S2 */
     symbol ceil{S1, S2}({S1}) : {S2}
@@ -1736,7 +1785,7 @@ The IMP programming language defined in Kore:
     /* Axiom of strictness: "if" "(" BExp ")" Block "else" Block [strict(1)] */
     ??? ???
     
-\end{Verbatim}
+\end{lstlisting}
 
 \subsection{Ignore Me}
 
