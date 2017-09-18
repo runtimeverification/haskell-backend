@@ -1625,6 +1625,12 @@ The IMP programming language defined in Kore:
                        cons{S}(X:S, L:List{S}), List{S}), List{S}), List{S})
     axiom  \not(\and(nil{S}, \exists(X:S, \exists(L:List{S}, 
                              cons{S}(X:S, L:List{S}), List{S}), List{S}), List{S}), List{S})
+                             
+    /* Define Map */
+    sort   Map{S1, S2}
+    symbol emptyMap{S1, S2}()                      : Map{S1, S2}
+    symbol bind{S1, S2}({S1}, {S2})                : Map{S1, S2}
+    symbol merge{S1, S2}(Map{S1, S2}, Map{S1, S2}) : Map{S1, S2}
     
     /* In the following we show how to define the semantics of IMP */
     
@@ -1735,6 +1741,46 @@ The IMP programming language defined in Kore:
     
     /* Axiom of strictness: "if" "(" BExp ")" Block "else" Block [strict(1)] */
     ??? ???
+    
+    /* Define Pgm and Ids */
+    /* syntax Pgm ::= "int" Ids ";" Stmt <---- pgm
+     * syntax Ids ::= List{Id,","}       <---- List{Id} */
+    
+    sort   Pgm
+    symbol pgm(Ids, Stmt) : Pgm
+    
+    alias  Ids := List{Id}
+    
+    /* Define infrastructure of rewriting systems */
+    sort   Cfg
+    symbol tcell(K, State) : Cfg
+    sort   K
+    symbol kcell(Pgm) : K
+    sort   State
+    symbol statecell(Map{Id, Nat}) : State
+    
+    /* Define rewriting */
+    ... ...
+    /* the predicate pattern \rewrites(left, right, S, S') means that
+     * left => right, S is the sort of left and right,
+     * and S' is the sort of the context
+     * in which \rewrites(left, right, S, S') is mentioned.
+     */
+    alias  \rewrites(_,_,_,_) := ... ...
+    
+    /* syntax KResult ::= Int | Bool */
+    sort   KResult
+    symbol IntToKResult(Int)   : KResult
+    symbol BoolToKResult(Bool) : KResult
+    
+    /* Define contexts */
+    
+    ... ...
+    
+    /* Define rules */
+    
+    /* rule I1 + I2 => I1 +Int I2 */
+    axiom   \rewrites(C[I1 + I2], C[I1 +Int I2], ..., ...) 
     
 \end{Verbatim}
 
