@@ -135,11 +135,12 @@
      * wellFormedCtxt(C:KPattern) ->
      * plusAExp(C[X],E) = (gamma H:S . plusAExp(C[H:S],E))[E]
      */
-    axiom  \implies{S}(\equals{KSort, S}(KgetSort(C:KPattern, Signature), Ctxt{S',AExp}),  /* <-- what is signature? */
-    \equals{AExp,S}(plusAExp(ctxtapp(C:KPattern,X:S'), E:AExp),
-                    ctxtapp(gamma(HOLE:S, plusAExp(ctxtapp(C:KPattern,HOLE:S'), E:AExp)),
-                                   E:AExp))
-        
+    axiom
+	  \implies{R}(
+	    \equals{KSort, R}(KgetSort(C:KPattern), Ctxt{S,AExp}),
+        \equals{AExp,R}(plusAExp(ctxtapp{S,AExp}(C:KPattern, X:S), E:AExp),
+                        ctxtapp{S,AExp}(gamma{S,AExp}(HOLE:S, plusAExp(ctxtapp{S,AExp}(C:KPattern,HOLE:S), E:AExp)), X:S))
+      )
     /* In the following we show how to define the semantics of IMP */
     
     /* Define all IMP program variables */
