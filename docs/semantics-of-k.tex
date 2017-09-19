@@ -140,7 +140,8 @@
   		symbol,
   		hooked-symbol,
   		alias,
-  		axiom
+  		axiom,
+  		meta-var
   	},
     % list of connectives
     keywordstyle=[2]\color{codegreen},
@@ -1691,18 +1692,20 @@ The IMP programming language defined in Kore:
      *  - bind     is functional
      *  - merge    is partial
      *  - merge    is assoc-comm
-     *  - emptyMap, bind, and merge modulo AC are constructors
+     *  - emptyMap, bind, and merge modulo are constructors
      *  - merge(bind(X, Y), bind(X, Z)) = bottom
      */
     ... ...
     
     /* Define parametric contexts */
     sort   Ctxt{S1, S2}
-    symbol gamma0({S1}, {S2})            : Ctxt{S1, S2}
-    symbol ctxtapp(Ctxt{S1, S2}, {S1})   : {S2}
+    symbol gamma0{S1, S2}({S1}, {S2})            : Ctxt{S1, S2}
+    symbol ctxtapp{S1, S2}(Ctxt{S1, S2}, {S1})   : {S2}
     
-    /* Define alias gamma(HOLE:S1, BODY, Ctxt{S1, S2}) */
-    alias  gamma(_:_,_,_,_) := \exists(#1:#2,gamma0(#1:#2,#3),#4)
+    /* Define alias gamma(HOLE:S1, BODY, S2)
+     *           := exists HOLE:S1 . BODY
+     */
+    alias  gamma(_:_,_,_) := \exists(#1:#2,gamma0{#2,#4}(#1:#2,#3),Ctxt{#2,#4})
         
     /* In the following we show how to define the semantics of IMP */
     
@@ -1749,7 +1752,11 @@ The IMP programming language defined in Kore:
                     {S})
 
     /* Axiom of strictness: AExp "+" AExp [strict] */
-    /* UNSURE */ 
+    meta-var CAExp : Ctxt{S, AExp}
+    axiom  \equals(plusAExp(CAExp[X:S], E),      <---- how to tell the S is the one that we used in CAExp?
+                   ctxtapp{S,AExp}(gamma(H:S,plusAExp(CAExp[H:S], E), AExp), X),
+                   AExp, {S'})
+                   
     
     /* Define Boolean expressions */
     sort   BExp
