@@ -248,11 +248,11 @@ module AEXP
   \implies{R}(
   \equals{KSort, R}(KgetSort(C:KPattern), Ctxt{S, BExp}),
   \equals{Stmt, R}(ite(ctxtapp{S, BExp}(C:KPattern, X:S), S1:Stmt, S2:Stmt),
-                   ctxtapp{S, BExp}(
-                     gamma{S, BExp}(
+                   ctxtapp{S, Stmt}(
+                     gamma{S, Stmt}(
                        HOLE:S,
                        ite(ctxtapp{S, BExp}(C:KPattern, HOLE:S),
-                           S1:Stmt, S2:Stmt)))))
+                           S1:Stmt, S2:Stmt)), X:S)))
 endmodule
 
 /**** IGNORE THE REST ****/

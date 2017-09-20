@@ -1,0 +1,20 @@
+\exists{KSort,KAxiom}(S:KSort,
+  \exists{KSort,KAxiom}(R:KSort,
+    Kaxiom(
+      Kimplies(R:KSort,
+        ,
+        _		
+	  )
+	)
+  )
+)
+	
+
+  \equals{KSort, R}(KgetSort(C:KPattern), Ctxt{S, BExp}),
+  
+  \equals{Stmt, R}(ite(ctxtapp{S, BExp}(C:KPattern, X:S), S1:Stmt, S2:Stmt),
+                   ctxtapp{S, Stmt}(
+                     gamma{S, Stmt}(
+                       HOLE:S,
+                       ite(ctxtapp{S, BExp}(C:KPattern, HOLE:S),
+                           S1:Stmt, S2:Stmt)), X:S))
