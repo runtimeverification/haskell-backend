@@ -2,11 +2,6 @@ module PL-SYNTACTIC-SUGAR
 
   /* Define predicate logic derived connectives as alias */
   
-  /* Question. What is alias?
-       - They are symbols at the meta-theory with axioms defining their meaning
-       - They are purely syntactic sugar
-  */
-  
   /* Style A */
   /* Is it defining symbols at the meta-theory? */
   
