@@ -2,15 +2,17 @@
 ---- as Maude constants, simply because Maude does not allows us
 ---- to define them as regular expressions. 
 
-fmod IMP-TOKENS is
+fmod TOKENS is
 
   including MODULE .
 
   ---- Sort terminals
-  ops Nat Bool    : -> AtomicSort           .
+  ops Nat Bool        : -> AtomicSort           .
   ops AExp BExp       : -> AtomicSort           .
   ops List Map Ctxt   : -> ParSort              .
   ops S S' S1 S2 S3 R : -> SortVar              .
+
+  ops KPattern        : -> AtomicSort           .
 
   ---- Symbol terminals
   op  ceil            : -> ParNConstSymbolId    .
@@ -23,23 +25,32 @@ fmod IMP-TOKENS is
   op  ctxtapp         : -> ParNConstSymbolId    .
   op  gamma0          : -> ParNConstSymbolId    .
 
+  ---- Alias terminals
+  ops \or \implies    : -> ParNConstAliasId     .
+  ops \iff \equals    : -> ParNConstAliasId     .
+  ops \forall         : -> ParNConstAliasId     .
+
   ---- VariableName terminals
   ops B               : -> VariableName         .
-  ops S S' S1 S2 S3 R : -> VariableName         . 
+  ops S S' S1 S2 S3   : -> VariableName         . 
   ops X Y Z L L0      : -> VariableName         .
   ops C C1 C2 C' C''  : -> VariableName         .
+  ops P Q R           : -> VariableName         .
 
   ---- ModuleName terminals
-  op  DEFINEDNESS     : -> ModuleName           .
-  op  BOOL            : -> ModuleName           .
-  op  PRESBURGER      : -> ModuleName           .
-  op  LIST            : -> ModuleName           .
+  op  PL-SYNTACTIC-SUGAR : -> ModuleName        .
+  op  DEFINEDNESS        : -> ModuleName        .
+  op  BOOL               : -> ModuleName        .
+  op  PRESBURGER         : -> ModuleName        .
+  op  LIST               : -> ModuleName        .
 
   ---- Some frontend sugar that allows us
   ---- to use x:s instead of x : s in 
   ---- Kore definition. 
   op  X:S1            : -> Variable             .
   eq  X:S1            =    X : S1               .
+  op  X:S2            : -> Variable             .
+  eq  X:S2            =    X : S2               .
   op  X:S             : -> Variable             .
   eq  X:S             =    X : S                .
   op  X:Nat           : -> Variable             .
@@ -60,5 +71,10 @@ fmod IMP-TOKENS is
   eq  C1:Bool         =    C1 : Bool            .
   op  C2:Bool         : -> Variable             .
   eq  C2:Bool         =    C2 : Bool            .
+
+  op  P:KPattern      : -> Variable             .
+  eq  P:KPattern      =    P : KPattern         .
+  op  Q:KPattern      : -> Variable             .
+  eq  Q:KPattern      =    Q : KPattern         .
 
 endfm
