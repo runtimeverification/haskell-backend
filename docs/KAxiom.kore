@@ -35,8 +35,8 @@
 
 alias
   choice{S, R}(P, Q1, Q2) 
-  := \or{R}(\and{R}(ceil{S, R}(P), Q), 
-            \and{R}(\not{R}(ceil{S, R}(P)), R))
+  := \or{R}(\and{R}(ceil{S, R}(P), Q1), 
+            \and{R}(\not{R}(ceil{S, R}(P)), Q2))
 
 
 
@@ -74,7 +74,7 @@ alias
             KconsKPatternList(
               Kapplication(
                 Ksymbol(
-                  "ctxtapp",
+                  "ctxtapp",     // how about the parameter instances S and BExp of ctxtapp?
                   KconsKSortList(Ksort("Ctxt", 
                                        KconsKSortList(S,
                                          KconsKSortList(Ksort("BExp"),
@@ -87,7 +87,7 @@ alias
                 KconsKPatternList(C:KPattern,
                   KconsKPatternList(Kvariable("X", S),
                   KnilKPattern))
-              ), 
+              ),
               KconsKPatternList(Kvariable("S1", Ksort("Stmt")),
               KconsKPatternList(Kvariable("S2", Ksort("Stmt")),
               KnilKPattern))
