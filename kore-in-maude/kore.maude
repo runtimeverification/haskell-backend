@@ -12,17 +12,17 @@ fmod SORT is
 
   sorts   Sort   SortList .
   subsort Sort < SortList .
-  op _,_ : Sort SortList -> SortList [prec 50] .
+  op _,_ : Sort SortList -> SortList [prec 52] .
 
   sorts AtomicSort SortVar ParSort .
   subsort AtomicSort < Sort . 
   subsort SortVar    < Sort .
-  op _{_} : ParSort SortList -> Sort [prec 49] .
+  op _{_} : ParSort SortList -> Sort [prec 50] .
 
   sort SortVarList .
   subsort SortVar < SortVarList .
   subsort SortVarList < SortList .
-  op _,_ : SortVar SortVarList -> SortVarList [prec 50] .
+  op _,_ : SortVar SortVarList -> SortVarList [prec 52] .
 
 endfm
 
@@ -35,19 +35,21 @@ fmod SYMBOL is
   
   sort DecoSymbol .
   op _:_ : ConstSymbolId Sort -> DecoSymbol 
-    [format(d s s d) prec 50] .
+    [format(d s s d) prec 52] .
   op _`(_`):_ : NConstSymbolId SortList Sort -> DecoSymbol 
-    [format(d d d d s s d) prec 50] .
+    [format(d d d d s s d) prec 52] .
 
   ---- Constant symbols identifier: non-parametric and parametric:
   sorts AtomicConstSymbolId ParConstSymbolId .
   subsort AtomicConstSymbolId < ConstSymbolId .
-  op _{_} : ParConstSymbolId SortVarList -> ConstSymbolId [prec 49] .
+  op _{_} : ParConstSymbolId SortVarList -> ConstSymbolId 
+    [format(d d y o d) prec 50] .
 
   ---- Non-constant symbols identifier: non-par and par:
   sorts AtomicNConstSymbolId ParNConstSymbolId .
   subsort AtomicNConstSymbolId < NConstSymbolId .
-  op _{_} : ParNConstSymbolId SortVarList -> NConstSymbolId [prec 49] .
+  op _{_} : ParNConstSymbolId SortVarList -> NConstSymbolId 
+    [format(d d y o d) prec 50] .
 
 endfm
 
@@ -64,7 +66,7 @@ fmod VARIABLE is
   protecting SORT .
 
   sorts VariableName Variable .
-  op _:_ : VariableName Sort -> Variable [prec 50] .
+  op _:_ : VariableName Sort -> Variable [prec 52] .
 
 endfm
 
@@ -76,23 +78,60 @@ fmod PATTERN is
 
   sorts Pattern PatternList .
   subsort Pattern < PatternList .
-  op _,_ : Pattern PatternList -> PatternList [prec 51] .  
+  op _,_ : Pattern PatternList -> PatternList [prec 58] .  
 
   subsort Variable < Pattern .
 
   subsort ConstSymbolId < Pattern .
-  op _`(_`) : NConstSymbolId PatternList -> Pattern [prec 50] .
+  op _`(_`) : NConstSymbolId PatternList -> Pattern [prec 52] .
 
-  op \not{_}`(_`) : Sort Pattern -> Pattern .
-  op \and{_}`(_,_`) : Sort Pattern Pattern -> Pattern .
-  op \exists{_,_}`(_,_`) : Sort Sort Variable Pattern -> Pattern .
+  op \not{_}`(_`) : Sort Pattern -> Pattern 
+    [format(d d y o d d d d) prec 52] .
+  op \and{_}`(_,_`) : Sort Pattern Pattern -> Pattern 
+    [format(d d y o d d d d d d) prec 52] .
+  op \exists{_,_}`(_,_`) : Sort Sort Variable Pattern -> Pattern
+    [format(d d y d d o d d d d d d) prec 52] . 
 
-  ---- derived connectives
-  op \or{_}`(_,_`) : Sort Pattern Pattern -> Pattern .
-  op \iff{_}`(_,_`) : Sort Pattern Pattern -> Pattern .
-  op \implies{_}`(_,_`) : Sort Pattern Pattern -> Pattern .
-  op \forall{_,_}`(_,_`) : Sort Sort Variable Pattern -> Pattern .
-  op \equals{_,_}`(_,_`) : Sort Sort Pattern Pattern -> Pattern .
+  ---- alias (defined later in this module)
+  subsort ConstAliasId < Pattern .
+  op _`(_`) : NConstAliasId PatternList -> Pattern [prec 52] .
+
+
+  ---- fmod ALIAS is
+
+  ---- An alias is something that enjoys the same 
+  ---- syntax / grammar as a symbol but semantically
+  ---- different from a symbol.
+  ---- Therefore, it is reasonable to expect something (syntactic)
+  ---- similar to happen with alias.
+
+  ---- Alias should has its own module ALIAS.
+  ---- The reason we put it here under PATTERN module is that
+  ---- ALIAS depends on PATTERN and PATTERN depends on ALIAS,
+  ---- and Maude does not allow this.
+  
+  sorts AliasId ConstAliasId NConstAliasId .
+  subsorts ConstAliasId NConstAliasId < AliasId .
+  
+  sort DecoAlias .
+  op _:=_ : ConstAliasId Pattern -> DecoAlias 
+    [format(d s s d) prec 50] .
+  op _`(_`):=_ : NConstAliasId PatternList Pattern -> DecoAlias 
+    [format(d d d d s s d) prec 50] .
+
+  ---- Constant alias identifier: non-parametric and parametric:
+  sorts AtomicConstAliasId ParConstAliasId .
+  subsort AtomicConstAliasId < ConstAliasId .
+  op _{_} : ParConstAliasId SortVarList -> ConstAliasId
+    [format(d d y o d) prec 49] .
+
+  ---- Non-constant alias identifier: non-par and par:
+  sorts AtomicNConstAliasId ParNConstAliasId .
+  subsort AtomicNConstAliasId < NConstAliasId .
+  op _{_} : ParNConstAliasId SortVarList -> NConstAliasId
+    [format(d d y o d) prec 49] .
+
+  ---- endfm
 
 endfm
 
@@ -103,21 +142,23 @@ fmod MODULE is
   sorts Module Modules .
   subsort Module < Modules .
   op __ : Module Modules -> Modules 
-    [format(d n d) prec 60] .
+    [format(d n d) prec 80] .
 
   sort ModuleName Sentence Sentences .
   op module__endmodule : ModuleName Sentences -> Module 
-    [format(nb o n++ n--b o) prec 53] .
+    [format(nb o n++ n--b o) prec 70] .
 
   subsort Sentence < Sentences .
   op __ : Sentence Sentences -> Sentences
-    [format(d n d) prec 52] .
+    [format(d n d) prec 65] .
 
-  op import_ : ModuleName -> Sentence [format(ib o d) prec 51] .
-  op sort_ : Sort -> Sentence [format(ib o d) prec 51] .
-  op symbol_ : DecoSymbol -> Sentence [format(ib o d) prec 51] .
-  op axiom_ : Pattern -> Sentence [format(ib n++io --) prec 51] .
-  op axiom{_}_ : SortVarList Pattern -> Sentence [format(ib o d d n++i --) prec 51] .
+  op import_ : ModuleName -> Sentence [format(ib o d) prec 55] .
+  op sort_ : Sort -> Sentence [format(ib o d) prec 55] .
+  op symbol_ : DecoSymbol -> Sentence [format(ib o d) prec 55] .
+  op alias_ : DecoAlias -> Sentence [format(ib o d) prec 55] .
+  op axiom_ : Pattern -> Sentence [format(ib n++io --) prec 55] .
+  op axiom{_}_ : SortVarList Pattern -> Sentence 
+    [format(ib o d d n++i --) prec 55] .
   
 endfm
 

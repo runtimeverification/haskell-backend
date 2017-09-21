@@ -1,11 +1,33 @@
-in kore
-in imp-tokens
+---- The IMP theory in Kore ----
 
+---- Some preludes ... Just ignore ---
+in kore
+in tokens
 fmod IMP is
-  including IMP-TOKENS .
+  including TOKENS .
 endfm
 
+------------------------------
+---- imp.kore starts here ----
+------------------------------
+
+set print mixfix off .
+
 parse
+
+module PL-SYNTACTIC-SUGAR
+  
+  alias  \or{S}(P:KPattern, Q:KPattern)
+      := \not{S}(\and{S}(\not{S}(P:KPattern), \not{S}(Q:KPattern)))
+  alias  \implies{S}(P:KPattern, Q:KPattern) 
+      := \or{S}(\not{S}(P:KPattern), Q:KPattern)
+  alias  \iff{S}(P:KPattern, Q:KPattern) 
+      := \and{S}(\implies{S}(P:KPattern, Q:KPattern), 
+                 \implies{S}(Q:KPattern, P:KPattern))
+  alias  \forall{S1,S2}(X:S1,P:KPattern) 
+      := \not{S2}(\exists{S1,S2}(X:S1,\not{S2}(P:KPattern)))
+  
+endmodule
 
 module DEFINEDNESS
   
