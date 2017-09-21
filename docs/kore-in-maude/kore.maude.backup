@@ -1,0 +1,81 @@
+--- Run Maude with option -no-prelude.  We only need the builtin strings
+--- from the Maude prelude, which we reinclude/rehook below (ignore warning):
+
+mod KSTRING is
+  sort String .
+  op <Strings> : -> String  .
+endm
+
+mod MATCHING-LOGIC is
+  including KSTRING .
+*** Basic term-like syntax for structure:
+  sorts Symbol Sort VariableName Variable Pattern PatternList .
+  subsorts Variable < Pattern < PatternList .
+  op _,_ : Pattern PatternList -> PatternList [prec 100 format(d d s d)] .
+  op _`(_`) : Symbol PatternList -> Pattern   [prec 10 strat(2 0)] .
+  op _`(`) : Symbol -> Pattern                [prec 10 strat(0)] .
+  op _`(_`) : Symbol String -> Pattern        [prec 10 strat(0)] .
+  --- The strat attribute says that the symbol should never be
+  --- evaluated; this is important because we want to later allow constant
+  --- symbols in the E-KORE and then desugar them.
+  op _:_ : VariableName Sort -> Variable [strat(0)] .
+*** Logical constructs:
+  op \top : -> Pattern .
+  op \bottom : -> Pattern .
+  op \and : Pattern Pattern -> Pattern .
+  op \or : Pattern Pattern -> Pattern .
+  op \not : Pattern -> Pattern .
+  op \implies : Pattern Pattern -> Pattern .
+  op \exists : Variable Pattern -> Pattern .
+  op \forall : Variable Pattern -> Pattern .
+  op \next : Pattern -> Pattern .
+  op \rewrite : Pattern Pattern -> Pattern .
+  op \equal : Pattern Pattern -> Pattern .
+endm
+
+mod KORE is
+  including MATCHING-LOGIC .
+
+  sorts Module ModuleList Definition .
+  subsort Module < ModuleList .
+  op __ : Module ModuleList -> ModuleList  [prec 110] .
+  op __ : Attributes ModuleList -> Definition [prec 120 format(ni n d)] .
+
+  sort Attributes .
+  op [_] : PatternList -> Attributes .
+  op [] : -> Attributes .
+
+  sort ModuleName .
+  op module__endmodule_ : ModuleName SentenceList Attributes -> Module
+    [format(ni d ++n --ni d n) prec 100] .
+  op module_endmodule_ : ModuleName Attributes -> Module
+    [format(ni d ni d n) prec 100] .
+  --- Second operation above needed because Maude does not allow empty lists
+
+  sorts Sentence SentenceList .
+  subsort Sentence < SentenceList .
+  op __ : Sentence SentenceList -> SentenceList
+    [format(d n d) prec 90] .
+
+  op import__ : ModuleName Attributes -> Sentence
+    [format(i d d d) prec 80] .
+
+  op syntax__ : Sort Attributes -> Sentence
+    [format(i d d d) prec 80] .
+  op syntax_::=_`(_`)_ : Sort Symbol SortList Attributes -> Sentence
+    [format(i d d d d d d s d) prec 80 strat(3 4 0)] .
+  op syntax_::=_`(`)_ : Sort Symbol Attributes -> Sentence
+    [format(i d d d d d s d) prec 80 strat(3 0)] .
+  --- strategy says that no desugaring happens in the first 2 arguments
+
+  sort SortList .
+  subsort Sort < SortList .
+  op _,_ : Sort SortList -> SortList .
+
+  op rule__ : Pattern Attributes -> Sentence
+    [format(i d d d) prec 80] .
+
+  op axiom__ : Pattern Attributes -> Sentence
+    [format(i d d d) prec 80] .
+endm
+

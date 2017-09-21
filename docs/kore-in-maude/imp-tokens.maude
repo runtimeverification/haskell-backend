@@ -1,0 +1,5 @@
+fmod IMP-TOKENS is
+  including KORE .
+  op ID : -> ModuleName .
+  op Id : -> KSort .
+endfm

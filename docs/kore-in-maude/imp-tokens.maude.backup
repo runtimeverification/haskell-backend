@@ -1,0 +1,30 @@
+mod IMP-TOKENS is
+  including KORE .
+
+  ops ID BOOL INT SET MAP DOMAINS K CONTEXTS
+      IMP-SYNTAX IMP
+    : -> ModuleName .
+  ops Bool Int Set K KResult Map Id
+      AExp BExp Block Stmt Pgm Ids TopCell KCell StateCell Whatever
+    : -> Sort .
+  ops kResultAsK
+      bool true false not@BOOL
+      int 0 1 2 plus@INT div@INT leq@INT
+      .Set kAsSet comma@SET in
+      .Map comma@MAP bind keys
+      list set map
+      #krun
+      #gamma #context #context2 #context3 #... #...2 #...3
+      strict seqstrict isKResult
+      intAsAExp idAsAExp boolAsBExp blockAsStmt pgmAsK stmtAsK idAsIds
+      intAsKResult boolAsKResult
+      div plus leq not and asgn seq emptyBlock block if while pgm .Ids comma
+      top k state cfg
+    : -> Symbol .
+  ops _ HOLE
+      S S1 S2 S3 K1 K2 K3 M M1 M2 M3 C
+      A A1 A2 B B1 B2 T X P Ids1 Ids2 Ids3 Kc Sc I I1 I2 Xs M
+    : -> VariableName .
+  --- keep Variable disjoint from Sort
+endm
+

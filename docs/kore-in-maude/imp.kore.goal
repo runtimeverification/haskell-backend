@@ -1,0 +1,368 @@
+module PL-SYNTACTIC-SUGAR
+
+  /* Define predicate logic derived connectives as alias */
+  
+  /* Style A */
+  /* Is it defining symbols at the meta-theory? */
+  
+  alias  \or{S}(P:KPattern, Q:KPattern)
+      := \not{S}(\and{S}(\not{S}(P:KPattern), \not{S}(Q:KPattern)))
+  alias  \implies{S}(P:KPattern, Q:KPattern) 
+      := \or{S}(\not{S}(P:KPattern), Q:KPattern)
+  alias  \iff{S}(P:KPattern, Q:KPattern) 
+      := \and{S}(\implies{S}(P:KPattern, Q:KPattern), 
+                 \implies{S}(Q:KPattern, P:KPattern))
+  alias  \forall{S1}(X:S2,P:KPattern) 
+      := \not{S1}(\exists{S1}(X:S2,\not{S1}(P:KPattern)))
+  
+endmodule
+
+
+module DEFINEDNESS
+
+  /* Define the definedness symbol ceil  ,
+   * which is parametric on sorts S1 and S2 */
+  
+  symbol ceil{S1,S2}(S1) : S2
+  axiom{S1, S2}  
+    ceil{S1,S2}(X:S1)
+  
+  alias  floor{S1,S2}(P:KPattern) 
+      := \not{S2}(ceil{S1,S2}(\not{S1}(P:KPattern)))
+  alias  \equals{S1,S2}(P:KPattern,Q:KPattern) 
+      := floor{S1,S2}(\iff{S1,S2}(P:KPattern,Q:KPattern))
+  
+endmodule
+
+module BOOL
+
+  hooked-sort   Bool
+  hooked-symbol true                : Bool
+  hooked-symbol false               : Bool
+  hooked-symbol notBool(Bool)       : Bool
+  hooked-symbol andBool(Bool, Bool) : Bool
+  
+  /* Axioms for functional symbols */
+   
+  axiom{S}  
+    \exists{Bool, S}(B:Bool, \equals{Bool, S}(B:Bool, true))
+  axiom{S}
+    \exists{Bool, S}(B:Bool, \equals{Bool, S}(B:Bool, false))
+  axiom{S}
+    \exists{Bool, S}(B:Bool, \equals{Bool, S}(B:Bool, notBool(C:Bool)))
+  axiom{S}
+    \exists{Bool, S}(B:Bool, \equals{Bool, S}(B:Bool, andBool(C1:Bool, C2:Bool)))
+  
+  /* Axioms for no-junk and no-overlap */ 
+  axiom
+    \or{Bool}(true, false)
+  axiom
+    \not{Bool}(\and{Bool}(true, false))
+  
+  /* Other axioms */
+  
+  /* notBool(B) = not B */
+  axiom{S}
+    \equals{Bool, S}(notBool(B:Bool), \not{Bool}(B:Bool))
+  
+  /* andBool(B, true) = B */
+  axiom{S}
+    \equals{Bool, S}(andBool(B:Bool, true), B:Bool)
+  
+  /* andBool(B, false) = false */
+  axiom{S}
+    \equals{Bool, S}(andBool(B:Bool, false), false)
+
+endmodule
+
+module PRESBURGER
+
+  hooked-sort   Nat
+  hooked-symbol zero           : Nat
+  hooked-symbol succ(Nat)      : Nat
+  hooked-symbol plus(Nat, Nat) : Nat
+  hooked-symbol gte(Nat, Nat)  : Bool /* greater-than-or-equal-to */
+  
+  /* Axioms for functional symbols */
+  
+  axiom{S}
+    \exists{Nat, S}(X:Nat, \equals{Nat, S}(X:Nat, zero))
+  axiom{S}
+    \exists{Nat, S}(X:Nat, \equals{Nat, S}(X:Nat, succ(Y:Nat)))
+  axiom{S}
+    \exists{Nat, S}(X:Nat, \equals{Nat, S}(X:Nat, plus(Y:Nat, Z:Nat)))
+  axiom{S}
+    \exists{Bool, S}(B:Bool, \equals{Bool, S}(B:Bool, gte(Y:Nat, Z:Nat)))
+  
+  /* Axioms for no-junk and no-overlap */
+  axiom  
+    \or{Nat}(zero, \exists{Nat, Nat}(X:Nat, succ(X:Nat)))
+  axiom
+    \not{Nat}(\and{Nat}(zero, \exists{Nat, Nat}(X:Nat, succ(X:Nat))))
+  
+  /* Other axioms */
+  
+  /* X + 0 = X */
+  /* X + succ(Y) = succ(X + Y) */
+  axiom{S}
+    \equals{Nat, S}(plus(X:Nat, zero), zero)
+  axiom{S}
+    \equals{Nat, S}(plus(X:Nat, succ(Y:Nat)), succ(plus(X:Nat, Y:Nat)))
+
+endmodule
+
+
+
+
+module LIST
+
+  sort   List{S}
+  symbol nil{S}              : List{S}
+  symbol cons{S}(S, List{S}) : List{S}
+  
+  /* Axioms for functional symbols */
+  axiom{S, R}
+    \exists{List{S}, R}(L:List{S}, 
+    \equals{List{S}, R}(L:List{S}, nil{S}))
+  axiom{S, R}
+    \exists{List{S}, R}(L:List{S}, 
+    \equals{List{S}, R}(L:List{S}, cons{S}(X:S, L0:List{S})))
+  
+  /* Axioms for no-junk and no-overlap */
+  axiom{S}
+    \or{List{S}}(nil{S}, 
+                 \exists{S, List{S}}(X:S, \exists{List{S}, List{S}}(L:List{S}, 
+                    cons{S}(X:S, L:List{S}))))
+  axiom{S}
+    \not{List{S}}(\and{List{S}}(
+      nil{S}, 
+      \exists{S, List{S}}(X:S, \exists{List{S}, List{S}}(L:List{S}, 
+        cons{S}(X:S, L:List{S})))))
+  
+  endmodule
+                           
+  /* Define parametric maps 
+  sort   Map{S1, S2}
+  symbol emptyMap{S1, S2}                        : Map{S1, S2}
+  symbol bind{S1, S2}({S1}, {S2})                : Map{S1, S2}
+  symbol merge{S1, S2}(Map{S1, S2}, Map{S1, S2}) : Map{S1, S2}
+  
+  /* Axioms of functional symbols, partial functional symbols,
+   * and constructors:
+   *  - emptyMap is functional
+   *  - bind     is functional
+   *  - merge    is partial
+   *  - merge    is assoc-comm
+   *  - emptyMap, bind, and merge modulo are constructors
+   *  - merge(bind(X, Y), bind(X, Z)) = bottom
+   
+  ... ...
+  
+  */
+
+module CONTEXT
+
+  sort   Ctxt{S1, S2}
+  symbol gamma0{S1, S2}(S1, S2)            : Ctxt{S1, S2}
+  symbol ctxtapp{S1, S2}(Ctxt{S1, S2}, S1) : S2
+  
+  alias  gamma{S1,S2}(HOLE:S1, P:KPattern) 
+     :=  \exists{S1, Ctxt{S1, S2}}(HOLE:S1, gamma0{S1, S2}(HOLE:S1, P:KPattern))
+  
+endmodule
+
+module ID
+
+  sort Id
+  symbol a : Id
+  symbol b : Id
+  ... ...
+  symbol z : Id
+  
+  /* Axioms of functional symbols */
+  /* No-Junk and No-Overlap axioms */
+            
+endmodule
+
+module AEXP
+
+  import ID
+
+  sort   AExp
+  
+  /* syntax AExp  ::= Nat                    <---- NatToAExp    
+   *                | Id                     <---- IdToAExp
+   *                | AExp "+" AExp [strict] <---- plusAExp
+   */
+  
+  symbol NatToAExp(Nat)       : AExp
+  symbol IdToAExp(Nat)        : AExp
+  symbol plusAExp(AExp, AExp) : AExp
+  
+  /* Axioms of functional symbols */
+  /* No-Junk and No-Overlap axioms:
+  /* Injection from Nat to AExp */
+  
+  /* Axiom of strictness: AExp "+" AExp [strict] */
+  
+  
+  /* plusAExp is strict at the 1st argument:
+   * plusAExp(C[X],E) = (gamma H:S . plusAExp(C[H:S],E))[X]
+   * if C is of sort Ctxt{S, AExp}
+   */
+  axiom{S, R}
+  \implies{R}(
+  \equals{KSort, R}(KgetSort(C:KPattern), Ctxt{S, AExp}),
+          /* or ... KgetSort(C:KPattern, KModule("IMP")), ... */
+  \equals{AExp, R}(plusAExp(ctxtapp{S,AExp}(C:KPattern, X:S), E:AExp),
+                   ctxtapp{S,AExp}(
+                     gamma{S,AExp}(
+                       HOLE:S, 
+                       plusAExp(ctxtapp{S,AExp}(C:KPattern, HOLE:S), E:AExp)), 
+                     X:S)))
+
+  /* plusAExp is strict at the 2nd argument:
+   * plusAExp(E, C[X]) = (gamma H:S . plusAExp(E, C[H]))[X]
+   * if C is of sort Ctxt{S, AExp}
+   */
+  axiom{S, R}
+  \implies{R}(
+  \equals{KSort, R}(KgetSort(C:KPattern), Ctxt{S,AExp}),
+  \equals{AExp, R}(ctxtapp{S,AExp}(
+                     gamma{S,AExp}(
+                       HOLE:S, 
+                       plusAExp(ctxtapp{S,AExp}(C:KPattern, HOLE:S), E:AExp)), 
+                     X:S)),
+                   plusAExp(ctxtapp{S,AExp}(C:KPattern, X:S), E:AExp))
+  
+  /* ite is strict at the 1st argument:
+   * ite(C[X], S1, S2) = (gamma H:S . ite(C[H], S1, S2))[X]
+   * if C is of sort Ctxt{S, BExp}
+   */
+  axiom{S, R}
+  \implies{R}(
+  \equals{KSort, R}(KgetSort(C:KPattern), Ctxt{S, BExp}),
+  \equals{Stmt, R}(ite(ctxtapp{S, BExp}(C:KPattern, X:S), S1:Stmt, S2:Stmt),
+                   ctxtapp{S, Stmt}(
+                     gamma{S, Stmt}(
+                       HOLE:S,
+                       ite(ctxtapp{S, BExp}(C:KPattern, HOLE:S),
+                           S1:Stmt, S2:Stmt)), X:S)))
+endmodule
+
+/**** IGNORE THE REST ****/
+/**** IGNORE THE REST ****/
+/**** IGNORE THE REST ****/
+/**** IGNORE THE REST ****/
+
+
+/* In the following we show how to define the semantics of IMP */
+
+   
+               
+
+/* Define Boolean expressions */
+sort   BExp
+
+* syntax BExp  ::= Bool                       <---- BoolToBExp    
+*                | "!" BExp       [strict]    <---- notBExp
+*                | AExp ">=" AExp [seqstrict] <---- gteBExp
+*/
+symbol BoolToBExp(Bool)     : BExp
+symbol notBExp(BExp)       : BExp
+symbol gteBExp(AExp, AExp) : BExp
+
+/* Axioms of functional symbols */
+... ...
+
+/* No-Junk and No-Overlap axioms:
+   BoolToBExp, notBExp, and gteBExp are constructors. */
+... ...
+
+/* Injection axioms */
+... ...
+
+/* Axiom of strictness: "!" BExp       [strict] */
+??? ???
+
+/* Axiom of strictness: AExp ">=" AExp [seqstrict] */
+??? ???
+
+/* Define Block and Stmt */
+sort   Block
+sort   Stmt
+
+/* syntax Block ::= "{" "}"      <---- emptyBlock  
+ *                | "{" Stmt "}" <---- CurlyBracket(Stmt)
+ */
+symbol emptyBlock         : Block
+symbol CurlyBracket(Stmt) : Block
+
+/* syntax Stmt  ::= Block
+ *                | Id "=" AExp ";"            [strict(2)]
+ *                | "if" "(" BExp ")"
+ *                  Block "else" Block         [strict(1)]
+ *                | "while" "(" BExp ")" Block
+ *                | Stmt Stmt
+ */
+ 
+symbol BlockToStmt(Block)      : Stmt
+symbol asgn(Id, AExp)          : Stmt
+symbol ite(BExp, Block, Block) : Stmt
+symbol while(BExp, Block)      : Stmt
+symbol seq(Stmt, Stmt)         : Stmt
+
+/* Axioms of functional symbols */
+... ...
+
+/* No-Junk and No-Overlap axioms of constuctors */
+... ...
+
+/* Axiom of strictness: Id "=" AExp ";" [strict(2)] */
+??? ???
+
+/* Axiom of strictness: "if" "(" BExp ")" Block "else" Block [strict(1)] */
+??? ???
+
+/* Define Pgm and Ids */
+/* syntax Pgm ::= "int" Ids ";" Stmt <---- pgm
+ * syntax Ids ::= List{Id,","}       <---- List{Id} */
+
+sort   Pgm
+symbol pgm(Ids, Stmt) : Pgm
+
+alias  Ids := List{Id}
+
+/* Define infrastructure of rewriting systems */
+sort   Cfg
+symbol tcell(K, State) : Cfg
+sort   K
+symbol kcell(Pgm) : K
+sort   State
+symbol statecell(Map{Id, Nat}) : State
+
+/* Define rewriting */
+... ...
+/* the predicate pattern \rewrites(left, right, S, S') means that
+ * left => right, S is the sort of left and right,
+ * and S' is the sort of the context
+ * in which \rewrites(left, right, S, S') is mentioned.
+ */
+alias  \rewrites(_,_,_,_) := ... ...
+
+/* syntax KResult ::= Int | Bool */
+sort   KResult
+symbol IntToKResult(Int)   : KResult
+symbol BoolToKResult(Bool) : KResult
+
+/* Define contexts */
+
+... ...
+
+/* Define rules */
+
+/* rule I1 + I2 => I1 +Int I2 */
+axiom   \rewrites(C[I1 + I2], C[I1 +Int I2], ..., ...) 
+
+endmodule
+
