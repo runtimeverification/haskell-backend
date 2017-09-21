@@ -1,0 +1,124 @@
+---- Run Maude with option -no-prelude.  We only need the builtin strings
+---- from the Maude prelude, which we reinclude/rehook below (ignore warning):
+
+fmod STRING is
+
+  sort String .
+  op <Strings> : -> String [special(id-hook StringSymbol)] .
+
+endfm
+
+fmod SORT is
+
+  sorts   Sort   SortList .
+  subsort Sort < SortList .
+  op _,_ : Sort SortList -> SortList [prec 50] .
+
+  sorts AtomicSort SortVar ParSort .
+  subsort AtomicSort < Sort . 
+  subsort SortVar    < Sort .
+  op _{_} : ParSort SortList -> Sort [prec 49] .
+
+  sort SortVarList .
+  subsort SortVar < SortVarList .
+  subsort SortVarList < SortList .
+  op _,_ : SortVar SortVarList -> SortVarList [prec 50] .
+
+endfm
+
+fmod SYMBOL is
+
+  protecting SORT .
+
+  sorts SymbolId ConstSymbolId NConstSymbolId .
+  subsorts ConstSymbolId NConstSymbolId < SymbolId .
+  
+  sort DecoSymbol .
+  op _:_ : ConstSymbolId Sort -> DecoSymbol 
+    [format(d s s d) prec 50] .
+  op _`(_`):_ : NConstSymbolId SortList Sort -> DecoSymbol 
+    [format(d d d d s s d) prec 50] .
+
+  ---- Constant symbols identifier: non-parametric and parametric:
+  sorts AtomicConstSymbolId ParConstSymbolId .
+  subsort AtomicConstSymbolId < ConstSymbolId .
+  op _{_} : ParConstSymbolId SortVarList -> ConstSymbolId [prec 49] .
+
+  ---- Non-constant symbols identifier: non-par and par:
+  sorts AtomicNConstSymbolId ParNConstSymbolId .
+  subsort AtomicNConstSymbolId < NConstSymbolId .
+  op _{_} : ParNConstSymbolId SortVarList -> NConstSymbolId [prec 49] .
+
+endfm
+
+---- This is the module for matching logic variables.
+---- Known issue: Maude cannot parse x:s as x : s;
+---- We need some space around the colon ":" when
+---- parsing variables.
+---- To get around this (not a big) issue,
+---- in files *-tokens.maude where we define terminals,
+---- we define some "frontend sugar" that allows us
+---- write x:s instead of x : s.
+fmod VARIABLE is
+
+  protecting SORT .
+
+  sorts VariableName Variable .
+  op _:_ : VariableName Sort -> Variable [prec 50] .
+
+endfm
+
+
+fmod PATTERN is
+
+  protecting SYMBOL     .
+  protecting VARIABLE   .
+
+  sorts Pattern PatternList .
+  subsort Pattern < PatternList .
+  op _,_ : Pattern PatternList -> PatternList [prec 51] .  
+
+  subsort Variable < Pattern .
+
+  subsort ConstSymbolId < Pattern .
+  op _`(_`) : NConstSymbolId PatternList -> Pattern [prec 50] .
+
+  op \not{_}`(_`) : Sort Pattern -> Pattern .
+  op \and{_}`(_,_`) : Sort Pattern Pattern -> Pattern .
+  op \exists{_,_}`(_,_`) : Sort Sort Variable Pattern -> Pattern .
+
+  ---- derived connectives
+  op \or{_}`(_,_`) : Sort Pattern Pattern -> Pattern .
+  op \iff{_}`(_,_`) : Sort Pattern Pattern -> Pattern .
+  op \implies{_}`(_,_`) : Sort Pattern Pattern -> Pattern .
+  op \forall{_,_}`(_,_`) : Sort Sort Variable Pattern -> Pattern .
+  op \equals{_,_}`(_,_`) : Sort Sort Pattern Pattern -> Pattern .
+
+endfm
+
+fmod MODULE is
+  
+  protecting PATTERN .
+
+  sorts Module Modules .
+  subsort Module < Modules .
+  op __ : Module Modules -> Modules 
+    [format(d n d) prec 60] .
+
+  sort ModuleName Sentence Sentences .
+  op module__endmodule : ModuleName Sentences -> Module 
+    [format(nb o n++ n--b o) prec 53] .
+
+  subsort Sentence < Sentences .
+  op __ : Sentence Sentences -> Sentences
+    [format(d n d) prec 52] .
+
+  op import_ : ModuleName -> Sentence [format(ib o d) prec 51] .
+  op sort_ : Sort -> Sentence [format(ib o d) prec 51] .
+  op symbol_ : DecoSymbol -> Sentence [format(ib o d) prec 51] .
+  op axiom_ : Pattern -> Sentence [format(ib n++io --) prec 51] .
+  op axiom{_}_ : SortVarList Pattern -> Sentence [format(ib o d d n++i --) prec 51] .
+  
+endfm
+
+

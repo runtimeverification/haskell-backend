@@ -1,0 +1,64 @@
+---- Terminals / Tokens of the Kore syntax / grammar are defined
+---- as Maude constants, simply because Maude does not allows us
+---- to define them as regular expressions. 
+
+fmod IMP-TOKENS is
+
+  including MODULE .
+
+  ---- Sort terminals
+  ops Nat Bool    : -> AtomicSort           .
+  ops AExp BExp       : -> AtomicSort           .
+  ops List Map Ctxt   : -> ParSort              .
+  ops S S' S1 S2 S3 R : -> SortVar              .
+
+  ---- Symbol terminals
+  op  ceil            : -> ParNConstSymbolId    .
+  ops true false      : -> AtomicConstSymbolId  .
+  ops andBool notBool : -> AtomicNConstSymbolId . 
+  ops zero            : -> AtomicConstSymbolId  .
+  ops succ plus gte   : -> AtomicNConstSymbolId .
+  op  nil             : -> ParConstSymbolId     .
+  op  cons            : -> ParNConstSymbolId    .
+  op  ctxtapp         : -> ParNConstSymbolId    .
+  op  gamma0          : -> ParNConstSymbolId    .
+
+  ---- VariableName terminals
+  ops B               : -> VariableName         .
+  ops S S' S1 S2 S3 R : -> VariableName         . 
+  ops X Y Z L L0      : -> VariableName         .
+  ops C C1 C2 C' C''  : -> VariableName         .
+
+  ---- ModuleName terminals
+  op  DEFINEDNESS     : -> ModuleName           .
+  op  BOOL            : -> ModuleName           .
+  op  PRESBURGER      : -> ModuleName           .
+  op  LIST            : -> ModuleName           .
+
+  ---- Some frontend sugar that allows us
+  ---- to use x:s instead of x : s in 
+  ---- Kore definition. 
+  op  X:S1            : -> Variable             .
+  eq  X:S1            =    X : S1               .
+  op  X:S             : -> Variable             .
+  eq  X:S             =    X : S                .
+  op  X:Nat           : -> Variable             .
+  eq  X:Nat           =    X : S1               .
+  op  Y:Nat           : -> Variable             .
+  eq  Y:Nat           =    Y : S1               .
+  op  Z:Nat           : -> Variable             .
+  eq  Z:Nat           =    Z : S1               .
+  op  L:List{S}       : -> Variable             .
+  eq  L:List{S}       =    L : List{S}          .
+  op  L0:List{S}      : -> Variable             .
+  eq  L0:List{S}      =    L0 : List{S}         .
+  op  B:Bool          : -> Variable             .
+  eq  B:Bool          =    B : Bool             .
+  op  C:Bool          : -> Variable             .
+  eq  C:Bool          =    C : Bool             .
+  op  C1:Bool         : -> Variable             .
+  eq  C1:Bool         =    C1 : Bool            .
+  op  C2:Bool         : -> Variable             .
+  eq  C2:Bool         =    C2 : Bool            .
+
+endfm

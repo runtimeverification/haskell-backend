@@ -1,0 +1,112 @@
+in kore
+in imp-tokens
+
+fmod IMP is
+  including IMP-TOKENS .
+endfm
+
+parse
+
+module DEFINEDNESS
+  
+  symbol ceil{S1,S2}(S1) : S2
+  axiom{S1, S2}  
+    ceil{S1,S2}(X:S1)
+  
+endmodule
+
+module BOOL
+
+  sort   Bool
+  symbol true                : Bool
+  symbol false               : Bool
+  symbol notBool(Bool)       : Bool
+  symbol andBool(Bool, Bool) : Bool
+  
+  axiom{S}  
+    \exists{Bool, S}(B:Bool, \equals{Bool, S}(B:Bool, true))
+  axiom{S}
+    \exists{Bool, S}(B:Bool, \equals{Bool, S}(B:Bool, false))
+  axiom{S}
+    \exists{Bool, S}(B:Bool, \equals{Bool, S}(B:Bool, notBool(C:Bool)))
+  axiom{S}
+    \exists{Bool, S}(B:Bool, \equals{Bool, S}(B:Bool, andBool(C1:Bool, C2:Bool)))
+  
+  axiom
+    \or{Bool}(true, false)
+  axiom
+    \not{Bool}(\and{Bool}(true, false))
+  
+  
+  axiom{S}
+    \equals{Bool, S}(notBool(B:Bool), \not{Bool}(B:Bool))
+  
+  axiom{S}
+    \equals{Bool, S}(andBool(B:Bool, true), B:Bool)
+  
+  axiom{S}
+    \equals{Bool, S}(andBool(B:Bool, false), false)
+
+endmodule
+
+
+
+module PRESBURGER
+
+  sort   Nat
+  symbol zero           : Nat
+  symbol succ(Nat)      : Nat
+  symbol plus(Nat, Nat) : Nat
+  symbol gte(Nat, Nat)  : Bool 
+  
+  
+  axiom{S}
+    \exists{Nat, S}(X:Nat, \equals{Nat, S}(X:Nat, zero))
+  axiom{S}
+    \exists{Nat, S}(X:Nat, \equals{Nat, S}(X:Nat, succ(Y:Nat)))
+  axiom{S}
+    \exists{Nat, S}(X:Nat, \equals{Nat, S}(X:Nat, plus(Y:Nat, Z:Nat)))
+  axiom{S}
+    \exists{Bool, S}(B:Bool, \equals{Bool, S}(B:Bool, gte(Y:Nat, Z:Nat)))
+  
+  axiom  
+    \or{Nat}(zero, \exists{Nat, Nat}(X:Nat, succ(X:Nat)))
+  axiom
+    \not{Nat}(\and{Nat}(zero, \exists{Nat, Nat}(X:Nat, succ(X:Nat))))
+  
+  axiom{S}
+    \equals{Nat, S}(plus(X:Nat, zero), zero)
+  axiom{S}
+    \equals{Nat, S}(plus(X:Nat, succ(Y:Nat)), succ(plus(X:Nat, Y:Nat)))
+
+endmodule
+
+
+module LIST
+
+  sort   List{S}
+  symbol nil{S}              : List{S}
+  symbol cons{S}(S, List{S}) : List{S}
+  
+  axiom{S, R}
+    \exists{List{S}, R}(L:List{S}, 
+    \equals{List{S}, R}(L:List{S}, nil{S}))
+  axiom{S, R}
+    \exists{List{S}, R}(L:List{S}, 
+    \equals{List{S}, R}(L:List{S}, cons{S}(X:S, L0:List{S})))
+  
+  axiom{S}
+    \or{List{S}}(nil{S}, 
+                 \exists{S, List{S}}(X:S, \exists{List{S}, List{S}}(L:List{S}, 
+                    cons{S}(X:S, L:List{S}))))
+  axiom{S}
+    \not{List{S}}(\and{List{S}}(
+      nil{S}, 
+      \exists{S, List{S}}(X:S, \exists{List{S}, List{S}}(L:List{S}, 
+        cons{S}(X:S, L:List{S})))))
+  
+endmodule
+
+
+.
+quit
