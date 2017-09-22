@@ -18,7 +18,7 @@ fmod LIFT is
    = KconsKSortList(lift(S:Sort), KnilKSortList) .
   eq liftlist(S:Sort, S':Sort)
    = KconsKSortList(lift(S:Sort), liftlist(S':Sort)) .
-  eq lift(S:Sort, Ss:SortList)
+  eq liftlist(S:Sort, Ss:SortList)
    = KconsKSortList(lift(S:Sort), liftlist(Ss:SortList)) .
 
   ---- lift a parametric sort
@@ -53,8 +53,6 @@ fmod LIFT is
   op  KSymbol         : -> AtomicSort           .
   ---)
 
-
-
 endfm
 
 
@@ -80,37 +78,9 @@ lift(List{Bool})
 
 reduce
 
-lift(Ctxt{Bool, List{Nat}})
+lift(Ctxt{Bool, List{Nat, List{Nat}}, List{S1, S2, List{S3}}})
 
 .
-
-reduce
-
-lift(S1)
-
-.
-
-reduce
-
-liftlist(S1)
-
-.
-
-reduce
-
-liftlist(S1, S1)
-
-. 
-
-set trace on .
-
-reduce
-
-liftlist(S1, (S1, S1))
-
-. 
-
-
 
 
 quit
