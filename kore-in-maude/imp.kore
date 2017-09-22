@@ -11,6 +11,9 @@ endfm
 ---- imp.kore starts here ----
 ------------------------------
 
+--- set print mixfix off .
+
+
 parse
 
 module PL-SYNTACTIC-SUGAR
@@ -135,23 +138,17 @@ module CONTEXT
   
 endmodule
 
-.
-
-quit
-
 module AEXP
 
   import ID
-
   sort   AExp
-
   symbol NatToAExp(Nat)       : AExp
   symbol IdToAExp(Nat)        : AExp
   symbol plusAExp(AExp, AExp) : AExp
 
   axiom{S, R}
   \implies{R}(
-  \equals{KSort, R}(KgetSort(C:KPattern), Ctxt{S, AExp}),  <---- I CANNOT PARSE THIS
+  \equals{KSort, R}(KgetSort(C:KPattern), Ctxt{S, AExp}),  
   \equals{AExp, R}(plusAExp(ctxtapp{S,AExp}(C:KPattern, X:S), E:AExp),
                    ctxtapp{S,AExp}(
                      gamma{S,AExp}(
@@ -178,6 +175,41 @@ module AEXP
                        HOLE:S,
                        ite(ctxtapp{S, BExp}(C:KPattern, HOLE:S),
                            S1:Stmt, S2:Stmt)), X:S)))
+endmodule
+
+module K
+
+  sort KString
+
+  sort KSort
+  sort KSortList
+  sort KSymbol
+  sort KSymbolList
+  sort KVariable
+  sort KPattern
+  sort KPatternList
+
+  sort KSortSentence
+  sort KSortSentenceList
+  sort KSymbolSentence
+  sort KSymbolSentenceList
+  sort KAxiomSentence
+  sort KAxiomSentenceList
+
+  sort KModule 
+  sort KModuleList
+
+  symbol Ksort(KString)                   : KSort
+  symbol Kparsort(KString, KSortList)     : KSort
+
+  symbol KnilKSortList                    : KSortList
+  symbol KconsKSortList(KSort, KSortList) : KSortList 
+
+  symbol Ksymbol(KString, KSortList, KSort)               : KSymbol 
+  symbol Kparsymbol(KSortList, KString, KSortList, KSort) : KSymbol 
+
+  symbol Kvariable(KString, KSort)    : KPattern
+
 endmodule
 
 .
