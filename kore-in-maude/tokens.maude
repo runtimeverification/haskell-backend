@@ -9,10 +9,12 @@ fmod TOKENS is
   ---- Sort terminals
   ops Nat Bool        : -> AtomicSort           .
   ops AExp BExp       : -> AtomicSort           .
+  op  Stmt            : -> AtomicSort           .
   ops List Map Ctxt   : -> ParSort              .
   ops S S' S1 S2 S3 R : -> SortVar              .
 
-  ops KPattern        : -> AtomicSort           .
+  op  KPattern        : -> AtomicSort           .
+  op  KSort           : -> AtomicSort           .
 
   ---- Symbol terminals
   op  ceil            : -> ParNConstSymbolId    .
@@ -24,18 +26,27 @@ fmod TOKENS is
   op  cons            : -> ParNConstSymbolId    .
   op  ctxtapp         : -> ParNConstSymbolId    .
   op  gamma0          : -> ParNConstSymbolId    .
+  op  NatToAExp       : -> AtomicNConstSymbolId .
+  op  IdToAExp        : -> AtomicNConstSymbolId .
+  op  plusAExp        : -> AtomicNConstSymbolId .
+  op  ite             : -> AtomicNConstSymbolId .
+
+  op  KgetSort        : -> AtomicNConstSymbolId .
 
   ---- Alias terminals
   ops \or \implies    : -> ParNConstAliasId     .
   ops \iff \equals    : -> ParNConstAliasId     .
   ops \forall         : -> ParNConstAliasId     .
+  op  floor           : -> ParNConstAliasId     .
+  op  gamma           : -> ParNConstAliasId     .
 
   ---- VariableName terminals
-  ops B               : -> VariableName         .
+  ops B E             : -> VariableName         .
   ops S S' S1 S2 S3   : -> VariableName         . 
   ops X Y Z L L0      : -> VariableName         .
   ops C C1 C2 C' C''  : -> VariableName         .
   ops P Q R           : -> VariableName         .
+  ops HOLE            : -> VariableName         .
 
   ---- ModuleName terminals
   op  PL-SYNTACTIC-SUGAR : -> ModuleName        .
@@ -43,6 +54,9 @@ fmod TOKENS is
   op  BOOL               : -> ModuleName        .
   op  PRESBURGER         : -> ModuleName        .
   op  LIST               : -> ModuleName        .
+  op  CONTEXT            : -> ModuleName        .
+  op  AEXP               : -> ModuleName        .
+  op  ID                 : -> ModuleName        .
 
   ---- Some frontend sugar that allows us
   ---- to use x:s instead of x : s in 
@@ -71,10 +85,22 @@ fmod TOKENS is
   eq  C1:Bool         =    C1 : Bool            .
   op  C2:Bool         : -> Variable             .
   eq  C2:Bool         =    C2 : Bool            .
+  op  E:AExp          : -> Variable             .
+  eq  E:AExp          =    E : AExp             .
+  op  S1:Stmt         : -> Variable             .
+  eq  S1:Stmt         =    S1 : Stmt            .
+  op  S2:Stmt         : -> Variable             .
+  eq  S2:Stmt         =    S2 : Stmt            .
 
   op  P:KPattern      : -> Variable             .
   eq  P:KPattern      =    P : KPattern         .
   op  Q:KPattern      : -> Variable             .
   eq  Q:KPattern      =    Q : KPattern         .
+  op  C:KPattern      : -> Variable             .
+  eq  C:KPattern      =    C : KPattern         .
+  op  HOLE:S1         : -> Variable             .
+  eq  HOLE:S1         =    HOLE : S1            .
+  op  HOLE:S          : -> Variable             .
+  eq  HOLE:S          =    HOLE : S             .
 
 endfm
