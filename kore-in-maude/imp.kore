@@ -11,6 +11,8 @@ endfm
 ---- imp.kore starts here ----
 ------------------------------
 
+--- set print mixfix off .
+
 parse
 
 module PL-SYNTACTIC-SUGAR
@@ -135,10 +137,6 @@ module CONTEXT
   
 endmodule
 
-.
-
-quit
-
 module AEXP
 
   import ID
@@ -151,7 +149,7 @@ module AEXP
 
   axiom{S, R}
   \implies{R}(
-  \equals{KSort, R}(KgetSort(C:KPattern), Ctxt{S, AExp}),  <---- I CANNOT PARSE THIS
+  \equals{KSort, R}(KgetSort(C:KPattern), Ctxt{S, AExp}),  
   \equals{AExp, R}(plusAExp(ctxtapp{S,AExp}(C:KPattern, X:S), E:AExp),
                    ctxtapp{S,AExp}(
                      gamma{S,AExp}(

@@ -28,7 +28,6 @@ module AEXP
   axiom{S, R}
   \implies{R}(
   \equals{KSort, R}(KgetSort(C:KPattern), Ctxt{S, AExp}),
-          /* or ... KgetSort(C:KPattern, KModule("IMP")), ... */
   \equals{AExp, R}(plusAExp(ctxtapp{S,AExp}(C:KPattern, X:S), E:AExp),
                    ctxtapp{S,AExp}(
                      gamma{S,AExp}(

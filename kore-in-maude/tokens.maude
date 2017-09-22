@@ -4,7 +4,7 @@
 
 fmod TOKENS is
 
-  including MODULE .
+  including KORE .
 
   ---- Sort terminals
   ops Nat Bool        : -> AtomicSort           .
@@ -57,6 +57,17 @@ fmod TOKENS is
   op  CONTEXT            : -> ModuleName        .
   op  AEXP               : -> ModuleName        .
   op  ID                 : -> ModuleName        .
+
+  ---- Reflexive: Sort as Pattern
+
+  ops Nat Bool        : -> AtomicSort-As-Pattern           .
+  ops AExp BExp       : -> AtomicSort-As-Pattern           .
+  op  Stmt            : -> AtomicSort-As-Pattern           .
+  ops List Map Ctxt   : -> ParSort-As-Pattern              .
+  ops S S' S1 S2 S3 R : -> SortVar-As-Pattern              .
+
+  op  KPattern        : -> AtomicSort-As-Pattern           .
+  op  KSort           : -> AtomicSort-As-Pattern           .
 
   ---- Some frontend sugar that allows us
   ---- to use x:s instead of x : s in 
