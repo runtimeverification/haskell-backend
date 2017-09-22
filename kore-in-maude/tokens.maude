@@ -13,8 +13,25 @@ fmod TOKENS is
   ops List Map Ctxt   : -> ParSort              .
   ops S S' S1 S2 S3 R : -> SortVar              .
 
-  op  KPattern        : -> AtomicSort           .
-  op  KSort           : -> AtomicSort           .
+  ---- Sort terminals in K
+  op  KString         : -> AtomicSort           . 
+
+  op  KSort           : -> AtomicSort           . 
+  op  KSortList       : -> AtomicSort           . 
+  op  KSymbol         : -> AtomicSort           . 
+  op  KSymbolList     : -> AtomicSort           .  
+  op  KVariable       : -> AtomicSort           .  
+  op  KPattern        : -> AtomicSort           .  
+  op  KPatternList    : -> AtomicSort           .   
+
+  op  KSortSentence           : -> AtomicSort   . 
+  op  KSortSentenceList       : -> AtomicSort   . 
+  op  KSymbolSentence         : -> AtomicSort   . 
+  op  KSymbolSentenceList     : -> AtomicSort   .  
+  op  KAxiomSentence          : -> AtomicSort   . 
+  op  KAxiomSentenceList      : -> AtomicSort   .  
+  op  KModule                 : -> AtomicSort   .  
+  op  KModuleList             : -> AtomicSort   .  
 
   ---- Symbol terminals
   op  ceil            : -> ParNConstSymbolId    .
@@ -31,7 +48,20 @@ fmod TOKENS is
   op  plusAExp        : -> AtomicNConstSymbolId .
   op  ite             : -> AtomicNConstSymbolId .
 
+  ---- Symbol terminals in K
+  op  Ksort           : -> AtomicNConstSymbolId .
+  op  Kparsort        : -> AtomicNConstSymbolId .
+  op  KnilKSortList   : -> AtomicConstSymbolId .
+  op  KconsKSortList  : -> AtomicNConstSymbolId .
+
+  op  Ksymbol         : -> AtomicNConstSymbolId .
+  op  Kparsymbol      : -> AtomicNConstSymbolId .
+  op  Kvariable       : -> AtomicNConstSymbolId .
   op  KgetSort        : -> AtomicNConstSymbolId .
+
+  ---- Parametric sorts binders
+  ---- symbol pi0(KSort, S) : S 
+  op  pi0             : -> ParNConstSymbolId    .
 
   ---- Alias terminals
   ops \or \implies    : -> ParNConstAliasId     .
@@ -39,6 +69,7 @@ fmod TOKENS is
   ops \forall         : -> ParNConstAliasId     .
   op  floor           : -> ParNConstAliasId     .
   op  gamma           : -> ParNConstAliasId     .
+  op  pi              : -> ParNConstAliasId     .
 
   ---- VariableName terminals
   ops B E             : -> VariableName         .
@@ -57,6 +88,8 @@ fmod TOKENS is
   op  CONTEXT            : -> ModuleName        .
   op  AEXP               : -> ModuleName        .
   op  ID                 : -> ModuleName        .
+  op  TEST               : -> ModuleName        .
+  op  K                  : -> ModuleName        .
 
   ---- Reflexive: Sort as Pattern
 
@@ -113,5 +146,6 @@ fmod TOKENS is
   eq  HOLE:S1         =    HOLE : S1            .
   op  HOLE:S          : -> Variable             .
   eq  HOLE:S          =    HOLE : S             .
+
 
 endfm
