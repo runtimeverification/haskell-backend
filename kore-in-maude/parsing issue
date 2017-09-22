@@ -1,5 +1,0 @@
-__(alias_ ( _`(_`) := _(_`{_`}(\or, (S).SortVar), _`,_(P:KPattern, Q:KPattern), \not`{_`}`(_`)(S, \and`{_`}`(_`,_`)(S,
-    \not`{_`}`(_`)(S, P:KPattern)
-    
-__(alias_ ( _:=_ ( _`(_`)(_`{_`}(\or, (S).SortVar), _`,_(P:KPattern, Q:KPattern)), \not`{_`}`(_`)(S, \and`{_`}`(_`,_`)(S,
-    \not`{_`}`(_`)(S, P:KPattern), 
