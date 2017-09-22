@@ -84,6 +84,7 @@ fmod PATTERN is
 
   protecting SYMBOL     .
   protecting VARIABLE   .
+  protecting STRING     .
 
   sorts Pattern PatternList .
   subsort Pattern < PatternList .
@@ -92,7 +93,7 @@ fmod PATTERN is
   subsort Variable < Pattern .
 
   subsort ConstSymbolId < Pattern .
-  op _`(_`) : NConstSymbolId PatternList -> Pattern [prec 52] .
+  op _`(_`) : NConstSymbolId PatternList -> Pattern [prec 53] .
 
   op \not{_}`(_`) : Sort Pattern -> Pattern 
     [format(d d d o d d d d) prec 52] .
@@ -101,9 +102,12 @@ fmod PATTERN is
   op \exists{_,_}`(_,_`) : Sort Sort Variable Pattern -> Pattern
     [format(d d d d d o d d d d d d) prec 52] . 
 
+  ---- strings
+  subsort String < Pattern .
+
   ---- alias (defined later in this module)
   subsort ConstAliasId < Pattern .
-  op _`(_`) : NConstAliasId PatternList -> Pattern [prec 52] .
+  op _`(_`) : NConstAliasId PatternList -> Pattern [prec 53] .
 
 
   ---- fmod ALIAS is
@@ -134,7 +138,7 @@ fmod PATTERN is
   op _{_} : ParNConstAliasId SortList -> NConstAliasId
     [format(d d d o d) prec 50] .
 
-  ---- endfm
+  ---- endfm ALIAS
 
 endfm
 
@@ -165,4 +169,74 @@ fmod MODULE is
   
 endfm
 
+---- Reflection
+---- Kore's syntax is reflexive, in the sense that
+---- everything can be parsed as a Pattern, and a
+---- Pattern can be parsed as anything. The general
+---- principle is "No-Surprise":
+----  - something won't be parsed as a Pattern unless
+----    it has to.
+----  - a Pattern won't be parsed as something(else)
+----    unless it has to.
+
+---- Reflection is implemented by the following modules
+---- with overloaded operators.
+---- (Overloaded) operators are assigned with selected
+---- precedence so that there is "No-Surprise".
+
+---- Reflect Sort as Pattern
+
+fmod SORT-AS-PATTERN is
+
+  protecting PATTERN .
+
+  sorts   Sort-As-Pattern   SortList-As-PatternList .
+
+  subsort Sort-As-Pattern         < Pattern     .
+  subsort SortList-As-PatternList < PatternList . 
+  
+  subsort Sort-As-Pattern < SortList-As-PatternList .
+  op _,_ : Sort-As-Pattern SortList-As-PatternList -> SortList-As-PatternList 
+    [prec 58] . ---- has the same prec as the (_,_) on PatternList.
+
+  sorts AtomicSort-As-Pattern SortVar-As-Pattern ParSort-As-Pattern .
+  subsort AtomicSort-As-Pattern < Sort-As-Pattern . 
+  subsort SortVar-As-Pattern    < Sort-As-Pattern .
+  op _{_} : ParSort-As-Pattern SortList-As-PatternList -> Sort-As-Pattern 
+    [prec 53] . 
+
+endfm
+
+fmod REFLEXIVITY is
+
+  protecting SORT-AS-PATTERN .
+
+endfm
+
+---(
+---- Lift to the meta-theory ----
+  sorts   Sort   SortList .
+  subsort Sort < SortList .
+  op _,_ : Sort SortList -> SortList [prec 52] .
+
+  ---- Atomic sorts examples: Nat Int AExp
+  ---- Parametric sorts     : List{Nat} Ctxt{S, Nat} List{List{S}}
+  ---- Sort variables       : S S1 S2 
+  sorts AtomicSort SortVar ParSort .
+  subsort AtomicSort < Sort . 
+  subsort SortVar    < Sort .
+  op _{_} : ParSort SortList -> Sort [prec 50] .
+
+  sort SortVarList .
+  subsort SortVar < SortVarList .
+  subsort SortVarList < SortList .
+  op _,_ : SortVar SortVarList -> SortVarList [prec 52] .
+---)
+
+fmod KORE is
+
+  protecting MODULE      .
+  protecting REFLEXIVITY .
+
+endfm
 
