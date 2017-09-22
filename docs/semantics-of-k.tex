@@ -178,6 +178,7 @@
   \newcommand{\Mod}{\textit{Mod}}
   \newcommand{\denote}[1]{\llbracket{#1}\rrbracket}
   \newcommand{\reduct}[2]{\mbox{${#1}\!\!\upharpoonright_{#2}$}}
+  \newcommand{\reductscript}[2]{\mbox{\tiny${#1}\!\!\upharpoonright_{#2}$}}
   
   \newcommand{\builtin}{\textit{builtin}}
   
@@ -293,6 +294,9 @@
   % Use quotation marks "..." in math mode.
   \newcommand{\quot}[1]{\mathrm{``#1"}}
 
+\newcommand{\Pattern}{\textsc{Pattern}\xspace}
+\newcommand{\ra}{\rightarrow}
+\newcommand{\lra}{\leftrightarrow}
 
 
   % Title and authors
@@ -406,6 +410,7 @@ For each $s\in S$, $\varphi_s$ are \emph{patterns of sort $s$}.}
 \label{ml-grammar}
 \vspace*{\baselineskip}\endgroup
 
+Let \Pattern be the $S$-sorted set of patterns.
 The grammar above can be infinite, i.e., can have infinitely many
 non-terminals and productions, because $S$ and $\Sigma$ can be
 infinite.
@@ -414,10 +419,6 @@ their semantics.
 For example, patterns $x \wedge y$ and $y \wedge x$ are distinct elements in
 the language of the grammar, in spite of them being semantically/provably
 equal in matching logic.
-Derived constructs like $\vee$, $\rightarrow$, $\leftrightarrow$,
-$\forall$, etc., can be defined as aliases as usual; for example,
-$\varphi_1 \vee \varphi_2 \equiv \neg(\neg \varphi_1 \wedge \neg\varphi_2)$.
-
 For notational convenience, we take the liberty to use mix-fix syntax for
 operators in $\Sigma$ and parentheses for grouping.
 Also, we take the freedom to suffix variables with their sort preceded
@@ -428,6 +429,19 @@ then we may write ``$(x\cln\Nat + y\cln\Nat)*z\cln\Nat$'' instead of
 ``$\_*\_(\_+\_(x,y),z)$ and $x,y,z\in\Nat$''.
 More notational conventions will be introduced along the way
 as we use them. 
+We adopt the following derived constructs (``syntactic sugar''): %\vspace*{-1ex}
+$$\begin{array}{rcl@{\hspace*{10ex}}rcl}
+\top_{\!\!s} & \equiv & \exists x\!:\!s \,.\, x &
+\varphi_1 \ra \varphi_2 & \equiv & \neg\varphi_1 \vee \varphi_2 \\
+\bot_{s} & \equiv & \neg \top_{\!\!s} &
+\varphi_1 \lra \varphi_2 & \equiv & (\varphi_1 \ra \varphi_2) \wedge
+ (\varphi_2 \ra \varphi_1) \\
+\varphi_1 \vee \varphi_2 & \equiv & \neg(\neg\varphi_1\wedge\neg\varphi_2) &
+\forall x . \varphi & \equiv & \neg(\exists x . \neg\varphi) \\
+%\varphi_1 = \varphi_2 & \equiv & \varphi_1 \lra \varphi_2
+\end{array}
+%\vspace*{-1ex}
+$$
 
 A matching logic \emph{theory} is a triple $(S, \Sigma, A)$ where
 $(S,\Sigma)$ is a signature and $A$ is a set of patterns called \emph{axioms}.
@@ -443,26 +457,71 @@ non-empty; and a function
 $\sigma_M:M_{s_1}\times\cdots\times M_{s_n} \rightarrow {\cal P}(M_s)$
 for each symbol $\sigma\in\Sigma_{s_1\ldots s_n,s}$, called the
 \emph{interpretation} of $\sigma$ in $M$.
+We tacitly use the same notation $\sigma_M$ for its extension
+to argument sets,
+${\cal P}(M_{s_1})\times\cdots\times {\cal P}(M_{s_n}) \rightarrow {\cal P}(M_s)$.
 When $S$ is understood we may call $M$ a \emph{$\Sigma$-model}, and when
 both $S$ and $\Sigma$ are understood we call it simply a \emph{model}.
+We let $\Mod(S,\Sigma)$, or $\Mod(\Sigma)$ when $S$ is understood, denote
+the (category of) models of a signature $(S,\Sigma)$.
+%
+Given a model $M$ and a map
+$\rho:\Var\rightarrow M$, called an \emph{$M$-valuation}, let its extension
+$\overline{\rho}:\Pattern\rightarrow{\cal P}(M)$
+be inductively defined as follows:\vspace*{-2ex}
+\begin{itemize}\itemsep-1ex
+\item $\overline{\rho}(x) = \{\rho(x)\}$, for all $x\in\Var_s$
+\item $\overline{\rho}(\sigma(\varphi_{1},\ldots,\varphi_{n}))=
+\sigma_M(\overline{\rho}(\varphi_1),\ldots \overline{\rho}(\varphi_n))$ for all
+$\sigma\in\Sigma_{s_1...s_n,s}$ and appropriate $\varphi_1,...,\varphi_n$
+%\item $\overline(\rho)(\top_{\!\!s}) = M_s$
+\item $\overline{\rho}(\neg\varphi) = M_s \ \backslash\ \overline{\rho}(\varphi)$ for all
+$\varphi\in\Pattern_s$
+\item $\overline{\rho}(\varphi_1 \wedge \varphi_2) =
+\overline{\rho}(\varphi_1) \cap \overline{\rho}(\varphi_2)$
+for all $\varphi_1, \varphi_2$ patterns of the same sort
+\item $\overline{\rho}(\exists x . \varphi) =
+\bigcup\{\overline{\rho'}(\varphi) \mid \rho':\Var\rightarrow M,\ 
+\rho'\!\!\upharpoonright_{\Var\backslash\{x\}} =
+\rho\!\!\upharpoonright_{\Var\backslash\{x\}}\}
+= \bigcup_{a\in M} \overline{\rho[a/x]}(\varphi)
+$
+\end{itemize}\vspace*{-.5ex}
+where `` $\backslash$'' is set difference,
+``$\rho\!\!\upharpoonright_V$'' is
+$\rho$ restricted to $V \subseteq \Var$,
+and ``$\rho[a/x]$'' is map $\rho'$ with $\rho'(x)=a$ and $\rho'(y)=\rho(y)$ if
+$y\neq x$.
+If $a\in \overline{\rho}(\varphi)$ then we say $a$ \emph{matches}
+$\varphi$ (with witness $\rho$).
 
-Models, satisfaction, some properties
-\improvement{We should also add the semantics here: models, $M \models_{(S,\Sigma)} A$,
-$(S,\Sigma,A) \models \varphi$.}
-
-Let $(S,\Sigma)$ be a signature.
-
-$\Mod(\Sigma)$
-
-$M \models_{\Sigma} A$
-
-$A \models_\Sigma \varphi$
-
-$(\Sigma,A) \models \varphi$
-
-$\Mod(\Sigma,A) =
-\denote{(\Sigma,A)} =
-\{M \ \mid \ M \in \Mod_{\Sigma},\ M \models_{\Sigma} A \}$
+Pattern $\varphi_s$ is an \emph{$M$-predicate}, or a
+\emph{predicate in $M$}, iff for any $M$-valuation $\rho:\Var\rightarrow M$,
+it is the case that $\overline{\rho}(\varphi_s)$ is either $M_s$ (it holds) or
+$\emptyset$ (it does not hold).
+Pattern $\varphi_s$ is a \emph{predicate} iff it is a predicate in all
+models $M$.
+For example, $\top_s$ and $\bot_s$ are predicates, and if $\varphi$,
+$\varphi_1$ and $\varphi_2$ are predicates then so are $\neg\varphi$,
+$\varphi_1 \wedge \varphi_2$, and $\exists x\,.\,\varphi$.
+That is, the logical connectives of matching logic preserve the predicate
+nature of patterns.
+Model $M$ \emph{satisfies} $\varphi_s$, written ${M}\models \varphi_s$, iff
+$\overline{\rho}(\varphi_s) = M_s$ for all $\rho:\Var\rightarrow M$.
+Pattern $\varphi$ is \emph{valid}, written $\models \varphi$,
+iff ${M} \models \varphi$ for all ${M}$.
+If $A\subseteq\Pattern$ then ${M} \models A$ iff
+${M} \models \varphi$ for all $\varphi\in A$.
+$A$ \emph{entails} $\varphi$, written $A \models \varphi$,
+iff for each ${M}$, ${M} \models A$ implies ${M} \models \varphi$.
+We may subscript $\models$ with the signature whenever we feel it
+clarifies the presentation; that is, we may write $\models_{(S,\Sigma)}$ or
+$\models_\Sigma$ instead of $\models$.
+A \emph{matching logic specification} is a triple $(S,\Sigma,A)$, or
+just $(\Sigma,A)$ when $S$ is understood, with $A$ a set of $\Sigma$-patterns.
+Given matching logic specification $(\Sigma,A)$ we let
+$\Mod(\Sigma,A)$, also denoted by $\denote{(\Sigma,A)}$ be its (category of)
+models $\{M \ \mid \ M \in \Mod_{\Sigma},\ M \models_{\Sigma} A \}$.
 
 A signature $(S',\Sigma')$ is called a \emph{subsignature} of $(S,\Sigma)$, written
 $(S',\Sigma') \hookrightarrow(S,\Sigma)$, if and only if $S' \subseteq S$ and
@@ -470,19 +529,84 @@ $\Sigma' \subseteq \Sigma$.
 If $M \in \Mod(\Sigma)$ then we let
 $\reduct{M}{\Sigma'} \in \Mod(\Sigma')$ denote its
 \emph{$\Sigma'$-reduct}, or simply its \emph{reduct} when
-$\Sigma'$ is understood, defined as follows: ...
-
-We can think of signatures as interfaces and of models as
-\emph{implementations}, or \emph{realizations}, of such interfaces.
+$\Sigma'$ is understood, defined as follows:
+$(\reduct{M}{\Sigma'})_{s'} = M_{s'}$ for any $s'\in S'$ and
+$\sigma'_{\reductscript{M}{\Sigma'}} = \sigma'_M$ for any $\sigma'\in\Sigma'$.
+It may help to think of signatures as interfaces and of models as
+\emph{implementations} of such interfaces.
 Indeed, models provide concrete values for each sort, and concrete relations
 for symbols.
 Then the reduct $\reduct{M}{\Sigma'}$ can be regarded as a ``wrapper'' of
 the implementation $M$ of $\Sigma$ turning it into an implementation of
 $\Sigma'$, or a reuse of a richer implementation in a smaller context.
 
-\subsection{Derived Symbols}
+\subsection{Useful Symbols and Notations}
 
-Definedness, membership, equality
+For any (not necessarily distinct) sorts $s_1,s_2\in S$, assume the following
+\emph{definedness} symbol and corresponding pattern:
+$$
+\begin{array}{l@{\hspace*{7ex}}l}
+\lceil\_\rceil_{s_1}^{s_2} \in \Sigma_{s_1,s_2}
+& \mbox{\it // Definedness symbol} \\
+\lceil x\!:\! s_1 \rceil_{s_1}^{s_2} \in F & \mbox{\it // Definedness pattern}
+\end{array}
+$$
+If $S$ is infinite, then we have infinitely many definedness symbols and patterns
+above.
+It can be easily shown that if $\varphi \in \Pattern_{s_1}$ then
+$\lceil\varphi\rceil_{s_1}^{s_2}$ is a predicate; specifically,
+if $\rho : \Var \ra M$ is any valuation then
+$\overline{\rho}(\lceil\varphi\rceil_{s_1}^{s_2})$ is either $\emptyset$
+(i.e., $\overline{\rho}(\bot_{s_2})$)
+when $\overline{\rho}(\varphi) = \emptyset$
+(i.e., $\varphi$ undefined in $\rho$), or is $M_{s_2}$
+(i.e., $\overline{\rho}(\top_{s_2})$) 
+when $\overline{\rho}(\varphi) \neq \emptyset$ (i.e., $\varphi$ defined).
+
+We also define \emph{totality}, $\lfloor\_\rfloor_{s_1}^{s_2}$, as a derived
+construct dual to definedness:
+$$
+\begin{array}{lcl}
+\lfloor\varphi\rfloor_{s_1}^{s_2}
+& \equiv &
+\neg\lceil\neg\varphi\rceil_{s_1}^{s_2}
+\end{array}
+$$
+The totality construct states that the enclosed pattern must be matched by
+all values.
+That is, if $\varphi \in \Pattern_{s_1}$ then $\lfloor\varphi\rfloor_{s_1}^{s_2}$
+is a predicate where if $\rho : \Var \ra M$ is any valuation
+then $\overline{\rho}(\lfloor\varphi\rfloor_{s_1}^{s_2})$ is either $\emptyset$
+(i.e., $\overline{\rho}(\bot_{s_2})$)
+when $\overline{\rho}(\varphi) \neq M_{s_1}$
+(i.e., $\varphi$ is not total in $\rho$), or is $M_{s_2}$
+(i.e., $\overline{\rho}(\top_{s_2})$) 
+when $\overline{\rho}(\varphi) = M_{s_1}$
+(i.e., $\varphi$ is total).
+
+Since $s_1$ and $s_2$ can usually be inferred from context,
+we write $\lceil\_\rceil$ or $\lfloor\_\rfloor$ instead of
+$\lceil\_\rceil_{s_1}^{s_2}$ or $\lfloor\_\rfloor_{s_1}^{s_2}$, respectively.
+If the sort decorations cannot be inferred from context, then we assume
+the stated property/axiom/rule holds for all such sorts.
+%
+For example, the generic pattern axiom ``$\lceil x \rceil$ where $x\in\Var$''
+replaces all the axioms $\lceil x\!:\!s_1 \rceil_{s_1}^{s_2}$ above for all
+the definedness symbols for all the sorts $s_1$ and $s_2$.
+
+\emph{Equality} can be defined quite compactly using pattern totality and
+equivalence.
+For each pair of sorts $s_1$ (for the compared patterns) and
+$s_2$ (for the context in which the equality is used), we define
+$\_=_{s_1}^{s_2}\_$ as the following derived construct:
+$$
+\begin{array}{@{}rcll}
+\varphi =_{s_1}^{s_2} \varphi' & \ \ \ \ \ \equiv \ \ \ \ \ &
+\lfloor\varphi \lra \varphi'\rfloor_{s_1}^{s_2}
+& \ \ \ \ \ \mbox{where } \varphi,\varphi' \in \Pattern_{s_1}
+\end{array}
+$$
+
 
 \subsection{Sound and Complete Deduction}
 
