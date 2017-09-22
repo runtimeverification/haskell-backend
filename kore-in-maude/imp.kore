@@ -13,6 +13,7 @@ endfm
 
 --- set print mixfix off .
 
+
 parse
 
 module PL-SYNTACTIC-SUGAR
@@ -140,9 +141,7 @@ endmodule
 module AEXP
 
   import ID
-
   sort   AExp
-
   symbol NatToAExp(Nat)       : AExp
   symbol IdToAExp(Nat)        : AExp
   symbol plusAExp(AExp, AExp) : AExp
@@ -176,6 +175,41 @@ module AEXP
                        HOLE:S,
                        ite(ctxtapp{S, BExp}(C:KPattern, HOLE:S),
                            S1:Stmt, S2:Stmt)), X:S)))
+endmodule
+
+module K
+
+  sort KString
+
+  sort KSort
+  sort KSortList
+  sort KSymbol
+  sort KSymbolList
+  sort KVariable
+  sort KPattern
+  sort KPatternList
+
+  sort KSortSentence
+  sort KSortSentenceList
+  sort KSymbolSentence
+  sort KSymbolSentenceList
+  sort KAxiomSentence
+  sort KAxiomSentenceList
+
+  sort KModule 
+  sort KModuleList
+
+  symbol Ksort(KString)                   : KSort
+  symbol Kparsort(KString, KSortList)     : KSort
+
+  symbol KnilKSortList                    : KSortList
+  symbol KconsKSortList(KSort, KSortList) : KSortList 
+
+  symbol Ksymbol(KString, KSortList, KSort)               : KSymbol 
+  symbol Kparsymbol(KSortList, KString, KSortList, KSort) : KSymbol 
+
+  symbol Kvariable(KString, KSort)    : KPattern
+
 endmodule
 
 .

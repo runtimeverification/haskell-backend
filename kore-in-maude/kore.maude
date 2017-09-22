@@ -84,6 +84,7 @@ fmod PATTERN is
 
   protecting SYMBOL     .
   protecting VARIABLE   .
+  protecting STRING     .
 
   sorts Pattern PatternList .
   subsort Pattern < PatternList .
@@ -100,6 +101,9 @@ fmod PATTERN is
     [format(d d d o d d d d d d) prec 52] .
   op \exists{_,_}`(_,_`) : Sort Sort Variable Pattern -> Pattern
     [format(d d d d d o d d d d d d) prec 52] . 
+
+  ---- strings
+  subsort String < Pattern .
 
   ---- alias (defined later in this module)
   subsort ConstAliasId < Pattern .
@@ -209,10 +213,30 @@ fmod REFLEXIVITY is
 
 endfm
 
+---(
+---- Lift to the meta-theory ----
+  sorts   Sort   SortList .
+  subsort Sort < SortList .
+  op _,_ : Sort SortList -> SortList [prec 52] .
+
+  ---- Atomic sorts examples: Nat Int AExp
+  ---- Parametric sorts     : List{Nat} Ctxt{S, Nat} List{List{S}}
+  ---- Sort variables       : S S1 S2 
+  sorts AtomicSort SortVar ParSort .
+  subsort AtomicSort < Sort . 
+  subsort SortVar    < Sort .
+  op _{_} : ParSort SortList -> Sort [prec 50] .
+
+  sort SortVarList .
+  subsort SortVar < SortVarList .
+  subsort SortVarList < SortList .
+  op _,_ : SortVar SortVarList -> SortVarList [prec 52] .
+---)
+
 fmod KORE is
 
-  protecting MODULE .
-  protecting REFLEXIVITY . 
+  protecting MODULE      .
+  protecting REFLEXIVITY .
 
 endfm
 
