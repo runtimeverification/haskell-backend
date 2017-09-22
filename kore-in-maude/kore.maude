@@ -14,6 +14,9 @@ fmod SORT is
   subsort Sort < SortList .
   op _,_ : Sort SortList -> SortList [prec 52] .
 
+  ---- Atomic sorts examples: Nat Int AExp
+  ---- Parametric sorts     : List{Nat} Ctxt{S, Nat} List{List{S}}
+  ---- Sort variables       : S S1 S2 
   sorts AtomicSort SortVar ParSort .
   subsort AtomicSort < Sort . 
   subsort SortVar    < Sort .
@@ -30,9 +33,15 @@ fmod SYMBOL is
 
   protecting SORT .
 
+  ---- Symbol identifiers examples: plusAExp ctxtapp{S1, S2}
+  ----   - Constant symbols
+  ----   - NonConstant symbols
   sorts SymbolId ConstSymbolId NConstSymbolId .
   subsorts ConstSymbolId NConstSymbolId < SymbolId .
   
+  ---- Decorated symbols examples:
+  ----  - plus(Nat, Nat) : Nat
+  ----  - true : Bool
   sort DecoSymbol .
   op _:_ : ConstSymbolId Sort -> DecoSymbol 
     [format(d s s d) prec 52] .
@@ -42,14 +51,14 @@ fmod SYMBOL is
   ---- Constant symbols identifier: non-parametric and parametric:
   sorts AtomicConstSymbolId ParConstSymbolId .
   subsort AtomicConstSymbolId < ConstSymbolId .
-  op _{_} : ParConstSymbolId SortVarList -> ConstSymbolId 
-    [format(d d y o d) prec 50] .
+  op _{_} : ParConstSymbolId SortList -> ConstSymbolId 
+    [format(d d d o d) prec 50] .
 
   ---- Non-constant symbols identifier: non-par and par:
   sorts AtomicNConstSymbolId ParNConstSymbolId .
   subsort AtomicNConstSymbolId < NConstSymbolId .
-  op _{_} : ParNConstSymbolId SortVarList -> NConstSymbolId 
-    [format(d d y o d) prec 50] .
+  op _{_} : ParNConstSymbolId SortList -> NConstSymbolId 
+    [format(d d d o d) prec 50] .
 
 endfm
 
@@ -86,11 +95,11 @@ fmod PATTERN is
   op _`(_`) : NConstSymbolId PatternList -> Pattern [prec 52] .
 
   op \not{_}`(_`) : Sort Pattern -> Pattern 
-    [format(d d y o d d d d) prec 52] .
+    [format(d d d o d d d d) prec 52] .
   op \and{_}`(_,_`) : Sort Pattern Pattern -> Pattern 
-    [format(d d y o d d d d d d) prec 52] .
+    [format(d d d o d d d d d d) prec 52] .
   op \exists{_,_}`(_,_`) : Sort Sort Variable Pattern -> Pattern
-    [format(d d y d d o d d d d d d) prec 52] . 
+    [format(d d d d d o d d d d d d) prec 52] . 
 
   ---- alias (defined later in this module)
   subsort ConstAliasId < Pattern .
@@ -113,23 +122,17 @@ fmod PATTERN is
   sorts AliasId ConstAliasId NConstAliasId .
   subsorts ConstAliasId NConstAliasId < AliasId .
   
-  sort DecoAlias .
-  op _:=_ : ConstAliasId Pattern -> DecoAlias 
-    [format(d s s d) prec 50] .
-  op _`(_`):=_ : NConstAliasId PatternList Pattern -> DecoAlias 
-    [format(d d d d s s d) prec 50] .
-
   ---- Constant alias identifier: non-parametric and parametric:
   sorts AtomicConstAliasId ParConstAliasId .
   subsort AtomicConstAliasId < ConstAliasId .
-  op _{_} : ParConstAliasId SortVarList -> ConstAliasId
-    [format(d d y o d) prec 49] .
+  op _{_} : ParConstAliasId SortList -> ConstAliasId
+    [format(d d d o d) prec 50] .
 
   ---- Non-constant alias identifier: non-par and par:
   sorts AtomicNConstAliasId ParNConstAliasId .
   subsort AtomicNConstAliasId < NConstAliasId .
-  op _{_} : ParNConstAliasId SortVarList -> NConstAliasId
-    [format(d d y o d) prec 49] .
+  op _{_} : ParNConstAliasId SortList -> NConstAliasId
+    [format(d d d o d) prec 50] .
 
   ---- endfm
 
@@ -142,23 +145,23 @@ fmod MODULE is
   sorts Module Modules .
   subsort Module < Modules .
   op __ : Module Modules -> Modules 
-    [format(d n d) prec 80] .
+    [format(d n d) prec 90] .
 
   sort ModuleName Sentence Sentences .
   op module__endmodule : ModuleName Sentences -> Module 
-    [format(nb o n++ n--b o) prec 70] .
+    [format(nb o n++ n--b o) prec 80] .
 
   subsort Sentence < Sentences .
   op __ : Sentence Sentences -> Sentences
-    [format(d n d) prec 65] .
+    [format(d n d) prec 75] .
 
-  op import_ : ModuleName -> Sentence [format(ib o d) prec 55] .
-  op sort_ : Sort -> Sentence [format(ib o d) prec 55] .
-  op symbol_ : DecoSymbol -> Sentence [format(ib o d) prec 55] .
-  op alias_ : DecoAlias -> Sentence [format(ib o d) prec 55] .
-  op axiom_ : Pattern -> Sentence [format(ib n++io --) prec 55] .
+  op import_ : ModuleName -> Sentence [format(ib o d) prec 66] .
+  op sort_ : Sort -> Sentence [format(ib o d) prec 66] .
+  op symbol_ : DecoSymbol -> Sentence [format(ib o d) prec 66] .
+  op alias_:=_ : Pattern Pattern -> Sentence [format(ib o d d d) prec 66] .
+  op axiom_ : Pattern -> Sentence [format(ib n++io --) prec 66] .
   op axiom{_}_ : SortVarList Pattern -> Sentence 
-    [format(ib o d d n++i --) prec 55] .
+    [format(ib o d d n++i --) prec 66] .
   
 endfm
 
