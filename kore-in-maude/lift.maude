@@ -7,12 +7,35 @@ fmod LIFT is
 
   including KORE   .
   including TOKENS .
+  including BOOL   .
 
   ---- Lift sorts
 
   ---- Lift to KString
   op liftAtomicSortToKString : AtomicSort -> String .
   op liftParSortToKString    : ParSort    -> String .
+
+  ---- Check whether Sort is already one in the meta-level K.
+  ---- Notice there are only a finite number of sorts in K.
+
+  op sortIsMetaLevel : Sort -> Bool    .
+  eq sortIsMetaLevel(KString            ) = true .
+  eq sortIsMetaLevel(KSort              ) = true .
+  eq sortIsMetaLevel(KSortList          ) = true .
+  eq sortIsMetaLevel(KSymbol            ) = true .
+  eq sortIsMetaLevel(KSymbolList        ) = true .
+  eq sortIsMetaLevel(KVariable          ) = true .
+  eq sortIsMetaLevel(KPattern           ) = true .
+  eq sortIsMetaLevel(KPatternList       ) = true .
+  eq sortIsMetaLevel(KSortSentence      ) = true .
+  eq sortIsMetaLevel(KSortSentenceList  ) = true .
+  eq sortIsMetaLevel(KSymbolSentence    ) = true .
+  eq sortIsMetaLevel(KSymbolSentenceList) = true .
+  eq sortIsMetaLevel(KAxiomSentence     ) = true .
+  eq sortIsMetaLevel(KAxiomSentenceList ) = true .
+  eq sortIsMetaLevel(KModule            ) = true .
+  eq sortIsMetaLevel(KModuleList        ) = true .
+  eq sortIsMetaLevel(S:Sort             ) = false [owise] .
 
   ---- Lift to KSort
   op liftSortToKSort : Sort -> Pattern .
@@ -40,6 +63,35 @@ fmod LIFT is
 
   ---- Lift symbols 
 
+  ---- Check whether Symbol is one at the meta-theory K.
+  ---- Notice there are only a finite number of them.
+
+  op symbolidIsMetaLevel : SymbolId -> Bool .
+  eq symbolidIsMetaLevel(Ksort         ) = true .
+  eq symbolidIsMetaLevel(KnilKSortList ) = true .
+  eq symbolidIsMetaLevel(KconsKSortList) = true .
+  eq symbolidIsMetaLevel(Ksymbolid     ) = true .
+  eq symbolidIsMetaLevel(Ksymbol       ) = true .
+  eq symbolidIsMetaLevel(Kvariable     ) = true .
+  eq symbolidIsMetaLevel(KgetSort      ) = true .
+  eq symbolidIsMetaLevel(Kceil         ) = true .
+  eq symbolidIsMetaLevel(Ktrue         ) = true .
+  eq symbolidIsMetaLevel(Kfalse        ) = true .
+  eq symbolidIsMetaLevel(KandBool      ) = true .
+  eq symbolidIsMetaLevel(KnotBool      ) = true .
+  eq symbolidIsMetaLevel(Kzero         ) = true .
+  eq symbolidIsMetaLevel(Ksucc         ) = true .
+  eq symbolidIsMetaLevel(Kplus         ) = true .
+  eq symbolidIsMetaLevel(Kgte          ) = true .
+  eq symbolidIsMetaLevel(Knil          ) = true .
+  eq symbolidIsMetaLevel(Kcons         ) = true .
+  eq symbolidIsMetaLevel(Kctxtapp      ) = true .
+  eq symbolidIsMetaLevel(Kgamma0       ) = true .
+  eq symbolidIsMetaLevel(KNatToAExp    ) = true .
+  eq symbolidIsMetaLevel(KIdToAExp     ) = true .
+  eq symbolidIsMetaLevel(KplusAExp     ) = true .
+  eq symbolidIsMetaLevel(Kite          ) = true .
+  eq symbolidIsMetaLevel(S:SymbolId    ) = false [owise] .
 
   ---- Lift to KString
   op liftAtomicConstSymbolIdToKString  : AtomicConstSymbolId  -> String .
@@ -47,26 +99,62 @@ fmod LIFT is
   op liftParConstSymbolIdToKString     : ParConstSymbolId     -> String .
   op liftParNConstSymbolIdToKString    : ParNConstSymbolId    -> String .
 
-  ---- Lift to KSymbolId
-  op liftAtomicConstSymbolId : AtomicConstSymbolId 
-  
+  ---- Lift to KSymbol
+  op liftSymbolIdToKSymbol : SymbolId -> Pattern .
 
----(
-  op liftSymbolIdToKSymbolPattern : SymbolId -> Pattern .
+  eq liftSymbolIdToKSymbol(S:AtomicConstSymbolId)
+   = Ksymbolid(liftAtomicConstSymbolIdToKString(S:AtomicConstSymbolId),
+               KnilKSortList) .
+
+  eq liftSymbolIdToKSymbol(S:AtomicNConstSymbolId)
+   = Ksymbolid(liftAtomicNConstSymbolIdToKString(S:AtomicNConstSymbolId),
+               KnilKSortList) .
+
+  eq liftSymbolIdToKSymbol(P:ParConstSymbolId{Ss:SortList})
+   = Ksymbolid(liftParConstSymbolIdToKString(P:ParConstSymbolId),
+               liftSortListToKSortList(Ss:SortList)) .
+
+  eq liftSymbolIdToKSymbol(P:ParNConstSymbolId{Ss:SortList})
+   = Ksymbolid(liftParNConstSymbolIdToKString(P:ParNConstSymbolId),
+               liftSortListToKSortList(Ss:SortList)) .
 
 
-  ---- Examples:
-  ----   plus    ----lift---->   Kplus = Ksymbolid("plus", ...)
-  ----   zero    ----lift---->   Kzero = Ksymbolid("zero", ...)
-  ----   cons{S} ----lift---->   Kcons = Ksymbolid("cons", (S), ...)
-  op liftParSymbolId : ParConstSymbolId   -> String  .
-  op liftParSymbolId : ParNConstSymbolId  -> String  .
-  ---- defined for each terminals in the end of this module.
 
-  eq liftSymbolIdToKSymbolPattern(PS:ParConstSymbolId{Ss:SortList})
-   = 
----)
-   
+  ---- Lift VariableName to KString
+  op liftVariableNameToKString : VariableName -> String .
+
+  ---- Check whether Variable is at meta-level K.
+  op variableIsMetaLevel : Variable -> Bool .
+  eq variableIsMetaLevel(X:VariableName : S:Sort)
+   = sortIsMetaLevel(S:Sort) .
+
+  ---- Lift Variable to KPattern
+  ----   X:S  ---lift---> Kvariable("X", Ksort("S",...)) if S is object-level
+  ----   X:S  ---lift---> X:S                            if S is meta-level
+  op liftVariableToKPattern : Variable -> Pattern .
+
+ ceq liftVariableToKPattern(X:VariableName : S:Sort)
+   = Kvariable(liftVariableNameToKString(X:VariableName),
+               liftSortToKSort(S:Sort))
+  if not variableIsMetaLevel(X:VariableName : S:Sort) .
+
+ ceq liftVariableToKPattern(X:VariableName : S:Sort)
+   = X:VariableName : S:Sort  
+  if variableIsMetaLevel(X:VariableName : S:Sort) . 
+
+ 
+  ---- Lift patterns to KPattern.
+
+  op liftPatternToKPattern : Pattern -> Pattern .
+
+
+
+
+
+
+
+
+
 
   ---- Lifting: terminals to terminals.
 
@@ -110,7 +198,32 @@ fmod LIFT is
   eq  liftParNConstSymbolIdToKString(ctxtapp) = "ctxtapp" .
   eq  liftParNConstSymbolIdToKString(gamma0)  = "gamma0"  .
 
+  ---- Lifting VariableName terminals to KString
+  eq  liftVariableNameToKString(B   ) = "B" .
+  eq  liftVariableNameToKString(S   ) = "S" .    
+  eq  liftVariableNameToKString(R   ) = "R" .    
+  eq  liftVariableNameToKString(X   ) = "X" .      
+  eq  liftVariableNameToKString(C   ) = "C" .    
+  eq  liftVariableNameToKString(P   ) = "P" .           
+  eq  liftVariableNameToKString(HOLE) = "HOLE" .             
+  eq  liftVariableNameToKString(E   ) = "E" .    
+  eq  liftVariableNameToKString(S'  ) = "S'" .    
+  eq  liftVariableNameToKString(Y   ) = "Y" .    
+  eq  liftVariableNameToKString(C1  ) = "C1" .    
+  eq  liftVariableNameToKString(Q   ) = "Q" .    
+  eq  liftVariableNameToKString(S1  ) = "S1" .    
+  eq  liftVariableNameToKString(Z   ) = "Z" .    
+  eq  liftVariableNameToKString(C2  ) = "C2" .    
+  eq  liftVariableNameToKString(S2  ) = "S2" .    
+  eq  liftVariableNameToKString(L   ) = "L" .    
+  eq  liftVariableNameToKString(C'  ) = "C'" .    
+  eq  liftVariableNameToKString(S3  ) = "S3" .    
+  eq  liftVariableNameToKString(L0  ) = "L0" .    
+  eq  liftVariableNameToKString(C'' ) = "C''" .    
+
 endfm
+
+
 
 
 ---- test lift ----
@@ -121,5 +234,22 @@ liftSortToKSort(Ctxt{Bool, List{Nat, List{Nat}}, List{S1, S2, List{S3}}})
 
 .
 
+reduce
+
+liftSymbolIdToKSymbol(gamma0{List{S}, List{Bool, Nat}})
+
+.
+
+reduce
+
+liftVariableToKPattern(B:Bool)
+
+.
+
+reduce
+
+liftVariableToKPattern(C:KPattern)
+
+.
 
 quit
