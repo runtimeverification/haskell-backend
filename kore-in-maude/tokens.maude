@@ -53,7 +53,8 @@ fmod TOKENS is
   op  KnilKSortList   : -> AtomicConstSymbolId .
   op  KconsKSortList  : -> AtomicNConstSymbolId .
 
-  op  Ksymbol         : -> AtomicNConstSymbolId .
+  op  Ksymbolid       : -> AtomicNConstSymbolId .
+  op  Ksymbol     : -> AtomicNConstSymbolId .
   op  Kvariable       : -> AtomicNConstSymbolId .
   op  KgetSort        : -> AtomicNConstSymbolId .
 
