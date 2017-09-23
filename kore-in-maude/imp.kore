@@ -199,14 +199,12 @@ module K
   sort KModule 
   sort KModuleList
 
-  symbol Ksort(KString)                   : KSort
-  symbol Kparsort(KString, KSortList)     : KSort
+  symbol Ksort(KString, KSortList)        : KSort
 
   symbol KnilKSortList                    : KSortList
   symbol KconsKSortList(KSort, KSortList) : KSortList 
 
-  symbol Ksymbol(KString, KSortList, KSort)               : KSymbol 
-  symbol Kparsymbol(KSortList, KString, KSortList, KSort) : KSymbol 
+  symbol Ksymbol(KString, KSortList, KSortList, KSort) : KSymbol 
 
   symbol Kvariable(KString, KSort)    : KPattern
 
