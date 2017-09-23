@@ -54,7 +54,7 @@ fmod TOKENS is
   op  KconsKSortList  : -> AtomicNConstSymbolId .
 
   op  Ksymbolid       : -> AtomicNConstSymbolId .
-  op  Ksymbol     : -> AtomicNConstSymbolId .
+  op  Ksymbol         : -> AtomicNConstSymbolId .
   op  Kvariable       : -> AtomicNConstSymbolId .
   op  KgetSort        : -> AtomicNConstSymbolId .
 
@@ -75,12 +75,6 @@ fmod TOKENS is
   op  KIdToAExp       : -> AtomicConstSymbolId  .       
   op  KplusAExp       : -> AtomicConstSymbolId  .       
   op  Kite            : -> AtomicConstSymbolId  .       
-
-
-
-  ---- Parametric sorts binders
-  ---- symbol pi0(KSort, S) : S 
-  op  pi0             : -> ParNConstSymbolId    .
 
   ---- Alias terminals
   ops \or \implies    : -> ParNConstAliasId     .
