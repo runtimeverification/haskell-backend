@@ -9,49 +9,84 @@ fmod LIFT is
   including TOKENS .
 
   ---- lift a sort
-  op lift     : Sort     -> Pattern .  ---- defined in the end of this module
-  op lift     : ParSort  -> String  .  ---- defined in the end of this module
+  op liftSortToKSort      : Sort    -> Pattern . ---- defined for each terminals
+  op liftParSortToKString : ParSort -> String  . ---- in the end of this module
 
   ---- lift a sort list
-  op liftlist : SortList -> Pattern .
-  eq liftlist(S:Sort)
-   = KconsKSortList(lift(S:Sort), KnilKSortList) .
-  eq liftlist(S:Sort, S':Sort)
-   = KconsKSortList(lift(S:Sort), liftlist(S':Sort)) .
-  eq liftlist(S:Sort, Ss:SortList)
-   = KconsKSortList(lift(S:Sort), liftlist(Ss:SortList)) .
+  op liftSortListToKSortList : SortList -> Pattern .
+  eq liftSortListToKSortList(S:Sort)
+   = KconsKSortList(liftSortToKSort(S:Sort), KnilKSortList) .
+  eq liftSortListToKSortList(S:Sort, S':Sort)
+   = KconsKSortList(liftSortToKSort(S:Sort), liftSortListToKSortList(S':Sort)) .
+  eq liftSortListToKSortList(S:Sort, Ss:SortList)
+   = KconsKSortList(liftSortToKSort(S:Sort), liftSortListToKSortList(Ss:SortList)) .
 
   ---- lift a parametric sort
-  eq lift(PS:ParSort{Ss:SortList})
-   = Kparsort(lift(PS:ParSort), liftlist(Ss:SortList)) . 
+  eq liftSortToKSort(PS:ParSort{Ss:SortList})
+   = Ksort(liftParSortToKString(PS:ParSort), liftSortListToKSortList(Ss:SortList)) . 
    
- 
+---(
+  ---- lift a symbol to a KSymbol Pattern
+  ----   Suppose we have plus(Nat, Nat) : Nat .
+  ----   Suppose we want to lift plus(0, 0)
+  ----   We will get Kapplication(Ksymbol("plus", ...), ...)
+  ----   where the first "..." is the argument sorts and return
+  ----   sort of plus, which we cannot know locally.
+  ----   Therefore we introduce a constant symbol at 
+  ----   the meta-level called Kplus, and define it as
+  ----   Kplus = Ksymbol("plus", ...).
+
+  op liftSymbolIdToKSymbolPattern : SymbolId -> Pattern .
+  op liftParSymbolId : ParConstSymbolId   -> String  .
+  op liftParSymbolId : ParNConstSymbolId  -> String  .
+  ---- defined for each terminals in the end of this module.
+
+  eq liftSymbolIdToKSymbolPattern(PS:ParConstSymbolId{Ss:SortList})
+   = 
+---)
+   
+
   ---- Lifting: terminals to terminals.
 
   ---- Lifting atomic sorts terminals. 
-  eq  lift(Nat)       = Ksort("Nat")            .
-  eq  lift(Bool)      = Ksort("Bool")           .
-  eq  lift(AExp)      = Ksort("AExp")           .
-  eq  lift(BExp)      = Ksort("BExp")           .
-  eq  lift(Stmt)      = Ksort("Stmt")           .
+  eq  liftSortToKSort((Nat).AtomicSort)  = Ksort("Nat" , KnilKSortList) .
+  eq  liftSortToKSort((Bool).AtomicSort) = Ksort("Bool", KnilKSortList) .
+  eq  liftSortToKSort((AExp).AtomicSort) = Ksort("AExp", KnilKSortList) .
+  eq  liftSortToKSort((BExp).AtomicSort) = Ksort("BExp", KnilKSortList) .
+  eq  liftSortToKSort((Stmt).AtomicSort) = Ksort("Stmt", KnilKSortList) .
 
   ---- Lifting sort variables to terminals.
-  eq  lift(S)         = S  : KSort              .
-  eq  lift(S')        = S' : KSort              .
-  eq  lift(S1)        = S1 : KSort              .
-  eq  lift(S2)        = S2 : KSort              .
-  eq  lift(S3)        = S3 : KSort              .
+  eq  liftSortToKSort((S).SortVar )      = S  : KSort             .
+  eq  liftSortToKSort((S').SortVar)      = S' : KSort             .
+  eq  liftSortToKSort((S1).SortVar)      = S1 : KSort             .
+  eq  liftSortToKSort((S2).SortVar)      = S2 : KSort             .
+  eq  liftSortToKSort((S3).SortVar)      = S3 : KSort             .
 
   ---- Lifting parametric sort constructors to terminals.
-  eq  lift(List)      = "List"                  .
-  eq  lift(Ctxt)      = "Ctxt"                  .
+  eq  liftParSortToKString(List)           = "List"                 .
+  eq  liftParSortToKString(Ctxt)           = "Ctxt"                 .
 
-  ---- 
-  ---(
-  op  KPattern        : -> AtomicSort           .
-  op  KSort           : -> AtomicSort           .
-  op  KSymbol         : -> AtomicSort           .
-  ---)
+---(
+  ---- Lifting symbol identifiers
+
+  eq  liftsymbolid((ceil     ).SymbolId) = Kceil           . 
+  eq  liftsymbolid((true     ).SymbolId) = Ktrue           .         
+  eq  liftsymbolid((false    ).SymbolId) = Kfalse          . 
+  eq  liftsymbolid((andBool  ).SymbolId) = KandBool        .        
+  eq  liftsymbolid((notBool  ).SymbolId) = KnotBool        .      
+  eq  liftsymbolid((zero     ).SymbolId) = Kzero           .       
+  eq  liftsymbolid((succ     ).SymbolId) = Ksucc           .    
+  eq  liftsymbolid((plus     ).SymbolId) = Kplus           .    
+  eq  liftsymbolid((gte      ).SymbolId) = Kgte            .  
+  eq  liftsymbolid((nil      ).SymbolId) = Knil            .      
+  eq  liftsymbolid((cons     ).SymbolId) = Kcons           .      
+  eq  liftsymbolid((ctxtapp  ).SymbolId) = Kctxtapp        .      
+  eq  liftsymbolid((gamma0   ).SymbolId) = Kgamma0         .      
+  eq  liftsymbolid((NatToAExp).SymbolId) = KNatToAExp      .
+  eq  liftsymbolid((IdToAExp ).SymbolId) = KIdToAExp       .      
+  eq  liftsymbolid((plusAExp ).SymbolId) = KplusAExp       .      
+  eq  liftsymbolid((ite      ).SymbolId) = Kite            .     
+---) 
 
 endfm
 
@@ -60,25 +95,7 @@ endfm
 
 reduce
 
-lift(Nat) 
-
-.
-
-reduce
-
-lift(Nat, Bool, Bool)
-
-.
-
-reduce 
-
-lift(List{Bool})
-
-.
-
-reduce
-
-lift(Ctxt{Bool, List{Nat, List{Nat}}, List{S1, S2, List{S3}}})
+liftSortToKSort(Ctxt{Bool, List{Nat, List{Nat}}, List{S1, S2, List{S3}}})
 
 .
 

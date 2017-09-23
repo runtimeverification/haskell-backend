@@ -10,7 +10,7 @@ fmod TOKENS is
   ops Nat Bool        : -> AtomicSort           .
   ops AExp BExp       : -> AtomicSort           .
   op  Stmt            : -> AtomicSort           .
-  ops List Map Ctxt   : -> ParSort              .
+  ops List Ctxt       : -> ParSort              .
   ops S S' S1 S2 S3 R : -> SortVar              .
 
   ---- Sort terminals in K
@@ -50,14 +50,32 @@ fmod TOKENS is
 
   ---- Symbol terminals in K
   op  Ksort           : -> AtomicNConstSymbolId .
-  op  Kparsort        : -> AtomicNConstSymbolId .
   op  KnilKSortList   : -> AtomicConstSymbolId .
   op  KconsKSortList  : -> AtomicNConstSymbolId .
 
   op  Ksymbol         : -> AtomicNConstSymbolId .
-  op  Kparsymbol      : -> AtomicNConstSymbolId .
   op  Kvariable       : -> AtomicNConstSymbolId .
   op  KgetSort        : -> AtomicNConstSymbolId .
+
+  op  Kceil           : -> AtomicConstSymbolId  .       
+  op  Ktrue           : -> AtomicConstSymbolId  .    
+  op  Kfalse          : -> AtomicConstSymbolId  .  
+  op  KandBool        : -> AtomicConstSymbolId  .      
+  op  KnotBool        : -> AtomicConstSymbolId  .   
+  op  Kzero           : -> AtomicConstSymbolId  .       
+  op  Ksucc           : -> AtomicConstSymbolId  .     
+  op  Kplus           : -> AtomicConstSymbolId  .    
+  op  Kgte            : -> AtomicConstSymbolId  .    
+  op  Knil            : -> AtomicConstSymbolId  .       
+  op  Kcons           : -> AtomicConstSymbolId  .       
+  op  Kctxtapp        : -> AtomicConstSymbolId  .       
+  op  Kgamma0         : -> AtomicConstSymbolId  .       
+  op  KNatToAExp      : -> AtomicConstSymbolId  .       
+  op  KIdToAExp       : -> AtomicConstSymbolId  .       
+  op  KplusAExp       : -> AtomicConstSymbolId  .       
+  op  Kite            : -> AtomicConstSymbolId  .       
+
+
 
   ---- Parametric sorts binders
   ---- symbol pi0(KSort, S) : S 
