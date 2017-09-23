@@ -457,6 +457,9 @@ non-empty; and a function
 $\sigma_M:M_{s_1}\times\cdots\times M_{s_n} \rightarrow {\cal P}(M_s)$
 for each symbol $\sigma\in\Sigma_{s_1\ldots s_n,s}$, called the
 \emph{interpretation} of $\sigma$ in $M$.
+It is important to note that in matching logic symbols are interpreted as
+functions into power-set domains, that is, as \emph{relations}, and not as
+usual functions like in FOL.
 We tacitly use the same notation $\sigma_M$ for its extension
 to argument sets,
 ${\cal P}(M_{s_1})\times\cdots\times {\cal P}(M_{s_n}) \rightarrow {\cal P}(M_s)$.
@@ -542,20 +545,37 @@ $\Sigma'$, or a reuse of a richer implementation in a smaller context.
 
 \subsection{Useful Symbols and Notations}
 
-For any (not necessarily distinct) sorts $s_1,s_2\in S$, assume the following
-\emph{definedness} symbol and corresponding pattern:
+Matching logic is rather poor by default.
+For example, it has no functions, no predicates, no equality, and although
+symbols are interpreted as sets and variables are singletons, it has no
+membership or inclusion.
+All these operations are very useful, if not indispensable in practice.
+Fortunately, they and many others can be defined axiomatically in matching
+logic.
+That is, whenever we need these in order to define (the semantics of other
+symbols in) a matching logic specification $(\Sigma,A)$, we can add
+corresponding symbols to $\Sigma$ and corresponding patterns to $A$ as axioms,
+so that, in models, the desired symbols or patterns associated to the
+desired operations get interpreted as expected.
+
+For any sorts $s_1,s_2\in S$, assume the following \emph{definedness}
+symbol and corresponding pattern:
 $$
 \begin{array}{l@{\hspace*{7ex}}l}
-\lceil\_\rceil_{s_1}^{s_2} \in \Sigma_{s_1,s_2}
+\lceil\_\rceil_{s_1}^{s_2} \ \ \in \Sigma_{s_1,s_2}
 & \mbox{\it // Definedness symbol} \\
-\lceil x\!:\! s_1 \rceil_{s_1}^{s_2} \in F & \mbox{\it // Definedness pattern}
+\lceil x\!:\! s_1 \rceil_{s_1}^{s_2} \ \ \in A & \mbox{\it // Definedness pattern}
 \end{array}
 $$
+Like in many logics, free variables are assumed universally quantified.
+So the definedness pattern axiom above should be read as
+``$\forall x\cln s_1\,.\,\lceil x \rceil_{s_1}^{s_2}$''.
 If $S$ is infinite, then we have infinitely many definedness symbols and patterns
 above.
-It can be easily shown that if $\varphi \in \Pattern_{s_1}$ then
-$\lceil\varphi\rceil_{s_1}^{s_2}$ is a predicate; specifically,
-if $\rho : \Var \ra M$ is any valuation then
+It is easy to show that if $\varphi \in \Pattern_{s_1}$ then
+$\lceil\varphi\rceil_{s_1}^{s_2}$ is a predicate which holds iff $\varphi$ is
+defined:
+if $\rho : \Var \ra M$ then
 $\overline{\rho}(\lceil\varphi\rceil_{s_1}^{s_2})$ is either $\emptyset$
 (i.e., $\overline{\rho}(\bot_{s_2})$)
 when $\overline{\rho}(\varphi) = \emptyset$
@@ -572,8 +592,8 @@ $$
 \neg\lceil\neg\varphi\rceil_{s_1}^{s_2}
 \end{array}
 $$
-The totality construct states that the enclosed pattern must be matched by
-all values.
+Totality also behaves as a predicate.
+It states that the enclosed pattern is matched by all values.
 That is, if $\varphi \in \Pattern_{s_1}$ then $\lfloor\varphi\rfloor_{s_1}^{s_2}$
 is a predicate where if $\rho : \Var \ra M$ is any valuation
 then $\overline{\rho}(\lfloor\varphi\rfloor_{s_1}^{s_2})$ is either $\emptyset$
@@ -583,16 +603,6 @@ when $\overline{\rho}(\varphi) \neq M_{s_1}$
 (i.e., $\overline{\rho}(\top_{s_2})$) 
 when $\overline{\rho}(\varphi) = M_{s_1}$
 (i.e., $\varphi$ is total).
-
-Since $s_1$ and $s_2$ can usually be inferred from context,
-we write $\lceil\_\rceil$ or $\lfloor\_\rfloor$ instead of
-$\lceil\_\rceil_{s_1}^{s_2}$ or $\lfloor\_\rfloor_{s_1}^{s_2}$, respectively.
-If the sort decorations cannot be inferred from context, then we assume
-the stated property/axiom/rule holds for all such sorts.
-%
-For example, the generic pattern axiom ``$\lceil x \rceil$ where $x\in\Var$''
-replaces all the axioms $\lceil x\!:\!s_1 \rceil_{s_1}^{s_2}$ above for all
-the definedness symbols for all the sorts $s_1$ and $s_2$.
 
 \emph{Equality} can be defined quite compactly using pattern totality and
 equivalence.
@@ -606,6 +616,64 @@ $$
 & \ \ \ \ \ \mbox{where } \varphi,\varphi' \in \Pattern_{s_1}
 \end{array}
 $$
+Equality is also a predicate.
+if $\varphi,\varphi' \in \Pattern_{s_1}$ and $\rho : \Var \ra M$ then
+$\overline{\rho}(\varphi =_{s_1}^{s_2} \varphi') = \emptyset$
+iff $\overline{\rho}(\varphi) \neq \overline{\rho}(\varphi')$, and
+$\overline{\rho}(\varphi =_{s_1}^{s_2} \varphi') = M_{s_2}$
+iff $\overline{\rho}(\varphi) = \overline{\rho}(\varphi')$.
+
+Similarly, we can define \emph{membership}:
+if $x\in\Var_{s_1}$, $\varphi\in\Pattern_{s_1}$ and $s_2\in S$, then
+let
+$$
+\begin{array}{@{}rcll}
+x \in_{s_1}^{s_2} \varphi & \ \ \ \ \ \equiv \ \ \ \ \ &
+\lceil x \wedge \varphi\rceil_{s_1}^{s_2}
+& % \ \ \ \ \ \mbox{where } x \in \Var_{s_1},\varphi\in \Pattern_{s_1}\\
+\end{array}
+$$
+Membership is also a predicate.
+Specifically, for any $\rho:\Var\ra M$,
+$\overline{\rho}(x \in_{s_1}^{s_2} \varphi) = \emptyset$
+iff $\rho(x) \not\in \overline{\rho}(\varphi)$, and
+$\overline{\rho}(x \in_{s_1}^{s_2} \varphi) = M_{s_2}$
+iff $\rho(x) \in \overline{\rho}(\varphi)$.
+
+Since $s_1$ and $s_2$ can usually be inferred from context,
+we write $\lceil\_\rceil$ or $\lfloor\_\rfloor$ instead of
+$\lceil\_\rceil_{s_1}^{s_2}$ or $\lfloor\_\rfloor_{s_1}^{s_2}$, respectively,
+and similarly for the equality and membership.
+Also, if the sort decorations cannot be inferred from context, then we assume
+the stated property/axiom/rule holds for all such sorts.
+\info{Refer to this later when we talk about parameters.}
+%
+For example, the generic pattern axiom ``$\lceil x \rceil$ where $x\in\Var$''
+replaces all the axioms $\lceil x\!:\!s_1 \rceil_{s_1}^{s_2}$ above for all
+the definedness symbols for all the sorts $s_1$ and $s_2$.
+
+Note that, by default, symbols are interpreted as relations in matching logic.
+It is often the case, though, that we want symbols to be interpreted as
+\emph{functions}.
+This can be easily done by axiomatically constraining those symbols to evaluate to
+singletons.
+For example, if $f$ is a unary symbol, then the pattern equation
+``$\forall x\,.\,\exists y\,.\,f(x) = y$'' (the convention for free variables
+allows us to drop the universal quantifier) states that in any model
+$M$, the set $f_M(a)$ contains precisely one element for any $a\in M$.
+%
+Inspired from similar notations in other logics,
+we adopt the familiar notation
+``$\sigma : s_1 \times \cdots \times s_n \ra s$''
+to indicate that $\sigma$ is a symbol in $\Sigma_{s_1\ldots s_n,s}$ and that
+the pattern
+$
+\exists y\,.\,\sigma(x_1,\ldots,x_n) = y
+$ is in $A$.
+In this case, we call $\sigma$ a \emph{function symbol} or even just a
+\emph{function}.
+Patterns built with only function symbols are called
+\emph{term patterns}, or simply just \emph{terms}.
 
 
 \subsection{Sound and Complete Deduction}
