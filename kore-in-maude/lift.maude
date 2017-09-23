@@ -8,35 +8,57 @@ fmod LIFT is
   including KORE   .
   including TOKENS .
 
-  ---- lift a sort
-  op liftSortToKSort      : Sort    -> Pattern . ---- defined for each terminals
-  op liftParSortToKString : ParSort -> String  . ---- in the end of this module
+  ---- Lift sorts
 
-  ---- lift a sort list
+  ---- Lift to KString
+  op liftAtomicSortToKString : AtomicSort -> String .
+  op liftParSortToKString    : ParSort    -> String .
+
+  ---- Lift to KSort
+  op liftSortToKSort : Sort -> Pattern .
+
+  eq liftSortToKSort(S:AtomicSort) 
+   = Ksort(liftAtomicSortToKString(S:AtomicSort), 
+           KnilKSortList) .
+
+  eq liftSortToKSort(PS:ParSort{Ss:SortList})
+   = Ksort(liftParSortToKString(PS:ParSort), 
+           liftSortListToKSortList(Ss:SortList)) .
+
+  ---- Lift to KSortList 
   op liftSortListToKSortList : SortList -> Pattern .
+
   eq liftSortListToKSortList(S:Sort)
    = KconsKSortList(liftSortToKSort(S:Sort), KnilKSortList) .
+
   eq liftSortListToKSortList(S:Sort, S':Sort)
    = KconsKSortList(liftSortToKSort(S:Sort), liftSortListToKSortList(S':Sort)) .
+
   eq liftSortListToKSortList(S:Sort, Ss:SortList)
    = KconsKSortList(liftSortToKSort(S:Sort), liftSortListToKSortList(Ss:SortList)) .
 
-  ---- lift a parametric sort
-  eq liftSortToKSort(PS:ParSort{Ss:SortList})
-   = Ksort(liftParSortToKString(PS:ParSort), liftSortListToKSortList(Ss:SortList)) . 
-   
----(
-  ---- lift a symbol to a KSymbol Pattern
-  ----   Suppose we have plus(Nat, Nat) : Nat .
-  ----   Suppose we want to lift plus(0, 0)
-  ----   We will get Kapplication(Ksymbol("plus", ...), ...)
-  ----   where the first "..." is the argument sorts and return
-  ----   sort of plus, which we cannot know locally.
-  ----   Therefore we introduce a constant symbol at 
-  ----   the meta-level called Kplus, and define it as
-  ----   Kplus = Ksymbol("plus", ...).
 
+  ---- Lift symbols 
+
+
+  ---- Lift to KString
+  op liftAtomicConstSymbolIdToKString  : AtomicConstSymbolId  -> String .
+  op liftAtomicNConstSymbolIdToKString : AtomicNConstSymbolId -> String .
+  op liftParConstSymbolIdToKString     : ParConstSymbolId     -> String .
+  op liftParNConstSymbolIdToKString    : ParNConstSymbolId    -> String .
+
+  ---- Lift to KSymbolId
+  op liftAtomicConstSymbolId : AtomicConstSymbolId 
+  
+
+---(
   op liftSymbolIdToKSymbolPattern : SymbolId -> Pattern .
+
+
+  ---- Examples:
+  ----   plus    ----lift---->   Kplus = Ksymbolid("plus", ...)
+  ----   zero    ----lift---->   Kzero = Ksymbolid("zero", ...)
+  ----   cons{S} ----lift---->   Kcons = Ksymbolid("cons", (S), ...)
   op liftParSymbolId : ParConstSymbolId   -> String  .
   op liftParSymbolId : ParNConstSymbolId  -> String  .
   ---- defined for each terminals in the end of this module.
@@ -49,44 +71,44 @@ fmod LIFT is
   ---- Lifting: terminals to terminals.
 
   ---- Lifting atomic sorts terminals. 
-  eq  liftSortToKSort((Nat).AtomicSort)  = Ksort("Nat" , KnilKSortList) .
-  eq  liftSortToKSort((Bool).AtomicSort) = Ksort("Bool", KnilKSortList) .
-  eq  liftSortToKSort((AExp).AtomicSort) = Ksort("AExp", KnilKSortList) .
-  eq  liftSortToKSort((BExp).AtomicSort) = Ksort("BExp", KnilKSortList) .
-  eq  liftSortToKSort((Stmt).AtomicSort) = Ksort("Stmt", KnilKSortList) .
+  eq  liftAtomicSortToKString((Nat).AtomicSort)  = "Nat"  .
+  eq  liftAtomicSortToKString((Bool).AtomicSort) = "Bool" .
+  eq  liftAtomicSortToKString((AExp).AtomicSort) = "AExp" .
+  eq  liftAtomicSortToKString((BExp).AtomicSort) = "BExp" .
+  eq  liftAtomicSortToKString((Stmt).AtomicSort) = "Stmt" .
 
   ---- Lifting sort variables to terminals.
-  eq  liftSortToKSort((S).SortVar )      = S  : KSort             .
-  eq  liftSortToKSort((S').SortVar)      = S' : KSort             .
-  eq  liftSortToKSort((S1).SortVar)      = S1 : KSort             .
-  eq  liftSortToKSort((S2).SortVar)      = S2 : KSort             .
-  eq  liftSortToKSort((S3).SortVar)      = S3 : KSort             .
+  eq  liftSortToKSort((S).SortVar )      = S  : KSort     .
+  eq  liftSortToKSort((S').SortVar)      = S' : KSort     .
+  eq  liftSortToKSort((S1).SortVar)      = S1 : KSort     .
+  eq  liftSortToKSort((S2).SortVar)      = S2 : KSort     .
+  eq  liftSortToKSort((S3).SortVar)      = S3 : KSort     .
 
   ---- Lifting parametric sort constructors to terminals.
-  eq  liftParSortToKString(List)           = "List"                 .
-  eq  liftParSortToKString(Ctxt)           = "Ctxt"                 .
+  eq  liftParSortToKString(List)         = "List"       .
+  eq  liftParSortToKString(Ctxt)         = "Ctxt"       .
 
----(
-  ---- Lifting symbol identifiers
+  ---- Lifting AtomicConstSymbolId terminals to KString
+  eq  liftAtomicConstSymbolIdToKString(true)  = "true"  .
+  eq  liftAtomicConstSymbolIdToKString(false) = "false" .
+  eq  liftAtomicConstSymbolIdToKString(zero)  = "zero"  .
 
-  eq  liftsymbolid((ceil     ).SymbolId) = Kceil           . 
-  eq  liftsymbolid((true     ).SymbolId) = Ktrue           .         
-  eq  liftsymbolid((false    ).SymbolId) = Kfalse          . 
-  eq  liftsymbolid((andBool  ).SymbolId) = KandBool        .        
-  eq  liftsymbolid((notBool  ).SymbolId) = KnotBool        .      
-  eq  liftsymbolid((zero     ).SymbolId) = Kzero           .       
-  eq  liftsymbolid((succ     ).SymbolId) = Ksucc           .    
-  eq  liftsymbolid((plus     ).SymbolId) = Kplus           .    
-  eq  liftsymbolid((gte      ).SymbolId) = Kgte            .  
-  eq  liftsymbolid((nil      ).SymbolId) = Knil            .      
-  eq  liftsymbolid((cons     ).SymbolId) = Kcons           .      
-  eq  liftsymbolid((ctxtapp  ).SymbolId) = Kctxtapp        .      
-  eq  liftsymbolid((gamma0   ).SymbolId) = Kgamma0         .      
-  eq  liftsymbolid((NatToAExp).SymbolId) = KNatToAExp      .
-  eq  liftsymbolid((IdToAExp ).SymbolId) = KIdToAExp       .      
-  eq  liftsymbolid((plusAExp ).SymbolId) = KplusAExp       .      
-  eq  liftsymbolid((ite      ).SymbolId) = Kite            .     
----) 
+  ---- Lifting AtomicNConstSymbolId terminals to KString
+  eq  liftAtomicNConstSymbolIdToKString(andBool)   = "andBool" .
+  eq  liftAtomicNConstSymbolIdToKString(notBool)   = "notBool" .
+  eq  liftAtomicNConstSymbolIdToKString(NatToAExp) = "NatToAExp" .
+  eq  liftAtomicNConstSymbolIdToKString(IdToAExp)  = "IdToAExp" .
+  eq  liftAtomicNConstSymbolIdToKString(plusAExp)  = "plusAExp" .
+  eq  liftAtomicNConstSymbolIdToKString(ite)       = "ite" .
+
+  ---- Lifting ParConstSymbolId terminals to KString
+  eq  liftParConstSymbolIdToKString(nil) = "nil" .
+
+  ---- Lifting ParNConstSymbolId terminals to KString
+  eq  liftParNConstSymbolIdToKString(ceil)    = "ceil"    .
+  eq  liftParNConstSymbolIdToKString(cons)    = "cons"    .
+  eq  liftParNConstSymbolIdToKString(ctxtapp) = "ctxtapp" .
+  eq  liftParNConstSymbolIdToKString(gamma0)  = "gamma0"  .
 
 endfm
 

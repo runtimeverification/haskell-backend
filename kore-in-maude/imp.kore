@@ -204,6 +204,7 @@ module K
   symbol KnilKSortList                    : KSortList
   symbol KconsKSortList(KSort, KSortList) : KSortList 
 
+  symbol Ksymbolid(KString, KSortList)                 : KSymbol
   symbol Ksymbol(KString, KSortList, KSortList, KSort) : KSymbol 
 
   symbol Kvariable(KString, KSort)    : KPattern
