@@ -298,6 +298,8 @@
 \newcommand{\ra}{\rightarrow}
 \newcommand{\lra}{\leftrightarrow}
 
+\newcommand{\FV}{{\it FV}}
+
 
   % Title and authors
   \title{The Semantics of \K}
@@ -442,10 +444,16 @@ $$\begin{array}{rcl@{\hspace*{10ex}}rcl}
 \end{array}
 %\vspace*{-1ex}
 $$
+We adapt from first-order logic the notions of \emph{free variable}
+($\FV(\varphi)$ is the set of free variables of $\varphi$) and of
+variable-capture-free \emph{substitution} ($\varphi[\varphi'/x]$ denotes
+$\varphi$ whose free occurrences of $x$ are replaced with $\varphi'$, possibly
+renaming bound variables in $\varphi$ to avoid capturing free variables of
+$\varphi'$).
 
 A matching logic \emph{theory} is a triple $(S, \Sigma, A)$ where
 $(S,\Sigma)$ is a signature and $A$ is a set of patterns called \emph{axioms}.
-When $S$ is understood, we write $(\Sigma,A)$ instead of $(S,\Sigma,A)$.
+When $S$ is understood or not important, we write $(\Sigma,A)$ instead of $(S,\Sigma,A)$.
 
 \subsection{Semantics and Basic Properties}
 \label{sec:semantics}
@@ -544,6 +552,7 @@ the implementation $M$ of $\Sigma$ turning it into an implementation of
 $\Sigma'$, or a reuse of a richer implementation in a smaller context.
 
 \subsection{Useful Symbols and Notations}
+\label{sec:useful}
 
 Matching logic is rather poor by default.
 For example, it has no functions, no predicates, no equality, and although
@@ -675,12 +684,205 @@ In this case, we call $\sigma$ a \emph{function symbol} or even just a
 Patterns built with only function symbols are called
 \emph{term patterns}, or simply just \emph{terms}.
 
+\unsure{Should we discuss constructors, too?}
 
 \subsection{Sound and Complete Deduction}
 
-Proof system, soundness and completeness
+Currently, our sound and complete proof system for matching logic extends that
+of first-order logic with equality with axioms and proof rules for membership.
+In order for this to be feasible, we need equality and membership, which are
+available when the definedness symbol is available, as seen in
+Section~\ref{sec:useful}.
+Therefore, in this section we assume a matching logic theory $(S,\Sigma,A)$
+which includes all the definedness symbols discussed in Section~\ref{sec:useful}
+(and thus also totality, equality and membership).
+We conjecture that it is possible to craft a proof system that does not rely on
+the existence of definedness symbols.
+Nevertheless, that will not significantly change the \K semantics approach taken
+in this paper, because all the existing axioms and proof rules will be proven as
+lemmas in the new proof system.
+Therefore, any proofs done with the proof system below will be easily translatable
+to proofs done with the new proof system, whenever the latter will be available.
 
-\subsection{Finite Mechanisms to Define Infinite Theories}
+\newcommand{\sequent}[2]{{#1}\vdash{#2}}
+
+Our proof system is a Hilbert-style proof system (not to be confused with a
+Gentzen-style proof system).
+To avoid any confusion about our notation and to remind the reader the
+basics of axiom and proof rule \emph{schemas}, we start by briefly recalling
+what a Hilbert-style proof system is, but for specificity we do it in the
+context of matching logic.
+A \emph{proof rule} is a pair $(\{\varphi_1,...,\varphi_n\},\varphi)$,
+written
+$$
+\frac{
+\varphi_1 \ \ ... \ \ \varphi_n
+}{\varphi}
+$$
+The formulae $\varphi_1$, ..., $\varphi_n$ are called the \emph{hypotheses}
+and $\varphi$ is called the \emph{conclusion} of the rule.
+The order in which the hypotheses occur in a proof rule is irrelevant.
+When $n = 0$ we call the proof rule an \emph{axiom} and take the freedom to
+drop the empty hypotheses and the separating line, writing it simply as
+``$\varphi$''.
+A proof system allows us to \emph{formally prove} or \emph{derive} formulae.
+Specifically, a proof system yields a \emph{provability relation}, written
+$\sequent{A}{\varphi}$, for any given specification $(\Sigma,A)$, defined
+inductively as follows:
+$\sequent{A}{\varphi}$ if $\varphi \in A$; and
+$\sequent{A}{\varphi}$ if there is a proof rule like above such that
+$\sequent{A}{\varphi_1}$, ..., $\sequent{A}{\varphi_n}$.
+Formulae in $A$ can therefore be regarded as axioms, and we even take the
+freedom to call them axioms when there is no misunderstanding.
+However, note that a proof system is fixed for the target logic, including
+all its axioms (i.e., proof rules with no hypotheses).
+
+Proof systems can be and typically are infinite, that is, contain infinitely
+many proof rules.
+To write them using finite resources (space, time), we make use of \emph{proof schemas}
+and \emph{meta-variables}.
+As an example, let us recall the usual proof system of propositional logic,
+which is also included in the proof system we propose here for matching logic:
+
+\vspace*{2ex}
+
+\noindent
+\underline{Propositional calculus proof rules:}
+
+\begin{quote}
+1. $\varphi_1 \ra (\varphi_2 \ra \varphi_1)$
+\hfill \textsc{(Propositional$_1$)}
+\end{quote}
+
+\begin{quote}
+2. $(\varphi_1 \ra (\varphi_2 \ra \varphi_3)) \ra ((\varphi_1 \ra \varphi_2) \ra (\varphi_1 \ra \varphi_3))$
+\hfill \textsc{(Propositional$_2$)}
+\end{quote}
+
+\begin{quote}
+3. $(\neg \varphi_1 \ra \neg\varphi_2) \ra (\varphi_2 \ra \varphi_1)$
+\hfill \textsc{(Propositional$_3$)}
+\end{quote}
+
+\begin{quote}
+4. $\displaystyle\frac{\varphi_1 \ \ \ \ \varphi_1 \ra \varphi_2}{\varphi_2}$
+\hfill \textsc{(Modus Ponens)}
+\end{quote}
+
+In propositional logic, $\varphi_1$, $\varphi_2$ and $\varphi_3$ above are
+meta-variables ranging over propositions.
+The first three are \emph{axiom schemas} while the fourth is a proper
+\emph{rule schema}.
+Schemas can be regarded as templates, which specify infinitely many instances,
+one for each instance of the meta-variables.
+We take the four proof rule schemas of propositional logic unchanged and
+regard them as proof rule schemas for matching logic.
+Note, however, that the \emph{meta-variables now range over patterns} of
+the same sort, and thus there is a schema for each sort.
+
+Matching logic also includes the proof system of first-order logic with
+equality.
+However, as explained in \cite{rosu-2017-lmcs}, we prefer to replace the
+FOL substitution proof rule with two rules, called
+\emph{functional substitution}
+and \emph{functional variable} below:
+
+\vspace*{2ex}
+
+\noindent
+\underline{First-order logic with equality proof rules:}
+
+\begin{quote}
+5. $\vdash (\forall x\,.\,\varphi_1\ra\varphi_2) \ra (\varphi_1 \ra \forall x\,.\,\varphi_2)$
+when $x\not\in\FV(\varphi_1)$
+\hfill \textsc{($\forall$)}
+\end{quote}
+
+\begin{quote}
+6. $\displaystyle\frac{\varphi}{\forall x\,.\,\varphi}$
+\hfill \textsc{(Universal Generalization)}
+\end{quote}
+
+\begin{quote}
+7. $\vdash (\forall x\,.\,\varphi) \wedge
+  (\exists y\,.\,\varphi'=y) \ra \varphi[\varphi'/x]$
+\hfill \textsc{(Functional Substitution)}
+\improvement{Need to define functional patterns.}
+\end{quote}
+
+\begin{quote}
+8. $\exists y\,.\,x=y$
+\hfill \textsc{(Functional Variable)}
+\end{quote}
+
+\begin{quote}
+9. $\varphi = \varphi$
+\hfill \textsc{(Equality Introduction)}
+\end{quote}
+
+\begin{quote}
+10. $\varphi_1=\varphi_2 \mathrel\wedge \varphi[\varphi_1/x] \ra \varphi[\varphi_2/x]$
+\hfill \textsc{(Equality Elimination)}
+\end{quote}
+
+In addition to the above rules borrowed from FOL with equality, matching
+logic also introduces the following rules for (reasoning about) membership.
+
+\vspace*{2ex}
+
+\noindent
+\underline{Membership rules:}
+
+\begin{quote}
+11. $\displaystyle\frac{\varphi}{\forall x\,.\,x\in\varphi}$
+\hfill \textsc{(Membership Introduction)}
+\end{quote}
+
+\begin{quote}
+12. $\displaystyle\frac{\forall x\,.\,x\in\varphi}{\varphi}$
+\hfill \textsc{(Membership Elimination)}
+\end{quote}
+
+\begin{quote}
+13. $x \in y = (x=y)$ when $x,y\in\Var$
+\hfill \textsc{(Membership Variable)}
+\end{quote}
+
+\begin{quote}
+14. $x\in\neg\varphi = \neg(x\in\varphi)$
+\hfill \textsc{(Membership $\neg$)}
+\end{quote}
+
+\begin{quote}
+15. $x\in\varphi_1\wedge\varphi_2 = (x\in\varphi_1) \wedge (x\in\varphi_2)$
+\hfill \textsc{(Membership $\wedge$)}
+\end{quote}
+
+\begin{quote}
+16. $(x\in\exists y\,.\,\varphi) = \exists y\,.\,(x\in\varphi)$ when $x,y\in\Var$ distinct
+\hfill \textsc{(Membership $\exists$)}
+\end{quote}
+
+\begin{quote}
+17. $\begin{array}{l}x\in\sigma(\varphi_1,...,\varphi_{i-1},\varphi_i,\varphi_{i+1},...,\varphi_n) = \\ \exists y\,.\, (y \in\varphi_i \mathrel\wedge x \in\sigma(\varphi_1,...,\varphi_{i-1},y,\varphi_{i+1},...,\varphi_n))\end{array}$
+\hfill \textsc{(Membership Symbol)}
+\end{quote}
+
+The following result establishes the soundness and completeness
+of the proof system above:
+
+\begin{theorem}\cite{rosu-2017-lmcs}
+\label{thm:completeness}
+For any matching logic specification $(\Sigma,A)$ and $\Sigma$-pattern
+$\varphi$, $A \models \varphi$ iff $\sequent{A}{\varphi}$.
+\end{theorem}
+
+Note that Theorem~\ref{thm:completeness} also holds when the matching logic
+specification is infinite, that is, when it has infinitely many sorts and
+symbols in $\Sigma$ and infinitely many axioms in $A$.
+
+
+\section{Finite Mechanisms to Define Infinite Theories}
 
 Note that all the theoretical results discussed so far imposed no finiteness
 restrictions on the sets of sorts, symbols, or patterns that form a matching
@@ -790,7 +992,7 @@ One of the major goals of this paper is to propose a formal language,
 and an implementation, that allow us to finitely specify potentially
 infinite matching logic theories presented with finitely many pattern schemas.
 
-\subsection{Built-ins}
+\section{Built-ins}
 \label{sec:builtins}
 
 It is rarely the case in practice that a matching logic theory, for example
