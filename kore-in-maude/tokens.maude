@@ -49,32 +49,43 @@ fmod TOKENS is
   op  ite             : -> AtomicNConstSymbolId .
 
   ---- Symbol terminals in K
-  op  Ksort           : -> AtomicNConstSymbolId .
-  op  KnilKSortList   : -> AtomicConstSymbolId .
-  op  KconsKSortList  : -> AtomicNConstSymbolId .
+  op  Ksort             : -> AtomicNConstSymbolId .
+  op  KnilKSortList     : -> AtomicConstSymbolId  .
+  op  KconsKSortList    : -> AtomicNConstSymbolId .
 
-  op  Ksymbolid       : -> AtomicNConstSymbolId .
-  op  Ksymbol         : -> AtomicNConstSymbolId .
-  op  Kvariable       : -> AtomicNConstSymbolId .
-  op  KgetSort        : -> AtomicNConstSymbolId .
+  op  Ksymbolid         : -> AtomicNConstSymbolId .
+  op  Ksymbol           : -> AtomicNConstSymbolId .
 
-  op  Kceil           : -> AtomicConstSymbolId  .       
-  op  Ktrue           : -> AtomicConstSymbolId  .    
-  op  Kfalse          : -> AtomicConstSymbolId  .  
-  op  KandBool        : -> AtomicConstSymbolId  .      
-  op  KnotBool        : -> AtomicConstSymbolId  .   
-  op  Kzero           : -> AtomicConstSymbolId  .       
-  op  Ksucc           : -> AtomicConstSymbolId  .     
-  op  Kplus           : -> AtomicConstSymbolId  .    
-  op  Kgte            : -> AtomicConstSymbolId  .    
-  op  Knil            : -> AtomicConstSymbolId  .       
-  op  Kcons           : -> AtomicConstSymbolId  .       
-  op  Kctxtapp        : -> AtomicConstSymbolId  .       
-  op  Kgamma0         : -> AtomicConstSymbolId  .       
-  op  KNatToAExp      : -> AtomicConstSymbolId  .       
-  op  KIdToAExp       : -> AtomicConstSymbolId  .       
-  op  KplusAExp       : -> AtomicConstSymbolId  .       
-  op  Kite            : -> AtomicConstSymbolId  .       
+  op  Kvariable         : -> AtomicNConstSymbolId .
+  op  Kapplication      : -> AtomicNConstSymbolId .
+  op  Kand              : -> AtomicNConstSymbolId .
+  op  Knot              : -> AtomicNConstSymbolId .
+  op  Kexists           : -> AtomicNConstSymbolId .
+
+  op  Kequals           : -> AtomicNConstSymbolId .
+
+  op  KnilKPatternList  : -> AtomicConstSymbolId  .
+  op  KconsKPatternList : -> AtomicNConstSymbolId .
+
+  op  KgetSort          : -> AtomicNConstSymbolId .
+
+  op  Kceil             : -> AtomicConstSymbolId  .       
+  op  Ktrue             : -> AtomicConstSymbolId  .    
+  op  Kfalse            : -> AtomicConstSymbolId  .  
+  op  KandBool          : -> AtomicConstSymbolId  .      
+  op  KnotBool          : -> AtomicConstSymbolId  .   
+  op  Kzero             : -> AtomicConstSymbolId  .       
+  op  Ksucc             : -> AtomicConstSymbolId  .     
+  op  Kplus             : -> AtomicConstSymbolId  .    
+  op  Kgte              : -> AtomicConstSymbolId  .    
+  op  Knil              : -> AtomicConstSymbolId  .       
+  op  Kcons             : -> AtomicConstSymbolId  .       
+  op  Kctxtapp          : -> AtomicConstSymbolId  .       
+  op  Kgamma0           : -> AtomicConstSymbolId  .       
+  op  KNatToAExp        : -> AtomicConstSymbolId  .       
+  op  KIdToAExp         : -> AtomicConstSymbolId  .       
+  op  KplusAExp         : -> AtomicConstSymbolId  .       
+  op  Kite              : -> AtomicConstSymbolId  .       
 
   ---- Alias terminals
   ops \or \implies    : -> ParNConstAliasId     .

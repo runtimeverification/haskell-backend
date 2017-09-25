@@ -1,12 +1,11 @@
----- Run Maude with option -no-prelude.  We only need the builtin strings
----- from the Maude prelude, which we reinclude/rehook below (ignore warning):
-
+---(
 fmod STRING is
 
   sort String .
   op <Strings> : -> String [special(id-hook StringSymbol)] .
 
 endfm
+---)
 
 fmod SORT is
 
