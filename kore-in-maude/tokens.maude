@@ -23,6 +23,8 @@ fmod TOKENS is
   op  KVariable       : -> AtomicSort           .  
   op  KPattern        : -> AtomicSort           .  
   op  KPatternList    : -> AtomicSort           .   
+  op  KAxiom          : -> AtomicSort           .
+  op  KAxiomList      : -> AtomicSort           .
 
   op  KSortSentence           : -> AtomicSort   . 
   op  KSortSentenceList       : -> AtomicSort   . 
@@ -61,12 +63,20 @@ fmod TOKENS is
   op  Kand              : -> AtomicNConstSymbolId .
   op  Knot              : -> AtomicNConstSymbolId .
   op  Kexists           : -> AtomicNConstSymbolId .
-  op  Kor               : -> AtomicNConstSymbolId .
-
-  op  Kequals           : -> AtomicNConstSymbolId .
 
   op  KnilKPatternList  : -> AtomicConstSymbolId  .
   op  KconsKPatternList : -> AtomicNConstSymbolId .
+
+  op  Kor               : -> AtomicNConstSymbolId .
+  op  Kimplies          : -> AtomicNConstSymbolId .
+  op  Kequals           : -> AtomicNConstSymbolId .
+
+  op  Kaxiom            : -> AtomicNConstSymbolId .
+  op  KnilKAxiomList    : -> AtomicNConstSymbolId . 
+  op  KconsKAxiomList   : -> AtomicNConstSymbolId . 
+
+  op  Kpi0              : -> ParNConstSymbolId    .
+  op  Kpi               : -> ParNConstAliasId     .
 
   op  KgetSort          : -> AtomicNConstSymbolId .
 
@@ -94,7 +104,6 @@ fmod TOKENS is
   ops \forall         : -> ParNConstAliasId     .
   op  floor           : -> ParNConstAliasId     .
   op  gamma           : -> ParNConstAliasId     .
-  op  pi              : -> ParNConstAliasId     .
 
   ---- VariableName terminals
   ops B E             : -> VariableName         .
