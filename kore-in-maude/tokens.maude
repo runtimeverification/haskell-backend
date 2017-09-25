@@ -61,6 +61,7 @@ fmod TOKENS is
   op  Kand              : -> AtomicNConstSymbolId .
   op  Knot              : -> AtomicNConstSymbolId .
   op  Kexists           : -> AtomicNConstSymbolId .
+  op  Kor               : -> AtomicNConstSymbolId .
 
   op  Kequals           : -> AtomicNConstSymbolId .
 

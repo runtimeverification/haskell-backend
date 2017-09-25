@@ -132,23 +132,6 @@ fmod LIFT is
                liftSortListToKSortList(Ss:SortList)) .
 
 
-  ---- Lift Alias
-
-  ---- I think whether an alias is meta-level or not
-  ---- should be infered by its definition. 
-  ---- Also there are alias(es) which could be seen
-  ---- as meta-level or object-level.
-  ---- For now let's define lifting of alias manually.
-
-  op aliasidIsMetaLevel : AliasId -> Bool .
----(
-  \or      
-  \implies
-  \if        
-  \equals   
-  \forall     
----)
-
 
 
 
@@ -217,10 +200,10 @@ fmod LIFT is
    = patternIsMetaLevel(P:Pattern) .
 
   eq patternIsMetaLevel(\and{S:Sort}(P1:Pattern, P2:Pattern))
-   = patternIsMetaLevel(P1:Pattern) and patternIsMetaLevel(P2:Pattern) .
+   = patternIsMetaLevel(P1:Pattern) or patternIsMetaLevel(P2:Pattern) .
 
   eq patternIsMetaLevel(\exists{S1:Sort, S2:Sort}(Var:Variable, P:Pattern))
-   = patternIsMetaLevel(P:Pattern) and variableIsMetaLevel(Var:Variable) .
+   = patternIsMetaLevel(P:Pattern) or variableIsMetaLevel(Var:Variable) .
 
   eq patternIsMetaLevel(Str:String)
    = true .
@@ -283,6 +266,92 @@ fmod LIFT is
              liftVariableToKVariable(V:Variable),
              liftPatternToKPattern(P:Pattern))
   if not patternIsMetaLevel(\exists{S1:Sort, S2:Sort}(V:Variable, P:Pattern)) .
+
+
+  ---- Lift patterns with alias
+
+  ---- I think whether an alias is meta-level or not
+  ---- should be infered by its definition. 
+  ---- Also there are alias(es) which could be seen
+  ---- as meta-level or object-level.
+  ---- For now let's define lifting of alias manually.
+
+  ---- \or
+  eq patternIsMetaLevel(\or{S:Sort}(P1:Pattern, P2:Pattern))
+   = patternIsMetaLevel(P1:Pattern) or patternIsMetaLevel(P2:Pattern) .
+
+ ceq liftPatternToKPattern(\or{S:Sort}(P1:Pattern, P2:Pattern))
+   = \or{S:Sort}(liftPatternToKPattern(P1:Pattern),
+                 liftPatternToKPattern(P2:Pattern))
+  if patternIsMetaLevel(\or{S:Sort}(P1:Pattern, P2:Pattern)) .
+
+ ceq liftPatternToKPattern(\or{S:Sort}(P1:Pattern, P2:Pattern))
+   = Kor(liftSortToKSort(S:Sort),
+         liftPatternToKPattern(P1:Pattern),
+         liftPatternToKPattern(P2:Pattern))
+  if not patternIsMetaLevel(\or{S:Sort}(P1:Pattern, P2:Pattern)) .
+
+  ---- \implies
+  eq patternIsMetaLevel(\implies{S:Sort}(P1:Pattern, P2:Pattern))
+   = patternIsMetaLevel(P1:Pattern) or patternIsMetaLevel(P2:Pattern) .
+
+ ceq liftPatternToKPattern(\implies{S:Sort}(P1:Pattern, P2:Pattern))
+   = \and{S:Sort}(liftPatternToKPattern(P1:Pattern),
+                  liftPatternToKPattern(P2:Pattern))
+  if patternIsMetaLevel(\implies{S:Sort}(P1:Pattern, P2:Pattern)) .
+
+ ceq liftPatternToKPattern(\implies{S:Sort}(P1:Pattern, P2:Pattern))
+   = Kand(liftSortToKSort(S:Sort),
+          liftPatternToKPattern(P1:Pattern),
+          liftPatternToKPattern(P2:Pattern))
+  if not patternIsMetaLevel(\implies{S:Sort}(P1:Pattern, P2:Pattern)) .
+
+---(
+  ---- \equals
+  eq patternIsMetaLevel(\equals{S1:Sort, S2:Sort}(P1:Pattern, P2:Pattern))
+   = patternIsMetaLevel(P1:Pattern) or patternIsMetaLevel(P2:Pattern) .
+
+ ceq liftPatternToKPattern(\equals{S:Sort}(P1:Pattern, P2:Pattern))
+   = \or{S:Sort}(liftPatternToKPattern(P1:Pattern),
+                 liftPatternToKPattern(P2:Pattern))
+  if patternIsMetaLevel(\or{S:Sort}(P1:Pattern, P2:Pattern)) .
+
+ ceq liftPatternToKPattern(\or{S:Sort}(P1:Pattern, P2:Pattern))
+   = Kor(liftSortToKSort(S:Sort),
+         liftPatternToKPattern(P1:Pattern),
+         liftPatternToKPattern(P2:Pattern))
+  if not patternIsMetaLevel(\or{S:Sort}(P1:Pattern, P2:Pattern)) .
+---)
+
+
+
+
+
+
+  
+---(
+  \implies
+  \if        
+  \equals   
+  \forall     
+---)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
