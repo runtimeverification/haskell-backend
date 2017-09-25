@@ -38,7 +38,7 @@ fmod LIFT is
   eq sortIsMetaLevel(S:Sort             ) = false [owise] .
 
   ---- Lift to KSort
-  op liftSortToKSort : Sort -> Pattern .
+  op liftSortToKSort : Sort -> Pattern [format(r o)] .
 
   eq liftSortToKSort(S:AtomicSort) 
    = Ksort(liftAtomicSortToKString(S:AtomicSort), 
@@ -63,7 +63,7 @@ fmod LIFT is
 
   ---- Lift symbols 
 
-  ---- Check whether Symbol is one at the meta-theory K.
+  ---- Check whether Symbol is at the meta-theory K.
   ---- Notice there are only a finite number of them.
 
   op symbolidIsMetaLevel : SymbolId -> Bool .
@@ -132,9 +132,6 @@ fmod LIFT is
                liftSortListToKSortList(Ss:SortList)) .
 
 
-
-
-
   ---- Lift VariableName to KString
   op liftVariableNameToKString : VariableName -> String .
 
@@ -159,16 +156,17 @@ fmod LIFT is
 
  
   ---- Lift patterns and lists of patterns to KPattern
-  op liftPatternToKPattern : Pattern -> Pattern .  ---- Equations defined later .
+  op liftPatternToKPattern : Pattern -> Pattern [format(r o)] .  
+  ---- Equations defined later .
 
   op liftPatternListToKPattern : PatternList -> Pattern .
 
   eq liftPatternListToKPattern(P:Pattern)
-   = KconsKPatternList(liftPatternListToKPattern(P:Pattern),
+   = KconsKPatternList(liftPatternToKPattern(P:Pattern),
                        KnilKPatternList) .
 
   eq liftPatternListToKPattern(P:Pattern, Ps:PatternList)
-   = KconsKPatternList(liftPatternListToKPattern(P:Pattern),
+   = KconsKPatternList(liftPatternToKPattern(P:Pattern),
      liftPatternListToKPattern(Ps:PatternList)) .
 
   ---- Map liftPatternToKPattern on a list of patterns:
@@ -273,7 +271,7 @@ fmod LIFT is
   ---- I think whether an alias is meta-level or not
   ---- should be infered by its definition. 
   ---- Also there are alias(es) which could be seen
-  ---- as meta-level or object-level.
+  ---- as meta-level or object-level. (For example, \or)
   ---- For now let's define lifting of alias manually.
 
   ---- \or
@@ -296,33 +294,45 @@ fmod LIFT is
    = patternIsMetaLevel(P1:Pattern) or patternIsMetaLevel(P2:Pattern) .
 
  ceq liftPatternToKPattern(\implies{S:Sort}(P1:Pattern, P2:Pattern))
-   = \and{S:Sort}(liftPatternToKPattern(P1:Pattern),
-                  liftPatternToKPattern(P2:Pattern))
+   = \implies{S:Sort}(liftPatternToKPattern(P1:Pattern),
+                      liftPatternToKPattern(P2:Pattern))
   if patternIsMetaLevel(\implies{S:Sort}(P1:Pattern, P2:Pattern)) .
 
  ceq liftPatternToKPattern(\implies{S:Sort}(P1:Pattern, P2:Pattern))
-   = Kand(liftSortToKSort(S:Sort),
-          liftPatternToKPattern(P1:Pattern),
-          liftPatternToKPattern(P2:Pattern))
+   = Kimplies(liftSortToKSort(S:Sort),
+              liftPatternToKPattern(P1:Pattern),
+              liftPatternToKPattern(P2:Pattern))
   if not patternIsMetaLevel(\implies{S:Sort}(P1:Pattern, P2:Pattern)) .
 
----(
   ---- \equals
   eq patternIsMetaLevel(\equals{S1:Sort, S2:Sort}(P1:Pattern, P2:Pattern))
    = patternIsMetaLevel(P1:Pattern) or patternIsMetaLevel(P2:Pattern) .
 
- ceq liftPatternToKPattern(\equals{S:Sort}(P1:Pattern, P2:Pattern))
-   = \or{S:Sort}(liftPatternToKPattern(P1:Pattern),
-                 liftPatternToKPattern(P2:Pattern))
-  if patternIsMetaLevel(\or{S:Sort}(P1:Pattern, P2:Pattern)) .
+ ceq liftPatternToKPattern(\equals{S1:Sort,S2:Sort}(P1:Pattern, P2:Pattern))
+   = \equals{S1:Sort,S2:Sort}(liftPatternToKPattern(P1:Pattern),
+                              liftPatternToKPattern(P2:Pattern))
+  if patternIsMetaLevel(\equals{S1:Sort,S2:Sort}(P1:Pattern, P2:Pattern)) .
 
- ceq liftPatternToKPattern(\or{S:Sort}(P1:Pattern, P2:Pattern))
-   = Kor(liftSortToKSort(S:Sort),
-         liftPatternToKPattern(P1:Pattern),
-         liftPatternToKPattern(P2:Pattern))
-  if not patternIsMetaLevel(\or{S:Sort}(P1:Pattern, P2:Pattern)) .
----)
+ ceq liftPatternToKPattern(\equals{S1:Sort,S2:Sort}(P1:Pattern, P2:Pattern))
+   = Kequals(liftSortToKSort(S1:Sort),
+             liftSortToKSort(S2:Sort),
+             liftPatternToKPattern(P1:Pattern),
+             liftPatternToKPattern(P2:Pattern))
+  if not patternIsMetaLevel(\equals{S1:Sort,S2:Sort}(P1:Pattern, P2:Pattern)) .
 
+  ---- Lift Axioms
+  op liftAxiomToKAxiom : Sentence -> Pattern .
+
+  eq liftAxiomToKAxiom(axiom P:Pattern)
+   = Kaxiom(liftPatternToKPattern(P:Pattern)) .
+
+  eq liftAxiomToKAxiom(axiom{SVar:SortVar} P:Pattern)
+   = Kpi{KAxiom}(liftSortToKSort(SVar:SortVar),
+                 liftAxiomToKAxiom(axiom P:Pattern)) .
+
+  eq liftAxiomToKAxiom(axiom{SVar:SortVar, SVars:SortVarList} P:Pattern)
+   = Kpi{KAxiom}(liftSortToKSort(SVar:SortVar),
+                 liftAxiomToKAxiom(axiom{SVars:SortVarList} P:Pattern)) .
 
 
 
@@ -370,6 +380,7 @@ fmod LIFT is
   eq  liftSortToKSort((S1).SortVar)      = S1 : KSort     .
   eq  liftSortToKSort((S2).SortVar)      = S2 : KSort     .
   eq  liftSortToKSort((S3).SortVar)      = S3 : KSort     .
+  eq  liftSortToKSort((R).SortVar )      = R  : KSort     .
 
   ---- Lifting parametric sort constructors to terminals.
   eq  liftParSortToKString(List)         = "List"       .
@@ -456,6 +467,51 @@ reduce
 liftPatternToKPattern(
 
 \not{Bool}(\and{Bool}(true, false))
+
+)
+
+.
+
+reduce
+
+liftAxiomToKAxiom(
+
+axiom{S1,S2}
+  ceil{S1,S2}(X:S1)
+
+)
+
+.
+
+reduce
+
+liftAxiomToKAxiom(
+
+  axiom{S}
+    \not{List{S}}(\and{List{S}}(
+      nil{S}, 
+      \exists{S, List{S}}(X:S, \exists{List{S}, List{S}}(L:List{S}, 
+        cons{S}(X:S, L:List{S})))))
+
+)
+
+.
+
+reduce
+
+liftAxiomToKAxiom(
+
+  axiom{S, R}
+  \implies{R}(
+  \equals{KSort, R}(KgetSort(C:KPattern), Ctxt{S, AExp}),  
+  \equals{AExp, R}(plusAExp(ctxtapp{S,AExp}(C:KPattern, X:S), E:AExp),
+                   ctxtapp{S,AExp}(
+                     gamma{S,AExp}(
+                       HOLE:S, 
+                       plusAExp(ctxtapp{S,AExp}(C:KPattern, HOLE:S), E:AExp)), 
+                     X:S)))
+
+
 
 )
 
