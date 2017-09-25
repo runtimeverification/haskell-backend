@@ -265,6 +265,29 @@ fmod LIFT is
              liftPatternToKPattern(P:Pattern))
   if not patternIsMetaLevel(\exists{S1:Sort, S2:Sort}(V:Variable, P:Pattern)) .
 
+  ---- Lift Sort-As-Pattern.
+  ---- First convert Sort-As-Pattern to its corresponding Sort,
+  ---- and then use liftSortToKSort.
+
+  eq patternIsMetaLevel(S:Sort-As-Pattern) = true .
+
+  op patternAsSort         : Sort-As-Pattern         -> Sort     [format(r o)] .
+  op patternAsSort         : ParSort-As-Pattern      -> ParSort  [format(r o)] .
+  op patternListAsSortList : SortList-As-PatternList -> SortList [format(r o)] .
+
+  eq liftPatternToKPattern(S:Sort-As-Pattern)
+   = liftSortToKSort(patternAsSort(S:Sort-As-Pattern)) .
+
+  eq patternListAsSortList(S:Sort-As-Pattern)
+   = patternAsSort(S:Sort-As-Pattern) .  
+
+  eq patternListAsSortList(S:Sort-As-Pattern, Ss:SortList-As-PatternList)
+   = patternAsSort(S:Sort-As-Pattern),
+     patternListAsSortList(Ss:SortList-As-PatternList) .
+
+  eq patternAsSort(P:ParSort-As-Pattern{Ss:SortList-As-PatternList})
+   = patternAsSort(P:ParSort-As-Pattern){patternListAsSortList(Ss:SortList-As-PatternList)} .
+
 
   ---- Lift patterns with alias
 
@@ -321,7 +344,7 @@ fmod LIFT is
   if not patternIsMetaLevel(\equals{S1:Sort,S2:Sort}(P1:Pattern, P2:Pattern)) .
 
   ---- Lift Axioms
-  op liftAxiomToKAxiom : Sentence -> Pattern .
+  op liftAxiomToKAxiom : Sentence -> Pattern [format(r o)] .
 
   eq liftAxiomToKAxiom(axiom P:Pattern)
    = Kaxiom(liftPatternToKPattern(P:Pattern)) .
@@ -333,36 +356,6 @@ fmod LIFT is
   eq liftAxiomToKAxiom(axiom{SVar:SortVar, SVars:SortVarList} P:Pattern)
    = Kpi{KAxiom}(liftSortToKSort(SVar:SortVar),
                  liftAxiomToKAxiom(axiom{SVars:SortVarList} P:Pattern)) .
-
-
-
-
-
-  
----(
-  \implies
-  \if        
-  \equals   
-  \forall     
----)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
   ---- Lifting: terminals to terminals.
@@ -431,6 +424,13 @@ fmod LIFT is
   eq  liftVariableNameToKString(L0  ) = "L0" .    
   eq  liftVariableNameToKString(C'' ) = "C''" .    
 
+  ---- Convert Sort-As-Pattern to Sort
+  eq  patternAsSort((AExp).AtomicSort-As-Pattern) = (AExp).AtomicSort .
+  eq  patternAsSort((BExp).AtomicSort-As-Pattern) = (BExp).AtomicSort .
+  eq  patternAsSort((S).SortVar-As-Pattern      ) = (S).SortVar .
+  eq  patternAsSort((Ctxt).ParSort-As-Pattern   ) = (Ctxt).ParSort .
+
+
 endfm
 
 
@@ -497,6 +497,8 @@ liftAxiomToKAxiom(
 
 .
 
+
+
 reduce
 
 liftAxiomToKAxiom(
@@ -506,12 +508,33 @@ liftAxiomToKAxiom(
   \equals{KSort, R}(KgetSort(C:KPattern), Ctxt{S, AExp}),  
   \equals{AExp, R}(plusAExp(ctxtapp{S,AExp}(C:KPattern, X:S), E:AExp),
                    ctxtapp{S,AExp}(
-                     gamma{S,AExp}(
+                     \exists{S,AExp}(
                        HOLE:S, 
-                       plusAExp(ctxtapp{S,AExp}(C:KPattern, HOLE:S), E:AExp)), 
+                       gamma0{S,AExp}(
+                         HOLE:S, 
+                         plusAExp(ctxtapp{S,AExp}(C:KPattern, HOLE:S), E:AExp))), 
                      X:S)))
 
+)
 
+.
+
+reduce
+
+liftAxiomToKAxiom(
+
+  axiom{S, R}
+  \implies{R}(
+  \equals{KSort, R}(KgetSort(C:KPattern), Ctxt{S, BExp}),
+  \equals{Stmt, R}(ite(ctxtapp{S, BExp}(C:KPattern, X:S), S1:Stmt, S2:Stmt),
+                   ctxtapp{S, Stmt}(
+                     \exists{S, Stmt}(
+                       HOLE:S,
+                       gamma0{S, Stmt}(
+                         HOLE:S,
+                         ite(ctxtapp{S, BExp}(C:KPattern, HOLE:S),
+                             S1:Stmt, S2:Stmt))), 
+                     X:S)))
 
 )
 
