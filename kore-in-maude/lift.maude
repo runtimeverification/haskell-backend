@@ -67,12 +67,25 @@ fmod LIFT is
   ---- Notice there are only a finite number of them.
 
   op symbolidIsMetaLevel : SymbolId -> Bool .
+
+  ---- The following equations are in correspondence to
+  ---- symbols terminals in K, defined in tokens.maude
+
   eq symbolidIsMetaLevel(Ksort         ) = true .
   eq symbolidIsMetaLevel(KnilKSortList ) = true .
   eq symbolidIsMetaLevel(KconsKSortList) = true .
+
   eq symbolidIsMetaLevel(Ksymbolid     ) = true .
   eq symbolidIsMetaLevel(Ksymbol       ) = true .
+
   eq symbolidIsMetaLevel(Kvariable     ) = true .
+  eq symbolidIsMetaLevel(Kapplication  ) = true .
+  eq symbolidIsMetaLevel(Kand          ) = true .
+  eq symbolidIsMetaLevel(Knot          ) = true .
+  eq symbolidIsMetaLevel(Kexists       ) = true .
+
+  eq symbolidIsMetaLevel(Kequals       ) = true .
+
   eq symbolidIsMetaLevel(KgetSort      ) = true .
   eq symbolidIsMetaLevel(Kceil         ) = true .
   eq symbolidIsMetaLevel(Ktrue         ) = true .
@@ -119,6 +132,25 @@ fmod LIFT is
                liftSortListToKSortList(Ss:SortList)) .
 
 
+  ---- Lift Alias
+
+  ---- I think whether an alias is meta-level or not
+  ---- should be infered by its definition. 
+  ---- Also there are alias(es) which could be seen
+  ---- as meta-level or object-level.
+  ---- For now let's define lifting of alias manually.
+
+  op aliasidIsMetaLevel : AliasId -> Bool .
+---(
+  \or      
+  \implies
+  \if        
+  \equals   
+  \forall     
+---)
+
+
+
 
   ---- Lift VariableName to KString
   op liftVariableNameToKString : VariableName -> String .
@@ -128,31 +160,129 @@ fmod LIFT is
   eq variableIsMetaLevel(X:VariableName : S:Sort)
    = sortIsMetaLevel(S:Sort) .
 
-  ---- Lift Variable to KPattern
+  ---- Lift Variable to KVariable
   ----   X:S  ---lift---> Kvariable("X", Ksort("S",...)) if S is object-level
   ----   X:S  ---lift---> X:S                            if S is meta-level
-  op liftVariableToKPattern : Variable -> Pattern .
+  op liftVariableToKVariable : Variable -> Pattern .
 
- ceq liftVariableToKPattern(X:VariableName : S:Sort)
+ ceq liftVariableToKVariable(X:VariableName : S:Sort)
    = Kvariable(liftVariableNameToKString(X:VariableName),
                liftSortToKSort(S:Sort))
   if not variableIsMetaLevel(X:VariableName : S:Sort) .
 
- ceq liftVariableToKPattern(X:VariableName : S:Sort)
+ ceq liftVariableToKVariable(X:VariableName : S:Sort)
    = X:VariableName : S:Sort  
   if variableIsMetaLevel(X:VariableName : S:Sort) . 
 
  
-  ---- Lift patterns to KPattern.
+  ---- Lift patterns and lists of patterns to KPattern
+  op liftPatternToKPattern : Pattern -> Pattern .  ---- Equations defined later .
 
-  op liftPatternToKPattern : Pattern -> Pattern .
+  op liftPatternListToKPattern : PatternList -> Pattern .
+
+  eq liftPatternListToKPattern(P:Pattern)
+   = KconsKPatternList(liftPatternListToKPattern(P:Pattern),
+                       KnilKPatternList) .
+
+  eq liftPatternListToKPattern(P:Pattern, Ps:PatternList)
+   = KconsKPatternList(liftPatternListToKPattern(P:Pattern),
+     liftPatternListToKPattern(Ps:PatternList)) .
+
+  ---- Map liftPatternToKPattern on a list of patterns:
+  op liftPatternToKPattern-MapOnList : PatternList -> PatternList .
+
+  eq liftPatternToKPattern-MapOnList(P:Pattern)
+   = liftPatternToKPattern(P:Pattern) .
+
+  eq liftPatternToKPattern-MapOnList(P:Pattern, Ps:PatternList)
+   = liftPatternToKPattern(P:Pattern),
+     liftPatternToKPattern-MapOnList(Ps:PatternList) .
+
+  ---- Check whether Pattern is at meta-level K.
+  op patternIsMetaLevel : Pattern -> Bool .
+
+  eq patternIsMetaLevel(Var:Variable)
+   = variableIsMetaLevel(Var:Variable) .
+
+  eq patternIsMetaLevel(ConstSigma:ConstSymbolId)
+   = symbolidIsMetaLevel(ConstSigma:ConstSymbolId) .
+
+  ---- Whether a Pattern Sigma(P1,...,Pn) is meta-level
+  ---- only depends on whether Sigma is a meta-level symbol,
+  ---- and has nothing to do with its arguments P1, ..., Pn.
+  eq patternIsMetaLevel(Sigma:NConstSymbolId(Ps:PatternList))
+   = symbolidIsMetaLevel(Sigma:NConstSymbolId) .
+
+  eq patternIsMetaLevel(\not{S:Sort}(P:Pattern))
+   = patternIsMetaLevel(P:Pattern) .
+
+  eq patternIsMetaLevel(\and{S:Sort}(P1:Pattern, P2:Pattern))
+   = patternIsMetaLevel(P1:Pattern) and patternIsMetaLevel(P2:Pattern) .
+
+  eq patternIsMetaLevel(\exists{S1:Sort, S2:Sort}(Var:Variable, P:Pattern))
+   = patternIsMetaLevel(P:Pattern) and variableIsMetaLevel(Var:Variable) .
+
+  eq patternIsMetaLevel(Str:String)
+   = true .
+
+  eq patternIsMetaLevel(P:Pattern)
+   = false [owise] .
 
 
+  ---- Lift to KPattern.
 
+  eq liftPatternToKPattern(Var:Variable)
+   = liftVariableToKVariable(Var:Variable) .
 
+ ceq liftPatternToKPattern(ConstSigma:ConstSymbolId)
+   = ConstSigma:ConstSymbolId
+  if symbolidIsMetaLevel(ConstSigma:ConstSymbolId) .
 
+ ceq liftPatternToKPattern(ConstSigma:ConstSymbolId)
+   = Kapplication(liftSymbolIdToKSymbol(ConstSigma:ConstSymbolId),
+                  KnilKPatternList) 
+  if not symbolidIsMetaLevel(ConstSigma:ConstSymbolId) .
 
+ ceq liftPatternToKPattern(Sigma:NConstSymbolId(Ps:PatternList))
+   = Sigma:NConstSymbolId(liftPatternToKPattern-MapOnList(Ps:PatternList))
+  if symbolidIsMetaLevel(Sigma:NConstSymbolId) .
 
+ ceq liftPatternToKPattern(Sigma:NConstSymbolId(Ps:PatternList))
+   = Kapplication(liftSymbolIdToKSymbol(Sigma:NConstSymbolId),
+                  liftPatternListToKPattern(Ps:PatternList))
+  if not symbolidIsMetaLevel(Sigma:NConstSymbolId) .
+
+ ceq liftPatternToKPattern(\not{S:Sort}(P:Pattern))
+   = \not{S:Sort}(liftPatternToKPattern(P:Pattern))
+  if patternIsMetaLevel(\not{S:Sort}(P:Pattern)) .
+
+ ceq liftPatternToKPattern(\not{S:Sort}(P:Pattern))
+   = Knot(liftSortToKSort(S:Sort),
+          liftPatternToKPattern(P:Pattern))
+  if not patternIsMetaLevel(\not{S:Sort}(P:Pattern)) .
+
+ ceq liftPatternToKPattern(\and{S:Sort}(P1:Pattern, P2:Pattern))
+   = \and{S:Sort}(liftPatternToKPattern(P1:Pattern),
+                  liftPatternToKPattern(P2:Pattern))
+  if patternIsMetaLevel(\and{S:Sort}(P1:Pattern, P2:Pattern)) .
+
+ ceq liftPatternToKPattern(\and{S:Sort}(P1:Pattern, P2:Pattern))
+   = Kand(liftSortToKSort(S:Sort),
+          liftPatternToKPattern(P1:Pattern),
+          liftPatternToKPattern(P2:Pattern))
+  if not patternIsMetaLevel(\and{S:Sort}(P1:Pattern, P2:Pattern)) .
+
+ ceq liftPatternToKPattern(\exists{S1:Sort, S2:Sort}(V:Variable, P:Pattern))
+   = \exists{S1:Sort, S2:Sort}(liftVariableToKVariable(V:Variable),  --- shouldn't change
+                               liftPatternToKPattern(P:Pattern))
+  if patternIsMetaLevel(\exists{S1:Sort, S2:Sort}(V:Variable, P:Pattern)) .
+
+ ceq liftPatternToKPattern(\exists{S1:Sort, S2:Sort}(V:Variable, P:Pattern))
+   = Kexists(liftSortToKSort(S1:Sort),
+             liftSortToKSort(S2:Sort),
+             liftVariableToKVariable(V:Variable),
+             liftPatternToKPattern(P:Pattern))
+  if not patternIsMetaLevel(\exists{S1:Sort, S2:Sort}(V:Variable, P:Pattern)) .
 
 
 
@@ -242,13 +372,23 @@ liftSymbolIdToKSymbol(gamma0{List{S}, List{Bool, Nat}})
 
 reduce
 
-liftVariableToKPattern(B:Bool)
+liftVariableToKVariable(B:Bool)
 
 .
 
 reduce
 
-liftVariableToKPattern(C:KPattern)
+liftVariableToKVariable(C:KPattern)
+
+.
+
+reduce
+
+liftPatternToKPattern(
+
+\not{Bool}(\and{Bool}(true, false))
+
+)
 
 .
 

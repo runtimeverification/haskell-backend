@@ -207,7 +207,7 @@ module K
   symbol Ksymbolid(KString, KSortList)                 : KSymbol
   symbol Ksymbol(KString, KSortList, KSortList, KSort) : KSymbol 
 
-  symbol Kvariable(KString, KSort)    : KPattern
+  symbol Kvariable(KString, KSort)    : KVariable
 
 endmodule
 
