@@ -151,9 +151,11 @@ module AEXP
   \equals{KSort, R}(KgetSort(C:KPattern), Ctxt{S, AExp}),  
   \equals{AExp, R}(plusAExp(ctxtapp{S,AExp}(C:KPattern, X:S), E:AExp),
                    ctxtapp{S,AExp}(
-                     gamma{S,AExp}(
+                     \exists{S,AExp}(
                        HOLE:S, 
-                       plusAExp(ctxtapp{S,AExp}(C:KPattern, HOLE:S), E:AExp)), 
+                       gamma0{S,AExp}(
+                         HOLE:S, 
+                         plusAExp(ctxtapp{S,AExp}(C:KPattern, HOLE:S), E:AExp))), 
                      X:S)))
 
   axiom{S, R}
@@ -171,10 +173,13 @@ module AEXP
   \equals{KSort, R}(KgetSort(C:KPattern), Ctxt{S, BExp}),
   \equals{Stmt, R}(ite(ctxtapp{S, BExp}(C:KPattern, X:S), S1:Stmt, S2:Stmt),
                    ctxtapp{S, Stmt}(
-                     gamma{S, Stmt}(
+                     \exists{S, Stmt}(
                        HOLE:S,
-                       ite(ctxtapp{S, BExp}(C:KPattern, HOLE:S),
-                           S1:Stmt, S2:Stmt)), X:S)))
+                       gamma0{S, Stmt}(
+                         HOLE:S,
+                         ite(ctxtapp{S, BExp}(C:KPattern, HOLE:S),
+                             S1:Stmt, S2:Stmt))), 
+                     X:S)))
 endmodule
 
 module K
