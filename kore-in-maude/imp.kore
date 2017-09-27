@@ -11,8 +11,6 @@ endfm
 ---- imp.kore starts here ----
 ------------------------------
 
---- set print mixfix off .
-
 parse
 
 module PL-SYNTACTIC-SUGAR

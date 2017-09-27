@@ -149,7 +149,7 @@ fmod MODULE is
      [format(ib o d d d d d d) prec 66] .
 
   op symbol_:_ : Symbol Sort -> Sentence
-     [format(ib o d d d) prec 66] .
+     [format(ib o d d d) prec 52 gather(e e)] .
 
   op alias_:=_ : Pattern Pattern -> Sentence 
      [format(ib o d d d) prec 66] .
