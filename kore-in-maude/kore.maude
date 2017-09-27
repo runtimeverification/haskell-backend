@@ -162,9 +162,10 @@ fmod MODULE is
   
 endfm
 
----(
 
----- Reflection
+
+---- Reflection ----
+
 ---- Kore's syntax is reflexive, in the sense that
 ---- everything can be parsed as a Pattern, and a
 ---- Pattern can be parsed as anything. The general
@@ -174,47 +175,96 @@ endfm
 ----  - a Pattern won't be parsed as something(else)
 ----    unless it has to.
 
+---- We provide some examples of reflection here.
+
+---- Example 1 (Parse Sort As Pattern):
+----   \equals{KSort, S}
+----     (KgetSort(C:KPattern), Ctxt{BExp, AExp})
+
+---- Example 2 (Parse Symbol As Pattern):
+----   \equals{KSymbol, S}
+----     (Sigma:KSymbol, plus)
+
+---- Example 3 (Parse Pattern As Sort):
+----   X:Ksort("Int")
+
 ---- Reflection is implemented by the following modules
 ---- with overloaded operators.
 ---- (Overloaded) operators are assigned with selected
 ---- precedence so that there is "No-Surprise".
 
----- Reflect Sort as Pattern
+
+---- Parse Sort as Pattern
 
 fmod SORT-AS-PATTERN is
 
   protecting PATTERN .
 
-  sorts   Sort-As-Pattern   SortList-As-PatternList .
-
-  subsort Sort-As-Pattern         < Pattern     .
-  subsort SortList-As-PatternList < PatternList . 
+  sort    Sort-As-Pattern           .
+  subsort Sort-As-Pattern < Pattern .
   
-  subsort Sort-As-Pattern < SortList-As-PatternList .
-  op _,_ : Sort-As-Pattern SortList-As-PatternList -> SortList-As-PatternList 
-    [prec 58] . ---- has the same prec as the (_,_) on PatternList.
+  sort SortList-As-PatternList                  .
+  subsort SortList-As-PatternList < PatternList .     
 
-  sorts AtomicSort-As-Pattern SortVariable-As-Pattern ParametricSort-As-Pattern .
-  subsort AtomicSort-As-Pattern < Sort-As-Pattern . 
-  subsort SortVariable-As-Pattern    < Sort-As-Pattern .
-  op _{_} : ParametricSort-As-Pattern SortList-As-PatternList -> Sort-As-Pattern 
-    [prec 53] . 
+  subsort Sort-As-Pattern < SortList-As-PatternList .
+  op _,_ : Sort-As-Pattern SortList-As-PatternList
+        -> SortList-As-PatternList
+     [prec 53] .
+
+  sort AtomicSort-As-Pattern        .
+  sort SortVariable-As-Pattern      .
+  sort ParametricSort-As-Pattern    .
+
+  subsort AtomicSort-As-Pattern   < Sort-As-Pattern . 
+  subsort SortVariable-As-Pattern < Sort-As-Pattern .
+  op _{_} : ParametricSort-As-Pattern SortList-As-PatternList 
+         -> Sort-As-Pattern [prec 53] . 
 
 endfm
+
+---- Parse Symbol as Pattern
+
+fmod SYMBOL-AS-PATTERN is
+
+---- TODO::
+
+endfm
+
+
+---- Parse Pattern as Sort
+
+fmod PATTERN-AS-SORT is
+
+---- TODO::
+
+endfm
+
+---- Parse Pattern as Symbol
+
+fmod PATTERN-AS-SYMBOL is
+
+---- TODO::
+
+endfm
+
+
+
+
 
 fmod REFLEXIVITY is
 
-  protecting SORT-AS-PATTERN .
+  protecting SORT-AS-PATTERN   .
+  protecting SYMBOL-AS-PATTERN .
+  protecting PATTERN-AS-SORT   .
+  protecting PATTERN-AS-SYMBOL .
 
 endfm
-
----)
 
 
 fmod KORE is
 
   protecting MODULE      .
-  --- protecting REFLEXIVITY .
+  protecting REFLEXIVITY .
 
 endfm
 
