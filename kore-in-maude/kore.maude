@@ -150,6 +150,19 @@ fmod MODULE is
 
   op symbol_:_ : Symbol Sort -> Sentence
      [format(ib o d d d) prec 52 gather(e e)] .
+  ---- The gather(e e) attribute is tricky.
+  ---- Here is an example that shows why we need it:
+  ----   symbol ceil{S1,S2}(S1) : S2
+  ---- might be parsed as
+  ----   symbol (ceil{S1,S2}(S1)) : S2
+  ---- Because of 
+  ----   (1) Symbol is a subsort of Pattern;
+  ----   (2) The reflection module Sort-As-Pattern
+  ----       will allow us to parse S1 as a pattern.
+  ---- We would like to find a better way to deal with
+  ---- this issue. At least we should re-examine all
+  ---- prec and gather attributes to make sure they
+  ---- work as expected.
 
   op alias_:=_ : Pattern Pattern -> Sentence 
      [format(ib o d d d) prec 66] .

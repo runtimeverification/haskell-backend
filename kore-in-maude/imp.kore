@@ -134,10 +134,6 @@ module CONTEXT
   
 endmodule
 
-.
-
-quit
-
 module AEXP
 
   import ID
