@@ -36,7 +36,7 @@ fmod TOKENS is
   op  KModule             : -> AtomicSort     .  
   op  KModuleList         : -> AtomicSort     .  
 
-  ---- Symbol terminals
+  ---- Terminals of Symbol (object-level ones)
   op  ceil            : -> Symbol .
   ops true false      : -> Symbol .
   ops andBool notBool : -> Symbol . 
@@ -51,93 +51,146 @@ fmod TOKENS is
   op  plusAExp        : -> Symbol .
   op  ite             : -> Symbol .
 
-  ---- Symbol terminals in K
+  ---- Terminals of Symbol (meta-level ones)
   op  Ksort             : -> Symbol .
   op  KnilKSortList     : -> Symbol .
   op  KconsKSortList    : -> Symbol .
-
   op  Ksymbolid         : -> Symbol .
   op  Ksymbol           : -> Symbol .
-
   op  Kvariable         : -> Symbol .
   op  Kapplication      : -> Symbol .
   op  Kand              : -> Symbol .
   op  Knot              : -> Symbol .
   op  Kexists           : -> Symbol .
-
   op  KnilKPatternList  : -> Symbol .
   op  KconsKPatternList : -> Symbol .
-
   op  Kor               : -> Symbol .
   op  Kimplies          : -> Symbol .
   op  Kequals           : -> Symbol .
-
   op  Kaxiom            : -> Symbol .
   op  KnilKAxiomList    : -> Symbol . 
   op  KconsKAxiomList   : -> Symbol . 
-
-  op  Kpi0              : -> Symbol    .
-  op  Kpi               : -> Alias     .
-
+  op  Kpi0              : -> Symbol .
   op  KgetSort          : -> Symbol .
+  op  Kceil             : -> Symbol .       
+  op  Ktrue             : -> Symbol .    
+  op  Kfalse            : -> Symbol .  
+  op  KandBool          : -> Symbol .      
+  op  KnotBool          : -> Symbol .   
+  op  Kzero             : -> Symbol .       
+  op  Ksucc             : -> Symbol .     
+  op  Kplus             : -> Symbol .    
+  op  Kgte              : -> Symbol .    
+  op  Knil              : -> Symbol .       
+  op  Kcons             : -> Symbol .       
+  op  Kctxtapp          : -> Symbol .       
+  op  Kgamma0           : -> Symbol .       
+  op  KNatToAExp        : -> Symbol .       
+  op  KIdToAExp         : -> Symbol .       
+  op  KplusAExp         : -> Symbol .       
+  op  Kite              : -> Symbol .       
 
-  op  Kceil             : -> Symbol  .       
-  op  Ktrue             : -> Symbol  .    
-  op  Kfalse            : -> Symbol  .  
-  op  KandBool          : -> Symbol  .      
-  op  KnotBool          : -> Symbol  .   
-  op  Kzero             : -> Symbol  .       
-  op  Ksucc             : -> Symbol  .     
-  op  Kplus             : -> Symbol  .    
-  op  Kgte              : -> Symbol  .    
-  op  Knil              : -> Symbol  .       
-  op  Kcons             : -> Symbol  .       
-  op  Kctxtapp          : -> Symbol  .       
-  op  Kgamma0           : -> Symbol  .       
-  op  KNatToAExp        : -> Symbol  .       
-  op  KIdToAExp         : -> Symbol  .       
-  op  KplusAExp         : -> Symbol  .       
-  op  Kite              : -> Symbol  .       
+  ---- Terminals of Alias 
+  ops \or \implies : -> Alias .
+  ops \iff \equals : -> Alias .
+  ops \forall      : -> Alias .
+  op  floor        : -> Alias .
+  op  gamma        : -> Alias .
+  op  Kpi          : -> Alias .
 
-  ---- Alias terminals
-  ops \or \implies    : -> Alias     .
-  ops \iff \equals    : -> Alias     .
-  ops \forall         : -> Alias     .
-  op  floor           : -> Alias     .
-  op  gamma           : -> Alias     .
+  ---- Terminals of VariableName
+  ops B E             : -> VariableName .
+  ops S S' S1 S2 S3   : -> VariableName . 
+  ops X Y Z L L0      : -> VariableName .
+  ops C C1 C2 C' C''  : -> VariableName .
+  ops P Q R           : -> VariableName .
+  ops HOLE            : -> VariableName .
 
-  ---- VariableName terminals
-  ops B E             : -> VariableName         .
-  ops S S' S1 S2 S3   : -> VariableName         . 
-  ops X Y Z L L0      : -> VariableName         .
-  ops C C1 C2 C' C''  : -> VariableName         .
-  ops P Q R           : -> VariableName         .
-  ops HOLE            : -> VariableName         .
+  ---- Terminals of ModuleName
+  op  PL-SYNTACTIC-SUGAR : -> ModuleName .
+  op  DEFINEDNESS        : -> ModuleName .
+  op  BOOL               : -> ModuleName .
+  op  PRESBURGER         : -> ModuleName .
+  op  LIST               : -> ModuleName .
+  op  CONTEXT            : -> ModuleName .
+  op  AEXP               : -> ModuleName .
+  op  ID                 : -> ModuleName .
+  op  TEST               : -> ModuleName .
+  op  K                  : -> ModuleName .
 
-  ---- ModuleName terminals
-  op  PL-SYNTACTIC-SUGAR : -> ModuleName        .
-  op  DEFINEDNESS        : -> ModuleName        .
-  op  BOOL               : -> ModuleName        .
-  op  PRESBURGER         : -> ModuleName        .
-  op  LIST               : -> ModuleName        .
-  op  CONTEXT            : -> ModuleName        .
-  op  AEXP               : -> ModuleName        .
-  op  ID                 : -> ModuleName        .
-  op  TEST               : -> ModuleName        .
-  op  K                  : -> ModuleName        .
-
-  ---(
   ---- Reflexive: Sort as Pattern
 
-  ops Nat Bool        : -> AtomicSort-As-Pattern           .
-  ops AExp BExp       : -> AtomicSort-As-Pattern           .
-  op  Stmt            : -> AtomicSort-As-Pattern           .
-  ops List Map Ctxt   : -> ParametricSort-As-Pattern              .
-  ops S S' S1 S2 S3 R : -> SortVariable-As-Pattern              .
+  ---- Terminals of SortVariable-As-Pattern
+  ops S S' S1 S2 S3 R : -> SortVariable-As-Pattern .
 
-  op  KPattern        : -> AtomicSort-As-Pattern           .
-  op  KSort           : -> AtomicSort-As-Pattern           .
-  ---)
+  ---- Terminals of Sort-As-Pattern 
+  ops Nat Bool            : -> AtomicSort-As-Pattern     .
+  ops AExp BExp           : -> AtomicSort-As-Pattern     .
+  op  Stmt                : -> AtomicSort-As-Pattern     .
+  ops List Ctxt           : -> ParametricSort-As-Pattern .
+  op  KString             : -> AtomicSort-As-Pattern     . 
+  op  KSort               : -> AtomicSort-As-Pattern     . 
+  op  KSortList           : -> AtomicSort-As-Pattern     . 
+  op  KSymbol             : -> AtomicSort-As-Pattern     . 
+  op  KSymbolList         : -> AtomicSort-As-Pattern     .  
+  op  KVariable           : -> AtomicSort-As-Pattern     .  
+  op  KPattern            : -> AtomicSort-As-Pattern     .  
+  op  KPatternList        : -> AtomicSort-As-Pattern     .   
+  op  KAxiom              : -> AtomicSort-As-Pattern     .
+  op  KAxiomList          : -> AtomicSort-As-Pattern     .
+  op  KSortSentence       : -> AtomicSort-As-Pattern     . 
+  op  KSortSentenceList   : -> AtomicSort-As-Pattern     . 
+  op  KSymbolSentence     : -> AtomicSort-As-Pattern     . 
+  op  KSymbolSentenceList : -> AtomicSort-As-Pattern     .  
+  op  KAxiomSentence      : -> AtomicSort-As-Pattern     . 
+  op  KAxiomSentenceList  : -> AtomicSort-As-Pattern     .  
+  op  KModule             : -> AtomicSort-As-Pattern     .  
+  op  KModuleList         : -> AtomicSort-As-Pattern     .  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   ---- Some frontend sugar that allows us
   ---- to use x:s instead of x : s in 
