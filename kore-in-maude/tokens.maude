@@ -2,108 +2,109 @@
 ---- as Maude constants, simply because Maude does not allows us
 ---- to define them as regular expressions. 
 
+
 fmod TOKENS is
 
   including KORE .
 
-  ---- Sort terminals
-  ops Nat Bool        : -> AtomicSort           .
-  ops AExp BExp       : -> AtomicSort           .
-  op  Stmt            : -> AtomicSort           .
-  ops List Ctxt       : -> ParametricSort              .
-  ops S S' S1 S2 S3 R : -> SortVariable              .
+  ---- Terminals of SortVariable
+  ops S S' S1 S2 S3 R : -> SortVariable   .
 
-  ---- Sort terminals in K
-  op  KString         : -> AtomicSort           . 
+  ---- Terminals of Sort (object-level ones)
+  ops Nat Bool            : -> AtomicSort     .
+  ops AExp BExp           : -> AtomicSort     .
+  op  Stmt                : -> AtomicSort     .
+  ops List Ctxt           : -> ParametricSort .
 
-  op  KSort           : -> AtomicSort           . 
-  op  KSortList       : -> AtomicSort           . 
-  op  KSymbol         : -> AtomicSort           . 
-  op  KSymbolList     : -> AtomicSort           .  
-  op  KVariable       : -> AtomicSort           .  
-  op  KPattern        : -> AtomicSort           .  
-  op  KPatternList    : -> AtomicSort           .   
-  op  KAxiom          : -> AtomicSort           .
-  op  KAxiomList      : -> AtomicSort           .
-
-  op  KSortSentence           : -> AtomicSort   . 
-  op  KSortSentenceList       : -> AtomicSort   . 
-  op  KSymbolSentence         : -> AtomicSort   . 
-  op  KSymbolSentenceList     : -> AtomicSort   .  
-  op  KAxiomSentence          : -> AtomicSort   . 
-  op  KAxiomSentenceList      : -> AtomicSort   .  
-  op  KModule                 : -> AtomicSort   .  
-  op  KModuleList             : -> AtomicSort   .  
+  ---- Terminals of Sort (meta-level ones)
+  op  KString             : -> AtomicSort     . 
+  op  KSort               : -> AtomicSort     . 
+  op  KSortList           : -> AtomicSort     . 
+  op  KSymbol             : -> AtomicSort     . 
+  op  KSymbolList         : -> AtomicSort     .  
+  op  KVariable           : -> AtomicSort     .  
+  op  KPattern            : -> AtomicSort     .  
+  op  KPatternList        : -> AtomicSort     .   
+  op  KAxiom              : -> AtomicSort     .
+  op  KAxiomList          : -> AtomicSort     .
+  op  KSortSentence       : -> AtomicSort     . 
+  op  KSortSentenceList   : -> AtomicSort     . 
+  op  KSymbolSentence     : -> AtomicSort     . 
+  op  KSymbolSentenceList : -> AtomicSort     .  
+  op  KAxiomSentence      : -> AtomicSort     . 
+  op  KAxiomSentenceList  : -> AtomicSort     .  
+  op  KModule             : -> AtomicSort     .  
+  op  KModuleList         : -> AtomicSort     .  
 
   ---- Symbol terminals
-  op  ceil            : -> ParNConstSymbolId    .
-  ops true false      : -> AtomicConstantSymbolId  .
-  ops andBool notBool : -> AtomicNConstSymbolId . 
-  ops zero            : -> AtomicConstantSymbolId  .
-  ops succ plus gte   : -> AtomicNConstSymbolId .
-  op  nil             : -> ParametricConstantSymbolId     .
-  op  cons            : -> ParNConstSymbolId    .
-  op  ctxtapp         : -> ParNConstSymbolId    .
-  op  gamma0          : -> ParNConstSymbolId    .
-  op  NatToAExp       : -> AtomicNConstSymbolId .
-  op  IdToAExp        : -> AtomicNConstSymbolId .
-  op  plusAExp        : -> AtomicNConstSymbolId .
-  op  ite             : -> AtomicNConstSymbolId .
+  op  ceil            : -> Symbol .
+  ops true false      : -> Symbol .
+  ops andBool notBool : -> Symbol . 
+  ops zero            : -> Symbol .
+  ops succ plus gte   : -> Symbol .
+  op  nil             : -> Symbol .
+  op  cons            : -> Symbol .
+  op  ctxtapp         : -> Symbol .
+  op  gamma0          : -> Symbol .
+  op  NatToAExp       : -> Symbol .
+  op  IdToAExp        : -> Symbol .
+  op  plusAExp        : -> Symbol .
+  op  ite             : -> Symbol .
 
   ---- Symbol terminals in K
-  op  Ksort             : -> AtomicNConstSymbolId .
-  op  KnilKSortList     : -> AtomicConstantSymbolId  .
-  op  KconsKSortList    : -> AtomicNConstSymbolId .
+  op  Ksort             : -> Symbol .
+  op  KnilKSortList     : -> Symbol .
+  op  KconsKSortList    : -> Symbol .
 
-  op  Ksymbolid         : -> AtomicNConstSymbolId .
-  op  Ksymbol           : -> AtomicNConstSymbolId .
+  op  Ksymbolid         : -> Symbol .
+  op  Ksymbol           : -> Symbol .
 
-  op  Kvariable         : -> AtomicNConstSymbolId .
-  op  Kapplication      : -> AtomicNConstSymbolId .
-  op  Kand              : -> AtomicNConstSymbolId .
-  op  Knot              : -> AtomicNConstSymbolId .
-  op  Kexists           : -> AtomicNConstSymbolId .
+  op  Kvariable         : -> Symbol .
+  op  Kapplication      : -> Symbol .
+  op  Kand              : -> Symbol .
+  op  Knot              : -> Symbol .
+  op  Kexists           : -> Symbol .
 
-  op  KnilKPatternList  : -> AtomicConstantSymbolId  .
-  op  KconsKPatternList : -> AtomicNConstSymbolId .
+  op  KnilKPatternList  : -> Symbol .
+  op  KconsKPatternList : -> Symbol .
 
-  op  Kor               : -> AtomicNConstSymbolId .
-  op  Kimplies          : -> AtomicNConstSymbolId .
-  op  Kequals           : -> AtomicNConstSymbolId .
+  op  Kor               : -> Symbol .
+  op  Kimplies          : -> Symbol .
+  op  Kequals           : -> Symbol .
 
-  op  Kaxiom            : -> AtomicNConstSymbolId .
-  op  KnilKAxiomList    : -> AtomicNConstSymbolId . 
-  op  KconsKAxiomList   : -> AtomicNConstSymbolId . 
+  op  Kaxiom            : -> Symbol .
+  op  KnilKAxiomList    : -> Symbol . 
+  op  KconsKAxiomList   : -> Symbol . 
 
-  op  Kpi0              : -> ParNConstSymbolId    .
-  op  Kpi               : -> ParNConstAliasId     .
+  op  Kpi0              : -> Symbol    .
+  op  Kpi               : -> Alias     .
 
-  op  KgetSort          : -> AtomicNConstSymbolId .
+  op  KgetSort          : -> Symbol .
 
-  op  Kceil             : -> AtomicConstantSymbolId  .       
-  op  Ktrue             : -> AtomicConstantSymbolId  .    
-  op  Kfalse            : -> AtomicConstantSymbolId  .  
-  op  KandBool          : -> AtomicConstantSymbolId  .      
-  op  KnotBool          : -> AtomicConstantSymbolId  .   
-  op  Kzero             : -> AtomicConstantSymbolId  .       
-  op  Ksucc             : -> AtomicConstantSymbolId  .     
-  op  Kplus             : -> AtomicConstantSymbolId  .    
-  op  Kgte              : -> AtomicConstantSymbolId  .    
-  op  Knil              : -> AtomicConstantSymbolId  .       
-  op  Kcons             : -> AtomicConstantSymbolId  .       
-  op  Kctxtapp          : -> AtomicConstantSymbolId  .       
-  op  Kgamma0           : -> AtomicConstantSymbolId  .       
-  op  KNatToAExp        : -> AtomicConstantSymbolId  .       
-  op  KIdToAExp         : -> AtomicConstantSymbolId  .       
-  op  KplusAExp         : -> AtomicConstantSymbolId  .       
-  op  Kite              : -> AtomicConstantSymbolId  .       
+  op  Kceil             : -> Symbol  .       
+  op  Ktrue             : -> Symbol  .    
+  op  Kfalse            : -> Symbol  .  
+  op  KandBool          : -> Symbol  .      
+  op  KnotBool          : -> Symbol  .   
+  op  Kzero             : -> Symbol  .       
+  op  Ksucc             : -> Symbol  .     
+  op  Kplus             : -> Symbol  .    
+  op  Kgte              : -> Symbol  .    
+  op  Knil              : -> Symbol  .       
+  op  Kcons             : -> Symbol  .       
+  op  Kctxtapp          : -> Symbol  .       
+  op  Kgamma0           : -> Symbol  .       
+  op  KNatToAExp        : -> Symbol  .       
+  op  KIdToAExp         : -> Symbol  .       
+  op  KplusAExp         : -> Symbol  .       
+  op  Kite              : -> Symbol  .       
 
   ---- Alias terminals
-  ops \or \implies    : -> ParNConstAliasId     .
-  ops \iff \equals    : -> ParNConstAliasId     .
-  ops \forall         : -> ParNConstAliasId     .
-  op  floor           : -> ParNConstAliasId     .
-  op  gamma           : -> ParNConstAliasId     .
+  ops \or \implies    : -> Alias     .
+  ops \iff \equals    : -> Alias     .
+  ops \forall         : -> Alias     .
+  op  floor           : -> Alias     .
+  op  gamma           : -> Alias     .
 
   ---- VariableName terminals
   ops B E             : -> VariableName         .
@@ -125,6 +126,7 @@ fmod TOKENS is
   op  TEST               : -> ModuleName        .
   op  K                  : -> ModuleName        .
 
+  ---(
   ---- Reflexive: Sort as Pattern
 
   ops Nat Bool        : -> AtomicSort-As-Pattern           .
@@ -135,6 +137,7 @@ fmod TOKENS is
 
   op  KPattern        : -> AtomicSort-As-Pattern           .
   op  KSort           : -> AtomicSort-As-Pattern           .
+  ---)
 
   ---- Some frontend sugar that allows us
   ---- to use x:s instead of x : s in 

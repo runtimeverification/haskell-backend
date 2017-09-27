@@ -8,9 +8,12 @@ endfm
 ---)
 
 fmod SORT is
-  ---- Atomic sorts examples: Nat Int AExp
-  ---- Parametric sorts     : List{Nat} Ctxt{S, Nat} List{List{S}}
-  ---- Sort variables       : S S1 S2 
+
+  ---- Sorts examples:
+  ----   Atomic sorts     : Nat Int AExp
+  ----   Parametric sorts : List{Nat} Ctxt{S, Nat} List{List{S}}
+  ----   Sort variables   : S S1 S2 
+
   sorts AtomicSort SortVariable ParametricSort Sort .
   subsorts AtomicSort < Sort .
   op _{_} : ParametricSort SortList -> Sort [prec 50] .
@@ -19,49 +22,39 @@ fmod SORT is
   subsorts SortVariable < SortVariableList Sort < SortList .
   op _,_ : SortVariable SortVariableList -> SortVariableList [prec 52] .
   op _,_ : Sort SortList -> SortList [prec 52] .
+
 endfm
 
 fmod SYMBOL is
 
   protecting SORT .
 
-  ---- Symbol identifiers examples: plusAExp ctxtapp{S1, S2}
-  ----   - Constant symbols
-  ----   - NonConstant symbols
-  sorts SymbolId ConstantSymbolId NonConstantSymbolId .
-  subsorts ConstantSymbolId NonConstantSymbolId < SymbolId .
-  
-  ---- Symbols decorated with sorts. Examples:
-  ----  - plus(Nat, Nat) : Nat
-  ----  - true : Bool
-  sort SymbolWithSorts .
-  op _:_ : ConstantSymbolId Sort -> SymbolWithSorts 
-    [format(d s s d) prec 52] .
-  op _`(_`):_ : NonConstantSymbolId SortList Sort -> SymbolWithSorts 
-    [format(d d d d s s d) prec 52] .
+  ---- Symbols examples:
+  ----   Atomic constant symbols         : true false zero
+  ----   Parametric constant symbols     : nil{Nat}
+  ----   Atomic non-constant symbols     : plus
+  ----   Parametric non-constant symbols : cons{Nat}
 
-  ---- Constant symbols identifier: non-parametric and parametric:
-  sorts AtomicConstantSymbolId ParametricConstantSymbolId .
-  subsort AtomicConstantSymbolId < ConstantSymbolId .
-  op _{_} : ParametricConstantSymbolId SortList -> ConstantSymbolId 
-    [format(d d d o d) prec 50] .
+  sort Symbol . ---- Terminals defined in tokens.maude
 
-  ---- Non-constant symbols identifier: non-par and par:
-  sorts AtomicNConstSymbolId ParNConstSymbolId .
-  subsort AtomicNConstSymbolId < NonConstantSymbolId .
-  op _{_} : ParNConstSymbolId SortList -> NonConstantSymbolId 
-    [format(d d d o d) prec 50] .
+  ---- Constuct parametric symbols:
+  op _{_} : Symbol SortList -> Symbol [prec 50] . 
 
 endfm
 
----- This is the module for matching logic variables.
----- Known issue: Maude cannot parse x:s as x : s;
----- We need some space around the colon ":" when
----- parsing variables.
----- To get around this (not a big) issue,
----- in files *-tokens.maude where we define terminals,
----- we define some "frontend sugar" that allows us
----- write x:s instead of x : s.
+fmod ALIAS is
+
+  protecting SORT .
+
+  ---- Aliases have the same grammar / syntax with
+  ---- symbols, but they are semantically different
+  ---- from symbols.
+
+  sort Alias .
+  op _{_} : Alias SortList -> Alias [prec 50] .
+
+endfm
+
 fmod VARIABLE is
 
   protecting SORT .
@@ -69,12 +62,20 @@ fmod VARIABLE is
   sorts VariableName Variable .
   op _:_ : VariableName Sort -> Variable [prec 52] .
 
+  ---- Known issue: Maude cannot parse X:S.
+  ---- It needs some space around the colon ":".
+  ---- To solve this (not a big) issue,
+  ---- we define a list of equations of the form
+  ----   eq X:S = X : S .
+  ---- in file "tokens.maude" to help Maude.
+
 endfm
 
 
 fmod PATTERN is
 
   protecting SYMBOL     .
+  protecting ALIAS      .
   protecting VARIABLE   .
   protecting STRING     .
 
@@ -82,55 +83,38 @@ fmod PATTERN is
   subsort Pattern < PatternList .
   op _,_ : Pattern PatternList -> PatternList [prec 58] .  
 
+
+  ---- Recall the grammar of patterns:
+  ----   Pattern ::= Variable
+  ----             | Symbol(PatternList)        // For non-constant symbols
+  ----             | Symbol                     // For constant symbols
+  ----             | \not{S}(Pattern)
+  ----             | \and{S}(Pattern, Pattern)
+  ----             | \exists{S,S'}(Variable, Pattern)
+  ----             | Alias(PatternList)         // For non-constant aliases
+  ----             | Alias                      // For constant aliases 
+  ----             | "..."                      // Strings
+
   subsort Variable < Pattern .
 
-  subsort ConstantSymbolId < Pattern .
-  op _`(_`) : NonConstantSymbolId PatternList -> Pattern [prec 53] .
+  op _`(_`) : Symbol PatternList -> Pattern [prec 53] .
+
+  subsort Symbol < Pattern .
 
   op \not{_}`(_`) : Sort Pattern -> Pattern 
-    [format(d d d o d d d d) prec 52] .
+     [format(d d d o d d d d) prec 52] .
+
   op \and{_}`(_,_`) : Sort Pattern Pattern -> Pattern 
-    [format(d d d o d d d d d d) prec 52] .
+     [format(d d d o d d d d d d) prec 52] .
+
   op \exists{_,_}`(_,_`) : Sort Sort Variable Pattern -> Pattern
-    [format(d d d d d o d d d d d d) prec 52] . 
+     [format(d d d d d o d d d d d d) prec 52] . 
 
-  ---- strings
+  op _`(_`) : Alias PatternList -> Pattern [prec 53] .
+
+  subsort Alias < Pattern .
+
   subsort String < Pattern .
-
-  ---- alias (defined later in this module)
-  subsort ConstAliasId < Pattern .
-  op _`(_`) : NConstAliasId PatternList -> Pattern [prec 53] .
-
-
-  ---- fmod ALIAS is
-
-  ---- An alias is something that enjoys the same 
-  ---- syntax / grammar as a symbol but semantically
-  ---- different from a symbol.
-  ---- Therefore, it is reasonable to expect something (syntactic)
-  ---- similar to happen with alias.
-
-  ---- Alias should has its own module ALIAS.
-  ---- The reason we put it here under PATTERN module is that
-  ---- ALIAS depends on PATTERN and PATTERN depends on ALIAS,
-  ---- and Maude does not allow this.
-  
-  sorts AliasId ConstAliasId NConstAliasId .
-  subsorts ConstAliasId NConstAliasId < AliasId .
-  
-  ---- Constant alias identifier: non-parametric and parametric:
-  sorts AtomicConstAliasId ParConstAliasId .
-  subsort AtomicConstAliasId < ConstAliasId .
-  op _{_} : ParConstAliasId SortList -> ConstAliasId
-    [format(d d d o d) prec 50] .
-
-  ---- Non-constant alias identifier: non-par and par:
-  sorts AtomicNConstAliasId ParNConstAliasId .
-  subsort AtomicNConstAliasId < NConstAliasId .
-  op _{_} : ParNConstAliasId SortList -> NConstAliasId
-    [format(d d d o d) prec 50] .
-
-  ---- endfm ALIAS
 
 endfm
 
@@ -138,28 +122,47 @@ fmod MODULE is
   
   protecting PATTERN .
 
-  sorts Module Modules .
+  sorts   Module   Modules .  
   subsort Module < Modules .
-  op __ : Module Modules -> Modules 
-    [format(d n d) prec 90] .
+  op __ : Module Modules -> Modules [format(d n d) prec 90] .
 
-  sort ModuleName Sentence Sentences .
-  op module__endmodule : ModuleName Sentences -> Module 
-    [format(nb o n++ n--b o) prec 80] .
+  ---- Terminals of ModuleName are defined in "tokens.maude".
+  sort ModuleName .
 
+  sort    Sentence   Sentences .
   subsort Sentence < Sentences .
-  op __ : Sentence Sentences -> Sentences
-    [format(d n d) prec 75] .
+  op __ : Sentence Sentences -> Sentences [format(d n d) prec 75] .
 
-  op import_ : ModuleName -> Sentence [format(ib o d) prec 66] .
-  op sort_ : Sort -> Sentence [format(ib o d) prec 66] .
-  op symbol_ : SymbolWithSorts -> Sentence [format(ib o d) prec 66] .
-  op alias_:=_ : Pattern Pattern -> Sentence [format(ib o d d d) prec 66] .
-  op axiom_ : Pattern -> Sentence [format(ib n++io --) prec 66] .
+  ---- A module has a name and some sentence(s) (at least one).
+  op module__endmodule : ModuleName Sentences -> Module 
+     [format(nb o n++ n--b o) prec 80] .
+
+  ---- Various types of sentences:
+
+  op import_ : ModuleName -> Sentence 
+     [format(ib o d) prec 66] .
+
+  op sort_ : Sort -> Sentence 
+     [format(ib o d) prec 66] .
+
+  op symbol_`(_`):_ : Symbol SortList Sort -> Sentence 
+     [format(ib o d d d d d d) prec 66] .
+
+  op symbol_:_ : Symbol Sort -> Sentence
+     [format(ib o d d d) prec 66] .
+
+  op alias_:=_ : Pattern Pattern -> Sentence 
+     [format(ib o d d d) prec 66] .
+
+  op axiom_ : Pattern -> Sentence 
+     [format(ib n++io --) prec 66] .
+
   op axiom{_}_ : SortVariableList Pattern -> Sentence 
-    [format(ib o d d n++i --) prec 66] .
+     [format(ib o d d n++i --) prec 66] .
   
 endfm
+
+---(
 
 ---- Reflection
 ---- Kore's syntax is reflexive, in the sense that
@@ -205,30 +208,13 @@ fmod REFLEXIVITY is
 
 endfm
 
----(
----- Lift to the meta-theory ----
-  sorts   Sort   SortList .
-  subsort Sort < SortList .
-  op _,_ : Sort SortList -> SortList [prec 52] .
-
-  ---- Atomic sorts examples: Nat Int AExp
-  ---- Parametric sorts     : List{Nat} Ctxt{S, Nat} List{List{S}}
-  ---- Sort variables       : S S1 S2 
-  sorts AtomicSort SortVariable ParametricSort .
-  subsort AtomicSort < Sort . 
-  subsort SortVariable    < Sort .
-  op _{_} : ParametricSort SortList -> Sort [prec 50] .
-
-  sort SortVariableList .
-  subsort SortVariable < SortVariableList .
-  subsort SortVariableList < SortList .
-  op _,_ : SortVariable SortVariableList -> SortVariableList [prec 52] .
 ---)
+
 
 fmod KORE is
 
   protecting MODULE      .
-  protecting REFLEXIVITY .
+  --- protecting REFLEXIVITY .
 
 endfm
 
