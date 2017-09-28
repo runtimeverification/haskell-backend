@@ -1,18 +1,9 @@
----(
-fmod STRING is
-
-  sort String .
-  op <Strings> : -> String [special(id-hook StringSymbol)] .
-
-endfm
----)
-
 fmod SORT is
 
   ---- Sorts examples:
   ----   Atomic sorts     : Nat Int AExp
   ----   Parametric sorts : List{Nat} Ctxt{S, Nat} List{List{S}}
-  ----   Sort variables   : S S1 S2 
+  ----   Sort variables   : S S1 S2
 
   sorts AtomicSort SortVariable ParametricSort Sort .
   subsorts AtomicSort < Sort .
@@ -29,29 +20,25 @@ fmod SYMBOL is
 
   protecting SORT .
 
-  ---- Symbols examples:
+  ---- Symbols are elements of a signature:
   ----   Atomic constant symbols         : true false zero
   ----   Parametric constant symbols     : nil{Nat}
   ----   Atomic non-constant symbols     : plus
   ----   Parametric non-constant symbols : cons{Nat}
+  ---- Aliases have the same grammar / syntax as symbols,
+  ---- for simplicity. But, semantically, aliases are *not*
+  ---- symbols.  Semantically, aliases do not exist.  They
+  ---- desugar into patterns.
 
-  sort Symbol . ---- Terminals defined in tokens.maude
+  sorts Symbol Alias .
+  ---- Trick to prevent symbol overloading warnings
+  sort BottomSymbolAlias .
+  subsorts BottomSymbolAlias < Symbol Alias .
+  op _{_} : BottomSymbolAlias SortList -> BottomSymbolAlias [prec 50] .
 
-  ---- Constuct parametric symbols:
-  op _{_} : Symbol SortList -> Symbol [prec 50] . 
-
-endfm
-
-fmod ALIAS is
-
-  protecting SORT .
-
-  ---- Aliases have the same grammar / syntax with
-  ---- symbols, but they are semantically different
-  ---- from symbols.
-
-  sort Alias .
-  op _{_} : Alias SortList -> Alias [prec 50] .
+  ---- Constuct parametric symbols and aliases:
+  op _{_} : Symbol SortList -> Symbol [ditto] .
+  op _{_} : Alias SortList -> Alias [ditto] .
 
 endfm
 
@@ -75,9 +62,7 @@ endfm
 fmod PATTERN is
 
   protecting SYMBOL     .
-  protecting ALIAS      .
   protecting VARIABLE   .
-  protecting STRING     .
 
   sorts Pattern PatternList .
   subsort Pattern < PatternList .
@@ -93,13 +78,12 @@ fmod PATTERN is
   ----             | \exists{S,S'}(Variable, Pattern)
   ----             | Alias(PatternList)         // For non-constant aliases
   ----             | Alias                      // For constant aliases 
-  ----             | "..."                      // Strings
 
   subsort Variable < Pattern .
 
+  subsorts Symbol Alias < Pattern .
   op _`(_`) : Symbol PatternList -> Pattern [prec 53] .
-
-  subsort Symbol < Pattern .
+  op _`(_`) : Alias  PatternList -> Pattern [prec 53] .
 
   op \not{_}`(_`) : Sort Pattern -> Pattern 
      [format(d d d o d d d d) prec 52] .
@@ -108,13 +92,7 @@ fmod PATTERN is
      [format(d d d o d d d d d d) prec 52] .
 
   op \exists{_,_}`(_,_`) : Sort Sort Variable Pattern -> Pattern
-     [format(d d d d d o d d d d d d) prec 52] . 
-
-  op _`(_`) : Alias PatternList -> Pattern [prec 53] .
-
-  subsort Alias < Pattern .
-
-  subsort String < Pattern .
+     [format(d d d d d o d d d d d d) prec 52] .
 
 endfm
 
@@ -172,7 +150,7 @@ fmod MODULE is
 
   op axiom{_}_ : SortVariableList Pattern -> Sentence 
      [format(ib o d d n++i --) prec 66] .
-  
+
 endfm
 
 
