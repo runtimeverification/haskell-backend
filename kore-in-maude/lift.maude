@@ -19,6 +19,18 @@ fmod LIFT is
   op [[_]] : Universal -> Pattern [poly(1)] .
 
 
+  ---- Lifting sorts.
+  ---- Examples:
+  ----   - [[Nat]] = KNat
+  ----   - [[List{Nat}]] = KList(KNat)
+  ----   - [[S]] = S:KSort
+  ----   - [[KSort]] = KSort
+  ----   - [[KPattern]] = KPattern
+  ----   - [[List{S}]] = KList(S:KSort)
+
+
+
+
   ---- Lifting VariableName to KString.
   ---- Example: [[X]] = "X"
 

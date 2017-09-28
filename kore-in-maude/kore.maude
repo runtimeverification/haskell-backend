@@ -1,159 +1,171 @@
-fmod SORT is
+---- This module contains a parser for the Kore language, whose
+---- formal grammar is given in standard BNF notation.
 
-  ---- Sorts examples:
-  ----   Atomic sorts     : Nat Int AExp
-  ----   Parametric sorts : List{Nat} Ctxt{S, Nat} List{List{S}}
-  ----   Sort variables   : S S1 S2
+---- General Design Principles: 
+----   The lifting function from the
+----   object-level to the meta-level should be as trivial and 
+----   straightforward as possible, which means:
+----   (1) One nonterminal has one way to lift;
+----   (2) Different nonterminals have different ways to lift.
 
-  sorts AtomicSort SortVariable ParametricSort Sort .
-  subsorts AtomicSort < Sort .
-  op _{_} : ParametricSort SortList -> Sort [prec 50] .
+fmod KORE is
 
-  sorts SortVariableList SortList .
-  subsorts SortVariable < SortVariableList Sort < SortList .
-  op _,_ : SortVariable SortVariableList -> SortVariableList [prec 52] .
+  ---- <Sort>     ::= <SortConstructor> "{" <SortList> "}"
+  ----              | <SortVariable>
+  ---- <SortList> ::= ""
+  ----              | <Sort>
+  ----              | <Sort> "," <SortList>
+  
+  ---- Notice: Nonterminals <SortConstructor> and <SortVariable> are
+  ----         defined as sets of terminals using regular expressions.
+  ----         Because Maude does not allow us to use regular expressions
+  ----         to define nonterminals, we explicitly define a few terminals
+  ----         as Maude constant operators in "tokens.maude".
+  
+  ---- Example terminals of <SortConstructor>:
+  ---- - Nat Int AExp BExp List Ctxt
+  
+  ---- Example terminals of <SortVariable>:
+  ---- - S S' S1 S2 R
+
+  sorts Sort SortList .
+
+  subsort Sort < SortList .
+  op .SortList : -> SortList .
   op _,_ : Sort SortList -> SortList [prec 52] .
 
-endfm
+  sorts SortVariable SortConstructor .
 
-fmod SYMBOL is
+  subsort SortVariable < Sort .
+  op _`{_`} : SortConstructor SortList -> Sort [prec 50] .
+  op _`{`}  : SortConstructor          -> Sort [prec 50] .
 
-  protecting SORT .
+  eq SC:SortConstructor{}
+   = SC:SortConstructor{.SortList} .
+  
 
+  ---- <Symbol> ::= <SymbolConstructor> "{" <SortList> "}"
+  ---- <Alias>  ::= <AliasConstructor>  "{" <SortList> "}"
+  
   ---- Symbols are elements of a signature:
-  ----   Atomic constant symbols         : true false zero
-  ----   Parametric constant symbols     : nil{Nat}
-  ----   Atomic non-constant symbols     : plus
-  ----   Parametric non-constant symbols : cons{Nat}
+  ---- - Atomic constant symbols         : true{} false{} zero{}
+  ---- - Parametric constant symbols     : nil{Nat}
+  ---- - Atomic non-constant symbols     : plus{}
+  ---- - Parametric non-constant symbols : cons{Nat}
+
   ---- Aliases have the same grammar / syntax as symbols,
   ---- for simplicity. But, semantically, aliases are *not*
-  ---- symbols.  Semantically, aliases do not exist.  They
+  ---- symbols. Semantically, aliases do not exist. They
   ---- desugar into patterns.
 
-  sorts Symbol Alias .
+  sorts Symbol SymbolConstructor .
+  op _`{_`} : SymbolConstructor SortList -> Symbol [prec 50] .
+  op _`{`}  : SymbolConstructor          -> Symbol [prec 50] .
+  eq SC:SymbolConstructor{}
+   = SC:SymbolConstructor{.SortList} .
+
+  sorts Alias AliasConstructor .
+  op _`{_`} : AliasConstructor SortList -> Alias [prec 50] .
+  op _`{`}  : AliasConstructor          -> Alias [prec 50] .
+  eq SC:AliasConstructor{}
+   = SC:AliasConstructor{.SortList} .
+
+  ---(
   ---- Trick to prevent symbol overloading warnings
   sort BottomSymbolAlias .
   subsorts BottomSymbolAlias < Symbol Alias .
   op _{_} : BottomSymbolAlias SortList -> BottomSymbolAlias [prec 50] .
+  ---)
 
-  ---- Constuct parametric symbols and aliases:
-  op _{_} : Symbol SortList -> Symbol [ditto] .
-  op _{_} : Alias SortList -> Alias [ditto] .
-
-endfm
-
-fmod VARIABLE is
-
-  protecting SORT .
+  ---- <Variable> ::= <VariableName> ":" <Sort>
 
   sorts VariableName Variable .
   op _:_ : VariableName Sort -> Variable [prec 52] .
 
-  ---- Known issue: Maude cannot parse X:S.
-  ---- It needs some space around the colon ":".
-  ---- To solve this (not a big) issue,
-  ---- we define a list of equations of the form
-  ----   eq X:S = X : S .
-  ---- in file "tokens.maude" to help Maude.
-
-endfm
 
 
-fmod PATTERN is
 
-  protecting SYMBOL     .
-  protecting VARIABLE   .
+  ---- <Pattern>     ::= <Variable>                       
+  ----                 | <Symbol> "(" <PatternList> ")"   
+  ----                 | "\not" "{" <Sort> "}" "(" <Pattern> ")"
+  ----                 | "\and" "{" <Sort> "}" "(" <Pattern> "," <Pattern> ")"
+  ----                 | "\exists" "{" <Sort> "}" "(" <Variable> "," <Pattern> ")"
+  ----                 | <Alias> "(" <PatternList> ")"   
+  ----
+  ---- <PatternList> ::= ""
+  ----                 | <Pattern>
+  ----                 | <Pattern> "," <PatternList>
 
   sorts Pattern PatternList .
+
   subsort Pattern < PatternList .
+  op .PatternList : -> PatternList .
   op _,_ : Pattern PatternList -> PatternList [prec 58] .  
 
 
-  ---- Recall the grammar of patterns:
-  ----   Pattern ::= Variable
-  ----             | Symbol(PatternList)        // For non-constant symbols
-  ----             | Symbol                     // For constant symbols
-  ----             | \not{S}(Pattern)
-  ----             | \and{S}(Pattern, Pattern)
-  ----             | \exists{S,S'}(Variable, Pattern)
-  ----             | Alias(PatternList)         // For non-constant aliases
-  ----             | Alias                      // For constant aliases 
-
   subsort Variable < Pattern .
 
-  subsorts Symbol Alias < Pattern .
   op _`(_`) : Symbol PatternList -> Pattern [prec 53] .
   op _`(_`) : Alias  PatternList -> Pattern [prec 53] .
+  op _`(`)  : Symbol             -> Pattern [prec 53] .
+  op _`(`)  : Alias              -> Pattern [prec 53] .
+  eq S:Symbol() = S:Symbol(.PatternList) .
+  eq S:Alias()  = S:Alias (.PatternList) .
 
-  op \not{_}`(_`) : Sort Pattern -> Pattern 
-     [format(d d d o d d d d) prec 52] .
+  op \not`{_`}`(_`) : Sort Pattern -> Pattern 
+     [format(d d d d d d d d) prec 52] .
 
-  op \and{_}`(_,_`) : Sort Pattern Pattern -> Pattern 
-     [format(d d d o d d d d d d) prec 52] .
+  op \and`{_`}`(_,_`) : Sort Pattern Pattern -> Pattern 
+     [format(d d d d d d d d d d) prec 52] .
 
-  op \exists{_,_}`(_,_`) : Sort Sort Variable Pattern -> Pattern
-     [format(d d d d d o d d d d d d) prec 52] .
+  op \exists`{_,_`}`(_,_`) : Sort Sort Variable Pattern -> Pattern
+     [format(d d d d d d d d d d d d) prec 52] .
 
-endfm
 
-fmod MODULE is
-  
-  protecting PATTERN .
 
-  sorts   Module   Modules .  
-  subsort Module < Modules .
-  op __ : Module Modules -> Modules [format(d n d) prec 90] .
 
-  ---- Terminals of ModuleName are defined in "tokens.maude".
-  sort ModuleName .
 
-  sort    Sentence   Sentences .
+  ---- <Sentence>  ::= "sort" <Sort>
+  ----               | "symbol" <Symbol> "(" <SortList> ")" ":" <Sort>
+  ----               | "axiom" "{" <SortList> "}" <Pattern>
+  ----               | "alias" "{" <SortList> "}" <Pattern> ":=" <Pattern>
+  ----
+  ---- <Sentences> ::= <Sentence>
+  ----               | <Sentence> <Sentences>
+
+  sort Sentence Sentences .
   subsort Sentence < Sentences .
-  op __ : Sentence Sentences -> Sentences [format(d n d) prec 75] .
 
-  ---- A module has a name and some sentence(s) (at least one).
-  op module__endmodule : ModuleName Sentences -> Module 
-     [format(nb o n++ n--b o) prec 80] .
+  op __ : Sentence Sentences -> Sentences 
+     [format(d n d) prec 75] .
 
-  ---- Various types of sentences:
-
-  op import_ : ModuleName -> Sentence 
-     [format(ib o d) prec 66] .
 
   op sort_ : Sort -> Sentence 
-     [format(ib o d) prec 66] .
+     [format(nb o d) prec 66] .
 
   op symbol_`(_`):_ : Symbol SortList Sort -> Sentence 
-     [format(ib o d d d d d d) prec 66] .
+     [format(nb o d d d d d d) prec 66] .
 
-  op symbol_:_ : Symbol Sort -> Sentence
-     [format(ib o d d d) prec 52 gather(e e)] .
-  ---- The gather(e e) attribute is tricky.
-  ---- Here is an example that shows why we need it:
-  ----   symbol ceil{S1,S2}(S1) : S2
-  ---- might be parsed as
-  ----   symbol (ceil{S1,S2}(S1)) : S2
-  ---- Because of 
-  ----   (1) Symbol is a subsort of Pattern;
-  ----   (2) The reflection module Sort-As-Pattern
-  ----       will allow us to parse S1 as a pattern.
-  ---- We would like to find a better way to deal with
-  ---- this issue. At least we should re-examine all
-  ---- prec and gather attributes to make sure they
-  ---- work as expected.
+  op axiom{_}_ : SortList Pattern -> Sentence 
+     [format(nb o d d n++i --) prec 66] .
 
-  op alias_:=_ : Pattern Pattern -> Sentence 
-     [format(ib o d d d) prec 66] .
+  op alias{_}_:=_ : SortList Pattern Pattern -> Sentence 
+     [format(nb o d d n++i nb o --) prec 66] .
 
-  op axiom_ : Pattern -> Sentence 
-     [format(ib n++io --) prec 66] .
-
-  op axiom{_}_ : SortVariableList Pattern -> Sentence 
-     [format(ib o d d n++i --) prec 66] .
+  ---- Deal with empty sort list.
+  op symbol_():_ : Symbol Sort -> Sentence
+     [format(nb o d d d d d) prec 66] .
+  eq symbol S:Symbol() : S:Sort = symbol S:Symbol (.SortList) : S:Sort .
+  op axiom{}_ : Pattern -> Sentence 
+     [format(nb o d n++i --) prec 66] .
+  eq axiom{} P:Pattern = axiom{.SortList} P:Pattern .
+  op alias{}_:=_ : Pattern Pattern -> Sentence 
+     [format(nb o d n++i ni d --) prec 66] .
+  eq alias{} P:Pattern := Q:Pattern = alias{.SortList} P:Pattern := Q:Pattern .
 
 endfm
 
-
+---(
 
 ---- Reflection ----
 
@@ -251,11 +263,6 @@ fmod REFLEXIVITY is
 
 endfm
 
+---)
 
-fmod KORE is
-
-  protecting MODULE      .
-  protecting REFLEXIVITY .
-
-endfm
 
