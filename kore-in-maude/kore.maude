@@ -1,12 +1,17 @@
 ---- This module contains a parser for the Kore language, whose
 ---- formal grammar is given in standard BNF notation.
 
----- General Design Principles: 
+---- General Design Principle: 
 ----   The lifting function from the
 ----   object-level to the meta-level should be as trivial and 
 ----   straightforward as possible, which means:
 ----   (1) One nonterminal has simply one way to be lifted;
 ----   (2) Different nonterminals have different ways to be lifted.
+
+---- Unsure:
+---- Following the General Design Principle, object-level things and
+---- meta-level things should belong to different nonterminals (Maude
+---- sorts) because they are treated differently when being lifted.
 
 fmod KORE is
 
