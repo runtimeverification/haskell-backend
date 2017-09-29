@@ -116,13 +116,6 @@ fmod TOKENS is
   op L0                : -> VariableName      .
   op P                 : -> VariableName      .
   op Q                 : -> VariableName      .
-  op R                 : -> VariableName      .
-  op S                 : -> VariableName      .
-  op S                 : -> VariableName      .
-  op S'                : -> VariableName      .
-  op S1                : -> VariableName      .
-  op S2                : -> VariableName      .
-  op S3                : -> VariableName      .
   op X                 : -> VariableName      .
   op Y                 : -> VariableName      .
   op Z                 : -> VariableName      .
