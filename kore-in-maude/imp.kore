@@ -7,9 +7,27 @@ fmod IMP is
   including TOKENS .
 endfm
 
+
+-------------------------------
+---- Testing lifting [[_]] ----
+-------------------------------
+
+reduce 
+  [[S]]
+.
+
+reduce
+  [[List{S}]]
+.
+
+
+quit
+
+
 ------------------------------
 ---- imp.kore starts here ----
 ------------------------------
+
 
 reduce
 

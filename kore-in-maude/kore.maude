@@ -229,53 +229,137 @@ fmod KORE is
   op _:_ : VariableName MetaSort -> MetaVariable [prec 52] .
 
 
-endfm
-
-quit
 
 
-  ---- <Pattern> ::= <Variable>                       
-  ---- | <Symbol> "(" <PatternList> ")"   
-  ---- | "\not" "{" <Sort> "}" "(" <Pattern> ")"
-  ---- | "\and" "{" <Sort> "}" "(" <Pattern> "," <Pattern> ")"
-  ---- | "\exists" "{" <Sort> "," <Sort> "}" "(" <Variable> "," <Pattern> ")"
-  ---- | <Alias> "(" <PatternList> ")"   
-  ---- | <String>
-  ----
-  ---- <PatternList> ::= ""
-  ----                 | <Pattern>
-  ----                 | <Pattern> "," <PatternList>
+  ---- <Pattern> ::=
+  ---- | <ObjectPattern>
+  ---- | <MetaPattern>
 
-  sorts Pattern PatternList .
-
-  subsort Pattern < PatternList .
-  op .PatternList : -> PatternList .
-  op _,_ : Pattern PatternList -> PatternList [prec 58] .  
+  sorts Pattern ObjectPattern MetaPattern .
+  subsorts ObjectPattern MetaPattern < Pattern .
 
 
-  subsort Variable < Pattern .
+  ---- <ObjectPattern> ::= 
+  ---- | <ObjectVariable>                       
+  ---- | <ObjectSymbol> "(" <ObjectPatternList> ")"   
+  ---- | <ObjectAlias> "(" <ObjectPatternList> ")"   
+  ---- | "\not" "{" <ObjectSort> "}" "(" <ObjectPattern> ")"
+  ---- | "\and" "{" <ObjectSort> "}" 
+  ----          "(" <ObjectPattern> "," <ObjectPattern> ")"
+  ---- | "\exists" "{" <ObjectSort> "," <ObjectSort> "}" 
+  ----             "(" <ObjectVariable> "," <ObjectPattern> ")"
 
-  op _`(_`) : Symbol PatternList -> Pattern [prec 53] .
-  op _`(_`) : Alias  PatternList -> Pattern [prec 53] .
-  op _`(`)  : Symbol             -> Pattern [prec 53] .
-  op _`(`)  : Alias              -> Pattern [prec 53] .
-  eq S:Symbol() = S:Symbol(.PatternList) .
-  eq S:Alias()  = S:Alias (.PatternList) .
+  subsort ObjectVariable < ObjectPattern .
 
-  op \not`{_`}`(_`) : Sort Pattern -> Pattern 
+  op _`(_`) : ObjectSymbol ObjectPatternList -> ObjectPattern [prec 53] .
+
+  op _`(_`) : ObjectAlias  ObjectPatternList -> ObjectPattern [prec 53] .
+
+  op \not`{_`}`(_`) : ObjectSort ObjectPattern -> ObjectPattern 
      [format(d d d d d d d d) prec 52] .
 
-  op \and`{_`}`(_,_`) : Sort Pattern Pattern -> Pattern 
+  op \and`{_`}`(_,_`) : ObjectSort ObjectPattern ObjectPattern 
+                     -> ObjectPattern 
      [format(d d d d d d d d d d) prec 52] .
 
-  op \exists`{_,_`}`(_,_`) : Sort Sort Variable Pattern -> Pattern
+  op \exists`{_,_`}`(_,_`) : ObjectSort ObjectSort ObjectVariable ObjectPattern 
+                          -> ObjectPattern
      [format(d d d d d d d d d d d d) prec 52] .
 
+  ---- Deal with empty list.
+  op _`(`)  : ObjectSymbol -> ObjectPattern [prec 53] .
+  op _`(`)  : ObjectAlias  -> ObjectPattern [prec 53] .
+  eq S:ObjectSymbol() = S:ObjectSymbol(.ObjectPatternList) .
+  eq S:ObjectAlias()  = S:ObjectAlias (.ObjectPatternList) .
+
+  ---- <ObjectPatternList> ::=
+  ---- | ""
+  ---- | <ObjectPattern>
+  ---- | <ObjectPattern> "," <ObjectPatternList>
+
+  sort ObjectPatternList .
+
+  subsort ObjectPattern < ObjectPatternList .
+  op .ObjectPatternList : -> ObjectPatternList .
+  op _,_ : ObjectPattern ObjectPatternList -> ObjectPatternList [prec 58] .  
+
+
+  ---- <MetaPattern> ::= 
+  ---- | <MetaVariable>                       
+  ---- | <MetaSymbol> "(" <MetaPatternList> ")"   
+  ---- | <MetaAlias> "(" <MetaPatternList> ")"   
+  ---- | "\not" "{" <MetaSort> "}" "(" <MetaPattern> ")"
+  ---- | "\and" "{" <MetaSort> "}" 
+  ----          "(" <MetaPattern> "," <MetaPattern> ")"
+  ---- | "\exists" "{" <MetaSort> "," <MetaSort> "}" 
+  ----             "(" <MetaVariable> "," <MetaPattern> ")"
+  ---- | <String> // quoted texts
+
+  subsort MetaVariable < MetaPattern .
+
+  op _`(_`) : MetaSymbol MetaPatternList -> MetaPattern [prec 53] .
+
+  op _`(_`) : MetaAlias  MetaPatternList -> MetaPattern [prec 53] .
+
+  op \not`{_`}`(_`) : MetaSort MetaPattern -> MetaPattern 
+     [format(d d d d d d d d) prec 52] .
+
+  op \and`{_`}`(_,_`) : MetaSort MetaPattern MetaPattern 
+                     -> MetaPattern 
+     [format(d d d d d d d d d d) prec 52] .
+
+  op \exists`{_,_`}`(_,_`) : MetaSort MetaSort MetaVariable MetaPattern 
+                          -> MetaPattern
+     [format(d d d d d d d d d d d d) prec 52] .
 
   protecting STRING .
-  subsort String < Pattern .
+  subsort String < MetaPattern .
 
 
+  ---- Deal with empty list.
+  op _`(`)  : MetaSymbol -> MetaPattern [prec 53] .
+  op _`(`)  : MetaAlias  -> MetaPattern [prec 53] .
+  eq S:MetaSymbol() = S:MetaSymbol(.MetaPatternList) .
+  eq S:MetaAlias()  = S:MetaAlias (.MetaPatternList) .
+
+  ---- <MetaPatternList> ::=
+  ---- | ""
+  ---- | <MetaPattern>
+  ---- | <MetaPattern> "," <MetaPatternList>
+
+  sort MetaPatternList .
+
+  subsort MetaPattern < MetaPatternList .
+  op .MetaPatternList : -> MetaPatternList .
+  op _,_ : MetaPattern MetaPatternList -> MetaPatternList [prec 58] .  
+
+
+
+  ---- Define lifting bracket(s) [[_]].
+  ---- Preferably [[_]] should be defined using Maude's META-LEVEL.
+  ---- For intuition, let's not worry about the length of our code.
+  ---- We'll enumerate all equations, one for each terminals, in "tokens.maude".
+
+
+  ---- Lift <ObjectSortVariable> to <MetaVariable>
+  op [[_]] : ObjectSortVariable -> MetaVariable .
+
+  ---- Lift <ObjectSortConstructor> to <MetaSymbol>
+  op [[_]] : ObjectSortConstructor -> MetaSymbol .
+
+  ---- Lift <ObjectSort> to <MetaPattern>
+  op [[_]] : ObjectSort -> MetaPattern .
+  eq [[SC:ObjectSortConstructor{Ss:ObjectSortList}]]
+   = [[SC:ObjectSortConstructor]]([[Ss:ObjectSortList]]) .
+
+  ---- Lift <ObjectSortList> to <MetaPatternList>, elementwisely
+  op [[_]] : ObjectSortList -> MetaPatternList .
+  eq [[.ObjectSortList]] = .MetaPatternList .
+
+
+endfm
+
+---(
 
   ---- <Sentence>  ::= "sort" <Sort>
   ----               | "symbol" <Symbol> "(" <SortList> ")" ":" <Sort>
@@ -317,4 +401,5 @@ quit
 
 endfm
 
+---)
 
