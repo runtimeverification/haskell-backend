@@ -9,52 +9,26 @@ fmod LIFT is
   including TOKENS .
   including BOOL   .
 
-  ---- The lifting bracket ----
-  op [[_]] : Universal -> Pattern [poly(1)] .
 
+  ---- Define the lifting bracket(s) [[_]].
 
-  ---- Lift sort variables.
-  subsort SortVariable < VariableName .
-  eq [[S:SortVariable]] = S:SortVariable : KSort{} .
+  ---- Lift SortConstructor
+  op [[_]] : SortConstructor -> SymbolConstructor .
+  eq [[Nat ]] = KNat  .
+  eq [[Bool]] = KBool .
+  eq [[AExp]] = KAExp .
+  eq [[BExp]] = KBExp .
+  eq [[Stmt]] = KStmt .
+  eq [[List]] = KList .
+  eq [[Ctxt]] = KCtxt .
 
-  ---- Lift sort constructors.
-  eq [[SC:SortConstructor]]
+  ---- Lift Sort 
+  op [[_]] : Sort -> Pattern .
+
 
 endfm
 
 quit
-
-
-  ---- Lifting sorts.
-  ---- Examples:
-  ----   - [[Nat]] = KNat
-  ----   - [[List{Nat}]] = KList(KNat)
-  ----   - [[S]] = S:KSort
-  ----   - [[KSort]] = KSort
-  ----   - [[KPattern]] = KPattern
-  ----   - [[List{S}]] = KList(S:KSort)
-
-
-
-
-  ---- Lifting VariableName to KString.
-  ---- Example: [[X]] = "X"
-
-  eq [[X:VariableName]] = string(getName(upTerm(X:VariableName))) .
-
-  ---- Lifting 
-
-endfm  
-
-
-quit
-
-  ---- Lift sorts
-
-  ---- Lift to KString
-  op liftAtomicSortToKString : AtomicSort -> String .
-  op liftParSortToKString    : ParSort    -> String .
-
   ---- Check whether Sort is already one in the meta-level K.
   ---- Notice there are only a finite number of sorts in K.
 

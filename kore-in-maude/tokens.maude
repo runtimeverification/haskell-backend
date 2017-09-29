@@ -7,57 +7,42 @@ fmod TOKENS is
 
   including KORE .
 
-  ---- Terminals of <SortVariable>
-  op S                 : -> SortVariable      .
-  op S'                : -> SortVariable      .
-  op S1                : -> SortVariable      .
-  op S2                : -> SortVariable      .
-  op S3                : -> SortVariable      .
-  op R                 : -> SortVariable      .
+  ---- Terminals of <ObjectSortVariable>
+  op S  : -> ObjectSortVariable .
+  op S' : -> ObjectSortVariable .
+  op S1 : -> ObjectSortVariable .
+  op S2 : -> ObjectSortVariable .
+  op S3 : -> ObjectSortVariable .
+  op R  : -> ObjectSortVariable .
 
-  ---- Terminals of <SortConstructor> 
-  ---- - Object-Level
-  op Nat               : -> SortConstructor   .
-  op Bool              : -> SortConstructor   .
-  op AExp              : -> SortConstructor   .
-  op BExp              : -> SortConstructor   .
-  op Stmt              : -> SortConstructor   .
-  op List              : -> SortConstructor   .
-  op Ctxt              : -> SortConstructor   .
-  ---- - Meta-Level
-  op KPred             : -> SortConstructor   .
-  op KChar             : -> SortConstructor   .
-  op KString           : -> SortConstructor   . 
-  op KSort             : -> SortConstructor   . 
-  op KSortList         : -> SortConstructor   . 
-  op KSymbol           : -> SortConstructor   . 
-  op KSymbolList       : -> SortConstructor   .  
-  op KVariable         : -> SortConstructor   .  
-  op KPattern          : -> SortConstructor   .  
-  op KPatternList      : -> SortConstructor   .   
-  op KAxiom            : -> SortConstructor   .
-  op KAxiomList        : -> SortConstructor   .
+  ---- Terminals of <ObjectSortConstructor> 
+  op Nat  : -> ObjectSortConstructor .
+  op Bool : -> ObjectSortConstructor .
+  op AExp : -> ObjectSortConstructor .
+  op BExp : -> ObjectSortConstructor .
+  op Stmt : -> ObjectSortConstructor .
+  op List : -> ObjectSortConstructor .
+  op Ctxt : -> ObjectSortConstructor .
 
-  ---- Terminals of <Symbol> 
-  ---- - Object-Level
-  op ceil              : -> SymbolConstructor .
-  op true              : -> SymbolConstructor .
-  op false             : -> SymbolConstructor .
-  op andBool           : -> SymbolConstructor . 
-  op notBool           : -> SymbolConstructor . 
-  op zero              : -> SymbolConstructor .
-  op succ              : -> SymbolConstructor .
-  op plus              : -> SymbolConstructor .
-  op gte               : -> SymbolConstructor .
-  op nil               : -> SymbolConstructor .
-  op cons              : -> SymbolConstructor .
-  op ctxtapp           : -> SymbolConstructor .
-  op gamma0            : -> SymbolConstructor .
-  op NatToAExp         : -> SymbolConstructor .
-  op IdToAExp          : -> SymbolConstructor .
-  op plusAExp          : -> SymbolConstructor .
-  op ite               : -> SymbolConstructor .
-  ---- - Meta-Level 
+  ---- Terminals of <ObjectSymbolConstructor> 
+  op ceil      : -> ObjectSymbolConstructor .
+  op true      : -> ObjectSymbolConstructor .
+  op false     : -> ObjectSymbolConstructor .
+  op andBool   : -> ObjectSymbolConstructor . 
+  op notBool   : -> ObjectSymbolConstructor . 
+  op zero      : -> ObjectSymbolConstructor .
+  op succ      : -> ObjectSymbolConstructor .
+  op plus      : -> ObjectSymbolConstructor .
+  op gte       : -> ObjectSymbolConstructor .
+  op nil       : -> ObjectSymbolConstructor .
+  op cons      : -> ObjectSymbolConstructor .
+  op ctxtapp   : -> ObjectSymbolConstructor .
+  op gamma0    : -> ObjectSymbolConstructor .
+  op NatToAExp : -> ObjectSymbolConstructor .
+  op IdToAExp  : -> ObjectSymbolConstructor .
+  op plusAExp  : -> ObjectSymbolConstructor .
+  op ite       : -> ObjectSymbolConstructor .
+
   op Ksort             : -> SymbolConstructor .
   op KnilKSortList     : -> SymbolConstructor .
   op KconsKSortList    : -> SymbolConstructor .
@@ -95,6 +80,13 @@ fmod TOKENS is
   op KIdToAExp         : -> SymbolConstructor .       
   op KplusAExp         : -> SymbolConstructor .       
   op Kite              : -> SymbolConstructor .       
+  op KNat              : -> SymbolConstructor .
+  op KBool             : -> SymbolConstructor .
+  op KAExp             : -> SymbolConstructor .
+  op KBExp             : -> SymbolConstructor .
+  op KStmt             : -> SymbolConstructor .
+  op KList             : -> SymbolConstructor .
+  op KCtxt             : -> SymbolConstructor .
 
   ---- Terminals of <Alias>
   op \or               : -> AliasConstructor  .
@@ -116,41 +108,15 @@ fmod TOKENS is
   op L0                : -> VariableName      .
   op P                 : -> VariableName      .
   op Q                 : -> VariableName      .
+  op S                 : -> VariableName      .                 
+  op S'                : -> VariableName      .
+  op S1                : -> VariableName      .
+  op S2                : -> VariableName      .
+  op S3                : -> VariableName      .
+  op R                 : -> VariableName      .
   op X                 : -> VariableName      .
   op Y                 : -> VariableName      .
   op Z                 : -> VariableName      .
-
-  ---(
-  ---- Reflexive: Sort as Pattern
-
-  ---- Terminals of SortVariable-As-Pattern
-  ops S S' S1 S2 S3 R : -> SortVariable-As-Pattern .
-
-  ---- Terminals of Sort-As-Pattern 
-  ops Nat Bool            : -> AtomicSort-As-Pattern     .
-  ops AExp BExp           : -> AtomicSort-As-Pattern     .
-  op  Stmt                : -> AtomicSort-As-Pattern     .
-  ops List Ctxt           : -> ParametricSort-As-Pattern .
-  op  KString             : -> AtomicSort-As-Pattern     . 
-  op  KSort               : -> AtomicSort-As-Pattern     . 
-  op  KSortList           : -> AtomicSort-As-Pattern     . 
-  op  KSymbol             : -> AtomicSort-As-Pattern     . 
-  op  KSymbolList         : -> AtomicSort-As-Pattern     .  
-  op  KVariable           : -> AtomicSort-As-Pattern     .  
-  op  KPattern            : -> AtomicSort-As-Pattern     .  
-  op  KPatternList        : -> AtomicSort-As-Pattern     .   
-  op  KAxiom              : -> AtomicSort-As-Pattern     .
-  op  KAxiomList          : -> AtomicSort-As-Pattern     .
-  op  KSortSentence       : -> AtomicSort-As-Pattern     . 
-  op  KSortSentenceList   : -> AtomicSort-As-Pattern     . 
-  op  KSymbolSentence     : -> AtomicSort-As-Pattern     . 
-  op  KSymbolSentenceList : -> AtomicSort-As-Pattern     .  
-  op  KAxiomSentence      : -> AtomicSort-As-Pattern     . 
-  op  KAxiomSentenceList  : -> AtomicSort-As-Pattern     .  
-  op  KModule             : -> AtomicSort-As-Pattern     .  
-  op  KModuleList         : -> AtomicSort-As-Pattern     .  
-  ---)
-
 
   ---- Some frontends sugar that allows use to write
   ---- X:Nat{} instead of X : Nat{} with space around ":".
