@@ -9,14 +9,20 @@ fmod LIFT is
   including TOKENS .
   including BOOL   .
 
-  including META-LEVEL
-  * ( sort Sort     to MaudeMetaLevel-Sort     ,
-      sort Variable to MaudeMetaLevel-Variable ,
-      sort Module   to MaudeMetaLevel-Module   ) .
-
-
   ---- The lifting bracket ----
   op [[_]] : Universal -> Pattern [poly(1)] .
+
+
+  ---- Lift sort variables.
+  subsort SortVariable < VariableName .
+  eq [[S:SortVariable]] = S:SortVariable : KSort{} .
+
+  ---- Lift sort constructors.
+  eq [[SC:SortConstructor]]
+
+endfm
+
+quit
 
 
   ---- Lifting sorts.

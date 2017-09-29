@@ -5,13 +5,15 @@
 ----   The lifting function from the
 ----   object-level to the meta-level should be as trivial and 
 ----   straightforward as possible, which means:
-----   (1) One nonterminal has one way to lift;
-----   (2) Different nonterminals have different ways to lift.
+----   (1) One nonterminal has simply one way to be lifted;
+----   (2) Different nonterminals have different ways to be lifted.
 
 fmod KORE is
 
-  ---- <Sort>     ::= <SortConstructor> "{" <SortList> "}"
-  ----              | <SortVariable>
+  ---- <Sort> ::= 
+  ---- | <SortConstructor> "{" <SortList> "}"
+  ---- | <SortVariable>
+
   ---- <SortList> ::= ""
   ----              | <Sort>
   ----              | <Sort> "," <SortList>
@@ -24,6 +26,7 @@ fmod KORE is
   
   ---- Example terminals of <SortConstructor>:
   ---- - Nat Int AExp BExp List Ctxt
+  ---- - KSort KSymbol KPattern
   
   ---- Example terminals of <SortVariable>:
   ---- - S S' S1 S2 R
@@ -85,12 +88,12 @@ fmod KORE is
 
 
 
-  ---- <Pattern>     ::= <Variable>                       
-  ----                 | <Symbol> "(" <PatternList> ")"   
-  ----                 | "\not" "{" <Sort> "}" "(" <Pattern> ")"
-  ----                 | "\and" "{" <Sort> "}" "(" <Pattern> "," <Pattern> ")"
-  ----                 | "\exists" "{" <Sort> "}" "(" <Variable> "," <Pattern> ")"
-  ----                 | <Alias> "(" <PatternList> ")"   
+  ---- <Pattern> ::= <Variable>                       
+  ----             | <Symbol> "(" <PatternList> ")"   
+  ----             | "\not" "{" <Sort> "}" "(" <Pattern> ")"
+  ----             | "\and" "{" <Sort> "}" "(" <Pattern> "," <Pattern> ")"
+  ----             | "\exists" "{" <Sort> "}" "(" <Variable> "," <Pattern> ")"
+  ----             | <Alias> "(" <PatternList> ")"   
   ----
   ---- <PatternList> ::= ""
   ----                 | <Pattern>
@@ -152,7 +155,7 @@ fmod KORE is
   op alias{_}_:=_ : SortList Pattern Pattern -> Sentence 
      [format(nb o d d n++i nb o --) prec 66] .
 
-  ---- Deal with empty sort list.
+  ---- Deal with empty sort parameter list.
   op symbol_():_ : Symbol Sort -> Sentence
      [format(nb o d d d d d) prec 66] .
   eq symbol S:Symbol() : S:Sort = symbol S:Symbol (.SortList) : S:Sort .
