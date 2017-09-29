@@ -8,6 +8,7 @@ fmod TOKENS is
   including KORE .
 
   ---- Terminals of <ObjectSortVariable>
+  ---- and how to lift them.
   op S  : -> ObjectSortVariable .
   op S' : -> ObjectSortVariable .
   op S1 : -> ObjectSortVariable .
@@ -15,7 +16,15 @@ fmod TOKENS is
   op S3 : -> ObjectSortVariable .
   op R  : -> ObjectSortVariable .
 
+  eq [[S ]] = S  : KSort{} .
+  eq [[S']] = S' : KSort{} .
+  eq [[S1]] = S1 : KSort{} .
+  eq [[S2]] = S2 : KSort{} .
+  eq [[S3]] = S3 : KSort{} .
+  eq [[R ]] = R  : KSort{} .
+
   ---- Terminals of <ObjectSortConstructor> 
+  ---- and how to lift them.
   op Nat  : -> ObjectSortConstructor .
   op Bool : -> ObjectSortConstructor .
   op AExp : -> ObjectSortConstructor .
@@ -23,6 +32,25 @@ fmod TOKENS is
   op Stmt : -> ObjectSortConstructor .
   op List : -> ObjectSortConstructor .
   op Ctxt : -> ObjectSortConstructor .
+
+  ---- The lower case "k" means they are just
+  ---- representations of some object-level
+  ---- things at the meta-level.
+  eq [[Nat ]] = kNat {} .
+  eq [[Bool]] = kBool{} .
+  eq [[AExp]] = kAExp{} .
+  eq [[BExp]] = kBExp{} .
+  eq [[Stmt]] = kStmt{} .
+  eq [[List]] = kList{} .
+  eq [[Ctxt]] = kCtxt{} .
+
+  op kNat  : -> MetaSymbolConstructor .
+  op kBool : -> MetaSymbolConstructor .
+  op kAExp : -> MetaSymbolConstructor .
+  op kBExp : -> MetaSymbolConstructor .
+  op kStmt : -> MetaSymbolConstructor .
+  op kList : -> MetaSymbolConstructor .  
+  op kCtxt : -> MetaSymbolConstructor .
 
   ---- Terminals of <ObjectSymbolConstructor> 
   op ceil      : -> ObjectSymbolConstructor .
@@ -43,59 +71,14 @@ fmod TOKENS is
   op plusAExp  : -> ObjectSymbolConstructor .
   op ite       : -> ObjectSymbolConstructor .
 
-  op Ksort             : -> SymbolConstructor .
-  op KnilKSortList     : -> SymbolConstructor .
-  op KconsKSortList    : -> SymbolConstructor .
-  op Ksymbolid         : -> SymbolConstructor .
-  op Ksymbol           : -> SymbolConstructor .
-  op Kvariable         : -> SymbolConstructor .
-  op Kapplication      : -> SymbolConstructor .
-  op Kand              : -> SymbolConstructor .
-  op Knot              : -> SymbolConstructor .
-  op Kexists           : -> SymbolConstructor .
-  op KnilKPatternList  : -> SymbolConstructor .
-  op KconsKPatternList : -> SymbolConstructor .
-  op Kor               : -> SymbolConstructor .
-  op Kimplies          : -> SymbolConstructor .
-  op Kequals           : -> SymbolConstructor .
-  op Kaxiom            : -> SymbolConstructor .
-  op KnilKAxiomList    : -> SymbolConstructor . 
-  op KconsKAxiomList   : -> SymbolConstructor . 
-  op Kpi0              : -> SymbolConstructor .
-  op KgetSort          : -> SymbolConstructor .
-  op Kceil             : -> SymbolConstructor .       
-  op Ktrue             : -> SymbolConstructor .    
-  op Kfalse            : -> SymbolConstructor .  
-  op KandBool          : -> SymbolConstructor .      
-  op KnotBool          : -> SymbolConstructor .   
-  op Kzero             : -> SymbolConstructor .       
-  op Ksucc             : -> SymbolConstructor .     
-  op Kplus             : -> SymbolConstructor .    
-  op Kgte              : -> SymbolConstructor .    
-  op Knil              : -> SymbolConstructor .       
-  op Kcons             : -> SymbolConstructor .       
-  op Kctxtapp          : -> SymbolConstructor .       
-  op Kgamma0           : -> SymbolConstructor .       
-  op KNatToAExp        : -> SymbolConstructor .       
-  op KIdToAExp         : -> SymbolConstructor .       
-  op KplusAExp         : -> SymbolConstructor .       
-  op Kite              : -> SymbolConstructor .       
-  op KNat              : -> SymbolConstructor .
-  op KBool             : -> SymbolConstructor .
-  op KAExp             : -> SymbolConstructor .
-  op KBExp             : -> SymbolConstructor .
-  op KStmt             : -> SymbolConstructor .
-  op KList             : -> SymbolConstructor .
-  op KCtxt             : -> SymbolConstructor .
-
-  ---- Terminals of <Alias>
-  op \or               : -> AliasConstructor  .
-  op \implies          : -> AliasConstructor  .
-  op \iff              : -> AliasConstructor  .
-  op \equals           : -> AliasConstructor  .
-  op \forall           : -> AliasConstructor  .
-  op floor             : -> AliasConstructor  .
-  op gamma             : -> AliasConstructor  .
+   ---- Terminals of <Alias>
+  op \or               : -> ObjectAliasConstructor  .
+  op \implies          : -> ObjectAliasConstructor  .
+  op \iff              : -> ObjectAliasConstructor  .
+  op \equals           : -> ObjectAliasConstructor  .
+  op \forall           : -> ObjectAliasConstructor  .
+  op floor             : -> ObjectAliasConstructor  .
+  op gamma             : -> ObjectAliasConstructor  .
 
   ---- Terminals of <VariableName>
   op B                 : -> VariableName      .
