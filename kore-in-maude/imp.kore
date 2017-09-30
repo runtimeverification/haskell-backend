@@ -14,8 +14,10 @@ endfm
 
 reduce
   [[  
-    \not{Bool{}}(\and{Bool{}}(true{}(), false{}()))
- ]]
+     \not{List{S}}(\and{List{S}}(
+      nil{S}(), 
+      \exists{S, List{S}}(X:S, \exists{List{S}, List{S}}(L:List{S}, 
+        cons{S}(X:S, L:List{S}))))) ]]
 .
 
 quit

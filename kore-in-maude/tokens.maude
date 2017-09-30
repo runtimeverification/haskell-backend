@@ -71,41 +71,41 @@ fmod TOKENS is
   op plusAExp  : -> ObjectSymbolConstructor .
   op ite       : -> ObjectSymbolConstructor .
 
-  eq [[ceil     ]] = kceil      .
-  eq [[true     ]] = ktrue      .
-  eq [[false    ]] = kfalse     .
-  eq [[andBool  ]] = kandBool   . 
-  eq [[notBool  ]] = knotBool   . 
-  eq [[zero     ]] = kzero      .
-  eq [[succ     ]] = ksucc      .
-  eq [[plus     ]] = kplus      .
-  eq [[gte      ]] = kgte       .
-  eq [[nil      ]] = knil       .
-  eq [[cons     ]] = kcons      .
-  eq [[ctxtapp  ]] = kctxtapp   .
-  eq [[gamma0   ]] = kgamma0    .
-  eq [[NatToAExp]] = kNatToAExp .
-  eq [[IdToAExp ]] = kIdToAExp  .
-  eq [[plusAExp ]] = kplusAExp  .
-  eq [[ite      ]] = kite       .
+  eq [[ceil     ]] = kceil     {} .
+  eq [[true     ]] = ktrue     {} .
+  eq [[false    ]] = kfalse    {} .
+  eq [[andBool  ]] = kandBool  {} . 
+  eq [[notBool  ]] = knotBool  {} . 
+  eq [[zero     ]] = kzero     {} .
+  eq [[succ     ]] = ksucc     {} .
+  eq [[plus     ]] = kplus     {} .
+  eq [[gte      ]] = kgte      {} .
+  eq [[nil      ]] = knil      {} .
+  eq [[cons     ]] = kcons     {} .
+  eq [[ctxtapp  ]] = kctxtapp  {} .
+  eq [[gamma0   ]] = kgamma0   {} .
+  eq [[NatToAExp]] = kNatToAExp{} .
+  eq [[IdToAExp ]] = kIdToAExp {} .
+  eq [[plusAExp ]] = kplusAExp {} .
+  eq [[ite      ]] = kite      {} .
 
-  op kceil      : -> MetaSymbol .
-  op ktrue      : -> MetaSymbol .
-  op kfalse     : -> MetaSymbol .
-  op kandBool   : -> MetaSymbol .
-  op knotBool   : -> MetaSymbol .
-  op kzero      : -> MetaSymbol .
-  op ksucc      : -> MetaSymbol .
-  op kplus      : -> MetaSymbol .
-  op kgte       : -> MetaSymbol .
-  op knil       : -> MetaSymbol .
-  op kcons      : -> MetaSymbol .
-  op kctxtapp   : -> MetaSymbol .
-  op kgamma0    : -> MetaSymbol .
-  op kNatToAExp : -> MetaSymbol .
-  op kIdToAExp  : -> MetaSymbol .
-  op kplusAExp  : -> MetaSymbol .
-  op kite       : -> MetaSymbol .
+  op kceil      : -> MetaSymbolConstructor .
+  op ktrue      : -> MetaSymbolConstructor .
+  op kfalse     : -> MetaSymbolConstructor .
+  op kandBool   : -> MetaSymbolConstructor .
+  op knotBool   : -> MetaSymbolConstructor .
+  op kzero      : -> MetaSymbolConstructor .
+  op ksucc      : -> MetaSymbolConstructor .
+  op kplus      : -> MetaSymbolConstructor .
+  op kgte       : -> MetaSymbolConstructor .
+  op knil       : -> MetaSymbolConstructor .
+  op kcons      : -> MetaSymbolConstructor .
+  op kctxtapp   : -> MetaSymbolConstructor .
+  op kgamma0    : -> MetaSymbolConstructor .
+  op kNatToAExp : -> MetaSymbolConstructor .
+  op kIdToAExp  : -> MetaSymbolConstructor .
+  op kplusAExp  : -> MetaSymbolConstructor .
+  op kite       : -> MetaSymbolConstructor .
 
 
 
@@ -119,6 +119,15 @@ fmod TOKENS is
   op \forall           : -> ObjectAliasConstructor  .
   op floor             : -> ObjectAliasConstructor  .
   op gamma             : -> ObjectAliasConstructor  .
+
+
+
+  ---- lifting \equals
+  eq [[\equals{S1:ObjectSort, S2:ObjectSort}(P1:Pattern, P2:Pattern)]]
+   = Kexists{}([[S1:ObjectSort]], [[S2:ObjectSort]], [[P1:Pattern]], [[P2:Pattern]]) .
+
+  eq [[\exists{S1:MetaSort, S2:MetaSort}(P1:Pattern, P2:Pattern)]]
+   = \exists{S1:MetaSort, S2:MetaSort}([[P1:Pattern]], [[P2:Pattern]]) .
 
   ---- Terminals of <VariableName>
   ---- and how to lift them
