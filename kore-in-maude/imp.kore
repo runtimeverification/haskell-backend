@@ -12,14 +12,11 @@ endfm
 ---- Testing lifting [[_]] ----
 -------------------------------
 
-reduce 
-  [[S]]
-.
-
 reduce
-  [[List{S}]]
+  [[  
+    \not{Bool{}}(\and{Bool{}}(true{}(), false{}()))
+ ]]
 .
-
 
 quit
 

@@ -16,12 +16,12 @@ fmod TOKENS is
   op S3 : -> ObjectSortVariable .
   op R  : -> ObjectSortVariable .
 
-  eq [[S ]] = S  : KSort{} .
-  eq [[S']] = S' : KSort{} .
-  eq [[S1]] = S1 : KSort{} .
-  eq [[S2]] = S2 : KSort{} .
-  eq [[S3]] = S3 : KSort{} .
-  eq [[R ]] = R  : KSort{} .
+  eq [[(S ).ObjectSortVariable]] = S  : KSort{} .
+  eq [[(S').ObjectSortVariable]] = S' : KSort{} .
+  eq [[(S1).ObjectSortVariable]] = S1 : KSort{} .
+  eq [[(S2).ObjectSortVariable]] = S2 : KSort{} .
+  eq [[(S3).ObjectSortVariable]] = S3 : KSort{} .
+  eq [[(R ).ObjectSortVariable]] = R  : KSort{} .
 
   ---- Terminals of <ObjectSortConstructor> 
   ---- and how to lift them.
@@ -33,9 +33,8 @@ fmod TOKENS is
   op List : -> ObjectSortConstructor .
   op Ctxt : -> ObjectSortConstructor .
 
-  ---- The lower case "k" means they are just
-  ---- representations of some object-level
-  ---- things at the meta-level.
+  ---- The lower case "k" means they are meta-representations 
+  ---- of some object-level things.
   eq [[Nat ]] = kNat {} .
   eq [[Bool]] = kBool{} .
   eq [[AExp]] = kAExp{} .
@@ -53,6 +52,7 @@ fmod TOKENS is
   op kCtxt : -> MetaSymbolConstructor .
 
   ---- Terminals of <ObjectSymbolConstructor> 
+  ---- and how to lift them.
   op ceil      : -> ObjectSymbolConstructor .
   op true      : -> ObjectSymbolConstructor .
   op false     : -> ObjectSymbolConstructor .
@@ -71,6 +71,46 @@ fmod TOKENS is
   op plusAExp  : -> ObjectSymbolConstructor .
   op ite       : -> ObjectSymbolConstructor .
 
+  eq [[ceil     ]] = kceil      .
+  eq [[true     ]] = ktrue      .
+  eq [[false    ]] = kfalse     .
+  eq [[andBool  ]] = kandBool   . 
+  eq [[notBool  ]] = knotBool   . 
+  eq [[zero     ]] = kzero      .
+  eq [[succ     ]] = ksucc      .
+  eq [[plus     ]] = kplus      .
+  eq [[gte      ]] = kgte       .
+  eq [[nil      ]] = knil       .
+  eq [[cons     ]] = kcons      .
+  eq [[ctxtapp  ]] = kctxtapp   .
+  eq [[gamma0   ]] = kgamma0    .
+  eq [[NatToAExp]] = kNatToAExp .
+  eq [[IdToAExp ]] = kIdToAExp  .
+  eq [[plusAExp ]] = kplusAExp  .
+  eq [[ite      ]] = kite       .
+
+  op kceil      : -> MetaSymbol .
+  op ktrue      : -> MetaSymbol .
+  op kfalse     : -> MetaSymbol .
+  op kandBool   : -> MetaSymbol .
+  op knotBool   : -> MetaSymbol .
+  op kzero      : -> MetaSymbol .
+  op ksucc      : -> MetaSymbol .
+  op kplus      : -> MetaSymbol .
+  op kgte       : -> MetaSymbol .
+  op knil       : -> MetaSymbol .
+  op kcons      : -> MetaSymbol .
+  op kctxtapp   : -> MetaSymbol .
+  op kgamma0    : -> MetaSymbol .
+  op kNatToAExp : -> MetaSymbol .
+  op kIdToAExp  : -> MetaSymbol .
+  op kplusAExp  : -> MetaSymbol .
+  op kite       : -> MetaSymbol .
+
+
+
+
+
    ---- Terminals of <Alias>
   op \or               : -> ObjectAliasConstructor  .
   op \implies          : -> ObjectAliasConstructor  .
@@ -81,6 +121,7 @@ fmod TOKENS is
   op gamma             : -> ObjectAliasConstructor  .
 
   ---- Terminals of <VariableName>
+  ---- and how to lift them
   op B                 : -> VariableName      .
   op C                 : -> VariableName      .
   op C1                : -> VariableName      .
@@ -100,6 +141,7 @@ fmod TOKENS is
   op X                 : -> VariableName      .
   op Y                 : -> VariableName      .
   op Z                 : -> VariableName      .
+
 
   ---- Some frontends sugar that allows use to write
   ---- X:Nat{} instead of X : Nat{} with space around ":".
