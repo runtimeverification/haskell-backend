@@ -383,11 +383,11 @@ fmod KORE is
 
   ---- Example 1:
   ----   [[cons{Nat}(P, Q)]]
-  ----   = kcons([[Nat]], [[P]], [[Q]]) 
+  ----   = kcons{}([[Nat]], [[P]], [[Q]]) 
 
   ---- Example 2 (the general case):
   ----   [[sigma{S1,...,Sn}(P1,...,Pn)]]
-  ----   = ksigma([[S1]],...,[[Sn]],[[P1]],...,[[Pn]])
+  ----   = ksigma{}([[S1]],...,[[Sn]],[[P1]],...,[[Pn]])
 
   ---- Lift <ObjectSymbolConstructor> to <MetaSymbol>
   op [[_]] : ObjectSymbolConstructor -> MetaSymbol .
@@ -439,6 +439,10 @@ fmod KORE is
   eq [[\exists{S1:MetaSort, S2:MetaSort}(V:Variable, P:Pattern)]]
    = \exists{S1:MetaSort, S2:MetaSort}([[V:Variable]], [[P:Pattern]]) .
 
+  ---- lifting a list
+  eq [[.MetaPatternList]] = .MetaPatternList .
+  eq [[.ObjectPatternList]] = .MetaPatternList .
+  eq [[P:Pattern, Ps:PatternList]] = [[P:Pattern]], [[Ps:PatternList]] .
 
 
 endfm
