@@ -11,10 +11,15 @@ endfm
 
 reduce
 
+[[
+
     not{List{S}}(and{List{S}}(
       nil{S}(), 
-      exists{S, List{S}}(X:S, exists{List{S}, List{S}}(L:List{S}, 
-        cons{S}(X:S, L:List{S})))))
+      exists{S, List{S}}(variable{S}("X"), exists{List{S}, List{S}}
+       (variable{List{S}}("L"), 
+        cons{S}(variable{S}("X"), variable{List{S}}("L"))))))
+
+]]
 
 .
 

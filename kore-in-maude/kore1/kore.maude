@@ -94,6 +94,16 @@ fmod KORE is
   sort SortList .
   subsorts ObjectSortList MetaSortList < SortList .
 
+  op .SortList : -> SortList .
+
+
+
+
+
+
+
+
+
 
   ---- <Pattern> ::=
   ---- | <PatternBuilder> "{" <SortList> "}" "(" <PatternList> ")"
@@ -104,21 +114,32 @@ fmod KORE is
   sort Pattern PatternList .
   subsort String < Pattern .
 
-  op .PatternList -> PatternList .
+  op .PatternList : -> PatternList .
   subsort Pattern < PatternList .
-  op _,_ : Pattern PatternList -> PatternList .
+  op _,_ : Pattern PatternList -> PatternList [prec 80] .
 
   sort PatternBuilder .
+  var P : Pattern .
+  var Ps : PatternList .
+  var PB : PatternBuilder .
+  var Ss : SortList .
+  var OS : ObjectSort .
+  var OSs : ObjectSortList .
+  var MSs : MetaSortList .
 
-  op _{_}(_) : PatternBuilder SortList PatternList -> Pattern .
+  op _{_}(_) : PatternBuilder SortList PatternList -> Pattern [prec 70] .
+  op _{}(_)  : PatternBuilder          PatternList -> Pattern [prec 70] .
+  op _{_}()  : PatternBuilder SortList             -> Pattern [prec 70] .
+  eq PB{}(Ps) = PB{.SortList}(Ps) .
+  eq PB{Ss}() = PB{Ss}(.PatternList) .
 
   ---- Lifting patterns
 
   op [[_]] : Pattern -> Pattern .
-  eq [[B:PatternBuilder{Ss:ObjectSortList}(Ps:PatternList)]]
-   = [[B:PatternBuilder]]([[Ss:ObjectSortList]] @ [[Ps:PatternList]]) .
-  eq [[B:PatternBuilder{Ss:MetaSortList}(Ps:PatternList)]]
-   = B:PatternBuilder{Ss:MetaSortList}([[Ps:PatternList]]) .
+  eq [[PB{OSs}(Ps)]]
+   = [[PB]]{}([[OSs]] @ [[Ps]]) .
+  eq [[PB{MSs}(Ps)]]
+   = PB{MSs}([[Ps]]) .
   eq [[S:String]] = S:String .
 
   op [[_]] : PatternList -> PatternList . ---- elementwise
@@ -126,14 +147,26 @@ fmod KORE is
   eq [[P:Pattern, Ps:PatternList]] = [[P:Pattern]], [[Ps:PatternList]] .
 
   ---- append two lists
-  op _@_ : PatternList PatternList -> PatternList [assoc id: .PatternList] .
+  op _@_ : PatternList PatternList -> PatternList [assoc] .
   eq P:Pattern @ Ps:PatternList = P:Pattern, Ps:PatternList .
   eq (P:Pattern, Ps:PatternList) @ Ps':PatternList
    = P:Pattern, (Ps:PatternList @ Ps':PatternList) .
 
   ---- Lifting pattern builder by adding a "K" in front of it.
   op [[_]] : PatternBuilder -> PatternBuilder . 
+  eq [[PB]]
+   = downTerm(qid("K" + string(getName(upTerm(PB))) + ".PatternBuilder"), PB) .
+  
+  ---- Lifting object sorts to patterns.
+  op [[_]] : ObjectSort -> Pattern .
+  op [[_]] : ObjectSortConstructor -> PatternBuilder .
+  op [[_]] : ObjectSortList -> PatternList .
+  var OSC : ObjectSortConstructor .
+  eq [[OSC{OSs}]]
+   = [[OSC]]{}([[OSs]]) .
+  eq [[OS, OSs]] = [[OS]], [[OSs]] .
 
 endfm
+
 
 
