@@ -1,0 +1,139 @@
+fmod KORE is
+
+  protecting META-LEVEL *
+    (sort Sort     to META-LEVEL.Sort,
+     sort Variable to META-LEVEL.Variable) .
+
+  protecting STRING .
+
+
+  ---- <Sort> ::= 
+  ---- | <ObjectSort>
+  ---- | <MetaSort>
+
+  sorts Sort ObjectSort MetaSort .
+  subsorts ObjectSort MetaSort < Sort .
+
+
+  ---- <ObjectSort> ::=
+  ---- | <ObjectSortConstructor> "{" <ObjectSortList> "}"
+  ---- | <ObjectSortVariable>
+  ---- Remark: Nonterminals <ObjectSortConstructor> and <ObjectSortVariable> 
+  ----         are defined as sets of terminals using regular expressions.
+  ----         Because Maude does not allow us to use regular expressions
+  ----         to define nonterminals, we explicitly define a few terminals
+  ----         as Maude constant operators in "tokens.maude".
+
+  sort ObjectSortConstructor .
+  sort ObjectSortList .
+  sort ObjectSortVariable .
+  subsort ObjectSortVariable < ObjectSort .
+  op _`{_`} : ObjectSortConstructor ObjectSortList -> ObjectSort [prec 50] .
+
+
+  ---- <ObjectSortList> ::=
+  ---- | ""
+  ---- | <ObjectSort>
+  ---- | <ObjectSort> "," <ObjectSortList>
+
+  op .ObjectSortList : -> ObjectSortList .
+  subsort ObjectSort < ObjectSortList .
+  op _,_ : ObjectSort ObjectSortList -> ObjectSortList [prec 52] .
+
+  ---- Deal with (parsing) the empty list.
+  op _`{`} : ObjectSortConstructor -> ObjectSort [prec 50] .
+  eq SC:ObjectSortConstructor{}
+   = SC:ObjectSortConstructor{.ObjectSortList} .
+
+
+  ---- <MetaSort> ::=
+  ---- | <MetaSortConstructor> "{" "}"
+  ---- | <MetaSortVariable> 
+  ---- Remark: <MetaSortConstructor> has only a finite number of terminals.
+
+  sort MetaSortConstructor .
+  sort MetaSortList .
+  sort MetaSortVariable .
+  subsort MetaSortVariable < MetaSort .
+  op _`{`} : MetaSortConstructor -> MetaSort [prec 50] .
+
+  op KPred        : -> MetaSortConstructor . 
+  op KChar        : -> MetaSortConstructor . 
+  op KString      : -> MetaSortConstructor . 
+  op KSort        : -> MetaSortConstructor . 
+  op KSortList    : -> MetaSortConstructor . 
+  op KSymbol      : -> MetaSortConstructor . 
+  op KSymbolList  : -> MetaSortConstructor .   
+  op KVariable    : -> MetaSortConstructor . 
+  op KPattern     : -> MetaSortConstructor . 
+  op KPatternList : -> MetaSortConstructor . 
+  op KAxiom       : -> MetaSortConstructor .  
+  op KAxiomList   : -> MetaSortConstructor . 
+
+  op KS           : -> MetaSortVariable .
+  op KS1          : -> MetaSortVariable .
+  op KS2          : -> MetaSortVariable .
+  op KS3          : -> MetaSortVariable .
+  op KS'          : -> MetaSortVariable .
+  op KS''         : -> MetaSortVariable .
+
+
+  ---- <MetaSortList> ::=
+  ---- | ""
+  ---- | <MetaSort>
+  ---- | <MetaSort> "," <MetaSortList>
+
+  op .MetaSortList : -> MetaSortList .
+  subsort MetaSort < MetaSortList .
+  op _,_ : MetaSort MetaSortList -> MetaSortList [prec 52] .
+
+  ---- <SortList> ::=
+  ---- | <MetaSortList>
+  ---- | <ObjectSortList>
+  
+  sort SortList .
+  subsorts ObjectSortList MetaSortList < SortList .
+
+
+  ---- <Pattern> ::=
+  ---- | <PatternBuilder> "{" <SortList> "}" "(" <PatternList> ")"
+  ---- | <String>
+
+  ---- X:Int becomes variable{Int}("X")
+
+  sort Pattern PatternList .
+  subsort String < Pattern .
+
+  op .PatternList -> PatternList .
+  subsort Pattern < PatternList .
+  op _,_ : Pattern PatternList -> PatternList .
+
+  sort PatternBuilder .
+
+  op _{_}(_) : PatternBuilder SortList PatternList -> Pattern .
+
+  ---- Lifting patterns
+
+  op [[_]] : Pattern -> Pattern .
+  eq [[B:PatternBuilder{Ss:ObjectSortList}(Ps:PatternList)]]
+   = [[B:PatternBuilder]]([[Ss:ObjectSortList]] @ [[Ps:PatternList]]) .
+  eq [[B:PatternBuilder{Ss:MetaSortList}(Ps:PatternList)]]
+   = B:PatternBuilder{Ss:MetaSortList}([[Ps:PatternList]]) .
+  eq [[S:String]] = S:String .
+
+  op [[_]] : PatternList -> PatternList . ---- elementwise
+  eq [[.PatternList]] = .PatternList .
+  eq [[P:Pattern, Ps:PatternList]] = [[P:Pattern]], [[Ps:PatternList]] .
+
+  ---- append two lists
+  op _@_ : PatternList PatternList -> PatternList [assoc id: .PatternList] .
+  eq P:Pattern @ Ps:PatternList = P:Pattern, Ps:PatternList .
+  eq (P:Pattern, Ps:PatternList) @ Ps':PatternList
+   = P:Pattern, (Ps:PatternList @ Ps':PatternList) .
+
+  ---- Lifting pattern builder by adding a "K" in front of it.
+  op [[_]] : PatternBuilder -> PatternBuilder . 
+
+endfm
+
+

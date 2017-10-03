@@ -1,0 +1,139 @@
+---- Terminals / Tokens of the Kore syntax / grammar are defined
+---- as Maude constants, simply because Maude does not allows us
+---- to define them as regular expressions. 
+
+
+fmod TOKENS is
+
+  including KORE .
+
+  ---- Terminals of <ObjectSortVariable>
+  ---- and how to lift them.
+  op S  : -> ObjectSortVariable .
+  op S' : -> ObjectSortVariable .
+  op S1 : -> ObjectSortVariable .
+  op S2 : -> ObjectSortVariable .
+  op S3 : -> ObjectSortVariable .
+  op R  : -> ObjectSortVariable .
+
+  eq [[(S ).ObjectSortVariable]] = variable{KSort{}}(S ) .
+  eq [[(S').ObjectSortVariable]] = variable{KSort{}}(S') .
+  eq [[(S1).ObjectSortVariable]] = variable{KSort{}}(S1) .
+  eq [[(S2).ObjectSortVariable]] = variable{KSort{}}(S2) .
+  eq [[(S3).ObjectSortVariable]] = variable{KSort{}}(S3) .
+  eq [[(R ).ObjectSortVariable]] = variable{KSort{}}(R ) .
+
+  ---- Terminals of <ObjectSortConstructor> 
+  ---- and how to lift them.
+  op Nat  : -> ObjectSortConstructor .
+  op Bool : -> ObjectSortConstructor .
+  op AExp : -> ObjectSortConstructor .
+  op BExp : -> ObjectSortConstructor .
+  op Stmt : -> ObjectSortConstructor .
+  op List : -> ObjectSortConstructor .
+  op Ctxt : -> ObjectSortConstructor .
+
+  eq [[Nat ]] = KNat {}() .
+  eq [[Bool]] = KBool{}() .
+  eq [[AExp]] = KAExp{}() .
+  eq [[BExp]] = KBExp{}() .
+  eq [[Stmt]] = KStmt{}() .
+  eq [[List]] = KList{}() .
+  eq [[Ctxt]] = KCtxt{}() .
+
+  ---- Terminals of <PatternBuilder> 
+
+  op KNat      : -> PatternBuilder .
+  op KBool     : -> PatternBuilder .
+  op KAExp     : -> PatternBuilder .
+  op KBExp     : -> PatternBuilder .
+  op KStmt     : -> PatternBuilder .
+  op KList     : -> PatternBuilder .  
+  op KCtxt     : -> PatternBuilder .
+
+  op ceil      : -> PatternBuilder .
+  op true      : -> PatternBuilder .
+  op false     : -> PatternBuilder .
+  op andBool   : -> PatternBuilder . 
+  op notBool   : -> PatternBuilder . 
+  op zero      : -> PatternBuilder .
+  op succ      : -> PatternBuilder .
+  op plus      : -> PatternBuilder .
+  op gte       : -> PatternBuilder .
+  op nil       : -> PatternBuilder .
+  op cons      : -> PatternBuilder .
+  op ctxtapp   : -> PatternBuilder .
+  op gamma0    : -> PatternBuilder .
+  op NatToAExp : -> PatternBuilder .
+  op IdToAExp  : -> PatternBuilder .
+  op plusAExp  : -> PatternBuilder .
+  op ite       : -> PatternBuilder .
+
+  op or         : -> PatternBuilder  .
+  op implies    : -> PatternBuilder  .
+  op iff        : -> PatternBuilder  .
+  op equals     : -> PatternBuilder  .
+  op forall     : -> PatternBuilder  .
+  op floor      : -> PatternBuilder  .
+  op gamma      : -> PatternBuilder  .
+
+  op kceil      : -> PatternBuilder .
+  op ktrue      : -> PatternBuilder .
+  op kfalse     : -> PatternBuilder .
+  op kandBool   : -> PatternBuilder .
+  op knotBool   : -> PatternBuilder .
+  op kzero      : -> PatternBuilder .
+  op ksucc      : -> PatternBuilder .
+  op kplus      : -> PatternBuilder .
+  op kgte       : -> PatternBuilder .
+  op knil       : -> PatternBuilder .
+  op kcons      : -> PatternBuilder .
+  op kctxtapp   : -> PatternBuilder .
+  op kgamma0    : -> PatternBuilder .
+  op kNatToAExp : -> PatternBuilder .
+  op kIdToAExp  : -> PatternBuilder .
+  op kplusAExp  : -> PatternBuilder .
+  op kite       : -> PatternBuilder .
+
+  ---- Terminals of <VariableName>
+  ---- and how to lift them
+  op B    : -> VariableName .
+  op C    : -> VariableName .
+  op C1   : -> VariableName .
+  op C2   : -> VariableName .
+  op E    : -> VariableName .
+  op HOLE : -> VariableName .
+  op L    : -> VariableName .
+  op L0   : -> VariableName .
+  op P    : -> VariableName .
+  op Q    : -> VariableName .
+  op S    : -> VariableName .                 
+  op S'   : -> VariableName .
+  op S1   : -> VariableName .
+  op S2   : -> VariableName .
+  op S3   : -> VariableName .
+  op R    : -> VariableName .
+  op X    : -> VariableName .
+  op Y    : -> VariableName .
+  op Z    : -> VariableName .
+
+
+  ---- Some frontends sugar that allows use to write
+  ---- X:Nat{} instead of X : Nat{} with space around ":".
+
+  op P:KPattern{} : -> Variable . eq P:KPattern{} = P : KPattern{} . 
+  op Q:KPattern{} : -> Variable . eq Q:KPattern{} = Q : KPattern{} . 
+  op X:S          : -> Variable . eq X:S          = X : S          . 
+  op X:S1         : -> Variable . eq X:S1         = X : S1         . 
+  op HOLE:S1      : -> Variable . eq HOLE:S1      = HOLE : S1      . 
+  op X:Nat{}      : -> Variable . eq X:Nat{}      = X : Nat{}      . 
+  op Y:Nat{}      : -> Variable . eq Y:Nat{}      = Y : Nat{}      . 
+  op Z:Nat{}      : -> Variable . eq Z:Nat{}      = Z : Nat{}      . 
+  op L:List{S}    : -> Variable . eq L:List{S}    = L : List{S}    . 
+  op L0:List{S}   : -> Variable . eq L0:List{S}   = L0 : List{S}   . 
+  op B:Bool{}     : -> Variable . eq B:Bool{}     = B : Bool{}     . 
+  op C:Bool{}     : -> Variable . eq C:Bool{}     = C : Bool{}     . 
+  op C1:Bool{}    : -> Variable . eq C1:Bool{}    = C1 : Bool{}    . 
+  op C2:Bool{}    : -> Variable . eq C2:Bool{}    = C2 : Bool{}    . 
+
+endfm
