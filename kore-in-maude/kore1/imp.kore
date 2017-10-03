@@ -2,24 +2,70 @@
 
 ---- Some preludes ... Just ignore ---
 in kore
-in tokens
 fmod IMP is
-  including TOKENS .
+  including KORE .
 endfm
-
 
 
 reduce
 
+
 [[
 
+  axiom{S1,S2}  
+    ceil{S1,S2}(variable{S1}(X))
+
+  axiom{S}  
+    exists{Bool, S}(
+      variable{Bool}(B), 
+      equals{Bool,S}(
+        variable{Bool}(B), 
+        true()))
+
+
+  axiom{S, R}
+    exists{List{S}, R}(variable{List{S}}(L), 
+    equals{List{S}, R}(variable{List{S}}(L), nil{S}()))
+  axiom{S, R}
+    exists{List{S}, R}(variable{List{S}}(L), 
+    equals{List{S}, R}(variable{List{S}}(L), cons{S}(variable{S}(X), variable{List{S}}(L0))))
+  
+  axiom{S}
+    or{List{S}}(nil{S}(), 
+                 exists{S, List{S}}(variable{S}(X), exists{List{S}, List{S}}(variable{List{S}}(L), 
+                    cons{S}(variable{S}(X), variable{List{S}}(L)))))
+  axiom{S}
     not{List{S}}(and{List{S}}(
       nil{S}(), 
-      exists{S, List{S}}(variable{S}("X"), exists{List{S}, List{S}}
-       (variable{List{S}}("L"), 
-        cons{S}(variable{S}("X"), variable{List{S}}("L"))))))
+      exists{S, List{S}}(variable{S}(X), exists{List{S}, List{S}}(variable{List{S}}(L), 
+        cons{S}(variable{S}(X), variable{List{S}}(L))))))
 
+  sort   Nat
+
+  sort   List{S}
 ]]
+
+.
+
+quit
+  axiom{S}
+    exists{Bool, S}(variable{Bool}(B), equals{Bool, S}(variable{Bool}(B), false()))
+  axiom{S}
+    exists{Bool, S}(variable{Bool}(B), equals{Bool, S}(variable{Bool}(B), notBool(C:Bool)))
+  axiom{S}
+    exists{Bool, S}(variable{Bool}(B), equals{Bool, S}(variable{Bool}(B), andBool(C1:Bool, C2:Bool)))
+  axiom
+    or{Bool}(true(), false())
+  axiom
+    not{Bool}(and{Bool}(true(), false()))
+  axiom{S}
+    equals{Bool, S}(notBool(variable{Bool}(B)), not{Bool}(variable{Bool}(B)))
+  axiom{S}
+    equals{Bool, S}(andBool(variable{Bool}(B), true()), variable{Bool}(B))
+  axiom{S}
+    equals{Bool, S}(andBool(variable{Bool}(B), false()), false()))
+]]
+
 
 .
 
@@ -31,10 +77,10 @@ quit
 
 reduce
   [[  
-     \not{List{S}}(\and{List{S}}(
+     not{List{S}}(and{List{S}}(
       nil{S}(), 
-      \exists{S, List{S}}(X:S, \exists{List{S}, List{S}}(L:List{S}, 
-        cons{S}(X:S, L:List{S}))))) ]]
+      exists{S, List{S}}(variable{S}(X), exists{List{S}, List{S}}(variable{List{S}}(L), 
+        cons{S}(variable{S}(X), variable{List{S}}(L)))))) ]]
 .
 
 quit
@@ -47,109 +93,75 @@ quit
 
 reduce
 
-  alias{S} \or{S}(P:KPattern{}, Q:KPattern{})
-        := \not{S}(\and{S}(\not{S}(P:KPattern{}), \not{S}(Q:KPattern{})))
-  alias{S} \implies{S}(P:KPattern{}, Q:KPattern{}) 
-        := \or{S}(\not{S}(P:KPattern{}), Q:KPattern{})
-  alias{S} \iff{S}(P:KPattern{}, Q:KPattern{}) 
-        := \and{S}(\implies{S}(P:KPattern{}, Q:KPattern{}), 
-                   \implies{S}(Q:KPattern{}, P:KPattern{}))
-  alias{S} \forall{S1,S2}(X:S1,P:KPattern{}) 
-        := \not{S2}(\exists{S1,S2}(X:S1,\not{S2}(P:KPattern{})))
+  alias{S} or{S}(P:KPattern, Q:KPattern)
+        := not{S}(and{S}(not{S}(P:KPattern), not{S}(Q:KPattern)))
+  alias{S} implies{S}(P:KPattern, Q:KPattern) 
+        := or{S}(not{S}(P:KPattern), Q:KPattern)
+  alias{S} iff{S}(P:KPattern, Q:KPattern) 
+        := and{S}(implies{S}(P:KPattern, Q:KPattern), 
+                   implies{S}(Q:KPattern, P:KPattern))
+  alias{S} forall{S1,S2}(variable{S}(X)1,P:KPattern) 
+        := not{S2}(exists{S1,S2}(variable{S}(X)1,not{S2}(P:KPattern)))
 
   symbol
     ceil{S1,S2}(S1) : S2
 
   axiom{S1,S2}  
-    ceil{S1,S2}(X:S1)
+    ceil{S1,S2}(variable{S}(X)1)
 
   alias{S1,S2}
-    floor{S1,S2}(P:KPattern{}) 
-    := \not{S2}(ceil{S1,S2}(\not{S1}(P:KPattern{})))
+    floor{S1,S2}(P:KPattern) 
+    := not{S2}(ceil{S1,S2}(not{S1}(P:KPattern)))
 
   alias{S1,S2}
-    \equals{S1,S2}(P:KPattern{},Q:KPattern{}) 
-    := floor{S1,S2}(\iff{S1,S2}(P:KPattern{},Q:KPattern{})) 
+    equals{S1,S2}(P:KPattern,Q:KPattern) 
+    := floor{S1,S2}(iff{S1,S2}(P:KPattern,Q:KPattern)) 
 
-  sort   Bool{}
-  symbol true{}()                : Bool{}
-  symbol false{}()               : Bool{}
-  symbol notBool{}(Bool{})       : Bool{}
-  symbol andBool{}(Bool{}, Bool{}) : Bool{}
+  sort   Bool
+  symbol true()                : Bool
+  symbol false()               : Bool
+  symbol notBool(Bool)       : Bool
+  symbol andBool(Bool, Bool) : Bool
   
-  axiom{S}  
-    \exists{Bool{}, S}(B:Bool{}, \equals{Bool{}, S}(B:Bool{}, true{}()))
-  axiom{S}
-    \exists{Bool{}, S}(B:Bool{}, \equals{Bool{}, S}(B:Bool{}, false{}()))
-  axiom{S}
-    \exists{Bool{}, S}(B:Bool{}, \equals{Bool{}, S}(B:Bool{}, notBool{}(C:Bool{})))
-  axiom{S}
-    \exists{Bool{}, S}(B:Bool{}, \equals{Bool{}, S}(B:Bool{}, andBool{}(C1:Bool{}, C2:Bool{})))
-  axiom{}
-    \or{Bool{}}(true{}(), false{}())
-  axiom{}
-    \not{Bool{}}(\and{Bool{}}(true{}(), false{}()))
-  axiom{S}
-    \equals{Bool{}, S}(notBool{}(B:Bool{}), \not{Bool{}}(B:Bool{}))
-  axiom{S}
-    \equals{Bool{}, S}(andBool{}(B:Bool{}, true{}()), B:Bool{})
-  axiom{S}
-    \equals{Bool{}, S}(andBool{}(B:Bool{}, false{}()), false{}())
 
 
-  sort   Nat{}
-  symbol zero{}()           : Nat{}
-  symbol succ{}(Nat{})      : Nat{}
-  symbol plus{}(Nat{}, Nat{}) : Nat{}
-  symbol gte{}(Nat{}, Nat{})  : Bool{} 
-  
-  
-  axiom{S}
-    \exists{Nat{}, S}(X:Nat{}, \equals{Nat{}, S}(X:Nat{}, zero{}()))
-  axiom{S}
-    \exists{Nat{}, S}(X:Nat{}, \equals{Nat{}, S}(X:Nat{}, succ{}(Y:Nat{})))
-  axiom{S}
-    \exists{Nat{}, S}(X:Nat{}, \equals{Nat{}, S}(X:Nat{}, plus{}(Y:Nat{}, Z:Nat{})))
-  axiom{S}
-    \exists{Bool{}, S}(B:Bool{}, \equals{Bool{}, S}(B:Bool{}, gte{}(Y:Nat{}, Z:Nat{})))
-  
-  axiom{}  
-    \or{Nat{}}(zero{}(), \exists{Nat{}, Nat{}}(X:Nat{}, succ{}(X:Nat{})))
-  axiom{}
-    \not{Nat{}}(\and{Nat{}}(zero{}(), \exists{Nat{}, Nat{}}(X:Nat{}, succ{}(X:Nat{}))))
-  
-  axiom{S}
-    \equals{Nat{}, S}(plus{}(X:Nat{}, zero{}()), zero{}())
-  axiom{S}
-    \equals{Nat{}, S}(plus{}(X:Nat{}, succ{}(Y:Nat{})), succ{}(plus{}(X:Nat{}, Y:Nat{})))
 
-  sort   List{S}
+  symbol zero()           : Nat
+  symbol succ(Nat)      : Nat
+  symbol plus(Nat, Nat) : Nat
+  symbol gte(Nat, Nat)  : Bool 
+  
+  
+  axiom{S}
+    exists{Nat, S}(X:Nat, equals{Nat, S}(X:Nat, zero()))
+  axiom{S}
+    exists{Nat, S}(X:Nat, equals{Nat, S}(X:Nat, succ(Y:Nat)))
+  axiom{S}
+    exists{Nat, S}(X:Nat, equals{Nat, S}(X:Nat, plus(Y:Nat, Z:Nat)))
+  axiom{S}
+    exists{Bool, S}(variable{Bool}(B), equals{Bool, S}(variable{Bool}(B), gte(Y:Nat, Z:Nat)))
+  
+  axiom  
+    or{Nat}(zero(), exists{Nat, Nat}(X:Nat, succ(X:Nat)))
+  axiom
+    not{Nat}(and{Nat}(zero(), exists{Nat, Nat}(X:Nat, succ(X:Nat))))
+  
+  axiom{S}
+    equals{Nat, S}(plus(X:Nat, zero()), zero())
+  axiom{S}
+    equals{Nat, S}(plus(X:Nat, succ(Y:Nat)), succ(plus(X:Nat, Y:Nat)))
+
   symbol nil{S}()              : List{S}
   symbol cons{S}(S, List{S}) : List{S}
   
-  axiom{S, R}
-    \exists{List{S}, R}(L:List{S}, 
-    \equals{List{S}, R}(L:List{S}, nil{S}()))
-  axiom{S, R}
-    \exists{List{S}, R}(L:List{S}, 
-    \equals{List{S}, R}(L:List{S}, cons{S}(X:S, L0:List{S})))
-  
-  axiom{S}
-    \or{List{S}}(nil{S}(), 
-                 \exists{S, List{S}}(X:S, \exists{List{S}, List{S}}(L:List{S}, 
-                    cons{S}(X:S, L:List{S}))))
-  axiom{S}
-    \not{List{S}}(\and{List{S}}(
-      nil{S}(), 
-      \exists{S, List{S}}(X:S, \exists{List{S}, List{S}}(L:List{S}, 
-        cons{S}(X:S, L:List{S})))))
+
 
   sort   Ctxt{S1, S2}
   symbol gamma0{S1, S2}(S1, S2)            : Ctxt{S1, S2}
   symbol ctxtapp{S1, S2}(Ctxt{S1, S2}, S1) : S2
   
-  alias{}  gamma{S1,S2}(HOLE:S1, P:KPattern{}) 
-     :=  \exists{S1, Ctxt{S1, S2}}(HOLE:S1, gamma0{S1, S2}(HOLE:S1, P:KPattern{}))
+  alias  gamma{S1,S2}(HOLE:S1, P:KPattern) 
+     :=  exists{S1, Ctxt{S1, S2}}(HOLE:S1, gamma0{S1, S2}(HOLE:S1, P:KPattern))
 
 .
 
@@ -157,44 +169,44 @@ quit
   
 
   sort   AExp
-  symbol Nat{}ToAExp(Nat{})       : AExp
-  symbol IdToAExp(Nat{})        : AExp
-  symbol plus{}AExp(AExp, AExp) : AExp
+  symbol NatToAExp(Nat)       : AExp
+  symbol IdToAExp(Nat)        : AExp
+  symbol plusAExp(AExp, AExp) : AExp
 
   axiom{S, R}
-  \implies{R}(
-  \equals{KSort, R}(KgetSort(C:KPattern{}), Ctxt{S, AExp}),  
-  \equals{AExp, R}(plus{}AExp(ctxtapp{S,AExp}(C:KPattern{}, X:S), E:AExp),
+  implies{R}(
+  equals{KSort, R}(KgetSort(C:KPattern), Ctxt{S, AExp}),  
+  equals{AExp, R}(plusAExp(ctxtapp{S,AExp}(C:KPattern, variable{S}(X)), E:AExp),
                    ctxtapp{S,AExp}(
-                     \exists{S,AExp}(
+                     exists{S,AExp}(
                        HOLE:S, 
                        gamma0{S,AExp}(
                          HOLE:S, 
-                         plus{}AExp(ctxtapp{S,AExp}(C:KPattern{}, HOLE:S), E:AExp))), 
-                     X:S)))
+                         plusAExp(ctxtapp{S,AExp}(C:KPattern, HOLE:S), E:AExp))), 
+                     variable{S}(X))))
 
   axiom{S, R}
-  \implies{R}(
-  \equals{KSort, R}(KgetSort(C:KPattern{}), Ctxt{S,AExp}),
-  \equals{AExp, R}(ctxtapp{S,AExp}(
+  implies{R}(
+  equals{KSort, R}(KgetSort(C:KPattern), Ctxt{S,AExp}),
+  equals{AExp, R}(ctxtapp{S,AExp}(
                      gamma{S,AExp}(
                        HOLE:S, 
-                       plus{}AExp(ctxtapp{S,AExp}(C:KPattern{}, HOLE:S), E:AExp)), 
-                     X:S)),
-                   plus{}AExp(ctxtapp{S,AExp}(C:KPattern{}, X:S), E:AExp))
+                       plusAExp(ctxtapp{S,AExp}(C:KPattern, HOLE:S), E:AExp)), 
+                     variable{S}(X))),
+                   plusAExp(ctxtapp{S,AExp}(C:KPattern, variable{S}(X)), E:AExp))
   
   axiom{S, R}
-  \implies{R}(
-  \equals{KSort, R}(KgetSort(C:KPattern{}), Ctxt{S, BExp}),
-  \equals{Stmt, R}(ite(ctxtapp{S, BExp}(C:KPattern{}, X:S), S1:Stmt, S2:Stmt),
+  implies{R}(
+  equals{KSort, R}(KgetSort(C:KPattern), Ctxt{S, BExp}),
+  equals{Stmt, R}(ite(ctxtapp{S, BExp}(C:KPattern, variable{S}(X)), S1:Stmt, S2:Stmt),
                    ctxtapp{S, Stmt}(
-                     \exists{S, Stmt}(
+                     exists{S, Stmt}(
                        HOLE:S,
                        gamma0{S, Stmt}(
                          HOLE:S,
-                         ite(ctxtapp{S, BExp}(C:KPattern{}, HOLE:S),
+                         ite(ctxtapp{S, BExp}(C:KPattern, HOLE:S),
                              S1:Stmt, S2:Stmt))), 
-                     X:S)))
+                     variable{S}(X))))
   sort KString
 
   sort KSort
@@ -202,8 +214,8 @@ quit
   sort KSymbol
   sort KSymbolList
   sort KVariable
-  sort KPattern{}
-  sort KPatternList{}
+  sort KPattern
+  sort KPatternList
 
   sort KSortSentence
   sort KSortSentenceList
