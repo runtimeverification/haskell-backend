@@ -618,6 +618,8 @@ fmod KORE is
   op gamma      : -> ParametricHead .
   op append     : -> ParametricHead .
 
+  op choice     : -> ParametricHead .
+
 
 
 
@@ -680,6 +682,8 @@ fmod KORE is
   op Kiff       : -> AtomicMetaHead  .
   op Kequals    : -> AtomicMetaHead  .
   op Kforall    : -> AtomicMetaHead  .
+  op Kbottom    : -> AtomicMetaHead  .
+  op Ktop       : -> AtomicMetaHead  .
   op Kfloor     : -> AtomicMetaHead  .
   op Kgamma     : -> AtomicMetaHead  .
 

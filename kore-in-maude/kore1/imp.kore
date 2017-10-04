@@ -67,6 +67,18 @@ fmod IMP is
       append{S}(nil{S}(), L : List{S}),
       L : List{S})
 
+  ---- append(cons(X, L0), L) = cons(X, append(L0, L))
+  axiom{S}
+    equals{List{S}, R}(
+      append{S}(cons{S}(X : S, L0 : List{S}), L : List{S}),
+      cons{S}(X : S, append{S}(L0 : List{S}, L : List{S})))
+
+  sort Map{S1,S2}
+
+  symbol emp{S1,S2}() : Map{S1,S2}
+  symbol merge{S1,S2}(Map{S1,S2},Map{S1,S2}) : Map{S1,S2}
+  symbol bind{S1,S2}(S1,S2) : Map{S1,S2}
+
 
   -------------------------
   ---- End "imp.kore" -----
@@ -155,10 +167,7 @@ quit
   sort   List{S}
   symbol nil{S}()              : List{S}
   symbol cons{S}(S, List{S}) : List{S}
-  sort Map{S1,S2}
-  symbol emp{S1,S2}() : Map{S1,S2}
-  symbol merge{S1,S2}(Map{S1,S2},Map{S1,S2}) : Map{S1,S2}
-  symbol bind{S1,S2}(S1,S2) : Map{S1,S2}
+
   axiom emp{Nat, Bool}() 
   axiom bind{Nat, Bool}(zero(), true()) 
   symbol natemp{S}() : Map{Nat, S}
