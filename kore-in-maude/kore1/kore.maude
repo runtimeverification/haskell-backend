@@ -97,6 +97,11 @@ fmod KORE is
 
 
 
+  ---- Append two sort lists
+  op _@_ : SortList SortList -> SortList .
+  eq S:Sort @ Ss:SortList = S:Sort, Ss:SortList .
+  eq (S:Sort, Ss:SortList) @ (Ss':SortList)
+   = S:Sort, (Ss:SortList @ Ss':SortList) .
 
 
 
@@ -127,7 +132,7 @@ fmod KORE is
 
   subsort Pattern < PatternList .
   op . : -> PatternList .
-  op _,_ : Pattern PatternList -> PatternList [prec 78] .
+  op _,_ : Pattern PatternList -> PatternList [format(d d s d) prec 78] .
   eq P:Pattern, . = P:Pattern .
 
   ---- Deal with empty pattern list.
@@ -406,23 +411,48 @@ fmod KORE is
   eq ListOfKPatternToKPatternList(P:Pattern, Ps)
    = KconsKPatternList(P:Pattern, ListOfKPatternToKPatternList(Ps)) .
 
-  ---- Lifting object symbols declarations: parametric case
+
+  ---- Lifting object symbols declarations: parametric constant case
+  ---- [[symbol f{S1,...,Sn}() : S]]
+  ---- = symbol Kf(KSort,...,KSort) : KPattern
+  ---- = axiom Kf(S1,...,Sn)
+  ----         = Kapplication(Ksymbol("f", (S1,...,Sn), nil, S),
+  ----                        nil)
   eq [[symbol PH{OSs}() : S:ObjectSort]]
-   = axiom KisSymbol([[PH{OSs}()]])
-     axiom equals{KSymbol,KS}(
-       [[PH{OSs}()]],
-       Ksymbol(name(PH),
-               ListOfKSortToKSortList([[OSs]]),
-               KnilKSortList(),
-               [[S:ObjectSort]])) .
+   = symbol [[PH]](makeListOfKSort(length(OSs))) : KPattern
+     axiom equals{KPattern,KS}(
+       [[PH]]([[OSs]]),
+       Kapplication(
+         Ksymbol(name(PH),
+                 ListOfKSortToKSortList([[OSs]]),
+                 KnilKSortList(),
+                 [[S:ObjectSort]]),
+         KnilKPatternList())) .
+  ---- Some aux functions
+  op makeListOfKSort : NzNat -> MetaSortList .
+  eq makeListOfKSort(1) = KSort .
+  eq makeListOfKSort(N:NzNat)
+   = KSort, makeListOfKSort(N:NzNat + -1) .
+
+
+  ---- Lifting object symbols declarations: parametric non-constant case
+  ---- [[symbol f{S1...Sn}(T1...Tm) : S]]
+  ---- = symbol Kf(KSort,..,KSort,KPattern,...,KPattern) : KPattern
+  ---- = axiom Kf(S1,...,Sn,P1,...,Pn)
+  ----         = Kapplication(
+  ----             Ksymbol("f", (S1...Sn), (T1...Tn), S),
+  ----             (P1...Pn)) 
   eq [[symbol PH{OSs}(OSs') : S:ObjectSort]]
-   = axiom KisSymbol([[PH{OSs}()]])
-     axiom equals{KSymbol,KS}(
-       [[PH{OSs}()]],
-       Ksymbol(name(PH),
-               ListOfKSortToKSortList([[OSs]]),
-               ListOfKSortToKSortList([[OSs']]),
-               [[S:ObjectSort]])) .
+   = symbol [[PH]](makeListOfKSort(length(OSs)) 
+                 @ makeListOfKPattern(length(OSs'))) : KPattern
+     axiom equals{KPattern,KS}(
+       [[PH]]([[OSs]] @ makeListOfKPatternVar(length(OSs'))),
+       Kapplication(
+         Ksymbol(name(PH),
+                 ListOfKSortToKSortList([[OSs]]),
+                 ListOfKSortToKSortList([[OSs']]),
+                 [[S:ObjectSort]]),
+         ListOfKPatternToKPatternList(makeListOfKPatternVar(length(OSs'))))) .
   op name : ParametricHead -> String .
   eq name(PH) = string(getName(upTerm(PH))) .
 
@@ -493,6 +523,7 @@ fmod KORE is
 
   op List : -> ParametricObjectSort .
   op Ctxt : -> ParametricObjectSort .
+  op Map  : -> ParametricObjectSort .
 
   op S  : -> ObjectSortVariable .
   op S' : -> ObjectSortVariable .
@@ -531,6 +562,12 @@ fmod KORE is
   op ceil       : -> ParametricHead .
   op nil        : -> ParametricHead .
   op cons       : -> ParametricHead .      
+  op emp        : -> ParametricHead .      
+  op merge      : -> ParametricHead .      
+  op bind       : -> ParametricHead .      
+  op natemp     : -> ParametricHead .      
+  op natmerge   : -> ParametricHead .      
+  op natbind    : -> ParametricHead .      
   op floor      : -> ParametricHead .
   op gamma      : -> ParametricHead .
 
@@ -551,6 +588,7 @@ fmod KORE is
 
 
   op KNat       : -> AtomicMetaHead .
+  op KMap       : -> AtomicMetaHead .
   op KBool      : -> AtomicMetaHead .
   op KAExp      : -> AtomicMetaHead .
   op KBExp      : -> AtomicMetaHead .
@@ -615,7 +653,12 @@ fmod KORE is
   op KIdToAExp  : -> AtomicMetaHead .
   op KplusAExp  : -> AtomicMetaHead .
   op Kite       : -> AtomicMetaHead .
-
+  op Kemp       : -> AtomicMetaHead .
+  op Kmerge     : -> AtomicMetaHead .
+  op Kbind      : -> AtomicMetaHead .
+  op Knatemp       : -> AtomicMetaHead .
+  op Knatmerge     : -> AtomicMetaHead .
+  op Knatbind      : -> AtomicMetaHead .
 
 endfm
 
