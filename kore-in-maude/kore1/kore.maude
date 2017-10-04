@@ -124,19 +124,19 @@ fmod KORE is
   op _`(_`) : Head PatternList -> Pattern [prec 75] .
 
   subsort Pattern < PatternList .
-  op .PatternList : -> PatternList .
+  op . : -> PatternList .
   op _,_ : Pattern PatternList -> PatternList [prec 78] .
-  eq P:Pattern, .PatternList = P:Pattern .
+  eq P:Pattern, . = P:Pattern .
 
   ---- Deal with empty pattern list.
-  ---- Parse head() as head(.PatternList).
+  ---- Parse head() as head(.).
   op _`(`) : Head -> Pattern [prec 75] .
-  eq H:Head() = H:Head(.PatternList) .
+  eq H:Head() = H:Head(.) .
 
 
   ---- Append two lists
   op _@_ : PatternList PatternList -> PatternList [assoc] .
-  eq .PatternList @ Ps = Ps .
+  eq . @ Ps = Ps .
   eq P:Pattern @ Ps = P:Pattern, Ps .
   eq (P:Pattern, Ps) @ Ps'
    = P:Pattern, (Ps @ Ps') .
@@ -183,11 +183,17 @@ fmod KORE is
    = S:Sentence (Ss:Sentences @ Ss':Sentences) .
 
 
-  op axiom{_}_ : SortList Pattern -> Sentence [format(b o d d d d) prec 82] .
+  op axiom{_}_ : SortList Pattern -> Sentence [format(b os d d s d) prec 82] .
   op axiom_    : Pattern -> Sentence [format(b o d) prec 82] .
 
 
   op sort_ : ObjectSort -> Sentence [format(b o d) prec 82] .
+
+
+  op symbol_`(_`):_ : ObjectHead ObjectSortList ObjectSort -> Sentence 
+     [format(b o d d d s d d) prec 82] .
+  op symbol_`(`):_  : ObjectHead                ObjectSort -> Sentence
+     [format(b o d d s d d) prec 82] .
 
 
 
@@ -210,8 +216,9 @@ fmod KORE is
 
 
   vars Ps Ps' : PatternList .
-  var OSs : ObjectSortList .
+  var OSs OSs' : ObjectSortList .
   var MSs : MetaSortList .
+  var PH : ParametricHead .
 
 
   op ERROR@AtomicMetaHead : -> [AtomicMetaHead] .
@@ -228,7 +235,7 @@ fmod KORE is
 
   ---- Lift a list of patterns by lifting each of them.
   op [[_]] : PatternList -> PatternList .
-  eq [[.PatternList]] = .PatternList .
+  eq [[.]] = . .
   eq [[P:Pattern, Ps]] = [[P:Pattern]], [[Ps]] . 
 
   ---- Lift an atomic object head by putting a "K" in front of it
@@ -289,15 +296,21 @@ fmod KORE is
   eq [[S:Sentence Ss:Sentences]] = [[S:Sentence]] @ [[Ss:Sentences]] .
 
 
+  ---- Lifting axiom declarations
   eq [[axiom P:Pattern]] = axiom KisAxiom([[P:Pattern]]) .
   eq [[axiom{Ss:SortList} P:Pattern]] = axiom KisAxiom([[P:Pattern]]) .
 
+
+ ---- Lifting sort declarations
  ceq [[sort OS:ObjectSort]] 
    = axiom KisSort([[OS:ObjectSort]])
      axiom equals{KSort, KS}(
              [[OS:ObjectSort]],
-             Ksort(name(OS:ObjectSort), Ps:PatternList))
+             Ksort(name(OS:ObjectSort), ListOfKSortToKSortList(Ps:PatternList)))
   if H:MetaHead(Ps:PatternList) := [[OS:ObjectSort]] .
+  ---- Calculating the names (strings) of atomic object sorts and
+  ---- parametric sorts.
+  ---- For example, name(Nat) = "Nat", name(List) = "List".
   op name : AtomicObjectSort -> String .
   eq name(S:AtomicObjectSort) = string(getName(upTerm(S:AtomicObjectSort))) .
   op name : ParametricObjectSort -> String .
@@ -306,14 +319,65 @@ fmod KORE is
   op name : ObjectSort -> String .
   eq name(PS:ParametricObjectSort{Ss:SortList})
    = name(PS:ParametricObjectSort) .
+  ---- Convert a list of meta-level patterns (whose sorts are KSort)
+  ---- to one meta-level pattern of the sort KSortList . 
+  ---- KnilKSortList and KconsKSortList are constructors of KSortList.
+  op ListOfKSortToKSortList : PatternList -> Pattern .
+  eq ListOfKSortToKSortList(.) = KnilKSortList() .
+  eq ListOfKSortToKSortList(P:Pattern) 
+   = KconsKSortList(P:Pattern, KnilKSortList()) .
+  eq ListOfKSortToKSortList(P:Pattern, Ps)
+   = KconsKSortList(P:Pattern, ListOfKSortToKSortList(Ps)) .
 
 
 
+  ---- Lifting object symbols declarations: non-parametric case
+  eq [[symbol H:AtomicObjectHead() : S:ObjectSort]]
+   = axiom KisSymbol([[H:AtomicObjectHead()]])
+     axiom equals{KSymbol,KS}(
+        [[H:AtomicObjectHead()]],
+        Ksymbol(name(H:AtomicObjectHead),
+                KnilKSortList(),
+                KnilKSortList(),
+                [[S:ObjectSort]])) . 
 
+  ---- TODO
+  ---- [[symbol f(S1,...,Sn) : S]]
+  ---- = axiom KgetSort(P1:KPattern) = S1 /\ ... /\ KgetSort(Pn:KPattern) = Sn
+  ----         -> Kf(P1,...,Pn) 
+  ----            = Kapplication(Ksymbol("f", nil, (S1,...,Sn), S),
+  ----                           (P1,...,Pn))
+   
+  eq [[symbol H:AtomicObjectHead(Ss:ObjectSortList) : S:ObjectSort]]
+   = axiom KisSymbol([[H:AtomicObjectHead()]])
+     axiom equals{KSymbol,KS}(
+       [[H:AtomicObjectHead()]],
+       Ksymbol(name(H:AtomicObjectHead),
+               KnilKSortList(),
+               ListOfKSortToKSortList([[Ss:ObjectSortList]]),
+               [[S:ObjectSort]])) .
+  op name : AtomicObjectHead -> String .
+  eq name(H:AtomicObjectHead) = string(getName(upTerm(H:AtomicObjectHead))) .
 
-
-
-
+  ---- Lifting object symbols declarations: parametric case
+  eq [[symbol PH{OSs}() : S:ObjectSort]]
+   = axiom KisSymbol([[PH{OSs}()]])
+     axiom equals{KSymbol,KS}(
+       [[PH{OSs}()]],
+       Ksymbol(name(PH),
+               ListOfKSortToKSortList([[OSs]]),
+               KnilKSortList(),
+               [[S:ObjectSort]])) .
+  eq [[symbol PH{OSs}(OSs') : S:ObjectSort]]
+   = axiom KisSymbol([[PH{OSs}()]])
+     axiom equals{KSymbol,KS}(
+       [[PH{OSs}()]],
+       Ksymbol(name(PH),
+               ListOfKSortToKSortList([[OSs]]),
+               ListOfKSortToKSortList([[OSs']]),
+               [[S:ObjectSort]])) .
+  op name : ParametricHead -> String .
+  eq name(PH) = string(getName(upTerm(PH))) .
 
 
 
@@ -454,11 +518,16 @@ fmod KORE is
 
   op KisAxiom    : -> AtomicMetaHead .
   op KisSort     : -> AtomicMetaHead .
+  op KisSymbol   : -> AtomicMetaHead .
 
 
 
 
   op Ksort     : -> AtomicMetaHead .
+  op Ksymbol   : -> AtomicMetaHead .
+  op KnilKSortList : -> AtomicMetaHead .
+  op KconsKSortList : -> AtomicMetaHead .
+
 
 
 
