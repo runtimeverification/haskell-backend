@@ -51,9 +51,18 @@ reduce
         cons{S}(variable{S}(X), variable{List{S}}(L))))))
 
   sort   Nat
+  sort   List{S}
   symbol nil{S}()              : List{S}
   symbol cons{S}(S, List{S}) : List{S}
-  sort   List{S}
+  sort Map{S1,S2}
+  symbol emp{S1,S2}() : Map{S1,S2}
+  symbol merge{S1,S2}(Map{S1,S2},Map{S1,S2}) : Map{S1,S2}
+  symbol bind{S1,S2}(S1,S2) : Map{S1,S2}
+  axiom emp{Nat, Bool}() 
+  axiom bind{Nat, Bool}(zero(), true()) 
+  symbol natemp{S}() : Map{Nat, S}
+  symbol natbind{S}(Nat, S) : Map{Nat, S}
+  symbol natmerge{S}(Map{Nat,S}, Map{Nat,S}) : Map{Nat,S}
 ]]
 
 .
