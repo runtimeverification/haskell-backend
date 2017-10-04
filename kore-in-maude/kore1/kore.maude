@@ -190,7 +190,7 @@ fmod KORE is
    = S:Sentence (Ss:Sentences @ Ss':Sentences) .
 
 
-  op axiom{_}_ : SortList Pattern -> Sentence [format(b os d d s d) prec 82] .
+  op axiom{_}_ : SortList Pattern -> Sentence [format(b o d d s d) prec 82] .
   op axiom_    : Pattern -> Sentence [format(b o d) prec 82] .
 
 
@@ -202,15 +202,17 @@ fmod KORE is
   op symbol_`(`):_  : ObjectHead                ObjectSort -> Sentence
      [format(b o d d s d d) prec 82] .
 
-
-
-
-
-
   op symbol_`(_`):_ : MetaHead MetaSortList MetaSort -> Sentence
      [format(b o d d d s d d) prec 82] .
   op symbol_`(`):_  : MetaHead              MetaSort -> Sentence
      [format(b o d d s d d) prec 82] .
+
+
+
+
+
+  op alias`{_`}_:=_ : SortList Pattern Pattern -> Sentence 
+     [format(b o d d s d d d) prec 82] .
 
 
 
@@ -229,6 +231,8 @@ fmod KORE is
 
 
   ---- Defining the lifting bracket [[_]]
+
+
 
 
 
@@ -314,8 +318,22 @@ fmod KORE is
 
 
   ---- Lifting axiom declarations
-  eq [[axiom P:Pattern]] = axiom KisAxiom([[P:Pattern]]) .
-  eq [[axiom{Ss:SortList} P:Pattern]] = axiom KisAxiom([[P:Pattern]]) .
+  ---- Step 1: Get rid of object sort variables
+  eq [[axiom P:Pattern]] = axiom liftToAxiom(P:Pattern) .
+  eq [[axiom{OSs} P:Pattern]] = axiom liftToAxiom(P:Pattern) .
+  eq [[axiom{MSs} P:Pattern]] = axiom{MSs} liftToAxiom(P:Pattern) .
+  ---- Step 2: if Pattern has metahead, lift to [[P]]
+  ----         otherwise, lift to KisAxiom([[P]]) .
+  eq liftToAxiom(P:Pattern)
+   = if   hasMetaHead(P:Pattern)
+     then [[P:Pattern]]
+     else KisAxiom([[P:Pattern]])
+     fi .
+  op liftToAxiom : Pattern -> Pattern .
+  op hasMetaHead : Pattern -> Bool .
+  eq hasMetaHead(H:MetaHead(Ps)) = true .
+  eq hasMetaHead(H:ObjectHead(Ps)) = false .
+  eq hasMetaHead(S:String) = true .
 
 
  ---- Lifting sort declarations
@@ -348,6 +366,7 @@ fmod KORE is
 
 
 
+  ---- TODO:: We shouldn't need this case!
   ---- Lifting object symbols declarations: non-parametric constant case
   ---- [[symbol f() : S]]
   ---- = symbol Kf() : KPattern
@@ -412,6 +431,7 @@ fmod KORE is
    = KconsKPatternList(P:Pattern, ListOfKPatternToKPatternList(Ps)) .
 
 
+  ---- TODO:: We shouldn't need this case!
   ---- Lifting object symbols declarations: parametric constant case
   ---- [[symbol f{S1,...,Sn}() : S]]
   ---- = symbol Kf(KSort,...,KSort) : KPattern
@@ -456,6 +476,20 @@ fmod KORE is
   op name : ParametricHead -> String .
   eq name(PH) = string(getName(upTerm(PH))) .
 
+
+
+  ---- Lifting object alias declarations: parametric case
+  ---- [[alias g{S1...Sn}(P1...Pn) := Q]]
+  ---- = symbol Kg(KSort,...,KSort,KPattern,...,KPattern) : KPattern
+  ----   axiom Kg(S1,...,Sn,P1,...,Pn) = [[Q]]
+  ---- TODO here
+----  eq [[alias{} PH{OSs}(Ps) := Q:Pattern]]
+----   = symbol [[PH]](makeListOfKSort(length(OSs))
+----                 @ makeListOfKPattern(length(Ps))) : KPattern
+----     axiom equals{KPattern,KS}(
+----       [[PH]]([[OSs]] @ [[Ps]]),
+----       [[Q:Pattern]]) .
+----
 
 
 

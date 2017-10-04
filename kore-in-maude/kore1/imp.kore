@@ -63,6 +63,10 @@ reduce
   symbol natemp{S}() : Map{Nat, S}
   symbol natbind{S}(Nat, S) : Map{Nat, S}
   symbol natmerge{S}(Map{Nat,S}, Map{Nat,S}) : Map{Nat,S}
+----  alias{S} or{S}(variable{KPattern}(P), variable{KPattern}(Q))
+----        := not{S}(and{S}(
+----             not{S}(variable{KPattern}(P)), 
+----             not{S}(variable{KPattern}(Q))))
 ]]
 
 .
@@ -113,8 +117,7 @@ quit
 
 reduce
 
-  alias{S} or{S}(P:KPattern, Q:KPattern)
-        := not{S}(and{S}(not{S}(P:KPattern), not{S}(Q:KPattern)))
+
   alias{S} implies{S}(P:KPattern, Q:KPattern) 
         := or{S}(not{S}(P:KPattern), Q:KPattern)
   alias{S} iff{S}(P:KPattern, Q:KPattern) 
