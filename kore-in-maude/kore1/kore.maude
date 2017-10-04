@@ -586,6 +586,7 @@ fmod KORE is
   op KS3  : -> MetaSortVariable .
   op KS'  : -> MetaSortVariable .
   op KS'' : -> MetaSortVariable .
+  op KR   : -> MetaSortVariable .
 
   op true    : -> AtomicObjectHead .
   op false   : -> AtomicObjectHead .
@@ -615,6 +616,7 @@ fmod KORE is
   op natbind    : -> ParametricHead .      
   op floor      : -> ParametricHead .
   op gamma      : -> ParametricHead .
+  op append     : -> ParametricHead .
 
 
 
@@ -669,17 +671,17 @@ fmod KORE is
 
 
 
-  op Kvariable   : -> AtomicMetaHead  .
-  op Kexists     : -> AtomicMetaHead  .
-  op Knot        : -> AtomicMetaHead  .
-  op Kand        : -> AtomicMetaHead  .
-  op Kor         : -> AtomicMetaHead  .
-  op Kimplies    : -> AtomicMetaHead  .
-  op Kiff        : -> AtomicMetaHead  .
-  op Kequals     : -> AtomicMetaHead  .
-  op Kforall     : -> AtomicMetaHead  .
-  op Kfloor      : -> AtomicMetaHead  .
-  op Kgamma      : -> AtomicMetaHead  .
+  op Kvariable  : -> AtomicMetaHead  .
+  op Kexists    : -> AtomicMetaHead  .
+  op Knot       : -> AtomicMetaHead  .
+  op Kand       : -> AtomicMetaHead  .
+  op Kor        : -> AtomicMetaHead  .
+  op Kimplies   : -> AtomicMetaHead  .
+  op Kiff       : -> AtomicMetaHead  .
+  op Kequals    : -> AtomicMetaHead  .
+  op Kforall    : -> AtomicMetaHead  .
+  op Kfloor     : -> AtomicMetaHead  .
+  op Kgamma     : -> AtomicMetaHead  .
 
   op Kceil      : -> AtomicMetaHead .
   op Ktrue      : -> AtomicMetaHead .
@@ -701,9 +703,10 @@ fmod KORE is
   op Kemp       : -> AtomicMetaHead .
   op Kmerge     : -> AtomicMetaHead .
   op Kbind      : -> AtomicMetaHead .
-  op Knatemp       : -> AtomicMetaHead .
-  op Knatmerge     : -> AtomicMetaHead .
-  op Knatbind      : -> AtomicMetaHead .
+  op Knatemp    : -> AtomicMetaHead .
+  op Knatmerge  : -> AtomicMetaHead .
+  op Knatbind   : -> AtomicMetaHead .
+  op Kappend    : -> AtomicMetaHead .
 
 endfm
 

@@ -7,7 +7,12 @@ fmod IMP is
   op imp : -> Sentence .
   eq imp =
 
-  ---- imp.kore ----
+
+
+
+  -------------------------
+  -------"imp.kore"--------
+  -------------------------
   
   symbol
     ceil{S1,S2}(S1) : S2
@@ -53,6 +58,61 @@ fmod IMP is
         exists{List{S}, List{S}}(
           L : List{S},
           cons{S}(X : S, L : List{S})))) 
+
+  symbol append{S}(List{S}, List{S}) : List{S}
+
+  ---- append(nil, L) = L
+  axiom{S}
+    equals{List{S}, R}(
+      append{S}(nil{S}(), L : List{S}),
+      L : List{S})
+
+
+  -------------------------
+  ---- End "imp.kore" -----
+  -------------------------
+
+  .
+
+endfm
+
+
+
+
+reduce [[imp]] .
+
+
+
+---- Should return true:
+reduce [[imp]] == [[ [[imp]] ]] .
+
+
+
+quit
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   ---(
 
@@ -111,48 +171,6 @@ fmod IMP is
 
 
   ---)
-
-
-  .
-
-
-
-endfm
-
-
-reduce [[imp]] .
-
-
-reduce 
-  [[imp]] == [[ [[imp]] ]]
-.
-
-
-
-quit
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
