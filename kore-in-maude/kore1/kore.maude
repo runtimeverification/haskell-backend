@@ -116,8 +116,8 @@ fmod KORE is
 
   ---- <Pattern> ::=
   ---- | <Head> "(" <PatternList> ")"
+  ---- | <VariableName> ":" <Sort>
   ---- | <String>
-  ---- | <VariableName>     /* This does look wired. */
 
   ---- <PatternList> ::=
   ---- | ""
@@ -128,9 +128,9 @@ fmod KORE is
   subsorts ObjectHead MetaHead < Head .
 
   sort Pattern PatternList VariableName .
-  subsorts String VariableName < Pattern .
-
+  subsorts String < Pattern .
   op _`(_`) : Head PatternList -> Pattern [format(d d n++i d --) prec 75] .
+  op _:_ : VariableName Sort -> Pattern [prec 75] .
 
   subsort Pattern < PatternList .
   op . : -> PatternList .
@@ -167,9 +167,6 @@ fmod KORE is
   subsort AtomicMetaHead < MetaHead .
   op _`{_`} : ParametricHead ObjectSortList -> ObjectHead [prec 72] .
   op _`{_`} : ParametricHead MetaSortList -> MetaHead [prec 72] .
-
-
-
 
 
 
@@ -242,6 +239,7 @@ fmod KORE is
 
   vars Ps Ps' : PatternList .
   var OSs OSs' : ObjectSortList .
+  var OS : ObjectSort .
   var MS : MetaSort .
   var MSs : MetaSortList .
   var PH : ParametricHead .
@@ -256,14 +254,10 @@ fmod KORE is
   op [[_]] : Pattern -> Pattern . 
   eq [[H:AtomicObjectHead(Ps)]] = [[H:AtomicObjectHead]]([[Ps]]) .
   eq [[H:AtomicMetaHead(Ps)]] = H:AtomicMetaHead([[Ps]]) .
-  ---- It's a bit annoyting that we have to define a special case
-  ---- for variables:
-  ----   [[variable{Nat}(X)]] = Kvariable(KNat(), "X")
-  ----   [[variable{KSort}(X)]] = variable{KSort}(X)
-  ----      which is not equal to variable{KSort}([[X]])
-  eq [[variable{MS}(X:VariableName)]] = variable{MS}(X:VariableName) .
   eq [[PH:ParametricHead{OSs}(Ps)]] = [[PH:ParametricHead]]([[OSs]] @ [[Ps]]) .
   eq [[PH:ParametricHead{MSs}(Ps)]] = PH:ParametricHead{MSs}([[Ps]]) .
+  eq [[X:VariableName : OS]] = Kvariable([[X:VariableName]], [[OS]]) .
+  eq [[X:VariableName : MS]] = X:VariableName : MS .
   eq [[S:String]] = S:String .
 
   ---- Lift a list of patterns by lifting each of them.
@@ -306,13 +300,12 @@ fmod KORE is
    = [[PS:ParametricObjectSort]]([[OSs]]) .
 
   ---- Lifting an object sort variable:
-  ----   [[S]] = variable{KSort}(S)
+  ----   [[S]] = S : KSort
   eq [[S:ObjectSortVariable]]
-   = variable{KSort}
-       (downTerm(
-          qid(string(getName(upTerm(S:ObjectSortVariable)))
-              + ".VariableName"), 
-          ERROR@VariableName)) .
+   = (downTerm(
+        qid(string(getName(upTerm(S:ObjectSortVariable)))
+            + ".VariableName"), 
+        ERROR@VariableName)) : KSort .
 
   ---- Lifting a list of object sorts by lifting each of them.
   op [[_]] : ObjectSortList -> PatternList .
@@ -320,6 +313,7 @@ fmod KORE is
    = [[S:ObjectSort]], [[OSs]] .
 
   ---- Lifting a variable name to its string representation.
+  op [[_]] : VariableName -> String .
   eq [[X:VariableName]]
    = string(getName(upTerm(X:VariableName))) .
 
@@ -423,7 +417,7 @@ fmod KORE is
 
   op makeKPatternVar : NzNat -> Pattern .
   eq makeKPatternVar(N:Nat)
-   = variable{KPattern}(makeVariableName("P", N:Nat)) . 
+   = makeVariableName("P", N:Nat) : KPattern . 
   op makeVariableName : String Nat -> VariableName .
   eq makeVariableName(Prefix:String, N:Nat)
    = downTerm(
@@ -602,7 +596,6 @@ fmod KORE is
   op plus    : -> AtomicObjectHead .
   op gte     : -> AtomicObjectHead .
 
-  op variable   : -> ParametricHead .
   op exists     : -> ParametricHead .
   op not        : -> ParametricHead .
   op and        : -> ParametricHead .
