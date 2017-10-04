@@ -15,6 +15,16 @@ reduce
   axiom{S1,S2}  
     ceil{S1,S2}(variable{S1}(X))
 
+  sort   Bool
+  symbol true()                : Bool
+  symbol false()               : Bool
+  symbol notBool(Bool)       : Bool
+  symbol andBool(Bool, Bool) : Bool
+  symbol zero()           : Nat
+  symbol succ(Nat)      : Nat
+  symbol plus(Nat, Nat) : Nat
+  symbol gte(Nat, Nat)  : Bool 
+
   axiom{S}  
     exists{Bool, S}(
       variable{Bool}(B), 
@@ -41,7 +51,8 @@ reduce
         cons{S}(variable{S}(X), variable{List{S}}(L))))))
 
   sort   Nat
-
+  symbol nil{S}()              : List{S}
+  symbol cons{S}(S, List{S}) : List{S}
   sort   List{S}
 ]]
 
@@ -117,19 +128,11 @@ reduce
     equals{S1,S2}(P:KPattern,Q:KPattern) 
     := floor{S1,S2}(iff{S1,S2}(P:KPattern,Q:KPattern)) 
 
-  sort   Bool
-  symbol true()                : Bool
-  symbol false()               : Bool
-  symbol notBool(Bool)       : Bool
-  symbol andBool(Bool, Bool) : Bool
-  
 
 
 
-  symbol zero()           : Nat
-  symbol succ(Nat)      : Nat
-  symbol plus(Nat, Nat) : Nat
-  symbol gte(Nat, Nat)  : Bool 
+
+
   
   
   axiom{S}
@@ -151,8 +154,7 @@ reduce
   axiom{S}
     equals{Nat, S}(plus(X:Nat, succ(Y:Nat)), succ(plus(X:Nat, Y:Nat)))
 
-  symbol nil{S}()              : List{S}
-  symbol cons{S}(S, List{S}) : List{S}
+
   
 
 
