@@ -19,6 +19,41 @@ fmod IMP is
     floor{S1,S2}(P : KPattern)
   := not{S2}(ceil{S1,S2}(not{S1}(P : KPattern)))
 
+  alias{S}
+    or{S}(P : KPattern , Q : KPattern)
+  := not{S}(and{S}(
+       not{S}(P : KPattern),
+       not{S}(Q : KPattern)))
+
+  sort Bool
+
+  symbol true() : Bool
+  symbol false() : Bool
+
+  symbol andBool(Bool, Bool) : Bool
+  symbol notBool(Bool) : Bool
+
+  sort Nat
+
+  symbol zero() : Nat
+  symbol succ(Nat) : Nat
+  symbol plus(Nat, Nat) : Nat 
+
+  sort List{S}
+
+  symbol nil{S}() : List{S}
+  symbol cons{S}(S, List{S}) : List{S}
+
+  ---- No-Junk Axiom ----
+  axiom{S}
+    or{S}(
+      nil{S}(),
+      exists{S,List{S}}(
+        X : S,
+        exists{List{S}, List{S}}(
+          L : List{S},
+          cons{S}(X : S, L : List{S})))) 
+
   ---(
 
   sort   Bool
