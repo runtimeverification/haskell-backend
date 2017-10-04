@@ -98,11 +98,13 @@ fmod KORE is
 
 
   ---- Append two sort lists
-  op _@_ : SortList SortList -> SortList .
+  op _@_ : SortList SortList -> SortList [assoc] .
   eq S:Sort @ Ss:SortList = S:Sort, Ss:SortList .
   eq (S:Sort, Ss:SortList) @ (Ss':SortList)
    = S:Sort, (Ss:SortList @ Ss':SortList) .
-
+  op len : SortList -> Nat .
+  eq len(S:Sort) = 1 .
+  eq len(S:Sort, Ss:SortList) = 1 + len(Ss:SortList) .
 
 
 
@@ -128,11 +130,11 @@ fmod KORE is
   sort Pattern PatternList VariableName .
   subsorts String VariableName < Pattern .
 
-  op _`(_`) : Head PatternList -> Pattern [prec 75] .
+  op _`(_`) : Head PatternList -> Pattern [format(d d n++i d --) prec 75] .
 
   subsort Pattern < PatternList .
   op . : -> PatternList .
-  op _,_ : Pattern PatternList -> PatternList [format(d d s d) prec 78] .
+  op _,_ : Pattern PatternList -> PatternList [format(d d ni d) prec 78] .
   eq P:Pattern, . = P:Pattern .
 
   ---- Deal with empty pattern list.
@@ -147,7 +149,9 @@ fmod KORE is
   eq P:Pattern @ Ps = P:Pattern, Ps .
   eq (P:Pattern, Ps) @ Ps'
    = P:Pattern, (Ps @ Ps') .
-
+  op len : PatternList -> Nat .
+  eq len(P:Pattern) = 1 .
+  eq len(P:Pattern, Ps) = 1 + len(Ps) .
 
 
   ---- <ObjectHead> ::=
@@ -190,11 +194,11 @@ fmod KORE is
    = S:Sentence (Ss:Sentences @ Ss':Sentences) .
 
 
-  op axiom{_}_ : SortList Pattern -> Sentence [format(b o d d s d) prec 82] .
-  op axiom_    : Pattern -> Sentence [format(b o d) prec 82] .
+  op axiom{_}_ : SortList Pattern -> Sentence [format(b o d d n++i --) prec 82] .
+  op axiom_    : Pattern -> Sentence [format(b on++i --) prec 82] .
 
 
-  op sort_ : ObjectSort -> Sentence [format(b o d) prec 82] .
+  op sort_ : Sort -> Sentence [format(b o d) prec 82] .
 
 
   op symbol_`(_`):_ : ObjectHead ObjectSortList ObjectSort -> Sentence 
@@ -238,8 +242,10 @@ fmod KORE is
 
   vars Ps Ps' : PatternList .
   var OSs OSs' : ObjectSortList .
+  var MS : MetaSort .
   var MSs : MetaSortList .
   var PH : ParametricHead .
+  var MH : MetaHead .
 
 
   op ERROR@AtomicMetaHead : -> [AtomicMetaHead] .
@@ -250,6 +256,12 @@ fmod KORE is
   op [[_]] : Pattern -> Pattern . 
   eq [[H:AtomicObjectHead(Ps)]] = [[H:AtomicObjectHead]]([[Ps]]) .
   eq [[H:AtomicMetaHead(Ps)]] = H:AtomicMetaHead([[Ps]]) .
+  ---- It's a bit annoyting that we have to define a special case
+  ---- for variables:
+  ----   [[variable{Nat}(X)]] = Kvariable(KNat(), "X")
+  ----   [[variable{KSort}(X)]] = variable{KSort}(X)
+  ----      which is not equal to variable{KSort}([[X]])
+  eq [[variable{MS}(X:VariableName)]] = variable{MS}(X:VariableName) .
   eq [[PH:ParametricHead{OSs}(Ps)]] = [[PH:ParametricHead]]([[OSs]] @ [[Ps]]) .
   eq [[PH:ParametricHead{MSs}(Ps)]] = PH:ParametricHead{MSs}([[Ps]]) .
   eq [[S:String]] = S:String .
@@ -318,7 +330,10 @@ fmod KORE is
 
 
   ---- Lifting axiom declarations
-  ---- Step 1: Get rid of object sort variables
+  ---- Step 1: Get rid of object sort variables.
+  ----         In fact, the object sort variables in the curly bracket
+  ----         after the keyword "axiom" is of no use in this implementation,
+  ----         because we already knew (defined) terminals of ObjectSortVariable
   eq [[axiom P:Pattern]] = axiom liftToAxiom(P:Pattern) .
   eq [[axiom{OSs} P:Pattern]] = axiom liftToAxiom(P:Pattern) .
   eq [[axiom{MSs} P:Pattern]] = axiom{MSs} liftToAxiom(P:Pattern) .
@@ -390,24 +405,22 @@ fmod KORE is
    
   eq [[symbol H:AtomicObjectHead(OSs) : S:ObjectSort]]
    = symbol
-       [[H:AtomicObjectHead]](makeListOfKPattern(length(OSs))) : KPattern
+       [[H:AtomicObjectHead]](makeListOfKPattern(len(OSs))) : KPattern
      axiom equals{KPattern,KS}(
-       [[H:AtomicObjectHead]](makeListOfKPatternVar(length(OSs))),
+       [[H:AtomicObjectHead]](makeListOfKPatternVar(len(OSs))),
        Kapplication(
          Ksymbol(name(H:AtomicObjectHead),
                  KnilKSortList(),
                  ListOfKSortToKSortList([[OSs]]),
                  [[S:ObjectSort]]),
-         ListOfKPatternToKPatternList(makeListOfKPatternVar(length(OSs))))) .
+         ListOfKPatternToKPatternList(makeListOfKPatternVar(len(OSs))))) .
   op name : AtomicObjectHead -> String .
   eq name(H:AtomicObjectHead) = string(getName(upTerm(H:AtomicObjectHead))) .
   ---- Some aux functions
   op makeListOfKPattern : NzNat -> MetaSortList . 
   eq makeListOfKPattern(1) = KPattern .
   eq makeListOfKPattern(N:Nat) = KPattern, makeListOfKPattern(N:Nat + -1) .
-  op length : SortList -> Nat .
-  eq length(S:Sort) = 1 .
-  eq length(S:Sort, Ss:SortList) = 1 + length(Ss:SortList) .
+
   op makeKPatternVar : NzNat -> Pattern .
   eq makeKPatternVar(N:Nat)
    = variable{KPattern}(makeVariableName("P", N:Nat)) . 
@@ -439,7 +452,7 @@ fmod KORE is
   ----         = Kapplication(Ksymbol("f", (S1,...,Sn), nil, S),
   ----                        nil)
   eq [[symbol PH{OSs}() : S:ObjectSort]]
-   = symbol [[PH]](makeListOfKSort(length(OSs))) : KPattern
+   = symbol [[PH]](makeListOfKSort(len(OSs))) : KPattern
      axiom equals{KPattern,KS}(
        [[PH]]([[OSs]]),
        Kapplication(
@@ -463,35 +476,40 @@ fmod KORE is
   ----             Ksymbol("f", (S1...Sn), (T1...Tn), S),
   ----             (P1...Pn)) 
   eq [[symbol PH{OSs}(OSs') : S:ObjectSort]]
-   = symbol [[PH]](makeListOfKSort(length(OSs)) 
-                 @ makeListOfKPattern(length(OSs'))) : KPattern
+   = symbol [[PH]](makeListOfKSort(len(OSs)) 
+                 @ makeListOfKPattern(len(OSs'))) : KPattern
      axiom equals{KPattern,KS}(
-       [[PH]]([[OSs]] @ makeListOfKPatternVar(length(OSs'))),
+       [[PH]]([[OSs]] @ makeListOfKPatternVar(len(OSs'))),
        Kapplication(
          Ksymbol(name(PH),
                  ListOfKSortToKSortList([[OSs]]),
                  ListOfKSortToKSortList([[OSs']]),
                  [[S:ObjectSort]]),
-         ListOfKPatternToKPatternList(makeListOfKPatternVar(length(OSs'))))) .
+         ListOfKPatternToKPatternList(makeListOfKPatternVar(len(OSs'))))) .
   op name : ParametricHead -> String .
   eq name(PH) = string(getName(upTerm(PH))) .
 
 
 
   ---- Lifting object alias declarations: parametric case
-  ---- [[alias g{S1...Sn}(P1...Pn) := Q]]
+  ---- For the same reason, object sort variables in the curly
+  ---- bracket after "alias" is of no use in this implementation.
+  ---- [[alias{...} g{S1...Sn}(P1...Pn) := Q]]
   ---- = symbol Kg(KSort,...,KSort,KPattern,...,KPattern) : KPattern
   ----   axiom Kg(S1,...,Sn,P1,...,Pn) = [[Q]]
-  ---- TODO here
-----  eq [[alias{} PH{OSs}(Ps) := Q:Pattern]]
-----   = symbol [[PH]](makeListOfKSort(length(OSs))
-----                 @ makeListOfKPattern(length(Ps))) : KPattern
-----     axiom equals{KPattern,KS}(
-----       [[PH]]([[OSs]] @ [[Ps]]),
-----       [[Q:Pattern]]) .
-----
+  eq [[alias{OSs'} PH{OSs}(Ps) := Q:Pattern]]
+   = symbol [[PH]](makeListOfKSort(len(OSs))
+                 @ makeListOfKPattern(len(Ps))) : KPattern
+     axiom equals{KPattern,KS}(
+       [[PH]]([[OSs]] @ [[Ps]]),
+       [[Q:Pattern]]) .
 
 
+
+  ---- Lifting meta-level declarations: just keep them!
+  eq [[sort MS]] = sort MS .
+  eq [[symbol MH() : MS]] = symbol MH() : MS .
+  eq [[symbol MH(MSs) : MS]] = symbol MH(MSs) : MS .
 
 
 
