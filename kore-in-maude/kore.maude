@@ -1,3 +1,5 @@
+---- The Kore Language: A Maude Implementation ----
+
 fmod KORE is
 
   protecting META-LEVEL *
@@ -12,221 +14,256 @@ fmod KORE is
 
 
 
-
-
-
-  ---- <Sort> ::= 
-  ---- | <ObjectSort>
-  ---- | <MetaSort>
-
-  ---- <SortList> ::=
-  ---- | <ObjectSortList>
-  ---- | <MetaSortList>
-
-  ---- An observation about the empty sort list:
-  ----   We (will) have two empty lists: .ObjectSortList and .MetaSortList,
-  ----   instead of just one .SortList being the empty list of sorts.
-  ----   The reason that we have two empty lists (which seems weird) 
-  ----   is that we want to decide whether a pattern is an object-level
-  ----   one or a meta-level one by just looking at its head. 
-  ----   Suppose we have just one operator .SortList as the empty list.
-  ----   Then consider the following pattern
-  ----     f{.SortList}().
-  ----   It is not clear whether it is an object-level one or a meta-level
-  ----   one. Having both .ObjectSortList and .MetaSortList makes it
-  ----   cystal clear:
-  ----     f{.ObjectSortList}() is an object-level pattern,
-  ----     f{.MetaSortList}() is a meta-level pattern.
-
-  sorts Sort ObjectSort MetaSort .
-  subsorts ObjectSort MetaSort < Sort .
-
-  sorts SortList ObjectSortList MetaSortList .
-  subsorts ObjectSortList MetaSortList < SortList .
+  ---- Syntax of Kore: BNF grammar followed by the implementation.
 
 
 
 
 
+  ---- <ObjectSort>  ::= <AtomicObjectSort>
+  ----                 | <ParametricObjectSort> "{" <NeObjectSortList> "}"
+  ----                 | <ObjectSortVariable>
+  ---- <MetaSort>    ::= "KSort"
+  ----                 | "KSortList"
+  ----                 | "KSymbol"
+  ----                 | "KPattern" 
+  ----                 | "KPatternList" 
+  ----                 | "KString"
+  ----                 | <MetaSortVariable> 
 
+  ---- Remark: It is critical that we are able to distintuish object sorts 
+  ----         and meta sorts statically (and preferably locally, too).
 
-  ---- <ObjectSort> ::=
-  ---- | <AtomicObjectSort>
-  ---- | <ParametricObjectSort> "{" <ObjectSortList> "}"
-  ---- | <ObjectSortVariable>
-
-  ---- <ObjectSortList> ::=
-  ---- | <ObjectSort>
-  ---- | <ObjectSort> "," <ObjectSortList>
-
+  sorts ObjectSort MetaSort .
 
   sort AtomicObjectSort ParametricObjectSort ObjectSortVariable .
   subsorts AtomicObjectSort ObjectSortVariable < ObjectSort .
-  op _`{_`} : ParametricObjectSort ObjectSortList -> ObjectSort [prec 50] .
-
-  op .ObjectSortList : -> ObjectSortList .
-  subsort ObjectSort < ObjectSortList .
-  op _,_ : ObjectSort ObjectSortList -> ObjectSortList [prec 52] .
-
-
-
-
-
-
-
-
-
-
-
-
-  ---- <MetaSort> ::=
-  ---- | <MetaSort>          /* has only a finite number of terminals */
-  ---- | <MetaSortVariable> 
-
-  ---- <MetaSortList> ::=
-  ---- | <MetaSort>
-  ---- | <MetaSort> "," <MetaSortList>
-
+  op _`{_`} : ParametricObjectSort NeObjectSortList -> ObjectSort [prec 50] .
 
   sort MetaSortVariable .
   subsort MetaSortVariable < MetaSort .
 
+  ---- Defining lists of various types.
+  ---- Remark: Maude cannot parse "" as the empty list, so we use "." instead.
+  ----         Some auxiliary equations are added to help Maude parse
+  ----         the empty list.
 
-  subsort MetaSort < MetaSortList .
-  op _,_ : MetaSort MetaSortList -> MetaSortList [prec 52] .
+  ---- Object sort list.
+
+  sorts NeObjectSortList ObjectSortList .
+  subsort ObjectSort < NeObjectSortList < ObjectSortList .
+  op . : -> ObjectSortList .
+  op _,_ : ObjectSort ObjectSortList -> NeObjectSortList [prec 52] .
+
+  ---- Meta sort list.
+
+  sort NeMetaSortList MetaSortList .
+  subsort MetaSort < NeMetaSortList < MetaSortList .
+  op . : -> MetaSortList .
+  op _,_ : MetaSort NeMetaSortList -> NeMetaSortList [prec 52] .
+
+  ---- <SortVariable> ::= <ObjectSortVariable> | <MetaSortVariable>
+
+  ---- Remark: Sort variables are declared (locally) in curly brackets "{}"
+  ----         after keywords "axiom" and "alias". We require a clear 
+  ----         distinction between object sort variables and meta sort
+  ----         variables. 
+
+  sort SortVariable .
+  subsort ObjectSortVariable MetaSortVariable < SortVariable .
+
+  ---- Sort variable lists.
+
+  sorts NeSortVariableList SortVariableList .
+  subsorts SortVariable < NeSortVariableList < SortVariableList .
+  op . : -> SortVariableList .
+  op _,_ : SortVariable SortVariableList -> NeSortVariableList [prec 52] .
+
+  ---- Non-empty object sort variable list
+
+  sort NeObjectSortVariableList .
+  subsorts ObjectSortVariable < NeObjectSortVariableList < NeSortVariableList .
+  op _,_ : ObjectSortVariable NeObjectSortVariableList 
+        -> NeObjectSortVariableList [prec 52] .
+
+  ---- Some utility functions.
+
+  var OS : ObjectSort . var MS : MetaSort .
+  var OH : ObjectHead . var MH : MetaHead .
+  vars MSs MSs' : NeMetaSortList .
+  var NeSVs : NeSortVariableList .
+
+  ---- Append two lists.
+  op _@_ : NeMetaSortList NeMetaSortList -> NeMetaSortList .
+  eq MS @ MSs = MS, MSs .
+  eq (MS, MSs) @ MSs' = MS, (MSs @ MSs') .
+
+  ---- Length of lists.
+  op len : NeMetaSortList -> Nat .
+  eq len(MS) = 1 .
+  eq len(MS, MSs) = 1 + len(MSs) .
 
 
 
-  ---- Append two sort lists
-  op _@_ : SortList SortList -> SortList [assoc] .
-  eq S:Sort @ Ss:SortList = S:Sort, Ss:SortList .
-  eq (S:Sort, Ss:SortList) @ (Ss':SortList)
-   = S:Sort, (Ss:SortList @ Ss':SortList) .
-  op len : SortList -> Nat .
-  eq len(S:Sort) = 1 .
-  eq len(S:Sort, Ss:SortList) = 1 + len(Ss:SortList) .
 
 
+  ---- <Pattern>     ::= <Head> "(" <PatternList> ")"
+  ----                 | <VariableName> ":" <ObjectSort>
+  ----                 | <VariableName> ":" <MetaSort>
+  ----                 | <String>
+  ---- <PatternList> ::= ""
+  ----                 | <Pattern>
+  ----                 | <Pattern> "," <PatternList>
 
-  ---- A pattern is a head applied to a list of patterns.
+  ---- Remark: Maude cannot parse "", so we use "." instead.
 
-  ---- <Head> ::=
-  ---- | <ObjectHead>
-  ---- | <MetaHead>
+  sorts Pattern PatternList Head VariableName .
 
-  ---- <Pattern> ::=
-  ---- | <Head> "(" <PatternList> ")"
-  ---- | <VariableName> ":" <Sort>
-  ---- | <String>
+  op _`(_`) : Head PatternList -> Pattern 
+     [format(d d n++i d --) prec 75] .
+  op _:_ : VariableName ObjectSort -> Pattern 
+     [prec 75] .
+  op _:_ : VariableName MetaSort -> Pattern 
+     [prec 75] .
+  subsort String < Pattern .
 
-  ---- <PatternList> ::=
-  ---- | ""
-  ---- | <Pattern>
-  ---- | <Pattern> "," <PatternList>
-
-  sorts Head ObjectHead MetaHead . 
-  subsorts ObjectHead MetaHead < Head .
-
-  sort Pattern PatternList VariableName .
-  subsorts String < Pattern .
-  op _`(_`) : Head PatternList -> Pattern [format(d d n++i d --) prec 75] .
-  op _:_ : VariableName Sort -> Pattern [prec 75] .
-
-  subsort Pattern < PatternList .
   op . : -> PatternList .
-  op _,_ : Pattern PatternList -> PatternList [format(d d ni d) prec 78] .
-  eq P:Pattern, . = P:Pattern .
+  subsort Pattern < PatternList .
+  op _,_ : Pattern PatternList -> PatternList 
+     [format(d d ni d) prec 78] .
 
-  ---- Deal with empty pattern list.
-  ---- Parse head() as head(.).
+  ---- Help Maude parse the empty pattern list.
   op _`(`) : Head -> Pattern [prec 75] .
   eq H:Head() = H:Head(.) .
 
+  ---- Prevent "." to appear at the tail of a list.
+  eq P:Pattern, . = P:Pattern .
 
-  ---- Append two lists
-  op _@_ : PatternList PatternList -> PatternList [assoc] .
+  vars Ps Ps' : PatternList .
+
+  ---- Append two lists.
+  op _@_ : PatternList PatternList -> PatternList .
   eq . @ Ps = Ps .
   eq P:Pattern @ Ps = P:Pattern, Ps .
-  eq (P:Pattern, Ps) @ Ps'
-   = P:Pattern, (Ps @ Ps') .
+  eq (P:Pattern, Ps) @ Ps' = P:Pattern, (Ps @ Ps') .
+
+  ---- Length of lists.
   op len : PatternList -> Nat .
   eq len(P:Pattern) = 1 .
   eq len(P:Pattern, Ps) = 1 + len(Ps) .
 
 
-  ---- <ObjectHead> ::=
-  ---- | <AtomicObjectHead>
-  ---- | <ParametricHead> "{" <ObjectSortList> "}" 
 
-  ---- <MetaHead> ::=
-  ---- | <AtomicMetaHead>
-  ---- | < ParametricHead> "{" <MetaSortList> "}"
+
+
+
+
+  ---- <Head> ::= <ObjectHead> | <MetaHead>
+  
+  ---- Remark: One design principle of the Kore language is that
+  ----         we can tell (locally and statically) whether a head
+  ----         is an object-level one or a meta-level one.
+
+  sorts ObjectHead MetaHead . 
+  subsorts ObjectHead MetaHead < Head .
+
+  ---- <ObjectHead> ::= <AtomicObjectHead>
+  ----                | <ParametricHead> "{" <NeObjectSortList> "}" 
+  ---- <MetaHead>   ::= <AtomicMetaHead>
+  ----                | <ParametricHead> "{" <NeMetaSortList> "}"
 
   sorts AtomicObjectHead AtomicMetaHead ParametricHead .
   subsort AtomicObjectHead < ObjectHead .
   subsort AtomicMetaHead < MetaHead .
-  op _`{_`} : ParametricHead ObjectSortList -> ObjectHead [prec 72] .
-  op _`{_`} : ParametricHead MetaSortList -> MetaHead [prec 72] .
+  op _`{_`} : ParametricHead NeObjectSortList -> ObjectHead [prec 72] .
+  op _`{_`} : ParametricHead NeMetaSortList -> MetaHead [prec 72] .
 
 
 
 
 
 
-  ---- <Sentence> ::=
-  ---- | "sort" <ObjectSort>
-  ---- | "symbol" <AtomicObjectHead> "(" <ObjectSortList> ")" ":" <ObjectSort>
-  ---- | "symbol" <MetaObjectHead> "(" <MetaSortList> ")" ":" <MetaSort>
-  ---- | "symbol" "{" <ObjectSortVariableList> "}" "(" ...
-  ---- | "axiom" <Pattern>
-  ---- | "alias"  ...
+  ---- A Kore definition (def.kore) consists of a sequence of declarations.
 
-  sorts Sentence Sentences .
-  subsort Sentence < Sentences .
-  op __ : Sentence Sentences -> Sentences [format(d n d) prec 85] .
-  ---- append two sentences
-  op _@_ : Sentences Sentences -> Sentences .
-  eq S:Sentence @ Ss:Sentences = S:Sentence Ss:Sentences .
-  eq (S:Sentence Ss:Sentences) @ Ss':Sentences
-   = S:Sentence (Ss:Sentences @ Ss':Sentences) .
+  ---- <Declaration>  ::= 
+  ----   | "sort" <AtomicObjectSort>
+  ----   | "sort" <ParametricObjectSort> "{" <NeObjectSortVariableList> "}"
+  ----   | "symbol" <ObjectHead> "(" <ObjectSortList> ")" ":" <ObjectSort>
+  ----   | "symbol" <MetaHead> "(" <MetaSortList> ")" ":" <MetaSort>
+  ----   | "axiom" <Pattern>
+  ----   | "axiom" "{" <NeSortVariableList> "}" <Pattern>
+  ----   | "alias" 
+  ----             <Head> "(" <PatternList> ")" ":=" <Pattern> 
+  ----   | "alias" "{" <NeSortVariableList> "}" 
+  ----             <Head> "(" <PatternList> ")" ":=" <Pattern> 
 
+  ---- <Declarations> ::= 
+  ----   | ""
+  ----   | <Declaration>
+  ----   | <Declaration> <Declarations>
 
-  op axiom{_}_ : SortList Pattern -> Sentence [format(b o d d n++i --) prec 82] .
-  op axiom_    : Pattern -> Sentence [format(b on++i --) prec 82] .
+  ---- Remark: Maude can't parse an empty definition, so we omit that case.
 
+  sorts Declaration Declarations .
+  subsort Declaration < Declarations .
+  op __ : Declaration Declarations -> Declarations [format(d n d) prec 85] .
 
-  op sort_ : Sort -> Sentence [format(b o d) prec 82] .
+  var Decl : Declaration .
+  vars Decls Decls' : Declarations .
 
+  ---- Append two declarations.
+  op _@_ : Declarations Declarations -> Declarations .
+  eq Decl @ Decls = Decl Decls .
+  eq (Decl Decls) @ Decls' = Decl (Decls @ Decls') .
 
-  op symbol_`(_`):_ : ObjectHead ObjectSortList ObjectSort -> Sentence 
+  op sort_ : AtomicObjectSort -> Declaration 
+     [format(b o d) prec 82] .
+  op sort_`{_`} : ParametricObjectSort NeObjectSortVariableList 
+               -> Declaration 
+     [format(b o d d d d) prec 82] .
+
+  op symbol_`(_`):_ : ObjectHead ObjectSortList ObjectSort -> Declaration 
      [format(b o d d d s d d) prec 82] .
-  op symbol_`(`):_  : ObjectHead                ObjectSort -> Sentence
-     [format(b o d d s d d) prec 82] .
-
-  op symbol_`(_`):_ : MetaHead MetaSortList MetaSort -> Sentence
+  op symbol_`(_`):_ : MetaHead MetaSortList MetaSort -> Declaration
      [format(b o d d d s d d) prec 82] .
-  op symbol_`(`):_  : MetaHead              MetaSort -> Sentence
+
+  op axiom_    : Pattern -> Declaration 
+     [format(b on++i --) prec 82] .
+  op axiom{_}_ : NeSortVariableList Pattern -> Declaration 
+     [format(b o d d n++i --) prec 82] .
+
+  op alias_`(_`):=_ : Head PatternList Pattern -> Declaration 
+     [prec 82] .
+  op alias`{_`}_`(_`):=_ : NeSortVariableList Head PatternList Pattern 
+                        -> Declaration 
+     [format(b o d d d d d s d d d) prec 82] .
+  
+  ---- Help Maude parse empty lists.
+
+  op symbol_`(`):_ : ObjectHead ObjectSort -> Declaration 
      [format(b o d d s d d) prec 82] .
+  eq symbol OH() : OS = symbol OH(.) : OS .
+  
+  op symbol_`(`):_ : MetaHead MetaSort -> Declaration 
+     [format(b o d d s d d) prec 82] .
+  eq symbol MH() : MS = symbol MH(.) : MS .
+
+  op alias_`(`):=_ : Head Pattern -> Declaration 
+     [prec 82] .
+  eq alias H:Head() := P:Pattern = alias H:Head(.) := P:Pattern .
+
+  op alias`{_`}_`(`):=_ : NeSortVariableList Head Pattern -> Declaration 
+     [format(b o d d d d s d d d) prec 82] .
+  eq alias{NeSVs} H:Head() := P:Pattern = alias{NeSVs} H:Head(.) := P:Pattern .
 
 
+  ----
+
+  eq axiom P:Pattern = axiom{.} P:Pattern .
+  eq alias H:Head(Ps) := P:Pattern = alias{.} H:Head(Ps) := P:Pattern .
 
 
-
-  op alias`{_`}_:=_ : SortList Pattern Pattern -> Sentence 
-     [format(b o d d s d d d) prec 82] .
-
-
-
-
-
-
-
-
-
-
-
-
-
+  ---(
 
 
 
@@ -238,12 +275,8 @@ fmod KORE is
 
 
   vars Ps Ps' : PatternList .
-  var OSs OSs' : ObjectSortList .
-  var OS : ObjectSort .
-  var MS : MetaSort .
-  var MSs : MetaSortList .
+
   var PH : ParametricHead .
-  var MH : MetaHead .
 
 
   op ERROR@AtomicMetaHead : -> [AtomicMetaHead] .
@@ -319,8 +352,8 @@ fmod KORE is
 
 
   ---- Lifting a sentence to sentences at meta-level
-  op [[_]] : Sentences -> Sentences .
-  eq [[S:Sentence Ss:Sentences]] = [[S:Sentence]] @ [[Ss:Sentences]] .
+  op [[_]] : Declarations -> Declarations .
+  eq [[S:Declaration Ss:Declarations]] = [[S:Declaration]] @ [[Ss:Declarations]] .
 
 
   ---- Lifting axiom declarations
@@ -520,82 +553,9 @@ fmod KORE is
                             + string(getName(C:Constant)) 
                             + ".AtomicMetaHead") .
 
+  ---)
 
 
-
-
-
-
----- Terminals / Tokens of the Kore syntax / grammar are defined
----- as Maude constants, simply because Maude does not allows us
----- to define them as regular expressions. 
-
-
-
-
-  op B         : -> VariableName .
-  op C         : -> VariableName .
-  op C1        : -> VariableName .
-  op C2        : -> VariableName .
-  op E         : -> VariableName .
-  op X         : -> VariableName .
-  op Y         : -> VariableName .
-  op Z         : -> VariableName .
-  op HOLE      : -> VariableName .
-  op SortVarR  : -> VariableName .
-
-  op L         : -> VariableName .
-  op L0        : -> VariableName .
-  op P         : -> VariableName .
-  op P1        : -> VariableName .
-  op P2        : -> VariableName .
-  op P3        : -> VariableName .
-  op P4        : -> VariableName .
-  op P5        : -> VariableName .
-  op Q         : -> VariableName .
-  op R         : -> VariableName .
-  op S  : -> VariableName . 
-  op S' : -> VariableName .
-  op S1 : -> VariableName .
-  op S2 : -> VariableName .
-  op S3 : -> VariableName .
-
-
-  op Nat  : -> AtomicObjectSort .
-  op Bool : -> AtomicObjectSort .
-  op AExp : -> AtomicObjectSort .
-  op BExp : -> AtomicObjectSort .
-  op Stmt : -> AtomicObjectSort .
-
-  op List : -> ParametricObjectSort .
-  op Ctxt : -> ParametricObjectSort .
-  op Map  : -> ParametricObjectSort .
-
-  op S  : -> ObjectSortVariable .
-  op S' : -> ObjectSortVariable .
-  op S1 : -> ObjectSortVariable .
-  op S2 : -> ObjectSortVariable .
-  op S3 : -> ObjectSortVariable .
-  op R  : -> ObjectSortVariable .
-
-
-
-  op KS   : -> MetaSortVariable .
-  op KS1  : -> MetaSortVariable .
-  op KS2  : -> MetaSortVariable .
-  op KS3  : -> MetaSortVariable .
-  op KS'  : -> MetaSortVariable .
-  op KS'' : -> MetaSortVariable .
-  op KR   : -> MetaSortVariable .
-
-  op true    : -> AtomicObjectHead .
-  op false   : -> AtomicObjectHead .
-  op andBool : -> AtomicObjectHead . 
-  op notBool : -> AtomicObjectHead . 
-  op zero    : -> AtomicObjectHead .
-  op succ    : -> AtomicObjectHead .
-  op plus    : -> AtomicObjectHead .
-  op gte     : -> AtomicObjectHead .
 
   op exists     : -> ParametricHead .
   op not        : -> ParametricHead .
@@ -606,22 +566,6 @@ fmod KORE is
   op equals     : -> ParametricHead .
   op forall     : -> ParametricHead .
   op ceil       : -> ParametricHead .
-  op nil        : -> ParametricHead .
-  op cons       : -> ParametricHead .      
-  op emp        : -> ParametricHead .      
-  op merge      : -> ParametricHead .      
-  op bind       : -> ParametricHead .      
-  op natemp     : -> ParametricHead .      
-  op natmerge   : -> ParametricHead .      
-  op natbind    : -> ParametricHead .      
-  op floor      : -> ParametricHead .
-  op gamma      : -> ParametricHead .
-  op append     : -> ParametricHead .
-
-  op choice     : -> ParametricHead .
-
-
-
 
   op KPred        : -> MetaSort .
   op KChar        : -> MetaSort .
@@ -634,44 +578,10 @@ fmod KORE is
   op KPattern     : -> MetaSort .
   op KPatternList : -> MetaSort .
 
-
-
-  op KNat       : -> AtomicMetaHead .
-  op KMap       : -> AtomicMetaHead .
-  op KBool      : -> AtomicMetaHead .
-  op KAExp      : -> AtomicMetaHead .
-  op KBExp      : -> AtomicMetaHead .
-  op KStmt      : -> AtomicMetaHead .
-  op KList      : -> AtomicMetaHead .  
-  op KCtxt      : -> AtomicMetaHead .
-
-
-  op ctxtapp    : -> ParametricHead .
-  op gamma0     : -> ParametricHead .
-
-  op NatToAExp  : -> AtomicObjectHead .
-  op IdToAExp   : -> AtomicObjectHead .
-  op plusAExp   : -> AtomicObjectHead .
-  op ite        : -> AtomicObjectHead .
-
-
+  op KS   : -> MetaSortVariable .
   op KisAxiom    : -> AtomicMetaHead .
   op KisSort     : -> AtomicMetaHead .
   op KisSymbol   : -> AtomicMetaHead .
-
-
-
-
-  op Ksort     : -> AtomicMetaHead .
-  op Ksymbol   : -> AtomicMetaHead .
-  op KnilKSortList : -> AtomicMetaHead .
-  op KconsKSortList : -> AtomicMetaHead .
-  op KnilKPatternList : -> AtomicMetaHead .
-  op KconsKPatternList : -> AtomicMetaHead .
-  op Kapplication : -> AtomicMetaHead .
-
-
-
 
   op Kvariable  : -> AtomicMetaHead  .
   op Kexists    : -> AtomicMetaHead  .
@@ -684,33 +594,16 @@ fmod KORE is
   op Kforall    : -> AtomicMetaHead  .
   op Kbottom    : -> AtomicMetaHead  .
   op Ktop       : -> AtomicMetaHead  .
-  op Kfloor     : -> AtomicMetaHead  .
-  op Kgamma     : -> AtomicMetaHead  .
 
-  op Kceil      : -> AtomicMetaHead .
-  op Ktrue      : -> AtomicMetaHead .
-  op Kfalse     : -> AtomicMetaHead .
-  op KandBool   : -> AtomicMetaHead .
-  op KnotBool   : -> AtomicMetaHead .
-  op Kzero      : -> AtomicMetaHead .
-  op Ksucc      : -> AtomicMetaHead .
-  op Kplus      : -> AtomicMetaHead .
-  op Kgte       : -> AtomicMetaHead .
-  op Knil       : -> AtomicMetaHead .
-  op Kcons      : -> AtomicMetaHead .
-  op Kctxtapp   : -> AtomicMetaHead .
-  op Kgamma0    : -> AtomicMetaHead .
-  op KNatToAExp : -> AtomicMetaHead .
-  op KIdToAExp  : -> AtomicMetaHead .
-  op KplusAExp  : -> AtomicMetaHead .
-  op Kite       : -> AtomicMetaHead .
-  op Kemp       : -> AtomicMetaHead .
-  op Kmerge     : -> AtomicMetaHead .
-  op Kbind      : -> AtomicMetaHead .
-  op Knatemp    : -> AtomicMetaHead .
-  op Knatmerge  : -> AtomicMetaHead .
-  op Knatbind   : -> AtomicMetaHead .
-  op Kappend    : -> AtomicMetaHead .
+
+  op Ksort     : -> AtomicMetaHead .
+  op Ksymbol   : -> AtomicMetaHead .
+  op KnilKSortList : -> AtomicMetaHead .
+  op KconsKSortList : -> AtomicMetaHead .
+  op KnilKPatternList : -> AtomicMetaHead .
+  op KconsKPatternList : -> AtomicMetaHead .
+  op Kapplication : -> AtomicMetaHead .
+
 
 endfm
 
