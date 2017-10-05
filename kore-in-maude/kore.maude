@@ -257,7 +257,12 @@ fmod KORE is
   eq alias{NeSVs} H:Head() := P:Pattern = alias{NeSVs} H:Head(.) := P:Pattern .
 
 
-  ----
+
+
+
+
+
+  ---- Defining the lifting bracket [[_]]
 
   eq axiom P:Pattern = axiom{.} P:Pattern .
   eq alias H:Head(Ps) := P:Pattern = alias{.} H:Head(Ps) := P:Pattern .
@@ -268,7 +273,6 @@ fmod KORE is
 
 
 
-  ---- Defining the lifting bracket [[_]]
 
 
 
