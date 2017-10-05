@@ -1,10 +1,10 @@
 ---- The IMP theory in Kore ----
 
----- Some preludes ... Just ignore ---
-in kore
+in imp-tokens.kore
+
 fmod IMP is
-  including KORE .
-  op imp : -> Sentence .
+  including TOKENS .
+  op imp : -> Declarations .
   eq imp =
 
 
@@ -30,10 +30,13 @@ fmod IMP is
        not{S}(P : KPattern),
        not{S}(Q : KPattern)))
 
+
   sort Bool
 
   symbol true() : Bool
   symbol false() : Bool
+
+  axiom or{Bool}(true(), false())
 
   symbol andBool(Bool, Bool) : Bool
   symbol notBool(Bool) : Bool
@@ -80,6 +83,7 @@ fmod IMP is
   symbol bind{S1,S2}(S1,S2) : Map{S1,S2}
 
 
+
   -------------------------
   ---- End "imp.kore" -----
   -------------------------
@@ -88,7 +92,9 @@ fmod IMP is
 
 endfm
 
+reduce imp .
 
+quit
 
 
 reduce [[imp]] .
