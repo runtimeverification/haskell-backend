@@ -82,8 +82,51 @@ fmod IMP is
   symbol merge{S1,S2}(Map{S1,S2},Map{S1,S2}) : Map{S1,S2}
   symbol bind{S1,S2}(S1,S2) : Map{S1,S2}
 
+  symbol choice{KS1,KS2}(KS1,KS2,KS2) : KS2 
 
+  sort   AExp
+  symbol NatToAExp(Nat)       : AExp
+  symbol IdToAExp(Nat)        : AExp
+  symbol plusAExp(AExp, AExp) : AExp
 
+  axiom{S, R}
+  implies{R}(
+  choice{KSort,KPattern}(
+         equals{KSort, KSort}(KgetSort(C : KPattern), KCtxt(S : KSort, KAExp())),
+         top{KPattern}(), 
+         bottom{KPattern}()),
+  equals{AExp, R}(plusAExp(ctxtapp{S,AExp}(C : KPattern, X : S), E : AExp),
+                   ctxtapp{S,AExp}(
+                     exists{S,AExp}(
+                       HOLE : S, 
+                       gamma0{S,AExp}(
+                         HOLE : S, 
+                         plusAExp(ctxtapp{S,AExp}(C : KPattern, HOLE : S), E : AExp))), 
+                     X : S)))
+  ---(
+  axiom{S, R}
+  implies{R}(
+  equals{KSort, R}(KgetSort(C:KPattern), Ctxt{S,AExp}),
+  equals{AExp, R}(ctxtapp{S,AExp}(
+                     gamma{S,AExp}(
+                       HOLE:S, 
+                       plusAExp(ctxtapp{S,AExp}(C:KPattern, HOLE:S), E:AExp)), 
+                     variable{S}(X))),
+                   plusAExp(ctxtapp{S,AExp}(C:KPattern, variable{S}(X)), E:AExp))
+  
+  axiom{S, R}
+  implies{R}(
+  equals{KSort, R}(KgetSort(C:KPattern), Ctxt{S, BExp}),
+  equals{Stmt, R}(ite(ctxtapp{S, BExp}(C:KPattern, variable{S}(X)), S1:Stmt, S2:Stmt),
+                   ctxtapp{S, Stmt}(
+                     exists{S, Stmt}(
+                       HOLE:S,
+                       gamma0{S, Stmt}(
+                         HOLE:S,
+                         ite(ctxtapp{S, BExp}(C:KPattern, HOLE:S),
+                             S1:Stmt, S2:Stmt))), 
+                     variable{S}(X))))
+  ---)
   -------------------------
   ---- End "imp.kore" -----
   -------------------------
@@ -124,102 +167,7 @@ quit
 
 
 
-  ---(
 
-  sort   Bool
-  symbol true()              : Bool
-  symbol false()             : Bool
-  symbol notBool(Bool)       : Bool
-  symbol andBool(Bool, Bool) : Bool
-  symbol zero()           : Nat
-  symbol succ(Nat)      : Nat
-  symbol plus(Nat, Nat) : Nat
-  symbol gte(Nat, Nat)  : Bool 
-
-  axiom{S}  
-    exists{Bool, S}(
-      variable{Bool}(B), 
-      equals{Bool,S}(
-        variable{Bool}(B), 
-        true()))
-
-
-  axiom{S, R}
-    exists{List{S}, R}(variable{List{S}}(L), 
-    equals{List{S}, R}(variable{List{S}}(L), nil{S}()))
-  axiom{S, R}
-    exists{List{S}, R}(variable{List{S}}(L), 
-    equals{List{S}, R}(variable{List{S}}(L), cons{S}(variable{S}(X), variable{List{S}}(L0))))
-  
-  axiom{S}
-    or{List{S}}(nil{S}(), 
-                 exists{S, List{S}}(variable{S}(X), exists{List{S}, List{S}}(variable{List{S}}(L), 
-                    cons{S}(variable{S}(X), variable{List{S}}(L)))))
-  axiom{S}
-    not{List{S}}(and{List{S}}(
-      nil{S}(), 
-      exists{S, List{S}}(variable{S}(X), exists{List{S}, List{S}}(variable{List{S}}(L), 
-        cons{S}(variable{S}(X), variable{List{S}}(L))))))
-
-  sort   Nat
-  sort   List{S}
-  symbol nil{S}()              : List{S}
-  symbol cons{S}(S, List{S}) : List{S}
-
-  axiom emp{Nat, Bool}() 
-  axiom bind{Nat, Bool}(zero(), true()) 
-  symbol natemp{S}() : Map{Nat, S}
-  symbol natbind{S}(Nat, S) : Map{Nat, S}
-  symbol natmerge{S}(Map{Nat,S}, Map{Nat,S}) : Map{Nat,S}
-  alias{S} or{S}(variable{KPattern}(P), variable{KPattern}(Q))
-        := not{S}(and{S}(
-             not{S}(variable{KPattern}(P)), 
-             not{S}(variable{KPattern}(Q))))
-
-
-  ---)
-
-
-
-
-
-
-  axiom{S}
-    exists{Bool, S}(variable{Bool}(B), equals{Bool, S}(variable{Bool}(B), false()))
-  axiom{S}
-    exists{Bool, S}(variable{Bool}(B), equals{Bool, S}(variable{Bool}(B), notBool(C:Bool)))
-  axiom{S}
-    exists{Bool, S}(variable{Bool}(B), equals{Bool, S}(variable{Bool}(B), andBool(C1:Bool, C2:Bool)))
-  axiom
-    or{Bool}(true(), false())
-  axiom
-    not{Bool}(and{Bool}(true(), false()))
-  axiom{S}
-    equals{Bool, S}(notBool(variable{Bool}(B)), not{Bool}(variable{Bool}(B)))
-  axiom{S}
-    equals{Bool, S}(andBool(variable{Bool}(B), true()), variable{Bool}(B))
-  axiom{S}
-    equals{Bool, S}(andBool(variable{Bool}(B), false()), false()))
-]]
-
-
-.
-
-quit
-
--------------------------------
----- Testing lifting [[_]] ----
--------------------------------
-
-reduce
-  [[  
-     not{List{S}}(and{List{S}}(
-      nil{S}(), 
-      exists{S, List{S}}(variable{S}(X), exists{List{S}, List{S}}(variable{List{S}}(L), 
-        cons{S}(variable{S}(X), variable{List{S}}(L)))))) ]]
-.
-
-quit
 
 
 ------------------------------
@@ -294,45 +242,7 @@ reduce
 quit
   
 
-  sort   AExp
-  symbol NatToAExp(Nat)       : AExp
-  symbol IdToAExp(Nat)        : AExp
-  symbol plusAExp(AExp, AExp) : AExp
 
-  axiom{S, R}
-  implies{R}(
-  equals{KSort, R}(KgetSort(C:KPattern), Ctxt{S, AExp}),  
-  equals{AExp, R}(plusAExp(ctxtapp{S,AExp}(C:KPattern, variable{S}(X)), E:AExp),
-                   ctxtapp{S,AExp}(
-                     exists{S,AExp}(
-                       HOLE:S, 
-                       gamma0{S,AExp}(
-                         HOLE:S, 
-                         plusAExp(ctxtapp{S,AExp}(C:KPattern, HOLE:S), E:AExp))), 
-                     variable{S}(X))))
-
-  axiom{S, R}
-  implies{R}(
-  equals{KSort, R}(KgetSort(C:KPattern), Ctxt{S,AExp}),
-  equals{AExp, R}(ctxtapp{S,AExp}(
-                     gamma{S,AExp}(
-                       HOLE:S, 
-                       plusAExp(ctxtapp{S,AExp}(C:KPattern, HOLE:S), E:AExp)), 
-                     variable{S}(X))),
-                   plusAExp(ctxtapp{S,AExp}(C:KPattern, variable{S}(X)), E:AExp))
-  
-  axiom{S, R}
-  implies{R}(
-  equals{KSort, R}(KgetSort(C:KPattern), Ctxt{S, BExp}),
-  equals{Stmt, R}(ite(ctxtapp{S, BExp}(C:KPattern, variable{S}(X)), S1:Stmt, S2:Stmt),
-                   ctxtapp{S, Stmt}(
-                     exists{S, Stmt}(
-                       HOLE:S,
-                       gamma0{S, Stmt}(
-                         HOLE:S,
-                         ite(ctxtapp{S, BExp}(C:KPattern, HOLE:S),
-                             S1:Stmt, S2:Stmt))), 
-                     variable{S}(X))))
   sort KString
 
   sort KSort
