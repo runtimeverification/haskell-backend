@@ -487,6 +487,8 @@ fmod KORE is
   op equals     : -> ParametricHead .
   op forall     : -> ParametricHead .
   op ceil       : -> ParametricHead .
+  op top        : -> ParametricHead .
+  op bottom     : -> ParametricHead .
 
   op KPred        : -> MetaSort .
   op KChar        : -> MetaSort .
@@ -500,9 +502,9 @@ fmod KORE is
   op KPatternList : -> MetaSort .
 
   op KS   : -> MetaSortVariable .
-  op KisAxiom    : -> AtomicMetaHead .
   op KisSort     : -> AtomicMetaHead .
   op KisSymbol   : -> AtomicMetaHead .
+  op KgetSort   : -> AtomicMetaHead .
 
   op Kvariable  : -> AtomicMetaHead  .
   op Kexists    : -> AtomicMetaHead  .
