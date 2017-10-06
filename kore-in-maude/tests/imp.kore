@@ -92,18 +92,10 @@ fmod IMP is
 
 endfm
 
-reduce imp .
-
-quit
-
-
 reduce [[imp]] .
-
-
 
 ---- Should return true:
 reduce [[imp]] == [[ [[imp]] ]] .
-
 
 
 quit
