@@ -478,17 +478,21 @@ fmod KORE is
 
 
 
-  op exists     : -> ParametricHead .
-  op not        : -> ParametricHead .
-  op and        : -> ParametricHead .
-  op or         : -> ParametricHead .
-  op implies    : -> ParametricHead .
-  op iff        : -> ParametricHead .
-  op equals     : -> ParametricHead .
-  op forall     : -> ParametricHead .
-  op ceil       : -> ParametricHead .
-  op top        : -> ParametricHead .
-  op bottom     : -> ParametricHead .
+  ---- Terminals that belong to the meta-theory.
+
+  op and          : -> ParametricHead .
+  op or           : -> ParametricHead .
+  op not          : -> ParametricHead .
+  op implies      : -> ParametricHead .
+  op iff          : -> ParametricHead .
+  op equals       : -> ParametricHead .
+  op forall       : -> ParametricHead .
+  op exists       : -> ParametricHead .
+  op ceil         : -> ParametricHead .
+  op floor        : -> ParametricHead .
+  op top          : -> ParametricHead .
+  op bottom       : -> ParametricHead .
+  op choice       : -> ParametricHead .
 
   op KPred        : -> MetaSort .
   op KChar        : -> MetaSort .
@@ -501,32 +505,38 @@ fmod KORE is
   op KPattern     : -> MetaSort .
   op KPatternList : -> MetaSort .
 
-  op KS   : -> MetaSortVariable .
-  op KisSort     : -> AtomicMetaHead .
-  op KisSymbol   : -> AtomicMetaHead .
-  op KgetSort   : -> AtomicMetaHead .
+  op Kvariable    : -> AtomicMetaHead  .
+  op Kand         : -> AtomicMetaHead .
+  op Kor          : -> AtomicMetaHead .
+  op Knot         : -> AtomicMetaHead .
+  op Kimplies     : -> AtomicMetaHead .
+  op Kiff         : -> AtomicMetaHead .
+  op Kequals      : -> AtomicMetaHead .
+  op Kforall      : -> AtomicMetaHead .
+  op Kexists      : -> AtomicMetaHead .
+  op Kceil        : -> AtomicMetaHead .
+  op Kfloor       : -> AtomicMetaHead .
+  op Ktop         : -> AtomicMetaHead .
+  op Kbottom      : -> AtomicMetaHead .
+  op Kchoice      : -> AtomicMetaHead .
+  op KisSort      : -> AtomicMetaHead .
+  op KgetSort     : -> AtomicMetaHead .
 
-  op Kvariable  : -> AtomicMetaHead  .
-  op Kexists    : -> AtomicMetaHead  .
-  op Knot       : -> AtomicMetaHead  .
-  op Kand       : -> AtomicMetaHead  .
-  op Kor        : -> AtomicMetaHead  .
-  op Kimplies   : -> AtomicMetaHead  .
-  op Kiff       : -> AtomicMetaHead  .
-  op Kequals    : -> AtomicMetaHead  .
-  op Kforall    : -> AtomicMetaHead  .
-  op Kbottom    : -> AtomicMetaHead  .
-  op Ktop       : -> AtomicMetaHead  .
-
-
-  op Ksort     : -> AtomicMetaHead .
-  op Ksymbol   : -> AtomicMetaHead .
-  op KnilKSortList : -> AtomicMetaHead .
-  op KconsKSortList : -> AtomicMetaHead .
-  op KnilKPatternList : -> AtomicMetaHead .
+  op Ksort             : -> AtomicMetaHead .
+  op Ksymbol           : -> AtomicMetaHead .
+  op KnilKSortList     : -> AtomicMetaHead .
+  op KconsKSortList    : -> AtomicMetaHead .
+  op KnilKPatternList  : -> AtomicMetaHead .
   op KconsKPatternList : -> AtomicMetaHead .
-  op Kapplication : -> AtomicMetaHead .
+  op Kapplication      : -> AtomicMetaHead .
 
+  op KS : -> MetaSortVariable .
+  op P0 : -> VariableName .
+  op P1 : -> VariableName .
+  op P2 : -> VariableName .
+  op P3 : -> VariableName .
+  op P4 : -> VariableName .
+  op P5 : -> VariableName .
 
 endfm
 
