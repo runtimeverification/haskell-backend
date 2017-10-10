@@ -5,34 +5,38 @@
   
   % Package for writing algorithms (why do we need this one?).
   \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
-
   
-  \usepackage[pdftex,dvipsnames]{xcolor}  % Coloured text etc.
-  \usepackage{xargs}                      % Use more than one optional
-                                          % parameter in a new commands
+  % Package for using colored texts.
+  \usepackage[pdftex,dvipsnames]{xcolor}
+  
+  % Pakcage for using multiple optional parameters in new commands.
+  \usepackage{xargs}
 
-  % Select what to do with todonotes: 
-  % \usepackage[disable]{todonotes} % notes not showed
-  % \usepackage[draft]  {todonotes} % notes showed
+  % Packages for writing comments and todo notes.
   \usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
   \newcommandx{\unsure}[2][1=]
     {\todo[linecolor=red,backgroundcolor=red!25,
-    	   bordercolor=red,#1]
-     {#2}\xspace{}}
+	bordercolor=red,#1]
+	{#2}\xspace{}}
   \newcommandx{\change}[2][1=]
     {\todo[linecolor=blue,backgroundcolor=blue!25,
-    	   bordercolor=blue,#1]
-     {#2}\xspace{}}
+	bordercolor=blue,#1]
+	{#2}\xspace{}}
   \newcommandx{\info}[2][1=]
     {\todo[linecolor=OliveGreen,backgroundcolor=OliveGreen!25,
-    	   bordercolor=OliveGreen,#1]
-     {#2}}
+	bordercolor=OliveGreen,#1]
+	{#2}}
   \newcommandx{\improvement}[2][1=]
     {\todo[linecolor=Plum,backgroundcolor=Plum!25,bordercolor=Plum,#1]
-     {#2}\xspace{}}
+	{#2}\xspace{}}
   \newcommandx{\thiswillnotshow}[2][1=]
     {\todo[disable,#1]
-     {#2}\xspace{}}
+	{#2}\xspace{}}
+
+  % What are there for?
+  % Select what to do with todonotes: 
+  % \usepackage[disable]{todonotes} % notes not showed
+  % \usepackage[draft]  {todonotes} % notes showed
 
   % Select what to do with command \comment:  
   % \newcommand{\comment}[1]
@@ -40,10 +44,8 @@
   \newcommand{\comment}[1]
     {\par {\bfseries \color{blue} #1 \par}} %comment showed
   
-  % Use AMS Math package.
-  \usepackage{amsmath}
-  \usepackage{amssymb}
-  \usepackage{amsthm}
+  % ams math packages.
+  \usepackage{amsmath, amssymb, amsthm}
   
   % Declare a global counter for theorem environments:
   \newcounter{thmcounter}
@@ -79,9 +81,7 @@
   % Package for tables:
   \usepackage[english]{babel}  
   
-  % Define the colon ":" that is used in "x:s"
-  % with less spacing around.
-  \newcommand{\cln}{{:}}
+
  
   
   % Define ceiling and flooring symbols:
@@ -102,7 +102,7 @@
   % Package for writing BNF syntax
   \usepackage{syntax}
   
-  % Package for refering Section 3.1 as something like Section §3.1:
+  % Package for using the symbol "§", e.g., "Section §3.1".
   \usepackage[utf8]{inputenc}
   \usepackage{cleveref}
   \crefname{section}{§}{§§}
@@ -157,6 +157,10 @@
     	\\iff
     }
   }
+
+  % Define the colon ":" that is used in "x:s"
+  % with less spacing around.
+  \newcommand{\cln}{{:}}
 
   % Define the curly K:
   \newcommand{\K}{\mbox{$\mathbb{K}$}\xspace}
@@ -296,12 +300,10 @@
   % Use quotation marks "..." in math mode.
   \newcommand{\quot}[1]{\mathrm{``#1"}}
 
-\newcommand{\Pattern}{\textsc{Pattern}\xspace}
-\newcommand{\ra}{\rightarrow}
-\newcommand{\lra}{\leftrightarrow}
-
-\newcommand{\FV}{{\it FV}}
-
+  \newcommand{\Pattern}{\textsc{Pattern}\xspace}
+  \newcommand{\ra}{\rightarrow}
+  \newcommand{\lra}{\leftrightarrow}
+  \newcommand{\FV}{{\it FV}}
 
   % Title and authors
   \title{The Semantics of \K}
