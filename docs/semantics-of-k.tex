@@ -81,7 +81,8 @@
   % Package for tables:
   \usepackage[english]{babel}  
   
-
+  % Package for quotations:
+  \usepackage{csquotes}
  
   
   % Define ceiling and flooring symbols:
@@ -103,6 +104,7 @@
   \usepackage{syntax}
   
   % Package for using the symbol "§", e.g., "Section §3.1".
+  % Use \cref{label} to cite Secctions.
   \usepackage[utf8]{inputenc}
   \usepackage{cleveref}
   \crefname{section}{§}{§§}
@@ -887,6 +889,7 @@ symbols in $\Sigma$ and infinitely many axioms in $A$.
 
 
 \section{Finite Mechanisms to Define Infinite Theories}
+\label{sec:finite-mechanisms}
 
 Note that all the theoretical results discussed so far imposed no finiteness
 restrictions on the sets of sorts, symbols, or patterns that form a matching
@@ -1063,8 +1066,53 @@ be no finite or algorithmic way to represent those
 (e.g., the set of properties of the ``builtin'' model of natural numbers is
 not r.e.).
 
+\section{Reflection in Matching Logic}
 
-\section{Meta-Theory of Matching Logic: Finite Case}
+Consider a matching logic prover $P$ that decides whether a matching logic patter $\varphi$ holds in a matching logic theory $T$. 
+The prover $P$ is an executable program written in some programming language, and it has two inputs: a piece of data that \emph{encodes} the pattern $\varphi$, and another piece of data that \emph{encodes} the theory $T$.
+With the sound and complete proof system of matching logic that is introduced in~\cite{rosu-2017-lmcs}, we expect the prover $P$ to be a semi-decision procedure---that is, $P$ always halts with success if $T \vdash \varphi$ and either halts with failure or never halts if $T \not\vdash \varphi$.
+
+The main focus in this section is not about \emph{how to design and implement the prover $P$}, but about \emph{how to encode $\varphi$ and $T$ as data that can be fed into $P$ as inputs}.
+In other words, we are interested in \emph{representations} of patterns and matching logic theories.
+Since any executable programs (in the normal sense) can only handle finite inputs, we are in particular interested in \emph{finite representations} of pattern and matching logic theories.
+
+In Section~\cref{sec:finite-mechanisms} we have seen many mechanisms that help to define infinite theories using finite resources, including using sort, symbol, and pattern schemas with side conditions.
+In this section, we will give such mechanisms \emph{a formal semantics} in terms of
+\begin{itemize}
+	\item developing a reflective theory $K$ of matching logic;
+	\item axiomatizing the mechanisms in the reflective theory $K$.  
+\end{itemize}
+
+There has been a good many of studies about reflections in logic, computation, and programming.
+Brian Smith gave reflection a rather broad definition in~\cite{?}, from which we quote that
+\begin{displayquote}
+(Reflection is) an entity’s integral ability to represent, operate on,
+and otherwise deal with its self in the same way that
+it represents, operates on and deals with its primary
+subject matter.
+\end{displayquote}
+Following this definition, a reflective theory of matching logic is a matching logic theory with which one can study and discuss properties of matching logic, for example, the wellformedness of a pattern and the derivability of a pattern from a theory.
+The following table shows the difference of topics that we are interested between a theory of arithmetics and its reflective theory:
+\begin{center}
+\begin{figure}[h]
+\centering
+\begin{tabular}{l|l}
+\textbf{The theory of arithmetic} & \textbf{The reflective theory}
+\\ \hline
+Is multiplication commutative?  & Is ``$x \times y = y \times x$'' derivable?
+\\ \hline
+Is $233$ a prime number? & Does ``$\mathit{isPrime(\varphi)}$'' has sort $\mathit{Bool}$ if $\varphi$ has sort $\mathit{Nat}$?
+\\ \hline
+The de-factorization of $12$ is $2 \times 2 \times 3$.
+&
+The DNF of $\varphi \to \psi$ is $\varphi' \vee \psi'$, \\
+& where $\varphi'$ and $\psi'$ are DNFs of $\neg \varphi$ and $\psi$, respectively.
+\end{tabular}
+\caption{Different concerns of topics in a theory and its reflective theory.}
+\end{figure}
+\end{center}
+
+\subsection{Meta-Theory of Matching Logic: Finite Case}
 
 \todo[inline]{We need a few words about reflexive logic and logic embeddings before we introduce}
 
@@ -1078,7 +1126,7 @@ In this section, we present a matching logic theory $\Kfinite = ( S_\Kfinite, \S
 
 \improvement
 {Xiaohong: Section 5.1 Truth needs improvement.}
-\subsection{Truth}
+\subsubsection{Truth}
 
 A sort $\KPred$ is introduced to capture predicates and the predicate logic.
 Patterns of sort $\KPred$ are called \emph{predicate patterns} or just \emph{predicates}, and symbols whose return sort are $\KPred$ are called \emph{predicate symbols}. 
@@ -1855,7 +1903,7 @@ Now we are in a good shape to prove Theorem~\ref{thm:faithfulness-finite}.
     \end{minipage}}
 \end{proof}
 
-\section{Matching Logic Theory of Matching Logic: With Meta-Variables}
+\subsection{Matching Logic Theory of Matching Logic: With Meta-Variables}
 
 \section{Matching Logic Theory of Matching Logic: With Parameters}
 
