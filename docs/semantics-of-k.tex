@@ -99,6 +99,9 @@
   % Define double-bracket [[P]]
   \usepackage{stmaryrd}
   \newcommand{\Bracket}[1]{\llbracket#1\rrbracket}
+  
+  % Package for writing natural proof deductions
+  \usepackage{prftree}
     
   % Package for writing BNF syntax
   \usepackage{syntax}
@@ -288,6 +291,7 @@
   \newcommand{\KsortDeclared}{\mathit{KsortDeclared}}
   \newcommand{\KsymbolDeclared}{\mathit{KsymbolDeclared}}
   \newcommand{\KaxiomDeclared}{\mathit{KaxiomDeclared}}
+  \newcommand{\Kderivable}{\Kdeduce}
   
   \newcommand{\KwellFormed}{\mathit{KwellFormed}}
   \newcommand{\KwellFormedPatterns}{\mathit{KwellFormedPatterns}}
@@ -301,7 +305,7 @@
   \newcommand{\Ktheory}{\mathit{Ktheory}}
   \newcommand{\KwellFormedTheory}{\mathit{KwellFormedTheory}}
   
-  \newcommand{\Kdeduce}{\mathit{Kdeduce}}
+  \newcommand{\Kdeduce}{\mathit{Kderivable}}
   
   % The italic font of "ceil" used in math mode.
   \newcommand{\cl}{\mathit{ceil}}
@@ -1079,15 +1083,20 @@ Consider a matching logic prover $P$ that decides whether a matching logic patte
 The prover $P$ is an executable program written in some programming language, and it has two inputs: a piece of data that \emph{encodes} the pattern $\varphi$, and another piece of data that \emph{encodes} the theory $T$.
 With the sound and complete proof system of matching logic that is introduced in~\cite{rosu-2017-lmcs}, we expect the prover $P$ to be a semi-decision procedure---that is, $P$ always halts with success if $T \vdash \varphi$ and either halts with failure or never halts if $T \not\vdash \varphi$.
 
-The main focus in this section is not about \emph{how to design and implement the prover $P$}, but about \emph{how to encode $\varphi$ and $T$ as data that can be fed into $P$ as inputs}.
+The main focus in this and the next two sections is not about \emph{how to 
+design and implement the prover $P$}, but about \emph{how to encode $\varphi$ 
+and $T$ as data that can be fed into $P$ as inputs}.
 In other words, we are interested in \emph{representations} of patterns and matching logic theories.
 Since any executable programs (in the normal sense) can only handle finite inputs, we are in particular interested in \emph{finite representations} of pattern and matching logic theories.
 
 In Section~\cref{sec:finite-mechanisms} we have seen many mechanisms that help to define infinite theories using finite resources, including using sort, symbol, and pattern schemas with side conditions.
 In this section, we will give such mechanisms \emph{a formal semantics} in terms of
 \begin{itemize}
-	\item developing a reflective theory $K$ of matching logic;
-	\item axiomatizing the mechanisms in the reflective theory $K$.  
+	\item developing a reflective theory of matching logic which we refer to as 
+	the meta-theory $K$;
+	\item axiomatizing the mechanisms that we use in 
+	Section~\cref{sec:finite-mechanisms} to define infinite theories in a 
+	finite manner in $K$.  
 \end{itemize}
 
 There has been a good many of studies about reflections in logic, computation, and programming.
@@ -1099,33 +1108,36 @@ it represents, operates on and deals with its primary
 subject matter.
 \end{displayquote}
 Following this definition, a reflective theory of matching logic is a matching logic theory with which one can study and discuss properties of matching logic, for example, the wellformedness of a pattern and the derivability of a pattern from a theory.
-The following table shows the difference of topics that we are interested between a theory of arithmetics and its reflective theory:
+The following table shows the difference of topics that we are interested 
+between a theory of arithmetics and its reflective theory:
 \begin{center}
-\begin{figure}[h]
-\centering
-\begin{tabular}{|l|l|}
-\hline
-\textbf{The theory of arithmetic} & \textbf{The reflective theory}
-\\ \hline
-Is multiplication commutative?  & Is ``$x \times y = y \times x$'' derivable?
-\\ \hline
-Is $233$ a prime number? & Does ``$\mathit{isPrime(\varphi)}$'' has sort $\mathit{Bool}$ if $\varphi$ has sort $\mathit{Nat}$?
-\\ \hline
-The de-factorization of $12$ is $2 \times 2 \times 3$.
-&
-The DNF of $\varphi \to \psi$ is $\varphi' \vee \psi'$, \\
-& where $\varphi'$ and $\psi'$ are DNFs of $\neg \varphi$ and $\psi$, respectively.
-\\ \hline
-\end{tabular}
-\caption{Different concerns of topics in a theory and its reflective theory.}
-\end{figure}
+	\textbf{Topics we discuss in the theory of arithmetic}
+	\begin{itemize}\itemsep0em
+		\item Multiplication is commutative.
+		\item Number $233$ is a prime number.
+		\item The de-factorization of $12$ is $2 \times 2 \times 3$.
+		\item The expression $\sqrt{-1}$ is not a well-defined number.
+	\end{itemize}
+	\textbf{Topics we discuss in the reflective theory of the theory of 
+	arithmetic}
+    \begin{itemize}\itemsep0em
+    	\item The pattern $x \times y = y \times x$ is a derivable pattern.
+    	\item The sort $\mathit{RealNumber}$ is declared and the sort 
+    	$\mathit{ComplexNumber}$ is not declared.
+    	\item The pattern $\mathit{isPrime(\varphi)}$ has sort 
+    	$\mathit{Bool}$ 
+    	if $\varphi$ has sort $\mathit{Nat}$.
+    	\item The DNF of $\varphi \to \psi$ is $\varphi' \vee \psi'$, where 
+    	$\varphi'$ and $\psi'$ are DNFs of $\neg \varphi$ and $\psi$, 
+    	respectively.
+    \end{itemize}
 \end{center}
 
 \paragraph{Naming relation} TODO.
 
 \paragraph{Faithfulness}
 
-\subsection{Meta-Theory of Matching Logic: Finite Case}
+\section{Meta-Theory of Matching Logic: Finite Case}
 
 \emph{Finite matching logic theories} are theories that have a finite number of sorts, symbols, and axioms.
 Finite theories are very common in practice.
@@ -1134,7 +1146,7 @@ The theory $\Kfinite$ itself is a finite matching logic theory, too.
 
 In this section, we present a matching logic theory $\Kfinite = ( S_\Kfinite, \Sigma_\Kfinite, F_\Kfinite )$ as \emph{the theory of finite matching logic theories}, in which $S_\Kfinite$ , $\Sigma_\Kfinite$, and $F_\Kfinite$ are finite sets of sorts, symbols, and axioms, respectively, which we are going to define in the later subsections.
 
-\subsubsection{Truth}
+\subsection{Truth}
 
 A sort $\KPred$ is introduced to capture predicates and the predicate logic.
 Patterns of sort $\KPred$ are called \emph{predicate patterns} or just \emph{predicates}, and symbols whose return sort are $\KPred$ are called \emph{predicate symbols}. 
@@ -1143,7 +1155,7 @@ Predicate symbols in $\Kfinite$ are defined in later sections when they firstly 
 	If $b$ is a predicate pattern, we take the freedom to write $b$ instead of $b = \top_\KPred$, so that $\KPred$ patterns can be used in any sort context.
 \end{notation}
 
-\subsubsection{Characters and Strings}
+\subsection{Characters and Strings}
 The sort $\KChar$ is the sort for \emph{characters}. It has the following $26 + 26 + 10 = 62$ functional symbols as constructors:
 \begin{center}
 	\begin{tabular}{c c c}
@@ -1179,7 +1191,7 @@ that construct lists of characters.
 	we simply write $\quot{abc}$.
 \end{notation}
 
-\subsubsection{Matching Logic Sorts and Symbols}
+\subsection{Matching Logic Sorts and Symbols}
 
 The sort $\KSort$ is the sort for matching logic sorts.
 The only constructor of the sort $\KSort$ is the functional symbol
@@ -1227,7 +1239,7 @@ with the axiom
 where $(s)$ is the singleton list that consists of only one sort $s$ (see 
 Notation~\ref{notation:lists}).
 
-\subsubsection{Finite Lists}
+\subsection{Finite Lists}
 \label{sec:finite-lists}
 
 For sorts $\KChar$, $\KSort$, $\KSymbol$, $\KVariable$, and 
@@ -1286,7 +1298,7 @@ It is axiomatized by the next two axioms
 \end{align*}
 
 
-\subsubsection{Matching Logic Patterns}
+\subsection{Matching Logic Patterns}
 \label{sec:matching-logic-patterns}
 
 \paragraph{Matching Logic Variables.}
@@ -1524,8 +1536,8 @@ variable.
   & \overline{(\neg_{s} \varphi)[\psi / v]} = \overline{\neg_{s} \varphi[\psi 
   / v]}
   \\
-  & \overline{(\exists_s u . \varphi)[\psi/v]} 
-  = \exists u' . \left(u' = \Kvariable(\KfreshName(\varphi, \psi, v), 
+  & \overline{(\exists_s u . \varphi)[\psi/v]} \\
+  & = \exists u' . \left(u' = \Kvariable(\KfreshName(\varphi, \psi, v), 
   \KgetSort(u)) 
   \wedge \overline{\exists_s u' . (\varphi[u' / u][\psi/v])}\right)
   \\
@@ -1546,13 +1558,78 @@ $$
 \overline{\exists_s v_2 .(\varphi[v_2 / u])}
 $$
 
-\subsubsection{Matching Logic Theories}
+\subsection{Matching Logic Theories}
 
 In previous subsections we have defined a universe of terms that represent 
 abstract syntax trees of matching logic sorts, symbols, and patterns.
-Start from this subsection, we are going to define matching logic theories as 
-\emph{sets of predicates over the universe of abstract syntax trees of sorts, 
-symbols, and patterns}.
+Every sort or symbol or pattern gets its meta-representation in the meta-theory 
+$\Kfinite$ as a term of sort $\KSort$ or $\KSymbol$ or $\KPattern$.
+
+Start from this subsection, we are going to define matching logic theories and 
+the proof system of matching logic as \emph{sets of predicates over the 
+universe of abstract syntax trees of sorts, symbols, and patterns}.
+The approach that we adopt in this proposal is a standard approach in the 
+studies of reflective logics. 
+For example in~\cite{?}, a unary predicate symbol 
+$T$ called the \emph{truth predicate} is used in a reflective logic of 
+propositional logic that satisfies the faithfulness conditions
+\begin{center}
+\begin{tabular}{c|c}
+$
+\prftree[r]{\footnotesize (Upward Reflection)}
+{\vdash \varphi}
+{\vdash T(\widehat{\varphi})}
+$
+& 
+$
+\prftree[r]{\footnotesize (Downward Reflection)}
+{\vdash T(\widehat{\varphi})}
+{\vdash \varphi}
+$
+\end{tabular}
+\end{center}
+where $\widehat{\varphi}$ is the term that represents the formula $\varphi$ in 
+the reflective logic.
+Intuitively, the truth predicate $T$ captures the semantics of a formula being 
+true.
+
+In the following we will introduce and axiomatize a finite number of
+predicate symbols in the 
+meta-theory $\Kfinite$ that capture the semantics of the matching logic 
+proof system, or more specifically, the semantics of
+\begin{itemize}\itemsep0em
+	\item A sort being declared in a theory ($\KsortDeclared$)
+	\item A symbol being decalred in a theory ($\KsymbolDeclared$)
+	\item A pattern being an axiom in a theory ($\KaxiomDeclared$)
+	\item A pattern being wellformed in a theory ($\KwellFormed$)
+	\item A pattern being derivable in a theory ($\Kderivable$)
+\end{itemize}
+
+We point out here that there are multiple ways to design a reflective logic.
+For example, we could develop the meta-theory in a way that not only sorts, 
+symbols, and patterns have their abstract syntax trees as terms in the 
+meta-theory, but also signatures and theories.
+In such reflections (which we refer to as \emph{deep embedding}, compared to 
+\emph{shallow embedding} which is the approach we adopt in this proposal), the 
+derivability relation is captured by a \emph{binary} predicate symbol that 
+takes representations of a pattern and a theory as its two arguments.
+The reason we adopt shallow embedding in this proposal instead of deep 
+embedding is more of 
+practical concerns.
+\todo{another benefit of shallow embedding is that it captures the ``smallest 
+fixed points'' semantics of parametric sorts.}
+In shallow embedding, we do not need to develop infrastructure that 
+``encapsulate'' (possibly) infinite signatures and theories as (definitely) 
+finite terms, which results in a more light-weighted meta-theory.
+However, shallow embedding brings some inconvenience, too. The 
+lack of representation of signatures and theories in the meta-theory makes it 
+impossible to axiomatize module operations---such as joining two modules and 
+hiding a module from the other---within the meta-theory.
+
+Given said that, such inconvenience should never become a theoretical obstacle.
+\todo{because we can reflect the meta-theory in itself.}
+
+
 
 \paragraph{Theory as Predicates.}
 A theory declares some sorts, so in $\Kfinite$ there is a predicate symbol
@@ -1566,161 +1643,219 @@ A theory declares some patterns as axioms, so in $\Kfinite$ there is a
 predicate symbol
 $$ \KaxiomDeclared \colon \KPattern \to \KPred$$
 
-\paragraph{Well-formedness.}
+\paragraph{Wellformedness.}
 The predicate symbol
-$$\KwellFormed \colon \KPattern \times \KSignature \to \KPred$$ 
-takes a pattern and a finite signature, and decides whether the pattern is a \emph{well-formed pattern} in the given signature.
+$$\KwellFormed \colon \KPattern \to \KPred$$ 
+decides whether a pattern is \emph{wellformed pattern}.
+A related predicate symbol $\KwellFormedPatterns$ checks whether multiple 
+patterns are all wellformed
+$$ \KwellFormedPatterns \colon \KPatternList \to \KPred$$
+with two axioms
+\begin{align*}
+& \KwellFormedPatterns(\KnilKPatternList) \\
+& \KwellFormedPatterns(\varphi, L) = \KwellFormed(\varphi) \wedge 
+\KwellFormedPatterns(L)
+\end{align*}
 
 The partial function
-$$\KgetSort \colon \KPattern \times \KSignature \rightharpoonup \KSort$$
-takes a pattern and a finite signature, and returns the sort of the pattern in the given signature if the pattern is well-formed.
+$$\KgetSort \colon \KPattern \rightharpoonup \KSort$$
+returns the sort of a pattern if the pattern is wellformed.
 Otherwise, it returns $\bot_\KSort$.
-
 A related partial function is 
-$$ \KgetSortsFromPatterns \colon \KPatternList \times \KSignature \rightharpoonup \KSortList
+$$ \KgetSortsFromPatterns \colon \KPatternList \rightharpoonup \KSortList
 $$
-that takes a pattern lists and applies $\KgetSort$ on each element, and finally returns the list of results.
+which takes a pattern lists and applies $\KgetSort$ on each element, and 
+returns 
+the list of results.
 It has two straightforward axioms
 \begin{align*}
-  & \KgetSortsFromPatterns(\KnilKPatternList, \Sigma) = \KnilKSortList
+  & \KgetSortsFromPatterns(\KnilKPatternList) = \KnilKSortList
   \\
-  & \KgetSortsFromPatterns((\varphi, L), \Sigma) = (\KgetSort(\varphi, \Sigma), \KgetSortsFromPatterns(L, \Sigma))
+  & \KgetSortsFromPatterns(\varphi, L) = \KgetSort(\varphi), 
+  \KgetSortsFromPatterns(L)
 \end{align*}
 
 The partial functions $\KwellFormed$ and $\KgetSort$ are defined by the following axioms
 \begin{align*}
-  &\KwellFormed(\overline{x \cln s}, \Sigma) = \KsortDeclared(s, \Sigma)
+  &\KwellFormed(\overline{x \cln s}) = \KsortDeclared(s)
   \\
-  & \KwellFormed(\overline{\sigma(L)}, \Sigma) 
+  & \KwellFormed(\overline{\sigma(L)}) 
+  = \KsymbolDeclared(\sigma) 
+  \wedge \KwellFormedPatterns(L)
   \\
-  & = \KsymbolDeclared(\sigma, \Sigma) \wedge (\KgetSortsFromPatterns(L, \Sigma) = \KgetArgumentSorts(\sigma))
+  & \quad \wedge (\KgetSortsFromPatterns(L) = \KgetArgumentSorts(\sigma))
   \\
-  & \KwellFormed(\overline{\varphi \wedge_s \psi}, \Sigma) = (\KgetSort(\varphi, \Sigma) = s) \wedge (\KgetSort(\psi, \Sigma) = s)
+  & \KwellFormed(\overline{\varphi \wedge_s \psi}) 
+  = \KwellFormed(\varphi) \wedge \KwellFormed(\psi)
   \\
-  & \KwellFormed(\overline{\neg_s \varphi}, \Sigma) = (\KgetSort(\varphi, \Sigma) = s)
+  & \quad \wedge (\KgetSort(\varphi) = s) \wedge (\KgetSort(\psi) = s)
   \\
-  & \KwellFormed(\overline{\exists_{s_1}^{s_2} x . \varphi}, \Sigma) = \KsortDeclared(s_1, \Sigma) \wedge (\KgetSort(\varphi, \Sigma) = s_2)
+  & \KwellFormed(\overline{\neg_s \varphi}) = \KwellFormed(\varphi)
+    \wedge (\KgetSort(\varphi) = s)
   \\
-  & \KgetSort(\overline{x \cln s}, \Sigma) = \KsortDeclared(s, \Sigma) \wedge s
+  & \KwellFormed(\overline{\exists_s v . \varphi}) =
+  \KwellFormed(v) \wedge \KwellFormed(\varphi) \wedge (\KgetSort(\varphi) = s)
   \\
-  & \KgetSort(\overline{\sigma(L)}, \Sigma) = \KwellFormed(\overline{\sigma(L)}, \Sigma) \wedge \KgetReturnSort(\sigma)
+  & \KgetSort(\overline{x \cln s}) = \KwellFormed(\overline{x \cln s}) \wedge s
   \\
-  & \KgetSort(\overline{\varphi \wedge_s \psi}, \Sigma) = (\KgetSort(\varphi, \Sigma) = s) \wedge (\KgetSort(\psi, \Sigma) = s) \wedge s
+  & \KgetSort(\overline{\sigma(L)}) = \KwellFormed(\overline{\sigma(L)}) \wedge 
+  \KgetReturnSort(\sigma)
   \\
-  & \KgetSort(\overline{\neg_s \varphi}, \Sigma) = (\KgetSort(\varphi, \Sigma) = s) \wedge s
+  & \KgetSort(\overline{\varphi \wedge_s \psi}) = 
+  \KwellFormed(\overline{\varphi \wedge_s \psi}) \wedge s
   \\
-  & \KgetSort(\overline{\exists_{s_1}^{s_2} x . \varphi}, \Sigma) = \KsortDeclared(s_1, \Sigma) \wedge (\KgetSort(\varphi, \Sigma) = s_2) \wedge s_2
+  & \KgetSort(\overline{\neg_s \varphi}) = \KwellFormed(\overline{\neg_s 
+  \varphi}) \wedge s
+  \\
+  & \KgetSort(\overline{\exists_s v . \varphi}) = 
+  \KwellFormed(\overline{\exists_s v . \varphi}) \wedge s
 \end{align*}
 
-It is often useful to check whether multiple patterns are all well-formed in a given signature.
-The predicate symbol
-$$ \KwellFormedPatterns \colon \KPatternList \times \KSignature \to \KPred$$
-does that.
-It applies $\KwellFormed$ on each pattern and returns $\bot_\KPred$ if one of the applications returns $\bot_\KPred$.
-It has two axioms
-\begin{align*}
- & \KwellFormedPatterns(\KnilKPatternList, \Sigma) \\
- & \KwellFormedPatterns((\varphi, L), \Sigma) = \KwellFormed(\varphi, \Sigma) \wedge \KwellFormedPatterns(L, \Sigma)
-\end{align*}
-
-\subsubsection{Matching Logic Proof System}
+\subsection{Matching Logic Proof System}
 \label{sec:ml-proof-system-finite-case}
 
-A sound and complete proof system has been introduced in~\cite{rosu-2017-lmcs}.
-In this section we define the predicate symbol $\Kdeduce$ that captures the sound and complete proof system of matching logic.
-The predicate symbol
-$$
-\Kdeduce \colon \KTheory \times \KPattern \to \KPred
-$$
-takes a finite theory and a pattern as proof obligation, and decides if the obligation pattern is deducible in the given theory.
-The symbol $\Kdeduce$ has axioms in correspondence to the inference rules\footnote{Axioms are considered as inference rules with zero premises, so we do not distinguish axioms from inference rules.} 
-of the matching logic proof system in~\cite{rosu-2017-lmcs}.
+The Hilbert-style proof system of matching logic in~\cite{rosu-2017-lmcs} 
+defines the \emph{derivability} of a pattern in an inductive manner.
+It defines a recursive set of patterns as \emph{logic axioms} (in terms of 
+logic 
+schemas) and 
+says 
+all logic axioms are derivable.
+It also consists of four inference rules schemas---\textsc{(Modus Ponens)}, 
+\textsc{(Universal Generalization)}, \textsc{(Membership Introduction)}, 
+\textsc{(Membership Elimination)}---that if some patterns (called the premises) 
+are derivable, then a pattern (called the conclusion) is also derivable.
+The set of all derivable patterns according to the proof system is the smallest 
+set of patterns that contains all logic axioms and are closed under the four 
+inference rules schemas.
 
-In the following, we list all the inference rules of the matching logic proof system and the correspondent axioms of $\Kdeduce$. \improvement{We should mention here that all the subterms / subpatterns that appear in the axioms are assumed to be well-formed. Also, the theory $T$ itself must be well-formed, in the sense that all axioms in $T$ are well-formed. We omit those premises when writing the axioms because writing all of them down need a lot of space, and will make the axioms less readable.}
+For the purpose of a unified perspective, we regard logic axiom schemas as 
+inference 
+rule schemas with zero premise.
 
-We recall the readers our conventions of choosing variable names. 
+Such inductiveness of derivability is naturally captured by 
+introducing a predicate symbol
+$$
+\Kdeduce \colon \KPattern \to \KPred
+$$
+which has axioms in correspondent to every inference rules:
+$$\Kderivable(\widehat{\varphi_1}) \wedge \dots \wedge 
+\Kderivable(\widehat{\varphi_n}) \to \Kderivable(\widehat{\psi})$$
+is an axiom in the meta-theory if and only if 
+$$
+	\prftree
+	{ \varphi_1 \dots  \varphi_n}
+	{ \psi }
+$$
+is an inference rule of matching logic, in which $\widehat{\varphi_1}, \dots, 
+\widehat{\varphi_n}, \widehat{\psi}$ are representations of $\varphi_1, \dots, 
+\varphi_n, \psi$ in the meta-theory.
+\improvement{We should 
+	mention here that all the subterms / subpatterns that appear in the axioms 
+	are 
+	assumed to be well-formed. Also, the theory $T$ itself must be well-formed, 
+	in 
+	the sense that all axioms in $T$ are well-formed. We omit those premises 
+	when 
+	writing the axioms because writing all of them down need a lot of space, 
+	and 
+	will make the axioms less readable.}
+In the following, we list all the inference rules of the matching logic proof 
+system and the correspondent axioms of $\Kdeduce$. We recall the readers our 
+conventions of choosing variable names. 
 We use 
 $x$ and $y$ for $\KString$ variables,
 $s$ for $\KSort$ variables,
 $\varphi$ and $\psi$ for $\KPattern$ variables,
-$l$ and $r$ for $\KPatternList$ variables~(in \textbf{Rule~(M5)}),
-$\Sigma$ for $\KSignature$ variables, 
-$A$ for $\KPatternList$ variables~(in \textbf{Rule~(Axiom)}),
-and $T$ for $\KTheory$ variables.
+$L$, $R$ for $\KPatternList$ variables~(in \textbf{Rule~(M5)}).
+
+\todo{Change fonts and remove the ``dot'' after each formulas.}
+\todo{Change notations}
 
 \paragraph{Rule (Axiom).}
 $A \vdash \varphi$ if $\varphi \in A$.
 \begin{equation*}
-\KinKPatternList(\varphi, A) \to \Kdeduce(( \Sigma, A ), \varphi).
+\KaxiomDeclared(\varphi) \to \Kdeduce(\varphi)
 \end{equation*}
 
 \paragraph{Rule (K1).}
 $\vdash \varphi \to (\psi \to \varphi)$.
 \begin{equation*}
-\Kdeduce(T, \overline{\varphi \leftrightarrow (\psi \leftrightarrow_s  \varphi)}).
+\Kdeduce(\overline{\varphi \to (\psi \to_s  \varphi)})
 \end{equation*}
 
 \paragraph{Rule (K2).}
 $\vdash (\varphi_1 \to (\varphi_2 \to \varphi_3)) \to ((\varphi_1 \to \varphi_2) \to (\varphi_1 \to \varphi_3))$.
 \begin{equation*}
-\Kdeduce(T, 
-\overline{(\varphi_1 \leftrightarrow_s (\varphi_2 \leftrightarrow_s \varphi_3)) \leftrightarrow_s ((\varphi_1 \leftrightarrow_s \varphi_2) \leftrightarrow_s (\varphi_1 \leftrightarrow_s \varphi_3))}).
+\Kdeduce(
+\overline{(\varphi_1 \to_s (\varphi_2 \to_s \varphi_3)) \to_s ((\varphi_1 \to_s 
+\varphi_2) \to_s (\varphi_1 \to_s \varphi_3))}).
 \end{equation*}
 
 \paragraph{Rule (K3).}
 $\vdash (\neg \psi \to \neg \varphi) \to (\varphi \to \psi)$.
 \begin{equation*}
-\Kdeduce(T, \overline{(\neg_s \psi \leftrightarrow_s \neg_s \varphi) \leftrightarrow_s (\varphi 
-\leftrightarrow_s \psi)}).
+\Kdeduce(\overline{(\neg_s \psi \to_s \neg_s \varphi) 
+\to_s (\varphi 
+\to_s \psi)}).
 \end{equation*}
 
 \paragraph{Rule (K4).}
-$\vdash \forall x . \varphi \to \varphi[y/x]$.
+$\vdash \forall v . \varphi \to \varphi[u/v]$.
 \begin{equation*}
-\Kdeduce(T, \overline{\forall_{s_1}^{s_2}  x . \varphi \leftrightarrow_{s_2} \varphi[y \cln s_1 / x \cln s_1]}).
+\Kdeduce(\overline{\forall_s  v . \varphi \to_{s_2} 
+\varphi[y \cln s_1 / x \cln s_1]}).
 \end{equation*}
 
 \paragraph{Rule (K5).}
 $\vdash \forall x . (\varphi \to \psi) \to (\varphi \to \forall x . \psi)$ if $x$ does not occur free in $\varphi$. 
 \begin{equation*}
 \neg\KinKPatternList(\overline{x \cln s_1}, \KgetFvs(\varphi))
-\to \Kdeduce(T, \overline{\forall_{s_1}^{s_2} x . (\varphi \leftrightarrow_{s_2} \psi) \leftrightarrow_{s_2} (\varphi \leftrightarrow_{s_2} \forall_{s_1}^{s_2} x . \psi)}).
+\to \Kdeduce(\overline{\forall_{s_1}^{s_2} x . (\varphi \to_{s_2} 
+\psi) \to_{s_2} (\varphi \to_{s_2} \forall_{s_1}^{s_2} 
+x . \psi)}).
 \end{equation*}
 
 \paragraph{Rule (K6).}
 $\vdash (\varphi_1 = \varphi_2) \to (\psi[\varphi_1/x] \to \psi[\varphi_2/x])$.
 \begin{equation*}
-\Kdeduce(T, \overline{(\varphi_1 =_{s_1}^{s_2} \varphi_2) \leftrightarrow_{s_2} (\psi[\varphi_1/x \cln s] \leftrightarrow_{s_2} \psi[\varphi_2/x \cln s])}).
+\Kdeduce(\overline{(\varphi_1 =_{s_1}^{s_2} \varphi_2) \to_{s_2} 
+(\psi[\varphi_1/x \cln s] \to_{s_2} \psi[\varphi_2/x \cln s])}).
 \end{equation*}
 
 \paragraph{Rule (Df).}
 $\vdash \ceil{x}$.
 \begin{equation*}
-\Kdeduce(T, \Kapplication(\Ksymbol(\quot{ceil}, \KconsKSortList(s_1, \KnilKPatternList), s_2), \overline{x \cln s_1})).
+\Kdeduce(\Kapplication(\Ksymbol(\quot{ceil}, \KconsKSortList(s_1, 
+\KnilKPatternList), s_2), \overline{x \cln s_1})).
 \end{equation*}
 
 \paragraph{Rule (M1).}
 $\vdash (x \in y) = (x = y)$.
 \begin{equation*}
-\Kdeduce(T, \overline{(x \in_{s_1}^{s_2} y) =_{s_2}^{s_3} (x =_{s_1}^{s_2} y)}).
+\Kdeduce(\overline{(x \in_{s_1}^{s_2} y) =_{s_2}^{s_3} (x =_{s_1}^{s_2} y)}).
 \end{equation*}
 
 \paragraph{Rule (M2).}
 $\vdash x \in (\varphi \wedge \psi) = (x \in \varphi) \wedge (x \in \psi).$
 \begin{equation*}
-\Kdeduce(T, \overline{x \in_{s_1}^{s_2} (\varphi \wedge_{s_1} \psi) =_{s_2}^{s_3} (x \in_{s_1}^{s_2} \varphi) \wedge_{s_2} (x \in_{s_1}^{s_2} \psi)}).
+\Kdeduce(\overline{x \in_{s_1}^{s_2} (\varphi \wedge_{s_1} \psi) =_{s_2}^{s_3} 
+(x \in_{s_1}^{s_2} \varphi) \wedge_{s_2} (x \in_{s_1}^{s_2} \psi)}).
 \end{equation*}
 
 \paragraph{Rule (M3).}
 $\vdash x \in \neg \varphi = \neg (x \in \varphi)$.
 \begin{equation*}
-\Kdeduce(T, \overline{x \in_{s_1}^{s_2} \neg_{s_1} \varphi =_{s_2}^{s_3} \neg_{s_2} (x \in_{s_1}^{s_2} \varphi)}).
+\Kdeduce(\overline{x \in_{s_1}^{s_2} \neg_{s_1} \varphi =_{s_2}^{s_3} 
+\neg_{s_2} (x \in_{s_1}^{s_2} \varphi)}).
 \end{equation*}
 
 \paragraph{Rule (M4).}
 $\vdash x \in \forall y . \varphi = \forall y . x \in \varphi$ if $x$ is distinct from $y$.
 \begin{equation*}
-(\overline{x \cln s_1} \neq \overline{y \cln s_2})  \to \Kdeduce(T, \overline{(x \in_{s_1}^{s_3} \forall_{s_2}^{s_1} y . \varphi) =_{s_3}^{s_4} (\forall_{s_2}^{s_3} y . (x \in_{s_1}^{s_3} \varphi))}).
+(\overline{x \cln s_1} \neq \overline{y \cln s_2})  \to \Kdeduce(\overline{(x 
+\in_{s_1}^{s_3} \forall_{s_2}^{s_1} y . \varphi) =_{s_3}^{s_4} 
+(\forall_{s_2}^{s_3} y . (x \in_{s_1}^{s_3} \varphi))}).
 \end{equation*}
 
 \paragraph{Rule (M5).}
@@ -1730,7 +1865,7 @@ $\vdash x \in \sigma(\dots \varphi_i \dots) = \exists y . y \in \varphi_i \wedge
   \wedge \neg \KinKPatternList(\overline{y \cln s_2}, 
   \KgetFvs(\overline{\sigma(L, \varphi_i, R)}))
 \\
-\to & \Kdeduce(T, \overline{x \cln s_1 \in_{s_1}^{s_3} \sigma(L, 
+\to & \Kdeduce(\overline{x \cln s_1 \in_{s_1}^{s_3} \sigma(L, 
 \varphi_i, R) =_{s_3}^{s_4} \exists_{s_2}^{s_4} y . (y \cln s_2 \in_{s_2}^{s_3} \varphi_i \wedge x \cln s_1 \in_{s_1}^{s_3} \sigma(L, y, R))}),
 \end{align*}
 where $L$ and $R$ are $\KPatternList$ variables, and we write $(L, \varphi, R)$ as a shorthand of
@@ -1739,33 +1874,37 @@ $$(L, \varphi, R) \equiv \KappendKPatternList(L, \KconsKPatternList(\varphi, R))
 \paragraph{Rule (Modus Ponens).}
 If $\vdash \varphi$ and $\vdash \varphi \to \psi$, then $\vdash \psi$.
 \begin{equation*}
-\Kdeduce(T, \varphi) \wedge \Kdeduce(T, \overline{\varphi \leftrightarrow_s \psi}) \to 
-\Kdeduce(T, \psi).
+\Kdeduce(\varphi) \wedge \Kdeduce(\overline{\varphi \to_s \psi}) 
+\to 
+\Kdeduce(\psi).
 \end{equation*}
 
 \paragraph{Rule (Universal Generalization).}
 If $\vdash \varphi$, then $\vdash \forall x . \varphi$.
 \begin{equation*}
-\Kdeduce(T, \varphi) \to \Kdeduce(T, \overline{\forall_{s_1}^{s_2} x . \varphi}).
+\Kdeduce(\varphi) \to \Kdeduce(\overline{\forall_{s_1}^{s_2} x . \varphi}).
 \end{equation*}
 
 \paragraph{Rule (Membership Introduction).}
 If $\vdash \varphi$ and $x$ does not occur free in $\varphi$, then $\vdash x \in \varphi$.
 \begin{equation*}
-\Kdeduce(T, \varphi) \wedge \neg \KinKPatternList(\overline{x \cln s_1}, 
-\KgetFvs(\varphi)) \to \Kdeduce(T, \overline{x \cln s_1 \in_{s_1}^{s_2} 
+\Kdeduce(\varphi) \wedge \neg \KinKPatternList(\overline{x \cln s_1}, 
+\KgetFvs(\varphi)) \to \Kdeduce(\overline{x \cln s_1 \in_{s_1}^{s_2} 
 \varphi}).
 \end{equation*}
 
 \paragraph{Rule (Membership Elimination).}
 If $\vdash x \in \varphi$ and $x$ does not occur free in $\varphi$, then $\vdash \varphi$.
 \begin{equation*}
-\Kdeduce(T, \overline{x \cln s_1 \in_{s_1}^{s_2} \varphi}) \wedge\neg 
-\KinKPatternList(\overline{x \cln s_1}, \KgetFvs(\varphi)) \to \Kdeduce(T, 
+\Kdeduce(\overline{x \cln s_1 \in_{s_1}^{s_2} \varphi}) \wedge\neg 
+\KinKPatternList(\overline{x \cln s_1}, \KgetFvs(\varphi)) \to \Kdeduce(
 \varphi).
 \end{equation*}
 
 \subsection{Faithfulness: Finite Case}
+
+\improvement{State the faithfulness theorem and why it is useful, and move the 
+proof to appendix.}
 
 \begin{theorem}[Faithfulness Theorem]\label{thm:faithfulness-finite}
 	For any finite matching logic theory $T = (S, \Sigma, A)$ and a $\Sigma$-pattern $\varphi$, let us use $\hat{T}$ to denote the corresponding $\Sigma_\Kfinite$-pattern of the sort $\KTheory$ that represents the theory $T$, and use $\hat{\varphi}$ to denote the corresponding $\Sigma_\Kfinite$-pattern of the sort $\KPattern$ that represents the pattern $\varphi$, then
@@ -1774,241 +1913,43 @@ If $\vdash x \in \varphi$ and $x$ does not occur free in $\varphi$, then $\vdash
 
 Theorem~\ref{thm:faithfulness-finite} is an important theorem that justifies the design and usage of the theory $\Kfinite$. 
 It guarantees that the theory $\Kfinite$ does faithfully capture the matching logic reasoning in finite theories.
-Before we start to prove the theorem, we need to explain what ``the corresponding patterns'' $\hat{T}$ and $\hat{\varphi}$ are, as they appear in the theorem.
-For that reason, we introduce the next definition.
-
-\begin{definition}[Naming and Lifting]
-	Suppose $T = (S, \Sigma, A)$ is a finite matching logic theory, with $\Var = \bigcup_{s \in S} \Var_s$ is the set of all variables of $T$.
-	\emph{A naming of $T$}, denoted as $e$, consists of the following three naming functions
-	\begin{itemize}
-		\item A sort-naming function $e_S \colon S \to \PATTERNS_\KString$ that maps each sort in $S$ to a syntactic $\KString$ pattern such that $K \vdash e_S(s_1) \neq e_S(s_2)$ for any distinct sorts $s_1$ and $s_2$;
-		\item A symbol-naming function $e_\Sigma \colon \Sigma \to \PATTERNS_\KString$ that maps each symbol in $\Sigma$ to a syntactic $\KString$ pattern such that $K \vdash e_\Sigma(\sigma_1) \neq e_\Sigma(\sigma_2)$ for any distinct symbols $\sigma_1$ and $\sigma_2$;
-		\item A variable-naming function $e_\Var \colon \Var \to \PATTERNS_\KString$ that maps each variable in $T$ to a syntactic $\KString$ pattern in $K$, such that $K \vdash e_\Var(x) \neq e_\Var(y)$ for any distinct variables $x$ and $y$.
-	\end{itemize}
-
-    Given $e = \{e_S, e_\Sigma, e_\Var \}$ is a naming of theory $T$, the \emph{lift of $T$ with respect to $e$} consists of the following lifting functions.
-    
-    (Sort-lifting).
-    For each sort $s$ in theory $T$, the lift of $s$ is a $\KSort$ pattern
-    $$ \hat{s} = \Ksort(e_S(s))$$
-    
-    (Symbol-lifting).
-    For each symbol $\sigma \in \Sigma_{s_1 \dots s_n, s}$, the lift of $\sigma$ is a $\KSymbol$ pattern 
-    $$ \hat{\sigma} = \Ksymbol(e_\Sigma(\sigma), (\hat{s_1}, \dots, \hat{s_n}), \hat{s})$$
-    
-    (Pattern-lifting).
-    For each $\Sigma$-pattern $\varphi$, the lift of $\varphi$ is a $\KPattern$ pattern inductively defined as follows
-    \begin{equation*}
-      \hat{\varphi} =
-      \begin{cases*}
-        \Kvariable(e_\Var(x), \hat{s}) & if $\varphi$ is a variable $x \in \Var_s \subseteq \PATTERNS_s$
-        \\
-        \Kapplication(\hat{\sigma}, (\hat{\psi_1}, \dots, \hat{\psi_n})) & if $\varphi$ is $\sigma(\psi_1,\dots,\psi_n) \in \PATTERNS_s$
-        \\
-        \Kand(\hat{\psi_1}, \hat{\psi_2}, \hat{s}) & if $\varphi$ is $\psi_1 \wedge \psi_2 \in \PATTERNS_s$
-        \\
-        \Knot(\hat{\psi}, \hat{s}) & if $\varphi$ is $\neg \psi \in \PATTERNS_s$
-        \\
-        \Kexists(e_\Var(x), \hat{s_1}, \hat{\psi}, \hat{s_2}) & if $\varphi$ is $\exists x . \psi \in \PATTERNS_{s_2}$ and $x \in \Var_{s_1}$
-      \end{cases*}
-    \end{equation*}
-    
-    (Theory-lifting). Since $T = (S, \Sigma, A)$ is a finite theory, let us suppose
-    \begin{equation*}
-       S = \{ s_1, \dots, s_n \}, 
-       \Sigma = \{ \sigma_1, \dots, \sigma_m \}, 
-       A = \{ \varphi_1, \dots, \varphi_k \},
-    \end{equation*}
-    are three finite sets. The lift of theory $T$ is a $\KTheory$ pattern 
-    $$ \hat{T} = \Ktheory(\Ksignature(\hat{S}, \hat{\Sigma}), \hat{A}),$$
-    where the lifts of $S$, $\Sigma$, and $A$ are respectively defined as
-    \begin{align*}
-    & \hat{S} = \hat{s_1},\dots,\hat{s_n} 
-      \quad \text{is a $\KSortList$ pattern}
-    \\
-    & \hat{\Sigma} = \hat{\sigma_1},\dots,\hat{\sigma_m}
-      \quad \text{is a $\KSymbolList$ pattern}
-    \\
-    & \hat{A} = \hat{\varphi_1}, \dots, \hat{\varphi_k}
-      \quad \text{is a $\KPatternList$ pattern}
-    \end{align*}
-\end{definition}
-
-In order to prove Theorem~\ref{thm:faithfulness-finite}, we introduce a canonical model of $\Kfinite$.
-
-\begin{definition}[Canonical model of $\Kfinite$]
-	The canonical model of $\Kfinite$, denoted as $M_\Kfinite$, contains  carrier sets (for each sort in $S_\Kfinite$) and relations (for each symbols in $\Sigma_\Kfinite$) that are defined in the following.
-	
-	The carrier set for the sort $\KPred$ is a singleton set $M_\KPred = \{ \star \}$. 
-	
-	The carrier set for the sort $\KChar$ is the set of all 62 constructors of the sort $\KChar$, denoted as $M_\KChar$.
-	
-	The carrier set for the sort $\KString$ is the set of all syntactic patterns of the sort $\KString$, denoted as $M_\KString$.
-	
-	The carrier set for the sort $\KSort$ is the set of all syntactic patterns of the sort $\KSort$ 
-	$$M_\KSort = \{ \Ksort(str) \mid str \in M_\KString \}.$$
-	
-	The carrier set for the sort $\KSortList$ is the set of all finite lists of $M_\KSort$:
-	$$M_\KSortList = (M_\KSort)^*.$$
-	
-	The carrier set for the sort $\KSymbol$ is the set of all syntactic patterns of the sort $\KSymbol$
-	$$M_\KSymbol = \{ \Ksymbol(str, l, s) \mid str \in M_\KString, l \in M_\KSortList, s \in M_\KSort \}.$$
-	
-	The carrier set for the sort $\KSymbolList$ is the set of all finite lists over $M_\KSymbol$:
-	$$M_\KSymbolList = (M_\KSymbol)^* .$$
-	
-	The carrier set for the sort $\KPattern$ is the set of all syntactic patterns of the sort $\KPattern$, denoted as $M_\KPattern$.
-	
-	The carrier set for the sort $\KPatternList$ is the set of all finite lists over $M_\KPattern$:
-	$$M_\KPatternList = (M_\KPattern)^*.$$
-	
-	The carrier set for the sort $\KSignature$ is a product set
-	$$ M_\KSignature = M_\KSortList \times M_\KSymbolList.$$
-	
-	The carrier set for the sort $\KTheory$ is a product set
-	$$ M_\KTheory = M_\KSignature \times M_\KPattern. $$
-	
-	The interpretations of most symbols (except $\Kdeduce$) in $\Kfinite$ are so straightforward that they are trivial.\improvement{Basically I want to say that $M_K$ is almost (except $\Kdeduce$) the initial algebra of $\Kfinite$.}
-	For example, $\KconsKSortList$ is interpreted as the cons function on $M_\KSortList$, and $\KdeleteKPatternList$ is interpreted as a function on $M_\KPattern \times M_\KPatternList$ that deletes the first argument from the second, etc.
-	
-	The only nontrivial interpretation is the one for $\Kdeduce$, as we would like to interpret it \emph{in terms of} matching logic reasoning.
-	The interpretation of $\Kdeduce$ in the canonical model is a predicate on $M_\KTheory$ and $M_\KPattern$.
-	Intuitively, $\Kdeduce_M(T, \varphi)$ holds if both $T$ and $\varphi$ are well-formed and $\varphi$ is deducible in the finite matching logic theory $T$.
-	This intuition is captured by the next formal definition.
-	
-	For any $T = (\Sigma, A) \in M_\KTheory$ and $\varphi \in M_\KPattern$, we define
-	\begin{equation*}
-	  \Kdeduce_M(T, \varphi) =
-	  \begin{cases*}
-	    \emptyset & if $\KwellFormed_M(\Sigma, \varphi) = \emptyset$
-	    \\
-	    \{ \star \} & if $\Bracket{T} \vdash \Bracket{\varphi}$
-	    \\
-	    \emptyset & if $\Bracket{T} \not\vdash \Bracket{\varphi}$
-	  \end{cases*}
-	\end{equation*}
-	where the \emph{semantics bracket} $\Bracket{\_}$ is defined (only on well-formed $T$ and $\varphi$) as follows:
-	\begin{center}\begin{tabular}{l}
-		$\Bracket{T}$ is the matching logic theory $(\Sigma, \Bracket{A})$ \\
-		$\Bracket{A} = \{ \Bracket{\psi} | \mid \psi \in A \}$ \\
-		$\Bracket{\varphi} =
-		 \begin{cases*}
-		   x \cln s & if $\varphi$ is $\Kvariable(x, s)$ \\
-		   \sigma(\Bracket{\varphi_1},\dots,\Bracket{\varphi_n}) & if $\varphi$ is $\Kapplication(\sigma, (\varphi_1,\dots,\varphi_n))$\\
-		   \Bracket{\varphi_1} \wedge \Bracket{\varphi_2} & if $\varphi$ is $\Kand(\varphi_1,\varphi_2,s)$,\\
-		   \neg \Bracket{\varphi_1} & if $\varphi$ is $\Knot(\varphi_1, s)$\\
-		   \exists x . \Bracket{\varphi_1} & if $\varphi$ is $\Kexists(x, s_1, \varphi_1, s_2)$
-		 \end{cases*}$
-	\end{tabular}\end{center}
-
-    It is tedious but straightforward to verify that $\Kdeduce_M$ satisfies all axioms about $\Kdeduce$ that we introduced in Section~\cref{sec:ml-proof-system-finite-case}.
-    For example, the Rule (K1)
-    \begin{equation*}
-    \Kdeduce(T, \overline{\varphi \leftrightarrow_s (\psi \leftrightarrow_s \varphi)})
-    \end{equation*}
-    holds in $\Kfinite$ because
-    $$\Bracket{T} \vdash \Bracket{\varphi} \to (\Bracket{\psi} \to \Bracket{\varphi})$$
-    The Rule (Modus Ponens)
-    \begin{equation*}
-    \Kdeduce(T, \varphi) \wedge \Kdeduce(T, \overline{\varphi \leftrightarrow_s \psi}) \to 
-    \Kdeduce(T, \psi)
-    \end{equation*}
-    holds in $\Kfinite$ because
-    $$\text{if $\Bracket{T} \vdash \Bracket{\varphi}$ and $\Bracket{T} \vdash \Bracket{\varphi} \to \Bracket{\psi}$, then $\Bracket{T} \vdash \Bracket{\psi}$}.$$
-    
-    Readers are welcomed to verify the remaining axioms in $\Kfinite$ also hold in $M_K$.
-    We omit them here.
-    
-
-\end{definition}
 
 
-Now we are in a good shape to prove Theorem~\ref{thm:faithfulness-finite}.
+\section{Meta-Theory of Matching Logic: With Sort Parameters}
+\subsection{Things Different From Finite Case}
+\paragraph{Parametric Sorts.} A parametric sort, for example
+$\parametric{\Map}{\Nat,\Bool}$, has a name ``Map'' and a list of sorts 
+$\Nat, \Bool$ that instantiate the parametric sort.
+We modify the signature of $\Ksort$ symbol to
+$$
+\Ksort \colon \KString \times \KSortList \to \KSort
+$$
 
-\begin{proof}[Proof Sketch of Theorem~\ref{thm:faithfulness-finite}]\quad
-	
-	Step 1 (The ``$\Rightarrow$'' part). 
-	
-	We prove this by simply mimicking the proof of $T \vdash \varphi$ in $\Kfinite$.
-	
-	Step 2 (The ``$\Leftarrow$'' part).
-	
-	Let us fix a finite matching logic theory $T = (S, \Sigma, A)$, a $\Sigma$-pattern $\varphi$, and an encoding $e$, and assume that $\Kfinite \vdash \Kdeduce(\hat{T}, \hat{\varphi})$.
-	Since the matching logic proof system is sound, the interpretation of $\Kdeduce(\hat{T}, \hat{\varphi})$ should hold in the canonical model $M_K$:
-	$$ \Kdeduce_M(\hat{T}, \hat{\varphi}) = \{ \star \}. $$
-	By definition, this means that
-	$$\Bracket{\hat{T}} \vdash \Bracket{\hat{\varphi}}.$$
-	
-	Finally notice that by construction of encoding, lifting, and the semantics bracket, there is an isomorphism between $T$ and  $\Bracket{\hat{T}}$, so from $\Bracket{\hat{T}} \vdash \Bracket{\hat{\varphi}}$ we have
-	$$T \vdash \varphi.$$
-	
-	\fbox{\begin{minipage}{35em}\color{blue}\small
-	The following a snapshot of what we had on the board:
-	
-	Step 2.1. Fix a finite matching logic theory $T = (S, \Sigma, A)$ and a $\Sigma$-pattern $\varphi$. 
-	
-	Step 2.2. Build a model $M_{T}$ based on $T = (S, \Sigma, A)$.
-	
-	Step 2.3. Show that $M_T$ is a model of $\Kfinite$.
-	
-	
-	
-	Step 2.5. Interpret $\Kdeduce(\hat{T}, \hat{\varphi})$ in $M_T$ and get $T \vDash \varphi$.
-    \end{minipage}}
-\end{proof}
+\paragraph{Parametric Symbols.} We modify the signature of $\Ksymbol$ to 
+$$
+\Ksymbol \colon \KString \times \KSortList \times \KSort \times \KSortList \to 
+\KSymbol
+$$
+where the second argument is the list of sort parameters.
+Getter functions $\KgetArgumentSorts$ and $\KgetReturnSort$ are modified 
+accordingly, too.
 
-\subsection{Matching Logic Theory of Matching Logic: With Meta-Variables}
+\subsection{Parametric Sorts and Symbols Declarations as Predicates}
 
-\section{Matching Logic Theory of Matching Logic: With Parameters}
-
-\section{Get Material From Here}
-
-Matching logic imposes no restrictions on the cardinality of the set of
-sorts $S$, of the set of symbols $\Sigma$, or of the set of patterns $A$
-in a theory $(S,\Sigma,A)$.
-In practice, however, we need a finite mechanism to describe such theories
-in order to mechanically reason about them using a computer.
-In the vast universe of possibilities, we here propose one particular approach
-that we found useful, convenient and sufficient in our semantics engineering
-efforts.
-Specifically:
-\begin{itemize}
-\item
-We restrict the infinite sets of sorts to ones which can be described with
-a finite set of \emph{parametric} sorts, where the parameters range over
-other sorts.
-For example, $S=\{\Nat,\parametric{\List}{X}\}$ describes the infinite set
-of sorts
-$S=\{\Nat, \parametric{\List}{\Nat}, \parametric{\List}{\parametric{\List}{\Nat}}, ...\}$.
-
-\end{itemize}
-
-From here on, unless otherwise specified, when we say \emph{set} we mean
-a \emph{recursively enumerable set}, i.e., a set that can be generated
-algorithmically (not to be confused with the weaker notion of a
-countable\unsure{countable may suffice, we'll need to understand how it is in FOL}
-set, which only means that it has a cardinal no larger than
-$\aleph_0$---either finite or in bijection with the set
-of natural numbers).
-
-
-In this section, we define a matching logic theory $K = (S_K, \Sigma_K, A_K)$ 
-as \emph{the (reflective) calculus of matching logic},
-where $S_K, \Sigma_K$, and $A_K$ are \emph{finite} sets of sorts,
-symbols, and axioms,  respectively.
-
-
+\subsection{Faithfulness: With Sort Parameters}
 
 \section{The Kore Syntax}
 
 We propose a language called Kore to specify matching logic theories.
 The following is a list of a few features of Kore:
 \begin{itemize}
-	\item Kore does not support module-level operations such as module importation, 
+	\item Kore does not support module-level operations such as module 
+	importation, 
 	signature hiding, symbol renaming;
 	\item Kore supports only the five basic matching logic constructors 
 	(variables, symbol applications, conjunction, negation, and existential 
-	quantifications), while it provides a keyword \textsf{alias} that allows to define other derivative connectives as syntactic sugar;
+	quantifications), while it provides a keyword \textsf{alias} that allows to 
+	define other derivative connectives as syntactic sugar;
 	\item Kore supports sort parametricity;
 	\item more ...
 \end{itemize}
@@ -2047,19 +1988,19 @@ The following is the grammar of the Kore language for finite theories:
 	<parametric-sort-constructor> ::= "[A-Z][a-zA-Z0-9]"$^+$
 	
 	<symbol-declaration> ::= \quad
-    \alt `symbol' <symbol> <symbol-signature>
-    \alt `hooked-symbol' <symbol> <symbol-signature>
-    
-    <symbol> ::= \quad
-    \alt <nonparametric-symbol>
-    \alt <parametric-symbol>
-    
-    <nonparametric-symbol> ::= "[a-zA-Z0-9]"$^+$
-    
-    <parametric-symbol> ::= \quad
-    \alt <parametric-symbol-name> `{' <sort-list> `}'
-    
-    <parametric-symbol-name> ::= "[a-zA-Z0-9]"$^+$
+	\alt `symbol' <symbol> <symbol-signature>
+	\alt `hooked-symbol' <symbol> <symbol-signature>
+	
+	<symbol> ::= \quad
+	\alt <nonparametric-symbol>
+	\alt <parametric-symbol>
+	
+	<nonparametric-symbol> ::= "[a-zA-Z0-9]"$^+$
+	
+	<parametric-symbol> ::= \quad
+	\alt <parametric-symbol-name> `{' <sort-list> `}'
+	
+	<parametric-symbol-name> ::= "[a-zA-Z0-9]"$^+$
 	
 	<symbol-signature> ::= \quad
 	\alt `(' <sort-list> `)' `:' <sort>
@@ -2087,110 +2028,404 @@ The following is the grammar of the Kore language for finite theories:
 The IMP programming language defined in Kore:
 \lstinputlisting[language=kore]{imp.kore}
 
-\subsection{Ignore Me}
+\section{Proof of Faithfulness Theorem}
+Before we start to prove the theorem, we need to explain what ``the 
+corresponding patterns'' $\hat{T}$ and $\hat{\varphi}$ are, as they appear in 
+the theorem.
+For that reason, we introduce the next definition.
+
+\begin{definition}[Naming and Lifting]
+	Suppose $T = (S, \Sigma, A)$ is a finite matching logic theory, with $\Var 
+	= \bigcup_{s \in S} \Var_s$ is the set of all variables of $T$.
+	\emph{A naming of $T$}, denoted as $e$, consists of the following three 
+	naming functions
+	\begin{itemize}
+		\item A sort-naming function $e_S \colon S \to \PATTERNS_\KString$ that 
+		maps each sort in $S$ to a syntactic $\KString$ pattern such that $K 
+		\vdash e_S(s_1) \neq e_S(s_2)$ for any distinct sorts $s_1$ and $s_2$;
+		\item A symbol-naming function $e_\Sigma \colon \Sigma \to 
+		\PATTERNS_\KString$ that maps each symbol in $\Sigma$ to a syntactic 
+		$\KString$ pattern such that $K \vdash e_\Sigma(\sigma_1) \neq 
+		e_\Sigma(\sigma_2)$ for any distinct symbols $\sigma_1$ and $\sigma_2$;
+		\item A variable-naming function $e_\Var \colon \Var \to 
+		\PATTERNS_\KString$ that maps each variable in $T$ to a syntactic 
+		$\KString$ pattern in $K$, such that $K \vdash e_\Var(x) \neq 
+		e_\Var(y)$ for any distinct variables $x$ and $y$.
+	\end{itemize}
+	
+	Given $e = \{e_S, e_\Sigma, e_\Var \}$ is a naming of theory $T$, the 
+	\emph{lift of $T$ with respect to $e$} consists of the following lifting 
+	functions.
+	
+	(Sort-lifting).
+	For each sort $s$ in theory $T$, the lift of $s$ is a $\KSort$ pattern
+	$$ \hat{s} = \Ksort(e_S(s))$$
+	
+	(Symbol-lifting).
+	For each symbol $\sigma \in \Sigma_{s_1 \dots s_n, s}$, the lift of 
+	$\sigma$ is a $\KSymbol$ pattern 
+	$$ \hat{\sigma} = \Ksymbol(e_\Sigma(\sigma), (\hat{s_1}, \dots, \hat{s_n}), 
+	\hat{s})$$
+	
+	(Pattern-lifting).
+	For each $\Sigma$-pattern $\varphi$, the lift of $\varphi$ is a $\KPattern$ 
+	pattern inductively defined as follows
+	\begin{equation*}
+	\hat{\varphi} =
+	\begin{cases*}
+	\Kvariable(e_\Var(x), \hat{s}) & if $\varphi$ is a variable $x \in \Var_s 
+	\subseteq \PATTERNS_s$
+	\\
+	\Kapplication(\hat{\sigma}, (\hat{\psi_1}, \dots, \hat{\psi_n})) & if 
+	$\varphi$ is $\sigma(\psi_1,\dots,\psi_n) \in \PATTERNS_s$
+	\\
+	\Kand(\hat{\psi_1}, \hat{\psi_2}, \hat{s}) & if $\varphi$ is $\psi_1 \wedge 
+	\psi_2 \in \PATTERNS_s$
+	\\
+	\Knot(\hat{\psi}, \hat{s}) & if $\varphi$ is $\neg \psi \in \PATTERNS_s$
+	\\
+	\Kexists(e_\Var(x), \hat{s_1}, \hat{\psi}, \hat{s_2}) & if $\varphi$ is 
+	$\exists x . \psi \in \PATTERNS_{s_2}$ and $x \in \Var_{s_1}$
+	\end{cases*}
+	\end{equation*}
+	
+	(Theory-lifting). Since $T = (S, \Sigma, A)$ is a finite theory, let us 
+	suppose
+	\begin{equation*}
+	S = \{ s_1, \dots, s_n \}, 
+	\Sigma = \{ \sigma_1, \dots, \sigma_m \}, 
+	A = \{ \varphi_1, \dots, \varphi_k \},
+	\end{equation*}
+	are three finite sets. The lift of theory $T$ is a $\KTheory$ pattern 
+	$$ \hat{T} = \Ktheory(\Ksignature(\hat{S}, \hat{\Sigma}), \hat{A}),$$
+	where the lifts of $S$, $\Sigma$, and $A$ are respectively defined as
+	\begin{align*}
+	& \hat{S} = \hat{s_1},\dots,\hat{s_n} 
+	\quad \text{is a $\KSortList$ pattern}
+	\\
+	& \hat{\Sigma} = \hat{\sigma_1},\dots,\hat{\sigma_m}
+	\quad \text{is a $\KSymbolList$ pattern}
+	\\
+	& \hat{A} = \hat{\varphi_1}, \dots, \hat{\varphi_k}
+	\quad \text{is a $\KPatternList$ pattern}
+	\end{align*}
+\end{definition}
+
+In order to prove Theorem~\ref{thm:faithfulness-finite}, we introduce a 
+canonical model of $\Kfinite$.
+
+\begin{definition}[Canonical model of $\Kfinite$]
+	The canonical model of $\Kfinite$, denoted as $M_\Kfinite$, contains  
+	carrier sets (for each sort in $S_\Kfinite$) and relations (for each 
+	symbols in $\Sigma_\Kfinite$) that are defined in the following.
+	
+	The carrier set for the sort $\KPred$ is a singleton set $M_\KPred = \{ 
+	\star \}$. 
+	
+	The carrier set for the sort $\KChar$ is the set of all 62 constructors of 
+	the sort $\KChar$, denoted as $M_\KChar$.
+	
+	The carrier set for the sort $\KString$ is the set of all syntactic 
+	patterns of the sort $\KString$, denoted as $M_\KString$.
+	
+	The carrier set for the sort $\KSort$ is the set of all syntactic patterns 
+	of the sort $\KSort$ 
+	$$M_\KSort = \{ \Ksort(str) \mid str \in M_\KString \}.$$
+	
+	The carrier set for the sort $\KSortList$ is the set of all finite lists of 
+	$M_\KSort$:
+	$$M_\KSortList = (M_\KSort)^*.$$
+	
+	The carrier set for the sort $\KSymbol$ is the set of all syntactic 
+	patterns of the sort $\KSymbol$
+	$$M_\KSymbol = \{ \Ksymbol(str, l, s) \mid str \in M_\KString, l \in 
+	M_\KSortList, s \in M_\KSort \}.$$
+	
+	The carrier set for the sort $\KSymbolList$ is the set of all finite lists 
+	over $M_\KSymbol$:
+	$$M_\KSymbolList = (M_\KSymbol)^* .$$
+	
+	The carrier set for the sort $\KPattern$ is the set of all syntactic 
+	patterns of the sort $\KPattern$, denoted as $M_\KPattern$.
+	
+	The carrier set for the sort $\KPatternList$ is the set of all finite lists 
+	over $M_\KPattern$:
+	$$M_\KPatternList = (M_\KPattern)^*.$$
+	
+	The carrier set for the sort $\KSignature$ is a product set
+	$$ M_\KSignature = M_\KSortList \times M_\KSymbolList.$$
+	
+	The carrier set for the sort $\KTheory$ is a product set
+	$$ M_\KTheory = M_\KSignature \times M_\KPattern. $$
+	
+	The interpretations of most symbols (except $\Kdeduce$) in $\Kfinite$ are 
+	so straightforward that they are trivial.\improvement{Basically I want to 
+	say that $M_K$ is almost (except $\Kdeduce$) the initial algebra of 
+	$\Kfinite$.}
+	For example, $\KconsKSortList$ is interpreted as the cons function on 
+	$M_\KSortList$, and $\KdeleteKPatternList$ is interpreted as a function on 
+	$M_\KPattern \times M_\KPatternList$ that deletes the first argument from 
+	the second, etc.
+	
+	The only nontrivial interpretation is the one for $\Kdeduce$, as we would 
+	like to interpret it \emph{in terms of} matching logic reasoning.
+	The interpretation of $\Kdeduce$ in the canonical model is a predicate on 
+	$M_\KTheory$ and $M_\KPattern$.
+	Intuitively, $\Kdeduce_M(T, \varphi)$ holds if both $T$ and $\varphi$ are 
+	well-formed and $\varphi$ is deducible in the finite matching logic theory 
+	$T$.
+	This intuition is captured by the next formal definition.
+	
+	For any $T = (\Sigma, A) \in M_\KTheory$ and $\varphi \in M_\KPattern$, we 
+	define
+	\begin{equation*}
+	\Kdeduce_M(T, \varphi) =
+	\begin{cases*}
+	\emptyset & if $\KwellFormed_M(\Sigma, \varphi) = \emptyset$
+	\\
+	\{ \star \} & if $\Bracket{T} \vdash \Bracket{\varphi}$
+	\\
+	\emptyset & if $\Bracket{T} \not\vdash \Bracket{\varphi}$
+	\end{cases*}
+	\end{equation*}
+	where the \emph{semantics bracket} $\Bracket{\_}$ is defined (only on 
+	well-formed $T$ and $\varphi$) as follows:
+	\begin{center}\begin{tabular}{l}
+			$\Bracket{T}$ is the matching logic theory $(\Sigma, \Bracket{A})$ 
+			\\
+			$\Bracket{A} = \{ \Bracket{\psi} | \mid \psi \in A \}$ \\
+			$\Bracket{\varphi} =
+			\begin{cases*}
+			x \cln s & if $\varphi$ is $\Kvariable(x, s)$ \\
+			\sigma(\Bracket{\varphi_1},\dots,\Bracket{\varphi_n}) & if 
+			$\varphi$ is $\Kapplication(\sigma, (\varphi_1,\dots,\varphi_n))$\\
+			\Bracket{\varphi_1} \wedge \Bracket{\varphi_2} & if $\varphi$ is 
+			$\Kand(\varphi_1,\varphi_2,s)$,\\
+			\neg \Bracket{\varphi_1} & if $\varphi$ is $\Knot(\varphi_1, s)$\\
+			\exists x . \Bracket{\varphi_1} & if $\varphi$ is $\Kexists(x, s_1, 
+			\varphi_1, s_2)$
+			\end{cases*}$
+	\end{tabular}\end{center}
+	
+	It is tedious but straightforward to verify that $\Kdeduce_M$ satisfies all 
+	axioms about $\Kdeduce$ that we introduced in 
+	Section~\cref{sec:ml-proof-system-finite-case}.
+	For example, the Rule (K1)
+	\begin{equation*}
+	\Kdeduce(T, \overline{\varphi \leftrightarrow_s (\psi \leftrightarrow_s 
+	\varphi)})
+	\end{equation*}
+	holds in $\Kfinite$ because
+	$$\Bracket{T} \vdash \Bracket{\varphi} \to (\Bracket{\psi} \to 
+	\Bracket{\varphi})$$
+	The Rule (Modus Ponens)
+	\begin{equation*}
+	\Kdeduce(T, \varphi) \wedge \Kdeduce(T, \overline{\varphi \leftrightarrow_s 
+	\psi}) \to 
+	\Kdeduce(T, \psi)
+	\end{equation*}
+	holds in $\Kfinite$ because
+	$$\text{if $\Bracket{T} \vdash \Bracket{\varphi}$ and $\Bracket{T} \vdash 
+	\Bracket{\varphi} \to \Bracket{\psi}$, then $\Bracket{T} \vdash 
+	\Bracket{\psi}$}.$$
+	
+	Readers are welcomed to verify the remaining axioms in $\Kfinite$ also hold 
+	in $M_K$.
+	We omit them here.
+	
+	
+\end{definition}
+
+
+Now we are in a good shape to prove Theorem~\ref{thm:faithfulness-finite}.
+
+\begin{proof}[Proof Sketch of Theorem~\ref{thm:faithfulness-finite}]\quad
+	
+	Step 1 (The ``$\Rightarrow$'' part). 
+	
+	We prove this by simply mimicking the proof of $T \vdash \varphi$ in 
+	$\Kfinite$.
+	
+	Step 2 (The ``$\Leftarrow$'' part).
+	
+	Let us fix a finite matching logic theory $T = (S, \Sigma, A)$, a 
+	$\Sigma$-pattern $\varphi$, and an encoding $e$, and assume that $\Kfinite 
+	\vdash \Kdeduce(\hat{T}, \hat{\varphi})$.
+	Since the matching logic proof system is sound, the interpretation of 
+	$\Kdeduce(\hat{T}, \hat{\varphi})$ should hold in the canonical model $M_K$:
+	$$ \Kdeduce_M(\hat{T}, \hat{\varphi}) = \{ \star \}. $$
+	By definition, this means that
+	$$\Bracket{\hat{T}} \vdash \Bracket{\hat{\varphi}}.$$
+	
+	Finally notice that by construction of encoding, lifting, and the semantics 
+	bracket, there is an isomorphism between $T$ and  $\Bracket{\hat{T}}$, so 
+	from $\Bracket{\hat{T}} \vdash \Bracket{\hat{\varphi}}$ we have
+	$$T \vdash \varphi.$$
+	
+	\fbox{\begin{minipage}{35em}\color{blue}\small
+			The following a snapshot of what we had on the board:
+			
+			Step 2.1. Fix a finite matching logic theory $T = (S, \Sigma, A)$ 
+			and a $\Sigma$-pattern $\varphi$. 
+			
+			Step 2.2. Build a model $M_{T}$ based on $T = (S, \Sigma, A)$.
+			
+			Step 2.3. Show that $M_T$ is a model of $\Kfinite$.
+			
+			Step 2.4. Interpret $\Kdeduce(\hat{T}, \hat{\varphi})$ in $M_T$ and 
+			get $T 
+			\vDash \varphi$.
+	\end{minipage}}
+\end{proof}
+
+
+\bibliographystyle{abbrv}
+\bibliography{refs}
+
+\section{Get Material From Here}
+
+Matching logic imposes no restrictions on the cardinality of the set of
+sorts $S$, of the set of symbols $\Sigma$, or of the set of patterns $A$
+in a theory $(S,\Sigma,A)$.
+In practice, however, we need a finite mechanism to describe such theories
+in order to mechanically reason about them using a computer.
+In the vast universe of possibilities, we here propose one particular approach
+that we found useful, convenient and sufficient in our semantics engineering
+efforts.
+Specifically:
+\begin{itemize}
+	\item
+	We restrict the infinite sets of sorts to ones which can be described with
+	a finite set of \emph{parametric} sorts, where the parameters range over
+	other sorts.
+	For example, $S=\{\Nat,\parametric{\List}{X}\}$ describes the infinite set
+	of sorts
+	$S=\{\Nat, \parametric{\List}{\Nat}, 
+	\parametric{\List}{\parametric{\List}{\Nat}}, ...\}$.
+	
+\end{itemize}
+
+From here on, unless otherwise specified, when we say \emph{set} we mean
+a \emph{recursively enumerable set}, i.e., a set that can be generated
+algorithmically (not to be confused with the weaker notion of a
+countable\unsure{countable may suffice, we'll need to understand how it is in 
+FOL}
+set, which only means that it has a cardinal no larger than
+$\aleph_0$---either finite or in bijection with the set
+of natural numbers).
+
+
+In this section, we define a matching logic theory $K = (S_K, \Sigma_K, A_K)$ 
+as \emph{the (reflective) calculus of matching logic},
+where $S_K, \Sigma_K$, and $A_K$ are \emph{finite} sets of sorts,
+symbols, and axioms,  respectively.
+
 
 \newcommand{\smalltt}[1]{\texttt{\small #1} }
 \newcommand{\sort}{\smalltt{sort}}
 \newcommand{\symb}{\smalltt{symbol}}
 \newcommand{\axiom}{\smalltt{axiom}}
 
-Sorts are declared using the \sort keyword, symbols are declared using the \symb keyword, and axioms are defined using the \axiom keyword.
+Sorts are declared using the \sort keyword, symbols are declared using the 
+\symb keyword, and axioms are defined using the \axiom keyword.
 
 \begin{Verbatim}[fontsize=\small]
-    /* Example 1: One-Element */
-    sort Element1
-    symbol e() : Element1
-    axiom  e()
+/* Example 1: One-Element */
+sort Element1
+symbol e() : Element1
+axiom  e()
 \end{Verbatim}
 
 \begin{Verbatim}[fontsize=\small]
-    /* Example 2: Two-Element */
-    sort Element2
-    symbol e1() : Element2
-    symbol e2() : Element2
-    axiom  \not(\and(\not(e1()), \not(e2())))
-    axiom  \not(\and(e1(), e2()))
+/* Example 2: Two-Element */
+sort Element2
+symbol e1() : Element2
+symbol e2() : Element2
+axiom  \not(\and(\not(e1()), \not(e2())))
+axiom  \not(\and(e1(), e2()))
 \end{Verbatim}
 
-Symbols can be parametric on sort variables, which are wrapped by curly brackets. 
+Symbols can be parametric on sort variables, which are wrapped by curly 
+brackets. 
 Sort variables can be instantiated by any sort.
 
 \begin{Verbatim}[fontsize=\small]
-    /* Example 3: Identity-Function */
-    symbol id({S}) : {S}
-    axiom  \not(\and(X:{S},     \not(id(X:{S}))))
-    axiom  \not(\and(id(X:{S}), \not(X:{S})))
+/* Example 3: Identity-Function */
+symbol id({S}) : {S}
+axiom  \not(\and(X:{S},     \not(id(X:{S}))))
+axiom  \not(\and(id(X:{S}), \not(X:{S})))
 \end{Verbatim}
 
-Given the context where two sorts \smalltt{Element1} and \smalltt{Element2} are declared, the above is just a shorthand of
+Given the context where two sorts \smalltt{Element1} and \smalltt{Element2} are 
+declared, the above is just a shorthand of
 
 \begin{Verbatim}[fontsize=\small]
-    /* Example 3': Identity-Function */
-    symbol id(Element1) : Element1
-    symbol id(Element2) : Element2
-    axiom  \not(\and(X:Element1,     \not(id(X:Element1))))
-    axiom  \not(\and(id(X:Element1), \not(X:Element1)))
-    axiom  \not(\and(X:Element2,     \not(id(X:Element2))))
-    axiom  \not(\and(id(X:Element1), \not(X:Element1)))
+/* Example 3': Identity-Function */
+symbol id(Element1) : Element1
+symbol id(Element2) : Element2
+axiom  \not(\and(X:Element1,     \not(id(X:Element1))))
+axiom  \not(\and(id(X:Element1), \not(X:Element1)))
+axiom  \not(\and(X:Element2,     \not(id(X:Element2))))
+axiom  \not(\and(id(X:Element1), \not(X:Element1)))
 \end{Verbatim}
 
-If a sort variable appears multiple times in a statement, only one of the appearances needs curly brackets.
+If a sort variable appears multiple times in a statement, only one of the 
+appearances needs curly brackets.
 Therefore, an alternative way to write Example~3 is
 \begin{Verbatim}[fontsize=\small]
-    /* Example 3'': Identity-Function */
-    symbol id({S}) : S
-    axiom  \not(\and(X:{S},     \not(id(X:S))))
-    axiom  \not(\and(id(X:{S}), \not(X:S)))
+/* Example 3'': Identity-Function */
+symbol id({S}) : S
+axiom  \not(\and(X:{S},     \not(id(X:S))))
+axiom  \not(\and(id(X:{S}), \not(X:S)))
 \end{Verbatim}
 
-If a variable is decorated with a sort variable, as in {\small\verb|X:{S}|}, the sort decoration can be omitted. Therefore, an alternative way to write Example 3 is
+If a variable is decorated with a sort variable, as in {\small\verb|X:{S}|}, 
+the sort decoration can be omitted. Therefore, an alternative way to write 
+Example 3 is
 \begin{Verbatim}[fontsize=\small]
-    /* Example 3''': Identity-Function */
-    symbol id({S}) : S
-    axiom  \not(\and(X,     \not(id(X))))
-    axiom  \not(\and(id(X), \not(X)))
+/* Example 3''': Identity-Function */
+symbol id({S}) : S
+axiom  \not(\and(X,     \not(id(X))))
+axiom  \not(\and(id(X), \not(X)))
 \end{Verbatim}
 
 Symbols can be parametric on more than one sort variables.
 \begin{Verbatim}[fontsize=\small]
-    /* Example 4: Definedness */
-    symbol ceil({S}) : {S'}
-    axiom  ceil(X)
+/* Example 4: Definedness */
+symbol ceil({S}) : {S'}
+axiom  ceil(X)
 \end{Verbatim}
 
 Use sort constructors and sort variables to declare parametric sorts.
 \begin{Verbatim}[fontsize=\small]
-    /* Example 5: Lists */
-    sort List{S}
-    symbol nil() : List{S}
-    symbol cons(S, List{S}) : List{S}
-    symbol length(List{S}) : Nat
+/* Example 5: Lists */
+sort List{S}
+symbol nil() : List{S}
+symbol cons(S, List{S}) : List{S}
+symbol length(List{S}) : Nat
 \end{Verbatim}
 
 Parametric sorts can take multiple sort variables.
 \begin{Verbatim}[fontsize=\small]
-    /* Example 6: Pairs */
-    sort Pair{S, S'}
-    symbol pairOf(S, S') : Pair{S, S'}
-    symbol fst(Pair{S, S'}) : S
-    symbol snd(Pair{S, S'}) : S'  
+/* Example 6: Pairs */
+sort Pair{S, S'}
+symbol pairOf(S, S') : Pair{S, S'}
+symbol fst(Pair{S, S'}) : S
+symbol snd(Pair{S, S'}) : S'  
 \end{Verbatim}
 
 \paragraph{Example (Boolean Algebra).}
 \begin{Verbatim}[fontsize=\small]
-    sort Bool
-    symbol true() : Bool
-    symbol false() : Bool
-    axiom  \or(true(), false())
-    axiom  \not(\and(true(), false()))
-    symbol andBool(Bool, Bool) : Bool
-    axiom  \equals(andBool(true(), B), B)
-    axiom  \equals(andBool(false(), B), false())
+sort Bool
+symbol true() : Bool
+symbol false() : Bool
+axiom  \or(true(), false())
+axiom  \not(\and(true(), false()))
+symbol andBool(Bool, Bool) : Bool
+axiom  \equals(andBool(true(), B), B)
+axiom  \equals(andBool(false(), B), false())
 \end{Verbatim}
 
-
-
-\section{Ignore Me}
 
 \subsection{Syntax and Semantics of Kore}
 \label{sec:syntax-of-kore}
@@ -2208,46 +2443,60 @@ Variable       = VariableId:Sort
 MetaVariable   = MetaVariableId::Sort
 
 Pattern        = Variable | MetaVariable
-               | \and(Pattern, Pattern)
-               | \not(Pattern)
-               | \exists(Variable, Pattern)
-               | Symbol(PatternList)
+| \and(Pattern, Pattern)
+| \not(Pattern)
+| \exists(Variable, Pattern)
+| Symbol(PatternList)
 
 Sentence       = import ModuleId
-               | syntax Sort
-               | syntax Sort ::= Symbol(SortList)
-               | axiom Pattern
+| syntax Sort
+| syntax Sort ::= Symbol(SortList)
+| axiom Pattern
 Sentences      = Sentence | Sentences Sentences
 
 Module         = module ModuleId
-                   Sentences
-                 endmodule
+Sentences
+endmodule
 \end{Verbatim}
 
-In Kore syntax, the backslash ``\verb|\|'' is reserved for matching logic connectives and the sharp ``\verb|#|'' is reserved for the meta-level, i.e., the $K$ sorts and symbols. 
+In Kore syntax, the backslash ``\verb|\|'' is reserved for matching logic 
+connectives and the sharp ``\verb|#|'' is reserved for the meta-level, i.e., 
+the $K$ sorts and symbols. 
 Therefore, the sorts $\KPred$, $\KString$, $\KSymbol$, $\KSort$, and 
 $\KPattern$ in the calculus $K$ are denoted as \verb|#Bool|, \verb|#String|, 
 \verb|#Symbol|, \verb|#Sort|, and \verb|#Pattern| in Kore respectively.
 Symbols in $K$ are denoted in the similar way, too. 
-For example, the constructor symbol $\Kvariable \colon \KString \times \KSort \to \KPattern$ is denoted as \verb|#variable| in Kore. 
+For example, the constructor symbol $\Kvariable \colon \KString \times \KSort 
+\to \KPattern$ is denoted as \verb|#variable| in Kore. 
 
-A Kore module definition begins with the keyword \verb|module| followed by the name of the module-being-defined, and ends with the keyword \verb|endmodule|. The body of the definition consists of some \emph{sentences}, whose meaning are introduced in the following.
+A Kore module definition begins with the keyword \verb|module| followed by the 
+name of the module-being-defined, and ends with the keyword \verb|endmodule|. 
+The body of the definition consists of some \emph{sentences}, whose meaning are 
+introduced in the following.
 
-The keyword \verb|import| takes an argument as the name of the module-being-imported, and looks for that module in previous definitions. 
+The keyword \verb|import| takes an argument as the name of the 
+module-being-imported, and looks for that module in previous definitions. 
 If the module is found, the body of that module is copied to the current module.
 Otherwise, nothing happens. 
-The keyword \verb|syntax| leads a \emph{syntax declaration}, which can be either a \emph{sort declaration} or a \emph{symbol declaration}.
-Sorts declared by sort declarations are called \emph{object-sorts}, in comparison to the five \emph{meta-sorts}, \verb|#Bool|, \verb|#String|, \verb|#Symbol|, \verb|#Sort|, and \verb|#Pattern|, in $K$. 
-Symbols whose argument sorts and return sort are all object-sorts (meta-sorts) are called \emph{object-symbols} (\emph{meta-sorts}).
+The keyword \verb|syntax| leads a \emph{syntax declaration}, which can be 
+either a \emph{sort declaration} or a \emph{symbol declaration}.
+Sorts declared by sort declarations are called \emph{object-sorts}, in 
+comparison to the five \emph{meta-sorts}, \verb|#Bool|, \verb|#String|, 
+\verb|#Symbol|, \verb|#Sort|, and \verb|#Pattern|, in $K$. 
+Symbols whose argument sorts and return sort are all object-sorts (meta-sorts) 
+are called \emph{object-symbols} (\emph{meta-sorts}).
 
 Patterns are written in prefix forms. 
-A pattern is called an \emph{object-pattern} (\emph{meta-pattern}) if all sorts and symbols in it are object (meta) ones.
-Meta-symbols will be added to the calculus $K$, while object-sorts and object-symbols will not.
+A pattern is called an \emph{object-pattern} (\emph{meta-pattern}) if all sorts 
+and symbols in it are object (meta) ones.
+Meta-symbols will be added to the calculus $K$, while object-sorts and 
+object-symbols will not.
 They only serve for the purpose to parse an object pattern. 
 
 The keyword \verb|axiom| takes a pattern and adds an axiom to the calculus $K$.
 If the pattern is a meta-pattern, it adds the pattern itself as an axiom.
-If the pattern $\varphi$ is an object-pattern, it adds $\Bracket{\varphi}$ as an axiom to the calculus $K$.
+If the pattern $\varphi$ is an object-pattern, it adds $\Bracket{\varphi}$ as 
+an axiom to the calculus $K$.
 
 Recall that we have defined the semantics bracket as
 \begin{equation*}
@@ -2256,25 +2505,36 @@ Recall that we have defined the semantics bracket as
 \end{equation*}
 where $\varphi$ is a pattern of the grammar in Figure~\ref{ml-grammar}.
 However, here in Kore we allow $\varphi$ containing \emph{meta-variables}.
-As a result, we modify the definition of the semantics bracket as $$\Bracket{\varphi} \equiv \mathit{mvsc}[\varphi] \to (deducible\left(\mathit{lift}[\varphi]\right) = true),$$
-where the lifting function $\mathit{lift}[\_]$ and the meta-variable sort constraint $\mathit{mvsc}[\_]$ are defined in Algorithm~\ref{alg:liftingfunction} and~\ref{alg:mvsc}, respectively.
-Intuitively, meta-variables in an object-pattern $\varphi$ are lifted to variables of the sort $\KPattern$ with the corresponding sort constraints. 
-For example, the meta-variable $x \cln\cln s$ is lifted to a variable $x \cln \KPattern$ in $K$ with the constraint that $\KgetSort(x \cln \KPattern) = sort(s)$. The function $\mathit{mvsc}[\_]$ collects all such meta-variable sort constraint in an object-pattern is implemented in Algorithm~\ref{alg:mvsc}.
+As a result, we modify the definition of the semantics bracket as 
+$$\Bracket{\varphi} \equiv \mathit{mvsc}[\varphi] \to 
+(deducible\left(\mathit{lift}[\varphi]\right) = true),$$
+where the lifting function $\mathit{lift}[\_]$ and the meta-variable sort 
+constraint $\mathit{mvsc}[\_]$ are defined in 
+Algorithm~\ref{alg:liftingfunction} and~\ref{alg:mvsc}, respectively.
+Intuitively, meta-variables in an object-pattern $\varphi$ are lifted to 
+variables of the sort $\KPattern$ with the corresponding sort constraints. 
+For example, the meta-variable $x \cln\cln s$ is lifted to a variable $x \cln 
+\KPattern$ in $K$ with the constraint that $\KgetSort(x \cln \KPattern) = 
+sort(s)$. The function $\mathit{mvsc}[\_]$ collects all such meta-variable sort 
+constraint in an object-pattern is implemented in Algorithm~\ref{alg:mvsc}.
 
 \begin{algorithm}
 	\KwIn{An object-pattern $\varphi$.}
 	\KwOut{The meta-representation (ASTs) of $\varphi$ in $K$}
 	\uIf{$\varphi$ is $x \cln s$}{Return $\mathit{variable(x, sort(s))}$}
-	\uElseIf{$\varphi$ is $x \cln \cln s$}{Return $x \cln \KPattern {\ \wedge\ } (\mathit{sort(s)} = \KgetSort(x \cln \KPattern)) $}
+	\uElseIf{$\varphi$ is $x \cln \cln s$}{Return $x \cln \KPattern {\ \wedge\ 
+	} (\mathit{sort(s)} = \KgetSort(x \cln \KPattern)) $}
 	\uElseIf{$\varphi$ is $\varphi_1 \wedge \varphi_2$}
 	{Return $\Kand(\mathit{lift}[\varphi_1], \mathit{lift}[\varphi_2]$}
 	\uElseIf{$\varphi$ is $\neg \varphi_1$}
 	{Return $\Knot(\mathit{lift}[\varphi_1])$}
 	\uElseIf{$\varphi$ is $\exists x \cln s . \varphi_1$}
 	{Return $\Kexists(x, \mathit{sort(s)}, \mathit{lift}[\varphi_1])$}
-	\uElseIf{$\varphi$ is $\sigma(\varphi_1,\dots,\varphi_n)$ and $\sigma \in \Sigma_{s_1,\dots,s_n,s}$}
-	{Return $\Kapplication(\mathit{symbol}(\sigma, (\Ksort(s_1), \dots, \Ksort(s_n)), \Ksort(s)),$
-	$\mathit{lift}[\varphi_1],\dots,\mathit{lift}[\varphi_n])$}
+	\uElseIf{$\varphi$ is $\sigma(\varphi_1,\dots,\varphi_n)$ and $\sigma \in 
+	\Sigma_{s_1,\dots,s_n,s}$}
+	{Return $\Kapplication(\mathit{symbol}(\sigma, (\Ksort(s_1), \dots, 
+	\Ksort(s_n)), \Ksort(s)),$
+		$\mathit{lift}[\varphi_1],\dots,\mathit{lift}[\varphi_n])$}
 	\caption{Lifting Function $\mathit{lift}[\_]$}
 	\label{alg:liftingfunction}
 \end{algorithm}
@@ -2300,83 +2560,79 @@ For example, the meta-variable $x \cln\cln s$ is lifted to a variable $x \cln \K
 \paragraph{The {\small BOOL} module.}\quad
 \begin{Verbatim}[fontsize=\small]
 module BOOL
-  syntax Bool
-  syntax Bool ::= true | false | notBool(Bool)
-                | andBool(Bool, Bool) | orBool(Bool, Bool)
-  axiom \or(true(), false())
-  axiom \exists(X:Bool, \equals(X:Bool, true()))
-  axiom \equals(andBool(B1::Bool, B2::Bool), 
-                andBool(B2::Bool, B1::Bool))
-  axiom ... ...
+syntax Bool
+syntax Bool ::= true | false | notBool(Bool)
+| andBool(Bool, Bool) | orBool(Bool, Bool)
+axiom \or(true(), false())
+axiom \exists(X:Bool, \equals(X:Bool, true()))
+axiom \equals(andBool(B1::Bool, B2::Bool), 
+andBool(B2::Bool, B1::Bool))
+axiom ... ...
 endmodule
 \end{Verbatim}
 
 \paragraph{The {\small BOOL} module (desugared).}\quad
 \begin{Verbatim}[fontsize=\small]
 module BOOL
-  axiom \equals(
-    #true,
-    #deducible(#or(#application(#symbol("true", #nilSort, #sort("Bool")),
-                                #nilPattern), 
-                   #application(#symbol("false", #nilSort, #sort("Bool")),
-                                #nilPattern))))
-  axiom \equals(
-    #true,
-    #deducible(#exists("X", #sort("Bool"), 
-               #equals(#variable("X", #sort("Bool")), 
-                       #application(#symbol("true", #nilSort, #sort("Bool")),
-                                    #nilPattern)))))
-  axiom \leftrightarrow(
-    \and(\equals(#getSort(B1:Pattern), #sort("Bool")), 
-         \equals(#getSort(B2:Pattern), #sort("Bool"))),
-    \equals(
-      #true,
-      #deducible(#equals(#application(#symbol("andBool", 
-                                              (#sort("Bool"), #sort("Bool"))
-                                              #sort("Bool")), 
-                                      (B1:Patern, B2:Pattern)), ---- TODO
-                         #application(#symbol("andBool", 
-                                              (#sort("Bool"), #sort("Bool"))
-                                              #sort("Bool")), 
-                                      (B2:Patern, B1:Pattern))))))
-  axiom ... ...
+axiom \equals(
+#true,
+#deducible(#or(#application(#symbol("true", #nilSort, #sort("Bool")),
+#nilPattern), 
+#application(#symbol("false", #nilSort, #sort("Bool")),
+#nilPattern))))
+axiom \equals(
+#true,
+#deducible(#exists("X", #sort("Bool"), 
+#equals(#variable("X", #sort("Bool")), 
+#application(#symbol("true", #nilSort, #sort("Bool")),
+#nilPattern)))))
+axiom \leftrightarrow(
+\and(\equals(#getSort(B1:Pattern), #sort("Bool")), 
+\equals(#getSort(B2:Pattern), #sort("Bool"))),
+\equals(
+#true,
+#deducible(#equals(#application(#symbol("andBool", 
+(#sort("Bool"), #sort("Bool"))
+#sort("Bool")), 
+(B1:Patern, B2:Pattern)), ---- TODO
+#application(#symbol("andBool", 
+(#sort("Bool"), #sort("Bool"))
+#sort("Bool")), 
+(B2:Patern, B1:Pattern))))))
+axiom ... ...
 endmodule
 \end{Verbatim}
 
 \paragraph{The {\small LAMBDA} module}\quad
 \begin{Verbatim}[fontsize=\small]
 module LAMBDA
-  syntax Exp
-  syntax Exp ::= app(Exp, Exp) | lambda0(Exp, Exp)
-  syntax #Bool ::= isLTerm(#Pattern)
+syntax Exp
+syntax Exp ::= app(Exp, Exp) | lambda0(Exp, Exp)
+syntax #Bool ::= isLTerm(#Pattern)
 
-  axiom \equals(
-    isLTerm(#variable(X:String, #sort("Exp"))), 
-    true)
-  axiom \equals(
-    isLTerm(#application(
-              #symbol("app", (#sort("Exp"), #sort("Exp")), #sort("Exp")),
-              (E:Pattern, E':Pattern))),
-    andBool(isLTerm(E:Pattern), isLTerm(E':Pattern)))
-  axiom \equals(
-    isLTerm(#exists(X:String, #sort("Exp"),
-                    #application(#symbol("lambda0",
-                                         (#sort("Exp"), #sort("Exp")),
-                                         #sort("Exp")),
-                                 (#variable(X:String, #sort("Exp")),
-                                  E:Pattern))),
-    isLTerm(E:Pattern))
-  axiom \leftrightarrow(\equals(true, 
-                         andBool(isLTerm(E:Pattern), 
-                                 isLTerm(E':Pattern))),
-                 \equals(true,
-                         deducible(#equals(...1,
-                                           ...2)))) 
+axiom \equals(
+isLTerm(#variable(X:String, #sort("Exp"))), 
+true)
+axiom \equals(
+isLTerm(#application(
+#symbol("app", (#sort("Exp"), #sort("Exp")), #sort("Exp")),
+(E:Pattern, E':Pattern))),
+andBool(isLTerm(E:Pattern), isLTerm(E':Pattern)))
+axiom \equals(
+isLTerm(#exists(X:String, #sort("Exp"),
+#application(#symbol("lambda0",
+(#sort("Exp"), #sort("Exp")),
+#sort("Exp")),
+(#variable(X:String, #sort("Exp")),
+E:Pattern))),
+isLTerm(E:Pattern))
+axiom \leftrightarrow(\equals(true, 
+andBool(isLTerm(E:Pattern), 
+isLTerm(E':Pattern))),
+\equals(true,
+deducible(#equals(...1,
+...2)))) 
 endmodule
 \end{Verbatim}
-
-
-\bibliographystyle{abbrv}
-\bibliography{refs}
 
 \end{document}
