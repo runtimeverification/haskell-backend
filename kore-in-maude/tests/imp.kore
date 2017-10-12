@@ -103,6 +103,7 @@ fmod IMP is
                          HOLE : S, 
                          plusAExp(ctxtapp{S,AExp}(C : KPattern, HOLE : S), E : AExp))), 
                      X : S)))
+
   ---(
   axiom{S, R}
   implies{R}(
