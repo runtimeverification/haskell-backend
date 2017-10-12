@@ -83,6 +83,9 @@
   
   % Package for quotations:
   \usepackage{csquotes}
+  
+  % Package for customizing lists environments:
+  \usepackage{enumitem}
  
   
   % Define ceiling and flooring symbols:
@@ -181,6 +184,8 @@
   \newcommand{\Bag}{\textit{Bag}}
   \newcommand{\Set}{\textit{Set}}
   \newcommand{\Map}{\textit{Map}}
+  \newcommand{\Exp}{\textit{Exp}}
+  \newcommand{\app}{\textit{app}}
   \newcommand{\parametric}[2]{{#1}\raisebox{.2ex}{\texttt{\footnotesize{\{}}}#2\raisebox{.2ex}{\texttt{\footnotesize{\}}}}}
   \newcommand{\parametricscript}[2]{{#1}\raisebox{.2ex}{\texttt{\tiny{\{}}}#2\raisebox{.2ex}{\texttt{\tiny{\}}}}}
   
@@ -1139,7 +1144,7 @@ sort or symbol.
 Therefore, instead of having the sort $\Bool$ as part of it, $K$ has \emph{a 
 mention for it}, denoted as the string ``Bool''.
 
-The sort of $K$ for strings is denoted as $\KString$, which are defined in 
+The sort in $K$ for strings is $\KString$, which are defined in 
 Section~\cref{?}.
 
 \paragraph{Naming Functions.}
@@ -1187,7 +1192,44 @@ formula $\varphi$ in the reflective logic.
 Intuitively, the truth predicate $T$ captures the semantics of a formula being 
 true.
 
-We adopt the same approach here. We introduce and axiomatize a finite number of
+We adopt the same approach here.
+For illustration, consider the theory of lambda calculus as an example.
+\paragraph{Lambda Calculus.} The theory of lambda calculus, denoted as $L$, has 
+only one sort which we denote as $\Exp$
+\begin{center}
+	(\textsc{Exp}) \quad $\Exp$ is a sort in theory $L$.
+\end{center} It has two binary symbols which we 
+denote as $\lambda_0$ and $\app$, respectively
+\begin{center}
+	(\textsc{Abstraction}) \quad $\lambda_0(\Exp, \Exp) \colon \Exp$ 
+	\\
+	(\textsc{Application}) \quad $\app(\Exp, \Exp) \colon \Exp$ 
+\end{center}
+We introduce the symbol $\lambda$ as an alias defined as
+\begin{center}
+	(\textsc{Binder})\quad $ \lambda(x, e) \coloneqq \exists x . \lambda_0(x, 
+	e)$ \quad for any variable $x$ and $\Exp$ pattern $e$
+\end{center}
+and define a syntactic class called $\lambda$-terms
+\begin{center}
+	(\textsc{$\lambda$-Term}) \quad $\Lambda$-terms is the smallest set 
+	satisfying the following three conditions
+	\begin{itemize}[leftmargin=11em,nosep]
+		\item $x \in \text{$\lambda$-Term}$ for any variable $x$
+		\item $\lambda(x, e) \in \text{$\lambda$-Term}$ for any variable $x$ 
+		and $e \in \text{$\lambda$-Term}$
+		\item $\app(e, e') \in \text{$\lambda$-Term}$ for any $e, e' \in 
+		\text{$\lambda$-Term}$
+	\end{itemize}
+\end{center}
+The theory $\Lambda$ has an axiom schema
+\begin{center}
+	(\textsc{Beta}) \quad $\app(\lambda(x, e), e') = e'[e/x]$ 
+	\quad if $e$ and $e'$ are $\lambda$-terms
+\end{center}
+\todo{TODO here}
+
+We introduce and axiomatize a finite number of
 predicate symbols in the meta-theory $K$ that capture the semantics of the 
 matching logic proof system, or more specifically, the semantics of
 \begin{itemize}\itemsep0em
