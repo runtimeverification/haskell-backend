@@ -186,6 +186,10 @@
   \newcommand{\Map}{\textit{Map}}
   \newcommand{\Exp}{\textit{Exp}}
   \newcommand{\app}{\textit{app}}
+  \newcommand{\KExp}{\mathit{KExp}}
+  \newcommand{\Klambdazero}{\mathit{Klambda0}}
+  \newcommand{\Kapp}{\mathit{Kapp}}
+  \newcommand{\Klambda}{\mathit{Klambda}}
   \newcommand{\parametric}[2]{{#1}\raisebox{.2ex}{\texttt{\footnotesize{\{}}}#2\raisebox{.2ex}{\texttt{\footnotesize{\}}}}}
   \newcommand{\parametricscript}[2]{{#1}\raisebox{.2ex}{\texttt{\tiny{\{}}}#2\raisebox{.2ex}{\texttt{\tiny{\}}}}}
   
@@ -1113,7 +1117,7 @@ because
 (1) $K$ itself is a matching logic theory and 
 (2) one is able to study and discuss the properties of matching logic itself, 
 instead of the properties of some models or algebras that are axiomatized in 
-the logic. Some typical example properties of matching logic include the 
+the logic, in the meta-theory $K$. Some typical example properties of matching logic include the 
 wellformedness of a pattern and the derivability of a pattern in a theory.
 
 Before we put our effort in exhaustively defining the meta-theory $K$, we would 
@@ -1192,9 +1196,42 @@ formula $\varphi$ in the reflective logic.
 Intuitively, the truth predicate $T$ captures the semantics of a formula being 
 true.
 
-We adopt the same approach here.
-For illustration, consider the theory of lambda calculus as an example.
-\paragraph{Lambda Calculus.} The theory of lambda calculus, denoted as $L$, has 
+We adopt the same approach in this proposal.
+We introduce and axiomatize a finite number of
+predicate symbols in the meta-theory $K$ that capture the semantics of the 
+matching logic proof system, or more specifically, the semantics of
+\begin{itemize}\itemsep0em
+	\item A sort being declared in a theory ($\KsortDeclared$)
+	\item A symbol being decalred in a theory ($\KsymbolDeclared$)
+	\item A pattern being an axiom in a theory ($\KaxiomDeclared$)
+	\item A pattern being wellformed in a theory ($\KwellFormed$)
+	\item A pattern being derivable in a theory ($\Kderivable$)
+\end{itemize}
+
+Each of them has to satisfy the corresponding faithfulness theorem.
+In particular, the faithfulness for the derivability means
+\begin{center}
+	\begin{tabular}{cc}
+		$
+		\prftree[r]{\footnotesize (Upward Reflection)}
+		{T \vdash \varphi}
+		{K \cup \widehat{T} \vdash \Kdeduce(\widehat{\varphi})}
+		$
+		&
+		$
+		\prftree[r]{\footnotesize (Downward Reflection)}
+		{K \cup \widehat{T} \vdash \Kdeduce(\widehat{\varphi})}
+		{T \vdash \varphi}
+		$
+	\end{tabular}
+\end{center}
+where $\widehat{\varphi}$ is the representation of $\varphi$ in the 
+meta-theory, and $\widehat{T}$ is the set of assertions of predicates that 
+defines the theory $T$ in the meta-theory.
+
+In the following, we use the theory of lambda calculus as an example to illustrate how the meta-theory $K$ works.
+\subsubsection*{Example: Lambda Calculus Represented in $K$}
+The theory of lambda calculus, denoted as $L$, has 
 only one sort which we denote as $\Exp$
 \begin{center}
 	(\textsc{Exp}) \quad $\Exp$ is a sort in theory $L$.
@@ -1227,38 +1264,72 @@ The theory $\Lambda$ has an axiom schema
 	(\textsc{Beta}) \quad $\app(\lambda(x, e), e') = e'[e/x]$ 
 	\quad if $e$ and $e'$ are $\lambda$-terms
 \end{center}
-\todo{TODO here}
 
-We introduce and axiomatize a finite number of
-predicate symbols in the meta-theory $K$ that capture the semantics of the 
-matching logic proof system, or more specifically, the semantics of
-\begin{itemize}\itemsep0em
-	\item A sort being declared in a theory ($\KsortDeclared$)
-	\item A symbol being decalred in a theory ($\KsymbolDeclared$)
-	\item A pattern being an axiom in a theory ($\KaxiomDeclared$)
-	\item A pattern being wellformed in a theory ($\KwellFormed$)
-	\item A pattern being derivable in a theory ($\Kderivable$)
-\end{itemize}
-Each of them has to satisfy the corresponding faithfulness theorem.
-In particular, the faithfulness for the derivability means
+\paragraph{Naming Function.}
+A naming function is needed to encode lambda expressions as abstract syntax trees.
+We use the next naming function
 \begin{center}
-	\begin{tabular}{cc}
-		$
-		\prftree[r]{\footnotesize (Upward Reflection)}
-		{T \vdash \varphi}
-		{K \cup \widehat{T} \vdash \Kdeduce(\widehat{\varphi})}
-		$
-		&
-		$
-		\prftree[r]{\footnotesize (Downward Reflection)}
-		{K \cup \widehat{T} \vdash \Kdeduce(\widehat{\varphi})}
-		{T \vdash \varphi}
-		$
+\begin{tabular}{c|c}
+	Object targets & Names in $K$
+	\\\hline
+	$\Exp$ & ``Exp''
+	\\\hline
+	$\lambda_0$ & ``lambda0''
+	\\\hline
+	$\app$ & ``app''
+	\\\hline
+	$\lambda$ & ``lambda''
+\end{tabular}
+\end{center}
+
+
+
+\paragraph{Declarations in $L$ as Assertions in $K$.} \quad
+We list all declarations in $L$ and their corresponding assertions in $K$, without explaining them.
+We will formally define the process in Section~\cref{?}, but for now we only provide a taste of flavor of the meta-theory $K$.
+
+In $L$,
+\begin{center}
+	$\Exp$ is a sort
+\end{center}
+
+In $K$,
+\begin{center}
+\begin{tabular}{l}
+	$\KExp$ is a constant symbol of sort $\KSort$ \\
+	$\KExp = \Ksort(\text{``Exp''})$ \\
+	$\KsortDeclared(\KExp)$
+\end{tabular}
+\end{center}
+
+In $L$,
+\begin{center}
+	$\lambda_0$ is a binary symbol
+\end{center}
+
+In $K$,
+\begin{center}
+	\begin{tabular}{l}
+		$\mathit{KSymbollambda0}$ is a constant symbol of sort $\KSymbol$ \\
+		$\mathit{KSymbollambda0} = \Ksymbol(\text{``Exp''}, (\KExp, \KExp), \KExp)$ \\
+		$\KsymbolDeclared(\mathit{KSymbollambda0})$ \\
+		$\Klambdazero \colon \KPattern \times \KPattern \to \KPattern$ is a symbol\\
+		$\Klambdazero(\varphi, \psi) = \Kapplication(\mathit{KSymbollambda0}, (\varphi, \psi))$\\
 	\end{tabular}
 \end{center}
-where $\widehat{\varphi}$ is the representation of $\varphi$ in the 
-meta-theory, and $\widehat{T}$ is the set of assertions of predicates that 
-defines the theory $T$ in the meta-theory.
+
+In $L$
+\begin{center}
+	$\lambda$ is an alias defined as $\lambda(x, e) = \exists x . \lambda_0(x, e)$
+\end{center}
+
+In $K$
+\begin{center}
+	\begin{tabular}{l}
+	$\Klambda \colon \KVariable \times \KPattern \to \KPattern$ is a symbol \\
+	$\Klambda(v, \varphi) = \Kexists(\KExp, \KExp, v, \Klambdazero(v, \varphi))$
+	\end{tabular}
+\end{center}
 
 \paragraph{Shallow Embedding and Deep Embedding.}
 There are multiple ways to design a reflective logic.
@@ -1867,9 +1938,6 @@ $s$ for $\KSort$ variables,
 $\varphi$ and $\psi$ for $\KPattern$ variables,
 $L$, $R$ for $\KPatternList$ variables~(in \textbf{Rule~(M5)}).
 
-\todo{Change fonts and remove the ``dot'' after each formulas.}
-\todo{Change notations}
-
 (\textsc{Axiom}).\quad
 $A \vdash \varphi$ if $\varphi \in A$.
 \begin{equation*}
@@ -2036,9 +2104,6 @@ $$(L, \varphi, R) \equiv \KappendKPatternList(L, \KconsKPatternList(\varphi,
 R)).$$
 
 \subsection{Faithfulness: Finite Case}
-
-\improvement{State the faithfulness theorem and why it is useful, and move the 
-proof to appendix.}
 
 \begin{theorem}[Faithfulness Theorem]\label{thm:faithfulness-finite}
 	$$T \vdash \varphi \quad \text{iff} \quad \Kfinite \cup \widehat{T} \vdash 
