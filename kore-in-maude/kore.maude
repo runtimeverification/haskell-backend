@@ -101,7 +101,7 @@ fmod KORE is
   vars Ps Ps' : PatternList .
 
   ---- Append two lists.
-  op _@_ : PatternList PatternList -> PatternList .
+  op _@_ : PatternList PatternList -> PatternList [assoc] .
   eq . @ Ps = Ps .
   eq P:Pattern @ Ps = P:Pattern, Ps .
   eq (P:Pattern, Ps) @ Ps' = P:Pattern, (Ps @ Ps') .
@@ -191,7 +191,7 @@ fmod KORE is
   vars Decls Decls' : Declarations .
 
   ---- Append two declarations.
-  op _@_ : Declarations Declarations -> Declarations .
+  op _@_ : Declarations Declarations -> Declarations [assoc] .
   eq Decl @ Decls = Decl Decls .
   eq (Decl Decls) @ Decls' = Decl (Decls @ Decls') .
 
@@ -251,13 +251,24 @@ fmod KORE is
   op [[_]] : Pattern -> Pattern . 
   eq [[AOH(Ps)]] = [[AOH]]([[Ps]]) .
   eq [[AMH(Ps)]] = AMH([[Ps]]) .
+ ceq [[exists{Ss}(V:Pattern, Q:Pattern)]] 
+   = Kexists([[Ss]] @ [[V:Pattern]]0 @ [[Q:Pattern]])
+  if isNeObjectSortList(Ss) .
+ ceq [[forall{Ss}(V:Pattern, Q:Pattern)]]
+   = Kforall([[Ss]] @ [[V:Pattern]]0 @ [[Q:Pattern]])
+  if isNeObjectSortList(Ss) .
  ceq [[PH{Ss}(Ps)]] = [[PH]]([[Ss]] @ [[Ps]])
   if isNeObjectSortList(Ss) .
  ceq [[PH{Ss}(Ps)]] = PH{Ss}([[Ps]])
   if isNeMetaSortList(Ss) .
-  eq [[X:VariableName : OS]] = Kvariable([[X:VariableName]], [[OS]]) .
+  eq [[X:VariableName : OS]] = KvariableAsPattern([[X:VariableName]], [[OS]]) .
   eq [[X:VariableName : MS]] = X:VariableName : MS .
   eq [[S:String]] = S:String .
+
+
+  ---- Lifting a variable to KVariable (instead of KPattern)
+  op [[_]]0 : Pattern -> Pattern .
+  eq [[X:VariableName : OS]]0 = Kvariable([[X:VariableName]], [[OS]]) .
 
   ---- Lift a list of patterns by lifting each of them.
   op [[_]] : PatternList -> PatternList .
@@ -505,7 +516,8 @@ fmod KORE is
   op KPattern     : -> MetaSort .
   op KPatternList : -> MetaSort .
 
-  op Kvariable    : -> AtomicMetaHead  .
+  op Kvariable           : -> AtomicMetaHead  .
+  op KvariableAsPattern  : -> AtomicMetaHead  .
   op Kand         : -> AtomicMetaHead .
   op Kor          : -> AtomicMetaHead .
   op Knot         : -> AtomicMetaHead .
