@@ -1077,9 +1077,9 @@ be no finite or algorithmic way to represent those
 (e.g., the set of properties of the ``builtin'' model of natural numbers is
 not r.e.).
 
-\section{Reflection in Matching Logic}
-
-Consider a matching logic prover $P$ that decides whether a matching logic patter $\varphi$ holds in a matching logic theory $T$. 
+\section{The Meta-Theory: Reflection in Matching Logic}
+Consider a matching logic prover $P$ that decides whether a matching logic 
+patter $\varphi$ holds in a matching logic theory $T$. 
 The prover $P$ is an executable program written in some programming language, and it has two inputs: a piece of data that \emph{encodes} the pattern $\varphi$, and another piece of data that \emph{encodes} the theory $T$.
 With the sound and complete proof system of matching logic that is introduced in~\cite{rosu-2017-lmcs}, we expect the prover $P$ to be a semi-decision procedure---that is, $P$ always halts with success if $T \vdash \varphi$ and either halts with failure or never halts if $T \not\vdash \varphi$.
 
@@ -1087,55 +1087,167 @@ The main focus in this and the next two sections is not about \emph{how to
 design and implement the prover $P$}, but about \emph{how to encode $\varphi$ 
 and $T$ as data that can be fed into $P$ as inputs}.
 In other words, we are interested in \emph{representations} of patterns and matching logic theories.
-Since any executable programs (in the normal sense) can only handle finite inputs, we are in particular interested in \emph{finite representations} of pattern and matching logic theories.
+Since any executable programs (in the normal sense) can only handle finite 
+inputs, we are in particular interested in \emph{finite representations} of 
+patterns and matching logic theories.
 
-In Section~\cref{sec:finite-mechanisms} we have seen many mechanisms that help to define infinite theories using finite resources, including using sort, symbol, and pattern schemas with side conditions.
-In this section, we will give such mechanisms \emph{a formal semantics} in terms of
-\begin{itemize}
-	\item developing a reflective theory of matching logic which we refer to as 
-	the meta-theory $K$;
-	\item axiomatizing the mechanisms that we use in 
-	Section~\cref{sec:finite-mechanisms} to define infinite theories in a 
-	finite manner in $K$.  
-\end{itemize}
-
-There has been a good many of studies about reflections in logic, computation, and programming.
-Brian Smith gave reflection a rather broad definition in~\cite{?}, from which we quote that
+In this proposal, we answer the above question by developing a reflection of 
+matching logic through a theory called the meta-theory, denoted as $K$.
+There has been a good many of studies about reflections in logic, computation, 
+and programming.
+Brian Smith gave reflection a rather broad definition in~\cite{?}, from which 
+we quote that
 \begin{displayquote}
-(Reflection is) an entity’s integral ability to represent, operate on,
-and otherwise deal with its self in the same way that
-it represents, operates on and deals with its primary
-subject matter.
+	(Reflection is) an entity’s integral ability to represent, operate on,
+	and otherwise deal with its self in the same way that
+	it represents, operates on and deals with its primary
+	subject matter.
 \end{displayquote}
-Following this definition, a reflective theory of matching logic is a matching logic theory with which one can study and discuss properties of matching logic, for example, the wellformedness of a pattern and the derivability of a pattern from a theory.
-The following table shows the difference of topics that we are interested 
-between a theory of arithmetics and its reflective theory:
+Following this definition, the theory $K$ is said to be a {reflective} one 
+because 
+(1) $K$ itself is a matching logic theory and 
+(2) one is able to study and discuss the properties of matching logic itself, 
+instead of the properties of some models or algebras that are axiomatized in 
+the logic. Some typical example properties of matching logic include the 
+wellformedness of a pattern and the derivability of a pattern in a theory.
+
+Before we put our effort in exhaustively defining the meta-theory $K$, we would 
+like to firstly point how the meta-theory $K$ helps us in having a finite 
+representations of patterns and theories.
+
+\subsection{Representing Sorts, Symbols, and Patterns by Their Abstract Syntax 
+Trees}
+
+\paragraph{Strings.}
+We refer to things in various way.
+For example, we use $\Bool$ to denote the only sort in the theory of Boolean 
+algebra, and $\mathit{zero}$ to denote the constant functional 
+symbol in Peano arithmetic that stands for the natural number zero.
+In philosophy and logic, there is a well-known distinction called the 
+use-mention distinction that distinguishes \emph{using} a word or phrase versus 
+\emph{mentioning} it.
+In the previous sentence, we were \emph{using} but not \emph{mentioning} the 
+sort $\Bool$ and the symbol $\mathit{zero}$.
+A clear evidence of mentioning something is that the thing being mentioned is 
+wrapped with quotation marks.
+For $K$ to be the reflective logic of matching logic, it should be able to 
+contain \emph{every} sorts and symbols that appear in \emph{every} theories, 
+which is simply impossible because there is not such a set as \emph{the set of 
+all matching logic sorts}.
+Instead, we let $K$ contain \emph{all possible mentions} of a matching logic 
+sort or symbol.
+Therefore, instead of having the sort $\Bool$ as part of it, $K$ has \emph{a 
+mention for it}, denoted as the string ``Bool''.
+
+The sort of $K$ for strings is denoted as $\KString$, which are defined in 
+Section~\cref{?}.
+
+\paragraph{Naming Functions.}
+A naming function is a function from an object to its \emph{mention}---\emph{a 
+string representation in $K$}.
+A naming is a prerequisite for anything to be encoded and represented in $K$.
+What matters is to have a naming function.
+It does not matter which naming function we choose, as long as distinct 
+objects have distinct names, which is referred to as the \emph{unique name 
+principle}.
+
+\paragraph{Abstract Syntax Trees}
+As soon as we have a naming function, we can encode sorts, symbols, and 
+patterns by constructing terms in $K$ that stand for the abstract syntax trees 
+of them.
+A majority portion of the meta-theory $K$ is about the construction of abstract 
+syntax trees of sorts, symbols, and patterns, and common operations on those 
+abstract syntax trees.
+
+\subsection{Representing Theories as Assertions on Some Predicates}
+We define matching logic theories and the proof system of matching logic as 
+\emph{sets of predicates over the universe of abstract syntax trees of sorts, 
+symbols, and patterns}.
+This approach is a standard approach in the studies of reflective logics. 
+For example in~\cite{?}, a unary predicate symbol $T$ called the \emph{truth 
+predicate} is used in a reflective logic of propositional logic that satisfies 
+the faithfulness conditions
 \begin{center}
-	\textbf{Topics we discuss in the theory of arithmetic}
-	\begin{itemize}\itemsep0em
-		\item Multiplication is commutative.
-		\item Number $233$ is a prime number.
-		\item The de-factorization of $12$ is $2 \times 2 \times 3$.
-		\item The expression $\sqrt{-1}$ is not a well-defined number.
-	\end{itemize}
-	\textbf{Topics we discuss in the reflective theory of the theory of 
-	arithmetic}
-    \begin{itemize}\itemsep0em
-    	\item The pattern $x \times y = y \times x$ is a derivable pattern.
-    	\item The sort $\mathit{RealNumber}$ is declared and the sort 
-    	$\mathit{ComplexNumber}$ is not declared.
-    	\item The pattern $\mathit{isPrime(\varphi)}$ has sort 
-    	$\mathit{Bool}$ 
-    	if $\varphi$ has sort $\mathit{Nat}$.
-    	\item The DNF of $\varphi \to \psi$ is $\varphi' \vee \psi'$, where 
-    	$\varphi'$ and $\psi'$ are DNFs of $\neg \varphi$ and $\psi$, 
-    	respectively.
-    \end{itemize}
+	\begin{tabular}{ccc}
+		$
+		\prftree[r]{\footnotesize (Upward Reflection)}
+		{\vdash \varphi}
+		{\vdash T(\widehat{\varphi})}
+		$
+		&&
+		$
+		\prftree[r]{\footnotesize (Downward Reflection)}
+		{\vdash T(\widehat{\varphi})}
+		{\vdash \varphi}
+		$
+	\end{tabular}
 \end{center}
+where $\widehat{\varphi}$ is the abstract syntax tree that represents the 
+formula $\varphi$ in the reflective logic.
+Intuitively, the truth predicate $T$ captures the semantics of a formula being 
+true.
 
-\paragraph{Naming relation} TODO.
+We adopt the same approach here. We introduce and axiomatize a finite number of
+predicate symbols in the meta-theory $K$ that capture the semantics of the 
+matching logic proof system, or more specifically, the semantics of
+\begin{itemize}\itemsep0em
+	\item A sort being declared in a theory ($\KsortDeclared$)
+	\item A symbol being decalred in a theory ($\KsymbolDeclared$)
+	\item A pattern being an axiom in a theory ($\KaxiomDeclared$)
+	\item A pattern being wellformed in a theory ($\KwellFormed$)
+	\item A pattern being derivable in a theory ($\Kderivable$)
+\end{itemize}
+Each of them has to satisfy the corresponding faithfulness theorem.
+In particular, the faithfulness for the derivability means
+\begin{center}
+	\begin{tabular}{cc}
+		$
+		\prftree[r]{\footnotesize (Upward Reflection)}
+		{T \vdash \varphi}
+		{K \cup \widehat{T} \vdash \Kdeduce(\widehat{\varphi})}
+		$
+		&
+		$
+		\prftree[r]{\footnotesize (Downward Reflection)}
+		{K \cup \widehat{T} \vdash \Kdeduce(\widehat{\varphi})}
+		{T \vdash \varphi}
+		$
+	\end{tabular}
+\end{center}
+where $\widehat{\varphi}$ is the representation of $\varphi$ in the 
+meta-theory, and $\widehat{T}$ is the set of assertions of predicates that 
+defines the theory $T$ in the meta-theory.
 
-\paragraph{Faithfulness}
+\paragraph{Shallow Embedding and Deep Embedding.}
+There are multiple ways to design a reflective logic.
+For example, we could define the meta-theory $K$ in a way that not only sorts, 
+symbols, and patterns have their abstract syntax trees as terms in the 
+meta-theory, but also signatures and theories.
+We just showed how to define in the meta-theory $K$ a universe of abstract 
+syntax trees of matching logic sorts, symbols, and patterns so that every sort 
+or symbol or pattern gets its (unique) meta-representation in the meta-theory 
+as a term of sort $\KSort$ or $\KSymbol$ or $\KPattern$.
+We could do the same thing for theories, that is, we develop a universe of 
+abstract syntax tree of matching logic theories and go from that.
+We called such approach \emph{deep embedding}, compared to the \emph{shallow 
+	embedding} approach what we are going to propose).
+In deep embedding, the derivability relation is captured by a \emph{binary} 
+predicate symbol that takes representations of a pattern and a theory as its 
+two arguments.
+The reason we adopt shallow embedding in this proposal instead of deep 
+embedding is more of practical concerns.
+\todo{another benefit of shallow embedding is that it captures the ``smallest 
+fixed points'' semantics of parametric sorts.}
+In shallow embedding, we do not need to develop infrastructure that 
+``encapsulate'' (possibly) infinite signatures and theories as (definitely) 
+finite terms, which results in a more light-weighted meta-theory.
+However, shallow embedding brings some inconvenience, too. The 
+lack of representation of signatures and theories in the meta-theory makes it 
+impossible to axiomatize module operations---such as joining two modules and 
+hiding a module from the other---within the meta-theory.
+
+Given said that, such inconvenience should never become a theoretical obstacle.
+\todo{because we can reflect the meta-theory in itself.}
 
 \section{Meta-Theory of Matching Logic: Finite Case}
 
@@ -1560,74 +1672,9 @@ $$
 
 \subsection{Matching Logic Theories}
 
-In previous subsections we have defined a universe of terms that represent 
-abstract syntax trees of matching logic sorts, symbols, and patterns.
-Every sort or symbol or pattern gets its meta-representation in the meta-theory 
-$\Kfinite$ as a term of sort $\KSort$ or $\KSymbol$ or $\KPattern$.
 
-Start from this subsection, we are going to define matching logic theories and 
-the proof system of matching logic as \emph{sets of predicates over the 
-universe of abstract syntax trees of sorts, symbols, and patterns}.
-The approach that we adopt in this proposal is a standard approach in the 
-studies of reflective logics. 
-For example in~\cite{?}, a unary predicate symbol 
-$T$ called the \emph{truth predicate} is used in a reflective logic of 
-propositional logic that satisfies the faithfulness conditions
-\begin{center}
-\begin{tabular}{c|c}
-$
-\prftree[r]{\footnotesize (Upward Reflection)}
-{\vdash \varphi}
-{\vdash T(\widehat{\varphi})}
-$
-& 
-$
-\prftree[r]{\footnotesize (Downward Reflection)}
-{\vdash T(\widehat{\varphi})}
-{\vdash \varphi}
-$
-\end{tabular}
-\end{center}
-where $\widehat{\varphi}$ is the term that represents the formula $\varphi$ in 
-the reflective logic.
-Intuitively, the truth predicate $T$ captures the semantics of a formula being 
-true.
 
-In the following we will introduce and axiomatize a finite number of
-predicate symbols in the 
-meta-theory $\Kfinite$ that capture the semantics of the matching logic 
-proof system, or more specifically, the semantics of
-\begin{itemize}\itemsep0em
-	\item A sort being declared in a theory ($\KsortDeclared$)
-	\item A symbol being decalred in a theory ($\KsymbolDeclared$)
-	\item A pattern being an axiom in a theory ($\KaxiomDeclared$)
-	\item A pattern being wellformed in a theory ($\KwellFormed$)
-	\item A pattern being derivable in a theory ($\Kderivable$)
-\end{itemize}
-
-We point out here that there are multiple ways to design a reflective logic.
-For example, we could develop the meta-theory in a way that not only sorts, 
-symbols, and patterns have their abstract syntax trees as terms in the 
-meta-theory, but also signatures and theories.
-In such reflections (which we refer to as \emph{deep embedding}, compared to 
-\emph{shallow embedding} which is the approach we adopt in this proposal), the 
-derivability relation is captured by a \emph{binary} predicate symbol that 
-takes representations of a pattern and a theory as its two arguments.
-The reason we adopt shallow embedding in this proposal instead of deep 
-embedding is more of 
-practical concerns.
-\todo{another benefit of shallow embedding is that it captures the ``smallest 
-fixed points'' semantics of parametric sorts.}
-In shallow embedding, we do not need to develop infrastructure that 
-``encapsulate'' (possibly) infinite signatures and theories as (definitely) 
-finite terms, which results in a more light-weighted meta-theory.
-However, shallow embedding brings some inconvenience, too. The 
-lack of representation of signatures and theories in the meta-theory makes it 
-impossible to axiomatize module operations---such as joining two modules and 
-hiding a module from the other---within the meta-theory.
-
-Given said that, such inconvenience should never become a theoretical obstacle.
-\todo{because we can reflect the meta-theory in itself.}
+We point out here that 
 
 
 
@@ -1642,6 +1689,24 @@ $$ \KsortDeclared(s_1) \wedge \KsortDeclared(s_2) \to
 A theory declares some patterns as axioms, so in $\Kfinite$ there is a 
 predicate symbol
 $$ \KaxiomDeclared \colon \KPattern \to \KPred$$
+
+(\textsc{Sort Declaration}).
+$\mathit{S}$ is declared as a non-parametric sort with~``S'' being its name.
+$$
+\KsortDeclared(\Ksort(\text{``S''}))
+$$
+
+(\textsc{Symbols Declaration}).
+$\mathit{sigma} \colon S_1 \times \dots \times S_n \to S$ is declared as a 
+symbol with ``sigma'' being it name.
+\begin{equation*}
+\KsymbolDeclared(\Ksymbol(\text{``sigma''}, 
+(\widehat{S_1},\dots,\widehat{S_n}), \widehat{S}))
+\end{equation*}
+
+(\textsc{Axiom Declaration}). 
+$\varphi$ is declared to be an axiom.
+$$\KaxiomDeclared(\widehat{\varphi})$$
 
 \paragraph{Wellformedness.}
 The predicate symbol
@@ -1750,16 +1815,7 @@ $$
 is an inference rule of matching logic, in which $\widehat{\varphi_1}, \dots, 
 \widehat{\varphi_n}, \widehat{\psi}$ are representations of $\varphi_1, \dots, 
 \varphi_n, \psi$ in the meta-theory.
-\improvement{We should 
-	mention here that all the subterms / subpatterns that appear in the axioms 
-	are 
-	assumed to be well-formed. Also, the theory $T$ itself must be well-formed, 
-	in 
-	the sense that all axioms in $T$ are well-formed. We omit those premises 
-	when 
-	writing the axioms because writing all of them down need a lot of space, 
-	and 
-	will make the axioms less readable.}
+
 In the following, we list all the inference rules of the matching logic proof 
 system and the correspondent axioms of $\Kdeduce$. We recall the readers our 
 conventions of choosing variable names. 
@@ -1772,19 +1828,30 @@ $L$, $R$ for $\KPatternList$ variables~(in \textbf{Rule~(M5)}).
 \todo{Change fonts and remove the ``dot'' after each formulas.}
 \todo{Change notations}
 
-\paragraph{Rule (Axiom).}
+(\textsc{Axiom}).\quad
 $A \vdash \varphi$ if $\varphi \in A$.
 \begin{equation*}
 \KaxiomDeclared(\varphi) \to \Kdeduce(\varphi)
 \end{equation*}
 
-\paragraph{Rule (K1).}
+\paragraph{Propositional Logic Inference Rules.}\quad
+\\
+
+(\textsc{Propositional$_1$}).\quad
 $\vdash \varphi \to (\psi \to \varphi)$.
 \begin{equation*}
-\Kdeduce(\overline{\varphi \to (\psi \to_s  \varphi)})
+\forall \varphi \forall \psi \forall s \left(
+\KwellFormed(\overline{\varphi \to_s (\psi \to_s  \varphi)}) \to
+\Kdeduce(\overline{\varphi \to_s (\psi \to_s  \varphi)})\right)
 \end{equation*}
 
-\paragraph{Rule (K2).}
+Just for simplicity, from now on we omit writing the wellformedness premises, 
+though it does not mean they are unimportant.
+They are crucial in proving the faithfulness of the meta-theory.
+We also omit explicitly quantifying free variables.
+\\
+
+(\textsc{Propositional$_2$}).\quad
 $\vdash (\varphi_1 \to (\varphi_2 \to \varphi_3)) \to ((\varphi_1 \to \varphi_2) \to (\varphi_1 \to \varphi_3))$.
 \begin{equation*}
 \Kdeduce(
@@ -1792,7 +1859,7 @@ $\vdash (\varphi_1 \to (\varphi_2 \to \varphi_3)) \to ((\varphi_1 \to \varphi_2)
 \varphi_2) \to_s (\varphi_1 \to_s \varphi_3))}).
 \end{equation*}
 
-\paragraph{Rule (K3).}
+(\textsc{Propositional$_3$}).\quad
 $\vdash (\neg \psi \to \neg \varphi) \to (\varphi \to \psi)$.
 \begin{equation*}
 \Kdeduce(\overline{(\neg_s \psi \to_s \neg_s \varphi) 
@@ -1800,78 +1867,7 @@ $\vdash (\neg \psi \to \neg \varphi) \to (\varphi \to \psi)$.
 \to_s \psi)}).
 \end{equation*}
 
-\paragraph{Rule (K4).}
-$\vdash \forall v . \varphi \to \varphi[u/v]$.
-\begin{equation*}
-\Kdeduce(\overline{\forall_s  v . \varphi \to_{s_2} 
-\varphi[y \cln s_1 / x \cln s_1]}).
-\end{equation*}
-
-\paragraph{Rule (K5).}
-$\vdash \forall x . (\varphi \to \psi) \to (\varphi \to \forall x . \psi)$ if $x$ does not occur free in $\varphi$. 
-\begin{equation*}
-\neg\KinKPatternList(\overline{x \cln s_1}, \KgetFvs(\varphi))
-\to \Kdeduce(\overline{\forall_{s_1}^{s_2} x . (\varphi \to_{s_2} 
-\psi) \to_{s_2} (\varphi \to_{s_2} \forall_{s_1}^{s_2} 
-x . \psi)}).
-\end{equation*}
-
-\paragraph{Rule (K6).}
-$\vdash (\varphi_1 = \varphi_2) \to (\psi[\varphi_1/x] \to \psi[\varphi_2/x])$.
-\begin{equation*}
-\Kdeduce(\overline{(\varphi_1 =_{s_1}^{s_2} \varphi_2) \to_{s_2} 
-(\psi[\varphi_1/x \cln s] \to_{s_2} \psi[\varphi_2/x \cln s])}).
-\end{equation*}
-
-\paragraph{Rule (Df).}
-$\vdash \ceil{x}$.
-\begin{equation*}
-\Kdeduce(\Kapplication(\Ksymbol(\quot{ceil}, \KconsKSortList(s_1, 
-\KnilKPatternList), s_2), \overline{x \cln s_1})).
-\end{equation*}
-
-\paragraph{Rule (M1).}
-$\vdash (x \in y) = (x = y)$.
-\begin{equation*}
-\Kdeduce(\overline{(x \in_{s_1}^{s_2} y) =_{s_2}^{s_3} (x =_{s_1}^{s_2} y)}).
-\end{equation*}
-
-\paragraph{Rule (M2).}
-$\vdash x \in (\varphi \wedge \psi) = (x \in \varphi) \wedge (x \in \psi).$
-\begin{equation*}
-\Kdeduce(\overline{x \in_{s_1}^{s_2} (\varphi \wedge_{s_1} \psi) =_{s_2}^{s_3} 
-(x \in_{s_1}^{s_2} \varphi) \wedge_{s_2} (x \in_{s_1}^{s_2} \psi)}).
-\end{equation*}
-
-\paragraph{Rule (M3).}
-$\vdash x \in \neg \varphi = \neg (x \in \varphi)$.
-\begin{equation*}
-\Kdeduce(\overline{x \in_{s_1}^{s_2} \neg_{s_1} \varphi =_{s_2}^{s_3} 
-\neg_{s_2} (x \in_{s_1}^{s_2} \varphi)}).
-\end{equation*}
-
-\paragraph{Rule (M4).}
-$\vdash x \in \forall y . \varphi = \forall y . x \in \varphi$ if $x$ is distinct from $y$.
-\begin{equation*}
-(\overline{x \cln s_1} \neq \overline{y \cln s_2})  \to \Kdeduce(\overline{(x 
-\in_{s_1}^{s_3} \forall_{s_2}^{s_1} y . \varphi) =_{s_3}^{s_4} 
-(\forall_{s_2}^{s_3} y . (x \in_{s_1}^{s_3} \varphi))}).
-\end{equation*}
-
-\paragraph{Rule (M5).}
-$\vdash x \in \sigma(\dots \varphi_i \dots) = \exists y . y \in \varphi_i \wedge x \in \sigma(\dots y \dots)$ where $y$ is distinct from $x$ and it does not occur free in $\sigma(\dots \varphi_i \dots)$.
-\begin{align*}
-& (\overline{x \cln s_1} \neq \overline{y \cln s_2}) 
-  \wedge \neg \KinKPatternList(\overline{y \cln s_2}, 
-  \KgetFvs(\overline{\sigma(L, \varphi_i, R)}))
-\\
-\to & \Kdeduce(\overline{x \cln s_1 \in_{s_1}^{s_3} \sigma(L, 
-\varphi_i, R) =_{s_3}^{s_4} \exists_{s_2}^{s_4} y . (y \cln s_2 \in_{s_2}^{s_3} \varphi_i \wedge x \cln s_1 \in_{s_1}^{s_3} \sigma(L, y, R))}),
-\end{align*}
-where $L$ and $R$ are $\KPatternList$ variables, and we write $(L, \varphi, R)$ as a shorthand of
-$$(L, \varphi, R) \equiv \KappendKPatternList(L, \KconsKPatternList(\varphi, R)).$$
-
-\paragraph{Rule (Modus Ponens).}
+(\textsc{Modus Ponens}).\quad
 If $\vdash \varphi$ and $\vdash \varphi \to \psi$, then $\vdash \psi$.
 \begin{equation*}
 \Kdeduce(\varphi) \wedge \Kdeduce(\overline{\varphi \to_s \psi}) 
@@ -1879,27 +1875,123 @@ If $\vdash \varphi$ and $\vdash \varphi \to \psi$, then $\vdash \psi$.
 \Kdeduce(\psi).
 \end{equation*}
 
-\paragraph{Rule (Universal Generalization).}
-If $\vdash \varphi$, then $\vdash \forall x . \varphi$.
+\paragraph{First-Order Logic With Equality Inference Rules.} \quad
+\\
+
+(\textsc{$\forall$}).\quad
+$\vdash \forall v . (\varphi \to \psi) \to (\varphi \to \forall v . \psi)$ if 
+$v$ does not occur free in $\varphi$. 
 \begin{equation*}
-\Kdeduce(\varphi) \to \Kdeduce(\overline{\forall_{s_1}^{s_2} x . \varphi}).
+\neg\KoccursFree(v, \varphi)
+\to \Kdeduce(\overline{\forall_s v . (\varphi \to_s	\psi) \to_s (\varphi \to_s 
+\forall_s v . \psi)}).
 \end{equation*}
 
-\paragraph{Rule (Membership Introduction).}
-If $\vdash \varphi$ and $x$ does not occur free in $\varphi$, then $\vdash x \in \varphi$.
+(\textsc{Universal Generalization}).\quad
+If $\vdash \varphi$, then $\vdash \forall v . \varphi$.
 \begin{equation*}
-\Kdeduce(\varphi) \wedge \neg \KinKPatternList(\overline{x \cln s_1}, 
-\KgetFvs(\varphi)) \to \Kdeduce(\overline{x \cln s_1 \in_{s_1}^{s_2} 
-\varphi}).
+\Kdeduce(\varphi) \to \Kdeduce(\overline{\forall_s v . \varphi}).
 \end{equation*}
 
-\paragraph{Rule (Membership Elimination).}
-If $\vdash x \in \varphi$ and $x$ does not occur free in $\varphi$, then $\vdash \varphi$.
+(\textsc{Functional Substitution}).\quad
+$\vdash \exists u . u = \psi \wedge \forall v . \varphi \to \varphi[\psi/v]$ if 
+$u$ does not occur free in $\psi$.
 \begin{equation*}
-\Kdeduce(\overline{x \cln s_1 \in_{s_1}^{s_2} \varphi}) \wedge\neg 
-\KinKPatternList(\overline{x \cln s_1}, \KgetFvs(\varphi)) \to \Kdeduce(
-\varphi).
+\KoccursFree(u, \psi) \to
+\Kdeduce(\overline{\exists_{s_2} u . u =_{s_1}^{s_2} \psi \wedge_{s_2} 
+\forall_{s_2} v . \varphi \to_{s_2} \varphi[\psi/v]}).
 \end{equation*}
+
+(\textsc{Functional Variable}). \quad
+$\vdash \exists u . u =v $
+$$
+\Kdeduce(\overline{\exists_{s_2} u . u =_{s_1}^{s_2} v})
+$$
+
+(\textsc{Equality Introduction}).\quad
+$\vdash \varphi = \varphi$
+$$\Kdeduce(\overline{\varphi =_{s_1}^{s_2} \varphi})$$
+
+(\textsc{Equality Elimination}).\quad
+$\vdash (\varphi_1 = \varphi_2) \to (\psi[\varphi_1/v] \to \psi[\varphi_2/v])$.
+\begin{equation*}
+\Kdeduce(\overline{(\varphi_1 =_{s_1}^{s_2} \varphi_2) \to_{s_2} 
+(\psi[\varphi_1/v] \to_{s_2} \psi[\varphi_2/v])}).
+\end{equation*}
+
+\paragraph{Definedness Axioms.}\quad
+\\
+
+(\textsc{Defined Variable}).
+$\vdash \ceil{x \cln s}$.
+\begin{equation*}
+\Kdeduce(\Kceil(s, s', \overline{x \cln s})).
+\end{equation*}
+
+\paragraph{Membership Rules.}\quad
+\\
+
+
+(\textsc{Membership Introduction}).
+If $\vdash \varphi$, and $v$ does not occur free in $\varphi$, then $\vdash v 
+\in \varphi$.
+\begin{equation*}
+\Kdeduce(\varphi) \wedge \neg \KoccursFree(v, \varphi) \to \Kdeduce(\overline{v 
+\in_{s_1}^{s_2} \varphi}).
+\end{equation*}
+
+(\textsc{Membership Introduction}).
+If $\vdash v \in \varphi$ and $v$ does not occur free in $\varphi$, then 
+$\vdash \varphi$.
+\begin{equation*}
+\Kdeduce(\overline{v \in_{s_1}^{s_2} \varphi}) \wedge \neg 
+\KoccursFree(v, \varphi) \to \Kdeduce(\varphi).
+\end{equation*}
+
+(\textsc{Membership Variable}).
+$\vdash (v \in u) = (v = u)$.
+\begin{equation*}
+\Kdeduce(\overline{(v \in_{s_1}^{s_2} u) =_{s_2}^{s_3} (v =_{s_1}^{s_2} u)}).
+\end{equation*}
+
+(\textsc{Membership $\wedge$}).
+$\vdash v \in (\varphi \wedge \psi) = (v \in \varphi) \wedge (v \in \psi).$
+\begin{equation*}
+\Kdeduce(\overline{v \in_{s_1}^{s_2} (\varphi \wedge_{s_1} \psi) =_{s_2}^{s_3} 
+(v \in_{s_1}^{s_2} \varphi) \wedge_{s_2} (v \in_{s_1}^{s_2} \psi)}).
+\end{equation*}
+
+(\textsc{Membership $\neg$}).
+$\vdash v \in \neg \varphi = \neg (v \in \varphi)$.
+\begin{equation*}
+\Kdeduce(\overline{v \in_{s_1}^{s_2} \neg_{s_1} \varphi =_{s_2}^{s_3} 
+\neg_{s_2} (v \in_{s_1}^{s_2} \varphi)}).
+\end{equation*}
+
+(\textsc{Membership $\forall$}).
+$\vdash v \in \forall u . \varphi = \forall u . v \in \varphi$ if $v$ is 
+distinct from $u$.
+\begin{equation*}
+(v \neq u)  \to \Kdeduce(\overline{(v \in_{s_1}^{s_2} \forall_{s_1} u . 
+\varphi) =_{s_2}^{s_3} 
+(\forall_{s_2} u . (v \in_{s_1}^{s_2} \varphi))}).
+\end{equation*}
+
+(\textsc{Membership Symbol}).
+$\vdash v \in \sigma(\dots \varphi_i \dots) = \exists u . u \in \varphi_i 
+\wedge v \in \sigma(\dots u \dots)$ where $u$ is distinct from $v$ and it does 
+not occur free in $\sigma(\dots \varphi_i \dots)$.
+\begin{align*}
+& (u \neq v) 
+  \wedge \neg \KoccursFree(u, \overline{\sigma(L, \varphi_i, R)})
+\\
+\to & \Kdeduce(\overline{v \in_{s_1}^{s_2} \sigma(L, \varphi_i, R) 
+=_{s_2}^{s_3} \exists_{s_2} u . (u \in_{s_4}^{s_2} \varphi_i \wedge_{s_2} v 
+\in_{s_1}^{s_2} \sigma(L, u, R))}),
+\end{align*}
+where $L$ and $R$ are $\KPatternList$ variables, and we write $(L, \varphi, R)$ as a shorthand of
+$$(L, \varphi, R) \equiv \KappendKPatternList(L, \KconsKPatternList(\varphi, 
+R)).$$
 
 \subsection{Faithfulness: Finite Case}
 
@@ -1907,8 +1999,8 @@ If $\vdash x \in \varphi$ and $x$ does not occur free in $\varphi$, then $\vdash
 proof to appendix.}
 
 \begin{theorem}[Faithfulness Theorem]\label{thm:faithfulness-finite}
-	For any finite matching logic theory $T = (S, \Sigma, A)$ and a $\Sigma$-pattern $\varphi$, let us use $\hat{T}$ to denote the corresponding $\Sigma_\Kfinite$-pattern of the sort $\KTheory$ that represents the theory $T$, and use $\hat{\varphi}$ to denote the corresponding $\Sigma_\Kfinite$-pattern of the sort $\KPattern$ that represents the pattern $\varphi$, then
-	$$T \vdash \varphi \quad \text{iff} \quad \Kfinite \vdash \Kdeduce(\hat{T}, \hat{\varphi}).$$
+	$$T \vdash \varphi \quad \text{iff} \quad \Kfinite \cup \widehat{T} \vdash 
+	\Kdeduce(\hat{\varphi}).$$
 \end{theorem}
 
 Theorem~\ref{thm:faithfulness-finite} is an important theorem that justifies the design and usage of the theory $\Kfinite$. 
@@ -1934,7 +2026,33 @@ where the second argument is the list of sort parameters.
 Getter functions $\KgetArgumentSorts$ and $\KgetReturnSort$ are modified 
 accordingly, too.
 
-\subsection{Parametric Sorts and Symbols Declarations as Predicates}
+\subsection{Parametric Sorts and Symbols Declarations as Assertions on 
+Predicates}\quad
+
+(\textsc{Parametric Sort}).
+$\mathit{PS\{s_1,\dots,s_n\}}$ is declared as a parametric sort with $n$ 
+parameters, with~``PS'' being its name.
+$$
+\KsortDeclared(s_1) \wedge \dots \wedge \KsortDeclared(s_n) \to 
+\KsortDeclared(\Ksort(\text{``PS''}, (s_1,\dots,s_n)))
+$$
+
+As a special case,
+
+(\textsc{Non-Parametric Sort}).
+$\mathit{S}$ is declared as a non-parametric sort with~``S'' being its name.
+$$
+\KsortDeclared(\Ksort(\text{``S''}, \KnilKSortList))
+$$
+
+(\textsc{Parametric Symbols}).
+$\mathit{sigma}\{s_1,\dots, s_n\} \colon S_1 \times \dots \times S_n \to S$
+\begin{align*}
+&\KsortDeclared(s_1) \wedge \dots \wedge \KsortDeclared(s_n) \\
+\to 
+&\KsymbolDeclared(\Ksymbol(\text{``sigma''}, (s_1,\dots,s_n), (S_1,\dots,S_n), 
+S))
+\end{align*}
 
 \subsection{Faithfulness: With Sort Parameters}
 
