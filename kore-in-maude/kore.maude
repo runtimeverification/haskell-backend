@@ -137,10 +137,14 @@ fmod KORE is
 
   var PH : ParametricHead .
 
+
+
   cmb PH{Ss} : ObjectHead
    if isNeObjectSortList(Ss) .
   cmb PH{Ss} : MetaHead
    if isNeMetaSortList(Ss) .
+
+  ---- TODO:: Refactor this.
 
   op isNeObjectSortList : SortList -> Bool .
   op isNeMetaSortList : SortList -> Bool .
@@ -236,7 +240,10 @@ fmod KORE is
   eq axiom P:Pattern = axiom{.} P:Pattern .
   eq alias P:Pattern := Q:Pattern = alias{.} P:Pattern := Q:Pattern .
 
-
+  ---- Naming Function
+  op name : Universal -> String [poly(1)] .
+  eq name(AOH) = string(getName(upTerm(AOH))) . 
+  eq name(PH) = string(getName(upTerm(PH))) .
 
   
   op ERROR@AtomicMetaHead : -> [AtomicMetaHead] .
@@ -291,7 +298,10 @@ fmod KORE is
   ---- Lift an atomic object sort by putting a "K" in front of it
   ----   [[Nat]] = KNat()
   ----   [[Bool]] = KBool()
-  eq [[AOS]] = downTerm(addK(upTerm(AOS)), ERROR@AtomicMetaHead) () .
+  eq [[AOS]] =  [[AOS]]0 () .
+  ---- Lift to AtomicMetaHead
+  op [[_]]0 : AtomicObjectSort -> AtomicMetaHead .
+  eq [[AOS]]0 = downTerm(addK(upTerm(AOS)), ERROR@AtomicMetaHead) .
 
   var POS : ParametricObjectSort .
 
@@ -331,8 +341,6 @@ fmod KORE is
   ---- Calculating the names (strings) of atomic object sorts and
   ---- parametric sorts.
   ---- For example, name(Nat) = "Nat", name(List{...}) = "List".
-  op name : ObjectSort -> String .
-  op name : ParametricObjectSort -> String .
   eq name(AOS) = string(getName(upTerm(AOS))) .
   eq name(POS) = string(getName(upTerm(POS))) .
   eq name(POS{Ss}) = name(POS) .
@@ -394,8 +402,6 @@ fmod KORE is
              KnilKSortList(),
              ListOfKSortToKSortList([[Ss]]),
              [[OS]]) .
-  op name : AtomicObjectHead -> String .
-  eq name(AOH) = string(getName(upTerm(AOH))) .
   ---- Some aux functions
   op makeListOfKPattern : Nat -> SortList . 
   eq makeListOfKPattern(0) = . .
@@ -441,8 +447,6 @@ fmod KORE is
                  ListOfKSortToKSortList([[Ss']]),
                  [[OS]]),
          ListOfKPatternToKPatternList(makeListOfKPatternVar(len(Ss'))))) .
-  op name : ParametricHead -> String .
-  eq name(PH) = string(getName(upTerm(PH))) .
   op makeListOfKSort : Nat -> SortList .
   eq makeListOfKSort(0) = . .
   eq makeListOfKSort(N:Nat) = KSort, makeListOfKSort(N:Nat + -1) .
