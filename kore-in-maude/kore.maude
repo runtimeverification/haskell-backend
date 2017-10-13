@@ -333,7 +333,7 @@ fmod KORE is
 
  ---- Lifting sort declarations
  ceq [[sort OS]] 
-   = axiom KisSort([[OS]])
+   = axiom KsortDeclared([[OS]])
      axiom equals{KSort, KS}(
              [[OS]],
              Ksort(name(OS), ListOfKSortToKSortList(Ps)))
@@ -520,23 +520,27 @@ fmod KORE is
   op KPattern     : -> MetaSort .
   op KPatternList : -> MetaSort .
 
+  op KsortDeclared   : -> AtomicMetaHead  .
+  op KsymbolDeclared : -> AtomicMetaHead  .
+  op KaxiomDeclared  : -> AtomicMetaHead  .
+
   op Kvariable           : -> AtomicMetaHead  .
   op KvariableAsPattern  : -> AtomicMetaHead  .
-  op Kand         : -> AtomicMetaHead .
-  op Kor          : -> AtomicMetaHead .
-  op Knot         : -> AtomicMetaHead .
-  op Kimplies     : -> AtomicMetaHead .
-  op Kiff         : -> AtomicMetaHead .
-  op Kequals      : -> AtomicMetaHead .
-  op Kforall      : -> AtomicMetaHead .
-  op Kexists      : -> AtomicMetaHead .
-  op Kceil        : -> AtomicMetaHead .
-  op Kfloor       : -> AtomicMetaHead .
-  op Ktop         : -> AtomicMetaHead .
-  op Kbottom      : -> AtomicMetaHead .
-  op Kchoice      : -> AtomicMetaHead .
-  op KisSort      : -> AtomicMetaHead .
-  op KgetSort     : -> AtomicMetaHead .
+  op Kand                : -> AtomicMetaHead .
+  op Kor                 : -> AtomicMetaHead .
+  op Knot                : -> AtomicMetaHead .
+  op Kimplies            : -> AtomicMetaHead .
+  op Kiff                : -> AtomicMetaHead .
+  op Kequals             : -> AtomicMetaHead .
+  op Kforall             : -> AtomicMetaHead .
+  op Kexists             : -> AtomicMetaHead .
+  op Kceil               : -> AtomicMetaHead .
+  op Kfloor              : -> AtomicMetaHead .
+  op Ktop                : -> AtomicMetaHead .
+  op Kbottom             : -> AtomicMetaHead .
+  op Kchoice             : -> AtomicMetaHead .
+  op KisSort             : -> AtomicMetaHead .
+  op KgetSort            : -> AtomicMetaHead .
 
   op Ksort             : -> AtomicMetaHead .
   op Ksymbol           : -> AtomicMetaHead .
