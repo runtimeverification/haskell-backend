@@ -231,6 +231,8 @@ fmod KORE is
 
 
 
+  ---- LIFTING
+
 
   ---- Defining the lifting bracket [[_]]
 
@@ -300,8 +302,9 @@ fmod KORE is
   ----   [[Bool]] = KBool()
   eq [[AOS]] =  [[AOS]]0 () .
   ---- Lift to AtomicMetaHead
-  op [[_]]0 : AtomicObjectSort -> AtomicMetaHead .
+  op [[_]]0 : ObjectSort -> AtomicMetaHead .
   eq [[AOS]]0 = downTerm(addK(upTerm(AOS)), ERROR@AtomicMetaHead) .
+  eq [[POS{Ss}]]0 = [[POS]]0 .
 
   var POS : ParametricObjectSort .
 
@@ -309,6 +312,9 @@ fmod KORE is
   op [[_]] : ParametricObjectSort -> AtomicMetaHead .
   eq [[POS]] = downTerm(addK(upTerm(POS)), ERROR@AtomicMetaHead) .
   eq [[POS{Ss}]] = [[POS]]([[Ss]]) .
+  ---- Lift to AtomicMetaHead
+  op [[_]]0 : ParametricObjectSort -> AtomicMetaHead .
+  eq [[POS]]0 = downTerm(addK(upTerm(POS)), ERROR@AtomicMetaHead) .
 
   ---- Lifting an object sort variable:
   ----   [[S]] = S : KSort
@@ -333,8 +339,15 @@ fmod KORE is
 
  ---- Lifting sort declarations
  ceq [[sort OS]] 
-   = axiom KsortDeclared([[OS]])
-     axiom equals{KSort, KS}(
+   = symbol [[OS]]0(makeListOfKSort(len(Ps))) : KPattern
+     axiom{KS} implies{KS}(
+             equals{KPred, KS}(
+               makeConjunctionOfKsortDeclared(Ps),
+               top{KPred}()),
+             equals{KPred, KS}(
+               KsortDeclared([[OS]]),
+               top{KPred}())) 
+     axiom{KS} equals{KSort, KS}(
              [[OS]],
              Ksort(name(OS), ListOfKSortToKSortList(Ps)))
   if MH(Ps) := [[OS]] .
@@ -353,6 +366,15 @@ fmod KORE is
    = KconsKSortList(P:Pattern, KnilKSortList()) .
   eq ListOfKSortToKSortList(P:Pattern, Ps)
    = KconsKSortList(P:Pattern, ListOfKSortToKSortList(Ps)) .
+  ---- Convert a list of meta-level patterns (whose sort are KSort)
+  ---- to one meta-level pattern as follows
+  ---- makeConjunctionOfKsortDeclared(S1:KSort,...,Sn:KSort)
+  ---- = KsortDeclared(S1:KSort) /\ ... /\ KsortDeclared(Sn)
+  op makeConjunctionOfKsortDeclared : PatternList -> Pattern .
+  eq makeConjunctionOfKsortDeclared(.) = top{KPred}() .
+  eq makeConjunctionOfKsortDeclared(P:Pattern) = KsortDeclared(P:Pattern) .
+  eq makeConjunctionOfKsortDeclared(P:Pattern, Ps) 
+   = and{KPred}(KsortDeclared(P:Pattern), makeConjunctionOfKsortDeclared(Ps)) .
 
 
   ---- Lifting axiom declaration axiom{Ss} P.
@@ -378,30 +400,60 @@ fmod KORE is
   eq hasObjectSortVariable(MS, Ss) = hasObjectSortVariable(Ss) .
 
 
-  ---- Step 2: Lift the pattern.
+  ---- Step 2: Lift the pattern and wrap it with KaxiomDeclared(.) if
+  ----         it is object-level. Otherwise, just lift it.
+ ceq [[axiom{Ss} P:Pattern]] = axiom{Ss} KaxiomDeclared([[P:Pattern]])
+  if isObjectLevelPattern(P:Pattern) .
   eq [[axiom{Ss} P:Pattern]] = axiom{Ss} [[P:Pattern]] .
+  op isObjectLevelPattern : Pattern -> Bool .
+  eq isObjectLevelPattern(X:VariableName : OS) = true .
+  eq isObjectLevelPattern(X:VariableName : MS) = false .
+  eq isObjectLevelPattern(OH(Ps)) = true .
+  eq isObjectLevelPattern(MH(Ps)) = false .
+  eq isObjectLevelPattern(Str:String) = false .
+  
   
 
+
+
+
+  ---- Lifting Symbol Declarations
+
+
   ---- Lifting object symbols declarations: non-parametric case
+
   ---- [[symbol f(S1,...,Sn) : S]]
   ---- = symbol Kf(KPattern,...,KPattern) : KPattern
+  ----   symbol KSymbolf() : KPattern
+  ----   axiom KSymbolf() = Ksymbol("f", nil, (S1,...,Sn), S)
+  ----   axiom KsymbolDeclared(KSymbolf())
   ----   axiom Kf(P1,...,Pn) 
-  ----         = Kapplication(Ksymbol("f", nil, (S1,...,Sn), S),
-  ----                        (P1,...,Pn))
+  ----         = Kapplication(KSymbolf(), (P1,...,Pn))
    
-  eq [[symbol AOH(Ss) : OS]]
+ ceq [[symbol AOH(Ss) : OS]]
    = symbol [[AOH]](makeListOfKPattern(len(Ss))) : KPattern
-     axiom equals{KPattern,KS}(
+     symbol makeKsymbolSymbol(AOH) () : KPattern
+     axiom equals{KPattern, KS}(
+             KSymbolf:AtomicMetaHead(),
+             makeKsymbol(AOH, Ss, OS)) 
+     axiom KsymbolDeclared(KSymbolf:AtomicMetaHead())
+     axiom{KS} equals{KPattern,KS}(
        [[AOH]](makeListOfKPatternVar(len(Ss))),
        Kapplication(
-         makeKsymbol(AOH, Ss, OS),
-         ListOfKPatternToKPatternList(makeListOfKPatternVar(len(Ss))))) .
+         KSymbolf:AtomicMetaHead(),
+         ListOfKPatternToKPatternList(makeListOfKPatternVar(len(Ss)))))
+  if KSymbolf:AtomicMetaHead := makeKsymbolSymbol(AOH) .
   op makeKsymbol : AtomicObjectHead SortList ObjectSort -> Pattern .
   eq makeKsymbol(AOH, Ss, OS)
    = Ksymbol(name(AOH),
              KnilKSortList(),
              ListOfKSortToKSortList([[Ss]]),
              [[OS]]) .
+  op makeKsymbolSymbol : AtomicObjectHead -> AtomicMetaHead .
+  eq makeKsymbolSymbol(AOH)
+   = downTerm(
+       concatQid('KSymbol, qid(name(AOH)), '.AtomicMetaHead),
+       ERROR@AtomicMetaHead) .
   ---- Some aux functions
   op makeListOfKPattern : Nat -> SortList . 
   eq makeListOfKPattern(0) = . .
@@ -432,25 +484,43 @@ fmod KORE is
   ---- Lifting object symbols declarations: parametric case
   ---- [[symbol f{S1...Sn}(T1...Tm) : S]]
   ---- = symbol Kf(KSort,..,KSort,KPattern,...,KPattern) : KPattern
-  ---- = axiom Kf(S1,...,Sn,P1,...,Pn)
-  ----         = Kapplication(
-  ----             Ksymbol("f", (S1...Sn), (T1...Tn), S),
-  ----             (P1...Pn)) 
-  eq [[symbol PH{Ss}(Ss') : OS]]
+  ----   symbol KSymbolf(KSort,...,KSort) : KPattern
+  ----   axiom KSymbolf(S1,...,Sn)
+  ----         = Ksymbol("f", (S1...Sn), (T1...Tn), S)
+  ----   axiom /\ KsortDeclared(Si) -> KsymbolDeclared(KSymbolf(S1,...,Sn))
+  ----   axiom Kf(S1,...,Sn,P1,...,Pn)
+  ----         = Kapplication(KSymbolf(S1...Sn), (P1...Pn)) 
+ ceq [[symbol PH{Ss}(Ss') : OS]]
    = symbol [[PH]](makeListOfKSort(len(Ss)) 
                  @ makeListOfKPattern(len(Ss'))) : KPattern
-     axiom equals{KPattern,KS}(
+     symbol [[PH]]0(makeListOfKSort(len(Ss))) : KPattern
+     axiom{KS} equals{KPattern, KS}(
+             [[PH]]0([[Ss]]),
+             Kf:Pattern)
+     axiom{KS} implies{KS}(
+             equals{KPred, KS}(
+               makeConjunctionOfKsortDeclared([[Ss]]),
+               top{KPred}()),
+             equals{KPred, KS}(
+               KsymbolDeclared([[PH]]0([[Ss]])),
+               top{KPred}()))
+     axiom{KS} equals{KPattern,KS}(
        [[PH]]([[Ss]] @ makeListOfKPatternVar(len(Ss'))),
        Kapplication(
-         Ksymbol(name(PH),
-                 ListOfKSortToKSortList([[Ss]]),
-                 ListOfKSortToKSortList([[Ss']]),
-                 [[OS]]),
-         ListOfKPatternToKPatternList(makeListOfKPatternVar(len(Ss'))))) .
+         [[PH]]0([[Ss]]),
+         ListOfKPatternToKPatternList(makeListOfKPatternVar(len(Ss')))))
+  if Kf:Pattern :=  Ksymbol(name(PH),
+                            ListOfKSortToKSortList([[Ss]]),
+                            ListOfKSortToKSortList([[Ss']]),
+                            [[OS]]) .
   op makeListOfKSort : Nat -> SortList .
   eq makeListOfKSort(0) = . .
   eq makeListOfKSort(N:Nat) = KSort, makeListOfKSort(N:Nat + -1) .
-
+  op [[_]]0 : ParametricHead -> AtomicMetaHead . 
+  eq [[PH]]0
+   = downTerm(
+       concatQid('KSymbol, qid(name(PH)), '.AtomicMetaHead),
+       ERROR@AtomicMetaHead) .
 
   ---- Lifting object alias declarations: parametric case
   ---- For the same reason, object sort variables in the curly
@@ -490,6 +560,9 @@ fmod KORE is
                             + string(getName(C:Constant)) 
                             + ".AtomicMetaHead") .
 
+  op concatQid : Qid Qid -> Qid [assoc] .
+  eq concatQid(Q:Qid, Q':Qid)
+   = qid(string(Q:Qid) + string(Q':Qid)) .
 
 
 

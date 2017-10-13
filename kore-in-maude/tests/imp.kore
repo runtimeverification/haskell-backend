@@ -136,16 +136,13 @@ fmod IMP is
 
 endfm
 
----(
 
 reduce [[imp]] .
 
 ---- Should return true:
 reduce [[imp]] == [[ [[imp]] ]] .
 
----)
 
-reduce [[ sort Nat ]] .
 
 
 quit
