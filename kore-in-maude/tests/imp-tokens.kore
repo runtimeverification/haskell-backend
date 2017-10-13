@@ -58,6 +58,10 @@ fmod TOKENS is
   op succ    : -> AtomicObjectHead .
   op plus    : -> AtomicObjectHead .
   op gte     : -> AtomicObjectHead .
+  op NatToAExp  : -> AtomicObjectHead .
+  op IdToAExp   : -> AtomicObjectHead .
+  op plusAExp   : -> AtomicObjectHead .
+  op ite        : -> AtomicObjectHead .
 
   op nil        : -> ParametricHead .
   op cons       : -> ParametricHead .      
@@ -69,6 +73,30 @@ fmod TOKENS is
   op natbind    : -> ParametricHead .      
   op gamma      : -> ParametricHead .
   op append     : -> ParametricHead .
+
+  op KSymboltrue       : -> AtomicMetaHead .
+  op KSymbolfalse      : -> AtomicMetaHead .
+  op KSymbolandBool    : -> AtomicMetaHead . 
+  op KSymbolnotBool    : -> AtomicMetaHead . 
+  op KSymbolzero       : -> AtomicMetaHead .
+  op KSymbolsucc       : -> AtomicMetaHead .
+  op KSymbolplus       : -> AtomicMetaHead .
+  op KSymbolgte        : -> AtomicMetaHead .
+  op KSymbolNatToAExp  : -> AtomicMetaHead .
+  op KSymbolIdToAExp   : -> AtomicMetaHead .
+  op KSymbolplusAExp   : -> AtomicMetaHead .
+  op KSymbolite        : -> AtomicMetaHead .
+  op KSymbolnil        : -> AtomicMetaHead .
+  op KSymbolcons       : -> AtomicMetaHead .      
+  op KSymbolemp        : -> AtomicMetaHead .      
+  op KSymbolmerge      : -> AtomicMetaHead .      
+  op KSymbolbind       : -> AtomicMetaHead .      
+  op KSymbolnatemp     : -> AtomicMetaHead .      
+  op KSymbolnatmerge   : -> AtomicMetaHead .      
+  op KSymbolnatbind    : -> AtomicMetaHead .      
+  op KSymbolgamma      : -> AtomicMetaHead .
+  op KSymbolappend     : -> AtomicMetaHead .
+  op KSymbolceil     : -> AtomicMetaHead .
 
   op KNat       : -> AtomicMetaHead .
   op KMap       : -> AtomicMetaHead .
@@ -82,10 +110,7 @@ fmod TOKENS is
   op ctxtapp    : -> ParametricHead .
   op gamma0     : -> ParametricHead .
 
-  op NatToAExp  : -> AtomicObjectHead .
-  op IdToAExp   : -> AtomicObjectHead .
-  op plusAExp   : -> AtomicObjectHead .
-  op ite        : -> AtomicObjectHead .
+
 
   op Kfloor     : -> AtomicMetaHead  .
   op Kgamma     : -> AtomicMetaHead  .
