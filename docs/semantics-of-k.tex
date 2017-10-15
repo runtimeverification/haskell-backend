@@ -166,6 +166,9 @@
     }
   }
 
+  % Define |-fin
+  \newcommand{\vdashfin}{\vdash_\text{fin}}
+
   % Define the colon ":" that is used in "x:s"
   % with less spacing around.
   \newcommand{\cln}{{:}}
@@ -314,7 +317,7 @@
   \newcommand{\Ktheory}{\mathit{Ktheory}}
   \newcommand{\KwellFormedTheory}{\mathit{KwellFormedTheory}}
   
-  \newcommand{\Kdeduce}{\mathit{Kderivable}}
+  \newcommand{\Kdeduce}{\mathit{Kprovable}}
   
   % The italic font of "ceil" used in math mode.
   \newcommand{\cl}{\mathit{ceil}}
@@ -1087,27 +1090,45 @@ be no finite or algorithmic way to represent those
 not r.e.).
 
 \section{The Meta-Theory: Reflection in Matching Logic}
-Consider a matching logic prover $P$ that decides whether a matching logic 
-patter $\varphi$ holds in a matching logic theory $T$. 
-The prover $P$ is an executable program written in some programming language, and it has two inputs: a piece of data that \emph{encodes} the pattern $\varphi$, and another piece of data that \emph{encodes} the theory $T$.
-With the sound and complete proof system of matching logic that is introduced in~\cite{rosu-2017-lmcs}, we expect the prover $P$ to be a semi-decision procedure---that is, $P$ always halts with success if $T \vdash \varphi$ and either halts with failure or never halts if $T \not\vdash \varphi$.
+This section is a follow-up to Section~\cref{sec:finite-mechanisms}, in which 
+we introduced various \emph{schema mechanisms} that allow us to define infinite 
+theories using a finite amount of resources.
+In this and the next few sections, we give such schema mechanisms \emph{a 
+formal meaning} by axiomatizing them as a matching logic theory: the 
+meta-theory $K$.
+We are going to define the meta-theory $K$ in detail in 
+Section~\cref{sec:meta-theory-finite}, while before that, we would like to show 
+readers the big picture first and point out the relation between our work and 
+the studies of \emph{reflection in logic}.
 
-The main focus in this and the next two sections is not about \emph{how to 
-design and implement the prover $P$}, but about \emph{how to encode $\varphi$ 
-and $T$ as data that can be fed into $P$ as inputs}.
-In other words, we are interested in \emph{representations} of patterns and matching logic theories.
-Since any executable programs (in the normal sense) can only handle finite 
-inputs, we are in particular interested in \emph{finite representations} of 
-patterns and matching logic theories.
 
-In this proposal, we answer the above question by developing a reflection of 
-matching logic through a theory called the meta-theory, denoted as $K$.
-There has been a good many of studies about reflections in logic, computation, 
-and programming.
-Brian Smith gave reflection a rather broad definition in~\cite{?}, from which 
-we quote that
+
+%Consider a matching logic prover $P$ that decides whether a matching logic 
+%patter $\varphi$ holds in a matching logic theory $T$. 
+%
+%The prover $P$ is an executable program written in some programming language, 
+%and it has two inputs: a piece of data that \emph{encodes} the pattern 
+%$\varphi$, and another piece of data that \emph{encodes} the theory $T$.
+%With the sound and complete proof system of matching logic that is introduced 
+%in~\cite{rosu-2017-lmcs}, we expect the prover $P$ to be a semi-decision 
+%procedure---that is, $P$ always halts with success if $T \vdash \varphi$ and 
+%either halts with failure or never halts if $T \not\vdash \varphi$.
+%
+%The main focus in this and the next two sections is not about \emph{how to 
+%design and implement the prover $P$}, but about \emph{how to encode $\varphi$ 
+%and $T$ as data that can be fed into $P$ as inputs}.
+%In other words, we are interested in \emph{representations} of patterns and 
+%matching logic theories.
+%Since any executable programs (in the normal sense) can only handle finite 
+%inputs, we are in particular interested in \emph{finite representations} of 
+%patterns and matching logic theories.
+
+Reflection in logic and programming languages has been extensively studied 
+in literature~\cite{?}.
+We here quote a rather broad definition by Brain Smith, who in~\cite{?} defines 
+reflection as
 \begin{displayquote}
-	(Reflection is) an entity’s integral ability to represent, operate on,
+	an entity’s integral ability to represent, operate on,
 	and otherwise deal with its self in the same way that
 	it represents, operates on and deals with its primary
 	subject matter.
@@ -1115,14 +1136,149 @@ we quote that
 Following this definition, the theory $K$ is said to be a {reflective} one 
 because 
 (1) $K$ itself is a matching logic theory and 
-(2) one is able to study and discuss the properties of matching logic itself, 
-instead of the properties of some models or algebras that are axiomatized in 
-the logic, in the meta-theory $K$. Some typical example properties of matching logic include the 
-wellformedness of a pattern and the derivability of a pattern in a theory.
+(2) one can use $K$ to study and discuss the properties of matching logic and 
+matching logic theories, as shown in the next theorem (the faithfulness 
+theorem):
+\begin{center}
+	\begin{tabular}{cc}
+		$
+		\prftree[r]{\footnotesize (Upward Reflection)}
+		{T \vdash \varphi}
+		{K \cup \widehat{T} \vdashfin \Kdeduce(\widehat{\varphi})}
+		$
+		&
+		$
+		\prftree[r]{\footnotesize (Downward Reflection)}
+		{T \vdash \varphi}
+		{K \cup \widehat{T} \vdashfin \Kdeduce(\widehat{\varphi})}
+		$
+	\end{tabular}
+\end{center}
+where $\widehat{T}$ is the meta-theory of $T$, $\widehat{\varphi}$ is the 
+meta-representation of $\varphi$, and $\Kdeduce$ is a predicate symbol of $K$, 
+known as the \emph{truth predicate} in reflection logic because it captures the 
+truth in theory $T$. The \emph{lifting} operation ``$\widehat{\ \ \ }$'' brings 
+object-level patterns and theories to their 
+representations in the meta-level.
+Notice that the meta-theory $K$ is defined to be a finite theory. Also, even if 
+$T$ could be infinite, its lifting $\widehat{T}$ is a finite theory.
+Therefore, the provability relation
+$$
+K \cup \widehat{T} \vdashfin \Kdeduce(\widehat{\varphi})
+$$
+is \emph{a probability relation over a finite theory}.
 
-Before we put our effort in exhaustively defining the meta-theory $K$, we would 
-like to firstly point how the meta-theory $K$ helps us in having a finite 
-representations of patterns and theories.
+In the following, we use the theory of lambda calculus as an example to 
+illustrate how the meta-theory $K$ works.
+\subsubsection*{Example: Lambda Calculus Represented in $K$}
+The theory of lambda calculus, denoted as $L$, has 
+only one sort which we denote as $\Exp$
+\begin{center}
+	(\textsc{Exp}) \quad $\Exp$ is a sort in theory $L$.
+\end{center} It has two binary symbols which we 
+denote as $\lambda_0$ and $\app$, respectively
+\begin{center}
+	(\textsc{Abstraction}) \quad $\lambda_0(\Exp, \Exp) \colon \Exp$ 
+	\\
+	(\textsc{Application}) \quad $\app(\Exp, \Exp) \colon \Exp$ 
+\end{center}
+We introduce the symbol $\lambda$ as an alias defined as
+\begin{center}
+	(\textsc{Binder})\quad $ \lambda(x, e) \coloneqq \exists x . \lambda_0(x, 
+	e)$ \quad for any variable $x$ and $\Exp$ pattern $e$
+\end{center}
+and define a syntactic class called $\lambda$-terms
+\begin{center}
+	(\textsc{$\lambda$-Term}) \quad $\Lambda$-terms is the smallest set 
+	satisfying the following three conditions
+	\begin{itemize}[leftmargin=11em,nosep]
+		\item $x \in \text{$\lambda$-Term}$ for any variable $x$
+		\item $\lambda(x, e) \in \text{$\lambda$-Term}$ for any variable $x$ 
+		and $e \in \text{$\lambda$-Term}$
+		\item $\app(e, e') \in \text{$\lambda$-Term}$ for any $e, e' \in 
+		\text{$\lambda$-Term}$
+	\end{itemize}
+\end{center}
+The theory $\Lambda$ has an axiom schema
+\begin{center}
+	(\textsc{Beta}) \quad $\app(\lambda(x, e), e') = e'[e/x]$ 
+	\quad if $e$ and $e'$ are $\lambda$-terms
+\end{center}
+
+\paragraph{Naming Function.}
+A naming function is needed to encode lambda expressions as abstract syntax 
+trees.
+We use the next naming function
+\begin{center}
+	\begin{tabular}{c|c}
+		Object targets & Names in $K$
+		\\\hline
+		$\Exp$ & ``Exp''
+		\\\hline
+		$\lambda_0$ & ``lambda0''
+		\\\hline
+		$\app$ & ``app''
+		\\\hline
+		$\lambda$ & ``lambda''
+	\end{tabular}
+\end{center}
+
+
+
+\paragraph{Declarations in $L$ as Assertions in $K$.} \quad
+We list all declarations in $L$ and their corresponding assertions in $K$, 
+without explaining them.
+We will formally define the process in Section~\cref{?}, but for now we only 
+provide a taste of flavor of the meta-theory $K$.
+
+In $L$,
+\begin{center}
+	$\Exp$ is a sort
+\end{center}
+
+In $K$,
+\begin{center}
+	\begin{tabular}{l}
+		$\KExp$ is a constant symbol of sort $\KSort$ \\
+		$\KExp = \Ksort(\text{``Exp''})$ \\
+		$\KsortDeclared(\KExp)$
+	\end{tabular}
+\end{center}
+
+In $L$,
+\begin{center}
+	$\lambda_0$ is a binary symbol
+\end{center}
+
+In $K$,
+\begin{center}
+	\begin{tabular}{l}
+		$\mathit{KSymbollambda0}$ is a constant symbol of sort $\KSymbol$ \\
+		$\mathit{KSymbollambda0} = \Ksymbol(\text{``Exp''}, (\KExp, \KExp), 
+		\KExp)$ \\
+		$\KsymbolDeclared(\mathit{KSymbollambda0})$ \\
+		$\Klambdazero \colon \KPattern \times \KPattern \to \KPattern$ is a 
+		symbol\\
+		$\Klambdazero(\varphi, \psi) = \Kapplication(\mathit{KSymbollambda0}, 
+		(\varphi, \psi))$\\
+	\end{tabular}
+\end{center}
+
+In $L$
+\begin{center}
+	$\lambda$ is an alias defined as $\lambda(x, e) = \exists x . \lambda_0(x, 
+	e)$
+\end{center}
+
+In $K$
+\begin{center}
+	\begin{tabular}{l}
+		$\Klambda \colon \KVariable \times \KPattern \to \KPattern$ is a symbol 
+		\\
+		$\Klambda(v, \varphi) = \Kexists(\KExp, \KExp, v, \Klambdazero(v, 
+		\varphi))$
+	\end{tabular}
+\end{center} 
 
 \subsection{Representing Sorts, Symbols, and Patterns by Their Abstract Syntax 
 Trees}
@@ -1229,107 +1385,7 @@ where $\widehat{\varphi}$ is the representation of $\varphi$ in the
 meta-theory, and $\widehat{T}$ is the set of assertions of predicates that 
 defines the theory $T$ in the meta-theory.
 
-In the following, we use the theory of lambda calculus as an example to illustrate how the meta-theory $K$ works.
-\subsubsection*{Example: Lambda Calculus Represented in $K$}
-The theory of lambda calculus, denoted as $L$, has 
-only one sort which we denote as $\Exp$
-\begin{center}
-	(\textsc{Exp}) \quad $\Exp$ is a sort in theory $L$.
-\end{center} It has two binary symbols which we 
-denote as $\lambda_0$ and $\app$, respectively
-\begin{center}
-	(\textsc{Abstraction}) \quad $\lambda_0(\Exp, \Exp) \colon \Exp$ 
-	\\
-	(\textsc{Application}) \quad $\app(\Exp, \Exp) \colon \Exp$ 
-\end{center}
-We introduce the symbol $\lambda$ as an alias defined as
-\begin{center}
-	(\textsc{Binder})\quad $ \lambda(x, e) \coloneqq \exists x . \lambda_0(x, 
-	e)$ \quad for any variable $x$ and $\Exp$ pattern $e$
-\end{center}
-and define a syntactic class called $\lambda$-terms
-\begin{center}
-	(\textsc{$\lambda$-Term}) \quad $\Lambda$-terms is the smallest set 
-	satisfying the following three conditions
-	\begin{itemize}[leftmargin=11em,nosep]
-		\item $x \in \text{$\lambda$-Term}$ for any variable $x$
-		\item $\lambda(x, e) \in \text{$\lambda$-Term}$ for any variable $x$ 
-		and $e \in \text{$\lambda$-Term}$
-		\item $\app(e, e') \in \text{$\lambda$-Term}$ for any $e, e' \in 
-		\text{$\lambda$-Term}$
-	\end{itemize}
-\end{center}
-The theory $\Lambda$ has an axiom schema
-\begin{center}
-	(\textsc{Beta}) \quad $\app(\lambda(x, e), e') = e'[e/x]$ 
-	\quad if $e$ and $e'$ are $\lambda$-terms
-\end{center}
 
-\paragraph{Naming Function.}
-A naming function is needed to encode lambda expressions as abstract syntax trees.
-We use the next naming function
-\begin{center}
-\begin{tabular}{c|c}
-	Object targets & Names in $K$
-	\\\hline
-	$\Exp$ & ``Exp''
-	\\\hline
-	$\lambda_0$ & ``lambda0''
-	\\\hline
-	$\app$ & ``app''
-	\\\hline
-	$\lambda$ & ``lambda''
-\end{tabular}
-\end{center}
-
-
-
-\paragraph{Declarations in $L$ as Assertions in $K$.} \quad
-We list all declarations in $L$ and their corresponding assertions in $K$, without explaining them.
-We will formally define the process in Section~\cref{?}, but for now we only provide a taste of flavor of the meta-theory $K$.
-
-In $L$,
-\begin{center}
-	$\Exp$ is a sort
-\end{center}
-
-In $K$,
-\begin{center}
-\begin{tabular}{l}
-	$\KExp$ is a constant symbol of sort $\KSort$ \\
-	$\KExp = \Ksort(\text{``Exp''})$ \\
-	$\KsortDeclared(\KExp)$
-\end{tabular}
-\end{center}
-
-In $L$,
-\begin{center}
-	$\lambda_0$ is a binary symbol
-\end{center}
-
-In $K$,
-\begin{center}
-	\begin{tabular}{l}
-		$\mathit{KSymbollambda0}$ is a constant symbol of sort $\KSymbol$ \\
-		$\mathit{KSymbollambda0} = \Ksymbol(\text{``Exp''}, (\KExp, \KExp), \KExp)$ \\
-		$\KsymbolDeclared(\mathit{KSymbollambda0})$ \\
-		$\Klambdazero \colon \KPattern \times \KPattern \to \KPattern$ is a symbol\\
-		$\Klambdazero(\varphi, \psi) = \Kapplication(\mathit{KSymbollambda0}, (\varphi, \psi))$\\
-	\end{tabular}
-\end{center}
-
-In $L$
-\begin{center}
-	$\lambda$ is an alias defined as $\lambda(x, e) = \exists x . \lambda_0(x, e)$
-\end{center}
-
-In $K$
-\begin{center}
-	\begin{tabular}{l}
-	$\Klambda \colon \KVariable \times \KPattern \to \KPattern$ is a symbol \\
-	$\Klambda(v, \varphi) = \Kexists(\KExp, \KExp, v, \Klambdazero(v, \varphi))$
-	\end{tabular}
-\end{center}
 
 \paragraph{Shallow Embedding and Deep Embedding.}
 There are multiple ways to design a reflective logic.
@@ -1363,6 +1419,7 @@ Given said that, such inconvenience should never become a theoretical obstacle.
 \todo{because we can reflect the meta-theory in itself.}
 
 \section{Meta-Theory of Matching Logic: Finite Case}
+\label{sec:meta-theory-finite}
 
 \emph{Finite matching logic theories} are theories that have a finite number of sorts, symbols, and axioms.
 Finite theories are very common in practice.
