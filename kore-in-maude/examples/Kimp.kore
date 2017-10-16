@@ -1,0 +1,603 @@
+symbol KNat():KPattern
+
+axiom{KS}
+  implies{KS}(
+    equals{KPred,KS}(top{KPred}(), top{KPred}()),
+    equals{KPred,KS}(KsortDeclared(KNat()), top{KPred}()))
+
+axiom{KS}
+  equals{KSort,KS}(
+    KNat(),
+    Ksort("Nat", KnilKSortList()))
+
+
+
+
+
+
+
+
+
+symbol Kzero():KPattern
+
+symbol KSymbolzero():KPattern
+
+axiom{}
+  equals{KPattern,KS}(
+    KSymbolzero(),
+    Ksymbol("zero", KnilKSortList(), KnilKSortList(), KNat()))
+
+axiom{}
+  KsymbolDeclared(KSymbolzero())
+
+axiom{KS}
+  equals{KPattern,KS}(
+    Kzero(),
+    Kapplication(KSymbolzero(), KnilKPatternList()))
+
+
+
+
+
+
+
+
+
+
+symbol Ksucc(KPattern):KPattern
+
+symbol KSymbolsucc():KPattern
+
+axiom{}
+  equals{KPattern,KS}(
+    KSymbolsucc(),
+    Ksymbol(
+      "succ", 
+      KnilKSortList(),
+      KconsKSortList(KNat(), KnilKSortList()),
+      KNat()))
+
+axiom{}
+  KsymbolDeclared(KSymbolsucc())
+
+axiom{KS}
+  equals{KPattern,KS}(
+    Ksucc(P1:KPattern),
+    Kapplication(
+      KSymbolsucc(),
+      KconsKPatternList(P1:KPattern, KnilKPatternList())))
+
+
+
+
+
+
+
+
+
+
+symbol Kplus(KPattern,KPattern):KPattern
+symbol KSymbolplus():KPattern
+axiom{}
+  equals{KPattern,KS}(
+    KSymbolplus(
+      ),
+    Ksymbol(
+      "plus",
+      KnilKSortList(
+        ),
+      KconsKSortList(
+        KNat(
+          ),
+        KconsKSortList(
+          KNat(
+            ),
+          KnilKSortList(
+            ))),
+      KNat(
+        )))
+axiom{}
+  KsymbolDeclared(
+    KSymbolplus(
+      ))
+axiom{KS}
+  equals{KPattern,KS}(
+    Kplus(
+      P1:KPattern,
+      P2:KPattern),
+    Kapplication(
+      KSymbolplus(
+        ),
+      KconsKPatternList(
+        P1:KPattern,
+        KconsKPatternList(
+          P2:KPattern,
+          KnilKPatternList(
+            )))))
+
+
+
+
+
+
+
+
+
+symbol KList(KSort):KPattern
+
+axiom{KS}
+  implies{KS}(
+    equals{KPred,KS}(
+      KsortDeclared(S:KSort),
+      top{KPred}()),
+    equals{KPred,KS}(
+      KsortDeclared(KList(S:KSort)),
+      top{KPred}()))
+
+axiom{KS}
+  equals{KSort,KS}(
+    KList(S:KSort),
+    Ksort(
+      "List",
+      KconsKSortList(S:KSort, KnilKSortList())))
+
+
+
+
+
+
+
+symbol Knil(KSort):KPattern
+symbol KSymbolnil(KSort):KPattern
+axiom{KS}
+  equals{KPattern,KS}(
+    KSymbolnil(
+      S:KSort),
+    Ksymbol(
+      "nil",
+      KconsKSortList(
+        S:KSort,
+        KnilKSortList(
+          )),
+      KnilKSortList(
+        ),
+      KList(
+        S:KSort)))
+axiom{KS}
+  implies{KS}(
+    equals{KPred,KS}(
+      KsortDeclared(
+        S:KSort),
+      top{KPred}(
+        )),
+    equals{KPred,KS}(
+      KsymbolDeclared(
+        KSymbolnil(
+          S:KSort)),
+      top{KPred}(
+        )))
+axiom{KS}
+  equals{KPattern,KS}(
+    Knil(
+      S:KSort),
+    Kapplication(
+      KSymbolnil(
+        S:KSort),
+      KnilKPatternList(
+        )))
+
+
+
+
+
+
+
+
+
+
+symbol Kcons(KSort,KPattern,KPattern):KPattern
+
+symbol KSymbolcons(KSort):KPattern
+
+axiom{KS}
+  equals{KPattern,KS}(
+    KSymbolcons(S:KSort),
+    Ksymbol(
+      "cons",
+      KconsKSortList(S:KSort, KnilKSortList()),
+      KconsKSortList(S:KSort, KconsKSortList(KList(S:KSort), KnilKSortList())),
+      KList(S:KSort)))
+
+axiom{KS}
+  implies{KS}(
+    equals{KPred,KS}(
+      KsortDeclared(S:KSort),
+      top{KPred}()),
+    equals{KPred,KS}(
+      KsymbolDeclared(KSymbolcons(S:KSort)),
+      top{KPred}()))
+
+axiom{KS}
+  equals{KPattern,KS}(
+    Kcons(S:KSort, P1:KPattern, P2:KPattern),
+    Kapplication(
+      KSymbolcons(S:KSort),
+      KconsKPatternList(
+        P1:KPattern,
+        KconsKPatternList(
+          P2:KPattern,
+          KnilKPatternList(
+            )))))
+
+
+
+
+
+
+
+
+
+
+axiom{}
+  KaxiomDeclared(
+    Kor(
+      S:KSort,
+      Knil(S:KSort),
+      Kexists(
+        S:KSort,
+        KList(S:KSort),
+        Kvariable("X", S:KSort),
+        Kexists(
+          KList(S:KSort),
+          KList(S:KSort),
+          Kvariable("L", KList(S:KSort)),
+          Kcons(
+            S:KSort,
+            KvariableAsPattern("X", S:KSort),
+            KvariableAsPattern("L", KList(S:KSort)))))))
+
+
+
+
+
+
+
+
+symbol Kappend(KSort,KPattern,KPattern):KPattern
+symbol KSymbolappend(KSort):KPattern
+axiom{KS}
+  equals{KPattern,KS}(
+    KSymbolappend(
+      S:KSort),
+    Ksymbol(
+      "append",
+      KconsKSortList(
+        S:KSort,
+        KnilKSortList(
+          )),
+      KconsKSortList(
+        KList(
+          S:KSort),
+        KconsKSortList(
+          KList(
+            S:KSort),
+          KnilKSortList(
+            ))),
+      KList(
+        S:KSort)))
+axiom{KS}
+  implies{KS}(
+    equals{KPred,KS}(
+      KsortDeclared(
+        S:KSort),
+      top{KPred}(
+        )),
+    equals{KPred,KS}(
+      KsymbolDeclared(
+        KSymbolappend(
+          S:KSort)),
+      top{KPred}(
+        )))
+axiom{KS}
+  equals{KPattern,KS}(
+    Kappend(
+      S:KSort,
+      P1:KPattern,
+      P2:KPattern),
+    Kapplication(
+      KSymbolappend(
+        S:KSort),
+      KconsKPatternList(
+        P1:KPattern,
+        KconsKPatternList(
+          P2:KPattern,
+          KnilKPatternList(
+            )))))
+
+
+
+
+
+
+
+
+
+
+
+
+
+axiom{}
+  KaxiomDeclared(
+    Kequals(
+      KList(
+        S:KSort),
+      R:KSort,
+      Kappend(
+        S:KSort,
+        Knil(
+          S:KSort),
+        KvariableAsPattern(
+          "L",
+          KList(
+            S:KSort))),
+      KvariableAsPattern(
+        "L",
+        KList(
+          S:KSort))))
+
+
+
+
+
+
+
+
+
+
+
+
+
+axiom{}
+  KaxiomDeclared(
+    Kequals(
+      KList(
+        S:KSort),
+      R:KSort,
+      Kappend(
+        S:KSort,
+        Kcons(
+          S:KSort,
+          KvariableAsPattern(
+            "X",
+            S:KSort),
+          KvariableAsPattern(
+            "L0",
+            KList(
+              S:KSort))),
+        KvariableAsPattern(
+          "L",
+          KList(
+            S:KSort))),
+      Kcons(
+        S:KSort,
+        KvariableAsPattern(
+          "X",
+          S:KSort),
+        Kappend(
+          S:KSort,
+          KvariableAsPattern(
+            "L0",
+            KList(
+              S:KSort)),
+          KvariableAsPattern(
+            "L",
+            KList(
+              S:KSort))))))
+
+
+
+
+
+
+
+
+
+
+symbol KStmt():KPattern
+axiom{KS}
+  implies{KS}(
+    equals{KPred,KS}(
+      top{KPred}(
+        ),
+      top{KPred}(
+        )),
+    equals{KPred,KS}(
+      KsortDeclared(
+        KStmt(
+          )),
+      top{KPred}(
+        )))
+axiom{KS}
+  equals{KSort,KS}(
+    KStmt(
+      ),
+    Ksort(
+      "Stmt",
+      KnilKSortList(
+        )))
+
+
+
+
+
+
+
+
+
+
+
+
+
+symbol Kite(KPattern,KPattern,KPattern):KPattern
+symbol KSymbolite():KPattern
+axiom{}
+  equals{KPattern,KS}(
+    KSymbolite(
+      ),
+    Ksymbol(
+      "ite",
+      KnilKSortList(
+        ),
+      KconsKSortList(
+        KBExp(
+          ),
+        KconsKSortList(
+          KStmt(
+            ),
+          KconsKSortList(
+            KStmt(
+              ),
+            KnilKSortList(
+              )))),
+      KStmt(
+        )))
+axiom{}
+  KsymbolDeclared(
+    KSymbolite(
+      ))
+axiom{KS}
+  equals{KPattern,KS}(
+    Kite(
+      P1:KPattern,
+      P2:KPattern,
+      P3:KPattern),
+    Kapplication(
+      KSymbolite(
+        ),
+      KconsKPatternList(
+        P1:KPattern,
+        KconsKPatternList(
+          P2:KPattern,
+          KconsKPatternList(
+            P3:KPattern,
+            KnilKPatternList(
+              ))))))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+axiom{}
+  KaxiomDeclared(
+    Kimplies(
+      R:KSort,
+      choice{KSort,KPattern}(
+        equals{KSort,KSort}(KgetSort(C:KPattern), KCtxt(S:KSort, KAExp())),
+        top{KPattern}(),
+        bottom{KPattern}()),
+      Kequals(
+        KStmt(), 
+        R:KSort,
+        Kite(
+          Kctxtapp(
+            S:KSort,
+            KBExp(),
+            C:KPattern,
+            KvariableAsPattern("X", S:KSort)),
+          KvariableAsPattern("S1", KStmt()),
+          KvariableAsPattern("S2", KStmt())),
+        Kctxtapp(
+          S:KSort,
+          KBExp(),
+          Kgamma(
+            S:KSort,
+            KBExp(),
+            Kvariable("H", S:KSort),
+            Kite(
+              Kctxtapp(
+                S:KSort,
+                KBExp(),
+                C:KPattern,
+                KvariableAsPattern("H", S:KSort)),
+              KvariableAsPattern("S1", KStmt()),
+              KvariableAsPattern("S2", KStmt()))),
+          KvariableAsPattern("X", S:KSort)))))
+
+
+
+
+
+
+
+
+
+
+axiom{}
+  KaxiomDeclared(
+    Krewrites(
+      R:KSort,
+      Kctxtapp(KStmt(),
+        R:KSort,
+        C:KPattern,
+        Kite(
+          Ktt(),
+          KvariableAsPattern("S1", KStmt()),
+          KvariableAsPattern("S2", KStmt()))),
+      Kctxtapp(
+        KStmt(),
+        R:KSort,
+        C:KPattern,
+        KvariableAsPattern("S1", KStmt()))))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+axiom{}
+  KaxiomDeclared(
+    Krewrites(
+      R:KSort,
+      Kctxtapp(
+        KStmt(
+          ),
+        R:KSort,
+        C:KPattern,
+        Kite(
+          Kff(
+            ),
+          KvariableAsPattern(
+            "S1",
+            KStmt(
+              )),
+          KvariableAsPattern(
+            "S2",
+            KStmt(
+              )))),
+      Kctxtapp(
+        KStmt(
+          ),
+        R:KSort,
+        C:KPattern,
+        KvariableAsPattern(
+          "S2",
+          KStmt(
+            )))))
+

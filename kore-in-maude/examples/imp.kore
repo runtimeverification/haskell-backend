@@ -1,0 +1,63 @@
+  sort Nat
+
+  symbol zero():Nat
+
+  symbol succ(Nat):Nat
+
+  symbol plus(Nat, Nat):Nat 
+
+  sort List{S}
+
+  symbol nil{S}():List{S}
+
+  symbol cons{S}(S, List{S}):List{S}
+
+  axiom{S}
+    or{S}(
+      nil{S}(),
+      exists{S,List{S}}(
+        X:S,
+        exists{List{S}, List{S}}(
+          L:List{S},
+          cons{S}(X:S, L:List{S})))) 
+
+  symbol append{S}(List{S}, List{S}):List{S}
+
+  axiom{S}
+    equals{List{S}, R}(
+      append{S}(nil{S}(), L:List{S}),
+      L:List{S})
+
+  axiom{S}
+    equals{List{S}, R}(
+      append{S}(cons{S}(X:S, L0:List{S}), L:List{S}),
+      cons{S}(X:S, append{S}(L0:List{S}, L:List{S})))
+
+  sort Stmt
+
+  symbol ite(BExp,Stmt,Stmt):Stmt
+
+  axiom{S,R} 
+    implies{R}(
+      choice{KSort,KPattern}(
+        equals{KSort,KSort}(KgetSort(C:KPattern), KCtxt(S:KSort,KAExp())),
+        top{KPattern}(), 
+        bottom{KPattern}()),
+      equals{Stmt, R}(
+        ite(ctxtapp{S,BExp}(C:KPattern, X:S), S1:Stmt, S2:Stmt),
+        ctxtapp{S,BExp}(
+          gamma{S,BExp}(
+            H:S,
+            ite(ctxtapp{S,BExp}(C:KPattern, H:S), S1:Stmt, S2:Stmt)),
+          X:S)))
+
+  axiom{R}
+    rewrites{R}(
+      ctxtapp{Stmt,R}(C:KPattern, ite(tt(), S1:Stmt, S2:Stmt)),
+      ctxtapp{Stmt,R}(C:KPattern, S1:Stmt))
+
+  axiom{R}
+    rewrites{R}(
+      ctxtapp{Stmt,R}(C:KPattern, ite(ff(), S1:Stmt, S2:Stmt)),
+      ctxtapp{Stmt,R}(C:KPattern, S2:Stmt))
+
