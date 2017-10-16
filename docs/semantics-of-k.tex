@@ -166,6 +166,9 @@
     }
   }
 
+  % Define |-fin
+  \newcommand{\vdashfin}{\vdash_\text{fin}}
+
   % Define the colon ":" that is used in "x:s"
   % with less spacing around.
   \newcommand{\cln}{{:}}
@@ -175,9 +178,11 @@
   
   % Define commands that are used in Sec 2.  
   \newcommand{\Nat}{\textit{Nat}}
+  \newcommand{\KNat}{\textit{KNat}}
   \newcommand{\Int}{\textit{Int}}
   \newcommand{\Bool}{\textit{Bool}}
   \newcommand{\List}{\textit{List}}
+  \newcommand{\KList}{\textit{KList}}
   \newcommand{\nil}{\textit{nil}}
   \newcommand{\cons}{\textit{cons}}
   \newcommand{\append}{\textit{append}}
@@ -198,6 +203,10 @@
   \newcommand{\parametric}[2]{{#1}\raisebox{.2ex}{\texttt{\footnotesize{\{}}}#2\raisebox{.2ex}{\texttt{\footnotesize{\}}}}}
   \newcommand{\parametricscript}[2]{{#1}\raisebox{.2ex}{\texttt{\tiny{\{}}}#2\raisebox{.2ex}{\texttt{\tiny{\}}}}}
   
+  \newcommand{\zero}{\textit{zero}}
+  \newcommand{\Kzero}{\textit{Kzero}}
+  \newcommand{\Ksucc}{\textit{Ksucc}}
+  \newcommand{\KSymbolsucc}{\textit{KSymbolsucc}}
   \newcommand{\Mod}{\textit{Mod}}
   \newcommand{\denote}[1]{\llbracket{#1}\rrbracket}
   \newcommand{\reduct}[2]{\mbox{${#1}\!\!\upharpoonright_{#2}$}}
@@ -297,6 +306,11 @@
   \newcommand{\KgetFvsFromPatterns}{\mathit{KgetFvsFromPatterns}}
   \newcommand{\KoccursFree}{\mathit{KoccursFree}}
   \newcommand{\KfreshName}{\mathit{KfreshName}}
+  \newcommand{\Kcons}{\mathit{Kcons}}
+  \newcommand{\Knil}{\mathit{Knil}}
+  \newcommand{\KSymbolzero}{\mathit{KSymbolzero}}
+  \newcommand{\KSymbolcons}{\mathit{KSymbolcons}}
+  \newcommand{\KSymbolnil}{\mathit{KSymbolnil}}
   
   \newcommand{\KSignature}{\mathit{KSignature}}
   \newcommand{\Ksignature}{\mathit{Ksignature}}
@@ -319,7 +333,7 @@
   \newcommand{\Ktheory}{\mathit{Ktheory}}
   \newcommand{\KwellFormedTheory}{\mathit{KwellFormedTheory}}
   
-  \newcommand{\Kdeduce}{\mathit{Kderivable}}
+  \newcommand{\Kdeduce}{\mathit{Kprovable}}
   
   % The italic font of "ceil" used in math mode.
   \newcommand{\cl}{\mathit{ceil}}
@@ -1321,283 +1335,458 @@ be no finite or algorithmic way to represent those
 not r.e.).
 
 \section{The Meta-Theory: Reflection in Matching Logic}
-\label{sec:meta-level}
-Consider a matching logic prover $P$ that decides whether a matching logic 
-patter $\varphi$ holds in a matching logic theory $T$. 
-The prover $P$ is an executable program written in some programming language, and it has two inputs: a piece of data that \emph{encodes} the pattern $\varphi$, and another piece of data that \emph{encodes} the theory $T$.
-With the sound and complete proof system of matching logic that is introduced in~\cite{rosu-2017-lmcs}, we expect the prover $P$ to be a semi-decision procedure---that is, $P$ always halts with success if $T \vdash \varphi$ and either halts with failure or never halts if $T \not\vdash \varphi$.
+This section is a follow-up to Section~\cref{sec:finite-mechanisms}, in which 
+we introduced various \emph{schema mechanisms} that allow us to define infinite 
+theories using a finite amount of resources.
+In this and the next few sections, we give such schema mechanisms \emph{a 
+formal meaning} by axiomatizing them as a matching logic theory: the 
+meta-theory $K$.
+We are going to define the meta-theory $K$ in detail in 
+Section~\cref{sec:meta-theory-finite}, while before that, we would like to show 
+readers the big picture first and point out the relation between our work and 
+the studies of \emph{reflection in logic}.
 
-The main focus in this and the next two sections is not about \emph{how to 
-design and implement the prover $P$}, but about \emph{how to encode $\varphi$ 
-and $T$ as data that can be fed into $P$ as inputs}.
-In other words, we are interested in \emph{representations} of patterns and matching logic theories.
-Since any executable programs (in the normal sense) can only handle finite 
-inputs, we are in particular interested in \emph{finite representations} of 
-patterns and matching logic theories.
 
-In this proposal, we answer the above question by developing a reflection of 
-matching logic through a theory called the meta-theory, denoted as $K$.
-There has been a good many of studies about reflections in logic, computation, 
-and programming.
-Brian Smith gave reflection a rather broad definition in~\cite{?}, from which 
-we quote that
+
+%Consider a matching logic prover $P$ that decides whether a matching logic 
+%patter $\varphi$ holds in a matching logic theory $T$. 
+%
+%The prover $P$ is an executable program written in some programming language, 
+%and it has two inputs: a piece of data that \emph{encodes} the pattern 
+%$\varphi$, and another piece of data that \emph{encodes} the theory $T$.
+%With the sound and complete proof system of matching logic that is introduced 
+%in~\cite{rosu-2017-lmcs}, we expect the prover $P$ to be a semi-decision 
+%procedure---that is, $P$ always halts with success if $T \vdash \varphi$ and 
+%either halts with failure or never halts if $T \not\vdash \varphi$.
+%
+%The main focus in this and the next two sections is not about \emph{how to 
+%design and implement the prover $P$}, but about \emph{how to encode $\varphi$ 
+%and $T$ as data that can be fed into $P$ as inputs}.
+%In other words, we are interested in \emph{representations} of patterns and 
+%matching logic theories.
+%Since any executable programs (in the normal sense) can only handle finite 
+%inputs, we are in particular interested in \emph{finite representations} of 
+%patterns and matching logic theories.
+
+Reflection in logic and programming languages has been extensively studied 
+in literature~\cite{?}.
+We here quote a rather broad definition by Brain Smith, who in~\cite{?} defines 
+reflection as
 \begin{displayquote}
-	(Reflection is) an entity’s integral ability to represent, operate on,
+	an entity’s integral ability to represent, operate on,
 	and otherwise deal with its self in the same way that
 	it represents, operates on and deals with its primary
 	subject matter.
 \end{displayquote}
-Following this definition, the theory $K$ is said to be a {reflective} one 
+Following this definition, the meta-theory $K$ is said to be a {reflective} one 
 because 
 (1) $K$ itself is a matching logic theory and 
-(2) one is able to study and discuss the properties of matching logic itself, 
-instead of the properties of some models or algebras that are axiomatized in 
-the logic, in the meta-theory $K$. Some typical example properties of matching logic include the 
-wellformedness of a pattern and the derivability of a pattern in a theory.
-
-Before we put our effort in exhaustively defining the meta-theory $K$, we would 
-like to firstly point how the meta-theory $K$ helps us in having a finite 
-representations of patterns and theories.
-
-\subsection{Representing Sorts, Symbols, and Patterns by Their Abstract Syntax 
-Trees}
-
-\paragraph{Strings.}
-We refer to things in various way.
-For example, we use $\Bool$ to denote the only sort in the theory of Boolean 
-algebra, and $\mathit{zero}$ to denote the constant functional 
-symbol in Peano arithmetic that stands for the natural number zero.
-In philosophy and logic, there is a well-known distinction called the 
-use-mention distinction that distinguishes \emph{using} a word or phrase versus 
-\emph{mentioning} it.
-In the previous sentence, we were \emph{using} but not \emph{mentioning} the 
-sort $\Bool$ and the symbol $\mathit{zero}$.
-A clear evidence of mentioning something is that the thing being mentioned is 
-wrapped with quotation marks.
-For $K$ to be the reflective logic of matching logic, it should be able to 
-contain \emph{every} sorts and symbols that appear in \emph{every} theories, 
-which is simply impossible because there is not such a set as \emph{the set of 
-all matching logic sorts}.
-Instead, we let $K$ contain \emph{all possible mentions} of a matching logic 
-sort or symbol.
-Therefore, instead of having the sort $\Bool$ as part of it, $K$ has \emph{a 
-mention for it}, denoted as the string ``Bool''.
-
-The sort in $K$ for strings is $\KString$, which are defined in 
-Section~\cref{?}.
-
-\paragraph{Naming Functions.}
-A naming function is a function from an object to its \emph{mention}---\emph{a 
-string representation in $K$}.
-A naming is a prerequisite for anything to be encoded and represented in $K$.
-What matters is to have a naming function.
-It does not matter which naming function we choose, as long as distinct 
-objects have distinct names, which is referred to as the \emph{unique name 
-principle}.
-
-\paragraph{Abstract Syntax Trees}
-As soon as we have a naming function, we can encode sorts, symbols, and 
-patterns by constructing terms in $K$ that stand for the abstract syntax trees 
-of them.
-A majority portion of the meta-theory $K$ is about the construction of abstract 
-syntax trees of sorts, symbols, and patterns, and common operations on those 
-abstract syntax trees.
-
-\subsection{Representing Theories as Assertions on Some Predicates}
-We define matching logic theories and the proof system of matching logic as 
-\emph{sets of predicates over the universe of abstract syntax trees of sorts, 
-symbols, and patterns}.
-This approach is a standard approach in the studies of reflective logics. 
-For example in~\cite{?}, a unary predicate symbol $T$ called the \emph{truth 
-predicate} is used in a reflective logic of propositional logic that satisfies 
-the faithfulness conditions
-\begin{center}
-	\begin{tabular}{ccc}
-		$
-		\prftree[r]{\footnotesize (Upward Reflection)}
-		{\vdash \varphi}
-		{\vdash T(\widehat{\varphi})}
-		$
-		&&
-		$
-		\prftree[r]{\footnotesize (Downward Reflection)}
-		{\vdash T(\widehat{\varphi})}
-		{\vdash \varphi}
-		$
-	\end{tabular}
-\end{center}
-where $\widehat{\varphi}$ is the abstract syntax tree that represents the 
-formula $\varphi$ in the reflective logic.
-Intuitively, the truth predicate $T$ captures the semantics of a formula being 
-true.
-
-We adopt the same approach in this proposal.
-We introduce and axiomatize a finite number of
-predicate symbols in the meta-theory $K$ that capture the semantics of the 
-matching logic proof system, or more specifically, the semantics of
-\begin{itemize}\itemsep0em
-	\item A sort being declared in a theory ($\KsortDeclared$)
-	\item A symbol being decalred in a theory ($\KsymbolDeclared$)
-	\item A pattern being an axiom in a theory ($\KaxiomDeclared$)
-	\item A pattern being wellformed in a theory ($\KwellFormed$)
-	\item A pattern being derivable in a theory ($\Kderivable$)
-\end{itemize}
-
-Each of them has to satisfy the corresponding faithfulness theorem.
-In particular, the faithfulness for the derivability means
+(2) one can use $K$ to study and discuss the properties of matching logic and 
+matching logic theories, as shown in the next theorem (the faithfulness 
+theorem):
 \begin{center}
 	\begin{tabular}{cc}
 		$
 		\prftree[r]{\footnotesize (Upward Reflection)}
 		{T \vdash \varphi}
-		{K \cup \widehat{T} \vdash \Kdeduce(\widehat{\varphi})}
+		{K \cup \widehat{T} \vdashfin \Kdeduce(\widehat{\varphi})}
 		$
 		&
 		$
 		\prftree[r]{\footnotesize (Downward Reflection)}
-		{K \cup \widehat{T} \vdash \Kdeduce(\widehat{\varphi})}
+		{K \cup \widehat{T} \vdashfin \Kdeduce(\widehat{\varphi})}
 		{T \vdash \varphi}
 		$
 	\end{tabular}
 \end{center}
-where $\widehat{\varphi}$ is the representation of $\varphi$ in the 
-meta-theory, and $\widehat{T}$ is the set of assertions of predicates that 
-defines the theory $T$ in the meta-theory.
+where $\widehat{T}$ is the meta-theory of $T$, $\widehat{\varphi}$ is the 
+meta-representation of $\varphi$, and $\Kdeduce$ is a predicate symbol of $K$, 
+known as the \emph{truth predicate} in reflection logic because it captures the 
+truth in theory $T$. The \emph{lifting} operation ``$\widehat{\ \ \ }$'' brings 
+object-level patterns and theories to their 
+representations in the meta-level.
+Notice that the meta-theory $K$ is defined to be a finite theory. Also, even if 
+$T$ could be infinite, its lifting $\widehat{T}$ is a finite theory.
+Therefore, the provability relation
+$$
+K \cup \widehat{T} \vdashfin \Kdeduce(\widehat{\varphi})
+$$
+is \emph{a probability relation over a finite theory}.
 
-In the following, we use the theory of lambda calculus as an example to illustrate how the meta-theory $K$ works.
-\subsubsection*{Example: Lambda Calculus Represented in $K$}
-The theory of lambda calculus, denoted as $L$, has 
-only one sort which we denote as $\Exp$
-\begin{center}
-	(\textsc{Exp}) \quad $\Exp$ is a sort in theory $L$.
-\end{center} It has two binary symbols which we 
-denote as $\lambda_0$ and $\app$, respectively
-\begin{center}
-	(\textsc{Abstraction}) \quad $\lambda_0(\Exp, \Exp) \colon \Exp$ 
-	\\
-	(\textsc{Application}) \quad $\app(\Exp, \Exp) \colon \Exp$ 
-\end{center}
-We introduce the symbol $\lambda$ as an alias defined as
-\begin{center}
-	(\textsc{Binder})\quad $ \lambda(x, e) \coloneqq \exists x . \lambda_0(x, 
-	e)$ \quad for any variable $x$ and $\Exp$ pattern $e$
-\end{center}
-and define a syntactic class called $\lambda$-terms
-\begin{center}
-	(\textsc{$\lambda$-Term}) \quad $\Lambda$-terms is the smallest set 
-	satisfying the following three conditions
-	\begin{itemize}[leftmargin=11em,nosep]
-		\item $x \in \text{$\lambda$-Term}$ for any variable $x$
-		\item $\lambda(x, e) \in \text{$\lambda$-Term}$ for any variable $x$ 
-		and $e \in \text{$\lambda$-Term}$
-		\item $\app(e, e') \in \text{$\lambda$-Term}$ for any $e, e' \in 
-		\text{$\lambda$-Term}$
-	\end{itemize}
-\end{center}
-The theory $\Lambda$ has an axiom schema
-\begin{center}
-	(\textsc{Beta}) \quad $\app(\lambda(x, e), e') = e'[e/x]$ 
-	\quad if $e$ and $e'$ are $\lambda$-terms
-\end{center}
+In the following, we will use some examples to show how we can use 
+Kore to specify the (infinite) theories and how $K$ gives Kore definitions 
+semantics.
 
-\paragraph{Naming Function.}
-A naming function is needed to encode lambda expressions as abstract syntax trees.
-We use the next naming function
+\subsection{Example A: Arithmetic \& Parametric Lists}
+
+\begin{lstlisting}[language=kore]
+/*** natlist.kore ***/
+sort Nat
+sort List{S}
+symbol zero() : Nat
+symbol succ(Nat) : Nat
+symbol nil{S}() : List{S}
+symbol cons{S}(S, List{S}) : List{S}
+symbol append{S}(List{S}, List{S}) : List{S}
+axiom{S,S'} equals{List{S}, S'}(
+              append{S}(nil{S}(), L:List{S}),
+              L:List{S})
+\end{lstlisting}
+
+\paragraph{Naming Functions.}
+A naming function associates any object to a string, called its \emph{name}.
+For example, $\Bool$ is a non-parametric sort in Boolean algebra, and the string ``Bool'' is its name.
+$\List$ is a parametric sort, and the string ``List'' is its name.
+A naming function is a prerequisite for anything to be represented in the meta-theory $K$ (see Section~\cref{sec:chars-string}), and in Kore we assume the names of anything is itself wrapped with quotation marks.
+
 \begin{center}
-\begin{tabular}{c|c}
-	Object targets & Names in $K$
-	\\\hline
-	$\Exp$ & ``Exp''
-	\\\hline
-	$\lambda_0$ & ``lambda0''
-	\\\hline
-	$\app$ & ``app''
-	\\\hline
-	$\lambda$ & ``lambda''
-\end{tabular}
-\end{center}
-
-
-
-\paragraph{Declarations in $L$ as Assertions in $K$.} \quad
-We list all declarations in $L$ and their corresponding assertions in $K$, without explaining them.
-We will formally define the process in Section~\cref{?}, but for now we only provide a taste of flavor of the meta-theory $K$.
-
-In $L$,
-\begin{center}
-	$\Exp$ is a sort
-\end{center}
-
-In $K$,
-\begin{center}
-\begin{tabular}{l}
-	$\KExp$ is a constant symbol of sort $\KSort$ \\
-	$\KExp = \Ksort(\text{``Exp''})$ \\
-	$\KsortDeclared(\KExp)$
-\end{tabular}
-\end{center}
-
-In $L$,
-\begin{center}
-	$\lambda_0$ is a binary symbol
-\end{center}
-
-In $K$,
-\begin{center}
-	\begin{tabular}{l}
-		$\mathit{KSymbollambda0}$ is a constant symbol of sort $\KSymbol$ \\
-		$\mathit{KSymbollambda0} = \Ksymbol(\text{``Exp''}, (\KExp, \KExp), \KExp)$ \\
-		$\KsymbolDeclared(\mathit{KSymbollambda0})$ \\
-		$\Klambdazero \colon \KPattern \times \KPattern \to \KPattern$ is a symbol\\
-		$\Klambdazero(\varphi, \psi) = \Kapplication(\mathit{KSymbollambda0}, (\varphi, \psi))$\\
+	\begin{tabular}{l|r}
+		\textbf{Objects} & \textbf{Names}
+		\\\hline
+		Non-parametric sort $\Nat$ & ``Nat''
+		\\\hline
+		Parametric sort $\List$ & ``List''
+		\\\hline
+		Non-parametric symbol $\zero$ & ``zero''
+		\\\hline
+		Parametric symbol $\nil$ & ``nil''
+		\\\hline
+		Parametric symbol $\cons$ & ``cons''
+		\\\hline
+		Parametric symbol $\append$ & ``append''
 	\end{tabular}
+\captionof{table}{Naming Table of the Theory of Parametric Lists}
 \end{center}
 
-In $L$
-\begin{center}
-	$\lambda$ is an alias defined as $\lambda(x, e) = \exists x . \lambda_0(x, e)$
-\end{center}
+\paragraph{Abstract Syntax Trees.}
+As soon as we have a naming function, we can encode sorts, symbols, and 
+patterns by their abstract syntax trees in the meta-theory $K$.
+A majority portion of the meta-theory $K$ is about the construction of abstract 
+syntax trees of sorts, symbols, and patterns, and common operations on those 
+abstract syntax trees (for more details, please refer to Sections~\cref{sec:ML-sorts-symbols,sec:ML-patterns,sec:meta-theory-sort-parameters}).
 
-In $K$
 \begin{center}
-	\begin{tabular}{l}
-	$\Klambda \colon \KVariable \times \KPattern \to \KPattern$ is a symbol \\
-	$\Klambda(v, \varphi) = \Kexists(\KExp, \KExp, v, \Klambdazero(v, \varphi))$
+	\begin{tabular}{l|r}
+		\textbf{Objects} & \textbf{Abstract Syntax Trees as Patterns in $K$}
+		\\\hline
+		Non-parametric sort $\Nat$ & $\Ksort(\text{``Nat''}, \KnilKSortList)$
+		\\\hline
+		Parametric sort $\parametric{\List}{\Nat}$ & $\Ksort(\text{``List''}, \KconsKSortList(\Ksort(\text{``Nat''}, \KnilKSortList),$ \\ & $\KnilKSortList))$
+		\\\hline
+		Non-parametric constant symbol $\zero$ & $\Ksymbol(\text{``zero''}, \KnilKSortList, \KnilKSortList,$ \\ &
+		$\Ksort(\text{``Nat''}, \KnilKSortList))$
+		\\\hline
+		Parametric symbol $\parametric{nil}{\Nat}$ & See equation~\eqref{nil-Nat}
+		\\\hline
+		Parametric symbol $\parametric{\cons}{\Nat}$ & See equation~\eqref{cons-Nat}
 	\end{tabular}
+	\captionof{table}{Objects and Their Abstract Syntax Trees (Without Notation Sugar)}
 \end{center}
 
-\paragraph{Shallow Embedding and Deep Embedding.}
-There are multiple ways to design a reflective logic.
-For example, we could define the meta-theory $K$ in a way that not only sorts, 
-symbols, and patterns have their abstract syntax trees as terms in the 
-meta-theory, but also signatures and theories.
-We just showed how to define in the meta-theory $K$ a universe of abstract 
-syntax trees of matching logic sorts, symbols, and patterns so that every sort 
-or symbol or pattern gets its (unique) meta-representation in the meta-theory 
-as a term of sort $\KSort$ or $\KSymbol$ or $\KPattern$.
-We could do the same thing for theories, that is, we develop a universe of 
-abstract syntax tree of matching logic theories and go from that.
-We called such approach \emph{deep embedding}, compared to the \emph{shallow 
-	embedding} approach what we are going to propose).
-In deep embedding, the derivability relation is captured by a \emph{binary} 
-predicate symbol that takes representations of a pattern and a theory as its 
-two arguments.
-The reason we adopt shallow embedding in this proposal instead of deep 
-embedding is more of practical concerns.
-\todo{another benefit of shallow embedding is that it captures the ``smallest 
-fixed points'' semantics of parametric sorts.}
-In shallow embedding, we do not need to develop infrastructure that 
-``encapsulate'' (possibly) infinite signatures and theories as (definitely) 
-finite terms, which results in a more light-weighted meta-theory.
-However, shallow embedding brings some inconvenience, too. The 
-lack of representation of signatures and theories in the meta-theory makes it 
-impossible to axiomatize module operations---such as joining two modules and 
-hiding a module from the other---within the meta-theory.
+\paragraph{Sugar for Abstract Syntax Trees.}
+As we have seen, abstract syntax trees are huge even for the simplest object.
+To simplify our notation with abstract syntax trees, we introduce intermediate symbols (notation sugar) to allow us write more compact patterns in $K$.
+For example, instead of writing
+$$\Ksort(\text{``Nat''}, \KnilKSortList)$$
+over and over again, we introduce a new constant symbol $\KNat$ to the meta-theory with the axiom
+$$ \KNat = \Ksort(\text{``Nat''}, \KnilKSortList) $$
+For parametric sort $\List$, we introduce a unary symbol $\KList$ which takes a sort as parameter, with axiom
+$$ \KList(s) = \Ksort(\text{``List''}, \KconsKSortList(s, \KnilKSortList)) $$
+Basically, we could introduce as much notation sugar as we want to the meta-theory in order to make writing abstract syntax trees less painful.
 
-Given said that, such inconvenience should never become a theoretical obstacle.
-\todo{because we can reflect the meta-theory in itself.}
+\begin{center}
+	\begin{tabular}{l|r}
+		\textbf{Objects} & \textbf{Abstract Syntax Trees as Patterns in $K$}
+		\\\hline
+		Non-parametric sort $\Nat$ & $\KNat$
+		\\\hline
+		Parametric sort $\parametric{\List}{\Nat}$ & $\KList(\KNat)$
+		\\\hline
+		Non-parametric constant symbol $\zero$ & $\KSymbolzero$
+		\\\hline
+		Parametric symbol $\parametric{nil}{\Nat}$ & $\KSymbolnil(\KNat)$
+		\\\hline
+		Parametric symbol $\parametric{\cons}{\Nat}$ & $\KSymbolcons(\KNat)$
+		\\\hline
+		Pattern $zero$ & $\Kzero$
+		\\\hline
+		Pattern $\parametric{\cons}{\Nat}(\zero, \parametric{\nil}{\Nat})$
+		& $\Kcons(\KNat, \Kzero, \Knil(\KNat))$
+	\end{tabular}
+	\captionof{table}{Objects and Their Abstract Syntax Trees (With Notation Sugar)}
+	\label{tab:ast-with-sugar}
+\end{center}
+
+Such transformation from objects to their abstract syntax trees with notation sugar as shown in Table~\ref{tab:ast-with-sugar} is the \emph{lifting} operation ``$\widehat{\ \ \ }$''.
+
+\paragraph{Declarations as Assertions.}
+
+A Kore definition contains some sort, symbol, and axiom declarations, whose formal semantics are given in the meta-theory with three predicate symbols: $\KsortDeclared$, $\KsymbolDeclared$, and $\KaxiomDeclared$ (See Section~\cref{sec:ML-theories}).
+
+\begin{center}
+	\begin{tabular}{l|r}
+		\textbf{Declarations} & \textbf{Assertions Added to the Meta-Theory $K$}
+		\\\hline
+		\texttt{sort Nat} & $\KsortDeclared(\KNat)$
+		\\\hline
+		\texttt{sort List\{S\}} & $\KsortDeclared(s) \to \KsortDeclared(\KList(s))$
+		\\\hline
+		\texttt{symbol zero():Nat} & $\KsymbolDeclared(\KSymbolzero)$
+		\\\hline
+		\texttt{symbol succ(Nat):Nat} & $\KsymbolDeclared(\KSymbolsucc)$
+		\\\hline
+		\texttt{symbol nil\{S\}():List\{S\}} & $\KsortDeclared(s)\to\KsymbolDeclared(\KSymbolnil(s))$
+		\\\hline
+		\texttt{symbol cons\{S\}(S,List\{S\}):List\{S\}} & $\KsortDeclared(s)\to\KsymbolDeclared(\KSymbolcons(s))$
+        \\\hline
+		\texttt{axiom $\varphi$} & $\Kdeduce(\widehat{\varphi})$
+		\\\hline
+		\texttt{axiom\{S\} $\varphi$} & $\KsortDeclared(s) \to \Kdeduce(\widehat{\varphi})$
+		\\\hline
+		\texttt{axiom\{S1,..,Sn\} $\varphi$} & $\KsortDeclared(s_1) \wedge \dots \wedge \KsortDeclared(s_n) \to \Kdeduce(\widehat{\varphi})$
+	\end{tabular}
+	\captionof{table}{Declarations Lift to Assertions}
+	\label{tab:declarations-as-assertions}
+\end{center}
+
+\paragraph{Lifting Kore Definitions.} Given kore definition ``\texttt{natlist.kore}'', its lifting is a kore definition with notation sugar defined as symbols and declarations defined as axioms:
+
+\begin{lstlisting}[language=kore]
+/*** Knatlist.kore ***/
+symbol KList(KSort) : KSort
+axiom{KS} implies{KS}(
+            equals{KPred, KS}(
+              KsortDeclared(S:KSort),
+              top{KPred}),
+            equals{KPred, KS}(
+              KsortDeclared(KList(S:KSort)),
+              top{KPred})))
+axiom{KS} equals{KSort, KS}(
+            KList(S:KSort),
+            Ksort("List", KconsKSortList(S:KSort, KnilKSortList)))
+\end{lstlisting}
+%
+%The theory of lambda calculus, denoted as $L$, has 
+%only one sort which we denote as $\Exp$
+%\begin{center}
+%	(\textsc{Exp}) \quad $\Exp$ is a sort in theory $L$.
+%\end{center} It has two binary symbols which we 
+%denote as $\lambda_0$ and $\app$, respectively
+%\begin{center}
+%	(\textsc{Abstraction}) \quad $\lambda_0(\Exp, \Exp) \colon \Exp$ 
+%	\\
+%	(\textsc{Application}) \quad $\app(\Exp, \Exp) \colon \Exp$ 
+%\end{center}
+%We introduce the symbol $\lambda$ as an alias defined as
+%\begin{center}
+%	(\textsc{Binder})\quad $ \lambda(x, e) \coloneqq \exists x . \lambda_0(x, 
+%	e)$ \quad for any variable $x$ and $\Exp$ pattern $e$
+%\end{center}
+%and define a syntactic class called $\lambda$-terms
+%\begin{center}
+%	(\textsc{$\lambda$-Term}) \quad $\Lambda$-terms is the smallest set 
+%	satisfying the following three conditions
+%	\begin{itemize}[leftmargin=11em,nosep]
+%		\item $x \in \text{$\lambda$-Term}$ for any variable $x$
+%		\item $\lambda(x, e) \in \text{$\lambda$-Term}$ for any variable $x$ 
+%		and $e \in \text{$\lambda$-Term}$
+%		\item $\app(e, e') \in \text{$\lambda$-Term}$ for any $e, e' \in 
+%		\text{$\lambda$-Term}$
+%	\end{itemize}
+%\end{center}
+%The theory $\Lambda$ has an axiom schema
+%\begin{center}
+%	(\textsc{Beta}) \quad $\app(\lambda(x, e), e') = e'[e/x]$ 
+%	\quad if $e$ and $e'$ are $\lambda$-terms
+%\end{center}
+%
+%\paragraph{Naming Function.}
+%A naming function is needed to encode lambda expressions as abstract syntax 
+%trees.
+%We use the next naming function
+%
+%
+%
+%
+%\paragraph{Declarations in $L$ as Assertions in $K$.} \quad
+%We list all declarations in $L$ and their corresponding assertions in $K$, 
+%without explaining them.
+%We will formally define the process in Section~\cref{?}, but for now we only 
+%provide a taste of flavor of the meta-theory $K$.
+%
+%In $L$,
+%\begin{center}
+%	$\Exp$ is a sort
+%\end{center}
+%
+%In $K$,
+%\begin{center}
+%	\begin{tabular}{l}
+%		$\KExp$ is a constant symbol of sort $\KSort$ \\
+%		$\KExp = \Ksort(\text{``Exp''})$ \\
+%		$\KsortDeclared(\KExp)$
+%	\end{tabular}
+%\end{center}
+%
+%In $L$,
+%\begin{center}
+%	$\lambda_0$ is a binary symbol
+%\end{center}
+%
+%In $K$,
+%\begin{center}
+%	\begin{tabular}{l}
+%		$\mathit{KSymbollambda0}$ is a constant symbol of sort $\KSymbol$ \\
+%		$\mathit{KSymbollambda0} = \Ksymbol(\text{``Exp''}, (\KExp, \KExp), 
+%		\KExp)$ \\
+%		$\KsymbolDeclared(\mathit{KSymbollambda0})$ \\
+%		$\Klambdazero \colon \KPattern \times \KPattern \to \KPattern$ is a 
+%		symbol\\
+%		$\Klambdazero(\varphi, \psi) = \Kapplication(\mathit{KSymbollambda0}, 
+%		(\varphi, \psi))$\\
+%	\end{tabular}
+%\end{center}
+%
+%In $L$
+%\begin{center}
+%	$\lambda$ is an alias defined as $\lambda(x, e) = \exists x . \lambda_0(x, 
+%	e)$
+%\end{center}
+%
+%In $K$
+%\begin{center}
+%	\begin{tabular}{l}
+%		$\Klambda \colon \KVariable \times \KPattern \to \KPattern$ is a symbol 
+%		\\
+%		$\Klambda(v, \varphi) = \Kexists(\KExp, \KExp, v, \Klambdazero(v, 
+%		\varphi))$
+%	\end{tabular}
+%\end{center} 
+
+%\paragraph{Strings.}
+%We refer to things in various way.
+%For example, we use $\Bool$ to denote the only sort in the theory of Boolean 
+%algebra, and $\mathit{zero}$ to denote the constant functional 
+%symbol in Peano arithmetic that stands for the natural number zero.
+%In philosophy and logic, there is a well-known distinction called the 
+%use-mention distinction that distinguishes \emph{using} a word or phrase versus 
+%\emph{mentioning} it.
+%In the previous sentence, we were \emph{using} but not \emph{mentioning} the 
+%sort $\Bool$ and the symbol $\mathit{zero}$.
+%A clear evidence of mentioning something is that the thing being mentioned is 
+%wrapped with quotation marks.
+%For $K$ to be the reflective logic of matching logic, it should be able to 
+%contain \emph{every} sorts and symbols that appear in \emph{every} theories, 
+%which is simply impossible because there is not such a set as \emph{the set of 
+%all matching logic sorts}.
+%Instead, we let $K$ contain \emph{all possible mentions} of a matching logic 
+%sort or symbol.
+%Therefore, instead of having the sort $\Bool$ as part of it, $K$ has \emph{a 
+%mention for it}, denoted as the string ``Bool''.
+%
+%The sort in $K$ for strings is $\KString$, which are defined in 
+%Section~\cref{?}.
+
+
+
+
+%
+%\subsection{Representing Theories as Assertions on Some Predicates}
+%We define matching logic theories and the proof system of matching logic as 
+%\emph{sets of predicates over the universe of abstract syntax trees of sorts, 
+%symbols, and patterns}.
+%This approach is a standard approach in the studies of reflective logics. 
+%For example in~\cite{?}, a unary predicate symbol $T$ called the \emph{truth 
+%predicate} is used in a reflective logic of propositional logic that satisfies 
+%the faithfulness conditions
+%\begin{center}
+%	\begin{tabular}{ccc}
+%		$
+%		\prftree[r]{\footnotesize (Upward Reflection)}
+%		{\vdash \varphi}
+%		{\vdash T(\widehat{\varphi})}
+%		$
+%		&&
+%		$
+%		\prftree[r]{\footnotesize (Downward Reflection)}
+%		{\vdash T(\widehat{\varphi})}
+%		{\vdash \varphi}
+%		$
+%	\end{tabular}
+%\end{center}
+%where $\widehat{\varphi}$ is the abstract syntax tree that represents the 
+%formula $\varphi$ in the reflective logic.
+%Intuitively, the truth predicate $T$ captures the semantics of a formula being 
+%true.
+%
+%We adopt the same approach in this proposal.
+%We introduce and axiomatize a finite number of
+%predicate symbols in the meta-theory $K$ that capture the semantics of the 
+%matching logic proof system, or more specifically, the semantics of
+%\begin{itemize}\itemsep0em
+%	\item A sort being declared in a theory ($\KsortDeclared$)
+%	\item A symbol being decalred in a theory ($\KsymbolDeclared$)
+%	\item A pattern being an axiom in a theory ($\KaxiomDeclared$)
+%	\item A pattern being wellformed in a theory ($\KwellFormed$)
+%	\item A pattern being derivable in a theory ($\Kderivable$)
+%\end{itemize}
+%
+%Each of them has to satisfy the corresponding faithfulness theorem.
+%In particular, the faithfulness for the derivability means
+%\begin{center}
+%	\begin{tabular}{cc}
+%		$
+%		\prftree[r]{\footnotesize (Upward Reflection)}
+%		{T \vdash \varphi}
+%		{K \cup \widehat{T} \vdash \Kdeduce(\widehat{\varphi})}
+%		$
+%		&
+%		$
+%		\prftree[r]{\footnotesize (Downward Reflection)}
+%		{K \cup \widehat{T} \vdash \Kdeduce(\widehat{\varphi})}
+%		{T \vdash \varphi}
+%		$
+%	\end{tabular}
+%\end{center}
+%where $\widehat{\varphi}$ is the representation of $\varphi$ in the 
+%meta-theory, and $\widehat{T}$ is the set of assertions of predicates that 
+%defines the theory $T$ in the meta-theory.
+%
+%
+%
+%\paragraph{Shallow Embedding and Deep Embedding.}
+%There are multiple ways to design a reflective logic.
+%For example, we could define the meta-theory $K$ in a way that not only sorts, 
+%symbols, and patterns have their abstract syntax trees as terms in the 
+%meta-theory, but also signatures and theories.
+%We just showed how to define in the meta-theory $K$ a universe of abstract 
+%syntax trees of matching logic sorts, symbols, and patterns so that every sort 
+%or symbol or pattern gets its (unique) meta-representation in the meta-theory 
+%as a term of sort $\KSort$ or $\KSymbol$ or $\KPattern$.
+%We could do the same thing for theories, that is, we develop a universe of 
+%abstract syntax tree of matching logic theories and go from that.
+%We called such approach \emph{deep embedding}, compared to the \emph{shallow 
+%	embedding} approach what we are going to propose).
+%In deep embedding, the derivability relation is captured by a \emph{binary} 
+%predicate symbol that takes representations of a pattern and a theory as its 
+%two arguments.
+%The reason we adopt shallow embedding in this proposal instead of deep 
+%embedding is more of practical concerns.
+%\todo{another benefit of shallow embedding is that it captures the ``smallest 
+%fixed points'' semantics of parametric sorts.}
+%In shallow embedding, we do not need to develop infrastructure that 
+%``encapsulate'' (possibly) infinite signatures and theories as (definitely) 
+%finite terms, which results in a more light-weighted meta-theory.
+%However, shallow embedding brings some inconvenience, too. The 
+%lack of representation of signatures and theories in the meta-theory makes it 
+%impossible to axiomatize module operations---such as joining two modules and 
+%hiding a module from the other---within the meta-theory.
+%
+%Given said that, such inconvenience should never become a theoretical obstacle.
+%\todo{because we can reflect the meta-theory in itself.}
 
 \section{Meta-Theory of Matching Logic: Finite Case}
+\label{sec:meta-theory-finite}
 
 \emph{Finite matching logic theories} are theories that have a finite number of sorts, symbols, and axioms.
 Finite theories are very common in practice.
@@ -1616,6 +1805,7 @@ Predicate symbols in $\Kfinite$ are defined in later sections when they firstly 
 \end{notation}
 
 \subsection{Characters and Strings}
+\label{sec:chars-string}
 The sort $\KChar$ is the sort for \emph{characters}. It has the following $26 + 26 + 10 = 62$ functional symbols as constructors:
 \begin{center}
 	\begin{tabular}{c c c}
@@ -1652,6 +1842,7 @@ that construct lists of characters.
 \end{notation}
 
 \subsection{Matching Logic Sorts and Symbols}
+\label{sec:ML-sorts-symbols}
 
 The sort $\KSort$ is the sort for matching logic sorts.
 The only constructor of the sort $\KSort$ is the functional symbol
@@ -1759,7 +1950,7 @@ It is axiomatized by the next two axioms
 
 
 \subsection{Matching Logic Patterns}
-\label{sec:matching-logic-patterns}
+\label{sec:ML-patterns}
 
 \paragraph{Matching Logic Variables.}
 The sort $\KVariable$ is the sort for 
@@ -2019,11 +2210,7 @@ $$
 $$
 
 \subsection{Matching Logic Theories}
-
-
-
-We point out here that 
-
+\label{sec:ML-theories}
 
 
 \paragraph{Theory as Predicates.}
@@ -2350,6 +2537,7 @@ It guarantees that the theory $\Kfinite$ does faithfully capture the matching lo
 
 
 \section{Meta-Theory of Matching Logic: With Sort Parameters}
+\label{sec:meta-theory-sort-parameters}
 \subsection{Things Different From Finite Case}
 \paragraph{Parametric Sorts.} A parametric sort, for example
 $\parametric{\Map}{\Nat,\Bool}$, has a name ``Map'' and a list of sorts 
