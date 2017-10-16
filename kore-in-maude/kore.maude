@@ -266,6 +266,9 @@ fmod KORE is
  ceq [[forall{Ss}(V:Pattern, Q:Pattern)]]
    = Kforall([[Ss]] @ [[V:Pattern]]0 @ [[Q:Pattern]])
   if isNeObjectSortList(Ss) .
+ ceq [[gamma{Ss}(V:Pattern, Q:Pattern)]]
+   = Kgamma([[Ss]] @ [[V:Pattern]]0 @ [[Q:Pattern]])
+  if isNeObjectSortList(Ss) .
  ceq [[PH{Ss}(Ps)]] = [[PH]]([[Ss]] @ [[Ps]])
   if isNeObjectSortList(Ss) .
  ceq [[PH{Ss}(Ps)]] = PH{Ss}([[Ps]])
@@ -581,6 +584,9 @@ fmod KORE is
   op top          : -> ParametricHead .
   op bottom       : -> ParametricHead .
   op choice       : -> ParametricHead .
+  op gamma        : -> ParametricHead .
+  op Kgamma      : -> AtomicMetaHead .
+  op KSymbolgamma      : -> AtomicMetaHead .
 
   op KPred        : -> MetaSort .
   op KChar        : -> MetaSort .

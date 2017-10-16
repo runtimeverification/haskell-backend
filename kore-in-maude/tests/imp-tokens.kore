@@ -14,7 +14,7 @@ fmod TOKENS is
   op X    : -> VariableName .
   op Y    : -> VariableName .
   op Z    : -> VariableName .
-  op HOLE : -> VariableName .
+  op H    : -> VariableName .
   op L    : -> VariableName .
   op L0   : -> VariableName .
   op P    : -> VariableName .
@@ -62,6 +62,22 @@ fmod TOKENS is
   op IdToAExp   : -> AtomicObjectHead .
   op plusAExp   : -> AtomicObjectHead .
   op ite        : -> AtomicObjectHead .
+  op tt    : -> AtomicObjectHead .
+  op ff    : -> AtomicObjectHead .
+  op ctxtapp : -> ParametricHead .
+
+  op Ktt    : -> AtomicMetaHead .
+  op Kff    : -> AtomicMetaHead .
+  op KSymboltt    : -> AtomicMetaHead .
+  op KSymbolff    : -> AtomicMetaHead .
+
+  op rewrites : -> ParametricHead .
+  op Kctxtapp : -> AtomicMetaHead .
+  op Kchoice : -> AtomicMetaHead .
+  op Krewrites : -> AtomicMetaHead .
+  op KSymbolctxtapp : -> AtomicMetaHead .
+  op KSymbolchoice : -> AtomicMetaHead .
+  op KSymbolrewrites : -> AtomicMetaHead .
 
   op nil        : -> ParametricHead .
   op cons       : -> ParametricHead .      
@@ -71,8 +87,8 @@ fmod TOKENS is
   op natemp     : -> ParametricHead .      
   op natmerge   : -> ParametricHead .      
   op natbind    : -> ParametricHead .      
-  op gamma      : -> ParametricHead .
   op append     : -> ParametricHead .
+
 
   op KSymboltrue       : -> AtomicMetaHead .
   op KSymbolfalse      : -> AtomicMetaHead .
