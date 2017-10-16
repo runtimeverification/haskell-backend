@@ -184,6 +184,11 @@
   \newcommand{\Bag}{\textit{Bag}}
   \newcommand{\Set}{\textit{Set}}
   \newcommand{\Map}{\textit{Map}}
+  \newcommand{\emptyMap}{\textit{empty}}
+  \newcommand{\bindMap}{\textit{bind}}
+  \newcommand{\mergeMap}{\textit{merge}}
+
+  \newcommand{\Context}{\textit{Context}}
   \newcommand{\Exp}{\textit{Exp}}
   \newcommand{\app}{\textit{app}}
   \newcommand{\KExp}{\mathit{KExp}}
@@ -713,6 +718,7 @@ Patterns built with only function symbols are called
 \unsure{Should we discuss constructors, too?}
 
 \subsection{Sound and Complete Deduction}
+\label{sec:deduction}
 
 Currently, our sound and complete proof system for matching logic extends that
 of first-order logic with equality with axioms and proof rules for membership.
@@ -911,7 +917,7 @@ symbols in $\Sigma$ and infinitely many axioms in $A$.
 \section{Finite Mechanisms to Define Infinite Theories}
 \label{sec:finite-mechanisms}
 
-Note that all the theoretical results discussed so far imposed no finiteness
+The theoretical results discussed so far imposed no finiteness
 restrictions on the sets of sorts, symbols, or patterns that form a matching
 logic theory.
 In practice, however, like in many other logics or formalisms, we have to
@@ -919,19 +925,19 @@ limit ourselves to finitely describable theories.
 The simplest approach to achieve that would be to require the theories to be
 finite; however, like in many other logics and formalisms, such a requirement
 would simply be too strong to be practical.
-Instead, we have to adopt or develop conventions, mechanisms or languages that
-allow us to describe potentially infinite theories using a finite amount of
-resources (paper, space, characters, etc.).
+Instead, we have to adopt or develop conventions, mechanisms and/or languages
+that allow us to describe potentially infinite theories using a finite amount
+of resources (paper, space, characters, etc.).
 For example, many logics allow \emph{axiom schemas} as a way to finitely
 define infinite theories.
 
 To prepare the ground for our proposal in Section~\ref{sec:syntax-of-kore},
 we here discuss, informally, some ways to finitely describe infinite theories.
 Let us start with sorts.
-Suppose that we have a finite set of \emph{basic sorts}, e.g.,
+Suppose that we have a finite set of \emph{basic sorts}, such as
 $\Nat$, $\Int$, $\Bool$, etc.
-Here are several \emph{sort schemas} that allow us to extend the set of sorts
-with infinitely many new sorts:
+Below are several \emph{sort schema} examples that allow us to extend the set
+of sorts with infinitely many new sorts:
 $$
 \begin{array}{rl}
 \parametric{\List}{s} &
@@ -943,14 +949,36 @@ $$
 \parametric{\Bag_p}{s} &
 \textrm{for any sort $s$ which is not of the form $\parametric{\Bag_p}{\_}$} \\
 \parametric{\Map}{s,s'} &
-\textrm{for any sorts $s,s'$} \\
+\textrm{for any sorts $s,s'$ \ \ \ // for (partial) maps from keys of sort $s$ to values of sort $s'$} \\
 \parametric{\Map_p}{s,s'} &
 \textrm{for any sorts $s,s'$ such that $s$ is not of the form $\parametric{\Map_p}{\_,\_}$}
+\\
+\parametric{\Context}{s,s'} &
+\textrm{for any sorts $s,s'$ \ \ \ // for contexts with holes of sort $s$ and results of sort $s'$}
 \end{array}
 $$
+Sort schemas, like all schemas, have a \emph{least fixed-point}
+interpretation;
+that is, they can be regarded as sort constructors which
+{\em inductively define} a (potentially) infinite set of sorts.
+The five sort schemas above together with the basic sorts, for example,
+generate infinitely many sorts, such as
+$\parametric{\List}{\Nat}$,
+$\parametric{\Bag}{\parametric{\List}{\Nat}}$,
+$\parametric{\Map}{\parametric{\List}{\Int},\parametric{\Set}{\Int}}$,
+$\parametric{\Context}{\parametric{\Set}{\Int},\parametric{\Map}{\Int,\Bool}}$,
+etc.
+Note that sort schemas, like all schemas, can have \emph{side conditions}.
+For example, the schema $\parametric{\Bag_p}{s}$ (of \underline{p}roper bags)
+disallows instances where $s$ is already a proper bag.
+In general, to formally write side conditions over schema parameters we need
+access to a \emph{meta-level}.
+We will do this in Section~\ref{sec:meta-level}, but for now we will continue
+to use side conditions informally.
 
-Here are several \emph{symbol schemas}, each adding now infinitely many symbols:
-
+Let us now move to symbols.
+Here are a few \emph{symbol schemas}, defining infinitely many
+symbols:\info{Make sure we always use the same symbol for empty sequences of sorts.}
 $$
 \begin{array}{rl}
 \parametric{\nil}{s} \in \Sigma_{*,\parametricscript{\List}{s}} &
@@ -958,66 +986,272 @@ $$
 \parametric{\cons}{s} \in \Sigma_{s\times\parametricscript{\List}{s},\parametricscript{\List}{s}} &
 \textrm{for any sort $s$} \\
 \parametric{\append}{s} \in \Sigma_{\parametricscript{\List}{s}\times\parametricscript{\List}{s},\parametricscript{\List}{s}} &
-\textrm{for any sort $s$} \\
-...
+\textrm{for any sort $s$}
+\\[2ex]
+\parametric{\emptyMap}{s,s'} \in \Sigma_{*,\parametricscript{\Map}{s,s'}} &
+\textrm{for any sorts $s,s'$} \\
+\parametric{\bindMap}{s,s'} \in \Sigma_{s\times s',\parametricscript{\Map}{s,s'}} &
+\textrm{for any sorts $s,s'$} \\
+\parametric{\mergeMap}{s,s'} \in \Sigma_{\parametricscript{\Map}{s,s'}\times \parametricscript{\Map}{s,s'},\parametricscript{\Map}{s,s'}} &
+\textrm{for any sorts $s,s'$} \\
 \end{array}
 $$
-
-Here are some \emph{pattern schemas}, each defining infinitely many patters:
+And here are some \emph{pattern schemas}, each defining infinitely many patters:
 $$
 \begin{array}{rl}
 \parametric{\append}{s}(\parametric{\nil}{s},l'\cln\parametric{\List}{s})
-=_{\parametricscript{\List}{s}}^{s'} l'\cln\parametric{\List}{s}
+=_{\parametricscript{\List}{s}}^{s'} l' %\cln\parametric{\List}{s}
 & \textrm{for any sorts $s, s'$}
-\\[2ex]
+\\[1.5ex]
 \begin{array}{@{}l@{}}
 \parametric{\append}{s}(\parametric{\cons}{s}(x\cln s,l\cln\parametric{\List}{s}),l'\cln\parametric{\List}{s})
 \ =_{\parametricscript{\List}{s}}^{s'} 
 \\
-\parametric{cons}{s}(x\cln s,\parametric{\append}{s}(l\cln\parametric{\List}{s},l'\cln\parametric{\List}{s})
+\parametric{cons}{s}(x\cln s,\parametric{\append}{s}(
+l%\cln\parametric{\List}{s}
+,
+l'%\cln\parametric{\List}{s}
+))
 \end{array}
 & \textrm{for any sorts $s, s'$}
-\\[3ex]
+\\[3.5ex]
+\parametric{\mergeMap}{s,s'}(\parametric{\emptyMap}{s,s'},m\cln\parametric{\Map}{s,s'})
+=_{\parametricscript{\Map}{s,s'}}^{s''} m %\cln\parametric{\List}{s}
+& \textrm{for any sorts $s, s', s''$}
+\\[1.5ex]
+\begin{array}{@{}l@{}}
+\parametric{\mergeMap}{s,s'}(m\cln\parametric{\Map}{s,s'},m'\cln\parametric{\Map}{s,s'})
+=_{\parametricscript{\Map}{s,s'}}^{s''}
+\\
+\parametric{\mergeMap}{s,s'}(m'\cln\parametric{\Map}{s,s'},m\cln\parametric{\Map}{s,s'})
+\end{array}
+& \textrm{for any sorts $s, s', s''$}
+\\[1.5ex]
+...
+\end{array}
+$$
+
+Note that all the sort, symbol and pattern schemas above are parametric in
+sorts only.
+In theory, they can be parameterized with anything, including with integer
+numbers, with symbols, and even with arbitrary patterns.
+We found it sufficient in practice to parameterize sort and symbol schemas with
+sort parameters only, so for the time being we do not consider any other
+parameters for these.
+However, pattern schemas sometimes need to be parameterized with symbols and
+patterns in addition to sorts.
+Consider, for example, the following pattern schema describing the important
+property of substitution when applied to a pattern rooted in a symbol:
+$$
+\begin{array}{rl}
+\sigma(\varphi_1,...,\varphi_n)[\varphi/x:s']
+=_s^{s''} 
+\sigma(\varphi_1[\varphi/x],...,\varphi_n[\varphi/x])
+&
+\textrm{for any sorts $s, s', s'', s_1,...,s_n$,}
+\\
+& \textrm{any symbol $\sigma\in\Sigma_{s_1\times...\times s_n, s}$,}
+\\
+& \textrm{and any pattern $\varphi$ of sort $s$}
+\end{array}
+$$
+The above pattern schema is parametric in sorts, symbols and patterns, and,
+of course, has infinitely many instances.
+
+We have seen some simple side conditions in the examples of sort schemas
+above.
+Pattern schemas, however, tend to have more complex side conditions.
+Below are several other common examples of pattern schemas, some of them
+with nontrivial side conditions:
+$$
+\begin{array}{rl}
 \varphi[\varphi_1/{x\cln s}] \wedge (\varphi_1 =_s^{s'} \varphi_2) \rightarrow \varphi[\varphi_2/{x\cln s}]
 &\textrm{where $s,s'$ are any sorts, $\varphi$ any pattern of} \\
 & \textrm{sort $s'$, and $\varphi_1,\varphi_2$ any patterns of sort $s$}
 \\[2ex]
-\textit{G: stopped here, we should add all sorts below}
+\forall x\cln s . \varphi \rightarrow \varphi[t/x]
+&\textrm{where $s$ is any sort and $t$ is any \emph{syntactic pattern}, or \emph{term}}, \\
+& \textrm{or sort $s$, i.e., one containing only variables and symbols}
 \\[2ex]
-\forall x . \varphi \rightarrow \varphi[t/x]
-&\textrm{where $t$ is any \emph{syntactic pattern}, or \emph{term}}, \\
-& \textrm{i.e., containing only variables and symbols}
-\\[2ex]
-(\lambda x . \varphi)\varphi' = \varphi[\varphi'/x]
-& \textrm{where $\varphi$, $\varphi'$ are patterns containing only}
-\\
-& \textrm{variables, $\lambda$ binders and application symbols}
-\\[2ex]
+%(\lambda x . \varphi)\varphi' = \varphi[\varphi'/x]
+%& \textrm{where $\varphi$, $\varphi'$ are patterns containing only}
+%\\
+%& \textrm{variables, $\lambda$ binders and application symbols}
+%\\[2ex]
 \varphi_1 \mathrel{\texttt{+}} \varphi_2 = \varphi_1 +_\Nat \varphi_2
-& \textrm{where $\varphi$, $\varphi'$ are \emph{ground} syntactic patterns}
+& \textrm{where $\varphi$, $\varphi'$ are \emph{ground} syntactic patterns of sort $\Nat$,}
 \\
-&\textrm{of sort $\Nat$, that is, patterns built only}
-\\
-&\textrm{with symbols \texttt{zero} and \texttt{succ}}
+&\textrm{that is, patterns built only with symbols \texttt{zero} and \texttt{succ}}
 \\[2ex]
 (\varphi_1 \rightarrow \varphi_2) \rightarrow
 (\varphi[\varphi_1 / x] \rightarrow \varphi[\varphi_2 / x])
-& \textrm{where $\varphi$ is a \emph{positive context in $x$}, that is,}
+& \textrm{where $\varphi$ is a \emph{positive context in $x$}, that is, a pattern}
 \\
-& \textrm{a pattern
-containing only one occurrence}
+& \textrm{containing only one occurrence of $x$ with no negation ($\neg$)}
 \\
-&\textrm{of $x$ with no negation ($\neg$) on the path to}
+&\textrm{on the path to $x$, and where $\varphi_1$, $\varphi_2$ are any patterns}
 \\
-&\textrm{$x$, and where $\varphi_1$, $\varphi_2$ are any patterns}
-\\
-&\textrm{having the same sort}
+&\textrm{having the same sort as $x$}
 \end{array}
 $$
 
-One of the major goals of this paper is to propose a formal language,
-and an implementation, that allow us to finitely specify potentially
-infinite matching logic theories presented with finitely many pattern schemas.
+One of the major goals of this paper is to propose a formal language
+and an implementation of it that allow us to finitely specify potentially
+infinite matching logic theories presented with finitely many sort, symbol
+and pattern schemas.
+
+\section{Important Case Studies}
+
+In this section we illustrate the power of matching logic by showing how it can
+handle binders, fixed-points, contexts, and rewriting and reachability.
+These important notions or concepts can be defined as syntactic sugar or as
+particular theories in matching logic, so that the uniform matching logic proof
+system in Section~\ref{sec:deduction} can be used to reason about all of these.
+In particular, \K can now be given semantics fully in matching logic.
+That is, a \K language definition becomes a matching logic theory, and the
+various tools that are part of the \K framework become best-effort
+implementations of targeted proof search using the deduction system in
+Section~\ref{sec:deduction}.
+
+\subsection{Binders}
+\label{sec:binders}
+
+The \K framework allows to define binders, such as the $\lambda$ binder in
+$\lambda$-calculus, using the attribute \texttt{binder}.
+But what does that really mean?
+Matching logic appears to provide no support for binders, except for having
+its own binder, the existential quantifier $\exists$.
+Here we only discuss untyped $\lambda$-calculus, but the same ideas apply to
+any calculus with binders.
+
+Suppose that $S$ consists of only one sort, $\Exp$, for $\lambda$-expressions.
+Although matching logic provides an infinite set of variables $\Var_\Exp$ of
+sort $\Exp$, we cannot simply define $\lambda\_.\_$ as a symbol in
+$\Sigma_{\Var_\Exp \times \Exp, \Exp}$, for at least two reasons:
+first, $\Var_\Exp$ is \emph{not} an actual sort at the core level
+(as seen in Section~\ref{sec:meta-level}, it is a sort at the meta-level);
+second, we want the first argument of $\lambda\_.\_$ to bind its occurrences
+in the second argument, and symbols do not do that.
+To ease notation, from here on in this section assume that all variables
+are in $\Var_\Exp$ and all patterns have sort $\Exp$.
+
+The key observation here is that the $\lambda\_.\_$ construct in
+$\lambda$-calculus \emph{performs two important operations}: on the one hand
+it builds a binding of its first argument into its second, and one the other
+hand it builds a term.
+Fortunately, matching logic allows us to separate these two operations, and
+use the builtin existential quantifier for binding.
+Specifically, we define a symbol $\lambda^0$ and regard $\lambda$ as syntactic
+sugar for the pattern that existentially binds its first argument into $\lambda^0$:
+$$
+\begin{array}{l}
+\lambda^0 \in \Sigma_{\Exp\times\Exp,\Exp} \\
+\lambda x . e \equiv \exists x . \lambda^0(x,e)
+\end{array}
+$$
+Therefore, $\lambda^0(x,e)$ builds a term (actually a pattern) with no binding
+relationship between the its first argument $x$ and other occurrences of $x$ in
+term/pattern $e$, and then the existential quantifier $\exists x$ adds the binding
+relationship.
+Mathematically, we can regard $\lambda^0$ as constructing points (input,output)
+on the graph of the function, and then the existential quantifier gives us their
+union as stated by its matching logic semantics, that is, the actual function.
+Note that this same construction does not work in FOL, because there quantifiers
+apply to predicates and not to terms/patters.
+It is the very nature of matching logic to not distinguish between function
+and predicate symbols that makes the above work.
+The application can be defined as an ordinary symbol:
+$$
+\_\,\_ \in \Sigma_{\Exp \times \Exp,\Exp}
+$$
+
+Let us now discuss the axiom patterns.
+First, note that we get the $\alpha$-equality property,
+$$
+\lambda x . e = \lambda y . e[y/x]
+$$
+essentially for free, because matching logic's builtin existential quantifier
+and substitution already enjoy the $\alpha$-equivalence
+property~\cite{rosu-2017-lmcs}.
+The $\beta$-equality, on the other hand, requires an important side condition.
+To start the discussion, let us suppose that we naively define it as follows:
+$$
+\begin{array}{r@{\hspace*{4ex}}l}
+(\lambda x . e)e' = e[e'/x]
+&
+\textrm{for any \emph{pattern} $e$ \ \ \ \ // this is actually wrong!}
+\end{array}
+$$
+The problem is that $e$ and $e'$ cannot be just any arbitrary patterns.
+For example, if we pick $e$ to be $\top$ and $e'$ to be $\bot$, then
+we can show that $(\lambda x . \top)\bot = \bot$
+(see Section~\ref{sec:semantics}: the interpretation of $\_\,\_$ is empty
+when any of its arguments is empty), and since $\top[\bot/x] = \top$ we
+get $\top = \bot$, that is, inconsistency.
+Matching logic, therefore, provides patterns that were not intended for
+$\lambda$-calculus.
+The solution is to restrict, with side conditions, the application of
+$\beta$-equality to only patterns that correspond to $\lambda$-terms
+in the original calculus:
+$$
+\begin{array}{r@{\hspace*{4ex}}l}
+(\lambda x . e)e' = e[e'/x]
+& \textrm{where $e$, $e'$ are patterns constructed only with variables}
+\\
+& \textrm{$\lambda$ binders (via desugaring) and application symbols}
+\end{array}
+$$
+That is, we first identify a syntactic fragment of the universe of
+patterns which is in a bijective correspondence with the original
+syntactic terms of $\lambda$-calculus, and then restrict the
+application of the $\beta$-equality rule to only patterns in that 
+fragment.
+
+The above gives us an embedding of $\lambda$-calculus as a theory
+in matching logic.
+We conjecture that this embedding is a \emph{conservative extension},
+that is, if $e$ and $e'$ are two $\lambda$-terms, then $e=e'$ holds
+in the original $\lambda$-calculus if and only if the corresponding
+equality between patterns holds in the matching logic theory.
+The ``only if'' part is easy, because equational reasoning is sound
+for matching logic~\cite{rosu-2017-lmcs}, but the ``if'' part appears
+to be non-trivial.
+
+
+\subsection{Fixed Points}
+\label{sec:fixed-points}
+
+Similarly to the $\lambda$-binder in Section~\ref{sec:binders}, we can
+add a fixed-point $\mu$-binder as follows:
+$$
+\begin{array}{r@{\hspace*{4ex}}l}
+\mu^0 \in \Sigma_{\Exp\times\Exp,\Exp}
+\\
+\mu x . e \equiv \exists x . \mu^0(x,e)
+\\
+\mu x . e = e[\mu x.e/x]
+& \textrm{where $e$ is a pattern corresponding to a term}
+\\
+& \textrm{in the original calculus (i.e., constructed with variables,}
+\\
+& \textrm{$\lambda$ and $\mu$ binders (via desugaring), and application symbols}
+\end{array}
+$$
+Given any model $M$ and interpretation $\rho : \Var \ra M$, pattern $e$
+yields a function $e_M : M \rightarrow {\cal P}(M)$ where
+$e_M(a) = \overline{\rho[a/x]}(e)$.
+Therefore, if we let $X$ be the set $\overline{\rho}(\mu x . e)$, then
+the equation of $\mu$ above yields $X = e_M(X)$, that is, $X$ is a fixed point
+of $e_M$.
+
+\subsection{Contexts}
+
+both strictness and configuration abstraction
+
+\subsection{Rewriting and Reachability}
+
+as implication and as fixed-points 
+
 
 \section{Built-ins}
 \label{sec:builtins}
@@ -1087,6 +1321,7 @@ be no finite or algorithmic way to represent those
 not r.e.).
 
 \section{The Meta-Theory: Reflection in Matching Logic}
+\label{sec:meta-level}
 Consider a matching logic prover $P$ that decides whether a matching logic 
 patter $\varphi$ holds in a matching logic theory $T$. 
 The prover $P$ is an executable program written in some programming language, and it has two inputs: a piece of data that \emph{encodes} the pattern $\varphi$, and another piece of data that \emph{encodes} the theory $T$.
