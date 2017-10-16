@@ -82,52 +82,34 @@ fmod IMP is
   symbol merge{S1,S2}(Map{S1,S2},Map{S1,S2}) : Map{S1,S2}
   symbol bind{S1,S2}(S1,S2) : Map{S1,S2}
 
-  symbol choice{KS1,KS2}(KS1,KS2,KS2) : KS2 
 
-  sort   AExp
-  symbol NatToAExp(Nat)       : AExp
-  symbol IdToAExp(Nat)        : AExp
-  symbol plusAExp(AExp, AExp) : AExp
+  sort Stmt
+  symbol ite(BExp,Stmt,Stmt) : Stmt
+  axiom{S,R} 
+    implies{R}(
+      choice{KSort,KPattern}(
+        equals{KSort,KSort}(KgetSort(C : KPattern), KCtxt(S : KSort,KAExp())),
+        top{KPattern}(), 
+        bottom{KPattern}()),
+      equals{Stmt, R}(
+        ite(ctxtapp{S,BExp}(C : KPattern, X : S), S1 : Stmt, S2 : Stmt),
+        ctxtapp{S,BExp}(
+          gamma{S,BExp}(
+            H : S,
+            ite(ctxtapp{S,BExp}(C : KPattern, H : S), S1 : Stmt, S2 : Stmt)),
+          X : S)))
 
-  axiom{S, R}
-  implies{R}(
-  choice{KSort,KPattern}(
-         equals{KSort, KSort}(KgetSort(C : KPattern), KCtxt(S : KSort, KAExp())),
-         top{KPattern}(), 
-         bottom{KPattern}()),
-  equals{AExp, R}(plusAExp(ctxtapp{S,AExp}(C : KPattern, X : S), E : AExp),
-                   ctxtapp{S,AExp}(
-                     exists{S,AExp}(
-                       HOLE : S, 
-                       gamma0{S,AExp}(
-                         HOLE : S, 
-                         plusAExp(ctxtapp{S,AExp}(C : KPattern, HOLE : S), E : AExp))), 
-                     X : S)))
+  axiom{R}
+    rewrites{R}(
+      ctxtapp{Stmt,R}(C : KPattern, ite(tt(), S1 : Stmt, S2 : Stmt)),
+      ctxtapp{Stmt,R}(C : KPattern, S1 : Stmt))
 
-  ---(
-  axiom{S, R}
-  implies{R}(
-  equals{KSort, R}(KgetSort(C:KPattern), Ctxt{S,AExp}),
-  equals{AExp, R}(ctxtapp{S,AExp}(
-                     gamma{S,AExp}(
-                       HOLE:S, 
-                       plusAExp(ctxtapp{S,AExp}(C:KPattern, HOLE:S), E:AExp)), 
-                     variable{S}(X))),
-                   plusAExp(ctxtapp{S,AExp}(C:KPattern, variable{S}(X)), E:AExp))
+  axiom{R}
+    rewrites{R}(
+      ctxtapp{Stmt,R}(C : KPattern, ite(ff(), S1 : Stmt, S2 : Stmt)),
+      ctxtapp{Stmt,R}(C : KPattern, S2 : Stmt))
   
-  axiom{S, R}
-  implies{R}(
-  equals{KSort, R}(KgetSort(C:KPattern), Ctxt{S, BExp}),
-  equals{Stmt, R}(ite(ctxtapp{S, BExp}(C:KPattern, variable{S}(X)), S1:Stmt, S2:Stmt),
-                   ctxtapp{S, Stmt}(
-                     exists{S, Stmt}(
-                       HOLE:S,
-                       gamma0{S, Stmt}(
-                         HOLE:S,
-                         ite(ctxtapp{S, BExp}(C:KPattern, HOLE:S),
-                             S1:Stmt, S2:Stmt))), 
-                     variable{S}(X))))
-  ---)
+
   -------------------------
   ---- End "imp.kore" -----
   -------------------------
@@ -148,136 +130,3 @@ reduce [[imp]] == [[ [[imp]] ]] .
 quit
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-------------------------------
----- imp.kore starts here ----
-------------------------------
-
-
-reduce
-
-
-  alias{S} implies{S}(P:KPattern, Q:KPattern) 
-        := or{S}(not{S}(P:KPattern), Q:KPattern)
-  alias{S} iff{S}(P:KPattern, Q:KPattern) 
-        := and{S}(implies{S}(P:KPattern, Q:KPattern), 
-                   implies{S}(Q:KPattern, P:KPattern))
-  alias{S} forall{S1,S2}(variable{S}(X)1,P:KPattern) 
-        := not{S2}(exists{S1,S2}(variable{S}(X)1,not{S2}(P:KPattern)))
-
-  symbol
-    ceil{S1,S2}(S1) : S2
-
-  axiom{S1,S2}  
-    ceil{S1,S2}(variable{S}(X)1)
-
-  alias{S1,S2}
-    floor{S1,S2}(P:KPattern) 
-    := not{S2}(ceil{S1,S2}(not{S1}(P:KPattern)))
-
-  alias{S1,S2}
-    equals{S1,S2}(P:KPattern,Q:KPattern) 
-    := floor{S1,S2}(iff{S1,S2}(P:KPattern,Q:KPattern)) 
-
-
-
-
-
-
-  
-  
-  axiom{S}
-    exists{Nat, S}(X:Nat, equals{Nat, S}(X:Nat, zero()))
-  axiom{S}
-    exists{Nat, S}(X:Nat, equals{Nat, S}(X:Nat, succ(Y:Nat)))
-  axiom{S}
-    exists{Nat, S}(X:Nat, equals{Nat, S}(X:Nat, plus(Y:Nat, Z:Nat)))
-  axiom{S}
-    exists{Bool, S}(variable{Bool}(B), equals{Bool, S}(variable{Bool}(B), gte(Y:Nat, Z:Nat)))
-  
-  axiom  
-    or{Nat}(zero(), exists{Nat, Nat}(X:Nat, succ(X:Nat)))
-  axiom
-    not{Nat}(and{Nat}(zero(), exists{Nat, Nat}(X:Nat, succ(X:Nat))))
-  
-  axiom{S}
-    equals{Nat, S}(plus(X:Nat, zero()), zero())
-  axiom{S}
-    equals{Nat, S}(plus(X:Nat, succ(Y:Nat)), succ(plus(X:Nat, Y:Nat)))
-
-
-  
-
-
-  sort   Ctxt{S1, S2}
-  symbol gamma0{S1, S2}(S1, S2)            : Ctxt{S1, S2}
-  symbol ctxtapp{S1, S2}(Ctxt{S1, S2}, S1) : S2
-  
-  alias  gamma{S1,S2}(HOLE:S1, P:KPattern) 
-     :=  exists{S1, Ctxt{S1, S2}}(HOLE:S1, gamma0{S1, S2}(HOLE:S1, P:KPattern))
-
-.
-
-quit
-  
-
-
-  sort KString
-
-  sort KSort
-  sort KSortList
-  sort KSymbol
-  sort KSymbolList
-  sort KVariable
-  sort KPattern
-  sort KPatternList
-
-  sort KSortSentence
-  sort KSortSentenceList
-  sort KSymbolSentence
-  sort KSymbolSentenceList
-  sort KAxiomSentence
-  sort KAxiomSentenceList
-
-  sort KModule 
-  sort KModuleList
-
-  symbol Ksort(KString, KSortList)        : KSort
-
-  symbol KnilKSortList                    : KSortList
-  symbol KconsKSortList(KSort, KSortList) : KSortList 
-
-  symbol Ksymbolid(KString, KSortList)                 : KSymbol
-  symbol Ksymbol(KString, KSortList, KSortList, KSort) : KSymbol 
-
-  symbol Kvariable(KString, KSort)    : KVariable
-
-
-.
-
-quit
