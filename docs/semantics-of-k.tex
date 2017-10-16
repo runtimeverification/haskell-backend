@@ -1254,9 +1254,57 @@ $$
 Given any model $M$ and interpretation $\rho : \Var \ra M$, pattern $e$
 yields a function $e_M : M \rightarrow {\cal P}(M)$ where
 $e_M(a) = \overline{\rho[a/x]}(e)$.
-Therefore, if we let $X$ be the set $\overline{\rho}(\mu x . e)$, then
+It is easy to see that its point-wise extension 
+$e_M : {\cal P}(M) \rightarrow {\cal P}(M)$ is monotone w.r.t. $\subseteq$,
+so by the Knaster-Tarski theorem it has a fixed point\footnote{
+Moreover, the set of fixed-points of
+$e_M : {\cal P}(M) \rightarrow {\cal P}(M)$ forms a complete lattice.}.
+In fact, if we let $X$ be the set $\overline{\rho}(\mu x . e)$, then
 the equation of $\mu$ above yields $X = e_M(X)$, that is, $X$ is a fixed point
-of $e_M$.
+of $e_M : {\cal P}(M) \rightarrow {\cal P}(M)$.
+%
+We want, however, $X$ to be the \emph{least} fixed point of $e_M$.
+We do not know if that is possible, because $M$ and $\rho$ are arbitrary
+and many of the fixed-points of $e_M$ may very well be unreachable with
+patterns.
+However, from a practical perspective, are those fixed points of any
+importance at all?
+Considering that when we do proofs we can only derive patterns, it makes
+sense to limit ourselves to only fixed points that can be expressed
+syntactically.
+Within this limited universe, we can axiomatize the
+\emph{least fixed-point} nature of $\mu x . e$ with the following
+pattern schema:
+$$
+\begin{array}{r@{\hspace*{4ex}}l}
+e[e'/x] = e' \rightarrow \floor{\mu x . e \rightarrow e'}
+& \textrm{where $e$ and $e'$ are patterns corresponding to terms}
+\\
+& \textrm{in the original calculus}
+\end{array}
+$$
+
+It is now a simple exercise to add a dual, greatest fixed-point construct:
+$$
+\begin{array}{r@{\hspace*{4ex}}l}
+\nu^0 \in \Sigma_{\Exp\times\Exp,\Exp}
+\\
+\nu x . e \equiv \exists x . \nu^0(x,e)
+\\
+\nu x . e = e[\nu x.e/x]
+& \textrm{where $e$ is a pattern corresponding to a term}
+\\
+& \textrm{in the original calculus} \\
+e[e'/x] = e' \rightarrow \floor{e' \rightarrow \nu x . e}
+& \textrm{where $e$ and $e'$ are patterns corresponding to terms}
+\\
+& \textrm{in the original calculus}
+\end{array}
+$$
+
+\info{An alternative is to define $\nu x . e$ directly as the dual of
+$\mu x . e$, that is, $\nu x . e \equiv \neg \mu x . \neg e$.
+Can we prove the pattern above them?}
 
 \subsection{Contexts}
 
