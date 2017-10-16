@@ -92,9 +92,9 @@ fmod IMP is
 endfm
 
 
-reduce [[natlist]] .
+--- reduce [[natlist]] .
 
---- reduce [[imp]] .
+reduce [[imp]] .
 
 ---- Should return true:
 ---  reduce [[imp]] == [[ [[imp]] ]] .
