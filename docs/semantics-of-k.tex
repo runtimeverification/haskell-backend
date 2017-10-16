@@ -1331,6 +1331,46 @@ axiom{KS} equals{KSort, KS}(
             KList(S:KSort),
             Ksort("List", KconsKSortList(S:KSort, KnilKSortList)))
 \end{lstlisting}
+
+\subsection{Example B: Rewriting with Contexts}
+\begin{lstlisting}[language=kore]
+/*** ctxt.kore ***/
+sort Ctxt{S1,S2}
+symbol gamma0{S1,S2}(S1,S2):Ctxt{S1,S2}
+symbol ctxtapp{S1,S2}(Ctxt{S1,S2},S1):S2
+alias{S1,S2} gamma{S1,S2}(H:KVariable, P:KPattern) 
+  := exists{S1,S2}(H:KVariable, gamma0(H:KVariable, P:KPattern))
+alias{S} idctxt{S}() := gamma{S,S}(H:S,H:S)
+axiom{S,R} equals{S,R}(ctxtapp(idctxt{S}(), P:KPattern), P:KPattern)
+/*** if-then-else is strict on the 1st argument ***/
+sort BExp
+sort Stmt
+symbol ite(BExp,Stmt,Stmt):Stmt
+axiom{S,R} 
+  implies{R}(
+    choice{KSort,KPattern}(
+      equals{KSort,KSort}(KgetSort(C:KPattern), KCtxt(S:KSort,KAExp())),
+      top{KPattern}(), 
+      bottom{KPattern}()),
+    equals{Stmt, R}(
+      ite(ctxtapp{S,BExp}(C:KPattern, X:S), S1:Stmt, S2:Stmt),
+      ctxtapp{S,BExp}(
+        gamma{S,BExp}(
+          H:S,
+          ite(ctxtapp{S,BExp}(C:KPattern, H:S), S1:Stmt, S2:Stmt)),
+        X:S)))
+/*** C[ite(tt,S1,S2)] => C[S1] ***/
+axiom{R}
+  rewrites{R}(
+    ctxtapp{Stmt,R}(C:KPattern, ite(tt(), S1:Stmt, S2:Stmt)),
+    ctxtapp{Stmt,R}(C:KPattern, S1:Stmt))
+/*** C[ite(ff,S1,S2)] => C[S2] ***/
+axiom{R}
+  rewrites{R}(
+    ctxtapp{Stmt,R}(C:KPattern, ite(ff(), S1:Stmt, S2:Stmt)),
+    ctxtapp{Stmt,R}(C:KPattern, S2:Stmt))
+\end{lstlisting}
+
 %
 %The theory of lambda calculus, denoted as $L$, has 
 %only one sort which we denote as $\Exp$
