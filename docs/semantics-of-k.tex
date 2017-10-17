@@ -1143,7 +1143,7 @@ Although matching logic provides an infinite set of variables $\Var_\Exp$ of
 sort $\Exp$, we cannot simply define $\lambda\_.\_$ as a symbol in
 $\Sigma_{\Var_\Exp \times \Exp, \Exp}$, for at least two reasons:
 first, $\Var_\Exp$ is \emph{not} an actual sort at the core level
-(as seen in Section~\ref{sec:meta-level}, it is a sort at the meta-level);
+(as seen in Section~\ref{sec:meta-theory}, it is a sort at the meta-level);
 second, we want the first argument of $\lambda\_.\_$ to bind its occurrences
 in the second argument, and symbols do not do that.
 To ease notation, from here on in this section assume that all variables
@@ -1306,6 +1306,16 @@ $$
 $\mu x . e$, that is, $\nu x . e \equiv \neg \mu x . \neg e$.
 Can we prove the pattern above them?}
 
+We extend our conjecture in Section~\ref{sec:binders} and conjecture
+that the embedding above, in spite of not necessarily yielding the
+expected absolute least fixed-points in all models (but least only
+relatively to patterns that can be constructed with the original
+syntax), remains a conservative extension: if $e$ and $e'$ are two
+terms built with the syntax of the original calculus, then $e=e'$
+holds in the original calculus if and only if the corresponding equality holds
+in the corresponding matching logic theory.
+Like before, the ``only if'' part is easy.
+
 \subsection{Contexts}
 
 both strictness and configuration abstraction
@@ -1383,6 +1393,8 @@ be no finite or algorithmic way to represent those
 not r.e.).
 
 \section{The Meta-Theory: Reflection in Matching Logic}
+\label{sec:meta-theory}
+
 This section is a follow-up to Section~\cref{sec:finite-mechanisms}, in which 
 we introduced various \emph{schema mechanisms} that allow us to define infinite 
 theories using a finite amount of resources.
