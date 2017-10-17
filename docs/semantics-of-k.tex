@@ -1449,27 +1449,27 @@ theorem):
 		$
 		\prftree[r]{\footnotesize (Upward Reflection)}
 		{T \vdash \varphi}
-		{K \cup \widehat{T} \vdashfin \Kdeduce(\widehat{\varphi})}
+		{K \cup \denote{T} \vdashfin \Kdeduce(\denote{\varphi})}
 		$
 		&
 		$
 		\prftree[r]{\footnotesize (Downward Reflection)}
-		{K \cup \widehat{T} \vdashfin \Kdeduce(\widehat{\varphi})}
+		{K \cup \denote{T} \vdashfin \Kdeduce(\denote{\varphi})}
 		{T \vdash \varphi}
 		$
 	\end{tabular}
 \end{center}
-where $\widehat{T}$ is the meta-theory of $T$, $\widehat{\varphi}$ is the 
+where $\denote{T}$ is the meta-theory of $T$, $\denote{\varphi}$ is the 
 meta-representation of $\varphi$, and $\Kdeduce$ is a predicate symbol of $K$, 
 known as the \emph{truth predicate} in reflection logic because it captures the 
-truth in theory $T$. The \emph{lifting} operation ``$\widehat{\ \ \ }$'' brings 
+truth in theory $T$. The \emph{lifting} operation ``$\denote{\ \ \ }$'' brings 
 object-level patterns and theories to their 
 representations in the meta-level.
 Notice that the meta-theory $K$ is defined to be a finite theory. Also, even if 
-$T$ could be infinite, its lifting $\widehat{T}$ is a finite theory.
+$T$ could be infinite, its lifting $\denote{T}$ is a finite theory.
 Therefore, the provability relation
 $$
-K \cup \widehat{T} \vdashfin \Kdeduce(\widehat{\varphi})
+K \cup \denote{T} \vdashfin \Kdeduce(\denote{\varphi})
 $$
 is \emph{a probability relation over a finite theory}.
 
@@ -1577,7 +1577,7 @@ Basically, we could introduce as much notation sugar as we want to the meta-theo
 	\label{tab:ast-with-sugar}
 \end{center}
 
-Such transformation from objects to their abstract syntax trees with notation sugar as shown in Table~\ref{tab:ast-with-sugar} is the \emph{lifting} operation ``$\widehat{\ \ \ }$''.
+Such transformation from objects to their abstract syntax trees with notation sugar as shown in Table~\ref{tab:ast-with-sugar} is the \emph{lifting} operation ``$\denote{\ \ \ }$''.
 
 Adding sugar for abstract syntax trees means we add some new symbols (such as $\KNat$) and new axioms to the meta-theory $K$.
 
@@ -1602,11 +1602,11 @@ A Kore definition contains some sort, symbol, and axiom declarations, whose form
 		\\\hline
 		\texttt{symbol cons\{S\}(S,List\{S\}):List\{S\}} & $\KsortDeclared(s)\to\KsymbolDeclared(\KSymbolcons(s))$
         \\\hline
-		\texttt{axiom $\varphi$} & $\Kdeduce(\widehat{\varphi})$
+		\texttt{axiom $\varphi$} & $\Kdeduce(\denote{\varphi})$
 		\\\hline
-		\texttt{axiom\{S\} $\varphi$} & $\KsortDeclared(s) \to \Kdeduce(\widehat{\varphi})$
+		\texttt{axiom\{S\} $\varphi$} & $\KsortDeclared(s) \to \Kdeduce(\denote{\varphi})$
 		\\\hline
-		\texttt{axiom\{S1,..,Sn\} $\varphi$} & $\KsortDeclared(s_1) \wedge \dots \wedge \KsortDeclared(s_n) \to \Kdeduce(\widehat{\varphi})$
+		\texttt{axiom\{S1,..,Sn\} $\varphi$} & $\KsortDeclared(s_1) \wedge \dots \wedge \KsortDeclared(s_n) \to \Kdeduce(\denote{\varphi})$
 	\end{tabular}
 	\captionof{table}{Lift Declarations to Assertions}
 	\label{tab:declarations-as-assertions}
@@ -1807,17 +1807,17 @@ axiom{R}
 %		$
 %		\prftree[r]{\footnotesize (Upward Reflection)}
 %		{\vdash \varphi}
-%		{\vdash T(\widehat{\varphi})}
+%		{\vdash T(\denote{\varphi})}
 %		$
 %		&&
 %		$
 %		\prftree[r]{\footnotesize (Downward Reflection)}
-%		{\vdash T(\widehat{\varphi})}
+%		{\vdash T(\denote{\varphi})}
 %		{\vdash \varphi}
 %		$
 %	\end{tabular}
 %\end{center}
-%where $\widehat{\varphi}$ is the abstract syntax tree that represents the 
+%where $\denote{\varphi}$ is the abstract syntax tree that represents the 
 %formula $\varphi$ in the reflective logic.
 %Intuitively, the truth predicate $T$ captures the semantics of a formula being 
 %true.
@@ -1841,18 +1841,18 @@ axiom{R}
 %		$
 %		\prftree[r]{\footnotesize (Upward Reflection)}
 %		{T \vdash \varphi}
-%		{K \cup \widehat{T} \vdash \Kdeduce(\widehat{\varphi})}
+%		{K \cup \denote{T} \vdash \Kdeduce(\denote{\varphi})}
 %		$
 %		&
 %		$
 %		\prftree[r]{\footnotesize (Downward Reflection)}
-%		{K \cup \widehat{T} \vdash \Kdeduce(\widehat{\varphi})}
+%		{K \cup \denote{T} \vdash \Kdeduce(\denote{\varphi})}
 %		{T \vdash \varphi}
 %		$
 %	\end{tabular}
 %\end{center}
-%where $\widehat{\varphi}$ is the representation of $\varphi$ in the 
-%meta-theory, and $\widehat{T}$ is the set of assertions of predicates that 
+%where $\denote{\varphi}$ is the representation of $\varphi$ in the 
+%meta-theory, and $\denote{T}$ is the set of assertions of predicates that 
 %defines the theory $T$ in the meta-theory.
 %
 %
@@ -2339,12 +2339,12 @@ $\mathit{sigma} \colon S_1 \times \dots \times S_n \to S$ is declared as a
 symbol with ``sigma'' being it name.
 \begin{equation*}
 \KsymbolDeclared(\Ksymbol(\text{``sigma''}, 
-(\widehat{S_1},\dots,\widehat{S_n}), \widehat{S}))
+(\denote{S_1},\dots,\denote{S_n}), \denote{S}))
 \end{equation*}
 
 (\textsc{Axiom Declaration}). 
 $\varphi$ is declared to be an axiom.
-$$\KaxiomDeclared(\widehat{\varphi})$$
+$$\KaxiomDeclared(\denote{\varphi})$$
 
 \paragraph{Wellformedness.}
 The predicate symbol
@@ -2442,16 +2442,16 @@ $$
 \Kdeduce \colon \KPattern \to \KPred
 $$
 which has axioms in correspondent to every inference rules:
-$$\Kderivable(\widehat{\varphi_1}) \wedge \dots \wedge 
-\Kderivable(\widehat{\varphi_n}) \to \Kderivable(\widehat{\psi})$$
+$$\Kderivable(\denote{\varphi_1}) \wedge \dots \wedge 
+\Kderivable(\denote{\varphi_n}) \to \Kderivable(\denote{\psi})$$
 is an axiom in the meta-theory if and only if 
 $$
 	\prftree
 	{ \varphi_1 \dots  \varphi_n}
 	{ \psi }
 $$
-is an inference rule of matching logic, in which $\widehat{\varphi_1}, \dots, 
-\widehat{\varphi_n}, \widehat{\psi}$ are representations of $\varphi_1, \dots, 
+is an inference rule of matching logic, in which $\denote{\varphi_1}, \dots, 
+\denote{\varphi_n}, \denote{\psi}$ are representations of $\varphi_1, \dots, 
 \varphi_n, \psi$ in the meta-theory.
 
 In the following, we list all the inference rules of the matching logic proof 
@@ -2631,7 +2631,7 @@ R)).$$
 \subsection{Faithfulness: Finite Case}
 
 \begin{theorem}[Faithfulness Theorem]\label{thm:faithfulness-finite}
-	$$T \vdash \varphi \quad \text{iff} \quad \Kfinite \cup \widehat{T} \vdash 
+	$$T \vdash \varphi \quad \text{iff} \quad \Kfinite \cup \denote{T} \vdash 
 	\Kdeduce(\hat{\varphi}).$$
 \end{theorem}
 
@@ -2700,17 +2700,17 @@ We recall the readers of upward and downward reflection relations
 		$
 		\prftree[r]{\footnotesize (Upward Reflection)}
 		{T \vdash \varphi}
-		{K \cup \widehat{T} \vdashfin \Kdeduce(\widehat{\varphi})}
+		{K \cup \denote{T} \vdashfin \Kdeduce(\denote{\varphi})}
 		$
 		&
 		$
 		\prftree[r]{\footnotesize (Downward Reflection)}
-		{K \cup \widehat{T} \vdashfin \Kdeduce(\widehat{\varphi})}
+		{K \cup \denote{T} \vdashfin \Kdeduce(\denote{\varphi})}
 		{T \vdash \varphi}
 		$
 	\end{tabular}
 \end{center}
-What Kore does is to give users a nice way to specify $\widehat{T}$, a finite number of symbols and axioms (see Section~\cref{sec:}), while allows users to work with $T$.
+What Kore does is to give users a nice way to specify $\denote{T}$, a finite number of symbols and axioms (see Section~\cref{sec:}), while allows users to work with $T$.
 In other words, the semantics of Kore is given by lifting itself to the meta-theory.
 Kore is a nice interface language to write meta-theory things
 
