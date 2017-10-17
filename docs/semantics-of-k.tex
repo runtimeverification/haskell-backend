@@ -1543,7 +1543,7 @@ abstract syntax trees (for more details, please refer to Sections~\cref{sec:ML-s
 	\captionof{table}{Objects and Their Abstract Syntax Trees (Without Notation Sugar)}
 \end{center}
 
-\paragraph{Sugar for Abstract Syntax Trees.}
+\paragraph{Abstract Syntax Trees With Sugar.}
 As we have seen, abstract syntax trees are huge even for the simplest object.
 To simplify our notation with abstract syntax trees, we introduce intermediate symbols (notation sugar) to allow us write more compact patterns in $K$.
 For example, instead of writing
@@ -1579,6 +1579,9 @@ Basically, we could introduce as much notation sugar as we want to the meta-theo
 
 Such transformation from objects to their abstract syntax trees with notation sugar as shown in Table~\ref{tab:ast-with-sugar} is the \emph{lifting} operation ``$\widehat{\ \ \ }$''.
 
+Adding sugar for abstract syntax trees means we add some new symbols (such as $\KNat$) and new axioms to the meta-theory $K$.
+
+
 \paragraph{Declarations as Assertions.}
 
 A Kore definition contains some sort, symbol, and axiom declarations, whose formal semantics are given in the meta-theory with three predicate symbols: $\KsortDeclared$, $\KsymbolDeclared$, and $\KaxiomDeclared$ (See Section~\cref{sec:ML-theories}).
@@ -1605,7 +1608,7 @@ A Kore definition contains some sort, symbol, and axiom declarations, whose form
 		\\\hline
 		\texttt{axiom\{S1,..,Sn\} $\varphi$} & $\KsortDeclared(s_1) \wedge \dots \wedge \KsortDeclared(s_n) \to \Kdeduce(\widehat{\varphi})$
 	\end{tabular}
-	\captionof{table}{Declarations Lift to Assertions}
+	\captionof{table}{Lift Declarations to Assertions}
 	\label{tab:declarations-as-assertions}
 \end{center}
 
@@ -2686,23 +2689,36 @@ S))
 
 \subsection{Faithfulness: With Sort Parameters}
 
-\section{The Kore Syntax}
+\section{The Kore Language}
 
-We propose a language called Kore to specify matching logic theories.
-The following is a list of a few features of Kore:
-\begin{itemize}
-	\item Kore does not support module-level operations such as module 
-	importation, 
-	signature hiding, symbol renaming;
-	\item Kore supports only the five basic matching logic constructors 
-	(variables, symbol applications, conjunction, negation, and existential 
-	quantifications), while it provides a keyword \textsf{alias} that allows to 
-	define other derivative connectives as syntactic sugar;
-	\item Kore supports sort parametricity;
-	\item more ...
-\end{itemize}
+The Kore language is a formal specification language that allows one to specify (finite or r.e. infinite) theories using a finite number of characters and words.
+The syntax of Kore is designed to be very simple, as we will see in Section~\cref{sec:kore-syntax}.
 
-The following is the grammar of the Kore language for finite theories:
+We recall the readers of upward and downward reflection relations
+\begin{center}
+	\begin{tabular}{cc}
+		$
+		\prftree[r]{\footnotesize (Upward Reflection)}
+		{T \vdash \varphi}
+		{K \cup \widehat{T} \vdashfin \Kdeduce(\widehat{\varphi})}
+		$
+		&
+		$
+		\prftree[r]{\footnotesize (Downward Reflection)}
+		{K \cup \widehat{T} \vdashfin \Kdeduce(\widehat{\varphi})}
+		{T \vdash \varphi}
+		$
+	\end{tabular}
+\end{center}
+What Kore does is to give users a nice way to specify $\widehat{T}$, a finite number of symbols and axioms (see Section~\cref{sec:}), while allows users to work with $T$.
+In other words, the semantics of Kore is given by lifting itself to the meta-theory.
+Kore is a nice interface language to write meta-theory things
+
+\subsection{Kore Syntax}
+\label{sec:kore-syntax}
+
+\todo[inline]{This section should include (1) a formal BNF grammar of Kore (2) namespaces for variable names (3) sort parameters \& sort parameters at the meta-level (4) Kore keywords that are reserved for sorts and symbols at the meta-level.}
+\todo[inline]{We should decide a syntax for alias declaration.}
 
 \begin{grammar}\small
 	<definition>    ::= \quad
@@ -2773,7 +2789,31 @@ The following is the grammar of the Kore language for finite theories:
 	\alt `alias' "todo here, check the following example of IMP."
 \end{grammar}
 
-The IMP programming language defined in Kore:
+\subsection{Kore Semantics}
+\todo[inline]{Show how to lift a Kore definition: (1) the default naming function Nat $\longrightarrow$ ``Nat'' (2) the default sugar symbols at the meta-level Nat $\longrightarrow$ KNat, succ $\longrightarrow$ Ksucc, etc. (3) the lifting function}
+\begin{algorithm}
+	\KwIn{An object-pattern $\varphi$.}
+	\KwOut{The meta-representation (ASTs) of $\varphi$ in $K$}
+	\uIf{$\varphi$ is $x \cln s$}{Return $\mathit{variable(x, sort(s))}$}
+	\uElseIf{$\varphi$ is $x \cln \cln s$}{Return $x \cln \KPattern {\ \wedge\ 
+		} (\mathit{sort(s)} = \KgetSort(x \cln \KPattern)) $}
+	\uElseIf{$\varphi$ is $\varphi_1 \wedge \varphi_2$}
+	{Return $\Kand(\mathit{lift}[\varphi_1], \mathit{lift}[\varphi_2]$}
+	\uElseIf{$\varphi$ is $\neg \varphi_1$}
+	{Return $\Knot(\mathit{lift}[\varphi_1])$}
+	\uElseIf{$\varphi$ is $\exists x \cln s . \varphi_1$}
+	{Return $\Kexists(x, \mathit{sort(s)}, \mathit{lift}[\varphi_1])$}
+	\uElseIf{$\varphi$ is $\sigma(\varphi_1,\dots,\varphi_n)$ and $\sigma \in 
+		\Sigma_{s_1,\dots,s_n,s}$}
+	{Return $\Kapplication(\mathit{symbol}(\sigma, (\Ksort(s_1), \dots, 
+		\Ksort(s_n)), \Ksort(s)),$
+		$\mathit{lift}[\varphi_1],\dots,\mathit{lift}[\varphi_n])$}
+	\caption{Lifting Function $\mathit{lift}[\_]$}
+	\label{alg:liftingfunction}
+\end{algorithm}
+
+\section{IMP in Kore}
+As an example, we present the semantics of IMP defined as a Kore definition.
 \lstinputlisting[language=kore]{imp.kore}
 
 \section{Proof of Faithfulness Theorem}
@@ -3078,107 +3118,6 @@ Sorts are declared using the \sort keyword, symbols are declared using the
 \symb keyword, and axioms are defined using the \axiom keyword.
 
 \begin{Verbatim}[fontsize=\small]
-/* Example 1: One-Element */
-sort Element1
-symbol e() : Element1
-axiom  e()
-\end{Verbatim}
-
-\begin{Verbatim}[fontsize=\small]
-/* Example 2: Two-Element */
-sort Element2
-symbol e1() : Element2
-symbol e2() : Element2
-axiom  \not(\and(\not(e1()), \not(e2())))
-axiom  \not(\and(e1(), e2()))
-\end{Verbatim}
-
-Symbols can be parametric on sort variables, which are wrapped by curly 
-brackets. 
-Sort variables can be instantiated by any sort.
-
-\begin{Verbatim}[fontsize=\small]
-/* Example 3: Identity-Function */
-symbol id({S}) : {S}
-axiom  \not(\and(X:{S},     \not(id(X:{S}))))
-axiom  \not(\and(id(X:{S}), \not(X:{S})))
-\end{Verbatim}
-
-Given the context where two sorts \smalltt{Element1} and \smalltt{Element2} are 
-declared, the above is just a shorthand of
-
-\begin{Verbatim}[fontsize=\small]
-/* Example 3': Identity-Function */
-symbol id(Element1) : Element1
-symbol id(Element2) : Element2
-axiom  \not(\and(X:Element1,     \not(id(X:Element1))))
-axiom  \not(\and(id(X:Element1), \not(X:Element1)))
-axiom  \not(\and(X:Element2,     \not(id(X:Element2))))
-axiom  \not(\and(id(X:Element1), \not(X:Element1)))
-\end{Verbatim}
-
-If a sort variable appears multiple times in a statement, only one of the 
-appearances needs curly brackets.
-Therefore, an alternative way to write Example~3 is
-\begin{Verbatim}[fontsize=\small]
-/* Example 3'': Identity-Function */
-symbol id({S}) : S
-axiom  \not(\and(X:{S},     \not(id(X:S))))
-axiom  \not(\and(id(X:{S}), \not(X:S)))
-\end{Verbatim}
-
-If a variable is decorated with a sort variable, as in {\small\verb|X:{S}|}, 
-the sort decoration can be omitted. Therefore, an alternative way to write 
-Example 3 is
-\begin{Verbatim}[fontsize=\small]
-/* Example 3''': Identity-Function */
-symbol id({S}) : S
-axiom  \not(\and(X,     \not(id(X))))
-axiom  \not(\and(id(X), \not(X)))
-\end{Verbatim}
-
-Symbols can be parametric on more than one sort variables.
-\begin{Verbatim}[fontsize=\small]
-/* Example 4: Definedness */
-symbol ceil({S}) : {S'}
-axiom  ceil(X)
-\end{Verbatim}
-
-Use sort constructors and sort variables to declare parametric sorts.
-\begin{Verbatim}[fontsize=\small]
-/* Example 5: Lists */
-sort List{S}
-symbol nil() : List{S}
-symbol cons(S, List{S}) : List{S}
-symbol length(List{S}) : Nat
-\end{Verbatim}
-
-Parametric sorts can take multiple sort variables.
-\begin{Verbatim}[fontsize=\small]
-/* Example 6: Pairs */
-sort Pair{S, S'}
-symbol pairOf(S, S') : Pair{S, S'}
-symbol fst(Pair{S, S'}) : S
-symbol snd(Pair{S, S'}) : S'  
-\end{Verbatim}
-
-\paragraph{Example (Boolean Algebra).}
-\begin{Verbatim}[fontsize=\small]
-sort Bool
-symbol true() : Bool
-symbol false() : Bool
-axiom  \or(true(), false())
-axiom  \not(\and(true(), false()))
-symbol andBool(Bool, Bool) : Bool
-axiom  \equals(andBool(true(), B), B)
-axiom  \equals(andBool(false(), B), false())
-\end{Verbatim}
-
-
-\subsection{Syntax and Semantics of Kore}
-\label{sec:syntax-of-kore}
-
-\begin{Verbatim}[fontsize=\small]
 // Namespaces for sorts, variables, metavariables,
 // symbols, and Kore modules.
 Sort           = String
@@ -3266,26 +3205,7 @@ For example, the meta-variable $x \cln\cln s$ is lifted to a variable $x \cln
 sort(s)$. The function $\mathit{mvsc}[\_]$ collects all such meta-variable sort 
 constraint in an object-pattern is implemented in Algorithm~\ref{alg:mvsc}.
 
-\begin{algorithm}
-	\KwIn{An object-pattern $\varphi$.}
-	\KwOut{The meta-representation (ASTs) of $\varphi$ in $K$}
-	\uIf{$\varphi$ is $x \cln s$}{Return $\mathit{variable(x, sort(s))}$}
-	\uElseIf{$\varphi$ is $x \cln \cln s$}{Return $x \cln \KPattern {\ \wedge\ 
-	} (\mathit{sort(s)} = \KgetSort(x \cln \KPattern)) $}
-	\uElseIf{$\varphi$ is $\varphi_1 \wedge \varphi_2$}
-	{Return $\Kand(\mathit{lift}[\varphi_1], \mathit{lift}[\varphi_2]$}
-	\uElseIf{$\varphi$ is $\neg \varphi_1$}
-	{Return $\Knot(\mathit{lift}[\varphi_1])$}
-	\uElseIf{$\varphi$ is $\exists x \cln s . \varphi_1$}
-	{Return $\Kexists(x, \mathit{sort(s)}, \mathit{lift}[\varphi_1])$}
-	\uElseIf{$\varphi$ is $\sigma(\varphi_1,\dots,\varphi_n)$ and $\sigma \in 
-	\Sigma_{s_1,\dots,s_n,s}$}
-	{Return $\Kapplication(\mathit{symbol}(\sigma, (\Ksort(s_1), \dots, 
-	\Ksort(s_n)), \Ksort(s)),$
-		$\mathit{lift}[\varphi_1],\dots,\mathit{lift}[\varphi_n])$}
-	\caption{Lifting Function $\mathit{lift}[\_]$}
-	\label{alg:liftingfunction}
-\end{algorithm}
+
 
 \begin{algorithm}
 	\KwIn{An object-pattern $\varphi$}
@@ -3298,89 +3218,5 @@ constraint in an object-pattern is implemented in Algorithm~\ref{alg:mvsc}.
 	\caption{Meta-Variable Sort Constraint Collection $\mathit{mvsc}$}
 	\label{alg:mvsc}
 \end{algorithm}
-
-
-\subsection{Examples of Kore}
-\label{sec:examples-of-kore}
-
-\todo[inline, author=Xiaohong]{Add more examples and texts here.}
-
-\paragraph{The {\small BOOL} module.}\quad
-\begin{Verbatim}[fontsize=\small]
-module BOOL
-syntax Bool
-syntax Bool ::= true | false | notBool(Bool)
-| andBool(Bool, Bool) | orBool(Bool, Bool)
-axiom \or(true(), false())
-axiom \exists(X:Bool, \equals(X:Bool, true()))
-axiom \equals(andBool(B1::Bool, B2::Bool), 
-andBool(B2::Bool, B1::Bool))
-axiom ... ...
-endmodule
-\end{Verbatim}
-
-\paragraph{The {\small BOOL} module (desugared).}\quad
-\begin{Verbatim}[fontsize=\small]
-module BOOL
-axiom \equals(
-#true,
-#deducible(#or(#application(#symbol("true", #nilSort, #sort("Bool")),
-#nilPattern), 
-#application(#symbol("false", #nilSort, #sort("Bool")),
-#nilPattern))))
-axiom \equals(
-#true,
-#deducible(#exists("X", #sort("Bool"), 
-#equals(#variable("X", #sort("Bool")), 
-#application(#symbol("true", #nilSort, #sort("Bool")),
-#nilPattern)))))
-axiom \leftrightarrow(
-\and(\equals(#getSort(B1:Pattern), #sort("Bool")), 
-\equals(#getSort(B2:Pattern), #sort("Bool"))),
-\equals(
-#true,
-#deducible(#equals(#application(#symbol("andBool", 
-(#sort("Bool"), #sort("Bool"))
-#sort("Bool")), 
-(B1:Patern, B2:Pattern)), ---- TODO
-#application(#symbol("andBool", 
-(#sort("Bool"), #sort("Bool"))
-#sort("Bool")), 
-(B2:Patern, B1:Pattern))))))
-axiom ... ...
-endmodule
-\end{Verbatim}
-
-\paragraph{The {\small LAMBDA} module}\quad
-\begin{Verbatim}[fontsize=\small]
-module LAMBDA
-syntax Exp
-syntax Exp ::= app(Exp, Exp) | lambda0(Exp, Exp)
-syntax #Bool ::= isLTerm(#Pattern)
-
-axiom \equals(
-isLTerm(#variable(X:String, #sort("Exp"))), 
-true)
-axiom \equals(
-isLTerm(#application(
-#symbol("app", (#sort("Exp"), #sort("Exp")), #sort("Exp")),
-(E:Pattern, E':Pattern))),
-andBool(isLTerm(E:Pattern), isLTerm(E':Pattern)))
-axiom \equals(
-isLTerm(#exists(X:String, #sort("Exp"),
-#application(#symbol("lambda0",
-(#sort("Exp"), #sort("Exp")),
-#sort("Exp")),
-(#variable(X:String, #sort("Exp")),
-E:Pattern))),
-isLTerm(E:Pattern))
-axiom \leftrightarrow(\equals(true, 
-andBool(isLTerm(E:Pattern), 
-isLTerm(E':Pattern))),
-\equals(true,
-deducible(#equals(...1,
-...2)))) 
-endmodule
-\end{Verbatim}
 
 \end{document}
