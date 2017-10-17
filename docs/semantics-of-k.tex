@@ -782,6 +782,7 @@ Formulae in $A$ can therefore be regarded as axioms, and we even take the
 freedom to call them axioms when there is no misunderstanding.
 However, note that a proof system is fixed for the target logic, including
 all its axioms (i.e., proof rules with no hypotheses).
+We use the notation $T \vdashfin \varphi$ or $A \vdashfin \varphi$ to emphasize the fact that the theory $T$ or the set of axioms $A$ is finite.
 
 Proof systems can be and typically are infinite, that is, contain infinitely
 many proof rules.
@@ -1459,23 +1460,16 @@ theorem):
 		$
 	\end{tabular}
 \end{center}
-where $\denote{T}$ is the meta-theory of $T$, $\denote{\varphi}$ is the 
-meta-representation of $\varphi$, and $\Kdeduce$ is a predicate symbol of $K$, 
-known as the \emph{truth predicate} in reflection logic because it captures the 
-truth in theory $T$. The \emph{lifting} operation ``$\denote{\ \ \ }$'' brings 
-object-level patterns and theories to their 
-representations in the meta-level.
-Notice that the meta-theory $K$ is defined to be a finite theory. Also, even if 
-$T$ could be infinite, its lifting $\denote{T}$ is a finite theory.
-Therefore, the provability relation
-$$
-K \cup \denote{T} \vdashfin \Kdeduce(\denote{\varphi})
-$$
-is \emph{a probability relation over a finite theory}.
+where 
+\begin{itemize}
+	\item $\denote{T}$, called the \emph{meta-representation of $T$}, consists of a finite number of new symbols and axioms depending on $T$;
+	\item $K \cup \denote{T}$, called the \emph{meta-theory instantiated by $T$}, is the meta-theory $K$ plus the finitely many symbols and axioms in $\denote{T}$;
+	\item $\denote{\varphi}$ is the \emph{meta-representation of $\varphi$} as a matching logic pattern in $K \cup \denote{T}$;
+	\item $\Kdeduce$ is a symbol in $K$ (see Section~\cref{sec:ML-proof-system})
+\end{itemize}
 
-In the following, we will use some examples to show how we can use 
-Kore to specify the (infinite) theories and how $K$ gives Kore definitions 
-semantics.
+The double bracket $\denote{\_}$ is called \emph{lifting}, which brings objects to their meta-representations in the meta-theory $K$.
+Lifting will be defined in detail in Section~\cref{sec:lifting}, but before that we would like to use two examples to illustrate the big picture of how things work and to define a set of terminologies that we will use later.
 
 \subsection{Example A: Arithmetic \& Parametric Lists}
 
@@ -2415,7 +2409,7 @@ The partial functions $\KwellFormed$ and $\KgetSort$ are defined by the followin
 \end{align*}
 
 \subsection{Matching Logic Proof System}
-\label{sec:ml-proof-system-finite-case}
+\label{sec:ML-proof-system}
 
 The Hilbert-style proof system of matching logic in~\cite{rosu-2017-lmcs} 
 defines the \emph{derivability} of a pattern in an inductive manner.
