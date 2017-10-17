@@ -2704,9 +2704,9 @@ We recall the readers of upward and downward reflection relations
 		$
 	\end{tabular}
 \end{center}
-What Kore does is to give users a nice way to specify $\denote{T}$, a finite number of symbols and axioms (see Section~\cref{sec:}), while allows users to work with $T$.
+What Kore does is to give users a nice way to specify $\denote{T}$ without getting exposed to too much staffs in the meta-theory.
+Users are free to write things at the object-level and Kore will lift those to the meta-theory automatically.
 In other words, the semantics of Kore is given by lifting itself to the meta-theory.
-Kore is a nice interface language to write meta-theory things
 
 \subsection{Kore Syntax}
 \label{sec:kore-syntax}
@@ -2714,9 +2714,48 @@ Kore is a nice interface language to write meta-theory things
 \todo[inline]{This section should include (1) a formal BNF grammar of Kore (2) namespaces for variable names (3) sort parameters \& sort parameters at the meta-level (4) Kore keywords that are reserved for sorts and symbols at the meta-level.}
 \todo[inline]{We should decide a syntax for alias declaration.}
 
+\subsubsection{Special Characters, Keywords and Namespaces}
+The following characters have special meaning in Kore:
+\begin{center}
+\begin{tabular}{c|l|l}
+	\textbf{Character} & \textbf{Name} & \textbf{Usage}
+	\\\hline
+	\texttt{:} & Colon & Variable constructor and symbol declaration
+	\\
+	\texttt{\string{ \string}} & Curly braces & Sort parameters
+	\\
+	\texttt{( )} & Parenthesis & Kore expression
+	\\
+	\texttt{:=} & Colon equal & Alias definition
+\end{tabular}
+\end{center}
+
+The following are reserved keywords in Kore:
+\begin{center}
+\texttt{
+\begin{tabular}{lllll}
+	and & or & implies & iff & equals \\ 
+	mem & contains & ceil & floor & not \\ 
+	exists & forall & top & bottom &  \\ 
+	Kand & Kor & Kimplies & Kiff & Kequals \\ 
+	Kmem & Kcontains & Kceil & Kfloor & Knot \\ 
+	Kexists & Kforall & Ktop & Kbottom &  \\ 
+	KSort & KSymbol & KVariable & KPattern & KPred \\ 
+	KSortList & KSymbolList & KVariableList & KPatternList &  \\ 
+	Ksort & Ksymbol & Kvariable & KvariableAsPattern &  \\ 
+	KnilKSortList & KconsKSortLiat & KnilKSymbolList & KconsKSymbolList & KnilKVariableList \\ 
+	KconsKVariableList & KnilKPatternList & KconsKPatternList & KgetSort & Kprobable \\ 
+	KsortDeclared & KsymbolDeclared & KaxiomDeclared &  &  \\ 
+\end{tabular} 
+}
+\end{center}
+
+\subsubsection{Formal BNF Grammar of Kore}
+
 \begin{grammar}\small
-	<definition>    ::= \quad
-	\alt `module' <module-expression> <declaration>$^*$ `endmodule'
+	<definition>    ::= <declarations>
+	
+	<declarations> ::= `' | <declaration> | <declaration> <declarations>
 	
 	<declaration>   ::= \quad
 	\alt <sort-declaration> 
@@ -2785,7 +2824,7 @@ Kore is a nice interface language to write meta-theory things
 
 \subsection{Kore Semantics}
 \todo[inline]{Show how to lift a Kore definition: (1) the default naming function Nat $\longrightarrow$ ``Nat'' (2) the default sugar symbols at the meta-level Nat $\longrightarrow$ KNat, succ $\longrightarrow$ Ksucc, etc. (3) the lifting function}
-\begin{algorithm}
+\begin{algorithm}[h]
 	\KwIn{An object-pattern $\varphi$.}
 	\KwOut{The meta-representation (ASTs) of $\varphi$ in $K$}
 	\uIf{$\varphi$ is $x \cln s$}{Return $\mathit{variable(x, sort(s))}$}
