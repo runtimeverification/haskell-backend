@@ -86,7 +86,9 @@
   
   % Package for customizing lists environments:
   \usepackage{enumitem}
- 
+  
+  % Package for graphics
+  \usepackage{graphicx}
   
   % Define ceiling and flooring symbols:
   \usepackage{mathtools}
@@ -196,7 +198,7 @@
   \newcommand{\Context}{\textit{Context}}
   \newcommand{\Exp}{\textit{Exp}}
   \newcommand{\app}{\textit{app}}
-  \newcommand{\KExp}{\mathit{KExp}}
+  \newcommand{\KExp}{\mathit{\#Exp}}
   \newcommand{\Klambdazero}{\mathit{Klambda0}}
   \newcommand{\Kapp}{\mathit{Kapp}}
   \newcommand{\Klambda}{\mathit{Klambda}}
@@ -221,119 +223,120 @@
   
   \newcommand{\Kfinite}{{K_\text{finite}}}
   
+  \newcommand{\shp}{\includegraphics{hash-symbol}\kern-0.1em}
   % Sec 3.1 Truth
-  \newcommand{\KPred}{\mathit{KPred}}
+  \newcommand{\KPred}{\mathit{\shp Pred}}
   
   %% We shouldn't need the follows.
-  \newcommand{\Ktrue}{\mathit{Ktrue}}
-  \newcommand{\Kfalse}{\mathit{Kfalse}}
-  \newcommand{\KandBool}{\mathit{KandBool}}
-  \newcommand{\KorBool}{\mathit{KorBool}}
-  \newcommand{\KnotBool}{\mathit{KnotBool}}
-  \newcommand{\KimpliesBool}{\mathit{KimpliesBool}}
+  \newcommand{\Ktrue}{\mathit{\shp true}}
+  \newcommand{\Kfalse}{\mathit{\shp false}}
+  \newcommand{\KandBool}{\mathit{\shp andBool}}
+  \newcommand{\KorBool}{\mathit{\shp orBool}}
+  \newcommand{\KnotBool}{\mathit{\shp notBool}}
+  \newcommand{\KimpliesBool}{\mathit{\shp impliesBool}}
   
   % Sec 3.2 Strings
-  \newcommand{\KChar}{\mathit{KChar}}
-  \newcommand{\KCharList}{\mathit{KCharList}}
-  \newcommand{\KString}{\mathit{KString}}
-  \newcommand{\Kepsilon}{\mathit{Kepsilon}}
-  \newcommand{\KconsKString}{\mathit{KconsKString}}
+  \newcommand{\KChar}{\mathit{\shp Char}}
+  \newcommand{\KCharList}{\mathit{\shp CharList}}
+  \newcommand{\KString}{\mathit{\shp String}}
+  \newcommand{\Kepsilon}{\mathit{\shp epsilon}}
+  \newcommand{\KconsKString}{\mathit{\shp consKString}}
   
   %% We shouldn't need the follows.  
-  \newcommand{\Kconcat}{\mathit{Kconcat}}
+  \newcommand{\Kconcat}{\mathit{\shp concat}}
   
   % Sec 3.3 Sorts and Symbols
-  \newcommand{\KSort}{\mathit{KSort}}
-  \newcommand{\Ksort}{\mathit{Ksort}}
-  \newcommand{\KSymbol}{\mathit{KSymbol}}
-  \newcommand{\Ksymbol}{\mathit{Ksymbol}}
-  \newcommand{\KSymbolceil}{\mathit{KSymbolceil}}
-  \newcommand{\KgetArgumentSorts}{\mathit{KgetArgumentSorts}}
-  \newcommand{\KgetReturnSort}{\mathit{KgetReturnSort}}
+  \newcommand{\KSort}{\mathit{\shp Sort}}
+  \newcommand{\Ksort}{\mathit{\shp sort}}
+  \newcommand{\KSymbol}{\mathit{\shp Symbol}}
+  \newcommand{\Ksymbol}{\mathit{\shp symbol}}
+  \newcommand{\KSymbolceil}{\mathit{\shp Symbolceil}}
+  \newcommand{\KgetArgumentSorts}{\mathit{\shp getArgumentSorts}}
+  \newcommand{\KgetReturnSort}{\mathit{\shp getReturnSort}}
   
   % Sec 3.4 Finite Lists
   \newcommand{\XList}{\mathit{XList}}
-  \newcommand{\KnilXList}{\mathit{KnilXList}}
-  \newcommand{\KconsXList}{\mathit{KconsXList}}
-  \newcommand{\KappendXList}{\mathit{KappendXList}}
-  \newcommand{\KinXList}{\mathit{KinXList}}
-  \newcommand{\KdeleteXList}{\mathit{KdeleteXList}}
-  \newcommand{\KPatternList}{\mathit{KPatternList}}
-  \newcommand{\KnilKPatternList}{\mathit{KnilKPatternList}}
-  \newcommand{\KconsKPatternList}{\mathit{KconsKPatternList}}
-  \newcommand{\KappendKPatternList}{\mathit{KappendKPatternList}}
-  \newcommand{\KinKPatternList}{\mathit{KinKPatternList}}
-  \newcommand{\KdeleteKPatternList}{\mathit{KdeleteKPatternList}}
-  \newcommand{\KSortList}{\mathit{KSortList}}
-  \newcommand{\KnilKSortList}{\mathit{KnilKSortList}}
-  \newcommand{\KconsKSortList}{\mathit{KconsKSortList}}
-  \newcommand{\KappendKSortList}{\mathit{KappendKSortList}}
-  \newcommand{\KinKSortList}{\mathit{KinKSortList}}
-  \newcommand{\KdeleteKSortList}{\mathit{KdeleteKSortList}}
-  \newcommand{\KSymbolList}{\mathit{KSymbolList}}
-  \newcommand{\KinKSymbolList}{\mathit{KinKSymbolList}}
-  \newcommand{\KnilKCharList}{\mathit{KnilKCharList}}
-  \newcommand{\KconsKCharList}{\mathit{KconsKCharList}}
-  \newcommand{\KVariableList}{\mathit{KVariableList}}
-  \newcommand{\KnilKVariableList}{\mathit{KnilKVariableList}}
-  \newcommand{\KconsKVariableList}{\mathit{KconsKVariableList}}
+  \newcommand{\KnilXList}{\mathit{\shp nilXList}}
+  \newcommand{\KconsXList}{\mathit{\shp consXList}}
+  \newcommand{\KappendXList}{\mathit{\shp appendXList}}
+  \newcommand{\KinXList}{\mathit{\shp inXList}}
+  \newcommand{\KdeleteXList}{\mathit{\shp deleteXList}}
+  \newcommand{\KPatternList}{\mathit{\shp PatternList}}
+  \newcommand{\KnilKPatternList}{\mathit{\shp nilKPatternList}}
+  \newcommand{\KconsKPatternList}{\mathit{\shp consKPatternList}}
+  \newcommand{\KappendKPatternList}{\mathit{\shp appendKPatternList}}
+  \newcommand{\KinKPatternList}{\mathit{\shp inKPatternList}}
+  \newcommand{\KdeleteKPatternList}{\mathit{\shp deleteKPatternList}}
+  \newcommand{\KSortList}{\mathit{\shp SortList}}
+  \newcommand{\KnilKSortList}{\mathit{\shp nilKSortList}}
+  \newcommand{\KconsKSortList}{\mathit{\shp consKSortList}}
+  \newcommand{\KappendKSortList}{\mathit{\shp appendKSortList}}
+  \newcommand{\KinKSortList}{\mathit{\shp inKSortList}}
+  \newcommand{\KdeleteKSortList}{\mathit{\shp deleteKSortList}}
+  \newcommand{\KSymbolList}{\mathit{\shp SymbolList}}
+  \newcommand{\KinKSymbolList}{\mathit{\shp inKSymbolList}}
+  \newcommand{\KnilKCharList}{\mathit{\shp nilKCharList}}
+  \newcommand{\KconsKCharList}{\mathit{\shp consKCharList}}
+  \newcommand{\KVariableList}{\mathit{\shp VariableList}}
+  \newcommand{\KnilKVariableList}{\mathit{\shp nilKVariableList}}
+  \newcommand{\KconsKVariableList}{\mathit{\shp consKVariableList}}
   %% Define l1 @ l2 for list concatenation.
   \newcommand{\at}{@}
     
   \newcommand{\Kdelete}{\mathit{delete}} 
 
-  \newcommand{\KVariable}{\mathit{KVariable}}
-  \newcommand{\KVariableToKPattern}{\mathit{KVariableToKPattern}}
-  \newcommand{\KPattern}{\mathit{KPattern}}
-  \newcommand{\Kvariable}{\mathit{Kvariable}}
-  \newcommand{\Kand}{\mathit{Kand}}
-  \newcommand{\Kor}{\mathit{Kor}}
-  \newcommand{\Kimplies}{\mathit{Kimplies}}
-  \newcommand{\Kiff}{\mathit{Kiff}}
-  \newcommand{\Knot}{\mathit{Knot}}
-  \newcommand{\Kapplication}{\mathit{Kapplication}}
-  \newcommand{\Kexists}{\mathit{Kexists}}
-  \newcommand{\Kforall}{\mathit{Kforall}}
-  \newcommand{\Kequals}{\mathit{Kequals}}
-  \newcommand{\Kmembership}{\mathit{Kmembership}}
-  \newcommand{\Kcontains}{\mathit{Kcontains}}
-  \newcommand{\Ktop}{\mathit{Ktop}}
-  \newcommand{\Kbottom}{\mathit{Kbottom}}
-  \newcommand{\Kfloor}{\mathit{Kfloor}}
-  \newcommand{\Kceil}{\mathit{Kceil}}
+  \newcommand{\KVariable}{\mathit{\shp Variable}}
+  \newcommand{\KVariableToKPattern}{\mathit{\shp VariableToKPattern}}
+  \newcommand{\KPattern}{\mathit{\shp Pattern}}
+  \newcommand{\Kvariable}{\mathit{\shp variable}}
+  \newcommand{\Kand}{\mathit{\shp and}}
+  \newcommand{\Kor}{\mathit{\shp or}}
+  \newcommand{\Kimplies}{\mathit{\shp implies}}
+  \newcommand{\Kiff}{\mathit{\shp iff}}
+  \newcommand{\Knot}{\mathit{\shp not}}
+  \newcommand{\Kapplication}{\mathit{\shp application}}
+  \newcommand{\Kexists}{\mathit{\shp exists}}
+  \newcommand{\Kforall}{\mathit{\shp forall}}
+  \newcommand{\Kequals}{\mathit{\shp equals}}
+  \newcommand{\Kmembership}{\mathit{\shp membership}}
+  \newcommand{\Kcontains}{\mathit{\shp contains}}
+  \newcommand{\Ktop}{\mathit{\shp top}}
+  \newcommand{\Kbottom}{\mathit{\shp bottom}}
+  \newcommand{\Kfloor}{\mathit{\shp floor}}
+  \newcommand{\Kceil}{\mathit{\shp ceil}}
   
-  \newcommand{\KgetFvs}{\mathit{KgetFvs}}
-  \newcommand{\KgetFvsFromPatterns}{\mathit{KgetFvsFromPatterns}}
-  \newcommand{\KoccursFree}{\mathit{KoccursFree}}
-  \newcommand{\KfreshName}{\mathit{KfreshName}}
-  \newcommand{\Kcons}{\mathit{Kcons}}
-  \newcommand{\Knil}{\mathit{Knil}}
-  \newcommand{\KSymbolzero}{\mathit{KSymbolzero}}
-  \newcommand{\KSymbolcons}{\mathit{KSymbolcons}}
-  \newcommand{\KSymbolnil}{\mathit{KSymbolnil}}
+  \newcommand{\KgetFvs}{\mathit{\shp getFvs}}
+  \newcommand{\KgetFvsFromPatterns}{\mathit{\shp getFvsFromPatterns}}
+  \newcommand{\KoccursFree}{\mathit{\shp occursFree}}
+  \newcommand{\KfreshName}{\mathit{\shp freshName}}
+  \newcommand{\Kcons}{\mathit{\shp cons}}
+  \newcommand{\Knil}{\mathit{\shp nil}}
+  \newcommand{\KSymbolzero}{\mathit{\shp Symbolzero}}
+  \newcommand{\KSymbolcons}{\mathit{\shp Symbolcons}}
+  \newcommand{\KSymbolnil}{\mathit{\shp Symbolnil}}
   
-  \newcommand{\KSignature}{\mathit{KSignature}}
-  \newcommand{\Ksignature}{\mathit{Ksignature}}
-  \newcommand{\KgetSorts}{\mathit{KgetSorts}}
-  \newcommand{\KgetSymbols}{\mathit{KgetSymbols}}
-  \newcommand{\KsortDeclared}{\mathit{KsortDeclared}}
-  \newcommand{\KsymbolDeclared}{\mathit{KsymbolDeclared}}
-  \newcommand{\KaxiomDeclared}{\mathit{KaxiomDeclared}}
+  \newcommand{\KSignature}{\mathit{\shp Signature}}
+  \newcommand{\Ksignature}{\mathit{\shp signature}}
+  \newcommand{\KgetSorts}{\mathit{\shp getSorts}}
+  \newcommand{\KgetSymbols}{\mathit{\shp getSymbols}}
+  \newcommand{\KsortDeclared}{\mathit{\shp sortDeclared}}
+  \newcommand{\KsymbolDeclared}{\mathit{\shp symbolDeclared}}
+  \newcommand{\KaxiomDeclared}{\mathit{\shp axiomDeclared}}
   \newcommand{\Kderivable}{\Kdeduce}
   
-  \newcommand{\KwellFormed}{\mathit{KwellFormed}}
-  \newcommand{\KwellFormedPatterns}{\mathit{KwellFormedPatterns}}
-  \newcommand{\KgetSort}{\mathit{KgetSort}}
-  \newcommand{\KgetSortsFromPatterns}{\mathit{KgetSortsFromPatterns}}
-  \newcommand{\KisSort}{\mathit{KisSort}}
-  \newcommand{\Ksubstitute}{\mathit{Ksubstitute}}
-  \newcommand{\KsubstitutePatterns}{\mathit{KsubstitutePatterns}}
+  \newcommand{\KwellFormed}{\mathit{\shp wellFormed}}
+  \newcommand{\KwellFormedPatterns}{\mathit{\shp wellFormedPatterns}}
+  \newcommand{\KgetSort}{\mathit{\shp getSort}}
+  \newcommand{\KgetSortsFromPatterns}{\mathit{\shp getSortsFromPatterns}}
+  \newcommand{\KisSort}{\mathit{\shp isSort}}
+  \newcommand{\Ksubstitute}{\mathit{\shp substitute}}
+  \newcommand{\KsubstitutePatterns}{\mathit{\shp substitutePatterns}}
   
-  \newcommand{\KTheory}{\mathit{KTheory}}
-  \newcommand{\Ktheory}{\mathit{Ktheory}}
-  \newcommand{\KwellFormedTheory}{\mathit{KwellFormedTheory}}
+  \newcommand{\KTheory}{\mathit{\shp Theory}}
+  \newcommand{\Ktheory}{\mathit{\shp theory}}
+  \newcommand{\KwellFormedTheory}{\mathit{\shp wellFormedTheory}}
   
-  \newcommand{\Kdeduce}{\mathit{Kprovable}}
+  \newcommand{\Kdeduce}{\mathit{\#provable}}
   
   % The italic font of "ceil" used in math mode.
   \newcommand{\cl}{\mathit{ceil}}
