@@ -194,7 +194,12 @@
   \newcommand{\mergeMap}{\textit{merge}}
 
   \newcommand{\Context}{\textit{Context}}
+  \newcommand{\hole}{\boxempty}
   \newcommand{\Exp}{\textit{Exp}}
+  \newcommand{\Stmt}{\textit{Stmt}}
+  \newcommand{\ite}{\textsf{ite}}
+  \newcommand{\ttrue}{\textit{true}}
+  \newcommand{\ffalse}{\textit{false}}
   \newcommand{\app}{\textit{app}}
   \newcommand{\KExp}{\mathit{KExp}}
   \newcommand{\Klambdazero}{\mathit{Klambda0}}
@@ -1167,8 +1172,8 @@ $$
 Therefore, $\lambda^0(x,e)$ builds a term (actually a pattern) with no binding
 relationship between the its first argument $x$ and other occurrences of $x$ in
 term/pattern $e$, and then the existential quantifier $\exists x$ adds the binding
-relationship.
-Mathematically, we can regard $\lambda^0$ as constructing points (input,output)
+relationship.\improvement{Explain why $\lambda$ is not a symbol, but an alias}
+Mathematically, we can regard $\lambda^0$ as constructing points (input, output)
 on the graph of the function, and then the existential quantifier gives us their
 union as stated by its matching logic semantics, that is, the actual function.
 Note that this same construction does not work in FOL, because there quantifiers
@@ -1319,9 +1324,65 @@ Like before, the ``only if'' part is easy.
 
 \subsection{Contexts}
 
-both strictness and configuration abstraction
+Matching logic allows us to define a very general notion of context.
+Our contexts can be used not only to define evaluation strategies of
+various language constructs, like how evaluation contexts are
+traditionally used~\cite{felleisen-hieb-92}, but also for configuration
+abstraction to enhance modularity and reuse, and for matching multiple
+sub-patterns of interest at the same time.
+\unsure{Brandon: how about the locality principle?}
+
+Like $\lambda$ in Section~\ref{sec:binders}, contexts are also defined
+as binders.
+However, they are defined as schemas parametric in the sorts of their
+hole and result, respectively, and their application is controlled by
+their structure and surroundings.
+We first define the generic infrastructure for contexts:
+$$
+\begin{array}{r@{\hspace*{5ex}}l}
+\parametric{\Context}{s,s'} &
+\textrm{sort schema, where $s$ (hole sort) and}
+\\ &\textrm{$s'$ (result sort) range over any sorts}
+\\ \parametric{\gamma^0}{s,s'} \in \Sigma_{s \times s', \parametricscript{\Context}{s,s'}}
+& \textrm{symbol schema, for all sorts $s, s'$}
+\\ \parametric{\gamma\_.\_}{s,s'}(\hole\cln s,T\cln s') \equiv \exists \hole . \parametric{\gamma^0}{s,s'}(\hole,T)
+& \textrm{here, $\hole$ is an ordinary variable}
+\\
+\parametric{\_[\_]}{s,s'} \in \Sigma_{\parametricscript{\Context}{s,s'} \times s, s'}
+& \textrm{symbol schema, for all sorts $s, s'$}
+\\
+\parametric{\_[\_]}{s,s}(\parametric{\gamma\_.\_}{s,s}(\hole\cln s, \hole),T\cln s) = T
+& \textrm{axiom schema for identity contexts, for all sorts $s$}
+\end{array}
+$$
+The sort parameters of axiom schemas can usually be inferred from the context.
+To ease notation, from here on we assume they can be inferred and apply the
+mixfix notation for symbols containing ``$\_$'' in their names.
+With these, the last axiom schema above becomes:
+$$
+(\gamma \hole .\; \hole)[T] = T
+$$
+
+The above sort, symbol and axiom schemas are generic and tacitly assumed in
+all definitions that make use of contexts.
+Let us now illustrate specific uses of contexts.
+Suppose that a programming language has an if-then-else statement,
+say $\ite\in\Sigma_{\Exp\times\Stmt\times\Stmt,\Stmt}$,
+whose evaluation strategy is to first evaluate its first argument and then, depending
+on whether it evaluates to $\ttrue$ or $\ffalse$, to rewrite to either
+its second argument or its third argument.
+We here only focus on its evaluation strategy and not its reduction rules;
+the latter will be discussed in Section~\ref{sec:rewriting}.
+Assuming that all reductions/rewrites apply in context, as discussed in
+Section~\ref{sec:rewriting}, we can state that $\ite$ should evaluate its
+first argument with the following axiom:
+$$
+\ite(C[T],S_1,S_2) = (\gamma\hole.\;\ite(C[\hole],S_1,S_2))[T]
+$$
+
 
 \subsection{Rewriting and Reachability}
+\label{sec:rewriting}
 
 as implication and as fixed-points 
 
