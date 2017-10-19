@@ -289,8 +289,6 @@
   \newcommand{\KconsKVariableList}{\mathit{\shp consKVariableList}}
   %% Define l1 @ l2 for list concatenation.
   \newcommand{\at}{@}
-    
-  \newcommand{\Kdelete}{\mathit{delete}} 
 
   \newcommand{\KVariable}{\mathit{\shp Variable}}
   \newcommand{\KVariableToKPattern}{\mathit{\shp VariableToKPattern}}
@@ -343,7 +341,7 @@
   \newcommand{\Ktheory}{\mathit{\shp theory}}
   \newcommand{\KwellFormedTheory}{\mathit{\shp wellFormedTheory}}
   
-  \newcommand{\Kdeduce}{\mathit{\#provable}}
+  \newcommand{\Kdeduce}{\mathit{\shp provable}}
   
   % The italic font of "ceil" used in math mode.
   \newcommand{\cl}{\mathit{ceil}}
@@ -1638,8 +1636,8 @@ and the studies of \emph{reflection in logic}.
 %patterns and matching logic theories.
 
 Reflection in logic and programming languages has been extensively studied 
-in the literature~\cite{?}.
-We here quote a rather broad definition by Brain Smith, who in~\cite{?} defines 
+in literature.
+We here quote a rather broad definition by Brian Smith, who in~\cite{smith-1984-popl} defines 
 reflection as
 \begin{displayquote}
 	an entity’s integral ability to represent, operate on,
@@ -1673,13 +1671,15 @@ where
 	\item $\denote{T}$, called the \emph{meta-representation of $T$}, consists of a finite number of new symbols and axioms depending on $T$;
 	\item $K \cup \denote{T}$, called the \emph{meta-theory instantiated by $T$}, is the meta-theory $K$ plus the finitely many symbols and axioms in $\denote{T}$;
 	\item $\denote{\varphi}$ is the \emph{meta-representation of $\varphi$} as a matching logic pattern in $K \cup \denote{T}$;
-	\item $\Kdeduce$ is a symbol in $K$ (see Section~\cref{sec:ML-proof-system})
+	\item $\Kdeduce$ is a symbol in $K$ which axiomatizes the probability relation in matching logic (see Section~\cref{sec:ML-proof-system})
 \end{itemize}
 
 The double bracket $\denote{\_}$ is called \emph{lifting}, which brings objects to their meta-representations in the meta-theory $K$.
-Lifting will be defined in detail in Section~\cref{sec:lifting}, but before that we would like to use two examples to illustrate the big picture of how things work and to define a set of terminologies that we will use later.
+Lifting will be defined in detail in Section~\cref{sec:kore-semantics}, but before that we would like to use two examples to illustrate the big picture of how things work and to define a set of terminologies that we will use later.
 
 \subsection{Example A: Arithmetic \& Parametric Lists}
+
+\improvement{These two examples are helpful but I am not sure when to present them. Putting them here before introducing $K$ makes us using lots of symbols ($\#and$, $\#symbol$, etc) that are not defined yet.}
 
 \begin{lstlisting}[language=kore]
 /*** natlist.kore ***/
@@ -2090,15 +2090,12 @@ axiom{R}
 %Given said that, such inconvenience should never become a theoretical obstacle.
 %\todo{because we can reflect the meta-theory in itself.}
 
-\section{Meta-Theory of Matching Logic: Finite Case}
+\section{Meta-Theory of Matching Logic}
 \label{sec:meta-theory-finite}
 
-\emph{Finite matching logic theories} are theories that have a finite number of sorts, symbols, and axioms.
-Finite theories are very common in practice.
-Most theories for algebraic data structures introduced in~\cite{rosu-2017-lmcs} are finite theories. 
-The theory $\Kfinite$ itself is a finite matching logic theory, too.
-
-In this section, we present a matching logic theory $\Kfinite = ( S_\Kfinite, \Sigma_\Kfinite, F_\Kfinite )$ as \emph{the theory of finite matching logic theories}, in which $S_\Kfinite$ , $\Sigma_\Kfinite$, and $F_\Kfinite$ are finite sets of sorts, symbols, and axioms, respectively, which we are going to define in the later subsections.
+In this section, we present a finite matching logic theory $K = ( S_K, \Sigma_K, F_K )$ as \emph{the meta-theory of matching logic}.
+$K$ is finite and has $S_K$ , $\Sigma_K$, and $F_K$ being finite sets of sorts, symbols, and axioms, respectively.
+We are going to define them in detail in the following subsections.
 
 \subsection{Truth}
 
@@ -2151,15 +2148,16 @@ that construct lists of characters.
 
 The sort $\KSort$ is the sort for matching logic sorts.
 The only constructor of the sort $\KSort$ is the functional symbol
-\begin{equation*}
-\Ksort \colon \KString \to \KSort
-\end{equation*}
-where the argument is called the \emph{name} of the sort. 
+$$
+\Ksort \colon \KString \times \KSortList \to \KSort
+$$
+which takes a \emph{name} and a list of \emph{sort parameters}. 
 
 The sort $\KSymbol$ is the sort for matching logic symbols.
 The only constructor of the sort $\KSymbol$ is the functional symbol
 \begin{equation*}
-\Ksymbol \colon \KString \times \KSortList\footnote{The sort $\KSortList$ is defined in Section~\cref{sec:finite-lists}} \times \KSort \to \KSymbol
+\Ksymbol \colon \KString \times \KSortList\footnote{The sort $\KSortList$ is defined in Section~\cref{sec:finite-lists}} \times \KSort \times \KSortList \to 
+\KSymbol \times \KSort \to \KSymbol
 \end{equation*}
 where the first argument is called the \emph{name} of the symbol, and the rest arguments are called the \emph{argument sorts} and the \emph{return sort} of the symbol. 
 Two getter functions, $\KgetArgumentSorts$ and $\KgetReturnSort$, are defined as functional symbols
@@ -2830,40 +2828,7 @@ where $L$ and $R$ are $\KPatternList$ variables, and we write $(L, \varphi, R)$ 
 $$(L, \varphi, R) \equiv \KappendKPatternList(L, \KconsKPatternList(\varphi, 
 R)).$$
 
-\subsection{Faithfulness: Finite Case}
-
-\begin{theorem}[Faithfulness Theorem]\label{thm:faithfulness-finite}
-	$$T \vdash \varphi \quad \text{iff} \quad \Kfinite \cup \denote{T} \vdash 
-	\Kdeduce(\hat{\varphi}).$$
-\end{theorem}
-
-Theorem~\ref{thm:faithfulness-finite} is an important theorem that justifies the design and usage of the theory $\Kfinite$. 
-It guarantees that the theory $\Kfinite$ does faithfully capture the matching logic reasoning in finite theories.
-
-
-\section{Meta-Theory of Matching Logic: With Sort Parameters}
-\label{sec:meta-theory-sort-parameters}
-\subsection{Things Different From Finite Case}
-\paragraph{Parametric Sorts.} A parametric sort, for example
-$\parametric{\Map}{\Nat,\Bool}$, has a name ``Map'' and a list of sorts 
-$\Nat, \Bool$ that instantiate the parametric sort.
-We modify the signature of $\Ksort$ symbol to
-$$
-\Ksort \colon \KString \times \KSortList \to \KSort
-$$
-
-\paragraph{Parametric Symbols.} We modify the signature of $\Ksymbol$ to 
-$$
-\Ksymbol \colon \KString \times \KSortList \times \KSort \times \KSortList \to 
-\KSymbol
-$$
-where the second argument is the list of sort parameters.
-Getter functions $\KgetArgumentSorts$ and $\KgetReturnSort$ are modified 
-accordingly, too.
-
-\subsection{Parametric Sorts and Symbols Declarations as Assertions on 
-Predicates}\quad
-
+\subsection{Encode Theories in $K$}
 (\textsc{Parametric Sort}).
 $\mathit{PS\{s_1,\dots,s_n\}}$ is declared as a parametric sort with $n$ 
 parameters, with~``PS'' being its name.
@@ -2889,7 +2854,17 @@ $\mathit{sigma}\{s_1,\dots, s_n\} \colon S_1 \times \dots \times S_n \to S$
 S))
 \end{align*}
 
-\subsection{Faithfulness: With Sort Parameters}
+
+\subsection{Faithfulness}
+
+\begin{theorem}[Faithfulness Theorem]\label{thm:faithfulness-finite}
+	$$T \vdash \varphi \quad \text{iff} \quad \Kfinite \cup \denote{T} \vdash 
+	\Kdeduce(\hat{\varphi}).$$
+\end{theorem}
+
+Theorem~\ref{thm:faithfulness-finite} is an important theorem that justifies the design and usage of the theory $\Kfinite$. 
+It guarantees that the theory $\Kfinite$ does faithfully capture the matching logic reasoning in finite theories.
+
 
 \section{The Kore Language}
 
@@ -3031,6 +3006,7 @@ The following are reserved keywords in Kore:
 \end{grammar}
 
 \subsection{Kore Semantics}
+\label{sec:kore-semantics}
 \todo[inline]{Show how to lift a Kore definition: (1) the default naming function Nat $\longrightarrow$ ``Nat'' (2) the default sugar symbols at the meta-level Nat $\longrightarrow$ KNat, succ $\longrightarrow$ Ksucc, etc. (3) the lifting function}
 \begin{algorithm}[h]
 	\KwIn{An object-pattern $\varphi$.}
@@ -3189,8 +3165,7 @@ canonical model of $\Kfinite$.
 	
 	The interpretations of most symbols (except $\Kdeduce$) in $\Kfinite$ are 
 	so straightforward that they are trivial.\improvement{Basically I want to 
-	say that $M_K$ is almost (except $\Kdeduce$) the initial algebra of 
-	$\Kfinite$.}
+	say that $M_K$ is almost (except $Kprovable$) the initial algebra of $\Kfinite$.}
 	For example, $\KconsKSortList$ is interpreted as the cons function on 
 	$M_\KSortList$, and $\KdeleteKPatternList$ is interpreted as a function on 
 	$M_\KPattern \times M_\KPatternList$ that deletes the first argument from 
