@@ -1370,6 +1370,9 @@ $$
 The above sort, symbol and axiom schemas are generic and tacitly assumed in
 all definitions that make use of contexts.
 Let us now illustrate specific uses of contexts.
+
+\subsubsection{Evaluation Strategies of Language Constructs}
+
 Suppose that a programming language has an if-then-else statement,
 say $\ite\in\Sigma_{\BExp\times\Stmt\times\Stmt,\Stmt}$,
 whose evaluation strategy is to first evaluate its first argument and then, depending
@@ -1413,11 +1416,15 @@ $$
 & \textrm{// \textsf{strict(1)} axiom for $\ite$ above}
 \end{array}
 $$
-So $x$ has been ``pulled'' out of its context and isolated.
-Now other semantic rules or axioms can be applied to reduce $x$.
+Therefore, $\ite(1 < x,S_1,S_2)$ can be matched against a pattern
+of the form $C[x]$, where $C$ is a context of sort
+$\parametric{\Context}{\AExp,\Stmt}$.
+That is, $x$ has been ``pulled'' out of the $\ite$ context;
+now other semantic rules or axioms can be applied to reduce $x$, by
+simply matching $x$ in a context.
 At any moment during the reduction, the axioms above can be applied
-backwards and thus the new $x$ can be ``plugged'' back into its
-context.
+backwards and thus whatever $x$ reduces to can be ``plugged'' back into
+its context.
 This way, the axiomatic approach to contexts in matching logic
 achieves the ``pull and plug'' mechanism underlying reduction
 semantics with evaluation contexts~\cite{felleisen-hieb-92} by
@@ -1429,6 +1436,35 @@ That is, it is not only used for reduction or in order to isolate
 a redex to be reduced, but it can be used for matching any relevant
 data from a program configuration.
 More examples below will illustrate that.
+But before that, we would like to conclude this subsection by noting
+that nothing special needs to be done to allow nested contexts.
+For example:
+$$
+\begin{array}{rcll}
+\ite(1 < x,S_1,S_2) & = &
+\ite((\gamma\hole.\;\hole)[1 < x],S_1,S_2)
+& \textrm{// context identity}
+\\
+& = &
+(\gamma\hole.\;\ite(\hole,S_1,S_2))[1 < x]
+& \textrm{// \textsf{strict(1)} axiom for $\ite$}
+\\
+& = &
+(\gamma\hole.\;\ite(\hole,S_1,S_2))[(\gamma\hole.\;1 < \hole)[x]]
+& \textrm{// \textsf{strict(2)} axiom for $\_<\_$}
+\end{array}
+$$
+Therefore, $\ite(1 < x,S_1,S_2)$ can also be matched against a pattern
+of the form $C_1[C_2[x]]$, where $C_1$ is a context of sort
+$\parametric{\Context}{\BExp,\Stmt}$ and $C_2$ of sort
+$\parametric{\Context}{\AExp,\BExp}$.
+
+
+
+
+\subsubsection{Configuration Abstraction}
+
+Contexts 
 
 \textsf{cfg}
 \textsf{k}
