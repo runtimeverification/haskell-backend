@@ -198,6 +198,8 @@
   \newcommand{\Context}{\textit{Context}}
   \newcommand{\hole}{\boxempty}
   \newcommand{\Exp}{\textit{Exp}}
+  \newcommand{\AExp}{\textit{AExp}}
+  \newcommand{\BExp}{\textit{BExp}}
   \newcommand{\Stmt}{\textit{Stmt}}
   \newcommand{\ite}{\textsf{ite}}
   \newcommand{\ttrue}{\textit{true}}
@@ -1370,23 +1372,164 @@ The above sort, symbol and axiom schemas are generic and tacitly assumed in
 all definitions that make use of contexts.
 Let us now illustrate specific uses of contexts.
 Suppose that a programming language has an if-then-else statement,
-say $\ite\in\Sigma_{\Exp\times\Stmt\times\Stmt,\Stmt}$,
+say $\ite\in\Sigma_{\BExp\times\Stmt\times\Stmt,\Stmt}$,
 whose evaluation strategy is to first evaluate its first argument and then, depending
 on whether it evaluates to $\ttrue$ or $\ffalse$, to rewrite to either
 its second argument or its third argument.
 We here only focus on its evaluation strategy and not its reduction rules;
 the latter will be discussed in Section~\ref{sec:rewriting}.
 Assuming that all reductions/rewrites apply in context, as discussed in
-Section~\ref{sec:rewriting}, we can state that $\ite$ should evaluate its
-first argument with the following axiom:
+Section~\ref{sec:rewriting}, we can state that $\ite$ is given permission to
+apply reductions within its first argument with the following axiom:
 $$
 \ite(C[T],S_1,S_2) = (\gamma\hole.\;\ite(C[\hole],S_1,S_2))[T]
 $$
+In particular, $C$ can be the identity context, ``$\gamma \hole .\; \hole$''.
+In addition to sort/parameter inference, front-ends of implementations of
+matching logic are expected to provide shortcuts for such rather boring
+axioms.
+For example, \K provides the \textsf{strict} attribute to be used with symbol
+declarations for exactly this purpose; for example, the evaluation strategy
+of $\ite$, or the axiom above, is defined with the attribute
+\textsf{strict(1)} associated to the declaration of the symbol $\ite$.
 
+As an example, suppose that besides $\ite$ with strategy \textsf{strict(1)}
+we also have an infix operation $\_<\_\in\Sigma_{\AExp\times\AExp,\BExp}$ with
+strategy \textsf{strict(1,2)}
+(i.e., it has two axioms like above, corresponding to each of its two
+arguments).
+Using these axioms, we can infer the following:
+$$
+\begin{array}{rcll}
+\ite(1 < x,S_1,S_2) & = &
+\ite(1 < (\gamma\hole.\;\hole)[x],S_1,S_2)
+& \textrm{// context identity}
+\\
+& = &
+\ite((\gamma\hole.\;1 < \hole)[x],S_1,S_2)
+& \textrm{// \textsf{strict(2)} axiom for $\_<\_$}
+\\
+& = &
+(\gamma\hole.\;\ite(1 < \hole,S_1,S_2))[x]
+& \textrm{// \textsf{strict(1)} axiom for $\ite$ above}
+\end{array}
+$$
+So $x$ has been ``pulled'' out of its context and isolated.
+Now other semantic rules or axioms can be applied to reduce $x$.
+At any moment during the reduction, the axioms above can be applied
+backwards and thus the new $x$ can be ``plugged'' back into its
+context.
+This way, the axiomatic approach to contexts in matching logic
+achieves the ``pull and plug'' mechanism underlying reduction
+semantics with evaluation contexts~\cite{felleisen-hieb-92} by
+means of logical deduction using the generic sound and complete
+proof system in Section~\ref{sec:deduction}.
+Also, notice that our notion of context is more general than
+that in reduction semantics.
+That is, it is not only used for reduction or in order to isolate
+a redex to be reduced, but it can be used for matching any relevant
+data from a program configuration.
+More examples below will illustrate that.
+
+\textsf{cfg}
+\textsf{k}
+\textsf{env}
+\textsf{state}
+
+$$
+\begin{array}{@{}rcl}
+\textsf{cfg}
+(
+\textsf{k}(\ite(1 < x,S_1,S_2)\textsf{;\ }S_3),
+\ \textsf{env}(x \mapsto l, R_\textit{env})
+,
+\ \textsf{state}(l \mapsto a, R_\textit{state})
+)
+\\
+\textsf{cfg}
+(
+\textsf{k}(\ite(1 < x,S_1,S_2)\textsf{;\ }S_3),
+\ \textsf{env}(x \mapsto l, R_\textit{env})
+,
+\ \textsf{state}((\gamma\hole_3.\;\hole_3)[l \mapsto a], R_\textit{state})
+)
+\\
+\textsf{cfg}
+(
+\textsf{k}(\ite(1 < x,S_1,S_2)\textsf{;\ }S_3),
+\ \textsf{env}(x \mapsto l, R_\textit{env})
+,
+\ \textsf{state}((\gamma\hole_3.\;(\hole_3,R_\textit{state}))[l \mapsto a])
+)
+\\
+\textsf{cfg}
+(
+\textsf{k}(\ite(1 < x,S_1,S_2)\textsf{;\ }S_3),
+\ \textsf{env}(x \mapsto l, R_\textit{env})
+,
+\ (\gamma\hole_3.\;\textsf{state}(\hole_3,R_\textit{state}))[l \mapsto a]
+)
+\\
+(\gamma\hole_3.\;\textsf{cfg}
+(
+\textsf{k}(\ite(1 < x,S_1,S_2)\textsf{;\ }S_3),
+\ \textsf{env}(x \mapsto l, R_\textit{env})
+,
+\ \textsf{state}(\hole_3,R_\textit{state})))[l \mapsto a]
+\\
+...
+\\
+(\gamma\hole_3.\;
+(\gamma\hole_2.\;
+\textsf{cfg}
+(
+\textsf{k}(\ite(1 < x,S_1,S_2)\textsf{;\ }S_3),
+\ \textsf{env}(\hole_2, R_\textit{env})
+,
+\ \textsf{state}(\hole_3,R_\textit{state})))[x \mapsto l])[l \mapsto a]
+\\
+(\gamma\hole_2\hole_3.\;
+\textsf{cfg}
+(
+\textsf{k}(\ite(1 < x,S_1,S_2)\textsf{;\ }S_3),
+\ \textsf{env}(\hole_2, R_\textit{env})
+,
+\ \textsf{state}(\hole_3,R_\textit{state})))[x \mapsto l,l \mapsto a]
+\\
+...
+\\
+(\gamma\hole_2\hole_3.\;
+(\gamma\hole_1.\;
+\textsf{cfg}
+(
+\textsf{k}(\ite(1 < \hole_1,S_1,S_2)\textsf{;\ }S_3),
+\ \textsf{env}(\hole_2, R_\textit{env})
+,
+\ \textsf{state}(\hole_3,R_\textit{state})))[x]
+)[x \mapsto l,l \mapsto a]
+\\
+(\gamma\hole_1\hole_2\hole_3.\;
+\textsf{cfg}
+(
+\textsf{k}(\ite(1 < \hole_1,S_1,S_2)\textsf{;\ }S_3),
+\ \textsf{env}(\hole_2, R_\textit{env})
+,
+\ \textsf{state}(\hole_3, R_\textit{state})
+))
+[x, x \mapsto l, l \mapsto a]
+\end{array}
+$$
+
+
+
+multi-hole contexts
+
+nested contexts
 
 \subsection{Rewriting and Reachability}
 \label{sec:rewriting}
 
+rules apply in contexts by default
 as implication and as fixed-points 
 
 
