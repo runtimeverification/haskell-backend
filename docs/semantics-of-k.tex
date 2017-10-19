@@ -355,6 +355,10 @@
   \newcommand{\FV}{{\it FV}}
   
   \newcommand{\name}{\mathit{name}}
+  \newcommand{\smalltt}[1]{\texttt{\small #1} }
+  \newcommand{\sort}{\smalltt{sort}}
+  \newcommand{\symb}{\smalltt{symbol}}
+  \newcommand{\axiom}{\smalltt{axiom}}
 
   % Title and authors
   \title{The Semantics of \K}
@@ -1753,7 +1757,7 @@ be no finite or algorithmic way to represent those
 not r.e.).
 
 \section{The Meta-Theory: A Reflection in Matching Logic}
-\label{sec:meta-theory}
+\label{sec:meta-theory-reflection}
 
 This section is a follow-up to Section~\cref{sec:finite-mechanisms}, in which 
 we introduced various \emph{schema mechanisms} that allow us to define infinite 
@@ -1762,7 +1766,7 @@ In this and the next few sections, we give such schema mechanisms \emph{a
 formal meaning} by axiomatizing them as a matching logic theory: the 
 meta-theory $K$.
 We are going to define the meta-theory $K$ in detail in 
-Section~\cref{sec:meta-theory-finite}, while before that, we would like to
+Section~\cref{sec:meta-theory}, while before that, we would like to
 illustrate the big picture first and point out the relationship between our work
 and the studies of \emph{reflection in logic}.
 
@@ -1828,10 +1832,10 @@ where
 \end{itemize}
 
 The double bracket $\denote{\_}$ is called \emph{lifting}, which brings objects to their meta-representations in the meta-theory $K$.
-Lifting will be defined in detail in Section~\cref{sec:kore-semantics}, but before that we would like to use two examples to illustrate the big picture of how things work and to define a set of terminologies that we will use later.
+Lifting will be defined in detail in Section~\cref{sec:reflect}, after we present in full length the meta-theory $K$ in Secion~\cref{sec:meta-theory}
 
 \section{Meta-Theory of Matching Logic}
-\label{sec:meta-theory-finite}
+\label{sec:meta-theory}
 
 In this section, we present a finite matching logic theory $K = ( S_K, \Sigma_K, F_K )$ as \emph{the meta-theory of matching logic}.
 $K$ is a finite theory and has $S_K$ , $\Sigma_K$, and $F_K$ being its finite sets of sorts, symbols, and axioms, respectively.
@@ -2572,6 +2576,7 @@ R)).$$
 
 
 \section{Reflect Theories in the Meta-Theory}
+\label{sec:reflect}
 We have shown the readers the big picture of the meta-theory $K$ and its usage in Section~\cref{sec:meta-theory}.
 In this section, we will show in detail how to \emph{lift} any r.e. matching logic theory $T$ to its meta-representation $\denote{T}$, and present the faithfulness theorem of $K$.
 
@@ -3114,7 +3119,25 @@ In other words, the semantics of Kore is given by lifting itself to the meta-the
 \todo[inline]{This section should include (1) a formal BNF grammar of Kore (2) namespaces for variable names (3) sort parameters \& sort parameters at the meta-level (4) Kore keywords that are reserved for sorts and symbols at the meta-level.}
 \todo[inline]{We should decide a syntax for alias declaration.}
 
-A Kore definition is a 
+A Kore definition is a sequence of \emph{Kore declarations}. Kore declarations can be either one of the follows:
+\begin{itemize}\itemsep0em
+	\item Sort declaration
+	\item Symbol declaration
+	\item Axiom declaration
+	\item Alias declaration
+\end{itemize}
+each of which declares a sort, a symbol, an axiom, or an alias respectively.
+
+
+
+\subsubsection{Object Namespace and Meta-Namespace}
+Meta-namespace contains identifiers whose first letter is ``\,\shp\ ''.
+
+\subsubsection{Sort Declaration}
+A sort declaration starts with the keyword $\sort$, followed by an identifier and a list of sort parameters wrapped with curly braces.
+
+
+\subsection{Get Things From Here}
 
 \subsubsection{Special Characters, Keywords and Namespaces}
 The following characters have special meaning in Kore:
@@ -3542,12 +3565,6 @@ In this section, we define a matching logic theory $K = (S_K, \Sigma_K, A_K)$
 as \emph{the (reflective) calculus of matching logic},
 where $S_K, \Sigma_K$, and $A_K$ are \emph{finite} sets of sorts,
 symbols, and axioms,  respectively.
-
-
-\newcommand{\smalltt}[1]{\texttt{\small #1} }
-\newcommand{\sort}{\smalltt{sort}}
-\newcommand{\symb}{\smalltt{symbol}}
-\newcommand{\axiom}{\smalltt{axiom}}
 
 Sorts are declared using the \sort keyword, symbols are declared using the 
 \symb keyword, and axioms are defined using the \axiom keyword.
