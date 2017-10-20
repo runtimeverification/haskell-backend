@@ -3319,11 +3319,11 @@ a comment is ...
 Lexicon tokens are
 \begin{center}
 	\begin{tabular}{c|l|l}
-		\textbf{Token Character} & \textbf{Name} & \textbf{Used In}
+		\textbf{Token Character(s)} & \textbf{Name} & \textbf{Used In}
 		\\\hline
 		\texttt{:} & Colon & Variables and Declarations
 		\\
-		\texttt{\string{ \string}} & Curly Braces & Parameters
+		\texttt{\string{ \string}} & Curly Braces & Sort Parameters
 		\\
 		\texttt{( )} & Parenthesis & Kore Expressions
 		\\
@@ -3338,7 +3338,16 @@ Syntactic categories are introduced and defined in the following.
 \paragraph{Digits}
 \paragraph{Letters}
 
+\paragraph{Reserved Keywords}
+\begin{center}
+	{\ttfamily
+		\begin{tabular}{lllllll}
+			sort & hooked-sort & symbol & hooked-symbol & alias & hooked-alias &
+			axiom
+	\end{tabular}}
+\end{center}
 
+\paragraph{Identifiers}
 \paragraph{Reserved Logical Connectives and Derived Connectives.}
 \begin{center}
 	\begin{tabular}{llll}
@@ -3348,14 +3357,7 @@ Syntactic categories are introduced and defined in the following.
 	\end{tabular}
 \end{center}
 
-\paragraph{Reserved Keywords}
-\begin{center}
-	{\ttfamily
-		\begin{tabular}{lllllll}
-			sort & hooked-sort & symbol & hooked-symbol & alias & hooked-alias &
-			axiom
-	\end{tabular}}
-\end{center}
+
 
 \paragraph{String Literals.}
 ``Anything'' that is wrapped with quotation marks.
@@ -3372,13 +3374,33 @@ A non-empty sequence of characters that starts with a ``\shp\,''.
 \paragraph{Reserved Identifiers.}
 Meta-identifiers that are either a sort or a symbol in the meta-theory, $K$. For example, \verb|#Sort|, \verb|#\and|.
 
-\subsubsection{Parameters}
-
-\subsubsection{Sorts}
+\subsubsection{Sorts and Sort Parameters}
+\paragraph{User-Defined Sorts and Sort Schemas.}
+\begin{center}
+{\ttfamily
+	\begin{tabular}{lll}
+		Bool & Int & \parametric{List}{Int} \\
+		\parametric{List}{\parametric{List}{Int}} & \parametric{Map}{Int,Int} & \parametric{Map}{Int,\parametric{Map}{Int,Bool}} \\
+		S & S' & \parametric{List}{\parametric{Map}{Int,S}} \\
+	\end{tabular}
+}
+\end{center}
+\paragraph{Pre-Defined Meta-Theory Sorts.}
+\begin{center}
+	{\ttfamily
+	\begin{tabular}{llll}
+		\#Pred & \#Char & \#String & 
+		\\
+		\#Sort & \#Symbol & \#Variable & \#Pattern
+		\\
+		\#SortList & \#SymbolList & \#VariableList & \#PatternList		
+\end{tabular}}
+\end{center}
 
 \subsubsection{Symbols and Aliases}
 
 \subsubsection{Patterns}
+A pattern is either a 
 
 \subsubsection{Kore Declarations}
 Kore declarations can be either one of the follows:
@@ -3416,6 +3438,46 @@ each of which declares a sort, a symbol, an axiom, or an alias respectively.
 \end{algorithm}
 \subsubsection{Lifting Declarations}
 
+\subsection{Example A: Presburger Arithmetic}
+\begin{lstlisting}[language=kore]
+  sort Nat{}
+  
+  symbol zero{}() : Nat{}
+  symbol succ{}(Nat{}) : Nat{}
+  symbol plus{}(Nat{}, Nat[}) : Nat{}
+\end{lstlisting}
+\subsection{Example B: Parametric Lists}
+\begin{lstlisting}[language=kore]
+  sort List{S}
+  
+  symbol nil{S}() : List{S}
+  symbol cons{S}(S, List{S}) : List{S}
+  symbol append{S}(List{S}, List{S}) : List{S}
+  symbol rev{S}(List{S}) : List{S}
+  
+  axiom{S,S'} 
+    equals{List{S},S'}(
+      append{S}(nil{S}(), L:List{S}),
+      L:List{S})
+      
+  axiom{S,S'}
+    equals{List{S},S'}(
+      append{S}(cons{S}(X:S, L:List{S}), L':List{S}),
+      cons{S}(X:S, append{S}(L:List{S}, L':List{S})))
+\end{lstlisting}
+
+\subsection{Example C: Lambda Calculus}
+
+\begin{lstlisting}[language=kore]
+  sort Exp{}
+  
+  symbol app{}(Exp{}, Exp{}) : Exp{}
+  symbol lambda0{}(Exp{}, Exp{}) : Exp{}
+  
+  alias lambda{}(#Exp.Variable, #Exp) : #Exp
+\end{lstlisting}
+
+\subsection{Example D: Contexts}
 
 \subsection{Get Things From Here}
 
