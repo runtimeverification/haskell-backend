@@ -1685,7 +1685,57 @@ $$
 \subsection{Rewriting and Reachability}
 \label{sec:rewriting}
 
+Matching logic patterns generalize terms: indeed, each term $t$ is a
+particular pattern built only with variables and symbols.
+Furthermore, reachability rules in reachability
+logic~\cite{rosu-stefanescu-ciobaca-moore-2013-lics,stefanescu-ciobaca-mereuta-moore-serbanuta-rosu-2014-rta},
+which have the form $\varphi \Rightarrow \varphi'$ where $\varphi$ and $\varphi'$
+are patterns of the same sort, generalize rewrite rules.
+A set of reachability rules $\cal S$, for example a \K language
+definition, yields a binary relation $\_\ra_{\cal S}\_ \subseteq M \times M$
+on any given model $M$, called a \emph{transition system}.
+The transition system $(M,\ra_{\cal S})$ is a mathematical model of $\cal S$,
+comprising all the dynamic behaviors of $\cal S$.
+Reachability logic consists of a proof system for reachability rules,
+which is sound and relatively complete.
+Until now, \K's semantics was best explained in terms of reachability logic.
+However, it turns out that matching logic is expressive enough to represent
+both rewriting and reachability.
+Together with the other results above, this implies that matching
+logic can serve as a standalone semantic foundation of~$\K$.
 
+Let us first note that, in matching logic, giving a binary relation
+$R_s \in M_s \times M_s$ on the carrier of sort $s$ of a model $M$
+is equivalent to interpreting a unary symbol $\circ \in \Sigma_{s,s}$ in $M$:
+indeed, for any $a,b\in M_s$, take $a\mathrel{R_s} b$ iff $a \in \circ_M(b)$.
+If the intuition for $a \mathrel{R_s} b$ is ``state $a$ transitions to
+state $b$'', then the intuition for $\circ_M$ is that of ``transition to''
+or ``next'':
+$\circ_M(b)$ is the set of states that transition to $b$, or which next go
+to $b$.
+Next consider two patterns $\varphi$ and $\varphi'$ of sort $s$, and the
+pattern $\varphi \ra \circ \varphi'$.
+We have $M \models \varphi \ra \circ \varphi'$ iff
+$\overline{\rho}(\varphi) \subseteq \circ_M(\overline{\rho}(\varphi'))$
+for any $M$-valuation $\rho$, iff for any $a\in\overline{\rho}(\varphi)$
+there is some $b \in \overline{\rho}(\varphi')$ such that $a\mathrel{R_s}b$,
+which is precisely the interpretation of a rewrite rule
+$\varphi \Rightarrow \varphi'$ in $M$.
+Consequently, we can add multi-sorted rewriting to a matching logic theory
+as follows:
+$$
+\begin{array}{r@{\hspace*{7ex}}l}
+\parametric{\circ}{s} \in \Sigma_{s,s}
+& \textrm{// a ``next'' symbol schema}
+\\
+\varphi\mathrel{\parametric{\Rightarrow}{s}}\varphi'
+\equiv \varphi \rightarrow \parametric{\circ}{s} \varphi'
+& \textrm{// a ``rewrite relation'' alias schema}
+\end{array}
+$$
+To avoid clutter, we write $\Rightarrow$ instead of
+$\parametric{\Rightarrow}{s}$ and assume that $s$ can be inferred from
+context.
 
 rules apply in contexts by default
 as implication and as fixed-points 
