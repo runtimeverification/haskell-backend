@@ -359,6 +359,20 @@
   \newcommand{\sort}{\smalltt{sort}}
   \newcommand{\symb}{\smalltt{symbol}}
   \newcommand{\axiom}{\smalltt{axiom}}
+  
+  % Define slashed ttfamily words
+  \newcommand{\sland}{\smalltt{\string\and}}
+  \newcommand{\slor}{\smalltt{\string\or}}
+  \newcommand{\slnot}{\smalltt{\string\not}}
+  \newcommand{\slimplies}{\smalltt{\string\implies}}
+  \newcommand{\sliff}{\smalltt{\string\iff}}
+  \newcommand{\slequals}{\smalltt{\string\equals}}
+  \newcommand{\slexists}{\smalltt{\string\exists}}
+  \newcommand{\slforall}{\smalltt{\string\forall}}
+  \newcommand{\sltop}{\smalltt{\string\top}}
+  \newcommand{\slbottom}{\smalltt{\string\bottom}}
+  \newcommand{\slceil}{\smalltt{\string\ceil}}
+  \newcommand{\slfloor}{\smalltt{\string\floor}}
 
   % Title and authors
   \title{The Semantics of \K}
@@ -3292,13 +3306,82 @@ In other words, the semantics of Kore is given by lifting itself to the meta-the
 
 
 
-\subsection{Kore Syntax}
-\label{sec:kore-syntax}
+\subsection{Syntax}
 
-\todo[inline]{This section should include (1) a formal BNF grammar of Kore (2) namespaces for variable names (3) sort parameters \& sort parameters at the meta-level (4) Kore keywords that are reserved for sorts and symbols at the meta-level.}
-\todo[inline]{We should decide a syntax for alias declaration.}
+\subsubsection{Lexicon}
+\label{sec:kore-lexicon}
 
-A Kore definition is a sequence of \emph{Kore declarations}. Kore declarations can be either one of the follows:
+A Kore definition file is a sequence of ASCII characters
+
+a comment is ...
+
+
+Lexicon tokens are
+\begin{center}
+	\begin{tabular}{c|l|l}
+		\textbf{Token Character} & \textbf{Name} & \textbf{Used In}
+		\\\hline
+		\texttt{:} & Colon & Variables and Declarations
+		\\
+		\texttt{\string{ \string}} & Curly Braces & Parameters
+		\\
+		\texttt{( )} & Parenthesis & Kore Expressions
+		\\
+		\texttt{:=} & Colon Equal & Alias Declarations
+	\end{tabular}
+\end{center}
+
+Syntactic categories are introduced and defined in the following.
+
+\paragraph{White Space Characters.}
+\paragraph{Printable Characters.}
+\paragraph{Digits}
+\paragraph{Letters}
+
+
+\paragraph{Reserved Logical Connectives and Derived Connectives.}
+\begin{center}
+	\begin{tabular}{llll}
+		\sland & or & \slexists & \slforall \\
+		\slnot & \slimplies & \sliff & \slequals \\
+		\slceil & \slfloor & \sltop & \slbottom
+	\end{tabular}
+\end{center}
+
+\paragraph{Reserved Keywords}
+\begin{center}
+	{\ttfamily
+		\begin{tabular}{lllllll}
+			sort & hooked-sort & symbol & hooked-symbol & alias & hooked-alias &
+			axiom
+	\end{tabular}}
+\end{center}
+
+\paragraph{String Literals.}
+``Anything'' that is wrapped with quotation marks.
+
+\subsubsection{Identifiers}
+
+\paragraph{Object Identifiers.}
+A non-empty sequence of characters that does not start with a ``\shp\,''.
+
+\paragraph{Meta-Identifiers.}
+A non-empty sequence of characters that starts with a ``\shp\,''.
+
+
+\paragraph{Reserved Identifiers.}
+Meta-identifiers that are either a sort or a symbol in the meta-theory, $K$. For example, \verb|#Sort|, \verb|#\and|.
+
+\subsubsection{Parameters}
+
+\subsubsection{Sorts}
+
+\subsubsection{Symbols and Aliases}
+
+\subsubsection{Patterns}
+
+\subsubsection{Kore Declarations}
+Kore declarations can be either one of the follows:
 \begin{itemize}\itemsep0em
 	\item Sort declaration
 	\item Symbol declaration
@@ -3307,13 +3390,31 @@ A Kore definition is a sequence of \emph{Kore declarations}. Kore declarations c
 \end{itemize}
 each of which declares a sort, a symbol, an axiom, or an alias respectively.
 
-
-
-\subsubsection{Object Namespace and Meta-Namespace}
-Meta-namespace contains identifiers whose first letter is ``\,\shp\ ''.
-
-\subsubsection{Sort Declaration}
-A sort declaration starts with the keyword $\sort$, followed by an identifier and a list of sort parameters wrapped with curly braces.
+\subsection{Semantics}
+\subsubsection{Distinguish Meta-Level from Object Level}
+\subsubsection{Identifiers To String Literals}
+\subsubsection{Lifting Patterns}
+\begin{algorithm}[h]
+	\KwIn{An object-pattern $\varphi$.}
+	\KwOut{The meta-representation (ASTs) of $\varphi$ in $K$}
+	\uIf{$\varphi$ is $x \cln s$}{Return $\mathit{variable(x, sort(s))}$}
+	\uElseIf{$\varphi$ is $x \cln \cln s$}{Return $x \cln \KPattern {\ \wedge\ 
+		} (\mathit{sort(s)} = \KgetSort(x \cln \KPattern)) $}
+	\uElseIf{$\varphi$ is $\varphi_1 \wedge \varphi_2$}
+	{Return $\Kand(\mathit{lift}[\varphi_1], \mathit{lift}[\varphi_2]$}
+	\uElseIf{$\varphi$ is $\neg \varphi_1$}
+	{Return $\Knot(\mathit{lift}[\varphi_1])$}
+	\uElseIf{$\varphi$ is $\exists x \cln s . \varphi_1$}
+	{Return $\Kexists(x, \mathit{sort(s)}, \mathit{lift}[\varphi_1])$}
+	\uElseIf{$\varphi$ is $\sigma(\varphi_1,\dots,\varphi_n)$ and $\sigma \in 
+		\Sigma_{s_1,\dots,s_n,s}$}
+	{Return $\Kapplication(\mathit{symbol}(\sigma, (\Ksort(s_1), \dots, 
+		\Ksort(s_n)), \Ksort(s)),$
+		$\mathit{lift}[\varphi_1],\dots,\mathit{lift}[\varphi_n])$}
+	\caption{Lifting Function $\mathit{lift}[\_]$}
+	\label{alg:liftingfunction}
+\end{algorithm}
+\subsubsection{Lifting Declarations}
 
 
 \subsection{Get Things From Here}
