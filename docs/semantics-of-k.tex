@@ -359,20 +359,7 @@
   \newcommand{\sort}{\smalltt{sort}}
   \newcommand{\symb}{\smalltt{symbol}}
   \newcommand{\axiom}{\smalltt{axiom}}
-  
-  % Define slashed ttfamily words
-  \newcommand{\sland}{\smalltt{\string\and}}
-  \newcommand{\slor}{\smalltt{\string\or}}
-  \newcommand{\slnot}{\smalltt{\string\not}}
-  \newcommand{\slimplies}{\smalltt{\string\implies}}
-  \newcommand{\sliff}{\smalltt{\string\iff}}
-  \newcommand{\slequals}{\smalltt{\string\equals}}
-  \newcommand{\slexists}{\smalltt{\string\exists}}
-  \newcommand{\slforall}{\smalltt{\string\forall}}
-  \newcommand{\sltop}{\smalltt{\string\top}}
-  \newcommand{\slbottom}{\smalltt{\string\bottom}}
-  \newcommand{\slceil}{\smalltt{\string\ceil}}
-  \newcommand{\slfloor}{\smalltt{\string\floor}}
+
   % Title and authors
   \title{The Semantics of \K}
   \author{Formal Systems Laboratory \\
@@ -1517,6 +1504,7 @@ $C_2 = \gamma\hole.\;T_2$.
 
 
 \subsubsection{Multi-Hole Contexts and Configuration Abstraction}
+\label{sec:cfg-abstraction}
 
 Contexts with multiple holes can also be easily supported by our approach,
 also without anything extra but the already existing deductive system of
@@ -1694,6 +1682,27 @@ $$
 \end{array}
 $$
 
+Therefore, the configuration pattern
+$$
+\textsf{cfg}
+(
+\textsf{k}(\ite(1 < x,S_1,S_2)\textsf{;\ }S_3),
+\ \textsf{env}(x \mapsto l, R_\textit{env})
+,
+\ \textsf{mem}(l \mapsto a, R_\textit{mem})
+)
+$$
+can be matched by a pattern $C[x,x\mapsto l,l\mapsto a]$, where $C$ is a
+multi-hole context.
+Sometimes configurations can be much more complex than the above, in which
+case one may want to make use of nested contexts to disambiguate.
+For example, the pattern
+$$
+C_{\textsf{cfg}}[\textsf{k}(C_{\textsf{k}}[x]),\textsf{env}(C_{\textsf{env}}[x\mapsto l]),\textsf{mem}(C_{\textsf{mem}}[l\mapsto a])]
+$$
+makes it clear that $x$, $x\mapsto l$, and $l\mapsto a$ must be located inside
+the \textsf{k}, \textsf{end}, and \textsf{mem} configuration semantic
+components, or cells, respectively.
 
 \subsection{Rewriting and Reachability}
 \label{sec:rewriting}
@@ -1734,7 +1743,7 @@ for any $M$-valuation $\rho$, iff for any $a\in\overline{\rho}(\varphi)$
 there is some $b \in \overline{\rho}(\varphi')$ such that $a\mathrel{R_s}b$,
 which is precisely the interpretation of a rewrite rule
 $\varphi \Rightarrow \varphi'$ in $M$.
-Consequently, we can add multi-sorted rewriting to a matching logic theory
+Hence, we can add multi-sorted rewriting to a matching logic theory
 as follows:
 $$
 \begin{array}{r@{\hspace*{7ex}}l}
@@ -1749,9 +1758,114 @@ $$
 To avoid clutter, we write $\Rightarrow$ instead of
 $\parametric{\Rightarrow}{s}$ and assume that $s$ can be inferred from
 context.
+If necessary, we may add a superscript $n$ to indicate the number of rewrite steps;
+for example, $\varphi \Rightarrow^1 \varphi'$ means
+``$\varphi$ rewrites to $\varphi'$ in one step''.
+By default, from here on $\Rightarrow$ means $\Rightarrow^1$.
 
-rules apply in contexts by default
-as implication and as fixed-points 
+We can now write semantic rules, like in \K.
+For example, for the configuration in Section~\ref{sec:cfg-abstraction},
+the rule for variable lookup can be as follows:
+$$C[(x \Rightarrow a),x\mapsto l,l\mapsto a]$$
+Or, if more structure in the context is needed or preferred:
+$$
+C_{\textsf{cfg}}[\textsf{k}(C_{\textsf{k}}[x \Rightarrow a]),\textsf{env}(C_{\textsf{env}}[x\mapsto l]),\textsf{mem}(C_{\textsf{mem}}[l\mapsto a])]
+$$
+Although irrelevant here, it is worth noting that the \K frontend
+provides syntactic sugar for avoiding writing the contexts.
+Specifically, users can use ellipses ``\dots'' to
+``fill in the obvious context''.
+For example, \K frontends may allow users to write the two rules above as
+$$
+x \Rightarrow a \dots x \mapsto l \dots l \mapsto a
+$$
+and, respectively,
+$$
+\textsf{k}(x \Rightarrow a \dots) \ \textsf{env}(\dots x\mapsto l \dots) \ 
+\textsf{mem}(\dots l\mapsto a \dots)
+$$
+Note that the top-level context is skipped, because there is always a
+top-level context and thus there is no need to mention it in each rule.
+A more interesting example is the rule for assignment in an imperative
+language, taking an assignment $x := b$ to $\textsf{skip}$ and at the
+same time updating $x$ in the memory.
+Using the compact notation above, this rule becomes:
+$$
+(x := b)\Rightarrow \textsf{skip} \dots x \mapsto l \dots l \mapsto (a \Rightarrow b)
+$$
+There are two rewrites taking place at the same time in the rule above:
+one in the \textsf{k} cell rewriting $x := b$ to $\textsf{skip}$, and another
+one in the location of $x$ in the memory rewriting whatever value was there,
+$a$, to the assigned value, $b$.
+
+There are two important aspects left to explain before we can use \K definitions to
+reason about programs.
+First, we need to be able to lift rewrites from inside patterns to the
+top level.
+Indeed, the rules above do not explain how an actual configuration
+that matches the lookup or the assignment pattern above transits to
+the next configuration.
+For that reason, we add axiom schemas to the matching logic theory
+that lift the $\circ$ symbol:
+$$
+\begin{array}{l@{\hspace*{7ex}}l}
+\sigma(*\varphi_1,\dots,*\varphi_n) \rightarrow \circ\;\sigma(\varphi_1,\dots,\varphi_n)
+& \textrm{where $\sigma\in\Sigma_{s_1\times\cdots s_n,s}$,}
+\\ & \textrm{$\varphi_1$ is a pattern of sort $s_1$,}
+\\
+& \dots,
+\\ & \textrm{$\varphi_n$ is a pattern of sort $s_n$,}
+\\ & \textrm{and at least one of $*$ is $\circ$}
+\end{array}
+$$
+Together with structural framing~\cite{rosu-2017-lmcs},
+these axioms allow not only to lift multiple local rewrites
+that are part of the same rule into one rewrite higher in the
+pattern, but also to combine multiple parallel rewrites into
+one rewrite, thus giving natural support for \emph{true concurrency}.
+Note that the axioms above allow to lift the $\circ$ symbol from
+any proper subset of orthogonal subpaterns, without enforcing
+the lifting of \emph{all} the $\circ$ symbols.
+In other words, an \emph{interleaving model of concurrency}
+is also supported.
+One can choose one or another methodologically, the underlying
+logic not enforcing any.
+We believe that this is the ideal scenario wrt concurrency.
+
+The other important aspect that needs to be explained in order to allow
+full reasoning based on \K definitions, is reachability.
+Specifically, we need a way to define reachability claims/specifications
+in matching logic.
+Thanks to matching logic's support for fixed-points, we can, in fact,
+define various LTL-, CTL-, or CTL$^*$-like constructs.
+We leave most of these as exercise to the interested reader,
+here only showing how to define two of them which are useful to define
+and reason about reachability:
+$$
+\begin{array}{rcl@{\hspace*{7ex}}l}
+\Diamond_{\textit{Strong}} \varphi & \equiv & \mu f . (\varphi \vee \circ f)
+& \textrm{// strong eventually on one path}
+\\
+\Diamond_{\textit{Weak}} \varphi & \equiv & \nu f . (\varphi \vee \circ f)
+& \textrm{// weak eventually on one path}
+\end{array}
+$$
+The pattern $\Diamond_{\textit{Strong}}\varphi$ is matched by those
+states/configurations which eventually reach a state/configuration that
+matches $\varphi$, using the transition system associated to the unary
+symbol $\circ$ as described above.
+The pattern $\Diamond_{\textit{weak}}\varphi$, one the other hand, is matched
+by those states/configurations which either never terminate or otherwise
+eventually reach a state/configuration that matches $\varphi$.
+With these, it is not hard to see that the (partial correctness) one-path
+reachability relation $\varphi \Rightarrow^\exists \varphi'$ of reachability
+logic \cite{stefanescu-park-yuwen-li-rosu-2016-oopsla} can be semantically
+captured by the pattern
+$\varphi \rightarrow \Diamond_{\textit{weak}}\varphi'$.
+We leave it as a (non-trivial) exercise to the reader to also define the
+all-path reachability relation $\varphi \Rightarrow^\forall\varphi'$ and to
+prove all the proof rules of reachability logic as lemmas/theorems using the
+more basic proof system of matching logic.
 
 
 \section{Built-ins}
@@ -2638,8 +2752,6 @@ where $L$ and $R$ are $\KPatternList$ variables, and we write $(L, \varphi, R)$ 
 $$(L, \varphi, R) \equiv \KappendKPatternList(L, \KconsKPatternList(\varphi, 
 R)).$$
 
-\subsection{A Summary of the Meta-Theory}
-\label{sec:K-summary}
 
 
 \section{Reflect Theories in the Meta-Theory}
@@ -3149,6 +3261,9 @@ $$ \KsortDeclared(s_1) \wedge \dots \wedge  \KsortDeclared(s_n) \to \KaxiomDecla
 Theorem~\ref{thm:faithfulness-finite} is an important theorem that justifies the design and usage of the theory $\Kfinite$. 
 It guarantees that the theory $\Kfinite$ does faithfully capture the matching logic reasoning in finite theories.
 
+\subsection{A Summary of the Meta-Theory}
+\label{sec:K-summary}
+
 
 \section{The Kore Language}
 
@@ -3176,82 +3291,14 @@ Users are free to write things at the object-level and Kore will lift those to t
 In other words, the semantics of Kore is given by lifting itself to the meta-theory.
 
 
-\subsection{Syntax}
 
-\subsubsection{Lexicon}
-\label{sec:kore-lexicon}
+\subsection{Kore Syntax}
+\label{sec:kore-syntax}
 
-A Kore definition file is a sequence of ASCII characters
+\todo[inline]{This section should include (1) a formal BNF grammar of Kore (2) namespaces for variable names (3) sort parameters \& sort parameters at the meta-level (4) Kore keywords that are reserved for sorts and symbols at the meta-level.}
+\todo[inline]{We should decide a syntax for alias declaration.}
 
-a comment is ...
-
-
-Lexicon tokens are
-\begin{center}
-	\begin{tabular}{c|l|l}
-		\textbf{Token Character} & \textbf{Name} & \textbf{Used In}
-		\\\hline
-		\texttt{:} & Colon & Variables and Declarations
-		\\
-		\texttt{\string{ \string}} & Curly Braces & Parameters
-		\\
-		\texttt{( )} & Parenthesis & Kore Expressions
-		\\
-		\texttt{:=} & Colon Equal & Alias Declarations
-	\end{tabular}
-\end{center}
-
-Syntactic categories are introduced and defined in the following.
-
-\paragraph{White Space Characters.}
-\paragraph{Printable Characters.}
-\paragraph{Digits}
-\paragraph{Letters}
-
-
-\paragraph{Reserved Logical Connectives and Derived Connectives.}
-\begin{center}
-\begin{tabular}{llll}
-    \sland & or & \slexists & \slforall \\
-	\slnot & \slimplies & \sliff & \slequals \\
-	\slceil & \slfloor & \sltop & \slbottom
-\end{tabular}
-\end{center}
-
-\paragraph{Reserved Keywords}
-\begin{center}
-	{\ttfamily
-	\begin{tabular}{lllllll}
-		sort & hooked-sort & symbol & hooked-symbol & alias & hooked-alias &
-		axiom
-\end{tabular}}
-\end{center}
-
-\paragraph{String Literals.}
-``Anything'' that is wrapped with quotation marks.
-
-\subsubsection{Identifiers}
-
-\paragraph{Object Identifiers.}
-A non-empty sequence of characters that does not start with a ``\shp\,''.
-
-\paragraph{Meta-Identifiers.}
-A non-empty sequence of characters that starts with a ``\shp\,''.
-
-
-\paragraph{Reserved Identifiers.}
-Meta-identifiers that are either a sort or a symbol in the meta-theory, $K$. For example, \verb|#Sort|, \verb|#\and|.
-
-\subsubsection{Parameters}
-
-\subsubsection{Sorts}
-
-\subsubsection{Symbols and Aliases}
-
-\subsubsection{Patterns}
-
-\subsubsection{Kore Declarations}
-Kore declarations can be either one of the follows:
+A Kore definition is a sequence of \emph{Kore declarations}. Kore declarations can be either one of the follows:
 \begin{itemize}\itemsep0em
 	\item Sort declaration
 	\item Symbol declaration
@@ -3260,32 +3307,52 @@ Kore declarations can be either one of the follows:
 \end{itemize}
 each of which declares a sort, a symbol, an axiom, or an alias respectively.
 
-\subsection{Semantics}
-\subsubsection{Distinguish Meta-Level from Object Level}
-\subsubsection{Identifiers To String Literals}
-\subsubsection{Lifting Patterns}
-\begin{algorithm}[h]
-	\KwIn{An object-pattern $\varphi$.}
-	\KwOut{The meta-representation (ASTs) of $\varphi$ in $K$}
-	\uIf{$\varphi$ is $x \cln s$}{Return $\mathit{variable(x, sort(s))}$}
-	\uElseIf{$\varphi$ is $x \cln \cln s$}{Return $x \cln \KPattern {\ \wedge\ 
-		} (\mathit{sort(s)} = \KgetSort(x \cln \KPattern)) $}
-	\uElseIf{$\varphi$ is $\varphi_1 \wedge \varphi_2$}
-	{Return $\Kand(\mathit{lift}[\varphi_1], \mathit{lift}[\varphi_2]$}
-	\uElseIf{$\varphi$ is $\neg \varphi_1$}
-	{Return $\Knot(\mathit{lift}[\varphi_1])$}
-	\uElseIf{$\varphi$ is $\exists x \cln s . \varphi_1$}
-	{Return $\Kexists(x, \mathit{sort(s)}, \mathit{lift}[\varphi_1])$}
-	\uElseIf{$\varphi$ is $\sigma(\varphi_1,\dots,\varphi_n)$ and $\sigma \in 
-		\Sigma_{s_1,\dots,s_n,s}$}
-	{Return $\Kapplication(\mathit{symbol}(\sigma, (\Ksort(s_1), \dots, 
-		\Ksort(s_n)), \Ksort(s)),$
-		$\mathit{lift}[\varphi_1],\dots,\mathit{lift}[\varphi_n])$}
-	\caption{Lifting Function $\mathit{lift}[\_]$}
-	\label{alg:liftingfunction}
-\end{algorithm}
-\subsubsection{Lifting Declarations}
+
+
+\subsubsection{Object Namespace and Meta-Namespace}
+Meta-namespace contains identifiers whose first letter is ``\,\shp\ ''.
+
+\subsubsection{Sort Declaration}
+A sort declaration starts with the keyword $\sort$, followed by an identifier and a list of sort parameters wrapped with curly braces.
+
+
 \subsection{Get Things From Here}
+
+\subsubsection{Special Characters, Keywords and Namespaces}
+The following characters have special meaning in Kore:
+\begin{center}
+\begin{tabular}{c|l|l}
+	\textbf{Character} & \textbf{Name} & \textbf{Usage}
+	\\\hline
+	\texttt{:} & Colon & Variable constructor and symbol declaration
+	\\
+	\texttt{\string{ \string}} & Curly braces & Sort parameters
+	\\
+	\texttt{( )} & Parenthesis & Kore expression
+	\\
+	\texttt{:=} & Colon equal & Alias definition
+\end{tabular}
+\end{center}
+
+The following are reserved keywords in Kore:
+\begin{center}
+\texttt{
+\begin{tabular}{lllll}
+	and & or & implies & iff & equals \\ 
+	mem & contains & ceil & floor & not \\ 
+	exists & forall & top & bottom &  \\ 
+	Kand & Kor & Kimplies & Kiff & Kequals \\ 
+	Kmem & Kcontains & Kceil & Kfloor & Knot \\ 
+	Kexists & Kforall & Ktop & Kbottom &  \\ 
+	KSort & KSymbol & KVariable & KPattern & KPred \\ 
+	KSortList & KSymbolList & KVariableList & KPatternList &  \\ 
+	Ksort & Ksymbol & Kvariable & KvariableAsPattern &  \\ 
+	KnilKSortList & KconsKSortLiat & KnilKSymbolList & KconsKSymbolList & KnilKVariableList \\ 
+	KconsKVariableList & KnilKPatternList & KconsKPatternList & KgetSort & Kprobable \\ 
+	KsortDeclared & KsymbolDeclared & KaxiomDeclared &  &  \\ 
+\end{tabular} 
+}
+\end{center}
 
 \subsubsection{Formal BNF Grammar of Kore}
 
@@ -3359,8 +3426,29 @@ each of which declares a sort, a symbol, an axiom, or an alias respectively.
 	\alt `alias' "todo here, check the following example of IMP."
 \end{grammar}
 
+\subsection{Kore Semantics}
+\label{sec:kore-semantics}
 \todo[inline]{Show how to lift a Kore definition: (1) the default naming function Nat $\longrightarrow$ ``Nat'' (2) the default sugar symbols at the meta-level Nat $\longrightarrow$ KNat, succ $\longrightarrow$ Ksucc, etc. (3) the lifting function}
-
+\begin{algorithm}[h]
+	\KwIn{An object-pattern $\varphi$.}
+	\KwOut{The meta-representation (ASTs) of $\varphi$ in $K$}
+	\uIf{$\varphi$ is $x \cln s$}{Return $\mathit{variable(x, sort(s))}$}
+	\uElseIf{$\varphi$ is $x \cln \cln s$}{Return $x \cln \KPattern {\ \wedge\ 
+		} (\mathit{sort(s)} = \KgetSort(x \cln \KPattern)) $}
+	\uElseIf{$\varphi$ is $\varphi_1 \wedge \varphi_2$}
+	{Return $\Kand(\mathit{lift}[\varphi_1], \mathit{lift}[\varphi_2]$}
+	\uElseIf{$\varphi$ is $\neg \varphi_1$}
+	{Return $\Knot(\mathit{lift}[\varphi_1])$}
+	\uElseIf{$\varphi$ is $\exists x \cln s . \varphi_1$}
+	{Return $\Kexists(x, \mathit{sort(s)}, \mathit{lift}[\varphi_1])$}
+	\uElseIf{$\varphi$ is $\sigma(\varphi_1,\dots,\varphi_n)$ and $\sigma \in 
+		\Sigma_{s_1,\dots,s_n,s}$}
+	{Return $\Kapplication(\mathit{symbol}(\sigma, (\Ksort(s_1), \dots, 
+		\Ksort(s_n)), \Ksort(s)),$
+		$\mathit{lift}[\varphi_1],\dots,\mathit{lift}[\varphi_n])$}
+	\caption{Lifting Function $\mathit{lift}[\_]$}
+	\label{alg:liftingfunction}
+\end{algorithm}
 
 \section{IMP in Kore}
 As an example, we present the semantics of IMP defined as a Kore definition.
