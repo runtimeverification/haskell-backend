@@ -3308,15 +3308,11 @@ In other words, the semantics of Kore is given by lifting itself to the meta-the
 
 \subsection{Syntax}
 
-\subsubsection{Lexicon}
-\label{sec:kore-lexicon}
+A Kore definition file is a sequence of ASCII characters.
+Line comments start with ``\verb|//|'' and block comments start with 
+``\verb|/*|'' and end with ``\verb|*/|''.
 
-A Kore definition file is a sequence of ASCII characters
-
-a comment is ...
-
-
-Lexicon tokens are
+\paragraph{Lexicon Tokens.}
 \begin{center}
 	\begin{tabular}{c|l|l}
 		\textbf{Token Character(s)} & \textbf{Name} & \textbf{Used In}
@@ -3326,19 +3322,14 @@ Lexicon tokens are
 		\texttt{\string{ \string}} & Curly Braces & Sort Parameters
 		\\
 		\texttt{( )} & Parenthesis & Kore Expressions
-		\\
-		\texttt{:=} & Colon Equal & Alias Declarations
 	\end{tabular}
 \end{center}
 
 Syntactic categories are introduced and defined in the following.
 
-\paragraph{White Space Characters.}
-\paragraph{Printable Characters.}
-\paragraph{Digits}
-\paragraph{Letters}
-
-\paragraph{Reserved Keywords}
+\paragraph{Kore Keywords.} 
+The following keywords are used to start a Kore 
+declaration.
 \begin{center}
 	{\ttfamily
 		\begin{tabular}{lllllll}
@@ -3347,7 +3338,67 @@ Syntactic categories are introduced and defined in the following.
 	\end{tabular}}
 \end{center}
 
-\paragraph{Identifiers}
+\paragraph{Identifier.}
+
+Identifiers are nonempty sequences of printable characters.
+An identifier is said to be a meta-level one, if it starts with the letter 
+``\verb|#|''.
+Otherwise, it is said to be an object-level one.
+
+\begin{grammar}\small\centering
+	<id>    ::= <meta-id> | <object-id>
+\end{grammar}
+
+Identifiers are building blocks of many syntactic categories in Kore, such as 
+sorts, symbols, variables, and patterns.
+It is important to separate meta-level identifiers from object-level ones, 
+because Kore provides users to write a mixture of the meta-level and the 
+object-level, and we do not want to confuses the meta-level with the 
+object-level.
+
+\paragraph{Sort.}
+In Kore, every sorts are parametric.
+A sort is constructed by ``\verb|_{_}|'', which takes a \emph{sort 
+constructor} and a list of \emph{sort parameters}.
+Sort parameter can be either a sort, or a \emph{sort variable}.
+For example,
+\begin{center}{\ttfamily
+\begin{tabular}{lclcl}
+	\textrm{Sort} & \textrm{Sort Constructor} & \textrm{Sort Parameter(s)} & 
+	\textrm{Sort Schema?} & \textrm{Depending Variable(s)}
+	\\\hline
+	\parametric{Nat}{} & Nat & - & \textrm{No} & -
+	\\\hline
+	\parametric{List}{\parametric{Nat}{}} & List & \parametric{Nat}{} & 
+	\textrm{No} & -
+	\\\hline
+	\parametric{Map}{\parametric{Nat}{},S} & Map & \parametric{Nat}{},S & 
+	\textrm{Yes} & S
+	\\\hline
+	\parametric{Map}{S1,\parametric{List}{S2}} & Map & S1,\parametric{List}{S2} 
+	& \textrm{Yes} & S1,S2
+\end{tabular}
+}
+\end{center}
+TODO HERE
+
+\paragraph{Sort Declarations.}
+A sort declaration starts with the keyword ``\verb|sort|'', followed by an 
+object identifier called an \emph{object sort constructor},  
+
+
+\begin{center}
+	{\ttfamily
+		\begin{tabular}{lll}
+			Bool & Int & \parametric{List}{Int} \\
+			\parametric{List}{\parametric{List}{Int}} & 
+			\parametric{Map}{Int,Int} & 
+			\parametric{Map}{Int,\parametric{Map}{Int,Bool}} \\
+			S & S' & \parametric{List}{\parametric{Map}{Int,S}} \\
+		\end{tabular}
+	}
+\end{center}
+
 \paragraph{Reserved Logical Connectives and Derived Connectives.}
 \begin{center}
 	\begin{tabular}{llll}
@@ -3362,19 +3413,12 @@ Syntactic categories are introduced and defined in the following.
 \paragraph{String Literals.}
 ``Anything'' that is wrapped with quotation marks.
 
-\subsubsection{Identifiers}
-
-\paragraph{Object Identifiers.}
-A non-empty sequence of characters that does not start with a ``\shp\,''.
-
-\paragraph{Meta-Identifiers.}
-A non-empty sequence of characters that starts with a ``\shp\,''.
-
 
 \paragraph{Reserved Identifiers.}
 Meta-identifiers that are either a sort or a symbol in the meta-theory, $K$. For example, \verb|#Sort|, \verb|#\and|.
 
 \subsubsection{Sorts and Sort Parameters}
+\paragraph{Sort }
 \paragraph{User-Defined Sorts and Sort Schemas.}
 \begin{center}
 {\ttfamily
