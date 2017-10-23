@@ -3696,12 +3696,12 @@ Otherwise, it is a \emph{meta axiom declaration}.
   symbol #lambda{}(#Variable{}, #Pattern{}) : #Pattern{}
   axiom{#S}
     \equals{#Pattern{},#S}(
-      #lambda{}(V:#Variable{}, E:#Pattern{}),
+      #lambda{}(#V:#Variable{}, #E:#Pattern{}),
       \exists{Exp,Exp}(
-        V:#Variable{},
+        #V:#Variable{},
         lambda0{}(
-          #variableAsPattern{}(V:#Variable{}), 
-          E:#Pattern{})))
+          #variableAsPattern{}(#V:#Variable{}), 
+          #E:#Pattern{})))
    
   /* Define isLambdaTerm for each (meta-level) result sort #S */
   symbol #isLambdaTerm{#S}(#Pattern{}) : #S
@@ -3712,16 +3712,16 @@ Otherwise, it is a \emph{meta axiom declaration}.
   axiom{#S}
     \equals{#S,#S}(
       #isLambdaTerm{#S}(
-        app{}(E:#Pattern{}, E':#Pattern{})),
+        app{}(#E:#Pattern{}, #E':#Pattern{})),
       \and{#S}(
-         #isLambdaTerm{#S}(E:#Pattern{}),
-         #isLambdaTerm{#S}(E':#Pattern{})))
+         #isLambdaTerm{#S}(#E:#Pattern{}),
+         #isLambdaTerm{#S}(#E':#Pattern{})))
   axiom{#S}
     \equals{#S,#S}(
-      #isLambdaTerm{#S}(#lambda{}(V:#Variable{}, E:#Pattern{})),
+      #isLambdaTerm{#S}(#lambda{}(#V:#Variable{}, #E:#Pattern{})),
       \and{#S}(
-        #variableHasSort{#S}(V:#Variable, #Exp{}()),
-        #isLambdaTerm{#S}(E:#Pattern)))
+        #variableHasSort{#S}(#V:#Variable, #Exp{}()),
+        #isLambdaTerm{#S}(#E:#Pattern)))
         
   /* Define the beta reduction axiom:
    * app(lambda(x,e),e') = e'[e/x]
@@ -3730,18 +3730,18 @@ Otherwise, it is a \emph{meta axiom declaration}.
   axiom{#S,R}
     \implies{#S}(
       \and{#S}(\and{#S}(
-        #variableHasSort{#S}(V:#Variable{}, #Exp{}()),
-        #isLambdaTerm{#S}(E:#Pattern{})),
-        #isLambdaTerm{#S}(E':#Pattern{})),
+        #variableHasSort{#S}(#V:#Variable{}, #Exp{}()),
+        #isLambdaTerm{#S}(#E:#Pattern{})),
+        #isLambdaTerm{#S}(#E':#Pattern{})),
       #provable{#S}(
         \equals{Exp{},R}(
           app{}(
-            #lambda{}(V:#Variable{}, E:#Pattern{}),
-            E':#Pattern{}),
+            #lambda{}(#V:#Variable{}, #E:#Pattern{}),
+            #E':#Pattern{}),
           #substitute{}(
-            E':#Pattern{},
-            E:#Pattern{},
-            V:#Variable{})))))
+            #E':#Pattern{},
+            #E:#Pattern{},
+            #V:#Variable{})))))
         
 \end{lstlisting}
 
