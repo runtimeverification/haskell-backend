@@ -3306,6 +3306,8 @@ In other words, the semantics of Kore is given by lifting itself to the meta-the
 
 \subsection{Syntax}
 
+\subsubsection{Lexicon and Syntactic Categories}
+
 A Kore definition file is a sequence of ASCII characters.
 Line comments start with ``\verb|//|'' and block comments start with 
 ``\verb|/*|'' and end with ``\verb|*/|''.
@@ -3628,7 +3630,20 @@ Otherwise, it is a \emph{meta axiom declaration}.
 
 \subsection{Semantics}
 
+Give a theory $T$ defined as a Kore definition ``\verb|definition.kore|'' which consists of a set of object sort declarations, a set of object and meta symbol declarations, and a set of object and meta axiom declarations using the syntax that we have introduced before.
+The \emph{semantics} of the theory $T$, known as \emph{the meta-theory instantiated with $T$}, is given by \emph{lifting} the Kore definition ``\verb|definition.kore|'' to the Kore definition ``\verb|#definition.kore|'' which encodes $\denote{T}$.
+The Kore definition ``\verb|#definition.kore|'' will contain only meta symbol declarations and meta axiom declarations.
+The lifting algorithm is defined in~\ref{alg:lifting}.
+\subsubsection{General Principle of Lifting}
+The general principle of the lifting operation is to lift whatever object level 
+targets to their corresponding meta-level representations.
+An object sort/symbol/pattern is lifted to the meta-pattern that is the 
+abstract syntax tree of it. 
+An object sort/symbol/axiom declaration is lifted to the meta-level axiom 
+declaration that declares ``the object sort/symbol/axiom is declared''.
+
 \subsubsection{Distinguish Meta-Level and Object Level}
+
 \subsubsection{Lift Object Identifiers To String Literals}
 \subsubsection{Lift Logic Connectives To Meta Symbols}
 \subsubsection{Lift Sort Declarations}
@@ -3652,7 +3667,7 @@ Otherwise, it is a \emph{meta axiom declaration}.
 		\Ksort(s_n)), \Ksort(s)),$
 		$\mathit{lift}[\varphi_1],\dots,\mathit{lift}[\varphi_n])$}
 	\caption{Lifting Function $\mathit{lift}[\_]$}
-	\label{alg:liftingfunction}
+	\label{alg:lifting}
 \end{algorithm}
 \subsubsection{Lifting Axiom Declarations}
 
