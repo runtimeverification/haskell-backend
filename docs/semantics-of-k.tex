@@ -3313,9 +3313,10 @@ Line comments start with ``\verb|//|'' and block comments start with
 ``\verb|/*|'' and end with ``\verb|*/|''.
 
 \paragraph{Lexicon Tokens.}
+Kore has the following lexicon tokens.
 \begin{center}
 	\begin{tabular}{c|l|l}
-		\textbf{Token Character(s)} & \textbf{Name} & \textbf{Used In}
+		\textrm{Token Character(s)} & \textrm{Name} & \textrm{Used In}
 		\\\hline
 		\texttt{:} & Colon & Variables and Declarations
 		\\
@@ -3338,12 +3339,15 @@ declaration.
 	\end{tabular}}
 \end{center}
 
+\paragraph{String Literals.}
+String literals are wrapped with quotation marks.
+
 \paragraph{Identifier.}
 
 Identifiers are nonempty sequences of printable characters.
-An identifier is said to be a meta-level one, if it starts with the letter 
-``\verb|#|''.
-Otherwise, it is said to be an object-level one.
+An identifier is said to be a \emph{meta identifier}, if it starts with the 
+letter ``\verb|#|''.
+Otherwise, it is said to be an \emph{objecty identifier}.
 
 \begin{grammar}\small\centering
 	<id>    ::= <meta-id> | <object-id>
@@ -3361,6 +3365,7 @@ In Kore, every sorts are parametric.
 A sort is constructed by ``\verb|_{_}|'', which takes a \emph{sort 
 constructor} and a list of \emph{sort parameters}.
 Sort parameter can be either a sort, or a \emph{sort variable}.
+A sort variable itself is a sort, too.
 For example,
 \begin{center}{\ttfamily
 \begin{tabular}{lclcl}
@@ -3377,29 +3382,74 @@ For example,
 	\\\hline
 	\parametric{Map}{S1,\parametric{List}{S2}} & Map & S1,\parametric{List}{S2} 
 	& \textrm{Yes} & S1,S2
+	\\\hline
+	S & - & - & \textrm{Yes} & S
 \end{tabular}
 }
 \end{center}
-TODO HERE
+A sort is said to be an \emph{object sort} if the sort constructor does not 
+start with ``\verb|#|'', in which case we called it an \emph{object sort 
+constructor}.
+Object sort constructor can be declared with the ``\verb|sort|'' keyword, 
+followed by the name of the object sort constructor being defined and a list of 
+sort variables wrapped with curly braces.
 
-\paragraph{Sort Declarations.}
-A sort declaration starts with the keyword ``\verb|sort|'', followed by an 
-object identifier called an \emph{object sort constructor},  
+\begin{grammar}\small\centering
+	<object-sort-constructor-declaration> ::= `sort' <object-id> `{' 
+	<sort-variable-list> `}'
+\end{grammar}
+If an object sort constructor is declared with no sort variable, we say it is 
+\emph{non-parametric} or \emph{atomic}. 
+Otherwise, we say it is \emph{parametric}.
+We say a parametric object  sort constructor is \emph{$n$-parametric} if it is 
+declared with $n$ sort variables.
 
 
-\begin{center}
-	{\ttfamily
-		\begin{tabular}{lll}
-			Bool & Int & \parametric{List}{Int} \\
-			\parametric{List}{\parametric{List}{Int}} & 
-			\parametric{Map}{Int,Int} & 
-			\parametric{Map}{Int,\parametric{Map}{Int,Bool}} \\
-			S & S' & \parametric{List}{\parametric{Map}{Int,S}} \\
+\begin{center}{\ttfamily
+		\begin{tabular}{l|r}
+			\textrm{Declaration} & \textrm{Informal Semantics}
+			\\\hline
+			sort \parametric{Nat}{} & \textrm{Declare a non-parametric sort 
+			$\Nat$}
+			\\\hline
+			sort \parametric{List}{S} & \textrm{Declare a sort schema 
+			$\parametric{\List}{s}$ for any sort $s$}
+			\\\hline
+			sort \parametric{Map}{S1,S2} & \textrm{Declare a sort schema 
+			$\parametric{\Map}{s_1,s_2}$ for any sort $s_1,s_2$}
 		\end{tabular}
 	}
 \end{center}
 
-\paragraph{Reserved Logical Connectives and Derived Connectives.}
+A sort is said to be a \emph{meta sort} if the sort constructor starts with 
+``\verb|#|'', in which case we called the constructor a \emph{meta sort 
+constructor}.
+In Kore, the following non-parametric meta sort constructors are predefined:
+\begin{center}
+	{\ttfamily
+		\begin{tabular}{llll}
+			\verb|#Sort| & \verb|#Symbol| & \verb|#Variable| & \verb|#Pattern| 
+			\\
+			\verb|#SortList| & \verb|#SymbolList| & \verb|#VariableList| & 
+			\verb|#PatternList|
+		\end{tabular}
+	}
+\end{center}
+Meta sort constructors are predefined. New meta sort constructors \emph{cannot} 
+be declared.
+\emph{Meta sort variables} are meta identifiers, for example, \verb|#S|, 
+\verb|#S'|.
+Meta sort variables can only be instantiated with (the above eight) meta sorts, 
+and 
+object sort 
+variables can only be instantiated with (potentially infinite) object sorts.
+
+\paragraph{Symbol}
+
+\paragraph{Pattern}
+
+
+{Reserved Logical Connectives and Derived Connectives.}
 \begin{center}
 	\begin{tabular}{llll}
 		\sland & or & \slexists & \slforall \\
@@ -3410,56 +3460,12 @@ object identifier called an \emph{object sort constructor},
 
 
 
-\paragraph{String Literals.}
-``Anything'' that is wrapped with quotation marks.
-
-
-\paragraph{Reserved Identifiers.}
-Meta-identifiers that are either a sort or a symbol in the meta-theory, $K$. For example, \verb|#Sort|, \verb|#\and|.
-
-\subsubsection{Sorts and Sort Parameters}
-\paragraph{Sort }
-\paragraph{User-Defined Sorts and Sort Schemas.}
-\begin{center}
-{\ttfamily
-	\begin{tabular}{lll}
-		Bool & Int & \parametric{List}{Int} \\
-		\parametric{List}{\parametric{List}{Int}} & \parametric{Map}{Int,Int} & \parametric{Map}{Int,\parametric{Map}{Int,Bool}} \\
-		S & S' & \parametric{List}{\parametric{Map}{Int,S}} \\
-	\end{tabular}
-}
-\end{center}
-\paragraph{Pre-Defined Meta-Theory Sorts.}
-\begin{center}
-	{\ttfamily
-	\begin{tabular}{llll}
-		\#Pred & \#Char & \#String & 
-		\\
-		\#Sort & \#Symbol & \#Variable & \#Pattern
-		\\
-		\#SortList & \#SymbolList & \#VariableList & \#PatternList		
-\end{tabular}}
-\end{center}
-
-\subsubsection{Symbols and Aliases}
-
-\subsubsection{Patterns}
-A pattern is either a 
-
-\subsubsection{Kore Declarations}
-Kore declarations can be either one of the follows:
-\begin{itemize}\itemsep0em
-	\item Sort declaration
-	\item Symbol declaration
-	\item Axiom declaration
-	\item Alias declaration
-\end{itemize}
-each of which declares a sort, a symbol, an axiom, or an alias respectively.
-
 \subsection{Semantics}
 \subsubsection{Distinguish Meta-Level from Object Level}
-\subsubsection{Identifiers To String Literals}
-\subsubsection{Lifting Patterns}
+\subsubsection{Lift Object Identifiers To String Literals}
+\subsubsection{Lift Sort Declarations}
+\subsubsection{Lift Symbol Declarations}
+\subsubsection{Lift Patterns}
 \begin{algorithm}[h]
 	\KwIn{An object-pattern $\varphi$.}
 	\KwOut{The meta-representation (ASTs) of $\varphi$ in $K$}
@@ -3480,7 +3486,7 @@ each of which declares a sort, a symbol, an axiom, or an alias respectively.
 	\caption{Lifting Function $\mathit{lift}[\_]$}
 	\label{alg:liftingfunction}
 \end{algorithm}
-\subsubsection{Lifting Declarations}
+\subsubsection{Lifting Axiom Declarations}
 
 \subsection{Example A: Presburger Arithmetic}
 \begin{lstlisting}[language=kore]
