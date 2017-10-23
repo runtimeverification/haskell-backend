@@ -3642,11 +3642,65 @@ abstract syntax tree of it.
 An object sort/symbol/axiom declaration is lifted to the meta-level axiom 
 declaration that declares ``the object sort/symbol/axiom is declared''.
 
+Here is one more word about lifting a pattern.
+Recall that most patterns are constructed with a head and a list of patterns, 
+and the list of patterns can be a mixture of object and meta patterns.
+If the pattern-being-lifted is an object pattern, both its head and list of 
+subpatterns are lifted. 
+If the pattern-being-lifted is a meta pattern, only its subpatterns are lifted, 
+and its head is not lifted.
+
+\begin{notation}
+	We use the double bracket $\denote{\_}$ for lifting operation and overload 
+	it for all syntactic categories.
+	Subscripts are used ($\denote{\_}_0$, $\denote{\_}_1$, \dots) when we need 
+	to define some auxiliary lifting operations and do not want to confuse them 
+	with the canonical one  $\denote{\_}$.
+\end{notation}
+
 \subsubsection{Distinguish Meta-Level and Object Level}
+In Kore, there is always a clear distinction between object level targets and 
+meta level targets.
 
 \subsubsection{Lift Object Identifiers To String Literals}
-\subsubsection{Lift Logic Connectives To Meta Symbols}
-\subsubsection{Lift Sort Declarations}
+Object identities are lifted to string literals by wrapping them with quotation 
+marks.
+\subsubsection{Lift Logic Connective Constructors To Meta Symbols}
+Logic connectives constructor are lifted to non-parametric meta symbols by 
+appending a ``\texttt{\sharpsymbol}'' in front.
+\subsubsection{Lift Object Sorts}
+Object sort constructors are lifted to non-parametric meta symbols constructors 
+by appending 
+a ``\texttt{\sharpsymbol}'' in front.
+A sort variable $\tt S$ is lifted to a variable pattern {\tt \sharpsymbol 
+$\tt S\cln \KSort$}.
+A sort $\parametric{C}{s_1,\dots,s_n}$ with sort constructor $C$ and a list of 
+sort parameters is lifted as
+$$ \denote{\parametric{C}{s_1,\dots,s_n}} = 
+\parametric{\denote{C}}{}(\denote{s_1}, \dots,\denote{s_n})$$
+
+For example,
+\begin{center}{\ttfamily
+		\begin{tabular}{llr}
+			\textrm{Object Sort} & \textrm{Lifting To} &  \textrm{Meta-Pattern}
+			\\\hline
+			\parametric{Nat}{} & & \parametric{\sharpsymbol Nat}{}()
+			\\\hline
+			\parametric{List}{\parametric{Nat}{}} & & 
+			\parametric{\sharpsymbol List}{}(\parametric{\sharpsymbol Nat}{}())
+			\\\hline
+			\parametric{Map}{\parametric{Nat}{},S} & & \parametric{\sharpsymbol 
+			Map}{}(\parametric{\sharpsymbol Nat}{}(),\sharpsymbol S:\KSort)
+			\\\hline
+			\parametric{Map}{S1,\parametric{List}{S2}} & & 
+			\parametric{\sharpsymbol Map}{}(\sharpsymbol 
+			S1:\KSort,\parametric{\sharpsymbol 
+			List}{}(\sharpsymbol S2:\KSort))
+			\\\hline
+			S & & \sharpsymbol S:\KSort
+		\end{tabular}
+	}
+\end{center}
 \subsubsection{Lift Symbol Declarations}
 \subsubsection{Lift Patterns}
 \begin{algorithm}[h]
