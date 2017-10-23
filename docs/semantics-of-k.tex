@@ -228,120 +228,111 @@
   \newcommand{\VARIABLES}{\text{V\textsc{ariables}}}
   % Define sorts and symbols in the calculus K.
   
-  \newcommand{\Kfinite}{{K_\text{finite}}}
-  
+
   \newcommand{\shp}{\includegraphics{hash-symbol}\kern-0.1em}
+  \newcommand{\sharpsymbol}{\#}
   % Sec 3.1 Truth
   \newcommand{\KPred}{\mathit{\shp Pred}}
   
-  %% We shouldn't need the follows.
-  \newcommand{\Ktrue}{\mathit{\shp true}}
-  \newcommand{\Kfalse}{\mathit{\shp false}}
-  \newcommand{\KandBool}{\mathit{\shp andBool}}
-  \newcommand{\KorBool}{\mathit{\shp orBool}}
-  \newcommand{\KnotBool}{\mathit{\shp notBool}}
-  \newcommand{\KimpliesBool}{\mathit{\shp impliesBool}}
-  
   % Sec 3.2 Strings
-  \newcommand{\KChar}{\mathit{\shp Char}}
-  \newcommand{\KCharList}{\mathit{\shp CharList}}
-  \newcommand{\KString}{\mathit{\shp String}}
-  \newcommand{\Kepsilon}{\mathit{\shp epsilon}}
-  \newcommand{\KconsKString}{\mathit{\shp consKString}}
+  \newcommand{\KChar}{\texttt{\sharpsymbol Char}}
+  \newcommand{\KCharList}{\texttt{\sharpsymbol CharList}}
+  \newcommand{\KString}{\texttt{\sharpsymbol String}}
+  \newcommand{\Kepsilon}{\texttt{\sharpsymbol epsilon}}
+  \newcommand{\KconsKString}{\texttt{\sharpsymbol consKString}}
   
   %% We shouldn't need the follows.  
-  \newcommand{\Kconcat}{\mathit{\shp concat}}
+  \newcommand{\Kconcat}{\texttt{\sharpsymbol concat}}
   
   % Sec 3.3 Sorts and Symbols
-  \newcommand{\KSort}{\mathit{\shp Sort}}
-  \newcommand{\Ksort}{\mathit{\shp sort}}
-  \newcommand{\KSymbol}{\mathit{\shp Symbol}}
-  \newcommand{\Ksymbol}{\mathit{\shp symbol}}
-  \newcommand{\KSymbolceil}{\mathit{\shp Symbolceil}}
-  \newcommand{\KgetArgumentSorts}{\mathit{\shp getArgumentSorts}}
-  \newcommand{\KgetReturnSort}{\mathit{\shp getReturnSort}}
+  \newcommand{\KSort}{\texttt{\sharpsymbol Sort}}
+  \newcommand{\Ksort}{\texttt{\sharpsymbol sort}}
+  \newcommand{\KSymbol}{\texttt{\sharpsymbol Symbol}}
+  \newcommand{\Ksymbol}{\texttt{\sharpsymbol symbol}}
+  \newcommand{\KSymbolceil}{\texttt{\sharpsymbol Symbolceil}}
+  \newcommand{\KgetArgumentSorts}{\texttt{\sharpsymbol getArgumentSorts}}
+  \newcommand{\KgetReturnSort}{\texttt{\sharpsymbol getReturnSort}}
   
   % Sec 3.4 Finite Lists
   \newcommand{\XList}{\mathit{XList}}
-  \newcommand{\KnilXList}{\mathit{\shp nilXList}}
-  \newcommand{\KconsXList}{\mathit{\shp consXList}}
-  \newcommand{\KappendXList}{\mathit{\shp appendXList}}
-  \newcommand{\KinXList}{\mathit{\shp inXList}}
-  \newcommand{\KdeleteXList}{\mathit{\shp deleteXList}}
-  \newcommand{\KPatternList}{\mathit{\shp PatternList}}
-  \newcommand{\KnilKPatternList}{\mathit{\shp nilKPatternList}}
-  \newcommand{\KconsKPatternList}{\mathit{\shp consKPatternList}}
-  \newcommand{\KappendKPatternList}{\mathit{\shp appendKPatternList}}
-  \newcommand{\KinKPatternList}{\mathit{\shp inKPatternList}}
-  \newcommand{\KdeleteKPatternList}{\mathit{\shp deleteKPatternList}}
-  \newcommand{\KSortList}{\mathit{\shp SortList}}
-  \newcommand{\KnilKSortList}{\mathit{\shp nilKSortList}}
-  \newcommand{\KconsKSortList}{\mathit{\shp consKSortList}}
-  \newcommand{\KappendKSortList}{\mathit{\shp appendKSortList}}
-  \newcommand{\KinKSortList}{\mathit{\shp inKSortList}}
-  \newcommand{\KdeleteKSortList}{\mathit{\shp deleteKSortList}}
-  \newcommand{\KSymbolList}{\mathit{\shp SymbolList}}
-  \newcommand{\KinKSymbolList}{\mathit{\shp inKSymbolList}}
-  \newcommand{\KnilKCharList}{\mathit{\shp nilKCharList}}
-  \newcommand{\KconsKCharList}{\mathit{\shp consKCharList}}
-  \newcommand{\KVariableList}{\mathit{\shp VariableList}}
-  \newcommand{\KnilKVariableList}{\mathit{\shp nilKVariableList}}
-  \newcommand{\KconsKVariableList}{\mathit{\shp consKVariableList}}
-  %% Define l1 @ l2 for list concatenation.
-  \newcommand{\at}{@}
+  \newcommand{\KnilXList}{\texttt{\sharpsymbol nilXList}}
+  \newcommand{\KconsXList}{\texttt{\sharpsymbol consXList}}
+  \newcommand{\KappendXList}{\texttt{\sharpsymbol appendXList}}
+  \newcommand{\KinXList}{\texttt{\sharpsymbol inXList}}
+  \newcommand{\KdeleteXList}{\texttt{\sharpsymbol deleteXList}}
+  \newcommand{\KPatternList}{\texttt{\sharpsymbol PatternList}}
+  \newcommand{\KnilKPatternList}{\texttt{\sharpsymbol nilKPatternList}}
+  \newcommand{\KconsKPatternList}{\texttt{\sharpsymbol consKPatternList}}
+  \newcommand{\KappendKPatternList}{\texttt{\sharpsymbol appendKPatternList}}
+  \newcommand{\KinKPatternList}{\texttt{\sharpsymbol inKPatternList}}
+  \newcommand{\KdeleteKPatternList}{\texttt{\sharpsymbol deleteKPatternList}}
+  \newcommand{\KSortList}{\texttt{\sharpsymbol SortList}}
+  \newcommand{\KnilKSortList}{\texttt{\sharpsymbol nilKSortList}}
+  \newcommand{\KconsKSortList}{\texttt{\sharpsymbol consKSortList}}
+  \newcommand{\KappendKSortList}{\texttt{\sharpsymbol appendKSortList}}
+  \newcommand{\KinKSortList}{\texttt{\sharpsymbol inKSortList}}
+  \newcommand{\KdeleteKSortList}{\texttt{\sharpsymbol deleteKSortList}}
+  \newcommand{\KSymbolList}{\texttt{\sharpsymbol SymbolList}}
+  \newcommand{\KinKSymbolList}{\texttt{\sharpsymbol inKSymbolList}}
+  \newcommand{\KnilKCharList}{\texttt{\sharpsymbol nilKCharList}}
+  \newcommand{\KconsKCharList}{\texttt{\sharpsymbol consKCharList}}
+  \newcommand{\KVariableList}{\texttt{\sharpsymbol VariableList}}
+  \newcommand{\KnilKVariableList}{\texttt{\sharpsymbol nilKVariableList}}
+  \newcommand{\KconsKVariableList}{\texttt{\sharpsymbol consKVariableList}}
 
-  \newcommand{\KVariable}{\mathit{\shp Variable}}
-  \newcommand{\KVariableToKPattern}{\mathit{\shp VariableToKPattern}}
-  \newcommand{\KPattern}{\mathit{\shp Pattern}}
-  \newcommand{\Kvariable}{\mathit{\shp variable}}
-  \newcommand{\Kand}{\mathit{\shp and}}
-  \newcommand{\Kor}{\mathit{\shp or}}
-  \newcommand{\Kimplies}{\mathit{\shp implies}}
-  \newcommand{\Kiff}{\mathit{\shp iff}}
-  \newcommand{\Knot}{\mathit{\shp not}}
-  \newcommand{\Kapplication}{\mathit{\shp application}}
-  \newcommand{\Kexists}{\mathit{\shp exists}}
-  \newcommand{\Kforall}{\mathit{\shp forall}}
-  \newcommand{\Kequals}{\mathit{\shp equals}}
-  \newcommand{\Kmembership}{\mathit{\shp mem}}
-  \newcommand{\Kcontains}{\mathit{\shp contains}}
-  \newcommand{\Ktop}{\mathit{\shp top}}
-  \newcommand{\Kbottom}{\mathit{\shp bottom}}
-  \newcommand{\Kfloor}{\mathit{\shp floor}}
-  \newcommand{\Kceil}{\mathit{\shp ceil}}
+  \newcommand{\KVariable}{\texttt{\sharpsymbol Variable}}
+  \newcommand{\KVariableToKPattern}{\texttt{\sharpsymbol VariableToKPattern}}
+  \newcommand{\KPattern}{\texttt{\sharpsymbol Pattern}}
+  \newcommand{\Kvariable}{\texttt{\sharpsymbol variable}}
+  \newcommand{\Kand}{\texttt{\sharpsymbol  \slashsymbol and}}
+  \newcommand{\Kor}{\texttt{\sharpsymbol \slashsymbol  or}}
+  \newcommand{\Kimplies}{\texttt{\sharpsymbol  \slashsymbol implies}}
+  \newcommand{\Kiff}{\texttt{\sharpsymbol  \slashsymbol iff}}
+  \newcommand{\Knot}{\texttt{\sharpsymbol  \slashsymbol not}}
+  \newcommand{\Kapplication}{\texttt{\sharpsymbol application}}
+  \newcommand{\Kexists}{\texttt{\sharpsymbol \slashsymbol  exists}}
+  \newcommand{\Kforall}{\texttt{\sharpsymbol \slashsymbol  forall}}
+  \newcommand{\Kequals}{\texttt{\sharpsymbol \slashsymbol  equals}}
+  \newcommand{\Kmembership}{\texttt{\sharpsymbol \slashsymbol  mem}}
+  \newcommand{\Kcontains}{\texttt{\sharpsymbol  \slashsymbol contains}}
+  \newcommand{\Ktop}{\texttt{\sharpsymbol \slashsymbol  top}}
+  \newcommand{\Kbottom}{\texttt{\sharpsymbol \slashsymbol  bottom}}
+  \newcommand{\Kfloor}{\texttt{\sharpsymbol \slashsymbol  floor}}
+  \newcommand{\Kceil}{\texttt{\sharpsymbol \slashsymbol  ceil}}
   
-  \newcommand{\KgetFvs}{\mathit{\shp getFvs}}
-  \newcommand{\KgetFvsFromPatterns}{\mathit{\shp getFvsFromPatterns}}
-  \newcommand{\KoccursFree}{\mathit{\shp occursFree}}
-  \newcommand{\KfreshName}{\mathit{\shp freshName}}
-  \newcommand{\Kcons}{\mathit{\shp cons}}
-  \newcommand{\Knil}{\mathit{\shp nil}}
-  \newcommand{\KSymbolzero}{\mathit{\shp Symbolzero}}
-  \newcommand{\KSymbolcons}{\mathit{\shp Symbolcons}}
-  \newcommand{\KSymbolnil}{\mathit{\shp Symbolnil}}
+  \newcommand{\KgetFvs}{\texttt{\sharpsymbol getFvs}}
+  \newcommand{\KgetFvsFromPatterns}{\texttt{\sharpsymbol getFvsFromPatterns}}
+  \newcommand{\KoccursFree}{\texttt{\sharpsymbol occursFree}}
+  \newcommand{\KfreshName}{\texttt{\sharpsymbol freshName}}
+  \newcommand{\Kcons}{\texttt{\sharpsymbol cons}}
+  \newcommand{\Knil}{\texttt{\sharpsymbol nil}}
+  \newcommand{\KSymbolzero}{\texttt{\sharpsymbol Symbolzero}}
+  \newcommand{\KSymbolcons}{\texttt{\sharpsymbol Symbolcons}}
+  \newcommand{\KSymbolnil}{\texttt{\sharpsymbol Symbolnil}}
   
-  \newcommand{\KSignature}{\mathit{\shp Signature}}
-  \newcommand{\Ksignature}{\mathit{\shp signature}}
-  \newcommand{\KgetSorts}{\mathit{\shp getSorts}}
-  \newcommand{\KgetSymbols}{\mathit{\shp getSymbols}}
-  \newcommand{\KsortDeclared}{\mathit{\shp sortDeclared}}
-  \newcommand{\KsymbolDeclared}{\mathit{\shp symbolDeclared}}
-  \newcommand{\KaxiomDeclared}{\mathit{\shp axiomDeclared}}
+  \newcommand{\KSignature}{\texttt{\sharpsymbol Signature}}
+  \newcommand{\Ksignature}{\texttt{\sharpsymbol signature}}
+  \newcommand{\KgetSorts}{\texttt{\sharpsymbol getSorts}}
+  \newcommand{\KgetSymbols}{\texttt{\sharpsymbol getSymbols}}
+  \newcommand{\KsortDeclared}{\texttt{\sharpsymbol sortDeclared}}
+  \newcommand{\KsymbolDeclared}{\texttt{\sharpsymbol symbolDeclared}}
+  \newcommand{\KaxiomDeclared}{\texttt{\sharpsymbol axiomDeclared}}
   \newcommand{\Kderivable}{\Kdeduce}
   
-  \newcommand{\KwellFormed}{\mathit{\shp wellFormed}}
-  \newcommand{\KwellFormedPatterns}{\mathit{\shp wellFormedPatterns}}
-  \newcommand{\KgetSort}{\mathit{\shp getSort}}
-  \newcommand{\KgetSortsFromPatterns}{\mathit{\shp getSortsFromPatterns}}
-  \newcommand{\KisSort}{\mathit{\shp isSort}}
-  \newcommand{\Ksubstitute}{\mathit{\shp substitute}}
-  \newcommand{\KsubstitutePatterns}{\mathit{\shp substitutePatterns}}
+  \newcommand{\KwellFormed}{\texttt{\sharpsymbol wellFormed}}
+  \newcommand{\KwellFormedPatterns}{\texttt{\sharpsymbol wellFormedPatterns}}
+  \newcommand{\KgetSort}{\texttt{\sharpsymbol getSort}}
+  \newcommand{\KgetSortsFromPatterns}{\texttt{\sharpsymbol 
+  getSortsFromPatterns}}
+  \newcommand{\KisSort}{\texttt{\sharpsymbol isSort}}
+  \newcommand{\Ksubstitute}{\texttt{\sharpsymbol substitute}}
+  \newcommand{\KsubstitutePatterns}{\texttt{\sharpsymbol substitutePatterns}}
   
-  \newcommand{\KTheory}{\mathit{\shp Theory}}
-  \newcommand{\Ktheory}{\mathit{\shp theory}}
-  \newcommand{\KwellFormedTheory}{\mathit{\shp wellFormedTheory}}
+  \newcommand{\KTheory}{\texttt{\sharpsymbol Theory}}
+  \newcommand{\Ktheory}{\texttt{\sharpsymbol theory}}
+  \newcommand{\KwellFormedTheory}{\texttt{\sharpsymbol wellFormedTheory}}
   
-  \newcommand{\Kdeduce}{\mathit{\shp provable}}
+  \newcommand{\Kdeduce}{\texttt{\sharpsymbol provable}}
   
   % The italic font of "ceil" used in math mode.
   \newcommand{\cl}{\mathit{ceil}}
@@ -360,8 +351,10 @@
   \newcommand{\symb}{\smalltt{symbol}}
   \newcommand{\axiom}{\smalltt{axiom}}
   
+  % Define the slash symbol
+  \newcommand{\slashsymbol}{\symbol{92}}
   % Define slashed ttfamily words
-  \newcommand{\slsh}[1]{\texttt{\symbol{92}#1}}
+  \newcommand{\slsh}[1]{\texttt{\slashsymbol#1}}
   \newcommand{\sland}{\slsh{and}}
   \newcommand{\slor}{\slsh{or}}
   \newcommand{\slnot}{\slsh{not}}
@@ -2042,7 +2035,7 @@ A summary is provided in Section~\cref{sec:K-summary}.
 
 A sort $\KPred$ is introduced to capture predicates and the predicate logic.
 Patterns of sort $\KPred$ are called \emph{predicate patterns} or just \emph{predicates}, and symbols whose return sort are $\KPred$ are called \emph{predicate symbols}. 
-Predicate symbols in $\Kfinite$ are defined in later sections when they firstly appear.
+Predicate symbols in $K$ are defined in later sections when they firstly appear.
 \begin{notation}
 	If $b$ is a predicate pattern, we take the freedom to write $b$ instead of $b = \top_\KPred$, so that $\KPred$ patterns can be used in any sort context.
 \end{notation}
@@ -2121,7 +2114,7 @@ For any matching logic theory and two sorts $s, s'$ in the theory, we assume
 there exists a symbol $\ceil{\_}_s^{s'}$ with the axiom $\ceil{x \cln 
 s}_s^{s'}$ defined in the theory.
 
-In the meta-theory of matching logic $\Kfinite$, the symbol $\KSymbolceil$ is 
+In the meta-theory of matching logic $K$, the symbol $\KSymbolceil$ is 
 the 
 symbol for the definedness symbols
 \begin{equation*}
@@ -2140,13 +2133,14 @@ Notation~\ref{notation:lists}).
 For sorts $\KChar$, $\KSort$, $\KSymbol$, $\KVariable$, and 
 $\KPattern$\footnote{The sort $\KPattern$ is defined in 
 Section~\cref{sec:matching-logic-patterns}.}
-in $S_\Kfinite$,
+in $S_K$,
 we define sorts $\KCharList$, $\KSortList$, $\KSymbolList$, and $\KPatternList$ to be the sorts of finite lists over them, respectively.
 Formally, for any sort $X$ where
 $$
 X \in \{\KChar, \KSort, \KSymbol, \KPattern\}
 $$
-the sort $\XList$ is in $S_\Kfinite$, and the following functional constructors of the sort $\XList$ are in $\Sigma_\Kfinite$
+the sort $\XList$ is in $S_K$, and the following functional constructors of the 
+sort $\XList$ are in $\Sigma_K$
 \begin{align*}
   & \KnilXList \colon \to \XList
   \\
@@ -2446,7 +2440,7 @@ variable.
 In matching logic, alpha-renaming is always assumed.
 This means that the pattern set of a matching logic theory is the one that is generated by the grammar of matching logic patterns in Figure~\ref{ml-grammar}, \emph{modulo alpha-renaming}.
 In other words, matching logic patterns are equivalence classes with respect to alpha-equivalence.
-This fact is captured in $\Kfinite$ by the next axiom
+This fact is captured in $K$ by the next axiom
 $$
 \KoccursFree(v_1, \varphi) \wedge \KoccursFree(v_2, \varphi) \to 
 \overline{\exists_s v_1 .(\varphi[v_1 / u])} = 
@@ -2458,14 +2452,14 @@ $$
 
 
 \paragraph{Theory as Predicates.}
-A theory declares some sorts, so in $\Kfinite$ there is a predicate symbol
+A theory declares some sorts, so in $K$ there is a predicate symbol
 $$ \KsortDeclared \colon \KSort \to \KPred$$
-A theory declares some symbols, so in $\Kfinite$ there is a predicate symbol
+A theory declares some symbols, so in $K$ there is a predicate symbol
 $$ \KsymbolDeclared \colon \KSymbol \to \KPred$$
 with an axiom that says the definedness symbol is always declared
 $$ \KsortDeclared(s_1) \wedge \KsortDeclared(s_2) \to 
 \KsymbolDeclared(\KSymbolceil(s_1, s_2))$$
-A theory declares some patterns as axioms, so in $\Kfinite$ there is a 
+A theory declares some patterns as axioms, so in $K$ there is a 
 predicate symbol
 $$ \KaxiomDeclared \colon \KPattern \to \KPred$$
 
@@ -3276,8 +3270,10 @@ $$ \KsortDeclared(s_1) \wedge \dots \wedge  \KsortDeclared(s_n) \to \KaxiomDecla
 	\Kdeduce(\denote{\varphi}).$$
 \end{theorem}
 
-Theorem~\ref{thm:faithfulness-finite} is an important theorem that justifies the design and usage of the theory $\Kfinite$. 
-It guarantees that the theory $\Kfinite$ does faithfully capture the matching logic reasoning in finite theories.
+Theorem~\ref{thm:faithfulness-finite} is an important theorem that justifies 
+the design and usage of the theory $K$. 
+It guarantees that the theory $K$ does faithfully capture the matching logic 
+reasoning in finite theories.
 
 
 \section{The Kore Language}
@@ -3628,9 +3624,13 @@ If the pattern is an object pattern, we call the declaration an \emph{object
 axiom declaration}.
 Otherwise, it is a \emph{meta axiom declaration}.
 
+\subsubsection{Wellformedness}
+
 \subsection{Semantics}
-\subsubsection{Distinguish Meta-Level from Object Level}
+
+\subsubsection{Distinguish Meta-Level and Object Level}
 \subsubsection{Lift Object Identifiers To String Literals}
+\subsubsection{Lift Logic Connectives To Meta Symbols}
 \subsubsection{Lift Sort Declarations}
 \subsubsection{Lift Symbol Declarations}
 \subsubsection{Lift Patterns}
@@ -3952,12 +3952,12 @@ For that reason, we introduce the next definition.
 \end{definition}
 
 In order to prove Theorem~\ref{thm:faithfulness-finite}, we introduce a 
-canonical model of $\Kfinite$.
+canonical model of $K$.
 
-\begin{definition}[Canonical model of $\Kfinite$]
-	The canonical model of $\Kfinite$, denoted as $M_\Kfinite$, contains  
-	carrier sets (for each sort in $S_\Kfinite$) and relations (for each 
-	symbols in $\Sigma_\Kfinite$) that are defined in the following.
+\begin{definition}[Canonical model of $K$]
+	The canonical model of $K$, denoted as $M_K$, contains  
+	carrier sets (for each sort in $S_K$) and relations (for each 
+	symbols in $\Sigma_K$) that are defined in the following.
 	
 	The carrier set for the sort $\KPred$ is a singleton set $M_\KPred = \{ 
 	\star \}$. 
@@ -3998,9 +3998,9 @@ canonical model of $\Kfinite$.
 	The carrier set for the sort $\KTheory$ is a product set
 	$$ M_\KTheory = M_\KSignature \times M_\KPattern. $$
 	
-	The interpretations of most symbols (except $\Kdeduce$) in $\Kfinite$ are 
+	The interpretations of most symbols (except $\Kdeduce$) in $K$ are 
 	so straightforward that they are trivial.\improvement{Basically I want to 
-	say that $M_K$ is almost (except $Kprovable$) the initial algebra of $\Kfinite$.}
+	say that $M_K$ is almost (except $Kprovable$) the initial algebra of $K$.}
 	For example, $\KconsKSortList$ is interpreted as the cons function on 
 	$M_\KSortList$, and $\KdeleteKPatternList$ is interpreted as a function on 
 	$M_\KPattern \times M_\KPatternList$ that deletes the first argument from 
@@ -4054,7 +4054,7 @@ canonical model of $\Kfinite$.
 	\Kdeduce(T, \overline{\varphi \leftrightarrow_s (\psi \leftrightarrow_s 
 	\varphi)})
 	\end{equation*}
-	holds in $\Kfinite$ because
+	holds in $K$ because
 	$$\Bracket{T} \vdash \Bracket{\varphi} \to (\Bracket{\psi} \to 
 	\Bracket{\varphi})$$
 	The Rule (Modus Ponens)
@@ -4063,12 +4063,12 @@ canonical model of $\Kfinite$.
 	\psi}) \to 
 	\Kdeduce(T, \psi)
 	\end{equation*}
-	holds in $\Kfinite$ because
+	holds in $K$ because
 	$$\text{if $\Bracket{T} \vdash \Bracket{\varphi}$ and $\Bracket{T} \vdash 
 	\Bracket{\varphi} \to \Bracket{\psi}$, then $\Bracket{T} \vdash 
 	\Bracket{\psi}$}.$$
 	
-	Readers are welcomed to verify the remaining axioms in $\Kfinite$ also hold 
+	Readers are welcomed to verify the remaining axioms in $K$ also hold 
 	in $M_K$.
 	We omit them here.
 	
@@ -4083,12 +4083,12 @@ Now we are in a good shape to prove Theorem~\ref{thm:faithfulness-finite}.
 	Step 1 (The ``$\Rightarrow$'' part). 
 	
 	We prove this by simply mimicking the proof of $T \vdash \varphi$ in 
-	$\Kfinite$.
+	$K$.
 	
 	Step 2 (The ``$\Leftarrow$'' part).
 	
 	Let us fix a finite matching logic theory $T = (S, \Sigma, A)$, a 
-	$\Sigma$-pattern $\varphi$, and an encoding $e$, and assume that $\Kfinite 
+	$\Sigma$-pattern $\varphi$, and an encoding $e$, and assume that $K 
 	\vdash \Kdeduce(\hat{T}, \hat{\varphi})$.
 	Since the matching logic proof system is sound, the interpretation of 
 	$\Kdeduce(\hat{T}, \hat{\varphi})$ should hold in the canonical model $M_K$:
@@ -4109,7 +4109,7 @@ Now we are in a good shape to prove Theorem~\ref{thm:faithfulness-finite}.
 			
 			Step 2.2. Build a model $M_{T}$ based on $T = (S, \Sigma, A)$.
 			
-			Step 2.3. Show that $M_T$ is a model of $\Kfinite$.
+			Step 2.3. Show that $M_T$ is a model of $K$.
 			
 			Step 2.4. Interpret $\Kdeduce(\hat{T}, \hat{\varphi})$ in $M_T$ and 
 			get $T 
