@@ -3449,7 +3449,32 @@ variables can only be instantiated with (potentially infinite) object sorts.
 \paragraph{Symbol}
 In Kore, every symbol is parametric.
 A symbol is constructed by ``\verb|_{_}|'', which takes a \emph{symbol 
-constructor} and a list of sort variables. 
+constructor} and a list of sorts. 
+If any sort variable appears in a symbol, we say the symbol is a \emph{symbol 
+schema}.
+
+\begin{center}{\ttfamily
+		\begin{tabular}{lclcl}
+			\textrm{Symbol} & \textrm{Symbol Constructor} & 
+			\textrm{Parameter(s)} & 
+			\textrm{Symbol Schema?} & \textrm{Depending Variable(s)}
+			\\\hline
+			\parametric{zero}{} & zero & - & \textrm{No} & -
+			\\\hline
+			\parametric{succ}{\parametric{}{}} & succ & - & 
+			\textrm{No} & -
+			\\\hline
+			\parametric{nil}{S} & nil & S			& 
+			\textrm{Yes} & S
+			\\\hline
+			\parametric{Map}{S1,\parametric{List}{S2}} & Map & 
+			S1,\parametric{List}{S2} 
+			& \textrm{Yes} & S1,S2
+			\\\hline
+			S & - & - & \textrm{Yes} & S
+		\end{tabular}
+	}
+\end{center}
 
 Object symbol constructor and meta symbol constructor.
 
