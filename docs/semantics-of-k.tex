@@ -3347,10 +3347,12 @@ String literals are wrapped with quotation marks.
 Identifiers are nonempty sequences of printable characters.
 An identifier is said to be a \emph{meta identifier}, if it starts with the 
 letter ``\verb|#|''.
-Otherwise, it is said to be an \emph{objecty identifier}.
+If it starts with the letter ``\verb|\|'', it is said to be a \emph{reserved 
+identifier}.
+Otherwise, it is said to be an \emph{object identifier}.
 
 \begin{grammar}\small\centering
-	<id>    ::= <meta-id> | <object-id>
+	<id>    ::= <meta-id> | <reserved-id> | <object-id> 
 \end{grammar}
 
 Identifiers are building blocks of many syntactic categories in Kore, such as 
@@ -3445,20 +3447,29 @@ object sort
 variables can only be instantiated with (potentially infinite) object sorts.
 
 \paragraph{Symbol}
+In Kore, every symbol is parametric.
+A symbol is constructed by ``\verb|_{_}|'', which takes a \emph{symbol 
+constructor} and a list of sort variables. 
 
-\paragraph{Pattern}
+Object symbol constructor and meta symbol constructor.
 
+Symbol declarations.
 
-{Reserved Logical Connectives and Derived Connectives.}
-\begin{center}
-	\begin{tabular}{llll}
-		\sland & or & \slexists & \slforall \\
-		\slnot & \slimplies & \sliff & \slequals \\
-		\slceil & \slfloor & \sltop & \slbottom
-	\end{tabular}
-\end{center}
+\paragraph{Connectives}
+In Kore, logic connectives are sort parametric.
 
+Logic connective constructor are identifiers starts with ``\verb|\|''.
 
+\begin{grammar}\small\centering
+	<logic-connective> ::= <reserved-id> `{' <sort-list> `}'
+\end{grammar}
+
+\paragraph{Pattern}\quad
+
+\begin{grammar}\small\centering
+	<pattern> ::= <variable-name> `:' <sort> | <head> <sort-list>  `(' 
+	<pattern-list> `)'
+\end{grammar}
 
 \subsection{Semantics}
 \subsubsection{Distinguish Meta-Level from Object Level}
@@ -3580,23 +3591,6 @@ variables can only be instantiated with (potentially infinite) object sorts.
 \subsection{Example D: Contexts}
 
 \subsection{Get Things From Here}
-
-\subsubsection{Special Characters, Keywords and Namespaces}
-The following characters have special meaning in Kore:
-\begin{center}
-\begin{tabular}{c|l|l}
-	\textbf{Character} & \textbf{Name} & \textbf{Usage}
-	\\\hline
-	\texttt{:} & Colon & Variable constructor and symbol declaration
-	\\
-	\texttt{\string{ \string}} & Curly braces & Sort parameters
-	\\
-	\texttt{( )} & Parenthesis & Kore expression
-	\\
-	\texttt{:=} & Colon equal & Alias definition
-\end{tabular}
-\end{center}
-
 The following are reserved keywords in Kore:
 \begin{center}
 \texttt{
