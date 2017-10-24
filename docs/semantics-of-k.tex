@@ -371,6 +371,7 @@
   \newcommand{\slmem}{\slsh{mem}}
   
   \newcommand{\itlogic}{\mathit{logic}}
+  \newcommand{\itconnective}{\mathit{connective}}
   \newcommand{\itsort}{\mathit{sort}}
   \newcommand{\itsymbol}{\mathit{symbol}}
   
@@ -3331,16 +3332,16 @@ language (Section~\cref{sec:kore-semantics}).
 
 A Kore definition file is a sequence of ASCII characters.
 A Kore definition consists of a sequence of \emph{Kore declarations}.
-In this section, we will complete define lexicon tokens and syntactic 
+In this section, we will completely define lexicon tokens and syntactic 
 categories of the 
 Kore language.
 
-\subsubsection{Kore Comments}
+\subsubsection{Comment in Kore}
 Kore supports C-style comments.
 Line comments start with ``\verb|//|'' and block comments start with 
 ``\verb|/*|'' and end with ``\verb|*/|''.
 
-\subsubsection{Lexicon Tokens}
+\subsubsection{Lexicon Token}
 Kore has the following lexicon tokens.
 Some of them are reserved for future use.
 \begin{center}
@@ -3371,7 +3372,7 @@ Some of them are reserved for future use.
 	\end{tabular}
 \end{center}
 
-\subsubsection{Kore Keywords} 
+\subsubsection{Kore Keyword} 
 The following keywords are used to initiate a Kore declaration.
 \begin{center}
 	{\ttfamily
@@ -3386,10 +3387,10 @@ The following keywords are used to initiate a Kore declaration.
 	\end{tabular}}
 \end{center}
 
-\subsubsection{String Literals}
+\subsubsection{String Literal}
 Kore supports C-style string literals.
 
-\subsubsection{Words}
+\subsubsection{Word}
 Words are nonempty sequences of alphabets, digits, or the prime symbol
 ``\texttt{'}''.
 Words must start with an alphabet.
@@ -3409,10 +3410,10 @@ respectively.
 	<identifier>    ::= 	<object-identifier>  | <meta-identifier> | 
 	<reserved-identifier>
 
-	<object-identifier> ::= <word>
-	
-	<meta-identifier> ::= `\sharpsymbol' <word>
-	
+	<object-identifier> ::= <word> 
+		
+	<meta-identifier> ::= `\sharpsymbol' <word> 
+		
 	<reserved-identifier> ::= `\slashsymbol' <word>
 \end{grammar}
 
@@ -3432,51 +3433,119 @@ symbols, as we will se in Section~\cref{sec:kore-syntax-pattern}.
 \subsubsection{Sort}
 A sort is either a sort variable, or of the form 
 $\parametric{C_\itsort}{s_1,\dots,s_n}$ for some $n \ge 0$, in which 
-$C_\itsort$ is called a \emph{sort constructor} and 
+$C_\itsort$ is called a \emph{sort constructor} and $s_1,\dots,s_n$ is a 
+comma-separated list of sorts.
+A sort is said to be an \emph{object (or meta) sort}, if it is an object (or 
+meta) sort variable, or it is constructed with an object (or meta) sort 
+constructor and a list of object (or meta) sorts.
+\begin{grammar}\small
+	<sort> ::= <object-sort> | <meta-sort>
+	
+	<object-sort> ::= <object-sort-variable> | <object-sort-constructor> `{' 
+	<object-sort-list> `}'
+	
+	<meta-sort> ::= <meta-sort-variable> | <meta-sort-constructor> `{' 
+	<meta-sort-list> `}'
 
-A sort is constructed by ``\verb|_{_}|'', which takes a \emph{sort 
-constructor} and a list of \emph{sort parameters}.
-Sort parameter can be either a sort, or a \emph{sort variable}.
-A sort variable itself is a sort, too.
-For example,
+    <object-sort-variable> ::= <object-identifier>
+
+    <object-sort-constructor> ::= <object-identifier>
+
+    <meta-sort-variable> ::= <meta-identifier>
+
+    <meta-sort-constructor> ::= <meta-identifier>
+\end{grammar}
+
+
+Here are some examples of object and meta sorts written in Kore syntax.
 \begin{center}{\ttfamily
-\begin{tabular}{lclcl}
-	\textrm{Sort} & \textrm{Sort Constructor} & \textrm{Sort Parameter(s)} & 
-	\textrm{Sort Schema?} & \textrm{Depending Variable(s)}
+\begin{tabular}{lllllll}
+	\textrm{Sort} &
+	\textrm{Sort} &
+	\textrm{Sort} &
+	\textrm{Meta or} &
+	\textrm{Sort} & 
+	\textrm{Depending}\\
+	\textrm{}       &
+	\textrm{Constructor} &
+	\textrm{Parameters}  &
+	\textrm{Object?}       &
+	\textrm{Schema?}     &
+	\textrm{Variable(s)}
 	\\\hline
-	\parametric{Nat}{} & Nat & - & \textrm{No} & -
+	\parametric{Nat}{} & Nat & - & \textrm{Object} & \textrm{No} & -
 	\\\hline
-	\parametric{List}{\parametric{Nat}{}} & List & \parametric{Nat}{} & 
+	\parametric{List}{\parametric{Nat}{}} & List & \parametric{Nat}{} &
+	\textrm{Object} & 
 	\textrm{No} & -
 	\\\hline
-	\parametric{Map}{\parametric{Nat}{},S} & Map & \parametric{Nat}{},S & 
+	\parametric{Map}{\parametric{Nat}{},S} & Map & \parametric{Nat}{},S &
+	\textrm{Object} & 
 	\textrm{Yes} & S
 	\\\hline
 	\parametric{Map}{S1,\parametric{List}{S2}} & Map & S1,\parametric{List}{S2} 
-	& \textrm{Yes} & S1,S2
+	&
+	\textrm{Object} & \textrm{Yes} & S1,S2
 	\\\hline
-	S & - & - & \textrm{Yes} & S
+	S & - & - & \textrm{Object} & \textrm{Yes} & S
+	\\\hline
+	\parametric{\KPattern}{} & \KPattern & - & \textrm{Meta} & \textrm{No} & -
+	\\\hline
+	\parametric{\KSort}{} & \KSort & - & \textrm{Meta} & \textrm{No} & -
+	\\\hline
+	\parametric{\KPatternList}{} & \KPatternList & - & \textrm{Meta} & 
+	\textrm{No} & -
+	\\\hline
+	\sharpsymbol S & - & - & \textrm{Meta} & \textrm{Yes} & \sharpsymbol S
 \end{tabular}
 }
 \end{center}
-A sort is said to be an \emph{object sort} if the sort constructor does not 
-start with ``\verb|#|'', in which case we called it an \emph{object sort 
-constructor}.
-Object sort constructor can be declared with the ``\verb|sort|'' keyword, 
-followed by the name of the object sort constructor being defined and a list of 
+We call a sort constructor $C_\itsymbol$ is a \emph{parametric sort 
+constructor}, if it requires at least one sort as its parameter(s).
+Otherwise, we call it a \emph{non-parametric sort constructor}.
+The number of parameters that a sort constructor needs is called the 
+\emph{arity} of that sort constructor, which is decided in terms of a 
+\emph{sort declaration} that is discussed in 
+Section~\cref{sec:kore-syntax-sort-declaration}.
+
+Since the meta-theory is a finite theory, there is no parametric meta sort 
+constructor.
+All meta sort constructors are non-parametric and have zero arity.
+Since meta sort constructors are all non-parametric, meta sort variables are 
+not used to construct meta sorts.
+Instead, they are used to construct meta pattern schemas, which is discussed in 
+Section~\cref{sec:kore-syntax-pattern}.
+
+The fixed number of predefined non-parametric meta sort constructors in Kore 
+are in correspondence to sorts in the meta-theory $K$ (see 
+Section~\cref{sec:K-summary}).
+They are
+\begin{center}
+	{\ttfamily
+		\begin{tabular}{llll}
+			\verb|#Sort| & \verb|#Symbol| & \verb|#Variable| & \verb|#Pattern| 
+			\\\hline
+			\verb|#SortList| & \verb|#SymbolList| & \verb|#VariableList| & 
+			\verb|#PatternList|
+		\end{tabular}
+	}
+\end{center}
+
+\subsubsection{Sort Declaration}
+\label{sec:kore-syntax-sort-declaration}
+
+An object sort declaration starts with ``\texttt{sort}'' 
+keyword, 
+followed by the object sort constructor being defined and a list of 
 object sort variables wrapped with curly braces.
 
 \begin{grammar}\small\centering
-	<object-sort-constructor-declaration> ::= `sort' <object-id> `{' 
+	<object-sort-declaration> ::= `sort' <object-sort-constructor> 
+	`{' 
 	<object-sort-variable-list> `}'
 \end{grammar}
-If an object sort constructor is declared with no sort variable, we say it is 
-\emph{non-parametric} or \emph{atomic}. 
-Otherwise, we say it is \emph{parametric}.
-We say a parametric object  sort constructor is \emph{$n$-parametric} if it is 
-declared with $n$ sort variables.
 
-
+Here are some examples of sort declarations in Kore.
 \begin{center}{\ttfamily
 		\begin{tabular}{l|r}
 			\textrm{Declaration} & \textrm{Informal Semantics}
@@ -3493,45 +3562,37 @@ declared with $n$ sort variables.
 	}
 \end{center}
 
-A sort is said to be a \emph{meta sort} if the sort constructor starts with 
-``\verb|#|'', in which case we called the constructor a \emph{meta sort 
-constructor}.
-In Kore, the following non-parametric meta sort constructors are predefined:
-\begin{center}
-	{\ttfamily
-		\begin{tabular}{llll}
-			\verb|#Sort| & \verb|#Symbol| & \verb|#Variable| & \verb|#Pattern| 
-			\\
-			\verb|#SortList| & \verb|#SymbolList| & \verb|#VariableList| & 
-			\verb|#PatternList|
-		\end{tabular}
-	}
-\end{center}
-Meta sort constructors are predefined. New meta sort constructors \emph{cannot} 
-be declared.
-\emph{Meta sort variables} are meta identifiers, for example, \verb|#S|, 
-\verb|#S'|.
-Meta sort variables can only be instantiated with (the above eight) meta sorts, 
-and 
-object sort 
-variables can only be instantiated with (potentially infinite) object sorts.
+In Kore, new meta sort constructors cannot be declared.
 
 \subsubsection{Symbol.}
-In Kore, all symbols are parametric.
-A symbol is constructed by ``\verb|_{_}|'', which takes a \emph{symbol 
-constructor} and a list of sorts. 
-If any sort variable appears in a symbol, we say the symbol is a \emph{symbol 
-schema}.
+A symbol in Kore is of the form $\parametric{C_\itsymbol}{s_1,\dots,s_n}$ for 
+some $n \ge 0$, in which $C_\itsymbol$ is called a \emph{symbol constructor} 
+and $s_1,\dots,s_n$ is a comma-separated list of sorts.
+A symbol is said to be an object (or meta) symbol, if it is constructed with an 
+object (or meta) symbol constructor and a list of object (or meta) sorts.
+\begin{grammar}\small
+	<symbol> ::= <object-symbol> | <meta-symbol>
+	
+	<object-symbol> ::= <object-symbol-constructor> `{' <object-sort-list> `}'
+	
+	<meta-symbol> ::= <meta-symbol-constructor> `{' <meta-sort-list> `}'
+	
+	<object-symbol-constructor> ::= <object-identifier>
+	
+	<meta-symbol-constructor> ::= <meta-identifier>
+\end{grammar}
+
+Here are some examples of object and meta symbols written in Kore syntax.
 
 \begin{center}{\ttfamily
-		\begin{tabular}{lclcl}
+		\begin{tabular}{lllll}
 			\textrm{Symbol} & \textrm{Symbol Constructor} & 
 			\textrm{Parameter(s)} & 
 			\textrm{Schema?} & \textrm{Depending Variable(s)}
 			\\\hline
 			\parametric{zero}{} & zero & - & \textrm{No} & -
 			\\\hline
-			\parametric{succ}{\parametric{}{}} & succ & - & 
+			\parametric{succ}{} & succ & - & 
 			\textrm{No} & -
 			\\\hline
 			\parametric{nil}{S} & nil & S			& 
@@ -3550,29 +3611,46 @@ schema}.
 			\parametric{merge}{Nat,\parametric{List}{S}} & merge & 
 			Nat,\parametric{List}{S} & 
 			\textrm{Yes} & S
+			\\\hline
+			\parametric{isLambdaTerm}{\sharpsymbol S}
+			& isLambdaTerm
+			& \sharpsymbol S
+			& \textrm{Yes}
+			& \sharpsymbol S
 		\end{tabular}
 	}
 \end{center}
 
-\emph{Object symbol constructors} are symbol constructors which are object 
-identifiers.
-\emph{Meta symbol constructors} are symbol constructors which are meta 
-identifiers.
-Both symbol constructors can be declared with the keyword ``\verb|symbol|'', 
-followed by an (object or meta) identifier, a list of (object or meta) sort 
-variables, a list of (object or meta) argument sorts, and an (object or meta) 
-return sort.
+We call a symbol constructor $C_\itsymbol$ a \emph{parametric symbol}, if it 
+requires at least one sort as sort parameter(s).
+Otherwise, we call it a \emph{non-parametric symbol}.
+The number of parameters that a symbol constructor needs, together with its 
+arity, argument sorts, and result sort, are defined in terms of symbol 
+declarations, introduced in Section~\cref{sec:kore-syntax-symbol-declaration}.
+
+\subsubsection{Symbol Declaration}
+\label{sec:kore-syntax-symbol-declaration}
+
+Both object and meta symbols can be declared with the keyword 
+``\texttt{symbol}'', followed by the symbol constructor being declared, a list 
+of sort variables, a list of argument sorts, and a result sort.
+
 \begin{grammar}\small
-	<object-symbol-constructor-declaration> ::= \quad
-	\alt `symbol' <object-id> `{' 
+	<symbol-declaration> ::= <object-symbol-declaration> | 
+	<meta-symbol-declaration>
+	
+	<object-symbol-declaration> ::= \quad
+	\alt `symbol' <object-symbol-constructor> `{' 
 		<object-sort-variable-list> `}' `(' <object-sort-list> `)' `:' 
 		<object-sort>
 		
-	<meta-symbol-constructor-declaration> ::= \quad
-	\alt `symbol' <meta-id> `{' 
+	<meta-symbol-declaration> ::= \quad
+	\alt `symbol' <meta-symbol-constructor> `{' 
 		<meta-sort-variable-list> `}' `(' <meta-sort-list> `)' `:' 
 	<meta-sort>
 \end{grammar}
+
+Here are some examples of symbol declarations in Kore.
 
 \begin{center}{\ttfamily
 		\begin{tabular}{lcc}
@@ -3600,10 +3678,15 @@ return sort.
 	}
 \end{center}
 
-\subsubsection{Connectives.}
-In Kore, all logic connectives are sort parametric, constructed with 
-``\verb|_{_}|''.
-Logic connective constructor are reserved identifiers.
+Notice that allowing parametric meta symbols does not break the finitary of the 
+meta-theory, because the number of meta sorts in Kore is finite.
+
+\subsubsection{Logic Connective}
+In Kore, a \emph{logic connective} (or simply a \emph{connective}) is of the 
+form $\parametric{C_\itconnective}{s_1,\dots,s_n}$ where $C_\itconnective$ is a 
+connective constructor and $s_1,\dots,s_n$ is a list of sort parameters.
+A connective is said to be an object (or meta) connective, if it has a list of 
+object (or meta) sort(s) as parameter(s).
 
 \begin{grammar}\small
 	<logic-connective> ::= <object-logic-connective> | <meta-logic-connective>
@@ -3699,7 +3782,7 @@ Otherwise, it is a \emph{meta axiom declaration}.
 Give a theory $T$ defined as a Kore definition ``\verb|definition.kore|'' which consists of a set of object sort declarations, a set of object and meta symbol declarations, and a set of object and meta axiom declarations using the syntax that we have introduced before.
 The \emph{semantics} of the theory $T$, known as \emph{the meta-theory instantiated with $T$}, is given by \emph{lifting} the Kore definition ``\verb|definition.kore|'' to the Kore definition ``\verb|#definition.kore|'' which encodes $\denote{T}$.
 The Kore definition ``\verb|#definition.kore|'' will contain only meta symbol declarations and meta axiom declarations.
-The lifting algorithm is defined in~\ref{alg:lifting}.
+The lifting algorithm is defined in the next few sections.
 \subsubsection{General Principle of Lifting}
 The general principle of the lifting operation is to lift whatever object level 
 targets to their corresponding meta-level representations.
