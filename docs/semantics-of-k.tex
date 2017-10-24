@@ -3687,14 +3687,17 @@ form $\parametric{C_\itconnective}{s_1,\dots,s_n}$ where $C_\itconnective$ is a
 connective constructor and $s_1,\dots,s_n$ is a list of sort parameters.
 A connective is said to be an object (or meta) connective, if it has a list of 
 object (or meta) sort(s) as parameter(s).
-
+To distinguish from symbols, we use reserved identifiers for connective 
+constructors.
 \begin{grammar}\small
-	<logic-connective> ::= <object-logic-connective> | <meta-logic-connective>
+	<connective> ::= <object-connective> | <meta-connective>
 	
-	<object-logic-connective> ::= <reserved-id> `{' <object-sort-list> `}'
+	<object-connective> ::= <reserved-identifier> `{' <object-sort-list> `}'
 	
-	<meta-logic-connective> ::= <reserved-id> `{' <meta-sort-list> `}'
+	<meta-connective> ::= <reserved-identifier> `{' <meta-sort-list> `}'
 \end{grammar}
+
+
 
 The following are all logic connective constructors in Kore, including both 
 basic connectives and derived connectives.
@@ -3720,49 +3723,65 @@ basic connectives and derived connectives.
 \end{tabular}
 \end{center}
 
-\subsubsection{Pattern.}
+\subsubsection{Head}
+Before we define the syntactic category \syntacc{pattern} in 
+Section~\cref{sec:kore-syntax-pattern}, we would like to 
+introduce a unified view of how \emph{syntactically the same} that symbols and 
+connectives (and aliases that we have not defined in this version of Kore) are.
+This unified view is useful to understand how patterns are constructed in Kore 
+as well as the \emph{lifting operation} when we define the semantics of Kore in 
+Section~\cref{sec:kore-semantics}.
+
+A \emph{head} is of the form $\parametric{C}{s_1,\dots,s_n}$ in which $C$ is 
+called the \emph{head constructor} and $s_1,\dots,s_n$ are called the sort 
+parameters.
+A head constructor is either a symbol constructor or a connective constructor.
+A head is said to be an object (or meta) head if it is an object (or meta) one 
+as a symbol or a connective.
+\begin{grammar}\small
+	<head> ::= <head-constructor> `{' <sort-list> `}'
+	
+	<head-constructor> ::= <symbol-constructor> | <connective-constructor>
+	
+	<object-head> ::= <object-symbol> | <object-connective>
+	
+	<meta-head> ::= <meta-symbol> | <meta-connective>
+\end{grammar}
+
+
+\subsubsection{Pattern}
 \label{sec:kore-syntax-pattern}
-In Kore, patterns have a highly unified construction (apart from two 
-exceptions: string literals and variable patterns, which will be introduced 
-separately).
-A pattern is constructed with ``\verb|_(_)|'', which takes a \emph{head} and a 
-list of patterns.
-Heads can be either a symbol or a logic connective.
-We call a head is an \emph{object (or meta) head}, if it is an object (or meta) 
-symbol or an object (or meta)
-logic connective.
-Patterns constructed with object (or meta) heads are \emph{object (or meta) 
-patterns}.
-Notice that whether a pattern is object or meta only depends on its head, not 
-the patter list that the head applies on.
-Both object and meta heads can take a list of mixed patterns.
+Apart from two exceptions: string literal patterns and variable patterns, 
+patterns in Kore have a highly unified construction:
+they are constructed with a head and a list of patterns.
+Variable patterns are constructed with a \emph{variable name} and a sort using 
+the colon symbol ``\texttt{:}''.
+String literals are patterns on their own.
+
+A pattern is said to be an object (or meta) pattern if it has an object (or 
+meta) head, or it is a variable pattern with an object (or meta) variable name 
+and an object (or meta) sort.
+String literals are meta patterns.
+
 \begin{grammar}\small
 	<pattern> ::= <object-pattern> | <meta-pattern>
 	
-	<object-pattern> ::= <object-head> `(' <pattern-list> `)'
+	<object-pattern> ::= \quad
+	\alt <object-head> `(' <pattern-list> `)'
+	\alt <object-variable-name> `:' <object-sort>
 	
-	<meta-pattern> ::= <meta-head> `(' <pattern-list> `)'
+	<meta-pattern> ::= \quad
+	\alt <meta-head> `(' <pattern-list> `)'
+	\alt <meta-variable-name> `:' <meta-sort>
+	\alt <string-literal>
+	
+	<object-variable-name> ::= <object-identifier>
+	
+	<meta-variable-name> ::= <meta-identifier>
 \end{grammar}
 
-Variable patterns are constructed with ``\verb|_:_|'', which takes an 
-identifier and a sort.
-If the sort is an object sort, we say the variable pattern is an \emph{object 
-variable}.
-Otherwise, it is a \emph{meta variable}.
-\begin{grammar}\small
-	<pattern> ::= <variable>
-	
-	<variable> ::= <object-variable> | <meta-variable>
-	
-    <object-variable> ::= <id> `:' <object-sort>
-    
-    <meta-variable> ::= <id> `:' <meta-sort>
-\end{grammar}
-
-String literals are considered as meta patterns.
-\begin{grammar}\small
-	<pattern> ::= <string-literals>
-\end{grammar}
+Notice that whether a pattern is an object or a meta one depends only on its 
+head, not the patter list that the head applies on.
 
 \subsubsection{Axiom Declarations.}
 In Kore, a pattern can be declared as an axiom using the keyword 
@@ -3778,7 +3797,7 @@ Otherwise, it is a \emph{meta axiom declaration}.
 \subsubsection{Wellformedness}
 
 \subsection{Semantics}
-
+\label{sec:kore-semantics}
 Give a theory $T$ defined as a Kore definition ``\verb|definition.kore|'' which consists of a set of object sort declarations, a set of object and meta symbol declarations, and a set of object and meta axiom declarations using the syntax that we have introduced before.
 The \emph{semantics} of the theory $T$, known as \emph{the meta-theory instantiated with $T$}, is given by \emph{lifting} the Kore definition ``\verb|definition.kore|'' to the Kore definition ``\verb|#definition.kore|'' which encodes $\denote{T}$.
 The Kore definition ``\verb|#definition.kore|'' will contain only meta symbol declarations and meta axiom declarations.
@@ -4194,7 +4213,6 @@ The following are reserved keywords in Kore:
 \end{grammar}
 
 \subsection{Kore Semantics}
-\label{sec:kore-semantics}
 \todo[inline]{Show how to lift a Kore definition: (1) the default naming function Nat $\longrightarrow$ ``Nat'' (2) the default sugar symbols at the meta-level Nat $\longrightarrow$ KNat, succ $\longrightarrow$ Ksucc, etc. (3) the lifting function}
 \begin{algorithm}[h]
 	\KwIn{An object-pattern $\varphi$.}
