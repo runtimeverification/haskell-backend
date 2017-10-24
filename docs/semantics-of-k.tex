@@ -3286,10 +3286,13 @@ reasoning in finite theories.
 
 \section{The Kore Language}
 
-The Kore language is a formal specification language that allows one to specify (finite or r.e. infinite) theories using a finite number of characters and words.
-The syntax of Kore is designed to be very simple, as we will see in Section~\cref{sec:kore-syntax}.
+The Kore language is a formal specification language that allows one to specify 
+(both finite and recursively enumerable infinite) theories using a finite 
+number of characters and space.
 
-We recall the readers of upward and downward reflection relations
+Before we present the syntax and semantics of Kore, we would like to recall 
+the readers of upward and downward reflection relations that we have introduced 
+in Section~\cref{sec:meta-theory}, a.k.a. the faithfulness theorem.
 \begin{center}
 	\begin{tabular}{cc}
 		$
@@ -3305,27 +3308,44 @@ We recall the readers of upward and downward reflection relations
 		$
 	\end{tabular}
 \end{center}
-What Kore does is to give users an elegant way to specify $\denote{T}$ without
-getting exposed to too much of the meta-theory infrastructure.
-Users are free to write things at the object-level and Kore will lift those to the meta-theory automatically.
-In other words, the semantics of Kore is given by lifting itself to the meta-theory.
+Given such a faithful upward/downward reflection relation, it is suffice to 
+specify the finite theory~$\denote{T}$ in order to specify the possibly 
+infinite theory $T$.
+However, the meta-theory $K$ and the meta-representation $\denote{T}$ is 
+inevitably more verbose and heavier than the original theory $T$.
 
-
+The Kore language is one means to ease the discomfort of using the meta-theory.
+Kore provides a nice syntax surface that allows users to write declarations 
+directly with the object-level theory $T$, while it still offers the full 
+access to the meta-theory.
+Therefore, the users are free to write things at the object-level as they are 
+used to, and are always able to write meta-level definitions and specifications 
+to use the full power of the meta-theory and the faithful reflection relation.
+Object-level declarations and specifications are seen as just syntactic sugar 
+of the more verbose meta-level declarations.
+This process of ``desugaring object specifications to meta specifications'' are 
+called \emph{lifting}, which is giving Kore a semantics as a specification 
+language (Section~\cref{sec:kore-semantics}).
 
 \subsection{Syntax}
 
-\subsubsection{Lexicon and Syntactic Categories}
-
 A Kore definition file is a sequence of ASCII characters.
+A Kore definition consists of a sequence of \emph{Kore declarations}.
+In this section, we will complete define lexicon tokens and syntactic 
+categories of the 
+Kore language.
+
+\subsubsection{Kore Comments}
+Kore supports C-style comments.
 Line comments start with ``\verb|//|'' and block comments start with 
 ``\verb|/*|'' and end with ``\verb|*/|''.
 
-\paragraph{Lexicon Tokens.}
+\subsubsection{Lexicon Tokens}
 Kore has the following lexicon tokens.
 Some of them are reserved for future use.
 \begin{center}
 	\begin{tabular}{c|l|l}
-		\textrm{Token Character(s)} & \textrm{Name} & \textrm{Used In}
+		\textrm{Token Character(s)} & \textrm{Name} & \textrm{Usage}
 		\\\hline
 		\texttt{:} & Colon & Variables and Declarations
 		\\
@@ -3333,50 +3353,87 @@ Some of them are reserved for future use.
 		\\
 		\texttt{( )} & Parenthesis & Kore Expressions
 		\\
+		\texttt{,} & Comma & Kore Expressions
+		\\
+        \texttt{\sharpsymbol} & Sharp & Meta Identities
+        \\
+        \texttt{\slashsymbol} & Slash & Reserved Identities
+        \\
+        \texttt{'} & Prime & Identities
+        \\
+        \texttt{::} & Double Colon & --
+        \\
 		\texttt{.} & Period & --
 		\\
 		\texttt{@} & At & --
+		\\
+		\texttt{=} & Equals & --
 	\end{tabular}
 \end{center}
 
-Syntactic categories are introduced and defined in the following.
-
-\paragraph{Kore Keywords.} 
-The following keywords are used to start a Kore 
-declaration.
+\subsubsection{Kore Keywords} 
+The following keywords are used to initiate a Kore declaration.
 \begin{center}
 	{\ttfamily
-		\begin{tabular}{lllllll}
-			sort & hooked-sort & symbol & hooked-symbol & alias & hooked-alias &
-			axiom
+		\begin{tabular}{l|l}
+			\textrm{Keyword} & \textrm{Usage}
+			\\\hline
+			sort & \textrm{Initiate a sort declaration}
+			\\
+			symbol & \textrm{Initiate a symbol declaration}
+			\\
+			axiom & \textrm{Initiate an axiom declaration}
 	\end{tabular}}
 \end{center}
 
-\paragraph{String Literals.}
-String literals are wrapped with quotation marks.
+\subsubsection{String Literals}
+Kore supports C-style string literals.
 
-\paragraph{Identifier.}
-
-Identifiers are nonempty sequences of printable characters.
-An identifier is said to be a \emph{meta identifier}, if it starts with the 
-letter ``\verb|#|''.
-If it starts with the letter ``\verb|\|'', it is said to be a \emph{reserved 
-identifier}.
-Otherwise, it is said to be an \emph{object identifier}.
-
+\subsubsection{Words}
+Words are nonempty sequences of alphabets, digits, or the prime symbol
+``\texttt{'}''.
+Words must start with an alphabet.
 \begin{grammar}\small\centering
-	<id>    ::= <meta-id> | <reserved-id> | <object-id> 
+	<word> ::= "[a-zA-Z][a-zA-Z0-9\']"$^*$
+\end{grammar}
+
+\subsubsection{Identifier}
+In Kore, an identifier is either a word, or a word followed after the sharp 
+symbol
+``\texttt{\sharpsymbol}'' or the slash symbol ``\texttt{\slashsymbol}'', in 
+which case 
+we called the identifier \emph{object}, \emph{meta}, or \emph{reserved}, 
+respectively.
+
+\begin{grammar}\small
+	<identifier>    ::= 	<object-identifier>  | <meta-identifier> | 
+	<reserved-identifier>
+
+	<object-identifier> ::= <word>
+	
+	<meta-identifier> ::= `\sharpsymbol' <word>
+	
+	<reserved-identifier> ::= `\slashsymbol' <word>
 \end{grammar}
 
 Identifiers are building blocks of many syntactic categories in Kore, such as 
-sorts, symbols, variables, and patterns.
-It is important to separate meta-level identifiers from object-level ones, 
-because Kore provides users to write a mixture of the meta-level and the 
-object-level, and we do not want to confuses the meta-level with the 
-object-level.
+\syntacc{sort}, \syntacc{symbol}, and \syntacc{pattern}.
+Notice that it is important to distinguish the three different categories of 
+identifiers from one another,
+because Kore provides a nice unified syntactic interface that allows users to 
+write both matching logic connectives, object-level symbols, and meta-level 
+symbols, in 
+exactly the same prefix normal form,
+and we do not want to confuse the three of them.
+Instead, we use reserved identities for matching logic connectives, object 
+identities for object-level symbols, and meta-level identities for meta-level 
+symbols, as we will se in Section~\cref{sec:kore-syntax-pattern}.
 
-\paragraph{Sort.}
-In Kore, all sorts are parametric.
+\subsubsection{Sort}
+A sort is either a sort variable, or of the form 
+$\parametric{C_\itsort}{s_1,\dots,s_n}$ for some $n \ge 0$, in which 
+$C_\itsort$ is called a \emph{sort constructor} and 
+
 A sort is constructed by ``\verb|_{_}|'', which takes a \emph{sort 
 constructor} and a list of \emph{sort parameters}.
 Sort parameter can be either a sort, or a \emph{sort variable}.
@@ -3459,7 +3516,7 @@ and
 object sort 
 variables can only be instantiated with (potentially infinite) object sorts.
 
-\paragraph{Symbol.}
+\subsubsection{Symbol.}
 In Kore, all symbols are parametric.
 A symbol is constructed by ``\verb|_{_}|'', which takes a \emph{symbol 
 constructor} and a list of sorts. 
@@ -3543,7 +3600,7 @@ return sort.
 	}
 \end{center}
 
-\paragraph{Connectives.}
+\subsubsection{Connectives.}
 In Kore, all logic connectives are sort parametric, constructed with 
 ``\verb|_{_}|''.
 Logic connective constructor are reserved identifiers.
@@ -3580,7 +3637,8 @@ basic connectives and derived connectives.
 \end{tabular}
 \end{center}
 
-\paragraph{Pattern.}
+\subsubsection{Pattern.}
+\label{sec:kore-syntax-pattern}
 In Kore, patterns have a highly unified construction (apart from two 
 exceptions: string literals and variable patterns, which will be introduced 
 separately).
@@ -3623,7 +3681,7 @@ String literals are considered as meta patterns.
 	<pattern> ::= <string-literals>
 \end{grammar}
 
-\paragraph{Axiom Declarations.}
+\subsubsection{Axiom Declarations.}
 In Kore, a pattern can be declared as an axiom using the keyword 
 ``\verb|axiom|'', followed by a list of sort variables as parameters wrapped 
 with curly braces.
