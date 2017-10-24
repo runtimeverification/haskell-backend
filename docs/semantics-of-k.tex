@@ -373,6 +373,9 @@
   \newcommand{\itlogic}{\mathit{logic}}
   \newcommand{\itsort}{\mathit{sort}}
   \newcommand{\itsymbol}{\mathit{symbol}}
+  
+  % Define syntactic category <category>
+  \newcommand{\syntacc}[1]{$\langle$\textit{#1}$\rangle$}
 
   % Title and authors
   \title{The Semantics of \K}
@@ -3805,29 +3808,65 @@ $\denote{C_\itsymbol}$($\underbrace{\parametric{\KSort}{},\dots,
 			Pn:\parametric{\KPattern}{}}}_\llist$))
 }
 \end{align*}
-
+in which $\denote{\_}_\itsymbol$ (given $S_1,\dots,S_m,s_1,\dots,s_n,s$) is 
+defined as
+\begin{align*}
+  \denote{C_\itsymbol}_\itsymbol = 
+  &\ \texttt{\Ksymbol($\denote{C_\itsymbol}_\name$,} \\
+  &\ \qquad\qquad \texttt{$\denote{S_1,\dots,S_m}_\llist$,} \\
+  &\ \qquad\qquad \texttt{$\denote{s_1,\dots,s_n}_\llist$,} \\
+  &\ \qquad\qquad \texttt{$\denote{s}$))}
+\end{align*}
 \subsubsection{Lift Patterns}
-\begin{algorithm}[h]
-	\KwIn{An object-pattern $\varphi$.}
-	\KwOut{The meta-representation (ASTs) of $\varphi$ in $K$}
-	\uIf{$\varphi$ is $x \cln s$}{Return $\mathit{variable(x, sort(s))}$}
-	\uElseIf{$\varphi$ is $x \cln \cln s$}{Return $x \cln \KPattern {\ \wedge\ 
-		} (\mathit{sort(s)} = \KgetSort(x \cln \KPattern)) $}
-	\uElseIf{$\varphi$ is $\varphi_1 \wedge \varphi_2$}
-	{Return $\Kand(\mathit{lift}[\varphi_1], \mathit{lift}[\varphi_2]$}
-	\uElseIf{$\varphi$ is $\neg \varphi_1$}
-	{Return $\Knot(\mathit{lift}[\varphi_1])$}
-	\uElseIf{$\varphi$ is $\exists x \cln s . \varphi_1$}
-	{Return $\Kexists(x, \mathit{sort(s)}, \mathit{lift}[\varphi_1])$}
-	\uElseIf{$\varphi$ is $\sigma(\varphi_1,\dots,\varphi_n)$ and $\sigma \in 
-		\Sigma_{s_1,\dots,s_n,s}$}
-	{Return $\Kapplication(\mathit{symbol}(\sigma, (\Ksort(s_1), \dots, 
-		\Ksort(s_n)), \Ksort(s)),$
-		$\mathit{lift}[\varphi_1],\dots,\mathit{lift}[\varphi_n])$}
-	\caption{Lifting Function $\mathit{lift}[\_]$}
-	\label{alg:lifting}
-\end{algorithm}
+Recall the following grammar of patterns
+\begin{grammar}
+	<pattern> ::= \quad
+	\alt <id> `:' <sort>
+	\alt <string-literal>
+	\alt <head> `(' <pattern-list> `)'
+\end{grammar}
+Recall that the syntactic category \syntacc{head} is either a logic connective
+or a symbol, which is always of the form $\parametric{C}{s_1,\dots,s_n}$ with 
+constructor $C$ and a list of sorts as parameters $s_1,\dots,s_n$.
+
+In Kore, a pattern $\varphi$ is lifted as follows.
+\begin{align*}
+\varphi = 
+\begin{cases*}
+\Kvariable(\denote{x}_\name, \denote{s}) & if $\varphi$ is \texttt{$x$:$s$} and 
+$s$ is an object sort\\
+\denote{C}(\denote{s_1},\dots,\denote{s_n},\denote{
+	\varphi_1},\dots,\denote{\varphi_n})&
+ if $\varphi$ is $\parametric{C}{s_1,\dots,s_n}(\varphi_1,\dots,\varphi_n)$ \\
+ &and 
+ $C$ is an object symbol or logic connective constructor\\
+ \parametric{C}{s_1,\dots,s_n}(\denote{
+ 	\varphi_1},\dots,\denote{\varphi_n})&
+ if $\varphi$ is $\parametric{C}{s_1,\dots,s_n}(\varphi_1,\dots,\varphi_n)$ \\
+ &and 
+ $C$ is a meta symbol or logic connective constructor\\
+ \varphi & if $\varphi$ is a meta variable or a string literal
+\end{cases*}
+\end{align*}
 \subsubsection{Lifting Axiom Declarations}
+In Kore, an axiom declaration
+\begin{center}\ttfamily
+	\parametric{axiom}{$s_1$,\dots,$s_n$,$s'_1$,\dots,$s'_m$}
+	$\varphi$
+\end{center}
+with object sort variables $s_1,\dots,s_n$, meta sort variables 
+$s'_1,\dots,s'_m$ and a pattern $\varphi$ is lifted as follows.
+
+\begin{align*}
+\denote{\texttt{\parametric{axiom}{$s_1$,\dots,$s_n$,$s'_1$,\dots,$s'_m$}
+	$\varphi$}} =
+\begin{cases*}
+\texttt{\parametric{axiom}{$s'_1$,\dots,$s'_m$} \Kdeduce($\denote{\varphi}$)} & 
+if $\varphi$ is an object variable \\&or has an object head\\
+\texttt{\parametric{axiom}{$s'_1$,\dots,$s'_m$} $\denote{\varphi}$} & if
+$\varphi$ is a meta variable, \\&a string literal, \\&or has a meta head
+\end{cases*}
+\end{align*}
 
 \subsection{Example A: Presburger Arithmetic}
 \begin{lstlisting}[language=kore]
