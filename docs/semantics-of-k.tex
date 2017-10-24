@@ -3733,8 +3733,10 @@ For example,
 	}
 \end{center}
 
-For any object sort declaration \texttt{sort 
+For any object sort declaration \begin{center}
+	\texttt{sort 
 $\parametric{C_\itsort}{S_1,\dots,S_n}$} 
+\end{center}
 with sort constructor $C_\itsort$ and sort variables $S_1,\dots,S_n$, 
 define the lifting operation as
 \begin{align*}
@@ -3742,12 +3744,13 @@ define the lifting operation as
   &\ \texttt{symbol 
   $\denote{C_\itsort}$(\parametric{\KSort}{},\dots,\parametric{\KSort}{}):\parametric{\KSort}{}}
   \\
-  &\ \texttt{axiom \parametric{equals}{\parametric{\KSort}{},\sharpsymbol S}(}
+  &\ \texttt{\parametric{axiom}{\sharpsymbol S} 
+  \parametric{equals}{\parametric{\KSort}{},\sharpsymbol S}(}
   \\
-  &\qquad\qquad\quad
+  &\qquad\qquad\qquad
   \texttt{$\denote{C_\itsort}$($\denote{S_1}$,\dots,$\denote{S_n}$),}
   \\
-  &\qquad\qquad\quad
+  &\qquad\qquad\qquad
   \texttt{\parametric{\Ksort}{}($\denote{C_\itsort}_\name$, 
   $\denote{S_1,\dots,S_n}_\llist$))}
 \end{align*}
@@ -3770,7 +3773,38 @@ Object symbol constructors $C_\itsymbol$ are lifted to non-parametric meta
 symbols as
 $$ \denote{C_\itsymbol} = \parametric{\denote{C_\itsymbol}_\sharp}{}$$
 
-
+An object symbol declaration \begin{center}
+	\texttt{symbol 
+\parametric{$C_\itsymbol$}{$S_1$,\dots,$S_m$}($s_1$,\dots,$s_n$):$s$}
+\end{center}
+with object symbol constructor $C_\itsymbol$, sort vari$  $ables $S_1,\dots,S_m$, 
+argument sorts $s_1,\dots,s_n$, and return sort $s$, is lifted as
+\begin{align*}
+& \texttt{symbol 
+	\parametric{$C_\itsymbol$}{$S_1$,\dots,$S_m$}($s_1$,\dots,$s_n$):$s$}
+\\ =\
+& \texttt{symbol 
+$\denote{C_\itsymbol}$($\underbrace{\parametric{\KSort}{},\dots,
+	\parametric{\KSort}{}}_\text{$m$\,times}$,$\underbrace{
+	\parametric{\KPattern}{},\dots,\parametric{
+		\KPattern}{}}_\text{$n$\,times}$):\parametric{\KPattern}{}}
+\\ 
+& \texttt{\parametric{axiom}{\sharpsymbol S}
+\parametric{\slequals}{\parametric{\KPattern}{},\sharpsymbol S}(
+}
+\\
+& \qquad\qquad\qquad \texttt{
+	$\denote{C_\itsymbol}$($\denote{S_1}$,\dots,$\denote{S_m}$,\sharpsymbol 
+	P1:\parametric{\KPattern}{},\dots,\sharpsymbol Pn:\parametric{\KPattern}{}),
+}
+\\
+& \qquad\qquad\qquad \texttt{
+	\parametric{\Kapplication}{}($\denote{
+		C_\itsymbol}_\itsymbol$,$\denote{\texttt{\sharpsymbol 
+			P1:\parametric{\KPattern}{},\dots,\sharpsymbol 
+			Pn:\parametric{\KPattern}{}}}_\llist$))
+}
+\end{align*}
 
 \subsubsection{Lift Patterns}
 \begin{algorithm}[h]
@@ -4037,7 +4071,8 @@ For that reason, we introduce the next definition.
 	functions.
 	
 	(Sort-lifting).
-	For each sort $s$ in theory $T$, the lift of $s$ is a $\KSort$ pattern
+	For each sort $s$ in theory $T$, the lift of $s$ is a 
+	$\parametric{\KSort}{}$ pattern
 	$$ \hat{s} = \Ksort(e_S(s))$$
 	
 	(Symbol-lifting).
@@ -4080,7 +4115,7 @@ For that reason, we introduce the next definition.
 	where the lifts of $S$, $\Sigma$, and $A$ are respectively defined as
 	\begin{align*}
 	& \hat{S} = \hat{s_1},\dots,\hat{s_n} 
-	\quad \text{is a $\KSortList$ pattern}
+	\quad \text{is a $\parametric{\KSort}{}List$ pattern}
 	\\
 	& \hat{\Sigma} = \hat{\sigma_1},\dots,\hat{\sigma_m}
 	\quad \text{is a $\KSymbolList$ pattern}
@@ -4107,18 +4142,20 @@ canonical model of $K$.
 	The carrier set for the sort $\KString$ is the set of all syntactic 
 	patterns of the sort $\KString$, denoted as $M_\KString$.
 	
-	The carrier set for the sort $\KSort$ is the set of all syntactic patterns 
-	of the sort $\KSort$ 
-	$$M_\KSort = \{ \Ksort(str) \mid str \in M_\KString \}.$$
+	The carrier set for the sort $\parametric{\KSort}{}$ is the set of all 
+	syntactic patterns 
+	of the sort $\parametric{\KSort}{}$ 
+	$$M_\parametric{\KSort}{} = \{ \Ksort(str) \mid str \in M_\KString \}.$$
 	
-	The carrier set for the sort $\KSortList$ is the set of all finite lists of 
-	$M_\KSort$:
-	$$M_\KSortList = (M_\KSort)^*.$$
+	The carrier set for the sort $\parametric{\KSort}{}List$ is the set of all 
+	finite lists of 
+	$M_\parametric{\KSort}{}$:
+	$$M_\parametric{\KSort}{}List = (M_\parametric{\KSort}{})^*.$$
 	
 	The carrier set for the sort $\KSymbol$ is the set of all syntactic 
 	patterns of the sort $\KSymbol$
 	$$M_\KSymbol = \{ \Ksymbol(str, l, s) \mid str \in M_\KString, l \in 
-	M_\KSortList, s \in M_\KSort \}.$$
+	M_\parametric{\KSort}{}List, s \in M_\parametric{\KSort}{} \}.$$
 	
 	The carrier set for the sort $\KSymbolList$ is the set of all finite lists 
 	over $M_\KSymbol$:
@@ -4132,7 +4169,7 @@ canonical model of $K$.
 	$$M_\KPatternList = (M_\KPattern)^*.$$
 	
 	The carrier set for the sort $\KSignature$ is a product set
-	$$ M_\KSignature = M_\KSortList \times M_\KSymbolList.$$
+	$$ M_\KSignature = M_\parametric{\KSort}{}List \times M_\KSymbolList.$$
 	
 	The carrier set for the sort $\KTheory$ is a product set
 	$$ M_\KTheory = M_\KSignature \times M_\KPattern. $$
@@ -4141,7 +4178,8 @@ canonical model of $K$.
 	so straightforward that they are trivial.\improvement{Basically I want to 
 	say that $M_K$ is almost (except $Kprovable$) the initial algebra of $K$.}
 	For example, $\KconsKSortList$ is interpreted as the cons function on 
-	$M_\KSortList$, and $\KdeleteKPatternList$ is interpreted as a function on 
+	$M_\parametric{\KSort}{}List$, and $\KdeleteKPatternList$ is interpreted as 
+	a function on 
 	$M_\KPattern \times M_\KPatternList$ that deletes the first argument from 
 	the second, etc.
 	
@@ -4333,11 +4371,13 @@ endmodule
 In Kore syntax, the backslash ``\verb|\|'' is reserved for matching logic 
 connectives and the sharp ``\verb|#|'' is reserved for the meta-level, i.e., 
 the $K$ sorts and symbols. 
-Therefore, the sorts $\KPred$, $\KString$, $\KSymbol$, $\KSort$, and 
+Therefore, the sorts $\KPred$, $\KString$, $\KSymbol$, $\parametric{\KSort}{}$, 
+and 
 $\KPattern$ in the calculus $K$ are denoted as \verb|#Bool|, \verb|#String|, 
 \verb|#Symbol|, \verb|#Sort|, and \verb|#Pattern| in Kore respectively.
 Symbols in $K$ are denoted in the similar way, too. 
-For example, the constructor symbol $\Kvariable \colon \KString \times \KSort 
+For example, the constructor symbol $\Kvariable \colon \KString \times 
+\parametric{\KSort}{} 
 \to \KPattern$ is denoted as \verb|#variable| in Kore. 
 
 A Kore module definition begins with the keyword \verb|module| followed by the 
