@@ -346,6 +346,7 @@
   \newcommand{\FV}{{\it FV}}
   
   \newcommand{\name}{\mathit{name}}
+  \newcommand{\llist}{\mathit{list}}
   \newcommand{\smalltt}[1]{\texttt{\small #1} }
   \newcommand{\sort}{\smalltt{sort}}
   \newcommand{\symb}{\smalltt{symbol}}
@@ -368,6 +369,10 @@
   \newcommand{\slceil}{\slsh{ceil}}
   \newcommand{\slfloor}{\slsh{floor}}
   \newcommand{\slmem}{\slsh{mem}}
+  
+  \newcommand{\itlogic}{\mathit{logic}}
+  \newcommand{\itsort}{\mathit{sort}}
+  \newcommand{\itsymbol}{\mathit{symbol}}
 
   % Title and authors
   \title{The Semantics of \K}
@@ -3653,7 +3658,8 @@ and its head is not lifted.
 \begin{notation}
 	We use the double bracket $\denote{\_}$ for lifting operation and overload 
 	it for all syntactic categories.
-	Subscripts are used ($\denote{\_}_0$, $\denote{\_}_1$, \dots) when we need 
+	Subscripts are used (e.g., $\denote{\_}_\name$, $\denote{\_}_\llist$, 
+	\dots) when we need 
 	to define some auxiliary lifting operations and do not want to confuse them 
 	with the canonical one  $\denote{\_}$.
 \end{notation}
@@ -3665,24 +3671,49 @@ meta level targets.
 \subsubsection{Lift Object Identifiers To String Literals}
 Object identities are lifted to string literals by wrapping them with quotation 
 marks.
+We denote this lifting function as $\denote{\_}_\name$.
+
+\subsubsection{Lift Object \& Reserved Identifiers To Meta Identifiers}
+Object and reserved identifiers are lifted to meta identifiers by appending a 
+``\texttt{\sharpsymbol}'' in front, denoted as 
+$\denote{\_}_\sharp$.
+
 \subsubsection{Lift Logic Connective Constructors To Meta Symbols}
-Logic connectives constructor are lifted to non-parametric meta symbols by 
-appending a ``\texttt{\sharpsymbol}'' in front.
+Logic connectives constructor are lifted to non-parametric meta symbols as 
+follows.
+For any logic connective constructor $C_\itlogic$, 
+$$\denote{C_\itlogic} = \parametric{\denote{C_\itlogic}_\sharp}{}$$
 \subsubsection{Lift Object Sorts}
-Object sort constructors are lifted to non-parametric meta symbols constructors 
-by appending 
-a ``\texttt{\sharpsymbol}'' in front.
+Object sort constructors $C_\itsort$ are lifted to non-parametric meta symbols 
+as
+$$\denote{C_\itsort} = \parametric{\denote{C_\itsort}_\sharp}{}$$
+For example
+\begin{center}{\ttfamily
+\begin{tabular}{lcr}
+    \textrm{Object Sort Constructor} & \textrm{Is Lifted To} & 
+    \textrm{Non-Parametric Meta-Symbol}
+    \\\hline
+    Nat && \parametric{\sharpsymbol Nat}{}
+    \\\hline
+    List && \parametric{\sharpsymbol List}{}
+    \\\hline
+    Map && \parametric{\sharpsymbol Map}{}
+\end{tabular}
+}
+\end{center}
 A sort variable $\tt S$ is lifted to a variable pattern {\tt \sharpsymbol 
 $\tt S\cln \KSort$}.
-A sort $\parametric{C}{s_1,\dots,s_n}$ with sort constructor $C$ and a list of 
+A sort $\parametric{C_\itsort}{s_1,\dots,s_n}$ with sort constructor 
+$C_\itsort$ and a list of 
 sort parameters is lifted as
-$$ \denote{\parametric{C}{s_1,\dots,s_n}} = 
-\parametric{\denote{C}}{}(\denote{s_1}, \dots,\denote{s_n})$$
+$$ \denote{\parametric{C_\itsort}{s_1,\dots,s_n}} = 
+\texttt{$\denote{C_\itsort}$($\denote{s_1}$,\dots,$\denote{s_n}$)}$$
 
 For example,
 \begin{center}{\ttfamily
 		\begin{tabular}{llr}
-			\textrm{Object Sort} & \textrm{Lifting To} &  \textrm{Meta-Pattern}
+			\textrm{Object Sort} & \textrm{Is Lifted To} &  
+			\textrm{Meta-Pattern}
 			\\\hline
 			\parametric{Nat}{} & & \parametric{\sharpsymbol Nat}{}()
 			\\\hline
@@ -3701,7 +3732,46 @@ For example,
 		\end{tabular}
 	}
 \end{center}
-\subsubsection{Lift Symbol Declarations}
+
+For any object sort declaration \texttt{sort 
+$\parametric{C_\itsort}{S_1,\dots,S_n}$} 
+with sort constructor $C_\itsort$ and sort variables $S_1,\dots,S_n$, 
+define the lifting operation as
+\begin{align*}
+  \denote{\texttt{sort \parametric{$C_\itsort$}{$S_1$,\dots,$S_n$}}} =
+  &\ \texttt{symbol 
+  $\denote{C_\itsort}$(\parametric{\KSort}{},\dots,\parametric{\KSort}{}):\parametric{\KSort}{}}
+  \\
+  &\ \texttt{axiom \parametric{equals}{\parametric{\KSort}{},\sharpsymbol S}(}
+  \\
+  &\qquad\qquad\quad
+  \texttt{$\denote{C_\itsort}$($\denote{S_1}$,\dots,$\denote{S_n}$),}
+  \\
+  &\qquad\qquad\quad
+  \texttt{\parametric{\Ksort}{}($\denote{C_\itsort}_\name$, 
+  $\denote{S_1,\dots,S_n}_\llist$))}
+\end{align*}
+The sort list lifting operation $\denote{\_}_\llist$ takes a list 
+$\alpha$ of sorts 
+and lift them to a $\parametric{\KSortList}{}$ pattern as follows (using Kore 
+syntax):
+\begin{align*}
+\denote{\alpha}_\llist = 
+\begin{cases*}
+\parametric{\KnilKSortList}{}\texttt{()} & if $\alpha$ is empty list \\
+\parametric{\KconsKSortList}{}\texttt{($\denote{s}$,$\denote{\beta}_\llist$)} 
+& if 
+$\alpha 
+= s, \beta$
+\end{cases*}
+\end{align*}
+\subsubsection{Lift Object Symbols}
+Object symbol constructors $C_\itsymbol$ are lifted to non-parametric meta 
+symbols as
+$$ \denote{C_\itsymbol} = \parametric{\denote{C_\itsymbol}_\sharp}{}$$
+
+
+
 \subsubsection{Lift Patterns}
 \begin{algorithm}[h]
 	\KwIn{An object-pattern $\varphi$.}
