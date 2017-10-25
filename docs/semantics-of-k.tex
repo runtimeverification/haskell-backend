@@ -2033,17 +2033,21 @@ where
 	relation in matching logic (see Section~\ref{sec:ML-proof-system})
 \end{itemize}
 
-The double bracket $\denote{\_}$ is called \emph{lifting}, which brings objects to their meta-representations in the meta-theory $K$.
-Lifting will be defined in detail in Section~\ref{sec:reflect}, after we 
+The double bracket $\denote{\_}$ is called \emph{lifting operation}, which 
+brings 
+objects to their meta-representations in the meta-theory $K$.
+Lifting operation will be defined in detail in Section~\ref{sec:reflect}, after 
+we 
 present in full length the meta-theory $K$ in Secion~\ref{sec:meta-theory}
 
 \section{Meta-Theory of Matching Logic}
 \label{sec:meta-theory}
 
-In this section, we present a finite matching logic theory $K = ( S_K, \Sigma_K, F_K )$ as \emph{the meta-theory of matching logic}.
+In this section, we present a finite matching logic theory $K = ( S_K, 
+\Sigma_K, F_K )$ as \emph{the meta-theory of matching logic}.
 $K$ is a finite theory and has $S_K$ , $\Sigma_K$, and $F_K$ being its finite sets of sorts, symbols, and axioms, respectively.
 We are going to define the meta-theory $K$ in detail in the following subsections.
-A summary is provided in Section~\ref{sec:K-summary}.
+A summary of the meta-theory $K$ is provided in Section~\ref{sec:K-summary}.
 
 \subsection{Truth}
 
@@ -3338,7 +3342,7 @@ used to, and are always able to write meta-level definitions and specifications
 to use the full power of the meta-theory and the faithful reflection relation.
 Object-level declarations and specifications are seen as just syntactic sugar 
 of the more verbose meta-level declarations.
-This process of ``desugaring object specifications to meta specifications'' are 
+This process of ``desugaring object specifications to meta-specifications'' are 
 called \emph{lifting}, which is giving Kore a semantics as a specification 
 language (Section~\ref{sec:kore-semantics}).
 
@@ -3471,7 +3475,7 @@ constructor and a list of object (or meta) sorts.
 \end{grammar}
 
 
-Here are some examples of object and meta sorts written in Kore syntax.
+Here are some examples of object and meta-sorts written in Kore syntax.
 \begin{center}{\ttfamily
 \begin{tabular}{lllllll}
 	\textrm{Sort} &
@@ -3522,15 +3526,15 @@ The number of parameters that a sort constructor needs is called the
 \emph{sort declaration} that is discussed in 
 Section~\ref{sec:kore-syntax-sort-declaration}.
 
-Since the meta-theory is a finite theory, there is no parametric meta sort 
+Since the meta-theory is a finite theory, there is no parametric meta-sort 
 constructor.
-All meta sort constructors are non-parametric and have zero arity.
-Since meta sort constructors are all non-parametric, meta sort variables are 
-not used to construct meta sorts.
-Instead, they are used to construct meta pattern schemas, which is discussed in 
+All meta-sort constructors are non-parametric and have zero arity.
+Since meta-sort constructors are all non-parametric, meta-sort variables are 
+not used to construct meta-sorts.
+Instead, they are used to construct meta-pattern schemas, which is discussed in 
 Section~\ref{sec:kore-syntax-pattern}.
 
-The fixed number of predefined non-parametric meta sort constructors in Kore 
+The fixed number of predefined non-parametric meta-sort constructors in Kore 
 are in correspondence to sorts in the meta-theory $K$ (see 
 Section~\ref{sec:K-summary}).
 They are
@@ -3576,7 +3580,7 @@ Here are some examples of sort declarations in Kore.
 	}
 \end{center}
 
-In Kore, new meta sort constructors cannot be declared.
+In Kore, new meta-sort constructors cannot be declared.
 
 \subsubsection{Symbol.}
 A symbol in Kore is of the form $\parametric{C_\itsymbol}{s_1,\dots,s_n}$ for 
@@ -3596,7 +3600,7 @@ object (or meta) symbol constructor and a list of object (or meta) sorts.
 	<meta-symbol-constructor> ::= <meta-identifier>
 \end{grammar}
 
-Here are some examples of object and meta symbols written in Kore syntax.
+Here are some examples of object and meta-symbols written in Kore syntax.
 
 \begin{center}{\ttfamily
 		\begin{tabular}{lllll}
@@ -3645,7 +3649,7 @@ declarations, introduced in Section~\ref{sec:kore-syntax-symbol-declaration}.
 \subsubsection{Symbol Declaration}
 \label{sec:kore-syntax-symbol-declaration}
 
-Both object and meta symbols can be declared with the keyword 
+Both object and meta-symbols can be declared with the keyword 
 ``\texttt{symbol}'', followed by the symbol constructor being declared, a list 
 of sort variables, a list of argument sorts, and a result sort.
 
@@ -3692,8 +3696,8 @@ Here are some examples of symbol declarations in Kore.
 	}
 \end{center}
 
-Notice that allowing parametric meta symbols does not break the finitary of the 
-meta-theory, because the number of meta sorts in Kore is finite.
+Notice that allowing parametric meta-symbols does not break the finitary of the 
+meta-theory, because the number of meta-sorts in Kore is finite.
 
 \subsubsection{Logic Connective}
 In Kore, a \emph{logic connective} (or simply a \emph{connective}) is of the 
@@ -3775,7 +3779,7 @@ String literals are patterns on their own.
 A pattern is said to be an object (or meta) pattern if it has an object (or 
 meta) head, or it is a variable pattern with an object (or meta) variable name 
 and an object (or meta) sort.
-String literals are meta patterns.
+String literals are meta-patterns.
 
 \begin{grammar}\small
 	<pattern> ::= <object-pattern> | <meta-pattern>
@@ -3798,7 +3802,7 @@ String literals are meta patterns.
 	<meta-variable-name> ::= <meta-identifier>
 \end{grammar}
 
-Notice that whether a pattern is an object or a meta one depends only on its 
+Notice that whether a pattern is an object or a meta-one depends only on its 
 head, not the patter list that the head applies on.
 
 \subsubsection{Axiom Declarations}
@@ -3810,16 +3814,20 @@ with curly braces.
 \end{grammar}
 If the pattern is an object pattern, we call the declaration an \emph{object 
 axiom declaration}.
-Otherwise, it is a \emph{meta axiom declaration}.
+Otherwise, it is a \emph{meta-axiom declaration}.
 
 \subsubsection{Wellformedness}
 \label{sec:kore-syntax-wellformedness}
 
 \subsection{Kore Semantics}
 \label{sec:kore-semantics}
-Give a theory $T$ defined as a Kore definition ``\verb|definition.kore|'' which consists of a set of object sort declarations, a set of object and meta symbol declarations, and a set of object and meta axiom declarations using the syntax that we have introduced before.
+Give a theory $T$ defined as a Kore definition ``\verb|definition.kore|'' which 
+consists of a set of object sort declarations, a set of object and meta-symbol 
+declarations, and a set of object and meta-axiom declarations using the syntax 
+that we have introduced before.
 The \emph{semantics} of the theory $T$, known as \emph{the meta-theory instantiated with $T$}, is given by \emph{lifting} the Kore definition ``\verb|definition.kore|'' to the Kore definition ``\verb|#definition.kore|'' which encodes $\denote{T}$.
-The Kore definition ``\verb|#definition.kore|'' will contain only meta symbol declarations and meta axiom declarations.
+The Kore definition ``\verb|#definition.kore|'' will contain only meta-symbol 
+declarations and meta-axiom declarations.
 The lifting algorithm is defined in the next few sections.
 \subsubsection{General Principle of Lifting}
 The general principle of the lifting operation is to lift whatever object level 
@@ -3831,10 +3839,10 @@ declaration that declares ``the object sort/symbol/axiom is declared''.
 
 Here is one more word about lifting a pattern.
 Recall that most patterns are constructed with a head and a list of patterns, 
-and the list of patterns can be a mixture of object and meta patterns.
+and the list of patterns can be a mixture of object and meta-patterns.
 If the pattern-being-lifted is an object pattern, both its head and list of 
 subpatterns are lifted. 
-If the pattern-being-lifted is a meta pattern, only its subpatterns are lifted, 
+If the pattern-being-lifted is a meta-pattern, only its subpatterns are lifted, 
 and its head is not lifted.
 
 \begin{notation}
@@ -3858,7 +3866,7 @@ identifier $x$}
 
 
 \subsubsection{Lift Object \& Reserved Identifiers To Meta Identifiers}
-Object and reserved identifiers are lifted to meta identifiers by appending the 
+Object and reserved identifiers are lifted to meta-identifiers by appending the 
 sharp symbol \quottt{\sharpsymbol} in front.
 \begin{align*}
 &\denote{\_}_\sharp \colon \syntacc{object-identifier} \cup 
@@ -3869,7 +3877,7 @@ reserved identifier $x$}
 \end{align*}
 
 \subsubsection{Lift Object Sort Constructors To Meta Symbols}
-Object sort constructors are lifted to non-parametric meta symbols 
+Object sort constructors are lifted to non-parametric meta-symbols 
 as
 \begin{align*}
 & \denote{\_} \colon \syntacc{object-sort-constructor} \to \syntacc{meta-symbol}
@@ -3894,7 +3902,7 @@ For example,
 \end{center}
 
 \subsubsection{Lift Object Sorts To Meta Patterns}
-Object sorts are lifted to meta patterns by the lifting operation inductively 
+Object sorts are lifted to meta-patterns by the lifting operation inductively 
 defined as
 \begin{align*}
 &\denote{\_} \colon \syntacc{object-sort} \to \syntacc{meta-pattern} \\
@@ -3986,9 +3994,9 @@ $\alpha
 \end{cases*}
 \end{align*}
 The sort declared lifting function $\denote{\_}_\itdeclared$ is depended on a 
-meta sort variable \texttt{\sharpsymbol S} and  
+meta-sort variable \texttt{\sharpsymbol S} and  
 takes a list $\alpha$ of sorts and lifts them 
-to a meta pattern as follows:
+to a meta-pattern as follows:
 \begin{align*}
 \denote{\alpha}_\itdeclared = 
 \begin{cases*}
@@ -4003,7 +4011,7 @@ $\alpha
 \end{align*}
 
 \subsubsection{Lift Object Symbol Constructors To Meta Symbols}
-Object symbol constructors are lifted to non-parametric meta symbols as
+Object symbol constructors are lifted to non-parametric meta-symbols as
 \begin{align*}
 & \denote{\_} \colon \syntacc{object-symbol-constructor} \to 
 \syntacc{meta-symbol}\\
@@ -4073,7 +4081,7 @@ $\varphi, \beta$
 \end{equation*}
 
 \subsubsection{Lift Connective Constructors To Meta Symbols}
-Connective constructors are lifted to non-parametric meta symbols as 
+Connective constructors are lifted to non-parametric meta-symbols as 
 follows.
 \begin{align*}
 & \denote{\_} \colon \syntacc{connective} \to \syntacc{meta-symbol} \\
@@ -4084,11 +4092,11 @@ follows.
 \subsubsection{Lift Object Head Constructors To Meta Symbols}
 Recall that a head constructor is either a symbol constructor or a connective 
 constructor.
-A head constructor $C$ is lifted to the meta symbol $\denote{C}$ in the same 
+A head constructor $C$ is lifted to the meta-symbol $\denote{C}$ in the same 
 way a symbol/connective constructor is lifted.
 
 \subsubsection{Lift Object Variables To Meta Patterns of Sort \KVariable}
-Variables are lifted to meta patterns of sort {\KVariable} as follows.
+Variables are lifted to meta-patterns of sort {\KVariable} as follows.
 \begin{align*}
 &\denote{\_}_0 \colon \syntacc{object-variable} \to \syntacc{meta-pattern} \\
 &\denote{x \cln s} = \texttt{\parametric{\Kvariable}{}($\denote{
@@ -4097,11 +4105,11 @@ Variables are lifted to meta patterns of sort {\KVariable} as follows.
 \end{align*}
 
 \subsubsection{Lift Patterns To Meta Patterns of Sort \KPattern}
-One of the main part of the lifting operation is lifting patterns to meta 
+One of the main part of the lifting operation is lifting patterns to meta-
 patterns of sort \KPattern, which is the main job of this subsection.
 We recall the readers of the following grammar of Kore 
 patterns, in which we intensionally merge the grammars of both object and 
-meta patterns for simplicity.
+meta-patterns for simplicity.
 \begin{grammar}
 	<pattern> ::= \quad
 	\alt <object-identifier> `:' <object-sort>
@@ -4124,7 +4132,7 @@ variable}
 
 \paragraph{Case B: Meta Variable Pattern.} \quad
 \begin{align*}
-\denote{v} = v \quad \text{if $v$ is a meta variable}
+\denote{v} = v \quad \text{if $v$ is a meta-variable}
 \end{align*}
 
 \paragraph{Case C: String Literal.}\quad
@@ -4187,10 +4195,10 @@ In Kore, an axiom declaration is lifted as follows.
   	\Kdeduce($\denote{\varphi}$)} & 
   if $\varphi$ is an object pattern \\
   \texttt{\parametric{axiom}{$s'_1,\dots,s'_m$} $\denote{\varphi}$} & if
-  $\varphi$ is a meta pattern
+  $\varphi$ is a meta-pattern
   	\end{cases*}
 \end{align*}
-where $s_1',\dots,s_m'$ are all those meta variables in $s_1,\dots,s_n$.
+where $s_1',\dots,s_m'$ are all those meta-variables in $s_1,\dots,s_n$.
 
 
 \subsection{Example A: Presburger Arithmetic}
