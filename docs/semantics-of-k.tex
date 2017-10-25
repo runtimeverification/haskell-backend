@@ -375,6 +375,8 @@
   \newcommand{\itconnective}{\mathit{connective}}
   \newcommand{\itsort}{\mathit{sort}}
   \newcommand{\itsymbol}{\mathit{symbol}}
+  \newcommand{\itdeclared}{\mathit{declared}}
+  \newcommand{\itsortDeclared}{\mathit{sortDeclared}}
   
   % Define syntactic category <category>
   \newcommand{\syntacc}[1]{\text{$\langle$\textit{#1}$\rangle$}}
@@ -3876,67 +3878,86 @@ For example,
 \end{center}
 
 \subsubsection{Lift Object Sorts To Meta Patterns}
-Object sorts are lifted to meta patterns by the lifting operation:
+Object sorts are lifted to meta patterns by the lifting operation inductively 
+defined as
 \begin{align*}
-\denote{\_} \colon \syntacc{object-sort} \to \syntacc{meta-pattern}
+&\denote{\_} \colon \syntacc{object-sort} \to \syntacc{meta-pattern} \\
+&\denote{s} = \begin{cases*}
+\denote{S}_\sharp  \ \quottt{:} \ \quottt{\KSort} & if $s$ is an object sort 
+variable 
+$S$ \\
+\texttt{$\denote{C_\itsort}$($\denote{s_1}$,\dots,$\denote{s_n}$)} & if $s$ is 
+$\parametric{C_\itsort}{s_1,\dots,s_n}$  \\
+& where $C_\itsort$ is an object sort constructor \\
+& and $s_1,\dots,s_n$ are object sorts
+\end{cases*}
 \end{align*}
 
-A sort variable $\tt S$ is lifted to a variable pattern {\tt \sharpsymbol 
-$\tt S\cln \KSort$}.
-A sort $\parametric{C_\itsort}{s_1,\dots,s_n}$ with sort constructor 
-$C_\itsort$ and a list of 
-sort parameters is lifted as
-$$ \denote{\parametric{C_\itsort}{s_1,\dots,s_n}} = 
-\texttt{$\denote{C_\itsort}$($\denote{s_1}$,\dots,$\denote{s_n}$)}$$
+
 
 For example,
 \begin{center}{\ttfamily
-		\begin{tabular}{llr}
-			\textrm{Object Sort} & \textrm{Is Lifted To} &  
-			\textrm{Meta-Pattern}
+		\begin{tabular}{l|l}
+			\textrm{Object Sort $s$} & \textrm{Meta Pattern $\denote{s}$}
 			\\\hline
-			\parametric{Nat}{} & & \parametric{\sharpsymbol Nat}{}()
+			\parametric{Nat}{} & \parametric{\sharpsymbol Nat}{}()
 			\\\hline
-			\parametric{List}{\parametric{Nat}{}} & & 
+			\parametric{List}{\parametric{Nat}{}} & 
 			\parametric{\sharpsymbol List}{}(\parametric{\sharpsymbol Nat}{}())
 			\\\hline
-			\parametric{Map}{\parametric{Nat}{},S} & & \parametric{\sharpsymbol 
+			\parametric{Map}{\parametric{Nat}{},S} & \parametric{\sharpsymbol 
 			Map}{}(\parametric{\sharpsymbol Nat}{}(),\sharpsymbol S:\KSort)
 			\\\hline
-			\parametric{Map}{S1,\parametric{List}{S2}} & & 
+			\parametric{Map}{S1,\parametric{List}{S2}} & 
 			\parametric{\sharpsymbol Map}{}(\sharpsymbol 
 			S1:\KSort,\parametric{\sharpsymbol 
 			List}{}(\sharpsymbol S2:\KSort))
 			\\\hline
-			S & & \sharpsymbol S:\KSort
+			S & \sharpsymbol S:\KSort
 		\end{tabular}
 	}
 \end{center}
 
-For any object sort declaration \begin{center}
-	\texttt{sort 
-$\parametric{C_\itsort}{S_1,\dots,S_n}$} 
-\end{center}
+\subsubsection{Lift Sort Declarations To Symbol \& Axiom Declarations}
+A sort declaration is lifted to a symbol declaration and two axiom declarations
+$$ \denote{\_} \colon \syntacc{sort-declaration} \to 
+\syntacc{declaration-list}$$
+defined as follows.
+For any sort schema $\parametric{C_\itsort}{S_1,\dots,S_n}$
 with sort constructor $C_\itsort$ and sort variables $S_1,\dots,S_n$, 
-define the lifting operation as
+its lifting is
 \begin{align*}
-  \denote{\texttt{sort \parametric{$C_\itsort$}{$S_1$,\dots,$S_n$}}} =
-  &\ \texttt{symbol 
-  $\denote{C_\itsort}$(\parametric{\KSort}{},\dots,\parametric{\KSort}{}):\parametric{\KSort}{}}
+  &\ \denote{\texttt{sort \parametric{$C_\itsort$}{$S_1$,\dots,$S_n$}}} \\
+  = &\ \texttt{symbol 
+  $\denote{C_\itsort}$($\underbrace{\parametric{
+  		\KSort}{},\dots,\parametric{\KSort}{}}_\textrm{$n$ 
+  		times}$):\parametric{\KSort}{}}
   \\
   &\ \texttt{\parametric{axiom}{\sharpsymbol S} 
-  \parametric{equals}{\parametric{\KSort}{},\sharpsymbol S}(}
+  \parametric{\slequals}{\parametric{\KSort}{},\sharpsymbol S}(}
   \\
-  &\qquad\qquad\qquad
-  \texttt{$\denote{C_\itsort}$($\denote{S_1}$,\dots,$\denote{S_n}$),}
+  &\qquad\qquad\qquad\quad
+  \texttt{$\denote{\parametric{C_\itsort}{S_1,\dots,S_n}}$,}
   \\
-  &\qquad\qquad\qquad
+  &\qquad\qquad\qquad\quad
   \texttt{\parametric{\Ksort}{}($\denote{C_\itsort}_\name$, 
   $\denote{S_1,\dots,S_n}_\llist$))}
+  \\
+  &\ 
+  \texttt{\parametric{axiom}{\sharpsymbol S}
+  \parametric{\slimplies}{\sharpsymbol S}( }
+  \\
+  &\qquad\qquad\qquad\quad
+  \texttt{$\denote{S_1,\dots,S_n}_\itdeclared$,}
+  \\
+  &\qquad\qquad\qquad\quad
+  \texttt{$\denote{\parametric{C_\itsort}{S_1,\dots,S_n}}_\itdeclared$)}
 \end{align*}
+where $\denote{\_}_\llist$ and $\denote{\_}_\itdeclared$ are two auxiliary 
+lifting operations defined as follows.
 The sort list lifting operation $\denote{\_}_\llist$ takes a list 
 $\alpha$ of sorts 
-and lift them to a $\parametric{\KSortList}{}$ pattern as follows (using Kore 
+and lifts them to a $\parametric{\KSortList}{}$ pattern as follows (using Kore 
 syntax):
 \begin{align*}
 \denote{\alpha}_\llist = 
@@ -3948,17 +3969,34 @@ $\alpha
 = s, \beta$
 \end{cases*}
 \end{align*}
-\subsubsection{Lift Connective Constructors To Meta Symbols}
-Connectives constructor are lifted to non-parametric meta symbols as 
-follows.
-For any logic connective constructor $C_\itlogic$, 
-$$\denote{C_\itlogic} = \parametric{\denote{C_\itlogic}_\sharp}{}$$
+The sort declared lifting function $\denote{\_}_\itdeclared$ is depended on a 
+meta sort variable \texttt{\sharpsymbol S} and  
+takes a list $\alpha$ of sorts and lifts them 
+to a meta pattern as follows:
+\begin{align*}
+\denote{\alpha}_\itdeclared = 
+\begin{cases*}
+\parametric{\sltop}{\texttt{\sharpsymbol S}} & if $\alpha$ is empty list \\
+\parametric{\sland}{\texttt{\sharpsymbol 
+S}}\texttt{(\parametric{\KsortDeclared}{}($\denote{s}$),$\denote{
+\beta}_\itdeclared$)}
+& if 
+$\alpha 
+= s, \beta$
+\end{cases*}
+\end{align*}
 
-\subsubsection{Lift Object Symbols}
-Object symbol constructors $C_\itsymbol$ are lifted to non-parametric meta 
-symbols as
-$$ \denote{C_\itsymbol} = \parametric{\denote{C_\itsymbol}_\sharp}{}$$
+\subsubsection{Lift Object Symbol Constructors To Meta Symbols}
+Object symbol constructors are lifted to non-parametric meta symbols as
+\begin{align*}
+& \denote{\_} \colon \syntacc{object-symbol-constructor} \to 
+\syntacc{meta-symbol}\\
+& \denote{C_\itsymbol} = \parametric{\denote{C_\itsymbol}_\sharp}{} \quad 
+\text{for any object symbol constructor $C_\itsymbol$}
+\end{align*}
 
+
+\subsubsection{Lift Object Symbol Declarations To Symbol \& Axiom Declarations}
 An object symbol declaration \begin{center}
 	\texttt{symbol 
 \parametric{$C_\itsymbol$}{$S_1$,\dots,$S_m$}($s_1$,\dots,$s_n$):$s$}
@@ -3971,9 +4009,9 @@ argument sorts $s_1,\dots,s_n$, and return sort $s$, is lifted as
 \\ =\
 & \texttt{symbol 
 $\denote{C_\itsymbol}$($\underbrace{\parametric{\KSort}{},\dots,
-	\parametric{\KSort}{}}_\text{$m$\,times}$,$\underbrace{
+	\parametric{\KSort}{}}_\textrm{$m$ times}$,$\underbrace{
 	\parametric{\KPattern}{},\dots,\parametric{
-		\KPattern}{}}_\text{$n$\,times}$):\parametric{\KPattern}{}}
+		\KPattern}{}}_\textrm{$n$ times}$):\parametric{\KPattern}{}}
 \\ 
 & \texttt{\parametric{axiom}{\sharpsymbol S}
 \parametric{\slequals}{\parametric{\KPattern}{},\sharpsymbol S}(
@@ -3990,16 +4028,35 @@ $\denote{C_\itsymbol}$($\underbrace{\parametric{\KSort}{},\dots,
 			P1:\parametric{\KPattern}{},\dots,\sharpsymbol 
 			Pn:\parametric{\KPattern}{}}}_\llist$))
 }
+\\
+& \texttt{\parametric{axiom}{\sharpsymbol S}
+	\parametric{\Kimplies}{\sharpsymbol S}($\denote{
+		S_1,\dots,S_n}_\itdeclared$,
+	\parametric{\KsymbolDeclared}{\sharpsymbol 
+	S}($\denote{C_\itsymbol}_\itsymbol$))
+}
 \end{align*}
-in which $\denote{\_}_\itsymbol$ (given $S_1,\dots,S_m,s_1,\dots,s_n,s$) is 
+in which $\denote{\_}_\itsymbol$ (given 
+$S_1,\dots,S_m,s_1,\dots,s_n,s$, and \texttt{\sharpsymbol S}) is 
 defined as
 \begin{align*}
   \denote{C_\itsymbol}_\itsymbol = 
-  &\ \texttt{\Ksymbol($\denote{C_\itsymbol}_\name$,} \\
-  &\ \qquad\qquad \texttt{$\denote{S_1,\dots,S_m}_\llist$,} \\
-  &\ \qquad\qquad \texttt{$\denote{s_1,\dots,s_n}_\llist$,} \\
-  &\ \qquad\qquad \texttt{$\denote{s}$))}
+  \texttt{\Ksymbol($\denote{C_\itsymbol}_\name$,$\denote{
+  		S_1,\dots,S_m}_\llist$,$\denote{
+  		s_1,\dots,s_n}_\llist$,$\denote{
+  		s}$))}
 \end{align*}
+
+\subsubsection{Lift Connective Constructors To Meta Symbols}
+Connective constructors are lifted to non-parametric meta symbols as 
+follows.
+\begin{align*}
+& \denote{\_} \colon \syntacc{connective} \to \syntacc{meta-symbol} \\
+& \denote{C_\itlogic} = \parametric{\denote{C_\itlogic}_\sharp}{} \quad 
+\text{for any connective constructor $C_\itconnective$}
+\end{align*}
+
+
 \subsubsection{Lift Patterns}
 Recall the following grammar of patterns
 \begin{grammar}
