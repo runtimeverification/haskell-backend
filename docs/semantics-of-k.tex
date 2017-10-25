@@ -111,12 +111,6 @@
   % Package for writing BNF syntax
   \usepackage{syntax}
   
-  % Package for using the symbol "§", e.g., "Section §3.1".
-  % Use \cref{label} to cite Secctions.
-  \usepackage[utf8]{inputenc}
-  \usepackage{cleveref}
-  \crefname{section}{§}{§§}
-  
   % Package for lstlisting and definition of Kore
   \usepackage{listings}
   % Define colors
@@ -1964,7 +1958,8 @@ not r.e.).
 \section{The Meta-Theory: A Reflection in Matching Logic}
 \label{sec:meta-theory-reflection}
 
-This section is a follow-up to Section~\cref{sec:finite-mechanisms},\improvement{we should uniformly use either ``cref'' of ``ref''}
+This section is a follow-up to 
+Section~\ref{sec:finite-mechanisms},
 in which 
 we introduced various \emph{schema mechanisms} that allow us to define infinite 
 theories using a finite amount of resources.
@@ -1972,7 +1967,7 @@ In this and the next few sections, we give such schema mechanisms \emph{a
 formal meaning} by axiomatizing them as a matching logic theory: the 
 meta-theory $K$.
 We are going to define the meta-theory $K$ in detail in 
-Section~\cref{sec:meta-theory}, while before that, we would like to
+Section~\ref{sec:meta-theory}, while before that, we would like to
 illustrate the big picture first and point out the relationship between our work
 and the studies of \emph{reflection in logic}.
 
@@ -2034,11 +2029,13 @@ where
 	\item $\denote{T}$, called the \emph{meta-representation of $T$}, consists of a finite number of new symbols and axioms depending on $T$;
 	\item $K \cup \denote{T}$, called the \emph{meta-theory instantiated by $T$}, is the meta-theory $K$ plus the finitely many symbols and axioms in $\denote{T}$;
 	\item $\denote{\varphi}$ is the \emph{meta-representation of $\varphi$} as a matching logic pattern in $K \cup \denote{T}$;
-	\item $\Kdeduce$ is a symbol in $K$ which axiomatizes the probability relation in matching logic (see Section~\cref{sec:ML-proof-system})
+	\item $\Kdeduce$ is a symbol in $K$ which axiomatizes the probability 
+	relation in matching logic (see Section~\ref{sec:ML-proof-system})
 \end{itemize}
 
 The double bracket $\denote{\_}$ is called \emph{lifting}, which brings objects to their meta-representations in the meta-theory $K$.
-Lifting will be defined in detail in Section~\cref{sec:reflect}, after we present in full length the meta-theory $K$ in Secion~\cref{sec:meta-theory}
+Lifting will be defined in detail in Section~\ref{sec:reflect}, after we 
+present in full length the meta-theory $K$ in Secion~\ref{sec:meta-theory}
 
 \section{Meta-Theory of Matching Logic}
 \label{sec:meta-theory}
@@ -2046,7 +2043,7 @@ Lifting will be defined in detail in Section~\cref{sec:reflect}, after we presen
 In this section, we present a finite matching logic theory $K = ( S_K, \Sigma_K, F_K )$ as \emph{the meta-theory of matching logic}.
 $K$ is a finite theory and has $S_K$ , $\Sigma_K$, and $F_K$ being its finite sets of sorts, symbols, and axioms, respectively.
 We are going to define the meta-theory $K$ in detail in the following subsections.
-A summary is provided in Section~\cref{sec:K-summary}.
+A summary is provided in Section~\ref{sec:K-summary}.
 
 \subsection{Truth}
 
@@ -2074,7 +2071,8 @@ The sort $\KChar$ is the sort for \emph{characters}. It has the following $26 + 
 
 \paragraph{String as Finite Lists of Characters.}\quad
 Characters are used to construct \emph{strings}, which will be formalized as finite lists of characters.
-In Section~\cref{sec:finite-lists}, we will define a sort $\KCharList$ for finites lists of characters, and two functional constructors
+In Section~\ref{sec:finite-lists}, we will define a sort $\KCharList$ for 
+finites lists of characters, and two functional constructors
 \begin{align*}
  & \KnilKCharList \colon \to \KCharList \\
  & \KconsKCharList \colon \KChar \times \KCharList \to \KCharList
@@ -2107,7 +2105,8 @@ which takes a \emph{name} and a list of \emph{sort parameters}.
 The sort $\KSymbol$ is the sort for matching logic symbols.
 The only constructor of the sort $\KSymbol$ is the functional symbol
 \begin{equation*}
-\Ksymbol \colon \KString \times \KSortList\footnote{The sort $\KSortList$ is defined in Section~\cref{sec:finite-lists}} \times \KSort \times \KSortList \to 
+\Ksymbol \colon \KString \times \KSortList\footnote{The sort $\KSortList$ is 
+defined in Section~\ref{sec:finite-lists}} \times \KSort \times \KSortList \to 
 \KSymbol \times \KSort \to \KSymbol
 \end{equation*}
 where the first argument is called the \emph{name} of the symbol, and the rest arguments are called the \emph{argument sorts} and the \emph{return sort} of the symbol. 
@@ -2149,7 +2148,7 @@ Notation~\ref{notation:lists}).
 
 For sorts $\KChar$, $\KSort$, $\KSymbol$, $\KVariable$, and 
 $\KPattern$\footnote{The sort $\KPattern$ is defined in 
-Section~\cref{sec:matching-logic-patterns}.}
+Section~\ref{sec:matching-logic-patterns}.}
 in $S_K$,
 we define sorts $\KCharList$, $\KSortList$, $\KSymbolList$, and $\KPatternList$ to be the sorts of finite lists over them, respectively.
 Formally, for any sort $X$ where
@@ -2785,14 +2784,17 @@ R)).$$
 
 \section{Reflect Theories in the Meta-Theory}
 \label{sec:reflect}
-We have shown the readers the big picture of the meta-theory $K$ and its usage in Section~\cref{sec:meta-theory}.
+We have shown the readers the big picture of the meta-theory $K$ and its usage 
+in Section~\ref{sec:meta-theory}.
 In this section, we will show in detail how to \emph{lift} any r.e. matching logic theory $T$ to its meta-representation $\denote{T}$, and present the faithfulness theorem of $K$.
 
 \subsection{Naming Functions}
 A naming function associates any object to a string, called its \emph{name}.
 For example, $\Bool$ is a non-parametric sort in Boolean algebra, and the string ``Bool'' is its name.
 $\List$ is a parametric sort, and the string ``List'' is its name.
-A naming function is a prerequisite for anything to be represented in the meta-theory $K$ (see Section~\cref{sec:chars-string}), and in Kore we assume the names of anything is itself wrapped with quotation marks.
+A naming function is a prerequisite for anything to be represented in the 
+meta-theory $K$ (see Section~\ref{sec:chars-string}), and in Kore we assume the 
+names of anything is itself wrapped with quotation marks.
 
 \begin{center}
 	\begin{tabular}{l|r}
@@ -2928,7 +2930,8 @@ $$ \KsortDeclared(s_1) \wedge \dots \wedge  \KsortDeclared(s_n) \to \KaxiomDecla
 %patterns by their abstract syntax trees in the meta-theory $K$.
 %A majority portion of the meta-theory $K$ is about the construction of abstract 
 %syntax trees of sorts, symbols, and patterns, and common operations on those 
-%abstract syntax trees (for more details, please refer to Sections~\cref{sec:ML-sorts-symbols,sec:ML-patterns,sec:meta-theory-sort-parameters}).
+%abstract syntax trees (for more details, please refer to 
+%Sections~\ref{sec:ML-sorts-symbols,sec:ML-patterns,sec:meta-theory-sort-parameters}).
 %
 %\begin{center}
 %	\begin{tabular}{l|r}
@@ -2989,7 +2992,10 @@ $$ \KsortDeclared(s_1) \wedge \dots \wedge  \KsortDeclared(s_n) \to \KaxiomDecla
 %
 %\paragraph{Declarations as Assertions.}
 %
-%A Kore definition contains some sort, symbol, and axiom declarations, whose formal semantics are given in the meta-theory with three predicate symbols: $\KsortDeclared$, $\KsymbolDeclared$, and $\KaxiomDeclared$ (See Section~\cref{sec:ML-theories}).
+%A Kore definition contains some sort, symbol, and axiom declarations, whose 
+%formal semantics are given in the meta-theory with three predicate symbols: 
+%$\KsortDeclared$, $\KsymbolDeclared$, and $\KaxiomDeclared$ (See 
+%Section~\ref{sec:ML-theories}).
 %
 %\begin{center}
 %	\begin{tabular}{l|r}
@@ -3104,7 +3110,7 @@ $$ \KsortDeclared(s_1) \wedge \dots \wedge  \KsortDeclared(s_n) \to \KaxiomDecla
 %\paragraph{Declarations in $L$ as Assertions in $K$.} \quad
 %We list all declarations in $L$ and their corresponding assertions in $K$, 
 %without explaining them.
-%We will formally define the process in Section~\cref{?}, but for now we only 
+%We will formally define the process in Section~\ref{?}, but for now we only 
 %provide a taste of flavor of the meta-theory $K$.
 %
 %In $L$,
@@ -3178,7 +3184,7 @@ $$ \KsortDeclared(s_1) \wedge \dots \wedge  \KsortDeclared(s_n) \to \KaxiomDecla
 %mention for it}, denoted as the string ``Bool''.
 %
 %The sort in $K$ for strings is $\KString$, which are defined in 
-%Section~\cref{?}.
+%Section~\ref{?}.
 
 
 
@@ -3301,7 +3307,7 @@ number of characters and space.
 
 Before we present the syntax and semantics of Kore, we would like to recall 
 the readers of upward and downward reflection relations that we have introduced 
-in Section~\cref{sec:meta-theory}, a.k.a. the faithfulness theorem.
+in Section~\ref{sec:meta-theory}, a.k.a. the faithfulness theorem.
 \begin{center}
 	\begin{tabular}{cc}
 		$
@@ -3334,7 +3340,7 @@ Object-level declarations and specifications are seen as just syntactic sugar
 of the more verbose meta-level declarations.
 This process of ``desugaring object specifications to meta specifications'' are 
 called \emph{lifting}, which is giving Kore a semantics as a specification 
-language (Section~\cref{sec:kore-semantics}).
+language (Section~\ref{sec:kore-semantics}).
 
 \subsection{Kore Syntax}
 
@@ -3436,7 +3442,7 @@ exactly the same prefix normal form,
 and we do not want to confuse the three of them.
 Instead, we use reserved identities for matching logic connectives, object 
 identities for object-level symbols, and meta-level identities for meta-level 
-symbols, as we will se in Section~\cref{sec:kore-syntax-pattern}.
+symbols, as we will se in Section~\ref{sec:kore-syntax-pattern}.
 
 \subsubsection{Sort}
 A sort is either a sort variable, or of the form 
@@ -3514,7 +3520,7 @@ Otherwise, we call it a \emph{non-parametric sort constructor}.
 The number of parameters that a sort constructor needs is called the 
 \emph{arity} of that sort constructor, which is decided in terms of a 
 \emph{sort declaration} that is discussed in 
-Section~\cref{sec:kore-syntax-sort-declaration}.
+Section~\ref{sec:kore-syntax-sort-declaration}.
 
 Since the meta-theory is a finite theory, there is no parametric meta sort 
 constructor.
@@ -3522,11 +3528,11 @@ All meta sort constructors are non-parametric and have zero arity.
 Since meta sort constructors are all non-parametric, meta sort variables are 
 not used to construct meta sorts.
 Instead, they are used to construct meta pattern schemas, which is discussed in 
-Section~\cref{sec:kore-syntax-pattern}.
+Section~\ref{sec:kore-syntax-pattern}.
 
 The fixed number of predefined non-parametric meta sort constructors in Kore 
 are in correspondence to sorts in the meta-theory $K$ (see 
-Section~\cref{sec:K-summary}).
+Section~\ref{sec:K-summary}).
 They are
 \begin{center}
 	{\ttfamily
@@ -3634,7 +3640,7 @@ requires at least one sort as sort parameter(s).
 Otherwise, we call it a \emph{non-parametric symbol}.
 The number of parameters that a symbol constructor needs, together with its 
 arity, argument sorts, and result sort, are defined in terms of symbol 
-declarations, introduced in Section~\cref{sec:kore-syntax-symbol-declaration}.
+declarations, introduced in Section~\ref{sec:kore-syntax-symbol-declaration}.
 
 \subsubsection{Symbol Declaration}
 \label{sec:kore-syntax-symbol-declaration}
@@ -3733,12 +3739,12 @@ basic connectives and derived connectives.
 
 \subsubsection{Head}
 Before we define the syntactic category \syntacc{pattern} in 
-Section~\cref{sec:kore-syntax-pattern}, we would like to 
+Section~\ref{sec:kore-syntax-pattern}, we would like to 
 introduce a unified view of how \emph{syntactically the same} that symbols and 
 connectives (and aliases that we have not defined in this version of Kore) are.
 This unified view is useful to understand how patterns are constructed in Kore 
 as well as the \emph{lifting operation} when we define the semantics of Kore in 
-Section~\cref{sec:kore-semantics}.
+Section~\ref{sec:kore-semantics}.
 
 A \emph{head} is of the form $\parametric{C}{s_1,\dots,s_n}$ in which $C$ is 
 called the \emph{head constructor} and $s_1,\dots,s_n$ are called the sort 
@@ -4137,7 +4143,7 @@ $\denote{\_}$, which we just defined the case for object variables in {Case A}.
 In practice, some heads (for example {\slexists} and \slforall) expect some of 
 its argument to be a variable instead of an arbitrary pattern, and we want to 
 reflect that fact in the lifting and the meta-theory.
-In Section~\cref{sec:kore-syntax-wellformedness} we have defined for all head 
+In Section~\ref{sec:kore-syntax-wellformedness} we have defined for all head 
 constructors $C$ a \emph{variable-pattern vector} $\nu_C$.
 The vector is of the same length as the arity of $C$, and each of its component 
 is from a set of two flags: $\{ \ttv, \ttp \}$.
@@ -4582,7 +4588,7 @@ canonical model of $K$.
 	
 	It is tedious but straightforward to verify that $\Kdeduce_M$ satisfies all 
 	axioms about $\Kdeduce$ that we introduced in 
-	Section~\cref{sec:ml-proof-system-finite-case}.
+	Section~\ref{sec:ml-proof-system-finite-case}.
 	For example, the Rule (K1)
 	\begin{equation*}
 	\Kdeduce(T, \overline{\varphi \leftrightarrow_s (\psi \leftrightarrow_s 
