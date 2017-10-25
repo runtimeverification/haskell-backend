@@ -3771,12 +3771,16 @@ String literals are meta patterns.
 	
 	<object-pattern> ::= \quad
 	\alt <object-head> `(' <pattern-list> `)'
-	\alt <object-variable-name> `:' <object-sort>
+    \alt <object-variable>
 	
 	<meta-pattern> ::= \quad
 	\alt <meta-head> `(' <pattern-list> `)'
-	\alt <meta-variable-name> `:' <meta-sort>
+	\alt <meta-variable>
 	\alt <string-literal>
+	
+	<object-variable> ::= <object-variable-name> `:' <object-sort>
+	
+	<meta-variable> ::= <meta-variable-name> `:' <meta-sort>
 	
 	<object-variable-name> ::= <object-identifier>
 	
