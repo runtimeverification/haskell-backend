@@ -2204,19 +2204,19 @@ takes two lists and returns the concatenation of them, with two axioms
   \\
   & \KappendXList(\KconsXList(x, L_0), L) = \KconsXList(x, \KappendXList(L_0, L))
 \end{align*}
-
-The predicate symbol $$\parametric{\KinXList}{s} \colon 
+The symbol schema $$\parametric{\KinXList}{s} \colon 
 \texttt{\sharpsymbol}\ttX \times \XList \to s \quad \text{for any 
 $s \in S_K$}$$
-takes an element and a list, and decides whether the element is a member of the 
-list or not. The two axioms for $\KinXList$ are
+defines for each sort $s$ in the meta-theory $K$, a predicate symbol that
+checks list membership and returns either $\top_s$ or $\bot_s$:
 \begin{align*}
-  & \neg \KinXList(x, \KnilXList)
+  & \neg \parametric{\KinXList}{s}(x, \KnilXList)
   \\
-  & \KinXList(x, \KconsXList(y, L)) = (x = y) \vee \KinXList(x, L)
+  & \parametric{\KinXList}{s}(x, \KconsXList(y, L)) = (x = y) \vee 
+  \parametric{\KinXList}{s}(x, L)
 \end{align*}
-
-The functional symbol $$\KdeleteXList \colon \mathit{X} \times \XList \to \XList$$
+The functional symbol $$\KdeleteXList \colon \texttt{\sharpsymbol}\ttX \times 
+\XList \to \XList$$
 takes an element and a list, and returns the list in which all the occurrences
 of the element have been deleted, and the order of the remaining elements does not
 change.
