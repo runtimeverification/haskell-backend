@@ -3336,7 +3336,7 @@ This process of ``desugaring object specifications to meta specifications'' are
 called \emph{lifting}, which is giving Kore a semantics as a specification 
 language (Section~\cref{sec:kore-semantics}).
 
-\subsection{Syntax}
+\subsection{Kore Syntax}
 
 A Kore definition file is a sequence of ASCII characters.
 A Kore definition consists of a sequence of \emph{Kore declarations}.
@@ -3795,7 +3795,7 @@ String literals are meta patterns.
 Notice that whether a pattern is an object or a meta one depends only on its 
 head, not the patter list that the head applies on.
 
-\subsubsection{Axiom Declarations.}
+\subsubsection{Axiom Declarations}
 In Kore, a pattern can be declared as an axiom using the keyword 
 ``\verb|axiom|'', followed by a list of sort variables as parameters wrapped 
 with curly braces.
@@ -3809,7 +3809,7 @@ Otherwise, it is a \emph{meta axiom declaration}.
 \subsubsection{Wellformedness}
 \label{sec:kore-syntax-wellformedness}
 
-\subsection{Semantics}
+\subsection{Kore Semantics}
 \label{sec:kore-semantics}
 Give a theory $T$ defined as a Kore definition ``\verb|definition.kore|'' which consists of a set of object sort declarations, a set of object and meta symbol declarations, and a set of object and meta axiom declarations using the syntax that we have introduced before.
 The \emph{semantics} of the theory $T$, known as \emph{the meta-theory instantiated with $T$}, is given by \emph{lifting} the Kore definition ``\verb|definition.kore|'' to the Kore definition ``\verb|#definition.kore|'' which encodes $\denote{T}$.
