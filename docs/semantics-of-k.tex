@@ -173,7 +173,7 @@
 
   % Define the colon ":" that is used in "x:s"
   % with less spacing around.
-  \newcommand{\cln}{{:}}
+  \newcommand{\cln}{\texttt{:}}
 
   % Define the curly K:
   \newcommand{\K}{\mbox{$\mathbb{K}$}\xspace}
@@ -377,6 +377,11 @@
   \newcommand{\itsymbol}{\mathit{symbol}}
   \newcommand{\itdeclared}{\mathit{declared}}
   \newcommand{\itsortDeclared}{\mathit{sortDeclared}}
+  \newcommand{\collapse}{\mathit{collapse}}
+  
+  \newcommand{\ttv}{\texttt{v}}
+  \newcommand{\ttp}{\texttt{p}}
+  \newcommand{\itvp}{\mathit{vp}}
   
   % Define syntactic category <category>
   \newcommand{\syntacc}[1]{\text{$\langle$\textit{#1}$\rangle$}}
@@ -3802,6 +3807,7 @@ axiom declaration}.
 Otherwise, it is a \emph{meta axiom declaration}.
 
 \subsubsection{Wellformedness}
+\label{sec:kore-syntax-wellformedness}
 
 \subsection{Semantics}
 \label{sec:kore-semantics}
@@ -4028,9 +4034,9 @@ $\denote{C_\itsymbol}$($\underbrace{\parametric{\KSort}{},\dots,
 \\
 & \qquad\qquad\qquad \texttt{
 	\parametric{\Kapplication}{}($\denote{
-		C_\itsymbol}_\itsymbol$,$\denote{\texttt{\sharpsymbol 
-			P1:\parametric{\KPattern}{},\dots,\sharpsymbol 
-			Pn:\parametric{\KPattern}{}}}_\llist$))
+		C_\itsymbol}_\itsymbol$,$\collapse(\texttt{\sharpsymbol 
+			P1:\parametric{\KPattern}{}},\dots,\texttt{\sharpsymbol 
+			Pn:\parametric{\KPattern}{}})$))
 }
 \\
 & \texttt{\parametric{axiom}{\sharpsymbol S}
@@ -4050,6 +4056,15 @@ defined as
   		s_1,\dots,s_n}_\llist$,$\denote{
   		s}$))}
 \end{align*}
+and $\collapse(\alpha)$ for a list $\alpha$ of Kore patterns is defined as
+\begin{equation*}
+\collapse(\alpha) =
+\begin{cases*}
+\parametric{\KnilKPatternList}{} & if $\alpha$ is empty list \\
+\parametric{\KconsKPatternList}{}(\varphi, \collapse(\beta)) & if $\alpha$ is 
+$\varphi, \beta$
+\end{cases*}
+\end{equation*}
 
 \subsubsection{Lift Connective Constructors To Meta Symbols}
 Connective constructors are lifted to non-parametric meta symbols as 
@@ -4060,57 +4075,117 @@ follows.
 \text{for any connective constructor $C_\itconnective$}
 \end{align*}
 
+\subsubsection{Lift Object Head Constructors To Meta Symbols}
+Recall that a head constructor is either a symbol constructor or a connective 
+constructor.
+A head constructor $C$ is lifted to the meta symbol $\denote{C}$ in the same 
+way a symbol/connective constructor is lifted.
 
-\subsubsection{Lift Patterns}
-Recall the following grammar of patterns
+\subsubsection{Lift Object Variables To Meta Patterns of Sort \KVariable}
+Variables are lifted to meta patterns of sort {\KVariable} as follows.
+\begin{align*}
+&\denote{\_}_0 \colon \syntacc{object-variable} \to \syntacc{meta-pattern} \\
+&\denote{x \cln s} = \texttt{\parametric{\Kvariable}{}($\denote{
+		x}_\name$,$\denote{s}$)} \quad \text{for any object variable name $x$ 
+		and object sort $s$}
+\end{align*}
+
+\subsubsection{Lift Patterns To Meta Patterns of Sort \KPattern}
+One of the main part of the lifting operation is lifting patterns to meta 
+patterns of sort \KPattern, which is the main job of this subsection.
+We recall the readers of the following grammar of Kore 
+patterns, in which we intensionally merge the grammars of both object and 
+meta patterns for simplicity.
 \begin{grammar}
 	<pattern> ::= \quad
-	\alt <id> `:' <sort>
+	\alt <object-identifier> `:' <object-sort>
+	\alt <meta-identifier> `:' <meta-sort>
 	\alt <string-literal>
-	\alt <head> `(' <pattern-list> `)'
+	\alt <object-head> `(' <pattern-list> `)'
+	\alt <meta-head> `(' <pattern-list> `)'
 \end{grammar}
-Recall that the syntactic category \syntacc{head} is either a logic connective
-or a symbol, which is always of the form $\parametric{C}{s_1,\dots,s_n}$ with 
-constructor $C$ and a list of sorts as parameters $s_1,\dots,s_n$.
+We will define the lifting operation for patterns case by case following the 
+grammar of patterns
+\begin{equation*}
+\denote{\_} \colon \syntacc{pattern} \to \syntacc{pattern}
+\end{equation*}
 
-In Kore, a pattern $\varphi$ is lifted as follows.
+\paragraph{Case A: Object Variable Pattern.}\quad
 \begin{align*}
-\varphi = 
+\denote{v} = \KVariableToKPattern(\denote{v}_0)\quad \text{if $v$ is an object 
+variable}
+\end{align*}
+
+\paragraph{Case B: Meta Variable Pattern.} \quad
+\begin{align*}
+\denote{v} = v \quad \text{if $v$ is a meta variable}
+\end{align*}
+
+\paragraph{Case C: String Literal.}\quad
+\begin{align*}
+\denote{s} = s \quad \text{if $s$ is a string literal}
+\end{align*}
+
+\paragraph{Case D \& E: Headed Pattern.} 
+A bit extra work is need to lift headed patterns.
+This is because we have defined two ways to lift an object variable.
+One way is to lift it to a {\KVariable} pattern using the lifting operation 
+$\denote{\_}_0$.
+The other way is to lift it to a {\KPattern} using the lifting operation 
+$\denote{\_}$, which we just defined the case for object variables in {Case A}.
+
+In practice, some heads (for example {\slexists} and \slforall) expect some of 
+its argument to be a variable instead of an arbitrary pattern, and we want to 
+reflect that fact in the lifting and the meta-theory.
+In Section~\cref{sec:kore-syntax-wellformedness} we have defined for all head 
+constructors $C$ a \emph{variable-pattern vector} $\nu_C$.
+The vector is of the same length as the arity of $C$, and each of its component 
+is from a set of two flags: $\{ \ttv, \ttp \}$.
+We use $\nu_C^i$ to denote the $i$th component of the vector $\nu_C$.
+The lifting operation replies on such variable-pattern vectors.
+
+Given any headed pattern 
+$\parametric{C}{s_1,\dots,s_n}(\varphi_1,\dots,\varphi_n)$, its 
+variable-pattern vector $\nu_C$, and one sub-pattern $\varphi_i$,
+define the customized lifting for $\denote{\varphi_i}_{\itvp}$ 
+as follows
+\begin{align*}
+\denote{\varphi_i}_\itvp =
 \begin{cases*}
-\Kvariable(\denote{x}_\name, \denote{s}) & if $\varphi$ is \texttt{$x$:$s$} and 
-$s$ is an object sort\\
+\denote{\varphi_i} & if $\nu_C^i = \ttp$ \\
+\denote{\varphi_i}_0 & if $\nu_C^i = \ttv$
+\end{cases*}
+\end{align*}
+
+The lifting for headed patterns are therefore defined as follows.
+\begin{align*}
+\denote{\parametric{C}{s_1,\dots,s_n}(\varphi_1,\dots,\varphi_n)} =
+\begin{cases*}
 \denote{C}(\denote{s_1},\dots,\denote{s_n},\denote{
-	\varphi_1},\dots,\denote{\varphi_n})&
- if $\varphi$ is $\parametric{C}{s_1,\dots,s_n}(\varphi_1,\dots,\varphi_n)$ \\
- &and 
- $C$ is an object symbol or logic connective constructor\\
- \parametric{C}{s_1,\dots,s_n}(\denote{
- 	\varphi_1},\dots,\denote{\varphi_n})&
- if $\varphi$ is $\parametric{C}{s_1,\dots,s_n}(\varphi_1,\dots,\varphi_n)$ \\
- &and 
- $C$ is a meta symbol or logic connective constructor\\
- \varphi & if $\varphi$ is a meta variable or a string literal
+	\varphi_1}_\itvp,\dots,\denote{\varphi_n}_\itvp)\\
+\parametric{C}{s_1,\dots,s_n}(\denote{
+	\varphi_1}_\itvp,\dots,\denote{\varphi_n}_\itvp)
 \end{cases*}
 \end{align*}
-\subsubsection{Lifting Axiom Declarations}
-In Kore, an axiom declaration
-\begin{center}\ttfamily
-	\parametric{axiom}{$s_1$,\dots,$s_n$,$s'_1$,\dots,$s'_m$}
-	$\varphi$
-\end{center}
-with object sort variables $s_1,\dots,s_n$, meta sort variables 
-$s'_1,\dots,s'_m$ and a pattern $\varphi$ is lifted as follows.
 
+\subsubsection{Lift Axiom Declarations To Axiom Declarations}
+In Kore, an axiom declaration is lifted as follows.
 \begin{align*}
-\denote{\texttt{\parametric{axiom}{$s_1$,\dots,$s_n$,$s'_1$,\dots,$s'_m$}
-	$\varphi$}} =
-\begin{cases*}
-\texttt{\parametric{axiom}{$s'_1$,\dots,$s'_m$} \Kdeduce($\denote{\varphi}$)} & 
-if $\varphi$ is an object variable \\&or has an object head\\
-\texttt{\parametric{axiom}{$s'_1$,\dots,$s'_m$} $\denote{\varphi}$} & if
-$\varphi$ is a meta variable, \\&a string literal, \\&or has a meta head
-\end{cases*}
+  &\denote{\_} \colon \syntacc{axiom-declaration} \to 
+  \syntacc{axiom-declaration}
+  \\
+  &\denote{\texttt{\parametric{axiom}{$s_1,\dots,s_n$}
+  		$\varphi$}} =
+  	\begin{cases*}
+  	\texttt{\parametric{axiom}{$s'_1,\dots,s'_m$} 
+  	\Kdeduce($\denote{\varphi}$)} & 
+  if $\varphi$ is an object pattern \\
+  \texttt{\parametric{axiom}{$s'_1,\dots,s'_m$} $\denote{\varphi}$} & if
+  $\varphi$ is a meta pattern
+  	\end{cases*}
 \end{align*}
+where $s_1',\dots,s_m'$ are all those meta variables in $s_1,\dots,s_n$.
+
 
 \subsection{Example A: Presburger Arithmetic}
 \begin{lstlisting}[language=kore]
