@@ -243,39 +243,45 @@
   \newcommand{\Ksort}{\texttt{\sharpsymbol sort}}
   \newcommand{\KSymbol}{\texttt{\sharpsymbol Symbol}}
   \newcommand{\Ksymbol}{\texttt{\sharpsymbol symbol}}
-  \newcommand{\KSymbolceil}{\texttt{\sharpsymbol Symbolceil}}
+  \newcommand{\KSymbolceil}{\texttt{\sharpsymbol ceil}}
   \newcommand{\KgetArgumentSorts}{\texttt{\sharpsymbol getArgumentSorts}}
   \newcommand{\KgetReturnSort}{\texttt{\sharpsymbol getReturnSort}}
   
   % Sec 3.4 Finite Lists
-  \newcommand{\XList}{\mathit{XList}}
+  \newcommand{\ttX}{\texttt{X}}
+  \newcommand{\ttChar}{\texttt{Char}}
+  \newcommand{\ttSort}{\texttt{Sort}}
+  \newcommand{\ttSymbol}{\texttt{Symbol}}
+  \newcommand{\ttVariable}{\texttt{Variable}}
+  \newcommand{\ttPattern}{\texttt{Pattern}}
+  \newcommand{\XList}{\texttt{\sharpsymbol XList}}
   \newcommand{\KnilXList}{\texttt{\sharpsymbol nilXList}}
   \newcommand{\KconsXList}{\texttt{\sharpsymbol consXList}}
   \newcommand{\KappendXList}{\texttt{\sharpsymbol appendXList}}
   \newcommand{\KinXList}{\texttt{\sharpsymbol inXList}}
   \newcommand{\KdeleteXList}{\texttt{\sharpsymbol deleteXList}}
   \newcommand{\KPatternList}{\texttt{\sharpsymbol PatternList}}
-  \newcommand{\KnilKPatternList}{\texttt{\sharpsymbol nilKPatternList}}
-  \newcommand{\KconsKPatternList}{\texttt{\sharpsymbol consKPatternList}}
-  \newcommand{\KappendKPatternList}{\texttt{\sharpsymbol appendKPatternList}}
-  \newcommand{\KinKPatternList}{\texttt{\sharpsymbol inKPatternList}}
-  \newcommand{\KdeleteKPatternList}{\texttt{\sharpsymbol deleteKPatternList}}
+  \newcommand{\KnilKPatternList}{\texttt{\sharpsymbol nilPatternList}}
+  \newcommand{\KconsKPatternList}{\texttt{\sharpsymbol consPatternList}}
+  \newcommand{\KappendKPatternList}{\texttt{\sharpsymbol appendPatternList}}
+  \newcommand{\KinKPatternList}{\texttt{\sharpsymbol inPatternList}}
+  \newcommand{\KdeleteKPatternList}{\texttt{\sharpsymbol deletePatternList}}
   \newcommand{\KSortList}{\texttt{\sharpsymbol SortList}}
-  \newcommand{\KnilKSortList}{\texttt{\sharpsymbol nilKSortList}}
-  \newcommand{\KconsKSortList}{\texttt{\sharpsymbol consKSortList}}
-  \newcommand{\KappendKSortList}{\texttt{\sharpsymbol appendKSortList}}
-  \newcommand{\KinKSortList}{\texttt{\sharpsymbol inKSortList}}
-  \newcommand{\KdeleteKSortList}{\texttt{\sharpsymbol deleteKSortList}}
+  \newcommand{\KnilKSortList}{\texttt{\sharpsymbol nilSortList}}
+  \newcommand{\KconsKSortList}{\texttt{\sharpsymbol consSortList}}
+  \newcommand{\KappendKSortList}{\texttt{\sharpsymbol appendSortList}}
+  \newcommand{\KinKSortList}{\texttt{\sharpsymbol inSortList}}
+  \newcommand{\KdeleteKSortList}{\texttt{\sharpsymbol deleteSortList}}
   \newcommand{\KSymbolList}{\texttt{\sharpsymbol SymbolList}}
-  \newcommand{\KinKSymbolList}{\texttt{\sharpsymbol inKSymbolList}}
-  \newcommand{\KnilKCharList}{\texttt{\sharpsymbol nilKCharList}}
-  \newcommand{\KconsKCharList}{\texttt{\sharpsymbol consKCharList}}
+  \newcommand{\KinKSymbolList}{\texttt{\sharpsymbol inSymbolList}}
+  \newcommand{\KnilKCharList}{\texttt{\sharpsymbol nilCharList}}
+  \newcommand{\KconsKCharList}{\texttt{\sharpsymbol consCharList}}
   \newcommand{\KVariableList}{\texttt{\sharpsymbol VariableList}}
-  \newcommand{\KnilKVariableList}{\texttt{\sharpsymbol nilKVariableList}}
-  \newcommand{\KconsKVariableList}{\texttt{\sharpsymbol consKVariableList}}
+  \newcommand{\KnilKVariableList}{\texttt{\sharpsymbol nilVariableList}}
+  \newcommand{\KconsKVariableList}{\texttt{\sharpsymbol consVariableList}}
 
   \newcommand{\KVariable}{\texttt{\sharpsymbol Variable}}
-  \newcommand{\KVariableToKPattern}{\texttt{\sharpsymbol VariableToKPattern}}
+  \newcommand{\KVariableToKPattern}{\texttt{\sharpsymbol VariableToPattern}}
   \newcommand{\KPattern}{\texttt{\sharpsymbol Pattern}}
   \newcommand{\Kvariable}{\texttt{\sharpsymbol variable}}
   \newcommand{\Kand}{\texttt{\sharpsymbol  \slashsymbol and}}
@@ -334,6 +340,7 @@
   % Use quotation marks "..." in math mode.
   \newcommand{\quot}[1]{\mathrm{``#1"}}
   \newcommand{\quottt}[1]{\textrm{\lq\texttt{#1}\rq}}
+  \newcommand{\qquottt}[1]{\textrm{``\texttt{#1}''}}
 
   \newcommand{\Pattern}{\textsc{Pattern}\xspace}
   \newcommand{\ra}{\rightarrow}
@@ -2045,137 +2052,151 @@ present in full length the meta-theory $K$ in Secion~\ref{sec:meta-theory}
 
 In this section, we present a finite matching logic theory $K = ( S_K, 
 \Sigma_K, F_K )$ as \emph{the meta-theory of matching logic}.
-$K$ is a finite theory and has $S_K$ , $\Sigma_K$, and $F_K$ being its finite sets of sorts, symbols, and axioms, respectively.
+The meta-theory $K$ is a finite theory and has $S_K$ , $\Sigma_K$, and $F_K$ as 
+its finite sets of sorts, symbols, and axioms, respectively.
 We are going to define the meta-theory $K$ in detail in the following subsections.
 A summary of the meta-theory $K$ is provided in Section~\ref{sec:K-summary}.
-
-\subsection{Truth}
-
-A sort $\KPred$ is introduced to capture predicates and the predicate logic.
-Patterns of sort $\KPred$ are called \emph{predicate patterns} or just \emph{predicates}, and symbols whose return sort are $\KPred$ are called \emph{predicate symbols}. 
-Predicate symbols in $K$ are defined in later sections when they firstly appear.
-\begin{notation}
-	If $b$ is a predicate pattern, we take the freedom to write $b$ instead of $b = \top_\KPred$, so that $\KPred$ patterns can be used in any sort context.
-\end{notation}
-
+ 
 \subsection{Characters and Strings}
 \label{sec:chars-string}
-The sort $\KChar$ is the sort for \emph{characters}. It has the following $26 + 26 + 10 = 62$ functional symbols as constructors:
+The sort $\KChar$ is the sort for \emph{characters}. It has the following $26 + 
+26 + 10 + 3 = 65$ functional symbols as constructors:
 \begin{center}
 	\begin{tabular}{c c c}
-		$\quot{a} \colon \to \KChar$ & $\quot{b} \colon \to \KChar$ & $\quot{c} \colon \to \KChar$ \\
+		$\quottt{a} \colon \to \KChar$ & $\quottt{b} \colon \to \KChar$ & 
+		$\quottt{c} \colon \to \KChar$ \\
 		$\cdots$ & $\cdots$ & $\cdots$ \\
-		$\quot{x} \colon \to \KChar$ & $\quot{y} \colon \to \KChar$ & $\quot{z} \colon \to \KChar$ \\
-		$\quot{A} \colon \to \KChar$ & $\quot{B} \colon \to \KChar$ & $\quot{C} \colon \to \KChar$ \\
+		$\quottt{x} \colon \to \KChar$ & $\quottt{y} \colon \to \KChar$ & 
+		$\quottt{z} \colon \to \KChar$ \\
+		$\quottt{A} \colon \to \KChar$ & $\quottt{B} \colon \to \KChar$ & 
+		$\quottt{C} \colon \to \KChar$ \\
 		$\cdots$ & $\cdots$ & $\cdots$ \\
-		$\quot{X} \colon \to \KChar$ & $\quot{Y} \colon \to \KChar$ & $\quot{Z} \colon \to \KChar$ \\
-		$\quot{0} \colon \to \KChar$ & $\cdots$ & $\quot{9} \colon \to \KChar$ 
+		$\quottt{X} \colon \to \KChar$ & $\quottt{Y} \colon \to \KChar$ & 
+		$\quottt{Z} \colon \to \KChar$ \\
+		$\quottt{0} \colon \to \KChar$ & $\cdots$ & $\quottt{9} \colon \to 
+		\KChar$ 
+		\\
+		$\quottt{\sharpsymbol} \colon \to \KChar$ & $\quottt{\slashsymbol} 
+		\colon \to \KChar$ & $\quottt{'} \colon \to \KChar$
 	\end{tabular}
 \end{center}
 
-\paragraph{String as Finite Lists of Characters.}\quad
+\paragraph{Strings as Finite Lists of Characters.}\quad
 Characters are used to construct \emph{strings}, which will be formalized as finite lists of characters.
 In Section~\ref{sec:finite-lists}, we will define a sort $\KCharList$ for 
 finites lists of characters, and two functional constructors
 \begin{align*}
- & \KnilKCharList \colon \to \KCharList \\
- & \KconsKCharList \colon \KChar \times \KCharList \to \KCharList
+& \KnilKCharList \colon \to \KCharList \\
+& \KconsKCharList \colon \KChar \times \KCharList \to \KCharList
 \end{align*}
-that construct lists of characters.
+that construct cons-lists of characters.
 
 \begin{notation}
-	We write $\KString$ as an alias of the sort $\KCharList$, and we write $\Kepsilon$ as an alias of $\KnilKCharList$ which represents the empty string.
+We write $\KString$ as an alias of $\KCharList$, and we write $\Kepsilon$ as 
+an alias of $\KnilKCharList$ which represents the empty string.
 \end{notation}
 
 \begin{notation}
 	As a convention, strings are often represented by texts wrapped with quotation marks. 
 	For example, instead of writing
 	$$
-	\KconsKCharList(\quot{a}, \KconsKCharList(\quot{b}, \KconsKCharList(\quot{c}, \Kepsilon)))
+	\KconsKCharList(\quottt{a}, \KconsKCharList(\quottt{b}, 
+	\KconsKCharList(\quottt{c}, \Kepsilon)))
 	$$
-	we simply write $\quot{abc}$.
+	we simply write $\qquottt{abc}$.
 \end{notation}
 
 \subsection{Matching Logic Sorts and Symbols}
 \label{sec:ML-sorts-symbols}
 
 The sort $\KSort$ is the sort for matching logic sorts.
-The only constructor of the sort $\KSort$ is the functional symbol
+The only constructor is the functional symbol
 $$
-\Ksort \colon \KString \times \KSortList \to \KSort
+\Ksort \colon \KString \times \KSortList\footnote{The sort $\KSortList$ is 
+	defined in Section~\ref{sec:finite-lists}.} \to \KSort
 $$
-which takes a \emph{name} and a list of \emph{sort parameters}. 
+which takes a string as the \emph{name} and a list of sorts as the 
+\emph{parameters}. 
 
 The sort $\KSymbol$ is the sort for matching logic symbols.
-The only constructor of the sort $\KSymbol$ is the functional symbol
+The only constructor is the functional symbol
 \begin{equation*}
-\Ksymbol \colon \KString \times \KSortList\footnote{The sort $\KSortList$ is 
-defined in Section~\ref{sec:finite-lists}} \times \KSort \times \KSortList \to 
-\KSymbol \times \KSort \to \KSymbol
+\Ksymbol \colon \KString \times \KSortList \times \KSortList \times \KSort \to 
+\KSymbol
 \end{equation*}
-where the first argument is called the \emph{name} of the symbol, and the rest arguments are called the \emph{argument sorts} and the \emph{return sort} of the symbol. 
-Two getter functions, $\KgetArgumentSorts$ and $\KgetReturnSort$, are defined as functional symbols
+which in turn takes a string as the name, a list of sorts as parameters, a list 
+of argument sorts, and a return sort.
+
+Two useful getter functions are defined as follows
 \begin{align*}
  & \KgetArgumentSorts \colon \KSymbol \to \KSortList \\
  & \KgetReturnSort    \colon \KSymbol \to \KSort
 \end{align*}
 with axioms
 \begin{align*}
- & \KgetArgumentSorts(\Ksymbol(f, S, s)) = S\\
- & \KgetReturnSort(\Ksymbol(f, S, s)) = s
+ & \KgetArgumentSorts(\Ksymbol(f, S, S', s)) = S'\\
+ & \KgetReturnSort(\Ksymbol(f, S, S', s)) = s
 \end{align*}
-where $f$ is a $\KString$ variable, $S$ is a $\KSortList$ variable, and $s$ is 
+where $f$ is a $\KString$ variable, $S,S'$ are $\KSortList$ variables, and $s$ 
+is 
 a $\KSort$ variable.
 
 \paragraph{Definedness Symbols}
-Definedness symbols are required for the sound and complete proof system of 
-matching logic that is introduced in~\cite{rosu-2017-lmcs}.
+Definedness symbols, also known as the \emph{ceiling} symbol, are required by 
+the sound and complete proof system of matching logic~\cite{rosu-2017-lmcs}.
 For any matching logic theory and two sorts $s, s'$ in the theory, we assume 
 there exists a symbol $\ceil{\_}_s^{s'}$ with the axiom $\ceil{x \cln 
 s}_s^{s'}$ defined in the theory.
 
-In the meta-theory of matching logic $K$, the symbol $\KSymbolceil$ is 
-the 
-symbol for the definedness symbols
-\begin{equation*}
-  \KSymbolceil \colon \KSort \times \KSort \to \KSymbol
-\end{equation*}
-with the axiom
-\begin{equation*}
-  \KSymbolceil(s, s') = \Ksymbol(\text{``ceil''}, (s), s')
-\end{equation*}
-where $(s)$ is the singleton list that consists of only one sort $s$ (see 
-Notation~\ref{notation:lists}).
+In the meta-theory $K$, a reflective symbol $\KSymbolceil$ is defined and 
+axiomatized:
+\begin{align*}
+&  \KSymbolceil \colon \KSort \times \KSort \to \KSymbol \\
+&  \KSymbolceil(s, s') = \Ksymbol(\qquottt{ceil}, (s,s'), (s), s')
+\end{align*}
+where (following Notation~\ref{notation:lists})
+\begin{center}
+\begin{tabular}{ll}
+& $(s,s')$ is a shortcut of 
+$\KconsKSortList(s,\KconsKSortList(s',\KnilKSortList))$ \\
+and & $(s)$ is a shortcut of $\KconsKSortList(s,\KnilKSortList)$
+\end{tabular}
+\end{center}
+
+\begin{remark}
+	Symbol {\KSymbolceil} is the reflection of definedness symbols \emph{in the 
+	object theories}, not the definedness symbols in the meta-theory $K$.
+\end{remark}
 
 \subsection{Finite Lists}
 \label{sec:finite-lists}
 
 For sorts $\KChar$, $\KSort$, $\KSymbol$, $\KVariable$, and 
-$\KPattern$\footnote{The sort $\KPattern$ is defined in 
-Section~\ref{sec:matching-logic-patterns}.}
-in $S_K$,
-we define sorts $\KCharList$, $\KSortList$, $\KSymbolList$, and $\KPatternList$ to be the sorts of finite lists over them, respectively.
-Formally, for any sort $X$ where
+$\KPattern$\footnote{The sorts $\KVariable$ and $\KPattern$ are defined in 
+Section~\ref{sec:ML-patterns}.}
+in the meta-theory,
+we define $\KCharList$, $\KSortList$, $\KSymbolList$, $\KVariableList$, 
+and $\KPatternList$ as the sorts for finite lists over them, respectively.
+Formally, for any sort $\ttX$
 $$
-X \in \{\KChar, \KSort, \KSymbol, \KPattern\}
+\ttX \in \{\ttChar, \ttSort, \ttSymbol, \ttVariable, \ttPattern\}
 $$
-the sort $\XList$ is in $S_K$, and the following functional constructors of the 
-sort $\XList$ are in $\Sigma_K$
+the sort $\XList$ is defined with two functional constructors:
 \begin{align*}
   & \KnilXList \colon \to \XList
   \\
-  & \KconsXList \colon \mathit{X} \times \XList \to \XList
+  & \KconsXList \colon \texttt{\sharpsymbol}\ttX \times \XList \to \XList
 \end{align*}
 
 \begin{notation}
 \label{notation:lists}
-	To write lists expression more compactly, we adopt the following abbreviations
+	To write list expressions more compactly, we use abbreviation
 	\begin{equation*}
 	  (x_1, x_2, \dots, x_n) \equiv \KconsXList(x_1, \KconsXList(x_2, \dots\KconsXList(x_n, \KnilXList)\dots))
 	\end{equation*}
 \end{notation}
 
-Common operations on lists can be defined as functional symbols on $\XList$.
+Common list operations and predicates are defined as usual.
 The symbol $$\KappendXList \colon \XList \times \XList \to \XList$$ 
 takes two lists and returns the concatenation of them, with two axioms
 \begin{align*}
@@ -2184,7 +2205,9 @@ takes two lists and returns the concatenation of them, with two axioms
   & \KappendXList(\KconsXList(x, L_0), L) = \KconsXList(x, \KappendXList(L_0, L))
 \end{align*}
 
-The predicate symbol $$\KinXList \colon \mathit{X} \times \XList \to \KPred$$
+The predicate symbol $$\parametric{\KinXList}{s} \colon 
+\texttt{\sharpsymbol}\ttX \times \XList \to s \quad \text{for any 
+$s \in S_K$}$$
 takes an element and a list, and decides whether the element is a member of the 
 list or not. The two axioms for $\KinXList$ are
 \begin{align*}
