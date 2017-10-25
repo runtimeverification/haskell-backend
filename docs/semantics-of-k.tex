@@ -339,6 +339,7 @@
   
   % Use quotation marks "..." in math mode.
   \newcommand{\quot}[1]{\mathrm{``#1"}}
+  \newcommand{\quottt}[1]{\textrm{\lq\texttt{#1}\rq}}
 
   \newcommand{\Pattern}{\textsc{Pattern}\xspace}
   \newcommand{\ra}{\rightarrow}
@@ -375,7 +376,7 @@
   \newcommand{\itsymbol}{\mathit{symbol}}
   
   % Define syntactic category <category>
-  \newcommand{\syntacc}[1]{$\langle$\textit{#1}$\rangle$}
+  \newcommand{\syntacc}[1]{\text{$\langle$\textit{#1}$\rangle$}}
 
   % Title and authors
   \title{The Semantics of \K}
@@ -3667,43 +3668,59 @@ and its head is not lifted.
 	with the canonical one  $\denote{\_}$.
 \end{notation}
 
-\subsubsection{Distinguish Meta-Level and Object Level}
-In Kore, there is always a clear distinction between object level targets and 
-meta level targets.
-
 \subsubsection{Lift Object Identifiers To String Literals}
-Object identities are lifted to string literals by wrapping them with quotation 
-marks.
-We denote this lifting function as $\denote{\_}_\name$.
+Object identifiers are lifted to string literals by wrapping them with 
+quotation marks.
+\begin{align*}
+&\denote{\_}_\name \colon \syntacc{object-identifier} \to 
+\syntacc{string-literal} \\
+&\denote{x}_\name = \quottt{"} \ x \  \quottt{"} \quad \text{for an object 
+identifier $x$}
+\end{align*}
+
 
 \subsubsection{Lift Object \& Reserved Identifiers To Meta Identifiers}
-Object and reserved identifiers are lifted to meta identifiers by appending a 
-``\texttt{\sharpsymbol}'' in front, denoted as 
-$\denote{\_}_\sharp$.
+Object and reserved identifiers are lifted to meta identifiers by appending the 
+sharp symbol \quottt{\sharpsymbol} in front.
+\begin{align*}
+&\denote{\_}_\sharp \colon \syntacc{object-identifier} \cup 
+\syntacc{reserved-identifier} \to 
+\syntacc{meta-identifier} \\
+&\denote{x}_\sharp = \quottt{\sharpsymbol} \ x \quad \text{for any object or 
+reserved identifier $x$}
+\end{align*}
 
-\subsubsection{Lift Logic Connective Constructors To Meta Symbols}
-Logic connectives constructor are lifted to non-parametric meta symbols as 
-follows.
-For any logic connective constructor $C_\itlogic$, 
-$$\denote{C_\itlogic} = \parametric{\denote{C_\itlogic}_\sharp}{}$$
-\subsubsection{Lift Object Sorts}
-Object sort constructors $C_\itsort$ are lifted to non-parametric meta symbols 
+\subsubsection{Lift Object Sort Constructors To Meta Symbols}
+Object sort constructors are lifted to non-parametric meta symbols 
 as
-$$\denote{C_\itsort} = \parametric{\denote{C_\itsort}_\sharp}{}$$
-For example
+\begin{align*}
+& \denote{\_} \colon \syntacc{object-sort-constructor} \to \syntacc{meta-symbol}
+\\
+& \denote{C_\itsort} = \parametric{\denote{C_\itsort}_\sharp}{} \quad \text{for 
+any object sort constructor $C_\itsort$}
+\end{align*}
+
+For example,
 \begin{center}{\ttfamily
-\begin{tabular}{lcr}
-    \textrm{Object Sort Constructor} & \textrm{Is Lifted To} & 
-    \textrm{Non-Parametric Meta-Symbol}
+\begin{tabular}{c|c}
+    \textrm{Object Sort Constructor $C_\itsort$} &
+    \textrm{Non-Parametric Meta Symbol $\denote{C_\itsort}$}
     \\\hline
-    Nat && \parametric{\sharpsymbol Nat}{}
+    Nat & \parametric{\sharpsymbol Nat}{}
     \\\hline
-    List && \parametric{\sharpsymbol List}{}
+    List & \parametric{\sharpsymbol List}{}
     \\\hline
-    Map && \parametric{\sharpsymbol Map}{}
+    Map & \parametric{\sharpsymbol Map}{}
 \end{tabular}
 }
 \end{center}
+
+\subsubsection{Lift Object Sorts To Meta Patterns}
+Object sorts are lifted to meta patterns by the lifting operation:
+\begin{align*}
+\denote{\_} \colon \syntacc{object-sort} \to \syntacc{meta-pattern}
+\end{align*}
+
 A sort variable $\tt S$ is lifted to a variable pattern {\tt \sharpsymbol 
 $\tt S\cln \KSort$}.
 A sort $\parametric{C_\itsort}{s_1,\dots,s_n}$ with sort constructor 
@@ -3771,6 +3788,12 @@ $\alpha
 = s, \beta$
 \end{cases*}
 \end{align*}
+\subsubsection{Lift Connective Constructors To Meta Symbols}
+Connectives constructor are lifted to non-parametric meta symbols as 
+follows.
+For any logic connective constructor $C_\itlogic$, 
+$$\denote{C_\itlogic} = \parametric{\denote{C_\itlogic}_\sharp}{}$$
+
 \subsubsection{Lift Object Symbols}
 Object symbol constructors $C_\itsymbol$ are lifted to non-parametric meta 
 symbols as
