@@ -318,6 +318,7 @@
   \newcommand{\KgetSorts}{\texttt{\sharpsymbol getSorts}}
   \newcommand{\KgetSymbols}{\texttt{\sharpsymbol getSymbols}}
   \newcommand{\KsortDeclared}{\texttt{\sharpsymbol sortDeclared}}
+  \newcommand{\KsortsDeclared}{\texttt{\sharpsymbol sortsDeclared}}
   \newcommand{\KsymbolDeclared}{\texttt{\sharpsymbol symbolDeclared}}
   \newcommand{\KaxiomDeclared}{\texttt{\sharpsymbol axiomDeclared}}
   \newcommand{\Kderivable}{\Kdeduce}
@@ -2529,11 +2530,19 @@ for any sort $\shs \in S_K$.
 
 The definedness symbol $\ceil{\_}_{s_1}^{s_2}$ is always declared if $s_1$ and 
 $s_2$ are declared sorts:
-$$ \parametric{\KsortDeclared}{s}(s_1) \wedge 
-\parametric{\KsortDeclared}{s}(s_2) \to 
-\parametric{\KsymbolDeclared}{s}(\KSymbolceil(s_1, s_2))$$
-A theory declares some patterns as axioms, so in $K$ there is a 
-predicate symbol schema
+$$ \parametric{\KsortDeclared}{\shs}(s_1) \wedge 
+\parametric{\KsortDeclared}{\shs}(s_2) \to 
+\parametric{\KsymbolDeclared}{\shs}(\KSymbolceil(s_1, s_2))$$
+
+The symbol schema {\KsortsDeclared} checks whether a list of sorts are declared:
+\begin{align*}
+ & \parametric{\KsortsDeclared}{\shs} \colon \KSortList \to \shs \\
+ & \parametric{\KsortsDeclared}{\shs}(\KnilKSortList) \\
+ & \parametric{\KsortsDeclared}{\shs}(\KconsKSortList(s,S)) \\
+ & = 
+ \parametric{\KsortDeclared}{\shs}(s) \wedge 
+ \parametric{\KsortsDeclared}{\shs}(S)
+\end{align*}
 
 
 %(\textsc{Sort Declaration}).
