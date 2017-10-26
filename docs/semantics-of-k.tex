@@ -1968,20 +1968,13 @@ not r.e.).
 \section{The Meta-Theory: A Reflection in Matching Logic}
 \label{sec:meta-theory-reflection}
 
-This section is a follow-up to 
-Section~\ref{sec:finite-mechanisms},
-in which 
+As a follow-up to 
+Section~\ref{sec:finite-mechanisms} where 
 we introduced various \emph{schema mechanisms} that allow us to define infinite 
-theories using a finite amount of resources.
-In this and the next few sections, we give such schema mechanisms \emph{a 
-formal meaning} by axiomatizing them as a matching logic theory: the 
-meta-theory $K$.
-We are going to define the meta-theory $K$ in detail in 
-Section~\ref{sec:meta-theory}, while before that, we would like to
-illustrate the big picture first and point out the relationship between our work
-and the studies of \emph{reflection in logic}.
-
-
+theories using a finite amount of resources, we are going to give such schema 
+mechanisms \emph{a formal semantics}.
+We will define a matching logic theory called \emph{the meta-theory $K$} as a 
+reflective theory of matching logic in Section~\ref{sec:meta-theory}.
 
 %Consider a matching logic prover $P$ that decides whether a matching logic 
 %patter $\varphi$ holds in a matching logic theory $T$. 
@@ -2008,7 +2001,7 @@ in literature.
 We here quote a rather broad definition by Brian Smith, who in~\cite{smith-1984-popl} defines 
 reflection as
 \begin{displayquote}
-	an entity’s integral ability to represent, operate on,
+	An entity’s integral ability to represent, operate on,
 	and otherwise deal with its self in the same way that
 	it represents, operates on and deals with its primary
 	subject matter.
@@ -2055,8 +2048,10 @@ present in full length the meta-theory $K$ in Secion~\ref{sec:meta-theory}
 
 In this section, we present a finite matching logic theory $K = ( S_K, 
 \Sigma_K, F_K )$ as \emph{the meta-theory of matching logic}.
-The meta-theory $K$ is a finite theory and has $S_K$ , $\Sigma_K$, and $F_K$ as 
+$K$ is a finite theory and has $S_K$ , $\Sigma_K$, and $F_K$ as 
 its finite sets of sorts, symbols, and axioms, respectively.
+$K$ also serves as a foundation of the Kore language, a specification language 
+for matching logic theories that is introduced in Section~\ref{sec:kore}.
 We are going to define the meta-theory $K$ in detail in the following subsections.
 A summary of the meta-theory $K$ is provided in Section~\ref{sec:K-summary}.
  
@@ -2219,11 +2214,18 @@ $\bot_{\smallshs}$:
   & \parametric{\KinXList}{\shs}(x, \KconsXList(y, L)) = (x = y) \vee 
   \parametric{\KinXList}{\shs}(x, L)
 \end{align*}
+Notice that using symbol (and axiom) schemas does not break the finitary 
+of $K$ as long as we do not use sort schemas.
+Sort schemas inductively define an infinite set of sorts, and thus will result 
+in an infinite theory.
+While in $K$ the number of sorts are designed to be finite (see Section~\ref{} 
+for a summary of all sorts, symbols, and axioms in $K$).
+
 The functional symbol $$\KdeleteXList \colon \texttt{\sharpsymbol}\ttX \times 
 \XList \to \XList$$
 takes an element and a list, and returns the list in which all the occurrences
-of the element have been deleted, and the order of the remaining elements does not
-change.
+of the element have been deleted, and the order of the remaining elements does 
+not change.
 It is axiomatized by the next two axioms
 \begin{align*}
   & \KdeleteXList(x, \KnilXList) = \KnilXList
@@ -2856,6 +2858,74 @@ R)).$$
 \subsection{A Summary of the Meta-Theory}
 \label{sec:K-summary}
 
+\subsubsection{Sorts}
+
+\begin{center}
+	\begin{tabular}{l|l}
+		\textbf{Sort} & \textbf{Meaning} \\
+		\hline
+		\KChar & Characters \\
+		{\KCharList} or \KString & Finite lists of characters \\
+		\KSort & Matching logic sorts \\
+		\KSortList & Finite lists of matching logic sorts \\
+		\KSymbol & Matching logic symbols \\
+		\KSymbolList & Finite lists of matching logic symbols \\
+		\KVariable & Matching logic variables \\
+		\KVariableList & Finite lists of matching logic variables \\
+		\KPattern & Matching logic patterns \\
+		\KPatternList & Finite lists of matching logic patterns \\
+	\end{tabular}
+\end{center}
+
+\subsubsection{Symbols}
+
+
+	\begin{tabular}{l|l}
+	    \textbf{Symbols} & \textbf{Meaning} \\
+	    \hline
+	    \quottt{a}, \quottt{b}, \dots & Individual characters \\
+	    {\KnilKCharList} or \Kepsilon, \KconsKCharList & Construct character 
+	    lists (a.k.a. strings) \\
+	    \Ksort & Construct sorts \\
+	    \Ksymbol & Construct symbols \\
+	    \KgetArgumentSorts & Get the argument sorts of a symbol \\
+	    \KgetReturnSort & Get the return sort of a symbol \\
+	    \KSymbolceil & Definedness symbol(s) \\
+	    \KnilKSortList, \KconsKSortList & Construct sort lists \\
+	    \KappendKSortList & Append two sort lists \\
+	    \KinKSortList & Check whether a sort belongs to a sort list \\
+	    \KdeleteKSortList & Delete a sort from a sort list \\
+	    \Kvariable & Construct matching logic variables \\
+	    \Kapplication & Construct symbol application patterns \\
+	    \Kand & Construct conjunction patterns \\
+	    \Knot & Construct negation patterns \\
+	    \Kexists & Construct existential quantification patterns \\
+	    \KVariableToKPattern & Injection from variables to patterns \\
+	    \Kor & Construct disjunction patterns \\
+	    \Kimplies,\dots & Construct all kinds of patterns \\
+	    \KgetFvs & Get free variables in a pattern \\
+	    \KgetFvsFromPatterns & Get all free variables from a pattern list \\
+	    \KoccursFree & Check whether a variable occurs free in a pattern \\
+	    \KfreshName & Generate a fresh variable name w.r.t. a pattern list \\
+	    \Ksubstitute & Substitute a variable for a pattern \\
+	    \KsubstitutePatterns & Substitute a list of patterns \\
+	    \KsortDeclared & Check whether a sort is declared in the current theory 
+	    \\
+	    \KsymbolDeclared & Check whether a symbol is declared in the current 
+	    theory \\
+	    \KaxiomDeclared & Check whether an axiom is declared in the current 
+	    theory \\
+	    \KwellFormed & Check whether a pattern is wellformed in the current 
+	    theory \\
+	    \KwellFormedPatterns & Check whether a list of patterns are wellformed 
+	    \\
+	    \KgetSort & Get the sort of a pattern in the current theory \\
+	    \KgetSortsFromPatterns & Get the list of sorts from a list of patterns 
+	    \\
+	    \Kdeduce & Check whether a pattern is provable in the current theory
+	\end{tabular}
+
+
 \section{Reflect Theories in the Meta-Theory}
 \label{sec:reflect}
 We have shown the readers the big picture of the meta-theory $K$ and its usage 
@@ -3380,6 +3450,7 @@ reasoning in finite theories.
 
 
 \section{The Kore Language}
+\label{sec:kore}
 
 The Kore language is a formal specification language that allows one to specify 
 (both finite and recursively enumerable infinite) theories using a finite 
