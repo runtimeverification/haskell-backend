@@ -3708,17 +3708,17 @@ Section~\ref{sec:kore-syntax-pattern}.
 The fixed number of predefined non-parametric meta-sort constructors in Kore 
 are in correspondence to sorts in the meta-theory $K$ (see 
 Section~\ref{sec:K-summary}).
-They are
-\begin{center}
-	{\ttfamily
-		\begin{tabular}{llll}
-			\verb|#Sort| & \verb|#Symbol| & \verb|#Variable| & \verb|#Pattern| 
-			\\\hline
-			\verb|#SortList| & \verb|#SymbolList| & \verb|#VariableList| & 
-			\verb|#PatternList|
-		\end{tabular}
-	}
-\end{center}
+%They are
+%\begin{center}
+%	{\ttfamily
+%		\begin{tabular}{llll}
+%			\verb|#Sort| & \verb|#Symbol| & \verb|#Variable| & \verb|#Pattern| 
+%			\\\hline
+%			\verb|#SortList| & \verb|#SymbolList| & \verb|#VariableList| & 
+%			\verb|#PatternList|
+%		\end{tabular}
+%	}
+%\end{center}
 
 \subsubsection{Sort Declaration}
 \label{sec:kore-syntax-sort-declaration}
@@ -4072,7 +4072,7 @@ For example,
 }
 \end{center}
 
-\subsubsection{Lift Object Sorts To Meta Patterns}
+\subsubsection{Lift Object Sorts To Meta-Patterns}
 Object sorts are lifted to meta-patterns by the lifting operation inductively 
 defined as
 \begin{align*}
@@ -4087,8 +4087,6 @@ $\parametric{C_\itsort}{s_1,\dots,s_n}$  \\
 & and $s_1,\dots,s_n$ are object sorts
 \end{cases*}
 \end{align*}
-
-
 
 For example,
 \begin{center}{\ttfamily
@@ -4113,6 +4111,29 @@ For example,
 	}
 \end{center}
 
+\subsubsection{Lift Object Sort Lists To Meta-Patterns}
+Given a list of sorts $s_1,\dots,s_n$.
+We can naturally define the element-wise extension lifting operation as
+\begin{align*}
+&\denote{\_} \colon \syntacc{object-sort-list} \to \syntacc{meta-pattern-list} 
+\\
+&\denote{s_1,\dots,s_n} = \denote{s_1},\dots,\denote{s_n}
+\end{align*}
+However, it is often the case that we want to lift a sort list to \emph{one 
+\textup{\KSortList} meta-pattern} instead of \emph{a list of \textup{\KSort} 
+meta-patterns}.
+For that reason, we define the following \emph{list-lifting operation} for 
+sorts:
+\begin{align*}
+& \denote{\_}_\llist \colon \syntacc{object-sort-list} \to 
+\syntacc{meta-pattern} \\
+& \denote{\alpha} = 
+\begin{cases*}
+\KnilKSortList & if $\alpha$ is empty \\
+\KconsKSortList(\denote{s},\denote{\beta}_\llist) & if $\alpha = s,\beta$
+\end{cases*}
+\end{align*}
+
 \subsubsection{Lift Sort Declarations To Symbol \& Axiom Declarations}
 A sort declaration is lifted to a symbol declaration and two axiom declarations
 $$ \denote{\_} \colon \syntacc{sort-declaration} \to 
@@ -4136,49 +4157,21 @@ its lifting is
   \\
   &\qquad\qquad\qquad\quad
   \texttt{\parametric{\Ksort}{}($\denote{C_\itsort}_\name$, 
-  $\denote{S_1,\dots,S_n}_\llist$))}
+  $\denote{
+  	S_1,\dots,S_m}_\llist$))}
   \\
   &\ 
   \texttt{\parametric{axiom}{\sharpsymbol S}
   \parametric{\slimplies}{\sharpsymbol S}( }
   \\
   &\qquad\qquad\qquad\quad
-  \texttt{$\denote{S_1,\dots,S_n}_\itdeclared$,}
+  \parametric{\KsortsDeclared}{\texttt{\sharpsymbol 
+  		S}}(\denote{
+  	S_1,\dots,S_m}_\llist),
   \\
   &\qquad\qquad\qquad\quad
-  \texttt{$\denote{\parametric{C_\itsort}{S_1,\dots,S_n}}_\itdeclared$)}
-\end{align*}
-where $\denote{\_}_\llist$ and $\denote{\_}_\itdeclared$ are two auxiliary 
-lifting operations defined as follows.
-The sort list lifting operation $\denote{\_}_\llist$ takes a list 
-$\alpha$ of sorts 
-and lifts them to a $\parametric{\KSortList}{}$ pattern as follows (using Kore 
-syntax):
-\begin{align*}
-\denote{\alpha}_\llist = 
-\begin{cases*}
-\parametric{\KnilKSortList}{}\texttt{()} & if $\alpha$ is empty list \\
-\parametric{\KconsKSortList}{}\texttt{($\denote{s}$,$\denote{\beta}_\llist$)} 
-& if 
-$\alpha 
-= s, \beta$
-\end{cases*}
-\end{align*}
-The sort declared lifting function $\denote{\_}_\itdeclared$ is depended on a 
-meta-sort variable \texttt{\sharpsymbol S} and  
-takes a list $\alpha$ of sorts and lifts them 
-to a meta-pattern as follows:
-\begin{align*}
-\denote{\alpha}_\itdeclared = 
-\begin{cases*}
-\parametric{\sltop}{\texttt{\sharpsymbol S}} & if $\alpha$ is empty list \\
-\parametric{\sland}{\texttt{\sharpsymbol 
-S}}\texttt{(\parametric{\KsortDeclared}{}($\denote{s}$),$\denote{
-\beta}_\itdeclared$)}
-& if 
-$\alpha 
-= s, \beta$
-\end{cases*}
+  \parametric{\KsortDeclared}{\texttt{\sharpsymbol 
+  S}}(\denote{\parametric{C_\itsort}{S_1,\dots,S_n}}))
 \end{align*}
 
 \subsubsection{Lift Object Symbol Constructors To Meta Symbols}
@@ -4219,7 +4212,7 @@ $\denote{C_\itsymbol}$($\underbrace{\parametric{\KSort}{},\dots,
 \\
 & \qquad\qquad\qquad \texttt{
 	\parametric{\Kapplication}{}($\denote{
-		C_\itsymbol}_\itsymbol$,$\collapse(\texttt{\sharpsymbol 
+		C_\itsymbol}_\itsymbol$,$\collapse_\KPattern(\texttt{\sharpsymbol 
 			P1:\parametric{\KPattern}{}},\dots,\texttt{\sharpsymbol 
 			Pn:\parametric{\KPattern}{}})$))
 }
@@ -4241,12 +4234,14 @@ defined as
   		s_1,\dots,s_n}_\llist$,$\denote{
   		s}$))}
 \end{align*}
-and $\collapse(\alpha)$ for a list $\alpha$ of Kore patterns is defined as
+and $\collapse_\KPattern(\alpha)$ for a list $\alpha$ of Kore patterns is 
+defined as
 \begin{equation*}
-\collapse(\alpha) =
+\collapse_\KPattern(\alpha) =
 \begin{cases*}
 \parametric{\KnilKPatternList}{} & if $\alpha$ is empty list \\
-\parametric{\KconsKPatternList}{}(\varphi, \collapse(\beta)) & if $\alpha$ is 
+\parametric{\KconsKPatternList}{}(\varphi, \collapse_\KPattern(\beta)) & if 
+$\alpha$ is 
 $\varphi, \beta$
 \end{cases*}
 \end{equation*}
