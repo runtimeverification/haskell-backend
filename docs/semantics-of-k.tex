@@ -2505,21 +2505,36 @@ $$
 
 \subsection{Matching Logic Theories}
 \label{sec:ML-theories}
+We have defined a universe of meta-representations of matching logic sorts, 
+symbols, and patterns, with which we represent all possible sorts, symbols, and 
+patterns coming from all kinds of matching logic theories.
+When fix a theory $T$, the meta-representations of sorts, symbols, and patterns 
+in the theory $T$ only stand for a small portion of the universe of sort, 
+symbol, and pattern meta-representations in $K$.
+For example, $\Nat$ is a sort in Presburger arithmetic, but not in lambda 
+calculus.
+Pattern $f(x,y) = f(y,x)$ is an axiom in theories where $f$ is a commutative 
+symbol, but not an axiom in theories where $f$ is not in the signature or not 
+commutative.
 
-A theory declares some sorts, so in $K$ there is a predicate symbol schema
-$$ \parametric{\KsortDeclared}{s} \colon \KSort \to s \quad \text{for any $s 
-\in S_K$}$$
-A theory declares some symbols, so in $K$ there is a predicate symbol schema
-$$ \parametric{\KsymbolDeclared}{s} \colon \KSymbol \to s\quad \text{for any $s 
-\in S_K$}$$
-with an axiom that says the definedness symbol is always declared
+Therefore, in the meta-theory $K$, we introduce three predicate schemas to 
+capture what are defined in \emph{the current theory} and what are not.
+They are:
+\begin{align*}
+& \parametric{\KsortDeclared}{\shs} \colon \KSort \to \shs \\
+& \parametric{\KsymbolDeclared}{\shs} \colon \KSymbol \to \shs \\
+& \parametric{\KaxiomDeclared}{\shs} \colon \KPattern \to \shs
+\end{align*}
+for any sort $\shs \in S_K$.
+
+The definedness symbol $\ceil{\_}_{s_1}^{s_2}$ is always declared if $s_1$ and 
+$s_2$ are declared sorts:
 $$ \parametric{\KsortDeclared}{s}(s_1) \wedge 
 \parametric{\KsortDeclared}{s}(s_2) \to 
 \parametric{\KsymbolDeclared}{s}(\KSymbolceil(s_1, s_2))$$
 A theory declares some patterns as axioms, so in $K$ there is a 
 predicate symbol schema
-$$ \parametric{\KaxiomDeclared}{s} \colon \KPattern \to s\quad \text{for any $s 
-\in S_K$}$$
+
 
 %(\textsc{Sort Declaration}).
 %$\mathit{S}$ is declared as a non-parametric sort with~``S'' being its name.
