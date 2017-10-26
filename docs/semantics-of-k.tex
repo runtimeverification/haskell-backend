@@ -4369,25 +4369,6 @@ where $s_1',\dots,s_m'$ are all those meta-variables in $s_1,\dots,s_n$.
 \subsection{Example D: Contexts}
 
 \subsection{Get Things From Here}
-The following are reserved keywords in Kore:
-\begin{center}
-\texttt{
-\begin{tabular}{lllll}
-	and & or & implies & iff & equals \\ 
-	mem & contains & ceil & floor & not \\ 
-	exists & forall & top & bottom &  \\ 
-	Kand & Kor & Kimplies & Kiff & Kequals \\ 
-	Kmem & Kcontains & Kceil & Kfloor & Knot \\ 
-	Kexists & Kforall & Ktop & Kbottom &  \\ 
-	KSort & KSymbol & KVariable & KPattern & KPred \\ 
-	KSortList & KSymbolList & KVariableList & KPatternList &  \\ 
-	Ksort & Ksymbol & Kvariable & KvariableAsPattern &  \\ 
-	KnilKSortList & KconsKSortLiat & KnilKSymbolList & KconsKSymbolList & KnilKVariableList \\ 
-	KconsKVariableList & KnilKPatternList & KconsKPatternList & KgetSort & Kprobable \\ 
-	KsortDeclared & KsymbolDeclared & KaxiomDeclared &  &  \\ 
-\end{tabular} 
-}
-\end{center}
 
 \subsubsection{Formal BNF Grammar of Kore}
 
@@ -4461,32 +4442,9 @@ The following are reserved keywords in Kore:
 	\alt `alias' "todo here, check the following example of IMP."
 \end{grammar}
 
-\subsection{Kore Semantics}
-\todo[inline]{Show how to lift a Kore definition: (1) the default naming function Nat $\longrightarrow$ ``Nat'' (2) the default sugar symbols at the meta-level Nat $\longrightarrow$ KNat, succ $\longrightarrow$ Ksucc, etc. (3) the lifting function}
-\begin{algorithm}[h]
-	\KwIn{An object-pattern $\varphi$.}
-	\KwOut{The meta-representation (ASTs) of $\varphi$ in $K$}
-	\uIf{$\varphi$ is $x \cln s$}{Return $\mathit{variable(x, sort(s))}$}
-	\uElseIf{$\varphi$ is $x \cln \cln s$}{Return $x \cln \KPattern {\ \wedge\ 
-		} (\mathit{sort(s)} = \KgetSort(x \cln \KPattern)) $}
-	\uElseIf{$\varphi$ is $\varphi_1 \wedge \varphi_2$}
-	{Return $\Kand(\mathit{lift}[\varphi_1], \mathit{lift}[\varphi_2]$}
-	\uElseIf{$\varphi$ is $\neg \varphi_1$}
-	{Return $\Knot(\mathit{lift}[\varphi_1])$}
-	\uElseIf{$\varphi$ is $\exists x \cln s . \varphi_1$}
-	{Return $\Kexists(x, \mathit{sort(s)}, \mathit{lift}[\varphi_1])$}
-	\uElseIf{$\varphi$ is $\sigma(\varphi_1,\dots,\varphi_n)$ and $\sigma \in 
-		\Sigma_{s_1,\dots,s_n,s}$}
-	{Return $\Kapplication(\mathit{symbol}(\sigma, (\Ksort(s_1), \dots, 
-		\Ksort(s_n)), \Ksort(s)),$
-		$\mathit{lift}[\varphi_1],\dots,\mathit{lift}[\varphi_n])$}
-	\caption{Lifting Function $\mathit{lift}[\_]$}
-	\label{alg:liftingfunction}
-\end{algorithm}
-
-\section{IMP in Kore}
-As an example, we present the semantics of IMP defined as a Kore definition.
-\lstinputlisting[language=kore]{imp.kore}
+%\section{IMP in Kore}
+%As an example, we present the semantics of IMP defined as a Kore definition.
+%\lstinputlisting[language=kore]{imp.kore}
 
 \section{Proof of Faithfulness Theorem}
 Before we start to prove the theorem, we need to explain what ``the 
@@ -4725,20 +4683,20 @@ Now we are in a good shape to prove Theorem~\ref{thm:faithfulness-finite}.
 	from $\Bracket{\hat{T}} \vdash \Bracket{\hat{\varphi}}$ we have
 	$$T \vdash \varphi.$$
 	
-	\fbox{\begin{minipage}{35em}\color{blue}\small
-			The following a snapshot of what we had on the board:
-			
-			Step 2.1. Fix a finite matching logic theory $T = (S, \Sigma, A)$ 
-			and a $\Sigma$-pattern $\varphi$. 
-			
-			Step 2.2. Build a model $M_{T}$ based on $T = (S, \Sigma, A)$.
-			
-			Step 2.3. Show that $M_T$ is a model of $K$.
-			
-			Step 2.4. Interpret $\Kdeduce(\hat{T}, \hat{\varphi})$ in $M_T$ and 
-			get $T 
-			\vDash \varphi$.
-	\end{minipage}}
+%	\fbox{\begin{minipage}{35em}\color{blue}\small
+%			The following a snapshot of what we had on the board:
+%			
+%			Step 2.1. Fix a finite matching logic theory $T = (S, \Sigma, A)$ 
+%			and a $\Sigma$-pattern $\varphi$. 
+%			
+%			Step 2.2. Build a model $M_{T}$ based on $T = (S, \Sigma, A)$.
+%			
+%			Step 2.3. Show that $M_T$ is a model of $K$.
+%			
+%			Step 2.4. Interpret $\Kdeduce(\hat{T}, \hat{\varphi})$ in $M_T$ and 
+%			get $T 
+%			\vDash \varphi$.
+%	\end{minipage}}
 \end{proof}
 
 
