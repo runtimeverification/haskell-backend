@@ -188,6 +188,10 @@
   \newcommand{\emptyMap}{\textit{empty}}
   \newcommand{\bindMap}{\textit{bind}}
   \newcommand{\mergeMap}{\textit{merge}}
+  \newcommand{\ittrue}{\textit{true}}
+  \newcommand{\itfalse}{\textit{false}}
+  
+  \newcommand{\Pred}{\textit{Pred}}
 
   \newcommand{\Context}{\textit{Context}}
   \newcommand{\hole}{\boxempty}
@@ -214,6 +218,8 @@
   \newcommand{\denote}[1]{\llbracket{#1}\rrbracket}
   \newcommand{\reduct}[2]{\mbox{${#1}\!\!\upharpoonright_{#2}$}}
   \newcommand{\reductscript}[2]{\mbox{\tiny${#1}\!\!\upharpoonright_{#2}$}}
+  
+  \newcommand{\isEmpty}{\textit{isEmpty}}
   
   \newcommand{\builtin}{\textit{builtin}}
   
@@ -1983,7 +1989,7 @@ be no finite or algorithmic way to represent those
 (e.g., the set of properties of the ``builtin'' model of natural numbers is
 not r.e.).
 
-\section{Warming-Up: Meta-Theory and Reflection in Matching Logic}
+\section{Meta-Theory and Reflection in Matching Logic}
 \label{sec:meta-theory-reflection}
 
 As a follow-up to 
@@ -2061,30 +2067,186 @@ Lifting operation will be defined in detail in Section~\ref{sec:reflect}, after
 we 
 present in full length the meta-theory $K$ in Secion~\ref{sec:meta-theory}
 
-\section{Warming-Up: Notations, Conventions, and Terminologies}
-
-We will define the meta-theory in Section~\ref{sec:meta-theory}.
-The meta-theory is a complex theory, and we will use many notations and 
-conventions to help us define it.
-Most notations and naming conventions are explained when they first appear.
-In this section, we will introduce some general notations, methods, and 
-techniques that help us specify matching logic theories.
-
-\subsection{Review: Matching Logic Grammar}
-
 \section{Meta-Theory of Matching Logic}
 \label{sec:meta-theory}
 
 In this section, we present a finite matching logic theory $K = ( S_K, 
-\Sigma_K, F_K )$ as \emph{the meta-theory of matching logic}.
-$K$ is a finite theory and has $S_K$ , $\Sigma_K$, and $F_K$ as 
-its finite sets of sorts, symbols, and axioms, respectively.
-$K$ also serves as a foundation of the Kore language, a specification language 
-for matching logic theories that is introduced in Section~\ref{sec:kore}.
-We are going to define the meta-theory $K$ in detail in the following subsections.
-A summary of the meta-theory $K$ is provided in Section~\ref{sec:K-summary}.
- 
+\Sigma_K, A_K )$ as \emph{the meta-theory of matching logic}.
+The meta-theory $K$ has a finite set $S_K$ of sorts, a finite set $\Sigma_S$ of 
+symbols, and a finite set $A_K$ of axioms.
+We will define the meta-theory $K$ as a \emph{a syntactic theory},
+as we will explicitly enumerate all the finitely many axioms in the meta-theory 
+$K$.
+In fact, we will provide a summary of the meta-theory $K$ at the end of this 
+section~(see Section~\ref{sec:K-summary}).
+We prefer a syntactic definition for the meta-theory $K$ because we are mainly 
+interested in doing reasoning in matching logic, and a purely 
+syntactic definition helps us to develop a prover for matching logic.
+We will find the meta-theory $K$ a model when we prove the faithfulness theorem 
+in Section~\ref{sec:proof-of-faithfulness-theorem}, in which we will introduce 
+\emph{the canonical model of the meta-theory}.
+However, this is not the emphasis of this section, and let us focus on the 
+syntactic definition of $K$ for now.
+
+\subsection{Warming-Up}
+The meta-theory $K$ is a complex theory, and we will use many notations and 
+conventions to help us define it.
+Some notations and naming conventions are specific to the meta-theory $K$ and 
+they will be defined when they are firstly used.
+The others are general ones and are not specific to $K$.
+In this subsection, we provide an overview of all tricks that we play in 
+defining $K$.
+
+\subsubsection{Variable Names}
+Recall that the matching logic grammar that we introduced in 
+Figure~\ref{ml-grammar} 
+assumes a set $\Name$ of infinitely many variable names.
+Generally speaking, it does not matter what sets of variable names we choose, 
+but good names are often more intuitive and helpful than bad ones.
+In a complex theory like $K$, picking good names can be extremely important.
+
+In $K$, we assume the following letters and their variants (primed, 
+subscripted, etc.) 
+are in the set {\Name} of variable names:
+$$
+\Name = \{ x, y, z, s, f, S, L, u, v, \sigma, \varphi, \psi, 
+\dots \}
+$$
+Starting from Section~\ref{sec:chars-string}, the only mathematical variable or 
+meta-variable that we will use is $\shp s$.
+We use $\shp s$ to denote any sort in $S_K$.
+Readers may notice that $\varphi$ and $\psi$ are now normal variable names like 
+$x$ and $y$, and \emph{not} meta-variables for patterns as in 
+Section~\ref{sec:finite-mechanisms}.
+This is intended.
+
+\subsubsection{Three Ways of Defining Predicate Symbols}
+\label{sec:three-ways-of-defining-predicate-symbols}
+Recall that predicate symbols in matching logic are symbols whose 
+interpretations in models are mappings which return either the empty set 
+$\emptyset$ or the total set on all inputs.
+We can also define predicate symbols in a syntactic way.
+A symbol $\sigma \in \Sigma_{s_1\ldots s_n,s}$ is said to be a predicate symbol 
+in a theory $\Gamma$ if
+$$ \Gamma \vdash \forall x_1 \dots x_n . ((\sigma(x_1,\dots,x_n) = \top) \vee  
+(\sigma(x_1,\dots,x_n) = \bot))$$
+
+In terms of defining predicate symbols, there are in general three approaches.
+We use the predicate symbol $\isEmpty$ as an example to illustrate all three 
+approaches.
+The predicate symbol $\isEmpty$ checks whether a list is empty or not.
+The key thing is that we want to use $\isEmpty$ in any sort contexts.
+
+One way to do that is to introduce a special sort $\Pred$ and define
+\begin{align*}
+ \isEmpty \in \Sigma_{\List,\Pred}
+\end{align*}
+and two axioms
+\begin{align*}
+\isEmpty(\nil) \qquad\qquad \neg \isEmpty(\cons(x,L))
+\end{align*}
+Now $\isEmpty$ is defined as a predicate symbol but it has a specific return 
+sort $\Pred$, and therefore it cannot be used in any sort context.
+In order to use $\isEmpty$ in any sort context, we have to introduce the 
+following abbreviation:
+\begin{center}
+	$b \equiv (b = \top_\Pred)$ \qquad for any pattern $b$ of sort $\Pred$
+\end{center}
+and the equality lets us use it in any sort context.
+
+The second approach is to define
+$$ \isEmpty \colon \List \to \Bool $$
+as a function from $\List$ to $\Bool$, with two axioms:
+\begin{center}
+	$isEmpty(\nil)=\ittrue \qquad\qquad \isEmpty(\cons(x,L)) = \itfalse$
+\end{center}
+Now $\isEmpty$ is defined as a function and has a specific return sort $\Bool$.
+To use it in any sort context, we have to introduce the following abbreviation:
+\begin{center}
+	$b \equiv (b = \ittrue)$ \qquad for any pattern $b$ of sort $\Bool$
+\end{center}
+and the equality lets us use it in any sort context.
+
+The last approach, which is also the approach that we adopt in defining $K$, is 
+to define a set of predicate symbols
+\begin{center}
+	$\parametric{\isEmpty}{s} \in \Sigma_{\List,s}$ \qquad for any sort $s$
+\end{center}
+with two axiom schemas:
+\begin{center}
+	$\parametric{\isEmpty}{s}(\nil)$
+	\qquad\qquad
+	$\neg \parametric{\isEmpty}{s}(\cons(x,L))$
+\end{center}
+Now $\isEmpty$ is defined as a \emph{symbol schema}, and it can be put in any 
+sort context by instantiating the schema with the corresponding sort.
+
+It is mostly a taste of flavor in choosing which approach to use.
+The third approach might seem a bit verbose but it is the most fundamental and 
+essential one, as it does not require equality and thus it can be used in 
+all theories even if the definedness symbols are not defined.
+
+\subsubsection{Using Symbol Schemas Does Not Make Meta-Theory Infinite}
+As we have shown in Section~\ref{sec:three-ways-of-defining-predicate-symbols},
+the meta-theory $K$ contains some predicate symbols defined using symbol 
+schemas.
+Smart readers might be wondering whether that leads to an infinite theory, and 
+the answer is no. 
+Using symbol schemas in defining the meta-theory $K$ does not make it an 
+infinite theory, because we never use \emph{sort schemas}.
+Therefore, the meta-theory $K$ only has a finite number of sorts.
+As long as the number of sorts are finite, we can freely use both symbol 
+schemas and axiom schemas to help us defining $K$ without taking the risk of 
+making the whole theory an infinite one, because any (symbol or axiom) schema 
+will have only finitely many instances.
+
+\subsubsection{Typewriter Fonts versus Italic Fonts}
+As we have seen, variable names in $K$ are printed in italic fonts.
+The only meta-variable $\shp s$ that we use is also printed in italic fonts.
+All sorts and symbols in $K$ are printed in typewriter fonts, and most of them 
+start with a sharp ``\texttt{\sharpsymbol}''.
+
+\subsubsection{A Road Map of The Definition Of Meta-Theory}
+Starting from the next subsection, we will define the meta-theory $K$ in full 
+detail.
+We will organize the lengthy definition into six sections (running from 
+Section~\ref{sec:chars-string} to Section~\ref{sec:ML-proof-system})
+with each subsection defining a high-cohesion-loose-coupling part of the 
+meta-theory:
+\begin{center}
+\begin{tabular}{l|l}
+	\textbf{Section} & \textbf{Contents}
+	\\\hline\hline
+	Section~\ref{sec:chars-string} & Definition of characters and strings
+	\\\hline
+	Section~\ref{sec:ML-sorts-symbols} & Definition of meta-representations 
+	of sorts and symbols
+	\\\hline
+	Section~\ref{sec:finite-lists} & Definition of finite lists
+	\\\hline
+	Section~\ref{sec:ML-patterns} & Definition of meta-representations of 
+	patterns
+	\\\hline
+	Section~\ref{sec:ML-theories} & Definition of predicate symbols that
+	define theories
+	\\\hline
+	Section~\ref{sec:ML-proof-system} & Axiomatization of the proof system of 
+	matching logic
+	\\\hline
+	Section~\ref{sec:K-summary} & A summary of all sorts, symbols, and axioms 
+	in $K$
+\end{tabular}
+\end{center}
+
+We tried to make sure for any $x, y \in \{2,3,4,5,6,7\}$ and $x < y$, that 
+Section~\ref{sec:meta-theory}.$x$ does not refer to the contents that are 
+introduced in Section~\ref{sec:meta-theory}.$y$, but it is not always the case.
+The readers should be prepared to see some sorts and symbols are used before 
+they are formally defined, in which case there will be informal explanations 
+about those sorts and symbols.
+
 \subsection{Characters and Strings}
+
 \label{sec:chars-string}
 The sort $\KChar$ is the sort for \emph{characters}. It has the following $26 + 
 26 + 10 + 3 = 65$ functional constructors:
@@ -2168,7 +2330,7 @@ where $f$ is a $\KString$ variable, $S,S'$ are $\KSortList$ variables, and $s$
 is 
 a $\KSort$ variable.
 
-\paragraph{Definedness Symbols}
+\paragraph{Meta-Representations of Definedness Symbols}
 Definedness symbols, also known as the \emph{ceiling} symbol, are required by 
 the sound and complete proof system of matching logic~\cite{rosu-2017-lmcs}.
 For any matching logic theory and two sorts $s, s'$ in the theory, we assume 
@@ -4566,6 +4728,7 @@ where $s_1',\dots,s_m'$ are all those meta-variables in $s_1,\dots,s_n$.
 %\lstinputlisting[language=kore]{imp.kore}
 
 \section{Proof of Faithfulness Theorem}
+\label{sec:proof-of-faithfulness-theorem}
 Before we start to prove the theorem, we need to explain what ``the 
 corresponding patterns'' $\hat{T}$ and $\hat{\varphi}$ are, as they appear in 
 the theorem.
