@@ -2181,7 +2181,8 @@ with two axiom schemas:
 	$\neg \parametric{\isEmpty}{s}(\cons(x,L))$
 \end{center}
 Now $\isEmpty$ is defined as a \emph{symbol schema}, and it can be put in any 
-sort context by instantiating the schema with the corresponding sort.
+sort contexts by instantiating the sort parameter $s$ with corresponding 
+sorts.
 
 It is mostly a taste of flavor in choosing which approach to use.
 The third approach might seem a bit verbose but it is the most fundamental and 
@@ -2445,7 +2446,7 @@ The last two shorthands are defined in Notation~\ref{notation:lists}.
 	In fact, the meta-theory $K$ has $n^2$ different definedness symbols:
 	\begin{center}
 		$\ceil{\_}_{\smallshp s}^{\smallshp s'} \in \Sigma_K$ \qquad
-		for any $\shp s, \shp s' \in S_K$ are sorts in the meta-theory $K$
+		for any $\shp s, \shp s' \in S_K$ that are sorts in the meta-theory $K$
 	\end{center}
     where $n = |S_K|$ is the number of sorts in the meta-theory.
     The function $\KSymbolceil \in \Sigma_K$ has nothing to do with those $n^2$ 
@@ -2887,30 +2888,63 @@ symbol, but not an axiom in theories where $f$ is not in the signature or not
 commutative.
 
 Therefore, in the meta-theory $K$, we introduce three predicate schemas to 
-capture what are defined in \emph{the current theory} and what are not.
-They are:
+capture what are defined or declared in the \emph{current theory} and what are 
+not.
+They are
 \begin{align*}
 & \parametric{\KsortDeclared}{\shs} \colon \KSort \to \shs \\
 & \parametric{\KsymbolDeclared}{\shs} \colon \KSymbol \to \shs \\
 & \parametric{\KaxiomDeclared}{\shs} \colon \KPattern \to \shs
 \end{align*}
-for any sort $\shs \in S_K$.
+This gives us what we call an \emph{intensional definition} of matching logic 
+theories.
 
+A related predicate symbol
+\begin{equation}
+	\parametric{\KsortsDeclared}{\shs} \colon \KSortList \to \shs
+\end{equation}
+
+
+{\KsortsDeclared} checks whether a list of sorts 
+are declared:
+\begin{align*}
+& \parametric{\KsortsDeclared}{\shs} \colon \KSortList \to \shs \\
+& \parametric{\KsortsDeclared}{\shs}(\KnilKSortList) \\
+& \parametric{\KsortsDeclared}{\shs}(\KconsKSortList(s,S)) \\
+& = 
+\parametric{\KsortDeclared}{\shs}(s) \wedge 
+\parametric{\KsortsDeclared}{\shs}(S)
+\end{align*}
+
+\paragraph{Extensional and Intensional Definitions.}
+When we define a matching logic theory $T = (S, \Sigma, A)$, we are mainly 
+defining three sets: a set $S$ of sorts, a set $\Sigma$ of symbols, and a set 
+$A$ of axioms.
+There are in general two ways to define a set: either extensionally or 
+intensionally. 
+For example, one is to define a set $P$ of all prime numbers. 
+An extensional definition would be $$P = \{2, 3, 5, 7, 11, \dots\}$$
+in which one enumerates all prime numbers.
+An intensional definition would be $$P = \{ n \in \mathbb{N} \mid \text{the 
+only factors $n$ has is 1 and $n$ itself} \}$$
+in which one uses a necessary and sufficient condition to specify what numbers 
+are prime numbers.
+Extensional definitions are preferred when the sets being defined are small 
+finite sets, while intensional definitions are easier to use when the sets 
+being defined have infinitely many elements and have a simple necessary and 
+sufficient specification condition.
+In the meta-theory $K$, basically we use intensional definitions to define the 
+sort, symbol, and axiom sets, because they are often infinite sets and we 
+cannot afford enumerating all of their elements.
+
+\paragraph{Definedness Symbols are Defined in All Theories}
 The definedness symbol $\ceil{\_}_{s_1}^{s_2}$ is always declared if $s_1$ and 
 $s_2$ are declared sorts:
 $$ \parametric{\KsortDeclared}{\shs}(s_1) \wedge 
 \parametric{\KsortDeclared}{\shs}(s_2) \to 
 \parametric{\KsymbolDeclared}{\shs}(\KSymbolceil(s_1, s_2))$$
 
-The symbol schema {\KsortsDeclared} checks whether a list of sorts are declared:
-\begin{align*}
- & \parametric{\KsortsDeclared}{\shs} \colon \KSortList \to \shs \\
- & \parametric{\KsortsDeclared}{\shs}(\KnilKSortList) \\
- & \parametric{\KsortsDeclared}{\shs}(\KconsKSortList(s,S)) \\
- & = 
- \parametric{\KsortDeclared}{\shs}(s) \wedge 
- \parametric{\KsortsDeclared}{\shs}(S)
-\end{align*}
+
 
 
 %(\textsc{Sort Declaration}).
