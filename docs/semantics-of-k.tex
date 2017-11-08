@@ -190,6 +190,7 @@
   \newcommand{\mergeMap}{\textit{merge}}
   \newcommand{\ittrue}{\textit{true}}
   \newcommand{\itfalse}{\textit{false}}
+  \newcommand{\itceil}{\textit{ceil}}
   
   \newcommand{\Pred}{\textit{Pred}}
 
@@ -2399,15 +2400,22 @@ s}_s^{s'}$ defined in the theory.
 The symbol $\ceil{\_}_s^{s'}$ will have its unique meta-representation in the 
 meta-theory $K$, constructed using the constructor $\Ksymbol$.
 
-For convenience, we introduce a function $\KSymbolceil$ in the meta-theory $K$:
+Notice that $\ceil{\_}_s^{s'}$ is a 2-dimensional representation of the symbol 
+$\parametric{\itceil}{s,s'}$:
+$$ \ceil{\_}_s^{s'} \equiv \parametric{\itceil}{s,s'} $$
+In the following, we will interchangeably use both the 2-dimensional 
+representation and the linear representation.
+
+We introduce a function (not a constructor) $\KSymbolceil$ in the meta-theory 
+$K$:
 \begin{equation*}
  \KSymbolceil \colon 
  \underbrace{\KSort}_\text{the subscripted sort $s$}
  \times 
  \underbrace{\KSort}_\text{the superscripted sort $s'$} \to \KSymbol \\
 \end{equation*}
-which help to construct the meta-representation of the definedness symbol 
-$\ceil{\_}_s^{s'}$.
+which helps to construct the meta-representation of the definedness symbol 
+$\parametric{\itceil}{s,s'}$.
 The function~$\KSymbolceil$ is \emph{not} a constructor of sort $\KSymbol$ but 
 rather a helper function, as shown in the next axiom:
 \begin{equation*}
@@ -2429,44 +2437,80 @@ The last two shorthands are defined in Notation~\ref{notation:lists}.
 \begin{remark}
 	The function {\KSymbolceil} is used to construct the meta-representations 
 	of definedness symbols \emph{in the object theories}.
-	The meta-theory $K$ 
+	Smart readers may already notice that our meta-theory $K$ has equality, and 
+	thus must have definedness symbols defined.
+	That is exactly true.
+	In fact, the meta-theory $K$ has $n^2$ different definedness symbols:
+	\begin{center}
+		$\ceil{\_}_{\smallshp s}^{\smallshp s'} \in \Sigma_K$ \qquad
+		for any $\shp s, \shp s' \in S_K$ are sorts in the meta-theory $K$
+	\end{center}
+    where $n = |S_K|$ is the number of sorts in the meta-theory.
+    The function $\KSymbolceil \in \Sigma_K$ has nothing to do with those $n^2$ 
+    definedness symbols in the meta-theory $K$.
+    It is simply a direct correspondence of the definedness symbol 
+    $\parametric{\itceil}{s,s'}$ in the object theories.
+    
+    Here is one more word about where the weird name {\KSymbolceil} comes from.
+    The first letter sharp {\texttt{\sharpsymbol}} tells us that it belongs to 
+    the 
+    meta-theory $K$.
+    The second letter quot {\texttt{`}} tells us that it corresponds to 
+    something in 
+    object theories (in this case, the definedness symbols in object theories).
+    As a general principle, we use the quot {\texttt{`}} for naming
+    meta-theory symbols which directly correspond to things in object 
+    theories, so that we will not have a naming conflict with other meta-theory 
+    symbols.
 \end{remark}
 
 \subsection{Finite Lists}
 \label{sec:finite-lists}
 
-For sorts $\KChar$, $\KSort$, $\KSymbol$, $\KVariable$, and 
-$\KPattern$\footnote{The sorts $\KVariable$ and $\KPattern$ are defined in 
-Section~\ref{sec:ML-patterns}.}
-in the meta-theory,
-we define $\KCharList$, $\KSortList$, $\KSymbolList$, $\KVariableList$, 
-and $\KPatternList$ as the sorts for finite lists over them, respectively.
-Formally, for any sort $\ttX$
-$$
-\ttX \in \{\ttChar, \ttSort, \ttSymbol, \ttVariable, \ttPattern\}
-$$
-the sort $\XList$ is defined with two functional constructors:
+As we have seen, the meta-theory $K$ has a sort $\KSortList$ for cons-lists of 
+sorts, and a sort $\KCharList$ for cons-lists of characters.
+In fact, the meta-theory $K$ defines the following five different types of 
+cons-lists:
+\begin{center}
+\begin{tabular}{l|l}
+	\textbf{Sort} & \textbf{Meaning} \\\hline\hline
+	\KCharList & Sort for cons-lists of characters \KChar \\\hline
+	\KSortList & Sort for cons-lists of sorts \KSort \\\hline
+	\KSymbolList & Sort for cons-lists of symbols \KSymbol \\\hline
+	\KVariableList & Sort for cons-lists of variables \KVariable \\\hline
+	\KPatternList & Sort for cons-lists of patterns	\KPattern
+\end{tabular}
+\end{center}
+We have defined the sorts \KChar, \KSort, and \KSymbol.
+The sorts {\KVariable} and {\KPattern} will be defined in 
+Section~\ref{sec:ML-patterns}.
+
+All five types of cons-lists have a similar definition.
+In the following, we only show to define cons-lists of sorts as an example.
+The definition for the rest four types of cons-lists should be constructed in 
+the same way.
+
+\subsubsection{Finite Lists of Sorts}
+
+The sort $\KSortList$ is the sort for cons-lists of sorts.
+It has two functional constructors:
 \begin{align*}
-  & \KnilXList \colon \to \XList
+  & \KnilKSortList \colon \to \KSortList
   \\
-  & \KconsXList \colon \texttt{\sharpsymbol}\ttX \times \XList \to \XList
+  & \KconsKSortList \colon \KSort \times \KSortList \to 
+  \KSortList
 \end{align*}
-
-\begin{notation}
-\label{notation:lists}
-	To write list expressions more compactly, we use abbreviation
-	\begin{equation*}
-	  (x_1, x_2, \dots, x_n) \equiv \KconsXList(x_1, \KconsXList(x_2, \dots\KconsXList(x_n, \KnilXList)\dots))
-	\end{equation*}
-\end{notation}
-
-Common list operations and predicates are defined as usual.
-The symbol $$\KappendXList \colon \XList \times \XList \to \XList$$ 
-takes two lists and returns the concatenation of them, with two axioms
+The function
+$$\KappendKSortList \colon \KSortList \times \KSortList \to \KSortList$$ 
+takes two lists and returns the concatenation of them.
+Assume $s$ is a {\KSort} variable, and $S_0,S$ are $\KSortList$ variables, the 
+following two axioms are defined 
 \begin{align*}
-  & \KappendXList(\KnilXList, L) = L
+  & \KappendKSortList(\KnilKSortList, S) = S
   \\
-  & \KappendXList(\KconsXList(x, L_0), L) = \KconsXList(x, \KappendXList(L_0, L))
+  & \KappendKSortList(\KconsKSortList(s, 
+  S_0), S) = \KconsKSortList(s, 
+  \KappendKSortList(S_0, S))
 \end{align*}
 The symbol schema $$\parametric{\KinXList}{\shs} \colon 
 \texttt{\sharpsymbol}\ttX \times \XList \to \shs \quad \text{for any 
@@ -2501,6 +2545,15 @@ It is axiomatized by the next two axioms
   \\
   & = ((x = y) \wedge \KdeleteXList(x, L)) \vee ((x \neq y) \wedge \KconsXList(y, \KdeleteXList(x, L)))
 \end{align*}
+
+\begin{notation}
+	\label{notation:lists}
+	To write list expressions more compactly, we use abbreviation
+	\begin{equation*}
+	(x_1, x_2, \dots, x_n) \equiv \KconsXList(x_1, \KconsXList(x_2, 
+	\dots\KconsXList(x_n, \KnilXList)\dots))
+	\end{equation*}
+\end{notation}
 
 
 \subsection{Matching Logic Patterns}
