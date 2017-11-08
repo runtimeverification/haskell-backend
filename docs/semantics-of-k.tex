@@ -2218,7 +2218,7 @@ On the other hand, we never regard the meta-theory as a final product.
 As \K evolves, the meta-theory also has to evolve accordingly.
 
 
-\subsubsection{A Road Map of The Definition Of Meta-Theory}
+\subsubsection{A Roadmap Of The Definition Of Meta-Theory}
 Starting from the next subsection, we will define the meta-theory $K$ in full 
 detail.
 We will organize the lengthy definition into six sections (running from 
@@ -2485,7 +2485,7 @@ We have defined the sorts \KChar, \KSort, and \KSymbol.
 The sorts {\KVariable} and {\KPattern} will be defined in 
 Section~\ref{sec:ML-patterns}.
 
-All five types of cons-lists have a similar definition.
+All five types of cons-lists share a similar definition.
 In the following, we only show to define cons-lists of sorts as an example.
 The definition for the rest four types of cons-lists should be constructed in 
 the same way.
@@ -2512,7 +2512,12 @@ following two axioms are defined
   S_0), S) = \KconsKSortList(s, 
   \KappendKSortList(S_0, S))
 \end{align*}
-The symbol schema $$\parametric{\KinXList}{\shs} \colon 
+
+\todo[inline]{TODO:: Start revising from here!!}
+The predicate symbol $\KinKSortList$ checks list membership given a sort and a 
+cons-list of sorts.
+It is defined as a symbol schema
+$$\parametric{\KinXList}{\shs} \colon 
 \texttt{\sharpsymbol}\ttX \times \XList \to \shs \quad \text{for any 
 $\shs \in S_K$}$$
 defines for each sort $\shs$ in the meta-theory $K$, a predicate symbol that
