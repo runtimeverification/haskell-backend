@@ -512,7 +512,7 @@ Instead of writing $x \cln s$, we write just $x$ for a variable when $s$ is
 understood from the contexts.
 In Figure~\ref{ml-grammar}, the ``wedge $\wedge$'', ``negation $\neg$'', and 
 ``exists $\exists$'' are in fact
-parametric over the sort $s$:
+parametric over a sort $s$:
 \begin{center}
 	``wedge $\wedge_s$'', ``negation $\neg_s$'', and ``exists $\exists_s$'',
 \end{center}
@@ -2188,6 +2188,7 @@ essential one, as it does not require equality and thus it can be used in
 all theories even if the definedness symbols are not defined.
 
 \subsubsection{Using Symbol Schemas Does Not Make Meta-Theory Infinite}
+\label{sec:symbol-schema-finitary}
 As we have shown in Section~\ref{sec:three-ways-of-defining-predicate-symbols},
 the meta-theory $K$ contains some predicate symbols defined using symbol 
 schemas.
@@ -2513,70 +2514,81 @@ following two axioms are defined
   \KappendKSortList(S_0, S))
 \end{align*}
 
-\todo[inline]{TODO:: Start revising from here!!}
-The predicate symbol $\KinKSortList$ checks list membership given a sort and a 
-cons-list of sorts.
-It is defined as a symbol schema
-$$\parametric{\KinXList}{\shs} \colon 
-\texttt{\sharpsymbol}\ttX \times \XList \to \shs \quad \text{for any 
-$\shs \in S_K$}$$
-defines for each sort $\shs$ in the meta-theory $K$, a predicate symbol that
-checks list membership and returns either $\top_{\smallshs}$ or 
-$\bot_{\smallshs}$:
+For any sort $\shp s \in S_K$ that is a sort of the meta-theory,
+we define a predicate symbol
+$$\parametric{\KinKSortList}{\shs} \colon 
+ \KSort \times \KSortList \to \shs $$
+that takes a sort and a cons-list of sorts and checks list membership.
+The predicate symbol $\parametric{\KinKSortList}{\shs}$ returns either 
+$\top_{\smallshs}$ or $\bot_{\smallshs}$ so that it can be used in any sort 
+contexts (see 
+Section~\ref{sec:three-ways-of-defining-predicate-symbols} and 
+Section~\ref{sec:symbol-schema-finitary}).
+Assume $s,s'$ are two {\KSort} variables, and $S$ is a $\KSortList$ variable,
+the following two axioms are defined for any $\shs \in S_K$
 \begin{align*}
-  & \neg \parametric{\KinXList}{\shs}(x, \KnilXList)
+  & \neg \parametric{\KinKSortList}{\shs}(s, \KnilKSortList)
   \\
-  & \parametric{\KinXList}{\shs}(x, \KconsXList(y, L)) = (x = y) \vee 
-  \parametric{\KinXList}{\shs}(x, L)
+  & \parametric{\KinKSortList}{\shs}(s, \KconsKSortList(s', S)) = (s = s') \vee 
+  \parametric{\KinKSortList}{\shs}(s, S)
 \end{align*}
-Notice that using symbol (and axiom) schemas does not break the finitary 
-of $K$ as long as we do not use sort schemas.
-Sort schemas inductively define an infinite set of sorts, and thus will result 
-in an infinite theory.
-While in $K$ the number of sorts are designed to be finite (see 
-Section~\ref{sec:K-summary} 
-for a summary of all sorts, symbols, and axioms in $K$).
 
-The functional symbol $$\KdeleteXList \colon \texttt{\sharpsymbol}\ttX \times 
-\XList \to \XList$$
-takes an element and a list, and returns the list in which all the occurrences
-of the element have been deleted, and the order of the remaining elements does 
+
+The functional 
+$$\KdeleteKSortList \colon \KSort \times \KSortList \to \KSortList$$
+takes a sort and a sort list, and returns the sort list in which all the 
+occurrences of the sort are deleted, and the order of the remaining 
+elements does 
 not change.
-It is axiomatized by the next two axioms
+It has two axioms
 \begin{align*}
-  & \KdeleteXList(x, \KnilXList) = \KnilXList
+  & \KdeleteKSortList(s, \KnilKSortList) = \KnilKSortList
   \\
-  & \KdeleteXList(x, \KconsXList(y, L))
+  & \KdeleteKSortList(s, \KconsKSortList(s', S))
   \\
-  & = ((x = y) \wedge \KdeleteXList(x, L)) \vee ((x \neq y) \wedge \KconsXList(y, \KdeleteXList(x, L)))
+  & = ((s = s') \wedge \KdeleteKSortList(s, S)) \vee ((s \neq s') \wedge 
+  \KconsKSortList(s', \KdeleteKSortList(s, S)))
 \end{align*}
 
 \begin{notation}
 	\label{notation:lists}
-	To write list expressions more compactly, we use abbreviation
-	\begin{equation*}
-	(x_1, x_2, \dots, x_n) \equiv \KconsXList(x_1, \KconsXList(x_2, 
-	\dots\KconsXList(x_n, \KnilXList)\dots))
-	\end{equation*}
+	To write list expressions more compactly, we use abbreviation(s)
+	\begin{align*}
+	& (s_1) \equiv \KconsKSortList(s_1, \KnilKSortList)
+	\\
+	& (s_1, s_2, \dots, s_n) \equiv \KconsKSortList(s_1, \KconsKSortList(s_2, 
+	\dots\KconsKSortList(s_n, \KnilKSortList)\dots))
+	\end{align*}
+	This abbreviation is also known as the \emph{mixfix form representation of 
+	lists}.
 \end{notation}
 
+\subsubsection{Finite Lists of Characters, Symbols, Variables, and Patterns}
+The sorts of cons-lists of characters, symbols, variables, and patterns can be 
+defined in the same way we define the sort of cons-lists of sorts.
 
 \subsection{Matching Logic Patterns}
 \label{sec:ML-patterns}
 
 \paragraph{Matching Logic Variables.}
 The sort $\KVariable$ is the sort for 
-matching logic variables, with the only functional constructor
+matching logic variables, with a functional constructor
 \begin{equation*}
-  \Kvariable \colon \KString \times \KSort \to \KVariable
+  \Kvariable \colon \underbrace{\KString}_\text{variable name} \times 
+  \underbrace{\KSort}_\text{variable sort} \to \KVariable
 \end{equation*}
-in which the first argument is called the $\emph{name}$ of the variable, while 
-the second argument is the sort of the variable.
 
 \paragraph{Matching Logic Patterns.}
 The sort $\KPattern$ is the sort for matching logic patterns.
-It has in total five functional constructors, including the following four 
-symbols
+We recall the readers of the grammar of matching logic in 
+Figure~\ref{ml-grammar}.
+There are five production rules in the grammar: Variable, Symbol Application, 
+Conjunction $\wedge_s$, Negation $\neg_s$, and (Existential) Quantification 
+$\exists_s$, and that Conjunction, Negation, and Quantification are in fact 
+parametric on a sort $s$.
+In correspondence to the grammar of matching logic, the sort $\KPattern$ 
+has five constructors, including the following four 
+functions
 \begin{align*}
   & \Kapplication \colon \KSymbol \times \KPatternList \to \KPattern
   \\
@@ -2586,14 +2598,19 @@ symbols
   \\
   & \Kexists \colon \KSort \times \KVariable \times \KPattern \to \KPattern
 \end{align*}
-and an injection function from sort $\KVariable$ to sort $\KPattern$
+and an injection function from variables to patterns
 \begin{equation*}
   \KVariableToKPattern \colon \KVariable \to \KPattern
 \end{equation*}
 
-
-Apart from the five constructor symbols, the sort $\KPattern$ also has
-the following functional symbols for derived logic connectives
+In matching logic, apart from the five productions in the grammar, we also 
+introduce many \emph{derived connectives} as aliases or syntactic sugar to help 
+us write compact formulae, such as Disjunction $\vee_s$, Equality 
+$=_{s_1}^{s_2}$, and Membership $\in_{s_1}^{s_2}$.
+In practice, we found it is often useful to give those derived connectives a 
+correspondence in the meta-theory. Therefore, the sort $\KPattern$ also has
+the following functions (not constructors) in correspondence to those derived 
+connectives
 \begin{align*}
   & \Kor \colon \KSort\times\KPattern \times \KPattern   \to \KPattern
   \\
@@ -2621,12 +2638,40 @@ the following functional symbols for derived logic connectives
 
 
 \begin{notation}\label{notation:variables-about-KPattern}
-	As a convention, we use $\varphi$ and $\psi$ for $\KPattern$ variables, 
-	$x$, $y$, and $z$ for $\KString$ variables, $s$ for $\KSort$ variables, $v, 
-	u$ for $\KVariable$ variables, and $\sigma$ for $\KSymbol$ variables. 
+	As a convention, we are writing
+	\begin{center}
+	\begin{tabular}{lll}
+		$x$ & as a shorthand of $x \cln \KString$ 
+		& which is a variable of sort $\KString$
+		\\
+		$y$ & as a shorthand of $y \cln \KString$ 
+		& which is a variable of sort $\KString$
+		\\
+		$z$ & as a shorthand of $z \cln \KString$ 
+		& which is a variable of sort $\KString$
+		\\
+		$s$ & as a shorthand of $s \cln \KSort$ 
+		& which is a variable of sort $\KSort$
+		\\
+		$\sigma$ & as a shorthand of $\sigma \cln \KSymbol$ 
+		& which is a variable of sort $\KSymbol$
+		\\
+		$v$ & as a shorthand of $v \cln \KVariable$ 
+		& which is a variable of sort $\KVariable$
+		\\
+		$u$ & as a shorthand of $u \cln \KVariable$ 
+		& which is a variable of sort $\KVariable$
+		\\
+		$\varphi$ & as a shorthand of $\varphi \cln \KPattern$ 
+		& which is a variable of sort $\KPattern$
+		\\
+		$\psi$ & as a shorthand of $\psi \cln \KPattern$ 
+		& which is a variable of sort $\KPattern$
+	\end{tabular}
+	\end{center} 
 \end{notation}
 
-Derived logic connectives are axiomatized by the following axioms
+Derived connectives have axioms
 \begin{align*}
   & \Kor(s, \varphi, \psi) 
   = \Knot(s, \Kand(s, \Knot(s, \varphi), \Knot(s, \psi)))
@@ -2659,12 +2704,12 @@ Derived logic connectives are axiomatized by the following axioms
 
 \begin{notation}
 	As one may have already noticed, patterns of sort $\KPattern$ get huge rather quickly.
-	The following notation conventions are adopted to write $\KPattern$ patterns in a more compact way, by putting a bar upon their normal mixfix forms
+	The following notations are adopted to write $\KPattern$ patterns in a more 
+	compact way, by putting a bar over their normal mixfix forms
 	\begin{align*}
 	  & \overline{x \cln s} \equiv \Kvariable(x, s) \\
-	  & \quad \ \text{or } \KVariableToKPattern(\Kvariable(x, s))
-	  \\
-	  & \overline{\sigma(\varphi_1, \dots, \varphi_n)} \equiv \Kapplication(\sigma, (\varphi_1, \dots, \varphi_n))
+	  & \overline{\sigma(\varphi_1, \dots, \varphi_n)} \equiv 
+	  \Kapplication(\sigma, (\varphi_1, \dots, \varphi_n))
 	  \\
 	  & \overline{\varphi \wedge_s \psi} \equiv \Kand(s, \varphi, \psi)
 	  \\
