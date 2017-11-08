@@ -252,7 +252,7 @@
   \newcommand{\Ksort}{\texttt{\sharpsymbol sort}}
   \newcommand{\KSymbol}{\texttt{\sharpsymbol Symbol}}
   \newcommand{\Ksymbol}{\texttt{\sharpsymbol symbol}}
-  \newcommand{\KSymbolceil}{\texttt{\sharpsymbol ceil}}
+  \newcommand{\KSymbolceil}{\texttt{\sharpsymbol `ceil}}
   \newcommand{\KgetArgumentSorts}{\texttt{\sharpsymbol getArgumentSorts}}
   \newcommand{\KgetReturnSort}{\texttt{\sharpsymbol getReturnSort}}
   
@@ -2206,6 +2206,17 @@ The only meta-variable $\shp s$ that we use is also printed in italic fonts.
 All sorts and symbols in $K$ are printed in typewriter fonts, and most of them 
 start with a sharp ``\texttt{\sharpsymbol}''.
 
+\subsubsection{Uppercase versus Lowercase}
+As a general principle, all sorts in $K$ start with an uppercase letter while 
+all symbols in $K$ start with a lowercase letter.
+
+\subsubsection{The Meta-Theory Is Extended By Need}
+The meta-theory is our answer to the question ``what is the semantics of \K?''.
+It represents our approach to support reflection in matching logic.
+On the other hand, we never regard the meta-theory as a final product. 
+As \K evolves, the meta-theory also has to evolve accordingly.
+
+
 \subsubsection{A Road Map of The Definition Of Meta-Theory}
 Starting from the next subsection, we will define the meta-theory $K$ in full 
 detail.
@@ -2271,64 +2282,113 @@ The sort $\KChar$ is the sort for \emph{characters}. It has the following $26 +
 \end{center}
 
 \paragraph{Strings as Finite Lists of Characters.}\quad
-Characters are used to construct \emph{strings}, which will be formalized as finite lists of characters.
-In Section~\ref{sec:finite-lists}, we will define a sort $\KCharList$ for 
-finites lists of characters, and two functional constructors
+Characters are used to construct \emph{strings}, defined as cons-lists of 
+characters.
+The sort for strings is $\KCharList$, which will be defined in 
+Section~\ref{sec:finite-lists}.
+The sort $\KCharList$ has two functional constructors
 \begin{align*}
 & \KnilKCharList \colon \to \KCharList \\
 & \KconsKCharList \colon \KChar \times \KCharList \to \KCharList
 \end{align*}
-that construct cons-lists of characters.
 
-\begin{notation}
-We write $\KString$ as an alias of $\KCharList$, and we write $\Kepsilon$ as 
-an alias of $\KnilKCharList$ which represents the empty string.
-\end{notation}
-
-\begin{notation}
+\begin{notation}\label{not:strings}
+It is a bit inconvenient and heavy to treat strings as cons-lists of 
+characters, and it is not quite user-friendly to write $\KCharList$ for the 
+sort of strings.
+Therefore, we introduce $\KString$ as an alias of $\KCharList$, and we write 
+$\Kepsilon$ as an alias of $\KnilKCharList$ that represents the empty string.
 	As a convention, strings are often represented by texts wrapped with quotation marks. 
 	For example, instead of writing
 	$$
 	\KconsKCharList(\quottt{a}, \KconsKCharList(\quottt{b}, 
 	\KconsKCharList(\quottt{c}, \Kepsilon)))
 	$$
-	we simply write $\qquottt{abc}$.
+	we simply write $\qquottt{abc}$ with the double-quotation marks.
 \end{notation}
 
 \subsection{Matching Logic Sorts and Symbols}
 \label{sec:ML-sorts-symbols}
 
 The sort $\KSort$ is the sort for matching logic sorts.
-The only constructor is the functional symbol
+It has one functional constructor
 $$
-\Ksort \colon \KString \times \KSortList\footnote{The sort $\KSortList$ is 
-	defined in Section~\ref{sec:finite-lists}.} \to \KSort
+\Ksort \colon \underbrace{\KString}_\text{name}\  \times 
+\underbrace{\KSortList}_\text{sort parameters} \to \KSort
 $$
-which takes a string as the \emph{name} and a list of sorts as the 
-\emph{parameters}. 
+The constructor $\Ksort$ takes a string as the \emph{sort name} and a list of 
+sorts as the \emph{sort parameters},
+and constructs the corresponding sort.
+The sort $\KSortList$ is the sort for cons-lists of sorts and it is defined in 
+Section~\ref{sec:finite-lists}.
+For parametric sorts such as \parametric{\List}{\Nat} and 
+\parametric{\Map}{\Nat,\Bool}, it is easy to tell what their sort names are and 
+what their sort parameters are, and therefore it is easy to see how to 
+construct their meta-representations in $K$ using the constructor $\Ksort$.
+For non-parametric sort such as $\Nat$, we regard it as the ``parametric sort'' 
+\parametric{\Nat}{} which takes zero sort parameter.
+This unified view of parametric and non-parametric sorts helps to keep the 
+meta-theory as simple as possible.
+We will adopt the same view in dealing with parametric symbols and 
+non-parametric symbols, too.
 
 The sort $\KSymbol$ is the sort for matching logic symbols.
-The only constructor is the functional symbol
+It has one functional constructor
 \begin{equation*}
-\Ksymbol \colon \KString \times \KSortList \times \KSortList \times \KSort \to 
+\Ksymbol \colon {\underbrace{\KString}_\text{name}}\ 
+\times 
+\underbrace{\KSortList}_\text{sort parameters} 
+\times\ 
+\underbrace{\KSortList}_\text{argument sorts} \ 
+\times \underbrace{\KSort}_\text{return sort} \to 
 \KSymbol
 \end{equation*}
-which in turn takes a string as the name, a list of sorts as parameters, a list 
-of argument sorts, and a return sort.
+Since the argument sorts and the return sort of a symbol are included in its 
+meta-representation, it is often called the meta-representation of ``decorated 
+symbols'', where the word ``decorated'' means that not only the name and sort 
+parameters of a symbol are included, but also its argument sorts and return 
+sort.
+For non-parametric symbols such as $\zero$ and $\textit{plus}$, we regard them 
+as the ``parametric symbols'' \parametric{\zero}{} and 
+\parametric{\textit{plus}}{} which take zero sort parameter.
 
-Two useful getter functions are defined as follows
+Two useful getter functions for $\KSymbol$ are defined:
 \begin{align*}
  & \KgetArgumentSorts \colon \KSymbol \to \KSortList \\
  & \KgetReturnSort    \colon \KSymbol \to \KSort
 \end{align*}
-with axioms
+Both getter functions have very simple axioms
 \begin{align*}
- & \KgetArgumentSorts(\Ksymbol(f, S, S', s)) = S'\\
- & \KgetReturnSort(\Ksymbol(f, S, S', s)) = s
+ & \forall f\forall S \forall S'\forall s . \KgetArgumentSorts(\Ksymbol(f, S, 
+ S', s)) = S'\\
+ & \forall f\forall S \forall S'\forall s . \KgetReturnSort(\Ksymbol(f, S, S', 
+ s)) = s
 \end{align*}
-where $f$ is a $\KString$ variable, $S,S'$ are $\KSortList$ variables, and $s$ 
-is 
-a $\KSort$ variable.
+Recall that we often write just $x$ instead of $x \cln s$ for logic variables 
+when the sort $s$ is understood from the context.
+Here we are writing
+\begin{center}
+\begin{tabular}{lll}
+	$f$ & as a shorthand of $f \cln \KString$ & which is a variable of sort 
+	$\KString$ \\
+	$S$ & as a shorthand of $S \cln \KSortList$ & which is a variable of sort 
+	$\KSortList$ \\
+	$S'$ & as a shorthand of $S' \cln \KSortList$ & which is a variable of sort 
+	$\KSortList$ \\
+	$s$ & as a shorthand of $s \cln \KSort$ & which is a variable of sort 
+	$\KSort$
+\end{tabular}
+\end{center}
+The universal quantifiers ``$\forall f\forall S \forall S'\forall s$'' in the 
+front of both axioms are not necessary and can be removed without any change in 
+semantics meaning.
+In later sections, we will often not write such unnecessary universal 
+quantifiers unless there is a chance to confuse logic variables with 
+mathematical variables or meta-variables.
+In that case, we will explicitly write those universal quantifiers to emphasize 
+certain variables are not meta-variables but normal logic variables, because 
+only logic variables can be quantified.
+Readers will see such examples in Section~\ref{sec:ML-patterns}.
 
 \paragraph{Meta-Representations of Definedness Symbols}
 Definedness symbols, also known as the \emph{ceiling} symbol, are required by 
@@ -2336,25 +2396,40 @@ the sound and complete proof system of matching logic~\cite{rosu-2017-lmcs}.
 For any matching logic theory and two sorts $s, s'$ in the theory, we assume 
 there exists a symbol $\ceil{\_}_s^{s'}$ with the axiom $\ceil{x \cln 
 s}_s^{s'}$ defined in the theory.
+The symbol $\ceil{\_}_s^{s'}$ will have its unique meta-representation in the 
+meta-theory $K$, constructed using the constructor $\Ksymbol$.
 
-In the meta-theory $K$, a reflective symbol $\KSymbolceil$ is defined and 
-axiomatized:
-\begin{align*}
-&  \KSymbolceil \colon \KSort \times \KSort \to \KSymbol \\
-&  \KSymbolceil(s, s') = \Ksymbol(\qquottt{ceil}, (s,s'), (s), s')
-\end{align*}
-where (following Notation~\ref{notation:lists})
+For convenience, we introduce a function $\KSymbolceil$ in the meta-theory $K$:
+\begin{equation*}
+ \KSymbolceil \colon 
+ \underbrace{\KSort}_\text{the subscripted sort $s$}
+ \times 
+ \underbrace{\KSort}_\text{the superscripted sort $s'$} \to \KSymbol \\
+\end{equation*}
+which help to construct the meta-representation of the definedness symbol 
+$\ceil{\_}_s^{s'}$.
+The function~$\KSymbolceil$ is \emph{not} a constructor of sort $\KSymbol$ but 
+rather a helper function, as shown in the next axiom:
+\begin{equation*}
+ \forall s \forall s' . (\KSymbolceil(s, s') = \Ksymbol(\qquottt{ceil}, (s,s'), 
+ (s), s'))
+\end{equation*}
+Here we are writing
 \begin{center}
 \begin{tabular}{ll}
-& $(s,s')$ is a shortcut of 
-$\KconsKSortList(s,\KconsKSortList(s',\KnilKSortList))$ \\
-and & $(s)$ is a shortcut of $\KconsKSortList(s,\KnilKSortList)$
+	$s$ & as a shorthand of $s \cln \KSort$ \\
+	$s'$ & as a shorthand of $s' \cln \KSort$ \\
+    $(s,s')$ & as a shorthand of 
+    $\KconsKSortList(s,\KconsKSortList(s',\KnilKSortList))$ \\
+    $(s)$ & as a shorthand of $\KconsKSortList(s,\KnilKSortList)$
 \end{tabular}
 \end{center}
+The last two shorthands are defined in Notation~\ref{notation:lists}.
 
 \begin{remark}
-	Symbol {\KSymbolceil} is the reflection of definedness symbols \emph{in the 
-	object theories}, not the definedness symbols in the meta-theory $K$.
+	The function {\KSymbolceil} is used to construct the meta-representations 
+	of definedness symbols \emph{in the object theories}.
+	The meta-theory $K$ 
 \end{remark}
 
 \subsection{Finite Lists}
