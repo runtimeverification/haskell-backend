@@ -289,6 +289,7 @@
   \newcommand{\KVariableList}{\texttt{\sharpsymbol VariableList}}
   \newcommand{\KnilKVariableList}{\texttt{\sharpsymbol nilVariableList}}
   \newcommand{\KconsKVariableList}{\texttt{\sharpsymbol consVariableList}}
+  \newcommand{\KinKVariableList}{\texttt{\sharpsymbol inVariableList}}
 
   \newcommand{\KVariable}{\texttt{\sharpsymbol Variable}}
   \newcommand{\KVariableToKPattern}{\texttt{\sharpsymbol VariableToPattern}}
@@ -310,8 +311,8 @@
   \newcommand{\Kfloor}{\texttt{\sharpsymbol \slashsymbol  floor}}
   \newcommand{\Kceil}{\texttt{\sharpsymbol \slashsymbol  ceil}}
   
-  \newcommand{\KgetFvs}{\texttt{\sharpsymbol getFvs}}
-  \newcommand{\KgetFvsFromPatterns}{\texttt{\sharpsymbol getFvsFromPatterns}}
+  \newcommand{\KgetFV}{\texttt{\sharpsymbol getFV}}
+  \newcommand{\KgetFVFromPatterns}{\texttt{\sharpsymbol getFVFromPatterns}}
   \newcommand{\KoccursFree}{\texttt{\sharpsymbol occursFree}}
   \newcommand{\KfreshName}{\texttt{\sharpsymbol freshName}}
   \newcommand{\Kcons}{\texttt{\sharpsymbol cons}}
@@ -2740,101 +2741,95 @@ Derived connectives have axioms
       \\
       & \overline{\bot_s} \equiv \Kbottom(s)
 	\end{align*}
-	Notice that we overload the notation $\overline{x \cln s}$ for both 
-	the $\KVariable$ pattern $\Kvariable(x, s)$ and the $\KPattern$ pattern 
-	$\KVariableToKPattern(\Kvariable(x, s))$, so that it can be used in both 
-	$\KVariable$ and $\KPattern$ sort contexts, and as a result, it reduces the 
-	number of times we explicitly write the injection function 
-	$\KVariableToKPattern$.
 \end{notation}
 
-Apart from the five constructors and ten derived connectives introduced above, the sort $\KPattern$ also gets some common operators defined as functional symbols.
-Those functional symbols are defined and axiomatized in the following 
-subsections.
+Apart from the five constructors and ten derived connectives introduced above, 
+the sort $\KPattern$ also gets some common utility functions.
+Those utility functions are defined in the following subsections.
 
 \paragraph{Free Variable Collection.}
-The functional symbol 
-$$\KgetFvs \colon \KPattern \to \KVariableList$$
+The function
+$$\KgetFV \colon \KPattern \to \KVariableList$$
 traverses the argument pattern and collects all its free variables.
 If a variable has multiple occurrences in the pattern, it has the same 
 number of occurrences in the result list.
-A related functional symbol is 
-$$ \KgetFvsFromPatterns \colon \KPatternList \to \KVariableList $$
-which takes a list of patterns and applies $\KgetFvs$ on each of them, and returns the concatenation of the results.
-\begin{notation}
-	As a naming convention, we use $L$ and $R$ for $\KPatternList$ variables. 
-\end{notation}
-The next seven axioms define $\KgetFvs$ and $\KgetFvsFromPatterns$, with the 
-first five of them defining $\KgetFvs$ and the last two defining 
-$\KgetFvsFromPatterns$.
-Recall that we use $(v)$ to denote the singleton list that consists of only one 
-element $v$ (see Notation~\ref{notation:lists}).
+A related functional is 
+$$ \KgetFVFromPatterns \colon \KPatternList \to \KVariableList $$
+which takes a list of patterns and applies $\KgetFV$ on each of them, and 
+returns the concatenation of the results.
+Assume $L,R$ are $\KPatternList$ variables. 
+The next seven axioms define functions $\KgetFV$ and $\KgetFVFromPatterns$, 
+with the 
+first five of them defining $\KgetFV$ and the last two defining 
+$\KgetFVFromPatterns$
 \begin{align*}
-& \KgetFvs(v) = (v)
+& \KgetFV(v) = \KconsKVariableList(v, \KnilKVariableList)
 \\
-& \KgetFvs(\overline{\sigma(L)}) = \KgetFvsFromPatterns(L)
+& \KgetFV(\overline{\sigma(L)}) = \KgetFVFromPatterns(L)
 \\
-& \KgetFvs(\overline{\varphi \wedge_s \psi}) = \KappendKPatternList(\KgetFvs(\varphi), \KgetFvs(\psi))
+& \KgetFV(\overline{\varphi \wedge_s \psi}) = 
+\KappendKPatternList(\KgetFV(\varphi), \KgetFV(\psi))
 \\
-& \KgetFvs(\overline{\neg_s \varphi}) = \KgetFvs(\varphi)
+& \KgetFV(\overline{\neg_s \varphi}) = \KgetFV(\varphi)
 \\
-& \KgetFvs(\overline{\exists_s v . \varphi}) = \KdeleteKPatternList(v, 
-\KgetFvs(\varphi))
+& \KgetFV(\overline{\exists_s v . \varphi}) = \KdeleteKPatternList(v, 
+\KgetFV(\varphi))
 \\
-& \KgetFvsFromPatterns(\KnilKPatternList) = \KnilKPatternList
+& \KgetFVFromPatterns(\KnilKPatternList) = \KnilKPatternList
 \\
-& \KgetFvsFromPatterns(\KconsKPatternList(\varphi, L))
+& \KgetFVFromPatterns(\KconsKPatternList(\varphi, L))
 \\
-& = \KappendKPatternList(\KgetFvs(\varphi), \KgetFvsFromPatterns(L))
+& = \KappendKPatternList(\KgetFV(\varphi), \KgetFVFromPatterns(L))
 \end{align*}
 
 The predicate symbol schema
 $$ \parametric{\KoccursFree}{\shs} \colon \KVariable \times \KPattern \to \shs 
 \quad 
 \text{for any $\shs \in S_K$} $$
-decides whether a variable occurs free in a given pattern
+decides whether a variable occurs free in a given pattern. It has axiom
 \begin{align*}
   \parametric{\KoccursFree}{\shs}(v, \varphi) = 
   \parametric{\KinKPatternList}{\shs}(v, 
-  \KgetFvs(\varphi))
+  \KgetFV(\varphi))
 \end{align*}
 
 \paragraph{Fresh Variable Name Generation.}
 The functional symbol
 $$\KfreshName \colon \KPatternList \to \KString$$ 
-generates a fresh variable name that does not occur free in the argument list of patterns.
-It has the following axiom schema for any sort $\shs \in S_K$
+generates a fresh variable name that does not occur free in a list of patterns.
+Generally speaking, in matching logic, given a list of patterns 
+$\varphi_1,\dots,\varphi_n$, a variable name $x$ is said to be a \emph{fresh 
+name} if and only if for any sort $s$, the variable $x \cln s$ does not occur 
+free in $\varphi_1,\dots,\varphi_n$.
+This leads to the following axiom schema
 \begin{align*}
-\neg(\parametric{\KinKPatternList}{\shs}(\Kvariable(\KfreshName(L), s), 
-\KgetFvsFromPatterns(L)))
+\neg(\parametric{\KinKVariableList}{\shs}(\Kvariable(\KfreshName(L), s), 
+\KgetFVFromPatterns(L)))
 \end{align*}
 
 \paragraph{Substitution.}
-The functional symbol
-$$\Ksubstitute \colon \KPattern \times \KPattern \times \KVariable \to 
-\KPattern$$
-takes a target pattern $\varphi$, a ``replace''-pattern $\psi$, and a 
-``find''-variable $v$, and returns $\varphi[\psi / v]$, the pattern in 
-which all free occurrences of variable $v$ are placed with $\psi$
-with respect to alpha-renaming.
-
+The function
+$$\Ksubstitute \colon \underbrace{\KPattern}_\text{a target pattern $\varphi$} 
+\times \underbrace{\KPattern}_\text{a ``replace''-pattern $\psi$} \times 
+\underbrace{\KVariable}_\text{a ``find''-variable $v$} \to 
+\underbrace{\KPattern}_\text{substitute $\psi$ for $x$ in $\varphi$}$$
+substitutes $\psi$ for $x$ in $\varphi$ and returns the substitution result 
+$\varphi[\psi / v]$.
 A related function is 
-$$\KsubstitutePatterns \colon \KPatternList \times \KPattern \times \KString \times \KSort \to \KPatternList$$
-which takes a list of patterns and applies $\Ksubstitute$ on each of them, and finally returns the list of all the results.
+$$\KsubstitutePatterns \colon \KPatternList \times \KPattern \times \KVariable 
+\to \KPatternList$$
+which substitutes $\psi$ for $x$ in a list of patterns.
+We define the familiar overbar abbreviation 
+\begin{align*}
+& \overline{\varphi[\psi / v]} \equiv \Ksubstitute(\varphi, \psi, v) \\
+& \overline{(\varphi_1,\dots,\varphi_n)[\psi / v]} \equiv 
+\KsubstitutePatterns((\varphi_1,\dots,\varphi_n), \psi, v)
+\end{align*}
 
-\begin{notation}
-	We abbreviate 
-	$$\Ksubstitute(\varphi, \psi, v) \equiv \overline{\varphi[\psi / v]}$$
-	and 
-	$$\KsubstitutePatterns(L, \psi, v) \equiv 
-	\overline{L[\psi / v]}$$
-	for any $\KPatternList$ pattern $L$.
-\end{notation}
-
-The functional symbols $\Ksubstitute$ and $\KsubstitutePatterns$ have the 
-following axioms. Recall that we use $v, u$ for $\KVariable$ variables (see 
-Notation~\ref{notation:variables-about-KPattern}), and $L$ for $\KPatternList$ 
-variable. 
+Recall our naming conventions in 
+Notation~\ref{notation:variables-about-KPattern}.
+Assume $L$ is a $\KPatternList$ variable.
+The functions $\Ksubstitute$ and $\KsubstitutePatterns$ have axioms
 \begin{align*}
   & \overline{u [\psi / v]} 
   = ((u = v) \wedge \psi)
@@ -2849,10 +2844,12 @@ variable.
   & \overline{(\neg_{s} \varphi)[\psi / v]} = \overline{\neg_{s} \varphi[\psi 
   / v]}
   \\
-  & \overline{(\exists_s u . \varphi)[\psi/v]} \\
-  & = \exists u' . \left(u' = \Kvariable(\KfreshName(\varphi, \psi, v), 
-  \KgetSort(u)) 
-  \wedge \overline{\exists_s u' . (\varphi[u' / u][\psi/v])}\right)
+  & \overline{(\exists_s x \cln s . \varphi)[\psi/v]} 
+  \qquad \text{/\!/ this complex axiom is needed to 
+  	prevent \emph{free variable capturing}}\\
+  & = \exists x' . \left(x' = \KfreshName(\varphi, \psi, 
+  v) \wedge \overline{\exists_s x' \cln s . 
+  (\varphi[x' \cln s / x \cln s][\psi/v])}\right)
   \\
   & \overline{\KnilKPatternList[\psi / v]} = \KnilKPatternList
   \\
@@ -2860,12 +2857,14 @@ variable.
   \KconsKPatternList(\overline{\varphi[\psi / v]}, \overline{L[\psi / v]})
 \end{align*}
 
+
 \paragraph{Alpha-Renaming and Alpha-Equivalence.}
 In matching logic, alpha-renaming is always assumed.
-This means that the pattern set of a matching logic theory is the one that is generated by the grammar of matching logic patterns in Figure~\ref{ml-grammar}, \emph{modulo alpha-renaming}.
+This means that given a matching logic signature, the set of patterns is the 
+one generated by the grammar of matching logic (Figure~\ref{ml-grammar})
+\emph{modulo alpha-renaming}.
 In other words, matching logic patterns are equivalence classes with respect to alpha-equivalence.
-This fact is captured in $K$ by the next axiom schema for any sort $\shs \in 
-S_K$
+This fact is captured by the next axiom schema
 $$
 \parametric{\KoccursFree}{\shs}(v_1, \varphi) \wedge 
 \parametric{\KoccursFree}{\shs}(v_2, \varphi) \to 
@@ -3296,8 +3295,8 @@ R)).$$
 	    \KVariableToKPattern & Injection from variables to patterns \\
 	    \Kor & Construct disjunction patterns \\
 	    \Kimplies,\dots & Construct all kinds of patterns \\
-	    \KgetFvs & Get free variables in a pattern \\
-	    \KgetFvsFromPatterns & Get all free variables from a pattern list \\
+	    \KgetFV & Get free variables in a pattern \\
+	    \KgetFVFromPatterns & Get all free variables from a pattern list \\
 	    \KoccursFree & Check whether a variable occurs free in a pattern \\
 	    \KfreshName & Generate a fresh variable name w.r.t. a pattern list \\
 	    \Ksubstitute & Substitute a variable for a pattern \\
