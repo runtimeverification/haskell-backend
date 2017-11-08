@@ -2937,9 +2937,9 @@ In the meta-theory $K$, basically we use intensional definitions to define the
 sort, symbol, and axiom sets, because they are often infinite sets and we 
 cannot afford enumerating all of their elements.
 
-\paragraph{Definedness Symbols are Defined in All Theories}
+\paragraph{Definedness Symbols are Defined in All Theories.}
 The definedness symbol $\ceil{\_}_{s_1}^{s_2}$ is always declared if $s_1$ and 
-$s_2$ are declared sorts:
+$s_2$ are declared in the current theory:
 $$ \parametric{\KsortDeclared}{\shs}(s_1) \wedge 
 \parametric{\KsortDeclared}{\shs}(s_2) \to 
 \parametric{\KsymbolDeclared}{\shs}(\KSymbolceil(s_1, s_2))$$
@@ -2967,21 +2967,21 @@ $$ \parametric{\KsortDeclared}{\shs}(s_1) \wedge
 
 \paragraph{Wellformed Patterns.}
 The predicate symbol schema
-$$\parametric{\KwellFormed}{s} \colon \KPattern \to s \quad \text{for any $s 
-	\in S_K$}$$ 
+$$\parametric{\KwellFormed}{\shs} \colon \KPattern \to \shs \quad \text{for any 
+$\shs \in S_K$}$$ 
 decides whether a pattern is \emph{wellformed pattern}.
-A related predicate symbol $\parametric{\KwellFormedPatterns}{s}$ checks 
+A related predicate symbol $\parametric{\KwellFormedPatterns}{\shs}$ checks 
 whether multiple 
 patterns are all wellformed
-$$ \parametric{\KwellFormedPatterns}{s} \colon \KPatternList \to s \quad 
-\text{for any $s \in S_K$}$$
+$$ \parametric{\KwellFormedPatterns}{\shs} \colon \KPatternList \to \shs \quad 
+\text{for any $\shs \in S_K$}$$
 with two axioms
 \begin{align*}
-& \parametric{\KwellFormedPatterns}{s}(\KnilKPatternList) \\
-& \parametric{\KwellFormedPatterns}{s}(\varphi, L) = 
-\parametric{\KwellFormed}{s}(\varphi) 
+& \parametric{\KwellFormedPatterns}{\shs}(\KnilKPatternList) \\
+& \parametric{\KwellFormedPatterns}{\shs}(\varphi, L) = 
+\parametric{\KwellFormed}{\shs}(\varphi) 
 \wedge 
-\parametric{\KwellFormedPatterns}{s}(L)
+\parametric{\KwellFormedPatterns}{\shs}(L)
 \end{align*}
 
 The partial function
@@ -3085,7 +3085,8 @@ $$
 	{ \psi }
 $$
 is an inference rule of matching logic, in which $\denote{\varphi_1}, \dots, 
-\denote{\varphi_n}, \denote{\psi}$ are representations of $\varphi_1, \dots, 
+\denote{\varphi_n}, \denote{\psi}$ are meta-representations of $\varphi_1, 
+\dots, 
 \varphi_n, \psi$ in the meta-theory.
 
 In the following, we list all the inference rules of the matching logic proof 
@@ -3304,7 +3305,6 @@ R)).$$
 \end{center}
 
 \subsubsection{Symbols}
-
 
 	\begin{tabular}{l|l}
 	    \textbf{Symbols} & \textbf{Meaning} \\
@@ -5196,149 +5196,141 @@ Now we are in a good shape to prove Theorem~\ref{thm:faithfulness-finite}.
 \bibliographystyle{abbrv}
 \bibliography{refs}
 
-\section{Get Material From Here}
+%\section{Get Material From Here}
+%
+%Matching logic imposes no restrictions on the cardinality of the set of
+%sorts $S$, of the set of symbols $\Sigma$, or of the set of patterns $A$
+%in a theory $(S,\Sigma,A)$.
+%In practice, however, we need a finite mechanism to describe such theories
+%in order to mechanically reason about them using a computer.
+%In the vast universe of possibilities, we here propose one particular approach
+%that we found useful, convenient and sufficient in our semantics engineering
+%efforts.
+%Specifically:
+%\begin{itemize}
+%	\item
+%	We restrict the infinite sets of sorts to ones which can be described with
+%	a finite set of \emph{parametric} sorts, where the parameters range over
+%	other sorts.
+%	For example, $S=\{\Nat,\parametric{\List}{X}\}$ describes the infinite set
+%	of sorts
+%	$S=\{\Nat, \parametric{\List}{\Nat}, 
+%	\parametric{\List}{\parametric{\List}{\Nat}}, ...\}$.
+%	
+%\end{itemize}
+%
+%From here on, unless otherwise specified, when we say \emph{set} we mean
+%a \emph{recursively enumerable set}, i.e., a set that can be generated
+%algorithmically (not to be confused with the weaker notion of a
+%countable\unsure{countable may suffice, we'll need to understand how it is in 
+%FOL}
+%set, which only means that it has a cardinal no larger than
+%$\aleph_0$---either finite or in bijection with the set
+%of natural numbers).
+%
+%
+%In this section, we define a matching logic theory $K = (S_K, \Sigma_K, A_K)$ 
+%as \emph{the (reflective) calculus of matching logic},
+%where $S_K, \Sigma_K$, and $A_K$ are \emph{finite} sets of sorts,
+%symbols, and axioms,  respectively.
+%
+%Sorts are declared using the \sort keyword, symbols are declared using the 
+%\symb keyword, and axioms are defined using the \axiom keyword.
+%
+%\begin{Verbatim}[fontsize=\small]
+%// Namespaces for sorts, variables, metavariables,
+%// symbols, and Kore modules.
+%Sort           = String
+%VariableId     = String
+%MetaVariableId = String
+%Symbol         = String
+%ModuleId       = String
+%
+%Variable       = VariableId:Sort
+%MetaVariable   = MetaVariableId::Sort
+%
+%Pattern        = Variable | MetaVariable
+%| \and(Pattern, Pattern)
+%| \not(Pattern)
+%| \exists(Variable, Pattern)
+%| Symbol(PatternList)
+%
+%Sentence       = import ModuleId
+%| syntax Sort
+%| syntax Sort ::= Symbol(SortList)
+%| axiom Pattern
+%Sentences      = Sentence | Sentences Sentences
+%
+%Module         = module ModuleId
+%Sentences
+%endmodule
+%\end{Verbatim}
+%
+%In Kore syntax, the backslash ``\verb|\|'' is reserved for matching logic 
+%connectives and the sharp ``\verb|#|'' is reserved for the meta-level, i.e., 
+%the $K$ sorts and symbols. 
+%Therefore, the sorts $\KPred$, $\KString$, $\KSymbol$, 
+%$\parametric{\KSort}{}$, 
+%and 
+%$\KPattern$ in the calculus $K$ are denoted as \verb|#Bool|, \verb|#String|, 
+%\verb|#Symbol|, \verb|#Sort|, and \verb|#Pattern| in Kore respectively.
+%Symbols in $K$ are denoted in the similar way, too. 
+%For example, the constructor symbol $\Kvariable \colon \KString \times 
+%\parametric{\KSort}{} 
+%\to \KPattern$ is denoted as \verb|#variable| in Kore. 
+%
+%A Kore module definition begins with the keyword \verb|module| followed by the 
+%name of the module-being-defined, and ends with the keyword \verb|endmodule|. 
+%The body of the definition consists of some \emph{sentences}, whose meaning 
+%are 
+%introduced in the following.
+%
+%The keyword \verb|import| takes an argument as the name of the 
+%module-being-imported, and looks for that module in previous definitions. 
+%If the module is found, the body of that module is copied to the current 
+%module.
+%Otherwise, nothing happens. 
+%The keyword \verb|syntax| leads a \emph{syntax declaration}, which can be 
+%either a \emph{sort declaration} or a \emph{symbol declaration}.
+%Sorts declared by sort declarations are called \emph{object-sorts}, in 
+%comparison to the five \emph{meta-sorts}, \verb|#Bool|, \verb|#String|, 
+%\verb|#Symbol|, \verb|#Sort|, and \verb|#Pattern|, in $K$. 
+%Symbols whose argument sorts and return sort are all object-sorts (meta-sorts) 
+%are called \emph{object-symbols} (\emph{meta-sorts}).
+%
+%Patterns are written in prefix forms. 
+%A pattern is called an \emph{object-pattern} (\emph{meta-pattern}) if all 
+%sorts 
+%and symbols in it are object (meta) ones.
+%Meta-symbols will be added to the calculus $K$, while object-sorts and 
+%object-symbols will not.
+%They only serve for the purpose to parse an object pattern. 
+%
+%The keyword \verb|axiom| takes a pattern and adds an axiom to the calculus $K$.
+%If the pattern is a meta-pattern, it adds the pattern itself as an axiom.
+%If the pattern $\varphi$ is an object-pattern, it adds $\Bracket{\varphi}$ as 
+%an axiom to the calculus $K$.
+%
+%Recall that we have defined the semantics bracket as
+%\begin{equation*}
+%\Bracket{\varphi} \equiv 
+%\left(\textit{deducible}\left(\mathit{lift}[\varphi]\right) = true\right),
+%\end{equation*}
+%where $\varphi$ is a pattern of the grammar in Figure~\ref{ml-grammar}.
+%However, here in Kore we allow $\varphi$ containing \emph{meta-variables}.
+%As a result, we modify the definition of the semantics bracket as 
+%$$\Bracket{\varphi} \equiv \mathit{mvsc}[\varphi] \to 
+%(deducible\left(\mathit{lift}[\varphi]\right) = true),$$
+%where the lifting function $\mathit{lift}[\_]$ and the meta-variable sort 
+%constraint $\mathit{mvsc}[\_]$ are defined in 
+%Algorithm~\ref{alg:liftingfunction} and~\ref{alg:mvsc}, respectively.
+%Intuitively, meta-variables in an object-pattern $\varphi$ are lifted to 
+%variables of the sort $\KPattern$ with the corresponding sort constraints. 
+%For example, the meta-variable $x \cln\cln s$ is lifted to a variable $x \cln 
+%\KPattern$ in $K$ with the constraint that $\KgetSort(x \cln \KPattern) = 
+%sort(s)$. The function $\mathit{mvsc}[\_]$ collects all such meta-variable 
+%sort 
+%constraint in an object-pattern is implemented in Algorithm~\ref{alg:mvsc}.
 
-Matching logic imposes no restrictions on the cardinality of the set of
-sorts $S$, of the set of symbols $\Sigma$, or of the set of patterns $A$
-in a theory $(S,\Sigma,A)$.
-In practice, however, we need a finite mechanism to describe such theories
-in order to mechanically reason about them using a computer.
-In the vast universe of possibilities, we here propose one particular approach
-that we found useful, convenient and sufficient in our semantics engineering
-efforts.
-Specifically:
-\begin{itemize}
-	\item
-	We restrict the infinite sets of sorts to ones which can be described with
-	a finite set of \emph{parametric} sorts, where the parameters range over
-	other sorts.
-	For example, $S=\{\Nat,\parametric{\List}{X}\}$ describes the infinite set
-	of sorts
-	$S=\{\Nat, \parametric{\List}{\Nat}, 
-	\parametric{\List}{\parametric{\List}{\Nat}}, ...\}$.
-	
-\end{itemize}
-
-From here on, unless otherwise specified, when we say \emph{set} we mean
-a \emph{recursively enumerable set}, i.e., a set that can be generated
-algorithmically (not to be confused with the weaker notion of a
-countable\unsure{countable may suffice, we'll need to understand how it is in 
-FOL}
-set, which only means that it has a cardinal no larger than
-$\aleph_0$---either finite or in bijection with the set
-of natural numbers).
-
-
-In this section, we define a matching logic theory $K = (S_K, \Sigma_K, A_K)$ 
-as \emph{the (reflective) calculus of matching logic},
-where $S_K, \Sigma_K$, and $A_K$ are \emph{finite} sets of sorts,
-symbols, and axioms,  respectively.
-
-Sorts are declared using the \sort keyword, symbols are declared using the 
-\symb keyword, and axioms are defined using the \axiom keyword.
-
-\begin{Verbatim}[fontsize=\small]
-// Namespaces for sorts, variables, metavariables,
-// symbols, and Kore modules.
-Sort           = String
-VariableId     = String
-MetaVariableId = String
-Symbol         = String
-ModuleId       = String
-
-Variable       = VariableId:Sort
-MetaVariable   = MetaVariableId::Sort
-
-Pattern        = Variable | MetaVariable
-| \and(Pattern, Pattern)
-| \not(Pattern)
-| \exists(Variable, Pattern)
-| Symbol(PatternList)
-
-Sentence       = import ModuleId
-| syntax Sort
-| syntax Sort ::= Symbol(SortList)
-| axiom Pattern
-Sentences      = Sentence | Sentences Sentences
-
-Module         = module ModuleId
-Sentences
-endmodule
-\end{Verbatim}
-
-In Kore syntax, the backslash ``\verb|\|'' is reserved for matching logic 
-connectives and the sharp ``\verb|#|'' is reserved for the meta-level, i.e., 
-the $K$ sorts and symbols. 
-Therefore, the sorts $\KPred$, $\KString$, $\KSymbol$, $\parametric{\KSort}{}$, 
-and 
-$\KPattern$ in the calculus $K$ are denoted as \verb|#Bool|, \verb|#String|, 
-\verb|#Symbol|, \verb|#Sort|, and \verb|#Pattern| in Kore respectively.
-Symbols in $K$ are denoted in the similar way, too. 
-For example, the constructor symbol $\Kvariable \colon \KString \times 
-\parametric{\KSort}{} 
-\to \KPattern$ is denoted as \verb|#variable| in Kore. 
-
-A Kore module definition begins with the keyword \verb|module| followed by the 
-name of the module-being-defined, and ends with the keyword \verb|endmodule|. 
-The body of the definition consists of some \emph{sentences}, whose meaning are 
-introduced in the following.
-
-The keyword \verb|import| takes an argument as the name of the 
-module-being-imported, and looks for that module in previous definitions. 
-If the module is found, the body of that module is copied to the current module.
-Otherwise, nothing happens. 
-The keyword \verb|syntax| leads a \emph{syntax declaration}, which can be 
-either a \emph{sort declaration} or a \emph{symbol declaration}.
-Sorts declared by sort declarations are called \emph{object-sorts}, in 
-comparison to the five \emph{meta-sorts}, \verb|#Bool|, \verb|#String|, 
-\verb|#Symbol|, \verb|#Sort|, and \verb|#Pattern|, in $K$. 
-Symbols whose argument sorts and return sort are all object-sorts (meta-sorts) 
-are called \emph{object-symbols} (\emph{meta-sorts}).
-
-Patterns are written in prefix forms. 
-A pattern is called an \emph{object-pattern} (\emph{meta-pattern}) if all sorts 
-and symbols in it are object (meta) ones.
-Meta-symbols will be added to the calculus $K$, while object-sorts and 
-object-symbols will not.
-They only serve for the purpose to parse an object pattern. 
-
-The keyword \verb|axiom| takes a pattern and adds an axiom to the calculus $K$.
-If the pattern is a meta-pattern, it adds the pattern itself as an axiom.
-If the pattern $\varphi$ is an object-pattern, it adds $\Bracket{\varphi}$ as 
-an axiom to the calculus $K$.
-
-Recall that we have defined the semantics bracket as
-\begin{equation*}
-\Bracket{\varphi} \equiv 
-\left(\textit{deducible}\left(\mathit{lift}[\varphi]\right) = true\right),
-\end{equation*}
-where $\varphi$ is a pattern of the grammar in Figure~\ref{ml-grammar}.
-However, here in Kore we allow $\varphi$ containing \emph{meta-variables}.
-As a result, we modify the definition of the semantics bracket as 
-$$\Bracket{\varphi} \equiv \mathit{mvsc}[\varphi] \to 
-(deducible\left(\mathit{lift}[\varphi]\right) = true),$$
-where the lifting function $\mathit{lift}[\_]$ and the meta-variable sort 
-constraint $\mathit{mvsc}[\_]$ are defined in 
-Algorithm~\ref{alg:liftingfunction} and~\ref{alg:mvsc}, respectively.
-Intuitively, meta-variables in an object-pattern $\varphi$ are lifted to 
-variables of the sort $\KPattern$ with the corresponding sort constraints. 
-For example, the meta-variable $x \cln\cln s$ is lifted to a variable $x \cln 
-\KPattern$ in $K$ with the constraint that $\KgetSort(x \cln \KPattern) = 
-sort(s)$. The function $\mathit{mvsc}[\_]$ collects all such meta-variable sort 
-constraint in an object-pattern is implemented in Algorithm~\ref{alg:mvsc}.
-
-
-
-\begin{algorithm}
-	\KwIn{An object-pattern $\varphi$}
-	\KwOut{The meta-variable sort constraint of $\varphi$}
-	Collect in set $W$ all meta-variables appearing in $\varphi$\;
-	Let $C = \emptyset$\;
-	\ForEach{$x \cln \cln s \in W$}
-	{$C = C \cup (\mathit{sort(s)} = \KgetSort(x \cln \KPattern))$}
-	Return $\bigwedge C$\;
-	\caption{Meta-Variable Sort Constraint Collection $\mathit{mvsc}$}
-	\label{alg:mvsc}
-\end{algorithm}
 
 \end{document}
