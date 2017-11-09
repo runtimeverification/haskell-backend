@@ -3453,7 +3453,7 @@ theory: it has finitely many sorts, symbols, and axioms.
 	\end{longtable}
 
 
-\section{Reflect Theories in the Meta-Theory}
+\section{Represent Theories in the Meta-Theory}
 \label{sec:reflect}
 We have shown readers the big picture of reflection in matching logic and  
 the role the meta-theory $K$ plays in the reflection in 
@@ -3565,35 +3565,94 @@ This is known as the \emph{principle of unique names}.
 In the following subsections, we fix a naming for $T_L$ to be the one in 
 Table~\ref{tab:naming}.
 
-\subsection{Reflect Sorts}
-The \emph{sort lifting operation} is a mapping
-$$ \denote{\_} \colon S \to \PATTERNS_\KSort $$
-inductively defined as
-\begin{align*}
-&\denote{s} = \Ksort(\name(s), \KnilKSortList) & \text{if $s \in S$ is a basic sort} \\
-&\denote{\parametric{S}{s_1,\dots,s_n}} = \Ksort(\name(S), \denote{s_1,\dots,s_n}) & \text{if $S\{s_1,\dots,s_n\} \in S$ is a sort schema instance}
-\end{align*}
-where $\denote{s_1,\dots,s_n}$ is the pointwise extension of sort lifting operation on a sequence of sorts:
-$$\denote{\_} \colon S^* \to \PATTERNS_\KSortList$$
-inductively defined as
-\begin{align*}
-&\denote{\epsilon} = \KnilKSortList \\
-&\denote{s} = \KconsKSortList(\denote{s}, \KnilKSortList) \\
-&\denote{s_1,\dots,s_n} = \KconsKSortList(\denote{s_1}, \denote{s_2,\dots,s_n}) \quad \text{if $n \ge 2$}
-\end{align*}
+\newcommand{\KqNat}{\texttt{\shp `Nat}{ }}
+\newcommand{\KqList}{\texttt{\shp `List}{ }}
 
-If $T$ has a basic sort $s \in S$, we add the following axiom to $\denote{T}$
-$$ \parametric{\KsortDeclared}{\shs}(\denote{s}) $$
-If $T$ has a sort schema 
+\subsection{Represent Sorts}
+Given the naming function as in Table~\ref{tab:naming}, it is straightforward 
+to obtain the meta-representations of sorts in theory $T_L$.
 \begin{center}
-$\parametric{S}{s_1,\dots,s_n} \in S$ \quad for any $s_1,\dots,s_n \in S$
+	\begin{tabular}{l|r}
+	\textbf{Sorts in $T_L$} & \textbf{Meta-Representations in $K$}
+	\\\hline
+	$\Nat$ 
+	& 
+	$\Ksort(\qquottt{Nat}, \KnilKSortList)$
+	\\\hline
+	$\parametric{\List}{\Nat}$ 
+	& 
+	$\Ksort(\qquottt{List}, \KconsKSortList(\Ksort(\qquottt{Nat}, 
+	\KnilKSortList),\KnilKSortList))$
+	\\\hline
+	$\parametric{\List}{\parametric{\List}{\Nat}}$
+	&
+	$\Ksort(\qquottt{List}, \KconsKSortList(\dots,\KnilKSortList))$
+	\\\hline
+	\dots & \dots
+	\end{tabular}
 \end{center}
-we add the following axiom to $\denote{T}$
-$$ \parametric{\KsortDeclared}{\shs}(s_1) \wedge \dots \wedge 
-\parametric{\KsortDeclared}{\shs}(s_n) \to 
-\parametric{\KsortDeclared}{\shs}(\denote{\parametric{S}{s_1,\dots,s_n}}) $$
+Even though the meta-representations (in the right column) are straightforward 
+and easy to construct, they are often too lengthy to fit in one line or even 
+one page.
+To ease the pain of reading and writing huge meta-representations, we define 
+the following two helper functions that allow us to write meta-representations 
+more compactly
+\begin{align*}
+& \KqNat \colon \to \KSort \\
+& \KqList \colon \KSort \to \KSort 
+\end{align*}
+They are not constructors of $\KSort$ but just helper functions, defined by the 
+following two axioms
+\begin{align*}
+& \KqNat = \Ksort(\qquottt{Nat}, \KnilKSortList) \\
+& \forall s \cln \KSort . \left(\KqList(s\cln \KSort) = \Ksort(\qquottt{List}, 
+\KconsKSortList(s\cln \KSort, \KnilKSortList))\right)
+\end{align*}
+Remind that $s \cln \KSort$ is a variable of $\KSort$.
+With these two helper functions, we can write much shorter meta-representations 
+of sorts in $T_L$, as shown in the next table.
+\begin{center}
+	\begin{tabular}{l|r}
+		\textbf{Sorts in $T_L$} & \textbf{Meta-Representations in $K$}
+		\\\hline
+		$\Nat$ 
+		& 
+		$\KqNat$
+		\\\hline
+		$\parametric{\List}{\Nat}$ 
+		& 
+		$\KqList(\KqNat)$
+		\\\hline
+		$\parametric{\List}{\parametric{\List}{\Nat}}$
+		&
+		$\KqList(\KqList(\KqNat))$
+		\\\hline
+		\dots & \dots
+	\end{tabular}
+\end{center}
+Notice how similar the sorts in $T_L$ and their meta-representations in $K$ are.
+
+The theory $T_L$ only has sorts $\Nat, \parametric{\List}{\Nat}, 
+\parametric{\List}{\parametric{\List}{\Nat}}, \dots$ and not any other sorts.
+This fact is also important and should be represented in the meta-theory, too.
+In fact, we have defined a predicate symbol schema $\KsortDeclared$ that does 
+exactly this job (in Section~\ref{sec:ML-theories}).
+
+The theory $T_L$ has sort~$\Nat$.
+This is axiomatized as
+$$ \parametric{\KsortDeclared}{\shs}(\KqNat) \qquad \text{for any $\shs \in 
+S_K$}$$
+
+If the theory $T_L$ has sort $s$, then it also has sort $\parametric{\List}{s}$.
+This is axiomatized as
+$$ \forall s . \left( \parametric{\KsortDeclared}{\shs}(s) \to 
+\parametric{\KsortDeclared}{\shs}(\KqList(s)) \right) \qquad \text{for any 
+$\shs 
+\in 
+	S_K$}$$
 
 \subsection{Reflect Symbols}
+\todo[inline]{TODO from here!!}
 The \emph{symbol lifting operation} is a mapping
 $$ \denote{\_} \colon \Sigma \to \PATTERNS_\KSymbol $$
 For any basic symbol $\sigma \colon s_1 \times \dots \times s_n \to s$, define
