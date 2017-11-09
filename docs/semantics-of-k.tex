@@ -2095,7 +2095,8 @@ We prefer a syntactic definition for the meta-theory $K$ because we are mainly
 interested in doing reasoning in matching logic, and a purely 
 syntactic definition helps us to develop a prover for matching logic.
 We will find the meta-theory $K$ a model when we prove the faithfulness theorem 
-in Section~\ref{sec:proof-of-faithfulness-theorem}, in which we will introduce 
+in Section~\ref{sec:proof-of-faithfulness-theorem}
+In there, we will introduce 
 \emph{the canonical model of the meta-theory}.
 However, this is not the emphasis of this section, and let us focus on the 
 syntactic definition of $K$ for now.
@@ -3476,57 +3477,93 @@ how to obtain meta-representations of theories in the meta-theory $K$.
 
 \subsection{A Running Example}
 Let us define a matching logic theory $T_L = (S_L, \Sigma_L, A_L)$ as our 
-example theory.
+running example theory.
 The theory $T_L$ has a sort $\Nat$ and a sort schema $\parametric{\List}{s}$ 
 for any sort $s \in S_L$.
 In other words, $T_L$ has the following infinitely many sorts:
 $$\Nat, \parametric{\List}{\Nat},  
 \parametric{\List}{\parametric{\List}{\Nat}}, 
 \parametric{\List}{\parametric{\List}{\parametric{\List}{\Nat}}} ,\dots $$
-For sort $\Nat$, two basic constructors are defined
+For sort $\Nat$, two basic constructors and an addition function are defined
 \begin{center}
 \begin{tabular}{ll}
   $O \colon \to \Nat$       & \doubleslash The constant zero \\
-  $S \colon \Nat \to \Nat$  & \doubleslash The successor function
+  $S \colon \Nat \to \Nat$  & \doubleslash The successor function \\
+  $\_+\_ \colon \Nat \times \Nat \to \Nat$ & \doubleslash The addition function
 \end{tabular}
 \end{center}
-For sort schema $\parametric{\List}{s}$, two constructors are defined for each 
-$s \in S_L$
+
+For sort schema $\parametric{\List}{s}$, two constructors and an append
+function are defined 
 \begin{center}
 	\begin{tabular}{ll}
-		$O \colon \to \Nat$       & \doubleslash The constant zero \\
-		$S \colon \Nat \to \Nat$  & \doubleslash The successor function
+		$\epsilon_s \colon \to \parametric{\List}{s}$       & 
+		\doubleslash The empty list \\
+		$\_::_s\_ \colon s \times \parametric{\List}{s} \to 
+		\parametric{\List}{s}$  & 
+		\doubleslash The cons function \\
+		$\_@_s\_ \colon \parametric{\List}{s} \times \parametric{\List}{s} \to 
+		\parametric{\List}{s}$ & \doubleslash The append function
 	\end{tabular}
 \end{center}
+The theory $S_L$ also gets some axioms.
+Here we only list two of them as an example
+\begin{align*}
+& x \cln \Nat + O = x \cln \Nat \\
+& (x \cln s ::_s L_0 \cln \parametric{\List}{s}) @_s L = x \cln s::_s (L_0 \cln 
+\parametric{\List}{s}@_s L\cln \parametric{\List}{s})
+\end{align*}
 
 \subsection{Naming Functions}
-A naming function associates any object to a string, called its \emph{name}.
-For example, $\Bool$ is a non-parametric sort in Boolean algebra, and the string ``Bool'' is its name.
-$\List$ is a parametric sort, and the string ``List'' is its name.
-A naming function is a prerequisite for anything to be represented in the 
-meta-theory $K$ (see Section~\ref{sec:chars-string}), and in Kore we assume the 
-names of anything is itself wrapped with quotation marks.
-
+Our theory $T_L$ are defined using many fancy mathematical notations, including
+special letters ($+$,$@$, $::$), mixfix symbols ($\_+\_$), and 2-dimensional 
+representations such as subscript ($\_@_s\_$).
+In order to represent $T_L$ in the meta-theory $K$, we first have to deal with 
+those mathematical notations and give them a unified form so that the 
+meta-theory can handle. 
+This process is called \emph{naming}.
+For example, a possible naming of the theory $T_L$ could be
 \begin{center}
-	\begin{tabular}{l|r}
-		\textbf{Objects} & \textbf{Names}
+	\begin{tabular}{l|l}
+		\textbf{Theory $T_L$} & \textbf{Name in Meta-Theory $K$}
 		\\\hline
-		Non-parametric sort $\Nat$ & ``Nat''
+		Sort $\Nat$ & \qquottt{Nat}
 		\\\hline
-		Parametric sort $\List$ & ``List''
+		Parametric sort $\List$ & \qquottt{List}
 		\\\hline
-		Non-parametric symbol $\zero$ & ``zero''
+		Constant $O$ & \qquottt{zero}
 		\\\hline
-		Parametric symbol $\nil$ & ``nil''
+		Function $S$ & \qquottt{succ}
 		\\\hline
-		Parametric symbol $\cons$ & ``cons''
+		Function $\_+\_$ & \qquottt{plus}
 		\\\hline
-		Parametric symbol $\append$ & ``append''
+		Constant $\epsilon$ & \qquottt{nil}
+		\\\hline
+		Function $::$ & \qquottt{cons}
+		\\\hline
+	    Function $@$ & \qquottt{append}
+	    \\\hline
+	    Variable Name $x$ & \qquottt{x}
+	    \\\hline
+	    Variable Name $L_0$ & \qquottt{L0}
+	    \\\hline
+	    Variable Name $L$ & \qquottt{L}
 	\end{tabular}
-	\captionof{table}{Naming Function Example}
+	\captionof{table}{An Example Naming for Theory $T_L$}
+	\label{tab:naming}
 \end{center}
+Notice that we do not bother to name the mathematical variable or meta-variable 
+$s$ that is also used in defining theory $T_L$, because meta-variables do not 
+belong to the theory $T_L$, but rather a tool or a mechanism from the 
+outside that help defining $T_L$.
 
-In the following subsections, we fix a matching logic theory $T = (S, \Sigma, A)$ and a naming function $\name$, and show how to get $\denote{T}$.
+There are of course more than one possible naming for theory $T_L$.
+As long as different objects get different names, it does not matter what 
+specific naming we use to encode a theory.
+This is known as the \emph{principle of unique names}.
+
+In the following subsections, we fix a naming for $T_L$ to be the one in 
+Table~\ref{tab:naming}.
 
 \subsection{Reflect Sorts}
 The \emph{sort lifting operation} is a mapping
