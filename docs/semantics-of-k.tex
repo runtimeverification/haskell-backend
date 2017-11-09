@@ -232,6 +232,8 @@
   \newcommand{\VARIABLES}{\text{V\textsc{ariables}}}
   % Define sorts and symbols in the calculus K.
   
+  \newcommand{\doubleslash}{/\!/{ }}
+  
 
   \newcommand{\shp}{\includegraphics{hash-symbol}\kern-0.1em}
   \newcommand{\smallshp}{\includegraphics[scale=0.8]{hash-symbol}\kern-0.1em}
@@ -691,8 +693,10 @@ symbol and corresponding pattern:
 $$
 \begin{array}{l@{\hspace*{7ex}}l}
 \lceil\_\rceil_{s_1}^{s_2} \ \ \in \Sigma_{s_1,s_2}
-& \mbox{\it // Definedness symbol} \\
-\lceil x\!:\! s_1 \rceil_{s_1}^{s_2} \ \ \in A & \mbox{\it // Definedness pattern}
+& \mbox{\it \doubleslash Definedness symbol} \\
+\lceil x\!:\! s_1 \rceil_{s_1}^{s_2} \ \ \in A & \mbox{\it \doubleslash 
+Definedness 
+pattern}
 \end{array}
 $$
 Like in many logics, free variables are assumed universally quantified.
@@ -1038,12 +1042,15 @@ $$
 \parametric{\Bag_p}{s} &
 \textrm{for any sort $s$ which is not of the form $\parametric{\Bag_p}{\_}$} \\
 \parametric{\Map}{s,s'} &
-\textrm{for any sorts $s,s'$ \ \ \ // for (partial) maps from keys of sort $s$ to values of sort $s'$} \\
+\textrm{for any sorts $s,s'$ \ \ \ \doubleslash for (partial) maps from keys of 
+sort 
+$s$ to values of sort $s'$} \\
 \parametric{\Map_p}{s,s'} &
 \textrm{for any sorts $s,s'$ such that $s$ is not of the form $\parametric{\Map_p}{\_,\_}$}
 \\
 \parametric{\Context}{s,s'} &
-\textrm{for any sorts $s,s'$ \ \ \ // for contexts with holes of sort $s$ and results of sort $s'$}
+\textrm{for any sorts $s,s'$ \ \ \ \doubleslash for contexts with holes of sort 
+$s$ and results of sort $s'$}
 \end{array}
 $$
 Sort schemas, like all schemas, have a \emph{least fixed-point}
@@ -1268,7 +1275,7 @@ $$
 \begin{array}{r@{\hspace*{4ex}}l}
 (\lambda x . e)e' = e[e'/x]
 &
-\textrm{for any \emph{pattern} $e$ \ \ \ \ // this is actually wrong!}
+\textrm{for any \emph{pattern} $e$ \ \ \ \ \doubleslash this is actually wrong!}
 \end{array}
 $$
 The problem is that $e$ and $e'$ cannot be just any arbitrary patterns.
@@ -1470,15 +1477,15 @@ $$
 \begin{array}{rcll}
 \ite(1 < x,S_1,S_2) & = &
 \ite(1 < (\gamma\hole.\;\hole)[x],S_1,S_2)
-& \textrm{// context identity}
+& \textrm{\doubleslash context identity}
 \\
 & = &
 \ite((\gamma\hole.\;1 < \hole)[x],S_1,S_2)
-& \textrm{// \textsf{strict(2)} axiom for $\_<\_$}
+& \textrm{\doubleslash \textsf{strict(2)} axiom for $\_<\_$}
 \\
 & = &
 (\gamma\hole.\;\ite(1 < \hole,S_1,S_2))[x]
-& \textrm{// \textsf{strict(1)} axiom for $\ite$ above}
+& \textrm{\doubleslash \textsf{strict(1)} axiom for $\ite$ above}
 \end{array}
 $$
 Therefore, $\ite(1 < x,S_1,S_2)$ can be matched against a pattern
@@ -1512,15 +1519,15 @@ $$
 \begin{array}{rcll}
 \ite(1 < x,S_1,S_2) & = &
 \ite((\gamma\hole.\;\hole)[1 < x],S_1,S_2)
-& \textrm{// context identity}
+& \textrm{\doubleslash context identity}
 \\
 & = &
 (\gamma\hole.\;\ite(\hole,S_1,S_2))[1 < x]
-& \textrm{// \textsf{strict(1)} axiom for $\ite$}
+& \textrm{\doubleslash \textsf{strict(1)} axiom for $\ite$}
 \\
 & = &
 (\gamma\hole.\;\ite(\hole,S_1,S_2))[(\gamma\hole.\;1 < \hole)[x]]
-& \textrm{// \textsf{strict(2)} axiom for $\_<\_$}
+& \textrm{\doubleslash \textsf{strict(2)} axiom for $\_<\_$}
 \end{array}
 $$
 Therefore, $\ite(1 < x,S_1,S_2)$ can also be matched against a pattern
@@ -1532,23 +1539,23 @@ $$
 \begin{array}{rcll}
 \ite(1 < x,S_1,S_2) & = &
 \ite(1 < (\gamma\hole.\;\hole)[x],S_1,S_2)
-& \textrm{// context identity}
+& \textrm{\doubleslash context identity}
 \\
 & = &
 \ite((\gamma\hole.\;1 < \hole)[x],S_1,S_2)
-& \textrm{// \textsf{strict(2)} axiom for $\_<\_$}
+& \textrm{\doubleslash \textsf{strict(2)} axiom for $\_<\_$}
 \\
 & = &
 (\gamma\hole.\;\ite(1 < \hole,S_1,S_2))[x]
-& \textrm{// \textsf{strict(1)} axiom for $\ite$}
+& \textrm{\doubleslash \textsf{strict(1)} axiom for $\ite$}
 \\
 & = &
 (\gamma\hole.\;\ite((\gamma\hole.\;\hole)[1 < \hole],S_1,S_2))[x]
-& \textrm{// context identity}
+& \textrm{\doubleslash context identity}
 \\
 & = &
 (\gamma\hole.\;(\gamma\hole.\;\ite(\hole,S_1,S_2))[1 < \hole])[x]
-& \textrm{// \textsf{strict(1)} axiom for $\ite$}
+& \textrm{\doubleslash \textsf{strict(1)} axiom for $\ite$}
 \end{array}
 $$
 Therefore, $\ite(1 < x,S_1,S_2)$ can also be matched against a pattern
@@ -1807,11 +1814,11 @@ as follows:
 $$
 \begin{array}{r@{\hspace*{7ex}}l}
 \parametric{\circ}{s} \in \Sigma_{s,s}
-& \textrm{// a ``next'' symbol schema}
+& \textrm{\doubleslash a ``next'' symbol schema}
 \\
 \varphi\mathrel{\parametric{\Rightarrow}{s}}\varphi'
 \equiv \varphi \rightarrow \parametric{\circ}{s} \varphi'
-& \textrm{// a ``rewrite relation'' alias schema}
+& \textrm{\doubleslash a ``rewrite relation'' alias schema}
 \end{array}
 $$
 To avoid clutter, we write $\Rightarrow$ instead of
@@ -1903,10 +1910,10 @@ and reason about reachability:
 $$
 \begin{array}{rcl@{\hspace*{7ex}}l}
 \Diamond_{\textit{Strong}} \varphi & \equiv & \mu f . (\varphi \vee \circ f)
-& \textrm{// strong eventually on one path}
+& \textrm{\doubleslash strong eventually on one path}
 \\
 \Diamond_{\textit{Weak}} \varphi & \equiv & \nu f . (\varphi \vee \circ f)
-& \textrm{// weak eventually on one path}
+& \textrm{\doubleslash weak eventually on one path}
 \end{array}
 $$
 The pattern $\Diamond_{\textit{Strong}}\varphi$ is matched by those
@@ -2849,7 +2856,7 @@ The functions $\Ksubstitute$ and $\KsubstitutePatterns$ have axioms
   / v]}
   \\
   & \overline{(\exists_s x \cln s . \varphi)[\psi/v]} 
-  \qquad \text{/\!/ this complex axiom is needed to 
+  \qquad \text{\doubleslash this complex axiom is needed to 
   	prevent \emph{free variable capturing}}\\
   & = \exists x' . \left(x' = \KfreshName(\varphi, \psi, 
   v) \wedge \overline{\exists_s x' \cln s . 
@@ -3146,19 +3153,6 @@ We are using
 Finally, notice that all the axioms are axiom schemas, with $\shs \in S_K$ 
 being any sort of the meta-theory.
 
-\paragraph{The Axiom Rule.}\quad
-\\
-
-(\textsc{Axiom}).\quad
-$A \vdash \varphi$ if $\varphi \in A$.
-\begin{equation*}
-\underbrace{\parametric{\KaxiomDeclared}{\shs}(\varphi)}_\text{if $\varphi$ is 
-an axiom in the current theory} \to 
-\underbrace{\parametric{\Kdeduce}{\shs}(\varphi)}_\text{then $\varphi$ is 
-provable 
-in the current theory}
-\end{equation*}
-
 \paragraph{Propositional Logic Inference Rules.}\quad
 \\
 
@@ -3186,7 +3180,8 @@ We also omit the explicitly universal quantifiers hanging in front of the
 axioms.
 Secondly, we use the Greek letters ``$\varphi$'' and ``$\psi$'' both in the 
 inference rule schema 
-$$\vdash \varphi \to (\psi \to \varphi) \qquad \text{/\!/ $\varphi$ and $\psi$ 
+$$\vdash \varphi \to (\psi \to \varphi) \qquad \text{\doubleslash $\varphi$ and 
+$\psi$ 
 are meta-variables of patterns}$$
 and in the meta-theory axiom
 $$
@@ -3370,6 +3365,19 @@ not occur free in $\sigma(\dots \varphi_i \dots)$.
 \in_{s_1}^{s_2} \sigma(L, u, R))}),
 \end{align*}
 
+\paragraph{The Axiom Rule.}\quad
+\\
+
+(\textsc{Axiom}).\quad
+$A \vdash \varphi$ if $\varphi \in A$.
+\begin{equation*}
+\underbrace{\parametric{\KaxiomDeclared}{\shs}(\varphi)}_\text{if $\varphi$ is 
+	an axiom in the current theory} \to 
+\underbrace{\parametric{\Kdeduce}{\shs}(\varphi)}_\text{then $\varphi$ is 
+	provable 
+	in the current theory}
+\end{equation*}
+
 \subsection{A Summary of the Meta-Theory}
 \label{sec:K-summary}
 Here we provide a comprehensive list of all sorts and symbols in the 
@@ -3446,9 +3454,50 @@ theory: it has finitely many sorts, symbols, and axioms.
 
 \section{Reflect Theories in the Meta-Theory}
 \label{sec:reflect}
-We have shown the readers the big picture of the meta-theory $K$ and its usage 
-in Section~\ref{sec:meta-theory}.
-In this section, we will show in detail how to \emph{lift} any r.e. matching logic theory $T$ to its meta-representation $\denote{T}$, and present the faithfulness theorem of $K$.
+We have shown readers the big picture of reflection in matching logic and  
+the role the meta-theory $K$ plays in the reflection in 
+Section~\ref{sec:meta-theory-reflection}.
+And we have also seen the entire meta-theory $K$ as defined in 
+Section~\ref{sec:meta-theory}.
+In this section, we will deepen our discussion about the reflection in matching 
+logic and the meta-theory $K$ building upon the discussion in 
+Section~\ref{sec:meta-theory-reflection}.
+More specifically speaking,
+\begin{itemize}
+	\item We will show that given a matching logic theory $T$, how to obtain 
+	its meta-representation in the meta-theory $K$, which we denoted as 
+	$\denote{T}$;
+	\item We will establish the faithfulness theorems;
+\end{itemize}
+This section is also served as a warming-up of Section~\ref{sec:kore}, where we 
+will define the Kore language.
+Therefore, we will use a running example to help readers understand 
+how to obtain meta-representations of theories in the meta-theory $K$.
+
+\subsection{A Running Example}
+Let us define a matching logic theory $T_L = (S_L, \Sigma_L, A_L)$ as our 
+example theory.
+The theory $T_L$ has a sort $\Nat$ and a sort schema $\parametric{\List}{s}$ 
+for any sort $s \in S_L$.
+In other words, $T_L$ has the following infinitely many sorts:
+$$\Nat, \parametric{\List}{\Nat},  
+\parametric{\List}{\parametric{\List}{\Nat}}, 
+\parametric{\List}{\parametric{\List}{\parametric{\List}{\Nat}}} ,\dots $$
+For sort $\Nat$, two basic constructors are defined
+\begin{center}
+\begin{tabular}{ll}
+  $O \colon \to \Nat$       & \doubleslash The constant zero \\
+  $S \colon \Nat \to \Nat$  & \doubleslash The successor function
+\end{tabular}
+\end{center}
+For sort schema $\parametric{\List}{s}$, two constructors are defined for each 
+$s \in S_L$
+\begin{center}
+	\begin{tabular}{ll}
+		$O \colon \to \Nat$       & \doubleslash The constant zero \\
+		$S \colon \Nat \to \Nat$  & \doubleslash The successor function
+	\end{tabular}
+\end{center}
 
 \subsection{Naming Functions}
 A naming function associates any object to a string, called its \emph{name}.
