@@ -87,6 +87,9 @@
   % Package for customizing lists environments:
   \usepackage{enumitem}
   
+  % Package for writing long tables:
+  \usepackage{longtable}
+  
   % Package for graphics
   \usepackage{graphicx}
   
@@ -2969,13 +2972,12 @@ $$ \parametric{\KsortDeclared}{\shs}(s_1) \wedge
 The predicate symbol schema
 $$\parametric{\KwellFormed}{\shs} \colon \KPattern \to \shs \quad \text{for any 
 $\shs \in S_K$}$$ 
-decides whether a pattern is \emph{wellformed pattern}.
-A related predicate symbol $\parametric{\KwellFormedPatterns}{\shs}$ checks 
-whether multiple 
-patterns are all wellformed
+decides whether a pattern is a \emph{wellformed pattern}.
+A related predicate symbol 
 $$ \parametric{\KwellFormedPatterns}{\shs} \colon \KPatternList \to \shs \quad 
 \text{for any $\shs \in S_K$}$$
-with two axioms
+decides whether multiple patterns are all wellformed,
+which has two axioms
 \begin{align*}
 & \parametric{\KwellFormedPatterns}{\shs}(\KnilKPatternList) \\
 & \parametric{\KwellFormedPatterns}{\shs}(\varphi, L) = 
@@ -3049,62 +3051,112 @@ defined by the following axioms
 \subsection{Matching Logic Proof System}
 \label{sec:ML-proof-system}
 
-The Hilbert-style proof system of matching logic in~\cite{rosu-2017-lmcs} 
-defines the \emph{derivability} of a pattern in an inductive manner.
-It defines a recursive set of patterns as \emph{logic axioms} (in terms of 
-logic 
-schemas) and 
-says 
-all logic axioms are derivable.
-It also consists of four inference rules schemas---\textsc{(Modus Ponens)}, 
-\textsc{(Universal Generalization)}, \textsc{(Membership Introduction)}, 
-\textsc{(Membership Elimination)}---that if some patterns (called the premises) 
-are derivable, then a pattern (called the conclusion) is also derivable.
-The set of all derivable patterns according to the proof system is the smallest 
-set of patterns that contains all logic axioms and are closed under the four 
-inference rules schemas.
-
-For the purpose of a unified perspective, we regard logic axiom schemas as 
-inference 
-rule schemas with zero premise.
-
-Such inductiveness of derivability is naturally captured by 
-introducing a predicate symbol
+A sound and complete proof system of matching logic is firstly proposed 
+in~\cite{rosu-2017-lmcs} and reviewed in Section~\ref{sec:deduction}.
+The proof system inductively defines a \emph{provability} relation of patterns.
+It consists of several inference rule schemas which are of the form
+$$
+\prftree
+{ \varphi_1 \dots  \varphi_n}
+{ \psi }
+$$
+This inductive provability relation is naturally captured in the meta-theory 
+$K$ using a predicate symbol
 $$
 \parametric{\Kdeduce}{\shs} \colon \KPattern \to \shs \quad \text{for any $\shs 
 \in S_K$}
 $$
-which has axioms in correspondent to every inference rules:
+The main task of this subsection is to define axioms for $\Kdeduce$ in 
+correspondence to the inference rule schemas of the proof system of matching 
+logic.
+Roughly speaking, the intuition is that for any inference rule schema of 
+matching logic
+$$
+\prftree
+{ \varphi_1 \dots  \varphi_n}
+{ \psi }
+$$
+we define the following axiom in the meta-theory $K$
 $$\parametric{\Kdeduce}{\shs}(\denote{\varphi_1}) \wedge \dots \wedge 
 \parametric{\Kdeduce}{\shs}(\denote{\varphi_n}) \to 
 \parametric{\Kdeduce}{\shs}(\denote{\psi})$$
-is an axiom in the meta-theory if and only if 
-$$
-	\prftree
-	{ \varphi_1 \dots  \varphi_n}
-	{ \psi }
-$$
-is an inference rule of matching logic, in which $\denote{\varphi_1}, \dots, 
+in which $\denote{\varphi_1}, \dots, 
 \denote{\varphi_n}, \denote{\psi}$ are meta-representations of $\varphi_1, 
-\dots, 
-\varphi_n, \psi$ in the meta-theory.
+\dots, \varphi_n, \psi$ in the meta-theory.
+This is just a rough but good enough intuition, because in practice one also 
+needs to consider the so-called \emph{wellformedness premises}, which make the 
+axioms in the meta-theory even longer.
+Readers should not worry about the details for now as they will be clarified in 
+later sections.
+Instead, readers should try to understand the big picture here.
+What we are doing is to \emph{encode or represent each inference rule 
+schema of matching logic by an axiom in the meta-theory $K$}.
+While each inference rule schema has infinitely many instances, we manage to 
+\emph{intensionally} define that infinitely many instances using one axiom of 
+the meta-theory.
 
-In the following, we list all the inference rules of the matching logic proof 
-system and the correspondent axioms of $\parametric{\Kdeduce}{\shs}$. We recall 
-the readers our 
-conventions of choosing variable names. 
-We use 
-$x$ and $y$ for $\KString$ variables,
-$s$ for $\KSort$ variables,
-$\varphi$ and $\psi$ for $\KPattern$ variables,
-$L$, $R$ for $\KPatternList$ variables~(in \textbf{Rule~(M5)}).
-All axioms are parametric for any sort $\shs \in S_K$.
+Reader should get more familiar with the double bracket $\denote{\_}$, also 
+known as the semantics bracket, when we introduce the Kore language in 
+Section~\ref{sec:kore}.
+For now it is sufficient to think of it as purely a notation that denotes the 
+meta-representation of something.
+
+
+In the following, we will define all the axioms for the predicate symbol 
+$\Kdeduce$ in correspondence to all the inference rule schemas of matching 
+logic defined in Section~\ref{sec:deduction}. We recall our conventions for 
+variable names. 
+We are using 
+\begin{center}
+	\begin{tabular}{lll}
+		$x$ & as a shorthand of $x \cln \KString$ 
+		& which is a variable of sort $\KString$
+		\\
+		$y$ & as a shorthand of $y \cln \KString$ 
+		& which is a variable of sort $\KString$
+		\\
+		$z$ & as a shorthand of $z \cln \KString$ 
+		& which is a variable of sort $\KString$
+		\\
+		$s$ & as a shorthand of $s \cln \KSort$ 
+		& which is a variable of sort $\KSort$
+		\\
+		$\sigma$ & as a shorthand of $\sigma \cln \KSymbol$ 
+		& which is a variable of sort $\KSymbol$
+		\\
+		$v$ & as a shorthand of $v \cln \KVariable$ 
+		& which is a variable of sort $\KVariable$
+		\\
+		$u$ & as a shorthand of $u \cln \KVariable$ 
+		& which is a variable of sort $\KVariable$
+		\\
+		$\varphi$ & as a shorthand of $\varphi \cln \KPattern$ 
+		& which is a variable of sort $\KPattern$
+		\\
+		$\psi$ & as a shorthand of $\psi \cln \KPattern$ 
+		& which is a variable of sort $\KPattern$
+		\\
+		$L$ & as a shorthand of $L \cln \KPatternList$
+		& which is a variable of sort $\KPatternList$
+		\\
+		$R$ & as a shorthand of $R \cln \KPatternList$
+		& which is a variable of sort $\KPatternList$
+	\end{tabular}
+\end{center}
+Finally, notice that all the axioms are axiom schemas, with $\shs \in S_K$ 
+being any sort of the meta-theory.
+
+\paragraph{The Axiom Rule.}\quad
+\\
 
 (\textsc{Axiom}).\quad
 $A \vdash \varphi$ if $\varphi \in A$.
 \begin{equation*}
-\parametric{\KaxiomDeclared}{\shs}(\varphi) \to 
-\parametric{\Kdeduce}{\shs}(\varphi)
+\underbrace{\parametric{\KaxiomDeclared}{\shs}(\varphi)}_\text{if $\varphi$ is 
+an axiom in the current theory} \to 
+\underbrace{\parametric{\Kdeduce}{\shs}(\varphi)}_\text{then $\varphi$ is 
+provable 
+in the current theory}
 \end{equation*}
 
 \paragraph{Propositional Logic Inference Rules.}\quad
@@ -3114,16 +3166,47 @@ $A \vdash \varphi$ if $\varphi \in A$.
 $\vdash \varphi \to (\psi \to \varphi)$.
 \begin{equation*}
 \forall \varphi \forall \psi \forall s \left(
-\parametric{\KwellFormed}{\shs}(\overline{\varphi \to_s (\psi \to_s  \varphi)}) 
+\underbrace{\parametric{\KwellFormed}{\shs}(\overline{\varphi \to_s (\psi 
+\to_s  \varphi)})}_\text{if the meta-representation is wellformed}
+\to
+\underbrace{\parametric{\Kdeduce}{\shs}(\overline{\varphi \to_s (\psi \to_s  
+\varphi)})}_\text{then it is probable}\right)
+\end{equation*}
+Let us pause here and clarify some points.
+Firstly, the lengthy pattern 
+$\parametric{\KwellFormed}{\shs}(\overline{\varphi \to_s (\psi 	\to_s 
+\varphi)})$ is called a \emph{welformedness premise}.
+They are necessary, and they are crucial in establishing the faithfulness 
+theorem (Section~\ref{sec:proof-of-faithfulness-theorem}).
+However, they are also lengthy and boring, and they are often understood and 
+taken for granted.
+Therefore, just for simplicity, we will omit writing the wellformedness 
+premises from now on.
+We also omit the explicitly universal quantifiers hanging in front of the 
+axioms.
+Secondly, we use the Greek letters ``$\varphi$'' and ``$\psi$'' both in the 
+inference rule schema 
+$$\vdash \varphi \to (\psi \to \varphi) \qquad \text{/\!/ $\varphi$ and $\psi$ 
+are meta-variables of patterns}$$
+and in the meta-theory axiom
+$$
+\forall \varphi \forall \psi \forall s \left(
+\parametric{\KwellFormed}{\shs}(\overline{\varphi \to_s (\psi 
+		\to_s  \varphi)})
 \to
 \parametric{\Kdeduce}{\shs}(\overline{\varphi \to_s (\psi \to_s  
-\varphi)})\right)
-\end{equation*}
+		\varphi)})\right)
+$$
+When we use them in the inference rule schema, they are mathematical variables 
+or the so-called meta-variables for wellformed matching logic patterns.
+When we use then in the meta-theory axiom, they are $\KPattern$ variables and 
+thus can be quantified.
+This abuse use of notations is intended because \emph{meta-variables in 
+object theories are variables in the meta-theory}.
 
-Just for simplicity, from now on we omit writing the wellformedness premises, 
-though it does not mean they are unimportant.
-They are crucial in proving the faithfulness of the meta-theory.
-We also omit explicitly quantifying free variables.
+Let us move on and define the axioms for the other two propositional logic 
+inference rules, in which we omit wellformedness premises and hanging universal 
+quantifiers.
 \\
 
 (\textsc{Propositional$_2$}).\quad
@@ -3142,6 +3225,10 @@ $\vdash (\neg \psi \to \neg \varphi) \to (\varphi \to \psi)$.
 \to_s \psi)}).
 \end{equation*}
 
+The Modus Ponens inference rule has two premises.
+It can be defined as an axiom in the meta-theory, too.
+\\
+
 (\textsc{Modus Ponens}).\quad
 If $\vdash \varphi$ and $\vdash \varphi \to \psi$, then $\vdash \psi$.
 \begin{equation*}
@@ -3150,6 +3237,10 @@ If $\vdash \varphi$ and $\vdash \varphi \to \psi$, then $\vdash \psi$.
 \to 
 \parametric{\Kdeduce}{\shs}(\psi).
 \end{equation*}
+
+From now on, we will quickly list all the inference rule schemas of matching 
+logic and their corresponding axioms in the meta-theory, and only add 
+explanations by need.
 
 \paragraph{First-Order Logic With Equality Inference Rules.} \quad
 \\
@@ -3278,12 +3369,13 @@ not occur free in $\sigma(\dots \varphi_i \dots)$.
 =_{s_2}^{s_3} \exists_{s_2} u . (u \in_{s_4}^{s_2} \varphi_i \wedge_{s_2} v 
 \in_{s_1}^{s_2} \sigma(L, u, R))}),
 \end{align*}
-where $L$ and $R$ are $\KPatternList$ variables, and we write $(L, \varphi, R)$ as a shorthand of
-$$(L, \varphi, R) \equiv \KappendKPatternList(L, \KconsKPatternList(\varphi, 
-R)).$$
 
 \subsection{A Summary of the Meta-Theory}
 \label{sec:K-summary}
+Here we provide a comprehensive list of all sorts and symbols in the 
+meta-theory $K$.
+The main point is to convince readers that the meta-theory is indeed a finite 
+theory: it has finitely many sorts, symbols, and axioms.
 
 \subsubsection{Sorts}
 
@@ -3292,7 +3384,7 @@ R)).$$
 		\textbf{Sort} & \textbf{Meaning} \\
 		\hline
 		\KChar & Characters \\
-		{\KCharList} or \KString & Finite lists of characters \\
+		{\KCharList} or \KString & Strings \\
 		\KSort & Matching logic sorts \\
 		\KSortList & Finite lists of matching logic sorts \\
 		\KSymbol & Matching logic symbols \\
@@ -3306,18 +3398,18 @@ R)).$$
 
 \subsubsection{Symbols}
 
-	\begin{tabular}{l|l}
+	\begin{longtable}{l|l}
 	    \textbf{Symbols} & \textbf{Meaning} \\
 	    \hline
-	    \quottt{a}, \quottt{b}, \dots & Individual characters \\
-	    {\KnilKCharList} or \Kepsilon, \KconsKCharList & Construct character 
-	    lists (a.k.a. strings) \\
+	    \endhead
+	    \quottt{a}, \quottt{b}, \dots & 65 individual characters \\
 	    \Ksort & Construct sorts \\
 	    \Ksymbol & Construct symbols \\
 	    \KgetArgumentSorts & Get the argument sorts of a symbol \\
 	    \KgetReturnSort & Get the return sort of a symbol \\
-	    \KSymbolceil & Definedness symbol(s) \\
-	    \KnilKSortList, \KconsKSortList & Construct sort lists \\
+	    \KSymbolceil & Construct meta-representations of definedness symbols 
+	    \\
+	    \KnilKSortList, \KconsKSortList & Construct cons-lists of sorts \\
 	    \KappendKSortList & Append two sort lists \\
 	    \KinKSortList & Check whether a sort belongs to a sort list \\
 	    \KdeleteKSortList & Delete a sort from a sort list \\
@@ -3349,7 +3441,7 @@ R)).$$
 	    \KgetSortsFromPatterns & Get the list of sorts from a list of patterns 
 	    \\
 	    \Kdeduce & Check whether a pattern is provable in the current theory
-	\end{tabular}
+	\end{longtable}
 
 
 \section{Reflect Theories in the Meta-Theory}
