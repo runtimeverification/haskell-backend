@@ -371,6 +371,16 @@
   \newcommand{\symb}{\smalltt{symbol}}
   \newcommand{\axiom}{\smalltt{axiom}}
   
+  % User-defined sorts & symbols in the meta-theory
+  \newcommand{\KqNat}{\texttt{\shp `Nat}{ }}
+  \newcommand{\KqList}{\texttt{\shp `List}{ }}
+  \newcommand{\Kqzero}{\texttt{\shp `zero}{ }}
+  \newcommand{\Kqsucc}{\texttt{\shp `succ}{ }}
+  \newcommand{\Kqplus}{\texttt{\shp `plus}{ }}
+  \newcommand{\Kqnil}{\texttt{\shp `nil}{ }}
+  \newcommand{\Kqcons}{\texttt{\shp `cons}{ }}
+  \newcommand{\Kqappend}{\texttt{\shp `append}{ }}
+  
   % Define the slash symbol
   \newcommand{\slashsymbol}{\symbol{92}}
   % Define slashed ttfamily words
@@ -3525,21 +3535,21 @@ For example, a possible naming of the theory $T_L$ could be
 	\begin{tabular}{l|l}
 		\textbf{Theory $T_L$} & \textbf{Name in Meta-Theory $K$}
 		\\\hline
-		Sort $\Nat$ & \qquottt{Nat}
+		Non-parametric sort $\Nat$ & \qquottt{Nat}
 		\\\hline
 		Parametric sort $\List$ & \qquottt{List}
 		\\\hline
-		Constant $O$ & \qquottt{zero}
+		Non-parametric constant $O$ & \qquottt{zero}
 		\\\hline
-		Function $S$ & \qquottt{succ}
+		Non-parametric function $S$ & \qquottt{succ}
 		\\\hline
-		Function $\_+\_$ & \qquottt{plus}
+		Non-parametric function $\_+\_$ & \qquottt{plus}
 		\\\hline
-		Constant $\epsilon$ & \qquottt{nil}
+		Parametric constant $\epsilon$ & \qquottt{nil}
 		\\\hline
-		Function $::$ & \qquottt{cons}
+		Parametric function $\_::\_$ & \qquottt{cons}
 		\\\hline
-	    Function $@$ & \qquottt{append}
+	    Parametric function $\_@\_$ & \qquottt{append}
 	    \\\hline
 	    Variable Name $x$ & \qquottt{x}
 	    \\\hline
@@ -3562,9 +3572,6 @@ This is known as the \emph{principle of unique names}.
 
 In the following subsections, we fix a naming for $T_L$ to be the one in 
 Table~\ref{tab:naming}.
-
-\newcommand{\KqNat}{\texttt{\shp `Nat}{ }}
-\newcommand{\KqList}{\texttt{\shp `List}{ }}
 
 \subsection{Represent Sorts}
 Recall that in Section~\ref{sec:ML-sorts-symbols}, we defined the constructor
@@ -3670,7 +3677,6 @@ Recall that we defined the constructor
 \KSymbol
 \end{equation*}
 to construct the meta-representations of symbols.
-
 For instance, the symbol in $T_L$
 $$O \colon \to \Nat$$
 has its meta-representation in the meta-theory 
@@ -3681,7 +3687,6 @@ has its meta-representation in the meta-theory
 &\KnilKSortList, &&\quad\text{\doubleslash empty list of argument sorts} \\
 &\KqNat)         &&\quad\text{\doubleslash return sort $\Nat$}
 \end{alignat*}
-
 The symbol in $T_L$
 $$ S \colon \Nat \to \Nat$$
 is a non-parametric symbol with one argument of sort $\Nat$.
@@ -3697,7 +3702,6 @@ is the following $\KSymbol$ pattern:
 	list $\Nat$ of argument sorts} \\
 &\KqNat)         &&\quad\text{\doubleslash return sort $\Nat$}
 \end{alignat*}
-
 The symbol in $T_L$
 $$ \_+\_ \colon \Nat \times \Nat \to \Nat$$
 is non-parametric and a binary function, which takes two arguments of sort 
@@ -3729,8 +3733,8 @@ The symbol
 $$\_::_\Nat\_ \colon \Nat \times \parametric{\List}{\Nat} \to 
 \parametric{\List}{\Nat}$$
 is the constructor of lists of naturals.
-It has a singleton list $\Nat$ of sort parameters and two arguments of sort 
-$\Nat$ and $\parametric{\List}{\Nat}$, so its meta-representation 
+It has a singleton list $\Nat$ of sort parameters and two arguments of sorts 
+$\Nat$ and $\parametric{\List}{\Nat}$ respectively, so its meta-representation 
 in the meta-theory is the following $\KSymbol$ pattern:
 \begin{alignat*}{2}
 \Ksymbol(
@@ -3742,6 +3746,33 @@ $\Nat,\parametric{\List}{\Nat}$}
 &\KqList(\KqNat))         &&\quad\text{\doubleslash return sort 
 	$\parametric{\List}{\Nat}$}
 \end{alignat*}
+The symbol
+$$\_@_\Nat\_ \colon \parametric{\List}{\Nat} \times \parametric{\List}{\Nat} 
+\to 
+\parametric{\List}{\Nat}$$
+is the append operator of two lists of naturals.
+It has a singleton list $\Nat$ of sort parameters and two arguments of sort 
+$\parametric{\List}{\Nat}$, so its meta-representation 
+in the meta-theory is the following $\KSymbol$ pattern:
+\begin{alignat*}{2}
+\Ksymbol(
+&\qquottt{append}, &&\quad\text{\doubleslash symbol name} \\
+&(\KqNat),　&&\quad\text{\doubleslash sort parameter $\Nat$} \\
+&(\KqList(\KqNat),\KqList(\KqNat)), &&\quad\text{\doubleslash argument sorts 
+	$\parametric{\List}{\Nat},\parametric{\List}{\Nat}$} 
+\\
+&\KqList(\KqNat))         &&\quad\text{\doubleslash return sort 
+	$\parametric{\List}{\Nat}$}
+\end{alignat*}
+
+
+
+To help us write compact meta-representations of symbols, we introduce some 
+helper functions (one for each symbol) to the meta-theory as follows:
+\begin{align*}
+  \Kqzero \colon \to \KSymbol \\
+  \Kqsucc \colon \to \KSymbol \\
+\end{align*}
 %
 %The \emph{symbol lifting operation} is a mapping
 %$$ \denote{\_} \colon \Sigma \to \PATTERNS_\KSymbol $$
