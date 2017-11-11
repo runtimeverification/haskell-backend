@@ -298,6 +298,7 @@
 
   \newcommand{\KVariable}{\texttt{\sharpsymbol Variable}}
   \newcommand{\KVariableToKPattern}{\texttt{\sharpsymbol VariableToPattern}}
+  \newcommand{\KvariableAsPattern}{\texttt{\sharpsymbol variableAsPattern}}
   \newcommand{\KPattern}{\texttt{\sharpsymbol Pattern}}
   \newcommand{\Kvariable}{\texttt{\sharpsymbol variable}}
   \newcommand{\Kand}{\texttt{\sharpsymbol  \slashsymbol and}}
@@ -3842,50 +3843,285 @@ And we define the similar axioms for $\_::_s\_$ and $\_@_s\_$
 %\parametric{\KsymbolDeclared}{\shs}(\denote{\parametric{\sigma}{s_1,\dots,s_n}})
 %$$
 
-\subsection{Reflect Variables}
-Define the set of variables in $T$
-$$\VARIABLES_T = \bigcup_{\text{$x \in N$ is a variable name and $s\in S$ is a sort in $T$}} x \cln s$$
-The \emph{variable lifting operation}
-$$\denote{\_}_0 \colon \VARIABLES_T \to \PATTERNS_\KVariable$$
-is defined as
-$$\denote{x \cln s}_0 = \Kvariable(\name(x), \denote{s})$$
-
-\subsection{Reflect Patterns and Axioms}
-Just like how we reflect sorts and symbols, patterns are reflected by lifting to their corresponding abstract syntax trees, too.
-Let us define the set of all patterns in $T$
-$$\PATTERNS_T = \bigcup_{\text{$s\in S$ is a sort in $T$}} \PATTERNS_s$$
-The \emph{pattern lifting operation}
-$$\denote{\_} \colon \PATTERNS_T \to \PATTERNS_\KPattern$$
-and its pointwise extension on pattern lists 
-$$\denote{\_} \colon \PATTERNS_T^* \to \PATTERNS_\KPatternList$$
-are inductively defined as the follows.
+\subsection{Represent Matching Logic Patterns and Axioms}
+The theory $T_L$ has defined many axioms.
+Two of them are
 \begin{align*}
-&\denote{x \cln s} = \KVariableToKPattern(\denote{x \cln s}_0) \\
-&\denote{\sigma(\varphi_1,\dots,\varphi_n)} = \Kapplication(\denote{\sigma}, \denote{\varphi_1,\dots,\varphi_n}) \\
-&\denote{\varphi \wedge_s \psi} = \Kand(\denote{s}, \denote{\varphi}, \denote{\psi}) \\
-&\denote{\neg_s \varphi} = \Knot(\denote{s}, \denote{\varphi}) \\
-&\denote{\exists_s^{s'} x \cln s . \varphi} = \Kexists(\denote{s}, \denote{{s'}}, \denote{x \cln s}_0, \denote{\varphi}) \\
-&\denote{\varphi \vee_s \psi} = \Kor(\denote{s}, \denote{\varphi}, \denote{\psi}) \\
-&\denote{\varphi \to_s \psi} = \Kimplies(\denote{s}, \denote{\varphi}, \denote{\psi}) \\
-&\denote{\varphi \leftrightarrow_s \psi} = \Kiff(\denote{s}, \denote{\varphi}, \denote{\psi}) \\
-&\denote{\forall_s^{s'} x \cln s . \varphi} = \Kforall(\denote{s}, \denote{{s'}}, \denote{x \cln s}_0, \denote{\varphi}) \\
-&\denote{\ceil{\varphi}_s^{s'}} = \Kceil(\denote{s}, \denote{{s'}}, \denote{\varphi})\\
-&\denote{\floor{\varphi}_s^{s'}} = \Kfloor(\denote{s}, \denote{{s'}}, \denote{\varphi})\\
-&\denote{\varphi =_s^{s'} \psi} = \Kequals(\denote{s}, \denote{s'}, \denote{\varphi}, \denote{\psi})\\
-&\denote{x \cln s \in_s^{s'} \varphi} = \Kmembership(\denote{s}, \denote{s'}, \denote{x \cln s}_0, \denote{\varphi})\\
-&\denote{\top_s} = \Ktop(\denote{s})\\
-&\denote{\bot_s} = \Kbottom(\denote{s})
+& x \cln \Nat + O = x \cln \Nat \\
+& (x \cln s ::_s L_0 \cln \parametric{\List}{s}) @_s L\cln 
+\parametric{\List}{s} = x \cln s::_s (L_0 \cln 
+\parametric{\List}{s}@_s L\cln \parametric{\List}{s})
 \end{align*}
-Notice that we do not desugar derivative connectives such as disjunction or universal quantification.
-Instead, we keep them as it is when lifting them to the meta-theory.
-Also notice how the injection wrapper $\KVariableToKPattern$ is used.
+How to represent them in the meta-theory?
+The answer is similar to how to represent sorts and symbols.
+We firstly obtain meta-representations of those axioms, and add axioms to the 
+meta-theory saying that they are declared, using the $\KaxiomDeclared$ 
+predicate symbol.
 
-If $\varphi$ is an axiom in $T$, add the following axiom to $\denote{T}$
-$$ \parametric{\KaxiomDeclared}{\shs}(\denote{\varphi})$$
-If $\varphi$ is an axiom schema with $s_1,\dots,s_n$ are sort parameters, add the following axiom to $\denote{T}$
-$$ \parametric{\KsortDeclared}{\shs}(s_1) \wedge \dots \wedge  
-\parametric{\KsortDeclared}{\shs}(s_n) \to 
-\parametric{\KaxiomDeclared}{\shs}(\denote{\varphi}) $$
+\subsubsection{Meta-Representations of Patterns}
+We start from the basic.
+The most basic patterns are variables.
+The meta-representation of a variable, say $x \cln \Nat$, is constructed using 
+the constructor $\Kvariable$:
+$$ \Kvariable(\underbrace{\qquottt{x}}_\text{the name of $x$}, 
+\underbrace{\KqNat}_\text{meta-representation of $\Nat$}) $$
+Notice that what we get here is a $\KVariable$ pattern, because $\Kvariable$ is 
+a $\KVariable$ constructor (see Section~\ref{sec:ML-patterns}).
+More often, we want to obtain a meta-representation of the variable $x \cln 
+\Nat$ as a $\KPattern$ pattern.
+In that case, we will wrap the $\KVariable$ pattern with the injection function 
+from $\KVariable$ to $\KPattern$:
+$$\KVariableToKPattern(\Kvariable(\qquottt{x}, \KqNat))$$
+
+The meta-representation of patterns constructed using (basic and derived) logic 
+connectives (e.g. $\wedge$, $\neg$, $\exists$, $=$) are constructed with the 
+corresponding constructors (e.g. $\Kand$, $\Knot$, $\Kexists$, $\Kequals$).
+We now focus on the meta-representation of patterns obtained by applying a 
+symbol to a list of patterns.
+Recall that the corresponding constructor for such symbol application patterns 
+is
+$$ \Kapplication \colon \KSymbol \times \KPatternList \to \KPattern$$
+
+Now let us consider the simplest case.
+The simplest pattern that is a symbol application is a constant symbol applying 
+to an empty list of patterns, for example, the pattern $O$.
+Its meta-representation is
+$$ \Kapplication(\underbrace{\Ksymbol(\qquottt{zero}, \KnilKSortList, 
+\KnilKSortList, 
+\KqNat)}_\text{meta-representation of symbol $O$}, 
+\underbrace{\KnilKPatternList}_\text{empty pattern list})
+$$
+To help us write this lengthy pattern, let us introduce a helper function to 
+the meta-theory
+$$ \Kqzero \colon \to \KPattern$$
+and add an axiom, too
+$$ \Kqzero = \Kapplication(\Ksymbol(\qquottt{zero}, \KnilKSortList, 
+	\KnilKSortList, 
+	\KqNat), 
+\KnilKPatternList)
+$$
+With this helper function defined, the meta-representation of the pattern $O$ 
+becomes simply $\Kqzero$.
+
+Now let us look at the meta-representation of pattern $S(O)$, which is the 
+symbol $S$ applying to the singleton pattern list $O$
+$$
+\Kapplication(\underbrace{\Ksymbol(\qquottt{succ}, \KnilKSortList, (\KqNat), 
+\KqNat)}_\text{meta-representation of symbol $S$}, 
+\underbrace{(\Kqzero)}_\text{singleton pattern list})
+$$
+Similarly, let us define a helper function to the meta-theory
+$$ \Kqsucc \colon \KPattern \to \KPattern $$
+and define its axiom
+$$ \forall \varphi . \left(\Kqsucc(\varphi) = 
+\Kapplication(\Ksymbol(\qquottt{succ}, \KnilKSortList, 
+(\KqNat), \KqNat), (\varphi)\right) $$
+This makes the meta-representation of $S(O)$ just
+$$ \Kqsucc(\Kqzero)$$
+
+Let us do the same thing to the binary function $\_+\_$.
+We define a helper function to the meta-theory
+$$ \Kqplus \colon \KPattern \times \KPattern \to \KPattern $$
+with an axiom
+$$ \forall \varphi_1 \forall \varphi_2 . \left( \Kqplus(\varphi_1, \varphi_2) = 
+\Kapplication(\underbrace{\Ksymbol(\qquottt{plus}, 
+\KnilKSortList, (\KqNat,\KqNat), \KqNat)}_\text{meta-representation of 
+$\_+\_$}, \underbrace{(\varphi_1,\varphi_2)}_\text{pattern list}) \right)
+$$
+With these helper functions and axioms, we can easily write 
+meta-representations of symbol application patterns.
+For example, the meta-representation of $S(O) + S(S(O))$ is
+$$ \Kqplus(\Kqsucc(\Kqzero), \Kqsucc(\Kqsucc(\Kqzero))) $$
+Readers are encouraged to write its meta-representation without using the 
+helper functions that we have defined, and then realize how useful those 
+helpful functions are.
+
+Now, let us focus on parametric symbols.
+Let us also start from the most basic one, the empty list of naturals 
+$\epsilon_\Nat$.
+It is a constant symbol applying to an empty pattern list, so its 
+meta-representation is
+$$
+\Kapplication(\underbrace{\Ksymbol(\qquottt{nil}, (\KqNat), \KnilKSortList, 
+(\KqList(\KqNat)))}_\text{meta-representation of symbol $\epsilon_\Nat$}, 
+\underbrace{\KnilKPatternList}_\text{empty pattern list})
+$$
+Let us also define for $\epsilon_s$ a helper function.
+Since it is parametric on a sort $s$, its helper function takes a $\KSort$ 
+pattern as argument
+$$
+\Kqnil \colon \KSort \to \KPattern
+$$
+It has the axiom
+$$ \forall s . \left(
+\Kqnil = \underbrace{\Kapplication(\Ksymbol(\qquottt{nil}, (s), \KnilKSortList, 
+(\KqList(s))), \KnilKPatternList)}_\text{meta-representation of pattern 
+$\epsilon_s$ for a sort $s$}
+\right)
+$$
+Using this helper, we can easily construct meta-representations for the pattern 
+$\epsilon_s$ for any $s$, as shown in the next table
+\begin{center}
+\begin{tabular}{l|l}
+	\textbf{Patterns in $T_L$} & \textbf{Meta-Representation in $K$}
+	\\\hline
+	$\epsilon_\Nat$ & $\Kqnil(\KqNat)$
+	\\\hline
+	$\epsilon_{\parametric{\List}{\Nat}}$ & $\Kqnil(\KqList(\KqNat))$
+	\\\hline
+	$\epsilon_{\parametric{\List}{\parametric{\List}{\Nat}}}$ & 
+	$\Kqnil(\KqList(\KqList(\KqNat)))$
+	\\\hline
+	\dots & \dots
+\end{tabular}
+\end{center}
+
+The parametric symbol $\_::_s\_$ needs a sort $s$ as parameter and it takes two 
+patterns as arguments.
+Let us define its helper function
+$$ \Kqcons \colon \KSort \times \KPattern \times \KPattern \to \KPattern $$
+and the axiom
+$$ \forall s \forall \varphi_1 \forall \varphi_2 . \left( 
+\Kqcons(s,\varphi_1,\varphi_2) = 
+   \Kapplication(\underbrace{\Ksymbol(\qquottt{cons}, (s), (s,\KqList(s)), 
+   \KqList(s))}_\text{meta-representation of 
+   $\_::_s\_$},\underbrace{(\varphi_1,\varphi_2)}_\text{pattern list}) 
+   \right)
+$$
+Using this helper function, we can write the meta-representation of $O ::_\Nat 
+(S(O) ::_\Nat \epsilon_\Nat)$ as
+$$
+\Kqcons(\KqNat, \Kqzero, \Kqcons(\KqNat, \Kqsucc(\Kqzero), \Kqnil(\KqNat)))
+$$
+
+The parametric symbol $\_@_s\_$ also needs a sort $s$ as parameter and it takes 
+two patterns as arguments.
+We can similarly define its helper function
+$$
+\Kqappend \colon \KSort \times \KPattern \times \KPattern \to \KPattern
+$$
+and its axiom
+\begin{equation*} \forall s \varphi_1 \varphi_2 . \left( 
+\begin{tabular}{l}
+$\Kqappend(s,\varphi_1,\varphi_2)$ \\
+$= \Kapplication(\underbrace{\Ksymbol(\qquottt{append}, (s), 
+(\KqList(s),\KqList(s)), \KqList(s))}_\text{meta-representation of 
+	$\_@_s\_$},\underbrace{(\varphi_1,\varphi_2)}_\text{pattern list})$
+\end{tabular} 
+\right)
+\end{equation*}
+
+
+\subsubsection{Represent Axioms}
+The theory $T_L$ defines some patterns as axioms.
+For example, the following two patterns are axioms of~$T_L$:
+\begin{align*}
+& x \cln \Nat + O = x \cln \Nat \\
+& (x \cln s ::_s L_0 \cln \parametric{\List}{s}) @_s L \cln 
+\parametric{\List}{s} = x \cln s::_s (L_0 \cln 
+\parametric{\List}{s}@_s L\cln \parametric{\List}{s})
+\end{align*}
+Recall that equality ``$=$'' is sort parametric, so the above axioms should be
+\begin{align*}
+& x \cln \Nat + O =_\Nat^{s'} x \cln \Nat \\
+& (x \cln s ::_s L_0 \cln \parametric{\List}{s}) @_s L \cln 
+\parametric{\List}{s}
+=_{\parametric{\List}{s}}^{s'} x \cln 
+s::_s (L_0 \cln 
+\parametric{\List}{s}@_s L\cln \parametric{\List}{s})
+\end{align*}
+for any sort $s,s'$ in theory $T_L$.
+To represent those axioms in the meta-theory, we first calculate the 
+meta-representations of those axioms, that is
+\begin{alignat*}{2}
+\Kequals(
+&\KqNat,s',
+\\
+&\Kqplus(\KvariableAsPattern(\qquottt{x},\KqNat), \Kqzero),
+\\
+&\KvariableAsPattern(\qquottt{x},\KqNat))
+\\
+\Kequals(
+&\KqList(s),s',
+\\
+&\Kqappend(s, \Kqcons(s, \KvariableAsPattern(\qquottt{x},s),
+\\
+& \qquad\qquad\qquad\qquad\qquad\!\!
+\KvariableAsPattern(\qquottt{L0},\KqList(s))),
+\\
+& \qquad\qquad\quad\  \KvariableAsPattern(\qquottt{L},\KqList(s))),
+\\
+& \Kqcons(s, \KvariableAsPattern(\qquottt{x},s),
+\\
+& \qquad\qquad\  \Kqappend(s, \KvariableAsPattern(\qquottt{L0},\KqList(s)),
+\\
+& \qquad\qquad\qquad\qquad\qquad\!\! 
+\KvariableAsPattern(\qquottt{L},\KqList(s)))))
+\end{alignat*}
+\improvement{I have to use $\Psi_1$ and $\Psi_2$ to refer to the above two 
+patterns. They are too huge.}
+Let us denote the first pattern as $\Psi_1$ and the second pattern as $\Psi_2$.
+Then we can define the following axioms to the meta-theory saying that those 
+patterns are axioms if $s, s'$ are declared sorts
+\begin{align*}
+ & \forall s' . (\parametric{\KsortDeclared}{\shs}(s') \to 
+   \parametric{\KaxiomDeclared}{\shs}(\Psi_1)) \\
+ & \forall s \forall s' . (\parametric{\KsortDeclared}{\shs}(s) \wedge 
+ \parametric{\KsortDeclared}{\shs}(s') \to 
+ \parametric{\KaxiomDeclared}{\shs}(\Psi_2))
+\end{align*}
+
+
+%\subsection{Reflect Patterns and Axioms}
+%Just like how we reflect sorts and symbols, patterns are reflected by lifting 
+%to their corresponding abstract syntax trees, too.
+%Let us define the set of all patterns in $T$
+%$$\PATTERNS_T = \bigcup_{\text{$s\in S$ is a sort in $T$}} \PATTERNS_s$$
+%The \emph{pattern lifting operation}
+%$$\denote{\_} \colon \PATTERNS_T \to \PATTERNS_\KPattern$$
+%and its pointwise extension on pattern lists 
+%$$\denote{\_} \colon \PATTERNS_T^* \to \PATTERNS_\KPatternList$$
+%are inductively defined as the follows.
+%\begin{align*}
+%&\denote{x \cln s} = \KVariableToKPattern(\denote{x \cln s}_0) \\
+%&\denote{\sigma(\varphi_1,\dots,\varphi_n)} = \Kapplication(\denote{\sigma}, 
+%\denote{\varphi_1,\dots,\varphi_n}) \\
+%&\denote{\varphi \wedge_s \psi} = \Kand(\denote{s}, \denote{\varphi}, 
+%\denote{\psi}) \\
+%&\denote{\neg_s \varphi} = \Knot(\denote{s}, \denote{\varphi}) \\
+%&\denote{\exists_s^{s'} x \cln s . \varphi} = \Kexists(\denote{s}, 
+%\denote{{s'}}, \denote{x \cln s}_0, \denote{\varphi}) \\
+%&\denote{\varphi \vee_s \psi} = \Kor(\denote{s}, \denote{\varphi}, 
+%\denote{\psi}) \\
+%&\denote{\varphi \to_s \psi} = \Kimplies(\denote{s}, \denote{\varphi}, 
+%\denote{\psi}) \\
+%&\denote{\varphi \leftrightarrow_s \psi} = \Kiff(\denote{s}, \denote{\varphi}, 
+%\denote{\psi}) \\
+%&\denote{\forall_s^{s'} x \cln s . \varphi} = \Kforall(\denote{s}, 
+%\denote{{s'}}, \denote{x \cln s}_0, \denote{\varphi}) \\
+%&\denote{\ceil{\varphi}_s^{s'}} = \Kceil(\denote{s}, \denote{{s'}}, 
+%\denote{\varphi})\\
+%&\denote{\floor{\varphi}_s^{s'}} = \Kfloor(\denote{s}, \denote{{s'}}, 
+%\denote{\varphi})\\
+%&\denote{\varphi =_s^{s'} \psi} = \Kequals(\denote{s}, \denote{s'}, 
+%\denote{\varphi}, \denote{\psi})\\
+%&\denote{x \cln s \in_s^{s'} \varphi} = \Kmembership(\denote{s}, \denote{s'}, 
+%\denote{x \cln s}_0, \denote{\varphi})\\
+%&\denote{\top_s} = \Ktop(\denote{s})\\
+%&\denote{\bot_s} = \Kbottom(\denote{s})
+%\end{align*}
+%Notice that we do not desugar derivative connectives such as disjunction or 
+%universal quantification.
+%Instead, we keep them as it is when lifting them to the meta-theory.
+%Also notice how the injection wrapper $\KVariableToKPattern$ is used.
+%
+%If $\varphi$ is an axiom in $T$, add the following axiom to $\denote{T}$
+%$$ \parametric{\KaxiomDeclared}{\shs}(\denote{\varphi})$$
+%If $\varphi$ is an axiom schema with $s_1,\dots,s_n$ are sort parameters, add 
+%the following axiom to $\denote{T}$
+%$$ \parametric{\KsortDeclared}{\shs}(s_1) \wedge \dots \wedge  
+%\parametric{\KsortDeclared}{\shs}(s_n) \to 
+%\parametric{\KaxiomDeclared}{\shs}(\denote{\varphi}) $$
 
 
 
