@@ -3765,13 +3765,56 @@ in the meta-theory is the following $\KSymbol$ pattern:
 	$\parametric{\List}{\Nat}$}
 \end{alignat*}
 
-
-
-To help us write compact meta-representations of symbols, we introduce some 
-helper functions (one for each symbol) to the meta-theory as follows:
+The theory $T_L$ has non-parametric symbols $O, S, \_+\_$ and parametric 
+symbols $\epsilon_s, \_::_s\_, \_@_s\_$ for any sort $s$ in $T_L$ and not any 
+other symbols.
+This fact also needs to be represented in the meta-theory using the predicate 
+symbol $\KsymbolDeclared$.
+For non-parametric symbols, it is straightforward to define axioms
 \begin{align*}
-  \Kqzero \colon \to \KSymbol \\
-  \Kqsucc \colon \to \KSymbol \\
+& \parametric{\KsymbolDeclared}{\shs}(
+    \underbrace{\Ksymbol(\qquottt{zero}, \KnilKSortList, \KnilKSortList, 
+    \KqNat)}_\text{meta-representation of the symbol $O \colon \!\to \Nat$})
+\\
+& \parametric{\KsymbolDeclared}{\shs}(
+\underbrace{\Ksymbol(\qquottt{succ}, \KnilKSortList, (\KqNat), 
+	\KqNat)}_\text{meta-representation of the symbol $S \colon \!\Nat\to \Nat$})
+\\
+& \parametric{\KsymbolDeclared}{\shs}(
+\underbrace{\Ksymbol(\qquottt{plus}, \KnilKSortList, (\KqNat,\KqNat), 
+	\KqNat)}_\text{meta-representation of the symbol $\_+\_ \colon 
+	\!\Nat\times\Nat\to \Nat$})
+\end{align*}
+
+For parametric symbols, we define axioms saying that, for example, the symbol 
+$\epsilon_s$ is defined in $T_L$ if sort $s$ is defined
+\begin{align*}
+& \forall s . \left(
+  \parametric{\KsortDeclared}{\shs}(s) \to
+  \parametric{\KsymbolDeclared}{\shs}(
+  \underbrace{\Ksymbol(\qquottt{nil}, (s), \KnilKSortList, 
+  	\KqList(s)}_\text{meta-representation of $\epsilon_s \colon \! \to 
+  	\parametric{\List}{s}$}) \right)
+\end{align*}
+And we define the similar axioms for $\_::_s\_$ and $\_@_s\_$
+\begin{align*}
+& \forall s . \left(
+\parametric{\KsortDeclared}{\shs}(s) \to
+\parametric{\KsymbolDeclared}{\shs}(
+\underbrace{\Ksymbol(\qquottt{cons}, (s), (s, \KqList(s)), 
+	\KqList(s)}_\text{meta-representation of $\_::_s\_ \colon s \times 
+	\parametric{\List}{s} \! \to 
+	\parametric{\List}{s}$})
+\right)
+\\
+& \forall s . \left(
+\parametric{\KsortDeclared}{\shs}(s) \to
+\parametric{\KsymbolDeclared}{\shs}(
+\underbrace{\Ksymbol(\qquottt{append}, (s), (\KqList(s), \KqList(s)), 
+	\KqList(s)}_\text{meta-representation of $\_@_s\_ \colon \! 
+	\parametric{\List}{s} \times \parametric{\List}{s} \to 
+	\parametric{\List}{s}$})
+\right)
 \end{align*}
 %
 %The \emph{symbol lifting operation} is a mapping
