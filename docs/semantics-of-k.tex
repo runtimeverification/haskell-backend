@@ -487,14 +487,6 @@ be interested in this document.}
 
 In this section we first recall basic matching logic syntax and semantics
 notions from~\cite{rosu-2017-lmcs} at a theoretical level.
-\improvement{
-We should make this paper self-contained in terms of definitions
-and only refer to \cite{rosu-2017-lmcs} for details and proofs.
-We want people who trust \cite{rosu-2017-lmcs} to not have to leave
-this paper in order to understand the semantics of \K.
-So we should define signatures, symbols, patterns, models,
-satisfaction, proof system, etc.
-}
 Then we discuss schematic/parametric ways to finitely define infinite
 matching logic theories.
 Finally, we introduce theoretical foundations underlying the
@@ -666,10 +658,14 @@ iff for each ${M}$, ${M} \models A$ implies ${M} \models \varphi$.
 We may subscript $\models$ with the signature whenever we feel it
 clarifies the presentation; that is, we may write $\models_{(S,\Sigma)}$ or
 $\models_\Sigma$ instead of $\models$.
-A \emph{matching logic specification} is a triple $(S,\Sigma,A)$, or
-just $(\Sigma,A)$ when $S$ is understood, with $A$ a set of $\Sigma$-patterns.
-Given matching logic specification $(\Sigma,A)$ we let
-$\Mod(\Sigma,A)$, also denoted by $\denote{(\Sigma,A)}$ be its (category of)
+A \emph{(matching logic) specification}, or a \emph{(matching logic) theory},
+is a triple $(S,\Sigma,A)$, or just $(\Sigma,A)$ when $S$ is understood,
+with $A$ a set of $\Sigma$-patterns.
+We let $T$ range over specification/theories;
+$T = (S,\Sigma,A)$ is \emph{finite} whenever $S$, $\Sigma$ and $A$ are finite.
+Given specification $T=(S,\Sigma,A)$ we let $\Mod(T)$, or
+$\Mod(S,\Sigma,A)$ or $\Mod(\Sigma,A)$, also denoted by $\denote{T}$,
+or $\denote{(S,\Sigma,A)}$ or $\denote{(\Sigma,A)}$, be its (category of)
 models $\{M \ \mid \ M \in \Mod_{\Sigma},\ M \models_{\Sigma} A \}$.
 
 A signature $(S',\Sigma')$ is called a \emph{subsignature} of $(S,\Sigma)$, written
@@ -822,6 +818,10 @@ In this case, we call $\sigma$ a \emph{function symbol} or even just a
 \emph{function}.
 Patterns built with only function symbols are called
 \emph{term patterns}, or simply just \emph{terms}.
+The functionality property can be extended from a symbol to
+a pattern: equation ``$\exists y\,.\,\varphi = y$'' states that pattern
+$\varphi$ is \emph{functional}; it is easy to see that terms are
+functional patterns.
 Partial functions and total relations can also be axiomatized;
 we refer the interested reader to \cite{rosu-2017-lmcs}.
 
@@ -918,12 +918,16 @@ When $n = 0$ we call the proof rule an \emph{axiom} and take the freedom to
 drop the empty hypotheses and the separating line, writing it simply as
 ``$\varphi$''.
 A proof system allows us to \emph{formally prove} or \emph{derive} formulae.
-Specifically, a proof system yields a \emph{provability relation}, written
-$\sequent{A}{\varphi}$, for any given specification $(\Sigma,A)$, defined
-inductively as follows:
+Specifically, for any given finite or infinite specification $(\Sigma,A)$,
+a proof system yields a \emph{provability relation},
+written $\sequent{A}{\varphi}$, defined inductively as follows:
+
 $\sequent{A}{\varphi}$ if $\varphi \in A$; and
+
 $\sequent{A}{\varphi}$ if there is a proof rule like above such that
 $\sequent{A}{\varphi_1}$, ..., $\sequent{A}{\varphi_n}$.
+
+\noindent
 Formulae in $A$ can therefore be regarded as axioms, and we even take the
 freedom to call them axioms when there is no misunderstanding.
 However, note that a proof system is fixed for the target logic, including
@@ -1000,7 +1004,6 @@ when $x\not\in\FV(\varphi_1)$
 7. $\vdash (\forall x\,.\,\varphi) \wedge
   (\exists y\,.\,\varphi'=y) \ra \varphi[\varphi'/x]$
 \hfill \textsc{(Functional Substitution)}
-\improvement{Need to define functional patterns.}
 \end{quote}
 
 \begin{quote}
