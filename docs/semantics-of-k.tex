@@ -3614,12 +3614,15 @@ function are defined
 		\parametric{\List}{s}$ & \doubleslash the append function
 	\end{tabular}
 \end{center}
-The theory $S_L$ also gets some axioms (schemas).
-Here we only list two of them as an example:
+The theory $T_L$ also gets some axioms.
+For example, the following are two axiom schemas in $T_L$.
 \begin{align*}
-& x \cln \Nat + O = x \cln \Nat \\
-& (x \cln s ::_s L_0 \cln \parametric{\List}{s}) @_s L = x \cln s::_s (L_0 \cln 
-\parametric{\List}{s}@_s L\cln \parametric{\List}{s})
+& x \cln \Nat + O =_{\Nat}^{s'} x \cln \Nat \\
+& (x \cln s ::_s L_0 \cln \parametric{\List}{s}) @_s L \cln 
+\parametric{\List}{s}
+=_{\parametric{\List}{s}}^{s'} x \cln s::_s (L_0 \cln 
+\parametric{\List}{s}@_s L\cln \parametric{\List}{s}) \\
+& \text{\doubleslash for any sorts $s, s'$ of $T_L$}
 \end{align*}
 
 \subsection{Naming Functions}
@@ -4003,7 +4006,7 @@ The meta-representations of patterns constructed using (basic and derived)
 logic 
 connectives (e.g. $\wedge_s$, $\neg_s$, $\exists_s$, $=_{s_1}^{s_2}$) are 
 constructed with the 
-corresponding constructors (e.g. $\Kand$, $\Knot$, $\Kexists$, $\Kequals$).
+corresponding constructors (e.g., $\Kand$, $\Knot$, $\Kexists$, $\Kequals$).
 We now focus on the meta-representations of \emph{structural} patterns, i.e., 
 patterns obtained by applying a symbol to a list of patterns
 $$ \sigma(\varphi_1,\dots,\varphi_n)$$
@@ -4019,7 +4022,7 @@ $$ \Kapplication(\underbrace{\Ksymbol(\qquottt{zero}, \KnilKSortList,
 \underbrace{\KnilKPatternList}_\text{applied to empty pattern list})
 $$
 To help us write this lengthy pattern, we define a helper function in 
-$\denote{T}$
+$\denote{T_L}$
 $$ \Kqzero \colon \to \KPattern$$
 and define an axiom
 $$ \Kqzero = \underbrace{\Kapplication(\Ksymbol(\qquottt{zero}, \KnilKSortList, 
@@ -4058,7 +4061,7 @@ $\_+\_ \colon \Nat \times \Nat \to \Nat$},
 \underbrace{(\varphi_1,\varphi_2)}_\text{two patterns})}_\text{the 
 meta-representation of pattern $\varphi_1 + \varphi_2$} \right)
 $$
-These helper functions in $\denote{T}$ allows us to write compact 
+These helper functions in $\denote{T_L}$ allows us to write compact 
 meta-representations of patterns.
 For example, the meta-representation of $S(O) + S(S(O))$ is
 $$ \Kqplus(\Kqsucc(\Kqzero), \Kqsucc(\Kqsucc(\Kqzero))) $$
@@ -4083,7 +4086,7 @@ $$ \forall s . \left(
 \Kqnil(s) = \underbrace{\Kapplication(\Ksymbol(\qquottt{nil}, (s), 
 \KnilKSortList, 
 (\KqList(s))), \KnilKPatternList)}_\text{meta-representation of pattern 
-$\epsilon_s$ for a sort $s$}
+$\epsilon_s$}
 \right)
 $$
 Using this helper function, we can easily construct meta-representations for 
@@ -4103,16 +4106,17 @@ the patterns $\epsilon_s$ for any $s$, as shown in the next table
 \end{tabular}
 \end{center}
 
-The parametric symbol $\_::_s\_$ needs a sort $s$ as parameter and it takes two 
+The parametric symbol $\_::_s\_$ needs a sort parameter $s$ and it takes two 
 patterns as arguments.
 Let us define its helper function
-$$ \Kqcons \colon \KSort \times \KPattern \times \KPattern \to \KPattern $$
+$$ \Kqcons \colon \underbrace{\KSort}_\text{the sort parameter} \times 
+\underbrace{\KPattern \times \KPattern}_\text{two patterns} \to \KPattern $$
 and define the axiom
 $$ \forall s \forall \varphi_1 \forall \varphi_2 . \left( 
 \Kqcons(s,\varphi_1,\varphi_2) = 
-   \Kapplication(\underbrace{\Ksymbol(\qquottt{cons}, (s), (s,\KqList(s)), 
-   \KqList(s))}_\text{meta-representation of 
-   $\_::_s\_$},\underbrace{(\varphi_1,\varphi_2)}_\text{two patterns}) 
+  \underbrace{ \Kapplication(\Ksymbol(\qquottt{cons}, (s), (s,\KqList(s)), 
+   \KqList(s)),(\varphi_1,\varphi_2))}_\text{meta-representation of pattern 
+   $\varphi_1 ::_s \varphi_2$}
    \right)
 $$
 Using this helper function, we can write the meta-representation of $O ::_\Nat 
@@ -4121,80 +4125,66 @@ $$
 \Kqcons(\KqNat, \Kqzero, \Kqcons(\KqNat, \Kqsucc(\Kqzero), \Kqnil(\KqNat)))
 $$
 
-The parametric symbol $\_@_s\_$ also needs a sort $s$ as parameter and it takes 
-two patterns as arguments.
-We can similarly define its helper function
+Similarly, the parametric symbol $\_@_s\_$ has its helper function
 $$
 \Kqappend \colon \KSort \times \KPattern \times \KPattern \to \KPattern
 $$
-and its axiom
-\begin{equation*} \forall s \varphi_1 \varphi_2 . \left( 
-\begin{tabular}{l}
-$\Kqappend(s,\varphi_1,\varphi_2)$ \\
-$= \Kapplication(\underbrace{\Ksymbol(\qquottt{append}, (s), 
-(\KqList(s),\KqList(s)), \KqList(s))}_\text{meta-representation of 
-	$\_@_s\_$},\underbrace{(\varphi_1,\varphi_2)}_\text{two patterns})$
-\end{tabular} 
-\right)
-\end{equation*}
+We left the definition of its axiom as an exercise to readers.
 
 
 \subsubsection{Represent Axioms}
 The theory $T_L$ defines some axioms. For example
-\begin{align*}
-& x \cln \Nat + O = x \cln \Nat \\
-& (x \cln s ::_s L_0 \cln \parametric{\List}{s}) @_s L \cln 
-\parametric{\List}{s} = x \cln s::_s (L_0 \cln 
-\parametric{\List}{s}@_s L\cln \parametric{\List}{s})
-\end{align*}
-Recall that equality ``$=$'' is sort parametric, so the above axioms should be
 \begin{align*}
 & x \cln \Nat + O =_\Nat^{s'} x \cln \Nat \\
 & (x \cln s ::_s L_0 \cln \parametric{\List}{s}) @_s L \cln 
 \parametric{\List}{s}
 =_{\parametric{\List}{s}}^{s'} x \cln 
 s::_s (L_0 \cln 
-\parametric{\List}{s}@_s L\cln \parametric{\List}{s})
+\parametric{\List}{s}@_s L\cln \parametric{\List}{s}) \\
+& \text{\doubleslash for any sorts $s, s'$ defined in $T_L$}
 \end{align*}
-for any sort $s,s'$ defined in theory $T_L$.
-To represent those axioms in the meta-theory, we first calculate the 
-meta-representations of those axioms, that is
+To represent those axioms and axiom schemas, we first 
+calculate their meta-representations:
 \begin{alignat*}{2}
-\Kequals(
-&\KqNat,s',
+\text{\doubleslash} & \text{Let $\Psi_1$ be}
 \\
-&\Kqplus(\KvariableAsPattern(\qquottt{x},\KqNat), \Kqzero),
+&\Kequals(&&\KqNat,s',
 \\
-&\KvariableAsPattern(\qquottt{x},\KqNat))
+& &&\Kqplus(\KvariableAsPattern(\qquottt{x},\KqNat), \Kqzero),
 \\
-\Kequals(
-&\KqList(s),s',
+& &&\KvariableAsPattern(\qquottt{x},\KqNat))
 \\
-&\Kqappend(s, \Kqcons(s, \KvariableAsPattern(\qquottt{x},s),
+\text{\doubleslash} & \text{Let $\Psi_2$ be}
 \\
-& \qquad\qquad\qquad\qquad\qquad\!\!
+&\Kequals(
+&&\KqList(s),s',
+\\
+& &&\Kqappend(s, \Kqcons(s, \KvariableAsPattern(\qquottt{x},s),
+\\
+& && \qquad\qquad\qquad\qquad\qquad\!\!
 \KvariableAsPattern(\qquottt{L0},\KqList(s))),
 \\
-& \qquad\qquad\quad\  \KvariableAsPattern(\qquottt{L},\KqList(s))),
+& && \qquad\qquad\quad\  \KvariableAsPattern(\qquottt{L},\KqList(s))),
 \\
-& \Kqcons(s, \KvariableAsPattern(\qquottt{x},s),
+& && \Kqcons(s, \KvariableAsPattern(\qquottt{x},s),
 \\
-& \qquad\qquad\  \Kqappend(s, \KvariableAsPattern(\qquottt{L0},\KqList(s)),
+& && \qquad\qquad\  \Kqappend(s, \KvariableAsPattern(\qquottt{L0},\KqList(s)),
 \\
-& \qquad\qquad\qquad\qquad\qquad\!\! 
+& && \qquad\qquad\qquad\qquad\qquad\!\! 
 \KvariableAsPattern(\qquottt{L},\KqList(s)))))
 \end{alignat*}
-\improvement{I have to use $\Psi_1$ and $\Psi_2$ to refer to the above two 
-patterns. They are too huge.}
-Let us denote the first pattern as $\Psi_1$ and the second pattern as $\Psi_2$.
-Then we can define the following axioms to the meta-theory saying that those 
-patterns are axioms if $s, s'$ are declared sorts
+Then we can define the following axiom schemas in $\denote{T_L}$
 \begin{align*}
- & \forall s' . (\parametric{\KsortDeclared}{\shs}(s') \to 
-   \parametric{\KaxiomDeclared}{\shs}(\Psi_1)) \\
- & \forall s \forall s' . (\parametric{\KsortDeclared}{\shs}(s) \wedge 
- \parametric{\KsortDeclared}{\shs}(s') \to 
- \parametric{\KaxiomDeclared}{\shs}(\Psi_2))
+ & \forall s' . (\underbrace{\parametric{\KsortDeclared}{\shs}(s')}_\text{if 
+ $s'$ is defined in $T_L$} \to 
+   \underbrace{\parametric{\KaxiomDeclared}{\shs}(\Psi_1)}_\text{then $\Psi_1$ 
+   is an axiom in $T_L$}) \\
+ & \forall s \forall s' . (\underbrace{\parametric{\KsortDeclared}{\shs}(s) 
+ \wedge 
+ \parametric{\KsortDeclared}{\shs}(s')}_\text{if $s, s'$ are defined in $T_L$} 
+ \to 
+ \underbrace{\parametric{\KaxiomDeclared}{\shs}(\Psi_2)}_\text{then $\Psi_2$ is 
+ an axiom in $T_L$})
 \end{align*}
 
 
@@ -4629,19 +4619,22 @@ patterns are axioms if $s, s'$ are declared sorts
 
 
 \subsection{Faithfulness}
-
+We present the faithfulness theorem of the meta-theory, whose proof is in 
+Section~\ref{sec:proof-of-faithfulness-theorem}. 
 \begin{theorem}[Faithfulness Theorem]\label{thm:faithfulness-finite}
-	Given a matching logic theory $T$ and a naming function,
-	$$T \vdash \varphi \quad \text{iff} \quad K \cup \denote{T} \vdash 
+	Given a matching logic theory $T$ and a naming function.
+	Let $\denote{T}$ be the meta-theory instantiated with $T$, and $\varphi$ be 
+	any pattern in $T$,
+	$$T \vdash \varphi \quad \text{iff} \quad K \cup \denote{T} \vdashfin 
 	\parametric{\Kdeduce}{\shs}(\denote{\varphi})\quad\text{for any $\shs \in 
 	S_K$}$$
 \end{theorem}
 
-Theorem~\ref{thm:faithfulness-finite} is an important theorem that justifies 
-the design and usage of the theory $K$. 
-It guarantees that the theory $K$ does faithfully capture the matching logic 
-reasoning in finite theories.
-
+Theorem~\ref{thm:faithfulness-finite} is an important theorem both in theory 
+and in practice.
+It relates the provability relation of infinite theories (`` $\vdash$ '') with 
+the provability relation of finite theories (`` $\vdashfin$ ''), the one that 
+can ever be implemented.
 
 \section{The Kore Language}
 \label{sec:kore}
