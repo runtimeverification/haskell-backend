@@ -2719,6 +2719,14 @@ and an injection function from variables to patterns
 \begin{equation*}
   \KVariableToKPattern \colon \KVariable \to \KPattern
 \end{equation*}
+A related function is 
+$$
+\KvariableAsPattern \colon \KString \times \KSort \to \KPattern
+$$
+It has axiom
+$$
+\KvariableAsPattern(x,s) = \KVariableToKPattern(\Kvariable(x,s))
+$$
 
 In matching logic, apart from the five productions in the grammar, we also 
 introduce many \emph{derived connectives} as aliases or syntactic sugar to help 
@@ -3986,58 +3994,58 @@ Thus its meta-representation is
 $$ \Kvariable(\underbrace{\qquottt{x}}_\text{the name of $x$}, 
 \underbrace{\KqNat}_\text{the meta-representation of $\Nat$}) $$
 Notice that what we get here is a $\KVariable$ pattern, because $\Kvariable$ is 
-a $\KVariable$ constructor (see Section~\ref{sec:ML-patterns}).
-More often, we want to obtain a meta-representation of the variable $x \cln 
-\Nat$ as a $\KPattern$ pattern.
-In that case, we will wrap the $\KVariable$ pattern with the injection function 
-from $\KVariable$ to $\KPattern$:
-$$\KVariableToKPattern(\Kvariable(\qquottt{x}, \KqNat))$$
+a constructor of $\KVariable$.
+To obtain the meta-representation of $x \cln \Nat$ as a $\KPattern$ pattern,
+we write (see Section~\ref{sec:ML-patterns}):
+$$\KvariableAsPattern(\qquottt{x}, \KqNat)$$
 
-The meta-representation of patterns constructed using (basic and derived) logic 
-connectives (e.g. $\wedge$, $\neg$, $\exists$, $=$) are constructed with the 
+The meta-representations of patterns constructed using (basic and derived) 
+logic 
+connectives (e.g. $\wedge_s$, $\neg_s$, $\exists_s$, $=_{s_1}^{s_2}$) are 
+constructed with the 
 corresponding constructors (e.g. $\Kand$, $\Knot$, $\Kexists$, $\Kequals$).
-We now focus on the meta-representation of patterns obtained by applying a 
-symbol to a list of patterns.
-Recall that the corresponding constructor for such symbol application patterns 
-is
+We now focus on the meta-representations of \emph{structural} patterns, i.e., 
+patterns obtained by applying a symbol to a list of patterns
+$$ \sigma(\varphi_1,\dots,\varphi_n)$$
+Recall that we defined a corresponding constructor
 $$ \Kapplication \colon \KSymbol \times \KPatternList \to \KPattern$$
-
-Now let us consider the simplest case.
-The simplest pattern that is a symbol application is a constant symbol applying 
-to an empty list of patterns, for example, the pattern $O$.
-Its meta-representation is
+Let us first consider the simplest case---a constant symbol applied 
+to an empty list of patterns.
+Take the constant symbol $O \colon \!\to \Nat$ as an example.
+The pattern $O()$, often abbreviated as just~$O$, has meta-representation
 $$ \Kapplication(\underbrace{\Ksymbol(\qquottt{zero}, \KnilKSortList, 
 \KnilKSortList, 
-\KqNat)}_\text{meta-representation of symbol $O$}, 
-\underbrace{\KnilKPatternList}_\text{empty pattern list})
+\KqNat)}_\text{the constant symbol $O\colon \!\to \Nat$}, 
+\underbrace{\KnilKPatternList}_\text{applied to empty pattern list})
 $$
-To help us write this lengthy pattern, let us introduce a helper function to 
-the meta-theory
+To help us write this lengthy pattern, we define a helper function in 
+$\denote{T}$
 $$ \Kqzero \colon \to \KPattern$$
-and add an axiom, too
-$$ \Kqzero = \Kapplication(\Ksymbol(\qquottt{zero}, \KnilKSortList, 
+and define an axiom
+$$ \Kqzero = \underbrace{\Kapplication(\Ksymbol(\qquottt{zero}, \KnilKSortList, 
 	\KnilKSortList, 
 	\KqNat), 
-\KnilKPatternList)
+\KnilKPatternList)}_\text{the meta-representation of pattern $O$}
 $$
 With this helper function defined, the meta-representation of the pattern $O$ 
 becomes simply $\Kqzero$.
-
-Now let us look at the meta-representation of pattern $S(O)$, which is the 
-symbol $S$ applying to the singleton pattern list $O$
+Now consider $S(O)$, in which
+the symbol $S$ is applied to a singleton list $O$ of patterns.
+Its meta-representation is
 $$
 \Kapplication(\underbrace{\Ksymbol(\qquottt{succ}, \KnilKSortList, (\KqNat), 
-\KqNat)}_\text{meta-representation of symbol $S$}, 
-\underbrace{(\Kqzero)}_\text{singleton pattern list})
+\KqNat)}_\text{the symbol $S \colon \Nat \to \Nat$}, 
+\underbrace{(\Kqzero)}_\text{applied to pattern $O$})
 $$
-Similarly, let us define a helper function to the meta-theory
+Similarly, we can define a helper function
 $$ \Kqsucc \colon \KPattern \to \KPattern $$
-and define its axiom
+and define an axiom
 $$ \forall \varphi . \left(\Kqsucc(\varphi) = 
-\Kapplication(\Ksymbol(\qquottt{succ}, \KnilKSortList, 
-(\KqNat), \KqNat), (\varphi)\right) $$
-This makes the meta-representation of $S(O)$ just
-$$ \Kqsucc(\Kqzero)$$
+\underbrace{\Kapplication(\Ksymbol(\qquottt{succ}, \KnilKSortList, 
+(\KqNat), \KqNat), (\varphi))}_\text{the meta-representation of pattern 
+$S(\varphi)$}\right) $$
+This allows us to write the meta-representation of $S(O)$ as just
+$ \Kqsucc(\Kqzero)$.
 
 Let us do the same thing to the binary function $\_+\_$.
 We define a helper function to the meta-theory
