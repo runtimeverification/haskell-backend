@@ -2112,37 +2112,38 @@ More specifically, we expect the following \emph{reflection relation}:
 where 
 \begin{itemize}
 	\item $T$ is any \emph{recursively enumerable} or \emph{finitely 
-	representable} matching 
-	logic theory;
+	representable} matching logic theory; this includes all theories that we 
+	have seen in Section~\ref{sec:case-studies};
 	\item $\denote{T}$, called the \emph{meta-representation of $T$}, consists 
-	of definitions of finitely many matching logic symbols and matching logic 
-	patterns as axioms;
+	of definitions of finitely many matching logic symbols and finitely many 
+	matching logic patterns as axioms;
 	\item $K \cup \denote{T}$, called the \emph{meta-theory instantiated by 
 	$T$}, is obtained by adding the new symbols and axioms in 
 	$\denote{T}$ to the meta-theory $K$;
 	\item $\denote{\varphi}$ is the \emph{meta-representation of $\varphi$}, 
-	and it is a matching logic pattern of $K \cup \denote{T}$;
+	and it is a matching logic pattern in $K \cup \denote{T}$, i.e., the 
+	meta-theory instantiated by $T$;
 	\item $\Kdeduce$ is a predicate symbol defined in the meta-theory $K$ that 
 	axiomatizes the probability relation of matching logic (see 
-	Section~\ref{sec:ML-proof-system})
+	Section~\ref{sec:ML-proof-system});
 \end{itemize}
 
 With the meta-theory $K$, whatever schema mechanisms or notations that we use 
-when defining an infinite 
-theory $T$, we can give those mechanisms and notations a formal semantics by 
+to define the theory $T$ can be given a formal semantics by 
 defining the meta-representation $\denote{T}$, which is a finite artifact.
 It also allows us to design and use new mechanisms and notations that help us 
-define infinite theories, as long as we define their semantics in the 
+define infinite theories, as long as we have their semantics defined in the 
 meta-theory $K$.
 In other words, the meta-theory $K$ gives us a one-stop solution.
 
-We point out that we will define the meta-theory $K$ to be \emph{a finite 
-theory}.
-It has finitely many sorts, symbols, and axioms, so it requires no use of any 
-special mechanism to define the meta-theory $K$.
-In fact, we define the meta-theory $K$ by enumerating all its sorts, symbols, 
-and axioms, in Section~\ref{sec:meta-theory}.
-The meta-theory $K$ also serves as a starting point of implementing any tools 
+As we will see in Section~\ref{sec:meta-theory}, the meta-theory $K$ is \emph{a 
+finite theory}.
+It has finitely many sorts, symbols, and axioms, so its definition requires no 
+use of any special mechanism.
+In fact, we will define it by simply enumerating all its sorts, symbols, 
+and axioms.
+Because of its finitary, the meta-theory $K$ also serves as a starting point of 
+implementing any tools 
 or back-ends for \K.
 
 %Consider a matching logic prover $P$ that decides whether a matching logic 
@@ -2165,11 +2166,11 @@ or back-ends for \K.
 %inputs, we are in particular interested in \emph{finite representations} of 
 %patterns and matching logic theories.
 
-In the studies of logics, the meta-theory $K$ is called a \emph{a reflective 
-logic} of matching logic, because it is a matching logic that defines matching 
-logic.
-Generally speaking, reflection has been extensively studied not only in logics
-but also in programming languages.
+The meta-theory $K$ is called a \emph{reflective 
+logic} of matching logic, because it is a matching logic theory that defines 
+matching logic.
+Generally speaking, reflection in logic and programming languages is a mature 
+research area and has been extensively studied.
 We here quote a rather broad definition of reflection by Brian Smith, who 
 in~\cite{smith-1984-popl} defines reflection as
 \begin{displayquote}
@@ -2178,7 +2179,6 @@ in~\cite{smith-1984-popl} defines reflection as
 	it represents, operates on and deals with its primary
 	subject matter.
 \end{displayquote}
-
 It is in general interesting to see how our meta-theory relates to the study of 
 reflection in literature, but it is not the main interest in this proposal, so 
 we leave it to future work.
