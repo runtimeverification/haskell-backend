@@ -2103,16 +2103,18 @@ techniques that we use to define infinite theories), our developers of \K will
 have to guess what those schema mechanisms used in (b) mean and thus not be 
 able to do their work properly.
 
-One may argue: ``we do not have a formal semantics for (a), i.e., matching 
-logic, in~\cite{rosu-2017-lmcs} anyway, so why bother to give formal semantics 
-to (b)?''
+One may argue: ``we do not have a \emph{formal} semantics for (a), i.e., 
+matching 
+logic, in~\cite{rosu-2017-lmcs} anyway, so why bother to give (b) formal 
+semantics?''
 The reason is that matching logic is fixed while the theories underlying \K are 
 moving targets: 
 we may change existing theories and add new theories.
-Therefore, we can afford to write a comprehensive paper about matching logic, 
-in natural languages, and educate our \K developers once and for all, but we 
-cannot afford to write for each theory such a comprehensive informal document 
-and educate our \K developers whenever we change the theory.
+Therefore, we can afford to write an informal but comprehensive paper (such 
+as~\cite{rosu-2017-lmcs}) about matching logic, and educate our \K developers 
+once and for all, but we 
+cannot afford to write for each underlying theory of \K such an informal 
+document and educate our \K developers whenever we change the theory.
 Suppose some time in the future we design a new theory $T_\textrm{symbolic}$ 
 for symbolic execution and decide to add it to \K, and we
 use some new sorts of mechanisms to define $T_\textrm{symbolic}$.
@@ -2124,7 +2126,8 @@ Instead, we look for a \emph{one-stop solution}, that is, no matter what smart
 techniques and mechanisms we have used, are using, and will use to help us 
 defining infinite theories, they 
 can all be explained and formally defined in the same unified manner.
-And we did find one such one-step solution called \emph{the meta-theory $K$.}
+And we did find one such one-step solution. We called it \emph{the meta-theory 
+$K$.}
 
 Just like how one can use the theory of Presburger arithmetic to study the 
 properties of natural numbers, and how one can use the theory of rewriting and 
