@@ -4047,51 +4047,50 @@ $S(\varphi)$}\right) $$
 This allows us to write the meta-representation of $S(O)$ as just
 $ \Kqsucc(\Kqzero)$.
 
-Let us do the same thing to the binary function $\_+\_$.
-We define a helper function to the meta-theory
+Let us do the same thing to the plus function $\_+\_$.
+We define a helper function
 $$ \Kqplus \colon \KPattern \times \KPattern \to \KPattern $$
-with an axiom
+and define an axiom
 $$ \forall \varphi_1 \forall \varphi_2 . \left( \Kqplus(\varphi_1, \varphi_2) = 
-\Kapplication(\underbrace{\Ksymbol(\qquottt{plus}, 
-\KnilKSortList, (\KqNat,\KqNat), \KqNat)}_\text{meta-representation of 
-$\_+\_$}, \underbrace{(\varphi_1,\varphi_2)}_\text{pattern list}) \right)
+\underbrace{\Kapplication(\underbrace{\Ksymbol(\qquottt{plus}, 
+\KnilKSortList, (\KqNat,\KqNat), \KqNat)}_\text{the symbol
+$\_+\_ \colon \Nat \times \Nat \to \Nat$}, 
+\underbrace{(\varphi_1,\varphi_2)}_\text{two patterns})}_\text{the 
+meta-representation of pattern $\varphi_1 + \varphi_2$} \right)
 $$
-With these helper functions and axioms, we can easily write 
-meta-representations of symbol application patterns.
+These helper functions in $\denote{T}$ allows us to write compact 
+meta-representations of patterns.
 For example, the meta-representation of $S(O) + S(S(O))$ is
 $$ \Kqplus(\Kqsucc(\Kqzero), \Kqsucc(\Kqsucc(\Kqzero))) $$
-Readers are encouraged to write its meta-representation without using the 
-helper functions that we have defined, and then realize how useful those 
-helpful functions are.
 
-Now, let us focus on parametric symbols.
-Let us also start from the most basic one, the empty list of naturals 
-$\epsilon_\Nat$.
-It is a constant symbol applying to an empty pattern list, so its 
-meta-representation is
+Now let us move on and consider parametric cases.
+The simplest case is the parametric empty list $\epsilon_s$.
+Its meta-representation is
 $$
-\Kapplication(\underbrace{\Ksymbol(\qquottt{nil}, (\KqNat), \KnilKSortList, 
-(\KqList(\KqNat)))}_\text{meta-representation of symbol $\epsilon_\Nat$}, 
+\Kapplication(\underbrace{\Ksymbol(\qquottt{nil}, (s), \KnilKSortList, 
+(\KqList(s)))}_\text{the symbol $\epsilon_s \colon \! \to 
+\parametric{\List}{s}$}, 
 \underbrace{\KnilKPatternList}_\text{empty pattern list})
 $$
 Let us also define for $\epsilon_s$ a helper function.
-Since it is parametric on a sort $s$, its helper function takes a $\KSort$ 
+It needs a sort parameter $s$, so its helper function takes a $\KSort$ 
 pattern as argument
 $$
 \Kqnil \colon \KSort \to \KPattern
 $$
 It has the axiom
 $$ \forall s . \left(
-\Kqnil = \underbrace{\Kapplication(\Ksymbol(\qquottt{nil}, (s), \KnilKSortList, 
+\Kqnil(s) = \underbrace{\Kapplication(\Ksymbol(\qquottt{nil}, (s), 
+\KnilKSortList, 
 (\KqList(s))), \KnilKPatternList)}_\text{meta-representation of pattern 
 $\epsilon_s$ for a sort $s$}
 \right)
 $$
-Using this helper, we can easily construct meta-representations for the pattern 
-$\epsilon_s$ for any $s$, as shown in the next table
+Using this helper function, we can easily construct meta-representations for 
+the patterns $\epsilon_s$ for any $s$, as shown in the next table
 \begin{center}
 \begin{tabular}{l|l}
-	\textbf{Patterns in $T_L$} & \textbf{Meta-Representation in $K$}
+	\textbf{Patterns in $T_L$} & \textbf{Meta-Representations in $K$}
 	\\\hline
 	$\epsilon_\Nat$ & $\Kqnil(\KqNat)$
 	\\\hline
@@ -4108,12 +4107,12 @@ The parametric symbol $\_::_s\_$ needs a sort $s$ as parameter and it takes two
 patterns as arguments.
 Let us define its helper function
 $$ \Kqcons \colon \KSort \times \KPattern \times \KPattern \to \KPattern $$
-and the axiom
+and define the axiom
 $$ \forall s \forall \varphi_1 \forall \varphi_2 . \left( 
 \Kqcons(s,\varphi_1,\varphi_2) = 
    \Kapplication(\underbrace{\Ksymbol(\qquottt{cons}, (s), (s,\KqList(s)), 
    \KqList(s))}_\text{meta-representation of 
-   $\_::_s\_$},\underbrace{(\varphi_1,\varphi_2)}_\text{pattern list}) 
+   $\_::_s\_$},\underbrace{(\varphi_1,\varphi_2)}_\text{two patterns}) 
    \right)
 $$
 Using this helper function, we can write the meta-representation of $O ::_\Nat 
@@ -4134,15 +4133,14 @@ and its axiom
 $\Kqappend(s,\varphi_1,\varphi_2)$ \\
 $= \Kapplication(\underbrace{\Ksymbol(\qquottt{append}, (s), 
 (\KqList(s),\KqList(s)), \KqList(s))}_\text{meta-representation of 
-	$\_@_s\_$},\underbrace{(\varphi_1,\varphi_2)}_\text{pattern list})$
+	$\_@_s\_$},\underbrace{(\varphi_1,\varphi_2)}_\text{two patterns})$
 \end{tabular} 
 \right)
 \end{equation*}
 
 
 \subsubsection{Represent Axioms}
-The theory $T_L$ defines some patterns as axioms.
-For example, the following two patterns are axioms of~$T_L$:
+The theory $T_L$ defines some axioms. For example
 \begin{align*}
 & x \cln \Nat + O = x \cln \Nat \\
 & (x \cln s ::_s L_0 \cln \parametric{\List}{s}) @_s L \cln 
@@ -4158,7 +4156,7 @@ Recall that equality ``$=$'' is sort parametric, so the above axioms should be
 s::_s (L_0 \cln 
 \parametric{\List}{s}@_s L\cln \parametric{\List}{s})
 \end{align*}
-for any sort $s,s'$ in theory $T_L$.
+for any sort $s,s'$ defined in theory $T_L$.
 To represent those axioms in the meta-theory, we first calculate the 
 meta-representations of those axioms, that is
 \begin{alignat*}{2}
