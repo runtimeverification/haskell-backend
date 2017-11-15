@@ -3959,7 +3959,7 @@ For parametric symbols, we define axioms
 %$$
 
 \subsection{Represent Matching Logic Patterns and Axioms}
-The theory $T_L$ has defined many axioms.
+The theory $T_L$ defines many axioms.
 Two of them are
 \begin{align*}
 & x \cln \Nat + O = x \cln \Nat \\
@@ -3969,17 +3969,22 @@ Two of them are
 \end{align*}
 How to represent them in the meta-theory?
 The answer is similar to how to represent sorts and symbols.
-We firstly obtain meta-representations of those axioms, and add axioms to the 
-meta-theory saying that they are declared, using the $\KaxiomDeclared$ 
-predicate symbol.
+We firstly obtain meta-representations of those axioms, and use the predicate 
+symbol $\KaxiomDeclared$ to say they are axioms of $T_L$.
 
 \subsubsection{Meta-Representations of Patterns}
 We start from the basic.
-The most basic patterns are variables.
-The meta-representation of a variable, say $x \cln \Nat$, is constructed using 
-the constructor $\Kvariable$:
+Recall that we defined the constructor
+\begin{equation*}
+  \Kvariable \colon \underbrace{\KString}_\text{variable name} \times 
+  \underbrace{\KSort}_\text{variable sort} \to \KVariable
+\end{equation*}
+to construct meta-representations of variables.
+Consider a variable, say $x \cln \Nat$, which has a variable name $x$ and a 
+sort $\Nat$.
+Thus its meta-representation is
 $$ \Kvariable(\underbrace{\qquottt{x}}_\text{the name of $x$}, 
-\underbrace{\KqNat}_\text{meta-representation of $\Nat$}) $$
+\underbrace{\KqNat}_\text{the meta-representation of $\Nat$}) $$
 Notice that what we get here is a $\KVariable$ pattern, because $\Kvariable$ is 
 a $\KVariable$ constructor (see Section~\ref{sec:ML-patterns}).
 More often, we want to obtain a meta-representation of the variable $x \cln 
