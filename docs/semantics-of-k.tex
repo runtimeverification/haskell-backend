@@ -2073,13 +2073,19 @@ be no finite or algorithmic way to represent those
 (e.g., the set of properties of the ``builtin'' model of natural numbers is
 not r.e.).
 
-\section{Towards a Formal Semantics of {\K}: The Meta-Theory}
+\section{Towards a Formal Semantics of {\K}: The Need For a Meta-Theory}
 \label{sec:meta-theory-reflection}
 
-{\K} is the best realization of matching logic, and it involves reasoning with 
-various matching logic theories, including theories of binders, 
-fixed-points, contexts, and rewriting and reachability as we have seen in 
-Section~\ref{sec:case-studies}.
+{\K} is a best effort realization of matching logic.
+It was created and developed as a semantic framework for the domain
+of programming languages, but it is not limited to this domain.
+It was, however, tuned for defining and reasoning with theories like
+those in Section~\ref{sec:case-studies}, i.e.,
+binders, fixed-points, contexts, rewriting, and reachability, which
+are particularly useful for programming language semantics.
+In the context of complex languages, we often need many or all of the
+above-mentioned theories in addition to more user-defined theories, that is,
+proof tasks have the form:
 $$
 \underbrace{T_\textrm{binders} \cup
 T_\textrm{fixed-points} \cup 
@@ -2087,47 +2093,56 @@ T_\textrm{contexts} \cup
 T_\textrm{rewriting} \cup 
 \cdots \cup 
 T_\textrm{user-defined} \vdash \cdots}_
-\text{\K is the best realization of matching logic reasoning}
+\text{\K is a best effort realization of matching logic reasoning}
 $$
-Those theories are of course important and they are all infinite theories.
-As a result, we need some ways to finitely represent them, for example using 
-\emph{schema mechanisms} (see Section~\ref{sec:finite-mechanisms}).
+Notice that, as discussed in Section~\ref{sec:case-studies}, all these
+theories are potentially infinite.
+To make it possible to even write down such theories or proof tasks,
+\K has adopted finite mechanisms to define infinite theories like those in
+Section~\ref{sec:finite-mechanisms} based on sort, symbol, and
+pattern \emph{schemas}.
 
-This leads us to the question:
+This naturally leads to the question:
 \emph{what is the formal semantics of those schema mechanisms}?
-This is not a useless question, as one should be able to take (a) matching 
-logic introduced in~\cite{rosu-2017-lmcs} and (b) the semantics of \K defined 
-as a combo of matching logic theories in this proposal, and implement \K.
-If we do not provide a formal semantics for schema mechanisms (or whatever 
-techniques that we use to define infinite theories), our developers of \K will 
-have to guess what those schema mechanisms used in (b) mean and thus not be 
-able to do their work properly.
+Without a precise answer to this question, the problem of a correct
+implementation of \K cannot even be formulated.
+Even without the correctness of the \K implementation explicitly stated as a goal,
+developers of \K would have to guess what those schema mechanisms mean and
+thus yield potential inconsistencies, disagreements and ultimately slowdowns
+in the implementation process.
 
-One may argue: ``we do not have a \emph{formal} semantics for (a), i.e., 
-matching 
-logic, in~\cite{rosu-2017-lmcs} anyway, so why bother to give (b) formal 
-semantics?''
-The reason is that matching logic is fixed while the theories underlying \K are 
-moving targets: 
-we may change existing theories and add new theories.
-Therefore, we can afford to write an informal but comprehensive paper (such 
-as~\cite{rosu-2017-lmcs}) about matching logic, and educate our \K developers 
-once and for all, but we 
-cannot afford to write for each underlying theory of \K such an informal 
-document and educate our \K developers whenever we change the theory.
-Suppose some time in the future we design a new theory $T_\textrm{symbolic}$ 
-for symbolic execution and decide to add it to \K, and we
-use some new sorts of mechanisms to define $T_\textrm{symbolic}$.
-We will then need to explain not only the theory $T_\textrm{symbolic}$ but also 
-the meaning of those new mechanisms.
-And we are not in favor of such approach.
+It is worth noting that any formalism expressive enough to capture the intended
+meaning of schemas would suffice for this purpose.
+For example, one could use a formal system like Coq \cite{coq},
+Isabelle~\cite{isabelle}, Agda~\cite{agda}, Vampire~\cite{vampire},
+Maude~\ref{maude}, etc., and encode all matching logic elements in it:
+sorts and sort schemas, symbols and symbol schemas, patterns and
+pattrn schemas, and even the entire sound and complete deduction system in
+Section~\ref{sec:deduction}.
+Then one could use such a target system not only to yield a formal semantics
+to finite or infinite matching logic theories and thus to \K, but also to
+define and reason about any matching logic theory.
+Such encodings, also called embeddings, of one formalism into another are
+quite common.
+In fact, previous implementations of \K used two such encodings, one to
+Maude and another to Coq (called \K backends).
 
-Instead, we look for a \emph{one-stop solution}, that is, no matter what smart 
-techniques and mechanisms we have used, are using, and will use to help us 
-defining infinite theories, they 
-can all be explained and formally defined in the same unified manner.
-And we did find one such one-step solution. We called it \emph{the meta-theory 
-$K$.}
+One important lesson we learned from our previous embedding efforts of \K
+into other systems was that such encodings can be quite complex and slow,
+hard to understand and thus to maintain and debug, and ultimately depend
+upon the target system which itself is a research tool under continuous
+change/improvement.
+Therefore, we take a different approach here, which is also common:
+\emph{we define the formal semantics of matching logic in (a fragment of)
+matching logic itself}.
+Specifically, in the \emph{finite} fragment of matching logic, which is
+much simpler and is well-understood.
+This not only incentivizes an accelerated development of implementations
+of matching logic, such as \K, but also serves as a basis for simpler
+and cleaner implementations of other backends for \K, because it is much
+simpler and cleaner to encode finite theories than infinite ones.
+
+...
 
 Just like how one can use the theory of Presburger arithmetic to study the 
 properties of natural numbers, and how one can use the theory of rewriting and 
@@ -2136,15 +2151,15 @@ meta-theory $K$ to study the properties of matching logic and matching logic
 theories.
 More specifically, we expect the following \emph{reflection relation}:
 \begin{center}
-	\begin{tabular}{cc}
+	\begin{tabular}{c}
 		$
-		\prftree[r]{\footnotesize (Upward Reflection)}
+		\prftree[r]{\hspace*{3ex}\textsc{(Upward Reflection)}}
 		{T \vdash \varphi}
 		{K \cup \denote{T} \vdashfin \Kdeduce(\denote{\varphi})}
 		$
-		&
+		\\[4ex]
 		$
-		\prftree[r]{\footnotesize (Downward Reflection)}
+		\prftree[r]{\hspace*{3ex} \textsc{(Downward Reflection)}}
 		{K \cup \denote{T} \vdashfin \Kdeduce(\denote{\varphi})}
 		{T \vdash \varphi}
 		$
