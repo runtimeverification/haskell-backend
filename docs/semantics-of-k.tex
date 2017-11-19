@@ -932,7 +932,8 @@ Formulae in $A$ can therefore be regarded as axioms, and we even take the
 freedom to call them axioms when there is no misunderstanding.
 However, note that a proof system is fixed for the target logic, including
 all its axioms (i.e., proof rules with no hypotheses).
-We use the notation $T \vdashfin \varphi$ or $A \vdashfin \varphi$ to emphasize the fact that the theory $T$ or the set of axioms $A$ is finite.
+We use the notation $T \vdashfin \varphi$ or $A \vdashfin \varphi$ to
+emphasize the fact that the theory $T$ or the set of axioms $A$ is finite.
 
 Proof systems can be and typically are infinite, that is, contain infinitely
 many proof rules.
@@ -2102,8 +2103,9 @@ To make it possible to even write down such theories or proof tasks,
 Section~\ref{sec:finite-mechanisms} based on sort, symbol, and
 pattern \emph{schemas}.
 
-This naturally leads to the question:
-\emph{what is the formal semantics of those schema mechanisms}?
+This leads to the question:
+\emph{what is the formal semantics of those schema mechanisms, and thus
+of \K}?
 Without a precise answer to this question, the problem of a correct
 implementation of \K cannot even be formulated.
 Even without the correctness of the \K implementation explicitly stated as a goal,
@@ -2113,9 +2115,9 @@ in the implementation process.
 
 It is worth noting that any formalism expressive enough to capture the intended
 meaning of schemas would suffice for this purpose.
-For example, one could use a formal system like Coq \cite{coq},
+For example, one could choose a formal system like Coq~\cite{coq},
 Isabelle~\cite{isabelle}, Agda~\cite{agda}, Vampire~\cite{vampire},
-Maude~\ref{maude}, etc., and encode all matching logic elements in it:
+Maude~\cite{maude}, etc., and encode all matching logic elements in it:
 sorts and sort schemas, symbols and symbol schemas, patterns and
 pattrn schemas, and even the entire sound and complete deduction system in
 Section~\ref{sec:deduction}.
@@ -2132,24 +2134,26 @@ into other systems was that such encodings can be quite complex and slow,
 hard to understand and thus to maintain and debug, and ultimately depend
 upon the target system which itself is a research tool under continuous
 change/improvement.
-Therefore, we take a different approach here, which is also common:
+Therefore, based on our experience, such encoding can hardly
+be used as a means to describing the semantics of \K.
+Interested users or developers of \K would not only have to learn an
+additional language and system, the target system, but would also have to
+decipher complex encodings and translate their target language meaning back
+to \K.
+Consequently, we take a different approach here, which is also relatively
+common:
 \emph{we define the formal semantics of matching logic in (a fragment of)
 matching logic itself}.
-Specifically, in the \emph{finite} fragment of matching logic, which is
-much simpler and is well-understood.
-This not only incentivizes an accelerated development of implementations
-of matching logic, such as \K, but also serves as a basis for simpler
-and cleaner implementations of other backends for \K, because it is much
-simpler and cleaner to encode finite theories than infinite ones.
+Namely, the \emph{finite} fragment of matching logic, which is much simpler
+and is well-understood.
 
-...
-
-Just like how one can use the theory of Presburger arithmetic to study the 
-properties of natural numbers, and how one can use the theory of rewriting and 
-reachability to study the properties of rewriting systems, we can use the 
-meta-theory $K$ to study the properties of matching logic and matching logic 
-theories.
-More specifically, we expect the following \emph{reflection relation}:
+Specifically, in Section~\ref{sec:meta-theory} we define a particular but
+important finite matching logic theory $K$, which we call
+\emph{the meta-theory of matching logic}, with the property that it can
+represent and reason about any (recursively enumerable) elements of
+matching logic, finite or infinite.
+In particular, $K$ enjoys the following \emph{reflection} property, which we
+split in two properties for clarity and terminology:
 \begin{center}
 	\begin{tabular}{c}
 		$
@@ -2167,9 +2171,9 @@ More specifically, we expect the following \emph{reflection relation}:
 \end{center}
 where 
 \begin{itemize}
-	\item $T$ is any \emph{recursively enumerable} or \emph{finitely 
-	representable} matching logic theory; this includes all theories that we 
-	have seen in Section~\ref{sec:case-studies};
+	\item $T$ is any \emph{recursively enumerable} matching logic theory,
+	including all (finite or infinite) theories in
+	Section~\ref{sec:case-studies};
 	\item $\denote{T}$, called the \emph{meta-representation of $T$}, consists 
 	of definitions of finitely many matching logic symbols and finitely many 
 	matching logic patterns as axioms;
@@ -2180,27 +2184,34 @@ where
 	and it is a matching logic pattern in $K \cup \denote{T}$, i.e., the 
 	meta-theory instantiated by $T$;
 	\item $\Kdeduce$ is a predicate symbol defined in the meta-theory $K$ that 
-	axiomatizes the probability relation of matching logic (see 
+	axiomatizes the provability relation of matching logic (see 
 	Section~\ref{sec:ML-proof-system});
 \end{itemize}
+	
+With the meta-theory $K$, any schema mechanisms, conventions or notations
+that are found useful to define theories $T$ can be given a formal semantics by 
+defining a corresponding meta-representation $\denote{T}$, which is a finite
+artifact.
+Although any recursively enumerable domain can be algorithmically represented
+as a finite equational theory~\cite{bt95}, and thus as a finite matching logic
+theory, for practical reasons we consider new types of recursively
+enumerable theories $T$ and their encodings $\denote{T}$ on a by-need basis.
+In other words, the meta-theory $K$ gives us a one-stop solution to designing
+and using new mechanisms and notations to define potentially infinite
+theories.
 
-With the meta-theory $K$, whatever schema mechanisms or notations that we use 
-to define the theory $T$ can be given a formal semantics by 
-defining the meta-representation $\denote{T}$, which is a finite artifact.
-It also allows us to design and use new mechanisms and notations that help us 
-define infinite theories, as long as we have their semantics defined in the 
-meta-theory $K$.
-In other words, the meta-theory $K$ gives us a one-stop solution.
-
-As we will see in Section~\ref{sec:meta-theory}, the meta-theory $K$ is \emph{a 
-finite theory}.
-It has finitely many sorts, symbols, and axioms, so its definition requires no 
-use of any special mechanism.
-In fact, we will define it by simply enumerating all its sorts, symbols, 
-and axioms.
-Because of its finitary, the meta-theory $K$ also serves as a starting point of 
-implementing any tools 
-or back-ends for \K.
+From a practical perspective, the meta-theory $K$ can be regarded as
+bootstrapping and thus as a way to incentivize an accelerated development of
+implementations of matching logic, such as \K.
+Moreover, since the meta-theory $K$ is ultimately a finite matching logic
+theory, defined by simply enumerating all its sorts, symbols and patterns
+(Section~\ref{sec:meta-theory}), it is relatively easy to implement and
+translate to other formalisms, so it can serve as a starting point for 
+implementing tools and backends for \K.
+Even if tools/backends for \K prefer a different implementation
+approach, the meta-theory $K$ still serves as a uniform foundation/language
+which they can use to justify their correctness or communicate artifacts,
+e.g., generated theories or proofs.
 
 %Consider a matching logic prover $P$ that decides whether a matching logic 
 %patter $\varphi$ holds in a matching logic theory $T$. 
@@ -2222,22 +2233,26 @@ or back-ends for \K.
 %inputs, we are in particular interested in \emph{finite representations} of 
 %patterns and matching logic theories.
 
-The meta-theory $K$ is called a \emph{reflective 
-logic} of matching logic, because it is a matching logic theory that defines 
-matching logic.
-Generally speaking, reflection in logic and programming languages is a mature 
-research area and has been extensively studied.
-We here quote a rather broad definition of reflection by Brian Smith, who 
-in~\cite{smith-1984-popl} defines reflection as
-\begin{displayquote}
-	an entity’s integral ability to represent, operate on,
-	and otherwise deal with its self in the same way that
-	it represents, operates on and deals with its primary
-	subject matter.
-\end{displayquote}
-It is in general interesting to see how our meta-theory relates to the study of 
-reflection in literature, but it is not the main interest in this proposal, so 
-we leave it to future work.
+It is worth noting that the meta-theory $K$ makes
+matching logic a \emph{reflective logic}; according to~\cite{smith-1984-popl},
+reflection is ``an entity's integral ability to represent, operate on,
+and otherwise deal with its self in the same way that it represents, operates
+on and deals with its primary subject matter.''
+While reflection is an interesting property to have for all the reasons
+above and more, note that almost all non-trivial logics enjoy it; for example,
+all logics including or capable of defining equational logic~\cite{bt95}.
+The challenge is to devise a \emph{useful meta-theory} that gives tool developers
+incentives to incorporate it in their tool chain or at least to use it for
+communicating their tool artifacts.
+This was the main driving force behind the design of our $K$ meta-theory
+presented in Section~\ref{sec:meta-theory}.
+\improvement{We should also talk about the negatives of using a meta-theory
+as a reference semantics.  E.g., there is apparent additional level of indirection,
+which goes in both directions;
+but this is unavoidable, otherwise we get inconsistencies: substitution-like
+operation needs $\FV$, and $\{x\} = \FV(x*0) = \FV(0) = \emptyset$;
+$\denote{...}$ cannot be a symbol.}
+
 
 \section{Meta-Theory of Matching Logic}
 \label{sec:meta-theory}
