@@ -2382,20 +2382,26 @@ The third approach might seem a bit verbose but it is the most fundamental and
 essential one, as it does not require equality and thus it can be used in 
 all theories even if the definedness symbols are not defined.
 
-\subsubsection{Using Symbol Schemas Does Not Make Meta-Theory Infinite}
+\subsubsection{Schemas Do Not Necessarily Make a Finite (Meta-)Theory Infinite}
 \label{sec:symbol-schema-finitary}
-As we have shown in Section~\ref{sec:three-ways-of-defining-predicate-symbols},
-the meta-theory $K$ contains some predicate symbols defined using symbol 
-schemas.
-Smart readers might be wondering whether that leads to an infinite theory, and 
-the answer is no. 
-Using symbol schemas in defining the meta-theory $K$ does not make it an 
-infinite theory, because we never use \emph{sort schemas}.
-Therefore, the meta-theory $K$ only has a finite number of sorts.
-As long as the number of sorts are finite, we can freely use both symbol 
-schemas and axiom schemas to help us defining $K$ without taking the risk of 
-making the whole theory an infinite one, because any (symbol or axiom) schema 
-will have only finitely many instances.
+
+As seen in Section~\ref{sec:three-ways-of-defining-predicate-symbols},
+the meta-theory $K$ is planned to contain some predicate symbols defined
+using symbol and pattern/axiom schemas.
+The reader may wonder whether that leads to an infinite theory.
+The answer is no.
+Adding a finite number of symbol schemas to an otherwise finite theory,
+be it $K$ or not, does not make it an infinite theory.
+If a theory has only a finite number of sorts, then a symbol schema also
+has only a finite number of symbol instances, one for each combination of
+sorts as instances of its parameters (i.e., sort meta-variables).
+The same applies for axiom/pattern schemas whose meta-variables only range
+over sorts, like those needed to define the predicate symbols.
+(Sort schemas, and axiom/pattern schemas with meta-variables ranging over
+patterns, on the other hand, make a theory infinite.)
+Therefore, the meta-theory $K$ stays finite as long as the number of sorts are
+finite (in particular, no sort schemas) and the symbol and axiom/pattern
+schemas only use sort meta-variables.
 
 %\subsubsection{Typewriter Fonts versus Italic Fonts}
 %As we have seen, variable names in $K$ are printed in italic fonts.
@@ -2414,13 +2420,10 @@ On the other hand, we never regard the meta-theory as a final product.
 As \K evolves, the meta-theory also has to evolve accordingly.
 
 
-\subsubsection{A Roadmap of The Definition of Meta-Theory}
-Starting from the next subsection, we will define the meta-theory $K$ in full 
-detail.
-We will organize the lengthy definition into six sections (running from 
-Section~\ref{sec:chars-string} to Section~\ref{sec:ML-proof-system})
-with each subsection defining a high-cohesion-loose-coupling part of the 
-meta-theory:
+\subsubsection{A Roadmap of The Definition of The Meta-Theory}
+We organize the definition of the meta-theory $K$ into six
+parts, running from Section~\ref{sec:chars-string} to
+Section~\ref{sec:ML-proof-system}, as follows:
 \begin{center}
 \begin{tabular}{l|l}
 	\textbf{Section} & \textbf{Contents}
@@ -2441,23 +2444,22 @@ meta-theory:
 	Section~\ref{sec:ML-proof-system} & Axiomatization of the proof system of 
 	matching logic
 	\\\hline
-	Section~\ref{sec:K-summary} & A summary of all sorts, symbols, and axioms 
-	in $K$
 \end{tabular}
 \end{center}
-
-We tried to make sure for any $x, y \in \{2,3,4,5,6,7\}$ and $x < y$, that 
+Section~\ref{sec:K-summary} then gives a summary of all sorts, symbols, and
+axioms of $K$.
+We tried to ensure for any $x, y \in \{2,3,4,5,6,7\}$ and $x < y$, that 
 Section~\ref{sec:meta-theory}.$x$ does not refer to the contents that are 
-introduced in Section~\ref{sec:meta-theory}.$y$, but it is not always the case.
-The readers should be prepared to see some sorts and symbols are used before 
-they are formally defined, in which case there will be informal explanations 
-about those sorts and symbols.
+introduced in Section~\ref{sec:meta-theory}.$y$.
+Unfortunately, that was not entirely possible;
+informal explanations will be given whenever sorts or symbols are used before
+they are formally defined.
 
 \subsection{Characters and Strings}
 
 \label{sec:chars-string}
 The sort $\KChar$ is the sort for \emph{characters}. It has the following $26 + 
-26 + 10 + 3 = 65$ functional constructors:
+26 + 10 + 3 = 65$ functional constructors (more can be added is needed or desired):
 \begin{center}
 	\begin{tabular}{c c c}
 		$\quottt{a} \colon \to \KChar$ & $\quottt{b} \colon \to \KChar$ & 
@@ -2478,7 +2480,7 @@ The sort $\KChar$ is the sort for \emph{characters}. It has the following $26 +
 	\end{tabular}
 \end{center}
 
-\paragraph{Strings as Finite Lists of Characters.}\quad
+\paragraph{Strings as Finite Lists of Characters.}
 Characters are used to construct \emph{strings}, defined as cons-lists of 
 characters.
 The sort for strings is $\KCharList$, which will be defined in 
@@ -2495,13 +2497,13 @@ characters, and it is not quite user-friendly to write $\KCharList$ for the
 sort of strings.
 Therefore, we introduce $\KString$ as an alias of $\KCharList$, and we write 
 $\Kepsilon$ as an alias of $\KnilKCharList$ that represents the empty string.
-	As a convention, strings are often represented by texts wrapped with quotation marks. 
-	For example, instead of writing
+As a convention, strings are often represented by texts wrapped with
+double-quotation marks. 
+For example, we simply write $\qquottt{abc}$ instead of
 	$$
 	\KconsKCharList(\quottt{a}, \KconsKCharList(\quottt{b}, 
 	\KconsKCharList(\quottt{c}, \Kepsilon)))
 	$$
-	we simply write $\qquottt{abc}$ with the double-quotation marks.
 \end{notation}
 
 \subsection{Matching Logic Sorts and Symbols}
@@ -2523,11 +2525,11 @@ For parametric sorts such as \parametric{\List}{\Nat} and
 what their sort parameters are, and therefore it is easy to see how to 
 construct their meta-representations in $K$ using the constructor $\Ksort$.
 For non-parametric sort such as $\Nat$, we regard it as the ``parametric sort'' 
-\parametric{\Nat}{} which takes zero sort parameter.
+\parametric{\Nat}{} which takes zero sort parameters.
 This unified view of parametric and non-parametric sorts helps to keep the 
-meta-theory as simple as possible.
-We will adopt the same view in dealing with parametric symbols and 
-non-parametric symbols, too.
+meta-theory simple.
+We will adopt the same view in dealing with parametric/non-parametric symbols,
+too.
 
 The sort $\KSymbol$ is the sort for matching logic symbols.
 It has one functional constructor
@@ -2545,9 +2547,9 @@ meta-representation, it is often called the meta-representation of ``decorated
 symbols'', where the word ``decorated'' means that not only the name and sort 
 parameters of a symbol are included, but also its argument sorts and return 
 sort.
-For non-parametric symbols such as $\zero$ and $\textit{plus}$, we regard them 
-as the ``parametric symbols'' \parametric{\zero}{} and 
-\parametric{\textit{plus}}{} which take zero sort parameter.
+Non-parametric symbols such as $\zero$ and $\textit{plus}$ are regarded
+as parametric symbols \parametric{\zero}{} and 
+\parametric{\textit{plus}}{} taking and empty list of sort parameters.
 
 Two useful getter functions for $\KSymbol$ are defined:
 \begin{align*}
@@ -2556,9 +2558,9 @@ Two useful getter functions for $\KSymbol$ are defined:
 \end{align*}
 Both getter functions have very simple axioms
 \begin{align*}
- & \forall f\forall S \forall S'\forall s . \KgetArgumentSorts(\Ksymbol(f, S, 
+ & \forall f\forall S \forall S'\forall s \ .\ \KgetArgumentSorts(\Ksymbol(f, S, 
  S', s)) = S'\\
- & \forall f\forall S \forall S'\forall s . \KgetReturnSort(\Ksymbol(f, S, S', 
+ & \forall f\forall S \forall S'\forall s \ .\ \KgetReturnSort(\Ksymbol(f, S, S', 
  s)) = s
 \end{align*}
 Recall that we often write just $x$ instead of $x \cln s$ for logic variables 
@@ -2587,8 +2589,8 @@ certain variables are not meta-variables but normal logic variables, because
 only logic variables can be quantified.
 Readers will see such examples in Section~\ref{sec:ML-patterns}.
 
-\paragraph{Meta-Representations of Definedness Symbols}
-Definedness symbols, also known as the \emph{ceiling} symbol, are required by 
+\paragraph{Meta-Representations of Definedness Symbols.}
+Definedness symbols, also known as the \emph{ceiling} symbols, are required by 
 the sound and complete proof system of matching logic~\cite{rosu-2017-lmcs}.
 For any matching logic theory and two sorts $s, s'$ in the theory, we assume 
 the definedness symbol $\ceil{\_}_s^{s'}$ is defined in the theory, and it has 
@@ -2600,7 +2602,7 @@ Notice that $\ceil{\_}_s^{s'}$ is a 2-dimensional representation of the symbol
 $\parametric{\itceil}{s,s'}$:
 $$ \ceil{\_}_s^{s'} \equiv \parametric{\itceil}{s,s'} $$
 In the following, we will interchangeably use both the 2-dimensional 
-representation and the linear representation.
+and the linear representations.
 
 We introduce a function (not a constructor) $\KSymbolceil$ in the meta-theory 
 $K$:
@@ -2613,10 +2615,10 @@ $K$:
 which helps to construct the meta-representation of the definedness symbol 
 $\parametric{\itceil}{s,s'}$.
 The function~$\KSymbolceil$ is \emph{not} a constructor of sort $\KSymbol$ but 
-rather a helper function, as shown in the next axiom:
+rather a helper function, via the axiom:
 \begin{equation*}
- \forall s \forall s' . (\KSymbolceil(s, s') = \Ksymbol(\qquottt{ceil}, (s,s'), 
- (s), s'))
+ \forall s \forall s' \ .\ \KSymbolceil(s, s') = \Ksymbol(\qquottt{ceil}, (s,s'), 
+ (s), s')
 \end{equation*}
 Here we are writing
 \begin{center}
@@ -2633,10 +2635,10 @@ The last two shorthands are defined in Notation~\ref{notation:lists}.
 \begin{remark}
 	The function {\KSymbolceil} is used to construct the meta-representations 
 	of definedness symbols \emph{in the object theories}.
-	Smart readers may already notice that our meta-theory $K$ has equality, and 
-	thus must have definedness symbols defined.
-	That is exactly true.
-	In fact, the meta-theory $K$ has $n^2$ different definedness symbols:
+	The reader may have noticed that we assumed equality defined in the
+	meta-theory $K$, which means that we also assumed definedness symbols defined.
+	In fact, as discussed in Section~\ref{sec:symbol-schema-finitary}, the
+	meta-theory $K$ has $n^2$ different definedness symbols:
 	\begin{center}
 		$\ceil{\_}_{\smallshp s}^{\smallshp s'} \in \Sigma_K$ \qquad
 		for any $\shp s, \shp s' \in S_K$ that are sorts in the meta-theory $K$
@@ -2647,17 +2649,16 @@ The last two shorthands are defined in Notation~\ref{notation:lists}.
     It is simply a direct correspondence of the definedness symbol 
     $\parametric{\itceil}{s,s'}$ in the object theories.
     
-    Here is one more word about where the weird name {\KSymbolceil} comes from.
-    The first letter sharp {\texttt{\sharpsymbol}} tells us that it belongs to 
-    the 
-    meta-theory $K$.
-    The second letter quot {\texttt{`}} tells us that it corresponds to 
-    something in 
-    object theories (in this case, the definedness symbols in object theories).
-    As a general principle, we use the quot {\texttt{`}} for naming
+    An explanation for the name {\KSymbolceil} is needed.
+    The first character of the name, {\texttt{\sharpsymbol}}, tells us that it
+    belongs to the meta-theory $K$.
+    The second character, {\texttt{`}}, tells us that it
+    corresponds to something defined in the object theory (in this case,
+    the definedness symbols in object theories).
+    As a general principle, we use the quote {\texttt{`}} for naming
     meta-theory symbols which directly correspond to things in object 
-    theories, so that we will not have a naming conflict with other meta-theory 
-    symbols.
+    theories, so that we will not have a naming conflict with other
+    meta-theory symbols.
 \end{remark}
 
 \subsection{Finite Lists}
