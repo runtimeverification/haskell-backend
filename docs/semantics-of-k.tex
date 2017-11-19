@@ -299,6 +299,8 @@
   \newcommand{\KnilKVariableList}{\texttt{\sharpsymbol nilVariableList}}
   \newcommand{\KconsKVariableList}{\texttt{\sharpsymbol consVariableList}}
   \newcommand{\KinKVariableList}{\texttt{\sharpsymbol inVariableList}}
+  \newcommand{\KappendKVariableList}{\texttt{\sharpsymbol appendVariableList}}
+  \newcommand{\KdeleteKVariableList}{\texttt{\sharpsymbol deleteVariableList}}
   \newcommand{\KappendKCharList}{\texttt{\sharpsymbol appendKCharList}}
   \newcommand{\KVariable}{\texttt{\sharpsymbol Variable}}
   \newcommand{\KVariableToKPattern}{\texttt{\sharpsymbol VariableToPattern}}
@@ -2975,18 +2977,18 @@ $\KgetFVFromPatterns$
 & \KgetFV(\overline{\sigma(L)}) = \KgetFVFromPatterns(L)
 \\
 & \KgetFV(\overline{\varphi \wedge_s \psi}) = 
-\KappendKPatternList(\KgetFV(\varphi), \KgetFV(\psi))
+\KappendKVariableList(\KgetFV(\varphi), \KgetFV(\psi))
 \\
 & \KgetFV(\overline{\neg_s \varphi}) = \KgetFV(\varphi)
 \\
-& \KgetFV(\overline{\exists_s v . \varphi}) = \KdeleteKPatternList(v, 
+& \KgetFV(\overline{\exists_s v . \varphi}) = \KdeleteKVariableList(v, 
 \KgetFV(\varphi))
 \\
 & \KgetFVFromPatterns(\KnilKPatternList) = \KnilKPatternList
 \\
 & \KgetFVFromPatterns(\KconsKPatternList(\varphi, L))
 \\
-& = \KappendKPatternList(\KgetFV(\varphi), \KgetFVFromPatterns(L))
+& = \KappendKVariableList(\KgetFV(\varphi), \KgetFVFromPatterns(L))
 \end{align*}
 
 The predicate symbol schema
