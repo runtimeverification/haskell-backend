@@ -3634,26 +3634,33 @@ this right now. I need to work on revising Section 8.}
 
 \section{Represent Theories in the Meta-Theory}
 \label{sec:reflect}
-We have shown readers the big picture of reflection in matching logic and  
-the role the meta-theory $K$ plays in defining the semantics of \K in 
-Section~\ref{sec:meta-theory-reflection}.
-We also defined the entire meta-theory $K$ in 
-Section~\ref{sec:meta-theory}.
-In this section, we will deepen our discussion about the reflection in matching 
-logic and the meta-theory $K$ building upon the discussion in 
-Section~\ref{sec:meta-theory-reflection}.
-More specifically speaking,
-\begin{itemize}
-	\item We will show how to obtain 
-	the meta-representation of a matching logic theory $T$, which we denoted as 
-	$\denote{T}$;
-	\item We will establish the faithfulness theorem of the meta-theory $K$;
-\end{itemize}
+In Section~\ref{sec:meta-theory-reflection}, we showed the reason why we 
+need a meta-theory and its role in defining the semantics of \K.
+In particular, we introduced the reflection property
+\begin{center}
+	\begin{tabular}{c}
+		$
+		\prftree[r]{\hspace*{3ex}\textsc{(Upward Reflection)}}
+		{T \vdash \varphi}
+		{K \cup \denote{T} \vdashfin \Kdeduce(\denote{\varphi})}
+		$
+		\\[4ex]
+		$
+		\prftree[r]{\hspace*{3ex} \textsc{(Downward Reflection)}}
+		{K \cup \denote{T} \vdashfin \Kdeduce(\denote{\varphi})}
+		{T \vdash \varphi}
+		$
+	\end{tabular}
+\end{center}
+However, we did not show what the meta-representations $\denote{T}$ and 
+$\denote{\varphi}$ look like.
+In this section, we will use an example theory to show how to obtain the 
+meta-representations $\denote{T}$ and $\denote{\varphi}$.
 This section also serves as a warming-up section of Section~\ref{sec:kore}, 
-where we will define the Kore language.
+where we define the Kore language.
 
 \subsection{A Running Example}
-Let us define a matching logic theory $T_L = (S_L, \Sigma_L, A_L)$ as our 
+We use a simple theory $T_L = (S_L, \Sigma_L, A_L)$ as our 
 running example.
 The theory $T_L$ has a sort $\Nat$ and a sort schema $\parametric{\List}{s}$ 
 for any sort $s \in S_L$.
@@ -3669,7 +3676,8 @@ For sort $\Nat$, two constructors and a plus function are defined
   $\_+\_ \colon \Nat \times \Nat \to \Nat$ & \doubleslash the plus function
 \end{tabular}
 \end{center}
-For sort schema $\parametric{\List}{s}$, two constructors and an append
+For sort $\parametric{\List}{s}$, $s \in S_L$, two constructors and an 
+append
 function are defined 
 \begin{center}
 	\begin{tabular}{ll}
@@ -3683,26 +3691,27 @@ function are defined
 	\end{tabular}
 \end{center}
 The theory $T_L$ also gets some axioms.
-For example, the following are two axiom schemas in $T_L$.
+For example, the following are two axiom (schemas) in $T_L$.
 \begin{align*}
 & x \cln \Nat + O =_{\Nat}^{s'} x \cln \Nat \\
 & (x \cln s ::_s L_0 \cln \parametric{\List}{s}) @_s L \cln 
 \parametric{\List}{s}
 =_{\parametric{\List}{s}}^{s'} x \cln s::_s (L_0 \cln 
 \parametric{\List}{s}@_s L\cln \parametric{\List}{s}) \\
-& \text{\doubleslash for any sorts $s, s'$ of $T_L$}
+& \text{\doubleslash for any sorts $s, s'$ in $T_L$}
 \end{align*}
 
 \subsection{Naming Functions}
-Our theory $T_L$ are defined using many fancy mathematical notations, including
-special letters ($+$,$@$, $::$), mixfix operators ($\_+\_$, $\_::\_$, $\_@\_$), 
+We use mathematical notations to define $T_L$, such as
+special letters ($+$,$@$, $::$),
+mixfix operators ($\_+\_$, $\_::\_$, $\_@\_$),
 and 2-dimensional representations such as subscripts ($\_@_s\_$).
-In order to represent $T_L$ in the meta-theory $K$, we first have to deal with 
-those mathematical notations and give them a unified form. 
+In order to represent $T_L$ in the meta-theory $K$, we should represent
+those mathematical notations in a unified form using \emph{strings}.
 This process is called \emph{naming}.
-A naming function associates any ``artifacts'' or ``things'' in $T_L$ with a 
-$\KString$ pattern in the meta-theory $K$.
-For example, the following is a possible naming of $T_L$
+A naming function associates any ``artifact'' or ``thing'' in $T_L$ with a 
+$\KString$ pattern as its name.
+For instance, the following is a possible naming of $T_L$
 \begin{center}
 	\begin{tabular}{l|l}
 		\textbf{Things in $T_L$} & \textbf{Names as $\KString$ Patterns}
@@ -3728,20 +3737,21 @@ For example, the following is a possible naming of $T_L$
 	    Variable Name $L_0$ & \qquottt{L0}
 	    \\\hline
 	    Variable Name $L$ & \qquottt{L}
+	    \\\hline
+	    \dots & \dots
 	\end{tabular}
 	\captionof{table}{An Example Naming of $T_L$}
 	\label{tab:naming}
 \end{center}
 Notice that we do not bother to name the meta-variable $s$ that is used as sort 
-parameters in defining theory $T_L$, because meta-variables do not 
-belong to the theory $T_L$, but rather a tool or a mechanism from the 
+parameters in defining theory $T_L$, because strictly speaking meta-variables 
+do not belong to the theory $T_L$, but rather a tool or a mechanism from the 
 outside that help defining $T_L$.
 
-There are of course more than one possible naming for theory $T_L$.
-As long as different ``things'' in $T_L$ get different names, it does not 
-matter what naming we use.
+There are of course more than one naming of $T_L$.
+As long as different ``things'' get different names, it does not 
+matter what naming function we choose.
 This is known as the \emph{principle of unique names}.
-
 In the following, we fix a naming for $T_L$ to be the one in 
 Table~\ref{tab:naming}.
 
@@ -3757,10 +3767,10 @@ so its meta-representation is the following $\KSort$ pattern
 $$
 \Ksort(
 	\underbrace{\qquottt{Nat}}_\text{name of $\Nat$}, 
-	\underbrace{\KnilKSortList}_\text{$\Nat$ has no sort parameter})
+	\underbrace{\KnilKSortList}_\text{no sort parameter})
 $$
-The parametric sort $\parametric{\List}{\Nat}$ has a sort parameter $\Nat$, so 
-its meta-representation is
+The parametric sort $\parametric{\List}{\Nat}$ has one sort parameter $\Nat$, 
+so its meta-representation is
 $$
 \Ksort(
 	\underbrace{
@@ -3768,7 +3778,7 @@ $$
 		\text{name of $\List$}, 
 	\underbrace{
 		\KconsKSortList(\Ksort(\qquottt{Nat}, \KnilKSortList),\KnilKSortList)}_
-		\text{the singleton sort list $\Nat$})
+		\text{the singleton list $\Nat$ of sort parameters})
 $$
 or using our abbreviation notation for list expressions 
 (Notation~\ref{notation:lists}):
@@ -3776,22 +3786,19 @@ $$
 	\Ksort(
 		\qquottt{List}, 
 		\underbrace{(\Ksort(\qquottt{Nat},\KnilKSortList))}_
-			\text{the singleton sort list $\Nat$})
+			\text{the singleton list $\Nat$ of sort parameters})
 $$
 The parametric sort $\parametric{\List}{\parametric{\List}{\Nat}}$ has a sort 
 parameter $\parametric{\List}{\Nat}$, so its 
 meta-representation is
 $$ \Ksort(\qquottt{List}, \underbrace{(\Ksort(\qquottt{List}, 
 (\Ksort(\qquottt{Nat},\KnilKSortList))))}_
-	\text{the singleton sort list $\parametric{\List}{\Nat}$})$$
+	\text{the singleton list $\parametric{\List}{\Nat}$ of sort parameters})$$
 
 Even though we use abbreviation notations for list expressions, the 
-meta-representations are still often too lengthy to fit in one line or 
-even one page.
-To ease the pain of reading and writing huge meta-representations, we define 
-the following two helper functions in $\denote{T}$ that allow us to write 
-meta-representations 
-more compactly
+meta-representations can still be too lengthy to write and read.
+Therefore, we define some helper functions in $\denote{T_L}$ that allow us to 
+write meta-representations more compactly
 \begin{center}
 \begin{tabular}{ll}
 $\KqNat \colon \to \KSort         $ & \doubleslash $\Nat$ needs no sort 
@@ -3835,26 +3842,31 @@ Notice how similar the sorts in $T_L$ and their meta-representations in $K$ are.
 \paragraph{Represent Sort Definitions.}
 The theory $T_L$ only defines sorts $\Nat, \parametric{\List}{\Nat}, 
 \parametric{\List}{\parametric{\List}{\Nat}}, \dots$ and not any other sorts.
-This fact is important and should be represented.
-In the meta-theory, we have a predicate symbol $\KsortDeclared$ 
-that does 
-exactly this job (see Section~\ref{sec:ML-theories}).
-The theory $T_L$ defines sort~$\Nat$.
-This is axiomatized as
+This fact is important and should be represented in $\denote{T_L}$ using
+the predicate symbol $\KsortDeclared$ (see Section~\ref{sec:ML-theories}).
+
+The theory $T_L$ defines sort~$\Nat$,
+so we add the axiom schema to $\denote{T_L}$
 $$ \parametric{\KsortDeclared}{\shs}(\KqNat) \qquad \text{for any $\shs \in 
 S_K$}$$
-The theory defines $\parametric{\List}{s}$ for any sort $s$ that it defines.
-This is axiomatized as
-$$ \forall s . \left( 
-\underbrace{\parametric{\KsortDeclared}{\shs}(s)}_\text{if $s$ is defined} \to 
-\underbrace{\parametric{\KsortDeclared}{\shs}(\KqList(s))}_\text{then 
-$\parametric{\List}{s}$ is defined} \right) \qquad \text{for any 
-$\shs \in S_K$}$$
+Notice that adding axiom schemas to $\denote{T_L}$ does not make $\denote{T_L}$ 
+an infinite artifact, because there are only finitely many sorts in $S_K$.
+
+Similarly, $T_L$ defines sort $\parametric{\List}{s}$ for any sort $s$ that it 
+defines, so we add the next axiom schema to $T_L$
+$$ \forall s \cln \KSort . \left( 
+\underbrace{\parametric{\KsortDeclared}{\shs}(s \cln \KSort)}_\text{if $s$ is 
+defined} \to 
+\underbrace{\parametric{\KsortDeclared}{\shs}(\KqList(s \cln 
+\KSort))}_\text{then 
+$\parametric{\List}{s}$ is defined} \right)$$
+Notice how meta-variable $s$ is represented by a variable $s \cln \KSort$ in 
+the meta-theory.
+\improvement{We should explain how such axioms in $\denote{T_L}$ capture the 
+least fixed point semantics of sort schemas.}
 
 \subsection{Represent Symbols}
-Just like sorts, symbols have their meta-representations, 
-too.
-Recall we defined the constructor 
+Recall that we defined a constructor 
 \begin{equation*}
 \Ksymbol \colon {\underbrace{\KString}_\text{name}}\ 
 \times 
@@ -3866,12 +3878,12 @@ Recall we defined the constructor
 \end{equation*}
 to construct meta-representations of symbols.
 In $T_L$, the non-parametric symbol
-$$O \colon \to \Nat$$
+$$O \colon \!\to \Nat$$
 takes no argument and has return sort $\Nat$.
 Thus its meta-representation is
 \begin{alignat*}{2}
 \Ksymbol(
-&\qquottt{zero}, &&\quad\text{\doubleslash name of $O$} \\
+&\qquottt{zero}, &&\quad\text{\doubleslash name of $O \colon \!\to \Nat$} \\
 &\KnilKSortList,　&&\quad\text{\doubleslash no sort parameter} \\
 &\KnilKSortList, &&\quad\text{\doubleslash no argument sort} \\
 &\KqNat)         &&\quad\text{\doubleslash return sort is $\Nat$}
@@ -3969,7 +3981,7 @@ The theory $T_L$ defines non-parametric symbols $O, S, \_+\_$ and parametric
 symbols $\epsilon_s, \_::_s\_, \_@_s\_$ for any sort $s$ in $T_L$, and not any 
 other symbols.
 This fact is represented using the predicate symbol $\KsymbolDeclared$.
-For non-parametric symbols, it is straightforward to define axioms
+For non-parametric symbols, we add the next axioms to $\denote{T_L}$
 \begin{align*}
 & \parametric{\KsymbolDeclared}{\shs}(
     \underbrace{\Ksymbol(\qquottt{zero}, \KnilKSortList, \KnilKSortList, 
@@ -3984,7 +3996,8 @@ For non-parametric symbols, it is straightforward to define axioms
 	\KqNat)}_\text{the meta-representation of $\_+\_ \colon 
 	\!\Nat\times\Nat\to \Nat$})
 \end{align*}
-For parametric symbols, we define axioms
+For parametric symbols, we add the next axioms to $\denote{T_L}$
+\footnotesize
 \begin{align*}
 & \forall s . \left(
   \underbrace{\parametric{\KsortDeclared}{\shs}(s)}_\text{if $s$ is defined} \to
@@ -4011,6 +4024,8 @@ For parametric symbols, we define axioms
 	\parametric{\List}{s}$})
 \right)
 \end{align*}
+\normalsize
+Notice we abbreviate $s$ for $s \cln \KSort$ as we always do.
 %
 %The \emph{symbol lifting operation} is a mapping
 %$$ \denote{\_} \colon \Sigma \to \PATTERNS_\KSymbol $$
@@ -4041,13 +4056,15 @@ For parametric symbols, we define axioms
 The theory $T_L$ defines many axioms.
 Two of them are
 \begin{align*}
-& x \cln \Nat + O = x \cln \Nat \\
-& (x \cln s ::_s L_0 \cln \parametric{\List}{s}) @_s L\cln 
-\parametric{\List}{s} = x \cln s::_s (L_0 \cln 
-\parametric{\List}{s}@_s L\cln \parametric{\List}{s})
+& x \cln \Nat + O =_{\Nat}^{s'} x \cln \Nat \\
+& (x \cln s ::_s L_0 \cln \parametric{\List}{s}) @_s L \cln 
+\parametric{\List}{s}
+=_{\parametric{\List}{s}}^{s'} x \cln s::_s (L_0 \cln 
+\parametric{\List}{s}@_s L\cln \parametric{\List}{s}) \\
+& \text{\doubleslash for any sorts $s, s'$ in $T_L$}
 \end{align*}
 How to represent them in the meta-theory?
-The answer is similar to how to represent sorts and symbols.
+The answer is it is similar to the way we represent sorts and symbols.
 We firstly obtain meta-representations of those axioms, and use the predicate 
 symbol $\KaxiomDeclared$ to say they are axioms of $T_L$.
 
@@ -4075,8 +4092,8 @@ logic
 connectives (e.g. $\wedge_s$, $\neg_s$, $\exists_s$, $=_{s_1}^{s_2}$) are 
 constructed with the 
 corresponding constructors (e.g., $\Kand$, $\Knot$, $\Kexists$, $\Kequals$).
-We now focus on the meta-representations of \emph{structural} patterns, i.e., 
-patterns obtained by applying a symbol to a list of patterns
+We now focus on getting the meta-representations of
+patterns which are of the form 
 $$ \sigma(\varphi_1,\dots,\varphi_n)$$
 Recall that we defined a corresponding constructor
 $$ \Kapplication \colon \KSymbol \times \KPatternList \to \KPattern$$
@@ -4122,6 +4139,7 @@ Let us do the same thing to the plus function $\_+\_$.
 We define a helper function
 $$ \Kqplus \colon \KPattern \times \KPattern \to \KPattern $$
 and define an axiom
+\small
 $$ \forall \varphi_1 \forall \varphi_2 . \left( \Kqplus(\varphi_1, \varphi_2) = 
 \underbrace{\Kapplication(\underbrace{\Ksymbol(\qquottt{plus}, 
 \KnilKSortList, (\KqNat,\KqNat), \KqNat)}_\text{the symbol
@@ -4129,6 +4147,7 @@ $\_+\_ \colon \Nat \times \Nat \to \Nat$},
 \underbrace{(\varphi_1,\varphi_2)}_\text{two patterns})}_\text{the 
 meta-representation of pattern $\varphi_1 + \varphi_2$} \right)
 $$
+\normalsize
 These helper functions in $\denote{T_L}$ allows us to write compact 
 meta-representations of patterns.
 For example, the meta-representation of $S(O) + S(S(O))$ is
@@ -4150,6 +4169,7 @@ $$
 \Kqnil \colon \KSort \to \KPattern
 $$
 It has the axiom
+\small
 $$ \forall s . \left(
 \Kqnil(s) = \underbrace{\Kapplication(\Ksymbol(\qquottt{nil}, (s), 
 \KnilKSortList, 
@@ -4157,6 +4177,7 @@ $$ \forall s . \left(
 $\epsilon_s$}
 \right)
 $$
+\normalsize
 Using this helper function, we can easily construct meta-representations for 
 the patterns $\epsilon_s$ for any $s$, as shown in the next table
 \begin{center}
@@ -4177,9 +4198,10 @@ the patterns $\epsilon_s$ for any $s$, as shown in the next table
 The parametric symbol $\_::_s\_$ needs a sort parameter $s$ and it takes two 
 patterns as arguments.
 Let us define its helper function
-$$ \Kqcons \colon \underbrace{\KSort}_\text{the sort parameter} \times 
+$$ \Kqcons \colon \underbrace{\KSort}_\text{a sort parameter} \times \ 
 \underbrace{\KPattern \times \KPattern}_\text{two patterns} \to \KPattern $$
 and define the axiom
+\small
 $$ \forall s \forall \varphi_1 \forall \varphi_2 . \left( 
 \Kqcons(s,\varphi_1,\varphi_2) = 
   \underbrace{ \Kapplication(\Ksymbol(\qquottt{cons}, (s), (s,\KqList(s)), 
@@ -4187,6 +4209,7 @@ $$ \forall s \forall \varphi_1 \forall \varphi_2 . \left(
    $\varphi_1 ::_s \varphi_2$}
    \right)
 $$
+\normalsize
 Using this helper function, we can write the meta-representation of $O ::_\Nat 
 (S(O) ::_\Nat \epsilon_\Nat)$ as
 $$
