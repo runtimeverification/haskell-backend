@@ -287,15 +287,19 @@
   \newcommand{\KappendKSortList}{\texttt{\sharpsymbol appendSortList}}
   \newcommand{\KinKSortList}{\texttt{\sharpsymbol inSortList}}
   \newcommand{\KdeleteKSortList}{\texttt{\sharpsymbol deleteSortList}}
+  \newcommand{\KnilKSymbolList}{\texttt{\sharpsymbol nilSymbolList}}
+  \newcommand{\KconsKSymbolList}{\texttt{\sharpsymbol consSymbolList}}
   \newcommand{\KSymbolList}{\texttt{\sharpsymbol SymbolList}}
+  \newcommand{\KappendKSymbolList}{\texttt{\sharpsymbol appendSymbolList}}
   \newcommand{\KinKSymbolList}{\texttt{\sharpsymbol inSymbolList}}
+  \newcommand{\KdeleteKSymbolList}{\texttt{\sharpsymbol deleteSymbolList}}
   \newcommand{\KnilKCharList}{\texttt{\sharpsymbol nilCharList}}
   \newcommand{\KconsKCharList}{\texttt{\sharpsymbol consCharList}}
   \newcommand{\KVariableList}{\texttt{\sharpsymbol VariableList}}
   \newcommand{\KnilKVariableList}{\texttt{\sharpsymbol nilVariableList}}
   \newcommand{\KconsKVariableList}{\texttt{\sharpsymbol consVariableList}}
   \newcommand{\KinKVariableList}{\texttt{\sharpsymbol inVariableList}}
-
+  \newcommand{\KappendKCharList}{\texttt{\sharpsymbol appendKCharList}}
   \newcommand{\KVariable}{\texttt{\sharpsymbol Variable}}
   \newcommand{\KVariableToKPattern}{\texttt{\sharpsymbol VariableToPattern}}
   \newcommand{\KvariableAsPattern}{\texttt{\sharpsymbol variableAsPattern}}
@@ -3574,49 +3578,64 @@ In this subsection, we give a summary of the meta-theory $K = (S_K, \Sigma_K,
 A_K)$.
 We list all its sorts and symbols, together with their meaning.
 
-\subsubsection{Sorts}
-
+\subsubsection{Sorts in Meta-Theory}
+There are in total 10 sorts in the meta-theory.
 \begin{center}
 	\begin{tabular}{l|l}
 		\textbf{Sort} & \textbf{Meaning} \\
 		\hline
 		\KChar & Characters \\
 		{\KCharList} or \KString & Strings \\
-		\KSort & Matching logic sorts \\
-		\KSortList & Finite lists of matching logic sorts \\
-		\KSymbol & Matching logic symbols \\
-		\KSymbolList & Finite lists of matching logic symbols \\
-		\KVariable & Matching logic variables \\
-		\KVariableList & Finite lists of matching logic variables \\
-		\KPattern & Matching logic patterns \\
-		\KPatternList & Finite lists of matching logic patterns \\
+		\KSort & Sorts \\
+		\KSortList & Cons-lists of sorts \\
+		\KSymbol & Symbols \\
+		\KSymbolList & Cons-lists of symbols \\
+		\KVariable & Variables \\
+		\KVariableList & Cons-lists of variables \\
+		\KPattern & Patterns \\
+		\KPatternList & Cons-lists of patterns \\
 	\end{tabular}
 \end{center}
 
-\subsubsection{Symbols}
-\improvement{This table is far from complete, but I don't have time to work on 
-this right now. I need to work on revising Section 8.}
+\subsubsection{Symbols in Meta-Theory}
+
 	\begin{longtable}{l|l}
 	    \textbf{Symbols} & \textbf{Meaning} \\
-	    \hline
+	    \hline\hline
 	    \endhead
+	    $\ceil{\_}_{\smallshs_1}^{\smallshs_2}$ & $10 \times 10 = 100$ 
+	    definedness symbols in the meta-theory, 
+	    \\ & defined for each $\shs_1,\shs_2 \in 
+	    S_K$ \\
 	    \quottt{a}, \quottt{b}, \dots & 65 individual characters \\
+	    {\KnilKCharList} or \Kepsilon & Empty string \\
+	    \KconsKCharList & Concatenate a character to a string \\
+	    \KappendKCharList & Concatenate two strings \\
 	    \Ksort & Construct sorts \\
+	    \KnilKSortList & Empty sort list \\
+	    \KconsKSortList & Construct sort lists \\
+	    \KappendKSortList & Append two sort lists \\
+	    \KinKSortList & Check whether a sort belongs to a sort list \\
+	    \KdeleteKSortList & Delete a sort from a sort list \\
 	    \Ksymbol & Construct symbols \\
 	    \KgetArgumentSorts & Get the argument sorts of a symbol \\
 	    \KgetReturnSort & Get the return sort of a symbol \\
 	    \KSymbolceil & Construct meta-representations of definedness symbols 
 	    \\
-	    \KnilKSortList, \KconsKSortList & Construct cons-lists of sorts \\
-	    \KappendKSortList & Append two sort lists \\
-	    \KinKSortList & Check whether a sort belongs to a sort list \\
-	    \KdeleteKSortList & Delete a sort from a sort list \\
-	    \Kvariable & Construct matching logic variables \\
-	    \Kapplication & Construct symbol application patterns \\
+	    \KnilKSymbolList & Empty symbol list \\
+	    \KconsKSymbolList & Construct symbol lists \\
+	    \KappendKSymbolList & Append two symbol lists \\
+	    \KinKSymbolList & Check whether a symbol belongs to a symbol list \\
+	    \KdeleteKSymbolList & Delete a symbol from a symbol list \\
+	    \Kvariable & Construct variables $x \cln s$ \\
+	    \KnilKVariableList & Empty variable list \\
+	    \KconsKVariableList & Construct variable lists \\
+	    \KVariableToKPattern & Injection from variables to patterns \\
+	    \Kapplication & Construct patterns of the form 
+	    $\sigma(\varphi_1,\dots,\varphi_n)$ \\
 	    \Kand & Construct conjunction patterns \\
 	    \Knot & Construct negation patterns \\
 	    \Kexists & Construct existential quantification patterns \\
-	    \KVariableToKPattern & Injection from variables to patterns \\
 	    \Kor & Construct disjunction patterns \\
 	    \Kimplies,\dots & Construct all kinds of patterns \\
 	    \KgetFV & Get free variables in a pattern \\
