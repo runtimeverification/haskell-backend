@@ -3606,8 +3606,9 @@ There are in total 10 sorts in the meta-theory.
 
 \subsubsection{Symbols in Meta-Theory}
 
+\small
 	\begin{longtable}{l|l}
-	    \textbf{Symbols} & \textbf{Meaning} \\
+	    \textbf{Symbol or Symbol Schema} & \textbf{Meaning} \\
 	    \hline\hline
 	    \endhead
 	    $\ceil{\_}_{\smallshs_1}^{\smallshs_2}$ & $10 \times 10 = 100$ 
@@ -3617,12 +3618,13 @@ There are in total 10 sorts in the meta-theory.
 	    \quottt{a}, \quottt{b}, \dots & 65 individual characters \\
 	    {\KnilKCharList} or \Kepsilon & Empty string \\
 	    \KconsKCharList & Concatenate a character to a string \\
-	    \KappendKCharList & Concatenate two strings \\
+	    {\KappendKCharList} or \Kconcat & Concatenate two strings \\
 	    \Ksort & Construct sorts \\
 	    \KnilKSortList & Empty sort list \\
 	    \KconsKSortList & Construct sort lists \\
 	    \KappendKSortList & Append two sort lists \\
-	    \KinKSortList & Check whether a sort belongs to a sort list \\
+	    \parametric{\KinKSortList}{$\shs$} & Check whether a sort belongs to a 
+	    sort list \\
 	    \KdeleteKSortList & Delete a sort from a sort list \\
 	    \Ksymbol & Construct symbols \\
 	    \KgetArgumentSorts & Get the argument sorts of a symbol \\
@@ -3632,41 +3634,90 @@ There are in total 10 sorts in the meta-theory.
 	    \KnilKSymbolList & Empty symbol list \\
 	    \KconsKSymbolList & Construct symbol lists \\
 	    \KappendKSymbolList & Append two symbol lists \\
-	    \KinKSymbolList & Check whether a symbol belongs to a symbol list \\
+	    \parametric{\KinKSymbolList}{$\shs$} & Check whether a symbol belongs 
+	    to a symbol list \\
 	    \KdeleteKSymbolList & Delete a symbol from a symbol list \\
 	    \Kvariable & Construct variables $x \cln s$ \\
 	    \KnilKVariableList & Empty variable list \\
 	    \KconsKVariableList & Construct variable lists \\
-	    \KVariableToKPattern & Injection from variables to patterns \\
+	    \parametric{\KinKVariableList}{$\shs$} & Check whether a variable 
+	    belongs 
+	    to a variable list \\
+	    \KappendKVariableList & Append two variable lists \\
+	    \KdeleteKVariableList & Delete a variable from a variable list \\
+	    \KVariableToKPattern & Injection function from {\KVariable} to 
+	    {\KPattern} \\
+	    \KvariableAsPattern & Construct variable patterns of the form $x \cln 
+	    s$ \\
 	    \Kapplication & Construct patterns of the form 
 	    $\sigma(\varphi_1,\dots,\varphi_n)$ \\
-	    \Kand & Construct conjunction patterns \\
-	    \Knot & Construct negation patterns \\
-	    \Kexists & Construct existential quantification patterns \\
-	    \Kor & Construct disjunction patterns \\
-	    \Kimplies,\dots & Construct all kinds of patterns \\
+	    \Kand & Construct patterns of the form $\varphi_1 \wedge_s \varphi_2$ \\
+	    \Knot & Construct patterns of the form $\neg_s \varphi$ \\
+	    \Kexists & Construct patterns of the form $\exists_s x \cln s' . 
+	    \varphi$ 
+	    \\
+	    \Kor & Construct patterns of the form $\varphi_1 \vee_s \varphi_2$ \\
+	    \Kimplies & Construct patterns of the form $\varphi_1 \to_s \varphi_s$ 
+	    \\
+	    \Kiff & Construct patterns of the form $\varphi_1 \lra_s \varphi_s$ 
+	    \\
+	    \Kforall & Construct patterns of the form $\forall_s x \cln s' . 
+	    \varphi$ 
+	    \\
+	    \Kceil & Construct patterns of the form $\ceil{\varphi}_{s}^{s'} $ 
+	    \\
+	    \Kfloor & Construct patterns of the form $\floor{\varphi}_{s}^{s'} $
+	    \\
+	    \Kequals & Construct patterns of the form $\varphi_1 =_{s}^{s'} 
+	    \varphi_2$
+	    \\
+	    \Kmembership & Construct patterns of the form $x \cln s \in_s^{s'} 
+	    \varphi$
+	    \\
+	    \Ktop & Construct patterns of the form $\top_s^{s'}$
+	    \\
+	    \Kbottom & Construct patterns of the form $\bot_s^{s'}$
+	    \\
+	    \KnilKPatternList & Empty pattern list \\
+		\KconsKPatternList & Construct pattern lists \\
+		\KappendKPatternList & Append two pattern lists \\
+		\parametric{\KinKPatternList}{$\shs$} & Check whether a pattern belongs 
+		to a 
+		pattern list \\
+		\KdeleteKPatternList & Delete a pattern from a pattern list \\
 	    \KgetFV & Get free variables in a pattern \\
-	    \KgetFVFromPatterns & Get all free variables from a pattern list \\
-	    \KoccursFree & Check whether a variable occurs free in a pattern \\
-	    \KfreshName & Generate a fresh variable name w.r.t. a pattern list \\
+	    \KgetFVFromPatterns & Get all free variables in a list of patterns \\
+	    $\parametric{\KoccursFree}{\shs}$ & Check whether a variable occurs 
+	    free 	    in a pattern \\
+	    \KfreshName & Generate a fresh variable name w.r.t. a list of patterns 
+	    \\
 	    \Ksubstitute & Substitute a variable for a pattern \\
-	    \KsubstitutePatterns & Substitute a list of patterns \\
-	    \KsortDeclared & Check whether a sort is declared in the current theory 
+	    \KsubstitutePatterns & Substitute a variabel for a list of patterns \\
+	    \parametric{\KsortDeclared}{$\shs$} & Check whether a sort is declared 
+	    in the current theory 
 	    \\
-	    \KsymbolDeclared & Check whether a symbol is declared in the current 
-	    theory \\
-	    \KaxiomDeclared & Check whether an axiom is declared in the current 
-	    theory \\
-	    \KwellFormed & Check whether a pattern is wellformed in the current 
-	    theory \\
-	    \KwellFormedPatterns & Check whether a list of patterns are wellformed 
+	    \parametric{\KsortsDeclared}{$\shs$}  & Check whether a list of sorts 
+	    are declared in the current theory 
 	    \\
-	    \KgetSort & Get the sort of a pattern in the current theory \\
-	    \KgetSortsFromPatterns & Get the list of sorts from a list of patterns 
+	    \parametric{\KsymbolDeclared}{$\shs$} & Check whether a symbol is 
+	    declared in the current theory \\
+	    \parametric{\KaxiomDeclared}{$\shs$} & Check whether an axiom is 
+	    declared in the current theory \\
+	    \parametric{\KwellFormed}{$\shs$} & Check whether a pattern is 
+	    wellformed in the current theory \\
+	    \parametric{\KwellFormedPatterns}{$\shs$} & Check whether a list of 
+	    patterns are wellformed in the current theory
 	    \\
-	    \Kdeduce & Check whether a pattern is provable in the current theory
+	    \KgetSort & Get the sort of a pattern in the current theory; \\
+	              & Returns $\bot_{\KSort}$ if the pattern is not wellformed\\
+	    \KgetSortsFromPatterns & Get the sorts from a list of patterns; \\
+	              & Returns $\bot_{\KSortList}$ if any pattern is not 
+	              wellformed 
+	    \\
+	    \parametric{\Kdeduce}{$\shs$} & Check whether a pattern is provable in 
+	    the current theory
 	\end{longtable}
-
+\normalsize
 
 \section{Represent Theories in the Meta-Theory}
 \label{sec:reflect}
