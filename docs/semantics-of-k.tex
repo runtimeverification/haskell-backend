@@ -537,6 +537,10 @@ Given a symbol $\sigma \in \Sigma_{s_1 \ldots s_n,s}$, $s_1 \ldots s_n$ are
 called the \emph{argument sorts} of $\sigma$, $s$ is called the 
 \emph{return sort} of $\sigma$, and $n$ is called the \emph{arity} of
 $\sigma$.
+By abuse of language, we take the freedom to identify symbols
+$\sigma\in\Sigma_{s_1 \ldots s_n,s}$ with corresponding patterns
+$\sigma(x_1\cln s_1,...,x_n\cln s_n)$, where $x_1$, ..., $x_n$ are all
+distinct names.
 When $n = 0$, we call $\sigma$ a \emph{constant symbol} or simply a 
 \emph{constant}.
 If $\sigma$ is a constant, we write the pattern just $\sigma$ instead of 
@@ -647,6 +651,10 @@ $\varphi_1$ and $\varphi_2$ are predicates then so are $\neg\varphi$,
 $\varphi_1 \wedge \varphi_2$, and $\exists x\,.\,\varphi$.
 That is, the logical connectives of matching logic preserve the predicate
 nature of patterns.
+A symbol $\sigma\in\Sigma_{s_1 \ldots s_n,s}$ is called a \emph{predicate} if
+its corresponding pattern $\sigma(x_1\cln s_1,...,x_n\cln s_n)$ is a
+predicate.
+
 Model $M$ \emph{satisfies} $\varphi_s$, written ${M}\models \varphi_s$, iff
 $\overline{\rho}(\varphi_s) = M_s$ for all $\rho:\Var\rightarrow M$.
 Pattern $\varphi$ is \emph{valid}, written $\models \varphi$,
@@ -2260,68 +2268,65 @@ $\denote{...}$ cannot be a symbol.}
 In this section, we present the meta-theory $K$ as a finite matching logic 
 theory $K = ( S_K, \Sigma_K, A_K )$ with $S_K$ a finite set  of sorts, 
 $\Sigma_S$ a finite set of symbols, and $A_K$ a finite set of axioms.
-We define the meta-theory $K$ as a \emph{syntactic theory},
-as we explicitly enumerate all its finitely many axioms.
+%We define the meta-theory $K$ as a \emph{syntactic theory},
+%as we explicitly enumerate all its finitely many axioms.
 A summary of the meta-theory $K$ is provided in Section~\ref{sec:K-summary}.
-We prefer a \emph{syntactic} definition because we are 
-interested in doing reasoning in matching logic, and
-a pure syntactic definition helps us embed meta-theory to other logic 
-frameworks such as Coq and Isabelle, and develop theorem provers.
-We will find the meta-theory $K$ a model when we prove the faithfulness theorem 
-in Section~\ref{sec:proof-of-faithfulness-theorem}
-In there, we will introduce 
-\emph{the canonical model of the meta-theory}.
-However, this is not the emphasis of this section, and let us focus on the 
-syntactic definition of $K$ for now.
+%We prefer a \emph{syntactic} definition because we are 
+%interested in doing reasoning in matching logic, and
+%a pure syntactic definition helps us embed meta-theory to other logic 
+%frameworks such as Coq and Isabelle, and develop theorem provers.
+In Section~\ref{sec:proof-of-faithfulness-theorem} we propose a
+\emph{canonical model} for $K$, needed to prove a faithfulness theorem.
+Here we only focus on the syntactic definition of $K$.
 
 \subsection{Warming-Up}
-The meta-theory $K$ is a complex theory, and we will use many notations and 
-conventions to help us define it.
+The meta-theory $K$ is a complex theory.
+We will use many notations and conventions to help us define it.
 Some notations and naming conventions are specific to the meta-theory $K$ and 
-they will be defined when they are firstly used.
-The others are general ones and are not specific to $K$.
-In this subsection, we provide an overview of all tricks that we play in 
-defining $K$.
+will be defined when they are firstly used.
+The others are general and are not specific to $K$.
+In this subsection we give an overview of our notations, conventions and
+techniques used to define $K$.
 
 \subsubsection{Variable Names}
 Recall that the matching logic grammar that we introduced in 
 Figure~\ref{ml-grammar} 
-assumes a set $\Name$ of infinitely many variable names.
-Generally speaking, it does not matter what sets of variable names we choose, 
+assumes an arbitrary but fixed infinite set $\Name$ of variable names.
+Generally speaking, it does not matter what variable names we choose, 
 but good names are often more intuitive and helpful than bad ones.
-In a complex theory like $K$, picking good names can be extremely important.
-
-In $K$, we assume the following letters and their variants (primed, 
-subscripted, etc.) 
+In a complex theory like $K$, picking good names can make a big difference.
+%
+We assume the following letters and their variants (primed, subscripted, etc.) 
 are in the set {\Name} of variable names:
 $$
 \Name = \{ x, y, z, s, f, S, L, u, v, \sigma, \varphi, \psi, 
 \dots \}
 $$
-Starting from Section~\ref{sec:chars-string}, the only mathematical variable or 
+Starting with Section~\ref{sec:chars-string}, the only mathematical variable or 
 meta-variable that we will use is $\shp s$.
 We use $\shp s$ to denote any sort in $S_K$.
 Readers may notice that $\varphi$ and $\psi$ are now normal variable names like 
-$x$ and $y$, and \emph{not} meta-variables for patterns as in 
+$x$ and $y$, and \emph{not} meta-variables for patterns like in 
 Section~\ref{sec:finite-mechanisms}.
 This is intended.
 
 \subsubsection{Three Ways of Defining Predicate Symbols}
 \label{sec:three-ways-of-defining-predicate-symbols}
-Recall that predicate symbols in matching logic are symbols whose 
-interpretations in models are mappings which return either the empty set 
-$\emptyset$ or the total set on all inputs.
-We can also define predicate symbols in a syntactic way.
-A symbol $\sigma \in \Sigma_{s_1\ldots s_n,s}$ is said to be a predicate symbol 
-in a theory $\Gamma$ if
-$$ \Gamma \vdash \forall x_1 \dots x_n . ((\sigma(x_1,\dots,x_n) = \top) \vee  
+Recall from Section~\ref{sec:semantics} that predicate symbols in
+matching logic are symbols whose interpretations in models are either the
+empty set or the total set.
+We can also capture the main property of a predicate symbol syntactically:
+symbol $\sigma \in \Sigma_{s_1\ldots s_n,s}$ is a predicate symbol 
+in a theory $T$ iff
+$$ T \vdash \forall x_1 \dots x_n . ((\sigma(x_1,\dots,x_n) = \top) \vee  
 (\sigma(x_1,\dots,x_n) = \bot))$$
-
-In terms of defining predicate symbols, there are in general three approaches.
-We use the predicate symbol $\isEmpty$ as an example to illustrate all three 
-approaches.
-The predicate symbol $\isEmpty$ checks whether a list is empty or not.
-The key thing is that we want to use $\isEmpty$ in any sort contexts.
+So far, we identified three practical approaches to define predicate symbols.
+To illustrate these, we use the predicate symbol $\isEmpty$, which checks
+whether a list is empty or not;
+assume the sort $\List$ for lists and ignore the irrelevant sort of the list
+elements.
+The important characteristic of predicate symbols in matching logic is that
+we want to be able to use them in \emph{any} sort context.
 
 One way to do that is to introduce a special sort $\Pred$ and define
 \begin{align*}
@@ -2331,10 +2336,12 @@ and two axioms
 \begin{align*}
 \isEmpty(\nil) \qquad\qquad \neg \isEmpty(\cons(x,L))
 \end{align*}
-Now $\isEmpty$ is defined as a predicate symbol but it has a specific return 
-sort $\Pred$, and therefore it cannot be used in any sort context.
-In order to use $\isEmpty$ in any sort context, we have to introduce the 
-following abbreviation:
+Assuming that $\nil$ and $\cons$ are constructors, as described in
+Section~\ref{sec:useful}, we can prove that $\isEmpty$ is indeed a
+predicate symbol.
+But it has a specific return sort, $\Pred$, so it cannot be directly used
+in any sort context.
+To do it, we have to introduce the following abbreviation:
 \begin{center}
 	$b \equiv (b = \top_\Pred)$ \qquad for any pattern $b$ of sort $\Pred$
 \end{center}
@@ -2354,7 +2361,8 @@ To use it in any sort context, we have to introduce the following abbreviation:
 and the equality lets us use it in any sort context.
 
 The last approach, which is also the approach that we adopt in defining $K$, is 
-to define a set of predicate symbols
+to define $\isEmpty$ as a \emph{predicate symbol schema}, i.e., as a set of
+symbols 
 \begin{center}
 	$\parametric{\isEmpty}{s} \in \Sigma_{\List,s}$ \qquad for any sort $s$
 \end{center}
@@ -2364,8 +2372,8 @@ with two axiom schemas:
 	\qquad\qquad
 	$\neg \parametric{\isEmpty}{s}(\cons(x,L))$
 \end{center}
-Now $\isEmpty$ is defined as a \emph{symbol schema}, and it can be put in any 
-sort contexts by instantiating the sort parameter $s$ with corresponding 
+Now $\isEmpty$ is a \emph{symbol schema}, so it can be put in any 
+sort contexts by simply instantiating the sort parameter $s$ with corresponding 
 sorts.
 
 It is mostly a taste of flavor in choosing which approach to use.
