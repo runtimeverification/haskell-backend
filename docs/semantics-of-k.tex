@@ -2462,8 +2462,8 @@ informal explanations will be given whenever sorts or symbols are used before
 they are formally defined.
 
 \subsection{Characters and Strings}
-
 \label{sec:chars-string}
+
 The sort $\KChar$ is the sort for \emph{characters}. It has the following $26 + 
 26 + 10 + 3 = 65$ functional constructors (more can be added is needed or desired):
 \begin{center}
@@ -2670,8 +2670,10 @@ The last two shorthands are defined in Notation~\ref{notation:lists}.
 \subsection{Finite Lists}
 \label{sec:finite-lists}
 
-As we have seen, the meta-theory $K$ has a sort $\KSortList$ for cons-lists of 
-sorts, and a sort $\KCharList$ for cons-lists of characters.
+As we have seen in Sections~\ref{sec:chars-string} and
+\ref{sec:ML-sorts-symbols}, respectively, the meta-theory $K$ has 
+a sort $\KCharList$ for cons-lists of characters and a sort
+$\KSortList$ for cons-lists of sorts.
 In fact, the meta-theory $K$ defines the following five different types of 
 cons-lists:
 \begin{center}
@@ -2684,14 +2686,12 @@ cons-lists:
 	\KPatternList & Sort for cons-lists of patterns	\KPattern
 \end{tabular}
 \end{center}
-We have defined the sorts \KChar, \KSort, and \KSymbol.
-The sorts {\KVariable} and {\KPattern} will be defined in 
+We have already defined the sorts \KChar, \KSort, and \KSymbol.
+The sorts {\KVariable} and {\KPattern} will be defined shortly in 
 Section~\ref{sec:ML-patterns}.
-
-All five types of cons-lists share a similar definition.
-In the following, we only show to define cons-lists of sorts as an example.
-The definition for the rest four types of cons-lists should be constructed in 
-the same way.
+%
+The five types of cons-lists have similar definitions.
+We only show one of them below, namely how to define cons-lists of sorts.
 
 \subsubsection{Finite Lists of Sorts}
 
@@ -2705,9 +2705,9 @@ It has two functional constructors:
 \end{align*}
 The function
 $$\KappendKSortList \colon \KSortList \times \KSortList \to \KSortList$$ 
-takes two lists and returns the concatenation of them.
-Assume $s$ is a {\KSort} variable, and $S_0,S$ are $\KSortList$ variables, the 
-following two axioms are defined 
+takes two lists and returns their concatenation, and can be defined as
+follows
+(assume $s$ is a {\KSort} variable and $S_0,S$ are $\KSortList$ variables):
 \begin{align*}
   & \KappendKSortList(\KnilKSortList, S) = S
   \\
@@ -2716,18 +2716,19 @@ following two axioms are defined
   \KappendKSortList(S_0, S))
 \end{align*}
 
-For any sort $\shp s \in S_K$ that is a sort of the meta-theory,
+For any sort $\shp s \in S_K$ of the meta-theory,
 we define a predicate symbol
 $$\parametric{\KinKSortList}{\shs} \colon 
  \KSort \times \KSortList \to \shs $$
 that takes a sort and a cons-list of sorts and checks list membership.
-The predicate symbol $\parametric{\KinKSortList}{\shs}$ returns either 
-$\top_{\smallshs}$ or $\bot_{\smallshs}$ so that it can be used in any sort 
-contexts (see 
-Section~\ref{sec:three-ways-of-defining-predicate-symbols} and 
-Section~\ref{sec:symbol-schema-finitary}).
-Assume $s,s'$ are two {\KSort} variables, and $S$ is a $\KSortList$ variable,
-the following two axioms are defined for any $\shs \in S_K$
+The predicate symbol $\parametric{\KinKSortList}{\shs}$ yields either 
+$\top_{\smallshs}$ or $\bot_{\smallshs}$ so that it can be used as a pattern
+of sort $\shs$ (see Section~\ref{sec:three-ways-of-defining-predicate-symbols}
+and Section~\ref{sec:symbol-schema-finitary}).
+Its semantics can be defined with the following two axioms for each
+$\shs\in S_K$ --- as discussed in Section~\ref{sec:symbol-schema-finitary}, we
+only have a finite number of instances
+(here $s,s'$ are {\KSort} variables, and $S$ is a $\KSortList$ variable):
 \begin{align*}
   & \neg \parametric{\KinKSortList}{\shs}(s, \KnilKSortList)
   \\
@@ -2761,13 +2762,17 @@ It has two axioms
 	& (s_1, s_2, \dots, s_n) \equiv \KconsKSortList(s_1, \KconsKSortList(s_2, 
 	\dots\KconsKSortList(s_n, \KnilKSortList)\dots))
 	\end{align*}
-	This abbreviation is also known as the \emph{mixfix form representation of 
-	lists}.
+	We may refer to this abbreviation as the
+	\emph{mixfix form representation of lists}.
 \end{notation}
 
 \subsubsection{Finite Lists of Characters, Symbols, Variables, and Patterns}
-The sorts of cons-lists of characters, symbols, variables, and patterns can be 
-defined in the same way we define the sort of cons-lists of sorts.
+As already mentioned, the cons-lists of characters, symbols, variables,
+and patterns can be defined the same way we defined the cons-lists
+of sorts above.
+For example, for cons-lists of patterns we add sort
+$\KPatternList$, symbols $\KnilKPatternList$, $\KconsKPatternList$,
+$\parametric{\KinKPatternList}{\shs}$, etc.
 
 \subsection{Matching Logic Patterns}
 \label{sec:ML-patterns}
