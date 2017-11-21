@@ -2787,15 +2787,14 @@ matching logic variables, with a functional constructor
 
 \paragraph{Matching Logic Patterns.}
 The sort $\KPattern$ is the sort for matching logic patterns.
-We recall the readers of the grammar of matching logic in 
-Figure~\ref{ml-grammar}.
+Recall the grammar of matching logic in Figure~\ref{ml-grammar}.
 There are five production rules in the grammar: Variable, Symbol Application, 
 Conjunction $\wedge_s$, Negation $\neg_s$, and (Existential) Quantification 
-$\exists_s$, and that Conjunction, Negation, and Quantification are in fact 
+$\exists_s$.
+Conjunction, Negation, and Quantification are in fact 
 parametric on a sort $s$.
-In correspondence to the grammar of matching logic, the sort $\KPattern$ 
-has five constructors, including the following four 
-functions
+Correspondingly, the sort $\KPattern$ has five constructors:
+the following four functions
 \begin{align*}
   & \Kapplication \colon \KSymbol \times \KPatternList \to \KPattern
   \\
@@ -2805,7 +2804,7 @@ functions
   \\
   & \Kexists \colon \KSort \times \KVariable \times \KPattern \to \KPattern
 \end{align*}
-and an injection function from variables to patterns
+and an ``injection'' function from variables to patterns
 \begin{equation*}
   \KVariableToKPattern \colon \KVariable \to \KPattern
 \end{equation*}
