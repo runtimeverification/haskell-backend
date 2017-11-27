@@ -3,7 +3,7 @@ organization := "org.kframework.k"
 
 name := "kore"
 
-scalaVersion := "2.12.2"
+scalaVersion := "2.12.4"
 
 version := "1.2-SNAPSHOT"
 
