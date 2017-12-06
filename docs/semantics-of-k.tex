@@ -4857,51 +4857,72 @@ This process of ``desugaring object specifications to meta-specifications'' are
 called \emph{lifting}, which is giving Kore a semantics as a specification 
 language (Section~\ref{sec:kore-semantics}).
 
-\subsection{Kore Syntax}
+\subsection{The Kore Language Syntax}
+\improvement{Many sentences are from the specification of SMT-LIB language 
+(version 2.6), which I use very often as the main reference when writing this 
+section. We need to rephrase those sentences when we make Kore public.}
+This section defines a complete and concrete syntax of the Kore language, the 
+design of which is mostly driven by the goal of relatively easy parsing without 
+making too many compromises on human readability.
+The Kore language syntax is defined by BNF-style production rules, which we 
+summarize in Section~\ref{kore-syntax-summary}.
+The language accepted by there rules is a \emph{superset} of the Kore language 
+as a legal Kore language source file should satisfy additional constraints such 
+as wellformedness.
 
-A Kore definition file is a sequence of ASCII characters.
-A Kore definition consists of a sequence of \emph{Kore declarations}.
-In this section, we will completely define lexicon tokens and syntactic 
-categories of the 
-Kore language.
+\subsubsection{Lexicon}
 
-\subsubsection{Comment in Kore}
-Kore supports C-style comments.
+The syntax rules defined in this section are given directly with respect to 
+streams of lexical tokens from the set defined in this subsection.
+
+A Kore language source file, also called as a Kore definition or simply a 
+definition, consists of a sequence of ASCII characters.
+All lexical tokens defined below are limited to ASCII printable characters.
+
+Kore supports C-style \emph{comments}.
 Line comments start with ``\verb|//|'' and block comments start with 
 ``\verb|/*|'' and end with ``\verb|*/|''.
+Both comments and consecutive white space characters occurring outside a string 
+literal or an identifier (both defined later) are considered \emph{whitespace}.
+The only lexical function of whitespace is to break the source text into tokens.
 
-\subsubsection{Lexicon Token}
-Kore has the following lexicon tokens.
-Some of them are reserved for future use.
-\begin{center}
-	\begin{tabular}{c|l|l}
-		\textrm{Token Character(s)} & \textrm{Name} & \textrm{Usage}
+The lexicon tokens of Kore include a few token characters (listed in 
+Table~\ref{tab:lexicon-tokens}) and the elements of the syntactic categories
+\syntacc{identifier},
+\syntacc{string},
+\syntacc{keyword}, which we all defined below.
+
+\begin{table}[h]
+	\centering
+	\begin{tabular}{c|l}
+		\textrm{Token Character(s)} & \textrm{Name} % & \textrm{Usage}
 		\\\hline
-		\texttt{:} & Colon & Variables and Declarations
+		\texttt{:} & Colon % & Variables and Declarations
 		\\
-		\texttt{\string{ \string}} & Curly Braces & Sort Parameters
+		\texttt{\string{ \string}} & Curly Braces % & Sort Parameters
 		\\
-		\texttt{( )} & Parenthesis & Kore Expressions
+		\texttt{( )} & Parenthesis % & Kore Expressions
 		\\
-		\texttt{,} & Comma & Kore Expressions
-		\\
-        \texttt{\sharpsymbol} & Sharp & Meta Identities
-        \\
-        \texttt{\slashsymbol} & Slash & Reserved Identities
-        \\
-        \texttt{'} & Prime & Identities
-        \\
-        \texttt{::} & Double Colon & --
-        \\
-		\texttt{.} & Period & --
-		\\
-		\texttt{@} & At & --
-		\\
-		\texttt{=} & Equals & --
+		\texttt{,} & Comma % & Kore Expression
 	\end{tabular}
-\end{center}
+	\caption{Lexicon Tokens in Kore}
+	\label{tab:lexicon-tokens}
+\end{table}
 
-\subsubsection{Kore Keyword} 
+\paragraph{Identifiers.}
+Identifiers are mostly used as symbols, sorts, and variable names.
+An \syntacc{identifier} is either of the following three cases:
+\begin{itemize}
+\item a nonempty sequence of alphabets and digits and the character 
+``\verb|'|'' that starts with an alphabet and is not a \syntacc{keyword};
+\item the character ``\verb|#|'' followed by a sequence like the above;
+\item the character ``\verb|\|'' followed by a sequence like the above;
+\end{itemize}
+
+\paragraph{String literals.}
+Kore supports C-style string literals.
+
+\paragraph{Keyword.}
 The following keywords are used to initiate a Kore declaration.
 \begin{center}
 	{\ttfamily
@@ -4916,16 +4937,6 @@ The following keywords are used to initiate a Kore declaration.
 	\end{tabular}}
 \end{center}
 
-\subsubsection{String Literal}
-Kore supports C-style string literals.
-
-\subsubsection{Word}
-Words are nonempty sequences of alphabets, digits, or the prime symbol
-``\texttt{'}''.
-Words must start with an alphabet.
-\begin{grammar}\small\centering
-	<word> ::= "[a-zA-Z][a-zA-Z0-9\']"$^*$
-\end{grammar}
 
 \subsubsection{Identifier}
 In Kore, an identifier is either a word, or a word followed after the sharp 
