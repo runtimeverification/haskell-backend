@@ -4935,7 +4935,7 @@ not want to take the risk of confusing them.
 Kore supports C-style string literals.
 
 \paragraph{Keyword.}
-Kore has three keywords.
+Kore has four keywords.
 They are used to initiate declarations.
 \begin{center}
 	{\ttfamily
@@ -4946,49 +4946,49 @@ They are used to initiate declarations.
 			\\
 			symbol & \textrm{Initiate a symbol declaration}
 			\\
+			alias & \textrm{Initiate an alias declaration}
+			\\
 			axiom & \textrm{Initiate an axiom declaration}
 	\end{tabular}}
 \end{center}
 
 
 \subsubsection{Sorts}
-A sort in Kore is a \emph{sort variable}, an \emph{atomic sort}, or a 
-\emph{sort constructor} applied to a list of sorts.
-There is no syntactic difference among a sort variable, an atomic sort, or a 
-sort constructor.
-They are all identifiers.
-However, we do want to distinguish meta-level sorts from object-level ones, by 
-using \syntacc{meta-identifier} for meta-level sorts and 
-\syntacc{object-identifier} for object-level sorts.
+A sort is either a \emph{sort variable} or a \emph{sort constructor} applied to 
+a list of \emph{sort parameters}.
+Sorts include object-level sorts and meta-level sorts, which are syntactically 
+different as we will see in the next grammar, so that we can tell whether a 
+sort is object-level or meta-level in the parse time.
 
 \setlength{\grammarparsep}{3pt}
 \begin{grammar}\small
 <sort> ::= <object-sort> | <meta-sort>
 	
-<object-sort> ::= \quad
-\alt <object-sort-variable>
-\alt <object-atomic-sort>
-\alt <object-sort-constructor> `{' 
+<object-sort> ::= <object-sort-variable> | <object-sort-constructor> `{' 
 <object-sort-list> `}'
 
 <object-sort-variable> ::= <object-identifier>
 
-<object-atomic-sort> ::= <object-identifier>
-
 <object-sort-constructor> ::= <object-identifier>
 
-<object-sort-list> ::= <object-sort> | <object-sort> `,' <object-sort-list>
+<object-sort-list> ::= $\epsilon$ | <object-sort> | <object-sort> `,' 
+<object-sort-list>
 
-<meta-sort> ::= \quad
-\alt <meta-sort-variable>
-\alt <meta-atomic-sort>
+<meta-sort> ::= <meta-sort-variable> | <meta-sort-constructor> `{' `}'
 
 <meta-sort-variable> ::= <meta-identifier>
 
-<meta-atomic-sort> ::= `#Char' | `#CharList' | `#String' | `#Sort' | `#SortList'
+<meta-sort-constructor> ::= `#Char' | `#CharList' | `#String' | `#Sort' | 
+`#SortList'
 \alt `#Symbol' | `#SymbolList' | `#Variable' | `#VariableList' | `#Pattern' | 
 `#PatternList'
+
+<meta-sort-list> ::= $\epsilon$ | <meta-sort> | <meta-sort> `,' 
+<meta-sort-list>
 \end{grammar}
+If a sort has no sort parameter, it is a \emph{non-parametric} sort.
+All meta-level sorts are non-parametric sorts.
+
 
 
 % or of the 
@@ -5092,52 +5092,22 @@ using \syntacc{meta-identifier} for meta-level sorts and
 %an 
 %object (or meta) symbol constructor and a list of object (or meta) sorts.
 
-Heads are user-definable things (a better word?) that are used to construct 
-\syntacc{pattern} in prefix form (see Section~\ref{sec:kore-syntax-patterns}).
-Heads include symbols and aliases.
-Heads \emph{do not} include logic connectives such as ``\verb|\and|'' and 
-``\verb|\or|''.
-The difference is a head is \emph{either object-level or meta-level},
-while logic connectives can be used in \emph{both object-level and meta-level}. 
+Heads are user-definable constructors of \syntacc{pattern} (see 
+Section~\ref{sec:kore-syntax-patterns}).
+Heads include \emph{object-level heads} and \emph{meta-level heads}, that are 
+used to construct \syntacc{object-pattern} and \syntacc{meta-pattern} 
+respectively, which are treated differently in the \emph{lifting process}.
 
 \begin{grammar}\small
 	<head> ::= <object-head> | <meta-head>
 	
-	<object-head> ::= <object-constant-head> | <object-nonconstant-head>
-	
-	<object-constant-head> ::= \quad
-	\alt <object-atomic-constant-head>
-	\alt <object-constant-head-constructor> `{' <object-sort-list> `}'
+	<object-head> ::= <object-head-constructor> `{' <object-sort-list> `}'
 		
-	<object-atomic-constant-head> ::= <object-identifier>
-
-	<object-constant-head-constructor> ::= <object-identifier>
+	<object-head-constructor> ::= <object-identifier>
 	
-	<object-nonconstant-head> ::= \quad
-	\alt <object-atomic-nonconstant-head>
-	\alt <object-nonconstant-head-constructor> `{' <object-sort-list> `}'
+	<meta-head> ::= <meta-head-constructor> `{' <meta-sort-list> `}'
 	
-	<object-atomic-nonconstant-head> ::= <object-identifier>
-	
-	<object-nonconstant-head-constructor> ::= <object-identifier>
-	
-	<meta-head> ::= <meta-constant-head> | <meta-nonconstant-head>
-	
-	<meta-constant-head> ::= \quad
-	\alt <meta-atomic-constant-head>
-	\alt <meta-constant-head-constructor> `{' <meta-sort-list> `}'
-	
-	<meta-nonconstant-head> ::= \quad
-	\alt <meta-atomic-nonconstant-head>
-	\alt <meta-nonconstant-head-constructor> `{' <meta-sort-list> `}'
-	
-	<meta-atomic-constant-head> ::= <meta-identifier>
-	
-	<meta-constant-head-constructor> ::= <meta-identifier>
-	
-	<meta-atomic-nonconstant-head> ::= <meta-identifier>
-	
-	<meta-nonconstant-head-constructor> ::= <meta-identifier>
+	<meta-head-constructor> ::= <meta-identifier>
 \end{grammar}
 
 %Here are some examples of object and meta-symbols written in Kore syntax.
@@ -5206,8 +5176,7 @@ while logic connectives can be used in \emph{both object-level and meta-level}.
 	
 	<object-pattern> ::= \quad
     \alt <object-variable>
-    \alt <object-constant-head>
-	\alt <object-nonconstant-head> `(' <pattern-list> `)'
+	\alt <object-head> `(' <pattern-list> `)'
 	\alt `\\and' `{' <object-sort> `}'
 	`(' <pattern> `,' <pattern> `)'
 	\alt `\\not' `{' <object-sort> `}'
@@ -5237,8 +5206,7 @@ while logic connectives can be used in \emph{both object-level and meta-level}.
 	
 	<meta-pattern> ::= \quad
     \alt <meta-variable>
-    \alt <meta-constant-head>
-	\alt <meta-nonconstant-head> `(' <pattern-list> `)'
+	\alt <meta-head> `(' <pattern-list> `)'
 	\alt `\\and' `{' <meta-sort> `}'
 	`(' <pattern> `,' <pattern> `)'
 	\alt `\\not' `{' <meta-sort> `}'
@@ -5304,19 +5272,10 @@ while logic connectives can be used in \emph{both object-level and meta-level}.
 
 <declaration> ::= \quad
 \alt `sort' <object-sort>
-\alt `symbol' <object-constant-head> `:' <object-sort>
-\alt `symbol' <object-nonconstant-head> `(' <object-sort-list> `)' `:' 
-<object-sort>
-\alt `symbol' <meta-constant-head> `:' <meta-sort>
-\alt `symbol' <meta-nonconstant-head> `(' <meta-sort-list> `)' `:' 
-<object-sort>
-\alt `alias' <object-constant-head> `:' <object-sort>
-\alt `alias' <object-nonconstant-head> `(' <object-sort-list> `)' `:' 
-<object-sort>
-\alt `alias' <meta-constant-head> `:' <meta-sort>
-\alt `alias' <meta-nonconstant-head> `(' <meta-sort-list> `)' `:' 
-<object-sort>
-\alt `axiom'  <pattern>
+\alt `symbol' <object-head> `(' <object-sort-list> `)' `:' <object-sort>
+\alt `symbol' <meta-head> `(' <meta-sort-list> `)' `:' <meta-sort>
+\alt `alias' <object-head> `(' <object-sort-list> `)' `:' <object-sort>
+\alt `alias' <meta-head> `(' <meta-sort-list> `)' `:' <meta-sort>
 \alt `axiom' `{' <sort-variable-list> `}' <pattern>
 
 <sort-variable-list> ::= \quad
