@@ -1,0 +1,48 @@
+This is BibTeX, Version 0.99d (TeX Live 2017/Debian)
+Capacity: max_strings=100000, hash_size=100000, hash_prime=85009
+The top-level auxiliary file: semantics-of-k.aux
+The style file: abbrv.bst
+Database file #1: refs.bib
+Warning--can't use both author and editor fields in vampire
+You've used 24 entries,
+            2118 wiz_defined-function locations,
+            646 strings with 8047 characters,
+and the built_in function-call counts, 9283 in all, are:
+= -- 927
+> -- 413
+< -- 17
++ -- 167
+- -- 138
+* -- 609
+:= -- 1470
+add.period$ -- 84
+call.type$ -- 24
+change.case$ -- 135
+chr.to.int$ -- 0
+cite$ -- 25
+duplicate$ -- 389
+empty$ -- 732
+format.name$ -- 138
+if$ -- 2056
+int.to.chr$ -- 0
+int.to.str$ -- 24
+missing$ -- 22
+newline$ -- 124
+num.names$ -- 50
+pop$ -- 156
+preamble$ -- 1
+purify$ -- 115
+quote$ -- 0
+skip$ -- 300
+stack$ -- 0
+substring$ -- 531
+swap$ -- 140
+text.length$ -- 17
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 90
+warning$ -- 1
+while$ -- 80
+width$ -- 26
+write$ -- 282
+(There was 1 warning)

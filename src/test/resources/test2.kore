@@ -1,0 +1,5 @@
+[]
+
+module TEST2
+  sort List{S} []
+endmodule []
