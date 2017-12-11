@@ -9,6 +9,15 @@ import org.kframework.kore.parser.{KoreToText, ParseError, TextToKore}
 
 class TextToKoreTest {
 
+  @Test def parseFileTest1() : Unit = {
+    parseFromFile("test1.kore")
+  }
+
+  @Test def parseFileTest2() : Unit = {
+    parseFromFile("test2.kore")
+  }
+
+  /*
   @Test def parseTest1(): Unit = {
     parseFromFile("imp-lesson-4.kore")
   }
@@ -17,14 +26,15 @@ class TextToKoreTest {
     parseFromFile("kool-typed-dynamic.kore")
   }
 
-  @Test def parseTest3(): Unit = {
-    parseFromFile("imp.kore")
-  }
+
 
   @Test def parseFileTest4(): Unit = {
     parseFromFile("p4.kore")
   }
 
+  @Test def parseFileTest5() : Unit = {
+    parseFromFile("text.kore")
+  }
   @Test def parseTest4(): Unit = {
     val s =
       strip("""
@@ -501,6 +511,7 @@ class TextToKoreTest {
           msg)
     }
   }
+  */
 // TODO: Improve error message above to say "Expected 'm' or <EOF> ..."
 
   def strip(s: String): String = {
