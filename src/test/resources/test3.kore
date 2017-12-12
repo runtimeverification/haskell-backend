@@ -1,0 +1,5 @@
+[]
+
+module TEST2
+  sort Map{S1,S2} []
+endmodule []
