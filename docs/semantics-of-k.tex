@@ -4932,9 +4932,10 @@ not want to take the risk of confusing them.
 
 \paragraph{String literals.}
 Kore supports C-style string literals.
+The syntactic category of string literals is \syntacc{string}
 
 \paragraph{Keyword.}
-Kore has four keywords.
+Kore has four keywords in the syntactic category \syntacc{keyword}.
 They are used to initiate declarations.
 \begin{center}
 	{\ttfamily
@@ -5270,11 +5271,15 @@ respectively, which are treated differently in the \emph{lifting process}.
 <definition> ::= <declaration>$^+$
 
 <declaration> ::= \quad
-\alt `sort' <object-sort>
-\alt `symbol' <object-head> `(' <object-sort-list> `)' `:' <object-sort>
-\alt `symbol' <meta-head> `(' <meta-sort-list> `)' `:' <meta-sort>
-\alt `alias' <object-head> `(' <object-sort-list> `)' `:' <object-sort>
-\alt `alias' <meta-head> `(' <meta-sort-list> `)' `:' <meta-sort>
+\alt `sort' `{' <sort-variable-list> `}' <object-sort>
+\alt `symbol' `{' <sort-variable-list> `}' <object-head> `(' <object-sort-list> 
+`)' `:' <object-sort>
+\alt `symbol' `{' <sort-variable-list> `}' <meta-head> `(' <meta-sort-list> `)' 
+`:' <meta-sort>
+\alt `alias' `{' <sort-variable-list> `}' <object-head> `(' <object-sort-list> 
+`)' `:' <object-sort>
+\alt `alias' `{' <sort-variable-list> `}' <meta-head> `(' <meta-sort-list> `)' 
+`:' <meta-sort>
 \alt `axiom' `{' <sort-variable-list> `}' <pattern>
 
 <sort-variable-list> ::= \quad
