@@ -17,6 +17,18 @@ class TextToKoreTest {
     parseFromFile("test2.kore")
   }
 
+  @Test def parseFileTest3() : Unit = {
+    parseFromFile("test3.kore")
+  }
+
+  @Test def parseFileTest4() : Unit = {
+    parseFromFile("test4.kore")
+  }
+
+  @Test def parseFileTest5() : Unit = {
+    parseFromFile("test5.kore")
+  }
+
   /*
   @Test def parseTest1(): Unit = {
     parseFromFile("imp-lesson-4.kore")
