@@ -1,5 +1,5 @@
 []
 
 module TEST1
-  sort Nat{} []
+  sort{} Nat{} []
 endmodule []

@@ -1,0 +1,8 @@
+[]
+
+module TEST10
+
+  axiom{}
+    "test string is a meta-level pattern" []
+
+endmodule []
