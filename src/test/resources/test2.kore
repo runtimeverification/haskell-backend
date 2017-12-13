@@ -1,5 +1,5 @@
 []
 
 module TEST2
-  sort List{S} []
+  sort{S} List{S} []
 endmodule []
