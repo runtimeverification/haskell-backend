@@ -5206,6 +5206,7 @@ respectively, which are treated differently in the \emph{lifting process}.
 	
 	<meta-pattern> ::= \quad
     \alt <meta-variable>
+    \alt <string>
 	\alt <meta-head> `(' <pattern-list> `)'
 	\alt `\\and' `{' <meta-sort> `}'
 	`(' <pattern> `,' <pattern> `)'
@@ -5271,16 +5272,30 @@ respectively, which are treated differently in the \emph{lifting process}.
 <definition> ::= <declaration>$^+$
 
 <declaration> ::= \quad
-\alt `sort' `{' <sort-variable-list> `}' <object-sort>
-\alt `symbol' `{' <sort-variable-list> `}' <object-head> `(' <object-sort-list> 
+\alt <sort-declaration>
+\alt <symbol-declaration>
+\alt <alias-declaration>
+\alt <axiom-declaration>
+
+<sort-declaration> ::= `sort' `{' <sort-variable-list> `}' <object-sort>
+
+<symbol-declaration> ::= <object-symbol-declaration> | <meta-symbol-declaration>
+
+<object-symbol-declaration> ::= `symbol' <object-head> `(' <object-sort-list> 
 `)' `:' <object-sort>
-\alt `symbol' `{' <sort-variable-list> `}' <meta-head> `(' <meta-sort-list> `)' 
+
+<meta-symbol-declaration> ::= `symbol' <meta-head> `(' <meta-sort-list> `)' 
 `:' <meta-sort>
-\alt `alias' `{' <sort-variable-list> `}' <object-head> `(' <object-sort-list> 
+
+<alias-declaration> ::= <object-alias-declaration> | <meta-alias-declaration>
+
+<object-alias-declaration> ::= `alias' <object-head> `(' <object-sort-list> 
 `)' `:' <object-sort>
-\alt `alias' `{' <sort-variable-list> `}' <meta-head> `(' <meta-sort-list> `)' 
+
+<meta-alias-declaration> ::= `alias' <meta-head> `(' <meta-sort-list> `)' 
 `:' <meta-sort>
-\alt `axiom' `{' <sort-variable-list> `}' <pattern>
+
+<axiom-declaration> ::= `axiom' `{' <sort-variable-list> `}' <pattern>
 
 <sort-variable-list> ::= \quad
 \alt <object-sort-variable>
