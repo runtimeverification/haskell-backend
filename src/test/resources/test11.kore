@@ -1,0 +1,21 @@
+[]
+
+module TEST11
+
+  sort{} Bool{} ["test-att1", "test-att2"]
+
+  symbol true{}() : Bool{} []
+
+  symbol false{}() : Bool{} []
+
+  symbol and{}(Bool{}, Bool{}) : Bool{} []
+
+  symbol not{}(Bool{}) : Bool{} []
+
+  axiom{}
+    \implies{Bool{}}(\top{Bool{}}(), \bottom{Bool{}}()) []
+
+  axiom{}
+    \forall{Bool{}}(X:Bool{}, X:Bool{}) []
+
+endmodule []
