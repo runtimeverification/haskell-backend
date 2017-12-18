@@ -9,17 +9,6 @@ import org.kframework.kore.parser.{KoreToText, ParseError, TextToKore}
 
 class TextToKoreTest {
 
-  /* Run all tests "testx.kore" for x = 1, 2, ... */
-  @Test def runAllTests(): Unit = {
-    var totalTestsNumber = 10
-    var i = 1;
-    for(i <- 1 to totalTestsNumber){
-      var testfilename = "test" + i + ".kore"
-      parseFromFile(testfilename)
-    }
-  }
-
-  /*
   @Test def test1(): Unit = {
     parseFromFile("test1.kore")
   }
@@ -38,7 +27,21 @@ class TextToKoreTest {
   @Test def test6(): Unit = {
     parseFromFile("test6.kore")
   }
-  */
+  @Test def test7(): Unit = {
+    parseFromFile("test7.kore")
+  }
+  @Test def test8(): Unit = {
+    parseFromFile("test8.kore")
+  }
+  @Test def test9(): Unit = {
+    parseFromFile("test9.kore")
+  }
+  @Test def test10(): Unit = {
+    parseFromFile("test10.kore")
+  }
+  @Test def test11(): Unit = {
+    parseFromFile("test11.kore")
+  }
 
 
   def strip(s: String): String = {
