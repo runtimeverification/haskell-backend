@@ -12,6 +12,8 @@ module TEST11
 
   symbol not{}(Bool{}) : Bool{} []
 
+  alias or{}(Bool{}, Bool{}) : Bool{} []
+
   axiom{}
     \implies{Bool{}}(\top{Bool{}}(), \bottom{Bool{}}()) []
 
