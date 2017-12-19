@@ -42,6 +42,9 @@ class TextToKoreTest {
   @Test def test11(): Unit = {
     parseFromFile("test11.kore")
   }
+  @Test def imp(): Unit = {
+    parseFromFile("imp.kore")
+  }
 
 
   def strip(s: String): String = {
