@@ -303,7 +303,7 @@
   \newcommand{\KdeleteKVariableList}{\texttt{\sharpsymbol deleteVariableList}}
   \newcommand{\KappendKCharList}{\texttt{\sharpsymbol appendKCharList}}
   \newcommand{\KVariable}{\texttt{\sharpsymbol Variable}}
-  \newcommand{\KVariableToKPattern}{\texttt{\sharpsymbol VariableToPattern}}
+  \newcommand{\KVariableToKPattern}{\texttt{\sharpsymbol variableToPattern}}
   \newcommand{\KvariableAsPattern}{\texttt{\sharpsymbol variableAsPattern}}
   \newcommand{\KPattern}{\texttt{\sharpsymbol Pattern}}
   \newcommand{\Kvariable}{\texttt{\sharpsymbol variable}}
@@ -3724,16 +3724,18 @@ In Section~\ref{sec:meta-theory-reflection}, we showed the reason why we
 need a meta-theory and its role in defining the semantics of \K.
 In particular, we introduced the reflection property
 \begin{center}
-	\begin{tabular}{c}
+	\begin{tabular}{l}
 		$
 		\prftree[r]{\hspace*{3ex}\textsc{(Upward Reflection)}}
 		{T \vdash \varphi}
-		{K \cup \denote{T} \vdashfin \Kdeduce(\denote{\varphi})}
+		{K \cup \denote{T} \vdashfin 
+		\parametric{\Kdeduce}{\shs}(\denote{\varphi})}
 		$
 		\\[4ex]
 		$
 		\prftree[r]{\hspace*{3ex} \textsc{(Downward Reflection)}}
-		{K \cup \denote{T} \vdashfin \Kdeduce(\denote{\varphi})}
+		{K \cup \denote{T} \vdashfin 
+		\parametric{\Kdeduce}{\shs}(\denote{\varphi})}
 		{T \vdash \varphi}
 		$
 	\end{tabular}
@@ -4821,14 +4823,15 @@ The Kore language is a formal specification language that allows one to specify
 number of characters and space.
 
 Before we present the syntax and semantics of Kore, we would like to recall 
-the readers of upward and downward reflection relations that we have introduced 
-in Section~\ref{sec:meta-theory}, a.k.a. the faithfulness theorem.
+the readers again of the reflection property that we firstly introduced 
+in Section~\ref{sec:meta-theory-reflection}
 \begin{center}
 	\begin{tabular}{cc}
 		$
 		\prftree[r]{\footnotesize (Upward Reflection)}
 		{T \vdash \varphi}
-		{K \cup \denote{T} \vdashfin \Kdeduce(\denote{\varphi})}
+		{K \cup \denote{T} \vdashfin 
+		\parametric{\Kdeduce}{\shs}(\denote{\varphi})}
 		$
 		&
 		$
@@ -4913,16 +4916,16 @@ Identifiers are mostly used as symbols, sorts, and variable names.
 An \syntacc{identifier} is either of the following three cases:
 \begin{itemize}
 \item An \syntacc{object-identifier}, which is a nonempty sequence of alphabets 
-and digits and the character ``\verb|'|'' that starts with an alphabet and is 
-not a \syntacc{keyword}
-\item A \syntacc{meta-identifier}, which is the character ``\verb|#|'' followed 
-by an \syntacc{object-identifier};
-%\item A \syntacc{reserved-identifier}, which is the character ``\verb|\|'' 
-followed by an \syntacc{object-identifier}
+and digits and the character~``\verb|'|'' that starts with an 
+alphabet and is not a \syntacc{keyword}.
+\item A \syntacc{meta-identifier},
+which is either the character ``\verb|#|'' followed by an 
+\syntacc{object-identifier},
+or the string ``\verb|#`|'' followed by an \syntacc{object-identifier}.
 \end{itemize}
 
 Identifiers are building blocks of many syntactic categories in Kore,
-including 
+such as 
 \syntacc{sort}, \syntacc{symbol}, and \syntacc{pattern}.
 It is important to be able to syntactically distinguish 
 \syntacc{object-identifier} and \syntacc{meta-identifier}
@@ -4932,16 +4935,23 @@ not want to take the risk of confusing them.
 
 \paragraph{String literals.}
 Kore supports C-style string literals.
-The syntactic category of string literals is \syntacc{string}
+The syntactic category of string literals is~\syntacc{string}.
+We use string literals to represent patterns in the meta-theory whose sort is 
+$\KString$.
 
-\paragraph{Keyword.}
-Kore has four keywords in the syntactic category \syntacc{keyword}.
-They are used to initiate declarations.
+\paragraph{Keywords.}
+Kore has six keywords.
+They belong to the syntactic category \syntacc{keyword}.
+They are used to signify the begin and end of a declaration.
 \begin{center}
 	{\ttfamily
 		\begin{tabular}{l|l}
 			\textrm{Keyword} & \textrm{Usage}
 			\\\hline
+			module & \textrm{Initiate a module declaration}
+			\\
+			endmodule & \textrm{Finalize a module declaration}
+			\\
 			sort & \textrm{Initiate a sort declaration}
 			\\
 			symbol & \textrm{Initiate a symbol declaration}
@@ -5094,9 +5104,30 @@ All meta-level sorts are non-parametric sorts.
 
 Heads are user-definable constructors of \syntacc{pattern} (see 
 Section~\ref{sec:kore-syntax-patterns}).
-Heads include \emph{object-level heads} and \emph{meta-level heads}, that are 
-used to construct \syntacc{object-pattern} and \syntacc{meta-pattern} 
-respectively, which are treated differently in the \emph{lifting process}.
+In practice, a head is either a symbol or an alias.
+The only difference between symbols and alias are their semantics.
+The semantics of a symbol is defined not only by user-defined axioms, but also 
+by the inference rule (\textsc{Membership Symbol}) in the matching logic proof 
+system (see Section~\ref{sec:ML-proof-system}).
+The semantics of an alias is defined only by user-defined axioms.
+Whether a head is declared as a symbol or an alias is decided
+in its declaration (see Section~\ref{sec:kore-syntax-declarations}).
+If it is declared with the keyword \texttt{symbol}, then the head is a symbol.
+If it is declared with the keyword \texttt{alias}, then the head is an alias.
+Therefore the parser cannot tell if a head appearing in a pattern is a symbol 
+or an alias \emph{locally}.
+The parser either needs to remember a table of all symbols and aliases
+declarations and look up the table whenever it parses a head,
+or it simply parses the head as it is and leaves the job of looking up 
+declaration table to other tools.
+In here we prefer the latter approach, because the job of looking up 
+declaration table to decide if a head is a symbol or an alias is also part of 
+the job of \emph{checking wellformedness} of the definition, for which we need 
+separate tools anyway.
+
+Heads include \syntacc{object-head} and \syntacc{meta-head}.
+They are used to construct \syntacc{object-pattern} and \syntacc{meta-pattern} 
+respectively.
 
 \begin{grammar}\small
 	<head> ::= <object-head> | <meta-head>
@@ -5171,6 +5202,10 @@ respectively, which are treated differently in the \emph{lifting process}.
 %and an object (or meta) sort.
 %String literals are meta-patterns.
 
+Apart from a few exceptions, patterns in Kore have a highly unified 
+prefix form representations.
+Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
+ 
 \begin{grammar}\small
 	<pattern> ::= <object-pattern> | <meta-pattern>
 	
@@ -5235,8 +5270,19 @@ respectively, which are treated differently in the \emph{lifting process}.
 	
 	<meta-variable> ::= <meta-identifier> `:' <meta-sort>
 	
+	<pattern-list> ::= $\epsilon$ | <pattern> | <pattern> `,' <pattern-list>
 \end{grammar}
-
+Notice that we allow a mixed syntax for object-level patterns and meta-level 
+patterns.
+In practice it is useful, because meta-level patterns are often lengthier and 
+less intuitive than the corresponding object-level ones.
+On the other hand, we have seen there are many cases in which one has no means 
+but to use the meta-theory and write meta-level patterns to define certain 
+things, such as parametric sorts and side conditions (see 
+Section~\ref{sec:finite-mechanisms}).
+By allowing writing a mix of object-level patterns and meta-level patterns, the 
+users can write patterns in the object-level as usual and only write meta-level 
+patterns when needed.
 %
 %
 %The following are all logic connective constructors in Kore, including both 
@@ -5264,12 +5310,47 @@ respectively, which are treated differently in the \emph{lifting process}.
 %\end{tabular}
 %\end{center}
 
+\subsubsection{Attributes}
+\label{sec:kore-attributes}
+
+Attributes are pieces of information, often collected by front-ends, about 
+various aspects including pretty-printing, parsing concrete syntax of 
+user-defined languages, 
+evaluation and rewriting strategies,
+associative and commutative matching,
+and automatic document generation.
+Some attributes contain purely syntactic information while the others contain 
+semantics information.
+All semantics information contained in attributes has to have corresponding 
+axioms explicitly declared in Kore definitions, and thus in theory we do not 
+need to look at attributes at all in Kore.
+However, information contained in attributes is highly compact and easy to 
+understand.
+Many semantics attributes provide useful hints for back-ends to use faster 
+algorithms or more efficient data structures.
+Even though such hints are encoded as axioms in Kore definition, we do not want 
+back-ends to re-engineer the information from those axioms.
+Therefore, in Kore definitions we provide syntax to specify attributes for 
+every declaration.
+Back-ends that care less about proving and focus more on execution may choose 
+to simply trust these attributes, without checking that a definition does 
+contain axioms that justify the attributes it claims.
+Back-ends that care more about proving and want to have \emph{certificates} for 
+whatever they do need to use axioms instead of attributes to generate proof 
+objects and prove them in matching logic provers.
+
+Attributes are written as comma-separated patterns wrapped with brackets 
+``\texttt{[}'' and ``\texttt{]}''.
+\begin{grammar}
+<attribute> ::= `[' <pattern-list> `]'
+\end{grammar}
+
 
 \subsubsection{Declarations and Definitions}
 \label{sec:kore-syntax-declarations}
 
 \begin{grammar}\small
-<definition> ::= <declaration>$^+$
+<definition> ::= <attribute> `module' <declaration>$^+$ `endmodule'
 
 <declaration> ::= \quad
 \alt <sort-declaration>
@@ -5277,25 +5358,29 @@ respectively, which are treated differently in the \emph{lifting process}.
 \alt <alias-declaration>
 \alt <axiom-declaration>
 
-<sort-declaration> ::= `sort' `{' <sort-variable-list> `}' <object-sort>
+<sort-declaration> ::= `sort' `{' <sort-variable-list> `}' <object-sort> 
+<attribute>
 
-<symbol-declaration> ::= <object-symbol-declaration> | <meta-symbol-declaration>
+<symbol-declaration> ::= <object-symbol-declaration> | 
+<meta-symbol-declaration> <attribute>
 
 <object-symbol-declaration> ::= `symbol' <object-head> `(' <object-sort-list> 
-`)' `:' <object-sort>
+`)' `:' <object-sort> <attribute>
 
 <meta-symbol-declaration> ::= `symbol' <meta-head> `(' <meta-sort-list> `)' 
-`:' <meta-sort>
+`:' <meta-sort> <attribute>
 
-<alias-declaration> ::= <object-alias-declaration> | <meta-alias-declaration>
+<alias-declaration> ::= <object-alias-declaration> | <meta-alias-declaration> 
+<attribute>
 
 <object-alias-declaration> ::= `alias' <object-head> `(' <object-sort-list> 
-`)' `:' <object-sort>
+`)' `:' <object-sort> <attribute>
 
 <meta-alias-declaration> ::= `alias' <meta-head> `(' <meta-sort-list> `)' 
-`:' <meta-sort>
+`:' <meta-sort> <attribute>
 
-<axiom-declaration> ::= `axiom' `{' <sort-variable-list> `}' <pattern>
+<axiom-declaration> ::= `axiom' `{' <sort-variable-list> `}' <pattern> 
+<attribute>
 
 <sort-variable-list> ::= \quad
 \alt <object-sort-variable>
@@ -5865,83 +5950,6 @@ where $s_1',\dots,s_m'$ are all those meta-variables in $s_1,\dots,s_n$.
 
 \subsection{Example D: Contexts}
 
-\subsection{Get Things From Here}
-
-\subsubsection{Formal BNF Grammar of Kore}
-
-\begin{grammar}\small
-	<definition>    ::= <declarations>
-	
-	<declarations> ::= `' | <declaration> | <declaration> <declarations>
-	
-	<declaration>   ::= \quad
-	\alt <sort-declaration> 
-	\alt <symbol-declaration> 
-	\alt <axiom-declaration>
-	\alt <alias-declaration>
-	
-	<sort-declaration> ::= \quad
-	\alt `sort' <sort>
-	\alt `hooked-sort' <sort> 
-	
-	<sort> ::= \quad
-	\alt <atomic-sort> 
-	\alt <parametric-sort>
-	
-	<parametric-sort> ::= \quad
-	\alt <parametric-sort-constructor> `{' <sort-list> `}'
-	
-	<sort-list> ::= \quad 
-	\alt <sort> 
-	\alt <sort> `,' <sort-list>
-	
-	<atomic-sort> ::= "[A-Z][a-zA-Z0-9]"$^+$
-	
-	<sort-variable> ::= "[A-Z0-9]"$^+$
-	
-	<parametric-sort-constructor> ::= "[A-Z][a-zA-Z0-9]"$^+$
-	
-	<symbol-declaration> ::= \quad
-	\alt `symbol' <symbol> <symbol-signature>
-	\alt `hooked-symbol' <symbol> <symbol-signature>
-	
-	<symbol> ::= \quad
-	\alt <nonparametric-symbol>
-	\alt <parametric-symbol>
-	
-	<nonparametric-symbol> ::= "[a-zA-Z0-9]"$^+$
-	
-	<parametric-symbol> ::= \quad
-	\alt <parametric-symbol-name> `{' <sort-list> `}'
-	
-	<parametric-symbol-name> ::= "[a-zA-Z0-9]"$^+$
-	
-	<symbol-signature> ::= \quad
-	\alt `(' <sort-list> `)' `:' <sort>
-	
-	<axiom-declaration> ::= \quad
-	\alt `axiom' <pattern>
-	
-	<pattern> ::= \quad
-	\alt <variable-name> `:' <sort>
-	\alt <symbol> `(' <pattern-list> `)'
-	\alt `\\and' `(' <pattern> `,' <pattern> `,' <sort> `)'
-	\alt `\\not' `(' <pattern> `,' <sort> `)' 
-	\alt `\\exists' `(' <variable-name> `:' <sort> `,' <pattern> `,' <sort> `)'
-	\alt "how to denote meta-variables?"
-	
-	<pattern-list> ::= \quad
-	\alt `' 
-	\alt <pattern> 
-	\alt <pattern> `,' <pattern-list>
-	
-	<alias-declaration> ::= \quad
-	\alt `alias' "todo here, check the following example of IMP."
-\end{grammar}
-
-%\section{IMP in Kore}
-%As an example, we present the semantics of IMP defined as a Kore definition.
-%\lstinputlisting[language=kore]{imp.kore}
 
 \section{Proof of Faithfulness Theorem}
 \label{sec:proof-of-faithfulness-theorem}
