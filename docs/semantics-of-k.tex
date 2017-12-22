@@ -418,6 +418,10 @@
   \newcommand{\ttp}{\texttt{p}}
   \newcommand{\itvp}{\mathit{vp}}
   
+  \newcommand{\att}{\mathit{att}}
+  \newcommand{\verbose}{\mathit{verbose}}
+  \newcommand{\var}{\mathit{var}}
+  
   % Define syntactic category <category>
   \newcommand{\syntacc}[1]{\text{$\langle$\textit{#1}$\rangle$}}
 
@@ -3845,6 +3849,7 @@ In the following, we fix a naming for $T_L$ to be the one in
 Table~\ref{tab:naming}.
 
 \subsection{Represent Sorts}
+\label{sec:represent-sorts}
 Recall that in Section~\ref{sec:ML-sorts-symbols}, we defined the constructor
 $$
 \Ksort \colon \underbrace{\KString}_\text{name}\  \times 
@@ -5207,7 +5212,9 @@ Apart from a few exceptions, patterns in Kore have a highly unified
 prefix form representations.
 Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
  
-\begin{grammar}\small
+\begin{grammar}
+\label{grammar:patterns}
+	\small
 	<pattern> ::= <object-pattern> | <meta-pattern>
 	
 	<object-pattern> ::= \quad
@@ -5227,13 +5234,13 @@ Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
 	`(' <pattern> `,' <pattern> `)'
 	\alt `\\exists' `{' <object-sort> `}'
 	`(' <pattern> `,' <pattern> `)'
-	\alt `\\ceil' `{' <object-sort> `}'
+	\alt `\\ceil' `{' <object-sort> `,'  <object-sort> `}'
 	`(' <pattern> `)'
-	\alt `\\floor' `{' <object-sort> `}'
+	\alt `\\floor' `{' <object-sort> `,'  <object-sort> `}'
 	`(' <pattern> `)'
-	\alt `\\equals' `{' <object-sort> `}'
+	\alt `\\equals' `{' <object-sort> `,'  <object-sort> `}'
 	`(' <pattern> `,' <pattern> `)'
-	\alt `\\mem' `{' <object-sort> `}'
+	\alt `\\mem' `{' <object-sort> `,'  <object-sort> `}'
 	`(' <pattern> `,' <pattern> `)'
 	\alt `\\top' `{' <object-sort> `}'
 	\alt `\\bottom' `{' <object-sort> `}'
@@ -5258,13 +5265,13 @@ Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
 	`(' <pattern> `,' <pattern> `)'
 	\alt `\\exists' `{' <meta-sort> `}'
 	`(' <pattern> `,' <pattern> `)'
-	\alt `\\ceil' `{' <meta-sort> `}'
+	\alt `\\ceil' `{' <meta-sort> `,' <meta-sort> `}'
 	`(' <pattern> `)'
-	\alt `\\floor' `{' <meta-sort> `}'
+	\alt `\\floor' `{' <meta-sort> `,' <meta-sort> `}'
 	`(' <pattern> `)'
-	\alt `\\equals' `{' <meta-sort> `}'
+	\alt `\\equals' `{' <meta-sort> `,' <meta-sort> `}'
 	`(' <pattern> `,' <pattern> `)'
-	\alt `\\mem' `{' <meta-sort> `}'
+	\alt `\\mem' `{' <meta-sort> `,' <meta-sort> `}'
 	`(' <pattern> `,' <pattern> `)'
 	\alt `\\top' `{' <meta-sort> `}'
 	\alt `\\bottom' `{' <meta-sort> `}'
@@ -5617,17 +5624,14 @@ For example,
 }
 \end{center}
 
-\subsubsection{Lift Object Sorts to Meta-Patterns}
+\subsubsection{Lift Object Sorts and Object Sort Lists}
 The lifting process that lifts object sorts to their meta-representations
 is defined inductively as follows
 \begin{align*}
 &\denote{\_} \colon \syntacc{object-sort} \to \syntacc{meta-pattern} \\
 &\denote{s} = \begin{cases*}
-\quottt{\sharpsymbol} \ s \ \quottt{:} \ \quottt{\KSort\{\}} & if $s$ is an 
-object 
-sort 
-variable 
-$S$ \\
+\quottt{\sharpsymbol} \ s \ \quottt{:} \ \quottt{\KSort\{\}} & if $s$ is a 
+sort variable \\
 \denote{C} \ \quottt{(} \ 
 \denote{s_1} \ \quottt{,} \ 
 \dots \ \quottt{,} \ 
@@ -5660,12 +5664,11 @@ For example,
 	}
 \end{center}
 
-\subsubsection{Lift Object Sort Lists to Meta-Patterns}
 Given a list of object sorts $s_1,\dots,s_n$.
-Sometimes we want to lift the list to 
-one meta-pattern of the sort \textup{\KSortList}, instead of
-a list of meta-patterns of the sort \textup{\KSort}.
-For that reason, we define the following {list-lifting process}
+Sometimes we want to lift the sort list to 
+a meta-pattern of sort \textup{\KSortList}, instead of
+a list of meta-patterns of sort \textup{\KSort}.
+For that reason, we define the following lifting process for lists
 \begin{align*}
 & \denote{\_}_\llist \colon \syntacc{object-sort-list} \to 
 \syntacc{meta-pattern} \\
@@ -5682,42 +5685,110 @@ $\alpha = s,\beta$
 \end{cases*}
 \end{align*}
 
-\subsubsection{Lift Sort Declarations to Symbol and Axiom Declarations}
+We remind readers that this lifting process uses helper functions as we 
+introduced in Section~\ref{sec:represent-sorts} that help us write more compact 
+meta-representations.
+It is also the lifting process that we use the most often.
+On the other hand, the lifting process that does not use these helper functions 
+is also needed.
+For example in Section~\ref{sec:lift-sort-decls}, we will show how to generate 
+declarations for these helper functions and their axioms.
+In there, we will use the lifting process that does not use helper functions.
+For consistency, we define this lifting process, denoted as 
+$\Bracket{\_}_\verbose$, in this subsection.
+\begin{align*}
+&\denote{\_}_\verbose \colon \syntacc{object-sort} \to \syntacc{meta-pattern} \\
+&\denote{s} = \begin{cases*}
+\quottt{\sharpsymbol} \ s \ \quottt{:} \ \quottt{\KSort\{\}} & if $s$ is a 
+sort variable \\
+\quottt{\sharpsymbol sort\{\}} \
+\quottt{(} \ 
+\denote{C}_\name \ \quottt{,} \
+\denote{s_1,\dots,s_n}_{\verbose\llist} \ 
+\quottt{)} & if $s$ 
+is of the 
+form $\parametric{C}{s_1,\dots,s_n}$
+\end{cases*}
+\end{align*}
+In the definition, $\denote{\_}_{\verbose\llist}$ is the lifting process for 
+lists that does not use helper functions.
+It is inductively defined as
+\begin{align*}
+& \denote{\_}_{\verbose\llist} \colon \syntacc{object-sort-list} \to 
+\syntacc{meta-pattern} \\
+& \denote{\alpha}_{\verbose\llist} = 
+\begin{cases*}
+\quottt{\sharpsymbol nilSortList\{\}} & if $\alpha$ is empty \\
+\quottt{\sharpsymbol consSortList\{\}} \ 
+\quottt{(} \ 
+\denote{s}_\verbose \ 
+\quottt{,} \ 
+\denote{\beta}_{\verbose\llist} \ 
+\quottt{)} & if 
+$\alpha = s,\beta$
+\end{cases*}
+\end{align*}
+
+\subsubsection{Lift Sort Declarations}
+\label{sec:lift-sort-decls}
 A sort declaration is lifted to one symbol declaration and two axiom 
 declarations
 $$ \denote{\_} \colon \syntacc{sort-declaration} \to 
 \syntacc{declaration}^3$$
-\begin{align*}
-  &\ \denote{\texttt{sort\{$\dots$\} \parametric{$C$}{$S_1$,\dots,$S_n$}}} \\
-  = &\ \texttt{symbol 
-  $\denote{C}$($\underbrace{\parametric{
-  		\KSort}{},\dots,\parametric{\KSort}{}}_\textrm{$n$ 
-  		times}$):\parametric{\KSort}{}}
-  \\
-  &\ \texttt{\parametric{axiom}{\sharpsymbol S} 
-  \parametric{\slequals}{\parametric{\KSort}{},\sharpsymbol S}(}
-  \\
-  &\qquad\qquad\qquad\quad
-  \texttt{$\denote{\parametric{C}{S_1,\dots,S_n}}$,}
-  \\
-  &\qquad\qquad\qquad\quad
-  \texttt{\parametric{\Ksort}{}($\denote{C}_\name$, 
-  $\denote{
-  	S_1,\dots,S_m}_\llist$))}
-  \\
-  &\ 
-  \texttt{\parametric{axiom}{\sharpsymbol S}
-  \parametric{\slimplies}{\sharpsymbol S}( }
-  \\
-  &\qquad\qquad\qquad\quad
-  \parametric{\KsortsDeclared}{\texttt{\sharpsymbol 
-  		S}}(\denote{
-  	S_1,\dots,S_m}_\llist),
-  \\
-  &\qquad\qquad\qquad\quad
-  \parametric{\KsortDeclared}{\texttt{\sharpsymbol 
-  S}}(\denote{\parametric{C}{S_1,\dots,S_n}}))
-\end{align*}
+Consider the sort declaration 
+\begin{center}
+	\ttfamily
+	sort\{$v_1,\dots,v_m$\} $C$\{$s_1,\dots,s_n$\} [$\att$]
+\end{center}
+where $v_1,\dots,v_m$ are sort variables,
+\texttt{$C$\{$s_1,\dots,s_n$\}} is a sort which (possibly) uses sort 
+variables $v_1,\dots,v_m$, and $\att$ is an attribute.
+This sort declaration is lifted to the following three declarations.
+
+The first declaration is a symbol declaration for the corresponding helper 
+function $\denote{C}$ for the sort constructor $C$.
+Since $C$ takes $n$ sorts as parameters, the helper function $\denote{C}$ takes 
+$n$ arguments.
+\begin{center}
+\ttfamily
+symbol $\denote{C}$($\underbrace{\parametric{
+		\KSort}{},\dots,\parametric{\KSort}{}}_\textrm{$n$ 
+	times}$):\parametric{\KSort}{} []
+\end{center}
+
+The second declaration is an axiom declaration that says the helper function 
+$\denote{C}$ is indeed just a helper function
+\begin{center}
+\begin{tabular}{l}
+\ttfamily
+axiom\{$\shs$\} \\
+\ttfamily
+\qquad \slequals\{\KSort\{\},\shs\}($\denote{
+	\text{$C$\{$s_1,\dots,s_n$\}}}$,$\denote{
+	\text{$C$\{$s_1,\dots,s_n$\}}}_\verbose$) []
+\end{tabular}
+\end{center}
+where $\shs$ is a fresh meta-level sort variable.
+
+The third declaration is an axiom declaration that says the parametric sort
+\texttt{$C$\{$s_1,\dots,s_n$\}}
+is declared iff all sort variables $v_1,\dots,v_m$ are declared.
+\begin{center}
+\begin{tabular}{l}
+\ttfamily
+axiom\{$\shs$\} \\
+\ttfamily
+\qquad 
+\slimplies\{\shs\}( \\
+\ttfamily
+\qquad\qquad\KsortsDeclared\{\shs\}($\denote{
+	v_1,\dots,v_m}_\llist$),\\
+\ttfamily
+\qquad\qquad\KsortDeclared\{\shs\}($\denote{
+	\text{$C$\{$s_1,\dots,s_n$\}}}$)) []
+\end{tabular}
+\end{center}
+where $\shs$ is a fresh meta-level sort variable.
 
 \subsubsection{Lift Object Head Constructors to Meta Symbols}
 Object symbol constructors are lifted to non-parametric meta-symbols as
@@ -5730,179 +5801,414 @@ Object symbol constructors are lifted to non-parametric meta-symbols as
 \end{align*}
 
 
-\subsubsection{Lift Object Symbol and Alias Declarations to Symbol and Axiom 
-Declarations}
-An object symbol declaration \begin{center}
-	\texttt{symbol 
-\parametric{$C_\itsymbol$}{$S_1$,\dots,$S_m$}($s_1$,\dots,$s_n$):$s$}
+\subsubsection{Lift Object Symbol Declarations}
+An object symbol declaration is lifted to a symbol declaration and two axiom 
+declarations.
+$$ \denote{\_} \colon \syntacc{object-symbol-declaration} \to 
+\syntacc{declaration}^3$$
+Consider the symbol declaration
+\begin{center}
+\ttfamily
+symbol $C$\{$v_1,\dots,v_m$\}($s_1,\dots,s_n$):$s$ [$\att$]
 \end{center}
-with object symbol constructor $C_\itsymbol$, sort vari$  $ables $S_1,\dots,S_m$, 
-argument sorts $s_1,\dots,s_n$, and return sort $s$, is lifted as
+where $C$ is an object symbol constructor, $v_1,\dots,v_m$ are sort variables, 
+$s_1,\dots,s_n$ and $s$ are argument sorts and return sort which possibly use 
+sort variables $v_1,\dots,v_m$.
+
+The first declaration is a symbol declaration for the corresponding helper 
+function $\denote{C}$ of the symbol constructor $C$.
+Since $C$ takes $m$ sort parameters and $n$ arguments, the helper function 
+$\denote{C}$ takes in total $m+n$ arguments.
+\begin{center}
+	\ttfamily
+	symbol $\denote{C}$($\underbrace{\parametric{
+			\KSort}{},\dots,\parametric{\KSort}{}}_\textrm{$m$ 
+		times},\underbrace{\parametric{
+			\KPattern}{},\dots,\parametric{\KPattern}{}}_\textrm{$n$ 
+		times}$):\parametric{\KPattern}{} []
+\end{center}
+
+The second declaration is an axiom declaration that says the helper function 
+$\denote{C}$ is indeed just a helper function.
+Before we show the axiom declaration, let us define some notations.
+Let us use $\sigma$ to denote the following meta-pattern
+$$
+\sigma =
+\texttt{\Ksymbol\{\}($\denote{
+		C}_\name$,$\denote{
+		v_1,\dots,v_m}_\llist$,$\denote{
+		s_1,\dots,s_n}_\llist$,$\denote{s}$)}
+$$
+We also need $n$ fresh and distinct meta-level variables of sort $\KPattern$, 
+denoted as 
+$\varphi_1,\dots,\varphi_n$ respectively.
+For example when $n = 3$, we can choose $\varphi_1,\varphi_2,\varphi_3$ to be
 \begin{align*}
-& \texttt{symbol 
-	\parametric{$C_\itsymbol$}{$S_1$,\dots,$S_m$}($s_1$,\dots,$s_n$):$s$}
-\\ =\
-& \texttt{symbol 
-$\denote{C_\itsymbol}$($\underbrace{\parametric{\KSort}{},\dots,
-	\parametric{\KSort}{}}_\textrm{$m$ times}$,$\underbrace{
-	\parametric{\KPattern}{},\dots,\parametric{
-		\KPattern}{}}_\textrm{$n$ times}$):\parametric{\KPattern}{}}
-\\ 
-& \texttt{\parametric{axiom}{\sharpsymbol S}
-\parametric{\slequals}{\parametric{\KPattern}{},\sharpsymbol S}(
-}
-\\
-& \qquad\qquad\qquad \texttt{
-	$\denote{C_\itsymbol}$($\denote{S_1}$,\dots,$\denote{S_m}$,\sharpsymbol 
-	P1:\parametric{\KPattern}{},\dots,\sharpsymbol Pn:\parametric{\KPattern}{}),
-}
-\\
-& \qquad\qquad\qquad \texttt{
-	\parametric{\Kapplication}{}($\denote{
-		C_\itsymbol}_\itsymbol$,$\collapse_\KPattern(\texttt{\sharpsymbol 
-			P1:\parametric{\KPattern}{}},\dots,\texttt{\sharpsymbol 
-			Pn:\parametric{\KPattern}{}})$))
-}
-\\
-& \texttt{\parametric{axiom}{\sharpsymbol S}
-	\parametric{\Kimplies}{\sharpsymbol S}($\denote{
-		S_1,\dots,S_n}_\itdeclared$,
-	\parametric{\KsymbolDeclared}{\sharpsymbol 
-	S}($\denote{C_\itsymbol}_\itsymbol$))
-}
+\varphi_1 &= \texttt{\sharpsymbol P1:\KPattern\{\}} \\
+\varphi_2 &= \texttt{\sharpsymbol P2:\KPattern\{\}} \\
+\varphi_3 &= \texttt{\sharpsymbol P3:\KPattern\{\}}
 \end{align*}
-in which $\denote{\_}_\itsymbol$ (given 
-$S_1,\dots,S_m,s_1,\dots,s_n,s$, and \texttt{\sharpsymbol S}) is 
-defined as
+The last notation we need to introduce is 
+$\denote{\varphi_1,\dots,\varphi_n}_\llist$, which is a 
+meta-pattern of sort $\KPatternList$ obtained from a list of meta-patterns of 
+sort $\KPattern$.
+It is defined inductively as follows
 \begin{align*}
-  \denote{C_\itsymbol}_\itsymbol = 
-  \texttt{\Ksymbol($\denote{C_\itsymbol}_\name$,$\denote{
-  		S_1,\dots,S_m}_\llist$,$\denote{
-  		s_1,\dots,s_n}_\llist$,$\denote{
-  		s}$))}
-\end{align*}
-and $\collapse_\KPattern(\alpha)$ for a list $\alpha$ of Kore patterns is 
-defined as
-\begin{equation*}
-\collapse_\KPattern(\alpha) =
+& \denote{\_}_\llist \colon \syntacc{meta-pattern}^* \to 
+\syntacc{meta-pattern} \\
+& \denote{\alpha}_\llist = 
 \begin{cases*}
-\parametric{\KnilKPatternList}{} & if $\alpha$ is empty list \\
-\parametric{\KconsKPatternList}{}(\varphi, \collapse_\KPattern(\beta)) & if 
-$\alpha$ is 
-$\varphi, \beta$
+\quottt{\KnilKPatternList\{\}} & if $\alpha$ is empty \\
+\quottt{\KconsKPatternList\{\}} \ 
+\quottt{(} \ 
+\varphi \ 
+\quottt{,} \ 
+\denote{\beta}_\llist \ 
+\quottt{)} & if 
+$\alpha = \varphi,\beta$
 \end{cases*}
-\end{equation*}
-
-An object alias declaration is lifted in the same way as an object symbol 
-declaration is lifted, except that the alias declaration does not have the two 
-axioms.
-
-\subsubsection{Lift Connective Constructors To Meta Symbols}
-Connective constructors are lifted to non-parametric meta-symbols as 
-follows.
-\begin{align*}
-& \denote{\_} \colon \syntacc{connective} \to \syntacc{meta-symbol} \\
-& \denote{C_\itlogic} = \parametric{\denote{C_\itlogic}_\sharp}{} \quad 
-\text{for any connective constructor $C_\itconnective$}
 \end{align*}
+Now we are ready to show the axiom declaration which says the helper function 
+$\denote{C}$ is indeed just a helper function.
 
-\subsubsection{Lift Object Head Constructors To Meta Symbols}
-Recall that a head constructor is either a symbol constructor or a connective 
-constructor.
-A head constructor $C$ is lifted to the meta-symbol $\denote{C}$ in the same 
-way a symbol/connective constructor is lifted.
+\begin{center}
+	\begin{tabular}{l}
+		\ttfamily
+		axiom\{$\shs$\} \\
+		\ttfamily
+		\qquad \slequals\{\KPattern\{\},\shs\}( \\
+		\ttfamily
+		\qquad\qquad$\denote{C}$($
+		\denote{v_1},\dots,\denote{v_m},\varphi_1,\dots,\varphi_n$), \\
+		\ttfamily
+		\qquad\qquad
+		\Kapplication\{\}($\sigma, \denote{\varphi_1,\dots,\varphi_n}_\llist$)
+		[]
+	\end{tabular}
+\end{center}
+where $\shs$ is a fresh meta-level sort variable.
 
-\subsubsection{Lift Object Variables To Meta Patterns of Sort \KVariable}
-Variables are lifted to meta-patterns of sort {\KVariable} as follows.
+The third declaration is an axiom declaration that says the parametric symbol
+\texttt{$C$\{$v_1,\dots,v_m$\}} is declared iff all sort variables 
+$v_1,\dots,v_m$ are declared.
+
+\begin{center}
+	\begin{tabular}{l}
+		\ttfamily
+		axiom\{$\shs$\} \\
+		\ttfamily
+		\qquad 
+		\slimplies\{\shs\}( \\
+		\ttfamily
+		\qquad\qquad\KsortsDeclared\{\shs\}($\denote{
+			v_1,\dots,v_m}_\llist$),\\
+		\ttfamily
+		\qquad\qquad\KsymbolDeclared\{\shs\}($\sigma$))
+		[]
+	\end{tabular}
+\end{center}
+where $\shs$ is a fresh meta-level sort variable.
+
+\subsubsection{Lift Object Alias Declarations}
+An object alias declaration is lifted to a symbol declaration.
+$$ \denote{\_} \colon \syntacc{object-alias-declaration} \to 
+\syntacc{declaration}$$
+Consider the alias declaration
+\begin{center}
+	\ttfamily
+	alias $C$\{$v_1,\dots,v_m$\}($s_1,\dots,s_n$):$s$ [$\att$]
+\end{center}
+where $C$ is an object alias constructor, $v_1,\dots,v_m$ are sort variables, 
+$s_1,\dots,s_n$ and $s$ are argument sorts and return sort which possibly use 
+sort variables $v_1,\dots,v_m$.
+
+The alias declaration is lifted to a symbol declaration for the corresponding 
+helper function $\denote{C}$ of the alias constructor $C$.
+Since $C$ takes $m$ sort parameters and $n$ arguments, the helper function 
+$\denote{C}$ takes in total $m+n$ arguments.
+\begin{center}
+	\ttfamily
+	symbol $\denote{C}$($\underbrace{\parametric{
+			\KSort}{},\dots,\parametric{\KSort}{}}_\textrm{$m$ 
+		times},\underbrace{\parametric{
+			\KPattern}{},\dots,\parametric{\KPattern}{}}_\textrm{$n$ 
+		times}$):\parametric{\KPattern}{}
+	[]
+\end{center}
+
+%\subsubsection{Lift Connective Constructors To Meta Symbols}
+%Connective constructors are lifted to non-parametric meta-symbols as 
+%follows.
+%\begin{align*}
+%& \denote{\_} \colon \syntacc{connective} \to \syntacc{meta-symbol} \\
+%& \denote{C_\itlogic} = \parametric{\denote{C_\itlogic}_\sharp}{} \quad 
+%\text{for any connective constructor $C_\itconnective$}
+%\end{align*}
+
+\subsubsection{Lift Patterns}
+We remind readers of the grammar of Kore patterns in 
+Section~\ref{grammar:patterns}.
+In this section, we define the lifting process for patterns
+$$
+\denote{\_} \colon \syntacc{pattern} \to \syntacc{meta-pattern}
+$$
+
+\paragraph{Variables.}
+We first define an auxiliary lifting process that lifts an object variable to a 
+meta-pattern of sort $\KVariable$.
 \begin{align*}
-&\denote{\_}_0 \colon \syntacc{object-variable} \to \syntacc{meta-pattern} \\
+&\denote{\_}_\var \colon \syntacc{object-variable} \to \syntacc{meta-pattern} \\
 &\denote{x \cln s} = \texttt{\parametric{\Kvariable}{}($\denote{
-		x}_\name$,$\denote{s}$)} \quad \text{for any object variable name $x$ 
-		and object sort $s$}
+		x}_\name$,$\denote{s}$)} \quad \text{for any object variable $x \cln s$}
 \end{align*}
-
-\subsubsection{Lift Patterns To Meta Patterns of Sort \KPattern}
-One of the main part of the lifting operation is lifting patterns to meta-
-patterns of sort \KPattern, which is the main job of this subsection.
-We recall the readers of the following grammar of Kore 
-patterns, in which we intensionally merge the grammars of both object and 
-meta-patterns for simplicity.
-\begin{grammar}
-	<pattern> ::= \quad
-	\alt <object-identifier> `:' <object-sort>
-	\alt <meta-identifier> `:' <meta-sort>
-	\alt <string-literal>
-	\alt <object-head> `(' <pattern-list> `)'
-	\alt <meta-head> `(' <pattern-list> `)'
-\end{grammar}
-We will define the lifting operation for patterns case by case following the 
-grammar of patterns
-\begin{equation*}
-\denote{\_} \colon \syntacc{pattern} \to \syntacc{pattern}
-\end{equation*}
-
-\paragraph{Case A: Object Variable Pattern.}\quad
-\begin{align*}
-\denote{v} = \KVariableToKPattern(\denote{v}_0)\quad \text{if $v$ is an object 
-variable}
-\end{align*}
-
-\paragraph{Case B: Meta Variable Pattern.} \quad
-\begin{align*}
-\denote{v} = v \quad \text{if $v$ is a meta-variable}
-\end{align*}
-
-\paragraph{Case C: String Literal.}\quad
-\begin{align*}
-\denote{s} = s \quad \text{if $s$ is a string literal}
-\end{align*}
-
-\paragraph{Case D \& E: Headed Pattern.} 
-A bit extra work is need to lift headed patterns.
-This is because we have defined two ways to lift an object variable.
-One way is to lift it to a {\KVariable} pattern using the lifting operation 
-$\denote{\_}_0$.
-The other way is to lift it to a {\KPattern} using the lifting operation 
-$\denote{\_}$, which we just defined the case for object variables in {Case A}.
-
-In practice, some heads (for example {\slexists} and \slforall) expect some of 
-its argument to be a variable instead of an arbitrary pattern, and we want to 
-reflect that fact in the lifting and the meta-theory.
-In Section~\ref{sec:kore-syntax-wellformedness} we have defined for all head 
-constructors $C$ a \emph{variable-pattern vector} $\nu_C$.
-The vector is of the same length as the arity of $C$, and each of its component 
-is from a set of two flags: $\{ \ttv, \ttp \}$.
-We use $\nu_C^i$ to denote the $i$th component of the vector $\nu_C$.
-The lifting operation replies on such variable-pattern vectors.
-
-Given any headed pattern 
-$\parametric{C}{s_1,\dots,s_n}(\varphi_1,\dots,\varphi_n)$, its 
-variable-pattern vector $\nu_C$, and one sub-pattern $\varphi_i$,
-define the customized lifting for $\denote{\varphi_i}_{\itvp}$ 
-as follows
-\begin{align*}
-\denote{\varphi_i}_\itvp =
+The lifting of a variable $v$ is defined as
+$$
+\denote{v} =
 \begin{cases*}
-\denote{\varphi_i} & if $\nu_C^i = \ttp$ \\
-\denote{\varphi_i}_0 & if $\nu_C^i = \ttv$
+\KVariableToKPattern\texttt{\{\}($\denote{v}_\var$)} & if $v$ is 
+\syntacc{object-variable}\\
+v & if $v$ is $\syntacc{meta-variable}$
+\end{cases*}
+$$
+
+\paragraph{Patterns Constructed with Heads.}
+The lifting of a pattern of the form 
+\texttt{$C$\{$s_1,\dots,s_m$\}($\varphi_1,\dots,\varphi_n$)} is defined as
+\begin{align*}
+\denote{C\texttt{\{}s_1,\dots,s_n\texttt{\}}\texttt{(}\varphi_1,
+	\dots,\varphi_n\texttt{)}}
+ =
+\begin{cases*}
+\denote{C}\texttt{(}\denote{s_1},\dots,\denote{s_n},\denote{
+	\varphi_1},\dots,\denote{\varphi_n}\texttt{)} & if $C$ is 
+	\syntacc{object-head}\\
+C\texttt{\{}s_1,\dots,s_n\texttt{\}}\texttt{(}\denote{
+	\varphi_1},\dots,\denote{\varphi_n}\texttt{)} & if $C$ is 
+	\syntacc{meta-head}
 \end{cases*}
 \end{align*}
 
-The lifting for headed patterns are therefore defined as follows.
-\begin{align*}
-\denote{\parametric{C}{s_1,\dots,s_n}(\varphi_1,\dots,\varphi_n)} =
-\begin{cases*}
-\denote{C}(\denote{s_1},\dots,\denote{s_n},\denote{
-	\varphi_1}_\itvp,\dots,\denote{\varphi_n}_\itvp)\\
-\parametric{C}{s_1,\dots,s_n}(\denote{
-	\varphi_1}_\itvp,\dots,\denote{\varphi_n}_\itvp)
-\end{cases*}
-\end{align*}
+\paragraph{Patterns Constructed with Logic Connectives.}
+The lifting of a pattern constructed using logic connectives is defined as 
+follows.
 
-\subsubsection{Lift Axiom Declarations To Axiom Declarations}
+\begin{longtable}{ll}
+$\denote{\texttt{\sland\{$s$\}($\varphi_1$,$\varphi_2$)}}
+=
+\texttt{\Kand\{\}($\denote{s}$,$\denote{\varphi_1}$,$\denote{\varphi_2}$)}$
+& if $s$ is \syntacc{object-sort}
+\\
+$\denote{\texttt{\sland\{$s$\}($\varphi_1$,$\varphi_2$)}}
+=
+\texttt{\sland\{$s$\}($\denote{\varphi_1}$,$\denote{\varphi_2}$)}$
+& if $s$ is \syntacc{meta-sort}
+\\
+$\denote{\texttt{\slnot\{$s$\}($\varphi$)}}
+=
+\texttt{\Knot\{\}($\denote{s}$,$\denote{\varphi}$)}$
+& if $s$ is \syntacc{object-sort}
+\\
+$\denote{\texttt{\slnot\{$s$\}($\varphi_1$)}}
+=
+\texttt{\slnot\{$s$\}($\denote{\varphi}$)}$
+& if $s$ is \syntacc{meta-sort}
+\\
+$\denote{\texttt{\slor\{$s$\}($\varphi_1$,$\varphi_2$)}}
+=
+\texttt{\Kor\{\}($\denote{s}$,$\denote{\varphi_1}$,$\denote{\varphi_2}$)}$
+& if $s$ is \syntacc{object-sort}
+\\
+$\denote{\texttt{\slor\{$s$\}($\varphi_1$,$\varphi_2$)}}
+=
+\texttt{\slor\{$s$\}($\denote{\varphi_1}$,$\denote{\varphi_2}$)}$
+& if $s$ is \syntacc{meta-sort}
+\\
+$\denote{\texttt{\slimplies\{$s$\}($\varphi_1$,$\varphi_2$)}}
+=
+\texttt{\Kimplies\{\}($\denote{s}$,$\denote{\varphi_1}$,$\denote{\varphi_2}$)}$
+& if $s$ is \syntacc{object-sort}
+\\
+$\denote{\texttt{\slimplies\{$s$\}($\varphi_1$,$\varphi_2$)}}
+=
+\texttt{\slimplies\{$s$\}($\denote{\varphi_1}$,$\denote{\varphi_2}$)}$
+& if $s$ is \syntacc{meta-sort}
+\\
+$\denote{\texttt{\sliff\{$s$\}($\varphi_1$,$\varphi_2$)}}
+=
+\texttt{\Kiff\{\}($\denote{s}$,$\denote{\varphi_1}$,$\denote{\varphi_2}$)}$
+& if $s$ is \syntacc{object-sort}
+\\
+$\denote{\texttt{\sliff\{$s$\}($\varphi_1$,$\varphi_2$)}}
+=
+\texttt{\sliff\{$s$\}($\denote{\varphi_1}$,$\denote{\varphi_2}$)}$
+& if $s$ is \syntacc{meta-sort}
+\\
+$\denote{\texttt{\slforall\{$s$\}($v$,$\varphi$)}}
+=
+\texttt{\Kforall\{\}($\denote{s}$,$\denote{v}_\var$,$\denote{\varphi}$)}$
+& if $s$ is \syntacc{object-sort}
+\\
+$\denote{\texttt{\slforall\{$s$\}($v$,$\varphi$)}}
+=
+\texttt{\slforall\{$s$\}($\denote{v}_\var$,$\denote{\varphi}$)}$
+& if $s$ is \syntacc{meta-sort}
+\\
+$\denote{\texttt{\slexists\{$s$\}($v$,$\varphi$)}}
+=
+\texttt{\Kexists\{\}($\denote{s}$,$\denote{v}_\var$,$\denote{\varphi}$)}$
+& if $s$ is \syntacc{object-sort}
+\\
+$\denote{\texttt{\slexists\{$s$\}($v$,$\varphi$)}}
+=
+\texttt{\slexists\{$s$\}($\denote{v}_\var$,$\denote{\varphi}$)}$
+& if $s$ is \syntacc{meta-sort}
+\\
+$\denote{\texttt{\slceil\{$s_1,s_2$\}($\varphi$)}}
+=
+\texttt{\Kceil\{\}($\denote{s_1}$,$\denote{s_2}$,$\denote{\varphi}$)}$
+& if $s_1,s_2$ are \syntacc{object-sort}
+\\
+$\denote{\texttt{\slceil\{$s_1,s_2$\}($\varphi$)}}
+=
+\texttt{\slceil\{$s_1,s_2$\}($\denote{\varphi}$)}$
+& if $s_1,s_2$ are \syntacc{meta-sort}
+\\
+$\denote{\texttt{\slfloor\{$s_1,s_2$\}($\varphi$)}}
+=
+\texttt{\Kfloor\{\}($\denote{s_1}$,$\denote{s_2}$,$\denote{\varphi}$)}$
+& if $s_1,s_2$ are \syntacc{object-sort}
+\\
+$\denote{\texttt{\slfloor\{$s_1,s_2$\}($\varphi$)}}
+=
+\texttt{\slfloor\{$s_1,s_2$\}($\denote{\varphi}$)}$
+& if $s_1,s_2$ are \syntacc{meta-sort}
+\\
+$\denote{\texttt{\slequals\{$s_1,s_2$\}($\varphi_1,\varphi_2$)}}
+=
+\texttt{\Kequals\{\}($\denote{s_1}$,$\denote{s_2}$,$
+	\denote{\varphi_1}$,$\denote{\varphi_2}$)}$
+& if $s_1,s_2$ are \syntacc{object-sort}
+\\
+$\denote{\texttt{\slequals\{$s_1,s_2$\}($\varphi_1,\varphi_2$)}}
+=
+\texttt{\slequals\{$s_1,s_2$\}($\varphi_1,\varphi_2$)}$
+& if $s_1,s_2$ are \syntacc{meta-sort}
+\\
+$\denote{\texttt{\slmem\{$s_1,s_2$\}($\varphi_1,\varphi_2$)}}
+=
+\texttt{\Kmembership\{\}($\denote{s_1}$,$\denote{s_2}$,$
+	\denote{\varphi_1}$,$\denote{\varphi_2}$)}$
+& if $s_1,s_2$ are \syntacc{object-sort}
+\\
+$\denote{\texttt{\slmem\{$s_1,s_2$\}($\varphi_1,\varphi_2$)}}
+=
+\texttt{\slmem\{$s_1,s_2$\}($\varphi_1,\varphi_2$)}$
+& if $s_1,s_2$ are \syntacc{meta-sort}
+\\
+$\denote{\texttt{\sltop\{$s$\}()}}
+=
+\texttt{\Ktop\{\}($\denote{s}$)}$
+& if $s$ is \syntacc{object-sort}
+\\
+$\denote{\texttt{\sltop\{$s$\}()}}
+=
+\texttt{\sltop\{$s$\}()}$
+& if $s$ is \syntacc{meta-sort}
+\\
+$\denote{\texttt{\slbottom\{$s$\}()}}
+=
+\texttt{\Kbottom\{\}($\denote{s}$)}$
+& if $s$ is \syntacc{object-sort}
+\\
+$\denote{\texttt{\slbottom\{$s$\}()}}
+=
+\texttt{\slbottom\{$s$\}()}$
+& if $s$ is \syntacc{meta-sort}
+\end{longtable}
+
+%\subsubsection{Lift Patterns To Meta Patterns of Sort \KPattern}
+%One of the main part of the lifting operation is lifting patterns to meta-
+%patterns of sort \KPattern, which is the main job of this subsection.
+%We recall the readers of the following grammar of Kore 
+%patterns, in which we intensionally merge the grammars of both object and 
+%meta-patterns for simplicity.
+%\begin{grammar}
+%	<pattern> ::= \quad
+%	\alt <object-identifier> `:' <object-sort>
+%	\alt <meta-identifier> `:' <meta-sort>
+%	\alt <string-literal>
+%	\alt <object-head> `(' <pattern-list> `)'
+%	\alt <meta-head> `(' <pattern-list> `)'
+%\end{grammar}
+%We will define the lifting operation for patterns case by case following the 
+%grammar of patterns
+%\begin{equation*}
+%\denote{\_} \colon \syntacc{pattern} \to \syntacc{pattern}
+%\end{equation*}
+%
+%\paragraph{Case A: Object Variable Pattern.}\quad
+%\begin{align*}
+%\denote{v} = \KVariableToKPattern(\denote{v}_0)\quad \text{if $v$ is an object 
+%variable}
+%\end{align*}
+%
+%\paragraph{Case B: Meta Variable Pattern.} \quad
+%\begin{align*}
+%\denote{v} = v \quad \text{if $v$ is a meta-variable}
+%\end{align*}
+%
+%\paragraph{Case C: String Literal.}\quad
+%\begin{align*}
+%\denote{s} = s \quad \text{if $s$ is a string literal}
+%\end{align*}
+%
+%\paragraph{Case D \& E: Headed Pattern.} 
+%A bit extra work is need to lift headed patterns.
+%This is because we have defined two ways to lift an object variable.
+%One way is to lift it to a {\KVariable} pattern using the lifting operation 
+%$\denote{\_}_0$.
+%The other way is to lift it to a {\KPattern} using the lifting operation 
+%$\denote{\_}$, which we just defined the case for object variables in {Case A}.
+%
+%In practice, some heads (for example {\slexists} and \slforall) expect some of 
+%its argument to be a variable instead of an arbitrary pattern, and we want to 
+%reflect that fact in the lifting and the meta-theory.
+%In Section~\ref{sec:kore-syntax-wellformedness} we have defined for all head 
+%constructors $C$ a \emph{variable-pattern vector} $\nu_C$.
+%The vector is of the same length as the arity of $C$, and each of its 
+%component 
+%is from a set of two flags: $\{ \ttv, \ttp \}$.
+%We use $\nu_C^i$ to denote the $i$th component of the vector $\nu_C$.
+%The lifting operation replies on such variable-pattern vectors.
+%
+%Given any headed pattern 
+%$\parametric{C}{s_1,\dots,s_n}(\varphi_1,\dots,\varphi_n)$, its 
+%variable-pattern vector $\nu_C$, and one sub-pattern $\varphi_i$,
+%define the customized lifting for $\denote{\varphi_i}_{\itvp}$ 
+%as follows
+%\begin{align*}
+%\denote{\varphi_i}_\itvp =
+%\begin{cases*}
+%\denote{\varphi_i} & if $\nu_C^i = \ttp$ \\
+%\denote{\varphi_i}_0 & if $\nu_C^i = \ttv$
+%\end{cases*}
+%\end{align*}
+%
+%The lifting for headed patterns are therefore defined as follows.
+%\begin{align*}
+%\denote{\parametric{C}{s_1,\dots,s_n}(\varphi_1,\dots,\varphi_n)} =
+%\begin{cases*}
+%\denote{C}(\denote{s_1},\dots,\denote{s_n},\denote{
+%	\varphi_1}_\itvp,\dots,\denote{\varphi_n}_\itvp)\\
+%\parametric{C}{s_1,\dots,s_n}(\denote{
+%	\varphi_1}_\itvp,\dots,\denote{\varphi_n}_\itvp)
+%\end{cases*}
+%\end{align*}
+
+\subsubsection{Lift Axiom Declarations}
 In Kore, an axiom declaration is lifted as follows.
 \begin{align*}
-  &\denote{\_} \colon \syntacc{axiom-declaration} \to 
+  &\denote{\_} \colon \syntacc{object-axiom-declaration} \to 
   \syntacc{axiom-declaration}
   \\
   &\denote{\texttt{\parametric{axiom}{$s_1,\dots,s_n$}
@@ -5910,13 +6216,12 @@ In Kore, an axiom declaration is lifted as follows.
   	\begin{cases*}
   	\texttt{\parametric{axiom}{$s'_1,\dots,s'_m$} 
   	\Kdeduce($\denote{\varphi}$)} & 
-  if $\varphi$ is an object pattern \\
+  if $\varphi$ is \syntacc{object-pattern} \\
   \texttt{\parametric{axiom}{$s'_1,\dots,s'_m$} $\denote{\varphi}$} & if
-  $\varphi$ is a meta-pattern
+  $\varphi$ is \syntacc{meta-pattern}
   	\end{cases*}
 \end{align*}
-where $s_1',\dots,s_m'$ are all those meta-variables in $s_1,\dots,s_n$.
-
+where $s_1',\dots,s_m'$ are all \syntacc{meta-sort-variable} in $s_1,\dots,s_n$.
 
 %\subsection{Example A: Presburger Arithmetic}
 %\begin{lstlisting}[language=kore]
