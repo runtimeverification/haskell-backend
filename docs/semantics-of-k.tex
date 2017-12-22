@@ -2174,7 +2174,7 @@ matching logic, finite or infinite.
 In particular, $K$ enjoys the following \emph{reflection} property, which we
 split in two properties for clarity and terminology:
 \begin{center}
-	\begin{tabular}{c}
+	\begin{tabular}{l}
 		$
 		\prftree[r]{\hspace*{3ex}\textsc{(Upward Reflection)}}
 		{T \vdash \varphi}
@@ -4827,30 +4827,19 @@ can ever be implemented.
 The Kore language is a formal specification language that allows one to specify 
 (both finite and recursively enumerable infinite) theories using a finite 
 number of characters and space.
-
 Before we present the syntax and semantics of Kore, we would like to recall 
 the readers again of the reflection property that we firstly introduced 
 in Section~\ref{sec:meta-theory-reflection}
 \begin{center}
-	\begin{tabular}{cc}
-		$
-		\prftree[r]{\footnotesize (Upward Reflection)}
-		{T \vdash \varphi}
-		{K \cup \denote{T} \vdashfin 
-		\parametric{\Kdeduce}{\shs}(\denote{\varphi})}
-		$
-		&
-		$
-		\prftree[r]{\footnotesize (Downward Reflection)}
-		{K \cup \denote{T} \vdashfin \Kdeduce(\denote{\varphi})}
-		{T \vdash \varphi}
-		$
-	\end{tabular}
+$T \vdash \varphi$ \quad iff \quad 
+$K \cup \denote{T} \vdashfin 
+		\parametric{\Kdeduce}{\shs}(\denote{\varphi})$
 \end{center}
-Given such a faithful upward/downward reflection relation, it is suffice to 
-specify the finite theory~$\denote{T}$ in order to specify the possibly 
-infinite theory $T$.
-However, the meta-theory $K$ and the meta-representation $\denote{T}$ is 
+
+Given such a reflection property, 
+we could use the finite theory~$\denote{T}$ \emph{as the specification} of the 
+possibly infinite theory $T$.
+However, the meta-theory $K$ and the meta-representation $\denote{T}$ are 
 inevitably more verbose and heavier than the original theory $T$.
 
 The Kore language is one means to ease the discomfort of using the meta-theory.
@@ -4863,31 +4852,28 @@ to use the full power of the meta-theory and the faithful reflection relation.
 Object-level declarations and specifications are seen as just syntactic sugar 
 of the more verbose meta-level declarations.
 This process of ``desugaring object specifications to meta-specifications'' are 
-called \emph{lifting}, which is giving Kore a semantics as a specification 
+called \emph{lifting process}, which is giving Kore a semantics as a 
+specification 
 language (Section~\ref{sec:kore-semantics}).
 
 \subsection{The Kore Language Syntax}
-\improvement{Many sentences are from the specification of SMT-LIB language 
-(version 2.6), which I use very often as the main reference when writing this 
-section. We need to rephrase those sentences when we make Kore public.}
 This section defines a complete and concrete syntax of the Kore language, the 
 design of which is mostly driven by the goal of relatively easy parsing without 
 making too many compromises on human readability.
 The Kore language syntax is defined by BNF-style production rules.
-The language accepted by there rules is a \emph{superset} of the Kore language. 
+The language accepted by there rules is a superset of the Kore language. 
 A legal Kore language source file should satisfy additional constraints such 
 as wellformedness (see Section~\ref{sec:kore-syntax-wellformedness}).
 
 \subsubsection{Lexicon}
 
-The syntax rules defined in this section are given directly with respect to 
-streams of lexical tokens from the set defined in this subsection.
 
-A Kore language source file, also called as a Kore definition or simply a 
-definition, consists of a sequence of ASCII characters.
+A Kore language source file, also called as a Kore definition, consists of a 
+sequence of ASCII characters.
 All lexical tokens defined below are limited to ASCII printable characters.
 
-Kore supports C-style \emph{comments}.
+\paragraph{Comments.}
+Kore supports C-style comments.
 Line comments start with ``\verb|//|'' and block comments start with 
 ``\verb|/*|'' and end with ``\verb|*/|''.
 Both comments and consecutive white space characters occurring outside a string 
@@ -4919,7 +4905,7 @@ Table~\ref{tab:lexicon-tokens}) and the elements of the syntactic categories
 
 \paragraph{Identifiers.}
 Identifiers are mostly used as symbols, sorts, and variable names.
-An \syntacc{identifier} is either of the following three cases:
+An \syntacc{identifier} is either of the following two cases:
 \begin{itemize}
 \item An \syntacc{object-identifier}, which is a nonempty sequence of alphabets 
 and digits and the character~``\verb|'|'' that starts with an 
@@ -5003,8 +4989,11 @@ sort is object-level or meta-level in the parse time.
 <meta-sort-list>
 \end{grammar}
 If a sort has no sort parameter, it is a \emph{non-parametric} sort.
-All meta-level sorts are non-parametric sorts.
-
+All meta-level sorts are non-parametric sorts, as defined in the grammar.
+Notice that any sort that is not a sort variable is of the form 
+\texttt{$C$\{$s_1,\dots,s_n$\}} for some $n \ge 0$, where $C$ is sort 
+constructor and 
+$s_1,\dots,s_n$ are sort parameters.
 
 
 % or of the 
@@ -5108,10 +5097,10 @@ All meta-level sorts are non-parametric sorts.
 %an 
 %object (or meta) symbol constructor and a list of object (or meta) sorts.
 
-Heads are user-definable constructors of \syntacc{pattern} (see 
+Heads are user-definable syntactic constructors of \syntacc{pattern} (see 
 Section~\ref{sec:kore-syntax-patterns}).
-In practice, a head is either a symbol or an alias.
-The only difference between symbols and alias are their semantics.
+In practice, a head is either a matching logic symbol or an alias.
+The only difference between symbols and aliases are their semantics.
 The semantics of a symbol is defined not only by user-defined axioms, but also 
 by the inference rule (\textsc{Membership Symbol}) in the matching logic proof 
 system (see Section~\ref{sec:ML-proof-system}).
@@ -5133,7 +5122,7 @@ separate tools anyway.
 
 Heads include \syntacc{object-head} and \syntacc{meta-head}.
 They are used to construct \syntacc{object-pattern} and \syntacc{meta-pattern} 
-respectively.
+respectively, as shown in the next grammar.
 
 \begin{grammar}\small
 	<head> ::= <object-head> | <meta-head>
@@ -5146,6 +5135,13 @@ respectively.
 	
 	<meta-head-constructor> ::= <meta-identifier>
 \end{grammar}
+A head is of the form \texttt{$C$\{$s_1,\dots,s_n$\}} for some $n \ge 0$, where 
+$C$ is head constructor and $s_1,\dots,s_n$ are sort parameters.
+In the case when $n = 0$, we say the head constructor $C$ is a non-parametric 
+head constructor and the head \texttt{$C$\{\}} is a non-parametric head.
+Notice that an object head constructor can only take object sorts as 
+parameters, and a meta-level head constructor can only take meta-level sorts as 
+parameters. 
 
 %Here are some examples of object and meta-symbols written in Kore syntax.
 %
@@ -5496,12 +5492,23 @@ parametric modules, and module imports.
 
 \subsubsection{Wellformedness}
 \label{sec:kore-syntax-wellformedness}
-The language defined by the above BNF grammar forms a superset of the Kore 
-language.
-For a Kore definition to be valid, it has to satisfy some 
-\emph{wellformedness} conditions.
+The language defined by the BNF grammar we just showed forms a superset of the 
+Kore language.
+For a Kore definition to be valid, it has to satisfy the following common 
+wellformedness conditions.
+\begin{enumerate}\itemsep0em
+\item In any declaration, every sort variable used should be in the leading 
+sort variable list;
+\item In any symbol or alias declaration, the head being declared should be of 
+the form \texttt{$C$\{$s_1,\dots,s_n$\}} where $C$ is a head constructor and 
+$s_1,\dots,s_n$ are $n$ distinct sort variables;
+\item In any pattern that is a head being applied to a list of argument 
+patterns, the number and sorts of argument patterns should match with the head 
+declaration;
+\item Every sorts, symbols, and aliases should be declared to be used;
+\item Every sorts, symbols, and aliases should have unique names;
+\end{enumerate}
 
-\todo{finish this section}
 
 \subsection{The Kore Language Semantics}
 \label{sec:kore-semantics}
@@ -6314,9 +6321,17 @@ where $s_1',\dots,s_m'$ are all \syntacc{meta-sort-variable} in $s_1,\dots,s_n$.
 
 %\subsection{Example D: Contexts}
 
+\section{Conclusion and Future Work}
+
 
 \section{Proof of Faithfulness Theorem}
 \label{sec:proof-of-faithfulness-theorem}
+\paragraph{Warning. }
+The proof here is outdated.
+However, the general approach is still valid.
+Read with cautions.
+\newline
+
 Before we start to prove the theorem, we need to explain what ``the 
 corresponding patterns'' $\hat{T}$ and $\hat{\varphi}$ are, as they appear in 
 the theorem.
