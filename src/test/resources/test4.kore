@@ -1,8 +1,5 @@
 []
 
 module TEST4
-  sort{} Nat{} []
-  sort{S} List{S} []
-  axiom{} 
-    \top{Nat{}}() []
+  sort{S} Map{S,S} []
 endmodule []

@@ -33,8 +33,8 @@ class TextToKoreTest {
   @Test def test8(): Unit = {
     parseFromFile("test8.kore")
   }
-  @Test def test9(): Unit = {
-    parseFromFile("test9.kore")
+  @Test def lambda(): Unit = {
+    parseFromFile("lambda.kore")
   }
   @Test def test10(): Unit = {
     parseFromFile("test10.kore")
@@ -44,6 +44,9 @@ class TextToKoreTest {
   }
   @Test def imp(): Unit = {
     parseFromFile("imp.kore")
+  }
+  @Test def fullcov() : Unit = {
+    parseFromFile("fullcov.kore")
   }
 
 

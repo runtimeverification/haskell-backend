@@ -3,6 +3,6 @@
 module TEST10
 
   axiom{}
-    "test string is a meta-level pattern" []
+    "string literal is a valid meta-level pattern" []
 
 endmodule []
