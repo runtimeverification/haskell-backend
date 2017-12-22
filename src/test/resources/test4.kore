@@ -1,0 +1,5 @@
+[]
+
+module TEST4
+  sort{S} Map{S,S} []
+endmodule []

@@ -1,0 +1,61 @@
+[]
+
+module TEST9
+
+  sort{} Exp{} []
+
+  symbol lambda0{}(Exp{},Exp{}) : Exp{} []
+
+  symbol app{}(Exp{},Exp{}) : Exp{} []
+
+  alias lambda{}(Exp{},Exp{}) : Exp{} []
+
+  axiom{R}
+    \equals{Exp{},R}(
+      lambda{}(
+        #variableToPattern{}(#X:#Variable{}),
+        #E:Pattern{}),
+      \exists{Exp}(
+        #X:#Variable{},
+        lambda0{}(
+          #variableToPattern{}(#X:#Variable{}),
+          #P:Pattern{}))) []
+
+  symbol #isExp{#S}(#Pattern{}) : #S []
+
+  axiom{#S,#R}
+    \equals{#S,#R}(
+      #isExp{#S}(#VariableToPattern{}(#variable{}(#NAME:#String{},#SORT:#Sort{}))),
+      \equals{#Sort{},#S}(#SORT:#Sort{}, #Exp{}())) []
+
+
+  axiom{#S,#R}
+    \equals{#S,#R}(
+      #isExp{#S}(app{}(#E1:#Pattern{},#E2:#Pattern{})),
+      \and{#S}(
+        #isExp{#S}(#E1:#Pattern{}),
+        #isExp{#S}(#E2:#Pattern{}))) []
+
+  axiom{#S,#R}
+    \equals{#S,#R}(
+      #isExp{#S}(#lambda{}(#variable{}(#NAME:#String{},#SORT:#Sort{}),#E:#Pattern{})),
+      \and{#S}(
+        \equals{#Sort{},#S}(#SORT:#Sort{}, #Exp{}()),
+        #isExp{#S}(#E:#Pattern{}))) []
+
+  axiom{#S}
+    \implies{#S}(
+      #isExp{#S}(
+        app{}(
+          #lambda{}(#X:#Variable{},#E:#Pattern{}),
+          #E1:#Pattern{})),
+      \equals{#Pattern,#S}(
+        app{}(
+          #lambda{}(#X:#Variable{},#E:#Pattern{}),
+          #E1:#Pattern{}),
+        #substitute{}(#E:#Pattern{}, #E1:#Pattern{}, #X:#Variable{}))) []
+
+
+
+
+endmodule []

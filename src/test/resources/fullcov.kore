@@ -1,0 +1,16 @@
+[]
+
+module FULLCOV
+
+  axiom{S}
+    \next{S}(X:S) []
+  axiom{S}
+    \implies{S}(X:S,X:S) []
+  axiom{S}
+    \iff{S}(X:S,X:S) []
+  axiom{S,R}
+    \mem{S,R}(X:S,X:S) []
+  axiom{S,R}
+    \subset{S,R}(X:S,X:S) []
+
+endmodule []

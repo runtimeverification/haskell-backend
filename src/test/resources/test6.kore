@@ -1,0 +1,14 @@
+[]
+
+module TEST6
+  sort{} Nat{} []
+  sort{S} List{S} []
+  sort{S} Map{Nat{},S} []
+  symbol zero{}() : Nat{} []
+  axiom{S} 
+    \exists{S}(
+      T:Nat{},
+      \equals{Nat{},S}(
+        T:Nat{},
+        zero{}())) []
+endmodule []
