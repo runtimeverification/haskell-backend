@@ -77,8 +77,6 @@ module IMP
 
   alias gamma{S1,S2}(S1,S2) : Ctxt{S1,S2} []
 
-  symbol #gamma{}(#Sort{}, #Sort{}, #Variable{}, #Pattern{}) : #Pattern{} []
-
   axiom{S1,S2,R}
     \equals{Ctxt{S1,S2},R}(
       gamma{S1,S2}(
@@ -92,7 +90,7 @@ module IMP
 
   axiom{S1,S2,#S}
     \equals{#Pattern{},#S}(
-      #gamma{}(
+      #`gamma{}(
         #S1:#Sort{},
         #S2:#Sort{},
         #X:#Variable{},
@@ -108,7 +106,7 @@ module IMP
   axiom{S,R}
     \equals{Ctxt{S,S},R}(
       idctxt{S}(),
-      #gamma{}(
+      #`gamma{}(
         #S:#Sort{}, 
         #S:#Sort{}, 
         #variable{}(#X:#String{}, #S:#Sort{}),
@@ -143,8 +141,8 @@ module IMP
               #C:#Pattern{},
               T:S),
             P:AExp{}),
-          app{S1,AExp{}}(
-            gamma{}(
+          app{S,AExp{}}(
+            gamma{S,AExp{}}(
               HOLE:S,
               divAExp{}(
                 app{S,AExp{}}(
@@ -170,7 +168,7 @@ module IMP
               #C:#Pattern{},
               T:S)),
           app{S,AExp{}}(
-            gamma{}(
+            gamma{S,AExp{}}(
               HOLE:S,
               divAExp{}(
                 P:AExp{},
@@ -209,7 +207,7 @@ module IMP
               #C:#Pattern{},
               T:S)),
           app{S,Stmt{}}(
-            gamma{}(
+            gamma{S,Stmt{}}(
               HOLE:S,
               asgn{}(
                 ID:Id{},
@@ -240,7 +238,7 @@ module IMP
             B1:Block{},
             B2:Block{}),
           app{S,Stmt{}}(
-            gamma{}(
+            gamma{S,Stmt{}}(
               HOLE:S,
               if{}(
                 app{S,BExp{}}(
@@ -272,7 +270,7 @@ module IMP
               T:S),
             P:Stmt{}),
           app{S,Stmt{}}(
-            gamma{}(
+            gamma{S,Stmt{}}(
               HOLE:S,
               seq{}(
                 app{S,Stmt{}}(

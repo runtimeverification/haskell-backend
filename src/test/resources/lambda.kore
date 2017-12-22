@@ -8,16 +8,18 @@ module TEST9
 
   symbol app{}(Exp{},Exp{}) : Exp{} []
 
-  symbol #lambda{}(#Variable{},#Pattern{}) : #Pattern{} []
+  alias lambda{}(Exp{},Exp{}) : Exp{} []
 
-  axiom{#S}
-    \equals{#Pattern{},#S}(
-      #lambda{}(#X:#Variable{},#E:#Pattern{}),
-      \exists{Exp{}}(
+  axiom{R}
+    \equals{Exp{},R}(
+      lambda{}(
+        #variableToPattern{}(#X:#Variable{}),
+        #E:Pattern{}),
+      \exists{Exp}(
         #X:#Variable{},
         lambda0{}(
-          #VariableToPattern{}(#X:#Variable{}),
-          #E:#Pattern{}))) []
+          #variableToPattern{}(#X:#Variable{}),
+          #P:Pattern{}))) []
 
   symbol #isExp{#S}(#Pattern{}) : #S []
 
