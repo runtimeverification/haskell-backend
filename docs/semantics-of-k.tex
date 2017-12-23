@@ -405,6 +405,8 @@
   \newcommand{\slceil}{\slsh{ceil}}
   \newcommand{\slfloor}{\slsh{floor}}
   \newcommand{\slmem}{\slsh{mem}}
+  \newcommand{\slnext}{\slsh{next}}
+  \newcommand{\slrewrites}{\slsh{rewrites}}
   
   \newcommand{\itlogic}{\mathit{logic}}
   \newcommand{\itconnective}{\mathit{connective}}
@@ -2392,7 +2394,7 @@ The third approach might seem a bit verbose but it is the most fundamental and
 essential one, as it does not require equality and thus it can be used in 
 all theories even if the definedness symbols are not defined.
 
-\subsubsection{Schemas Do Not Necessarily Make a Finite (Meta-)Theory Infinite}
+\subsubsection{Schemas do not Necessarily Make a Finite (Meta-)Theory Infinite}
 \label{sec:symbol-schema-finitary}
 
 As seen in Section~\ref{sec:three-ways-of-defining-predicate-symbols},
@@ -2423,14 +2425,14 @@ schemas only use sort meta-variables.
 %As a general principle, all sorts in $K$ start with an uppercase letter while 
 %all symbols in $K$ start with a lowercase letter.
 
-\subsubsection{The Meta-Theory Is Extended By Need}
+\subsubsection{The Meta-Theory is Extended by Need}
 The meta-theory is our answer to the question ``what is the semantics of \K?''.
 It represents our approach to support reflection in matching logic.
 On the other hand, we never regard the meta-theory as a final product. 
 As \K evolves, the meta-theory also has to evolve accordingly.
 
 
-\subsubsection{A Roadmap of The Definition of The Meta-Theory}
+\subsubsection{A Roadmap of Meta-Theory}
 We organize the definition of the meta-theory $K$ into six
 parts, running from Section~\ref{sec:chars-string} to
 Section~\ref{sec:ML-proof-system}, as follows:
@@ -3441,7 +3443,7 @@ From now on, we will quickly list all the inference rule schemas of matching
 logic and their corresponding axioms in the meta-theory, and only add 
 explanations by need.
 
-\paragraph{First-Order Logic With Equality Inference Rules.} \quad
+\paragraph{First-Order Logic with Equality Inference Rules.} \quad
 \\
 
 (\textsc{$\forall$}).\quad
@@ -6322,7 +6324,98 @@ where $s_1',\dots,s_m'$ are all \syntacc{meta-sort-variable} in $s_1,\dots,s_n$.
 %\subsection{Example D: Contexts}
 
 \section{Conclusion and Future Work}
+It took us a long journey to realize that \K is a fragment of matching logic 
+and all \K does is logic reasoning with some matching logic theories
+$$
+\underbrace{T_\textrm{binders} \cup
+T_\textrm{fixed-points} \cup 
+T_\textrm{contexts} \cup 
+T_\textrm{rewriting} \cup 
+\cdots \cup 
+T_\textrm{user-defined} \vdash \cdots}_
+\text{\K is a best effort realization of matching logic reasoning}
+$$
+In Section~\ref{sec:finite-mechanisms} and~\ref{sec:case-studies}, we showed a 
+few important case studies of these theories and pointed out the fact that
+it is often not trivial to specify those theories because they are infinite 
+artifacts. 
+In Section~\ref{sec:meta-theory-reflection} we proposed an approach that 
+provides us a one-stop solution of specifying recursively enumerable theories 
+in a nice and mathematically crystal clear manner, by developing a deep 
+embedding of matching logic in a finite fragment of itself, which we call the 
+meta-theory $K$.
+Section~\ref{sec:meta-theory} and~\ref{sec:reflect} define the meta-theory $K$ 
+and explain how to encode theories in it.
+Section~\ref{sec:kore} defines the Kore language including both its syntax and 
+semantics.
 
+\paragraph{Future Work.}
+This document does not answer all questions, and there is still much to be 
+grained and much future research work to do.
+We think the future work can be divided into three main categories.
+
+The first category of future work is to define \K in the Kore language.
+In Section~\ref{sec:case-studies}, we defined a few important underlying 
+theories of \K using natural language and mathematical notations.
+In there, our main purpose is to demonstrate that \K is all about matching 
+logic reasoning.
+In the future, all features and functionalities of \K will be specified as 
+Kore definitions.
+These include everything that we mentioned in Section~\ref{sec:case-studies}, 
+and also all \K's APIs and commands such as 
+\texttt{kompile}, \texttt{krun}, and \texttt{kprove}.
+These Kore definitions plus this document forms a solid answer to the ultimate 
+question: ``what is the semantics of \K?''.
+
+The second category of future work is to extend the Kore language and to 
+develop tools about the Kore language.
+The Kore language defined in Section~\ref{sec:kore} has a rather simple syntax.
+During its design, we considered more on machine readability and relative less 
+on  human readability, 
+As a result, writing Kore definitions manually is definitely possible, but it 
+can be tedious and error proneing.
+As we do the first category of future work and define \K in Kore, we will 
+gradually notice that certain syntactic sugar should be introduced to Kore so 
+that the resulting Kore definitions are shorter.
+For example, empty parenthesis and braces in Kore patterns and Kore 
+declarations need not be written explicitly all the time.
+New logic connectives such that \texttt{\slnext} and \texttt{\slrewrites} can 
+be introduced to Kore as they appear very often in the theory of rewriting and 
+reachability.
+The general principle of adding new syntax features to Kore is that any 
+syntactic sugar that is added to Kore should be proved to be useful and highly 
+needed in practice, in particular, in the process of defining \K in Kore.
+In addition, we may need to change the meta-theory in correspondence to 
+our changes to Kore's syntax, 
+in order to keep the lifting process, the process that gives Kore 
+semantics, clean and simple.
+In the meantime, automatic tools about the Kore language should be developed.
+These include parsers and pretty-printers, implementations of the lifting 
+process, wellformedness checkers and so on.
+
+The third category of future work is to develop provers for matching logic.
+More specifically, to develop tools for reasoning with the meta-theory and Kore.
+These tools include at least the following three kinds.
+The first is automatic proof checkers.
+A proof checker takes a Kore definition and a proof obligation, which is often 
+automatically generated by \K back-ends, and a proof for that proof obligation, 
+and checks whether the proof is valid.
+Proof checkers should be very simple so that their correctness is convincing, 
+and very fast so that they can handle proofs of monster size.
+The second is interactive provers.
+An interactive prover takes a Kore definition and a proof obligation, and 
+provides an interactive proving environment for human users to input proof 
+hints and tactics, and finds a proof for the proof obligation that can be 
+checked by proof checkers.
+Interactive provers aim at completeness, which means they should be able to 
+prove any valid claims, at least in theory.
+The third is automatic provers.
+An automatic prover automatically finds a proof for a constrained type of Kore 
+definitions and proof obligations.
+Automatic provers often care less about completeness but more about performance.
+Apart from developing the above three kinds of provers, we also need to 
+consider how to generate proof obligations and how to represent proofs in a 
+structured and well-organized manner.
 
 \section{Proof of Faithfulness Theorem}
 \label{sec:proof-of-faithfulness-theorem}
