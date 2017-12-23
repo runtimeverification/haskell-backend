@@ -1,8 +1,0 @@
-[]
-
-module TEST10
-
-  axiom{}
-    "string literal is a valid meta-level pattern" []
-
-endmodule []

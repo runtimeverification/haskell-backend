@@ -1,8 +1,10 @@
 []
 
-module TEST5
-  sort{} Nat{} []
-  sort{S} List{S} []
+module BOOL
+
+  sort{} Bool{} []
+
   axiom{} 
     \top{List{List{Nat{}}}}() []
+
 endmodule []
