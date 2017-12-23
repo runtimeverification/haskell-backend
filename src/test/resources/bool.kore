@@ -4,7 +4,39 @@ module BOOL
 
   sort{} Bool{} []
 
-  axiom{} 
-    \top{List{List{Nat{}}}}() []
+  symbol true{}() : Bool{} []
+
+  symbol false{}() : Bool{} []
+
+  symbol andBool{}(Bool{},Bool{}) : Bool{} []
+
+  symbol orBool{}(Bool{},Bool{}) : Bool{} []
+
+  symbol notBool{}(Bool{}) : Bool{} []
+
+  axiom{}
+    \or{Bool{}}(
+      true{}(),
+      false{}()) []
+
+  axiom{}
+    \not{Bool{}}(
+      \and{Bool{}}(
+        true{}(),
+        false{}())) []
+
+  axiom{S}
+    \exists{S}(
+      T:Bool{},
+      \equals{Bool{},S}(
+        T:Bool{},
+        true{}())) []
+
+  axiom{S}
+    \exists{S}(
+      T:Bool{},
+      \equals{Bool{},S}(
+        T:Bool{},
+        false{}())) []
 
 endmodule []
