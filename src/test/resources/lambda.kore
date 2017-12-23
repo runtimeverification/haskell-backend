@@ -1,6 +1,6 @@
 []
 
-module TEST9
+module LAMBDA 
 
   sort{} Exp{} []
 
@@ -14,19 +14,19 @@ module TEST9
     \equals{Exp{},R}(
       lambda{}(
         #variableToPattern{}(#X:#Variable{}),
-        #E:Pattern{}),
+        #E:#Pattern{}),
       \exists{Exp}(
         #X:#Variable{},
         lambda0{}(
           #variableToPattern{}(#X:#Variable{}),
-          #P:Pattern{}))) []
+          #E:#Pattern{}))) []
 
   symbol #isExp{#S}(#Pattern{}) : #S []
 
   axiom{#S,#R}
     \equals{#S,#R}(
       #isExp{#S}(#VariableToPattern{}(#variable{}(#NAME:#String{},#SORT:#Sort{}))),
-      \equals{#Sort{},#S}(#SORT:#Sort{}, #Exp{}())) []
+      \equals{#Sort{},#S}(#SORT:#Sort{}, #`Exp{}())) []
 
 
   axiom{#S,#R}
@@ -38,20 +38,20 @@ module TEST9
 
   axiom{#S,#R}
     \equals{#S,#R}(
-      #isExp{#S}(#lambda{}(#variable{}(#NAME:#String{},#SORT:#Sort{}),#E:#Pattern{})),
+      #isExp{#S}(#`lambda{}(#variable{}(#NAME:#String{},#SORT:#Sort{}),#E:#Pattern{})),
       \and{#S}(
-        \equals{#Sort{},#S}(#SORT:#Sort{}, #Exp{}()),
+        \equals{#Sort{},#S}(#SORT:#Sort{}, #`Exp{}()),
         #isExp{#S}(#E:#Pattern{}))) []
 
   axiom{#S}
     \implies{#S}(
       #isExp{#S}(
         app{}(
-          #lambda{}(#X:#Variable{},#E:#Pattern{}),
+          #`lambda{}(#X:#Variable{},#E:#Pattern{}),
           #E1:#Pattern{})),
       \equals{#Pattern,#S}(
         app{}(
-          #lambda{}(#X:#Variable{},#E:#Pattern{}),
+          #`lambda{}(#X:#Variable{},#E:#Pattern{}),
           #E1:#Pattern{}),
         #substitute{}(#E:#Pattern{}, #E1:#Pattern{}, #X:#Variable{}))) []
 

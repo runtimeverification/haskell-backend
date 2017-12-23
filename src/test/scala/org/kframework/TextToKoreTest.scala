@@ -9,44 +9,153 @@ import org.kframework.kore.parser.{KoreToText, ParseError, TextToKore}
 
 class TextToKoreTest {
 
-  @Test def test1(): Unit = {
-    parseFromFile("test1.kore")
+  /**
+    * Tests for parsing sorts.
+    */
+  @Test def test_sort_1(): Unit = {
+    parseFromFile("test-sort-1.kore")
   }
-  @Test def test2(): Unit = {
-    parseFromFile("test2.kore")
+  @Test def test_sort_2(): Unit = {
+    parseFromFile("test-sort-2.kore")
   }
-  @Test def test3(): Unit = {
-    parseFromFile("test3.kore")
+  @Test def test_sort_3(): Unit = {
+    parseFromFile("test-sort-3.kore")
   }
-  @Test def test4(): Unit = {
-    parseFromFile("test4.kore")
+  @Test def test_sort_4(): Unit = {
+    parseFromFile("test-sort-4.kore")
   }
-  @Test def test5(): Unit = {
-    parseFromFile("test5.kore")
+
+  /**
+    * Tests for parsing symbols.
+    */
+  @Test def test_symbol_1(): Unit = {
+    parseFromFile("test-symbol-1.kore")
   }
-  @Test def test6(): Unit = {
-    parseFromFile("test6.kore")
+  @Test def test_symbol_2(): Unit = {
+    parseFromFile("test-symbol-2.kore")
   }
-  @Test def test7(): Unit = {
-    parseFromFile("test7.kore")
+  @Test def test_symbol_3(): Unit = {
+    parseFromFile("test-symbol-3.kore")
   }
-  @Test def test8(): Unit = {
-    parseFromFile("test8.kore")
+  @Test def test_symbol_4(): Unit = {
+    parseFromFile("test-symbol-4.kore")
+  }
+  @Test def test_symbol_5(): Unit = {
+    parseFromFile("test-symbol-5.kore")
+  }
+  @Test def test_symbol_6(): Unit = {
+    parseFromFile("test-symbol-6.kore")
+  }
+  @Test def test_symbol_7(): Unit = {
+    parseFromFile("test-symbol-7.kore")
+  }
+  @Test def test_symbol_8(): Unit = {
+    parseFromFile("test-symbol-8.kore")
+  }
+
+  /**
+    * Tests for parsing aliases.
+    */
+  @Test def test_alias_1(): Unit = {
+    parseFromFile("test-alias-1.kore")
+  }
+  @Test def test_alias_2(): Unit = {
+    parseFromFile("test-alias-2.kore")
+  }
+  @Test def test_alias_3(): Unit = {
+    parseFromFile("test-alias-3.kore")
+  }
+  @Test def test_alias_4(): Unit = {
+    parseFromFile("test-alias-4.kore")
+  }
+  @Test def test_alias_5(): Unit = {
+    parseFromFile("test-alias-5.kore")
+  }
+  @Test def test_alias_6(): Unit = {
+    parseFromFile("test-alias-6.kore")
+  }
+  @Test def test_alias_7(): Unit = {
+    parseFromFile("test-alias-7.kore")
+  }
+  @Test def test_alias_8(): Unit = {
+    parseFromFile("test-alias-8.kore")
+  }
+
+  /**
+    * Tests for parsing patterns.
+    */
+  @Test def test_pattern_1(): Unit = {
+    parseFromFile("test-pattern-1.kore")
+  }
+  @Test def test_pattern_2(): Unit = {
+    parseFromFile("test-pattern-2.kore")
+  }
+  @Test def test_pattern_3(): Unit = {
+    parseFromFile("test-pattern-3.kore")
+  }
+  @Test def test_pattern_4(): Unit = {
+    parseFromFile("test-pattern-4.kore")
+  }
+  @Test def test_pattern_5(): Unit = {
+    parseFromFile("test-pattern-5.kore")
+  }
+  @Test def test_pattern_6(): Unit = {
+    parseFromFile("test-pattern-6.kore")
+  }
+  @Test def test_pattern_7(): Unit = {
+    parseFromFile("test-pattern-7.kore")
+  }
+  @Test def test_pattern_8(): Unit = {
+    parseFromFile("test-pattern-8.kore")
+  }
+  @Test def test_pattern_9(): Unit = {
+    parseFromFile("test-pattern-9.kore")
+  }
+  @Test def test_pattern_10(): Unit = {
+    parseFromFile("test-pattern-10.kore")
+  }
+  @Test def test_pattern_11(): Unit = {
+    parseFromFile("test-pattern-11.kore")
+  }
+  @Test def test_pattern_12(): Unit = {
+    parseFromFile("test-pattern-12.kore")
+  }
+  @Test def test_pattern_13(): Unit = {
+    parseFromFile("test-pattern-13.kore")
+  }
+  @Test def test_pattern_14(): Unit = {
+    parseFromFile("test-pattern-14.kore")
+  }
+  /**
+    * Tests for parsing attributes.
+    */
+  @Test def test_attribute_1(): Unit = {
+    parseFromFile("test-attribute-1.kore")
+  }
+  @Test def test_attribute_2(): Unit = {
+    parseFromFile("test-attribute-2.kore")
+  }
+
+
+  /**
+    * Comprehensive tests for parsing complete and meaningful modules.
+    */
+
+
+  @Test def bool(): Unit = {
+    parseFromFile("bool.kore")
+  }
+  @Test def nat(): Unit = {
+    parseFromFile("nat.kore")
+  }
+  @Test def list(): Unit = {
+    parseFromFile("list.kore")
   }
   @Test def lambda(): Unit = {
     parseFromFile("lambda.kore")
   }
-  @Test def test10(): Unit = {
-    parseFromFile("test10.kore")
-  }
-  @Test def test11(): Unit = {
-    parseFromFile("test11.kore")
-  }
   @Test def imp(): Unit = {
     parseFromFile("imp.kore")
-  }
-  @Test def fullcov() : Unit = {
-    parseFromFile("fullcov.kore")
   }
 
 
