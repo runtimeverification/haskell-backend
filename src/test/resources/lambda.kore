@@ -25,7 +25,7 @@ module LAMBDA
 
   axiom{#S,#R}
     \equals{#S,#R}(
-      #isExp{#S}(#VariableToPattern{}(#variable{}(#NAME:#String{},#SORT:#Sort{}))),
+      #isExp{#S}(#variableToPattern{}(#variable{}(#NAME:#String{},#SORT:#Sort{}))),
       \equals{#Sort{},#S}(#SORT:#Sort{}, #`Exp{}())) []
 
 
@@ -38,22 +38,27 @@ module LAMBDA
 
   axiom{#S,#R}
     \equals{#S,#R}(
-      #isExp{#S}(#`lambda{}(#variable{}(#NAME:#String{},#SORT:#Sort{}),#E:#Pattern{})),
+      #isExp{#S}(
+        lambda{}(
+          #variableToPattern{}(
+            #variable{}(#NAME:#String{},#SORT:#Sort{}),
+            #E:#Pattern{}))),
       \and{#S}(
         \equals{#Sort{},#S}(#SORT:#Sort{}, #`Exp{}()),
         #isExp{#S}(#E:#Pattern{}))) []
 
-  axiom{#S}
+  axiom{#S,S}
     \implies{#S}(
       #isExp{#S}(
         app{}(
-          #`lambda{}(#X:#Variable{},#E:#Pattern{}),
-          #E1:#Pattern{})),
-      \equals{#Pattern,#S}(
-        app{}(
-          #`lambda{}(#X:#Variable{},#E:#Pattern{}),
-          #E1:#Pattern{}),
-        #substitute{}(#E:#Pattern{}, #E1:#Pattern{}, #X:#Variable{}))) []
+          lambda{}(X:Exp{}, #E:#Pattern{}),
+          #E':#Pattern{})),
+      #provable{#S}(
+        \equals{Exp{},S}(
+          app{}(
+            lambda{}(X:Exp{},#E:#Pattern{}),
+            #E':#Pattern{}),
+          #substitute{}(#E:#Pattern{}, #E':#Pattern{}, X:Exp{})))) []
 
 
 

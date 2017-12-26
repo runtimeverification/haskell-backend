@@ -88,29 +88,12 @@ module IMP
           #variableToPattern{}(#X:#Variable{}),
           #P:Pattern{}))) []
 
-  axiom{S1,S2,#S}
-    \equals{#Pattern{},#S}(
-      #`gamma{}(
-        #S1:#Sort{},
-        #S2:#Sort{},
-        #X:#Variable{},
-        #E:#Pattern{}),
-      \exists{Ctxt{S1,S2}}(
-        #X:#Variable{},
-        gamma0{S1,S2}(
-          #VariableToPattern{}(#X:#Variable{}),
-          #E:#Pattern{}))) []
-
-  alias idctxt{S}() : Ctxt{S,S} []
+ alias idctxt{S}() : Ctxt{S,S} []
 
   axiom{S,R}
     \equals{Ctxt{S,S},R}(
       idctxt{S}(),
-      #`gamma{}(
-        #S:#Sort{}, 
-        #S:#Sort{}, 
-        #variable{}(#X:#String{}, #S:#Sort{}),
-        #variableToPattern{}(#variable{}(#X:#String{}, #S:#Sort{})))) []
+      gamma{S,S}(X:S,X:S)) []
 
   axiom{S,R}
     \equals{S,R}(
@@ -127,13 +110,14 @@ module IMP
 
   axiom{S,R,#R}
     \implies{#R}(
-      #occursFree{#R}(
-        HOLE:S,
-        divAExp{}(
-          app{S,AExp{}}(
-            #C:#Pattern{},
-            T:S),
-          P:AExp{})),
+      \not{#R}(
+        #occursFree{#R}(
+          HOLE:S,
+          divAExp{}(
+            app{S,AExp{}}(
+              #C:#Pattern{},
+              T:S),
+            P:AExp{}))),
       #provable{#R}(
         \equals{AExp{},R}(
           divAExp{}(
@@ -153,13 +137,14 @@ module IMP
 
   axiom{S,R,#R}
     \implies{#R}(
-      #occursFree{#R}(
-        HOLE:S,
-        divAExp{}(
-          P:AExp{},
-          app{S,AExp{}}(
-            #C:#Pattern{},
-            T:S))),
+      \not{#R}(
+        #occursFree{#R}(
+          HOLE:S,
+          divAExp{}(
+            P:AExp{},
+            app{S,AExp{}}(
+              #C:#Pattern{},
+              T:S)))),
       #provable{#R}(
         \equals{AExp{},R}(
           divAExp{}(
@@ -192,13 +177,14 @@ module IMP
 
   axiom{S,R,#R}
     \implies{#R}(
-      #occursFree{#R}(
-        HOLE:S,
-        asgn{}(
-          ID:Id{},
-          app{S,AExp{}}(
-            #C:#Pattern{},
-            T:S))),
+      \not{#R}(
+        #occursFree{#R}(
+          HOLE:S,
+          asgn{}(
+            ID:Id{},
+            app{S,AExp{}}(
+              #C:#Pattern{},
+              T:S)))),
       #provable{#R}(
         \equals{Stmt{},R}(
           divAExp{}(
@@ -221,14 +207,15 @@ module IMP
 
   axiom{S,R,#R}
     \implies{#R}(
-      #occursFree{#R}(
-        HOLE:S,
-        if{}(
-          app{S,BExp{}}(
-            #C:#Pattern{},
-            T:S),
-          B1:Block{},
-          B2:Block{})),
+      \not{#R}(
+        #occursFree{#R}(
+          HOLE:S,
+          if{}(
+            app{S,BExp{}}(
+              #C:#Pattern{},
+              T:S),
+            B1:Block{},
+            B2:Block{}))),
       #provable{#R}(
         \equals{Stmt{},R}(
           if{}(
@@ -255,13 +242,14 @@ module IMP
 
    axiom{S,R,#R}
     \implies{#R}(
-      #occursFree{#R}(
-        HOLE:S,
-        seq{}(
-          app{S,Stmt{}}(
-            #C:#Pattern{},
-            T:S),
-          P:Stmt{})),
+      \not{#R}(
+        #occursFree{#R}(
+          HOLE:S,
+          seq{}(
+            app{S,Stmt{}}(
+              #C:#Pattern{},
+              T:S),
+            P:Stmt{}))),
       #provable{#R}(
         \equals{Stmt{},R}(
           seq{}(

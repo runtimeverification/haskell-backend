@@ -1,6 +1,6 @@
 []
 
-module TEST7
+module NAT
 
   sort{} Nat{} []
 

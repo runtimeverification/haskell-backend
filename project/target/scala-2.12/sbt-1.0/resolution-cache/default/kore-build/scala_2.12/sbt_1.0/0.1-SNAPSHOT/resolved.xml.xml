@@ -4,7 +4,7 @@
 		module="kore-build"
 		revision="0.1-SNAPSHOT"
 		status="integration"
-		publication="20171211155735"
+		publication="20171226095605"
 		e:sbtVersion="1.0" e:scalaVersion="2.12"
 	>
 		<description>
