@@ -1966,16 +1966,22 @@ that matches the lookup or the assignment pattern above transits to
 the next configuration.
 For that reason, we add axiom schemas to the matching logic theory
 that lift the $\circ$ symbol:
+%$$
+%\begin{array}{l@{\hspace*{7ex}}l}
+%\sigma(*\varphi_1,\dots,*\varphi_n) \rightarrow 
+%\circ\;\sigma(\varphi_1,\dots,\varphi_n)
+%& \textrm{where $\sigma\in\Sigma_{s_1\times\cdots s_n,s}$,}
+%\\ & \textrm{$\varphi_1$ is a pattern of sort $s_1$,}
+%\\
+%& \dots,
+%\\ & \textrm{$\varphi_n$ is a pattern of sort $s_n$,}
+%\\ & \textrm{and at least one of $*$ is $\circ$}
+%\end{array}
+%$$
 $$
-\begin{array}{l@{\hspace*{7ex}}l}
-\sigma(*\varphi_1,\dots,*\varphi_n) \rightarrow \circ\;\sigma(\varphi_1,\dots,\varphi_n)
-& \textrm{where $\sigma\in\Sigma_{s_1\times\cdots s_n,s}$,}
-\\ & \textrm{$\varphi_1$ is a pattern of sort $s_1$,}
-\\
-& \dots,
-\\ & \textrm{$\varphi_n$ is a pattern of sort $s_n$,}
-\\ & \textrm{and at least one of $*$ is $\circ$}
-\end{array}
+C[* \varphi_1,\dots, * \varphi] \to \circ C[\varphi_1,\dots,\varphi_n]
+\qquad
+\text{where at least one of $*$ is $\circ$}
 $$
 Together with structural framing~\cite{rosu-2017-lmcs},
 these axioms allow not only to lift multiple local rewrites
