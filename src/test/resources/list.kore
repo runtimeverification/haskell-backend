@@ -1,14 +1,6 @@
 []
 
-module TEST8
-
-  sort{} Nat{} []
-
-  symbol zero{}() : Nat{} []
-
-  symbol succ{}(Nat{}) : Nat{} []
-
-  symbol plus{}(Nat{},Nat{}) : Nat{} []
+module LIST
 
   sort{S} List{S} []
 
@@ -17,52 +9,6 @@ module TEST8
   symbol cons{S}(S,List{S}) : List{S} []
 
   symbol append{S}(List{S},List{S}) : List{S} []
-
-  axiom{S}
-    \exists{S}(
-      T:Nat{},
-      \equals{Nat{},S}(
-        T:Nat{},
-        zero{}())) []
-
-  axiom{S}
-    \exists{S}(
-      T:Nat{},
-      \equals{Nat{},S}(
-        T:Nat{},
-        succ{}(X:Nat{}))) []
-
-  axiom{S}
-    \exists{S}(
-      T:Nat{},
-      \equals{Nat{},S}(
-        T:Nat{},
-        plus{}(X:Nat{},Y:Nat{}))) []
-
-  axiom{}
-    \or{Nat{}}(
-      zero{}(),
-      \exists{Nat{}}(
-        X:Nat{},
-        succ{}(X:Nat{}))) []
-
-  axiom{}
-    \not{Nat{}}(
-      \and{Nat{}}(
-        zero{}(),
-        \exists{Nat{}}(
-          X:Nat{},
-          succ{}(X:Nat{})))) []
-
-  axiom{S}
-    \equals{Nat{},S}(
-      plus{}(X:Nat{},zero{}()),
-      X:Nat{}) []
-
-  axiom{S}
-    \equals{Nat{},S}(
-      plus{}(X:Nat{},succ{}(Y:Nat{})),
-      succ{}(plus{}(X:Nat{},Y:Nat{}))) []
 
   axiom{S,R}
     \exists{R}(
@@ -113,6 +59,5 @@ module TEST8
     \equals{List{S},R}(
       append{S}(cons{S}(X:S,L0:List{S}),L:List{S}),
       cons{S}(X:S,append{S}(L0:List{S},L:List{S}))) []
-
 
 endmodule []
