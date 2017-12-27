@@ -1,0 +1,143 @@
+\begin{thebibliography}{10}
+
+\bibitem{bt95}
+J.~Bergstra and J.~Tucker.
+\newblock Equational specifications, complete term rewriting systems, and
+  computable and semicomputable algebras.
+\newblock {\em Journal of the Association for Computing Machinery},
+  42(6):1194--1230, 1995.
+
+\bibitem{coq}
+Y.~Bertot and P.~Cast{\'e}ran.
+\newblock {\em Interactive theorem proving and program development: Coq’Art:
+  the calculus of inductive constructions}.
+\newblock Springer Science \& Business Media, 2013.
+
+\bibitem{bogdanas-rosu-2015-popl}
+D.~Bogd\u{a}na\c{s} and G.~Ro\c{s}u.
+\newblock {K-Java: A Complete Semantics of Java}.
+\newblock In {\em POPL'15}, pages 445--456. ACM, January 2015.
+
+\bibitem{clavel-et-al99a}
+M.~Clavel, F.~Dur{\'a}n, S.~Eker, P.~Lincoln, N.~Mart\'{\i}-Oliet, J.~Meseguer,
+  and J.~F. Quesada.
+\newblock Maude: specification and programming in rewriting logic.
+\newblock {\em Theoretical Computer Science}, 285(2):187--243, 2002.
+
+\bibitem{stefanescu-ciobaca-mereuta-moore-serbanuta-rosu-2014-rta}
+A.~\c{S}tef\u{a}nescu, c.~Ciob\^{a}c\u{a}, R.~Mereu\c{t}\u{a}, B.~M. Moore,
+  T.~F. \c{S}erb\u{a}nu\c{t}\u{a}, and G.~Ro\c{s}u.
+\newblock All-path reachability logic.
+\newblock In {\em RTA-TLCA'14}, volume 8560 of {\em LNCS}, pages 425--440.
+  Springer, 2014.
+
+\bibitem{stefanescu-park-yuwen-li-rosu-2016-oopsla}
+A.~\c{S}tef\u{a}nescu, D.~Park, S.~Yuwen, Y.~Li, and G.~Ro\c{s}u.
+\newblock Semantics-based program verifiers for all languages.
+\newblock In {\em OOPSLA'16}, pages 74--91. ACM, 2016.
+
+\bibitem{ellison-rosu-2012-popl}
+C.~Ellison and G.~Rosu.
+\newblock An executable formal semantics of {C} with applications.
+\newblock In {\em POPL}, pages 533--544. ACM, 2012.
+
+\bibitem{felleisen-hieb-92}
+M.~Felleisen and R.~Hieb.
+\newblock The revised report on the syntactic theories of sequential control
+  and state.
+\newblock {\em Th. Comp. Sci.}, 103(2):235--271, 1992.
+
+\bibitem{k-php}
+D.~Filaretti and S.~Maffeis.
+\newblock An executable formal semantics of php.
+\newblock In {\em ECOOP'14}, LNCS, pages 567--592. Springer, 2014.
+
+\bibitem{guth-2013-thesis}
+D.~Guth.
+\newblock A formal semantics of {Python} 3.3.
+\newblock Master's thesis, University of Illinois at Urbana-Champaign, July
+  2013.
+\newblock \url{https://github.com/kframework/python-semantics}.
+
+\bibitem{hathhorn-ellison-rosu-2015-pldi}
+C.~Hathhorn, C.~Ellison, and G.~Ro\c{s}u.
+\newblock Defining the undefinedness of {C}.
+\newblock In {\em PLDI'15}, pages 336--345. ACM, 2015.
+
+\bibitem{hildenbrandt-saxena-zhu-rodrigues-daian-guth-rosu-2017-tr}
+E.~Hildenbrandt, M.~Saxena, X.~Zhu, N.~Rodrigues, P.~Daian, D.~Guth, and
+  G.~Rosu.
+\newblock Kevm: A complete semantics of the ethereum virtual machine.
+\newblock Technical Report http://hdl.handle.net/2142/97207, University of
+  Illinois, Aug 2017.
+
+\bibitem{hiraidefining}
+Y.~Hirai.
+\newblock Defining the ethereum virtual machine for interactive theorem
+  provers.
+\newblock WSTC17, International Conference on Financial Cryptography and Data
+  Security, 2017.
+
+\bibitem{vampire}
+L.~Kov{\'a}cs and A.~Voronkov.
+\newblock {\em First-Order Theorem Proving and Vampire}, pages 1--35.
+\newblock Springer Berlin Heidelberg, Berlin, Heidelberg, 2013.
+
+\bibitem{meseguer-1992-tcs}
+J.~Meseguer.
+\newblock Conditional rewriting logic as a unified model of concurrency.
+\newblock {\em Theoretical Comput. Sci.}, 96(1):73--155, 1992.
+
+\bibitem{agda}
+U.~Norell.
+\newblock {\em Towards a practical programming language based on dependent type
+  theory}.
+\newblock PhD thesis, Department of Computer Science and Engineering, Chalmers
+  University of Technology, SE-412 96 G\"{o}teborg, Sweden, September 2007.
+
+\bibitem{park-stefanescu-rosu-2015-pldi}
+D.~Park, A.~\c{S}tef\u{a}nescu, and G.~Ro\c{s}u.
+\newblock {KJS}: A complete formal semantics of {JavaScript}.
+\newblock In {\em PLDI'15}, pages 346--356. ACM, 2015.
+
+\bibitem{isabelle}
+L.~C. Paulson.
+\newblock {\em Isabelle: A generic theorem prover}, volume 828.
+\newblock Springer Science \& Business Media, 1994.
+
+\bibitem{pltredex-python}
+J.~G. Politz, A.~Martinez, M.~Milano, S.~Warren, D.~Patterson, J.~Li,
+  A.~Chitipothu, and S.~Krishnamurthi.
+\newblock Python: The full monty.
+\newblock In {\em OOPSLA'13}, pages 217--232. ACM, 2013.
+
+\bibitem{rosu-2003-cs322}
+G.~Ro\c{s}u.
+\newblock {CS322 - Programming Language Design: Lecture Notes}.
+\newblock Technical Report http://hdl.handle.net/2142/11385, University of
+  Illinois, December 2003.
+
+\bibitem{rosu-2017-lmcs}
+G.~Ro\c{s}u.
+\newblock Matching logic.
+\newblock {\em Logical Methods in Computer Science}, to appear, 2017.
+
+\bibitem{rosu-stefanescu-ciobaca-moore-2013-lics}
+G.~Ro\c{s}u, A.~\c{S}tef\u{a}nescu, \c{S}tefan Ciob\^{a}c\u{a}, and B.~M.
+  Moore.
+\newblock One-path reachability logic.
+\newblock In {\em LICS'13}, pages 358--367. IEEE, 2013.
+
+\bibitem{serbanuta-rosu-2012-icgt}
+T.~F. Serbanuta and G.~Rosu.
+\newblock A truly concurrent semantics for the k framework based on graph
+  transformations.
+\newblock In H.~Ehrig, G.~Engels, H.-J. Kreowski, and G.~Rozenberg, editors,
+  {\em ICGT}, volume 7562 of {\em LNCS}, pages 294--310. Springer, 2012.
+
+\bibitem{smith-1984-popl}
+B.~C. Smith.
+\newblock Reflection and semantics in {LISP}.
+\newblock In {\em POPL'84}, pages 23--35. ACM, 1984.
+
+\end{thebibliography}

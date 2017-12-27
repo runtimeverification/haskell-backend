@@ -1,0 +1,147 @@
+/* This is an example of lifting an object-level axiom 
+ * to its meta-representation.
+ *
+ * The object-level axiom that is lifted is:
+ *
+ *   axiom{S, R}
+ *   \implies{R}(
+ *     \equals{KSort, R}(
+ *       KgetSort(C:KPattern),
+ *       Ctxt{S, BExp}),
+ *     \equals{Stmt, R}(
+ *       ite(ctxtapp{S, BExp}(C:KPattern, X:S),
+ *           S1:Stmt,
+ *           S2:Stmt),
+ *       ctxtapp{S, Stmt}(
+ *         gamma{S, Stmt}(
+ *           HOLE:S,
+ *           ite(ctxtapp{S, BExp}(C:KPattern, HOLE:S),
+ *               S1:Stmt, 
+ *               S2:Stmt
+ *           )
+ *         ), 
+ *         X:S
+ *       )
+ *     )
+ *   )
+ */
+
+
+/* Define alias choice{S, R}(P, Q1, Q2) as
+ *   - if P is not bottom then Q1
+ *   - if P is bottom then Q2
+ * in which P has sort S, and Q1 and Q2 have sort R.
+ */
+
+alias
+  choice{S, R}(P, Q1, Q2) 
+  := \or{R}(\and{R}(ceil{S, R}(P), Q1), 
+            \and{R}(\not{R}(ceil{S, R}(P)), Q2))
+
+
+
+
+\exists{KSort,KAxiom}(S:KSort,
+  \exists{KSort,KAxiom}(R:KSort,
+    Kaxiom(
+      Kimplies(
+        R:KSort,
+        choice{KSort, KPattern}(
+          \equals{KSort, KSort}(
+            KgetSort(C:KPattern),
+            Ksort(
+              "Ctxt", 
+              KconsKSortList(S:KSort,
+                KconsKSortList(Ksort("BExp"),
+                KnilKSortList))
+            )
+          ),
+          Ktop(R:KSort),
+          Kbottom(R:KSort)
+        ),
+        Kequals(
+          KSort("Stmt"),
+          R:KSort,
+          Kapplication(
+            Ksymbol(
+              "ite", 
+              KconsKSortList(Ksort("BExp"),
+                KconsKSortList(Ksort("Stmt"),
+                KconsKSortList(Ksort("Stmt"),
+                KnilKSortList))), 
+              Ksort("Stmt")
+            ), 
+            KconsKPatternList(
+              Kapplication(
+                Ksymbol(
+                  "ctxtapp",     // how about the parameter instances S and BExp of ctxtapp?
+                  KconsKSortList(Ksort("Ctxt", 
+                                       KconsKSortList(S,
+                                         KconsKSortList(Ksort("BExp"),
+                                         KnilKSortList))),
+                    KconsKSortList(S,
+                    KnilKSortList)
+                  ),
+                  Ksort("BExp")
+                ),
+                KconsKPatternList(C:KPattern,
+                  KconsKPatternList(Kvariable("X", S),
+                  KnilKPattern))
+              ),
+              KconsKPatternList(Kvariable("S1", Ksort("Stmt")),
+              KconsKPatternList(Kvariable("S2", Ksort("Stmt")),
+              KnilKPattern))
+            )
+          ),
+          Kapplication(
+            Ksymbol(
+              "ctxtapp",
+              KconsKSortList(Ksort("Ctxt", 
+                                   KconsKSortList(S,
+                                     KconsKSortList(Ksort("Stmt"),
+                                     KnilKSortList))),
+                    KconsKSortList(S,
+                    KnilKSortList)),
+                  Ksort("BExp")
+            ),
+            KconsKPatternList(Kapplication(
+                                Ksymbol(),
+                                KconsKPatternList(Kvariable("HOLE", S),
+                                  KconsKPatternList(Kapplication(
+                                                      Ksymbol(
+                                                        "ite", 
+                                                        KconsKSortList(Ksort("BExp"),
+                                                          KconsKSortList(Ksort("Stmt"),
+                                                          KconsKSortList(Ksort("Stmt"),
+                                                          KnilKSortList))), 
+                                                        Ksort("Stmt")
+                                                      ),
+                                                      KconsKPatternList(Kapplication(
+                                                                          Ksymbol(
+                                                                            "ctxtapp",
+                                                                            KconsKSortList(Ksort("Ctxt", 
+                                                                                                 KconsKSortList(S,
+                                                                                                   KconsKSortList(Ksort("BExp"),
+                                                                                                   KnilKSortList))),
+                                                                              KconsKSortList(S,
+                                                                              KnilKSortList)),
+                                                                            Ksort("BExp")
+                                                                          ),
+                                                                          KconsKPatternList(C:KPattern,
+                                                                            KconsKPatternList(Kvariable("HOLE", S), 
+                                                                            KnilKPattern))
+                                                                        ),
+                                                        KconsKPatternList(Kvariable("S1", Ksort("Stmt")),
+                                                        KconsKPatternList(Kvariable("S2", Ksort("Stmt")),
+                                                        KnilKPattern)))
+                                                    ),
+                                  KnilKPattern))
+                              ),
+              KconsKPatternList(Kvariable("X", S),
+              KnilKPattern))
+          )
+        )
+	    )
+	  )
+  )
+)

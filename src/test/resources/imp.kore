@@ -1,160 +1,313 @@
 []
 
-module ID
-  syntax Id []
-endmodule []
-
-module BOOL
-  syntax Bool []
-  syntax Bool ::= true() []
-  axiom \equals(true(),bool("true")) []
-  syntax Bool ::= false() []
-  axiom \equals(false(),bool("false")) []
-  syntax Bool ::= not@BOOL(Bool) []
-endmodule []
-
-module INT
-  import BOOL []
-  syntax Int []
-  syntax Int ::= plus@INT(Int,Int) []
-  syntax Int ::= div@INT(Int,Int) []
-  syntax Bool ::= leq@INT(Int,Int) []
-  syntax Int ::= 0() []
-  axiom \equals(0(),int("0")) []
-endmodule []
-
-module SET
-  syntax Set [set()]
-  syntax Set ::= .Set() [set()]
-  syntax Set ::= kAsSet(K) [set()]
-  syntax Set ::= comma@SET(Set,Set) [set()]
-  syntax Bool ::= in(K,Set) [set()]
-  axiom \equals(comma@SET(.Set(),S:`???`),S:`???`) [set()]
-  axiom \equals(comma@SET(S1:`???`,S2:`???`),comma@SET(S2:`???`,S1:`???`)) [set()]
-  axiom \equals(comma@SET(comma@SET(S1:`???`,S2:`???`),S3:`???`),comma@SET(S1:`???`,comma@SET(S2:`???`,S3:`???`))) [set()]
-  axiom \equals(comma@SET(S:`???`,S:`???`),S:`???`) [set()]
-  axiom \equals(in(K1:`???`,comma@SET(kAsSet(K1:`???`),S:`???`)),true()) [set()]
-  axiom \implies(\not(\equals(K1:`???`,K2:`???`)),\equals(in(K1:`???`,comma@SET(kAsSet(K2:`???`),S:`???`)),in(K1:`???`,S:`???`))) [set()]
-  axiom \equals(in(K1:`???`,.Set()),false()) [set()]
-endmodule []
-
-module MAP
-  import SET []
-  syntax Map [map()]
-  syntax Map ::= bind(K,K) [map()]
-  syntax Map ::= .Map() [map()]
-  syntax Map ::= comma@MAP(Map,Map) [map()]
-  syntax Set ::= keys(Map) [map()]
-  axiom \equals(comma@MAP(.Map(),M:`???`),M:`???`) [map()]
-  axiom \equals(comma@MAP(M:`???`,.Map()),M:`???`) [map()]
-  axiom \equals(comma@MAP(comma@MAP(M1:`???`,M2:`???`),M3:`???`),comma@MAP(M1:`???`,comma@MAP(M2:`???`,M3:`???`))) [map()]
-  axiom \equals(comma@MAP(M1:`???`,M2:`???`),comma@MAP(M2:`???`,M1:`???`)) [map()]
-endmodule []
-
-module DOMAINS
-  import ID []
-  import BOOL []
-  import INT []
-  import SET []
-  import MAP []
-endmodule []
-
-module K
-  syntax KResult []
-  syntax K []
-  syntax K ::= kResultAsK(KResult) []
-endmodule []
-
-module CONTEXTS
-  import K []
-  syntax K ::= #context(K,K) []
-  syntax K ::= #context2(K,K,K) []
-  syntax K ::= #context3(K,K,K,K) []
-  axiom \equals(#context2(C:`???`,K1:`???`,K2:`???`),#context(#context(C:`???`,K1:`???`),K2:`???`)) []
-  axiom \equals(#context3(C:`???`,K1:`???`,K2:`???`,K3:`???`),#context(#context2(C:`???`,K1:`???`,K2:`???`),K3:`???`)) []
-  syntax K ::= #...(K) []
-  syntax K ::= #...2(K,K) []
-  syntax K ::= #...3(K,K) []
-  axiom \equals(#...(K1:`???`),\exists(C:`???`,#context(C:`???`,K1:`???`))) []
-  axiom \equals(#...2(K1:`???`,K2:`???`),\exists(C:`???`,#context2(C:`???`,K1:`???`,K2:`???`))) []
-  axiom \equals(#...3(K1:`???`,K2:`???`,K3:`???`),\exists(C:`???`,#context3(C:`???`,K1:`???`,K2:`???`,K3:`???`))) []
-  syntax K ::= #gamma(K) []
-  axiom \equals(#context(\exists(HOLE:`???`,#gamma(HOLE:`???`)),K1:`???`),K1:`???`) []
-endmodule []
-
-module IMP-SYNTAX
-  import DOMAINS []
-  import CONTEXTS []
-  syntax AExp []
-  syntax AExp ::= intAsAExp(Int) []
-  syntax AExp ::= idAsAExp(Id) []
-  syntax AExp ::= div(AExp,AExp) [strict()]
-  axiom \equals(#context(\exists(HOLE:`???`,#gamma(div(#context(C:`???`,HOLE:`???`),A2:`???`))),A1:`???`),div(#context(C:`???`,A1:`???`),A2:`???`)) [strict(div(),1())]
-  axiom \equals(#context(\exists(HOLE:`???`,#gamma(div(A1:`???`,#context(C:`???`,HOLE:`???`)))),A2:`???`),div(A1:`???`,#context(C:`???`,A2:`???`))) [strict(div(),2())]
-  syntax AExp ::= plus(AExp,AExp) [strict()]
-  axiom \equals(#context(\exists(HOLE:`???`,#gamma(plus(#context(C:`???`,HOLE:`???`),A2:`???`))),A1:`???`),plus(#context(C:`???`,A1:`???`),A2:`???`)) [strict(plus(),1())]
-  axiom \equals(#context(\exists(HOLE:`???`,#gamma(plus(A1:`???`,#context(C:`???`,HOLE:`???`)))),A2:`???`),plus(A1:`???`,#context(C:`???`,A2:`???`))) [strict(plus(),2())]
-  syntax BExp []
-  syntax BExp ::= boolAsBExp(Bool) []
-  syntax BExp ::= leq(AExp,AExp) [seqstrict()]
-  axiom \equals(#context(\exists(HOLE:`???`,#gamma(leq(#context(C:`???`,HOLE:`???`),A2:`???`))),A1:`???`),leq(#context(C:`???`,A1:`???`),A2:`???`)) [seqstrict(leq(),1())]
-  axiom \implies(\equals(isKResult(A1:`???`),\top()),\equals(#context(\exists(HOLE:`???`,#gamma(leq(A1:`???`,#context(C:`???`,HOLE:`???`)))),A2:`???`),leq(A1:`???`,#context(C:`???`,A2:`???`)))) [seqstrict(leq(),2())]
-  syntax BExp ::= not(BExp) [strict()]
-  axiom \equals(#context(\exists(HOLE:`???`,#gamma(not(#context(C:`???`,HOLE:`???`)))),B:`???`),not(#context(C:`???`,B:`???`))) [strict(not(),1())]
-  syntax BExp ::= and(BExp,BExp) [strict(1())]
-  axiom \equals(#context(\exists(HOLE:`???`,#gamma(and(#context(C:`???`,HOLE:`???`),B2:`???`))),B1:`???`),and(#context(C:`???`,B1:`???`),B2:`???`)) [strict(and(),1())]
-  syntax Block []
-  syntax Block ::= emptyBlock() []
-  syntax Block ::= block(Stmt) []
-  syntax Stmt []
-  syntax Stmt ::= blockAsStmt(Block) []
-  syntax Stmt ::= asgn(Id,AExp) [strict(2())]
-  axiom \equals(#context(\exists(HOLE:`???`,#gamma(asgn(X:`???`,#context(C:`???`,HOLE:`???`)))),A:`???`),asgn(X:`???`,#context(C:`???`,A:`???`))) [strict(asgn(),2())]
-  syntax Stmt ::= if(BExp,Block,Block) [strict(1())]
-  axiom \equals(#context(\exists(HOLE:`???`,#gamma(if(#context(C:`???`,HOLE:`???`),S1:`???`,S2:`???`))),B:`???`),if(#context(C:`???`,B:`???`),S1:`???`,S2:`???`)) [strict(if(),1())]
-  syntax Stmt ::= while(BExp,Block) []
-  syntax Stmt ::= seq(Stmt,Stmt) [strict(1())]
-  axiom \equals(#context(\exists(HOLE:`???`,#gamma(seq(#context(C:`???`,HOLE:`???`),S2:`???`))),S1:`???`),seq(#context(C:`???`,S1:`???`),S2:`???`)) [strict(seq(),1())]
-  syntax Pgm []
-  syntax Pgm ::= pgm(Ids,Stmt) []
-  syntax Ids []
-  syntax Ids ::= idAsIds(Id) [list()]
-  syntax Ids ::= .Ids() [list()]
-  syntax Ids ::= comma(Ids,Ids) [list()]
-  axiom \equals(comma(.Ids(),Ids1:`???`),Ids1:`???`) [list()]
-  axiom \equals(comma(Ids1:`???`,.Ids()),Ids1:`???`) [list()]
-  axiom \equals(comma(comma(Ids1:`???`,Ids2:`???`),Ids3:`???`),comma(Ids1:`???`,comma(Ids2:`???`,Ids3:`???`))) [list()]
-endmodule []
-
 module IMP
-  import IMP-SYNTAX []
-  syntax KResult ::= intAsKResult(Int) []
-  syntax KResult ::= boolAsKResult(Bool) []
-  syntax TopCell [cfg()]
-  syntax TopCell ::= top(KCell,StateCell) [cfg()]
-  axiom \equals(#context(\exists(HOLE:`???`,#gamma(top(#context(C:`???`,HOLE:`???`),Sc:`???`))),Kc:`???`),top(#context(C:`???`,Kc:`???`),Sc:`???`)) [cfg(top(),1())]
-  axiom \equals(#context(\exists(HOLE:`???`,#gamma(top(Kc:`???`,#context(C:`???`,HOLE:`???`)))),Sc:`???`),top(Kc:`???`,#context(C:`???`,Sc:`???`))) [cfg(top(),2())]
-  syntax KCell [cfg()]
-  syntax KCell ::= k(K) [cfg()]
-  axiom \equals(#context(\exists(HOLE:`???`,#gamma(k(#context(C:`???`,HOLE:`???`)))),K1:`???`),k(#context(C:`???`,K1:`???`))) [cfg(k(),1())]
-  syntax StateCell [cfg()]
-  syntax StateCell ::= state(Map) [cfg()]
-  axiom \equals(#context(\exists(HOLE:`???`,#gamma(state(#context(C:`???`,HOLE:`???`)))),M:`???`),state(#context(C:`???`,M:`???`))) [cfg(state(),1())]
-  syntax TopCell ::= #krun(Pgm) []
-  axiom \equals(#krun(P:`???`),top(k(P:`???`),state(.Map()))) []
-  rule #...2(\rewrite(idAsAExp(X:`???`),intAsAExp(I:`???`)),bind(X:`???`,I:`???`)) []
-  rule \implies(\not(\equals(I2:`???`,0())),#...(\rewrite(div(intAsAExp(I1:`???`),intAsAExp(I2:`???`)),intAsAExp(div@INT(I1:`???`,I2:`???`))))) []
-  rule #...(\rewrite(plus(intAsAExp(I1:`???`),intAsAExp(I2:`???`)),intAsAExp(plus@INT(I1:`???`,I2:`???`)))) []
-  rule #...(\rewrite(leq(intAsAExp(I1:`???`),intAsAExp(I2:`???`)),boolAsBExp(leq@INT(I1:`???`,I2:`???`)))) []
-  rule #...(\rewrite(not(boolAsBExp(T:`???`)),boolAsBExp(not@BOOL(T:`???`)))) []
-  rule #...(\rewrite(and(boolAsBExp(true()),B:`???`),B:`???`)) []
-  rule #...(\rewrite(and(boolAsBExp(false()),_:`???`),boolAsBExp(false()))) []
-  rule #...(\rewrite(blockAsStmt(block(S:`???`)),S:`???`)) []
-  rule #...2(\rewrite(asgn(X:`???`,intAsAExp(I:`???`)),blockAsStmt(emptyBlock())),bind(X:`???`,\rewrite(_:`???`,I:`???`))) []
-  rule #...(\rewrite(seq(blockAsStmt(emptyBlock()),S:`???`),S:`???`)) []
-  rule #...(\rewrite(if(boolAsBExp(true()),S:`???`,_:`???`),blockAsStmt(S:`???`))) []
-  rule #...(\rewrite(if(boolAsBExp(false()),_:`???`,S:`???`),blockAsStmt(S:`???`))) []
-  rule #...(\rewrite(while(B:`???`,S:`???`),if(B:`???`,block(seq(blockAsStmt(S:`???`),while(B:`???`,S:`???`))),emptyBlock()))) []
-  rule #...(pgm(\rewrite(comma(idAsIds(X:`???`),Xs:`???`),Xs:`???`),_:`???`),state(comma@MAP(\equals(\and(M:`???`,in(X:`???`,keys(M:`???`))),false()),\rewrite(.Map(),bind(X:`???`,0()))))) []
-  rule #...(\rewrite(pgmAsK(pgm(.Ids(),S:Stmt)),stmtAsK(S:`???`))) []
+
+  sort{} Bool{} []
+
+  symbol true{}() : Bool{} []
+
+  symbol false{}() : Bool{} []
+
+  symbol and{}(Bool{}, Bool{}) : Bool{} []
+
+  symbol not{}(Bool{}) : Bool{} []
+
+  sort{} Int{} []
+
+  symbol zero{}() : Int{} []
+
+  symbol succ{}(Int{}) : Int{} []
+
+  symbol plus{}(Int{}, Int{}) : Int{} []
+
+  symbol 0{}() : Int{} []
+
+  symbol 1{}() : Int{} []
+
+  symbol 2{}() : Int{} []
+
+  symbol 3{}() : Int{} []
+
+  symbol div{}(Int{}, Int{}) : Int{} []
+
+  symbol leq{}(Int{}, Int{}) : Bool{} []
+
+  sort{} Id{} []
+
+  symbol id{}(Int{}) : Id{} []
+
+  sort{S} List{S} []
+
+  symbol nil{S}() : List{S} []
+
+  symbol cons{S}(S, List{S}) : List{S} []
+
+  symbol append{S}(List{S}, List{S}) : List{S} []
+
+  symbol listItem{S}(S) : List{S} []
+
+  sort{S} Set{S} []
+
+  symbol emptySet{S}() : Set{S} []
+
+  symbol union{S}(Set{S}, Set{S}) : Set{S} []
+
+  symbol inSet{S}(S, Set{S}) : Bool{} []
+
+  axiom{S,R}
+    \equals{Set{S},R}(
+      union{S}(S:Set{S}, emptySet{S}()),
+      S:Set{S}) []
+
+  sort{S1,S2} Map{S1,S2} []
+
+  symbol bind{S1,S2}(S1,S2) : Map{S1,S2} []
+
+  symbol emp{S1,S2}() : Map{S1,S2} []
+
+  symbol merge{S1,S2}(Map{S1,S2}, Map{S1,S2}) : Map{S1,S2} []
+
+  symbol keys{S1,S2}(Map{S1,S2}) : Set{S1} []
+
+  sort{S1,S2} Ctxt{S1,S2} []
+
+  symbol gamma0{S1,S2}(S1,S2) : Ctxt{S1,S2} []
+
+  symbol app{S1,S2}(Ctxt{S1,S2}, S1) : S2 []
+
+  alias gamma{S1,S2}(S1,S2) : Ctxt{S1,S2} []
+
+  axiom{S1,S2,R}
+    \equals{Ctxt{S1,S2},R}(
+      gamma{S1,S2}(
+        #variableToPattern{}(#X:#Variable{}),
+        #P:Pattern{}),
+      \exists{Ctxt{S1,S2}}(
+        #X:#Variable{},
+        gamma0{S1,S2}(
+          #variableToPattern{}(#X:#Variable{}),
+          #P:Pattern{}))) []
+
+ alias idctxt{S}() : Ctxt{S,S} []
+
+  axiom{S,R}
+    \equals{Ctxt{S,S},R}(
+      idctxt{S}(),
+      gamma{S,S}(X:S,X:S)) []
+
+  axiom{S,R}
+    \equals{S,R}(
+      T:S,
+      app{S,S}(idctxt{S,S}(), T:S)) []
+
+  sort{} AExp{} []
+
+  symbol intAsAExp{}(Int{}) : AExp{} []
+
+  symbol idAsAExp{}(Id{}) : AExp{} []
+
+  symbol divAExp{}(AExp{}, AExp{}) : AExp{} []
+
+  axiom{S,R,#R}
+    \implies{#R}(
+      \not{#R}(
+        #occursFree{#R}(
+          HOLE:S,
+          divAExp{}(
+            app{S,AExp{}}(
+              #C:#Pattern{},
+              T:S),
+            P:AExp{}))),
+      #provable{#R}(
+        \equals{AExp{},R}(
+          divAExp{}(
+            app{S,AExp{}}(
+              #C:#Pattern{},
+              T:S),
+            P:AExp{}),
+          app{S,AExp{}}(
+            gamma{S,AExp{}}(
+              HOLE:S,
+              divAExp{}(
+                app{S,AExp{}}(
+                  #C:#Pattern{},
+                  HOLE:S),
+                P:AExp{})),
+            T:S)))) [#strict{}("divAExp", 1{}())]
+
+  axiom{S,R,#R}
+    \implies{#R}(
+      \not{#R}(
+        #occursFree{#R}(
+          HOLE:S,
+          divAExp{}(
+            P:AExp{},
+            app{S,AExp{}}(
+              #C:#Pattern{},
+              T:S)))),
+      #provable{#R}(
+        \equals{AExp{},R}(
+          divAExp{}(
+            P:AExp{},
+            app{S,AExp{}}(
+              #C:#Pattern{},
+              T:S)),
+          app{S,AExp{}}(
+            gamma{S,AExp{}}(
+              HOLE:S,
+              divAExp{}(
+                P:AExp{},
+                app{S,AExp{}}(
+                  #C:#Pattern{},
+                  HOLE:S))),
+            T:S)))) [#strict{}("divAExp", 2{}())]
+
+
+  sort{} Block{} []
+
+  symbol emptyBlock{}() : Block{} []
+
+  symbol block{}(Stmt{}) : Block{} []
+
+  sort{} Stmt{} []
+
+  symbol blockAsStmt{}(Block{}) : Stmt{} []
+
+  symbol asgn{}(Id{}, AExp{}) : Stmt{} [#strict{}("asgn", 2{}())]
+
+  axiom{S,R,#R}
+    \implies{#R}(
+      \not{#R}(
+        #occursFree{#R}(
+          HOLE:S,
+          asgn{}(
+            ID:Id{},
+            app{S,AExp{}}(
+              #C:#Pattern{},
+              T:S)))),
+      #provable{#R}(
+        \equals{Stmt{},R}(
+          divAExp{}(
+            ID:Id{},
+            app{S,AExp{}}(
+              #C:#Pattern{},
+              T:S)),
+          app{S,Stmt{}}(
+            gamma{S,Stmt{}}(
+              HOLE:S,
+              asgn{}(
+                ID:Id{},
+                app{S,AExp{}}(
+                  #C:#Pattern{},
+                  HOLE:S))),
+            T:S)))) [#strict{}("asgn", 2{}())]
+
+
+  symbol if{}(BExp{}, Block{}, Block{}) : Stmt{} [#strict{}("if", 1{}())]
+
+  axiom{S,R,#R}
+    \implies{#R}(
+      \not{#R}(
+        #occursFree{#R}(
+          HOLE:S,
+          if{}(
+            app{S,BExp{}}(
+              #C:#Pattern{},
+              T:S),
+            B1:Block{},
+            B2:Block{}))),
+      #provable{#R}(
+        \equals{Stmt{},R}(
+          if{}(
+            app{S,BExp{}}(
+              #C:#Pattern{},
+              T:S),
+            B1:Block{},
+            B2:Block{}),
+          app{S,Stmt{}}(
+            gamma{S,Stmt{}}(
+              HOLE:S,
+              if{}(
+                app{S,BExp{}}(
+                  #C:#Pattern{},
+                  HOLE:S),
+                B1:Block{},
+                B2:Block{})),
+            T:S)))) [#strict{}("if", 1{}())]
+
+
+  symbol while{}(BExp{}, Block{}) : Stmt{} []
+
+  symbol seq{}(Stmt{}, Stmt{}) : Stmt{} [#strict{}("seq", 1{}())]
+
+   axiom{S,R,#R}
+    \implies{#R}(
+      \not{#R}(
+        #occursFree{#R}(
+          HOLE:S,
+          seq{}(
+            app{S,Stmt{}}(
+              #C:#Pattern{},
+              T:S),
+            P:Stmt{}))),
+      #provable{#R}(
+        \equals{Stmt{},R}(
+          seq{}(
+            app{S,Stmt{}}(
+              #C:#Pattern{},
+              T:S),
+            P:Stmt{}),
+          app{S,Stmt{}}(
+            gamma{S,Stmt{}}(
+              HOLE:S,
+              seq{}(
+                app{S,Stmt{}}(
+                  #C:#Pattern{},
+                  HOLE:S),
+                P:Stmt{})),
+            T:S)))) [#strict{}("seq", 1{}())]
+
+
+  sort{} Pgm{} []
+
+  symbol pgm{}(List{Id{}}, Stmt{}) : Pgm{} [#strict{}("pgm", 1{}()), #strict{}("pgm", 2{}())]
+
+  sort{} KCell{} []
+
+  symbol kcell{}(Pgm{}) : KCell{} [#strict{}("kcell", 1{}())]
+
+  sort{} StateCell{} []
+
+  symbol statecell{}(Map{Id{}, Int{}}) : StateCell{} [#strict{}("statecell", 1{}())]
+
+  sort{} TopCell{} []
+
+  symbol topcell{}(KCell{}, StateCell{}) : TopCell{} [#strict{}("topcell", 1{}()), #strict{}("topcell", 2{}())]
+
+  symbol krun{}(Pgm{}) : TopCell{} []
+
+  axiom{R}
+    \equals{Top{},R}(
+      krun{}(P:Pgm{}),
+      top{}(
+        kcell{}(P:Pgm{}),
+        statecell{}(emp{Id{},Int{}}()))) []
+
+  axiom{S,R}
+    \rewrites{S,R}(
+      app{Map{Id{},Int{}},S}(
+        app{AExp{}, Ctxt{Map{Id{},Int{}}, S}}(
+          #C:#Pattern{},
+          idAsAExp{}(X:Id{})),
+        bind{Id{},Int{}}(
+          X:Id{},
+          I:Int{})),
+      app{Map{Id{},Int{}},S}(
+        app{AExp{}, Ctxt{Map{Id{},Int{}}, S}}(
+          #C:#Pattern{},
+          intAsAExp{}(I:Int{})),
+        bind{Id{},Int{}}(
+          X:Id{},
+          I:Int{}))) []
+
 endmodule []
