@@ -3,3 +3,9 @@
 *.iml
 target/*
 .idea
+docs/*.aux
+docs/*.bbl
+docs/*.blg
+docs/*.log
+docs/*.out
+docs/*.synctex.gz
