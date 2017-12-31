@@ -2477,7 +2477,8 @@ they are formally defined.
 \label{sec:chars-string}
 
 The sort $\KChar$ is the sort for \emph{characters}. It has the following $26 + 
-26 + 10 + 3 = 65$ functional constructors (more can be added is needed or desired):
+26 + 10 + 3 = 65$ functional constructors (more can be added if needed or
+desired):
 \begin{center}
 	\begin{tabular}{c c c}
 		$\quottt{a} \colon \to \KChar$ & $\quottt{b} \colon \to \KChar$ & 
@@ -3060,7 +3061,7 @@ The functions $\Ksubstitute$ and $\KsubstitutePatterns$ have axioms
   = ((u = v) \wedge \psi)
   \vee ((u \neq v) \wedge u)
   \\
-  & \overline{\sigma(L [\psi / v])} = 
+  & \overline{\sigma(L)[\psi / v]} =
   \overline{\sigma(L[\psi / v])}
   \\
   & \overline{(\varphi_1 \wedge_{s} \varphi_2) [\psi / v]} = 
@@ -3249,22 +3250,22 @@ defined by the following axioms
   \parametric{\KwellFormed}{\shs}(v) \wedge 
   \parametric{\KwellFormed}{\shs}(\varphi) \wedge (\KgetSort(\varphi) = s)
   \\
-  & \KgetSort(\overline{x \cln s}) = 
-  \parametric{\KwellFormed}{\shs}(\overline{x \cln s}) \wedge s
+  & \KgetSort(\overline{x \cln s}) =
+  \parametric{\KwellFormed}{\KSort}(\overline{x \cln s}) \wedge s
   \\
-  & \KgetSort(\overline{\sigma(L)}) = 
-  \parametric{\KwellFormed}{\shs}(\overline{\sigma(L)}) \wedge 
+  & \KgetSort(\overline{\sigma(L)}) =
+  \parametric{\KwellFormed}{\KSort}(\overline{\sigma(L)}) \wedge
   \KgetReturnSort(\sigma)
   \\
-  & \KgetSort(\overline{\varphi \wedge_s \psi}) = 
-  \parametric{\KwellFormed}{\shs}(\overline{\varphi \wedge_s \psi}) \wedge s
+  & \KgetSort(\overline{\varphi \wedge_s \psi}) =
+  \parametric{\KwellFormed}{\KSort}(\overline{\varphi \wedge_s \psi}) \wedge s
   \\
-  & \KgetSort(\overline{\neg_s \varphi}) = 
-  \parametric{\KwellFormed}{\shs}(\overline{\neg_s 
+  & \KgetSort(\overline{\neg_s \varphi}) =
+  \parametric{\KwellFormed}{\KSort}(\overline{\neg_s
   \varphi}) \wedge s
   \\
-  & \KgetSort(\overline{\exists_s v . \varphi}) = 
-  \parametric{\KwellFormed}{\shs}(\overline{\exists_s v . \varphi}) \wedge s
+  & \KgetSort(\overline{\exists_s v . \varphi}) =
+  \parametric{\KwellFormed}{\KSort}(\overline{\exists_s v . \varphi}) \wedge s
 \end{align*}
 
 \subsection{Matching Logic Proof System}
@@ -3375,8 +3376,8 @@ $\vdash \varphi \to (\psi \to \varphi)$.
 \underbrace{\parametric{\KwellFormed}{\shs}(\overline{\varphi \to_s (\psi 
 \to_s  \varphi)})}_\text{if the meta-representation is wellformed}
 \to
-\underbrace{\parametric{\Kdeduce}{\shs}(\overline{\varphi \to_s (\psi \to_s  
-\varphi)})}_\text{then it is probable}\right)
+\underbrace{\parametric{\Kdeduce}{\shs}(\overline{\varphi \to_s (\psi \to_s
+\varphi)})}_\text{then it is provable}\right)
 \end{equation*}
 Let us pause here and clarify some points.
 Firstly, the lengthy pattern 
@@ -3520,7 +3521,7 @@ If $\vdash \varphi$, and $v$ does not occur free in $\varphi$, then $\vdash v
 \in_{s_1}^{s_2} \varphi}).
 \end{equation*}
 
-(\textsc{Membership Introduction}).
+(\textsc{Membership Elimination}).
 If $\vdash v \in \varphi$ and $v$ does not occur free in $\varphi$, then 
 $\vdash \varphi$.
 \begin{equation*}
@@ -3730,7 +3731,7 @@ There are in total 10 sorts in the meta-theory.
 	\end{longtable}
 \normalsize
 
-\section{Represent Theories in the Meta-Theory}
+\section{Representing Theories in the Meta-Theory}
 \label{sec:reflect}
 In Section~\ref{sec:meta-theory-reflection}, we showed the reason why we 
 need a meta-theory and its role in defining the semantics of \K.
@@ -3844,20 +3845,22 @@ For instance, the following is a possible naming of $T_L$
 	\captionof{table}{An Example Naming of $T_L$}
 	\label{tab:naming}
 \end{center}
-Notice that we do not bother to name the meta-variable $s$ that is used as sort 
-parameters in defining theory $T_L$, because strictly speaking meta-variables 
-do not belong to the theory $T_L$, but rather a tool or a mechanism from the 
-outside that help defining $T_L$.
+Notice that we do not bother to name the meta-variable $\shs$ that is used as
+sort parameters in defining the $T_L$ theory, because, strictly speaking,
+meta-variables do not belong to the $T_L$ theory, they are rather a tool or a
+mechanism from the outside that help defining $T_L$.
 
-There are of course more than one naming of $T_L$.
+There is, of course, more than one possible naming of $T_L$.
 As long as different ``things'' get different names, it does not 
 matter what naming function we choose.
 This is known as the \emph{principle of unique names}.
-In the following, we fix a naming for $T_L$ to be the one in 
+In the following, we fix $T_L$'s naming to be the one in
 Table~\ref{tab:naming}.
 
-\subsection{Represent Sorts}
+\subsection{Representing Sorts}
 \label{sec:represent-sorts}
+
+
 Recall that in Section~\ref{sec:ML-sorts-symbols}, we defined the constructor
 $$
 \Ksort \colon \underbrace{\KString}_\text{name}\  \times 
@@ -3918,7 +3921,7 @@ following two axioms
 & \forall s \cln \KSort . \left(\KqList(s\cln \KSort) = \Ksort(\qquottt{List}, 
 \KconsKSortList(s\cln \KSort, \KnilKSortList))\right)
 \end{align*}
-Remind that $s \cln \KSort$ is a variable of $\KSort$.
+Remember that $s \cln \KSort$ is a variable of $\KSort$.
 With these two helper functions, we can write much shorter meta-representations:
 \begin{center}
 	\begin{tabular}{l|l}
@@ -3941,7 +3944,7 @@ With these two helper functions, we can write much shorter meta-representations:
 \end{center}
 Notice how similar the sorts in $T_L$ and their meta-representations in $K$ are.
 
-\paragraph{Represent Sort Definitions.}
+\paragraph{Representing Sort Definedness.}
 The theory $T_L$ only defines sorts $\Nat, \parametric{\List}{\Nat}, 
 \parametric{\List}{\parametric{\List}{\Nat}}, \dots$ and not any other sorts.
 This fact is important and should be represented in $\denote{T_L}$ using
@@ -3967,7 +3970,7 @@ the meta-theory.
 \improvement{We should explain how such axioms in $\denote{T_L}$ capture the 
 least fixed point semantics of sort schemas.}
 
-\subsection{Represent Symbols}
+\subsection{Representing Symbols}
 Recall that we defined a constructor 
 \begin{equation*}
 \Ksymbol \colon {\underbrace{\KString}_\text{name}}\ 
@@ -4078,7 +4081,7 @@ sorts $\parametric{\List}{\Nat},\parametric{\List}{\Nat}$}
 	$\parametric{\List}{\Nat}$}
 \end{alignat*}
 
-\paragraph{Represent Symbol Definitions.}
+\paragraph{Representing Symbol Definedness.}
 The theory $T_L$ defines non-parametric symbols $O, S, \_+\_$ and parametric 
 symbols $\epsilon_s, \_::_s\_, \_@_s\_$ for any sort $s$ in $T_L$, and not any 
 other symbols.
@@ -4154,7 +4157,7 @@ Notice we abbreviate $s$ for $s \cln \KSort$ as we always do.
 %\parametric{\KsymbolDeclared}{\shs}(\denote{\parametric{\sigma}{s_1,\dots,s_n}})
 %$$
 
-\subsection{Represent Matching Logic Patterns and Axioms}
+\subsection{Representing Matching Logic Patterns and Axioms}
 The theory $T_L$ defines many axioms.
 Two of them are
 \begin{align*}
@@ -4325,7 +4328,7 @@ $$
 We left the definition of its axiom as an exercise to readers.
 
 
-\subsubsection{Represent Axioms}
+\subsubsection{Representing Axioms}
 The theory $T_L$ defines some axioms. For example
 \begin{align*}
 & x \cln \Nat + O =_\Nat^{s'} x \cln \Nat \\
@@ -4826,8 +4829,8 @@ Section~\ref{sec:proof-of-faithfulness-theorem}.
 Theorem~\ref{thm:faithfulness-finite} is an important theorem both in theory 
 and in practice.
 It relates the provability relation of infinite theories (`` $\vdash$ '') with 
-the provability relation of finite theories (`` $\vdashfin$ ''), the one that 
-can ever be implemented.
+the provability relation of finite theories (`` $\vdashfin$ ''), the only ones
+that could ever be implemented.
 
 \section{The Kore Language}
 \label{sec:kore}
@@ -4915,9 +4918,9 @@ Table~\ref{tab:lexicon-tokens}) and the elements of the syntactic categories
 Identifiers are mostly used as symbols, sorts, and variable names.
 An \syntacc{identifier} is either of the following two cases:
 \begin{itemize}
-\item An \syntacc{object-identifier}, which is a nonempty sequence of alphabets 
-and digits and the character~``\verb|'|'' that starts with an 
-alphabet and is not a \syntacc{keyword}.
+\item An \syntacc{object-identifier}, which is a nonempty sequence of letters,
+digits and the character~``\verb|'|'' that starts with a
+letter and is not a \syntacc{keyword}.
 \item A \syntacc{meta-identifier},
 which is either the character ``\verb|#|'' followed by an 
 \syntacc{object-identifier},
@@ -5002,8 +5005,6 @@ Notice that any sort that is not a sort variable is of the form
 \texttt{$C$\{$s_1,\dots,s_n$\}} for some $n \ge 0$, where $C$ is sort 
 constructor and 
 $s_1,\dots,s_n$ are sort parameters.
-
-
 % or of the 
 %form 
 %$\parametric{C_\itsort}{s_1,\dots,s_n}$ for some $n \ge 0$, in which 
@@ -5105,6 +5106,7 @@ $s_1,\dots,s_n$ are sort parameters.
 %an 
 %object (or meta) symbol constructor and a list of object (or meta) sorts.
 
+
 Heads are user-definable syntactic constructors of \syntacc{pattern} (see 
 Section~\ref{sec:kore-syntax-patterns}).
 In practice, a head is either a matching logic symbol or an alias.
@@ -5131,6 +5133,8 @@ separate tools anyway.
 Heads include \syntacc{object-head} and \syntacc{meta-head}.
 They are used to construct \syntacc{object-pattern} and \syntacc{meta-pattern} 
 respectively, as shown in the next grammar.
+
+
 
 \begin{grammar}\small
 	<head> ::= <object-head> | <meta-head>
