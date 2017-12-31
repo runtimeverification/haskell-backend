@@ -1,0 +1,9 @@
+[]
+
+module TEST-ALIAS-8
+
+  sort{} Nat{} []
+
+  alias f{S}(Nat{},S) : S []
+
+endmodule []

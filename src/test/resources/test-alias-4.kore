@@ -1,0 +1,7 @@
+[]
+
+module TEST-ALIAS-4
+
+  alias f{S}() : S []
+
+endmodule []
