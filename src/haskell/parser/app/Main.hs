@@ -1,8 +1,7 @@
 module Main where
 
-import Lib
-
-
+import KoreAST
+import KoreParser
 
 main :: IO ()
-main = someFunc
+main = parse idParser "" "a"
