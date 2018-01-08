@@ -1,21 +1,54 @@
 module KoreParser where
 
 import           KoreAST
-import           KoreUtil
+import           CharDict
 
+import           Control.Applicative
 import           Control.Monad
 import qualified Data.Attoparsec.ByteString.Char8 as Parser
 import           Data.ByteString hiding (elem)
+import qualified Data.ByteString.Char8 as Char8
 import           Data.Char
 
 
+searchForMulltiLineCommentEnd :: Parser.Parser ()
+searchForMulltiLineCommentEnd = do
+    Parser.skipWhile (/= '*')
+    void (Parser.char '*')
+    Parser.skipWhile (== '*')
+    void (Parser.char '/') <|> searchForMulltiLineCommentEnd
+
+multiLineCommentToken :: Parser.Parser ()
+multiLineCommentToken = do
+    void (Parser.string (Char8.pack "/*"))
+    searchForMulltiLineCommentEnd
+
+singleLineCommentToken :: Parser.Parser ()
+singleLineCommentToken = do
+    void (Parser.string (Char8.pack "//"))
+    Parser.skipWhile (/= '\n')
+    void (Parser.char '\n')
+
+whitespaceChunk :: Parser.Parser ()
+whitespaceChunk
+      = multiLineCommentToken
+    <|> singleLineCommentToken
+    <|> (Parser.space *> Parser.skipWhile Parser.isSpace)
+
+-- TODO: Rewrite this, or parts of this, using Parser.scan
+skipWhitespace :: Parser.Parser ()
+skipWhitespace = void (many whitespaceChunk)
+
 firstIdCharDict :: CharDict
-firstIdCharDict = makeDict (['A'..'Z'] ++ ['a'..'z'])
+firstIdCharDict = CharDict.make (['A'..'Z'] ++ ['a'..'z'])
 
 idCharDict :: CharDict
-idCharDict = joinDicts firstIdCharDict (makeDict (['0'..'9'] ++ "'"))
+idCharDict = CharDict.join firstIdCharDict (CharDict.make (['0'..'9'] ++ "'"))
 
-idParser :: Parser.Parser ByteString
+idParser :: Parser.Parser Id
 idParser = do
-    c <- peekChar'
-    when (isFirstIdCharDict ! c) (Parser.takeWhile isIdChar)
+    c <- Parser.peekChar'
+    id <- if not (c `CharDict.elem` firstIdCharDict)
+        then fail "idParser"
+        else Parser.takeWhile (`CharDict.elem` idCharDict)
+    return (Id (Char8.unpack id))

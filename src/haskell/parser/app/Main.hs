@@ -3,5 +3,8 @@ module Main where
 import KoreAST
 import KoreParser
 
+import Data.Attoparsec.ByteString.Char8
+import Data.ByteString.Char8
+
 main :: IO ()
-main = parse idParser "" "a"
+main = print (parseOnly (skipWhitespace *> idParser <* endOfInput) (pack " /* * */ //b\na"))
