@@ -7,8 +7,8 @@ module CharDict
   where
 
 import           Data.Array
-import           Prelude hiding (elem)
-import qualified Prelude (elem)
+import           Prelude    hiding (elem)
+import qualified Prelude    (elem)
 
 newtype CharDict = CharDict { getCharDict :: Array Char Bool }
 

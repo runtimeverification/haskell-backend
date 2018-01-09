@@ -1,14 +1,12 @@
 module KoreParser where
 
-import           KoreAST
 import           CharDict
+import           KoreAST
 
 import           Control.Applicative
 import           Control.Monad
 import qualified Data.Attoparsec.ByteString.Char8 as Parser
-import           Data.ByteString hiding (elem)
-import qualified Data.ByteString.Char8 as Char8
-import           Data.Char
+import qualified Data.ByteString.Char8            as Char8
 
 
 searchForMulltiLineCommentEnd :: Parser.Parser ()

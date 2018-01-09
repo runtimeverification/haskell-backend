@@ -8,19 +8,19 @@ newtype StringLiteral = StringLiteral { getStringLiteral :: String }
 
 data SymbolOrAlias = SymbolOrAlias
     { symbolOrAliasConstructor :: !Id
-    , symbolOrAliasParams :: ![Sort]
+    , symbolOrAliasParams      :: ![Sort]
     }
     deriving (Show, Eq)
 
 data Symbol = Symbol
     { symbolConstructor :: !Id
-    , symbolParams :: ![Sort]
+    , symbolParams      :: ![Sort]
     }
     deriving (Show, Eq)
 
 data Alias = Alias
     { aliasConstructor :: !Id
-    , aliasParams :: ![Sort]
+    , aliasParams      :: ![Sort]
     }
     deriving (Show, Eq)
 
@@ -30,7 +30,7 @@ newtype SortVariable = SortVariable { getSortVariable :: Id }
 data Sort
     = SortVariableSort !SortVariable
     | ActualSort
-        { actualSortName :: !Id
+        { actualSortName  :: !Id
         , actualSortSorts :: ![Sort]
         }
     deriving (Show, Eq)
@@ -49,104 +49,104 @@ data Pattern
     | StringLiteralPattern !StringLiteral
     | SymbolOrAliasPattern
         { symbolOrAlias :: !SymbolOrAlias
-        , patterns :: ![Pattern]
+        , patterns      :: ![Pattern]
         }
     | TopPattern !Sort
     | BottomPattern !Sort
     | AndPattern
-        { andPatternSort :: !Sort
-        , andPatternFirst :: !Pattern
+        { andPatternSort   :: !Sort
+        , andPatternFirst  :: !Pattern
         , andPatternSecond :: !Pattern
         }
     | OrPattern
-        { orPatternSort :: !Sort
-        , orPatternFirst :: !Pattern
+        { orPatternSort   :: !Sort
+        , orPatternFirst  :: !Pattern
         , orPatternSecond :: !Pattern
         }
     | NotPattern
-        { notPatternSort :: !Sort
+        { notPatternSort    :: !Sort
         , notPatternPattern :: !Pattern
         }
     | ImpliesPattern
-        { impliesPatternSort :: !Sort
-        , impliesPatternFirst :: !Pattern
+        { impliesPatternSort   :: !Sort
+        , impliesPatternFirst  :: !Pattern
         , impliesPatternSecond :: !Pattern
         }
     | IffPattern
-        { iffPatternSort :: !Sort
-        , iffPatternFirst :: !Pattern
+        { iffPatternSort   :: !Sort
+        , iffPatternFirst  :: !Pattern
         , iffPatternSecond :: !Pattern
         }
     | ExistsPattern
-        { existsPatternSort :: !Sort
+        { existsPatternSort     :: !Sort
         , existsPatternVariable :: !Variable
-        , existsPatternPattern :: !Pattern
+        , existsPatternPattern  :: !Pattern
         }
     | ForallPattern
-        { forallPatternSort :: !Sort
+        { forallPatternSort     :: !Sort
         , forallPatternVariable :: !Variable
-        , forallPatternPattern :: !Pattern
+        , forallPatternPattern  :: !Pattern
         }
     | NextPattern
-        { nextPatternSort :: !Sort
+        { nextPatternSort    :: !Sort
         , nextPatternPattern :: !Pattern
         }
     | RewritesPattern
-        { rewritesPatternFirstSort :: !Sort
+        { rewritesPatternFirstSort  :: !Sort
         , rewritesPatternSecondSort :: !Sort
-        , rewritesPatternFirst :: !Pattern
-        , rewritesPatternSecond :: !Pattern
+        , rewritesPatternFirst      :: !Pattern
+        , rewritesPatternSecond     :: !Pattern
         }
     | EqualPattern
-        { equalPatternFirstSort :: !Sort
+        { equalPatternFirstSort  :: !Sort
         , equalPatternSecondSort :: !Sort
-        , equalPatternFirst :: !Pattern
-        , equalPatternSecond :: !Pattern
+        , equalPatternFirst      :: !Pattern
+        , equalPatternSecond     :: !Pattern
         }
     | MemPattern
-        { memPatternFirstSort :: !Sort
+        { memPatternFirstSort  :: !Sort
         , memPatternSecondSort :: !Sort
-        , memPatternVariable :: !Variable
-        , memPatternPattern :: !Pattern
+        , memPatternVariable   :: !Variable
+        , memPatternPattern    :: !Pattern
         }
     | SubsetPattern
-        { subsetPatternFirstSort :: !Sort
+        { subsetPatternFirstSort  :: !Sort
         , subsetPatternSecondSort :: !Sort
-        , subsetPatternFirst :: !Pattern
-        , subsetPatternSecond :: !Pattern
+        , subsetPatternFirst      :: !Pattern
+        , subsetPatternSecond     :: !Pattern
         }
     | DomainValuePattern
-        { domainValuePatternFirst :: !StringLiteral
+        { domainValuePatternFirst  :: !StringLiteral
         , domainValuePatternSecond :: !StringLiteral
         }
     deriving (Show, Eq)
 
 data Axiom = Axiom
     { axiomSortVariables :: ![SortVariable]
-    , axiomPattern :: !Pattern
-    , axiomAttributes :: !Attributes
+    , axiomPattern       :: !Pattern
+    , axiomAttributes    :: !Attributes
     }
     deriving (Show, Eq)
 
 data Sentence
     = SortSentence
         { sortSentenceSortVariables :: ![SortVariable]
-        , sortSentenceSort :: !Sort
-        , sortSentenceAttributes :: !Attributes
+        , sortSentenceSort          :: !Sort
+        , sortSentenceAttributes    :: !Attributes
         }
     | SymbolSentence
-        { symbolSentenceSymbol :: !Symbol
-        , symbolSentenceSorts :: ![Sort]
+        { symbolSentenceSymbol     :: !Symbol
+        , symbolSentenceSorts      :: ![Sort]
         , symbolSentenceAttributes :: !Attributes
         }
     | AliasSentence
-        { aliasSentenceAlias :: !Alias
-        , aliasSentenceSorts :: ![Sort]
+        { aliasSentenceAlias      :: !Alias
+        , aliasSentenceSorts      :: ![Sort]
         , aliasSentenceAttributes :: !Attributes
         }
     | AxiomSentence
         { axiomSentenceSortVariables :: ![SortVariable]
-        , axiomSentenceAxiom :: !Axiom
+        , axiomSentenceAxiom         :: !Axiom
         }
     deriving (Show, Eq)
 
@@ -154,15 +154,15 @@ newtype Attributes = Attributes { getAttributes :: [Pattern] }
     deriving (Show, Eq)
 
 data Module = Module
-    { moduleName :: !String
-    , moduleSentences :: ![Sentence]
+    { moduleName       :: !String
+    , moduleSentences  :: ![Sentence]
     , moduleAttributes :: !Attributes
     }
     deriving (Show, Eq)
 
 data Definition = Definition
     { definitionAttributes :: !Attributes
-    , definitionModules :: ![Module]
+    , definitionModules    :: ![Module]
     }
     deriving (Show, Eq)
 
