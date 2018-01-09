@@ -8,24 +8,26 @@ import           Control.Monad
 import qualified Data.Attoparsec.ByteString.Char8 as Parser
 import qualified Data.ByteString.Char8            as Char8
 
-
-searchForMulltiLineCommentEnd :: Parser.Parser ()
-searchForMulltiLineCommentEnd = do
-    Parser.skipWhile (/= '*')
-    void (Parser.char '*')
-    Parser.skipWhile (== '*')
-    void (Parser.char '/') <|> searchForMulltiLineCommentEnd
+data CommentScanner = COMMENT | STAR | END
 
 multiLineCommentToken :: Parser.Parser ()
 multiLineCommentToken = do
     void (Parser.string (Char8.pack "/*"))
-    searchForMulltiLineCommentEnd
+    void (Parser.scan COMMENT delta)
+  where
+    delta END _    = Nothing
+    delta _ '*'    = Just STAR
+    delta STAR '/' = Just END
+    delta _ _      = Just COMMENT
 
 singleLineCommentToken :: Parser.Parser ()
 singleLineCommentToken = do
     void (Parser.string (Char8.pack "//"))
-    Parser.skipWhile (/= '\n')
-    void (Parser.char '\n')
+    void (Parser.scan COMMENT delta)
+  where
+    delta END _  = Nothing
+    delta _ '\n' = Just END
+    delta _ _    = Just COMMENT
 
 whitespaceChunk :: Parser.Parser ()
 whitespaceChunk
