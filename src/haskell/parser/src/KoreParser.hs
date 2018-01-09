@@ -1,54 +1,215 @@
 module KoreParser where
 
-import           CharDict
 import           KoreAST
+import           KoreLexeme
 
 import           Control.Applicative
-import           Control.Monad
+
 import qualified Data.Attoparsec.ByteString.Char8 as Parser
-import qualified Data.ByteString.Char8            as Char8
 
-data CommentScanner = COMMENT | STAR | END
-
-multiLineCommentToken :: Parser.Parser ()
-multiLineCommentToken = do
-    void (Parser.string (Char8.pack "/*"))
-    void (Parser.scan COMMENT delta)
+sortParser :: Parser.Parser Sort
+sortParser = do
+    id <- idParser
+    actualSortParser id <|> return (SortVariableSort $ SortVariable id)
   where
-    delta END _    = Nothing
-    delta _ '*'    = Just STAR
-    delta STAR '/' = Just END
-    delta _ _      = Just COMMENT
+    actualSortParser id = do
+        openCurlyBraceParser
+        sorts <- sortListParser
+        closedCurlyBraceParser
+        return ActualSort
+            { actualSortName = id
+            , actualSortSorts = sorts
+            }
 
-singleLineCommentToken :: Parser.Parser ()
-singleLineCommentToken = do
-    void (Parser.string (Char8.pack "//"))
-    void (Parser.scan COMMENT delta)
-  where
-    delta END _  = Nothing
-    delta _ '\n' = Just END
-    delta _ _    = Just COMMENT
+sortListParser :: Parser.Parser [Sort]
+sortListParser = Parser.sepBy sortParser commaParser
 
-whitespaceChunk :: Parser.Parser ()
-whitespaceChunk
-      = multiLineCommentToken
-    <|> singleLineCommentToken
-    <|> (Parser.space *> Parser.skipSpace)
+symbolOrAliasRemainderRawParser :: ([Sort] -> a) -> Parser.Parser a
+symbolOrAliasRemainderRawParser constructor = do
+    openCurlyBraceParser
+    sorts <- sortListParser
+    closedCurlyBraceParser
+    return (constructor sorts)
 
--- TODO: Rewrite this, or parts of this, using Parser.scan
-skipWhitespace :: Parser.Parser ()
-skipWhitespace = Parser.skipMany whitespaceChunk
+symbolOrAliasRawParser :: (Id -> [Sort] -> a) -> Parser.Parser a
+symbolOrAliasRawParser constructor = do
+    headConstructor <- idParser
+    symbolOrAliasRemainderRawParser (constructor headConstructor)
 
-firstIdCharDict :: CharDict
-firstIdCharDict = CharDict.make (['A'..'Z'] ++ ['a'..'z'])
+aliasParser :: Parser.Parser Alias
+aliasParser = symbolOrAliasRawParser Alias
 
-idCharDict :: CharDict
-idCharDict = CharDict.join firstIdCharDict (CharDict.make (['0'..'9'] ++ "'"))
+symbolParser :: Parser.Parser Symbol
+symbolParser = symbolOrAliasRawParser Symbol
 
-idParser :: Parser.Parser Id
-idParser = do
-    c <- Parser.peekChar'
-    id <- if not (c `CharDict.elem` firstIdCharDict)
-        then fail "idParser"
-        else Parser.takeWhile (`CharDict.elem` idCharDict)
-    return (Id (Char8.unpack id))
+symbolOrAliasRemainderParser :: Id -> Parser.Parser SymbolOrAlias
+symbolOrAliasRemainderParser id =
+    symbolOrAliasRemainderRawParser (SymbolOrAlias id)
+
+notRemainderParser :: Parser.Parser Pattern
+notRemainderParser = do
+    openCurlyBraceParser
+    sort <- sortParser
+    closedCurlyBraceParser
+    openParenthesisParser
+    pattern <- patternParser
+    closedParenthesisParser
+    return NotPattern
+        { notPatternSort = sort
+        , notPatternPattern = pattern
+        }
+
+binaryOperatorRemainderParser
+    :: (Sort -> Pattern -> Pattern -> Pattern)
+    -> Parser.Parser Pattern
+binaryOperatorRemainderParser constructor = do
+    openCurlyBraceParser
+    sort <- sortParser
+    closedCurlyBraceParser
+    openParenthesisParser
+    pattern1 <- patternParser
+    commaParser
+    pattern2 <- patternParser
+    closedParenthesisParser
+    return (constructor sort pattern1 pattern2)
+
+existsForallRemainderParser
+    :: (Sort -> Variable -> Pattern -> Pattern)
+    -> Parser.Parser Pattern
+existsForallRemainderParser constructor = do
+    openCurlyBraceParser
+    sort <- sortParser
+    closedCurlyBraceParser
+    openParenthesisParser
+    variable <- variableParser
+    commaParser
+    pattern <- patternParser
+    closedParenthesisParser
+    return (constructor sort variable pattern)
+
+ceilFloorRemainderParser
+    :: (Sort -> Sort -> Pattern -> Pattern)
+    -> Parser.Parser Pattern
+ceilFloorRemainderParser constructor = do
+    openCurlyBraceParser
+    sort1 <- sortParser
+    commaParser
+    sort2 <- sortParser
+    closedCurlyBraceParser
+    openParenthesisParser
+    pattern <- patternParser
+    closedParenthesisParser
+    return (constructor sort1 sort2 pattern)
+
+equalsMemRemainderParser
+    :: (Sort -> Sort -> Pattern -> Pattern -> Pattern)
+    -> Parser.Parser Pattern
+equalsMemRemainderParser constructor = do
+    openCurlyBraceParser
+    sort1 <- sortParser
+    commaParser
+    sort2 <- sortParser
+    closedCurlyBraceParser
+    openParenthesisParser
+    pattern1 <- patternParser
+    commaParser
+    pattern2 <- patternParser
+    closedParenthesisParser
+    return (constructor sort1 sort2 pattern1 pattern2)
+
+topBottomRemainderParser :: (Sort -> Pattern) -> Parser.Parser Pattern
+topBottomRemainderParser constructor = do
+    openCurlyBraceParser
+    sort <- sortParser
+    closedCurlyBraceParser
+    return (constructor sort)
+
+patternListParser :: Parser.Parser [Pattern]
+patternListParser = Parser.sepBy patternParser commaParser
+
+symbolOrAliasPatternRemainderParser :: Id -> Parser.Parser Pattern
+symbolOrAliasPatternRemainderParser id = do
+    symbolOrAlias <- symbolOrAliasRemainderParser id
+    openParenthesisParser
+    patterns <- patternListParser
+    closedParenthesisParser
+    return SymbolOrAliasPattern
+        { symbolOrAlias = symbolOrAlias
+        , patterns = patterns
+        }
+
+variablePatternRemainderParser :: Id -> Parser.Parser Pattern
+variablePatternRemainderParser id = do
+    colonParser
+    sort <- sortParser
+    return (VariablePattern Variable { variableName = id, variableSort = sort })
+
+variableParser :: Parser.Parser Pattern
+variableParser = do
+    id <- idParser
+    variablePatternRemainderParser id
+
+variableOrTermPatternParser :: Parser.Parser Pattern
+variableOrTermPatternParser = do
+    id <- idParser
+    c' <- peekChar'
+    if c == ':'
+        then variablePatternRemainderParser id
+        else symbolOrAliasPatternRemainderParser id
+
+equalOrExistsRemainderParser :: Parser.Parser Pattern
+equalOrExistsRemainderParser = do
+    void (Parser.char 'e')
+    c <- peekChar'
+    case c of
+        'q' -> mlLexemeParser "quals" *> equalsMemRemainderParser EqualsPattern
+        'x' -> mlLexemeParser "xists" *>
+               existsForallRemainderParser ExistsPattern
+
+floorOrForallRemainderParser :: Parser.Parser Pattern
+floorOrForallRemainderParser = do
+    void (Parser.char 'f')
+    c <- peekChar'
+    case c of
+        'l' -> mlLexemeParser "loor" *> ceilFloorRemainderParser FloorPattern
+        'o' -> mlLexemeParser "orall" *>
+               existsForallRemainderParser ForallPattern
+
+impliesOrIffRemainderParser :: Parser.Parser Pattern
+impliesOrIffRemainderParser = do
+    void (Parser.char 'i')
+    c <- peekChar'
+    case c of
+        'f' -> mlLexemeParser "ff" *> binaryOperatorRemainderParser IffPattern
+        'm' -> mlLexemeParser "mplies" *>
+               binaryOperatorRemainderParser ImpliesPattern
+
+mlConstructorParser :: Parser.Parser Pattern
+mlConstructorParser = do
+    Parser.char '\\'
+    c <- peekChar'
+    case c of
+        'a' -> mlLexemeParser "and" *> binaryOperatorRemainderParser AndPattern
+        'b' -> mlLexemeParser "bottom" *> topBottomRemainderParser BottomPattern
+        'c' -> mlLexemeParser "ceil" *> ceilFloorRemainderParser CeilPattern
+        'e' -> equalOrExistsRemainderParser
+        'f' -> floorOrForallRemainderParser
+        'i' -> impliesOrIffRemainderParser
+        'm' -> mlLexemeParser "mem" *> equalsMemRemainderParser MemPattern
+        'n' -> mlLexemeParser "not" *> notRemainderParser
+        'o' -> mlLexemeParser "or" *> binaryOperatorRemainderParser OrPattern
+        't' -> mlLexemeParser "top" *> topBottomRemainderParser TopPattern
+{-TODO?
+2,3 next
+2,3 rewrites
+2,3 subset
+2 domainValue
+-}
+
+patternParser :: Parser.Parser Pattern
+patternParser = do
+    c <- peekChar'
+    case c of
+        '\\' -> mlConstructorParser
+        '"' -> StringLiteralParser <$> stringLiteralParser
+        _ -> variableOrTermPatternParser

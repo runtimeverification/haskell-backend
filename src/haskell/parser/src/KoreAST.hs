@@ -45,63 +45,51 @@ data Variable = Variable
     deriving (Show, Eq)
 
 data Pattern
-    = VariablePattern !Variable
-    | StringLiteralPattern !StringLiteral
-    | SymbolOrAliasPattern
-        { symbolOrAlias :: !SymbolOrAlias
-        , patterns      :: ![Pattern]
-        }
-    | TopPattern !Sort
-    | BottomPattern !Sort
-    | AndPattern
+    = AndPattern
         { andPatternSort   :: !Sort
         , andPatternFirst  :: !Pattern
         , andPatternSecond :: !Pattern
         }
-    | OrPattern
-        { orPatternSort   :: !Sort
-        , orPatternFirst  :: !Pattern
-        , orPatternSecond :: !Pattern
+    | BottomPattern !Sort
+    | CeilPattern
+        { ceilPatternFirstSort  :: !Sort
+        , ceilPatternSecondSort :: !Sort
+        , ceilPattern           :: !Pattern
         }
-    | NotPattern
-        { notPatternSort    :: !Sort
-        , notPatternPattern :: !Pattern
+     | DomainValuePattern
+        { domainValuePatternFirst  :: !StringLiteral
+        , domainValuePatternSecond :: !StringLiteral
         }
-    | ImpliesPattern
-        { impliesPatternSort   :: !Sort
-        , impliesPatternFirst  :: !Pattern
-        , impliesPatternSecond :: !Pattern
-        }
-    | IffPattern
-        { iffPatternSort   :: !Sort
-        , iffPatternFirst  :: !Pattern
-        , iffPatternSecond :: !Pattern
+    | EqualsPattern
+        { equalsPatternFirstSort  :: !Sort
+        , equalsPatternSecondSort :: !Sort
+        , equalsPatternFirst      :: !Pattern
+        , equalsPatternSecond     :: !Pattern
         }
     | ExistsPattern
         { existsPatternSort     :: !Sort
         , existsPatternVariable :: !Variable
         , existsPatternPattern  :: !Pattern
         }
+    | FloorPattern
+        { floorPatternFirstSort  :: !Sort
+        , floorPatternSecondSort :: !Sort
+        , floorPattern           :: !Pattern
+        }
     | ForallPattern
         { forallPatternSort     :: !Sort
         , forallPatternVariable :: !Variable
         , forallPatternPattern  :: !Pattern
         }
-    | NextPattern
-        { nextPatternSort    :: !Sort
-        , nextPatternPattern :: !Pattern
+    | IffPattern
+        { iffPatternSort   :: !Sort
+        , iffPatternFirst  :: !Pattern
+        , iffPatternSecond :: !Pattern
         }
-    | RewritesPattern
-        { rewritesPatternFirstSort  :: !Sort
-        , rewritesPatternSecondSort :: !Sort
-        , rewritesPatternFirst      :: !Pattern
-        , rewritesPatternSecond     :: !Pattern
-        }
-    | EqualPattern
-        { equalPatternFirstSort  :: !Sort
-        , equalPatternSecondSort :: !Sort
-        , equalPatternFirst      :: !Pattern
-        , equalPatternSecond     :: !Pattern
+    | ImpliesPattern
+        { impliesPatternSort   :: !Sort
+        , impliesPatternFirst  :: !Pattern
+        , impliesPatternSecond :: !Pattern
         }
     | MemPattern
         { memPatternFirstSort  :: !Sort
@@ -109,16 +97,38 @@ data Pattern
         , memPatternVariable   :: !Variable
         , memPatternPattern    :: !Pattern
         }
+    | NextPattern
+        { nextPatternSort    :: !Sort
+        , nextPatternPattern :: !Pattern
+        }
+    | NotPattern
+        { notPatternSort    :: !Sort
+        , notPatternPattern :: !Pattern
+        }
+    | OrPattern
+        { orPatternSort   :: !Sort
+        , orPatternFirst  :: !Pattern
+        , orPatternSecond :: !Pattern
+        }
+    | RewritesPattern
+        { rewritesPatternFirstSort  :: !Sort
+        , rewritesPatternSecondSort :: !Sort
+        , rewritesPatternFirst      :: !Pattern
+        , rewritesPatternSecond     :: !Pattern
+        }
+    | StringLiteralPattern !StringLiteral
     | SubsetPattern
         { subsetPatternFirstSort  :: !Sort
         , subsetPatternSecondSort :: !Sort
         , subsetPatternFirst      :: !Pattern
         , subsetPatternSecond     :: !Pattern
         }
-    | DomainValuePattern
-        { domainValuePatternFirst  :: !StringLiteral
-        , domainValuePatternSecond :: !StringLiteral
+    | SymbolOrAliasPattern
+        { symbolOrAlias :: !SymbolOrAlias
+        , patterns      :: ![Pattern]
         }
+    | TopPattern !Sort
+    | VariablePattern !Variable
     deriving (Show, Eq)
 
 data Axiom = Axiom

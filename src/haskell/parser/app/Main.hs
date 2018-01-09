@@ -1,6 +1,7 @@
 module Main where
 
 import KoreAST
+import KoreLexeme
 import KoreParser
 
 import Data.Attoparsec.ByteString.Char8
