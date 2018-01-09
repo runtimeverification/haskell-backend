@@ -33,11 +33,11 @@ whitespaceChunk :: Parser.Parser ()
 whitespaceChunk
       = multiLineCommentToken
     <|> singleLineCommentToken
-    <|> (Parser.space *> Parser.skipWhile Parser.isSpace)
+    <|> (Parser.space *> Parser.skipSpace)
 
 -- TODO: Rewrite this, or parts of this, using Parser.scan
 skipWhitespace :: Parser.Parser ()
-skipWhitespace = void (many whitespaceChunk)
+skipWhitespace = Parser.skipMany whitespaceChunk
 
 firstIdCharDict :: CharDict
 firstIdCharDict = CharDict.make (['A'..'Z'] ++ ['a'..'z'])
