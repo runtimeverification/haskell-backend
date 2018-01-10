@@ -17,19 +17,26 @@ main = defaultMain
         , testGroup "aliasParser" aliasParserTests
         , testGroup "symbolParser" symbolParserTests
         , testGroup "variableParser" variableParserTests
-        , testGroup "variableOrTermPatternParser" variableOrTermPatternParserTests
         , testGroup "andPatternParser" andPatternParserTests
+        , testGroup "applicationPatternParser" applicationPatternParserTests
         , testGroup "bottomPatternParser" bottomPatternParserTests
         , testGroup "ceilPatternParser" ceilPatternParserTests
+        , testGroup "domainValuePatternParser" domainValuePatternParserTests
         , testGroup "equalsPatternParser" equalsPatternParserTests
         , testGroup "existsPatternParser" existsPatternParserTests
         , testGroup "floorPatternParser" floorPatternParserTests
+        , testGroup "forallPatternParser" forallPatternParserTests
         , testGroup "iffPatternParser" iffPatternParserTests
         , testGroup "impliesPatternParser" impliesPatternParserTests
         , testGroup "memPatternParser" memPatternParserTests
+        , testGroup "nextPatternParser" nextPatternParserTests
         , testGroup "notPatternParser" notPatternParserTests
         , testGroup "orPatternParser" orPatternParserTests
+        , testGroup "rewritesPatternParser" rewritesPatternParserTests
+        , testGroup "stringLiteralPatternParser" stringLiteralPatternParserTests
+        , testGroup "subsetPatternParser" subsetPatternParserTests
         , testGroup "topPatternParser" topPatternParserTests
+        , testGroup "variablePatternParser" variablePatternParserTests
         ]
     )
 
@@ -175,8 +182,26 @@ variableParserTests =
         ]
         (Failure ["", "var", "v:", ":s"])
 
-variableOrTermPatternParserTests :: [TestTree]
-variableOrTermPatternParserTests =
+andPatternParserTests :: [TestTree]
+andPatternParserTests =
+    parseTree patternParser
+        [ Success "\\and{s}(\"a\", \"b\")"
+            AndPattern
+                { andPatternSort = SortVariableSort (SortVariable (Id "s"))
+                , andPatternFirst = StringLiteralPattern (StringLiteral "a")
+                , andPatternSecond = StringLiteralPattern (StringLiteral "b")
+                }
+        ]
+        (Failure
+            [ ""
+            , "\\and{s,s}(\"a\", \"b\")"
+            , "\\and{}(\"a\", \"b\")"
+            , "\\and{s}(\"a\")"
+            , "\\and{s}(\"a\", \"b\", \"c\")"
+            , "\\and{s}(\"a\" \"b\")"
+            ])
+applicationPatternParserTests :: [TestTree]
+applicationPatternParserTests =
     parseTree patternParser
         [ Success "v:s"
             ( VariablePattern Variable
@@ -229,25 +254,6 @@ variableOrTermPatternParserTests =
                 }
         ]
         (Failure ["", "var", "v:", ":s", "c(s)", "c{s}"])
-
-andPatternParserTests :: [TestTree]
-andPatternParserTests =
-    parseTree patternParser
-        [ Success "\\and{s}(\"a\", \"b\")"
-            AndPattern
-                { andPatternSort = SortVariableSort (SortVariable (Id "s"))
-                , andPatternFirst = StringLiteralPattern (StringLiteral "a")
-                , andPatternSecond = StringLiteralPattern (StringLiteral "b")
-                }
-        ]
-        (Failure
-            [ ""
-            , "\\and{s,s}(\"a\", \"b\")"
-            , "\\and{}(\"a\", \"b\")"
-            , "\\and{s}(\"a\")"
-            , "\\and{s}(\"a\", \"b\", \"c\")"
-            , "\\and{s}(\"a\" \"b\")"
-            ])
 bottomPatternParserTests :: [TestTree]
 bottomPatternParserTests =
     parseTree patternParser
@@ -279,6 +285,22 @@ ceilPatternParserTests =
             , "\\ceil{s1}(\"a\")"
             , "\\ceil{s1, s2, s3}(\"a\")"
             , "\\ceil{s1 s2}(\"a\")"
+            ])
+domainValuePatternParserTests :: [TestTree]
+domainValuePatternParserTests =
+    parseTree patternParser
+        [ Success "\\domainvalue(\"a\", \"b\")"
+            DomainValuePattern
+                { domainValuePatternFirst = StringLiteral "a"
+                , domainValuePatternSecond = StringLiteral "b"
+                }
+        ]
+        (Failure
+            [ ""
+            , "\\domainvalue{}(\"a\", \"b\")"
+            , "\\domainvalue(\"a\")"
+            , "\\domainvalue(\"a\", \"b\", \"c\")"
+            , "\\domainvalue(\"a\" \"b\")"
             ])
 equalsPatternParserTests :: [TestTree]
 equalsPatternParserTests =
@@ -349,6 +371,35 @@ floorPatternParserTests =
             , "\\floor{s1, s2, s3}(\"a\")"
             , "\\floor{s1 s2}(\"a\")"
             ])
+forallPatternParserTests :: [TestTree]
+forallPatternParserTests =
+    parseTree patternParser
+        [ Success "\\forall{s}(v:s1, \"b\")"
+            ForallPattern
+                { forallPatternSort =
+                    SortVariableSort (SortVariable (Id "s"))
+                , forallPatternVariable = Variable
+                    { variableName = Id "v"
+                    , variableSort = SortVariableSort (SortVariable (Id "s1"))
+                    }
+                , forallPatternPattern =
+                    StringLiteralPattern (StringLiteral "b")
+                }
+        ]
+        (Failure
+            [ ""
+            , "\\forall{}(v:s1, \"b\")"
+            , "\\forall{s,s}(v:s1, \"b\")"
+            , "\\forall{s}(\"b\", \"b\")"
+            , "\\forall{s}(, \"b\")"
+            , "\\forall{s}(\"b\")"
+            , "\\forall{s}(v:s1, )"
+            , "\\forall{s}(v:s1)"
+            , "\\forall{s}()"
+            , "\\forall{s}"
+            , "\\forall"
+            , "\\forall(v:s1, \"b\")"
+            ])
 iffPatternParserTests :: [TestTree]
 iffPatternParserTests =
     parseTree patternParser
@@ -415,6 +466,24 @@ memPatternParserTests =
             , "\\mem"
             , "\\mem(v:s1, \"b\")"
             ])
+nextPatternParserTests :: [TestTree]
+nextPatternParserTests =
+    parseTree patternParser
+        [ Success "\\next{s}(\"a\")"
+            NextPattern
+                { nextPatternSort = SortVariableSort (SortVariable (Id "s"))
+                , nextPatternPattern = StringLiteralPattern (StringLiteral "a")
+                }
+        ]
+        (Failure
+            [ ""
+            , "\\next{s,s}(\"a\")"
+            , "\\next{}(\"a\")"
+            , "\\next{s}()"
+            , "\\next{s}(\"a\", \"b\")"
+            , "\\next{s}"
+            , "\\next(\"a\")"
+            ])
 notPatternParserTests :: [TestTree]
 notPatternParserTests =
     parseTree patternParser
@@ -450,7 +519,56 @@ orPatternParserTests =
             "\\or{s}(\"a\")",
             "\\or{s}(\"a\", \"b\", \"c\")",
             "\\or{s}(\"a\" \"b\")"])
-
+rewritesPatternParserTests :: [TestTree]
+rewritesPatternParserTests =
+    parseTree patternParser
+        [ Success "\\rewrites{s1, s2}(\"a\", \"b\")"
+            RewritesPattern
+                { rewritesPatternFirstSort =
+                    SortVariableSort (SortVariable (Id "s1"))
+                , rewritesPatternSecondSort =
+                    SortVariableSort (SortVariable (Id "s2"))
+                , rewritesPatternFirst = StringLiteralPattern (StringLiteral "a")
+                , rewritesPatternSecond = StringLiteralPattern (StringLiteral "b")
+                }
+        ]
+        (Failure
+            [ ""
+            , "\\rewrites{s}(\"a\", \"b\")"
+            , "\\rewrites{s,s,s}(\"a\", \"b\")"
+            , "\\rewrites{s,s}(\"a\")"
+            , "\\rewrites{s,s}(\"a\", \"b\", \"c\")"
+            , "\\rewrites{s,s}(\"a\" \"b\")"
+            ])
+stringLiteralPatternParserTests :: [TestTree]
+stringLiteralPatternParserTests =
+    parseTree patternParser
+        [ Success "\"hello\"" (StringLiteralPattern (StringLiteral "hello"))
+        , Success "\"\"" (StringLiteralPattern (StringLiteral ""))
+        , Success "\"\\\"\"" (StringLiteralPattern (StringLiteral "\""))
+        ]
+        (Failure ["", "\""])
+subsetPatternParserTests :: [TestTree]
+subsetPatternParserTests =
+    parseTree patternParser
+        [ Success "\\subset{s1, s2}(\"a\", \"b\")"
+            SubsetPattern
+                { subsetPatternFirstSort =
+                    SortVariableSort (SortVariable (Id "s1"))
+                , subsetPatternSecondSort =
+                    SortVariableSort (SortVariable (Id "s2"))
+                , subsetPatternFirst = StringLiteralPattern (StringLiteral "a")
+                , subsetPatternSecond = StringLiteralPattern (StringLiteral "b")
+                }
+        ]
+        (Failure
+            [ ""
+            , "\\subset{s}(\"a\", \"b\")"
+            , "\\subset{s,s,s}(\"a\", \"b\")"
+            , "\\subset{s,s}(\"a\")"
+            , "\\subset{s,s}(\"a\", \"b\", \"c\")"
+            , "\\subset{s,s}(\"a\" \"b\")"
+            ])
 topPatternParserTests :: [TestTree]
 topPatternParserTests =
     parseTree patternParser
@@ -458,6 +576,29 @@ topPatternParserTests =
             (TopPattern (SortVariableSort (SortVariable (Id "s"))))
         ]
         (Failure ["", "\\top()", "\\top{}()", "\\top{s, s}()", "\\top{s}"])
+variablePatternParserTests :: [TestTree]
+variablePatternParserTests =
+    parseTree patternParser
+        [ Success "v:s"
+            ( VariablePattern Variable
+                { variableName = Id "v"
+                , variableSort = SortVariableSort (SortVariable (Id "s"))
+                }
+            )
+        , Success "v:s1{s2}"
+            ( VariablePattern Variable
+                { variableName = Id "v"
+                , variableSort =
+                    ActualSort
+                        { actualSortName=Id "s1"
+                        , actualSortSorts=
+                            [SortVariableSort (SortVariable (Id "s2"))]
+                        }
+                }
+            )
+        ]
+        (Failure ["", "var", "v:", ":s", "c(s)", "c{s}"])
+
 ------------------------------------
 -- Generic test utilities
 ------------------------------------
