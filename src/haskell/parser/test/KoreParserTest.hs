@@ -2,7 +2,7 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
 
 import           KoreAST
-import           KoreParser
+import           KoreParserImpl
 
 import qualified Data.Attoparsec.ByteString.Char8 as Parser
 import qualified Data.ByteString.Char8 as Char8

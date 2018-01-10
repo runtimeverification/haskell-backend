@@ -1,4 +1,4 @@
-module KoreParser where
+module KoreParserImpl where
 
 import           KoreAST
 import           KoreLexeme

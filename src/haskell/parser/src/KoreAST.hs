@@ -50,6 +50,10 @@ data Pattern
         , andPatternFirst  :: !Pattern
         , andPatternSecond :: !Pattern
         }
+    | ApplicationPattern
+        { applicationPatternSymbolOrAlias :: !SymbolOrAlias
+        , applicationPatternPatterns      :: ![Pattern]
+        }
     | BottomPattern !Sort
     | CeilPattern
         { ceilPatternFirstSort  :: !Sort
@@ -122,10 +126,6 @@ data Pattern
         , subsetPatternSecondSort :: !Sort
         , subsetPatternFirst      :: !Pattern
         , subsetPatternSecond     :: !Pattern
-        }
-    | ApplicationPattern
-        { applicationPatternSymbolOrAlias :: !SymbolOrAlias
-        , applicationPatternPatterns      :: ![Pattern]
         }
     | TopPattern !Sort
     | VariablePattern !Variable
