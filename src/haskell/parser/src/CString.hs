@@ -3,12 +3,12 @@ module CString
        , oneCharEscapeDict
        ) where
 
-import CharDict
+import CharSet
 
 import Data.Char
 
-oneCharEscapeDict :: CharDict
-oneCharEscapeDict = CharDict.make "'\"?\\abfnrtv"
+oneCharEscapeDict :: CharSet
+oneCharEscapeDict = CharSet.make "'\"?\\abfnrtv"
 
 {-|Expects input string to be a properly escaped C String.
 -}
@@ -19,7 +19,7 @@ unescapeCString (c:cs) = c:unescapeCString cs
 
 unescapePrefixAndContinue :: String -> String
 unescapePrefixAndContinue (c:cs)
-  | c `CharDict.elem` oneCharEscapeDict =
+  | c `CharSet.elem` oneCharEscapeDict =
     unescapeOne c : unescapeCString cs
   | isOctDigit c =
       let (octs,rest) = span isOctDigit cs

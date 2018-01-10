@@ -10,15 +10,16 @@ import qualified Data.Attoparsec.ByteString.Char8 as Parser
 
 sortParser :: Parser.Parser Sort
 sortParser = do
-    id <- idParser
-    actualSortParser id <|> return (SortVariableSort $ SortVariable id)
+    identifier <- idParser
+    actualSortParser identifier <|>
+        return (SortVariableSort $ SortVariable identifier)
   where
-    actualSortParser id = do
+    actualSortParser identifier = do
         openCurlyBraceParser
         sorts <- sortListParser
         closedCurlyBraceParser
         return ActualSort
-            { actualSortName = id
+            { actualSortName = identifier
             , actualSortSorts = sorts
             }
 
@@ -44,8 +45,8 @@ symbolParser :: Parser.Parser Symbol
 symbolParser = symbolOrAliasRawParser Symbol
 
 symbolOrAliasRemainderParser :: Id -> Parser.Parser SymbolOrAlias
-symbolOrAliasRemainderParser id =
-    symbolOrAliasRemainderRawParser (SymbolOrAlias id)
+symbolOrAliasRemainderParser identifier =
+    symbolOrAliasRemainderRawParser (SymbolOrAlias identifier)
 
 notRemainderParser :: Parser.Parser Pattern
 notRemainderParser = do
@@ -147,81 +148,58 @@ topBottomRemainderParser constructor = do
     closedCurlyBraceParser
     return (constructor sort)
 
-patternListParser :: Parser.Parser [Pattern]
-patternListParser = Parser.sepBy patternParser commaParser
-
 symbolOrAliasPatternRemainderParser :: Id -> Parser.Parser Pattern
-symbolOrAliasPatternRemainderParser id = do
-    symbolOrAlias <- symbolOrAliasRemainderParser id
+symbolOrAliasPatternRemainderParser identifier = do
+    symbolOrAlias <- symbolOrAliasRemainderParser identifier
     openParenthesisParser
     patterns <- patternListParser
     closedParenthesisParser
-    return SymbolOrAliasPattern
-        { symbolOrAlias = symbolOrAlias
-        , patterns = patterns
+    return ApplicationPattern
+        { applicationPatternSymbolOrAlias = symbolOrAlias
+        , applicationPatternPatterns = patterns
         }
 
 variablePatternRemainderParser :: Id -> Parser.Parser Pattern
-variablePatternRemainderParser id = do
+variablePatternRemainderParser identifier = do
     colonParser
     sort <- sortParser
-    return (VariablePattern Variable { variableName = id, variableSort = sort })
+    return (VariablePattern Variable
+        { variableName = identifier
+        , variableSort = sort
+        })
 
 variableParser :: Parser.Parser Variable
 variableParser = do
-    id <- idParser
-    getVariablePattern <$> variablePatternRemainderParser id
+    identifier <- idParser
+    getVariablePattern <$> variablePatternRemainderParser identifier
 
 variableOrTermPatternParser :: Parser.Parser Pattern
 variableOrTermPatternParser = do
-    id <- idParser
+    identifier <- idParser
     c <- Parser.peekChar'
     if c == ':'
-        then variablePatternRemainderParser id
-        else symbolOrAliasPatternRemainderParser id
-
-equalOrExistsRemainderParser :: Parser.Parser Pattern
-equalOrExistsRemainderParser = do
-    void (Parser.char 'e')
-    c <- Parser.peekChar'
-    case c of
-        'q' -> mlLexemeParser "quals" *> equalsRemainderParser
-        'x' -> mlLexemeParser "xists" *>
-               existsForallRemainderParser ExistsPattern
-
-floorOrForallRemainderParser :: Parser.Parser Pattern
-floorOrForallRemainderParser = do
-    void (Parser.char 'f')
-    c <- Parser.peekChar'
-    case c of
-        'l' -> mlLexemeParser "loor" *> ceilFloorRemainderParser FloorPattern
-        'o' -> mlLexemeParser "orall" *>
-               existsForallRemainderParser ForallPattern
-
-impliesOrIffRemainderParser :: Parser.Parser Pattern
-impliesOrIffRemainderParser = do
-    void (Parser.char 'i')
-    c <- Parser.peekChar'
-    case c of
-        'f' -> mlLexemeParser "ff" *> binaryOperatorRemainderParser IffPattern
-        'm' -> mlLexemeParser "mplies" *>
-               binaryOperatorRemainderParser ImpliesPattern
+        then variablePatternRemainderParser identifier
+        else symbolOrAliasPatternRemainderParser identifier
 
 mlConstructorParser :: Parser.Parser Pattern
 mlConstructorParser = do
     Parser.char '\\'
-    c <- Parser.peekChar'
-    case c of
-        'a' -> mlLexemeParser "and" *> binaryOperatorRemainderParser AndPattern
-        'b' -> mlLexemeParser "bottom" *> topBottomRemainderParser BottomPattern
-        'c' -> mlLexemeParser "ceil" *> ceilFloorRemainderParser CeilPattern
-        'e' -> equalOrExistsRemainderParser
-        'f' -> floorOrForallRemainderParser
-        'i' -> impliesOrIffRemainderParser
-        'm' -> mlLexemeParser "mem" *> memRemainderParser
-        'n' -> mlLexemeParser "not" *> notRemainderParser
-        'o' -> mlLexemeParser "or" *> binaryOperatorRemainderParser OrPattern
-        't' -> mlLexemeParser "top" *> topBottomRemainderParser TopPattern
+    mlPatternParser
+  where
+    mlPatternParser = keywordBasedParsers
+        [ ("and", binaryOperatorRemainderParser AndPattern)
+        , ("bottom", topBottomRemainderParser BottomPattern)
+        , ("ceil", ceilFloorRemainderParser CeilPattern)
+        , ("equals", equalsRemainderParser)
+        , ("exists", existsForallRemainderParser ExistsPattern)
+        , ("floor", existsForallRemainderParser ForallPattern)
+        , ("iff", binaryOperatorRemainderParser IffPattern)
+        , ("implies", binaryOperatorRemainderParser ImpliesPattern)
+        , ("mem", memRemainderParser)
+        , ("not", notRemainderParser)
+        , ("or", binaryOperatorRemainderParser OrPattern)
+        , ("top", topBottomRemainderParser TopPattern)
+        ]
 {-TODO?
 2,3 next
 2,3 rewrites
@@ -236,3 +214,50 @@ patternParser = do
         '\\' -> mlConstructorParser
         '"' -> StringLiteralPattern <$> stringLiteralParser
         _ -> variableOrTermPatternParser
+
+patternListParser :: Parser.Parser [Pattern]
+patternListParser = Parser.sepBy patternParser commaParser
+
+attributesParser :: Parser.Parser Attributes
+attributesParser = do
+    openSquareBracketParser
+    patterns <- patternListParser
+    closedSquareBracketParser
+    return (Attributes patterns)
+
+definitionParser :: Parser.Parser Definition
+definitionParser = do
+    attributes <- attributesParser
+    modules <- Parser.many1 moduleParser
+    return Definition
+      { definitionAttributes = attributes
+      , definitionModules = modules
+      }
+
+moduleParser :: Parser.Parser Module
+moduleParser = do
+    mlLexemeParser "module"
+    name <- moduleNameParser
+    sentences <- Parser.many1 sentenceParser
+    mlLexemeParser "endmodule"
+    attributes <- attributesParser
+    return Module
+           { moduleName = name
+           , moduleSentences = sentences
+           , moduleAttributes = attributes
+           }
+
+sentenceParser :: Parser.Parser Sentence
+sentenceParser = keywordBasedParsers
+    [ ("alias", aliasSentenceRemainderParser)
+    , ("axiom", axiomSentenceRemainderParser)
+    , ("import", importSentenceRemainderParser)
+    , ("sort", sortSentenceRemainderParser)
+    , ("symbol", symbolSentenceRemainderParser)
+    ]
+
+aliasSentenceRemainderParser = undefined
+axiomSentenceRemainderParser = undefined
+importSentenceRemainderParser = undefined
+sortSentenceRemainderParser = undefined
+symbolSentenceRemainderParser = undefined

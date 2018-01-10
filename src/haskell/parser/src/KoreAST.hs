@@ -123,9 +123,9 @@ data Pattern
         , subsetPatternFirst      :: !Pattern
         , subsetPatternSecond     :: !Pattern
         }
-    | SymbolOrAliasPattern
-        { symbolOrAlias :: !SymbolOrAlias
-        , patterns      :: ![Pattern]
+    | ApplicationPattern
+        { applicationPatternSymbolOrAlias :: !SymbolOrAlias
+        , applicationPatternPatterns      :: ![Pattern]
         }
     | TopPattern !Sort
     | VariablePattern { getVariablePattern :: !Variable }
@@ -139,7 +139,20 @@ data Axiom = Axiom
     deriving (Show, Eq)
 
 data Sentence
-    = SortSentence
+    = AliasSentence
+        { aliasSentenceAlias      :: !Alias
+        , aliasSentenceSorts      :: ![Sort]
+        , aliasSentenceAttributes :: !Attributes
+        }
+    | AxiomSentence
+        { axiomSentenceSortVariables :: ![SortVariable]
+        , axiomSentenceAxiom         :: !Axiom
+        }
+    | ImportSentence
+        { importModuleName :: !ModuleName
+        , importAttributes :: !Attributes
+        }
+    | SortSentence
         { sortSentenceSortVariables :: ![SortVariable]
         , sortSentenceSort          :: !Sort
         , sortSentenceAttributes    :: !Attributes
@@ -149,22 +162,13 @@ data Sentence
         , symbolSentenceSorts      :: ![Sort]
         , symbolSentenceAttributes :: !Attributes
         }
-    | AliasSentence
-        { aliasSentenceAlias      :: !Alias
-        , aliasSentenceSorts      :: ![Sort]
-        , aliasSentenceAttributes :: !Attributes
-        }
-    | AxiomSentence
-        { axiomSentenceSortVariables :: ![SortVariable]
-        , axiomSentenceAxiom         :: !Axiom
-        }
-    deriving (Show, Eq)
+   deriving (Show, Eq)
 
 newtype Attributes = Attributes { getAttributes :: [Pattern] }
     deriving (Show, Eq)
 
 data Module = Module
-    { moduleName       :: !String
+    { moduleName       :: !ModuleName
     , moduleSentences  :: ![Sentence]
     , moduleAttributes :: !Attributes
     }
@@ -175,13 +179,3 @@ data Definition = Definition
     , definitionModules    :: ![Module]
     }
     deriving (Show, Eq)
-
---definitionParser :: Parser Definition
---definitionParser = do
---    attributes <- attributesParser
---    modules <- modulesParser
---    return Definition
---      { definitionAttributes = attributes
---      , definitionModules = modules
---      }
-

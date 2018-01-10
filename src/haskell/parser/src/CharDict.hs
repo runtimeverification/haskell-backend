@@ -1,27 +1,24 @@
 module CharDict
        ( CharDict
        , make
-       , join
-       , elem
+       , memoize
+       , (!)
        )
   where
 
-import           Data.Array
-import           Prelude    hiding (elem)
-import qualified Prelude    (elem)
+import qualified Data.Array as Array
+import           Data.Maybe (fromMaybe)
 
-newtype CharDict = CharDict { getCharDict :: Array Char Bool }
+newtype CharDict a = CharDict { getCharDict :: Array.Array Char a }
 
-make :: String -> CharDict
-make domain =
-    CharDict $
-      array ('\0', '\255') [(c, c `Prelude.elem` domain)| c <- ['\0'..'\255']]
+memoize :: (Char -> a) -> CharDict a
+memoize f =
+    CharDict $ Array.array ('\0', '\255') [(c, f c) | c <- ['\0'..'\255']]
 
-join :: CharDict -> CharDict -> CharDict
-x `join` y =
-    CharDict $
-      array ('\0', '\255') [(c, c `elem` x || c `elem` y) | c <- ['\0'..'\255']]
+make :: [(Char,a)] -> a -> CharDict a
+make dict defaultValue =
+  CharDict $ Array.array ('\0', '\255')
+      [(c, fromMaybe defaultValue (lookup c dict))| c <- ['\0'..'\255']]
 
-
-elem :: Char -> CharDict -> Bool
-c `elem` dict = (getCharDict dict) ! c
+(!) :: CharDict a -> Char -> a
+dict ! c = (getCharDict dict) Array.! c
