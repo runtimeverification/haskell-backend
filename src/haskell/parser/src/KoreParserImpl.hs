@@ -50,9 +50,9 @@ symbolOrAliasRemainderParser :: Id -> Parser SymbolOrAlias
 symbolOrAliasRemainderParser identifier =
     symbolOrAliasRemainderRawParser (SymbolOrAlias identifier)
 
-notRemainderParser :: Parser Pattern
-notRemainderParser =
-    pure NotPattern
+unaryOperatorRemainderParser :: (Sort -> Pattern -> Pattern) ->  Parser Pattern
+unaryOperatorRemainderParser constructor =
+    pure constructor
         <*> inCurlyBracesParser sortParser
         <*> inParenthesesParser patternParser
 
@@ -156,18 +156,13 @@ mlConstructorParser = do
         , ("iff", binaryOperatorRemainderParser IffPattern)
         , ("implies", binaryOperatorRemainderParser ImpliesPattern)
         , ("mem", memRemainderParser)
-        , ("not", notRemainderParser)
+        , ("next", unaryOperatorRemainderParser NextPattern)
+        , ("not", unaryOperatorRemainderParser NotPattern)
         , ("or", binaryOperatorRemainderParser OrPattern)
         , ("rewrites", equalsLikeRemainderParser RewritesPattern)
         , ("subset", equalsLikeRemainderParser SubsetPattern)
         , ("top", topBottomRemainderParser TopPattern)
         ]
-{-TODO?
-2,3 next
-2,3 rewrites
-2,3 subset
-2 domainValue
--}
 
 patternParser :: Parser Pattern
 patternParser = do
