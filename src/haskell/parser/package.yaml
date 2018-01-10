@@ -42,7 +42,7 @@ executables:
 
 tests:
   parser-test:
-    main:                Spec.hs
+    main:                KoreParserTest.hs
     source-dirs:         test
     ghc-options:
     - -threaded
@@ -50,3 +50,5 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - parser
+    - tasty
+    - tasty-hunit
