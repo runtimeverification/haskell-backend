@@ -3,17 +3,19 @@ module KoreParser where
 import           KoreAST
 import           KoreLexeme
 
-import           Control.Applicative
+import           Control.Applicative ((<|>))
+import           Control.Monad (void)
 
+import           Data.Attoparsec.ByteString.Char8 (Parser)
 import qualified Data.Attoparsec.ByteString.Char8 as Parser
 
-sortVariableParser :: Parser.Parser SortVariable
+sortVariableParser :: Parser SortVariable
 sortVariableParser = SortVariable <$> idParser
 
-sortVariableList1Parser :: Parser.Parser [SortVariable]
+sortVariableList1Parser :: Parser [SortVariable]
 sortVariableList1Parser = Parser.sepBy1 sortVariableParser commaParser
 
-sortParser :: Parser.Parser Sort
+sortParser :: Parser Sort
 sortParser = do
     identifier <- idParser
     actualSortParser identifier <|>
@@ -26,29 +28,29 @@ sortParser = do
             , actualSortSorts = sorts
             }
 
-sortListParser :: Parser.Parser [Sort]
+sortListParser :: Parser [Sort]
 sortListParser = Parser.sepBy sortParser commaParser
 
-symbolOrAliasRemainderRawParser :: ([Sort] -> a) -> Parser.Parser a
+symbolOrAliasRemainderRawParser :: ([Sort] -> a) -> Parser a
 symbolOrAliasRemainderRawParser constructor =
     constructor <$> inCurlyBracesParser sortListParser
 
-symbolOrAliasRawParser :: (Id -> [Sort] -> a) -> Parser.Parser a
+symbolOrAliasRawParser :: (Id -> [Sort] -> a) -> Parser a
 symbolOrAliasRawParser constructor = do
     headConstructor <- idParser
     symbolOrAliasRemainderRawParser (constructor headConstructor)
 
-aliasParser :: Parser.Parser Alias
+aliasParser :: Parser Alias
 aliasParser = symbolOrAliasRawParser Alias
 
-symbolParser :: Parser.Parser Symbol
+symbolParser :: Parser Symbol
 symbolParser = symbolOrAliasRawParser Symbol
 
-symbolOrAliasRemainderParser :: Id -> Parser.Parser SymbolOrAlias
+symbolOrAliasRemainderParser :: Id -> Parser SymbolOrAlias
 symbolOrAliasRemainderParser identifier =
     symbolOrAliasRemainderRawParser (SymbolOrAlias identifier)
 
-notRemainderParser :: Parser.Parser Pattern
+notRemainderParser :: Parser Pattern
 notRemainderParser =
     pure NotPattern
         <*> inCurlyBracesParser sortParser
@@ -56,7 +58,7 @@ notRemainderParser =
 
 binaryOperatorRemainderParser
     :: (Sort -> Pattern -> Pattern -> Pattern)
-    -> Parser.Parser Pattern
+    -> Parser Pattern
 binaryOperatorRemainderParser constructor = do
     sort <- inCurlyBracesParser sortParser
     (pattern1, pattern2) <- parenPairParser patternParser patternParser
@@ -64,7 +66,7 @@ binaryOperatorRemainderParser constructor = do
 
 existsForallRemainderParser
     :: (Sort -> Variable -> Pattern -> Pattern)
-    -> Parser.Parser Pattern
+    -> Parser Pattern
 existsForallRemainderParser constructor = do
     sort <- inCurlyBracesParser sortParser
     (variable, pattern) <- parenPairParser variableParser patternParser
@@ -72,13 +74,13 @@ existsForallRemainderParser constructor = do
 
 ceilFloorRemainderParser
     :: (Sort -> Sort -> Pattern -> Pattern)
-    -> Parser.Parser Pattern
+    -> Parser Pattern
 ceilFloorRemainderParser constructor = do
     (sort1, sort2) <- curlyPairParser sortParser sortParser
     pattern <- inParenthesesParser patternParser
     return (constructor sort1 sort2 pattern)
 
-memRemainderParser :: Parser.Parser Pattern
+memRemainderParser :: Parser Pattern
 memRemainderParser = do
     (sort1, sort2) <- curlyPairParser sortParser sortParser
     (variable, pattern) <- parenPairParser variableParser patternParser
@@ -89,30 +91,27 @@ memRemainderParser = do
            , memPatternPattern = pattern
            }
 
-equalsRemainderParser :: Parser.Parser Pattern
-equalsRemainderParser = do
+equalsLikeRemainderParser
+    :: (Sort -> Sort -> Pattern -> Pattern -> Pattern)
+    -> Parser Pattern
+equalsLikeRemainderParser constructor = do
     (sort1, sort2) <- curlyPairParser sortParser sortParser
     (pattern1, pattern2) <- parenPairParser patternParser patternParser
-    return EqualsPattern
-           { equalsPatternFirstSort = sort1
-           , equalsPatternSecondSort = sort2
-           , equalsPatternFirst = pattern1
-           , equalsPatternSecond = pattern2
-           }
+    return (constructor sort1 sort2 pattern1 pattern2)
 
-topBottomRemainderParser :: (Sort -> Pattern) -> Parser.Parser Pattern
+topBottomRemainderParser :: (Sort -> Pattern) -> Parser Pattern
 topBottomRemainderParser constructor = do
     sort <- inCurlyBracesParser sortParser
     inParenthesesParser (return ())
     return (constructor sort)
 
-symbolOrAliasPatternRemainderParser :: Id -> Parser.Parser Pattern
+symbolOrAliasPatternRemainderParser :: Id -> Parser Pattern
 symbolOrAliasPatternRemainderParser identifier =
     pure ApplicationPattern
         <*> symbolOrAliasRemainderParser identifier
         <*> inParenthesesParser patternListParser
 
-variableRemainderParser :: Id -> Parser.Parser Variable
+variableRemainderParser :: Id -> Parser Variable
 variableRemainderParser identifier = do
     colonParser
     sort <- sortParser
@@ -121,10 +120,10 @@ variableRemainderParser identifier = do
         , variableSort = sort
         }
 
-variableParser :: Parser.Parser Variable
+variableParser :: Parser Variable
 variableParser = idParser >>= variableRemainderParser
 
-variableOrTermPatternParser :: Parser.Parser Pattern
+variableOrTermPatternParser :: Parser Pattern
 variableOrTermPatternParser = do
     identifier <- idParser
     c <- Parser.peekChar'
@@ -132,16 +131,25 @@ variableOrTermPatternParser = do
         then VariablePattern <$> variableRemainderParser identifier
         else symbolOrAliasPatternRemainderParser identifier
 
-mlConstructorParser :: Parser.Parser Pattern
+domainValueRemainderParser :: Parser Pattern
+domainValueRemainderParser = do
+    (string1, string2) <- parenPairParser stringLiteralParser stringLiteralParser
+    return DomainValuePattern
+        { domainValuePatternFirst = string1
+        , domainValuePatternSecond = string2
+        }
+
+mlConstructorParser :: Parser Pattern
 mlConstructorParser = do
-    Parser.char '\\'
+    void (Parser.char '\\')
     mlPatternParser
   where
     mlPatternParser = keywordBasedParsers
         [ ("and", binaryOperatorRemainderParser AndPattern)
         , ("bottom", topBottomRemainderParser BottomPattern)
         , ("ceil", ceilFloorRemainderParser CeilPattern)
-        , ("equals", equalsRemainderParser)
+        , ("domainValue", domainValueRemainderParser)
+        , ("equals", equalsLikeRemainderParser EqualsPattern)
         , ("exists", existsForallRemainderParser ExistsPattern)
         , ("floor", ceilFloorRemainderParser FloorPattern)
         , ("forall", existsForallRemainderParser ForallPattern)
@@ -150,6 +158,8 @@ mlConstructorParser = do
         , ("mem", memRemainderParser)
         , ("not", notRemainderParser)
         , ("or", binaryOperatorRemainderParser OrPattern)
+        , ("rewrites", equalsLikeRemainderParser RewritesPattern)
+        , ("subset", equalsLikeRemainderParser SubsetPattern)
         , ("top", topBottomRemainderParser TopPattern)
         ]
 {-TODO?
@@ -159,7 +169,7 @@ mlConstructorParser = do
 2 domainValue
 -}
 
-patternParser :: Parser.Parser Pattern
+patternParser :: Parser Pattern
 patternParser = do
     c <- Parser.peekChar'
     case c of
@@ -167,20 +177,20 @@ patternParser = do
         '"' -> StringLiteralPattern <$> stringLiteralParser
         _ -> variableOrTermPatternParser
 
-patternListParser :: Parser.Parser [Pattern]
+patternListParser :: Parser [Pattern]
 patternListParser = Parser.sepBy patternParser commaParser
 
-attributesParser :: Parser.Parser Attributes
+attributesParser :: Parser Attributes
 attributesParser =
     Attributes <$> inSquareBracketsParser patternListParser
 
-definitionParser :: Parser.Parser Definition
+definitionParser :: Parser Definition
 definitionParser =
     pure Definition
         <*> attributesParser
         <*> Parser.many1 moduleParser
 
-moduleParser :: Parser.Parser Module
+moduleParser :: Parser Module
 moduleParser = do
     mlLexemeParser "module"
     name <- moduleNameParser
@@ -193,7 +203,7 @@ moduleParser = do
            , moduleAttributes = attributes
            }
 
-sentenceParser :: Parser.Parser Sentence
+sentenceParser :: Parser Sentence
 sentenceParser = keywordBasedParsers
     [ ("alias", aliasSymbolSentenceRemainderParser aliasParser AliasSentence)
     , ("axiom", axiomSentenceRemainderParser)
@@ -203,9 +213,9 @@ sentenceParser = keywordBasedParsers
     ]
 
 aliasSymbolSentenceRemainderParser
-    :: Parser.Parser a
+    :: Parser a
     -> (a -> [Sort] -> Sort -> Attributes -> Sentence)
-    -> Parser.Parser Sentence
+    -> Parser Sentence
 aliasSymbolSentenceRemainderParser aliasSymbolParser constructor = do
     aliasSymbol <- aliasSymbolParser
     sorts <- inParenthesesParser sortListParser
@@ -214,20 +224,20 @@ aliasSymbolSentenceRemainderParser aliasSymbolParser constructor = do
     attributes <- attributesParser
     return (constructor aliasSymbol sorts resultSort attributes)
 
-axiomSentenceRemainderParser :: Parser.Parser Sentence
+axiomSentenceRemainderParser :: Parser Sentence
 axiomSentenceRemainderParser =
     pure AxiomSentence
         <*> inCurlyBracesParser sortVariableList1Parser
         <*> patternParser
         <*> attributesParser
 
-importSentenceRemainderParser :: Parser.Parser Sentence
+importSentenceRemainderParser :: Parser Sentence
 importSentenceRemainderParser =
     pure ImportSentence
         <*> moduleNameParser
         <*> attributesParser
 
-sortSentenceRemainderParser :: Parser.Parser Sentence
+sortSentenceRemainderParser :: Parser Sentence
 sortSentenceRemainderParser =
     pure SortSentence
         <*> inCurlyBracesParser sortVariableList1Parser

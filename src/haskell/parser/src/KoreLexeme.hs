@@ -19,21 +19,22 @@ import           CharSet
 import           CString
 import           KoreAST
 
-import           Control.Applicative
-import           Control.Monad
+import           Control.Applicative ((<|>))
+import           Control.Monad (void)
+import           Data.Attoparsec.ByteString.Char8 (Parser)
 import qualified Data.Attoparsec.ByteString.Char8 as Parser
 import qualified Data.ByteString.Char8            as Char8
-import           Data.Char
+import           Data.Char (isOctDigit, isHexDigit)
 
-idParser :: Parser.Parser Id
+idParser :: Parser Id
 idParser = lexeme idRawParser
 
-stringLiteralParser :: Parser.Parser StringLiteral
+stringLiteralParser :: Parser StringLiteral
 stringLiteralParser = lexeme stringLiteralRawParser
 
 data CommentScannerState = COMMENT | STAR | END
 
-multiLineCommentToken :: Parser.Parser ()
+multiLineCommentToken :: Parser ()
 multiLineCommentToken = do
     void (Parser.string (Char8.pack "/*"))
     void (Parser.scan COMMENT delta)
@@ -43,7 +44,7 @@ multiLineCommentToken = do
     delta STAR '/' = Just END
     delta _ _      = Just COMMENT
 
-singleLineCommentToken :: Parser.Parser ()
+singleLineCommentToken :: Parser ()
 singleLineCommentToken = do
     void (Parser.string (Char8.pack "//"))
     void (Parser.scan COMMENT delta)
@@ -52,20 +53,20 @@ singleLineCommentToken = do
     delta _ '\n' = Just END
     delta _ _    = Just COMMENT
 
-whitespaceChunk :: Parser.Parser ()
+whitespaceChunk :: Parser ()
 whitespaceChunk
       = multiLineCommentToken
     <|> singleLineCommentToken
     <|> (Parser.space *> Parser.skipSpace)
 
 -- TODO: Rewrite this, or parts of this, using Parser.scan
-skipWhitespace :: Parser.Parser ()
+skipWhitespace :: Parser ()
 skipWhitespace = Parser.skipMany whitespaceChunk
 
-lexeme :: Parser.Parser a -> Parser.Parser a
+lexeme :: Parser a -> Parser a
 lexeme p = p <* skipWhitespace
 
-genericIdParser :: CharSet -> CharSet -> (String -> a) -> Parser.Parser a
+genericIdParser :: CharSet -> CharSet -> (String -> a) -> Parser a
 genericIdParser firstCharSet charSet constructor = do
     c <- Parser.peekChar'
     id <- if not (c `CharSet.elem` firstCharSet)
@@ -80,7 +81,7 @@ moduleNameCharSet :: CharSet
 moduleNameCharSet =
   CharSet.join moduleNameFirstCharSet (CharSet.make (['0'..'9'] ++ "-"))
 
-moduleNameParser :: Parser.Parser ModuleName
+moduleNameParser :: Parser ModuleName
 moduleNameParser =
   genericIdParser moduleNameFirstCharSet moduleNameCharSet ModuleName
 
@@ -90,10 +91,10 @@ idFirstCharSet = CharSet.make (['A'..'Z'] ++ ['a'..'z'])
 idCharSet :: CharSet
 idCharSet = CharSet.join idFirstCharSet (CharSet.make (['0'..'9'] ++ "'"))
 
-objectIdParser :: Parser.Parser Id
+objectIdParser :: Parser Id
 objectIdParser = genericIdParser idFirstCharSet idCharSet Id
 
-metaIdParser :: Parser.Parser Id
+metaIdParser :: Parser Id
 metaIdParser = do
     c <- Parser.char '#'
     c' <- Parser.peekChar'
@@ -106,12 +107,12 @@ metaIdParser = do
             Id id <- objectIdParser
             return (Id (c:id))
 
-idRawParser :: Parser.Parser Id
+idRawParser :: Parser Id
 idRawParser = metaIdParser <|> objectIdParser
 
 data StringScannerState = STRING | ESCAPE | HEX StringScannerState
 
-stringLiteralRawParser :: Parser.Parser StringLiteral
+stringLiteralRawParser :: Parser StringLiteral
 stringLiteralRawParser = do
     void (Parser.char '"')
     s <- Parser.scan STRING delta
@@ -135,62 +136,62 @@ stringLiteralRawParser = do
       | isHexDigit c = Just s
       | otherwise = Nothing
 
-tokenCharParser :: Char -> Parser.Parser ()
+tokenCharParser :: Char -> Parser ()
 tokenCharParser c = lexeme (void (Parser.char c))
 
-colonParser :: Parser.Parser ()
+colonParser :: Parser ()
 colonParser = tokenCharParser ':'
 
-openCurlyBraceParser :: Parser.Parser ()
+openCurlyBraceParser :: Parser ()
 openCurlyBraceParser = tokenCharParser '{'
 
-closedCurlyBraceParser :: Parser.Parser ()
+closedCurlyBraceParser :: Parser ()
 closedCurlyBraceParser = tokenCharParser '}'
 
-inCurlyBracesParser :: Parser.Parser a -> Parser.Parser a
+inCurlyBracesParser :: Parser a -> Parser a
 inCurlyBracesParser p =
     openCurlyBraceParser *> p <* closedCurlyBraceParser
 
-openParenthesisParser :: Parser.Parser ()
+openParenthesisParser :: Parser ()
 openParenthesisParser = tokenCharParser '('
 
-closedParenthesisParser :: Parser.Parser ()
+closedParenthesisParser :: Parser ()
 closedParenthesisParser = tokenCharParser ')'
 
-inParenthesesParser :: Parser.Parser a -> Parser.Parser a
+inParenthesesParser :: Parser a -> Parser a
 inParenthesesParser p =
     openParenthesisParser *> p <* closedParenthesisParser
 
-rawPairParser :: Parser.Parser a -> Parser.Parser b -> Parser.Parser (a,b)
+rawPairParser :: Parser a -> Parser b -> Parser (a,b)
 rawPairParser pa pb = do
     a <- pa
     commaParser
     b <- pb
     return (a, b)
 
-parenPairParser :: Parser.Parser a -> Parser.Parser b -> Parser.Parser (a,b)
+parenPairParser :: Parser a -> Parser b -> Parser (a,b)
 parenPairParser pa pb = inParenthesesParser (rawPairParser pa pb)
 
-curlyPairParser :: Parser.Parser a -> Parser.Parser b -> Parser.Parser (a,b)
+curlyPairParser :: Parser a -> Parser b -> Parser (a,b)
 curlyPairParser pa pb = inCurlyBracesParser (rawPairParser pa pb)
 
-openSquareBracketParser :: Parser.Parser ()
+openSquareBracketParser :: Parser ()
 openSquareBracketParser = tokenCharParser '['
 
-closedSquareBracketParser :: Parser.Parser ()
+closedSquareBracketParser :: Parser ()
 closedSquareBracketParser = tokenCharParser ']'
 
-inSquareBracketsParser :: Parser.Parser a -> Parser.Parser a
+inSquareBracketsParser :: Parser a -> Parser a
 inSquareBracketsParser p =
     openSquareBracketParser *> p <* closedSquareBracketParser
 
-commaParser :: Parser.Parser ()
+commaParser :: Parser ()
 commaParser = tokenCharParser ','
 
-mlLexemeParser :: String -> Parser.Parser ()
+mlLexemeParser :: String -> Parser ()
 mlLexemeParser s = lexeme (void (Parser.string (Char8.pack s)))
 
-keywordBasedParsers :: [(String, Parser.Parser a)] -> Parser.Parser a
+keywordBasedParsers :: [(String, Parser a)] -> Parser a
 keywordBasedParsers [] = fail "Keyword Based Parsers"
 keywordBasedParsers [(k, p)] = mlLexemeParser k *> p
 keywordBasedParsers stringParsers = do

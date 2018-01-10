@@ -5,7 +5,7 @@ module CString
 
 import CharSet
 
-import Data.Char
+import Data.Char (isOctDigit, isHexDigit, chr, toUpper, digitToInt)
 
 oneCharEscapeDict :: CharSet
 oneCharEscapeDict = CharSet.make "'\"?\\abfnrtv"
