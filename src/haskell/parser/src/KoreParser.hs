@@ -223,7 +223,9 @@ axiomSentenceRemainderParser =
 
 importSentenceRemainderParser :: Parser.Parser Sentence
 importSentenceRemainderParser =
-    ImportSentence <$> moduleNameParser <*> attributesParser
+    pure ImportSentence
+        <*> moduleNameParser
+        <*> attributesParser
 
 sortSentenceRemainderParser :: Parser.Parser Sentence
 sortSentenceRemainderParser =

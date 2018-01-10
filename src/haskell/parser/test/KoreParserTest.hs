@@ -272,7 +272,7 @@ ceilPatternParserTests =
                     SortVariableSort (SortVariable (Id "s1"))
                 , ceilPatternSecondSort =
                     SortVariableSort (SortVariable (Id "s2"))
-                , ceilPattern = StringLiteralPattern (StringLiteral "a")
+                , ceilPatternPattern = StringLiteralPattern (StringLiteral "a")
                 }
         ]
         (Failure
@@ -305,7 +305,7 @@ floorPatternParserTests =
                     SortVariableSort (SortVariable (Id "s1"))
                 , floorPatternSecondSort =
                     SortVariableSort (SortVariable (Id "s2"))
-                , floorPattern = StringLiteralPattern (StringLiteral "a")
+                , floorPatternPattern = StringLiteralPattern (StringLiteral "a")
                 }
         ]
         (Failure
