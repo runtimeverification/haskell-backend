@@ -4,6 +4,7 @@ import           KoreAST
 import           KoreLexeme
 
 import           Control.Applicative
+import           Control.Monad
 
 import qualified Data.Attoparsec.ByteString.Char8 as Parser
 
@@ -101,10 +102,27 @@ ceilFloorRemainderParser constructor = do
     closedParenthesisParser
     return (constructor sort1 sort2 pattern)
 
-equalsMemRemainderParser
-    :: (Sort -> Sort -> Pattern -> Pattern -> Pattern)
-    -> Parser.Parser Pattern
-equalsMemRemainderParser constructor = do
+memRemainderParser :: Parser.Parser Pattern
+memRemainderParser = do
+    openCurlyBraceParser
+    sort1 <- sortParser
+    commaParser
+    sort2 <- sortParser
+    closedCurlyBraceParser
+    openParenthesisParser
+    variable <- variableParser
+    commaParser
+    pattern <- patternParser
+    closedParenthesisParser
+    return MemPattern
+           { memPatternFirstSort = sort1
+           , memPatternSecondSort = sort2
+           , memPatternVariable = variable
+           , memPatternPattern = pattern
+           }
+
+equalsRemainderParser :: Parser.Parser Pattern
+equalsRemainderParser = do
     openCurlyBraceParser
     sort1 <- sortParser
     commaParser
@@ -115,7 +133,12 @@ equalsMemRemainderParser constructor = do
     commaParser
     pattern2 <- patternParser
     closedParenthesisParser
-    return (constructor sort1 sort2 pattern1 pattern2)
+    return EqualsPattern
+           { equalsPatternFirstSort = sort1
+           , equalsPatternSecondSort = sort2
+           , equalsPatternFirst = pattern1
+           , equalsPatternSecond = pattern2
+           }
 
 topBottomRemainderParser :: (Sort -> Pattern) -> Parser.Parser Pattern
 topBottomRemainderParser constructor = do
@@ -144,15 +167,15 @@ variablePatternRemainderParser id = do
     sort <- sortParser
     return (VariablePattern Variable { variableName = id, variableSort = sort })
 
-variableParser :: Parser.Parser Pattern
+variableParser :: Parser.Parser Variable
 variableParser = do
     id <- idParser
-    variablePatternRemainderParser id
+    getVariablePattern <$> variablePatternRemainderParser id
 
 variableOrTermPatternParser :: Parser.Parser Pattern
 variableOrTermPatternParser = do
     id <- idParser
-    c' <- peekChar'
+    c <- Parser.peekChar'
     if c == ':'
         then variablePatternRemainderParser id
         else symbolOrAliasPatternRemainderParser id
@@ -160,16 +183,16 @@ variableOrTermPatternParser = do
 equalOrExistsRemainderParser :: Parser.Parser Pattern
 equalOrExistsRemainderParser = do
     void (Parser.char 'e')
-    c <- peekChar'
+    c <- Parser.peekChar'
     case c of
-        'q' -> mlLexemeParser "quals" *> equalsMemRemainderParser EqualsPattern
+        'q' -> mlLexemeParser "quals" *> equalsRemainderParser
         'x' -> mlLexemeParser "xists" *>
                existsForallRemainderParser ExistsPattern
 
 floorOrForallRemainderParser :: Parser.Parser Pattern
 floorOrForallRemainderParser = do
     void (Parser.char 'f')
-    c <- peekChar'
+    c <- Parser.peekChar'
     case c of
         'l' -> mlLexemeParser "loor" *> ceilFloorRemainderParser FloorPattern
         'o' -> mlLexemeParser "orall" *>
@@ -178,7 +201,7 @@ floorOrForallRemainderParser = do
 impliesOrIffRemainderParser :: Parser.Parser Pattern
 impliesOrIffRemainderParser = do
     void (Parser.char 'i')
-    c <- peekChar'
+    c <- Parser.peekChar'
     case c of
         'f' -> mlLexemeParser "ff" *> binaryOperatorRemainderParser IffPattern
         'm' -> mlLexemeParser "mplies" *>
@@ -187,7 +210,7 @@ impliesOrIffRemainderParser = do
 mlConstructorParser :: Parser.Parser Pattern
 mlConstructorParser = do
     Parser.char '\\'
-    c <- peekChar'
+    c <- Parser.peekChar'
     case c of
         'a' -> mlLexemeParser "and" *> binaryOperatorRemainderParser AndPattern
         'b' -> mlLexemeParser "bottom" *> topBottomRemainderParser BottomPattern
@@ -195,7 +218,7 @@ mlConstructorParser = do
         'e' -> equalOrExistsRemainderParser
         'f' -> floorOrForallRemainderParser
         'i' -> impliesOrIffRemainderParser
-        'm' -> mlLexemeParser "mem" *> equalsMemRemainderParser MemPattern
+        'm' -> mlLexemeParser "mem" *> memRemainderParser
         'n' -> mlLexemeParser "not" *> notRemainderParser
         'o' -> mlLexemeParser "or" *> binaryOperatorRemainderParser OrPattern
         't' -> mlLexemeParser "top" *> topBottomRemainderParser TopPattern
@@ -208,8 +231,8 @@ mlConstructorParser = do
 
 patternParser :: Parser.Parser Pattern
 patternParser = do
-    c <- peekChar'
+    c <- Parser.peekChar'
     case c of
         '\\' -> mlConstructorParser
-        '"' -> StringLiteralParser <$> stringLiteralParser
+        '"' -> StringLiteralPattern <$> stringLiteralParser
         _ -> variableOrTermPatternParser

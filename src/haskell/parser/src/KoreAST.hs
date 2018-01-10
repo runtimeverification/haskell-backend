@@ -128,7 +128,7 @@ data Pattern
         , patterns      :: ![Pattern]
         }
     | TopPattern !Sort
-    | VariablePattern !Variable
+    | VariablePattern { getVariablePattern :: !Variable }
     deriving (Show, Eq)
 
 data Axiom = Axiom
