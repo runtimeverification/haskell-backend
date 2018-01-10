@@ -1,16 +1,15 @@
 module KoreLexeme
-       ( closedCurlyBraceParser
-       , closedParenthesisParser
-       , closedSquareBracketParser
-       , colonParser
+       ( colonParser
        , commaParser
+       , curlyPairParser
        , idParser
+       , inCurlyBracesParser
+       , inParenthesesParser
+       , inSquareBracketsParser
        , keywordBasedParsers
        , mlLexemeParser
        , moduleNameParser
-       , openCurlyBraceParser
-       , openParenthesisParser
-       , openSquareBracketParser
+       , parenPairParser
        , skipWhitespace
        , stringLiteralParser
        ) where
@@ -25,7 +24,6 @@ import           Control.Monad
 import qualified Data.Attoparsec.ByteString.Char8 as Parser
 import qualified Data.ByteString.Char8            as Char8
 import           Data.Char
-import           Data.List (nub)
 
 idParser :: Parser.Parser Id
 idParser = lexeme idRawParser
@@ -149,17 +147,42 @@ openCurlyBraceParser = tokenCharParser '{'
 closedCurlyBraceParser :: Parser.Parser ()
 closedCurlyBraceParser = tokenCharParser '}'
 
+inCurlyBracesParser :: Parser.Parser a -> Parser.Parser a
+inCurlyBracesParser p =
+    openCurlyBraceParser *> p <* closedCurlyBraceParser
+
 openParenthesisParser :: Parser.Parser ()
 openParenthesisParser = tokenCharParser '('
 
 closedParenthesisParser :: Parser.Parser ()
 closedParenthesisParser = tokenCharParser ')'
 
+inParenthesesParser :: Parser.Parser a -> Parser.Parser a
+inParenthesesParser p =
+    openParenthesisParser *> p <* closedParenthesisParser
+
+rawPairParser :: Parser.Parser a -> Parser.Parser b -> Parser.Parser (a,b)
+rawPairParser pa pb = do
+    a <- pa
+    commaParser
+    b <- pb
+    return (a, b)
+
+parenPairParser :: Parser.Parser a -> Parser.Parser b -> Parser.Parser (a,b)
+parenPairParser pa pb = inParenthesesParser (rawPairParser pa pb)
+
+curlyPairParser :: Parser.Parser a -> Parser.Parser b -> Parser.Parser (a,b)
+curlyPairParser pa pb = inCurlyBracesParser (rawPairParser pa pb)
+
 openSquareBracketParser :: Parser.Parser ()
 openSquareBracketParser = tokenCharParser '['
 
 closedSquareBracketParser :: Parser.Parser ()
 closedSquareBracketParser = tokenCharParser ']'
+
+inSquareBracketsParser :: Parser.Parser a -> Parser.Parser a
+inSquareBracketsParser p =
+    openSquareBracketParser *> p <* closedSquareBracketParser
 
 commaParser :: Parser.Parser ()
 commaParser = tokenCharParser ','

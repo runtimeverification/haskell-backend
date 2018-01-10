@@ -54,7 +54,7 @@ data Pattern
     | CeilPattern
         { ceilPatternFirstSort  :: !Sort
         , ceilPatternSecondSort :: !Sort
-        , ceilPattern           :: !Pattern
+        , ceilPatternPattern    :: !Pattern
         }
      | DomainValuePattern
         { domainValuePatternFirst  :: !StringLiteral
@@ -74,7 +74,7 @@ data Pattern
     | FloorPattern
         { floorPatternFirstSort  :: !Sort
         , floorPatternSecondSort :: !Sort
-        , floorPattern           :: !Pattern
+        , floorPatternPattern    :: !Pattern
         }
     | ForallPattern
         { forallPatternSort     :: !Sort
@@ -128,38 +128,34 @@ data Pattern
         , applicationPatternPatterns      :: ![Pattern]
         }
     | TopPattern !Sort
-    | VariablePattern { getVariablePattern :: !Variable }
-    deriving (Show, Eq)
-
-data Axiom = Axiom
-    { axiomSortVariables :: ![SortVariable]
-    , axiomPattern       :: !Pattern
-    , axiomAttributes    :: !Attributes
-    }
+    | VariablePattern !Variable
     deriving (Show, Eq)
 
 data Sentence
     = AliasSentence
         { aliasSentenceAlias      :: !Alias
         , aliasSentenceSorts      :: ![Sort]
+        , aliasSentenceReturnSort :: !Sort
         , aliasSentenceAttributes :: !Attributes
         }
     | AxiomSentence
-        { axiomSentenceSortVariables :: ![SortVariable]
-        , axiomSentenceAxiom         :: !Axiom
+        { axiomSentenceParameters :: ![SortVariable]
+        , axiomSentencePattern    :: !Pattern
+        , axiomSentenceAtrributes :: Attributes
         }
     | ImportSentence
         { importModuleName :: !ModuleName
         , importAttributes :: !Attributes
         }
     | SortSentence
-        { sortSentenceSortVariables :: ![SortVariable]
-        , sortSentenceSort          :: !Sort
-        , sortSentenceAttributes    :: !Attributes
+        { sortSentenceParameters :: ![SortVariable]
+        , sortSentenceSort       :: !Sort
+        , sortSentenceAttributes :: !Attributes
         }
     | SymbolSentence
         { symbolSentenceSymbol     :: !Symbol
         , symbolSentenceSorts      :: ![Sort]
+        , symbolSentenceReturnSort :: !Sort
         , symbolSentenceAttributes :: !Attributes
         }
    deriving (Show, Eq)
