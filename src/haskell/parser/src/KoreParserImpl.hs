@@ -148,7 +148,7 @@ mlConstructorParser = do
         [ ("and", binaryOperatorRemainderParser AndPattern)
         , ("bottom", topBottomRemainderParser BottomPattern)
         , ("ceil", ceilFloorRemainderParser CeilPattern)
-        , ("domainValue", domainValueRemainderParser)
+        , ("domainvalue", domainValueRemainderParser)
         , ("equals", equalsLikeRemainderParser EqualsPattern)
         , ("exists", existsForallRemainderParser ExistsPattern)
         , ("floor", ceilFloorRemainderParser FloorPattern)
