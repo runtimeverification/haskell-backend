@@ -192,7 +192,7 @@ mlLexemeParser :: String -> Parser ()
 mlLexemeParser s = lexeme (void (Parser.string (Char8.pack s)))
 
 keywordBasedParsers :: [(String, Parser a)] -> Parser a
-keywordBasedParsers [] = fail "Keyword Based Parsers"
+keywordBasedParsers [] = fail "Keyword Based Parsers - no parsers"
 keywordBasedParsers [(k, p)] = mlLexemeParser k *> p
 keywordBasedParsers stringParsers = do
     c <- Parser.peekChar'
@@ -203,7 +203,7 @@ keywordBasedParsers stringParsers = do
     tailParser c =
         let ts = tails c
         in if null ts
-            then fail "Keyword Based Parsers"
+            then fail "Keyword Based Parsers - unexpected character."
             else Parser.char c *> keywordBasedParsers ts
     dict = CharDict.memoize tailParser
 

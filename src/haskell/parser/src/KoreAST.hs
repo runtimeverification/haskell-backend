@@ -141,7 +141,7 @@ data Sentence
     | AxiomSentence
         { axiomSentenceParameters :: ![SortVariable]
         , axiomSentencePattern    :: !Pattern
-        , axiomSentenceAtrributes :: Attributes
+        , axiomSentenceAtrributes :: !Attributes
         }
     | ImportSentence
         { importModuleName :: !ModuleName

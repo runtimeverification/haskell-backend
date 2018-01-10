@@ -14,6 +14,8 @@ main = defaultMain
         " Parser Tests"
         [ testGroup "sortParser" sortParserTests
         , testGroup "sortListParser" sortListParserTests
+        , testGroup "sortVariableParser" sortVariableParserTests
+        , testGroup "sortVariableList1Parser" sortVariableList1ParserTests
         , testGroup "aliasParser" aliasParserTests
         , testGroup "symbolParser" symbolParserTests
         , testGroup "variableParser" variableParserTests
@@ -37,6 +39,11 @@ main = defaultMain
         , testGroup "subsetPatternParser" subsetPatternParserTests
         , testGroup "topPatternParser" topPatternParserTests
         , testGroup "variablePatternParser" variablePatternParserTests
+        , testGroup "aliasSentenceParser" aliasSentenceParserTests
+        , testGroup "axiomSentenceParser" axiomSentenceParserTests
+        , testGroup "importSentenceParser" importSentenceParserTests
+        , testGroup "sortSentenceParser" sortSentenceParserTests
+        , testGroup "symbolSentenceParser" symbolSentenceParserTests
         ]
     )
 
@@ -100,6 +107,22 @@ sortListParserTests =
             ]
         ]
         (Failure ["var1 var2"])
+
+sortVariableParserTests :: [TestTree]
+sortVariableParserTests =
+    parseTree sortVariableParser
+        [ Success "var" (SortVariable (Id "var"))
+        , Success "#var" (SortVariable (Id "#var"))
+        ]
+        (Failure ["", "#"])
+
+sortVariableList1ParserTests :: [TestTree]
+sortVariableList1ParserTests =
+    parseTree sortVariableList1Parser
+        [ Success "v" [SortVariable (Id "v")]
+        , Success "v1, v2" [SortVariable (Id "v1"), SortVariable (Id "v2")]
+        ]
+        (Failure ["", "v v"])
 
 aliasParserTests :: [TestTree]
 aliasParserTests =
@@ -598,6 +621,156 @@ variablePatternParserTests =
             )
         ]
         (Failure ["", "var", "v:", ":s", "c(s)", "c{s}"])
+
+aliasSentenceParserTests :: [TestTree]
+aliasSentenceParserTests =
+    parseTree sentenceParser
+        [ Success "alias a{s1}(s2):s3[\"a\"]"
+            AliasSentence
+                { aliasSentenceAlias = Alias
+                    { aliasConstructor = Id "a"
+                    , aliasParams = [SortVariableSort (SortVariable (Id "s1"))]
+                    }
+                , aliasSentenceSorts =
+                    [SortVariableSort (SortVariable (Id "s2"))]
+                , aliasSentenceReturnSort =
+                    SortVariableSort (SortVariable (Id "s3"))
+                , aliasSentenceAttributes =
+                    Attributes [StringLiteralPattern (StringLiteral "a")]
+                }
+        , Success "alias a { s1 , s2 } ( s3, s4 ) : s5 [ \"a\" , \"b\" ]"
+            AliasSentence
+                { aliasSentenceAlias = Alias
+                    { aliasConstructor = Id "a"
+                    , aliasParams =
+                        [ SortVariableSort (SortVariable (Id "s1"))
+                        , SortVariableSort (SortVariable (Id "s2"))
+                        ]
+                    }
+                , aliasSentenceSorts =
+                    [ SortVariableSort (SortVariable (Id "s3"))
+                    , SortVariableSort (SortVariable (Id "s4"))
+                    ]
+                , aliasSentenceReturnSort =
+                    SortVariableSort (SortVariable (Id "s5"))
+                , aliasSentenceAttributes =
+                    Attributes
+                        [ StringLiteralPattern (StringLiteral "a")
+                        , StringLiteralPattern (StringLiteral "b")
+                        ]
+                }
+        , Success "alias a{}():s3[]"
+            AliasSentence
+                { aliasSentenceAlias = Alias
+                    { aliasConstructor = Id "a"
+                    , aliasParams = []
+                    }
+                , aliasSentenceSorts = []
+                , aliasSentenceReturnSort =
+                    SortVariableSort (SortVariable (Id "s3"))
+                , aliasSentenceAttributes = Attributes []
+                }
+        ]
+    (Failure
+        [ ""
+        , "a{s1}(s2):s3[\"a\"]"
+        , "alias {s1}(s2):s3[\"a\"]"
+        , "alias a(s2):s3[\"a\"]"
+        , "alias a{s1}:s3[\"a\"]"
+        , "alias a{s1}(s2)s3[\"a\"]"
+        , "alias a{s1}(s2):[\"a\"]"
+        , "alias a{s1}(s2)[\"a\"]"
+        , "alias a{s1}(s2):s3"
+        ])
+
+axiomSentenceParserTests :: [TestTree]
+axiomSentenceParserTests =
+    parseTree sentenceParser
+        [ Success "axiom{sv1}\"a\"[\"b\"]"
+            AxiomSentence
+                { axiomSentenceParameters = [SortVariable (Id "sv1")]
+                , axiomSentencePattern =
+                    StringLiteralPattern (StringLiteral "a")
+                , axiomSentenceAtrributes =
+                    Attributes [StringLiteralPattern (StringLiteral "b")]
+                }
+        {- TODO(virgil): The Scala parser allows empty sort variable lists
+           while the semantics-of-k document does not. Find out if this test
+           is needed.
+        , Success "axiom{}\"a\"[\"b\"]"
+            AxiomSentence
+                { axiomSentenceParameters = []
+                , axiomSentencePattern =
+                    StringLiteralPattern (StringLiteral "a")
+                , axiomSentenceAtrributes =
+                    Attributes [StringLiteralPattern (StringLiteral "b")]
+                }
+        -}
+        , Success "axiom { sv1 , sv2 } \"a\" [ \"b\" ] "
+            AxiomSentence
+                { axiomSentenceParameters =
+                    [SortVariable (Id "sv1"), SortVariable (Id "sv2")]
+                , axiomSentencePattern =
+                    StringLiteralPattern (StringLiteral "a")
+                , axiomSentenceAtrributes =
+                    Attributes [StringLiteralPattern (StringLiteral "b")]
+                }
+        ]
+    (Failure
+        [ ""
+        , "{sv1}\"a\"[\"b\"]"
+        , "axiom\"a\"[\"b\"]"
+        -- , "axiom{}\"a\"[\"b\"]" See the TODO above.
+        , "axiom{sv1}[\"b\"]"
+        , "axiom{sv1}\"a\""
+        ])
+
+importSentenceParserTests :: [TestTree]
+importSentenceParserTests =
+    parseTree sentenceParser
+        [ Success "import Mn [\"b\"]"
+            ImportSentence
+                { importModuleName = ModuleName "Mn"
+                , importAttributes =
+                    Attributes [StringLiteralPattern (StringLiteral "a")]
+                }
+        ]
+    (Failure
+        [ ""
+        , "import mn [\"b\"]"
+        , "Mn [\"b\"]"
+        , "import [\"b\"]"
+        , "import Mn"
+        ])
+
+sortSentenceParserTests :: [TestTree]
+sortSentenceParserTests =
+    parseTree sentenceParser
+        [ Success ""
+            SortSentence
+                { sortSentenceParameters = [SortVariable (Id "sv1")]
+                , sortSentenceSort = SortVariableSort (SortVariable (Id "s1"))
+                , sortSentenceAttributes = Attributes [StringLiteralPattern (StringLiteral "a")]
+                }
+        ]
+    (Failure [""])
+
+symbolSentenceParserTests :: [TestTree]
+symbolSentenceParserTests =
+    parseTree sentenceParser
+        [ Success ""
+            SymbolSentence
+                { symbolSentenceSymbol = Symbol
+                    { symbolConstructor = Id "sy1"
+                    , symbolParams = [SortVariableSort (SortVariable (Id "s1"))]
+                    }
+                , symbolSentenceSorts = [SortVariableSort (SortVariable (Id "s1"))]
+                , symbolSentenceReturnSort = SortVariableSort (SortVariable (Id "s1"))
+                , symbolSentenceAttributes = Attributes [StringLiteralPattern (StringLiteral "a")]
+                }
+        ]
+    (Failure [""])
+
 
 ------------------------------------
 -- Generic test utilities
