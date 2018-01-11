@@ -10,33 +10,43 @@ import Data.Char (isOctDigit, isHexDigit, chr, toUpper, digitToInt)
 oneCharEscapeDict :: CharSet
 oneCharEscapeDict = CharSet.make "'\"?\\abfnrtv"
 
+joinChar :: Char -> Either String String -> Either String String
+joinChar c (Right str) = Right (c:str)
+joinChar _ error = error
+
+joinString :: String -> Either String String -> Either String String
+joinString prefix (Right str) = Right (prefix ++ str)
+joinString _ error = error
+
 {-|Expects input string to be a properly escaped C String.
 -}
-unescapeCString :: String -> String
-unescapeCString "" = ""
+unescapeCString :: String -> Either String String
+unescapeCString "" = Right ""
 unescapeCString ('\\':cs) = unescapePrefixAndContinue cs
-unescapeCString (c:cs) = c:unescapeCString cs
+unescapeCString (c:cs) = joinChar c (unescapeCString cs)
 
-unescapePrefixAndContinue :: String -> String
+unescapePrefixAndContinue :: String -> Either String String
 unescapePrefixAndContinue (c:cs)
   | c `CharSet.elem` oneCharEscapeDict =
-    unescapeOne c : unescapeCString cs
+      joinChar (unescapeOne c) (unescapeCString cs)
   | isOctDigit c =
       let (octs,rest) = span isOctDigit cs
           (digits, octs') = splitAt 2 octs
           octVal = digitsToNumber 8 (c:digits)
-      in (chr octVal : octs') ++ unescapeCString rest
+      in joinString (chr octVal : octs') (unescapeCString rest)
   | c == 'x' =
       let (hexes,rest) = span isHexDigit cs
           hexVal = digitsToNumber 16 hexes
-      in chr hexVal : unescapeCString rest
+      in joinChar (chr hexVal) (unescapeCString rest)
   | toUpper c == 'U' =
       let digitCount = if c == 'u' then 4 else 8
           (unis, rest) = splitAt digitCount cs
           hexVal = digitsToNumber 16 unis
-      in chr hexVal : unescapeCString rest
+      in if digitCount == length unis
+          then joinChar (chr hexVal) (unescapeCString rest)
+          else Left "Invalid unicde sequence length."
 unescapePrefixAndContinue cs =
-  error ("unescapeCString : Unknown escape sequence '\\" ++ cs ++ "'.")
+  Left ("unescapeCString : Unknown escape sequence '\\" ++ cs ++ "'.")
 
 unescapeOne :: Char -> Char
 unescapeOne '\'' = '\''

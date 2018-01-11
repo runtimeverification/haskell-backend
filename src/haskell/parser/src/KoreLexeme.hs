@@ -126,7 +126,9 @@ stringLiteralRawParser = do
     s <- Parser.scan STRING delta
     void (Parser.char '"')
     let s' = unescapeCString (Char8.unpack s)
-    return (StringLiteral s')
+    case s' of
+        Left error -> fail error
+        Right s'' -> return (StringLiteral s'')
   where
     pow f 0 = id
     pow f n = f . pow f (n-1)
