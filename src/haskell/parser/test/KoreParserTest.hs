@@ -5,8 +5,8 @@ import           KoreAST
 import           KoreParserImpl
 
 import qualified Data.Attoparsec.ByteString.Char8 as Parser
-import qualified Data.ByteString.Char8 as Char8
-import           Data.Either (isLeft)
+import qualified Data.ByteString.Char8            as Char8
+import           Data.Either                      (isLeft)
 
 main :: IO ()
 main = defaultMain
@@ -728,11 +728,11 @@ axiomSentenceParserTests =
 importSentenceParserTests :: [TestTree]
 importSentenceParserTests =
     parseTree sentenceParser
-        [ Success "import Mn [\"b\"]"
+        [ Success "import MN [\"b\"]"
             ImportSentence
-                { importModuleName = ModuleName "Mn"
+                { importModuleName = ModuleName "MN"
                 , importAttributes =
-                    Attributes [StringLiteralPattern (StringLiteral "a")]
+                    Attributes [StringLiteralPattern (StringLiteral "b")]
                 }
         ]
     (Failure
@@ -746,7 +746,7 @@ importSentenceParserTests =
 sortSentenceParserTests :: [TestTree]
 sortSentenceParserTests =
     parseTree sentenceParser
-        [ Success ""
+        [ Success "sort { sv1 } s1 [ \"a\" ]"
             SortSentence
                 { sortSentenceParameters = [SortVariable (Id "sv1")]
                 , sortSentenceSort = SortVariableSort (SortVariable (Id "s1"))
@@ -758,7 +758,7 @@ sortSentenceParserTests =
 symbolSentenceParserTests :: [TestTree]
 symbolSentenceParserTests =
     parseTree sentenceParser
-        [ Success ""
+        [ Success "symbol sy1 { s1 } ( s1 ) : s1 [\"a\"] "
             SymbolSentence
                 { symbolSentenceSymbol = Symbol
                     { symbolConstructor = Id "sy1"

@@ -19,18 +19,21 @@ import           CharSet
 import           CString
 import           KoreAST
 
-import           Control.Applicative ((<|>))
-import           Control.Monad (void)
+import           Control.Applicative              ((<|>))
+import           Control.Monad                    (void)
 import           Data.Attoparsec.ByteString.Char8 (Parser)
 import qualified Data.Attoparsec.ByteString.Char8 as Parser
 import qualified Data.ByteString.Char8            as Char8
-import           Data.Char (isOctDigit, isHexDigit)
+import           Data.Char                        (isHexDigit, isOctDigit)
 
 idParser :: Parser Id
 idParser = lexeme idRawParser
 
 stringLiteralParser :: Parser StringLiteral
 stringLiteralParser = lexeme stringLiteralRawParser
+
+moduleNameParser :: Parser ModuleName
+moduleNameParser = lexeme moduleNameRawParser
 
 data CommentScannerState = COMMENT | STAR | END
 
@@ -81,8 +84,8 @@ moduleNameCharSet :: CharSet
 moduleNameCharSet =
   CharSet.join moduleNameFirstCharSet (CharSet.make (['0'..'9'] ++ "-"))
 
-moduleNameParser :: Parser ModuleName
-moduleNameParser =
+moduleNameRawParser :: Parser ModuleName
+moduleNameRawParser =
   genericIdParser moduleNameFirstCharSet moduleNameCharSet ModuleName
 
 idFirstCharSet :: CharSet
