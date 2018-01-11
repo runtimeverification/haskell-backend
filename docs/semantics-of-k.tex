@@ -5225,6 +5225,8 @@ Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
 	\small
 	<pattern> ::= <object-pattern> | <meta-pattern>
 	
+	<variable> ::= <object-variable> | <meta-variable>
+	
 	<object-pattern> ::= \quad
     \alt <object-variable>
 	\alt <object-head> `(' <pattern-list> `)'
@@ -5239,9 +5241,9 @@ Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
 	\alt `\\iff' `{' <object-sort> `}'
 	`(' <pattern> `,' <pattern> `)'
 	\alt `\\forall' `{' <object-sort> `}'
-	`(' <pattern> `,' <pattern> `)'
+	`(' <variable> `,' <pattern> `)'
 	\alt `\\exists' `{' <object-sort> `}'
-	`(' <pattern> `,' <pattern> `)'
+	`(' <variable> `,' <pattern> `)'
 	\alt `\\ceil' `{' <object-sort> `,'  <object-sort> `}'
 	`(' <pattern> `)'
 	\alt `\\floor' `{' <object-sort> `,'  <object-sort> `}'
@@ -5249,7 +5251,7 @@ Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
 	\alt `\\equals' `{' <object-sort> `,'  <object-sort> `}'
 	`(' <pattern> `,' <pattern> `)'
 	\alt `\\mem' `{' <object-sort> `,'  <object-sort> `}'
-	`(' <pattern> `,' <pattern> `)'
+	`(' <variable> `,' <pattern> `)'
 	\alt `\\top' `{' <object-sort> `}'
 	\alt `\\bottom' `{' <object-sort> `}'
 	
@@ -5270,9 +5272,9 @@ Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
 	\alt `\\iff' `{' <meta-sort> `}'
 	`(' <pattern> `,' <pattern> `)'
 	\alt `\\forall' `{' <meta-sort> `}'
-	`(' <pattern> `,' <pattern> `)'
+	`(' <variable> `,' <pattern> `)'
 	\alt `\\exists' `{' <meta-sort> `}'
-	`(' <pattern> `,' <pattern> `)'
+	`(' <variable> `,' <pattern> `)'
 	\alt `\\ceil' `{' <meta-sort> `,' <meta-sort> `}'
 	`(' <pattern> `)'
 	\alt `\\floor' `{' <meta-sort> `,' <meta-sort> `}'
@@ -5280,7 +5282,7 @@ Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
 	\alt `\\equals' `{' <meta-sort> `,' <meta-sort> `}'
 	`(' <pattern> `,' <pattern> `)'
 	\alt `\\mem' `{' <meta-sort> `,' <meta-sort> `}'
-	`(' <pattern> `,' <pattern> `)'
+	`(' <variable> `,' <pattern> `)'
 	\alt `\\top' `{' <meta-sort> `}'
 	\alt `\\bottom' `{' <meta-sort> `}'
 	
@@ -5406,6 +5408,7 @@ parametric modules, and module imports.
 <attribute>
 
 <sort-variable-list> ::= \quad
+\alt $\epsilon$
 \alt <object-sort-variable>
 \alt <meta-sort-variable>
 \alt <object-sort-variable> `,' <sort-variable-list>
