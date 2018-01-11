@@ -2477,7 +2477,7 @@ they are formally defined.
 \label{sec:chars-string}
 
 The sort $\KChar$ is the sort for \emph{characters}. It has the following $26 + 
-26 + 10 + 3 = 65$ functional constructors (more can be added if needed or
+26 + 10 + 5 = 67$ functional constructors (more can be added if needed or
 desired):
 \begin{center}
 	\begin{tabular}{c c c}
@@ -2495,7 +2495,9 @@ desired):
 		\KChar$ 
 		\\
 		$\quottt{\sharpsymbol} \colon \to \KChar$ & $\quottt{\slashsymbol} 
-		\colon \to \KChar$ & $\quottt{'} \colon \to \KChar$
+		\colon \to \KChar$ & $\quottt{`} \colon \to \KChar$
+		\\
+		$\quottt{-} \colon \to \KChar$ & $\quottt{'} \colon \to \KChar$
 	\end{tabular}
 \end{center}
 
@@ -4919,7 +4921,8 @@ Identifiers are mostly used as symbols, sorts, and variable names.
 An \syntacc{identifier} is either of the following two cases:
 \begin{itemize}
 \item An \syntacc{object-identifier}, which is a nonempty sequence of letters,
-digits and the character~``\verb|'|'' that starts with a
+digits, the character~``\verb|'|'', and the character~``\verb|-|'' that starts 
+with a
 letter and is not a \syntacc{keyword}.
 \item A \syntacc{meta-identifier},
 which is either the character ``\verb|#|'' followed by an 
