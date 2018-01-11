@@ -5375,7 +5375,8 @@ In the near future, Kore will be extended to support multiple modules,
 parametric modules, and module imports. 
 
 \begin{grammar}\small
-<definition> ::= <attribute> `module' <declaration>$^+$ `endmodule'
+<definition> ::= <attribute> `module' <module-name> <declaration>$^+$ 
+`endmodule'
 
 <declaration> ::= \quad
 \alt <sort-declaration>
@@ -5413,6 +5414,8 @@ parametric modules, and module imports.
 \alt <meta-sort-variable>
 \alt <object-sort-variable> `,' <sort-variable-list>
 \alt <meta-sort-variable> `,' <sort-variable-list>
+
+<module-name> ::= <object-identifier>
 \end{grammar}
 
 %Here are some examples of sort declarations in Kore.
