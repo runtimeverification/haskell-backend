@@ -125,12 +125,11 @@ stringLiteralRawParser = do
     void (Parser.char '"')
     s <- Parser.scan STRING delta
     void (Parser.char '"')
-    let s' = unescapeCString (Char8.unpack s)
-    case s' of
-        Left error -> fail error
-        Right s'' -> return (StringLiteral s'')
+    case unescapeCString (Char8.unpack s) of
+        Left e   -> fail e
+        Right s' -> return (StringLiteral s')
   where
-    pow f 0 = id
+    pow _ 0 = id
     pow f n = f . pow f (n-1)
     delta STRING '"' = Nothing
     delta STRING '\\' = Just ESCAPE

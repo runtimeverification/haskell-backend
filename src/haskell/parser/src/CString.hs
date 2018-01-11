@@ -3,64 +3,64 @@ module CString
        , oneCharEscapeDict
        ) where
 
-import CharSet
+import           CharSet
 
-import Data.Char (isOctDigit, isHexDigit, chr, toUpper, digitToInt)
+import           Data.Char (chr, digitToInt, isHexDigit, isOctDigit, ord,
+                            toUpper)
 
 oneCharEscapeDict :: CharSet
 oneCharEscapeDict = CharSet.make "'\"?\\abfnrtv"
 
-joinChar :: Char -> Either String String -> Either String String
-joinChar c (Right str) = Right (c:str)
-joinChar _ error = error
-
-joinString :: String -> Either String String -> Either String String
-joinString prefix (Right str) = Right (prefix ++ str)
-joinString _ error = error
-
 {-|Expects input string to be a properly escaped C String.
 -}
 unescapeCString :: String -> Either String String
-unescapeCString "" = Right ""
+unescapeCString ""        = return ""
 unescapeCString ('\\':cs) = unescapePrefixAndContinue cs
-unescapeCString (c:cs) = joinChar c (unescapeCString cs)
+unescapeCString (c:cs)    = (c :) <$> unescapeCString cs
+
+safeChr :: Int -> Either String Char
+safeChr i =
+    if i <= ord(maxBound::Char)
+        then return (chr i)
+        else Left ("Character code " ++ show i ++
+            " outside of the representable codes.")
 
 unescapePrefixAndContinue :: String -> Either String String
 unescapePrefixAndContinue (c:cs)
   | c `CharSet.elem` oneCharEscapeDict =
-      joinChar (unescapeOne c) (unescapeCString cs)
+      (:) <$> (unescapeOne c) <*> (unescapeCString cs)
   | isOctDigit c =
       let (octs,rest) = span isOctDigit cs
           (digits, octs') = splitAt 2 octs
           octVal = digitsToNumber 8 (c:digits)
-      in joinString (chr octVal : octs') (unescapeCString rest)
+      in ((chr octVal : octs') ++) <$> (unescapeCString rest)
   | c == 'x' =
       let (hexes,rest) = span isHexDigit cs
           hexVal = digitsToNumber 16 hexes
-      in joinChar (chr hexVal) (unescapeCString rest)
+      in (:) <$> (safeChr hexVal) <*> (unescapeCString rest)
   | toUpper c == 'U' =
       let digitCount = if c == 'u' then 4 else 8
           (unis, rest) = splitAt digitCount cs
           hexVal = digitsToNumber 16 unis
       in if digitCount == length unis
-          then joinChar (chr hexVal) (unescapeCString rest)
-          else Left "Invalid unicde sequence length."
+          then (:) <$> (safeChr hexVal) <*> (unescapeCString rest)
+          else Left "Invalid unicode sequence length."
 unescapePrefixAndContinue cs =
   Left ("unescapeCString : Unknown escape sequence '\\" ++ cs ++ "'.")
 
-unescapeOne :: Char -> Char
-unescapeOne '\'' = '\''
-unescapeOne '"' = '"'
-unescapeOne '\\' = '\\'
-unescapeOne '?' = '?'
-unescapeOne 'a' = '\a'
-unescapeOne 'b' = '\b'
-unescapeOne 'f' = '\f'
-unescapeOne 'n' = '\n'
-unescapeOne 'r' = '\r'
-unescapeOne 't' = '\t'
-unescapeOne 'v' = '\v'
-unescapeOne c = error ("Unexpected escape sequence '``" ++ "c'.")
+unescapeOne :: Char -> Either String Char
+unescapeOne '\'' = return '\''
+unescapeOne '"'  = return '"'
+unescapeOne '\\' = return '\\'
+unescapeOne '?'  = return '?'
+unescapeOne 'a'  = return '\a'
+unescapeOne 'b'  = return '\b'
+unescapeOne 'f'  = return '\f'
+unescapeOne 'n'  = return '\n'
+unescapeOne 'r'  = return '\r'
+unescapeOne 't'  = return '\t'
+unescapeOne 'v'  = return '\v'
+unescapeOne c    = Left ("Unexpected escape sequence '``" ++ show c ++ "'.")
 
 digitsToNumber :: Int -> String -> Int
 digitsToNumber base = foldl (\r ch -> base * r + digitToInt ch) 0
