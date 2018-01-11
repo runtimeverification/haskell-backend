@@ -42,7 +42,7 @@ executables:
 
 tests:
   parser-test:
-    main:                KoreParserTest.hs
+    main:                AllParserTests.hs
     source-dirs:         test
     ghc-options:
     - -threaded

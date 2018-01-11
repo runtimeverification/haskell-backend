@@ -1,14 +1,15 @@
+module KoreParserTest (koreParserTests) where
+
 import           Test.Tasty
-import           Test.Tasty.HUnit
 
 import           KoreAST
 import           KoreParserImpl
 import           ParserTestUtils
 
-main :: IO ()
-main = defaultMain
-    (testGroup
-        " Parser Tests"
+koreParserTests :: TestTree
+koreParserTests =
+    testGroup
+        "Parser Tests"
         [ testGroup "sortParser" sortParserTests
         , testGroup "sortListParser" sortListParserTests
         , testGroup "sortVariableParser" sortVariableParserTests
@@ -45,7 +46,6 @@ main = defaultMain
         , testGroup "moduleParser" moduleParserTests
         , testGroup "definitionParser" definitionParserTests
         ]
-    )
 
 sortParserTests :: [TestTree]
 sortParserTests =

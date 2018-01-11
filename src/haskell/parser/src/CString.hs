@@ -28,7 +28,7 @@ unescapePrefixAndContinue (c:cs)
       in (chr octVal : octs') ++ unescapeCString rest
   | c == 'x' =
       let (hexes,rest) = span isHexDigit cs
-          hexVal = digitsToNumber 16 (c:hexes)
+          hexVal = digitsToNumber 16 hexes
       in chr hexVal : unescapeCString rest
   | toUpper c == 'U' =
       let digitCount = if c == 'u' then 4 else 8

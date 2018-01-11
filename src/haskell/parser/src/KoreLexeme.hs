@@ -40,7 +40,12 @@ data CommentScannerState = COMMENT | STAR | END
 multiLineCommentToken :: Parser ()
 multiLineCommentToken = do
     void (Parser.string (Char8.pack "/*"))
-    void (Parser.scan COMMENT delta)
+    comment <- Parser.scan COMMENT delta
+    if Char8.length comment < 2 then fail "Unfinished comment (short)."
+    else if Char8.last comment /= '/' then fail "Unfinished comment (/)."
+    else if Char8.last (Char8.init comment) /= '*'
+        then fail "Unfinished comment (*)."
+        else return ()
   where
     delta END _    = Nothing
     delta _ '*'    = Just STAR
