@@ -695,8 +695,7 @@ axiomSentenceParserTests =
                     Attributes [StringLiteralPattern (StringLiteral "b")]
                 }
         {- TODO(virgil): The Scala parser allows empty sort variable lists
-           while the semantics-of-k document does not. Find out if this test
-           is needed.
+           while the semantics-of-k document does not. -}
         , Success "axiom{}\"a\"[\"b\"]"
             AxiomSentence
                 { axiomSentenceParameters = []
@@ -705,7 +704,6 @@ axiomSentenceParserTests =
                 , axiomSentenceAtrributes =
                     Attributes [StringLiteralPattern (StringLiteral "b")]
                 }
-        -}
         , Success "axiom { sv1 , sv2 } \"a\" [ \"b\" ] "
             AxiomSentence
                 { axiomSentenceParameters =
@@ -752,7 +750,15 @@ sortSentenceParserTests =
                 , sortSentenceSort = SortVariableSort (SortVariable (Id "s1"))
                 , sortSentenceAttributes = Attributes [StringLiteralPattern (StringLiteral "a")]
                 }
-        ]
+        {- TODO(virgil): The Scala parser allows empty sort variable lists
+           while the semantics-of-k document does not. -}
+        , Success "sort {} s1 [ \"a\" ]"
+            SortSentence
+                { sortSentenceParameters = []
+                , sortSentenceSort = SortVariableSort (SortVariable (Id "s1"))
+                , sortSentenceAttributes = Attributes [StringLiteralPattern (StringLiteral "a")]
+                }
+         ]
     (Failure [""])
 
 symbolSentenceParserTests :: [TestTree]

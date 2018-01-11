@@ -3,8 +3,8 @@ module KoreParserImpl where
 import           KoreAST
 import           KoreLexeme
 
-import           Control.Applicative ((<|>))
-import           Control.Monad (void)
+import           Control.Applicative              ((<|>))
+import           Control.Monad                    (void)
 
 import           Data.Attoparsec.ByteString.Char8 (Parser)
 import qualified Data.Attoparsec.ByteString.Char8 as Parser
@@ -14,6 +14,9 @@ sortVariableParser = SortVariable <$> idParser
 
 sortVariableList1Parser :: Parser [SortVariable]
 sortVariableList1Parser = Parser.sepBy1 sortVariableParser commaParser
+
+sortVariableListParser :: Parser [SortVariable]
+sortVariableListParser = Parser.sepBy sortVariableParser commaParser
 
 sortParser :: Parser Sort
 sortParser = do
@@ -169,8 +172,8 @@ patternParser = do
     c <- Parser.peekChar'
     case c of
         '\\' -> mlConstructorParser
-        '"' -> StringLiteralPattern <$> stringLiteralParser
-        _ -> variableOrTermPatternParser
+        '"'  -> StringLiteralPattern <$> stringLiteralParser
+        _    -> variableOrTermPatternParser
 
 patternListParser :: Parser [Pattern]
 patternListParser = Parser.sepBy patternParser commaParser
@@ -222,7 +225,7 @@ aliasSymbolSentenceRemainderParser aliasSymbolParser constructor = do
 axiomSentenceRemainderParser :: Parser Sentence
 axiomSentenceRemainderParser =
     pure AxiomSentence
-        <*> inCurlyBracesParser sortVariableList1Parser
+        <*> inCurlyBracesParser sortVariableListParser
         <*> patternParser
         <*> attributesParser
 
@@ -235,6 +238,6 @@ importSentenceRemainderParser =
 sortSentenceRemainderParser :: Parser Sentence
 sortSentenceRemainderParser =
     pure SortSentence
-        <*> inCurlyBracesParser sortVariableList1Parser
+        <*> inCurlyBracesParser sortVariableListParser
         <*> sortParser
         <*> attributesParser
