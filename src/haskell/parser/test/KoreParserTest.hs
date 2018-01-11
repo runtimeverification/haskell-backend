@@ -44,6 +44,9 @@ main = defaultMain
         , testGroup "importSentenceParser" importSentenceParserTests
         , testGroup "sortSentenceParser" sortSentenceParserTests
         , testGroup "symbolSentenceParser" symbolSentenceParserTests
+        , testGroup "attributesParser" attributesParserTests
+        , testGroup "moduleParser" moduleParserTests
+        , testGroup "definitionParser" definitionParserTests
         ]
     )
 
@@ -732,13 +735,19 @@ importSentenceParserTests =
                 , importAttributes =
                     Attributes [StringLiteralPattern (StringLiteral "b")]
                 }
+        , Success "import MN []"
+            ImportSentence
+                { importModuleName = ModuleName "MN"
+                , importAttributes = Attributes []
+                }
         ]
     (Failure
         [ ""
         , "import mn [\"b\"]"
-        , "Mn [\"b\"]"
+        , "import Mn [\"b\"]"
+        , "MN [\"b\"]"
         , "import [\"b\"]"
-        , "import Mn"
+        , "import MN"
         ])
 
 sortSentenceParserTests :: [TestTree]
@@ -748,7 +757,8 @@ sortSentenceParserTests =
             SortSentence
                 { sortSentenceParameters = [SortVariable (Id "sv1")]
                 , sortSentenceSort = SortVariableSort (SortVariable (Id "s1"))
-                , sortSentenceAttributes = Attributes [StringLiteralPattern (StringLiteral "a")]
+                , sortSentenceAttributes =
+                    Attributes [StringLiteralPattern (StringLiteral "a")]
                 }
         {- TODO(virgil): The Scala parser allows empty sort variable lists
            while the semantics-of-k document does not. -}
@@ -756,10 +766,17 @@ sortSentenceParserTests =
             SortSentence
                 { sortSentenceParameters = []
                 , sortSentenceSort = SortVariableSort (SortVariable (Id "s1"))
-                , sortSentenceAttributes = Attributes [StringLiteralPattern (StringLiteral "a")]
+                , sortSentenceAttributes =
+                    Attributes [StringLiteralPattern (StringLiteral "a")]
                 }
          ]
-    (Failure [""])
+    (Failure
+        [ ""
+        , "{ sv1 } s1 [ \"a\" ]"
+        , "sort s1 [ \"a\" ]"
+        , "sort { sv1 } [ \"a\" ]"
+        , "sort { sv1 } s1 "
+        ])
 
 symbolSentenceParserTests :: [TestTree]
 symbolSentenceParserTests =
@@ -770,13 +787,155 @@ symbolSentenceParserTests =
                     { symbolConstructor = Id "sy1"
                     , symbolParams = [SortVariableSort (SortVariable (Id "s1"))]
                     }
-                , symbolSentenceSorts = [SortVariableSort (SortVariable (Id "s1"))]
-                , symbolSentenceReturnSort = SortVariableSort (SortVariable (Id "s1"))
-                , symbolSentenceAttributes = Attributes [StringLiteralPattern (StringLiteral "a")]
+                , symbolSentenceSorts =
+                    [SortVariableSort (SortVariable (Id "s1"))]
+                , symbolSentenceReturnSort =
+                    SortVariableSort (SortVariable (Id "s1"))
+                , symbolSentenceAttributes =
+                    Attributes [StringLiteralPattern (StringLiteral "a")]
+                }
+        , Success "symbol sy1 {} () : s1 [] "
+            SymbolSentence
+                { symbolSentenceSymbol = Symbol
+                    { symbolConstructor = Id "sy1"
+                    , symbolParams = []
+                    }
+                , symbolSentenceSorts = []
+                , symbolSentenceReturnSort =
+                    SortVariableSort (SortVariable (Id "s1"))
+                , symbolSentenceAttributes = Attributes []
                 }
         ]
-    (Failure [""])
+    (Failure
+        [ ""
+        , "sy1 { s1 } ( s1 ) : s1 [\"a\"] "
+        , "symbol { s1 } ( s1 ) : s1 [\"a\"] "
+        , "symbol sy1 ( s1 ) : s1 [\"a\"] "
+        , "symbol sy1 { s1 } : s1 [\"a\"] "
+        , "symbol sy1 { s1 } ( s1 ) s1 [\"a\"] "
+        , "symbol sy1 { s1 } ( s1 ) : [\"a\"] "
+        , "symbol sy1 { s1 } ( s1 ) : s1 "
+        , "symbol sy1 { s1 } ( s1 ) [\"a\"] "
+        ])
 
+attributesParserTests :: [TestTree]
+attributesParserTests =
+    parseTree attributesParser
+        [ Success "[\"a\"]"
+            (Attributes [StringLiteralPattern (StringLiteral "a")])
+        , Success "[]"
+            (Attributes [])
+        , Success "[\"a\", \"b\"]"
+            (Attributes
+                [ StringLiteralPattern (StringLiteral "a")
+                , StringLiteralPattern (StringLiteral "b")
+                ])
+        ]
+    (Failure ["", "a", "\"a\"", "[\"a\" \"a\"]"])
+
+
+moduleParserTests :: [TestTree]
+moduleParserTests =
+    parseTree moduleParser
+        [ Success "module MN import M [] endmodule [\"a\"]"
+            Module
+                { moduleName = ModuleName "MN"
+                , moduleSentences =
+                    [ ImportSentence
+                        { importModuleName = ModuleName "M"
+                        , importAttributes = Attributes []
+                        }
+                    ]
+                , moduleAttributes =
+                    Attributes [StringLiteralPattern (StringLiteral "a")]
+                }
+        , Success "module MN import M [] import N [] endmodule [\"a\"]"
+            Module
+                { moduleName = ModuleName "MN"
+                , moduleSentences =
+                    [ ImportSentence
+                        { importModuleName = ModuleName "M"
+                        , importAttributes = Attributes []
+                        }
+                    , ImportSentence
+                        { importModuleName = ModuleName "N"
+                        , importAttributes = Attributes []
+                        }
+                    ]
+                , moduleAttributes =
+                    Attributes [StringLiteralPattern (StringLiteral "a")]
+                }
+        ]
+    (Failure
+        [ ""
+        , "module MN endmodule []"
+        , "MN import M [] endmodule [\"a\"]"
+        , "module import M [] endmodule [\"a\"]"
+        , "module MN import M [] [\"a\"]"
+        , "module MN import M [] endmodule"
+        ])
+
+definitionParserTests :: [TestTree]
+definitionParserTests =
+    parseTree definitionParser
+        [ Success "[\"a\"] module M import N [] endmodule [\"b\"]"
+            Definition
+                { definitionAttributes =
+                    Attributes [StringLiteralPattern (StringLiteral "a")]
+                , definitionModules =
+                    [ Module
+                        { moduleName = ModuleName "M"
+                        , moduleSentences =
+                            [ ImportSentence
+                                { importModuleName = ModuleName "N"
+                                , importAttributes = Attributes []
+                                }
+                            ]
+                        , moduleAttributes =
+                            Attributes
+                                [StringLiteralPattern (StringLiteral "b")]
+                        }
+                    ]
+                }
+        , Success
+            ("[\"a\"] module M import N [] endmodule [\"b\"] "
+                ++ "module O import P [] endmodule [\"c\"]")
+            Definition
+                { definitionAttributes =
+                    Attributes [StringLiteralPattern (StringLiteral "a")]
+                , definitionModules =
+                    [ Module
+                        { moduleName = ModuleName "M"
+                        , moduleSentences =
+                            [ ImportSentence
+                                { importModuleName = ModuleName "N"
+                                , importAttributes = Attributes []
+                                }
+                            ]
+                        , moduleAttributes =
+                            Attributes
+                                [StringLiteralPattern (StringLiteral "b")]
+                        }
+                    , Module
+                        { moduleName = ModuleName "O"
+                        , moduleSentences =
+                            [ ImportSentence
+                                { importModuleName = ModuleName "P"
+                                , importAttributes = Attributes []
+                                }
+                            ]
+                        , moduleAttributes =
+                            Attributes
+                                [StringLiteralPattern (StringLiteral "c")]
+                        }
+                    ]
+                }
+        ]
+    (Failure
+        [ ""
+        , "[]"
+        , "module M import N [] endmodule [\"b\"]"
+        ])
 
 ------------------------------------
 -- Generic test utilities
