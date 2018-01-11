@@ -293,8 +293,20 @@ module IMP
         kcell{}(P:Pgm{}),
         statecell{}(emp{Id{},Int{}}()))) []
 
+
+  symbol next{S}(S) : S []
+
+  alias rewrites{S}(S, S) : S []
+
+  axiom{S,RS}
+    \equals{S,RS}(
+      rewrites{S}(LEFT:S, RIGHT:S),
+      \implies{S}(
+        LEFT:S,
+        next{S}(RIGHT:S))) []
+
   axiom{S,R}
-    \rewrites{S,R}(
+    rewrites{S,R}(
       app{Map{Id{},Int{}},S}(
         app{AExp{}, Ctxt{Map{Id{},Int{}}, S}}(
           #C:#Pattern{},
