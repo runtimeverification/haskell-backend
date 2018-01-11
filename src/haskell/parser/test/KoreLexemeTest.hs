@@ -56,6 +56,7 @@ idParserTests =
         , Success "a'" (Id "a'")
         , Success "a'2" (Id "a'2")
         , Success "#a" (Id "#a")
+        , Success "#`a" (Id "#`a")
         , Success "#abc" (Id "#abc")
         , Success "#a'" (Id "#a'")
         , Success "#a'2" (Id "#a'2")
@@ -63,8 +64,9 @@ idParserTests =
         , Success "a/**/ " (Id "a")
         ]
         (Failure
-            [  "",  "'",  "'a",  "2",  "2a"
-            , "#", "#'", "#'a", "#2", "#2a"
+            [   "",   "'",   "'a",   "2",   "2a", "`", "`a"
+            ,  "#",  "#'",  "#'a",  "#2",  "#2a"
+            , "#`", "#`'", "#`'a", "#`2", "#`2a"
             , "a#"
             , ",", " a"])
 
@@ -155,7 +157,7 @@ skipWhtespaceTests =
             , "//hello\n", "//hello"
             , "\t//hello\n /* world\n //*/  //!\n"])
         (Failure
-            [ "a", "/*", "/**", "/*/", "/*//", "*/"
+            [ "a", "/*", "/**", "/***", "/*hello", "/*/", "/*//", "*/"
             , "/ /", "/**//", "//\na"])
 
 stringLiteralParserTests :: [TestTree]
@@ -189,6 +191,7 @@ stringLiteralParserTests =
         ]
         (Failure
             [ "", "\"\\z\"", "\"\\xzf\"", "\"\\u123\"", "\"\\U1234567\""
+            , "\"\\UFFFFFFFF\""
             {-  TODO(virgil): It's not clear whether the strings below should
                 fail or not. A C hex sequence can be longer than 2 if it fits
                 into the char size being considered. Not sure if octals above

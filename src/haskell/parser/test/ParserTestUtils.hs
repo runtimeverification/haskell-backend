@@ -57,17 +57,17 @@ parseFailureTree parser (Failure tests) =
 
 parseSuccess :: (Show a, Eq a) => a -> Parser.Parser a -> String -> Assertion
 parseSuccess expected parser input =
-  assertEqual
-    "Expecting parse success!"
-    (Right expected)
-    (Parser.parseOnly (parser <* Parser.endOfInput) (Char8.pack input))
+    assertEqual
+        "Expecting parse success!"
+        (Right expected)
+        (Parser.parseOnly (parser <* Parser.endOfInput) (Char8.pack input))
 
 parseSkip :: Parser.Parser () -> String -> Assertion
 parseSkip parser input =
-  assertEqual
-    "Expecting skip success!"
-    (Right ())
-    (Parser.parseOnly (parser <* Parser.endOfInput) (Char8.pack input))
+    assertEqual
+        "Expecting skip success!"
+        (Right ())
+        (Parser.parseOnly (parser <* Parser.endOfInput) (Char8.pack input))
 
 parseFailure :: (Show a, Eq a) => Parser.Parser a -> String -> Assertion
 parseFailure parser input =
