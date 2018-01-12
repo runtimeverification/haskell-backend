@@ -411,12 +411,12 @@ iffPatternParserTests =
                 }
         ]
         (Failure
-            [ "",
-            "\\iff{s,s}(\"a\", \"b\")",
-            "\\iff{}(\"a\", \"b\")",
-            "\\iff{s}(\"a\")",
-            "\\iff{s}(\"a\", \"b\", \"c\")",
-            "\\iff{s}(\"a\" \"b\")"])
+            [ ""
+            , "\\iff{s,s}(\"a\", \"b\")"
+            , "\\iff{}(\"a\", \"b\")"
+            , "\\iff{s}(\"a\")"
+            , "\\iff{s}(\"a\", \"b\", \"c\")"
+            , "\\iff{s}(\"a\" \"b\")"])
 impliesPatternParserTests :: [TestTree]
 impliesPatternParserTests =
     parseTree patternParser
@@ -429,12 +429,12 @@ impliesPatternParserTests =
                 }
         ]
         (Failure
-            [ "",
-            "\\implies{s,s}(\"a\", \"b\")",
-            "\\implies{}(\"a\", \"b\")",
-            "\\implies{s}(\"a\")",
-            "\\implies{s}(\"a\", \"b\", \"c\")",
-            "\\implies{s}(\"a\" \"b\")"])
+            [ ""
+            , "\\implies{s,s}(\"a\", \"b\")"
+            , "\\implies{}(\"a\", \"b\")"
+            , "\\implies{s}(\"a\")"
+            , "\\implies{s}(\"a\", \"b\", \"c\")"
+            , "\\implies{s}(\"a\" \"b\")"])
 memPatternParserTests :: [TestTree]
 memPatternParserTests =
     parseTree patternParser
@@ -495,12 +495,12 @@ orPatternParserTests =
                 }
         ]
         (Failure
-            [ "",
-            "\\or{s,s}(\"a\", \"b\")",
-            "\\or{}(\"a\", \"b\")",
-            "\\or{s}(\"a\")",
-            "\\or{s}(\"a\", \"b\", \"c\")",
-            "\\or{s}(\"a\" \"b\")"])
+            [ ""
+            , "\\or{s,s}(\"a\", \"b\")"
+            , "\\or{}(\"a\", \"b\")"
+            , "\\or{s}(\"a\")"
+            , "\\or{s}(\"a\", \"b\", \"c\")"
+            , "\\or{s}(\"a\" \"b\")"])
 stringLiteralPatternParserTests :: [TestTree]
 stringLiteralPatternParserTests =
     parseTree patternParser
