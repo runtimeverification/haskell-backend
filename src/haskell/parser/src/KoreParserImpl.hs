@@ -134,14 +134,6 @@ variableOrTermPatternParser = do
         then VariablePattern <$> variableRemainderParser identifier
         else symbolOrAliasPatternRemainderParser identifier
 
-domainValueRemainderParser :: Parser Pattern
-domainValueRemainderParser = do
-    (string1, string2) <- parenPairParser stringLiteralParser stringLiteralParser
-    return DomainValuePattern
-        { domainValuePatternFirst = string1
-        , domainValuePatternSecond = string2
-        }
-
 mlConstructorParser :: Parser Pattern
 mlConstructorParser = do
     void (Parser.char '\\')
@@ -151,7 +143,6 @@ mlConstructorParser = do
         [ ("and", binaryOperatorRemainderParser AndPattern)
         , ("bottom", topBottomRemainderParser BottomPattern)
         , ("ceil", ceilFloorRemainderParser CeilPattern)
-        , ("domainvalue", domainValueRemainderParser)
         , ("equals", equalsLikeRemainderParser EqualsPattern)
         , ("exists", existsForallRemainderParser ExistsPattern)
         , ("floor", ceilFloorRemainderParser FloorPattern)
@@ -159,11 +150,8 @@ mlConstructorParser = do
         , ("iff", binaryOperatorRemainderParser IffPattern)
         , ("implies", binaryOperatorRemainderParser ImpliesPattern)
         , ("mem", memRemainderParser)
-        , ("next", unaryOperatorRemainderParser NextPattern)
         , ("not", unaryOperatorRemainderParser NotPattern)
         , ("or", binaryOperatorRemainderParser OrPattern)
-        , ("rewrites", equalsLikeRemainderParser RewritesPattern)
-        , ("subset", equalsLikeRemainderParser SubsetPattern)
         , ("top", topBottomRemainderParser TopPattern)
         ]
 

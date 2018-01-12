@@ -60,10 +60,6 @@ data Pattern
         , ceilPatternSecondSort :: !Sort
         , ceilPatternPattern    :: !Pattern
         }
-     | DomainValuePattern
-        { domainValuePatternFirst  :: !StringLiteral
-        , domainValuePatternSecond :: !StringLiteral
-        }
     | EqualsPattern
         { equalsPatternFirstSort  :: !Sort
         , equalsPatternSecondSort :: !Sort
@@ -101,10 +97,6 @@ data Pattern
         , memPatternVariable   :: !Variable
         , memPatternPattern    :: !Pattern
         }
-    | NextPattern
-        { nextPatternSort    :: !Sort
-        , nextPatternPattern :: !Pattern
-        }
     | NotPattern
         { notPatternSort    :: !Sort
         , notPatternPattern :: !Pattern
@@ -114,19 +106,7 @@ data Pattern
         , orPatternFirst  :: !Pattern
         , orPatternSecond :: !Pattern
         }
-    | RewritesPattern
-        { rewritesPatternFirstSort  :: !Sort
-        , rewritesPatternSecondSort :: !Sort
-        , rewritesPatternFirst      :: !Pattern
-        , rewritesPatternSecond     :: !Pattern
-        }
     | StringLiteralPattern !StringLiteral
-    | SubsetPattern
-        { subsetPatternFirstSort  :: !Sort
-        , subsetPatternSecondSort :: !Sort
-        , subsetPatternFirst      :: !Pattern
-        , subsetPatternSecond     :: !Pattern
-        }
     | TopPattern !Sort
     | VariablePattern !Variable
     deriving (Show, Eq)
