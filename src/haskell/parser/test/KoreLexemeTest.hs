@@ -44,7 +44,7 @@ curlyPairParserTests =
         , Success "{/**/a/**/,/**/B/**/}/**/" (Id "a", ModuleName "B")
         ]
         (Failure
-            [ "", " {a,B}", "{a}", "{B}", "{a,}", "{,B}", "{a,b}", "{a{},b}"
+            [ "", " {a,B}", "{a}", "{B}", "{a,}", "{,B}", "{a{},b}"
             , "{a,B,c}", "(a,B)"])
 
 idParserTests :: [TestTree]
@@ -54,6 +54,7 @@ idParserTests =
         , Success "a" (Id "a")
         , Success "abc" (Id "abc")
         , Success "a'" (Id "a'")
+        , Success "a-" (Id "a-")
         , Success "a'2" (Id "a'2")
         , Success "#a" (Id "#a")
         , Success "#`a" (Id "#`a")
@@ -130,12 +131,13 @@ moduleNameParserTests =
         [ Success "A" (ModuleName "A")
         , Success "A-" (ModuleName "A-")
         , Success "A2" (ModuleName "A2")
+        , Success "a'-2" (ModuleName "a'-2")
         , Success "A " (ModuleName "A")
         , Success "A/**/ " (ModuleName "A")
         ]
         (Failure
             [  "",  "-",  "-A",  "2",  "2A"
-            , "#", "#A", "a", "Aa", " A", ","])
+            , "#", "#A", " A", ","])
 
 parenPairParserTests :: [TestTree]
 parenPairParserTests =
@@ -145,7 +147,7 @@ parenPairParserTests =
         , Success "(/**/a/**/,/**/B/**/)/**/" (Id "a", ModuleName "B")
         ]
         (Failure
-            [ "", " (a,B)", "(a)", "(B)", "(a,)", "(,B)", "(a,b)", "(a(),b)"
+            [ "", " (a,B)", "(a)", "(B)", "(a,)", "(,B)", "(a(),b)"
             , "(a,B,c)", "{a,B}"])
 
 skipWhtespaceTests :: [TestTree]

@@ -83,11 +83,10 @@ genericIdParser firstCharSet charSet constructor = do
     return (constructor (Char8.unpack id))
 
 moduleNameFirstCharSet :: CharSet
-moduleNameFirstCharSet = CharSet.make ['A'..'Z']
+moduleNameFirstCharSet = idFirstCharSet
 
 moduleNameCharSet :: CharSet
-moduleNameCharSet =
-  CharSet.join moduleNameFirstCharSet (CharSet.make (['0'..'9'] ++ "-"))
+moduleNameCharSet = idCharSet
 
 moduleNameRawParser :: Parser ModuleName
 moduleNameRawParser =
@@ -97,7 +96,7 @@ idFirstCharSet :: CharSet
 idFirstCharSet = CharSet.make (['A'..'Z'] ++ ['a'..'z'])
 
 idCharSet :: CharSet
-idCharSet = CharSet.join idFirstCharSet (CharSet.make (['0'..'9'] ++ "'"))
+idCharSet = CharSet.join idFirstCharSet (CharSet.make (['0'..'9'] ++ "'-"))
 
 objectIdParser :: Parser Id
 objectIdParser = genericIdParser idFirstCharSet idCharSet Id
