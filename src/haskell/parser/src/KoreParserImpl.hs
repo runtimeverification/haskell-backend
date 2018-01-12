@@ -174,7 +174,7 @@ definitionParser :: Parser Definition
 definitionParser =
     pure Definition
         <*> attributesParser
-        <*> Parser.many1 moduleParser
+        <*> moduleParser
 
 moduleParser :: Parser Module
 moduleParser = do
@@ -193,7 +193,6 @@ sentenceParser :: Parser Sentence
 sentenceParser = keywordBasedParsers
     [ ("alias", aliasSymbolSentenceRemainderParser aliasParser AliasSentence)
     , ("axiom", axiomSentenceRemainderParser)
-    , ("import", importSentenceRemainderParser)
     , ("sort", sortSentenceRemainderParser)
     , ("symbol", aliasSymbolSentenceRemainderParser symbolParser SymbolSentence)
     ]
@@ -215,12 +214,6 @@ axiomSentenceRemainderParser =
     pure AxiomSentence
         <*> inCurlyBracesParser sortVariableListParser
         <*> patternParser
-        <*> attributesParser
-
-importSentenceRemainderParser :: Parser Sentence
-importSentenceRemainderParser =
-    pure ImportSentence
-        <*> moduleNameParser
         <*> attributesParser
 
 sortSentenceRemainderParser :: Parser Sentence

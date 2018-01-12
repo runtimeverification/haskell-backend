@@ -35,7 +35,6 @@ koreParserTests =
         , testGroup "variablePatternParser" variablePatternParserTests
         , testGroup "aliasSentenceParser" aliasSentenceParserTests
         , testGroup "axiomSentenceParser" axiomSentenceParserTests
-        , testGroup "importSentenceParser" importSentenceParserTests
         , testGroup "sortSentenceParser" sortSentenceParserTests
         , testGroup "symbolSentenceParser" symbolSentenceParserTests
         , testGroup "attributesParser" attributesParserTests
@@ -640,30 +639,6 @@ axiomSentenceParserTests =
         , "axiom{sv1}\"a\""
         ])
 
-importSentenceParserTests :: [TestTree]
-importSentenceParserTests =
-    parseTree sentenceParser
-        [ Success "import MN [\"b\"]"
-            ImportSentence
-                { importModuleName = ModuleName "MN"
-                , importAttributes =
-                    Attributes [StringLiteralPattern (StringLiteral "b")]
-                }
-        , Success "import MN []"
-            ImportSentence
-                { importModuleName = ModuleName "MN"
-                , importAttributes = Attributes []
-                }
-        ]
-    (Failure
-        [ ""
-        , "import mn [\"b\"]"
-        , "import Mn [\"b\"]"
-        , "MN [\"b\"]"
-        , "import [\"b\"]"
-        , "import MN"
-        ])
-
 sortSentenceParserTests :: [TestTree]
 sortSentenceParserTests =
     parseTree sentenceParser
@@ -751,29 +726,35 @@ attributesParserTests =
 moduleParserTests :: [TestTree]
 moduleParserTests =
     parseTree moduleParser
-        [ Success "module MN import M [] endmodule [\"a\"]"
+        [ Success "module MN sort{}c[] endmodule [\"a\"]"
             Module
                 { moduleName = ModuleName "MN"
                 , moduleSentences =
-                    [ ImportSentence
-                        { importModuleName = ModuleName "M"
-                        , importAttributes = Attributes []
+                    [ SortSentence
+                        { sortSentenceParameters = []
+                        , sortSentenceSort =
+                            SortVariableSort (SortVariable (Id "c"))
+                        , sortSentenceAttributes = Attributes []
                         }
                     ]
                 , moduleAttributes =
                     Attributes [StringLiteralPattern (StringLiteral "a")]
                 }
-        , Success "module MN import M [] import N [] endmodule [\"a\"]"
+        , Success "module MN sort{}c[] sort{}c[] endmodule [\"a\"]"
             Module
                 { moduleName = ModuleName "MN"
                 , moduleSentences =
-                    [ ImportSentence
-                        { importModuleName = ModuleName "M"
-                        , importAttributes = Attributes []
+                    [ SortSentence
+                        { sortSentenceParameters = []
+                        , sortSentenceSort =
+                            SortVariableSort (SortVariable (Id "c"))
+                        , sortSentenceAttributes = Attributes []
                         }
-                    , ImportSentence
-                        { importModuleName = ModuleName "N"
-                        , importAttributes = Attributes []
+                    , SortSentence
+                        { sortSentenceParameters = []
+                        , sortSentenceSort =
+                            SortVariableSort (SortVariable (Id "c"))
+                        , sortSentenceAttributes = Attributes []
                         }
                     ]
                 , moduleAttributes =
@@ -783,72 +764,42 @@ moduleParserTests =
     (Failure
         [ ""
         , "module MN endmodule []"
-        , "MN import M [] endmodule [\"a\"]"
-        , "module import M [] endmodule [\"a\"]"
-        , "module MN import M [] [\"a\"]"
-        , "module MN import M [] endmodule"
+        , "MN sort{}c[] endmodule [\"a\"]"
+        , "module sort{}c[] endmodule [\"a\"]"
+        , "module MN sort{}c[] [\"a\"]"
+        , "module MN sort{}c[] endmodule"
         ])
 
 definitionParserTests :: [TestTree]
 definitionParserTests =
     parseTree definitionParser
-        [ Success "[\"a\"] module M import N [] endmodule [\"b\"]"
+        [ Success "[\"a\"] module M sort{}c[] endmodule [\"b\"]"
             Definition
                 { definitionAttributes =
                     Attributes [StringLiteralPattern (StringLiteral "a")]
                 , definitionModules =
-                    [ Module
+                    Module
                         { moduleName = ModuleName "M"
                         , moduleSentences =
-                            [ ImportSentence
-                                { importModuleName = ModuleName "N"
-                                , importAttributes = Attributes []
+                            [ SortSentence
+                                { sortSentenceParameters = []
+                                , sortSentenceSort =
+                                    SortVariableSort (SortVariable (Id "c"))
+                                , sortSentenceAttributes = Attributes []
                                 }
                             ]
                         , moduleAttributes =
                             Attributes
                                 [StringLiteralPattern (StringLiteral "b")]
                         }
-                    ]
-                }
-        , Success
-            ("[\"a\"] module M import N [] endmodule [\"b\"] "
-                ++ "module O import P [] endmodule [\"c\"]")
-            Definition
-                { definitionAttributes =
-                    Attributes [StringLiteralPattern (StringLiteral "a")]
-                , definitionModules =
-                    [ Module
-                        { moduleName = ModuleName "M"
-                        , moduleSentences =
-                            [ ImportSentence
-                                { importModuleName = ModuleName "N"
-                                , importAttributes = Attributes []
-                                }
-                            ]
-                        , moduleAttributes =
-                            Attributes
-                                [StringLiteralPattern (StringLiteral "b")]
-                        }
-                    , Module
-                        { moduleName = ModuleName "O"
-                        , moduleSentences =
-                            [ ImportSentence
-                                { importModuleName = ModuleName "P"
-                                , importAttributes = Attributes []
-                                }
-                            ]
-                        , moduleAttributes =
-                            Attributes
-                                [StringLiteralPattern (StringLiteral "c")]
-                        }
-                    ]
                 }
         ]
     (Failure
         [ ""
         , "[]"
-        , "module M import N [] endmodule [\"b\"]"
+        , "module M sort{}c[] endmodule [\"b\"]"
+        , "[\"a\"] module M sort{}c[] endmodule [\"b\"] "
+            ++ "module O sort{}c[] endmodule [\"c\"]"
         ])
 
 ------------------------------------

@@ -123,10 +123,6 @@ data Sentence
         , axiomSentencePattern    :: !Pattern
         , axiomSentenceAtrributes :: !Attributes
         }
-    | ImportSentence
-        { importModuleName :: !ModuleName
-        , importAttributes :: !Attributes
-        }
     | SortSentence
         { sortSentenceParameters :: ![SortVariable]
         , sortSentenceSort       :: !Sort
@@ -152,6 +148,6 @@ data Module = Module
 
 data Definition = Definition
     { definitionAttributes :: !Attributes
-    , definitionModules    :: ![Module]
+    , definitionModules    :: !Module
     }
     deriving (Show, Eq)
