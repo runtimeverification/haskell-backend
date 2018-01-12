@@ -1,6 +1,7 @@
 import           Test.Tasty
 
 import           CharDictTest
+import           CharSetTest
 import           CStringTest
 import           KoreParserTest
 import           KoreLexemeTest
@@ -12,4 +13,9 @@ allParserTests :: TestTree
 allParserTests =
     testGroup
         " All Parser Tests"
-        [koreParserTests, koreLexemeTests, cStringTests, charDictTests]
+        [ koreParserTests
+        , koreLexemeTests
+        , cStringTests
+        , charDictTests
+        , charSetTests
+        ]
