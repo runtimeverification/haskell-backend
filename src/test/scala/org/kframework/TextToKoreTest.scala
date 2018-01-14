@@ -127,6 +127,13 @@ class TextToKoreTest {
     parseFromFile("test-attribute-2.kore")
   }
 
+  /**
+    * Tests for comments.
+    */
+  @Test def test_comment_1(): Unit = {
+    parseFromFile("test-comment-1.kore")
+  }
+
 
   /**
     * Comprehensive tests for parsing complete and meaningful modules.
@@ -185,14 +192,8 @@ class TextToKoreTest {
   case class FileFOS(x: java.io.File) extends FileOrSource
   case class SourceFOS(x: io.Source) extends FileOrSource
 
-  /** Tests if parse is correct.
-    *
-    * Check:
-    *   t == u(p(t))
-    * otherwise,
-    *   t == u(p(t)) modulo whitespaces
-    *     and
-    *   p(t) == p(u(p(t)))
+  /** Tests if parse is correct,
+    * by checking if p(t) == p(u(p(t)))
     *
     * where:
     *   e in MiniKore
@@ -212,12 +213,12 @@ class TextToKoreTest {
     val text = KoreToText(minikore)
     // val outputfile = new java.io.File("/tmp/x")
     // FileUtils.writeStringToFile(outputfile, text)
-    if (expected == text) () // t == u(p(t))
-    else if (trim(expected) == trim(text)) () // t == u(p(t)) modulo leading/trailing whitespaces
-    else {
-      assertEquals(expected.replaceAll("\\s+", ""), text.replaceAll("\\s+", "")) //   t  ==   u(p(t))  modulo whitespaces
-      assertEquals(minikore, new TextToKore(builder).parse(io.Source.fromString(text))) // p(t) == p(u(p(t)))
-    }
+    // if (expected == text) () // t == u(p(t))
+    // else if (trim(expected) == trim(text)) () // t == u(p(t)) modulo leading/trailing whitespaces
+    // else {
+      // assertEquals(expected.replaceAll("\\s+", ""), text.replaceAll("\\s+", "")) //   t  ==   u(p(t))  modulo whitespaces
+    assertEquals(minikore, new TextToKore(builder).parse(io.Source.fromString(text))) // p(t) == p(u(p(t)))
+    // }
   }
 
 //  @Test def errorTest(): Unit = {
