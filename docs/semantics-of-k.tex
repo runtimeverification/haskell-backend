@@ -4910,6 +4910,8 @@ Table~\ref{tab:lexicon-tokens}) and the elements of the syntactic categories
 		\\
 		\texttt{( )} & Parenthesis % & Kore Expressions
 		\\
+		\texttt{[ ]} & Braces
+		\\
 		\texttt{,} & Comma % & Kore Expression
 	\end{tabular}
 	\caption{Lexicon Tokens in Kore}
@@ -5379,7 +5381,7 @@ parametric modules, and module imports.
 
 \begin{grammar}\small
 <definition> ::= <attribute> `module' <module-name> <declaration>$^+$ 
-`endmodule'
+`endmodule' <attribute>
 
 <declaration> ::= \quad
 \alt <sort-declaration>
