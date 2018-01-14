@@ -133,7 +133,18 @@ class TextToKoreTest {
   @Test def test_comment_1(): Unit = {
     parseFromFile("test-comment-1.kore")
   }
-
+  @Test def test_comment_2(): Unit = {
+    parseFromFile("test-comment-2.kore")
+  }
+  @Test def test_comment_3(): Unit = {
+    parseFromFile("test-comment-3.kore")
+  }
+  @Test def test_comment_4(): Unit = {
+    parseFromFile("test-comment-4.kore")
+  }
+  @Test def test_comment_5(): Unit = {
+    parseFromFile("test-comment-5.kore")
+  }
 
   /**
     * Comprehensive tests for parsing complete and meaningful modules.
