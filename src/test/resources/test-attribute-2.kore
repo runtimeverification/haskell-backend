@@ -1,0 +1,9 @@
+[]
+
+module TEST-ATTRIBUTE-2
+
+  sort{} Nat{} [#hook{}("Nat")]
+
+  symbol plus{}(Nat{},Nat{}) : Nat{} [#hook{}("plus"), #assoc{}(), #comm{}()]
+
+endmodule []

@@ -1,7 +1,9 @@
 *.cache
 *.class
 *.iml
-target/*
+*.ipr
+*.iws
+target
 .idea
 docs/*.aux
 docs/*.bbl
@@ -9,3 +11,7 @@ docs/*.blg
 docs/*.log
 docs/*.out
 docs/*.synctex.gz
+!docs/hash-symbol.pdf
+.*.swp
+.*.swo
+tags

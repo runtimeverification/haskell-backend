@@ -9,499 +9,146 @@ import org.kframework.kore.parser.{KoreToText, ParseError, TextToKore}
 
 class TextToKoreTest {
 
-  @Test def parseTest1(): Unit = {
-    parseFromFile("imp-lesson-4.kore")
+  /**
+    * Tests for parsing sorts.
+    */
+  @Test def test_sort_1(): Unit = {
+    parseFromFile("test-sort-1.kore")
+  }
+  @Test def test_sort_2(): Unit = {
+    parseFromFile("test-sort-2.kore")
+  }
+  @Test def test_sort_3(): Unit = {
+    parseFromFile("test-sort-3.kore")
+  }
+  @Test def test_sort_4(): Unit = {
+    parseFromFile("test-sort-4.kore")
   }
 
-  @Test def parseTest2(): Unit = {
-    parseFromFile("kool-typed-dynamic.kore")
+  /**
+    * Tests for parsing symbols.
+    */
+  @Test def test_symbol_1(): Unit = {
+    parseFromFile("test-symbol-1.kore")
+  }
+  @Test def test_symbol_2(): Unit = {
+    parseFromFile("test-symbol-2.kore")
+  }
+  @Test def test_symbol_3(): Unit = {
+    parseFromFile("test-symbol-3.kore")
+  }
+  @Test def test_symbol_4(): Unit = {
+    parseFromFile("test-symbol-4.kore")
+  }
+  @Test def test_symbol_5(): Unit = {
+    parseFromFile("test-symbol-5.kore")
+  }
+  @Test def test_symbol_6(): Unit = {
+    parseFromFile("test-symbol-6.kore")
+  }
+  @Test def test_symbol_7(): Unit = {
+    parseFromFile("test-symbol-7.kore")
+  }
+  @Test def test_symbol_8(): Unit = {
+    parseFromFile("test-symbol-8.kore")
   }
 
-  @Test def parseTest3(): Unit = {
+  /**
+    * Tests for parsing aliases.
+    */
+  @Test def test_alias_1(): Unit = {
+    parseFromFile("test-alias-1.kore")
+  }
+  @Test def test_alias_2(): Unit = {
+    parseFromFile("test-alias-2.kore")
+  }
+  @Test def test_alias_3(): Unit = {
+    parseFromFile("test-alias-3.kore")
+  }
+  @Test def test_alias_4(): Unit = {
+    parseFromFile("test-alias-4.kore")
+  }
+  @Test def test_alias_5(): Unit = {
+    parseFromFile("test-alias-5.kore")
+  }
+  @Test def test_alias_6(): Unit = {
+    parseFromFile("test-alias-6.kore")
+  }
+  @Test def test_alias_7(): Unit = {
+    parseFromFile("test-alias-7.kore")
+  }
+  @Test def test_alias_8(): Unit = {
+    parseFromFile("test-alias-8.kore")
+  }
+
+  /**
+    * Tests for parsing patterns.
+    */
+  @Test def test_pattern_1(): Unit = {
+    parseFromFile("test-pattern-1.kore")
+  }
+  @Test def test_pattern_2(): Unit = {
+    parseFromFile("test-pattern-2.kore")
+  }
+  @Test def test_pattern_3(): Unit = {
+    parseFromFile("test-pattern-3.kore")
+  }
+  @Test def test_pattern_4(): Unit = {
+    parseFromFile("test-pattern-4.kore")
+  }
+  @Test def test_pattern_5(): Unit = {
+    parseFromFile("test-pattern-5.kore")
+  }
+  @Test def test_pattern_6(): Unit = {
+    parseFromFile("test-pattern-6.kore")
+  }
+  @Test def test_pattern_7(): Unit = {
+    parseFromFile("test-pattern-7.kore")
+  }
+  @Test def test_pattern_8(): Unit = {
+    parseFromFile("test-pattern-8.kore")
+  }
+  @Test def test_pattern_9(): Unit = {
+    parseFromFile("test-pattern-9.kore")
+  }
+  @Test def test_pattern_10(): Unit = {
+    parseFromFile("test-pattern-10.kore")
+  }
+  @Test def test_pattern_11(): Unit = {
+    parseFromFile("test-pattern-11.kore")
+  }
+  /**
+    * Tests for parsing attributes.
+    */
+  @Test def test_attribute_1(): Unit = {
+    parseFromFile("test-attribute-1.kore")
+  }
+  @Test def test_attribute_2(): Unit = {
+    parseFromFile("test-attribute-2.kore")
+  }
+
+
+  /**
+    * Comprehensive tests for parsing complete and meaningful modules.
+    */
+
+
+  @Test def bool(): Unit = {
+    parseFromFile("bool.kore")
+  }
+  @Test def nat(): Unit = {
+    parseFromFile("nat.kore")
+  }
+  @Test def list(): Unit = {
+    parseFromFile("list.kore")
+  }
+  @Test def lambda(): Unit = {
+    parseFromFile("lambda.kore")
+  }
+  @Test def imp(): Unit = {
     parseFromFile("imp.kore")
   }
 
-  @Test def parseFileTest4(): Unit = {
-    parseFromFile("p4.kore")
-  }
-
-  @Test def parseTest4(): Unit = {
-    val s =
-      strip("""
-        |[]
-        |module A
-        |  import B []
-        |  axiom \top ( ) [ ]
-        |  axiom \and  (  \top (   ) ,   \bottom (  )  )  [   ]
-        |  axiom \or  (  \top (   ) ,   \bottom (  )  )  [   ]
-        |  axiom \forall  ( X:K, \top() ) [ ]
-        |  axiom ` f o o `() []
-        |  axiom ` _,_( ) `() []
-        |endmodule []
-        |""")
-    parseFromString(s)
-  }
-
-  @Test def parseTest5(): Unit = {
-    val s =
-      strip("""
-        |[]
-        |""")
-    parseFromString(s)
-  }
-
-  @Test def parseTest6(): Unit = {
-    val s =
-      strip("""
-        |[]
-        |module A
-        |endmodule []
-        |""")
-    parseFromString(s)
-  }
-
-  @Test def parseTest7(): Unit = {
-    val s = "[] \t"
-    parseFromString(s)
-  }
-
-  @Test def parseTestFail1(): Unit = {
-    val s =
-      strip("""
-        |[]
-        |module A
-        |  impor t B []
-        |endmodule []
-        |""")
-    try {
-      parseFromString(s)
-      assert(false)
-    } catch {
-      case ParseError(msg) =>
-        assertEquals(
-          strip("""
-            |ERROR: Line 3: Column 8: Expected 't', but ' '
-            |  impor t B []
-            |       ^
-            |"""),
-          msg)
-    }
-  }
-
-  @Test def parseTestFail2(): Unit = {
-    val s =
-      strip("""
-        |[]
-        |module A
-        |  import B OOL []
-        |endmodule []
-        |""")
-    try {
-      parseFromString(s)
-      assert(false)
-    } catch {
-      case ParseError(msg) =>
-        assertEquals(
-          strip("""
-            |ERROR: Line 3: Column 12: Expected '[', but 'O'
-            |  import B OOL []
-            |           ^
-            |"""),
-          msg)
-    }
-  }
-
-  @Test def parseTestFail3(): Unit = {
-    val s =
-      strip("""
-        |[]
-        |module A
-        |  axiom fo o() []
-        |endmodule []
-        |""")
-    try {
-      parseFromString(s)
-      assert(false)
-    } catch {
-      case ParseError(msg) =>
-        assertEquals(
-          strip("""
-            |ERROR: Line 3: Column 12: Expected ':' or '(', but 'o'
-            |  axiom fo o() []
-            |           ^
-            |"""),
-          msg)
-    }
-  }
-
-  @Test def parseTestFail4(): Unit = {
-    val s =
-      strip("""
-        |[]
-        |module A
-        |  axiom ` ...\`... `() []
-        |endmodule []
-        |""")
-    try {
-      parseFromString(s)
-      assert(false)
-    } catch {
-      case ParseError(msg) =>
-        assertEquals(
-          strip("""
-            |ERROR: Line 3: Column 16: Expected ':' or '(', but '.'
-            |  axiom ` ...\`... `() []
-            |               ^
-            |"""),
-          msg)
-    }
-  }
-
-  @Test def parseTestFail5(): Unit = {
-    val s =
-      strip("""
-        |[]
-        |module A
-        |  axiom foo(X:K, Y:K, ) []
-        |endmodule []
-        |""")
-    try {
-      parseFromString(s)
-      assert(false)
-    } catch {
-      case ParseError(msg) =>
-        assertEquals(
-          strip("""
-            |ERROR: Line 3: Column 23: Expected <Symbol>, but ')'
-            |  axiom foo(X:K, Y:K, ) []
-            |                      ^
-            |"""),
-          msg)
-    }
-  }
-
-  @Test def parseTestFail6(): Unit = {
-    val s =
-      strip("""
-        |[]
-        |module A
-        |  axiom foo(, Y:K) []
-        |endmodule []
-        |""")
-    try {
-      parseFromString(s)
-      assert(false)
-    } catch {
-      case ParseError(msg) =>
-        assertEquals(
-          strip("""
-            |ERROR: Line 3: Column 13: Expected <Symbol>, but ','
-            |  axiom foo(, Y:K) []
-            |            ^
-            |"""),
-          msg)
-    }
-  }
-
-  @Test def parseTestFail7(): Unit = {
-    val s =
-      strip("""
-        |[]
-        |module A
-        |  axiom \my()
-        |endmodule []
-        |""")
-    try {
-      parseFromString(s)
-      assert(false)
-    } catch {
-      case ParseError(msg) =>
-        assertEquals(
-          strip("""
-            |ERROR: Line 3: Column 11: Expected \top, \bottom, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equals, but '\my'
-            |  axiom \my()
-            |          ^
-            |"""),
-          msg)
-    }
-  }
-
-  @Test def parseTestFail8(): Unit = {
-    val s =
-      strip("""
-        |[]
-        |module A
-        |  i mport B []
-        |endmodule []
-        |""")
-    try {
-      parseFromString(s)
-      assert(false)
-    } catch {
-      case ParseError(msg) =>
-        assertEquals(
-          strip("""
-            |ERROR: Line 3: Column 4: Expected 'm', but ' '
-            |  i mport B []
-            |   ^
-            |"""),
-          msg)
-    }
-  }
-
-  @Test def parseTestFail9(): Unit = {
-    val s =
-      strip("""
-        |[]
-        |module A
-        |  axiom \to p() []
-        |endmodule []
-        |""")
-    try {
-      parseFromString(s)
-      assert(false)
-    } catch {
-      case ParseError(msg) =>
-        assertEquals(
-          strip("""
-            |ERROR: Line 3: Column 12: Expected 'p', but ' '
-            |  axiom \to p() []
-            |           ^
-            |"""),
-          msg)
-    }
-  }
-
-  @Test def parseTestFail10(): Unit = {
-    val s =
-      strip("""
-        |[]
-        |module A
-        |  axiom \t op() []
-        |endmodule []
-        |""")
-    try {
-      parseFromString(s)
-      assert(false)
-    } catch {
-      case ParseError(msg) =>
-        assertEquals(
-          strip("""
-            |ERROR: Line 3: Column 11: Expected \top, \bottom, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equals, but '\t '
-            |  axiom \t op() []
-            |          ^
-            |"""),
-          msg)
-    }
-  }
-
-  @Test def parseTestFail11(): Unit = {
-    val s =
-      strip("""
-        |[]
-        |module A
-        |  axiom \t
-        |""")
-    try {
-      parseFromString(s)
-      assert(false)
-    } catch {
-      case ParseError(msg) =>
-        assertEquals(
-          strip("""
-            |ERROR: Line 3: Column 11: Expected \top, \bottom, \and, \or, \not, \implies, \exists, \forall, \next, \rewrite, or \equals, but '\t '
-            |  axiom \t
-            |          ^
-            |"""),
-          msg)
-    }
-  }
-
-  @Test def parseTestFail12(): Unit = {
-    val s =
-      strip("""
-        |[]
-        |module A
-        |  syntax X
-        |endmodule
-        |""")
-    try {
-      parseFromString(s)
-      assert(false)
-    } catch {
-      case ParseError(msg) =>
-        assertEquals(
-          strip("""
-            |ERROR: Line 4: Column 1: Expected '[' or ':', but 'e'
-            |endmodule
-            |^
-            |"""),
-          msg)
-    }
-  }
-
-  @Test def parseTestFail13(): Unit = {
-    val s =
-      strip("""
-        |[]
-        |module A
-        |  dummy
-        |endmodule
-        |""")
-    try {
-      parseFromString(s)
-      assert(false)
-    } catch {
-      case ParseError(msg) =>
-        assertEquals(
-          strip("""
-            |ERROR: Line 3: Column 3: Expected import, syntax, rule, axiom, or endmodule, but 'd'
-            |  dummy
-            |  ^
-            |"""),
-          msg)
-    }
-  }
-
-  @Test def parseTestFail14(): Unit = {
-    val s =
-      strip("""
-        |[]
-        |module _A
-        |endmodule
-        |""")
-    try {
-      parseFromString(s)
-      assert(false)
-    } catch {
-      case ParseError(msg) =>
-        assertEquals(
-          strip("""
-            |ERROR: Line 2: Column 8: Expected <ModuleName>, but '_'
-            |module _A
-            |       ^
-            |"""),
-          msg)
-    }
-  }
-
-  @Test def parseTestFail15(): Unit = {
-    val s =
-      strip("""
-        |[]
-        |module A
-        |  syntax X ::= x(Y Z) []
-        |endmodule
-        |""")
-    try {
-      parseFromString(s)
-      assert(false)
-    } catch {
-      case ParseError(msg) =>
-        assertEquals(
-          strip("""
-            |ERROR: Line 3: Column 20: Expected ')' or ',', but 'Z'
-            |  syntax X ::= x(Y Z) []
-            |                   ^
-            |"""),
-          msg)
-    }
-  }
-
-  @Test def parseTestFailWhiteSpacesPrefix(): Unit = {
-    val s =
-      """
-        |
-        |
-        |
-        |[]
-        |module A
-        |endmodule [}
-        |""".stripMargin
-    try {
-      parseFromString(s)
-      assert(false)
-    } catch {
-      case ParseError(msg) =>
-        assertEquals(
-          strip("""
-                  |ERROR: Line 7: Column 12: Expected <Symbol>, but '}'
-                  |endmodule [}
-                  |           ^
-                  |"""),
-          msg)
-    }
-  }
-// TODO: Improve error message above to say "Expected <Symbol> or ']' ..."
-
-  @Test def parseTestFailWhiteSpacesSuffix(): Unit = {
-    val s =
-      """
-        |[]
-        |module A
-        |endmodule [}
-        |
-        |
-        |
-        |""".stripMargin
-    try {
-      parseFromString(s)
-      assert(false)
-    } catch {
-      case ParseError(msg) =>
-        assertEquals(
-          strip("""
-                  |ERROR: Line 4: Column 12: Expected <Symbol>, but '}'
-                  |endmodule [}
-                  |           ^
-                  |"""),
-          msg)
-    }
-  }
-
-  @Test def parseTestFailUnfinishedModule(): Unit = {
-    val s =
-      """
-        |[]
-        |module A
-        |endmodule
-        |""".stripMargin
-    try {
-      parseFromString(s)
-      assert(false)
-    } catch {
-      case ParseError(msg) =>
-        assertEquals(
-          strip("""
-                  |ERROR: Unexpected end of file while parsing
-                  |"""),
-          msg)
-    }
-  }
-
-  @Test def parseTestFailJunkAfterModule(): Unit = {
-    val s =
-      """
-        |[]
-        |module A
-        |endmodule []
-        |  junk
-        |""".stripMargin
-    try {
-      parseFromString(s)
-      assert(false)
-    } catch {
-      case ParseError(msg) =>
-        assertEquals(
-          strip("""
-                  |ERROR: Line 5: Column 3: Expected 'm', but 'j'
-                  |  junk
-                  |  ^
-                  |"""),
-          msg)
-    }
-  }
-// TODO: Improve error message above to say "Expected 'm' or <EOF> ..."
 
   def strip(s: String): String = {
     trim(s.stripMargin)

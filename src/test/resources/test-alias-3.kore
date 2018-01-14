@@ -1,0 +1,9 @@
+[]
+
+module TEST-ALIAS-3
+
+  sort{} S{} []
+
+  alias f{}(S{},S{}) : S{} []
+
+endmodule []
