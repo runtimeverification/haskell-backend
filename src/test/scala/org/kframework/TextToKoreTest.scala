@@ -147,6 +147,35 @@ class TextToKoreTest {
   }
 
   /**
+    * Tests for strings.
+    */
+  @Test def test_string_1(): Unit = {
+    parseFromFile("test-string-1.kore")
+  }
+  @Test def test_string_2(): Unit = {
+    parseFromFile("test-string-2.kore")
+  }
+  @Test def test_string_3(): Unit = {
+    parseFromFile("test-string-3.kore")
+  }
+  @Test def test_string_4(): Unit = {
+    parseFromFile("test-string-4.kore")
+  }
+  @Test def test_string_5(): Unit = {
+    parseFromFile("test-string-5.kore")
+  }
+  @Test def test_string_6(): Unit = {
+    parseFromFile("test-string-6.kore")
+  }
+  @Test def test_string_7(): Unit = {
+    parseFromFile("test-string-7.kore")
+  }
+
+
+
+
+
+  /**
     * Comprehensive tests for parsing complete and meaningful modules.
     */
 
