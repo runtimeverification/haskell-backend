@@ -23,4 +23,13 @@ infinite, and it is tricky to specify infinite theories without
 a carefully designed formal specification language.
 And Kore is such a language.
 
+## Structure of this project
 
+The `/docs` directory contains a comprehensive document _Semantics of K_
+that describes the mathematical foundation of Kore, and a BNF grammar
+that defines the syntax of Kore language.
+
+The `/src` directory contains a parser for the Kore language implemented
+in scala.
+
+The `/src/test` directory contains a collection of Kore definition examples.
