@@ -268,26 +268,35 @@ class TextToKoreTest {
   @Test def test_exception_26(): Unit = {
     parseFromFileExpectParseException("test-exception-26.kore")
   }
+  @Test def test_exception_27(): Unit = {
+    parseFromFileExpectParseException("test-exception-27.kore")
+  }
 
+  /**
+    * Tests for scanner
+    */
+  @Test def test_scanner_1(): Unit = {
+    parseFromFile("test-scanner-1.kore")
+  }
 
   /**
     * Comprehensive tests for parsing complete and meaningful modules.
     */
 
 
-  @Test def bool(): Unit = {
+  @Test def test_bool(): Unit = {
     parseFromFile("bool.kore")
   }
-  @Test def nat(): Unit = {
+  @Test def test_nat(): Unit = {
     parseFromFile("nat.kore")
   }
-  @Test def list(): Unit = {
+  @Test def test_list(): Unit = {
     parseFromFile("list.kore")
   }
-  @Test def lambda(): Unit = {
+  @Test def test_lambda(): Unit = {
     parseFromFile("lambda.kore")
   }
-  @Test def imp(): Unit = {
+  @Test def test_imp(): Unit = {
     parseFromFile("imp.kore")
   }
 
