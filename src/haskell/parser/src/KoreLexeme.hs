@@ -3,11 +3,11 @@ module KoreLexeme
        , commaParser
        , curlyPairParser
        , idParser
+       , openCurlyBraceParser
        , inCurlyBracesParser
        , inParenthesesParser
        , inSquareBracketsParser
        , keywordBasedParsers
-       , metaIdParser
        , mlLexemeParser
        , moduleNameParser
        , parenPairParser

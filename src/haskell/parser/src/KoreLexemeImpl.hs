@@ -5,7 +5,6 @@ import           CharSet
 import           CString
 import           KoreAST
 
-import           Control.Applicative              ((<|>))
 import           Control.Monad                    (void)
 import           Data.Attoparsec.ByteString.Char8 (Parser)
 import qualified Data.Attoparsec.ByteString.Char8 as Parser
@@ -13,11 +12,8 @@ import qualified Data.Attoparsec.ByteString       as BParser (runScanner)
 import qualified Data.ByteString.Char8            as Char8
 import           Data.Char                        (isHexDigit, isOctDigit)
 
-idParser :: Parser Id
-idParser = lexeme idRawParser
-
-metaIdParser :: Parser MetaId
-metaIdParser = lexeme metaIdRawParser
+idParser :: IsMeta a => a -> Parser (Id a)
+idParser x = idConstructor x <$> lexeme (idRawParser x)
 
 stringLiteralParser :: Parser StringLiteral
 stringLiteralParser = lexeme stringLiteralRawParser
@@ -74,13 +70,13 @@ skipWhitespace = whitespaceChunk
 lexeme :: Parser a -> Parser a
 lexeme p = p <* skipWhitespace
 
-genericIdParser :: CharSet -> CharSet -> (String -> a) -> Parser a
-genericIdParser firstCharSet charSet constructor = do
+genericIdParser :: CharSet -> CharSet -> Parser String
+genericIdParser firstCharSet charSet = do
     c <- Parser.peekChar'
     idChar <- if not (c `CharSet.elem` firstCharSet)
         then fail ("genericidParser: Invalid first character '" ++ c : "'.")
         else Parser.takeWhile (`CharSet.elem` charSet)
-    return (constructor (Char8.unpack idChar))
+    return (Char8.unpack idChar)
 
 moduleNameFirstCharSet :: CharSet
 moduleNameFirstCharSet = idFirstCharSet
@@ -90,7 +86,7 @@ moduleNameCharSet = idCharSet
 
 moduleNameRawParser :: Parser ModuleName
 moduleNameRawParser =
-  genericIdParser moduleNameFirstCharSet moduleNameCharSet ModuleName
+  ModuleName <$> genericIdParser moduleNameFirstCharSet moduleNameCharSet
 
 idFirstCharSet :: CharSet
 idFirstCharSet = CharSet.make (['A'..'Z'] ++ ['a'..'z'])
@@ -98,21 +94,26 @@ idFirstCharSet = CharSet.make (['A'..'Z'] ++ ['a'..'z'])
 idCharSet :: CharSet
 idCharSet = CharSet.join idFirstCharSet (CharSet.make (['0'..'9'] ++ "'-"))
 
-idRawParser :: Parser Id
-idRawParser = genericIdParser idFirstCharSet idCharSet Id
+objectIdRawParser :: Parser String
+objectIdRawParser = genericIdParser idFirstCharSet idCharSet
 
-metaIdRawParser :: Parser MetaId
+metaIdRawParser :: Parser String
 metaIdRawParser = do
     c <- Parser.char '#'
     c' <- Parser.peekChar'
     if (c' == '`')
         then do
             void (Parser.char c')
-            Id idToken <- idRawParser
-            return (MetaId (c:c':idToken))
+            idToken <- objectIdRawParser
+            return (c:c':idToken)
         else do
-            Id idToken <- idRawParser
-            return (MetaId (c:idToken))
+            idToken <- objectIdRawParser
+            return (c:idToken)
+
+idRawParser :: (IsMeta a) => a -> Parser String
+idRawParser x = case metaType x of
+    ObjectType -> objectIdRawParser
+    MetaType -> metaIdRawParser
 
 data StringScannerState = STRING | ESCAPE | HEX StringScannerState
 

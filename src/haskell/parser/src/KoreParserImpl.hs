@@ -1,117 +1,96 @@
+{-# LANGUAGE ExistentialQuantification #-}
 module KoreParserImpl where
 
 import           KoreAST
 import           KoreLexeme
 
 import           Control.Applicative              ((<|>))
-import           Control.Monad                    (void)
+import           Control.Monad                    (void, when)
 
 import           Data.Attoparsec.ByteString.Char8 (Parser)
 import qualified Data.Attoparsec.ByteString.Char8 as Parser
 
-objectSortVariableParser :: Parser ObjectSortVariable
-objectSortVariableParser = ObjectSortVariable <$> idParser
+sortVariableParser :: IsMeta a => a -> Parser (SortVariable a)
+sortVariableParser x = SortVariable <$> idParser x
 
-metaSortVariableParser :: Parser MetaSortVariable
-metaSortVariableParser = MetaSortVariable <$> metaIdParser
-
-sortVariableParser :: Parser SortVariable
-sortVariableParser = do
+unifiedSortVariableParser :: Parser UnifiedSortVariable
+unifiedSortVariableParser = do
     c <- Parser.peekChar'
     if c == '#'
-        then MetaSortVariableSortVariable <$> metaSortVariableParser
-        else ObjectSortVariableSortVariable <$> objectSortVariableParser
+        then MetaSortVariable <$> sortVariableParser Meta
+        else ObjectSortVariable <$> sortVariableParser Object
 
-sortVariableListParser :: Parser [SortVariable]
-sortVariableListParser = Parser.sepBy sortVariableParser commaParser
+sortVariableListParser :: Parser [UnifiedSortVariable]
+sortVariableListParser = Parser.sepBy unifiedSortVariableParser commaParser
 
-objectSortParser :: Parser ObjectSort
-objectSortParser = do
-    identifier <- idParser
+sortParser :: IsMeta a => a -> Parser (Sort a)
+sortParser x = do
+    identifier <- idParser x
     actualSortParser identifier <|>
-        return (ObjectSortVariableSort $ ObjectSortVariable identifier)
+        return (SortVariableSort $ SortVariable identifier)
   where
     actualSortParser identifier = do
-        sorts <- inCurlyBracesParser objectSortListParser
+        sorts <- inCurlyBracesParser (sortListParser x)
+        when (metaType x == MetaType) (checkMetaSort identifier sorts)
         return ActualSort
             { actualSortName = identifier
             , actualSortSorts = sorts
             }
 
-metaSortParser :: Parser MetaSort
-metaSortParser = do
-    identifier <- metaIdParser
-    mc <- Parser.peekChar
-    case mc of
-        Just '{' ->
-            inCurlyBracesParser (return ()) *> concreteMetaSort identifier
-        _        ->
-            return (MetaSortVariableMetaSort $ MetaSortVariable $ identifier)
+checkMetaSort :: Id a -> [Sort a] -> Parser ()
+checkMetaSort identifier [] = checkMetaSort' (getId identifier)
   where
-    concreteMetaSort (MetaId metaId) = case metaId of
-        "#Char" -> return CharMetaSort
-        "#CharList" -> return CharListMetaSort
-        "#Pattern" -> return PatternMetaSort
-        "#PatternList" -> return PatternListMetaSort
-        "#ObjectSort" -> return SortMetaSort
-        "#SortList" -> return SortListMetaSort
-        "#String" -> return StringMetaSort
-        "#ObjectSymbol" -> return SymbolMetaSort
-        "#SymbolList" -> return SymbolListMetaSort
-        "#Variable" -> return VariableMetaSort
-        "#VariableList" -> return VariableListMetaSort
-        str -> fail ("metaSortParser: Invalid constructor: '" ++ str ++ "'.")
+    checkMetaSort' metaId =
+        if metaId `elem`  --TODO: optimize ?
+            [ "#Char"
+            , "#CharList"
+            , "#Pattern"
+            , "#PatternList"
+            , "#ObjectSort"
+            , "#SortList"
+            , "#String"
+            , "#ObjectSymbol"
+            , "#SymbolList"
+            , "#Variable"
+            , "#VariableList"
+            ]
+            then return ()
+            else fail ("metaSortParser: Invalid constructor: '" ++
+                metaId ++ "'.")
 
-objectSortListParser :: Parser [ObjectSort]
-objectSortListParser = Parser.sepBy objectSortParser commaParser
+sortListParser :: IsMeta a => a -> Parser [Sort a]
+sortListParser x = Parser.sepBy (sortParser x) commaParser
 
-metaSortListParser :: Parser [MetaSort]
-metaSortListParser = Parser.sepBy metaSortParser commaParser
+symbolOrAliasRemainderRawParser
+    :: IsMeta a => a -> ([Sort a] -> (m a)) -> Parser (m a)
+symbolOrAliasRemainderRawParser x constructor =
+    constructor <$> inCurlyBracesParser (sortListParser x)
 
-objectSymbolOrAliasRemainderRawParser :: ([ObjectSort] -> a) -> Parser a
-objectSymbolOrAliasRemainderRawParser constructor =
-    constructor <$> inCurlyBracesParser objectSortListParser
+symbolOrAliasRawParser
+    :: IsMeta a => a -> (Id a -> [Sort a] -> m a) -> Parser (m a)
+symbolOrAliasRawParser x constructor = do
+    headConstructor <- idParser x
+    symbolOrAliasRemainderRawParser x (constructor headConstructor)
 
-objectSymbolOrAliasRawParser :: (Id -> [ObjectSort] -> a) -> Parser a
-objectSymbolOrAliasRawParser constructor = do
-    headConstructor <- idParser
-    objectSymbolOrAliasRemainderRawParser (constructor headConstructor)
+aliasParser :: IsMeta a => a -> Parser (Alias a)
+aliasParser x = symbolOrAliasRawParser x Alias
 
-metaSymbolOrAliasRemainderRawParser :: ([MetaSort] -> a) -> Parser a
-metaSymbolOrAliasRemainderRawParser constructor =
-    constructor <$> inCurlyBracesParser metaSortListParser
+symbolParser :: IsMeta a => a -> Parser (Symbol a)
+symbolParser x = symbolOrAliasRawParser x Symbol
 
-metaSymbolOrAliasRawParser :: (MetaId -> [MetaSort] -> a) -> Parser a
-metaSymbolOrAliasRawParser constructor = do
-    headConstructor <- metaIdParser
-    metaSymbolOrAliasRemainderRawParser (constructor headConstructor)
+symbolOrAliasRemainderParser
+    :: IsMeta a => a -> Id a -> Parser (SymbolOrAlias a)
+symbolOrAliasRemainderParser x identifier =
+    symbolOrAliasRemainderRawParser x (SymbolOrAlias identifier)
 
-objectAliasParser :: Parser ObjectAlias
-objectAliasParser = objectSymbolOrAliasRawParser ObjectAlias
-
-objectSymbolParser :: Parser ObjectSymbol
-objectSymbolParser = objectSymbolOrAliasRawParser ObjectSymbol
-
-objectSymbolOrAliasRemainderParser :: Id -> Parser ObjectSymbolOrAlias
-objectSymbolOrAliasRemainderParser identifier =
-    objectSymbolOrAliasRemainderRawParser (ObjectSymbolOrAlias identifier)
-
-metaAliasParser :: Parser MetaAlias
-metaAliasParser = metaSymbolOrAliasRawParser MetaAlias
-
-metaSymbolParser :: Parser MetaSymbol
-metaSymbolParser = metaSymbolOrAliasRawParser MetaSymbol
-
-metaSymbolOrAliasRemainderParser :: MetaId -> Parser MetaSymbolOrAlias
-metaSymbolOrAliasRemainderParser identifier =
-    metaSymbolOrAliasRemainderRawParser (MetaSymbolOrAlias identifier)
-
-unaryOperatorRemainderParser :: (ObjectSort -> Pattern -> Pattern) ->  Parser Pattern
-unaryOperatorRemainderParser constructor =
+unaryOperatorRemainderParser
+    :: IsMeta a => a -> (Sort a -> Pattern -> Pattern) -> Parser Pattern
+unaryOperatorRemainderParser x constructor =
     pure constructor
-        <*> inCurlyBracesParser objectSortParser
+        <*> inCurlyBracesRemainderParser (sortParser x)
         <*> inParenthesesParser patternParser
 
+{-
 binaryOperatorRemainderParser
     :: (ObjectSort -> Pattern -> Pattern -> Pattern)
     -> Parser Pattern
@@ -186,6 +165,14 @@ variableOrTermPatternParser = do
     if c == ':'
         then VariablePattern <$> variableRemainderParser identifier
         else symbolOrAliasPatternRemainderParser identifier
+-}
+
+getMeta :: IsMeta a => (a -> Parser Pattern) -> Parser Pattern
+getMeta pa = do
+    c <- Parser.peekChar'
+    if c == '#'
+        then (pa Meta)
+        else (pa Object)
 
 mlConstructorParser :: Parser Pattern
 mlConstructorParser = do
@@ -193,7 +180,7 @@ mlConstructorParser = do
     mlPatternParser
   where
     mlPatternParser = keywordBasedParsers
-        [ ("and", binaryOperatorRemainderParser AndPattern)
+        [ {-("and", binaryOperatorRemainderParser AndPattern)
         , ("bottom", topBottomRemainderParser BottomPattern)
         , ("ceil", ceilFloorRemainderParser CeilPattern)
         , ("equals", equalsLikeRemainderParser EqualsPattern)
@@ -203,11 +190,13 @@ mlConstructorParser = do
         , ("iff", binaryOperatorRemainderParser IffPattern)
         , ("implies", binaryOperatorRemainderParser ImpliesPattern)
         , ("mem", memRemainderParser)
-        , ("not", unaryOperatorRemainderParser NotPattern)
+        ,-} ("not", unaryOperatorRemainderParser (openCurlyBrace *> getMeta) NotPattern)
+{-
         , ("or", binaryOperatorRemainderParser OrPattern)
         , ("top", topBottomRemainderParser TopPattern)
+        -}
         ]
-
+{-
 patternParser :: Parser Pattern
 patternParser = do
     c <- Parser.peekChar'
@@ -278,3 +267,4 @@ sortSentenceRemainderParser =
         <*> inCurlyBracesParser sortVariableListParser
         <*> objectSortParser
         <*> attributesParser
+-}
