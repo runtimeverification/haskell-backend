@@ -5257,8 +5257,8 @@ Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
 	`(' <pattern> `,' <pattern> `)'
 	\alt `\\mem' `{' <object-sort> `,'  <object-sort> `}'
 	`(' <variable> `,' <pattern> `)'
-	\alt `\\top' `{' <object-sort> `}'
-	\alt `\\bottom' `{' <object-sort> `}'
+	\alt `\\top' `{' <object-sort> `}' `(' `)'
+	\alt `\\bottom' `{' <object-sort> `}' `(' `)'
 	
 	<object-variable> ::= <object-identifier> `:' <object-sort>
 	
@@ -5288,8 +5288,8 @@ Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
 	`(' <pattern> `,' <pattern> `)'
 	\alt `\\mem' `{' <meta-sort> `,' <meta-sort> `}'
 	`(' <variable> `,' <pattern> `)'
-	\alt `\\top' `{' <meta-sort> `}'
-	\alt `\\bottom' `{' <meta-sort> `}'
+	\alt `\\top' `{' <meta-sort> `}' `(' `)'
+	\alt `\\bottom' `{' <meta-sort> `}' `(' `)'
 	
 	<meta-variable> ::= <meta-identifier> `:' <meta-sort>
 	
