@@ -1,0 +1,7 @@
+[]
+
+module TEST-EXCEPTION-21
+
+  sort{A,B} #C ["d"]
+
+endmodule []

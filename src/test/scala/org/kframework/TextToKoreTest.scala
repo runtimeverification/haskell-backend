@@ -1,5 +1,8 @@
 package org.kframework
 
+import java.io.EOFException
+
+import junit.framework.TestFailure
 import org.apache.commons.io.FileUtils
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -172,7 +175,87 @@ class TextToKoreTest {
   }
 
 
-
+  /**
+    * Tests for exception and error handling.
+    */
+  @Test def test_exception_1(): Unit = {
+    parseFromFileExpectParseException("test-exception-1.kore")
+  }
+  @Test def test_exception_2(): Unit = {
+    parseFromFileExpectParseException("test-exception-2.kore")
+  }
+  @Test def test_exception_3(): Unit = {
+    parseFromFileExpectParseException("test-exception-3.kore")
+  }
+  @Test def test_exception_4(): Unit = {
+    parseFromFileExpectParseException("test-exception-4.kore")
+  }
+  @Test def test_exception_5(): Unit = {
+    parseFromFileExpectParseException("test-exception-5.kore")
+  }
+  @Test def test_exception_6(): Unit = {
+    parseFromFileExpectParseException("test-exception-6.kore")
+  }
+  @Test def test_exception_7(): Unit = {
+    parseFromFileExpectParseException("test-exception-7.kore")
+  }
+  @Test def test_exception_8(): Unit = {
+    parseFromFileExpectParseException("test-exception-8.kore")
+  }
+  @Test def test_exception_9(): Unit = {
+    parseFromFileExpectParseException("test-exception-9.kore")
+  }
+  @Test def test_exception_10(): Unit = {
+    parseFromFileExpectParseException("test-exception-10.kore")
+  }
+  @Test def test_exception_11(): Unit = {
+    parseFromFileExpectParseException("test-exception-11.kore")
+  }
+  @Test def test_exception_12(): Unit = {
+    parseFromFileExpectParseException("test-exception-12.kore")
+  }
+  @Test def test_exception_13(): Unit = {
+    parseFromFileExpectParseException("test-exception-13.kore")
+  }
+  @Test def test_exception_14(): Unit = {
+    parseFromFileExpectParseException("test-exception-14.kore")
+  }
+  @Test def test_exception_15(): Unit = {
+    parseFromFileExpectParseException("test-exception-15.kore")
+  }
+  @Test def test_exception_16(): Unit = {
+    parseFromFileExpectParseException("test-exception-16.kore")
+  }
+  @Test def test_exception_17(): Unit = {
+    parseFromFileExpectParseException("test-exception-17.kore")
+  }
+  @Test def test_exception_18(): Unit = {
+    parseFromFileExpectParseException("test-exception-18.kore")
+  }
+  @Test def test_exception_19(): Unit = {
+    parseFromFileExpectParseException("test-exception-19.kore")
+  }
+  @Test def test_exception_20(): Unit = {
+    parseFromFileExpectParseException("test-exception-20.kore")
+  }
+  @Test def test_exception_21(): Unit = {
+    parseFromFileExpectParseException("test-exception-21.kore")
+  }
+  @Test def test_exception_22(): Unit = {
+    parseFromFileExpectParseException("test-exception-22.kore")
+  }
+  @Test def test_exception_23(): Unit = {
+    parseFromFileExpectParseException("test-exception-23.kore")
+  }
+  @Test def test_exception_24(): Unit = {
+    parseFromFileExpectParseException("test-exception-24.kore")
+  }
+  @Test def test_exception_25(): Unit = {
+    parseFromFileExpectParseException("test-exception-25.kore")
+  }
+  @Test def test_exception_26(): Unit = {
+    parseFromFileExpectParseException("test-exception-26.kore")
+  }
 
 
   /**
@@ -226,6 +309,16 @@ class TextToKoreTest {
   def parseFromFile(file: String): Unit = {
     val f = FileUtils.toFile(getClass.getResource("/" + file))
     parseTest(FileFOS(f), FileUtils.readFileToString(f))
+  }
+
+  def parseFromFileExpectParseException(file: String): Unit = {
+    try {
+      parseFromFile(file) // expect ParseError being thrown
+      throw new Exception("Parse " + file + " succeeded while excepting ParseError.")
+    }
+    catch {
+      case _ : ParseError => // Expected
+    }
   }
 
   sealed trait FileOrSource

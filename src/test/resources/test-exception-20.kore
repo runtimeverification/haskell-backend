@@ -1,0 +1,8 @@
+[]
+
+module TEST-EXCEPTION-20
+
+  axiom{}
+    \mem{#S,S}(X:S,X:S) []
+
+endmodule []

@@ -1,0 +1,8 @@
+[]
+
+module TEST-EXCEPTION-18
+
+  axiom{}
+    \ceil{#S,S}(X:S) []
+
+endmodule []

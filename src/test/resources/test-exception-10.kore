@@ -1,0 +1,8 @@
+[]
+
+module TEST-EXCEPTION-10
+
+  axiom{}
+    #X:#S{#R} []
+
+endmodule []

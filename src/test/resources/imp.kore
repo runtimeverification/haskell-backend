@@ -20,13 +20,13 @@ module IMP
 
   symbol plus{}(Int{}, Int{}) : Int{} []
 
-  symbol 0{}() : Int{} []
+  symbol zero{}() : Int{} []
 
-  symbol 1{}() : Int{} []
+  symbol one{}() : Int{} []
 
-  symbol 2{}() : Int{} []
+  symbol two{}() : Int{} []
 
-  symbol 3{}() : Int{} []
+  symbol three{}() : Int{} []
 
   symbol div{}(Int{}, Int{}) : Int{} []
 
@@ -81,12 +81,12 @@ module IMP
     \equals{Ctxt{S1,S2},R}(
       gamma{S1,S2}(
         #variableToPattern{}(#X:#Variable{}),
-        #P:Pattern{}),
+        #P:#Pattern{}),
       \exists{Ctxt{S1,S2}}(
         #X:#Variable{},
         gamma0{S1,S2}(
           #variableToPattern{}(#X:#Variable{}),
-          #P:Pattern{}))) []
+          #P:#Pattern{}))) []
 
  alias idctxt{S}() : Ctxt{S,S} []
 
@@ -133,7 +133,7 @@ module IMP
                   #C:#Pattern{},
                   HOLE:S),
                 P:AExp{})),
-            T:S)))) [#strict{}("divAExp", 1{}())]
+            T:S)))) [#strict{}("divAExp", one{}())]
 
   axiom{S,R,#R}
     \implies{#R}(
@@ -160,7 +160,7 @@ module IMP
                 app{S,AExp{}}(
                   #C:#Pattern{},
                   HOLE:S))),
-            T:S)))) [#strict{}("divAExp", 2{}())]
+            T:S)))) [#strict{}("divAExp", two{}())]
 
 
   sort{} Block{} []
@@ -173,7 +173,7 @@ module IMP
 
   symbol blockAsStmt{}(Block{}) : Stmt{} []
 
-  symbol asgn{}(Id{}, AExp{}) : Stmt{} [#strict{}("asgn", 2{}())]
+  symbol asgn{}(Id{}, AExp{}) : Stmt{} [#strict{}("asgn", two{}())]
 
   axiom{S,R,#R}
     \implies{#R}(
@@ -200,10 +200,10 @@ module IMP
                 app{S,AExp{}}(
                   #C:#Pattern{},
                   HOLE:S))),
-            T:S)))) [#strict{}("asgn", 2{}())]
+            T:S)))) [#strict{}("asgn", two{}())]
 
 
-  symbol if{}(BExp{}, Block{}, Block{}) : Stmt{} [#strict{}("if", 1{}())]
+  symbol if{}(BExp{}, Block{}, Block{}) : Stmt{} [#strict{}("if", one{}())]
 
   axiom{S,R,#R}
     \implies{#R}(
@@ -233,12 +233,12 @@ module IMP
                   HOLE:S),
                 B1:Block{},
                 B2:Block{})),
-            T:S)))) [#strict{}("if", 1{}())]
+            T:S)))) [#strict{}("if", one{}())]
 
 
   symbol while{}(BExp{}, Block{}) : Stmt{} []
 
-  symbol seq{}(Stmt{}, Stmt{}) : Stmt{} [#strict{}("seq", 1{}())]
+  symbol seq{}(Stmt{}, Stmt{}) : Stmt{} [#strict{}("seq", one{}())]
 
    axiom{S,R,#R}
     \implies{#R}(
@@ -265,24 +265,24 @@ module IMP
                   #C:#Pattern{},
                   HOLE:S),
                 P:Stmt{})),
-            T:S)))) [#strict{}("seq", 1{}())]
+            T:S)))) [#strict{}("seq", one{}())]
 
 
   sort{} Pgm{} []
 
-  symbol pgm{}(List{Id{}}, Stmt{}) : Pgm{} [#strict{}("pgm", 1{}()), #strict{}("pgm", 2{}())]
+  symbol pgm{}(List{Id{}}, Stmt{}) : Pgm{} [#strict{}("pgm", one{}()), #strict{}("pgm", two{}())]
 
   sort{} KCell{} []
 
-  symbol kcell{}(Pgm{}) : KCell{} [#strict{}("kcell", 1{}())]
+  symbol kcell{}(Pgm{}) : KCell{} [#strict{}("kcell", one{}())]
 
   sort{} StateCell{} []
 
-  symbol statecell{}(Map{Id{}, Int{}}) : StateCell{} [#strict{}("statecell", 1{}())]
+  symbol statecell{}(Map{Id{}, Int{}}) : StateCell{} [#strict{}("statecell", one{}())]
 
   sort{} TopCell{} []
 
-  symbol topcell{}(KCell{}, StateCell{}) : TopCell{} [#strict{}("topcell", 1{}()), #strict{}("topcell", 2{}())]
+  symbol topcell{}(KCell{}, StateCell{}) : TopCell{} [#strict{}("topcell", one{}()), #strict{}("topcell", two{}())]
 
   symbol krun{}(Pgm{}) : TopCell{} []
 

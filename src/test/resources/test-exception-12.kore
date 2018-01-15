@@ -1,0 +1,8 @@
+[]
+
+module TEST-EXCEPTION-12
+
+  axiom{}
+    f{S,#S}() []
+
+endmodule []
