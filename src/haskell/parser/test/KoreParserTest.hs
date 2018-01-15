@@ -77,8 +77,8 @@ sortParserTests =
                         }
                     ]
                 }
+        , FailureWithoutMessage ["var1, var2", "var1{var1 var2}"]
         ]
-        (Failure ["var1, var2", "var1{var1 var2}"])
 
 sortListParserTests :: [TestTree]
 sortListParserTests =
@@ -97,24 +97,24 @@ sortListParserTests =
                 }
             , SortVariableSort (SortVariable (Id "var"))
             ]
+        , FailureWithoutMessage ["var1 var2"]
         ]
-        (Failure ["var1 var2"])
 
 sortVariableParserTests :: [TestTree]
 sortVariableParserTests =
     parseTree sortVariableParser
         [ Success "var" (SortVariable (Id "var"))
         , Success "#var" (SortVariable (Id "#var"))
+        , FailureWithoutMessage ["", "#"]
         ]
-        (Failure ["", "#"])
 
 sortVariableList1ParserTests :: [TestTree]
 sortVariableList1ParserTests =
     parseTree sortVariableList1Parser
         [ Success "v" [SortVariable (Id "v")]
         , Success "v1, v2" [SortVariable (Id "v1"), SortVariable (Id "v2")]
+        , FailureWithoutMessage ["", "v v"]
         ]
-        (Failure ["", "v v"])
 
 aliasParserTests :: [TestTree]
 aliasParserTests =
@@ -143,8 +143,8 @@ aliasParserTests =
                         }
                     ]
                 }
+        , FailureWithoutMessage ["alias", "a1{a2},a1{a2}", "a1{a2 a2}", "a1{a2}a1{a2}"]
         ]
-        (Failure ["alias", "a1{a2},a1{a2}", "a1{a2 a2}", "a1{a2}a1{a2}"])
 
 symbolParserTests :: [TestTree]
 symbolParserTests =
@@ -173,8 +173,8 @@ symbolParserTests =
                         }
                     ]
                 }
+        , FailureWithoutMessage ["symbol", "a1{a2},a1{a2}", "a1{a2 a2}", "a1{a2}a1{a2}"]
         ]
-        (Failure ["symbol", "a1{a2},a1{a2}", "a1{a2 a2}", "a1{a2}a1{a2}"])
 
 variableParserTests :: [TestTree]
 variableParserTests =
@@ -194,8 +194,8 @@ variableParserTests =
                             [SortVariableSort (SortVariable (Id "s2"))]
                         }
                 }
+        , FailureWithoutMessage ["", "var", "v:", ":s"]
         ]
-        (Failure ["", "var", "v:", ":s"])
 
 andPatternParserTests :: [TestTree]
 andPatternParserTests =
@@ -206,15 +206,15 @@ andPatternParserTests =
                 , andPatternFirst = StringLiteralPattern (StringLiteral "a")
                 , andPatternSecond = StringLiteralPattern (StringLiteral "b")
                 }
-        ]
-        (Failure
+        , FailureWithoutMessage
             [ ""
             , "\\and{s,s}(\"a\", \"b\")"
             , "\\and{}(\"a\", \"b\")"
             , "\\and{s}(\"a\")"
             , "\\and{s}(\"a\", \"b\", \"c\")"
             , "\\and{s}(\"a\" \"b\")"
-            ])
+            ]
+        ]
 applicationPatternParserTests :: [TestTree]
 applicationPatternParserTests =
     parseTree patternParser
@@ -267,21 +267,21 @@ applicationPatternParserTests =
                         }
                 , applicationPatternPatterns = []
                 }
+        , FailureWithoutMessage ["", "var", "v:", ":s", "c(s)", "c{s}"]
         ]
-        (Failure ["", "var", "v:", ":s", "c(s)", "c{s}"])
 bottomPatternParserTests :: [TestTree]
 bottomPatternParserTests =
     parseTree patternParser
         [ Success "\\bottom{s}()"
             (BottomPattern (SortVariableSort (SortVariable (Id "s"))))
-        ]
-        (Failure
+        , FailureWithoutMessage
             [ ""
             , "\\bottom()"
             , "\\bottom{}()"
             , "\\bottom{s, s}()"
             , "\\bottom{s}"
-            ])
+            ]
+        ]
 ceilPatternParserTests :: [TestTree]
 ceilPatternParserTests =
     parseTree patternParser
@@ -293,14 +293,14 @@ ceilPatternParserTests =
                     SortVariableSort (SortVariable (Id "s2"))
                 , ceilPatternPattern = StringLiteralPattern (StringLiteral "a")
                 }
-        ]
-        (Failure
+        , FailureWithoutMessage
             [ ""
             , "\\ceil{s1, s2}()"
             , "\\ceil{s1}(\"a\")"
             , "\\ceil{s1, s2, s3}(\"a\")"
             , "\\ceil{s1 s2}(\"a\")"
-            ])
+            ]
+        ]
 equalsPatternParserTests :: [TestTree]
 equalsPatternParserTests =
     parseTree patternParser
@@ -313,15 +313,15 @@ equalsPatternParserTests =
                 , equalsPatternFirst = StringLiteralPattern (StringLiteral "a")
                 , equalsPatternSecond = StringLiteralPattern (StringLiteral "b")
                 }
-        ]
-        (Failure
+        , FailureWithoutMessage
             [ ""
             , "\\equals{s}(\"a\", \"b\")"
             , "\\equals{s,s,s}(\"a\", \"b\")"
             , "\\equals{s,s}(\"a\")"
             , "\\equals{s,s}(\"a\", \"b\", \"c\")"
             , "\\equals{s,s}(\"a\" \"b\")"
-            ])
+            ]
+        ]
 existsPatternParserTests :: [TestTree]
 existsPatternParserTests =
     parseTree patternParser
@@ -336,8 +336,7 @@ existsPatternParserTests =
                 , existsPatternPattern =
                     StringLiteralPattern (StringLiteral "b")
                 }
-        ]
-        (Failure
+        , FailureWithoutMessage
             [ ""
             , "\\exists{}(v:s1, \"b\")"
             , "\\exists{s,s}(v:s1, \"b\")"
@@ -350,7 +349,8 @@ existsPatternParserTests =
             , "\\exists{s}"
             , "\\exists"
             , "\\exists(v:s1, \"b\")"
-            ])
+            ]
+        ]
 floorPatternParserTests :: [TestTree]
 floorPatternParserTests =
     parseTree patternParser
@@ -362,14 +362,14 @@ floorPatternParserTests =
                     SortVariableSort (SortVariable (Id "s2"))
                 , floorPatternPattern = StringLiteralPattern (StringLiteral "a")
                 }
-        ]
-        (Failure
+        , FailureWithoutMessage
             [ ""
             , "\\floor{s1, s2}()"
             , "\\floor{s1}(\"a\")"
             , "\\floor{s1, s2, s3}(\"a\")"
             , "\\floor{s1 s2}(\"a\")"
-            ])
+            ]
+        ]
 forallPatternParserTests :: [TestTree]
 forallPatternParserTests =
     parseTree patternParser
@@ -384,8 +384,7 @@ forallPatternParserTests =
                 , forallPatternPattern =
                     StringLiteralPattern (StringLiteral "b")
                 }
-        ]
-        (Failure
+        , FailureWithoutMessage
             [ ""
             , "\\forall{}(v:s1, \"b\")"
             , "\\forall{s,s}(v:s1, \"b\")"
@@ -398,7 +397,8 @@ forallPatternParserTests =
             , "\\forall{s}"
             , "\\forall"
             , "\\forall(v:s1, \"b\")"
-            ])
+            ]
+        ]
 iffPatternParserTests :: [TestTree]
 iffPatternParserTests =
     parseTree patternParser
@@ -408,14 +408,14 @@ iffPatternParserTests =
                 , iffPatternFirst = StringLiteralPattern (StringLiteral "a")
                 , iffPatternSecond = StringLiteralPattern (StringLiteral "b")
                 }
-        ]
-        (Failure
+        , FailureWithoutMessage
             [ ""
             , "\\iff{s,s}(\"a\", \"b\")"
             , "\\iff{}(\"a\", \"b\")"
             , "\\iff{s}(\"a\")"
             , "\\iff{s}(\"a\", \"b\", \"c\")"
-            , "\\iff{s}(\"a\" \"b\")"])
+            , "\\iff{s}(\"a\" \"b\")"]
+        ]
 impliesPatternParserTests :: [TestTree]
 impliesPatternParserTests =
     parseTree patternParser
@@ -426,14 +426,14 @@ impliesPatternParserTests =
                 , impliesPatternSecond =
                     StringLiteralPattern (StringLiteral "b")
                 }
-        ]
-        (Failure
+        , FailureWithoutMessage
             [ ""
             , "\\implies{s,s}(\"a\", \"b\")"
             , "\\implies{}(\"a\", \"b\")"
             , "\\implies{s}(\"a\")"
             , "\\implies{s}(\"a\", \"b\", \"c\")"
-            , "\\implies{s}(\"a\" \"b\")"])
+            , "\\implies{s}(\"a\" \"b\")"]
+        ]
 memPatternParserTests :: [TestTree]
 memPatternParserTests =
     parseTree patternParser
@@ -450,8 +450,7 @@ memPatternParserTests =
                 , memPatternPattern =
                     StringLiteralPattern (StringLiteral "b")
                 }
-        ]
-        (Failure
+        , FailureWithoutMessage
             [ ""
             , "\\mem{s}(v:s1, \"b\")"
             , "\\mem{s,s,s}(v:s1, \"b\")"
@@ -464,7 +463,8 @@ memPatternParserTests =
             , "\\mem{s,s}"
             , "\\mem"
             , "\\mem(v:s1, \"b\")"
-            ])
+            ]
+        ]
 notPatternParserTests :: [TestTree]
 notPatternParserTests =
     parseTree patternParser
@@ -473,8 +473,7 @@ notPatternParserTests =
                 { notPatternSort = SortVariableSort (SortVariable (Id "s"))
                 , notPatternPattern = StringLiteralPattern (StringLiteral "a")
                 }
-        ]
-        (Failure
+        , FailureWithoutMessage
             [ ""
             , "\\not{s,s}(\"a\")"
             , "\\not{}(\"a\")"
@@ -482,7 +481,8 @@ notPatternParserTests =
             , "\\not{s}(\"a\", \"b\")"
             , "\\not{s}"
             , "\\not(\"a\")"
-            ])
+            ]
+        ]
 orPatternParserTests :: [TestTree]
 orPatternParserTests =
     parseTree patternParser
@@ -492,29 +492,29 @@ orPatternParserTests =
                 , orPatternFirst = StringLiteralPattern (StringLiteral "a")
                 , orPatternSecond = StringLiteralPattern (StringLiteral "b")
                 }
-        ]
-        (Failure
+        , FailureWithoutMessage
             [ ""
             , "\\or{s,s}(\"a\", \"b\")"
             , "\\or{}(\"a\", \"b\")"
             , "\\or{s}(\"a\")"
             , "\\or{s}(\"a\", \"b\", \"c\")"
-            , "\\or{s}(\"a\" \"b\")"])
+            , "\\or{s}(\"a\" \"b\")"]
+        ]
 stringLiteralPatternParserTests :: [TestTree]
 stringLiteralPatternParserTests =
     parseTree patternParser
         [ Success "\"hello\"" (StringLiteralPattern (StringLiteral "hello"))
         , Success "\"\"" (StringLiteralPattern (StringLiteral ""))
         , Success "\"\\\"\"" (StringLiteralPattern (StringLiteral "\""))
+        , FailureWithoutMessage ["", "\""]
         ]
-        (Failure ["", "\""])
 topPatternParserTests :: [TestTree]
 topPatternParserTests =
     parseTree patternParser
         [ Success "\\top{s}()"
             (TopPattern (SortVariableSort (SortVariable (Id "s"))))
+        , FailureWithoutMessage ["", "\\top()", "\\top{}()", "\\top{s, s}()", "\\top{s}"]
         ]
-        (Failure ["", "\\top()", "\\top{}()", "\\top{s, s}()", "\\top{s}"])
 variablePatternParserTests :: [TestTree]
 variablePatternParserTests =
     parseTree patternParser
@@ -535,8 +535,8 @@ variablePatternParserTests =
                         }
                 }
             )
+        , FailureWithoutMessage ["", "var", "v:", ":s", "c(s)", "c{s}"]
         ]
-        (Failure ["", "var", "v:", ":s", "c(s)", "c{s}"])
 
 aliasSentenceParserTests :: [TestTree]
 aliasSentenceParserTests =
@@ -586,18 +586,18 @@ aliasSentenceParserTests =
                     SortVariableSort (SortVariable (Id "s3"))
                 , aliasSentenceAttributes = Attributes []
                 }
+        , FailureWithoutMessage
+            [ ""
+            , "a{s1}(s2):s3[\"a\"]"
+            , "alias {s1}(s2):s3[\"a\"]"
+            , "alias a(s2):s3[\"a\"]"
+            , "alias a{s1}:s3[\"a\"]"
+            , "alias a{s1}(s2)s3[\"a\"]"
+            , "alias a{s1}(s2):[\"a\"]"
+            , "alias a{s1}(s2)[\"a\"]"
+            , "alias a{s1}(s2):s3"
+            ]
         ]
-    (Failure
-        [ ""
-        , "a{s1}(s2):s3[\"a\"]"
-        , "alias {s1}(s2):s3[\"a\"]"
-        , "alias a(s2):s3[\"a\"]"
-        , "alias a{s1}:s3[\"a\"]"
-        , "alias a{s1}(s2)s3[\"a\"]"
-        , "alias a{s1}(s2):[\"a\"]"
-        , "alias a{s1}(s2)[\"a\"]"
-        , "alias a{s1}(s2):s3"
-        ])
 
 axiomSentenceParserTests :: [TestTree]
 axiomSentenceParserTests =
@@ -629,15 +629,15 @@ axiomSentenceParserTests =
                 , axiomSentenceAtrributes =
                     Attributes [StringLiteralPattern (StringLiteral "b")]
                 }
+        , FailureWithoutMessage
+            [ ""
+            , "{sv1}\"a\"[\"b\"]"
+            , "axiom\"a\"[\"b\"]"
+            -- , "axiom{}\"a\"[\"b\"]" See the TODO above.
+            , "axiom{sv1}[\"b\"]"
+            , "axiom{sv1}\"a\""
+            ]
         ]
-    (Failure
-        [ ""
-        , "{sv1}\"a\"[\"b\"]"
-        , "axiom\"a\"[\"b\"]"
-        -- , "axiom{}\"a\"[\"b\"]" See the TODO above.
-        , "axiom{sv1}[\"b\"]"
-        , "axiom{sv1}\"a\""
-        ])
 
 sortSentenceParserTests :: [TestTree]
 sortSentenceParserTests =
@@ -658,14 +658,14 @@ sortSentenceParserTests =
                 , sortSentenceAttributes =
                     Attributes [StringLiteralPattern (StringLiteral "a")]
                 }
-         ]
-    (Failure
-        [ ""
-        , "{ sv1 } s1 [ \"a\" ]"
-        , "sort s1 [ \"a\" ]"
-        , "sort { sv1 } [ \"a\" ]"
-        , "sort { sv1 } s1 "
-        ])
+        , FailureWithoutMessage
+            [ ""
+            , "{ sv1 } s1 [ \"a\" ]"
+            , "sort s1 [ \"a\" ]"
+            , "sort { sv1 } [ \"a\" ]"
+            , "sort { sv1 } s1 "
+            ]
+        ]
 
 symbolSentenceParserTests :: [TestTree]
 symbolSentenceParserTests =
@@ -694,18 +694,18 @@ symbolSentenceParserTests =
                     SortVariableSort (SortVariable (Id "s1"))
                 , symbolSentenceAttributes = Attributes []
                 }
+        , FailureWithoutMessage
+            [ ""
+            , "sy1 { s1 } ( s1 ) : s1 [\"a\"] "
+            , "symbol { s1 } ( s1 ) : s1 [\"a\"] "
+            , "symbol sy1 ( s1 ) : s1 [\"a\"] "
+            , "symbol sy1 { s1 } : s1 [\"a\"] "
+            , "symbol sy1 { s1 } ( s1 ) s1 [\"a\"] "
+            , "symbol sy1 { s1 } ( s1 ) : [\"a\"] "
+            , "symbol sy1 { s1 } ( s1 ) : s1 "
+            , "symbol sy1 { s1 } ( s1 ) [\"a\"] "
+            ]
         ]
-    (Failure
-        [ ""
-        , "sy1 { s1 } ( s1 ) : s1 [\"a\"] "
-        , "symbol { s1 } ( s1 ) : s1 [\"a\"] "
-        , "symbol sy1 ( s1 ) : s1 [\"a\"] "
-        , "symbol sy1 { s1 } : s1 [\"a\"] "
-        , "symbol sy1 { s1 } ( s1 ) s1 [\"a\"] "
-        , "symbol sy1 { s1 } ( s1 ) : [\"a\"] "
-        , "symbol sy1 { s1 } ( s1 ) : s1 "
-        , "symbol sy1 { s1 } ( s1 ) [\"a\"] "
-        ])
 
 attributesParserTests :: [TestTree]
 attributesParserTests =
@@ -719,8 +719,8 @@ attributesParserTests =
                 [ StringLiteralPattern (StringLiteral "a")
                 , StringLiteralPattern (StringLiteral "b")
                 ])
+        , FailureWithoutMessage ["", "a", "\"a\"", "[\"a\" \"a\"]"]
         ]
-    (Failure ["", "a", "\"a\"", "[\"a\" \"a\"]"])
 
 
 moduleParserTests :: [TestTree]
@@ -760,15 +760,15 @@ moduleParserTests =
                 , moduleAttributes =
                     Attributes [StringLiteralPattern (StringLiteral "a")]
                 }
+        , FailureWithoutMessage
+            [ ""
+            , "module MN endmodule []"
+            , "MN sort{}c[] endmodule [\"a\"]"
+            , "module sort{}c[] endmodule [\"a\"]"
+            , "module MN sort{}c[] [\"a\"]"
+            , "module MN sort{}c[] endmodule"
+            ]
         ]
-    (Failure
-        [ ""
-        , "module MN endmodule []"
-        , "MN sort{}c[] endmodule [\"a\"]"
-        , "module sort{}c[] endmodule [\"a\"]"
-        , "module MN sort{}c[] [\"a\"]"
-        , "module MN sort{}c[] endmodule"
-        ])
 
 definitionParserTests :: [TestTree]
 definitionParserTests =
@@ -793,14 +793,14 @@ definitionParserTests =
                                 [StringLiteralPattern (StringLiteral "b")]
                         }
                 }
+        , FailureWithoutMessage
+            [ ""
+            , "[]"
+            , "module M sort{}c[] endmodule [\"b\"]"
+            , "[\"a\"] module M sort{}c[] endmodule [\"b\"] "
+                ++ "module O sort{}c[] endmodule [\"c\"]"
+            ]
         ]
-    (Failure
-        [ ""
-        , "[]"
-        , "module M sort{}c[] endmodule [\"b\"]"
-        , "[\"a\"] module M sort{}c[] endmodule [\"b\"] "
-            ++ "module O sort{}c[] endmodule [\"c\"]"
-        ])
 
 ------------------------------------
 -- Generic test utilities

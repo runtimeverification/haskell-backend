@@ -20,21 +20,23 @@ koreLexemeTests =
         , testGroup "mlLexemeParser" mlLexemeParserTests
         , testGroup "moduleNameParser" moduleNameParserTests
         , testGroup "parenPairParser" parenPairParserTests
-        , testGroup "skipWhitespace" skipWhtespaceTests
+        , testGroup "skipWhitespace" skipWhitespaceTests
         , testGroup "stringLiteralParser" stringLiteralParserTests
         ]
 
 colonParserTests :: [TestTree]
 colonParserTests =
-    skipTree colonParser
-        (Skip [":", ": ", ":/**/"])
-        (Failure ["", " :", " ", ","])
+    parseSkipTree colonParser
+        [ Skip [":", ": ", ":/**/"]
+        , FailureWithoutMessage ["", " :", " ", ","]
+        ]
 
 commaParserTests :: [TestTree]
 commaParserTests =
-    skipTree commaParser
-        (Skip [",", ", ", ",/**/"])
-        (Failure ["", " ,", " ", ":"])
+    parseSkipTree commaParser
+        [ Skip [",", ", ", ",/**/"]
+        , FailureWithoutMessage ["", " ,", " ", ":"]
+        ]
 
 curlyPairParserTests :: [TestTree]
 curlyPairParserTests =
@@ -42,10 +44,11 @@ curlyPairParserTests =
         [ Success "{a,B}" (Id "a", ModuleName "B")
         , Success "{ a , B } " (Id "a", ModuleName "B")
         , Success "{/**/a/**/,/**/B/**/}/**/" (Id "a", ModuleName "B")
-        ]
-        (Failure
+        , Success "{/*/**/a,/**/B/**/}/**/" (Id "a", ModuleName "B")
+        , FailureWithoutMessage
             [ "", " {a,B}", "{a}", "{B}", "{a,}", "{,B}", "{a{},b}"
-            , "{a,B,c}", "(a,B)"])
+            , "{a,B,c}", "(a,B)"]
+        ]
 
 idParserTests :: [TestTree]
 idParserTests =
@@ -63,13 +66,13 @@ idParserTests =
         , Success "#a'2" (Id "#a'2")
         , Success "a " (Id "a")
         , Success "a/**/ " (Id "a")
-        ]
-        (Failure
+        , FailureWithoutMessage
             [   "",   "'",   "'a",   "2",   "2a", "`", "`a"
             ,  "#",  "#'",  "#'a",  "#2",  "#2a"
             , "#`", "#`'", "#`'a", "#`2", "#`2a"
             , "a#"
-            , ",", " a"])
+            , ",", " a"]
+        ]
 
 inCurlyBracesParserTests :: [TestTree]
 inCurlyBracesParserTests =
@@ -77,9 +80,9 @@ inCurlyBracesParserTests =
         [ Success "{a}" (Id "a")
         , Success "{ a } " (Id "a")
         , Success "{/**/a/**/}/**/" (Id "a")
+        , FailureWithoutMessage
+            [ "", "{}", " {a}", "{a,b}", "{a{}}", "a}", "{a"]
         ]
-        (Failure
-            [ "", "{}", " {a}", "{a,b}", "{a{}}", "a}", "{a"])
 
 inParenthesesParserTests :: [TestTree]
 inParenthesesParserTests =
@@ -87,9 +90,9 @@ inParenthesesParserTests =
         [ Success "(a)" (Id "a")
         , Success "( a ) " (Id "a")
         , Success "(/**/a/**/)/**/" (Id "a")
+        , FailureWithoutMessage
+            [ "", "()", " (a)", "(a,b)", "(a())", "a)", "(a"]
         ]
-        (Failure
-            [ "", "()", " (a)", "(a,b)", "(a())", "a)", "(a"])
 
 inSquareBracketsParserTests :: [TestTree]
 inSquareBracketsParserTests =
@@ -97,9 +100,9 @@ inSquareBracketsParserTests =
         [ Success "[a]" (Id "a")
         , Success "[ a ] " (Id "a")
         , Success "[/**/a/**/]/**/" (Id "a")
+        , FailureWithoutMessage
+            [ "", "[]", " [a]", "[a,b]", "[a[]]", "a]", "[a"]
         ]
-        (Failure
-            [ "", "[]", " [a]", "[a,b]", "[a[]]", "a]", "[a"])
 
 keywordBasedParsersTests :: [TestTree]
 keywordBasedParsersTests =
@@ -113,17 +116,18 @@ keywordBasedParsersTests =
         , Success "df[a]" (Id "a")
         , Success "df [ a ] " (Id "a")
         , Success "df/**/ [/**/ a/**/ ]/**/ " (Id "a")
-        ]
-        (Failure
+        , FailureWithoutMessage
             [ "abc(a)", "abc[a]", "de{a}", "de[a]", "df{a}", "dfa)"
             , "abc", "de", "df"
-            , "", " de(a)", "(a)"])
+            , "", " de(a)", "(a)"]
+        ]
 
 mlLexemeParserTests :: [TestTree]
 mlLexemeParserTests =
-    skipTree (mlLexemeParser "hello")
-    (Skip ["hello", "hello ", "hello/**/ "])
-    (Failure ["", "Hello", " hello"])
+    parseSkipTree (mlLexemeParser "hello")
+    [ Skip ["hello", "hello ", "hello/**/ "]
+    , FailureWithoutMessage ["", "Hello", " hello"]
+    ]
 
 moduleNameParserTests :: [TestTree]
 moduleNameParserTests =
@@ -134,10 +138,10 @@ moduleNameParserTests =
         , Success "a'-2" (ModuleName "a'-2")
         , Success "A " (ModuleName "A")
         , Success "A/**/ " (ModuleName "A")
-        ]
-        (Failure
+        , FailureWithoutMessage
             [  "",  "-",  "-A",  "2",  "2A"
-            , "#", "#A", " A", ","])
+            , "#", "#A", " A", ","]
+        ]
 
 parenPairParserTests :: [TestTree]
 parenPairParserTests =
@@ -145,22 +149,27 @@ parenPairParserTests =
         [ Success "(a,B)" (Id "a", ModuleName "B")
         , Success "( a , B ) " (Id "a", ModuleName "B")
         , Success "(/**/a/**/,/**/B/**/)/**/" (Id "a", ModuleName "B")
-        ]
-        (Failure
+        , FailureWithoutMessage
             [ "", " (a,B)", "(a)", "(B)", "(a,)", "(,B)", "(a(),b)"
-            , "(a,B,c)", "{a,B}"])
+            , "(a,B,c)", "{a,B}"]
+        ]
 
-skipWhtespaceTests :: [TestTree]
-skipWhtespaceTests =
-    skipTree skipWhitespace
-        (Skip
+skipWhitespaceTests :: [TestTree]
+skipWhitespaceTests =
+    parseSkipTree skipWhitespace
+        [ Skip
             [ "", " ", "\n", "\r", "\t", "/**/", "//\n"
             , "/*\n*/", "/*//*/", "/****/", "/* * / */", "/*/*/"
             , "//hello\n", "//hello"
-            , "\t//hello\n /* world\n //*/  //!\n"])
-        (Failure
-            [ "a", "/*", "/**", "/***", "/*hello", "/*/", "/*//", "*/"
-            , "/ /", "/**//", "//\na"])
+            , "\t//hello\n /* world\n //*/  //!\n"]
+        , Failure
+            { failureInput = "/*/"
+            , failureExpected = "Failed reading: Unfinished comment."
+            }
+        , FailureWithoutMessage
+            [ "a", "/*", "/**", "/***", "/*hello", "/*//", "*/"
+            , "/ /", "/**//", "//\na"]
+        ]
 
 stringLiteralParserTests :: [TestTree]
 stringLiteralParserTests =
@@ -190,8 +199,7 @@ stringLiteralParserTests =
         , Success "\"\\U000120FF\"" (StringLiteral "\73983")
         , Success "\"\\U000120FFa\"" (StringLiteral ("\73983" ++ "a"))
         , Success "\"\\U000120ff\"" (StringLiteral "\73983")
-        ]
-        (Failure
+        , FailureWithoutMessage
             [ "", "\"\\z\"", "\"\\xzf\"", "\"\\u123\"", "\"\\U1234567\""
             , "\"\\UFFFFFFFF\""
             {-  TODO(virgil): It's not clear whether the strings below should
@@ -200,4 +208,5 @@ stringLiteralParserTests =
                 \377 are allowed or not.
             , "\"\\400\"", "\"\\xfff\""
             -}
-            ])
+            ]
+        ]
