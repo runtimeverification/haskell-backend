@@ -7,6 +7,7 @@ module KoreLexeme
        , inParenthesesParser
        , inSquareBracketsParser
        , keywordBasedParsers
+       , metaIdParser
        , mlLexemeParser
        , moduleNameParser
        , parenPairParser

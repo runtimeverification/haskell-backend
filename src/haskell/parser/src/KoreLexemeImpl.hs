@@ -16,6 +16,9 @@ import           Data.Char                        (isHexDigit, isOctDigit)
 idParser :: Parser Id
 idParser = lexeme idRawParser
 
+metaIdParser :: Parser MetaId
+metaIdParser = lexeme metaIdRawParser
+
 stringLiteralParser :: Parser StringLiteral
 stringLiteralParser = lexeme stringLiteralRawParser
 
@@ -74,10 +77,10 @@ lexeme p = p <* skipWhitespace
 genericIdParser :: CharSet -> CharSet -> (String -> a) -> Parser a
 genericIdParser firstCharSet charSet constructor = do
     c <- Parser.peekChar'
-    id <- if not (c `CharSet.elem` firstCharSet)
-        then fail "genericidParser"
+    idChar <- if not (c `CharSet.elem` firstCharSet)
+        then fail ("genericidParser: Invalid first character '" ++ c : "'.")
         else Parser.takeWhile (`CharSet.elem` charSet)
-    return (constructor (Char8.unpack id))
+    return (constructor (Char8.unpack idChar))
 
 moduleNameFirstCharSet :: CharSet
 moduleNameFirstCharSet = idFirstCharSet
@@ -95,24 +98,21 @@ idFirstCharSet = CharSet.make (['A'..'Z'] ++ ['a'..'z'])
 idCharSet :: CharSet
 idCharSet = CharSet.join idFirstCharSet (CharSet.make (['0'..'9'] ++ "'-"))
 
-objectIdParser :: Parser Id
-objectIdParser = genericIdParser idFirstCharSet idCharSet Id
+idRawParser :: Parser Id
+idRawParser = genericIdParser idFirstCharSet idCharSet Id
 
-metaIdParser :: Parser Id
-metaIdParser = do
+metaIdRawParser :: Parser MetaId
+metaIdRawParser = do
     c <- Parser.char '#'
     c' <- Parser.peekChar'
     if (c' == '`')
         then do
             void (Parser.char c')
-            Id id <- objectIdParser
-            return (Id (c:c':id))
+            Id idToken <- idRawParser
+            return (MetaId (c:c':idToken))
         else do
-            Id id <- objectIdParser
-            return (Id (c:id))
-
-idRawParser :: Parser Id
-idRawParser = metaIdParser <|> objectIdParser
+            Id idToken <- idRawParser
+            return (MetaId (c:idToken))
 
 data StringScannerState = STRING | ESCAPE | HEX StringScannerState
 
@@ -197,7 +197,18 @@ stringParser :: String -> Parser ()
 stringParser = void . Parser.string . Char8.pack
 
 mlLexemeParser :: String -> Parser ()
-mlLexemeParser s = lexeme (void (Parser.string (Char8.pack s)))
+mlLexemeParser s =
+    lexeme (void (Parser.string (Char8.pack s) <* keywordEndParser))
+
+keywordEndParser :: Parser ()
+keywordEndParser = do
+    mc <- Parser.peekChar
+    case mc of
+        Nothing -> return ()
+        Just c -> if c `CharSet.elem` idCharSet
+            then fail "Expecting keyword to end."
+            else return ()
+
 
 keywordBasedParsers :: [(String, Parser a)] -> Parser a
 keywordBasedParsers stringParsers =

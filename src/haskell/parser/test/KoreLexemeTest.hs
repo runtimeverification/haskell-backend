@@ -17,6 +17,7 @@ koreLexemeTests =
         , testGroup "inCurlyBracesParser" inCurlyBracesParserTests
         , testGroup "inParenthesesParser" inParenthesesParserTests
         , testGroup "keywordBasedParsers" keywordBasedParsersTests
+        , testGroup "metaIdParser" metaIdParserTests
         , testGroup "mlLexemeParser" mlLexemeParserTests
         , testGroup "moduleNameParser" moduleNameParserTests
         , testGroup "parenPairParser" parenPairParserTests
@@ -59,19 +60,35 @@ idParserTests =
         , Success "a'" (Id "a'")
         , Success "a-" (Id "a-")
         , Success "a'2" (Id "a'2")
-        , Success "#a" (Id "#a")
-        , Success "#`a" (Id "#`a")
-        , Success "#abc" (Id "#abc")
-        , Success "#a'" (Id "#a'")
-        , Success "#a'2" (Id "#a'2")
         , Success "a " (Id "a")
         , Success "a/**/ " (Id "a")
+        , Failure
+            { failureInput = "["
+            , failureExpected =
+                "Failed reading: genericidParser: Invalid first character '['."
+            }
+        , FailureWithoutMessage
+            [   "",   "'",   "'a",   "2",   "2a", "`", "`a"
+            ,  "#",  "#'",  "#'a",  "#2",  "#2a"
+            , "#`", "#`'", "#`'a", "#`2", "#`2a"
+            , "a#", "#a"
+            , ",", " a"]
+        ]
+
+metaIdParserTests :: [TestTree]
+metaIdParserTests =
+    parseTree metaIdParser
+        [ Success "#a" (MetaId "#a")
+        , Success "#`a" (MetaId "#`a")
+        , Success "#abc" (MetaId "#abc")
+        , Success "#a'" (MetaId "#a'")
+        , Success "#a'2" (MetaId "#a'2")
         , FailureWithoutMessage
             [   "",   "'",   "'a",   "2",   "2a", "`", "`a"
             ,  "#",  "#'",  "#'a",  "#2",  "#2a"
             , "#`", "#`'", "#`'a", "#`2", "#`2a"
             , "a#"
-            , ",", " a"]
+            , ",", " a", "a"]
         ]
 
 inCurlyBracesParserTests :: [TestTree]
@@ -110,16 +127,29 @@ keywordBasedParsersTests =
         (keywordBasedParsers
             [ ("abc", inCurlyBracesParser idParser)
             , ("de", inParenthesesParser idParser)
+            , ("dd", idParser)
             , ("df", inSquareBracketsParser idParser)])
         [ Success "abc{a}" (Id "a")
         , Success "de(a)" (Id "a")
         , Success "df[a]" (Id "a")
         , Success "df [ a ] " (Id "a")
+        , Success "dd a" (Id "a")
         , Success "df/**/ [/**/ a/**/ ]/**/ " (Id "a")
+        , Failure
+            { failureInput = "dg(a)"
+            , failureExpected =
+                "Failed reading: Keyword Based Parsers - unexpected character."
+            }
+        , Failure
+            { failureInput = "dda"
+            , failureExpected =
+                "Failed reading: Expecting keyword to end."
+            }
         , FailureWithoutMessage
             [ "abc(a)", "abc[a]", "de{a}", "de[a]", "df{a}", "dfa)"
             , "abc", "de", "df"
-            , "", " de(a)", "(a)"]
+            , "", " de(a)", "(a)"
+            ]
         ]
 
 mlLexemeParserTests :: [TestTree]
@@ -199,9 +229,13 @@ stringLiteralParserTests =
         , Success "\"\\U000120FF\"" (StringLiteral "\73983")
         , Success "\"\\U000120FFa\"" (StringLiteral ("\73983" ++ "a"))
         , Success "\"\\U000120ff\"" (StringLiteral "\73983")
+        , Failure
+            { failureInput = "\"\\UFFFFFFFF\""
+            , failureExpected = "Failed reading: Character code 4294967295"
+                ++ " outside of the representable codes."
+            }
         , FailureWithoutMessage
             [ "", "\"\\z\"", "\"\\xzf\"", "\"\\u123\"", "\"\\U1234567\""
-            , "\"\\UFFFFFFFF\""
             {-  TODO(virgil): It's not clear whether the strings below should
                 fail or not. A C hex sequence can be longer than 2 if it fits
                 into the char size being considered. Not sure if octals above
