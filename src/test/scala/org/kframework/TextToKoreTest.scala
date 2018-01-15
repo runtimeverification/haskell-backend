@@ -148,6 +148,12 @@ class TextToKoreTest {
   @Test def test_comment_5(): Unit = {
     parseFromFile("test-comment-5.kore")
   }
+  @Test def test_comment_6(): Unit = {
+    parseFromFile("test-comment-6.kore")
+  }
+  @Test def test_comment_7(): Unit = {
+    parseFromFile("test-comment-7.kore")
+  }
 
   /**
     * Tests for strings.
