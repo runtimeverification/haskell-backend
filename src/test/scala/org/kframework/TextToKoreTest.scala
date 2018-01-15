@@ -120,6 +120,12 @@ class TextToKoreTest {
   @Test def test_pattern_11(): Unit = {
     parseFromFile("test-pattern-11.kore")
   }
+  @Test def test_pattern_12(): Unit = {
+    parseFromFile("test-pattern-12.kore")
+  }
+  @Test def test_pattern_13(): Unit = {
+    parseFromFile("test-pattern-13.kore")
+  }
   /**
     * Tests for parsing attributes.
     */
