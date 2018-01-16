@@ -67,6 +67,11 @@ idParserTests =
             , failureExpected =
                 "Failed reading: genericidParser: Invalid first character '['."
             }
+        , Failure
+            { failureInput = "module"
+            , failureExpected =
+                "Failed reading: Identifiers should not be keywords: 'module'."
+            }
         , FailureWithoutMessage
             [   "",   "'",   "'a",   "2",   "2a", "`", "`a"
             ,  "#",  "#'",  "#'a",  "#2",  "#2a"
@@ -83,6 +88,11 @@ metaIdParserTests =
         , Success "#abc" (Id Meta "#abc")
         , Success "#a'" (Id Meta "#a'")
         , Success "#a'2" (Id Meta "#a'2")
+        , Failure
+            { failureInput = "#module"
+            , failureExpected =
+                "Failed reading: Identifiers should not be keywords: 'module'."
+            }
         , FailureWithoutMessage
             [   "",   "'",   "'a",   "2",   "2a", "`", "`a"
             ,  "#",  "#'",  "#'a",  "#2",  "#2a"

@@ -5,7 +5,7 @@ import           CharSet
 import           CString
 import           KoreAST
 
-import           Control.Monad                    (void)
+import           Control.Monad                    (void, when)
 import           Data.Attoparsec.ByteString.Char8 (Parser)
 import qualified Data.Attoparsec.ByteString.Char8 as Parser
 import qualified Data.Attoparsec.ByteString       as BParser (runScanner)
@@ -69,13 +69,19 @@ skipWhitespace = whitespaceChunk
 lexeme :: Parser a -> Parser a
 lexeme p = p <* skipWhitespace
 
+koreKeywords :: [String]
+koreKeywords = ["module", "endmodule", "sort", "symbol", "alias", "axiom"]
+
 genericIdParser :: CharSet -> CharSet -> Parser String
 genericIdParser firstCharSet charSet = do
     c <- Parser.peekChar'
     idChar <- if not (c `CharSet.elem` firstCharSet)
         then fail ("genericidParser: Invalid first character '" ++ c : "'.")
         else Parser.takeWhile (`CharSet.elem` charSet)
-    return (Char8.unpack idChar)
+    let identifier = Char8.unpack idChar
+    when (identifier `Prelude.elem` koreKeywords)
+        (fail ("Identifiers should not be keywords: '" ++ identifier ++ "'."))
+    return identifier
 
 moduleNameFirstCharSet :: CharSet
 moduleNameFirstCharSet = idFirstCharSet
