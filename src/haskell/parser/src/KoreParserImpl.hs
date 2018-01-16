@@ -1,4 +1,3 @@
-{-# LANGUAGE ExistentialQuantification #-}
 module KoreParserImpl where
 
 import           KoreAST
@@ -11,7 +10,7 @@ import           Data.Attoparsec.ByteString.Char8 (Parser)
 import qualified Data.Attoparsec.ByteString.Char8 as Parser
 
 sortVariableParser :: IsMeta a => a -> Parser (SortVariable a)
-sortVariableParser x = SortVariable <$> idParser x
+sortVariableParser x = SortVariable x <$> idParser x
 
 unifiedSortVariableParser :: Parser UnifiedSortVariable
 unifiedSortVariableParser = do
@@ -26,18 +25,21 @@ sortVariableListParser = Parser.sepBy unifiedSortVariableParser commaParser
 sortParser :: IsMeta a => a -> Parser (Sort a)
 sortParser x = do
     identifier <- idParser x
-    actualSortParser identifier <|>
-        return (SortVariableSort $ SortVariable identifier)
+    c <- Parser.peekChar
+    case c of
+        Just '{' -> actualSortParser identifier
+        _ -> return (SortVariableSort x $ SortVariable x identifier)
   where
     actualSortParser identifier = do
         sorts <- inCurlyBracesParser (sortListParser x)
         when (metaType x == MetaType) (checkMetaSort identifier sorts)
         return ActualSort
-            { actualSortName = identifier
+            { actualSortType = x
+            , actualSortName = identifier
             , actualSortSorts = sorts
             }
 
-checkMetaSort :: Id a -> [Sort a] -> Parser ()
+checkMetaSort :: Show a => Id a -> [Sort a] -> Parser ()
 checkMetaSort identifier [] = checkMetaSort' (getId identifier)
   where
     checkMetaSort' metaId =
@@ -46,10 +48,10 @@ checkMetaSort identifier [] = checkMetaSort' (getId identifier)
             , "#CharList"
             , "#Pattern"
             , "#PatternList"
-            , "#ObjectSort"
+            , "#Sort"
             , "#SortList"
             , "#String"
-            , "#ObjectSymbol"
+            , "#Symbol"
             , "#SymbolList"
             , "#Variable"
             , "#VariableList"
@@ -57,6 +59,15 @@ checkMetaSort identifier [] = checkMetaSort' (getId identifier)
             then return ()
             else fail ("metaSortParser: Invalid constructor: '" ++
                 metaId ++ "'.")
+checkMetaSort _ l =
+    fail ("metaSortParser: Non empty parameter sorts '" ++ show l ++ "'.")
+
+metaSort :: MetaSortType -> Sort Meta
+metaSort sortType =
+    ActualSort
+    { actualSortType = Meta
+    , actualSortName = Id Meta (show sortType)
+    , actualSortSorts = []}
 
 sortListParser :: IsMeta a => a -> Parser [Sort a]
 sortListParser x = Parser.sepBy (sortParser x) commaParser
@@ -73,52 +84,59 @@ symbolOrAliasRawParser x constructor = do
     symbolOrAliasRemainderRawParser x (constructor headConstructor)
 
 aliasParser :: IsMeta a => a -> Parser (Alias a)
-aliasParser x = symbolOrAliasRawParser x Alias
+aliasParser x = symbolOrAliasRawParser x (Alias x)
 
 symbolParser :: IsMeta a => a -> Parser (Symbol a)
-symbolParser x = symbolOrAliasRawParser x Symbol
+symbolParser x = symbolOrAliasRawParser x (Symbol x)
 
 symbolOrAliasRemainderParser
     :: IsMeta a => a -> Id a -> Parser (SymbolOrAlias a)
 symbolOrAliasRemainderParser x identifier =
-    symbolOrAliasRemainderRawParser x (SymbolOrAlias identifier)
+    symbolOrAliasRemainderRawParser x (SymbolOrAlias x identifier)
 
 unaryOperatorRemainderParser
-    :: IsMeta a => a -> (Sort a -> Pattern -> Pattern) -> Parser Pattern
+    :: IsMeta a
+    => a -> (Sort a -> UnifiedPattern -> Pattern a) -> Parser (Pattern a)
 unaryOperatorRemainderParser x constructor =
     pure constructor
         <*> inCurlyBracesRemainderParser (sortParser x)
         <*> inParenthesesParser patternParser
 
-{-
 binaryOperatorRemainderParser
-    :: (ObjectSort -> Pattern -> Pattern -> Pattern)
-    -> Parser Pattern
-binaryOperatorRemainderParser constructor = do
-    sort <- inCurlyBracesParser objectSortParser
-    (pattern1, pattern2) <- parenPairParser patternParser patternParser
+    :: IsMeta a
+    => a -> (Sort a -> UnifiedPattern -> UnifiedPattern -> Pattern a)
+    -> Parser (Pattern a)
+binaryOperatorRemainderParser x constructor = do
+    sort <- inCurlyBracesRemainderParser (sortParser x)
+    (pattern1, pattern2) <-
+        parenPairParser patternParser patternParser
     return (constructor sort pattern1 pattern2)
 
 existsForallRemainderParser
-    :: (ObjectSort -> Variable -> Pattern -> Pattern)
-    -> Parser Pattern
-existsForallRemainderParser constructor = do
-    sort <- inCurlyBracesParser objectSortParser
-    (variable, pattern) <- parenPairParser variableParser patternParser
+    :: IsMeta a
+    => a -> (Sort a -> UnifiedVariable -> UnifiedPattern -> Pattern a)
+    -> Parser (Pattern a)
+existsForallRemainderParser x constructor = do
+    sort <- inCurlyBracesRemainderParser (sortParser x)
+    (variable, pattern) <-
+        parenPairParser unifiedVariableParser patternParser
     return (constructor sort variable pattern)
 
 ceilFloorRemainderParser
-    :: (ObjectSort -> ObjectSort -> Pattern -> Pattern)
-    -> Parser Pattern
-ceilFloorRemainderParser constructor = do
-    (sort1, sort2) <- curlyPairParser objectSortParser objectSortParser
+    :: IsMeta a
+    => a -> (Sort a -> Sort a -> UnifiedPattern -> Pattern a)
+    -> Parser (Pattern a)
+ceilFloorRemainderParser x constructor = do
+    (sort1, sort2) <- curlyPairRemainderParser (sortParser x)
     pattern <- inParenthesesParser patternParser
     return (constructor sort1 sort2 pattern)
 
-memRemainderParser :: Parser Pattern
-memRemainderParser = do
-    (sort1, sort2) <- curlyPairParser objectSortParser objectSortParser
-    (variable, pattern) <- parenPairParser variableParser patternParser
+memRemainderParser
+    :: IsMeta a => a -> Parser (Pattern a)
+memRemainderParser x = do
+    (sort1, sort2) <- curlyPairRemainderParser (sortParser x)
+    (variable, pattern) <-
+        parenPairParser unifiedVariableParser patternParser
     return MemPattern
            { memPatternFirstSort = sort1
            , memPatternSecondSort = sort2
@@ -127,85 +145,134 @@ memRemainderParser = do
            }
 
 equalsLikeRemainderParser
-    :: (ObjectSort -> ObjectSort -> Pattern -> Pattern -> Pattern)
-    -> Parser Pattern
-equalsLikeRemainderParser constructor = do
-    (sort1, sort2) <- curlyPairParser objectSortParser objectSortParser
-    (pattern1, pattern2) <- parenPairParser patternParser patternParser
+    :: IsMeta a
+    => a -> (Sort a -> Sort a -> UnifiedPattern -> UnifiedPattern -> Pattern a)
+    -> Parser (Pattern a)
+equalsLikeRemainderParser x constructor = do
+    (sort1, sort2) <- curlyPairRemainderParser (sortParser x)
+    (pattern1, pattern2) <-
+        parenPairParser patternParser patternParser
     return (constructor sort1 sort2 pattern1 pattern2)
 
-topBottomRemainderParser :: (ObjectSort -> Pattern) -> Parser Pattern
-topBottomRemainderParser constructor = do
-    sort <- inCurlyBracesParser objectSortParser
+topBottomRemainderParser
+    :: IsMeta a => a -> (Sort a -> Pattern a) -> Parser (Pattern a)
+topBottomRemainderParser x constructor = do
+    sort <- inCurlyBracesRemainderParser (sortParser x)
     inParenthesesParser (return ())
     return (constructor sort)
 
-symbolOrAliasPatternRemainderParser :: Id -> Parser Pattern
-symbolOrAliasPatternRemainderParser identifier =
+symbolOrAliasPatternRemainderParser
+    :: IsMeta a => a -> Id a -> Parser (Pattern a)
+symbolOrAliasPatternRemainderParser x identifier =
     pure ApplicationPattern
-        <*> objectSymbolOrAliasRemainderParser identifier
+        <*> symbolOrAliasRemainderParser x identifier
         <*> inParenthesesParser patternListParser
 
-variableRemainderParser :: Id -> Parser Variable
-variableRemainderParser identifier = do
+variableRemainderParser
+    :: IsMeta a => a -> Id a -> Parser (Variable a)
+variableRemainderParser x identifier = do
     colonParser
-    sort <- objectSortParser
+    sort <- sortParser x
     return Variable
-        { variableName = identifier
+        { variableType = x
+        , variableName = identifier
         , variableSort = sort
         }
 
-variableParser :: Parser Variable
-variableParser = idParser >>= variableRemainderParser
+variableParser
+    :: IsMeta a => a -> Parser (Variable a)
+variableParser x = idParser x >>= variableRemainderParser x
 
-variableOrTermPatternParser :: Parser Pattern
-variableOrTermPatternParser = do
-    identifier <- idParser
-    c <- Parser.peekChar'
-    if c == ':'
-        then VariablePattern <$> variableRemainderParser identifier
-        else symbolOrAliasPatternRemainderParser identifier
--}
-
-getMeta :: IsMeta a => (a -> Parser Pattern) -> Parser Pattern
-getMeta pa = do
+unifiedVariableParser :: Parser UnifiedVariable
+unifiedVariableParser = do
     c <- Parser.peekChar'
     if c == '#'
-        then (pa Meta)
-        else (pa Object)
+        then MetaVariable <$> variableParser Meta
+        else ObjectVariable <$> variableParser Object
 
-mlConstructorParser :: Parser Pattern
+unifiedVariableOrTermPatternParser :: Parser UnifiedPattern
+unifiedVariableOrTermPatternParser = do
+    c <- Parser.peekChar'
+    if c == '#'
+        then MetaPattern <$> variableOrTermPatternParser Meta
+        else ObjectPattern <$> variableOrTermPatternParser Object
+
+variableOrTermPatternParser
+    :: IsMeta a => a -> Parser (Pattern a)
+variableOrTermPatternParser x = do
+    identifier <- idParser x
+    c <- Parser.peekChar'
+    if c == ':'
+        then VariablePattern <$> variableRemainderParser x identifier
+        else symbolOrAliasPatternRemainderParser x identifier
+
+data PatternType
+    = AndPatternType
+    | BottomPatternType
+    | CeilPatternType
+    | EqualsPatternType
+    | ExistsPatternType
+    | FloorPatternType
+    | ForallPatternType
+    | IffPatternType
+    | ImpliesPatternType
+    | MemPatternType
+    | NotPatternType
+    | OrPatternType
+    | TopPatternType
+
+mlConstructorParser :: Parser UnifiedPattern
 mlConstructorParser = do
     void (Parser.char '\\')
     mlPatternParser
   where
     mlPatternParser = keywordBasedParsers
-        [ {-("and", binaryOperatorRemainderParser AndPattern)
-        , ("bottom", topBottomRemainderParser BottomPattern)
-        , ("ceil", ceilFloorRemainderParser CeilPattern)
-        , ("equals", equalsLikeRemainderParser EqualsPattern)
-        , ("exists", existsForallRemainderParser ExistsPattern)
-        , ("floor", ceilFloorRemainderParser FloorPattern)
-        , ("forall", existsForallRemainderParser ForallPattern)
-        , ("iff", binaryOperatorRemainderParser IffPattern)
-        , ("implies", binaryOperatorRemainderParser ImpliesPattern)
-        , ("mem", memRemainderParser)
-        ,-} ("not", unaryOperatorRemainderParser (openCurlyBrace *> getMeta) NotPattern)
-{-
-        , ("or", binaryOperatorRemainderParser OrPattern)
-        , ("top", topBottomRemainderParser TopPattern)
-        -}
+        [ ("and", mlConstructorRemainderParser AndPatternType)
+        , ("bottom", mlConstructorRemainderParser BottomPatternType)
+        , ("ceil", mlConstructorRemainderParser CeilPatternType)
+        , ("equals", mlConstructorRemainderParser EqualsPatternType)
+        , ("exists", mlConstructorRemainderParser ExistsPatternType)
+        , ("floor", mlConstructorRemainderParser FloorPatternType)
+        , ("forall", mlConstructorRemainderParser ForallPatternType)
+        , ("iff", mlConstructorRemainderParser IffPatternType)
+        , ("implies", mlConstructorRemainderParser ImpliesPatternType)
+        , ("mem", mlConstructorRemainderParser MemPatternType)
+        , ("not", mlConstructorRemainderParser NotPatternType)
+        , ("or", mlConstructorRemainderParser OrPatternType)
+        , ("top", mlConstructorRemainderParser TopPatternType)
         ]
-{-
-patternParser :: Parser Pattern
+    mlConstructorRemainderParser patternType = do
+        openCurlyBraceParser
+        c <- Parser.peekChar'
+        if c == '#'
+            then MetaPattern <$> mlConstructorRemainderParser' Meta patternType
+            else ObjectPattern <$>
+                mlConstructorRemainderParser' Object patternType
+    mlConstructorRemainderParser' x patternType =
+        case patternType of
+            AndPatternType -> binaryOperatorRemainderParser x AndPattern
+            BottomPatternType -> topBottomRemainderParser x BottomPattern
+            CeilPatternType -> ceilFloorRemainderParser x CeilPattern
+            EqualsPatternType -> equalsLikeRemainderParser x EqualsPattern
+            ExistsPatternType -> existsForallRemainderParser x ExistsPattern
+            FloorPatternType -> ceilFloorRemainderParser x FloorPattern
+            ForallPatternType -> existsForallRemainderParser x ForallPattern
+            IffPatternType -> binaryOperatorRemainderParser x IffPattern
+            ImpliesPatternType -> binaryOperatorRemainderParser x ImpliesPattern
+            MemPatternType -> memRemainderParser x
+            NotPatternType -> unaryOperatorRemainderParser x NotPattern
+            OrPatternType -> binaryOperatorRemainderParser x OrPattern
+            TopPatternType -> topBottomRemainderParser x TopPattern
+
+patternParser :: Parser UnifiedPattern
 patternParser = do
     c <- Parser.peekChar'
     case c of
         '\\' -> mlConstructorParser
-        '"'  -> StringLiteralPattern <$> stringLiteralParser
-        _    -> variableOrTermPatternParser
+        '"'  -> MetaPattern <$> StringLiteralPattern <$> stringLiteralParser
+        _    -> unifiedVariableOrTermPatternParser
 
-patternListParser :: Parser [Pattern]
+patternListParser :: Parser [UnifiedPattern]
 patternListParser = Parser.sepBy patternParser commaParser
 
 attributesParser :: Parser Attributes
@@ -222,7 +289,7 @@ moduleParser :: Parser Module
 moduleParser = do
     mlLexemeParser "module"
     name <- moduleNameParser
-    sentences <- Parser.many1 sentenceParser
+    sentences <- Parser.many' sentenceParser
     mlLexemeParser "endmodule"
     attributes <- attributesParser
     return Module
@@ -231,26 +298,44 @@ moduleParser = do
            , moduleAttributes = attributes
            }
 
+data SentenceType
+    = AliasSentenceType
+    | SymbolSentenceType
+
+
 sentenceParser :: Parser Sentence
 sentenceParser = keywordBasedParsers
-    [ ( "alias"
-      , aliasSymbolSentenceRemainderParser objectAliasParser AliasSentence
-      )
+    [ ( "alias", sentenceConstructorRemainderParser AliasSentenceType)
     , ( "axiom", axiomSentenceRemainderParser )
     , ( "sort", sortSentenceRemainderParser )
-    , ( "symbol"
-      , aliasSymbolSentenceRemainderParser objectSymbolParser SymbolSentence)
+    , ( "symbol", sentenceConstructorRemainderParser SymbolSentenceType)
     ]
+  where
+    sentenceConstructorRemainderParser sentenceType = do
+        c <- Parser.peekChar'
+        if c == '#'
+            then MetaSymbolOrAliasSentence <$>
+                sentenceConstructorRemainderParser' Meta sentenceType
+            else ObjectSymbolOrAliasSentence <$>
+                sentenceConstructorRemainderParser' Object sentenceType
+    sentenceConstructorRemainderParser' x sentenceType =
+        case sentenceType of
+            AliasSentenceType -> aliasSymbolSentenceRemainderParser x
+                (aliasParser x) AliasSentence
+            SymbolSentenceType -> aliasSymbolSentenceRemainderParser x
+                (symbolParser x) SymbolSentence
 
 aliasSymbolSentenceRemainderParser
-    :: Parser a
-    -> (a -> [ObjectSort] -> ObjectSort -> Attributes -> Sentence)
-    -> Parser Sentence
-aliasSymbolSentenceRemainderParser aliasSymbolParser constructor = do
+    :: IsMeta a
+    => a
+    -> Parser (m a)
+    -> (m a -> [Sort a] -> Sort a -> Attributes -> SymbolOrAliasSentence a)
+    -> Parser (SymbolOrAliasSentence a)
+aliasSymbolSentenceRemainderParser  x aliasSymbolParser constructor = do
     aliasSymbol <- aliasSymbolParser
-    sorts <- inParenthesesParser objectSortListParser
+    sorts <- inParenthesesParser (sortListParser x)
     colonParser
-    resultSort <- objectSortParser
+    resultSort <- sortParser x
     attributes <- attributesParser
     return (constructor aliasSymbol sorts resultSort attributes)
 
@@ -265,6 +350,5 @@ sortSentenceRemainderParser :: Parser Sentence
 sortSentenceRemainderParser =
     pure SortSentence
         <*> inCurlyBracesParser sortVariableListParser
-        <*> objectSortParser
+        <*> sortParser Object
         <*> attributesParser
--}

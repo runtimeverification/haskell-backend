@@ -1,4 +1,3 @@
-{-# LANGUAGE ExistentialQuantification #-}
 module KoreAST where
 
 data MetaType
@@ -6,61 +5,91 @@ data MetaType
     | MetaType
     deriving (Eq, Show)
 
-class IsMeta a where
-    object :: a
+class Show a => IsMeta a where
     metaType :: a -> MetaType
-    idConstructor :: a -> (String -> Id a)
 
 data Meta = Meta
-    deriving (Show)
+    deriving (Show, Eq)
 
 instance IsMeta Meta where
-    object = Meta
     metaType _ = MetaType
-    idConstructor _ = Id
 
 data Object = Object
-    deriving (Show)
+    deriving (Show, Eq)
 
 instance IsMeta Object where
-    object = Object
     metaType _ = ObjectType
-    idConstructor _ = Id
 
-newtype Id a = Id { getId :: String }
+data Id a = Id { idType :: !a, getId :: !String }
     deriving (Show, Eq)
 
 newtype StringLiteral = StringLiteral { getStringLiteral :: String }
     deriving (Show, Eq)
 
 data SymbolOrAlias a = SymbolOrAlias
-    { symbolOrAliasConstructor :: !(Id a)
+    { symbolOrAliasType        :: !a
+    , symbolOrAliasConstructor :: !(Id a)
     , symbolOrAliasParams      :: ![Sort a]
     }
     deriving (Show, Eq)
 
 data Symbol a = Symbol
-    { symbolConstructor :: !(Id a)
+    { symbolType        :: !a
+    , symbolConstructor :: !(Id a)
     , symbolParams      :: ![Sort a]
     }
     deriving (Show, Eq)
 
 data Alias a = Alias
-    { objectAliasConstructor :: !(Id a)
-    , objectAliasParams      :: ![Sort a]
+    { aliasType        :: !a
+    , aliasConstructor :: !(Id a)
+    , aliasParams      :: ![Sort a]
     }
     deriving (Show, Eq)
 
-newtype SortVariable a = SortVariable { getSortVariable :: Id a}
+data SortVariable a = SortVariable
+    { sortVariableType :: !a
+    , getSortVariable  :: !(Id a)
+    }
     deriving (Show, Eq)
 
 data Sort a
-    = SortVariableSort !(SortVariable a)
+    = SortVariableSort
+        { sortVariableSortType :: !a
+        , getSortVariableSort  :: !(SortVariable a)
+        }
     | ActualSort
-        { actualSortName  :: !(Id a)
+        { actualSortType  :: !a
+        , actualSortName  :: !(Id a)
         , actualSortSorts :: ![Sort a]
         }
     deriving (Show, Eq)
+
+data MetaSortType
+    = CharSort
+    | CharListSort
+    | PatternSort
+    | PatternListSort
+    | SortSort
+    | SortListSort
+    | StringSort
+    | SymbolSort
+    | SymbolListSort
+    | VariableSort
+    | VariableListSort
+
+instance Show MetaSortType where
+    show CharSort         = "#Char"
+    show CharListSort     = "#CharList"
+    show PatternSort      = "#Pattern"
+    show PatternListSort  = "#PatternList"
+    show SortSort         = "#Sort"
+    show SortListSort     = "#SortList"
+    show StringSort       = "#String"
+    show SymbolSort       = "#Symbol"
+    show SymbolListSort   = "#SymbolList"
+    show VariableSort     = "#Variable"
+    show VariableListSort = "#VariableList"
 
 data UnifiedSortVariable
     = ObjectSortVariable !(SortVariable Object)
@@ -71,87 +100,110 @@ newtype ModuleName = ModuleName { getModuleName :: String }
     deriving (Show, Eq)
 
 data Variable a = Variable
-    { variableName :: !(Id a)
+    { variableType :: a
+    , variableName :: !(Id a)
     , variableSort :: !(Sort a)
     }
     deriving (Show, Eq)
 
-data Pattern
-    = forall a . AndPattern
+data UnifiedVariable
+    = MetaVariable !(Variable Meta)
+    | ObjectVariable !(Variable Object)
+    deriving (Eq, Show)
+
+data UnifiedPattern
+    = MetaPattern !(Pattern Meta)
+    | ObjectPattern !(Pattern Object)
+    deriving (Eq, Show)
+
+data Pattern a
+    = AndPattern
         { andPatternSort   :: !(Sort a)
-        , andPatternFirst  :: !Pattern
-        , andPatternSecond :: !Pattern
+        , andPatternFirst  :: !UnifiedPattern
+        , andPatternSecond :: !UnifiedPattern
         }
-    | forall a . ApplicationPattern
+    | ApplicationPattern
         { applicationPatternSymbolOrAlias :: !(SymbolOrAlias a)
-        , applicationPatternPatterns      :: ![Pattern]
+        , applicationPatternPatterns      :: ![UnifiedPattern]
         }
-    | forall a . BottomPattern !(Sort a)
-    | forall a . CeilPattern
+    | BottomPattern !(Sort a)
+    | CeilPattern
         { ceilPatternFirstSort  :: !(Sort a)
         , ceilPatternSecondSort :: !(Sort a)
-        , ceilPatternPattern    :: !Pattern
+        , ceilPatternPattern    :: !UnifiedPattern
         }
-    | forall a . EqualsPattern
+    | EqualsPattern
         { equalsPatternFirstSort  :: !(Sort a)
         , equalsPatternSecondSort :: !(Sort a)
-        , equalsPatternFirst      :: !Pattern
-        , equalsPatternSecond     :: !Pattern
+        , equalsPatternFirst      :: !UnifiedPattern
+        , equalsPatternSecond     :: !UnifiedPattern
         }
-    | forall a . ExistsPattern
+    | ExistsPattern
         { existsPatternSort     :: !(Sort a)
-        , existsPatternVariable :: !(Variable a)
-        , existsPatternPattern  :: !Pattern
+        , existsPatternVariable :: !UnifiedVariable
+        , existsPatternPattern  :: !UnifiedPattern
         }
-    | forall a . FloorPattern
+    | FloorPattern
         { floorPatternFirstSort  :: !(Sort a)
         , floorPatternSecondSort :: !(Sort a)
-        , floorPatternPattern    :: !Pattern
+        , floorPatternPattern    :: !UnifiedPattern
         }
-    | forall a . ForallPattern
+    | ForallPattern
         { forallPatternSort     :: !(Sort a)
-        , forallPatternVariable :: !(Variable a)
-        , forallPatternPattern  :: !Pattern
+        , forallPatternVariable :: !UnifiedVariable
+        , forallPatternPattern  :: !UnifiedPattern
         }
-    | forall a . IffPattern
+    | IffPattern
         { iffPatternSort   :: !(Sort a)
-        , iffPatternFirst  :: !Pattern
-        , iffPatternSecond :: !Pattern
+        , iffPatternFirst  :: !UnifiedPattern
+        , iffPatternSecond :: !UnifiedPattern
         }
-    | forall a . ImpliesPattern
+    | ImpliesPattern
         { impliesPatternSort   :: !(Sort a)
-        , impliesPatternFirst  :: !Pattern
-        , impliesPatternSecond :: !Pattern
+        , impliesPatternFirst  :: !UnifiedPattern
+        , impliesPatternSecond :: !UnifiedPattern
         }
-    | forall a . MemPattern
+    | MemPattern
         { memPatternFirstSort  :: !(Sort a)
         , memPatternSecondSort :: !(Sort a)
-        , memPatternVariable   :: !Pattern
-        , memPatternPattern    :: !Pattern
+        , memPatternVariable   :: !UnifiedVariable
+        , memPatternPattern    :: !UnifiedPattern
         }
-    | forall a . NotPattern
+    | NotPattern
         { notPatternSort    :: !(Sort a)
-        , notPatternPattern :: !Pattern
+        , notPatternPattern :: !UnifiedPattern
         }
-    | forall a . OrPattern
+    | OrPattern
         { orPatternSort   :: !(Sort a)
-        , orPatternFirst  :: !Pattern
-        , orPatternSecond :: !Pattern
+        , orPatternFirst  :: !UnifiedPattern
+        , orPatternSecond :: !UnifiedPattern
         }
     | StringLiteralPattern !StringLiteral
-    | forall a . TopPattern !(Sort a)
-    | forall a . VariablePattern !(Variable a)
+    | TopPattern !(Sort a)
+    | VariablePattern !(Variable a)
+    deriving (Eq, Show)
 
-data Sentence
-    = forall a . AliasSentence
+data SymbolOrAliasSentence a
+    = AliasSentence
         { aliasSentenceAlias      :: !(Alias a)
         , aliasSentenceSorts      :: ![Sort a]
         , aliasSentenceReturnSort :: !(Sort a)
         , aliasSentenceAttributes :: !Attributes
         }
+    | SymbolSentence
+        { symbolSentenceSymbol     :: !(Symbol a)
+        , symbolSentenceSorts      :: ![Sort a]
+        , symbolSentenceReturnSort :: !(Sort a)
+        , symbolSentenceAttributes :: !Attributes
+        }
+    deriving (Eq, Show)
+
+data Sentence
+    = MetaSymbolOrAliasSentence !(SymbolOrAliasSentence Meta)
+    | ObjectSymbolOrAliasSentence !(SymbolOrAliasSentence Object)
     | AxiomSentence
         { axiomSentenceParameters :: ![UnifiedSortVariable]
-        , axiomSentencePattern    :: !Pattern
+        , axiomSentencePattern    :: !UnifiedPattern
         , axiomSentenceAtrributes :: !Attributes
         }
     | SortSentence
@@ -159,22 +211,20 @@ data Sentence
         , sortSentenceSort       :: !(Sort Object)
         , sortSentenceAttributes :: !Attributes
         }
-    | forall a. SymbolSentence
-        { symbolSentenceSymbol     :: !(Symbol a)
-        , symbolSentenceSorts      :: ![Sort a]
-        , symbolSentenceReturnSort :: !(Sort a)
-        , symbolSentenceAttributes :: !Attributes
-        }
+    deriving (Eq, Show)
 
-newtype Attributes = Attributes { getAttributes :: [Pattern] }
+newtype Attributes = Attributes { getAttributes :: [UnifiedPattern] }
+    deriving (Eq, Show)
 
 data Module = Module
     { moduleName       :: !ModuleName
     , moduleSentences  :: ![Sentence]
     , moduleAttributes :: !Attributes
     }
+    deriving (Eq, Show)
 
 data Definition = Definition
     { definitionAttributes :: !Attributes
     , definitionModules    :: !Module
     }
+    deriving (Eq, Show)

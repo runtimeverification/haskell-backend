@@ -13,7 +13,7 @@ import qualified Data.ByteString.Char8            as Char8
 import           Data.Char                        (isHexDigit, isOctDigit)
 
 idParser :: IsMeta a => a -> Parser (Id a)
-idParser x = idConstructor x <$> lexeme (idRawParser x)
+idParser x = Id x <$> lexeme (idRawParser x)
 
 stringLiteralParser :: Parser StringLiteral
 stringLiteralParser = lexeme stringLiteralRawParser
@@ -156,7 +156,11 @@ closedCurlyBraceParser = tokenCharParser '}'
 
 inCurlyBracesParser :: Parser a -> Parser a
 inCurlyBracesParser p =
-    openCurlyBraceParser *> p <* closedCurlyBraceParser
+    openCurlyBraceParser *> inCurlyBracesRemainderParser p
+
+inCurlyBracesRemainderParser :: Parser a -> Parser a
+inCurlyBracesRemainderParser p =
+    p <* closedCurlyBraceParser
 
 openParenthesisParser :: Parser ()
 openParenthesisParser = tokenCharParser '('
@@ -180,6 +184,9 @@ parenPairParser pa pb = inParenthesesParser (rawPairParser pa pb)
 
 curlyPairParser :: Parser a -> Parser b -> Parser (a,b)
 curlyPairParser pa pb = inCurlyBracesParser (rawPairParser pa pb)
+
+curlyPairRemainderParser :: Parser a -> Parser (a,a)
+curlyPairRemainderParser pa = inCurlyBracesRemainderParser (rawPairParser pa pa)
 
 openSquareBracketParser :: Parser ()
 openSquareBracketParser = tokenCharParser '['

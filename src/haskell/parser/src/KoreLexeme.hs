@@ -2,9 +2,11 @@ module KoreLexeme
        ( colonParser
        , commaParser
        , curlyPairParser
+       , curlyPairRemainderParser
        , idParser
        , openCurlyBraceParser
        , inCurlyBracesParser
+       , inCurlyBracesRemainderParser
        , inParenthesesParser
        , inSquareBracketsParser
        , keywordBasedParsers
