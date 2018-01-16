@@ -13,9 +13,9 @@ allParserTests :: TestTree
 allParserTests =
     testGroup
         " All Parser Tests"
-        [ koreParserTests
-        , koreLexemeTests
-        , cStringTests
-        , charDictTests
+        [ charDictTests
         , charSetTests
+        , cStringTests
+        , koreLexemeTests
+        , koreParserTests
         ]
