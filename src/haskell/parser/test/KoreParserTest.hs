@@ -129,10 +129,17 @@ metaSortParserTests =
             , failureExpected =
                 "Failed reading: metaSortParser: Invalid constructor: '#Chart'."
             }
+        , Failure
+            { failureInput = "#Char{#Char}"
+            , failureExpected = "Failed reading: metaSortParser: Non empty " ++
+                "parameter sorts '[SortVariableSort {sortVariableSortType =" ++
+                " Meta, getSortVariableSort = SortVariable " ++
+                "{sortVariableType = Meta, getSortVariable = Id {idType = " ++
+                "Meta, getId = \"#Char\"}}}]'."
+            }
         , FailureWithoutMessage
             [ "var1, var2", "var1{var1 var2}"
             , "sort1{sort2, sort3}", "sort1{sort2{sort3}}"
-            , "#Char{#Char}"
             ]
         ]
 
@@ -373,11 +380,11 @@ andPatternParserTests =
 applicationPatternParserTests :: [TestTree]
 applicationPatternParserTests =
     parseTree patternParser
-        [ Success "v:s"
-            ( ObjectPattern $ VariablePattern Variable
-                { variableType = Object
-                , variableName = Id Object "v"
-                , variableSort = objectSortVariableSort "s"
+        [ Success "#v:#Char"
+            ( MetaPattern $ VariablePattern Variable
+                { variableType = Meta
+                , variableName = Id Meta "#v"
+                , variableSort = metaSortVariableSort "#Char"
                 }
             )
         , Success "v:s1{s2}"
@@ -432,8 +439,8 @@ applicationPatternParserTests =
 bottomPatternParserTests :: [TestTree]
 bottomPatternParserTests =
     parseTree patternParser
-        [ Success "\\bottom{s}()"
-            (ObjectPattern $ BottomPattern (objectSortVariableSort "s"))
+        [ Success "\\bottom{#Sort}()"
+            (MetaPattern $ BottomPattern (metaSortVariableSort "#Sort"))
         , FailureWithoutMessage
             [ ""
             , "\\bottom()"
@@ -488,15 +495,15 @@ equalsPatternParserTests =
 existsPatternParserTests :: [TestTree]
 existsPatternParserTests =
     parseTree patternParser
-        [ Success "\\exists{s}(v:s1, \"b\")"
+        [ Success "\\exists{s}(#v:#Char, \"b\")"
             (ObjectPattern
                 ExistsPattern
                     { existsPatternSort = objectSortVariableSort "s"
-                    , existsPatternVariable = ObjectVariable
+                    , existsPatternVariable = MetaVariable
                         Variable
-                            { variableType = Object
-                            , variableName = Id Object "v"
-                            , variableSort = objectSortVariableSort "s1"
+                            { variableType = Meta
+                            , variableName = Id Meta "#v"
+                            , variableSort = metaSortVariableSort "#Char"
                             }
                     , existsPatternPattern =
                         MetaPattern $ StringLiteralPattern (StringLiteral "b")
@@ -774,16 +781,16 @@ aliasSentenceParserTests =
                             ]
                     }
             )
-        , Success "alias a{}():s3[]"
-            ( ObjectSymbolOrAliasSentence
+        , Success "alias #a{}():#Char[]"
+            ( MetaSymbolOrAliasSentence
                 AliasSentence
                     { aliasSentenceAlias = Alias
-                        { aliasType = Object
-                        , aliasConstructor = Id Object "a"
+                        { aliasType = Meta
+                        , aliasConstructor = Id Meta "#a"
                         , aliasParams = []
                         }
                     , aliasSentenceSorts = []
-                    , aliasSentenceReturnSort = objectSortVariableSort "s3"
+                    , aliasSentenceReturnSort = metaSortVariableSort "#Char"
                     , aliasSentenceAttributes = Attributes []
                     }
             )
@@ -1032,13 +1039,19 @@ definitionParserTests =
 -- Generic test utilities
 ------------------------------------
 
-objectSortVariableSort :: String -> Sort Object
-objectSortVariableSort name =
+sortVariableSort :: IsMeta a => a -> String -> Sort a
+sortVariableSort x name =
     SortVariableSort
-        { sortVariableSortType = Object
+        { sortVariableSortType = x
         , getSortVariableSort =
             SortVariable
-                { sortVariableType = Object
-                , getSortVariable = Id Object name
+                { sortVariableType = x
+                , getSortVariable = Id x name
                 }
         }
+
+objectSortVariableSort :: String -> Sort Object
+objectSortVariableSort name = sortVariableSort Object name
+
+metaSortVariableSort :: String -> Sort Meta
+metaSortVariableSort name = sortVariableSort Meta name
