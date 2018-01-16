@@ -1,10 +1,12 @@
-name:                parser
-version:             0.1.0.0
+name:                kore-parser
+version:             0.0.1.0
 github:              "kframework/kore"
-license:             BSD3
+license:             OtherLicense
+license-file:        LICENSE
 author:              "Virgil Serbanuta"
 maintainer:          "virgil.serbanuta@runtimeverification.com"
 copyright:           "2018 Runtime Verification Inc"
+category:            Parser
 
 extra-source-files:
 - README.md
@@ -17,7 +19,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on Github at <https://github.com/githubuser/parser#readme>
+description:         Please see the README on Github at <https://github.com/kframework/src/haskell/parser/README.md>
 
 dependencies:
 - base >= 4.7 && < 5
@@ -30,7 +32,7 @@ library:
   source-dirs: src
 
 executables:
-  parser-exe:
+  kore-parser:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
@@ -38,10 +40,10 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - parser
+    - kore-parser
 
 tests:
-  parser-test:
+  kore-parser-test:
     main:                AllParserTests.hs
     source-dirs:         test
     ghc-options:
@@ -49,6 +51,6 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - parser
+    - kore-parser
     - tasty
     - tasty-hunit
