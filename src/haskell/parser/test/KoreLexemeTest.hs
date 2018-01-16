@@ -42,10 +42,10 @@ commaParserTests =
 curlyPairParserTests :: [TestTree]
 curlyPairParserTests =
     parseTree (curlyPairParser (idParser Object) moduleNameParser)
-        [ Success "{a,B}" (Id Object "a", ModuleName "B")
-        , Success "{ a , B } " (Id Object "a", ModuleName "B")
-        , Success "{/**/a/**/,/**/B/**/}/**/" (Id Object "a", ModuleName "B")
-        , Success "{/*/**/a,/**/B/**/}/**/" (Id Object "a", ModuleName "B")
+        [ Success "{a,B}" (Id "a", ModuleName "B")
+        , Success "{ a , B } " (Id "a", ModuleName "B")
+        , Success "{/**/a/**/,/**/B/**/}/**/" (Id "a", ModuleName "B")
+        , Success "{/*/**/a,/**/B/**/}/**/" (Id "a", ModuleName "B")
         , FailureWithoutMessage
             [ "", " {a,B}", "{a}", "{B}", "{a,}", "{,B}", "{a{},b}"
             , "{a,B,c}", "(a,B)"]
@@ -54,14 +54,14 @@ curlyPairParserTests =
 idParserTests :: [TestTree]
 idParserTests =
     parseTree (idParser Object)
-        [ Success "A" (Id Object "A")
-        , Success "a" (Id Object "a")
-        , Success "abc" (Id Object "abc")
-        , Success "a'" (Id Object "a'")
-        , Success "a-" (Id Object "a-")
-        , Success "a'2" (Id Object "a'2")
-        , Success "a " (Id Object "a")
-        , Success "a/**/ " (Id Object "a")
+        [ Success "A" (Id "A")
+        , Success "a" (Id "a")
+        , Success "abc" (Id "abc")
+        , Success "a'" (Id "a'")
+        , Success "a-" (Id "a-")
+        , Success "a'2" (Id "a'2")
+        , Success "a " (Id "a")
+        , Success "a/**/ " (Id "a")
         , Failure
             { failureInput = "["
             , failureExpected =
@@ -83,11 +83,11 @@ idParserTests =
 metaIdParserTests :: [TestTree]
 metaIdParserTests =
     parseTree (idParser Meta)
-        [ Success "#a" (Id Meta "#a")
-        , Success "#`a" (Id Meta "#`a")
-        , Success "#abc" (Id Meta "#abc")
-        , Success "#a'" (Id Meta "#a'")
-        , Success "#a'2" (Id Meta "#a'2")
+        [ Success "#a" (Id "#a")
+        , Success "#`a" (Id "#`a")
+        , Success "#abc" (Id "#abc")
+        , Success "#a'" (Id "#a'")
+        , Success "#a'2" (Id "#a'2")
         , Failure
             { failureInput = "#module"
             , failureExpected =
@@ -104,9 +104,9 @@ metaIdParserTests =
 inCurlyBracesParserTests :: [TestTree]
 inCurlyBracesParserTests =
     parseTree (inCurlyBracesParser (idParser Object))
-        [ Success "{a}" (Id Object "a")
-        , Success "{ a } " (Id Object "a")
-        , Success "{/**/a/**/}/**/" (Id Object "a")
+        [ Success "{a}" (Id "a")
+        , Success "{ a } " (Id "a")
+        , Success "{/**/a/**/}/**/" (Id "a")
         , FailureWithoutMessage
             [ "", "{}", " {a}", "{a,b}", "{a{}}", "a}", "{a"]
         ]
@@ -114,9 +114,9 @@ inCurlyBracesParserTests =
 inParenthesesParserTests :: [TestTree]
 inParenthesesParserTests =
     parseTree (inParenthesesParser (idParser Object))
-        [ Success "(a)" (Id Object "a")
-        , Success "( a ) " (Id Object "a")
-        , Success "(/**/a/**/)/**/" (Id Object "a")
+        [ Success "(a)" (Id "a")
+        , Success "( a ) " (Id "a")
+        , Success "(/**/a/**/)/**/" (Id "a")
         , FailureWithoutMessage
             [ "", "()", " (a)", "(a,b)", "(a())", "a)", "(a"]
         ]
@@ -124,9 +124,9 @@ inParenthesesParserTests =
 inSquareBracketsParserTests :: [TestTree]
 inSquareBracketsParserTests =
     parseTree (inSquareBracketsParser (idParser Object))
-        [ Success "[a]" (Id Object "a")
-        , Success "[ a ] " (Id Object "a")
-        , Success "[/**/a/**/]/**/" (Id Object "a")
+        [ Success "[a]" (Id "a")
+        , Success "[ a ] " (Id "a")
+        , Success "[/**/a/**/]/**/" (Id "a")
         , FailureWithoutMessage
             [ "", "[]", " [a]", "[a,b]", "[a[]]", "a]", "[a"]
         ]
@@ -139,12 +139,12 @@ keywordBasedParsersTests =
             , ("de", inParenthesesParser (idParser Object))
             , ("dd", idParser Object)
             , ("df", inSquareBracketsParser (idParser Object))])
-        [ Success "abc{a}" (Id Object "a")
-        , Success "de(a)" (Id Object "a")
-        , Success "df[a]" (Id Object "a")
-        , Success "df [ a ] " (Id Object "a")
-        , Success "dd a" (Id Object "a")
-        , Success "df/**/ [/**/ a/**/ ]/**/ " (Id Object "a")
+        [ Success "abc{a}" (Id "a")
+        , Success "de(a)" (Id "a")
+        , Success "df[a]" (Id "a")
+        , Success "df [ a ] " (Id "a")
+        , Success "dd a" (Id "a")
+        , Success "df/**/ [/**/ a/**/ ]/**/ " (Id "a")
         , Failure
             { failureInput = "dg(a)"
             , failureExpected =
@@ -186,9 +186,9 @@ moduleNameParserTests =
 parenPairParserTests :: [TestTree]
 parenPairParserTests =
     parseTree (parenPairParser (idParser Object) moduleNameParser)
-        [ Success "(a,B)" (Id Object "a", ModuleName "B")
-        , Success "( a , B ) " (Id Object "a", ModuleName "B")
-        , Success "(/**/a/**/,/**/B/**/)/**/" (Id Object "a", ModuleName "B")
+        [ Success "(a,B)" (Id "a", ModuleName "B")
+        , Success "( a , B ) " (Id "a", ModuleName "B")
+        , Success "(/**/a/**/,/**/B/**/)/**/" (Id "a", ModuleName "B")
         , FailureWithoutMessage
             [ "", " (a,B)", "(a)", "(B)", "(a,)", "(,B)", "(a(),b)"
             , "(a,B,c)", "{a,B}"]

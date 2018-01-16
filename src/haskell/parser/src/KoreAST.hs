@@ -1,5 +1,7 @@
 module KoreAST where
 
+import           Data.Typeable
+
 data MetaType
     = ObjectType
     | MetaType
@@ -9,61 +11,59 @@ class Show a => IsMeta a where
     metaType :: a -> MetaType
 
 data Meta = Meta
-    deriving (Show, Eq)
+    deriving (Show, Eq, Typeable)
 
 instance IsMeta Meta where
     metaType _ = MetaType
 
 data Object = Object
-    deriving (Show, Eq)
+    deriving (Show, Eq, Typeable)
 
 instance IsMeta Object where
     metaType _ = ObjectType
 
-data Id a = Id { idType :: !a, getId :: !String }
-    deriving (Show, Eq)
+isObject :: (IsMeta a, Typeable (m a)) => m a -> Bool
+isObject x = (head $ typeRepArgs (typeOf x)) == typeOf Object
+
+isMeta :: (IsMeta a, Typeable (m a)) => m a -> Bool
+isMeta x = (head $ typeRepArgs (typeOf x)) == typeOf Meta
+
+newtype Id a = Id { getId :: String }
+    deriving (Show, Eq, Typeable)
 
 newtype StringLiteral = StringLiteral { getStringLiteral :: String }
     deriving (Show, Eq)
 
 data SymbolOrAlias a = SymbolOrAlias
-    { symbolOrAliasType        :: !a
-    , symbolOrAliasConstructor :: !(Id a)
+    { symbolOrAliasConstructor :: !(Id a)
     , symbolOrAliasParams      :: ![Sort a]
     }
-    deriving (Show, Eq)
+    deriving (Show, Eq, Typeable)
 
 data Symbol a = Symbol
-    { symbolType        :: !a
-    , symbolConstructor :: !(Id a)
+    { symbolConstructor :: !(Id a)
     , symbolParams      :: ![Sort a]
     }
-    deriving (Show, Eq)
+    deriving (Show, Eq, Typeable)
 
 data Alias a = Alias
-    { aliasType        :: !a
-    , aliasConstructor :: !(Id a)
+    { aliasConstructor :: !(Id a)
     , aliasParams      :: ![Sort a]
     }
-    deriving (Show, Eq)
+    deriving (Show, Eq, Typeable)
 
-data SortVariable a = SortVariable
-    { sortVariableType :: !a
-    , getSortVariable  :: !(Id a)
-    }
-    deriving (Show, Eq)
+newtype SortVariable a = SortVariable
+    { getSortVariable  :: Id a }
+    deriving (Show, Eq, Typeable)
 
 data Sort a
     = SortVariableSort
-        { sortVariableSortType :: !a
-        , getSortVariableSort  :: !(SortVariable a)
-        }
+        { getSortVariableSort  :: !(SortVariable a) }
     | ActualSort
-        { actualSortType  :: !a
-        , actualSortName  :: !(Id a)
+        { actualSortName  :: !(Id a)
         , actualSortSorts :: ![Sort a]
         }
-    deriving (Show, Eq)
+    deriving (Show, Eq, Typeable)
 
 data MetaSortType
     = CharSort
@@ -100,11 +100,10 @@ newtype ModuleName = ModuleName { getModuleName :: String }
     deriving (Show, Eq)
 
 data Variable a = Variable
-    { variableType :: a
-    , variableName :: !(Id a)
+    { variableName :: !(Id a)
     , variableSort :: !(Sort a)
     }
-    deriving (Show, Eq)
+    deriving (Show, Eq, Typeable)
 
 data UnifiedVariable
     = MetaVariable !(Variable Meta)
@@ -181,7 +180,7 @@ data Pattern a
     | StringLiteralPattern !StringLiteral
     | TopPattern !(Sort a)
     | VariablePattern !(Variable a)
-    deriving (Eq, Show)
+    deriving (Eq, Show, Typeable)
 
 data SymbolOrAliasSentence a
     = AliasSentence
@@ -196,7 +195,7 @@ data SymbolOrAliasSentence a
         , symbolSentenceReturnSort :: !(Sort a)
         , symbolSentenceAttributes :: !Attributes
         }
-    deriving (Eq, Show)
+    deriving (Eq, Show, Typeable)
 
 data Sentence
     = MetaSymbolOrAliasSentence !(SymbolOrAliasSentence Meta)

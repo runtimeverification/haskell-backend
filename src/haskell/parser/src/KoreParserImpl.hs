@@ -10,7 +10,7 @@ import           Data.Attoparsec.ByteString.Char8 (Parser)
 import qualified Data.Attoparsec.ByteString.Char8 as Parser
 
 sortVariableParser :: IsMeta a => a -> Parser (SortVariable a)
-sortVariableParser x = SortVariable x <$> idParser x
+sortVariableParser x = SortVariable <$> idParser x
 
 unifiedSortVariableParser :: Parser UnifiedSortVariable
 unifiedSortVariableParser = do
@@ -28,14 +28,13 @@ sortParser x = do
     c <- Parser.peekChar
     case c of
         Just '{' -> actualSortParser identifier
-        _ -> return (SortVariableSort x $ SortVariable x identifier)
+        _        -> return (SortVariableSort $ SortVariable identifier)
   where
     actualSortParser identifier = do
         sorts <- inCurlyBracesParser (sortListParser x)
         when (metaType x == MetaType) (checkMetaSort identifier sorts)
         return ActualSort
-            { actualSortType = x
-            , actualSortName = identifier
+            { actualSortName = identifier
             , actualSortSorts = sorts
             }
 
@@ -65,8 +64,7 @@ checkMetaSort _ l =
 metaSort :: MetaSortType -> Sort Meta
 metaSort sortType =
     ActualSort
-    { actualSortType = Meta
-    , actualSortName = Id Meta (show sortType)
+    { actualSortName = Id (show sortType)
     , actualSortSorts = []}
 
 sortListParser :: IsMeta a => a -> Parser [Sort a]
@@ -84,15 +82,15 @@ symbolOrAliasRawParser x constructor = do
     symbolOrAliasRemainderRawParser x (constructor headConstructor)
 
 aliasParser :: IsMeta a => a -> Parser (Alias a)
-aliasParser x = symbolOrAliasRawParser x (Alias x)
+aliasParser x = symbolOrAliasRawParser x Alias
 
 symbolParser :: IsMeta a => a -> Parser (Symbol a)
-symbolParser x = symbolOrAliasRawParser x (Symbol x)
+symbolParser x = symbolOrAliasRawParser x Symbol
 
 symbolOrAliasRemainderParser
     :: IsMeta a => a -> Id a -> Parser (SymbolOrAlias a)
 symbolOrAliasRemainderParser x identifier =
-    symbolOrAliasRemainderRawParser x (SymbolOrAlias x identifier)
+    symbolOrAliasRemainderRawParser x (SymbolOrAlias identifier)
 
 unaryOperatorRemainderParser
     :: IsMeta a
@@ -174,8 +172,7 @@ variableRemainderParser x identifier = do
     colonParser
     sort <- sortParser x
     return Variable
-        { variableType = x
-        , variableName = identifier
+        { variableName = identifier
         , variableSort = sort
         }
 

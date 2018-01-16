@@ -6,14 +6,14 @@ import           CString
 import           KoreAST
 
 import           Control.Monad                    (void, when)
+import qualified Data.Attoparsec.ByteString       as BParser (runScanner)
 import           Data.Attoparsec.ByteString.Char8 (Parser)
 import qualified Data.Attoparsec.ByteString.Char8 as Parser
-import qualified Data.Attoparsec.ByteString       as BParser (runScanner)
 import qualified Data.ByteString.Char8            as Char8
 import           Data.Char                        (isHexDigit, isOctDigit)
 
 idParser :: IsMeta a => a -> Parser (Id a)
-idParser x = Id x <$> lexeme (idRawParser x)
+idParser x = Id <$> lexeme (idRawParser x)
 
 stringLiteralParser :: Parser StringLiteral
 stringLiteralParser = lexeme stringLiteralRawParser
@@ -29,7 +29,7 @@ multiLineCommentToken = do
     (_,state) <- BParser.runScanner COMMENT delta'
     case state of
         END -> return ()
-        _ -> fail "Unfinished comment."
+        _   -> fail "Unfinished comment."
   where
     delta' s c = delta s (toEnum (fromEnum c))
     delta END _    = Nothing
@@ -118,7 +118,7 @@ metaIdRawParser = do
 idRawParser :: (IsMeta a) => a -> Parser String
 idRawParser x = case metaType x of
     ObjectType -> objectIdRawParser
-    MetaType -> metaIdRawParser
+    MetaType   -> metaIdRawParser
 
 data StringScannerState = STRING | ESCAPE | HEX StringScannerState
 
