@@ -127,7 +127,7 @@ keywordBasedParsersTests =
         (keywordBasedParsers
             [ ("abc", inCurlyBracesParser (idParser Object))
             , ("de", inParenthesesParser (idParser Object))
-            , ("dd", (idParser Object))
+            , ("dd", idParser Object)
             , ("df", inSquareBracketsParser (idParser Object))])
         [ Success "abc{a}" (Id Object "a")
         , Success "de(a)" (Id Object "a")

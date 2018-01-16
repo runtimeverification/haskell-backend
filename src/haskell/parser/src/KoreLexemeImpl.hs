@@ -38,8 +38,7 @@ multiLineCommentToken = do
     delta _ _      = Just COMMENT
 
 singleLineCommentToken :: Parser ()
-singleLineCommentToken = do
---    void (Parser.string (Char8.pack "//"))
+singleLineCommentToken =
     void (Parser.scan COMMENT delta)
   where
     delta END _  = Nothing
@@ -101,7 +100,7 @@ metaIdRawParser :: Parser String
 metaIdRawParser = do
     c <- Parser.char '#'
     c' <- Parser.peekChar'
-    if (c' == '`')
+    if c' == '`'
         then do
             void (Parser.char c')
             idToken <- objectIdRawParser

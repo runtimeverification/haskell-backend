@@ -50,7 +50,11 @@ koreParserTests =
 objectSortParserTests :: [TestTree]
 objectSortParserTests =
     parseTree (sortParser Object)
-        [ Success "var" (SortVariableSort Object (SortVariable Object (Id Object "var")))
+        [ Success "var"
+            SortVariableSort
+                { sortVariableSortType = Object
+                , getSortVariableSort = SortVariable Object (Id Object "var")
+                }
         , Success "sort1{}"
             ActualSort
                 { actualSortType = Object
@@ -62,15 +66,28 @@ objectSortParserTests =
                 { actualSortType = Object
                 , actualSortName = Id Object "sort1"
                 , actualSortSorts =
-                    [SortVariableSort Object (SortVariable Object (Id Object "sort2"))]
+                    [ SortVariableSort
+                        { sortVariableSortType = Object
+                        , getSortVariableSort =
+                            SortVariable Object (Id Object "sort2")
+                        }
+                    ]
                 }
         , Success "sort1{sort2, sort3}"
             ActualSort
                 { actualSortType = Object
                 , actualSortName = Id Object "sort1"
                 , actualSortSorts =
-                    [ SortVariableSort Object (SortVariable Object (Id Object "sort2"))
-                    , SortVariableSort Object (SortVariable Object (Id Object "sort3"))
+                    [ SortVariableSort
+                        { sortVariableSortType = Object
+                        , getSortVariableSort =
+                            SortVariable Object (Id Object "sort2")
+                        }
+                    , SortVariableSort
+                        { sortVariableSortType = Object
+                        , getSortVariableSort =
+                            SortVariable Object (Id Object "sort3")
+                        }
                     ]
                 }
         , Success "sort1{sort2{sort3}}"
@@ -123,19 +140,20 @@ objectSortListParserTests :: [TestTree]
 objectSortListParserTests =
     parseTree (sortListParser Object)
         [ Success "" []
-        , Success "var" [SortVariableSort Object (SortVariable Object (Id Object "var"))]
+        , Success "var"
+            [ objectSortVariableSort "var" ]
         , Success "var1, var2"
-            [ SortVariableSort Object (SortVariable Object (Id Object "var1"))
-            , SortVariableSort Object (SortVariable Object (Id Object "var2"))
+            [ objectSortVariableSort "var1"
+            , objectSortVariableSort "var2"
             ]
         , Success "sort1{sort2}, var"
             [ ActualSort
                 { actualSortType = Object
                 , actualSortName = Id Object "sort1"
                 , actualSortSorts =
-                    [SortVariableSort Object (SortVariable Object (Id Object "sort2"))]
+                    [ objectSortVariableSort "sort2" ]
                 }
-            , SortVariableSort Object (SortVariable Object (Id Object "var"))
+            , objectSortVariableSort "var"
             ]
         , FailureWithoutMessage ["var1 var2"]
         ]
@@ -199,25 +217,23 @@ objectAliasParserTests =
             Alias
                 { aliasType = Object
                 , aliasConstructor = Id Object "c1"
-                , aliasParams =
-                    [SortVariableSort Object (SortVariable Object (Id Object "s1"))]
+                , aliasParams = [ objectSortVariableSort "s1" ]
                 }
         , Success "c1{s1,s2{s3}}"
             Alias
                 { aliasType = Object
                 , aliasConstructor = Id Object "c1"
                 , aliasParams =
-                    [ SortVariableSort Object (SortVariable Object (Id Object "s1"))
+                    [ objectSortVariableSort "s1"
                     , ActualSort
                         { actualSortType = Object
                         , actualSortName = Id Object "s2"
-                        , actualSortSorts =
-                            [ SortVariableSort Object (SortVariable Object (Id Object "s3"))
-                            ]
+                        , actualSortSorts = [ objectSortVariableSort "s3" ]
                         }
                     ]
                 }
-        , FailureWithoutMessage ["alias", "a1{a2},a1{a2}", "a1{a2 a2}", "a1{a2}a1{a2}"]
+        , FailureWithoutMessage
+            ["alias", "a1{a2},a1{a2}", "a1{a2 a2}", "a1{a2}a1{a2}"]
         ]
 
 objectSymbolParserTests :: [TestTree]
@@ -233,25 +249,23 @@ objectSymbolParserTests =
             Symbol
                 { symbolType = Object
                 , symbolConstructor = Id Object "c1"
-                , symbolParams =
-                    [SortVariableSort Object (SortVariable Object (Id Object "s1"))]
+                , symbolParams = [ objectSortVariableSort "s1" ]
                 }
         , Success "c1{s1,s2{s3}}"
             Symbol
                 { symbolType = Object
                 , symbolConstructor = Id Object "c1"
                 , symbolParams =
-                    [ SortVariableSort Object (SortVariable Object (Id Object "s1"))
+                    [ objectSortVariableSort "s1"
                     , ActualSort
                         { actualSortType = Object
                         , actualSortName = Id Object "s2"
-                        , actualSortSorts =
-                            [ SortVariableSort Object (SortVariable Object (Id Object "s3"))
-                            ]
+                        , actualSortSorts = [ objectSortVariableSort "s3" ]
                         }
                     ]
                 }
-        , FailureWithoutMessage ["symbol", "a1{a2},a1{a2}", "a1{a2 a2}", "a1{a2}a1{a2}"]
+        , FailureWithoutMessage
+            ["symbol", "a1{a2},a1{a2}", "a1{a2 a2}", "a1{a2}a1{a2}"]
         ]
 
 metaAliasParserTests :: [TestTree]
@@ -279,7 +293,8 @@ metaAliasParserTests =
                     , metaSort CharSort
                     ]
                 }
-        , FailureWithoutMessage ["#alias", "#a1{#a2},#a1{#a2}", "#a1{#a2 #a2}", "#a1{#a2}#a1{#a2}"]
+        , FailureWithoutMessage
+            ["#alias", "#a1{#a2},#a1{#a2}", "#a1{#a2 #a2}", "#a1{#a2}#a1{#a2}"]
         ]
 
 metaSymbolParserTests :: [TestTree]
@@ -307,7 +322,8 @@ metaSymbolParserTests =
                     , metaSort CharListSort
                     ]
                 }
-        , FailureWithoutMessage ["#symbol", "#a1{#a2},#a1{#a2}", "#a1{#a2 #a2}", "#a1{#a2}#a1{#a2}"]
+        , FailureWithoutMessage
+            ["#symbol", "#a1{#a2},#a1{#a2}", "#a1{#a2 #a2}", "#a1{#a2}#a1{#a2}"]
         ]
 
 variableParserTests :: [TestTree]
@@ -317,7 +333,7 @@ variableParserTests =
             Variable
                 { variableType = Object
                 , variableName = Id Object "v"
-                , variableSort = SortVariableSort Object (SortVariable Object (Id Object "s"))
+                , variableSort = objectSortVariableSort "s"
                 }
         , Success "v:s1{s2}"
             Variable
@@ -326,9 +342,8 @@ variableParserTests =
                 , variableSort =
                     ActualSort
                         { actualSortType = Object
-                        , actualSortName=Id Object "s1"
-                        , actualSortSorts=
-                            [SortVariableSort Object (SortVariable Object (Id Object "s2"))]
+                        , actualSortName = Id Object "s1"
+                        , actualSortSorts = [ objectSortVariableSort "s2" ]
                         }
                 }
         , FailureWithoutMessage ["", "var", "v:", ":s"]
@@ -339,9 +354,11 @@ andPatternParserTests =
     parseTree patternParser
         [ Success "\\and{s}(\"a\", \"b\")"
             ( ObjectPattern AndPattern
-                { andPatternSort = SortVariableSort Object (SortVariable Object (Id Object "s"))
-                , andPatternFirst = MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                , andPatternSecond = MetaPattern $ StringLiteralPattern (StringLiteral "b")
+                { andPatternSort = objectSortVariableSort "s"
+                , andPatternFirst =
+                    MetaPattern $ StringLiteralPattern (StringLiteral "a")
+                , andPatternSecond =
+                    MetaPattern $ StringLiteralPattern (StringLiteral "b")
                 }
             )
         , FailureWithoutMessage
@@ -360,7 +377,7 @@ applicationPatternParserTests =
             ( ObjectPattern $ VariablePattern Variable
                 { variableType = Object
                 , variableName = Id Object "v"
-                , variableSort = SortVariableSort Object (SortVariable Object (Id Object "s"))
+                , variableSort = objectSortVariableSort "s"
                 }
             )
         , Success "v:s1{s2}"
@@ -370,9 +387,8 @@ applicationPatternParserTests =
                 , variableSort =
                     ActualSort
                         { actualSortType = Object
-                        , actualSortName=Id Object "s1"
-                        , actualSortSorts=
-                            [SortVariableSort Object (SortVariable Object (Id Object "s2"))]
+                        , actualSortName = Id Object "s1"
+                        , actualSortSorts = [ objectSortVariableSort "s2" ]
                         }
                 }
             )
@@ -383,22 +399,19 @@ applicationPatternParserTests =
                         { symbolOrAliasType = Object
                         , symbolOrAliasConstructor = Id Object "c"
                         , symbolOrAliasParams =
-                            [ SortVariableSort Object (SortVariable Object (Id Object "s1"))
-                            , SortVariableSort Object (SortVariable Object (Id Object "s2"))
-                            ]
+                            [ objectSortVariableSort "s1"
+                            , objectSortVariableSort "s2" ]
                         }
                 , applicationPatternPatterns =
                     [ ObjectPattern $ VariablePattern Variable
                         { variableType = Object
                         , variableName = Id Object "v1"
-                        , variableSort =
-                            SortVariableSort Object (SortVariable Object (Id Object "s1"))
+                        , variableSort = objectSortVariableSort "s1"
                         }
                     , ObjectPattern $ VariablePattern Variable
                         { variableType = Object
                         , variableName = Id Object "v2"
-                        , variableSort =
-                            SortVariableSort Object (SortVariable Object (Id Object "s2"))
+                        , variableSort = objectSortVariableSort "s2"
                         }
                     ]
                 }
@@ -420,7 +433,7 @@ bottomPatternParserTests :: [TestTree]
 bottomPatternParserTests =
     parseTree patternParser
         [ Success "\\bottom{s}()"
-            (ObjectPattern $ BottomPattern (SortVariableSort Object (SortVariable Object (Id Object "s"))))
+            (ObjectPattern $ BottomPattern (objectSortVariableSort "s"))
         , FailureWithoutMessage
             [ ""
             , "\\bottom()"
@@ -433,13 +446,13 @@ ceilPatternParserTests :: [TestTree]
 ceilPatternParserTests =
     parseTree patternParser
         [ Success "\\ceil{s1, s2}(\"a\")"
-            (ObjectPattern $ CeilPattern
-                { ceilPatternFirstSort =
-                    SortVariableSort Object (SortVariable Object (Id Object "s1"))
-                , ceilPatternSecondSort =
-                    SortVariableSort Object (SortVariable Object (Id Object "s2"))
-                , ceilPatternPattern = MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                }
+            (ObjectPattern
+                CeilPattern
+                    { ceilPatternFirstSort = objectSortVariableSort "s1"
+                    , ceilPatternSecondSort = objectSortVariableSort "s2"
+                    , ceilPatternPattern =
+                        MetaPattern $ StringLiteralPattern (StringLiteral "a")
+                    }
             )
         , FailureWithoutMessage
             [ ""
@@ -453,14 +466,15 @@ equalsPatternParserTests :: [TestTree]
 equalsPatternParserTests =
     parseTree patternParser
         [ Success "\\equals{s1, s2}(\"a\", \"b\")"
-            ( ObjectPattern $ EqualsPattern
-                { equalsPatternFirstSort =
-                    SortVariableSort Object (SortVariable Object (Id Object "s1"))
-                , equalsPatternSecondSort =
-                    SortVariableSort Object (SortVariable Object (Id Object "s2"))
-                , equalsPatternFirst = MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                , equalsPatternSecond = MetaPattern $ StringLiteralPattern (StringLiteral "b")
-                }
+            ( ObjectPattern
+                EqualsPattern
+                    { equalsPatternFirstSort = objectSortVariableSort "s1"
+                    , equalsPatternSecondSort = objectSortVariableSort "s2"
+                    , equalsPatternFirst =
+                        MetaPattern $ StringLiteralPattern (StringLiteral "a")
+                    , equalsPatternSecond =
+                        MetaPattern $ StringLiteralPattern (StringLiteral "b")
+                    }
             )
         , FailureWithoutMessage
             [ ""
@@ -475,17 +489,18 @@ existsPatternParserTests :: [TestTree]
 existsPatternParserTests =
     parseTree patternParser
         [ Success "\\exists{s}(v:s1, \"b\")"
-            (ObjectPattern $ ExistsPattern
-                { existsPatternSort =
-                    SortVariableSort Object (SortVariable Object (Id Object "s"))
-                , existsPatternVariable = ObjectVariable $ Variable
-                    { variableType = Object
-                    , variableName = Id Object "v"
-                    , variableSort = SortVariableSort Object (SortVariable Object (Id Object "s1"))
+            (ObjectPattern
+                ExistsPattern
+                    { existsPatternSort = objectSortVariableSort "s"
+                    , existsPatternVariable = ObjectVariable
+                        Variable
+                            { variableType = Object
+                            , variableName = Id Object "v"
+                            , variableSort = objectSortVariableSort "s1"
+                            }
+                    , existsPatternPattern =
+                        MetaPattern $ StringLiteralPattern (StringLiteral "b")
                     }
-                , existsPatternPattern =
-                    MetaPattern $ StringLiteralPattern (StringLiteral "b")
-                }
             )
         , FailureWithoutMessage
             [ ""
@@ -506,13 +521,13 @@ floorPatternParserTests :: [TestTree]
 floorPatternParserTests =
     parseTree patternParser
         [ Success "\\floor{s1, s2}(\"a\")"
-            ( ObjectPattern $ FloorPattern
-                { floorPatternFirstSort =
-                    SortVariableSort Object (SortVariable Object (Id Object "s1"))
-                , floorPatternSecondSort =
-                    SortVariableSort Object (SortVariable Object (Id Object "s2"))
-                , floorPatternPattern = MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                }
+            ( ObjectPattern
+                FloorPattern
+                    { floorPatternFirstSort = objectSortVariableSort "s1"
+                    , floorPatternSecondSort = objectSortVariableSort "s2"
+                    , floorPatternPattern =
+                        MetaPattern $ StringLiteralPattern (StringLiteral "a")
+                    }
             )
         , FailureWithoutMessage
             [ ""
@@ -526,17 +541,18 @@ forallPatternParserTests :: [TestTree]
 forallPatternParserTests =
     parseTree patternParser
         [ Success "\\forall{s}(v:s1, \"b\")"
-            ( ObjectPattern $ ForallPattern
-                { forallPatternSort =
-                    SortVariableSort Object (SortVariable Object (Id Object "s"))
-                , forallPatternVariable = ObjectVariable $ Variable
-                    { variableType = Object
-                    , variableName = Id Object "v"
-                    , variableSort = SortVariableSort Object (SortVariable Object (Id Object "s1"))
+            ( ObjectPattern
+                ForallPattern
+                    { forallPatternSort = objectSortVariableSort "s"
+                    , forallPatternVariable = ObjectVariable
+                        Variable
+                            { variableType = Object
+                            , variableName = Id Object "v"
+                            , variableSort = objectSortVariableSort "s1"
+                            }
+                    , forallPatternPattern =
+                        MetaPattern $ StringLiteralPattern (StringLiteral "b")
                     }
-                , forallPatternPattern =
-                    MetaPattern $ StringLiteralPattern (StringLiteral "b")
-                }
             )
         , FailureWithoutMessage
             [ ""
@@ -557,11 +573,14 @@ iffPatternParserTests :: [TestTree]
 iffPatternParserTests =
     parseTree patternParser
         [ Success "\\iff{s}(\"a\", \"b\")"
-            ( ObjectPattern $ IffPattern
-                { iffPatternSort = SortVariableSort Object (SortVariable Object (Id Object "s"))
-                , iffPatternFirst = MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                , iffPatternSecond = MetaPattern $ StringLiteralPattern (StringLiteral "b")
-                }
+            ( ObjectPattern
+                IffPattern
+                    { iffPatternSort = objectSortVariableSort "s"
+                    , iffPatternFirst =
+                        MetaPattern $ StringLiteralPattern (StringLiteral "a")
+                    , iffPatternSecond =
+                        MetaPattern $ StringLiteralPattern (StringLiteral "b")
+                    }
             )
         , FailureWithoutMessage
             [ ""
@@ -575,12 +594,14 @@ impliesPatternParserTests :: [TestTree]
 impliesPatternParserTests =
     parseTree patternParser
         [ Success "\\implies{s}(\"a\", \"b\")"
-            ( ObjectPattern $ ImpliesPattern
-                { impliesPatternSort = SortVariableSort Object (SortVariable Object (Id Object "s"))
-                , impliesPatternFirst = MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                , impliesPatternSecond =
-                    MetaPattern $ StringLiteralPattern (StringLiteral "b")
-                }
+            ( ObjectPattern
+                ImpliesPattern
+                    { impliesPatternSort = objectSortVariableSort "s"
+                    , impliesPatternFirst =
+                        MetaPattern $ StringLiteralPattern (StringLiteral "a")
+                    , impliesPatternSecond =
+                        MetaPattern $ StringLiteralPattern (StringLiteral "b")
+                    }
             )
         , FailureWithoutMessage
             [ ""
@@ -594,19 +615,19 @@ memPatternParserTests :: [TestTree]
 memPatternParserTests =
     parseTree patternParser
         [ Success "\\mem{s1,s2}(v:s3, \"b\")"
-            ( ObjectPattern $ MemPattern
-                { memPatternFirstSort =
-                    SortVariableSort Object (SortVariable Object (Id Object "s1"))
-                , memPatternSecondSort =
-                    SortVariableSort Object (SortVariable Object (Id Object "s2"))
-                , memPatternVariable = ObjectVariable $ Variable
-                    { variableType = Object
-                    , variableName = Id Object "v"
-                    , variableSort = SortVariableSort Object (SortVariable Object (Id Object "s3"))
+            ( ObjectPattern
+                MemPattern
+                    { memPatternFirstSort = objectSortVariableSort "s1"
+                    , memPatternSecondSort = objectSortVariableSort "s2"
+                    , memPatternVariable = ObjectVariable
+                        Variable
+                            { variableType = Object
+                            , variableName = Id Object "v"
+                            , variableSort = objectSortVariableSort "s3"
+                            }
+                    , memPatternPattern =
+                        MetaPattern $ StringLiteralPattern (StringLiteral "b")
                     }
-                , memPatternPattern =
-                    MetaPattern $ StringLiteralPattern (StringLiteral "b")
-                }
             )
         , FailureWithoutMessage
             [ ""
@@ -627,10 +648,12 @@ notPatternParserTests :: [TestTree]
 notPatternParserTests =
     parseTree patternParser
         [ Success "\\not{s}(\"a\")"
-            ( ObjectPattern $ NotPattern
-                { notPatternSort = SortVariableSort Object (SortVariable Object (Id Object "s"))
-                , notPatternPattern = MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                }
+            ( ObjectPattern
+                NotPattern
+                    { notPatternSort = objectSortVariableSort "s"
+                    , notPatternPattern =
+                        MetaPattern $ StringLiteralPattern (StringLiteral "a")
+                    }
             )
         , FailureWithoutMessage
             [ ""
@@ -646,11 +669,14 @@ orPatternParserTests :: [TestTree]
 orPatternParserTests =
     parseTree patternParser
         [ Success "\\or{s}(\"a\", \"b\")"
-            ( ObjectPattern $ OrPattern
-                { orPatternSort = SortVariableSort Object (SortVariable Object (Id Object "s"))
-                , orPatternFirst = MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                , orPatternSecond = MetaPattern $ StringLiteralPattern (StringLiteral "b")
-                }
+            ( ObjectPattern
+                OrPattern
+                    { orPatternSort = objectSortVariableSort "s"
+                    , orPatternFirst =
+                        MetaPattern $ StringLiteralPattern (StringLiteral "a")
+                    , orPatternSecond =
+                        MetaPattern $ StringLiteralPattern (StringLiteral "b")
+                    }
             )
         , FailureWithoutMessage
             [ ""
@@ -663,17 +689,21 @@ orPatternParserTests =
 stringLiteralPatternParserTests :: [TestTree]
 stringLiteralPatternParserTests =
     parseTree patternParser
-        [ Success "\"hello\"" (MetaPattern $ StringLiteralPattern (StringLiteral "hello"))
-        , Success "\"\"" (MetaPattern $ StringLiteralPattern (StringLiteral ""))
-        , Success "\"\\\"\"" (MetaPattern $ StringLiteralPattern (StringLiteral "\""))
+        [ Success "\"hello\""
+            (MetaPattern $ StringLiteralPattern (StringLiteral "hello"))
+        , Success "\"\""
+            (MetaPattern $ StringLiteralPattern (StringLiteral ""))
+        , Success "\"\\\"\""
+            (MetaPattern $ StringLiteralPattern (StringLiteral "\""))
         , FailureWithoutMessage ["", "\""]
         ]
 topPatternParserTests :: [TestTree]
 topPatternParserTests =
     parseTree patternParser
         [ Success "\\top{s}()"
-            ( ObjectPattern $ TopPattern (SortVariableSort Object (SortVariable Object (Id Object "s"))))
-        , FailureWithoutMessage ["", "\\top()", "\\top{}()", "\\top{s, s}()", "\\top{s}"]
+            (ObjectPattern $ TopPattern (objectSortVariableSort "s"))
+        , FailureWithoutMessage
+            ["", "\\top()", "\\top{}()", "\\top{s, s}()", "\\top{s}"]
         ]
 variablePatternParserTests :: [TestTree]
 variablePatternParserTests =
@@ -682,7 +712,7 @@ variablePatternParserTests =
             ( ObjectPattern $ VariablePattern Variable
                 { variableType = Object
                 , variableName = Id Object "v"
-                , variableSort = SortVariableSort Object (SortVariable Object (Id Object "s"))
+                , variableSort = objectSortVariableSort "s"
                 }
             )
         , Success "v:s1{s2}"
@@ -693,8 +723,7 @@ variablePatternParserTests =
                     ActualSort
                         { actualSortType = Object
                         , actualSortName=Id Object "s1"
-                        , actualSortSorts=
-                            [SortVariableSort Object (SortVariable Object (Id Object "s2"))]
+                        , actualSortSorts = [ objectSortVariableSort "s2" ]
                         }
                 }
             )
@@ -705,55 +734,58 @@ aliasSentenceParserTests :: [TestTree]
 aliasSentenceParserTests =
     parseTree sentenceParser
         [ Success "alias a{s1}(s2):s3[\"a\"]"
-            ( ObjectSymbolOrAliasSentence $ AliasSentence
-                { aliasSentenceAlias = Alias
-                    { aliasType = Object
-                    , aliasConstructor = Id Object "a"
-                    , aliasParams = [SortVariableSort Object (SortVariable Object (Id Object "s1"))]
+            ( ObjectSymbolOrAliasSentence
+                AliasSentence
+                    { aliasSentenceAlias = Alias
+                        { aliasType = Object
+                        , aliasConstructor = Id Object "a"
+                        , aliasParams = [ objectSortVariableSort "s1" ]
+                        }
+                    , aliasSentenceSorts = [ objectSortVariableSort "s2"]
+                    , aliasSentenceReturnSort = objectSortVariableSort "s3"
+                    , aliasSentenceAttributes =
+                        Attributes
+                            [MetaPattern $
+                                StringLiteralPattern (StringLiteral "a")]
                     }
-                , aliasSentenceSorts =
-                    [SortVariableSort Object (SortVariable Object (Id Object "s2"))]
-                , aliasSentenceReturnSort =
-                    SortVariableSort Object (SortVariable Object (Id Object "s3"))
-                , aliasSentenceAttributes =
-                    Attributes [MetaPattern $ StringLiteralPattern (StringLiteral "a")]
-                }
             )
         , Success "alias a { s1 , s2 } ( s3, s4 ) : s5 [ \"a\" , \"b\" ]"
-            ( ObjectSymbolOrAliasSentence $ AliasSentence
-                { aliasSentenceAlias = Alias
-                    { aliasType = Object
-                    , aliasConstructor = Id Object "a"
-                    , aliasParams =
-                        [ SortVariableSort Object (SortVariable Object (Id Object "s1"))
-                        , SortVariableSort Object (SortVariable Object (Id Object "s2"))
+            ( ObjectSymbolOrAliasSentence
+                AliasSentence
+                    { aliasSentenceAlias = Alias
+                        { aliasType = Object
+                        , aliasConstructor = Id Object "a"
+                        , aliasParams =
+                            [ objectSortVariableSort "s1"
+                            , objectSortVariableSort "s2"
+                            ]
+                        }
+                    , aliasSentenceSorts =
+                        [ objectSortVariableSort "s3"
+                        , objectSortVariableSort "s4"
                         ]
+                    , aliasSentenceReturnSort = objectSortVariableSort "s5"
+                    , aliasSentenceAttributes =
+                        Attributes
+                            [ MetaPattern $
+                                StringLiteralPattern (StringLiteral "a")
+                            , MetaPattern $
+                                StringLiteralPattern (StringLiteral "b")
+                            ]
                     }
-                , aliasSentenceSorts =
-                    [ SortVariableSort Object (SortVariable Object (Id Object "s3"))
-                    , SortVariableSort Object (SortVariable Object (Id Object "s4"))
-                    ]
-                , aliasSentenceReturnSort =
-                    SortVariableSort Object (SortVariable Object (Id Object "s5"))
-                , aliasSentenceAttributes =
-                    Attributes
-                        [ MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                        , MetaPattern $ StringLiteralPattern (StringLiteral "b")
-                        ]
-                }
             )
         , Success "alias a{}():s3[]"
-            ( ObjectSymbolOrAliasSentence $ AliasSentence
-                { aliasSentenceAlias = Alias
-                    { aliasType = Object
-                    , aliasConstructor = Id Object "a"
-                    , aliasParams = []
+            ( ObjectSymbolOrAliasSentence
+                AliasSentence
+                    { aliasSentenceAlias = Alias
+                        { aliasType = Object
+                        , aliasConstructor = Id Object "a"
+                        , aliasParams = []
+                        }
+                    , aliasSentenceSorts = []
+                    , aliasSentenceReturnSort = objectSortVariableSort "s3"
+                    , aliasSentenceAttributes = Attributes []
                     }
-                , aliasSentenceSorts = []
-                , aliasSentenceReturnSort =
-                    SortVariableSort Object (SortVariable Object (Id Object "s3"))
-                , aliasSentenceAttributes = Attributes []
-                }
             )
         , FailureWithoutMessage
             [ ""
@@ -779,7 +811,8 @@ axiomSentenceParserTests =
                 , axiomSentencePattern =
                     MetaPattern $ StringLiteralPattern (StringLiteral "a")
                 , axiomSentenceAtrributes =
-                    Attributes [MetaPattern $ StringLiteralPattern (StringLiteral "b")]
+                    Attributes
+                        [MetaPattern $ StringLiteralPattern (StringLiteral "b")]
                 }
         {- TODO(virgil): The Scala parser allows empty sort variable lists
            while the semantics-of-k document does not. -}
@@ -789,7 +822,8 @@ axiomSentenceParserTests =
                 , axiomSentencePattern =
                     MetaPattern $ StringLiteralPattern (StringLiteral "a")
                 , axiomSentenceAtrributes =
-                    Attributes [MetaPattern $ StringLiteralPattern (StringLiteral "b")]
+                    Attributes
+                        [MetaPattern $ StringLiteralPattern (StringLiteral "b")]
                 }
         , Success "axiom { sv1 , sv2 } \"a\" [ \"b\" ] "
             AxiomSentence
@@ -802,7 +836,8 @@ axiomSentenceParserTests =
                 , axiomSentencePattern =
                     MetaPattern $ StringLiteralPattern (StringLiteral "a")
                 , axiomSentenceAtrributes =
-                    Attributes [MetaPattern $ StringLiteralPattern (StringLiteral "b")]
+                    Attributes
+                        [MetaPattern $ StringLiteralPattern (StringLiteral "b")]
                 }
         , FailureWithoutMessage
             [ ""
@@ -823,20 +858,20 @@ sortSentenceParserTests =
                     [ ObjectSortVariable
                         (SortVariable Object (Id Object "sv1"))
                     ]
-                , sortSentenceSort =
-                    SortVariableSort Object (SortVariable Object (Id Object "s1"))
+                , sortSentenceSort = objectSortVariableSort "s1"
                 , sortSentenceAttributes =
-                    Attributes [MetaPattern $ StringLiteralPattern (StringLiteral "a")]
+                    Attributes
+                        [MetaPattern $ StringLiteralPattern (StringLiteral "a")]
                 }
         {- TODO(virgil): The Scala parser allows empty sort variable lists
            while the semantics-of-k document does not. -}
         , Success "sort {} s1 [ \"a\" ]"
             SortSentence
                 { sortSentenceParameters = []
-                , sortSentenceSort =
-                    SortVariableSort Object (SortVariable Object (Id Object "s1"))
+                , sortSentenceSort = objectSortVariableSort "s1"
                 , sortSentenceAttributes =
-                    Attributes [MetaPattern $ StringLiteralPattern (StringLiteral "a")]
+                    Attributes
+                        [MetaPattern $ StringLiteralPattern (StringLiteral "a")]
                 }
         , FailureWithoutMessage
             [ ""
@@ -851,33 +886,33 @@ symbolSentenceParserTests :: [TestTree]
 symbolSentenceParserTests =
     parseTree sentenceParser
         [ Success "symbol sy1 { s1 } ( s1 ) : s1 [\"a\"] "
-            ( ObjectSymbolOrAliasSentence $ SymbolSentence
-                { symbolSentenceSymbol = Symbol
-                    { symbolType = Object
-                    , symbolConstructor = Id Object "sy1"
-                    , symbolParams =
-                        [SortVariableSort Object (SortVariable Object (Id Object "s1"))]
+            ( ObjectSymbolOrAliasSentence
+                SymbolSentence
+                    { symbolSentenceSymbol = Symbol
+                        { symbolType = Object
+                        , symbolConstructor = Id Object "sy1"
+                        , symbolParams = [ objectSortVariableSort "s1" ]
+                        }
+                    , symbolSentenceSorts = [ objectSortVariableSort "s1" ]
+                    , symbolSentenceReturnSort = objectSortVariableSort "s1"
+                    , symbolSentenceAttributes =
+                        Attributes
+                            [MetaPattern $
+                                StringLiteralPattern (StringLiteral "a")]
                     }
-                , symbolSentenceSorts =
-                    [SortVariableSort Object (SortVariable Object (Id Object "s1"))]
-                , symbolSentenceReturnSort =
-                    SortVariableSort Object (SortVariable Object (Id Object "s1"))
-                , symbolSentenceAttributes =
-                    Attributes [MetaPattern $ StringLiteralPattern (StringLiteral "a")]
-                }
             )
         , Success "symbol sy1 {} () : s1 [] "
-            ( ObjectSymbolOrAliasSentence $ SymbolSentence
-                { symbolSentenceSymbol = Symbol
-                    { symbolType = Object
-                    , symbolConstructor = Id Object "sy1"
-                    , symbolParams = []
+            ( ObjectSymbolOrAliasSentence
+                SymbolSentence
+                    { symbolSentenceSymbol = Symbol
+                        { symbolType = Object
+                        , symbolConstructor = Id Object "sy1"
+                        , symbolParams = []
+                        }
+                    , symbolSentenceSorts = []
+                    , symbolSentenceReturnSort = objectSortVariableSort "s1"
+                    , symbolSentenceAttributes = Attributes []
                     }
-                , symbolSentenceSorts = []
-                , symbolSentenceReturnSort =
-                    SortVariableSort Object (SortVariable Object (Id Object "s1"))
-                , symbolSentenceAttributes = Attributes []
-                }
             )
         , FailureWithoutMessage
             [ ""
@@ -896,7 +931,8 @@ attributesParserTests :: [TestTree]
 attributesParserTests =
     parseTree attributesParser
         [ Success "[\"a\"]"
-            (Attributes [MetaPattern $ StringLiteralPattern (StringLiteral "a")])
+            (Attributes
+                [MetaPattern $ StringLiteralPattern (StringLiteral "a")])
         , Success "[]"
             (Attributes [])
         , Success "[\"a\", \"b\"]"
@@ -917,13 +953,13 @@ moduleParserTests =
                 , moduleSentences =
                     [ SortSentence
                         { sortSentenceParameters = []
-                        , sortSentenceSort =
-                            SortVariableSort Object (SortVariable Object (Id Object "c"))
+                        , sortSentenceSort = objectSortVariableSort "c"
                         , sortSentenceAttributes = Attributes []
                         }
                     ]
                 , moduleAttributes =
-                    Attributes [MetaPattern $ StringLiteralPattern (StringLiteral "a")]
+                    Attributes
+                        [MetaPattern $ StringLiteralPattern (StringLiteral "a")]
                 }
         , Success "module MN sort{}c[] sort{}c[] endmodule [\"a\"]"
             Module
@@ -931,19 +967,18 @@ moduleParserTests =
                 , moduleSentences =
                     [ SortSentence
                         { sortSentenceParameters = []
-                        , sortSentenceSort =
-                            SortVariableSort Object (SortVariable Object (Id Object "c"))
+                        , sortSentenceSort = objectSortVariableSort "c"
                         , sortSentenceAttributes = Attributes []
                         }
                     , SortSentence
                         { sortSentenceParameters = []
-                        , sortSentenceSort =
-                            SortVariableSort Object (SortVariable Object (Id Object "c"))
+                        , sortSentenceSort = objectSortVariableSort "c"
                         , sortSentenceAttributes = Attributes []
                         }
                     ]
                 , moduleAttributes =
-                    Attributes [MetaPattern $ StringLiteralPattern (StringLiteral "a")]
+                    Attributes
+                        [MetaPattern $ StringLiteralPattern (StringLiteral "a")]
                 }
         , Success "module MN endmodule []"
             Module
@@ -966,22 +1001,22 @@ definitionParserTests =
         [ Success "[\"a\"] module M sort{}c[] endmodule [\"b\"]"
             Definition
                 { definitionAttributes =
-                    Attributes [MetaPattern $ StringLiteralPattern (StringLiteral "a")]
+                    Attributes
+                        [MetaPattern $ StringLiteralPattern (StringLiteral "a")]
                 , definitionModules =
                     Module
                         { moduleName = ModuleName "M"
                         , moduleSentences =
                             [ SortSentence
                                 { sortSentenceParameters = []
-                                , sortSentenceSort =
-                                    SortVariableSort Object
-                                        (SortVariable Object (Id Object "c"))
+                                , sortSentenceSort = objectSortVariableSort "c"
                                 , sortSentenceAttributes = Attributes []
                                 }
                             ]
                         , moduleAttributes =
                             Attributes
-                                [MetaPattern $ StringLiteralPattern (StringLiteral "b")]
+                                [MetaPattern $
+                                    StringLiteralPattern (StringLiteral "b")]
                         }
                 }
         , FailureWithoutMessage
@@ -996,3 +1031,14 @@ definitionParserTests =
 ------------------------------------
 -- Generic test utilities
 ------------------------------------
+
+objectSortVariableSort :: String -> Sort Object
+objectSortVariableSort name =
+    SortVariableSort
+        { sortVariableSortType = Object
+        , getSortVariableSort =
+            SortVariable
+                { sortVariableType = Object
+                , getSortVariable = Id Object name
+                }
+        }
