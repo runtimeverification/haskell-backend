@@ -2285,7 +2285,9 @@ $\denote{...}$ cannot be a symbol.}
 \label{sec:meta-theory}
 
 In this section, we present the meta-theory $K$ as a finite matching logic 
-theory $K = ( S_K, \Sigma_K, A_K )$ with $S_K$ a finite set  of sorts, 
+theory\footnote{Also known as a deep embedding of matching logic in itself.} $K 
+= ( S_K, \Sigma_K, A_K )$ 
+with $S_K$ a finite set  of sorts, 
 $\Sigma_S$ a finite set of symbols, and $A_K$ a finite set of axioms.
 %We define the meta-theory $K$ as a \emph{syntactic theory},
 %as we explicitly enumerate all its finitely many axioms.
@@ -4831,7 +4833,7 @@ Section~\ref{sec:proof-of-faithfulness-theorem}.
 Theorem~\ref{thm:faithfulness-finite} is an important theorem both in theory 
 and in practice.
 It relates the provability relation of infinite theories (`` $\vdash$ '') with 
-the provability relation of finite theories (`` $\vdashfin$ ''), the only ones
+the provability relation of finite theories (`` $\vdashfin$ ''), the only one
 that could ever be implemented.
 
 \section{The Kore Language}
@@ -6445,6 +6447,16 @@ The proof here is outdated.
 However, the general approach is still valid.
 Read with cautions.
 \newline
+
+We restate the faithfulness theorem
+\begin{theorem}[Faithfulness Theorem]\label{thm:faithfulness-finite-in-appendix}
+	Given a matching logic theory $T$ and a naming function $e$.
+	Let $\denote{T}$ be the meta-theory instantiated with $T$, and $\varphi$ be 
+	any pattern in $T$,
+	$$T \vdash \varphi \quad \text{iff} \quad K \cup \denote{T} \vdashfin 
+	\parametric{\Kdeduce}{\shs}(\denote{\varphi})\quad\text{for any $\shs \in 
+	S_K$}$$
+\end{theorem}
 
 Before we start to prove the theorem, we need to explain what ``the 
 corresponding patterns'' $\hat{T}$ and $\hat{\varphi}$ are, as they appear in 
