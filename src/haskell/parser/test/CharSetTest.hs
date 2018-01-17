@@ -30,4 +30,4 @@ charSetTests =
                 (not ('\255' `CharSet.elem` makeSet)))
         ]
   where
-    makeSet = make "aBc"
+    makeSet = makeCharSet "aBc"

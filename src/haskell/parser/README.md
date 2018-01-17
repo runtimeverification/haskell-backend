@@ -8,4 +8,7 @@ All dependencies are managed by stack.
 To run: `stack exec kore-parser FILE`.
 
 To run the tests: `stack test --coverage` or `stack test --no-keep-going` or
-`stack test --test-arguments --hide-successes`
+`stack test --test-arguments --hide-successes`.
+
+To regenerate the golden data fo regression tests:
+`stack test --no-keep-going --ta --accept`

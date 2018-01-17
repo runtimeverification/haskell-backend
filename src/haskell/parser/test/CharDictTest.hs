@@ -40,7 +40,7 @@ charDictTests =
                 7)
         ]
   where
-    makeDict = make [('a', 2), ('B', 3)] 1
+    makeDict = makeCharDict [('a', 2), ('B', 3)] 1
     memoizeDict = memoize f
     f 'A' = 5
     f 'b' = 6
