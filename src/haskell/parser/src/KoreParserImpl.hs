@@ -2,12 +2,12 @@ module KoreParserImpl where
 
 import           KoreAST
 import           KoreLexeme
+import qualified ParserUtils
 
-import           Control.Applicative              ((<|>))
 import           Control.Monad                    (void, when)
 
 import           Data.Attoparsec.ByteString.Char8 (Parser)
-import qualified Data.Attoparsec.ByteString.Char8 as Parser
+import qualified Data.Attoparsec.ByteString.Char8 as Parser (char,peekChar',peekChar)
 import           Data.Maybe                       (isJust)
 
 sortVariableParser :: IsMeta a => a -> Parser (SortVariable a)
@@ -20,8 +20,10 @@ unifiedSortVariableParser = do
         then MetaSortVariable <$> sortVariableParser Meta
         else ObjectSortVariable <$> sortVariableParser Object
 
-sortVariableListParser :: Parser [UnifiedSortVariable]
-sortVariableListParser = Parser.sepBy unifiedSortVariableParser commaParser
+inCurlyBracesSortVariableListParser :: Parser [UnifiedSortVariable]
+inCurlyBracesSortVariableListParser =
+    ParserUtils.sepByCharWithDelimitingChars skipWhitespace '{' '}' ','
+        unifiedSortVariableParser
 
 sortParser :: IsMeta a => a -> Parser (Sort a)
 sortParser x = do
@@ -32,7 +34,7 @@ sortParser x = do
         _        -> return (SortVariableSort $ SortVariable identifier)
   where
     actualSortParser identifier = do
-        sorts <- inCurlyBracesParser (sortListParser x)
+        sorts <- inCurlyBracesSortListParser x
         when (metaType x == MetaType) (checkMetaSort identifier sorts)
         return $ SortActualSort $ SortActual
             { sortActualName = identifier
@@ -53,13 +55,20 @@ metaSort sortType = SortActualSort SortActual
     { sortActualName = Id (show sortType)
     , sortActualSorts = []}
 
-sortListParser :: IsMeta a => a -> Parser [Sort a]
-sortListParser x = Parser.sepBy (sortParser x) commaParser
+inCurlyBracesSortListParser :: IsMeta a => a -> Parser [Sort a]
+inCurlyBracesSortListParser x =
+    ParserUtils.sepByCharWithDelimitingChars skipWhitespace '{' '}' ','
+        (sortParser x)
+
+inParenthesesSortListParser :: IsMeta a => a -> Parser [Sort a]
+inParenthesesSortListParser x =
+    ParserUtils.sepByCharWithDelimitingChars skipWhitespace '(' ')' ','
+        (sortParser x)
 
 symbolOrAliasRemainderRawParser
     :: IsMeta a => a -> ([Sort a] -> (m a)) -> Parser (m a)
 symbolOrAliasRemainderRawParser x constructor =
-    constructor <$> inCurlyBracesParser (sortListParser x)
+    constructor <$> inCurlyBracesSortListParser x
 
 symbolOrAliasRawParser
     :: IsMeta a => a -> (Id a -> [Sort a] -> m a) -> Parser (m a)
@@ -150,7 +159,7 @@ symbolOrAliasPatternRemainderParser
 symbolOrAliasPatternRemainderParser x identifier = ApplicationPattern <$>
     ( pure Application
         <*> symbolOrAliasRemainderParser x identifier
-        <*> inParenthesesParser patternListParser
+        <*> inParenthesesPatternListParser
     )
 
 variableRemainderParser
@@ -267,12 +276,19 @@ patternParser = do
         '"'  -> MetaPattern <$> StringLiteralPattern <$> stringLiteralParser
         _    -> unifiedVariableOrTermPatternParser
 
-patternListParser :: Parser [UnifiedPattern]
-patternListParser = Parser.sepBy patternParser commaParser
+inSquareBracketsPatternListParser :: Parser [UnifiedPattern]
+inSquareBracketsPatternListParser =
+    ParserUtils.sepByCharWithDelimitingChars skipWhitespace
+        '[' ']' ',' patternParser
+
+inParenthesesPatternListParser :: Parser [UnifiedPattern]
+inParenthesesPatternListParser =
+    ParserUtils.sepByCharWithDelimitingChars skipWhitespace
+        '(' ')' ',' patternParser
 
 attributesParser :: Parser Attributes
 attributesParser =
-    Attributes <$> inSquareBracketsParser patternListParser
+    Attributes <$> inSquareBracketsPatternListParser
 
 definitionParser :: Parser Definition
 definitionParser =
@@ -284,7 +300,7 @@ moduleParser :: Parser Module
 moduleParser = do
     mlLexemeParser "module"
     name <- moduleNameParser
-    sentences <- Parser.many' sentenceParser
+    sentences <- ParserUtils.manyUntilChar 'e' sentenceParser
     mlLexemeParser "endmodule"
     attributes <- attributesParser
     return Module
@@ -330,7 +346,7 @@ aliasSymbolSentenceRemainderParser
     -> Parser (as a)
 aliasSymbolSentenceRemainderParser  x aliasSymbolParser constructor = do
     aliasSymbol <- aliasSymbolParser
-    sorts <- inParenthesesParser (sortListParser x)
+    sorts <- inParenthesesSortListParser x
     colonParser
     resultSort <- sortParser x
     attributes <- attributesParser
@@ -339,7 +355,7 @@ aliasSymbolSentenceRemainderParser  x aliasSymbolParser constructor = do
 axiomSentenceRemainderParser :: Parser Sentence
 axiomSentenceRemainderParser = SentenceAxiomSentence <$>
     ( pure SentenceAxiom
-        <*> inCurlyBracesParser sortVariableListParser
+        <*> inCurlyBracesSortVariableListParser
         <*> patternParser
         <*> attributesParser
     )
@@ -347,7 +363,7 @@ axiomSentenceRemainderParser = SentenceAxiomSentence <$>
 sortSentenceRemainderParser :: Parser Sentence
 sortSentenceRemainderParser = SentenceSortSentence <$>
     ( pure SentenceSort
-        <*> inCurlyBracesParser sortVariableListParser
+        <*> inCurlyBracesSortVariableListParser
         <*> sortParser Object
         <*> attributesParser
     )

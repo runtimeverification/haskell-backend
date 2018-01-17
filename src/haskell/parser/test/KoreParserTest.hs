@@ -119,15 +119,15 @@ metaSortParserTests =
 
 objectSortListParserTests :: [TestTree]
 objectSortListParserTests =
-    parseTree (sortListParser Object)
-        [ Success "" []
-        , Success "var"
+    parseTree (inParenthesesSortListParser Object)
+        [ Success "()" []
+        , Success "(var)"
             [ sortVariableSort "var" ]
-        , Success "var1, var2"
+        , Success "( var1  , var2   )  "
             [ sortVariableSort "var1"
             , sortVariableSort "var2"
             ]
-        , Success "sort1{sort2}, var"
+        , Success "(sort1{sort2}, var)"
             [ SortActualSort SortActual
                 { sortActualName = Id "sort1"
                 , sortActualSorts =
@@ -135,25 +135,25 @@ objectSortListParserTests =
                 }
             , sortVariableSort "var"
             ]
-        , FailureWithoutMessage ["var1 var2"]
+        , FailureWithoutMessage ["(var1 var2)"]
         ]
 
 metaSortListParserTests :: [TestTree]
 metaSortListParserTests =
-    parseTree (sortListParser Meta)
-        [ Success "" []
-        , Success "#var"
+    parseTree (inCurlyBracesSortListParser Meta)
+        [ Success "{}" []
+        , Success "{#var}"
             [SortVariableSort (SortVariable (Id "#var"))]
-        , Success "#var1, #var2"
+        , Success "{#var1, #var2}"
             [ SortVariableSort (SortVariable (Id "#var1"))
             , SortVariableSort (SortVariable (Id "#var2"))
             ]
-        , Success "#Char{  }  , #var"
+        , Success "{#Char{  }  , #var}"
             [ metaSort CharSort
             , SortVariableSort (SortVariable (Id "#var"))
             ]
         , FailureWithoutMessage
-            [ "#var1 #var2", "#var1, var2" ]
+            [ "{#var1 #var2}", "{#var1, var2}" ]
         ]
 
 objectSortVariableParserTests :: [TestTree]

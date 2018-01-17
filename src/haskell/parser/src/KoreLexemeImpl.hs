@@ -8,7 +8,14 @@ import           KoreAST
 import           Control.Monad                    (void, when)
 import qualified Data.Attoparsec.ByteString       as BParser (runScanner)
 import           Data.Attoparsec.ByteString.Char8 (Parser)
-import qualified Data.Attoparsec.ByteString.Char8 as Parser
+import qualified Data.Attoparsec.ByteString.Char8 as Parser ( char
+                                                            , peekChar
+                                                            , peekChar'
+                                                            , scan
+                                                            , skipSpace
+                                                            , string
+                                                            , takeWhile
+                                                            )
 import qualified Data.ByteString.Char8            as Char8
 import           Data.Char                        (isHexDigit, isOctDigit)
 import           Data.Maybe                       (isJust)
