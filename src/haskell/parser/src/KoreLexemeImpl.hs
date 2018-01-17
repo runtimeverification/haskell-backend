@@ -96,10 +96,11 @@ moduleNameRawParser =
   ModuleName <$> genericIdParser moduleNameFirstCharSet moduleNameCharSet
 
 idFirstCharSet :: CharSet
-idFirstCharSet = CharSet.make (['A'..'Z'] ++ ['a'..'z'])
+idFirstCharSet = CharSet.makeCharSet (['A'..'Z'] ++ ['a'..'z'])
 
 idCharSet :: CharSet
-idCharSet = CharSet.join idFirstCharSet (CharSet.make (['0'..'9'] ++ "'-"))
+idCharSet =
+    CharSet.join idFirstCharSet (CharSet.makeCharSet (['0'..'9'] ++ "'-"))
 
 objectIdRawParser :: Parser String
 objectIdRawParser = genericIdParser idFirstCharSet idCharSet

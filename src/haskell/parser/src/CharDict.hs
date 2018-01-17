@@ -1,6 +1,6 @@
 module CharDict
        ( CharDict
-       , make
+       , makeCharDict
        , memoize
        , (!)
        )
@@ -15,8 +15,8 @@ memoize :: (Char -> a) -> CharDict a
 memoize f =
     CharDict $ Array.array ('\0', '\255') [(c, f c) | c <- ['\0'..'\255']]
 
-make :: [(Char,a)] -> a -> CharDict a
-make dict defaultValue =
+makeCharDict :: [(Char,a)] -> a -> CharDict a
+makeCharDict dict defaultValue =
   CharDict $ Array.array ('\0', '\255')
       [(c, fromMaybe defaultValue (lookup c dict))| c <- ['\0'..'\255']]
 

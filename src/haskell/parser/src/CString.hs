@@ -9,7 +9,7 @@ import           Data.Char (chr, digitToInt, isHexDigit, isOctDigit, ord,
                             toUpper)
 
 oneCharEscapeDict :: CharSet
-oneCharEscapeDict = CharSet.make "'\"?\\abfnrtv"
+oneCharEscapeDict = makeCharSet "'\"?\\abfnrtv"
 
 {-|Expects input string to be a properly escaped C String.
 -}
