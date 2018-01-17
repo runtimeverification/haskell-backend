@@ -5012,6 +5012,27 @@ Notice that any sort that is not a sort variable is of the form
 \texttt{$C$\{$s_1,\dots,s_n$\}} for some $n \ge 0$, where $C$ is sort 
 constructor and 
 $s_1,\dots,s_n$ are sort parameters.
+Even though we do exclude \syntacc{keyword} from \syntacc{object-identifier}, 
+and thus from \syntacc{object-sort-variable}, we do not exclude 
+\syntacc{meta-sort-constructor} from \syntacc{meta-sort-variable}.
+As a result, one may use \texttt{\sharpsymbol Char} as a valid meta-sort 
+variable in Kore, even though it is in general a bad practice because it is 
+confusing. 
+It might appear that the policies we have here are inconsistent, but it is 
+really not.
+In the following, we will see that whenever a sort variable is used, it has to 
+be declared by putting in a list of sort variables wrapped with curly brackets 
+(see Section~\ref{sec:kore-syntax-declarations}), so that we can tell if 
+something is a sort variable locally.
+As a result, we do not need to exclude any \syntacc{object-sort-constructor} 
+from \syntacc{object-sort-variable}, as whenever an \syntacc{object-identifier} 
+is used as sort variable, we can tell that locally from the list of declared 
+sort variables. 
+For the same reason, we do not exclude any \syntacc{meta-sort-constructor} from 
+\syntacc{meta-sort-variable}.
+On the other hand, it is a common practice to exclude keywords from identifiers 
+in programming languages, and in Kore we follow the same practice.
+
 % or of the 
 %form 
 %$\parametric{C_\itsort}{s_1,\dots,s_n}$ for some $n \ge 0$, in which 
