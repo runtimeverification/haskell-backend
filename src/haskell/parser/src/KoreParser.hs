@@ -22,9 +22,18 @@ main = do
     print (parseOnly (skipWhitespace *> definitionParser <* endOfInput) contents)
 @
 -}
-module KoreParser ( definitionParser
+module KoreParser ( Definition
+                  , definitionParser
+                  , fromKore
                   , skipWhitespace
                   ) where
 
-import KoreParserImpl (definitionParser)
-import KoreLexeme (skipWhitespace)
+import           KoreAST (Definition)
+import           KoreParserImpl (definitionParser)
+import           KoreLexeme (skipWhitespace)
+
+import           Data.Attoparsec.ByteString.Char8 (parseOnly, endOfInput)
+import qualified Data.ByteString as ByteString
+
+fromKore :: ByteString.ByteString -> Either String Definition
+fromKore = parseOnly (skipWhitespace *> definitionParser <* endOfInput)

@@ -5,14 +5,25 @@ import           CharSetTest
 import           CStringTest
 import           KoreParserTest
 import           KoreLexemeTest
+import           RegressionTest
 
 main :: IO ()
-main = defaultMain allParserTests
+main = do
+    inputFiles <- regressionTestsInputFiles "../../test/resources/"
+    defaultMain (allParserTests inputFiles)
 
-allParserTests :: TestTree
-allParserTests =
+allParserTests :: [String] -> TestTree
+allParserTests regressionInputFiles =
     testGroup
         " All Parser Tests"
+        [ unitTests
+        , regressionTests regressionInputFiles
+        ]
+
+unitTests :: TestTree
+unitTests =
+    testGroup
+        " Unit Tests"
         [ charDictTests
         , charSetTests
         , cStringTests
