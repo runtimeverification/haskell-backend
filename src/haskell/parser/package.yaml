@@ -27,6 +27,7 @@ dependencies:
 - attoparsec >=0.13 && <0.14
 - bytestring >=0.10 && <0.11
 - array
+- bytestring-trie
 
 library:
   source-dirs: src

@@ -8,6 +8,7 @@ import           Control.Monad                    (void, when)
 
 import           Data.Attoparsec.ByteString.Char8 (Parser)
 import qualified Data.Attoparsec.ByteString.Char8 as Parser
+import           Data.Maybe                       (isJust)
 
 sortVariableParser :: IsMeta a => a -> Parser (SortVariable a)
 sortVariableParser x = SortVariable <$> idParser x
@@ -39,25 +40,12 @@ sortParser x = do
             }
 
 checkMetaSort :: Show a => Id a -> [Sort a] -> Parser ()
-checkMetaSort identifier [] = checkMetaSort' (getId identifier)
+checkMetaSort identifier [] =
+    if isJust (metaSortParser metaId)
+        then return ()
+        else fail ("metaSortParser: Invalid constructor: '" ++ metaId ++ "'.")
   where
-    checkMetaSort' metaId =
-        if metaId `elem`  --TODO: optimize ?
-            [ "#Char"
-            , "#CharList"
-            , "#Pattern"
-            , "#PatternList"
-            , "#Sort"
-            , "#SortList"
-            , "#String"
-            , "#Symbol"
-            , "#SymbolList"
-            , "#Variable"
-            , "#VariableList"
-            ]
-            then return ()
-            else fail ("metaSortParser: Invalid constructor: '" ++
-                metaId ++ "'.")
+    metaId = getId identifier
 checkMetaSort _ l =
     fail ("metaSortParser: Non empty parameter sorts '" ++ show l ++ "'.")
 

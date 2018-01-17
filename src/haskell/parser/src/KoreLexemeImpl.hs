@@ -11,6 +11,8 @@ import           Data.Attoparsec.ByteString.Char8 (Parser)
 import qualified Data.Attoparsec.ByteString.Char8 as Parser
 import qualified Data.ByteString.Char8            as Char8
 import           Data.Char                        (isHexDigit, isOctDigit)
+import           Data.Maybe                       (isJust)
+import qualified Data.Trie                        as Trie
 
 idParser :: IsMeta a => a -> Parser (Id a)
 idParser x = Id <$> lexeme (idRawParser x)
@@ -25,7 +27,6 @@ data CommentScannerState = COMMENT | STAR | END
 
 multiLineCommentToken :: Parser ()
 multiLineCommentToken = do
---    void (Parser.string (Char8.pack "/*"))
     (_,state) <- BParser.runScanner COMMENT delta'
     case state of
         END -> return ()
@@ -69,8 +70,9 @@ skipWhitespace = whitespaceChunk
 lexeme :: Parser a -> Parser a
 lexeme p = p <* skipWhitespace
 
-koreKeywords :: [String]
-koreKeywords = ["module", "endmodule", "sort", "symbol", "alias", "axiom"]
+koreKeywordsSet :: Trie.Trie ()
+koreKeywordsSet = Trie.fromList $ map (\s -> (Char8.pack s, ()))
+    ["module", "endmodule", "sort", "symbol", "alias", "axiom"]
 
 genericIdParser :: CharSet -> CharSet -> Parser String
 genericIdParser firstCharSet charSet = do
@@ -79,7 +81,7 @@ genericIdParser firstCharSet charSet = do
         then fail ("genericidParser: Invalid first character '" ++ c : "'.")
         else Parser.takeWhile (`CharSet.elem` charSet)
     let identifier = Char8.unpack idChar
-    when (identifier `Prelude.elem` koreKeywords)
+    when (isJust $ Trie.lookup idChar koreKeywordsSet)
         (fail ("Identifiers should not be keywords: '" ++ identifier ++ "'."))
     return identifier
 
@@ -255,3 +257,12 @@ prefixBasedParsersWithDefault prefixParser defaultParser stringParsers = do
             then prefixBasedParsers prefixParser stringParsers
             else defaultParser
 
+metaSortTrie :: Trie.Trie MetaSortType
+metaSortTrie = Trie.fromList $ map (\s -> (Char8.pack $ show s, s))
+    [ CharSort, CharListSort, PatternSort, PatternListSort, SortSort
+    , SortListSort, StringSort, SymbolSort, SymbolListSort
+    , VariableSort, VariableListSort
+    ]
+
+metaSortParser :: String -> Maybe MetaSortType
+metaSortParser identifier = Trie.lookup (Char8.pack identifier) metaSortTrie
