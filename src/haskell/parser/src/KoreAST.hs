@@ -1,6 +1,23 @@
+{-|
+Module      : KoreAST
+Description : Data Structures for representing the Kore language AST
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : traian.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : POSIX
+
+This module includes all the data structures necessary for representing
+all the syntactic categories of a Kore definition.
+
+Please refer to Section 9 (The Kore Language) of the
+<http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
+
+
+-}
 module KoreAST where
 
-import           Data.Typeable
+import Data.Typeable
 
 data MetaType
     = ObjectType
@@ -236,6 +253,9 @@ data SentenceSymbol a = SentenceSymbol
     }
     deriving (Eq, Show, Typeable)
 
+{-|'SentenceAxiom' corresponds to the @axiom-declaration@ syntactic category
+from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
+-}
 data SentenceAxiom = SentenceAxiom
     { sentenceAxiomParameters :: ![UnifiedSortVariable]
     , sentenceAxiomPattern    :: !UnifiedPattern
@@ -243,6 +263,9 @@ data SentenceAxiom = SentenceAxiom
     }
     deriving (Eq, Show)
 
+{-|'SentenceSort' corresponds to the @sort-declaration@ syntactic category
+from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
+-}
 data SentenceSort = SentenceSort
     { sentenceSortParameters :: ![UnifiedSortVariable]
     , sentenceSortSort       :: !(Sort Object)
@@ -250,6 +273,13 @@ data SentenceSort = SentenceSort
     }
     deriving (Eq, Show)
 
+{-|The 'Sentence' type corresponds to the @declaration@ syntactic category
+from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
+
+The @symbol-declaration@ and @alias-declaration@ categories were also merged
+into 'Sentence', with distinct constructors for the @Meta@ and @Object@
+variants.
+-}
 data Sentence
     = MetaSentenceAliasSentence !(SentenceAlias Meta)
     | ObjectSentenceAliasSentence !(SentenceAlias Object)
@@ -262,6 +292,13 @@ data Sentence
 newtype Attributes = Attributes { getAttributes :: [UnifiedPattern] }
     deriving (Eq, Show)
 
+{-|A 'Module' consists of a 'ModuleName' a list of 'Sentence's and some
+'Attributes'.
+
+They correspond to the second, third and forth non-terminals of the @definition@
+syntactic category from the Semantics of K, Section 9.1.6
+(Declaration and Definitions).
+-}
 data Module = Module
     { moduleName       :: !ModuleName
     , moduleSentences  :: ![Sentence]
@@ -269,6 +306,15 @@ data Module = Module
     }
     deriving (Eq, Show)
 
+{-|Currently, a 'Definition' consists of some 'Attributes' and a 'Module'
+
+Because there are plans to extend this to a list of 'Module's, the @definition@
+syntactic category from the Semantics of K, Section 9.1.6
+(Declaration and Definitions) is splitted here into 'Definition' and 'Module'.
+
+'definitionAttributes' corresponds to the first non-terminal of @definition@,
+while the remaining three are grouped into 'definitionModules'.
+-}
 data Definition = Definition
     { definitionAttributes :: !Attributes
     , definitionModules    :: !Module

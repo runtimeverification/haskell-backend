@@ -8,6 +8,7 @@ Stability   : experimental
 Portability : POSIX
 
 This is a parser for the Kore language. Sample usage:
+
 @
 import KoreParser
 
@@ -21,6 +22,7 @@ main = do
     contents <- ByteString.readFile fileName
     print (parseOnly (skipWhitespace *> definitionParser <* endOfInput) contents)
 @
+
 -}
 module KoreParser ( Definition
                   , definitionParser
