@@ -56,13 +56,15 @@ newtype SortVariable a = SortVariable
     { getSortVariable  :: Id a }
     deriving (Show, Eq, Typeable)
 
+data SortActual a = SortActual
+    { sortActualName  :: !(Id a)
+    , sortActualSorts :: ![Sort a]
+    }
+    deriving (Show, Eq, Typeable)
+
 data Sort a
-    = SortVariableSort
-        { getSortVariableSort  :: !(SortVariable a) }
-    | ActualSort
-        { actualSortName  :: !(Id a)
-        , actualSortSorts :: ![Sort a]
-        }
+    = SortVariableSort !(SortVariable a)
+    | SortActualSort !(SortActual a)
     deriving (Show, Eq, Typeable)
 
 data MetaSortType
@@ -115,101 +117,146 @@ data UnifiedPattern
     | ObjectPattern !(Pattern Object)
     deriving (Eq, Show)
 
+data And a = And
+    { andSort   :: !(Sort a)
+    , andFirst  :: !UnifiedPattern
+    , andSecond :: !UnifiedPattern
+    }
+    deriving (Eq, Show, Typeable)
+
+data Application a = Application
+    { applicationSymbolOrAlias :: !(SymbolOrAlias a)
+    , applicationPatterns      :: ![UnifiedPattern]
+    }
+    deriving (Eq, Show, Typeable)
+
+data Ceil a = Ceil
+    { ceilFirstSort  :: !(Sort a)
+    , ceilSecondSort :: !(Sort a)
+    , ceilPattern    :: !UnifiedPattern
+    }
+    deriving (Eq, Show, Typeable)
+
+data Equals a = Equals
+    { equalsFirstSort  :: !(Sort a)
+    , equalsSecondSort :: !(Sort a)
+    , equalsFirst      :: !UnifiedPattern
+    , equalsSecond     :: !UnifiedPattern
+    }
+    deriving (Eq, Show, Typeable)
+
+data Exists a = Exists
+    { existsSort     :: !(Sort a)
+    , existsVariable :: !UnifiedVariable
+    , existsPattern  :: !UnifiedPattern
+    }
+    deriving (Eq, Show, Typeable)
+
+data Floor a = Floor
+    { floorFirstSort  :: !(Sort a)
+    , floorSecondSort :: !(Sort a)
+    , floorPattern    :: !UnifiedPattern
+    }
+    deriving (Eq, Show, Typeable)
+
+data Forall a = Forall
+    { forallSort     :: !(Sort a)
+    , forallVariable :: !UnifiedVariable
+    , forallPattern  :: !UnifiedPattern
+    }
+    deriving (Eq, Show, Typeable)
+
+data Iff a = Iff
+    { iffSort   :: !(Sort a)
+    , iffFirst  :: !UnifiedPattern
+    , iffSecond :: !UnifiedPattern
+    }
+    deriving (Eq, Show, Typeable)
+
+data Implies a = Implies
+    { impliesSort   :: !(Sort a)
+    , impliesFirst  :: !UnifiedPattern
+    , impliesSecond :: !UnifiedPattern
+    }
+    deriving (Eq, Show, Typeable)
+
+data Mem a = Mem
+    { memFirstSort  :: !(Sort a)
+    , memSecondSort :: !(Sort a)
+    , memVariable   :: !UnifiedVariable
+    , memPattern    :: !UnifiedPattern
+    }
+    deriving (Eq, Show, Typeable)
+
+data Not a = Not
+    { notSort    :: !(Sort a)
+    , notPattern :: !UnifiedPattern
+    }
+    deriving (Eq, Show, Typeable)
+
+data Or a = Or
+    { orSort   :: !(Sort a)
+    , orFirst  :: !UnifiedPattern
+    , orSecond :: !UnifiedPattern
+    }
+    deriving (Eq, Show, Typeable)
+
 data Pattern a
-    = AndPattern
-        { andPatternSort   :: !(Sort a)
-        , andPatternFirst  :: !UnifiedPattern
-        , andPatternSecond :: !UnifiedPattern
-        }
-    | ApplicationPattern
-        { applicationPatternSymbolOrAlias :: !(SymbolOrAlias a)
-        , applicationPatternPatterns      :: ![UnifiedPattern]
-        }
+    = AndPattern !(And a)
+    | ApplicationPattern !(Application a)
     | BottomPattern !(Sort a)
-    | CeilPattern
-        { ceilPatternFirstSort  :: !(Sort a)
-        , ceilPatternSecondSort :: !(Sort a)
-        , ceilPatternPattern    :: !UnifiedPattern
-        }
-    | EqualsPattern
-        { equalsPatternFirstSort  :: !(Sort a)
-        , equalsPatternSecondSort :: !(Sort a)
-        , equalsPatternFirst      :: !UnifiedPattern
-        , equalsPatternSecond     :: !UnifiedPattern
-        }
-    | ExistsPattern
-        { existsPatternSort     :: !(Sort a)
-        , existsPatternVariable :: !UnifiedVariable
-        , existsPatternPattern  :: !UnifiedPattern
-        }
-    | FloorPattern
-        { floorPatternFirstSort  :: !(Sort a)
-        , floorPatternSecondSort :: !(Sort a)
-        , floorPatternPattern    :: !UnifiedPattern
-        }
-    | ForallPattern
-        { forallPatternSort     :: !(Sort a)
-        , forallPatternVariable :: !UnifiedVariable
-        , forallPatternPattern  :: !UnifiedPattern
-        }
-    | IffPattern
-        { iffPatternSort   :: !(Sort a)
-        , iffPatternFirst  :: !UnifiedPattern
-        , iffPatternSecond :: !UnifiedPattern
-        }
-    | ImpliesPattern
-        { impliesPatternSort   :: !(Sort a)
-        , impliesPatternFirst  :: !UnifiedPattern
-        , impliesPatternSecond :: !UnifiedPattern
-        }
-    | MemPattern
-        { memPatternFirstSort  :: !(Sort a)
-        , memPatternSecondSort :: !(Sort a)
-        , memPatternVariable   :: !UnifiedVariable
-        , memPatternPattern    :: !UnifiedPattern
-        }
-    | NotPattern
-        { notPatternSort    :: !(Sort a)
-        , notPatternPattern :: !UnifiedPattern
-        }
-    | OrPattern
-        { orPatternSort   :: !(Sort a)
-        , orPatternFirst  :: !UnifiedPattern
-        , orPatternSecond :: !UnifiedPattern
-        }
+    | CeilPattern !(Ceil a)
+    | EqualsPattern !(Equals a)
+    | ExistsPattern !(Exists a)
+    | FloorPattern !(Floor a)
+    | ForallPattern !(Forall a)
+    | IffPattern !(Iff a)
+    | ImpliesPattern !(Implies a)
+    | MemPattern !(Mem a)
+    | NotPattern !(Not a)
+    | OrPattern !(Or a)
     | StringLiteralPattern !StringLiteral
     | TopPattern !(Sort a)
     | VariablePattern !(Variable a)
     deriving (Eq, Show, Typeable)
 
-data SymbolOrAliasSentence a
-    = AliasSentence
-        { aliasSentenceAlias      :: !(Alias a)
-        , aliasSentenceSorts      :: ![Sort a]
-        , aliasSentenceReturnSort :: !(Sort a)
-        , aliasSentenceAttributes :: !Attributes
-        }
-    | SymbolSentence
-        { symbolSentenceSymbol     :: !(Symbol a)
-        , symbolSentenceSorts      :: ![Sort a]
-        , symbolSentenceReturnSort :: !(Sort a)
-        , symbolSentenceAttributes :: !Attributes
-        }
+data SentenceAlias a = SentenceAlias
+    { sentenceAliasAlias      :: !(Alias a)
+    , sentenceAliasSorts      :: ![Sort a]
+    , sentenceAliasReturnSort :: !(Sort a)
+    , sentenceAliasAttributes :: !Attributes
+    }
     deriving (Eq, Show, Typeable)
 
+data SentenceSymbol a = SentenceSymbol
+    { sentenceSymbolSymbol     :: !(Symbol a)
+    , sentenceSymbolSorts      :: ![Sort a]
+    , sentenceSymbolReturnSort :: !(Sort a)
+    , sentenceSymbolAttributes :: !Attributes
+    }
+    deriving (Eq, Show, Typeable)
+
+data SentenceAxiom = SentenceAxiom
+    { sentenceAxiomParameters :: ![UnifiedSortVariable]
+    , sentenceAxiomPattern    :: !UnifiedPattern
+    , sentenceAxiomAtrributes :: !Attributes
+    }
+    deriving (Eq, Show)
+
+data SentenceSort = SentenceSort
+    { sentenceSortParameters :: ![UnifiedSortVariable]
+    , sentenceSortSort       :: !(Sort Object)
+    , sentenceSortAttributes :: !Attributes
+    }
+    deriving (Eq, Show)
+
 data Sentence
-    = MetaSymbolOrAliasSentence !(SymbolOrAliasSentence Meta)
-    | ObjectSymbolOrAliasSentence !(SymbolOrAliasSentence Object)
-    | AxiomSentence
-        { axiomSentenceParameters :: ![UnifiedSortVariable]
-        , axiomSentencePattern    :: !UnifiedPattern
-        , axiomSentenceAtrributes :: !Attributes
-        }
-    | SortSentence
-        { sortSentenceParameters :: ![UnifiedSortVariable]
-        , sortSentenceSort       :: !(Sort Object)
-        , sortSentenceAttributes :: !Attributes
-        }
+    = MetaSentenceAliasSentence !(SentenceAlias Meta)
+    | ObjectSentenceAliasSentence !(SentenceAlias Object)
+    | MetaSentenceSymbolSentence !(SentenceSymbol Meta)
+    | ObjectSentenceSymbolSentence !(SentenceSymbol Object)
+    | SentenceAxiomSentence !SentenceAxiom
+    | SentenceSortSentence !SentenceSort
     deriving (Eq, Show)
 
 newtype Attributes = Attributes { getAttributes :: [UnifiedPattern] }
