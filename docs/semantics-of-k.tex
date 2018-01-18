@@ -5418,19 +5418,27 @@ parametric modules, and module imports.
 <symbol-declaration> ::= <object-symbol-declaration> | 
 <meta-symbol-declaration>
 
-<object-symbol-declaration> ::= `symbol' <object-head> `(' <object-sort-list> 
-`)' `:' <object-sort> <attribute>
+<object-symbol-declaration> ::= \quad
+\alt `symbol' <object-head-constructor> 
+`{' <object-sort-variable-list> `}' 
+`(' <object-sort-list> `)' `:' <object-sort> <attribute>
 
-<meta-symbol-declaration> ::= `symbol' <meta-head> `(' <meta-sort-list> `)' 
-`:' <meta-sort> <attribute>
+<meta-symbol-declaration> ::= \quad
+\alt `symbol' <meta-head-constructor>
+`{'	<meta-sort-variable-list> `}'
+ `(' <meta-sort-list> `)' `:' <meta-sort> <attribute>
 
 <alias-declaration> ::= <object-alias-declaration> | <meta-alias-declaration> 
 
-<object-alias-declaration> ::= `alias' <object-head> `(' <object-sort-list> 
-`)' `:' <object-sort> <attribute>
+<object-alias-declaration> ::= \quad
+\alt `alias' <object-head-constructor> 
+`{' <object-sort-variable-list> `}' 
+`(' <object-sort-list> `)' `:' <object-sort> <attribute>
 
-<meta-alias-declaration> ::= `alias' <meta-head> `(' <meta-sort-list> `)' 
-`:' <meta-sort> <attribute>
+<meta-alias-declaration> ::= \quad
+\alt `alias' <meta-head-constructor> 
+`{'	<meta-sort-variable-list> `}'
+`(' <meta-sort-list> `)' `:' <meta-sort> <attribute>
 
 <axiom-declaration> ::= `axiom' `{' <sort-variable-list> `}' <pattern> 
 <attribute>
@@ -5442,8 +5450,29 @@ parametric modules, and module imports.
 \alt <object-sort-variable> `,' <sort-variable-list>
 \alt <meta-sort-variable> `,' <sort-variable-list>
 
+<object-sort-variable-list> ::= \quad
+\alt $\epsilon$
+\alt <object-sort-variable>
+\alt <object-sort-variable> `,' <object-sort-variable-list>
+
+<meta-sort-variable-list> ::= \quad
+\alt $\epsilon$
+\alt <meta-sort-variable>
+\alt <meta-sort-variable> `,' <meta-sort-variable-list>
+
 <module-name> ::= <object-identifier>
 \end{grammar}
+
+Every declaration has a list of sort variables wrapped in curly brackets, also 
+called as a \emph{sort variable declaration}.
+In sort and axiom declarations, the sort variable declarations follow by the 
+keywords `\texttt{sort}' and `\texttt{axiom}'.
+In symbol and alias declarations, the sort variable declarations follow by the 
+head constructor being declared.
+Sort variable declarations are used to help us decide \emph{in a local manner} 
+if an identifier is a sort variable or something else.
+All sort variables used in a declaration have to be declared in the sort 
+variable declaration (see Section~\ref{sec:kore-syntax-wellformedness}).
 
 %Here are some examples of sort declarations in Kore.
 %\begin{center}{\ttfamily
