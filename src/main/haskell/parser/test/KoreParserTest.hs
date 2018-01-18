@@ -403,8 +403,8 @@ ceilPatternParserTests =
     parseTree patternParser
         [ Success "\\ceil{s1, s2}(\"a\")"
             (ObjectPattern $ CeilPattern Ceil
-                    { ceilFirstSort = sortVariableSort "s1"
-                    , ceilSecondSort = sortVariableSort "s2"
+                    { ceilOperandSort = sortVariableSort "s1"
+                    , ceilResultSort = sortVariableSort "s2"
                     , ceilPattern =
                         MetaPattern $ StringLiteralPattern (StringLiteral "a")
                     }
@@ -422,8 +422,8 @@ equalsPatternParserTests =
     parseTree patternParser
         [ Success "\\equals{s1, s2}(\"a\", \"b\")"
             ( ObjectPattern $ EqualsPattern Equals
-                    { equalsFirstSort = sortVariableSort "s1"
-                    , equalsSecondSort = sortVariableSort "s2"
+                    { equalsOperandSort = sortVariableSort "s1"
+                    , equalsResultSort = sortVariableSort "s2"
                     , equalsFirst =
                         MetaPattern $ StringLiteralPattern (StringLiteral "a")
                     , equalsSecond =
@@ -474,8 +474,8 @@ floorPatternParserTests =
     parseTree patternParser
         [ Success "\\floor{s1, s2}(\"a\")"
             ( ObjectPattern $ FloorPattern Floor
-                    { floorFirstSort = sortVariableSort "s1"
-                    , floorSecondSort = sortVariableSort "s2"
+                    { floorOperandSort = sortVariableSort "s1"
+                    , floorResultSort = sortVariableSort "s2"
                     , floorPattern =
                         MetaPattern $ StringLiteralPattern (StringLiteral "a")
                     }
@@ -563,8 +563,8 @@ memPatternParserTests =
     parseTree patternParser
         [ Success "\\mem{s1,s2}(v:s3, \"b\")"
             ( ObjectPattern $ MemPattern $ Mem
-                    { memFirstSort = sortVariableSort "s1"
-                    , memSecondSort = sortVariableSort "s2"
+                    { memOperandSort = sortVariableSort "s1"
+                    , memResultSort = sortVariableSort "s2"
                     , memVariable = ObjectVariable
                         Variable
                             { variableName = Id "v"

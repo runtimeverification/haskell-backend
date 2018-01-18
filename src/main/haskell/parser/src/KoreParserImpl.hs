@@ -131,8 +131,8 @@ memRemainderParser x = do
     (variable, pattern) <-
         parenPairParser unifiedVariableParser patternParser
     return Mem
-           { memFirstSort = sort1
-           , memSecondSort = sort2
+           { memOperandSort = sort1
+           , memResultSort = sort2
            , memVariable = variable
            , memPattern = pattern
            }

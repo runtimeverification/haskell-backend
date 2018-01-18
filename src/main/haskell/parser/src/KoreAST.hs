@@ -221,7 +221,9 @@ Section 9.1.4 (Patterns).
 The 'a' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'IsMeta a'.
 
-This represents the '∧' operator in Matching Logic.
+'andSort' is both the sort of the operands and the sort of the result.
+
+This represents the 'andFirst ∧ andSecond' Matching Logic construct.
 -}
 data And a = And
     { andSort   :: !(Sort a)
@@ -252,11 +254,15 @@ Section 9.1.4 (Patterns).
 The 'a' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'IsMeta a'.
 
-This represents the ⌈.⌉ operator in Matching Logic.
+'ceilOperandSort' is the sort of the operand.
+
+'ceilResultSort' is the sort of the result.
+
+This represents the ⌈ceilPattern⌉ Matching Logic construct.
 -}
 data Ceil a = Ceil
-    { ceilFirstSort  :: !(Sort a)
-    , ceilSecondSort :: !(Sort a)
+    { ceilOperandSort  :: !(Sort a)
+    , ceilResultSort :: !(Sort a)
     , ceilPattern    :: !UnifiedPattern
     }
     deriving (Eq, Show, Typeable)
@@ -268,11 +274,15 @@ Section 9.1.4 (Patterns).
 The 'a' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'IsMeta a'.
 
-This represents the = operator in Matching Logic.
+'equalsOperandSort' is the sort of the operand.
+
+'equalsResultSort' is the sort of the result.
+
+This represents the 'equalsFirst = equalsSecond' Matching Logic construct.
 -}
 data Equals a = Equals
-    { equalsFirstSort  :: !(Sort a)
-    , equalsSecondSort :: !(Sort a)
+    { equalsOperandSort  :: !(Sort a)
+    , equalsResultSort :: !(Sort a)
     , equalsFirst      :: !UnifiedPattern
     , equalsSecond     :: !UnifiedPattern
     }
@@ -285,7 +295,9 @@ Section 9.1.4 (Patterns).
 The 'a' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'IsMeta a'.
 
-This represents the ∃ construct in Matching Logic.
+'existsSort' is both the sort of the operands and the sort of the result.
+
+This represents the '∃forallVariable(forallPattern)' Matching Logic construct.
 -}
 data Exists a = Exists
     { existsSort     :: !(Sort a)
@@ -301,11 +313,15 @@ Section 9.1.4 (Patterns).
 The 'a' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'IsMeta a'.
 
-This represents the ⌊.⌋ operator in Matching Logic.
+'floorOperandSort' is the sort of the operand.
+
+'floorResultSort' is the sort of the result.
+
+This represents the '⌊floorPattern⌋' Matching Logic construct.
 -}
 data Floor a = Floor
-    { floorFirstSort  :: !(Sort a)
-    , floorSecondSort :: !(Sort a)
+    { floorOperandSort  :: !(Sort a)
+    , floorResultSort :: !(Sort a)
     , floorPattern    :: !UnifiedPattern
     }
     deriving (Eq, Show, Typeable)
@@ -317,7 +333,9 @@ Section 9.1.4 (Patterns).
 The 'a' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'IsMeta a'.
 
-This represents the ∀ construct in Matching Logic.
+'forallSort' is both the sort of the operands and the sort of the result.
+
+This represents the '∀forallVariable(forallPattern)' Matching Logic construct.
 -}
 data Forall a = Forall
     { forallSort     :: !(Sort a)
@@ -333,7 +351,9 @@ Section 9.1.4 (Patterns).
 The 'a' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. 15It should verify 'IsMeta a'.
 
-This represents the ⭤ Matching Logic operator.
+'iffSort' is both the sort of the operands and the sort of the result.
+
+This represents the 'iffFirst ⭤ iffSecond' Matching Logic construct.
 -}
 data Iff a = Iff
     { iffSort   :: !(Sort a)
@@ -349,7 +369,9 @@ Section 9.1.4 (Patterns).
 The 'a' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'IsMeta a'.
 
-This represents the ⭢ Matching Logic operator.
+'impliesSort' is both the sort of the operands and the sort of the result.
+
+This represents the 'impliesFirst ⭢ impliesSecond' Matching Logic construct.
 -}
 data Implies a = Implies
     { impliesSort   :: !(Sort a)
@@ -365,11 +387,15 @@ Section 9.1.4 (Patterns).
 The 'a' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'IsMeta a'.
 
-This represents the '∊' operator in Matching Logic.
+'memOperandSort' is the sort of the operands.
+
+'memResultSort' is the sort of the result.
+
+This represents the 'memVariable ∊ memPattern' Matching Logic construct.
 -}
 data Mem a = Mem
-    { memFirstSort  :: !(Sort a)
-    , memSecondSort :: !(Sort a)
+    { memOperandSort  :: !(Sort a)
+    , memResultSort :: !(Sort a)
     , memVariable   :: !UnifiedVariable
     , memPattern    :: !UnifiedPattern
     }
@@ -382,7 +408,9 @@ Section 9.1.4 (Patterns).
 The 'a' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'IsMeta a'.
 
-This represents the '¬' operator in Matching Logic.
+'notSort' is both the sort of the operand and the sort of the result.
+
+This represents the '¬ notPattern' Matching Logic construct.
 -}
 data Not a = Not
     { notSort    :: !(Sort a)
@@ -397,7 +425,9 @@ Section 9.1.4 (Patterns).
 The 'a' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'IsMeta a'.
 
-This represents the '∨' operator in Matching Logic.
+'orSort' is both the sort of the operands and the sort of the result.
+
+This represents the 'orFirst ∨ orSecond' Matching Logic construct.
 -}
 data Or a = Or
     { orSort   :: !(Sort a)
