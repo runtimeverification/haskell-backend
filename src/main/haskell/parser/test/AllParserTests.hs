@@ -9,7 +9,7 @@ import           RegressionTest
 
 main :: IO ()
 main = do
-    inputFiles <- regressionTestsInputFiles "../../test/resources/"
+    inputFiles <- regressionTestsInputFiles "../../../test/resources/"
     defaultMain (allParserTests inputFiles)
 
 allParserTests :: [String] -> TestTree
