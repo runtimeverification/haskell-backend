@@ -109,7 +109,7 @@ metaSortParserTests =
         , Failure
             { failureInput = "#Char{#Char}"
             , failureExpected =
-                "Failed reading: metaSortParser: Non empty parameter sorts"
+                "Failed reading: metaSortParser: Non empty parameter sorts."
             }
         , FailureWithoutMessage
             [ "var1, var2", "var1{var1 var2}"
@@ -975,3 +975,9 @@ definitionParserTests =
 sortVariableSort :: String -> Sort a
 sortVariableSort name =
     SortVariableSort (SortVariable (Id name))
+
+metaSort :: MetaSortType -> Sort Meta
+metaSort sortType =
+    SortActualSort SortActual
+        { sortActualName = Id (show sortType)
+        , sortActualSorts = []}

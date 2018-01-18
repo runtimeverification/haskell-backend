@@ -273,4 +273,6 @@ metaSortTrie = Trie.fromList $ map (\s -> (Char8.pack $ show s, s))
     ]
 
 metaSortParser :: String -> Maybe MetaSortType
+-- TODO(virgil): Does the pack call matter for performance? Should we try to
+-- improve it?
 metaSortParser identifier = Trie.lookup (Char8.pack identifier) metaSortTrie
