@@ -40,8 +40,17 @@ import           Data.Attoparsec.ByteString.Char8 ( parseOnly
                                                   , endOfInput)
 import qualified Data.ByteString as ByteString
 
+{-|'koreParser' is a parser for Kore.
+
+The input must contain a full valid Kore defininition and nothing else.
+-}
 koreParser :: Parser Definition
 koreParser = skipWhitespace *> definitionParser <* endOfInput
 
+{-|'fromKore' takes a string repredentation of a Kore Definition and returns
+a 'Definition' or a parse error.
+
+The input must contain a full valid Kore defininition and nothing else.
+-}
 fromKore :: ByteString.ByteString -> Either String Definition
 fromKore = parseOnly koreParser
