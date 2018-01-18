@@ -45,45 +45,106 @@ isObject x = (head $ typeRepArgs (typeOf x)) == typeOf Object
 isMeta :: (IsMeta a, Typeable (m a)) => m a -> Bool
 isMeta x = (head $ typeRepArgs (typeOf x)) == typeOf Meta
 
+{-|'Id' corresponds to the @object-identifier@ and @meta-identifier@
+syntactic categories from the Semantics of K, Section 9.1.1 (Lexicon).
+
+The 'a' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should verify 'IsMeta a'.
+-}
 newtype Id a = Id { getId :: String }
     deriving (Show, Eq, Typeable)
 
+{-|'StringLiteral' corresponds to the @string@ literal from the Semantics of K,
+Section 9.1.1 (Lexicon).
+-}
 newtype StringLiteral = StringLiteral { getStringLiteral :: String }
     deriving (Show, Eq)
 
+{-|'SymbolOrAlias' corresponds to the @head{sort-list}@ branch of the
+@object-head@ and @meta-heaf@ syntactic categories from the Semantics of K,
+Section 9.1.3 (Heads).
+
+The 'a' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should verify 'IsMeta a'.
+-}
 data SymbolOrAlias a = SymbolOrAlias
     { symbolOrAliasConstructor :: !(Id a)
     , symbolOrAliasParams      :: ![Sort a]
     }
     deriving (Show, Eq, Typeable)
 
+{-|'Symbol' corresponds to the @head(sort-list)@ part of the
+@object-symbol-declaration@ and @meta-symbol-declaration@ syntactic categories
+from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
+
+The 'a' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should verify 'IsMeta a'.
+
+Note that this is very similar to 'SymbolOrAlias'.
+-}
 data Symbol a = Symbol
     { symbolConstructor :: !(Id a)
     , symbolParams      :: ![Sort a]
     }
     deriving (Show, Eq, Typeable)
 
+{-|'Alias' corresponds to the @head(sort-list)@ part of the
+@object-alias-declaration@ and @meta-alias-declaration@ syntactic categories
+from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
+
+The 'a' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should verify 'IsMeta a'.
+
+Note that this is very similar to 'SymbolOrAlias'.
+-}
 data Alias a = Alias
     { aliasConstructor :: !(Id a)
     , aliasParams      :: ![Sort a]
     }
     deriving (Show, Eq, Typeable)
 
+{-|'SortVariable' corresponds to the @object-sort-variable@ and
+@meta-sort-variable@ syntactic categories from the Semantics of K,
+Section 9.1.2 (Sorts).
+
+The 'a' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should verify 'IsMeta a'.
+-}
 newtype SortVariable a = SortVariable
     { getSortVariable  :: Id a }
     deriving (Show, Eq, Typeable)
 
+{-|'SortActual' corresponds to the @sort-constructor{sort-list}@ branch of the
+@object-sort@ and @meta-sort@ syntactic categories from the Semantics of K,
+Section 9.1.2 (Sorts).
+
+The 'a' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should verify 'IsMeta a'.
+-}
 data SortActual a = SortActual
     { sortActualName  :: !(Id a)
     , sortActualSorts :: ![Sort a]
     }
     deriving (Show, Eq, Typeable)
 
+{-|'Sort' corresponds to the @object-sort@ and
+@meta-sort@ syntactic categories from the Semantics of K,
+Section 9.1.2 (Sorts).
+
+The 'a' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should verify 'IsMeta a'.
+-}
 data Sort a
     = SortVariableSort !(SortVariable a)
     | SortActualSort !(SortActual a)
     deriving (Show, Eq, Typeable)
 
+{-|'MetaSortType' corresponds to the @meta-sort-constructor@ syntactic category
+from the Semantics of K, Section 9.1.2 (Sorts).
+
+Ths is not represented directly in the AST, we're usin the string
+representation instead.
+-}
 data MetaSortType
     = CharSort
     | CharListSort
@@ -110,30 +171,58 @@ instance Show MetaSortType where
     show VariableSort     = "#Variable"
     show VariableListSort = "#VariableList"
 
+{-|'UnifiedSortVariable' corresponds to the @variable@ syntactic category
+from the Semantics of K, Section 9.1.2 (Sorts).
+-}
 data UnifiedSortVariable
     = ObjectSortVariable !(SortVariable Object)
     | MetaSortVariable !(SortVariable Meta)
     deriving (Show, Eq)
 
+{-|'ModuleName' corresponds to the @module-name@ syntactic category
+from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
+-}
 newtype ModuleName = ModuleName { getModuleName :: String }
     deriving (Show, Eq)
 
+{-|'Variable' corresponds to the @object-variable@ and
+@meta-variable@ syntactic categories from the Semantics of K,
+Section 9.1.4 (Patterns).
+
+The 'a' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should verify 'IsMeta a'.
+-}
 data Variable a = Variable
     { variableName :: !(Id a)
     , variableSort :: !(Sort a)
     }
     deriving (Show, Eq, Typeable)
 
+{-|'UnifiedVariable' corresponds to the @variable@ syntactic category from
+the Semantics of K, Section 9.1.4 (Patterns).
+-}
 data UnifiedVariable
     = MetaVariable !(Variable Meta)
     | ObjectVariable !(Variable Object)
     deriving (Eq, Show)
 
+{-|'UnifiedPattern' corresponds to the @pattern@ syntactic category from
+the Semantics of K, Section 9.1.4 (Patterns).
+-}
 data UnifiedPattern
     = MetaPattern !(Pattern Meta)
     | ObjectPattern !(Pattern Object)
     deriving (Eq, Show)
 
+{-|'And' corresponds to the @\and@ branches of the @object-pattern@ and
+@meta-pattern@ syntactic categories from the Semantics of K,
+Section 9.1.4 (Patterns).
+
+The 'a' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should verify 'IsMeta a'.
+
+This represents the '∧' operator in Matching Logic.
+-}
 data And a = And
     { andSort   :: !(Sort a)
     , andFirst  :: !UnifiedPattern
@@ -141,12 +230,30 @@ data And a = And
     }
     deriving (Eq, Show, Typeable)
 
+{-|'Application' corresponds to the @head(pattern-list)@ branches of the
+@object-pattern@ and @meta-pattern@ syntactic categories from
+the Semantics of K, Section 9.1.4 (Patterns).
+
+The 'a' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should verify 'IsMeta a'.
+
+This represents the σ(φ1, ..., φn) symbol patterns in Matching Logic.
+-}
 data Application a = Application
     { applicationSymbolOrAlias :: !(SymbolOrAlias a)
     , applicationPatterns      :: ![UnifiedPattern]
     }
     deriving (Eq, Show, Typeable)
 
+{-|'Ceil' corresponds to the @\ceil@ branches of the @object-pattern@ and
+@meta-pattern@ syntactic categories from the Semantics of K,
+Section 9.1.4 (Patterns).
+
+The 'a' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should verify 'IsMeta a'.
+
+This represents the ⌈.⌉ operator in Matching Logic.
+-}
 data Ceil a = Ceil
     { ceilFirstSort  :: !(Sort a)
     , ceilSecondSort :: !(Sort a)
@@ -154,6 +261,15 @@ data Ceil a = Ceil
     }
     deriving (Eq, Show, Typeable)
 
+{-|'Equals' corresponds to the @\equals@ branches of the @object-pattern@ and
+@meta-pattern@ syntactic categories from the Semantics of K,
+Section 9.1.4 (Patterns).
+
+The 'a' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should verify 'IsMeta a'.
+
+This represents the = operator in Matching Logic.
+-}
 data Equals a = Equals
     { equalsFirstSort  :: !(Sort a)
     , equalsSecondSort :: !(Sort a)
@@ -162,6 +278,15 @@ data Equals a = Equals
     }
     deriving (Eq, Show, Typeable)
 
+{-|'Exists' corresponds to the @\exists@ branches of the @object-pattern@ and
+@meta-pattern@ syntactic categories from the Semantics of K,
+Section 9.1.4 (Patterns).
+
+The 'a' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should verify 'IsMeta a'.
+
+This represents the ∃ construct in Matching Logic.
+-}
 data Exists a = Exists
     { existsSort     :: !(Sort a)
     , existsVariable :: !UnifiedVariable
@@ -169,6 +294,15 @@ data Exists a = Exists
     }
     deriving (Eq, Show, Typeable)
 
+{-|'Floor' corresponds to the @\floor@ branches of the @object-pattern@ and
+@meta-pattern@ syntactic categories from the Semantics of K,
+Section 9.1.4 (Patterns).
+
+The 'a' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should verify 'IsMeta a'.
+
+This represents the ⌊.⌋ operator in Matching Logic.
+-}
 data Floor a = Floor
     { floorFirstSort  :: !(Sort a)
     , floorSecondSort :: !(Sort a)
@@ -176,6 +310,15 @@ data Floor a = Floor
     }
     deriving (Eq, Show, Typeable)
 
+{-|'Forall' corresponds to the @\forall@ branches of the @object-pattern@ and
+@meta-pattern@ syntactic categories from the Semantics of K,
+Section 9.1.4 (Patterns).
+
+The 'a' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should verify 'IsMeta a'.
+
+This represents the ∀ construct in Matching Logic.
+-}
 data Forall a = Forall
     { forallSort     :: !(Sort a)
     , forallVariable :: !UnifiedVariable
@@ -183,6 +326,15 @@ data Forall a = Forall
     }
     deriving (Eq, Show, Typeable)
 
+{-|'Iff' corresponds to the @\iff@ branches of the @object-pattern@ and
+@meta-pattern@ syntactic categories from the Semantics of K,
+Section 9.1.4 (Patterns).
+
+The 'a' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. 15It should verify 'IsMeta a'.
+
+This represents the ⭤ Matching Logic operator.
+-}
 data Iff a = Iff
     { iffSort   :: !(Sort a)
     , iffFirst  :: !UnifiedPattern
@@ -190,6 +342,15 @@ data Iff a = Iff
     }
     deriving (Eq, Show, Typeable)
 
+{-|'Implies' corresponds to the @\implies@ branches of the @object-pattern@ and
+@meta-pattern@ syntactic categories from the Semantics of K,
+Section 9.1.4 (Patterns).
+
+The 'a' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should verify 'IsMeta a'.
+
+This represents the ⭢ Matching Logic operator.
+-}
 data Implies a = Implies
     { impliesSort   :: !(Sort a)
     , impliesFirst  :: !UnifiedPattern
@@ -197,6 +358,15 @@ data Implies a = Implies
     }
     deriving (Eq, Show, Typeable)
 
+{-|'Mem' corresponds to the @\mem@ branches of the @object-pattern@ and
+@meta-pattern@ syntactic categories from the Semantics of K,
+Section 9.1.4 (Patterns).
+
+The 'a' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should verify 'IsMeta a'.
+
+This represents the '∊' operator in Matching Logic.
+-}
 data Mem a = Mem
     { memFirstSort  :: !(Sort a)
     , memSecondSort :: !(Sort a)
@@ -205,12 +375,30 @@ data Mem a = Mem
     }
     deriving (Eq, Show, Typeable)
 
+{-|'Not' corresponds to the @\not@ branches of the @object-pattern@ and
+@meta-pattern@ syntactic categories from the Semantics of K,
+Section 9.1.4 (Patterns).
+
+The 'a' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should verify 'IsMeta a'.
+
+This represents the '¬' operator in Matching Logic.
+-}
 data Not a = Not
     { notSort    :: !(Sort a)
     , notPattern :: !UnifiedPattern
     }
     deriving (Eq, Show, Typeable)
 
+{-|'Or' corresponds to the @\or@ branches of the @object-pattern@ and
+@meta-pattern@ syntactic categories from the Semantics of K,
+Section 9.1.4 (Patterns).
+
+The 'a' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should verify 'IsMeta a'.
+
+This represents the '∨' operator in Matching Logic.
+-}
 data Or a = Or
     { orSort   :: !(Sort a)
     , orFirst  :: !UnifiedPattern
@@ -218,6 +406,15 @@ data Or a = Or
     }
     deriving (Eq, Show, Typeable)
 
+{-|'Pattern' corresponds to the @object-pattern@ and
+@meta-pattern@ syntactic categories from the Semantics of K,
+Section 9.1.4 (Patterns).
+
+The 'a' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should verify 'IsMeta a'.
+
+Note that the StringLiteralPattern should only be a member of 'Pattern Meta'.
+-}
 data Pattern a
     = AndPattern !(And a)
     | ApplicationPattern !(Application a)
@@ -237,6 +434,13 @@ data Pattern a
     | VariablePattern !(Variable a)
     deriving (Eq, Show, Typeable)
 
+{-|'SentenceAlias' corresponds to the @object-alias-declaration@ and
+@meta-alias-declaration@ syntactic categories from the Semantics of K,
+Section 9.1.6 (Declaration and Definitions).
+
+The 'a' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should verify 'IsMeta a'.
+-}
 data SentenceAlias a = SentenceAlias
     { sentenceAliasAlias      :: !(Alias a)
     , sentenceAliasSorts      :: ![Sort a]
@@ -245,6 +449,13 @@ data SentenceAlias a = SentenceAlias
     }
     deriving (Eq, Show, Typeable)
 
+{-|'SentenceSymbol' corresponds to the @object-symbol-declaration@ and
+@meta-symbol-declaration@ syntactic categories from the Semantics of K,
+Section 9.1.6 (Declaration and Definitions).
+
+The 'a' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should verify 'IsMeta a'.
+-}
 data SentenceSymbol a = SentenceSymbol
     { sentenceSymbolSymbol     :: !(Symbol a)
     , sentenceSymbolSorts      :: ![Sort a]
