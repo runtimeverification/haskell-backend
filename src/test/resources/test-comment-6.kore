@@ -2,7 +2,7 @@
 
 module TEST-COMMENT-6
 
-  sort{} Nat{ /* Block comments are whitespaces. */ } [] 
+  sort{}/* Block comments are whitespaces. */Nat{} [] 
 
 endmodule []
 

@@ -346,15 +346,13 @@ class TextToKoreTest {
   case class FileFOS(x: java.io.File) extends FileOrSource
   case class SourceFOS(x: io.Source) extends FileOrSource
 
-  /** Tests if parse is correct,
-    * by checking if p(t) == p(u(p(t)))
-    * TODO:: Check t ~~ u(p(t)) where ~~ is the equiv modulo whitespaces & comments
-    *
-    * where:
-    *   e in MiniKore
-    *   t in String
-    *   p : String -> MiniKore
-    *   u : MiniKore -> String
+  /** Tests if parse is correct by checking if
+    *   src ~~ unparse(parse(src))
+    * where src is a kore definition source file and
+    *       ~~ is the equiv relation modulo whitespaces & comments.
+    * Property:
+    *     src1 ~~ src2
+    * iff canonicalString(src1) == canonicalString(src2)
     */
   def parseTest(src: FileOrSource, expected: String): Unit = {
     //TODO: Make test file parametric over builders.
@@ -365,14 +363,28 @@ class TextToKoreTest {
       case src: SourceFOS => TextToKore(builder).parse(src.x)
     }
     val end = java.lang.System.nanoTime(); println(end - begin)
-    val text = KoreToText(minikore)
+    val textOfMiniKore = KoreToText(minikore)
+
+    val canonicalString = src match {
+      case src: FileFOS => TextToKore(builder).canonicalString(src.x)
+      case src: SourceFOS => TextToKore(builder).canonicalString(src.x)
+    }
+
+    val canonicalStringOfTextOfMiniKore = src match {
+      case src: FileFOS => TextToKore(builder).canonicalString(textOfMiniKore)
+      case src: SourceFOS => TextToKore(builder).canonicalString(textOfMiniKore)
+    }
+    println(canonicalString)
+    println(canonicalStringOfTextOfMiniKore)
+    assertEquals(canonicalString, canonicalStringOfTextOfMiniKore)
+
     // val outputfile = new java.io.File("/tmp/x")
     // FileUtils.writeStringToFile(outputfile, text)
     // if (expected == text) () // t == u(p(t))
     // else if (trim(expected) == trim(text)) () // t == u(p(t)) modulo leading/trailing whitespaces
     // else {
       // assertEquals(expected.replaceAll("\\s+", ""), text.replaceAll("\\s+", "")) //   t  ==   u(p(t))  modulo whitespaces
-    assertEquals(minikore, new TextToKore(builder).parse(io.Source.fromString(text))) // p(t) == p(u(p(t)))
+    // assertEquals(minikore, new TextToKore(builder).parse(io.Source.fromString(text))) // p(t) == p(u(p(t)))
     // }
   }
 
