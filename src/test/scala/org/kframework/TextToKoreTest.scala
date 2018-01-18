@@ -348,6 +348,7 @@ class TextToKoreTest {
 
   /** Tests if parse is correct,
     * by checking if p(t) == p(u(p(t)))
+    * TODO:: Check t ~~ u(p(t)) where ~~ is the equiv modulo whitespaces & comments
     *
     * where:
     *   e in MiniKore
