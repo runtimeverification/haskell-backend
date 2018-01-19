@@ -104,7 +104,8 @@ metaSortConverterTests =
         , Failure
             { failureInput = "#Chart{}"
             , failureExpected =
-                "Failed reading: metaSortConverter: Invalid constructor: '#Chart'."
+                "Failed reading: metaSortConverter: " ++
+                "Invalid constructor: '#Chart'."
             }
         , Failure
             { failureInput = "#Char{#Char}"
