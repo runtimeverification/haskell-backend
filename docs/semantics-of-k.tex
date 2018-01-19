@@ -2043,8 +2043,22 @@ Operators $f \colon s_1 \times \dots \times s_n \to s$ and $f \colon t_1
 \times \dots \times t_n \to t$ are called \emph{subsort overloading} if 
 $[t_i] = [t'_i]$ for $i = 1,\dots,n$ and $[t] = [t']$.
 Otherwise, they are called \emph{ad-hoc overloading}. 
-Here we only consider subsort overloading as ad-hoc overloading can be 
-eliminated by renaming of operators.
+Subsort overloading is the main focus when it comes to order-sorted signatures 
+and algebras as ad-hoc overloading can be recognized and dealt with easily by 
+calculating connected components of the poset of sorts.
+
+In order-sorted algebras, there is a standard approach that introduces for each 
+connected component $[s]$ a top sort (or called a \emph{kind}), often denoted 
+as just $[s]$.
+Therefore for any $s \in [s]$, $s \preceq [s]$.
+And for each operator $f \colon s_1 \times \dots \times s_n \to s$, we define a 
+subsort overloading $f \colon [s_1] \times \dots \times [s_n] \to [s]$.
+Intuitively, it allows us to parse (meaningful) terms and rules that are not 
+guaranteed to be always well-formed syntactically.
+One such example is $succ(pred(X)) \Rightarrow X$, where the term 
+$succ(pred(X))$ does not have sort $Int$ but only have the kind $[Int]$.
+Runtime checks will be made in order to make sure rules are applied to terms 
+with expected sorts.
 
 In matching logic we decided not to have order-sorted signatures because 
 it makes reasoning a lot harder.
@@ -2088,6 +2102,16 @@ $$
   \inj{s'_1}{s''_1}(x_1\cln s'_1), \dots, \inj{s'_n}{s''_n}(x_n\cln s'_n))
   )
 $$
+The above property is especially useful.
+It allows us to do \emph{sort casting} however we want to.
+Together with the strictness axioms for injection functions which we introduce 
+later, it provides us full reasoning power of dealing with order-sorted 
+signatures in a multi-sorted setting.
+In other words, it tells us how to generate proof objects about sort casting 
+and etc. 
+How to design algorithms and data structures that make doing sort casting and 
+sort inference (introduced below) more efficient is of course another important 
+question.
 
 Notice that any term $t$ in an order-sorted signature is also a well-formed 
 pattern in the corresponding matching logic signature except that the sort 
@@ -2101,7 +2125,8 @@ the order-sorted operators) in a pattern $t$ (that correspond to the term $t$
 in the order-sorted signature) so that $t$ is well-formed.
 Suppose $f(t_1,\dots,t_n)$ is a term in an order-sorted signature.
 We want to find sort parameters $s_1,\dots,s_n$ such that
-$\parametric{f}{s_1,\dots,s_n}(t_1,\dots,t_n)$ is a well-formed pattern.
+$\parametric{f}{s_1,\dots,s_n}(t_1,\dots,t_n)$ is a well-formed pattern in 
+matching logic.
 In fact, we only need to pick $s_i$ to be the least sort of $t_i$ in the 
 order-sorted signature obtained by the sort inference in order-sorted signature.
 
@@ -2123,6 +2148,12 @@ following property holds
 $$
 \inj{s_1}{s_2}(C[T]) = (\gamma \square . \inj{s_1}{s_2}(C[\square]))[T]
 $$
+
+It is often convenient to assume that $(S,\preceq)$ is not just a poset but a  
+lattice.
+There are standard techniques that extend the poset $(S,\preceq)$ to a lattice 
+by introducing new sorts to $S$ if needed.
+It is orthogonal to what we have discussed.
 
 
 
