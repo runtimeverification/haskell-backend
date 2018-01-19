@@ -378,6 +378,8 @@
   \newcommand{\symb}{\smalltt{symbol}}
   \newcommand{\axiom}{\smalltt{axiom}}
   
+  \newcommand{\inj}[2]{\parametric{\mathit{inj}}{#1, #2}}
+  
   % User-defined sorts & symbols in the meta-theory
   \newcommand{\KqNat}{\texttt{\shp `Nat}{ }}
   \newcommand{\KqList}{\texttt{\shp `List}{ }}
@@ -2031,6 +2033,97 @@ We leave it as a (non-trivial) exercise to the reader to also define the
 all-path reachability relation $\varphi \Rightarrow^\forall\varphi'$ and to
 prove all the proof rules of reachability logic as lemmas/theorems using the
 more basic proof system of matching logic.
+
+\subsection{Dealing with Order-Sorted Signatures and Algebras}
+
+An order-sorted signature has a poset of the form $(S, \preceq)$. 
+If $s_1 \preceq s_2$ we say $s_1$ is a subsort of $s_2$.
+We denote the connected component of a sort $s$ as $[s]$.
+Operators $f \colon s_1 \times \dots \times s_n \to s$ and $f \colon t_1 
+\times \dots \times t_n \to t$ are called \emph{subsort overloading} if 
+$[t_i] = [t'_i]$ for $i = 1,\dots,n$ and $[t] = [t']$.
+Otherwise, they are called \emph{ad-hoc overloading}. 
+Here we only consider subsort overloading as ad-hoc overloading can be 
+eliminated by renaming of operators.
+
+In matching logic we decided not to have order-sorted signatures because 
+it makes reasoning a lot harder.
+Instead, we mimic order-sorted signatures by multi-sorted signatures with 
+explicit injection functions plus axioms that capture properties about these 
+injection functions.
+For any $s_1 \preceq s_2$, we define an injective function 
+$\inj{s_1}{s_2} \colon s_1 \to s_2$.
+Properties about subsorts are axiomatized.
+For example, if $s_1 \preceq s_2 \preceq s_3$, 
+the three injective functions
+\begin{align*}
+& \inj{s_1}{s_2} \colon s_1 \to s_2 \\
+& \inj{s_2}{s_3} \colon s_2 \to s_3 \\
+& \inj{s_1}{s_3} \colon s_1 \to s_3
+\end{align*}
+have property
+$$
+\inj{s_1}{s_3}(x) = \inj{s_2}{s_3}(\inj{s_1}{s_2}(x))
+$$
+
+For any operator $f \colon s_1 \times \dots \times s_n \to s$ in an 
+order-sorted signature that might be subsort overloaded, we define for each 
+$s'_1 \in [s_1], \dots, s'_n \in [s_n]$, a matching logic symbol
+$$\parametric{f}{s'_1,\dots,s'_n} \in \Sigma_{s'_1,\dots,s'_n,s'}$$
+where $s'$ is the \emph{least sort} of the term $f(x_1 \cln s'_1, \dots, x_n 
+\cln x'_n)$ in the order-sorted signature.
+Suppose $s'_1 \preceq s''_1 \in [s_1], \dots, s'_n \preceq s''_n \in [s_n]$ and
+\begin{align*}
+& \parametric{f}{s'_1,\dots,s'_n} \in \Sigma_{s'_1,\dots,s'_n,s'} \\
+& \parametric{f}{s''_1,\dots,s''_n} \in \Sigma_{s''_1,\dots,s''_n,s''}
+\end{align*}
+By definition, $s' \preceq s'' \in [s]$ and thus there is an injection function 
+$\inj{s'}{s''} \colon s' \to s''$.
+The following property should hold
+$$
+\parametric{f}{s'_1,\dots,s'_n}(x_1 \cln s'_1,\dots,x_n \cln s'_n) 
+=
+\inj{s'}{s''}(
+\parametric{f}{s''_1,\dots,s''_n}(
+  \inj{s'_1}{s''_1}(x_1\cln s'_1), \dots, \inj{s'_n}{s''_n}(x_n\cln s'_n))
+  )
+$$
+
+Notice that any term $t$ in an order-sorted signature is also a well-formed 
+pattern in the corresponding matching logic signature except that the sort 
+parameters of symbols (that correspond to the operators in the order-sorted 
+signature) are not yet decided.
+\emph{Sort inference in order-sorted signature} is the process of finding a 
+term $t$ its least sort $s$ in an order-sorted signature.
+We overload the terminology \emph{sort inference} here to 
+mean the process of finding sort parameters for symbols (that correspond to 
+the order-sorted operators) in a pattern $t$ (that correspond to the term $t$ 
+in the order-sorted signature) so that $t$ is well-formed.
+Suppose $f(t_1,\dots,t_n)$ is a term in an order-sorted signature.
+We want to find sort parameters $s_1,\dots,s_n$ such that
+$\parametric{f}{s_1,\dots,s_n}(t_1,\dots,t_n)$ is a well-formed pattern.
+In fact, we only need to pick $s_i$ to be the least sort of $t_i$ in the 
+order-sorted signature obtained by the sort inference in order-sorted signature.
+
+The same sort inference procedure works not only for symbols but also for logic 
+connectives.
+Suppose $l \Rightarrow r$ is a rewrite rule where the least sorts of $l$ and 
+$r$ are $s_l$ and $s_r$ respectively.
+Notice that in front-ends, we may not necessarily ask that $s_l$ and $s_r$ are 
+the same sort but just ask they belong to the same connected component.
+We denote $s$ as the lub of the least sorts of $l$ and $r$.
+Then $l \Rightarrow r$ is the syntactic sugar of the following axiom
+$$
+\inj{s_l}{s}(l) \to_s \parametric{\circ}{s} \inj{s_r}{s}(r)
+$$
+
+Injection function are strict.
+For any $s_1 \preceq s_2$ and the injection function $\inj{s_1}{s_2}$, the 
+following property holds
+$$
+\inj{s_1}{s_2}(C[T]) = (\gamma \square . \inj{s_1}{s_2}(C[\square]))[T]
+$$
+
 
 
 \section{Built-ins}
