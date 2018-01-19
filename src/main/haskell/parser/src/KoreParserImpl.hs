@@ -44,7 +44,9 @@ import qualified ParserUtils
 import           Control.Monad                    (void, when)
 
 import           Data.Attoparsec.ByteString.Char8 (Parser)
-import qualified Data.Attoparsec.ByteString.Char8 as Parser (char,peekChar',peekChar)
+import qualified Data.Attoparsec.ByteString.Char8 as Parser ( char
+                                                            , peekChar'
+                                                            , peekChar)
 import           Data.Maybe                       (isJust)
 
 {-|'sortVariableParser' parses either an @object-sort-variable@, or a
@@ -158,7 +160,8 @@ validateMetaSort
 validateMetaSort identifier [] =
     if isJust (metaSortConverter metaId)
         then return ()
-        else fail ("metaSortConverter: Invalid constructor: '" ++ metaId ++ "'.")
+        else fail
+            ("metaSortConverter: Invalid constructor: '" ++ metaId ++ "'.")
   where
     metaId = getId identifier
 validateMetaSort _ l = fail "metaSortConverter: Non empty parameter sorts."
