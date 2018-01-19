@@ -7,6 +7,8 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 
+Parser definition for Kore. Meant for internal use only.
+
 Conventions used:
 
 1. In various cases we distinguish between @object-@ and @meta-@ versions of an
@@ -55,11 +57,12 @@ BNF definition:
 ⟨meta-sort-variable⟩ ::= ⟨meta-identifier⟩
 @
 
-The 'x' parameter is used to distiguish between the meta- and object- versions.
-
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
-sortVariableParser :: IsMeta a => a -> Parser (SortVariable a)
+sortVariableParser
+    :: IsMeta a
+    => a        -- ^ Distinguishes between the meta and non-meta elements.
+    -> Parser (SortVariable a)
 sortVariableParser x = SortVariable <$> idParser x
 
 {-|'unifiedSortVariableParser' parses a sort variable.-}
@@ -111,13 +114,14 @@ BNF definition:
 ⟨meta-sort⟩ ::= ⟨meta-sort-variable⟩ | ⟨meta-sort-constructor⟩ ‘{’ ‘}’
 @
 
-The 'x' parameter is used to distiguish between the meta- and object- versions.
-
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 
 Always starts with @{@,
 -}
-sortParser :: IsMeta a => a -> Parser (Sort a)
+sortParser
+    :: IsMeta a
+    => a        -- ^ Distinguishes between the meta and non-meta elements.
+    -> Parser (Sort a)
 sortParser x = do
     identifier <- idParser x
     c <- Parser.peekChar
@@ -146,7 +150,11 @@ Relevant BNF definitions:
     | ‘#Pattern’    | ‘#PatternList’
 @
 -}
-validateMetaSort :: Show a => Id a -> [Sort a] -> Parser ()
+validateMetaSort
+    :: Show a
+    => Id a     -- ^ The sort name
+    -> [Sort a] -- ^ The sort arguments
+    -> Parser ()
 validateMetaSort identifier [] =
     if isJust (metaSortConverter metaId)
         then return ()
@@ -172,11 +180,12 @@ BNF definition fragment for what we're parsing here:
 ⟨...⟩ ::= ... ‘{’ ⟨meta-sort-list⟩ ‘}’ ...
 @
 
-The 'x' parameter is used to distiguish between the meta- and object- versions.
-
 Always starts with @{@,
 -}
-inCurlyBracesSortListParser :: IsMeta a => a -> Parser [Sort a]
+inCurlyBracesSortListParser
+    :: IsMeta a
+    => a        -- ^ Distinguishes between the meta and non-meta elements.
+    -> Parser [Sort a]
 inCurlyBracesSortListParser x =
     ParserUtils.sepByCharWithDelimitingChars skipWhitespace '{' '}' ','
         (sortParser x)
@@ -191,7 +200,7 @@ inParenthesesSortListParser x =
         (sortParser x)
 
 {-|'symbolOrAliasRemainderRawParser' parses the sort list that occurs
-in heads and constructs the head using the provided 'constructor'.
+in heads and constructs the head using the provided constructor.
 
 BNF fragments:
 
@@ -200,17 +209,18 @@ BNF fragments:
 ... ::= ... ‘{’ head-sort-list⟩ ‘}’ ...
 @
 
-The 'x' parameter is used to distiguish between the meta- and object- versions.
-
 Always starts with @{@.
 -}
 symbolOrAliasRemainderRawParser
-    :: IsMeta a => a -> ([Sort a] -> (m a)) -> Parser (m a)
+    :: IsMeta a
+    => a   -- ^ Distinguishes between the meta and non-meta elements.
+    -> ([Sort a] -> (m a))  -- ^ Element constructor.
+    -> Parser (m a)
 symbolOrAliasRemainderRawParser x constructor =
     constructor <$> inCurlyBracesSortListParser x
 
 {-|'symbolOrAliasRawParser' parses a head and constructs it using the provided
-'constructor'.
+constructor.
 
 BNF definitions:
 
@@ -219,12 +229,13 @@ BNF definitions:
 ⟨meta-head⟩ ::= ⟨meta-head-constructor⟩ ‘{’ ⟨meta-sort-list⟩ ‘}’
 @
 
-The 'x' parameter is used to distiguish between the meta- and object- versions.
-
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 symbolOrAliasRawParser
-    :: IsMeta a => a -> (Id a -> [Sort a] -> m a) -> Parser (m a)
+    :: IsMeta a
+    => a  -- ^ Distinguishes between the meta and non-meta elements.
+    -> (Id a -> [Sort a] -> m a)  -- ^ Element constructor.
+    -> Parser (m a)
 symbolOrAliasRawParser x constructor = do
     headConstructor <- idParser x
     symbolOrAliasRemainderRawParser x (constructor headConstructor)
@@ -239,9 +250,12 @@ BNF definitions:
 ⟨meta-head⟩ ::= ⟨meta-head-constructor⟩ ‘{’ ⟨meta-sort-list⟩ ‘}’
 @
 
-The 'x' parameter is used to distiguish between the meta- and object- versions.
+The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
-aliasParser :: IsMeta a => a -> Parser (Alias a)
+aliasParser
+    :: IsMeta a
+    => a        -- ^ Distinguishes between the meta and non-meta elements.
+    -> Parser (Alias a)
 aliasParser x = symbolOrAliasRawParser x Alias
 
 
@@ -254,8 +268,6 @@ symbolParser x = symbolOrAliasRawParser x Symbol
 {-|'symbolOrAliasRemainderParser' parses the sort list that occurs
 in heads and constructs it as a SymbolOrAlias.
 
-The 'x' parameter is used to distiguish between the meta- and object- versions.
-
 BNF fragments:
 
 @
@@ -266,13 +278,16 @@ BNF fragments:
 Always starts with @{@.
 -}
 symbolOrAliasRemainderParser
-    :: IsMeta a => a -> Id a -> Parser (SymbolOrAlias a)
+    :: IsMeta a
+    => a        -- ^ Distinguishes between the meta and non-meta elements.
+    -> Id a     -- ^ The already parsed prefix.
+    -> Parser (SymbolOrAlias a)
 symbolOrAliasRemainderParser x identifier =
     symbolOrAliasRemainderRawParser x (SymbolOrAlias identifier)
 
 {-|'unaryOperatorRemainderParser' parses the part after an unary operator's
 name and the first open curly brace and constructs it using the provided
-'constructor'.
+constructor.
 
 BNF fragments:
 
@@ -281,13 +296,13 @@ BNF fragments:
 ... ::= ... ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
 @
 
-The 'x' parameter is used to distiguish between the meta- and object- versions.
-
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 unaryOperatorRemainderParser
     :: IsMeta a
-    => a -> (Sort a -> UnifiedPattern -> m a) -> Parser (m a)
+    => a  -- ^ Distinguishes between the meta and non-meta elements.
+    -> (Sort a -> UnifiedPattern -> m a)  -- ^ Element constructor.
+    -> Parser (m a)
 unaryOperatorRemainderParser x constructor =
     pure constructor
         <*> inCurlyBracesRemainderParser (sortParser x)
@@ -295,7 +310,7 @@ unaryOperatorRemainderParser x constructor =
 
 {-|'binaryOperatorRemainderParser' parses the part after a binary operator's
 name and the first open curly brace and constructs it using the provided
-'constructor'.
+constructor.
 
 BNF fragments:
 
@@ -304,13 +319,13 @@ BNF fragments:
 ... ::= ... ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
 @
 
-The 'x' parameter is used to distiguish between the meta- and object- versions.
-
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 binaryOperatorRemainderParser
     :: IsMeta a
-    => a -> (Sort a -> UnifiedPattern -> UnifiedPattern -> m a)
+    => a  -- ^ Distinguishes between the meta and non-meta elements.
+    -> (Sort a -> UnifiedPattern -> UnifiedPattern -> m a)
+    -- ^ Element constructor.
     -> Parser (m a)
 binaryOperatorRemainderParser x constructor = do
     sort <- inCurlyBracesRemainderParser (sortParser x)
@@ -320,7 +335,7 @@ binaryOperatorRemainderParser x constructor = do
 
 {-|'existsForallRemainderParser' parses the part after an exists or forall
 operator's name and the first open curly brace and constructs it using the
-provided 'constructor'.
+provided constructor.
 
 BNF fragments:
 
@@ -329,13 +344,13 @@ BNF fragments:
 ... ::= ... ⟨meta-sort⟩ ‘}’ ‘(’ ⟨variable⟩ ‘,’ ⟨pattern⟩ ‘)’
 @
 
-The 'x' parameter is used to distiguish between the meta- and object- versions.
-
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 existsForallRemainderParser
     :: IsMeta a
-    => a -> (Sort a -> UnifiedVariable -> UnifiedPattern -> m a)
+    => a  -- ^ Distinguishes between the meta and non-meta elements.
+    -> (Sort a -> UnifiedVariable -> UnifiedPattern -> m a)
+    -- ^ Element constructor.
     -> Parser (m a)
 existsForallRemainderParser x constructor = do
     sort <- inCurlyBracesRemainderParser (sortParser x)
@@ -345,7 +360,7 @@ existsForallRemainderParser x constructor = do
 
 {-|'ceilFloorRemainderParser' parses the part after a ceil or floor
 operator's name and the first open curly brace and constructs it using the
-provided 'constructor'.
+provided constructor.
 
 BNF fragments:
 
@@ -354,13 +369,13 @@ BNF fragments:
 ... ::= ... ⟨meta-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
 @
 
-The 'x' parameter is used to distiguish between the meta- and object- versions.
-
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 ceilFloorRemainderParser
     :: IsMeta a
-    => a -> (Sort a -> Sort a -> UnifiedPattern -> m a)
+    => a  -- ^ Distinguishes between the meta and non-meta elements.
+    -> (Sort a -> Sort a -> UnifiedPattern -> m a)
+    -- ^ Element constructor.
     -> Parser (m a)
 ceilFloorRemainderParser x constructor = do
     (sort1, sort2) <- curlyPairRemainderParser (sortParser x)
@@ -377,12 +392,12 @@ BNF fragments:
 ... ::= ... ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨variable⟩ ‘,’ ⟨pattern⟩ ‘)’
 @
 
-The 'x' parameter is used to distiguish between the meta- and object- versions.
-
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 memRemainderParser
-    :: IsMeta a => a -> Parser (Mem a)
+    :: IsMeta a
+    => a  -- ^ Distinguishes between the meta and non-meta elements.
+    -> Parser (Mem a)
 memRemainderParser x = do
     (sort1, sort2) <- curlyPairRemainderParser (sortParser x)
     (variable, pattern) <-
@@ -396,7 +411,7 @@ memRemainderParser x = do
 
 {-|'equalsLikeRemainderParser' parses the part after an equals
 operator's name and the first open curly brace and constructs it using the
-provided 'constructor'.
+provided constructor.
 
 BNF fragments:
 
@@ -405,13 +420,13 @@ BNF fragments:
 ... ::= ... ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
 @
 
-The 'x' parameter is used to distiguish between the meta- and object- versions.
-
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 equalsLikeRemainderParser
     :: IsMeta a
-    => a -> (Sort a -> Sort a -> UnifiedPattern -> UnifiedPattern -> m a)
+    => a  -- ^ Distinguishes between the meta and non-meta elements.
+    -> (Sort a -> Sort a -> UnifiedPattern -> UnifiedPattern -> m a)
+    -- ^ Element constructor.
     -> Parser (m a)
 equalsLikeRemainderParser x constructor = do
     (sort1, sort2) <- curlyPairRemainderParser (sortParser x)
@@ -421,7 +436,7 @@ equalsLikeRemainderParser x constructor = do
 
 {-|'topBottomRemainderParser' parses the part after a top or bottom
 operator's name and the first open curly brace and constructs it using the
-provided 'constructor'.
+provided constructor.
 
 BNF fragments:
 
@@ -430,12 +445,13 @@ BNF fragments:
 ... ::= ... ⟨meta-sort⟩ ‘}’ ‘(’ ‘)’
 @
 
-The 'x' parameter is used to distiguish between the meta- and object- versions.
-
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 topBottomRemainderParser
-    :: IsMeta a => a -> (Sort a -> Pattern a) -> Parser (Pattern a)
+    :: IsMeta a
+    => a  -- ^ Distinguishes between the meta and non-meta elements.
+    -> (Sort a -> Pattern a)  -- ^ Element constructor.
+    -> Parser (Pattern a)
 topBottomRemainderParser x constructor = do
     sort <- inCurlyBracesRemainderParser (sortParser x)
     inParenthesesParser (return ())
@@ -454,12 +470,13 @@ BNF fragments:
 ⟨meta-head⟩ ::= ... ‘{’ ⟨meta-sort-list⟩ ‘}’
 @
 
-The 'x' parameter is used to distiguish between the meta- and object- versions.
-
 Always starts with @{@.
 -}
 symbolOrAliasPatternRemainderParser
-    :: IsMeta a => a -> Id a -> Parser (Pattern a)
+    :: IsMeta a
+    => a  -- ^ Distinguishes between the meta and non-meta elements.
+    -> Id a  -- ^ The already parsed prefix.
+    -> Parser (Pattern a)
 symbolOrAliasPatternRemainderParser x identifier = ApplicationPattern <$>
     ( pure Application
         <*> symbolOrAliasRemainderParser x identifier
@@ -475,12 +492,13 @@ BNF fragments:
 ⟨object-variable⟩ ::= ... ‘:’ ⟨object-sort⟩
 @
 
-The 'x' parameter is used to distiguish between the meta- and object- versions.
-
 Always starts with @:@.
 -}
 variableRemainderParser
-    :: IsMeta a => a -> Id a -> Parser (Variable a)
+    :: IsMeta a
+    => a  -- ^ Distinguishes between the meta and non-meta elements.
+    -> Id a  -- ^ The already parsed prefix.
+    -> Parser (Variable a)
 variableRemainderParser x identifier = do
     colonParser
     sort <- sortParser x
@@ -498,12 +516,12 @@ BNF definitions:
 ⟨meta-variable⟩ ::= ⟨meta-identifier⟩ ‘:’ ⟨meta-sort⟩
 @
 
-The 'x' parameter is used to distiguish between the meta- and object- versions.
-
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 variableParser
-    :: IsMeta a => a -> Parser (Variable a)
+    :: IsMeta a
+    => a  -- ^ Distinguishes between the meta and non-meta elements.
+    -> Parser (Variable a)
 variableParser x = idParser x >>= variableRemainderParser x
 
 {-|'unifiedVariableParser' parses a @variable@.
@@ -542,12 +560,12 @@ BNF definitions:
 ⟨meta-head-constructor⟩ ::= ⟨meta-identifier⟩
 @
 
-The 'x' parameter is used to distiguish between the meta- and object- versions.
-
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 variableOrTermPatternParser
-    :: IsMeta a => a -> Parser (Pattern a)
+    :: IsMeta a
+    => a  -- ^ Distinguishes between the meta and non-meta elements.
+    -> Parser (Pattern a)
 variableOrTermPatternParser x = do
     identifier <- idParser x
     c <- Parser.peekChar'
@@ -752,8 +770,6 @@ BNF definition fragment for what we're parsing here:
 ⟨...⟩ ::= ... ‘[’ ⟨pattern-list⟩ ‘]’ ...
 @
 
-The 'x' parameter is used to distiguish between the meta- and object- versions.
-
 Always starts with @[@,
 -}
 inSquareBracketsPatternListParser :: Parser [UnifiedPattern]
@@ -868,8 +884,8 @@ sentenceParser = keywordBasedParsers
                     SentenceSymbol
 
 {-|'aliasSymbolSentenceRemainderParser' parses the part after the starting
-keyword of an alias or symbol declaration using the given 'aliasSymbolParser' to
-parse the head and constructs it using the given 'constructor'.
+keyword of an alias or symbol declaration using the given head parser
+to parse the head and constructs it using the given constructor.
 
 BNF fragment example:
 
@@ -877,15 +893,14 @@ BNF fragment example:
 ... ::= ... ⟨object-head⟩ ‘(’ ⟨object-sort-list⟩ ‘)’ ‘:’ ⟨object-sort⟩ ⟨attribute⟩
 @
 
-The 'x' parameter is used to distiguish between the meta- and object- versions.
-
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 aliasSymbolSentenceRemainderParser
     :: IsMeta a
-    => a
-    -> Parser (m a)
+    => a  -- ^ Distinguishes between the meta and non-meta elements.
+    -> Parser (m a)  -- Head parser.
     -> (m a -> [Sort a] -> Sort a -> Attributes -> as a)
+    -- ^ Element constructor.
     -> Parser (as a)
 aliasSymbolSentenceRemainderParser  x aliasSymbolParser constructor = do
     aliasSymbol <- aliasSymbolParser

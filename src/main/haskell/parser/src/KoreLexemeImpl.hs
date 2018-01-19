@@ -28,6 +28,7 @@ import qualified CharDict
 import           CharSet
 import           CString
 import           KoreAST
+import           ParserUtils
 
 import           Control.Monad                    (void, when)
 import qualified Data.Attoparsec.ByteString       as BParser (runScanner)
@@ -47,11 +48,11 @@ import qualified Data.Trie                        as Trie
 
 {-|'idParser' parses either an @object-identifier@, or a @meta-identifier@.
 
-The 'x' parameter is used to distiguish between the meta- and object- versions.
-
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
-idParser :: IsMeta a => a -> Parser (Id a)
+idParser :: IsMeta a
+         => a  -- ^ Distinguishes between the meta and non-meta elements.
+         -> Parser (Id a)
 idParser x = Id <$> lexeme (idRawParser x)
 
 {-|'stringLiteralParser' parses a C-style string literal, unescaping it.
@@ -126,12 +127,11 @@ koreKeywordsSet = Trie.fromList $ map (\s -> (Char8.pack s, ()))
 
 {-|'genericIdRawParser' parses for tokens that can be represented as
 @⟨prefix-char⟩ ⟨body-char⟩*@. Does not consume whitespace.
-
-'firstCharSet' contains the characters allowed for @⟨prefix-char⟩@.
-
-'bodyCharSet' contains the characters allowed for @⟨body-char⟩@.
 -}
-genericIdRawParser :: CharSet -> CharSet -> Parser String
+genericIdRawParser
+    :: CharSet  -- ^ contains the characters allowed for @⟨prefix-char⟩@.
+    -> CharSet  -- ^ contains the characters allowed for @⟨body-char⟩@.
+    -> Parser String
 genericIdRawParser firstCharSet bodyCharSet = do
     c <- Parser.peekChar'
     idChar <- if not (c `CharSet.elem` firstCharSet)
@@ -188,11 +188,11 @@ metaIdRawParser = do
 {-|'idParser' parses either an @object-identifier@, or a @meta-identifier@.
 Does not consume whitespace.
 
-The 'x' parameter is used to distiguish between the meta- and object- versions.
-
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
-idRawParser :: (IsMeta a) => a -> Parser String
+idRawParser :: (IsMeta a)
+            => a  -- ^ Distinguishes between the meta and non-meta elements.
+            -> Parser String
 idRawParser x = case metaType x of
     ObjectType -> objectIdRawParser
     MetaType   -> metaIdRawParser
@@ -232,7 +232,7 @@ stringLiteralRawParser = do
 Note that it does not enforce the existence of whitespace after the character.
 -}
 tokenCharParser :: Char -> Parser ()
-tokenCharParser c = lexeme (void (Parser.char c))
+tokenCharParser = skipCharParser skipWhitespace
 
 {-|'colonParser' parses a @:@ character.-}
 colonParser :: Parser ()
@@ -387,7 +387,10 @@ input character does not match any string prefix, it uses the default parser.
 Fails if one of the strings is a prefix of another one.
 -}
 prefixBasedParsersWithDefault
-    :: (String -> Parser ()) -> Parser a -> [(String, Parser a)] -> Parser a
+    :: (String -> Parser ())  -- ^ Parser for the prefix strings.
+    -> Parser a  -- ^ Element parser.
+    -> [(String, Parser a)] -- ^ (prefix, remainder parser) pairs.
+    -> Parser a
 prefixBasedParsersWithDefault _ _ [] =
     error "Keyword Based Parsers With Default - no parsers"
 prefixBasedParsersWithDefault prefixParser defaultParser stringParsers = do

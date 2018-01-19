@@ -6,6 +6,8 @@ License     : UIUC/NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
+
+Helper tools for parsing Kore. Meant for internal use only.
 -}
 module ParserUtils where
 
@@ -15,22 +17,25 @@ import qualified Data.Attoparsec.ByteString.Char8 as Parser
 
 {-|'manyUntilChar' parses a list of 'a' items.
 
-It uses 'itemParser' to parse 0 or more items until 'endchar'
+It uses the item parser to parse 0 or more items until the end character
 is encountered at the edge of an item (or at the beginning of the input).
 
 Returns a list of items.
 
 The difference between this and the standard 'many' construct is that this one
-returns any errors reported by 'itemParser'
+returns any errors reported by the item parser.
 -}
-manyUntilChar :: Char -> Parser a -> Parser [a]
+manyUntilChar :: Char       -- ^ The end character
+              -> Parser a   -- ^ The item parser
+              -> Parser [a]
 manyUntilChar endChar itemParser = do
     mc <- Parser.peekChar
     if mc == Just endChar
       then return []
       else (:) <$> itemParser <*> manyUntilChar endChar itemParser
 
-{-|'skipCharParser' skips the given character, consuming any whitespace after.
+{-|'skipCharParser' skips the given character, using the provided parser to
+consume whatever is after the character.
 -}
 skipCharParser :: Parser () -> Char -> Parser ()
 skipCharParser skipWhitespace c = do
@@ -39,15 +44,20 @@ skipCharParser skipWhitespace c = do
 
 {-|'sepByCharWithDelimitingChars' parses a list of 0 or more 'a' items.
 
-The list must start with 'firstChar' and end with 'endChar'. Items must be
-delimited by 'delimiter'. The parser uses 'skipWhitespace' to consume any space
-after these.
+The list must start with the start character and end with the end character.
+The separator character should occur between items. The parser uses
+the skipping parser to consume input after these.
 
 The difference between this and the standard 'sepBy' construct is that this one
 returns any errors reported by 'itemParser'
 -}
 sepByCharWithDelimitingChars
-    :: Parser() -> Char -> Char -> Char -> Parser a -> Parser [a]
+    :: Parser()   -- ^ Skipping parser
+    -> Char       -- ^ The start character
+    -> Char       -- ^ The end character
+    -> Char       -- ^ The separator character
+    -> Parser a   -- ^ The item perser
+    -> Parser [a]
 sepByCharWithDelimitingChars
     skipWhitespace firstChar endChar delimiter itemParser = do
         skipCharParser skipWhitespace firstChar
