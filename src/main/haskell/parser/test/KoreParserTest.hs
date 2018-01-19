@@ -11,7 +11,7 @@ koreParserTests =
     testGroup
         "Parser Tests"
         [ testGroup "objectSortParser" objectSortParserTests
-        , testGroup "metaSortParser" metaSortParserTests
+        , testGroup "metaSortConverter" metaSortConverterTests
         , testGroup "objectSortListParser" objectSortListParserTests
         , testGroup "metaSortListParser" metaSortListParserTests
         , testGroup "objectSortVariableParser" objectSortVariableParserTests
@@ -85,8 +85,8 @@ objectSortParserTests =
         , FailureWithoutMessage ["var1, var2", "var1{var1 var2}"]
         ]
 
-metaSortParserTests :: [TestTree]
-metaSortParserTests =
+metaSortConverterTests :: [TestTree]
+metaSortConverterTests =
     parseTree (sortParser Meta)
         [ Success "#var"
             (SortVariableSort (SortVariable (Id "#var")))
@@ -104,12 +104,12 @@ metaSortParserTests =
         , Failure
             { failureInput = "#Chart{}"
             , failureExpected =
-                "Failed reading: metaSortParser: Invalid constructor: '#Chart'."
+                "Failed reading: metaSortConverter: Invalid constructor: '#Chart'."
             }
         , Failure
             { failureInput = "#Char{#Char}"
             , failureExpected =
-                "Failed reading: metaSortParser: Non empty parameter sorts."
+                "Failed reading: metaSortConverter: Non empty parameter sorts."
             }
         , FailureWithoutMessage
             [ "var1, var2", "var1{var1 var2}"

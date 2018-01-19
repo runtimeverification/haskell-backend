@@ -65,7 +65,7 @@ idParserTests =
         , Failure
             { failureInput = "["
             , failureExpected =
-                "Failed reading: genericidParser: Invalid first character '['."
+                "Failed reading: genericIdRawParser: Invalid first character '['."
             }
         , Failure
             { failureInput = "module"

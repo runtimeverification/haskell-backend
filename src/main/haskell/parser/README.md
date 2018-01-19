@@ -12,3 +12,5 @@ To run the tests: `stack test --coverage` or `stack test --no-keep-going` or
 
 To regenerate the golden data fo regression tests:
 `stack test --no-keep-going --ta --accept`
+
+To generate documentation: `stack build --haddock`.

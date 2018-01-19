@@ -148,12 +148,12 @@ Relevant BNF definitions:
 -}
 validateMetaSort :: Show a => Id a -> [Sort a] -> Parser ()
 validateMetaSort identifier [] =
-    if isJust (metaSortParser metaId)
+    if isJust (metaSortConverter metaId)
         then return ()
-        else fail ("metaSortParser: Invalid constructor: '" ++ metaId ++ "'.")
+        else fail ("metaSortConverter: Invalid constructor: '" ++ metaId ++ "'.")
   where
     metaId = getId identifier
-validateMetaSort _ l = fail "metaSortParser: Non empty parameter sorts."
+validateMetaSort _ l = fail "metaSortConverter: Non empty parameter sorts."
 
 {-|'inCurlyBracesSortVariableListParser' parses either an @object-sort-list@
 or a @meta-sort-list@, delimited by curly braces and separated by commas.
