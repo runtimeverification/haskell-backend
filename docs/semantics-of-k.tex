@@ -343,6 +343,8 @@
   \newcommand{\KaxiomDeclared}{\texttt{\sharpsymbol axiomDeclared}}
   \newcommand{\Kderivable}{\Kdeduce}
   
+  \newcommand{\Ksubsort}[1]{\parametric{\texttt{\sharpsymbol subsort}}{#1}}
+  
   \newcommand{\KwellFormed}{\texttt{\sharpsymbol wellFormed}}
   \newcommand{\KwellFormedPatterns}{\texttt{\sharpsymbol wellFormedPatterns}}
   \newcommand{\KgetSort}{\texttt{\sharpsymbol getSort}}
@@ -2034,7 +2036,8 @@ all-path reachability relation $\varphi \Rightarrow^\forall\varphi'$ and to
 prove all the proof rules of reachability logic as lemmas/theorems using the
 more basic proof system of matching logic.
 
-\subsection{Dealing with Order-Sorted Algebras}
+\subsection{Dealing with Order-Sorted Signatures and Algebras}
+\label{sec:dealing-with-OS}
 
 Matching logic is a many-sorted logic and all sorts in a matching logic 
 signature forms a set which is often denoted as $S$.
@@ -3413,6 +3416,44 @@ defined by the following axioms
   & \KgetSort(\overline{\exists_s v . \varphi}) =
   \parametric{\KwellFormed}{\KSort}(\overline{\exists_s v . \varphi}) \wedge s
 \end{align*}
+
+\subsection{Embedding Order-Sorted in the Meta-Theory}
+\label{sec:ML-OS}
+
+In Section~\ref{sec:dealing-with-OS}, we have shown how to embed order-sorted 
+signatures and algebras in a many-sorted setting such as in matching logic. 
+In this section, we will formalize the discussion we had in 
+Section~\ref{sec:dealing-with-OS} and give axiomatization for these embeddings.
+The intuition is that reasoning in an order-sorted theory can be seen as 
+reasoning in a many-sorted theory plus some symbols and axioms that capture the 
+order-sorted structures in the order-sorted theory.
+This observation is an analogy to the observation that reasoning in a 
+many-sorted theory can be 
+seen as reasoning in a unsorted theory plus some symbols (i.e. indicator 
+predicate symbols for every sorts) and axioms that capture the many-sorted 
+structures 
+in the many-sorted theory. 
+\subsubsection{The Partial Order Relation over Sorts}
+
+In order-sorted algebras, the set of sorts $(S, \preceq)$ forms a partial order 
+set and the subsort relation~$\preceq$ is a partial order relation.
+To capture the subsort relation in order-sorted algebras, we define a predicate 
+symbol
+$$
+\Ksubsort{\shs} \colon \KSort \times \KSort \to \shs \qquad 
+\text{for any sort $\shs \in S_K$}
+$$
+with the following axioms saying that it is a partial order relation
+\begin{align*}
+& \Ksubsort{\shs}(s, s) \\
+& \Ksubsort{\shs}(s_1, s_2) \wedge \Ksubsort{\shs}(s_2, s_1) \to s_1 = s_2 \\
+& \Ksubsort{\shs}(s_1, s_2) \wedge \Ksubsort{\shs}(s_2, s_3) \to 
+\Ksubsort{\shs}(s_1, s_3)
+\end{align*}
+
+Various functions and predicates for partial order sets can be easily defined.
+For example, 
+
 
 \subsection{Matching Logic Proof System}
 \label{sec:ML-proof-system}
