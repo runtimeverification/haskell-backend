@@ -2034,10 +2034,20 @@ all-path reachability relation $\varphi \Rightarrow^\forall\varphi'$ and to
 prove all the proof rules of reachability logic as lemmas/theorems using the
 more basic proof system of matching logic.
 
-\subsection{Dealing with Order-Sorted Signatures and Algebras}
+\subsection{Dealing with Order-Sorted Algebras}
+
+Matching logic is a many-sorted logic and all sorts in a matching logic 
+signature forms a set which is often denoted as $S$.
+Another popular and commonly used type of logic is \emph{order-sorted logic}.
+In an order-sorted logic, all sorts of a signature forms a partial order set 
+(poset) which is often denoted as $(S, \preceq)$. 
+The binary relation $\preceq$ is called the \emph{subsort relation}. 
+If $s_1 \preceq s_2$ we say $s_1$ is a subsort of $s_2$.
+
+\subsubsection{Order-Sorted Algebras}
 
 An order-sorted signature has a poset of the form $(S, \preceq)$. 
-If $s_1 \preceq s_2$ we say $s_1$ is a subsort of $s_2$.
+
 We denote the connected component of a sort $s$ as $[s]$.
 Operators $f \colon s_1 \times \dots \times s_n \to s$ and $f \colon t_1 
 \times \dots \times t_n \to t$ are called \emph{subsort overloading} if 
@@ -2059,6 +2069,15 @@ One such example is $succ(pred(X)) \Rightarrow X$, where the term
 $succ(pred(X))$ does not have sort $Int$ but only have the kind $[Int]$.
 Runtime checks will be made in order to make sure rules are applied to terms 
 with expected sorts.
+
+algorithms and decision procedures for OS have been proposed and implemented in 
+languages like Maude, but that in general OS is hard from a theoretical point 
+of view and reasoning in an OS setting is even harder.  And that what we'd like 
+is to allow backends to make use of decision procedures and algorithms, but at 
+the same time to have a crystal clear and easier mathematical foundation for 
+OS, via a methodological embedding in ML
+
+\subsubsection{Embedding Order-Sorted in Matching Logic}
 
 In matching logic we decided not to have order-sorted signatures because 
 it makes reasoning a lot harder.
@@ -2095,12 +2114,11 @@ By definition, $s' \preceq s'' \in [s]$ and thus there is an injection function
 $\inj{s'}{s''} \colon s' \to s''$.
 The following property should hold
 $$
-\parametric{f}{s'_1,\dots,s'_n}(x_1 \cln s'_1,\dots,x_n \cln s'_n) 
-=
 \inj{s'}{s''}(
+\parametric{f}{s'_1,\dots,s'_n}(x_1 \cln s'_1,\dots,x_n \cln s'_n))
+=
 \parametric{f}{s''_1,\dots,s''_n}(
   \inj{s'_1}{s''_1}(x_1\cln s'_1), \dots, \inj{s'_n}{s''_n}(x_n\cln s'_n))
-  )
 $$
 The above property is especially useful.
 It allows us to do \emph{sort casting} however we want to.
