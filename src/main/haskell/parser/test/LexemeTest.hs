@@ -1,9 +1,9 @@
-module KoreLexemeTest (koreLexemeTests) where
+module LexemeTest (koreLexemeTests) where
 
 import           Test.Tasty
 
 import           Data.Kore.AST
-import           Data.Kore.Parser.KoreLexeme
+import           Data.Kore.Parser.Lexeme
 import           ParserTestUtils
 
 koreLexemeTests :: TestTree

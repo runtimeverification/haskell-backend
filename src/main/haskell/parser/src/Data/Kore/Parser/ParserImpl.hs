@@ -1,5 +1,5 @@
 {-|
-Module      : Data.Kore.Parser.KoreParserImpl
+Module      : Data.Kore.Parser.ParserImpl
 Description : Parser definition for Kore. Meant for internal use only.
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
@@ -35,10 +35,10 @@ Conventions used:
 5. All parsers consume the whitespace after the parsed element and expect no
    whitespace before.
 -}
-module Data.Kore.Parser.KoreParserImpl where
+module Data.Kore.Parser.ParserImpl where
 
 import           Data.Kore.AST
-import           Data.Kore.Parser.KoreLexeme
+import           Data.Kore.Parser.Lexeme
 import qualified Data.Kore.Parser.ParserUtils as ParserUtils
 
 import           Control.Monad                    (void, when)
