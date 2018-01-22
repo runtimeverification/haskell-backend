@@ -397,7 +397,7 @@ prefixBasedParsersWithDefault prefixParser defaultParser stringParsers = do
     mc <- Parser.peekChar
     case mc of
         Nothing -> defaultParser
-        -- TODO(virgl): Should this lookup be optimized?
+        -- TODO(virgil): Should this lookup be optimized?
         Just c -> if any ((==c).head.fst) stringParsers
             then prefixBasedParsers prefixParser stringParsers
             else defaultParser

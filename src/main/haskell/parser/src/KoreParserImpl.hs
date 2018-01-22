@@ -117,8 +117,6 @@ BNF definition:
 @
 
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
-
-Always starts with @{@,
 -}
 sortParser
     :: IsMeta a
@@ -648,6 +646,7 @@ BNF definitions:
     | ‘\mem’ ‘{’ ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨variable⟩ ‘,’ ⟨pattern⟩ ‘)’
     | ‘\top’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ‘)’
     | ‘\bottom’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ‘)’
+@
 
 Always starts with @\@.
 -}
@@ -854,10 +853,10 @@ BNF definition fragments:
     | ⟨axiom-declaration⟩
 ⟨axiom-declaration⟩ ::= ‘axiom’ ...
 ⟨sort-declaration⟩ ::= ‘sort’ ...
-⟨symbol-declaration⟩ ::= ⟨object-symbol-declaration⟩ | ⟨meta-symbol-declaration⟩ ⟨attribute⟩
+⟨symbol-declaration⟩ ::= ( ⟨object-symbol-declaration⟩ | ⟨meta-symbol-declaration⟩ ) ⟨attribute⟩
 ⟨object-symbol-declaration⟩ ::= ‘symbol’ ...
 ⟨meta-symbol-declaration⟩ ::= ‘symbol’ ...
-⟨alias-declaration⟩ ::= ⟨object-alias-declaration⟩ | ⟨meta-alias-declaration⟩ ⟨attribute⟩
+⟨alias-declaration⟩ ::= ( ⟨object-alias-declaration⟩ | ⟨meta-alias-declaration⟩ ) ⟨attribute⟩
 ⟨object-alias-declaration⟩ ::= ‘alias’ ...
 ⟨meta-alias-declaration⟩ ::= ‘alias’ ...
 @

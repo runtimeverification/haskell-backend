@@ -61,7 +61,7 @@ newtype StringLiteral = StringLiteral { getStringLiteral :: String }
     deriving (Show, Eq)
 
 {-|'SymbolOrAlias' corresponds to the @head{sort-list}@ branch of the
-@object-head@ and @meta-heaf@ syntactic categories from the Semantics of K,
+@object-head@ and @meta-head@ syntactic categories from the Semantics of K,
 Section 9.1.3 (Heads).
 
 The 'a' type parameter is used to distiguish between the meta- and object-
@@ -142,7 +142,7 @@ data Sort a
 {-|'MetaSortType' corresponds to the @meta-sort-constructor@ syntactic category
 from the Semantics of K, Section 9.1.2 (Sorts).
 
-Ths is not represented directly in the AST, we're usin the string
+Ths is not represented directly in the AST, we're using the string
 representation instead.
 -}
 data MetaSortType
@@ -297,7 +297,7 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 
 'existsSort' is both the sort of the operands and the sort of the result.
 
-This represents the '∃forallVariable(forallPattern)' Matching Logic construct.
+This represents the '∃existsVariable(existsPattern)' Matching Logic construct.
 -}
 data Exists a = Exists
     { existsSort     :: !(Sort a)
@@ -349,7 +349,7 @@ data Forall a = Forall
 Section 9.1.4 (Patterns).
 
 The 'a' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. 15It should verify 'IsMeta a'.
+versions of symbol declarations. It should verify 'IsMeta a'.
 
 'iffSort' is both the sort of the operands and the sort of the result.
 
