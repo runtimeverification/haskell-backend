@@ -1,5 +1,5 @@
 {-|
-Module      : KoreLexemeImpl
+Module      : Data.Kore.Parser.KoreLexemeImpl
 Description : Lexical unit definitions for Kore and simple ways of composing
               parsers. Meant for internal use only.
 Copyright   : (c) Runtime Verification, 2018
@@ -22,13 +22,13 @@ Conventions used:
 
 4. The "Raw" parsers do not consume any whitespace.
 -}
-module KoreLexemeImpl where
+module Data.Kore.Parser.KoreLexemeImpl where
 
-import qualified CharDict
-import           CharSet
-import           CString
 import           Data.Kore.AST
-import           ParserUtils
+import qualified Data.Kore.Parser.CharDict as CharDict
+import           Data.Kore.Parser.CharSet as CharSet
+import           Data.Kore.Parser.CString
+import           Data.Kore.Parser.ParserUtils
 
 import           Control.Monad                    (void, when)
 import qualified Data.Attoparsec.ByteString       as BParser (runScanner)

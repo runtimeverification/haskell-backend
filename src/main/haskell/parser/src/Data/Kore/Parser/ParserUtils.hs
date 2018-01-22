@@ -1,5 +1,5 @@
 {-|
-Module      : ParserUtils
+Module      : Data.Kore.Parser.ParserUtils
 Description : Helper tools for parsing Kore. Meant for internal use only.
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
@@ -9,7 +9,7 @@ Portability : POSIX
 
 Helper tools for parsing Kore. Meant for internal use only.
 -}
-module ParserUtils where
+module Data.Kore.Parser.ParserUtils where
 
 import           Control.Monad                    (void)
 import           Data.Attoparsec.ByteString.Char8 (Parser)

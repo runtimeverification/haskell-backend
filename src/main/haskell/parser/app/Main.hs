@@ -1,6 +1,6 @@
 module Main where
 
-import KoreParser
+import Data.Kore.Parser.KoreParser
 
 import qualified Data.ByteString as ByteString
 import System.Environment (getArgs)

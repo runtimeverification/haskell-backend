@@ -3,7 +3,7 @@ module CharSetTest (charSetTests) where
 import           Test.Tasty
 import           Test.Tasty.HUnit
 
-import           CharSet
+import           Data.Kore.Parser.CharSet as CharSet
 
 charSetTests :: TestTree
 charSetTests =

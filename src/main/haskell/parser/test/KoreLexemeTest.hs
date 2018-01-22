@@ -3,7 +3,7 @@ module KoreLexemeTest (koreLexemeTests) where
 import           Test.Tasty
 
 import           Data.Kore.AST
-import           KoreLexeme
+import           Data.Kore.Parser.KoreLexeme
 import           ParserTestUtils
 
 koreLexemeTests :: TestTree

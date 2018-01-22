@@ -1,5 +1,5 @@
 {-|
-Module      : CharSet
+Module      : Data.Kore.Parser.CharSet
 Description : Efficient representation for a set of extended ASCII characters.
               Meant for internal use only.
 Copyright   : (c) Runtime Verification, 2018
@@ -8,14 +8,14 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module CharSet
+module Data.Kore.Parser.CharSet
        ( CharSet
        , makeCharSet
        , join
        , elem
        ) where
 
-import CharDict
+import Data.Kore.Parser.CharDict as CharDict
 import Prelude hiding (elem)
 
 newtype CharSet = CharSet { getCharSet :: CharDict.CharDict Bool }

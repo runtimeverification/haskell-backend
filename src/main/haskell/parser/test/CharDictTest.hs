@@ -3,7 +3,7 @@ module CharDictTest (charDictTests) where
 import           Test.Tasty
 import           Test.Tasty.HUnit
 
-import           CharDict
+import           Data.Kore.Parser.CharDict
 
 charDictTests :: TestTree
 charDictTests =

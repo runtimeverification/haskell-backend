@@ -1,5 +1,5 @@
 {-|
-Module      : KoreParser
+Module      : Data.Kore.Parser.KoreParser
 Description : Parser for the Kore language
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
@@ -10,7 +10,7 @@ Portability : POSIX
 This is a parser for the Kore language. Sample usage:
 
 @
-import KoreParser
+import Data.Kore.Parser.KoreParser
 
 import           Data.Attoparsec.ByteString.Char8 (parseOnly)
 import qualified Data.ByteString as ByteString
@@ -26,14 +26,14 @@ main = do
 @
 
 -}
-module KoreParser ( Definition
-                  , fromKore
-                  , koreParser
-                  ) where
+module Data.Kore.Parser.KoreParser ( Definition
+                                   , fromKore
+                                   , koreParser
+                                   ) where
 
 import           Data.Kore.AST (Definition)
-import           KoreParserImpl (definitionParser)
-import           KoreLexeme (skipWhitespace)
+import           Data.Kore.Parser.KoreParserImpl (definitionParser)
+import           Data.Kore.Parser.KoreLexeme (skipWhitespace)
 
 import           Data.Attoparsec.ByteString.Char8 ( parseOnly
                                                   , Parser

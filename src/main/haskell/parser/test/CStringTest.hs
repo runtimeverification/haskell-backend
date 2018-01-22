@@ -3,7 +3,7 @@ module CStringTest (cStringTests) where
 import           Test.Tasty
 import           Test.Tasty.HUnit
 
-import           CString
+import           Data.Kore.Parser.CString
 
 cStringTests :: TestTree
 cStringTests =

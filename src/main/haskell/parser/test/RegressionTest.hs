@@ -5,7 +5,7 @@ import           Test.Tasty.HUnit
 import           Test.Tasty.Golden
 import           Test.Tasty.Golden.Advanced
 
-import           KoreParser
+import           Data.Kore.Parser.KoreParser
 
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Char8 as Char8

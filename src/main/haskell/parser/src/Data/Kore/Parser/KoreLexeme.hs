@@ -1,5 +1,5 @@
 {-|
-Module      : KoreLexemeImpl
+Module      : Data.Kore.Parser.KoreLexemeImpl
 Description : Lexical unit definitions for Kore and simple ways of composing
               parsers. Meant for internal use only.
 Copyright   : (c) Runtime Verification, 2018
@@ -20,7 +20,7 @@ Conventions used:
 3. All parsers consume the whitespace after the parsed element and expect no
    whitespace before.
 -}
-module KoreLexeme
+module Data.Kore.Parser.KoreLexeme
        ( colonParser
        , commaParser
        , curlyPairParser
@@ -40,4 +40,4 @@ module KoreLexeme
        , stringLiteralParser
        ) where
 
-import KoreLexemeImpl
+import Data.Kore.Parser.KoreLexemeImpl

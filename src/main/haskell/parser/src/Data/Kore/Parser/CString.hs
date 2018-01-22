@@ -1,5 +1,5 @@
 {-|
-Module      : CString
+Module      : Data.Kore.Parser.CString
 Description : Unescaping for C-style strings. Meant for internal use only.
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
@@ -7,12 +7,12 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module CString
+module Data.Kore.Parser.CString
        ( unescapeCString
        , oneCharEscapeDict
        ) where
 
-import           CharSet
+import           Data.Kore.Parser.CharSet as CharSet
 
 import           Data.Char (chr, digitToInt, isHexDigit, isOctDigit, ord,
                             toUpper)
