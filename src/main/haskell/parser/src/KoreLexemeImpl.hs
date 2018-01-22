@@ -27,7 +27,7 @@ module KoreLexemeImpl where
 import qualified CharDict
 import           CharSet
 import           CString
-import           KoreAST
+import           Data.Kore.AST
 import           ParserUtils
 
 import           Control.Monad                    (void, when)

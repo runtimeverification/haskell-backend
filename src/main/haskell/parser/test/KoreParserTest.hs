@@ -2,7 +2,7 @@ module KoreParserTest (koreParserTests) where
 
 import           Test.Tasty
 
-import           KoreAST
+import           Data.Kore.AST
 import           KoreParserImpl
 import           ParserTestUtils
 

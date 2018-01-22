@@ -37,7 +37,7 @@ Conventions used:
 -}
 module KoreParserImpl where
 
-import           KoreAST
+import           Data.Kore.AST
 import           KoreLexeme
 import qualified ParserUtils
 

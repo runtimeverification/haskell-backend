@@ -31,7 +31,7 @@ module KoreParser ( Definition
                   , koreParser
                   ) where
 
-import           KoreAST (Definition)
+import           Data.Kore.AST (Definition)
 import           KoreParserImpl (definitionParser)
 import           KoreLexeme (skipWhitespace)
 
