@@ -225,6 +225,8 @@
   
   \newcommand{\isEmpty}{\textit{isEmpty}}
   
+  \newcommand{\ostoml}{\textsf{os2ml}}
+  
   \newcommand{\builtin}{\textit{builtin}}
   
   % Define PATTERNS with ATTERNS are small capitals:
@@ -1993,7 +1995,7 @@ that are part of the same rule into one rewrite higher in the
 pattern, but also to combine multiple parallel rewrites into
 one rewrite, thus giving natural support for \emph{true concurrency}.
 Note that the axioms above allow to lift the $\circ$ symbol from
-any proper subset of orthogonal subpaterns, without enforcing
+any proper subset of orthogonal subpatterns, without enforcing
 the lifting of \emph{all} the $\circ$ symbols.
 In other words, an \emph{interleaving model of concurrency}
 is also supported.
@@ -2036,9 +2038,35 @@ all-path reachability relation $\varphi \Rightarrow^\forall\varphi'$ and to
 prove all the proof rules of reachability logic as lemmas/theorems using the
 more basic proof system of matching logic.
 
-\subsection{Dealing with Order-Sorted Signatures and Algebras}
+\subsection{Order-Sorted Algebras}
 \label{sec:dealing-with-OS}
 
+There are various motivations to study order-sorted algebras.
+Goguen in~\cite{Goguen1991types} used order-sorted algebras to treat errors in 
+abstract data types.
+Many algebraic specifications use \emph{subsorts} as a mechanism to model 
+subtypes.
+In \K, an order-sorted front-end syntax is used to allow more intuitive and 
+compact \K definitions.
+However, the convenience of order-sorted algebras does not come for free. 
+Algorithms and decision procedures for order-sorted algebras have been proposed 
+and implemented in languages like Maude, but in general order-sorted algebras 
+are hard from a theoretical point of view and reasoning in an order-sorted 
+setting is even harder.
+Therefore, we allow back-ends to make use of order-sorted decision procedures 
+and algorithms, but at the same time we want to have a crystal clear and easier 
+mathematical foundation for order-sorted algebras, via a methodological 
+embedding in matching logic\footnote{
+It is well-known that order-sorted algebras can be reduced to many-sorted 	
+algebras~\cite{GOGUEN1992217}.}.
+
+\info{Xiaohong: how to formulate the problem so that it helps translate 
+order-sorted \K definitions to many-sorted Kore definition?}
+
+
+\subsubsection{Order-Sorted Algebras}
+
+An order-sorted signature has a poset of the form $(S, \preceq)$. 
 Matching logic is a many-sorted logic and all sorts in a matching logic 
 signature forms a set which is often denoted as $S$.
 Another popular and commonly used type of logic is \emph{order-sorted logic}.
@@ -2046,11 +2074,6 @@ In an order-sorted logic, all sorts of a signature forms a partial order set
 (poset) which is often denoted as $(S, \preceq)$. 
 The binary relation $\preceq$ is called the \emph{subsort relation}. 
 If $s_1 \preceq s_2$ we say $s_1$ is a subsort of $s_2$.
-
-\subsubsection{Order-Sorted Algebras}
-
-An order-sorted signature has a poset of the form $(S, \preceq)$. 
-
 We denote the connected component of a sort $s$ as $[s]$.
 Operators $f \colon s_1 \times \dots \times s_n \to s$ and $f \colon t_1 
 \times \dots \times t_n \to t$ are called \emph{subsort overloading} if 
@@ -2072,13 +2095,6 @@ One such example is $succ(pred(X)) \Rightarrow X$, where the term
 $succ(pred(X))$ does not have sort $Int$ but only have the kind $[Int]$.
 Runtime checks will be made in order to make sure rules are applied to terms 
 with expected sorts.
-
-algorithms and decision procedures for OS have been proposed and implemented in 
-languages like Maude, but that in general OS is hard from a theoretical point 
-of view and reasoning in an OS setting is even harder.  And that what we'd like 
-is to allow backends to make use of decision procedures and algorithms, but at 
-the same time to have a crystal clear and easier mathematical foundation for 
-OS, via a methodological embedding in ML
 
 \subsubsection{Embedding Order-Sorted in Matching Logic}
 
