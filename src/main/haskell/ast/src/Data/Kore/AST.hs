@@ -5,7 +5,7 @@ Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
-Portability : POSIX
+Portability : portable
 
 This module includes all the data structures necessary for representing
 all the syntactic categories of a Kore definition.
