@@ -1,4 +1,4 @@
-module ParserTestUtils where
+module Data.Kore.Parser.ParserTestUtils where
 
 import           Test.Tasty
 import           Test.Tasty.HUnit

@@ -1,4 +1,4 @@
-module CharDictTest (charDictTests) where
+module Data.Kore.Parser.CharDictTest (charDictTests) where
 
 import           Test.Tasty
 import           Test.Tasty.HUnit

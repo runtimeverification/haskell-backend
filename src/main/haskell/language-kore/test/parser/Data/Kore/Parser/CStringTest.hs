@@ -1,4 +1,4 @@
-module CStringTest (cStringTests) where
+module Data.Kore.Parser.CStringTest (cStringTests) where
 
 import           Test.Tasty
 import           Test.Tasty.HUnit

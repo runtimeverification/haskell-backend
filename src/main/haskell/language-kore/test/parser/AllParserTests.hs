@@ -1,11 +1,11 @@
 import           Test.Tasty
 
-import           CharDictTest
-import           CharSetTest
-import           CStringTest
-import           LexemeTest
-import           ParserTest
-import           RegressionTest
+import           Data.Kore.Parser.CharDictTest
+import           Data.Kore.Parser.CharSetTest
+import           Data.Kore.Parser.CStringTest
+import           Data.Kore.Parser.LexemeTest
+import           Data.Kore.Parser.ParserTest
+import           Data.Kore.Parser.RegressionTest
 
 main :: IO ()
 main = do

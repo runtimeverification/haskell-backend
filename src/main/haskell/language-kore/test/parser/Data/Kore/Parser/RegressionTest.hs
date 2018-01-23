@@ -1,4 +1,4 @@
-module RegressionTest (regressionTests, regressionTestsInputFiles) where
+module Data.Kore.Parser.RegressionTest (regressionTests, regressionTestsInputFiles) where
 
 import           Test.Tasty
 import           Test.Tasty.Golden

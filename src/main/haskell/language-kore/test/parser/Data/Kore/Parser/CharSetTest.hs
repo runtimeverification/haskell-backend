@@ -1,4 +1,4 @@
-module CharSetTest (charSetTests) where
+module Data.Kore.Parser.CharSetTest (charSetTests) where
 
 import           Test.Tasty
 import           Test.Tasty.HUnit

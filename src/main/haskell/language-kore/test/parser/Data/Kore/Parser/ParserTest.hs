@@ -1,10 +1,10 @@
-module ParserTest (koreParserTests) where
+module Data.Kore.Parser.ParserTest (koreParserTests) where
 
 import           Test.Tasty
 
 import           Data.Kore.AST
 import           Data.Kore.Parser.ParserImpl
-import           ParserTestUtils
+import           Data.Kore.Parser.ParserTestUtils
 
 koreParserTests :: TestTree
 koreParserTests =
