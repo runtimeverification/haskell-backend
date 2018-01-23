@@ -39,14 +39,13 @@ module Data.Kore.Parser.ParserImpl where
 
 import           Data.Kore.AST
 import           Data.Kore.Parser.Lexeme
-import qualified Data.Kore.Parser.ParserUtils as ParserUtils
+import qualified Data.Kore.Parser.ParserUtils     as ParserUtils
 
 import           Control.Monad                    (void, when)
 
 import           Data.Attoparsec.ByteString.Char8 (Parser)
-import qualified Data.Attoparsec.ByteString.Char8 as Parser ( char
-                                                            , peekChar'
-                                                            , peekChar)
+import qualified Data.Attoparsec.ByteString.Char8 as Parser (char, peekChar,
+                                                             peekChar')
 import           Data.Maybe                       (isJust)
 
 {-|'sortVariableParser' parses either an @object-sort-variable@, or a

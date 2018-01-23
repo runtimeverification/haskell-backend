@@ -31,14 +31,13 @@ module Data.Kore.Parser.Parser ( Definition
                                , koreParser
                                ) where
 
-import           Data.Kore.AST (Definition)
-import           Data.Kore.Parser.ParserImpl (definitionParser)
-import           Data.Kore.Parser.Lexeme (skipWhitespace)
+import           Data.Kore.AST                    (Definition)
+import           Data.Kore.Parser.Lexeme          (skipWhitespace)
+import           Data.Kore.Parser.ParserImpl      (definitionParser)
 
-import           Data.Attoparsec.ByteString.Char8 ( parseOnly
-                                                  , Parser
-                                                  , endOfInput)
-import qualified Data.ByteString as ByteString
+import           Data.Attoparsec.ByteString.Char8 (Parser, endOfInput,
+                                                   parseOnly)
+import qualified Data.ByteString                  as ByteString
 
 {-|'koreParser' is a parser for Kore.
 

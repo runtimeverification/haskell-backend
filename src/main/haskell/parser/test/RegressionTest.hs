@@ -1,17 +1,17 @@
 module RegressionTest (regressionTests, regressionTestsInputFiles) where
 
 import           Test.Tasty
-import           Test.Tasty.HUnit
 import           Test.Tasty.Golden
 import           Test.Tasty.Golden.Advanced
+import           Test.Tasty.HUnit
 
 import           Data.Kore.Parser.Parser
 
-import qualified Data.ByteString as ByteString
-import qualified Data.ByteString.Char8 as Char8
-import qualified Data.ByteString.Lazy as LazyByteString
+import qualified Data.ByteString            as ByteString
+import qualified Data.ByteString.Char8      as Char8
+import qualified Data.ByteString.Lazy       as LazyByteString
 import qualified Data.ByteString.Lazy.Char8 as LazyChar8
-import           System.FilePath((</>), addExtension, splitFileName)
+import           System.FilePath            (addExtension, splitFileName, (</>))
 
 regressionTests :: [String] -> TestTree
 regressionTests inputFiles =

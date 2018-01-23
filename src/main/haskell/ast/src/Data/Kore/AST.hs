@@ -17,7 +17,7 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Data.Kore.AST where
 
-import Data.Typeable
+import           Data.Typeable
 
 data KoreLevel
     = ObjectLevel
@@ -261,9 +261,9 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 This represents the ⌈ceilPattern⌉ Matching Logic construct.
 -}
 data Ceil a = Ceil
-    { ceilOperandSort  :: !(Sort a)
-    , ceilResultSort :: !(Sort a)
-    , ceilPattern    :: !UnifiedPattern
+    { ceilOperandSort :: !(Sort a)
+    , ceilResultSort  :: !(Sort a)
+    , ceilPattern     :: !UnifiedPattern
     }
     deriving (Eq, Show, Typeable)
 
@@ -281,10 +281,10 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 This represents the 'equalsFirst = equalsSecond' Matching Logic construct.
 -}
 data Equals a = Equals
-    { equalsOperandSort  :: !(Sort a)
-    , equalsResultSort :: !(Sort a)
-    , equalsFirst      :: !UnifiedPattern
-    , equalsSecond     :: !UnifiedPattern
+    { equalsOperandSort :: !(Sort a)
+    , equalsResultSort  :: !(Sort a)
+    , equalsFirst       :: !UnifiedPattern
+    , equalsSecond      :: !UnifiedPattern
     }
     deriving (Eq, Show, Typeable)
 
@@ -320,9 +320,9 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 This represents the '⌊floorPattern⌋' Matching Logic construct.
 -}
 data Floor a = Floor
-    { floorOperandSort  :: !(Sort a)
-    , floorResultSort :: !(Sort a)
-    , floorPattern    :: !UnifiedPattern
+    { floorOperandSort :: !(Sort a)
+    , floorResultSort  :: !(Sort a)
+    , floorPattern     :: !UnifiedPattern
     }
     deriving (Eq, Show, Typeable)
 
@@ -394,10 +394,10 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 This represents the 'memVariable ∊ memPattern' Matching Logic construct.
 -}
 data Mem a = Mem
-    { memOperandSort  :: !(Sort a)
-    , memResultSort :: !(Sort a)
-    , memVariable   :: !UnifiedVariable
-    , memPattern    :: !UnifiedPattern
+    { memOperandSort :: !(Sort a)
+    , memResultSort  :: !(Sort a)
+    , memVariable    :: !UnifiedVariable
+    , memPattern     :: !UnifiedPattern
     }
     deriving (Eq, Show, Typeable)
 

@@ -14,8 +14,8 @@ module Data.Kore.Parser.CString
 
 import           Data.Kore.Parser.CharSet as CharSet
 
-import           Data.Char (chr, digitToInt, isHexDigit, isOctDigit, ord,
-                            toUpper)
+import           Data.Char                (chr, digitToInt, isHexDigit,
+                                           isOctDigit, ord, toUpper)
 
 oneCharEscapeDict :: CharSet
 oneCharEscapeDict = makeCharSet "'\"?\\abfnrtv"

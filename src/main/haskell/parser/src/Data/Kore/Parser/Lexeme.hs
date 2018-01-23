@@ -40,4 +40,4 @@ module Data.Kore.Parser.Lexeme
        , stringLiteralParser
        ) where
 
-import Data.Kore.Parser.LexemeImpl
+import           Data.Kore.Parser.LexemeImpl

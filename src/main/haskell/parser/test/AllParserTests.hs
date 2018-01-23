@@ -3,8 +3,8 @@ import           Test.Tasty
 import           CharDictTest
 import           CharSetTest
 import           CStringTest
-import           ParserTest
 import           LexemeTest
+import           ParserTest
 import           RegressionTest
 
 main :: IO ()

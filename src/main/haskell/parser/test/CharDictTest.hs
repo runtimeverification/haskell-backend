@@ -44,4 +44,4 @@ charDictTests =
     memoizeDict = memoize f
     f 'A' = 5
     f 'b' = 6
-    f _ = 7
+    f _   = 7
