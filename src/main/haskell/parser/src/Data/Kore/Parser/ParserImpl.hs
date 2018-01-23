@@ -131,7 +131,7 @@ sortParser x = do
   where
     actualSortParser identifier = do
         sorts <- inCurlyBracesSortListParser x
-        when (metaType x == MetaType) (validateMetaSort identifier sorts)
+        when (koreLevel x == MetaLevel) (validateMetaSort identifier sorts)
         return $ SortActualSort $ SortActual
             { sortActualName = identifier
             , sortActualSorts = sorts

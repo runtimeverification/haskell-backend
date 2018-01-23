@@ -193,9 +193,9 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 idRawParser :: (IsMeta a)
             => a  -- ^ Distinguishes between the meta and non-meta elements.
             -> Parser String
-idRawParser x = case metaType x of
-    ObjectType -> objectIdRawParser
-    MetaType   -> metaIdRawParser
+idRawParser x = case koreLevel x of
+    ObjectLevel -> objectIdRawParser
+    MetaLevel   -> metaIdRawParser
 
 data StringScannerState = STRING | ESCAPE | HEX StringScannerState
 
