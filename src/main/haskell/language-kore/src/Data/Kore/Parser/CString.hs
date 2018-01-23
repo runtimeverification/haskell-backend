@@ -9,6 +9,7 @@ Portability : POSIX
 -}
 module Data.Kore.Parser.CString
        ( unescapeCString
+       , escapeCString
        , oneCharEscapeDict
        ) where
 
@@ -16,9 +17,38 @@ import           Data.Kore.Parser.CharSet as CharSet
 
 import           Data.Char                (chr, digitToInt, isHexDigit,
                                            isOctDigit, ord, toUpper)
+import           Numeric                  (showHex, showOct)
 
 oneCharEscapeDict :: CharSet
 oneCharEscapeDict = makeCharSet "'\"?\\abfnrtv"
+
+escapeCString :: String -> String
+escapeCString s = foldr (.) id (map escapeAndAddChar s) ""
+
+padLeftWithCharToLength :: Char -> Int -> ShowS -> ShowS
+padLeftWithCharToLength c i ss =
+    showString (replicate (i - length (ss "")) c) . ss
+
+escapeAndAddChar :: Char -> ShowS
+escapeAndAddChar '"'  = showString "\\\""
+escapeAndAddChar '\\' = showString "\\\\"
+escapeAndAddChar '?'  = showString "\\?"
+escapeAndAddChar '\a' = showString "\\a"
+escapeAndAddChar '\b' = showString "\\b"
+escapeAndAddChar '\f' = showString "\\f"
+escapeAndAddChar '\n' = showString "\\n"
+escapeAndAddChar '\r' = showString "\\r"
+escapeAndAddChar '\t' = showString "\\t"
+escapeAndAddChar '\v' = showString "\\v"
+escapeAndAddChar c
+    | code >= 32 && code < 127 = showChar c    -- printable 7-bit ASCII
+    | code <= 255 =
+        showString "\\o" . zeroPad 3 (showOct code)
+    | code <= 65535 = showString "\\u" . zeroPad 4 (showHex code)
+    | otherwise =  showString "\\U" . zeroPad 8 (showHex code)
+  where
+    code = ord c
+    zeroPad = padLeftWithCharToLength '0'
 
 {-|Expects input string to be a properly escaped C String.
 -}

@@ -103,6 +103,25 @@ data Alias a = Alias
     }
     deriving (Show, Eq, Typeable)
 
+{-|'SymbolOrAliasClass' offers a common interface for 'Symbol', 'Alias', and
+'SymbolOrAlias' types.
+-}
+class SymbolOrAliasClass c where
+    getSymbolOrAliasConstructor :: c a -> Id a
+    getSymbolOrAliasParams :: c a -> [Sort a]
+
+instance SymbolOrAliasClass SymbolOrAlias where
+    getSymbolOrAliasConstructor = symbolOrAliasConstructor
+    getSymbolOrAliasParams = symbolOrAliasParams
+
+instance SymbolOrAliasClass Symbol where
+    getSymbolOrAliasConstructor = symbolConstructor
+    getSymbolOrAliasParams = symbolParams
+
+instance SymbolOrAliasClass Alias where
+    getSymbolOrAliasConstructor = aliasConstructor
+    getSymbolOrAliasParams = aliasParams
+
 {-|'SortVariable' corresponds to the @object-sort-variable@ and
 @meta-sort-variable@ syntactic categories from the Semantics of K,
 Section 9.1.2 (Sorts).
@@ -213,6 +232,23 @@ data UnifiedPattern
     = MetaPattern !(Pattern Meta)
     | ObjectPattern !(Pattern Object)
     deriving (Eq, Show)
+
+{-|Enumeration of patterns starting with @\@
+-}
+data MLPatternType
+    = AndPatternType
+    | BottomPatternType
+    | CeilPatternType
+    | EqualsPatternType
+    | ExistsPatternType
+    | FloorPatternType
+    | ForallPatternType
+    | IffPatternType
+    | ImpliesPatternType
+    | MemPatternType
+    | NotPatternType
+    | OrPatternType
+    | TopPatternType
 
 {-|'And' corresponds to the @\and@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -435,6 +471,18 @@ data Or a = Or
     , orSecond :: !UnifiedPattern
     }
     deriving (Eq, Show, Typeable)
+
+{-|'MLPatternClass' offers a common interface to ML patterns (starting with '\')
+-}
+class MLPatternClass p where
+    getPatternType :: p a -> MLPatternType
+    getPatternSorts :: p a -> [Sort a]
+    getPatternPatterns :: p a -> [UnifiedPattern]
+
+instance MLPatternClass And where
+    getPatternType _ = AndPatternType
+    getPatternSorts a = [andSort a]
+    getPatternPatterns a = [andFirst a, andSecond a]
 
 {-|'Pattern' corresponds to the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,

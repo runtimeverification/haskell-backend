@@ -28,6 +28,7 @@ dependencies:
 - bytestring >=0.10 && <0.11
 - array
 - bytestring-trie
+- mtl
 
 library:
   source-dirs: src

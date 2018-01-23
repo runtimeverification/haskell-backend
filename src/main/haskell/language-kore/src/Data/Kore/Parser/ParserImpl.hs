@@ -594,23 +594,6 @@ unifiedVariableOrTermPatternParser = do
         then MetaPattern <$> variableOrTermPatternParser Meta
         else ObjectPattern <$> variableOrTermPatternParser Object
 
-{-|Enumeration of patterns starting with @\@
--}
-data PatternType
-    = AndPatternType
-    | BottomPatternType
-    | CeilPatternType
-    | EqualsPatternType
-    | ExistsPatternType
-    | FloorPatternType
-    | ForallPatternType
-    | IffPatternType
-    | ImpliesPatternType
-    | MemPatternType
-    | NotPatternType
-    | OrPatternType
-    | TopPatternType
-
 {-|'mlConstructorParser' parses a pattern starting with @\@.
 
 BNF definitions:
