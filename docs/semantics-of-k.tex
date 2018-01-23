@@ -346,6 +346,9 @@
   \newcommand{\Kderivable}{\Kdeduce}
   
   \newcommand{\Ksubsort}[1]{\parametric{\texttt{\sharpsymbol subsort}}{#1}}
+  \newcommand{\Ksubsorts}[1]{\parametric{\texttt{\sharpsymbol subsorts}}{#1}}
+  \newcommand{\KSortConnectedComponent}{\texttt{\sharpsymbol 
+  SortConnectedComponent}}
   
   \newcommand{\KwellFormed}{\texttt{\sharpsymbol wellFormed}}
   \newcommand{\KwellFormedPatterns}{\texttt{\sharpsymbol wellFormedPatterns}}
@@ -1429,7 +1432,8 @@ $$
 \\
 & \textrm{in the original calculus (i.e., constructed with variables,}
 \\
-& \textrm{$\lambda$ and $\mu$ binders (via desugaring), and application symbols}
+& \textrm{$\lambda$ and $\mu$ binders (via desugaring), and application 
+symbols)}
 \end{array}
 $$
 Given any model $M$ and interpretation $\rho : \Var \ra M$, pattern $e$
@@ -3433,7 +3437,7 @@ defined by the following axioms
   \parametric{\KwellFormed}{\KSort}(\overline{\exists_s v . \varphi}) \wedge s
 \end{align*}
 
-\subsection{Embedding Order-Sorted in the Meta-Theory}
+\subsection{Mimicking Order-Sorted Theories}
 \label{sec:ML-OS}
 
 In Section~\ref{sec:dealing-with-OS}, we have shown how to embed order-sorted 
@@ -3468,7 +3472,36 @@ with the following axioms saying that it is a partial order relation
 \end{align*}
 
 Various functions and predicates for partial order sets can be easily defined.
-For example, 
+For example, the sort connected component of a sort $s$ can be defined as
+\begin{align*}
+& \KSortConnectedComponent \in \Sigma_{\KSort, \KSort} \\
+& \KSortConnectedComponent(s) = \exists{s'} . \Ksubsort{\shs}(s, s') 
+\vee \Ksubsort{\shs}(s', s)
+\end{align*}
+
+The parametric predicate symbol $\Ksubsort{\shs}$ can be easily element-wisely 
+extended to lists 
+of sorts.
+It returns $\top_{\shs}$ if its two argument are of the same length and every 
+corresponding pairs of sorts satisfy $\Ksubsort{\shs}$.
+Otherwise, it return $\bot{\shs}$.
+\begin{align*}
+& \Ksubsorts{\shs} \colon \KSortList \times \KSortList \to \shs
+\qquad \text{for any sort $\shs \in S_K$} \\
+& \Ksubsorts{\shs}(\KnilKSortList, \KnilKSortList) = \top_{\shs} \\
+& \Ksubsorts{\shs}(\KnilKSortList, (s, S)) = \bot_{\shs} \\
+& \Ksubsorts{\shs}((s, S), \KnilKSortList) = \bot_{\shs} \\
+& \Ksubsorts{\shs}((s, S), (s', S')) = \Ksubsort{\shs}(s, s') \wedge 
+\Ksubsorts{\shs}(S, S')
+\end{align*}
+where $s, s'$ are variables of sort $\KSort$ and $S, S'$ are variables of sort 
+$\KSortList$.
+
+The subsort relation is a congruence relation
+\begin{align*}
+& \Ksubsorts{\shs}(S, S') \to \Ksubsort{\shs}(\KSort(str, S), \KSort(str, S'))
+\end{align*}
+where $str$ is a variable of $\KString$.
 
 
 \subsection{Matching Logic Proof System}
