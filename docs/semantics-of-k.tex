@@ -339,9 +339,11 @@
   \newcommand{\Ksignature}{\texttt{\sharpsymbol signature}}
   \newcommand{\KgetSorts}{\texttt{\sharpsymbol getSorts}}
   \newcommand{\KgetSymbols}{\texttt{\sharpsymbol getSymbols}}
-  \newcommand{\KsortDeclared}{\texttt{\sharpsymbol sortDeclared}}
+  \newcommand{\KsortDeclared}[1]{
+  	\parametric{\texttt{\sharpsymbol sortDeclared}}{#1}}
   \newcommand{\KsortsDeclared}{\texttt{\sharpsymbol sortsDeclared}}
-  \newcommand{\KsymbolDeclared}{\texttt{\sharpsymbol symbolDeclared}}
+  \newcommand{\KsymbolDeclared}[1]{
+  	\parametric{\texttt{\sharpsymbol symbolDeclared}}{#1}}
   \newcommand{\KaxiomDeclared}{\texttt{\sharpsymbol axiomDeclared}}
   \newcommand{\Kderivable}{\Kdeduce}
   
@@ -349,6 +351,8 @@
   \newcommand{\Ksubsorts}[1]{\parametric{\texttt{\sharpsymbol subsorts}}{#1}}
   \newcommand{\KSortConnectedComponent}{\texttt{\sharpsymbol 
   SortConnectedComponent}}
+  \newcommand{\KsubsortOverloading}[1]{
+  	\parametric{\texttt{\sharpsymbol subsortOverloading}}{#1}}
   
   \newcommand{\KwellFormed}{\texttt{\sharpsymbol wellFormed}}
   \newcommand{\KwellFormedPatterns}{\texttt{\sharpsymbol wellFormedPatterns}}
@@ -396,6 +400,8 @@
   \newcommand{\Kqnil}{\texttt{\shp `nil}{ }}
   \newcommand{\Kqcons}{\texttt{\shp `cons}{ }}
   \newcommand{\Kqappend}{\texttt{\shp `append}{ }}
+  \newcommand{\KqK}{\texttt{\shp `K}{}}
+  \newcommand{\Kqinj}{\texttt{\shp `inj}}
   
   % Define the slash symbol
   \newcommand{\slashsymbol}{\symbol{92}}
@@ -1125,7 +1131,7 @@ of resources (paper, space, characters, etc.).
 For example, many logics allow \emph{axiom schemas} as a way to finitely
 define infinite theories.
 
-To prepare the ground for our proposal in Section~\ref{sec:syntax-of-kore},
+To prepare the ground for our proposal in Section~\ref{sec:kore},
 we here discuss, informally, some ways to finitely describe infinite theories.
 Let us start with sorts.
 Suppose that we have a finite set of \emph{basic sorts}, such as
@@ -2042,31 +2048,186 @@ all-path reachability relation $\varphi \Rightarrow^\forall\varphi'$ and to
 prove all the proof rules of reachability logic as lemmas/theorems using the
 more basic proof system of matching logic.
 
-\subsection{Order-Sorted Algebras}
+\subsection{Fake Order-Sorted Algebras}
 \label{sec:dealing-with-OS}
 
 There are various motivations to study order-sorted algebras.
 Goguen in~\cite{Goguen1991types} used order-sorted algebras to treat errors in 
 abstract data types.
-Many algebraic specifications use \emph{subsorts} as a mechanism to model 
+Many algebraic specifications use {subsorts} as a mechanism to model 
 subtypes.
-In \K, an order-sorted front-end syntax is used to allow more intuitive and 
+In \K, an order-sorted frontend syntax is used to allow more intuitive and 
 compact \K definitions.
-However, the convenience of order-sorted algebras does not come for free. 
+Therefore, it might appear that in order to give \K a formal semantics, 
+one has to adopt some kinds of order-sorted algebras as its mathematical 
+foundation.
+
+However, decades of years of research not only proved that order-sorted 
+algebras are intuitive, convenient, and easy to use in many practical cases, 
+but also showed their power does come for a cost (and sometimes a big cost).
 Algorithms and decision procedures for order-sorted algebras have been proposed 
-and implemented in languages like Maude, but in general order-sorted algebras 
+and implemented in languages like Maude~\cite{clavel-et-al99a}, but in general 
+order-sorted algebras 
 are hard from a theoretical point of view and reasoning in an order-sorted 
 setting is even harder.
-Therefore, we allow back-ends to make use of order-sorted decision procedures 
-and algorithms, but at the same time we want to have a crystal clear and easier 
-mathematical foundation for order-sorted algebras, via a methodological 
-embedding in matching logic\footnote{
-It is well-known that order-sorted algebras can be reduced to many-sorted 	
-algebras~\cite{GOGUEN1992217}.}.
+On one hand, we allow (and welcome) \K backends to make use of order-sorted 
+decision procedures and algorithms, but at the same time we want to have a 
+crystal clear and easier mathematical foundation for \K, and thus we restrict 
+ourselves in matching logic and many-sorted algebras.
+In this section, we will introduce techniques\footnote{The techniques are not 
+new.  There are many research about the reduction from order-sorted 
+algebras to many-sorted algebras, for example in~\cite{GOGUEN1992217}.} to 
+\emph{decorate} a matching logic 
+theory 
+with some additional structures such that it ``fakes'' and ``behaves like'' an 
+order-sorted theory.
+The results in this section can be used directly in defining the underlying 
+matching logic theory of a \K definition.
 
-\info{Xiaohong: how to formulate the problem so that it helps translate 
-order-sorted \K definitions to many-sorted Kore definition?}
+%In Section~\ref{sec:dealing-with-OS}, we have shown how to embed order-sorted 
+%signatures and algebras in a many-sorted setting such as in matching logic. 
+%In this section, we will formalize the discussion we had in 
+%Section~\ref{sec:dealing-with-OS} and give axiomatization for these embeddings.
+%The intuition is that reasoning in an order-sorted theory can be seen as 
+%reasoning in a many-sorted theory plus some symbols and axioms that capture 
+%the 
+%order-sorted structures in the order-sorted theory.
+%This observation is an analogy to the observation that reasoning in a 
+%many-sorted theory can be 
+%seen as reasoning in a unsorted theory plus some symbols (i.e. indicator 
+%predicate symbols for every sorts) and axioms that capture the many-sorted 
+%structures 
+%in the many-sorted theory. 
 
+A \K definition defines a sort set $S$ and a partial-order relation $\preceq 
+\subseteq S \times S$ called the \emph{subsort relation}.
+If $s \preceq s'$, we say $s$ is a \emph{subsort} of $s'$ and $s'$ is a 
+\emph{supersort} of $s$.
+%In order-sorted algebras, the set of sorts $(S, \preceq)$ forms a partial 
+%order 
+%set and the subsort relation~$\preceq$ is a partial order relation.
+%To capture the subsort relation in order-sorted algebras, we define a 
+%predicate 
+%symbol
+%$$
+%\Ksubsort{\shs} \colon \KSort \times \KSort \to \shs \qquad 
+%\text{for any sort $\shs \in S_K$}
+%$$
+%with the following axioms saying that it is a partial order relation
+%\begin{align*}
+%& \Ksubsort{\shs}(s, s) \\
+%& \Ksubsort{\shs}(s_1, s_2) \wedge \Ksubsort{\shs}(s_2, s_1) \to s_1 = s_2 \\
+%& \Ksubsort{\shs}(s_1, s_2) \wedge \Ksubsort{\shs}(s_2, s_3) \to 
+%\Ksubsort{\shs}(s_1, s_3)
+%\end{align*}
+%Various functions and predicates for partial order sets can be easily defined.
+%For example, the sort connected component of a sort $s$ can be defined as
+%\begin{align*}
+%& \KSortConnectedComponent \in \Sigma_{\KSort, \KSort} \\
+%& \KSortConnectedComponent(s) = \exists{s'} . \Ksubsort{\shs}(s, s') 
+%\vee \Ksubsort{\shs}(s', s)
+%\end{align*}
+%The parametric predicate symbol $\Ksubsort{\shs}$ can be easily element-wisely 
+%extended to lists 
+%of sorts.
+%It returns $\top_{\shs}$ if its two argument are of the same length and every 
+%corresponding pairs of sorts satisfy $\Ksubsort{\shs}$.
+%Otherwise, it return $\bot{\shs}$.
+%\begin{align*}
+%& \Ksubsorts{\shs} \colon \KSortList \times \KSortList \to \shs
+%\qquad \text{for any sort $\shs \in S_K$} \\
+%& \Ksubsorts{\shs}(\KnilKSortList, \KnilKSortList) = \top_{\shs} \\
+%& \Ksubsorts{\shs}(\KnilKSortList, (s, S)) = \bot_{\shs} \\
+%& \Ksubsorts{\shs}((s, S), \KnilKSortList) = \bot_{\shs} \\
+%& \Ksubsorts{\shs}((s, S), (s', S')) = \Ksubsort{\shs}(s, s') \wedge 
+%\Ksubsorts{\shs}(S, S')
+%\end{align*}
+%where $s, s'$ are variables of sort $\KSort$ and $S, S'$ are variables of sort 
+%$\KSortList$.
+The subsort relation is a congruence relation w.r.t. sort parametricity.
+For example,
+\begin{center}
+\begin{tabular}{rl}
+	$\parametric{\List}{s}$ is a subsort of $\parametric{\List}{s'}$ 
+	& if $s$ is a subsort of $s'$ \\
+	$\parametric{\Map}{s_1,s_2}$ is a subsort of $\parametric{\Map}{s'_1,s'_2}$
+	& if $s_1$ is a subsort of $s'_1$ and $s_2$ is a subsort of $s'_2$
+\end{tabular}
+\end{center}
+In other words, an instance of a parametric sort is the a subsort of the other 
+instance if its sort parameters are subsorts of the other's element-wisely.
+The intuition of $s \preceq s'$ is that any element in sort $s$ is included 
+in sort $s'$.
+We fake this intuition of inclusion by defining an injective partial function 
+called the \emph{injection function}:
+\begin{center}
+	\begin{tabular}{rl}
+		$\inj{s}{s'} \colon s \rightharpoonup s'$
+		& \doubleslash parametric sort defined for any $s \preceq s'$ \\
+		$\inj{s}{s}(x) = x$
+		& \doubleslash (identity) axiom \\
+		$x = y \to \inj{s}{s'}(x) = \inj{s}{s'}$
+		& \doubleslash (injectivity) axiom \\
+		$\inj{s}{s''}(x) = \inj{s'}{s''}(\inj{s}{s'}(x))$
+		& \doubleslash (transitivity) axiom \\
+	\end{tabular}
+\end{center}
+
+%\begin{align*}
+%& \Ksubsorts{\shs}(S, S') \to \Ksubsort{\shs}(\KSort(str, S), \KSort(str, S'))
+%\end{align*}
+%where $str$ is a variable of $\KString$.
+%
+%There is a special sort, denoted as $K$ in the object-level theories and 
+%denoted as $\KqK$ in the meta-theory, which contains every sorts as its 
+%subsorts
+%\begin{align*}
+%& \KqK \colon \to \KSort \\
+%& \KqK = \KSort(\qquottt{K}, \KnilKSortList) \\
+%& \KsortDeclared{\shs}(\KqK) \qquad \text{for any $\shs \in S_K$} \\
+%& \Ksubsort{\shs}(s, \KqK) = \top_{\shs} \qquad \text{for any $\shs \in S_K$}
+%\end{align*}
+%
+\subsubsection{Subsort Overloading}
+As in order-sorted algebras,
+we say two symbols $\sigma_1$ and $\sigma_2$ are \emph{subsort overloading}, if 
+they have the same name and the argument sorts 
+of $\sigma_1$ are subsorts of the argument sorts of $\sigma_2$ element-wisely.
+\begin{align*}
+& \KsubsortOverloading{\shs}(
+\underbrace{\KSymbol(f, S_1, S'_1, s_1)}_{\sigma_1},
+\underbrace{\KSymbol(f, S_2, S'_2, s_2)}_{\sigma_2}) 
+=  \Ksubsorts{\shs}(S'_1, S'_2) 
+\end{align*}
+
+If $\sigma_1$ and $\sigma_2$ are subsort overloading and the argument sorts of 
+$\sigma_1$ are subsorts of the argument sorts of $\sigma_2$, then the return 
+sort of $\sigma_1$ is a subsort of the return sort of $\sigma_2$.
+It is known as the \emph{monotone property}.
+\begin{align*}
+& \KsubsortOverloading{\shs}(\sigma_1, \sigma_2) \to 
+\Ksubsort{\shs}(\KgetReturnSort(\sigma_1), \KgetReturnSort(\sigma_2))
+\end{align*}
+%
+%\subsubsection{Injective Functions}
+%Given $s_1$ is a subsort of $s_2$, there exists naturally an injective 
+%function\footnote{These injective functions are called inclusion operations 
+%	in~\cite{GOGUEN1992217}.}
+%$\inj{s_1}{s_2} \colon s_1 \to s_2$.
+%We denote these injective functions as $\Kqinj$ in the meta-theory and define
+%\begin{align*}
+%& \Kqinj \colon \KSort \times \KSort \to \KSymbol \\
+%& \Kqinj(s_1, s_2) = \KSymbol(\qquottt{inj}, (s_1, s_2), (s_1), s_2) \\
+%& \Ksubsort{\shs}(s_1, s_2) \to \KsymbolDeclared{\shs}(\Kqinj(s_1, s_2))
+%\end{align*}
+%Let us introduce the following notation
+%\begin{align*}
+%\inj{s_1}{s_2}(\varphi) \equiv \Kapplication(\Kqinj(s_1,s_2), \varphi)
+%\end{align*}
+%Injective functions satisfy the following properties
+%\begin{align*}
+%& \inj{s}{s}()
+%\end{align*}
 
 \subsubsection{Order-Sorted Algebras}
 
@@ -3286,8 +3447,8 @@ capture what are defined or declared in the \emph{current theory} and what are
 not.
 They are
 \begin{align*}
-& \parametric{\KsortDeclared}{\shs} \colon \KSort \to \shs \\
-& \parametric{\KsymbolDeclared}{\shs} \colon \KSymbol \to \shs \\
+& \KsortDeclared{\shs} \colon \KSort \to \shs \\
+& \KsymbolDeclared{\shs} \colon \KSymbol \to \shs \\
 & \parametric{\KaxiomDeclared}{\shs} \colon \KPattern \to \shs
 \end{align*}
 A related predicate symbol
@@ -3296,11 +3457,11 @@ A related predicate symbol
 \end{equation}
 checks whether a list of sorts are declared:
 \begin{align*}
-& \parametric{\KsortsDeclared}{\shs} \colon \KSortList \to \shs \\
-& \parametric{\KsortsDeclared}{\shs}(\KnilKSortList) \\
-& \parametric{\KsortsDeclared}{\shs}(\KconsKSortList(s,S)) \\
+& \KsortsDeclared{\shs} \colon \KSortList \to \shs \\
+& \KsortsDeclared{\shs}(\KnilKSortList) \\
+& \KsortsDeclared{\shs}(\KconsKSortList(s,S)) \\
 & = 
-\parametric{\KsortDeclared}{\shs}(s) \wedge 
+\KsortDeclared{\shs}(s) \wedge 
 \parametric{\KsortsDeclared}{\shs}(S)
 \end{align*}
 
@@ -3332,9 +3493,9 @@ cannot afford enumerating all of their elements.
 \paragraph{Definedness Symbols are Defined in All Theories.}
 The definedness symbol $\ceil{\_}_{s_1}^{s_2}$ is always declared if $s_1$ and 
 $s_2$ are declared in the current theory:
-$$ \parametric{\KsortDeclared}{\shs}(s_1) \wedge 
-\parametric{\KsortDeclared}{\shs}(s_2) \to 
-\parametric{\KsymbolDeclared}{\shs}(\KSymbolceil(s_1, s_2))$$
+$$ \KsortDeclared{\shs}(s_1) \wedge 
+\KsortDeclared{\shs}(s_2) \to 
+\KsymbolDeclared{\shs}(\KSymbolceil(s_1, s_2))$$
 
 
 
@@ -3342,14 +3503,14 @@ $$ \parametric{\KsortDeclared}{\shs}(s_1) \wedge
 %(\textsc{Sort Declaration}).
 %$\mathit{S}$ is declared as a non-parametric sort with~``S'' being its name.
 %$$
-%\parametric{\KsortDeclared}{s}(\Ksort(\text{``S''}))
+%\KsortDeclared{s}(\Ksort(\text{``S''}))
 %$$
 %
 %(\textsc{Symbols Declaration}).
 %$\mathit{sigma} \colon S_1 \times \dots \times S_n \to S$ is declared as a 
 %symbol with ``sigma'' being it name.
 %\begin{equation*}
-%\parametric{\KsymbolDeclared}{s}(\Ksymbol(\text{``sigma''}, 
+%\KsymbolDeclared{s}(\Ksymbol(\text{``sigma''}, 
 %(\denote{S_1},\dots,\denote{S_n}), \denote{S}))
 %\end{equation*}
 %
@@ -3397,10 +3558,10 @@ The partial functions $\parametric{\KwellFormed}{\shs}$ and $\KgetSort$ are
 defined by the following axioms
 \begin{align*}
   &\parametric{\KwellFormed}{\shs}(\overline{x \cln s}) = 
-  \parametric{\KsortDeclared}{\shs}(s)
+  \KsortDeclared{\shs}(s)
   \\
   & \parametric{\KwellFormed}{\shs}(\overline{\sigma(L)}) 
-  = \parametric{\KsymbolDeclared}{\shs}(\sigma) 
+  = \KsymbolDeclared{\shs}(\sigma) 
   \wedge \parametric{\KwellFormedPatterns}{\shs}(L)
   \\
   & \quad \wedge (\KgetSortsFromPatterns(L) = \KgetArgumentSorts(\sigma))
@@ -3436,72 +3597,6 @@ defined by the following axioms
   & \KgetSort(\overline{\exists_s v . \varphi}) =
   \parametric{\KwellFormed}{\KSort}(\overline{\exists_s v . \varphi}) \wedge s
 \end{align*}
-
-\subsection{Mimicking Order-Sorted Theories}
-\label{sec:ML-OS}
-
-In Section~\ref{sec:dealing-with-OS}, we have shown how to embed order-sorted 
-signatures and algebras in a many-sorted setting such as in matching logic. 
-In this section, we will formalize the discussion we had in 
-Section~\ref{sec:dealing-with-OS} and give axiomatization for these embeddings.
-The intuition is that reasoning in an order-sorted theory can be seen as 
-reasoning in a many-sorted theory plus some symbols and axioms that capture the 
-order-sorted structures in the order-sorted theory.
-This observation is an analogy to the observation that reasoning in a 
-many-sorted theory can be 
-seen as reasoning in a unsorted theory plus some symbols (i.e. indicator 
-predicate symbols for every sorts) and axioms that capture the many-sorted 
-structures 
-in the many-sorted theory. 
-\subsubsection{The Partial Order Relation over Sorts}
-
-In order-sorted algebras, the set of sorts $(S, \preceq)$ forms a partial order 
-set and the subsort relation~$\preceq$ is a partial order relation.
-To capture the subsort relation in order-sorted algebras, we define a predicate 
-symbol
-$$
-\Ksubsort{\shs} \colon \KSort \times \KSort \to \shs \qquad 
-\text{for any sort $\shs \in S_K$}
-$$
-with the following axioms saying that it is a partial order relation
-\begin{align*}
-& \Ksubsort{\shs}(s, s) \\
-& \Ksubsort{\shs}(s_1, s_2) \wedge \Ksubsort{\shs}(s_2, s_1) \to s_1 = s_2 \\
-& \Ksubsort{\shs}(s_1, s_2) \wedge \Ksubsort{\shs}(s_2, s_3) \to 
-\Ksubsort{\shs}(s_1, s_3)
-\end{align*}
-
-Various functions and predicates for partial order sets can be easily defined.
-For example, the sort connected component of a sort $s$ can be defined as
-\begin{align*}
-& \KSortConnectedComponent \in \Sigma_{\KSort, \KSort} \\
-& \KSortConnectedComponent(s) = \exists{s'} . \Ksubsort{\shs}(s, s') 
-\vee \Ksubsort{\shs}(s', s)
-\end{align*}
-
-The parametric predicate symbol $\Ksubsort{\shs}$ can be easily element-wisely 
-extended to lists 
-of sorts.
-It returns $\top_{\shs}$ if its two argument are of the same length and every 
-corresponding pairs of sorts satisfy $\Ksubsort{\shs}$.
-Otherwise, it return $\bot{\shs}$.
-\begin{align*}
-& \Ksubsorts{\shs} \colon \KSortList \times \KSortList \to \shs
-\qquad \text{for any sort $\shs \in S_K$} \\
-& \Ksubsorts{\shs}(\KnilKSortList, \KnilKSortList) = \top_{\shs} \\
-& \Ksubsorts{\shs}(\KnilKSortList, (s, S)) = \bot_{\shs} \\
-& \Ksubsorts{\shs}((s, S), \KnilKSortList) = \bot_{\shs} \\
-& \Ksubsorts{\shs}((s, S), (s', S')) = \Ksubsort{\shs}(s, s') \wedge 
-\Ksubsorts{\shs}(S, S')
-\end{align*}
-where $s, s'$ are variables of sort $\KSort$ and $S, S'$ are variables of sort 
-$\KSortList$.
-
-The subsort relation is a congruence relation
-\begin{align*}
-& \Ksubsorts{\shs}(S, S') \to \Ksubsort{\shs}(\KSort(str, S), \KSort(str, S'))
-\end{align*}
-where $str$ is a variable of $\KString$.
 
 
 \subsection{Matching Logic Proof System}
@@ -3941,13 +4036,13 @@ There are in total 10 sorts in the meta-theory.
 	    \\
 	    \Ksubstitute & Substitute a variable for a pattern \\
 	    \KsubstitutePatterns & Substitute a variabel for a list of patterns \\
-	    \parametric{\KsortDeclared}{$\shs$} & Check whether a sort is declared 
+	    \KsortDeclared{$\shs$} & Check whether a sort is declared 
 	    in the current theory 
 	    \\
 	    \parametric{\KsortsDeclared}{$\shs$}  & Check whether a list of sorts 
 	    are declared in the current theory 
 	    \\
-	    \parametric{\KsymbolDeclared}{$\shs$} & Check whether a symbol is 
+	    \KsymbolDeclared{$\shs$} & Check whether a symbol is 
 	    declared in the current theory \\
 	    \parametric{\KaxiomDeclared}{$\shs$} & Check whether an axiom is 
 	    declared in the current theory \\
@@ -4188,7 +4283,7 @@ the predicate symbol $\KsortDeclared$ (see Section~\ref{sec:ML-theories}).
 
 The theory $T_L$ defines sort~$\Nat$,
 so we add the axiom schema to $\denote{T_L}$
-$$ \parametric{\KsortDeclared}{\shs}(\KqNat) \qquad \text{for any $\shs \in 
+$$ \KsortDeclared{\shs}(\KqNat) \qquad \text{for any $\shs \in 
 S_K$}$$
 Notice that adding axiom schemas to $\denote{T_L}$ does not make $\denote{T_L}$ 
 an infinite artifact, because there are only finitely many sorts in $S_K$.
@@ -4196,9 +4291,9 @@ an infinite artifact, because there are only finitely many sorts in $S_K$.
 Similarly, $T_L$ defines sort $\parametric{\List}{s}$ for any sort $s$ that it 
 defines, so we add the next axiom schema to $T_L$
 $$ \forall s \cln \KSort . \left( 
-\underbrace{\parametric{\KsortDeclared}{\shs}(s \cln \KSort)}_\text{if $s$ is 
+\underbrace{\KsortDeclared{\shs}(s \cln \KSort)}_\text{if $s$ is 
 defined} \to 
-\underbrace{\parametric{\KsortDeclared}{\shs}(\KqList(s \cln 
+\underbrace{\KsortDeclared{\shs}(\KqList(s \cln 
 \KSort))}_\text{then 
 $\parametric{\List}{s}$ is defined} \right)$$
 Notice how meta-variable $s$ is represented by a variable $s \cln \KSort$ in 
@@ -4324,15 +4419,15 @@ other symbols.
 This fact is represented using the predicate symbol $\KsymbolDeclared$.
 For non-parametric symbols, we add the next axioms to $\denote{T_L}$
 \begin{align*}
-& \parametric{\KsymbolDeclared}{\shs}(
+& \KsymbolDeclared{\shs}(
     \underbrace{\Ksymbol(\qquottt{zero}, \KnilKSortList, \KnilKSortList, 
     \KqNat)}_\text{the meta-representation of $O \colon \!\to \Nat$})
 \\
-& \parametric{\KsymbolDeclared}{\shs}(
+& \KsymbolDeclared{\shs}(
 \underbrace{\Ksymbol(\qquottt{succ}, \KnilKSortList, (\KqNat), 
 	\KqNat)}_\text{the meta-representation of $S \colon \!\Nat\to \Nat$})
 \\
-& \parametric{\KsymbolDeclared}{\shs}(
+& \KsymbolDeclared{\shs}(
 \underbrace{\Ksymbol(\qquottt{plus}, \KnilKSortList, (\KqNat,\KqNat), 
 	\KqNat)}_\text{the meta-representation of $\_+\_ \colon 
 	\!\Nat\times\Nat\to \Nat$})
@@ -4341,15 +4436,15 @@ For parametric symbols, we add the next axioms to $\denote{T_L}$
 \footnotesize
 \begin{align*}
 & \forall s . \left(
-  \underbrace{\parametric{\KsortDeclared}{\shs}(s)}_\text{if $s$ is defined} \to
-  \underbrace{\parametric{\KsymbolDeclared}{\shs}(
+  \underbrace{\KsortDeclared{\shs}(s)}_\text{if $s$ is defined} \to
+  \underbrace{\KsymbolDeclared{\shs}(
   \underbrace{\Ksymbol(\qquottt{nil}, (s), \KnilKSortList, 
   	\KqList(s))}_\text{the meta-representation of $\epsilon_s \colon \! \to 
   	\parametric{\List}{s}$})}_\text{then $\epsilon_s$ is defined} \right)
 \\
 & \forall s . \left(
-\parametric{\KsortDeclared}{\shs}(s) \to
-\parametric{\KsymbolDeclared}{\shs}(
+\KsortDeclared{\shs}(s) \to
+\KsymbolDeclared{\shs}(
 \underbrace{\Ksymbol(\qquottt{cons}, (s), (s, \KqList(s)), 
 	\KqList(s))}_\text{meta-representation of $\_::_s\_ \colon s \times 
 	\parametric{\List}{s} \! \to 
@@ -4357,8 +4452,8 @@ For parametric symbols, we add the next axioms to $\denote{T_L}$
 \right)
 \\
 & \forall s . \left(
-\parametric{\KsortDeclared}{\shs}(s) \to
-\parametric{\KsymbolDeclared}{\shs}(
+\KsortDeclared{\shs}(s) \to
+\KsymbolDeclared{\shs}(
 \underbrace{\Ksymbol(\qquottt{append}, (s), (\KqList(s), \KqList(s)), 
 	\KqList(s))}_\text{meta-representation of $\_@_s\_ \colon \! 
 	\parametric{\List}{s} \times \parametric{\List}{s} \to 
@@ -4379,7 +4474,7 @@ Notice we abbreviate $s$ for $s \cln \KSort$ as we always do.
 %\denote{s_1',\dots,s_m'}, \denote{s_1,\dots,s_n}, \denote{s})$$
 %
 %For $T$ has a basic symbol $\sigma$, add the following axiom to $\denote{T}$
-%$$ \parametric{\KsymbolDeclared}{\shs}(\denote{\sigma})$$
+%$$ \KsymbolDeclared{\shs}(\denote{\sigma})$$
 %
 %If $T$ has symbol a symbol schema
 %\begin{center}
@@ -4387,10 +4482,10 @@ Notice we abbreviate $s$ for $s \cln \KSort$ as we always do.
 %S$
 %\end{center}
 %then add the following axiom to $\denote{T}$
-%$$ \parametric{\KsortDeclared}{\shs}(s_1) \wedge \dots \wedge 
-%\parametric{\KsortDeclared}{\shs}(s_n) \to
+%$$ \KsortDeclared{\shs}(s_1) \wedge \dots \wedge 
+%\KsortDeclared{\shs}(s_n) \to
 %   
-%\parametric{\KsymbolDeclared}{\shs}(\denote{\parametric{\sigma}{s_1,\dots,s_n}})
+%\KsymbolDeclared{\shs}(\denote{\parametric{\sigma}{s_1,\dots,s_n}})
 %$$
 
 \subsection{Representing Matching Logic Patterns and Axioms}
@@ -4607,13 +4702,13 @@ calculate their meta-representations:
 \end{alignat*}
 Then we can define the following axiom schemas in $\denote{T_L}$
 \begin{align*}
- & \forall s' . (\underbrace{\parametric{\KsortDeclared}{\shs}(s')}_\text{if 
+ & \forall s' . (\underbrace{\KsortDeclared{\shs}(s')}_\text{if 
  $s'$ is defined in $T_L$} \to 
    \underbrace{\parametric{\KaxiomDeclared}{\shs}(\Psi_1)}_\text{then $\Psi_1$ 
    is an axiom in $T_L$}) \\
- & \forall s \forall s' . (\underbrace{\parametric{\KsortDeclared}{\shs}(s) 
+ & \forall s \forall s' . (\underbrace{\KsortDeclared{\shs}(s) 
  \wedge 
- \parametric{\KsortDeclared}{\shs}(s')}_\text{if $s, s'$ are defined in $T_L$} 
+ \KsortDeclared{\shs}(s')}_\text{if $s, s'$ are defined in $T_L$} 
  \to 
  \underbrace{\parametric{\KaxiomDeclared}{\shs}(\Psi_2)}_\text{then $\Psi_2$ is 
  an axiom in $T_L$})
@@ -4667,8 +4762,8 @@ Then we can define the following axiom schemas in $\denote{T_L}$
 %$$ \parametric{\KaxiomDeclared}{\shs}(\denote{\varphi})$$
 %If $\varphi$ is an axiom schema with $s_1,\dots,s_n$ are sort parameters, add 
 %the following axiom to $\denote{T}$
-%$$ \parametric{\KsortDeclared}{\shs}(s_1) \wedge \dots \wedge  
-%\parametric{\KsortDeclared}{\shs}(s_n) \to 
+%$$ \KsortDeclared{\shs}(s_1) \wedge \dots \wedge  
+%\KsortDeclared{\shs}(s_n) \to 
 %\parametric{\KaxiomDeclared}{\shs}(\denote{\varphi}) $$
 
 
@@ -6672,13 +6767,13 @@ These Kore definitions plus this document forms a solid answer to the ultimate
 question: ``what is the semantics of \K?''.
 
 The second category of future work is to extend the Kore language and to 
-develop tools about the Kore language.
-The Kore language defined in Section~\ref{sec:kore} has a rather simple syntax.
+develop tools for it.
+The Kore language has a rather simple syntax.
 During its design, we considered more on machine readability and relative less 
-on  human readability, 
+on  human readability.
 As a result, writing Kore definitions manually is definitely possible, but it 
 can be tedious and error proneing.
-As we do the first category of future work and define \K in Kore, we will 
+As we define \K in Kore, we will 
 gradually notice that certain syntactic sugar should be introduced to Kore so 
 that the resulting Kore definitions are shorter.
 For example, empty parenthesis and braces in Kore patterns and Kore 
@@ -6704,8 +6799,9 @@ The first is automatic proof checkers.
 A proof checker takes a Kore definition and a proof obligation, which is often 
 automatically generated by \K back-ends, and a proof for that proof obligation, 
 and checks whether the proof is valid.
-Proof checkers should be very simple so that their correctness is convincing, 
-and very fast so that they can handle proofs of monster size.
+Proof checkers should be very simple so that their correctness is 
+self-convincing, 
+and very fast so that they can handle proofs of monster sizes.
 The second is interactive provers.
 An interactive prover takes a Kore definition and a proof obligation, and 
 provides an interactive proving environment for human users to input proof 
