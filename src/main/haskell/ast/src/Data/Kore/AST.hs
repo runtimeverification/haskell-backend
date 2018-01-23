@@ -19,25 +19,25 @@ module Data.Kore.AST where
 
 import Data.Typeable
 
-data MetaType
-    = ObjectType
-    | MetaType
+data KoreLevel
+    = ObjectLevel
+    | MetaLevel
     deriving (Eq, Show)
 
 class Show a => IsMeta a where
-    metaType :: a -> MetaType
+    koreLevel :: a -> KoreLevel
 
 data Meta = Meta
     deriving (Show, Eq, Typeable)
 
 instance IsMeta Meta where
-    metaType _ = MetaType
+    koreLevel _ = MetaLevel
 
 data Object = Object
     deriving (Show, Eq, Typeable)
 
 instance IsMeta Object where
-    metaType _ = ObjectType
+    koreLevel _ = ObjectLevel
 
 isObject :: (IsMeta a, Typeable (m a)) => m a -> Bool
 isObject x = (head $ typeRepArgs (typeOf x)) == typeOf Object
