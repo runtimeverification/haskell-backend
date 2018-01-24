@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-|
 Module      : Data.Kore.AST
 Description : Data Structures for representing the Kore language AST
@@ -233,6 +234,23 @@ data UnifiedPattern
     | ObjectPattern !(Pattern Object)
     deriving (Eq, Show)
 
+class UnifiedPatternClass a where
+    asUnifiedPattern :: a -> UnifiedPattern
+
+instance UnifiedPatternClass (Pattern Object) where
+    asUnifiedPattern p = ObjectPattern p
+instance UnifiedPatternClass (Pattern Meta) where
+    asUnifiedPattern p = MetaPattern p
+
+instance UnifiedPatternClass (Variable Object) where
+    asUnifiedPattern v = asUnifiedPattern (VariablePattern v)
+instance UnifiedPatternClass (Variable Meta) where
+    asUnifiedPattern v = asUnifiedPattern (VariablePattern v)
+
+instance UnifiedPatternClass UnifiedVariable where
+    asUnifiedPattern (MetaVariable v)   = asUnifiedPattern v
+    asUnifiedPattern (ObjectVariable v) = asUnifiedPattern v
+
 {-|Enumeration of patterns starting with @\@
 -}
 data MLPatternType
@@ -281,6 +299,20 @@ data Application a = Application
     { applicationSymbolOrAlias :: !(SymbolOrAlias a)
     , applicationPatterns      :: ![UnifiedPattern]
     }
+    deriving (Eq, Show, Typeable)
+
+{-|'Bottom' corresponds to the @\bottom@ branches of the @object-pattern@ and
+@meta-pattern@ syntactic categories from the Semantics of K,
+Section 9.1.4 (Patterns).
+
+The 'a' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should verify 'IsMeta a'.
+
+'bottomSort' is the sort of the result.
+
+This represents the ⌈BottomPattern⌉ Matching Logic construct.
+-}
+data Bottom a = Bottom { bottomSort :: !(Sort a)}
     deriving (Eq, Show, Typeable)
 
 {-|'Ceil' corresponds to the @\ceil@ branches of the @object-pattern@ and
@@ -472,17 +504,19 @@ data Or a = Or
     }
     deriving (Eq, Show, Typeable)
 
-{-|'MLPatternClass' offers a common interface to ML patterns (starting with '\')
--}
-class MLPatternClass p where
-    getPatternType :: p a -> MLPatternType
-    getPatternSorts :: p a -> [Sort a]
-    getPatternPatterns :: p a -> [UnifiedPattern]
+{-|'Top' corresponds to the @\top@ branches of the @object-pattern@ and
+@meta-pattern@ syntactic categories from the Semantics of K,
+Section 9.1.4 (Patterns).
 
-instance MLPatternClass And where
-    getPatternType _ = AndPatternType
-    getPatternSorts a = [andSort a]
-    getPatternPatterns a = [andFirst a, andSecond a]
+The 'a' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should verify 'IsMeta a'.
+
+'topSort' is the sort of the result.
+
+This represents the ⌈TopPattern⌉ Matching Logic construct.
+-}
+data Top a = Top { topSort :: !(Sort a)}
+    deriving (Eq, Show, Typeable)
 
 {-|'Pattern' corresponds to the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -496,7 +530,7 @@ Note that the StringLiteralPattern should only be a member of 'Pattern Meta'.
 data Pattern a
     = AndPattern !(And a)
     | ApplicationPattern !(Application a)
-    | BottomPattern !(Sort a)
+    | BottomPattern !(Bottom a)
     | CeilPattern !(Ceil a)
     | EqualsPattern !(Equals a)
     | ExistsPattern !(Exists a)
@@ -508,7 +542,7 @@ data Pattern a
     | NotPattern !(Not a)
     | OrPattern !(Or a)
     | StringLiteralPattern !StringLiteral
-    | TopPattern !(Sort a)
+    | TopPattern !(Top a)
     | VariablePattern !(Variable a)
     deriving (Eq, Show, Typeable)
 
@@ -609,3 +643,124 @@ data Definition = Definition
     , definitionModules    :: !Module
     }
     deriving (Eq, Show)
+
+class AsPattern t where
+    asPattern :: t a -> Pattern a
+
+instance AsPattern And where
+    asPattern = AndPattern
+
+instance AsPattern Bottom where
+    asPattern = BottomPattern
+
+instance AsPattern Ceil where
+    asPattern = CeilPattern
+
+instance AsPattern Equals where
+    asPattern = EqualsPattern
+
+instance AsPattern Exists where
+    asPattern = ExistsPattern
+
+instance AsPattern Floor where
+    asPattern = FloorPattern
+
+instance AsPattern Forall where
+    asPattern = ForallPattern
+
+instance AsPattern Iff where
+    asPattern = IffPattern
+
+instance AsPattern Implies where
+    asPattern = ImpliesPattern
+
+instance AsPattern Mem where
+    asPattern = MemPattern
+
+instance AsPattern Not where
+    asPattern = NotPattern
+
+instance AsPattern Or where
+    asPattern = OrPattern
+
+instance AsPattern Top where
+    asPattern = TopPattern
+
+instance AsPattern Variable where
+    asPattern = VariablePattern
+
+{-|'MLPatternClass' offers a common interface to ML patterns
+  (those starting with '\', except for 'Exists', 'Forall', and 'Mem')
+-}
+class MLPatternClass p where
+    getPatternType :: p a -> MLPatternType
+    getPatternSorts :: p a -> [Sort a]
+    getPatternPatterns :: p a -> [UnifiedPattern]
+
+instance MLPatternClass And where
+    getPatternType _ = AndPatternType
+    getPatternSorts a = [andSort a]
+    getPatternPatterns a = [andFirst a, andSecond a]
+
+instance MLPatternClass Bottom where
+    getPatternType _ = BottomPatternType
+    getPatternSorts b = [bottomSort b]
+    getPatternPatterns _ = []
+
+instance MLPatternClass Ceil where
+    getPatternType _ = CeilPatternType
+    getPatternSorts c = [ceilOperandSort c, ceilResultSort c]
+    getPatternPatterns c = [ceilPattern c]
+
+instance MLPatternClass Equals where
+    getPatternType _ = EqualsPatternType
+    getPatternSorts e = [equalsOperandSort e, equalsResultSort e]
+    getPatternPatterns e = [equalsFirst e, equalsSecond e]
+
+instance MLPatternClass Floor where
+    getPatternType _ = FloorPatternType
+    getPatternSorts f = [floorOperandSort f, floorResultSort f]
+    getPatternPatterns f = [floorPattern f]
+
+instance MLPatternClass Iff where
+    getPatternType _ = IffPatternType
+    getPatternSorts i = [iffSort i]
+    getPatternPatterns i = [iffFirst i, iffSecond i]
+
+instance MLPatternClass Implies where
+    getPatternType _ = ImpliesPatternType
+    getPatternSorts i = [impliesSort i]
+    getPatternPatterns i = [impliesFirst i, impliesSecond i]
+
+instance MLPatternClass Not where
+    getPatternType _ = NotPatternType
+    getPatternSorts n = [notSort n]
+    getPatternPatterns n = [notPattern n]
+
+instance MLPatternClass Or where
+    getPatternType _ = OrPatternType
+    getPatternSorts a = [orSort a]
+    getPatternPatterns a = [orFirst a, orSecond a]
+
+instance MLPatternClass Top where
+    getPatternType _ = TopPatternType
+    getPatternSorts t = [topSort t]
+    getPatternPatterns _ = []
+
+class MLBinderPatternClass p where
+    getBinderPatternType :: p a -> MLPatternType
+    getBinderPatternSort :: p a -> Sort a
+    getBinderPatternVariable :: p a -> UnifiedVariable
+    getBinderPatternPattern :: p a -> UnifiedPattern
+
+instance MLBinderPatternClass Exists where
+    getBinderPatternType _ = ExistsPatternType
+    getBinderPatternSort = existsSort
+    getBinderPatternVariable = existsVariable
+    getBinderPatternPattern = existsPattern
+
+instance MLBinderPatternClass Forall where
+    getBinderPatternType _ = ForallPatternType
+    getBinderPatternSort = forallSort
+    getBinderPatternVariable = forallVariable
+    getBinderPatternPattern = forallPattern

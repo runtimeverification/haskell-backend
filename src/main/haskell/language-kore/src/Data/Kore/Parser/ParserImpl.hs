@@ -450,8 +450,8 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 topBottomRemainderParser
     :: IsMeta a
     => a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort a -> Pattern a)  -- ^ Element constructor.
-    -> Parser (Pattern a)
+    -> (Sort a -> m a)  -- ^ Element constructor.
+    -> Parser (m a)
 topBottomRemainderParser x constructor = do
     sort <- inCurlyBracesRemainderParser (sortParser x)
     inParenthesesParser (return ())
@@ -663,7 +663,8 @@ mlConstructorParser = do
         case patternType of
             AndPatternType -> AndPattern <$>
                 binaryOperatorRemainderParser x And
-            BottomPatternType -> topBottomRemainderParser x BottomPattern
+            BottomPatternType -> BottomPattern <$>
+                topBottomRemainderParser x Bottom
             CeilPatternType -> CeilPattern <$>
                 ceilFloorRemainderParser x Ceil
             EqualsPatternType -> EqualsPattern <$>
@@ -684,7 +685,8 @@ mlConstructorParser = do
                 unaryOperatorRemainderParser x Not
             OrPatternType -> OrPattern <$>
                 binaryOperatorRemainderParser x Or
-            TopPatternType -> topBottomRemainderParser x TopPattern
+            TopPatternType -> TopPattern <$>
+                topBottomRemainderParser x Top
 
 {-|'patternParser' parses an unifiedPattern
 

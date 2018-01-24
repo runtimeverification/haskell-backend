@@ -390,7 +390,7 @@ bottomPatternParserTests :: [TestTree]
 bottomPatternParserTests =
     parseTree patternParser
         [ Success "\\bottom{#Sort}()"
-            (MetaPattern $ BottomPattern (sortVariableSort "#Sort"))
+            (MetaPattern $ BottomPattern $ Bottom (sortVariableSort "#Sort"))
         , FailureWithoutMessage
             [ ""
             , "\\bottom()"
@@ -645,7 +645,7 @@ topPatternParserTests :: [TestTree]
 topPatternParserTests =
     parseTree patternParser
         [ Success "\\top{s}()"
-            (ObjectPattern $ TopPattern (sortVariableSort "s"))
+            (ObjectPattern $ TopPattern $ Top (sortVariableSort "s"))
         , FailureWithoutMessage
             ["", "\\top()", "\\top{}()", "\\top{s, s}()", "\\top{s}"]
         ]
