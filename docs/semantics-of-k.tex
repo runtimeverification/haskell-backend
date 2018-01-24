@@ -5311,19 +5311,23 @@ sort is object-level or meta-level in the parse time.
 \begin{grammar}\small
 <sort> ::= <object-sort> | <meta-sort>
 	
-<object-sort> ::= <object-sort-variable> | <object-sort-constructor> `{' 
-<object-sort-list> `}'
+<object-sort> ::= <object-sort-variable> | <object-non-variable-sort> 
 
 <object-sort-variable> ::= <object-identifier>
+
+<object-non-variable-sort> ::= <object-sort-constructor> `{' 	
+<object-sort-list> `}'
 
 <object-sort-constructor> ::= <object-identifier>
 
 <object-sort-list> ::= $\epsilon$ | <object-sort> | <object-sort> `,' 
 <object-sort-list>
 
-<meta-sort> ::= <meta-sort-variable> | <meta-sort-constructor> `{' `}'
+<meta-sort> ::= <meta-sort-variable> | <meta-non-variable-sort> 
 
 <meta-sort-variable> ::= <meta-identifier>
+
+<meta-non-variable-sort> ::= <meta-sort-constructor> `{' `}'
 
 <meta-sort-constructor> ::= `#Char' | `#CharList' | `#String' | `#Sort' | 
 `#SortList'
@@ -5739,7 +5743,8 @@ parametric modules, and module imports.
 \alt <alias-declaration>
 \alt <axiom-declaration>
 
-<sort-declaration> ::= `sort' `{' <sort-variable-list> `}' <object-sort> 
+<sort-declaration> ::= `sort' `{' <sort-variable-list> `}' 
+<object-non-variable-sort> 
 <attribute>
 
 <symbol-declaration> ::= <object-symbol-declaration> | 
