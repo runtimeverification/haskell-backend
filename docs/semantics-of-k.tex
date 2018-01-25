@@ -177,6 +177,7 @@
   
   % Define commands that are used in Sec 2.  
   \newcommand{\Nat}{\textit{Nat}}
+  \newcommand{\Rat}{\textit{Rat}}
   \newcommand{\KNat}{\textit{KNat}}
   \newcommand{\Int}{\textit{Int}}
   \newcommand{\Bool}{\textit{Bool}}
@@ -390,7 +391,8 @@
   \newcommand{\axiom}{\smalltt{axiom}}
   
   \newcommand{\inj}[2]{\parametric{\mathit{inj}}{#1, #2}}
-  
+  \newcommand{\retract}[2]{\parametric{\mathit{retract}}{#1, #2}}
+  \newcommand{\factorial}{\textit{factorial}}
   % User-defined sorts & symbols in the meta-theory
   \newcommand{\KqNat}{\texttt{\shp `Nat}{ }}
   \newcommand{\KqList}{\texttt{\shp `List}{ }}
@@ -2158,12 +2160,14 @@ In other words, an instance of a parametric sort is the a subsort of the other
 instance if its sort parameters are subsorts of the other's element-wisely.
 The intuition of $s \preceq s'$ is that any element in sort $s$ is included 
 in sort $s'$.
-We fake this intuition of inclusion by defining an injective partial function 
+We fake this intuition of inclusion by defining an injective function 
 called the \emph{injection function}:
 \begin{center}
 	\begin{tabular}{rl}
-		$\inj{s}{s'} \colon s \rightharpoonup s'$
-		& \doubleslash parametric sort defined for any $s \preceq s'$ \\
+		$\inj{s}{s'} \colon s \to s'$
+		& \doubleslash a parametric function \\
+		& \doubleslash defined for any $s \preceq 
+		s'$ \\
 		$\inj{s}{s}(x) = x$
 		& \doubleslash (identity) axiom \\
 		$x = y \to \inj{s}{s'}(x) = \inj{s}{s'}$
@@ -2172,6 +2176,45 @@ called the \emph{injection function}:
 		& \doubleslash (transitivity) axiom \\
 	\end{tabular}
 \end{center}
+
+The dual of injection functions are \emph{retracts}. 
+They are surjective partial functions that are the inverse of injection 
+functions, which can be defined as follows:
+\begin{center}
+	\begin{tabular}{rl}
+		$\retract{s'}{s} \colon s \rightharpoonup s'$
+		& \doubleslash a parametric partial function \\
+		& \doubleslash defined for any $s \preceq 
+		s'$ \\
+		$\retract{s'}{s}(x) = x$
+		& \doubleslash for any $x$ is a variable of sort $s'$
+	\end{tabular}
+\end{center}
+
+%Injection functions and retracts are useful.
+%In some occasions, we may want 
+%parsers to generate them automatically when parsing \K definitions.
+%Retracts might not be as well known as they should be, and they deserve an 
+%example to illustrate their importance.
+%Consider the following \K definition fragment where we define two 
+%sorts for naturals and rationals\footnote{This example is borrowed 
+%from a survey of order sorted algebras by Goguen and 
+%Diaconescu~\cite{goguen1994oxford}.}
+%\begin{Verbatim}
+%  syntax Nat
+%  syntax Rat ::= Nat
+%               | Rat "+" Rat
+%               | Rat "/" Rat
+%  syntax Nat ::= "factorial" "(" Nat ")"   // factorial function
+%\end{Verbatim}
+%The pattern $\factorial(21 / 7)$ does not parse under the above grammar, 
+%because $21 / 7$ is parsed as a rational and {\factorial} expects a natural 
+%number.
+%To resolve this issue, the parser may wrap $21 / 7$ with a retract and parse 
+%it 
+%as $\factorial(\retract{\Rat}{\Nat}(21 / 7))$.
+
+
 
 %\begin{align*}
 %& \Ksubsorts{\shs}(S, S') \to \Ksubsort{\shs}(\KSort(str, S), \KSort(str, S'))
@@ -2188,7 +2231,8 @@ called the \emph{injection function}:
 %& \Ksubsort{\shs}(s, \KqK) = \top_{\shs} \qquad \text{for any $\shs \in S_K$}
 %\end{align*}
 %
-\subsubsection{Subsort Overloading}
+ 
+\subsubsection{Overloading}
 As in order-sorted algebras,
 we say two symbols $\sigma_1$ and $\sigma_2$ are \emph{subsort overloading}, if 
 they have the same name and the argument sorts 
