@@ -110,6 +110,8 @@
   
   % Package for writing natural proof deductions
   \usepackage{prftree}
+  
+  \usepackage{enumitem}
     
   % Package for writing BNF syntax
   \usepackage{syntax}
@@ -177,6 +179,7 @@
   
   % Define commands that are used in Sec 2.  
   \newcommand{\Nat}{\textit{Nat}}
+  \newcommand{\String}{\textit{String}}
   \newcommand{\Rat}{\textit{Rat}}
   \newcommand{\KNat}{\textit{KNat}}
   \newcommand{\Int}{\textit{Int}}
@@ -373,6 +376,7 @@
   % The italic font of "ceil" used in math mode.
   \newcommand{\cl}{\mathit{ceil}}
   
+  \newcommand{\doublecolon}{::}
   % Use quotation marks "..." in math mode.
   \newcommand{\quot}[1]{\mathrm{``#1"}}
   \newcommand{\quottt}[1]{\textrm{\lq\texttt{#1}\rq}}
@@ -440,6 +444,8 @@
   \newcommand{\att}{\mathit{att}}
   \newcommand{\verbose}{\mathit{verbose}}
   \newcommand{\var}{\mathit{var}}
+  
+
   
   % Define syntactic category <category>
   \newcommand{\syntacc}[1]{\text{$\langle$\textit{#1}$\rangle$}}
@@ -2064,9 +2070,9 @@ Therefore, it might appear that in order to give \K a formal semantics,
 one has to adopt some kinds of order-sorted algebras as its mathematical 
 foundation.
 
-However, decades of years of research not only proved that order-sorted 
-algebras are intuitive, convenient, and easy to use in many practical cases, 
-but also showed their power does come for a cost (and sometimes a big cost).
+Decades of years of research proved that order-sorted 
+algebras are intuitive, convenient, and easy to use in many practical cases.
+However, their power does come for a cost (and sometimes a big cost).
 Algorithms and decision procedures for order-sorted algebras have been proposed 
 and implemented in languages like Maude~\cite{clavel-et-al99a}, but in general 
 order-sorted algebras 
@@ -2100,7 +2106,7 @@ matching logic theory of a \K definition.
 %predicate symbols for every sorts) and axioms that capture the many-sorted 
 %structures 
 %in the many-sorted theory. 
-
+\subsubsection{Fake Subsort Relation}
 A \K definition defines a sort set $S$ and a partial-order relation $\preceq 
 \subseteq S \times S$ called the \emph{subsort relation}.
 If $s \preceq s'$, we say $s$ is a \emph{subsort} of $s'$ and $s'$ is a 
@@ -2232,7 +2238,57 @@ functions, which can be defined as follows:
 %\end{align*}
 %
  
-\subsubsection{Overloading}
+\subsubsection{Fake Overloading}
+Overloading, or often called \emph{polymorphism} in the context of 
+programming languages, refers to the 
+phenomenon that we use one name for multiple operations.
+For example,
+\begin{enumerate}[label=(\alph*).]
+	\item Use $\_\doublecolon\_$ as the cons operation for lists of all types;
+	\item Use $\_+\_$ as both the addition of naturals and rationals;
+	\item Use $\_+\_$ as both the addition of naturals and concatenation of 
+	strings;
+\end{enumerate}
+In literature, especially literature on order-sorted algebras, researchers have 
+use various terminologies for various types of overloading and polymorphism.
+For example, in the above example, (a)~is often called as \emph{parametric 
+overloading}; (b)~is called as \emph{subsort overloading} if naturals is seen 
+as a subsort of rationals; (c)~is called as \emph{ad hoc overloading} or 
+\emph{strong overloading}.
+In general, overloading and polymorphism allow us to write more compact and 
+neat 
+expressions and help to make formal languages look ``more human'', but those 
+benefits do not come for free.
+\improvement{Xiaohong: We need some concrete discussion about why OS makes 
+things harder. Not even sure it is the right claim because OS people will argue 
+the OS makes things simpler instead of harder.}
+
+Our proposal is to make implicit overloading explicit, and we have seen one 
+such example.
+In Section~\ref{sec:finite-mechanisms}, we have shown how to deal with 
+parametric overloading by explicit writing the sort parameters.
+In there, one can think of that there exists a smart frontend parser that 
+allows users to write
+\begin{center}
+\begin{tabular}{rl}
+$1 \doublecolon 2 \doublecolon \nil$ 
+& \doubleslash a list of two naturals $1, 2$ \\
+$\quot{1} \doublecolon \quot{2} \doublecolon \nil$
+& \doubleslash a list of two strings $\quot{1}, \quot{2}$ \\
+\end{tabular}
+\end{center}
+while in its internal parse them as
+\begin{center}
+	\begin{tabular}{rl}
+		$1 {\ \parametric{\doublecolon}{\Nat}\ } 2 {\ 
+		\parametric{\doublecolon}{\Nat}\ } {\parametric{\nil}{\Nat}}$ 
+& \doubleslash a list of two naturals $1, 2$ \\
+$\quot{1} {\ \parametric{\doublecolon}{\String}\ } \quot{2} {\ 
+	\parametric{\doublecolon}{\String}\ } {\parametric{\nil}{\String}}$ 
+& \doubleslash a list of two strings $\quot{1}, \quot{2}$ 
+	\end{tabular}
+\end{center}
+
 As in order-sorted algebras,
 we say two symbols $\sigma_1$ and $\sigma_2$ are \emph{subsort overloading}, if 
 they have the same name and the argument sorts 
