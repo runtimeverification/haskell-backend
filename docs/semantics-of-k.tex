@@ -5934,8 +5934,8 @@ parametric modules, and module imports.
 \alt <alias-declaration>
 \alt <axiom-declaration>
 
-<sort-declaration> ::= `sort' `{' <sort-variable-list> `}' 
-<object-non-variable-sort> 
+<sort-declaration> ::= `sort'
+<object-sort-constructor>  `{' <sort-variable-list> `}' 
 <attribute>
 
 <symbol-declaration> ::= <object-symbol-declaration> | 
@@ -5988,10 +5988,10 @@ parametric modules, and module imports.
 
 Every declaration has a list of sort variables wrapped in curly brackets, also 
 called as a \emph{sort variable declaration}.
-In sort and axiom declarations, the sort variable declarations follow by the 
-keywords `\texttt{sort}' and `\texttt{axiom}'.
-In symbol and alias declarations, the sort variable declarations follow by the 
-head constructor being declared.
+In axiom declarations, the sort variable declarations follow by the 
+keyword `\texttt{axiom}'.
+In sort, symbol and alias declarations, the sort variable declarations follow 
+by the corresponding constructors that are declared.
 Sort variable declarations are used to help us decide \emph{in a local manner} 
 if an identifier is a sort variable or something else.
 All sort variables used in a declaration have to be declared in the sort 
@@ -6094,16 +6094,19 @@ Kore language.
 For a Kore definition to be valid, it has to satisfy the following common 
 wellformedness conditions.
 \begin{enumerate}\itemsep0em
-\item In any declaration, every sort variable used should be in the leading 
-sort variable list;
+\item In any declaration, every sort variable used should be included in the
+sort variable list; The sort variable lists should contain only distinct sort 
+variables (no duplicates);
 \item In any symbol or alias declaration, the head being declared should be of 
 the form \texttt{$C$\{$s_1,\dots,s_n$\}} where $C$ is a head constructor and 
 $s_1,\dots,s_n$ are $n$ distinct sort variables;
+\item Every declared symbol or alias should have their argument sorts and 
+return sorts declared;
 \item In any pattern that is a head being applied to a list of argument 
 patterns, the number and sorts of argument patterns should match with the head 
 declaration;
 \item Every sorts, symbols, and aliases should be declared to be used;
-\item Every sorts, symbols, and aliases should have unique names;
+\item Every sorts, symbols, and aliases should have unique constructor names;
 \end{enumerate}
 
 
@@ -6338,15 +6341,15 @@ $\alpha = s,\beta$
 A sort declaration is lifted to one symbol declaration and two axiom 
 declarations
 $$ \denote{\_} \colon \syntacc{sort-declaration} \to 
-\syntacc{declaration}^3$$
+\syntacc{declaration} \times \syntacc{declaration} \times 
+\syntacc{declaration}$$
 Consider the sort declaration 
 \begin{center}
 	\ttfamily
-	sort\{$v_1,\dots,v_m$\} $C$\{$s_1,\dots,s_n$\} [$\att$]
+	sort $C$\{$s_1,\dots,s_n$\} [$\att$]
 \end{center}
-where $v_1,\dots,v_m$ are sort variables,
-\texttt{$C$\{$s_1,\dots,s_n$\}} is a sort which (possibly) uses sort 
-variables $v_1,\dots,v_m$, and $\att$ is an attribute.
+where $s_1,\dots,s_n$ are sort variables, and $C$ is a sort constructor, and 
+$\att$ is an attribute.
 This sort declaration is lifted to the following three declarations.
 
 The first declaration is a symbol declaration for the corresponding helper 
@@ -6386,9 +6389,9 @@ axiom\{$\shs$\} \\
 \slimplies\{\shs\}( \\
 \ttfamily
 \qquad\qquad\KsortsDeclared\{\shs\}($\denote{
-	v_1,\dots,v_m}_\llist$),\\
+	s_1,\dots,s_n}_\llist$),\\
 \ttfamily
-\qquad\qquad\KsortDeclared\{\shs\}($\denote{
+\qquad\qquad\KsortDeclared{\shs}($\denote{
 	\text{$C$\{$s_1,\dots,s_n$\}}}$)) []
 \end{tabular}
 \end{center}
