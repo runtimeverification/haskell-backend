@@ -43,9 +43,15 @@ instance FromString ShowS where
 
 instance UnparseOutput ShowS StringUnparser where
 
+stringUnparse :: Unparse a => a -> StringUnparser ()
+stringUnparse = unparse
+
 unparseToString :: Unparse a => a -> String
-unparseToString a =
-    runReader (execWriterT ((unparse a)::StringUnparser ())) 0 ""
+unparseToString a = showChain ""
+  where
+    writerAction = stringUnparse a
+    readerAction = execWriterT writerAction
+    showChain = runReader readerAction 0
 
 
 {- unparse instances for Kore datastructures -}
@@ -53,10 +59,10 @@ unparseToString a =
 instance Unparse (Id a) where
     unparse = write . getId
 
-unparseList :: (UnparseOutput w m, Unparse a) => m() -> [a] -> m ()
-unparseList _ []       = return ()
-unparseList _ [x]      = unparse x
-unparseList btw (x:xs) = unparse x >> btw >> unparseList btw xs
+unparseList :: (UnparseOutput w m, Unparse a) => m () -> [a] -> m ()
+unparseList _ []           = return ()
+unparseList _ [x]          = unparse x
+unparseList between (x:xs) = unparse x >> between >> unparseList between xs
 
 instance Unparse a => Unparse [a] where
     unparse = unparseList (write ",")
@@ -234,15 +240,17 @@ instance Unparse (SentenceAlias a) where
         inParens (unparse (sentenceAliasSorts sa))
         write ":"
         unparse (sentenceAliasReturnSort sa)
+        unparse (sentenceAliasAttributes sa)
 
 instance Unparse (SentenceSymbol a) where
     unparse sa = do
-        write "alias"
+        write "symbol"
         write " "
         unparse (sentenceSymbolSymbol sa)
         inParens (unparse (sentenceSymbolSorts sa))
         write ":"
         unparse (sentenceSymbolReturnSort sa)
+        unparse (sentenceSymbolAttributes sa)
 
 instance Unparse SentenceAxiom where
     unparse a = do

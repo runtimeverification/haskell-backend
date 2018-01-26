@@ -56,8 +56,16 @@ unparseParseTests =
             )
         , testProperty "UnifiedVariable"
             (forAll unifiedVariableGen (unparseParseProp unifiedVariableParser))
---        , testProperty "UnifiedPattern"
---            (forAll unifiedPatternGen (unparseParseProp patternParser))
+        , testProperty "UnifiedPattern"
+            (forAll unifiedPatternGen (unparseParseProp patternParser))
+        , testProperty "Attributes"
+            (forAll attributesGen (unparseParseProp attributesParser))
+        , testProperty "Sentence"
+            (forAll sentenceGen (unparseParseProp sentenceParser))
+        , testProperty "Module"
+            (forAll moduleGen (unparseParseProp moduleParser))
+        , testProperty "Definition"
+            (forAll definitionGen (unparseParseProp definitionParser))
         ]
 
 parse :: Parser.Parser a -> String -> Either String a

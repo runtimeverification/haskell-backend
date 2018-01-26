@@ -11,8 +11,10 @@ import           Data.Kore.Parser.LexemeImpl
 
 couple :: Gen a -> Gen [a]
 couple gen = do
-  n <- choose (0,2)
-  vectorOf n gen
+    size <- getSize
+    if (size <= 0)
+        then return []
+        else choose (0,3) >>= (\n -> vectorOf n gen)
 
 genericIdGen :: [Char] -> [Char] -> Gen (String)
 genericIdGen firstChars nextChars = do
@@ -199,10 +201,14 @@ patternGen x =
     checkStringLiteralMeta _                        = True
 
 unifiedPatternGen :: Gen UnifiedPattern
-unifiedPatternGen = oneof
-    [ MetaPattern <$> patternGen Meta
-    , ObjectPattern <$> patternGen Object
-    ]
+unifiedPatternGen = sized (\n ->
+    if n<=0
+        then MetaPattern <$> StringLiteralPattern <$> stringLiteralGen
+        else oneof
+            [ MetaPattern <$> patternGen Meta
+            , ObjectPattern <$> patternGen Object
+            ]
+    )
 
 sentenceAliasGen :: IsMeta a => a -> Gen (SentenceAlias a)
 sentenceAliasGen x = pure SentenceAlias
