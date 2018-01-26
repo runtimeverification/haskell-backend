@@ -1,3 +1,4 @@
+{-# LANGUAGE RankNTypes #-}
 {-|
 Module      : Data.Kore.AST
 Description : Data Structures for representing the Kore language AST
@@ -17,24 +18,25 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Data.Kore.AST where
 
-import           Data.Typeable (Typeable, typeOf, typeRepArgs)
+import qualified Data.Map as Map
+import           Data.Typeable (Typeable, cast, typeOf, typeRepArgs)
 
 data KoreLevel
     = ObjectLevel
     | MetaLevel
     deriving (Eq, Show)
 
-class (Show a, Typeable a) => IsMeta a where
+class (Ord a, Show a, Typeable a) => IsMeta a where
     koreLevel :: a -> KoreLevel
 
 data Meta = Meta
-    deriving (Show, Eq, Typeable)
+    deriving (Show, Eq, Ord, Typeable)
 
 instance IsMeta Meta where
     koreLevel _ = MetaLevel
 
 data Object = Object
-    deriving (Show, Eq, Typeable)
+    deriving (Show, Eq, Ord, Typeable)
 
 instance IsMeta Object where
     koreLevel _ = ObjectLevel
@@ -45,14 +47,36 @@ isObject x = head (typeRepArgs (typeOf x)) == typeOf Object
 isMeta :: (IsMeta a, Typeable (m a)) => m a -> Bool
 isMeta x = head (typeRepArgs (typeOf x)) == typeOf Meta
 
+applyMetaObjectFunctionCasted
+    :: Maybe (p Object)
+    -> Maybe (p Meta)
+    -> (p Object -> r)
+    -> (p Meta -> r)
+    -> r
+applyMetaObjectFunctionCasted (Just item) Nothing fObject _ = fObject item
+applyMetaObjectFunctionCasted Nothing (Just item) _ fMeta = fMeta item
+
+applyMetaObjectFunction
+    :: (Typeable a, Typeable p)
+    => p a
+    -> (p Object -> r)
+    -> (p Meta -> r)
+    -> r
+applyMetaObjectFunction item =
+    applyMetaObjectFunctionCasted (cast item) (cast item)
+
+
 {-|'Id' corresponds to the @object-identifier@ and @meta-identifier@
 syntactic categories from the Semantics of K, Section 9.1.1 (Lexicon).
 
 The 'a' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'IsMeta a'.
+
+We may chage the Id's representation in the future so one should treat it as
+an opaque entity as much as possible.
 -}
 newtype Id a = Id { getId :: String }
-    deriving (Show, Eq, Typeable)
+    deriving (Show, Eq, Ord, Typeable)
 
 {-|'StringLiteral' corresponds to the @string@ literal from the Semantics of K,
 Section 9.1.1 (Lexicon).
@@ -114,7 +138,7 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 -}
 newtype SortVariable a = SortVariable
     { getSortVariable  :: Id a }
-    deriving (Show, Eq, Typeable)
+    deriving (Show, Eq, Ord, Typeable)
 
 {-|'SortActual' corresponds to the @sort-constructor{sort-list}@ branch of the
 @object-sort@ and @meta-sort@ syntactic categories from the Semantics of K,
@@ -141,6 +165,15 @@ data Sort a
     | SortActualSort !(SortActual a)
     deriving (Show, Eq, Typeable)
 
+data UnifiedSort
+    = ObjectSort !(Sort Object)
+    | MetaSort !(Sort Meta)
+    deriving (Show, Eq)
+
+asUnifiedSort :: Typeable a => Sort a -> UnifiedSort
+asUnifiedSort v =
+    applyMetaObjectFunction v ObjectSort MetaSort
+
 {-|'MetaSortType' corresponds to the @meta-sort-constructor@ syntactic category
 from the Semantics of K, Section 9.1.2 (Sorts).
 
@@ -166,6 +199,36 @@ metaSortsList = [ CharSort, CharListSort, PatternSort, PatternListSort, SortSort
     , VariableSort, VariableListSort
     ]
 
+-- TODO (virgil): Move these to a separate place with implicit definitions.
+charMetaSort :: Sort Meta
+charMetaSort = metaSort CharSort
+charListMetaSort :: Sort Meta
+charListMetaSort = metaSort CharListSort
+patternMetaSort :: Sort Meta
+patternMetaSort = metaSort PatternSort
+patternListMetaSort :: Sort Meta
+patternListMetaSort = metaSort PatternListSort
+sortMetaSort :: Sort Meta
+sortMetaSort = metaSort SortSort
+sortListMetaSort :: Sort Meta
+sortListMetaSort = metaSort SortListSort
+stringMetaSort :: Sort Meta
+stringMetaSort = metaSort StringSort
+symbolMetaSort :: Sort Meta
+symbolMetaSort = metaSort SymbolSort
+symbolListMetaSort :: Sort Meta
+symbolListMetaSort = metaSort SymbolListSort
+variableMetaSort :: Sort Meta
+variableMetaSort = metaSort VariableSort
+variableListMetaSort :: Sort Meta
+variableListMetaSort = metaSort VariableListSort
+
+metaSort :: MetaSortType -> Sort Meta
+metaSort sortType =
+    SortActualSort SortActual
+        { sortActualName = Id (show sortType)
+        , sortActualSorts = []}
+
 instance Show MetaSortType where
     show CharSort         = "#Char"
     show CharListSort     = "#CharList"
@@ -185,7 +248,12 @@ from the Semantics of K, Section 9.1.2 (Sorts).
 data UnifiedSortVariable
     = ObjectSortVariable !(SortVariable Object)
     | MetaSortVariable !(SortVariable Meta)
-    deriving (Show, Eq)
+    deriving (Show, Ord, Eq)
+
+asUnifiedSortVariable
+    :: Typeable a => SortVariable a -> UnifiedSortVariable
+asUnifiedSortVariable v =
+    applyMetaObjectFunction v ObjectSortVariable MetaSortVariable
 
 {-|'ModuleName' corresponds to the @module-name@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
@@ -214,6 +282,15 @@ data UnifiedVariable
     | ObjectVariable !(Variable Object)
     deriving (Eq, Show)
 
+asUnifiedVariable :: Typeable a => Variable a -> UnifiedVariable
+asUnifiedVariable v =
+    applyMetaObjectFunction v ObjectVariable MetaVariable
+
+applyOnUnifiedVariable
+    :: (forall a . Variable a -> b) -> UnifiedVariable -> b
+applyOnUnifiedVariable f (ObjectVariable variable) = f variable
+applyOnUnifiedVariable f (MetaVariable variable) = f variable
+
 {-|'UnifiedPattern' corresponds to the @pattern@ syntactic category from
 the Semantics of K, Section 9.1.4 (Patterns).
 -}
@@ -221,6 +298,10 @@ data UnifiedPattern
     = MetaPattern !(Pattern Meta)
     | ObjectPattern !(Pattern Object)
     deriving (Eq, Show)
+
+asUnifiedPattern :: Typeable a => Pattern a -> UnifiedPattern
+asUnifiedPattern v =
+    applyMetaObjectFunction v ObjectPattern MetaPattern
 
 {-|Enumeration of patterns starting with @\@
 -}
@@ -639,6 +720,18 @@ data Sentence
     | SentenceSortSentence !SentenceSort
     deriving (Eq, Show)
 
+asSentenceAliasSentence :: IsMeta a => SentenceAlias a -> Sentence
+asSentenceAliasSentence v =
+    applyMetaObjectFunction
+        v ObjectSentenceAliasSentence MetaSentenceAliasSentence
+
+
+asSentenceSymbolSentence :: IsMeta a => SentenceSymbol a -> Sentence
+asSentenceSymbolSentence v =
+    applyMetaObjectFunction
+        v ObjectSentenceSymbolSentence MetaSentenceSymbolSentence
+
+
 newtype Attributes = Attributes { getAttributes :: [UnifiedPattern] }
     deriving (Eq, Show)
 
@@ -655,6 +748,33 @@ data Module = Module
     , moduleAttributes :: !Attributes
     }
     deriving (Eq, Show)
+
+data SortDescription a = SortDescription
+    { sortDescriptionName       :: !(Id a)
+    , sortDescriptionParameters :: ![SortVariable a]
+    , sortDescriptionAttributes :: !Attributes
+    }
+    deriving (Eq, Show)
+
+-- TODO(virgil): Do we need to make the alias-symbol distinction here or
+-- should I just use SentenceSymbolOrAlias?
+data IndexedModule = IndexedModule
+    { indexedModuleName          :: !ModuleName
+    , indexedModuleMetaAliasSentences
+        :: !(Map.Map (Id Meta) (SentenceAlias Meta))
+    , indexedModuleObjectAliasSentences
+        :: !(Map.Map (Id Object) (SentenceAlias Object))
+    , indexedModuleMetaSymbolSentences
+        :: !(Map.Map (Id Meta) (SentenceSymbol Meta))
+    , indexedModuleObjectSymbolSentences
+        :: !(Map.Map (Id Object) (SentenceSymbol Object))
+    , indexedModuleObjectSortDescriptions
+        :: !(Map.Map (Id Object) (SortDescription Object))
+    , indexedModuleMetaSortDescriptions
+        :: !(Map.Map (Id Meta) (SortDescription Meta))
+    , indexedModuleAxioms        :: ![SentenceAxiom]
+    , indexedModuleAttributes    :: !Attributes
+    }
 
 {-|Currently, a 'Definition' consists of some 'Attributes' and a 'Module'
 
@@ -731,46 +851,64 @@ instance AsObjectPattern Rewrites where
 -}
 class MLPatternClass p where
     getPatternType :: p a -> MLPatternType
+    getMLPatternOperandSorts :: p a -> [Sort a]
+    getMLPatternResultSort :: p a -> Sort a
     getPatternSorts :: p a -> [Sort a]
     getPatternPatterns :: p a -> [UnifiedPattern]
 
 instance MLPatternClass And where
     getPatternType _ = AndPatternType
+    getMLPatternOperandSorts x = [andSort x, andSort x]
+    getMLPatternResultSort = andSort
     getPatternSorts a = [andSort a]
     getPatternPatterns a = [andFirst a, andSecond a]
 
 instance MLPatternClass Bottom where
     getPatternType _ = BottomPatternType
+    getMLPatternOperandSorts _ = []
+    getMLPatternResultSort = bottomSort
     getPatternSorts b = [bottomSort b]
     getPatternPatterns _ = []
 
 instance MLPatternClass Ceil where
     getPatternType _ = CeilPatternType
+    getMLPatternOperandSorts x = [ceilOperandSort x]
+    getMLPatternResultSort = ceilResultSort
     getPatternSorts c = [ceilOperandSort c, ceilResultSort c]
     getPatternPatterns c = [ceilPattern c]
 
 instance MLPatternClass Equals where
     getPatternType _ = EqualsPatternType
+    getMLPatternOperandSorts x = [equalsOperandSort x, equalsOperandSort x]
+    getMLPatternResultSort = equalsResultSort
     getPatternSorts e = [equalsOperandSort e, equalsResultSort e]
     getPatternPatterns e = [equalsFirst e, equalsSecond e]
 
 instance MLPatternClass Floor where
     getPatternType _ = FloorPatternType
+    getMLPatternOperandSorts x = [floorOperandSort x]
+    getMLPatternResultSort = floorResultSort
     getPatternSorts f = [floorOperandSort f, floorResultSort f]
     getPatternPatterns f = [floorPattern f]
 
 instance MLPatternClass Iff where
     getPatternType _ = IffPatternType
+    getMLPatternOperandSorts x = [iffSort x, iffSort x]
+    getMLPatternResultSort = iffSort
     getPatternSorts i = [iffSort i]
     getPatternPatterns i = [iffFirst i, iffSecond i]
 
 instance MLPatternClass Implies where
     getPatternType _ = ImpliesPatternType
+    getMLPatternOperandSorts x = [impliesSort x, impliesSort x]
+    getMLPatternResultSort = impliesSort
     getPatternSorts i = [impliesSort i]
     getPatternPatterns i = [impliesFirst i, impliesSecond i]
 
 instance MLPatternClass In where
     getPatternType _ = InPatternType
+    getMLPatternOperandSorts x = [inOperandSort x, inOperandSort x]
+    getMLPatternResultSort = inResultSort
     getPatternSorts i = [inOperandSort i, inResultSort i]
     getPatternPatterns i = [inContainedPattern i, inContainingPattern i]
 
@@ -781,11 +919,15 @@ instance MLPatternClass Next where
 
 instance MLPatternClass Not where
     getPatternType _ = NotPatternType
+    getMLPatternOperandSorts x = [notSort x]
+    getMLPatternResultSort = notSort
     getPatternSorts n = [notSort n]
     getPatternPatterns n = [notPattern n]
 
 instance MLPatternClass Or where
     getPatternType _ = OrPatternType
+    getMLPatternOperandSorts x = [orSort x, orSort x]
+    getMLPatternResultSort = orSort
     getPatternSorts a = [orSort a]
     getPatternPatterns a = [orFirst a, orSecond a]
 
@@ -796,6 +938,8 @@ instance MLPatternClass Rewrites where
 
 instance MLPatternClass Top where
     getPatternType _ = TopPatternType
+    getMLPatternOperandSorts _ = []
+    getMLPatternResultSort = topSort
     getPatternSorts t = [topSort t]
     getPatternPatterns _ = []
 
@@ -816,3 +960,29 @@ instance MLBinderPatternClass Forall where
     getBinderPatternSort = forallSort
     getBinderPatternVariable = forallVariable
     getBinderPatternPattern = forallPattern
+
+
+class SentenceSymbolOrAlias p where
+    getSentenceSymbolOrAliasConstructor :: p a -> Id a
+    getSentenceSymbolOrAliasSortParams :: p a -> [SortVariable a]
+    getSentenceSymbolOrAliasArgumentSorts :: p a -> [Sort a]
+    getSentenceSymbolOrAliasReturnSort :: p a -> Sort a
+    getSentenceSymbolOrAliasAttributes :: p a -> Attributes
+    getSentenceSymbolOrAliasSentenceName :: p a -> String
+
+instance SentenceSymbolOrAlias SentenceAlias where
+    getSentenceSymbolOrAliasConstructor = aliasConstructor . sentenceAliasAlias
+    getSentenceSymbolOrAliasSortParams = aliasParams . sentenceAliasAlias
+    getSentenceSymbolOrAliasArgumentSorts = sentenceAliasSorts
+    getSentenceSymbolOrAliasReturnSort = sentenceAliasReturnSort
+    getSentenceSymbolOrAliasAttributes = sentenceAliasAttributes
+    getSentenceSymbolOrAliasSentenceName _ = "alias"
+
+instance SentenceSymbolOrAlias SentenceSymbol where
+    getSentenceSymbolOrAliasConstructor =
+        symbolConstructor . sentenceSymbolSymbol
+    getSentenceSymbolOrAliasSortParams = symbolParams . sentenceSymbolSymbol
+    getSentenceSymbolOrAliasArgumentSorts = sentenceSymbolSorts
+    getSentenceSymbolOrAliasReturnSort = sentenceSymbolReturnSort
+    getSentenceSymbolOrAliasAttributes = sentenceSymbolAttributes
+    getSentenceSymbolOrAliasSentenceName _ = "symbol"

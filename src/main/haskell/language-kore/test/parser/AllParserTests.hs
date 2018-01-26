@@ -5,6 +5,7 @@ import           Test.Tasty.Runners              (consoleTestReporter,
                                                   listingTests)
 import           Test.Tasty.Runners.AntXML       (antXMLRunner)
 
+import           Data.Kore.ASTVerifier.ASTVerifierTest
 import           Data.Kore.IndentingPrinterTest
 import           Data.Kore.Parser.CharDictTest
 import           Data.Kore.Parser.CharSetTest
@@ -33,7 +34,8 @@ unitTests :: TestTree
 unitTests =
     testGroup
         " Unit Tests"
-        [ charDictTests
+        [ astVerifierTests
+        , charDictTests
         , charSetTests
         , cStringTests
         , koreLexemeTests

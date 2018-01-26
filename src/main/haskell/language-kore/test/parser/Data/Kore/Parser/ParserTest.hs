@@ -99,17 +99,17 @@ metaSortConverterTests =
     parseTree (sortParser Meta)
         [ success "#var"
             (SortVariableSort (SortVariable (Id "#var")))
-        , success "#Char{}" (metaSort CharSort)
-        , success "#CharList{}" (metaSort CharListSort)
-        , success "#Pattern{}" (metaSort PatternSort)
-        , success "#PatternList{}" (metaSort PatternListSort)
-        , success "#Sort{}" (metaSort SortSort)
-        , success "#SortList{}" (metaSort SortListSort)
-        , success "#String{}" (metaSort StringSort)
-        , success "#Symbol{}" (metaSort SymbolSort)
-        , success "#SymbolList{}" (metaSort SymbolListSort)
-        , success "#Variable{}" (metaSort VariableSort)
-        , success "#VariableList{}" (metaSort VariableListSort)
+        , success "#Char{}" charMetaSort
+        , success "#CharList{}" charListMetaSort
+        , success "#Pattern{}" patternMetaSort
+        , success "#PatternList{}" patternListMetaSort
+        , success "#Sort{}" sortMetaSort
+        , success "#SortList{}" sortListMetaSort
+        , success "#String{}" stringMetaSort
+        , success "#Symbol{}" symbolMetaSort
+        , success "#SymbolList{}" symbolListMetaSort
+        , success "#Variable{}" variableMetaSort
+        , success "#VariableList{}" variableListMetaSort
         , Failure FailureTest
             { failureInput = "#Chart{}"
             , failureExpected =
@@ -1131,9 +1131,3 @@ sortVariableSort name =
 sortVariable :: String -> SortVariable a
 sortVariable name =
     SortVariable (Id name)
-
-metaSort :: MetaSortType -> Sort Meta
-metaSort sortType =
-    SortActualSort SortActual
-        { sortActualName = Id (show sortType)
-        , sortActualSorts = []}
