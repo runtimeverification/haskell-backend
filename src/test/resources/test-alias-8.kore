@@ -2,7 +2,7 @@
 
 module TEST-ALIAS-8
 
-  sort{} Nat{} []
+  sort Nat{} []
 
   alias f{S}(Nat{},S) : S []
 

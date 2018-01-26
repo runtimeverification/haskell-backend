@@ -2,6 +2,6 @@
 
 module TEST-SORT-3
 
-  sort{S1,S2} Map{S1,S2} []
+  sort Map{S1,S2} []
 
 endmodule []

@@ -2,7 +2,7 @@
 
 module IMP
 
-  sort{} Bool{} []
+  sort Bool{} []
 
   symbol true{}() : Bool{} []
 
@@ -12,7 +12,7 @@ module IMP
 
   symbol not{}(Bool{}) : Bool{} []
 
-  sort{} Int{} []
+  sort Int{} []
 
   symbol zero{}() : Int{} []
 
@@ -32,11 +32,11 @@ module IMP
 
   symbol leq{}(Int{}, Int{}) : Bool{} []
 
-  sort{} Id{} []
+  sort Id{} []
 
   symbol id{}(Int{}) : Id{} []
 
-  sort{S} List{S} []
+  sort List{S} []
 
   symbol nil{S}() : List{S} []
 
@@ -46,7 +46,7 @@ module IMP
 
   symbol listItem{S}(S) : List{S} []
 
-  sort{S} Set{S} []
+  sort Set{S} []
 
   symbol emptySet{S}() : Set{S} []
 
@@ -59,7 +59,7 @@ module IMP
       union{S}(S:Set{S}, emptySet{S}()),
       S:Set{S}) []
 
-  sort{S1,S2} Map{S1,S2} []
+  sort Map{S1,S2} []
 
   symbol bind{S1,S2}(S1,S2) : Map{S1,S2} []
 
@@ -69,7 +69,7 @@ module IMP
 
   symbol keys{S1,S2}(Map{S1,S2}) : Set{S1} []
 
-  sort{S1,S2} Ctxt{S1,S2} []
+  sort Ctxt{S1,S2} []
 
   symbol gamma0{S1,S2}(S1,S2) : Ctxt{S1,S2} []
 
@@ -100,7 +100,7 @@ module IMP
       T:S,
       app{S,S}(idctxt{S,S}(), T:S)) []
 
-  sort{} AExp{} []
+  sort AExp{} []
 
   symbol intAsAExp{}(Int{}) : AExp{} []
 
@@ -163,13 +163,13 @@ module IMP
             T:S)))) [#strict{}("divAExp", two{}())]
 
 
-  sort{} Block{} []
+  sort Block{} []
 
   symbol emptyBlock{}() : Block{} []
 
   symbol block{}(Stmt{}) : Block{} []
 
-  sort{} Stmt{} []
+  sort Stmt{} []
 
   symbol blockAsStmt{}(Block{}) : Stmt{} []
 
@@ -268,19 +268,19 @@ module IMP
             T:S)))) [#strict{}("seq", one{}())]
 
 
-  sort{} Pgm{} []
+  sort Pgm{} []
 
   symbol pgm{}(List{Id{}}, Stmt{}) : Pgm{} [#strict{}("pgm", one{}()), #strict{}("pgm", two{}())]
 
-  sort{} KCell{} []
+  sort KCell{} []
 
   symbol kcell{}(Pgm{}) : KCell{} [#strict{}("kcell", one{}())]
 
-  sort{} StateCell{} []
+  sort StateCell{} []
 
   symbol statecell{}(Map{Id{}, Int{}}) : StateCell{} [#strict{}("statecell", one{}())]
 
-  sort{} TopCell{} []
+  sort TopCell{} []
 
   symbol topcell{}(KCell{}, StateCell{}) : TopCell{} [#strict{}("topcell", one{}()), #strict{}("topcell", two{}())]
 

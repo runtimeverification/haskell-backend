@@ -2,7 +2,7 @@
 
 module TEST-ALIAS-1
 
-  sort{} S{} []
+  sort S{} []
 
   alias f{}() : S{} []
 

@@ -2,6 +2,6 @@
 
 module TEST-SORT-1
 
-  sort{} Nat{} []
+  sort Nat{} []
 
 endmodule []

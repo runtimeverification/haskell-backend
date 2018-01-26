@@ -2,7 +2,7 @@
 
 module TEST-SYMBOL-8
 
-  sort{} Nat{} []
+  sort Nat{} []
 
   symbol f{S}(Nat{},S) : S []
 

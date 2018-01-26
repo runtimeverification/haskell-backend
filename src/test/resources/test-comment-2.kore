@@ -2,7 +2,7 @@
 
 module TEST-COMMENT-2
 
-  sort{} Nat{} [] // This is a line comment.
+  sort Nat{} [] // This is a line comment.
 
 endmodule []
 

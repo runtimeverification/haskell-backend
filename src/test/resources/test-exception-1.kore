@@ -2,6 +2,6 @@
 
 module TEST-EXCEPTION-1
 
-  sort{} #a{} []
+  sort #a{} []
 
 endmodule []

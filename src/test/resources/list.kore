@@ -2,7 +2,7 @@
 
 module LIST
 
-  sort{S} List{S} []
+  sort List{S} []
 
   symbol nil{S}() : List{S} []
 

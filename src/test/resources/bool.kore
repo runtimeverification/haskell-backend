@@ -2,7 +2,7 @@
 
 module BOOL
 
-  sort{} Bool{} []
+  sort Bool{} []
 
   symbol true{}() : Bool{} []
 

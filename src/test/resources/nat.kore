@@ -2,7 +2,7 @@
 
 module NAT
 
-  sort{} Nat{} []
+  sort Nat{} []
 
   symbol zero{}() : Nat{} []
 

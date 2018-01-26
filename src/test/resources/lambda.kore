@@ -2,7 +2,7 @@
 
 module LAMBDA 
 
-  sort{} Exp{} []
+  sort Exp{} []
 
   symbol lambda0{}(Exp{},Exp{}) : Exp{} []
 

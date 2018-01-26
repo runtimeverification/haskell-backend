@@ -2,7 +2,7 @@
 
 module TEST-SYMBOL-1
 
-  sort{} S{} []
+  sort S{} []
 
   symbol f{}() : S{} []
 
