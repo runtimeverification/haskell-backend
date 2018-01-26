@@ -211,6 +211,7 @@ BNF fragments:
 
 Always starts with @{@.
 -}
+-- TODO: Maybe delete/inline.
 symbolOrAliasRemainderRawParser
     :: IsMeta a
     => a   -- ^ Distinguishes between the meta and non-meta elements.
@@ -231,6 +232,7 @@ BNF definitions:
 
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
+-- TODO: Maybe delete/inline.
 symbolOrAliasRawParser
     :: IsMeta a
     => a  -- ^ Distinguishes between the meta and non-meta elements.
@@ -239,6 +241,23 @@ symbolOrAliasRawParser
 symbolOrAliasRawParser x constructor = do
     headConstructor <- idParser x
     symbolOrAliasRemainderRawParser x (constructor headConstructor)
+
+symbolOrAliasDeclarationRemainderRawParser
+    :: IsMeta a
+    => a   -- ^ Distinguishes between the meta and non-meta elements.
+    -> ([UnifiedSortVariable] -> (m a))  -- ^ Element constructor.
+    -> Parser (m a)
+symbolOrAliasDeclarationRemainderRawParser x constructor =
+    constructor <$> inCurlyBracesSortVariableListParser
+
+symbolOrAliasDeclarationRawParser
+    :: IsMeta a
+    => a  -- ^ Distinguishes between the meta and non-meta elements.
+    -> (Id a -> [UnifiedSortVariable] -> m a)  -- ^ Element constructor.
+    -> Parser (m a)
+symbolOrAliasDeclarationRawParser x constructor = do
+    headConstructor <- idParser x
+    symbolOrAliasDeclarationRemainderRawParser x (constructor headConstructor)
 
 {-|'aliasParser' parses either an @object-head@ or a @meta-head@ and interprets
 it as an alias head.
@@ -256,14 +275,14 @@ aliasParser
     :: IsMeta a
     => a        -- ^ Distinguishes between the meta and non-meta elements.
     -> Parser (Alias a)
-aliasParser x = symbolOrAliasRawParser x Alias
+aliasParser x = symbolOrAliasDeclarationRawParser x Alias
 
 
 {-|'symbolParser' is the same as 'aliasParser', but it interprets the head
 as a symbol one.
 -}
 symbolParser :: IsMeta a => a -> Parser (Symbol a)
-symbolParser x = symbolOrAliasRawParser x Symbol
+symbolParser x = symbolOrAliasDeclarationRawParser x Symbol
 
 {-|'symbolOrAliasRemainderParser' parses the sort list that occurs
 in heads and constructs it as a SymbolOrAlias.
@@ -929,7 +948,7 @@ Always starts with @{@.
 sortSentenceRemainderParser :: Parser Sentence
 sortSentenceRemainderParser = SentenceSortSentence <$>
     ( pure SentenceSort
+        <*> idParser Object
         <*> inCurlyBracesSortVariableListParser
-        <*> sortParser Object
         <*> attributesParser
     )
