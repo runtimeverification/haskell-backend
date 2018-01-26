@@ -30,11 +30,19 @@ idGen x
     objectId = genericIdGen idFirstChars (idFirstChars ++ idOtherChars)
 
 stringLiteralGen :: Gen StringLiteral
-stringLiteralGen = StringLiteral <$> listOf chooseAny
+stringLiteralGen = StringLiteral <$> listOf ( suchThat (oneof
+    [ chooseAny
+    , elements "\a\b\f\n\r\t\v\\\""
+    , choose ('\32','\127')
+    , choose ('\0','\255')
+    , choose ('\0','\65535')
+    ])
+    (/='?'))
 
 symbolOrAliasRawGen
     :: IsMeta a
-    => a -> (Id a -> [Sort a] -> s a)
+    => a
+    -> (Id a -> [Sort a] -> s a)
     -> Gen (s a)
 symbolOrAliasRawGen x constructor = pure constructor
     <*> scale (`div` 2) (idGen x)
@@ -89,7 +97,8 @@ unifiedVariableGen = scale (`div` 2) $ oneof
 
 binaryOperatorGen
     :: IsMeta a
-    => a -> (Sort a -> UnifiedPattern -> UnifiedPattern -> b a)
+    => a
+    -> (Sort a -> UnifiedPattern -> UnifiedPattern -> b a)
     -> Gen (b a)
 binaryOperatorGen x constructor = pure constructor
     <*> scale (`div` 2) (sortGen x)
@@ -98,7 +107,8 @@ binaryOperatorGen x constructor = pure constructor
 
 ceilFloorGen
     :: IsMeta a
-    => a -> (Sort a -> Sort a -> UnifiedPattern -> c a)
+    => a
+    -> (Sort a -> Sort a -> UnifiedPattern -> c a)
     -> Gen (c a)
 ceilFloorGen x constructor = pure constructor
     <*> scale (`div` 2) (sortGen x)
@@ -107,7 +117,8 @@ ceilFloorGen x constructor = pure constructor
 
 existsForallGen
     :: IsMeta a
-    => a -> (Sort a -> UnifiedVariable -> UnifiedPattern -> q a)
+    => a
+    -> (Sort a -> UnifiedVariable -> UnifiedPattern -> q a)
     -> Gen (q a)
 existsForallGen x constructor = pure constructor
     <*> scale (`div` 2) (sortGen x)
@@ -116,7 +127,8 @@ existsForallGen x constructor = pure constructor
 
 topBottomGen
     :: IsMeta a
-    => a -> (Sort a -> t a)
+    => a
+    -> (Sort a -> t a)
     -> Gen (t a)
 topBottomGen x constructor = pure constructor
     <*> sortGen x

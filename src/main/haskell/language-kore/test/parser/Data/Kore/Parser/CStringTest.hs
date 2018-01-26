@@ -12,8 +12,7 @@ cStringTests :: TestTree
 cStringTests =
     testGroup
         "CString Tests"
-        [ testProperty "QuickCheck Escape&Unescape" escapeUnescapeProp
-        , success (Input "hello") (Expected "hello")
+        [ success (Input "hello") (Expected "hello")
         , success (Input "") (Expected "")
         , success (Input "\\U000120FF") (Expected "\73983")
         , success (Input "\\\\") (Expected "\\")
@@ -39,6 +38,7 @@ cStringTests =
         , success (Input "\\u1ABCD") (Expected ("\6844" ++ "D"))
         , success (Input "\\U000120FF") (Expected "\73983")
         , success (Input "\\U000120FFF") (Expected ("\73983" ++ "F"))
+        , testProperty "QuickCheck Escape&Unescape" escapeUnescapeProp
 
         , failureWithMessage
             (Input "\\UFFFFFFFF")

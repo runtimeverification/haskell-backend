@@ -29,7 +29,7 @@ class (FromString w, MonadWriter w m, MonadReader Int m)
         write indent
 
     withIndent :: Int -> m() -> m ()
-    withIndent n m = local (+n) (betweenLines >> m)
+    withIndent n m = local (+n) (betweenLines >> m) >> betweenLines
 
 class Unparse a where
     unparse :: UnparseOutput w m => a -> m ()
@@ -61,24 +61,27 @@ instance Unparse (Id a) where
 
 unparseList :: (UnparseOutput w m, Unparse a) => m () -> [a] -> m ()
 unparseList _ []           = return ()
-unparseList _ [x]          = unparse x
-unparseList between (x:xs) = unparse x >> between >> unparseList between xs
+unparseList between xs = withIndent 4 (unparseList' xs)
+  where
+    unparseList' []     = return ()
+    unparseList' [x]    = unparse x
+    unparseList' (x:xs) = unparse x >> between >> unparseList' xs
 
 instance Unparse a => Unparse [a] where
-    unparse = unparseList (write ",")
+    unparse = unparseList (write "," >> betweenLines)
 
 withDelimiters :: UnparseOutput w m => String -> String -> m () -> m ()
 withDelimiters start end m =
     write start >> m >> write end
 
 inCurlyBraces :: UnparseOutput w m => m () -> m ()
-inCurlyBraces = withDelimiters "{" "}" . withIndent 4
+inCurlyBraces = withDelimiters "{" "}"
 
 inSquareBrackets :: UnparseOutput w m => m () -> m ()
-inSquareBrackets = withDelimiters "[" "]" . withIndent 4
+inSquareBrackets = withDelimiters "[" "]"
 
 inParens :: UnparseOutput w m => m () -> m ()
-inParens = withDelimiters "(" ")" . withIndent 4
+inParens = withDelimiters "(" ")"
 
 inDoubleQuotes :: UnparseOutput w m => m () -> m ()
 inDoubleQuotes = withDelimiters "\"" "\""
@@ -278,11 +281,9 @@ instance Unparse Module where
     unparse m = do
         write "module "
         unparse (moduleName m)
-        betweenLines
         withIndent 4 (
             unparseList betweenLines (moduleSentences m)
             )
-        betweenLines
         write "endmodule"
         betweenLines
         unparse (moduleAttributes m)
@@ -290,4 +291,5 @@ instance Unparse Module where
 instance Unparse Definition where
     unparse d = do
         unparse (definitionAttributes d)
+        betweenLines
         unparse (definitionModules d)
