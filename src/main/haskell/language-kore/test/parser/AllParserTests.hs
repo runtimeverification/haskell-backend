@@ -6,6 +6,7 @@ import           Data.Kore.Parser.CStringTest
 import           Data.Kore.Parser.LexemeTest
 import           Data.Kore.Parser.ParserTest
 import           Data.Kore.Parser.RegressionTest
+import           Data.Kore.Unparser.UnparseTest
 
 main :: IO ()
 main = do
@@ -29,4 +30,5 @@ unitTests =
         , cStringTests
         , koreLexemeTests
         , koreParserTests
+        , unparseParseTests
         ]

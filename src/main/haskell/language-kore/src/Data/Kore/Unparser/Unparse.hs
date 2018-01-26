@@ -1,10 +1,15 @@
 {-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-module Data.Kore.Unparser.Unparse where
+{-# LANGUAGE TypeSynonymInstances  #-}
+module Data.Kore.Unparser.Unparse ( FromString ( fromString )
+                                  , UnparseOutput
+                                  , Unparse ( unparse )
+                                  , unparseToString
+                                  ) where
 
 import           Control.Monad.Reader
 import           Control.Monad.Writer
-import           Data.Foldable            (sequence_)
 
 import           Data.Kore.AST
 import           Data.Kore.Parser.CString (escapeCString)
@@ -29,27 +34,48 @@ class (FromString w, MonadWriter w m, MonadReader Int m)
 class Unparse a where
     unparse :: UnparseOutput w m => a -> m ()
 
+{-  Unparse to string instance
+-}
+type StringUnparser = WriterT ShowS (Reader Int)
+
+instance FromString ShowS where
+    fromString = showString
+
+instance UnparseOutput ShowS StringUnparser where
+
+unparseToString :: Unparse a => a -> String
+unparseToString a =
+    runReader (execWriterT ((unparse a)::StringUnparser ())) 0 ""
+
+
+{- unparse instances for Kore datastructures -}
+
 instance Unparse (Id a) where
     unparse = write . getId
 
-intersperseM_ :: Monad m => m () -> [m ()] -> m ()
-intersperseM_ _ []       = return ()
-intersperseM_ _ [x]      = x
-intersperseM_ btw (x:xs) = x >> btw >> intersperseM_ btw xs
+unparseList :: (UnparseOutput w m, Unparse a) => m() -> [a] -> m ()
+unparseList _ []       = return ()
+unparseList _ [x]      = unparse x
+unparseList btw (x:xs) = unparse x >> btw >> unparseList btw xs
 
 instance Unparse a => Unparse [a] where
-    unparse []     = return ()
-    unparse [x]    = unparse x
-    unparse (x:xs) = unparse x >> write ", " >> unparse xs
+    unparse = unparseList (write ",")
+
+withDelimiters :: UnparseOutput w m => String -> String -> m () -> m ()
+withDelimiters start end m =
+    write start >> m >> write end
 
 inCurlyBraces :: UnparseOutput w m => m () -> m ()
-inCurlyBraces m = write "{" >> withIndent 4 m >> write "}"
+inCurlyBraces = withDelimiters "{" "}" . withIndent 4
 
 inSquareBrackets :: UnparseOutput w m => m () -> m ()
-inSquareBrackets m = write "{" >> withIndent 4 m >> write "}"
+inSquareBrackets = withDelimiters "[" "]" . withIndent 4
 
 inParens :: UnparseOutput w m => m () -> m ()
-inParens m = write "{" >> withIndent 4 m >> write "}"
+inParens = withDelimiters "(" ")" . withIndent 4
+
+inDoubleQuotes :: UnparseOutput w m => m () -> m ()
+inDoubleQuotes = withDelimiters "\"" "\""
 
 instance Unparse (SortVariable a) where
     unparse sv = unparse (getSortVariable sv)
@@ -61,7 +87,7 @@ instance Unparse (Sort a) where
         inCurlyBraces (unparse (sortActualSorts sa))
 
 instance Unparse StringLiteral where
-    unparse = write . escapeCString . getStringLiteral
+    unparse = inDoubleQuotes . write . escapeCString . getStringLiteral
 
 unparseSymbolOrAliasRaw
     :: (UnparseOutput w m, SymbolOrAliasClass s)
@@ -246,7 +272,7 @@ instance Unparse Module where
         unparse (moduleName m)
         betweenLines
         withIndent 4 (
-            intersperseM_ betweenLines (map unparse (moduleSentences m))
+            unparseList betweenLines (moduleSentences m)
             )
         betweenLines
         write "endmodule"

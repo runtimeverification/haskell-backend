@@ -483,7 +483,7 @@ symbolOrAliasPatternRemainderParser x identifier = ApplicationPattern <$>
         <*> inParenthesesPatternListParser
     )
 
-{-|'equalsLikeRemainderParser' parses the part after a variable's name and
+{-|'variableRemainderParser' parses the part after a variable's name and
 constructs it.
 
 BNF fragments:

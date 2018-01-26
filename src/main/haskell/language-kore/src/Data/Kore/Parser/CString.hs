@@ -10,6 +10,7 @@ Portability : POSIX
 module Data.Kore.Parser.CString
        ( unescapeCString
        , escapeCString
+       , oneCharEscapes
        , oneCharEscapeDict
        ) where
 
@@ -19,8 +20,11 @@ import           Data.Char                (chr, digitToInt, isHexDigit,
                                            isOctDigit, ord, toUpper)
 import           Numeric                  (showHex, showOct)
 
+oneCharEscapes :: [Char]
+oneCharEscapes = "'\"?\\abfnrtv"
+
 oneCharEscapeDict :: CharSet
-oneCharEscapeDict = makeCharSet "'\"?\\abfnrtv"
+oneCharEscapeDict = makeCharSet oneCharEscapes
 
 escapeCString :: String -> String
 escapeCString s = foldr (.) id (map escapeAndAddChar s) ""
@@ -43,7 +47,7 @@ escapeAndAddChar '\v' = showString "\\v"
 escapeAndAddChar c
     | code >= 32 && code < 127 = showChar c    -- printable 7-bit ASCII
     | code <= 255 =
-        showString "\\o" . zeroPad 3 (showOct code)
+        showString "\\" . zeroPad 3 (showOct code)
     | code <= 65535 = showString "\\u" . zeroPad 4 (showHex code)
     | otherwise =  showString "\\U" . zeroPad 8 (showHex code)
   where

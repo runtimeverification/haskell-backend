@@ -150,12 +150,18 @@ moduleNameRawParser :: Parser ModuleName
 moduleNameRawParser =
   ModuleName <$> genericIdRawParser moduleNameFirstCharSet moduleNameCharSet
 
+idFirstChars :: [Char]
+idFirstChars = ['A'..'Z'] ++ ['a'..'z']
+
 idFirstCharSet :: CharSet
-idFirstCharSet = CharSet.makeCharSet (['A'..'Z'] ++ ['a'..'z'])
+idFirstCharSet = CharSet.makeCharSet idFirstChars
+
+idOtherChars :: [Char]
+idOtherChars = ['0'..'9'] ++ "'-"
 
 idCharSet :: CharSet
 idCharSet =
-    CharSet.join idFirstCharSet (CharSet.makeCharSet (['0'..'9'] ++ "'-"))
+    CharSet.join idFirstCharSet (CharSet.makeCharSet idOtherChars)
 
 {-|'objectIdRawParser' extracts the string representing an @object-identifier@.
 Does not consume whitespace.
@@ -401,10 +407,7 @@ prefixBasedParsersWithDefault prefixParser defaultParser stringParsers = do
 {-|'metaSortTrie' is a trie containing all the possible metasorts.-}
 metaSortTrie :: Trie.Trie MetaSortType
 metaSortTrie = Trie.fromList $ map (\s -> (Char8.pack $ show s, s))
-    [ CharSort, CharListSort, PatternSort, PatternListSort, SortSort
-    , SortListSort, StringSort, SymbolSort, SymbolListSort
-    , VariableSort, VariableListSort
-    ]
+    metaSortsList
 
 {-|'metaSortConverter' converts a string representation of a metasort name
 (without the leading '#') to a 'MetaSortType'.

@@ -1,4 +1,3 @@
-{-# LANGUAGE FlexibleInstances #-}
 {-|
 Module      : Data.Kore.AST
 Description : Data Structures for representing the Kore language AST
@@ -178,6 +177,12 @@ data MetaSortType
     | VariableSort
     | VariableListSort
 
+metaSortsList :: [MetaSortType]
+metaSortsList = [ CharSort, CharListSort, PatternSort, PatternListSort, SortSort
+    , SortListSort, StringSort, SymbolSort, SymbolListSort
+    , VariableSort, VariableListSort
+    ]
+
 instance Show MetaSortType where
     show CharSort         = "#Char"
     show CharListSort     = "#CharList"
@@ -233,23 +238,6 @@ data UnifiedPattern
     = MetaPattern !(Pattern Meta)
     | ObjectPattern !(Pattern Object)
     deriving (Eq, Show)
-
-class UnifiedPatternClass a where
-    asUnifiedPattern :: a -> UnifiedPattern
-
-instance UnifiedPatternClass (Pattern Object) where
-    asUnifiedPattern p = ObjectPattern p
-instance UnifiedPatternClass (Pattern Meta) where
-    asUnifiedPattern p = MetaPattern p
-
-instance UnifiedPatternClass (Variable Object) where
-    asUnifiedPattern v = asUnifiedPattern (VariablePattern v)
-instance UnifiedPatternClass (Variable Meta) where
-    asUnifiedPattern v = asUnifiedPattern (VariablePattern v)
-
-instance UnifiedPatternClass UnifiedVariable where
-    asUnifiedPattern (MetaVariable v)   = asUnifiedPattern v
-    asUnifiedPattern (ObjectVariable v) = asUnifiedPattern v
 
 {-|Enumeration of patterns starting with @\@
 -}
