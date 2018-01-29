@@ -12,7 +12,7 @@ import           Data.Kore.Parser.LexemeImpl
 couple :: Gen a -> Gen [a]
 couple gen = do
     size <- getSize
-    if (size <= 0)
+    if size <= 0
         then return []
         else choose (0,3) >>= (\n -> vectorOf n gen)
 
@@ -48,14 +48,23 @@ symbolOrAliasRawGen x constructor = pure constructor
     <*> scale (`div` 2) (idGen x)
     <*> couple (scale (`div` 2) (sortGen x))
 
+symbolOrAliasDeclarationRawGen
+    :: IsMeta a
+    => a
+    -> (Id a -> [SortVariable a] -> s a)
+    -> Gen (s a)
+symbolOrAliasDeclarationRawGen x constructor = pure constructor
+    <*> scale (`div` 2) (idGen x)
+    <*> couple (scale (`div` 2) (sortVariableGen x))
+
 symbolOrAliasGen :: IsMeta a => a -> Gen (SymbolOrAlias a)
 symbolOrAliasGen x = symbolOrAliasRawGen x SymbolOrAlias
 
 symbolGen :: IsMeta a => a -> Gen (Symbol a)
-symbolGen x = symbolOrAliasRawGen x Symbol
+symbolGen x = symbolOrAliasDeclarationRawGen x Symbol
 
 aliasGen :: IsMeta a => a -> Gen (Alias a)
-aliasGen x = symbolOrAliasRawGen x Alias
+aliasGen x = symbolOrAliasDeclarationRawGen x Alias
 
 sortVariableGen :: IsMeta a => a -> Gen (SortVariable a)
 sortVariableGen x = SortVariable <$> idGen x
@@ -244,8 +253,8 @@ sentenceAxiomGen = pure SentenceAxiom
 
 sentenceSortGen :: Gen SentenceSort
 sentenceSortGen = pure SentenceSort
+    <*> scale (`div` 2) (idGen Object)
     <*> couple (scale (`div` 2) unifiedSortVariableGen)
-    <*> scale (`div` 2) (sortGen Object)
     <*> scale (`div` 2) attributesGen
 
 attributesGen :: Gen Attributes

@@ -196,17 +196,14 @@ objectAliasParserTests =
         , Success "c1{s1}"
             Alias
                 { aliasConstructor = Id "c1"
-                , aliasParams = [ sortVariableSort "s1" ]
+                , aliasParams = [ sortVariable "s1" ]
                 }
-        , Success "c1{s1,s2{s3}}"
+        , Success "c1{s1,s2}"
             Alias
                 { aliasConstructor = Id "c1"
                 , aliasParams =
-                    [ sortVariableSort "s1"
-                    , SortActualSort SortActual
-                        { sortActualName = Id "s2"
-                        , sortActualSorts = [ sortVariableSort "s3" ]
-                        }
+                    [ sortVariable "s1"
+                    , sortVariable "s2"
                     ]
                 }
         , FailureWithoutMessage
@@ -224,17 +221,14 @@ objectSymbolParserTests =
         , Success "c1{s1}"
             Symbol
                 { symbolConstructor = Id "c1"
-                , symbolParams = [ sortVariableSort "s1" ]
+                , symbolParams = [ sortVariable "s1" ]
                 }
-        , Success "c1{s1,s2{s3}}"
+        , Success "c1{s1,s2}"
             Symbol
                 { symbolConstructor = Id "c1"
                 , symbolParams =
-                    [ sortVariableSort "s1"
-                    , SortActualSort SortActual
-                        { sortActualName = Id "s2"
-                        , sortActualSorts = [ sortVariableSort "s3" ]
-                        }
+                    [ sortVariable "s1"
+                    , sortVariable "s2"
                     ]
                 }
         , FailureWithoutMessage
@@ -252,15 +246,14 @@ metaAliasParserTests =
         , Success "#c1{#s1}"
             Alias
                 { aliasConstructor = Id "#c1"
-                , aliasParams =
-                    [SortVariableSort (SortVariable (Id "#s1"))]
+                , aliasParams = [sortVariable "#s1"]
                 }
-        , Success "#c1{#s1,#Char{}}"
+        , Success "#c1{#s1,#s2}"
             Alias
                 { aliasConstructor = Id "#c1"
                 , aliasParams =
-                    [ SortVariableSort (SortVariable (Id "#s1"))
-                    , metaSort CharSort
+                    [ sortVariable "#s1"
+                    , sortVariable "#s2"
                     ]
                 }
         , FailureWithoutMessage
@@ -278,15 +271,14 @@ metaSymbolParserTests =
         , Success "#c1{#s1}"
             Symbol
                 { symbolConstructor = Id "#c1"
-                , symbolParams =
-                    [SortVariableSort (SortVariable (Id "#s1"))]
+                , symbolParams = [sortVariable "#s1"]
                 }
-        , Success "#c1{#s1,#CharList{}}"
+        , Success "#c1{#s1,#s2}"
             Symbol
                 { symbolConstructor = Id "#c1"
                 , symbolParams =
-                    [ SortVariableSort (SortVariable (Id "#s1"))
-                    , metaSort CharListSort
+                    [ sortVariable "#s1"
+                    , sortVariable "#s2"
                     ]
                 }
         , FailureWithoutMessage
@@ -679,7 +671,7 @@ sentenceAliasParserTests =
                 SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = Id "a"
-                        , aliasParams = [ sortVariableSort "s1" ]
+                        , aliasParams = [ sortVariable "s1" ]
                         }
                     , sentenceAliasSorts = [ sortVariableSort "s2"]
                     , sentenceAliasReturnSort = sortVariableSort "s3"
@@ -695,8 +687,8 @@ sentenceAliasParserTests =
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = Id "a"
                         , aliasParams =
-                            [ sortVariableSort "s1"
-                            , sortVariableSort "s2"
+                            [ sortVariable "s1"
+                            , sortVariable "s2"
                             ]
                         }
                     , sentenceAliasSorts =
@@ -793,13 +785,13 @@ sentenceAxiomParserTests =
 sentenceSortParserTests :: [TestTree]
 sentenceSortParserTests =
     parseTree sentenceParser
-        [ Success "sort { sv1 } s1 [ \"a\" ]"
+        [ Success "sort s1 { sv1 } [ \"a\" ]"
             ( SentenceSortSentence SentenceSort
-                { sentenceSortParameters =
+                { sentenceSortName = Id "s1"
+                , sentenceSortParameters =
                     [ ObjectSortVariable
                         (SortVariable (Id "sv1"))
                     ]
-                , sentenceSortSort = sortVariableSort "s1"
                 , sentenceSortAttributes =
                     Attributes
                         [MetaPattern $ StringLiteralPattern (StringLiteral "a")]
@@ -807,10 +799,10 @@ sentenceSortParserTests =
             )
         {- TODO(virgil): The Scala parser allows empty sort variable lists
            while the semantics-of-k document does not. -}
-        , Success "sort {} s1 [ \"a\" ]"
+        , Success "sort s1 {} [ \"a\" ]"
             ( SentenceSortSentence SentenceSort
-                { sentenceSortParameters = []
-                , sentenceSortSort = sortVariableSort "s1"
+                { sentenceSortName = Id "s1"
+                , sentenceSortParameters = []
                 , sentenceSortAttributes =
                     Attributes
                         [MetaPattern $ StringLiteralPattern (StringLiteral "a")]
@@ -833,7 +825,7 @@ sentenceSymbolParserTests =
                 SentenceSymbol
                     { sentenceSymbolSymbol = Symbol
                         { symbolConstructor = Id "sy1"
-                        , symbolParams = [ sortVariableSort "s1" ]
+                        , symbolParams = [ sortVariable "s1" ]
                         }
                     , sentenceSymbolSorts = [ sortVariableSort "s1" ]
                     , sentenceSymbolReturnSort = sortVariableSort "s1"
@@ -888,13 +880,13 @@ attributesParserTests =
 moduleParserTests :: [TestTree]
 moduleParserTests =
     parseTree moduleParser
-        [ Success "module MN sort{}c[] endmodule [\"a\"]"
+        [ Success "module MN sort c{}[] endmodule [\"a\"]"
             Module
                 { moduleName = ModuleName "MN"
                 , moduleSentences =
                     [ SentenceSortSentence SentenceSort
-                        { sentenceSortParameters = []
-                        , sentenceSortSort = sortVariableSort "c"
+                        { sentenceSortName = Id "c"
+                        , sentenceSortParameters = []
                         , sentenceSortAttributes = Attributes []
                         }
                     ]
@@ -902,18 +894,18 @@ moduleParserTests =
                     Attributes
                         [MetaPattern $ StringLiteralPattern (StringLiteral "a")]
                 }
-        , Success "module MN sort{}c[] sort{}c[] endmodule [\"a\"]"
+        , Success "module MN sort c{}[] sort c{}[] endmodule [\"a\"]"
             Module
                 { moduleName = ModuleName "MN"
                 , moduleSentences =
                     [ SentenceSortSentence SentenceSort
-                        { sentenceSortParameters = []
-                        , sentenceSortSort = sortVariableSort "c"
+                        { sentenceSortName = Id "c"
+                        , sentenceSortParameters = []
                         , sentenceSortAttributes = Attributes []
                         }
                     , SentenceSortSentence SentenceSort
-                        { sentenceSortParameters = []
-                        , sentenceSortSort = sortVariableSort "c"
+                        { sentenceSortName = Id "c"
+                        , sentenceSortParameters = []
                         , sentenceSortAttributes = Attributes []
                         }
                     ]
@@ -939,7 +931,7 @@ moduleParserTests =
 definitionParserTests :: [TestTree]
 definitionParserTests =
     parseTree definitionParser
-        [ Success "[\"a\"] module M sort{}c[] endmodule [\"b\"]"
+        [ Success "[\"a\"] module M sort c{}[] endmodule [\"b\"]"
             Definition
                 { definitionAttributes =
                     Attributes
@@ -949,8 +941,8 @@ definitionParserTests =
                         { moduleName = ModuleName "M"
                         , moduleSentences =
                             [ SentenceSortSentence SentenceSort
-                                { sentenceSortParameters = []
-                                , sentenceSortSort = sortVariableSort "c"
+                                { sentenceSortName = Id "c"
+                                , sentenceSortParameters = []
                                 , sentenceSortAttributes = Attributes []
                                 }
                             ]
@@ -963,9 +955,9 @@ definitionParserTests =
         , FailureWithoutMessage
             [ ""
             , "[]"
-            , "module M sort{}c[] endmodule [\"b\"]"
-            , "[\"a\"] module M sort{}c[] endmodule [\"b\"] "
-                ++ "module O sort{}c[] endmodule [\"c\"]"
+            , "module M sort c{}[] endmodule [\"b\"]"
+            , "[\"a\"] module M sort c{}[] endmodule [\"b\"] "
+                ++ "module O sort c{}[] endmodule [\"c\"]"
             ]
         ]
 
@@ -975,7 +967,11 @@ definitionParserTests =
 
 sortVariableSort :: String -> Sort a
 sortVariableSort name =
-    SortVariableSort (SortVariable (Id name))
+    SortVariableSort (sortVariable name)
+
+sortVariable :: String -> SortVariable a
+sortVariable name =
+    SortVariable (Id name)
 
 metaSort :: MetaSortType -> Sort Meta
 metaSort sortType =

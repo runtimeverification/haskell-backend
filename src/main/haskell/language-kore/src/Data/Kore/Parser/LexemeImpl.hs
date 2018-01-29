@@ -222,8 +222,8 @@ stringLiteralRawParser = do
       | c `CharSet.elem` oneCharEscapeDict = Just STRING
       | isOctDigit c = Just STRING -- ingore actual codes for now
       | c == 'x' = Just (HEX STRING)
-      | c == 'u' = Just ((pow HEX 4) STRING)
-      | c == 'U' = Just ((pow HEX 8) STRING)
+      | c == 'u' = Just ((HEX `pow` 4) STRING)
+      | c == 'U' = Just ((HEX `pow` 8) STRING)
       | otherwise = Nothing
     delta (HEX s) c
       | isHexDigit c = Just s

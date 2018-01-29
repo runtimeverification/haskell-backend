@@ -1,4 +1,4 @@
-module Data.Kore.Unparser.UnparseTest where
+module Data.Kore.Unparser.UnparseTest (unparseParseTests, unparseUnitTests) where
 
 import           Data.Kore.AST
 import           Data.Kore.ASTGen
@@ -11,6 +11,20 @@ import qualified Data.ByteString.Char8            as Char8
 import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
+
+unparseUnitTests :: TestTree
+unparseUnitTests =
+    testGroup
+        "Unparse unit tests"
+        [ unparseTest
+            (SentenceSortSentence
+                SentenceSort
+                    { sentenceSortName = Id "x"
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    })
+            "sort x{}[]"
+        ]
 
 unparseParseTests :: TestTree
 unparseParseTests =
@@ -73,3 +87,11 @@ parse parser input = Parser.parseOnly (parser <* Parser.endOfInput) (Char8.pack 
 
 unparseParseProp :: (Unparse a, Eq a) => Parser.Parser a -> a -> Bool
 unparseParseProp p a = parse p (unparseToString a) == Right a
+
+unparseTest :: (Unparse a, Show a) => a -> String -> TestTree
+unparseTest astInput expected =
+    testCase
+        ("Unparsing: " ++ show astInput)
+        (assertEqual "Expecting unparse success!"
+            expected
+            (unparseToString astInput))
