@@ -1,1 +1,680 @@
-Definition {definitionAttributes = Attributes {getAttributes = []}, definitionModules = Module {moduleName = ModuleName {getModuleName = "LAMBDA"}, moduleSentences = [SentenceSortSentence (SentenceSort {sentenceSortName = Id {getId = "Exp"}, sentenceSortParameters = [], sentenceSortAttributes = Attributes {getAttributes = []}}),ObjectSentenceSymbolSentence (SentenceSymbol {sentenceSymbolSymbol = Symbol {symbolConstructor = Id {getId = "lambda0"}, symbolParams = []}, sentenceSymbolSorts = [SortActualSort (SortActual {sortActualName = Id {getId = "Exp"}, sortActualSorts = []}),SortActualSort (SortActual {sortActualName = Id {getId = "Exp"}, sortActualSorts = []})], sentenceSymbolReturnSort = SortActualSort (SortActual {sortActualName = Id {getId = "Exp"}, sortActualSorts = []}), sentenceSymbolAttributes = Attributes {getAttributes = []}}),ObjectSentenceSymbolSentence (SentenceSymbol {sentenceSymbolSymbol = Symbol {symbolConstructor = Id {getId = "app"}, symbolParams = []}, sentenceSymbolSorts = [SortActualSort (SortActual {sortActualName = Id {getId = "Exp"}, sortActualSorts = []}),SortActualSort (SortActual {sortActualName = Id {getId = "Exp"}, sortActualSorts = []})], sentenceSymbolReturnSort = SortActualSort (SortActual {sortActualName = Id {getId = "Exp"}, sortActualSorts = []}), sentenceSymbolAttributes = Attributes {getAttributes = []}}),ObjectSentenceAliasSentence (SentenceAlias {sentenceAliasAlias = Alias {aliasConstructor = Id {getId = "lambda"}, aliasParams = []}, sentenceAliasSorts = [SortActualSort (SortActual {sortActualName = Id {getId = "Exp"}, sortActualSorts = []}),SortActualSort (SortActual {sortActualName = Id {getId = "Exp"}, sortActualSorts = []})], sentenceAliasReturnSort = SortActualSort (SortActual {sortActualName = Id {getId = "Exp"}, sortActualSorts = []}), sentenceAliasAttributes = Attributes {getAttributes = []}}),SentenceAxiomSentence (SentenceAxiom {sentenceAxiomParameters = [ObjectSortVariable (SortVariable {getSortVariable = Id {getId = "R"}})], sentenceAxiomPattern = ObjectPattern (EqualsPattern (Equals {equalsOperandSort = SortActualSort (SortActual {sortActualName = Id {getId = "Exp"}, sortActualSorts = []}), equalsResultSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "R"}}), equalsFirst = ObjectPattern (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "lambda"}, symbolOrAliasParams = []}, applicationPatterns = [MetaPattern (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "#variableToPattern"}, symbolOrAliasParams = []}, applicationPatterns = [MetaPattern (VariablePattern (Variable {variableName = Id {getId = "#X"}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "#Variable"}, sortActualSorts = []})}))]})),MetaPattern (VariablePattern (Variable {variableName = Id {getId = "#E"}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "#Pattern"}, sortActualSorts = []})}))]})), equalsSecond = ObjectPattern (ExistsPattern (Exists {existsSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "Exp"}}), existsVariable = MetaVariable (Variable {variableName = Id {getId = "#X"}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "#Variable"}, sortActualSorts = []})}), existsPattern = ObjectPattern (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "lambda0"}, symbolOrAliasParams = []}, applicationPatterns = [MetaPattern (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "#variableToPattern"}, symbolOrAliasParams = []}, applicationPatterns = [MetaPattern (VariablePattern (Variable {variableName = Id {getId = "#X"}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "#Variable"}, sortActualSorts = []})}))]})),MetaPattern (VariablePattern (Variable {variableName = Id {getId = "#E"}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "#Pattern"}, sortActualSorts = []})}))]}))}))})), sentenceAxiomAtrributes = Attributes {getAttributes = []}}),MetaSentenceSymbolSentence (SentenceSymbol {sentenceSymbolSymbol = Symbol {symbolConstructor = Id {getId = "#isExp"}, symbolParams = [SortVariable {getSortVariable = Id {getId = "#S"}}]}, sentenceSymbolSorts = [SortActualSort (SortActual {sortActualName = Id {getId = "#Pattern"}, sortActualSorts = []})], sentenceSymbolReturnSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "#S"}}), sentenceSymbolAttributes = Attributes {getAttributes = []}}),SentenceAxiomSentence (SentenceAxiom {sentenceAxiomParameters = [MetaSortVariable (SortVariable {getSortVariable = Id {getId = "#S"}}),MetaSortVariable (SortVariable {getSortVariable = Id {getId = "#R"}})], sentenceAxiomPattern = MetaPattern (EqualsPattern (Equals {equalsOperandSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "#S"}}), equalsResultSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "#R"}}), equalsFirst = MetaPattern (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "#isExp"}, symbolOrAliasParams = [SortVariableSort (SortVariable {getSortVariable = Id {getId = "#S"}})]}, applicationPatterns = [MetaPattern (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "#variableToPattern"}, symbolOrAliasParams = []}, applicationPatterns = [MetaPattern (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "#variable"}, symbolOrAliasParams = []}, applicationPatterns = [MetaPattern (VariablePattern (Variable {variableName = Id {getId = "#NAME"}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "#String"}, sortActualSorts = []})})),MetaPattern (VariablePattern (Variable {variableName = Id {getId = "#SORT"}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "#Sort"}, sortActualSorts = []})}))]}))]}))]})), equalsSecond = MetaPattern (EqualsPattern (Equals {equalsOperandSort = SortActualSort (SortActual {sortActualName = Id {getId = "#Sort"}, sortActualSorts = []}), equalsResultSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "#S"}}), equalsFirst = MetaPattern (VariablePattern (Variable {variableName = Id {getId = "#SORT"}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "#Sort"}, sortActualSorts = []})})), equalsSecond = MetaPattern (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "#`Exp"}, symbolOrAliasParams = []}, applicationPatterns = []}))}))})), sentenceAxiomAtrributes = Attributes {getAttributes = []}}),SentenceAxiomSentence (SentenceAxiom {sentenceAxiomParameters = [MetaSortVariable (SortVariable {getSortVariable = Id {getId = "#S"}}),MetaSortVariable (SortVariable {getSortVariable = Id {getId = "#R"}})], sentenceAxiomPattern = MetaPattern (EqualsPattern (Equals {equalsOperandSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "#S"}}), equalsResultSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "#R"}}), equalsFirst = MetaPattern (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "#isExp"}, symbolOrAliasParams = [SortVariableSort (SortVariable {getSortVariable = Id {getId = "#S"}})]}, applicationPatterns = [ObjectPattern (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "app"}, symbolOrAliasParams = []}, applicationPatterns = [MetaPattern (VariablePattern (Variable {variableName = Id {getId = "#E1"}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "#Pattern"}, sortActualSorts = []})})),MetaPattern (VariablePattern (Variable {variableName = Id {getId = "#E2"}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "#Pattern"}, sortActualSorts = []})}))]}))]})), equalsSecond = MetaPattern (AndPattern (And {andSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "#S"}}), andFirst = MetaPattern (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "#isExp"}, symbolOrAliasParams = [SortVariableSort (SortVariable {getSortVariable = Id {getId = "#S"}})]}, applicationPatterns = [MetaPattern (VariablePattern (Variable {variableName = Id {getId = "#E1"}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "#Pattern"}, sortActualSorts = []})}))]})), andSecond = MetaPattern (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "#isExp"}, symbolOrAliasParams = [SortVariableSort (SortVariable {getSortVariable = Id {getId = "#S"}})]}, applicationPatterns = [MetaPattern (VariablePattern (Variable {variableName = Id {getId = "#E2"}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "#Pattern"}, sortActualSorts = []})}))]}))}))})), sentenceAxiomAtrributes = Attributes {getAttributes = []}}),SentenceAxiomSentence (SentenceAxiom {sentenceAxiomParameters = [MetaSortVariable (SortVariable {getSortVariable = Id {getId = "#S"}}),MetaSortVariable (SortVariable {getSortVariable = Id {getId = "#R"}})], sentenceAxiomPattern = MetaPattern (EqualsPattern (Equals {equalsOperandSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "#S"}}), equalsResultSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "#R"}}), equalsFirst = MetaPattern (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "#isExp"}, symbolOrAliasParams = [SortVariableSort (SortVariable {getSortVariable = Id {getId = "#S"}})]}, applicationPatterns = [ObjectPattern (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "lambda"}, symbolOrAliasParams = []}, applicationPatterns = [MetaPattern (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "#variableToPattern"}, symbolOrAliasParams = []}, applicationPatterns = [MetaPattern (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "#variable"}, symbolOrAliasParams = []}, applicationPatterns = [MetaPattern (VariablePattern (Variable {variableName = Id {getId = "#NAME"}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "#String"}, sortActualSorts = []})})),MetaPattern (VariablePattern (Variable {variableName = Id {getId = "#SORT"}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "#Sort"}, sortActualSorts = []})}))]})),MetaPattern (VariablePattern (Variable {variableName = Id {getId = "#E"}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "#Pattern"}, sortActualSorts = []})}))]}))]}))]})), equalsSecond = MetaPattern (AndPattern (And {andSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "#S"}}), andFirst = MetaPattern (EqualsPattern (Equals {equalsOperandSort = SortActualSort (SortActual {sortActualName = Id {getId = "#Sort"}, sortActualSorts = []}), equalsResultSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "#S"}}), equalsFirst = MetaPattern (VariablePattern (Variable {variableName = Id {getId = "#SORT"}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "#Sort"}, sortActualSorts = []})})), equalsSecond = MetaPattern (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "#`Exp"}, symbolOrAliasParams = []}, applicationPatterns = []}))})), andSecond = MetaPattern (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "#isExp"}, symbolOrAliasParams = [SortVariableSort (SortVariable {getSortVariable = Id {getId = "#S"}})]}, applicationPatterns = [MetaPattern (VariablePattern (Variable {variableName = Id {getId = "#E"}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "#Pattern"}, sortActualSorts = []})}))]}))}))})), sentenceAxiomAtrributes = Attributes {getAttributes = []}}),SentenceAxiomSentence (SentenceAxiom {sentenceAxiomParameters = [MetaSortVariable (SortVariable {getSortVariable = Id {getId = "#S"}}),ObjectSortVariable (SortVariable {getSortVariable = Id {getId = "S"}})], sentenceAxiomPattern = MetaPattern (ImpliesPattern (Implies {impliesSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "#S"}}), impliesFirst = MetaPattern (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "#isExp"}, symbolOrAliasParams = [SortVariableSort (SortVariable {getSortVariable = Id {getId = "#S"}})]}, applicationPatterns = [ObjectPattern (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "app"}, symbolOrAliasParams = []}, applicationPatterns = [ObjectPattern (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "lambda"}, symbolOrAliasParams = []}, applicationPatterns = [ObjectPattern (VariablePattern (Variable {variableName = Id {getId = "X"}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "Exp"}, sortActualSorts = []})})),MetaPattern (VariablePattern (Variable {variableName = Id {getId = "#E"}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "#Pattern"}, sortActualSorts = []})}))]})),MetaPattern (VariablePattern (Variable {variableName = Id {getId = "#E'"}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "#Pattern"}, sortActualSorts = []})}))]}))]})), impliesSecond = MetaPattern (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "#provable"}, symbolOrAliasParams = [SortVariableSort (SortVariable {getSortVariable = Id {getId = "#S"}})]}, applicationPatterns = [ObjectPattern (EqualsPattern (Equals {equalsOperandSort = SortActualSort (SortActual {sortActualName = Id {getId = "Exp"}, sortActualSorts = []}), equalsResultSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "S"}}), equalsFirst = ObjectPattern (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "app"}, symbolOrAliasParams = []}, applicationPatterns = [ObjectPattern (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "lambda"}, symbolOrAliasParams = []}, applicationPatterns = [ObjectPattern (VariablePattern (Variable {variableName = Id {getId = "X"}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "Exp"}, sortActualSorts = []})})),MetaPattern (VariablePattern (Variable {variableName = Id {getId = "#E"}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "#Pattern"}, sortActualSorts = []})}))]})),MetaPattern (VariablePattern (Variable {variableName = Id {getId = "#E'"}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "#Pattern"}, sortActualSorts = []})}))]})), equalsSecond = MetaPattern (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "#substitute"}, symbolOrAliasParams = []}, applicationPatterns = [MetaPattern (VariablePattern (Variable {variableName = Id {getId = "#E"}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "#Pattern"}, sortActualSorts = []})})),MetaPattern (VariablePattern (Variable {variableName = Id {getId = "#E'"}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "#Pattern"}, sortActualSorts = []})})),ObjectPattern (VariablePattern (Variable {variableName = Id {getId = "X"}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "Exp"}, sortActualSorts = []})}))]}))}))]}))})), sentenceAxiomAtrributes = Attributes {getAttributes = []}})], moduleAttributes = Attributes {getAttributes = []}}}
+Definition
+    { definitionAttributes = Attributes []
+    , definitionModules =
+        Module
+            { moduleName = (ModuleName "LAMBDA")
+            , moduleSentences =
+                [ (SentenceSortSentence SentenceSort
+                    { sentenceSortName = (Id Object "Exp")
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    })
+                , (ObjectSentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id Object "lambda0")
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ (SortActualSortSortActual
+                                { sortActualName = (Id Object "Exp")
+                                , sortActualSorts = []
+                                })
+                        , (SortActualSortSortActual
+                                { sortActualName = (Id Object "Exp")
+                                , sortActualSorts = []
+                                })
+                        ]
+                    , sentenceSymbolReturnSort =
+                        (SortActualSortSortActual
+                                { sortActualName = (Id Object "Exp")
+                                , sortActualSorts = []
+                                })
+                    , sentenceSymbolAttributes = Attributes []
+                    })
+                , (ObjectSentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id Object "app")
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ (SortActualSortSortActual
+                                { sortActualName = (Id Object "Exp")
+                                , sortActualSorts = []
+                                })
+                        , (SortActualSortSortActual
+                                { sortActualName = (Id Object "Exp")
+                                , sortActualSorts = []
+                                })
+                        ]
+                    , sentenceSymbolReturnSort =
+                        (SortActualSortSortActual
+                                { sortActualName = (Id Object "Exp")
+                                , sortActualSorts = []
+                                })
+                    , sentenceSymbolAttributes = Attributes []
+                    })
+                , (ObjectSentenceAliasSentence SentenceAlias
+                    { sentenceAliasAlias =
+                        Alias
+                            { aliasConstructor = (Id Object "lambda")
+                            , aliasParams = []
+                            }
+                    , sentenceAliasSorts =
+                        [ (SortActualSortSortActual
+                                { sortActualName = (Id Object "Exp")
+                                , sortActualSorts = []
+                                })
+                        , (SortActualSortSortActual
+                                { sortActualName = (Id Object "Exp")
+                                , sortActualSorts = []
+                                })
+                        ]
+                    , sentenceAliasReturnSort =
+                        (SortActualSortSortActual
+                                { sortActualName = (Id Object "Exp")
+                                , sortActualSorts = []
+                                })
+                    , sentenceAliasAttributes = Attributes []
+                    })
+                , (SentenceAxiomSentence SentenceAxiom
+                    { sentenceAxiomParameters =
+                        [ (ObjectSortVariable (SortVariable (Id Object "R")))
+                        ]
+                    , sentenceAxiomPattern =
+                        (ObjectPattern (EqualsPattern Equals
+                            { equalsOperandSort =
+                                (SortActualSortSortActual
+                                        { sortActualName = (Id Object "Exp")
+                                        , sortActualSorts = []
+                                        })
+                            , equalsResultSort =
+                                (SortVariableSort (SortVariable (Id Object "R")))
+                            , equalsFirst =
+                                (ObjectPattern (ApplicationPattern Application
+                                    { applicationSymbolOrAlias =
+                                        SymbolOrAlias
+                                            { symbolOrAliasConstructor = (Id Object "lambda")
+                                            , symbolOrAliasParams = []
+                                            }
+                                    , applicationPatterns =
+                                        [ (MetaPattern (ApplicationPattern Application
+                                            { applicationSymbolOrAlias =
+                                                SymbolOrAlias
+                                                    { symbolOrAliasConstructor = (Id Meta "#variableToPattern")
+                                                    , symbolOrAliasParams = []
+                                                    }
+                                            , applicationPatterns =
+                                                [ (MetaPattern (VariablePattern Variable
+                                                    { variableName = (Id Meta "#X")
+                                                    , variableSort =
+                                                        (SortActualSortSortActual
+                                                                { sortActualName = (Id Meta "#Variable")
+                                                                , sortActualSorts = []
+                                                                })
+                                                    }))
+                                                ]
+                                            }))
+                                        , (MetaPattern (VariablePattern Variable
+                                            { variableName = (Id Meta "#E")
+                                            , variableSort =
+                                                (SortActualSortSortActual
+                                                        { sortActualName = (Id Meta "#Pattern")
+                                                        , sortActualSorts = []
+                                                        })
+                                            }))
+                                        ]
+                                    }))
+                            , equalsSecond =
+                                (ObjectPattern (ExistsPattern Exists
+                                    { existsSort =
+                                        (SortVariableSort (SortVariable (Id Object "Exp")))
+                                    , existsVariable =
+                                        (SortVariable Variable
+                                            { variableName = (Id Meta "#X")
+                                            , variableSort =
+                                                (SortActualSortSortActual
+                                                        { sortActualName = (Id Meta "#Variable")
+                                                        , sortActualSorts = []
+                                                        })
+                                            })
+                                    , existsPattern =
+                                        (ObjectPattern (ApplicationPattern Application
+                                            { applicationSymbolOrAlias =
+                                                SymbolOrAlias
+                                                    { symbolOrAliasConstructor = (Id Object "lambda0")
+                                                    , symbolOrAliasParams = []
+                                                    }
+                                            , applicationPatterns =
+                                                [ (MetaPattern (ApplicationPattern Application
+                                                    { applicationSymbolOrAlias =
+                                                        SymbolOrAlias
+                                                            { symbolOrAliasConstructor = (Id Meta "#variableToPattern")
+                                                            , symbolOrAliasParams = []
+                                                            }
+                                                    , applicationPatterns =
+                                                        [ (MetaPattern (VariablePattern Variable
+                                                            { variableName = (Id Meta "#X")
+                                                            , variableSort =
+                                                                (SortActualSortSortActual
+                                                                        { sortActualName = (Id Meta "#Variable")
+                                                                        , sortActualSorts = []
+                                                                        })
+                                                            }))
+                                                        ]
+                                                    }))
+                                                , (MetaPattern (VariablePattern Variable
+                                                    { variableName = (Id Meta "#E")
+                                                    , variableSort =
+                                                        (SortActualSortSortActual
+                                                                { sortActualName = (Id Meta "#Pattern")
+                                                                , sortActualSorts = []
+                                                                })
+                                                    }))
+                                                ]
+                                            }))
+                                    }))
+                            }))
+                    , sentenceAxiomAttributes = Attributes []
+                    })
+                , (MetaSentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id Meta "#isExp")
+                            , symbolParams =
+                                [ (SortVariable (Id Meta "#S"))
+                                ]
+                            }
+                    , sentenceSymbolSorts =
+                        [ (SortActualSortSortActual
+                                { sortActualName = (Id Meta "#Pattern")
+                                , sortActualSorts = []
+                                })
+                        ]
+                    , sentenceSymbolReturnSort =
+                        (SortVariableSort (SortVariable (Id Meta "#S")))
+                    , sentenceSymbolAttributes = Attributes []
+                    })
+                , (SentenceAxiomSentence SentenceAxiom
+                    { sentenceAxiomParameters =
+                        [ (MetaSortVariable (SortVariable (Id Meta "#S")))
+                        , (MetaSortVariable (SortVariable (Id Meta "#R")))
+                        ]
+                    , sentenceAxiomPattern =
+                        (MetaPattern (EqualsPattern Equals
+                            { equalsOperandSort =
+                                (SortVariableSort (SortVariable (Id Meta "#S")))
+                            , equalsResultSort =
+                                (SortVariableSort (SortVariable (Id Meta "#R")))
+                            , equalsFirst =
+                                (MetaPattern (ApplicationPattern Application
+                                    { applicationSymbolOrAlias =
+                                        SymbolOrAlias
+                                            { symbolOrAliasConstructor = (Id Meta "#isExp")
+                                            , symbolOrAliasParams =
+                                                [ (SortVariableSort (SortVariable (Id Meta "#S")))
+                                                ]
+                                            }
+                                    , applicationPatterns =
+                                        [ (MetaPattern (ApplicationPattern Application
+                                            { applicationSymbolOrAlias =
+                                                SymbolOrAlias
+                                                    { symbolOrAliasConstructor = (Id Meta "#variableToPattern")
+                                                    , symbolOrAliasParams = []
+                                                    }
+                                            , applicationPatterns =
+                                                [ (MetaPattern (ApplicationPattern Application
+                                                    { applicationSymbolOrAlias =
+                                                        SymbolOrAlias
+                                                            { symbolOrAliasConstructor = (Id Meta "#variable")
+                                                            , symbolOrAliasParams = []
+                                                            }
+                                                    , applicationPatterns =
+                                                        [ (MetaPattern (VariablePattern Variable
+                                                            { variableName = (Id Meta "#NAME")
+                                                            , variableSort =
+                                                                (SortActualSortSortActual
+                                                                        { sortActualName = (Id Meta "#String")
+                                                                        , sortActualSorts = []
+                                                                        })
+                                                            }))
+                                                        , (MetaPattern (VariablePattern Variable
+                                                            { variableName = (Id Meta "#SORT")
+                                                            , variableSort =
+                                                                (SortActualSortSortActual
+                                                                        { sortActualName = (Id Meta "#Sort")
+                                                                        , sortActualSorts = []
+                                                                        })
+                                                            }))
+                                                        ]
+                                                    }))
+                                                ]
+                                            }))
+                                        ]
+                                    }))
+                            , equalsSecond =
+                                (MetaPattern (EqualsPattern Equals
+                                    { equalsOperandSort =
+                                        (SortActualSortSortActual
+                                                { sortActualName = (Id Meta "#Sort")
+                                                , sortActualSorts = []
+                                                })
+                                    , equalsResultSort =
+                                        (SortVariableSort (SortVariable (Id Meta "#S")))
+                                    , equalsFirst =
+                                        (MetaPattern (VariablePattern Variable
+                                            { variableName = (Id Meta "#SORT")
+                                            , variableSort =
+                                                (SortActualSortSortActual
+                                                        { sortActualName = (Id Meta "#Sort")
+                                                        , sortActualSorts = []
+                                                        })
+                                            }))
+                                    , equalsSecond =
+                                        (MetaPattern (ApplicationPattern Application
+                                            { applicationSymbolOrAlias =
+                                                SymbolOrAlias
+                                                    { symbolOrAliasConstructor = (Id Meta "#`Exp")
+                                                    , symbolOrAliasParams = []
+                                                    }
+                                            , applicationPatterns = []
+                                            }))
+                                    }))
+                            }))
+                    , sentenceAxiomAttributes = Attributes []
+                    })
+                , (SentenceAxiomSentence SentenceAxiom
+                    { sentenceAxiomParameters =
+                        [ (MetaSortVariable (SortVariable (Id Meta "#S")))
+                        , (MetaSortVariable (SortVariable (Id Meta "#R")))
+                        ]
+                    , sentenceAxiomPattern =
+                        (MetaPattern (EqualsPattern Equals
+                            { equalsOperandSort =
+                                (SortVariableSort (SortVariable (Id Meta "#S")))
+                            , equalsResultSort =
+                                (SortVariableSort (SortVariable (Id Meta "#R")))
+                            , equalsFirst =
+                                (MetaPattern (ApplicationPattern Application
+                                    { applicationSymbolOrAlias =
+                                        SymbolOrAlias
+                                            { symbolOrAliasConstructor = (Id Meta "#isExp")
+                                            , symbolOrAliasParams =
+                                                [ (SortVariableSort (SortVariable (Id Meta "#S")))
+                                                ]
+                                            }
+                                    , applicationPatterns =
+                                        [ (ObjectPattern (ApplicationPattern Application
+                                            { applicationSymbolOrAlias =
+                                                SymbolOrAlias
+                                                    { symbolOrAliasConstructor = (Id Object "app")
+                                                    , symbolOrAliasParams = []
+                                                    }
+                                            , applicationPatterns =
+                                                [ (MetaPattern (VariablePattern Variable
+                                                    { variableName = (Id Meta "#E1")
+                                                    , variableSort =
+                                                        (SortActualSortSortActual
+                                                                { sortActualName = (Id Meta "#Pattern")
+                                                                , sortActualSorts = []
+                                                                })
+                                                    }))
+                                                , (MetaPattern (VariablePattern Variable
+                                                    { variableName = (Id Meta "#E2")
+                                                    , variableSort =
+                                                        (SortActualSortSortActual
+                                                                { sortActualName = (Id Meta "#Pattern")
+                                                                , sortActualSorts = []
+                                                                })
+                                                    }))
+                                                ]
+                                            }))
+                                        ]
+                                    }))
+                            , equalsSecond =
+                                (MetaPattern (AndPattern And
+                                    { andSort =
+                                        (SortVariableSort (SortVariable (Id Meta "#S")))
+                                    , andFirst =
+                                        (MetaPattern (ApplicationPattern Application
+                                            { applicationSymbolOrAlias =
+                                                SymbolOrAlias
+                                                    { symbolOrAliasConstructor = (Id Meta "#isExp")
+                                                    , symbolOrAliasParams =
+                                                        [ (SortVariableSort (SortVariable (Id Meta "#S")))
+                                                        ]
+                                                    }
+                                            , applicationPatterns =
+                                                [ (MetaPattern (VariablePattern Variable
+                                                    { variableName = (Id Meta "#E1")
+                                                    , variableSort =
+                                                        (SortActualSortSortActual
+                                                                { sortActualName = (Id Meta "#Pattern")
+                                                                , sortActualSorts = []
+                                                                })
+                                                    }))
+                                                ]
+                                            }))
+                                    , andSecond =
+                                        (MetaPattern (ApplicationPattern Application
+                                            { applicationSymbolOrAlias =
+                                                SymbolOrAlias
+                                                    { symbolOrAliasConstructor = (Id Meta "#isExp")
+                                                    , symbolOrAliasParams =
+                                                        [ (SortVariableSort (SortVariable (Id Meta "#S")))
+                                                        ]
+                                                    }
+                                            , applicationPatterns =
+                                                [ (MetaPattern (VariablePattern Variable
+                                                    { variableName = (Id Meta "#E2")
+                                                    , variableSort =
+                                                        (SortActualSortSortActual
+                                                                { sortActualName = (Id Meta "#Pattern")
+                                                                , sortActualSorts = []
+                                                                })
+                                                    }))
+                                                ]
+                                            }))
+                                    }))
+                            }))
+                    , sentenceAxiomAttributes = Attributes []
+                    })
+                , (SentenceAxiomSentence SentenceAxiom
+                    { sentenceAxiomParameters =
+                        [ (MetaSortVariable (SortVariable (Id Meta "#S")))
+                        , (MetaSortVariable (SortVariable (Id Meta "#R")))
+                        ]
+                    , sentenceAxiomPattern =
+                        (MetaPattern (EqualsPattern Equals
+                            { equalsOperandSort =
+                                (SortVariableSort (SortVariable (Id Meta "#S")))
+                            , equalsResultSort =
+                                (SortVariableSort (SortVariable (Id Meta "#R")))
+                            , equalsFirst =
+                                (MetaPattern (ApplicationPattern Application
+                                    { applicationSymbolOrAlias =
+                                        SymbolOrAlias
+                                            { symbolOrAliasConstructor = (Id Meta "#isExp")
+                                            , symbolOrAliasParams =
+                                                [ (SortVariableSort (SortVariable (Id Meta "#S")))
+                                                ]
+                                            }
+                                    , applicationPatterns =
+                                        [ (ObjectPattern (ApplicationPattern Application
+                                            { applicationSymbolOrAlias =
+                                                SymbolOrAlias
+                                                    { symbolOrAliasConstructor = (Id Object "lambda")
+                                                    , symbolOrAliasParams = []
+                                                    }
+                                            , applicationPatterns =
+                                                [ (MetaPattern (ApplicationPattern Application
+                                                    { applicationSymbolOrAlias =
+                                                        SymbolOrAlias
+                                                            { symbolOrAliasConstructor = (Id Meta "#variableToPattern")
+                                                            , symbolOrAliasParams = []
+                                                            }
+                                                    , applicationPatterns =
+                                                        [ (MetaPattern (ApplicationPattern Application
+                                                            { applicationSymbolOrAlias =
+                                                                SymbolOrAlias
+                                                                    { symbolOrAliasConstructor = (Id Meta "#variable")
+                                                                    , symbolOrAliasParams = []
+                                                                    }
+                                                            , applicationPatterns =
+                                                                [ (MetaPattern (VariablePattern Variable
+                                                                    { variableName = (Id Meta "#NAME")
+                                                                    , variableSort =
+                                                                        (SortActualSortSortActual
+                                                                                { sortActualName = (Id Meta "#String")
+                                                                                , sortActualSorts = []
+                                                                                })
+                                                                    }))
+                                                                , (MetaPattern (VariablePattern Variable
+                                                                    { variableName = (Id Meta "#SORT")
+                                                                    , variableSort =
+                                                                        (SortActualSortSortActual
+                                                                                { sortActualName = (Id Meta "#Sort")
+                                                                                , sortActualSorts = []
+                                                                                })
+                                                                    }))
+                                                                ]
+                                                            }))
+                                                        , (MetaPattern (VariablePattern Variable
+                                                            { variableName = (Id Meta "#E")
+                                                            , variableSort =
+                                                                (SortActualSortSortActual
+                                                                        { sortActualName = (Id Meta "#Pattern")
+                                                                        , sortActualSorts = []
+                                                                        })
+                                                            }))
+                                                        ]
+                                                    }))
+                                                ]
+                                            }))
+                                        ]
+                                    }))
+                            , equalsSecond =
+                                (MetaPattern (AndPattern And
+                                    { andSort =
+                                        (SortVariableSort (SortVariable (Id Meta "#S")))
+                                    , andFirst =
+                                        (MetaPattern (EqualsPattern Equals
+                                            { equalsOperandSort =
+                                                (SortActualSortSortActual
+                                                        { sortActualName = (Id Meta "#Sort")
+                                                        , sortActualSorts = []
+                                                        })
+                                            , equalsResultSort =
+                                                (SortVariableSort (SortVariable (Id Meta "#S")))
+                                            , equalsFirst =
+                                                (MetaPattern (VariablePattern Variable
+                                                    { variableName = (Id Meta "#SORT")
+                                                    , variableSort =
+                                                        (SortActualSortSortActual
+                                                                { sortActualName = (Id Meta "#Sort")
+                                                                , sortActualSorts = []
+                                                                })
+                                                    }))
+                                            , equalsSecond =
+                                                (MetaPattern (ApplicationPattern Application
+                                                    { applicationSymbolOrAlias =
+                                                        SymbolOrAlias
+                                                            { symbolOrAliasConstructor = (Id Meta "#`Exp")
+                                                            , symbolOrAliasParams = []
+                                                            }
+                                                    , applicationPatterns = []
+                                                    }))
+                                            }))
+                                    , andSecond =
+                                        (MetaPattern (ApplicationPattern Application
+                                            { applicationSymbolOrAlias =
+                                                SymbolOrAlias
+                                                    { symbolOrAliasConstructor = (Id Meta "#isExp")
+                                                    , symbolOrAliasParams =
+                                                        [ (SortVariableSort (SortVariable (Id Meta "#S")))
+                                                        ]
+                                                    }
+                                            , applicationPatterns =
+                                                [ (MetaPattern (VariablePattern Variable
+                                                    { variableName = (Id Meta "#E")
+                                                    , variableSort =
+                                                        (SortActualSortSortActual
+                                                                { sortActualName = (Id Meta "#Pattern")
+                                                                , sortActualSorts = []
+                                                                })
+                                                    }))
+                                                ]
+                                            }))
+                                    }))
+                            }))
+                    , sentenceAxiomAttributes = Attributes []
+                    })
+                , (SentenceAxiomSentence SentenceAxiom
+                    { sentenceAxiomParameters =
+                        [ (MetaSortVariable (SortVariable (Id Meta "#S")))
+                        , (ObjectSortVariable (SortVariable (Id Object "S")))
+                        ]
+                    , sentenceAxiomPattern =
+                        (MetaPattern (ImpliesPattern Implies
+                            { impliesSort =
+                                (SortVariableSort (SortVariable (Id Meta "#S")))
+                            , impliesFirst =
+                                (MetaPattern (ApplicationPattern Application
+                                    { applicationSymbolOrAlias =
+                                        SymbolOrAlias
+                                            { symbolOrAliasConstructor = (Id Meta "#isExp")
+                                            , symbolOrAliasParams =
+                                                [ (SortVariableSort (SortVariable (Id Meta "#S")))
+                                                ]
+                                            }
+                                    , applicationPatterns =
+                                        [ (ObjectPattern (ApplicationPattern Application
+                                            { applicationSymbolOrAlias =
+                                                SymbolOrAlias
+                                                    { symbolOrAliasConstructor = (Id Object "app")
+                                                    , symbolOrAliasParams = []
+                                                    }
+                                            , applicationPatterns =
+                                                [ (ObjectPattern (ApplicationPattern Application
+                                                    { applicationSymbolOrAlias =
+                                                        SymbolOrAlias
+                                                            { symbolOrAliasConstructor = (Id Object "lambda")
+                                                            , symbolOrAliasParams = []
+                                                            }
+                                                    , applicationPatterns =
+                                                        [ (ObjectPattern (VariablePattern Variable
+                                                            { variableName = (Id Object "X")
+                                                            , variableSort =
+                                                                (SortActualSortSortActual
+                                                                        { sortActualName = (Id Object "Exp")
+                                                                        , sortActualSorts = []
+                                                                        })
+                                                            }))
+                                                        , (MetaPattern (VariablePattern Variable
+                                                            { variableName = (Id Meta "#E")
+                                                            , variableSort =
+                                                                (SortActualSortSortActual
+                                                                        { sortActualName = (Id Meta "#Pattern")
+                                                                        , sortActualSorts = []
+                                                                        })
+                                                            }))
+                                                        ]
+                                                    }))
+                                                , (MetaPattern (VariablePattern Variable
+                                                    { variableName = (Id Meta "#E'")
+                                                    , variableSort =
+                                                        (SortActualSortSortActual
+                                                                { sortActualName = (Id Meta "#Pattern")
+                                                                , sortActualSorts = []
+                                                                })
+                                                    }))
+                                                ]
+                                            }))
+                                        ]
+                                    }))
+                            , impliesSecond =
+                                (MetaPattern (ApplicationPattern Application
+                                    { applicationSymbolOrAlias =
+                                        SymbolOrAlias
+                                            { symbolOrAliasConstructor = (Id Meta "#provable")
+                                            , symbolOrAliasParams =
+                                                [ (SortVariableSort (SortVariable (Id Meta "#S")))
+                                                ]
+                                            }
+                                    , applicationPatterns =
+                                        [ (ObjectPattern (EqualsPattern Equals
+                                            { equalsOperandSort =
+                                                (SortActualSortSortActual
+                                                        { sortActualName = (Id Object "Exp")
+                                                        , sortActualSorts = []
+                                                        })
+                                            , equalsResultSort =
+                                                (SortVariableSort (SortVariable (Id Object "S")))
+                                            , equalsFirst =
+                                                (ObjectPattern (ApplicationPattern Application
+                                                    { applicationSymbolOrAlias =
+                                                        SymbolOrAlias
+                                                            { symbolOrAliasConstructor = (Id Object "app")
+                                                            , symbolOrAliasParams = []
+                                                            }
+                                                    , applicationPatterns =
+                                                        [ (ObjectPattern (ApplicationPattern Application
+                                                            { applicationSymbolOrAlias =
+                                                                SymbolOrAlias
+                                                                    { symbolOrAliasConstructor = (Id Object "lambda")
+                                                                    , symbolOrAliasParams = []
+                                                                    }
+                                                            , applicationPatterns =
+                                                                [ (ObjectPattern (VariablePattern Variable
+                                                                    { variableName = (Id Object "X")
+                                                                    , variableSort =
+                                                                        (SortActualSortSortActual
+                                                                                { sortActualName = (Id Object "Exp")
+                                                                                , sortActualSorts = []
+                                                                                })
+                                                                    }))
+                                                                , (MetaPattern (VariablePattern Variable
+                                                                    { variableName = (Id Meta "#E")
+                                                                    , variableSort =
+                                                                        (SortActualSortSortActual
+                                                                                { sortActualName = (Id Meta "#Pattern")
+                                                                                , sortActualSorts = []
+                                                                                })
+                                                                    }))
+                                                                ]
+                                                            }))
+                                                        , (MetaPattern (VariablePattern Variable
+                                                            { variableName = (Id Meta "#E'")
+                                                            , variableSort =
+                                                                (SortActualSortSortActual
+                                                                        { sortActualName = (Id Meta "#Pattern")
+                                                                        , sortActualSorts = []
+                                                                        })
+                                                            }))
+                                                        ]
+                                                    }))
+                                            , equalsSecond =
+                                                (MetaPattern (ApplicationPattern Application
+                                                    { applicationSymbolOrAlias =
+                                                        SymbolOrAlias
+                                                            { symbolOrAliasConstructor = (Id Meta "#substitute")
+                                                            , symbolOrAliasParams = []
+                                                            }
+                                                    , applicationPatterns =
+                                                        [ (MetaPattern (VariablePattern Variable
+                                                            { variableName = (Id Meta "#E")
+                                                            , variableSort =
+                                                                (SortActualSortSortActual
+                                                                        { sortActualName = (Id Meta "#Pattern")
+                                                                        , sortActualSorts = []
+                                                                        })
+                                                            }))
+                                                        , (MetaPattern (VariablePattern Variable
+                                                            { variableName = (Id Meta "#E'")
+                                                            , variableSort =
+                                                                (SortActualSortSortActual
+                                                                        { sortActualName = (Id Meta "#Pattern")
+                                                                        , sortActualSorts = []
+                                                                        })
+                                                            }))
+                                                        , (ObjectPattern (VariablePattern Variable
+                                                            { variableName = (Id Object "X")
+                                                            , variableSort =
+                                                                (SortActualSortSortActual
+                                                                        { sortActualName = (Id Object "Exp")
+                                                                        , sortActualSorts = []
+                                                                        })
+                                                            }))
+                                                        ]
+                                                    }))
+                                            }))
+                                        ]
+                                    }))
+                            }))
+                    , sentenceAxiomAttributes = Attributes []
+                    })
+                ]
+            , moduleAttributes = Attributes []
+            }
+    }

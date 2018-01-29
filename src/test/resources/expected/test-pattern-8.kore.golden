@@ -1,1 +1,33 @@
-Definition {definitionAttributes = Attributes {getAttributes = []}, definitionModules = Module {moduleName = ModuleName {getModuleName = "TEST-PATTERN-8"}, moduleSentences = [SentenceAxiomSentence (SentenceAxiom {sentenceAxiomParameters = [ObjectSortVariable (SortVariable {getSortVariable = Id {getId = "S"}})], sentenceAxiomPattern = ObjectPattern (ExistsPattern (Exists {existsSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "S"}}), existsVariable = ObjectVariable (Variable {variableName = Id {getId = "X"}, variableSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "S"}})}), existsPattern = ObjectPattern (VariablePattern (Variable {variableName = Id {getId = "X"}, variableSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "S"}})}))})), sentenceAxiomAtrributes = Attributes {getAttributes = []}})], moduleAttributes = Attributes {getAttributes = []}}}
+Definition
+    { definitionAttributes = Attributes []
+    , definitionModules =
+        Module
+            { moduleName = (ModuleName "TEST-PATTERN-8")
+            , moduleSentences =
+                [ (SentenceAxiomSentence SentenceAxiom
+                    { sentenceAxiomParameters =
+                        [ (ObjectSortVariable (SortVariable (Id Object "S")))
+                        ]
+                    , sentenceAxiomPattern =
+                        (ObjectPattern (ExistsPattern Exists
+                            { existsSort =
+                                (SortVariableSort (SortVariable (Id Object "S")))
+                            , existsVariable =
+                                (ObjectVariable Variable
+                                    { variableName = (Id Object "X")
+                                    , variableSort =
+                                        (SortVariableSort (SortVariable (Id Object "S")))
+                                    })
+                            , existsPattern =
+                                (ObjectPattern (VariablePattern Variable
+                                    { variableName = (Id Object "X")
+                                    , variableSort =
+                                        (SortVariableSort (SortVariable (Id Object "S")))
+                                    }))
+                            }))
+                    , sentenceAxiomAttributes = Attributes []
+                    })
+                ]
+            , moduleAttributes = Attributes []
+            }
+    }

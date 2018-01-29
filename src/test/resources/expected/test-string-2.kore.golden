@@ -1,1 +1,12 @@
-Definition {definitionAttributes = Attributes {getAttributes = [MetaPattern (StringLiteralPattern (StringLiteral {getStringLiteral = "\a"}))]}, definitionModules = Module {moduleName = ModuleName {getModuleName = "TEST-STRING-2"}, moduleSentences = [], moduleAttributes = Attributes {getAttributes = []}}}
+Definition
+    { definitionAttributes =
+        (Attributes 
+            [ (MetaPattern (StringLiteralPattern (StringLiteral "\a")))
+            ])
+    , definitionModules =
+        Module
+            { moduleName = (ModuleName "TEST-STRING-2")
+            , moduleSentences = []
+            , moduleAttributes = Attributes []
+            }
+    }

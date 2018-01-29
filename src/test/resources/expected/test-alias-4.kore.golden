@@ -1,1 +1,23 @@
-Definition {definitionAttributes = Attributes {getAttributes = []}, definitionModules = Module {moduleName = ModuleName {getModuleName = "TEST-ALIAS-4"}, moduleSentences = [ObjectSentenceAliasSentence (SentenceAlias {sentenceAliasAlias = Alias {aliasConstructor = Id {getId = "f"}, aliasParams = [SortVariable {getSortVariable = Id {getId = "S"}}]}, sentenceAliasSorts = [], sentenceAliasReturnSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "S"}}), sentenceAliasAttributes = Attributes {getAttributes = []}})], moduleAttributes = Attributes {getAttributes = []}}}
+Definition
+    { definitionAttributes = Attributes []
+    , definitionModules =
+        Module
+            { moduleName = (ModuleName "TEST-ALIAS-4")
+            , moduleSentences =
+                [ (ObjectSentenceAliasSentence SentenceAlias
+                    { sentenceAliasAlias =
+                        Alias
+                            { aliasConstructor = (Id Object "f")
+                            , aliasParams =
+                                [ (SortVariable (Id Object "S"))
+                                ]
+                            }
+                    , sentenceAliasSorts = []
+                    , sentenceAliasReturnSort =
+                        (SortVariableSort (SortVariable (Id Object "S")))
+                    , sentenceAliasAttributes = Attributes []
+                    })
+                ]
+            , moduleAttributes = Attributes []
+            }
+    }

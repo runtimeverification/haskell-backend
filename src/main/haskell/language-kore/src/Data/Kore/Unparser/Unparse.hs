@@ -270,7 +270,7 @@ instance Unparse SentenceAxiom where
         write "axiom"
         inCurlyBraces (unparse (sentenceAxiomParameters a))
         unparse (sentenceAxiomPattern a)
-        unparse (sentenceAxiomAtrributes a)
+        unparse (sentenceAxiomAttributes a)
 
 instance Unparse SentenceSort where
     unparse a = do

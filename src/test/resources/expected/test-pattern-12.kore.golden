@@ -1,1 +1,29 @@
-Definition {definitionAttributes = Attributes {getAttributes = []}, definitionModules = Module {moduleName = ModuleName {getModuleName = "TEST-PATTERN-12"}, moduleSentences = [SentenceAxiomSentence (SentenceAxiom {sentenceAxiomParameters = [ObjectSortVariable (SortVariable {getSortVariable = Id {getId = "S"}})], sentenceAxiomPattern = ObjectPattern (CeilPattern (Ceil {ceilOperandSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "S"}}), ceilResultSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "S"}}), ceilPattern = ObjectPattern (VariablePattern (Variable {variableName = Id {getId = "X"}, variableSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "S"}})}))})), sentenceAxiomAtrributes = Attributes {getAttributes = []}})], moduleAttributes = Attributes {getAttributes = []}}}
+Definition
+    { definitionAttributes = Attributes []
+    , definitionModules =
+        Module
+            { moduleName = (ModuleName "TEST-PATTERN-12")
+            , moduleSentences =
+                [ (SentenceAxiomSentence SentenceAxiom
+                    { sentenceAxiomParameters =
+                        [ (ObjectSortVariable (SortVariable (Id Object "S")))
+                        ]
+                    , sentenceAxiomPattern =
+                        (ObjectPattern (CeilPattern Ceil
+                            { ceilOperandSort =
+                                (SortVariableSort (SortVariable (Id Object "S")))
+                            , ceilResultSort =
+                                (SortVariableSort (SortVariable (Id Object "S")))
+                            , ceilPattern =
+                                (ObjectPattern (VariablePattern Variable
+                                    { variableName = (Id Object "X")
+                                    , variableSort =
+                                        (SortVariableSort (SortVariable (Id Object "S")))
+                                    }))
+                            }))
+                    , sentenceAxiomAttributes = Attributes []
+                    })
+                ]
+            , moduleAttributes = Attributes []
+            }
+    }

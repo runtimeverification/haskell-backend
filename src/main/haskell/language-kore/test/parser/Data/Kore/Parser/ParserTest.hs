@@ -779,7 +779,7 @@ sentenceAxiomParserTests =
                         (SortVariable (Id "sv1"))]
                 , sentenceAxiomPattern =
                     MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                , sentenceAxiomAtrributes =
+                , sentenceAxiomAttributes =
                     Attributes
                         [MetaPattern $ StringLiteralPattern (StringLiteral "b")]
                 }
@@ -791,7 +791,7 @@ sentenceAxiomParserTests =
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
                     MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                , sentenceAxiomAtrributes =
+                , sentenceAxiomAttributes =
                     Attributes
                         [MetaPattern $ StringLiteralPattern (StringLiteral "b")]
                 }
@@ -806,7 +806,7 @@ sentenceAxiomParserTests =
                     ]
                 , sentenceAxiomPattern =
                     MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                , sentenceAxiomAtrributes =
+                , sentenceAxiomAttributes =
                     Attributes
                         [MetaPattern $ StringLiteralPattern (StringLiteral "b")]
                 }

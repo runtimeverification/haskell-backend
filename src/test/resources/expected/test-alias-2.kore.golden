@@ -1,1 +1,34 @@
-Definition {definitionAttributes = Attributes {getAttributes = []}, definitionModules = Module {moduleName = ModuleName {getModuleName = "TEST-ALIAS-2"}, moduleSentences = [SentenceSortSentence (SentenceSort {sentenceSortName = Id {getId = "S"}, sentenceSortParameters = [], sentenceSortAttributes = Attributes {getAttributes = []}}),ObjectSentenceAliasSentence (SentenceAlias {sentenceAliasAlias = Alias {aliasConstructor = Id {getId = "f"}, aliasParams = []}, sentenceAliasSorts = [SortActualSort (SortActual {sortActualName = Id {getId = "S"}, sortActualSorts = []})], sentenceAliasReturnSort = SortActualSort (SortActual {sortActualName = Id {getId = "S"}, sortActualSorts = []}), sentenceAliasAttributes = Attributes {getAttributes = []}})], moduleAttributes = Attributes {getAttributes = []}}}
+Definition
+    { definitionAttributes = Attributes []
+    , definitionModules =
+        Module
+            { moduleName = (ModuleName "TEST-ALIAS-2")
+            , moduleSentences =
+                [ (SentenceSortSentence SentenceSort
+                    { sentenceSortName = (Id Object "S")
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    })
+                , (ObjectSentenceAliasSentence SentenceAlias
+                    { sentenceAliasAlias =
+                        Alias
+                            { aliasConstructor = (Id Object "f")
+                            , aliasParams = []
+                            }
+                    , sentenceAliasSorts =
+                        [ (SortActualSortSortActual
+                                { sortActualName = (Id Object "S")
+                                , sortActualSorts = []
+                                })
+                        ]
+                    , sentenceAliasReturnSort =
+                        (SortActualSortSortActual
+                                { sortActualName = (Id Object "S")
+                                , sortActualSorts = []
+                                })
+                    , sentenceAliasAttributes = Attributes []
+                    })
+                ]
+            , moduleAttributes = Attributes []
+            }
+    }
