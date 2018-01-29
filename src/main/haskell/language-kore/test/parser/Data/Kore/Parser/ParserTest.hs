@@ -16,6 +16,12 @@ koreParserTests =
         , testGroup "metaSortListParser" metaSortListParserTests
         , testGroup "objectSortVariableParser" objectSortVariableParserTests
         , testGroup "metaSortVariableParser" metaSortVariableParserTests
+        , testGroup
+            "objectInCurlyBracesSortVariableListParser"
+            objectInCurlyBracesSortVariableListParserTest
+        , testGroup
+            "metaInCurlyBracesSortVariableListParser"
+            metaInCurlyBracesSortVariableListParserTest
         , testGroup "sortVariableParser" sortVariableParserTests
         , testGroup "objectAliasParser" objectAliasParserTests
         , testGroup "objectSymbolParser" objectSymbolParserTests
@@ -171,6 +177,34 @@ metaSortVariableParserTests =
         , FailureWithoutMessage ["", "#", "var"]
         ]
 
+objectInCurlyBracesSortVariableListParserTest :: [TestTree]
+objectInCurlyBracesSortVariableListParserTest =
+    parseTree (inCurlyBracesSortVariableListParser Object)
+        [ Success "{}" []
+        , Success "{var}"
+            [ SortVariable (Id "var") ]
+        , Success "{var1, var2}"
+            [ SortVariable (Id "var1")
+            , SortVariable (Id "var2")
+            ]
+        , FailureWithoutMessage
+            [ "{var1 var2}", "{#var1, var2}", "{var, Int{}}" ]
+        ]
+
+metaInCurlyBracesSortVariableListParserTest :: [TestTree]
+metaInCurlyBracesSortVariableListParserTest =
+    parseTree (inCurlyBracesSortVariableListParser Meta)
+        [ Success "{}" []
+        , Success "{#var}"
+            [ SortVariable (Id "#var") ]
+        , Success "{#var1, #var2}"
+            [ SortVariable (Id "#var1")
+            , SortVariable (Id "#var2")
+            ]
+        , FailureWithoutMessage
+            [ "{#var1 #var2}", "{#var1, var2}", "{#var, #Char{}}" ]
+        ]
+
 sortVariableParserTests :: [TestTree]
 sortVariableParserTests =
     parseTree unifiedSortVariableParser
@@ -207,7 +241,7 @@ objectAliasParserTests =
                     ]
                 }
         , FailureWithoutMessage
-            ["alias", "a1{a2},a1{a2}", "a1{a2 a2}", "a1{a2}a1{a2}"]
+            ["alias", "a1{a2},a1{a2}", "a1{a2 a2}", "a1{a2}a1{a2}", "c1{s1{}}"]
         ]
 
 objectSymbolParserTests :: [TestTree]
@@ -232,7 +266,7 @@ objectSymbolParserTests =
                     ]
                 }
         , FailureWithoutMessage
-            ["symbol", "a1{a2},a1{a2}", "a1{a2 a2}", "a1{a2}a1{a2}"]
+            ["symbol", "a1{a2},a1{a2}", "a1{a2 a2}", "a1{a2}a1{a2}", "c1{s1{}}"]
         ]
 
 metaAliasParserTests :: [TestTree]
@@ -257,7 +291,9 @@ metaAliasParserTests =
                     ]
                 }
         , FailureWithoutMessage
-            ["#alias", "#a1{#a2},#a1{#a2}", "#a1{#a2 #a2}", "#a1{#a2}#a1{#a2}"]
+            [ "#alias", "#a1{#a2},#a1{#a2}", "#a1{#a2 #a2}", "#a1{#a2}#a1{#a2}"
+            , "#c1{#Char{}}"
+            ]
         ]
 
 metaSymbolParserTests :: [TestTree]
@@ -282,7 +318,9 @@ metaSymbolParserTests =
                     ]
                 }
         , FailureWithoutMessage
-            ["#symbol", "#a1{#a2},#a1{#a2}", "#a1{#a2 #a2}", "#a1{#a2}#a1{#a2}"]
+            [ "#symbol", "#a1{#a2},#a1{#a2}", "#a1{#a2 #a2}", "#a1{#a2}#a1{#a2}"
+            , "#c1{#Char{}}"
+            ]
         ]
 
 variableParserTests :: [TestTree]
@@ -721,6 +759,7 @@ sentenceAliasParserTests =
             [ ""
             , "a{s1}(s2):s3[\"a\"]"
             , "alias {s1}(s2):s3[\"a\"]"
+            , "alias a{s1{}}(s2):s3[\"a\"]"
             , "alias a(s2):s3[\"a\"]"
             , "alias a{s1}:s3[\"a\"]"
             , "alias a{s1}(s2)s3[\"a\"]"
@@ -810,10 +849,12 @@ sentenceSortParserTests =
             )
         , FailureWithoutMessage
             [ ""
-            , "{ sv1 } s1 [ \"a\" ]"
-            , "sort s1 [ \"a\" ]"
+            , "s1 { sv1 } [ \"a\" ]"
             , "sort { sv1 } [ \"a\" ]"
-            , "sort { sv1 } s1 "
+            , "sort s1 { sv1{} } [ \"a\" ]"
+            , "sort s1 [ \"a\" ]"
+            , "sort s1 { sv1 } "
+            , "sort { sv1 } s1 [ \"a\" ]"
             ]
         ]
 
@@ -921,10 +962,10 @@ moduleParserTests =
                 }
         , FailureWithoutMessage
             [ ""
-            , "MN sort{}c[] endmodule [\"a\"]"
-            , "module sort{}c[] endmodule [\"a\"]"
-            , "module MN sort{}c[] [\"a\"]"
-            , "module MN sort{}c[] endmodule"
+            , "MN sort c{}[] endmodule [\"a\"]"
+            , "module sort c{}[] endmodule [\"a\"]"
+            , "module MN sort c{}[] [\"a\"]"
+            , "module MN sort c{}[] endmodule"
             ]
         ]
 

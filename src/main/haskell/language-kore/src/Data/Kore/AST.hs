@@ -105,27 +105,6 @@ data Alias a = Alias
     }
     deriving (Show, Eq, Typeable)
 
-{-|'SymbolOrAliasClass' offers a common interface for 'Symbol', 'Alias', and
-'SymbolOrAlias' types.
--}
-{-
-class SymbolOrAliasClass c where
-    getSymbolOrAliasConstructor :: c a -> Id a
-    getSymbolOrAliasParams :: c a -> [Sort a]
-
-instance SymbolOrAliasClass SymbolOrAlias where
-    getSymbolOrAliasConstructor = symbolOrAliasConstructor
-    getSymbolOrAliasParams = symbolOrAliasParams
-
-instance SymbolOrAliasClass Symbol where
-    getSymbolOrAliasConstructor = symbolConstructor
-    getSymbolOrAliasParams = symbolParams
-
-instance SymbolOrAliasClass Alias where
-    getSymbolOrAliasConstructor = aliasConstructor
-    getSymbolOrAliasParams = aliasParams
--}
-
 {-|'SortVariable' corresponds to the @object-sort-variable@ and
 @meta-sort-variable@ syntactic categories from the Semantics of K,
 Section 9.1.2 (Sorts).

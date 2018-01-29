@@ -36,14 +36,6 @@ unparseParseTests =
             (forAll (idGen Meta) (unparseParseProp (idParser Meta)))
         , testProperty "StringLiteral"
             (forAll stringLiteralGen (unparseParseProp stringLiteralParser))
-        , testProperty "Object SymbolOrAlias"
-            (forAll (symbolOrAliasGen Object)
-                (unparseParseProp (symbolOrAliasRawParser Object SymbolOrAlias))
-            )
-        , testProperty "Meta SymbolOrAlias"
-            (forAll (symbolOrAliasGen Meta)
-                (unparseParseProp (symbolOrAliasRawParser Meta SymbolOrAlias))
-            )
         , testProperty "Object Symbol"
             (forAll (symbolGen Object) (unparseParseProp (symbolParser Object)))
         , testProperty "Meta Symbol"
