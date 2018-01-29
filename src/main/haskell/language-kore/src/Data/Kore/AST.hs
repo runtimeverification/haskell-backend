@@ -85,7 +85,7 @@ Note that this is very similar to 'SymbolOrAlias'.
 -}
 data Symbol a = Symbol
     { symbolConstructor :: !(Id a)
-    , symbolParams      :: ![UnifiedSortVariable]
+    , symbolParams      :: ![SortVariable a]
     }
     deriving (Show, Eq, Typeable)
 
@@ -101,7 +101,7 @@ Note that this is very similar to 'SymbolOrAlias'.
 -}
 data Alias a = Alias
     { aliasConstructor :: !(Id a)
-    , aliasParams      :: ![UnifiedSortVariable]
+    , aliasParams      :: ![SortVariable a]
     }
     deriving (Show, Eq, Typeable)
 
