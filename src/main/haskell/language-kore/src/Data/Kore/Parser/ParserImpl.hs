@@ -936,6 +936,6 @@ sortSentenceRemainderParser :: Parser Sentence
 sortSentenceRemainderParser = SentenceSortSentence <$>
     ( pure SentenceSort
         <*> idParser Object
-        <*> inCurlyBracesUnifiedSortVariableListParser
+        <*> inCurlyBracesSortVariableListParser Object
         <*> attributesParser
     )

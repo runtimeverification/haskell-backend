@@ -562,7 +562,7 @@ from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
 data SentenceSort = SentenceSort
     { sentenceSortName       :: !(Id Object)
-    , sentenceSortParameters :: ![UnifiedSortVariable]
+    , sentenceSortParameters :: ![SortVariable Object]
     , sentenceSortAttributes :: !Attributes
     }
     deriving (Eq, Show)

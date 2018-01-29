@@ -827,10 +827,7 @@ sentenceSortParserTests =
         [ Success "sort s1 { sv1 } [ \"a\" ]"
             ( SentenceSortSentence SentenceSort
                 { sentenceSortName = Id "s1"
-                , sentenceSortParameters =
-                    [ ObjectSortVariable
-                        (SortVariable (Id "sv1"))
-                    ]
+                , sentenceSortParameters = [ sortVariable "sv1" ]
                 , sentenceSortAttributes =
                     Attributes
                         [MetaPattern $ StringLiteralPattern (StringLiteral "a")]

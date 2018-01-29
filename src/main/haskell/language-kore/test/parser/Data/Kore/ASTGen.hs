@@ -254,7 +254,7 @@ sentenceAxiomGen = pure SentenceAxiom
 sentenceSortGen :: Gen SentenceSort
 sentenceSortGen = pure SentenceSort
     <*> scale (`div` 2) (idGen Object)
-    <*> couple (scale (`div` 2) unifiedSortVariableGen)
+    <*> couple (scale (`div` 2) (sortVariableGen Object))
     <*> scale (`div` 2) attributesGen
 
 attributesGen :: Gen Attributes
