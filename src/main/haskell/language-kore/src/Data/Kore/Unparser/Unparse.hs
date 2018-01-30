@@ -65,9 +65,9 @@ unparseList :: (UnparseOutput w m, Unparse a) => m () -> [a] -> m ()
 unparseList _ []           = return ()
 unparseList between xs = withIndent 4 (unparseList' xs)
   where
-    unparseList' []     = return ()
-    unparseList' [x]    = unparse x
-    unparseList' (x:xs) = unparse x >> between >> unparseList' xs
+    unparseList' []      = return ()
+    unparseList' [x]     = unparse x
+    unparseList' (x:xs') = unparse x >> between >> unparseList' xs'
 
 instance Unparse a => Unparse [a] where
     unparse = unparseList (write "," >> betweenLines)
@@ -159,14 +159,17 @@ instance Unparse MLPatternType where
     unparse OrPatternType      = write "\\or"
     unparse TopPatternType     = write "\\top"
 
-unparseMLPattern :: (UnparseOutput w m, MLPatternClass p) => p a -> m ()
+unparseMLPattern
+    :: (UnparseOutput w m, MLPatternClass p, Unparse rpt)
+    => p a rpt -> m ()
 unparseMLPattern p = do
     unparse (getPatternType p)
     inCurlyBraces (unparse (getPatternSorts p))
     inParens (unparse (getPatternPatterns p))
 
 unparseMLBinderPattern
-    :: (UnparseOutput w m, MLBinderPatternClass p) => p a -> m ()
+    :: (UnparseOutput w m, MLBinderPatternClass p, Unparse rpt)
+    => p a rpt -> m ()
 unparseMLBinderPattern p = do
     unparse (getBinderPatternType p)
     inCurlyBraces (unparse (getBinderPatternSort p))
@@ -176,55 +179,61 @@ unparseMLBinderPattern p = do
         unparse (getBinderPatternPattern p)
         )
 
-instance Unparse (And a) where
+instance Unparse p => Unparse (And a p) where
     unparse = unparseMLPattern
 
-instance Unparse (Application a) where
+instance Unparse p => Unparse (Application a p) where
     unparse a =
         unparse (applicationSymbolOrAlias a)
         >> inParens (unparse (applicationPatterns a))
 
 instance Unparse (Bottom a) where
+    unparse bottom = do
+        unparse BottomPatternType
+        inCurlyBraces (unparse (bottomSort bottom))
+        inParens (return ())
+
+instance Unparse p => Unparse (Ceil a p) where
     unparse = unparseMLPattern
 
-instance Unparse (Ceil a) where
+instance Unparse p => Unparse (Equals a p) where
     unparse = unparseMLPattern
 
-instance Unparse (Equals a) where
-    unparse = unparseMLPattern
-
-instance Unparse (Exists a) where
+instance Unparse p => Unparse (Exists a p) where
     unparse = unparseMLBinderPattern
 
-instance Unparse (Floor a) where
+instance Unparse p => Unparse (Floor a p) where
     unparse = unparseMLPattern
 
-instance Unparse (Forall a) where
+instance Unparse p => Unparse (Forall a p) where
     unparse = unparseMLBinderPattern
 
-instance Unparse (Iff a) where
+instance Unparse p => Unparse (Iff a p) where
     unparse = unparseMLPattern
 
-instance Unparse (Implies a) where
+instance Unparse p => Unparse (Implies a p) where
     unparse = unparseMLPattern
 
-instance Unparse (Mem a) where
+instance Unparse p => Unparse (Mem a p) where
     unparse m = do
         unparse MemPatternType
         inCurlyBraces (unparse [memOperandSort m, memResultSort m])
         inParens
             (unparse (memVariable m) >> write ", " >> unparse (memPattern m))
 
-instance Unparse (Not a) where
+instance Unparse p => Unparse (Not a p) where
     unparse = unparseMLPattern
 
-instance Unparse (Or a) where
+instance Unparse p => Unparse (Or a p) where
     unparse = unparseMLPattern
 
 instance Unparse (Top a) where
-    unparse = unparseMLPattern
+    unparse top = do
+        unparse TopPatternType
+        inCurlyBraces (unparse (topSort top))
+        inParens (return ())
 
-instance Unparse (Pattern a) where
+instance Unparse p => Unparse (Pattern a p) where
     unparse (AndPattern p)           = unparse p
     unparse (ApplicationPattern p)   = unparse p
     unparse (BottomPattern p)        = unparse p

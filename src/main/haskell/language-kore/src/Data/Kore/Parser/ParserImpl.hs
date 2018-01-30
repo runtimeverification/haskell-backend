@@ -306,8 +306,9 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 unaryOperatorRemainderParser
     :: IsMeta a
     => a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort a -> UnifiedPattern -> m a)  -- ^ Element constructor.
-    -> Parser (m a)
+    -> (Sort a -> UnifiedPattern -> m a UnifiedPattern)
+    -- ^ Element constructor.
+    -> Parser (m a UnifiedPattern)
 unaryOperatorRemainderParser x constructor =
     pure constructor
         <*> inCurlyBracesRemainderParser (sortParser x)
@@ -329,9 +330,9 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 binaryOperatorRemainderParser
     :: IsMeta a
     => a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort a -> UnifiedPattern -> UnifiedPattern -> m a)
+    -> (Sort a -> UnifiedPattern -> UnifiedPattern -> m a UnifiedPattern)
     -- ^ Element constructor.
-    -> Parser (m a)
+    -> Parser (m a UnifiedPattern)
 binaryOperatorRemainderParser x constructor = do
     sort <- inCurlyBracesRemainderParser (sortParser x)
     (pattern1, pattern2) <-
@@ -354,9 +355,9 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 existsForallRemainderParser
     :: IsMeta a
     => a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort a -> UnifiedVariable -> UnifiedPattern -> m a)
+    -> (Sort a -> UnifiedVariable -> UnifiedPattern -> m a UnifiedPattern)
     -- ^ Element constructor.
-    -> Parser (m a)
+    -> Parser (m a UnifiedPattern)
 existsForallRemainderParser x constructor = do
     sort <- inCurlyBracesRemainderParser (sortParser x)
     (variable, qPattern) <- parenPairParser unifiedVariableParser patternParser
@@ -378,9 +379,9 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 ceilFloorRemainderParser
     :: IsMeta a
     => a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort a -> Sort a -> UnifiedPattern -> m a)
+    -> (Sort a -> Sort a -> UnifiedPattern -> m a UnifiedPattern)
     -- ^ Element constructor.
-    -> Parser (m a)
+    -> Parser (m a UnifiedPattern)
 ceilFloorRemainderParser x constructor = do
     (sort1, sort2) <- curlyPairRemainderParser (sortParser x)
     cfPattern <- inParenthesesParser patternParser
@@ -401,7 +402,7 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 memRemainderParser
     :: IsMeta a
     => a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser (Mem a)
+    -> Parser (Mem a UnifiedPattern)
 memRemainderParser x = do
     (sort1, sort2) <- curlyPairRemainderParser (sortParser x)
     (variable, mPattern) <-
@@ -429,9 +430,9 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 equalsLikeRemainderParser
     :: IsMeta a
     => a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort a -> Sort a -> UnifiedPattern -> UnifiedPattern -> m a)
+    -> (Sort a -> Sort a -> UnifiedPattern -> UnifiedPattern -> m a UnifiedPattern)
     -- ^ Element constructor.
-    -> Parser (m a)
+    -> Parser (m a UnifiedPattern)
 equalsLikeRemainderParser x constructor = do
     (sort1, sort2) <- curlyPairRemainderParser (sortParser x)
     (pattern1, pattern2) <-
@@ -480,7 +481,7 @@ symbolOrAliasPatternRemainderParser
     :: IsMeta a
     => a  -- ^ Distinguishes between the meta and non-meta elements.
     -> Id a  -- ^ The already parsed prefix.
-    -> Parser (Pattern a)
+    -> Parser (Pattern a UnifiedPattern)
 symbolOrAliasPatternRemainderParser x identifier = ApplicationPattern <$>
     ( pure Application
         <*> (SymbolOrAlias identifier <$> inCurlyBracesSortListParser x)
@@ -569,7 +570,7 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 variableOrTermPatternParser
     :: IsMeta a
     => a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser (Pattern a)
+    -> Parser (Pattern a UnifiedPattern)
 variableOrTermPatternParser x = do
     identifier <- idParser x
     c <- Parser.peekChar'
@@ -656,6 +657,7 @@ mlConstructorParser = do
         , ("or", mlConstructorRemainderParser OrPatternType)
         , ("top", mlConstructorRemainderParser TopPatternType)
         ]
+    -- mlConstructorRemainderParser :: MLPatternType -> Parser UnifiedPattern
     mlConstructorRemainderParser patternType = do
         openCurlyBraceParser
         c <- Parser.peekChar'
@@ -663,6 +665,9 @@ mlConstructorParser = do
             then MetaPattern <$> mlConstructorRemainderParser' Meta patternType
             else ObjectPattern <$>
                 mlConstructorRemainderParser' Object patternType
+    -- mlConstructorRemainderParser'
+    --     :: (IsMeta a)
+    --     => a -> MLPatternType -> Parser (Pattern a UnifiedPattern)
     mlConstructorRemainderParser' x patternType =
         case patternType of
             AndPatternType -> AndPattern <$>
@@ -741,7 +746,7 @@ patternParser = do
     c <- Parser.peekChar'
     case c of
         '\\' -> mlConstructorParser
-        '"'  -> MetaPattern <$> StringLiteralPattern <$> stringLiteralParser
+        '"'  -> MetaPattern . StringLiteralPattern <$> stringLiteralParser
         _    -> unifiedVariableOrTermPatternParser
 
 

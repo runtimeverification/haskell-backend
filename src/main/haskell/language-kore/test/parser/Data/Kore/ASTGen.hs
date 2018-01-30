@@ -108,8 +108,8 @@ unifiedVariableGen = scale (`div` 2) $ oneof
 binaryOperatorGen
     :: IsMeta a
     => a
-    -> (Sort a -> UnifiedPattern -> UnifiedPattern -> b a)
-    -> Gen (b a)
+    -> (Sort a -> UnifiedPattern -> UnifiedPattern -> b a UnifiedPattern)
+    -> Gen (b a UnifiedPattern)
 binaryOperatorGen x constructor = pure constructor
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) unifiedPatternGen
@@ -118,8 +118,8 @@ binaryOperatorGen x constructor = pure constructor
 ceilFloorGen
     :: IsMeta a
     => a
-    -> (Sort a -> Sort a -> UnifiedPattern -> c a)
-    -> Gen (c a)
+    -> (Sort a -> Sort a -> UnifiedPattern -> c a UnifiedPattern)
+    -> Gen (c a UnifiedPattern)
 ceilFloorGen x constructor = pure constructor
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) (sortGen x)
@@ -128,8 +128,8 @@ ceilFloorGen x constructor = pure constructor
 existsForallGen
     :: IsMeta a
     => a
-    -> (Sort a -> UnifiedVariable -> UnifiedPattern -> q a)
-    -> Gen (q a)
+    -> (Sort a -> UnifiedVariable -> UnifiedPattern -> q a UnifiedPattern)
+    -> Gen (q a UnifiedPattern)
 existsForallGen x constructor = pure constructor
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) unifiedVariableGen
@@ -143,10 +143,10 @@ topBottomGen
 topBottomGen x constructor = pure constructor
     <*> sortGen x
 
-andGen :: IsMeta a => a -> Gen (And a)
+andGen :: IsMeta a => a -> Gen (And a UnifiedPattern)
 andGen x = binaryOperatorGen x And
 
-applicationGen :: IsMeta a => a -> Gen (Application a)
+applicationGen :: IsMeta a => a -> Gen (Application a UnifiedPattern)
 applicationGen x = pure Application
     <*> scale (`div` 2) (symbolOrAliasGen x)
     <*> couple (scale (`div` 4) unifiedPatternGen)
@@ -154,50 +154,50 @@ applicationGen x = pure Application
 bottomGen :: IsMeta a => a -> Gen (Bottom a)
 bottomGen x = topBottomGen x Bottom
 
-ceilGen :: IsMeta a => a -> Gen (Ceil a)
+ceilGen :: IsMeta a => a -> Gen (Ceil a UnifiedPattern)
 ceilGen x = ceilFloorGen x Ceil
 
-equalsGen :: IsMeta a => a -> Gen (Equals a)
+equalsGen :: IsMeta a => a -> Gen (Equals a UnifiedPattern)
 equalsGen x = pure Equals
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) unifiedPatternGen
     <*> scale (`div` 2) unifiedPatternGen
 
-existsGen :: IsMeta a => a -> Gen (Exists a)
+existsGen :: IsMeta a => a -> Gen (Exists a UnifiedPattern)
 existsGen x = existsForallGen x Exists
 
-floorGen :: IsMeta a => a -> Gen (Floor a)
+floorGen :: IsMeta a => a -> Gen (Floor a UnifiedPattern)
 floorGen x = ceilFloorGen x Floor
 
-forallGen :: IsMeta a => a -> Gen (Forall a)
+forallGen :: IsMeta a => a -> Gen (Forall a UnifiedPattern)
 forallGen x = existsForallGen x Forall
 
-iffGen :: IsMeta a => a -> Gen (Iff a)
+iffGen :: IsMeta a => a -> Gen (Iff a UnifiedPattern)
 iffGen x = binaryOperatorGen x Iff
 
-impliesGen :: IsMeta a => a -> Gen (Implies a)
+impliesGen :: IsMeta a => a -> Gen (Implies a UnifiedPattern)
 impliesGen x = binaryOperatorGen x Implies
 
-memGen :: IsMeta a => a -> Gen (Mem a)
+memGen :: IsMeta a => a -> Gen (Mem a UnifiedPattern)
 memGen x = pure Mem
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) unifiedVariableGen
     <*> scale (`div` 2) unifiedPatternGen
 
-notGen :: IsMeta a => a -> Gen (Not a)
+notGen :: IsMeta a => a -> Gen (Not a UnifiedPattern)
 notGen x = pure Not
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) unifiedPatternGen
 
-orGen :: IsMeta a => a -> Gen (Or a)
+orGen :: IsMeta a => a -> Gen (Or a UnifiedPattern)
 orGen x = binaryOperatorGen x Or
 
 topGen :: IsMeta a => a -> Gen (Top a)
 topGen x = topBottomGen x Top
 
-patternGen :: IsMeta a => a -> Gen (Pattern a)
+patternGen :: IsMeta a => a -> Gen (Pattern a UnifiedPattern)
 patternGen x =
     suchThat ( oneof
         [ AndPattern <$> andGen x

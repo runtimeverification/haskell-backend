@@ -26,6 +26,34 @@ unparseUnitTests =
                     , sentenceSortAttributes = Attributes []
                     })
             "sort x{}[]"
+        , unparseTest
+            Attributes
+                { getAttributes =
+                    [ MetaPattern (TopPattern Top
+                        { topSort = SortVariableSort SortVariable
+                            { getSortVariable = Id {getId = "#Fm"} }
+                        })
+                    , ObjectPattern (MemPattern Mem
+                        { memOperandSort = SortActualSort SortActual
+                            { sortActualName = Id {getId = "B"}
+                            , sortActualSorts = []
+                            }
+                        , memResultSort = SortActualSort SortActual
+                            { sortActualName = Id {getId = "G"}
+                            , sortActualSorts = []
+                            }
+                        , memVariable = ObjectVariable Variable
+                            { variableName = Id {getId = "T"}
+                            , variableSort = SortVariableSort SortVariable
+                                { getSortVariable = Id {getId = "C"} }
+                            }
+                        , memPattern= MetaPattern (StringLiteralPattern
+                            StringLiteral { getStringLiteral = "" })
+                        })
+                    ]
+                }
+            "[\n    \\top{#Fm}(),\n    \\mem{\n        B{},\n        \
+                \G{}\n    }(T:C, \"\")\n]"
         ]
 
 unparseParseTests :: TestTree
