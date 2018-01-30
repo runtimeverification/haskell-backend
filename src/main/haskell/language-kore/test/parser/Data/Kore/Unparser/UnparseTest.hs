@@ -1,4 +1,4 @@
-module Data.Kore.Unparser.UnparseTest where
+module Data.Kore.Unparser.UnparseTest (unparseParseTests, unparseUnitTests) where
 
 import           Data.Kore.AST
 import           Data.Kore.ASTGen
@@ -12,6 +12,20 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 
+unparseUnitTests :: TestTree
+unparseUnitTests =
+    testGroup
+        "Unparse unit tests"
+        [ unparseTest
+            (SentenceSortSentence
+                SentenceSort
+                    { sentenceSortName = Id "x"
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    })
+            "sort x{}[]"
+        ]
+
 unparseParseTests :: TestTree
 unparseParseTests =
     testGroup
@@ -22,14 +36,6 @@ unparseParseTests =
             (forAll (idGen Meta) (unparseParseProp (idParser Meta)))
         , testProperty "StringLiteral"
             (forAll stringLiteralGen (unparseParseProp stringLiteralParser))
-        , testProperty "Object SymbolOrAlias"
-            (forAll (symbolOrAliasGen Object)
-                (unparseParseProp (symbolOrAliasRawParser Object SymbolOrAlias))
-            )
-        , testProperty "Meta SymbolOrAlias"
-            (forAll (symbolOrAliasGen Meta)
-                (unparseParseProp (symbolOrAliasRawParser Meta SymbolOrAlias))
-            )
         , testProperty "Object Symbol"
             (forAll (symbolGen Object) (unparseParseProp (symbolParser Object)))
         , testProperty "Meta Symbol"
@@ -73,3 +79,11 @@ parse parser input = Parser.parseOnly (parser <* Parser.endOfInput) (Char8.pack 
 
 unparseParseProp :: (Unparse a, Eq a) => Parser.Parser a -> a -> Bool
 unparseParseProp p a = parse p (unparseToString a) == Right a
+
+unparseTest :: (Unparse a, Show a) => a -> String -> TestTree
+unparseTest astInput expected =
+    testCase
+        ("Unparsing: " ++ show astInput)
+        (assertEqual "Expecting unparse success!"
+            expected
+            (unparseToString astInput))

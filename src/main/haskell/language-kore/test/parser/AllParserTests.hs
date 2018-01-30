@@ -30,5 +30,6 @@ unitTests =
         , cStringTests
         , koreLexemeTests
         , koreParserTests
+        , unparseUnitTests
         , unparseParseTests
         ]

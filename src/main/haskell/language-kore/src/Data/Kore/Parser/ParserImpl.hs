@@ -66,6 +66,34 @@ sortVariableParser
     -> Parser (SortVariable a)
 sortVariableParser x = SortVariable <$> idParser x
 
+{-|'inCurlyBracesSortVariableListParser' parses a comma delimited
+@object-sort-variable-list@ or a @meta-sort-variable-list@.
+
+Example BNF definition for @object-sort-variable-list@:
+
+@
+⟨object-sort-variable-list⟩ ::=
+    | ε
+    | ⟨object-sort-variable⟩
+    | ⟨object-sort-variable⟩ ‘,’ ⟨object-sort-variable-list⟩
+@
+
+Example BNF definition fragment for what we're parsing here:
+
+@
+⟨...⟩ ::= ... ‘{’ ⟨object-sort-variable-list⟩ ‘}’ ...
+@
+
+Always starts with @{@,
+-}
+inCurlyBracesSortVariableListParser
+    :: IsMeta a
+    => a        -- ^ Distinguishes between the meta and non-meta elements.
+    -> Parser [SortVariable a]
+inCurlyBracesSortVariableListParser x =
+    ParserUtils.sepByCharWithDelimitingChars skipWhitespace '{' '}' ','
+        (sortVariableParser x)
+
 {-|'unifiedSortVariableParser' parses a sort variable.-}
 unifiedSortVariableParser :: Parser UnifiedSortVariable
 unifiedSortVariableParser = do
@@ -74,7 +102,7 @@ unifiedSortVariableParser = do
         then MetaSortVariable <$> sortVariableParser Meta
         else ObjectSortVariable <$> sortVariableParser Object
 
-{-|'inCurlyBracesSortVariableListParser' parses a delimited
+{-|'inCurlyBracesUnifiedSortVariableListParser' parses a delimited
 @sort-variable-list@.
 
 BNF definition for @sort-variable-list@:
@@ -88,9 +116,6 @@ BNF definition for @sort-variable-list@:
     | ⟨meta-sort-variable⟩ ‘,’ ⟨sort-variable-list⟩
 @
 
-Note that we use a UnifiedSortVariable instead of separate @object-@ and
-@meta-@ @sort-variable@s.
-
 BNF definition fragment for what we're parsing here:
 
 @
@@ -99,8 +124,8 @@ BNF definition fragment for what we're parsing here:
 
 Always starts with @{@,
 -}
-inCurlyBracesSortVariableListParser :: Parser [UnifiedSortVariable]
-inCurlyBracesSortVariableListParser =
+inCurlyBracesUnifiedSortVariableListParser :: Parser [UnifiedSortVariable]
+inCurlyBracesUnifiedSortVariableListParser =
     ParserUtils.sepByCharWithDelimitingChars skipWhitespace '{' '}' ','
         unifiedSortVariableParser
 
@@ -163,7 +188,7 @@ validateMetaSort identifier [] =
     metaId = getId identifier
 validateMetaSort _ l = fail "metaSortConverter: Non empty parameter sorts."
 
-{-|'inCurlyBracesSortVariableListParser' parses either an @object-sort-list@
+{-|'inCurlyBracesSortListParser' parses either an @object-sort-list@
 or a @meta-sort-list@, delimited by curly braces and separated by commas.
 
 BNF definitions:
@@ -191,7 +216,7 @@ inCurlyBracesSortListParser x =
         (sortParser x)
 
 {-|'inParenthesesSortListParser' is similar to
-'inCurlyBracesSortVariableListParser', except that it uses parentheses
+'inCurlyBracesSortListParser', except that it uses parentheses
 instead of curly braces.
 -}
 inParenthesesSortListParser :: IsMeta a => a -> Parser [Sort a]
@@ -199,27 +224,7 @@ inParenthesesSortListParser x =
     ParserUtils.sepByCharWithDelimitingChars skipWhitespace '(' ')' ','
         (sortParser x)
 
-{-|'symbolOrAliasRemainderRawParser' parses the sort list that occurs
-in heads and constructs the head using the provided constructor.
-
-BNF fragments:
-
-@
-... ::= ... ‘{’ ⟨object-sort-list⟩ ‘}’ ...
-... ::= ... ‘{’ head-sort-list⟩ ‘}’ ...
-@
-
-Always starts with @{@.
--}
-symbolOrAliasRemainderRawParser
-    :: IsMeta a
-    => a   -- ^ Distinguishes between the meta and non-meta elements.
-    -> ([Sort a] -> (m a))  -- ^ Element constructor.
-    -> Parser (m a)
-symbolOrAliasRemainderRawParser x constructor =
-    constructor <$> inCurlyBracesSortListParser x
-
-{-|'symbolOrAliasRawParser' parses a head and constructs it using the provided
+{-|'symbolOrAliasDeclarationRawParser' parses a head and constructs it using the provided
 constructor.
 
 BNF definitions:
@@ -231,14 +236,34 @@ BNF definitions:
 
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
-symbolOrAliasRawParser
+symbolOrAliasDeclarationRawParser
     :: IsMeta a
     => a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Id a -> [Sort a] -> m a)  -- ^ Element constructor.
+    -> (Id a -> [SortVariable a] -> m a)  -- ^ Element constructor.
     -> Parser (m a)
-symbolOrAliasRawParser x constructor = do
+symbolOrAliasDeclarationRawParser x constructor = do
     headConstructor <- idParser x
-    symbolOrAliasRemainderRawParser x (constructor headConstructor)
+    symbolOrAliasDeclarationRemainderRawParser x (constructor headConstructor)
+
+{-|'symbolOrAliasDeclarationRemainderRawParser' parses the sort list that occurs
+in heads and constructs the head using the provided constructor.
+
+BNF fragments:
+
+@
+... ::= ... ‘{’ ⟨object-sort-variable-list⟩ ‘}’ ...
+... ::= ... ‘{’ head-sort-variable-list⟩ ‘}’ ...
+@
+
+Always starts with @{@.
+-}
+symbolOrAliasDeclarationRemainderRawParser
+    :: IsMeta a
+    => a   -- ^ Distinguishes between the meta and non-meta elements.
+    -> ([SortVariable a] -> (m a))  -- ^ Element constructor.
+    -> Parser (m a)
+symbolOrAliasDeclarationRemainderRawParser x constructor =
+    constructor <$> (inCurlyBracesSortVariableListParser x)
 
 {-|'aliasParser' parses either an @object-head@ or a @meta-head@ and interprets
 it as an alias head.
@@ -256,34 +281,14 @@ aliasParser
     :: IsMeta a
     => a        -- ^ Distinguishes between the meta and non-meta elements.
     -> Parser (Alias a)
-aliasParser x = symbolOrAliasRawParser x Alias
+aliasParser x = symbolOrAliasDeclarationRawParser x Alias
 
 
 {-|'symbolParser' is the same as 'aliasParser', but it interprets the head
 as a symbol one.
 -}
 symbolParser :: IsMeta a => a -> Parser (Symbol a)
-symbolParser x = symbolOrAliasRawParser x Symbol
-
-{-|'symbolOrAliasRemainderParser' parses the sort list that occurs
-in heads and constructs it as a SymbolOrAlias.
-
-BNF fragments:
-
-@
-⟨object-head⟩ ::= ... ‘{’ ⟨object-sort-list⟩ ‘}’
-⟨meta-head⟩ ::= ... ‘{’ ⟨meta-sort-list⟩ ‘}’
-@
-
-Always starts with @{@.
--}
-symbolOrAliasRemainderParser
-    :: IsMeta a
-    => a        -- ^ Distinguishes between the meta and non-meta elements.
-    -> Id a     -- ^ The already parsed prefix.
-    -> Parser (SymbolOrAlias a)
-symbolOrAliasRemainderParser x identifier =
-    symbolOrAliasRemainderRawParser x (SymbolOrAlias identifier)
+symbolParser x = symbolOrAliasDeclarationRawParser x Symbol
 
 {-|'unaryOperatorRemainderParser' parses the part after an unary operator's
 name and the first open curly brace and constructs it using the provided
@@ -479,7 +484,7 @@ symbolOrAliasPatternRemainderParser
     -> Parser (Pattern a)
 symbolOrAliasPatternRemainderParser x identifier = ApplicationPattern <$>
     ( pure Application
-        <*> symbolOrAliasRemainderParser x identifier
+        <*> (SymbolOrAlias identifier <$> inCurlyBracesSortListParser x)
         <*> inParenthesesPatternListParser
     )
 
@@ -540,7 +545,7 @@ unifiedVariableParser = do
         else ObjectVariable <$> variableParser Object
 
 {-|'variableOrTermPatternParser' parses an (object or meta) (variable pattern or
-application patten).
+application pattern).
 
 BNF definitions:
 
@@ -876,7 +881,8 @@ to parse the head and constructs it using the given constructor.
 BNF fragment example:
 
 @
-... ::= ... ⟨object-head⟩ ‘(’ ⟨object-sort-list⟩ ‘)’ ‘:’ ⟨object-sort⟩ ⟨attribute⟩
+... ::=  ... ⟨object-head-constructor⟩ ‘{’ ⟨object-sort-variable-list⟩ ‘}’
+             ‘(’ ⟨object-sort-variable-list⟩ ‘)’ ‘:’ ⟨object-sort⟩ ⟨attribute⟩
 @
 
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
@@ -910,7 +916,7 @@ Always starts with @{@.
 axiomSentenceRemainderParser :: Parser Sentence
 axiomSentenceRemainderParser = SentenceAxiomSentence <$>
     ( pure SentenceAxiom
-        <*> inCurlyBracesSortVariableListParser
+        <*> inCurlyBracesUnifiedSortVariableListParser
         <*> patternParser
         <*> attributesParser
     )
@@ -929,7 +935,7 @@ Always starts with @{@.
 sortSentenceRemainderParser :: Parser Sentence
 sortSentenceRemainderParser = SentenceSortSentence <$>
     ( pure SentenceSort
-        <*> inCurlyBracesSortVariableListParser
-        <*> sortParser Object
+        <*> idParser Object
+        <*> inCurlyBracesSortVariableListParser Object
         <*> attributesParser
     )

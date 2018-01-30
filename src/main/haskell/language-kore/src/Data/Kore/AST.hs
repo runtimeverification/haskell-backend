@@ -73,7 +73,8 @@ data SymbolOrAlias a = SymbolOrAlias
     }
     deriving (Show, Eq, Typeable)
 
-{-|'Symbol' corresponds to the @head(sort-list)@ part of the
+{-|'Symbol' corresponds to the
+@object-head-constructor{object-sort-variable-list}@ part of the
 @object-symbol-declaration@ and @meta-symbol-declaration@ syntactic categories
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 
@@ -84,11 +85,12 @@ Note that this is very similar to 'SymbolOrAlias'.
 -}
 data Symbol a = Symbol
     { symbolConstructor :: !(Id a)
-    , symbolParams      :: ![Sort a]
+    , symbolParams      :: ![SortVariable a]
     }
     deriving (Show, Eq, Typeable)
 
-{-|'Alias' corresponds to the @head(sort-list)@ part of the
+{-|'Alias' corresponds to the
+@object-head-constructor{object-sort-variable-list}@ part of the
 @object-alias-declaration@ and @meta-alias-declaration@ syntactic categories
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 
@@ -99,28 +101,9 @@ Note that this is very similar to 'SymbolOrAlias'.
 -}
 data Alias a = Alias
     { aliasConstructor :: !(Id a)
-    , aliasParams      :: ![Sort a]
+    , aliasParams      :: ![SortVariable a]
     }
     deriving (Show, Eq, Typeable)
-
-{-|'SymbolOrAliasClass' offers a common interface for 'Symbol', 'Alias', and
-'SymbolOrAlias' types.
--}
-class SymbolOrAliasClass c where
-    getSymbolOrAliasConstructor :: c a -> Id a
-    getSymbolOrAliasParams :: c a -> [Sort a]
-
-instance SymbolOrAliasClass SymbolOrAlias where
-    getSymbolOrAliasConstructor = symbolOrAliasConstructor
-    getSymbolOrAliasParams = symbolOrAliasParams
-
-instance SymbolOrAliasClass Symbol where
-    getSymbolOrAliasConstructor = symbolConstructor
-    getSymbolOrAliasParams = symbolParams
-
-instance SymbolOrAliasClass Alias where
-    getSymbolOrAliasConstructor = aliasConstructor
-    getSymbolOrAliasParams = aliasParams
 
 {-|'SortVariable' corresponds to the @object-sort-variable@ and
 @meta-sort-variable@ syntactic categories from the Semantics of K,
@@ -300,7 +283,7 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 
 This represents the ⌈BottomPattern⌉ Matching Logic construct.
 -}
-data Bottom a = Bottom { bottomSort :: !(Sort a)}
+newtype Bottom a = Bottom { bottomSort :: Sort a}
     deriving (Eq, Show, Typeable)
 
 {-|'Ceil' corresponds to the @\ceil@ branches of the @object-pattern@ and
@@ -503,7 +486,7 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 
 This represents the ⌈TopPattern⌉ Matching Logic construct.
 -}
-data Top a = Top { topSort :: !(Sort a)}
+newtype Top a = Top { topSort :: Sort a}
     deriving (Eq, Show, Typeable)
 
 {-|'Pattern' corresponds to the @object-pattern@ and
@@ -578,8 +561,8 @@ data SentenceAxiom = SentenceAxiom
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
 data SentenceSort = SentenceSort
-    { sentenceSortParameters :: ![UnifiedSortVariable]
-    , sentenceSortSort       :: !(Sort Object)
+    { sentenceSortName       :: !(Id Object)
+    , sentenceSortParameters :: ![SortVariable Object]
     , sentenceSortAttributes :: !Attributes
     }
     deriving (Eq, Show)

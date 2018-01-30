@@ -24,7 +24,7 @@ class (FromString w, MonadWriter w m, MonadReader Int m)
 
     betweenLines :: m ()
     betweenLines = do
-        indent <- reader (flip replicate ' ')
+        indent <- reader (`replicate` ' ')
         write "\n"
         write indent
 
@@ -98,21 +98,29 @@ instance Unparse (Sort a) where
 instance Unparse StringLiteral where
     unparse = inDoubleQuotes . write . escapeCString . getStringLiteral
 
-unparseSymbolOrAliasRaw
-    :: (UnparseOutput w m, SymbolOrAliasClass s)
-    => s a -> m ()
+unparseSymbolOrAliasRaw :: (UnparseOutput w m) => SymbolOrAlias a -> m ()
 unparseSymbolOrAliasRaw sa = do
-    unparse (getSymbolOrAliasConstructor sa)
-    inCurlyBraces (unparse (getSymbolOrAliasParams sa))
+    unparse (symbolOrAliasConstructor sa)
+    inCurlyBraces (unparse (symbolOrAliasParams sa))
+
+unparseSymbolRaw :: (UnparseOutput w m) => Symbol a -> m ()
+unparseSymbolRaw sa = do
+    unparse (symbolConstructor sa)
+    inCurlyBraces (unparse (symbolParams sa))
+
+unparseAliasRaw :: (UnparseOutput w m) => Alias a -> m ()
+unparseAliasRaw sa = do
+    unparse (aliasConstructor sa)
+    inCurlyBraces (unparse (aliasParams sa))
 
 instance Unparse (SymbolOrAlias a) where
     unparse = unparseSymbolOrAliasRaw
 
 instance Unparse (Alias a) where
-    unparse = unparseSymbolOrAliasRaw
+    unparse = unparseAliasRaw
 
 instance Unparse (Symbol a) where
-    unparse = unparseSymbolOrAliasRaw
+    unparse = unparseSymbolRaw
 
 instance Unparse ModuleName where
     unparse = write . getModuleName
@@ -265,8 +273,9 @@ instance Unparse SentenceAxiom where
 instance Unparse SentenceSort where
     unparse a = do
         write "sort"
+        write " "
+        unparse (sentenceSortName a)
         inCurlyBraces (unparse (sentenceSortParameters a))
-        unparse (sentenceSortSort a)
         unparse (sentenceSortAttributes a)
 
 instance Unparse Sentence where
