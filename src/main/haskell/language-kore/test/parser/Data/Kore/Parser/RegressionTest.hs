@@ -1,7 +1,7 @@
 module Data.Kore.Parser.RegressionTest (regressionTests, regressionTestsInputFiles) where
 
-import           Test.Tasty
-import           Test.Tasty.Golden
+import           Test.Tasty                 (TestTree, testGroup)
+import           Test.Tasty.Golden          (findByExtension, goldenVsString)
 
 import           Data.Kore.Parser.Parser
 

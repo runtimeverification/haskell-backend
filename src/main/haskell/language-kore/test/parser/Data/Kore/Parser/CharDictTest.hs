@@ -1,7 +1,7 @@
 module Data.Kore.Parser.CharDictTest (charDictTests) where
 
-import           Test.Tasty
-import           Test.Tasty.HUnit
+import           Test.Tasty                (TestTree, testGroup)
+import           Test.Tasty.HUnit          (assertEqual, testCase)
 
 import           Data.Kore.Parser.CharDict
 

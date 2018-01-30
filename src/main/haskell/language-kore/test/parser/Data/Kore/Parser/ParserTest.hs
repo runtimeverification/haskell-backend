@@ -1,6 +1,6 @@
 module Data.Kore.Parser.ParserTest (koreParserTests) where
 
-import           Test.Tasty
+import           Test.Tasty                       (TestTree, testGroup)
 
 import           Data.Kore.AST
 import           Data.Kore.Parser.ParserImpl

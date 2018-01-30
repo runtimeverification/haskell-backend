@@ -10,9 +10,9 @@ import           Data.Kore.Unparser.Unparse
 
 import qualified Data.Attoparsec.ByteString.Char8 as Parser
 import qualified Data.ByteString.Char8            as Char8
-import           Test.Tasty
-import           Test.Tasty.HUnit
-import           Test.Tasty.QuickCheck
+import           Test.Tasty                       (TestTree, testGroup)
+import           Test.Tasty.HUnit                 (assertEqual, testCase)
+import           Test.Tasty.QuickCheck            (forAll, testProperty)
 
 unparseUnitTests :: TestTree
 unparseUnitTests =

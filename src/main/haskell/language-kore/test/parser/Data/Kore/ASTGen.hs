@@ -1,7 +1,9 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Data.Kore.ASTGen where
 
-import           Test.QuickCheck.Gen
+import           Test.QuickCheck.Gen         (Gen, choose, chooseAny, elements,
+                                              getSize, listOf, oneof, scale,
+                                              sized, suchThat, vectorOf)
 
 import           Data.Kore.AST
 import           Data.Kore.Parser.LexemeImpl

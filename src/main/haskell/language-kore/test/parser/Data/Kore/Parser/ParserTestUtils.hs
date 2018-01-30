@@ -1,7 +1,8 @@
 module Data.Kore.Parser.ParserTestUtils where
 
-import           Test.Tasty
-import           Test.Tasty.HUnit
+import           Test.Tasty                       (TestTree, testGroup)
+import           Test.Tasty.HUnit                 (Assertion, assertBool,
+                                                   assertEqual, testCase)
 
 import qualified Data.Attoparsec.ByteString.Char8 as Parser
 import qualified Data.ByteString.Char8            as Char8

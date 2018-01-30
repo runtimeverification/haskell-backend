@@ -17,7 +17,7 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Data.Kore.AST where
 
-import           Data.Typeable
+import           Data.Typeable (Typeable, typeOf, typeRepArgs)
 
 data KoreLevel
     = ObjectLevel
