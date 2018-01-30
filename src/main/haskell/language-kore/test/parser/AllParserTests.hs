@@ -1,4 +1,5 @@
-import           Test.Tasty
+import           Test.Tasty                      (TestTree, defaultMain,
+                                                  testGroup)
 
 import           Data.Kore.Parser.CharDictTest
 import           Data.Kore.Parser.CharSetTest

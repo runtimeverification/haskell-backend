@@ -156,7 +156,7 @@ sortParser x = do
     actualSortParser identifier = do
         sorts <- inCurlyBracesSortListParser x
         when (koreLevel x == MetaLevel) (validateMetaSort identifier sorts)
-        return $ SortActualSort $ SortActual
+        return $ SortActualSort SortActual
             { sortActualName = identifier
             , sortActualSorts = sorts
             }
@@ -260,10 +260,10 @@ Always starts with @{@.
 symbolOrAliasDeclarationRemainderRawParser
     :: IsMeta a
     => a   -- ^ Distinguishes between the meta and non-meta elements.
-    -> ([SortVariable a] -> (m a))  -- ^ Element constructor.
+    -> ([SortVariable a] -> m a)  -- ^ Element constructor.
     -> Parser (m a)
 symbolOrAliasDeclarationRemainderRawParser x constructor =
-    constructor <$> (inCurlyBracesSortVariableListParser x)
+    constructor <$> inCurlyBracesSortVariableListParser x
 
 {-|'aliasParser' parses either an @object-head@ or a @meta-head@ and interprets
 it as an alias head.
@@ -359,9 +359,8 @@ existsForallRemainderParser
     -> Parser (m a)
 existsForallRemainderParser x constructor = do
     sort <- inCurlyBracesRemainderParser (sortParser x)
-    (variable, pattern) <-
-        parenPairParser unifiedVariableParser patternParser
-    return (constructor sort variable pattern)
+    (variable, qPattern) <- parenPairParser unifiedVariableParser patternParser
+    return (constructor sort variable qPattern)
 
 {-|'ceilFloorRemainderParser' parses the part after a ceil or floor
 operator's name and the first open curly brace and constructs it using the
@@ -384,8 +383,8 @@ ceilFloorRemainderParser
     -> Parser (m a)
 ceilFloorRemainderParser x constructor = do
     (sort1, sort2) <- curlyPairRemainderParser (sortParser x)
-    pattern <- inParenthesesParser patternParser
-    return (constructor sort1 sort2 pattern)
+    cfPattern <- inParenthesesParser patternParser
+    return (constructor sort1 sort2 cfPattern)
 
 {-|'memRemainderParser' parses the part after a mem
 operator's name and the first open curly brace and constructs it.
@@ -405,13 +404,13 @@ memRemainderParser
     -> Parser (Mem a)
 memRemainderParser x = do
     (sort1, sort2) <- curlyPairRemainderParser (sortParser x)
-    (variable, pattern) <-
+    (variable, mPattern) <-
         parenPairParser unifiedVariableParser patternParser
     return Mem
            { memOperandSort = sort1
            , memResultSort = sort2
            , memVariable = variable
-           , memPattern = pattern
+           , memPattern = mPattern
            }
 
 {-|'equalsLikeRemainderParser' parses the part after an equals

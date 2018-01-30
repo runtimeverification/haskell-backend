@@ -1,7 +1,7 @@
 module Data.Kore.Parser.CharSetTest (charSetTests) where
 
-import           Test.Tasty
-import           Test.Tasty.HUnit
+import           Test.Tasty               (TestTree, testGroup)
+import           Test.Tasty.HUnit         (assertBool, testCase)
 
 import           Data.Kore.Parser.CharSet as CharSet
 

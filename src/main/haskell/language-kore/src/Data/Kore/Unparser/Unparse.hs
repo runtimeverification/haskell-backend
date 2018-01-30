@@ -8,8 +8,10 @@ module Data.Kore.Unparser.Unparse ( FromString ( fromString )
                                   , unparseToString
                                   ) where
 
-import           Control.Monad.Reader
-import           Control.Monad.Writer
+import           Control.Monad.Reader     (MonadReader, Reader, local, reader,
+                                           runReader)
+import           Control.Monad.Writer     (MonadWriter, WriterT, execWriterT,
+                                           tell)
 
 import           Data.Kore.AST
 import           Data.Kore.Parser.CString (escapeCString)

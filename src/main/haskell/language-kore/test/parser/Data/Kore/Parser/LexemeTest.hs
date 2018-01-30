@@ -1,6 +1,6 @@
 module Data.Kore.Parser.LexemeTest (koreLexemeTests) where
 
-import           Test.Tasty
+import           Test.Tasty                       (TestTree, testGroup)
 
 import           Data.Kore.AST
 import           Data.Kore.Parser.Lexeme
@@ -16,6 +16,7 @@ koreLexemeTests =
         , testGroup "idParser" idParserTests
         , testGroup "inCurlyBracesParser" inCurlyBracesParserTests
         , testGroup "inParenthesesParser" inParenthesesParserTests
+        , testGroup "inSquareBracketsParser" inSquareBracketsParserTests
         , testGroup "keywordBasedParsers" keywordBasedParsersTests
         , testGroup "metaIdParser" metaIdParserTests
         , testGroup "mlLexemeParser" mlLexemeParserTests
@@ -42,10 +43,10 @@ commaParserTests =
 curlyPairParserTests :: [TestTree]
 curlyPairParserTests =
     parseTree (curlyPairParser (idParser Object) moduleNameParser)
-        [ Success "{a,B}" (Id "a", ModuleName "B")
-        , Success "{ a , B } " (Id "a", ModuleName "B")
-        , Success "{/**/a/**/,/**/B/**/}/**/" (Id "a", ModuleName "B")
-        , Success "{/*/**/a,/**/B/**/}/**/" (Id "a", ModuleName "B")
+        [ success "{a,B}" (Id "a", ModuleName "B")
+        , success "{ a , B } " (Id "a", ModuleName "B")
+        , success "{/**/a/**/,/**/B/**/}/**/" (Id "a", ModuleName "B")
+        , success "{/*/**/a,/**/B/**/}/**/" (Id "a", ModuleName "B")
         , FailureWithoutMessage
             [ "", " {a,B}", "{a}", "{B}", "{a,}", "{,B}", "{a{},b}"
             , "{a,B,c}", "(a,B)"]
@@ -54,21 +55,21 @@ curlyPairParserTests =
 idParserTests :: [TestTree]
 idParserTests =
     parseTree (idParser Object)
-        [ Success "A" (Id "A")
-        , Success "a" (Id "a")
-        , Success "abc" (Id "abc")
-        , Success "a'" (Id "a'")
-        , Success "a-" (Id "a-")
-        , Success "a'2" (Id "a'2")
-        , Success "a " (Id "a")
-        , Success "a/**/ " (Id "a")
-        , Failure
+        [ success "A" (Id "A")
+        , success "a" (Id "a")
+        , success "abc" (Id "abc")
+        , success "a'" (Id "a'")
+        , success "a-" (Id "a-")
+        , success "a'2" (Id "a'2")
+        , success "a " (Id "a")
+        , success "a/**/ " (Id "a")
+        , Failure FailureTest
             { failureInput = "["
             , failureExpected =
                 "Failed reading: genericIdRawParser: " ++
                 "Invalid first character '['."
             }
-        , Failure
+        , Failure FailureTest
             { failureInput = "module"
             , failureExpected =
                 "Failed reading: Identifiers should not be keywords: 'module'."
@@ -84,12 +85,12 @@ idParserTests =
 metaIdParserTests :: [TestTree]
 metaIdParserTests =
     parseTree (idParser Meta)
-        [ Success "#a" (Id "#a")
-        , Success "#`a" (Id "#`a")
-        , Success "#abc" (Id "#abc")
-        , Success "#a'" (Id "#a'")
-        , Success "#a'2" (Id "#a'2")
-        , Failure
+        [ success "#a" (Id "#a")
+        , success "#`a" (Id "#`a")
+        , success "#abc" (Id "#abc")
+        , success "#a'" (Id "#a'")
+        , success "#a'2" (Id "#a'2")
+        , Failure FailureTest
             { failureInput = "#module"
             , failureExpected =
                 "Failed reading: Identifiers should not be keywords: 'module'."
@@ -105,9 +106,9 @@ metaIdParserTests =
 inCurlyBracesParserTests :: [TestTree]
 inCurlyBracesParserTests =
     parseTree (inCurlyBracesParser (idParser Object))
-        [ Success "{a}" (Id "a")
-        , Success "{ a } " (Id "a")
-        , Success "{/**/a/**/}/**/" (Id "a")
+        [ success "{a}" (Id "a")
+        , success "{ a } " (Id "a")
+        , success "{/**/a/**/}/**/" (Id "a")
         , FailureWithoutMessage
             [ "", "{}", " {a}", "{a,b}", "{a{}}", "a}", "{a"]
         ]
@@ -115,9 +116,9 @@ inCurlyBracesParserTests =
 inParenthesesParserTests :: [TestTree]
 inParenthesesParserTests =
     parseTree (inParenthesesParser (idParser Object))
-        [ Success "(a)" (Id "a")
-        , Success "( a ) " (Id "a")
-        , Success "(/**/a/**/)/**/" (Id "a")
+        [ success "(a)" (Id "a")
+        , success "( a ) " (Id "a")
+        , success "(/**/a/**/)/**/" (Id "a")
         , FailureWithoutMessage
             [ "", "()", " (a)", "(a,b)", "(a())", "a)", "(a"]
         ]
@@ -125,9 +126,9 @@ inParenthesesParserTests =
 inSquareBracketsParserTests :: [TestTree]
 inSquareBracketsParserTests =
     parseTree (inSquareBracketsParser (idParser Object))
-        [ Success "[a]" (Id "a")
-        , Success "[ a ] " (Id "a")
-        , Success "[/**/a/**/]/**/" (Id "a")
+        [ success "[a]" (Id "a")
+        , success "[ a ] " (Id "a")
+        , success "[/**/a/**/]/**/" (Id "a")
         , FailureWithoutMessage
             [ "", "[]", " [a]", "[a,b]", "[a[]]", "a]", "[a"]
         ]
@@ -140,18 +141,18 @@ keywordBasedParsersTests =
             , ("de", inParenthesesParser (idParser Object))
             , ("dd", idParser Object)
             , ("df", inSquareBracketsParser (idParser Object))])
-        [ Success "abc{a}" (Id "a")
-        , Success "de(a)" (Id "a")
-        , Success "df[a]" (Id "a")
-        , Success "df [ a ] " (Id "a")
-        , Success "dd a" (Id "a")
-        , Success "df/**/ [/**/ a/**/ ]/**/ " (Id "a")
-        , Failure
+        [ success "abc{a}" (Id "a")
+        , success "de(a)" (Id "a")
+        , success "df[a]" (Id "a")
+        , success "df [ a ] " (Id "a")
+        , success "dd a" (Id "a")
+        , success "df/**/ [/**/ a/**/ ]/**/ " (Id "a")
+        , Failure FailureTest
             { failureInput = "dg(a)"
             , failureExpected =
                 "Failed reading: Keyword Based Parsers - unexpected character."
             }
-        , Failure
+        , Failure FailureTest
             { failureInput = "dda"
             , failureExpected =
                 "Failed reading: Expecting keyword to end."
@@ -173,12 +174,12 @@ mlLexemeParserTests =
 moduleNameParserTests :: [TestTree]
 moduleNameParserTests =
     parseTree moduleNameParser
-        [ Success "A" (ModuleName "A")
-        , Success "A-" (ModuleName "A-")
-        , Success "A2" (ModuleName "A2")
-        , Success "a'-2" (ModuleName "a'-2")
-        , Success "A " (ModuleName "A")
-        , Success "A/**/ " (ModuleName "A")
+        [ success "A" (ModuleName "A")
+        , success "A-" (ModuleName "A-")
+        , success "A2" (ModuleName "A2")
+        , success "a'-2" (ModuleName "a'-2")
+        , success "A " (ModuleName "A")
+        , success "A/**/ " (ModuleName "A")
         , FailureWithoutMessage
             [  "",  "-",  "-A",  "2",  "2A"
             , "#", "#A", " A", ","]
@@ -187,9 +188,9 @@ moduleNameParserTests =
 parenPairParserTests :: [TestTree]
 parenPairParserTests =
     parseTree (parenPairParser (idParser Object) moduleNameParser)
-        [ Success "(a,B)" (Id "a", ModuleName "B")
-        , Success "( a , B ) " (Id "a", ModuleName "B")
-        , Success "(/**/a/**/,/**/B/**/)/**/" (Id "a", ModuleName "B")
+        [ success "(a,B)" (Id "a", ModuleName "B")
+        , success "( a , B ) " (Id "a", ModuleName "B")
+        , success "(/**/a/**/,/**/B/**/)/**/" (Id "a", ModuleName "B")
         , FailureWithoutMessage
             [ "", " (a,B)", "(a)", "(B)", "(a,)", "(,B)", "(a(),b)"
             , "(a,B,c)", "{a,B}"]
@@ -203,7 +204,7 @@ skipWhitespaceTests =
             , "/*\n*/", "/*//*/", "/****/", "/* * / */", "/*/*/"
             , "//hello\n", "//hello"
             , "\t//hello\n /* world\n //*/  //!\n"]
-        , Failure
+        , Failure FailureTest
             { failureInput = "/*/"
             , failureExpected = "Failed reading: Unfinished comment."
             }
@@ -215,32 +216,32 @@ skipWhitespaceTests =
 stringLiteralParserTests :: [TestTree]
 stringLiteralParserTests =
     parseTree stringLiteralParser
-        [ Success "\"\"" (StringLiteral "")
-        , Success "\"a\"" (StringLiteral "a")
-        , Success "\"\\'\"" (StringLiteral "'")
-        , Success "\"\\\"\"" (StringLiteral "\"")
-        , Success "\"\\?\"" (StringLiteral "?")
-        , Success "\"\\a\"" (StringLiteral "\7")
-        , Success "\"\\b\"" (StringLiteral "\8")
-        , Success "\"\\f\"" (StringLiteral "\12")
-        , Success "\"\\n\"" (StringLiteral "\10")
-        , Success "\"\\r\"" (StringLiteral "\13")
-        , Success "\"\\t\"" (StringLiteral "\9")
-        , Success "\"\\v\"" (StringLiteral "\11")
-        , Success "\"\\377\"" (StringLiteral "\255")
-        , Success "\"\\77\"" (StringLiteral "\63")
-        , Success "\"\\77a\"" (StringLiteral ("\63" ++ "a"))
-        , Success "\"\\xFF\"" (StringLiteral "\255")
-        , Success "\"\\xff\"" (StringLiteral "\255")
-        , Success "\"\\xF\"" (StringLiteral "\15")
-        , Success "\"\\xFr\"" (StringLiteral ("\15" ++ "r"))
-        , Success "\"\\u1ABC\"" (StringLiteral "\6844")
-        , Success "\"\\u1ABCa\"" (StringLiteral ("\6844" ++ "a"))
-        , Success "\"\\u1abc\"" (StringLiteral "\6844")
-        , Success "\"\\U000120FF\"" (StringLiteral "\73983")
-        , Success "\"\\U000120FFa\"" (StringLiteral ("\73983" ++ "a"))
-        , Success "\"\\U000120ff\"" (StringLiteral "\73983")
-        , Failure
+        [ success "\"\"" (StringLiteral "")
+        , success "\"a\"" (StringLiteral "a")
+        , success "\"\\'\"" (StringLiteral "'")
+        , success "\"\\\"\"" (StringLiteral "\"")
+        , success "\"\\?\"" (StringLiteral "?")
+        , success "\"\\a\"" (StringLiteral "\7")
+        , success "\"\\b\"" (StringLiteral "\8")
+        , success "\"\\f\"" (StringLiteral "\12")
+        , success "\"\\n\"" (StringLiteral "\10")
+        , success "\"\\r\"" (StringLiteral "\13")
+        , success "\"\\t\"" (StringLiteral "\9")
+        , success "\"\\v\"" (StringLiteral "\11")
+        , success "\"\\377\"" (StringLiteral "\255")
+        , success "\"\\77\"" (StringLiteral "\63")
+        , success "\"\\77a\"" (StringLiteral ("\63" ++ "a"))
+        , success "\"\\xFF\"" (StringLiteral "\255")
+        , success "\"\\xff\"" (StringLiteral "\255")
+        , success "\"\\xF\"" (StringLiteral "\15")
+        , success "\"\\xFr\"" (StringLiteral ("\15" ++ "r"))
+        , success "\"\\u1ABC\"" (StringLiteral "\6844")
+        , success "\"\\u1ABCa\"" (StringLiteral ("\6844" ++ "a"))
+        , success "\"\\u1abc\"" (StringLiteral "\6844")
+        , success "\"\\U000120FF\"" (StringLiteral "\73983")
+        , success "\"\\U000120FFa\"" (StringLiteral ("\73983" ++ "a"))
+        , success "\"\\U000120ff\"" (StringLiteral "\73983")
+        , Failure FailureTest
             { failureInput = "\"\\UFFFFFFFF\""
             , failureExpected = "Failed reading: Character code 4294967295"
                 ++ " outside of the representable codes."

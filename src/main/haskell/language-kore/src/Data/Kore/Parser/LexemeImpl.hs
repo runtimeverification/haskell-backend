@@ -92,6 +92,7 @@ skipSingleLineCommentReminder =
     delta _ _    = Just COMMENT
 
 
+{-# ANN spaceChars "HLint: ignore Use String" #-}
 spaceChars :: [Char]
 spaceChars = [' ', '\t', '\n', '\v', '\f', '\r']
 
@@ -150,12 +151,14 @@ moduleNameRawParser :: Parser ModuleName
 moduleNameRawParser =
   ModuleName <$> genericIdRawParser moduleNameFirstCharSet moduleNameCharSet
 
+{-# ANN idFirstChars "HLint: ignore Use String" #-}
 idFirstChars :: [Char]
 idFirstChars = ['A'..'Z'] ++ ['a'..'z']
 
 idFirstCharSet :: CharSet
 idFirstCharSet = CharSet.makeCharSet idFirstChars
 
+{-# ANN idOtherChars "HLint: ignore Use String" #-}
 idOtherChars :: [Char]
 idOtherChars = ['0'..'9'] ++ "'-"
 

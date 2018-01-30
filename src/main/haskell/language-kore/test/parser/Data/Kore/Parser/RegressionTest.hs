@@ -1,9 +1,7 @@
 module Data.Kore.Parser.RegressionTest (regressionTests, regressionTestsInputFiles) where
 
-import           Test.Tasty
-import           Test.Tasty.Golden
-import           Test.Tasty.Golden.Advanced
-import           Test.Tasty.HUnit
+import           Test.Tasty                 (TestTree, testGroup)
+import           Test.Tasty.Golden          (findByExtension, goldenVsString)
 
 import           Data.Kore.Parser.Parser
 
@@ -34,14 +32,10 @@ goldenFromInputFileName inputFile =
   where (directory, fileName) = splitFileName inputFile
 
 prettyPrint :: Either String Definition -> LazyByteString.ByteString
-prettyPrint (Left error) =
-    LazyChar8.pack ("Parse error: " ++ error ++ ".")
+prettyPrint (Left err) =
+    LazyChar8.pack ("Parse error: " ++ err ++ ".")
 prettyPrint (Right definition) =
     LazyChar8.pack (show definition)
-
-goldenOutput :: Char8.ByteString -> LazyByteString.ByteString
-goldenOutput fileContent =
-    prettyPrint (fromKore fileContent)
 
 runParser :: String -> IO LazyByteString.ByteString
 runParser inputFileName = do

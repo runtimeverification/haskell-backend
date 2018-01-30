@@ -1,10 +1,8 @@
 module Data.Kore.Parser.CStringTest (cStringTests) where
 
-import           Data.Char                (chr)
-import           Test.QuickCheck.Gen
-import           Test.Tasty
-import           Test.Tasty.HUnit
-import           Test.Tasty.QuickCheck
+import           Test.Tasty               (TestTree, testGroup)
+import           Test.Tasty.HUnit         (assertEqual, testCase)
+import           Test.Tasty.QuickCheck    (testProperty)
 
 import           Data.Kore.Parser.CString
 
@@ -88,4 +86,4 @@ failureWithMessage (Input input) (Expected expected) =
 
 escapeUnescapeProp :: String -> Bool
 escapeUnescapeProp str =
-    (Right str == unescapeCString (escapeCString str))
+    Right str == unescapeCString (escapeCString str)
