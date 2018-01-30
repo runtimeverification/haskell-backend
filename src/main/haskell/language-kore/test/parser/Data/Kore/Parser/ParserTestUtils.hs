@@ -7,24 +7,47 @@ import qualified Data.Attoparsec.ByteString.Char8 as Parser
 import qualified Data.ByteString.Char8            as Char8
 import           Data.Either                      (isLeft)
 
+data SuccessfulTest a = SuccessfulTest
+    { successInput    :: String
+    , successExpected :: a
+    }
+
+data FailureTest = FailureTest
+    { failureInput    :: String
+    , failureExpected :: String
+    }
+
 data ParserTest a
-    = Success { successInput :: String, successExpected :: a }
-    | Failure { failureInput :: String, failureExpected :: String }
+    = Success (SuccessfulTest a)
+    | Failure FailureTest
     | Skip [String]
     | FailureWithoutMessage [String]
+
+success :: String -> a -> ParserTest a
+success input expected = Success SuccessfulTest
+    { successInput = input
+    , successExpected = expected
+    }
+
+failure :: String -> String -> ParserTest a
+failure input expected = Failure FailureTest
+    { failureInput = input
+    , failureExpected = expected
+    }
 
 parseTree :: (Show a, Eq a) => Parser.Parser a -> [ParserTest a] -> [TestTree]
 parseTree parser = map (parseTest parser)
 
 parseTest :: (Show a, Eq a) => Parser.Parser a -> ParserTest a -> TestTree
-parseTest parser (Success successInput successExpected) =
+parseTest parser (Success test) =
     testCase
-        ("Parsing '" ++ successInput ++ "'")
-        (parseSuccess successExpected parser successInput)
-parseTest parser (Failure failureInput failureExpected) =
+        ("Parsing '" ++ successInput test ++ "'")
+        (parseSuccess (successExpected test) parser (successInput test))
+parseTest parser (Failure test) =
     testCase
-        ("Failing to parse '" ++ failureInput ++ "'")
-        (parseFailureWithMessage failureExpected parser failureInput)
+        ("Failing to parse '" ++ failureInput test ++ "'")
+        (parseFailureWithMessage
+            (failureExpected test) parser (failureInput test))
 parseTest parser (FailureWithoutMessage tests) =
     testGroup "Tests Failing Without Message"
     (map
@@ -53,9 +76,9 @@ parseSkipTest parser (Skip tests) =
         )
         tests
     )
-parseSkipTest _ (Success successInput _) =
+parseSkipTest _ (Success test) =
     testCase
-        ("Parsing success test '" ++ successInput ++ "'")
+        ("Parsing success test '" ++ successInput test ++ "'")
         (assertBool "Not Expecting Success Tests here" False)
 parseSkipTest parser test = parseTest parser test
 

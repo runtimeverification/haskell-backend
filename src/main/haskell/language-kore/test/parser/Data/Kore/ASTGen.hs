@@ -2,10 +2,8 @@
 module Data.Kore.ASTGen where
 
 import           Test.QuickCheck.Gen
-import           Test.Tasty.QuickCheck
 
 import           Data.Kore.AST
-import           Data.Kore.Parser.CString
 import           Data.Kore.Parser.LexemeImpl
 
 
@@ -14,9 +12,10 @@ couple gen = do
     size <- getSize
     if size <= 0
         then return []
-        else choose (0,3) >>= (\n -> vectorOf n gen)
+        else choose (0,3) >>= (`vectorOf` gen)
 
-genericIdGen :: [Char] -> [Char] -> Gen (String)
+{-# ANN genericIdGen "HLint: ignore Use String" #-}
+genericIdGen :: [Char] -> [Char] -> Gen String
 genericIdGen firstChars nextChars = do
     firstChar <- elements firstChars
     body <- listOf (elements nextChars)
@@ -25,7 +24,7 @@ genericIdGen firstChars nextChars = do
 idGen :: IsMeta a => a -> Gen (Id a)
 idGen x
     | koreLevel x == ObjectLevel = Id <$> objectId
-    | otherwise                  = Id <$> ('#' :) <$> objectId
+    | otherwise                  = Id . ('#' :) <$> objectId
   where
     objectId = genericIdGen idFirstChars (idFirstChars ++ idOtherChars)
 
@@ -224,7 +223,7 @@ patternGen x =
 unifiedPatternGen :: Gen UnifiedPattern
 unifiedPatternGen = sized (\n ->
     if n<=0
-        then MetaPattern <$> StringLiteralPattern <$> stringLiteralGen
+        then MetaPattern . StringLiteralPattern <$> stringLiteralGen
         else oneof
             [ MetaPattern <$> patternGen Meta
             , ObjectPattern <$> patternGen Object

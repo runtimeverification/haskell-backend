@@ -88,4 +88,4 @@ failureWithMessage (Input input) (Expected expected) =
 
 escapeUnescapeProp :: String -> Bool
 escapeUnescapeProp str =
-    (Right str == unescapeCString (escapeCString str))
+    Right str == unescapeCString (escapeCString str)

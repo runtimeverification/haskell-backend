@@ -20,12 +20,14 @@ import           Data.Char                (chr, digitToInt, isHexDigit,
                                            isOctDigit, ord, toUpper)
 import           Numeric                  (showHex, showOct)
 
+{-# ANN oneCharEscapes "HLint: ignore Use String" #-}
 oneCharEscapes :: [Char]
 oneCharEscapes = "'\"?\\abfnrtv"
 
 oneCharEscapeDict :: CharSet
 oneCharEscapeDict = makeCharSet oneCharEscapes
 
+{-# ANN escapeCString "HLint: ignore Use ." #-}
 escapeCString :: String -> String
 escapeCString s = foldr (.) id (map escapeAndAddChar s) ""
 
@@ -77,22 +79,22 @@ i.e. @\@ and continues the unescape of the string.
 unescapePrefixAndContinue :: String -> Either String String
 unescapePrefixAndContinue (c:cs)
   | c `CharSet.elem` oneCharEscapeDict =
-      (:) <$> (unescapeOne c) <*> (unescapeCString cs)
+      (:) <$> unescapeOne c <*> unescapeCString cs
   | isOctDigit c =
       let (octs,rest) = span isOctDigit cs
           (digits, octs') = splitAt 2 octs
           octVal = digitsToNumber 8 (c:digits)
-      in ((chr octVal : octs') ++) <$> (unescapeCString rest)
+      in ((chr octVal : octs') ++) <$> unescapeCString rest
   | c == 'x' =
       let (hexes,rest) = span isHexDigit cs
           hexVal = digitsToNumber 16 hexes
-      in (:) <$> (safeChr hexVal) <*> (unescapeCString rest)
+      in (:) <$> safeChr hexVal <*> unescapeCString rest
   | toUpper c == 'U' =
       let digitCount = if c == 'u' then 4 else 8
           (unis, rest) = splitAt digitCount cs
           hexVal = digitsToNumber 16 unis
       in if digitCount == length unis
-          then (:) <$> (safeChr hexVal) <*> (unescapeCString rest)
+          then (:) <$> safeChr hexVal <*> unescapeCString rest
           else Left "Invalid unicode sequence length."
 unescapePrefixAndContinue cs =
   Left ("unescapeCString : Unknown escape sequence '\\" ++ cs ++ "'.")

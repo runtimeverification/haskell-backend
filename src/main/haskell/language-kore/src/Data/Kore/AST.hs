@@ -40,10 +40,10 @@ instance IsMeta Object where
     koreLevel _ = ObjectLevel
 
 isObject :: (IsMeta a, Typeable (m a)) => m a -> Bool
-isObject x = (head $ typeRepArgs (typeOf x)) == typeOf Object
+isObject x = head (typeRepArgs (typeOf x)) == typeOf Object
 
 isMeta :: (IsMeta a, Typeable (m a)) => m a -> Bool
-isMeta x = (head $ typeRepArgs (typeOf x)) == typeOf Meta
+isMeta x = head (typeRepArgs (typeOf x)) == typeOf Meta
 
 {-|'Id' corresponds to the @object-identifier@ and @meta-identifier@
 syntactic categories from the Semantics of K, Section 9.1.1 (Lexicon).

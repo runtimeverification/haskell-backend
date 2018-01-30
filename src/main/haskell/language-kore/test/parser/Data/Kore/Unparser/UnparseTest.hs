@@ -1,4 +1,6 @@
-module Data.Kore.Unparser.UnparseTest (unparseParseTests, unparseUnitTests) where
+module Data.Kore.Unparser.UnparseTest ( unparseParseTests
+                                      , unparseUnitTests
+                                      ) where
 
 import           Data.Kore.AST
 import           Data.Kore.ASTGen
@@ -75,7 +77,8 @@ unparseParseTests =
         ]
 
 parse :: Parser.Parser a -> String -> Either String a
-parse parser input = Parser.parseOnly (parser <* Parser.endOfInput) (Char8.pack input)
+parse parser input =
+    Parser.parseOnly (parser <* Parser.endOfInput) (Char8.pack input)
 
 unparseParseProp :: (Unparse a, Eq a) => Parser.Parser a -> a -> Bool
 unparseParseProp p a = parse p (unparseToString a) == Right a
