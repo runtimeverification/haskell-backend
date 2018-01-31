@@ -2,23 +2,23 @@ Definition
     { definitionAttributes = Attributes []
     , definitionModules =
         Module
-            { moduleName = (ModuleName "TEST-SYMBOL-5")
+            { moduleName = ModuleName "TEST-SYMBOL-5"
             , moduleSentences =
-                [ (ObjectSentenceSymbolSentence SentenceSymbol
+                [ ObjectSentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
-                            { symbolConstructor = (Id Object "f")
+                            { symbolConstructor = Id Object "f"
                             , symbolParams =
-                                [ (SortVariable (Id Object "S"))
+                                [ SortVariable (Id Object "S")
                                 ]
                             }
                     , sentenceSymbolSorts =
-                        [ (SortVariableSort (SortVariable (Id Object "S")))
+                        [ SortVariableSort (SortVariable (Id Object "S"))
                         ]
                     , sentenceSymbolReturnSort =
-                        (SortVariableSort (SortVariable (Id Object "S")))
+                        SortVariableSort (SortVariable (Id Object "S"))
                     , sentenceSymbolAttributes = Attributes []
-                    })
+                    }
                 ]
             , moduleAttributes = Attributes []
             }

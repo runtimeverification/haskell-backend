@@ -2,21 +2,21 @@ Definition
     { definitionAttributes = Attributes []
     , definitionModules =
         Module
-            { moduleName = (ModuleName "TEST-ALIAS-4")
+            { moduleName = ModuleName "TEST-ALIAS-4"
             , moduleSentences =
-                [ (ObjectSentenceAliasSentence SentenceAlias
+                [ ObjectSentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias =
                         Alias
-                            { aliasConstructor = (Id Object "f")
+                            { aliasConstructor = Id Object "f"
                             , aliasParams =
-                                [ (SortVariable (Id Object "S"))
+                                [ SortVariable (Id Object "S")
                                 ]
                             }
                     , sentenceAliasSorts = []
                     , sentenceAliasReturnSort =
-                        (SortVariableSort (SortVariable (Id Object "S")))
+                        SortVariableSort (SortVariable (Id Object "S"))
                     , sentenceAliasAttributes = Attributes []
-                    })
+                    }
                 ]
             , moduleAttributes = Attributes []
             }

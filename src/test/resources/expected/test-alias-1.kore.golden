@@ -2,27 +2,27 @@ Definition
     { definitionAttributes = Attributes []
     , definitionModules =
         Module
-            { moduleName = (ModuleName "TEST-ALIAS-1")
+            { moduleName = ModuleName "TEST-ALIAS-1"
             , moduleSentences =
-                [ (SentenceSortSentence SentenceSort
-                    { sentenceSortName = (Id Object "S")
+                [ SentenceSortSentence SentenceSort
+                    { sentenceSortName = Id Object "S"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
-                    })
-                , (ObjectSentenceAliasSentence SentenceAlias
+                    }
+                , ObjectSentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias =
                         Alias
-                            { aliasConstructor = (Id Object "f")
+                            { aliasConstructor = Id Object "f"
                             , aliasParams = []
                             }
                     , sentenceAliasSorts = []
                     , sentenceAliasReturnSort =
-                        (SortActualSortSortActual
-                                { sortActualName = (Id Object "S")
+                        SortActualSortSortActual
+                                { sortActualName = Id Object "S"
                                 , sortActualSorts = []
-                                })
+                                }
                     , sentenceAliasAttributes = Attributes []
-                    })
+                    }
                 ]
             , moduleAttributes = Attributes []
             }

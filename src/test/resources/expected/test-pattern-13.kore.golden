@@ -2,27 +2,27 @@ Definition
     { definitionAttributes = Attributes []
     , definitionModules =
         Module
-            { moduleName = (ModuleName "TEST-PATTERN-13")
+            { moduleName = ModuleName "TEST-PATTERN-13"
             , moduleSentences =
-                [ (SentenceAxiomSentence SentenceAxiom
+                [ SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ (ObjectSortVariable (SortVariable (Id Object "S")))
+                        [ ObjectSortVariable (SortVariable (Id Object "S"))
                         ]
                     , sentenceAxiomPattern =
-                        (ObjectPattern (FloorPattern Floor
+                        ObjectPattern (FloorPattern Floor
                             { floorOperandSort =
-                                (SortVariableSort (SortVariable (Id Object "S")))
+                                SortVariableSort (SortVariable (Id Object "S"))
                             , floorResultSort =
-                                (SortVariableSort (SortVariable (Id Object "S")))
+                                SortVariableSort (SortVariable (Id Object "S"))
                             , floorPattern =
-                                (ObjectPattern (VariablePattern Variable
-                                    { variableName = (Id Object "X")
+                                ObjectPattern (VariablePattern Variable
+                                    { variableName = Id Object "X"
                                     , variableSort =
-                                        (SortVariableSort (SortVariable (Id Object "S")))
-                                    }))
-                            }))
+                                        SortVariableSort (SortVariable (Id Object "S"))
+                                    })
+                            })
                     , sentenceAxiomAttributes = Attributes []
-                    })
+                    }
                 ]
             , moduleAttributes = Attributes []
             }

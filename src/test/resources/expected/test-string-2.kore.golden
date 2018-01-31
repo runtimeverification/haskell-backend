@@ -1,11 +1,11 @@
 Definition
     { definitionAttributes =
-        (Attributes 
-            [ (MetaPattern (StringLiteralPattern (StringLiteral "\a")))
-            ])
+        Attributes 
+            [ MetaPattern (StringLiteralPattern (StringLiteral "\a"))
+            ]
     , definitionModules =
         Module
-            { moduleName = (ModuleName "TEST-STRING-2")
+            { moduleName = ModuleName "TEST-STRING-2"
             , moduleSentences = []
             , moduleAttributes = Attributes []
             }

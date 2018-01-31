@@ -2,31 +2,31 @@ Definition
     { definitionAttributes = Attributes []
     , definitionModules =
         Module
-            { moduleName = (ModuleName "TEST-PATTERN-7")
+            { moduleName = ModuleName "TEST-PATTERN-7"
             , moduleSentences =
-                [ (SentenceAxiomSentence SentenceAxiom
+                [ SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ (ObjectSortVariable (SortVariable (Id Object "S")))
+                        [ ObjectSortVariable (SortVariable (Id Object "S"))
                         ]
                     , sentenceAxiomPattern =
-                        (ObjectPattern (IffPattern Iff
+                        ObjectPattern (IffPattern Iff
                             { iffSort =
-                                (SortVariableSort (SortVariable (Id Object "S")))
+                                SortVariableSort (SortVariable (Id Object "S"))
                             , iffFirst =
-                                (ObjectPattern (VariablePattern Variable
-                                    { variableName = (Id Object "X")
+                                ObjectPattern (VariablePattern Variable
+                                    { variableName = Id Object "X"
                                     , variableSort =
-                                        (SortVariableSort (SortVariable (Id Object "S")))
-                                    }))
+                                        SortVariableSort (SortVariable (Id Object "S"))
+                                    })
                             , iffSecond =
-                                (ObjectPattern (VariablePattern Variable
-                                    { variableName = (Id Object "X")
+                                ObjectPattern (VariablePattern Variable
+                                    { variableName = Id Object "X"
                                     , variableSort =
-                                        (SortVariableSort (SortVariable (Id Object "S")))
-                                    }))
-                            }))
+                                        SortVariableSort (SortVariable (Id Object "S"))
+                                    })
+                            })
                     , sentenceAxiomAttributes = Attributes []
-                    })
+                    }
                 ]
             , moduleAttributes = Attributes []
             }

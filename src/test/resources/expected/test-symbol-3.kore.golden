@@ -2,36 +2,36 @@ Definition
     { definitionAttributes = Attributes []
     , definitionModules =
         Module
-            { moduleName = (ModuleName "TEST-SYMBOL-3")
+            { moduleName = ModuleName "TEST-SYMBOL-3"
             , moduleSentences =
-                [ (SentenceSortSentence SentenceSort
-                    { sentenceSortName = (Id Object "S")
+                [ SentenceSortSentence SentenceSort
+                    { sentenceSortName = Id Object "S"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
-                    })
-                , (ObjectSentenceSymbolSentence SentenceSymbol
+                    }
+                , ObjectSentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
-                            { symbolConstructor = (Id Object "f")
+                            { symbolConstructor = Id Object "f"
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ (SortActualSortSortActual
-                                { sortActualName = (Id Object "S")
+                        [ SortActualSortSortActual
+                                { sortActualName = Id Object "S"
                                 , sortActualSorts = []
-                                })
-                        , (SortActualSortSortActual
-                                { sortActualName = (Id Object "S")
+                                }
+                        , SortActualSortSortActual
+                                { sortActualName = Id Object "S"
                                 , sortActualSorts = []
-                                })
+                                }
                         ]
                     , sentenceSymbolReturnSort =
-                        (SortActualSortSortActual
-                                { sortActualName = (Id Object "S")
+                        SortActualSortSortActual
+                                { sortActualName = Id Object "S"
                                 , sortActualSorts = []
-                                })
+                                }
                     , sentenceSymbolAttributes = Attributes []
-                    })
+                    }
                 ]
             , moduleAttributes = Attributes []
             }

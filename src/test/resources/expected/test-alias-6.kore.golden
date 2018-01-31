@@ -2,24 +2,24 @@ Definition
     { definitionAttributes = Attributes []
     , definitionModules =
         Module
-            { moduleName = (ModuleName "TEST-ALIAS-6")
+            { moduleName = ModuleName "TEST-ALIAS-6"
             , moduleSentences =
-                [ (ObjectSentenceAliasSentence SentenceAlias
+                [ ObjectSentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias =
                         Alias
-                            { aliasConstructor = (Id Object "f")
+                            { aliasConstructor = Id Object "f"
                             , aliasParams =
-                                [ (SortVariable (Id Object "S"))
+                                [ SortVariable (Id Object "S")
                                 ]
                             }
                     , sentenceAliasSorts =
-                        [ (SortVariableSort (SortVariable (Id Object "S")))
-                        , (SortVariableSort (SortVariable (Id Object "S")))
+                        [ SortVariableSort (SortVariable (Id Object "S"))
+                        , SortVariableSort (SortVariable (Id Object "S"))
                         ]
                     , sentenceAliasReturnSort =
-                        (SortVariableSort (SortVariable (Id Object "S")))
+                        SortVariableSort (SortVariable (Id Object "S"))
                     , sentenceAliasAttributes = Attributes []
-                    })
+                    }
                 ]
             , moduleAttributes = Attributes []
             }

@@ -2,13 +2,13 @@ Definition
     { definitionAttributes = Attributes []
     , definitionModules =
         Module
-            { moduleName = (ModuleName "TEST-SORT-1")
+            { moduleName = ModuleName "TEST-SORT-1"
             , moduleSentences =
-                [ (SentenceSortSentence SentenceSort
-                    { sentenceSortName = (Id Object "Nat")
+                [ SentenceSortSentence SentenceSort
+                    { sentenceSortName = Id Object "Nat"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
-                    })
+                    }
                 ]
             , moduleAttributes = Attributes []
             }

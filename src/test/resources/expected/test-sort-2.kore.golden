@@ -2,15 +2,15 @@ Definition
     { definitionAttributes = Attributes []
     , definitionModules =
         Module
-            { moduleName = (ModuleName "TEST-SORT-2")
+            { moduleName = ModuleName "TEST-SORT-2"
             , moduleSentences =
-                [ (SentenceSortSentence SentenceSort
-                    { sentenceSortName = (Id Object "List")
+                [ SentenceSortSentence SentenceSort
+                    { sentenceSortName = Id Object "List"
                     , sentenceSortParameters =
-                        [ (SortVariable (Id Object "S"))
+                        [ SortVariable (Id Object "S")
                         ]
                     , sentenceSortAttributes = Attributes []
-                    })
+                    }
                 ]
             , moduleAttributes = Attributes []
             }

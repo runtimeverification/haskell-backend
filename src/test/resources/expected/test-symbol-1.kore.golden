@@ -2,27 +2,27 @@ Definition
     { definitionAttributes = Attributes []
     , definitionModules =
         Module
-            { moduleName = (ModuleName "TEST-SYMBOL-1")
+            { moduleName = ModuleName "TEST-SYMBOL-1"
             , moduleSentences =
-                [ (SentenceSortSentence SentenceSort
-                    { sentenceSortName = (Id Object "S")
+                [ SentenceSortSentence SentenceSort
+                    { sentenceSortName = Id Object "S"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
-                    })
-                , (ObjectSentenceSymbolSentence SentenceSymbol
+                    }
+                , ObjectSentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
-                            { symbolConstructor = (Id Object "f")
+                            { symbolConstructor = Id Object "f"
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts = []
                     , sentenceSymbolReturnSort =
-                        (SortActualSortSortActual
-                                { sortActualName = (Id Object "S")
+                        SortActualSortSortActual
+                                { sortActualName = Id Object "S"
                                 , sortActualSorts = []
-                                })
+                                }
                     , sentenceSymbolAttributes = Attributes []
-                    })
+                    }
                 ]
             , moduleAttributes = Attributes []
             }

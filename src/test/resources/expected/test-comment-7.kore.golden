@@ -2,7 +2,7 @@ Definition
     { definitionAttributes = Attributes []
     , definitionModules =
         Module
-            { moduleName = (ModuleName "TEST-COMMENT-7")
+            { moduleName = ModuleName "TEST-COMMENT-7"
             , moduleSentences = []
             , moduleAttributes = Attributes []
             }

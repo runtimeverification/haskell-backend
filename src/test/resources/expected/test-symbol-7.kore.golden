@@ -2,31 +2,31 @@ Definition
     { definitionAttributes = Attributes []
     , definitionModules =
         Module
-            { moduleName = (ModuleName "TEST-SYMBOL-7")
+            { moduleName = ModuleName "TEST-SYMBOL-7"
             , moduleSentences =
-                [ (SentenceSortSentence SentenceSort
-                    { sentenceSortName = (Id Object "Nat")
+                [ SentenceSortSentence SentenceSort
+                    { sentenceSortName = Id Object "Nat"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
-                    })
-                , (ObjectSentenceSymbolSentence SentenceSymbol
+                    }
+                , ObjectSentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
-                            { symbolConstructor = (Id Object "f")
+                            { symbolConstructor = Id Object "f"
                             , symbolParams =
-                                [ (SortVariable (Id Object "S"))
+                                [ SortVariable (Id Object "S")
                                 ]
                             }
                     , sentenceSymbolSorts =
-                        [ (SortActualSortSortActual
-                                { sortActualName = (Id Object "Nat")
+                        [ SortActualSortSortActual
+                                { sortActualName = Id Object "Nat"
                                 , sortActualSorts = []
-                                })
+                                }
                         ]
                     , sentenceSymbolReturnSort =
-                        (SortVariableSort (SortVariable (Id Object "S")))
+                        SortVariableSort (SortVariable (Id Object "S"))
                     , sentenceSymbolAttributes = Attributes []
-                    })
+                    }
                 ]
             , moduleAttributes = Attributes []
             }

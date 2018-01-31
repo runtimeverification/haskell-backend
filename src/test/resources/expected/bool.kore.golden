@@ -2,714 +2,714 @@ Definition
     { definitionAttributes = Attributes []
     , definitionModules =
         Module
-            { moduleName = (ModuleName "BOOL")
+            { moduleName = ModuleName "BOOL"
             , moduleSentences =
-                [ (SentenceSortSentence SentenceSort
-                    { sentenceSortName = (Id Object "Bool")
+                [ SentenceSortSentence SentenceSort
+                    { sentenceSortName = Id Object "Bool"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
-                    })
-                , (ObjectSentenceSymbolSentence SentenceSymbol
+                    }
+                , ObjectSentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
-                            { symbolConstructor = (Id Object "true")
+                            { symbolConstructor = Id Object "true"
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts = []
                     , sentenceSymbolReturnSort =
-                        (SortActualSortSortActual
-                                { sortActualName = (Id Object "Bool")
+                        SortActualSortSortActual
+                                { sortActualName = Id Object "Bool"
                                 , sortActualSorts = []
-                                })
+                                }
                     , sentenceSymbolAttributes = Attributes []
-                    })
-                , (ObjectSentenceSymbolSentence SentenceSymbol
+                    }
+                , ObjectSentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
-                            { symbolConstructor = (Id Object "false")
+                            { symbolConstructor = Id Object "false"
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts = []
                     , sentenceSymbolReturnSort =
-                        (SortActualSortSortActual
-                                { sortActualName = (Id Object "Bool")
+                        SortActualSortSortActual
+                                { sortActualName = Id Object "Bool"
                                 , sortActualSorts = []
-                                })
+                                }
                     , sentenceSymbolAttributes = Attributes []
-                    })
-                , (ObjectSentenceSymbolSentence SentenceSymbol
+                    }
+                , ObjectSentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
-                            { symbolConstructor = (Id Object "andBool")
+                            { symbolConstructor = Id Object "andBool"
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ (SortActualSortSortActual
-                                { sortActualName = (Id Object "Bool")
+                        [ SortActualSortSortActual
+                                { sortActualName = Id Object "Bool"
                                 , sortActualSorts = []
-                                })
-                        , (SortActualSortSortActual
-                                { sortActualName = (Id Object "Bool")
+                                }
+                        , SortActualSortSortActual
+                                { sortActualName = Id Object "Bool"
                                 , sortActualSorts = []
-                                })
+                                }
                         ]
                     , sentenceSymbolReturnSort =
-                        (SortActualSortSortActual
-                                { sortActualName = (Id Object "Bool")
+                        SortActualSortSortActual
+                                { sortActualName = Id Object "Bool"
                                 , sortActualSorts = []
-                                })
+                                }
                     , sentenceSymbolAttributes = Attributes []
-                    })
-                , (ObjectSentenceSymbolSentence SentenceSymbol
+                    }
+                , ObjectSentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
-                            { symbolConstructor = (Id Object "orBool")
+                            { symbolConstructor = Id Object "orBool"
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ (SortActualSortSortActual
-                                { sortActualName = (Id Object "Bool")
+                        [ SortActualSortSortActual
+                                { sortActualName = Id Object "Bool"
                                 , sortActualSorts = []
-                                })
-                        , (SortActualSortSortActual
-                                { sortActualName = (Id Object "Bool")
+                                }
+                        , SortActualSortSortActual
+                                { sortActualName = Id Object "Bool"
                                 , sortActualSorts = []
-                                })
+                                }
                         ]
                     , sentenceSymbolReturnSort =
-                        (SortActualSortSortActual
-                                { sortActualName = (Id Object "Bool")
+                        SortActualSortSortActual
+                                { sortActualName = Id Object "Bool"
                                 , sortActualSorts = []
-                                })
+                                }
                     , sentenceSymbolAttributes = Attributes []
-                    })
-                , (ObjectSentenceSymbolSentence SentenceSymbol
+                    }
+                , ObjectSentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
-                            { symbolConstructor = (Id Object "notBool")
+                            { symbolConstructor = Id Object "notBool"
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ (SortActualSortSortActual
-                                { sortActualName = (Id Object "Bool")
+                        [ SortActualSortSortActual
+                                { sortActualName = Id Object "Bool"
                                 , sortActualSorts = []
-                                })
+                                }
                         ]
                     , sentenceSymbolReturnSort =
-                        (SortActualSortSortActual
-                                { sortActualName = (Id Object "Bool")
+                        SortActualSortSortActual
+                                { sortActualName = Id Object "Bool"
                                 , sortActualSorts = []
-                                })
+                                }
                     , sentenceSymbolAttributes = Attributes []
-                    })
-                , (SentenceAxiomSentence SentenceAxiom
+                    }
+                , SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters = []
                     , sentenceAxiomPattern =
-                        (ObjectPattern (OrPattern Or
+                        ObjectPattern (OrPattern Or
                             { orSort =
-                                (SortActualSortSortActual
-                                        { sortActualName = (Id Object "Bool")
+                                SortActualSortSortActual
+                                        { sortActualName = Id Object "Bool"
                                         , sortActualSorts = []
-                                        })
+                                        }
                             , orFirst =
-                                (ObjectPattern (ApplicationPattern Application
+                                ObjectPattern (ApplicationPattern Application
                                     { applicationSymbolOrAlias =
                                         SymbolOrAlias
-                                            { symbolOrAliasConstructor = (Id Object "true")
+                                            { symbolOrAliasConstructor = Id Object "true"
                                             , symbolOrAliasParams = []
                                             }
                                     , applicationPatterns = []
-                                    }))
+                                    })
                             , orSecond =
-                                (ObjectPattern (ApplicationPattern Application
+                                ObjectPattern (ApplicationPattern Application
                                     { applicationSymbolOrAlias =
                                         SymbolOrAlias
-                                            { symbolOrAliasConstructor = (Id Object "false")
+                                            { symbolOrAliasConstructor = Id Object "false"
                                             , symbolOrAliasParams = []
                                             }
                                     , applicationPatterns = []
-                                    }))
-                            }))
+                                    })
+                            })
                     , sentenceAxiomAttributes = Attributes []
-                    })
-                , (SentenceAxiomSentence SentenceAxiom
+                    }
+                , SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters = []
                     , sentenceAxiomPattern =
-                        (ObjectPattern (NotPattern Not
+                        ObjectPattern (NotPattern Not
                             { notSort =
-                                (SortActualSortSortActual
-                                        { sortActualName = (Id Object "Bool")
+                                SortActualSortSortActual
+                                        { sortActualName = Id Object "Bool"
                                         , sortActualSorts = []
-                                        })
+                                        }
                             , notPattern =
-                                (ObjectPattern (AndPattern And
+                                ObjectPattern (AndPattern And
                                     { andSort =
-                                        (SortActualSortSortActual
-                                                { sortActualName = (Id Object "Bool")
+                                        SortActualSortSortActual
+                                                { sortActualName = Id Object "Bool"
                                                 , sortActualSorts = []
-                                                })
+                                                }
                                     , andFirst =
-                                        (ObjectPattern (ApplicationPattern Application
+                                        ObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
-                                                    { symbolOrAliasConstructor = (Id Object "true")
+                                                    { symbolOrAliasConstructor = Id Object "true"
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationPatterns = []
-                                            }))
+                                            })
                                     , andSecond =
-                                        (ObjectPattern (ApplicationPattern Application
+                                        ObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
-                                                    { symbolOrAliasConstructor = (Id Object "false")
+                                                    { symbolOrAliasConstructor = Id Object "false"
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationPatterns = []
-                                            }))
-                                    }))
-                            }))
+                                            })
+                                    })
+                            })
                     , sentenceAxiomAttributes = Attributes []
-                    })
-                , (SentenceAxiomSentence SentenceAxiom
+                    }
+                , SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ (ObjectSortVariable (SortVariable (Id Object "S")))
+                        [ ObjectSortVariable (SortVariable (Id Object "S"))
                         ]
                     , sentenceAxiomPattern =
-                        (ObjectPattern (ExistsPattern Exists
+                        ObjectPattern (ExistsPattern Exists
                             { existsSort =
-                                (SortVariableSort (SortVariable (Id Object "S")))
+                                SortVariableSort (SortVariable (Id Object "S"))
                             , existsVariable =
-                                (ObjectVariable Variable
-                                    { variableName = (Id Object "T")
+                                ObjectVariable Variable
+                                    { variableName = Id Object "T"
                                     , variableSort =
-                                        (SortActualSortSortActual
-                                                { sortActualName = (Id Object "Bool")
+                                        SortActualSortSortActual
+                                                { sortActualName = Id Object "Bool"
                                                 , sortActualSorts = []
-                                                })
-                                    })
+                                                }
+                                    }
                             , existsPattern =
-                                (ObjectPattern (EqualsPattern Equals
+                                ObjectPattern (EqualsPattern Equals
                                     { equalsOperandSort =
-                                        (SortActualSortSortActual
-                                                { sortActualName = (Id Object "Bool")
+                                        SortActualSortSortActual
+                                                { sortActualName = Id Object "Bool"
                                                 , sortActualSorts = []
-                                                })
+                                                }
                                     , equalsResultSort =
-                                        (SortVariableSort (SortVariable (Id Object "S")))
+                                        SortVariableSort (SortVariable (Id Object "S"))
                                     , equalsFirst =
-                                        (ObjectPattern (VariablePattern Variable
-                                            { variableName = (Id Object "T")
+                                        ObjectPattern (VariablePattern Variable
+                                            { variableName = Id Object "T"
                                             , variableSort =
-                                                (SortActualSortSortActual
-                                                        { sortActualName = (Id Object "Bool")
+                                                SortActualSortSortActual
+                                                        { sortActualName = Id Object "Bool"
                                                         , sortActualSorts = []
-                                                        })
-                                            }))
+                                                        }
+                                            })
                                     , equalsSecond =
-                                        (ObjectPattern (ApplicationPattern Application
+                                        ObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
-                                                    { symbolOrAliasConstructor = (Id Object "true")
+                                                    { symbolOrAliasConstructor = Id Object "true"
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationPatterns = []
-                                            }))
-                                    }))
-                            }))
+                                            })
+                                    })
+                            })
                     , sentenceAxiomAttributes = Attributes []
-                    })
-                , (SentenceAxiomSentence SentenceAxiom
+                    }
+                , SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ (ObjectSortVariable (SortVariable (Id Object "S")))
+                        [ ObjectSortVariable (SortVariable (Id Object "S"))
                         ]
                     , sentenceAxiomPattern =
-                        (ObjectPattern (ExistsPattern Exists
+                        ObjectPattern (ExistsPattern Exists
                             { existsSort =
-                                (SortVariableSort (SortVariable (Id Object "S")))
+                                SortVariableSort (SortVariable (Id Object "S"))
                             , existsVariable =
-                                (ObjectVariable Variable
-                                    { variableName = (Id Object "T")
+                                ObjectVariable Variable
+                                    { variableName = Id Object "T"
                                     , variableSort =
-                                        (SortActualSortSortActual
-                                                { sortActualName = (Id Object "Bool")
+                                        SortActualSortSortActual
+                                                { sortActualName = Id Object "Bool"
                                                 , sortActualSorts = []
-                                                })
-                                    })
+                                                }
+                                    }
                             , existsPattern =
-                                (ObjectPattern (EqualsPattern Equals
+                                ObjectPattern (EqualsPattern Equals
                                     { equalsOperandSort =
-                                        (SortActualSortSortActual
-                                                { sortActualName = (Id Object "Bool")
+                                        SortActualSortSortActual
+                                                { sortActualName = Id Object "Bool"
                                                 , sortActualSorts = []
-                                                })
+                                                }
                                     , equalsResultSort =
-                                        (SortVariableSort (SortVariable (Id Object "S")))
+                                        SortVariableSort (SortVariable (Id Object "S"))
                                     , equalsFirst =
-                                        (ObjectPattern (VariablePattern Variable
-                                            { variableName = (Id Object "T")
+                                        ObjectPattern (VariablePattern Variable
+                                            { variableName = Id Object "T"
                                             , variableSort =
-                                                (SortActualSortSortActual
-                                                        { sortActualName = (Id Object "Bool")
+                                                SortActualSortSortActual
+                                                        { sortActualName = Id Object "Bool"
                                                         , sortActualSorts = []
-                                                        })
-                                            }))
+                                                        }
+                                            })
                                     , equalsSecond =
-                                        (ObjectPattern (ApplicationPattern Application
+                                        ObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
-                                                    { symbolOrAliasConstructor = (Id Object "false")
+                                                    { symbolOrAliasConstructor = Id Object "false"
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationPatterns = []
-                                            }))
-                                    }))
-                            }))
+                                            })
+                                    })
+                            })
                     , sentenceAxiomAttributes = Attributes []
-                    })
-                , (SentenceAxiomSentence SentenceAxiom
+                    }
+                , SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ (ObjectSortVariable (SortVariable (Id Object "S")))
+                        [ ObjectSortVariable (SortVariable (Id Object "S"))
                         ]
                     , sentenceAxiomPattern =
-                        (ObjectPattern (ExistsPattern Exists
+                        ObjectPattern (ExistsPattern Exists
                             { existsSort =
-                                (SortVariableSort (SortVariable (Id Object "S")))
+                                SortVariableSort (SortVariable (Id Object "S"))
                             , existsVariable =
-                                (ObjectVariable Variable
-                                    { variableName = (Id Object "T")
+                                ObjectVariable Variable
+                                    { variableName = Id Object "T"
                                     , variableSort =
-                                        (SortActualSortSortActual
-                                                { sortActualName = (Id Object "Bool")
+                                        SortActualSortSortActual
+                                                { sortActualName = Id Object "Bool"
                                                 , sortActualSorts = []
-                                                })
-                                    })
+                                                }
+                                    }
                             , existsPattern =
-                                (ObjectPattern (EqualsPattern Equals
+                                ObjectPattern (EqualsPattern Equals
                                     { equalsOperandSort =
-                                        (SortActualSortSortActual
-                                                { sortActualName = (Id Object "Bool")
+                                        SortActualSortSortActual
+                                                { sortActualName = Id Object "Bool"
                                                 , sortActualSorts = []
-                                                })
+                                                }
                                     , equalsResultSort =
-                                        (SortVariableSort (SortVariable (Id Object "S")))
+                                        SortVariableSort (SortVariable (Id Object "S"))
                                     , equalsFirst =
-                                        (ObjectPattern (VariablePattern Variable
-                                            { variableName = (Id Object "T")
+                                        ObjectPattern (VariablePattern Variable
+                                            { variableName = Id Object "T"
                                             , variableSort =
-                                                (SortActualSortSortActual
-                                                        { sortActualName = (Id Object "Bool")
+                                                SortActualSortSortActual
+                                                        { sortActualName = Id Object "Bool"
                                                         , sortActualSorts = []
-                                                        })
-                                            }))
+                                                        }
+                                            })
                                     , equalsSecond =
-                                        (ObjectPattern (ApplicationPattern Application
+                                        ObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
-                                                    { symbolOrAliasConstructor = (Id Object "andBool")
+                                                    { symbolOrAliasConstructor = Id Object "andBool"
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationPatterns =
-                                                [ (ObjectPattern (VariablePattern Variable
-                                                    { variableName = (Id Object "X")
+                                                [ ObjectPattern (VariablePattern Variable
+                                                    { variableName = Id Object "X"
                                                     , variableSort =
-                                                        (SortVariableSort (SortVariable (Id Object "Bool")))
-                                                    }))
-                                                , (ObjectPattern (VariablePattern Variable
-                                                    { variableName = (Id Object "Y")
+                                                        SortVariableSort (SortVariable (Id Object "Bool"))
+                                                    })
+                                                , ObjectPattern (VariablePattern Variable
+                                                    { variableName = Id Object "Y"
                                                     , variableSort =
-                                                        (SortVariableSort (SortVariable (Id Object "Bool")))
-                                                    }))
+                                                        SortVariableSort (SortVariable (Id Object "Bool"))
+                                                    })
                                                 ]
-                                            }))
-                                    }))
-                            }))
+                                            })
+                                    })
+                            })
                     , sentenceAxiomAttributes = Attributes []
-                    })
-                , (SentenceAxiomSentence SentenceAxiom
+                    }
+                , SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ (ObjectSortVariable (SortVariable (Id Object "S")))
+                        [ ObjectSortVariable (SortVariable (Id Object "S"))
                         ]
                     , sentenceAxiomPattern =
-                        (ObjectPattern (ExistsPattern Exists
+                        ObjectPattern (ExistsPattern Exists
                             { existsSort =
-                                (SortVariableSort (SortVariable (Id Object "S")))
+                                SortVariableSort (SortVariable (Id Object "S"))
                             , existsVariable =
-                                (ObjectVariable Variable
-                                    { variableName = (Id Object "T")
+                                ObjectVariable Variable
+                                    { variableName = Id Object "T"
                                     , variableSort =
-                                        (SortActualSortSortActual
-                                                { sortActualName = (Id Object "Bool")
+                                        SortActualSortSortActual
+                                                { sortActualName = Id Object "Bool"
                                                 , sortActualSorts = []
-                                                })
-                                    })
+                                                }
+                                    }
                             , existsPattern =
-                                (ObjectPattern (EqualsPattern Equals
+                                ObjectPattern (EqualsPattern Equals
                                     { equalsOperandSort =
-                                        (SortActualSortSortActual
-                                                { sortActualName = (Id Object "Bool")
+                                        SortActualSortSortActual
+                                                { sortActualName = Id Object "Bool"
                                                 , sortActualSorts = []
-                                                })
+                                                }
                                     , equalsResultSort =
-                                        (SortVariableSort (SortVariable (Id Object "S")))
+                                        SortVariableSort (SortVariable (Id Object "S"))
                                     , equalsFirst =
-                                        (ObjectPattern (VariablePattern Variable
-                                            { variableName = (Id Object "T")
+                                        ObjectPattern (VariablePattern Variable
+                                            { variableName = Id Object "T"
                                             , variableSort =
-                                                (SortActualSortSortActual
-                                                        { sortActualName = (Id Object "Bool")
+                                                SortActualSortSortActual
+                                                        { sortActualName = Id Object "Bool"
                                                         , sortActualSorts = []
-                                                        })
-                                            }))
+                                                        }
+                                            })
                                     , equalsSecond =
-                                        (ObjectPattern (ApplicationPattern Application
+                                        ObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
-                                                    { symbolOrAliasConstructor = (Id Object "orBool")
+                                                    { symbolOrAliasConstructor = Id Object "orBool"
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationPatterns =
-                                                [ (ObjectPattern (VariablePattern Variable
-                                                    { variableName = (Id Object "X")
+                                                [ ObjectPattern (VariablePattern Variable
+                                                    { variableName = Id Object "X"
                                                     , variableSort =
-                                                        (SortVariableSort (SortVariable (Id Object "Bool")))
-                                                    }))
-                                                , (ObjectPattern (VariablePattern Variable
-                                                    { variableName = (Id Object "Y")
+                                                        SortVariableSort (SortVariable (Id Object "Bool"))
+                                                    })
+                                                , ObjectPattern (VariablePattern Variable
+                                                    { variableName = Id Object "Y"
                                                     , variableSort =
-                                                        (SortVariableSort (SortVariable (Id Object "Bool")))
-                                                    }))
+                                                        SortVariableSort (SortVariable (Id Object "Bool"))
+                                                    })
                                                 ]
-                                            }))
-                                    }))
-                            }))
+                                            })
+                                    })
+                            })
                     , sentenceAxiomAttributes = Attributes []
-                    })
-                , (SentenceAxiomSentence SentenceAxiom
+                    }
+                , SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ (ObjectSortVariable (SortVariable (Id Object "S")))
+                        [ ObjectSortVariable (SortVariable (Id Object "S"))
                         ]
                     , sentenceAxiomPattern =
-                        (ObjectPattern (ExistsPattern Exists
+                        ObjectPattern (ExistsPattern Exists
                             { existsSort =
-                                (SortVariableSort (SortVariable (Id Object "S")))
+                                SortVariableSort (SortVariable (Id Object "S"))
                             , existsVariable =
-                                (ObjectVariable Variable
-                                    { variableName = (Id Object "T")
+                                ObjectVariable Variable
+                                    { variableName = Id Object "T"
                                     , variableSort =
-                                        (SortActualSortSortActual
-                                                { sortActualName = (Id Object "Bool")
+                                        SortActualSortSortActual
+                                                { sortActualName = Id Object "Bool"
                                                 , sortActualSorts = []
-                                                })
-                                    })
+                                                }
+                                    }
                             , existsPattern =
-                                (ObjectPattern (EqualsPattern Equals
+                                ObjectPattern (EqualsPattern Equals
                                     { equalsOperandSort =
-                                        (SortActualSortSortActual
-                                                { sortActualName = (Id Object "Bool")
+                                        SortActualSortSortActual
+                                                { sortActualName = Id Object "Bool"
                                                 , sortActualSorts = []
-                                                })
+                                                }
                                     , equalsResultSort =
-                                        (SortVariableSort (SortVariable (Id Object "S")))
+                                        SortVariableSort (SortVariable (Id Object "S"))
                                     , equalsFirst =
-                                        (ObjectPattern (VariablePattern Variable
-                                            { variableName = (Id Object "T")
+                                        ObjectPattern (VariablePattern Variable
+                                            { variableName = Id Object "T"
                                             , variableSort =
-                                                (SortActualSortSortActual
-                                                        { sortActualName = (Id Object "Bool")
+                                                SortActualSortSortActual
+                                                        { sortActualName = Id Object "Bool"
                                                         , sortActualSorts = []
-                                                        })
-                                            }))
+                                                        }
+                                            })
                                     , equalsSecond =
-                                        (ObjectPattern (ApplicationPattern Application
+                                        ObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
-                                                    { symbolOrAliasConstructor = (Id Object "notBool")
+                                                    { symbolOrAliasConstructor = Id Object "notBool"
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationPatterns =
-                                                [ (ObjectPattern (VariablePattern Variable
-                                                    { variableName = (Id Object "X")
+                                                [ ObjectPattern (VariablePattern Variable
+                                                    { variableName = Id Object "X"
                                                     , variableSort =
-                                                        (SortVariableSort (SortVariable (Id Object "Bool")))
-                                                    }))
+                                                        SortVariableSort (SortVariable (Id Object "Bool"))
+                                                    })
                                                 ]
-                                            }))
-                                    }))
-                            }))
+                                            })
+                                    })
+                            })
                     , sentenceAxiomAttributes = Attributes []
-                    })
-                , (SentenceAxiomSentence SentenceAxiom
+                    }
+                , SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ (ObjectSortVariable (SortVariable (Id Object "S")))
+                        [ ObjectSortVariable (SortVariable (Id Object "S"))
                         ]
                     , sentenceAxiomPattern =
-                        (ObjectPattern (EqualsPattern Equals
+                        ObjectPattern (EqualsPattern Equals
                             { equalsOperandSort =
-                                (SortActualSortSortActual
-                                        { sortActualName = (Id Object "Bool")
+                                SortActualSortSortActual
+                                        { sortActualName = Id Object "Bool"
                                         , sortActualSorts = []
-                                        })
+                                        }
                             , equalsResultSort =
-                                (SortVariableSort (SortVariable (Id Object "S")))
+                                SortVariableSort (SortVariable (Id Object "S"))
                             , equalsFirst =
-                                (ObjectPattern (ApplicationPattern Application
+                                ObjectPattern (ApplicationPattern Application
                                     { applicationSymbolOrAlias =
                                         SymbolOrAlias
-                                            { symbolOrAliasConstructor = (Id Object "andBool")
+                                            { symbolOrAliasConstructor = Id Object "andBool"
                                             , symbolOrAliasParams = []
                                             }
                                     , applicationPatterns =
-                                        [ (ObjectPattern (ApplicationPattern Application
+                                        [ ObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
-                                                    { symbolOrAliasConstructor = (Id Object "true")
+                                                    { symbolOrAliasConstructor = Id Object "true"
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationPatterns = []
-                                            }))
-                                        , (ObjectPattern (VariablePattern Variable
-                                            { variableName = (Id Object "X")
+                                            })
+                                        , ObjectPattern (VariablePattern Variable
+                                            { variableName = Id Object "X"
                                             , variableSort =
-                                                (SortVariableSort (SortVariable (Id Object "Bool")))
-                                            }))
+                                                SortVariableSort (SortVariable (Id Object "Bool"))
+                                            })
                                         ]
-                                    }))
+                                    })
                             , equalsSecond =
-                                (ObjectPattern (VariablePattern Variable
-                                    { variableName = (Id Object "X")
+                                ObjectPattern (VariablePattern Variable
+                                    { variableName = Id Object "X"
                                     , variableSort =
-                                        (SortVariableSort (SortVariable (Id Object "Bool")))
-                                    }))
-                            }))
+                                        SortVariableSort (SortVariable (Id Object "Bool"))
+                                    })
+                            })
                     , sentenceAxiomAttributes = Attributes []
-                    })
-                , (SentenceAxiomSentence SentenceAxiom
+                    }
+                , SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ (ObjectSortVariable (SortVariable (Id Object "S")))
+                        [ ObjectSortVariable (SortVariable (Id Object "S"))
                         ]
                     , sentenceAxiomPattern =
-                        (ObjectPattern (EqualsPattern Equals
+                        ObjectPattern (EqualsPattern Equals
                             { equalsOperandSort =
-                                (SortActualSortSortActual
-                                        { sortActualName = (Id Object "Bool")
+                                SortActualSortSortActual
+                                        { sortActualName = Id Object "Bool"
                                         , sortActualSorts = []
-                                        })
+                                        }
                             , equalsResultSort =
-                                (SortVariableSort (SortVariable (Id Object "S")))
+                                SortVariableSort (SortVariable (Id Object "S"))
                             , equalsFirst =
-                                (ObjectPattern (ApplicationPattern Application
+                                ObjectPattern (ApplicationPattern Application
                                     { applicationSymbolOrAlias =
                                         SymbolOrAlias
-                                            { symbolOrAliasConstructor = (Id Object "andBool")
+                                            { symbolOrAliasConstructor = Id Object "andBool"
                                             , symbolOrAliasParams = []
                                             }
                                     , applicationPatterns =
-                                        [ (ObjectPattern (ApplicationPattern Application
+                                        [ ObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
-                                                    { symbolOrAliasConstructor = (Id Object "false")
+                                                    { symbolOrAliasConstructor = Id Object "false"
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationPatterns = []
-                                            }))
-                                        , (ObjectPattern (VariablePattern Variable
-                                            { variableName = (Id Object "X")
+                                            })
+                                        , ObjectPattern (VariablePattern Variable
+                                            { variableName = Id Object "X"
                                             , variableSort =
-                                                (SortVariableSort (SortVariable (Id Object "Bool")))
-                                            }))
+                                                SortVariableSort (SortVariable (Id Object "Bool"))
+                                            })
                                         ]
-                                    }))
+                                    })
                             , equalsSecond =
-                                (ObjectPattern (ApplicationPattern Application
+                                ObjectPattern (ApplicationPattern Application
                                     { applicationSymbolOrAlias =
                                         SymbolOrAlias
-                                            { symbolOrAliasConstructor = (Id Object "false")
+                                            { symbolOrAliasConstructor = Id Object "false"
                                             , symbolOrAliasParams = []
                                             }
                                     , applicationPatterns = []
-                                    }))
-                            }))
+                                    })
+                            })
                     , sentenceAxiomAttributes = Attributes []
-                    })
-                , (SentenceAxiomSentence SentenceAxiom
+                    }
+                , SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ (ObjectSortVariable (SortVariable (Id Object "S")))
+                        [ ObjectSortVariable (SortVariable (Id Object "S"))
                         ]
                     , sentenceAxiomPattern =
-                        (ObjectPattern (EqualsPattern Equals
+                        ObjectPattern (EqualsPattern Equals
                             { equalsOperandSort =
-                                (SortActualSortSortActual
-                                        { sortActualName = (Id Object "Bool")
+                                SortActualSortSortActual
+                                        { sortActualName = Id Object "Bool"
                                         , sortActualSorts = []
-                                        })
+                                        }
                             , equalsResultSort =
-                                (SortVariableSort (SortVariable (Id Object "S")))
+                                SortVariableSort (SortVariable (Id Object "S"))
                             , equalsFirst =
-                                (ObjectPattern (ApplicationPattern Application
+                                ObjectPattern (ApplicationPattern Application
                                     { applicationSymbolOrAlias =
                                         SymbolOrAlias
-                                            { symbolOrAliasConstructor = (Id Object "orBool")
+                                            { symbolOrAliasConstructor = Id Object "orBool"
                                             , symbolOrAliasParams = []
                                             }
                                     , applicationPatterns =
-                                        [ (ObjectPattern (ApplicationPattern Application
+                                        [ ObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
-                                                    { symbolOrAliasConstructor = (Id Object "true")
+                                                    { symbolOrAliasConstructor = Id Object "true"
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationPatterns = []
-                                            }))
-                                        , (ObjectPattern (VariablePattern Variable
-                                            { variableName = (Id Object "X")
+                                            })
+                                        , ObjectPattern (VariablePattern Variable
+                                            { variableName = Id Object "X"
                                             , variableSort =
-                                                (SortVariableSort (SortVariable (Id Object "Bool")))
-                                            }))
+                                                SortVariableSort (SortVariable (Id Object "Bool"))
+                                            })
                                         ]
-                                    }))
+                                    })
                             , equalsSecond =
-                                (ObjectPattern (ApplicationPattern Application
+                                ObjectPattern (ApplicationPattern Application
                                     { applicationSymbolOrAlias =
                                         SymbolOrAlias
-                                            { symbolOrAliasConstructor = (Id Object "true")
+                                            { symbolOrAliasConstructor = Id Object "true"
                                             , symbolOrAliasParams = []
                                             }
                                     , applicationPatterns = []
-                                    }))
-                            }))
+                                    })
+                            })
                     , sentenceAxiomAttributes = Attributes []
-                    })
-                , (SentenceAxiomSentence SentenceAxiom
+                    }
+                , SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ (ObjectSortVariable (SortVariable (Id Object "S")))
+                        [ ObjectSortVariable (SortVariable (Id Object "S"))
                         ]
                     , sentenceAxiomPattern =
-                        (ObjectPattern (EqualsPattern Equals
+                        ObjectPattern (EqualsPattern Equals
                             { equalsOperandSort =
-                                (SortActualSortSortActual
-                                        { sortActualName = (Id Object "Bool")
+                                SortActualSortSortActual
+                                        { sortActualName = Id Object "Bool"
                                         , sortActualSorts = []
-                                        })
+                                        }
                             , equalsResultSort =
-                                (SortVariableSort (SortVariable (Id Object "S")))
+                                SortVariableSort (SortVariable (Id Object "S"))
                             , equalsFirst =
-                                (ObjectPattern (ApplicationPattern Application
+                                ObjectPattern (ApplicationPattern Application
                                     { applicationSymbolOrAlias =
                                         SymbolOrAlias
-                                            { symbolOrAliasConstructor = (Id Object "orBool")
+                                            { symbolOrAliasConstructor = Id Object "orBool"
                                             , symbolOrAliasParams = []
                                             }
                                     , applicationPatterns =
-                                        [ (ObjectPattern (ApplicationPattern Application
+                                        [ ObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
-                                                    { symbolOrAliasConstructor = (Id Object "false")
+                                                    { symbolOrAliasConstructor = Id Object "false"
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationPatterns = []
-                                            }))
-                                        , (ObjectPattern (VariablePattern Variable
-                                            { variableName = (Id Object "X")
+                                            })
+                                        , ObjectPattern (VariablePattern Variable
+                                            { variableName = Id Object "X"
                                             , variableSort =
-                                                (SortVariableSort (SortVariable (Id Object "Bool")))
-                                            }))
+                                                SortVariableSort (SortVariable (Id Object "Bool"))
+                                            })
                                         ]
-                                    }))
+                                    })
                             , equalsSecond =
-                                (ObjectPattern (VariablePattern Variable
-                                    { variableName = (Id Object "X")
+                                ObjectPattern (VariablePattern Variable
+                                    { variableName = Id Object "X"
                                     , variableSort =
-                                        (SortVariableSort (SortVariable (Id Object "Bool")))
-                                    }))
-                            }))
+                                        SortVariableSort (SortVariable (Id Object "Bool"))
+                                    })
+                            })
                     , sentenceAxiomAttributes = Attributes []
-                    })
-                , (SentenceAxiomSentence SentenceAxiom
+                    }
+                , SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ (ObjectSortVariable (SortVariable (Id Object "S")))
+                        [ ObjectSortVariable (SortVariable (Id Object "S"))
                         ]
                     , sentenceAxiomPattern =
-                        (ObjectPattern (EqualsPattern Equals
+                        ObjectPattern (EqualsPattern Equals
                             { equalsOperandSort =
-                                (SortActualSortSortActual
-                                        { sortActualName = (Id Object "Bool")
+                                SortActualSortSortActual
+                                        { sortActualName = Id Object "Bool"
                                         , sortActualSorts = []
-                                        })
+                                        }
                             , equalsResultSort =
-                                (SortVariableSort (SortVariable (Id Object "S")))
+                                SortVariableSort (SortVariable (Id Object "S"))
                             , equalsFirst =
-                                (ObjectPattern (ApplicationPattern Application
+                                ObjectPattern (ApplicationPattern Application
                                     { applicationSymbolOrAlias =
                                         SymbolOrAlias
-                                            { symbolOrAliasConstructor = (Id Object "notBool")
+                                            { symbolOrAliasConstructor = Id Object "notBool"
                                             , symbolOrAliasParams = []
                                             }
                                     , applicationPatterns =
-                                        [ (ObjectPattern (ApplicationPattern Application
+                                        [ ObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
-                                                    { symbolOrAliasConstructor = (Id Object "true")
+                                                    { symbolOrAliasConstructor = Id Object "true"
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationPatterns = []
-                                            }))
+                                            })
                                         ]
-                                    }))
+                                    })
                             , equalsSecond =
-                                (ObjectPattern (ApplicationPattern Application
+                                ObjectPattern (ApplicationPattern Application
                                     { applicationSymbolOrAlias =
                                         SymbolOrAlias
-                                            { symbolOrAliasConstructor = (Id Object "false")
+                                            { symbolOrAliasConstructor = Id Object "false"
                                             , symbolOrAliasParams = []
                                             }
                                     , applicationPatterns = []
-                                    }))
-                            }))
+                                    })
+                            })
                     , sentenceAxiomAttributes = Attributes []
-                    })
-                , (SentenceAxiomSentence SentenceAxiom
+                    }
+                , SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ (ObjectSortVariable (SortVariable (Id Object "S")))
+                        [ ObjectSortVariable (SortVariable (Id Object "S"))
                         ]
                     , sentenceAxiomPattern =
-                        (ObjectPattern (EqualsPattern Equals
+                        ObjectPattern (EqualsPattern Equals
                             { equalsOperandSort =
-                                (SortActualSortSortActual
-                                        { sortActualName = (Id Object "Bool")
+                                SortActualSortSortActual
+                                        { sortActualName = Id Object "Bool"
                                         , sortActualSorts = []
-                                        })
+                                        }
                             , equalsResultSort =
-                                (SortVariableSort (SortVariable (Id Object "S")))
+                                SortVariableSort (SortVariable (Id Object "S"))
                             , equalsFirst =
-                                (ObjectPattern (ApplicationPattern Application
+                                ObjectPattern (ApplicationPattern Application
                                     { applicationSymbolOrAlias =
                                         SymbolOrAlias
-                                            { symbolOrAliasConstructor = (Id Object "notBool")
+                                            { symbolOrAliasConstructor = Id Object "notBool"
                                             , symbolOrAliasParams = []
                                             }
                                     , applicationPatterns =
-                                        [ (ObjectPattern (ApplicationPattern Application
+                                        [ ObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
-                                                    { symbolOrAliasConstructor = (Id Object "false")
+                                                    { symbolOrAliasConstructor = Id Object "false"
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationPatterns = []
-                                            }))
+                                            })
                                         ]
-                                    }))
+                                    })
                             , equalsSecond =
-                                (ObjectPattern (ApplicationPattern Application
+                                ObjectPattern (ApplicationPattern Application
                                     { applicationSymbolOrAlias =
                                         SymbolOrAlias
-                                            { symbolOrAliasConstructor = (Id Object "true")
+                                            { symbolOrAliasConstructor = Id Object "true"
                                             , symbolOrAliasParams = []
                                             }
                                     , applicationPatterns = []
-                                    }))
-                            }))
+                                    })
+                            })
                     , sentenceAxiomAttributes = Attributes []
-                    })
+                    }
                 ]
             , moduleAttributes = Attributes []
             }
