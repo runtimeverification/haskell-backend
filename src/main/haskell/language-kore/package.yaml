@@ -60,3 +60,4 @@ tests:
     - tasty-quickcheck
     - QuickCheck
     - filepath
+    - tasty-jenkins-xml

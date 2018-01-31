@@ -9,7 +9,7 @@ import           Control.Monad.Writer
 
 import           Data.Kore.AST
 import           Data.Kore.Parser.CString (escapeCString)
-import           Data.List (intersperse)
+import           Data.List                (intersperse)
 
 {-# ANN module "HLint: ignore Use record patterns" #-}
 {-
@@ -255,7 +255,7 @@ instance PrettyPrint UnifiedSortVariable where
     prettyPrint flags (MetaSortVariable sv)   =
         writeOneFieldStruct flags "MetaSortVariable" sv
 
-instance PrettyPrint UnifiedVariable where
+instance PrettyPrint (UnifiedVariable Variable) where
     prettyPrint flags (ObjectVariable sv) =
         writeOneFieldStruct flags "ObjectVariable" sv
     prettyPrint flags (MetaVariable sv)   =
@@ -267,7 +267,7 @@ instance PrettyPrint UnifiedPattern where
     prettyPrint flags (MetaPattern sv)   =
         writeOneFieldStruct flags "MetaPattern" sv
 
-instance (IsMeta a) => PrettyPrint (And a) where
+instance (IsMeta a, PrettyPrint p) => PrettyPrint (And a p) where
     prettyPrint _ p@(And _ _ _) =
         writeStructure
             "And"
@@ -276,7 +276,7 @@ instance (IsMeta a) => PrettyPrint (And a) where
             , writeFieldNewLine "andSecond" andSecond p
             ]
 
-instance (IsMeta a) => PrettyPrint (Application a) where
+instance (IsMeta a, PrettyPrint p) => PrettyPrint (Application a p) where
     prettyPrint _ p@(Application _ _) =
         writeStructure
             "Application"
@@ -289,7 +289,7 @@ instance (IsMeta a) => PrettyPrint (Bottom a) where
     prettyPrint flags (Bottom p) =
         writeOneFieldStruct flags "Bottom" p
 
-instance (IsMeta a) => PrettyPrint (Ceil a) where
+instance (IsMeta a, PrettyPrint p) => PrettyPrint (Ceil a p) where
     prettyPrint _ p@(Ceil _ _ _) =
         writeStructure
             "Ceil"
@@ -298,7 +298,7 @@ instance (IsMeta a) => PrettyPrint (Ceil a) where
             , writeFieldNewLine "ceilPattern" ceilPattern p
             ]
 
-instance (IsMeta a) => PrettyPrint (Equals a) where
+instance (IsMeta a, PrettyPrint p) => PrettyPrint (Equals a p) where
     prettyPrint _ p@(Equals _ _ _ _) =
         writeStructure
             "Equals"
@@ -308,7 +308,8 @@ instance (IsMeta a) => PrettyPrint (Equals a) where
             , writeFieldNewLine "equalsSecond" equalsSecond p
             ]
 
-instance (IsMeta a) => PrettyPrint (Exists a) where
+instance (IsMeta a, PrettyPrint p, PrettyPrint (UnifiedVariable v))
+    => PrettyPrint (Exists a v p) where
     prettyPrint _ p@(Exists _ _ _) =
         writeStructure
             "Exists"
@@ -317,7 +318,7 @@ instance (IsMeta a) => PrettyPrint (Exists a) where
             , writeFieldNewLine "existsPattern" existsPattern p
             ]
 
-instance (IsMeta a) => PrettyPrint (Floor a) where
+instance (IsMeta a, PrettyPrint p) => PrettyPrint (Floor a p) where
     prettyPrint _ p@(Floor _ _ _) =
         writeStructure
             "Floor"
@@ -326,7 +327,8 @@ instance (IsMeta a) => PrettyPrint (Floor a) where
             , writeFieldNewLine "floorPattern" floorPattern p
             ]
 
-instance (IsMeta a) => PrettyPrint (Forall a) where
+instance (IsMeta a, PrettyPrint p, PrettyPrint (UnifiedVariable v))
+    => PrettyPrint (Forall a v p) where
     prettyPrint _ p@(Forall _ _ _) =
         writeStructure
             "Forall"
@@ -335,7 +337,7 @@ instance (IsMeta a) => PrettyPrint (Forall a) where
             , writeFieldNewLine "forallPattern" forallPattern p
             ]
 
-instance (IsMeta a) => PrettyPrint (Iff a) where
+instance (IsMeta a, PrettyPrint p) => PrettyPrint (Iff a p) where
     prettyPrint _ p@(Iff _ _ _) =
         writeStructure
             "Iff"
@@ -344,7 +346,7 @@ instance (IsMeta a) => PrettyPrint (Iff a) where
             , writeFieldNewLine "iffSecond" iffSecond p
             ]
 
-instance (IsMeta a) => PrettyPrint (Implies a) where
+instance (IsMeta a, PrettyPrint p) => PrettyPrint (Implies a p) where
     prettyPrint _ p@(Implies _ _ _) =
         writeStructure
             "Implies"
@@ -353,7 +355,8 @@ instance (IsMeta a) => PrettyPrint (Implies a) where
             , writeFieldNewLine "impliesSecond" impliesSecond p
             ]
 
-instance (IsMeta a) => PrettyPrint (Mem a) where
+instance (IsMeta a, PrettyPrint p, PrettyPrint (UnifiedVariable v))
+    => PrettyPrint (Mem a v p) where
     prettyPrint _ p@(Mem _ _ _ _) =
         writeStructure
             "Mem"
@@ -363,7 +366,7 @@ instance (IsMeta a) => PrettyPrint (Mem a) where
             , writeFieldNewLine "memPattern" memPattern p
             ]
 
-instance (IsMeta a) => PrettyPrint (Not a) where
+instance (IsMeta a, PrettyPrint p) => PrettyPrint (Not a p) where
     prettyPrint _ p@(Not _ _) =
         writeStructure
             "Not"
@@ -371,7 +374,7 @@ instance (IsMeta a) => PrettyPrint (Not a) where
             , writeFieldNewLine "notPattern" notPattern p
             ]
 
-instance (IsMeta a) => PrettyPrint (Or a) where
+instance (IsMeta a, PrettyPrint p) => PrettyPrint (Or a p) where
     prettyPrint _ p@(Or _ _ _) =
         writeStructure
             "Or"
@@ -384,7 +387,9 @@ instance (IsMeta a) => PrettyPrint (Top a) where
     prettyPrint flags (Top p) =
         writeOneFieldStruct flags "Top" p
 
-instance (IsMeta a) => PrettyPrint (Pattern a) where
+instance (IsMeta a, PrettyPrint p, PrettyPrint (v a),
+          PrettyPrint (UnifiedVariable v))
+    => PrettyPrint (Pattern a v p) where
     prettyPrint flags (AndPattern p) =
         writeOneFieldStruct flags "AndPattern" p
     prettyPrint flags (ApplicationPattern p)   =

@@ -1,5 +1,9 @@
-import           Test.Tasty                      (TestTree, defaultMain,
+import           Test.Tasty                      (TestTree,
+                                                  defaultMainWithIngredients,
                                                   testGroup)
+import           Test.Tasty.Ingredients.Basic    (consoleTestReporter,
+                                                  listingTests)
+import           Test.Tasty.Runners.JenkinsXML   (jenkinsXMLRunner)
 
 import           Data.Kore.Parser.CharDictTest
 import           Data.Kore.Parser.CharSetTest
@@ -12,7 +16,9 @@ import           Data.Kore.Unparser.UnparseTest
 main :: IO ()
 main = do
     inputFiles <- regressionTestsInputFiles "../../../test/resources/"
-    defaultMain (allParserTests inputFiles)
+    defaultMainWithIngredients
+        [listingTests, jenkinsXMLRunner]
+        (allParserTests inputFiles)
 
 allParserTests :: [String] -> TestTree
 allParserTests regressionInputFiles =
