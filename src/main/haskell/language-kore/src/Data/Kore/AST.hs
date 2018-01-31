@@ -1,9 +1,12 @@
-{-# LANGUAGE DeriveFoldable     #-}
-{-# LANGUAGE DeriveFunctor      #-}
-{-# LANGUAGE DeriveTraversable  #-}
-{-# LANGUAGE FlexibleContexts   #-}
-{-# LANGUAGE FlexibleInstances  #-}
-{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE DeriveFoldable         #-}
+{-# LANGUAGE DeriveFunctor          #-}
+{-# LANGUAGE DeriveTraversable      #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE Rank2Types             #-}
+{-# LANGUAGE StandaloneDeriving     #-}
 {-|
 Module      : Data.Kore.AST
 Description : Data Structures for representing the Kore language AST
@@ -23,14 +26,14 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Data.Kore.AST where
 
-import           Data.Typeable (Typeable, typeOf, typeRepArgs)
+import           Data.Typeable (Typeable, cast, typeOf, typeRepArgs)
 
 data KoreLevel
     = ObjectLevel
     | MetaLevel
     deriving (Eq, Show)
 
-class Show a => IsMeta a where
+class (Show a, Typeable a) => IsMeta a where
     koreLevel :: a -> KoreLevel
 
 data Meta = Meta
@@ -219,8 +222,44 @@ data UnifiedVariable v
     = MetaVariable !(v Meta)
     | ObjectVariable !(v Object)
 
+asUnifiedVariable'
+    :: (Show (v Object), Show (v Meta))
+    => Maybe (v Object)
+    -> Maybe (v Meta)
+    -> UnifiedVariable v
+asUnifiedVariable' Nothing Nothing =
+    error "Only Object and Meta levels are supported!"
+asUnifiedVariable' (Just v) Nothing = ObjectVariable v
+asUnifiedVariable' Nothing (Just v) = MetaVariable v
+asUnifiedVariable' mv1 mv2 =
+    error ("Should not have both undefined: " ++ show mv1 ++ " and " ++ show mv2)
+
+asUnifiedVariable
+    :: (Typeable v, IsMeta a, Show (v Object), Show (v Meta))
+    => v a -> UnifiedVariable v
+asUnifiedVariable v = asUnifiedVariable' (cast v) (cast v)
+
 deriving instance Eq (UnifiedVariable Variable)
 deriving instance Show (UnifiedVariable Variable)
+
+{-|'FixPattern' class corresponds to "fixed point"-like representations
+of the 'Pattern' class.
+
+'p' is the fiexd point wrapping pattern.
+
+'v' is the type of variables.
+-}
+class FixPattern v p | p -> v where
+    {-|'unFixPattern' "lifts" a function defined on 'Pattern' to the
+    domain of the fixed point 'p'.
+
+    The resulting function unwraps the pattern from 'p' and maps it through
+    the argument function.
+
+    Note: it would have been clearer to have an @unFix@ function for unwrapping
+    the pattern, but that is hindered by the shadow type variable 'a'.
+    -}
+    unFixPattern :: (forall a . IsMeta a => Pattern a v p -> b) -> (p -> b)
 
 {-|'UnifiedPattern' corresponds to the @pattern@ syntactic category from
 the Semantics of K, Section 9.1.4 (Patterns).
@@ -229,6 +268,10 @@ data UnifiedPattern
     = MetaPattern !(Pattern Meta Variable UnifiedPattern)
     | ObjectPattern !(Pattern Object Variable UnifiedPattern)
     deriving (Eq, Show)
+
+instance FixPattern Variable UnifiedPattern where
+    unFixPattern k (MetaPattern p)   = k p
+    unFixPattern k (ObjectPattern p) = k p
 
 {-|Enumeration of patterns starting with @\@
 -}
