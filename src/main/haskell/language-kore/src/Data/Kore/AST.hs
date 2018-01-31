@@ -618,7 +618,7 @@ from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 data SentenceAxiom = SentenceAxiom
     { sentenceAxiomParameters :: ![UnifiedSortVariable]
     , sentenceAxiomPattern    :: !UnifiedPattern
-    , sentenceAxiomAtrributes :: !Attributes
+    , sentenceAxiomAttributes :: !Attributes
     }
     deriving (Eq, Show)
 

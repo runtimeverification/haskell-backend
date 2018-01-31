@@ -1,1 +1,17 @@
-Definition {definitionAttributes = Attributes {getAttributes = []}, definitionModules = Module {moduleName = ModuleName {getModuleName = "TEST-SORT-2"}, moduleSentences = [SentenceSortSentence (SentenceSort {sentenceSortName = Id {getId = "List"}, sentenceSortParameters = [SortVariable {getSortVariable = Id {getId = "S"}}], sentenceSortAttributes = Attributes {getAttributes = []}})], moduleAttributes = Attributes {getAttributes = []}}}
+Definition
+    { definitionAttributes = Attributes []
+    , definitionModules =
+        Module
+            { moduleName = ModuleName "TEST-SORT-2"
+            , moduleSentences =
+                [ SentenceSortSentence SentenceSort
+                    { sentenceSortName = Id Object "List"
+                    , sentenceSortParameters =
+                        [ SortVariable (Id Object "S")
+                        ]
+                    , sentenceSortAttributes = Attributes []
+                    }
+                ]
+            , moduleAttributes = Attributes []
+            }
+    }

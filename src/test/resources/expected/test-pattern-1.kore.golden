@@ -1,1 +1,18 @@
-Definition {definitionAttributes = Attributes {getAttributes = []}, definitionModules = Module {moduleName = ModuleName {getModuleName = "TEST-PATTERN-1"}, moduleSentences = [SentenceAxiomSentence (SentenceAxiom {sentenceAxiomParameters = [ObjectSortVariable (SortVariable {getSortVariable = Id {getId = "S"}})], sentenceAxiomPattern = ObjectPattern (TopPattern (Top {topSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "S"}})})), sentenceAxiomAtrributes = Attributes {getAttributes = []}})], moduleAttributes = Attributes {getAttributes = []}}}
+Definition
+    { definitionAttributes = Attributes []
+    , definitionModules =
+        Module
+            { moduleName = ModuleName "TEST-PATTERN-1"
+            , moduleSentences =
+                [ SentenceAxiomSentence SentenceAxiom
+                    { sentenceAxiomParameters =
+                        [ ObjectSortVariable (SortVariable (Id Object "S"))
+                        ]
+                    , sentenceAxiomPattern =
+                        ObjectPattern (TopPattern (Top (SortVariableSort (SortVariable (Id Object "S")))))
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+                ]
+            , moduleAttributes = Attributes []
+            }
+    }

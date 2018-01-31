@@ -1,1 +1,33 @@
-Definition {definitionAttributes = Attributes {getAttributes = []}, definitionModules = Module {moduleName = ModuleName {getModuleName = "TEST-ALIAS-7"}, moduleSentences = [SentenceSortSentence (SentenceSort {sentenceSortName = Id {getId = "Nat"}, sentenceSortParameters = [], sentenceSortAttributes = Attributes {getAttributes = []}}),ObjectSentenceAliasSentence (SentenceAlias {sentenceAliasAlias = Alias {aliasConstructor = Id {getId = "f"}, aliasParams = [SortVariable {getSortVariable = Id {getId = "S"}}]}, sentenceAliasSorts = [SortActualSort (SortActual {sortActualName = Id {getId = "Nat"}, sortActualSorts = []})], sentenceAliasReturnSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "S"}}), sentenceAliasAttributes = Attributes {getAttributes = []}})], moduleAttributes = Attributes {getAttributes = []}}}
+Definition
+    { definitionAttributes = Attributes []
+    , definitionModules =
+        Module
+            { moduleName = ModuleName "TEST-ALIAS-7"
+            , moduleSentences =
+                [ SentenceSortSentence SentenceSort
+                    { sentenceSortName = Id Object "Nat"
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    }
+                , ObjectSentenceAliasSentence SentenceAlias
+                    { sentenceAliasAlias =
+                        Alias
+                            { aliasConstructor = Id Object "f"
+                            , aliasParams =
+                                [ SortVariable (Id Object "S")
+                                ]
+                            }
+                    , sentenceAliasSorts =
+                        [ SortActualSortSortActual
+                                { sortActualName = Id Object "Nat"
+                                , sortActualSorts = []
+                                }
+                        ]
+                    , sentenceAliasReturnSort =
+                        SortVariableSort (SortVariable (Id Object "S"))
+                    , sentenceAliasAttributes = Attributes []
+                    }
+                ]
+            , moduleAttributes = Attributes []
+            }
+    }

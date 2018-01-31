@@ -1,1 +1,38 @@
-Definition {definitionAttributes = Attributes {getAttributes = []}, definitionModules = Module {moduleName = ModuleName {getModuleName = "TEST-SYMBOL-3"}, moduleSentences = [SentenceSortSentence (SentenceSort {sentenceSortName = Id {getId = "S"}, sentenceSortParameters = [], sentenceSortAttributes = Attributes {getAttributes = []}}),ObjectSentenceSymbolSentence (SentenceSymbol {sentenceSymbolSymbol = Symbol {symbolConstructor = Id {getId = "f"}, symbolParams = []}, sentenceSymbolSorts = [SortActualSort (SortActual {sortActualName = Id {getId = "S"}, sortActualSorts = []}),SortActualSort (SortActual {sortActualName = Id {getId = "S"}, sortActualSorts = []})], sentenceSymbolReturnSort = SortActualSort (SortActual {sortActualName = Id {getId = "S"}, sortActualSorts = []}), sentenceSymbolAttributes = Attributes {getAttributes = []}})], moduleAttributes = Attributes {getAttributes = []}}}
+Definition
+    { definitionAttributes = Attributes []
+    , definitionModules =
+        Module
+            { moduleName = ModuleName "TEST-SYMBOL-3"
+            , moduleSentences =
+                [ SentenceSortSentence SentenceSort
+                    { sentenceSortName = Id Object "S"
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    }
+                , ObjectSentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = Id Object "f"
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSortSortActual
+                                { sortActualName = Id Object "S"
+                                , sortActualSorts = []
+                                }
+                        , SortActualSortSortActual
+                                { sortActualName = Id Object "S"
+                                , sortActualSorts = []
+                                }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSortSortActual
+                                { sortActualName = Id Object "S"
+                                , sortActualSorts = []
+                                }
+                    , sentenceSymbolAttributes = Attributes []
+                    }
+                ]
+            , moduleAttributes = Attributes []
+            }
+    }

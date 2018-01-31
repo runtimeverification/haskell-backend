@@ -186,7 +186,7 @@ validateMetaSort identifier [] =
             ("metaSortConverter: Invalid constructor: '" ++ metaId ++ "'.")
   where
     metaId = getId identifier
-validateMetaSort _ l = fail "metaSortConverter: Non empty parameter sorts."
+validateMetaSort _ _ = fail "metaSortConverter: Non empty parameter sorts."
 
 {-|'inCurlyBracesSortListParser' parses either an @object-sort-list@
 or a @meta-sort-list@, delimited by curly braces and separated by commas.

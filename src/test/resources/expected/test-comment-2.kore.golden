@@ -1,1 +1,15 @@
-Definition {definitionAttributes = Attributes {getAttributes = []}, definitionModules = Module {moduleName = ModuleName {getModuleName = "TEST-COMMENT-2"}, moduleSentences = [SentenceSortSentence (SentenceSort {sentenceSortName = Id {getId = "Nat"}, sentenceSortParameters = [], sentenceSortAttributes = Attributes {getAttributes = []}})], moduleAttributes = Attributes {getAttributes = []}}}
+Definition
+    { definitionAttributes = Attributes []
+    , definitionModules =
+        Module
+            { moduleName = ModuleName "TEST-COMMENT-2"
+            , moduleSentences =
+                [ SentenceSortSentence SentenceSort
+                    { sentenceSortName = Id Object "Nat"
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    }
+                ]
+            , moduleAttributes = Attributes []
+            }
+    }
