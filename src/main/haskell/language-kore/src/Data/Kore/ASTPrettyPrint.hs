@@ -387,35 +387,35 @@ instance (IsMeta a) => PrettyPrint (Top a) where
 instance (IsMeta a) => PrettyPrint (Pattern a) where
     prettyPrint flags (AndPattern p) =
         writeOneFieldStruct flags "AndPattern" p
-    prettyPrint flags (ApplicationPattern p) =
+    prettyPrint flags (ApplicationPattern p)   =
         writeOneFieldStruct flags "ApplicationPattern" p
-    prettyPrint flags (BottomPattern p) =
+    prettyPrint flags (BottomPattern p)        =
         writeOneFieldStruct flags "BottomPattern" p
-    prettyPrint flags (CeilPattern p) =
+    prettyPrint flags (CeilPattern p)          =
         writeOneFieldStruct flags "CeilPattern" p
-    prettyPrint flags (EqualsPattern p) =
+    prettyPrint flags (EqualsPattern p)        =
         writeOneFieldStruct flags "EqualsPattern" p
-    prettyPrint flags (ExistsPattern p) =
+    prettyPrint flags (ExistsPattern p)        =
         writeOneFieldStruct flags "ExistsPattern" p
-    prettyPrint flags (FloorPattern p) =
+    prettyPrint flags (FloorPattern p)         =
         writeOneFieldStruct flags "FloorPattern" p
-    prettyPrint flags (ForallPattern p) =
+    prettyPrint flags (ForallPattern p)        =
         writeOneFieldStruct flags "ForallPattern" p
-    prettyPrint flags (IffPattern p) =
+    prettyPrint flags (IffPattern p)           =
         writeOneFieldStruct flags "IffPattern" p
     prettyPrint flags (ImpliesPattern p)       =
         writeOneFieldStruct flags "ImpliesPattern" p
-    prettyPrint flags (MemPattern p) =
+    prettyPrint flags (MemPattern p)           =
         writeOneFieldStruct flags "MemPattern" p
-    prettyPrint flags (NotPattern p) =
+    prettyPrint flags (NotPattern p)           =
         writeOneFieldStruct flags "NotPattern" p
-    prettyPrint flags (OrPattern p) =
+    prettyPrint flags (OrPattern p)            =
         writeOneFieldStruct flags "OrPattern" p
     prettyPrint flags (StringLiteralPattern p) =
         writeOneFieldStruct flags "StringLiteralPattern" p
-    prettyPrint flags (TopPattern p) =
+    prettyPrint flags (TopPattern p)           =
         writeOneFieldStruct flags "TopPattern" p
-    prettyPrint flags (VariablePattern p) =
+    prettyPrint flags (VariablePattern p)      =
         writeOneFieldStruct flags "VariablePattern" p
 
 instance PrettyPrint Attributes where
