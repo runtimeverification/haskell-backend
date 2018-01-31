@@ -1,6 +1,9 @@
-{-# LANGUAGE DeriveFoldable    #-}
-{-# LANGUAGE DeriveFunctor     #-}
-{-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE DeriveFoldable     #-}
+{-# LANGUAGE DeriveFunctor      #-}
+{-# LANGUAGE DeriveTraversable  #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE FlexibleInstances  #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-|
 Module      : Data.Kore.AST
 Description : Data Structures for representing the Kore language AST
@@ -212,17 +215,19 @@ data Variable a = Variable
 {-|'UnifiedVariable' corresponds to the @variable@ syntactic category from
 the Semantics of K, Section 9.1.4 (Patterns).
 -}
-data UnifiedVariable
-    = MetaVariable !(Variable Meta)
-    | ObjectVariable !(Variable Object)
-    deriving (Eq, Show)
+data UnifiedVariable v
+    = MetaVariable !(v Meta)
+    | ObjectVariable !(v Object)
+
+deriving instance Eq (UnifiedVariable Variable)
+deriving instance Show (UnifiedVariable Variable)
 
 {-|'UnifiedPattern' corresponds to the @pattern@ syntactic category from
 the Semantics of K, Section 9.1.4 (Patterns).
 -}
 data UnifiedPattern
-    = MetaPattern !(Pattern Meta UnifiedPattern)
-    | ObjectPattern !(Pattern Object UnifiedPattern)
+    = MetaPattern !(Pattern Meta Variable UnifiedPattern)
+    | ObjectPattern !(Pattern Object Variable UnifiedPattern)
     deriving (Eq, Show)
 
 {-|Enumeration of patterns starting with @\@
@@ -341,12 +346,15 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 
 This represents the '∃existsVariable(existsPattern)' Matching Logic construct.
 -}
-data Exists a p = Exists
+data Exists a v p = Exists
     { existsSort     :: !(Sort a)
-    , existsVariable :: !UnifiedVariable
+    , existsVariable :: !(UnifiedVariable v)
     , existsPattern  :: !p
     }
-    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
+    deriving (Typeable, Functor, Foldable, Traversable)
+
+deriving instance (Eq p, Eq (UnifiedVariable v)) => Eq (Exists a v p)
+deriving instance (Show p, Show (UnifiedVariable v)) => Show (Exists a v p)
 
 {-|'Floor' corresponds to the @\floor@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -379,12 +387,15 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 
 This represents the '∀forallVariable(forallPattern)' Matching Logic construct.
 -}
-data Forall a p = Forall
+data Forall a v p = Forall
     { forallSort     :: !(Sort a)
-    , forallVariable :: !UnifiedVariable
+    , forallVariable :: !(UnifiedVariable v)
     , forallPattern  :: !p
     }
-    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
+    deriving (Typeable, Functor, Foldable, Traversable)
+
+deriving instance (Eq p, Eq (UnifiedVariable v)) => Eq (Forall a v p)
+deriving instance (Show p, Show (UnifiedVariable v)) => Show (Forall a v p)
 
 {-|'Iff' corresponds to the @\iff@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -435,13 +446,16 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 
 This represents the 'memVariable ∊ memPattern' Matching Logic construct.
 -}
-data Mem a p = Mem
+data Mem a v p = Mem
     { memOperandSort :: !(Sort a)
     , memResultSort  :: !(Sort a)
-    , memVariable    :: !UnifiedVariable
+    , memVariable    :: !(UnifiedVariable v)
     , memPattern     :: !p
     }
-    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
+    deriving (Typeable, Functor, Foldable, Traversable)
+
+deriving instance (Eq p, Eq (UnifiedVariable v)) => Eq (Mem a v p)
+deriving instance (Show p, Show (UnifiedVariable v)) => Show (Mem a v p)
 
 {-|'Not' corresponds to the @\not@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -501,24 +515,29 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 
 Note that the StringLiteralPattern should only be a member of 'Pattern Meta'.
 -}
-data Pattern a p
+data Pattern a v p
     = AndPattern !(And a p)
     | ApplicationPattern !(Application a p)
     | BottomPattern !(Bottom a)
     | CeilPattern !(Ceil a p)
     | EqualsPattern !(Equals a p)
-    | ExistsPattern !(Exists a p)
+    | ExistsPattern !(Exists a v p)
     | FloorPattern !(Floor a p)
-    | ForallPattern !(Forall a p)
+    | ForallPattern !(Forall a v p)
     | IffPattern !(Iff a p)
     | ImpliesPattern !(Implies a p)
-    | MemPattern !(Mem a p)
+    | MemPattern !(Mem a v p)
     | NotPattern !(Not a p)
     | OrPattern !(Or a p)
     | StringLiteralPattern !StringLiteral
     | TopPattern !(Top a)
-    | VariablePattern !(Variable a)
-    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
+    | VariablePattern !(v a)
+    deriving (Typeable, Functor, Foldable, Traversable)
+
+deriving instance (Eq p, Eq (UnifiedVariable v), Eq (v a))
+    => Eq (Pattern a v p)
+deriving instance (Show p, Show (UnifiedVariable v), Show (v a))
+    => Show (Pattern a v p)
 
 {-|'SentenceAlias' corresponds to the @object-alias-declaration@ and
 @meta-alias-declaration@ syntactic categories from the Semantics of K,
@@ -667,10 +686,10 @@ instance MLPatternClass Or where
     getPatternPatterns a = [orFirst a, orSecond a]
 
 class MLBinderPatternClass p where
-    getBinderPatternType :: p a rpt -> MLPatternType
-    getBinderPatternSort :: p a rpt -> Sort a
-    getBinderPatternVariable :: p a rpt -> UnifiedVariable
-    getBinderPatternPattern :: p a rpt -> rpt
+    getBinderPatternType :: p a v rpt -> MLPatternType
+    getBinderPatternSort :: p a v rpt -> Sort a
+    getBinderPatternVariable :: p a v rpt -> UnifiedVariable v
+    getBinderPatternPattern :: p a v rpt -> rpt
 
 instance MLBinderPatternClass Exists where
     getBinderPatternType _ = ExistsPatternType

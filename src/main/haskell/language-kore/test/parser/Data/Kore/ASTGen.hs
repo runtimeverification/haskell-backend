@@ -99,7 +99,7 @@ variableGen x = pure Variable
     <*> scale (`div` 2) (idGen x)
     <*> scale (`div` 2) (sortGen x)
 
-unifiedVariableGen :: Gen UnifiedVariable
+unifiedVariableGen :: Gen (UnifiedVariable Variable)
 unifiedVariableGen = scale (`div` 2) $ oneof
     [ ObjectVariable <$> variableGen Object
     , MetaVariable <$> variableGen Meta
@@ -128,8 +128,9 @@ ceilFloorGen x constructor = pure constructor
 existsForallGen
     :: IsMeta a
     => a
-    -> (Sort a -> UnifiedVariable -> UnifiedPattern -> q a UnifiedPattern)
-    -> Gen (q a UnifiedPattern)
+    -> (Sort a -> UnifiedVariable Variable -> UnifiedPattern
+        -> q a Variable UnifiedPattern)
+    -> Gen (q a Variable UnifiedPattern)
 existsForallGen x constructor = pure constructor
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) unifiedVariableGen
@@ -164,13 +165,13 @@ equalsGen x = pure Equals
     <*> scale (`div` 2) unifiedPatternGen
     <*> scale (`div` 2) unifiedPatternGen
 
-existsGen :: IsMeta a => a -> Gen (Exists a UnifiedPattern)
+existsGen :: IsMeta a => a -> Gen (Exists a Variable UnifiedPattern)
 existsGen x = existsForallGen x Exists
 
 floorGen :: IsMeta a => a -> Gen (Floor a UnifiedPattern)
 floorGen x = ceilFloorGen x Floor
 
-forallGen :: IsMeta a => a -> Gen (Forall a UnifiedPattern)
+forallGen :: IsMeta a => a -> Gen (Forall a Variable UnifiedPattern)
 forallGen x = existsForallGen x Forall
 
 iffGen :: IsMeta a => a -> Gen (Iff a UnifiedPattern)
@@ -179,7 +180,7 @@ iffGen x = binaryOperatorGen x Iff
 impliesGen :: IsMeta a => a -> Gen (Implies a UnifiedPattern)
 impliesGen x = binaryOperatorGen x Implies
 
-memGen :: IsMeta a => a -> Gen (Mem a UnifiedPattern)
+memGen :: IsMeta a => a -> Gen (Mem a Variable UnifiedPattern)
 memGen x = pure Mem
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) (sortGen x)
@@ -197,7 +198,7 @@ orGen x = binaryOperatorGen x Or
 topGen :: IsMeta a => a -> Gen (Top a)
 topGen x = topBottomGen x Top
 
-patternGen :: IsMeta a => a -> Gen (Pattern a UnifiedPattern)
+patternGen :: IsMeta a => a -> Gen (Pattern a Variable UnifiedPattern)
 patternGen x =
     suchThat ( oneof
         [ AndPattern <$> andGen x

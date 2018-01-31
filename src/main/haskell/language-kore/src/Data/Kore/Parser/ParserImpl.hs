@@ -355,9 +355,10 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 existsForallRemainderParser
     :: IsMeta a
     => a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort a -> UnifiedVariable -> UnifiedPattern -> m a UnifiedPattern)
+    -> (Sort a -> UnifiedVariable Variable -> UnifiedPattern
+        -> m a Variable UnifiedPattern)
     -- ^ Element constructor.
-    -> Parser (m a UnifiedPattern)
+    -> Parser (m a Variable UnifiedPattern)
 existsForallRemainderParser x constructor = do
     sort <- inCurlyBracesRemainderParser (sortParser x)
     (variable, qPattern) <- parenPairParser unifiedVariableParser patternParser
@@ -402,7 +403,7 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 memRemainderParser
     :: IsMeta a
     => a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser (Mem a UnifiedPattern)
+    -> Parser (Mem a Variable UnifiedPattern)
 memRemainderParser x = do
     (sort1, sort2) <- curlyPairRemainderParser (sortParser x)
     (variable, mPattern) <-
@@ -481,7 +482,7 @@ symbolOrAliasPatternRemainderParser
     :: IsMeta a
     => a  -- ^ Distinguishes between the meta and non-meta elements.
     -> Id a  -- ^ The already parsed prefix.
-    -> Parser (Pattern a UnifiedPattern)
+    -> Parser (Pattern a Variable UnifiedPattern)
 symbolOrAliasPatternRemainderParser x identifier = ApplicationPattern <$>
     ( pure Application
         <*> (SymbolOrAlias identifier <$> inCurlyBracesSortListParser x)
@@ -537,7 +538,7 @@ BNF definitions:
 ⟨variable⟩ ::= ⟨object-variable⟩ | ⟨meta-variable⟩
 @
 -}
-unifiedVariableParser :: Parser UnifiedVariable
+unifiedVariableParser :: Parser (UnifiedVariable Variable)
 unifiedVariableParser = do
     c <- Parser.peekChar'
     if c == '#'
@@ -570,7 +571,7 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 variableOrTermPatternParser
     :: IsMeta a
     => a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser (Pattern a UnifiedPattern)
+    -> Parser (Pattern a Variable UnifiedPattern)
 variableOrTermPatternParser x = do
     identifier <- idParser x
     c <- Parser.peekChar'

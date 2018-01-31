@@ -135,7 +135,7 @@ instance Unparse UnifiedSortVariable where
     unparse (ObjectSortVariable sv) = unparse sv
     unparse (MetaSortVariable sv)   = unparse sv
 
-instance Unparse UnifiedVariable where
+instance Unparse (UnifiedVariable Variable) where
     unparse (ObjectVariable sv) = unparse sv
     unparse (MetaVariable sv)   = unparse sv
 
@@ -168,8 +168,9 @@ unparseMLPattern p = do
     inParens (unparse (getPatternPatterns p))
 
 unparseMLBinderPattern
-    :: (UnparseOutput w m, MLBinderPatternClass p, Unparse rpt)
-    => p a rpt -> m ()
+    :: (UnparseOutput w m, MLBinderPatternClass p, Unparse rpt,
+        Unparse (UnifiedVariable v))
+    => p a v rpt -> m ()
 unparseMLBinderPattern p = do
     unparse (getBinderPatternType p)
     inCurlyBraces (unparse (getBinderPatternSort p))
@@ -199,13 +200,15 @@ instance Unparse p => Unparse (Ceil a p) where
 instance Unparse p => Unparse (Equals a p) where
     unparse = unparseMLPattern
 
-instance Unparse p => Unparse (Exists a p) where
+instance (Unparse (UnifiedVariable v), Unparse p)
+    => Unparse (Exists a v p) where
     unparse = unparseMLBinderPattern
 
 instance Unparse p => Unparse (Floor a p) where
     unparse = unparseMLPattern
 
-instance Unparse p => Unparse (Forall a p) where
+instance (Unparse (UnifiedVariable v), Unparse p)
+    => Unparse (Forall a v p) where
     unparse = unparseMLBinderPattern
 
 instance Unparse p => Unparse (Iff a p) where
@@ -214,7 +217,8 @@ instance Unparse p => Unparse (Iff a p) where
 instance Unparse p => Unparse (Implies a p) where
     unparse = unparseMLPattern
 
-instance Unparse p => Unparse (Mem a p) where
+instance (Unparse (UnifiedVariable v), Unparse p)
+    => Unparse (Mem a v p) where
     unparse m = do
         unparse MemPatternType
         inCurlyBraces (unparse [memOperandSort m, memResultSort m])
@@ -233,7 +237,8 @@ instance Unparse (Top a) where
         inCurlyBraces (unparse (topSort top))
         inParens (return ())
 
-instance Unparse p => Unparse (Pattern a p) where
+instance (Unparse (UnifiedVariable v), Unparse p, Unparse (v a))
+    => Unparse (Pattern a v p) where
     unparse (AndPattern p)           = unparse p
     unparse (ApplicationPattern p)   = unparse p
     unparse (BottomPattern p)        = unparse p
