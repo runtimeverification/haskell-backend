@@ -1,1 +1,25 @@
-Definition {definitionAttributes = Attributes {getAttributes = []}, definitionModules = Module {moduleName = ModuleName {getModuleName = "TEST-SYMBOL-5"}, moduleSentences = [ObjectSentenceSymbolSentence (SentenceSymbol {sentenceSymbolSymbol = Symbol {symbolConstructor = Id {getId = "f"}, symbolParams = [SortVariable {getSortVariable = Id {getId = "S"}}]}, sentenceSymbolSorts = [SortVariableSort (SortVariable {getSortVariable = Id {getId = "S"}})], sentenceSymbolReturnSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "S"}}), sentenceSymbolAttributes = Attributes {getAttributes = []}})], moduleAttributes = Attributes {getAttributes = []}}}
+Definition
+    { definitionAttributes = Attributes []
+    , definitionModules =
+        Module
+            { moduleName = ModuleName "TEST-SYMBOL-5"
+            , moduleSentences =
+                [ ObjectSentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = Id Object "f"
+                            , symbolParams =
+                                [ SortVariable (Id Object "S")
+                                ]
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortVariableSort (SortVariable (Id Object "S"))
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortVariableSort (SortVariable (Id Object "S"))
+                    , sentenceSymbolAttributes = Attributes []
+                    }
+                ]
+            , moduleAttributes = Attributes []
+            }
+    }
