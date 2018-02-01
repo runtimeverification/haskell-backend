@@ -60,3 +60,5 @@ tests:
     - tasty-quickcheck
     - QuickCheck
     - filepath
+    - tasty-ant-xml
+
