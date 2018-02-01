@@ -26,6 +26,13 @@ unparseUnitTests =
                     , sentenceSortAttributes = Attributes []
                     })
             "sort x{}[]"
+        , unparseTest
+            Module
+                { moduleName = ModuleName "t"
+                , moduleSentences = []
+                , moduleAttributes = Attributes []
+                }
+            "module t\nendmodule\n[]"
         ]
 
 unparseParseTests :: TestTree
