@@ -25,7 +25,7 @@ unparseUnitTests =
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
                     })
-            "sort x{}[]"
+            "sort {}[]"
         ]
 
 unparseParseTests :: TestTree
