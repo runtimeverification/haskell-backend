@@ -5,6 +5,7 @@ import           Test.Tasty.Runners              (consoleTestReporter,
                                                   listingTests)
 import           Test.Tasty.Runners.AntXML       (antXMLRunner)
 
+import           Data.Kore.IndentingPrinterTest
 import           Data.Kore.Parser.CharDictTest
 import           Data.Kore.Parser.CharSetTest
 import           Data.Kore.Parser.CStringTest
@@ -37,6 +38,7 @@ unitTests =
         , cStringTests
         , koreLexemeTests
         , koreParserTests
+        , indentingPrinterTests
         , unparseUnitTests
         , unparseParseTests
         ]
