@@ -5801,7 +5801,7 @@ Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
 	\alt `\\equals' `{' <object-sort> `,'  <object-sort> `}'
 	`(' <pattern> `,' <pattern> `)'
 	\alt `\\mem' `{' <object-sort> `,'  <object-sort> `}'
-	`(' <variable> `,' <pattern> `)'
+	`(' <pattern> `,' <pattern> `)'
 	\alt `\\top' `{' <object-sort> `}' `(' `)'
 	\alt `\\bottom' `{' <object-sort> `}' `(' `)'
 	
@@ -5832,7 +5832,7 @@ Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
 	\alt `\\equals' `{' <meta-sort> `,' <meta-sort> `}'
 	`(' <pattern> `,' <pattern> `)'
 	\alt `\\mem' `{' <meta-sort> `,' <meta-sort> `}'
-	`(' <variable> `,' <pattern> `)'
+	`(' <pattern> `,' <pattern> `)'
 	\alt `\\top' `{' <meta-sort> `}' `(' `)'
 	\alt `\\bottom' `{' <meta-sort> `}' `(' `)'
 	
@@ -5851,6 +5851,44 @@ Section~\ref{sec:finite-mechanisms}).
 By allowing writing a mix of object-level patterns and meta-level patterns, the 
 users can write patterns in the object-level as usual and only write meta-level 
 patterns when needed.
+
+Readers might notice that we allow the first component of membership pattern 
+\qquottt{\slashsymbol mem} to be not just a \syntacc{variable} but 
+a \syntacc{pattern}.
+This is not a typo but an intended decision choice.
+Membership patterns are not special from other patterns.
+They are just syntactic sugar, defined as
+$$
+x \in \varphi \equiv \ceil{x \wedge \varphi}
+$$
+The reason we often put a variable in its first component is because $x \in 
+\varphi$ yields the semantics that ``$x$ is an element in $\varphi$'' (refer 
+to~\cite{rosu-2017-lmcs}, Proposition~5.14), not because there is any special 
+syntactic constraint. 
+In fact, the membership construct applies to the cases where both of its 
+components are patterns just as well:
+$$
+\psi \in \varphi \equiv \ceil{\psi \wedge \varphi}
+$$
+This allows a uniform interface for all pattern constructs, except 
+\qquottt{\slashsymbol forall} and \qquottt{\slashsymbol exists} because of 
+their binding semantics.
+This uniform interface yields neat implementation of operations on patterns 
+such as substitution.
+Consider this example $\varphi[\psi / x]$ where we substitute $x$ for $\psi$ in 
+$\varphi$.
+If the membership construct only accept variables as its first component, then 
+the substitution is only defined when $x$ does not occur free as the first 
+component of a membership construct in $\varphi$, and any implementation of 
+substitution will have to take that into account and perform an 
+``occurs check'' for $x$ in $\varphi$, and this could get expensive.
+
+In~\cite{rosu-2017-lmcs}, Notation~5.13, the notation $x \in \varphi$ is only 
+defined when the first component is a variable.
+As we explained above, such a syntactic restriction is not necessary and can be 
+safely and preferably removed.
+
+
 %
 %
 %The following are all logic connective constructors in Kore, including both 
