@@ -322,7 +322,8 @@
   \newcommand{\Kexists}{\texttt{\sharpsymbol \slashsymbol  exists}}
   \newcommand{\Kforall}{\texttt{\sharpsymbol \slashsymbol  forall}}
   \newcommand{\Kequals}{\texttt{\sharpsymbol \slashsymbol  equals}}
-  \newcommand{\Kmembership}{\texttt{\sharpsymbol \slashsymbol  mem}}
+  \newcommand{\Kmembership}{\Kin}
+  \newcommand{\Kin}{\texttt{\sharpsymbol \slashsymbol  in}}
   \newcommand{\Kcontains}{\texttt{\sharpsymbol  \slashsymbol contains}}
   \newcommand{\Ktop}{\texttt{\sharpsymbol \slashsymbol  top}}
   \newcommand{\Kbottom}{\texttt{\sharpsymbol \slashsymbol  bottom}}
@@ -811,7 +812,7 @@ $\overline{\rho}(\varphi =_{s_1}^{s_2} \varphi') = M_{s_2}$
 iff $\overline{\rho}(\varphi) = \overline{\rho}(\varphi')$.
 
 Similarly, we can define \emph{membership}:
-if $x\in\Var_{s_1}$, $\varphi\in\Pattern_{s_1}$ and $s_2\in S$, then
+if $x\in\Var_{s_1}$, $\varphi\in\Pattern_{s_1}$ and $s_1,s_2\in S$, then
 let
 $$
 \begin{array}{@{}rcll}
@@ -826,6 +827,26 @@ $\overline{\rho}(x \in_{s_1}^{s_2} \varphi) = \emptyset$
 iff $\rho(x) \not\in \overline{\rho}(\varphi)$, and
 $\overline{\rho}(x \in_{s_1}^{s_2} \varphi) = M_{s_2}$
 iff $\rho(x) \in \overline{\rho}(\varphi)$.
+It is convenient to extend the definition of membership to cases when the first 
+component is not a variable, but a pattern:
+if $\psi, \varphi \in \Pattern_{s_1}$, and $s_1,s_2\in S$, 
+then let
+$$
+\begin{array}{@{}rcll}
+\psi \in_{s_1}^{s_2} \varphi & \ \ \ \ \ \equiv \ \ \ \ \ &
+\lceil \psi \wedge \varphi\rceil_{s_1}^{s_2}
+& % \ \ \ \ \ \mbox{where } x \in \Var_{s_1},\varphi\in \Pattern_{s_1}\\
+\end{array}
+$$
+This allows a uniform interface for pattern constructs, which yields neat 
+implementation of operations such as substitution.
+As an example, consider $\varphi_1[\varphi_2 / x]$ where we 
+substitute $x$ for $\varphi_2$ in $\varphi_1$.
+If the membership construct only accept variables as its first component, then 
+the substitution is only defined when $x$ does not occur free in the first 
+component of any membership construct in $\varphi_1$, and any implementation of 
+substitution will have to take that into account and perform an 
+``occurs check'' for $x$ in $\varphi_1$, and this could be expensive.
 
 Since $s_1$ and $s_2$ can usually be inferred from context,
 we write $\lceil\_\rceil$ or $\lfloor\_\rfloor$ instead of
@@ -3375,7 +3396,7 @@ connectives
   & \Kequals \colon \KSort\times\KSort \times \KPattern \times \KPattern \to 
   \KPattern
   \\
-  & \Kmembership \colon \KSort \times \KSort \times \KVariable \times 
+  & \Kmembership \colon \KSort \times \KSort \times \KPattern \times 
   \KPattern  \to \KPattern
   \\
   & \Ktop \colon \KSort \to \KPattern
@@ -3442,8 +3463,8 @@ Derived connectives have axioms
   & \Kequals(s_1, s_2, \varphi, \psi) 
   = \Kfloor(s_1, s_2, \Kiff(s_1, \varphi, \psi))
   \\
-  & \Kmembership(s_1, s_2, v, \psi) 
-  = \Kceil(s_1, s_2, \Kand(s_1, v, \psi))
+  & \Kmembership(s_1, s_2, \varphi, \psi) 
+  = \Kceil(s_1, s_2, \Kand(s_1, \varphi, \psi))
   \\
   & \Ktop(s) = \Kexists(s, \Kvariable(x, s), \Kvariable(x, s))
   \\
@@ -3481,7 +3502,8 @@ Derived connectives have axioms
       & \overline{\varphi =_{s_1}^{s_2} \psi} \equiv \Kequals(s_1, s_2, 
       \varphi, \psi)
       \\
-      & \overline{v \in_{s_1}^{s_2} \psi} \equiv \Kmembership(s_1, s_2, v, 
+      & \overline{\varphi \in_{s_1}^{s_2} \psi} \equiv \Kmembership(s_1, s_2, 
+      \varphi, 
       \psi)
       \\
       & \overline{\top_s} \equiv \Ktop(s)
@@ -5851,44 +5873,6 @@ Section~\ref{sec:finite-mechanisms}).
 By allowing writing a mix of object-level patterns and meta-level patterns, the 
 users can write patterns in the object-level as usual and only write meta-level 
 patterns when needed.
-
-Readers might notice that we allow the first component of membership pattern 
-\qquottt{\slashsymbol mem} to be not just a \syntacc{variable} but 
-a \syntacc{pattern}.
-This is not a typo but an intended decision choice.
-Membership patterns are not special from other patterns.
-They are just syntactic sugar, defined as
-$$
-x \in \varphi \equiv \ceil{x \wedge \varphi}
-$$
-The reason we often put a variable in its first component is because $x \in 
-\varphi$ yields the semantics that ``$x$ is an element in $\varphi$'' (refer 
-to~\cite{rosu-2017-lmcs}, Proposition~5.14), not because there is any special 
-syntactic constraint. 
-In fact, the membership construct applies to the cases where both of its 
-components are patterns just as well:
-$$
-\psi \in \varphi \equiv \ceil{\psi \wedge \varphi}
-$$
-This allows a uniform interface for all pattern constructs, except 
-\qquottt{\slashsymbol forall} and \qquottt{\slashsymbol exists} because of 
-their binding semantics.
-This uniform interface yields neat implementation of operations on patterns 
-such as substitution.
-Consider this example $\varphi[\psi / x]$ where we substitute $x$ for $\psi$ in 
-$\varphi$.
-If the membership construct only accept variables as its first component, then 
-the substitution is only defined when $x$ does not occur free as the first 
-component of a membership construct in $\varphi$, and any implementation of 
-substitution will have to take that into account and perform an 
-``occurs check'' for $x$ in $\varphi$, and this could get expensive.
-
-In~\cite{rosu-2017-lmcs}, Notation~5.13, the notation $x \in \varphi$ is only 
-defined when the first component is a variable.
-As we explained above, such a syntactic restriction is not necessary and can be 
-safely and preferably removed.
-
-
 %
 %
 %The following are all logic connective constructors in Kore, including both 
