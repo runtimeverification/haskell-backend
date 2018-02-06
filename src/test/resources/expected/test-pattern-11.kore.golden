@@ -9,18 +9,18 @@ Definition
                         [ ObjectSortVariable (SortVariable (Id Object "S"))
                         ]
                     , sentenceAxiomPattern =
-                        ObjectPattern (MemPattern Mem
-                            { memOperandSort =
+                        ObjectPattern (InPattern In
+                            { inOperandSort =
                                 SortVariableSort (SortVariable (Id Object "S"))
-                            , memResultSort =
+                            , inResultSort =
                                 SortVariableSort (SortVariable (Id Object "S"))
-                            , memVariable =
-                                ObjectVariable Variable
+                            , inContainedPattern =
+                                ObjectPattern (VariablePattern Variable
                                     { variableName = Id Object "X"
                                     , variableSort =
                                         SortVariableSort (SortVariable (Id Object "S"))
-                                    }
-                            , memPattern =
+                                    })
+                            , inContainingPattern =
                                 ObjectPattern (VariablePattern Variable
                                     { variableName = Id Object "X"
                                     , variableSort =

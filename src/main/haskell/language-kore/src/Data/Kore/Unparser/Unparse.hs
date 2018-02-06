@@ -120,7 +120,7 @@ instance Unparse MLPatternType where
     unparse ForallPatternType  = write "\\forall"
     unparse IffPatternType     = write "\\iff"
     unparse ImpliesPatternType = write "\\implies"
-    unparse MemPatternType     = write "\\mem"
+    unparse InPatternType      = write "\\in"
     unparse NotPatternType     = write "\\not"
     unparse OrPatternType      = write "\\or"
     unparse TopPatternType     = write "\\top"
@@ -174,12 +174,8 @@ instance Unparse (Iff a) where
 instance Unparse (Implies a) where
     unparse = unparseMLPattern
 
-instance Unparse (Mem a) where
-    unparse m = do
-        unparse MemPatternType
-        inCurlyBraces (unparse [memOperandSort m, memResultSort m])
-        inParens
-            (unparse (memVariable m) >> write ", " >> unparse (memPattern m))
+instance Unparse (In a) where
+    unparse = unparseMLPattern
 
 instance Unparse (Not a) where
     unparse = unparseMLPattern
@@ -201,7 +197,7 @@ instance Unparse (Pattern a) where
     unparse (ForallPattern p)        = unparse p
     unparse (IffPattern p)           = unparse p
     unparse (ImpliesPattern p)       = unparse p
-    unparse (MemPattern p)           = unparse p
+    unparse (InPattern p)            = unparse p
     unparse (NotPattern p)           = unparse p
     unparse (OrPattern p)            = unparse p
     unparse (StringLiteralPattern p) = unparse p

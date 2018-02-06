@@ -234,7 +234,7 @@ data MLPatternType
     | ForallPatternType
     | IffPatternType
     | ImpliesPatternType
-    | MemPatternType
+    | InPatternType
     | NotPatternType
     | OrPatternType
     | TopPatternType
@@ -419,24 +419,27 @@ data Implies a = Implies
     }
     deriving (Eq, Show, Typeable)
 
-{-|'Mem' corresponds to the @\mem@ branches of the @object-pattern@ and
+{-|'In' corresponds to the @\in@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
 
 The 'a' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'IsMeta a'.
 
-'memOperandSort' is the sort of the operands.
+'inOperandSort' is the sort of the operands.
 
-'memResultSort' is the sort of the result.
+'inResultSort' is the sort of the result.
 
-This represents the 'memVariable ∊ memPattern' Matching Logic construct.
+This represents the 'inMemberPattern ∊ inContainingPattern' Matching Logic
+construct, which, when 'inMemberPattern' is a singleton (e.g. a variable),
+represents the set membership. However, in general, it actually means that the
+two patterns have a non-empty intersection.
 -}
-data Mem a = Mem
-    { memOperandSort :: !(Sort a)
-    , memResultSort  :: !(Sort a)
-    , memVariable    :: !UnifiedVariable
-    , memPattern     :: !UnifiedPattern
+data In a = In
+    { inOperandSort       :: !(Sort a)
+    , inResultSort        :: !(Sort a)
+    , inContainedPattern  :: !UnifiedPattern
+    , inContainingPattern :: !UnifiedPattern
     }
     deriving (Eq, Show, Typeable)
 
@@ -509,7 +512,7 @@ data Pattern a
     | ForallPattern !(Forall a)
     | IffPattern !(Iff a)
     | ImpliesPattern !(Implies a)
-    | MemPattern !(Mem a)
+    | InPattern !(In a)
     | NotPattern !(Not a)
     | OrPattern !(Or a)
     | StringLiteralPattern !StringLiteral
@@ -645,8 +648,8 @@ instance AsPattern Iff where
 instance AsPattern Implies where
     asPattern = ImpliesPattern
 
-instance AsPattern Mem where
-    asPattern = MemPattern
+instance AsPattern In where
+    asPattern = InPattern
 
 instance AsPattern Not where
     asPattern = NotPattern
@@ -661,7 +664,7 @@ instance AsPattern Variable where
     asPattern = VariablePattern
 
 {-|'MLPatternClass' offers a common interface to ML patterns
-  (those starting with '\', except for 'Exists', 'Forall', and 'Mem')
+  (those starting with '\', except for 'Exists' and 'Forall')
 -}
 class MLPatternClass p where
     getPatternType :: p a -> MLPatternType
@@ -702,6 +705,11 @@ instance MLPatternClass Implies where
     getPatternType _ = ImpliesPatternType
     getPatternSorts i = [impliesSort i]
     getPatternPatterns i = [impliesFirst i, impliesSecond i]
+
+instance MLPatternClass In where
+    getPatternType _ = InPatternType
+    getPatternSorts i = [inOperandSort i, inResultSort i]
+    getPatternPatterns i = [inContainedPattern i, inContainingPattern i]
 
 instance MLPatternClass Not where
     getPatternType _ = NotPatternType

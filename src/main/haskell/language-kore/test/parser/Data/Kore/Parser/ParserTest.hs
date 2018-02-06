@@ -592,32 +592,42 @@ impliesPatternParserTests =
 memPatternParserTests :: [TestTree]
 memPatternParserTests =
     parseTree patternParser
-        [ success "\\mem{s1,s2}(v:s3, \"b\")"
-            ( ObjectPattern $ MemPattern Mem
-                    { memOperandSort = sortVariableSort "s1"
-                    , memResultSort = sortVariableSort "s2"
-                    , memVariable = ObjectVariable
-                        Variable
+        [ success "\\in{s1,s2}(v:s3, \"b\")"
+            ( ObjectPattern $ InPattern In
+                    { inOperandSort = sortVariableSort "s1"
+                    , inResultSort = sortVariableSort "s2"
+                    , inContainedPattern = ObjectPattern $
+                        VariablePattern Variable
                             { variableName = Id "v"
                             , variableSort = sortVariableSort "s3"
                             }
-                    , memPattern =
+                    , inContainingPattern =
+                        MetaPattern $ StringLiteralPattern (StringLiteral "b")
+                    }
+            )
+        , success "\\in{s1,s2}(\"a\", \"b\")"
+            ( ObjectPattern $ InPattern In
+                    { inOperandSort = sortVariableSort "s1"
+                    , inResultSort = sortVariableSort "s2"
+                    , inContainedPattern =
+                        MetaPattern $ StringLiteralPattern (StringLiteral "a")
+                    , inContainingPattern =
                         MetaPattern $ StringLiteralPattern (StringLiteral "b")
                     }
             )
         , FailureWithoutMessage
             [ ""
-            , "\\mem{s}(v:s1, \"b\")"
-            , "\\mem{s,s,s}(v:s1, \"b\")"
-            , "\\mem{s,s}(\"b\", \"b\")"
-            , "\\mem{s,s}(, \"b\")"
-            , "\\mem{s,s}(\"b\")"
-            , "\\mem{s,s}(v:s1, )"
-            , "\\mem{s,s}(v:s1)"
-            , "\\mem{s,s}()"
-            , "\\mem{s,s}"
-            , "\\mem"
-            , "\\mem(v:s1, \"b\")"
+            , "\\mem{s1,s2}(v:s3, \"b\")"
+            , "\\in{s}(v:s1, \"b\")"
+            , "\\in{s,s,s}(v:s1, \"b\")"
+            , "\\in{s,s}(, \"b\")"
+            , "\\in{s,s}(\"b\")"
+            , "\\in{s,s}(v:s1, )"
+            , "\\in{s,s}(v:s1)"
+            , "\\in{s,s}()"
+            , "\\in{s,s}"
+            , "\\in"
+            , "\\in(v:s1, \"b\")"
             ]
         ]
 notPatternParserTests :: [TestTree]
