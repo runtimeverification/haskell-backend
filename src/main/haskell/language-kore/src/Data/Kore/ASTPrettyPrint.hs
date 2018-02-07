@@ -325,14 +325,14 @@ instance (IsMeta a) => PrettyPrint (Implies a) where
             , writeFieldNewLine "impliesSecond" impliesSecond p
             ]
 
-instance (IsMeta a) => PrettyPrint (Mem a) where
-    prettyPrint _ p@(Mem _ _ _ _) =
+instance (IsMeta a) => PrettyPrint (In a) where
+    prettyPrint _ p@(In _ _ _ _) =
         writeStructure
-            "Mem"
-            [ writeFieldNewLine "memOperandSort" memOperandSort p
-            , writeFieldNewLine "memResultSort" memResultSort p
-            , writeFieldNewLine "memVariable" memVariable p
-            , writeFieldNewLine "memPattern" memPattern p
+            "In"
+            [ writeFieldNewLine "inOperandSort" inOperandSort p
+            , writeFieldNewLine "inResultSort" inResultSort p
+            , writeFieldNewLine "inContainedPattern" inContainedPattern p
+            , writeFieldNewLine "inContainingPattern" inContainingPattern p
             ]
 
 instance (IsMeta a) => PrettyPrint (Not a) where
@@ -377,8 +377,8 @@ instance (IsMeta a) => PrettyPrint (Pattern a) where
         writeOneFieldStruct flags "IffPattern" p
     prettyPrint flags (ImpliesPattern p)       =
         writeOneFieldStruct flags "ImpliesPattern" p
-    prettyPrint flags (MemPattern p)           =
-        writeOneFieldStruct flags "MemPattern" p
+    prettyPrint flags (InPattern p)           =
+        writeOneFieldStruct flags "InPattern" p
     prettyPrint flags (NotPattern p)           =
         writeOneFieldStruct flags "NotPattern" p
     prettyPrint flags (OrPattern p)            =

@@ -386,31 +386,31 @@ ceilFloorRemainderParser x constructor = do
     cfPattern <- inParenthesesParser patternParser
     return (constructor sort1 sort2 cfPattern)
 
-{-|'memRemainderParser' parses the part after a mem
+{-|'inRemainderParser' parses the part after a in
 operator's name and the first open curly brace and constructs it.
 
 BNF fragments:
 
 @
-... ::= ... ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨variable⟩ ‘,’ ⟨pattern⟩ ‘)’
-... ::= ... ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨variable⟩ ‘,’ ⟨pattern⟩ ‘)’
+... ::= ... ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
+... ::= ... ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
 @
 
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
-memRemainderParser
+inRemainderParser
     :: IsMeta a
     => a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser (Mem a)
-memRemainderParser x = do
+    -> Parser (In a)
+inRemainderParser x = do
     (sort1, sort2) <- curlyPairRemainderParser (sortParser x)
-    (variable, mPattern) <-
-        parenPairParser unifiedVariableParser patternParser
-    return Mem
-           { memOperandSort = sort1
-           , memResultSort = sort2
-           , memVariable = variable
-           , memPattern = mPattern
+    (cdPattern, cgPattern) <-
+        parenPairParser patternParser patternParser
+    return In
+           { inOperandSort = sort1
+           , inResultSort = sort2
+           , inContainedPattern = cdPattern
+           , inContainingPattern = cgPattern
            }
 
 {-|'equalsLikeRemainderParser' parses the part after an equals
@@ -614,7 +614,7 @@ BNF definitions:
     | ‘\ceil’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
     | ‘\floor’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
     | ‘\equals’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\mem’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨variable⟩ ‘,’ ⟨pattern⟩ ‘)’
+    | ‘\in’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ pattern ‘,’ ⟨pattern⟩ ‘)’
     | ‘\top’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ‘)’
     | ‘\bottom’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ‘)’
 
@@ -629,7 +629,7 @@ BNF definitions:
     | ‘\ceil’ ‘{’ ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
     | ‘\floor’ ‘{’ ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
     | ‘\equals’ ‘{’ ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\mem’ ‘{’ ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨variable⟩ ‘,’ ⟨pattern⟩ ‘)’
+    | ‘\in’ ‘{’ ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ pattern ‘,’ ⟨pattern⟩ ‘)’
     | ‘\top’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ‘)’
     | ‘\bottom’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ‘)’
 @
@@ -651,7 +651,7 @@ mlConstructorParser = do
         , ("forall", mlConstructorRemainderParser ForallPatternType)
         , ("iff", mlConstructorRemainderParser IffPatternType)
         , ("implies", mlConstructorRemainderParser ImpliesPatternType)
-        , ("mem", mlConstructorRemainderParser MemPatternType)
+        , ("in", mlConstructorRemainderParser InPatternType)
         , ("not", mlConstructorRemainderParser NotPatternType)
         , ("or", mlConstructorRemainderParser OrPatternType)
         , ("top", mlConstructorRemainderParser TopPatternType)
@@ -683,8 +683,8 @@ mlConstructorParser = do
                 binaryOperatorRemainderParser x Iff
             ImpliesPatternType -> ImpliesPattern <$>
                 binaryOperatorRemainderParser x Implies
-            MemPatternType -> MemPattern <$>
-                memRemainderParser x
+            InPatternType -> InPattern <$>
+                inRemainderParser x
             NotPatternType -> NotPattern <$>
                 unaryOperatorRemainderParser x Not
             OrPatternType -> OrPattern <$>
@@ -710,7 +710,7 @@ BNF definitions:
     | ‘\ceil’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
     | ‘\floor’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
     | ‘\equals’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\mem’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨variable⟩ ‘,’ ⟨pattern⟩ ‘)’
+    | ‘\in’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ pattern ‘,’ ⟨pattern⟩ ‘)’
     | ‘\top’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ‘)’
     | ‘\bottom’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ‘)’
 
@@ -728,7 +728,7 @@ BNF definitions:
     | ‘\ceil’ ‘{’ ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
     | ‘\floor’ ‘{’ ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
     | ‘\equals’ ‘{’ ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\mem’ ‘{’ ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨variable⟩ ‘,’ ⟨pattern⟩ ‘)’
+    | ‘\in’ ‘{’ ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ pattern ‘,’ ⟨pattern⟩ ‘)’
     | ‘\top’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ‘)’
     | ‘\bottom’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ‘)’
 @
