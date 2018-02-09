@@ -180,11 +180,11 @@ iffGen x = binaryOperatorGen x Iff
 impliesGen :: IsMeta a => a -> Gen (Implies a UnifiedPattern)
 impliesGen x = binaryOperatorGen x Implies
 
-memGen :: IsMeta a => a -> Gen (Mem a Variable UnifiedPattern)
-memGen x = pure Mem
+inGen :: IsMeta a => a -> Gen (In a UnifiedPattern)
+inGen x = pure In
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) (sortGen x)
-    <*> scale (`div` 2) unifiedVariableGen
+    <*> scale (`div` 2) unifiedPatternGen
     <*> scale (`div` 2) unifiedPatternGen
 
 notGen :: IsMeta a => a -> Gen (Not a UnifiedPattern)
@@ -211,7 +211,7 @@ patternGen x =
         , ForallPattern <$> forallGen x
         , IffPattern <$> iffGen x
         , ImpliesPattern <$> impliesGen x
-        , MemPattern <$> memGen x
+        , InPattern <$> inGen x
         , NotPattern <$> notGen x
         , OrPattern <$> orGen x
         , StringLiteralPattern <$> stringLiteralGen

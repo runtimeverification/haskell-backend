@@ -309,8 +309,8 @@
   \newcommand{\KdeleteKVariableList}{\texttt{\sharpsymbol deleteVariableList}}
   \newcommand{\KappendKCharList}{\texttt{\sharpsymbol appendKCharList}}
   \newcommand{\KVariable}{\texttt{\sharpsymbol Variable}}
-  \newcommand{\KVariableToKPattern}{\texttt{\sharpsymbol variableToPattern}}
-  \newcommand{\KvariableAsPattern}{\texttt{\sharpsymbol variableAsPattern}}
+  \newcommand{\KVariableAsKPattern}{\texttt{\sharpsymbol variableAsPattern}}
+  \newcommand{\KvariablePattern}{\texttt{\sharpsymbol variablePattern}}
   \newcommand{\KPattern}{\texttt{\sharpsymbol Pattern}}
   \newcommand{\Kvariable}{\texttt{\sharpsymbol variable}}
   \newcommand{\Kand}{\texttt{\sharpsymbol  \slashsymbol and}}
@@ -322,7 +322,8 @@
   \newcommand{\Kexists}{\texttt{\sharpsymbol \slashsymbol  exists}}
   \newcommand{\Kforall}{\texttt{\sharpsymbol \slashsymbol  forall}}
   \newcommand{\Kequals}{\texttt{\sharpsymbol \slashsymbol  equals}}
-  \newcommand{\Kmembership}{\texttt{\sharpsymbol \slashsymbol  mem}}
+  \newcommand{\Kmembership}{\Kin}
+  \newcommand{\Kin}{\texttt{\sharpsymbol \slashsymbol  in}}
   \newcommand{\Kcontains}{\texttt{\sharpsymbol  \slashsymbol contains}}
   \newcommand{\Ktop}{\texttt{\sharpsymbol \slashsymbol  top}}
   \newcommand{\Kbottom}{\texttt{\sharpsymbol \slashsymbol  bottom}}
@@ -425,7 +426,7 @@
   \newcommand{\slbottom}{\slsh{bottom}}
   \newcommand{\slceil}{\slsh{ceil}}
   \newcommand{\slfloor}{\slsh{floor}}
-  \newcommand{\slmem}{\slsh{mem}}
+  \newcommand{\slin}{\slsh{in}}
   \newcommand{\slnext}{\slsh{next}}
   \newcommand{\slrewrites}{\slsh{rewrites}}
   
@@ -811,7 +812,7 @@ $\overline{\rho}(\varphi =_{s_1}^{s_2} \varphi') = M_{s_2}$
 iff $\overline{\rho}(\varphi) = \overline{\rho}(\varphi')$.
 
 Similarly, we can define \emph{membership}:
-if $x\in\Var_{s_1}$, $\varphi\in\Pattern_{s_1}$ and $s_2\in S$, then
+if $x\in\Var_{s_1}$, $\varphi\in\Pattern_{s_1}$ and $s_1,s_2\in S$, then
 let
 $$
 \begin{array}{@{}rcll}
@@ -826,6 +827,26 @@ $\overline{\rho}(x \in_{s_1}^{s_2} \varphi) = \emptyset$
 iff $\rho(x) \not\in \overline{\rho}(\varphi)$, and
 $\overline{\rho}(x \in_{s_1}^{s_2} \varphi) = M_{s_2}$
 iff $\rho(x) \in \overline{\rho}(\varphi)$.
+It is convenient to extend the definition of membership to cases when the first 
+component is not a variable, but a pattern:
+if $\psi, \varphi \in \Pattern_{s_1}$, and $s_1,s_2\in S$, 
+then let
+$$
+\begin{array}{@{}rcll}
+\psi \in_{s_1}^{s_2} \varphi & \ \ \ \ \ \equiv \ \ \ \ \ &
+\lceil \psi \wedge \varphi\rceil_{s_1}^{s_2}
+& % \ \ \ \ \ \mbox{where } x \in \Var_{s_1},\varphi\in \Pattern_{s_1}\\
+\end{array}
+$$
+This allows a uniform interface for pattern constructs, which yields neat 
+implementation of operations such as substitution.
+As an example, consider $\varphi_1[\varphi_2 / x]$ where we 
+substitute $x$ for $\varphi_2$ in $\varphi_1$.
+If the membership construct only accept variables as its first component, then 
+the substitution is only defined when $x$ does not occur free in the first 
+component of any membership construct in $\varphi_1$, and any implementation of 
+substitution will have to take that into account and perform an 
+``occurs check'' for $x$ in $\varphi_1$, and this could be expensive.
 
 Since $s_1$ and $s_2$ can usually be inferred from context,
 we write $\lceil\_\rceil$ or $\lfloor\_\rfloor$ instead of
@@ -3338,21 +3359,30 @@ the following four functions
   \\
   & \Kexists \colon \KSort \times \KVariable \times \KPattern \to \KPattern
 \end{align*}
-and an ``injection'' function from variables to patterns
+and an injection function from variables to patterns
 \begin{equation*}
-  \KVariableToKPattern \colon \KVariable \to \KPattern
+  \KVariableAsKPattern \colon \KVariable \to \KPattern
 \end{equation*}
+The following axiom says $\KVariableAsKPattern$ is injective:
+$$
+v_1 \neq v_2 \to \KVariableAsKPattern(v_1) \neq \KVariableAsKPattern(v_2)
+$$
+Recall that in Section~\ref{sec:ML-syntax}, we use $\Var$ to denote the set of all variables, and $\Pattern$ to denote the set of all patterns, when a matching logic signature is given.
+In there, by definition, we have $\Var \subseteq \Pattern$ because any variable is also a pattern.
+However, in the meta-theory, we decided to define $\KVariable$ and $\KPattern$ as two different sorts, and use the injective function $\KVariableAsKPattern$ to mimic the inclusion relation $\Var \subseteq \Pattern$.
 A related function is 
 $$
-\KvariableAsPattern \colon \KString \times \KSort \to \KPattern
+\KvariablePattern \colon \KString \times \KSort \to \KPattern
 $$
 It has axiom
 $$
-\KvariableAsPattern(x,s) = \KVariableToKPattern(\Kvariable(x,s))
+\KvariablePattern(x,s) = \KVariableAsKPattern(\Kvariable(x,s))
 $$
 
+
+
 In matching logic, apart from the five productions in the grammar, we also 
-introduce many \emph{derived connectives} as aliases or syntactic sugar to help 
+introduce many \emph{derived constructs} as syntactic sugar to help 
 us write compact formulae, such as Disjunction $\vee_s$, Equality 
 $=_{s_1}^{s_2}$, and Membership $\in_{s_1}^{s_2}$.
 In practice, we found it is often useful to give those derived connectives a 
@@ -3375,15 +3405,14 @@ connectives
   & \Kequals \colon \KSort\times\KSort \times \KPattern \times \KPattern \to 
   \KPattern
   \\
-  & \Kmembership \colon \KSort \times \KSort \times \KVariable \times 
+  & \Kmembership \colon \KSort \times \KSort \times \KPattern \times 
   \KPattern  \to \KPattern
   \\
   & \Ktop \colon \KSort \to \KPattern
   \\
   & \Kbottom \colon \KSort \to \KPattern
 \end{align*}
-
-
+We refer readers to Section~\ref{sec:useful} for the reasons why the membership construct ``\Kin'' requires sort {\KPattern} instead of sort {\KVariable} for its third argument.
 
 \begin{notation}\label{notation:variables-about-KPattern}
 	As a convention, we are writing
@@ -3442,8 +3471,8 @@ Derived connectives have axioms
   & \Kequals(s_1, s_2, \varphi, \psi) 
   = \Kfloor(s_1, s_2, \Kiff(s_1, \varphi, \psi))
   \\
-  & \Kmembership(s_1, s_2, v, \psi) 
-  = \Kceil(s_1, s_2, \Kand(s_1, v, \psi))
+  & \Kmembership(s_1, s_2, \varphi, \psi) 
+  = \Kceil(s_1, s_2, \Kand(s_1, \varphi, \psi))
   \\
   & \Ktop(s) = \Kexists(s, \Kvariable(x, s), \Kvariable(x, s))
   \\
@@ -3454,8 +3483,9 @@ Derived connectives have axioms
 	As one may have already noticed, patterns of sort $\KPattern$ get huge rather quickly.
 	The following notations are adopted to write $\KPattern$ patterns in a more 
 	compact way, by putting a bar over their normal mixfix forms
+	\todo{We should define this overbar notation in a recursive manner.}
 	\begin{align*}
-	  & \overline{x \cln s} \equiv \Kvariable(x, s) \\
+	  & \overline{x \cln s} \equiv \KvariablePattern(x, s) \\
 	  & \overline{\sigma(\varphi_1, \dots, \varphi_n)} \equiv 
 	  \Kapplication(\sigma, (\varphi_1, \dots, \varphi_n))
 	  \\
@@ -3481,7 +3511,8 @@ Derived connectives have axioms
       & \overline{\varphi =_{s_1}^{s_2} \psi} \equiv \Kequals(s_1, s_2, 
       \varphi, \psi)
       \\
-      & \overline{v \in_{s_1}^{s_2} \psi} \equiv \Kmembership(s_1, s_2, v, 
+      & \overline{\varphi \in_{s_1}^{s_2} \psi} \equiv \Kmembership(s_1, s_2, 
+      \varphi, 
       \psi)
       \\
       & \overline{\top_s} \equiv \Ktop(s)
@@ -4179,9 +4210,9 @@ There are in total 10 sorts in the meta-theory.
 	    to a variable list \\
 	    \KappendKVariableList & Append two variable lists \\
 	    \KdeleteKVariableList & Delete a variable from a variable list \\
-	    \KVariableToKPattern & Injection function from {\KVariable} to 
+	    \KVariableAsKPattern & Injection function from {\KVariable} to 
 	    {\KPattern} \\
-	    \KvariableAsPattern & Construct variable patterns of the form $x \cln 
+	    \KvariablePattern & Construct variable patterns of the form $x \cln 
 	    s$ \\
 	    \Kapplication & Construct patterns of the form 
 	    $\sigma(\varphi_1,\dots,\varphi_n)$ \\
@@ -4712,7 +4743,7 @@ Notice that what we get here is a $\KVariable$ pattern, because $\Kvariable$ is
 a constructor of $\KVariable$.
 To obtain the meta-representation of $x \cln \Nat$ as a $\KPattern$ pattern,
 we write (see Section~\ref{sec:ML-patterns}):
-$$\KvariableAsPattern(\qquottt{x}, \KqNat)$$
+$$\KvariablePattern(\qquottt{x}, \KqNat)$$
 
 The meta-representations of patterns constructed using (basic and derived) 
 logic 
@@ -4868,28 +4899,28 @@ calculate their meta-representations:
 \\
 &\Kequals(&&\KqNat,s',
 \\
-& &&\Kqplus(\KvariableAsPattern(\qquottt{x},\KqNat), \Kqzero),
+& &&\Kqplus(\KvariablePattern(\qquottt{x},\KqNat), \Kqzero),
 \\
-& &&\KvariableAsPattern(\qquottt{x},\KqNat))
+& &&\KvariablePattern(\qquottt{x},\KqNat))
 \\
 \text{\doubleslash} & \text{Let $\Psi_2$ be}
 \\
 &\Kequals(
 &&\KqList(s),s',
 \\
-& &&\Kqappend(s, \Kqcons(s, \KvariableAsPattern(\qquottt{x},s),
+& &&\Kqappend(s, \Kqcons(s, \KvariablePattern(\qquottt{x},s),
 \\
 & && \qquad\qquad\qquad\qquad\qquad\!\!
-\KvariableAsPattern(\qquottt{L0},\KqList(s))),
+\KvariablePattern(\qquottt{L0},\KqList(s))),
 \\
-& && \qquad\qquad\quad\  \KvariableAsPattern(\qquottt{L},\KqList(s))),
+& && \qquad\qquad\quad\  \KvariablePattern(\qquottt{L},\KqList(s))),
 \\
-& && \Kqcons(s, \KvariableAsPattern(\qquottt{x},s),
+& && \Kqcons(s, \KvariablePattern(\qquottt{x},s),
 \\
-& && \qquad\qquad\  \Kqappend(s, \KvariableAsPattern(\qquottt{L0},\KqList(s)),
+& && \qquad\qquad\  \Kqappend(s, \KvariablePattern(\qquottt{L0},\KqList(s)),
 \\
 & && \qquad\qquad\qquad\qquad\qquad\!\! 
-\KvariableAsPattern(\qquottt{L},\KqList(s)))))
+\KvariablePattern(\qquottt{L},\KqList(s)))))
 \end{alignat*}
 Then we can define the following axiom schemas in $\denote{T_L}$
 \begin{align*}
@@ -4917,7 +4948,7 @@ Then we can define the following axiom schemas in $\denote{T_L}$
 %$$\denote{\_} \colon \PATTERNS_T^* \to \PATTERNS_\KPatternList$$
 %are inductively defined as the follows.
 %\begin{align*}
-%&\denote{x \cln s} = \KVariableToKPattern(\denote{x \cln s}_0) \\
+%&\denote{x \cln s} = \KVariableAsKPattern(\denote{x \cln s}_0) \\
 %&\denote{\sigma(\varphi_1,\dots,\varphi_n)} = \Kapplication(\denote{\sigma}, 
 %\denote{\varphi_1,\dots,\varphi_n}) \\
 %&\denote{\varphi \wedge_s \psi} = \Kand(\denote{s}, \denote{\varphi}, 
@@ -4947,7 +4978,7 @@ Then we can define the following axiom schemas in $\denote{T_L}$
 %Notice that we do not desugar derivative connectives such as disjunction or 
 %universal quantification.
 %Instead, we keep them as it is when lifting them to the meta-theory.
-%Also notice how the injection wrapper $\KVariableToKPattern$ is used.
+%Also notice how the injection wrapper $\KVariableAsKPattern$ is used.
 %
 %If $\varphi$ is an axiom in $T$, add the following axiom to $\denote{T}$
 %$$ \parametric{\KaxiomDeclared}{\shs}(\denote{\varphi})$$
@@ -5800,8 +5831,8 @@ Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
 	`(' <pattern> `)'
 	\alt `\\equals' `{' <object-sort> `,'  <object-sort> `}'
 	`(' <pattern> `,' <pattern> `)'
-	\alt `\\mem' `{' <object-sort> `,'  <object-sort> `}'
-	`(' <variable> `,' <pattern> `)'
+	\alt `\\in' `{' <object-sort> `,'  <object-sort> `}'
+	`(' <pattern> `,' <pattern> `)'
 	\alt `\\top' `{' <object-sort> `}' `(' `)'
 	\alt `\\bottom' `{' <object-sort> `}' `(' `)'
 	
@@ -5831,8 +5862,8 @@ Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
 	`(' <pattern> `)'
 	\alt `\\equals' `{' <meta-sort> `,' <meta-sort> `}'
 	`(' <pattern> `,' <pattern> `)'
-	\alt `\\mem' `{' <meta-sort> `,' <meta-sort> `}'
-	`(' <variable> `,' <pattern> `)'
+	\alt `\\in' `{' <meta-sort> `,' <meta-sort> `}'
+	`(' <pattern> `,' <pattern> `)'
 	\alt `\\top' `{' <meta-sort> `}' `(' `)'
 	\alt `\\bottom' `{' <meta-sort> `}' `(' `)'
 	
@@ -5868,7 +5899,7 @@ patterns when needed.
 %  \\\hline
 %  \slor & Disjunction & \slequals & Equality
 %  \\\hline
-%  \slmem & Membership & \slimplies & Implication
+%  \slin & Membership & \slimplies & Implication
 %  \\\hline
 %  \sliff & Double Implication & \sltop & Top
 %  \\\hline
@@ -6573,7 +6604,7 @@ The lifting of a variable $v$ is defined as
 $$
 \denote{v} =
 \begin{cases*}
-\KVariableToKPattern\texttt{\{\}($\denote{v}_\var$)} & if $v$ is 
+\KVariableAsKPattern\texttt{\{\}($\denote{v}_\var$)} & if $v$ is 
 \syntacc{object-variable}\\
 v & if $v$ is $\syntacc{meta-variable}$
 \end{cases*}
@@ -6702,15 +6733,15 @@ $\denote{\texttt{\slequals\{$s_1,s_2$\}($\varphi_1,\varphi_2$)}}
 \texttt{\slequals\{$s_1,s_2$\}($\varphi_1,\varphi_2$)}$
 & if $s_1,s_2$ are \syntacc{meta-sort}
 \\
-$\denote{\texttt{\slmem\{$s_1,s_2$\}($\varphi_1,\varphi_2$)}}
+$\denote{\texttt{\slin\{$s_1,s_2$\}($\varphi_1,\varphi_2$)}}
 =
 \texttt{\Kmembership\{\}($\denote{s_1}$,$\denote{s_2}$,$
 	\denote{\varphi_1}$,$\denote{\varphi_2}$)}$
 & if $s_1,s_2$ are \syntacc{object-sort}
 \\
-$\denote{\texttt{\slmem\{$s_1,s_2$\}($\varphi_1,\varphi_2$)}}
+$\denote{\texttt{\slin\{$s_1,s_2$\}($\varphi_1,\varphi_2$)}}
 =
-\texttt{\slmem\{$s_1,s_2$\}($\varphi_1,\varphi_2$)}$
+\texttt{\slin\{$s_1,s_2$\}($\varphi_1,\varphi_2$)}$
 & if $s_1,s_2$ are \syntacc{meta-sort}
 \\
 $\denote{\texttt{\sltop\{$s$\}()}}
@@ -6756,7 +6787,7 @@ $\denote{\texttt{\slbottom\{$s$\}()}}
 %
 %\paragraph{Case A: Object Variable Pattern.}\quad
 %\begin{align*}
-%\denote{v} = \KVariableToKPattern(\denote{v}_0)\quad \text{if $v$ is an object 
+%\denote{v} = \KVariableAsKPattern(\denote{v}_0)\quad \text{if $v$ is an object 
 %variable}
 %\end{align*}
 %

@@ -33,27 +33,42 @@ unparseUnitTests =
                         { topSort = SortVariableSort SortVariable
                             { getSortVariable = Id {getId = "#Fm"} }
                         })
-                    , ObjectPattern (MemPattern Mem
-                        { memOperandSort = SortActualSort SortActual
+                    , ObjectPattern (InPattern In
+                        { inOperandSort = SortActualSort SortActual
                             { sortActualName = Id {getId = "B"}
                             , sortActualSorts = []
                             }
-                        , memResultSort = SortActualSort SortActual
+                        , inResultSort = SortActualSort SortActual
                             { sortActualName = Id {getId = "G"}
                             , sortActualSorts = []
                             }
-                        , memVariable = ObjectVariable Variable
+                        , inContainedPattern = ObjectPattern $ VariablePattern Variable
                             { variableName = Id {getId = "T"}
                             , variableSort = SortVariableSort SortVariable
                                 { getSortVariable = Id {getId = "C"} }
                             }
-                        , memPattern= MetaPattern (StringLiteralPattern
+                        , inContainingPattern = MetaPattern (StringLiteralPattern
                             StringLiteral { getStringLiteral = "" })
                         })
                     ]
                 }
-            "[\n    \\top{#Fm}(),\n    \\mem{\n        B{},\n        \
-                \G{}\n    }(T:C, \"\")\n]"
+            "[\n\
+            \    \\top{#Fm}(),\n\
+            \    \\in{\n\
+            \        B{},\n\
+            \        G{}\n\
+            \    }(\n\
+            \        T:C,\n\
+            \        \"\"\n\
+            \    )\n\
+            \]"
+        , unparseTest
+            Module
+                { moduleName = ModuleName "t"
+                , moduleSentences = []
+                , moduleAttributes = Attributes []
+                }
+            "module t\nendmodule\n[]"
         ]
 
 unparseParseTests :: TestTree

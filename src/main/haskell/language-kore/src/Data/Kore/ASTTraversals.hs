@@ -33,6 +33,4 @@ collectFreeVars (ExistsPattern e) =
     filter (/= existsVariable e) (existsPattern e)
 collectFreeVars (ForallPattern f) =
     filter (/= forallVariable f) (forallPattern f)
-collectFreeVars (MemPattern m) =
-    memVariable m : memPattern m
 collectFreeVars p                   = foldMap id p

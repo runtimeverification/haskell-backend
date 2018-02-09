@@ -1,15 +1,14 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeSynonymInstances  #-}
 module Data.Kore.ASTPrettyPrint (prettyPrintToString) where
 
-import           Control.Monad.Reader
-import           Control.Monad.Writer
-
 import           Data.Kore.AST
-import           Data.Kore.Parser.CString (escapeCString)
-import           Data.List                (intersperse)
+import           Data.Kore.IndentingPrinter (PrinterOutput, StringPrinter,
+                                             betweenLines, printToString,
+                                             withIndent, write)
+import           Data.Kore.Parser.CString   (escapeCString)
+import           Data.List                  (intersperse)
 
 {-# ANN module "HLint: ignore Use record patterns" #-}
 {-
@@ -33,50 +32,23 @@ This pattern does a few things, which are very nice to have in a pretty printer:
 However, this generates the HLint error disabled above.
 -}
 
-class FromString a where
-    fromString :: String -> a
-
-class (FromString w, MonadWriter w m, MonadReader Int m)
-    => PrettyPrintOutput w m where
-    write :: String -> m ()
-    write s = tell (fromString s)
-
-    betweenLines :: m ()
-    betweenLines = do
-        indent <- reader (`replicate` ' ')
-        write "\n"
-        write indent
-
-    withIndent :: Int -> m () -> m ()
-    withIndent n = local (+n)
-
 data Flags = NeedsParentheses | MaySkipParentheses
 
-class PrettyPrint a where
-    prettyPrint :: PrettyPrintOutput w m => Flags -> a -> m ()
-
-{-  Unparse to string instance
+{-  Print to string instance
 -}
-type StringPrettyPrinter = WriterT ShowS (Reader Int)
 
-instance FromString ShowS where
-    fromString = showString
+class PrettyPrint a where
+    prettyPrint :: PrinterOutput w m => Flags -> a -> m ()
 
-instance PrettyPrintOutput ShowS StringPrettyPrinter where
-
-stringPrettyPrint :: PrettyPrint a => Flags -> a -> StringPrettyPrinter ()
+stringPrettyPrint :: PrettyPrint a => Flags -> a -> StringPrinter ()
 stringPrettyPrint = prettyPrint
 
 prettyPrintToString :: PrettyPrint a => a -> String
-prettyPrintToString a = showChain ""
-  where
-    writerAction = stringPrettyPrint MaySkipParentheses a
-    readerAction = execWriterT writerAction
-    showChain = runReader readerAction 0
+prettyPrintToString a = printToString (stringPrettyPrint MaySkipParentheses a)
 
 {- utility functions -}
 
-betweenParentheses :: PrettyPrintOutput w m => Flags -> m() -> m()
+betweenParentheses :: PrinterOutput w m => Flags -> m() -> m()
 betweenParentheses NeedsParentheses thing = do
     write "("
     thing
@@ -84,7 +56,7 @@ betweenParentheses NeedsParentheses thing = do
 betweenParentheses MaySkipParentheses thing = thing
 
 writeOneFieldStruct
-    :: (PrettyPrintOutput w m, PrettyPrint a)
+    :: (PrinterOutput w m, PrettyPrint a)
     => Flags -> String -> a -> m ()
 writeOneFieldStruct flags name content =
     betweenParentheses
@@ -96,7 +68,7 @@ writeOneFieldStruct flags name content =
         )
 
 writeOneFieldStructNewLine
-    :: (PrettyPrintOutput w m, PrettyPrint a)
+    :: (PrinterOutput w m, PrettyPrint a)
     => Flags -> String -> a -> m ()
 writeOneFieldStructNewLine flags name content =
     betweenParentheses
@@ -107,21 +79,21 @@ writeOneFieldStructNewLine flags name content =
         )
 
 writeFieldOneLine
-    :: (PrettyPrintOutput w m, PrettyPrint a) => String -> (b -> a) -> b -> m ()
+    :: (PrinterOutput w m, PrettyPrint a) => String -> (b -> a) -> b -> m ()
 writeFieldOneLine fieldName field object = do
     write fieldName
     write " = "
     prettyPrint MaySkipParentheses (field object)
 
 writeListField
-    :: (PrettyPrintOutput w m, PrettyPrint a) => String -> (b -> a) -> b -> m ()
+    :: (PrinterOutput w m, PrettyPrint a) => String -> (b -> a) -> b -> m ()
 writeListField fieldName field object = do
     write fieldName
     write " ="
     prettyPrint MaySkipParentheses (field object)
 
 writeFieldNewLine
-    :: (PrettyPrintOutput w m, PrettyPrint a) => String -> (b -> a) -> b -> m ()
+    :: (PrinterOutput w m, PrettyPrint a) => String -> (b -> a) -> b -> m ()
 writeFieldNewLine fieldName field object = do
     write fieldName
     write " ="
@@ -129,7 +101,7 @@ writeFieldNewLine fieldName field object = do
         (betweenLines >> prettyPrint MaySkipParentheses (field object))
 
 writeAttributesField
-    :: (PrettyPrintOutput w m)
+    :: (PrinterOutput w m)
     => String
     -> Attributes
     -> m ()
@@ -142,11 +114,11 @@ writeAttributesField fieldName attributes = do
     withIndent 4
         (betweenLines >> prettyPrint MaySkipParentheses attributes)
 
-writeStructure :: PrettyPrintOutput w m => String -> [m ()] -> m ()
+writeStructure :: PrinterOutput w m => String -> [m ()] -> m ()
 writeStructure name fields =
     write name >> inCurlyBracesIndent (printableList fields)
 
-printableList :: PrettyPrintOutput w m => [m ()] -> [m ()]
+printableList :: PrinterOutput w m => [m ()] -> [m ()]
 printableList = intersperse (betweenLines >> write ", ")
 
 instance (IsMeta a) => PrettyPrint (Id a) where
@@ -167,7 +139,7 @@ instance PrettyPrint a => PrettyPrint [a] where
             (printableList (map (prettyPrint MaySkipParentheses) list))
 
 listWithDelimiters
-    :: PrettyPrintOutput w m => String -> String -> [m ()] -> m ()
+    :: PrinterOutput w m => String -> String -> [m ()] -> m ()
 listWithDelimiters start end [] =
     write " " >> write start >> write end
 listWithDelimiters start end list =
@@ -178,13 +150,13 @@ listWithDelimiters start end list =
         sequence_ list
         betweenLines >> write end)
 
-inCurlyBracesIndent :: PrettyPrintOutput w m => [m ()] -> m ()
+inCurlyBracesIndent :: PrinterOutput w m => [m ()] -> m ()
 inCurlyBracesIndent = listWithDelimiters "{" "}"
 
-inSquareBracketsIndent :: PrettyPrintOutput w m => [m ()] -> m ()
+inSquareBracketsIndent :: PrinterOutput w m => [m ()] -> m ()
 inSquareBracketsIndent = listWithDelimiters "[" "]"
 
-inDoubleQuotes :: PrettyPrintOutput w m => m () -> m ()
+inDoubleQuotes :: PrinterOutput w m => m () -> m ()
 inDoubleQuotes thing = write "\"" >> thing >> write "\""
 
 instance (IsMeta a) => PrettyPrint (SortVariable a) where
@@ -355,15 +327,14 @@ instance (IsMeta a, PrettyPrint p) => PrettyPrint (Implies a p) where
             , writeFieldNewLine "impliesSecond" impliesSecond p
             ]
 
-instance (IsMeta a, PrettyPrint p, PrettyPrint (UnifiedVariable v))
-    => PrettyPrint (Mem a v p) where
-    prettyPrint _ p@(Mem _ _ _ _) =
+instance (IsMeta a, PrettyPrint p) => PrettyPrint (In a p) where
+    prettyPrint _ p@(In _ _ _ _) =
         writeStructure
-            "Mem"
-            [ writeFieldNewLine "memOperandSort" memOperandSort p
-            , writeFieldNewLine "memResultSort" memResultSort p
-            , writeFieldNewLine "memVariable" memVariable p
-            , writeFieldNewLine "memPattern" memPattern p
+            "In"
+            [ writeFieldNewLine "inOperandSort" inOperandSort p
+            , writeFieldNewLine "inResultSort" inResultSort p
+            , writeFieldNewLine "inContainedPattern" inContainedPattern p
+            , writeFieldNewLine "inContainingPattern" inContainingPattern p
             ]
 
 instance (IsMeta a, PrettyPrint p) => PrettyPrint (Not a p) where
@@ -410,8 +381,8 @@ instance (IsMeta a, PrettyPrint p, PrettyPrint (v a),
         writeOneFieldStruct flags "IffPattern" p
     prettyPrint flags (ImpliesPattern p)       =
         writeOneFieldStruct flags "ImpliesPattern" p
-    prettyPrint flags (MemPattern p)           =
-        writeOneFieldStruct flags "MemPattern" p
+    prettyPrint flags (InPattern p)           =
+        writeOneFieldStruct flags "InPattern" p
     prettyPrint flags (NotPattern p)           =
         writeOneFieldStruct flags "NotPattern" p
     prettyPrint flags (OrPattern p)            =

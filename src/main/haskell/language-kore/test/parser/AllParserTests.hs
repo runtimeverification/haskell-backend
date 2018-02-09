@@ -1,10 +1,11 @@
-import           Test.Tasty                      (TestTree,
-                                                  defaultMainWithIngredients,
-                                                  testGroup)
-import           Test.Tasty.Ingredients.Basic    (consoleTestReporter,
-                                                  listingTests)
-import           Test.Tasty.Runners.JenkinsXML   (jenkinsXMLRunner)
+import           Test.Tasty                      (TestTree, testGroup)
 
+import           Test.Tasty.Runners              (consoleTestReporter,
+                                                  defaultMainWithIngredients,
+                                                  listingTests)
+import           Test.Tasty.Runners.AntXML       (antXMLRunner)
+
+import           Data.Kore.IndentingPrinterTest
 import           Data.Kore.Parser.CharDictTest
 import           Data.Kore.Parser.CharSetTest
 import           Data.Kore.Parser.CStringTest
@@ -17,7 +18,7 @@ main :: IO ()
 main = do
     inputFiles <- regressionTestsInputFiles "../../../test/resources/"
     defaultMainWithIngredients
-        [listingTests, jenkinsXMLRunner]
+        [antXMLRunner, listingTests, consoleTestReporter]
         (allParserTests inputFiles)
 
 allParserTests :: [String] -> TestTree
@@ -37,6 +38,7 @@ unitTests =
         , cStringTests
         , koreLexemeTests
         , koreParserTests
+        , indentingPrinterTests
         , unparseUnitTests
         , unparseParseTests
         ]

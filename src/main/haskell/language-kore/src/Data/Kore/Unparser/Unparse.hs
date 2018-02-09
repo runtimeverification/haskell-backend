@@ -1,59 +1,24 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeSynonymInstances  #-}
-module Data.Kore.Unparser.Unparse ( FromString ( fromString )
-                                  , UnparseOutput
-                                  , Unparse ( unparse )
-                                  , unparseToString
-                                  ) where
-
-import           Control.Monad.Reader     (MonadReader, Reader, local, reader,
-                                           runReader)
-import           Control.Monad.Writer     (MonadWriter, WriterT, execWriterT,
-                                           tell)
+module Data.Kore.Unparser.Unparse (Unparse, unparseToString) where
 
 import           Data.Kore.AST
-import           Data.Kore.Parser.CString (escapeCString)
-
-class FromString a where
-    fromString :: String -> a
-
-class (FromString w, MonadWriter w m, MonadReader Int m)
-    => UnparseOutput w m where
-    write :: String -> m ()
-    write s = tell (fromString s)
-
-    betweenLines :: m ()
-    betweenLines = do
-        indent <- reader (`replicate` ' ')
-        write "\n"
-        write indent
-
-    withIndent :: Int -> m() -> m ()
-    withIndent n m = local (+n) (betweenLines >> m) >> betweenLines
-
-class Unparse a where
-    unparse :: UnparseOutput w m => a -> m ()
+import           Data.Kore.IndentingPrinter (PrinterOutput, StringPrinter,
+                                             betweenLines, printToString,
+                                             withIndent, write)
+import           Data.Kore.Parser.CString   (escapeCString)
 
 {-  Unparse to string instance
 -}
-type StringUnparser = WriterT ShowS (Reader Int)
+class Unparse a where
+    unparse :: PrinterOutput w m => a -> m ()
 
-instance FromString ShowS where
-    fromString = showString
-
-instance UnparseOutput ShowS StringUnparser where
-
-stringUnparse :: Unparse a => a -> StringUnparser ()
+stringUnparse :: Unparse a => a -> StringPrinter ()
 stringUnparse = unparse
 
 unparseToString :: Unparse a => a -> String
-unparseToString a = showChain ""
-  where
-    writerAction = stringUnparse a
-    readerAction = execWriterT writerAction
-    showChain = runReader readerAction 0
+unparseToString a = printToString (stringUnparse a)
 
 
 {- unparse instances for Kore datastructures -}
@@ -61,9 +26,10 @@ unparseToString a = showChain ""
 instance Unparse (Id a) where
     unparse = write . getId
 
-unparseList :: (UnparseOutput w m, Unparse a) => m () -> [a] -> m ()
+unparseList :: (PrinterOutput w m, Unparse a) => m () -> [a] -> m ()
 unparseList _ []           = return ()
-unparseList between xs = withIndent 4 (unparseList' xs)
+unparseList between xs =
+    withIndent 4 (betweenLines >> unparseList' xs) >> betweenLines
   where
     unparseList' []      = return ()
     unparseList' [x]     = unparse x
@@ -72,20 +38,20 @@ unparseList between xs = withIndent 4 (unparseList' xs)
 instance Unparse a => Unparse [a] where
     unparse = unparseList (write "," >> betweenLines)
 
-withDelimiters :: UnparseOutput w m => String -> String -> m () -> m ()
+withDelimiters :: PrinterOutput w m => String -> String -> m () -> m ()
 withDelimiters start end m =
     write start >> m >> write end
 
-inCurlyBraces :: UnparseOutput w m => m () -> m ()
+inCurlyBraces :: PrinterOutput w m => m () -> m ()
 inCurlyBraces = withDelimiters "{" "}"
 
-inSquareBrackets :: UnparseOutput w m => m () -> m ()
+inSquareBrackets :: PrinterOutput w m => m () -> m ()
 inSquareBrackets = withDelimiters "[" "]"
 
-inParens :: UnparseOutput w m => m () -> m ()
+inParens :: PrinterOutput w m => m () -> m ()
 inParens = withDelimiters "(" ")"
 
-inDoubleQuotes :: UnparseOutput w m => m () -> m ()
+inDoubleQuotes :: PrinterOutput w m => m () -> m ()
 inDoubleQuotes = withDelimiters "\"" "\""
 
 instance Unparse (SortVariable a) where
@@ -100,17 +66,17 @@ instance Unparse (Sort a) where
 instance Unparse StringLiteral where
     unparse = inDoubleQuotes . write . escapeCString . getStringLiteral
 
-unparseSymbolOrAliasRaw :: (UnparseOutput w m) => SymbolOrAlias a -> m ()
+unparseSymbolOrAliasRaw :: (PrinterOutput w m) => SymbolOrAlias a -> m ()
 unparseSymbolOrAliasRaw sa = do
     unparse (symbolOrAliasConstructor sa)
     inCurlyBraces (unparse (symbolOrAliasParams sa))
 
-unparseSymbolRaw :: (UnparseOutput w m) => Symbol a -> m ()
+unparseSymbolRaw :: (PrinterOutput w m) => Symbol a -> m ()
 unparseSymbolRaw sa = do
     unparse (symbolConstructor sa)
     inCurlyBraces (unparse (symbolParams sa))
 
-unparseAliasRaw :: (UnparseOutput w m) => Alias a -> m ()
+unparseAliasRaw :: (PrinterOutput w m) => Alias a -> m ()
 unparseAliasRaw sa = do
     unparse (aliasConstructor sa)
     inCurlyBraces (unparse (aliasParams sa))
@@ -154,13 +120,12 @@ instance Unparse MLPatternType where
     unparse ForallPatternType  = write "\\forall"
     unparse IffPatternType     = write "\\iff"
     unparse ImpliesPatternType = write "\\implies"
-    unparse MemPatternType     = write "\\mem"
+    unparse InPatternType      = write "\\in"
     unparse NotPatternType     = write "\\not"
     unparse OrPatternType      = write "\\or"
     unparse TopPatternType     = write "\\top"
 
-unparseMLPattern
-    :: (UnparseOutput w m, MLPatternClass p, Unparse rpt)
+unparseMLPattern :: (PrinterOutput w m, MLPatternClass p, Unparse rpt)
     => p a rpt -> m ()
 unparseMLPattern p = do
     unparse (getPatternType p)
@@ -168,7 +133,7 @@ unparseMLPattern p = do
     inParens (unparse (getPatternPatterns p))
 
 unparseMLBinderPattern
-    :: (UnparseOutput w m, MLBinderPatternClass p, Unparse rpt,
+    :: (PrinterOutput w m, MLBinderPatternClass p, Unparse rpt,
         Unparse (UnifiedVariable v))
     => p a v rpt -> m ()
 unparseMLBinderPattern p = do
@@ -217,13 +182,8 @@ instance Unparse p => Unparse (Iff a p) where
 instance Unparse p => Unparse (Implies a p) where
     unparse = unparseMLPattern
 
-instance (Unparse (UnifiedVariable v), Unparse p)
-    => Unparse (Mem a v p) where
-    unparse m = do
-        unparse MemPatternType
-        inCurlyBraces (unparse [memOperandSort m, memResultSort m])
-        inParens
-            (unparse (memVariable m) >> write ", " >> unparse (memPattern m))
+instance Unparse p => Unparse (In a p) where
+    unparse = unparseMLPattern
 
 instance Unparse p => Unparse (Not a p) where
     unparse = unparseMLPattern
@@ -249,7 +209,7 @@ instance (Unparse (UnifiedVariable v), Unparse p, Unparse (v a))
     unparse (ForallPattern p)        = unparse p
     unparse (IffPattern p)           = unparse p
     unparse (ImpliesPattern p)       = unparse p
-    unparse (MemPattern p)           = unparse p
+    unparse (InPattern p)            = unparse p
     unparse (NotPattern p)           = unparse p
     unparse (OrPattern p)            = unparse p
     unparse (StringLiteralPattern p) = unparse p
@@ -306,9 +266,14 @@ instance Unparse Module where
     unparse m = do
         write "module "
         unparse (moduleName m)
-        withIndent 4 (
-            unparseList betweenLines (moduleSentences m)
-            )
+        if moduleSentences m /= []
+            then do
+                withIndent 4
+                    (  betweenLines
+                    >> unparseList betweenLines (moduleSentences m)
+                    )
+                betweenLines
+            else betweenLines
         write "endmodule"
         betweenLines
         unparse (moduleAttributes m)
