@@ -34,3 +34,26 @@ collectFreeVars (ExistsPattern e) =
 collectFreeVars (ForallPattern f) =
     filter (/= forallVariable f) (forallPattern f)
 collectFreeVars p                   = foldMap id p
+
+substitute :: UnifiedPattern -> [(UnifiedVariable Variable, UnifiedPattern)] -> UnifiedPattern
+substitute = foldr substituteOne
+  where substituteOne s = fst . visit (substituteOne' s)
+
+substituteOne'
+    :: IsMeta a
+    => (UnifiedVariable Variable, UnifiedPattern)
+    -> Pattern a Variable (UnifiedPattern, UnifiedPattern)
+    -> (UnifiedPattern, UnifiedPattern)
+substituteOne' (uv, up) (VariablePattern v)
+    | uv == asUnifiedVariable v = (up, unified)
+    | otherwise = (unified, unified)
+  where unified = asUnifiedPattern (VariablePattern v)
+substituteOne' (uv, _) ep@(ExistsPattern e)
+    | uv == existsVariable e =
+        let origPattern = asUnifiedPattern $ fmap snd ep
+        in (origPattern, origPattern)
+substituteOne' (uv, _) fp@(ForallPattern e)
+    | uv == forallVariable e =
+        let origPattern = asUnifiedPattern $ fmap snd fp
+        in (origPattern, origPattern)
+substituteOne' _ p = (asUnifiedPattern $ fmap fst p, asUnifiedPattern $ fmap snd p)

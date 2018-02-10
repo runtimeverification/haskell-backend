@@ -232,7 +232,7 @@ asUnifiedVariable' Nothing Nothing =
 asUnifiedVariable' (Just v) Nothing = ObjectVariable v
 asUnifiedVariable' Nothing (Just v) = MetaVariable v
 asUnifiedVariable' mv1 mv2 =
-    error ("Should not have both undefined: " ++ show mv1 ++ " and " ++ show mv2)
+    error ("Should not have both defined: " ++ show mv1 ++ " and " ++ show mv2)
 
 asUnifiedVariable
     :: (Typeable v, IsMeta a, Show (v Object), Show (v Meta))
@@ -268,6 +268,22 @@ data UnifiedPattern
     = MetaPattern !(Pattern Meta Variable UnifiedPattern)
     | ObjectPattern !(Pattern Object Variable UnifiedPattern)
     deriving (Eq, Show)
+
+asUnifiedPattern'
+    :: Maybe (Pattern Object Variable UnifiedPattern)
+    -> Maybe (Pattern Meta Variable UnifiedPattern)
+    -> UnifiedPattern
+asUnifiedPattern' Nothing Nothing =
+    error "Only Object and Meta levels are supported!"
+asUnifiedPattern' (Just p) Nothing = ObjectPattern p
+asUnifiedPattern' Nothing (Just p) = MetaPattern p
+asUnifiedPattern' mp1 mp2 =
+    error ("Should not have both defined: " ++ show mp1 ++ " and " ++ show mp2)
+
+asUnifiedPattern
+    :: IsMeta a
+    => Pattern a Variable UnifiedPattern -> UnifiedPattern
+asUnifiedPattern p = asUnifiedPattern' (cast p) (cast p)
 
 instance FixPattern Variable UnifiedPattern where
     unFixPattern k (MetaPattern p)   = k p
