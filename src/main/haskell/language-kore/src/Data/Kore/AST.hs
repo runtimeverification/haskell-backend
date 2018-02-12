@@ -1,12 +1,11 @@
-{-# LANGUAGE DeriveFoldable         #-}
-{-# LANGUAGE DeriveFunctor          #-}
-{-# LANGUAGE DeriveTraversable      #-}
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE Rank2Types             #-}
-{-# LANGUAGE StandaloneDeriving     #-}
+{-# LANGUAGE DeriveFoldable        #-}
+{-# LANGUAGE DeriveFunctor         #-}
+{-# LANGUAGE DeriveTraversable     #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE Rank2Types            #-}
+{-# LANGUAGE StandaloneDeriving    #-}
 {-|
 Module      : Data.Kore.AST
 Description : Data Structures for representing the Kore language AST
@@ -215,6 +214,13 @@ data Variable a = Variable
     }
     deriving (Show, Eq, Typeable)
 
+class (Eq (UnifiedVariable var), Show (var Object), Show (var Meta), Typeable var) => VariableClass var
+  where
+    getVariableSort :: IsMeta a => var a -> Sort a
+
+instance VariableClass Variable where
+    getVariableSort = variableSort
+
 {-|'UnifiedVariable' corresponds to the @variable@ syntactic category from
 the Semantics of K, Section 9.1.4 (Patterns).
 -}
@@ -223,19 +229,18 @@ data UnifiedVariable v
     | ObjectVariable !(v Object)
 
 asUnifiedVariable'
-    :: (Show (v Object), Show (v Meta))
-    => Maybe (v Object)
+    :: Maybe (v Object)
     -> Maybe (v Meta)
     -> UnifiedVariable v
 asUnifiedVariable' Nothing Nothing =
     error "Only Object and Meta levels are supported!"
 asUnifiedVariable' (Just v) Nothing = ObjectVariable v
 asUnifiedVariable' Nothing (Just v) = MetaVariable v
-asUnifiedVariable' mv1 mv2 =
-    error ("Should not have both defined: " ++ show mv1 ++ " and " ++ show mv2)
+asUnifiedVariable' _ _ =
+    error "asUnifiedVariable: this should not happen!"
 
 asUnifiedVariable
-    :: (Typeable v, IsMeta a, Show (v Object), Show (v Meta))
+    :: (Typeable v, IsMeta a)
     => v a -> UnifiedVariable v
 asUnifiedVariable v = asUnifiedVariable' (cast v) (cast v)
 
@@ -249,7 +254,7 @@ of the 'Pattern' class.
 
 'v' is the type of variables.
 -}
-class FixPattern v p | p -> v where
+class FixPattern v p where
     {-|'unFixPattern' "lifts" a function defined on 'Pattern' to the
     domain of the fixed point 'p'.
 
@@ -259,33 +264,43 @@ class FixPattern v p | p -> v where
     Note: it would have been clearer to have an @unFix@ function for unwrapping
     the pattern, but that is hindered by the shadow type variable 'a'.
     -}
-    unFixPattern :: (forall a . IsMeta a => Pattern a v p -> b) -> (p -> b)
+    unFixPattern
+        :: (forall a . IsMeta a => Pattern a v (p v) -> b)
+        -> (p v -> b)
+
+data FixedPattern variable
+    = MetaPattern !(Pattern Meta variable (FixedPattern variable))
+    | ObjectPattern !(Pattern Object variable (FixedPattern variable))
 
 {-|'UnifiedPattern' corresponds to the @pattern@ syntactic category from
 the Semantics of K, Section 9.1.4 (Patterns).
 -}
-data UnifiedPattern
-    = MetaPattern !(Pattern Meta Variable UnifiedPattern)
-    | ObjectPattern !(Pattern Object Variable UnifiedPattern)
-    deriving (Eq, Show)
+type UnifiedPattern = FixedPattern Variable
+
+deriving instance Eq UnifiedPattern
+deriving instance Show UnifiedPattern
 
 asUnifiedPattern'
-    :: Maybe (Pattern Object Variable UnifiedPattern)
-    -> Maybe (Pattern Meta Variable UnifiedPattern)
-    -> UnifiedPattern
+    :: Maybe (Pattern Object v (FixedPattern v))
+    -> Maybe (Pattern Meta v (FixedPattern v))
+    -> FixedPattern v
 asUnifiedPattern' Nothing Nothing =
     error "Only Object and Meta levels are supported!"
 asUnifiedPattern' (Just p) Nothing = ObjectPattern p
 asUnifiedPattern' Nothing (Just p) = MetaPattern p
-asUnifiedPattern' mp1 mp2 =
-    error ("Should not have both defined: " ++ show mp1 ++ " and " ++ show mp2)
+asUnifiedPattern' _ _ =
+    error "asUnifiedPattern: this should not happen!"
 
 asUnifiedPattern
-    :: IsMeta a
-    => Pattern a Variable UnifiedPattern -> UnifiedPattern
+    :: (IsMeta a, Typeable v)
+    => Pattern a v (FixedPattern v) -> FixedPattern v
 asUnifiedPattern p = asUnifiedPattern' (cast p) (cast p)
 
-instance FixPattern Variable UnifiedPattern where
+unifiedVariableToPattern :: UnifiedVariable var -> FixedPattern var
+unifiedVariableToPattern (MetaVariable v) = MetaPattern $ VariablePattern v
+unifiedVariableToPattern (ObjectVariable v) = ObjectPattern $ VariablePattern v
+
+instance FixPattern var FixedPattern where
     unFixPattern k (MetaPattern p)   = k p
     unFixPattern k (ObjectPattern p) = k p
 

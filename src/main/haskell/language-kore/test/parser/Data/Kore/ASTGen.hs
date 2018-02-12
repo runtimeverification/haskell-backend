@@ -8,7 +8,6 @@ import           Test.QuickCheck.Gen         (Gen, choose, chooseAny, elements,
 import           Data.Kore.AST
 import           Data.Kore.Parser.LexemeImpl
 
-
 couple :: Gen a -> Gen [a]
 couple gen = do
     size <- getSize
