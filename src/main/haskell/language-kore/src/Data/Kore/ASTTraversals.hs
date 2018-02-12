@@ -1,7 +1,10 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE Rank2Types            #-}
-module Data.Kore.ASTTraversals where
+module Data.Kore.ASTTraversals ( visit
+                               , freeVariables
+                               , freeVarsVisitor
+                               ) where
 
 import           Data.Typeable (Typeable)
 
@@ -22,38 +25,39 @@ visit phi = self
     self = unFixPattern (phi . fmap self)
 
 freeVariables :: UnifiedPattern -> [UnifiedVariable Variable]
-freeVariables = visit collectFreeVars
+freeVariables = visit freeVarsVisitor
 
-collectFreeVars
+freeVarsVisitor
     :: (Typeable var, IsMeta a, Show (var Object), Show (var Meta),
         Eq (UnifiedVariable var))
     => Pattern a var [UnifiedVariable var] -> [UnifiedVariable var]
-collectFreeVars (VariablePattern v) = [asUnifiedVariable v]
-collectFreeVars (ExistsPattern e) =
+freeVarsVisitor (VariablePattern v) = [asUnifiedVariable v]
+freeVarsVisitor (ExistsPattern e) =
     filter (/= existsVariable e) (existsPattern e)
-collectFreeVars (ForallPattern f) =
+freeVarsVisitor (ForallPattern f) =
     filter (/= forallVariable f) (forallPattern f)
-collectFreeVars p                   = foldMap id p
+freeVarsVisitor p                  = foldMap id p --default rule
 
 substitute :: UnifiedPattern -> [(UnifiedVariable Variable, UnifiedPattern)] -> UnifiedPattern
 substitute = foldr substituteOne
-  where substituteOne s = fst . visit (substituteOne' s)
+  where substituteOne s = fst . visit (substituteVisitor s)
 
-substituteOne'
+substituteVisitor
     :: IsMeta a
     => (UnifiedVariable Variable, UnifiedPattern)
     -> Pattern a Variable (UnifiedPattern, UnifiedPattern)
     -> (UnifiedPattern, UnifiedPattern)
-substituteOne' (uv, up) (VariablePattern v)
+substituteVisitor (uv, up) (VariablePattern v)
     | uv == asUnifiedVariable v = (up, unified)
     | otherwise = (unified, unified)
   where unified = asUnifiedPattern (VariablePattern v)
-substituteOne' (uv, _) ep@(ExistsPattern e)
+substituteVisitor (uv, _) ep@(ExistsPattern e)
     | uv == existsVariable e =
         let origPattern = asUnifiedPattern $ fmap snd ep
         in (origPattern, origPattern)
-substituteOne' (uv, _) fp@(ForallPattern e)
+substituteVisitor (uv, _) fp@(ForallPattern e)
     | uv == forallVariable e =
         let origPattern = asUnifiedPattern $ fmap snd fp
         in (origPattern, origPattern)
-substituteOne' _ p = (asUnifiedPattern $ fmap fst p, asUnifiedPattern $ fmap snd p)
+substituteVisitor _ p =
+    (asUnifiedPattern $ fmap fst p, asUnifiedPattern $ fmap snd p)
