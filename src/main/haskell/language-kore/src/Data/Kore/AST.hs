@@ -36,13 +36,13 @@ class (Show a, Typeable a) => IsMeta a where
     koreLevel :: a -> KoreLevel
 
 data Meta = Meta
-    deriving (Show, Eq, Typeable)
+    deriving (Show, Eq, Ord, Typeable)
 
 instance IsMeta Meta where
     koreLevel _ = MetaLevel
 
 data Object = Object
-    deriving (Show, Eq, Typeable)
+    deriving (Show, Eq, Ord, Typeable)
 
 instance IsMeta Object where
     koreLevel _ = ObjectLevel
@@ -60,13 +60,13 @@ The 'a' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'IsMeta a'.
 -}
 newtype Id a = Id { getId :: String }
-    deriving (Show, Eq, Typeable)
+    deriving (Show, Eq, Ord, Typeable)
 
 {-|'StringLiteral' corresponds to the @string@ literal from the Semantics of K,
 Section 9.1.1 (Lexicon).
 -}
 newtype StringLiteral = StringLiteral { getStringLiteral :: String }
-    deriving (Show, Eq)
+    deriving (Show, Eq, Ord)
 
 {-|'SymbolOrAlias' corresponds to the @head{sort-list}@ branch of the
 @object-head@ and @meta-head@ syntactic categories from the Semantics of K,
@@ -79,7 +79,7 @@ data SymbolOrAlias a = SymbolOrAlias
     { symbolOrAliasConstructor :: !(Id a)
     , symbolOrAliasParams      :: ![Sort a]
     }
-    deriving (Show, Eq, Typeable)
+    deriving (Show, Eq, Ord, Typeable)
 
 {-|'Symbol' corresponds to the
 @object-head-constructor{object-sort-variable-list}@ part of the
@@ -95,7 +95,7 @@ data Symbol a = Symbol
     { symbolConstructor :: !(Id a)
     , symbolParams      :: ![SortVariable a]
     }
-    deriving (Show, Eq, Typeable)
+    deriving (Show, Eq, Ord, Typeable)
 
 {-|'Alias' corresponds to the
 @object-head-constructor{object-sort-variable-list}@ part of the
@@ -111,7 +111,7 @@ data Alias a = Alias
     { aliasConstructor :: !(Id a)
     , aliasParams      :: ![SortVariable a]
     }
-    deriving (Show, Eq, Typeable)
+    deriving (Show, Eq, Ord, Typeable)
 
 {-|'SortVariable' corresponds to the @object-sort-variable@ and
 @meta-sort-variable@ syntactic categories from the Semantics of K,
@@ -122,7 +122,7 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 -}
 newtype SortVariable a = SortVariable
     { getSortVariable  :: Id a }
-    deriving (Show, Eq, Typeable)
+    deriving (Show, Eq, Ord, Typeable)
 
 {-|'SortActual' corresponds to the @sort-constructor{sort-list}@ branch of the
 @object-sort@ and @meta-sort@ syntactic categories from the Semantics of K,
@@ -135,7 +135,7 @@ data SortActual a = SortActual
     { sortActualName  :: !(Id a)
     , sortActualSorts :: ![Sort a]
     }
-    deriving (Show, Eq, Typeable)
+    deriving (Show, Eq, Ord, Typeable)
 
 {-|'Sort' corresponds to the @object-sort@ and
 @meta-sort@ syntactic categories from the Semantics of K,
@@ -147,7 +147,7 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 data Sort a
     = SortVariableSort !(SortVariable a)
     | SortActualSort !(SortActual a)
-    deriving (Show, Eq, Typeable)
+    deriving (Show, Eq, Ord, Typeable)
 
 {-|'MetaSortType' corresponds to the @meta-sort-constructor@ syntactic category
 from the Semantics of K, Section 9.1.2 (Sorts).
@@ -193,13 +193,13 @@ from the Semantics of K, Section 9.1.2 (Sorts).
 data UnifiedSortVariable
     = ObjectSortVariable !(SortVariable Object)
     | MetaSortVariable !(SortVariable Meta)
-    deriving (Show, Eq)
+    deriving (Show, Eq, Ord)
 
 {-|'ModuleName' corresponds to the @module-name@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
 newtype ModuleName = ModuleName { getModuleName :: String }
-    deriving (Show, Eq)
+    deriving (Show, Eq, Ord)
 
 {-|'Variable' corresponds to the @object-variable@ and
 @meta-variable@ syntactic categories from the Semantics of K,
@@ -212,9 +212,12 @@ data Variable a = Variable
     { variableName :: !(Id a)
     , variableSort :: !(Sort a)
     }
-    deriving (Show, Eq, Typeable)
+    deriving (Show, Eq, Ord, Typeable)
 
-class (Eq (UnifiedVariable var), Show (var Object), Show (var Meta), Typeable var) => VariableClass var
+class (Eq (UnifiedVariable var), Ord (UnifiedVariable var)
+      , Show (var Object), Show (var Meta)
+      , Typeable var
+      ) => VariableClass var
   where
     getVariableSort :: IsMeta a => var a -> Sort a
 
@@ -244,7 +247,14 @@ asUnifiedVariable
     => v a -> UnifiedVariable v
 asUnifiedVariable v = asUnifiedVariable' (cast v) (cast v)
 
+transformUnifiedVariable
+  :: (forall a . IsMeta a => variable a -> b)
+  -> (UnifiedVariable variable -> b)
+transformUnifiedVariable f (ObjectVariable v) = f v
+transformUnifiedVariable f (MetaVariable v)   = f v
+
 deriving instance Eq (UnifiedVariable Variable)
+deriving instance Ord (UnifiedVariable Variable)
 deriving instance Show (UnifiedVariable Variable)
 
 {-|'FixPattern' class corresponds to "fixed point"-like representations

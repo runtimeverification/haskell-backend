@@ -29,6 +29,7 @@ dependencies:
 - array
 - bytestring-trie
 - mtl
+- containers
 
 library:
   source-dirs: src

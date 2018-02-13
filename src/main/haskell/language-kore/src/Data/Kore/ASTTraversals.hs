@@ -8,6 +8,7 @@ module Data.Kore.ASTTraversals ( bottomUpVisitor
                                , topDownVisitorM
                                ) where
 
+import qualified Data.Set               as Set
 import           Data.Typeable          (Typeable)
 
 import           Control.Monad.Identity
@@ -59,16 +60,17 @@ topDownVisitor preprocess postprocess =
 
 freeVariables
     :: VariableClass var
-    => FixedPattern var -> [UnifiedVariable var]
+    => FixedPattern var -> Set.Set (UnifiedVariable var)
 freeVariables = bottomUpVisitor freeVarsVisitor
 
 freeVarsVisitor
     :: (Typeable var, IsMeta a, Show (var Object), Show (var Meta),
-        Eq (UnifiedVariable var))
-    => Pattern a var [UnifiedVariable var] -> [UnifiedVariable var]
-freeVarsVisitor (VariablePattern v) = [asUnifiedVariable v]
+        Eq (UnifiedVariable var), Ord (UnifiedVariable var))
+    => Pattern a var (Set.Set (UnifiedVariable var))
+    -> Set.Set (UnifiedVariable var)
+freeVarsVisitor (VariablePattern v) = Set.singleton (asUnifiedVariable v)
 freeVarsVisitor (ExistsPattern e) =
-    filter (/= existsVariable e) (existsPattern e)
+    Set.delete (existsVariable e) (existsPattern e)
 freeVarsVisitor (ForallPattern f) =
-    filter (/= forallVariable f) (forallPattern f)
+    Set.delete (forallVariable f) (forallPattern f)
 freeVarsVisitor p = foldMap id p --default rule
