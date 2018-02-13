@@ -1483,21 +1483,22 @@ In fact, if we let $X$ be the set $\overline{\rho}(\mu x . e)$, then
 the equation of $\mu$ above yields $X = e_M(X)$, that is, $X$ is a fixed point
 of $e_M : {\cal P}(M) \rightarrow {\cal P}(M)$.
 %
-We want, however, $X$ to be the \emph{least} fixed point of $e_M$.
-We do not know if that is possible, because $M$ and $\rho$ are arbitrary
-and many of the fixed-points of $e_M$ may very well be unreachable with
-patterns.
-However, from a practical perspective, are those fixed points of any
-importance at all?
+We want, however, $X$ to be the \emph{least} fixed-point of $e_M$.
+This is not possible in general, because $M$ and $\rho$ are arbitrary
+and many of the fixed-points of $e_M$, including the least fixed-point,
+may very well be unreachable with patterns.
+However, from a practical perspective, the importance of those syntactically
+unreachable fixed-points is questionable.
 Considering that when we do proofs we can only derive patterns, it makes
 sense to limit ourselves to only fixed points that can be expressed
 syntactically.
-Within this limited universe, we can axiomatize the
+Within this limited universe, we can axiomatize the syntactic
 \emph{least fixed-point} nature of $\mu x . e$ with the following
-pattern schema:
+pattern schema, which we call ``Knaster-Tarski'':\info{Explain why only
+implication suffices in the LHS.}
 $$
 \begin{array}{r@{\hspace*{4ex}}l}
-e[e'/x] = e' \rightarrow \floor{\mu x . e \rightarrow e'}
+\floor{e[e'/x] \rightarrow e'} \rightarrow \floor{\mu x . e \rightarrow e'}
 & \textrm{where $e$ and $e'$ are patterns corresponding to terms}
 \\
 & \textrm{in the original calculus}
@@ -1515,7 +1516,7 @@ $$
 & \textrm{where $e$ is a pattern corresponding to a term}
 \\
 & \textrm{in the original calculus} \\
-e[e'/x] = e' \rightarrow \floor{e' \rightarrow \nu x . e}
+\floor{e' \rightarrow e[e'/x]} \rightarrow \floor{e' \rightarrow \nu x . e}
 & \textrm{where $e$ and $e'$ are patterns corresponding to terms}
 \\
 & \textrm{in the original calculus}
@@ -1524,7 +1525,7 @@ $$
 
 \info{An alternative is to define $\nu x . e$ directly as the dual of
 $\mu x . e$, that is, $\nu x . e \equiv \neg \mu x . \neg e$.
-Can we prove the pattern above them?}
+Can we prove the pattern above then?}
 
 We extend our conjecture in Section~\ref{sec:binders} and conjecture
 that the embedding above, in spite of not necessarily yielding the
