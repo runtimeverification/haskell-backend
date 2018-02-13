@@ -5882,6 +5882,32 @@ Section~\ref{sec:finite-mechanisms}).
 By allowing writing a mix of object-level patterns and meta-level patterns, the 
 users can write patterns in the object-level as usual and only write meta-level 
 patterns when needed.
+
+Apart from the logic connectives that are defined in the above grammar, there 
+are a few more connectives and symbols that are often used in program 
+verification in Kore.
+These connectives and symbols include those that are defined in 
+Section~\ref{sec:case-studies}.
+The ``next'' symbol, denoted as $\parametric{\circ}{s}$ with a parameter $s$, 
+is a unary symbol. 
+The ``rewrites'' construct, denoted as $\_\parametric{\Rightarrow}{s}\_$, is a 
+binary construct defined by $\varphi \parametric{\Rightarrow}{s} \psi \equiv 
+\varphi \to \parametric{\circ}{s} 
+\psi$.
+They have the following productions:
+\begin{grammar}
+	\small
+	<object-pattern> ::= \quad
+	\alt `\\next' `{' <object-sort> `}'
+	`(' <pattern> `)' 
+	\alt `\\rewrites' `{' <object-sort> `}'
+	`(' <pattern> `,' <pattern> `)'
+\end{grammar}
+Notice that these constructs are only defined for object-level patterns. 
+The meta-theory does not have these constructs defined, (see 
+Section~\ref{sec:meta-theory} for details about the meta-theory), and thus do 
+not need a syntax for these constructs.
+
 %
 %
 %The following are all logic connective constructors in Kore, including both 
