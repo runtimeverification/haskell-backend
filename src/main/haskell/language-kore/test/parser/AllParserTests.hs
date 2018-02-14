@@ -1,10 +1,11 @@
-import           Test.Tasty                      (TestTree, testGroup)
+import           Test.Tasty                       (TestTree, testGroup)
 
-import           Test.Tasty.Runners              (consoleTestReporter,
-                                                  defaultMainWithIngredients,
-                                                  listingTests)
-import           Test.Tasty.Runners.AntXML       (antXMLRunner)
+import           Test.Tasty.Runners               (consoleTestReporter,
+                                                   defaultMainWithIngredients,
+                                                   listingTests)
+import           Test.Tasty.Runners.AntXML        (antXMLRunner)
 
+import           Data.Kore.FreshVariables.IntTest
 import           Data.Kore.IndentingPrinterTest
 import           Data.Kore.Parser.CharDictTest
 import           Data.Kore.Parser.CharSetTest
@@ -41,4 +42,5 @@ unitTests =
         , indentingPrinterTests
         , unparseUnitTests
         , unparseParseTests
+        , freshVariablesIntTests
         ]

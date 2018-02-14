@@ -31,7 +31,6 @@ unparseList _ []           = return ()
 unparseList between xs =
     withIndent 4 (betweenLines >> unparseList' xs) >> betweenLines
   where
-    unparseList' []      = return ()
     unparseList' [x]     = unparse x
     unparseList' (x:xs') = unparse x >> between >> unparseList' xs'
 
