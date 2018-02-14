@@ -6,7 +6,8 @@ module Data.Kore.Substitution.Class ( Substitution (..)
                                     , PatternSubstitution (..)
                                     ) where
 
-import           Control.Monad.Reader
+import           Control.Monad.Reader           (ReaderT, ask, runReaderT,
+                                                 withReaderT)
 import           Data.Maybe                     (isJust)
 import qualified Data.Set                       as Set
 import           Prelude                        hiding (lookup)
@@ -46,7 +47,7 @@ instance ( VariableClass var
           }
 
 class ( Substitution s (UnifiedVariable var) (FixedPattern var)
-      , FreshVariables m var
+      , FreshVariablesClass m var
       ) => PatternSubstitution var s m where
     substitute
         :: FixedPattern var

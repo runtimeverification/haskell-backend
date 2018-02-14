@@ -7,7 +7,7 @@ import           Control.Monad.Reader (ReaderT, lift)
 
 import           Data.Kore.AST
 
-class (Monad m, VariableClass var) => FreshVariables m var where
+class (Monad m, VariableClass var) => FreshVariablesClass m var where
     freshVariable :: IsMeta a => var a -> m (var a)
     freshUnifiedVariable :: UnifiedVariable var -> m (UnifiedVariable var)
     freshUnifiedVariable = transformUnifiedVariable
@@ -22,6 +22,6 @@ class (Monad m, VariableClass var) => FreshVariables m var where
             then return var'
             else error "Cannot generate variable satisfying predicate"
 
-instance FreshVariables m var => FreshVariables (ReaderT a m) var where
+instance FreshVariablesClass m var => FreshVariablesClass (ReaderT a m) var where
     freshVariable = lift . freshVariable
 
