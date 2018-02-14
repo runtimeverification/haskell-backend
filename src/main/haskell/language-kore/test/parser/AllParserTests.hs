@@ -13,6 +13,8 @@ import           Data.Kore.Parser.CStringTest
 import           Data.Kore.Parser.LexemeTest
 import           Data.Kore.Parser.ParserTest
 import           Data.Kore.Parser.RegressionTest
+import           Data.Kore.Substitution.ClassTest
+import           Data.Kore.Substitution.ListTest
 import           Data.Kore.Unparser.UnparseTest
 
 main :: IO ()
@@ -43,4 +45,6 @@ unitTests =
         , unparseUnitTests
         , unparseParseTests
         , freshVariablesIntTests
+        , substitutionListTests
+        , substitutionClassTests
         ]
