@@ -6,6 +6,7 @@ module Data.Kore.ASTTraversals ( bottomUpVisitor
                                , freeVariables
                                , topDownVisitor
                                , topDownVisitorM
+                               , TermWithVariablesClass
                                ) where
 
 import qualified Data.Set               as Set
@@ -58,10 +59,12 @@ topDownVisitor
 topDownVisitor preprocess postprocess =
     runIdentity . topDownVisitorM (pure . preprocess) (pure . postprocess)
 
-freeVariables
-    :: VariableClass var
-    => FixedPattern var -> Set.Set (UnifiedVariable var)
-freeVariables = bottomUpVisitor freeVarsVisitor
+class TermWithVariablesClass term var where
+    freeVariables :: term -> Set.Set var
+
+instance VariableClass var
+    => TermWithVariablesClass (FixedPattern var) (UnifiedVariable var) where
+    freeVariables = bottomUpVisitor freeVarsVisitor
 
 freeVarsVisitor
     :: (Typeable var, IsMeta a, Show (var Object), Show (var Meta),

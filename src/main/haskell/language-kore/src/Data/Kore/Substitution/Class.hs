@@ -19,8 +19,7 @@ import           Data.Kore.FreshVariables.Class
 class SubstitutionClass s v t | s -> v, s -> t where
     isEmpty :: s -> Bool
     lookup :: Eq v => v -> s -> Maybe t
-    fromList :: Eq v => [(v,t)] -> s
-    toList :: s -> [(v,t)]
+    getFreeVars :: s -> Set.Set v
     addBinding :: v -> t -> s -> s
     removeBinding :: v -> s -> s
 
@@ -42,11 +41,6 @@ instance ( VariableClass var
         (UnifiedVariable var) (FixedPattern var) where
     isEmpty s = isEmpty (substitution s)
     lookup v s = lookup v (substitution s)
-    fromList l = SubstitutionWithFreeVars
-        { substitution = fromList l
-        , freeVars = foldMap (freeVariables . snd) l
-        }
-    toList s = toList (substitution s)
     removeBinding v s = s { substitution = removeBinding v (substitution s) }
     addBinding v t s =
         s { substitution = addBinding v t (substitution s)
@@ -63,7 +57,7 @@ class ( SubstitutionClass s (UnifiedVariable var) (FixedPattern var)
     substitute p s = runReaderT (substituteM p) SubstitutionWithFreeVars
         { substitution = s
         , freeVars =
-            freeVariables p `Set.union` foldMap (freeVariables . snd) (toList s)
+            freeVariables p `Set.union` getFreeVars s
         }
 
 substituteM
@@ -90,7 +84,7 @@ substitutePreprocess
         m (Either (FixedPattern var) (Pattern a var (FixedPattern var)))
 substitutePreprocess p = do
     s <- ask
-    if isEmpty (substitution s) then return $ Left (asUnifiedPattern p)
+    if isEmpty s then return $ Left (asUnifiedPattern p)
     else case p of
         ExistsPattern e ->
             substituteCheckBinder s
@@ -118,7 +112,7 @@ substituteCheckBinder s binder sort var pat
         pat' <- withReaderT (addBinding var (unifiedVariableToPattern var'))
             (substituteM pat)
         return $ Left $ asUnifiedPattern $ binder sort var' pat'
-    | isJust (lookup var (substitution s)) =
+    | isJust (lookup var s) =
         substituteBinderBody (removeBinding var)
     | otherwise = substituteBinderBody id
   where
