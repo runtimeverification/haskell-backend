@@ -6,6 +6,7 @@ module Data.Kore.FreshVariables.Int ( FreshVariablesClass(..)
                                     , IntVariable(..)
                                     , runFreshVariables
                                     , runFreshVariablesT
+                                    , MonadTrans (lift)
                                     ) where
 
 import           Control.Monad.Identity         (Identity, runIdentity)

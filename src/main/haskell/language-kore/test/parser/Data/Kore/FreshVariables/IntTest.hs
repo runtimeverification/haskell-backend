@@ -1,7 +1,8 @@
 module Data.Kore.FreshVariables.IntTest where
 
 import           Test.Tasty                   (TestTree, testGroup)
-import           Test.Tasty.HUnit             (assertEqual, assertFailure,
+import           Test.Tasty.HUnit             (Assertion, assertBool,
+                                               assertEqual, assertFailure,
                                                testCase)
 
 import           Control.Exception            (ErrorCall (ErrorCall), catch,
@@ -10,6 +11,9 @@ import           Control.Exception            (ErrorCall (ErrorCall), catch,
 import           Data.Kore.AST
 import           Data.Kore.FreshVariables.Int
 
+
+testLift :: FreshVariablesT IO ()
+testLift = lift (assertBool "" True)
 
 objectVariable :: Variable Object
 objectVariable = Variable
@@ -86,4 +90,5 @@ freshVariablesIntTests =
                         (const True)
                     ) 2)
             )
+        , testCase "Testing lift" (fst <$> (runFreshVariablesT testLift 17))
            ]

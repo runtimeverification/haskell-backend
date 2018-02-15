@@ -46,6 +46,7 @@ instance ( VariableClass var
         s { substitution = addBinding v t (substitution s)
           , freeVars = freeVars s `Set.union` freeVariables t
           }
+    getFreeVars = freeVars
 
 class ( SubstitutionClass s (UnifiedVariable var) (FixedPattern var)
       , FreshVariablesClass m var
@@ -116,7 +117,7 @@ substituteCheckBinder s binder sort var pat
         substituteBinderBody (removeBinding var)
     | otherwise = substituteBinderBody id
   where
-    vars = freeVars s
+    vars = getFreeVars s
     substituteBinderBody fs = do
         pat' <- withReaderT (addFreeVariable var . fs)
             (substituteM pat)

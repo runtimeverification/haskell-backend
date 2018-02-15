@@ -93,6 +93,15 @@ substitutionClassTests =
                     7
                 )
             )
+           , testCase "Testing double binder renaming 1"
+            (assertEqual ""
+                (forallExistsObjectUnifiedPattern2, 17)
+                (runFreshVariables
+                    (testSubstitute
+                        forallExistsObjectUnifiedPattern2 substitution1)
+                    17
+                )
+            )
           ]
 
 metaVariableSubstitute :: Int -> Variable Meta
@@ -156,6 +165,13 @@ forallExistsObjectUnifiedPattern1 :: UnifiedPattern
 forallExistsObjectUnifiedPattern1 = ObjectPattern $ ForallPattern Forall
     { forallSort = objectSort
     , forallVariable = unifiedObjectVariable
+    , forallPattern = existsObjectUnifiedPattern1
+    }
+
+forallExistsObjectUnifiedPattern2 :: UnifiedPattern
+forallExistsObjectUnifiedPattern2 = MetaPattern $ ForallPattern Forall
+    { forallSort = metaSort
+    , forallVariable = unifiedMetaVariable
     , forallPattern = existsObjectUnifiedPattern1
     }
 

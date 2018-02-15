@@ -31,7 +31,7 @@ bottomUpVisitor
     => (forall a . IsMeta a => Pattern a var result -> result)
     -> (fixedPoint var -> result)
 bottomUpVisitor reduce =
-    runIdentity . topDownVisitorM (return . Right) (pure . reduce)
+    runIdentity . bottomUpVisitorM (pure . reduce)
 
 topDownVisitorM
     :: (FixPattern var fixedPoint, Monad m)
