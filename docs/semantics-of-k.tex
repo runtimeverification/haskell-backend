@@ -5989,25 +5989,27 @@ Attributes are written as comma-separated patterns wrapped with brackets
 \end{grammar}
 
 
-\subsubsection{Declarations and Definitions}
+\subsubsection{Kore Modules and Declarations}
 \label{sec:kore-syntax-declarations}
 
-A Kore definition contains a sequence of declarations.
-Every declaration declares a sort, a symbol, an alias, or an axiom.
-For now, a Kore definition contains just one flattened module that contains all 
-declarations.
-In the near future, Kore will be extended to support multiple modules, 
-parametric modules, and module imports. 
+A Kore module contains a module name and a sequence of declarations.
+Every declaration declares a module import, a sort, a symbol, an alias, or an 
+axiom.
 
 \begin{grammar}\small
-<definition> ::= <attribute> `module' <module-name> <declaration>$^*$ 
+
+<module> ::= \quad
+\alt `module' <module-name> <declaration>$^*$ 
 `endmodule' <attribute>
 
 <declaration> ::= \quad
+\alt <import-declaration>
 \alt <sort-declaration>
 \alt <symbol-declaration>
 \alt <alias-declaration>
 \alt <axiom-declaration>
+
+<import-declaration> ::= `import' <module-name> <attribute>
 
 <sort-declaration> ::= `sort'
 <object-sort-constructor>  `{' <object-sort-variable-list> `}' 
@@ -6071,6 +6073,15 @@ Sort variable declarations are used to help us decide \emph{in a local manner}
 if an identifier is a sort variable or something else.
 All sort variables used in a declaration have to be declared in the sort 
 variable declaration (see Section~\ref{sec:kore-syntax-wellformedness}).
+
+\subsubsection{Kore Definitions}
+
+A Kore definition contains an attribute and a sequence of modules.
+A Kore definition contains at least a module.
+
+\begin{grammar}\small
+<definition> ::= <attribute> <module>$^+$
+\end{grammar}
 
 %Here are some examples of sort declarations in Kore.
 %\begin{center}{\ttfamily
@@ -6185,6 +6196,22 @@ declaration;
 names; One cannot use the same name for a sort and a symbol, for example. 
 Similarly, any meta-symbol cannot have the same name as a meta-sort.
 \item Every sort constructor can be declared only once;
+\end{enumerate}
+
+Besides the above wellformedness conditions for patterns, we have the following 
+wellformedness conditions for module imports.
+\begin{enumerate} \itemsep0em
+\item Two modules in a definition cannot have the same name.
+\item A module can only import modules that are have been declared. This 
+guarantees that the module import relation does not form a cycle. A module does 
+not import itself.
+\item Import declarations should only occur in the beginning of a module, 
+preceding all other declarations.
+\item Any declaration in a module $M$ is visible in the entire module (both 
+before and after the declaration), and in any module that imports $M$. This 
+means that in a module, the order of sort, symbol, alias, and axiom 
+declarations do not matter. However, the order of two modules do matter, 
+because a module cannot import modules that have not declared yet.
 \end{enumerate}
 
 
