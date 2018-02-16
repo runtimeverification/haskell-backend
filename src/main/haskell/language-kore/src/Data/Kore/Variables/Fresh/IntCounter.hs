@@ -10,8 +10,12 @@ import           Control.Monad.Identity (Identity, runIdentity)
 import           Control.Monad.State    (MonadState (get, put),
                                          MonadTrans (lift), StateT (..))
 
+-- |'IntCounterT' is a monad transformer encapsulating an integer counter
 newtype IntCounterT m a = IntCounterT { intCounterState :: StateT Int m a }
 
+{-|'runIntCounterT' evaluates the computation with the given initial counter
+and yields a value containing the state in the parameter monad.
+-}
 runIntCounterT :: IntCounterT m a -> Int -> m (a, Int)
 runIntCounterT = runStateT . intCounterState
 
