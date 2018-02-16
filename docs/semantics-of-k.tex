@@ -5430,6 +5430,16 @@ The language accepted by there rules is a superset of the Kore language.
 A legal Kore language source file should satisfy additional constraints such 
 as wellformedness (see Section~\ref{sec:kore-syntax-wellformedness}).
 
+The Kore language is a formal specification language that is designed for the 
+meta-theory (Section~\ref{sec:meta-theory}), which gives us all power of 
+reasoning and proving by the faithfulness 
+theorem~(Theorem~\ref{thm:faithfulness-finite}).
+The semantics of Kore is given based on the meta-theory 
+(Section~\ref{sec:kore-semantics}).
+One can also think of all sorts, symbols, and axioms of the meta-theory are 
+ready to use to any Kore definition \emph{as if} they are implicitly predefined.
+Precisely speaking, they are \emph{built-in} to the Kore language.
+
 \subsubsection{Lexicon}
 
 
@@ -5586,6 +5596,13 @@ For the same reason, we do not exclude any \syntacc{meta-sort-constructor} from
 \syntacc{meta-sort-variable}.
 On the other hand, it is a common practice to exclude keywords from identifiers 
 in programming languages, and in Kore we follow the same practice.
+
+Kore has a fixed number of meta-sorts, as illustrated in the grammar.
+One can think of these meta-sorts are implicitly declared.
+In fact, they are a part of the meta-theory that we introduced in 
+Section~\ref{sec:meta-theory}.
+
+
 
 % or of the 
 %form 
@@ -6164,7 +6181,9 @@ return sorts declared;
 patterns, the number and sorts of argument patterns should match with the head 
 declaration;
 \item Every sorts, symbols, and aliases should be declared to be used;
-\item Every sorts, symbols, and aliases should have unique constructor names;
+\item Every sorts, symbols, and aliases should all have unique constructor 
+names; One cannot use the same name for a sort and a symbol, for example. 
+Similarly, any meta-symbol cannot have the same name as a meta-sort.
 \item Every sort constructor can be declared only once;
 \end{enumerate}
 
