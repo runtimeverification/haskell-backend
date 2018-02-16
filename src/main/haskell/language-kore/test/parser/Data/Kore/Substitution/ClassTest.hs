@@ -3,25 +3,26 @@
 {-# LANGUAGE TypeSynonymInstances  #-}
 module Data.Kore.Substitution.ClassTest where
 
-import           Test.Tasty                        (TestTree, testGroup)
-import           Test.Tasty.HUnit                  (assertEqual, testCase)
+import           Test.Tasty                           (TestTree, testGroup)
+import           Test.Tasty.HUnit                     (assertEqual, testCase)
 
 import           Data.Kore.AST
-import           Data.Kore.FreshVariables.Int
 import           Data.Kore.Substitution.Class
-import           Data.Kore.Substitution.List       as S
+import           Data.Kore.Substitution.List          as S
+import           Data.Kore.Variables.Fresh.IntCounter
+import           Data.Kore.Variables.Int
 
 import           Data.Kore.Substitution.TestCommon
 
 type UnifiedPatternSubstitution =
     S.Substitution (UnifiedVariable Variable) UnifiedPattern
 
-instance PatternSubstitutionClass Variable UnifiedPatternSubstitution FreshVariables where
+instance PatternSubstitutionClass Variable UnifiedPatternSubstitution IntCounter where
 
 testSubstitute
     :: UnifiedPattern
     -> UnifiedPatternSubstitution
-    -> FreshVariables UnifiedPattern
+    -> IntCounter UnifiedPattern
 testSubstitute = substitute
 
 substitutionClassTests :: TestTree
@@ -31,7 +32,7 @@ substitutionClassTests =
         [ testCase "Testing substituting a variable."
             (assertEqual ""
                 (objectTopPattern, 2)
-                (runFreshVariables
+                (runIntCounter
                     (testSubstitute objectVariableUnifiedPattern substitution1)
                     2
                 )
@@ -39,7 +40,7 @@ substitutionClassTests =
         , testCase "Testing not substituting a variable."
             (assertEqual ""
                 (metaVariableUnifiedPattern, 2)
-                (runFreshVariables
+                (runIntCounter
                     (testSubstitute metaVariableUnifiedPattern substitution1)
                     2
                 )
@@ -47,7 +48,7 @@ substitutionClassTests =
         , testCase "Testing not substituting anything."
             (assertEqual ""
                 (objectBottomPattern, 2)
-                (runFreshVariables
+                (runIntCounter
                     (testSubstitute objectBottomPattern substitution1)
                     2
                 )
@@ -55,7 +56,7 @@ substitutionClassTests =
          , testCase "Testing exists => empty substitution."
             (assertEqual ""
                 (existsObjectUnifiedPattern1, 2)
-                (runFreshVariables
+                (runIntCounter
                     (testSubstitute existsObjectUnifiedPattern1 substitution1)
                     2
                 )
@@ -63,7 +64,7 @@ substitutionClassTests =
          , testCase "Testing forall."
             (assertEqual ""
                 (forallObjectUnifiedPattern2, 2)
-                (runFreshVariables
+                (runIntCounter
                     (testSubstitute forallObjectUnifiedPattern1 substitution1)
                     2
                 )
@@ -71,7 +72,7 @@ substitutionClassTests =
          , testCase "Testing binder renaming"
             (assertEqual ""
                 (existsObjectUnifiedPattern1S 2, 3)
-                (runFreshVariables
+                (runIntCounter
                     (testSubstitute existsObjectUnifiedPattern1 substitution2)
                     2
                 )
@@ -79,7 +80,7 @@ substitutionClassTests =
           , testCase "Testing binder renaming and substitution"
             (assertEqual ""
                 (forallObjectUnifiedPattern1S3, 6)
-                (runFreshVariables
+                (runIntCounter
                     (testSubstitute forallObjectUnifiedPattern1 substitution3)
                     5
                 )
@@ -87,7 +88,7 @@ substitutionClassTests =
           , testCase "Testing double binder renaming"
             (assertEqual ""
                 (forallExistsObjectUnifiedPattern1S2, 9)
-                (runFreshVariables
+                (runIntCounter
                     (testSubstitute
                         forallExistsObjectUnifiedPattern1 substitution2)
                     7
@@ -96,7 +97,7 @@ substitutionClassTests =
            , testCase "Testing double binder renaming 1"
             (assertEqual ""
                 (forallExistsObjectUnifiedPattern2, 17)
-                (runFreshVariables
+                (runIntCounter
                     (testSubstitute
                         forallExistsObjectUnifiedPattern2 substitution1)
                     17

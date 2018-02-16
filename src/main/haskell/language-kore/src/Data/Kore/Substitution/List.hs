@@ -8,8 +8,8 @@ module Data.Kore.Substitution.List ( Substitution
 
 import           Data.List                    (nubBy)
 
-import           Data.Kore.ASTTraversals
 import           Data.Kore.Substitution.Class
+import           Data.Kore.Variables.Free
 
 newtype Substitution v t = Substitution { getSubstitution :: [(v,t)] }
 

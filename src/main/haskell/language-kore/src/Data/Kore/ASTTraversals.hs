@@ -3,36 +3,25 @@
 {-# LANGUAGE Rank2Types            #-}
 module Data.Kore.ASTTraversals ( bottomUpVisitor
                                , bottomUpVisitorM
-                               , freeVariables
                                , topDownVisitor
                                , topDownVisitorM
-                               , TermWithVariablesClass
                                ) where
 
-import qualified Data.Set               as Set
-import           Data.Typeable          (Typeable)
 
 import           Control.Monad.Identity
 import           Data.Kore.AST
 
-{-|'bottomUpVisitor' is the specialization of a catamorphism for patterns.
-It takes as argument a local visitor/reduce function which reduces to a result
-parameterized patterns containing in any pattern position the result of
-visiting that pattern.
+{-|'topDownVisitorM' is a generalized monadic visitor for patterns.
+It takes as arguments a preprocess function and a postprocess function and produces a function transforming a 'FixPattern' into a monadic value.
+
+The preprocess function takes an unwrapped Pattern and can either skip
+the visiting recursion and transform it directly into a result, or it can
+transform it as a pattern but still leave it to be recursively visited.
+
+The postprocess function assumes that all children patterns of a pattern have
+been visited and transformed into results and aggregates these results to a
+new result.
 -}
-bottomUpVisitorM
-    :: (FixPattern var fixedPoint, Monad m)
-    => (forall a . IsMeta a => Pattern a var result -> m result)
-    -> (fixedPoint var -> m result)
-bottomUpVisitorM = topDownVisitorM (pure . Right)
-
-bottomUpVisitor
-    :: FixPattern var fixedPoint
-    => (forall a . IsMeta a => Pattern a var result -> result)
-    -> (fixedPoint var -> result)
-bottomUpVisitor reduce =
-    runIdentity . bottomUpVisitorM (pure . reduce)
-
 topDownVisitorM
     :: (FixPattern var fixedPoint, Monad m)
     => (forall a . IsMeta a => Pattern a var (fixedPoint var)
@@ -50,6 +39,21 @@ topDownVisitorM preprocess postprocess = self
                 postprocess recP
         )
 
+{-|'bottomUpVisitorM' is the specialization of 'topDownVisitorM' where the
+preprocessor function always requests the recursive visitation of its children,
+basically resulting in a bottom-up visitor given by the aggregation function.
+
+It takes as argument a local visitor/reduce function which reduces to a result
+parameterized patterns containing in any pattern position the result of
+visiting that pattern.
+-}
+bottomUpVisitorM
+    :: (FixPattern var fixedPoint, Monad m)
+    => (forall a . IsMeta a => Pattern a var result -> m result)
+    -> (fixedPoint var -> m result)
+bottomUpVisitorM = topDownVisitorM (pure . Right)
+
+-- |'topDownVisitor' is the non-monadic version of 'topDownVisitorM'.
 topDownVisitor
     :: FixPattern var fixedPoint
     => (forall a . IsMeta a => Pattern a var (fixedPoint var)
@@ -59,21 +63,10 @@ topDownVisitor
 topDownVisitor preprocess postprocess =
     runIdentity . topDownVisitorM (pure . preprocess) (pure . postprocess)
 
-class TermWithVariablesClass term var where
-    freeVariables :: term -> Set.Set var
-
-instance VariableClass var
-    => TermWithVariablesClass (FixedPattern var) (UnifiedVariable var) where
-    freeVariables = bottomUpVisitor freeVarsVisitor
-
-freeVarsVisitor
-    :: (Typeable var, IsMeta a, Show (var Object), Show (var Meta),
-        Eq (UnifiedVariable var), Ord (UnifiedVariable var))
-    => Pattern a var (Set.Set (UnifiedVariable var))
-    -> Set.Set (UnifiedVariable var)
-freeVarsVisitor (VariablePattern v) = Set.singleton (asUnifiedVariable v)
-freeVarsVisitor (ExistsPattern e) =
-    Set.delete (existsVariable e) (existsPattern e)
-freeVarsVisitor (ForallPattern f) =
-    Set.delete (forallVariable f) (forallPattern f)
-freeVarsVisitor p = foldMap id p --default rule
+-- |'bottomUpVisitor' is the non-monadic version of 'bottomUpVisitorM'.
+bottomUpVisitor
+    :: FixPattern var fixedPoint
+    => (forall a . IsMeta a => Pattern a var result -> result)
+    -> (fixedPoint var -> result)
+bottomUpVisitor reduce =
+    runIdentity . bottomUpVisitorM (pure . reduce)

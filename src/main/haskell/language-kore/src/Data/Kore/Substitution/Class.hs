@@ -6,15 +6,16 @@ module Data.Kore.Substitution.Class ( SubstitutionClass (..)
                                     , PatternSubstitutionClass (..)
                                     ) where
 
-import           Control.Monad.Reader           (ReaderT, ask, runReaderT,
-                                                 withReaderT)
-import           Data.Maybe                     (isJust)
-import qualified Data.Set                       as Set
-import           Prelude                        hiding (lookup)
+import           Control.Monad.Reader            (ReaderT, ask, runReaderT,
+                                                  withReaderT)
+import           Data.Maybe                      (isJust)
+import qualified Data.Set                        as Set
+import           Prelude                         hiding (lookup)
 
 import           Data.Kore.AST
-import           Data.Kore.ASTTraversals        (freeVariables, topDownVisitorM)
-import           Data.Kore.FreshVariables.Class
+import           Data.Kore.ASTTraversals         (topDownVisitorM)
+import           Data.Kore.Variables.Free
+import           Data.Kore.Variables.Fresh.Class
 
 class SubstitutionClass s v t | s -> v, s -> t where
     isEmpty :: s -> Bool
