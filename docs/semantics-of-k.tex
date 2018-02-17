@@ -1537,6 +1537,21 @@ holds in the original calculus if and only if the corresponding equality holds
 in the corresponding matching logic theory.
 Like before, the ``only if'' part is easy.
 
+An alternative way to define greatest fixed-point is using the least fixed-point construct:
+\begin{align*}
+\nu x . e \equiv \neg \mu x . (\neg e[\neg x / x])
+\end{align*}
+where the pattern $\neg e[\neg x / x]$ is called the \emph{dual of pattern $e$ w.r.t. the variable $x$}.
+This definition is justified by the following theorem which establishes the duality between least and greatest fixed-points.
+\begin{theorem}[Duality of Fixed-Points]
+	Let $F \colon 2^M \to 2^M$ be a monotone function. By Knaster-Tarski theorem, it has a unique least fixed-point $\mu x . F \subseteq M$ and a unique greatest fixed-point $\nu x . F \subseteq M$, which satisfy the following duality equations:
+	\begin{align*}
+	& \nu x . F = M \setminus \left( \mu x . \bar{F} \right) \\
+	& \mu x . F = M \setminus \left( \nu x . \bar{F} \right) \\
+	\end{align*}
+	where $\bar{F} \colon 2^M \to 2^M$ is also a monotone function defined as $\bar{F}(A) = M \setminus ( F(M \setminus A))$.
+\end{theorem}
+
 \subsection{Contexts}
 
 Matching logic allows us to define a very general notion of context.
