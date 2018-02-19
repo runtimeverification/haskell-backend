@@ -40,6 +40,7 @@ module Data.Kore.Parser.ParserImpl where
 import           Data.Kore.AST
 import           Data.Kore.Parser.Lexeme
 import qualified Data.Kore.Parser.ParserUtils     as ParserUtils
+import           Data.Kore.Unparser.Unparse
 
 import           Control.Monad                    (void, when)
 
@@ -615,6 +616,8 @@ BNF definitions:
     | ‘\floor’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
     | ‘\equals’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
     | ‘\in’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ pattern ‘,’ ⟨pattern⟩ ‘)’
+    | ‘\next’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
+    | ‘\rewrites’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
     | ‘\top’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ‘)’
     | ‘\bottom’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ‘)’
 
@@ -652,18 +655,23 @@ mlConstructorParser = do
         , ("iff", mlConstructorRemainderParser IffPatternType)
         , ("implies", mlConstructorRemainderParser ImpliesPatternType)
         , ("in", mlConstructorRemainderParser InPatternType)
+        , ("next", mlConstructorRemainderParser NextPatternType)
         , ("not", mlConstructorRemainderParser NotPatternType)
         , ("or", mlConstructorRemainderParser OrPatternType)
+        , ("rewrites", mlConstructorRemainderParser RewritesPatternType)
         , ("top", mlConstructorRemainderParser TopPatternType)
         ]
     mlConstructorRemainderParser patternType = do
         openCurlyBraceParser
         c <- Parser.peekChar'
         if c == '#'
-            then MetaPattern <$> mlConstructorRemainderParser' Meta patternType
+            then MetaPattern <$>
+                mlConstructorRemainderParser'
+                    Meta patternType metaMlConstructorRemainderParser
             else ObjectPattern <$>
-                mlConstructorRemainderParser' Object patternType
-    mlConstructorRemainderParser' x patternType =
+                mlConstructorRemainderParser'
+                    Object patternType objectMlConstructorRemainderParser
+    mlConstructorRemainderParser' x patternType otherParsers =
         case patternType of
             AndPatternType -> AndPattern <$>
                 binaryOperatorRemainderParser x And
@@ -691,6 +699,23 @@ mlConstructorParser = do
                 binaryOperatorRemainderParser x Or
             TopPatternType -> TopPattern <$>
                 topBottomRemainderParser x Top
+            _ -> otherParsers patternType
+    objectMlConstructorRemainderParser patternType =
+        case patternType of
+            NextPatternType -> NextPattern <$>
+                unaryOperatorRemainderParser Object Next
+            RewritesPatternType -> RewritesPattern <$>
+                binaryOperatorRemainderParser Object Rewrites
+            pt ->
+                fail
+                    (  "Cannot have a "
+                    ++ unparseToString pt
+                    ++ " object pattern.")
+    metaMlConstructorRemainderParser patternType =
+        fail
+            (  "Cannot have a "
+            ++ unparseToString patternType
+            ++ " meta pattern.")
 
 {-|'patternParser' parses an unifiedPattern
 
@@ -741,7 +766,7 @@ patternParser = do
     c <- Parser.peekChar'
     case c of
         '\\' -> mlConstructorParser
-        '"'  -> MetaPattern <$> StringLiteralPattern <$> stringLiteralParser
+        '"'  -> MetaPattern . StringLiteralPattern <$> stringLiteralParser
         _    -> unifiedVariableOrTermPatternParser
 
 

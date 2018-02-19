@@ -186,6 +186,11 @@ inGen x = pure In
     <*> scale (`div` 2) unifiedPatternGen
     <*> scale (`div` 2) unifiedPatternGen
 
+nextGen :: IsMeta a => a -> Gen (Next a)
+nextGen x = pure Next
+    <*> scale (`div` 2) (sortGen x)
+    <*> scale (`div` 2) unifiedPatternGen
+
 notGen :: IsMeta a => a -> Gen (Not a)
 notGen x = pure Not
     <*> scale (`div` 2) (sortGen x)
@@ -193,6 +198,9 @@ notGen x = pure Not
 
 orGen :: IsMeta a => a -> Gen (Or a)
 orGen x = binaryOperatorGen x Or
+
+rewritesGen :: IsMeta a => a -> Gen (Rewrites a)
+rewritesGen x = binaryOperatorGen x Rewrites
 
 topGen :: IsMeta a => a -> Gen (Top a)
 topGen x = topBottomGen x Top
@@ -211,16 +219,20 @@ patternGen x =
         , IffPattern <$> iffGen x
         , ImpliesPattern <$> impliesGen x
         , InPattern <$> inGen x
+        , NextPattern <$> nextGen Object
         , NotPattern <$> notGen x
         , OrPattern <$> orGen x
+        , RewritesPattern <$> rewritesGen Object
         , StringLiteralPattern <$> stringLiteralGen
         , TopPattern <$> topGen x
         , VariablePattern <$> variableGen x
         ]
-    ) checkStringLiteralMeta
+    ) checkMetaObject
   where
-    checkStringLiteralMeta (StringLiteralPattern _) = koreLevel x == MetaLevel
-    checkStringLiteralMeta _                        = True
+    checkMetaObject (StringLiteralPattern _) = koreLevel x == MetaLevel
+    checkMetaObject (NextPattern _)          = koreLevel x == ObjectLevel
+    checkMetaObject (RewritesPattern _)      = koreLevel x == ObjectLevel
+    checkMetaObject _                        = True
 
 unifiedPatternGen :: Gen UnifiedPattern
 unifiedPatternGen = sized (\n ->
