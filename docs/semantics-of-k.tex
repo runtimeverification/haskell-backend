@@ -1483,21 +1483,22 @@ In fact, if we let $X$ be the set $\overline{\rho}(\mu x . e)$, then
 the equation of $\mu$ above yields $X = e_M(X)$, that is, $X$ is a fixed point
 of $e_M : {\cal P}(M) \rightarrow {\cal P}(M)$.
 %
-We want, however, $X$ to be the \emph{least} fixed point of $e_M$.
-We do not know if that is possible, because $M$ and $\rho$ are arbitrary
-and many of the fixed-points of $e_M$ may very well be unreachable with
-patterns.
-However, from a practical perspective, are those fixed points of any
-importance at all?
+We want, however, $X$ to be the \emph{least} fixed-point of $e_M$.
+This is not possible in general, because $M$ and $\rho$ are arbitrary
+and many of the fixed-points of $e_M$, including the least fixed-point,
+may very well be unreachable with patterns.
+However, from a practical perspective, the importance of those syntactically
+unreachable fixed-points is questionable.
 Considering that when we do proofs we can only derive patterns, it makes
 sense to limit ourselves to only fixed points that can be expressed
 syntactically.
-Within this limited universe, we can axiomatize the
+Within this limited universe, we can axiomatize the syntactic
 \emph{least fixed-point} nature of $\mu x . e$ with the following
-pattern schema:
+pattern schema, which we call ``Knaster-Tarski'':\info{Explain why only
+implication suffices in the LHS.}
 $$
 \begin{array}{r@{\hspace*{4ex}}l}
-e[e'/x] = e' \rightarrow \floor{\mu x . e \rightarrow e'}
+\floor{e[e'/x] \rightarrow e'} \rightarrow \floor{\mu x . e \rightarrow e'}
 & \textrm{where $e$ and $e'$ are patterns corresponding to terms}
 \\
 & \textrm{in the original calculus}
@@ -1515,7 +1516,7 @@ $$
 & \textrm{where $e$ is a pattern corresponding to a term}
 \\
 & \textrm{in the original calculus} \\
-e[e'/x] = e' \rightarrow \floor{e' \rightarrow \nu x . e}
+\floor{e' \rightarrow e[e'/x]} \rightarrow \floor{e' \rightarrow \nu x . e}
 & \textrm{where $e$ and $e'$ are patterns corresponding to terms}
 \\
 & \textrm{in the original calculus}
@@ -1524,7 +1525,7 @@ $$
 
 \info{An alternative is to define $\nu x . e$ directly as the dual of
 $\mu x . e$, that is, $\nu x . e \equiv \neg \mu x . \neg e$.
-Can we prove the pattern above them?}
+Can we prove the pattern above then?}
 
 We extend our conjecture in Section~\ref{sec:binders} and conjecture
 that the embedding above, in spite of not necessarily yielding the
@@ -1535,6 +1536,21 @@ terms built with the syntax of the original calculus, then $e=e'$
 holds in the original calculus if and only if the corresponding equality holds
 in the corresponding matching logic theory.
 Like before, the ``only if'' part is easy.
+
+An alternative way to define greatest fixed-point is using the least fixed-point construct:
+\begin{align*}
+\nu x . e \equiv \neg \mu x . (\neg e[\neg x / x])
+\end{align*}
+where the pattern $\neg e[\neg x / x]$ is called the \emph{dual of pattern $e$ w.r.t. the variable $x$}.
+This definition is justified by the following theorem which establishes the duality between least and greatest fixed-points.
+\begin{theorem}[Duality of Fixed-Points]
+	Let $F \colon 2^M \to 2^M$ be a monotone function. By Knaster-Tarski theorem, it has a unique least fixed-point $\mu x . F \subseteq M$ and a unique greatest fixed-point $\nu x . F \subseteq M$, which satisfy the following duality equations:
+	\begin{align*}
+	& \nu x . F = M \setminus \left( \mu x . \bar{F} \right) \\
+	& \mu x . F = M \setminus \left( \nu x . \bar{F} \right) \\
+	\end{align*}
+	where $\bar{F} \colon 2^M \to 2^M$ is also a monotone function defined as $\bar{F}(A) = M \setminus ( F(M \setminus A))$.
+\end{theorem}
 
 \subsection{Contexts}
 
@@ -5429,6 +5445,16 @@ The language accepted by there rules is a superset of the Kore language.
 A legal Kore language source file should satisfy additional constraints such 
 as wellformedness (see Section~\ref{sec:kore-syntax-wellformedness}).
 
+The Kore language is a formal specification language that is designed for the 
+meta-theory (Section~\ref{sec:meta-theory}), which gives us all power of 
+reasoning and proving by the faithfulness 
+theorem~(Theorem~\ref{thm:faithfulness-finite}).
+The semantics of Kore is given based on the meta-theory 
+(Section~\ref{sec:kore-semantics}).
+One can also think of all sorts, symbols, and axioms of the meta-theory are 
+ready to use to any Kore definition \emph{as if} they are implicitly predefined.
+Precisely speaking, they are \emph{built-in} to the Kore language.
+
 \subsubsection{Lexicon}
 
 
@@ -5585,6 +5611,13 @@ For the same reason, we do not exclude any \syntacc{meta-sort-constructor} from
 \syntacc{meta-sort-variable}.
 On the other hand, it is a common practice to exclude keywords from identifiers 
 in programming languages, and in Kore we follow the same practice.
+
+Kore has a fixed number of meta-sorts, as illustrated in the grammar.
+One can think of these meta-sorts are implicitly declared.
+In fact, they are a part of the meta-theory that we introduced in 
+Section~\ref{sec:meta-theory}.
+
+
 
 % or of the 
 %form 
@@ -5882,6 +5915,32 @@ Section~\ref{sec:finite-mechanisms}).
 By allowing writing a mix of object-level patterns and meta-level patterns, the 
 users can write patterns in the object-level as usual and only write meta-level 
 patterns when needed.
+
+Apart from the logic connectives that are defined in the above grammar, there 
+are a few more connectives and symbols that are often used in program 
+verification in Kore.
+These connectives and symbols include those that are defined in 
+Section~\ref{sec:case-studies}.
+The ``next'' symbol, denoted as $\parametric{\circ}{s}$ with a parameter $s$, 
+is a unary symbol. 
+The ``rewrites'' construct, denoted as $\_\parametric{\Rightarrow}{s}\_$, is a 
+binary construct defined by $\varphi \parametric{\Rightarrow}{s} \psi \equiv 
+\varphi \to \parametric{\circ}{s} 
+\psi$.
+They have the following productions:
+\begin{grammar}
+	\small
+	<object-pattern> ::= \quad
+	\alt `\\next' `{' <object-sort> `}'
+	`(' <pattern> `)' 
+	\alt `\\rewrites' `{' <object-sort> `}'
+	`(' <pattern> `,' <pattern> `)'
+\end{grammar}
+Notice that these constructs are only defined for object-level patterns. 
+The meta-theory does not have these constructs defined, (see 
+Section~\ref{sec:meta-theory} for details about the meta-theory), and thus do 
+not need a syntax for these constructs.
+
 %
 %
 %The following are all logic connective constructors in Kore, including both 
@@ -5945,25 +6004,27 @@ Attributes are written as comma-separated patterns wrapped with brackets
 \end{grammar}
 
 
-\subsubsection{Declarations and Definitions}
+\subsubsection{Kore Modules and Declarations}
 \label{sec:kore-syntax-declarations}
 
-A Kore definition contains a sequence of declarations.
-Every declaration declares a sort, a symbol, an alias, or an axiom.
-For now, a Kore definition contains just one flattened module that contains all 
-declarations.
-In the near future, Kore will be extended to support multiple modules, 
-parametric modules, and module imports. 
+A Kore module contains a module name and a sequence of declarations.
+Every declaration declares a module import, a sort, a symbol, an alias, or an 
+axiom.
 
 \begin{grammar}\small
-<definition> ::= <attribute> `module' <module-name> <declaration>$^*$ 
+
+<module> ::= \quad
+\alt `module' <module-name> <declaration>$^*$ 
 `endmodule' <attribute>
 
 <declaration> ::= \quad
+\alt <import-declaration>
 \alt <sort-declaration>
 \alt <symbol-declaration>
 \alt <alias-declaration>
 \alt <axiom-declaration>
+
+<import-declaration> ::= `import' <module-name> <attribute>
 
 <sort-declaration> ::= `sort'
 <object-sort-constructor>  `{' <object-sort-variable-list> `}' 
@@ -6027,6 +6088,15 @@ Sort variable declarations are used to help us decide \emph{in a local manner}
 if an identifier is a sort variable or something else.
 All sort variables used in a declaration have to be declared in the sort 
 variable declaration (see Section~\ref{sec:kore-syntax-wellformedness}).
+
+\subsubsection{Kore Definitions}
+
+A Kore definition contains an attribute and a sequence of modules.
+A Kore definition contains at least a module.
+
+\begin{grammar}\small
+<definition> ::= <attribute> <module>$^+$
+\end{grammar}
 
 %Here are some examples of sort declarations in Kore.
 %\begin{center}{\ttfamily
@@ -6137,8 +6207,26 @@ return sorts declared;
 patterns, the number and sorts of argument patterns should match with the head 
 declaration;
 \item Every sorts, symbols, and aliases should be declared to be used;
-\item Every sorts, symbols, and aliases should have unique constructor names;
+\item Every sorts, symbols, and aliases should all have unique constructor 
+names; One cannot use the same name for a sort and a symbol, for example. 
+Similarly, any meta-symbol cannot have the same name as a meta-sort.
 \item Every sort constructor can be declared only once;
+\end{enumerate}
+
+Besides the above wellformedness conditions for patterns, we have the following 
+wellformedness conditions for module imports.
+\begin{enumerate} \itemsep0em
+\item Two modules in a definition cannot have the same name.
+\item A module can only import modules that are have been declared. This 
+guarantees that the module import relation does not form a cycle. A module does 
+not import itself.
+\item Import declarations should only occur in the beginning of a module, 
+preceding all other declarations.
+\item Any declaration in a module $M$ is visible in the entire module (both 
+before and after the declaration), and in any module that imports $M$. This 
+means that in a module, the order of sort, symbol, alias, and axiom 
+declarations do not matter. However, the order of two modules do matter, 
+because a module cannot import modules that have not declared yet.
 \end{enumerate}
 
 
