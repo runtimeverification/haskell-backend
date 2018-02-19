@@ -237,6 +237,13 @@ instance Unparse (SentenceSymbol a) where
         unparse (sentenceSymbolReturnSort sa)
         unparse (sentenceSymbolAttributes sa)
 
+instance Unparse SentenceImport where
+    unparse a = do
+        write "import"
+        write " "
+        unparse (sentenceImportModuleName a)
+        unparse (sentenceImportAttributes a)
+
 instance Unparse SentenceAxiom where
     unparse a = do
         write "axiom"
@@ -257,6 +264,7 @@ instance Unparse Sentence where
     unparse (ObjectSentenceAliasSentence s)  = unparse s
     unparse (MetaSentenceSymbolSentence s)   = unparse s
     unparse (ObjectSentenceSymbolSentence s) = unparse s
+    unparse (SentenceImportSentence s)       = unparse s
     unparse (SentenceAxiomSentence s)        = unparse s
     unparse (SentenceSortSentence s)         = unparse s
 

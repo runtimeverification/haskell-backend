@@ -70,10 +70,14 @@ unparseUnitTests =
             ++ "    module i\n    endmodule\n    []\n"
             ++ "    module k\n    endmodule\n    []\n"
             )
+        , unparseTest
+            ( SentenceImportSentence SentenceImport
+                { sentenceImportModuleName = ModuleName {getModuleName = "sl"}
+                , sentenceImportAttributes = Attributes { getAttributes = [] }
+                }
+            )
+            "import sl[]"
         ]
-
---  --quickcheck-replay=505940 
--- Definition {definitionAttributes = Attributes {getAttributes = []}, definitionModules = [Module {moduleName = ModuleName {getModuleName = "i"}, moduleSentences = [MetaSentenceSymbolSentence (SentenceSymbol {sentenceSymbolSymbol = Symbol {symbolConstructor = Id {getId = "#t"}, symbolParams = []}, sentenceSymbolSorts = [], sentenceSymbolReturnSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "#I"}}), sentenceSymbolAttributes = Attributes {getAttributes = []}}),SentenceAxiomSentence (SentenceAxiom {sentenceAxiomParameters = [], sentenceAxiomPattern = MetaPattern (StringLiteralPattern (StringLiteral {getStringLiteral = ""})), sentenceAxiomAttributes = Attributes {getAttributes = []}}),ObjectSentenceAliasSentence (SentenceAlias {sentenceAliasAlias = Alias {aliasConstructor = Id {getId = "m"}, aliasParams = []}, sentenceAliasSorts = [], sentenceAliasReturnSort = SortVariableSort (SortVariable {getSortVariable = Id {getId = "O"}}), sentenceAliasAttributes = Attributes {getAttributes = []}})], moduleAttributes = Attributes {getAttributes = []}},Module {moduleName = ModuleName {getModuleName = "D"}, moduleSentences = [SentenceSortSentence (SentenceSort {sentenceSortName = Id {getId = "l"}, sentenceSortParameters = [], sentenceSortAttributes = Attributes {getAttributes = []}}),SentenceAxiomSentence (SentenceAxiom {sentenceAxiomParameters = [], sentenceAxiomPattern = MetaPattern (StringLiteralPattern (StringLiteral {getStringLiteral = ""})), sentenceAxiomAttributes = Attributes {getAttributes = []}})], moduleAttributes = Attributes {getAttributes = []}},Module {moduleName = ModuleName {getModuleName = "k"}, moduleSentences = [], moduleAttributes = Attributes {getAttributes = []}}]}
 
 unparseParseTests :: TestTree
 unparseParseTests =

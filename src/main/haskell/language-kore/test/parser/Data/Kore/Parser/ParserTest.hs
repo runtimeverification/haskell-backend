@@ -47,6 +47,7 @@ koreParserTests =
         , testGroup "topPatternParser" topPatternParserTests
         , testGroup "variablePatternParser" variablePatternParserTests
         , testGroup "sentenceAliasParser" sentenceAliasParserTests
+        , testGroup "sentenceImportParser" sentenceImportParserTests
         , testGroup "sentenceAxiomParser" sentenceAxiomParserTests
         , testGroup "sentenceSortParser" sentenceSortParserTests
         , testGroup "sentenceSymbolParser" sentenceSymbolParserTests
@@ -880,6 +881,25 @@ sentenceAxiomParserTests =
             -- , "axiom{}\"a\"[\"b\"]" See the TODO above.
             , "axiom{sv1}[\"b\"]"
             , "axiom{sv1}\"a\""
+            ]
+        ]
+
+sentenceImportParserTests :: [TestTree]
+sentenceImportParserTests =
+    parseTree sentenceParser
+        [ success "import M[\"b\"]"
+            ( SentenceImportSentence SentenceImport
+                { sentenceImportModuleName = ModuleName "M"
+                , sentenceImportAttributes =
+                    Attributes
+                        [MetaPattern $ StringLiteralPattern (StringLiteral "b")]
+                }
+            )
+        , FailureWithoutMessage
+            [ ""
+            , "M[\"b\"]"
+            , "import [\"b\"]"
+            , "import M"
             ]
         ]
 

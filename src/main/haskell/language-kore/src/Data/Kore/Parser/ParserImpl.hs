@@ -867,6 +867,7 @@ BNF definition fragments:
     | ⟨axiom-declaration⟩
 ⟨axiom-declaration⟩ ::= ‘axiom’ ...
 ⟨sort-declaration⟩ ::= ‘sort’ ...
+⟨import-declaration⟩ ::= ‘import’ ⟨module-name⟩ ⟨attribute⟩
 ⟨symbol-declaration⟩ ::= ( ⟨object-symbol-declaration⟩ | ⟨meta-symbol-declaration⟩ ) ⟨attribute⟩
 ⟨object-symbol-declaration⟩ ::= ‘symbol’ ...
 ⟨meta-symbol-declaration⟩ ::= ‘symbol’ ...
@@ -880,7 +881,8 @@ sentenceParser = keywordBasedParsers
     [ ( "alias", sentenceConstructorRemainderParser AliasSentenceType)
     , ( "axiom", axiomSentenceRemainderParser )
     , ( "sort", sortSentenceRemainderParser )
-    , ( "symbol", sentenceConstructorRemainderParser SymbolSentenceType)
+    , ( "symbol", sentenceConstructorRemainderParser SymbolSentenceType )
+    , ( "import", importSentenceRemainderParser )
     ]
   where
     sentenceConstructorRemainderParser sentenceType = do
@@ -926,6 +928,22 @@ aliasSymbolSentenceRemainderParser  x aliasSymbolParser constructor = do
     resultSort <- sortParser x
     attributes <- attributesParser
     return (constructor aliasSymbol sorts resultSort attributes)
+
+{-|'importSentenceRemainderParser' parses the part after the starting
+'import' keyword of an import-declaration and constructs it.
+
+BNF example:
+
+@
+⟨import-declaration⟩ ::= ... ⟨module-name⟩ ⟨attribute⟩
+@
+-}
+importSentenceRemainderParser :: Parser Sentence
+importSentenceRemainderParser = SentenceImportSentence <$>
+    ( pure SentenceImport
+        <*> moduleNameParser
+        <*> attributesParser
+    )
 
 {-|'axiomSentenceRemainderParser' parses the part after the starting
 'axiom' keyword of an axiom-declaration and constructs it.

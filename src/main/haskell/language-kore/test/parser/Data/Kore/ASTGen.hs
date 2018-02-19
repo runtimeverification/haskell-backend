@@ -265,6 +265,11 @@ sentenceSymbolGen x = pure SentenceSymbol
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) attributesGen
 
+sentenceImportGen :: Gen SentenceImport
+sentenceImportGen = pure SentenceImport
+    <*> scale (`div` 2) moduleNameGen
+    <*> scale (`div` 2) attributesGen
+
 sentenceAxiomGen :: Gen SentenceAxiom
 sentenceAxiomGen = pure SentenceAxiom
     <*> couple (scale (`div` 2) unifiedSortVariableGen)
@@ -286,6 +291,7 @@ sentenceGen = oneof
     , ObjectSentenceAliasSentence <$> sentenceAliasGen Object
     , MetaSentenceSymbolSentence <$> sentenceSymbolGen Meta
     , ObjectSentenceSymbolSentence <$> sentenceSymbolGen Object
+    , SentenceImportSentence <$> sentenceImportGen
     , SentenceAxiomSentence <$> sentenceAxiomGen
     , SentenceSortSentence <$> sentenceSortGen
     ]

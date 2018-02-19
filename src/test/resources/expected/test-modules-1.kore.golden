@@ -1,0 +1,15 @@
+Definition
+    { definitionAttributes = Attributes []
+    , definitionModules =
+        [ Module
+            { moduleName = ModuleName "TEST-1"
+            , moduleSentences = []
+            , moduleAttributes = Attributes []
+            }
+        , Module
+            { moduleName = ModuleName "TEST-2"
+            , moduleSentences = []
+            , moduleAttributes = Attributes []
+            }
+        ]
+    }
