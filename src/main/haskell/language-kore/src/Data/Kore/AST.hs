@@ -235,9 +235,12 @@ data MLPatternType
     | IffPatternType
     | ImpliesPatternType
     | InPatternType
+    | NextPatternType
     | NotPatternType
     | OrPatternType
+    | RewritesPatternType
     | TopPatternType
+    deriving Show
 
 {-|'And' corresponds to the @\and@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -443,6 +446,24 @@ data In a = In
     }
     deriving (Eq, Show, Typeable)
 
+
+{-|'Next' corresponds to the @\next@ branch of the @object-pattern@
+syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
+
+Although there is no 'meta' version of @\next@, there is an 'a' type parameter
+which should verify 'IsMeta a'. The object-only restriction is done at the
+Pattern level.
+
+'nextSort' is both the sort of the operand and the sort of the result.
+
+This represents the '∘ nextPattern' Matching Logic construct.
+-}
+data Next a = Next
+    { nextSort    :: !(Sort a)
+    , nextPattern :: !UnifiedPattern
+    }
+    deriving (Eq, Show, Typeable)
+
 {-|'Not' corresponds to the @\not@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -475,6 +496,25 @@ data Or a = Or
     { orSort   :: !(Sort a)
     , orFirst  :: !UnifiedPattern
     , orSecond :: !UnifiedPattern
+    }
+    deriving (Eq, Show, Typeable)
+
+{-|'Rewrites' corresponds to the @\rewrites@ branch of the @object-pattern@
+syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
+
+Although there is no 'meta' version of @\rewrites@, there is an 'a' type
+parameter which should verify 'IsMeta a'. The object-only restriction is
+done at the Pattern level.
+
+'rewritesSort' is both the sort of the operands and the sort of the result.
+
+This represents the 'rewritesFirst ⇒ rewritesSecond' Matching Logic construct.
+-}
+
+data Rewrites a = Rewrites
+    { rewritesSort   :: !(Sort a)
+    , rewritesFirst  :: !UnifiedPattern
+    , rewritesSecond :: !UnifiedPattern
     }
     deriving (Eq, Show, Typeable)
 
@@ -513,8 +553,10 @@ data Pattern a
     | IffPattern !(Iff a)
     | ImpliesPattern !(Implies a)
     | InPattern !(In a)
+    | NextPattern !(Next Object)
     | NotPattern !(Not a)
     | OrPattern !(Or a)
+    | RewritesPattern !(Rewrites Object)
     | StringLiteralPattern !StringLiteral
     | TopPattern !(Top a)
     | VariablePattern !(Variable a)
@@ -663,6 +705,16 @@ instance AsPattern Top where
 instance AsPattern Variable where
     asPattern = VariablePattern
 
+
+class AsObjectPattern t where
+    asObjectPattern :: t Object -> Pattern Object
+
+instance AsObjectPattern Next where
+    asObjectPattern = NextPattern
+
+instance AsObjectPattern Rewrites where
+    asObjectPattern = RewritesPattern
+
 {-|'MLPatternClass' offers a common interface to ML patterns
   (those starting with '\', except for 'Exists' and 'Forall')
 -}
@@ -711,6 +763,11 @@ instance MLPatternClass In where
     getPatternSorts i = [inOperandSort i, inResultSort i]
     getPatternPatterns i = [inContainedPattern i, inContainingPattern i]
 
+instance MLPatternClass Next where
+    getPatternType _ = NextPatternType
+    getPatternSorts e = [nextSort e]
+    getPatternPatterns e = [nextPattern e]
+
 instance MLPatternClass Not where
     getPatternType _ = NotPatternType
     getPatternSorts n = [notSort n]
@@ -720,6 +777,11 @@ instance MLPatternClass Or where
     getPatternType _ = OrPatternType
     getPatternSorts a = [orSort a]
     getPatternPatterns a = [orFirst a, orSecond a]
+
+instance MLPatternClass Rewrites where
+    getPatternType _ = RewritesPatternType
+    getPatternSorts e = [rewritesSort e]
+    getPatternPatterns e = [rewritesFirst e, rewritesSecond e]
 
 instance MLPatternClass Top where
     getPatternType _ = TopPatternType

@@ -1,0 +1,27 @@
+Definition
+    { definitionAttributes = Attributes []
+    , definitionModules =
+        Module
+            { moduleName = ModuleName "TEST-PATTERN-14"
+            , moduleSentences =
+                [ SentenceAxiomSentence SentenceAxiom
+                    { sentenceAxiomParameters =
+                        [ ObjectSortVariable (SortVariable (Id Object "S"))
+                        ]
+                    , sentenceAxiomPattern =
+                        ObjectPattern (NextPattern Next
+                            { nextSort =
+                                SortVariableSort (SortVariable (Id Object "S"))
+                            , nextPattern =
+                                ObjectPattern (VariablePattern Variable
+                                    { variableName = Id Object "X"
+                                    , variableSort =
+                                        SortVariableSort (SortVariable (Id Object "S"))
+                                    })
+                            })
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+                ]
+            , moduleAttributes = Attributes []
+            }
+    }

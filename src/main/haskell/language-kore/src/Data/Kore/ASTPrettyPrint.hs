@@ -335,6 +335,14 @@ instance (IsMeta a) => PrettyPrint (In a) where
             , writeFieldNewLine "inContainingPattern" inContainingPattern p
             ]
 
+instance (IsMeta a) => PrettyPrint (Next a) where
+    prettyPrint _ p@(Next _ _) =
+        writeStructure
+            "Next"
+            [ writeFieldNewLine "nextSort" nextSort p
+            , writeFieldNewLine "nextPattern" nextPattern p
+            ]
+
 instance (IsMeta a) => PrettyPrint (Not a) where
     prettyPrint _ p@(Not _ _) =
         writeStructure
@@ -350,6 +358,15 @@ instance (IsMeta a) => PrettyPrint (Or a) where
             [ writeFieldNewLine "orSort" orSort p
             , writeFieldNewLine "orFirst" orFirst p
             , writeFieldNewLine "orSecond" orSecond p
+            ]
+
+instance (IsMeta a) => PrettyPrint (Rewrites a) where
+    prettyPrint _ p@(Rewrites _ _ _) =
+        writeStructure
+            "Rewrites"
+            [ writeFieldNewLine "rewritesSort" rewritesSort p
+            , writeFieldNewLine "rewritesFirst" rewritesFirst p
+            , writeFieldNewLine "rewritesSecond" rewritesSecond p
             ]
 
 instance (IsMeta a) => PrettyPrint (Top a) where
@@ -377,12 +394,16 @@ instance (IsMeta a) => PrettyPrint (Pattern a) where
         writeOneFieldStruct flags "IffPattern" p
     prettyPrint flags (ImpliesPattern p)       =
         writeOneFieldStruct flags "ImpliesPattern" p
-    prettyPrint flags (InPattern p)           =
+    prettyPrint flags (InPattern p)            =
         writeOneFieldStruct flags "InPattern" p
+    prettyPrint flags (NextPattern p)          =
+        writeOneFieldStruct flags "NextPattern" p
     prettyPrint flags (NotPattern p)           =
         writeOneFieldStruct flags "NotPattern" p
     prettyPrint flags (OrPattern p)            =
         writeOneFieldStruct flags "OrPattern" p
+    prettyPrint flags (RewritesPattern p)      =
+        writeOneFieldStruct flags "RewritesPattern" p
     prettyPrint flags (StringLiteralPattern p) =
         writeOneFieldStruct flags "StringLiteralPattern" p
     prettyPrint flags (TopPattern p)           =
