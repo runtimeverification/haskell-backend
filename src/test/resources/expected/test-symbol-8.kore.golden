@@ -1,7 +1,7 @@
 Definition
     { definitionAttributes = Attributes []
     , definitionModules =
-        Module
+        [ Module
             { moduleName = ModuleName "TEST-SYMBOL-8"
             , moduleSentences =
                 [ SentenceSortSentence SentenceSort
@@ -31,4 +31,5 @@ Definition
                 ]
             , moduleAttributes = Attributes []
             }
+        ]
     }

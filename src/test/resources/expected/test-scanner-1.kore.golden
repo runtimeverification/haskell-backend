@@ -1,9 +1,10 @@
 Definition
     { definitionAttributes = Attributes []
     , definitionModules =
-        Module
+        [ Module
             { moduleName = ModuleName "TEST-SCANNER-1"
             , moduleSentences = []
             , moduleAttributes = Attributes []
             }
+        ]
     }

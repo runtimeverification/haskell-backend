@@ -490,5 +490,5 @@ instance PrettyPrint Definition where
             "Definition"
             [ writeAttributesField
                 "definitionAttributes" (definitionAttributes d)
-            , writeFieldNewLine "definitionModules" definitionModules d
+            , writeListField "definitionModules" definitionModules d
             ]

@@ -16,6 +16,13 @@ couple gen = do
         then return []
         else choose (0,3) >>= (`vectorOf` gen)
 
+couple1 :: Gen a -> Gen [a]
+couple1 gen = do
+    size <- getSize
+    if size <= 0
+        then vectorOf 1 gen
+        else choose (1,3) >>= (`vectorOf` gen)
+
 {-# ANN genericIdGen "HLint: ignore Use String" #-}
 genericIdGen :: [Char] -> [Char] -> Gen String
 genericIdGen firstChars nextChars = do
@@ -289,7 +296,10 @@ moduleGen = pure Module
     <*> couple (scale (`div` 2) sentenceGen)
     <*> scale (`div` 2) attributesGen
 
+modulesGen :: Gen [Module]
+modulesGen = couple1 (scale (`div` 2) moduleGen)
+
 definitionGen :: Gen Definition
 definitionGen = pure Definition
     <*> scale (`div` 2) attributesGen
-    <*> scale (`div` 2) moduleGen
+    <*> scale (`div` 2) modulesGen

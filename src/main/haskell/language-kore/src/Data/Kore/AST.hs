@@ -656,7 +656,7 @@ while the remaining three are grouped into 'definitionModules'.
 -}
 data Definition = Definition
     { definitionAttributes :: !Attributes
-    , definitionModules    :: !Module
+    , definitionModules    :: ![Module]
     }
     deriving (Eq, Show)
 

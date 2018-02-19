@@ -47,6 +47,7 @@ import           Control.Monad                    (void, when)
 import           Data.Attoparsec.ByteString.Char8 (Parser)
 import qualified Data.Attoparsec.ByteString.Char8 as Parser (char, peekChar,
                                                              peekChar')
+import           Data.Attoparsec.Combinator (many1)
 import           Data.Maybe                       (isJust)
 
 {-|'sortVariableParser' parses either an @object-sort-variable@, or a
@@ -826,7 +827,7 @@ definitionParser :: Parser Definition
 definitionParser =
     pure Definition
         <*> attributesParser
-        <*> moduleParser
+        <*> (many1 moduleParser)
 
 {-|'moduleParser' parses the module part of a Kore @definition@
 

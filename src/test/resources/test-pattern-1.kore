@@ -1,6 +1,6 @@
 []
 
-module TEST-PATTERN-1 
+module TEST-PATTERN-1
 
   axiom{S}
     \top{S}() []

@@ -280,4 +280,4 @@ instance Unparse Definition where
     unparse d = do
         unparse (definitionAttributes d)
         betweenLines
-        unparse (definitionModules d)
+        unparseList betweenLines (definitionModules d)
