@@ -2,8 +2,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Data.Kore.Substitution.TestCommon where
 
-import           Data.Kore.Substitution.Class
-
 import           Data.Kore.AST
 
 objectSort :: Sort Object

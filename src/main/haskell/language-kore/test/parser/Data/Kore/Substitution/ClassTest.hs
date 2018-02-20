@@ -8,7 +8,8 @@ import           Test.Tasty.HUnit                     (assertEqual, testCase)
 
 import           Data.Kore.AST
 import           Data.Kore.Substitution.Class
-import           Data.Kore.Substitution.List          as S
+import           Data.Kore.Substitution.List          as S (Substitution)
+import           Data.Kore.Substitution.MapClass
 import           Data.Kore.Variables.Fresh.IntCounter
 import           Data.Kore.Variables.Int
 

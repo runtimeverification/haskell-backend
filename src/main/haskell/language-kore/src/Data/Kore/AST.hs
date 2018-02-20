@@ -779,15 +779,28 @@ class MLBinderPatternClass p where
     getBinderPatternSort :: p a v rpt -> Sort a
     getBinderPatternVariable :: p a v rpt -> UnifiedVariable v
     getBinderPatternPattern :: p a v rpt -> rpt
+    binderPatternConstructor
+        :: p a v rpt -> Sort a -> UnifiedVariable v -> rpt -> Pattern a v rpt
 
 instance MLBinderPatternClass Exists where
     getBinderPatternType _ = ExistsPatternType
     getBinderPatternSort = existsSort
     getBinderPatternVariable = existsVariable
     getBinderPatternPattern = existsPattern
+    binderPatternConstructor _ s v p = ExistsPattern Exists
+        { existsSort = s
+        , existsVariable = v
+        , existsPattern = p
+        }
 
 instance MLBinderPatternClass Forall where
     getBinderPatternType _ = ForallPatternType
     getBinderPatternSort = forallSort
     getBinderPatternVariable = forallVariable
     getBinderPatternPattern = forallPattern
+    binderPatternConstructor _ s v p = ForallPattern Forall
+        { forallSort = s
+        , forallVariable = v
+        , forallPattern = p
+        }
+

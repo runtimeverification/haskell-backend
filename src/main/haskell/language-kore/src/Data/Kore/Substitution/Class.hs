@@ -1,7 +1,6 @@
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Data.Kore.Substitution.Class ( SubstitutionClass (..)
                                     , PatternSubstitutionClass (..)
                                     ) where
@@ -14,16 +13,22 @@ import           Prelude                         hiding (lookup)
 
 import           Data.Kore.AST
 import           Data.Kore.ASTTraversals         (topDownVisitorM)
+import           Data.Kore.Substitution.MapClass
 import           Data.Kore.Variables.Free
 import           Data.Kore.Variables.Fresh.Class
 
-class SubstitutionClass s v t | s -> v, s -> t where
-    isEmpty :: s -> Bool
-    lookup :: Eq v => v -> s -> Maybe t
+{-|'SubstitutionClass' represents a substitution type @s@ mapping variables
+of type @v@ to terms of type @t@.
+-}
+class MapClass s v t => SubstitutionClass s v t where
     getFreeVars :: s -> Set.Set v
     addBinding :: v -> t -> s -> s
     removeBinding :: v -> s -> s
 
+{-'SubstitutionWithFreeVars' is a substitution which can hold more free
+variables than its terms can.  'freeVars' is used to track the free variables
+in a substitution context.
+-}
 data SubstitutionWithFreeVars s var = SubstitutionWithFreeVars
     { substitution :: s
     , freeVars     :: Set.Set (UnifiedVariable var)
@@ -36,12 +41,23 @@ addFreeVariable
     -> SubstitutionWithFreeVars s var
 addFreeVariable v s = s { freeVars = v `Set.insert` freeVars s }
 
+instance ( SubstitutionClass s (UnifiedVariable var) (FixedPattern var))
+    => MapClass (SubstitutionWithFreeVars s var)
+        (UnifiedVariable var) (FixedPattern var)
+  where
+    isEmpty = isEmpty . substitution
+    lookup v = lookup v . substitution
+    toList = toList . substitution
+    fromList l = let s = fromList l in SubstitutionWithFreeVars
+        { substitution = s
+        , freeVars = getFreeVars s
+        }
+
 instance ( VariableClass var
          , SubstitutionClass s (UnifiedVariable var) (FixedPattern var)
          ) => SubstitutionClass (SubstitutionWithFreeVars s var)
-        (UnifiedVariable var) (FixedPattern var) where
-    isEmpty s = isEmpty (substitution s)
-    lookup v s = lookup v (substitution s)
+            (UnifiedVariable var) (FixedPattern var)
+  where
     removeBinding v s = s { substitution = removeBinding v (substitution s) }
     addBinding v t s =
         s { substitution = addBinding v t (substitution s)
@@ -49,17 +65,21 @@ instance ( VariableClass var
           }
     getFreeVars = freeVars
 
+{-|'PatternSubstitutionClass' defines a generic 'substitute' function
+which given a 'FixedPattern' @p@ and an @s@ of class 'SubstitutionClass',
+applies @s@ on @p@ in a monadic state used for generating fresh variables.
+-}
 class ( SubstitutionClass s (UnifiedVariable var) (FixedPattern var)
       , FreshVariablesClass m var
-      ) => PatternSubstitutionClass var s m where
+      ) => PatternSubstitutionClass var s m
+  where
     substitute
         :: FixedPattern var
         -> s
         -> m (FixedPattern var)
     substitute p s = runReaderT (substituteM p) SubstitutionWithFreeVars
         { substitution = s
-        , freeVars =
-            freeVariables p `Set.union` getFreeVars s
+        , freeVars = freeVariables p `Set.union` getFreeVars s
         }
 
 substituteM
@@ -79,47 +99,54 @@ substituteVariable (VariablePattern v) = do
         Nothing -> return $ asUnifiedPattern (VariablePattern v)
 substituteVariable p = return $ asUnifiedPattern p
 
+{-
+* if the substitution is empty, return the pattern unchanged;
+* if the pattern is a binder, handle using 'binderPatternSubstitutePreprocess'
+* if the pattern is not a binder recurse.
+-}
 substitutePreprocess
     :: (IsMeta a, PatternSubstitutionClass var s m)
     => Pattern a var (FixedPattern var)
     -> ReaderT (SubstitutionWithFreeVars s var)
         m (Either (FixedPattern var) (Pattern a var (FixedPattern var)))
-substitutePreprocess p = do
+substitutePreprocess p
+  = do
     s <- ask
     if isEmpty s then return $ Left (asUnifiedPattern p)
     else case p of
-        ExistsPattern e ->
-            substituteCheckBinder s
-                (\ srt var pat -> ExistsPattern (Exists srt var pat))
-                (existsSort e) (existsVariable e) (existsPattern e)
-        ForallPattern e ->
-            substituteCheckBinder s
-                (\ srt var pat -> ForallPattern (Forall srt var pat))
-                (forallSort e) (forallVariable e) (forallPattern e)
-        _ -> return $ Right p
+        ExistsPattern e -> binderPatternSubstitutePreprocess s e
+        ForallPattern f -> binderPatternSubstitutePreprocess s f
+        _               -> return $ Right p
 
-substituteCheckBinder
-    :: (PatternSubstitutionClass var s m, IsMeta a)
+{-
+* if the quantified variable is among the encountered free variables
+  in this contex, add an alpha-renaming binding to the substitution
+* if the quantified variable is replaced by this substitution,
+  susbtitute the body using the substitution without this variable
+* otherwise, do a full substitution of the body (remembering that, in this
+  context, the quantified variable is free).
+-}
+binderPatternSubstitutePreprocess
+    :: (MLBinderPatternClass q, PatternSubstitutionClass var s m, IsMeta a)
     => SubstitutionWithFreeVars s var
-    -> (Sort a -> UnifiedVariable var -> FixedPattern var
-        -> Pattern a var (FixedPattern var))
-    -> Sort a
-    -> UnifiedVariable var
-    -> FixedPattern var
+    -> q a var (FixedPattern var)
     -> ReaderT (SubstitutionWithFreeVars s var)
         m (Either (FixedPattern var) (Pattern a var (FixedPattern var)))
-substituteCheckBinder s binder sort var pat
-    | var `Set.member` vars = do
+binderPatternSubstitutePreprocess s q
+    | var `Set.member` vars
+      = do
         var' <- freshVariableSuchThat var (not . (`Set.member` vars))
-        pat' <- withReaderT (addBinding var (unifiedVariableToPattern var'))
-            (substituteM pat)
-        return $ Left $ asUnifiedPattern $ binder sort var' pat'
-    | isJust (lookup var s) =
-        substituteBinderBody (removeBinding var)
-    | otherwise = substituteBinderBody id
+        substituteBinderBodyWith var'
+            (addBinding var (unifiedVariableToPattern var'))
+    | isJust (lookup var s) = substituteFreeBinderBodyWith (removeBinding var)
+    | otherwise = substituteFreeBinderBodyWith id
   where
+    sort = getBinderPatternSort q
+    var = getBinderPatternVariable q
+    pat = getBinderPatternPattern q
     vars = getFreeVars s
-    substituteBinderBody fs = do
-        pat' <- withReaderT (addFreeVariable var . fs)
-            (substituteM pat)
-        return $ Left $ asUnifiedPattern $ binder sort var pat'
+    substituteBinderBodyWith newVar fs =
+        (Left . asUnifiedPattern . binderPatternConstructor q sort newVar) <$>
+            withReaderT fs (substituteM pat)
+    substituteFreeBinderBodyWith fs =
+        substituteBinderBodyWith var (addFreeVariable var . fs)
