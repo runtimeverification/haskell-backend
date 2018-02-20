@@ -8,7 +8,7 @@ import           Test.Tasty.HUnit                     (assertEqual, testCase)
 
 import           Data.Kore.AST
 import           Data.Kore.Substitution.Class
-import           Data.Kore.Substitution.List          as S (Substitution)
+import qualified Data.Kore.Substitution.List          as S
 import           Data.Kore.Substitution.MapClass
 import           Data.Kore.Variables.Fresh.IntCounter
 import           Data.Kore.Variables.Int
@@ -117,15 +117,15 @@ objectVariableUnifiedPatternSubstitute =
     ObjectPattern . VariablePattern . objectVariableSubstitute
 
 substitution1 :: UnifiedPatternSubstitution
-substitution1 = fromList
+substitution1 = S.fromList
   [ (unifiedObjectVariable, objectTopPattern) ]
 
 substitution2 :: UnifiedPatternSubstitution
-substitution2 = fromList
+substitution2 = S.fromList
   [ (unifiedMetaVariable, objectVariableUnifiedPattern) ]
 
 substitution3 :: UnifiedPatternSubstitution
-substitution3 = fromList
+substitution3 = S.fromList
   [ (unifiedObjectVariable, metaVariableUnifiedPattern) ]
 
 existsObjectUnifiedPattern1 :: UnifiedPattern

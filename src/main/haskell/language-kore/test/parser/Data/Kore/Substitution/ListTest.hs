@@ -34,18 +34,18 @@ substitutionListTests =
             (assertEqual ""
                 [ (unifiedMetaVariable, objectBottomPattern)
                 , (unifiedObjectVariable, objectTopPattern)]
-                (toList $ addBinding
+                (toList $ insert
                     unifiedMetaVariable objectBottomPattern substitution1)
             )
          , testCase "Add binding 2"
             (assertEqual ""
                 [ (unifiedObjectVariable, objectBottomPattern) ]
-                (toList $ addBinding
+                (toList $ insert
                     unifiedObjectVariable objectBottomPattern substitution1)
             )
          , testCase "Remove binding"
             (assertEqual ""
                 []
-                (toList $ removeBinding unifiedObjectVariable substitution1)
+                (toList $ delete unifiedObjectVariable substitution1)
             )
         ]

@@ -22,8 +22,6 @@ of type @v@ to terms of type @t@.
 -}
 class MapClass s v t => SubstitutionClass s v t where
     getFreeVars :: s -> Set.Set v
-    addBinding :: v -> t -> s -> s
-    removeBinding :: v -> s -> s
 
 {-'SubstitutionWithFreeVars' is a substitution which can hold more free
 variables than its terms can.  'freeVars' is used to track the free variables
@@ -41,28 +39,24 @@ addFreeVariable
     -> SubstitutionWithFreeVars s var
 addFreeVariable v s = s { freeVars = v `Set.insert` freeVars s }
 
-instance ( SubstitutionClass s (UnifiedVariable var) (FixedPattern var))
+instance ( VariableClass var
+         , SubstitutionClass s (UnifiedVariable var) (FixedPattern var))
     => MapClass (SubstitutionWithFreeVars s var)
         (UnifiedVariable var) (FixedPattern var)
   where
     isEmpty = isEmpty . substitution
     lookup v = lookup v . substitution
-    toList = toList . substitution
-    fromList l = let s = fromList l in SubstitutionWithFreeVars
-        { substitution = s
-        , freeVars = getFreeVars s
-        }
+    delete v s = s { substitution = delete v (substitution s) }
+    insert v t s =
+        s { substitution = insert v t (substitution s)
+          , freeVars = freeVars s `Set.union` freeVariables t
+          }
 
 instance ( VariableClass var
          , SubstitutionClass s (UnifiedVariable var) (FixedPattern var)
          ) => SubstitutionClass (SubstitutionWithFreeVars s var)
             (UnifiedVariable var) (FixedPattern var)
   where
-    removeBinding v s = s { substitution = removeBinding v (substitution s) }
-    addBinding v t s =
-        s { substitution = addBinding v t (substitution s)
-          , freeVars = freeVars s `Set.union` freeVariables t
-          }
     getFreeVars = freeVars
 
 {-|'PatternSubstitutionClass' defines a generic 'substitute' function
@@ -137,8 +131,8 @@ binderPatternSubstitutePreprocess s q
       = do
         var' <- freshVariableSuchThat var (not . (`Set.member` vars))
         substituteBinderBodyWith var'
-            (addBinding var (unifiedVariableToPattern var'))
-    | isJust (lookup var s) = substituteFreeBinderBodyWith (removeBinding var)
+            (insert var (unifiedVariableToPattern var'))
+    | isJust (lookup var s) = substituteFreeBinderBodyWith (delete var)
     | otherwise = substituteFreeBinderBodyWith id
   where
     sort = getBinderPatternSort q
