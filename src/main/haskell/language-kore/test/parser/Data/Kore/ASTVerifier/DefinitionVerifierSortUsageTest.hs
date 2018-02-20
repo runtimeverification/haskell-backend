@@ -1,13 +1,14 @@
 module Data.Kore.ASTVerifier.DefinitionVerifierSortUsageTest
     (definitionVerifierSortUsageTests) where
 
-import           Test.Tasty       (TestTree, testGroup)
+import           Test.Tasty                                          (TestTree,
+                                                                      testGroup)
 
 import           Data.Kore.AST
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
-import qualified Data.List as List
-import           Data.Maybe (mapMaybe)
+import qualified Data.List                                           as List
+import           Data.Maybe                                          (mapMaybe)
 
 data TestFlag
     = CannotSeeSortVariables
@@ -34,7 +35,7 @@ data FailureConfiguration a
     | FailureConfigurationSkipAll
 
 data FlaggedTestData = FlaggedTestData
-    { flaggedTestDataFlags :: ![TestFlag]
+    { flaggedTestDataFlags    :: ![TestFlag]
     , flaggedTestDataTestData :: !([Sentence] -> TestData)
     }
 
@@ -107,7 +108,7 @@ definitionVerifierSortUsageTests =
                 }
             )
             (ExpectedErrorMessage "Sort variable 's' not declared.")
-            (ErrorStack ["sort variable 's'"])
+            (ErrorStack [])
             (TestedSort (objectVariableSort (SortVariableName "s")))
             (NamePrefix "internal")
         , let

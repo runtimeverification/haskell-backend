@@ -5,13 +5,15 @@ import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.SortVerifier
 import           Data.Kore.Error
 import           Data.Kore.Unparser.Unparse
-import qualified Data.Map as Map
-import qualified Data.Set as Set
-import           Data.Typeable (Typeable)
+
+import           Control.Monad                      (zipWithM_)
+import qualified Data.Map                           as Map
+import qualified Data.Set                           as Set
+import           Data.Typeable                      (Typeable)
 
 data DeclaredVariables = DeclaredVariables
     { objectDeclaredVariables :: !(Map.Map (Id Object) (Variable Object))
-    , metaDeclaredVariables :: !(Map.Map (Id Meta) (Variable Meta))
+    , metaDeclaredVariables   :: !(Map.Map (Id Meta) (Variable Meta))
     }
 
 emptyDeclaredVariables :: DeclaredVariables
@@ -22,7 +24,7 @@ emptyDeclaredVariables = DeclaredVariables
 
 data ApplicationSorts a = ApplicationSorts
     { applicationSortsOperands :: ![Sort a]
-    , applicationSortsReturn :: !(Sort a)
+    , applicationSortsReturn   :: !(Sort a)
     }
 
 data VerifyHelpers a = VerifyHelpers
@@ -87,10 +89,10 @@ verifyPattern
     -> IndexedModule
     -> Set.Set UnifiedSortVariable
     -> Either (Error VerifyError) VerifySuccess
-verifyPattern unifiedPattern maybeSort indexedModule sortVariables =
+verifyPattern unifiedPattern maybeExpectedSort indexedModule sortVariables =
     internalVerifyPattern
         unifiedPattern
-        maybeSort
+        maybeExpectedSort
         indexedModule
         sortVariables
         emptyDeclaredVariables
@@ -172,21 +174,21 @@ verifyParametrizedPattern
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
     -> Either (Error VerifyError) (Sort a)
-verifyParametrizedPattern (AndPattern p) = verifyMLPattern p
+verifyParametrizedPattern (AndPattern p)         = verifyMLPattern p
 verifyParametrizedPattern (ApplicationPattern p) = verifyApplication p
-verifyParametrizedPattern (BottomPattern p) = verifyMLPattern p
-verifyParametrizedPattern (CeilPattern p) = verifyMLPattern p
-verifyParametrizedPattern (EqualsPattern p) = verifyMLPattern p
-verifyParametrizedPattern (ExistsPattern p) = verifyBinder p
-verifyParametrizedPattern (FloorPattern p) = verifyMLPattern p
-verifyParametrizedPattern (ForallPattern p) = verifyBinder p
-verifyParametrizedPattern (IffPattern p) = verifyMLPattern p
-verifyParametrizedPattern (ImpliesPattern p) = verifyMLPattern p
-verifyParametrizedPattern (InPattern p) = verifyMLPattern p
-verifyParametrizedPattern (NotPattern p) = verifyMLPattern p
-verifyParametrizedPattern (OrPattern p) = verifyMLPattern p
-verifyParametrizedPattern (TopPattern p) = verifyMLPattern p
-verifyParametrizedPattern (VariablePattern p) = verifyVariableUsage p
+verifyParametrizedPattern (BottomPattern p)      = verifyMLPattern p
+verifyParametrizedPattern (CeilPattern p)        = verifyMLPattern p
+verifyParametrizedPattern (EqualsPattern p)      = verifyMLPattern p
+verifyParametrizedPattern (ExistsPattern p)      = verifyBinder p
+verifyParametrizedPattern (FloorPattern p)       = verifyMLPattern p
+verifyParametrizedPattern (ForallPattern p)      = verifyBinder p
+verifyParametrizedPattern (IffPattern p)         = verifyMLPattern p
+verifyParametrizedPattern (ImpliesPattern p)     = verifyMLPattern p
+verifyParametrizedPattern (InPattern p)          = verifyMLPattern p
+verifyParametrizedPattern (NotPattern p)         = verifyMLPattern p
+verifyParametrizedPattern (OrPattern p)          = verifyMLPattern p
+verifyParametrizedPattern (TopPattern p)         = verifyMLPattern p
+verifyParametrizedPattern (VariablePattern p)    = verifyVariableUsage p
 
 verifyMLPattern
     :: (MLPatternClass p, IsMeta a)
@@ -229,24 +231,35 @@ verifyPatternsWithSorts
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
     -> Either (Error VerifyError) VerifySuccess
-verifyPatternsWithSorts [] [] _ _ _ = verifySuccess
-verifyPatternsWithSorts [] _ _ _ _ = Left (koreError "Too many operands.")
-verifyPatternsWithSorts _ [] _ _ _ = Left (koreError "Not enough operands.")
 verifyPatternsWithSorts
-    (sort:sorts)
-    (operand:operands)
+    sorts
+    operands
     indexedModule
     declaredSortVariables
     declaredVariables
   = do
-    internalVerifyPattern
-        operand
-        (Just (asUnifiedSort sort))
-        indexedModule
-        declaredSortVariables
-        declaredVariables
-    verifyPatternsWithSorts
-        sorts operands indexedModule declaredSortVariables declaredVariables
+    koreFailWhen (declaredOperandCount /= actualOperandCount)
+        (  "Expected "
+        ++ show declaredOperandCount
+        ++ " operands, but got "
+        ++ show actualOperandCount
+        ++ "."
+        )
+    zipWithM_
+        (\sort operand ->
+            internalVerifyPattern
+                operand
+                (Just (asUnifiedSort sort))
+                indexedModule
+                declaredSortVariables
+                declaredVariables
+        )
+        sorts
+        operands
+    verifySuccess
+  where
+    declaredOperandCount = length sorts
+    actualOperandCount = length operands
 
 verifyApplication
     :: IsMeta a

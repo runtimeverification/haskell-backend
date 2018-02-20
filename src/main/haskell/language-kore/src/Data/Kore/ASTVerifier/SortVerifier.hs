@@ -6,8 +6,8 @@ module Data.Kore.ASTVerifier.SortVerifier
 import           Data.Kore.AST
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.Error
-import qualified Data.Set as Set
-import           Data.Typeable (Typeable)
+import qualified Data.Set                    as Set
+import           Data.Typeable               (Typeable)
 
 verifySortUsage
     :: IsMeta a
@@ -15,15 +15,11 @@ verifySortUsage
     -> Set.Set UnifiedSortVariable
     -> Sort a
     -> Either (Error VerifyError) VerifySuccess
-verifySortUsage _ declaredSortVariables (SortVariableSort variable) =
-    withContext
-        ("sort variable '" ++ getId variableId ++ "'")
-        (if unifiedVariable `Set.member` declaredSortVariables
-            then verifySuccess
-            else
-                koreFail
-                    ("Sort variable '" ++ getId variableId ++ "' not declared.")
-        )
+verifySortUsage _ declaredSortVariables (SortVariableSort variable)
+  = do
+    koreFailWhen (not (unifiedVariable `Set.member` declaredSortVariables))
+        ("Sort variable '" ++ getId variableId ++ "' not declared.")
+    verifySuccess
   where
     variableId = getSortVariable variable
     unifiedVariable = asUnifiedSortVariable variable
@@ -49,20 +45,18 @@ verifySortMatchesDeclaration
     -> Either (Error VerifyError) VerifySuccess
 verifySortMatchesDeclaration
     findSortDescription declaredSortVariables sort sortDescription
-  =
-    if actualSortCount /= declaredSortCount
-        then koreFail
-                (  "Expected "
-                ++ show declaredSortCount
-                ++ " sort arguments, but got "
-                ++ show actualSortCount
-                ++ "."
-                )
-        else do
-            mapM_
-                (verifySortUsage findSortDescription declaredSortVariables)
-                (sortActualSorts sort)
-            verifySuccess
+  = do
+    koreFailWhen (actualSortCount /= declaredSortCount)
+        (  "Expected "
+        ++ show declaredSortCount
+        ++ " sort arguments, but got "
+        ++ show actualSortCount
+        ++ "."
+        )
+    mapM_
+        (verifySortUsage findSortDescription declaredSortVariables)
+        (sortActualSorts sort)
+    verifySuccess
   where
     actualSortCount = length (sortActualSorts sort)
     declaredSortCount = length (sortDescriptionParameters sortDescription)
@@ -81,12 +75,11 @@ buildDeclaredUnifiedSortVariables
 buildDeclaredUnifiedSortVariables [] = Right Set.empty
 buildDeclaredUnifiedSortVariables (unifiedVariable : list) = do
     variables <- buildDeclaredUnifiedSortVariables list
-    if unifiedVariable `Set.member` variables
-        then koreFail
+    koreFailWhen (unifiedVariable `Set.member` variables)
                 (  "Duplicated sort variable: '"
                 ++ extractVariableName unifiedVariable
                 ++ "'.")
-        else return (Set.insert unifiedVariable variables)
+    return (Set.insert unifiedVariable variables)
   where
     extractVariableName (ObjectSortVariable variable) =
         getId (getSortVariable variable)

@@ -1,15 +1,15 @@
 module Data.Kore.ASTVerifier.SentenceVerifier
     (verifyUniqueNames, verifySentences) where
 
-import           Control.Monad (foldM)
+import           Control.Monad                            (foldM)
 import           Data.Kore.AST
 import           Data.Kore.ASTVerifier.AttributesVerifier
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.PatternVerifier
 import           Data.Kore.ASTVerifier.SortVerifier
 import           Data.Kore.Error
-import           Data.Maybe (mapMaybe)
-import qualified Data.Set as Set
+import           Data.Maybe                               (mapMaybe)
+import qualified Data.Set                                 as Set
 
 verifyUniqueNames
     :: [Sentence]
@@ -127,7 +127,7 @@ verifySymbolAliasSentence
             verifyAttributes
                 (getSentenceSymbolOrAliasAttributes sentence)
                 indexedModule
-                (Set.fromList (map asUnifiedSortVariable sortParams))
+                variables
         )
   where
     sortParams = getSentenceSymbolOrAliasSortParams sentence

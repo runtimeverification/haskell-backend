@@ -2,8 +2,8 @@ module Data.Kore.ASTVerifier.IndexedModule
     (implicitIndexedModule, indexModule) where
 
 import           Data.Kore.AST
-import qualified Data.Map as Map
-import qualified Data.Set as Set
+import qualified Data.Map      as Map
+import qualified Data.Set      as Set
 
 implicitIndexedModule :: ModuleName -> (IndexedModule, Set.Set String)
 implicitIndexedModule name =
@@ -38,20 +38,20 @@ metaSortDescription sortType =
 
 indexModule :: Module -> IndexedModule -> IndexedModule
 indexModule koreModule defaultIndexedModule =
-    foldl indexModuleSentence indexedModule (moduleSentences koreModule)
-  where
-    indexedModule =
+    foldr
+        indexModuleSentence
         defaultIndexedModule
             { indexedModuleName = moduleName koreModule
             , indexedModuleAttributes = moduleAttributes koreModule
             }
+        (moduleSentences koreModule)
 
 indexModuleSentence
-    :: IndexedModule -> Sentence -> IndexedModule
+    :: Sentence -> IndexedModule -> IndexedModule
 indexModuleSentence
+    (MetaSentenceAliasSentence sentence)
     indexedModule @ IndexedModule
         { indexedModuleMetaAliasSentences = sentences }
-    (MetaSentenceAliasSentence sentence)
   =
     indexedModule
         { indexedModuleMetaAliasSentences =
@@ -61,9 +61,9 @@ indexModuleSentence
                 sentences
         }
 indexModuleSentence
+    (ObjectSentenceAliasSentence sentence)
     indexedModule @ IndexedModule
         { indexedModuleObjectAliasSentences = sentences }
-    (ObjectSentenceAliasSentence sentence)
   =
     indexedModule
         { indexedModuleObjectAliasSentences =
@@ -73,9 +73,9 @@ indexModuleSentence
                 sentences
         }
 indexModuleSentence
+    (MetaSentenceSymbolSentence sentence)
     indexedModule @ IndexedModule
         { indexedModuleMetaSymbolSentences = sentences }
-    (MetaSentenceSymbolSentence sentence)
   =
     indexedModule
         { indexedModuleMetaSymbolSentences =
@@ -85,9 +85,9 @@ indexModuleSentence
                 sentences
         }
 indexModuleSentence
+    (ObjectSentenceSymbolSentence sentence)
     indexedModule @ IndexedModule
         { indexedModuleObjectSymbolSentences = sentences }
-    (ObjectSentenceSymbolSentence sentence)
   =
     indexedModule
         { indexedModuleObjectSymbolSentences =
@@ -97,9 +97,9 @@ indexModuleSentence
                 sentences
         }
 indexModuleSentence
+    (SentenceSortSentence sentence)
     indexedModule @ IndexedModule
         { indexedModuleObjectSortDescriptions = descriptions }
-    (SentenceSortSentence sentence)
   =
     indexedModule
         { indexedModuleObjectSortDescriptions =
@@ -109,11 +109,12 @@ indexModuleSentence
                 descriptions
         }
 indexModuleSentence
-    indexedModule @ IndexedModule { indexedModuleAxioms = sentences }
     (SentenceAxiomSentence sentence)
+    indexedModule @ IndexedModule { indexedModuleAxioms = sentences }
   =
     indexedModule { indexedModuleAxioms = sentence : sentences }
 
+-- TODO(virgil): Replace sort description with SentenceSort (Meta/Object)
 toSortDescription :: SentenceSort -> SortDescription Object
 toSortDescription sentence = SortDescription
     { sortDescriptionName = sentenceSortName sentence

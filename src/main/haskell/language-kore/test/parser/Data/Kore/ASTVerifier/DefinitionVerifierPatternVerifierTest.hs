@@ -1,12 +1,13 @@
 module Data.Kore.ASTVerifier.DefinitionVerifierPatternVerifierTest
     (definitionVerifierPatternVerifierTests) where
 
-import           Test.Tasty       (TestTree, testGroup)
+import           Test.Tasty                                          (TestTree,
+                                                                      testGroup)
 
 import           Data.Kore.AST
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
-import qualified Data.List as List
+import qualified Data.List                                           as List
 
 data PatternRestrict
     = NeedsSortVariables
@@ -15,7 +16,7 @@ data PatternRestrict
     | NoRestrict
 
 data TestPattern a = TestPattern
-    { testPatternPattern :: Pattern a
+    { testPatternPattern    :: Pattern a
     , testPatternErrorStack :: ErrorStack
     }
 
@@ -119,7 +120,6 @@ definitionVerifierPatternVerifierTests =
             (ErrorStack
                 [ "\\exists 'ObjectVariable'"
                 , "\\exists 'ObjectVariable'"
-                , "sort variable 'ObjectSortVariable'"
                 ]
             )
             (ExistsPattern Exists
@@ -241,7 +241,7 @@ definitionVerifierPatternVerifierTests =
             NeedsInternalDefinitions
         , failureTestsForObjectPattern
             "Application pattern - not enough arguments"
-            (ExpectedErrorMessage "Not enough operands.")
+            (ExpectedErrorMessage "Expected 1 operands, but got 0.")
             (ErrorStack ["symbol or alias 'ObjectSymbol'"])
             (applicationPatternWithChildren objectSymbolName [])
             (NamePrefix "dummy")
@@ -255,7 +255,7 @@ definitionVerifierPatternVerifierTests =
             ]
             NeedsInternalDefinitions
         , failureTestsForObjectPattern "Object pattern - too many arguments"
-            (ExpectedErrorMessage "Too many operands.")
+            (ExpectedErrorMessage "Expected 1 operands, but got 2.")
             (ErrorStack ["symbol or alias 'ObjectSymbol'"])
             (applicationPatternWithChildren
                 objectSymbolName
@@ -277,7 +277,7 @@ definitionVerifierPatternVerifierTests =
             NeedsInternalDefinitions
         , failureTestsForObjectPattern
             "Object pattern alias - too many arguments"
-            (ExpectedErrorMessage "Too many operands.")
+            (ExpectedErrorMessage "Expected 1 operands, but got 2.")
             (ErrorStack ["symbol or alias 'ObjectAlias'"])
             (applicationPatternWithChildren
                 objectAliasNameAsSymbol
@@ -298,7 +298,7 @@ definitionVerifierPatternVerifierTests =
             ]
             NeedsInternalDefinitions
         , failureTestsForMetaPattern "Meta pattern - wrong argument count"
-            (ExpectedErrorMessage "Not enough operands.")
+            (ExpectedErrorMessage "Expected 1 operands, but got 0.")
             (ErrorStack ["symbol or alias '#MetaSymbol'"])
             (applicationPatternWithChildren metaSymbolName [])
             (NamePrefix "#dummy")

@@ -1,6 +1,7 @@
 module Data.Kore.Error where
 
-import Data.List(intercalate)
+import           Control.Monad (when)
+import           Data.List     (intercalate)
 
 data Error a = Error
     { errorContext :: ![String]
@@ -24,9 +25,7 @@ koreFail errorMessage =
 
 koreFailWhen :: Bool -> String -> Either (Error a) ()
 koreFailWhen condition errorMessage =
-    if condition
-        then koreFail errorMessage
-        else Right ()
+    when condition (koreFail errorMessage)
 
 withContext
     :: String -> Either (Error a) result -> Either (Error a) result

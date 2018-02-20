@@ -3,10 +3,10 @@ module Data.Kore.ASTVerifier.DefinitionVerifier (verifyDefinition) where
 import           Data.Kore.AST
 import           Data.Kore.ASTVerifier.AttributesVerifier
 import           Data.Kore.ASTVerifier.Error
-import           Data.Kore.ASTVerifier.ModuleVerifier
 import           Data.Kore.ASTVerifier.IndexedModule
+import           Data.Kore.ASTVerifier.ModuleVerifier
 import           Data.Kore.Error
-import qualified Data.Set as Set
+import qualified Data.Set                                 as Set
 
 verifyDefinition :: Definition -> Either (Error VerifyError) VerifySuccess
 verifyDefinition definition = do
