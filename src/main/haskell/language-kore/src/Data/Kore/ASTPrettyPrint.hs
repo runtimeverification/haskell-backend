@@ -438,6 +438,16 @@ instance (IsMeta a) => PrettyPrint (SentenceSymbol a) where
                 "sentenceSymbolAttributes" (sentenceSymbolAttributes sa)
             ]
 
+instance PrettyPrint SentenceImport where
+    prettyPrint _ sa@(SentenceImport _ _) =
+        writeStructure
+            "SentenceImport"
+            [ writeFieldNewLine
+                "sentenceImportModuleName" sentenceImportModuleName sa
+            , writeAttributesField
+                "sentenceAxiomAttributes" (sentenceImportAttributes sa)
+            ]
+
 instance PrettyPrint SentenceAxiom where
     prettyPrint _ sa@(SentenceAxiom _ _ _) =
         writeStructure
@@ -470,6 +480,8 @@ instance PrettyPrint Sentence where
         writeOneFieldStruct flags "MetaSentenceSymbolSentence" s
     prettyPrint flags (ObjectSentenceSymbolSentence s) =
         writeOneFieldStruct flags "ObjectSentenceSymbolSentence" s
+    prettyPrint flags (SentenceImportSentence s)        =
+        writeOneFieldStruct flags "SentenceImportSentence" s
     prettyPrint flags (SentenceAxiomSentence s)        =
         writeOneFieldStruct flags "SentenceAxiomSentence" s
     prettyPrint flags (SentenceSortSentence s)         =
@@ -490,5 +502,5 @@ instance PrettyPrint Definition where
             "Definition"
             [ writeAttributesField
                 "definitionAttributes" (definitionAttributes d)
-            , writeFieldNewLine "definitionModules" definitionModules d
+            , writeListField "definitionModules" definitionModules d
             ]

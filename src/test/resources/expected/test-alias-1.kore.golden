@@ -1,7 +1,7 @@
 Definition
     { definitionAttributes = Attributes []
     , definitionModules =
-        Module
+        [ Module
             { moduleName = ModuleName "TEST-ALIAS-1"
             , moduleSentences =
                 [ SentenceSortSentence SentenceSort
@@ -26,4 +26,5 @@ Definition
                 ]
             , moduleAttributes = Attributes []
             }
+        ]
     }
