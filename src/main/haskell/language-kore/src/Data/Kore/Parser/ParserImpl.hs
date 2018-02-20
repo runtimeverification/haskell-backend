@@ -827,7 +827,7 @@ definitionParser :: Parser Definition
 definitionParser =
     pure Definition
         <*> attributesParser
-        <*> (many1 moduleParser)
+        <*> many1 moduleParser
 
 {-|'moduleParser' parses the module part of a Kore @definition@
 
@@ -878,7 +878,7 @@ BNF definition fragments:
 -}
 sentenceParser :: Parser Sentence
 sentenceParser = keywordBasedParsers
-    [ ( "alias", sentenceConstructorRemainderParser AliasSentenceType)
+    [ ( "alias", sentenceConstructorRemainderParser AliasSentenceType )
     , ( "axiom", axiomSentenceRemainderParser )
     , ( "sort", sortSentenceRemainderParser )
     , ( "symbol", sentenceConstructorRemainderParser SymbolSentenceType )

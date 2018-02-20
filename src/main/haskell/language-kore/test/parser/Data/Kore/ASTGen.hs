@@ -18,10 +18,9 @@ couple gen = do
 
 couple1 :: Gen a -> Gen [a]
 couple1 gen = do
-    size <- getSize
-    if size <= 0
-        then vectorOf 1 gen
-        else choose (1,3) >>= (`vectorOf` gen)
+    x <- gen
+    xs <- couple gen
+    return (x:xs)
 
 {-# ANN genericIdGen "HLint: ignore Use String" #-}
 genericIdGen :: [Char] -> [Char] -> Gen String
