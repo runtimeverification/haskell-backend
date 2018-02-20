@@ -31,4 +31,4 @@ makeCharDict dict defaultValue =
       [(c, fromMaybe defaultValue (lookup c dict))| c <- ['\0'..'\255']]
 
 (!) :: CharDict a -> Char -> a
-dict ! c = (getCharDict dict) Array.! c
+dict ! c = getCharDict dict Array.! c

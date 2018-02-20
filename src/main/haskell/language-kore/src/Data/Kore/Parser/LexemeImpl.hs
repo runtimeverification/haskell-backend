@@ -349,9 +349,8 @@ keywordEndParser = do
     mc <- Parser.peekChar
     case mc of
         Nothing -> return ()
-        Just c -> if c `CharSet.elem` idCharSet
-            then fail "Expecting keyword to end."
-            else return ()
+        Just c -> when (c `CharSet.elem` idCharSet) $
+            fail "Expecting keyword to end."
 
 {-|'keywordBasedParsers' consumes one of the strings in the provided pairs,
 then parses an element using the corresponding parser. Checks that the consumed
@@ -361,8 +360,7 @@ string is not followed by a character which could be part of an
 Fails if one of the strings is a prefix of another one.
 -}
 keywordBasedParsers :: [(String, Parser a)] -> Parser a
-keywordBasedParsers stringParsers =
-    prefixBasedParsers mlLexemeParser stringParsers
+keywordBasedParsers = prefixBasedParsers mlLexemeParser
 
 {-|'prefixBasedParsers' consumes one of the strings in the provided pairs,
 then parses an element using the corresponding parser.
