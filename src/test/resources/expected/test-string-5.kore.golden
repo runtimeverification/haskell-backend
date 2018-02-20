@@ -4,9 +4,10 @@ Definition
             [ MetaPattern (StringLiteralPattern (StringLiteral "\u7777"))
             ]
     , definitionModules =
-        Module
+        [ Module
             { moduleName = ModuleName "TEST-STRING-5"
             , moduleSentences = []
             , moduleAttributes = Attributes []
             }
+        ]
     }

@@ -592,6 +592,16 @@ data SentenceSymbol a = SentenceSymbol
     }
     deriving (Eq, Show, Typeable)
 
+
+{-|'SentenceImport' corresponds to the @import-declaration@ syntactic category
+from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
+-}
+data SentenceImport = SentenceImport
+    { sentenceImportModuleName :: !ModuleName
+    , sentenceImportAttributes :: !Attributes
+    }
+    deriving (Eq, Show, Typeable)
+
 {-|'SentenceAxiom' corresponds to the @axiom-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
@@ -624,6 +634,7 @@ data Sentence
     | ObjectSentenceAliasSentence !(SentenceAlias Object)
     | MetaSentenceSymbolSentence !(SentenceSymbol Meta)
     | ObjectSentenceSymbolSentence !(SentenceSymbol Object)
+    | SentenceImportSentence !SentenceImport
     | SentenceAxiomSentence !SentenceAxiom
     | SentenceSortSentence !SentenceSort
     deriving (Eq, Show)
@@ -656,7 +667,7 @@ while the remaining three are grouped into 'definitionModules'.
 -}
 data Definition = Definition
     { definitionAttributes :: !Attributes
-    , definitionModules    :: !Module
+    , definitionModules    :: ![Module]
     }
     deriving (Eq, Show)
 

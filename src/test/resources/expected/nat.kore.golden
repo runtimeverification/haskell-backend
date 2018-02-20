@@ -1,7 +1,7 @@
 Definition
     { definitionAttributes = Attributes []
     , definitionModules =
-        Module
+        [ Module
             { moduleName = ModuleName "NAT"
             , moduleSentences =
                 [ SentenceSortSentence SentenceSort
@@ -495,4 +495,5 @@ Definition
                 ]
             , moduleAttributes = Attributes []
             }
+        ]
     }

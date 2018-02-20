@@ -33,6 +33,50 @@ unparseUnitTests =
                 , moduleAttributes = Attributes []
                 }
             "module t\nendmodule\n[]"
+        , unparseParseTest
+            definitionParser
+            Definition
+                { definitionAttributes = Attributes {getAttributes = []}
+                , definitionModules =
+                    [ Module
+                        { moduleName = ModuleName {getModuleName = "i"}
+                        , moduleSentences = []
+                        , moduleAttributes = Attributes {getAttributes = []}
+                        }
+                    , Module
+                        { moduleName = ModuleName {getModuleName = "k"}
+                        , moduleSentences = []
+                        , moduleAttributes = Attributes {getAttributes = []}
+                        }
+                    ]
+                }
+        , unparseTest
+            Definition
+                { definitionAttributes = Attributes {getAttributes = []}
+                , definitionModules =
+                    [ Module
+                        { moduleName = ModuleName {getModuleName = "i"}
+                        , moduleSentences = []
+                        , moduleAttributes = Attributes {getAttributes = []}
+                        }
+                    , Module
+                        { moduleName = ModuleName {getModuleName = "k"}
+                        , moduleSentences = []
+                        , moduleAttributes = Attributes {getAttributes = []}
+                        }
+                    ]
+                }
+            (  "[]\n\n"
+            ++ "    module i\n    endmodule\n    []\n"
+            ++ "    module k\n    endmodule\n    []\n"
+            )
+        , unparseTest
+            ( SentenceImportSentence SentenceImport
+                { sentenceImportModuleName = ModuleName {getModuleName = "sl"}
+                , sentenceImportAttributes = Attributes { getAttributes = [] }
+                }
+            )
+            "import sl[]"
         ]
 
 unparseParseTests :: TestTree
@@ -89,6 +133,15 @@ parse parser input =
 
 unparseParseProp :: (Unparse a, Eq a) => Parser.Parser a -> a -> Bool
 unparseParseProp p a = parse p (unparseToString a) == Right a
+
+unparseParseTest
+    :: (Unparse a, Eq a, Show a) => Parser.Parser a -> a -> TestTree
+unparseParseTest parser astInput =
+    testCase
+        ("Parsing + unparsing.")
+        (assertEqual "Expecting unparse success!"
+            (Right astInput)
+            (parse parser (unparseToString astInput)))
 
 unparseTest :: (Unparse a, Show a) => a -> String -> TestTree
 unparseTest astInput expected =

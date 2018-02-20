@@ -1,7 +1,7 @@
 Definition
     { definitionAttributes = Attributes []
     , definitionModules =
-        Module
+        [ Module
             { moduleName = ModuleName "TEST-PATTERN-3"
             , moduleSentences =
                 [ SentenceAxiomSentence SentenceAxiom
@@ -30,4 +30,5 @@ Definition
                 ]
             , moduleAttributes = Attributes []
             }
+        ]
     }

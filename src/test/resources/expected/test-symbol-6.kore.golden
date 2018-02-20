@@ -1,7 +1,7 @@
 Definition
     { definitionAttributes = Attributes []
     , definitionModules =
-        Module
+        [ Module
             { moduleName = ModuleName "TEST-SYMBOL-6"
             , moduleSentences =
                 [ ObjectSentenceSymbolSentence SentenceSymbol
@@ -23,4 +23,5 @@ Definition
                 ]
             , moduleAttributes = Attributes []
             }
+        ]
     }

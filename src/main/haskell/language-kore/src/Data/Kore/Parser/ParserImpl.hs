@@ -47,6 +47,7 @@ import           Control.Monad                    (void, when)
 import           Data.Attoparsec.ByteString.Char8 (Parser)
 import qualified Data.Attoparsec.ByteString.Char8 as Parser (char, peekChar,
                                                              peekChar')
+import           Data.Attoparsec.Combinator (many1)
 import           Data.Maybe                       (isJust)
 
 {-|'sortVariableParser' parses either an @object-sort-variable@, or a
@@ -826,7 +827,7 @@ definitionParser :: Parser Definition
 definitionParser =
     pure Definition
         <*> attributesParser
-        <*> moduleParser
+        <*> many1 moduleParser
 
 {-|'moduleParser' parses the module part of a Kore @definition@
 
@@ -866,6 +867,7 @@ BNF definition fragments:
     | ⟨axiom-declaration⟩
 ⟨axiom-declaration⟩ ::= ‘axiom’ ...
 ⟨sort-declaration⟩ ::= ‘sort’ ...
+⟨import-declaration⟩ ::= ‘import’ ⟨module-name⟩ ⟨attribute⟩
 ⟨symbol-declaration⟩ ::= ( ⟨object-symbol-declaration⟩ | ⟨meta-symbol-declaration⟩ ) ⟨attribute⟩
 ⟨object-symbol-declaration⟩ ::= ‘symbol’ ...
 ⟨meta-symbol-declaration⟩ ::= ‘symbol’ ...
@@ -876,10 +878,11 @@ BNF definition fragments:
 -}
 sentenceParser :: Parser Sentence
 sentenceParser = keywordBasedParsers
-    [ ( "alias", sentenceConstructorRemainderParser AliasSentenceType)
+    [ ( "alias", sentenceConstructorRemainderParser AliasSentenceType )
     , ( "axiom", axiomSentenceRemainderParser )
     , ( "sort", sortSentenceRemainderParser )
-    , ( "symbol", sentenceConstructorRemainderParser SymbolSentenceType)
+    , ( "symbol", sentenceConstructorRemainderParser SymbolSentenceType )
+    , ( "import", importSentenceRemainderParser )
     ]
   where
     sentenceConstructorRemainderParser sentenceType = do
@@ -925,6 +928,22 @@ aliasSymbolSentenceRemainderParser  x aliasSymbolParser constructor = do
     resultSort <- sortParser x
     attributes <- attributesParser
     return (constructor aliasSymbol sorts resultSort attributes)
+
+{-|'importSentenceRemainderParser' parses the part after the starting
+'import' keyword of an import-declaration and constructs it.
+
+BNF example:
+
+@
+⟨import-declaration⟩ ::= ... ⟨module-name⟩ ⟨attribute⟩
+@
+-}
+importSentenceRemainderParser :: Parser Sentence
+importSentenceRemainderParser = SentenceImportSentence <$>
+    ( pure SentenceImport
+        <*> moduleNameParser
+        <*> attributesParser
+    )
 
 {-|'axiomSentenceRemainderParser' parses the part after the starting
 'axiom' keyword of an axiom-declaration and constructs it.

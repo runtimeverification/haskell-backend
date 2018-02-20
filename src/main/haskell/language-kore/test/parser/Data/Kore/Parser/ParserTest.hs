@@ -47,6 +47,7 @@ koreParserTests =
         , testGroup "topPatternParser" topPatternParserTests
         , testGroup "variablePatternParser" variablePatternParserTests
         , testGroup "sentenceAliasParser" sentenceAliasParserTests
+        , testGroup "sentenceImportParser" sentenceImportParserTests
         , testGroup "sentenceAxiomParser" sentenceAxiomParserTests
         , testGroup "sentenceSortParser" sentenceSortParserTests
         , testGroup "sentenceSymbolParser" sentenceSymbolParserTests
@@ -883,6 +884,25 @@ sentenceAxiomParserTests =
             ]
         ]
 
+sentenceImportParserTests :: [TestTree]
+sentenceImportParserTests =
+    parseTree sentenceParser
+        [ success "import M[\"b\"]"
+            ( SentenceImportSentence SentenceImport
+                { sentenceImportModuleName = ModuleName "M"
+                , sentenceImportAttributes =
+                    Attributes
+                        [MetaPattern $ StringLiteralPattern (StringLiteral "b")]
+                }
+            )
+        , FailureWithoutMessage
+            [ ""
+            , "M[\"b\"]"
+            , "import [\"b\"]"
+            , "import M"
+            ]
+        ]
+
 sentenceSortParserTests :: [TestTree]
 sentenceSortParserTests =
     parseTree sentenceParser
@@ -1037,7 +1057,7 @@ definitionParserTests =
                     Attributes
                         [MetaPattern $ StringLiteralPattern (StringLiteral "a")]
                 , definitionModules =
-                    Module
+                    [ Module
                         { moduleName = ModuleName "M"
                         , moduleSentences =
                             [ SentenceSortSentence SentenceSort
@@ -1051,13 +1071,52 @@ definitionParserTests =
                                 [MetaPattern $
                                     StringLiteralPattern (StringLiteral "b")]
                         }
+                    ]
+                }
+        , success
+            (  "[\"a\"] "
+                ++ "module M sort c{}[] endmodule [\"b\"] "
+                ++ "module N sort d{}[] endmodule [\"e\"]"
+                )
+            Definition
+                { definitionAttributes =
+                    Attributes
+                        [MetaPattern $ StringLiteralPattern (StringLiteral "a")]
+                , definitionModules =
+                    [ Module
+                        { moduleName = ModuleName "M"
+                        , moduleSentences =
+                            [ SentenceSortSentence SentenceSort
+                                { sentenceSortName = Id "c"
+                                , sentenceSortParameters = []
+                                , sentenceSortAttributes = Attributes []
+                                }
+                            ]
+                        , moduleAttributes =
+                            Attributes
+                                [MetaPattern $
+                                    StringLiteralPattern (StringLiteral "b")]
+                        }
+                    , Module
+                        { moduleName = ModuleName "N"
+                        , moduleSentences =
+                            [ SentenceSortSentence SentenceSort
+                                { sentenceSortName = Id "d"
+                                , sentenceSortParameters = []
+                                , sentenceSortAttributes = Attributes []
+                                }
+                            ]
+                        , moduleAttributes =
+                            Attributes
+                                [MetaPattern $
+                                    StringLiteralPattern (StringLiteral "e")]
+                        }
+                    ]
                 }
         , FailureWithoutMessage
             [ ""
             , "[]"
             , "module M sort c{}[] endmodule [\"b\"]"
-            , "[\"a\"] module M sort c{}[] endmodule [\"b\"] "
-                ++ "module O sort c{}[] endmodule [\"c\"]"
             ]
         ]
 
