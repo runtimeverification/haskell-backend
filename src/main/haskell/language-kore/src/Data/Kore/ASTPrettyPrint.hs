@@ -257,7 +257,7 @@ instance (IsMeta a, PrettyPrint p) => PrettyPrint (Application a p) where
             , writeListField "applicationPatterns" applicationPatterns p
             ]
 
-instance (IsMeta a) => PrettyPrint (Bottom a) where
+instance (IsMeta a) => PrettyPrint (Bottom a p) where
     prettyPrint flags (Bottom p) =
         writeOneFieldStruct flags "Bottom" p
 
@@ -337,6 +337,14 @@ instance (IsMeta a, PrettyPrint p) => PrettyPrint (In a p) where
             , writeFieldNewLine "inContainingPattern" inContainingPattern p
             ]
 
+instance (IsMeta a, PrettyPrint p) => PrettyPrint (Next a p) where
+    prettyPrint _ p@(Next _ _) =
+        writeStructure
+            "Next"
+            [ writeFieldNewLine "nextSort" nextSort p
+            , writeFieldNewLine "nextPattern" nextPattern p
+            ]
+
 instance (IsMeta a, PrettyPrint p) => PrettyPrint (Not a p) where
     prettyPrint _ p@(Not _ _) =
         writeStructure
@@ -354,7 +362,16 @@ instance (IsMeta a, PrettyPrint p) => PrettyPrint (Or a p) where
             , writeFieldNewLine "orSecond" orSecond p
             ]
 
-instance (IsMeta a) => PrettyPrint (Top a) where
+instance (IsMeta a, PrettyPrint p) => PrettyPrint (Rewrites a p) where
+    prettyPrint _ p@(Rewrites _ _ _) =
+        writeStructure
+            "Rewrites"
+            [ writeFieldNewLine "rewritesSort" rewritesSort p
+            , writeFieldNewLine "rewritesFirst" rewritesFirst p
+            , writeFieldNewLine "rewritesSecond" rewritesSecond p
+            ]
+
+instance (IsMeta a) => PrettyPrint (Top a p) where
     prettyPrint flags (Top p) =
         writeOneFieldStruct flags "Top" p
 
@@ -381,12 +398,16 @@ instance (IsMeta a, PrettyPrint p, PrettyPrint (v a),
         writeOneFieldStruct flags "IffPattern" p
     prettyPrint flags (ImpliesPattern p)       =
         writeOneFieldStruct flags "ImpliesPattern" p
-    prettyPrint flags (InPattern p)           =
+    prettyPrint flags (InPattern p)            =
         writeOneFieldStruct flags "InPattern" p
+    prettyPrint flags (NextPattern p)          =
+        writeOneFieldStruct flags "NextPattern" p
     prettyPrint flags (NotPattern p)           =
         writeOneFieldStruct flags "NotPattern" p
     prettyPrint flags (OrPattern p)            =
         writeOneFieldStruct flags "OrPattern" p
+    prettyPrint flags (RewritesPattern p)      =
+        writeOneFieldStruct flags "RewritesPattern" p
     prettyPrint flags (StringLiteralPattern p) =
         writeOneFieldStruct flags "StringLiteralPattern" p
     prettyPrint flags (TopPattern p)           =
@@ -421,6 +442,16 @@ instance (IsMeta a) => PrettyPrint (SentenceSymbol a) where
                 "sentenceSymbolAttributes" (sentenceSymbolAttributes sa)
             ]
 
+instance PrettyPrint SentenceImport where
+    prettyPrint _ sa@(SentenceImport _ _) =
+        writeStructure
+            "SentenceImport"
+            [ writeFieldNewLine
+                "sentenceImportModuleName" sentenceImportModuleName sa
+            , writeAttributesField
+                "sentenceAxiomAttributes" (sentenceImportAttributes sa)
+            ]
+
 instance PrettyPrint SentenceAxiom where
     prettyPrint _ sa@(SentenceAxiom _ _ _) =
         writeStructure
@@ -453,6 +484,8 @@ instance PrettyPrint Sentence where
         writeOneFieldStruct flags "MetaSentenceSymbolSentence" s
     prettyPrint flags (ObjectSentenceSymbolSentence s) =
         writeOneFieldStruct flags "ObjectSentenceSymbolSentence" s
+    prettyPrint flags (SentenceImportSentence s)        =
+        writeOneFieldStruct flags "SentenceImportSentence" s
     prettyPrint flags (SentenceAxiomSentence s)        =
         writeOneFieldStruct flags "SentenceAxiomSentence" s
     prettyPrint flags (SentenceSortSentence s)         =
@@ -473,5 +506,5 @@ instance PrettyPrint Definition where
             "Definition"
             [ writeAttributesField
                 "definitionAttributes" (definitionAttributes d)
-            , writeFieldNewLine "definitionModules" definitionModules d
+            , writeListField "definitionModules" definitionModules d
             ]

@@ -31,8 +31,9 @@ unparseList _ []           = return ()
 unparseList between xs =
     withIndent 4 (betweenLines >> unparseList' xs) >> betweenLines
   where
-    unparseList' [x]     = unparse x
-    unparseList' (x:xs') = unparse x >> between >> unparseList' xs'
+    unparseList' []     = return ()
+    unparseList' [x]    = unparse x
+    unparseList' (y:ys) = unparse y >> between >> unparseList' ys
 
 instance Unparse a => Unparse [a] where
     unparse = unparseList (write "," >> betweenLines)
@@ -110,19 +111,21 @@ instance Unparse UnifiedPattern where
 
 
 instance Unparse MLPatternType where
-    unparse AndPatternType     = write "\\and"
-    unparse BottomPatternType  = write "\\bottom"
-    unparse CeilPatternType    = write "\\ceil"
-    unparse EqualsPatternType  = write "\\equals"
-    unparse ExistsPatternType  = write "\\exists"
-    unparse FloorPatternType   = write "\\floor"
-    unparse ForallPatternType  = write "\\forall"
-    unparse IffPatternType     = write "\\iff"
-    unparse ImpliesPatternType = write "\\implies"
-    unparse InPatternType      = write "\\in"
-    unparse NotPatternType     = write "\\not"
-    unparse OrPatternType      = write "\\or"
-    unparse TopPatternType     = write "\\top"
+    unparse AndPatternType      = write "\\and"
+    unparse BottomPatternType   = write "\\bottom"
+    unparse CeilPatternType     = write "\\ceil"
+    unparse EqualsPatternType   = write "\\equals"
+    unparse ExistsPatternType   = write "\\exists"
+    unparse FloorPatternType    = write "\\floor"
+    unparse ForallPatternType   = write "\\forall"
+    unparse IffPatternType      = write "\\iff"
+    unparse ImpliesPatternType  = write "\\implies"
+    unparse InPatternType       = write "\\in"
+    unparse NextPatternType     = write "\\next"
+    unparse NotPatternType      = write "\\not"
+    unparse OrPatternType       = write "\\or"
+    unparse RewritesPatternType = write "\\rewrites"
+    unparse TopPatternType      = write "\\top"
 
 unparseMLPattern :: (PrinterOutput w m, MLPatternClass p, Unparse rpt)
     => p a rpt -> m ()
@@ -152,7 +155,7 @@ instance Unparse p => Unparse (Application a p) where
         unparse (applicationSymbolOrAlias a)
         >> inParens (unparse (applicationPatterns a))
 
-instance Unparse (Bottom a) where
+instance Unparse (Bottom a p) where
     unparse bottom = do
         unparse BottomPatternType
         inCurlyBraces (unparse (bottomSort bottom))
@@ -184,13 +187,19 @@ instance Unparse p => Unparse (Implies a p) where
 instance Unparse p => Unparse (In a p) where
     unparse = unparseMLPattern
 
+instance Unparse p => Unparse (Next a p) where
+    unparse = unparseMLPattern
+
 instance Unparse p => Unparse (Not a p) where
     unparse = unparseMLPattern
 
 instance Unparse p => Unparse (Or a p) where
     unparse = unparseMLPattern
 
-instance Unparse (Top a) where
+instance Unparse p => Unparse (Rewrites a p) where
+    unparse = unparseMLPattern
+
+instance Unparse (Top a p) where
     unparse top = do
         unparse TopPatternType
         inCurlyBraces (unparse (topSort top))
@@ -209,8 +218,10 @@ instance (Unparse (UnifiedVariable v), Unparse p, Unparse (v a))
     unparse (IffPattern p)           = unparse p
     unparse (ImpliesPattern p)       = unparse p
     unparse (InPattern p)            = unparse p
+    unparse (NextPattern p)          = unparse p
     unparse (NotPattern p)           = unparse p
     unparse (OrPattern p)            = unparse p
+    unparse (RewritesPattern p)      = unparse p
     unparse (StringLiteralPattern p) = unparse p
     unparse (TopPattern p)           = unparse p
     unparse (VariablePattern p)      = unparse p
@@ -238,6 +249,13 @@ instance Unparse (SentenceSymbol a) where
         unparse (sentenceSymbolReturnSort sa)
         unparse (sentenceSymbolAttributes sa)
 
+instance Unparse SentenceImport where
+    unparse a = do
+        write "import"
+        write " "
+        unparse (sentenceImportModuleName a)
+        unparse (sentenceImportAttributes a)
+
 instance Unparse SentenceAxiom where
     unparse a = do
         write "axiom"
@@ -258,6 +276,7 @@ instance Unparse Sentence where
     unparse (ObjectSentenceAliasSentence s)  = unparse s
     unparse (MetaSentenceSymbolSentence s)   = unparse s
     unparse (ObjectSentenceSymbolSentence s) = unparse s
+    unparse (SentenceImportSentence s)       = unparse s
     unparse (SentenceAxiomSentence s)        = unparse s
     unparse (SentenceSortSentence s)         = unparse s
 
@@ -281,4 +300,4 @@ instance Unparse Definition where
     unparse d = do
         unparse (definitionAttributes d)
         betweenLines
-        unparse (definitionModules d)
+        unparseList betweenLines (definitionModules d)

@@ -327,9 +327,12 @@ data MLPatternType
     | IffPatternType
     | ImpliesPatternType
     | InPatternType
+    | NextPatternType
     | NotPatternType
     | OrPatternType
+    | RewritesPatternType
     | TopPatternType
+    deriving Show
 
 {-|'And' corresponds to the @\and@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -375,8 +378,8 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 
 This represents the ⌈BottomPattern⌉ Matching Logic construct.
 -}
-newtype Bottom a = Bottom { bottomSort :: Sort a}
-    deriving (Eq, Show, Typeable)
+newtype Bottom a p = Bottom { bottomSort :: Sort a}
+    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
 {-|'Ceil' corresponds to the @\ceil@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -541,6 +544,24 @@ data In a p = In
     }
     deriving (Typeable, Functor, Foldable, Traversable, Eq, Show)
 
+
+{-|'Next' corresponds to the @\next@ branch of the @object-pattern@
+syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
+
+Although there is no 'meta' version of @\next@, there is an 'a' type parameter
+which should verify 'IsMeta a'. The object-only restriction is done at the
+Pattern level.
+
+'nextSort' is both the sort of the operand and the sort of the result.
+
+This represents the '∘ nextPattern' Matching Logic construct.
+-}
+data Next a p = Next
+    { nextSort    :: !(Sort a)
+    , nextPattern :: !p
+    }
+    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
+
 {-|'Not' corresponds to the @\not@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -576,6 +597,25 @@ data Or a p = Or
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
+{-|'Rewrites' corresponds to the @\rewrites@ branch of the @object-pattern@
+syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
+
+Although there is no 'meta' version of @\rewrites@, there is an 'a' type
+parameter which should verify 'IsMeta a'. The object-only restriction is
+done at the Pattern level.
+
+'rewritesSort' is both the sort of the operands and the sort of the result.
+
+This represents the 'rewritesFirst ⇒ rewritesSecond' Matching Logic construct.
+-}
+
+data Rewrites a p = Rewrites
+    { rewritesSort   :: !(Sort a)
+    , rewritesFirst  :: !p
+    , rewritesSecond :: !p
+    }
+    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
+
 {-|'Top' corresponds to the @\top@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -587,8 +627,8 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 
 This represents the ⌈TopPattern⌉ Matching Logic construct.
 -}
-newtype Top a = Top { topSort :: Sort a}
-    deriving (Eq, Show, Typeable)
+newtype Top a p = Top { topSort :: Sort a}
+    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
 {-|'Pattern' corresponds to the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -602,7 +642,7 @@ Note that the StringLiteralPattern should only be a member of 'Pattern Meta'.
 data Pattern a v p
     = AndPattern !(And a p)
     | ApplicationPattern !(Application a p)
-    | BottomPattern !(Bottom a)
+    | BottomPattern !(Bottom a p)
     | CeilPattern !(Ceil a p)
     | EqualsPattern !(Equals a p)
     | ExistsPattern !(Exists a v p)
@@ -611,10 +651,12 @@ data Pattern a v p
     | IffPattern !(Iff a p)
     | ImpliesPattern !(Implies a p)
     | InPattern !(In a p)
+    | NextPattern !(Next Object p)
     | NotPattern !(Not a p)
     | OrPattern !(Or a p)
+    | RewritesPattern !(Rewrites Object p)
     | StringLiteralPattern !StringLiteral
-    | TopPattern !(Top a)
+    | TopPattern !(Top a p)
     | VariablePattern !(v a)
     deriving (Typeable, Functor, Foldable, Traversable)
 
@@ -653,6 +695,16 @@ data SentenceSymbol a = SentenceSymbol
     }
     deriving (Eq, Show, Typeable)
 
+
+{-|'SentenceImport' corresponds to the @import-declaration@ syntactic category
+from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
+-}
+data SentenceImport = SentenceImport
+    { sentenceImportModuleName :: !ModuleName
+    , sentenceImportAttributes :: !Attributes
+    }
+    deriving (Eq, Show, Typeable)
+
 {-|'SentenceAxiom' corresponds to the @axiom-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
@@ -685,6 +737,7 @@ data Sentence
     | ObjectSentenceAliasSentence !(SentenceAlias Object)
     | MetaSentenceSymbolSentence !(SentenceSymbol Meta)
     | ObjectSentenceSymbolSentence !(SentenceSymbol Object)
+    | SentenceImportSentence !SentenceImport
     | SentenceAxiomSentence !SentenceAxiom
     | SentenceSortSentence !SentenceSort
     deriving (Eq, Show)
@@ -717,7 +770,7 @@ while the remaining three are grouped into 'definitionModules'.
 -}
 data Definition = Definition
     { definitionAttributes :: !Attributes
-    , definitionModules    :: !Module
+    , definitionModules    :: ![Module]
     }
     deriving (Eq, Show)
 
@@ -733,6 +786,11 @@ instance MLPatternClass And where
     getPatternType _ = AndPatternType
     getPatternSorts a = [andSort a]
     getPatternPatterns a = [andFirst a, andSecond a]
+
+instance MLPatternClass Bottom where
+    getPatternType _ = BottomPatternType
+    getPatternSorts t = [bottomSort t]
+    getPatternPatterns _ = []
 
 instance MLPatternClass Ceil where
     getPatternType _ = CeilPatternType
@@ -764,6 +822,11 @@ instance MLPatternClass In where
     getPatternSorts i = [inOperandSort i, inResultSort i]
     getPatternPatterns i = [inContainedPattern i, inContainingPattern i]
 
+instance MLPatternClass Next where
+    getPatternType _ = NextPatternType
+    getPatternSorts e = [nextSort e]
+    getPatternPatterns e = [nextPattern e]
+
 instance MLPatternClass Not where
     getPatternType _ = NotPatternType
     getPatternSorts n = [notSort n]
@@ -773,6 +836,16 @@ instance MLPatternClass Or where
     getPatternType _ = OrPatternType
     getPatternSorts a = [orSort a]
     getPatternPatterns a = [orFirst a, orSecond a]
+
+instance MLPatternClass Rewrites where
+    getPatternType _ = RewritesPatternType
+    getPatternSorts e = [rewritesSort e]
+    getPatternPatterns e = [rewritesFirst e, rewritesSecond e]
+
+instance MLPatternClass Top where
+    getPatternType _ = TopPatternType
+    getPatternSorts t = [topSort t]
+    getPatternPatterns _ = []
 
 class MLBinderPatternClass p where
     getBinderPatternType :: p a v rpt -> MLPatternType

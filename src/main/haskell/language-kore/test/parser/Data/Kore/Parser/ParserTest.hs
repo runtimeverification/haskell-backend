@@ -39,12 +39,15 @@ koreParserTests =
         , testGroup "iffPatternParser" iffPatternParserTests
         , testGroup "impliesPatternParser" impliesPatternParserTests
         , testGroup "memPatternParser" memPatternParserTests
+        , testGroup "nextPatternParser" nextPatternParserTests
         , testGroup "notPatternParser" notPatternParserTests
         , testGroup "orPatternParser" orPatternParserTests
+        , testGroup "rewritesPatternParser" rewritesPatternParserTests
         , testGroup "stringLiteralPatternParser" stringLiteralPatternParserTests
         , testGroup "topPatternParser" topPatternParserTests
         , testGroup "variablePatternParser" variablePatternParserTests
         , testGroup "sentenceAliasParser" sentenceAliasParserTests
+        , testGroup "sentenceImportParser" sentenceImportParserTests
         , testGroup "sentenceAxiomParser" sentenceAxiomParserTests
         , testGroup "sentenceSortParser" sentenceSortParserTests
         , testGroup "sentenceSymbolParser" sentenceSymbolParserTests
@@ -650,6 +653,31 @@ notPatternParserTests =
             , "\\not(\"a\")"
             ]
         ]
+nextPatternParserTests :: [TestTree]
+nextPatternParserTests =
+    parseTree patternParser
+        [ success "\\next{s}(\"a\")"
+            ( ObjectPattern $ NextPattern Next
+                    { nextSort = sortVariableSort "s"
+                    , nextPattern =
+                        MetaPattern $ StringLiteralPattern (StringLiteral "a")
+                    }
+            )
+        , Failure FailureTest
+            { failureInput = "\\next{#s}(\"a\")"
+            , failureExpected =
+                "Failed reading: Cannot have a \\next meta pattern."
+            }
+        , FailureWithoutMessage
+            [ ""
+            , "\\next{s,s}(\"a\")"
+            , "\\next{}(\"a\")"
+            , "\\next{s}()"
+            , "\\next{s}(\"a\", \"b\")"
+            , "\\next{s}"
+            , "\\next(\"a\")"
+            ]
+        ]
 orPatternParserTests :: [TestTree]
 orPatternParserTests =
     parseTree patternParser
@@ -669,6 +697,31 @@ orPatternParserTests =
             , "\\or{s}(\"a\")"
             , "\\or{s}(\"a\", \"b\", \"c\")"
             , "\\or{s}(\"a\" \"b\")"]
+        ]
+rewritesPatternParserTests :: [TestTree]
+rewritesPatternParserTests =
+    parseTree patternParser
+        [ success "\\rewrites{s}(\"a\", \"b\")"
+            ( ObjectPattern $ RewritesPattern Rewrites
+                    { rewritesSort = sortVariableSort "s"
+                    , rewritesFirst =
+                        MetaPattern $ StringLiteralPattern (StringLiteral "a")
+                    , rewritesSecond =
+                        MetaPattern $ StringLiteralPattern (StringLiteral "b")
+                    }
+            )
+        , Failure FailureTest
+            { failureInput = "\\rewrites{#s}(\"a\", \"b\")"
+            , failureExpected =
+                "Failed reading: Cannot have a \\rewrites meta pattern."
+            }
+        , FailureWithoutMessage
+            [ ""
+            , "\\rewrites{s,s}(\"a\", \"b\")"
+            , "\\rewrites{}(\"a\", \"b\")"
+            , "\\rewrites{s}(\"a\")"
+            , "\\rewrites{s}(\"a\", \"b\", \"c\")"
+            , "\\rewrites{s}(\"a\" \"b\")"]
         ]
 stringLiteralPatternParserTests :: [TestTree]
 stringLiteralPatternParserTests =
@@ -831,6 +884,25 @@ sentenceAxiomParserTests =
             ]
         ]
 
+sentenceImportParserTests :: [TestTree]
+sentenceImportParserTests =
+    parseTree sentenceParser
+        [ success "import M[\"b\"]"
+            ( SentenceImportSentence SentenceImport
+                { sentenceImportModuleName = ModuleName "M"
+                , sentenceImportAttributes =
+                    Attributes
+                        [MetaPattern $ StringLiteralPattern (StringLiteral "b")]
+                }
+            )
+        , FailureWithoutMessage
+            [ ""
+            , "M[\"b\"]"
+            , "import [\"b\"]"
+            , "import M"
+            ]
+        ]
+
 sentenceSortParserTests :: [TestTree]
 sentenceSortParserTests =
     parseTree sentenceParser
@@ -985,7 +1057,7 @@ definitionParserTests =
                     Attributes
                         [MetaPattern $ StringLiteralPattern (StringLiteral "a")]
                 , definitionModules =
-                    Module
+                    [ Module
                         { moduleName = ModuleName "M"
                         , moduleSentences =
                             [ SentenceSortSentence SentenceSort
@@ -999,13 +1071,52 @@ definitionParserTests =
                                 [MetaPattern $
                                     StringLiteralPattern (StringLiteral "b")]
                         }
+                    ]
+                }
+        , success
+            (  "[\"a\"] "
+                ++ "module M sort c{}[] endmodule [\"b\"] "
+                ++ "module N sort d{}[] endmodule [\"e\"]"
+                )
+            Definition
+                { definitionAttributes =
+                    Attributes
+                        [MetaPattern $ StringLiteralPattern (StringLiteral "a")]
+                , definitionModules =
+                    [ Module
+                        { moduleName = ModuleName "M"
+                        , moduleSentences =
+                            [ SentenceSortSentence SentenceSort
+                                { sentenceSortName = Id "c"
+                                , sentenceSortParameters = []
+                                , sentenceSortAttributes = Attributes []
+                                }
+                            ]
+                        , moduleAttributes =
+                            Attributes
+                                [MetaPattern $
+                                    StringLiteralPattern (StringLiteral "b")]
+                        }
+                    , Module
+                        { moduleName = ModuleName "N"
+                        , moduleSentences =
+                            [ SentenceSortSentence SentenceSort
+                                { sentenceSortName = Id "d"
+                                , sentenceSortParameters = []
+                                , sentenceSortAttributes = Attributes []
+                                }
+                            ]
+                        , moduleAttributes =
+                            Attributes
+                                [MetaPattern $
+                                    StringLiteralPattern (StringLiteral "e")]
+                        }
+                    ]
                 }
         , FailureWithoutMessage
             [ ""
             , "[]"
             , "module M sort c{}[] endmodule [\"b\"]"
-            , "[\"a\"] module M sort c{}[] endmodule [\"b\"] "
-                ++ "module O sort c{}[] endmodule [\"c\"]"
             ]
         ]
 

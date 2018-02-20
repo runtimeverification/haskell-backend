@@ -15,6 +15,12 @@ couple gen = do
         then return []
         else choose (0,3) >>= (`vectorOf` gen)
 
+couple1 :: Gen a -> Gen [a]
+couple1 gen = do
+    x <- gen
+    xs <- couple gen
+    return (x:xs)
+
 {-# ANN genericIdGen "HLint: ignore Use String" #-}
 genericIdGen :: [Char] -> [Char] -> Gen String
 genericIdGen firstChars nextChars = do
@@ -138,8 +144,8 @@ existsForallGen x constructor = pure constructor
 topBottomGen
     :: IsMeta a
     => a
-    -> (Sort a -> t a)
-    -> Gen (t a)
+    -> (Sort a -> t a p)
+    -> Gen (t a p)
 topBottomGen x constructor = pure constructor
     <*> sortGen x
 
@@ -151,7 +157,7 @@ applicationGen x = pure Application
     <*> scale (`div` 2) (symbolOrAliasGen x)
     <*> couple (scale (`div` 4) unifiedPatternGen)
 
-bottomGen :: IsMeta a => a -> Gen (Bottom a)
+bottomGen :: IsMeta a => a -> Gen (Bottom a UnifiedPattern)
 bottomGen x = topBottomGen x Bottom
 
 ceilGen :: IsMeta a => a -> Gen (Ceil a UnifiedPattern)
@@ -186,6 +192,11 @@ inGen x = pure In
     <*> scale (`div` 2) unifiedPatternGen
     <*> scale (`div` 2) unifiedPatternGen
 
+nextGen :: IsMeta a => a -> Gen (Next a UnifiedPattern)
+nextGen x = pure Next
+    <*> scale (`div` 2) (sortGen x)
+    <*> scale (`div` 2) unifiedPatternGen
+
 notGen :: IsMeta a => a -> Gen (Not a UnifiedPattern)
 notGen x = pure Not
     <*> scale (`div` 2) (sortGen x)
@@ -194,7 +205,10 @@ notGen x = pure Not
 orGen :: IsMeta a => a -> Gen (Or a UnifiedPattern)
 orGen x = binaryOperatorGen x Or
 
-topGen :: IsMeta a => a -> Gen (Top a)
+rewritesGen :: IsMeta a => a -> Gen (Rewrites a UnifiedPattern)
+rewritesGen x = binaryOperatorGen x Rewrites
+
+topGen :: IsMeta a => a -> Gen (Top a UnifiedPattern)
 topGen x = topBottomGen x Top
 
 patternGen :: IsMeta a => a -> Gen (Pattern a Variable UnifiedPattern)
@@ -211,16 +225,20 @@ patternGen x =
         , IffPattern <$> iffGen x
         , ImpliesPattern <$> impliesGen x
         , InPattern <$> inGen x
+        , NextPattern <$> nextGen Object
         , NotPattern <$> notGen x
         , OrPattern <$> orGen x
+        , RewritesPattern <$> rewritesGen Object
         , StringLiteralPattern <$> stringLiteralGen
         , TopPattern <$> topGen x
         , VariablePattern <$> variableGen x
         ]
-    ) checkStringLiteralMeta
+    ) checkMetaObject
   where
-    checkStringLiteralMeta (StringLiteralPattern _) = koreLevel x == MetaLevel
-    checkStringLiteralMeta _                        = True
+    checkMetaObject (StringLiteralPattern _) = koreLevel x == MetaLevel
+    checkMetaObject (NextPattern _)          = koreLevel x == ObjectLevel
+    checkMetaObject (RewritesPattern _)      = koreLevel x == ObjectLevel
+    checkMetaObject _                        = True
 
 unifiedPatternGen :: Gen UnifiedPattern
 unifiedPatternGen = sized (\n ->
@@ -246,6 +264,11 @@ sentenceSymbolGen x = pure SentenceSymbol
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) attributesGen
 
+sentenceImportGen :: Gen SentenceImport
+sentenceImportGen = pure SentenceImport
+    <*> scale (`div` 2) moduleNameGen
+    <*> scale (`div` 2) attributesGen
+
 sentenceAxiomGen :: Gen SentenceAxiom
 sentenceAxiomGen = pure SentenceAxiom
     <*> couple (scale (`div` 2) unifiedSortVariableGen)
@@ -267,6 +290,7 @@ sentenceGen = oneof
     , ObjectSentenceAliasSentence <$> sentenceAliasGen Object
     , MetaSentenceSymbolSentence <$> sentenceSymbolGen Meta
     , ObjectSentenceSymbolSentence <$> sentenceSymbolGen Object
+    , SentenceImportSentence <$> sentenceImportGen
     , SentenceAxiomSentence <$> sentenceAxiomGen
     , SentenceSortSentence <$> sentenceSortGen
     ]
@@ -277,7 +301,10 @@ moduleGen = pure Module
     <*> couple (scale (`div` 2) sentenceGen)
     <*> scale (`div` 2) attributesGen
 
+modulesGen :: Gen [Module]
+modulesGen = couple1 (scale (`div` 2) moduleGen)
+
 definitionGen :: Gen Definition
 definitionGen = pure Definition
     <*> scale (`div` 2) attributesGen
-    <*> scale (`div` 2) moduleGen
+    <*> scale (`div` 2) modulesGen

@@ -4,9 +4,10 @@ Definition
             [ MetaPattern (StringLiteralPattern (StringLiteral "\?"))
             ]
     , definitionModules =
-        Module
+        [ Module
             { moduleName = ModuleName "TEST-STRING-1"
             , moduleSentences = []
             , moduleAttributes = Attributes []
             }
+        ]
     }

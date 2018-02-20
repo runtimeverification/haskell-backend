@@ -1,7 +1,7 @@
 Definition
     { definitionAttributes = Attributes []
     , definitionModules =
-        Module
+        [ Module
             { moduleName = ModuleName "LAMBDA"
             , moduleSentences =
                 [ SentenceSortSentence SentenceSort
@@ -677,4 +677,5 @@ Definition
                 ]
             , moduleAttributes = Attributes []
             }
+        ]
     }

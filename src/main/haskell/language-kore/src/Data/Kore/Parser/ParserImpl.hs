@@ -40,12 +40,14 @@ module Data.Kore.Parser.ParserImpl where
 import           Data.Kore.AST
 import           Data.Kore.Parser.Lexeme
 import qualified Data.Kore.Parser.ParserUtils     as ParserUtils
+import           Data.Kore.Unparser.Unparse
 
-import           Control.Monad                    (void, when)
+import           Control.Monad                    (unless, void, when)
 
 import           Data.Attoparsec.ByteString.Char8 (Parser)
 import qualified Data.Attoparsec.ByteString.Char8 as Parser (char, peekChar,
                                                              peekChar')
+import           Data.Attoparsec.Combinator       (many1)
 import           Data.Maybe                       (isJust)
 
 {-|'sortVariableParser' parses either an @object-sort-variable@, or a
@@ -180,10 +182,8 @@ validateMetaSort
     -> [Sort a] -- ^ The sort arguments
     -> Parser ()
 validateMetaSort identifier [] =
-    if isJust (metaSortConverter metaId)
-        then return ()
-        else fail
-            ("metaSortConverter: Invalid constructor: '" ++ metaId ++ "'.")
+    unless (isJust (metaSortConverter metaId))
+        (fail ("metaSortConverter: Invalid constructor: '" ++ metaId ++ "'."))
   where
     metaId = getId identifier
 validateMetaSort _ _ = fail "metaSortConverter: Non empty parameter sorts."
@@ -456,8 +456,8 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 topBottomRemainderParser
     :: IsMeta a
     => a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort a -> m a)  -- ^ Element constructor.
-    -> Parser (m a)
+    -> (Sort a -> m a p)  -- ^ Element constructor.
+    -> Parser (m a p)
 topBottomRemainderParser x constructor = do
     sort <- inCurlyBracesRemainderParser (sortParser x)
     inParenthesesParser (return ())
@@ -617,6 +617,8 @@ BNF definitions:
     | ‘\floor’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
     | ‘\equals’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
     | ‘\in’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ pattern ‘,’ ⟨pattern⟩ ‘)’
+    | ‘\next’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
+    | ‘\rewrites’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
     | ‘\top’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ‘)’
     | ‘\bottom’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ‘)’
 
@@ -654,22 +656,23 @@ mlConstructorParser = do
         , ("iff", mlConstructorRemainderParser IffPatternType)
         , ("implies", mlConstructorRemainderParser ImpliesPatternType)
         , ("in", mlConstructorRemainderParser InPatternType)
+        , ("next", mlConstructorRemainderParser NextPatternType)
         , ("not", mlConstructorRemainderParser NotPatternType)
         , ("or", mlConstructorRemainderParser OrPatternType)
+        , ("rewrites", mlConstructorRemainderParser RewritesPatternType)
         , ("top", mlConstructorRemainderParser TopPatternType)
         ]
-    -- mlConstructorRemainderParser :: MLPatternType -> Parser UnifiedPattern
     mlConstructorRemainderParser patternType = do
         openCurlyBraceParser
         c <- Parser.peekChar'
         if c == '#'
-            then MetaPattern <$> mlConstructorRemainderParser' Meta patternType
+            then MetaPattern <$>
+                mlConstructorRemainderParser'
+                    Meta patternType metaMlConstructorRemainderParser
             else ObjectPattern <$>
-                mlConstructorRemainderParser' Object patternType
-    -- mlConstructorRemainderParser'
-    --     :: (IsMeta a)
-    --     => a -> MLPatternType -> Parser (Pattern a UnifiedPattern)
-    mlConstructorRemainderParser' x patternType =
+                mlConstructorRemainderParser'
+                    Object patternType objectMlConstructorRemainderParser
+    mlConstructorRemainderParser' x patternType otherParsers =
         case patternType of
             AndPatternType -> AndPattern <$>
                 binaryOperatorRemainderParser x And
@@ -697,6 +700,23 @@ mlConstructorParser = do
                 binaryOperatorRemainderParser x Or
             TopPatternType -> TopPattern <$>
                 topBottomRemainderParser x Top
+            _ -> otherParsers patternType
+    objectMlConstructorRemainderParser patternType =
+        case patternType of
+            NextPatternType -> NextPattern <$>
+                unaryOperatorRemainderParser Object Next
+            RewritesPatternType -> RewritesPattern <$>
+                binaryOperatorRemainderParser Object Rewrites
+            pt ->
+                fail
+                    (  "Cannot have a "
+                    ++ unparseToString pt
+                    ++ " object pattern.")
+    metaMlConstructorRemainderParser patternType =
+        fail
+            (  "Cannot have a "
+            ++ unparseToString patternType
+            ++ " meta pattern.")
 
 {-|'patternParser' parses an unifiedPattern
 
@@ -807,7 +827,7 @@ definitionParser :: Parser Definition
 definitionParser =
     pure Definition
         <*> attributesParser
-        <*> moduleParser
+        <*> many1 moduleParser
 
 {-|'moduleParser' parses the module part of a Kore @definition@
 
@@ -847,6 +867,7 @@ BNF definition fragments:
     | ⟨axiom-declaration⟩
 ⟨axiom-declaration⟩ ::= ‘axiom’ ...
 ⟨sort-declaration⟩ ::= ‘sort’ ...
+⟨import-declaration⟩ ::= ‘import’ ⟨module-name⟩ ⟨attribute⟩
 ⟨symbol-declaration⟩ ::= ( ⟨object-symbol-declaration⟩ | ⟨meta-symbol-declaration⟩ ) ⟨attribute⟩
 ⟨object-symbol-declaration⟩ ::= ‘symbol’ ...
 ⟨meta-symbol-declaration⟩ ::= ‘symbol’ ...
@@ -857,10 +878,11 @@ BNF definition fragments:
 -}
 sentenceParser :: Parser Sentence
 sentenceParser = keywordBasedParsers
-    [ ( "alias", sentenceConstructorRemainderParser AliasSentenceType)
+    [ ( "alias", sentenceConstructorRemainderParser AliasSentenceType )
     , ( "axiom", axiomSentenceRemainderParser )
     , ( "sort", sortSentenceRemainderParser )
-    , ( "symbol", sentenceConstructorRemainderParser SymbolSentenceType)
+    , ( "symbol", sentenceConstructorRemainderParser SymbolSentenceType )
+    , ( "import", importSentenceRemainderParser )
     ]
   where
     sentenceConstructorRemainderParser sentenceType = do
@@ -906,6 +928,22 @@ aliasSymbolSentenceRemainderParser  x aliasSymbolParser constructor = do
     resultSort <- sortParser x
     attributes <- attributesParser
     return (constructor aliasSymbol sorts resultSort attributes)
+
+{-|'importSentenceRemainderParser' parses the part after the starting
+'import' keyword of an import-declaration and constructs it.
+
+BNF example:
+
+@
+⟨import-declaration⟩ ::= ... ⟨module-name⟩ ⟨attribute⟩
+@
+-}
+importSentenceRemainderParser :: Parser Sentence
+importSentenceRemainderParser = SentenceImportSentence <$>
+    ( pure SentenceImport
+        <*> moduleNameParser
+        <*> attributesParser
+    )
 
 {-|'axiomSentenceRemainderParser' parses the part after the starting
 'axiom' keyword of an axiom-declaration and constructs it.

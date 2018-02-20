@@ -2,23 +2,17 @@ Definition
     { definitionAttributes = Attributes []
     , definitionModules =
         [ Module
-            { moduleName = ModuleName "TEST-PATTERN-9"
+            { moduleName = ModuleName "TEST-PATTERN-14"
             , moduleSentences =
                 [ SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ ObjectSortVariable (SortVariable (Id Object "S"))
                         ]
                     , sentenceAxiomPattern =
-                        ObjectPattern (ForallPattern Forall
-                            { forallSort =
+                        ObjectPattern (NextPattern Next
+                            { nextSort =
                                 SortVariableSort (SortVariable (Id Object "S"))
-                            , forallVariable =
-                                ObjectVariable Variable
-                                    { variableName = Id Object "X"
-                                    , variableSort =
-                                        SortVariableSort (SortVariable (Id Object "S"))
-                                    }
-                            , forallPattern =
+                            , nextPattern =
                                 ObjectPattern (VariablePattern Variable
                                     { variableName = Id Object "X"
                                     , variableSort =
