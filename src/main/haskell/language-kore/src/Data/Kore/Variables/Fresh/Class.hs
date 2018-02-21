@@ -4,7 +4,6 @@
 module Data.Kore.Variables.Fresh.Class where
 
 import qualified Control.Monad.State                  as State
-import           Control.Monad.Trans.Class            (MonadTrans, lift)
 
 import           Data.Kore.AST
 import           Data.Kore.Variables.Fresh.IntCounter
@@ -44,10 +43,10 @@ class (Monad m, VariableClass var) => FreshVariablesClass m var where
             then return var'
             else error "Cannot generate variable satisfying predicate"
 
-instance (MonadTrans t, Monad (t m), FreshVariablesClass m var)
+instance (State.MonadTrans t, Monad (t m), FreshVariablesClass m var)
     => FreshVariablesClass (t m) var
   where
-    freshVariable = lift . freshVariable
+    freshVariable = State.lift . freshVariable
 
 instance IntVariable var
     => FreshVariablesClass IntCounter var

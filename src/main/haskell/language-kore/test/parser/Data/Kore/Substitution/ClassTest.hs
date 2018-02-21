@@ -104,10 +104,23 @@ substitutionClassTests =
                     17
                 )
             )
-          ]
+           , testCase "Testing substitution state 1"
+            (assertEqual ""
+                (testSubstitutionStatePatternS3, 18)
+                (runIntCounter
+                    (testSubstitute
+                        testSubstitutionStatePattern substitution3)
+                    17
+                )
+            )
+           ]
 
 metaVariableSubstitute :: Int -> Variable Meta
 metaVariableSubstitute = intVariable metaVariable
+
+metaVariableUnifiedPatternSubstitute :: Int -> UnifiedPattern
+metaVariableUnifiedPatternSubstitute =
+    MetaPattern . VariablePattern . metaVariableSubstitute
 
 objectVariableSubstitute :: Int -> Variable Object
 objectVariableSubstitute = intVariable objectVariable
@@ -133,6 +146,20 @@ existsObjectUnifiedPattern1 = ObjectPattern $ ExistsPattern Exists
     { existsSort = objectSort
     , existsVariable = unifiedObjectVariable
     , existsChild = objectVariableUnifiedPattern
+    }
+
+existsMetaUnifiedPattern1 :: UnifiedPattern
+existsMetaUnifiedPattern1 = MetaPattern $ ExistsPattern Exists
+    { existsSort = metaSort
+    , existsVariable = unifiedMetaVariable
+    , existsChild = metaVariableUnifiedPattern
+    }
+
+existsMetaUnifiedPattern1S3 :: UnifiedPattern
+existsMetaUnifiedPattern1S3 = MetaPattern $ ExistsPattern Exists
+    { existsSort = metaSort
+    , existsVariable = MetaVariable $ metaVariableSubstitute 17
+    , existsChild = metaVariableUnifiedPatternSubstitute 17
     }
 
 existsObjectUnifiedPattern1S :: Int -> UnifiedPattern
@@ -184,4 +211,30 @@ forallExistsObjectUnifiedPattern1S2 = ObjectPattern $ ForallPattern Forall
     , forallChild = existsObjectUnifiedPattern1S 8
     }
 
+testSubstitutionStatePattern :: UnifiedPattern
+testSubstitutionStatePattern = ObjectPattern $ ApplicationPattern Application
+    { applicationSymbolOrAlias = SymbolOrAlias
+        { symbolOrAliasConstructor = Id "sigma"
+        , symbolOrAliasParams = []
+        }
+    , applicationChildren =
+        [ existsObjectUnifiedPattern1
+        , objectVariableUnifiedPattern
+        , existsMetaUnifiedPattern1
+        , metaVariableUnifiedPattern
+        ]
+    }
 
+testSubstitutionStatePatternS3 :: UnifiedPattern
+testSubstitutionStatePatternS3 = ObjectPattern $ ApplicationPattern Application
+    { applicationSymbolOrAlias = SymbolOrAlias
+        { symbolOrAliasConstructor = Id "sigma"
+        , symbolOrAliasParams = []
+        }
+    , applicationChildren =
+        [ existsObjectUnifiedPattern1
+        , metaVariableUnifiedPattern
+        , existsMetaUnifiedPattern1S3
+        , metaVariableUnifiedPattern
+        ]
+    }

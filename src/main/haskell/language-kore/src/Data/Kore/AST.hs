@@ -26,6 +26,7 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Data.Kore.AST where
 
+import           Data.Hashable (hash)
 import           Data.Typeable (Typeable, cast, typeOf, typeRepArgs)
 
 data KoreLevel
@@ -244,10 +245,14 @@ class (Eq (UnifiedVariable var), Ord (UnifiedVariable var)
       , Typeable var
       ) => VariableClass var
   where
+    -- |Retrieves the sort of the variable
     getVariableSort :: IsMeta a => var a -> Sort a
+    -- |Computes a hash identifying the variable
+    getVariableHash :: var a -> Int
 
 instance VariableClass Variable where
     getVariableSort = variableSort
+    getVariableHash = hash . getId . variableName
 
 {-|'UnifiedVariable' corresponds to the @variable@ syntactic category from
 the Semantics of K, Section 9.1.4 (Patterns).

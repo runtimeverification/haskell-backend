@@ -18,7 +18,7 @@ newtype Substitution v t = Substitution { getSubstitution :: [(v,t)] }
 
 instance (Ord v, TermWithVariablesClass t v)
     => SubstitutionClass (Substitution v t) v t where
-    getFreeVars = foldMap (freeVariables . snd) . getSubstitution
+    substitutionTermsFreeVars = foldMap (freeVariables . snd) . getSubstitution
 
 instance Eq v => MapClass (Substitution v t) v t where
     isEmpty = null . getSubstitution
