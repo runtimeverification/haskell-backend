@@ -132,7 +132,7 @@ unparseMLPattern :: (PrinterOutput w m, MLPatternClass p, Unparse rpt)
 unparseMLPattern p = do
     unparse (getPatternType p)
     inCurlyBraces (unparse (getPatternSorts p))
-    inParens (unparse (getPatternPatterns p))
+    inParens (unparse (getPatternChildren p))
 
 unparseMLBinderPattern
     :: (PrinterOutput w m, MLBinderPatternClass p, Unparse rpt,
@@ -144,7 +144,7 @@ unparseMLBinderPattern p = do
     inParens ( do
         unparse (getBinderPatternVariable p)
         write ", "
-        unparse (getBinderPatternPattern p)
+        unparse (getBinderPatternChild p)
         )
 
 instance Unparse p => Unparse (And a p) where
@@ -153,7 +153,7 @@ instance Unparse p => Unparse (And a p) where
 instance Unparse p => Unparse (Application a p) where
     unparse a =
         unparse (applicationSymbolOrAlias a)
-        >> inParens (unparse (applicationPatterns a))
+        >> inParens (unparse (applicationChildren a))
 
 instance Unparse (Bottom a p) where
     unparse bottom = do

@@ -42,12 +42,12 @@ unparseUnitTests =
                             { sortActualName = Id {getId = "G"}
                             , sortActualSorts = []
                             }
-                        , inContainedPattern = ObjectPattern $ VariablePattern Variable
+                        , inContainedChild = ObjectPattern $ VariablePattern Variable
                             { variableName = Id {getId = "T"}
                             , variableSort = SortVariableSort SortVariable
                                 { getSortVariable = Id {getId = "C"} }
                             }
-                        , inContainingPattern = MetaPattern (StringLiteralPattern
+                        , inContainingChild = MetaPattern (StringLiteralPattern
                             StringLiteral { getStringLiteral = "" })
                         })
                     ]

@@ -14,7 +14,7 @@ Definition
                                 SortVariableSort (SortVariable (Id Object "S"))
                             , ceilResultSort =
                                 SortVariableSort (SortVariable (Id Object "S"))
-                            , ceilPattern =
+                            , ceilChild =
                                 ObjectPattern (VariablePattern Variable
                                     { variableName = Id Object "X"
                                     , variableSort =

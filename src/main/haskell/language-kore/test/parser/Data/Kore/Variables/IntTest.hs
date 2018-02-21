@@ -13,7 +13,7 @@ variablesIntTests =
         [ testCase "Testing intVariable Object 1."
             (assertEqual ""
                 (Variable
-                    { variableName = Id "var1"
+                    { variableName = Id "var_1"
                     , variableSort = SortVariableSort (SortVariable (Id "s"))
                     }::Variable Object)
                 (intVariable Variable
@@ -25,7 +25,7 @@ variablesIntTests =
         , testCase "Testing intVariable Meta 1."
             (assertEqual ""
                 (Variable
-                    { variableName = Id "#var1"
+                    { variableName = Id "#var_1"
                     , variableSort = SortVariableSort (SortVariable (Id "#s"))
                     }:: Variable Meta)
                 (intVariable Variable

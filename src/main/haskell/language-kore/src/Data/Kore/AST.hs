@@ -273,19 +273,19 @@ of the 'Pattern' class.
 
 'v' is the type of variables.
 -}
-class FixPattern v p where
-    {-|'unFixPattern' "lifts" a function defined on 'Pattern' to the
+class UnifiedThing (p v) (PatternObjectMeta v (p v))
+    => FixPattern v p
+  where
+    {-|'fixPatternApply' "lifts" a function defined on 'Pattern' to the
     domain of the fixed point 'p'.
 
     The resulting function unwraps the pattern from 'p' and maps it through
     the argument function.
-
-    Note: it would have been clearer to have an @unFix@ function for unwrapping
-    the pattern, but that is hindered by the shadow type variable 'a'.
     -}
-    unFixPattern
+    fixPatternApply
         :: (forall a . IsMeta a => Pattern a v (p v) -> b)
         -> (p v -> b)
+    fixPatternApply f = transformUnified (f . getPatternObjectMeta)
 
 data FixedPattern variable
     = MetaPattern !(Pattern Meta variable (FixedPattern variable))
@@ -316,9 +316,7 @@ unifiedVariableToPattern :: UnifiedVariable var -> FixedPattern var
 unifiedVariableToPattern (MetaVariable v) = MetaPattern $ VariablePattern v
 unifiedVariableToPattern (ObjectVariable v) = ObjectPattern $ VariablePattern v
 
-instance FixPattern var FixedPattern where
-    unFixPattern k (MetaPattern p)   = k p
-    unFixPattern k (ObjectPattern p) = k p
+instance (Typeable var) => FixPattern var FixedPattern where
 
 {-|Enumeration of patterns starting with @\@
 -}
@@ -369,7 +367,7 @@ This represents the σ(φ1, ..., φn) symbol patterns in Matching Logic.
 -}
 data Application a p = Application
     { applicationSymbolOrAlias :: !(SymbolOrAlias a)
-    , applicationPatterns      :: ![p]
+    , applicationChildren      :: ![p]
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
@@ -403,7 +401,7 @@ This represents the ⌈ceilPattern⌉ Matching Logic construct.
 data Ceil a p = Ceil
     { ceilOperandSort :: !(Sort a)
     , ceilResultSort  :: !(Sort a)
-    , ceilPattern     :: !p
+    , ceilChild       :: !p
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
@@ -437,12 +435,12 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 
 'existsSort' is both the sort of the operands and the sort of the result.
 
-This represents the '∃existsVariable(existsPattern)' Matching Logic construct.
+This represents the '∃existsVariable(existsChild)' Matching Logic construct.
 -}
 data Exists a v p = Exists
     { existsSort     :: !(Sort a)
     , existsVariable :: !(UnifiedVariable v)
-    , existsPattern  :: !p
+    , existsChild    :: !p
     }
     deriving (Typeable, Functor, Foldable, Traversable)
 
@@ -465,7 +463,7 @@ This represents the '⌊floorPattern⌋' Matching Logic construct.
 data Floor a p = Floor
     { floorOperandSort :: !(Sort a)
     , floorResultSort  :: !(Sort a)
-    , floorPattern     :: !p
+    , floorChild       :: !p
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
@@ -478,12 +476,12 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 
 'forallSort' is both the sort of the operands and the sort of the result.
 
-This represents the '∀forallVariable(forallPattern)' Matching Logic construct.
+This represents the '∀forallVariable(forallChild)' Matching Logic construct.
 -}
 data Forall a v p = Forall
     { forallSort     :: !(Sort a)
     , forallVariable :: !(UnifiedVariable v)
-    , forallPattern  :: !p
+    , forallChild    :: !p
     }
     deriving (Typeable, Functor, Foldable, Traversable)
 
@@ -537,18 +535,18 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 
 'inResultSort' is the sort of the result.
 
-This represents the 'inMemberPattern ∊ inContainingPattern' Matching Logic
+This represents the 'inMemberPattern ∊ inContainingChild' Matching Logic
 construct, which, when 'inMemberPattern' is a singleton (e.g. a variable),
 represents the set membership. However, in general, it actually means that the
 two patterns have a non-empty intersection.
 -}
 data In a p = In
-    { inOperandSort       :: !(Sort a)
-    , inResultSort        :: !(Sort a)
-    , inContainedPattern  :: !p
-    , inContainingPattern :: !p
+    { inOperandSort     :: !(Sort a)
+    , inResultSort      :: !(Sort a)
+    , inContainedChild  :: !p
+    , inContainingChild :: !p
     }
-    deriving (Typeable, Functor, Foldable, Traversable, Eq, Show)
+    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
 
 {-|'Next' corresponds to the @\next@ branch of the @object-pattern@
@@ -560,11 +558,11 @@ Pattern level.
 
 'nextSort' is both the sort of the operand and the sort of the result.
 
-This represents the '∘ nextPattern' Matching Logic construct.
+This represents the '∘ nextChild' Matching Logic construct.
 -}
 data Next a p = Next
-    { nextSort    :: !(Sort a)
-    , nextPattern :: !p
+    { nextSort  :: !(Sort a)
+    , nextChild :: !p
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
@@ -577,11 +575,11 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 
 'notSort' is both the sort of the operand and the sort of the result.
 
-This represents the '¬ notPattern' Matching Logic construct.
+This represents the '¬ notChild' Matching Logic construct.
 -}
 data Not a p = Not
-    { notSort    :: !(Sort a)
-    , notPattern :: !p
+    { notSort  :: !(Sort a)
+    , notChild :: !p
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
@@ -787,102 +785,105 @@ data Definition = Definition
   (those starting with '\', except for 'Exists' and 'Forall')
 -}
 class MLPatternClass p where
-    getPatternType :: p a rpt -> MLPatternType
-    getPatternSorts :: p a rpt -> [Sort a]
-    getPatternPatterns :: p a rpt -> [rpt]
+    getPatternType :: p a recursionP -> MLPatternType
+    getPatternSorts :: p a recursionP -> [Sort a]
+    getPatternChildren :: p a recursionP -> [recursionP]
 
 instance MLPatternClass And where
     getPatternType _ = AndPatternType
     getPatternSorts a = [andSort a]
-    getPatternPatterns a = [andFirst a, andSecond a]
+    getPatternChildren a = [andFirst a, andSecond a]
 
 instance MLPatternClass Bottom where
     getPatternType _ = BottomPatternType
     getPatternSorts t = [bottomSort t]
-    getPatternPatterns _ = []
+    getPatternChildren _ = []
 
 instance MLPatternClass Ceil where
     getPatternType _ = CeilPatternType
     getPatternSorts c = [ceilOperandSort c, ceilResultSort c]
-    getPatternPatterns c = [ceilPattern c]
+    getPatternChildren c = [ceilChild c]
 
 instance MLPatternClass Equals where
     getPatternType _ = EqualsPatternType
     getPatternSorts e = [equalsOperandSort e, equalsResultSort e]
-    getPatternPatterns e = [equalsFirst e, equalsSecond e]
+    getPatternChildren e = [equalsFirst e, equalsSecond e]
 
 instance MLPatternClass Floor where
     getPatternType _ = FloorPatternType
     getPatternSorts f = [floorOperandSort f, floorResultSort f]
-    getPatternPatterns f = [floorPattern f]
+    getPatternChildren f = [floorChild f]
 
 instance MLPatternClass Iff where
     getPatternType _ = IffPatternType
     getPatternSorts i = [iffSort i]
-    getPatternPatterns i = [iffFirst i, iffSecond i]
+    getPatternChildren i = [iffFirst i, iffSecond i]
 
 instance MLPatternClass Implies where
     getPatternType _ = ImpliesPatternType
     getPatternSorts i = [impliesSort i]
-    getPatternPatterns i = [impliesFirst i, impliesSecond i]
+    getPatternChildren i = [impliesFirst i, impliesSecond i]
 
 instance MLPatternClass In where
     getPatternType _ = InPatternType
     getPatternSorts i = [inOperandSort i, inResultSort i]
-    getPatternPatterns i = [inContainedPattern i, inContainingPattern i]
+    getPatternChildren i = [inContainedChild i, inContainingChild i]
 
 instance MLPatternClass Next where
     getPatternType _ = NextPatternType
     getPatternSorts e = [nextSort e]
-    getPatternPatterns e = [nextPattern e]
+    getPatternChildren e = [nextChild e]
 
 instance MLPatternClass Not where
     getPatternType _ = NotPatternType
     getPatternSorts n = [notSort n]
-    getPatternPatterns n = [notPattern n]
+    getPatternChildren n = [notChild n]
 
 instance MLPatternClass Or where
     getPatternType _ = OrPatternType
     getPatternSorts a = [orSort a]
-    getPatternPatterns a = [orFirst a, orSecond a]
+    getPatternChildren a = [orFirst a, orSecond a]
 
 instance MLPatternClass Rewrites where
     getPatternType _ = RewritesPatternType
     getPatternSorts e = [rewritesSort e]
-    getPatternPatterns e = [rewritesFirst e, rewritesSecond e]
+    getPatternChildren e = [rewritesFirst e, rewritesSecond e]
 
 instance MLPatternClass Top where
     getPatternType _ = TopPatternType
     getPatternSorts t = [topSort t]
-    getPatternPatterns _ = []
+    getPatternChildren _ = []
 
 class MLBinderPatternClass p where
-    getBinderPatternType :: p a v rpt -> MLPatternType
-    getBinderPatternSort :: p a v rpt -> Sort a
-    getBinderPatternVariable :: p a v rpt -> UnifiedVariable v
-    getBinderPatternPattern :: p a v rpt -> rpt
+    getBinderPatternType :: p a v recursionP -> MLPatternType
+    getBinderPatternSort :: p a v recursionP -> Sort a
+    getBinderPatternVariable :: p a v recursionP -> UnifiedVariable v
+    getBinderPatternChild :: p a v recursionP -> recursionP
+    -- The first argument is only needed in order to make the Haskell type
+    -- system work.
     binderPatternConstructor
-        :: p a v rpt -> Sort a -> UnifiedVariable v -> rpt -> Pattern a v rpt
+        :: p a v recursionP -> Sort a -> UnifiedVariable v -> recursionP
+        -> Pattern a v recursionP
 
 instance MLBinderPatternClass Exists where
     getBinderPatternType _ = ExistsPatternType
     getBinderPatternSort = existsSort
     getBinderPatternVariable = existsVariable
-    getBinderPatternPattern = existsPattern
+    getBinderPatternChild = existsChild
     binderPatternConstructor _ s v p = ExistsPattern Exists
         { existsSort = s
         , existsVariable = v
-        , existsPattern = p
+        , existsChild = p
         }
 
 instance MLBinderPatternClass Forall where
     getBinderPatternType _ = ForallPatternType
     getBinderPatternSort = forallSort
     getBinderPatternVariable = forallVariable
-    getBinderPatternPattern = forallPattern
+    getBinderPatternChild = forallChild
     binderPatternConstructor _ s v p = ForallPattern Forall
         { forallSort = s
         , forallVariable = v
-        , forallPattern = p
+        , forallChild = p
         }
 

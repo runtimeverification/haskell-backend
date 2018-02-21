@@ -14,7 +14,7 @@ Definition
                                 SortVariableSort (SortVariable (Id Object "S"))
                             , floorResultSort =
                                 SortVariableSort (SortVariable (Id Object "S"))
-                            , floorPattern =
+                            , floorChild =
                                 ObjectPattern (VariablePattern Variable
                                     { variableName = Id Object "X"
                                     , variableSort =

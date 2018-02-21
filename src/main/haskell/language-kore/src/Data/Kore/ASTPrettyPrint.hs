@@ -254,7 +254,7 @@ instance (IsMeta a, PrettyPrint p) => PrettyPrint (Application a p) where
             "Application"
             [ writeFieldNewLine
                 "applicationSymbolOrAlias" applicationSymbolOrAlias p
-            , writeListField "applicationPatterns" applicationPatterns p
+            , writeListField "applicationChildren" applicationChildren p
             ]
 
 instance (IsMeta a) => PrettyPrint (Bottom a p) where
@@ -267,7 +267,7 @@ instance (IsMeta a, PrettyPrint p) => PrettyPrint (Ceil a p) where
             "Ceil"
             [ writeFieldNewLine "ceilOperandSort" ceilOperandSort p
             , writeFieldNewLine "ceilResultSort" ceilResultSort p
-            , writeFieldNewLine "ceilPattern" ceilPattern p
+            , writeFieldNewLine "ceilChild" ceilChild p
             ]
 
 instance (IsMeta a, PrettyPrint p) => PrettyPrint (Equals a p) where
@@ -287,7 +287,7 @@ instance (IsMeta a, PrettyPrint p, PrettyPrint (UnifiedVariable v))
             "Exists"
             [ writeFieldNewLine "existsSort" existsSort p
             , writeFieldNewLine "existsVariable" existsVariable p
-            , writeFieldNewLine "existsPattern" existsPattern p
+            , writeFieldNewLine "existsChild" existsChild p
             ]
 
 instance (IsMeta a, PrettyPrint p) => PrettyPrint (Floor a p) where
@@ -296,7 +296,7 @@ instance (IsMeta a, PrettyPrint p) => PrettyPrint (Floor a p) where
             "Floor"
             [ writeFieldNewLine "floorOperandSort" floorOperandSort p
             , writeFieldNewLine "floorResultSort" floorResultSort p
-            , writeFieldNewLine "floorPattern" floorPattern p
+            , writeFieldNewLine "floorChild" floorChild p
             ]
 
 instance (IsMeta a, PrettyPrint p, PrettyPrint (UnifiedVariable v))
@@ -306,7 +306,7 @@ instance (IsMeta a, PrettyPrint p, PrettyPrint (UnifiedVariable v))
             "Forall"
             [ writeFieldNewLine "forallSort" forallSort p
             , writeFieldNewLine "forallVariable" forallVariable p
-            , writeFieldNewLine "forallPattern" forallPattern p
+            , writeFieldNewLine "forallChild" forallChild p
             ]
 
 instance (IsMeta a, PrettyPrint p) => PrettyPrint (Iff a p) where
@@ -333,8 +333,8 @@ instance (IsMeta a, PrettyPrint p) => PrettyPrint (In a p) where
             "In"
             [ writeFieldNewLine "inOperandSort" inOperandSort p
             , writeFieldNewLine "inResultSort" inResultSort p
-            , writeFieldNewLine "inContainedPattern" inContainedPattern p
-            , writeFieldNewLine "inContainingPattern" inContainingPattern p
+            , writeFieldNewLine "inContainedChild" inContainedChild p
+            , writeFieldNewLine "inContainingChild" inContainingChild p
             ]
 
 instance (IsMeta a, PrettyPrint p) => PrettyPrint (Next a p) where
@@ -342,7 +342,7 @@ instance (IsMeta a, PrettyPrint p) => PrettyPrint (Next a p) where
         writeStructure
             "Next"
             [ writeFieldNewLine "nextSort" nextSort p
-            , writeFieldNewLine "nextPattern" nextPattern p
+            , writeFieldNewLine "nextChild" nextChild p
             ]
 
 instance (IsMeta a, PrettyPrint p) => PrettyPrint (Not a p) where
@@ -350,7 +350,7 @@ instance (IsMeta a, PrettyPrint p) => PrettyPrint (Not a p) where
         writeStructure
             "Not"
             [ writeFieldNewLine "notSort" notSort p
-            , writeFieldNewLine "notPattern" notPattern p
+            , writeFieldNewLine "notChild" notChild p
             ]
 
 instance (IsMeta a, PrettyPrint p) => PrettyPrint (Or a p) where

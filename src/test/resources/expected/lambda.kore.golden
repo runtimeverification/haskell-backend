@@ -98,14 +98,14 @@ Definition
                                             { symbolOrAliasConstructor = Id Object "lambda"
                                             , symbolOrAliasParams = []
                                             }
-                                    , applicationPatterns =
+                                    , applicationChildren =
                                         [ MetaPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = Id Meta "#variableToPattern"
                                                     , symbolOrAliasParams = []
                                                     }
-                                            , applicationPatterns =
+                                            , applicationChildren =
                                                 [ MetaPattern (VariablePattern Variable
                                                     { variableName = Id Meta "#X"
                                                     , variableSort =
@@ -139,21 +139,21 @@ Definition
                                                         , sortActualSorts = []
                                                         }
                                             }
-                                    , existsPattern =
+                                    , existsChild =
                                         ObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = Id Object "lambda0"
                                                     , symbolOrAliasParams = []
                                                     }
-                                            , applicationPatterns =
+                                            , applicationChildren =
                                                 [ MetaPattern (ApplicationPattern Application
                                                     { applicationSymbolOrAlias =
                                                         SymbolOrAlias
                                                             { symbolOrAliasConstructor = Id Meta "#variableToPattern"
                                                             , symbolOrAliasParams = []
                                                             }
-                                                    , applicationPatterns =
+                                                    , applicationChildren =
                                                         [ MetaPattern (VariablePattern Variable
                                                             { variableName = Id Meta "#X"
                                                             , variableSort =
@@ -216,21 +216,21 @@ Definition
                                                 [ SortVariableSort (SortVariable (Id Meta "#S"))
                                                 ]
                                             }
-                                    , applicationPatterns =
+                                    , applicationChildren =
                                         [ MetaPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = Id Meta "#variableToPattern"
                                                     , symbolOrAliasParams = []
                                                     }
-                                            , applicationPatterns =
+                                            , applicationChildren =
                                                 [ MetaPattern (ApplicationPattern Application
                                                     { applicationSymbolOrAlias =
                                                         SymbolOrAlias
                                                             { symbolOrAliasConstructor = Id Meta "#variable"
                                                             , symbolOrAliasParams = []
                                                             }
-                                                    , applicationPatterns =
+                                                    , applicationChildren =
                                                         [ MetaPattern (VariablePattern Variable
                                                             { variableName = Id Meta "#NAME"
                                                             , variableSort =
@@ -278,7 +278,7 @@ Definition
                                                     { symbolOrAliasConstructor = Id Meta "#`Exp"
                                                     , symbolOrAliasParams = []
                                                     }
-                                            , applicationPatterns = []
+                                            , applicationChildren = []
                                             })
                                     })
                             })
@@ -304,14 +304,14 @@ Definition
                                                 [ SortVariableSort (SortVariable (Id Meta "#S"))
                                                 ]
                                             }
-                                    , applicationPatterns =
+                                    , applicationChildren =
                                         [ ObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = Id Object "app"
                                                     , symbolOrAliasParams = []
                                                     }
-                                            , applicationPatterns =
+                                            , applicationChildren =
                                                 [ MetaPattern (VariablePattern Variable
                                                     { variableName = Id Meta "#E1"
                                                     , variableSort =
@@ -345,7 +345,7 @@ Definition
                                                         [ SortVariableSort (SortVariable (Id Meta "#S"))
                                                         ]
                                                     }
-                                            , applicationPatterns =
+                                            , applicationChildren =
                                                 [ MetaPattern (VariablePattern Variable
                                                     { variableName = Id Meta "#E1"
                                                     , variableSort =
@@ -365,7 +365,7 @@ Definition
                                                         [ SortVariableSort (SortVariable (Id Meta "#S"))
                                                         ]
                                                     }
-                                            , applicationPatterns =
+                                            , applicationChildren =
                                                 [ MetaPattern (VariablePattern Variable
                                                     { variableName = Id Meta "#E2"
                                                     , variableSort =
@@ -400,28 +400,28 @@ Definition
                                                 [ SortVariableSort (SortVariable (Id Meta "#S"))
                                                 ]
                                             }
-                                    , applicationPatterns =
+                                    , applicationChildren =
                                         [ ObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = Id Object "lambda"
                                                     , symbolOrAliasParams = []
                                                     }
-                                            , applicationPatterns =
+                                            , applicationChildren =
                                                 [ MetaPattern (ApplicationPattern Application
                                                     { applicationSymbolOrAlias =
                                                         SymbolOrAlias
                                                             { symbolOrAliasConstructor = Id Meta "#variableToPattern"
                                                             , symbolOrAliasParams = []
                                                             }
-                                                    , applicationPatterns =
+                                                    , applicationChildren =
                                                         [ MetaPattern (ApplicationPattern Application
                                                             { applicationSymbolOrAlias =
                                                                 SymbolOrAlias
                                                                     { symbolOrAliasConstructor = Id Meta "#variable"
                                                                     , symbolOrAliasParams = []
                                                                     }
-                                                            , applicationPatterns =
+                                                            , applicationChildren =
                                                                 [ MetaPattern (VariablePattern Variable
                                                                     { variableName = Id Meta "#NAME"
                                                                     , variableSort =
@@ -483,7 +483,7 @@ Definition
                                                             { symbolOrAliasConstructor = Id Meta "#`Exp"
                                                             , symbolOrAliasParams = []
                                                             }
-                                                    , applicationPatterns = []
+                                                    , applicationChildren = []
                                                     })
                                             })
                                     , andSecond =
@@ -495,7 +495,7 @@ Definition
                                                         [ SortVariableSort (SortVariable (Id Meta "#S"))
                                                         ]
                                                     }
-                                            , applicationPatterns =
+                                            , applicationChildren =
                                                 [ MetaPattern (VariablePattern Variable
                                                     { variableName = Id Meta "#E"
                                                     , variableSort =
@@ -528,21 +528,21 @@ Definition
                                                 [ SortVariableSort (SortVariable (Id Meta "#S"))
                                                 ]
                                             }
-                                    , applicationPatterns =
+                                    , applicationChildren =
                                         [ ObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = Id Object "app"
                                                     , symbolOrAliasParams = []
                                                     }
-                                            , applicationPatterns =
+                                            , applicationChildren =
                                                 [ ObjectPattern (ApplicationPattern Application
                                                     { applicationSymbolOrAlias =
                                                         SymbolOrAlias
                                                             { symbolOrAliasConstructor = Id Object "lambda"
                                                             , symbolOrAliasParams = []
                                                             }
-                                                    , applicationPatterns =
+                                                    , applicationChildren =
                                                         [ ObjectPattern (VariablePattern Variable
                                                             { variableName = Id Object "X"
                                                             , variableSort =
@@ -582,7 +582,7 @@ Definition
                                                 [ SortVariableSort (SortVariable (Id Meta "#S"))
                                                 ]
                                             }
-                                    , applicationPatterns =
+                                    , applicationChildren =
                                         [ ObjectPattern (EqualsPattern Equals
                                             { equalsOperandSort =
                                                 SortActualSortSortActual
@@ -598,14 +598,14 @@ Definition
                                                             { symbolOrAliasConstructor = Id Object "app"
                                                             , symbolOrAliasParams = []
                                                             }
-                                                    , applicationPatterns =
+                                                    , applicationChildren =
                                                         [ ObjectPattern (ApplicationPattern Application
                                                             { applicationSymbolOrAlias =
                                                                 SymbolOrAlias
                                                                     { symbolOrAliasConstructor = Id Object "lambda"
                                                                     , symbolOrAliasParams = []
                                                                     }
-                                                            , applicationPatterns =
+                                                            , applicationChildren =
                                                                 [ ObjectPattern (VariablePattern Variable
                                                                     { variableName = Id Object "X"
                                                                     , variableSort =
@@ -641,7 +641,7 @@ Definition
                                                             { symbolOrAliasConstructor = Id Meta "#substitute"
                                                             , symbolOrAliasParams = []
                                                             }
-                                                    , applicationPatterns =
+                                                    , applicationChildren =
                                                         [ MetaPattern (VariablePattern Variable
                                                             { variableName = Id Meta "#E"
                                                             , variableSort =

@@ -18,7 +18,7 @@ Definition
                                     , variableSort =
                                         SortVariableSort (SortVariable (Id Object "S"))
                                     }
-                            , existsPattern =
+                            , existsChild =
                                 ObjectPattern (VariablePattern Variable
                                     { variableName = Id Object "X"
                                     , variableSort =

@@ -106,7 +106,7 @@ Definition
                                                     ]
                                                 }
                                     }
-                            , existsPattern =
+                            , existsChild =
                                 ObjectPattern (EqualsPattern Equals
                                     { equalsOperandSort =
                                         SortActualSortSortActual
@@ -137,7 +137,7 @@ Definition
                                                         [ SortVariableSort (SortVariable (Id Object "S"))
                                                         ]
                                                     }
-                                            , applicationPatterns = []
+                                            , applicationChildren = []
                                             })
                                     })
                             })
@@ -163,7 +163,7 @@ Definition
                                                     ]
                                                 }
                                     }
-                            , existsPattern =
+                            , existsChild =
                                 ObjectPattern (EqualsPattern Equals
                                     { equalsOperandSort =
                                         SortActualSortSortActual
@@ -194,7 +194,7 @@ Definition
                                                         [ SortVariableSort (SortVariable (Id Object "S"))
                                                         ]
                                                     }
-                                            , applicationPatterns =
+                                            , applicationChildren =
                                                 [ ObjectPattern (VariablePattern Variable
                                                     { variableName = Id Object "X"
                                                     , variableSort =
@@ -236,7 +236,7 @@ Definition
                                                     ]
                                                 }
                                     }
-                            , existsPattern =
+                            , existsChild =
                                 ObjectPattern (EqualsPattern Equals
                                     { equalsOperandSort =
                                         SortActualSortSortActual
@@ -267,7 +267,7 @@ Definition
                                                         [ SortVariableSort (SortVariable (Id Object "S"))
                                                         ]
                                                     }
-                                            , applicationPatterns =
+                                            , applicationChildren =
                                                 [ ObjectPattern (VariablePattern Variable
                                                     { variableName = Id Object "L1"
                                                     , variableSort =
@@ -316,7 +316,7 @@ Definition
                                                 [ SortVariableSort (SortVariable (Id Object "S"))
                                                 ]
                                             }
-                                    , applicationPatterns = []
+                                    , applicationChildren = []
                                     })
                             , orSecond =
                                 ObjectPattern (ExistsPattern Exists
@@ -333,7 +333,7 @@ Definition
                                             , variableSort =
                                                 SortVariableSort (SortVariable (Id Object "S"))
                                             }
-                                    , existsPattern =
+                                    , existsChild =
                                         ObjectPattern (ExistsPattern Exists
                                             { existsSort =
                                                 SortActualSortSortActual
@@ -353,7 +353,7 @@ Definition
                                                                     ]
                                                                 }
                                                     }
-                                            , existsPattern =
+                                            , existsChild =
                                                 ObjectPattern (ApplicationPattern Application
                                                     { applicationSymbolOrAlias =
                                                         SymbolOrAlias
@@ -362,7 +362,7 @@ Definition
                                                                 [ SortVariableSort (SortVariable (Id Object "S"))
                                                                 ]
                                                             }
-                                                    , applicationPatterns =
+                                                    , applicationChildren =
                                                         [ ObjectPattern (VariablePattern Variable
                                                             { variableName = Id Object "X"
                                                             , variableSort =
@@ -398,7 +398,7 @@ Definition
                                             [ SortVariableSort (SortVariable (Id Object "S"))
                                             ]
                                         }
-                            , notPattern =
+                            , notChild =
                                 ObjectPattern (AndPattern And
                                     { andSort =
                                         SortActualSortSortActual
@@ -416,7 +416,7 @@ Definition
                                                         [ SortVariableSort (SortVariable (Id Object "S"))
                                                         ]
                                                     }
-                                            , applicationPatterns = []
+                                            , applicationChildren = []
                                             })
                                     , andSecond =
                                         ObjectPattern (ExistsPattern Exists
@@ -433,7 +433,7 @@ Definition
                                                     , variableSort =
                                                         SortVariableSort (SortVariable (Id Object "S"))
                                                     }
-                                            , existsPattern =
+                                            , existsChild =
                                                 ObjectPattern (ExistsPattern Exists
                                                     { existsSort =
                                                         SortActualSortSortActual
@@ -453,7 +453,7 @@ Definition
                                                                             ]
                                                                         }
                                                             }
-                                                    , existsPattern =
+                                                    , existsChild =
                                                         ObjectPattern (ApplicationPattern Application
                                                             { applicationSymbolOrAlias =
                                                                 SymbolOrAlias
@@ -462,7 +462,7 @@ Definition
                                                                         [ SortVariableSort (SortVariable (Id Object "S"))
                                                                         ]
                                                                     }
-                                                            , applicationPatterns =
+                                                            , applicationChildren =
                                                                 [ ObjectPattern (VariablePattern Variable
                                                                     { variableName = Id Object "X"
                                                                     , variableSort =
@@ -511,7 +511,7 @@ Definition
                                                 [ SortVariableSort (SortVariable (Id Object "S"))
                                                 ]
                                             }
-                                    , applicationPatterns =
+                                    , applicationChildren =
                                         [ ObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
@@ -520,7 +520,7 @@ Definition
                                                         [ SortVariableSort (SortVariable (Id Object "S"))
                                                         ]
                                                     }
-                                            , applicationPatterns = []
+                                            , applicationChildren = []
                                             })
                                         , ObjectPattern (VariablePattern Variable
                                             { variableName = Id Object "L"
@@ -573,7 +573,7 @@ Definition
                                                 [ SortVariableSort (SortVariable (Id Object "S"))
                                                 ]
                                             }
-                                    , applicationPatterns =
+                                    , applicationChildren =
                                         [ ObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
@@ -582,7 +582,7 @@ Definition
                                                         [ SortVariableSort (SortVariable (Id Object "S"))
                                                         ]
                                                     }
-                                            , applicationPatterns =
+                                            , applicationChildren =
                                                 [ ObjectPattern (VariablePattern Variable
                                                     { variableName = Id Object "X"
                                                     , variableSort =
@@ -621,7 +621,7 @@ Definition
                                                 [ SortVariableSort (SortVariable (Id Object "S"))
                                                 ]
                                             }
-                                    , applicationPatterns =
+                                    , applicationChildren =
                                         [ ObjectPattern (VariablePattern Variable
                                             { variableName = Id Object "X"
                                             , variableSort =
@@ -635,7 +635,7 @@ Definition
                                                         [ SortVariableSort (SortVariable (Id Object "S"))
                                                         ]
                                                     }
-                                            , applicationPatterns =
+                                            , applicationChildren =
                                                 [ ObjectPattern (VariablePattern Variable
                                                     { variableName = Id Object "L0"
                                                     , variableSort =

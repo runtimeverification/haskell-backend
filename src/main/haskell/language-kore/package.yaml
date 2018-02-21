@@ -30,6 +30,7 @@ dependencies:
 - bytestring-trie
 - mtl
 - containers
+- transformers
 
 library:
   source-dirs: src

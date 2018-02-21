@@ -411,8 +411,8 @@ inRemainderParser x = do
     return In
            { inOperandSort = sort1
            , inResultSort = sort2
-           , inContainedPattern = cdPattern
-           , inContainingPattern = cgPattern
+           , inContainedChild = cdPattern
+           , inContainingChild = cgPattern
            }
 
 {-|'equalsLikeRemainderParser' parses the part after an equals

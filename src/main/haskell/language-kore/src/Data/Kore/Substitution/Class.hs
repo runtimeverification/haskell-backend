@@ -5,8 +5,8 @@ module Data.Kore.Substitution.Class ( SubstitutionClass (..)
                                     , PatternSubstitutionClass (..)
                                     ) where
 
-import           Control.Monad.Reader            (ReaderT, ask, runReaderT,
-                                                  withReaderT)
+import           Control.Monad.Reader            (ReaderT, ask, local,
+                                                  runReaderT)
 import           Data.Maybe                      (isJust)
 import qualified Data.Set                        as Set
 import           Prelude                         hiding (lookup)
@@ -40,7 +40,8 @@ addFreeVariable
 addFreeVariable v s = s { freeVars = v `Set.insert` freeVars s }
 
 instance ( VariableClass var
-         , SubstitutionClass s (UnifiedVariable var) (FixedPattern var))
+         , SubstitutionClass s (UnifiedVariable var) (FixedPattern var)
+         )
     => MapClass (SubstitutionWithFreeVars s var)
         (UnifiedVariable var) (FixedPattern var)
   where
@@ -54,8 +55,9 @@ instance ( VariableClass var
 
 instance ( VariableClass var
          , SubstitutionClass s (UnifiedVariable var) (FixedPattern var)
-         ) => SubstitutionClass (SubstitutionWithFreeVars s var)
-            (UnifiedVariable var) (FixedPattern var)
+         )
+    => SubstitutionClass (SubstitutionWithFreeVars s var)
+        (UnifiedVariable var) (FixedPattern var)
   where
     getFreeVars = freeVars
 
@@ -65,7 +67,8 @@ applies @s@ on @p@ in a monadic state used for generating fresh variables.
 -}
 class ( SubstitutionClass s (UnifiedVariable var) (FixedPattern var)
       , FreshVariablesClass m var
-      ) => PatternSubstitutionClass var s m
+      )
+    => PatternSubstitutionClass var s m
   where
     substitute
         :: FixedPattern var
@@ -102,7 +105,13 @@ substitutePreprocess
     :: (IsMeta a, PatternSubstitutionClass var s m)
     => Pattern a var (FixedPattern var)
     -> ReaderT (SubstitutionWithFreeVars s var)
-        m (Either (FixedPattern var) (Pattern a var (FixedPattern var)))
+        m (Either
+            (FixedPattern var)
+            ( Pattern a var (FixedPattern var)
+            , ReaderT (SubstitutionWithFreeVars s var) m (FixedPattern var)
+                -> ReaderT (SubstitutionWithFreeVars s var) m (FixedPattern var)
+            )
+        )
 substitutePreprocess p
   = do
     s <- ask
@@ -110,7 +119,7 @@ substitutePreprocess p
     else case p of
         ExistsPattern e -> binderPatternSubstitutePreprocess s e
         ForallPattern f -> binderPatternSubstitutePreprocess s f
-        _               -> return $ Right p
+        _               -> return $ Right (p, id)
 
 {-
 * if the quantified variable is among the encountered free variables
@@ -125,7 +134,13 @@ binderPatternSubstitutePreprocess
     => SubstitutionWithFreeVars s var
     -> q a var (FixedPattern var)
     -> ReaderT (SubstitutionWithFreeVars s var)
-        m (Either (FixedPattern var) (Pattern a var (FixedPattern var)))
+        m (Either
+            (FixedPattern var)
+            ( Pattern a var (FixedPattern var)
+            , ReaderT (SubstitutionWithFreeVars s var) m (FixedPattern var)
+                -> ReaderT (SubstitutionWithFreeVars s var) m (FixedPattern var)
+            )
+        )
 binderPatternSubstitutePreprocess s q
     | var `Set.member` vars
       = do
@@ -137,10 +152,10 @@ binderPatternSubstitutePreprocess s q
   where
     sort = getBinderPatternSort q
     var = getBinderPatternVariable q
-    pat = getBinderPatternPattern q
+    pat = getBinderPatternChild q
     vars = getFreeVars s
     substituteBinderBodyWith newVar fs =
-        (Left . asUnifiedPattern . binderPatternConstructor q sort newVar) <$>
-            withReaderT fs (substituteM pat)
+        return
+            (Right (binderPatternConstructor q sort newVar pat, local fs))
     substituteFreeBinderBodyWith fs =
         substituteBinderBodyWith var (addFreeVariable var . fs)

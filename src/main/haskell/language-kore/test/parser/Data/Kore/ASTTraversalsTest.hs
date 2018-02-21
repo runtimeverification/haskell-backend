@@ -24,7 +24,7 @@ astTraversalsTests =
                         { symbolOrAliasConstructor = Id "sigma"
                         , symbolOrAliasParams = []
                         }
-                    , applicationPatterns =
+                    , applicationChildren =
                         [ MetaPattern $ StringLiteralPattern $
                                 StringLiteral "left1"
                         ,  MetaPattern $ StringLiteralPattern $
@@ -37,7 +37,7 @@ astTraversalsTests =
                         { symbolOrAliasConstructor = Id "sigma"
                         , symbolOrAliasParams = []
                         }
-                    , applicationPatterns =
+                    , applicationChildren =
                         [ ObjectPattern $ ImpliesPattern Implies
                             { impliesSort = SortVariableSort $ SortVariable $
                                 Id "#a"
