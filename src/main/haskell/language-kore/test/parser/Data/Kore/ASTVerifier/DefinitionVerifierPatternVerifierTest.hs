@@ -7,6 +7,7 @@ import           Test.Tasty                                          (TestTree,
 import           Data.Kore.AST
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
+import           Data.Kore.ImplicitDefinitions
 import qualified Data.List                                           as List
 
 data PatternRestrict
@@ -515,20 +516,32 @@ successTestsForObjectPattern
     sortVariables
     anotherSort
     sentences
+    patternRestrict
   =
-    successTestsForPattern Object
-        description
-        testedPattern
-        namePrefix
-        testedSort
-        sortVariables
-        sortVariables
-        anotherSort
-        (VariableOfDeclaredSort dummyVariable)
-        (dummySortSentences ++ sentences)
+    successTestDataGroup description testData
   where
     (dummyVariable, dummySortSentences) =
         dummyVariableAndSentences namePrefix
+    testData =
+        genericPatternInAllContexts
+            Object
+            testedPattern
+            namePrefix
+            testedSort
+            sortVariables
+            sortVariables
+            anotherSort
+            (VariableOfDeclaredSort dummyVariable)
+            (dummySortSentences ++ sentences)
+            patternRestrict
+        ++ objectPatternInAllContexts
+            testedPattern
+            namePrefix
+            testedSort
+            sortVariables
+            anotherSort
+            (dummySortSentences ++ sentences)
+            patternRestrict
 
 successTestsForMetaPattern
     :: String
@@ -542,24 +555,7 @@ successTestsForMetaPattern
     -> [Sentence]
     -> PatternRestrict
     -> TestTree
-successTestsForMetaPattern = successTestsForPattern Meta
-
-successTestsForPattern
-    :: IsMeta a
-    => a
-    -> String
-    -> Pattern a
-    -> NamePrefix
-    -> TestedPatternSort a
-    -> SortVariablesThatMustBeDeclared a
-    -> SortVariablesThatMustBeDeclared Object
-    -> DeclaredSort a
-    -> VariableOfDeclaredSort a
-    -> [Sentence]
-    -> PatternRestrict
-    -> TestTree
-successTestsForPattern
-    x
+successTestsForMetaPattern
     description
     testedPattern
     namePrefix
@@ -571,9 +567,11 @@ successTestsForPattern
     sentences
     patternRestrict
   =
-    successTestDataGroup description
-        (patternInAllContexts
-            x
+    successTestDataGroup description testData
+  where
+    testData =
+        genericPatternInAllContexts
+            Meta
             testedPattern
             namePrefix
             testedSort
@@ -583,7 +581,6 @@ successTestsForPattern
             dummyVariable
             sentences
             patternRestrict
-        )
 
 failureTestsForObjectPattern
     :: String
@@ -607,26 +604,39 @@ failureTestsForObjectPattern
     sortVariables
     anotherSort
     sentences
+    patternRestrict
   =
-    failureTestsForPattern
-        Object
+    failureTestDataGroup
         description
         errorMessage
         errorStackSuffix
-        testedPattern
-        namePrefix
-        testedSort
-        sortVariables
-        sortVariables
-        anotherSort
-        (VariableOfDeclaredSort dummyVariable)
-        (dummySortSentence : sentences)
+        testData
   where
     dummySortName = SortName (rawNamePrefix ++ "_OtherSort")
     dummySort = simpleSort dummySortName
     dummyVariable =
         variable (VariableName (rawNamePrefix ++ "_OtherVariable")) dummySort
     dummySortSentence = simpleSortSentence dummySortName
+    testData =
+        genericPatternInAllContexts
+            Object
+            testedPattern
+            namePrefix
+            testedSort
+            sortVariables
+            sortVariables
+            anotherSort
+            (VariableOfDeclaredSort dummyVariable)
+            (dummySortSentence : sentences)
+            patternRestrict
+        ++ objectPatternInAllContexts
+            testedPattern
+            namePrefix
+            testedSort
+            sortVariables
+            anotherSort
+            (dummySortSentence : sentences)
+            patternRestrict
 
 failureTestsForMetaPattern
     :: String
@@ -642,26 +652,7 @@ failureTestsForMetaPattern
     -> [Sentence]
     -> PatternRestrict
     -> TestTree
-failureTestsForMetaPattern = failureTestsForPattern Meta
-
-failureTestsForPattern
-    :: IsMeta a
-    => a
-    -> String
-    -> ExpectedErrorMessage
-    -> ErrorStack
-    -> Pattern a
-    -> NamePrefix
-    -> TestedPatternSort a
-    -> SortVariablesThatMustBeDeclared a
-    -> SortVariablesThatMustBeDeclared Object
-    -> DeclaredSort a
-    -> VariableOfDeclaredSort a
-    -> [Sentence]
-    -> PatternRestrict
-    -> TestTree
-failureTestsForPattern
-    x
+failureTestsForMetaPattern
     description
     errorMessage
     errorStackSuffix
@@ -679,8 +670,11 @@ failureTestsForPattern
         description
         errorMessage
         errorStackSuffix
-        (patternInAllContexts
-            x
+        testData
+  where
+    testData =
+        genericPatternInAllContexts
+            Meta
             testedPattern
             namePrefix
             testedSort
@@ -689,9 +683,9 @@ failureTestsForPattern
             anotherSort
             dummyVariable
             sentences
-            patternRestrict)
+            patternRestrict
 
-patternInAllContexts
+genericPatternInAllContexts
     :: IsMeta a
     => a
     -> Pattern a
@@ -704,7 +698,7 @@ patternInAllContexts
     -> [Sentence]
     -> PatternRestrict
     -> [TestData]
-patternInAllContexts
+genericPatternInAllContexts
     x
     testedPattern
     (NamePrefix namePrefix)
@@ -716,23 +710,18 @@ patternInAllContexts
     sentences
     patternRestrict
   =
-    map (\context -> context (List.head patternExpansion)) contextExpansion
-    ++ map (List.head contextExpansion) patternExpansion
+    patternsInAllContexts
+        x
+        patternExpansion
+        (NamePrefix namePrefix)
+        sortVariables
+        objectSortVariables
+        (DeclaredSort anotherSort)
+        sentences
+        patternRestrict
   where
-    contextExpansion =
-        testsForUnifiedPatternInTopLevelContext
-            x
-            (NamePrefix (namePrefix ++ "_piac"))
-            (DeclaredSort anotherSort)
-            sortVariables
-            objectSortVariables
-            ( symbolSentence
-            : aliasSentence
-            : sentences
-            )
-            patternRestrict
     patternExpansion =
-        patternInPatterns
+        genericPatternInPatterns
             testedPattern
             anotherPattern
             (OperandSort testedSort)
@@ -764,6 +753,86 @@ patternInAllContexts
             { symbolOrAliasConstructor = Id rawAliasName
             , symbolOrAliasParams = [sort]
             }
+
+objectPatternInAllContexts
+    :: Pattern Object
+    -> NamePrefix
+    -> TestedPatternSort Object
+    -> SortVariablesThatMustBeDeclared Object
+    -> DeclaredSort Object
+    -> [Sentence]
+    -> PatternRestrict
+    -> [TestData]
+objectPatternInAllContexts
+    testedPattern
+    (NamePrefix namePrefix)
+    (TestedPatternSort testedSort)
+    sortVariables
+    (DeclaredSort anotherSort)
+  =
+    patternsInAllContexts
+        Object
+        patternExpansion
+        (NamePrefix namePrefix)
+        sortVariables
+        sortVariables
+        (DeclaredSort anotherSort)
+  where
+    patternExpansion =
+        objectPatternInPatterns
+            testedPattern
+            anotherPattern
+            (OperandSort testedSort)
+    anotherPattern =
+        ExistsPattern Exists
+            { existsSort = testedSort
+            , existsVariable = asUnifiedVariable anotherVariable
+            , existsPattern = asUnifiedPattern (VariablePattern anotherVariable)
+            }
+    anotherVariable =
+        Variable
+            { variableName = Id (namePrefix ++ "_anotherVar")
+            , variableSort = testedSort
+            }
+
+patternsInAllContexts
+    :: IsMeta a
+    => a
+    -> [TestPattern a]
+    -> NamePrefix
+    -> SortVariablesThatMustBeDeclared a
+    -> SortVariablesThatMustBeDeclared Object
+    -> DeclaredSort a
+    -> [Sentence]
+    -> PatternRestrict
+    -> [TestData]
+patternsInAllContexts
+    x
+    patterns
+    (NamePrefix namePrefix)
+    sortVariables
+    objectSortVariables
+    (DeclaredSort anotherSort)
+    sentences
+    patternRestrict
+  =
+    map (\context -> context (List.head patterns)) contextExpansion
+    ++ map (List.head contextExpansion) patterns
+  where
+    contextExpansion =
+        testsForUnifiedPatternInTopLevelContext
+            x
+            (NamePrefix (namePrefix ++ "_piac"))
+            (DeclaredSort anotherSort)
+            sortVariables
+            objectSortVariables
+            ( symbolSentence
+            : aliasSentence
+            : sentences
+            )
+            patternRestrict
+    rawSymbolName = namePrefix ++ "_anotherSymbol"
+    rawAliasName = namePrefix ++ "_anotherAlias"
     rawSortVariableName = namePrefix ++ "_sortVariable"
     sortVariableName = SortVariableName rawSortVariableName
     symbolAliasSort = sortVariableSort sortVariableName
@@ -788,7 +857,7 @@ patternInAllContexts
             , sentenceAliasAttributes = Attributes []
             }
 
-patternInPatterns
+genericPatternInPatterns
     :: IsMeta a
     => Pattern a
     -> Pattern a
@@ -799,7 +868,7 @@ patternInPatterns
     -> SymbolOrAlias a
     -> PatternRestrict
     -> [TestPattern a]
-patternInPatterns
+genericPatternInPatterns
     testedPattern
     anotherPattern
     sort@(OperandSort testedSort)
@@ -810,7 +879,7 @@ patternInPatterns
     patternRestrict
   =
     patternInQuantifiedPatterns testedPattern testedSort dummyVariable
-    ++ patternInUnquantifiedPatterns
+    ++ patternInUnquantifiedGenericPatterns
         testedPattern anotherPattern sort resultSort
     ++ case patternRestrict of
         NeedsSortedParent -> []
@@ -847,6 +916,13 @@ patternInPatterns
             }
         ]
 
+objectPatternInPatterns
+    :: Pattern Object
+    -> Pattern Object
+    -> OperandSort Object
+    -> [TestPattern Object]
+objectPatternInPatterns = patternInUnquantifiedObjectPatterns
+
 patternInQuantifiedPatterns
     :: IsMeta a
     => Pattern a
@@ -882,14 +958,14 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
         }
     ]
 
-patternInUnquantifiedPatterns
+patternInUnquantifiedGenericPatterns
     :: IsMeta a
     => Pattern a
     -> Pattern a
     -> OperandSort a
     -> ResultSort a
     -> [TestPattern a]
-patternInUnquantifiedPatterns
+patternInUnquantifiedGenericPatterns
     testedPattern
     anotherPattern
     (OperandSort testedSort)
@@ -1023,6 +1099,44 @@ patternInUnquantifiedPatterns
     anotherUnifiedPattern = asUnifiedPattern anotherPattern
     testedUnifiedPattern = asUnifiedPattern testedPattern
 
+patternInUnquantifiedObjectPatterns
+    :: Pattern Object
+    -> Pattern Object
+    -> OperandSort Object
+    -> [TestPattern Object]
+patternInUnquantifiedObjectPatterns
+    testedPattern
+    anotherPattern
+    (OperandSort testedSort)
+  =
+    [ TestPattern
+        { testPatternPattern = NextPattern Next
+            { nextSort = testedSort
+            , nextPattern = testedUnifiedPattern
+            }
+        , testPatternErrorStack = ErrorStack ["\\next"]
+        }
+    , TestPattern
+        { testPatternPattern = RewritesPattern Rewrites
+            { rewritesSort = testedSort
+            , rewritesFirst = testedUnifiedPattern
+            , rewritesSecond = anotherUnifiedPattern
+            }
+        , testPatternErrorStack = ErrorStack ["\\rewrites"]
+        }
+    , TestPattern
+        { testPatternPattern = RewritesPattern Rewrites
+            { rewritesSort = testedSort
+            , rewritesFirst = anotherUnifiedPattern
+            , rewritesSecond = testedUnifiedPattern
+            }
+        , testPatternErrorStack = ErrorStack ["\\rewrites"]
+        }
+
+    ]
+  where
+    anotherUnifiedPattern = asUnifiedPattern anotherPattern
+    testedUnifiedPattern = asUnifiedPattern testedPattern
 
 testsForUnifiedPatternInTopLevelContext
     :: IsMeta a
@@ -1172,13 +1286,15 @@ testsForUnifiedPatternInTopLevelGenericContext
                 , testDataDefinition =
                     Definition
                         { definitionAttributes = Attributes []
-                        , definitionModules = Module
-                            { moduleName = ModuleName "MODULE"
-                            , moduleSentences = additionalSentences
-                            , moduleAttributes =
-                                Attributes
-                                    [ testPatternUnifiedPattern testPattern ]
-                            }
+                        , definitionModules =
+                            [ Module
+                                { moduleName = ModuleName "MODULE"
+                                , moduleSentences = additionalSentences
+                                , moduleAttributes =
+                                    Attributes
+                                        [ testPatternUnifiedPattern testPattern ]
+                                }
+                            ]
                         }
                 }
             ]
@@ -1200,11 +1316,13 @@ testsForUnifiedPatternInTopLevelGenericContext
                         { definitionAttributes =
                             Attributes
                                 [ testPatternUnifiedPattern testPattern ]
-                        , definitionModules = Module
-                            { moduleName = ModuleName "MODULE"
-                            , moduleSentences = additionalSentences
-                            , moduleAttributes = Attributes []
-                            }
+                        , definitionModules =
+                            [ Module
+                                { moduleName = ModuleName "MODULE"
+                                , moduleSentences = additionalSentences
+                                , moduleAttributes = Attributes []
+                                }
+                            ]
                         }
                 }
             ]

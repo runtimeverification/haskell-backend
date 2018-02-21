@@ -1,10 +1,12 @@
 module Data.Kore.ASTVerifier.DefinitionVerifierTest
     (definitionVerifierTests) where
 
-import           Test.Tasty       (TestTree, testGroup)
+import           Test.Tasty                                                      (TestTree,
+                                                                                  testGroup)
 
-import           Data.Kore.ASTVerifier.DefinitionVerifierSortUsageTest
+import           Data.Kore.ASTVerifier.DefinitionVerifierImportsTest
 import           Data.Kore.ASTVerifier.DefinitionVerifierPatternVerifierTest
+import           Data.Kore.ASTVerifier.DefinitionVerifierSortUsageTest
 import           Data.Kore.ASTVerifier.DefinitionVerifierUniqueNamesTest
 import           Data.Kore.ASTVerifier.DefinitionVerifierUniqueSortVariablesTest
 
@@ -16,4 +18,5 @@ definitionVerifierTests =
         , definitionVerifierUniqueSortVariablesTests
         , definitionVerifierSortUsageTests
         , definitionVerifierPatternVerifierTests
+        , definitionVerifierImportsTests
         ]

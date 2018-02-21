@@ -8,6 +8,7 @@ import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.PatternVerifier
 import           Data.Kore.ASTVerifier.SortVerifier
 import           Data.Kore.Error
+import           Data.Kore.IndexedModule.IndexedModule
 import           Data.Maybe                               (mapMaybe)
 import qualified Data.Set                                 as Set
 
@@ -39,6 +40,7 @@ definedNameForSentence (ObjectSentenceSymbolSentence sentenceSymbol) =
     Just (getId (getSentenceSymbolOrAliasConstructor sentenceSymbol))
 definedNameForSentence (SentenceSortSentence sentenceSort) =
     Just (getId (sentenceSortName sentenceSort))
+definedNameForSentence (SentenceImportSentence _) = Nothing
 definedNameForSentence (SentenceAxiomSentence _) = Nothing
 
 verifySentences
@@ -98,7 +100,8 @@ verifySentence _ _ indexedModule (SentenceAxiomSentence axiomSentence) =
     verifyAxiomSentence axiomSentence indexedModule
 verifySentence _ _ indexedModule (SentenceSortSentence sortSentence) =
     verifySortSentence sortSentence indexedModule
-
+verifySentence _ _ _ (SentenceImportSentence _) =
+    verifySuccess
 
 verifySymbolAliasSentence
     :: (IsMeta a, SentenceSymbolOrAlias ssa)

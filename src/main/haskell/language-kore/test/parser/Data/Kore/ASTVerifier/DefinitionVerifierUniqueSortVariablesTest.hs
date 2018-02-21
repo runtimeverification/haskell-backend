@@ -1,11 +1,13 @@
 module Data.Kore.ASTVerifier.DefinitionVerifierUniqueSortVariablesTest
     (definitionVerifierUniqueSortVariablesTests) where
 
-import           Test.Tasty       (TestTree, testGroup)
+import           Test.Tasty                                          (TestTree,
+                                                                      testGroup)
 
 import           Data.Kore.AST
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
+import           Data.Kore.ImplicitDefinitions
 
 definitionVerifierUniqueSortVariablesTests :: TestTree
 definitionVerifierUniqueSortVariablesTests =

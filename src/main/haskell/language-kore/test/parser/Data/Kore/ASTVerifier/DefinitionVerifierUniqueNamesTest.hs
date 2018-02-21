@@ -1,7 +1,8 @@
 module Data.Kore.ASTVerifier.DefinitionVerifierUniqueNamesTest
     (definitionVerifierUniqueNamesTests) where
 
-import           Test.Tasty       (TestTree, testGroup)
+import           Test.Tasty                                          (TestTree,
+                                                                      testGroup)
 
 import           Data.Kore.AST
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
@@ -110,7 +111,6 @@ definitionVerifierUniqueNamesTests =
                 , simpleSortSentence (SortName "s")
                 ]
             )
-        -- TODO: Make sure that this test is vaild.
         , expectFailureWithError
             "Definition with meta alias with same name as sort"
             (Error ["module 'MODULE'"] "Duplicated name: '#String'.")

@@ -4,7 +4,8 @@ import           Data.Kore.AST
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.PatternVerifier
 import           Data.Kore.Error
-import qualified Data.Set as Set
+import           Data.Kore.IndexedModule.IndexedModule
+import qualified Data.Set                              as Set
 
 verifyAttributes
     :: Attributes

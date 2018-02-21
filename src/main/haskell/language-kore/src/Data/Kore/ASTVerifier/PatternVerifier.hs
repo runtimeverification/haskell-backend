@@ -2,14 +2,17 @@ module Data.Kore.ASTVerifier.PatternVerifier (verifyPattern) where
 
 import           Data.Kore.AST
 import           Data.Kore.ASTVerifier.Error
+import           Data.Kore.ASTVerifier.Resolvers
 import           Data.Kore.ASTVerifier.SortVerifier
 import           Data.Kore.Error
+import           Data.Kore.ImplicitDefinitions
+import           Data.Kore.IndexedModule.IndexedModule
 import           Data.Kore.Unparser.Unparse
 
-import           Control.Monad                      (zipWithM_)
-import qualified Data.Map                           as Map
-import qualified Data.Set                           as Set
-import           Data.Typeable                      (Typeable)
+import           Control.Monad                         (zipWithM_)
+import qualified Data.Map                              as Map
+import qualified Data.Set                              as Set
+import           Data.Typeable                         (Typeable)
 
 data DeclaredVariables = DeclaredVariables
     { objectDeclaredVariables :: !(Map.Map (Id Object) (Variable Object))
@@ -42,11 +45,11 @@ metaVerifyHelpers :: IndexedModule -> DeclaredVariables -> VerifyHelpers Meta
 metaVerifyHelpers indexedModule declaredVariables =
     VerifyHelpers
         { verifyHelpersFindSort =
-            findSort (indexedModuleMetaSortDescriptions indexedModule)
+            resolveSort indexedModuleMetaSortDescriptions indexedModule
         , verifyHelpersLookupAliasDeclaration =
-            flip Map.lookup (indexedModuleMetaAliasSentences indexedModule)
+            resolveThing indexedModuleMetaAliasSentences indexedModule
         , verifyHelpersLookupSymbolDeclaration =
-            flip Map.lookup (indexedModuleMetaSymbolSentences indexedModule)
+            resolveThing indexedModuleMetaSymbolSentences indexedModule
         , verifyHelpersFindDeclaredVariables =
             flip Map.lookup (metaDeclaredVariables declaredVariables)
         }
@@ -56,11 +59,11 @@ objectVerifyHelpers
 objectVerifyHelpers indexedModule declaredVariables =
     VerifyHelpers
         { verifyHelpersFindSort =
-            findSort (indexedModuleObjectSortDescriptions indexedModule)
+            resolveSort indexedModuleObjectSortDescriptions indexedModule
         , verifyHelpersLookupAliasDeclaration =
-            flip Map.lookup (indexedModuleObjectAliasSentences indexedModule)
+            resolveThing indexedModuleObjectAliasSentences indexedModule
         , verifyHelpersLookupSymbolDeclaration =
-            flip Map.lookup (indexedModuleObjectSymbolSentences indexedModule)
+            resolveThing indexedModuleObjectSymbolSentences indexedModule
         , verifyHelpersFindDeclaredVariables =
             flip Map.lookup (objectDeclaredVariables declaredVariables)
         }
@@ -150,13 +153,19 @@ internalVerifyPattern
     declaredVariables
   =
     withContext (patternNameForContext p) (do
+        maybeSort <-
+            verifyObjectPattern
+                p indexedModule verifyHelpers sortVariables declaredVariables
         sort <-
-            verifyParametrizedPattern
-                p
-                indexedModule
-                (objectVerifyHelpers indexedModule declaredVariables)
-                sortVariables
-                declaredVariables
+            case maybeSort of
+                Just s -> return s
+                Nothing ->
+                    verifyParametrizedPattern
+                        p
+                        indexedModule
+                        verifyHelpers
+                        sortVariables
+                        declaredVariables
         case maybeExpectedSort of
             Just expectedSort ->
                 verifySameSort
@@ -165,6 +174,8 @@ internalVerifyPattern
             Nothing ->
                 verifySuccess
     )
+  where
+    verifyHelpers = objectVerifyHelpers indexedModule declaredVariables
 
 verifyParametrizedPattern
     :: IsMeta a
@@ -189,6 +200,42 @@ verifyParametrizedPattern (NotPattern p)         = verifyMLPattern p
 verifyParametrizedPattern (OrPattern p)          = verifyMLPattern p
 verifyParametrizedPattern (TopPattern p)         = verifyMLPattern p
 verifyParametrizedPattern (VariablePattern p)    = verifyVariableUsage p
+
+verifyObjectPattern
+    :: Pattern Object
+    -> IndexedModule
+    -> VerifyHelpers Object
+    -> Set.Set UnifiedSortVariable
+    -> DeclaredVariables
+    -> Either (Error VerifyError) (Maybe (Sort Object))
+verifyObjectPattern (NextPattern p)     = maybeVerifyMLPattern p
+verifyObjectPattern (RewritesPattern p) = maybeVerifyMLPattern p
+verifyObjectPattern _                   = rightNothing
+  where
+    rightNothing _ _ _ _ = Right Nothing
+
+maybeVerifyMLPattern
+    :: (MLPatternClass p, IsMeta a)
+    => p a
+    -> IndexedModule
+    -> VerifyHelpers a
+    -> Set.Set UnifiedSortVariable
+    -> DeclaredVariables
+    -> Either (Error VerifyError) (Maybe (Sort a))
+maybeVerifyMLPattern
+    mlPattern
+    indexedModule
+    verifyHelpers
+    declaredSortVariables
+    declaredVariables
+  =
+    Just <$>
+        verifyMLPattern
+            mlPattern
+            indexedModule
+            verifyHelpers
+            declaredSortVariables
+            declaredVariables
 
 verifyMLPattern
     :: (MLPatternClass p, IsMeta a)
@@ -350,24 +397,15 @@ verifyUnifiedVariableDeclaration
     (MetaVariable variable) indexedModule declaredSortVariables
   =
     verifySortUsage
-        (findSort (indexedModuleMetaSortDescriptions indexedModule))
+        (resolveSort indexedModuleMetaSortDescriptions indexedModule)
         declaredSortVariables
         (variableSort variable)
 verifyUnifiedVariableDeclaration
     (ObjectVariable variable) indexedModule declaredSortVariables
   = verifySortUsage
-        (findSort (indexedModuleObjectSortDescriptions indexedModule))
+        (resolveSort indexedModuleObjectSortDescriptions indexedModule)
         declaredSortVariables
         (variableSort variable)
-
-findSort
-    :: Map.Map (Id a) (SortDescription a)
-    -> Id a
-    -> Either (Error VerifyError) (SortDescription a)
-findSort sorts sortId =
-    case Map.lookup sortId sorts of
-        Nothing -> koreFail ("Sort '" ++ getId sortId ++  "' not declared.")
-        Just sortSentence -> Right sortSentence
 
 findVariableDeclaration
     :: (Ord a, Typeable a)
@@ -541,8 +579,10 @@ patternNameForContext (ForallPattern forall) =
 patternNameForContext (IffPattern _) = "\\iff"
 patternNameForContext (ImpliesPattern _) = "\\implies"
 patternNameForContext (InPattern _) = "\\in"
+patternNameForContext (NextPattern _) = "\\next"
 patternNameForContext (NotPattern _) = "\\not"
 patternNameForContext (OrPattern _) = "\\or"
+patternNameForContext (RewritesPattern _) = "\\rewrites"
 patternNameForContext (StringLiteralPattern _) = "<string>"
 patternNameForContext (TopPattern _) = "\\top"
 patternNameForContext (VariablePattern variable) =

@@ -1,19 +1,21 @@
-module Data.Kore.ASTVerifier.ModuleVerifier (verifyModule,
-                                             verifyUniqueNames) where
+module Data.Kore.ASTVerifier.ModuleVerifier
+    (verifyModule, verifyUniqueNames) where
 
 import           Data.Kore.AST
 import           Data.Kore.ASTVerifier.AttributesVerifier
 import           Data.Kore.ASTVerifier.Error
-import qualified Data.Kore.ASTVerifier.SentenceVerifier as SentenceVerifier
+import           Data.Kore.ASTVerifier.Resolvers
+import qualified Data.Kore.ASTVerifier.SentenceVerifier   as SentenceVerifier
 import           Data.Kore.Error
-import qualified Data.Map as Map
-import qualified Data.Set as Set
+import           Data.Kore.IndexedModule.IndexedModule
+
+import qualified Data.Set                                 as Set
 
 verifyUniqueNames
-    :: Module
-    -> Set.Set String
+    :: Set.Set String
+    -> Module
     -> Either (Error VerifyError) (Set.Set String)
-verifyUniqueNames koreModule existingNames =
+verifyUniqueNames existingNames koreModule =
     withContext
         ("module '" ++ getModuleName (moduleName koreModule) ++ "'")
         (SentenceVerifier.verifyUniqueNames
@@ -21,42 +23,17 @@ verifyUniqueNames koreModule existingNames =
             existingNames)
 
 verifyModule
-    :: Module
-    -> IndexedModule
+    :: IndexedModule
     -> Either (Error VerifyError) VerifySuccess
-verifyModule koreModule indexedModule =
+verifyModule indexedModule =
     withContext
-        ("module '" ++ getModuleName (moduleName koreModule) ++ "'")
+        ("module '" ++ getModuleName (indexedModuleName indexedModule) ++ "'")
         (do
             verifyAttributes
-                (moduleAttributes koreModule) indexedModule Set.empty
+                (indexedModuleAttributes indexedModule) indexedModule Set.empty
             SentenceVerifier.verifySentences
-                (findObjectSortDescription indexedModule)
-                (findMetaSortDescription indexedModule)
+                (resolveSort indexedModuleObjectSortDescriptions indexedModule)
+                (resolveSort indexedModuleMetaSortDescriptions indexedModule)
                 indexedModule
-                (moduleSentences koreModule)
+                (indexedModuleRawSentences indexedModule)
         )
-
-findObjectSortDescription
-    :: IndexedModule
-    -> Id Object
-    -> Either (Error VerifyError) (SortDescription Object)
-findObjectSortDescription indexedModule id1 =
-    findSortDescription id1 (indexedModuleObjectSortDescriptions indexedModule)
-
-findMetaSortDescription
-    :: IndexedModule
-    -> Id Meta
-    -> Either (Error VerifyError) (SortDescription Meta)
-findMetaSortDescription indexedModule id1 =
-    findSortDescription id1 (indexedModuleMetaSortDescriptions indexedModule)
-
-findSortDescription
-    :: Id a
-    -> Map.Map (Id a) (SortDescription a)
-    -> Either (Error VerifyError) (SortDescription a)
-findSortDescription sortId sortIdToSortDescription =
-    case Map.lookup sortId sortIdToSortDescription of
-        Nothing ->
-            Left (koreError ("Sort '" ++ getId sortId ++ "' not declared."))
-        Just description -> Right description

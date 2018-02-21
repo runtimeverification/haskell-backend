@@ -1,7 +1,9 @@
 module Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers where
 
-import           Test.Tasty       (TestTree, testGroup)
-import           Test.Tasty.HUnit (assertEqual, assertFailure, testCase)
+import           Test.Tasty                               (TestTree, testGroup)
+import           Test.Tasty.HUnit                         (assertEqual,
+                                                           assertFailure,
+                                                           testCase)
 
 
 import           Data.Kore.AST
@@ -16,9 +18,14 @@ newtype ErrorStack = ErrorStack [String]
 
 data TestData = TestData
     { testDataDescription :: !String
-    , testDataError :: !(Error VerifyError)
-    , testDataDefinition :: !Definition
+    , testDataError       :: !(Error VerifyError)
+    , testDataDefinition  :: !Definition
     }
+
+addPrefixToDescription :: String -> [TestData] -> [TestData]
+addPrefixToDescription prefix =
+    map
+        (\t -> t {testDataDescription = prefix ++ testDataDescription t})
 
 failureTestDataGroup
     :: String -> ExpectedErrorMessage -> ErrorStack -> [TestData] -> TestTree
@@ -107,11 +114,13 @@ simpleDefinitionFromSentences :: ModuleName -> [Sentence] -> Definition
 simpleDefinitionFromSentences name sentences =
     Definition
         { definitionAttributes = Attributes []
-        , definitionModules = Module
-            { moduleName = name
-            , moduleSentences = sentences
-            , moduleAttributes = Attributes []
-            }
+        , definitionModules =
+            [ Module
+                { moduleName = name
+                , moduleSentences = sentences
+                , moduleAttributes = Attributes []
+                }
+            ]
         }
 
 simpleSortSentence :: SortName -> Sentence
@@ -176,6 +185,13 @@ simpleAxiomSentence unifiedPattern =
         { sentenceAxiomParameters = []
         , sentenceAxiomPattern = unifiedPattern
         , sentenceAxiomAttributes = Attributes []
+        }
+
+importSentence :: ModuleName -> Sentence
+importSentence name =
+    SentenceImportSentence SentenceImport
+        { sentenceImportModuleName = name
+        , sentenceImportAttributes = Attributes []
         }
 
 sortSentenceWithSortParameters :: SortName -> [SortVariable Object] -> Sentence

@@ -3,6 +3,7 @@ module Data.Kore.Parser.ParserTest (koreParserTests) where
 import           Test.Tasty                       (TestTree, testGroup)
 
 import           Data.Kore.AST
+import           Data.Kore.ImplicitDefinitions
 import           Data.Kore.Parser.ParserImpl
 import           Data.Kore.Parser.ParserTestUtils
 

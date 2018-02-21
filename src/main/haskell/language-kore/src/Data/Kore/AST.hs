@@ -18,7 +18,7 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Data.Kore.AST where
 
-import qualified Data.Map as Map
+import qualified Data.Map      as Map
 import           Data.Typeable (Typeable, cast, typeOf, typeRepArgs)
 
 data KoreLevel
@@ -54,7 +54,7 @@ applyMetaObjectFunctionCasted
     -> (p Meta -> r)
     -> r
 applyMetaObjectFunctionCasted (Just item) Nothing fObject _ = fObject item
-applyMetaObjectFunctionCasted Nothing (Just item) _ fMeta = fMeta item
+applyMetaObjectFunctionCasted Nothing (Just item) _ fMeta   = fMeta item
 
 applyMetaObjectFunction
     :: (Typeable a, Typeable p)
@@ -199,36 +199,6 @@ metaSortsList = [ CharSort, CharListSort, PatternSort, PatternListSort, SortSort
     , VariableSort, VariableListSort
     ]
 
--- TODO (virgil): Move these to a separate place with implicit definitions.
-charMetaSort :: Sort Meta
-charMetaSort = metaSort CharSort
-charListMetaSort :: Sort Meta
-charListMetaSort = metaSort CharListSort
-patternMetaSort :: Sort Meta
-patternMetaSort = metaSort PatternSort
-patternListMetaSort :: Sort Meta
-patternListMetaSort = metaSort PatternListSort
-sortMetaSort :: Sort Meta
-sortMetaSort = metaSort SortSort
-sortListMetaSort :: Sort Meta
-sortListMetaSort = metaSort SortListSort
-stringMetaSort :: Sort Meta
-stringMetaSort = metaSort StringSort
-symbolMetaSort :: Sort Meta
-symbolMetaSort = metaSort SymbolSort
-symbolListMetaSort :: Sort Meta
-symbolListMetaSort = metaSort SymbolListSort
-variableMetaSort :: Sort Meta
-variableMetaSort = metaSort VariableSort
-variableListMetaSort :: Sort Meta
-variableListMetaSort = metaSort VariableListSort
-
-metaSort :: MetaSortType -> Sort Meta
-metaSort sortType =
-    SortActualSort SortActual
-        { sortActualName = Id (show sortType)
-        , sortActualSorts = []}
-
 instance Show MetaSortType where
     show CharSort         = "#Char"
     show CharListSort     = "#CharList"
@@ -259,7 +229,7 @@ asUnifiedSortVariable v =
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
 newtype ModuleName = ModuleName { getModuleName :: String }
-    deriving (Show, Eq)
+    deriving (Show, Eq, Ord)
 
 {-|'Variable' corresponds to the @object-variable@ and
 @meta-variable@ syntactic categories from the Semantics of K,
@@ -289,7 +259,7 @@ asUnifiedVariable v =
 applyOnUnifiedVariable
     :: (forall a . Variable a -> b) -> UnifiedVariable -> b
 applyOnUnifiedVariable f (ObjectVariable variable) = f variable
-applyOnUnifiedVariable f (MetaVariable variable) = f variable
+applyOnUnifiedVariable f (MetaVariable variable)   = f variable
 
 {-|'UnifiedPattern' corresponds to the @pattern@ syntactic category from
 the Semantics of K, Section 9.1.4 (Patterns).
@@ -749,33 +719,6 @@ data Module = Module
     }
     deriving (Eq, Show)
 
-data SortDescription a = SortDescription
-    { sortDescriptionName       :: !(Id a)
-    , sortDescriptionParameters :: ![SortVariable a]
-    , sortDescriptionAttributes :: !Attributes
-    }
-    deriving (Eq, Show)
-
--- TODO(virgil): Do we need to make the alias-symbol distinction here or
--- should I just use SentenceSymbolOrAlias?
-data IndexedModule = IndexedModule
-    { indexedModuleName          :: !ModuleName
-    , indexedModuleMetaAliasSentences
-        :: !(Map.Map (Id Meta) (SentenceAlias Meta))
-    , indexedModuleObjectAliasSentences
-        :: !(Map.Map (Id Object) (SentenceAlias Object))
-    , indexedModuleMetaSymbolSentences
-        :: !(Map.Map (Id Meta) (SentenceSymbol Meta))
-    , indexedModuleObjectSymbolSentences
-        :: !(Map.Map (Id Object) (SentenceSymbol Object))
-    , indexedModuleObjectSortDescriptions
-        :: !(Map.Map (Id Object) (SortDescription Object))
-    , indexedModuleMetaSortDescriptions
-        :: !(Map.Map (Id Meta) (SortDescription Meta))
-    , indexedModuleAxioms        :: ![SentenceAxiom]
-    , indexedModuleAttributes    :: !Attributes
-    }
-
 {-|Currently, a 'Definition' consists of some 'Attributes' and a 'Module'
 
 Because there are plans to extend this to a list of 'Module's, the @definition@
@@ -914,6 +857,8 @@ instance MLPatternClass In where
 
 instance MLPatternClass Next where
     getPatternType _ = NextPatternType
+    getMLPatternOperandSorts x = [nextSort x]
+    getMLPatternResultSort = nextSort
     getPatternSorts e = [nextSort e]
     getPatternPatterns e = [nextPattern e]
 
@@ -933,6 +878,8 @@ instance MLPatternClass Or where
 
 instance MLPatternClass Rewrites where
     getPatternType _ = RewritesPatternType
+    getMLPatternOperandSorts x = [rewritesSort x, rewritesSort x]
+    getMLPatternResultSort = rewritesSort
     getPatternSorts e = [rewritesSort e]
     getPatternPatterns e = [rewritesFirst e, rewritesSecond e]
 

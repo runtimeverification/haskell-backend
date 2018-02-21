@@ -6,8 +6,9 @@ module Data.Kore.ASTVerifier.SortVerifier
 import           Data.Kore.AST
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.Error
-import qualified Data.Set                    as Set
-import           Data.Typeable               (Typeable)
+import           Data.Kore.IndexedModule.IndexedModule
+import qualified Data.Set                              as Set
+import           Data.Typeable                         (Typeable)
 
 verifySortUsage
     :: IsMeta a

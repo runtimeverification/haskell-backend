@@ -7,6 +7,7 @@ import           Test.Tasty                                          (TestTree,
 import           Data.Kore.AST
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
+import           Data.Kore.ImplicitDefinitions
 import qualified Data.List                                           as List
 import           Data.Maybe                                          (mapMaybe)
 
@@ -710,12 +711,15 @@ unfilteredTestExamplesForSort
             , testDataDefinition =
                 Definition
                     { definitionAttributes = Attributes []
-                    , definitionModules = Module
-                        { moduleName = ModuleName "MODULE"
-                        , moduleSentences = additionalSentences
-                        , moduleAttributes = Attributes
-                            [ simpleExistsUnifiedPattern variableName1 sort ]
-                        }
+                    , definitionModules =
+                        [ Module
+                            { moduleName = ModuleName "MODULE"
+                            , moduleSentences = additionalSentences
+                            , moduleAttributes = Attributes
+                                [ simpleExistsUnifiedPattern variableName1 sort
+                                ]
+                            }
+                        ]
                     }
             }
         }
@@ -734,11 +738,13 @@ unfilteredTestExamplesForSort
                 Definition
                     { definitionAttributes = Attributes
                         [simpleExistsUnifiedPattern variableName1 sort]
-                    , definitionModules = Module
-                        { moduleName = ModuleName "MODULE"
-                        , moduleSentences = additionalSentences
-                        , moduleAttributes = Attributes []
-                        }
+                    , definitionModules =
+                        [ Module
+                            { moduleName = ModuleName "MODULE"
+                            , moduleSentences = additionalSentences
+                            , moduleAttributes = Attributes []
+                            }
+                        ]
                     }
             }
         }

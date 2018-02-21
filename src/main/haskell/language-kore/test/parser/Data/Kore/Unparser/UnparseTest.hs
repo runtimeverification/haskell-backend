@@ -138,7 +138,7 @@ unparseParseTest
     :: (Unparse a, Eq a, Show a) => Parser.Parser a -> a -> TestTree
 unparseParseTest parser astInput =
     testCase
-        ("Parsing + unparsing.")
+        "Parsing + unparsing."
         (assertEqual "Expecting unparse success!"
             (Right astInput)
             (parse parser (unparseToString astInput)))
@@ -146,7 +146,7 @@ unparseParseTest parser astInput =
 unparseTest :: (Unparse a, Show a) => a -> String -> TestTree
 unparseTest astInput expected =
     testCase
-        ("Unparsing: " ++ show astInput)
-        (assertEqual "Expecting unparse success!"
+        "Unparsing"
+        (assertEqual ("Expecting unparse success!" ++ show astInput)
             expected
             (unparseToString astInput))
