@@ -1,11 +1,12 @@
-{-# LANGUAGE DeriveFoldable        #-}
-{-# LANGUAGE DeriveFunctor         #-}
-{-# LANGUAGE DeriveTraversable     #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE Rank2Types            #-}
-{-# LANGUAGE StandaloneDeriving    #-}
+{-# LANGUAGE DeriveFoldable         #-}
+{-# LANGUAGE DeriveFunctor          #-}
+{-# LANGUAGE DeriveTraversable      #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE Rank2Types             #-}
+{-# LANGUAGE StandaloneDeriving     #-}
 {-|
 Module      : Data.Kore.AST
 Description : Data Structures for representing the Kore language AST
@@ -52,6 +53,30 @@ isObject x = head (typeRepArgs (typeOf x)) == typeOf Object
 
 isMeta :: (IsMeta a, Typeable (m a)) => m a -> Bool
 isMeta x = head (typeRepArgs (typeOf x)) == typeOf Meta
+
+class Typeable thing
+    => UnifiedThing unifiedThing thing | unifiedThing -> thing
+  where
+    destructor :: unifiedThing -> Either (thing Meta) (thing Object)
+    objectConstructor :: thing Object -> unifiedThing
+    metaConstructor :: thing Meta -> unifiedThing
+    transformUnified
+        :: (forall a . IsMeta a => thing a -> b)
+        -> (unifiedThing -> b)
+    transformUnified f unifiedStuff =
+        case destructor unifiedStuff of
+            Left x  -> f x
+            Right x -> f x
+    asUnified :: (IsMeta a) => thing a -> unifiedThing
+    asUnified x = asUnifiedCasted (cast x) (cast x)
+    asUnifiedCasted
+        :: Maybe (thing Object)
+        -> Maybe (thing Meta)
+        -> unifiedThing
+    asUnifiedCasted (Just v) Nothing = objectConstructor v
+    asUnifiedCasted Nothing (Just v) = metaConstructor v
+    asUnifiedCasted _ _ =
+        error "asUnifiedCasted: this should not happen!"
 
 {-|'Id' corresponds to the @object-identifier@ and @meta-identifier@
 syntactic categories from the Semantics of K, Section 9.1.1 (Lexicon).
@@ -231,27 +256,11 @@ data UnifiedVariable v
     = MetaVariable !(v Meta)
     | ObjectVariable !(v Object)
 
-asUnifiedVariable'
-    :: Maybe (v Object)
-    -> Maybe (v Meta)
-    -> UnifiedVariable v
-asUnifiedVariable' Nothing Nothing =
-    error "Only Object and Meta levels are supported!"
-asUnifiedVariable' (Just v) Nothing = ObjectVariable v
-asUnifiedVariable' Nothing (Just v) = MetaVariable v
-asUnifiedVariable' _ _ =
-    error "asUnifiedVariable: this should not happen!"
-
-asUnifiedVariable
-    :: (Typeable v, IsMeta a)
-    => v a -> UnifiedVariable v
-asUnifiedVariable v = asUnifiedVariable' (cast v) (cast v)
-
-transformUnifiedVariable
-  :: (forall a . IsMeta a => variable a -> b)
-  -> (UnifiedVariable variable -> b)
-transformUnifiedVariable f (ObjectVariable v) = f v
-transformUnifiedVariable f (MetaVariable v)   = f v
+instance Typeable v => UnifiedThing (UnifiedVariable v) v where
+    destructor (MetaVariable v)   = Left v
+    destructor (ObjectVariable v) = Right v
+    metaConstructor = MetaVariable
+    objectConstructor = ObjectVariable
 
 deriving instance Eq (UnifiedVariable Variable)
 deriving instance Ord (UnifiedVariable Variable)
@@ -290,21 +299,18 @@ type UnifiedPattern = FixedPattern Variable
 deriving instance Eq UnifiedPattern
 deriving instance Show UnifiedPattern
 
-asUnifiedPattern'
-    :: Maybe (Pattern Object v (FixedPattern v))
-    -> Maybe (Pattern Meta v (FixedPattern v))
-    -> FixedPattern v
-asUnifiedPattern' Nothing Nothing =
-    error "Only Object and Meta levels are supported!"
-asUnifiedPattern' (Just p) Nothing = ObjectPattern p
-asUnifiedPattern' Nothing (Just p) = MetaPattern p
-asUnifiedPattern' _ _ =
-    error "asUnifiedPattern: this should not happen!"
+instance Typeable v
+    => UnifiedThing (FixedPattern v) (PatternObjectMeta v (FixedPattern v))
+  where
+    destructor (MetaPattern p)   = Left (PatternObjectMeta p)
+    destructor (ObjectPattern p) = Right (PatternObjectMeta p)
+    metaConstructor = MetaPattern . getPatternObjectMeta
+    objectConstructor = ObjectPattern . getPatternObjectMeta
 
 asUnifiedPattern
     :: (IsMeta a, Typeable v)
     => Pattern a v (FixedPattern v) -> FixedPattern v
-asUnifiedPattern p = asUnifiedPattern' (cast p) (cast p)
+asUnifiedPattern = asUnified . PatternObjectMeta
 
 unifiedVariableToPattern :: UnifiedVariable var -> FixedPattern var
 unifiedVariableToPattern (MetaVariable v) = MetaPattern $ VariablePattern v
@@ -659,6 +665,9 @@ data Pattern a v p
     | TopPattern !(Top a p)
     | VariablePattern !(v a)
     deriving (Typeable, Functor, Foldable, Traversable)
+
+newtype PatternObjectMeta v p a = PatternObjectMeta
+    { getPatternObjectMeta :: Pattern a v p }
 
 deriving instance (Eq p, Eq (UnifiedVariable v), Eq (v a))
     => Eq (Pattern a v p)

@@ -22,7 +22,7 @@ freeVarsVisitor
     :: (IsMeta a, VariableClass var)
     => Pattern a var (Set.Set (UnifiedVariable var))
     -> Set.Set (UnifiedVariable var)
-freeVarsVisitor (VariablePattern v) = Set.singleton (asUnifiedVariable v)
+freeVarsVisitor (VariablePattern v) = Set.singleton (asUnified v)
 freeVarsVisitor (ExistsPattern e) =
     Set.delete (existsVariable e) (existsPattern e)
 freeVarsVisitor (ForallPattern f) =

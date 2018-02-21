@@ -88,7 +88,7 @@ substituteVariable
     -> ReaderT (SubstitutionWithFreeVars s var) m (FixedPattern var)
 substituteVariable (VariablePattern v) = do
     subst <- substitution <$> ask
-    case lookup (asUnifiedVariable v) subst of
+    case lookup (asUnified v) subst of
         Just up -> return up
         Nothing -> return $ asUnifiedPattern (VariablePattern v)
 substituteVariable p = return $ asUnifiedPattern p

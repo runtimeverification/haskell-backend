@@ -23,8 +23,8 @@ class (Monad m, VariableClass var) => FreshVariablesClass m var where
     the same type and sort.
     -}
     freshUnifiedVariable :: UnifiedVariable var -> m (UnifiedVariable var)
-    freshUnifiedVariable = transformUnifiedVariable
-        (\v -> asUnifiedVariable <$> freshVariable v)
+    freshUnifiedVariable = transformUnified
+        (\v -> asUnified <$> freshVariable v)
     {-|Given an existing 'UnifiedVariable' and a predicate, generate a
     fresh 'UnifiedVariable' of the same type and sort satisfying the predicate.
     -}
