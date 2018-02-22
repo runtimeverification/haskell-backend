@@ -12,7 +12,7 @@ Definition
                         ObjectPattern (NotPattern Not
                             { notSort =
                                 SortVariableSort (SortVariable (Id Object "S"))
-                            , notPattern =
+                            , notChild =
                                 ObjectPattern (VariablePattern Variable
                                     { variableName = Id Object "X"
                                     , variableSort =

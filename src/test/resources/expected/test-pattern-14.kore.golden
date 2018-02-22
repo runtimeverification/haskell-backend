@@ -12,7 +12,7 @@ Definition
                         ObjectPattern (NextPattern Next
                             { nextSort =
                                 SortVariableSort (SortVariable (Id Object "S"))
-                            , nextPattern =
+                            , nextChild =
                                 ObjectPattern (VariablePattern Variable
                                     { variableName = Id Object "X"
                                     , variableSort =

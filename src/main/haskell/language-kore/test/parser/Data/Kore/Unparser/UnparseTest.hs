@@ -27,6 +27,42 @@ unparseUnitTests =
                     })
             "sort x{}[]"
         , unparseTest
+            Attributes
+                { getAttributes =
+                    [ MetaPattern (TopPattern Top
+                        { topSort = SortVariableSort SortVariable
+                            { getSortVariable = Id {getId = "#Fm"} }
+                        })
+                    , ObjectPattern (InPattern In
+                        { inOperandSort = SortActualSort SortActual
+                            { sortActualName = Id {getId = "B"}
+                            , sortActualSorts = []
+                            }
+                        , inResultSort = SortActualSort SortActual
+                            { sortActualName = Id {getId = "G"}
+                            , sortActualSorts = []
+                            }
+                        , inContainedChild = ObjectPattern $ VariablePattern Variable
+                            { variableName = Id {getId = "T"}
+                            , variableSort = SortVariableSort SortVariable
+                                { getSortVariable = Id {getId = "C"} }
+                            }
+                        , inContainingChild = MetaPattern (StringLiteralPattern
+                            StringLiteral { getStringLiteral = "" })
+                        })
+                    ]
+                }
+            "[\n\
+            \    \\top{#Fm}(),\n\
+            \    \\in{\n\
+            \        B{},\n\
+            \        G{}\n\
+            \    }(\n\
+            \        T:C,\n\
+            \        \"\"\n\
+            \    )\n\
+            \]"
+        , unparseTest
             Module
                 { moduleName = ModuleName "t"
                 , moduleSentences = []
@@ -138,7 +174,7 @@ unparseParseTest
     :: (Unparse a, Eq a, Show a) => Parser.Parser a -> a -> TestTree
 unparseParseTest parser astInput =
     testCase
-        ("Parsing + unparsing.")
+        "Parsing + unparsing."
         (assertEqual "Expecting unparse success!"
             (Right astInput)
             (parse parser (unparseToString astInput)))

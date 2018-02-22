@@ -29,6 +29,8 @@ dependencies:
 - array
 - bytestring-trie
 - mtl
+- containers
+- hashable
 
 library:
   source-dirs: src
@@ -61,4 +63,3 @@ tests:
     - QuickCheck
     - filepath
     - tasty-ant-xml
-
