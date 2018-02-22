@@ -22,7 +22,9 @@ of type @v@ to terms of type @t@.
 -}
 class MapClass s v t => SubstitutionClass s v t where
     {-|Collects all free variables from the terms belonging to the
-    image of the substitution. Useful to avoid when generating fresh variables.
+    image of the substitution.
+    This can, e.g., be used to prevent collisions when generating
+    fresh variables.
     -}
     substitutionTermsFreeVars :: s -> Set.Set v
 
