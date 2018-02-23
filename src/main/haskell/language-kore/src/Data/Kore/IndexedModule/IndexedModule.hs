@@ -53,8 +53,9 @@ in the current module are included.
 It also contains the imported modules as 'IndexedModule's and all the other
 module data in raw-ish form.
 
-All 'IndexedModule' instances should either be returned by '' or they should
-start from an instance created by 'indexedModuleWithDefaultImports'.
+All 'IndexedModule' instances should either be returned by
+'implicitIndexedModule' or they should start from an instance created by
+'indexedModuleWithDefaultImports'.
 -}
 data IndexedModule = IndexedModule
     { indexedModuleName          :: !ModuleName
@@ -183,15 +184,7 @@ internalIndexModuleIfNeeded
                             implicitModule
                             importingModulesWithCurrentOne
                             nameToModule)
-                        ( indexedModules
-                        , (indexedModuleWithDefaultImports
-                                (moduleName koreModule) implicitModule)
-                            { indexedModuleAttributes =
-                                moduleAttributes koreModule
-                            , indexedModuleRawSentences =
-                                moduleSentences koreModule
-                            }
-                        )
+                        indexedModulesAndStartingIndexedModule
                         (moduleSentences koreModule)
                     return
                         ( Map.insert koreModuleName newModule newIndex
@@ -199,6 +192,16 @@ internalIndexModuleIfNeeded
                         )
         )
   where
+    indexedModulesAndStartingIndexedModule =
+        ( indexedModules
+        , (indexedModuleWithDefaultImports
+                (moduleName koreModule) implicitModule)
+            { indexedModuleAttributes =
+                moduleAttributes koreModule
+            , indexedModuleRawSentences =
+                moduleSentences koreModule
+            }
+        )
     koreModuleName = moduleName koreModule
     importingModulesWithCurrentOne = Set.insert koreModuleName importingModules
 
