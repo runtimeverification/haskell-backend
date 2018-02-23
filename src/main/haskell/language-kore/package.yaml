@@ -26,6 +26,7 @@ dependencies:
 - parsec >=3.1 && <3.2
 - attoparsec >=0.13 && <0.14
 - bytestring >=0.10 && <0.11
+- containers
 - array
 - bytestring-trie
 - mtl

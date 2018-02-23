@@ -182,7 +182,7 @@ unparseParseTest parser astInput =
 unparseTest :: (Unparse a, Show a) => a -> String -> TestTree
 unparseTest astInput expected =
     testCase
-        ("Unparsing: " ++ show astInput)
-        (assertEqual "Expecting unparse success!"
+        "Unparsing"
+        (assertEqual ("Expecting unparse success!" ++ show astInput)
             expected
             (unparseToString astInput))

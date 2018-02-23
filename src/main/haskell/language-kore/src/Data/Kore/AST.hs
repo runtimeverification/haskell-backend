@@ -6,6 +6,7 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE Rank2Types             #-}
+{-# LANGUAGE RankNTypes             #-}
 {-# LANGUAGE StandaloneDeriving     #-}
 {-|
 Module      : Data.Kore.AST
@@ -34,7 +35,7 @@ data KoreLevel
     | MetaLevel
     deriving (Eq, Show)
 
-class (Show a, Typeable a) => IsMeta a where
+class (Ord a, Show a, Typeable a) => IsMeta a where
     koreLevel :: a -> KoreLevel
 
 data Meta = Meta
@@ -55,6 +56,21 @@ isObject x = head (typeRepArgs (typeOf x)) == typeOf Object
 isMeta :: (IsMeta a, Typeable (m a)) => m a -> Bool
 isMeta x = head (typeRepArgs (typeOf x)) == typeOf Meta
 
+applyMetaObjectFunction
+    :: (IsMeta a, Typeable thing)
+    => thing a -> (thing Object -> c) -> (thing Meta -> c) -> c
+applyMetaObjectFunction x = applyMetaObjectFunctionCasted (cast x) (cast x)
+applyMetaObjectFunctionCasted
+    :: Maybe (thing Object)
+    -> Maybe (thing Meta)
+    -> (thing Object -> c)
+    -> (thing Meta -> c)
+    -> c
+applyMetaObjectFunctionCasted (Just x) Nothing f _ = f x
+applyMetaObjectFunctionCasted Nothing (Just x) _ f = f x
+applyMetaObjectFunctionCasted _ _ _ _ =
+    error "applyMetaObjectFunctionCasted: this should not happen!"
+
 class Typeable thing
     => UnifiedThing unifiedThing thing | unifiedThing -> thing
   where
@@ -69,21 +85,16 @@ class Typeable thing
             Left x  -> f x
             Right x -> f x
     asUnified :: (IsMeta a) => thing a -> unifiedThing
-    asUnified x = asUnifiedCasted (cast x) (cast x)
-    asUnifiedCasted
-        :: Maybe (thing Object)
-        -> Maybe (thing Meta)
-        -> unifiedThing
-    asUnifiedCasted (Just v) Nothing = objectConstructor v
-    asUnifiedCasted Nothing (Just v) = metaConstructor v
-    asUnifiedCasted _ _ =
-        error "asUnifiedCasted: this should not happen!"
+    asUnified x = applyMetaObjectFunction x objectConstructor metaConstructor
 
 {-|'Id' corresponds to the @object-identifier@ and @meta-identifier@
 syntactic categories from the Semantics of K, Section 9.1.1 (Lexicon).
 
 The 'a' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'IsMeta a'.
+
+We may chage the Id's representation in the future so one should treat it as
+an opaque entity as much as possible.
 -}
 newtype Id a = Id { getId :: String }
     deriving (Show, Eq, Ord, Typeable)
@@ -175,6 +186,17 @@ data Sort a
     | SortActualSort !(SortActual a)
     deriving (Show, Eq, Ord, Typeable)
 
+data UnifiedSort
+    = ObjectSort !(Sort Object)
+    | MetaSort !(Sort Meta)
+    deriving (Show, Eq)
+
+instance UnifiedThing UnifiedSort Sort where
+    destructor (MetaSort s)   = Left s
+    destructor (ObjectSort s) = Right s
+    metaConstructor = MetaSort
+    objectConstructor = ObjectSort
+
 {-|'MetaSortType' corresponds to the @meta-sort-constructor@ syntactic category
 from the Semantics of K, Section 9.1.2 (Sorts).
 
@@ -220,6 +242,12 @@ data UnifiedSortVariable
     = ObjectSortVariable !(SortVariable Object)
     | MetaSortVariable !(SortVariable Meta)
     deriving (Show, Eq, Ord)
+
+instance UnifiedThing UnifiedSortVariable SortVariable where
+    destructor (MetaSortVariable v)   = Left v
+    destructor (ObjectSortVariable v) = Right v
+    metaConstructor = MetaSortVariable
+    objectConstructor = ObjectSortVariable
 
 {-|'ModuleName' corresponds to the @module-name@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
@@ -540,8 +568,8 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 
 'inResultSort' is the sort of the result.
 
-This represents the 'inMemberPattern ∊ inContainingChild' Matching Logic
-construct, which, when 'inMemberPattern' is a singleton (e.g. a variable),
+This represents the 'inContainedChild ∊ inContainingChild' Matching Logic
+construct, which, when 'inContainedChild' is a singleton (e.g. a variable),
 represents the set membership. However, in general, it actually means that the
 two patterns have a non-empty intersection.
 -}
@@ -754,6 +782,18 @@ data Sentence
     | SentenceSortSentence !SentenceSort
     deriving (Eq, Show)
 
+asSentenceAliasSentence :: IsMeta a => SentenceAlias a -> Sentence
+asSentenceAliasSentence v =
+    applyMetaObjectFunction
+        v ObjectSentenceAliasSentence MetaSentenceAliasSentence
+
+
+asSentenceSymbolSentence :: IsMeta a => SentenceSymbol a -> Sentence
+asSentenceSymbolSentence v =
+    applyMetaObjectFunction
+        v ObjectSentenceSymbolSentence MetaSentenceSymbolSentence
+
+
 newtype Attributes = Attributes { getAttributes :: [UnifiedPattern] }
     deriving (Eq, Show)
 
@@ -791,71 +831,99 @@ data Definition = Definition
 -}
 class MLPatternClass p where
     getPatternType :: p a recursionP -> MLPatternType
+    getMLPatternOperandSorts :: p a recursionP -> [Sort a]
+    getMLPatternResultSort :: p a recursionP -> Sort a
     getPatternSorts :: p a recursionP -> [Sort a]
     getPatternChildren :: p a recursionP -> [recursionP]
 
 instance MLPatternClass And where
     getPatternType _ = AndPatternType
+    getMLPatternOperandSorts x = [andSort x, andSort x]
+    getMLPatternResultSort = andSort
     getPatternSorts a = [andSort a]
     getPatternChildren a = [andFirst a, andSecond a]
 
 instance MLPatternClass Bottom where
     getPatternType _ = BottomPatternType
+    getMLPatternOperandSorts _ = []
+    getMLPatternResultSort = bottomSort
     getPatternSorts t = [bottomSort t]
     getPatternChildren _ = []
 
 instance MLPatternClass Ceil where
     getPatternType _ = CeilPatternType
+    getMLPatternOperandSorts x = [ceilOperandSort x]
+    getMLPatternResultSort = ceilResultSort
     getPatternSorts c = [ceilOperandSort c, ceilResultSort c]
     getPatternChildren c = [ceilChild c]
 
 instance MLPatternClass Equals where
     getPatternType _ = EqualsPatternType
+    getMLPatternOperandSorts x = [equalsOperandSort x, equalsOperandSort x]
+    getMLPatternResultSort = equalsResultSort
     getPatternSorts e = [equalsOperandSort e, equalsResultSort e]
     getPatternChildren e = [equalsFirst e, equalsSecond e]
 
 instance MLPatternClass Floor where
     getPatternType _ = FloorPatternType
+    getMLPatternOperandSorts x = [floorOperandSort x]
+    getMLPatternResultSort = floorResultSort
     getPatternSorts f = [floorOperandSort f, floorResultSort f]
     getPatternChildren f = [floorChild f]
 
 instance MLPatternClass Iff where
     getPatternType _ = IffPatternType
+    getMLPatternOperandSorts x = [iffSort x, iffSort x]
+    getMLPatternResultSort = iffSort
     getPatternSorts i = [iffSort i]
     getPatternChildren i = [iffFirst i, iffSecond i]
 
 instance MLPatternClass Implies where
     getPatternType _ = ImpliesPatternType
+    getMLPatternOperandSorts x = [impliesSort x, impliesSort x]
+    getMLPatternResultSort = impliesSort
     getPatternSorts i = [impliesSort i]
     getPatternChildren i = [impliesFirst i, impliesSecond i]
 
 instance MLPatternClass In where
     getPatternType _ = InPatternType
+    getMLPatternOperandSorts x = [inOperandSort x, inOperandSort x]
+    getMLPatternResultSort = inResultSort
     getPatternSorts i = [inOperandSort i, inResultSort i]
     getPatternChildren i = [inContainedChild i, inContainingChild i]
 
 instance MLPatternClass Next where
     getPatternType _ = NextPatternType
+    getMLPatternOperandSorts x = [nextSort x]
+    getMLPatternResultSort = nextSort
     getPatternSorts e = [nextSort e]
     getPatternChildren e = [nextChild e]
 
 instance MLPatternClass Not where
     getPatternType _ = NotPatternType
+    getMLPatternOperandSorts x = [notSort x]
+    getMLPatternResultSort = notSort
     getPatternSorts n = [notSort n]
     getPatternChildren n = [notChild n]
 
 instance MLPatternClass Or where
     getPatternType _ = OrPatternType
+    getMLPatternOperandSorts x = [orSort x, orSort x]
+    getMLPatternResultSort = orSort
     getPatternSorts a = [orSort a]
     getPatternChildren a = [orFirst a, orSecond a]
 
 instance MLPatternClass Rewrites where
     getPatternType _ = RewritesPatternType
+    getMLPatternOperandSorts x = [rewritesSort x, rewritesSort x]
+    getMLPatternResultSort = rewritesSort
     getPatternSorts e = [rewritesSort e]
     getPatternChildren e = [rewritesFirst e, rewritesSecond e]
 
 instance MLPatternClass Top where
     getPatternType _ = TopPatternType
+    getMLPatternOperandSorts _ = []
+    getMLPatternResultSort = topSort
     getPatternSorts t = [topSort t]
     getPatternChildren _ = []
 
@@ -892,3 +960,27 @@ instance MLBinderPatternClass Forall where
         , forallChild = p
         }
 
+class SentenceSymbolOrAlias p where
+    getSentenceSymbolOrAliasConstructor :: p a -> Id a
+    getSentenceSymbolOrAliasSortParams :: p a -> [SortVariable a]
+    getSentenceSymbolOrAliasArgumentSorts :: p a -> [Sort a]
+    getSentenceSymbolOrAliasReturnSort :: p a -> Sort a
+    getSentenceSymbolOrAliasAttributes :: p a -> Attributes
+    getSentenceSymbolOrAliasSentenceName :: p a -> String
+
+instance SentenceSymbolOrAlias SentenceAlias where
+    getSentenceSymbolOrAliasConstructor = aliasConstructor . sentenceAliasAlias
+    getSentenceSymbolOrAliasSortParams = aliasParams . sentenceAliasAlias
+    getSentenceSymbolOrAliasArgumentSorts = sentenceAliasSorts
+    getSentenceSymbolOrAliasReturnSort = sentenceAliasReturnSort
+    getSentenceSymbolOrAliasAttributes = sentenceAliasAttributes
+    getSentenceSymbolOrAliasSentenceName _ = "alias"
+
+instance SentenceSymbolOrAlias SentenceSymbol where
+    getSentenceSymbolOrAliasConstructor =
+        symbolConstructor . sentenceSymbolSymbol
+    getSentenceSymbolOrAliasSortParams = symbolParams . sentenceSymbolSymbol
+    getSentenceSymbolOrAliasArgumentSorts = sentenceSymbolSorts
+    getSentenceSymbolOrAliasReturnSort = sentenceSymbolReturnSort
+    getSentenceSymbolOrAliasAttributes = sentenceSymbolAttributes
+    getSentenceSymbolOrAliasSentenceName _ = "symbol"
