@@ -7,8 +7,9 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Data.Kore.ASTVerifier.ModuleVerifier
-    (verifyModule, verifyUniqueNames) where
+module Data.Kore.ASTVerifier.ModuleVerifier ( verifyModule
+                                            , verifyUniqueNames
+                                            ) where
 
 import           Data.Kore.AST
 import           Data.Kore.ASTVerifier.AttributesVerifier

@@ -7,8 +7,9 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Data.Kore.ASTVerifier.Resolvers (resolveMetaSort, resolveObjectSort)
-  where
+module Data.Kore.ASTVerifier.Resolvers ( resolveMetaSort
+                                       , resolveObjectSort
+                                       ) where
 
 import           Data.Kore.AST
 import           Data.Kore.ASTVerifier.Error

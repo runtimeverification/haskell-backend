@@ -7,8 +7,9 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Data.Kore.ASTVerifier.SentenceVerifier
-    (verifyUniqueNames, verifySentences) where
+module Data.Kore.ASTVerifier.SentenceVerifier ( verifyUniqueNames
+                                              , verifySentences
+                                              ) where
 
 import           Control.Monad                            (foldM)
 import           Data.Kore.AST
