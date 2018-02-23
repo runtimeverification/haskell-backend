@@ -560,7 +560,7 @@ unfilteredTestExamplesForSort
                     (ModuleName "MODULE")
                     ( axiomSentenceWithSortParameters
                         (simpleExistsUnifiedPattern variableName1 sort)
-                        (map asUnifiedSortVariable sortVariables)
+                        (map asUnified sortVariables)
                     : additionalSentences
                     )
             }
@@ -586,7 +586,7 @@ unfilteredTestExamplesForSort
                             (OperandSort sort)
                             (ResultSort additionalSort)
                         )
-                        (map asUnifiedSortVariable sortVariables)
+                        (map asUnified sortVariables)
                     : additionalSentences
                     )
             }
@@ -612,7 +612,7 @@ unfilteredTestExamplesForSort
                             (OperandSort additionalSort)
                             (ResultSort sort)
                         )
-                        (map asUnifiedSortVariable sortVariables)
+                        (map asUnified sortVariables)
                     : additionalSentences
                     )
             }
@@ -636,7 +636,7 @@ unfilteredTestExamplesForSort
                             (SymbolName rawAliasName)
                             [sort]
                         )
-                        (map asUnifiedSortVariable sortVariables)
+                        (map asUnified sortVariables)
                     : sentenceSymbolSentence
                         (symbolSentenceWithSortParameters
                             (SymbolName rawAliasName)
@@ -689,7 +689,7 @@ unfilteredTestExamplesForSort
                 simpleDefinitionFromSentences
                     (ModuleName "MODULE")
                     ( axiomSentenceWithAttributes
-                        (map asUnifiedSortVariable sortVariables)
+                        (map asUnified sortVariables)
                         (simpleExistsUnifiedPattern
                             variableName1 additionalSort)
                         [simpleExistsUnifiedPattern variableName1 sort]
@@ -797,7 +797,7 @@ unfilteredTestExamplesForObjectSort
                                 }
                             ]
                         )
-                        (map asUnifiedSortVariable sortVariables)
+                        (map asUnified sortVariables)
                     : symbolSentenceWithReturnSort
                         (SymbolName "a")
                         (SortActualSort SortActual

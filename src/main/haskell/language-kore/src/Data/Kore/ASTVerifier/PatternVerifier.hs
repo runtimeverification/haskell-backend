@@ -68,7 +68,8 @@ objectVerifyHelpers indexedModule declaredVariables =
             flip Map.lookup (objectDeclaredVariables declaredVariables)
         }
 
-addDeclaredVariable :: UnifiedVariable -> DeclaredVariables -> DeclaredVariables
+addDeclaredVariable
+    :: UnifiedVariable Variable -> DeclaredVariables -> DeclaredVariables
 addDeclaredVariable
     (MetaVariable variable)
     variables@DeclaredVariables{ metaDeclaredVariables = variablesDict }
@@ -179,7 +180,7 @@ internalVerifyPattern
 
 verifyParametrizedPattern
     :: IsMeta a
-    => Pattern a
+    => Pattern a Variable UnifiedPattern
     -> IndexedModule
     -> VerifyHelpers a
     -> Set.Set UnifiedSortVariable
@@ -202,7 +203,7 @@ verifyParametrizedPattern (TopPattern p)         = verifyMLPattern p
 verifyParametrizedPattern (VariablePattern p)    = verifyVariableUsage p
 
 verifyObjectPattern
-    :: Pattern Object
+    :: Pattern Object v UnifiedPattern
     -> IndexedModule
     -> VerifyHelpers Object
     -> Set.Set UnifiedSortVariable
@@ -216,7 +217,7 @@ verifyObjectPattern _                   = rightNothing
 
 maybeVerifyMLPattern
     :: (MLPatternClass p, IsMeta a)
-    => p a
+    => p a UnifiedPattern
     -> IndexedModule
     -> VerifyHelpers a
     -> Set.Set UnifiedSortVariable
@@ -239,7 +240,7 @@ maybeVerifyMLPattern
 
 verifyMLPattern
     :: (MLPatternClass p, IsMeta a)
-    => p a
+    => p a UnifiedPattern
     -> IndexedModule
     -> VerifyHelpers a
     -> Set.Set UnifiedSortVariable
@@ -260,7 +261,7 @@ verifyMLPattern
         (getPatternSorts mlPattern)
     verifyPatternsWithSorts
         operandSorts
-        (getPatternPatterns mlPattern)
+        (getPatternChildren mlPattern)
         indexedModule
         declaredSortVariables
         declaredVariables
@@ -271,7 +272,7 @@ verifyMLPattern
 
 
 verifyPatternsWithSorts
-    :: Typeable a
+    :: IsMeta a
     => [Sort a]
     -> [UnifiedPattern]
     -> IndexedModule
@@ -296,7 +297,7 @@ verifyPatternsWithSorts
         (\sort operand ->
             internalVerifyPattern
                 operand
-                (Just (asUnifiedSort sort))
+                (Just (asUnified sort))
                 indexedModule
                 declaredSortVariables
                 declaredVariables
@@ -310,7 +311,7 @@ verifyPatternsWithSorts
 
 verifyApplication
     :: IsMeta a
-    => Application a
+    => Application a UnifiedPattern
     -> IndexedModule
     -> VerifyHelpers a
     -> Set.Set UnifiedSortVariable
@@ -330,7 +331,7 @@ verifyApplication
             declaredSortVariables
     verifyPatternsWithSorts
         (applicationSortsOperands applicationSorts)
-        (applicationPatterns application)
+        (applicationChildren application)
         indexedModule
         declaredSortVariables
         declaredVariables
@@ -338,7 +339,7 @@ verifyApplication
 
 verifyBinder
     :: (MLBinderPatternClass p, IsMeta a)
-    => p a
+    => p a Variable UnifiedPattern
     -> IndexedModule
     -> VerifyHelpers a
     -> Set.Set UnifiedSortVariable
@@ -358,8 +359,8 @@ verifyBinder
         declaredSortVariables
         binderSort
     internalVerifyPattern
-        (getBinderPatternPattern binder)
-        (Just (asUnifiedSort binderSort))
+        (getBinderPatternChild binder)
+        (Just (asUnified binderSort))
         indexedModule
         declaredSortVariables
         (addDeclaredVariable quantifiedVariable declaredVariables)
@@ -389,7 +390,7 @@ verifyStringPattern :: Either (Error VerifyError) (Sort Meta)
 verifyStringPattern = Right stringMetaSort
 
 verifyUnifiedVariableDeclaration
-    :: UnifiedVariable
+    :: UnifiedVariable Variable
     -> IndexedModule
     -> Set.Set UnifiedSortVariable
     -> Either (Error VerifyError) VerifySuccess
@@ -558,7 +559,7 @@ verifySameSort (ObjectSort expectedSort) (MetaSort actualSort) =
             ++ "'."
         )
 
-patternNameForContext :: Pattern a -> String
+patternNameForContext :: Pattern a Variable p -> String
 patternNameForContext (AndPattern _) = "\\and"
 patternNameForContext (ApplicationPattern application) =
     "symbol or alias '"
@@ -588,8 +589,8 @@ patternNameForContext (TopPattern _) = "\\top"
 patternNameForContext (VariablePattern variable) =
     "variable '" ++ variableNameForContext variable ++ "'"
 
-unifiedVariableNameForContext :: UnifiedVariable -> String
-unifiedVariableNameForContext = applyOnUnifiedVariable variableNameForContext
+unifiedVariableNameForContext :: UnifiedVariable Variable -> String
+unifiedVariableNameForContext = transformUnified variableNameForContext
 
 variableNameForContext :: Variable a -> String
 variableNameForContext variable = getId (variableName variable)

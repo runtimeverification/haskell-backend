@@ -28,7 +28,6 @@ Please refer to Section 9 (The Kore Language) of the
 module Data.Kore.AST where
 
 import           Data.Hashable (hash)
-import qualified Data.Map      as Map
 import           Data.Typeable (Typeable, cast, typeOf, typeRepArgs)
 
 data KoreLevel
@@ -57,6 +56,21 @@ isObject x = head (typeRepArgs (typeOf x)) == typeOf Object
 isMeta :: (IsMeta a, Typeable (m a)) => m a -> Bool
 isMeta x = head (typeRepArgs (typeOf x)) == typeOf Meta
 
+applyMetaObjectFunction
+    :: (IsMeta a, Typeable thing)
+    => thing a -> (thing Object -> c) -> (thing Meta -> c) -> c
+applyMetaObjectFunction x = applyMetaObjectFunctionCasted (cast x) (cast x)
+applyMetaObjectFunctionCasted
+    :: Maybe (thing Object)
+    -> Maybe (thing Meta)
+    -> (thing Object -> c)
+    -> (thing Meta -> c)
+    -> c
+applyMetaObjectFunctionCasted (Just x) Nothing f _ = f x
+applyMetaObjectFunctionCasted Nothing (Just x) _ f = f x
+applyMetaObjectFunctionCasted _ _ _ _ =
+    error "applyMetaObjectFunctionCasted: this should not happen!"
+
 class Typeable thing
     => UnifiedThing unifiedThing thing | unifiedThing -> thing
   where
@@ -71,15 +85,7 @@ class Typeable thing
             Left x  -> f x
             Right x -> f x
     asUnified :: (IsMeta a) => thing a -> unifiedThing
-    asUnified x = asUnifiedCasted (cast x) (cast x)
-    asUnifiedCasted
-        :: Maybe (thing Object)
-        -> Maybe (thing Meta)
-        -> unifiedThing
-    asUnifiedCasted (Just v) Nothing = objectConstructor v
-    asUnifiedCasted Nothing (Just v) = metaConstructor v
-    asUnifiedCasted _ _ =
-        error "asUnifiedCasted: this should not happen!"
+    asUnified x = applyMetaObjectFunction x objectConstructor metaConstructor
 
 {-|'Id' corresponds to the @object-identifier@ and @meta-identifier@
 syntactic categories from the Semantics of K, Section 9.1.1 (Lexicon).
@@ -185,9 +191,11 @@ data UnifiedSort
     | MetaSort !(Sort Meta)
     deriving (Show, Eq)
 
-asUnifiedSort :: Typeable a => Sort a -> UnifiedSort
-asUnifiedSort v =
-    applyMetaObjectFunction v ObjectSort MetaSort
+instance UnifiedThing UnifiedSort Sort where
+    destructor (MetaSort s)   = Left s
+    destructor (ObjectSort s) = Right s
+    metaConstructor = MetaSort
+    objectConstructor = ObjectSort
 
 {-|'MetaSortType' corresponds to the @meta-sort-constructor@ syntactic category
 from the Semantics of K, Section 9.1.2 (Sorts).
@@ -235,10 +243,11 @@ data UnifiedSortVariable
     | MetaSortVariable !(SortVariable Meta)
     deriving (Show, Eq, Ord)
 
-asUnifiedSortVariable
-    :: Typeable a => SortVariable a -> UnifiedSortVariable
-asUnifiedSortVariable v =
-    applyMetaObjectFunction v ObjectSortVariable MetaSortVariable
+instance UnifiedThing UnifiedSortVariable SortVariable where
+    destructor (MetaSortVariable v)   = Left v
+    destructor (ObjectSortVariable v) = Right v
+    metaConstructor = MetaSortVariable
+    objectConstructor = ObjectSortVariable
 
 {-|'ModuleName' corresponds to the @module-name@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
@@ -289,12 +298,6 @@ instance Typeable v => UnifiedThing (UnifiedVariable v) v where
 deriving instance Eq (UnifiedVariable Variable)
 deriving instance Ord (UnifiedVariable Variable)
 deriving instance Show (UnifiedVariable Variable)
-
--- TODO(virgil): Put this in the UnifiedThing class
-applyOnUnifiedVariable
-    :: (forall a . Variable a -> b) -> UnifiedVariable -> b
-applyOnUnifiedVariable f (ObjectVariable variable) = f variable
-applyOnUnifiedVariable f (MetaVariable variable)   = f variable
 
 {-|'FixPattern' class corresponds to "fixed point"-like representations
 of the 'Pattern' class.
@@ -565,8 +568,8 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 
 'inResultSort' is the sort of the result.
 
-This represents the 'inMemberPattern ∊ inContainingChild' Matching Logic
-construct, which, when 'inMemberPattern' is a singleton (e.g. a variable),
+This represents the 'inContainedChild ∊ inContainingChild' Matching Logic
+construct, which, when 'inContainedChild' is a singleton (e.g. a variable),
 represents the set membership. However, in general, it actually means that the
 two patterns have a non-empty intersection.
 -}
@@ -823,68 +826,13 @@ data Definition = Definition
     }
     deriving (Eq, Show)
 
-class AsPattern t where
-    asPattern :: t a -> Pattern a
-
-instance AsPattern And where
-    asPattern = AndPattern
-
-instance AsPattern Bottom where
-    asPattern = BottomPattern
-
-instance AsPattern Ceil where
-    asPattern = CeilPattern
-
-instance AsPattern Equals where
-    asPattern = EqualsPattern
-
-instance AsPattern Exists where
-    asPattern = ExistsPattern
-
-instance AsPattern Floor where
-    asPattern = FloorPattern
-
-instance AsPattern Forall where
-    asPattern = ForallPattern
-
-instance AsPattern Iff where
-    asPattern = IffPattern
-
-instance AsPattern Implies where
-    asPattern = ImpliesPattern
-
-instance AsPattern In where
-    asPattern = InPattern
-
-instance AsPattern Not where
-    asPattern = NotPattern
-
-instance AsPattern Or where
-    asPattern = OrPattern
-
-instance AsPattern Top where
-    asPattern = TopPattern
-
-instance AsPattern Variable where
-    asPattern = VariablePattern
-
-
-class AsObjectPattern t where
-    asObjectPattern :: t Object -> Pattern Object
-
-instance AsObjectPattern Next where
-    asObjectPattern = NextPattern
-
-instance AsObjectPattern Rewrites where
-    asObjectPattern = RewritesPattern
-
 {-|'MLPatternClass' offers a common interface to ML patterns
   (those starting with '\', except for 'Exists' and 'Forall')
 -}
 class MLPatternClass p where
     getPatternType :: p a recursionP -> MLPatternType
-    getMLPatternOperandSorts :: p a -> [Sort a]
-    getMLPatternResultSort :: p a -> Sort a
+    getMLPatternOperandSorts :: p a recursionP -> [Sort a]
+    getMLPatternResultSort :: p a recursionP -> Sort a
     getPatternSorts :: p a recursionP -> [Sort a]
     getPatternChildren :: p a recursionP -> [recursionP]
 

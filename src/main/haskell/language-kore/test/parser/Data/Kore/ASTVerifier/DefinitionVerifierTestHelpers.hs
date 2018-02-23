@@ -440,7 +440,7 @@ sortVariable _ (SortVariableName name) = SortVariable (Id name)
 
 unifiedSortVariable :: IsMeta a => a -> SortVariableName -> UnifiedSortVariable
 unifiedSortVariable x name =
-    asUnifiedSortVariable (sortVariable x name)
+    asUnified (sortVariable x name)
 
 stringUnifiedPattern :: String -> UnifiedPattern
 stringUnifiedPattern s =
@@ -453,11 +453,12 @@ variable (VariableName name) sort =
         , variableSort = sort
         }
 
-unifiedVariable :: IsMeta a => VariableName -> Sort a -> UnifiedVariable
+unifiedVariable
+    :: IsMeta a => VariableName -> Sort a -> UnifiedVariable Variable
 unifiedVariable name sort =
-    asUnifiedVariable (variable name sort)
+    asUnified (variable name sort)
 
-variablePattern :: VariableName -> Sort a -> Pattern a
+variablePattern :: VariableName -> Sort a -> Pattern a Variable p
 variablePattern name sort =
     VariablePattern (variable name sort)
 
@@ -465,12 +466,13 @@ unifiedVariablePattern :: IsMeta a => VariableName -> Sort a -> UnifiedPattern
 unifiedVariablePattern name sort =
     asUnifiedPattern (variablePattern name sort)
 
-simpleExistsPattern :: IsMeta a => Variable a -> Sort a -> Pattern a
+simpleExistsPattern
+    :: IsMeta a => Variable a -> Sort a -> Pattern a Variable UnifiedPattern
 simpleExistsPattern quantifiedVariable returnSort =
     ExistsPattern Exists
         { existsSort = returnSort
-        , existsVariable = asUnifiedVariable quantifiedVariable
-        , existsPattern = asUnifiedPattern (VariablePattern quantifiedVariable)
+        , existsVariable = asUnified quantifiedVariable
+        , existsChild = asUnifiedPattern (VariablePattern quantifiedVariable)
         }
 
 simpleExistsUnifiedPattern
@@ -505,7 +507,7 @@ simpleExistsEqualsUnifiedPattern
         (ExistsPattern Exists
             { existsSort = resultSort
             , existsVariable = unifiedVariable name operandSort
-            , existsPattern = asUnifiedPattern
+            , existsChild = asUnifiedPattern
                 (EqualsPattern Equals
                     { equalsOperandSort = operandSort
                     , equalsResultSort = resultSort
@@ -523,14 +525,15 @@ applicationObjectUnifiedPatternWithChildren
 applicationObjectUnifiedPatternWithChildren name unifiedPatterns =
     ObjectPattern (applicationPatternWithChildren name unifiedPatterns)
 
-applicationPatternWithChildren :: SymbolName -> [UnifiedPattern] -> Pattern a
+applicationPatternWithChildren
+    :: SymbolName -> [UnifiedPattern] -> Pattern a v UnifiedPattern
 applicationPatternWithChildren (SymbolName name) unifiedPatterns =
     ApplicationPattern Application
         { applicationSymbolOrAlias = SymbolOrAlias
             { symbolOrAliasConstructor = Id name
             , symbolOrAliasParams = []
             }
-        , applicationPatterns = unifiedPatterns
+        , applicationChildren = unifiedPatterns
         }
 
 applicationUnifiedPatternWithParams
@@ -542,6 +545,6 @@ applicationUnifiedPatternWithParams (SymbolName name) params =
                 { symbolOrAliasConstructor = Id name
                 , symbolOrAliasParams = params
                 }
-            , applicationPatterns = []
+            , applicationChildren = []
             }
         )

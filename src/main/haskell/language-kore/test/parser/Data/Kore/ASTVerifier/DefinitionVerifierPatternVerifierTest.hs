@@ -17,7 +17,7 @@ data PatternRestrict
     | NoRestrict
 
 data TestPattern a = TestPattern
-    { testPatternPattern    :: Pattern a
+    { testPatternPattern    :: Pattern a Variable UnifiedPattern
     , testPatternErrorStack :: ErrorStack
     }
 
@@ -72,7 +72,7 @@ definitionVerifierPatternVerifierTests =
             (ExistsPattern Exists
                 { existsSort = anotherSort
                 , existsVariable = ObjectVariable anotherVariable
-                , existsPattern =
+                , existsChild =
                     ObjectPattern
                         (simpleExistsPattern objectVariable objectSort)
                 }
@@ -94,7 +94,7 @@ definitionVerifierPatternVerifierTests =
             (ExistsPattern Exists
                 { existsSort = objectSort
                 , existsVariable = ObjectVariable objectVariable
-                , existsPattern =
+                , existsChild =
                     ObjectPattern (VariablePattern anotherVariable)
                 }
             )
@@ -126,7 +126,7 @@ definitionVerifierPatternVerifierTests =
             (ExistsPattern Exists
                 { existsSort = objectSort
                 , existsVariable = ObjectVariable objectVariable
-                , existsPattern =
+                , existsChild =
                     ObjectPattern
                         (simpleExistsPattern
                             objectVariableSortVariable objectSortVariableSort)
@@ -319,7 +319,7 @@ definitionVerifierPatternVerifierTests =
                     { symbolOrAliasConstructor = Id oneSortSymbolRawName
                     , symbolOrAliasParams = []
                     }
-                , applicationPatterns =
+                , applicationChildren =
                     [ simpleExistsObjectUnifiedPattern
                         objectVariableName anotherObjectSort2]
                 }
@@ -343,7 +343,7 @@ definitionVerifierPatternVerifierTests =
                     { symbolOrAliasConstructor = Id oneSortSymbolRawName
                     , symbolOrAliasParams = [objectSort, objectSort]
                     }
-                , applicationPatterns =
+                , applicationChildren =
                     [ simpleExistsObjectUnifiedPattern
                         objectVariableName anotherObjectSort2]
                 }
@@ -500,7 +500,7 @@ dummyVariableAndSentences (NamePrefix namePrefix) =
 
 successTestsForObjectPattern
     :: String
-    -> Pattern Object
+    -> Pattern Object Variable UnifiedPattern
     -> NamePrefix
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
@@ -545,7 +545,7 @@ successTestsForObjectPattern
 
 successTestsForMetaPattern
     :: String
-    -> Pattern Meta
+    -> Pattern Meta Variable UnifiedPattern
     -> NamePrefix
     -> TestedPatternSort Meta
     -> SortVariablesThatMustBeDeclared Meta
@@ -586,7 +586,7 @@ failureTestsForObjectPattern
     :: String
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> Pattern Object
+    -> Pattern Object Variable UnifiedPattern
     -> NamePrefix
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
@@ -642,7 +642,7 @@ failureTestsForMetaPattern
     :: String
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> Pattern Meta
+    -> Pattern Meta Variable UnifiedPattern
     -> NamePrefix
     -> TestedPatternSort Meta
     -> SortVariablesThatMustBeDeclared Meta
@@ -688,7 +688,7 @@ failureTestsForMetaPattern
 genericPatternInAllContexts
     :: IsMeta a
     => a
-    -> Pattern a
+    -> Pattern a Variable UnifiedPattern
     -> NamePrefix
     -> TestedPatternSort a
     -> SortVariablesThatMustBeDeclared a
@@ -733,8 +733,8 @@ genericPatternInAllContexts
     anotherPattern =
         ExistsPattern Exists
             { existsSort = testedSort
-            , existsVariable = asUnifiedVariable anotherVariable
-            , existsPattern = asUnifiedPattern (VariablePattern anotherVariable)
+            , existsVariable = asUnified anotherVariable
+            , existsChild = asUnifiedPattern (VariablePattern anotherVariable)
             }
     anotherVariable =
         Variable
@@ -755,7 +755,7 @@ genericPatternInAllContexts
             }
 
 objectPatternInAllContexts
-    :: Pattern Object
+    :: Pattern Object Variable UnifiedPattern
     -> NamePrefix
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
@@ -786,8 +786,8 @@ objectPatternInAllContexts
     anotherPattern =
         ExistsPattern Exists
             { existsSort = testedSort
-            , existsVariable = asUnifiedVariable anotherVariable
-            , existsPattern = asUnifiedPattern (VariablePattern anotherVariable)
+            , existsVariable = asUnified anotherVariable
+            , existsChild = asUnifiedPattern (VariablePattern anotherVariable)
             }
     anotherVariable =
         Variable
@@ -859,8 +859,8 @@ patternsInAllContexts
 
 genericPatternInPatterns
     :: IsMeta a
-    => Pattern a
-    -> Pattern a
+    => Pattern a Variable UnifiedPattern
+    -> Pattern a Variable UnifiedPattern
     -> OperandSort a
     -> ResultSort a
     -> VariableOfDeclaredSort a
@@ -893,7 +893,7 @@ genericPatternInPatterns
         [ TestPattern
             { testPatternPattern = ApplicationPattern Application
                 { applicationSymbolOrAlias = symbol
-                , applicationPatterns = [asUnifiedPattern testedPattern]
+                , applicationChildren = [asUnifiedPattern testedPattern]
                 }
             , testPatternErrorStack =
                 ErrorStack
@@ -905,7 +905,7 @@ genericPatternInPatterns
         , TestPattern
             { testPatternPattern = ApplicationPattern Application
                 { applicationSymbolOrAlias = alias
-                , applicationPatterns = [asUnifiedPattern testedPattern]
+                , applicationChildren = [asUnifiedPattern testedPattern]
                 }
             , testPatternErrorStack =
                 ErrorStack
@@ -917,15 +917,15 @@ genericPatternInPatterns
         ]
 
 objectPatternInPatterns
-    :: Pattern Object
-    -> Pattern Object
+    :: Pattern Object Variable UnifiedPattern
+    -> Pattern Object Variable UnifiedPattern
     -> OperandSort Object
     -> [TestPattern Object]
 objectPatternInPatterns = patternInUnquantifiedObjectPatterns
 
 patternInQuantifiedPatterns
     :: IsMeta a
-    => Pattern a
+    => Pattern a Variable UnifiedPattern
     -> Sort a
     -> Variable a
     -> [TestPattern a]
@@ -933,8 +933,8 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
     [ TestPattern
         { testPatternPattern = ExistsPattern Exists
             { existsSort = testedSort
-            , existsVariable = asUnifiedVariable quantifiedVariable
-            , existsPattern = asUnifiedPattern testedPattern
+            , existsVariable = asUnified quantifiedVariable
+            , existsChild = asUnifiedPattern testedPattern
             }
         , testPatternErrorStack =
             ErrorStack
@@ -946,8 +946,8 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
     , TestPattern
         { testPatternPattern = ForallPattern Forall
             { forallSort = testedSort
-            , forallVariable = asUnifiedVariable quantifiedVariable
-            , forallPattern = asUnifiedPattern testedPattern
+            , forallVariable = asUnified quantifiedVariable
+            , forallChild = asUnifiedPattern testedPattern
             }
         , testPatternErrorStack =
             ErrorStack
@@ -960,8 +960,8 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
 
 patternInUnquantifiedGenericPatterns
     :: IsMeta a
-    => Pattern a
-    -> Pattern a
+    => Pattern a Variable UnifiedPattern
+    -> Pattern a Variable UnifiedPattern
     -> OperandSort a
     -> ResultSort a
     -> [TestPattern a]
@@ -991,7 +991,7 @@ patternInUnquantifiedGenericPatterns
         { testPatternPattern = CeilPattern Ceil
             { ceilOperandSort = testedSort
             , ceilResultSort = resultSort
-            , ceilPattern = testedUnifiedPattern
+            , ceilChild = testedUnifiedPattern
             }
         , testPatternErrorStack = ErrorStack ["\\ceil"]
         }
@@ -1017,7 +1017,7 @@ patternInUnquantifiedGenericPatterns
         { testPatternPattern = FloorPattern Floor
             { floorOperandSort = testedSort
             , floorResultSort = resultSort
-            , floorPattern = testedUnifiedPattern
+            , floorChild = testedUnifiedPattern
             }
         , testPatternErrorStack = ErrorStack ["\\floor"]
         }
@@ -1057,8 +1057,8 @@ patternInUnquantifiedGenericPatterns
         { testPatternPattern = InPattern In
             { inOperandSort = testedSort
             , inResultSort = resultSort
-            , inContainedPattern = testedUnifiedPattern
-            , inContainingPattern = anotherUnifiedPattern
+            , inContainedChild = testedUnifiedPattern
+            , inContainingChild = anotherUnifiedPattern
             }
         , testPatternErrorStack = ErrorStack ["\\in"]
         }
@@ -1066,15 +1066,15 @@ patternInUnquantifiedGenericPatterns
         { testPatternPattern = InPattern In
             { inOperandSort = testedSort
             , inResultSort = resultSort
-            , inContainedPattern = anotherUnifiedPattern
-            , inContainingPattern = testedUnifiedPattern
+            , inContainedChild = anotherUnifiedPattern
+            , inContainingChild = testedUnifiedPattern
             }
         , testPatternErrorStack = ErrorStack ["\\in"]
         }
     , TestPattern
         { testPatternPattern = NotPattern Not
             { notSort = testedSort
-            , notPattern = testedUnifiedPattern
+            , notChild = testedUnifiedPattern
             }
         , testPatternErrorStack = ErrorStack ["\\not"]
         }
@@ -1100,8 +1100,8 @@ patternInUnquantifiedGenericPatterns
     testedUnifiedPattern = asUnifiedPattern testedPattern
 
 patternInUnquantifiedObjectPatterns
-    :: Pattern Object
-    -> Pattern Object
+    :: Pattern Object Variable UnifiedPattern
+    -> Pattern Object Variable UnifiedPattern
     -> OperandSort Object
     -> [TestPattern Object]
 patternInUnquantifiedObjectPatterns
@@ -1112,7 +1112,7 @@ patternInUnquantifiedObjectPatterns
     [ TestPattern
         { testPatternPattern = NextPattern Next
             { nextSort = testedSort
-            , nextPattern = testedUnifiedPattern
+            , nextChild = testedUnifiedPattern
             }
         , testPatternErrorStack = ErrorStack ["\\next"]
         }
@@ -1327,7 +1327,7 @@ testsForUnifiedPatternInTopLevelGenericContext
                 }
             ]
   where
-    unifiedSortVariables = map asUnifiedSortVariable sortVariables
+    unifiedSortVariables = map asUnified sortVariables
     rawAliasName = namePrefix ++ "_alias"
     aliasName = AliasName rawAliasName
     rawSymbolName = namePrefix ++ "_symbol"

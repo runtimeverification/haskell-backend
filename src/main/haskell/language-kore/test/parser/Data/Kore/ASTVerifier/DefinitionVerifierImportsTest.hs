@@ -355,7 +355,7 @@ sortVisibilityTests =
                         { variableName = Id "var"
                         , variableSort = sort
                         }
-                    , existsPattern = ObjectPattern
+                    , existsChild = ObjectPattern
                         ( VariablePattern Variable
                             { variableName = Id "var"
                             , variableSort = sort
@@ -383,7 +383,7 @@ sortVisibilityTests =
             , sentenceAxiomPattern = ObjectPattern
                 ( NextPattern Next
                     { nextSort = sort
-                    , nextPattern = topSortPattern
+                    , nextChild = topSortPattern
                     }
                 )
             , sentenceAxiomAttributes = Attributes []
@@ -394,7 +394,7 @@ sortVisibilityTests =
             , sentenceAxiomPattern = ObjectPattern
                 ( NextPattern Next
                     { nextSort = anotherSort
-                    , nextPattern = ObjectPattern
+                    , nextChild = ObjectPattern
                         ( EqualsPattern Equals
                             { equalsResultSort = anotherSort
                             , equalsOperandSort = sort
@@ -461,7 +461,7 @@ sortVisibilityTests =
                         { symbolOrAliasConstructor = Id "symbol2"
                         , symbolOrAliasParams = [ sort ]
                         }
-                    , applicationPatterns = []
+                    , applicationChildren = []
                     }
                 )
             , sentenceAxiomAttributes = Attributes []
@@ -572,7 +572,7 @@ symbolVisibilityTests =
                 { symbolOrAliasConstructor = Id "symbol1"
                 , symbolOrAliasParams = [ defaultSort ]
                 }
-            , applicationPatterns = []
+            , applicationChildren = []
             }
         )
     symbolDeclaration = ObjectSentenceSymbolSentence SentenceSymbol
@@ -592,7 +592,7 @@ symbolVisibilityTests =
                 { symbolOrAliasConstructor = Id "#symbol1"
                 , symbolOrAliasParams = [ charMetaSort ]
                 }
-            , applicationPatterns = []
+            , applicationChildren = []
             }
         )
     metaSymbolDeclaration = MetaSentenceSymbolSentence SentenceSymbol
@@ -645,7 +645,7 @@ symbolVisibilityTests =
                         { variableName = Id "var"
                         , variableSort = defaultSort
                         }
-                    , existsPattern = symbolPattern
+                    , existsChild = symbolPattern
                     }
                 )
             , sentenceAxiomAttributes = Attributes []
@@ -656,7 +656,7 @@ symbolVisibilityTests =
             , sentenceAxiomPattern = ObjectPattern
                 ( NextPattern Next
                     { nextSort = defaultSort
-                    , nextPattern = symbolPattern
+                    , nextChild = symbolPattern
                     }
                 )
             , sentenceAxiomAttributes = Attributes []
@@ -670,7 +670,7 @@ symbolVisibilityTests =
                         { symbolOrAliasConstructor = Id "symbol2"
                         , symbolOrAliasParams = [ defaultSort ]
                         }
-                    , applicationPatterns = [symbolPattern]
+                    , applicationChildren = [symbolPattern]
                     }
                 )
             , sentenceAxiomAttributes = Attributes []
@@ -782,7 +782,7 @@ aliasVisibilityTests =
                 { symbolOrAliasConstructor = Id "alias1"
                 , symbolOrAliasParams = [ defaultSort ]
                 }
-            , applicationPatterns = []
+            , applicationChildren = []
             }
         )
     aliasDeclaration = ObjectSentenceAliasSentence SentenceAlias
@@ -802,7 +802,7 @@ aliasVisibilityTests =
                 { symbolOrAliasConstructor = Id "#alias1"
                 , symbolOrAliasParams = [ charMetaSort ]
                 }
-            , applicationPatterns = []
+            , applicationChildren = []
             }
         )
     metaAliasDeclaration = MetaSentenceAliasSentence SentenceAlias
@@ -855,7 +855,7 @@ aliasVisibilityTests =
                         { variableName = Id "var"
                         , variableSort = defaultSort
                         }
-                    , existsPattern = aliasPattern
+                    , existsChild = aliasPattern
                     }
                 )
             , sentenceAxiomAttributes = Attributes []
@@ -866,7 +866,7 @@ aliasVisibilityTests =
             , sentenceAxiomPattern = ObjectPattern
                 ( NextPattern Next
                     { nextSort = defaultSort
-                    , nextPattern = aliasPattern
+                    , nextChild = aliasPattern
                     }
                 )
             , sentenceAxiomAttributes = Attributes []
@@ -880,7 +880,7 @@ aliasVisibilityTests =
                         { symbolOrAliasConstructor = Id "alias2"
                         , symbolOrAliasParams = [ defaultSort ]
                         }
-                    , applicationPatterns = [aliasPattern]
+                    , applicationChildren = [aliasPattern]
                     }
                 )
             , sentenceAxiomAttributes = Attributes []

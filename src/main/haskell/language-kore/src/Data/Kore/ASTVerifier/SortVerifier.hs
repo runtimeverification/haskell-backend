@@ -8,7 +8,6 @@ import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.Error
 import           Data.Kore.IndexedModule.IndexedModule
 import qualified Data.Set                              as Set
-import           Data.Typeable                         (Typeable)
 
 verifySortUsage
     :: IsMeta a
@@ -23,7 +22,7 @@ verifySortUsage _ declaredSortVariables (SortVariableSort variable)
     verifySuccess
   where
     variableId = getSortVariable variable
-    unifiedVariable = asUnifiedSortVariable variable
+    unifiedVariable = asUnified variable
 verifySortUsage findSortDescription declaredSortVariables (SortActualSort sort)
   =
     withContext
@@ -63,12 +62,12 @@ verifySortMatchesDeclaration
     declaredSortCount = length (sortDescriptionParameters sortDescription)
 
 buildDeclaredSortVariables
-    :: Typeable a
+    :: IsMeta a
     => [SortVariable a]
     -> Either (Error VerifyError) (Set.Set UnifiedSortVariable)
 buildDeclaredSortVariables variables =
     buildDeclaredUnifiedSortVariables
-        (map asUnifiedSortVariable variables)
+        (map asUnified variables)
 
 buildDeclaredUnifiedSortVariables
     :: [UnifiedSortVariable]
