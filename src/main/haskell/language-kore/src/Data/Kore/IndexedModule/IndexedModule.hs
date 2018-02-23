@@ -1,7 +1,26 @@
+{-|
+Module      : Data.Kore.IndexedModule.IndexedModule
+Description : Indexed representation for a module.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : virgil.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : POSIX
+-}
 module Data.Kore.IndexedModule.IndexedModule
     ( ImplicitIndexedModule (ImplicitIndexedModule)
     , implicitIndexedModule
-    , IndexedModule(..)
+    , IndexedModule
+        -- the IndexedModule data constructor not included in the list on
+        -- purpose.
+        (indexedModuleName, indexedModuleMetaAliasSentences
+        , indexedModuleObjectAliasSentences, indexedModuleMetaSymbolSentences
+        , indexedModuleObjectSymbolSentences
+        , indexedModuleObjectSortDescriptions
+        , indexedModuleMetaSortDescriptions, indexedModuleAxioms
+        , indexedModuleAttributes, indexedModuleImports
+        , indexedModuleRawSentences
+        )
     , indexModuleIfNeeded
     , resolveThing
     , SortDescription(..)
@@ -14,6 +33,9 @@ import           Control.Monad   (foldM)
 import qualified Data.Map        as Map
 import qualified Data.Set        as Set
 
+{-|'SortDescription' represents a 'SentenceSort' that can also be used for
+meta-sorts.
+-}
 data SortDescription a = SortDescription
     { sortDescriptionName       :: !(Id a)
     , sortDescriptionParameters :: ![SortVariable a]
@@ -21,6 +43,19 @@ data SortDescription a = SortDescription
     }
     deriving (Eq, Show)
 
+{-|'IndexedModule' represents an AST 'Module' somewhat optimized for resolving
+IDs.
+
+It contains mappings from IDs to the sentence that declares them
+(or to the 'SortDescription' for sorts). Note that only symbols defined
+in the current module are included.
+
+It also contains the imported modules as 'IndexedModule's and all the other
+module data in raw-ish form.
+
+All 'IndexedModule' instances should either be returned by '' or they should
+start from an instance created by 'indexedModuleWithDefaultImports'.
+-}
 data IndexedModule = IndexedModule
     { indexedModuleName          :: !ModuleName
     , indexedModuleMetaAliasSentences
@@ -41,6 +76,9 @@ data IndexedModule = IndexedModule
     , indexedModuleRawSentences  :: ![Sentence]
     }
 
+{-|'ImplicitIndexedModule' is the type for the 'IndexedModule' containing
+things that are implicitly defined.
+-}
 newtype ImplicitIndexedModule = ImplicitIndexedModule IndexedModule
 
 emptyIndexedModule :: ModuleName -> IndexedModule
@@ -59,12 +97,18 @@ emptyIndexedModule name =
         , indexedModuleRawSentences = []
         }
 
+{-|'indexedModuleWithDefaultImports' provides an 'IndexedModule' with the given
+name and containing the implicit definitions module.
+-}
 indexedModuleWithDefaultImports
     :: ModuleName -> ImplicitIndexedModule -> IndexedModule
 indexedModuleWithDefaultImports name (ImplicitIndexedModule implicitModule) =
     (emptyIndexedModule name)
         { indexedModuleImports = [implicitModule] }
 
+{-|'implicitIndexedModule' provides an 'IndexedModule' with the implicit Kore
+definitions.
+-}
 implicitIndexedModule :: ModuleName -> (ImplicitIndexedModule, Set.Set String)
 implicitIndexedModule name =
     ( ImplicitIndexedModule (emptyIndexedModule name)
@@ -87,14 +131,25 @@ metaSortDescription sortType =
   where
     sortId = Id (show sortType)
 
+{-|'indexModuleIfNeeded' transforms a 'Module' into an 'IndexedModule', unless
+the module is already in the 'IndexedModule' map.
+-}
 indexModuleIfNeeded
     :: ImplicitIndexedModule
+    -- ^ Module containing the implicit Kore definitions
     -> Map.Map ModuleName Module
+    -- ^ Map containing all defined modules, used for resolving imports.
     -> Map.Map ModuleName IndexedModule
+    -- ^ Map containing all modules that were already indexed.
     -> Module
+    -- ^ Module to be indexed
     -> Either
         (Error a)
         (Map.Map ModuleName IndexedModule)
+    -- ^ If the module was indexed succesfully, the map returned on 'Right'
+    -- contains everything that the provided 'IndexedModule' map contained,
+    -- plus the current module, plus all the modules that were indexed when
+    -- resolving imports.
 indexModuleIfNeeded
     implicitModule nameToModule indexedModules koreModule
   =
@@ -320,8 +375,12 @@ toSortDescription sentence = SortDescription
     , sortDescriptionAttributes = sentenceSortAttributes sentence
     }
 
+{-|'resolveThing' looks up an id in an 'IndexedModule', also searching in the
+imported modules.
+-}
 resolveThing
     :: (IndexedModule -> Map.Map (Id a) (thing a))
+    -- ^ extracts the map into which to look up the id
     -> IndexedModule
     -> Id a
     -> Maybe (thing a)

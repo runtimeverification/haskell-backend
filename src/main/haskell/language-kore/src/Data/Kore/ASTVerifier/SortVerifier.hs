@@ -1,7 +1,13 @@
-module Data.Kore.ASTVerifier.SortVerifier
-    (buildDeclaredSortVariables,
-    buildDeclaredUnifiedSortVariables,
-    verifySortUsage) where
+{-|
+Module      : Data.Kore.ASTVerifier.SortVerifier
+Description : Tools for verifying the wellformedness of a Kore 'Sort'.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : virgil.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : POSIX
+-}
+module Data.Kore.ASTVerifier.SortVerifier (verifySort) where
 
 import           Data.Kore.AST
 import           Data.Kore.ASTVerifier.Error
@@ -9,13 +15,16 @@ import           Data.Kore.Error
 import           Data.Kore.IndexedModule.IndexedModule
 import qualified Data.Set                              as Set
 
-verifySortUsage
+{-|'verifySort' verifies the welformedness of a Kore 'Sort'. -}
+verifySort
     :: IsMeta a
     => (Id a -> Either (Error VerifyError) (SortDescription a))
+    -- ^ Provides a sort's description.
     -> Set.Set UnifiedSortVariable
+    -- ^ Sort variables visible here.
     -> Sort a
     -> Either (Error VerifyError) VerifySuccess
-verifySortUsage _ declaredSortVariables (SortVariableSort variable)
+verifySort _ declaredSortVariables (SortVariableSort variable)
   = do
     koreFailWhen (not (unifiedVariable `Set.member` declaredSortVariables))
         ("Sort variable '" ++ getId variableId ++ "' not declared.")
@@ -23,7 +32,7 @@ verifySortUsage _ declaredSortVariables (SortVariableSort variable)
   where
     variableId = getSortVariable variable
     unifiedVariable = asUnified variable
-verifySortUsage findSortDescription declaredSortVariables (SortActualSort sort)
+verifySort findSortDescription declaredSortVariables (SortActualSort sort)
   =
     withContext
         ("sort '" ++ getId (sortActualName sort) ++ "'")
@@ -54,34 +63,9 @@ verifySortMatchesDeclaration
         ++ "."
         )
     mapM_
-        (verifySortUsage findSortDescription declaredSortVariables)
+        (verifySort findSortDescription declaredSortVariables)
         (sortActualSorts sort)
     verifySuccess
   where
     actualSortCount = length (sortActualSorts sort)
     declaredSortCount = length (sortDescriptionParameters sortDescription)
-
-buildDeclaredSortVariables
-    :: IsMeta a
-    => [SortVariable a]
-    -> Either (Error VerifyError) (Set.Set UnifiedSortVariable)
-buildDeclaredSortVariables variables =
-    buildDeclaredUnifiedSortVariables
-        (map asUnified variables)
-
-buildDeclaredUnifiedSortVariables
-    :: [UnifiedSortVariable]
-    -> Either (Error VerifyError) (Set.Set UnifiedSortVariable)
-buildDeclaredUnifiedSortVariables [] = Right Set.empty
-buildDeclaredUnifiedSortVariables (unifiedVariable : list) = do
-    variables <- buildDeclaredUnifiedSortVariables list
-    koreFailWhen (unifiedVariable `Set.member` variables)
-                (  "Duplicated sort variable: '"
-                ++ extractVariableName unifiedVariable
-                ++ "'.")
-    return (Set.insert unifiedVariable variables)
-  where
-    extractVariableName (ObjectSortVariable variable) =
-        getId (getSortVariable variable)
-    extractVariableName (MetaSortVariable variable) =
-        getId (getSortVariable variable)

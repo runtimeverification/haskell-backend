@@ -1,3 +1,12 @@
+{-|
+Module      : Data.Kore.ASTVerifier.PatternVerifier
+Description : Tools for verifying the wellformedness of a Kore 'Pattern'.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : virgil.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : POSIX
+-}
 module Data.Kore.ASTVerifier.PatternVerifier (verifyPattern) where
 
 import           Data.Kore.AST
@@ -44,8 +53,7 @@ data VerifyHelpers a = VerifyHelpers
 metaVerifyHelpers :: IndexedModule -> DeclaredVariables -> VerifyHelpers Meta
 metaVerifyHelpers indexedModule declaredVariables =
     VerifyHelpers
-        { verifyHelpersFindSort =
-            resolveSort indexedModuleMetaSortDescriptions indexedModule
+        { verifyHelpersFindSort = resolveMetaSort indexedModule
         , verifyHelpersLookupAliasDeclaration =
             resolveThing indexedModuleMetaAliasSentences indexedModule
         , verifyHelpersLookupSymbolDeclaration =
@@ -58,8 +66,7 @@ objectVerifyHelpers
     :: IndexedModule -> DeclaredVariables -> VerifyHelpers Object
 objectVerifyHelpers indexedModule declaredVariables =
     VerifyHelpers
-        { verifyHelpersFindSort =
-            resolveSort indexedModuleObjectSortDescriptions indexedModule
+        { verifyHelpersFindSort = resolveObjectSort indexedModule
         , verifyHelpersLookupAliasDeclaration =
             resolveThing indexedModuleObjectAliasSentences indexedModule
         , verifyHelpersLookupSymbolDeclaration =
@@ -87,11 +94,16 @@ addDeclaredVariable
             Map.insert (variableName variable) variable variablesDict
         }
 
+{-|'verifyPattern' verifies the welformedness of a Kore 'UnifiedPattern'. -}
 verifyPattern
     :: UnifiedPattern
     -> Maybe UnifiedSort
+    -- ^ If present, represents the expected sort of the pattern.
     -> IndexedModule
+    -- ^ The module containing all definitions which are visible in this
+    -- pattern.
     -> Set.Set UnifiedSortVariable
+    -- ^ Sort variables which are visible in this pattern.
     -> Either (Error VerifyError) VerifySuccess
 verifyPattern unifiedPattern maybeExpectedSort indexedModule sortVariables =
     internalVerifyPattern
@@ -254,7 +266,7 @@ verifyMLPattern
     declaredVariables
   = do
     mapM_
-        (verifySortUsage
+        (verifySort
             (verifyHelpersFindSort verifyHelpers)
             declaredSortVariables
         )
@@ -354,7 +366,7 @@ verifyBinder
   = do
     verifyUnifiedVariableDeclaration
         quantifiedVariable indexedModule declaredSortVariables
-    verifySortUsage
+    verifySort
         (verifyHelpersFindSort verifyHelpers)
         declaredSortVariables
         binderSort
@@ -397,14 +409,14 @@ verifyUnifiedVariableDeclaration
 verifyUnifiedVariableDeclaration
     (MetaVariable variable) indexedModule declaredSortVariables
   =
-    verifySortUsage
-        (resolveSort indexedModuleMetaSortDescriptions indexedModule)
+    verifySort
+        (resolveMetaSort indexedModule)
         declaredSortVariables
         (variableSort variable)
 verifyUnifiedVariableDeclaration
     (ObjectVariable variable) indexedModule declaredSortVariables
-  = verifySortUsage
-        (resolveSort indexedModuleObjectSortDescriptions indexedModule)
+  = verifySort
+        (resolveObjectSort indexedModule)
         declaredSortVariables
         (variableSort variable)
 
@@ -462,7 +474,7 @@ applicationSortsFromSymbolOrAliasSentence
     symbolOrAlias sentence verifyHelpers declaredSortVariables
   = do
     mapM_
-        ( verifySortUsage
+        ( verifySort
             (verifyHelpersFindSort verifyHelpers)
             declaredSortVariables
         )

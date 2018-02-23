@@ -1,3 +1,12 @@
+{-|
+Module      : Data.Kore.ImplicitDefinitions
+Description : Implicit definitions for Kore.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : virgil.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : POSIX
+-}
 module Data.Kore.ImplicitDefinitions where
 
 import           Data.Kore.AST
