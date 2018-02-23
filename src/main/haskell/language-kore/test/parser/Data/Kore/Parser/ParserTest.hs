@@ -396,7 +396,7 @@ applicationPatternParserTests =
                             [ sortVariableSort "s1"
                             , sortVariableSort "s2" ]
                         }
-                , applicationPatterns =
+                , applicationChildren =
                     [ ObjectPattern $ VariablePattern Variable
                         { variableName = Id "v1"
                         , variableSort = sortVariableSort "s1"
@@ -415,7 +415,7 @@ applicationPatternParserTests =
                         { symbolOrAliasConstructor = Id "c"
                         , symbolOrAliasParams = []
                         }
-                , applicationPatterns = []
+                , applicationChildren = []
                 }
             )
         , FailureWithoutMessage ["", "var", "v:", ":s", "c(s)", "c{s}"]
@@ -440,7 +440,7 @@ ceilPatternParserTests =
             (ObjectPattern $ CeilPattern Ceil
                     { ceilOperandSort = sortVariableSort "s1"
                     , ceilResultSort = sortVariableSort "s2"
-                    , ceilPattern =
+                    , ceilChild =
                         MetaPattern $ StringLiteralPattern (StringLiteral "a")
                     }
             )
@@ -485,7 +485,7 @@ existsPatternParserTests =
                             { variableName = Id "#v"
                             , variableSort = sortVariableSort "#Char"
                             }
-                    , existsPattern =
+                    , existsChild =
                         MetaPattern $ StringLiteralPattern (StringLiteral "b")
                     }
             )
@@ -511,7 +511,7 @@ floorPatternParserTests =
             ( ObjectPattern $ FloorPattern Floor
                     { floorOperandSort = sortVariableSort "s1"
                     , floorResultSort = sortVariableSort "s2"
-                    , floorPattern =
+                    , floorChild =
                         MetaPattern $ StringLiteralPattern (StringLiteral "a")
                     }
             )
@@ -534,7 +534,7 @@ forallPatternParserTests =
                             { variableName = Id "v"
                             , variableSort = sortVariableSort "s1"
                             }
-                    , forallPattern =
+                    , forallChild =
                         MetaPattern $ StringLiteralPattern (StringLiteral "b")
                     }
             )
@@ -600,12 +600,12 @@ memPatternParserTests =
             ( ObjectPattern $ InPattern In
                     { inOperandSort = sortVariableSort "s1"
                     , inResultSort = sortVariableSort "s2"
-                    , inContainedPattern = ObjectPattern $
+                    , inContainedChild = ObjectPattern $
                         VariablePattern Variable
                             { variableName = Id "v"
                             , variableSort = sortVariableSort "s3"
                             }
-                    , inContainingPattern =
+                    , inContainingChild =
                         MetaPattern $ StringLiteralPattern (StringLiteral "b")
                     }
             )
@@ -613,9 +613,9 @@ memPatternParserTests =
             ( ObjectPattern $ InPattern In
                     { inOperandSort = sortVariableSort "s1"
                     , inResultSort = sortVariableSort "s2"
-                    , inContainedPattern =
+                    , inContainedChild =
                         MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                    , inContainingPattern =
+                    , inContainingChild =
                         MetaPattern $ StringLiteralPattern (StringLiteral "b")
                     }
             )
@@ -640,7 +640,7 @@ notPatternParserTests =
         [ success "\\not{s}(\"a\")"
             ( ObjectPattern $ NotPattern Not
                     { notSort = sortVariableSort "s"
-                    , notPattern =
+                    , notChild =
                         MetaPattern $ StringLiteralPattern (StringLiteral "a")
                     }
             )
@@ -660,7 +660,7 @@ nextPatternParserTests =
         [ success "\\next{s}(\"a\")"
             ( ObjectPattern $ NextPattern Next
                     { nextSort = sortVariableSort "s"
-                    , nextPattern =
+                    , nextChild =
                         MetaPattern $ StringLiteralPattern (StringLiteral "a")
                     }
             )

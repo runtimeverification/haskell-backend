@@ -1,13 +1,13 @@
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Data.Kore.Unparser.Unparse (Unparse, unparseToString) where
 
 import           Data.Kore.AST
-import           Data.Kore.IndentingPrinter (betweenLines,
-                                             PrinterOutput,
-                                             printToString,
-                                             StringPrinter,
-                                             withIndent,
-                                             write)
-import           Data.Kore.Parser.CString (escapeCString)
+import           Data.Kore.IndentingPrinter (PrinterOutput, StringPrinter,
+                                             betweenLines, printToString,
+                                             withIndent, write)
+import           Data.Kore.Parser.CString   (escapeCString)
 
 {-  Unparse to string instance
 -}
@@ -101,7 +101,7 @@ instance Unparse UnifiedSortVariable where
     unparse (ObjectSortVariable sv) = unparse sv
     unparse (MetaSortVariable sv)   = unparse sv
 
-instance Unparse UnifiedVariable where
+instance Unparse (UnifiedVariable Variable) where
     unparse (ObjectVariable sv) = unparse sv
     unparse (MetaVariable sv)   = unparse sv
 
@@ -127,74 +127,86 @@ instance Unparse MLPatternType where
     unparse RewritesPatternType = write "\\rewrites"
     unparse TopPatternType      = write "\\top"
 
-unparseMLPattern :: (PrinterOutput w m, MLPatternClass p) => p a -> m ()
+unparseMLPattern :: (PrinterOutput w m, MLPatternClass p, Unparse rpt)
+    => p a rpt -> m ()
 unparseMLPattern p = do
     unparse (getPatternType p)
     inCurlyBraces (unparse (getPatternSorts p))
-    inParens (unparse (getPatternPatterns p))
+    inParens (unparse (getPatternChildren p))
 
 unparseMLBinderPattern
-    :: (PrinterOutput w m, MLBinderPatternClass p) => p a -> m ()
+    :: (PrinterOutput w m, MLBinderPatternClass p, Unparse rpt,
+        Unparse (UnifiedVariable v))
+    => p a v rpt -> m ()
 unparseMLBinderPattern p = do
     unparse (getBinderPatternType p)
     inCurlyBraces (unparse (getBinderPatternSort p))
     inParens ( do
         unparse (getBinderPatternVariable p)
         write ", "
-        unparse (getBinderPatternPattern p)
+        unparse (getBinderPatternChild p)
         )
 
-instance Unparse (And a) where
+instance Unparse p => Unparse (And a p) where
     unparse = unparseMLPattern
 
-instance Unparse (Application a) where
+instance Unparse p => Unparse (Application a p) where
     unparse a =
         unparse (applicationSymbolOrAlias a)
-        >> inParens (unparse (applicationPatterns a))
+        >> inParens (unparse (applicationChildren a))
 
-instance Unparse (Bottom a) where
+instance Unparse (Bottom a p) where
+    unparse bottom = do
+        unparse BottomPatternType
+        inCurlyBraces (unparse (bottomSort bottom))
+        inParens (return ())
+
+instance Unparse p => Unparse (Ceil a p) where
     unparse = unparseMLPattern
 
-instance Unparse (Ceil a) where
+instance Unparse p => Unparse (Equals a p) where
     unparse = unparseMLPattern
 
-instance Unparse (Equals a) where
-    unparse = unparseMLPattern
-
-instance Unparse (Exists a) where
+instance (Unparse (UnifiedVariable v), Unparse p)
+    => Unparse (Exists a v p) where
     unparse = unparseMLBinderPattern
 
-instance Unparse (Floor a) where
+instance Unparse p => Unparse (Floor a p) where
     unparse = unparseMLPattern
 
-instance Unparse (Forall a) where
+instance (Unparse (UnifiedVariable v), Unparse p)
+    => Unparse (Forall a v p) where
     unparse = unparseMLBinderPattern
 
-instance Unparse (Iff a) where
+instance Unparse p => Unparse (Iff a p) where
     unparse = unparseMLPattern
 
-instance Unparse (Implies a) where
+instance Unparse p => Unparse (Implies a p) where
     unparse = unparseMLPattern
 
-instance Unparse (In a) where
+instance Unparse p => Unparse (In a p) where
     unparse = unparseMLPattern
 
-instance Unparse (Next a) where
+instance Unparse p => Unparse (Next a p) where
     unparse = unparseMLPattern
 
-instance Unparse (Not a) where
+instance Unparse p => Unparse (Not a p) where
     unparse = unparseMLPattern
 
-instance Unparse (Or a) where
+instance Unparse p => Unparse (Or a p) where
     unparse = unparseMLPattern
 
-instance Unparse (Rewrites a) where
+instance Unparse p => Unparse (Rewrites a p) where
     unparse = unparseMLPattern
 
-instance Unparse (Top a) where
-    unparse = unparseMLPattern
+instance Unparse (Top a p) where
+    unparse top = do
+        unparse TopPatternType
+        inCurlyBraces (unparse (topSort top))
+        inParens (return ())
 
-instance Unparse (Pattern a) where
+instance (Unparse (UnifiedVariable v), Unparse p, Unparse (v a))
+    => Unparse (Pattern a v p) where
     unparse (AndPattern p)           = unparse p
     unparse (ApplicationPattern p)   = unparse p
     unparse (BottomPattern p)        = unparse p

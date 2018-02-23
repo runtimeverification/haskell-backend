@@ -11,6 +11,7 @@ Helper tools for parsing Kore. Meant for internal use only.
 -}
 module Data.Kore.Parser.ParserUtils where
 
+import           Data.Functor                     (($>))
 import           Control.Monad                    (void)
 import           Data.Attoparsec.ByteString.Char8 (Parser)
 import qualified Data.Attoparsec.ByteString.Char8 as Parser
@@ -66,7 +67,7 @@ sepByCharWithDelimitingChars
             Nothing -> fail "Unexpected end of input."
             Just c
                 | c == endChar ->
-                    skipCharParser skipWhitespace endChar *> return []
+                    skipCharParser skipWhitespace endChar $> []
                 | otherwise ->
                     (:) <$> itemParser <*> sepByCharWithDelimitingChars'
   where
@@ -76,7 +77,7 @@ sepByCharWithDelimitingChars
             Nothing -> fail "Unexpected end of input."
             Just c
                 | c == endChar ->
-                    skipCharParser skipWhitespace endChar *> return []
+                    skipCharParser skipWhitespace endChar $> []
                 | c == delimiter ->
                     skipCharParser skipWhitespace delimiter *>
                         ((:) <$> itemParser <*> sepByCharWithDelimitingChars')

@@ -82,7 +82,7 @@ Definition
                                                 , sortActualSorts = []
                                                 }
                                     }
-                            , existsPattern =
+                            , existsChild =
                                 ObjectPattern (EqualsPattern Equals
                                     { equalsOperandSort =
                                         SortActualSortSortActual
@@ -107,7 +107,7 @@ Definition
                                                     { symbolOrAliasConstructor = Id Object "zero"
                                                     , symbolOrAliasParams = []
                                                     }
-                                            , applicationPatterns = []
+                                            , applicationChildren = []
                                             })
                                     })
                             })
@@ -130,7 +130,7 @@ Definition
                                                 , sortActualSorts = []
                                                 }
                                     }
-                            , existsPattern =
+                            , existsChild =
                                 ObjectPattern (EqualsPattern Equals
                                     { equalsOperandSort =
                                         SortActualSortSortActual
@@ -155,7 +155,7 @@ Definition
                                                     { symbolOrAliasConstructor = Id Object "succ"
                                                     , symbolOrAliasParams = []
                                                     }
-                                            , applicationPatterns =
+                                            , applicationChildren =
                                                 [ ObjectPattern (VariablePattern Variable
                                                     { variableName = Id Object "X"
                                                     , variableSort =
@@ -187,7 +187,7 @@ Definition
                                                 , sortActualSorts = []
                                                 }
                                     }
-                            , existsPattern =
+                            , existsChild =
                                 ObjectPattern (EqualsPattern Equals
                                     { equalsOperandSort =
                                         SortActualSortSortActual
@@ -212,7 +212,7 @@ Definition
                                                     { symbolOrAliasConstructor = Id Object "plus"
                                                     , symbolOrAliasParams = []
                                                     }
-                                            , applicationPatterns =
+                                            , applicationChildren =
                                                 [ ObjectPattern (VariablePattern Variable
                                                     { variableName = Id Object "X"
                                                     , variableSort =
@@ -251,7 +251,7 @@ Definition
                                             { symbolOrAliasConstructor = Id Object "zero"
                                             , symbolOrAliasParams = []
                                             }
-                                    , applicationPatterns = []
+                                    , applicationChildren = []
                                     })
                             , orSecond =
                                 ObjectPattern (ExistsPattern Exists
@@ -269,14 +269,14 @@ Definition
                                                         , sortActualSorts = []
                                                         }
                                             }
-                                    , existsPattern =
+                                    , existsChild =
                                         ObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = Id Object "succ"
                                                     , symbolOrAliasParams = []
                                                     }
-                                            , applicationPatterns =
+                                            , applicationChildren =
                                                 [ ObjectPattern (VariablePattern Variable
                                                     { variableName = Id Object "X"
                                                     , variableSort =
@@ -300,7 +300,7 @@ Definition
                                         { sortActualName = Id Object "Nat"
                                         , sortActualSorts = []
                                         }
-                            , notPattern =
+                            , notChild =
                                 ObjectPattern (AndPattern And
                                     { andSort =
                                         SortActualSortSortActual
@@ -314,7 +314,7 @@ Definition
                                                     { symbolOrAliasConstructor = Id Object "zero"
                                                     , symbolOrAliasParams = []
                                                     }
-                                            , applicationPatterns = []
+                                            , applicationChildren = []
                                             })
                                     , andSecond =
                                         ObjectPattern (ExistsPattern Exists
@@ -332,14 +332,14 @@ Definition
                                                                 , sortActualSorts = []
                                                                 }
                                                     }
-                                            , existsPattern =
+                                            , existsChild =
                                                 ObjectPattern (ApplicationPattern Application
                                                     { applicationSymbolOrAlias =
                                                         SymbolOrAlias
                                                             { symbolOrAliasConstructor = Id Object "succ"
                                                             , symbolOrAliasParams = []
                                                             }
-                                                    , applicationPatterns =
+                                                    , applicationChildren =
                                                         [ ObjectPattern (VariablePattern Variable
                                                             { variableName = Id Object "X"
                                                             , variableSort =
@@ -375,7 +375,7 @@ Definition
                                             { symbolOrAliasConstructor = Id Object "plus"
                                             , symbolOrAliasParams = []
                                             }
-                                    , applicationPatterns =
+                                    , applicationChildren =
                                         [ ObjectPattern (VariablePattern Variable
                                             { variableName = Id Object "X"
                                             , variableSort =
@@ -390,7 +390,7 @@ Definition
                                                     { symbolOrAliasConstructor = Id Object "zero"
                                                     , symbolOrAliasParams = []
                                                     }
-                                            , applicationPatterns = []
+                                            , applicationChildren = []
                                             })
                                         ]
                                     })
@@ -426,7 +426,7 @@ Definition
                                             { symbolOrAliasConstructor = Id Object "plus"
                                             , symbolOrAliasParams = []
                                             }
-                                    , applicationPatterns =
+                                    , applicationChildren =
                                         [ ObjectPattern (VariablePattern Variable
                                             { variableName = Id Object "X"
                                             , variableSort =
@@ -441,7 +441,7 @@ Definition
                                                     { symbolOrAliasConstructor = Id Object "succ"
                                                     , symbolOrAliasParams = []
                                                     }
-                                            , applicationPatterns =
+                                            , applicationChildren =
                                                 [ ObjectPattern (VariablePattern Variable
                                                     { variableName = Id Object "Y"
                                                     , variableSort =
@@ -461,14 +461,14 @@ Definition
                                             { symbolOrAliasConstructor = Id Object "succ"
                                             , symbolOrAliasParams = []
                                             }
-                                    , applicationPatterns =
+                                    , applicationChildren =
                                         [ ObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = Id Object "plus"
                                                     , symbolOrAliasParams = []
                                                     }
-                                            , applicationPatterns =
+                                            , applicationChildren =
                                                 [ ObjectPattern (VariablePattern Variable
                                                     { variableName = Id Object "X"
                                                     , variableSort =

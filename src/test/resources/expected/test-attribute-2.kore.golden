@@ -15,7 +15,7 @@ Definition
                                         { symbolOrAliasConstructor = Id Meta "#hook"
                                         , symbolOrAliasParams = []
                                         }
-                                , applicationPatterns =
+                                , applicationChildren =
                                     [ MetaPattern (StringLiteralPattern (StringLiteral "Nat"))
                                     ]
                                 })
@@ -50,7 +50,7 @@ Definition
                                         { symbolOrAliasConstructor = Id Meta "#hook"
                                         , symbolOrAliasParams = []
                                         }
-                                , applicationPatterns =
+                                , applicationChildren =
                                     [ MetaPattern (StringLiteralPattern (StringLiteral "plus"))
                                     ]
                                 })
@@ -60,7 +60,7 @@ Definition
                                         { symbolOrAliasConstructor = Id Meta "#assoc"
                                         , symbolOrAliasParams = []
                                         }
-                                , applicationPatterns = []
+                                , applicationChildren = []
                                 })
                             , MetaPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
@@ -68,7 +68,7 @@ Definition
                                         { symbolOrAliasConstructor = Id Meta "#comm"
                                         , symbolOrAliasParams = []
                                         }
-                                , applicationPatterns = []
+                                , applicationChildren = []
                                 })
                             ]
                     }

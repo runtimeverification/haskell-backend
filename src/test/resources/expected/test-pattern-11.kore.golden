@@ -14,13 +14,13 @@ Definition
                                 SortVariableSort (SortVariable (Id Object "S"))
                             , inResultSort =
                                 SortVariableSort (SortVariable (Id Object "S"))
-                            , inContainedPattern =
+                            , inContainedChild =
                                 ObjectPattern (VariablePattern Variable
                                     { variableName = Id Object "X"
                                     , variableSort =
                                         SortVariableSort (SortVariable (Id Object "S"))
                                     })
-                            , inContainingPattern =
+                            , inContainingChild =
                                 ObjectPattern (VariablePattern Variable
                                     { variableName = Id Object "X"
                                     , variableSort =
