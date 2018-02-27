@@ -106,7 +106,7 @@ metaSortConverterTests =
         , success "#PatternList{}" patternListMetaSort
         , success "#Sort{}" sortMetaSort
         , success "#SortList{}" sortListMetaSort
-        , success "#String{}" stringMetaSort
+        , success "#String{}" charListMetaSort
         , success "#Symbol{}" symbolMetaSort
         , success "#SymbolList{}" symbolListMetaSort
         , success "#Variable{}" variableMetaSort
@@ -776,7 +776,7 @@ sentenceAliasParserTests =
                         , aliasParams = [ sortVariable "s1" ]
                         }
                     , sentenceAliasSorts = [ sortVariableSort "s2"]
-                    , sentenceAliasReturnSort = sortVariableSort "s3"
+                    , sentenceAliasResultSort = sortVariableSort "s3"
                     , sentenceAliasAttributes =
                         Attributes
                             [MetaPattern $
@@ -797,7 +797,7 @@ sentenceAliasParserTests =
                         [ sortVariableSort "s3"
                         , sortVariableSort "s4"
                         ]
-                    , sentenceAliasReturnSort = sortVariableSort "s5"
+                    , sentenceAliasResultSort = sortVariableSort "s5"
                     , sentenceAliasAttributes =
                         Attributes
                             [ MetaPattern $
@@ -815,7 +815,7 @@ sentenceAliasParserTests =
                         , aliasParams = []
                         }
                     , sentenceAliasSorts = []
-                    , sentenceAliasReturnSort = sortVariableSort "#Char"
+                    , sentenceAliasResultSort = sortVariableSort "#Char"
                     , sentenceAliasAttributes = Attributes []
                     }
             )
@@ -949,7 +949,7 @@ sentenceSymbolParserTests =
                         , symbolParams = [ sortVariable "s1" ]
                         }
                     , sentenceSymbolSorts = [ sortVariableSort "s1" ]
-                    , sentenceSymbolReturnSort = sortVariableSort "s1"
+                    , sentenceSymbolResultSort = sortVariableSort "s1"
                     , sentenceSymbolAttributes =
                         Attributes
                             [MetaPattern $
@@ -964,7 +964,7 @@ sentenceSymbolParserTests =
                         , symbolParams = []
                         }
                     , sentenceSymbolSorts = []
-                    , sentenceSymbolReturnSort = sortVariableSort "s1"
+                    , sentenceSymbolResultSort = sortVariableSort "s1"
                     , sentenceSymbolAttributes = Attributes []
                     }
             )

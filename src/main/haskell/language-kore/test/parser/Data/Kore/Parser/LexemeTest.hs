@@ -90,11 +90,7 @@ metaIdParserTests =
         , success "#abc" (Id "#abc")
         , success "#a'" (Id "#a'")
         , success "#a'2" (Id "#a'2")
-        , Failure FailureTest
-            { failureInput = "#module"
-            , failureExpected =
-                "Failed reading: Identifiers should not be keywords: 'module'."
-            }
+        , success "#sort" (Id "#sort")
         , FailureWithoutMessage
             [   "",   "'",   "'a",   "2",   "2a", "`", "`a"
             ,  "#",  "#'",  "#'a",  "#2",  "#2a"

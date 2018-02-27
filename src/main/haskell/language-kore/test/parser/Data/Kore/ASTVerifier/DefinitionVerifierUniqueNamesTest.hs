@@ -146,7 +146,9 @@ definitionVerifierUniqueNamesTests =
             "Definition with meta symbol with same name as sort"
             (Error ["module 'MODULE'"] "Duplicated name: '#String'.")
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
-                [ simpleMetaSymbolSentence (SymbolName "#String") stringSortName ]
+                [ simpleMetaSymbolSentence
+                    (SymbolName "#String") stringSortName
+                ]
             )
         , expectFailureWithError
             "Definition with object symbol with same name as sort"
@@ -156,6 +158,7 @@ definitionVerifierUniqueNamesTests =
                 , simpleSortSentence (SortName "s")
                 ]
             )
-        ]
-  where stringSortName = SortName (show StringSort)
+    ]
+  where
+    stringSortName = SortName (show CharListSort)
 

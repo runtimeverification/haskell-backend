@@ -114,7 +114,9 @@ implicitIndexedModule :: ModuleName -> (ImplicitIndexedModule, Set.Set String)
 implicitIndexedModule name =
     ( ImplicitIndexedModule (emptyIndexedModule name)
         { indexedModuleMetaSortDescriptions = metaSortDescriptions }
-    , Set.map getId (Map.keysSet metaSortDescriptions)
+    , Set.insert
+        (show StringSort)
+        (Set.map getId (Map.keysSet metaSortDescriptions))
     )
 
 metaSortDescriptions :: Map.Map (Id Meta) (SortDescription Meta)

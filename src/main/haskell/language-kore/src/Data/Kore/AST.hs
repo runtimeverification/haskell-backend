@@ -218,9 +218,11 @@ data MetaSortType
 
 metaSortsList :: [MetaSortType]
 metaSortsList = [ CharSort, CharListSort, PatternSort, PatternListSort, SortSort
-    , SortListSort, StringSort, SymbolSort, SymbolListSort
+    , SortListSort, SymbolSort, SymbolListSort
     , VariableSort, VariableListSort
     ]
+metaSortsListWithString :: [MetaSortType]
+metaSortsListWithString = StringSort : metaSortsList
 
 instance Show MetaSortType where
     show CharSort         = "#Char"
@@ -738,7 +740,7 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 data SentenceAlias a = SentenceAlias
     { sentenceAliasAlias      :: !(Alias a)
     , sentenceAliasSorts      :: ![Sort a]
-    , sentenceAliasReturnSort :: !(Sort a)
+    , sentenceAliasResultSort :: !(Sort a)
     , sentenceAliasAttributes :: !Attributes
     }
     deriving (Eq, Show, Typeable)
@@ -753,7 +755,7 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 data SentenceSymbol a = SentenceSymbol
     { sentenceSymbolSymbol     :: !(Symbol a)
     , sentenceSymbolSorts      :: ![Sort a]
-    , sentenceSymbolReturnSort :: !(Sort a)
+    , sentenceSymbolResultSort :: !(Sort a)
     , sentenceSymbolAttributes :: !Attributes
     }
     deriving (Eq, Show, Typeable)
@@ -848,6 +850,31 @@ data Definition = Definition
     , definitionModules    :: ![Module]
     }
     deriving (Eq, Show)
+
+class AsSentence s where
+    asSentence :: s -> Sentence
+
+instance AsSentence (SentenceAlias Meta) where
+    asSentence = MetaSentenceAliasSentence
+
+instance AsSentence (SentenceAlias Object) where
+    asSentence = ObjectSentenceAliasSentence
+
+instance AsSentence (SentenceSymbol Meta) where
+    asSentence = MetaSentenceSymbolSentence
+
+instance AsSentence (SentenceSymbol Object) where
+    asSentence = ObjectSentenceSymbolSentence
+
+instance AsSentence SentenceImport where
+    asSentence = SentenceImportSentence
+
+instance AsSentence SentenceAxiom where
+    asSentence = SentenceAxiomSentence
+
+instance AsSentence SentenceSort where
+    asSentence = SentenceSortSentence
+
 
 {-|'MLPatternClass' offers a common interface to ML patterns
   (those starting with '\', except for 'Exists' and 'Forall')
@@ -987,7 +1014,7 @@ class SentenceSymbolOrAlias p where
     getSentenceSymbolOrAliasConstructor :: p a -> Id a
     getSentenceSymbolOrAliasSortParams :: p a -> [SortVariable a]
     getSentenceSymbolOrAliasArgumentSorts :: p a -> [Sort a]
-    getSentenceSymbolOrAliasReturnSort :: p a -> Sort a
+    getSentenceSymbolOrAliasResultSort :: p a -> Sort a
     getSentenceSymbolOrAliasAttributes :: p a -> Attributes
     getSentenceSymbolOrAliasSentenceName :: p a -> String
 
@@ -995,7 +1022,7 @@ instance SentenceSymbolOrAlias SentenceAlias where
     getSentenceSymbolOrAliasConstructor = aliasConstructor . sentenceAliasAlias
     getSentenceSymbolOrAliasSortParams = aliasParams . sentenceAliasAlias
     getSentenceSymbolOrAliasArgumentSorts = sentenceAliasSorts
-    getSentenceSymbolOrAliasReturnSort = sentenceAliasReturnSort
+    getSentenceSymbolOrAliasResultSort = sentenceAliasResultSort
     getSentenceSymbolOrAliasAttributes = sentenceAliasAttributes
     getSentenceSymbolOrAliasSentenceName _ = "alias"
 
@@ -1004,6 +1031,6 @@ instance SentenceSymbolOrAlias SentenceSymbol where
         symbolConstructor . sentenceSymbolSymbol
     getSentenceSymbolOrAliasSortParams = symbolParams . sentenceSymbolSymbol
     getSentenceSymbolOrAliasArgumentSorts = sentenceSymbolSorts
-    getSentenceSymbolOrAliasReturnSort = sentenceSymbolReturnSort
+    getSentenceSymbolOrAliasResultSort = sentenceSymbolResultSort
     getSentenceSymbolOrAliasAttributes = sentenceSymbolAttributes
     getSentenceSymbolOrAliasSentenceName _ = "symbol"

@@ -123,21 +123,34 @@ koreKeywordsSet :: Trie.Trie ()
 koreKeywordsSet = Trie.fromList $ map (\s -> (Char8.pack s, ()))
     ["module", "endmodule", "sort", "symbol", "alias", "axiom"]
 
+data IdKeywordParsing
+    = KeywordsPermitted
+    | KeywordsForbidden
+
 {-|'genericIdRawParser' parses for tokens that can be represented as
 @⟨prefix-char⟩ ⟨body-char⟩*@. Does not consume whitespace.
 -}
 genericIdRawParser
     :: CharSet  -- ^ contains the characters allowed for @⟨prefix-char⟩@.
     -> CharSet  -- ^ contains the characters allowed for @⟨body-char⟩@.
+    -> IdKeywordParsing
     -> Parser String
-genericIdRawParser firstCharSet bodyCharSet = do
+genericIdRawParser firstCharSet bodyCharSet idKeywordParsing = do
     c <- Parser.peekChar'
     idChar <- if not (c `CharSet.elem` firstCharSet)
         then fail ("genericIdRawParser: Invalid first character '" ++ c : "'.")
         else Parser.takeWhile (`CharSet.elem` bodyCharSet)
     let identifier = Char8.unpack idChar
-    when (isJust $ Trie.lookup idChar koreKeywordsSet)
-        (fail ("Identifiers should not be keywords: '" ++ identifier ++ "'."))
+    case idKeywordParsing of
+        KeywordsForbidden ->
+            when (isJust $ Trie.lookup idChar koreKeywordsSet)
+                (fail
+                    (  "Identifiers should not be keywords: '"
+                    ++ identifier
+                    ++ "'."
+                    )
+                )
+        KeywordsPermitted -> return ()
     return identifier
 
 moduleNameFirstCharSet :: CharSet
@@ -150,7 +163,9 @@ moduleNameCharSet = idCharSet
 {-|'moduleNameRawParser' parses a @module-name@. Does not consume whitespace.-}
 moduleNameRawParser :: Parser ModuleName
 moduleNameRawParser =
-  ModuleName <$> genericIdRawParser moduleNameFirstCharSet moduleNameCharSet
+  ModuleName <$>
+    genericIdRawParser
+        moduleNameFirstCharSet moduleNameCharSet KeywordsForbidden
 
 {-# ANN idFirstChars "HLint: ignore Use String" #-}
 idFirstChars :: [Char]
@@ -170,7 +185,7 @@ idCharSet =
 {-|'objectIdRawParser' extracts the string representing an @object-identifier@.
 Does not consume whitespace.
 -}
-objectIdRawParser :: Parser String
+objectIdRawParser :: IdKeywordParsing -> Parser String
 objectIdRawParser = genericIdRawParser idFirstCharSet idCharSet
 
 {-|'metaIdRawParser' extracts the string representing a @meta-identifier@.
@@ -185,14 +200,14 @@ metaIdRawParser = do
     case c' of
         '`' -> do
             void (Parser.char c')
-            idToken <- objectIdRawParser
+            idToken <- objectIdRawParser KeywordsPermitted
             return (c:c':idToken)
         '\\' -> do
             void (Parser.char c')
             mlPatternCtor <- mlPatternCtorParser
             return (c:c':mlPatternCtor)
         _ -> do
-            idToken <- objectIdRawParser
+            idToken <- objectIdRawParser KeywordsPermitted
             return (c:idToken)
   where
     mlPatternCtorParser = keywordBasedParsers
@@ -207,7 +222,7 @@ idRawParser :: (IsMeta a)
             => a  -- ^ Distinguishes between the meta and non-meta elements.
             -> Parser String
 idRawParser x = case koreLevel x of
-    ObjectLevel -> objectIdRawParser
+    ObjectLevel -> objectIdRawParser KeywordsForbidden
     MetaLevel   -> metaIdRawParser
 
 data StringScannerState = STRING | ESCAPE | HEX StringScannerState
@@ -415,8 +430,9 @@ prefixBasedParsersWithDefault prefixParser defaultParser stringParsers = do
 
 {-|'metaSortTrie' is a trie containing all the possible metasorts.-}
 metaSortTrie :: Trie.Trie MetaSortType
-metaSortTrie = Trie.fromList $ map (\s -> (Char8.pack $ show s, s))
-    metaSortsList
+metaSortTrie =
+    Trie.fromList $
+        map (\s -> (Char8.pack $ show s, s)) metaSortsListWithString
 
 {-|'metaSortConverter' converts a string representation of a metasort name
 (without the leading '#') to a 'MetaSortType'.

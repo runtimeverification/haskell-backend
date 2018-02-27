@@ -23,8 +23,6 @@ sortMetaSort :: Sort Meta
 sortMetaSort = metaSort SortSort
 sortListMetaSort :: Sort Meta
 sortListMetaSort = metaSort SortListSort
-stringMetaSort :: Sort Meta
-stringMetaSort = metaSort StringSort
 symbolMetaSort :: Sort Meta
 symbolMetaSort = metaSort SymbolSort
 symbolListMetaSort :: Sort Meta
