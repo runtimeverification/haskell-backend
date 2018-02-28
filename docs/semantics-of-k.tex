@@ -5473,6 +5473,7 @@ The only lexical function of whitespace is to break the source text into tokens.
 The lexicon tokens of Kore include a few token characters (listed in 
 Table~\ref{tab:lexicon-tokens}) and the elements of the syntactic categories
 \syntacc{identifier},
+\syntacc{char},
 \syntacc{string},
 \syntacc{keyword}, which we all defined below.
 
@@ -5518,11 +5519,16 @@ because they will be used to represent different semantics
 components and we do 
 not want to take the risk of confusing them.
 
-\paragraph{String literals.}
-Kore supports C-style string literals.
+\paragraph{Character and string literals.}
+Kore supports C-style character and string literals.
+Character literals are wrapped with single quotes while string literals are 
+wrapped with double quotes.
+The syntactic category of character literals is~\syntacc{char}.
+We use character literals to represent patterns in the meta-theory whose sort 
+is $\KChar$.
 The syntactic category of string literals is~\syntacc{string}.
 We use string literals to represent patterns in the meta-theory whose sort is 
-$\KString$.
+$\KString$ (a.k.a., $\KCharList$).
 
 \paragraph{Keywords.}
 Kore has six keywords.
@@ -5874,6 +5880,7 @@ Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
 	<meta-pattern> ::= \quad
     \alt <meta-variable>
     \alt <string>
+    \alt <char>
 	\alt <meta-head> `(' <pattern-list> `)'
 	\alt `\\and' `{' <meta-sort> `}'
 	`(' <pattern> `,' <pattern> `)'
