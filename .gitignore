@@ -17,3 +17,6 @@ docs/*.fls
 .*.swp
 .*.swo
 tags
+.classpath
+.project
+.settings

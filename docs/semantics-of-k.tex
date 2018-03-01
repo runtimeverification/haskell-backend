@@ -5473,6 +5473,7 @@ The only lexical function of whitespace is to break the source text into tokens.
 The lexicon tokens of Kore include a few token characters (listed in 
 Table~\ref{tab:lexicon-tokens}) and the elements of the syntactic categories
 \syntacc{identifier},
+\syntacc{char},
 \syntacc{string},
 \syntacc{keyword}, which we all defined below.
 
@@ -5518,11 +5519,16 @@ because they will be used to represent different semantics
 components and we do 
 not want to take the risk of confusing them.
 
-\paragraph{String literals.}
-Kore supports C-style string literals.
+\paragraph{Character and string literals.}
+Kore supports C-style character and string literals.
+Character literals are wrapped with single quotes while string literals are 
+wrapped with double quotes.
+The syntactic category of character literals is~\syntacc{char}.
+We use character literals to represent patterns in the meta-theory whose sort 
+is $\KChar$.
 The syntactic category of string literals is~\syntacc{string}.
 We use string literals to represent patterns in the meta-theory whose sort is 
-$\KString$.
+$\KString$ (a.k.a., $\KCharList$).
 
 \paragraph{Keywords.}
 Kore has six keywords.
@@ -5855,9 +5861,9 @@ Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
 	\alt `\\iff' `{' <object-sort> `}'
 	`(' <pattern> `,' <pattern> `)'
 	\alt `\\forall' `{' <object-sort> `}'
-	`(' <variable> `,' <pattern> `)'
+	`(' <object-variable> `,' <pattern> `)'
 	\alt `\\exists' `{' <object-sort> `}'
-	`(' <variable> `,' <pattern> `)'
+	`(' <object-variable> `,' <pattern> `)'
 	\alt `\\ceil' `{' <object-sort> `,'  <object-sort> `}'
 	`(' <pattern> `)'
 	\alt `\\floor' `{' <object-sort> `,'  <object-sort> `}'
@@ -5874,6 +5880,7 @@ Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
 	<meta-pattern> ::= \quad
     \alt <meta-variable>
     \alt <string>
+    \alt <char>
 	\alt <meta-head> `(' <pattern-list> `)'
 	\alt `\\and' `{' <meta-sort> `}'
 	`(' <pattern> `,' <pattern> `)'
@@ -5886,9 +5893,9 @@ Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
 	\alt `\\iff' `{' <meta-sort> `}'
 	`(' <pattern> `,' <pattern> `)'
 	\alt `\\forall' `{' <meta-sort> `}'
-	`(' <variable> `,' <pattern> `)'
+	`(' <meta-variable> `,' <pattern> `)'
 	\alt `\\exists' `{' <meta-sort> `}'
-	`(' <variable> `,' <pattern> `)'
+	`(' <meta-variable> `,' <pattern> `)'
 	\alt `\\ceil' `{' <meta-sort> `,' <meta-sort> `}'
 	`(' <pattern> `)'
 	\alt `\\floor' `{' <meta-sort> `,' <meta-sort> `}'
@@ -6818,7 +6825,7 @@ $\denote{\texttt{\slequals\{$s_1,s_2$\}($\varphi_1,\varphi_2$)}}
 \\
 $\denote{\texttt{\slequals\{$s_1,s_2$\}($\varphi_1,\varphi_2$)}}
 =
-\texttt{\slequals\{$s_1,s_2$\}($\varphi_1,\varphi_2$)}$
+\texttt{\slequals\{$s_1,s_2$\}($\denote{\varphi_1},\denote{\varphi_2}$)}$
 & if $s_1,s_2$ are \syntacc{meta-sort}
 \\
 $\denote{\texttt{\slin\{$s_1,s_2$\}($\varphi_1,\varphi_2$)}}
@@ -6829,7 +6836,7 @@ $\denote{\texttt{\slin\{$s_1,s_2$\}($\varphi_1,\varphi_2$)}}
 \\
 $\denote{\texttt{\slin\{$s_1,s_2$\}($\varphi_1,\varphi_2$)}}
 =
-\texttt{\slin\{$s_1,s_2$\}($\varphi_1,\varphi_2$)}$
+\texttt{\slin\{$s_1,s_2$\}($\denote{\varphi_1},\denote{\varphi_2}$)}$
 & if $s_1,s_2$ are \syntacc{meta-sort}
 \\
 $\denote{\texttt{\sltop\{$s$\}()}}
