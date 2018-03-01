@@ -15,3 +15,6 @@ docs/*.synctex.gz
 .*.swp
 .*.swo
 tags
+.classpath
+.project
+.settings
