@@ -135,6 +135,12 @@ nextHead = groundHead "#\\next"
 notHead :: SymbolOrAlias Meta
 notHead = groundHead "#\\not"
 
+orHead :: SymbolOrAlias Meta
+orHead = groundHead "#\\or"
+
+rewritesHead :: SymbolOrAlias Meta
+rewritesHead = groundHead "#\\rewrites"
+
 topHead :: SymbolOrAlias Meta
 topHead = groundHead "#\\top"
 
@@ -195,5 +201,9 @@ liftObjectReducer p = case p of
         [liftToMeta (nextSort ap), nextChild ap]
     NotPattern ap -> Fix $ apply notHead
         [liftToMeta (notSort ap), notChild ap]
+    OrPattern ap -> Fix $ apply orHead
+        (liftToMeta (orSort ap) : getPatternChildren ap)
+    RewritesPattern ap -> Fix $ apply rewritesHead
+        (liftToMeta (rewritesSort ap) : getPatternChildren ap)
     TopPattern bp -> Fix $ apply topHead [liftToMeta (topSort bp)]
 
