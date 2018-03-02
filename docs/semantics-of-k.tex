@@ -3804,6 +3804,8 @@ defined by the following axioms
   = \KsymbolDeclared{\shs}(\sigma) 
   \wedge \parametric{\KwellFormedPatterns}{\shs}(L)
   \\
+  & \quad \wedge \parametric{\KsortDeclared{\shs}}{\KgetReturnSort(\sigma)}
+  \\
   & \quad \wedge (\KgetSortsFromPatterns(L) = \KgetArgumentSorts(\sigma))
   \\
   & \parametric{\KwellFormed}{\shs}(\overline{\varphi \wedge_s \psi}) 
