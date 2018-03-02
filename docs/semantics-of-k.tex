@@ -3640,11 +3640,11 @@ The functions $\Ksubstitute$ and $\KsubstitutePatterns$ have axioms
   & \overline{(\neg_{s} \varphi)[\psi / v]} = \overline{\neg_{s} \varphi[\psi 
   / v]}
   \\
-  & \overline{(\exists_s x \cln s . \varphi)[\psi/v]} 
+  & \overline{(\exists_{s'} x \cln s . \varphi)[\psi/v]} 
   \qquad \text{\doubleslash this complex axiom is needed to 
   	prevent \emph{free variable capturing}}\\
   & = \exists x' . \left(x' = \KfreshName(\varphi, \psi, 
-  v) \wedge \overline{\exists_s x' \cln s . 
+  v) \wedge \overline{\exists_{s'} x' \cln s . 
   (\varphi[x' \cln s / x \cln s][\psi/v])}\right)
   \\
   & \overline{\KnilKPatternList[\psi / v]} = \KnilKPatternList
@@ -3803,6 +3803,8 @@ defined by the following axioms
   & \parametric{\KwellFormed}{\shs}(\overline{\sigma(L)}) 
   = \KsymbolDeclared{\shs}(\sigma) 
   \wedge \parametric{\KwellFormedPatterns}{\shs}(L)
+  \\
+  & \quad \wedge \parametric{\KsortDeclared{\shs}}{\KgetReturnSort(\sigma)}
   \\
   & \quad \wedge (\KgetSortsFromPatterns(L) = \KgetArgumentSorts(\sigma))
   \\
@@ -5509,7 +5511,8 @@ letter and is not a \syntacc{keyword}.
 \item A \syntacc{meta-identifier},
 which is either the character ``\verb|#|'' followed by an 
 \syntacc{object-identifier},
-or the string ``\verb|#`|'' followed by an \syntacc{object-identifier}.
+or the string ``\verb|#`|'' followed by an \syntacc{object-identifier},
+or the string ``\verb|#\|'' followed by an \syntacc{object-identifier}.
 \end{itemize}
 
 Identifiers are building blocks of many syntactic categories in Kore,
