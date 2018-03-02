@@ -3640,11 +3640,11 @@ The functions $\Ksubstitute$ and $\KsubstitutePatterns$ have axioms
   & \overline{(\neg_{s} \varphi)[\psi / v]} = \overline{\neg_{s} \varphi[\psi 
   / v]}
   \\
-  & \overline{(\exists_s x \cln s . \varphi)[\psi/v]} 
+  & \overline{(\exists_{s'} x \cln s . \varphi)[\psi/v]} 
   \qquad \text{\doubleslash this complex axiom is needed to 
   	prevent \emph{free variable capturing}}\\
   & = \exists x' . \left(x' = \KfreshName(\varphi, \psi, 
-  v) \wedge \overline{\exists_s x' \cln s . 
+  v) \wedge \overline{\exists_{s'} x' \cln s . 
   (\varphi[x' \cln s / x \cln s][\psi/v])}\right)
   \\
   & \overline{\KnilKPatternList[\psi / v]} = \KnilKPatternList
