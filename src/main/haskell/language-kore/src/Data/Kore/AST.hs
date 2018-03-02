@@ -268,7 +268,7 @@ data Variable a = Variable
     }
     deriving (Show, Eq, Ord, Typeable)
 
-class (Eq (UnifiedVariable var), Ord (UnifiedVariable var)
+class ( Ord (UnifiedVariable var)
       , Show (var Object), Show (var Meta)
       , Typeable var
       ) => VariableClass var
@@ -345,9 +345,6 @@ asUnifiedPattern
     => Pattern a v (FixedPattern v) -> FixedPattern v
 asUnifiedPattern = asUnified . PatternObjectMeta
 
-unifiedVariableToPattern :: UnifiedVariable var -> FixedPattern var
-unifiedVariableToPattern (MetaVariable v) = MetaPattern $ VariablePattern v
-unifiedVariableToPattern (ObjectVariable v) = ObjectPattern $ VariablePattern v
 
 instance (Typeable var) => FixPattern var FixedPattern where
 
@@ -472,13 +469,10 @@ This represents the '∃existsVariable(existsChild)' Matching Logic construct.
 -}
 data Exists a v p = Exists
     { existsSort     :: !(Sort a)
-    , existsVariable :: !(UnifiedVariable v)
+    , existsVariable :: !(v a)
     , existsChild    :: !p
     }
-    deriving (Typeable, Functor, Foldable, Traversable)
-
-deriving instance (Eq p, Eq (UnifiedVariable v)) => Eq (Exists a v p)
-deriving instance (Show p, Show (UnifiedVariable v)) => Show (Exists a v p)
+    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
 {-|'Floor' corresponds to the @\floor@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -513,13 +507,10 @@ This represents the '∀forallVariable(forallChild)' Matching Logic construct.
 -}
 data Forall a v p = Forall
     { forallSort     :: !(Sort a)
-    , forallVariable :: !(UnifiedVariable v)
+    , forallVariable :: !(v a)
     , forallChild    :: !p
     }
-    deriving (Typeable, Functor, Foldable, Traversable)
-
-deriving instance (Eq p, Eq (UnifiedVariable v)) => Eq (Forall a v p)
-deriving instance (Show p, Show (UnifiedVariable v)) => Show (Forall a v p)
+    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
 {-|'Iff' corresponds to the @\iff@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -695,15 +686,10 @@ data Pattern a v p
     | StringLiteralPattern !StringLiteral
     | TopPattern !(Top a p)
     | VariablePattern !(v a)
-    deriving (Typeable, Functor, Foldable, Traversable)
+    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
 newtype PatternObjectMeta v p a = PatternObjectMeta
     { getPatternObjectMeta :: Pattern a v p }
-
-deriving instance (Eq p, Eq (UnifiedVariable v), Eq (v a))
-    => Eq (Pattern a v p)
-deriving instance (Show p, Show (UnifiedVariable v), Show (v a))
-    => Show (Pattern a v p)
 
 {-|'SentenceAlias' corresponds to the @object-alias-declaration@ and
 @meta-alias-declaration@ syntactic categories from the Semantics of K,
@@ -930,12 +916,12 @@ instance MLPatternClass Top where
 class MLBinderPatternClass p where
     getBinderPatternType :: p a v recursionP -> MLPatternType
     getBinderPatternSort :: p a v recursionP -> Sort a
-    getBinderPatternVariable :: p a v recursionP -> UnifiedVariable v
+    getBinderPatternVariable :: p a v recursionP -> v a
     getBinderPatternChild :: p a v recursionP -> recursionP
     -- The first argument is only needed in order to make the Haskell type
     -- system work.
     binderPatternConstructor
-        :: p a v recursionP -> Sort a -> UnifiedVariable v -> recursionP
+        :: p a v recursionP -> Sort a -> v a -> recursionP
         -> Pattern a v recursionP
 
 instance MLBinderPatternClass Exists where

@@ -13,7 +13,7 @@ Definition
                             { forallSort =
                                 SortVariableSort (SortVariable (Id Object "S"))
                             , forallVariable =
-                                ObjectVariable Variable
+                                Variable
                                     { variableName = Id Object "X"
                                     , variableSort =
                                         SortVariableSort (SortVariable (Id Object "S"))

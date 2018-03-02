@@ -1,6 +1,6 @@
 []
 
-module LAMBDA 
+module LAMBDA
 
   sort Exp{} []
 
@@ -15,7 +15,7 @@ module LAMBDA
       lambda{}(
         #variableToPattern{}(#X:#Variable{}),
         #E:#Pattern{}),
-      \exists{Exp}(
+      #\exists{}(#Exp:#Sort{},
         #X:#Variable{},
         lambda0{}(
           #variableToPattern{}(#X:#Variable{}),

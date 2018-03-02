@@ -179,7 +179,7 @@ Definition
                             { existsSort =
                                 SortVariableSort (SortVariable (Id Object "S"))
                             , existsVariable =
-                                ObjectVariable Variable
+                                Variable
                                     { variableName = Id Object "T"
                                     , variableSort =
                                         SortActualSortSortActual
@@ -227,7 +227,7 @@ Definition
                             { existsSort =
                                 SortVariableSort (SortVariable (Id Object "S"))
                             , existsVariable =
-                                ObjectVariable Variable
+                                Variable
                                     { variableName = Id Object "T"
                                     , variableSort =
                                         SortActualSortSortActual
@@ -275,7 +275,7 @@ Definition
                             { existsSort =
                                 SortVariableSort (SortVariable (Id Object "S"))
                             , existsVariable =
-                                ObjectVariable Variable
+                                Variable
                                     { variableName = Id Object "T"
                                     , variableSort =
                                         SortActualSortSortActual
@@ -334,7 +334,7 @@ Definition
                             { existsSort =
                                 SortVariableSort (SortVariable (Id Object "S"))
                             , existsVariable =
-                                ObjectVariable Variable
+                                Variable
                                     { variableName = Id Object "T"
                                     , variableSort =
                                         SortActualSortSortActual
@@ -393,7 +393,7 @@ Definition
                             { existsSort =
                                 SortVariableSort (SortVariable (Id Object "S"))
                             , existsVariable =
-                                ObjectVariable Variable
+                                Variable
                                     { variableName = Id Object "T"
                                     , variableSort =
                                         SortActualSortSortActual

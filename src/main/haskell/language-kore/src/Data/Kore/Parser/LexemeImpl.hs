@@ -181,7 +181,7 @@ metaIdRawParser :: Parser String
 metaIdRawParser = do
     c <- Parser.char '#'
     c' <- Parser.peekChar'
-    if c' == '`'
+    if c' == '`' || c' == '\\'
         then do
             void (Parser.char c')
             idToken <- objectIdRawParser

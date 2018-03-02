@@ -13,7 +13,7 @@ Definition
                             { existsSort =
                                 SortVariableSort (SortVariable (Id Object "S"))
                             , existsVariable =
-                                ObjectVariable Variable
+                                Variable
                                     { variableName = Id Object "X"
                                     , variableSort =
                                         SortVariableSort (SortVariable (Id Object "S"))

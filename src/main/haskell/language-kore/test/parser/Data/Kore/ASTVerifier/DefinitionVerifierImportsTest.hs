@@ -351,7 +351,7 @@ sortVisibilityTests =
             , sentenceAxiomPattern = ObjectPattern
                 ( ExistsPattern Exists
                     { existsSort = sort
-                    , existsVariable = ObjectVariable Variable
+                    , existsVariable = Variable
                         { variableName = Id "var"
                         , variableSort = sort
                         }
@@ -641,7 +641,7 @@ symbolVisibilityTests =
             , sentenceAxiomPattern = ObjectPattern
                 ( ExistsPattern Exists
                     { existsSort = defaultSort
-                    , existsVariable = ObjectVariable Variable
+                    , existsVariable = Variable
                         { variableName = Id "var"
                         , variableSort = defaultSort
                         }
@@ -851,7 +851,7 @@ aliasVisibilityTests =
             , sentenceAxiomPattern = ObjectPattern
                 ( ExistsPattern Exists
                     { existsSort = defaultSort
-                    , existsVariable = ObjectVariable Variable
+                    , existsVariable = Variable
                         { variableName = Id "var"
                         , variableSort = defaultSort
                         }

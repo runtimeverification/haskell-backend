@@ -364,7 +364,7 @@ verifyBinder
     declaredSortVariables
     declaredVariables
   = do
-    verifyUnifiedVariableDeclaration
+    verifyVariableDeclaration
         quantifiedVariable indexedModule declaredSortVariables
     verifySort
         (verifyHelpersFindSort verifyHelpers)
@@ -375,7 +375,7 @@ verifyBinder
         (Just (asUnified binderSort))
         indexedModule
         declaredSortVariables
-        (addDeclaredVariable quantifiedVariable declaredVariables)
+        (addDeclaredVariable (asUnified quantifiedVariable) declaredVariables)
     return binderSort
   where
     quantifiedVariable = getBinderPatternVariable binder
@@ -401,24 +401,23 @@ verifyVariableUsage variable _ verifyHelpers _ _ = do
 verifyStringPattern :: Either (Error VerifyError) (Sort Meta)
 verifyStringPattern = Right stringMetaSort
 
-verifyUnifiedVariableDeclaration
-    :: UnifiedVariable Variable
+verifyVariableDeclaration
+    :: IsMeta a
+    => Variable a
     -> IndexedModule
     -> Set.Set UnifiedSortVariable
     -> Either (Error VerifyError) VerifySuccess
-verifyUnifiedVariableDeclaration
-    (MetaVariable variable) indexedModule declaredSortVariables
+verifyVariableDeclaration
+    variable indexedModule declaredSortVariables
   =
-    verifySort
-        (resolveMetaSort indexedModule)
+    applyMetaObjectFunction
+        variable
+        (verifyUsing (resolveObjectSort indexedModule))
+        (verifyUsing (resolveMetaSort indexedModule))
+  where
+    verifyUsing f v = verifySort f
         declaredSortVariables
-        (variableSort variable)
-verifyUnifiedVariableDeclaration
-    (ObjectVariable variable) indexedModule declaredSortVariables
-  = verifySort
-        (resolveObjectSort indexedModule)
-        declaredSortVariables
-        (variableSort variable)
+        (variableSort v)
 
 findVariableDeclaration
     :: (Ord a, Typeable a)
@@ -582,12 +581,12 @@ patternNameForContext (CeilPattern _) = "\\ceil"
 patternNameForContext (EqualsPattern _) = "\\equals"
 patternNameForContext (ExistsPattern exists) =
     "\\exists '"
-    ++ unifiedVariableNameForContext (existsVariable exists)
+    ++ variableNameForContext (existsVariable exists)
     ++ "'"
 patternNameForContext (FloorPattern _) = "\\floor"
 patternNameForContext (ForallPattern forall) =
     "\\forall '"
-    ++ unifiedVariableNameForContext (forallVariable forall)
+    ++ variableNameForContext (forallVariable forall)
     ++ "'"
 patternNameForContext (IffPattern _) = "\\iff"
 patternNameForContext (ImpliesPattern _) = "\\implies"
@@ -600,9 +599,6 @@ patternNameForContext (StringLiteralPattern _) = "<string>"
 patternNameForContext (TopPattern _) = "\\top"
 patternNameForContext (VariablePattern variable) =
     "variable '" ++ variableNameForContext variable ++ "'"
-
-unifiedVariableNameForContext :: UnifiedVariable Variable -> String
-unifiedVariableNameForContext = transformUnified variableNameForContext
 
 variableNameForContext :: Variable a -> String
 variableNameForContext variable = getId (variableName variable)

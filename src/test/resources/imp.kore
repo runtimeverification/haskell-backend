@@ -82,7 +82,7 @@ module IMP
       gamma{S1,S2}(
         #variableToPattern{}(#X:#Variable{}),
         #P:#Pattern{}),
-      \exists{Ctxt{S1,S2}}(
+      #\exists{}(#`Ctxt{}(#S1:#Sort{},#S2:#Sort{}),
         #X:#Variable{},
         gamma0{S1,S2}(
           #variableToPattern{}(#X:#Variable{}),

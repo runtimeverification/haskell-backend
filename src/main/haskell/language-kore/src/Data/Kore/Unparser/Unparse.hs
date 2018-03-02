@@ -136,7 +136,7 @@ unparseMLPattern p = do
 
 unparseMLBinderPattern
     :: (PrinterOutput w m, MLBinderPatternClass p, Unparse rpt,
-        Unparse (UnifiedVariable v))
+        Unparse (v a))
     => p a v rpt -> m ()
 unparseMLBinderPattern p = do
     unparse (getBinderPatternType p)
@@ -167,14 +167,14 @@ instance Unparse p => Unparse (Ceil a p) where
 instance Unparse p => Unparse (Equals a p) where
     unparse = unparseMLPattern
 
-instance (Unparse (UnifiedVariable v), Unparse p)
+instance (Unparse (v a), Unparse p)
     => Unparse (Exists a v p) where
     unparse = unparseMLBinderPattern
 
 instance Unparse p => Unparse (Floor a p) where
     unparse = unparseMLPattern
 
-instance (Unparse (UnifiedVariable v), Unparse p)
+instance (Unparse (v a), Unparse p)
     => Unparse (Forall a v p) where
     unparse = unparseMLBinderPattern
 

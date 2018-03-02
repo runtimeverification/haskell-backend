@@ -52,15 +52,15 @@ variablesFreshIntCounterTests =
              )
         , testCase "Testing freshUnifiedVariable Meta 2."
             (assertEqual ""
-                (MetaVariable $ metaVariable { variableName = Id "#var_2" }, 3)
+                (metaVariable { variableName = Id "#var_2" }, 3)
                 (runIntCounter
-                    (freshUnifiedVariable unifiedMetaVariable) 2)
+                    (freshVariable metaVariable) 2)
             )
         , testCase "Testing failing freshVariableSuchThat Meta 1."
             ((evaluate (runIntCounter
                     (freshVariableSuchThat
-                        unifiedMetaVariable
-                        (== unifiedMetaVariable)
+                        metaVariable
+                        (== metaVariable)
                     ) 2) >> assertFailure "This evaluation should fail")
                 `catch` \ (ErrorCall s) ->
                         assertEqual ""
@@ -69,10 +69,10 @@ variablesFreshIntCounterTests =
             )
         , testCase "Testing freshVariableSuchThat Meta 1."
             (assertEqual ""
-                (MetaVariable $ metaVariable { variableName = Id "#var_2" }, 3)
+                (metaVariable { variableName = Id "#var_2" }, 3)
                 (runIntCounter
                     (freshVariableSuchThat
-                        unifiedMetaVariable
+                        metaVariable
                         (const True)
                     ) 2)
             )
