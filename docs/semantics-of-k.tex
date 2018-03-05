@@ -850,6 +850,25 @@ component of any membership construct in $\varphi_1$, and any implementation of
 substitution will have to take that into account and perform an 
 ``occurs check'' for $x$ in $\varphi_1$, and this could be expensive.
 
+When writing patterns, the following precedence and associativity rules are 
+useful to reduce the 
+number of necessary parentheses.
+\begin{center}
+	\begin{tabular}{c|c|c}
+		Connective      &     Precedence & Associativity \\\hline
+		$\neg$          &     1          & 　--　　　　　　　　　　　\\\hline
+		$=$, $\in$      &     2          & 　--          　\\\hline
+		$\wedge$        &     3          &  left         \\\hline
+		$\vee$          &     4          &  left         \\\hline
+		$\to$           &     5          &  right        \\\hline
+		$\leftrightarrow$ &   6          &  --           \\\hline
+		$\exists$,$\forall$ & 7          &  --           \\\hline
+	\end{tabular}
+\end{center}
+As a convention, binders ($\forall$ and $\exists$) have a lower precedence than 
+other connectives.
+This means that the scope of a binder extends as far to the right as possible. 
+
 Since $s_1$ and $s_2$ can usually be inferred from context,
 we write $\lceil\_\rceil$ or $\lfloor\_\rfloor$ instead of
 $\lceil\_\rceil_{s_1}^{s_2}$ or $\lfloor\_\rfloor_{s_1}^{s_2}$, respectively,
