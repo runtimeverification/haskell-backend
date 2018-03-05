@@ -84,10 +84,7 @@ liftObjectReducer p = case p of
         ]
     ExistsPattern ep -> Fix $ apply existsHead
         [ liftToMeta (existsSort ep)
-        , transformUnified
-            (\ uv -> applyMetaObjectFunction uv liftToMeta
-                (Fix . VariablePattern))
-            (existsVariable ep)
+        , liftToMeta (existsVariable ep)
         , existsChild ep
         ]
     FloorPattern cp -> Fix $ apply floorHead
@@ -97,10 +94,7 @@ liftObjectReducer p = case p of
         ]
     ForallPattern ep -> Fix $ apply forallHead
         [ liftToMeta (forallSort ep)
-        , transformUnified
-            (\ uv -> applyMetaObjectFunction uv liftToMeta
-                (Fix . VariablePattern))
-            (forallVariable ep)
+        , liftToMeta (forallVariable ep)
         , forallChild ep
         ]
     IffPattern ap -> Fix $ apply iffHead
