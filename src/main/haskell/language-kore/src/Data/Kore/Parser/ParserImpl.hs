@@ -42,6 +42,7 @@ import           Data.Kore.Parser.Lexeme
 import qualified Data.Kore.Parser.ParserUtils     as ParserUtils
 import           Data.Kore.Unparser.Unparse
 
+import           Control.Arrow                    ((&&&))
 import           Control.Monad                    (unless, void, when)
 
 import           Data.Attoparsec.ByteString.Char8 (Parser)
@@ -646,22 +647,7 @@ mlConstructorParser = do
     mlPatternParser
   where
     mlPatternParser = keywordBasedParsers
-        [ ("and", mlConstructorRemainderParser AndPatternType)
-        , ("bottom", mlConstructorRemainderParser BottomPatternType)
-        , ("ceil", mlConstructorRemainderParser CeilPatternType)
-        , ("equals", mlConstructorRemainderParser EqualsPatternType)
-        , ("exists", mlConstructorRemainderParser ExistsPatternType)
-        , ("floor", mlConstructorRemainderParser FloorPatternType)
-        , ("forall", mlConstructorRemainderParser ForallPatternType)
-        , ("iff", mlConstructorRemainderParser IffPatternType)
-        , ("implies", mlConstructorRemainderParser ImpliesPatternType)
-        , ("in", mlConstructorRemainderParser InPatternType)
-        , ("next", mlConstructorRemainderParser NextPatternType)
-        , ("not", mlConstructorRemainderParser NotPatternType)
-        , ("or", mlConstructorRemainderParser OrPatternType)
-        , ("rewrites", mlConstructorRemainderParser RewritesPatternType)
-        , ("top", mlConstructorRemainderParser TopPatternType)
-        ]
+        (map (patternString &&& mlConstructorRemainderParser) allPatternTypes)
     mlConstructorRemainderParser patternType = do
         openCurlyBraceParser
         c <- Parser.peekChar'

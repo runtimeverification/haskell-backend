@@ -368,6 +368,43 @@ data MLPatternType
     | TopPatternType
     deriving Show
 
+allPatternTypes :: [MLPatternType]
+allPatternTypes =
+    [ AndPatternType
+    , BottomPatternType
+    , CeilPatternType
+    , EqualsPatternType
+    , ExistsPatternType
+    , FloorPatternType
+    , ForallPatternType
+    , IffPatternType
+    , ImpliesPatternType
+    , InPatternType
+    , NextPatternType
+    , NotPatternType
+    , OrPatternType
+    , RewritesPatternType
+    , TopPatternType
+    ]
+
+patternString :: MLPatternType -> String
+patternString pt = case pt of
+    AndPatternType      -> "and"
+    BottomPatternType   -> "bottom"
+    CeilPatternType     -> "ceil"
+    EqualsPatternType   -> "equals"
+    ExistsPatternType   -> "exists"
+    FloorPatternType    -> "floor"
+    ForallPatternType   -> "forall"
+    IffPatternType      -> "iff"
+    ImpliesPatternType  -> "implies"
+    InPatternType       -> "in"
+    NextPatternType     -> "next"
+    NotPatternType      -> "not"
+    OrPatternType       -> "or"
+    RewritesPatternType -> "rewrites"
+    TopPatternType      -> "top"
+
 {-|'And' corresponds to the @\and@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
