@@ -3481,7 +3481,10 @@ Derived connectives have axioms
   = \Knot(s, \Kexists(s, v, \Knot(s, \varphi)))
   \\
   & \Kceil(s_1, s_2, \varphi) =
-    \Kapplication(\KSymbolceil(s_1, s_2), \varphi)
+    \Kapplication(\KSymbolceil(s_1, s_2),
+    \underbrace{(\varphi)}_{
+    	\mathclap{
+    		\text{the singleton list that contains only $\varphi$}}})
   \\
   & \Kfloor(s_1, s_2, \varphi) 
   = \Knot(s_2, \Kceil(s_1, s_2, \Knot(s_1, \varphi)))
