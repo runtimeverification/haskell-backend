@@ -246,6 +246,8 @@
   \newcommand{\sharpsymbol}{\#}
   \newcommand{\shs}{\shp s}
   \newcommand{\smallshs}{\smallshp s}
+  \newcommand{\sharpup}{\texttt{\sharpsymbol up}}
+  \newcommand{\sharpdown}{\texttt{\sharpsymbol down}}
   % Sec 3.1 Truth
   \newcommand{\KPred}{\mathit{\shp Pred}}
   
@@ -3638,11 +3640,11 @@ The functions $\Ksubstitute$ and $\KsubstitutePatterns$ have axioms
   & \overline{(\neg_{s} \varphi)[\psi / v]} = \overline{\neg_{s} \varphi[\psi 
   / v]}
   \\
-  & \overline{(\exists_s x \cln s . \varphi)[\psi/v]} 
+  & \overline{(\exists_{s'} x \cln s . \varphi)[\psi/v]} 
   \qquad \text{\doubleslash this complex axiom is needed to 
   	prevent \emph{free variable capturing}}\\
   & = \exists x' . \left(x' = \KfreshName(\varphi, \psi, 
-  v) \wedge \overline{\exists_s x' \cln s . 
+  v) \wedge \overline{\exists_{s'} x' \cln s . 
   (\varphi[x' \cln s / x \cln s][\psi/v])}\right)
   \\
   & \overline{\KnilKPatternList[\psi / v]} = \KnilKPatternList
@@ -3801,6 +3803,8 @@ defined by the following axioms
   & \parametric{\KwellFormed}{\shs}(\overline{\sigma(L)}) 
   = \KsymbolDeclared{\shs}(\sigma) 
   \wedge \parametric{\KwellFormedPatterns}{\shs}(L)
+  \\
+  & \quad \wedge \parametric{\KsortDeclared{\shs}}{\KgetReturnSort(\sigma)}
   \\
   & \quad \wedge (\KgetSortsFromPatterns(L) = \KgetArgumentSorts(\sigma))
   \\
@@ -5507,7 +5511,8 @@ letter and is not a \syntacc{keyword}.
 \item A \syntacc{meta-identifier},
 which is either the character ``\verb|#|'' followed by an 
 \syntacc{object-identifier},
-or the string ``\verb|#`|'' followed by an \syntacc{object-identifier}.
+or the string ``\verb|#`|'' followed by an \syntacc{object-identifier},
+or the string ``\verb|#\|'' followed by an \syntacc{object-identifier}.
 \end{itemize}
 
 Identifiers are building blocks of many syntactic categories in Kore,
@@ -5947,6 +5952,96 @@ Notice that these constructs are only defined for object-level patterns.
 The meta-theory does not have these constructs defined, (see 
 Section~\ref{sec:meta-theory} for details about the meta-theory), and thus do 
 not need a syntax for these constructs.
+
+\paragraph{No {\sharpup}, no {\sharpdown}, no 
+problem.}
+In Kore, we adopt a syntax for \syntacc{pattern} that allows a mixed-use of 
+both \syntacc{object-pattern} and \syntacc{meta-pattern}.
+The intended semantics of such a mixed syntax, as we will define in detail in 
+Section~\ref{sec:kore-semantics}, is that \syntacc{object-pattern} are just 
+syntactic sugar for things at the meta-level (in fact, their abstract syntax 
+trees), and they will all be automatically lifted to the meta-level.
+Compared to this implicit-level-shifting manner, an alternative approach is to 
+use {\sharpup} and {\sharpdown} to explicitly shift 
+levels.
+However, we found this alternative approach less favorable than our approach, 
+for the following reasons.
+
+Firstly, it is not clear what {\sharpup} and {\sharpdown} really are from a 
+mathematical point of view. 
+Therefore it is at risk to introduce them because of their lack of clear 
+mathematical meaning: users might think of them to be what they are not.
+They are external to the logic and thus none of 
+the logical 
+proof rules or semantics applies to them.
+For example, one cannot do any 
+reasoning in the argument of {\sharpup}, because two things that are logically 
+equivalent may have different abstract syntax trees, and thus will be taken to 
+two different things by {\sharpup}.
+Similarly for {\sharpdown}, one would have to do just "enough" reasoning in its 
+argument until it becomes the meta-level representation of an object pattern, 
+which is risky and possibly lead to inconsistencies.
+
+Secondly, {\sharpup} and {\sharpdown} provide no real benefit for the users; on 
+the contrary, they make them type more.
+For example in lambda calculus, we have the $\beta$-reduction axiom (side 
+conditions omitted because they are not important for this discussion)
+$$(\lambda x . e)e' = e[e'/x]$$
+Notice that $e$ and $e'$ have to be meta-variables, and therefore one would 
+write in Kore {\texttt{\sharpsymbol E:\KPattern}} and {\texttt{\sharpsymbol 
+E':\KPattern}} for each of them, resp.
+Now, in order to plug these two meta-variables in place, we need to wrap them 
+with an explicit {\sharpdown}, to bring them from the meta-level to the object 
+level, and end up with something (that we do not want) as follows
+\begin{lstlisting}[language=kore]
+axiom
+   \equals{Exp,Exp}(
+     app{}(lambda{}(X:Exp,#down(#E:#Pattern)),
+           #down(#E':#Pattern)),
+     #down(#substitute{}(#down(#E:#Pattern), #down(#E':#Pattern), #up(X:Exp))))
+\end{lstlisting}
+In fact, by having our current convention that all concrete syntax is 
+automatically lifted, there is nothing to stop users from writing
+\begin{lstlisting}[language=kore]
+    #inVariableList{}(X:S, #getFV{}(mult{}(X:S, zero{}()))
+\end{lstlisting}
+There is no need for 
+{\sharpup} and {\sharpdown} in order for users to not be exposed 
+to the meta-level.  That 
+is, they can already do that methodologically. And backends like K-2-LLVM will 
+still only know a few "meta-level" constructs, like \texttt{\sharpsymbol 
+inVariableList{}}, and can still only 
+accept definitions that make no explicit use of meta-level notation.
+
+Finally, 
+there is the issue of checking well-sortedness and guaranteeing a 
+sort-preservation kind of result.
+We know that we can screw things up massively at the meta-level.
+For example, when using
+$$\KgetFV \colon \KPattern \to \KVariableList$$
+\todo{Xiaohong: I need to understand this example better in order to phrase 
+this 
+discussion for well-sortedness and runtime checking.}
+`FV : KPattern -> KPattern` like 
+this `... andBool X inSet FV(X * 0)`, you are assuming that the `KPattern` it 
+returns is the meta-level representation of some `Set` core pattern.
+But if you implement `FV` at the meta-level in a way where it gives a 
+meta-level representation of a `List`, or even worse, some pure meta-level 
+`KPatternList`, then the well-sortedness is broken
+We were hoping that with explicit `\sharpsymbol up` and `\sharpsymbol down` we 
+can prevent violations of sortedness, where we write
+`andBool X inSet \sharpsymbol down{Set}(FV(\sharpsymbol up(X * 0)))`
+and then we can have `\sharpsymbol down` do a sort checking at runtime
+this way, we can statically sort-check the core definition, modulo the claims 
+made by `\sharpsymbol down` which are checked at runtime, so we are sort-safe 
+(edited)
+Well, this runtime check for well-sortedness of meta-stuff may or may not be a 
+good thing in itself, but it is toally orthogonal to having `\sharpsymbol up` 
+and `\sharpsymbol down` in KORE.  That is, there is nothing to stop you from 
+adding it around all meta-level patterns that occur in core-level contexts.  We 
+may add it as a kompilation option, for example.  But you do not need any 
+`\sharpsymbol down` for that, and sort inference is super-trivial, because we 
+do not have implicit subsorting (but only explicit injection symbols).
 
 %
 %
@@ -6942,7 +7037,7 @@ $\denote{\texttt{\slbottom\{$s$\}()}}
 \subsubsection{Lift Axiom Declarations}
 In Kore, an axiom declaration is lifted as follows.
 \begin{align*}
-  &\denote{\_} \colon \syntacc{object-axiom-declaration} \to 
+  &\denote{\_} \colon \syntacc{axiom-declaration} \to 
   \syntacc{axiom-declaration}
   \\
   &\denote{\texttt{\parametric{axiom}{$s_1,\dots,s_n$}

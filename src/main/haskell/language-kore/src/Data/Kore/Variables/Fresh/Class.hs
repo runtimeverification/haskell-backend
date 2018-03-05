@@ -18,27 +18,18 @@ class (Monad m, VariableClass var) => FreshVariablesClass m var where
     the same type and sort.
     -}
     freshVariable :: IsMeta a => var a -> m (var a)
-    {-|Given an existing variable, generate a fresh unified one of
-    the same type and sort.
-    -}
-    variableToFreshUnified :: IsMeta a => var a -> m (UnifiedVariable var)
-    variableToFreshUnified = fmap asUnified . freshVariable
-    {-|Given an existing unified variable, generate a fresh one of
-    the same type and sort.
-    -}
-    freshUnifiedVariable :: UnifiedVariable var -> m (UnifiedVariable var)
-    freshUnifiedVariable = transformUnified variableToFreshUnified
 
     {-|Given an existing 'UnifiedVariable' and a predicate, generate a
     fresh 'UnifiedVariable' of the same type and sort satisfying the predicate.
     By default, die in flames if the predicate is not satisfied.
     -}
     freshVariableSuchThat
-        :: UnifiedVariable var
-        -> (UnifiedVariable var -> Bool)
-        -> m (UnifiedVariable var)
+        :: IsMeta a
+        => var a
+        -> (var a -> Bool)
+        -> m (var a)
     freshVariableSuchThat var p = do
-        var' <- freshUnifiedVariable var
+        var' <- freshVariable var
         if p var'
             then return var'
             else error "Cannot generate variable satisfying predicate"

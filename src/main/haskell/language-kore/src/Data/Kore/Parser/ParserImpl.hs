@@ -42,6 +42,7 @@ import           Data.Kore.Parser.Lexeme
 import qualified Data.Kore.Parser.ParserUtils     as ParserUtils
 import           Data.Kore.Unparser.Unparse
 
+import           Control.Arrow                    ((&&&))
 import           Control.Monad                    (unless, void, when)
 
 import           Data.Attoparsec.ByteString.Char8 (Parser)
@@ -346,8 +347,8 @@ provided constructor.
 BNF fragments:
 
 @
-... ::= ... ⟨object-sort⟩ ‘}’ ‘(’ ⟨variable⟩ ‘,’ ⟨pattern⟩ ‘)’
-... ::= ... ⟨meta-sort⟩ ‘}’ ‘(’ ⟨variable⟩ ‘,’ ⟨pattern⟩ ‘)’
+... ::= ... ⟨object-sort⟩ ‘}’ ‘(’ ⟨object-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
+... ::= ... ⟨meta-sort⟩ ‘}’ ‘(’ ⟨meta-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
 @
 
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
@@ -355,13 +356,13 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 existsForallRemainderParser
     :: IsMeta a
     => a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort a -> UnifiedVariable Variable -> UnifiedPattern
+    -> (Sort a -> Variable a -> UnifiedPattern
         -> m a Variable UnifiedPattern)
     -- ^ Element constructor.
     -> Parser (m a Variable UnifiedPattern)
 existsForallRemainderParser x constructor = do
     sort <- inCurlyBracesRemainderParser (sortParser x)
-    (variable, qPattern) <- parenPairParser unifiedVariableParser patternParser
+    (variable, qPattern) <- parenPairParser (variableParser x) patternParser
     return (constructor sort variable qPattern)
 
 {-|'ceilFloorRemainderParser' parses the part after a ceil or floor
@@ -611,8 +612,8 @@ BNF definitions:
     | ‘\or’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
     | ‘\implies’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
     | ‘\iff’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\forall’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨variable⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\exists’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨variable⟩ ‘,’ ⟨pattern⟩ ‘)’
+    | ‘\forall’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨object-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
+    | ‘\exists’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨object-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
     | ‘\ceil’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
     | ‘\floor’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
     | ‘\equals’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
@@ -628,8 +629,8 @@ BNF definitions:
     | ‘\or’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
     | ‘\implies’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
     | ‘\iff’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\forall’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨variable⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\exists’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨variable⟩ ‘,’ ⟨pattern⟩ ‘)’
+    | ‘\forall’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨meta-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
+    | ‘\exists’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨meta-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
     | ‘\ceil’ ‘{’ ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
     | ‘\floor’ ‘{’ ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
     | ‘\equals’ ‘{’ ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
@@ -646,22 +647,7 @@ mlConstructorParser = do
     mlPatternParser
   where
     mlPatternParser = keywordBasedParsers
-        [ ("and", mlConstructorRemainderParser AndPatternType)
-        , ("bottom", mlConstructorRemainderParser BottomPatternType)
-        , ("ceil", mlConstructorRemainderParser CeilPatternType)
-        , ("equals", mlConstructorRemainderParser EqualsPatternType)
-        , ("exists", mlConstructorRemainderParser ExistsPatternType)
-        , ("floor", mlConstructorRemainderParser FloorPatternType)
-        , ("forall", mlConstructorRemainderParser ForallPatternType)
-        , ("iff", mlConstructorRemainderParser IffPatternType)
-        , ("implies", mlConstructorRemainderParser ImpliesPatternType)
-        , ("in", mlConstructorRemainderParser InPatternType)
-        , ("next", mlConstructorRemainderParser NextPatternType)
-        , ("not", mlConstructorRemainderParser NotPatternType)
-        , ("or", mlConstructorRemainderParser OrPatternType)
-        , ("rewrites", mlConstructorRemainderParser RewritesPatternType)
-        , ("top", mlConstructorRemainderParser TopPatternType)
-        ]
+        (map (patternString &&& mlConstructorRemainderParser) allPatternTypes)
     mlConstructorRemainderParser patternType = do
         openCurlyBraceParser
         c <- Parser.peekChar'
@@ -731,8 +717,8 @@ BNF definitions:
     | ‘\or’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
     | ‘\implies’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
     | ‘\iff’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\forall’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨variable⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\exists’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨variable⟩ ‘,’ ⟨pattern⟩ ‘)’
+    | ‘\forall’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨object-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
+    | ‘\exists’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨object-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
     | ‘\ceil’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
     | ‘\floor’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
     | ‘\equals’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
@@ -749,8 +735,8 @@ BNF definitions:
     | ‘\or’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
     | ‘\implies’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
     | ‘\iff’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\forall’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨variable⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\exists’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨variable⟩ ‘,’ ⟨pattern⟩ ‘)’
+    | ‘\forall’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨meta-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
+    | ‘\exists’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨meta-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
     | ‘\ceil’ ‘{’ ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
     | ‘\floor’ ‘{’ ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
     | ‘\equals’ ‘{’ ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’

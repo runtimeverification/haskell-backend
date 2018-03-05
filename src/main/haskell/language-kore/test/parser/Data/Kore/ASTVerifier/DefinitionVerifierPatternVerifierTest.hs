@@ -71,7 +71,7 @@ definitionVerifierPatternVerifierTests =
             )
             (ExistsPattern Exists
                 { existsSort = anotherSort
-                , existsVariable = ObjectVariable anotherVariable
+                , existsVariable = anotherVariable
                 , existsChild =
                     ObjectPattern
                         (simpleExistsPattern objectVariable objectSort)
@@ -93,7 +93,7 @@ definitionVerifierPatternVerifierTests =
             )
             (ExistsPattern Exists
                 { existsSort = objectSort
-                , existsVariable = ObjectVariable objectVariable
+                , existsVariable = objectVariable
                 , existsChild =
                     ObjectPattern (VariablePattern anotherVariable)
                 }
@@ -125,7 +125,7 @@ definitionVerifierPatternVerifierTests =
             )
             (ExistsPattern Exists
                 { existsSort = objectSort
-                , existsVariable = ObjectVariable objectVariable
+                , existsVariable = objectVariable
                 , existsChild =
                     ObjectPattern
                         (simpleExistsPattern
@@ -733,7 +733,7 @@ genericPatternInAllContexts
     anotherPattern =
         ExistsPattern Exists
             { existsSort = testedSort
-            , existsVariable = asUnified anotherVariable
+            , existsVariable = anotherVariable
             , existsChild = asUnifiedPattern (VariablePattern anotherVariable)
             }
     anotherVariable =
@@ -786,7 +786,7 @@ objectPatternInAllContexts
     anotherPattern =
         ExistsPattern Exists
             { existsSort = testedSort
-            , existsVariable = asUnified anotherVariable
+            , existsVariable = anotherVariable
             , existsChild = asUnifiedPattern (VariablePattern anotherVariable)
             }
     anotherVariable =
@@ -933,7 +933,7 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
     [ TestPattern
         { testPatternPattern = ExistsPattern Exists
             { existsSort = testedSort
-            , existsVariable = asUnified quantifiedVariable
+            , existsVariable = quantifiedVariable
             , existsChild = asUnifiedPattern testedPattern
             }
         , testPatternErrorStack =
@@ -946,7 +946,7 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
     , TestPattern
         { testPatternPattern = ForallPattern Forall
             { forallSort = testedSort
-            , forallVariable = asUnified quantifiedVariable
+            , forallVariable = quantifiedVariable
             , forallChild = asUnifiedPattern testedPattern
             }
         , testPatternErrorStack =

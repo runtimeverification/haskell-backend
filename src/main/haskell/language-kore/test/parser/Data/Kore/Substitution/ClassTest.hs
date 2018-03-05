@@ -144,70 +144,70 @@ substitution3 = S.fromList
 existsObjectUnifiedPattern1 :: UnifiedPattern
 existsObjectUnifiedPattern1 = ObjectPattern $ ExistsPattern Exists
     { existsSort = objectSort
-    , existsVariable = unifiedObjectVariable
+    , existsVariable = objectVariable
     , existsChild = objectVariableUnifiedPattern
     }
 
 existsMetaUnifiedPattern1 :: UnifiedPattern
 existsMetaUnifiedPattern1 = MetaPattern $ ExistsPattern Exists
     { existsSort = metaSort
-    , existsVariable = unifiedMetaVariable
+    , existsVariable = metaVariable
     , existsChild = metaVariableUnifiedPattern
     }
 
 existsMetaUnifiedPattern1S3 :: UnifiedPattern
 existsMetaUnifiedPattern1S3 = MetaPattern $ ExistsPattern Exists
     { existsSort = metaSort
-    , existsVariable = MetaVariable $ metaVariableSubstitute 17
+    , existsVariable = metaVariableSubstitute 17
     , existsChild = metaVariableUnifiedPatternSubstitute 17
     }
 
 existsObjectUnifiedPattern1S :: Int -> UnifiedPattern
 existsObjectUnifiedPattern1S n = ObjectPattern $ ExistsPattern Exists
     { existsSort = objectSort
-    , existsVariable = ObjectVariable $ objectVariableSubstitute n
+    , existsVariable = objectVariableSubstitute n
     , existsChild = objectVariableUnifiedPatternSubstitute n
     }
 
 forallObjectUnifiedPattern1 :: UnifiedPattern
-forallObjectUnifiedPattern1 = ObjectPattern $ ForallPattern Forall
-    { forallSort = objectSort
-    , forallVariable = unifiedMetaVariable
+forallObjectUnifiedPattern1 = MetaPattern $ ForallPattern Forall
+    { forallSort = metaSort
+    , forallVariable = metaVariable
     , forallChild = objectVariableUnifiedPattern
     }
 
 forallObjectUnifiedPattern2 :: UnifiedPattern
-forallObjectUnifiedPattern2 = ObjectPattern $ ForallPattern Forall
-    { forallSort = objectSort
-    , forallVariable = unifiedMetaVariable
+forallObjectUnifiedPattern2 = MetaPattern $ ForallPattern Forall
+    { forallSort = metaSort
+    , forallVariable = metaVariable
     , forallChild = objectTopPattern
     }
 
 forallObjectUnifiedPattern1S3 :: UnifiedPattern
-forallObjectUnifiedPattern1S3 = ObjectPattern $ ForallPattern Forall
-    { forallSort = objectSort
-    , forallVariable = MetaVariable $ metaVariableSubstitute 5
+forallObjectUnifiedPattern1S3 = MetaPattern $ ForallPattern Forall
+    { forallSort = metaSort
+    , forallVariable = metaVariableSubstitute 5
     , forallChild = metaVariableUnifiedPattern
     }
 
 forallExistsObjectUnifiedPattern1 :: UnifiedPattern
 forallExistsObjectUnifiedPattern1 = ObjectPattern $ ForallPattern Forall
     { forallSort = objectSort
-    , forallVariable = unifiedObjectVariable
+    , forallVariable = objectVariable
     , forallChild = existsObjectUnifiedPattern1
     }
 
 forallExistsObjectUnifiedPattern2 :: UnifiedPattern
 forallExistsObjectUnifiedPattern2 = MetaPattern $ ForallPattern Forall
     { forallSort = metaSort
-    , forallVariable = unifiedMetaVariable
+    , forallVariable = metaVariable
     , forallChild = existsObjectUnifiedPattern1
     }
 
 forallExistsObjectUnifiedPattern1S2 :: UnifiedPattern
 forallExistsObjectUnifiedPattern1S2 = ObjectPattern $ ForallPattern Forall
     { forallSort = objectSort
-    , forallVariable = ObjectVariable $ objectVariableSubstitute 7
+    , forallVariable = objectVariableSubstitute 7
     , forallChild = existsObjectUnifiedPattern1S 8
     }
 

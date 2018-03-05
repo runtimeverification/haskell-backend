@@ -133,12 +133,12 @@ ceilFloorGen x constructor = pure constructor
 existsForallGen
     :: IsMeta a
     => a
-    -> (Sort a -> UnifiedVariable Variable -> UnifiedPattern
+    -> (Sort a -> Variable a -> UnifiedPattern
         -> q a Variable UnifiedPattern)
     -> Gen (q a Variable UnifiedPattern)
 existsForallGen x constructor = pure constructor
     <*> scale (`div` 2) (sortGen x)
-    <*> scale (`div` 2) unifiedVariableGen
+    <*> scale (`div` 2) (variableGen x)
     <*> scale (`div` 2) unifiedPatternGen
 
 topBottomGen

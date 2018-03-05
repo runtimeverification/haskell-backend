@@ -471,7 +471,7 @@ simpleExistsPattern
 simpleExistsPattern quantifiedVariable returnSort =
     ExistsPattern Exists
         { existsSort = returnSort
-        , existsVariable = asUnified quantifiedVariable
+        , existsVariable = quantifiedVariable
         , existsChild = asUnifiedPattern (VariablePattern quantifiedVariable)
         }
 
@@ -506,7 +506,7 @@ simpleExistsEqualsUnifiedPattern
     asUnifiedPattern
         (ExistsPattern Exists
             { existsSort = resultSort
-            , existsVariable = unifiedVariable name operandSort
+            , existsVariable = variable name operandSort
             , existsChild = asUnifiedPattern
                 (EqualsPattern Equals
                     { equalsOperandSort = operandSort

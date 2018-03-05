@@ -146,23 +146,25 @@ binderPatternSubstitutePreprocess
             )
         )
 binderPatternSubstitutePreprocess s q
-    | var `Set.member` substitutionFreeVars
+    | unifiedVar `Set.member` substitutionFreeVars
       = do
         var' <- freshVariableSuchThat
             var
             ( not
             . (`Set.member` allFreeVarsIds)
-            . transformUnified getVariableHash
+            . getVariableHash
             )
         substituteBinderBodyWith var'
-            (insert var (unifiedVariableToPattern var'))
-    | isJust (lookup var s) = substituteFreeBinderBodyWith (delete var)
+            (insert unifiedVar (variableToUnifiedPattern var'))
+    | isJust (lookup unifiedVar s) = substituteFreeBinderBodyWith (delete unifiedVar)
     | otherwise = substituteFreeBinderBodyWith id
   where
     sort = getBinderPatternSort q
     var = getBinderPatternVariable q
+    unifiedVar = asUnified var
+    variableToUnifiedPattern = asUnifiedPattern . VariablePattern
     pat = getBinderPatternChild q
-    substitutionFreeVars = substitutionTermsFreeVars (delete var s)
+    substitutionFreeVars = substitutionTermsFreeVars (delete unifiedVar s)
     allFreeVars = substitutionFreeVars `Set.union` quantifiedVars s
     allFreeVarsIds =
         Set.map (transformUnified getVariableHash) allFreeVars
@@ -170,4 +172,4 @@ binderPatternSubstitutePreprocess s q
         return
             (Right (binderPatternConstructor q sort newVar pat, local fs))
     substituteFreeBinderBodyWith fs =
-        substituteBinderBodyWith var (addFreeVariable var . fs)
+        substituteBinderBodyWith var (addFreeVariable unifiedVar . fs)

@@ -111,21 +111,7 @@ instance Unparse UnifiedPattern where
 
 
 instance Unparse MLPatternType where
-    unparse AndPatternType      = write "\\and"
-    unparse BottomPatternType   = write "\\bottom"
-    unparse CeilPatternType     = write "\\ceil"
-    unparse EqualsPatternType   = write "\\equals"
-    unparse ExistsPatternType   = write "\\exists"
-    unparse FloorPatternType    = write "\\floor"
-    unparse ForallPatternType   = write "\\forall"
-    unparse IffPatternType      = write "\\iff"
-    unparse ImpliesPatternType  = write "\\implies"
-    unparse InPatternType       = write "\\in"
-    unparse NextPatternType     = write "\\next"
-    unparse NotPatternType      = write "\\not"
-    unparse OrPatternType       = write "\\or"
-    unparse RewritesPatternType = write "\\rewrites"
-    unparse TopPatternType      = write "\\top"
+    unparse pt = write ('\\' : patternString pt)
 
 unparseMLPattern :: (PrinterOutput w m, MLPatternClass p, Unparse rpt)
     => p a rpt -> m ()
@@ -136,7 +122,7 @@ unparseMLPattern p = do
 
 unparseMLBinderPattern
     :: (PrinterOutput w m, MLBinderPatternClass p, Unparse rpt,
-        Unparse (UnifiedVariable v))
+        Unparse (v a))
     => p a v rpt -> m ()
 unparseMLBinderPattern p = do
     unparse (getBinderPatternType p)
@@ -167,14 +153,14 @@ instance Unparse p => Unparse (Ceil a p) where
 instance Unparse p => Unparse (Equals a p) where
     unparse = unparseMLPattern
 
-instance (Unparse (UnifiedVariable v), Unparse p)
+instance (Unparse (v a), Unparse p)
     => Unparse (Exists a v p) where
     unparse = unparseMLBinderPattern
 
 instance Unparse p => Unparse (Floor a p) where
     unparse = unparseMLPattern
 
-instance (Unparse (UnifiedVariable v), Unparse p)
+instance (Unparse (v a), Unparse p)
     => Unparse (Forall a v p) where
     unparse = unparseMLBinderPattern
 
