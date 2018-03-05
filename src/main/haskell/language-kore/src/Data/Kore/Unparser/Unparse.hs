@@ -111,21 +111,7 @@ instance Unparse UnifiedPattern where
 
 
 instance Unparse MLPatternType where
-    unparse AndPatternType      = write "\\and"
-    unparse BottomPatternType   = write "\\bottom"
-    unparse CeilPatternType     = write "\\ceil"
-    unparse EqualsPatternType   = write "\\equals"
-    unparse ExistsPatternType   = write "\\exists"
-    unparse FloorPatternType    = write "\\floor"
-    unparse ForallPatternType   = write "\\forall"
-    unparse IffPatternType      = write "\\iff"
-    unparse ImpliesPatternType  = write "\\implies"
-    unparse InPatternType       = write "\\in"
-    unparse NextPatternType     = write "\\next"
-    unparse NotPatternType      = write "\\not"
-    unparse OrPatternType       = write "\\or"
-    unparse RewritesPatternType = write "\\rewrites"
-    unparse TopPatternType      = write "\\top"
+    unparse pt = write ('\\' : patternString pt)
 
 unparseMLPattern :: (PrinterOutput w m, MLPatternClass p, Unparse rpt)
     => p a rpt -> m ()
