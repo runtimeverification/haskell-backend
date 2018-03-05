@@ -26,7 +26,7 @@ freeVarsVisitor
     -> Set.Set (UnifiedVariable var)
 freeVarsVisitor (VariablePattern v) = Set.singleton (asUnified v)
 freeVarsVisitor (ExistsPattern e) =
-    Set.delete (existsVariable e) (existsChild e)
+    Set.delete (asUnified (existsVariable e)) (existsChild e)
 freeVarsVisitor (ForallPattern f) =
-    Set.delete (forallVariable f) (forallChild f)
+    Set.delete (asUnified (forallVariable f)) (forallChild f)
 freeVarsVisitor p = fold p  -- default rule

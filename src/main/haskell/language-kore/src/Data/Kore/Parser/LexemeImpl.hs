@@ -30,6 +30,7 @@ import           Data.Kore.Parser.CharSet         as CharSet
 import           Data.Kore.Parser.CString
 import           Data.Kore.Parser.ParserUtils
 
+import           Control.Arrow                    ((&&&))
 import           Control.Monad                    (void, when)
 import qualified Data.Attoparsec.ByteString       as BParser (runScanner)
 import           Data.Attoparsec.ByteString.Char8 (Parser)
@@ -181,14 +182,21 @@ metaIdRawParser :: Parser String
 metaIdRawParser = do
     c <- Parser.char '#'
     c' <- Parser.peekChar'
-    if c' == '`'
-        then do
+    case c' of
+        '`' -> do
             void (Parser.char c')
             idToken <- objectIdRawParser
             return (c:c':idToken)
-        else do
+        '\\' -> do
+            void (Parser.char c')
+            mlPatternCtor <- mlPatternCtorParser
+            return (c:c':mlPatternCtor)
+        _ -> do
             idToken <- objectIdRawParser
             return (c:idToken)
+  where
+    mlPatternCtorParser = keywordBasedParsers
+        (map (patternString &&& return . patternString) allPatternTypes)
 
 {-|'idParser' parses either an @object-identifier@, or a @meta-identifier@.
 Does not consume whitespace.

@@ -477,10 +477,10 @@ equalsPatternParserTests =
 existsPatternParserTests :: [TestTree]
 existsPatternParserTests =
     parseTree patternParser
-        [ success "\\exists{s}(#v:#Char, \"b\")"
-            (ObjectPattern $ ExistsPattern Exists
-                    { existsSort = sortVariableSort "s"
-                    , existsVariable = MetaVariable
+        [ success "\\exists{#s}(#v:#Char, \"b\")"
+            (MetaPattern $ ExistsPattern Exists
+                    { existsSort = sortVariableSort "#s"
+                    , existsVariable =
                         Variable
                             { variableName = Id "#v"
                             , variableSort = sortVariableSort "#Char"
@@ -529,7 +529,7 @@ forallPatternParserTests =
         [ success "\\forall{s}(v:s1, \"b\")"
             ( ObjectPattern $ ForallPattern Forall
                     { forallSort = sortVariableSort "s"
-                    , forallVariable = ObjectVariable
+                    , forallVariable =
                         Variable
                             { variableName = Id "v"
                             , variableSort = sortVariableSort "s1"

@@ -280,7 +280,7 @@ instance (IsMeta a, PrettyPrint p) => PrettyPrint (Equals a p) where
             , writeFieldNewLine "equalsSecond" equalsSecond p
             ]
 
-instance (IsMeta a, PrettyPrint p, PrettyPrint (UnifiedVariable v))
+instance (IsMeta a, PrettyPrint p, PrettyPrint (v a))
     => PrettyPrint (Exists a v p) where
     prettyPrint _ p@(Exists _ _ _) =
         writeStructure
@@ -299,7 +299,7 @@ instance (IsMeta a, PrettyPrint p) => PrettyPrint (Floor a p) where
             , writeFieldNewLine "floorChild" floorChild p
             ]
 
-instance (IsMeta a, PrettyPrint p, PrettyPrint (UnifiedVariable v))
+instance (IsMeta a, PrettyPrint p, PrettyPrint (v a))
     => PrettyPrint (Forall a v p) where
     prettyPrint _ p@(Forall _ _ _) =
         writeStructure

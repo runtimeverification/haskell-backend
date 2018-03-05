@@ -127,20 +127,30 @@ Definition
                                         ]
                                     })
                             , equalsSecond =
-                                ObjectPattern (ExistsPattern Exists
-                                    { existsSort =
-                                        SortVariableSort (SortVariable (Id Object "Exp"))
-                                    , existsVariable =
-                                        SortVariable Variable
+                                MetaPattern (ApplicationPattern Application
+                                    { applicationSymbolOrAlias =
+                                        SymbolOrAlias
+                                            { symbolOrAliasConstructor = Id Meta "#\exists"
+                                            , symbolOrAliasParams = []
+                                            }
+                                    , applicationChildren =
+                                        [ MetaPattern (VariablePattern Variable
+                                            { variableName = Id Meta "#Exp"
+                                            , variableSort =
+                                                SortActualSortSortActual
+                                                        { sortActualName = Id Meta "#Sort"
+                                                        , sortActualSorts = []
+                                                        }
+                                            })
+                                        , MetaPattern (VariablePattern Variable
                                             { variableName = Id Meta "#X"
                                             , variableSort =
                                                 SortActualSortSortActual
                                                         { sortActualName = Id Meta "#Variable"
                                                         , sortActualSorts = []
                                                         }
-                                            }
-                                    , existsChild =
-                                        ObjectPattern (ApplicationPattern Application
+                                            })
+                                        , ObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = Id Object "lambda0"
@@ -174,6 +184,7 @@ Definition
                                                     })
                                                 ]
                                             })
+                                        ]
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
