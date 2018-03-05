@@ -5512,7 +5512,24 @@ letter and is not a \syntacc{keyword}.
 which is either the character ``\verb|#|'' followed by an 
 \syntacc{object-identifier},
 or the string ``\verb|#`|'' followed by an \syntacc{object-identifier},
-or the string ``\verb|#\|'' followed by an \syntacc{object-identifier}.
+or one of the following:
+\begin{center}
+\begin{tabular}{lllll}
+	\ttfamily \sharpsymbol \slashsymbol and &
+	\ttfamily \sharpsymbol \slashsymbol not &
+	\ttfamily \sharpsymbol \slashsymbol or &
+	\ttfamily \sharpsymbol \slashsymbol implies &
+	\ttfamily \sharpsymbol \slashsymbol iff \\\hline
+	\ttfamily \sharpsymbol \slashsymbol forall &
+	\ttfamily \sharpsymbol \slashsymbol exists &
+	\ttfamily \sharpsymbol \slashsymbol ceil &
+	\ttfamily \sharpsymbol \slashsymbol floor &
+	\ttfamily \sharpsymbol \slashsymbol equals \\\hline
+	\ttfamily \sharpsymbol \slashsymbol in &
+	\ttfamily \sharpsymbol \slashsymbol top &
+	\ttfamily \sharpsymbol \slashsymbol bottom &
+\end{tabular}
+\end{center}
 \end{itemize}
 
 Identifiers are building blocks of many syntactic categories in Kore,
