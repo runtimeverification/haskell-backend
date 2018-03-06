@@ -7084,14 +7084,21 @@ In Kore, an axiom declaration is lifted as follows.
   &\denote{\texttt{\parametric{axiom}{$s_1,\dots,s_n$}
   		$\varphi$}} =
   	\begin{cases*}
-  	\texttt{\parametric{axiom}{$s'_1,\dots,s'_m$} 
-  	\parametric{\Kdeduce}{$s'$}($\denote{\varphi}$)} & 
+  	\texttt{\parametric{axiom}{$s'_1,\dots,s'_m$}}
+  	\texttt{ \parametric{\Kimplies}{$s'$}(} \\
+  	\qquad\qquad\quad\ \texttt{
+  	\KsortDeclared{$s'$}($\denote{s''_1,\dots,s''_k}_\llist$)},  \\
+  	\qquad\qquad\qquad\texttt{
+  	\parametric{\Kdeduce}{$s'$}($\denote{\varphi}$))} 
+  	& 
   if $\varphi$ is \syntacc{object-pattern} \\
   \texttt{\parametric{axiom}{$s'_1,\dots,s'_m$} $\denote{\varphi}$} & if
   $\varphi$ is \syntacc{meta-pattern}
   	\end{cases*}
 \end{align*}
 where $s_1',\dots,s_m'$ are all \syntacc{meta-sort-variable} in 
+$s_1,\dots,s_n$,
+$s_1'',\dots,s_k''$ are all \syntacc{object-sort-variable} in 
 $s_1,\dots,s_n$, and $s'$ is a fresh \syntacc{meta-sort-variable} that is 
 different from $s_1',\dots,s_m'$.
 
