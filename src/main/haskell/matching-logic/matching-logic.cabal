@@ -1,0 +1,102 @@
+name:           matching-logic
+version:        0.0.1.0
+description:    Please see the README on Github at <https://github.com/kframework/src/haskell/matching-logic/README.md>
+category:       Language
+homepage:       https://github.com/kframework/kore#readme
+bug-reports:    https://github.com/kframework/kore/issues
+author:         Brandon Moore
+maintainer:     brandon.moore@runtimeverification.com
+copyright:      2018 Runtime Verification Inc
+license:        OtherLicense
+license-file:   LICENSE
+build-type:     Simple
+cabal-version:  >= 1.10
+
+extra-source-files:
+    ChangeLog.md
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/kframework/kore
+executable prover
+  hs-source-dirs:
+      app
+  main-is: Main.hs
+  build-depends: base >=4.7 && <5
+               , containers
+               , mtl
+               , text
+               , megaparsec
+               , prettyprinter
+               , haskeline
+               , reflection
+               , lens
+               , matching-logic
+  default-language: Haskell2010
+  default-extensions: FlexibleContexts
+library
+  hs-source-dirs:
+      src
+  build-depends: base >=4.7 && <5
+               , containers
+               , language-kore
+               , mtl
+               , text
+               , megaparsec
+               , prettyprinter
+               , haskeline
+               , reflection
+               , data-fix
+               , free
+               , recursion-schemes
+               , deriving-compat
+               , lens
+               , language-kore
+  exposed-modules: Kore.MatchingLogic.AST
+                 , Kore.MatchingLogic.AST.Syntax
+                 , Kore.MatchingLogic.HilbertProof
+                 , Kore.MatchingLogic.ProofSystem.Dummy
+                 , Kore.MatchingLogic.ProofSystem.Minimal
+                 , Kore.MatchingLogic.ProofSystem.Minimal.Syntax
+                 , Kore.MatchingLogic.ProverRepl
+                 , Kore.MatchingLogic.Signature
+                 , Kore.MatchingLogic.Signature.Simple
+                 , Kore.MatchingLogic.Signature.Poly
+  default-language: Haskell2010
+  default-extensions: DataKinds
+                    , DeriveFunctor
+                    , DeriveFoldable
+                    , DeriveTraversable
+                    , StandaloneDeriving
+                    , ScopedTypeVariables
+                    , RankNTypes
+                    , MultiParamTypeClasses
+                    , FunctionalDependencies
+                    , FlexibleInstances
+                    , FlexibleContexts
+                    , TypeSynonymInstances
+                    , UndecidableInstances
+
+test-suite test
+  type: exitcode-stdio-1.0
+  main-is: AllTests.hs
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends: base
+               , QuickCheck
+               , containers
+               , prettyprinter
+               , lens
+               , bytestring
+               , store
+               , language-kore
+               , matching-logic
+               , tasty
+               , tasty-ant-xml
+               , tasty-golden
+               , tasty-hunit
+               , tasty-quickcheck
+  other-modules:
+  default-language: Haskell2010
