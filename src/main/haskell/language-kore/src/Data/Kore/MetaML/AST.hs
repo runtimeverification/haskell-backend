@@ -13,10 +13,30 @@ data MetaSentenceAxiom = MetaSentenceAxiom
     }
     deriving (Eq, Show)
 
-groundHead :: String -> SymbolOrAlias a
-groundHead name = SymbolOrAlias
-    { symbolOrAliasConstructor = Id name
+data MetaSentence
+    = AliasMetaSentence !(SentenceAlias Meta)
+    | SymbolMetaSentence !(SentenceSymbol Meta)
+    | AxiomMetaSentence !MetaSentenceAxiom
+    | ImportMetaSentence !SentenceImport
+    deriving (Eq, Show)
+
+data MetaModule = MetaModule
+    { metaModuleName       :: !ModuleName
+    , metaModuleSentences  :: ![MetaSentence]
+    , metaModuleAttributes :: !Attributes
+    }
+    deriving (Eq, Show)
+
+groundHead :: Id a -> SymbolOrAlias a
+groundHead ctor = SymbolOrAlias
+    { symbolOrAliasConstructor = ctor
     , symbolOrAliasParams = []
+    }
+
+groundSymbol :: Id a -> Symbol a
+groundSymbol ctor = Symbol
+    { symbolConstructor = ctor
+    , symbolParams = []
     }
 
 apply :: SymbolOrAlias a -> [p] -> Pattern a v p
@@ -29,70 +49,55 @@ constant :: SymbolOrAlias a -> Pattern a v p
 constant patternHead = apply patternHead []
 
 nilSortListHead :: SymbolOrAlias Meta
-nilSortListHead = groundHead "#nilSortList"
+nilSortListHead = groundHead (Id "#nilSortList")
 
 consSortListHead :: SymbolOrAlias Meta
-consSortListHead = groundHead "#consSortList"
+consSortListHead = groundHead (Id "#consSortList")
 
 nilSortListMetaPattern :: MetaMLPattern v
 nilSortListMetaPattern = Fix $ constant nilSortListHead
 
 nilPatternListHead :: SymbolOrAlias Meta
-nilPatternListHead = groundHead "#nilPatternList"
+nilPatternListHead = groundHead (Id "#nilPatternList")
 
 consPatternListHead :: SymbolOrAlias Meta
-consPatternListHead = groundHead "#consPatternList"
+consPatternListHead = groundHead (Id "#consPatternList")
 
 nilPatternListMetaPattern :: MetaMLPattern v
 nilPatternListMetaPattern = Fix $ constant nilPatternListHead
 
 variableHead :: SymbolOrAlias Meta
-variableHead = groundHead "#variable"
+variableHead = groundHead (Id "#variable")
 
 variableAsPatternHead :: SymbolOrAlias Meta
-variableAsPatternHead = groundHead "#variableAsPattern"
+variableAsPatternHead = groundHead (Id "#variableAsPattern")
 
-andHead :: SymbolOrAlias Meta
-andHead = groundHead "#\\and"
+metaMLPatternHead :: MLPatternType -> SymbolOrAlias Meta
+metaMLPatternHead pt = groundHead (Id ('#' : '\\' : patternString pt))
 
-bottomHead :: SymbolOrAlias Meta
-bottomHead = groundHead "#\\bottom"
+sortDeclaredHead :: Sort Meta -> SymbolOrAlias Meta
+sortDeclaredHead param = SymbolOrAlias
+    { symbolOrAliasConstructor = Id "#sortDeclared"
+    , symbolOrAliasParams = [param]
+    }
 
-ceilHead :: SymbolOrAlias Meta
-ceilHead = groundHead "#\\ceil"
+sortsDeclaredHead :: Sort Meta -> SymbolOrAlias Meta
+sortsDeclaredHead param = SymbolOrAlias
+    { symbolOrAliasConstructor = Id "#sortsDeclared"
+    , symbolOrAliasParams = [param]
+    }
 
-equalsHead :: SymbolOrAlias Meta
-equalsHead = groundHead "#\\equals"
+symbolDeclaredHead :: Sort Meta -> SymbolOrAlias Meta
+symbolDeclaredHead param = SymbolOrAlias
+    { symbolOrAliasConstructor = Id "#symbolDeclared"
+    , symbolOrAliasParams = [param]
+    }
 
-existsHead :: SymbolOrAlias Meta
-existsHead = groundHead "#\\equals"
+sortHead :: SymbolOrAlias Meta
+sortHead = groundHead (Id "#sort")
 
-floorHead :: SymbolOrAlias Meta
-floorHead = groundHead "#\\floor"
+symbolHead :: SymbolOrAlias Meta
+symbolHead = groundHead (Id "#symbol")
 
-forallHead :: SymbolOrAlias Meta
-forallHead = groundHead "#\\forall"
-
-iffHead :: SymbolOrAlias Meta
-iffHead = groundHead "#\\iff"
-
-impliesHead :: SymbolOrAlias Meta
-impliesHead = groundHead "#\\implies"
-
-inHead :: SymbolOrAlias Meta
-inHead = groundHead "#\\in"
-
-nextHead :: SymbolOrAlias Meta
-nextHead = groundHead "#\\next"
-
-notHead :: SymbolOrAlias Meta
-notHead = groundHead "#\\not"
-
-orHead :: SymbolOrAlias Meta
-orHead = groundHead "#\\or"
-
-rewritesHead :: SymbolOrAlias Meta
-rewritesHead = groundHead "#\\rewrites"
-
-topHead :: SymbolOrAlias Meta
-topHead = groundHead "#\\top"
+applicationHead :: SymbolOrAlias Meta
+applicationHead = groundHead (Id "#application")

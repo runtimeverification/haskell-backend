@@ -101,27 +101,35 @@ unliftPatternReducer
     :: Pattern Meta Variable UnliftResult
     -> IndexedModuleReader (Maybe (Pattern Object Variable UnifiedPattern))
 unliftPatternReducer (ApplicationPattern a)
-    | apHead == andHead
+    | apHead == metaMLPatternHead AndPatternType
     = return (unliftBinaryOpPattern AndPattern And apChildren)
-    | apHead == bottomHead
+    | apHead == metaMLPatternHead BottomPatternType
     = return (unliftTopBottomPattern (BottomPattern . Bottom) apChildren)
-    | apHead == ceilHead
+    | apHead == metaMLPatternHead CeilPatternType
     = return (unliftCeilFloorPattern CeilPattern Ceil apChildren)
-    | apHead == equalsHead
+    | apHead == metaMLPatternHead EqualsPatternType
     = return (unliftEqualsInPattern EqualsPattern Equals apChildren)
-    | apHead == floorHead
+    | apHead == metaMLPatternHead ExistsPatternType
+    = return (unliftQuantifiedPattern ExistsPattern Exists apChildren)
+    | apHead == metaMLPatternHead FloorPatternType
     = return (unliftCeilFloorPattern FloorPattern Floor apChildren)
-    | apHead == iffHead
+    | apHead == metaMLPatternHead ForallPatternType
+    = return (unliftQuantifiedPattern ForallPattern Forall apChildren)
+    | apHead == metaMLPatternHead IffPatternType
     = return (unliftBinaryOpPattern IffPattern Iff apChildren)
-    | apHead == impliesHead
+    | apHead == metaMLPatternHead ImpliesPatternType
     = return (unliftBinaryOpPattern ImpliesPattern Implies apChildren)
-    | apHead == inHead
+    | apHead == metaMLPatternHead InPatternType
     = return (unliftEqualsInPattern InPattern In apChildren)
-    | apHead == orHead
+    | apHead == metaMLPatternHead NextPatternType
+    = return (unliftUnaryOpPattern NextPattern Next apChildren)
+    | apHead == metaMLPatternHead NotPatternType
+    = return (unliftUnaryOpPattern NotPattern Not apChildren)
+    | apHead == metaMLPatternHead OrPatternType
     = return (unliftBinaryOpPattern OrPattern Or apChildren)
-    | apHead == rewritesHead
+    | apHead == metaMLPatternHead RewritesPatternType
     = return (unliftBinaryOpPattern RewritesPattern Rewrites apChildren)
-    | apHead == topHead
+    | apHead == metaMLPatternHead TopPatternType
     = return (unliftTopBottomPattern (TopPattern . Top) apChildren)
   where
     apHead = applicationSymbolOrAlias a
@@ -133,12 +141,22 @@ unliftBinaryOpPattern
     -> (Sort Object -> UnifiedPattern -> UnifiedPattern
         -> p Object UnifiedPattern)
     -> ([UnliftResult] -> Maybe (Pattern Object Variable UnifiedPattern))
-unliftBinaryOpPattern unifiedBinaryCtor binaryCtor [rSort, rFirst, rSecond] =
-    unifiedBinaryCtor <$> (pure binaryCtor
+unliftBinaryOpPattern unifiedCtor ctor [rSort, rFirst, rSecond] =
+    unifiedCtor <$> (pure ctor
         <*> unliftFromMeta (unliftResultOriginal rSort)
         <*> pure (unliftResultFinal rFirst)
         <*> pure (unliftResultFinal rSecond))
 unliftBinaryOpPattern _ _ _ = Nothing
+
+unliftUnaryOpPattern
+    :: (p Object UnifiedPattern -> Pattern Object Variable UnifiedPattern)
+    -> (Sort Object -> UnifiedPattern -> p Object UnifiedPattern)
+    -> ([UnliftResult] -> Maybe (Pattern Object Variable UnifiedPattern))
+unliftUnaryOpPattern unifiedCtor ctor [rSort, rChild] =
+    unifiedCtor <$> (pure ctor
+        <*> unliftFromMeta (unliftResultOriginal rSort)
+        <*> pure (unliftResultFinal rChild))
+unliftUnaryOpPattern _ _ _ = Nothing
 
 unliftTopBottomPattern
     :: (Sort Object -> Pattern Object Variable UnifiedPattern)
@@ -156,6 +174,7 @@ unliftCeilFloorPattern unifiedCtor ctor [rOperandSort, rResultSort, rChild] =
         <*> unliftFromMeta (unliftResultOriginal rOperandSort)
         <*> unliftFromMeta (unliftResultOriginal rResultSort)
         <*> pure (unliftResultFinal rChild))
+unliftCeilFloorPattern _ _ _ = Nothing
 
 unliftEqualsInPattern
     :: (p Object UnifiedPattern -> Pattern Object Variable UnifiedPattern)
@@ -169,4 +188,18 @@ unliftEqualsInPattern unifiedCtor ctor
             <*> unliftFromMeta (unliftResultOriginal rResultSort)
             <*> pure (unliftResultFinal rFirst)
             <*> pure (unliftResultFinal rSecond))
+unliftEqualsInPattern _ _ _ = Nothing
 
+unliftQuantifiedPattern
+    :: (p Object Variable UnifiedPattern
+        -> Pattern Object Variable UnifiedPattern)
+    -> (Sort Object -> Variable Object -> UnifiedPattern
+        -> p Object Variable UnifiedPattern)
+    -> ([UnliftResult] -> Maybe (Pattern Object Variable UnifiedPattern))
+unliftQuantifiedPattern unifiedCtor ctor
+    [rSort, rVariable, rChild] =
+        unifiedCtor <$> (pure ctor
+            <*> unliftFromMeta (unliftResultOriginal rSort)
+            <*> unliftFromMeta (unliftResultOriginal rVariable)
+            <*> pure (unliftResultFinal rChild))
+unliftQuantifiedPattern _ _ _ = Nothing
