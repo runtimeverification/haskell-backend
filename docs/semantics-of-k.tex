@@ -7085,13 +7085,15 @@ In Kore, an axiom declaration is lifted as follows.
   		$\varphi$}} =
   	\begin{cases*}
   	\texttt{\parametric{axiom}{$s'_1,\dots,s'_m$} 
-  	\Kdeduce($\denote{\varphi}$)} & 
+  	\parametric{\Kdeduce}{$s'$}($\denote{\varphi}$)} & 
   if $\varphi$ is \syntacc{object-pattern} \\
   \texttt{\parametric{axiom}{$s'_1,\dots,s'_m$} $\denote{\varphi}$} & if
   $\varphi$ is \syntacc{meta-pattern}
   	\end{cases*}
 \end{align*}
-where $s_1',\dots,s_m'$ are all \syntacc{meta-sort-variable} in $s_1,\dots,s_n$.
+where $s_1',\dots,s_m'$ are all \syntacc{meta-sort-variable} in 
+$s_1,\dots,s_n$, and $s'$ is a fresh \syntacc{meta-sort-variable} that is 
+different from $s_1',\dots,s_m'$.
 
 %\subsection{Example A: Presburger Arithmetic}
 %\begin{lstlisting}[language=kore]
