@@ -160,9 +160,13 @@ sortParser x = do
         sorts <- inCurlyBracesSortListParser x
         when (koreLevel x == MetaLevel) (validateMetaSort identifier sorts)
         return $ SortActualSort SortActual
-            { sortActualName = identifier
+            { sortActualName = stringNameNormalizer identifier
             , sortActualSorts = sorts
             }
+    stringNameNormalizer identifier@(Id i) =
+        if (koreLevel x == MetaLevel) && (i == show StringSort)
+            then Id (show CharListSort)
+            else identifier
 
 {-|'validateMetaSort' checks that a @meta-sort@ is well-formed.
 

@@ -1,4 +1,8 @@
-module Data.Kore.Parser.RegressionTest (regressionTests, regressionTestsInputFiles) where
+module Data.Kore.Parser.RegressionTest ( InputFileName (..)
+                                       , GoldenFileName (..)
+                                       , regressionTest
+                                       , regressionTests
+                                       , regressionTestsInputFiles) where
 
 import           Test.Tasty                 (TestTree, testGroup)
 import           Test.Tasty.Golden          (findByExtension, goldenVsString)
@@ -7,29 +11,38 @@ import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.Parser.Parser
 
 import qualified Data.ByteString            as ByteString
-import qualified Data.ByteString.Char8      as Char8
 import qualified Data.ByteString.Lazy       as LazyByteString
 import qualified Data.ByteString.Lazy.Char8 as LazyChar8
 import           System.FilePath            (addExtension, splitFileName, (</>))
 
-regressionTests :: [String] -> TestTree
+newtype InputFileName = InputFileName FilePath
+newtype GoldenFileName = GoldenFileName FilePath
+
+regressionTests :: [InputFileName] -> TestTree
 regressionTests inputFiles =
     testGroup "Regression tests"
-        (map regressionTest inputFiles)
+        (map regressionTestFromInputFile inputFiles)
 
-regressionTestsInputFiles :: String -> IO [String]
-regressionTestsInputFiles = findByExtension [".kore"]
+regressionTestsInputFiles :: String -> IO [InputFileName]
+regressionTestsInputFiles dir = do
+    files <- findByExtension [".kore"] dir
+    return (map InputFileName files)
 
-regressionTest :: String -> TestTree
-regressionTest inputFileName =
+regressionTestFromInputFile :: InputFileName -> TestTree
+regressionTestFromInputFile inputFileName =
+    regressionTest inputFileName (goldenFromInputFileName inputFileName)
+
+regressionTest :: InputFileName -> GoldenFileName -> TestTree
+regressionTest (InputFileName inputFileName) (GoldenFileName goldenFileName) =
     goldenVsString
         ("Testing '" ++ inputFileName ++ "'")
-        (goldenFromInputFileName inputFileName)
+        goldenFileName
         (runParser inputFileName)
 
-goldenFromInputFileName :: FilePath -> FilePath
-goldenFromInputFileName inputFile =
-    directory </> "expected" </> addExtension fileName ".golden"
+goldenFromInputFileName :: InputFileName -> GoldenFileName
+goldenFromInputFileName (InputFileName inputFile) =
+    GoldenFileName
+        (directory </> "expected" </> addExtension fileName ".golden")
   where (directory, fileName) = splitFileName inputFile
 
 toByteString :: Either String Definition -> LazyByteString.ByteString

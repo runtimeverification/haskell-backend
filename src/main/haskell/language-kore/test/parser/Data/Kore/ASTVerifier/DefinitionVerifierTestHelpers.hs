@@ -147,7 +147,7 @@ simpleAliasSentence (AliasName name) (SortName sort) =
             , aliasParams = []
             }
         , sentenceAliasSorts = []
-        , sentenceAliasReturnSort =
+        , sentenceAliasResultSort =
             SortActualSort SortActual
                 { sortActualName = Id sort
                 , sortActualSorts = []
@@ -171,7 +171,7 @@ simpleSymbolSentence (SymbolName name) (SortName sort) =
             , symbolParams = []
             }
         , sentenceSymbolSorts = []
-        , sentenceSymbolReturnSort =
+        , sentenceSymbolResultSort =
             SortActualSort SortActual
                 { sortActualName = Id sort
                 , sortActualSorts = []
@@ -210,7 +210,7 @@ aliasSentenceWithSort (AliasName name) sort =
             , aliasParams = []
             }
         , sentenceAliasSorts = []
-        , sentenceAliasReturnSort = sort
+        , sentenceAliasResultSort = sort
         , sentenceAliasAttributes = Attributes []
         }
 
@@ -225,7 +225,7 @@ metaAliasSentenceWithSortParameters
             , aliasParams = parameters
             }
         , sentenceAliasSorts = []
-        , sentenceAliasReturnSort = sort
+        , sentenceAliasResultSort = sort
         , sentenceAliasAttributes = Attributes []
         }
 
@@ -240,7 +240,7 @@ aliasSentenceWithSortParameters
             , aliasParams = parameters
             }
         , sentenceAliasSorts = []
-        , sentenceAliasReturnSort =
+        , sentenceAliasResultSort =
             SortActualSort SortActual
                 { sortActualName = Id sort
                 , sortActualSorts = []
@@ -259,7 +259,7 @@ sentenceAliasWithSortArgument
             , aliasParams = parameters
             }
         , sentenceAliasSorts = [sortArgument]
-        , sentenceAliasReturnSort = resultSort
+        , sentenceAliasResultSort = resultSort
         , sentenceAliasAttributes = Attributes []
         }
 
@@ -276,7 +276,7 @@ sentenceAliasWithAttributes (AliasName name) params sort attributes =
             , aliasParams = params
             }
         , sentenceAliasSorts = []
-        , sentenceAliasReturnSort = sort
+        , sentenceAliasResultSort = sort
         , sentenceAliasAttributes = Attributes attributes
         }
 
@@ -293,7 +293,7 @@ sentenceSymbolWithAttributes (SymbolName name) params sort attributes =
             , symbolParams = params
             }
         , sentenceSymbolSorts = []
-        , sentenceSymbolReturnSort = sort
+        , sentenceSymbolResultSort = sort
         , sentenceSymbolAttributes = Attributes attributes
         }
 
@@ -308,7 +308,7 @@ metaSymbolSentenceWithSortParameters
             , symbolParams = parameters
             }
         , sentenceSymbolSorts = []
-        , sentenceSymbolReturnSort = sort
+        , sentenceSymbolResultSort = sort
         , sentenceSymbolAttributes = Attributes []
         }
 
@@ -323,7 +323,7 @@ symbolSentenceWithSortParameters
             , symbolParams = parameters
             }
         , sentenceSymbolSorts = []
-        , sentenceSymbolReturnSort =
+        , sentenceSymbolResultSort =
             SortActualSort SortActual
                 { sortActualName = Id sort
                 , sortActualSorts = []
@@ -349,9 +349,9 @@ axiomSentenceWithAttributes parameters unifiedPattern attributes =
         , sentenceAxiomAttributes = Attributes attributes
         }
 
-sentenceAliasWithReturnSort
+sentenceAliasWithResultSort
     :: AliasName -> Sort a -> [SortVariable a] -> SentenceAlias a
-sentenceAliasWithReturnSort
+sentenceAliasWithResultSort
     (AliasName name) sort parameters
   =
     SentenceAlias
@@ -360,13 +360,13 @@ sentenceAliasWithReturnSort
             , aliasParams = parameters
             }
         , sentenceAliasSorts = []
-        , sentenceAliasReturnSort = sort
+        , sentenceAliasResultSort = sort
         , sentenceAliasAttributes = Attributes []
         }
 
-symbolSentenceWithReturnSort
+symbolSentenceWithResultSort
     :: IsMeta a => SymbolName -> Sort a -> [SortVariable a] -> Sentence
-symbolSentenceWithReturnSort
+symbolSentenceWithResultSort
     (SymbolName name) sort parameters
   =
     asSentenceSymbolSentence SentenceSymbol
@@ -375,7 +375,7 @@ symbolSentenceWithReturnSort
             , symbolParams = parameters
             }
         , sentenceSymbolSorts = []
-        , sentenceSymbolReturnSort = sort
+        , sentenceSymbolResultSort = sort
         , sentenceSymbolAttributes = Attributes []
         }
 
@@ -394,7 +394,7 @@ symbolSentenceWithArguments
             , symbolParams = []
             }
         , sentenceSymbolSorts = operandSorts
-        , sentenceSymbolReturnSort = sort
+        , sentenceSymbolResultSort = sort
         , sentenceSymbolAttributes = Attributes []
         }
 
@@ -413,7 +413,7 @@ aliasSentenceWithArguments
             , aliasParams = []
             }
         , sentenceAliasSorts = operandSorts
-        , sentenceAliasReturnSort = sort
+        , sentenceAliasResultSort = sort
         , sentenceAliasAttributes = Attributes []
         }
 
@@ -468,9 +468,9 @@ unifiedVariablePattern name sort =
 
 simpleExistsPattern
     :: IsMeta a => Variable a -> Sort a -> Pattern a Variable UnifiedPattern
-simpleExistsPattern quantifiedVariable returnSort =
+simpleExistsPattern quantifiedVariable resultSort =
     ExistsPattern Exists
-        { existsSort = returnSort
+        { existsSort = resultSort
         , existsVariable = quantifiedVariable
         , existsChild = asUnifiedPattern (VariablePattern quantifiedVariable)
         }

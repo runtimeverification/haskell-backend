@@ -174,7 +174,7 @@ definitionVerifierPatternVerifierTests =
             NeedsInternalDefinitions
         , failureTestsForMetaPattern "Meta pattern - sort not matched"
             (ExpectedErrorMessage
-                "Expecting sort '#Variable{}' but got '#String{}'.")
+                "Expecting sort '#Variable{}' but got '#CharList{}'.")
             (ErrorStack
                 [ "\\exists '#MetaVariable'"
                 , "variable '#MetaVariable'"
@@ -393,7 +393,7 @@ definitionVerifierPatternVerifierTests =
         , successTestsForMetaPattern "Simple string pattern"
             (StringLiteralPattern (StringLiteral "MetaString"))
             (NamePrefix "#dummy")
-            (TestedPatternSort stringMetaSort)
+            (TestedPatternSort charListMetaSort)
             (SortVariablesThatMustBeDeclared [])
             (SortVariablesThatMustBeDeclared [])
             (DeclaredSort anotherMetaSort)
@@ -404,7 +404,7 @@ definitionVerifierPatternVerifierTests =
             NeedsInternalDefinitions
         , failureTestsForMetaPattern "String pattern - sort not matched"
             (ExpectedErrorMessage
-                "Expecting sort '#Char{}' but got '#String{}'.")
+                "Expecting sort '#Char{}' but got '#CharList{}'.")
             (ErrorStack ["<string>"])
             (StringLiteralPattern (StringLiteral "MetaString"))
             (NamePrefix "#dummy")
@@ -444,7 +444,7 @@ definitionVerifierPatternVerifierTests =
     objectVariableName = VariableName "ObjectVariable"
     objectVariable = variable objectVariableName objectSort
     objectSortSentence = simpleSortSentence objectSortName
-    metaSort1 = stringMetaSort
+    metaSort1 = charListMetaSort
     metaVariable = variable (VariableName "#MetaVariable") metaSort1
     dummyMetaSort = patternMetaSort
     dummyMetaVariable = variable (VariableName "#otherVariable") dummyMetaSort
@@ -484,7 +484,7 @@ definitionVerifierPatternVerifierTests =
                 , symbolParams = [objectSortVariable]
                 }
             , sentenceSymbolSorts = [anotherObjectSort2]
-            , sentenceSymbolReturnSort = objectSort
+            , sentenceSymbolResultSort = objectSort
             , sentenceSymbolAttributes = Attributes []
             }
 
@@ -843,7 +843,7 @@ patternsInAllContexts
                 , symbolParams = [SortVariable (Id rawSortVariableName)]
                 }
             , sentenceSymbolSorts = [symbolAliasSort]
-            , sentenceSymbolReturnSort = anotherSort
+            , sentenceSymbolResultSort = anotherSort
             , sentenceSymbolAttributes = Attributes []
             }
     aliasSentence =
@@ -853,7 +853,7 @@ patternsInAllContexts
                 , aliasParams = [SortVariable (Id rawSortVariableName)]
                 }
             , sentenceAliasSorts = [symbolAliasSort]
-            , sentenceAliasReturnSort = anotherSort
+            , sentenceAliasResultSort = anotherSort
             , sentenceAliasAttributes = Attributes []
             }
 

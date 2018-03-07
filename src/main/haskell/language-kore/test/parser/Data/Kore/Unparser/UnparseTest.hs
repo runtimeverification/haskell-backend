@@ -113,6 +113,20 @@ unparseUnitTests =
                 }
             )
             "import sl[]"
+        , unparseTest
+            Attributes
+                { getAttributes =
+                    [ MetaPattern
+                        ( TopPattern Top
+                            { topSort = SortActualSort SortActual
+                                { sortActualName = Id { getId = "#CharList" }
+                                , sortActualSorts = []
+                                }
+                            }
+                        )
+                    ]
+                }
+        "[\n    \\top{#CharList{}}()\n]"
         ]
 
 unparseParseTests :: TestTree

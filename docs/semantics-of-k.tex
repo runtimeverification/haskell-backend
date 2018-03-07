@@ -850,6 +850,25 @@ component of any membership construct in $\varphi_1$, and any implementation of
 substitution will have to take that into account and perform an 
 ``occurs check'' for $x$ in $\varphi_1$, and this could be expensive.
 
+When writing patterns, the following precedence and associativity rules are 
+useful to reduce the 
+number of necessary parentheses.
+\begin{center}
+	\begin{tabular}{c|c|c}
+		Connective      &     Precedence & Associativity \\\hline
+		$\neg$          &     1          & 　--　　　　　　　　　　　\\\hline
+		$=$, $\in$      &     2          & 　--          　\\\hline
+		$\wedge$        &     3          &  left         \\\hline
+		$\vee$          &     4          &  left         \\\hline
+		$\to$           &     5          &  right        \\\hline
+		$\leftrightarrow$ &   6          &  --           \\\hline
+		$\exists$,$\forall$ & 7          &  --           \\\hline
+	\end{tabular}
+\end{center}
+As a convention, binders ($\forall$ and $\exists$) have a lower precedence than 
+other connectives.
+This means that the scope of a binder extends as far to the right as possible. 
+
 Since $s_1$ and $s_2$ can usually be inferred from context,
 we write $\lceil\_\rceil$ or $\lfloor\_\rfloor$ instead of
 $\lceil\_\rceil_{s_1}^{s_2}$ or $\lfloor\_\rfloor_{s_1}^{s_2}$, respectively,
@@ -3481,7 +3500,10 @@ Derived connectives have axioms
   = \Knot(s, \Kexists(s, v, \Knot(s, \varphi)))
   \\
   & \Kceil(s_1, s_2, \varphi) =
-    \Kapplication(\KSymbolceil(s_1, s_2), \varphi)
+    \Kapplication(\KSymbolceil(s_1, s_2),
+    \underbrace{(\varphi)}_{
+    	\mathclap{
+    		\text{the singleton list that contains only $\varphi$}}})
   \\
   & \Kfloor(s_1, s_2, \varphi) 
   = \Knot(s_2, \Kceil(s_1, s_2, \Knot(s_1, \varphi)))
@@ -3492,7 +3514,8 @@ Derived connectives have axioms
   & \Kmembership(s_1, s_2, \varphi, \psi) 
   = \Kceil(s_1, s_2, \Kand(s_1, \varphi, \psi))
   \\
-  & \Ktop(s) = \Kexists(s, \Kvariable(x, s), \Kvariable(x, s))
+  & \Ktop(s) = \Kexists(s, \Kvariable(x, s), 
+    \KvariablePattern(x, s))
   \\
   & \Kbottom(s) = \Knot(s, \Ktop(s))
 \end{align*}
@@ -3571,7 +3594,7 @@ $\KgetFVFromPatterns$
 & \KgetFV(\overline{\exists_s v . \varphi}) = \KdeleteKVariableList(v, 
 \KgetFV(\varphi))
 \\
-& \KgetFVFromPatterns(\KnilKPatternList) = \KnilKPatternList
+& \KgetFVFromPatterns(\KnilKPatternList) = \KnilKVariableList
 \\
 & \KgetFVFromPatterns(\KconsKPatternList(\varphi, L))
 \\
@@ -3585,7 +3608,7 @@ $$ \parametric{\KoccursFree}{\shs} \colon \KVariable \times \KPattern \to \shs
 decides whether a variable occurs free in a given pattern. It has axiom
 \begin{align*}
   \parametric{\KoccursFree}{\shs}(v, \varphi) = 
-  \parametric{\KinKPatternList}{\shs}(v, 
+  \parametric{\KinKVariableList}{\shs}(v, 
   \KgetFV(\varphi))
 \end{align*}
 
@@ -3629,7 +3652,7 @@ The functions $\Ksubstitute$ and $\KsubstitutePatterns$ have axioms
 \begin{align*}
   & \overline{u [\psi / v]} 
   = ((u = v) \wedge \psi)
-  \vee ((u \neq v) \wedge u)
+  \vee ((u \neq v) \wedge \KVariableAsKPattern(u))
   \\
   & \overline{\sigma(L)[\psi / v]} =
   \overline{\sigma(L[\psi / v])}
@@ -3642,9 +3665,9 @@ The functions $\Ksubstitute$ and $\KsubstitutePatterns$ have axioms
   \\
   & \overline{(\exists_{s'} x \cln s . \varphi)[\psi/v]} 
   \qquad \text{\doubleslash this complex axiom is needed to 
-  	prevent \emph{free variable capturing}}\\
+  	prevent {free variable capturing}}\\
   & = \exists x' . \left(x' = \KfreshName(\varphi, \psi, 
-  v) \wedge \overline{\exists_{s'} x' \cln s . 
+  \KVariableAsKPattern(v)) \wedge \overline{\exists_{s'} x' \cln s . 
   (\varphi[x' \cln s / x \cln s][\psi/v])}\right)
   \\
   & \overline{\KnilKPatternList[\psi / v]} = \KnilKPatternList
@@ -3819,7 +3842,8 @@ defined by the following axioms
     \wedge (\KgetSort(\varphi) = s)
   \\
   & \parametric{\KwellFormed}{\shs}(\overline{\exists_s v . \varphi}) =
-  \parametric{\KwellFormed}{\shs}(v) \wedge 
+  \parametric{\KwellFormed}{\shs}(\KVariableAsKPattern(v)) \\
+  & \quad \wedge 
   \parametric{\KwellFormed}{\shs}(\varphi) \wedge (\KgetSort(\varphi) = s)
   \\
   & \KgetSort(\overline{x \cln s}) =
@@ -5512,7 +5536,24 @@ letter and is not a \syntacc{keyword}.
 which is either the character ``\verb|#|'' followed by an 
 \syntacc{object-identifier},
 or the string ``\verb|#`|'' followed by an \syntacc{object-identifier},
-or the string ``\verb|#\|'' followed by an \syntacc{object-identifier}.
+or one of the following:
+\begin{center}
+\begin{tabular}{lllll}
+	\ttfamily \sharpsymbol \slashsymbol and &
+	\ttfamily \sharpsymbol \slashsymbol not &
+	\ttfamily \sharpsymbol \slashsymbol or &
+	\ttfamily \sharpsymbol \slashsymbol implies &
+	\ttfamily \sharpsymbol \slashsymbol iff \\\hline
+	\ttfamily \sharpsymbol \slashsymbol forall &
+	\ttfamily \sharpsymbol \slashsymbol exists &
+	\ttfamily \sharpsymbol \slashsymbol ceil &
+	\ttfamily \sharpsymbol \slashsymbol floor &
+	\ttfamily \sharpsymbol \slashsymbol equals \\\hline
+	\ttfamily \sharpsymbol \slashsymbol in &
+	\ttfamily \sharpsymbol \slashsymbol top &
+	\ttfamily \sharpsymbol \slashsymbol bottom &
+\end{tabular}
+\end{center}
 \end{itemize}
 
 Identifiers are building blocks of many syntactic categories in Kore,
@@ -7043,14 +7084,23 @@ In Kore, an axiom declaration is lifted as follows.
   &\denote{\texttt{\parametric{axiom}{$s_1,\dots,s_n$}
   		$\varphi$}} =
   	\begin{cases*}
-  	\texttt{\parametric{axiom}{$s'_1,\dots,s'_m$} 
-  	\Kdeduce($\denote{\varphi}$)} & 
+  	\texttt{\parametric{axiom}{$s'_1,\dots,s'_m$}}
+  	\texttt{ \parametric{\Kimplies}{$s'$}(} \\
+  	\qquad\qquad\quad\ \texttt{
+  	\KsortDeclared{$s'$}($\denote{s''_1,\dots,s''_k}_\llist$)},  \\
+  	\qquad\qquad\qquad\texttt{
+  	\parametric{\Kdeduce}{$s'$}($\denote{\varphi}$))} 
+  	& 
   if $\varphi$ is \syntacc{object-pattern} \\
   \texttt{\parametric{axiom}{$s'_1,\dots,s'_m$} $\denote{\varphi}$} & if
   $\varphi$ is \syntacc{meta-pattern}
   	\end{cases*}
 \end{align*}
-where $s_1',\dots,s_m'$ are all \syntacc{meta-sort-variable} in $s_1,\dots,s_n$.
+where $s_1',\dots,s_m'$ are all \syntacc{meta-sort-variable} in 
+$s_1,\dots,s_n$,
+$s_1'',\dots,s_k''$ are all \syntacc{object-sort-variable} in 
+$s_1,\dots,s_n$, and $s'$ is a fresh \syntacc{meta-sort-variable} that is 
+different from $s_1',\dots,s_m'$.
 
 %\subsection{Example A: Presburger Arithmetic}
 %\begin{lstlisting}[language=kore]

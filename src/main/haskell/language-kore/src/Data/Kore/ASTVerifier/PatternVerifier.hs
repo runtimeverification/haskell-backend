@@ -10,6 +10,7 @@ Portability : POSIX
 module Data.Kore.ASTVerifier.PatternVerifier (verifyPattern) where
 
 import           Data.Kore.AST
+import           Data.Kore.ASTHelpers
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.Resolvers
 import           Data.Kore.ASTVerifier.SortVerifier
@@ -32,11 +33,6 @@ emptyDeclaredVariables :: DeclaredVariables
 emptyDeclaredVariables = DeclaredVariables
     { objectDeclaredVariables = Map.empty
     , metaDeclaredVariables = Map.empty
-    }
-
-data ApplicationSorts a = ApplicationSorts
-    { applicationSortsOperands :: ![Sort a]
-    , applicationSortsReturn   :: !(Sort a)
     }
 
 data VerifyHelpers a = VerifyHelpers
@@ -347,7 +343,7 @@ verifyApplication
         indexedModule
         declaredSortVariables
         declaredVariables
-    return (applicationSortsReturn applicationSorts)
+    return (applicationSortsResult applicationSorts)
 
 verifyBinder
     :: (MLBinderPatternClass p, IsMeta a)
@@ -399,7 +395,7 @@ verifyVariableUsage variable _ verifyHelpers _ _ = do
     return (variableSort variable)
 
 verifyStringPattern :: Either (Error VerifyError) (Sort Meta)
-verifyStringPattern = Right stringMetaSort
+verifyStringPattern = Right charListMetaSort
 
 verifyVariableDeclaration
     :: IsMeta a
@@ -478,56 +474,7 @@ applicationSortsFromSymbolOrAliasSentence
             declaredSortVariables
         )
         (symbolOrAliasParams symbolOrAlias)
-    variableSortPairs <-
-        pairVariablesToSorts
-            paramVariables
-            (symbolOrAliasParams symbolOrAlias)
-    fullReturnSort <-
-        substituteSortVariables
-            (Map.fromList variableSortPairs)
-            parametrizedReturnSort
-    operandSorts <-
-        mapM
-            (substituteSortVariables (Map.fromList variableSortPairs))
-            parametrizedArgumentSorts
-    return ApplicationSorts
-        { applicationSortsOperands = operandSorts
-        , applicationSortsReturn = fullReturnSort
-        }
-  where
-    paramVariables = getSentenceSymbolOrAliasSortParams sentence
-    parametrizedArgumentSorts = getSentenceSymbolOrAliasArgumentSorts sentence
-    parametrizedReturnSort = getSentenceSymbolOrAliasReturnSort sentence
-
-
-substituteSortVariables
-    :: Map.Map (SortVariable a) (Sort a)
-    -> Sort a
-    -> Either (Error VerifyError) (Sort a)
-substituteSortVariables variableToSort (SortVariableSort variable) =
-    case Map.lookup variable variableToSort of
-        Just sort -> Right sort
-        -- The Nothing case should be caught by the sort checker.
-substituteSortVariables
-    variableToSort
-    (SortActualSort sort@SortActual { sortActualSorts = sortList })
-  = do
-    substituted <- mapM (substituteSortVariables variableToSort) sortList
-    return (SortActualSort sort { sortActualSorts = substituted })
-
-pairVariablesToSorts
-    :: [SortVariable a]
-    -> [Sort a]
-    -> Either (Error VerifyError) [(SortVariable a, Sort a)]
-pairVariablesToSorts variables sorts
-    | variablesLength < sortsLength =
-        Left (koreError "Application uses more sorts than the declaration.")
-    | variablesLength > sortsLength =
-        Left (koreError "Application uses less sorts than the declaration.")
-    | otherwise = Right (zip variables sorts)
-  where
-    variablesLength = length variables
-    sortsLength = length sorts
+    symbolOrAliasSorts (symbolOrAliasParams symbolOrAlias) sentence
 
 verifySameSort
     :: UnifiedSort

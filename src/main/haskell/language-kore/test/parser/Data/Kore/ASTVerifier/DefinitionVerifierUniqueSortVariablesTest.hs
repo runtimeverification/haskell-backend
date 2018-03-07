@@ -46,14 +46,14 @@ definitionVerifierUniqueSortVariablesTests =
         , expectSuccess "Definition with meta alias"
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
                 [ metaAliasSentenceWithSortParameters
-                    (AliasName "#a") stringMetaSort []
+                    (AliasName "#a") charListMetaSort []
                 ]
             )
         , expectSuccess "Meta alias with one sort parameter"
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
                 [ metaAliasSentenceWithSortParameters
                     (AliasName "#a")
-                    stringMetaSort
+                    charListMetaSort
                     [ sortVariable Meta (SortVariableName "#sv") ]
                 ]
             )
@@ -61,7 +61,7 @@ definitionVerifierUniqueSortVariablesTests =
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
                 [ metaAliasSentenceWithSortParameters
                     (AliasName "#a")
-                    stringMetaSort
+                    charListMetaSort
                     [ sortVariable Meta (SortVariableName "#a") ]
                 ]
             )
@@ -70,7 +70,7 @@ definitionVerifierUniqueSortVariablesTests =
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
                 [ metaAliasSentenceWithSortParameters
                     (AliasName "#a")
-                    stringMetaSort
+                    charListMetaSort
                     [ sortVariable Meta (SortVariableName "#String") ]
                 ]
             )
@@ -79,7 +79,7 @@ definitionVerifierUniqueSortVariablesTests =
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
                 [ metaAliasSentenceWithSortParameters
                     (AliasName "#a")
-                    stringMetaSort
+                    charListMetaSort
                     [ sortVariable Meta (SortVariableName "#sv1")
                     , sortVariable Meta (SortVariableName "#sv2")
                     ]
@@ -141,14 +141,14 @@ definitionVerifierUniqueSortVariablesTests =
         , expectSuccess "Definition with meta symbol"
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
                 [ metaSymbolSentenceWithSortParameters
-                    (SymbolName "#a") stringMetaSort []
+                    (SymbolName "#a") charListMetaSort []
                 ]
             )
         , expectSuccess "Meta symbol with one sort parameter"
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
                 [ metaSymbolSentenceWithSortParameters
                     (SymbolName "#a")
-                    stringMetaSort
+                    charListMetaSort
                     [ sortVariable Meta (SortVariableName "#sv") ]
                 ]
             )
@@ -156,7 +156,7 @@ definitionVerifierUniqueSortVariablesTests =
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
                 [ metaSymbolSentenceWithSortParameters
                     (SymbolName "#a")
-                    stringMetaSort
+                    charListMetaSort
                     [ sortVariable Meta (SortVariableName "#a") ]
                 ]
             )
@@ -165,7 +165,7 @@ definitionVerifierUniqueSortVariablesTests =
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
                 [ metaSymbolSentenceWithSortParameters
                     (SymbolName "#a")
-                    stringMetaSort
+                    charListMetaSort
                     [ sortVariable Meta (SortVariableName "#String") ]
                 ]
             )
@@ -174,7 +174,7 @@ definitionVerifierUniqueSortVariablesTests =
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
                 [ metaSymbolSentenceWithSortParameters
                     (SymbolName "#a")
-                    stringMetaSort
+                    charListMetaSort
                     [ sortVariable Meta (SortVariableName  "#sv1")
                     , sortVariable Meta (SortVariableName  "#sv2")
                     ]
@@ -309,7 +309,7 @@ definitionVerifierUniqueSortVariablesTests =
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
                 [ metaAliasSentenceWithSortParameters
                     (AliasName "#a")
-                    stringMetaSort
+                    charListMetaSort
                     [ sortVariable Meta (SortVariableName "#sv")
                     , sortVariable Meta (SortVariableName "#sv")
                     ]
@@ -341,7 +341,7 @@ definitionVerifierUniqueSortVariablesTests =
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
                 [ metaSymbolSentenceWithSortParameters
                     (SymbolName "#a")
-                    stringMetaSort
+                    charListMetaSort
                     [ sortVariable Meta (SortVariableName "#sv")
                     , sortVariable Meta (SortVariableName "#sv")
                     ]

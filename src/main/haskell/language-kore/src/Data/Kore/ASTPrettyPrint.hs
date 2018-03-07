@@ -425,7 +425,7 @@ instance (IsMeta a) => PrettyPrint (SentenceAlias a) where
             [ writeFieldNewLine "sentenceAliasAlias" sentenceAliasAlias sa
             , writeListField "sentenceAliasSorts" sentenceAliasSorts sa
             , writeFieldNewLine
-                "sentenceAliasReturnSort" sentenceAliasReturnSort sa
+                "sentenceAliasReturnSort" sentenceAliasResultSort sa
             , writeAttributesField
                 "sentenceAliasAttributes" (sentenceAliasAttributes sa)
             ]
@@ -437,7 +437,7 @@ instance (IsMeta a) => PrettyPrint (SentenceSymbol a) where
             [ writeFieldNewLine "sentenceSymbolSymbol" sentenceSymbolSymbol sa
             , writeListField "sentenceSymbolSorts" sentenceSymbolSorts sa
             , writeFieldNewLine
-                "sentenceSymbolReturnSort" sentenceSymbolReturnSort sa
+                "sentenceSymbolReturnSort" sentenceSymbolResultSort sa
             , writeAttributesField
                 "sentenceSymbolAttributes" (sentenceSymbolAttributes sa)
             ]

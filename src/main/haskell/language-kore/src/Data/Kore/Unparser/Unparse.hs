@@ -222,7 +222,7 @@ instance Unparse (SentenceAlias a) where
         unparse (sentenceAliasAlias sa)
         inParens (unparse (sentenceAliasSorts sa))
         write ":"
-        unparse (sentenceAliasReturnSort sa)
+        unparse (sentenceAliasResultSort sa)
         unparse (sentenceAliasAttributes sa)
 
 instance Unparse (SentenceSymbol a) where
@@ -232,7 +232,7 @@ instance Unparse (SentenceSymbol a) where
         unparse (sentenceSymbolSymbol sa)
         inParens (unparse (sentenceSymbolSorts sa))
         write ":"
-        unparse (sentenceSymbolReturnSort sa)
+        unparse (sentenceSymbolResultSort sa)
         unparse (sentenceSymbolAttributes sa)
 
 instance Unparse SentenceImport where
