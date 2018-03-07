@@ -22,6 +22,8 @@ import           Data.Foldable                            (foldl')
 import qualified Data.Map                                 as Map
 import qualified Data.Set                                 as Set
 
+{-# ANN module "HLint: ignore Top-level binding with no type signature" #-}
+
 {-
 Conventions used:
 

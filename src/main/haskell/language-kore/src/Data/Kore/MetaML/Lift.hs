@@ -142,7 +142,7 @@ liftSortDeclaration ss =
     symbolDeclaration = SentenceSymbol
         { sentenceSymbolSymbol = groundSymbol symbolId
         , sentenceSymbolSorts = map (const sortMetaSort) sortParameters
-        , sentenceSymbolReturnSort = sortMetaSort
+        , sentenceSymbolResultSort = sortMetaSort
         , sentenceSymbolAttributes = Attributes []
         }
     sortParam = SortVariable (Id "#s")
@@ -190,7 +190,7 @@ liftSymbolDeclaration sd =
         [ liftToMeta symbolName
         , liftToMeta sortParametersAsSorts
         , liftToMeta sorts
-        , liftToMeta (sentenceSymbolReturnSort sd)
+        , liftToMeta (sentenceSymbolResultSort sd)
         ]
     freshVariable n s = Fix $ VariablePattern Variable
         { variableName = Id ("#P" ++ show (n::Int))
@@ -239,7 +239,7 @@ symbolOrAliasLiftedDeclaration sa = symbolDeclaration
         , sentenceSymbolSorts =
             map (const sortMetaSort) sortParameters ++
             patternSorts
-        , sentenceSymbolReturnSort = patternMetaSort
+        , sentenceSymbolResultSort = patternMetaSort
         , sentenceSymbolAttributes = Attributes []
         }
 
