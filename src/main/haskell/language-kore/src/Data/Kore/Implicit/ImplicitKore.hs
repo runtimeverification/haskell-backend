@@ -157,19 +157,17 @@ withSort s (UnsortedPatternM p) =
 withSort
     s
     p@SortedPatternM { patternMSort = existingSort }
-  | s == existingSort
-  = p
-withSort
-    s
-    SortedPatternM { patternMSort = existingSort }
   =
-    error
-        (  "Unmatched sorts: "
-        ++ show s
-        ++ " and "
-        ++ show existingSort
-        ++ "."
-        )
+    if s == existingSort
+        then p
+        else
+            error
+                (  "Unmatched sorts: "
+                ++ show s
+                ++ " and "
+                ++ show existingSort
+                ++ "."
+                )
 
 {-|'parameterizedAxiom' creates an axiom that has sort parameters from
 a pattern.
@@ -389,17 +387,21 @@ binarySortedPattern constructor maybeSort first second =
                 Nothing ->
                     patternFromChildSort
                         firstPattern secondPattern (ChildSort commonSort)
-                Just (ChildSort s) | s == commonSort ->
-                    patternFromChildSort
-                        firstPattern secondPattern (ChildSort commonSort)
                 Just (ChildSort s) ->
-                    error
-                        (  "Incompatible sorts for equals children: "
-                        ++ show s
-                        ++ " and "
-                        ++ show commonSort
-                        ++ "."
-                        )
+                    if s == commonSort
+                        then
+                            patternFromChildSort
+                                firstPattern
+                                secondPattern
+                                (ChildSort commonSort)
+                        else
+                            error
+                                (  "Incompatible sorts for equals children: "
+                                ++ show s
+                                ++ " and "
+                                ++ show commonSort
+                                ++ "."
+                                )
   where
     patternFromChildSort firstPattern secondPattern childSort =
         UnsortedPatternM

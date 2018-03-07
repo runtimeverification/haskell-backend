@@ -126,6 +126,7 @@ koreKeywordsSet = Trie.fromList $ map (\s -> (Char8.pack s, ()))
 data IdKeywordParsing
     = KeywordsPermitted
     | KeywordsForbidden
+  deriving (Eq)
 
 {-|'genericIdRawParser' parses for tokens that can be represented as
 @⟨prefix-char⟩ ⟨body-char⟩*@. Does not consume whitespace.
@@ -141,16 +142,16 @@ genericIdRawParser firstCharSet bodyCharSet idKeywordParsing = do
         then fail ("genericIdRawParser: Invalid first character '" ++ c : "'.")
         else Parser.takeWhile (`CharSet.elem` bodyCharSet)
     let identifier = Char8.unpack idChar
-    case idKeywordParsing of
-        KeywordsForbidden ->
-            when (isJust $ Trie.lookup idChar koreKeywordsSet)
-                (fail
-                    (  "Identifiers should not be keywords: '"
-                    ++ identifier
-                    ++ "'."
-                    )
-                )
-        KeywordsPermitted -> return ()
+    when
+        (  (idKeywordParsing == KeywordsForbidden)
+        && isJust (Trie.lookup idChar koreKeywordsSet)
+        )
+        (fail
+            (  "Identifiers should not be keywords: '"
+            ++ identifier
+            ++ "'."
+            )
+        )
     return identifier
 
 moduleNameFirstCharSet :: CharSet
