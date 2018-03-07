@@ -38,6 +38,7 @@ module Data.Kore.Parser.Lexeme
        , parenPairParser
        , skipWhitespace
        , stringLiteralParser
+       , charLiteralParser
        ) where
 
 import           Data.Kore.Parser.LexemeImpl

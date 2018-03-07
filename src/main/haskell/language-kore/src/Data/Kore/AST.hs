@@ -105,6 +105,12 @@ Section 9.1.1 (Lexicon).
 newtype StringLiteral = StringLiteral { getStringLiteral :: String }
     deriving (Show, Eq, Ord)
 
+{-|'CharLiteral' corresponds to the @char@ literal from the Semantics of K,
+Section 9.1.1 (Lexicon).
+-}
+newtype CharLiteral = CharLiteral { getCharLiteral :: Char }
+    deriving (Show, Eq, Ord)
+
 {-|'SymbolOrAlias' corresponds to the @head{sort-list}@ branch of the
 @object-head@ and @meta-head@ syntactic categories from the Semantics of K,
 Section 9.1.3 (Heads).
@@ -704,7 +710,8 @@ Section 9.1.4 (Patterns).
 The 'a' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'IsMeta a'.
 
-Note that the StringLiteralPattern should only be a member of 'Pattern Meta'.
+Note that the 'StringLiteralPattern' and 'CharLiteralPattern' should
+be members only of 'Pattern Meta'.
 -}
 data Pattern a v p
     = AndPattern !(And a p)
@@ -723,6 +730,7 @@ data Pattern a v p
     | OrPattern !(Or a p)
     | RewritesPattern !(Rewrites Object p)
     | StringLiteralPattern !StringLiteral
+    | CharLiteralPattern !CharLiteral
     | TopPattern !(Top a p)
     | VariablePattern !(v a)
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)

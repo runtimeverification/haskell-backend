@@ -54,6 +54,9 @@ inParens = withDelimiters "(" ")"
 inDoubleQuotes :: PrinterOutput w m => m () -> m ()
 inDoubleQuotes = withDelimiters "\"" "\""
 
+inSingleQuotes :: PrinterOutput w m => m () -> m ()
+inSingleQuotes = withDelimiters "\'" "\'"
+
 instance Unparse (SortVariable a) where
     unparse sv = unparse (getSortVariable sv)
 
@@ -65,6 +68,12 @@ instance Unparse (Sort a) where
 
 instance Unparse StringLiteral where
     unparse = inDoubleQuotes . write . escapeCString . getStringLiteral
+
+instance Unparse CharLiteral where
+    unparse =
+        inSingleQuotes . write . escapeCString . charToString . getCharLiteral
+      where
+        charToString c = [c]
 
 unparseSymbolOrAliasRaw :: (PrinterOutput w m) => SymbolOrAlias a -> m ()
 unparseSymbolOrAliasRaw sa = do
@@ -209,6 +218,7 @@ instance (Unparse (UnifiedVariable v), Unparse p, Unparse (v a))
     unparse (OrPattern p)            = unparse p
     unparse (RewritesPattern p)      = unparse p
     unparse (StringLiteralPattern p) = unparse p
+    unparse (CharLiteralPattern p)   = unparse p
     unparse (TopPattern p)           = unparse p
     unparse (VariablePattern p)      = unparse p
 

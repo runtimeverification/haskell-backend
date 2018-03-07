@@ -37,6 +37,7 @@ padLeftWithCharToLength c i ss =
 
 escapeAndAddChar :: Char -> ShowS
 escapeAndAddChar '"'  = showString "\\\""
+escapeAndAddChar '\''  = showString "\\'"
 escapeAndAddChar '\\' = showString "\\\\"
 escapeAndAddChar '?'  = showString "\\?"
 escapeAndAddChar '\a' = showString "\\a"
