@@ -1,13 +1,16 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-module Data.Kore.Unparser.Unparse (Unparse, unparseToString) where
+module Data.Kore.Unparser.Unparse (Unparse(..), unparseToString) where
 
 import           Data.Kore.AST
 import           Data.Kore.IndentingPrinter (PrinterOutput, StringPrinter,
                                              betweenLines, printToString,
                                              withIndent, write)
+import           Data.Kore.MetaML.AST
 import           Data.Kore.Parser.CString   (escapeCString)
+
+import           Data.Fix
 
 {-  Unparse to string instance
 -}
@@ -249,6 +252,13 @@ instance Unparse SentenceAxiom where
         unparse (sentenceAxiomPattern a)
         unparse (sentenceAxiomAttributes a)
 
+instance Unparse MetaSentenceAxiom where
+    unparse a = do
+        write "axiom"
+        inCurlyBraces (unparse (metaSentenceAxiomParameters a))
+        unparse (metaSentenceAxiomPattern a)
+        unparse (metaSentenceAxiomAttributes a)
+
 instance Unparse SentenceSort where
     unparse a = do
         write "sort"
@@ -266,24 +276,46 @@ instance Unparse Sentence where
     unparse (SentenceAxiomSentence s)        = unparse s
     unparse (SentenceSortSentence s)         = unparse s
 
+instance Unparse MetaSentence where
+    unparse (AliasMetaSentence s)  = unparse s
+    unparse (SymbolMetaSentence s) = unparse s
+    unparse (ImportMetaSentence s) = unparse s
+    unparse (AxiomMetaSentence s)  = unparse s
+
+unparseModule
+    :: (PrinterOutput w m, Unparse sentence)
+    => ModuleName -> [sentence] -> Attributes -> m ()
+unparseModule name sentences attributes = do
+    write "module "
+    unparse name
+    if null sentences
+        then betweenLines
+        else do
+            withIndent 4
+                (  betweenLines
+                >> unparseList betweenLines sentences
+                )
+            betweenLines
+    write "endmodule"
+    betweenLines
+    unparse attributes
+
 instance Unparse Module where
-    unparse m = do
-        write "module "
-        unparse (moduleName m)
-        if moduleSentences m /= []
-            then do
-                withIndent 4
-                    (  betweenLines
-                    >> unparseList betweenLines (moduleSentences m)
-                    )
-                betweenLines
-            else betweenLines
-        write "endmodule"
-        betweenLines
-        unparse (moduleAttributes m)
+    unparse m =
+        unparseModule (moduleName m) (moduleSentences m) (moduleAttributes m)
+
+instance Unparse MetaModule where
+    unparse m =
+        unparseModule
+            (metaModuleName m)
+            (metaModuleSentences m)
+            (metaModuleAttributes m)
 
 instance Unparse Definition where
     unparse d = do
         unparse (definitionAttributes d)
         betweenLines
         unparseList betweenLines (definitionModules d)
+
+instance Unparse (Fix (Pattern Meta Variable)) where
+    unparse = unparse . unFix
