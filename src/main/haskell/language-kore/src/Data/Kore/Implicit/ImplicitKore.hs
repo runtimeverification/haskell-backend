@@ -197,13 +197,12 @@ parameterizedEqualsAxiom parameters first second =
         (equalsSortParam : parameters)
         (withSort equalsSort (equals_ first second))
 
-{-|'parameterizedEqualsAxiom' is a special case for an axiom that
-contains an equals pattern.
+{-|'equalsAxiom' is a special case for an axiom that contains an equals pattern.
 -}
 equalsAxiom :: PatternM -> PatternM -> SentenceAxiom
 equalsAxiom = parameterizedEqualsAxiom []
 
-{-|'parameterizedEqualsAxiom' is a special case for an axioms of the form
+{-|'wellFormedImpliesProvableAxiom' is a special case for an axioms of the form
 #wellFormed(phi) -> #provable(phi), which covers most axioms encoded in the
 meta-theory of K.
 -}
