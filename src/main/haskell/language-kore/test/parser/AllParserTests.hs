@@ -4,8 +4,10 @@ import           Test.Tasty.Runners                       (consoleTestReporter, 
                                                            listingTests)
 import           Test.Tasty.Runners.AntXML                (antXMLRunner)
 
+import           Data.Kore.ASTHelpersTest
 import           Data.Kore.ASTTraversalsTest
 import           Data.Kore.ASTVerifier.ASTVerifierTest
+import           Data.Kore.Implicit.ImplicitKoreTest
 import           Data.Kore.IndentingPrinterTest
 import           Data.Kore.Parser.CharDictTest
 import           Data.Kore.Parser.CharSetTest
@@ -26,12 +28,15 @@ main = do
         [antXMLRunner, listingTests, consoleTestReporter]
         (allParserTests inputFiles)
 
-allParserTests :: [String] -> TestTree
+allParserTests :: [InputFileName] -> TestTree
 allParserTests regressionInputFiles =
     testGroup
         " All Parser Tests"
         [ unitTests
         , regressionTests regressionInputFiles
+        , implicitKoreRegressionTests
+            (InputFileName "../../kore/kore.kore")
+            (GoldenFileName "../../../test/expected/kore.kore.golden")
         ]
 
 unitTests :: TestTree
@@ -39,6 +44,7 @@ unitTests =
     testGroup
         " Unit Tests"
         [ astVerifierTests
+        , astHelperTests
         , charDictTests
         , charSetTests
         , cStringTests

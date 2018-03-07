@@ -246,7 +246,7 @@ Definition
                                                             { variableName = Id Meta "#NAME"
                                                             , variableSort =
                                                                 SortActualSortSortActual
-                                                                        { sortActualName = Id Meta "#String"
+                                                                        { sortActualName = Id Meta "#CharList"
                                                                         , sortActualSorts = []
                                                                         }
                                                             })
@@ -437,7 +437,7 @@ Definition
                                                                     { variableName = Id Meta "#NAME"
                                                                     , variableSort =
                                                                         SortActualSortSortActual
-                                                                                { sortActualName = Id Meta "#String"
+                                                                                { sortActualName = Id Meta "#CharList"
                                                                                 , sortActualSorts = []
                                                                                 }
                                                                     })

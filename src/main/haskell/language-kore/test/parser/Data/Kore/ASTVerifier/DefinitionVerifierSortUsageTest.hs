@@ -55,7 +55,7 @@ definitionVerifierSortUsageTests =
         , expectSuccess "Definition with meta alias"
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
                 [ metaAliasSentenceWithSortParameters
-                    (AliasName "#a") stringMetaSort []
+                    (AliasName "#a") charListMetaSort []
                 ]
             )
         , testsForObjectSort
@@ -145,7 +145,7 @@ definitionVerifierSortUsageTests =
                 , testConfigurationCaseBasedConfiguration = []
                 }
             )
-            (TestedSort (simpleSort (SortName "#String")))
+            (TestedSort (simpleSort (SortName "#CharList")))
             (SortActualThatIsDeclared (simpleSortActual (SortName "#Char")))
             (NamePrefix "#internal")
         , failureTestsForMetaSort
@@ -517,7 +517,7 @@ unfilteredTestExamplesForSort
                 simpleDefinitionFromSentences
                     (ModuleName "MODULE")
                     (sentenceAliasSentence
-                        (sentenceAliasWithReturnSort
+                        (sentenceAliasWithResultSort
                             aliasName sort sortVariables)
                     : additionalSentences
                     )
@@ -798,7 +798,7 @@ unfilteredTestExamplesForObjectSort
                             ]
                         )
                         (map asUnified sortVariables)
-                    : symbolSentenceWithReturnSort
+                    : symbolSentenceWithResultSort
                         (SymbolName "a")
                         (SortActualSort SortActual
                             { sortActualName = Id differentAdditionalSortRawName

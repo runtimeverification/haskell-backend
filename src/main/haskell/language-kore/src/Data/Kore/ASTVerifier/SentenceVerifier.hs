@@ -134,7 +134,7 @@ verifySymbolAliasSentence
             verifySort
                 findSortDeclaration
                 variables
-                (getSentenceSymbolOrAliasReturnSort sentence)
+                (getSentenceSymbolOrAliasResultSort sentence)
             verifyAttributes
                 (getSentenceSymbolOrAliasAttributes sentence)
                 indexedModule

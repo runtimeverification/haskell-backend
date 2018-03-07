@@ -234,7 +234,7 @@ sortVisibilityTests =
             ]
         )
         (DeclaringSentence sortDeclaration)
-        (UsingSentence sortReferenceInSentenceSymbolReturnSortSentence)
+        (UsingSentence sortReferenceInSentenceSymbolResultSortSentence)
         (SupportingSentences [])
     , nameReferenceTests
         "Sort visibility in symbol declaration - operand sort"
@@ -257,7 +257,7 @@ sortVisibilityTests =
             ]
         )
         (DeclaringSentence sortDeclaration)
-        (UsingSentence sortReferenceInSentenceAliasReturnSortSentence)
+        (UsingSentence sortReferenceInSentenceAliasResultSortSentence)
         (SupportingSentences [])
     , nameReferenceTests
         "Sort visibility in alias declaration - operand sort"
@@ -408,14 +408,14 @@ sortVisibilityTests =
             }
     sortReferenceInPatternInPatternSupportingSentences =
         [ anotherSortDeclaration ]
-    sortReferenceInSentenceSymbolReturnSortSentence =
+    sortReferenceInSentenceSymbolResultSortSentence =
         ObjectSentenceSymbolSentence SentenceSymbol
             { sentenceSymbolSymbol = Symbol
                 { symbolConstructor = Id "symbol1"
                 , symbolParams = []
                 }
             , sentenceSymbolSorts = []
-            , sentenceSymbolReturnSort = sort
+            , sentenceSymbolResultSort = sort
             , sentenceSymbolAttributes = Attributes []
             }
     sortReferenceInSentenceSymbolSortsSentence =
@@ -425,19 +425,19 @@ sortVisibilityTests =
                 , symbolParams = []
                 }
             , sentenceSymbolSorts = [sort]
-            , sentenceSymbolReturnSort = anotherSort
+            , sentenceSymbolResultSort = anotherSort
             , sentenceSymbolAttributes = Attributes []
             }
     sortReferenceInSentenceSymbolSortsSupportSentences =
         [ anotherSortDeclaration ]
-    sortReferenceInSentenceAliasReturnSortSentence =
+    sortReferenceInSentenceAliasResultSortSentence =
         ObjectSentenceAliasSentence SentenceAlias
             { sentenceAliasAlias = Alias
                 { aliasConstructor = Id "alias1"
                 , aliasParams = []
                 }
             , sentenceAliasSorts = []
-            , sentenceAliasReturnSort = sort
+            , sentenceAliasResultSort = sort
             , sentenceAliasAttributes = Attributes []
             }
     sortReferenceInSentenceAliasSortsSentence =
@@ -447,7 +447,7 @@ sortVisibilityTests =
                 , aliasParams = []
                 }
             , sentenceAliasSorts = [sort]
-            , sentenceAliasReturnSort = anotherSort
+            , sentenceAliasResultSort = anotherSort
             , sentenceAliasAttributes = Attributes []
             }
     sortReferenceInSentenceAliasSortsSupportSentences =
@@ -473,7 +473,7 @@ sortVisibilityTests =
                 , symbolParams = [SortVariable (Id "sv1")]
                 }
             , sentenceSymbolSorts = []
-            , sentenceSymbolReturnSort =
+            , sentenceSymbolResultSort =
                 SortVariableSort (SortVariable (Id "sv1"))
             , sentenceSymbolAttributes = Attributes []
             }
@@ -581,7 +581,7 @@ symbolVisibilityTests =
             , symbolParams = [SortVariable (Id "sv1")]
             }
         , sentenceSymbolSorts = []
-        , sentenceSymbolReturnSort =
+        , sentenceSymbolResultSort =
             SortVariableSort (SortVariable (Id "sv1"))
         , sentenceSymbolAttributes = Attributes []
         }
@@ -601,7 +601,7 @@ symbolVisibilityTests =
             , symbolParams = [SortVariable (Id "#sv1")]
             }
         , sentenceSymbolSorts = []
-        , sentenceSymbolReturnSort =
+        , sentenceSymbolResultSort =
             SortVariableSort (SortVariable (Id "#sv1"))
         , sentenceSymbolAttributes = Attributes []
         }
@@ -683,7 +683,7 @@ symbolVisibilityTests =
                 }
             , sentenceSymbolSorts =
                 [ SortVariableSort (SortVariable (Id "sv1")) ]
-            , sentenceSymbolReturnSort =
+            , sentenceSymbolResultSort =
                 SortVariableSort (SortVariable (Id "sv1"))
             , sentenceSymbolAttributes = Attributes []
             }
@@ -791,7 +791,7 @@ aliasVisibilityTests =
             , aliasParams = [SortVariable (Id "sv1")]
             }
         , sentenceAliasSorts = []
-        , sentenceAliasReturnSort =
+        , sentenceAliasResultSort =
             SortVariableSort (SortVariable (Id "sv1"))
         , sentenceAliasAttributes = Attributes []
         }
@@ -811,7 +811,7 @@ aliasVisibilityTests =
             , aliasParams = [SortVariable (Id "#sv1")]
             }
         , sentenceAliasSorts = []
-        , sentenceAliasReturnSort =
+        , sentenceAliasResultSort =
             SortVariableSort (SortVariable (Id "#sv1"))
         , sentenceAliasAttributes = Attributes []
         }
@@ -893,7 +893,7 @@ aliasVisibilityTests =
                 }
             , sentenceAliasSorts =
                 [ SortVariableSort (SortVariable (Id "sv1")) ]
-            , sentenceAliasReturnSort =
+            , sentenceAliasResultSort =
                 SortVariableSort (SortVariable (Id "sv1"))
             , sentenceAliasAttributes = Attributes []
             }
@@ -1211,7 +1211,7 @@ nameDuplicationTests =
                         , symbolParams = [SortVariable (Id "sv1")]
                         }
                     , sentenceSymbolSorts = []
-                    , sentenceSymbolReturnSort =
+                    , sentenceSymbolResultSort =
                         SortVariableSort (SortVariable (Id "sv1"))
                     , sentenceSymbolAttributes = Attributes []
                     }
@@ -1228,7 +1228,7 @@ nameDuplicationTests =
                         , aliasParams = [SortVariable (Id "sv1")]
                         }
                     , sentenceAliasSorts = []
-                    , sentenceAliasReturnSort =
+                    , sentenceAliasResultSort =
                         SortVariableSort (SortVariable (Id "sv1"))
                     , sentenceAliasAttributes = Attributes []
                     }
