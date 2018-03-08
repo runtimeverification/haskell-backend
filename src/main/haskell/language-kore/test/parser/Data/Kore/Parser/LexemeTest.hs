@@ -92,11 +92,24 @@ metaIdParserTests =
         , success "#a'" (Id "#a'")
         , success "#a'2" (Id "#a'2")
         , success "#sort" (Id "#sort")
+        , success "#\\and" (Id "#\\and")
+        , success "#\\not" (Id "#\\not")
+        , success "#\\or" (Id "#\\or")
+        , success "#\\implies" (Id "#\\implies")
+        , success "#\\iff" (Id "#\\iff")
+        , success "#\\forall" (Id "#\\forall")
+        , success "#\\exists" (Id "#\\exists")
+        , success "#\\ceil" (Id "#\\ceil")
+        , success "#\\floor" (Id "#\\floor")
+        , success "#\\equals" (Id "#\\equals")
+        , success "#\\in" (Id "#\\in")
+        , success "#\\top" (Id "#\\top")
+        , success "#\\bottom" (Id "#\\bottom")
         , FailureWithoutMessage
             [   "",   "'",   "'a",   "2",   "2a", "`", "`a"
             ,  "#",  "#'",  "#'a",  "#2",  "#2a"
             , "#`", "#`'", "#`'a", "#`2", "#`2a"
-            , "a#"
+            , "a#", "#\\something"
             , ",", " a", "a"]
         ]
 
