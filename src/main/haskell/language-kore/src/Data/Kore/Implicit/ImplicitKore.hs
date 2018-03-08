@@ -1011,9 +1011,12 @@ wellFormedGetSortAxioms =
     , parameterizedEqualsAxiom [pS]
         (wellFormedA [spS] [applicationA [vsigma, vL]])
         (and_
-            (symbolDeclaredA [spS] [vsigma])
             (and_
+                (symbolDeclaredA [spS] [vsigma])
                 (wellFormedPatternsA [spS] [vL])
+            )
+            (and_
+                (sortDeclaredA [spS] [getReturnSortA [vsigma]])
                 (equals_
                     (getSortsFromPatternsA [vL])
                     (getArgumentSortsA [vsigma])
