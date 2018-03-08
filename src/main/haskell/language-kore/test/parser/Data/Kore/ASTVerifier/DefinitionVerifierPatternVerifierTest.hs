@@ -402,6 +402,18 @@ definitionVerifierPatternVerifierTests =
             -- TODO: Here we should be able to use NoRestrict,
             -- at least in some cases.
             NeedsInternalDefinitions
+        , successTestsForMetaPattern "Simple char pattern"
+            (CharLiteralPattern (CharLiteral 'c'))
+            (NamePrefix "#dummy")
+            (TestedPatternSort charMetaSort)
+            (SortVariablesThatMustBeDeclared [])
+            (SortVariablesThatMustBeDeclared [])
+            (DeclaredSort anotherMetaSort)
+            (VariableOfDeclaredSort dummyMetaVariable)
+            []
+            -- TODO: Here we should be able to use NoRestrict,
+            -- at least in some cases.
+            NeedsInternalDefinitions
         , failureTestsForMetaPattern "String pattern - sort not matched"
             (ExpectedErrorMessage
                 "Expecting sort '#Char{}' but got '#CharList{}'.")

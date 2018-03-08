@@ -159,6 +159,9 @@ inSquareBracketsIndent = listWithDelimiters "[" "]"
 inDoubleQuotes :: PrinterOutput w m => m () -> m ()
 inDoubleQuotes thing = write "\"" >> thing >> write "\""
 
+inSingleQuotes :: PrinterOutput w m => m () -> m ()
+inSingleQuotes thing = write "\'" >> thing >> write "\'"
+
 instance (IsMeta a) => PrettyPrint (SortVariable a) where
     prettyPrint flags sv =
         writeOneFieldStruct flags "SortVariable" (getSortVariable sv)
@@ -182,6 +185,14 @@ instance PrettyPrint StringLiteral where
             flags
             (  write "StringLiteral "
             >> inDoubleQuotes (write (escapeCString (getStringLiteral s)))
+            )
+
+instance PrettyPrint CharLiteral where
+    prettyPrint flags s@(CharLiteral _) =
+        betweenParentheses
+            flags
+            (  write "CharLiteral "
+            >> inSingleQuotes (write (escapeCString [getCharLiteral s]))
             )
 
 instance (IsMeta a) => PrettyPrint (SymbolOrAlias a) where
@@ -410,6 +421,8 @@ instance (IsMeta a, PrettyPrint p, PrettyPrint (v a),
         writeOneFieldStruct flags "RewritesPattern" p
     prettyPrint flags (StringLiteralPattern p) =
         writeOneFieldStruct flags "StringLiteralPattern" p
+    prettyPrint flags (CharLiteralPattern p) =
+        writeOneFieldStruct flags "CharLiteralPattern" p
     prettyPrint flags (TopPattern p)           =
         writeOneFieldStruct flags "TopPattern" p
     prettyPrint flags (VariablePattern p)      =

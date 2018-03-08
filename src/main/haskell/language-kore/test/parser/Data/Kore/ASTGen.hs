@@ -36,14 +36,23 @@ idGen x
     objectId = genericIdGen idFirstChars (idFirstChars ++ idOtherChars)
 
 stringLiteralGen :: Gen StringLiteral
-stringLiteralGen = StringLiteral <$> listOf ( suchThat (oneof
-    [ chooseAny
-    , elements "\a\b\f\n\r\t\v\\\""
-    , choose ('\32','\127')
-    , choose ('\0','\255')
-    , choose ('\0','\65535')
-    ])
-    (/='?'))
+stringLiteralGen = StringLiteral <$> listOf charGen
+
+charLiteralGen :: Gen CharLiteral
+charLiteralGen = CharLiteral <$> charGen
+
+charGen :: Gen Char
+charGen =
+    suchThat
+        (oneof
+            [ chooseAny
+            , elements "\a\b\f\n\r\t\v\\\"\'"
+            , choose ('\32','\127')
+            , choose ('\0','\255')
+            , choose ('\0','\65535')
+            ]
+        )
+        (/='?')
 
 symbolOrAliasRawGen
     :: IsMeta a
@@ -230,12 +239,14 @@ patternGen x =
         , OrPattern <$> orGen x
         , RewritesPattern <$> rewritesGen Object
         , StringLiteralPattern <$> stringLiteralGen
+        , CharLiteralPattern <$> charLiteralGen
         , TopPattern <$> topGen x
         , VariablePattern <$> variableGen x
         ]
     ) checkMetaObject
   where
     checkMetaObject (StringLiteralPattern _) = koreLevel x == MetaLevel
+    checkMetaObject (CharLiteralPattern _)   = koreLevel x == MetaLevel
     checkMetaObject (NextPattern _)          = koreLevel x == ObjectLevel
     checkMetaObject (RewritesPattern _)      = koreLevel x == ObjectLevel
     checkMetaObject _                        = True
@@ -243,7 +254,10 @@ patternGen x =
 unifiedPatternGen :: Gen UnifiedPattern
 unifiedPatternGen = sized (\n ->
     if n<=0
-        then MetaPattern . StringLiteralPattern <$> stringLiteralGen
+        then oneof
+            [ MetaPattern . StringLiteralPattern <$> stringLiteralGen
+            , MetaPattern . CharLiteralPattern <$> charLiteralGen
+            ]
         else oneof
             [ MetaPattern <$> patternGen Meta
             , ObjectPattern <$> patternGen Object

@@ -1919,18 +1919,29 @@
                 \and{
                     #sp
                 }(
-                    #symbolDeclared{
-                        #sp
-                    }(
-                        #sigma:#Symbol{}
-                    ),
                     \and{
                         #sp
                     }(
+                        #symbolDeclared{
+                            #sp
+                        }(
+                            #sigma:#Symbol{}
+                        ),
                         #wellFormedPatterns{
                             #sp
                         }(
                             #L:#PatternList{}
+                        )
+                    ),
+                    \and{
+                        #sp
+                    }(
+                        #sortDeclared{
+                            #sp
+                        }(
+                            #getReturnSort{}(
+                                #sigma:#Symbol{}
+                            )
                         ),
                         \equals{
                             #SortList{},

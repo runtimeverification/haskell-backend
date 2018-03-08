@@ -59,6 +59,13 @@ Always starts with @"@.
 stringLiteralParser :: Parser StringLiteral
 stringLiteralParser = lexeme stringLiteralRawParser
 
+{-|'charLiteralParser' parses a C-style char literal, unescaping it.
+
+Always starts with @'@.
+-}
+charLiteralParser :: Parser CharLiteral
+charLiteralParser = lexeme charLiteralRawParser
+
 {-|'moduleNameParser' parses a module name.-}
 moduleNameParser :: Parser ModuleName
 moduleNameParser = lexeme moduleNameRawParser
@@ -226,32 +233,61 @@ idRawParser x = case koreLevel x of
     ObjectLevel -> objectIdRawParser KeywordsForbidden
     MetaLevel   -> metaIdRawParser
 
-data StringScannerState = STRING | ESCAPE | HEX StringScannerState
+data StringScannerState
+  = STRING
+  | STRING_END
+  | ESCAPE
+  | OCTAL
+  | VARIABLE_HEX
+  | HEX StringScannerState
 
 {-|'stringLiteralRawParser' parses a C-style string literal, unescaping it.
 Does not consume whitespace.
 -}
 stringLiteralRawParser :: Parser StringLiteral
-stringLiteralRawParser = do
-    void (Parser.char '"')
+stringLiteralRawParser =
+    stringCharLiteralRawParser '"' STRING (return . StringLiteral)
+
+{-|'charLiteralRawParser' parses a C-style char literal, unescaping it.
+Does not consume whitespace.
+-}
+charLiteralRawParser :: Parser CharLiteral
+charLiteralRawParser =
+    stringCharLiteralRawParser '\'' STRING_END toCharLiteral
+  where
+    toCharLiteral []  = fail "'' is not a valid character literal."
+    toCharLiteral [c] = return (CharLiteral c)
+
+stringCharLiteralRawParser
+    :: Char -> StringScannerState -> (String -> Parser a) -> Parser a
+stringCharLiteralRawParser delimiter nextCharState constructor = do
+    void (Parser.char delimiter)
     s <- Parser.scan STRING delta
-    void (Parser.char '"')
+    void (Parser.char delimiter)
     case unescapeCString (Char8.unpack s) of
         Left e   -> fail e
-        Right s' -> return (StringLiteral s')
+        Right s' -> constructor s'
   where
     pow _ 0 = id
     pow f n = f . pow f (n-1)
-    delta STRING '"' = Nothing
-    delta STRING '\\' = Just ESCAPE
-    delta STRING _ = Just STRING
+    delta STRING c
+      | c == delimiter = Nothing
+      | c == '\\' = Just ESCAPE
+      | otherwise = Just nextCharState
+    delta STRING_END _ = Nothing
     delta ESCAPE c
-      | c `CharSet.elem` oneCharEscapeDict = Just STRING
-      | isOctDigit c = Just STRING -- ingore actual codes for now
-      | c == 'x' = Just (HEX STRING)
-      | c == 'u' = Just ((HEX `pow` 4) STRING)
-      | c == 'U' = Just ((HEX `pow` 8) STRING)
+      | c `CharSet.elem` oneCharEscapeDict = Just nextCharState
+      | isOctDigit c = Just OCTAL -- ingore actual codes for now
+      | c == 'x' = Just (HEX VARIABLE_HEX)
+      | c == 'u' = Just ((HEX `pow` 4) nextCharState)
+      | c == 'U' = Just ((HEX `pow` 8) nextCharState)
       | otherwise = Nothing
+    delta OCTAL c
+      | isOctDigit c = Just OCTAL
+      | otherwise = delta nextCharState c
+    delta VARIABLE_HEX c
+      | isHexDigit c = Just VARIABLE_HEX
+      | otherwise = delta nextCharState c
     delta (HEX s) c
       | isHexDigit c = Just s
       | otherwise = Nothing

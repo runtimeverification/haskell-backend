@@ -132,6 +132,19 @@ internalVerifyPattern
                 verifySuccess
     )
 internalVerifyPattern
+    (MetaPattern p@(CharLiteralPattern _))
+    maybeExpectedSort
+    _ _ _
+  =
+    withContext (patternNameForContext p) (do
+        sort <- verifyCharPattern
+        case maybeExpectedSort of
+            Just expectedSort ->
+                verifySameSort expectedSort (MetaSort sort)
+            Nothing ->
+                verifySuccess
+    )
+internalVerifyPattern
     (MetaPattern p)
     maybeExpectedSort
     indexedModule
@@ -397,6 +410,9 @@ verifyVariableUsage variable _ verifyHelpers _ _ = do
 verifyStringPattern :: Either (Error VerifyError) (Sort Meta)
 verifyStringPattern = Right charListMetaSort
 
+verifyCharPattern :: Either (Error VerifyError) (Sort Meta)
+verifyCharPattern = Right charMetaSort
+
 verifyVariableDeclaration
     :: IsMeta a
     => Variable a
@@ -543,6 +559,7 @@ patternNameForContext (NotPattern _) = "\\not"
 patternNameForContext (OrPattern _) = "\\or"
 patternNameForContext (RewritesPattern _) = "\\rewrites"
 patternNameForContext (StringLiteralPattern _) = "<string>"
+patternNameForContext (CharLiteralPattern _) = "<char>"
 patternNameForContext (TopPattern _) = "\\top"
 patternNameForContext (VariablePattern variable) =
     "variable '" ++ variableNameForContext variable ++ "'"

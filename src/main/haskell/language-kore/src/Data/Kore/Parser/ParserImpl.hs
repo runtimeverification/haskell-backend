@@ -732,6 +732,7 @@ BNF definitions:
 
 ⟨meta-pattern⟩ ::=
     | ⟨meta-variable⟩
+    | ⟨char⟩
     | ⟨string⟩
     | ⟨meta-head⟩ ‘(’ ⟨pattern-list⟩ ‘)’
     | ‘\and’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
@@ -758,6 +759,7 @@ patternParser = do
     case c of
         '\\' -> mlConstructorParser
         '"'  -> MetaPattern . StringLiteralPattern <$> stringLiteralParser
+        '\'' -> MetaPattern . CharLiteralPattern <$> charLiteralParser
         _    -> unifiedVariableOrTermPatternParser
 
 
