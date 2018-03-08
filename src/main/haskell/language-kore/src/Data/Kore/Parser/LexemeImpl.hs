@@ -61,7 +61,7 @@ stringLiteralParser = lexeme stringLiteralRawParser
 
 {-|'charLiteralParser' parses a C-style char literal, unescaping it.
 
-Always starts with @"@.
+Always starts with @'@.
 -}
 charLiteralParser :: Parser CharLiteral
 charLiteralParser = lexeme charLiteralRawParser
@@ -239,27 +239,27 @@ data StringScannerState
   | ESCAPE
   | OCTAL
   | VARIABLE_HEX
-  | HEX (Maybe StringScannerState)
+  | HEX StringScannerState
 
 {-|'stringLiteralRawParser' parses a C-style string literal, unescaping it.
 Does not consume whitespace.
 -}
 stringLiteralRawParser :: Parser StringLiteral
 stringLiteralRawParser =
-    stringCharLiteralRawParser '"' (Just STRING) (return . StringLiteral)
+    stringCharLiteralRawParser '"' STRING (return . StringLiteral)
 
 {-|'charLiteralRawParser' parses a C-style char literal, unescaping it.
 Does not consume whitespace.
 -}
 charLiteralRawParser :: Parser CharLiteral
 charLiteralRawParser =
-    stringCharLiteralRawParser '\'' (Just STRING_END) toCharLiteral
+    stringCharLiteralRawParser '\'' STRING_END toCharLiteral
   where
     toCharLiteral []  = fail "'' is not a valid character literal."
     toCharLiteral [c] = return (CharLiteral c)
 
 stringCharLiteralRawParser
-    :: Char -> Maybe StringScannerState -> (String -> Parser a) -> Parser a
+    :: Char -> StringScannerState -> (String -> Parser a) -> Parser a
 stringCharLiteralRawParser delimiter nextCharState constructor = do
     void (Parser.char delimiter)
     s <- Parser.scan STRING delta
@@ -273,29 +273,23 @@ stringCharLiteralRawParser delimiter nextCharState constructor = do
     delta STRING c
       | c == delimiter = Nothing
       | c == '\\' = Just ESCAPE
-      | otherwise = nextCharState
+      | otherwise = Just nextCharState
     delta STRING_END _ = Nothing
     delta ESCAPE c
-      | c `CharSet.elem` oneCharEscapeDict = nextCharState
+      | c `CharSet.elem` oneCharEscapeDict = Just nextCharState
       | isOctDigit c = Just OCTAL -- ingore actual codes for now
-      | c == 'x' = Just (HEX (Just VARIABLE_HEX))
-      | c == 'u' = ((Just . HEX) `pow` 4) nextCharState
-      | c == 'U' = ((Just . HEX) `pow` 8) nextCharState
+      | c == 'x' = Just (HEX VARIABLE_HEX)
+      | c == 'u' = Just ((HEX `pow` 4) nextCharState)
+      | c == 'U' = Just ((HEX `pow` 8) nextCharState)
       | otherwise = Nothing
     delta OCTAL c
       | isOctDigit c = Just OCTAL
-      | otherwise =
-            case nextCharState of
-                Nothing    -> Nothing
-                Just state -> delta state c
+      | otherwise = delta nextCharState c
     delta VARIABLE_HEX c
       | isHexDigit c = Just VARIABLE_HEX
-      | otherwise =
-            case nextCharState of
-                Nothing    -> Nothing
-                Just state -> delta state c
+      | otherwise = delta nextCharState c
     delta (HEX s) c
-      | isHexDigit c = s
+      | isHexDigit c = Just s
       | otherwise = Nothing
 
 {-|'tokenCharParser' parses a character, skipping any whitespace after.
