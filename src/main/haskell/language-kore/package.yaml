@@ -19,7 +19,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on Github at <https://github.com/kframework/src/haskell/language-kore/README.md>
+description:         Please see the README on Github at <https://github.com/kframework/kore/blob/master/src/main/haskell/language-kore/README.md>
 
 dependencies:
 - base >= 4.7 && < 5
