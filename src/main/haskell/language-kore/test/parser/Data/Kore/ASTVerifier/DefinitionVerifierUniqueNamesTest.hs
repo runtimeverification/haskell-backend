@@ -158,6 +158,13 @@ definitionVerifierUniqueNamesTests =
                 , simpleSortSentence (SortName "s")
                 ]
             )
+        , expectFailureWithError
+            "Definition with an implicit meta symbol name"
+            (Error ["module 'MODULE'"] "Duplicated name: '#nilCharList'.")
+            ( simpleDefinitionFromSentences (ModuleName "MODULE")
+                [ simpleMetaAliasSentence (AliasName "#nilCharList") stringSortName
+                ]
+            )
     ]
   where
     stringSortName = SortName (show CharListSort)

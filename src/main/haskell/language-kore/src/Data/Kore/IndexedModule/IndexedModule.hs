@@ -9,7 +9,7 @@ Portability : POSIX
 -}
 module Data.Kore.IndexedModule.IndexedModule
     ( ImplicitIndexedModule (ImplicitIndexedModule)
-    , implicitIndexedModule
+    , indexedModuleWithMetaSorts
     , IndexedModule
         -- the IndexedModule data constructor not included in the list on
         -- purpose.
@@ -54,7 +54,7 @@ It also contains the imported modules as 'IndexedModule's and all the other
 module data in raw-ish form.
 
 All 'IndexedModule' instances should either be returned by
-'implicitIndexedModule' or they should start from an instance created by
+'indexedModuleWithMetaSorts' or they should start from an instance created by
 'indexedModuleWithDefaultImports'.
 -}
 data IndexedModule = IndexedModule
@@ -107,11 +107,11 @@ indexedModuleWithDefaultImports name (ImplicitIndexedModule implicitModule) =
     (emptyIndexedModule name)
         { indexedModuleImports = [implicitModule] }
 
-{-|'implicitIndexedModule' provides an 'IndexedModule' with the implicit Kore
-definitions.
+{-|'indexedModuleWithMetaSorts' provides an 'IndexedModule' with the implicit
+Kore definitions.
 -}
-implicitIndexedModule :: ModuleName -> (ImplicitIndexedModule, Set.Set String)
-implicitIndexedModule name =
+indexedModuleWithMetaSorts :: ModuleName -> (ImplicitIndexedModule, Set.Set String)
+indexedModuleWithMetaSorts name =
     ( ImplicitIndexedModule (emptyIndexedModule name)
         { indexedModuleMetaSortDescriptions = metaSortDescriptions }
     , Set.insert
@@ -425,7 +425,8 @@ resolveThingInternal
                     thingId
                 )
                 ( Nothing
-                , Set.insert (indexedModuleName indexedModule) searchedModules)
+                , Set.insert (indexedModuleName indexedModule) searchedModules
+                )
                 (indexedModuleImports indexedModule)
   where
     things = mapExtractor indexedModule

@@ -8,6 +8,7 @@ import           Data.Kore.AST
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
 import           Data.Kore.ImplicitDefinitions
+
 import qualified Data.List                                           as List
 
 data PatternRestrict
@@ -53,6 +54,25 @@ definitionVerifierPatternVerifierTests =
             (simpleExistsPattern metaVariable metaSort1)
             (NamePrefix "#dummy")
             (TestedPatternSort metaSort1)
+            (SortVariablesThatMustBeDeclared [])
+            (SortVariablesThatMustBeDeclared [])
+            (DeclaredSort anotherMetaSort)
+            (VariableOfDeclaredSort dummyMetaVariable)
+            []
+            -- TODO: Here we should be able to use NoRestrict,
+            -- at least in some cases.
+            NeedsInternalDefinitions
+        , successTestsForMetaPattern "implicit meta pattern"
+            (ApplicationPattern Application
+                { applicationSymbolOrAlias = SymbolOrAlias
+                    { symbolOrAliasConstructor = Id "#nilSortList"
+                    , symbolOrAliasParams = []
+                    }
+                , applicationChildren      = []
+                }
+            )
+            (NamePrefix "#dummy")
+            (TestedPatternSort sortListMetaSort)
             (SortVariablesThatMustBeDeclared [])
             (SortVariablesThatMustBeDeclared [])
             (DeclaredSort anotherMetaSort)
