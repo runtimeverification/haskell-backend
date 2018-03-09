@@ -5,6 +5,7 @@ import           Test.Tasty                                                     
                                                                                   testGroup)
 
 import           Data.Kore.ASTVerifier.DefinitionVerifierImportsTest
+import           Data.Kore.ASTVerifier.DefinitionVerifierMetaObjectTest
 import           Data.Kore.ASTVerifier.DefinitionVerifierPatternVerifierTest
 import           Data.Kore.ASTVerifier.DefinitionVerifierSortUsageTest
 import           Data.Kore.ASTVerifier.DefinitionVerifierUniqueNamesTest
@@ -19,4 +20,5 @@ definitionVerifierTests =
         , definitionVerifierSortUsageTests
         , definitionVerifierPatternVerifierTests
         , definitionVerifierImportsTests
+        , definitionVerifierMetaObjectTests
         ]

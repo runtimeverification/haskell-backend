@@ -20,8 +20,9 @@ import           Data.Kore.Error
 import           Data.Kore.ImplicitDefinitions
 import           Data.Kore.IndexedModule.IndexedModule
 import           Data.Kore.Unparser.Unparse
+import           Data.Kore.Variables.Free              (freeVariables)
 
-import           Control.Monad                         (zipWithM_)
+import           Control.Monad                         (foldM, zipWithM_)
 import qualified Data.Map                              as Map
 import qualified Data.Set                              as Set
 
@@ -102,13 +103,14 @@ verifyPattern
     -> Set.Set UnifiedSortVariable
     -- ^ Sort variables which are visible in this pattern.
     -> Either (Error VerifyError) VerifySuccess
-verifyPattern unifiedPattern maybeExpectedSort indexedModule sortVariables =
+verifyPattern unifiedPattern maybeExpectedSort indexedModule sortVariables = do
+    freeVariables <- verifyFreeVariables unifiedPattern
     internalVerifyPattern
         unifiedPattern
         maybeExpectedSort
         indexedModule
         sortVariables
-        emptyDeclaredVariables
+        freeVariables
 
 internalVerifyPattern
     :: UnifiedPattern
@@ -530,22 +532,69 @@ verifySameSort (MetaSort expectedSort) (MetaSort actualSort) = do
             ++ "'."
         )
     verifySuccess
-verifySameSort (MetaSort expectedSort) (ObjectSort actualSort) =
-    koreFail
+verifySameSort (MetaSort expectedSort) (ObjectSort actualSort) = do
+    koreFailWhen
+        (expectedSort /= patternMetaSort)
         (   "Expecting meta sort '"
             ++ unparseToString expectedSort
             ++ "' but got object sort '"
             ++ unparseToString actualSort
             ++ "'."
         )
-verifySameSort (ObjectSort expectedSort) (MetaSort actualSort) =
-    koreFail
+    verifySuccess
+verifySameSort (ObjectSort expectedSort) (MetaSort actualSort) = do
+    koreFailWhen
+        (actualSort /= patternMetaSort)
         (   "Expecting object sort '"
             ++ unparseToString expectedSort
             ++ "' but got meta sort '"
             ++ unparseToString actualSort
             ++ "'."
         )
+    verifySuccess
+
+verifyFreeVariables
+    :: UnifiedPattern -> Either (Error VerifyError) DeclaredVariables
+verifyFreeVariables unifiedPattern =
+    foldM
+        addFreeVariable
+        emptyDeclaredVariables
+        (Set.toList (freeVariables unifiedPattern))
+
+addFreeVariable
+    :: DeclaredVariables
+    -> UnifiedVariable Variable
+    -> Either (Error VerifyError) DeclaredVariables
+addFreeVariable
+    vars @ DeclaredVariables { metaDeclaredVariables = metaVars }
+    (MetaVariable v)
+  = do
+    checkVariable v metaVars
+    return vars
+        { metaDeclaredVariables = Map.insert (variableName v) v metaVars }
+addFreeVariable
+    vars @ DeclaredVariables { objectDeclaredVariables = objectVars }
+    (ObjectVariable v)
+  = do
+    checkVariable v objectVars
+    return vars
+        { objectDeclaredVariables = Map.insert (variableName v) v objectVars }
+
+checkVariable
+    :: Variable a
+    -> Map.Map (Id a) (Variable a)
+    -> Either (Error VerifyError) VerifySuccess
+checkVariable var vars =
+    case Map.lookup (variableName var) vars of
+        Nothing -> verifySuccess
+        Just v ->
+            koreFail
+                ("Inconsistent free variable usage: "
+                ++ unparseToString v
+                ++ " and "
+                ++ unparseToString var
+                ++ "."
+                )
 
 patternNameForContext :: Pattern level Variable p -> String
 patternNameForContext (AndPattern _) = "\\and"

@@ -13,19 +13,19 @@ module LAMBDA
   axiom{R}
     \equals{Exp{},R}(
       lambda{}(
-        #variableToPattern{}(#X:#Variable{}),
+        #variableAsPattern{}(#X:#Variable{}),
         #E:#Pattern{}),
       #\exists{}(#Exp:#Sort{},
         #X:#Variable{},
         lambda0{}(
-          #variableToPattern{}(#X:#Variable{}),
+          #variableAsPattern{}(#X:#Variable{}),
           #E:#Pattern{}))) []
 
   symbol #isExp{#S}(#Pattern{}) : #S []
 
   axiom{#S,#R}
     \equals{#S,#R}(
-      #isExp{#S}(#variableToPattern{}(#variable{}(#NAME:#String{},#SORT:#Sort{}))),
+      #isExp{#S}(#variableAsPattern{}(#variable{}(#NAME:#String{},#SORT:#Sort{}))),
       \equals{#Sort{},#S}(#SORT:#Sort{}, #`Exp{}())) []
 
 
@@ -40,7 +40,7 @@ module LAMBDA
     \equals{#S,#R}(
       #isExp{#S}(
         lambda{}(
-          #variableToPattern{}(
+          #variableAsPattern{}(
             #variable{}(#NAME:#String{},#SORT:#Sort{}),
             #E:#Pattern{}))),
       \and{#S}(

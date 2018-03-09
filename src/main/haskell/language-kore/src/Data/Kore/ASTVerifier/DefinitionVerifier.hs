@@ -24,9 +24,8 @@ import qualified Data.Set                                 as Set
 
 {-|'verifyDefinition' verifies the welformedness of a Kore 'Definition'.
 
-It does not handle some cases when combining object sorts with meta patterns or
-the other way around.
-e.g. for:
+It does not fully verify the validity of object-meta combinations of patterns,
+e.g.:
 
 @
   axiom{S1,S2,R}

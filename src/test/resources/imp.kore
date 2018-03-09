@@ -20,8 +20,6 @@ module IMP
 
   symbol plus{}(Int{}, Int{}) : Int{} []
 
-  symbol zero{}() : Int{} []
-
   symbol one{}() : Int{} []
 
   symbol two{}() : Int{} []
@@ -80,12 +78,12 @@ module IMP
   axiom{S1,S2,R}
     \equals{Ctxt{S1,S2},R}(
       gamma{S1,S2}(
-        #variableToPattern{}(#X:#Variable{}),
+        #variableAsPattern{}(#X:#Variable{}),
         #P:#Pattern{}),
       #\exists{}(#`Ctxt{}(#S1:#Sort{},#S2:#Sort{}),
         #X:#Variable{},
         gamma0{S1,S2}(
-          #variableToPattern{}(#X:#Variable{}),
+          #variableAsPattern{}(#X:#Variable{}),
           #P:#Pattern{}))) []
 
  alias idctxt{S}() : Ctxt{S,S} []
@@ -98,7 +96,7 @@ module IMP
   axiom{S,R}
     \equals{S,R}(
       T:S,
-      app{S,S}(idctxt{S,S}(), T:S)) []
+      app{S,S}(idctxt{S}(), T:S)) []
 
   sort AExp{} []
 

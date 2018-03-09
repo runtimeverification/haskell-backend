@@ -21,7 +21,6 @@ import           Data.Kore.ASTVerifier.Resolvers
 import           Data.Kore.ASTVerifier.SortVerifier
 import           Data.Kore.Error
 import           Data.Kore.IndexedModule.IndexedModule
-import           Data.Maybe                               (mapMaybe)
 import qualified Data.Set                                 as Set
 
 {-|'verifyUniqueNames' verifies that names defined in a list of sentences are
@@ -36,7 +35,7 @@ verifyUniqueNames
     -- the names defined in the given 'Module'.
 verifyUniqueNames sentences existingNames =
     foldM verifyUniqueName existingNames
-        (mapMaybe definedNameForSentence sentences)
+        (concatMap definedNamesForSentence sentences)
 
 verifyUniqueName
     :: Set.Set String
@@ -47,19 +46,20 @@ verifyUniqueName set name =
         then koreFail ("Duplicated name: '" ++ name ++ "'.")
         else Right (Set.insert name set)
 
-definedNameForSentence :: Sentence -> Maybe String
-definedNameForSentence (MetaSentenceAliasSentence sentenceAlias) =
-    Just (getId (getSentenceSymbolOrAliasConstructor sentenceAlias))
-definedNameForSentence (ObjectSentenceAliasSentence sentenceAlias) =
-    Just (getId (getSentenceSymbolOrAliasConstructor sentenceAlias))
-definedNameForSentence (MetaSentenceSymbolSentence sentenceSymbol) =
-    Just (getId (getSentenceSymbolOrAliasConstructor sentenceSymbol))
-definedNameForSentence (ObjectSentenceSymbolSentence sentenceSymbol) =
-    Just (getId (getSentenceSymbolOrAliasConstructor sentenceSymbol))
-definedNameForSentence (SentenceSortSentence sentenceSort) =
-    Just (getId (sentenceSortName sentenceSort))
-definedNameForSentence (SentenceImportSentence _) = Nothing
-definedNameForSentence (SentenceAxiomSentence _) = Nothing
+definedNamesForSentence :: Sentence -> [String]
+definedNamesForSentence (MetaSentenceAliasSentence sentenceAlias) =
+    [ getId (getSentenceSymbolOrAliasConstructor sentenceAlias) ]
+definedNamesForSentence (ObjectSentenceAliasSentence sentenceAlias) =
+    [ getId (getSentenceSymbolOrAliasConstructor sentenceAlias) ]
+definedNamesForSentence (MetaSentenceSymbolSentence sentenceSymbol) =
+    [ getId (getSentenceSymbolOrAliasConstructor sentenceSymbol) ]
+definedNamesForSentence (ObjectSentenceSymbolSentence sentenceSymbol) =
+    [ getId (getSentenceSymbolOrAliasConstructor sentenceSymbol) ]
+definedNamesForSentence (SentenceSortSentence sentenceSort) =
+    [sentenceName, metaNameForObjectSort sentenceName]
+  where sentenceName = getId (sentenceSortName sentenceSort)
+definedNamesForSentence (SentenceImportSentence _) = []
+definedNamesForSentence (SentenceAxiomSentence _) = []
 
 {-|'verifySentences' verifies the welformedness of a list of Kore 'Sentence's.
 -}
