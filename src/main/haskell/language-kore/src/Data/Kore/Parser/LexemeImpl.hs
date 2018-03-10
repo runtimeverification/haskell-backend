@@ -269,26 +269,18 @@ stringCharLiteralRawParser delimiter nextCharState constructor = do
         Right s' -> constructor s'
   where
     pow _ 0 = id
-    pow f n = f . pow f (n-1)
+    pow f n = f . pow f (n-1::Int)
     delta STRING c
       | c == delimiter = Nothing
       | c == '\\' = Just ESCAPE
       | otherwise = Just nextCharState
     delta STRING_END _ = Nothing
     delta ESCAPE c
-<<<<<<< HEAD
-      | c `CharSet.elem` oneCharEscapeDict = Just STRING
-      | isOctDigit c = Just STRING -- ingore actual codes for now
-      | c == 'x' = Just (HEX STRING)
-      | c == 'u' = Just ((HEX `pow` (4::Integer)) STRING)
-      | c == 'U' = Just ((HEX `pow` (8::Integer)) STRING)
-=======
       | c `CharSet.elem` oneCharEscapeDict = Just nextCharState
       | isOctDigit c = Just OCTAL -- ingore actual codes for now
       | c == 'x' = Just (HEX VARIABLE_HEX)
       | c == 'u' = Just ((HEX `pow` 4) nextCharState)
       | c == 'U' = Just ((HEX `pow` 8) nextCharState)
->>>>>>> master
       | otherwise = Nothing
     delta OCTAL c
       | isOctDigit c = Just OCTAL
