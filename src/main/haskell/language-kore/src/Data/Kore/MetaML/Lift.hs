@@ -42,7 +42,10 @@ instance LiftableToMetaML (Sort Object) where
     verbosityLiftToMeta verb (SortActualSort sv)   = verbosityLiftToMeta verb sv
 
 instance LiftableToMetaML [Sort Object] where
-    verbosityLiftToMeta verb = foldr (applyConsSortList . verbosityLiftToMeta verb) nilSortListMetaPattern
+    verbosityLiftToMeta verb =
+        foldr
+            (applyConsSortList . verbosityLiftToMeta verb)
+            nilSortListMetaPattern
       where
         applyConsSortList sort sortList =
             Fix $ apply consSortListHead [sort, sortList]
@@ -269,11 +272,18 @@ liftSentence (SentenceAxiomSentence as) =
     [ AxiomMetaSentence MetaSentenceAxiom
         { metaSentenceAxiomParameters = metaParameters
         , metaSentenceAxiomAttributes = sentenceAxiomAttributes as
-        , metaSentenceAxiomPattern = liftToMeta (sentenceAxiomPattern as)
+        , metaSentenceAxiomPattern =
+            if null objectParameters
+                then liftedPattern
+                else undefined
         }
     ]
   where
-    metaParameters = [sv | MetaSortVariable sv <- sentenceAxiomParameters as]
+    metaParameters =
+        [sv | MetaSortVariable sv <- sentenceAxiomParameters as]
+    objectParameters =
+        [sv | ObjectSortVariable sv <- sentenceAxiomParameters as]
+    liftedPattern = liftToMeta (sentenceAxiomPattern as)
 liftSentence (SentenceImportSentence is) = [ImportMetaSentence is]
 
 liftModule :: Module -> MetaModule
