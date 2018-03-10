@@ -127,6 +127,20 @@ unparseUnitTests =
                     ]
                 }
         "[\n    \\top{#CharList{}}()\n]"
+        , unparseTest
+            Attributes
+                { getAttributes =
+                    [ MetaPattern
+                        (CharLiteralPattern CharLiteral
+                            { getCharLiteral = '\'' }
+                        )
+                    , MetaPattern
+                        (CharLiteralPattern CharLiteral
+                            { getCharLiteral = '\'' }
+                        )
+                    ]
+                }
+            "[\n    '\\'',\n    '\\''\n]"
         ]
 
 unparseParseTests :: TestTree
@@ -139,6 +153,8 @@ unparseParseTests =
             (forAll (idGen Meta) (unparseParseProp (idParser Meta)))
         , testProperty "StringLiteral"
             (forAll stringLiteralGen (unparseParseProp stringLiteralParser))
+        , testProperty "CharLiteral"
+            (forAll charLiteralGen (unparseParseProp charLiteralParser))
         , testProperty "Object Symbol"
             (forAll (symbolGen Object) (unparseParseProp (symbolParser Object)))
         , testProperty "Meta Symbol"

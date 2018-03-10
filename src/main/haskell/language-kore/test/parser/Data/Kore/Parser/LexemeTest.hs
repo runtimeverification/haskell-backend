@@ -24,6 +24,7 @@ koreLexemeTests =
         , testGroup "parenPairParser" parenPairParserTests
         , testGroup "skipWhitespace" skipWhitespaceTests
         , testGroup "stringLiteralParser" stringLiteralParserTests
+        , testGroup "charLiteralParser" charLiteralParserTests
         ]
 
 colonParserTests :: [TestTree]
@@ -91,11 +92,24 @@ metaIdParserTests =
         , success "#a'" (Id "#a'")
         , success "#a'2" (Id "#a'2")
         , success "#sort" (Id "#sort")
+        , success "#\\and" (Id "#\\and")
+        , success "#\\not" (Id "#\\not")
+        , success "#\\or" (Id "#\\or")
+        , success "#\\implies" (Id "#\\implies")
+        , success "#\\iff" (Id "#\\iff")
+        , success "#\\forall" (Id "#\\forall")
+        , success "#\\exists" (Id "#\\exists")
+        , success "#\\ceil" (Id "#\\ceil")
+        , success "#\\floor" (Id "#\\floor")
+        , success "#\\equals" (Id "#\\equals")
+        , success "#\\in" (Id "#\\in")
+        , success "#\\top" (Id "#\\top")
+        , success "#\\bottom" (Id "#\\bottom")
         , FailureWithoutMessage
             [   "",   "'",   "'a",   "2",   "2a", "`", "`a"
             ,  "#",  "#'",  "#'a",  "#2",  "#2a"
             , "#`", "#`'", "#`'a", "#`2", "#`2a"
-            , "a#"
+            , "a#", "#\\something"
             , ",", " a", "a"]
         ]
 
@@ -243,12 +257,58 @@ stringLiteralParserTests =
                 ++ " outside of the representable codes."
             }
         , FailureWithoutMessage
-            [ "", "\"\\z\"", "\"\\xzf\"", "\"\\u123\"", "\"\\U1234567\""
+            [ "", "'a'", "\"\\z\"", "\"\\xzf\"", "\"\\u123\"", "\"\\U1234567\""
             {-  TODO(virgil): It's not clear whether the strings below should
                 fail or not. A C hex sequence can be longer than 2 if it fits
                 into the char size being considered. Not sure if octals above
                 \377 are allowed or not.
             , "\"\\400\"", "\"\\xfff\""
+            -}
+            ]
+        ]
+
+charLiteralParserTests :: [TestTree]
+charLiteralParserTests =
+    parseTree charLiteralParser
+        [ success "'a'" (CharLiteral 'a')
+        , success "'\\''" (CharLiteral '\'')
+        , success "'\\\"'" (CharLiteral '\"')
+        , success "'\\?'" (CharLiteral '?')
+        , success "'\\a'" (CharLiteral '\7')
+        , success "'\\b'" (CharLiteral '\8')
+        , success "'\\f'" (CharLiteral '\12')
+        , success "'\\n'" (CharLiteral '\10')
+        , success "'\\r'" (CharLiteral '\13')
+        , success "'\\t'" (CharLiteral '\9')
+        , success "'\\v'" (CharLiteral '\11')
+        , success "'\\377'" (CharLiteral '\255')
+        , success "'\\77'" (CharLiteral '\63')
+        , success "'\\xFF'" (CharLiteral '\255')
+        , success "'\\xff'" (CharLiteral '\255')
+        , success "'\\xF'" (CharLiteral '\15')
+        , success "'\\u1ABC'" (CharLiteral '\6844')
+        , success "'\\u1abc'" (CharLiteral '\6844')
+        , success "'\\U000120FF'" (CharLiteral '\73983')
+        , success "'\\U000120ff'" (CharLiteral '\73983')
+        , Failure FailureTest
+            { failureInput = "'\\UFFFFFFFF'"
+            , failureExpected = "Failed reading: Character code 4294967295"
+                ++ " outside of the representable codes."
+            }
+        , Failure FailureTest
+            { failureInput = "''"
+            , failureExpected =
+                "Failed reading: '' is not a valid character literal."
+            }
+        , FailureWithoutMessage
+            [ "", "'\\z'", "'\\xzf'", "'\\u123'", "'\\U1234567'"
+            , "'\\U000120FFa'", "'\\xFr'", "'\\77a'", "'\\u1ABCa'"
+            , "'ab'"
+            {-  TODO(virgil): It's not clear whether the strings below should
+                fail or not. A C hex sequence can be longer than 2 if it fits
+                into the char size being considered. Not sure if octals above
+                \377 are allowed or not.
+            , "'\\400'", "'\\xfff'"
             -}
             ]
         ]

@@ -10703,30 +10703,30 @@ Definition
                                                     { andSort =
                                                         SortVariableSort (SortVariable (Id Meta "#sp"))
                                                     , andFirst =
-                                                        MetaPattern (ApplicationPattern Application
-                                                            { applicationSymbolOrAlias =
-                                                                SymbolOrAlias
-                                                                    { symbolOrAliasConstructor = Id Meta "#symbolDeclared"
-                                                                    , symbolOrAliasParams =
-                                                                        [ SortVariableSort (SortVariable (Id Meta "#sp"))
-                                                                        ]
-                                                                    }
-                                                            , applicationChildren =
-                                                                [ MetaPattern (VariablePattern Variable
-                                                                    { variableName = Id Meta "#sigma"
-                                                                    , variableSort =
-                                                                        SortActualSortSortActual
-                                                                                { sortActualName = Id Meta "#Symbol"
-                                                                                , sortActualSorts = []
-                                                                                }
-                                                                    })
-                                                                ]
-                                                            })
-                                                    , andSecond =
                                                         MetaPattern (AndPattern And
                                                             { andSort =
                                                                 SortVariableSort (SortVariable (Id Meta "#sp"))
                                                             , andFirst =
+                                                                MetaPattern (ApplicationPattern Application
+                                                                    { applicationSymbolOrAlias =
+                                                                        SymbolOrAlias
+                                                                            { symbolOrAliasConstructor = Id Meta "#symbolDeclared"
+                                                                            , symbolOrAliasParams =
+                                                                                [ SortVariableSort (SortVariable (Id Meta "#sp"))
+                                                                                ]
+                                                                            }
+                                                                    , applicationChildren =
+                                                                        [ MetaPattern (VariablePattern Variable
+                                                                            { variableName = Id Meta "#sigma"
+                                                                            , variableSort =
+                                                                                SortActualSortSortActual
+                                                                                        { sortActualName = Id Meta "#Symbol"
+                                                                                        , sortActualSorts = []
+                                                                                        }
+                                                                            })
+                                                                        ]
+                                                                    })
+                                                            , andSecond =
                                                                 MetaPattern (ApplicationPattern Application
                                                                     { applicationSymbolOrAlias =
                                                                         SymbolOrAlias
@@ -10743,6 +10743,40 @@ Definition
                                                                                         { sortActualName = Id Meta "#PatternList"
                                                                                         , sortActualSorts = []
                                                                                         }
+                                                                            })
+                                                                        ]
+                                                                    })
+                                                            })
+                                                    , andSecond =
+                                                        MetaPattern (AndPattern And
+                                                            { andSort =
+                                                                SortVariableSort (SortVariable (Id Meta "#sp"))
+                                                            , andFirst =
+                                                                MetaPattern (ApplicationPattern Application
+                                                                    { applicationSymbolOrAlias =
+                                                                        SymbolOrAlias
+                                                                            { symbolOrAliasConstructor = Id Meta "#sortDeclared"
+                                                                            , symbolOrAliasParams =
+                                                                                [ SortVariableSort (SortVariable (Id Meta "#sp"))
+                                                                                ]
+                                                                            }
+                                                                    , applicationChildren =
+                                                                        [ MetaPattern (ApplicationPattern Application
+                                                                            { applicationSymbolOrAlias =
+                                                                                SymbolOrAlias
+                                                                                    { symbolOrAliasConstructor = Id Meta "#getReturnSort"
+                                                                                    , symbolOrAliasParams = []
+                                                                                    }
+                                                                            , applicationChildren =
+                                                                                [ MetaPattern (VariablePattern Variable
+                                                                                    { variableName = Id Meta "#sigma"
+                                                                                    , variableSort =
+                                                                                        SortActualSortSortActual
+                                                                                                { sortActualName = Id Meta "#Symbol"
+                                                                                                , sortActualSorts = []
+                                                                                                }
+                                                                                    })
+                                                                                ]
                                                                             })
                                                                         ]
                                                                     })
