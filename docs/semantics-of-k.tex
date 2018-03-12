@@ -5601,6 +5601,7 @@ They are used to signify the begin and end of a declaration.
 
 
 \subsubsection{Sorts}
+\label{sec:kore-syntax-sorts}
 A sort is either a \emph{sort variable} or a \emph{sort constructor} applied to 
 a list of \emph{sort parameters}.
 Sorts include object-level sorts and meta-level sorts, which are syntactically 
@@ -7085,22 +7086,38 @@ In Kore, an axiom declaration is lifted as follows.
   		$\varphi$}} =
   	\begin{cases*}
   	\texttt{\parametric{axiom}{$s'_1,\dots,s'_m$}}
-  	\texttt{ \parametric{\Kimplies}{$s'$}(} \\
+  	\texttt{ \parametric{\slimplies}{$s'$}(} \\
   	\qquad\qquad\quad\ \texttt{
-  	\KsortDeclared{$s'$}($\denote{s''_1,\dots,s''_k}_\llist$)},  \\
-  	\qquad\qquad\qquad\texttt{
+  	\KsortDeclared{$s'$}($\denote{s''_1,\dots,s''_k}_\llist$)}, \texttt{
   	\parametric{\Kdeduce}{$s'$}($\denote{\varphi}$))} 
-  	& 
-  if $\varphi$ is \syntacc{object-pattern} \\
-  \texttt{\parametric{axiom}{$s'_1,\dots,s'_m$} $\denote{\varphi}$} & if
-  $\varphi$ is \syntacc{meta-pattern}
+  \\
+ 	\qquad\qquad\qquad\qquad\qquad\qquad\qquad\quad\qquad\qquad\quad \text{if 
+ 	$\varphi$ is 
+ 	\syntacc{object-pattern}} \\
+  \texttt{\parametric{axiom}{$s'_1,\dots,s'_m$}}
+    	\texttt{ \parametric{\slimplies}{$s'$}(} \\
+    	\qquad\qquad\quad\ \texttt{
+    	\KsortDeclared{$s'$}($\denote{s''_1,\dots,s''_k}_\llist$)}, 
+    	\denote{\varphi} \texttt{)}
+    	\\
+ 	\qquad\qquad\qquad\qquad\qquad\qquad\qquad\quad\qquad\qquad\quad
+ 	\text{if 
+ 	$\varphi$ is 
+ 	\syntacc{meta-pattern}} \\
   	\end{cases*}
 \end{align*}
 where $s_1',\dots,s_m'$ are all \syntacc{meta-sort-variable} in 
 $s_1,\dots,s_n$,
 $s_1'',\dots,s_k''$ are all \syntacc{object-sort-variable} in 
-$s_1,\dots,s_n$, and $s'$ is a fresh \syntacc{meta-sort-variable} that is 
+$s_1,\dots,s_n$, and $s'$ is a \syntacc{meta-sort-variable}.
+In the case when $\varphi$ is a \syntacc{object-pattern},
+$s'$ is a fresh \syntacc{meta-sort-variable} that is 
 different from $s_1',\dots,s_m'$.
+In the case when $\varphi$ is a \syntacc{meta-pattern},
+$s'$ is the sort of the \syntacc{meta-pattern} $\denote{\varphi}$.
+Depending on the the concrete form of $\denote{\varphi}$, $s'$ may be one of 
+the parameters $s_1',\dots,s_m'$, or the one built using one of the 
+\syntacc{meta-sort-constructor} defined in Section~\ref{sec:kore-syntax-sorts}.
 
 %\subsection{Example A: Presburger Arithmetic}
 %\begin{lstlisting}[language=kore]
