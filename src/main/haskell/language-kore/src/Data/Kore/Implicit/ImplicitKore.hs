@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-missing-signatures #-}
 {-|
 Module      : Data.Kore.Implicit.ImplicitKore
 Description : Builds the implicit kore definitions.
@@ -21,8 +22,6 @@ import           Data.Kore.Variables.Free                 (freeVariables)
 import           Data.Foldable                            (foldl')
 import qualified Data.Map                                 as Map
 import qualified Data.Set                                 as Set
-
-{-# ANN module "HLint: ignore Top-level binding with no type signature" #-}
 
 {-
 Conventions used:
@@ -661,6 +660,7 @@ v2 = unparameterizedVariable_ "#v2"
 vx = unparameterizedVariable_ "#x"
 vx' = unparameterizedVariable_ "#x'"
 
+-- TODO(virgil-serbanuta): Add tests for "defined but not used" symbols
 ( char', charList'
     , nilCharList, nilCharListA, consCharList, consCharListA
     , appendCharList, appendCharListA

@@ -517,7 +517,7 @@ BNF definitions:
 
 @
 ⟨object-pattern⟩ ::=
-    | ‘\and’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
+   | ‘\and’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
     | ‘\not’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
     | ‘\or’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
     | ‘\implies’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
@@ -582,6 +582,30 @@ unifiedMLConstructorParser = do
                     Rewrites
             pt -> unsupportedPatternType Object pt
 
+{-|'leveledMLConstructorParser' is similar to 'unifiedMLConstructorParser'
+in that it parses a pattern starting with @\@.  However, it only parses
+patterns types which can belong to both 'Meta' and 'Object' categories, and
+returns an object of the 'Pattern' type.
+
+BNF definitions (here cat ranges over meta and object):
+
+@
+⟨cat-pattern⟩ ::=
+    | ‘\and’ ‘{’ ⟨cat-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
+    | ‘\not’ ‘{’ ⟨cat-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
+    | ‘\or’ ‘{’ ⟨cat-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
+    | ‘\implies’ ‘{’ ⟨cat-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
+    | ‘\iff’ ‘{’ ⟨cat-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
+    | ‘\forall’ ‘{’ ⟨cat-sort⟩ ‘}’ ‘(’ ⟨cat-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
+    | ‘\exists’ ‘{’ ⟨cat-sort⟩ ‘}’ ‘(’ ⟨cat-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
+    | ‘\ceil’ ‘{’ ⟨cat-sort⟩ ‘,’ ⟨cat-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
+    | ‘\floor’ ‘{’ ⟨cat-sort⟩ ‘,’ ⟨cat-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
+    | ‘\equals’ ‘{’ ⟨cat-sort⟩ ‘,’ ⟨cat-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
+    | ‘\in’ ‘{’ ⟨cat-sort⟩ ‘,’ ⟨cat-sort⟩ ‘}’ ‘(’ pattern ‘,’ ⟨pattern⟩ ‘)’
+    | ‘\top’ ‘{’ ⟨cat-sort⟩ ‘}’ ‘(’ ‘)’
+    | ‘\bottom’ ‘{’ ⟨cat-sort⟩ ‘}’ ‘(’ ‘)’
+@
+-}
 leveledMLConstructorParser
     :: IsMeta a
     => Parser child
@@ -603,6 +627,9 @@ leveledMLConstructorParser childParser level = do
             patternType
             (unsupportedPatternType level)
 
+{-|'unsupportedPatternType' reports an error for a missing parser for
+a 'MLPatternType'.
+-}
 unsupportedPatternType
     :: Show level => level -> MLPatternType -> Parser a
 unsupportedPatternType level patternType =
@@ -611,6 +638,12 @@ unsupportedPatternType level patternType =
         ++ unparseToString patternType
         ++ " " ++ show level ++ " pattern.")
 
+{-|'mlConstructorRemainderParser' represents a continuation parser for
+'leveledMLConstructorParser', called after the constructor and the open curly
+brace were parsed. Note that parsing the constructor and open curly brace is
+required to be able to peek at the first character of the sort identifier, in
+order to determine whether we are parsing a 'Meta' or an 'Object' 'Pattern'.
+-}
 mlConstructorRemainderParser
     :: IsMeta a
     => Parser child
