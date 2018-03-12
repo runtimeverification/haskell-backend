@@ -9,18 +9,16 @@ Portability : POSIX
 -}
 
 module Data.Kore.Implicit.ImplicitKore
-    (implicitKoreModule, implicitKoreDefinition) where
+    (uncheckedKoreModule, uncheckedKoreDefinition) where
 
 import           Data.Kore.AST
 import           Data.Kore.ASTHelpers
-import           Data.Kore.ASTVerifier.DefinitionVerifier (verifyDefinition)
-import           Data.Kore.ASTVerifier.Error              (VerifyError)
-import           Data.Kore.Error                          (Error, printError)
-import           Data.Kore.Variables.Free                 (freeVariables)
+import           Data.Kore.Error          (printError)
+import           Data.Kore.Variables.Free (freeVariables)
 
-import           Data.Foldable                            (foldl')
-import qualified Data.Map                                 as Map
-import qualified Data.Set                                 as Set
+import           Data.Foldable            (foldl')
+import qualified Data.Map                 as Map
+import qualified Data.Set                 as Set
 
 {-
 Conventions used:
@@ -1527,20 +1525,3 @@ uncheckedKoreDefinition =
         { definitionAttributes = Attributes []
         , definitionModules    = [uncheckedKoreModule]
         }
-
-checkedKoreDefinition :: Either (Error VerifyError) Definition
-checkedKoreDefinition = do
-    verifyDefinition uncheckedKoreDefinition
-    return uncheckedKoreDefinition
-
-implicitKoreDefinition :: Definition
-implicitKoreDefinition =
-    case checkedKoreDefinition of
-        Left err -> error (printError err)
-        Right d  -> d
-
-implicitKoreModule :: Module
-implicitKoreModule =
-    case checkedKoreDefinition of
-        Left err                                   -> error (printError err)
-        Right Definition {definitionModules = [m]} -> m
