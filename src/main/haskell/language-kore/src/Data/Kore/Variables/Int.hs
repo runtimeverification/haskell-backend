@@ -4,14 +4,14 @@ module Data.Kore.Variables.Int ( IntVariable(..)
 
 import           Data.Kore.AST
 
-class VariableClass var => IntVariable var where
+class IntVariable var where
     {-|Given an existing variable @v@ and an integer index @n@, 'intVariable'
     generates a "fresh" variable, whose name is based on index @n@, but
     which inherits the meta type and sort from @v@.
     -}
-    intVariable :: IsMeta a => var a -> Int -> var a
+    intVariable :: var -> Int -> var
 
-instance IntVariable Variable where
+instance IsMeta a => IntVariable (Variable a) where
     intVariable var n =
         var { variableName = Id (metaObjectPrefix ++ "var_" ++ show n) }
       where

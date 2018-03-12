@@ -9,25 +9,22 @@ import           Data.Kore.AST
 import           Data.Kore.Variables.Fresh.IntCounter
 import           Data.Kore.Variables.Int
 
-{-|'FreshVariablesClass' links a `VariableClass` representing a type of
-variables with a 'Monad' containing state needed to generate fresh variables
-and provides several functions to generate new variables.
+{-|'FreshVariablesClass' links @var@ representing a type of variables
+with a 'Monad' @m@ containing state needed to generate fresh
+variables and provides several functions to generate new variables.
 -}
-class (Monad m, VariableClass var) => FreshVariablesClass m var where
+class Monad m => FreshVariablesClass m var where
     {-|Given an existing variable, generate a fresh one of
-    the same type and sort.
+    the same kind.
     -}
-    freshVariable :: IsMeta a => var a -> m (var a)
+    freshVariable :: var -> m var
 
-    {-|Given an existing 'UnifiedVariable' and a predicate, generate a
-    fresh 'UnifiedVariable' of the same type and sort satisfying the predicate.
+    {-|Given an existing variable and a predicate, generate a
+    fresh variable of the same kind satisfying the predicate.
     By default, die in flames if the predicate is not satisfied.
     -}
     freshVariableSuchThat
-        :: IsMeta a
-        => var a
-        -> (var a -> Bool)
-        -> m (var a)
+        :: var -> (var -> Bool) -> m var
     freshVariableSuchThat var p = do
         var' <- freshVariable var
         if p var'

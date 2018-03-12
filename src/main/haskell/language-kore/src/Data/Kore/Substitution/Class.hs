@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ExplicitForAll #-}
 module Data.Kore.Substitution.Class ( SubstitutionClass (..)
                                     , PatternSubstitutionClass (..)
                                     ) where
@@ -69,7 +70,8 @@ which given a 'FixedPattern' @p@ and an @s@ of class 'SubstitutionClass',
 applies @s@ on @p@ in a monadic state used for generating fresh variables.
 -}
 class ( SubstitutionClass s (UnifiedVariable var) (FixedPattern var)
-      , FreshVariablesClass m var
+      , Monad m
+      , VariableClass var
       )
     => PatternSubstitutionClass var s m
   where
@@ -83,9 +85,14 @@ class ( SubstitutionClass s (UnifiedVariable var) (FixedPattern var)
         }
 
 substituteM
-    :: PatternSubstitutionClass var s m
+    :: ( PatternSubstitutionClass var s m
+       , (forall a . FreshVariablesClass m (var a))
+       )
     => FixedPattern var
-    -> ReaderT (SubstitutionAndQuantifiedVars s var) m (FixedPattern var)
+    -> ReaderT
+        (SubstitutionAndQuantifiedVars s var)
+        m
+        (FixedPattern var)
 substituteM = topDownVisitorM substitutePreprocess substituteVariable
 
 substituteVariable
@@ -105,7 +112,10 @@ substituteVariable p = return $ asUnifiedPattern p
 * if the pattern is not a binder recurse.
 -}
 substitutePreprocess
-    :: (IsMeta a, PatternSubstitutionClass var s m)
+    :: ( IsMeta a
+       , PatternSubstitutionClass var s m
+       , FreshVariablesClass m (var a)
+       )
     => Pattern a var (FixedPattern var)
     -> ReaderT (SubstitutionAndQuantifiedVars s var)
         m (Either
@@ -133,7 +143,10 @@ substitutePreprocess p
   context, the quantified variable is free).
 -}
 binderPatternSubstitutePreprocess
-    :: (MLBinderPatternClass q, PatternSubstitutionClass var s m, IsMeta a)
+    :: ( MLBinderPatternClass q
+       , PatternSubstitutionClass var s m
+       , FreshVariablesClass m (var a)
+       , IsMeta a)
     => SubstitutionAndQuantifiedVars s var
     -> q a var (FixedPattern var)
     -> ReaderT (SubstitutionAndQuantifiedVars s var)
