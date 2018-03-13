@@ -40,17 +40,16 @@ module Data.Kore.Parser.ParserImpl where
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.Parser.Lexeme
-import qualified Data.Kore.Parser.ParserUtils     as ParserUtils
+import qualified Data.Kore.Parser.ParserUtils as ParserUtils
 import           Data.Kore.Unparser.Unparse
 
-import           Control.Arrow                    ((&&&))
-import           Control.Monad                    (unless, void, when)
+import           Control.Arrow                ((&&&))
+import           Control.Monad                (unless, void, when)
 
-import           Data.Attoparsec.ByteString.Char8 (Parser)
-import qualified Data.Attoparsec.ByteString.Char8 as Parser (char, peekChar,
-                                                             peekChar')
-import           Data.Attoparsec.Combinator       (many1)
-import           Data.Maybe                       (isJust)
+import           Data.Maybe                   (isJust)
+import qualified Text.Parsec.Char             as Parser (char)
+import           Text.Parsec.Combinator       (many1)
+import           Text.Parsec.String           (Parser)
 
 {-|'sortVariableParser' parses either an @object-sort-variable@, or a
 @meta-sort-variable@.
@@ -101,7 +100,7 @@ inCurlyBracesSortVariableListParser x =
 {-|'unifiedSortVariableParser' parses a sort variable.-}
 unifiedSortVariableParser :: Parser UnifiedSortVariable
 unifiedSortVariableParser = do
-    c <- Parser.peekChar'
+    c <- ParserUtils.peekChar'
     if c == '#'
         then MetaSortVariable <$> sortVariableParser Meta
         else ObjectSortVariable <$> sortVariableParser Object
@@ -152,7 +151,7 @@ sortParser
     -> Parser (Sort level)
 sortParser x = do
     identifier <- idParser x
-    c <- Parser.peekChar
+    c <- ParserUtils.peekChar
     case c of
         Just '{' -> actualSortParser identifier
         _        -> return (SortVariableSort $ SortVariable identifier)
@@ -547,7 +546,7 @@ BNF definitions:
 -}
 unifiedVariableParser :: Parser (UnifiedVariable Variable)
 unifiedVariableParser = do
-    c <- Parser.peekChar'
+    c <- ParserUtils.peekChar'
     if c == '#'
         then MetaVariable <$> variableParser Meta
         else ObjectVariable <$> variableParser Object
@@ -581,7 +580,7 @@ variableOrTermPatternParser
     -> Parser (Pattern level Variable UnifiedPattern)
 variableOrTermPatternParser x = do
     identifier <- idParser x
-    c <- Parser.peekChar'
+    c <- ParserUtils.peekChar'
     if c == ':'
         then VariablePattern <$> variableRemainderParser x identifier
         else symbolOrAliasPatternRemainderParser x identifier
@@ -602,7 +601,7 @@ BNF definitions:
 -}
 unifiedVariableOrTermPatternParser :: Parser UnifiedPattern
 unifiedVariableOrTermPatternParser = do
-    c <- Parser.peekChar'
+    c <- ParserUtils.peekChar'
     if c == '#'
         then MetaPattern <$> variableOrTermPatternParser Meta
         else ObjectPattern <$> variableOrTermPatternParser Object
@@ -656,7 +655,7 @@ mlConstructorParser = do
         (map (patternString &&& mlConstructorRemainderParser) allPatternTypes)
     mlConstructorRemainderParser patternType = do
         openCurlyBraceParser
-        c <- Parser.peekChar'
+        c <- ParserUtils.peekChar'
         if c == '#'
             then MetaPattern <$>
                 mlConstructorRemainderParser'
@@ -757,7 +756,7 @@ can't.
 -}
 patternParser :: Parser UnifiedPattern
 patternParser = do
-    c <- Parser.peekChar'
+    c <- ParserUtils.peekChar'
     case c of
         '\\' -> mlConstructorParser
         '"'  -> MetaPattern . StringLiteralPattern <$> stringLiteralParser
@@ -880,7 +879,7 @@ sentenceParser = keywordBasedParsers
     ]
   where
     sentenceConstructorRemainderParser sentenceType = do
-        c <- Parser.peekChar'
+        c <- ParserUtils.peekChar'
         case (c, sentenceType) of
             ('#', AliasSentenceType) -> MetaSentenceAliasSentence <$>
                 aliasSymbolSentenceRemainderParser Meta (aliasParser Meta)

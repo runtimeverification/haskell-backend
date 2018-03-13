@@ -67,13 +67,15 @@ idParserTests =
         , Failure FailureTest
             { failureInput = "["
             , failureExpected =
-                "Failed reading: genericIdRawParser: " ++
-                "Invalid first character '['."
+                "\"<test-string>\" (line 1, column 1):\n"
+                ++ "genericIdRawParser: Invalid first character '['."
             }
         , Failure FailureTest
             { failureInput = "module"
             , failureExpected =
-                "Failed reading: Identifiers should not be keywords: 'module'."
+                "\"<test-string>\" (line 1, column 7):\n"
+                ++ "unexpected end of input\n"
+                ++ "Identifiers should not be keywords: 'module'."
             }
         , FailureWithoutMessage
             [   "",   "'",   "'a",   "2",   "2a", "`", "`a"
@@ -160,12 +162,14 @@ keywordBasedParsersTests =
         , Failure FailureTest
             { failureInput = "dg(a)"
             , failureExpected =
-                "Failed reading: Keyword Based Parsers - unexpected character."
+                "\"<test-string>\" (line 1, column 2):\n"
+                ++ "Keyword Based Parsers - unexpected character."
             }
         , Failure FailureTest
             { failureInput = "dda"
             , failureExpected =
-                "Failed reading: Expecting keyword to end."
+                "\"<test-string>\" (line 1, column 3):\n"
+                ++ "Expecting keyword to end."
             }
         , FailureWithoutMessage
             [ "abc(a)", "abc[a]", "de{a}", "de[a]", "df{a}", "dfa)"
@@ -216,7 +220,10 @@ skipWhitespaceTests =
             , "\t//hello\n /* world\n //*/  //!\n"]
         , Failure FailureTest
             { failureInput = "/*/"
-            , failureExpected = "Failed reading: Unfinished comment."
+            , failureExpected =
+                "\"<test-string>\" (line 1, column 4):\n"
+                ++ "unexpected end of input\n"
+                ++ "Unfinished comment."
             }
         , FailureWithoutMessage
             [ "a", "/*", "/**", "/***", "/*hello", "/*//", "*/"
@@ -253,8 +260,10 @@ stringLiteralParserTests =
         , success "\"\\U000120ff\"" (StringLiteral "\73983")
         , Failure FailureTest
             { failureInput = "\"\\UFFFFFFFF\""
-            , failureExpected = "Failed reading: Character code 4294967295"
-                ++ " outside of the representable codes."
+            , failureExpected =
+                "\"<test-string>\" (line 1, column 13):\n"
+                ++ "Character code 4294967295 outside of the representable "
+                ++ "codes."
             }
         , FailureWithoutMessage
             [ "", "'a'", "\"\\z\"", "\"\\xzf\"", "\"\\u123\"", "\"\\U1234567\""
@@ -292,13 +301,16 @@ charLiteralParserTests =
         , success "'\\U000120ff'" (CharLiteral '\73983')
         , Failure FailureTest
             { failureInput = "'\\UFFFFFFFF'"
-            , failureExpected = "Failed reading: Character code 4294967295"
-                ++ " outside of the representable codes."
+            , failureExpected =
+                "\"<test-string>\" (line 1, column 13):\n"
+                ++ "Character code 4294967295 outside of the representable "
+                ++ "codes."
             }
         , Failure FailureTest
             { failureInput = "''"
             , failureExpected =
-                "Failed reading: '' is not a valid character literal."
+                "\"<test-string>\" (line 1, column 3):\n"
+                ++ "'' is not a valid character literal."
             }
         , FailureWithoutMessage
             [ "", "'\\z'", "'\\xzf'", "'\\u123'", "'\\U1234567'"

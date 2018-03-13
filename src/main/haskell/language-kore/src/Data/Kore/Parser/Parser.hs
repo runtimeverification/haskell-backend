@@ -12,17 +12,16 @@ This is a parser for the Kore language. Sample usage:
 @
 import Data.Kore.Parser.KoreParser
 
-import           Data.Attoparsec.ByteString.Char8 (parseOnly)
-import qualified Data.ByteString as ByteString
+import           Text.Parsec (parse)
 import           System.Environment (getArgs)
 
 main :: IO ()
 main = do
     (fileName:_) <- getArgs
-    contents <- ByteString.readFile fileName
+    contents <- readFile fileName
     print (fromKore contents)
     -- or --
-    print (parseOnly koreParser contents)
+    print (parse koreParser fileName contents)
 @
 
 -}
@@ -31,13 +30,12 @@ module Data.Kore.Parser.Parser ( Definition
                                , koreParser
                                ) where
 
-import           Data.Kore.AST.Kore               (Definition)
-import           Data.Kore.Parser.Lexeme          (skipWhitespace)
-import           Data.Kore.Parser.ParserImpl      (definitionParser)
+import           Data.Kore.AST.Kore           (Definition)
+import           Data.Kore.Parser.Lexeme      (skipWhitespace)
+import           Data.Kore.Parser.ParserImpl  (definitionParser)
+import           Data.Kore.Parser.ParserUtils
 
-import           Data.Attoparsec.ByteString.Char8 (Parser, endOfInput,
-                                                   parseOnly)
-import qualified Data.ByteString                  as ByteString
+import           Text.Parsec.String           (Parser)
 
 {-|'koreParser' is a parser for Kore.
 
@@ -51,5 +49,5 @@ a 'Definition' or a parse error.
 
 The input must contain a full valid Kore defininition and nothing else.
 -}
-fromKore :: ByteString.ByteString -> Either String Definition
+fromKore :: FilePath -> String -> Either String Definition
 fromKore = parseOnly koreParser

@@ -3,14 +3,13 @@ module Main where
 import           Data.Kore.ASTVerifier.DefinitionVerifier
 import           Data.Kore.Parser.Parser
 
-import qualified Data.ByteString                          as ByteString
 import           System.Environment                       (getArgs)
 
 main :: IO ()
 main = do
     (fileName:_) <- getArgs
-    contents <- ByteString.readFile fileName
-    case fromKore contents of
+    contents <- readFile fileName
+    case fromKore fileName contents of
         Left err -> print err
         Right definition ->
             case verifyDefinition definition of

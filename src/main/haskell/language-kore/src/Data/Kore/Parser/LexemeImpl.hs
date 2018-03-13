@@ -26,23 +26,19 @@ module Data.Kore.Parser.LexemeImpl where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore               (MetaOrObject (..))
-import qualified Data.Kore.Parser.CharDict        as CharDict
-import           Data.Kore.Parser.CharSet         as CharSet
+import qualified Data.Kore.Parser.CharDict    as CharDict
+import           Data.Kore.Parser.CharSet     as CharSet
 import           Data.Kore.Parser.CString
-import           Data.Kore.Parser.ParserUtils
+import           Data.Kore.Parser.ParserUtils as ParserUtils
 
-import           Control.Arrow                    ((&&&))
-import           Control.Monad                    (void, when)
-import qualified Data.Attoparsec.ByteString       as BParser (runScanner)
-import           Data.Attoparsec.ByteString.Char8 (Parser)
-import qualified Data.Attoparsec.ByteString.Char8 as Parser (char, peekChar,
-                                                             peekChar', scan,
-                                                             skipSpace, string,
-                                                             takeWhile)
-import qualified Data.ByteString.Char8            as Char8
-import           Data.Char                        (isHexDigit, isOctDigit)
-import           Data.Maybe                       (isJust)
-import qualified Data.Trie                        as Trie
+import           Control.Arrow                ((&&&))
+import           Control.Monad                (void, when)
+import qualified Data.ByteString.Char8        as Char8
+import           Data.Char                    (isHexDigit, isOctDigit)
+import           Data.Maybe                   (isJust)
+import qualified Data.Trie                    as Trie
+import qualified Text.Parsec.Char             as Parser (char, string)
+import           Text.Parsec.String           (Parser)
 
 {-|'idParser' parses either an @object-identifier@, or a @meta-identifier@.
 
@@ -80,7 +76,7 @@ leading @/*@ was already consumed.
 -}
 skipMultiLineCommentReminder :: Parser ()
 skipMultiLineCommentReminder = do
-    (_,state) <- BParser.runScanner COMMENT delta'
+    (_,state) <- runScanner COMMENT delta'
     case state of
         END -> return ()
         _   -> fail "Unfinished comment."
@@ -96,7 +92,7 @@ leading @//@ was already consumed.
 -}
 skipSingleLineCommentReminder :: Parser ()
 skipSingleLineCommentReminder =
-    void (Parser.scan COMMENT delta)
+    void (scan COMMENT delta)
   where
     delta END _  = Nothing
     delta _ '\n' = Just END
@@ -120,7 +116,7 @@ skipWhitespace =
             , ("//", skipSingleLineCommentReminder *> skipWhitespace)
             ]
             ++
-            map (\c -> ([c], Parser.skipSpace *> skipWhitespace)) spaceChars
+            map (\c -> ([c], skipSpace *> skipWhitespace)) spaceChars
         )
 
 {-|'lexeme' transforms a raw parser into one that skips the whitespace
@@ -147,22 +143,21 @@ genericIdRawParser
     -> IdKeywordParsing
     -> Parser String
 genericIdRawParser firstCharSet bodyCharSet idKeywordParsing = do
-    c <- Parser.peekChar'
+    c <- peekChar'
     idChar <- if not (c `CharSet.elem` firstCharSet)
         then fail ("genericIdRawParser: Invalid first character '" ++ c : "'.")
-        else Parser.takeWhile (`CharSet.elem` bodyCharSet)
-    let identifier = Char8.unpack idChar
+        else ParserUtils.takeWhile (`CharSet.elem` bodyCharSet)
     when
         (  (idKeywordParsing == KeywordsForbidden)
-        && isJust (Trie.lookup idChar koreKeywordsSet)
+        && isJust (Trie.lookup (Char8.pack idChar) koreKeywordsSet)
         )
         (fail
             (  "Identifiers should not be keywords: '"
-            ++ identifier
+            ++ idChar
             ++ "'."
             )
         )
-    return identifier
+    return idChar
 
 moduleNameFirstCharSet :: CharSet
 moduleNameFirstCharSet = idFirstCharSet
@@ -207,7 +202,7 @@ Always starts with @#@
 metaIdRawParser :: Parser String
 metaIdRawParser = do
     c <- Parser.char '#'
-    c' <- Parser.peekChar'
+    c' <- peekChar'
     case c' of
         '`' -> do
             void (Parser.char c')
@@ -253,9 +248,9 @@ stringCharLiteralRawParser
     :: Char -> StringScannerState -> (String -> Parser a) -> Parser a
 stringCharLiteralRawParser delimiter nextCharState constructor = do
     void (Parser.char delimiter)
-    s <- Parser.scan STRING delta
+    s <- scan STRING delta
     void (Parser.char delimiter)
-    case unescapeCString (Char8.unpack s) of
+    case unescapeCString s of
         Left e   -> fail e
         Right s' -> constructor s'
   where
@@ -383,21 +378,21 @@ commaParser = tokenCharParser ','
 
 {-|'skipString' consumes the provided string.-}
 skipString :: String -> Parser ()
-skipString = void . Parser.string . Char8.pack
+skipString = void . Parser.string
 
 {-|'mlLexemeParser' consumes the provided string, checking that it is not
 followed by a character which could be part of an @object-identifier@.
 -}
 mlLexemeParser :: String -> Parser ()
 mlLexemeParser s =
-    lexeme (void (Parser.string (Char8.pack s) <* keywordEndParser))
+    lexeme (void (Parser.string s <* keywordEndParser))
 
 {-|'keywordEndParser' checks that the next character cannot be part of an
 @object-identifier@.
 -}
 keywordEndParser :: Parser ()
 keywordEndParser = do
-    mc <- Parser.peekChar
+    mc <- peekChar
     case mc of
         Nothing -> return ()
         Just c -> when (c `CharSet.elem` idCharSet) $
@@ -422,7 +417,7 @@ prefixBasedParsers ::  (String -> Parser ()) ->[(String, Parser a)] -> Parser a
 prefixBasedParsers _ [] = error "Keyword Based Parsers - no parsers"
 prefixBasedParsers prefixParser [(k, p)] = prefixParser k *> p
 prefixBasedParsers prefixParser stringParsers = do
-    c <- Parser.peekChar'
+    c <- peekChar'
     dict CharDict.! c
   where
     tails c =
@@ -448,7 +443,7 @@ prefixBasedParsersWithDefault
 prefixBasedParsersWithDefault _ _ [] =
     error "Keyword Based Parsers With Default - no parsers"
 prefixBasedParsersWithDefault prefixParser defaultParser stringParsers = do
-    mc <- Parser.peekChar
+    mc <- peekChar
     case mc of
         Nothing -> defaultParser
         -- TODO(virgil): Should this lookup be optimized?
@@ -460,7 +455,7 @@ prefixBasedParsersWithDefault prefixParser defaultParser stringParsers = do
 metaSortTrie :: Trie.Trie MetaSortType
 metaSortTrie =
     Trie.fromList $
-        map (\s -> (Char8.pack $ show s, s)) metaSortsListWithString
+        map (\s -> (Char8.pack (show s), s)) metaSortsListWithString
 
 {-|'metaSortConverter' converts a string representation of a metasort name
 (without the leading '#') to a 'MetaSortType'.

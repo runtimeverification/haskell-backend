@@ -11,10 +11,49 @@ Helper tools for parsing Kore. Meant for internal use only.
 -}
 module Data.Kore.Parser.ParserUtils where
 
-import           Data.Functor                     (($>))
-import           Control.Monad                    (void)
-import           Data.Attoparsec.ByteString.Char8 (Parser)
-import qualified Data.Attoparsec.ByteString.Char8 as Parser
+import           Control.Applicative    (many, (<|>))
+import           Control.Monad          (void)
+import           Data.Functor           (($>))
+import           Text.Parsec            (parse)
+import qualified Text.Parsec.Char       as Parser
+import           Text.Parsec.Combinator (eof, lookAhead)
+import           Text.Parsec.String     (Parser)
+
+peekChar :: Parser (Maybe Char)
+peekChar =
+    Just <$> peekChar' <|> return Nothing
+
+peekChar' :: Parser Char
+peekChar' =
+    lookAhead Parser.anyChar
+
+scan :: a -> (a -> Char -> Maybe a) -> Parser String
+scan state delta = fst <$> runScanner state delta
+
+runScanner :: a -> (a -> Char -> Maybe a) -> Parser (String, a)
+runScanner state delta = do
+    maybeC <- peekChar
+    case maybeC >>= delta state of
+        Nothing -> return ("", state)
+        Just s -> do
+            c <- Parser.anyChar
+            (reminder, finalState) <- runScanner s delta
+            return (c:reminder, finalState)
+
+skipSpace :: Parser ()
+skipSpace = Parser.spaces
+
+takeWhile :: (Char -> Bool) -> Parser String
+takeWhile = many . Parser.satisfy
+
+endOfInput :: Parser ()
+endOfInput = eof
+
+parseOnly :: Parser a -> FilePath -> String -> Either String a
+parseOnly parser filePathForErrors input =
+    case parse parser filePathForErrors input of
+        Left err         -> Left (show err)
+        Right definition -> Right definition
 
 {-|'manyUntilChar' parses a list of 'a' items.
 
@@ -30,7 +69,7 @@ manyUntilChar :: Char       -- ^ The end character
               -> Parser a   -- ^ The item parser
               -> Parser [a]
 manyUntilChar endChar itemParser = do
-    mc <- Parser.peekChar
+    mc <- peekChar
     if mc == Just endChar
       then return []
       else (:) <$> itemParser <*> manyUntilChar endChar itemParser
@@ -62,7 +101,7 @@ sepByCharWithDelimitingChars
 sepByCharWithDelimitingChars
     skipWhitespace firstChar endChar delimiter itemParser = do
         skipCharParser skipWhitespace firstChar
-        mc <- Parser.peekChar
+        mc <- peekChar
         case mc of
             Nothing -> fail "Unexpected end of input."
             Just c
@@ -72,7 +111,7 @@ sepByCharWithDelimitingChars
                     (:) <$> itemParser <*> sepByCharWithDelimitingChars'
   where
     sepByCharWithDelimitingChars' = do
-        mc <- Parser.peekChar
+        mc <- peekChar
         case mc of
             Nothing -> fail "Unexpected end of input."
             Just c
