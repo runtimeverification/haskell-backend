@@ -12,7 +12,7 @@ Parser definition for Kore. Meant for internal use only.
 Conventions used:
 
 1. In various cases we distinguish between @object-@ and @meta-@ versions of an
-   element. For this we parametrize the element's type with an @level@ and we
+   element. For this we parametrize the element's type with a @level@ and we
    provide an element of type @level@ to the parser, usually called @x@.
 
 2. The meta versions are identified by the presence of @#@ characters, usually
