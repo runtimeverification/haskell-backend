@@ -33,7 +33,7 @@ data Object = Object
 syntactic categories from the Semantics of K, Section 9.1.1 (Lexicon).
 
 The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should either be 'Meta' or 'Object'.
+versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 We may chage the Id's representation in the future so one should treat it as
 an opaque entity as much as possible.
@@ -58,7 +58,7 @@ newtype CharLiteral = CharLiteral { getCharLiteral :: Char }
 Section 9.1.3 (Heads).
 
 The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should either be 'Meta' or 'Object'.
+versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
 data SymbolOrAlias level = SymbolOrAlias
     { symbolOrAliasConstructor :: !(Id level)
@@ -72,7 +72,7 @@ data SymbolOrAlias level = SymbolOrAlias
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 
 The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should either be 'Meta' or 'Object'.
+versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 Note that this is very similar to 'SymbolOrAlias'.
 -}
@@ -88,7 +88,7 @@ data Symbol level = Symbol
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 
 The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should either be 'Meta' or 'Object'.
+versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 Note that this is very similar to 'SymbolOrAlias'.
 -}
@@ -103,7 +103,7 @@ data Alias level = Alias
 Section 9.1.2 (Sorts).
 
 The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should either be 'Meta' or 'Object'.
+versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
 newtype SortVariable level = SortVariable
     { getSortVariable  :: Id level }
@@ -114,7 +114,7 @@ newtype SortVariable level = SortVariable
 Section 9.1.2 (Sorts).
 
 The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should either be 'Meta' or 'Object'.
+versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
 data SortActual level = SortActual
     { sortActualName  :: !(Id level)
@@ -127,7 +127,7 @@ data SortActual level = SortActual
 Section 9.1.2 (Sorts).
 
 The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should either be 'Meta' or 'Object'.
+versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
 data Sort level
     = SortVariableSort !(SortVariable level)
@@ -179,7 +179,7 @@ instance Show MetaSortType where
 Section 9.1.4 (Patterns).
 
 The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should either be 'Meta' or 'Object'.
+versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
 data Variable level = Variable
     { variableName :: !(Id level)
@@ -249,7 +249,7 @@ patternString pt = case pt of
 Section 9.1.4 (Patterns).
 
 The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should either be 'Meta' or 'Object'.
+versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 'andSort' is both the sort of the operands and the sort of the result.
 
@@ -267,7 +267,7 @@ data And level p = And
 the Semantics of K, Section 9.1.4 (Patterns).
 
 The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should either be 'Meta' or 'Object'.
+versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 This represents the σ(φ1, ..., φn) symbol patterns in Matching Logic.
 -}
@@ -282,7 +282,7 @@ data Application level p = Application
 Section 9.1.4 (Patterns).
 
 The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should either be 'Meta' or 'Object'.
+versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 'bottomSort' is the sort of the result.
 
@@ -296,7 +296,7 @@ newtype Bottom level p = Bottom { bottomSort :: Sort level}
 Section 9.1.4 (Patterns).
 
 The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should either be 'Meta' or 'Object'.
+versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 'ceilOperandSort' is the sort of the operand.
 
@@ -316,7 +316,7 @@ data Ceil level p = Ceil
 Section 9.1.4 (Patterns).
 
 The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should either be 'Meta' or 'Object'.
+versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 'equalsOperandSort' is the sort of the operand.
 
@@ -337,7 +337,7 @@ data Equals level p = Equals
 Section 9.1.4 (Patterns).
 
 The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should either be 'Meta' or 'Object'.
+versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 'existsSort' is both the sort of the operands and the sort of the result.
 
@@ -355,7 +355,7 @@ data Exists level v p = Exists
 Section 9.1.4 (Patterns).
 
 The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should either be 'Meta' or 'Object'.
+versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 'floorOperandSort' is the sort of the operand.
 
@@ -375,7 +375,7 @@ data Floor level p = Floor
 Section 9.1.4 (Patterns).
 
 The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should either be 'Meta' or 'Object'.
+versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 'forallSort' is both the sort of the operands and the sort of the result.
 
@@ -393,7 +393,7 @@ data Forall level v p = Forall
 Section 9.1.4 (Patterns).
 
 The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should either be 'Meta' or 'Object'.
+versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 'iffSort' is both the sort of the operands and the sort of the result.
 
@@ -411,7 +411,7 @@ data Iff level p = Iff
 Section 9.1.4 (Patterns).
 
 The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should either be 'Meta' or 'Object'.
+versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 'impliesSort' is both the sort of the operands and the sort of the result.
 
@@ -429,7 +429,7 @@ data Implies level p = Implies
 Section 9.1.4 (Patterns).
 
 The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should either be 'Meta' or 'Object'.
+versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 'inOperandSort' is the sort of the operands.
 
@@ -452,7 +452,7 @@ data In level p = In
 {-|'Next' corresponds to the @\next@ branch of the @object-pattern@
 syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
 
-Although there is no 'meta' version of @\next@, there is an 'level' type
+Although there is no 'meta' version of @\next@, there is a 'level' type
 parameter which will always be 'Object'. The object-only restriction is
 done at the 'Pattern' level.
 
@@ -471,7 +471,7 @@ data Next level p = Next
 Section 9.1.4 (Patterns).
 
 The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should either be 'Meta' or 'Object'.
+versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 'notSort' is both the sort of the operand and the sort of the result.
 
@@ -488,7 +488,7 @@ data Not level p = Not
 Section 9.1.4 (Patterns).
 
 The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should either be 'Meta' or 'Object'.
+versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 'orSort' is both the sort of the operands and the sort of the result.
 
@@ -504,7 +504,7 @@ data Or level p = Or
 {-|'Rewrites' corresponds to the @\rewrites@ branch of the @object-pattern@
 syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
 
-Although there is no 'meta' version of @\rewrites@, there is an 'level' type
+Although there is no 'Meta' version of @\rewrites@, there is a 'level' type
 parameter which will always be 'Object'. The object-only restriction is
 done at the Pattern level.
 
@@ -525,7 +525,7 @@ data Rewrites level p = Rewrites
 Section 9.1.4 (Patterns).
 
 The 'level type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should either be 'Meta' or 'Object'.
+versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 'topSort' is the sort of the result.
 
@@ -539,7 +539,7 @@ newtype Top level p = Top { topSort :: Sort level}
 Section 9.1.4 (Patterns).
 
 The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should either be 'Meta' or 'Object'.
+versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 Note that the 'StringLiteralPattern' and 'CharLiteralPattern' should
 be members only of 'Pattern Meta'.
@@ -602,7 +602,7 @@ deriving instance Traversable (Pattern level variable)
 Section 9.1.6 (Declaration and Definitions).
 
 The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should either be 'Meta' or 'Object'.
+versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
 data SentenceAlias attributes level = SentenceAlias
     { sentenceAliasAlias      :: !(Alias level)
@@ -617,7 +617,7 @@ data SentenceAlias attributes level = SentenceAlias
 Section 9.1.6 (Declaration and Definitions).
 
 The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should either be 'Meta' or 'Object'.
+versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
 data SentenceSymbol attributes level = SentenceSymbol
     { sentenceSymbolSymbol     :: !(Symbol level)

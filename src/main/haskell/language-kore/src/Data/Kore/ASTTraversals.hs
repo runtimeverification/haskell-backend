@@ -28,17 +28,18 @@ new result.
 -}
 topDownVisitorM
     :: (FixPattern var fixedPoint, Monad m)
-    => ( forall level . MetaOrObject level => Pattern level var (fixedPoint var)
-        -> m
-            ( Either
-                result
-                ( Pattern level var (fixedPoint var)
-                , m result -> m result
+    => ( forall level . MetaOrObject level
+        => Pattern level var (fixedPoint var)
+            -> m
+                ( Either
+                    result
+                    ( Pattern level var (fixedPoint var)
+                    , m result -> m result
+                    )
                 )
             )
-        )
-    -> (forall level . MetaOrObject level => Pattern level var result
-        -> m result)
+    -> (forall level . MetaOrObject level
+        => Pattern level var result -> m result)
     -> (fixedPoint var -> m result)
 topDownVisitorM preprocess postprocess = self
   where
@@ -61,18 +62,19 @@ transformed into results and aggregates these results into a new result.
 -}
 bottomUpVisitorM
     :: (FixPattern var fixedPoint, Monad m)
-    => (forall level . MetaOrObject level => Pattern level var result
-        -> m result)
+    => (forall level . MetaOrObject level
+        => Pattern level var result -> m result)
     -> (fixedPoint var -> m result)
 bottomUpVisitorM = topDownVisitorM (\x -> pure (Right (x, id)))
 
 -- |'topDownVisitor' is the non-monadic version of 'topDownVisitorM'.
 topDownVisitor
     :: FixPattern var fixedPoint
-    => (forall level . MetaOrObject level => Pattern level var (fixedPoint var)
-        -> Either result (Pattern level var (fixedPoint var)))
-    -> (forall level . MetaOrObject level => Pattern level var result
-        -> result)
+    => (forall level . MetaOrObject level
+        => Pattern level var (fixedPoint var)
+            -> Either result (Pattern level var (fixedPoint var)))
+    -> (forall level . MetaOrObject level
+        => Pattern level var result -> result)
     -> (fixedPoint var -> result)
 topDownVisitor preprocess postprocess =
     runIdentity .

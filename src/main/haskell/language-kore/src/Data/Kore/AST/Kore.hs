@@ -15,10 +15,10 @@ import           Data.Typeable                          (Typeable, cast)
 import           Data.Kore.Datastructures.EmptyTestable
 
 {-|Class identifying a Kore level. It should only be implemented by the
-'Object' and 'Meta' types, and should satisfy.
+'Object' and 'Meta' types, and should verify:
 
-* @ isObject Object && not (isMeta Object) == True @
-* @ not (isObject Meta) && isMeta Meta == True @
+* @ isObject Object && not (isMeta Object) @
+* @ not (isObject Meta) && isMeta Meta @
 -}
 class (Show level, Ord level, Eq level, Typeable level)
     => MetaOrObject level
@@ -27,25 +27,30 @@ class (Show level, Ord level, Eq level, Typeable level)
     isMeta :: level -> Bool
     isObject = not . isMeta
     isMeta = not . isObject
+    {-# MINIMAL isObject | isMeta #-}
 
 instance MetaOrObject Meta where
     isMeta _ = True
 instance MetaOrObject Object where
     isObject _ = True
 
+data MetaOrObjectTransformer thing result = MetaOrObjectTransformer
+    { metaTransformer   :: thing Meta -> result
+    , objectTransformer :: thing Object -> result
+    }
+
 applyMetaObjectFunction
     :: (Typeable thing, MetaOrObject level)
-    => thing level -> (thing Object -> c) -> (thing Meta -> c) -> c
+    => thing level -> MetaOrObjectTransformer thing c -> c
 applyMetaObjectFunction x = applyMetaObjectFunctionCasted (cast x) (cast x)
 applyMetaObjectFunctionCasted
     :: Maybe (thing Object)
     -> Maybe (thing Meta)
-    -> (thing Object -> c)
-    -> (thing Meta -> c)
+    -> MetaOrObjectTransformer thing c
     -> c
-applyMetaObjectFunctionCasted (Just x) Nothing f _ = f x
-applyMetaObjectFunctionCasted Nothing (Just x) _ f = f x
-applyMetaObjectFunctionCasted _ _ _ _ =
+applyMetaObjectFunctionCasted (Just x) Nothing f = objectTransformer f x
+applyMetaObjectFunctionCasted Nothing (Just x) f = metaTransformer f x
+applyMetaObjectFunctionCasted _ _ _ =
     error "applyMetaObjectFunctionCasted: this should not happen!"
 
 data UnifiedSort
@@ -92,7 +97,10 @@ class Typeable thing
             Left x  -> f x
             Right x -> f x
     asUnified :: MetaOrObject level => thing level -> unifiedThing
-    asUnified x = applyMetaObjectFunction x objectConstructor metaConstructor
+    asUnified x = applyMetaObjectFunction x MetaOrObjectTransformer
+        { objectTransformer = objectConstructor
+        , metaTransformer = metaConstructor
+        }
 
 instance UnifiedThing UnifiedSort Sort where
     destructor (MetaSort s)   = Left s
@@ -204,14 +212,18 @@ data Sentence
 asSentenceAliasSentence
     :: MetaOrObject level => KoreSentenceAlias level -> Sentence
 asSentenceAliasSentence v =
-    applyMetaObjectFunction
-        v ObjectSentenceAliasSentence MetaSentenceAliasSentence
+    applyMetaObjectFunction v MetaOrObjectTransformer
+        { objectTransformer = ObjectSentenceAliasSentence
+        , metaTransformer = MetaSentenceAliasSentence
+        }
 
 asSentenceSymbolSentence
     :: MetaOrObject level => KoreSentenceSymbol level -> Sentence
 asSentenceSymbolSentence v =
-    applyMetaObjectFunction
-        v ObjectSentenceSymbolSentence MetaSentenceSymbolSentence
+    applyMetaObjectFunction v MetaOrObjectTransformer
+        { objectTransformer = ObjectSentenceSymbolSentence
+        , metaTransformer = MetaSentenceSymbolSentence
+        }
 
 {-|A 'Module' consists of a 'ModuleName' a list of 'Sentence's and some
 'Attributes'.

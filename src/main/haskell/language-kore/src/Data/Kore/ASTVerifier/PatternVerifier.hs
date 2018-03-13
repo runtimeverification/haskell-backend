@@ -425,10 +425,14 @@ verifyVariableDeclaration
   =
     applyMetaObjectFunction
         variable
-        (verifyVariableDeclarationUsing
-            declaredSortVariables (resolveObjectSort indexedModule))
-        (verifyVariableDeclarationUsing
-            declaredSortVariables (resolveMetaSort indexedModule))
+        MetaOrObjectTransformer
+            { objectTransformer =
+                verifyVariableDeclarationUsing
+                    declaredSortVariables (resolveObjectSort indexedModule)
+            , metaTransformer =
+                verifyVariableDeclarationUsing
+                    declaredSortVariables (resolveMetaSort indexedModule)
+            }
 
 verifyVariableDeclarationUsing
     :: MetaOrObject level
@@ -436,7 +440,8 @@ verifyVariableDeclarationUsing
     -> (Id level -> Either (Error VerifyError) (SortDescription level))
     -> Variable level
     -> Either (Error VerifyError) VerifySuccess
-verifyVariableDeclarationUsing declaredSortVariables f v = verifySort f
+verifyVariableDeclarationUsing declaredSortVariables f v =
+    verifySort f
         declaredSortVariables
         (variableSort v)
 
