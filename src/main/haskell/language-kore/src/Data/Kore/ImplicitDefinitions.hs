@@ -9,7 +9,7 @@ Portability : POSIX
 -}
 module Data.Kore.ImplicitDefinitions where
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
 
 charMetaSort :: Sort Meta
 charMetaSort = metaSort CharSort

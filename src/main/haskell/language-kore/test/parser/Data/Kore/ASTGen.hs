@@ -1,11 +1,13 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs             #-}
 module Data.Kore.ASTGen where
 
 import           Test.QuickCheck.Gen         (Gen, choose, chooseAny, elements,
-                                              getSize, listOf, oneof, scale,
-                                              sized, suchThat, vectorOf)
+                                              frequency, getSize, listOf, oneof,
+                                              scale, sized, suchThat, vectorOf)
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
+import           Data.Kore.AST.Kore
 import           Data.Kore.Parser.LexemeImpl
 
 couple :: Gen a -> Gen [a]
@@ -28,10 +30,10 @@ genericIdGen firstChars nextChars = do
     body <- listOf (elements nextChars)
     return (firstChar : body)
 
-idGen :: IsMeta a => a -> Gen (Id a)
+idGen :: MetaOrObject level => level -> Gen (Id level)
 idGen x
-    | koreLevel x == ObjectLevel = Id <$> objectId
-    | otherwise                  = Id . ('#' :) <$> objectId
+    | isObject x = Id <$> objectId
+    | otherwise  = Id . ('#' :) <$> objectId
   where
     objectId = genericIdGen idFirstChars (idFirstChars ++ idOtherChars)
 
@@ -55,44 +57,44 @@ charGen =
         (/='?')
 
 symbolOrAliasRawGen
-    :: IsMeta a
-    => a
-    -> (Id a -> [Sort a] -> s a)
-    -> Gen (s a)
+    :: MetaOrObject level
+    => level
+    -> (Id level -> [Sort level] -> s level)
+    -> Gen (s level)
 symbolOrAliasRawGen x constructor = pure constructor
     <*> scale (`div` 2) (idGen x)
     <*> couple (scale (`div` 2) (sortGen x))
 
 symbolOrAliasDeclarationRawGen
-    :: IsMeta a
-    => a
-    -> (Id a -> [SortVariable a] -> s a)
-    -> Gen (s a)
+    :: MetaOrObject level
+    => level
+    -> (Id level -> [SortVariable level] -> s level)
+    -> Gen (s level)
 symbolOrAliasDeclarationRawGen x constructor = pure constructor
     <*> scale (`div` 2) (idGen x)
     <*> couple (scale (`div` 2) (sortVariableGen x))
 
-symbolOrAliasGen :: IsMeta a => a -> Gen (SymbolOrAlias a)
+symbolOrAliasGen :: MetaOrObject level => level -> Gen (SymbolOrAlias level)
 symbolOrAliasGen x = symbolOrAliasRawGen x SymbolOrAlias
 
-symbolGen :: IsMeta a => a -> Gen (Symbol a)
+symbolGen :: MetaOrObject level => level -> Gen (Symbol level)
 symbolGen x = symbolOrAliasDeclarationRawGen x Symbol
 
-aliasGen :: IsMeta a => a -> Gen (Alias a)
+aliasGen :: MetaOrObject level => level -> Gen (Alias level)
 aliasGen x = symbolOrAliasDeclarationRawGen x Alias
 
-sortVariableGen :: IsMeta a => a -> Gen (SortVariable a)
+sortVariableGen :: MetaOrObject level => level -> Gen (SortVariable level)
 sortVariableGen x = SortVariable <$> idGen x
 
-sortActualGen :: IsMeta a => a -> Gen (SortActual a)
+sortActualGen :: MetaOrObject level => level -> Gen (SortActual level)
 sortActualGen x
-    | koreLevel x == ObjectLevel = pure SortActual
+    | isObject x = pure SortActual
         <*> scale (`div` 2) (idGen x)
         <*> couple (scale (`div` 2) (sortGen x))
     | otherwise = SortActual <$>
         (Id <$> elements (map show metaSortsList)) <*> pure []
 
-sortGen :: IsMeta a => a -> Gen (Sort a)
+sortGen :: MetaOrObject level => level -> Gen (Sort level)
 sortGen x = oneof
     [ SortVariableSort <$> sortVariableGen x
     , SortActualSort <$> sortActualGen x
@@ -108,7 +110,7 @@ moduleNameGen :: Gen ModuleName
 moduleNameGen = ModuleName <$>
     genericIdGen idFirstChars (idFirstChars ++ idOtherChars)
 
-variableGen :: IsMeta a => a -> Gen (Variable a)
+variableGen :: MetaOrObject level => level -> Gen (Variable level)
 variableGen x = pure Variable
     <*> scale (`div` 2) (idGen x)
     <*> scale (`div` 2) (sortGen x)
@@ -120,109 +122,117 @@ unifiedVariableGen = scale (`div` 2) $ oneof
     ]
 
 binaryOperatorGen
-    :: IsMeta a
-    => a
-    -> (Sort a -> UnifiedPattern -> UnifiedPattern -> b a UnifiedPattern)
-    -> Gen (b a UnifiedPattern)
+    :: MetaOrObject level
+    => level
+    -> (Sort level -> UnifiedPattern -> UnifiedPattern
+        -> b level UnifiedPattern)
+    -> Gen (b level UnifiedPattern)
 binaryOperatorGen x constructor = pure constructor
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) unifiedPatternGen
     <*> scale (`div` 2) unifiedPatternGen
 
 ceilFloorGen
-    :: IsMeta a
-    => a
-    -> (Sort a -> Sort a -> UnifiedPattern -> c a UnifiedPattern)
-    -> Gen (c a UnifiedPattern)
+    :: MetaOrObject level
+    => level
+    -> (Sort level -> Sort level -> UnifiedPattern -> c level UnifiedPattern)
+    -> Gen (c level UnifiedPattern)
 ceilFloorGen x constructor = pure constructor
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) unifiedPatternGen
 
 existsForallGen
-    :: IsMeta a
-    => a
-    -> (Sort a -> Variable a -> UnifiedPattern
-        -> q a Variable UnifiedPattern)
-    -> Gen (q a Variable UnifiedPattern)
+    :: MetaOrObject level
+    => level
+    -> (Sort level -> Variable level -> UnifiedPattern
+        -> q level Variable UnifiedPattern)
+    -> Gen (q level Variable UnifiedPattern)
 existsForallGen x constructor = pure constructor
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) (variableGen x)
     <*> scale (`div` 2) unifiedPatternGen
 
 topBottomGen
-    :: IsMeta a
-    => a
-    -> (Sort a -> t a p)
-    -> Gen (t a p)
+    :: MetaOrObject level
+    => level
+    -> (Sort level -> t level p)
+    -> Gen (t level p)
 topBottomGen x constructor = pure constructor
     <*> sortGen x
 
-andGen :: IsMeta a => a -> Gen (And a UnifiedPattern)
+andGen :: MetaOrObject level => level -> Gen (And level UnifiedPattern)
 andGen x = binaryOperatorGen x And
 
-applicationGen :: IsMeta a => a -> Gen (Application a UnifiedPattern)
+applicationGen
+    :: MetaOrObject level => level -> Gen (Application level UnifiedPattern)
 applicationGen x = pure Application
     <*> scale (`div` 2) (symbolOrAliasGen x)
     <*> couple (scale (`div` 4) unifiedPatternGen)
 
-bottomGen :: IsMeta a => a -> Gen (Bottom a UnifiedPattern)
+bottomGen :: MetaOrObject level => level -> Gen (Bottom level UnifiedPattern)
 bottomGen x = topBottomGen x Bottom
 
-ceilGen :: IsMeta a => a -> Gen (Ceil a UnifiedPattern)
+ceilGen :: MetaOrObject level => level -> Gen (Ceil level UnifiedPattern)
 ceilGen x = ceilFloorGen x Ceil
 
-equalsGen :: IsMeta a => a -> Gen (Equals a UnifiedPattern)
+equalsGen :: MetaOrObject level => level -> Gen (Equals level UnifiedPattern)
 equalsGen x = pure Equals
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) unifiedPatternGen
     <*> scale (`div` 2) unifiedPatternGen
 
-existsGen :: IsMeta a => a -> Gen (Exists a Variable UnifiedPattern)
+existsGen
+    :: MetaOrObject level => level -> Gen (Exists level Variable UnifiedPattern)
 existsGen x = existsForallGen x Exists
 
-floorGen :: IsMeta a => a -> Gen (Floor a UnifiedPattern)
+floorGen :: MetaOrObject level => level -> Gen (Floor level UnifiedPattern)
 floorGen x = ceilFloorGen x Floor
 
-forallGen :: IsMeta a => a -> Gen (Forall a Variable UnifiedPattern)
+forallGen
+    :: MetaOrObject level => level -> Gen (Forall level Variable UnifiedPattern)
 forallGen x = existsForallGen x Forall
 
-iffGen :: IsMeta a => a -> Gen (Iff a UnifiedPattern)
+iffGen :: MetaOrObject level => level -> Gen (Iff level UnifiedPattern)
 iffGen x = binaryOperatorGen x Iff
 
-impliesGen :: IsMeta a => a -> Gen (Implies a UnifiedPattern)
+impliesGen :: MetaOrObject level => level -> Gen (Implies level UnifiedPattern)
 impliesGen x = binaryOperatorGen x Implies
 
-inGen :: IsMeta a => a -> Gen (In a UnifiedPattern)
+inGen :: MetaOrObject level => level -> Gen (In level UnifiedPattern)
 inGen x = pure In
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) unifiedPatternGen
     <*> scale (`div` 2) unifiedPatternGen
 
-nextGen :: IsMeta a => a -> Gen (Next a UnifiedPattern)
+nextGen :: MetaOrObject level => level -> Gen (Next level UnifiedPattern)
 nextGen x = pure Next
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) unifiedPatternGen
 
-notGen :: IsMeta a => a -> Gen (Not a UnifiedPattern)
+notGen :: MetaOrObject level => level -> Gen (Not level UnifiedPattern)
 notGen x = pure Not
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) unifiedPatternGen
 
-orGen :: IsMeta a => a -> Gen (Or a UnifiedPattern)
+orGen :: MetaOrObject level => level -> Gen (Or level UnifiedPattern)
 orGen x = binaryOperatorGen x Or
 
-rewritesGen :: IsMeta a => a -> Gen (Rewrites a UnifiedPattern)
+rewritesGen
+    :: MetaOrObject level => level -> Gen (Rewrites level UnifiedPattern)
 rewritesGen x = binaryOperatorGen x Rewrites
 
-topGen :: IsMeta a => a -> Gen (Top a UnifiedPattern)
+topGen :: MetaOrObject level => level -> Gen (Top level UnifiedPattern)
 topGen x = topBottomGen x Top
 
-patternGen :: IsMeta a => a -> Gen (Pattern a Variable UnifiedPattern)
+patternGen
+    :: MetaOrObject level
+    => level
+    -> Gen (Pattern level Variable UnifiedPattern)
 patternGen x =
-    suchThat ( oneof
+    oneof
         [ AndPattern <$> andGen x
         , ApplicationPattern <$> applicationGen x
         , BottomPattern <$> bottomGen x
@@ -234,22 +244,11 @@ patternGen x =
         , IffPattern <$> iffGen x
         , ImpliesPattern <$> impliesGen x
         , InPattern <$> inGen x
-        , NextPattern <$> nextGen Object
         , NotPattern <$> notGen x
         , OrPattern <$> orGen x
-        , RewritesPattern <$> rewritesGen Object
-        , StringLiteralPattern <$> stringLiteralGen
-        , CharLiteralPattern <$> charLiteralGen
         , TopPattern <$> topGen x
         , VariablePattern <$> variableGen x
         ]
-    ) checkMetaObject
-  where
-    checkMetaObject (StringLiteralPattern _) = koreLevel x == MetaLevel
-    checkMetaObject (CharLiteralPattern _)   = koreLevel x == MetaLevel
-    checkMetaObject (NextPattern _)          = koreLevel x == ObjectLevel
-    checkMetaObject (RewritesPattern _)      = koreLevel x == ObjectLevel
-    checkMetaObject _                        = True
 
 unifiedPatternGen :: Gen UnifiedPattern
 unifiedPatternGen = sized (\n ->
@@ -258,38 +257,43 @@ unifiedPatternGen = sized (\n ->
             [ MetaPattern . StringLiteralPattern <$> stringLiteralGen
             , MetaPattern . CharLiteralPattern <$> charLiteralGen
             ]
-        else oneof
-            [ MetaPattern <$> patternGen Meta
-            , ObjectPattern <$> patternGen Object
+        else frequency
+            [ (15, MetaPattern <$> patternGen Meta)
+            , (15, ObjectPattern <$> patternGen Object)
+            , (1, MetaPattern . StringLiteralPattern <$> stringLiteralGen)
+            , (1, MetaPattern . CharLiteralPattern <$> charLiteralGen)
+            , (1, ObjectPattern . NextPattern <$> nextGen Object)
+            , (1, ObjectPattern . RewritesPattern <$> rewritesGen Object)
             ]
     )
 
-sentenceAliasGen :: IsMeta a => a -> Gen (SentenceAlias a)
+sentenceAliasGen :: MetaOrObject level => level -> Gen (KoreSentenceAlias level)
 sentenceAliasGen x = pure SentenceAlias
     <*> scale (`div` 2) (aliasGen x)
     <*> couple (scale (`div` 2) (sortGen x))
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) attributesGen
 
-sentenceSymbolGen :: IsMeta a => a -> Gen (SentenceSymbol a)
+sentenceSymbolGen
+    :: MetaOrObject level => level -> Gen (KoreSentenceSymbol level)
 sentenceSymbolGen x = pure SentenceSymbol
     <*> scale (`div` 2) (symbolGen x)
     <*> couple (scale (`div` 2) (sortGen x))
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) attributesGen
 
-sentenceImportGen :: Gen SentenceImport
+sentenceImportGen :: Gen KoreSentenceImport
 sentenceImportGen = pure SentenceImport
     <*> scale (`div` 2) moduleNameGen
     <*> scale (`div` 2) attributesGen
 
-sentenceAxiomGen :: Gen SentenceAxiom
+sentenceAxiomGen :: Gen KoreSentenceAxiom
 sentenceAxiomGen = pure SentenceAxiom
     <*> couple (scale (`div` 2) unifiedSortVariableGen)
     <*> scale (`div` 2) unifiedPatternGen
     <*> scale (`div` 2) attributesGen
 
-sentenceSortGen :: Gen SentenceSort
+sentenceSortGen :: Gen KoreSentenceSort
 sentenceSortGen = pure SentenceSort
     <*> scale (`div` 2) (idGen Object)
     <*> couple (scale (`div` 2) (sortVariableGen Object))

@@ -6,7 +6,8 @@ module Data.Kore.Substitution.ClassTest where
 import           Test.Tasty                           (TestTree, testGroup)
 import           Test.Tasty.HUnit                     (assertEqual, testCase)
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
+import           Data.Kore.AST.Kore
 import           Data.Kore.Substitution.Class
 import qualified Data.Kore.Substitution.List          as S
 import           Data.Kore.Variables.Fresh.IntCounter

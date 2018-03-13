@@ -4,7 +4,8 @@ module Data.Kore.ASTVerifier.DefinitionVerifierSortUsageTest
 import           Test.Tasty                                          (TestTree,
                                                                       testGroup)
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
+import           Data.Kore.AST.Kore
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
 import           Data.Kore.ImplicitDefinitions
@@ -20,19 +21,19 @@ data AdditionalTestConfiguration
     = SkipTest
     | AdditionalSentences [Sentence]
 
-data TestConfiguration a = TestConfiguration
+data TestConfiguration level = TestConfiguration
     { testConfigurationDescription :: !String
     , testConfigurationAdditionalSentences :: ![Sentence]
-    , testConfigurationAdditionalSortVariables :: ![SortVariable a]
+    , testConfigurationAdditionalSortVariables :: ![SortVariable level]
     , testConfigurationCaseBasedConfiguration
         :: ![([TestFlag], AdditionalTestConfiguration)]
     }
 
-data SuccessConfiguration a
-    = SuccessConfiguration (TestConfiguration a)
+data SuccessConfiguration level
+    = SuccessConfiguration (TestConfiguration level)
     | SuccessConfigurationSkipAll
-data FailureConfiguration a
-    = FailureConfiguration (TestConfiguration a)
+data FailureConfiguration level
+    = FailureConfiguration (TestConfiguration level)
     | FailureConfigurationSkipAll
 
 data FlaggedTestData = FlaggedTestData
@@ -305,7 +306,7 @@ testsForObjectSort
         addSentenceToTestConfiguration additionalSortSentence
 
 addSentenceToTestConfiguration
-    :: Sentence -> TestConfiguration a -> TestConfiguration a
+    :: Sentence -> TestConfiguration level -> TestConfiguration level
 addSentenceToTestConfiguration
     sentence
     configuration@TestConfiguration
@@ -372,7 +373,7 @@ failureTestsForMetaSort
             namePrefix
 
 expectSuccessFlaggedTests
-    :: SuccessConfiguration a
+    :: SuccessConfiguration level
     -> [FlaggedTestData]
     -> TestTree
 expectSuccessFlaggedTests
@@ -385,7 +386,7 @@ expectSuccessFlaggedTests
         )
 
 expectFailureWithErrorFlaggedTests
-    :: FailureConfiguration a
+    :: FailureConfiguration level
     -> ExpectedErrorMessage
     -> ErrorStack
     -> [FlaggedTestData]
@@ -452,14 +453,14 @@ flaggedMetaTestsForSort
     ++ unfilteredTestExamplesForMetaSort sort
 
 applyTestConfiguration
-    :: TestConfiguration a
+    :: TestConfiguration level
     -> [FlaggedTestData]
     -> [TestData]
 applyTestConfiguration testConfiguration =
     mapMaybe (applyOneTestConfiguration testConfiguration)
 
 applyOneTestConfiguration
-    :: TestConfiguration a
+    :: TestConfiguration level
     -> FlaggedTestData
     -> Maybe TestData
 applyOneTestConfiguration testConfiguration flaggedTestData =
@@ -481,18 +482,19 @@ applyOneTestConfiguration testConfiguration flaggedTestData =
             (`elem` flaggedTestDataFlags flaggedTestData)
             (fst configurationWithFlags)
 
-newtype TestedSort a = TestedSort (Sort a)
-newtype SortActualThatIsDeclared a = SortActualThatIsDeclared (SortActual a)
+newtype TestedSort level = TestedSort (Sort level)
+newtype SortActualThatIsDeclared level =
+    SortActualThatIsDeclared (SortActual level)
 
 unfilteredTestExamplesForSort
-    :: IsMeta a
-    => a
-    -> TestedSort a
-    -> SortActualThatIsDeclared a
-    -> [SortVariable a]
+    :: MetaOrObject level
+    => level
+    -> TestedSort level
+    -> SortActualThatIsDeclared level
+    -> [SortVariable level]
     -> NamePrefix
-    -> (SentenceAlias a -> Sentence)
-    -> (SentenceSymbol a -> Sentence)
+    -> (KoreSentenceAlias level -> Sentence)
+    -> (KoreSentenceSymbol level -> Sentence)
     -> [FlaggedTestData]
 unfilteredTestExamplesForSort
     x

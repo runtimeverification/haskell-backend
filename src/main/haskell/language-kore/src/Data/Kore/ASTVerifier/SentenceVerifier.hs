@@ -12,7 +12,8 @@ module Data.Kore.ASTVerifier.SentenceVerifier ( verifyUniqueNames
                                               ) where
 
 import           Control.Monad                            (foldM)
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
+import           Data.Kore.AST.Kore
 import           Data.Kore.ASTVerifier.AttributesVerifier
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.PatternVerifier
@@ -112,10 +113,10 @@ verifySentence _ (SentenceImportSentence _) =
     verifySuccess
 
 verifySymbolAliasSentence
-    :: (IsMeta a, SentenceSymbolOrAlias ssa)
-    => (Id a -> Either (Error VerifyError) (SortDescription a))
+    :: (MetaOrObject level, SentenceSymbolOrAlias ssa)
+    => (Id level -> Either (Error VerifyError) (SortDescription level))
     -> IndexedModule
-    -> ssa a
+    -> ssa Attributes level
     -> Either (Error VerifyError) VerifySuccess
 verifySymbolAliasSentence
     findSortDeclaration indexedModule sentence
@@ -144,7 +145,7 @@ verifySymbolAliasSentence
     sortParams = getSentenceSymbolOrAliasSortParams sentence
 
 verifyAxiomSentence
-    :: SentenceAxiom
+    :: KoreSentenceAxiom
     -> IndexedModule
     -> Either (Error VerifyError) VerifySuccess
 verifyAxiomSentence axiom indexedModule =
@@ -164,7 +165,9 @@ verifyAxiomSentence axiom indexedModule =
         )
 
 verifySortSentence
-    :: SentenceSort -> IndexedModule -> Either (Error VerifyError) VerifySuccess
+    :: KoreSentenceSort
+    -> IndexedModule
+    -> Either (Error VerifyError) VerifySuccess
 verifySortSentence sentenceSort indexedModule =
     withContext
         ("sort '" ++ getId (sentenceSortName sentenceSort) ++ "' declaration")
@@ -176,8 +179,8 @@ verifySortSentence sentenceSort indexedModule =
         )
 
 buildDeclaredSortVariables
-    :: IsMeta a
-    => [SortVariable a]
+    :: MetaOrObject level
+    => [SortVariable level]
     -> Either (Error VerifyError) (Set.Set UnifiedSortVariable)
 buildDeclaredSortVariables variables =
     buildDeclaredUnifiedSortVariables

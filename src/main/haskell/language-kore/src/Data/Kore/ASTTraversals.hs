@@ -9,7 +9,8 @@ module Data.Kore.ASTTraversals ( bottomUpVisitor
 
 
 import           Control.Monad.Identity
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
+import           Data.Kore.AST.Kore
 
 {-|'topDownVisitorM' is a generalized monadic visitor for patterns.
 It takes as arguments a preprocess function and a postprocess function and
@@ -27,16 +28,18 @@ new result.
 -}
 topDownVisitorM
     :: (FixPattern var fixedPoint, Monad m)
-    => ( forall a . IsMeta a => Pattern a var (fixedPoint var)
-        -> m
-            ( Either
-                result
-                ( Pattern a var (fixedPoint var)
-                , m result -> m result
+    => ( forall level . MetaOrObject level
+        => Pattern level var (fixedPoint var)
+            -> m
+                ( Either
+                    result
+                    ( Pattern level var (fixedPoint var)
+                    , m result -> m result
+                    )
                 )
             )
-        )
-    -> (forall a . IsMeta a => Pattern a var result -> m result)
+    -> (forall level . MetaOrObject level
+        => Pattern level var result -> m result)
     -> (fixedPoint var -> m result)
 topDownVisitorM preprocess postprocess = self
   where
@@ -59,16 +62,19 @@ transformed into results and aggregates these results into a new result.
 -}
 bottomUpVisitorM
     :: (FixPattern var fixedPoint, Monad m)
-    => (forall a . IsMeta a => Pattern a var result -> m result)
+    => (forall level . MetaOrObject level
+        => Pattern level var result -> m result)
     -> (fixedPoint var -> m result)
 bottomUpVisitorM = topDownVisitorM (\x -> pure (Right (x, id)))
 
 -- |'topDownVisitor' is the non-monadic version of 'topDownVisitorM'.
 topDownVisitor
     :: FixPattern var fixedPoint
-    => (forall a . IsMeta a => Pattern a var (fixedPoint var)
-        -> Either result (Pattern a var (fixedPoint var)))
-    -> (forall a . IsMeta a => Pattern a var result -> result)
+    => (forall level . MetaOrObject level
+        => Pattern level var (fixedPoint var)
+            -> Either result (Pattern level var (fixedPoint var)))
+    -> (forall level . MetaOrObject level
+        => Pattern level var result -> result)
     -> (fixedPoint var -> result)
 topDownVisitor preprocess postprocess =
     runIdentity .
@@ -82,7 +88,7 @@ topDownVisitor preprocess postprocess =
 -- |'bottomUpVisitor' is the non-monadic version of 'bottomUpVisitorM'.
 bottomUpVisitor
     :: FixPattern var fixedPoint
-    => (forall a . IsMeta a => Pattern a var result -> result)
+    => (forall level . MetaOrObject level => Pattern level var result -> result)
     -> (fixedPoint var -> result)
 bottomUpVisitor reduce =
     runIdentity . bottomUpVisitorM (pure . reduce)

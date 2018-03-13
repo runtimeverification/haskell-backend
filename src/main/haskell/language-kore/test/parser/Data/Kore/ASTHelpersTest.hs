@@ -3,7 +3,8 @@ module Data.Kore.ASTHelpersTest (astHelperTests) where
 import           Test.Tasty           (TestTree, testGroup)
 import           Test.Tasty.HUnit     (assertEqual, testCase)
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
+import           Data.Kore.AST.Kore
 import           Data.Kore.ASTHelpers
 import           Data.Kore.Error
 
@@ -102,29 +103,34 @@ symbolOrAliasSortsTests =
     complexSortActualParam = sortActual "sa" [sortVariableSort']
     complexSortActualSort = sortActual "sa" [simpleSortActual]
 
-sortVariable :: String -> SortVariable a
+sortVariable :: String -> SortVariable level
 sortVariable name =
     SortVariable { getSortVariable = Id name }
 
-sortVariableSort :: String -> Sort a
+sortVariableSort :: String -> Sort level
 sortVariableSort name =
     SortVariableSort (sortVariable name)
 
-sortActual :: String -> [Sort a] -> Sort a
+sortActual :: String -> [Sort level] -> Sort level
 sortActual name sorts =
     SortActualSort SortActual
         { sortActualName = Id name
         , sortActualSorts = sorts
         }
 
-applicationSorts :: [Sort a] -> Sort a -> Either b (ApplicationSorts a)
+applicationSorts
+    :: [Sort level] -> Sort level -> Either b (ApplicationSorts level)
 applicationSorts operandSorts resultSort =
     Right ApplicationSorts
         { applicationSortsOperands = operandSorts
         , applicationSortsResult = resultSort
         }
 
-symbolSentence :: [SortVariable a] -> [Sort a] -> Sort a -> SentenceSymbol a
+symbolSentence
+    :: [SortVariable level]
+    -> [Sort level]
+    -> Sort level
+    -> KoreSentenceSymbol level
 symbolSentence sortParameters operandSorts resultSort =
     SentenceSymbol
         { sentenceSymbolSymbol     = Symbol

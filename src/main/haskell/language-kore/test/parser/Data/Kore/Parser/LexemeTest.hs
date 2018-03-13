@@ -2,7 +2,7 @@ module Data.Kore.Parser.LexemeTest (koreLexemeTests) where
 
 import           Test.Tasty                       (TestTree, testGroup)
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
 import           Data.Kore.Parser.Lexeme
 import           Data.Kore.Parser.ParserTestUtils
 

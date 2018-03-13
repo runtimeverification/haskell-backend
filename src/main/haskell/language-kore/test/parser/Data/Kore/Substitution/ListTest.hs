@@ -3,7 +3,8 @@ module Data.Kore.Substitution.ListTest where
 import           Test.Tasty                        (TestTree, testGroup)
 import           Test.Tasty.HUnit                  (assertEqual, testCase)
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
+import           Data.Kore.AST.Kore
 import           Data.Kore.Substitution.List
 
 import           Data.Kore.Substitution.TestCommon

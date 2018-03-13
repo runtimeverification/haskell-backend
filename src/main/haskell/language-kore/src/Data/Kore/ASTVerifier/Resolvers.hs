@@ -11,7 +11,7 @@ module Data.Kore.ASTVerifier.Resolvers ( resolveMetaSort
                                        , resolveObjectSort
                                        ) where
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.Error
 import           Data.Kore.IndexedModule.IndexedModule
@@ -38,13 +38,13 @@ resolveObjectSort = resolveSort indexedModuleObjectSortDescriptions
 
 {-|'resolveSort' resolves a sort given its id. -}
 resolveSort
-    :: (IndexedModule -> Map.Map (Id a) (SortDescription a))
+    :: (IndexedModule -> Map.Map (Id level) (SortDescription level))
     -- ^ Extracts the sort map to use.
     -> IndexedModule
     -- ^ Module containing the visible declarations.
-    -> Id a
+    -> Id level
     -- ^ The ID of the sort.
-    -> Either (Error VerifyError) (SortDescription a)
+    -> Either (Error VerifyError) (SortDescription level)
 resolveSort mapExtractor indexedModule sortId =
     case resolveThing mapExtractor indexedModule sortId of
         Nothing -> koreFail ("Sort '" ++ getId sortId ++  "' not declared.")

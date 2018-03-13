@@ -4,7 +4,7 @@ module Data.Kore.ASTVerifier.DefinitionVerifierUniqueNamesTest
 import           Test.Tasty                                          (TestTree,
                                                                       testGroup)
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
 

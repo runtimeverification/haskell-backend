@@ -11,7 +11,7 @@ Portability : POSIX
 module Data.Kore.Implicit.Verified
     (implicitKoreModule, implicitKoreDefinition) where
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Kore
 import           Data.Kore.ASTVerifier.DefinitionVerifier (verifyKoreDefinition)
 import           Data.Kore.ASTVerifier.Error              (VerifyError)
 import           Data.Kore.Error                          (Error, printError)

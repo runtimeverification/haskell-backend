@@ -2,7 +2,8 @@ module Data.Kore.Unparser.UnparseTest ( unparseParseTests
                                       , unparseUnitTests
                                       ) where
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
+import           Data.Kore.AST.Kore
 import           Data.Kore.ASTGen
 import           Data.Kore.Parser.LexemeImpl
 import           Data.Kore.Parser.ParserImpl
