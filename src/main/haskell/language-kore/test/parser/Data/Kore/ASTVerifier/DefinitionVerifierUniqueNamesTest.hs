@@ -4,7 +4,7 @@ module Data.Kore.ASTVerifier.DefinitionVerifierUniqueNamesTest
 import           Test.Tasty                                          (TestTree,
                                                                       testGroup)
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
 
@@ -156,6 +156,13 @@ definitionVerifierUniqueNamesTests =
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
                 [ simpleObjectSymbolSentence (SymbolName "s") (SortName "s")
                 , simpleSortSentence (SortName "s")
+                ]
+            )
+        , expectFailureWithError
+            "Definition with an implicit meta symbol name"
+            (Error ["module 'MODULE'"] "Duplicated name: '#nilCharList'.")
+            ( simpleDefinitionFromSentences (ModuleName "MODULE")
+                [ simpleMetaAliasSentence (AliasName "#nilCharList") stringSortName
                 ]
             )
     ]

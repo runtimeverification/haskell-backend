@@ -9,7 +9,7 @@ Portability : POSIX
 -}
 module Data.Kore.IndexedModule.IndexedModule
     ( ImplicitIndexedModule (ImplicitIndexedModule)
-    , implicitIndexedModule
+    , indexedModuleWithMetaSorts
     , IndexedModule
         -- the IndexedModule data constructor not included in the list on
         -- purpose.
@@ -23,25 +23,18 @@ module Data.Kore.IndexedModule.IndexedModule
         )
     , indexModuleIfNeeded
     , resolveThing
-    , SortDescription(..)
+    , SortDescription
     ) where
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
+import           Data.Kore.AST.Kore
 import           Data.Kore.Error
 
-import           Control.Monad   (foldM)
-import qualified Data.Map        as Map
-import qualified Data.Set        as Set
+import           Control.Monad        (foldM)
+import qualified Data.Map             as Map
+import qualified Data.Set             as Set
 
-{-|'SortDescription' represents a 'SentenceSort' that can also be used for
-meta-sorts.
--}
-data SortDescription a = SortDescription
-    { sortDescriptionName       :: !(Id a)
-    , sortDescriptionParameters :: ![SortVariable a]
-    , sortDescriptionAttributes :: !Attributes
-    }
-    deriving (Eq, Show)
+type SortDescription = SentenceSort Attributes
 
 {-|'IndexedModule' represents an AST 'Module' somewhat optimized for resolving
 IDs.
@@ -54,24 +47,24 @@ It also contains the imported modules as 'IndexedModule's and all the other
 module data in raw-ish form.
 
 All 'IndexedModule' instances should either be returned by
-'implicitIndexedModule' or they should start from an instance created by
+'indexedModuleWithMetaSorts' or they should start from an instance created by
 'indexedModuleWithDefaultImports'.
 -}
 data IndexedModule = IndexedModule
     { indexedModuleName          :: !ModuleName
     , indexedModuleMetaAliasSentences
-        :: !(Map.Map (Id Meta) (SentenceAlias Meta))
+        :: !(Map.Map (Id Meta) (KoreSentenceAlias Meta))
     , indexedModuleObjectAliasSentences
-        :: !(Map.Map (Id Object) (SentenceAlias Object))
+        :: !(Map.Map (Id Object) (KoreSentenceAlias Object))
     , indexedModuleMetaSymbolSentences
-        :: !(Map.Map (Id Meta) (SentenceSymbol Meta))
+        :: !(Map.Map (Id Meta) (KoreSentenceSymbol Meta))
     , indexedModuleObjectSymbolSentences
-        :: !(Map.Map (Id Object) (SentenceSymbol Object))
+        :: !(Map.Map (Id Object) (KoreSentenceSymbol Object))
     , indexedModuleObjectSortDescriptions
         :: !(Map.Map (Id Object) (SortDescription Object))
     , indexedModuleMetaSortDescriptions
         :: !(Map.Map (Id Meta) (SortDescription Meta))
-    , indexedModuleAxioms        :: ![SentenceAxiom]
+    , indexedModuleAxioms        :: ![KoreSentenceAxiom]
     , indexedModuleAttributes    :: !Attributes
     , indexedModuleImports       :: ![IndexedModule]
     , indexedModuleRawSentences  :: ![Sentence]
@@ -107,11 +100,11 @@ indexedModuleWithDefaultImports name (ImplicitIndexedModule implicitModule) =
     (emptyIndexedModule name)
         { indexedModuleImports = [implicitModule] }
 
-{-|'implicitIndexedModule' provides an 'IndexedModule' with the implicit Kore
-definitions.
+{-|'indexedModuleWithMetaSorts' provides an 'IndexedModule' with the implicit
+Kore definitions.
 -}
-implicitIndexedModule :: ModuleName -> (ImplicitIndexedModule, Set.Set String)
-implicitIndexedModule name =
+indexedModuleWithMetaSorts :: ModuleName -> (ImplicitIndexedModule, Set.Set String)
+indexedModuleWithMetaSorts name =
     ( ImplicitIndexedModule (emptyIndexedModule name)
         { indexedModuleMetaSortDescriptions = metaSortDescriptions }
     , Set.insert
@@ -125,10 +118,10 @@ metaSortDescriptions = Map.fromList (map metaSortDescription metaSortsList)
 metaSortDescription :: MetaSortType -> (Id Meta, SortDescription Meta)
 metaSortDescription sortType =
     ( sortId
-    , SortDescription
-        { sortDescriptionName = sortId
-        , sortDescriptionParameters = []
-        , sortDescriptionAttributes = Attributes []
+    , SentenceSort
+        { sentenceSortName = sortId
+        , sentenceSortParameters = []
+        , sentenceSortAttributes = Attributes []
         }
     )
   where
@@ -302,7 +295,7 @@ indexModuleSentence
             { indexedModuleObjectSortDescriptions =
                 Map.insert
                     (sentenceSortName sentence)
-                    (toSortDescription sentence)
+                    sentence
                     descriptions
             }
         )
@@ -373,22 +366,15 @@ indexImportedModule
         indexedModules
         koreModule
 
-toSortDescription :: SentenceSort -> SortDescription Object
-toSortDescription sentence = SortDescription
-    { sortDescriptionName = sentenceSortName sentence
-    , sortDescriptionParameters = sentenceSortParameters sentence
-    , sortDescriptionAttributes = sentenceSortAttributes sentence
-    }
-
 {-|'resolveThing' looks up an id in an 'IndexedModule', also searching in the
 imported modules.
 -}
 resolveThing
-    :: (IndexedModule -> Map.Map (Id a) (thing a))
+    :: (IndexedModule -> Map.Map (Id level) (thing level))
     -- ^ extracts the map into which to look up the id
     -> IndexedModule
-    -> Id a
-    -> Maybe (thing a)
+    -> Id level
+    -> Maybe (thing level)
 resolveThing
     mapExtractor
     indexedModule
@@ -400,11 +386,11 @@ resolveThing
         )
 
 resolveThingInternal
-    :: (Maybe (thing a), Set.Set ModuleName)
-    -> (IndexedModule -> Map.Map (Id a) (thing a))
+    :: (Maybe (thing level), Set.Set ModuleName)
+    -> (IndexedModule -> Map.Map (Id level) (thing level))
     -> IndexedModule
-    -> Id a
-    -> (Maybe (thing a), Set.Set ModuleName)
+    -> Id level
+    -> (Maybe (thing level), Set.Set ModuleName)
 resolveThingInternal x@(Just _, _) _ _ _ = x
 resolveThingInternal x@(Nothing, searchedModules) _ indexedModule _
     | indexedModuleName indexedModule `Set.member` searchedModules = x
@@ -425,7 +411,8 @@ resolveThingInternal
                     thingId
                 )
                 ( Nothing
-                , Set.insert (indexedModuleName indexedModule) searchedModules)
+                , Set.insert (indexedModuleName indexedModule) searchedModules
+                )
                 (indexedModuleImports indexedModule)
   where
     things = mapExtractor indexedModule

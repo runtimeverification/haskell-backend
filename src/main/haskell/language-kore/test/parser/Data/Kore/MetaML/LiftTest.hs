@@ -4,8 +4,8 @@ import           Test.Tasty            (TestTree, testGroup)
 import           Test.Tasty.HUnit      (assertEqual, testCase)
 
 import           Data.Fix
-import           Data.Kore.AST
-import           Data.Kore.MetaML.AST
+import           Data.Kore.AST.Common
+import           Data.Kore.AST.Kore
 import           Data.Kore.MetaML.Lift
 
 liftTests :: TestTree

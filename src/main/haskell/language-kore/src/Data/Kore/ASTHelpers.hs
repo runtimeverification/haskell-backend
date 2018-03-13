@@ -1,13 +1,13 @@
 module Data.Kore.ASTHelpers (ApplicationSorts (..), symbolOrAliasSorts) where
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
 import           Data.Kore.Error
 
-import qualified Data.Map        as Map
+import qualified Data.Map             as Map
 
-data ApplicationSorts a = ApplicationSorts
-    { applicationSortsOperands :: ![Sort a]
-    , applicationSortsResult   :: !(Sort a)
+data ApplicationSorts level = ApplicationSorts
+    { applicationSortsOperands :: ![Sort level]
+    , applicationSortsResult   :: !(Sort level)
     }
     deriving (Show, Eq)
 
@@ -16,9 +16,9 @@ pattern from the given sort parameters.
 -}
 symbolOrAliasSorts
     :: (SentenceSymbolOrAlias ssoa)
-    => [Sort a]
-    -> ssoa a
-    -> Either (Error b) (ApplicationSorts a)
+    => [Sort level]
+    -> ssoa attributes level
+    -> Either (Error b) (ApplicationSorts level)
 symbolOrAliasSorts params sentence = do
     variableToSort <-
         pairVariablesToSorts
@@ -43,9 +43,9 @@ symbolOrAliasSorts params sentence = do
 
 
 substituteSortVariables
-    :: Map.Map (SortVariable a) (Sort a)
-    -> Sort a
-    -> Either (Error b) (Sort a)
+    :: Map.Map (SortVariable level) (Sort level)
+    -> Sort level
+    -> Either (Error b) (Sort level)
 substituteSortVariables variableToSort (SortVariableSort variable) =
     case Map.lookup variable variableToSort of
         Just sort -> Right sort
@@ -63,9 +63,9 @@ substituteSortVariables
     return (SortActualSort sort { sortActualSorts = substituted })
 
 pairVariablesToSorts
-    :: [SortVariable a]
-    -> [Sort a]
-    -> Either (Error b) [(SortVariable a, Sort a)]
+    :: [SortVariable level]
+    -> [Sort level]
+    -> Either (Error b) [(SortVariable level, Sort level)]
 pairVariablesToSorts variables sorts
     | variablesLength < sortsLength =
         koreFail "Application uses more sorts than the declaration."

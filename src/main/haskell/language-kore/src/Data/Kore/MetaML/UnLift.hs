@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs             #-}
 module Data.Kore.MetaML.UnLift where
 {- TODO(traiansf):   -}
 
@@ -8,7 +9,8 @@ import qualified Data.Attoparsec.ByteString.Char8      as Parser
 import qualified Data.ByteString.Char8                 as Char8
 import           Data.Fix
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
+import           Data.Kore.AST.Kore
 import           Data.Kore.ImplicitDefinitions
 import           Data.Kore.IndexedModule.IndexedModule
 import           Data.Kore.MetaML.AST

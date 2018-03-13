@@ -2,28 +2,31 @@ module Data.Kore.MetaML.AST where
 
 import           Data.Fix
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
 
 type MetaMLPattern var = Fix (Pattern Meta var)
 
-data MetaSentenceAxiom = MetaSentenceAxiom
-    { metaSentenceAxiomParameters :: ![SortVariable Meta]
-    , metaSentenceAxiomPattern    :: !(MetaMLPattern Variable)
-    , metaSentenceAxiomAttributes :: !Attributes
-    }
-    deriving (Eq, Show)
+newtype MetaAttributes = MetaAttributes
+    { getMetaAttributes :: [MetaMLPattern Variable] }
+  deriving (Eq, Show)
+
+type MetaSentenceAxiom =
+    SentenceAxiom (SortVariable Meta) (MetaMLPattern Variable) MetaAttributes
+type MetaSentenceAlias = SentenceAlias MetaAttributes Meta
+type MetaSentenceSymbol = SentenceSymbol MetaAttributes Meta
+type MetaSentenceImport = SentenceImport MetaAttributes
 
 data MetaSentence
-    = AliasMetaSentence !(SentenceAlias Meta)
-    | SymbolMetaSentence !(SentenceSymbol Meta)
+    = AliasMetaSentence !MetaSentenceAlias
+    | SymbolMetaSentence !MetaSentenceSymbol
     | AxiomMetaSentence !MetaSentenceAxiom
-    | ImportMetaSentence !SentenceImport
+    | ImportMetaSentence !MetaSentenceImport
     deriving (Eq, Show)
 
 data MetaModule = MetaModule
     { metaModuleName       :: !ModuleName
     , metaModuleSentences  :: ![MetaSentence]
-    , metaModuleAttributes :: !Attributes
+    , metaModuleAttributes :: !MetaAttributes
     }
     deriving (Eq, Show)
 

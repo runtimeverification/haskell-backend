@@ -10,18 +10,17 @@ Portability : POSIX
 -}
 
 module Data.Kore.Implicit.ImplicitKore
-    (implicitKoreModule, implicitKoreDefinition) where
+    (uncheckedKoreModule, uncheckedKoreDefinition) where
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
+import           Data.Kore.AST.Kore
 import           Data.Kore.ASTHelpers
-import           Data.Kore.ASTVerifier.DefinitionVerifier (verifyDefinition)
-import           Data.Kore.ASTVerifier.Error              (VerifyError)
-import           Data.Kore.Error                          (Error, printError)
-import           Data.Kore.Variables.Free                 (freeVariables)
+import           Data.Kore.Error          (printError)
+import           Data.Kore.Variables.Free (freeVariables)
 
-import           Data.Foldable                            (foldl')
-import qualified Data.Map                                 as Map
-import qualified Data.Set                                 as Set
+import           Data.Foldable            (foldl')
+import qualified Data.Map                 as Map
+import qualified Data.Set                 as Set
 
 {-
 Conventions used:
@@ -66,7 +65,7 @@ can be applied to patterns.
 -}
 applyPS
     :: SentenceSymbolOrAlias s
-    => s Meta
+    => s Attributes Meta
     -> [Sort Meta]
     -> [PatternM]
     -> PatternM
@@ -97,7 +96,7 @@ given sentence, to a list of operands.
 It can also be used to transform a symbol or alias sentence to something that
 can be applied to patterns.
 -}
-applyS :: SentenceSymbolOrAlias s => s Meta -> [PatternM] -> PatternM
+applyS :: SentenceSymbolOrAlias s => s Attributes Meta -> [PatternM] -> PatternM
 applyS sentence = applyPS sentence []
 
 {-|'fillCheckSorts' matches a list of sorts to a list of 'PatternM', checking
@@ -173,7 +172,7 @@ withSort
 {-|'parameterizedAxiom' creates an axiom that has sort parameters from
 a pattern.
 -}
-parameterizedAxiom :: [SortVariable Meta] -> PatternM -> SentenceAxiom
+parameterizedAxiom :: [SortVariable Meta] -> PatternM -> KoreSentenceAxiom
 parameterizedAxiom _ (UnsortedPatternM p) =
     error ("Cannot infer sort for " ++ show (p dummySort) ++ ".")
 parameterizedAxiom
@@ -190,7 +189,7 @@ parameterizedAxiom
 contains an equals pattern.
 -}
 parameterizedEqualsAxiom
-    :: [SortVariable Meta] -> PatternM -> PatternM -> SentenceAxiom
+    :: [SortVariable Meta] -> PatternM -> PatternM -> KoreSentenceAxiom
 parameterizedEqualsAxiom parameters first second =
     parameterizedAxiom
         (equalsSortParam : parameters)
@@ -198,14 +197,14 @@ parameterizedEqualsAxiom parameters first second =
 
 {-|'equalsAxiom' is a special case for an axiom that contains an equals pattern.
 -}
-equalsAxiom :: PatternM -> PatternM -> SentenceAxiom
+equalsAxiom :: PatternM -> PatternM -> KoreSentenceAxiom
 equalsAxiom = parameterizedEqualsAxiom []
 
 {-|'wellFormedImpliesProvableAxiom' is a special case for an axioms of the form
 #wellFormed(phi) -> #provable(phi), which covers most axioms encoded in the
 meta-theory of K.
 -}
-wellFormedImpliesProvableAxiom :: PatternM -> SentenceAxiom
+wellFormedImpliesProvableAxiom :: PatternM -> KoreSentenceAxiom
 wellFormedImpliesProvableAxiom pattern1 =
     parameterizedAxiom [pS]
         (implies_
@@ -419,17 +418,17 @@ defineMetaSort
     :: String
     -> ( Sort Meta
        , Sort Meta
-       , SentenceSymbol Meta
+       , KoreSentenceSymbol Meta
        , PatternM
-       , SentenceSymbol Meta
+       , KoreSentenceSymbol Meta
        , [PatternM] -> PatternM
-       , SentenceSymbol Meta
+       , KoreSentenceSymbol Meta
        , [PatternM] -> PatternM
-       , SentenceSymbol Meta
+       , KoreSentenceSymbol Meta
        , [Sort Meta] -> [PatternM] -> PatternM
-       , SentenceSymbol Meta
+       , KoreSentenceSymbol Meta
        , [PatternM] -> PatternM
-       , [SentenceAxiom]
+       , [KoreSentenceAxiom]
        )
 defineMetaSort name =
     ( objectSort
@@ -528,12 +527,12 @@ stringVariable_ name =
         , variableSort = string'
         }
 
-symbol_ :: String -> [Sort Meta] -> Sort Meta -> SentenceSymbol Meta
+symbol_ :: String -> [Sort Meta] -> Sort Meta -> KoreSentenceSymbol Meta
 symbol_ name = parameterizedSymbol_ name []
 
 parameterizedSymbol_
     :: String -> [SortVariable Meta] -> [Sort Meta] -> Sort Meta
-    -> SentenceSymbol Meta
+    -> KoreSentenceSymbol Meta
 parameterizedSymbol_ name parameters operandSorts resultSort =
     SentenceSymbol
         { sentenceSymbolSymbol = Symbol
@@ -1529,20 +1528,3 @@ uncheckedKoreDefinition =
         { definitionAttributes = Attributes []
         , definitionModules    = [uncheckedKoreModule]
         }
-
-checkedKoreDefinition :: Either (Error VerifyError) Definition
-checkedKoreDefinition = do
-    verifyDefinition uncheckedKoreDefinition
-    return uncheckedKoreDefinition
-
-implicitKoreDefinition :: Definition
-implicitKoreDefinition =
-    case checkedKoreDefinition of
-        Left err -> error (printError err)
-        Right d  -> d
-
-implicitKoreModule :: Module
-implicitKoreModule =
-    case checkedKoreDefinition of
-        Left err                                   -> error (printError err)
-        Right Definition {definitionModules = [m]} -> m

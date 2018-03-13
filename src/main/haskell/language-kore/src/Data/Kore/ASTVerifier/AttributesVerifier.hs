@@ -9,7 +9,7 @@ Portability : POSIX
 -}
 module Data.Kore.ASTVerifier.AttributesVerifier (verifyAttributes) where
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Kore
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.PatternVerifier
 import           Data.Kore.Error

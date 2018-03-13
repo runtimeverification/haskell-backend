@@ -1,9 +1,11 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs             #-}
 module Data.Kore.MetaML.Lift where
 
 import           Data.Fix
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
+import           Data.Kore.AST.Kore
 import           Data.Kore.ASTTraversals
 import           Data.Kore.ImplicitDefinitions
 import           Data.Kore.MetaML.AST
@@ -63,12 +65,20 @@ instance LiftableToMetaML (Variable Object) where
         , verbosityLiftToMeta verb (variableSort v)]
 
 instance LiftableToMetaML UnifiedPattern where
-    verbosityLiftToMeta verb = bottomUpVisitor liftReducer
-      where
-        liftReducer p = applyMetaObjectFunction
-            (PatternObjectMeta p)
-            (liftObjectReducer verb . getPatternObjectMeta)
-            (Fix . getPatternObjectMeta)
+    verbosityLiftToMeta verb = bottomUpVisitor (liftReducer verb)
+
+liftReducer
+    :: MetaOrObject level
+    => Bool
+    -> Pattern level Variable (MetaMLPattern Variable)
+    -> MetaMLPattern Variable
+liftReducer verb p = applyMetaObjectFunction
+    (PatternObjectMeta p)
+    MetaOrObjectTransformer
+        { objectTransformer =
+            liftObjectReducer verb . getPatternObjectMeta
+        , metaTransformer = Fix . getPatternObjectMeta
+        }
 
 liftObjectReducer
     :: Bool
@@ -132,9 +142,13 @@ liftObjectReducer verb p = case p of
     TopPattern bp -> Fix $ apply (metaMLPatternHead TopPatternType)
         [verbosityLiftToMeta verb (topSort bp)]
 
+liftAttributes :: Attributes -> MetaAttributes
+liftAttributes (Attributes as) =
+    MetaAttributes (map liftToMeta as)
+
 liftSortDeclaration
-    :: SentenceSort
-    -> (SentenceSymbol Meta, MetaSentenceAxiom, MetaSentenceAxiom)
+    :: KoreSentenceSort
+    -> (MetaSentenceSymbol, MetaSentenceAxiom, MetaSentenceAxiom)
 liftSortDeclaration ss =
     (symbolDeclaration, helperFunctionAxiom, declaredAxiom)
   where
@@ -146,7 +160,7 @@ liftSortDeclaration ss =
         { sentenceSymbolSymbol = groundSymbol symbolId
         , sentenceSymbolSorts = map (const sortMetaSort) sortParameters
         , sentenceSymbolResultSort = sortMetaSort
-        , sentenceSymbolAttributes = Attributes []
+        , sentenceSymbolAttributes = MetaAttributes []
         }
     sortParam = SortVariable (Id "#s")
     sortParamAsSort = SortVariableSort sortParam
@@ -154,20 +168,20 @@ liftSortDeclaration ss =
         { sortActualName = sortName
         , sortActualSorts = sortParametersAsSorts
         }
-    helperFunctionAxiom = MetaSentenceAxiom
-        { metaSentenceAxiomAttributes = Attributes []
-        , metaSentenceAxiomParameters = [sortParam]
-        , metaSentenceAxiomPattern = Fix $ EqualsPattern Equals
+    helperFunctionAxiom = SentenceAxiom
+        { sentenceAxiomAttributes = MetaAttributes []
+        , sentenceAxiomParameters = [sortParam]
+        , sentenceAxiomPattern = Fix $ EqualsPattern Equals
             { equalsOperandSort = sortMetaSort
             , equalsResultSort = sortParamAsSort
             , equalsFirst = verbosityLiftToMeta False actualSort
             , equalsSecond = verbosityLiftToMeta True actualSort
             }
         }
-    declaredAxiom = MetaSentenceAxiom
-        { metaSentenceAxiomAttributes = Attributes []
-        , metaSentenceAxiomParameters = [sortParam]
-        , metaSentenceAxiomPattern = Fix $ ImpliesPattern Implies
+    declaredAxiom = SentenceAxiom
+        { sentenceAxiomAttributes = MetaAttributes []
+        , sentenceAxiomParameters = [sortParam]
+        , sentenceAxiomPattern = Fix $ ImpliesPattern Implies
             { impliesSort = SortVariableSort sortParam
             , impliesFirst = Fix $ apply (sortsDeclaredHead sortParamAsSort)
                 [verbosityLiftToMeta False sortParametersAsSorts]
@@ -177,8 +191,8 @@ liftSortDeclaration ss =
         }
 
 liftSymbolDeclaration
-    :: SentenceSymbol Object
-    -> (SentenceSymbol Meta, MetaSentenceAxiom, MetaSentenceAxiom)
+    :: KoreSentenceSymbol Object
+    -> (MetaSentenceSymbol, MetaSentenceAxiom, MetaSentenceAxiom)
 liftSymbolDeclaration sd =
     (symbolOrAliasLiftedDeclaration sd, helperFunctionAxiom, declaredAxiom)
   where
@@ -202,10 +216,10 @@ liftSymbolDeclaration sd =
     phis = zipWith freshVariable [1..] patternSorts
     sortParam = SortVariable (Id "#s")
     sortParamAsSort = SortVariableSort sortParam
-    helperFunctionAxiom = MetaSentenceAxiom
-        { metaSentenceAxiomAttributes = Attributes []
-        , metaSentenceAxiomParameters = [sortParam]
-        , metaSentenceAxiomPattern = Fix $ EqualsPattern Equals
+    helperFunctionAxiom = SentenceAxiom
+        { sentenceAxiomAttributes = MetaAttributes []
+        , sentenceAxiomParameters = [sortParam]
+        , sentenceAxiomPattern = Fix $ EqualsPattern Equals
             { equalsOperandSort = patternMetaSort
             , equalsResultSort = sortParamAsSort
             , equalsFirst = Fix $ apply (groundHead liftedSymbolId)
@@ -214,10 +228,10 @@ liftSymbolDeclaration sd =
                 [ sigma, liftToMeta phis]
             }
         }
-    declaredAxiom = MetaSentenceAxiom
-        { metaSentenceAxiomAttributes = Attributes []
-        , metaSentenceAxiomParameters = [sortParam]
-        , metaSentenceAxiomPattern = Fix $ ImpliesPattern Implies
+    declaredAxiom = SentenceAxiom
+        { sentenceAxiomAttributes = MetaAttributes []
+        , sentenceAxiomParameters = [sortParam]
+        , sentenceAxiomPattern = Fix $ ImpliesPattern Implies
             { impliesSort = SortVariableSort sortParam
             , impliesFirst = Fix $ apply (sortsDeclaredHead sortParamAsSort)
                 [verbosityLiftToMeta False sortParametersAsSorts]
@@ -228,8 +242,8 @@ liftSymbolDeclaration sd =
 
 symbolOrAliasLiftedDeclaration
     :: SentenceSymbolOrAlias sa
-    => sa Object
-    -> SentenceSymbol Meta
+    => sa attributes Object
+    -> MetaSentenceSymbol
 symbolOrAliasLiftedDeclaration sa = symbolDeclaration
   where
     sortParameters = getSentenceSymbolOrAliasSortParams sa
@@ -243,19 +257,26 @@ symbolOrAliasLiftedDeclaration sa = symbolDeclaration
             map (const sortMetaSort) sortParameters ++
             patternSorts
         , sentenceSymbolResultSort = patternMetaSort
-        , sentenceSymbolAttributes = Attributes []
+        , sentenceSymbolAttributes = MetaAttributes []
         }
 
-liftAliasDeclaration :: SentenceAlias Object -> SentenceSymbol Meta
+liftAliasDeclaration :: KoreSentenceAlias Object -> MetaSentenceSymbol
 liftAliasDeclaration = symbolOrAliasLiftedDeclaration
 
 liftSentence :: Sentence -> [MetaSentence]
 liftSentence (MetaSentenceAliasSentence msa) =
-    [ AliasMetaSentence msa ]
+    [ AliasMetaSentence msa
+        { sentenceAliasAttributes = liftAttributes (sentenceAliasAttributes msa)
+        }
+    ]
 liftSentence (ObjectSentenceAliasSentence osa) =
     [ SymbolMetaSentence (liftAliasDeclaration osa)]
 liftSentence (MetaSentenceSymbolSentence mss) =
-    [ SymbolMetaSentence mss ]
+    [ SymbolMetaSentence mss
+        { sentenceSymbolAttributes =
+            liftAttributes (sentenceSymbolAttributes mss)
+        }
+    ]
 liftSentence (ObjectSentenceSymbolSentence oss) =
     let (mss, axiom1, axiom2) = liftSymbolDeclaration oss in
         [ SymbolMetaSentence mss
@@ -269,10 +290,10 @@ liftSentence (SentenceSortSentence ss) =
         , AxiomMetaSentence axiom2
         ]
 liftSentence (SentenceAxiomSentence as) =
-    [ AxiomMetaSentence MetaSentenceAxiom
-        { metaSentenceAxiomParameters = metaParameters
-        , metaSentenceAxiomAttributes = sentenceAxiomAttributes as
-        , metaSentenceAxiomPattern =
+    [ AxiomMetaSentence SentenceAxiom
+        { sentenceAxiomParameters = metaParameters
+        , sentenceAxiomAttributes = liftAttributes (sentenceAxiomAttributes as)
+        , sentenceAxiomPattern =
             if null objectParameters
                 then liftedPattern
                 else undefined
@@ -284,11 +305,16 @@ liftSentence (SentenceAxiomSentence as) =
     objectParameters =
         [sv | ObjectSortVariable sv <- sentenceAxiomParameters as]
     liftedPattern = liftToMeta (sentenceAxiomPattern as)
-liftSentence (SentenceImportSentence is) = [ImportMetaSentence is]
+liftSentence (SentenceImportSentence is) =
+    [ ImportMetaSentence is
+        { sentenceImportAttributes =
+            liftAttributes (sentenceImportAttributes is)
+        }
+    ]
 
 liftModule :: Module -> MetaModule
 liftModule m = MetaModule
     { metaModuleName = moduleName m
-    , metaModuleAttributes = moduleAttributes m
+    , metaModuleAttributes = liftAttributes (moduleAttributes m)
     , metaModuleSentences = concatMap liftSentence (moduleSentences m)
     }

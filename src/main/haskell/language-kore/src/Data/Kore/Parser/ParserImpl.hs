@@ -12,8 +12,8 @@ Parser definition for Kore. Meant for internal use only.
 Conventions used:
 
 1. In various cases we distinguish between @object-@ and @meta-@ versions of an
-   element. For this we parametrize the element's type with an @a@ and we
-   provide an element of type @a@ to the parser, usually called @x@.
+   element. For this we parametrize the element's type with a @level@ and we
+   provide an element of type @level@ to the parser, usually called @x@.
 
 2. The meta versions are identified by the presence of @#@ characters, usually
    found at the start of the element. However, when they are found inside,
@@ -25,7 +25,7 @@ Conventions used:
    an element which is the union of the two, the union is called 'Unified*'.
    As an example, if we have @⟨object-variable⟩@, @⟨meta-variable⟩@ and
    @⟨variable⟩ ::= ⟨object-variable⟩ | ⟨meta-variable⟩@, then we'll represent
-   the fist two by "Variable a" and the latter by "UnifiedVariable".
+   the fist two by "Variable level" and the latter by "UnifiedVariable".
 
 3. Parsers called 'Raw' receive a constructor that constructs the element.
 
@@ -37,7 +37,8 @@ Conventions used:
 -}
 module Data.Kore.Parser.ParserImpl where
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
+import           Data.Kore.AST.Kore
 import           Data.Kore.MetaML.AST
 import           Data.Kore.Parser.Lexeme
 import qualified Data.Kore.Parser.ParserUtils     as ParserUtils
@@ -66,9 +67,9 @@ BNF definition:
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 sortVariableParser
-    :: IsMeta a
-    => a        -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser (SortVariable a)
+    :: MetaOrObject level
+    => level        -- ^ Distinguishes between the meta and non-meta elements.
+    -> Parser (SortVariable level)
 sortVariableParser x = SortVariable <$> idParser x
 
 {-|'unifiedSortVariableParser' parses a sort variable.-}
@@ -93,9 +94,9 @@ BNF definition:
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 sortParser
-    :: IsMeta a
-    => a        -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser (Sort a)
+    :: MetaOrObject level
+    => level        -- ^ Distinguishes between the meta and non-meta elements.
+    -> Parser (Sort level)
 sortParser x = do
     identifier <- idParser x
     c <- Parser.peekChar
@@ -105,13 +106,13 @@ sortParser x = do
   where
     actualSortParser identifier = do
         sorts <- inCurlyBracesListParser (sortParser x)
-        when (koreLevel x == MetaLevel) (validateMetaSort identifier sorts)
+        when (isMeta x) (validateMetaSort identifier sorts)
         return $ SortActualSort SortActual
             { sortActualName = stringNameNormalizer identifier
             , sortActualSorts = sorts
             }
     stringNameNormalizer identifier@(Id i) =
-        if (koreLevel x == MetaLevel) && (i == show StringSort)
+        if isMeta x && (i == show StringSort)
             then Id (show CharListSort)
             else identifier
 
@@ -129,9 +130,9 @@ Relevant BNF definitions:
 @
 -}
 validateMetaSort
-    :: Show a
-    => Id a     -- ^ The sort name
-    -> [Sort a] -- ^ The sort arguments
+    :: MetaOrObject level
+    => Id level     -- ^ The sort name
+    -> [Sort level] -- ^ The sort arguments
     -> Parser ()
 validateMetaSort identifier [] =
     unless (isJust (metaSortConverter metaId))
@@ -153,10 +154,10 @@ BNF definitions:
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 symbolOrAliasDeclarationRawParser
-    :: IsMeta a
-    => a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Id a -> [SortVariable a] -> m a)  -- ^ Element constructor.
-    -> Parser (m a)
+    :: MetaOrObject level
+    => level  -- ^ Distinguishes between the meta and non-meta elements.
+    -> (Id level -> [SortVariable level] -> m level)  -- ^ Element constructor.
+    -> Parser (m level)
 symbolOrAliasDeclarationRawParser x constructor = do
     headConstructor <- idParser x
     symbolOrAliasDeclarationRemainderRawParser x (constructor headConstructor)
@@ -174,10 +175,10 @@ BNF fragments:
 Always starts with @{@.
 -}
 symbolOrAliasDeclarationRemainderRawParser
-    :: IsMeta a
-    => a   -- ^ Distinguishes between the meta and non-meta elements.
-    -> ([SortVariable a] -> m a)  -- ^ Element constructor.
-    -> Parser (m a)
+    :: MetaOrObject level
+    => level   -- ^ Distinguishes between the meta and non-meta elements.
+    -> ([SortVariable level] -> m level)  -- ^ Element constructor.
+    -> Parser (m level)
 symbolOrAliasDeclarationRemainderRawParser x constructor =
     constructor <$> inCurlyBracesListParser (sortVariableParser x)
 
@@ -194,16 +195,16 @@ BNF definitions:
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 aliasParser
-    :: IsMeta a
-    => a        -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser (Alias a)
+    :: MetaOrObject level
+    => level        -- ^ Distinguishes between the meta and non-meta elements.
+    -> Parser (Alias level)
 aliasParser x = symbolOrAliasDeclarationRawParser x Alias
 
 
 {-|'symbolParser' is the same as 'aliasParser', but it interprets the head
 as a symbol one.
 -}
-symbolParser :: IsMeta a => a -> Parser (Symbol a)
+symbolParser :: MetaOrObject level => level -> Parser (Symbol level)
 symbolParser x = symbolOrAliasDeclarationRawParser x Symbol
 
 {-|'unaryOperatorRemainderParser' parses the part after an unary operator's
@@ -221,12 +222,12 @@ BNF fragments:
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 unaryOperatorRemainderParser
-    :: IsMeta a
+    :: MetaOrObject level
     => Parser child
-    -> a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort a -> child -> m a child)
+    -> level  -- ^ Distinguishes between the meta and non-meta elements.
+    -> (Sort level -> child -> m level child)
     -- ^ Element constructor.
-    -> Parser (m a child)
+    -> Parser (m level child)
 unaryOperatorRemainderParser childParser x constructor =
     pure constructor
         <*> inCurlyBracesRemainderParser (sortParser x)
@@ -247,12 +248,12 @@ BNF fragments:
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 binaryOperatorRemainderParser
-    :: IsMeta a
+    :: MetaOrObject level
     => Parser child
-    -> a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort a -> child -> child -> m a child)
+    -> level  -- ^ Distinguishes between the meta and non-meta elements.
+    -> (Sort level -> child -> child -> m level child)
     -- ^ Element constructor.
-    -> Parser (m a child)
+    -> Parser (m level child)
 binaryOperatorRemainderParser childParser x constructor = do
     sort <- inCurlyBracesRemainderParser (sortParser x)
     (child1, child2) <-
@@ -274,13 +275,13 @@ BNF fragments:
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 existsForallRemainderParser
-    :: IsMeta a
+    :: MetaOrObject level
     => Parser child
-    -> a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort a -> Variable a -> child
-        -> m a Variable child)
+    -> level  -- ^ Distinguishes between the meta and non-meta elements.
+    -> (Sort level -> Variable level -> child
+        -> m level Variable child)
     -- ^ Element constructor.
-    -> Parser (m a Variable child)
+    -> Parser (m level Variable child)
 existsForallRemainderParser childParser x constructor = do
     sort <- inCurlyBracesRemainderParser (sortParser x)
     (variable, qChild) <- parenPairParser (variableParser x) childParser
@@ -301,12 +302,12 @@ BNF fragments:
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 ceilFloorRemainderParser
-    :: IsMeta a
+    :: MetaOrObject level
     => Parser child
-    -> a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort a -> Sort a -> child -> m a child)
+    -> level  -- ^ Distinguishes between the meta and non-meta elements.
+    -> (Sort level -> Sort level -> child -> m level child)
     -- ^ Element constructor.
-    -> Parser (m a child)
+    -> Parser (m level child)
 ceilFloorRemainderParser childParser x constructor = do
     (sort1, sort2) <- curlyPairRemainderParser (sortParser x)
     cfChild <- inParenthesesParser childParser
@@ -327,12 +328,12 @@ BNF fragments:
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 equalsInRemainderParser
-    :: IsMeta a
+    :: MetaOrObject level
     => Parser child
-    -> a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort a -> Sort a -> child -> child -> m a child)
+    -> level  -- ^ Distinguishes between the meta and non-meta elements.
+    -> (Sort level -> Sort level -> child -> child -> m level child)
     -- ^ Element constructor.
-    -> Parser (m a child)
+    -> Parser (m level child)
 equalsInRemainderParser childParser x constructor = do
     (sort1, sort2) <- curlyPairRemainderParser (sortParser x)
     (child1, child2) <-
@@ -353,10 +354,10 @@ BNF fragments:
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 topBottomRemainderParser
-    :: IsMeta a
-    => a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort a -> m a child)  -- ^ Element constructor.
-    -> Parser (m a child)
+    :: MetaOrObject level
+    => level  -- ^ Distinguishes between the meta and non-meta elements.
+    -> (Sort level -> m level child)  -- ^ Element constructor.
+    -> Parser (m level child)
 topBottomRemainderParser x constructor = do
     sort <- inCurlyBracesRemainderParser (sortParser x)
     inParenthesesParser (return ())
@@ -379,11 +380,11 @@ BNF fragments:
 Always starts with @{@.
 -}
 symbolOrAliasPatternRemainderParser
-    :: IsMeta a
+    :: MetaOrObject level
     => Parser child
-    -> a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Id a  -- ^ The already parsed prefix.
-    -> Parser (Pattern a Variable child)
+    -> level  -- ^ Distinguishes between the meta and non-meta elements.
+    -> Id level  -- ^ The already parsed prefix.
+    -> Parser (Pattern level Variable child)
 symbolOrAliasPatternRemainderParser childParser x identifier =
     ApplicationPattern <$>
         ( pure Application
@@ -405,10 +406,10 @@ BNF fragments:
 Always starts with @:@.
 -}
 variableRemainderParser
-    :: IsMeta a
-    => a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Id a  -- ^ The already parsed prefix.
-    -> Parser (Variable a)
+    :: MetaOrObject level
+    => level  -- ^ Distinguishes between the meta and non-meta elements.
+    -> Id level  -- ^ The already parsed prefix.
+    -> Parser (Variable level)
 variableRemainderParser x identifier = do
     colonParser
     sort <- sortParser x
@@ -429,9 +430,9 @@ BNF definitions:
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 variableParser
-    :: IsMeta a
-    => a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser (Variable a)
+    :: MetaOrObject level
+    => level  -- ^ Distinguishes between the meta and non-meta elements.
+    -> Parser (Variable level)
 variableParser x = idParser x >>= variableRemainderParser x
 
 {-|'unifiedVariableParser' parses a @variable@.
@@ -473,10 +474,10 @@ BNF definitions:
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 variableOrTermPatternParser
-    :: IsMeta a
+    :: MetaOrObject level
     => Parser child
-    -> a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser (Pattern a Variable child)
+    -> level  -- ^ Distinguishes between the meta and non-meta elements.
+    -> Parser (Pattern level Variable child)
 variableOrTermPatternParser childParser x = do
     identifier <- idParser x
     c <- Parser.peekChar'
@@ -607,10 +608,10 @@ BNF definitions (here cat ranges over meta and object):
 @
 -}
 leveledMLConstructorParser
-    :: IsMeta a
+    :: MetaOrObject level
     => Parser child
-    -> a
-    -> Parser (Pattern a Variable child)
+    -> level
+    -> Parser (Pattern level Variable child)
 leveledMLConstructorParser childParser level = do
     void (Parser.char '\\')
     keywordBasedParsers
@@ -645,12 +646,12 @@ required to be able to peek at the first character of the sort identifier, in
 order to determine whether we are parsing a 'Meta' or an 'Object' 'Pattern'.
 -}
 mlConstructorRemainderParser
-    :: IsMeta a
+    :: MetaOrObject level
     => Parser child
-    -> a
+    -> level
     -> MLPatternType
-    -> (MLPatternType -> Parser (Pattern a Variable child))
-    -> Parser (Pattern a Variable child)
+    -> (MLPatternType -> Parser (Pattern level Variable child))
+    -> Parser (Pattern level Variable child)
 mlConstructorRemainderParser childParser x patternType otherParsers =
     case patternType of
         AndPatternType -> AndPattern <$>
@@ -881,12 +882,12 @@ BNF fragment example:
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 aliasSymbolSentenceRemainderParser
-    :: IsMeta a
-    => a  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser (m a)  -- Head parser.
-    -> (m a -> [Sort a] -> Sort a -> Attributes -> as a)
+    :: MetaOrObject level
+    => level  -- ^ Distinguishes between the meta and non-meta elements.
+    -> Parser (m level)  -- Head parser.
+    -> (m level -> [Sort level] -> Sort level -> Attributes -> as level)
     -- ^ Element constructor.
-    -> Parser (as a)
+    -> Parser (as level)
 aliasSymbolSentenceRemainderParser  x aliasSymbolParser constructor = do
     aliasSymbol <- aliasSymbolParser
     sorts <- inParenthesesListParser (sortParser x)

@@ -3,8 +3,8 @@ module Data.Kore.Implicit.ImplicitKoreTest (implicitKoreRegressionTests) where
 import           Test.Tasty                      (TestTree, testGroup)
 import           Test.Tasty.Golden               (goldenVsString)
 
-import           Data.Kore.AST
-import           Data.Kore.Implicit.ImplicitKore (implicitKoreDefinition)
+import           Data.Kore.AST.Kore
+import           Data.Kore.Implicit.Verified     (implicitKoreDefinition)
 import           Data.Kore.Parser.RegressionTest (GoldenFileName (..),
                                                   InputFileName (..),
                                                   regressionTest)
