@@ -133,7 +133,12 @@ instance (MetaOrObject level) => PrettyPrint (Id level) where
             flags
             (do
                 write "Id "
-                write (if isObject id' then "Object" else "Meta")
+                write
+                    (applyMetaObjectFunction
+                        id'
+                        (const "Object")
+                        (const "Meta")
+                    )
                 write " \""
                 write name
                 write "\""

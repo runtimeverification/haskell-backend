@@ -10,39 +10,28 @@ module Data.Kore.AST.Kore where
 import           Data.Kore.AST.Common
 
 import           Data.Hashable                          (hash)
-import           Data.Typeable                          (Typeable, cast, typeOf,
-                                                         typeRepArgs)
+import           Data.Typeable                          (Typeable, cast)
 
 import           Data.Kore.Datastructures.EmptyTestable
 
-{-|Class identifying whether a Kore construct sits at 'Object' level or at
-'Meta' level. Instances implementing this class shoul satisfy that:
+{-|Class identifying a Kore level. It should only be implemented by the
+'Object' and 'Meta' types, and should satisfy.
 
-* @ isObject x `xor` isMeta x == True @
+* @ isObject Object && not (isMeta Object) == True @
+* @ not (isObject Meta) && isMeta Meta == True @
 -}
-class (Typeable level) => KoreLevel level where
+class (Show level, Ord level, Eq level, Typeable level)
+    => MetaOrObject level
+  where
     isObject :: level -> Bool
     isMeta :: level -> Bool
     isObject = not . isMeta
     isMeta = not . isObject
 
-instance KoreLevel Meta where
-    isMeta _ = True
-
-instance KoreLevel Object where
-    isObject _ = True
-
-instance (Typeable m, KoreLevel level) => KoreLevel (m level)
-  where
-    isObject x = head (typeRepArgs (typeOf x)) == typeOf Object
-    isMeta x = head (typeRepArgs (typeOf x)) == typeOf Meta
-
-class (KoreLevel level, Show level, Ord level, Eq level)
-    => MetaOrObject level
-  where
-
 instance MetaOrObject Meta where
+    isMeta _ = True
 instance MetaOrObject Object where
+    isObject _ = True
 
 applyMetaObjectFunction
     :: (Typeable thing, MetaOrObject level)

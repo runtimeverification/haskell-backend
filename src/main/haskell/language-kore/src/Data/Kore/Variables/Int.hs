@@ -16,4 +16,5 @@ instance IntVariable Variable where
     intVariable var n =
         var { variableName = Id (metaObjectPrefix ++ "var_" ++ show n) }
       where
-        metaObjectPrefix = if isMeta var then "#" else ""
+        metaObjectPrefix =
+            applyMetaObjectFunction var (const "") (const "#")
