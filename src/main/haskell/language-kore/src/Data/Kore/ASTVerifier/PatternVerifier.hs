@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 {-|
 Module      : Data.Kore.ASTVerifier.PatternVerifier
 Description : Tools for verifying the wellformedness of a Kore 'Pattern'.
@@ -9,7 +10,8 @@ Portability : POSIX
 -}
 module Data.Kore.ASTVerifier.PatternVerifier (verifyPattern) where
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
+import           Data.Kore.AST.Kore
 import           Data.Kore.ASTHelpers
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.Resolvers
@@ -22,7 +24,6 @@ import           Data.Kore.Unparser.Unparse
 import           Control.Monad                         (zipWithM_)
 import qualified Data.Map                              as Map
 import qualified Data.Set                              as Set
-import           Data.Typeable                         (Typeable)
 
 data DeclaredVariables = DeclaredVariables
     { objectDeclaredVariables :: !(Map.Map (Id Object) (Variable Object))
@@ -35,15 +36,15 @@ emptyDeclaredVariables = DeclaredVariables
     , metaDeclaredVariables = Map.empty
     }
 
-data VerifyHelpers a = VerifyHelpers
+data VerifyHelpers level = VerifyHelpers
     { verifyHelpersFindSort
-        :: !(Id a -> Either (Error VerifyError) (SortDescription a))
+        :: !(Id level -> Either (Error VerifyError) (SortDescription level))
     , verifyHelpersLookupAliasDeclaration
-        :: !(Id a -> Maybe (SentenceAlias a))
+        :: !(Id level -> Maybe (KoreSentenceAlias level))
     , verifyHelpersLookupSymbolDeclaration
-        :: !(Id a -> Maybe (SentenceSymbol a))
+        :: !(Id level -> Maybe (KoreSentenceSymbol level))
     , verifyHelpersFindDeclaredVariables
-        :: !(Id a -> Maybe (Variable a))
+        :: !(Id level -> Maybe (Variable level))
     }
 
 metaVerifyHelpers :: IndexedModule -> DeclaredVariables -> VerifyHelpers Meta
@@ -200,13 +201,13 @@ internalVerifyPattern
     verifyHelpers = objectVerifyHelpers indexedModule declaredVariables
 
 verifyParametrizedPattern
-    :: IsMeta a
-    => Pattern a Variable UnifiedPattern
+    :: MetaOrObject level
+    => Pattern level Variable UnifiedPattern
     -> IndexedModule
-    -> VerifyHelpers a
+    -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
-    -> Either (Error VerifyError) (Sort a)
+    -> Either (Error VerifyError) (Sort level)
 verifyParametrizedPattern (AndPattern p)         = verifyMLPattern p
 verifyParametrizedPattern (ApplicationPattern p) = verifyApplication p
 verifyParametrizedPattern (BottomPattern p)      = verifyMLPattern p
@@ -237,13 +238,13 @@ verifyObjectPattern _                   = rightNothing
     rightNothing _ _ _ _ = Right Nothing
 
 maybeVerifyMLPattern
-    :: (MLPatternClass p, IsMeta a)
-    => p a UnifiedPattern
+    :: (MLPatternClass p, MetaOrObject level)
+    => p level UnifiedPattern
     -> IndexedModule
-    -> VerifyHelpers a
+    -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
-    -> Either (Error VerifyError) (Maybe (Sort a))
+    -> Either (Error VerifyError) (Maybe (Sort level))
 maybeVerifyMLPattern
     mlPattern
     indexedModule
@@ -260,13 +261,13 @@ maybeVerifyMLPattern
             declaredVariables
 
 verifyMLPattern
-    :: (MLPatternClass p, IsMeta a)
-    => p a UnifiedPattern
+    :: (MLPatternClass p, MetaOrObject level)
+    => p level UnifiedPattern
     -> IndexedModule
-    -> VerifyHelpers a
+    -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
-    -> Either (Error VerifyError) (Sort a)
+    -> Either (Error VerifyError) (Sort level)
 verifyMLPattern
     mlPattern
     indexedModule
@@ -293,8 +294,8 @@ verifyMLPattern
 
 
 verifyPatternsWithSorts
-    :: IsMeta a
-    => [Sort a]
+    :: MetaOrObject level
+    => [Sort level]
     -> [UnifiedPattern]
     -> IndexedModule
     -> Set.Set UnifiedSortVariable
@@ -331,13 +332,13 @@ verifyPatternsWithSorts
     actualOperandCount = length operands
 
 verifyApplication
-    :: IsMeta a
-    => Application a UnifiedPattern
+    :: MetaOrObject level
+    => Application level UnifiedPattern
     -> IndexedModule
-    -> VerifyHelpers a
+    -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
-    -> Either (Error VerifyError) (Sort a)
+    -> Either (Error VerifyError) (Sort level)
 verifyApplication
     application
     indexedModule
@@ -359,13 +360,13 @@ verifyApplication
     return (applicationSortsResult applicationSorts)
 
 verifyBinder
-    :: (MLBinderPatternClass p, IsMeta a)
-    => p a Variable UnifiedPattern
+    :: (MLBinderPatternClass p, MetaOrObject level)
+    => p level Variable UnifiedPattern
     -> IndexedModule
-    -> VerifyHelpers a
+    -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
-    -> Either (Error VerifyError) (Sort a)
+    -> Either (Error VerifyError) (Sort level)
 verifyBinder
     binder
     indexedModule
@@ -391,13 +392,13 @@ verifyBinder
     binderSort = getBinderPatternSort binder
 
 verifyVariableUsage
-    :: (Ord a, Typeable a)
-    => Variable a
+    :: (MetaOrObject level)
+    => Variable level
     -> IndexedModule
-    -> VerifyHelpers a
+    -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
-    -> Either (Error VerifyError) (Sort a)
+    -> Either (Error VerifyError) (Sort level)
 verifyVariableUsage variable _ verifyHelpers _ _ = do
     declaredVariable <-
         findVariableDeclaration
@@ -414,8 +415,8 @@ verifyCharPattern :: Either (Error VerifyError) (Sort Meta)
 verifyCharPattern = Right charMetaSort
 
 verifyVariableDeclaration
-    :: IsMeta a
-    => Variable a
+    :: MetaOrObject level
+    => Variable level
     -> IndexedModule
     -> Set.Set UnifiedSortVariable
     -> Either (Error VerifyError) VerifySuccess
@@ -424,18 +425,26 @@ verifyVariableDeclaration
   =
     applyMetaObjectFunction
         variable
-        (verifyUsing (resolveObjectSort indexedModule))
-        (verifyUsing (resolveMetaSort indexedModule))
-  where
-    verifyUsing f v = verifySort f
+        (verifyVariableDeclarationUsing
+            declaredSortVariables (resolveObjectSort indexedModule))
+        (verifyVariableDeclarationUsing
+            declaredSortVariables (resolveMetaSort indexedModule))
+
+verifyVariableDeclarationUsing
+    :: MetaOrObject level
+    => Set.Set UnifiedSortVariable
+    -> (Id level -> Either (Error VerifyError) (SortDescription level))
+    -> Variable level
+    -> Either (Error VerifyError) VerifySuccess
+verifyVariableDeclarationUsing declaredSortVariables f v = verifySort f
         declaredSortVariables
         (variableSort v)
 
 findVariableDeclaration
-    :: (Ord a, Typeable a)
-    => Id a
-    -> VerifyHelpers a
-    -> Either (Error VerifyError) (Variable a)
+    :: (MetaOrObject level)
+    => Id level
+    -> VerifyHelpers level
+    -> Either (Error VerifyError) (Variable level)
 findVariableDeclaration variableId verifyHelpers =
     case findVariables variableId of
         Nothing ->
@@ -445,11 +454,11 @@ findVariableDeclaration variableId verifyHelpers =
     findVariables = verifyHelpersFindDeclaredVariables verifyHelpers
 
 verifySymbolOrAlias
-    :: IsMeta a
-    => SymbolOrAlias a
-    -> VerifyHelpers a
+    :: MetaOrObject level
+    => SymbolOrAlias level
+    -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
-    -> Either (Error VerifyError) (ApplicationSorts a)
+    -> Either (Error VerifyError) (ApplicationSorts level)
 verifySymbolOrAlias symbolOrAlias verifyHelpers declaredSortVariables =
     case (maybeSentenceSymbol, maybeSentenceAlias) of
         (Just sentenceSymbol, Nothing) ->
@@ -475,12 +484,12 @@ verifySymbolOrAlias symbolOrAlias verifyHelpers declaredSortVariables =
     maybeSentenceAlias = aliasLookup applicationId
 
 applicationSortsFromSymbolOrAliasSentence
-    :: (IsMeta a, SentenceSymbolOrAlias sa)
-    => SymbolOrAlias a
-    -> sa a
-    -> VerifyHelpers a
+    :: (MetaOrObject level, SentenceSymbolOrAlias sa)
+    => SymbolOrAlias level
+    -> sa attributes level
+    -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
-    -> Either (Error VerifyError) (ApplicationSorts a)
+    -> Either (Error VerifyError) (ApplicationSorts level)
 applicationSortsFromSymbolOrAliasSentence
     symbolOrAlias sentence verifyHelpers declaredSortVariables
   = do
@@ -533,7 +542,7 @@ verifySameSort (ObjectSort expectedSort) (MetaSort actualSort) =
             ++ "'."
         )
 
-patternNameForContext :: Pattern a Variable p -> String
+patternNameForContext :: Pattern level Variable p -> String
 patternNameForContext (AndPattern _) = "\\and"
 patternNameForContext (ApplicationPattern application) =
     "symbol or alias '"
@@ -564,5 +573,5 @@ patternNameForContext (TopPattern _) = "\\top"
 patternNameForContext (VariablePattern variable) =
     "variable '" ++ variableNameForContext variable ++ "'"
 
-variableNameForContext :: Variable a -> String
+variableNameForContext :: Variable level -> String
 variableNameForContext variable = getId (variableName variable)

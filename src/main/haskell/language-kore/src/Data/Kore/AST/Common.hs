@@ -1,13 +1,9 @@
-{-# LANGUAGE DeriveFoldable         #-}
-{-# LANGUAGE DeriveFunctor          #-}
-{-# LANGUAGE DeriveTraversable      #-}
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE Rank2Types             #-}
-{-# LANGUAGE RankNTypes             #-}
-{-# LANGUAGE StandaloneDeriving     #-}
+{-# LANGUAGE DeriveFoldable     #-}
+{-# LANGUAGE DeriveFunctor      #-}
+{-# LANGUAGE DeriveTraversable  #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE GADTs              #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-|
 Module      : Data.Kore.AST
 Description : Data Structures for representing the Kore language AST
@@ -22,81 +18,27 @@ all the syntactic categories of a Kore definition.
 
 Please refer to Section 9 (The Kore Language) of the
 <http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
-
-
 -}
-module Data.Kore.AST where
+module Data.Kore.AST.Common where
 
-import           Data.Hashable (hash)
-import           Data.Typeable (Typeable, cast, typeOf, typeRepArgs)
-
-data KoreLevel
-    = ObjectLevel
-    | MetaLevel
-    deriving (Eq, Show)
-
-class (Ord a, Show a, Typeable a) => IsMeta a where
-    koreLevel :: a -> KoreLevel
+import           Data.Typeable (Typeable)
 
 data Meta = Meta
     deriving (Show, Eq, Ord, Typeable)
 
-instance IsMeta Meta where
-    koreLevel _ = MetaLevel
-
 data Object = Object
     deriving (Show, Eq, Ord, Typeable)
-
-instance IsMeta Object where
-    koreLevel _ = ObjectLevel
-
-isObject :: (IsMeta a, Typeable (m a)) => m a -> Bool
-isObject x = head (typeRepArgs (typeOf x)) == typeOf Object
-
-isMeta :: (IsMeta a, Typeable (m a)) => m a -> Bool
-isMeta x = head (typeRepArgs (typeOf x)) == typeOf Meta
-
-applyMetaObjectFunction
-    :: (IsMeta a, Typeable thing)
-    => thing a -> (thing Object -> c) -> (thing Meta -> c) -> c
-applyMetaObjectFunction x = applyMetaObjectFunctionCasted (cast x) (cast x)
-applyMetaObjectFunctionCasted
-    :: Maybe (thing Object)
-    -> Maybe (thing Meta)
-    -> (thing Object -> c)
-    -> (thing Meta -> c)
-    -> c
-applyMetaObjectFunctionCasted (Just x) Nothing f _ = f x
-applyMetaObjectFunctionCasted Nothing (Just x) _ f = f x
-applyMetaObjectFunctionCasted _ _ _ _ =
-    error "applyMetaObjectFunctionCasted: this should not happen!"
-
-class Typeable thing
-    => UnifiedThing unifiedThing thing | unifiedThing -> thing
-  where
-    destructor :: unifiedThing -> Either (thing Meta) (thing Object)
-    objectConstructor :: thing Object -> unifiedThing
-    metaConstructor :: thing Meta -> unifiedThing
-    transformUnified
-        :: (forall a . IsMeta a => thing a -> b)
-        -> (unifiedThing -> b)
-    transformUnified f unifiedStuff =
-        case destructor unifiedStuff of
-            Left x  -> f x
-            Right x -> f x
-    asUnified :: (IsMeta a) => thing a -> unifiedThing
-    asUnified x = applyMetaObjectFunction x objectConstructor metaConstructor
 
 {-|'Id' corresponds to the @object-identifier@ and @meta-identifier@
 syntactic categories from the Semantics of K, Section 9.1.1 (Lexicon).
 
-The 'a' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'IsMeta a'.
+The 'level' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should either be 'Meta' or 'Object'.
 
 We may chage the Id's representation in the future so one should treat it as
 an opaque entity as much as possible.
 -}
-newtype Id a = Id { getId :: String }
+newtype Id level = Id { getId :: String }
     deriving (Show, Eq, Ord, Typeable)
 
 {-|'StringLiteral' corresponds to the @string@ literal from the Semantics of K,
@@ -115,12 +57,12 @@ newtype CharLiteral = CharLiteral { getCharLiteral :: Char }
 @object-head@ and @meta-head@ syntactic categories from the Semantics of K,
 Section 9.1.3 (Heads).
 
-The 'a' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'IsMeta a'.
+The 'level' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should either be 'Meta' or 'Object'.
 -}
-data SymbolOrAlias a = SymbolOrAlias
-    { symbolOrAliasConstructor :: !(Id a)
-    , symbolOrAliasParams      :: ![Sort a]
+data SymbolOrAlias level = SymbolOrAlias
+    { symbolOrAliasConstructor :: !(Id level)
+    , symbolOrAliasParams      :: ![Sort level]
     }
     deriving (Show, Eq, Ord, Typeable)
 
@@ -129,14 +71,14 @@ data SymbolOrAlias a = SymbolOrAlias
 @object-symbol-declaration@ and @meta-symbol-declaration@ syntactic categories
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 
-The 'a' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'IsMeta a'.
+The 'level' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should either be 'Meta' or 'Object'.
 
 Note that this is very similar to 'SymbolOrAlias'.
 -}
-data Symbol a = Symbol
-    { symbolConstructor :: !(Id a)
-    , symbolParams      :: ![SortVariable a]
+data Symbol level = Symbol
+    { symbolConstructor :: !(Id level)
+    , symbolParams      :: ![SortVariable level]
     }
     deriving (Show, Eq, Ord, Typeable)
 
@@ -145,14 +87,14 @@ data Symbol a = Symbol
 @object-alias-declaration@ and @meta-alias-declaration@ syntactic categories
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 
-The 'a' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'IsMeta a'.
+The 'level' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should either be 'Meta' or 'Object'.
 
 Note that this is very similar to 'SymbolOrAlias'.
 -}
-data Alias a = Alias
-    { aliasConstructor :: !(Id a)
-    , aliasParams      :: ![SortVariable a]
+data Alias level = Alias
+    { aliasConstructor :: !(Id level)
+    , aliasParams      :: ![SortVariable level]
     }
     deriving (Show, Eq, Ord, Typeable)
 
@@ -160,23 +102,23 @@ data Alias a = Alias
 @meta-sort-variable@ syntactic categories from the Semantics of K,
 Section 9.1.2 (Sorts).
 
-The 'a' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'IsMeta a'.
+The 'level' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should either be 'Meta' or 'Object'.
 -}
-newtype SortVariable a = SortVariable
-    { getSortVariable  :: Id a }
+newtype SortVariable level = SortVariable
+    { getSortVariable  :: Id level }
     deriving (Show, Eq, Ord, Typeable)
 
 {-|'SortActual' corresponds to the @sort-constructor{sort-list}@ branch of the
 @object-sort@ and @meta-sort@ syntactic categories from the Semantics of K,
 Section 9.1.2 (Sorts).
 
-The 'a' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'IsMeta a'.
+The 'level' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should either be 'Meta' or 'Object'.
 -}
-data SortActual a = SortActual
-    { sortActualName  :: !(Id a)
-    , sortActualSorts :: ![Sort a]
+data SortActual level = SortActual
+    { sortActualName  :: !(Id level)
+    , sortActualSorts :: ![Sort level]
     }
     deriving (Show, Eq, Ord, Typeable)
 
@@ -184,24 +126,13 @@ data SortActual a = SortActual
 @meta-sort@ syntactic categories from the Semantics of K,
 Section 9.1.2 (Sorts).
 
-The 'a' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'IsMeta a'.
+The 'level' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should either be 'Meta' or 'Object'.
 -}
-data Sort a
-    = SortVariableSort !(SortVariable a)
-    | SortActualSort !(SortActual a)
+data Sort level
+    = SortVariableSort !(SortVariable level)
+    | SortActualSort !(SortActual level)
     deriving (Show, Eq, Ord, Typeable)
-
-data UnifiedSort
-    = ObjectSort !(Sort Object)
-    | MetaSort !(Sort Meta)
-    deriving (Show, Eq)
-
-instance UnifiedThing UnifiedSort Sort where
-    destructor (MetaSort s)   = Left s
-    destructor (ObjectSort s) = Right s
-    metaConstructor = MetaSort
-    objectConstructor = ObjectSort
 
 {-|'MetaSortType' corresponds to the @meta-sort-constructor@ syntactic category
 from the Semantics of K, Section 9.1.2 (Sorts).
@@ -243,118 +174,18 @@ instance Show MetaSortType where
     show VariableSort     = "#Variable"
     show VariableListSort = "#VariableList"
 
-{-|'UnifiedSortVariable' corresponds to the @variable@ syntactic category
-from the Semantics of K, Section 9.1.2 (Sorts).
--}
-data UnifiedSortVariable
-    = ObjectSortVariable !(SortVariable Object)
-    | MetaSortVariable !(SortVariable Meta)
-    deriving (Show, Eq, Ord)
-
-instance UnifiedThing UnifiedSortVariable SortVariable where
-    destructor (MetaSortVariable v)   = Left v
-    destructor (ObjectSortVariable v) = Right v
-    metaConstructor = MetaSortVariable
-    objectConstructor = ObjectSortVariable
-
-{-|'ModuleName' corresponds to the @module-name@ syntactic category
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
--}
-newtype ModuleName = ModuleName { getModuleName :: String }
-    deriving (Show, Eq, Ord)
-
 {-|'Variable' corresponds to the @object-variable@ and
 @meta-variable@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
 
-The 'a' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'IsMeta a'.
+The 'level' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should either be 'Meta' or 'Object'.
 -}
-data Variable a = Variable
-    { variableName :: !(Id a)
-    , variableSort :: !(Sort a)
+data Variable level = Variable
+    { variableName :: !(Id level)
+    , variableSort :: !(Sort level)
     }
     deriving (Show, Eq, Ord, Typeable)
-
-class ( Ord (UnifiedVariable var)
-      , Show (var Object), Show (var Meta)
-      , Typeable var
-      ) => VariableClass var
-  where
-    -- |Retrieves the sort of the variable
-    getVariableSort :: IsMeta a => var a -> Sort a
-    -- |Computes a hash identifying the variable
-    getVariableHash :: var a -> Int
-
-instance VariableClass Variable where
-    getVariableSort = variableSort
-    getVariableHash = hash . getId . variableName
-
-{-|'UnifiedVariable' corresponds to the @variable@ syntactic category from
-the Semantics of K, Section 9.1.4 (Patterns).
--}
-data UnifiedVariable v
-    = MetaVariable !(v Meta)
-    | ObjectVariable !(v Object)
-
-instance Typeable v => UnifiedThing (UnifiedVariable v) v where
-    destructor (MetaVariable v)   = Left v
-    destructor (ObjectVariable v) = Right v
-    metaConstructor = MetaVariable
-    objectConstructor = ObjectVariable
-
-deriving instance Eq (UnifiedVariable Variable)
-deriving instance Ord (UnifiedVariable Variable)
-deriving instance Show (UnifiedVariable Variable)
-
-{-|'FixPattern' class corresponds to "fixed point"-like representations
-of the 'Pattern' class.
-
-'p' is the fiexd point wrapping pattern.
-
-'v' is the type of variables.
--}
-class UnifiedThing (p v) (PatternObjectMeta v (p v))
-    => FixPattern v p
-  where
-    {-|'fixPatternApply' "lifts" a function defined on 'Pattern' to the
-    domain of the fixed point 'p'.
-
-    The resulting function unwraps the pattern from 'p' and maps it through
-    the argument function.
-    -}
-    fixPatternApply
-        :: (forall a . IsMeta a => Pattern a v (p v) -> b)
-        -> (p v -> b)
-    fixPatternApply f = transformUnified (f . getPatternObjectMeta)
-
-data FixedPattern variable
-    = MetaPattern !(Pattern Meta variable (FixedPattern variable))
-    | ObjectPattern !(Pattern Object variable (FixedPattern variable))
-
-{-|'UnifiedPattern' corresponds to the @pattern@ syntactic category from
-the Semantics of K, Section 9.1.4 (Patterns).
--}
-type UnifiedPattern = FixedPattern Variable
-
-deriving instance Eq UnifiedPattern
-deriving instance Show UnifiedPattern
-
-instance Typeable v
-    => UnifiedThing (FixedPattern v) (PatternObjectMeta v (FixedPattern v))
-  where
-    destructor (MetaPattern p)   = Left (PatternObjectMeta p)
-    destructor (ObjectPattern p) = Right (PatternObjectMeta p)
-    metaConstructor = MetaPattern . getPatternObjectMeta
-    objectConstructor = ObjectPattern . getPatternObjectMeta
-
-asUnifiedPattern
-    :: (IsMeta a, Typeable v)
-    => Pattern a v (FixedPattern v) -> FixedPattern v
-asUnifiedPattern = asUnified . PatternObjectMeta
-
-
-instance (Typeable var) => FixPattern var FixedPattern where
 
 {-|Enumeration of patterns starting with @\@
 -}
@@ -417,15 +248,15 @@ patternString pt = case pt of
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
 
-The 'a' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'IsMeta a'.
+The 'level' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should either be 'Meta' or 'Object'.
 
 'andSort' is both the sort of the operands and the sort of the result.
 
 This represents the 'andFirst ∧ andSecond' Matching Logic construct.
 -}
-data And a p = And
-    { andSort   :: !(Sort a)
+data And level p = And
+    { andSort   :: !(Sort level)
     , andFirst  :: !p
     , andSecond :: !p
     }
@@ -435,13 +266,13 @@ data And a p = And
 @object-pattern@ and @meta-pattern@ syntactic categories from
 the Semantics of K, Section 9.1.4 (Patterns).
 
-The 'a' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'IsMeta a'.
+The 'level' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should either be 'Meta' or 'Object'.
 
 This represents the σ(φ1, ..., φn) symbol patterns in Matching Logic.
 -}
-data Application a p = Application
-    { applicationSymbolOrAlias :: !(SymbolOrAlias a)
+data Application level p = Application
+    { applicationSymbolOrAlias :: !(SymbolOrAlias level)
     , applicationChildren      :: ![p]
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
@@ -450,22 +281,22 @@ data Application a p = Application
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
 
-The 'a' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'IsMeta a'.
+The 'level' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should either be 'Meta' or 'Object'.
 
 'bottomSort' is the sort of the result.
 
 This represents the ⌈BottomPattern⌉ Matching Logic construct.
 -}
-newtype Bottom a p = Bottom { bottomSort :: Sort a}
+newtype Bottom level p = Bottom { bottomSort :: Sort level}
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
 {-|'Ceil' corresponds to the @\ceil@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
 
-The 'a' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'IsMeta a'.
+The 'level' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should either be 'Meta' or 'Object'.
 
 'ceilOperandSort' is the sort of the operand.
 
@@ -473,9 +304,9 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 
 This represents the ⌈ceilPattern⌉ Matching Logic construct.
 -}
-data Ceil a p = Ceil
-    { ceilOperandSort :: !(Sort a)
-    , ceilResultSort  :: !(Sort a)
+data Ceil level p = Ceil
+    { ceilOperandSort :: !(Sort level)
+    , ceilResultSort  :: !(Sort level)
     , ceilChild       :: !p
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
@@ -484,8 +315,8 @@ data Ceil a p = Ceil
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
 
-The 'a' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'IsMeta a'.
+The 'level' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should either be 'Meta' or 'Object'.
 
 'equalsOperandSort' is the sort of the operand.
 
@@ -493,9 +324,9 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 
 This represents the 'equalsFirst = equalsSecond' Matching Logic construct.
 -}
-data Equals a p = Equals
-    { equalsOperandSort :: !(Sort a)
-    , equalsResultSort  :: !(Sort a)
+data Equals level p = Equals
+    { equalsOperandSort :: !(Sort level)
+    , equalsResultSort  :: !(Sort level)
     , equalsFirst       :: !p
     , equalsSecond      :: !p
     }
@@ -505,16 +336,16 @@ data Equals a p = Equals
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
 
-The 'a' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'IsMeta a'.
+The 'level' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should either be 'Meta' or 'Object'.
 
 'existsSort' is both the sort of the operands and the sort of the result.
 
 This represents the '∃existsVariable(existsChild)' Matching Logic construct.
 -}
-data Exists a v p = Exists
-    { existsSort     :: !(Sort a)
-    , existsVariable :: !(v a)
+data Exists level v p = Exists
+    { existsSort     :: !(Sort level)
+    , existsVariable :: !(v level)
     , existsChild    :: !p
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
@@ -523,8 +354,8 @@ data Exists a v p = Exists
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
 
-The 'a' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'IsMeta a'.
+The 'level' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should either be 'Meta' or 'Object'.
 
 'floorOperandSort' is the sort of the operand.
 
@@ -532,9 +363,9 @@ versions of symbol declarations. It should verify 'IsMeta a'.
 
 This represents the '⌊floorPattern⌋' Matching Logic construct.
 -}
-data Floor a p = Floor
-    { floorOperandSort :: !(Sort a)
-    , floorResultSort  :: !(Sort a)
+data Floor level p = Floor
+    { floorOperandSort :: !(Sort level)
+    , floorResultSort  :: !(Sort level)
     , floorChild       :: !p
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
@@ -543,16 +374,16 @@ data Floor a p = Floor
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
 
-The 'a' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'IsMeta a'.
+The 'level' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should either be 'Meta' or 'Object'.
 
 'forallSort' is both the sort of the operands and the sort of the result.
 
 This represents the '∀forallVariable(forallChild)' Matching Logic construct.
 -}
-data Forall a v p = Forall
-    { forallSort     :: !(Sort a)
-    , forallVariable :: !(v a)
+data Forall level v p = Forall
+    { forallSort     :: !(Sort level)
+    , forallVariable :: !(v level)
     , forallChild    :: !p
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
@@ -561,15 +392,15 @@ data Forall a v p = Forall
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
 
-The 'a' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'IsMeta a'.
+The 'level' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should either be 'Meta' or 'Object'.
 
 'iffSort' is both the sort of the operands and the sort of the result.
 
 This represents the 'iffFirst ⭤ iffSecond' Matching Logic construct.
 -}
-data Iff a p = Iff
-    { iffSort   :: !(Sort a)
+data Iff level p = Iff
+    { iffSort   :: !(Sort level)
     , iffFirst  :: !p
     , iffSecond :: !p
     }
@@ -579,15 +410,15 @@ data Iff a p = Iff
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
 
-The 'a' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'IsMeta a'.
+The 'level' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should either be 'Meta' or 'Object'.
 
 'impliesSort' is both the sort of the operands and the sort of the result.
 
 This represents the 'impliesFirst ⭢ impliesSecond' Matching Logic construct.
 -}
-data Implies a p = Implies
-    { impliesSort   :: !(Sort a)
+data Implies level p = Implies
+    { impliesSort   :: !(Sort level)
     , impliesFirst  :: !p
     , impliesSecond :: !p
     }
@@ -597,8 +428,8 @@ data Implies a p = Implies
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
 
-The 'a' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'IsMeta a'.
+The 'level' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should either be 'Meta' or 'Object'.
 
 'inOperandSort' is the sort of the operands.
 
@@ -609,9 +440,9 @@ construct, which, when 'inContainedChild' is a singleton (e.g. a variable),
 represents the set membership. However, in general, it actually means that the
 two patterns have a non-empty intersection.
 -}
-data In a p = In
-    { inOperandSort     :: !(Sort a)
-    , inResultSort      :: !(Sort a)
+data In level p = In
+    { inOperandSort     :: !(Sort level)
+    , inResultSort      :: !(Sort level)
     , inContainedChild  :: !p
     , inContainingChild :: !p
     }
@@ -621,16 +452,16 @@ data In a p = In
 {-|'Next' corresponds to the @\next@ branch of the @object-pattern@
 syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
 
-Although there is no 'meta' version of @\next@, there is an 'a' type parameter
-which should verify 'IsMeta a'. The object-only restriction is done at the
-Pattern level.
+Although there is no 'meta' version of @\next@, there is an 'level' type
+parameter which will always be 'Object'. The object-only restriction is
+done at the 'Pattern' level.
 
 'nextSort' is both the sort of the operand and the sort of the result.
 
 This represents the '∘ nextChild' Matching Logic construct.
 -}
-data Next a p = Next
-    { nextSort  :: !(Sort a)
+data Next level p = Next
+    { nextSort  :: !(Sort level)
     , nextChild :: !p
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
@@ -639,15 +470,15 @@ data Next a p = Next
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
 
-The 'a' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'IsMeta a'.
+The 'level' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should either be 'Meta' or 'Object'.
 
 'notSort' is both the sort of the operand and the sort of the result.
 
 This represents the '¬ notChild' Matching Logic construct.
 -}
-data Not a p = Not
-    { notSort  :: !(Sort a)
+data Not level p = Not
+    { notSort  :: !(Sort level)
     , notChild :: !p
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
@@ -656,15 +487,15 @@ data Not a p = Not
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
 
-The 'a' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'IsMeta a'.
+The 'level' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should either be 'Meta' or 'Object'.
 
 'orSort' is both the sort of the operands and the sort of the result.
 
 This represents the 'orFirst ∨ orSecond' Matching Logic construct.
 -}
-data Or a p = Or
-    { orSort   :: !(Sort a)
+data Or level p = Or
+    { orSort   :: !(Sort level)
     , orFirst  :: !p
     , orSecond :: !p
     }
@@ -673,8 +504,8 @@ data Or a p = Or
 {-|'Rewrites' corresponds to the @\rewrites@ branch of the @object-pattern@
 syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
 
-Although there is no 'meta' version of @\rewrites@, there is an 'a' type
-parameter which should verify 'IsMeta a'. The object-only restriction is
+Although there is no 'meta' version of @\rewrites@, there is an 'level' type
+parameter which will always be 'Object'. The object-only restriction is
 done at the Pattern level.
 
 'rewritesSort' is both the sort of the operands and the sort of the result.
@@ -682,8 +513,8 @@ done at the Pattern level.
 This represents the 'rewritesFirst ⇒ rewritesSecond' Matching Logic construct.
 -}
 
-data Rewrites a p = Rewrites
-    { rewritesSort   :: !(Sort a)
+data Rewrites level p = Rewrites
+    { rewritesSort   :: !(Sort level)
     , rewritesFirst  :: !p
     , rewritesSecond :: !p
     }
@@ -693,63 +524,91 @@ data Rewrites a p = Rewrites
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
 
-The 'a' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'IsMeta a'.
+The 'level type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should either be 'Meta' or 'Object'.
 
 'topSort' is the sort of the result.
 
 This represents the ⌈TopPattern⌉ Matching Logic construct.
 -}
-newtype Top a p = Top { topSort :: Sort a}
+newtype Top level p = Top { topSort :: Sort level}
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
 {-|'Pattern' corresponds to the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
 
-The 'a' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'IsMeta a'.
+The 'level' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should either be 'Meta' or 'Object'.
 
 Note that the 'StringLiteralPattern' and 'CharLiteralPattern' should
 be members only of 'Pattern Meta'.
 -}
-data Pattern a v p
-    = AndPattern !(And a p)
-    | ApplicationPattern !(Application a p)
-    | BottomPattern !(Bottom a p)
-    | CeilPattern !(Ceil a p)
-    | EqualsPattern !(Equals a p)
-    | ExistsPattern !(Exists a v p)
-    | FloorPattern !(Floor a p)
-    | ForallPattern !(Forall a v p)
-    | IffPattern !(Iff a p)
-    | ImpliesPattern !(Implies a p)
-    | InPattern !(In a p)
-    | NextPattern !(Next Object p)
-    | NotPattern !(Not a p)
-    | OrPattern !(Or a p)
-    | RewritesPattern !(Rewrites Object p)
-    | StringLiteralPattern !StringLiteral
-    | CharLiteralPattern !CharLiteral
-    | TopPattern !(Top a p)
-    | VariablePattern !(v a)
-    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
+data Pattern level variable child where
+    AndPattern
+        :: !(And level child) -> Pattern level variable child
+    ApplicationPattern
+        :: !(Application level child) -> Pattern level variable child
+    BottomPattern
+        :: !(Bottom level child) -> Pattern level variable child
+    CeilPattern
+        :: !(Ceil level child) -> Pattern level variable child
+    EqualsPattern
+        :: !(Equals level child) -> Pattern level variable child
+    ExistsPattern
+        :: !(Exists level variable child) -> Pattern level variable child
+    FloorPattern
+        :: !(Floor level child) -> Pattern level variable child
+    ForallPattern
+        :: !(Forall level variable child) -> Pattern level variable child
+    IffPattern
+        :: !(Iff level child) -> Pattern level variable child
+    ImpliesPattern
+        :: !(Implies level child) -> Pattern level variable child
+    InPattern
+        :: !(In level child) -> Pattern level variable child
+    NextPattern
+        :: !(Next Object child) -> Pattern Object variable child
+    NotPattern
+        :: !(Not level child) -> Pattern level variable child
+    OrPattern
+        :: !(Or level child) -> Pattern level variable child
+    RewritesPattern
+        :: !(Rewrites Object child) -> Pattern Object variable child
+    StringLiteralPattern
+        :: !StringLiteral -> Pattern Meta variable child
+    CharLiteralPattern
+        :: !CharLiteral -> Pattern Meta variable child
+    TopPattern
+        :: !(Top level child) -> Pattern level variable child
+    VariablePattern
+        :: !(variable level) -> Pattern level variable child
+  deriving (Typeable)
 
-newtype PatternObjectMeta v p a = PatternObjectMeta
-    { getPatternObjectMeta :: Pattern a v p }
+deriving instance
+    ( Eq child
+    , Eq (variable level)
+    ) => Eq (Pattern level variable child)
+deriving instance
+    ( Show child
+    , Show (variable level)
+    ) => Show (Pattern level variable child)
+deriving instance Functor (Pattern level variable)
+deriving instance Foldable (Pattern level variable)
+deriving instance Traversable (Pattern level variable)
 
 {-|'SentenceAlias' corresponds to the @object-alias-declaration@ and
 @meta-alias-declaration@ syntactic categories from the Semantics of K,
 Section 9.1.6 (Declaration and Definitions).
 
-The 'a' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'IsMeta a'.
+The 'level' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should either be 'Meta' or 'Object'.
 -}
-data SentenceAlias a = SentenceAlias
-    { sentenceAliasAlias      :: !(Alias a)
-    , sentenceAliasSorts      :: ![Sort a]
-    , sentenceAliasResultSort :: !(Sort a)
-    , sentenceAliasAttributes :: !Attributes
+data SentenceAlias attributes level = SentenceAlias
+    { sentenceAliasAlias      :: !(Alias level)
+    , sentenceAliasSorts      :: ![Sort level]
+    , sentenceAliasResultSort :: !(Sort level)
+    , sentenceAliasAttributes :: !attributes
     }
     deriving (Eq, Show, Typeable)
 
@@ -757,142 +616,61 @@ data SentenceAlias a = SentenceAlias
 @meta-symbol-declaration@ syntactic categories from the Semantics of K,
 Section 9.1.6 (Declaration and Definitions).
 
-The 'a' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'IsMeta a'.
+The 'level' type parameter is used to distiguish between the meta- and object-
+versions of symbol declarations. It should either be 'Meta' or 'Object'.
 -}
-data SentenceSymbol a = SentenceSymbol
-    { sentenceSymbolSymbol     :: !(Symbol a)
-    , sentenceSymbolSorts      :: ![Sort a]
-    , sentenceSymbolResultSort :: !(Sort a)
-    , sentenceSymbolAttributes :: !Attributes
+data SentenceSymbol attributes level = SentenceSymbol
+    { sentenceSymbolSymbol     :: !(Symbol level)
+    , sentenceSymbolSorts      :: ![Sort level]
+    , sentenceSymbolResultSort :: !(Sort level)
+    , sentenceSymbolAttributes :: !attributes
     }
     deriving (Eq, Show, Typeable)
 
+{-|'ModuleName' corresponds to the @module-name@ syntactic category
+from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
+-}
+newtype ModuleName = ModuleName { getModuleName :: String }
+    deriving (Show, Eq, Ord)
 
 {-|'SentenceImport' corresponds to the @import-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
-data SentenceImport = SentenceImport
+data SentenceImport attributes = SentenceImport
     { sentenceImportModuleName :: !ModuleName
-    , sentenceImportAttributes :: !Attributes
+    , sentenceImportAttributes :: !attributes
     }
     deriving (Eq, Show, Typeable)
-
-{-|'SentenceAxiom' corresponds to the @axiom-declaration@ syntactic category
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
--}
-data SentenceAxiom = SentenceAxiom
-    { sentenceAxiomParameters :: ![UnifiedSortVariable]
-    , sentenceAxiomPattern    :: !UnifiedPattern
-    , sentenceAxiomAttributes :: !Attributes
-    }
-    deriving (Eq, Show)
 
 {-|'SentenceSort' corresponds to the @sort-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
-data SentenceSort = SentenceSort
-    { sentenceSortName       :: !(Id Object)
-    , sentenceSortParameters :: ![SortVariable Object]
-    , sentenceSortAttributes :: !Attributes
+data SentenceSort attributes level = SentenceSort
+    { sentenceSortName       :: !(Id level)
+    , sentenceSortParameters :: ![SortVariable level]
+    , sentenceSortAttributes :: !attributes
     }
     deriving (Eq, Show)
 
-{-|The 'Sentence' type corresponds to the @declaration@ syntactic category
+{-|'SentenceAxiom' corresponds to the @axiom-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
-
-The @symbol-declaration@ and @alias-declaration@ categories were also merged
-into 'Sentence', with distinct constructors for the @Meta@ and @Object@
-variants.
 -}
-data Sentence
-    = MetaSentenceAliasSentence !(SentenceAlias Meta)
-    | ObjectSentenceAliasSentence !(SentenceAlias Object)
-    | MetaSentenceSymbolSentence !(SentenceSymbol Meta)
-    | ObjectSentenceSymbolSentence !(SentenceSymbol Object)
-    | SentenceImportSentence !SentenceImport
-    | SentenceAxiomSentence !SentenceAxiom
-    | SentenceSortSentence !SentenceSort
-    deriving (Eq, Show)
-
-asSentenceAliasSentence :: IsMeta a => SentenceAlias a -> Sentence
-asSentenceAliasSentence v =
-    applyMetaObjectFunction
-        v ObjectSentenceAliasSentence MetaSentenceAliasSentence
-
-
-asSentenceSymbolSentence :: IsMeta a => SentenceSymbol a -> Sentence
-asSentenceSymbolSentence v =
-    applyMetaObjectFunction
-        v ObjectSentenceSymbolSentence MetaSentenceSymbolSentence
-
-
-newtype Attributes = Attributes { getAttributes :: [UnifiedPattern] }
-    deriving (Eq, Show)
-
-{-|A 'Module' consists of a 'ModuleName' a list of 'Sentence's and some
-'Attributes'.
-
-They correspond to the second, third and forth non-terminals of the @definition@
-syntactic category from the Semantics of K, Section 9.1.6
-(Declaration and Definitions).
--}
-data Module = Module
-    { moduleName       :: !ModuleName
-    , moduleSentences  :: ![Sentence]
-    , moduleAttributes :: !Attributes
+data SentenceAxiom sortParam pat attributes = SentenceAxiom
+    { sentenceAxiomParameters :: ![sortParam]
+    , sentenceAxiomPattern    :: !pat
+    , sentenceAxiomAttributes :: !attributes
     }
     deriving (Eq, Show)
-
-{-|Currently, a 'Definition' consists of some 'Attributes' and a 'Module'
-
-Because there are plans to extend this to a list of 'Module's, the @definition@
-syntactic category from the Semantics of K, Section 9.1.6
-(Declaration and Definitions) is splitted here into 'Definition' and 'Module'.
-
-'definitionAttributes' corresponds to the first non-terminal of @definition@,
-while the remaining three are grouped into 'definitionModules'.
--}
-data Definition = Definition
-    { definitionAttributes :: !Attributes
-    , definitionModules    :: ![Module]
-    }
-    deriving (Eq, Show)
-
-class AsSentence s where
-    asSentence :: s -> Sentence
-
-instance AsSentence (SentenceAlias Meta) where
-    asSentence = MetaSentenceAliasSentence
-
-instance AsSentence (SentenceAlias Object) where
-    asSentence = ObjectSentenceAliasSentence
-
-instance AsSentence (SentenceSymbol Meta) where
-    asSentence = MetaSentenceSymbolSentence
-
-instance AsSentence (SentenceSymbol Object) where
-    asSentence = ObjectSentenceSymbolSentence
-
-instance AsSentence SentenceImport where
-    asSentence = SentenceImportSentence
-
-instance AsSentence SentenceAxiom where
-    asSentence = SentenceAxiomSentence
-
-instance AsSentence SentenceSort where
-    asSentence = SentenceSortSentence
-
 
 {-|'MLPatternClass' offers a common interface to ML patterns
   (those starting with '\', except for 'Exists' and 'Forall')
 -}
-class MLPatternClass p where
-    getPatternType :: p a recursionP -> MLPatternType
-    getMLPatternOperandSorts :: p a recursionP -> [Sort a]
-    getMLPatternResultSort :: p a recursionP -> Sort a
-    getPatternSorts :: p a recursionP -> [Sort a]
-    getPatternChildren :: p a recursionP -> [recursionP]
+class MLPatternClass pat where
+    getPatternType :: pat level child -> MLPatternType
+    getMLPatternOperandSorts :: pat level child -> [Sort level]
+    getMLPatternResultSort :: pat level child -> Sort level
+    getPatternSorts :: pat level child -> [Sort level]
+    getPatternChildren :: pat level child -> [child]
 
 instance MLPatternClass And where
     getPatternType _ = AndPatternType
@@ -985,26 +763,26 @@ instance MLPatternClass Top where
     getPatternSorts t = [topSort t]
     getPatternChildren _ = []
 
-class MLBinderPatternClass p where
-    getBinderPatternType :: p a v recursionP -> MLPatternType
-    getBinderPatternSort :: p a v recursionP -> Sort a
-    getBinderPatternVariable :: p a v recursionP -> v a
-    getBinderPatternChild :: p a v recursionP -> recursionP
+class MLBinderPatternClass pat where
+    getBinderPatternType :: pat level variable child -> MLPatternType
+    getBinderPatternSort :: pat level variable child -> Sort level
+    getBinderPatternVariable :: pat level variable child -> variable level
+    getBinderPatternChild :: pat level variable child -> child
     -- The first argument is only needed in order to make the Haskell type
     -- system work.
     binderPatternConstructor
-        :: p a v recursionP -> Sort a -> v a -> recursionP
-        -> Pattern a v recursionP
+        :: pat level variable child -> Sort level -> variable level -> child
+        -> Pattern level variable child
 
 instance MLBinderPatternClass Exists where
     getBinderPatternType _ = ExistsPatternType
     getBinderPatternSort = existsSort
     getBinderPatternVariable = existsVariable
     getBinderPatternChild = existsChild
-    binderPatternConstructor _ s v p = ExistsPattern Exists
-        { existsSort = s
-        , existsVariable = v
-        , existsChild = p
+    binderPatternConstructor _ sort variable pat = ExistsPattern Exists
+        { existsSort = sort
+        , existsVariable = variable
+        , existsChild = pat
         }
 
 instance MLBinderPatternClass Forall where
@@ -1012,19 +790,25 @@ instance MLBinderPatternClass Forall where
     getBinderPatternSort = forallSort
     getBinderPatternVariable = forallVariable
     getBinderPatternChild = forallChild
-    binderPatternConstructor _ s v p = ForallPattern Forall
-        { forallSort = s
-        , forallVariable = v
-        , forallChild = p
+    binderPatternConstructor _ sort variable pat = ForallPattern Forall
+        { forallSort = sort
+        , forallVariable = variable
+        , forallChild = pat
         }
 
-class SentenceSymbolOrAlias p where
-    getSentenceSymbolOrAliasConstructor :: p a -> Id a
-    getSentenceSymbolOrAliasSortParams :: p a -> [SortVariable a]
-    getSentenceSymbolOrAliasArgumentSorts :: p a -> [Sort a]
-    getSentenceSymbolOrAliasResultSort :: p a -> Sort a
-    getSentenceSymbolOrAliasAttributes :: p a -> Attributes
-    getSentenceSymbolOrAliasSentenceName :: p a -> String
+class SentenceSymbolOrAlias sentence where
+    getSentenceSymbolOrAliasConstructor
+        :: sentence attributes level -> Id level
+    getSentenceSymbolOrAliasSortParams
+        :: sentence attributes level -> [SortVariable level]
+    getSentenceSymbolOrAliasArgumentSorts
+        :: sentence attributes level -> [Sort level]
+    getSentenceSymbolOrAliasResultSort
+        :: sentence attributes level -> Sort level
+    getSentenceSymbolOrAliasAttributes
+        :: sentence attributes level -> attributes
+    getSentenceSymbolOrAliasSentenceName
+        :: sentence attributes level -> String
 
 instance SentenceSymbolOrAlias SentenceAlias where
     getSentenceSymbolOrAliasConstructor = aliasConstructor . sentenceAliasAlias

@@ -7,7 +7,8 @@ import           Test.Tasty.HUnit                     (assertEqual,
 import           Control.Exception                    (ErrorCall (ErrorCall),
                                                        catch, evaluate)
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
+import           Data.Kore.AST.Kore
 import           Data.Kore.Variables.Fresh.Class
 import           Data.Kore.Variables.Fresh.IntCounter
 

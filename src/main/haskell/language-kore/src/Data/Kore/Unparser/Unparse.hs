@@ -1,9 +1,11 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Data.Kore.Unparser.Unparse (Unparse, unparseToString) where
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
+import           Data.Kore.AST.Kore
 import           Data.Kore.IndentingPrinter (PrinterOutput, StringPrinter,
                                              betweenLines, printToString,
                                              withIndent, write)
@@ -23,7 +25,7 @@ unparseToString a = printToString (stringUnparse a)
 
 {- unparse instances for Kore datastructures -}
 
-instance Unparse (Id a) where
+instance Unparse (Id level) where
     unparse = write . getId
 
 unparseList :: (PrinterOutput w m, Unparse a) => m () -> [a] -> m ()
@@ -57,10 +59,10 @@ inDoubleQuotes = withDelimiters "\"" "\""
 inSingleQuotes :: PrinterOutput w m => m () -> m ()
 inSingleQuotes = withDelimiters "\'" "\'"
 
-instance Unparse (SortVariable a) where
+instance Unparse (SortVariable level) where
     unparse sv = unparse (getSortVariable sv)
 
-instance Unparse (Sort a) where
+instance Unparse (Sort level) where
     unparse (SortVariableSort sv) = unparse sv
     unparse (SortActualSort sa)   = do
         unparse (sortActualName sa)
@@ -75,34 +77,34 @@ instance Unparse CharLiteral where
       where
         charToString c = [c]
 
-unparseSymbolOrAliasRaw :: (PrinterOutput w m) => SymbolOrAlias a -> m ()
+unparseSymbolOrAliasRaw :: (PrinterOutput w m) => SymbolOrAlias level -> m ()
 unparseSymbolOrAliasRaw sa = do
     unparse (symbolOrAliasConstructor sa)
     inCurlyBraces (unparse (symbolOrAliasParams sa))
 
-unparseSymbolRaw :: (PrinterOutput w m) => Symbol a -> m ()
+unparseSymbolRaw :: (PrinterOutput w m) => Symbol level -> m ()
 unparseSymbolRaw sa = do
     unparse (symbolConstructor sa)
     inCurlyBraces (unparse (symbolParams sa))
 
-unparseAliasRaw :: (PrinterOutput w m) => Alias a -> m ()
+unparseAliasRaw :: (PrinterOutput w m) => Alias level -> m ()
 unparseAliasRaw sa = do
     unparse (aliasConstructor sa)
     inCurlyBraces (unparse (aliasParams sa))
 
-instance Unparse (SymbolOrAlias a) where
+instance Unparse (SymbolOrAlias level) where
     unparse = unparseSymbolOrAliasRaw
 
-instance Unparse (Alias a) where
+instance Unparse (Alias level) where
     unparse = unparseAliasRaw
 
-instance Unparse (Symbol a) where
+instance Unparse (Symbol level) where
     unparse = unparseSymbolRaw
 
 instance Unparse ModuleName where
     unparse = write . getModuleName
 
-instance Unparse (Variable a) where
+instance Unparse (Variable level) where
     unparse var =
         unparse (variableName var) >> write ":" >> unparse (variableSort var)
 
@@ -123,7 +125,7 @@ instance Unparse MLPatternType where
     unparse pt = write ('\\' : patternString pt)
 
 unparseMLPattern :: (PrinterOutput w m, MLPatternClass p, Unparse rpt)
-    => p a rpt -> m ()
+    => p level rpt -> m ()
 unparseMLPattern p = do
     unparse (getPatternType p)
     inCurlyBraces (unparse (getPatternSorts p))
@@ -131,8 +133,8 @@ unparseMLPattern p = do
 
 unparseMLBinderPattern
     :: (PrinterOutput w m, MLBinderPatternClass p, Unparse rpt,
-        Unparse (v a))
-    => p a v rpt -> m ()
+        Unparse (v level))
+    => p level v rpt -> m ()
 unparseMLBinderPattern p = do
     unparse (getBinderPatternType p)
     inCurlyBraces (unparse (getBinderPatternSort p))
@@ -142,66 +144,66 @@ unparseMLBinderPattern p = do
         unparse (getBinderPatternChild p)
         )
 
-instance Unparse p => Unparse (And a p) where
+instance Unparse p => Unparse (And level p) where
     unparse = unparseMLPattern
 
-instance Unparse p => Unparse (Application a p) where
+instance Unparse p => Unparse (Application level p) where
     unparse a =
         unparse (applicationSymbolOrAlias a)
         >> inParens (unparse (applicationChildren a))
 
-instance Unparse (Bottom a p) where
+instance Unparse (Bottom level p) where
     unparse bottom = do
         unparse BottomPatternType
         inCurlyBraces (unparse (bottomSort bottom))
         inParens (return ())
 
-instance Unparse p => Unparse (Ceil a p) where
+instance Unparse p => Unparse (Ceil level p) where
     unparse = unparseMLPattern
 
-instance Unparse p => Unparse (Equals a p) where
+instance Unparse p => Unparse (Equals level p) where
     unparse = unparseMLPattern
 
-instance (Unparse (v a), Unparse p)
-    => Unparse (Exists a v p) where
+instance (Unparse (v level), Unparse p)
+    => Unparse (Exists level v p) where
     unparse = unparseMLBinderPattern
 
-instance Unparse p => Unparse (Floor a p) where
+instance Unparse p => Unparse (Floor level p) where
     unparse = unparseMLPattern
 
-instance (Unparse (v a), Unparse p)
-    => Unparse (Forall a v p) where
+instance (Unparse (v level), Unparse p)
+    => Unparse (Forall level v p) where
     unparse = unparseMLBinderPattern
 
-instance Unparse p => Unparse (Iff a p) where
+instance Unparse p => Unparse (Iff level p) where
     unparse = unparseMLPattern
 
-instance Unparse p => Unparse (Implies a p) where
+instance Unparse p => Unparse (Implies level p) where
     unparse = unparseMLPattern
 
-instance Unparse p => Unparse (In a p) where
+instance Unparse p => Unparse (In level p) where
     unparse = unparseMLPattern
 
-instance Unparse p => Unparse (Next a p) where
+instance Unparse p => Unparse (Next level p) where
     unparse = unparseMLPattern
 
-instance Unparse p => Unparse (Not a p) where
+instance Unparse p => Unparse (Not level p) where
     unparse = unparseMLPattern
 
-instance Unparse p => Unparse (Or a p) where
+instance Unparse p => Unparse (Or level p) where
     unparse = unparseMLPattern
 
-instance Unparse p => Unparse (Rewrites a p) where
+instance Unparse p => Unparse (Rewrites level p) where
     unparse = unparseMLPattern
 
-instance Unparse (Top a p) where
+instance Unparse (Top level p) where
     unparse top = do
         unparse TopPatternType
         inCurlyBraces (unparse (topSort top))
         inParens (return ())
 
-instance (Unparse (UnifiedVariable v), Unparse p, Unparse (v a))
-    => Unparse (Pattern a v p) where
+instance (Unparse (UnifiedVariable v), Unparse p, Unparse (v level))
+    => Unparse (Pattern level v p) where
     unparse (AndPattern p)           = unparse p
     unparse (ApplicationPattern p)   = unparse p
     unparse (BottomPattern p)        = unparse p
@@ -225,7 +227,7 @@ instance (Unparse (UnifiedVariable v), Unparse p, Unparse (v a))
 instance Unparse Attributes where
     unparse = inSquareBrackets . unparse . getAttributes
 
-instance Unparse (SentenceAlias a) where
+instance Unparse attributes => Unparse (SentenceAlias attributes level) where
     unparse sa = do
         write "alias"
         write " "
@@ -235,7 +237,7 @@ instance Unparse (SentenceAlias a) where
         unparse (sentenceAliasResultSort sa)
         unparse (sentenceAliasAttributes sa)
 
-instance Unparse (SentenceSymbol a) where
+instance Unparse attributes => Unparse (SentenceSymbol attributes level) where
     unparse sa = do
         write "symbol"
         write " "
@@ -245,21 +247,26 @@ instance Unparse (SentenceSymbol a) where
         unparse (sentenceSymbolResultSort sa)
         unparse (sentenceSymbolAttributes sa)
 
-instance Unparse SentenceImport where
+instance Unparse attributes => Unparse (SentenceImport attributes) where
     unparse a = do
         write "import"
         write " "
         unparse (sentenceImportModuleName a)
         unparse (sentenceImportAttributes a)
 
-instance Unparse SentenceAxiom where
+instance
+    ( Unparse attributes
+    , Unparse param
+    , Unparse pat
+    ) => Unparse (SentenceAxiom param pat attributes)
+  where
     unparse a = do
         write "axiom"
         inCurlyBraces (unparse (sentenceAxiomParameters a))
         unparse (sentenceAxiomPattern a)
         unparse (sentenceAxiomAttributes a)
 
-instance Unparse SentenceSort where
+instance Unparse attributes => Unparse (SentenceSort attributes level) where
     unparse a = do
         write "sort"
         write " "

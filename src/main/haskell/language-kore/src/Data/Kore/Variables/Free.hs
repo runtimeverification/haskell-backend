@@ -7,7 +7,8 @@ module Data.Kore.Variables.Free ( TermWithVariablesClass(freeVariables)
 import           Data.Foldable           (fold)
 import qualified Data.Set                as Set
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
+import           Data.Kore.AST.Kore
 import           Data.Kore.ASTTraversals
 
 {-| 'TermWithVariableClass' links a @term@ type with a @var@ type and
@@ -21,8 +22,8 @@ instance VariableClass var
     freeVariables = bottomUpVisitor freeVarsVisitor
 
 freeVarsVisitor
-    :: (IsMeta a, VariableClass var)
-    => Pattern a var (Set.Set (UnifiedVariable var))
+    :: (MetaOrObject level, VariableClass var)
+    => Pattern level var (Set.Set (UnifiedVariable var))
     -> Set.Set (UnifiedVariable var)
 freeVarsVisitor (VariablePattern v) = Set.singleton (asUnified v)
 freeVarsVisitor (ExistsPattern e) =

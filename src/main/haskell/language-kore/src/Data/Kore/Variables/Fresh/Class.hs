@@ -5,7 +5,7 @@ module Data.Kore.Variables.Fresh.Class where
 
 import qualified Control.Monad.State                  as State
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Kore
 import           Data.Kore.Variables.Fresh.IntCounter
 import           Data.Kore.Variables.Int
 
@@ -17,17 +17,17 @@ class (Monad m, VariableClass var) => FreshVariablesClass m var where
     {-|Given an existing variable, generate a fresh one of
     the same type and sort.
     -}
-    freshVariable :: IsMeta a => var a -> m (var a)
+    freshVariable :: MetaOrObject level => var level -> m (var level)
 
     {-|Given an existing 'UnifiedVariable' and a predicate, generate a
     fresh 'UnifiedVariable' of the same type and sort satisfying the predicate.
     By default, die in flames if the predicate is not satisfied.
     -}
     freshVariableSuchThat
-        :: IsMeta a
-        => var a
-        -> (var a -> Bool)
-        -> m (var a)
+        :: MetaOrObject level
+        => var level
+        -> (var level -> Bool)
+        -> m (var level)
     freshVariableSuchThat var p = do
         var' <- freshVariable var
         if p var'

@@ -9,7 +9,8 @@ Portability : POSIX
 -}
 module Data.Kore.ASTVerifier.SortVerifier (verifySort) where
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
+import           Data.Kore.AST.Kore
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.Error
 import           Data.Kore.IndexedModule.IndexedModule
@@ -17,12 +18,12 @@ import qualified Data.Set                              as Set
 
 {-|'verifySort' verifies the welformedness of a Kore 'Sort'. -}
 verifySort
-    :: IsMeta a
-    => (Id a -> Either (Error VerifyError) (SortDescription a))
+    :: MetaOrObject level
+    => (Id level -> Either (Error VerifyError) (SortDescription level))
     -- ^ Provides a sort's description.
     -> Set.Set UnifiedSortVariable
     -- ^ Sort variables visible here.
-    -> Sort a
+    -> Sort level
     -> Either (Error VerifyError) VerifySuccess
 verifySort _ declaredSortVariables (SortVariableSort variable)
   = do
@@ -46,11 +47,11 @@ verifySort findSortDescription declaredSortVariables (SortActualSort sort)
         )
 
 verifySortMatchesDeclaration
-    :: IsMeta a
-    => (Id a -> Either (Error VerifyError) (SortDescription a))
+    :: MetaOrObject level
+    => (Id level -> Either (Error VerifyError) (SortDescription level))
     -> Set.Set UnifiedSortVariable
-    -> SortActual a
-    -> SortDescription a
+    -> SortActual level
+    -> SortDescription level
     -> Either (Error VerifyError) VerifySuccess
 verifySortMatchesDeclaration
     findSortDescription declaredSortVariables sort sortDescription
@@ -68,4 +69,4 @@ verifySortMatchesDeclaration
     verifySuccess
   where
     actualSortCount = length (sortActualSorts sort)
-    declaredSortCount = length (sortDescriptionParameters sortDescription)
+    declaredSortCount = length (sentenceSortParameters sortDescription)

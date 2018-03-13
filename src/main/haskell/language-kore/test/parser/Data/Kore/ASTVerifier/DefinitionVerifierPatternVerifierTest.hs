@@ -4,7 +4,8 @@ module Data.Kore.ASTVerifier.DefinitionVerifierPatternVerifierTest
 import           Test.Tasty                                          (TestTree,
                                                                       testGroup)
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
+import           Data.Kore.AST.Kore
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
 import           Data.Kore.ImplicitDefinitions
@@ -17,20 +18,21 @@ data PatternRestrict
     | NeedsSortedParent
     | NoRestrict
 
-data TestPattern a = TestPattern
-    { testPatternPattern    :: Pattern a Variable UnifiedPattern
+data TestPattern level = TestPattern
+    { testPatternPattern    :: Pattern level Variable UnifiedPattern
     , testPatternErrorStack :: ErrorStack
     }
 
-newtype VariableOfDeclaredSort a = VariableOfDeclaredSort (Variable a)
+newtype VariableOfDeclaredSort level = VariableOfDeclaredSort (Variable level)
 
-testPatternErrorStackStrings :: TestPattern a -> [String]
+testPatternErrorStackStrings :: TestPattern level -> [String]
 testPatternErrorStackStrings
     TestPattern {testPatternErrorStack = ErrorStack strings}
   =
     strings
 
-testPatternUnifiedPattern :: IsMeta a => TestPattern a -> UnifiedPattern
+testPatternUnifiedPattern
+    :: MetaOrObject level => TestPattern level -> UnifiedPattern
 testPatternUnifiedPattern
     TestPattern {testPatternPattern = p}
   =
@@ -718,15 +720,15 @@ failureTestsForMetaPattern
             patternRestrict
 
 genericPatternInAllContexts
-    :: IsMeta a
-    => a
-    -> Pattern a Variable UnifiedPattern
+    :: MetaOrObject level
+    => level
+    -> Pattern level Variable UnifiedPattern
     -> NamePrefix
-    -> TestedPatternSort a
-    -> SortVariablesThatMustBeDeclared a
+    -> TestedPatternSort level
+    -> SortVariablesThatMustBeDeclared level
     -> SortVariablesThatMustBeDeclared Object
-    -> DeclaredSort a
-    -> VariableOfDeclaredSort a
+    -> DeclaredSort level
+    -> VariableOfDeclaredSort level
     -> [Sentence]
     -> PatternRestrict
     -> [TestData]
@@ -828,13 +830,13 @@ objectPatternInAllContexts
             }
 
 patternsInAllContexts
-    :: IsMeta a
-    => a
-    -> [TestPattern a]
+    :: MetaOrObject level
+    => level
+    -> [TestPattern level]
     -> NamePrefix
-    -> SortVariablesThatMustBeDeclared a
+    -> SortVariablesThatMustBeDeclared level
     -> SortVariablesThatMustBeDeclared Object
-    -> DeclaredSort a
+    -> DeclaredSort level
     -> [Sentence]
     -> PatternRestrict
     -> [TestData]
@@ -890,16 +892,16 @@ patternsInAllContexts
             }
 
 genericPatternInPatterns
-    :: IsMeta a
-    => Pattern a Variable UnifiedPattern
-    -> Pattern a Variable UnifiedPattern
-    -> OperandSort a
-    -> ResultSort a
-    -> VariableOfDeclaredSort a
-    -> SymbolOrAlias a
-    -> SymbolOrAlias a
+    :: MetaOrObject level
+    => Pattern level Variable UnifiedPattern
+    -> Pattern level Variable UnifiedPattern
+    -> OperandSort level
+    -> ResultSort level
+    -> VariableOfDeclaredSort level
+    -> SymbolOrAlias level
+    -> SymbolOrAlias level
     -> PatternRestrict
-    -> [TestPattern a]
+    -> [TestPattern level]
 genericPatternInPatterns
     testedPattern
     anotherPattern
@@ -956,11 +958,11 @@ objectPatternInPatterns
 objectPatternInPatterns = patternInUnquantifiedObjectPatterns
 
 patternInQuantifiedPatterns
-    :: IsMeta a
-    => Pattern a Variable UnifiedPattern
-    -> Sort a
-    -> Variable a
-    -> [TestPattern a]
+    :: MetaOrObject level
+    => Pattern level Variable UnifiedPattern
+    -> Sort level
+    -> Variable level
+    -> [TestPattern level]
 patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
     [ TestPattern
         { testPatternPattern = ExistsPattern Exists
@@ -991,12 +993,12 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
     ]
 
 patternInUnquantifiedGenericPatterns
-    :: IsMeta a
-    => Pattern a Variable UnifiedPattern
-    -> Pattern a Variable UnifiedPattern
-    -> OperandSort a
-    -> ResultSort a
-    -> [TestPattern a]
+    :: MetaOrObject level
+    => Pattern level Variable UnifiedPattern
+    -> Pattern level Variable UnifiedPattern
+    -> OperandSort level
+    -> ResultSort level
+    -> [TestPattern level]
 patternInUnquantifiedGenericPatterns
     testedPattern
     anotherPattern
@@ -1171,15 +1173,15 @@ patternInUnquantifiedObjectPatterns
     testedUnifiedPattern = asUnifiedPattern testedPattern
 
 testsForUnifiedPatternInTopLevelContext
-    :: IsMeta a
-    => a
+    :: MetaOrObject level
+    => level
     -> NamePrefix
-    -> DeclaredSort a
-    -> SortVariablesThatMustBeDeclared a
+    -> DeclaredSort level
+    -> SortVariablesThatMustBeDeclared level
     -> SortVariablesThatMustBeDeclared Object
     -> [Sentence]
     -> PatternRestrict
-    -> [TestPattern a -> TestData]
+    -> [TestPattern level -> TestData]
 testsForUnifiedPatternInTopLevelContext
     x
     namePrefix
@@ -1203,14 +1205,14 @@ testsForUnifiedPatternInTopLevelContext
   where sortName = "sort_tfupitlc"
 
 testsForUnifiedPatternInTopLevelGenericContext
-    :: IsMeta a
-    => a
+    :: MetaOrObject level
+    => level
     -> NamePrefix
-    -> DeclaredSort a
-    -> SortVariablesThatMustBeDeclared a
+    -> DeclaredSort level
+    -> SortVariablesThatMustBeDeclared level
     -> [Sentence]
     -> PatternRestrict
-    -> [TestPattern a -> TestData]
+    -> [TestPattern level -> TestData]
 testsForUnifiedPatternInTopLevelGenericContext
     x
     (NamePrefix namePrefix)
@@ -1368,11 +1370,11 @@ testsForUnifiedPatternInTopLevelGenericContext
     variableName1 = VariableName rawVariableName1
 
 testsForUnifiedPatternInTopLevelObjectContext
-    :: IsMeta a
+    :: MetaOrObject level
     => SortName
     -> SortVariablesThatMustBeDeclared Object
     -> [Sentence]
-    -> [TestPattern a -> TestData]
+    -> [TestPattern level -> TestData]
 testsForUnifiedPatternInTopLevelObjectContext
     (SortName rawSortName)
     (SortVariablesThatMustBeDeclared sortVariables)

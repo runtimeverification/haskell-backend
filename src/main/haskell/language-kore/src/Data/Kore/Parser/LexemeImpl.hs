@@ -24,7 +24,8 @@ Conventions used:
 -}
 module Data.Kore.Parser.LexemeImpl where
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
+import           Data.Kore.AST.Kore               (KoreLevel (..), MetaOrObject)
 import qualified Data.Kore.Parser.CharDict        as CharDict
 import           Data.Kore.Parser.CharSet         as CharSet
 import           Data.Kore.Parser.CString
@@ -47,10 +48,12 @@ import qualified Data.Trie                        as Trie
 
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
-idParser :: IsMeta a
-         => a  -- ^ Distinguishes between the meta and non-meta elements.
-         -> Parser (Id a)
-idParser x = Id <$> lexeme (idRawParser x)
+idParser :: MetaOrObject level
+         => level  -- ^ Distinguishes between the meta and non-meta elements.
+         -> Parser (Id level)
+idParser x
+    | isObject x = Id <$> lexeme (objectIdRawParser KeywordsForbidden)
+    | isMeta x = Id <$> lexeme metaIdRawParser
 
 {-|'stringLiteralParser' parses a C-style string literal, unescaping it.
 
@@ -221,18 +224,6 @@ metaIdRawParser = do
     mlPatternCtorParser = keywordBasedParsers
         (map (patternString &&& return . patternString) allPatternTypes)
 
-{-|'idParser' parses either an @object-identifier@, or a @meta-identifier@.
-Does not consume whitespace.
-
-The @meta-@ version always starts with @#@, while the @object-@ one does not.
--}
-idRawParser :: (IsMeta a)
-            => a  -- ^ Distinguishes between the meta and non-meta elements.
-            -> Parser String
-idRawParser x = case koreLevel x of
-    ObjectLevel -> objectIdRawParser KeywordsForbidden
-    MetaLevel   -> metaIdRawParser
-
 data StringScannerState
   = STRING
   | STRING_END
@@ -269,7 +260,7 @@ stringCharLiteralRawParser delimiter nextCharState constructor = do
         Right s' -> constructor s'
   where
     pow _ 0 = id
-    pow f n = f . pow f (n-1)
+    pow f n = f . pow f (n-1::Int)
     delta STRING c
       | c == delimiter = Nothing
       | c == '\\' = Just ESCAPE

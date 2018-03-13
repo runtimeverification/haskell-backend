@@ -5,15 +5,16 @@ module Data.Kore.Substitution.Class ( SubstitutionClass (..)
                                     , PatternSubstitutionClass (..)
                                     ) where
 
-import           Control.Monad.Reader            (ReaderT, ask, local,
-                                                  runReaderT)
-import           Data.Maybe                      (isJust)
-import qualified Data.Set                        as Set
-import           Prelude                         hiding (lookup)
+import           Control.Monad.Reader              (ReaderT, ask, local,
+                                                    runReaderT)
+import           Data.Maybe                        (isJust)
+import qualified Data.Set                          as Set
+import           Prelude                           hiding (lookup)
 
-import           Data.Kore.AST
-import           Data.Kore.ASTTraversals         (topDownVisitorM)
-import           Data.Kore.Substitution.MapClass
+import           Data.Kore.AST.Common
+import           Data.Kore.AST.Kore
+import           Data.Kore.ASTTraversals           (topDownVisitorM)
+import           Data.Kore.Datastructures.MapClass
 import           Data.Kore.Variables.Free
 import           Data.Kore.Variables.Fresh.Class
 
@@ -44,13 +45,17 @@ addFreeVariable
     -> SubstitutionAndQuantifiedVars s var
 addFreeVariable v s = s { quantifiedVars = v `Set.insert` quantifiedVars s }
 
+instance
+    (EmptyTestable s) => EmptyTestable (SubstitutionAndQuantifiedVars s var)
+  where
+    isEmpty = isEmpty . substitution
+
 instance ( VariableClass var
          , SubstitutionClass s (UnifiedVariable var) (FixedPattern var)
          )
     => MapClass (SubstitutionAndQuantifiedVars s var)
         (UnifiedVariable var) (FixedPattern var)
   where
-    isEmpty = isEmpty . substitution
     lookup v = lookup v . substitution
     delete v s = s { substitution = delete v (substitution s) }
     insert v t s =
@@ -89,8 +94,8 @@ substituteM
 substituteM = topDownVisitorM substitutePreprocess substituteVariable
 
 substituteVariable
-    :: (IsMeta a, PatternSubstitutionClass var s m)
-    => Pattern a var (FixedPattern var)
+    :: (MetaOrObject level, PatternSubstitutionClass var s m)
+    => Pattern level var (FixedPattern var)
     -> ReaderT (SubstitutionAndQuantifiedVars s var) m (FixedPattern var)
 substituteVariable (VariablePattern v) = do
     subst <- substitution <$> ask
@@ -105,14 +110,16 @@ substituteVariable p = return $ asUnifiedPattern p
 * if the pattern is not a binder recurse.
 -}
 substitutePreprocess
-    :: (IsMeta a, PatternSubstitutionClass var s m)
-    => Pattern a var (FixedPattern var)
+    :: (MetaOrObject level, PatternSubstitutionClass var s m)
+    => Pattern level var (FixedPattern var)
     -> ReaderT (SubstitutionAndQuantifiedVars s var)
         m (Either
             (FixedPattern var)
-            ( Pattern a var (FixedPattern var)
+            ( Pattern level var (FixedPattern var)
             , ReaderT (SubstitutionAndQuantifiedVars s var) m (FixedPattern var)
-                -> ReaderT (SubstitutionAndQuantifiedVars s var) m (FixedPattern var)
+                -> ReaderT
+                    (SubstitutionAndQuantifiedVars s var)
+                    m (FixedPattern var)
             )
         )
 substitutePreprocess p
@@ -133,13 +140,15 @@ substitutePreprocess p
   context, the quantified variable is free).
 -}
 binderPatternSubstitutePreprocess
-    :: (MLBinderPatternClass q, PatternSubstitutionClass var s m, IsMeta a)
+    :: ( MLBinderPatternClass q
+       , PatternSubstitutionClass var s m
+       , MetaOrObject level)
     => SubstitutionAndQuantifiedVars s var
-    -> q a var (FixedPattern var)
+    -> q level var (FixedPattern var)
     -> ReaderT (SubstitutionAndQuantifiedVars s var)
         m (Either
             (FixedPattern var)
-            ( Pattern a var (FixedPattern var)
+            ( Pattern level var (FixedPattern var)
             , ReaderT (SubstitutionAndQuantifiedVars s var) m (FixedPattern var)
                 -> ReaderT (SubstitutionAndQuantifiedVars s var)
                     m (FixedPattern var)

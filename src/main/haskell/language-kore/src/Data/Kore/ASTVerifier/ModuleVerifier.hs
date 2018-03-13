@@ -11,7 +11,8 @@ module Data.Kore.ASTVerifier.ModuleVerifier ( verifyModule
                                             , verifyUniqueNames
                                             ) where
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
+import           Data.Kore.AST.Kore
 import           Data.Kore.ASTVerifier.AttributesVerifier
 import           Data.Kore.ASTVerifier.Error
 import qualified Data.Kore.ASTVerifier.SentenceVerifier   as SentenceVerifier

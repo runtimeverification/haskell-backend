@@ -4,7 +4,8 @@ module Data.Kore.ASTVerifier.DefinitionVerifierUniqueSortVariablesTest
 import           Test.Tasty                                          (TestTree,
                                                                       testGroup)
 
-import           Data.Kore.AST
+import           Data.Kore.AST.Common
+import           Data.Kore.AST.Kore
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
 import           Data.Kore.ImplicitDefinitions
