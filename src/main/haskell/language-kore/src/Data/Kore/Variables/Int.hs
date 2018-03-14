@@ -5,7 +5,7 @@ module Data.Kore.Variables.Int ( IntVariable(..)
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 
-class VariableClass var => IntVariable var where
+class IntVariable var where
     {-|Given an existing variable @v@ and an integer index @n@, 'intVariable'
     generates a "fresh" variable, whose name is based on index @n@, but
     which inherits the meta type and sort from @v@.

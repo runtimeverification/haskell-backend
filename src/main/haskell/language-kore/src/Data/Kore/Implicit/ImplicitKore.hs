@@ -17,6 +17,7 @@ import           Data.Kore.ASTHelpers
 import           Data.Kore.Error          (printError)
 import           Data.Kore.Variables.Free (freeVariables)
 
+import           Data.Fix
 import           Data.Foldable            (foldl')
 import qualified Data.Map                 as Map
 import qualified Data.Set                 as Set
@@ -38,7 +39,7 @@ way, e.g. sort_.
 
 -}
 
-type PatternMetaType = Pattern Meta Variable (FixedPattern Variable)
+type PatternMetaType = Pattern Meta Variable KorePattern
 
 {-|'PatternM' is either a meta pattern with a known sort, or a function that
 builds a meta pattern from a sort.
@@ -102,7 +103,7 @@ applyS sentence = applyPS sentence []
 that the sorts are identical where possible, creating a pattern with the
 provided sort otherwise.
 -}
-fillCheckSorts :: [Sort Meta] -> [PatternM] -> [UnifiedPattern]
+fillCheckSorts :: [Sort Meta] -> [PatternM] -> [KorePattern]
 fillCheckSorts [] []         = []
 fillCheckSorts [] _          = error "Not enough sorts!"
 fillCheckSorts _ []          = error "Not enough patterns!"
@@ -112,7 +113,7 @@ fillCheckSorts (s:ss) (p:ps) = fillCheckSort s p : fillCheckSorts ss ps
 that the pattern's sorts is identical if possible, creating a pattern with the
 provided sort otherwise.
 -}
-fillCheckSort :: Sort Meta -> PatternM -> UnifiedPattern
+fillCheckSort :: Sort Meta -> PatternM -> KorePattern
 fillCheckSort
     desiredSort
     SortedPatternM { patternMPattern = p, patternMSort = actualSort }
@@ -127,9 +128,9 @@ fillCheckSort
         ++ show p
         ++ "."
         )
-    else asUnifiedPattern p
+    else asMetaPattern p
 fillCheckSort desiredSort (UnsortedPatternM p) =
-    asUnifiedPattern (p desiredSort)
+    asMetaPattern (p desiredSort)
 
 {-|'sortParameter' defines a sort parameter that can be used in declarations.
 -}
@@ -180,7 +181,7 @@ parameterizedAxiom
   =
     SentenceAxiom
         { sentenceAxiomParameters = map asUnified parameters
-        , sentenceAxiomPattern = quantifyFreeVariables s (MetaPattern p)
+        , sentenceAxiomPattern = quantifyFreeVariables s (asMetaPattern p)
         , sentenceAxiomAttributes = Attributes []
         }
 
@@ -212,25 +213,25 @@ wellFormedImpliesProvableAxiom pattern1 =
         )
 
 {-|'fillCheckPairSorts' takes two 'PatternM' objects, assumes that they must
-have the same sort, and tries to build 'UnifiedPattern's from them if possible,
-otherwise it returns functions that can build 'UnifiedPattern's.
+have the same sort, and tries to build 'KorePattern's from them if possible,
+otherwise it returns functions that can build 'KorePattern's.
 -}
 fillCheckPairSorts
     :: PatternM
     -> PatternM
     -> Either
-        (Sort Meta -> UnifiedPattern, Sort Meta -> UnifiedPattern)
-        (Sort Meta, UnifiedPattern, UnifiedPattern)
+        (Sort Meta -> KorePattern, Sort Meta -> KorePattern)
+        (Sort Meta, KorePattern, KorePattern)
 fillCheckPairSorts (UnsortedPatternM first) (UnsortedPatternM second) =
-    Left (asUnifiedPattern . first, asUnifiedPattern . second)
+    Left (asMetaPattern . first, asMetaPattern . second)
 fillCheckPairSorts
     (UnsortedPatternM first)
     SortedPatternM { patternMPattern = second, patternMSort = s }
   =
     Right
         ( s
-        , asUnifiedPattern (first s)
-        , asUnifiedPattern second
+        , asMetaPattern (first s)
+        , asMetaPattern second
         )
 fillCheckPairSorts
     SortedPatternM { patternMPattern = first, patternMSort = s }
@@ -238,8 +239,8 @@ fillCheckPairSorts
   =
     Right
         ( s
-        , asUnifiedPattern first
-        , asUnifiedPattern (second s)
+        , asMetaPattern first
+        , asMetaPattern (second s)
         )
 fillCheckPairSorts
     SortedPatternM { patternMPattern = p1, patternMSort = actualSort1 }
@@ -256,27 +257,27 @@ fillCheckPairSorts
         else
             Right
                 ( actualSort1
-                , asUnifiedPattern p1
-                , asUnifiedPattern p2
+                , asMetaPattern p1
+                , asMetaPattern p2
                 )
 
 {-|'quantifyFreeVariables' quantifies all free variables in the given pattern.
 It assumes that the pattern has the provided sort.
 -}
 -- TODO(virgil): Make this generic and move it in ASTHelpers.hs
-quantifyFreeVariables :: Sort Meta -> UnifiedPattern -> UnifiedPattern
+quantifyFreeVariables :: Sort Meta -> KorePattern -> KorePattern
 quantifyFreeVariables s p =
     foldl'
         (wrapAndQuantify s)
         p
         (checkUnique (Set.map asMeta (freeVariables p)))
   where
-    asMeta (MetaVariable var) = var
+    asMeta (UnifiedMeta var) = var
 
 wrapAndQuantify
-    :: Sort Meta -> UnifiedPattern -> Variable Meta -> UnifiedPattern
+    :: Sort Meta -> KorePattern -> Variable Meta -> KorePattern
 wrapAndQuantify s p var =
-    MetaPattern
+    asMetaPattern
         (ForallPattern Forall
             { forallSort = s
             , forallVariable = var
@@ -314,7 +315,7 @@ checkUniqueEither (var:vars) indexed =
 like \not.
 -}
 unaryPattern
-    :: (Sort Meta -> UnifiedPattern -> PatternMetaType)
+    :: (Sort Meta -> KorePattern -> PatternMetaType)
     -> PatternM
     -> PatternM
 unaryPattern
@@ -322,17 +323,17 @@ unaryPattern
     SortedPatternM { patternMPattern = p, patternMSort = s }
   =
     SortedPatternM
-        { patternMPattern = constructor s (asUnifiedPattern p)
+        { patternMPattern = constructor s (asMetaPattern p)
         , patternMSort    = s
         }
 unaryPattern constructor (UnsortedPatternM p) =
-    UnsortedPatternM (\sortS -> constructor sortS (asUnifiedPattern (p sortS)))
+    UnsortedPatternM (\sortS -> constructor sortS (asMetaPattern (p sortS)))
 
 {-|'binaryPattern' is a helper for building 'PatternM's for binary operators
 like \and.
 -}
 binaryPattern
-    :: (Sort Meta -> UnifiedPattern -> UnifiedPattern -> PatternMetaType)
+    :: (Sort Meta -> KorePattern -> KorePattern -> PatternMetaType)
     -> PatternM
     -> PatternM
     -> PatternM
@@ -359,8 +360,8 @@ operators where the result sort is different from the operand sort like \equals.
 binarySortedPattern
     :: (ResultSort
         -> ChildSort
-        -> UnifiedPattern
-        -> UnifiedPattern
+        -> KorePattern
+        -> KorePattern
         -> PatternMetaType)
     -> Maybe ChildSort
     -> PatternM

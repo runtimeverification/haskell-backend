@@ -16,15 +16,15 @@ import           Data.Kore.Variables.Int
 import           Data.Kore.Substitution.TestCommon
 
 type UnifiedPatternSubstitution =
-    S.Substitution (UnifiedVariable Variable) UnifiedPattern
+    S.Substitution (Unified Variable) KorePattern
 
 instance PatternSubstitutionClass Variable UnifiedPatternSubstitution IntCounter
   where
 
 testSubstitute
-    :: UnifiedPattern
+    :: KorePattern
     -> UnifiedPatternSubstitution
-    -> IntCounter UnifiedPattern
+    -> IntCounter KorePattern
 testSubstitute = substitute
 
 substitutionClassTests :: TestTree
@@ -119,16 +119,16 @@ substitutionClassTests =
 metaVariableSubstitute :: Int -> Variable Meta
 metaVariableSubstitute = intVariable metaVariable
 
-metaVariableUnifiedPatternSubstitute :: Int -> UnifiedPattern
+metaVariableUnifiedPatternSubstitute :: Int -> KorePattern
 metaVariableUnifiedPatternSubstitute =
-    MetaPattern . VariablePattern . metaVariableSubstitute
+    asMetaPattern . VariablePattern . metaVariableSubstitute
 
 objectVariableSubstitute :: Int -> Variable Object
 objectVariableSubstitute = intVariable objectVariable
 
-objectVariableUnifiedPatternSubstitute :: Int -> UnifiedPattern
+objectVariableUnifiedPatternSubstitute :: Int -> KorePattern
 objectVariableUnifiedPatternSubstitute =
-    ObjectPattern . VariablePattern . objectVariableSubstitute
+    asObjectPattern . VariablePattern . objectVariableSubstitute
 
 substitution1 :: UnifiedPatternSubstitution
 substitution1 = S.fromList
@@ -142,78 +142,78 @@ substitution3 :: UnifiedPatternSubstitution
 substitution3 = S.fromList
   [ (unifiedObjectVariable, metaVariableUnifiedPattern) ]
 
-existsObjectUnifiedPattern1 :: UnifiedPattern
-existsObjectUnifiedPattern1 = ObjectPattern $ ExistsPattern Exists
+existsObjectUnifiedPattern1 :: KorePattern
+existsObjectUnifiedPattern1 = asObjectPattern $ ExistsPattern Exists
     { existsSort = objectSort
     , existsVariable = objectVariable
     , existsChild = objectVariableUnifiedPattern
     }
 
-existsMetaUnifiedPattern1 :: UnifiedPattern
-existsMetaUnifiedPattern1 = MetaPattern $ ExistsPattern Exists
+existsMetaUnifiedPattern1 :: KorePattern
+existsMetaUnifiedPattern1 = asMetaPattern $ ExistsPattern Exists
     { existsSort = metaSort
     , existsVariable = metaVariable
     , existsChild = metaVariableUnifiedPattern
     }
 
-existsMetaUnifiedPattern1S3 :: UnifiedPattern
-existsMetaUnifiedPattern1S3 = MetaPattern $ ExistsPattern Exists
+existsMetaUnifiedPattern1S3 :: KorePattern
+existsMetaUnifiedPattern1S3 = asMetaPattern $ ExistsPattern Exists
     { existsSort = metaSort
     , existsVariable = metaVariableSubstitute 17
     , existsChild = metaVariableUnifiedPatternSubstitute 17
     }
 
-existsObjectUnifiedPattern1S :: Int -> UnifiedPattern
-existsObjectUnifiedPattern1S n = ObjectPattern $ ExistsPattern Exists
+existsObjectUnifiedPattern1S :: Int -> KorePattern
+existsObjectUnifiedPattern1S n = asObjectPattern $ ExistsPattern Exists
     { existsSort = objectSort
     , existsVariable = objectVariableSubstitute n
     , existsChild = objectVariableUnifiedPatternSubstitute n
     }
 
-forallObjectUnifiedPattern1 :: UnifiedPattern
-forallObjectUnifiedPattern1 = MetaPattern $ ForallPattern Forall
+forallObjectUnifiedPattern1 :: KorePattern
+forallObjectUnifiedPattern1 = asMetaPattern $ ForallPattern Forall
     { forallSort = metaSort
     , forallVariable = metaVariable
     , forallChild = objectVariableUnifiedPattern
     }
 
-forallObjectUnifiedPattern2 :: UnifiedPattern
-forallObjectUnifiedPattern2 = MetaPattern $ ForallPattern Forall
+forallObjectUnifiedPattern2 :: KorePattern
+forallObjectUnifiedPattern2 = asMetaPattern $ ForallPattern Forall
     { forallSort = metaSort
     , forallVariable = metaVariable
     , forallChild = objectTopPattern
     }
 
-forallObjectUnifiedPattern1S3 :: UnifiedPattern
-forallObjectUnifiedPattern1S3 = MetaPattern $ ForallPattern Forall
+forallObjectUnifiedPattern1S3 :: KorePattern
+forallObjectUnifiedPattern1S3 = asMetaPattern $ ForallPattern Forall
     { forallSort = metaSort
     , forallVariable = metaVariableSubstitute 5
     , forallChild = metaVariableUnifiedPattern
     }
 
-forallExistsObjectUnifiedPattern1 :: UnifiedPattern
-forallExistsObjectUnifiedPattern1 = ObjectPattern $ ForallPattern Forall
+forallExistsObjectUnifiedPattern1 :: KorePattern
+forallExistsObjectUnifiedPattern1 = asObjectPattern $ ForallPattern Forall
     { forallSort = objectSort
     , forallVariable = objectVariable
     , forallChild = existsObjectUnifiedPattern1
     }
 
-forallExistsObjectUnifiedPattern2 :: UnifiedPattern
-forallExistsObjectUnifiedPattern2 = MetaPattern $ ForallPattern Forall
+forallExistsObjectUnifiedPattern2 :: KorePattern
+forallExistsObjectUnifiedPattern2 = asMetaPattern $ ForallPattern Forall
     { forallSort = metaSort
     , forallVariable = metaVariable
     , forallChild = existsObjectUnifiedPattern1
     }
 
-forallExistsObjectUnifiedPattern1S2 :: UnifiedPattern
-forallExistsObjectUnifiedPattern1S2 = ObjectPattern $ ForallPattern Forall
+forallExistsObjectUnifiedPattern1S2 :: KorePattern
+forallExistsObjectUnifiedPattern1S2 = asObjectPattern $ ForallPattern Forall
     { forallSort = objectSort
     , forallVariable = objectVariableSubstitute 7
     , forallChild = existsObjectUnifiedPattern1S 8
     }
 
-testSubstitutionStatePattern :: UnifiedPattern
-testSubstitutionStatePattern = ObjectPattern $ ApplicationPattern Application
+testSubstitutionStatePattern :: KorePattern
+testSubstitutionStatePattern = asObjectPattern $ ApplicationPattern Application
     { applicationSymbolOrAlias = SymbolOrAlias
         { symbolOrAliasConstructor = Id "sigma"
         , symbolOrAliasParams = []
@@ -226,8 +226,8 @@ testSubstitutionStatePattern = ObjectPattern $ ApplicationPattern Application
         ]
     }
 
-testSubstitutionStatePatternS3 :: UnifiedPattern
-testSubstitutionStatePatternS3 = ObjectPattern $ ApplicationPattern Application
+testSubstitutionStatePatternS3 :: KorePattern
+testSubstitutionStatePatternS3 = asObjectPattern $ ApplicationPattern Application
     { applicationSymbolOrAlias = SymbolOrAlias
         { symbolOrAliasConstructor = Id "sigma"
         , symbolOrAliasParams = []

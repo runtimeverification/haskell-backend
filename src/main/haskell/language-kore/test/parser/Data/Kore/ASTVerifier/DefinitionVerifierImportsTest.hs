@@ -312,9 +312,9 @@ sortVisibilityTests =
         , sentenceSortParameters = []
         , sentenceSortAttributes = Attributes []
         }
-    topSortPattern = ObjectPattern ( TopPattern Top { topSort = sort } )
+    topSortPattern = asObjectPattern ( TopPattern Top { topSort = sort } )
     metaTopSortPattern =
-        MetaPattern ( TopPattern Top { topSort = charMetaSort } )
+        asMetaPattern ( TopPattern Top { topSort = charMetaSort } )
     sortReferenceInSort =
         SortActualSort SortActual
             { sortActualName = Id "sort2"
@@ -323,7 +323,7 @@ sortVisibilityTests =
     sortReferenceInSortSentence =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+            , sentenceAxiomPattern = asObjectPattern
                 ( TopPattern Top { topSort = sortReferenceInSort } )
             , sentenceAxiomAttributes = Attributes []
             }
@@ -349,14 +349,14 @@ sortVisibilityTests =
     sortReferenceInExistsPatternSentence =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+            , sentenceAxiomPattern = asObjectPattern
                 ( ExistsPattern Exists
                     { existsSort = sort
                     , existsVariable = Variable
                         { variableName = Id "var"
                         , variableSort = sort
                         }
-                    , existsChild = ObjectPattern
+                    , existsChild = asObjectPattern
                         ( VariablePattern Variable
                             { variableName = Id "var"
                             , variableSort = sort
@@ -369,7 +369,7 @@ sortVisibilityTests =
     sortReferenceInAndPatternSentence =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+            , sentenceAxiomPattern = asObjectPattern
                 ( AndPattern And
                     { andSort = sort
                     , andFirst = topSortPattern
@@ -381,7 +381,7 @@ sortVisibilityTests =
     sortReferenceInNextPatternSentence =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+            , sentenceAxiomPattern = asObjectPattern
                 ( NextPattern Next
                     { nextSort = sort
                     , nextChild = topSortPattern
@@ -392,10 +392,10 @@ sortVisibilityTests =
     sortReferenceInPatternInPatternSentence =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+            , sentenceAxiomPattern = asObjectPattern
                 ( NextPattern Next
                     { nextSort = anotherSort
-                    , nextChild = ObjectPattern
+                    , nextChild = asObjectPattern
                         ( EqualsPattern Equals
                             { equalsResultSort = anotherSort
                             , equalsOperandSort = sort
@@ -456,7 +456,7 @@ sortVisibilityTests =
     sortReferenceInSymbolOrAliasSentence =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+            , sentenceAxiomPattern = asObjectPattern
                 ( ApplicationPattern Application
                     { applicationSymbolOrAlias = SymbolOrAlias
                         { symbolOrAliasConstructor = Id "symbol2"
@@ -566,8 +566,8 @@ symbolVisibilityTests =
         (SupportingSentences [])
     ]
   where
-    topSortPattern = ObjectPattern ( TopPattern Top { topSort = defaultSort } )
-    symbolPattern = ObjectPattern
+    topSortPattern = asObjectPattern ( TopPattern Top { topSort = defaultSort } )
+    symbolPattern = asObjectPattern
         ( ApplicationPattern Application
             { applicationSymbolOrAlias = SymbolOrAlias
                 { symbolOrAliasConstructor = Id "symbol1"
@@ -587,7 +587,7 @@ symbolVisibilityTests =
         , sentenceSymbolAttributes = Attributes []
         }
     defaultSymbolSupportSentences = [ defaultSortDeclaration ]
-    metaSymbolPattern = MetaPattern
+    metaSymbolPattern = asMetaPattern
         ( ApplicationPattern Application
             { applicationSymbolOrAlias = SymbolOrAlias
                 { symbolOrAliasConstructor = Id "#symbol1"
@@ -627,7 +627,7 @@ symbolVisibilityTests =
     symbolReferenceInAndPatternSentence =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+            , sentenceAxiomPattern = asObjectPattern
                 ( AndPattern And
                     { andSort = defaultSort
                     , andFirst = symbolPattern
@@ -639,7 +639,7 @@ symbolVisibilityTests =
     symbolReferenceInExistsPatternSentence =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+            , sentenceAxiomPattern = asObjectPattern
                 ( ExistsPattern Exists
                     { existsSort = defaultSort
                     , existsVariable = Variable
@@ -654,7 +654,7 @@ symbolVisibilityTests =
     symbolReferenceInNextPatternSentence =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+            , sentenceAxiomPattern = asObjectPattern
                 ( NextPattern Next
                     { nextSort = defaultSort
                     , nextChild = symbolPattern
@@ -665,7 +665,7 @@ symbolVisibilityTests =
     symbolReferenceInSymbolOrAliasSentence =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+            , sentenceAxiomPattern = asObjectPattern
                 ( ApplicationPattern Application
                     { applicationSymbolOrAlias = SymbolOrAlias
                         { symbolOrAliasConstructor = Id "symbol2"
@@ -776,8 +776,8 @@ aliasVisibilityTests =
         (SupportingSentences [])
     ]
   where
-    topSortPattern = ObjectPattern ( TopPattern Top { topSort = defaultSort } )
-    aliasPattern = ObjectPattern
+    topSortPattern = asObjectPattern ( TopPattern Top { topSort = defaultSort } )
+    aliasPattern = asObjectPattern
         ( ApplicationPattern Application
             { applicationSymbolOrAlias = SymbolOrAlias
                 { symbolOrAliasConstructor = Id "alias1"
@@ -797,7 +797,7 @@ aliasVisibilityTests =
         , sentenceAliasAttributes = Attributes []
         }
     defaultAliasSupportSentences = [ defaultSortDeclaration ]
-    metaAliasPattern = MetaPattern
+    metaAliasPattern = asMetaPattern
         ( ApplicationPattern Application
             { applicationSymbolOrAlias = SymbolOrAlias
                 { symbolOrAliasConstructor = Id "#alias1"
@@ -837,7 +837,7 @@ aliasVisibilityTests =
     aliasReferenceInAndPatternSentence =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+            , sentenceAxiomPattern = asObjectPattern
                 ( AndPattern And
                     { andSort = defaultSort
                     , andFirst = aliasPattern
@@ -849,7 +849,7 @@ aliasVisibilityTests =
     aliasReferenceInExistsPatternSentence =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+            , sentenceAxiomPattern = asObjectPattern
                 ( ExistsPattern Exists
                     { existsSort = defaultSort
                     , existsVariable = Variable
@@ -864,7 +864,7 @@ aliasVisibilityTests =
     aliasReferenceInNextPatternSentence =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+            , sentenceAxiomPattern = asObjectPattern
                 ( NextPattern Next
                     { nextSort = defaultSort
                     , nextChild = aliasPattern
@@ -875,7 +875,7 @@ aliasVisibilityTests =
     aliasReferenceInAliasOrAliasSentence =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+            , sentenceAxiomPattern = asObjectPattern
                 ( ApplicationPattern Application
                     { applicationSymbolOrAlias = SymbolOrAlias
                         { symbolOrAliasConstructor = Id "alias2"

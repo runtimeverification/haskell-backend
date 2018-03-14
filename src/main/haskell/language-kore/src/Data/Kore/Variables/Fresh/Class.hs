@@ -13,7 +13,7 @@ import           Data.Kore.Variables.Int
 variables with a 'Monad' containing state needed to generate fresh variables
 and provides several functions to generate new variables.
 -}
-class (Monad m, VariableClass var) => FreshVariablesClass m var where
+class Monad m => FreshVariablesClass m var where
     {-|Given an existing variable, generate a fresh one of
     the same type and sort.
     -}

@@ -67,429 +67,669 @@ Definition
                     }
                 , SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ ObjectSortVariable (SortVariable (Id Object "S"))
+                        [ UnifiedObject (SortVariable (Id Object "S"))
                         ]
                     , sentenceAxiomPattern =
-                        ObjectPattern (ExistsPattern Exists
-                            { existsSort =
-                                SortVariableSort (SortVariable (Id Object "S"))
-                            , existsVariable =
-                                Variable
-                                    { variableName = Id Object "T"
-                                    , variableSort =
-                                        SortActualSortSortActual
-                                                { sortActualName = Id Object "Nat"
-                                                , sortActualSorts = []
-                                                }
-                                    }
-                            , existsChild =
-                                ObjectPattern (EqualsPattern Equals
-                                    { equalsOperandSort =
-                                        SortActualSortSortActual
-                                                { sortActualName = Id Object "Nat"
-                                                , sortActualSorts = []
-                                                }
-                                    , equalsResultSort =
-                                        SortVariableSort (SortVariable (Id Object "S"))
-                                    , equalsFirst =
-                                        ObjectPattern (VariablePattern Variable
-                                            { variableName = Id Object "T"
-                                            , variableSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Object "Nat"
-                                                        , sortActualSorts = []
-                                                        }
-                                            })
-                                    , equalsSecond =
-                                        ObjectPattern (ApplicationPattern Application
-                                            { applicationSymbolOrAlias =
-                                                SymbolOrAlias
-                                                    { symbolOrAliasConstructor = Id Object "zero"
-                                                    , symbolOrAliasParams = []
-                                                    }
-                                            , applicationChildren = []
-                                            })
-                                    })
-                            })
-                    , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
-                    { sentenceAxiomParameters =
-                        [ ObjectSortVariable (SortVariable (Id Object "S"))
-                        ]
-                    , sentenceAxiomPattern =
-                        ObjectPattern (ExistsPattern Exists
-                            { existsSort =
-                                SortVariableSort (SortVariable (Id Object "S"))
-                            , existsVariable =
-                                Variable
-                                    { variableName = Id Object "T"
-                                    , variableSort =
-                                        SortActualSortSortActual
-                                                { sortActualName = Id Object "Nat"
-                                                , sortActualSorts = []
-                                                }
-                                    }
-                            , existsChild =
-                                ObjectPattern (EqualsPattern Equals
-                                    { equalsOperandSort =
-                                        SortActualSortSortActual
-                                                { sortActualName = Id Object "Nat"
-                                                , sortActualSorts = []
-                                                }
-                                    , equalsResultSort =
-                                        SortVariableSort (SortVariable (Id Object "S"))
-                                    , equalsFirst =
-                                        ObjectPattern (VariablePattern Variable
-                                            { variableName = Id Object "T"
-                                            , variableSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Object "Nat"
-                                                        , sortActualSorts = []
-                                                        }
-                                            })
-                                    , equalsSecond =
-                                        ObjectPattern (ApplicationPattern Application
-                                            { applicationSymbolOrAlias =
-                                                SymbolOrAlias
-                                                    { symbolOrAliasConstructor = Id Object "succ"
-                                                    , symbolOrAliasParams = []
-                                                    }
-                                            , applicationChildren =
-                                                [ ObjectPattern (VariablePattern Variable
-                                                    { variableName = Id Object "X"
-                                                    , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Object "Nat"
-                                                                , sortActualSorts = []
-                                                                }
-                                                    })
-                                                ]
-                                            })
-                                    })
-                            })
-                    , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
-                    { sentenceAxiomParameters =
-                        [ ObjectSortVariable (SortVariable (Id Object "S"))
-                        ]
-                    , sentenceAxiomPattern =
-                        ObjectPattern (ExistsPattern Exists
-                            { existsSort =
-                                SortVariableSort (SortVariable (Id Object "S"))
-                            , existsVariable =
-                                Variable
-                                    { variableName = Id Object "T"
-                                    , variableSort =
-                                        SortActualSortSortActual
-                                                { sortActualName = Id Object "Nat"
-                                                , sortActualSorts = []
-                                                }
-                                    }
-                            , existsChild =
-                                ObjectPattern (EqualsPattern Equals
-                                    { equalsOperandSort =
-                                        SortActualSortSortActual
-                                                { sortActualName = Id Object "Nat"
-                                                , sortActualSorts = []
-                                                }
-                                    , equalsResultSort =
-                                        SortVariableSort (SortVariable (Id Object "S"))
-                                    , equalsFirst =
-                                        ObjectPattern (VariablePattern Variable
-                                            { variableName = Id Object "T"
-                                            , variableSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Object "Nat"
-                                                        , sortActualSorts = []
-                                                        }
-                                            })
-                                    , equalsSecond =
-                                        ObjectPattern (ApplicationPattern Application
-                                            { applicationSymbolOrAlias =
-                                                SymbolOrAlias
-                                                    { symbolOrAliasConstructor = Id Object "plus"
-                                                    , symbolOrAliasParams = []
-                                                    }
-                                            , applicationChildren =
-                                                [ ObjectPattern (VariablePattern Variable
-                                                    { variableName = Id Object "X"
-                                                    , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Object "Nat"
-                                                                , sortActualSorts = []
-                                                                }
-                                                    })
-                                                , ObjectPattern (VariablePattern Variable
-                                                    { variableName = Id Object "Y"
-                                                    , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Object "Nat"
-                                                                , sortActualSorts = []
-                                                                }
-                                                    })
-                                                ]
-                                            })
-                                    })
-                            })
-                    , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
-                    { sentenceAxiomParameters = []
-                    , sentenceAxiomPattern =
-                        ObjectPattern (OrPattern Or
-                            { orSort =
-                                SortActualSortSortActual
-                                        { sortActualName = Id Object "Nat"
-                                        , sortActualSorts = []
-                                        }
-                            , orFirst =
-                                ObjectPattern (ApplicationPattern Application
-                                    { applicationSymbolOrAlias =
-                                        SymbolOrAlias
-                                            { symbolOrAliasConstructor = Id Object "zero"
-                                            , symbolOrAliasParams = []
-                                            }
-                                    , applicationChildren = []
-                                    })
-                            , orSecond =
-                                ObjectPattern (ExistsPattern Exists
-                                    { existsSort =
-                                        SortActualSortSortActual
-                                                { sortActualName = Id Object "Nat"
-                                                , sortActualSorts = []
-                                                }
-                                    , existsVariable =
-                                        Variable
-                                            { variableName = Id Object "X"
-                                            , variableSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Object "Nat"
-                                                        , sortActualSorts = []
-                                                        }
-                                            }
-                                    , existsChild =
-                                        ObjectPattern (ApplicationPattern Application
-                                            { applicationSymbolOrAlias =
-                                                SymbolOrAlias
-                                                    { symbolOrAliasConstructor = Id Object "succ"
-                                                    , symbolOrAliasParams = []
-                                                    }
-                                            , applicationChildren =
-                                                [ ObjectPattern (VariablePattern Variable
-                                                    { variableName = Id Object "X"
-                                                    , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Object "Nat"
-                                                                , sortActualSorts = []
-                                                                }
-                                                    })
-                                                ]
-                                            })
-                                    })
-                            })
-                    , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
-                    { sentenceAxiomParameters = []
-                    , sentenceAxiomPattern =
-                        ObjectPattern (NotPattern Not
-                            { notSort =
-                                SortActualSortSortActual
-                                        { sortActualName = Id Object "Nat"
-                                        , sortActualSorts = []
-                                        }
-                            , notChild =
-                                ObjectPattern (AndPattern And
-                                    { andSort =
-                                        SortActualSortSortActual
-                                                { sortActualName = Id Object "Nat"
-                                                , sortActualSorts = []
-                                                }
-                                    , andFirst =
-                                        ObjectPattern (ApplicationPattern Application
-                                            { applicationSymbolOrAlias =
-                                                SymbolOrAlias
-                                                    { symbolOrAliasConstructor = Id Object "zero"
-                                                    , symbolOrAliasParams = []
-                                                    }
-                                            , applicationChildren = []
-                                            })
-                                    , andSecond =
-                                        ObjectPattern (ExistsPattern Exists
-                                            { existsSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Object "Nat"
-                                                        , sortActualSorts = []
-                                                        }
-                                            , existsVariable =
-                                                Variable
-                                                    { variableName = Id Object "X"
-                                                    , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Object "Nat"
-                                                                , sortActualSorts = []
-                                                                }
-                                                    }
-                                            , existsChild =
-                                                ObjectPattern (ApplicationPattern Application
-                                                    { applicationSymbolOrAlias =
-                                                        SymbolOrAlias
-                                                            { symbolOrAliasConstructor = Id Object "succ"
-                                                            , symbolOrAliasParams = []
+                        Fix
+                            { unFix = UnifiedPattern
+                                { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                    { getPatternObjectMeta = ExistsPattern Exists
+                                        { existsSort =
+                                            SortVariableSort (SortVariable (Id Object "S"))
+                                        , existsVariable =
+                                            Variable
+                                                { variableName = Id Object "T"
+                                                , variableSort =
+                                                    SortActualSortSortActual
+                                                            { sortActualName = Id Object "Nat"
+                                                            , sortActualSorts = []
                                                             }
-                                                    , applicationChildren =
-                                                        [ ObjectPattern (VariablePattern Variable
+                                                }
+                                        , existsChild =
+                                            Fix
+                                                { unFix = UnifiedPattern
+                                                    { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                        { getPatternObjectMeta = EqualsPattern Equals
+                                                            { equalsOperandSort =
+                                                                SortActualSortSortActual
+                                                                        { sortActualName = Id Object "Nat"
+                                                                        , sortActualSorts = []
+                                                                        }
+                                                            , equalsResultSort =
+                                                                SortVariableSort (SortVariable (Id Object "S"))
+                                                            , equalsFirst =
+                                                                Fix
+                                                                    { unFix = UnifiedPattern
+                                                                        { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                                            { getPatternObjectMeta = VariablePattern Variable
+                                                                                { variableName = Id Object "T"
+                                                                                , variableSort =
+                                                                                    SortActualSortSortActual
+                                                                                            { sortActualName = Id Object "Nat"
+                                                                                            , sortActualSorts = []
+                                                                                            }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                            , equalsSecond =
+                                                                Fix
+                                                                    { unFix = UnifiedPattern
+                                                                        { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                                            { getPatternObjectMeta = ApplicationPattern Application
+                                                                                { applicationSymbolOrAlias =
+                                                                                    SymbolOrAlias
+                                                                                        { symbolOrAliasConstructor = Id Object "zero"
+                                                                                        , symbolOrAliasParams = []
+                                                                                        }
+                                                                                , applicationChildren = []
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                        }
+                                    }
+                                }
+                            }
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+                , SentenceAxiomSentence SentenceAxiom
+                    { sentenceAxiomParameters =
+                        [ UnifiedObject (SortVariable (Id Object "S"))
+                        ]
+                    , sentenceAxiomPattern =
+                        Fix
+                            { unFix = UnifiedPattern
+                                { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                    { getPatternObjectMeta = ExistsPattern Exists
+                                        { existsSort =
+                                            SortVariableSort (SortVariable (Id Object "S"))
+                                        , existsVariable =
+                                            Variable
+                                                { variableName = Id Object "T"
+                                                , variableSort =
+                                                    SortActualSortSortActual
+                                                            { sortActualName = Id Object "Nat"
+                                                            , sortActualSorts = []
+                                                            }
+                                                }
+                                        , existsChild =
+                                            Fix
+                                                { unFix = UnifiedPattern
+                                                    { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                        { getPatternObjectMeta = EqualsPattern Equals
+                                                            { equalsOperandSort =
+                                                                SortActualSortSortActual
+                                                                        { sortActualName = Id Object "Nat"
+                                                                        , sortActualSorts = []
+                                                                        }
+                                                            , equalsResultSort =
+                                                                SortVariableSort (SortVariable (Id Object "S"))
+                                                            , equalsFirst =
+                                                                Fix
+                                                                    { unFix = UnifiedPattern
+                                                                        { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                                            { getPatternObjectMeta = VariablePattern Variable
+                                                                                { variableName = Id Object "T"
+                                                                                , variableSort =
+                                                                                    SortActualSortSortActual
+                                                                                            { sortActualName = Id Object "Nat"
+                                                                                            , sortActualSorts = []
+                                                                                            }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                            , equalsSecond =
+                                                                Fix
+                                                                    { unFix = UnifiedPattern
+                                                                        { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                                            { getPatternObjectMeta = ApplicationPattern Application
+                                                                                { applicationSymbolOrAlias =
+                                                                                    SymbolOrAlias
+                                                                                        { symbolOrAliasConstructor = Id Object "succ"
+                                                                                        , symbolOrAliasParams = []
+                                                                                        }
+                                                                                , applicationChildren =
+                                                                                    [ Fix
+                                                                                        { unFix = UnifiedPattern
+                                                                                            { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                                                                { getPatternObjectMeta = VariablePattern Variable
+                                                                                                    { variableName = Id Object "X"
+                                                                                                    , variableSort =
+                                                                                                        SortActualSortSortActual
+                                                                                                                { sortActualName = Id Object "Nat"
+                                                                                                                , sortActualSorts = []
+                                                                                                                }
+                                                                                                    }
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    ]
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                        }
+                                    }
+                                }
+                            }
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+                , SentenceAxiomSentence SentenceAxiom
+                    { sentenceAxiomParameters =
+                        [ UnifiedObject (SortVariable (Id Object "S"))
+                        ]
+                    , sentenceAxiomPattern =
+                        Fix
+                            { unFix = UnifiedPattern
+                                { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                    { getPatternObjectMeta = ExistsPattern Exists
+                                        { existsSort =
+                                            SortVariableSort (SortVariable (Id Object "S"))
+                                        , existsVariable =
+                                            Variable
+                                                { variableName = Id Object "T"
+                                                , variableSort =
+                                                    SortActualSortSortActual
+                                                            { sortActualName = Id Object "Nat"
+                                                            , sortActualSorts = []
+                                                            }
+                                                }
+                                        , existsChild =
+                                            Fix
+                                                { unFix = UnifiedPattern
+                                                    { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                        { getPatternObjectMeta = EqualsPattern Equals
+                                                            { equalsOperandSort =
+                                                                SortActualSortSortActual
+                                                                        { sortActualName = Id Object "Nat"
+                                                                        , sortActualSorts = []
+                                                                        }
+                                                            , equalsResultSort =
+                                                                SortVariableSort (SortVariable (Id Object "S"))
+                                                            , equalsFirst =
+                                                                Fix
+                                                                    { unFix = UnifiedPattern
+                                                                        { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                                            { getPatternObjectMeta = VariablePattern Variable
+                                                                                { variableName = Id Object "T"
+                                                                                , variableSort =
+                                                                                    SortActualSortSortActual
+                                                                                            { sortActualName = Id Object "Nat"
+                                                                                            , sortActualSorts = []
+                                                                                            }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                            , equalsSecond =
+                                                                Fix
+                                                                    { unFix = UnifiedPattern
+                                                                        { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                                            { getPatternObjectMeta = ApplicationPattern Application
+                                                                                { applicationSymbolOrAlias =
+                                                                                    SymbolOrAlias
+                                                                                        { symbolOrAliasConstructor = Id Object "plus"
+                                                                                        , symbolOrAliasParams = []
+                                                                                        }
+                                                                                , applicationChildren =
+                                                                                    [ Fix
+                                                                                        { unFix = UnifiedPattern
+                                                                                            { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                                                                { getPatternObjectMeta = VariablePattern Variable
+                                                                                                    { variableName = Id Object "X"
+                                                                                                    , variableSort =
+                                                                                                        SortActualSortSortActual
+                                                                                                                { sortActualName = Id Object "Nat"
+                                                                                                                , sortActualSorts = []
+                                                                                                                }
+                                                                                                    }
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    , Fix
+                                                                                        { unFix = UnifiedPattern
+                                                                                            { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                                                                { getPatternObjectMeta = VariablePattern Variable
+                                                                                                    { variableName = Id Object "Y"
+                                                                                                    , variableSort =
+                                                                                                        SortActualSortSortActual
+                                                                                                                { sortActualName = Id Object "Nat"
+                                                                                                                , sortActualSorts = []
+                                                                                                                }
+                                                                                                    }
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    ]
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                        }
+                                    }
+                                }
+                            }
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+                , SentenceAxiomSentence SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        Fix
+                            { unFix = UnifiedPattern
+                                { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                    { getPatternObjectMeta = OrPattern Or
+                                        { orSort =
+                                            SortActualSortSortActual
+                                                    { sortActualName = Id Object "Nat"
+                                                    , sortActualSorts = []
+                                                    }
+                                        , orFirst =
+                                            Fix
+                                                { unFix = UnifiedPattern
+                                                    { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                        { getPatternObjectMeta = ApplicationPattern Application
+                                                            { applicationSymbolOrAlias =
+                                                                SymbolOrAlias
+                                                                    { symbolOrAliasConstructor = Id Object "zero"
+                                                                    , symbolOrAliasParams = []
+                                                                    }
+                                                            , applicationChildren = []
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                        , orSecond =
+                                            Fix
+                                                { unFix = UnifiedPattern
+                                                    { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                        { getPatternObjectMeta = ExistsPattern Exists
+                                                            { existsSort =
+                                                                SortActualSortSortActual
+                                                                        { sortActualName = Id Object "Nat"
+                                                                        , sortActualSorts = []
+                                                                        }
+                                                            , existsVariable =
+                                                                Variable
+                                                                    { variableName = Id Object "X"
+                                                                    , variableSort =
+                                                                        SortActualSortSortActual
+                                                                                { sortActualName = Id Object "Nat"
+                                                                                , sortActualSorts = []
+                                                                                }
+                                                                    }
+                                                            , existsChild =
+                                                                Fix
+                                                                    { unFix = UnifiedPattern
+                                                                        { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                                            { getPatternObjectMeta = ApplicationPattern Application
+                                                                                { applicationSymbolOrAlias =
+                                                                                    SymbolOrAlias
+                                                                                        { symbolOrAliasConstructor = Id Object "succ"
+                                                                                        , symbolOrAliasParams = []
+                                                                                        }
+                                                                                , applicationChildren =
+                                                                                    [ Fix
+                                                                                        { unFix = UnifiedPattern
+                                                                                            { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                                                                { getPatternObjectMeta = VariablePattern Variable
+                                                                                                    { variableName = Id Object "X"
+                                                                                                    , variableSort =
+                                                                                                        SortActualSortSortActual
+                                                                                                                { sortActualName = Id Object "Nat"
+                                                                                                                , sortActualSorts = []
+                                                                                                                }
+                                                                                                    }
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    ]
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                        }
+                                    }
+                                }
+                            }
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+                , SentenceAxiomSentence SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        Fix
+                            { unFix = UnifiedPattern
+                                { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                    { getPatternObjectMeta = NotPattern Not
+                                        { notSort =
+                                            SortActualSortSortActual
+                                                    { sortActualName = Id Object "Nat"
+                                                    , sortActualSorts = []
+                                                    }
+                                        , notChild =
+                                            Fix
+                                                { unFix = UnifiedPattern
+                                                    { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                        { getPatternObjectMeta = AndPattern And
+                                                            { andSort =
+                                                                SortActualSortSortActual
+                                                                        { sortActualName = Id Object "Nat"
+                                                                        , sortActualSorts = []
+                                                                        }
+                                                            , andFirst =
+                                                                Fix
+                                                                    { unFix = UnifiedPattern
+                                                                        { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                                            { getPatternObjectMeta = ApplicationPattern Application
+                                                                                { applicationSymbolOrAlias =
+                                                                                    SymbolOrAlias
+                                                                                        { symbolOrAliasConstructor = Id Object "zero"
+                                                                                        , symbolOrAliasParams = []
+                                                                                        }
+                                                                                , applicationChildren = []
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                            , andSecond =
+                                                                Fix
+                                                                    { unFix = UnifiedPattern
+                                                                        { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                                            { getPatternObjectMeta = ExistsPattern Exists
+                                                                                { existsSort =
+                                                                                    SortActualSortSortActual
+                                                                                            { sortActualName = Id Object "Nat"
+                                                                                            , sortActualSorts = []
+                                                                                            }
+                                                                                , existsVariable =
+                                                                                    Variable
+                                                                                        { variableName = Id Object "X"
+                                                                                        , variableSort =
+                                                                                            SortActualSortSortActual
+                                                                                                    { sortActualName = Id Object "Nat"
+                                                                                                    , sortActualSorts = []
+                                                                                                    }
+                                                                                        }
+                                                                                , existsChild =
+                                                                                    Fix
+                                                                                        { unFix = UnifiedPattern
+                                                                                            { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                                                                { getPatternObjectMeta = ApplicationPattern Application
+                                                                                                    { applicationSymbolOrAlias =
+                                                                                                        SymbolOrAlias
+                                                                                                            { symbolOrAliasConstructor = Id Object "succ"
+                                                                                                            , symbolOrAliasParams = []
+                                                                                                            }
+                                                                                                    , applicationChildren =
+                                                                                                        [ Fix
+                                                                                                            { unFix = UnifiedPattern
+                                                                                                                { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                                                                                    { getPatternObjectMeta = VariablePattern Variable
+                                                                                                                        { variableName = Id Object "X"
+                                                                                                                        , variableSort =
+                                                                                                                            SortActualSortSortActual
+                                                                                                                                    { sortActualName = Id Object "Nat"
+                                                                                                                                    , sortActualSorts = []
+                                                                                                                                    }
+                                                                                                                        }
+                                                                                                                    }
+                                                                                                                }
+                                                                                                            }
+                                                                                                        ]
+                                                                                                    }
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                        }
+                                    }
+                                }
+                            }
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+                , SentenceAxiomSentence SentenceAxiom
+                    { sentenceAxiomParameters =
+                        [ UnifiedObject (SortVariable (Id Object "S"))
+                        ]
+                    , sentenceAxiomPattern =
+                        Fix
+                            { unFix = UnifiedPattern
+                                { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                    { getPatternObjectMeta = EqualsPattern Equals
+                                        { equalsOperandSort =
+                                            SortActualSortSortActual
+                                                    { sortActualName = Id Object "Nat"
+                                                    , sortActualSorts = []
+                                                    }
+                                        , equalsResultSort =
+                                            SortVariableSort (SortVariable (Id Object "S"))
+                                        , equalsFirst =
+                                            Fix
+                                                { unFix = UnifiedPattern
+                                                    { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                        { getPatternObjectMeta = ApplicationPattern Application
+                                                            { applicationSymbolOrAlias =
+                                                                SymbolOrAlias
+                                                                    { symbolOrAliasConstructor = Id Object "plus"
+                                                                    , symbolOrAliasParams = []
+                                                                    }
+                                                            , applicationChildren =
+                                                                [ Fix
+                                                                    { unFix = UnifiedPattern
+                                                                        { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                                            { getPatternObjectMeta = VariablePattern Variable
+                                                                                { variableName = Id Object "X"
+                                                                                , variableSort =
+                                                                                    SortActualSortSortActual
+                                                                                            { sortActualName = Id Object "Nat"
+                                                                                            , sortActualSorts = []
+                                                                                            }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                , Fix
+                                                                    { unFix = UnifiedPattern
+                                                                        { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                                            { getPatternObjectMeta = ApplicationPattern Application
+                                                                                { applicationSymbolOrAlias =
+                                                                                    SymbolOrAlias
+                                                                                        { symbolOrAliasConstructor = Id Object "zero"
+                                                                                        , symbolOrAliasParams = []
+                                                                                        }
+                                                                                , applicationChildren = []
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                ]
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                        , equalsSecond =
+                                            Fix
+                                                { unFix = UnifiedPattern
+                                                    { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                        { getPatternObjectMeta = VariablePattern Variable
                                                             { variableName = Id Object "X"
                                                             , variableSort =
                                                                 SortActualSortSortActual
                                                                         { sortActualName = Id Object "Nat"
                                                                         , sortActualSorts = []
                                                                         }
-                                                            })
-                                                        ]
-                                                    })
-                                            })
-                                    })
-                            })
-                    , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
-                    { sentenceAxiomParameters =
-                        [ ObjectSortVariable (SortVariable (Id Object "S"))
-                        ]
-                    , sentenceAxiomPattern =
-                        ObjectPattern (EqualsPattern Equals
-                            { equalsOperandSort =
-                                SortActualSortSortActual
-                                        { sortActualName = Id Object "Nat"
-                                        , sortActualSorts = []
-                                        }
-                            , equalsResultSort =
-                                SortVariableSort (SortVariable (Id Object "S"))
-                            , equalsFirst =
-                                ObjectPattern (ApplicationPattern Application
-                                    { applicationSymbolOrAlias =
-                                        SymbolOrAlias
-                                            { symbolOrAliasConstructor = Id Object "plus"
-                                            , symbolOrAliasParams = []
-                                            }
-                                    , applicationChildren =
-                                        [ ObjectPattern (VariablePattern Variable
-                                            { variableName = Id Object "X"
-                                            , variableSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Object "Nat"
-                                                        , sortActualSorts = []
+                                                            }
                                                         }
-                                            })
-                                        , ObjectPattern (ApplicationPattern Application
-                                            { applicationSymbolOrAlias =
-                                                SymbolOrAlias
-                                                    { symbolOrAliasConstructor = Id Object "zero"
-                                                    , symbolOrAliasParams = []
                                                     }
-                                            , applicationChildren = []
-                                            })
-                                        ]
-                                    })
-                            , equalsSecond =
-                                ObjectPattern (VariablePattern Variable
-                                    { variableName = Id Object "X"
-                                    , variableSort =
-                                        SortActualSortSortActual
-                                                { sortActualName = Id Object "Nat"
-                                                , sortActualSorts = []
                                                 }
-                                    })
-                            })
+                                        }
+                                    }
+                                }
+                            }
                     , sentenceAxiomAttributes = Attributes []
                     }
                 , SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ ObjectSortVariable (SortVariable (Id Object "S"))
+                        [ UnifiedObject (SortVariable (Id Object "S"))
                         ]
                     , sentenceAxiomPattern =
-                        ObjectPattern (EqualsPattern Equals
-                            { equalsOperandSort =
-                                SortActualSortSortActual
-                                        { sortActualName = Id Object "Nat"
-                                        , sortActualSorts = []
-                                        }
-                            , equalsResultSort =
-                                SortVariableSort (SortVariable (Id Object "S"))
-                            , equalsFirst =
-                                ObjectPattern (ApplicationPattern Application
-                                    { applicationSymbolOrAlias =
-                                        SymbolOrAlias
-                                            { symbolOrAliasConstructor = Id Object "plus"
-                                            , symbolOrAliasParams = []
-                                            }
-                                    , applicationChildren =
-                                        [ ObjectPattern (VariablePattern Variable
-                                            { variableName = Id Object "X"
-                                            , variableSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Object "Nat"
-                                                        , sortActualSorts = []
+                        Fix
+                            { unFix = UnifiedPattern
+                                { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                    { getPatternObjectMeta = EqualsPattern Equals
+                                        { equalsOperandSort =
+                                            SortActualSortSortActual
+                                                    { sortActualName = Id Object "Nat"
+                                                    , sortActualSorts = []
+                                                    }
+                                        , equalsResultSort =
+                                            SortVariableSort (SortVariable (Id Object "S"))
+                                        , equalsFirst =
+                                            Fix
+                                                { unFix = UnifiedPattern
+                                                    { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                        { getPatternObjectMeta = ApplicationPattern Application
+                                                            { applicationSymbolOrAlias =
+                                                                SymbolOrAlias
+                                                                    { symbolOrAliasConstructor = Id Object "plus"
+                                                                    , symbolOrAliasParams = []
+                                                                    }
+                                                            , applicationChildren =
+                                                                [ Fix
+                                                                    { unFix = UnifiedPattern
+                                                                        { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                                            { getPatternObjectMeta = VariablePattern Variable
+                                                                                { variableName = Id Object "X"
+                                                                                , variableSort =
+                                                                                    SortActualSortSortActual
+                                                                                            { sortActualName = Id Object "Nat"
+                                                                                            , sortActualSorts = []
+                                                                                            }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                , Fix
+                                                                    { unFix = UnifiedPattern
+                                                                        { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                                            { getPatternObjectMeta = ApplicationPattern Application
+                                                                                { applicationSymbolOrAlias =
+                                                                                    SymbolOrAlias
+                                                                                        { symbolOrAliasConstructor = Id Object "succ"
+                                                                                        , symbolOrAliasParams = []
+                                                                                        }
+                                                                                , applicationChildren =
+                                                                                    [ Fix
+                                                                                        { unFix = UnifiedPattern
+                                                                                            { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                                                                { getPatternObjectMeta = VariablePattern Variable
+                                                                                                    { variableName = Id Object "Y"
+                                                                                                    , variableSort =
+                                                                                                        SortActualSortSortActual
+                                                                                                                { sortActualName = Id Object "Nat"
+                                                                                                                , sortActualSorts = []
+                                                                                                                }
+                                                                                                    }
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    ]
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                ]
+                                                            }
                                                         }
-                                            })
-                                        , ObjectPattern (ApplicationPattern Application
-                                            { applicationSymbolOrAlias =
-                                                SymbolOrAlias
-                                                    { symbolOrAliasConstructor = Id Object "succ"
-                                                    , symbolOrAliasParams = []
                                                     }
-                                            , applicationChildren =
-                                                [ ObjectPattern (VariablePattern Variable
-                                                    { variableName = Id Object "Y"
-                                                    , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Object "Nat"
-                                                                , sortActualSorts = []
-                                                                }
-                                                    })
-                                                ]
-                                            })
-                                        ]
-                                    })
-                            , equalsSecond =
-                                ObjectPattern (ApplicationPattern Application
-                                    { applicationSymbolOrAlias =
-                                        SymbolOrAlias
-                                            { symbolOrAliasConstructor = Id Object "succ"
-                                            , symbolOrAliasParams = []
-                                            }
-                                    , applicationChildren =
-                                        [ ObjectPattern (ApplicationPattern Application
-                                            { applicationSymbolOrAlias =
-                                                SymbolOrAlias
-                                                    { symbolOrAliasConstructor = Id Object "plus"
-                                                    , symbolOrAliasParams = []
+                                                }
+                                        , equalsSecond =
+                                            Fix
+                                                { unFix = UnifiedPattern
+                                                    { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                        { getPatternObjectMeta = ApplicationPattern Application
+                                                            { applicationSymbolOrAlias =
+                                                                SymbolOrAlias
+                                                                    { symbolOrAliasConstructor = Id Object "succ"
+                                                                    , symbolOrAliasParams = []
+                                                                    }
+                                                            , applicationChildren =
+                                                                [ Fix
+                                                                    { unFix = UnifiedPattern
+                                                                        { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                                            { getPatternObjectMeta = ApplicationPattern Application
+                                                                                { applicationSymbolOrAlias =
+                                                                                    SymbolOrAlias
+                                                                                        { symbolOrAliasConstructor = Id Object "plus"
+                                                                                        , symbolOrAliasParams = []
+                                                                                        }
+                                                                                , applicationChildren =
+                                                                                    [ Fix
+                                                                                        { unFix = UnifiedPattern
+                                                                                            { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                                                                { getPatternObjectMeta = VariablePattern Variable
+                                                                                                    { variableName = Id Object "X"
+                                                                                                    , variableSort =
+                                                                                                        SortActualSortSortActual
+                                                                                                                { sortActualName = Id Object "Nat"
+                                                                                                                , sortActualSorts = []
+                                                                                                                }
+                                                                                                    }
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    , Fix
+                                                                                        { unFix = UnifiedPattern
+                                                                                            { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                                                                { getPatternObjectMeta = VariablePattern Variable
+                                                                                                    { variableName = Id Object "Y"
+                                                                                                    , variableSort =
+                                                                                                        SortActualSortSortActual
+                                                                                                                { sortActualName = Id Object "Nat"
+                                                                                                                , sortActualSorts = []
+                                                                                                                }
+                                                                                                    }
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    ]
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                ]
+                                                            }
+                                                        }
                                                     }
-                                            , applicationChildren =
-                                                [ ObjectPattern (VariablePattern Variable
-                                                    { variableName = Id Object "X"
-                                                    , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Object "Nat"
-                                                                , sortActualSorts = []
-                                                                }
-                                                    })
-                                                , ObjectPattern (VariablePattern Variable
-                                                    { variableName = Id Object "Y"
-                                                    , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Object "Nat"
-                                                                , sortActualSorts = []
-                                                                }
-                                                    })
-                                                ]
-                                            })
-                                        ]
-                                    })
-                            })
+                                                }
+                                        }
+                                    }
+                                }
+                            }
                     , sentenceAxiomAttributes = Attributes []
                     }
                 ]

@@ -6,25 +6,37 @@ Definition
             , moduleSentences =
                 [ SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ ObjectSortVariable (SortVariable (Id Object "S"))
+                        [ UnifiedObject (SortVariable (Id Object "S"))
                         ]
                     , sentenceAxiomPattern =
-                        ObjectPattern (ForallPattern Forall
-                            { forallSort =
-                                SortVariableSort (SortVariable (Id Object "S"))
-                            , forallVariable =
-                                Variable
-                                    { variableName = Id Object "X"
-                                    , variableSort =
-                                        SortVariableSort (SortVariable (Id Object "S"))
+                        Fix
+                            { unFix = UnifiedPattern
+                                { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                    { getPatternObjectMeta = ForallPattern Forall
+                                        { forallSort =
+                                            SortVariableSort (SortVariable (Id Object "S"))
+                                        , forallVariable =
+                                            Variable
+                                                { variableName = Id Object "X"
+                                                , variableSort =
+                                                    SortVariableSort (SortVariable (Id Object "S"))
+                                                }
+                                        , forallChild =
+                                            Fix
+                                                { unFix = UnifiedPattern
+                                                    { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                        { getPatternObjectMeta = VariablePattern Variable
+                                                            { variableName = Id Object "X"
+                                                            , variableSort =
+                                                                SortVariableSort (SortVariable (Id Object "S"))
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                        }
                                     }
-                            , forallChild =
-                                ObjectPattern (VariablePattern Variable
-                                    { variableName = Id Object "X"
-                                    , variableSort =
-                                        SortVariableSort (SortVariable (Id Object "S"))
-                                    })
-                            })
+                                }
+                            }
                     , sentenceAxiomAttributes = Attributes []
                     }
                 ]

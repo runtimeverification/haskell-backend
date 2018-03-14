@@ -21,7 +21,7 @@ verifySort
     :: MetaOrObject level
     => (Id level -> Either (Error VerifyError) (SortDescription level))
     -- ^ Provides a sort's description.
-    -> Set.Set UnifiedSortVariable
+    -> Set.Set (Unified SortVariable)
     -- ^ Sort variables visible here.
     -> Sort level
     -> Either (Error VerifyError) VerifySuccess
@@ -49,7 +49,7 @@ verifySort findSortDescription declaredSortVariables (SortActualSort sort)
 verifySortMatchesDeclaration
     :: MetaOrObject level
     => (Id level -> Either (Error VerifyError) (SortDescription level))
-    -> Set.Set UnifiedSortVariable
+    -> Set.Set (Unified SortVariable)
     -> SortActual level
     -> SortDescription level
     -> Either (Error VerifyError) VerifySuccess

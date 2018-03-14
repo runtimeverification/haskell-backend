@@ -24,8 +24,8 @@ metaVariable = Variable
     , variableSort = SortVariableSort (SortVariable (Id "#s"))
     }
 
-unifiedMetaVariable :: UnifiedVariable Variable
-unifiedMetaVariable = MetaVariable metaVariable
+unifiedMetaVariable :: Unified Variable
+unifiedMetaVariable = UnifiedMeta metaVariable
 
 variablesFreshIntCounterTests :: TestTree
 variablesFreshIntCounterTests =
