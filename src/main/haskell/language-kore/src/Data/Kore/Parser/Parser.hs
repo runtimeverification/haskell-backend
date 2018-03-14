@@ -13,6 +13,7 @@ This is a parser for the Kore language. Sample usage:
 import Data.Kore.Parser.KoreParser
 
 import           Text.Parsec (parse)
+import           Data.Kore.Parser.ParserUtils (parseOnly)
 import           System.Environment (getArgs)
 
 main :: IO ()
@@ -22,6 +23,8 @@ main = do
     print (fromKore contents)
     -- or --
     print (parse koreParser fileName contents)
+    -- or --
+    print (parseOnly koreParser fileName contents)
 @
 
 -}
