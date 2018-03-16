@@ -1,3 +1,12 @@
+{-|
+Module      : Data.Kore.MLPatterns
+Description : Classes for handling patterns in an uniform way.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : virgil.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : portable
+-}
 module Data.Kore.AST.MLPatterns (MLPatternClass(..),
                                  MLBinderPatternClass (..)) where
 

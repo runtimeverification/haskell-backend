@@ -5,8 +5,10 @@
 {-# LANGUAGE GADTs              #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-|
-Module      : Data.Kore.AST
-Description : Data Structures for representing the Kore language AST
+Module      : Data.Kore.AST.Common
+Description : Data Structures for representing the Kore language AST that do not
+              need unified constructs (see Data.Kore.AST.Kore for the unified
+              ones).
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
@@ -14,7 +16,12 @@ Stability   : experimental
 Portability : portable
 
 This module includes all the data structures necessary for representing
-all the syntactic categories of a Kore definition.
+the syntactic categories of a Kore definition that do not need unified
+constructs.
+
+Unified constructs are those that represent both meta and object versions of
+an AST term in a single data type (e.g. 'UnifiedSort' that can be either
+'Sort Object' or 'Sort Meta')
 
 Please refer to Section 9 (The Kore Language) of the
 <http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
@@ -578,7 +585,7 @@ data Pattern level variable child where
     CeilPattern
         :: !(Ceil level child) -> Pattern level variable child
     DomainValuePattern
-        :: !(DomainValue level child) -> Pattern level variable child
+        :: !(DomainValue Object child) -> Pattern Object variable child
     EqualsPattern
         :: !(Equals level child) -> Pattern level variable child
     ExistsPattern
