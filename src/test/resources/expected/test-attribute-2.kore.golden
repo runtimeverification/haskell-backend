@@ -1,1 +1,79 @@
-Parse error: Error in module 'TEST-ATTRIBUTE-2' -> sort 'Nat' declaration -> attributes -> symbol or alias '#hook': Symbol '#hook' not defined..
+Definition
+    { definitionAttributes = Attributes []
+    , definitionModules =
+        [ Module
+            { moduleName = ModuleName "TEST-ATTRIBUTE-2"
+            , moduleSentences =
+                [ SentenceSortSentence SentenceSort
+                    { sentenceSortName = Id Object "Nat"
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes =
+                        Attributes 
+                            [ MetaPattern (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = Id Meta "#hook"
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ MetaPattern (StringLiteralPattern (StringLiteral "Nat"))
+                                    ]
+                                })
+                            ]
+                    }
+                , ObjectSentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = Id Object "plus"
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSortSortActual
+                                { sortActualName = Id Object "Nat"
+                                , sortActualSorts = []
+                                }
+                        , SortActualSortSortActual
+                                { sortActualName = Id Object "Nat"
+                                , sortActualSorts = []
+                                }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSortSortActual
+                                { sortActualName = Id Object "Nat"
+                                , sortActualSorts = []
+                                }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ MetaPattern (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = Id Meta "#hook"
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ MetaPattern (StringLiteralPattern (StringLiteral "plus"))
+                                    ]
+                                })
+                            , MetaPattern (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = Id Meta "#assoc"
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren = []
+                                })
+                            , MetaPattern (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = Id Meta "#comm"
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren = []
+                                })
+                            ]
+                    }
+                ]
+            , moduleAttributes = Attributes []
+            }
+        ]
+    }

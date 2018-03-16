@@ -7,7 +7,9 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Data.Kore.ASTVerifier.DefinitionVerifier (verifyDefinition, verifyKoreDefinition) where
+module Data.Kore.ASTVerifier.DefinitionVerifier (verifyDefinition,
+                                                 verifyKoreDefinition,
+                                                 AttributesVerification (..)) where
 
 import           Control.Monad                            (foldM, foldM_)
 import           Data.Kore.AST.Common
@@ -41,8 +43,11 @@ e.g.:
 @
 
 -}
-verifyDefinition :: Definition -> Either (Error VerifyError) VerifySuccess
-verifyDefinition definition = do
+verifyDefinition
+    :: AttributesVerification
+    -> Definition
+    -> Either (Error VerifyError) VerifySuccess
+verifyDefinition attributesVerification definition = do
     defaultNames <- verifyUniqueNames sortNames implicitModule
     foldM_ verifyUniqueNames defaultNames (definitionModules definition)
 
@@ -66,9 +71,12 @@ verifyDefinition definition = do
             )
             implicitIndexedModules
             (definitionModules definition)
-    mapM_ verifyModule (Map.elems indexedModules)
+    mapM_ (verifyModule attributesVerification) (Map.elems indexedModules)
     verifyAttributes
-        (definitionAttributes definition) implicitIndexedModule Set.empty
+        (definitionAttributes definition)
+        implicitIndexedModule
+        Set.empty
+        attributesVerification
   where
     defaultModuleName = ModuleName "Default module"
     (moduleWithMetaSorts, sortNames) =
@@ -84,7 +92,10 @@ verifyDefinition definition = do
 'Data.Kore.Implicit' package. It verifies the correctness of a definition
 containing only the 'kore' default module.
 -}
-verifyKoreDefinition :: Definition -> Either (Error VerifyError) VerifySuccess
-verifyKoreDefinition definition =
+verifyKoreDefinition
+    :: AttributesVerification
+    -> Definition
+    -> Either (Error VerifyError) VerifySuccess
+verifyKoreDefinition attributesVerification definition =
     -- VerifyDefinition already checks the Kore module, so we skip it.
-    verifyDefinition definition { definitionModules = [] }
+    verifyDefinition attributesVerification definition { definitionModules = [] }

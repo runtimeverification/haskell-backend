@@ -14,9 +14,10 @@ import           Data.Kore.ASTVerifier.DefinitionVerifier
 import           Data.Kore.Error
 import           Data.Kore.Parser.Parser
 
-import qualified Data.ByteString.Lazy       as LazyByteString
-import qualified Data.ByteString.Lazy.Char8 as LazyChar8
-import           System.FilePath            (addExtension, splitFileName, (</>))
+import qualified Data.ByteString.Lazy                     as LazyByteString
+import qualified Data.ByteString.Lazy.Char8               as LazyChar8
+import           System.FilePath                          (addExtension,
+                                                           splitFileName, (</>))
 
 newtype InputFileName = InputFileName FilePath
 newtype GoldenFileName = GoldenFileName FilePath
@@ -66,15 +67,15 @@ toByteString (Right definition) =
 verify :: Either String Definition -> Either String Definition
 verify (Left err) = Left err
 verify (Right definition) =
-    case verifyDefinition definition of
+    case verifyDefinition DoNotVerifyAttributes definition of
         Left e  -> Left (printError e)
         Right _ -> Right definition
 
 runParser :: String -> VerifyRequest -> IO LazyByteString.ByteString
 runParser inputFileName verifyRequest = do
-    fileContent <- ByteString.readFile inputFileName
+    fileContent <- readFile inputFileName
     let
-        unverifiedDefinition = fromKore fileContent
+        unverifiedDefinition = fromKore inputFileName fileContent
         definition =
             case verifyRequest of
                 VerifyRequestYes -> verify unverifiedDefinition

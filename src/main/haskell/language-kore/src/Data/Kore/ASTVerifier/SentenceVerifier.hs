@@ -67,47 +67,73 @@ verifySentences
     :: IndexedModule
     -- ^ The module containing all definitions which are visible in this
     -- pattern.
+    -> AttributesVerification
     -> [Sentence]
     -> Either (Error VerifyError) VerifySuccess
 verifySentences
-    indexedModule sentences
+    indexedModule attributesVerification sentences
   = do
-    mapM_ (verifySentence indexedModule) sentences
+    mapM_ (verifySentence indexedModule attributesVerification) sentences
     verifySuccess
 
 verifySentence
     :: IndexedModule
+    -> AttributesVerification
     -> Sentence
     -> Either (Error VerifyError) VerifySuccess
 verifySentence
     indexedModule
+    attributesVerification
     (MetaSentenceAliasSentence aliasSentence)
   =
     verifySymbolAliasSentence
-        (resolveMetaSort indexedModule) indexedModule aliasSentence
+        (resolveMetaSort indexedModule)
+        indexedModule
+        attributesVerification
+        aliasSentence
 verifySentence
     indexedModule
+    attributesVerification
     (ObjectSentenceAliasSentence aliasSentence)
   =
     verifySymbolAliasSentence
-        (resolveObjectSort indexedModule) indexedModule aliasSentence
+        (resolveObjectSort indexedModule)
+        indexedModule
+        attributesVerification
+        aliasSentence
 verifySentence
     indexedModule
+    attributesVerification
     (MetaSentenceSymbolSentence symbolSentence)
   =
     verifySymbolAliasSentence
-        (resolveMetaSort indexedModule) indexedModule symbolSentence
+        (resolveMetaSort indexedModule)
+        indexedModule
+        attributesVerification
+        symbolSentence
 verifySentence
     indexedModule
+    attributesVerification
     (ObjectSentenceSymbolSentence symbolSentence)
   =
     verifySymbolAliasSentence
-        (resolveObjectSort indexedModule) indexedModule symbolSentence
-verifySentence indexedModule (SentenceAxiomSentence axiomSentence) =
-    verifyAxiomSentence axiomSentence indexedModule
-verifySentence indexedModule (SentenceSortSentence sortSentence) =
-    verifySortSentence sortSentence indexedModule
-verifySentence _ (SentenceImportSentence _) =
+        (resolveObjectSort indexedModule)
+        indexedModule
+        attributesVerification
+        symbolSentence
+verifySentence
+    indexedModule
+    attributesVerification
+    (SentenceAxiomSentence axiomSentence)
+  =
+    verifyAxiomSentence axiomSentence indexedModule attributesVerification
+verifySentence
+    indexedModule
+    attributesVerification
+    (SentenceSortSentence sortSentence)
+  =
+    verifySortSentence sortSentence indexedModule attributesVerification
+verifySentence _ _ (SentenceImportSentence _) =
     -- Since we have an IndexedModule, we assume that imports were already
     -- resolved, so there is nothing left to verify here.
     verifySuccess
@@ -116,10 +142,11 @@ verifySymbolAliasSentence
     :: (MetaOrObject level, SentenceSymbolOrAlias ssa)
     => (Id level -> Either (Error VerifyError) (SortDescription level))
     -> IndexedModule
+    -> AttributesVerification
     -> ssa Attributes level
     -> Either (Error VerifyError) VerifySuccess
 verifySymbolAliasSentence
-    findSortDeclaration indexedModule sentence
+    findSortDeclaration indexedModule attributesVerification sentence
   =
     withContext
         (  getSentenceSymbolOrAliasSentenceName sentence
@@ -140,6 +167,7 @@ verifySymbolAliasSentence
                 (getSentenceSymbolOrAliasAttributes sentence)
                 indexedModule
                 variables
+                attributesVerification
         )
   where
     sortParams = getSentenceSymbolOrAliasSortParams sentence
@@ -147,8 +175,9 @@ verifySymbolAliasSentence
 verifyAxiomSentence
     :: KoreSentenceAxiom
     -> IndexedModule
+    -> AttributesVerification
     -> Either (Error VerifyError) VerifySuccess
-verifyAxiomSentence axiom indexedModule =
+verifyAxiomSentence axiom indexedModule attributesVerification =
     withContext
         "axiom declaration"
         (do
@@ -161,21 +190,28 @@ verifyAxiomSentence axiom indexedModule =
                 indexedModule
                 variables
             verifyAttributes
-                (sentenceAxiomAttributes axiom) indexedModule variables
+                (sentenceAxiomAttributes axiom)
+                indexedModule
+                variables
+                attributesVerification
         )
 
 verifySortSentence
     :: KoreSentenceSort
     -> IndexedModule
+    -> AttributesVerification
     -> Either (Error VerifyError) VerifySuccess
-verifySortSentence sentenceSort indexedModule =
+verifySortSentence sentenceSort indexedModule attributesVerification =
     withContext
         ("sort '" ++ getId (sentenceSortName sentenceSort) ++ "' declaration")
         (do
             variables <-
                 buildDeclaredSortVariables (sentenceSortParameters sentenceSort)
             verifyAttributes
-                (sentenceSortAttributes sentenceSort) indexedModule variables
+                (sentenceSortAttributes sentenceSort)
+                indexedModule
+                variables
+                attributesVerification
         )
 
 buildDeclaredSortVariables

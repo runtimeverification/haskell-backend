@@ -12,14 +12,15 @@ module Data.Kore.Implicit.Verified
     (implicitKoreModule, implicitKoreDefinition) where
 
 import           Data.Kore.AST.Kore
-import           Data.Kore.ASTVerifier.DefinitionVerifier (verifyKoreDefinition)
+import           Data.Kore.ASTVerifier.DefinitionVerifier (AttributesVerification (..),
+                                                           verifyKoreDefinition)
 import           Data.Kore.ASTVerifier.Error              (VerifyError)
 import           Data.Kore.Error                          (Error, printError)
 import           Data.Kore.Implicit.ImplicitKore          (uncheckedKoreDefinition)
 
 checkedKoreDefinition :: Either (Error VerifyError) Definition
 checkedKoreDefinition = do
-    verifyKoreDefinition uncheckedKoreDefinition
+    verifyKoreDefinition VerifyAttributes uncheckedKoreDefinition
     return uncheckedKoreDefinition
 
 implicitKoreDefinition :: Definition
