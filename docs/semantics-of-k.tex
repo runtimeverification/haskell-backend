@@ -3607,6 +3607,8 @@ $\KgetFVFromPatterns$
 & \KgetFV(\overline{\exists_s v . \varphi}) = \KdeleteKVariableList(v, 
 \KgetFV(\varphi))
 \\
+& \KgetFV(\Kdv(s, str)) = \KnilKVariableList
+\\
 & \KgetFVFromPatterns(\KnilKPatternList) = \KnilKVariableList
 \\
 & \KgetFVFromPatterns(\KconsKPatternList(\varphi, L))
@@ -3682,6 +3684,9 @@ The functions $\Ksubstitute$ and $\KsubstitutePatterns$ have axioms
   & = \exists x' . \left(x' = \KfreshName(\varphi, \psi, 
   \KVariableAsKPattern(v)) \wedge \overline{\exists_{s'} x' \cln s . 
   (\varphi[x' \cln s / x \cln s][\psi/v])}\right)
+  \\
+  & \overline{\Kdv(s,str)[\psi/v]} =
+    \Kdv(s,str)
   \\
   & \overline{\KnilKPatternList[\psi / v]} = \KnilKPatternList
   \\
@@ -5565,6 +5570,7 @@ or one of the following:
 	\ttfamily \sharpsymbol \slashsymbol in &
 	\ttfamily \sharpsymbol \slashsymbol top &
 	\ttfamily \sharpsymbol \slashsymbol bottom &
+	\ttfamily \sharpsymbol \slashsymbol dv &
 \end{tabular}
 \end{center}
 \end{itemize}
@@ -5934,7 +5940,9 @@ Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
 	`(' <pattern> `,' <pattern> `)'
 	\alt `\\top' `{' <object-sort> `}' `(' `)'
 	\alt `\\bottom' `{' <object-sort> `}' `(' `)'
-	\alt `\\dv' `{' <object-sort> `}' `(' <string> `)'
+	\alt `\\dv' `{' <object-sort> `}' `(' <meta-pattern> `)'
+	\doubleslash where <meta-pattern> has sort {\KString} (see wellformedness 
+	conditions)
 	
 	<object-variable> ::= <object-identifier> `:' <object-sort>
 	
@@ -6370,6 +6378,8 @@ should all have unique constructor
 names; One cannot use the same name for a sort and a symbol, for example. 
 Similarly, any meta-symbol cannot have the same name as a meta-sort.
 \item Every sort constructor can be declared only once;
+\item In domain value pattern $\Kdv\{s\}(str)$, the meta-level pattern $str$ 
+should have sort $\KString$.
 \end{enumerate}
 
 Besides the above wellformedness conditions for patterns, we have the following 
@@ -7010,12 +7020,16 @@ $\denote{\texttt{\slbottom\{$s$\}()}}
 =
 \texttt{\slbottom\{$s$\}()}$
 & if $s$ is \syntacc{meta-sort}
-\\
+\end{longtable}
+
+\paragraph{Domain Value Patterns.}
+
+\begin{center}
 $\denote{\texttt{\sldv\{$s$\}($str$)}}
 = \texttt{\sharpsymbol\slashsymbol dv\{\}($\denote{s}, str$)}$
-& if $s$ is \syntacc{object-sort}
+ if $s$ is \syntacc{object-sort}
   and $str$ is \syntacc{string}
-\end{longtable}
+\end{center}
 
 %\subsubsection{Lift Patterns To Meta Patterns of Sort \KPattern}
 %One of the main part of the lifting operation is lifting patterns to meta-
