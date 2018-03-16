@@ -332,6 +332,8 @@
   \newcommand{\Kfloor}{\texttt{\sharpsymbol \slashsymbol  floor}}
   \newcommand{\Kceil}{\texttt{\sharpsymbol \slashsymbol  ceil}}
   
+  \newcommand{\Kdv}{\texttt{\sharpsymbol \slashsymbol dv}}
+  
   \newcommand{\KgetFV}{\texttt{\sharpsymbol getFV}}
   \newcommand{\KgetFVFromPatterns}{\texttt{\sharpsymbol getFVFromPatterns}}
   \newcommand{\KoccursFree}{\texttt{\sharpsymbol occursFree}}
@@ -431,6 +433,8 @@
   \newcommand{\slin}{\slsh{in}}
   \newcommand{\slnext}{\slsh{next}}
   \newcommand{\slrewrites}{\slsh{rewrites}}
+  
+  \newcommand{\sldv}{\slsh{dv}}
   
   \newcommand{\itlogic}{\mathit{logic}}
   \newcommand{\itconnective}{\mathit{connective}}
@@ -3562,7 +3566,16 @@ Derived connectives have axioms
 	\end{align*}
 \end{notation}
 
-Apart from the five constructors and ten derived connectives introduced above, 
+\paragraph{Domain Values.}
+We provide a construct for representing domain values using their string 
+representation.
+
+$$
+\Kdv \colon \KSort \times \KString \to \KPattern
+$$
+
+Apart from the five constructors and ten derived connectives, and the domain 
+value construct that we introduced above, 
 the sort $\KPattern$ also gets some common utility functions.
 Those utility functions are defined in the following subsections.
 
@@ -5921,6 +5934,7 @@ Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
 	`(' <pattern> `,' <pattern> `)'
 	\alt `\\top' `{' <object-sort> `}' `(' `)'
 	\alt `\\bottom' `{' <object-sort> `}' `(' `)'
+	\alt `\\dv' `{' <object-sort> `}' `(' <string> `)'
 	
 	<object-variable> ::= <object-identifier> `:' <object-sort>
 	
@@ -6996,6 +7010,11 @@ $\denote{\texttt{\slbottom\{$s$\}()}}
 =
 \texttt{\slbottom\{$s$\}()}$
 & if $s$ is \syntacc{meta-sort}
+\\
+$\denote{\texttt{\sldv\{$s$\}($str$)}}
+= \texttt{\sharpsymbol\slashsymbol dv\{\}($\denote{s}, str$)}$
+& if $s$ is \syntacc{object-sort}
+  and $str$ is \syntacc{string}
 \end{longtable}
 
 %\subsubsection{Lift Patterns To Meta Patterns of Sort \KPattern}
