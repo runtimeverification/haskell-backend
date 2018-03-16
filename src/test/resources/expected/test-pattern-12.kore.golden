@@ -6,21 +6,33 @@ Definition
             , moduleSentences =
                 [ SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ ObjectSortVariable (SortVariable (Id Object "S"))
+                        [ UnifiedObject (SortVariable (Id Object "S"))
                         ]
                     , sentenceAxiomPattern =
-                        ObjectPattern (CeilPattern Ceil
-                            { ceilOperandSort =
-                                SortVariableSort (SortVariable (Id Object "S"))
-                            , ceilResultSort =
-                                SortVariableSort (SortVariable (Id Object "S"))
-                            , ceilChild =
-                                ObjectPattern (VariablePattern Variable
-                                    { variableName = Id Object "X"
-                                    , variableSort =
-                                        SortVariableSort (SortVariable (Id Object "S"))
-                                    })
-                            })
+                        Fix
+                            { unFix = UnifiedPattern
+                                { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                    { getPatternObjectMeta = CeilPattern Ceil
+                                        { ceilOperandSort =
+                                            SortVariableSort (SortVariable (Id Object "S"))
+                                        , ceilResultSort =
+                                            SortVariableSort (SortVariable (Id Object "S"))
+                                        , ceilChild =
+                                            Fix
+                                                { unFix = UnifiedPattern
+                                                    { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                        { getPatternObjectMeta = VariablePattern Variable
+                                                            { variableName = Id Object "X"
+                                                            , variableSort =
+                                                                SortVariableSort (SortVariable (Id Object "S"))
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                        }
+                                    }
+                                }
+                            }
                     , sentenceAxiomAttributes = Attributes []
                     }
                 ]

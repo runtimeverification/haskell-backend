@@ -9,16 +9,28 @@ Definition
                     , sentenceSortParameters = []
                     , sentenceSortAttributes =
                         Attributes 
-                            [ MetaPattern (ApplicationPattern Application
-                                { applicationSymbolOrAlias =
-                                    SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Meta "#hook"
-                                        , symbolOrAliasParams = []
+                            [ Fix
+                                { unFix = UnifiedPattern
+                                    { getUnifiedPattern = UnifiedMeta PatternObjectMeta
+                                        { getPatternObjectMeta = ApplicationPattern Application
+                                            { applicationSymbolOrAlias =
+                                                SymbolOrAlias
+                                                    { symbolOrAliasConstructor = Id Meta "#hook"
+                                                    , symbolOrAliasParams = []
+                                                    }
+                                            , applicationChildren =
+                                                [ Fix
+                                                    { unFix = UnifiedPattern
+                                                        { getUnifiedPattern = UnifiedMeta PatternObjectMeta
+                                                            { getPatternObjectMeta = StringLiteralPattern (StringLiteral "Nat")
+                                                            }
+                                                        }
+                                                    }
+                                                ]
+                                            }
                                         }
-                                , applicationChildren =
-                                    [ MetaPattern (StringLiteralPattern (StringLiteral "Nat"))
-                                    ]
-                                })
+                                    }
+                                }
                             ]
                     }
                 , ObjectSentenceSymbolSentence SentenceSymbol
@@ -44,32 +56,56 @@ Definition
                                 }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ MetaPattern (ApplicationPattern Application
-                                { applicationSymbolOrAlias =
-                                    SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Meta "#hook"
-                                        , symbolOrAliasParams = []
+                            [ Fix
+                                { unFix = UnifiedPattern
+                                    { getUnifiedPattern = UnifiedMeta PatternObjectMeta
+                                        { getPatternObjectMeta = ApplicationPattern Application
+                                            { applicationSymbolOrAlias =
+                                                SymbolOrAlias
+                                                    { symbolOrAliasConstructor = Id Meta "#hook"
+                                                    , symbolOrAliasParams = []
+                                                    }
+                                            , applicationChildren =
+                                                [ Fix
+                                                    { unFix = UnifiedPattern
+                                                        { getUnifiedPattern = UnifiedMeta PatternObjectMeta
+                                                            { getPatternObjectMeta = StringLiteralPattern (StringLiteral "plus")
+                                                            }
+                                                        }
+                                                    }
+                                                ]
+                                            }
                                         }
-                                , applicationChildren =
-                                    [ MetaPattern (StringLiteralPattern (StringLiteral "plus"))
-                                    ]
-                                })
-                            , MetaPattern (ApplicationPattern Application
-                                { applicationSymbolOrAlias =
-                                    SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Meta "#assoc"
-                                        , symbolOrAliasParams = []
+                                    }
+                                }
+                            , Fix
+                                { unFix = UnifiedPattern
+                                    { getUnifiedPattern = UnifiedMeta PatternObjectMeta
+                                        { getPatternObjectMeta = ApplicationPattern Application
+                                            { applicationSymbolOrAlias =
+                                                SymbolOrAlias
+                                                    { symbolOrAliasConstructor = Id Meta "#assoc"
+                                                    , symbolOrAliasParams = []
+                                                    }
+                                            , applicationChildren = []
+                                            }
                                         }
-                                , applicationChildren = []
-                                })
-                            , MetaPattern (ApplicationPattern Application
-                                { applicationSymbolOrAlias =
-                                    SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Meta "#comm"
-                                        , symbolOrAliasParams = []
+                                    }
+                                }
+                            , Fix
+                                { unFix = UnifiedPattern
+                                    { getUnifiedPattern = UnifiedMeta PatternObjectMeta
+                                        { getPatternObjectMeta = ApplicationPattern Application
+                                            { applicationSymbolOrAlias =
+                                                SymbolOrAlias
+                                                    { symbolOrAliasConstructor = Id Meta "#comm"
+                                                    , symbolOrAliasParams = []
+                                                    }
+                                            , applicationChildren = []
+                                            }
                                         }
-                                , applicationChildren = []
-                                })
+                                    }
+                                }
                             ]
                     }
                 ]

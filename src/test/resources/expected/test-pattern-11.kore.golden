@@ -6,27 +6,45 @@ Definition
             , moduleSentences =
                 [ SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ ObjectSortVariable (SortVariable (Id Object "S"))
+                        [ UnifiedObject (SortVariable (Id Object "S"))
                         ]
                     , sentenceAxiomPattern =
-                        ObjectPattern (InPattern In
-                            { inOperandSort =
-                                SortVariableSort (SortVariable (Id Object "S"))
-                            , inResultSort =
-                                SortVariableSort (SortVariable (Id Object "S"))
-                            , inContainedChild =
-                                ObjectPattern (VariablePattern Variable
-                                    { variableName = Id Object "X"
-                                    , variableSort =
-                                        SortVariableSort (SortVariable (Id Object "S"))
-                                    })
-                            , inContainingChild =
-                                ObjectPattern (VariablePattern Variable
-                                    { variableName = Id Object "X"
-                                    , variableSort =
-                                        SortVariableSort (SortVariable (Id Object "S"))
-                                    })
-                            })
+                        Fix
+                            { unFix = UnifiedPattern
+                                { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                    { getPatternObjectMeta = InPattern In
+                                        { inOperandSort =
+                                            SortVariableSort (SortVariable (Id Object "S"))
+                                        , inResultSort =
+                                            SortVariableSort (SortVariable (Id Object "S"))
+                                        , inContainedChild =
+                                            Fix
+                                                { unFix = UnifiedPattern
+                                                    { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                        { getPatternObjectMeta = VariablePattern Variable
+                                                            { variableName = Id Object "X"
+                                                            , variableSort =
+                                                                SortVariableSort (SortVariable (Id Object "S"))
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                        , inContainingChild =
+                                            Fix
+                                                { unFix = UnifiedPattern
+                                                    { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                        { getPatternObjectMeta = VariablePattern Variable
+                                                            { variableName = Id Object "X"
+                                                            , variableSort =
+                                                                SortVariableSort (SortVariable (Id Object "S"))
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                        }
+                                    }
+                                }
+                            }
                     , sentenceAxiomAttributes = Attributes []
                     }
                 ]

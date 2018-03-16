@@ -6,25 +6,43 @@ Definition
             , moduleSentences =
                 [ SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ ObjectSortVariable (SortVariable (Id Object "S"))
+                        [ UnifiedObject (SortVariable (Id Object "S"))
                         ]
                     , sentenceAxiomPattern =
-                        ObjectPattern (RewritesPattern Rewrites
-                            { rewritesSort =
-                                SortVariableSort (SortVariable (Id Object "S"))
-                            , rewritesFirst =
-                                ObjectPattern (VariablePattern Variable
-                                    { variableName = Id Object "X"
-                                    , variableSort =
-                                        SortVariableSort (SortVariable (Id Object "S"))
-                                    })
-                            , rewritesSecond =
-                                ObjectPattern (VariablePattern Variable
-                                    { variableName = Id Object "X"
-                                    , variableSort =
-                                        SortVariableSort (SortVariable (Id Object "S"))
-                                    })
-                            })
+                        Fix
+                            { unFix = UnifiedPattern
+                                { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                    { getPatternObjectMeta = RewritesPattern Rewrites
+                                        { rewritesSort =
+                                            SortVariableSort (SortVariable (Id Object "S"))
+                                        , rewritesFirst =
+                                            Fix
+                                                { unFix = UnifiedPattern
+                                                    { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                        { getPatternObjectMeta = VariablePattern Variable
+                                                            { variableName = Id Object "X"
+                                                            , variableSort =
+                                                                SortVariableSort (SortVariable (Id Object "S"))
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                        , rewritesSecond =
+                                            Fix
+                                                { unFix = UnifiedPattern
+                                                    { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                        { getPatternObjectMeta = VariablePattern Variable
+                                                            { variableName = Id Object "X"
+                                                            , variableSort =
+                                                                SortVariableSort (SortVariable (Id Object "S"))
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                        }
+                                    }
+                                }
+                            }
                     , sentenceAxiomAttributes = Attributes []
                     }
                 ]

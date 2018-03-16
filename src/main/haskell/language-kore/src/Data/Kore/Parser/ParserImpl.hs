@@ -46,6 +46,7 @@ import           Data.Kore.Unparser.Unparse
 import           Control.Arrow                ((&&&))
 import           Control.Monad                (unless, void, when)
 
+import           Data.Fix
 import           Data.Maybe                   (isJust)
 import qualified Text.Parsec.Char             as Parser (char)
 import           Text.Parsec.Combinator       (many1)
@@ -98,12 +99,12 @@ inCurlyBracesSortVariableListParser x =
         (sortVariableParser x)
 
 {-|'unifiedSortVariableParser' parses a sort variable.-}
-unifiedSortVariableParser :: Parser UnifiedSortVariable
+unifiedSortVariableParser :: Parser (Unified SortVariable)
 unifiedSortVariableParser = do
     c <- ParserUtils.peekChar'
     if c == '#'
-        then MetaSortVariable <$> sortVariableParser Meta
-        else ObjectSortVariable <$> sortVariableParser Object
+        then UnifiedMeta <$> sortVariableParser Meta
+        else UnifiedObject <$> sortVariableParser Object
 
 {-|'inCurlyBracesUnifiedSortVariableListParser' parses a delimited
 @sort-variable-list@.
@@ -127,7 +128,7 @@ BNF definition fragment for what we're parsing here:
 
 Always starts with @{@,
 -}
-inCurlyBracesUnifiedSortVariableListParser :: Parser [UnifiedSortVariable]
+inCurlyBracesUnifiedSortVariableListParser :: Parser [Unified SortVariable]
 inCurlyBracesUnifiedSortVariableListParser =
     ParserUtils.sepByCharWithDelimitingChars skipWhitespace '{' '}' ','
         unifiedSortVariableParser
@@ -311,9 +312,9 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 unaryOperatorRemainderParser
     :: MetaOrObject level
     => level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort level -> UnifiedPattern -> m level UnifiedPattern)
+    -> (Sort level -> KorePattern -> m level KorePattern)
     -- ^ Element constructor.
-    -> Parser (m level UnifiedPattern)
+    -> Parser (m level KorePattern)
 unaryOperatorRemainderParser x constructor =
     pure constructor
         <*> inCurlyBracesRemainderParser (sortParser x)
@@ -335,9 +336,9 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 binaryOperatorRemainderParser
     :: MetaOrObject level
     => level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort level -> UnifiedPattern -> UnifiedPattern -> m level UnifiedPattern)
+    -> (Sort level -> KorePattern -> KorePattern -> m level KorePattern)
     -- ^ Element constructor.
-    -> Parser (m level UnifiedPattern)
+    -> Parser (m level KorePattern)
 binaryOperatorRemainderParser x constructor = do
     sort <- inCurlyBracesRemainderParser (sortParser x)
     (pattern1, pattern2) <-
@@ -360,10 +361,10 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 existsForallRemainderParser
     :: MetaOrObject level
     => level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort level -> Variable level -> UnifiedPattern
-        -> m level Variable UnifiedPattern)
+    -> (Sort level -> Variable level -> KorePattern
+        -> m level Variable KorePattern)
     -- ^ Element constructor.
-    -> Parser (m level Variable UnifiedPattern)
+    -> Parser (m level Variable KorePattern)
 existsForallRemainderParser x constructor = do
     sort <- inCurlyBracesRemainderParser (sortParser x)
     (variable, qPattern) <- parenPairParser (variableParser x) patternParser
@@ -385,9 +386,9 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 ceilFloorRemainderParser
     :: MetaOrObject level
     => level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort level -> Sort level -> UnifiedPattern -> m level UnifiedPattern)
+    -> (Sort level -> Sort level -> KorePattern -> m level KorePattern)
     -- ^ Element constructor.
-    -> Parser (m level UnifiedPattern)
+    -> Parser (m level KorePattern)
 ceilFloorRemainderParser x constructor = do
     (sort1, sort2) <- curlyPairRemainderParser (sortParser x)
     cfPattern <- inParenthesesParser patternParser
@@ -408,7 +409,7 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 inRemainderParser
     :: MetaOrObject level
     => level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser (In level UnifiedPattern)
+    -> Parser (In level KorePattern)
 inRemainderParser x = do
     (sort1, sort2) <- curlyPairRemainderParser (sortParser x)
     (cdPattern, cgPattern) <-
@@ -436,10 +437,10 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 equalsLikeRemainderParser
     :: MetaOrObject level
     => level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort level -> Sort level -> UnifiedPattern -> UnifiedPattern ->
-        m level UnifiedPattern)
+    -> (Sort level -> Sort level -> KorePattern -> KorePattern ->
+        m level KorePattern)
     -- ^ Element constructor.
-    -> Parser (m level UnifiedPattern)
+    -> Parser (m level KorePattern)
 equalsLikeRemainderParser x constructor = do
     (sort1, sort2) <- curlyPairRemainderParser (sortParser x)
     (pattern1, pattern2) <-
@@ -488,7 +489,7 @@ symbolOrAliasPatternRemainderParser
     :: MetaOrObject level
     => level  -- ^ Distinguishes between the meta and non-meta elements.
     -> Id level  -- ^ The already parsed prefix.
-    -> Parser (Pattern level Variable UnifiedPattern)
+    -> Parser (Pattern level Variable KorePattern)
 symbolOrAliasPatternRemainderParser x identifier = ApplicationPattern <$>
     ( pure Application
         <*> (SymbolOrAlias identifier <$> inCurlyBracesSortListParser x)
@@ -536,21 +537,6 @@ variableParser
     -> Parser (Variable level)
 variableParser x = idParser x >>= variableRemainderParser x
 
-{-|'unifiedVariableParser' parses a @variable@.
-
-BNF definitions:
-
-@
-⟨variable⟩ ::= ⟨object-variable⟩ | ⟨meta-variable⟩
-@
--}
-unifiedVariableParser :: Parser (UnifiedVariable Variable)
-unifiedVariableParser = do
-    c <- ParserUtils.peekChar'
-    if c == '#'
-        then MetaVariable <$> variableParser Meta
-        else ObjectVariable <$> variableParser Object
-
 {-|'variableOrTermPatternParser' parses an (object or meta) (variable pattern or
 application pattern).
 
@@ -577,7 +563,7 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 variableOrTermPatternParser
     :: MetaOrObject level
     => level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser (Pattern level Variable UnifiedPattern)
+    -> Parser (Pattern level Variable KorePattern)
 variableOrTermPatternParser x = do
     identifier <- idParser x
     c <- ParserUtils.peekChar'
@@ -599,12 +585,14 @@ BNF definitions:
     | ⟨meta-head⟩ ‘(’ ⟨pattern-list⟩ ‘)’
 @
 -}
-unifiedVariableOrTermPatternParser :: Parser UnifiedPattern
+unifiedVariableOrTermPatternParser :: Parser KorePattern
 unifiedVariableOrTermPatternParser = do
     c <- ParserUtils.peekChar'
     if c == '#'
-        then MetaPattern <$> variableOrTermPatternParser Meta
-        else ObjectPattern <$> variableOrTermPatternParser Object
+        then Fix . UnifiedPattern . UnifiedMeta . PatternObjectMeta
+            <$> variableOrTermPatternParser Meta
+        else Fix . UnifiedPattern . UnifiedObject . PatternObjectMeta
+            <$> variableOrTermPatternParser Object
 
 {-|'mlConstructorParser' parses a pattern starting with @\@.
 
@@ -646,7 +634,7 @@ BNF definitions:
 
 Always starts with @\@.
 -}
-mlConstructorParser :: Parser UnifiedPattern
+mlConstructorParser :: Parser KorePattern
 mlConstructorParser = do
     void (Parser.char '\\')
     mlPatternParser
@@ -657,10 +645,10 @@ mlConstructorParser = do
         openCurlyBraceParser
         c <- ParserUtils.peekChar'
         if c == '#'
-            then MetaPattern <$>
+            then Fix . UnifiedPattern . UnifiedMeta . PatternObjectMeta <$>
                 mlConstructorRemainderParser'
                     Meta patternType metaMlConstructorRemainderParser
-            else ObjectPattern <$>
+            else Fix . UnifiedPattern . UnifiedObject . PatternObjectMeta <$>
                 mlConstructorRemainderParser'
                     Object patternType objectMlConstructorRemainderParser
     mlConstructorRemainderParser' x patternType otherParsers =
@@ -709,7 +697,7 @@ mlConstructorParser = do
             ++ unparseToString patternType
             ++ " meta pattern.")
 
-{-|'patternParser' parses an unifiedPattern
+{-|'patternParser' parses an KorePattern
 
 BNF definitions:
 
@@ -754,13 +742,15 @@ BNF definitions:
 Note that the @meta-pattern@ can be a @string@, while the @object-pattern@
 can't.
 -}
-patternParser :: Parser UnifiedPattern
+patternParser :: Parser KorePattern
 patternParser = do
     c <- ParserUtils.peekChar'
     case c of
         '\\' -> mlConstructorParser
-        '"'  -> MetaPattern . StringLiteralPattern <$> stringLiteralParser
-        '\'' -> MetaPattern . CharLiteralPattern <$> charLiteralParser
+        '"'  -> Fix . UnifiedPattern . UnifiedMeta . PatternObjectMeta
+            . StringLiteralPattern <$> stringLiteralParser
+        '\'' -> Fix . UnifiedPattern . UnifiedMeta . PatternObjectMeta
+            . CharLiteralPattern <$> charLiteralParser
         _    -> unifiedVariableOrTermPatternParser
 
 
@@ -781,7 +771,7 @@ BNF definition fragment for what we're parsing here:
 
 Always starts with @[@,
 -}
-inSquareBracketsPatternListParser :: Parser [UnifiedPattern]
+inSquareBracketsPatternListParser :: Parser [KorePattern]
 inSquareBracketsPatternListParser =
     ParserUtils.sepByCharWithDelimitingChars skipWhitespace
         '[' ']' ',' patternParser
@@ -790,7 +780,7 @@ inSquareBracketsPatternListParser =
 'inSquareBracketsPatternListParser' except that it uses parentheses instead of
 square brackets.
 -}
-inParenthesesPatternListParser :: Parser [UnifiedPattern]
+inParenthesesPatternListParser :: Parser [KorePattern]
 inParenthesesPatternListParser =
     ParserUtils.sepByCharWithDelimitingChars skipWhitespace
         '(' ')' ',' patternParser

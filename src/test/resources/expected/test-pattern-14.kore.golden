@@ -6,19 +6,31 @@ Definition
             , moduleSentences =
                 [ SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ ObjectSortVariable (SortVariable (Id Object "S"))
+                        [ UnifiedObject (SortVariable (Id Object "S"))
                         ]
                     , sentenceAxiomPattern =
-                        ObjectPattern (NextPattern Next
-                            { nextSort =
-                                SortVariableSort (SortVariable (Id Object "S"))
-                            , nextChild =
-                                ObjectPattern (VariablePattern Variable
-                                    { variableName = Id Object "X"
-                                    , variableSort =
-                                        SortVariableSort (SortVariable (Id Object "S"))
-                                    })
-                            })
+                        Fix
+                            { unFix = UnifiedPattern
+                                { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                    { getPatternObjectMeta = NextPattern Next
+                                        { nextSort =
+                                            SortVariableSort (SortVariable (Id Object "S"))
+                                        , nextChild =
+                                            Fix
+                                                { unFix = UnifiedPattern
+                                                    { getUnifiedPattern = UnifiedObject PatternObjectMeta
+                                                        { getPatternObjectMeta = VariablePattern Variable
+                                                            { variableName = Id Object "X"
+                                                            , variableSort =
+                                                                SortVariableSort (SortVariable (Id Object "S"))
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                        }
+                                    }
+                                }
+                            }
                     , sentenceAxiomAttributes = Attributes []
                     }
                 ]

@@ -181,14 +181,14 @@ verifySortSentence sentenceSort indexedModule =
 buildDeclaredSortVariables
     :: MetaOrObject level
     => [SortVariable level]
-    -> Either (Error VerifyError) (Set.Set UnifiedSortVariable)
+    -> Either (Error VerifyError) (Set.Set (Unified SortVariable))
 buildDeclaredSortVariables variables =
     buildDeclaredUnifiedSortVariables
         (map asUnified variables)
 
 buildDeclaredUnifiedSortVariables
-    :: [UnifiedSortVariable]
-    -> Either (Error VerifyError) (Set.Set UnifiedSortVariable)
+    :: [Unified SortVariable]
+    -> Either (Error VerifyError) (Set.Set (Unified SortVariable))
 buildDeclaredUnifiedSortVariables [] = Right Set.empty
 buildDeclaredUnifiedSortVariables (unifiedVariable : list) = do
     variables <- buildDeclaredUnifiedSortVariables list
@@ -198,7 +198,7 @@ buildDeclaredUnifiedSortVariables (unifiedVariable : list) = do
                 ++ "'.")
     return (Set.insert unifiedVariable variables)
   where
-    extractVariableName (ObjectSortVariable variable) =
+    extractVariableName (UnifiedObject variable) =
         getId (getSortVariable variable)
-    extractVariableName (MetaSortVariable variable) =
+    extractVariableName (UnifiedMeta variable) =
         getId (getSortVariable variable)

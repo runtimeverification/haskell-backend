@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE UndecidableInstances  #-}
 module Data.Kore.ASTPrettyPrint (prettyPrintToString) where
 
 import           Data.Kore.AST.Common
@@ -14,6 +15,7 @@ import           Data.Kore.IndentingPrinter             (PrinterOutput,
                                                          withIndent, write)
 import           Data.Kore.Parser.CString               (escapeCString)
 
+import           Data.Fix
 import           Data.List                              (intersperse)
 
 {-# ANN module "HLint: ignore Use record patterns" #-}
@@ -245,23 +247,48 @@ instance MetaOrObject level => PrettyPrint (Variable level) where
             , writeFieldNewLine "variableSort" variableSort var
             ]
 
-instance PrettyPrint UnifiedSortVariable where
-    prettyPrint flags (ObjectSortVariable sv) =
-        writeOneFieldStruct flags "ObjectSortVariable" sv
-    prettyPrint flags (MetaSortVariable sv)   =
-        writeOneFieldStruct flags "MetaSortVariable" sv
+instance
+    ( PrettyPrint (sort Object)
+    , PrettyPrint (sort Meta)
+    ) => PrettyPrint (Unified sort)
+  where
+    prettyPrint flags (UnifiedObject s) =
+        writeOneFieldStruct flags "UnifiedObject" s
+    prettyPrint flags (UnifiedMeta s)   =
+        writeOneFieldStruct flags "UnifiedMeta" s
 
-instance PrettyPrint (UnifiedVariable Variable) where
-    prettyPrint flags (ObjectVariable sv) =
-        writeOneFieldStruct flags "ObjectVariable" sv
-    prettyPrint flags (MetaVariable sv)   =
-        writeOneFieldStruct flags "SortVariable" sv
+instance
+    ( MetaOrObject level
+    , PrettyPrint child
+    , PrettyPrint (variable level)
+    ) => PrettyPrint (PatternObjectMeta variable child level)
+  where
+    prettyPrint _ pom@(PatternObjectMeta _) =
+        writeStructure "PatternObjectMeta"
+            [ writeFieldOneLine "getPatternObjectMeta" getPatternObjectMeta pom
+            ]
 
-instance PrettyPrint UnifiedPattern where
-    prettyPrint flags (ObjectPattern sv) =
-        writeOneFieldStruct flags "ObjectPattern" sv
-    prettyPrint flags (MetaPattern sv)   =
-        writeOneFieldStruct flags "MetaPattern" sv
+instance
+    ( PrettyPrint child
+    , PrettyPrint (variable Object)
+    , PrettyPrint (variable Meta)
+    ) => PrettyPrint (UnifiedPattern variable child)
+  where
+    prettyPrint _ up@(UnifiedPattern _) =
+        writeStructure "UnifiedPattern"
+            [ writeFieldOneLine "getUnifiedPattern" getUnifiedPattern up
+            ]
+
+instance
+    ( PrettyPrint (variable Object)
+    , PrettyPrint (variable Meta)
+    ) => PrettyPrint (Fix (UnifiedPattern variable))
+  where
+    prettyPrint _ up@(Fix _) =
+        writeStructure "Fix"
+            [ writeFieldOneLine "unFix" unFix up
+            ]
+
 
 instance
     ( MetaOrObject level
@@ -458,7 +485,6 @@ instance
     ( MetaOrObject level
     , PrettyPrint child
     , PrettyPrint (variable level)
-    , PrettyPrint (UnifiedVariable variable)
     ) => PrettyPrint (Pattern level variable child)
   where
     prettyPrint flags (AndPattern p) =

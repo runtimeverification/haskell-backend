@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE UndecidableInstances  #-}
 module Data.Kore.Unparser.Unparse (Unparse, unparseToString) where
 
 import           Data.Kore.AST.Common
@@ -10,6 +11,8 @@ import           Data.Kore.IndentingPrinter (PrinterOutput, StringPrinter,
                                              betweenLines, printToString,
                                              withIndent, write)
 import           Data.Kore.Parser.CString   (escapeCString)
+
+import           Data.Fix
 
 {-  Unparse to string instance
 -}
@@ -108,18 +111,36 @@ instance Unparse (Variable level) where
     unparse var =
         unparse (variableName var) >> write ":" >> unparse (variableSort var)
 
-instance Unparse UnifiedSortVariable where
-    unparse (ObjectSortVariable sv) = unparse sv
-    unparse (MetaSortVariable sv)   = unparse sv
+instance
+    ( Unparse (sort Object)
+    , Unparse (sort Meta)
+    ) => Unparse (Unified sort)
+  where
+    unparse (UnifiedObject s) = unparse s
+    unparse (UnifiedMeta s)   = unparse s
 
-instance Unparse (UnifiedVariable Variable) where
-    unparse (ObjectVariable sv) = unparse sv
-    unparse (MetaVariable sv)   = unparse sv
+instance
+    ( MetaOrObject level
+    , Unparse child
+    , Unparse (variable level)
+    ) => Unparse (PatternObjectMeta variable child level)
+  where
+    unparse pom@(PatternObjectMeta _) = unparse (getPatternObjectMeta pom)
 
-instance Unparse UnifiedPattern where
-    unparse (ObjectPattern sv) = unparse sv
-    unparse (MetaPattern sv)   = unparse sv
+instance
+    ( Unparse child
+    , Unparse (variable Object)
+    , Unparse (variable Meta)
+    ) => Unparse (UnifiedPattern variable child)
+  where
+    unparse up@(UnifiedPattern _) = unparse (getUnifiedPattern up)
 
+instance
+    ( Unparse (variable Object)
+    , Unparse (variable Meta)
+    ) => Unparse (Fix (UnifiedPattern variable))
+  where
+    unparse up@(Fix _) = unparse (unFix up)
 
 instance Unparse MLPatternType where
     unparse pt = write ('\\' : patternString pt)
@@ -202,8 +223,11 @@ instance Unparse (Top level p) where
         inCurlyBraces (unparse (topSort top))
         inParens (return ())
 
-instance (Unparse (UnifiedVariable v), Unparse p, Unparse (v level))
-    => Unparse (Pattern level v p) where
+instance
+    ( Unparse child
+    , Unparse (variable level)
+    ) => Unparse (Pattern level variable child)
+  where
     unparse (AndPattern p)           = unparse p
     unparse (ApplicationPattern p)   = unparse p
     unparse (BottomPattern p)        = unparse p
@@ -287,7 +311,7 @@ instance Unparse Module where
     unparse m = do
         write "module "
         unparse (moduleName m)
-        if moduleSentences m /= []
+        if not (null (moduleSentences m))
             then do
                 withIndent 4
                     (  betweenLines

@@ -1,7 +1,13 @@
 Definition
     { definitionAttributes =
         Attributes 
-            [ MetaPattern (StringLiteralPattern (StringLiteral "\u7777"))
+            [ Fix
+                { unFix = UnifiedPattern
+                    { getUnifiedPattern = UnifiedMeta PatternObjectMeta
+                        { getPatternObjectMeta = StringLiteralPattern (StringLiteral "\u7777")
+                        }
+                    }
+                }
             ]
     , definitionModules =
         [ Module

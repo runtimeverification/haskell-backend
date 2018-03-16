@@ -30,11 +30,11 @@ unparseUnitTests =
         , unparseTest
             Attributes
                 { getAttributes =
-                    [ MetaPattern (TopPattern Top
+                    [ asMetaPattern (TopPattern Top
                         { topSort = SortVariableSort SortVariable
                             { getSortVariable = Id {getId = "#Fm"} }
                         })
-                    , ObjectPattern (InPattern In
+                    , asObjectPattern (InPattern In
                         { inOperandSort = SortActualSort SortActual
                             { sortActualName = Id {getId = "B"}
                             , sortActualSorts = []
@@ -43,12 +43,12 @@ unparseUnitTests =
                             { sortActualName = Id {getId = "G"}
                             , sortActualSorts = []
                             }
-                        , inContainedChild = ObjectPattern $ VariablePattern Variable
+                        , inContainedChild = asObjectPattern $ VariablePattern Variable
                             { variableName = Id {getId = "T"}
                             , variableSort = SortVariableSort SortVariable
                                 { getSortVariable = Id {getId = "C"} }
                             }
-                        , inContainingChild = MetaPattern (StringLiteralPattern
+                        , inContainingChild = asMetaPattern (StringLiteralPattern
                             StringLiteral { getStringLiteral = "" })
                         })
                     ]
@@ -117,7 +117,7 @@ unparseUnitTests =
         , unparseTest
             Attributes
                 { getAttributes =
-                    [ MetaPattern
+                    [ asMetaPattern
                         ( TopPattern Top
                             { topSort = SortActualSort SortActual
                                 { sortActualName = Id { getId = "#CharList" }
@@ -131,11 +131,11 @@ unparseUnitTests =
         , unparseTest
             Attributes
                 { getAttributes =
-                    [ MetaPattern
+                    [ asMetaPattern
                         (CharLiteralPattern CharLiteral
                             { getCharLiteral = '\'' }
                         )
-                    , MetaPattern
+                    , asMetaPattern
                         (CharLiteralPattern CharLiteral
                             { getCharLiteral = '\'' }
                         )
@@ -180,9 +180,12 @@ unparseParseTests =
             (forAll (sortGen Meta)
                 (unparseParseProp (sortParser Meta))
             )
+{-  Unified Variable no longer part of Kore so no need to test parse/unparse
         , testProperty "UnifiedVariable"
-            (forAll unifiedVariableGen (unparseParseProp unifiedVariableParser))
-        , testProperty "UnifiedPattern"
+            (forAll (unifiedGen variableGen)
+                (unparseParseProp unifiedVariableParser))
+-}
+        , testProperty "KorePattern"
             (forAll unifiedPatternGen (unparseParseProp patternParser))
         , testProperty "Attributes"
             (forAll attributesGen (unparseParseProp attributesParser))

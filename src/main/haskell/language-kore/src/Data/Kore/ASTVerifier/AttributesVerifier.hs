@@ -9,6 +9,7 @@ Portability : POSIX
 -}
 module Data.Kore.ASTVerifier.AttributesVerifier (verifyAttributes) where
 
+import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.PatternVerifier
@@ -22,7 +23,7 @@ verifyAttributes
     :: Attributes
     -> IndexedModule
     -- ^ Module with the declarations visible in these atributes.
-    -> Set.Set UnifiedSortVariable
+    -> Set.Set (Unified SortVariable)
     -- ^ Sort variables visible in these atributes.
     -> Either (Error VerifyError) VerifySuccess
 verifyAttributes (Attributes patterns) indexedModule sortVariables = do
