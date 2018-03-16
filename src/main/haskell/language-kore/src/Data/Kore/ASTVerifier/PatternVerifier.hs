@@ -213,6 +213,7 @@ verifyParametrizedPattern (AndPattern p)         = verifyMLPattern p
 verifyParametrizedPattern (ApplicationPattern p) = verifyApplication p
 verifyParametrizedPattern (BottomPattern p)      = verifyMLPattern p
 verifyParametrizedPattern (CeilPattern p)        = verifyMLPattern p
+verifyParametrizedPattern (DomainValuePattern p) = verifyMLPattern p
 verifyParametrizedPattern (EqualsPattern p)      = verifyMLPattern p
 verifyParametrizedPattern (ExistsPattern p)      = verifyBinder p
 verifyParametrizedPattern (FloorPattern p)       = verifyMLPattern p
