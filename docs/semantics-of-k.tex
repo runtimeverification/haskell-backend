@@ -6191,6 +6191,7 @@ axiom.
 \alt <symbol-declaration>
 \alt <alias-declaration>
 \alt <axiom-declaration>
+\alt <hook-declaration>
 
 <import-declaration> ::= `import' <module-name> <attribute>
 
@@ -6225,6 +6226,13 @@ axiom.
 
 <axiom-declaration> ::= `axiom' `{' <sort-variable-list> `}' <pattern> 
 <attribute>
+
+<hook-declaration> ::= \quad
+\alt `hooked-sort' <object-sort-constructor>  `{' <object-sort-variable-list> 
+`}' <attribute>
+\alt `hooked-symbol' <object-head-constructor> 
+`{' <object-sort-variable-list> `}' 
+`(' <object-sort-list> `)' `:' <object-sort> <attribute>
 
 <sort-variable-list> ::= \quad
 \alt $\epsilon$
