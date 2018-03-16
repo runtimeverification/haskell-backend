@@ -12,6 +12,7 @@ module Data.Kore.ASTVerifier.PatternVerifier (verifyPattern) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MLPatterns
 import           Data.Kore.ASTHelpers
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.Resolvers
@@ -294,8 +295,7 @@ verifyMLPattern
 
 
 verifyPatternsWithSorts
-    :: MetaOrObject level
-    => [Sort level]
+    :: [UnifiedSort]
     -> [UnifiedPattern]
     -> IndexedModule
     -> Set.Set UnifiedSortVariable
@@ -319,7 +319,7 @@ verifyPatternsWithSorts
         (\sort operand ->
             internalVerifyPattern
                 operand
-                (Just (asUnified sort))
+                (Just sort)
                 indexedModule
                 declaredSortVariables
                 declaredVariables
@@ -352,7 +352,7 @@ verifyApplication
             verifyHelpers
             declaredSortVariables
     verifyPatternsWithSorts
-        (applicationSortsOperands applicationSorts)
+        (map asUnified (applicationSortsOperands applicationSorts))
         (applicationChildren application)
         indexedModule
         declaredSortVariables
@@ -555,6 +555,7 @@ patternNameForContext (ApplicationPattern application) =
     ++ "'"
 patternNameForContext (BottomPattern _) = "\\bottom"
 patternNameForContext (CeilPattern _) = "\\ceil"
+patternNameForContext (DomainValuePattern _) = "\\dv"
 patternNameForContext (EqualsPattern _) = "\\equals"
 patternNameForContext (ExistsPattern exists) =
     "\\exists '"

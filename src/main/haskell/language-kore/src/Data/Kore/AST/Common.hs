@@ -193,6 +193,7 @@ data MLPatternType
     = AndPatternType
     | BottomPatternType
     | CeilPatternType
+    | DomainValuePatternType
     | EqualsPatternType
     | ExistsPatternType
     | FloorPatternType
@@ -212,6 +213,7 @@ allPatternTypes =
     [ AndPatternType
     , BottomPatternType
     , CeilPatternType
+    , DomainValuePatternType
     , EqualsPatternType
     , ExistsPatternType
     , FloorPatternType
@@ -228,21 +230,22 @@ allPatternTypes =
 
 patternString :: MLPatternType -> String
 patternString pt = case pt of
-    AndPatternType      -> "and"
-    BottomPatternType   -> "bottom"
-    CeilPatternType     -> "ceil"
-    EqualsPatternType   -> "equals"
-    ExistsPatternType   -> "exists"
-    FloorPatternType    -> "floor"
-    ForallPatternType   -> "forall"
-    IffPatternType      -> "iff"
-    ImpliesPatternType  -> "implies"
-    InPatternType       -> "in"
-    NextPatternType     -> "next"
-    NotPatternType      -> "not"
-    OrPatternType       -> "or"
-    RewritesPatternType -> "rewrites"
-    TopPatternType      -> "top"
+    AndPatternType         -> "and"
+    BottomPatternType      -> "bottom"
+    CeilPatternType        -> "ceil"
+    DomainValuePatternType -> "dv"
+    EqualsPatternType      -> "equals"
+    ExistsPatternType      -> "exists"
+    FloorPatternType       -> "floor"
+    ForallPatternType      -> "forall"
+    IffPatternType         -> "iff"
+    ImpliesPatternType     -> "implies"
+    InPatternType          -> "in"
+    NextPatternType        -> "next"
+    NotPatternType         -> "not"
+    OrPatternType          -> "or"
+    RewritesPatternType    -> "rewrites"
+    TopPatternType         -> "top"
 
 {-|'And' corresponds to the @\and@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -308,6 +311,27 @@ data Ceil level p = Ceil
     { ceilOperandSort :: !(Sort level)
     , ceilResultSort  :: !(Sort level)
     , ceilChild       :: !p
+    }
+    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
+
+{-|'DomainValue' corresponds to the @\dv@ branch of the @object-pattern@
+syntactic category, which are not yet in the Semantics of K document,
+but they should appear in Section 9.1.4 (Patterns) at some point.
+
+Although there is no 'Meta' version of 'DomainValue's, for uniformity,
+the 'level' type parameter is used to distiguish between the hypothetical
+meta- and object- versions of symbol declarations. It should verify
+'MetaOrObject level'.
+
+'domainValueSort' is the sort of the result.
+
+This represents the encoding of an object constant, e.g. we may use
+\dv{Int{}}{"123"} instead of a representation based on constructors,
+e.g. succesor(succesor(...succesor(0)...))
+-}
+data DomainValue level p = DomainValue
+    { domainValueSort  :: !(Sort level)
+    , domainValueChild :: !p
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
@@ -553,6 +577,8 @@ data Pattern level variable child where
         :: !(Bottom level child) -> Pattern level variable child
     CeilPattern
         :: !(Ceil level child) -> Pattern level variable child
+    DomainValuePattern
+        :: !(DomainValue level child) -> Pattern level variable child
     EqualsPattern
         :: !(Equals level child) -> Pattern level variable child
     ExistsPattern
@@ -661,140 +687,6 @@ data SentenceAxiom sortParam pat attributes = SentenceAxiom
     , sentenceAxiomAttributes :: !attributes
     }
     deriving (Eq, Show)
-
-{-|'MLPatternClass' offers a common interface to ML patterns
-  (those starting with '\', except for 'Exists' and 'Forall')
--}
-class MLPatternClass pat where
-    getPatternType :: pat level child -> MLPatternType
-    getMLPatternOperandSorts :: pat level child -> [Sort level]
-    getMLPatternResultSort :: pat level child -> Sort level
-    getPatternSorts :: pat level child -> [Sort level]
-    getPatternChildren :: pat level child -> [child]
-
-instance MLPatternClass And where
-    getPatternType _ = AndPatternType
-    getMLPatternOperandSorts x = [andSort x, andSort x]
-    getMLPatternResultSort = andSort
-    getPatternSorts a = [andSort a]
-    getPatternChildren a = [andFirst a, andSecond a]
-
-instance MLPatternClass Bottom where
-    getPatternType _ = BottomPatternType
-    getMLPatternOperandSorts _ = []
-    getMLPatternResultSort = bottomSort
-    getPatternSorts t = [bottomSort t]
-    getPatternChildren _ = []
-
-instance MLPatternClass Ceil where
-    getPatternType _ = CeilPatternType
-    getMLPatternOperandSorts x = [ceilOperandSort x]
-    getMLPatternResultSort = ceilResultSort
-    getPatternSorts c = [ceilOperandSort c, ceilResultSort c]
-    getPatternChildren c = [ceilChild c]
-
-instance MLPatternClass Equals where
-    getPatternType _ = EqualsPatternType
-    getMLPatternOperandSorts x = [equalsOperandSort x, equalsOperandSort x]
-    getMLPatternResultSort = equalsResultSort
-    getPatternSorts e = [equalsOperandSort e, equalsResultSort e]
-    getPatternChildren e = [equalsFirst e, equalsSecond e]
-
-instance MLPatternClass Floor where
-    getPatternType _ = FloorPatternType
-    getMLPatternOperandSorts x = [floorOperandSort x]
-    getMLPatternResultSort = floorResultSort
-    getPatternSorts f = [floorOperandSort f, floorResultSort f]
-    getPatternChildren f = [floorChild f]
-
-instance MLPatternClass Iff where
-    getPatternType _ = IffPatternType
-    getMLPatternOperandSorts x = [iffSort x, iffSort x]
-    getMLPatternResultSort = iffSort
-    getPatternSorts i = [iffSort i]
-    getPatternChildren i = [iffFirst i, iffSecond i]
-
-instance MLPatternClass Implies where
-    getPatternType _ = ImpliesPatternType
-    getMLPatternOperandSorts x = [impliesSort x, impliesSort x]
-    getMLPatternResultSort = impliesSort
-    getPatternSorts i = [impliesSort i]
-    getPatternChildren i = [impliesFirst i, impliesSecond i]
-
-instance MLPatternClass In where
-    getPatternType _ = InPatternType
-    getMLPatternOperandSorts x = [inOperandSort x, inOperandSort x]
-    getMLPatternResultSort = inResultSort
-    getPatternSorts i = [inOperandSort i, inResultSort i]
-    getPatternChildren i = [inContainedChild i, inContainingChild i]
-
-instance MLPatternClass Next where
-    getPatternType _ = NextPatternType
-    getMLPatternOperandSorts x = [nextSort x]
-    getMLPatternResultSort = nextSort
-    getPatternSorts e = [nextSort e]
-    getPatternChildren e = [nextChild e]
-
-instance MLPatternClass Not where
-    getPatternType _ = NotPatternType
-    getMLPatternOperandSorts x = [notSort x]
-    getMLPatternResultSort = notSort
-    getPatternSorts n = [notSort n]
-    getPatternChildren n = [notChild n]
-
-instance MLPatternClass Or where
-    getPatternType _ = OrPatternType
-    getMLPatternOperandSorts x = [orSort x, orSort x]
-    getMLPatternResultSort = orSort
-    getPatternSorts a = [orSort a]
-    getPatternChildren a = [orFirst a, orSecond a]
-
-instance MLPatternClass Rewrites where
-    getPatternType _ = RewritesPatternType
-    getMLPatternOperandSorts x = [rewritesSort x, rewritesSort x]
-    getMLPatternResultSort = rewritesSort
-    getPatternSorts e = [rewritesSort e]
-    getPatternChildren e = [rewritesFirst e, rewritesSecond e]
-
-instance MLPatternClass Top where
-    getPatternType _ = TopPatternType
-    getMLPatternOperandSorts _ = []
-    getMLPatternResultSort = topSort
-    getPatternSorts t = [topSort t]
-    getPatternChildren _ = []
-
-class MLBinderPatternClass pat where
-    getBinderPatternType :: pat level variable child -> MLPatternType
-    getBinderPatternSort :: pat level variable child -> Sort level
-    getBinderPatternVariable :: pat level variable child -> variable level
-    getBinderPatternChild :: pat level variable child -> child
-    -- The first argument is only needed in order to make the Haskell type
-    -- system work.
-    binderPatternConstructor
-        :: pat level variable child -> Sort level -> variable level -> child
-        -> Pattern level variable child
-
-instance MLBinderPatternClass Exists where
-    getBinderPatternType _ = ExistsPatternType
-    getBinderPatternSort = existsSort
-    getBinderPatternVariable = existsVariable
-    getBinderPatternChild = existsChild
-    binderPatternConstructor _ sort variable pat = ExistsPattern Exists
-        { existsSort = sort
-        , existsVariable = variable
-        , existsChild = pat
-        }
-
-instance MLBinderPatternClass Forall where
-    getBinderPatternType _ = ForallPatternType
-    getBinderPatternSort = forallSort
-    getBinderPatternVariable = forallVariable
-    getBinderPatternChild = forallChild
-    binderPatternConstructor _ sort variable pat = ForallPattern Forall
-        { forallSort = sort
-        , forallVariable = variable
-        , forallChild = pat
-        }
 
 class SentenceSymbolOrAlias sentence where
     getSentenceSymbolOrAliasConstructor
