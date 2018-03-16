@@ -2236,7 +2236,7 @@ called the \emph{injection function}:
 		s'$ \\
 		$\inj{s}{s}(x) = x$
 		& \doubleslash (identity) axiom \\
-		$x = y \to \inj{s}{s'}(x) = \inj{s}{s'}$
+		$x = y \to \inj{s}{s'}(x) = \inj{s}{s'}(y)$
 		& \doubleslash (injectivity) axiom \\
 		$\inj{s}{s''}(x) = \inj{s'}{s''}(\inj{s}{s'}(x))$
 		& \doubleslash (transitivity) axiom \\
@@ -6350,7 +6350,7 @@ return sorts declared;
 \item In any pattern that is a head being applied to a list of argument 
 patterns, the number and sorts of argument patterns should match with the head 
 declaration;
-\item Every sorts, symbols, and aliases should be declared to be used;
+\item All sorts, symbols, and aliases should be declared before used;
 \item Every sorts, symbols, and aliases, even if they are in different modules, 
 should all have unique constructor 
 names; One cannot use the same name for a sort and a symbol, for example. 
