@@ -5,9 +5,8 @@ module Data.Kore.MetaML.UnLift where
 
 import           Control.Applicative
 import           Control.Monad.Reader
-import qualified Data.Attoparsec.ByteString.Char8      as Parser
-import qualified Data.ByteString.Char8                 as Char8
 import           Data.Fix
+import           Data.Kore.Parser.ParserUtils          as Parser
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
@@ -21,7 +20,7 @@ class UnliftableFromMetaML mixed where
 
 parseObjectId :: String -> Maybe (Id Object)
 parseObjectId input =
-    case Parser.parseOnly objectIdParser (Char8.pack input) of
+    case Parser.parseOnly objectIdParser "<unlift>" input of
         Right parsed -> Just parsed
         _            -> Nothing
   where objectIdParser = idParser Object <* Parser.endOfInput

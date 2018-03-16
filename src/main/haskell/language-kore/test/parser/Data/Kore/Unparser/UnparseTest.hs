@@ -7,13 +7,13 @@ import           Data.Kore.AST.Kore
 import           Data.Kore.ASTGen
 import           Data.Kore.Parser.LexemeImpl
 import           Data.Kore.Parser.ParserImpl
+import           Data.Kore.Parser.ParserUtils
 import           Data.Kore.Unparser.Unparse
 
-import qualified Data.Attoparsec.ByteString.Char8 as Parser
-import qualified Data.ByteString.Char8            as Char8
-import           Test.Tasty                       (TestTree, testGroup)
-import           Test.Tasty.HUnit                 (assertEqual, testCase)
-import           Test.Tasty.QuickCheck            (forAll, testProperty)
+import           Test.Tasty                   (TestTree, testGroup)
+import           Test.Tasty.HUnit             (assertEqual, testCase)
+import           Test.Tasty.QuickCheck        (forAll, testProperty)
+import qualified Text.Parsec.String           as Parser
 
 unparseUnitTests :: TestTree
 unparseUnitTests =
@@ -195,8 +195,8 @@ unparseParseTests =
         ]
 
 parse :: Parser.Parser a -> String -> Either String a
-parse parser input =
-    Parser.parseOnly (parser <* Parser.endOfInput) (Char8.pack input)
+parse parser =
+    parseOnly (parser <* endOfInput) "<test-string>"
 
 unparseParseProp :: (Unparse a, Eq a) => Parser.Parser a -> a -> Bool
 unparseParseProp p a = parse p (unparseToString a) == Right a

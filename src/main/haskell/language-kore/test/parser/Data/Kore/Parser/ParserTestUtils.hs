@@ -1,12 +1,13 @@
 module Data.Kore.Parser.ParserTestUtils where
 
-import           Test.Tasty                       (TestTree, testGroup)
-import           Test.Tasty.HUnit                 (Assertion, assertBool,
-                                                   assertEqual, testCase)
+import           Test.Tasty                   (TestTree, testGroup)
+import           Test.Tasty.HUnit             (Assertion, assertBool,
+                                               assertEqual, testCase)
 
-import qualified Data.Attoparsec.ByteString.Char8 as Parser
-import qualified Data.ByteString.Char8            as Char8
-import           Data.Either                      (isLeft)
+import           Data.Kore.Parser.ParserUtils
+
+import           Data.Either                  (isLeft)
+import qualified Text.Parsec.String           as Parser
 
 data SuccessfulTest a = SuccessfulTest
     { successInput    :: String
@@ -88,23 +89,22 @@ parseSuccess expected parser input =
     assertEqual
         "Expecting parse success!"
         (Right expected)
-        (Parser.parseOnly (parser <* Parser.endOfInput) (Char8.pack input))
+        (parseOnly (parser <* endOfInput) "<test-string>" input)
 
 parseSkip :: Parser.Parser () -> String -> Assertion
 parseSkip parser input =
     assertEqual
         "Expecting skip success!"
         (Right ())
-        (Parser.parseOnly (parser <* Parser.endOfInput) (Char8.pack input))
+        (parseOnly (parser <* endOfInput) "<test-string>" input)
 
 parseFailureWithoutMessage :: Parser.Parser a -> String -> Assertion
 parseFailureWithoutMessage parser input =
     assertBool
         "Expecting parse failure!"
         (isLeft
-            (Parser.parseOnly
-                (parser <* Parser.endOfInput)
-                (Char8.pack input)))
+            (parseOnly (parser <* endOfInput) "<test-string>" input)
+        )
 
 parseFailureWithMessage
     :: (Show a, Eq a)
@@ -113,4 +113,4 @@ parseFailureWithMessage expected parser input =
     assertEqual
         "Expecting parse failure!"
         (Left expected)
-        (Parser.parseOnly (parser <* Parser.endOfInput) (Char8.pack input))
+        (parseOnly (parser <* endOfInput) "<test-string>" input)

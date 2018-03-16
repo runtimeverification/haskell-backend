@@ -33,6 +33,7 @@ dependencies:
 - containers
 - hashable
 - data-fix
+- clock
 
 library:
   source-dirs: src

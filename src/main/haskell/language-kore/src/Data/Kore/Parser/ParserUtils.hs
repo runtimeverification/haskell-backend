@@ -11,10 +11,80 @@ Helper tools for parsing Kore. Meant for internal use only.
 -}
 module Data.Kore.Parser.ParserUtils where
 
-import           Data.Functor                     (($>))
-import           Control.Monad                    (void)
-import           Data.Attoparsec.ByteString.Char8 (Parser)
-import qualified Data.Attoparsec.ByteString.Char8 as Parser
+import           Control.Applicative    (many, (<|>))
+import           Control.Monad          (void)
+import           Data.Functor           (($>))
+import           Text.Parsec            (parse)
+import qualified Text.Parsec.Char       as Parser
+import           Text.Parsec.Combinator (eof, lookAhead)
+import           Text.Parsec.String     (Parser)
+
+{-|'peekChar' is similar to Attoparsec's 'peekChar'. It returns the next
+available character in the input, without consuming it. Returns 'Nothing'
+if the input does not have any available characters.
+-}
+peekChar :: Parser (Maybe Char)
+peekChar =
+    Just <$> peekChar' <|> return Nothing
+
+{-|'peekChar'' is similar to Attoparsec's 'peekChar''. It returns the next
+available character in the input, without consuming it. Fails if the input
+does not have any available characters.
+-}
+peekChar' :: Parser Char
+peekChar' =
+    lookAhead Parser.anyChar
+
+{-|'scan' is similar to Attoparsec's 'scan'. It does the same thing as
+'runScanner', but without returning the last state.
+-}
+scan :: a -> (a -> Char -> Maybe a) -> Parser String
+scan state delta = fst <$> runScanner state delta
+
+{-|'runScanner' is similar to Attoparsec's 'runScanner'. It parses a string
+with the given state machine, stopping when the state function returns
+'Nothing' or at the end of the input (without producing an error).
+
+Returns a pair of the parsed string and the last state.
+-}
+runScanner :: a -> (a -> Char -> Maybe a) -> Parser (String, a)
+runScanner state delta = do
+    maybeC <- peekChar
+    case maybeC >>= delta state of
+        Nothing -> return ("", state)
+        Just s -> do
+            c <- Parser.anyChar
+            (reminder, finalState) <- runScanner s delta
+            return (c:reminder, finalState)
+
+{-|'skipSpace' is similar to Attoparsec's 'skipSpace'. It consumes all
+characters until the first non-space one.
+-}
+skipSpace :: Parser ()
+skipSpace = Parser.spaces
+
+{-|'takeWhile' is similar to Attoparsec's 'takeWhile'. It consumes all
+the input characters that satisfy the given predicate and returns them
+as a string.
+-}
+takeWhile :: (Char -> Bool) -> Parser String
+takeWhile = many . Parser.satisfy
+
+{-|'endOfInput' is similar to Attoparsec's 'endOfInput'. It matches only the
+end-of-input position.
+-}
+endOfInput :: Parser ()
+endOfInput = eof
+
+{-|'parseOnly' is similar to Attoparsec's 'parseOnly'. It takes a parser,
+a FilePath that is used for generating error messages and an input string
+and produces either a parsed object, or an error message.
+-}
+parseOnly :: Parser a -> FilePath -> String -> Either String a
+parseOnly parser filePathForErrors input =
+    case parse parser filePathForErrors input of
+        Left err         -> Left (show err)
+        Right definition -> Right definition
 
 {-|'manyUntilChar' parses a list of 'a' items.
 
@@ -30,7 +100,7 @@ manyUntilChar :: Char       -- ^ The end character
               -> Parser a   -- ^ The item parser
               -> Parser [a]
 manyUntilChar endChar itemParser = do
-    mc <- Parser.peekChar
+    mc <- peekChar
     if mc == Just endChar
       then return []
       else (:) <$> itemParser <*> manyUntilChar endChar itemParser
@@ -62,7 +132,7 @@ sepByCharWithDelimitingChars
 sepByCharWithDelimitingChars
     skipWhitespace firstChar endChar delimiter itemParser = do
         skipCharParser skipWhitespace firstChar
-        mc <- Parser.peekChar
+        mc <- peekChar
         case mc of
             Nothing -> fail "Unexpected end of input."
             Just c
@@ -72,7 +142,7 @@ sepByCharWithDelimitingChars
                     (:) <$> itemParser <*> sepByCharWithDelimitingChars'
   where
     sepByCharWithDelimitingChars' = do
-        mc <- Parser.peekChar
+        mc <- peekChar
         case mc of
             Nothing -> fail "Unexpected end of input."
             Just c

@@ -10,7 +10,6 @@ import           Test.Tasty.Golden          (findByExtension, goldenVsString)
 import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.Parser.Parser
 
-import qualified Data.ByteString            as ByteString
 import qualified Data.ByteString.Lazy       as LazyByteString
 import qualified Data.ByteString.Lazy.Char8 as LazyChar8
 import           System.FilePath            (addExtension, splitFileName, (</>))
@@ -53,5 +52,5 @@ toByteString (Right definition) =
 
 runParser :: String -> IO LazyByteString.ByteString
 runParser inputFileName = do
-    fileContent <- ByteString.readFile inputFileName
-    return (toByteString (fromKore fileContent))
+    fileContent <- readFile inputFileName
+    return (toByteString (fromKore inputFileName fileContent))
