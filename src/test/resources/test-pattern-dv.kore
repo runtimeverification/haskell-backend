@@ -1,0 +1,10 @@
+[]
+
+module TEST-PATTERN-15
+
+  sort Int {} []
+
+  axiom{}
+    \dv{Int{}}("10") []
+
+endmodule []

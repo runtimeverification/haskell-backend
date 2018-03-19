@@ -332,6 +332,8 @@
   \newcommand{\Kfloor}{\texttt{\sharpsymbol \slashsymbol  floor}}
   \newcommand{\Kceil}{\texttt{\sharpsymbol \slashsymbol  ceil}}
   
+  \newcommand{\Kdv}{\texttt{\sharpsymbol \slashsymbol dv}}
+  
   \newcommand{\KgetFV}{\texttt{\sharpsymbol getFV}}
   \newcommand{\KgetFVFromPatterns}{\texttt{\sharpsymbol getFVFromPatterns}}
   \newcommand{\KoccursFree}{\texttt{\sharpsymbol occursFree}}
@@ -431,6 +433,8 @@
   \newcommand{\slin}{\slsh{in}}
   \newcommand{\slnext}{\slsh{next}}
   \newcommand{\slrewrites}{\slsh{rewrites}}
+  
+  \newcommand{\sldv}{\slsh{dv}}
   
   \newcommand{\itlogic}{\mathit{logic}}
   \newcommand{\itconnective}{\mathit{connective}}
@@ -2236,7 +2240,7 @@ called the \emph{injection function}:
 		s'$ \\
 		$\inj{s}{s}(x) = x$
 		& \doubleslash (identity) axiom \\
-		$x = y \to \inj{s}{s'}(x) = \inj{s}{s'}$
+		$x = y \to \inj{s}{s'}(x) = \inj{s}{s'}(y)$
 		& \doubleslash (injectivity) axiom \\
 		$\inj{s}{s''}(x) = \inj{s'}{s''}(\inj{s}{s'}(x))$
 		& \doubleslash (transitivity) axiom \\
@@ -3562,7 +3566,16 @@ Derived connectives have axioms
 	\end{align*}
 \end{notation}
 
-Apart from the five constructors and ten derived connectives introduced above, 
+\paragraph{Domain Values.}
+We provide a construct for representing domain values using their string 
+representation.
+
+$$
+\Kdv \colon \KSort \times \KString \to \KPattern
+$$
+
+Apart from the five constructors and ten derived connectives, and the domain 
+value construct that we introduced above, 
 the sort $\KPattern$ also gets some common utility functions.
 Those utility functions are defined in the following subsections.
 
@@ -3593,6 +3606,8 @@ $\KgetFVFromPatterns$
 \\
 & \KgetFV(\overline{\exists_s v . \varphi}) = \KdeleteKVariableList(v, 
 \KgetFV(\varphi))
+\\
+& \KgetFV(\Kdv(s, str)) = \KnilKVariableList
 \\
 & \KgetFVFromPatterns(\KnilKPatternList) = \KnilKVariableList
 \\
@@ -3669,6 +3684,9 @@ The functions $\Ksubstitute$ and $\KsubstitutePatterns$ have axioms
   & = \exists x' . \left(x' = \KfreshName(\varphi, \psi, 
   \KVariableAsKPattern(v)) \wedge \overline{\exists_{s'} x' \cln s . 
   (\varphi[x' \cln s / x \cln s][\psi/v])}\right)
+  \\
+  & \overline{\Kdv(s,str)[\psi/v]} =
+    \Kdv(s,str)
   \\
   & \overline{\KnilKPatternList[\psi / v]} = \KnilKPatternList
   \\
@@ -3862,6 +3880,8 @@ defined by the following axioms
   \\
   & \KgetSort(\overline{\exists_s v . \varphi}) =
   \parametric{\KwellFormed}{\KSort}(\overline{\exists_s v . \varphi}) \wedge s
+  \\
+  & \KgetSort(\Kdv(s,str)) = s
 \end{align*}
 
 
@@ -5552,6 +5572,7 @@ or one of the following:
 	\ttfamily \sharpsymbol \slashsymbol in &
 	\ttfamily \sharpsymbol \slashsymbol top &
 	\ttfamily \sharpsymbol \slashsymbol bottom &
+	\ttfamily \sharpsymbol \slashsymbol dv &
 \end{tabular}
 \end{center}
 \end{itemize}
@@ -5921,6 +5942,9 @@ Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
 	`(' <pattern> `,' <pattern> `)'
 	\alt `\\top' `{' <object-sort> `}' `(' `)'
 	\alt `\\bottom' `{' <object-sort> `}' `(' `)'
+	\alt `\\dv' `{' <object-sort> `}' `(' <meta-pattern> `)'
+	\doubleslash where <meta-pattern> has sort {\KString} (see wellformedness 
+	conditions)
 	
 	<object-variable> ::= <object-identifier> `:' <object-sort>
 	
@@ -6167,6 +6191,7 @@ axiom.
 \alt <symbol-declaration>
 \alt <alias-declaration>
 \alt <axiom-declaration>
+\alt <hook-declaration>
 
 <import-declaration> ::= `import' <module-name> <attribute>
 
@@ -6201,6 +6226,13 @@ axiom.
 
 <axiom-declaration> ::= `axiom' `{' <sort-variable-list> `}' <pattern> 
 <attribute>
+
+<hook-declaration> ::= \quad
+\alt `hooked-sort' <object-sort-constructor>  `{' <object-sort-variable-list> 
+`}' <attribute>
+\alt `hooked-symbol' <object-head-constructor> 
+`{' <object-sort-variable-list> `}' 
+`(' <object-sort-list> `)' `:' <object-sort> <attribute>
 
 <sort-variable-list> ::= \quad
 \alt $\epsilon$
@@ -6350,12 +6382,14 @@ return sorts declared;
 \item In any pattern that is a head being applied to a list of argument 
 patterns, the number and sorts of argument patterns should match with the head 
 declaration;
-\item Every sorts, symbols, and aliases should be declared to be used;
+\item All sorts, symbols, and aliases should be declared before being used;
 \item Every sorts, symbols, and aliases, even if they are in different modules, 
 should all have unique constructor 
 names; One cannot use the same name for a sort and a symbol, for example. 
 Similarly, any meta-symbol cannot have the same name as a meta-sort.
 \item Every sort constructor can be declared only once;
+\item In domain value pattern $\Kdv\{s\}(str)$, the meta-level pattern $str$ 
+should have sort $\KString$.
 \end{enumerate}
 
 Besides the above wellformedness conditions for patterns, we have the following 
@@ -6997,6 +7031,15 @@ $\denote{\texttt{\slbottom\{$s$\}()}}
 \texttt{\slbottom\{$s$\}()}$
 & if $s$ is \syntacc{meta-sort}
 \end{longtable}
+
+\paragraph{Domain Value Patterns.}
+
+\begin{center}
+$\denote{\texttt{\sldv\{$s$\}($str$)}}
+= \texttt{\sharpsymbol\slashsymbol dv\{\}($\denote{s}, str$)}$
+ if $s$ is \syntacc{object-sort}
+  and $str$ is \syntacc{string}
+\end{center}
 
 %\subsubsection{Lift Patterns To Meta Patterns of Sort \KPattern}
 %One of the main part of the lifting operation is lifting patterns to meta-

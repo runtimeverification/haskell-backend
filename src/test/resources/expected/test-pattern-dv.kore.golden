@@ -1,0 +1,30 @@
+Definition
+    { definitionAttributes = Attributes []
+    , definitionModules =
+        [ Module
+            { moduleName = ModuleName "TEST-PATTERN-15"
+            , moduleSentences =
+                [ SentenceSortSentence SentenceSort
+                    { sentenceSortName = Id Object "Int"
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    }
+                , SentenceAxiomSentence SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        ObjectPattern (DomainValuePattern DomainValue
+                            { domainValueSort =
+                                SortActualSortSortActual
+                                        { sortActualName = Id Object "Int"
+                                        , sortActualSorts = []
+                                        }
+                            , domainValueChild =
+                                MetaPattern (StringLiteralPattern (StringLiteral "10"))
+                            })
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+                ]
+            , moduleAttributes = Attributes []
+            }
+        ]
+    }
