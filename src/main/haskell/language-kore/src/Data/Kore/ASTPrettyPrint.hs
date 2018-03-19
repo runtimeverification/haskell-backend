@@ -309,6 +309,18 @@ instance
 instance
     ( MetaOrObject level
     , PrettyPrint child
+    ) => PrettyPrint (DomainValue level child)
+  where
+    prettyPrint _ p@(DomainValue _ _) =
+        writeStructure
+            "DomainValue"
+            [ writeFieldNewLine "domainValueSort" domainValueSort p
+            , writeFieldNewLine "domainValueChild" domainValueChild p
+            ]
+
+instance
+    ( MetaOrObject level
+    , PrettyPrint child
     ) => PrettyPrint (Equals level child)
   where
     prettyPrint _ p@(Equals _ _ _ _) =
@@ -469,6 +481,8 @@ instance
         writeOneFieldStruct flags "BottomPattern" p
     prettyPrint flags (CeilPattern p)          =
         writeOneFieldStruct flags "CeilPattern" p
+    prettyPrint flags (DomainValuePattern p)          =
+        writeOneFieldStruct flags "DomainValuePattern" p
     prettyPrint flags (EqualsPattern p)        =
         writeOneFieldStruct flags "EqualsPattern" p
     prettyPrint flags (ExistsPattern p)        =

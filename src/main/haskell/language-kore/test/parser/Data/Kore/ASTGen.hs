@@ -176,6 +176,12 @@ bottomGen x = topBottomGen x Bottom
 ceilGen :: MetaOrObject level => level -> Gen (Ceil level UnifiedPattern)
 ceilGen x = ceilFloorGen x Ceil
 
+domainValueGen
+    :: MetaOrObject level => level -> Gen (DomainValue level UnifiedPattern)
+domainValueGen x = pure DomainValue
+    <*> scale (`div` 2) (sortGen x)
+    <*> (MetaPattern . StringLiteralPattern <$> stringLiteralGen)
+
 equalsGen :: MetaOrObject level => level -> Gen (Equals level UnifiedPattern)
 equalsGen x = pure Equals
     <*> scale (`div` 2) (sortGen x)
@@ -262,6 +268,7 @@ unifiedPatternGen = sized (\n ->
             , (15, ObjectPattern <$> patternGen Object)
             , (1, MetaPattern . StringLiteralPattern <$> stringLiteralGen)
             , (1, MetaPattern . CharLiteralPattern <$> charLiteralGen)
+            , (1, ObjectPattern . DomainValuePattern <$> domainValueGen Object)
             , (1, ObjectPattern . NextPattern <$> nextGen Object)
             , (1, ObjectPattern . RewritesPattern <$> rewritesGen Object)
             ]
