@@ -6,6 +6,7 @@ import           Data.Fix
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MLPatterns
 import           Data.Kore.ASTTraversals
 import           Data.Kore.ImplicitDefinitions
 import           Data.Kore.MetaML.AST

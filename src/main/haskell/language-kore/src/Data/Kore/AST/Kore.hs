@@ -5,6 +5,27 @@
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE Rank2Types             #-}
 {-# LANGUAGE StandaloneDeriving     #-}
+{-|
+Module      : Data.Kore.AST.Kore
+Description : Data Structures for representing the Kore language AST with
+              unified constructs.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : traian.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : portable
+
+This module includes all the data structures necessary for representing
+the syntactic categories of a Kore definition that need unified
+constructs.
+
+Unified constructs are those that represent both meta and object versions of
+an AST term in a single data type (e.g. 'UnifiedSort' that can be either
+'Sort Object' or 'Sort Meta')
+
+Please refer to Section 9 (The Kore Language) of the
+<http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
+-}
 module Data.Kore.AST.Kore where
 
 import           Data.Kore.AST.Common

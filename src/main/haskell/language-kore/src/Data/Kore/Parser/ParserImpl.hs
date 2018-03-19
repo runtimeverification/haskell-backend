@@ -525,6 +525,7 @@ BNF definitions:
     | ‘\forall’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨object-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
     | ‘\exists’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨object-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
     | ‘\ceil’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
+    | ‘\dv’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
     | ‘\floor’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
     | ‘\equals’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
     | ‘\in’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ pattern ‘,’ ⟨pattern⟩ ‘)’
@@ -573,6 +574,11 @@ unifiedMLConstructorParser = do
                     Object patternType objectMlConstructorRemainderParser
     objectMlConstructorRemainderParser patternType =
         case patternType of
+            DomainValuePatternType -> DomainValuePattern <$>
+                unaryOperatorRemainderParser
+                    unifiedPatternParser
+                    Object
+                    DomainValue
             NextPatternType -> NextPattern <$>
                 unaryOperatorRemainderParser unifiedPatternParser Object Next
             RewritesPatternType -> RewritesPattern <$>

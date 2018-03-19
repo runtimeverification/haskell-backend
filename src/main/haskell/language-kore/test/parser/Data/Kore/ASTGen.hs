@@ -206,6 +206,12 @@ equalsGen
     :: MetaOrObject level => Gen child -> level -> Gen (Equals level child)
 equalsGen childGen x = equalsInGen childGen x Equals
 
+domainValueGen
+    :: MetaOrObject level => level -> Gen (DomainValue level UnifiedPattern)
+domainValueGen x = pure DomainValue
+    <*> scale (`div` 2) (sortGen x)
+    <*> (MetaPattern . StringLiteralPattern <$> stringLiteralGen)
+
 existsGen
     :: MetaOrObject level
     => Gen child
@@ -284,6 +290,7 @@ unifiedPatternGen = sized (\n ->
             , (15, ObjectPattern <$> patternGen unifiedPatternGen Object)
             , (1, MetaPattern . StringLiteralPattern <$> stringLiteralGen)
             , (1, MetaPattern . CharLiteralPattern <$> charLiteralGen)
+            , (1, ObjectPattern . DomainValuePattern <$> domainValueGen Object)
             , (1, ObjectPattern . NextPattern
                 <$> nextGen unifiedPatternGen Object)
             , (1, ObjectPattern . RewritesPattern
