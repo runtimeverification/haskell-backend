@@ -34,6 +34,7 @@ koreParserTests =
         , testGroup "applicationPatternParser" applicationPatternParserTests
         , testGroup "bottomPatternParser" bottomPatternParserTests
         , testGroup "ceilPatternParser" ceilPatternParserTests
+        , testGroup "domainValuePatternParser" domainValuePatternParserTests
         , testGroup "equalsPatternParser" equalsPatternParserTests
         , testGroup "existsPatternParser" existsPatternParserTests
         , testGroup "floorPatternParser" floorPatternParserTests
@@ -454,6 +455,23 @@ ceilPatternParserTests =
             , "\\ceil{s1}(\"a\")"
             , "\\ceil{s1, s2, s3}(\"a\")"
             , "\\ceil{s1 s2}(\"a\")"
+            ]
+        ]
+domainValuePatternParserTests :: [TestTree]
+domainValuePatternParserTests =
+    parseTree patternParser
+        [ success "\\dv{s1}(\"a\")"
+            (ObjectPattern $ DomainValuePattern DomainValue
+                    { domainValueSort = sortVariableSort "s1"
+                    , domainValueChild =
+                        MetaPattern $ StringLiteralPattern (StringLiteral "a")
+                    }
+            )
+        , FailureWithoutMessage
+            [ ""
+            , "\\dv{s1, s2}(\"a\")"
+            , "\\dv{}(\"a\")"
+            , "\\dv{s1}()"
             ]
         ]
 equalsPatternParserTests :: [TestTree]

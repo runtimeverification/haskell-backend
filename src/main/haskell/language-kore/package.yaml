@@ -32,6 +32,7 @@ dependencies:
 - mtl
 - containers
 - hashable
+- clock
 
 library:
   source-dirs: src

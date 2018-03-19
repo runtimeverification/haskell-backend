@@ -6,6 +6,7 @@ module Data.Kore.Unparser.Unparse (Unparse, unparseToString) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MLPatterns
 import           Data.Kore.IndentingPrinter (PrinterOutput, StringPrinter,
                                              betweenLines, printToString,
                                              withIndent, write)
@@ -161,6 +162,9 @@ instance Unparse (Bottom level p) where
 instance Unparse p => Unparse (Ceil level p) where
     unparse = unparseMLPattern
 
+instance Unparse p => Unparse (DomainValue level p) where
+    unparse = unparseMLPattern
+
 instance Unparse p => Unparse (Equals level p) where
     unparse = unparseMLPattern
 
@@ -208,6 +212,7 @@ instance (Unparse (UnifiedVariable v), Unparse p, Unparse (v level))
     unparse (ApplicationPattern p)   = unparse p
     unparse (BottomPattern p)        = unparse p
     unparse (CeilPattern p)          = unparse p
+    unparse (DomainValuePattern p)   = unparse p
     unparse (EqualsPattern p)        = unparse p
     unparse (ExistsPattern p)        = unparse p
     unparse (FloorPattern p)         = unparse p
