@@ -152,7 +152,7 @@ data UnifiedSortVariable
 {-|'FixPattern' class corresponds to "fixed point"-like representations
 of the 'Pattern' class.
 
-'p' is the fiexd point wrapping pattern.
+'p' is the fixed point wrapping pattern.
 
 'v' is the type of variables.
 -}
@@ -275,28 +275,25 @@ data Definition = Definition
     }
     deriving (Eq, Show)
 
-class AsSentence s where
-    asSentence :: s -> Sentence
-
-instance AsSentence (SentenceAlias Attributes Meta) where
+instance AsSentence Sentence (SentenceAlias Attributes Meta) where
     asSentence = MetaSentenceAliasSentence
 
-instance AsSentence (SentenceAlias Attributes Object) where
+instance AsSentence Sentence (SentenceAlias Attributes Object) where
     asSentence = ObjectSentenceAliasSentence
 
-instance AsSentence (SentenceSymbol Attributes Meta) where
+instance AsSentence Sentence (SentenceSymbol Attributes Meta) where
     asSentence = MetaSentenceSymbolSentence
 
-instance AsSentence (SentenceSymbol Attributes Object) where
+instance AsSentence Sentence (SentenceSymbol Attributes Object) where
     asSentence = ObjectSentenceSymbolSentence
 
-instance AsSentence (SentenceImport Attributes) where
+instance AsSentence Sentence (SentenceImport Attributes) where
     asSentence = SentenceImportSentence
 
-instance AsSentence
+instance AsSentence Sentence
     (SentenceAxiom UnifiedSortVariable UnifiedPattern Attributes)
   where
     asSentence = SentenceAxiomSentence
 
-instance AsSentence (SentenceSort Attributes Object) where
+instance AsSentence Sentence (SentenceSort Attributes Object) where
     asSentence = SentenceSortSentence

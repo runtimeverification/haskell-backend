@@ -1,6 +1,21 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs             #-}
-module Data.Kore.MetaML.Lift where
+{-|
+Module      : Data.Kore.MetaML.Lift
+Description : Lifts mixed 'Object' and 'Meta' constructs into pure 'Meta' ones.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : traian.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : POSIX
+
+Please refer to Section 9.2 (The Kore Language Semantics) of the
+<http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
+-}
+module Data.Kore.MetaML.Lift ( liftModule
+                             , liftSentence
+                             , LiftableToMetaML(liftToMeta)
+                             ) where
 
 import           Data.Fix
 
@@ -8,29 +23,37 @@ import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MLPatterns
 import           Data.Kore.ASTTraversals
-import           Data.Kore.ImplicitDefinitions
+import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.MetaML.AST
 
+{-|'LiftableToMetaML' describes functionality to lift mixed Kore
+'Object' and 'Meta' constructs to pure 'Meta' constructs.
+-}
 class LiftableToMetaML mixed where
-    liftToMeta :: mixed -> MetaMLPattern Variable
-    verbosityLiftToMeta :: Bool -> mixed -> MetaMLPattern Variable
+    liftToMeta :: mixed -> CommonMetaPattern
+    verbosityLiftToMeta :: Bool -> mixed -> CommonMetaPattern
     liftToMeta = verbosityLiftToMeta False
 
+-- Section 9.2.1 Lift Object Identifiers to String Literals
 instance LiftableToMetaML (Id Object) where
     verbosityLiftToMeta _ = Fix . StringLiteralPattern . StringLiteral . getId
 
+-- Section 9.2.3 Lift Object Sorts and Object Sort Lists
 instance LiftableToMetaML (SortVariable Object) where
     verbosityLiftToMeta _ sv = Fix $ VariablePattern Variable
         { variableName = Id $ ('#' :) $ getId $ getSortVariable sv
         , variableSort = sortMetaSort
         }
 
+-- Section 9.2.2 Lift Object Sort Constructors to Meta Symbols
 liftSortConstructor :: String -> Id Meta
 liftSortConstructor name = Id ('#' : '`' : name)
 
+-- Section 9.2.5 Lift Object Head Constructors to Meta Symbols
 liftHeadConstructor :: String -> Id Meta
 liftHeadConstructor = liftSortConstructor
 
+-- Section 9.2.3 Lift Object Sorts and Object Sort Lists
 instance LiftableToMetaML (SortActual Object) where
     verbosityLiftToMeta False sa = Fix $ apply
         (groundHead (liftSortConstructor (getId (sortActualName sa))))
@@ -40,10 +63,12 @@ instance LiftableToMetaML (SortActual Object) where
         , verbosityLiftToMeta True (sortActualSorts sa)
         ]
 
+-- Section 9.2.3 Lift Object Sorts and Object Sort Lists
 instance LiftableToMetaML (Sort Object) where
     verbosityLiftToMeta verb (SortVariableSort sv) = verbosityLiftToMeta verb sv
     verbosityLiftToMeta verb (SortActualSort sv)   = verbosityLiftToMeta verb sv
 
+-- Section 9.2.3 Lift Object Sorts and Object Sort Lists
 instance LiftableToMetaML [Sort Object] where
     verbosityLiftToMeta verb =
         foldr
@@ -53,26 +78,28 @@ instance LiftableToMetaML [Sort Object] where
         applyConsSortList sort sortList =
             Fix $ apply consSortListHead [sort, sortList]
 
-instance LiftableToMetaML [MetaMLPattern Variable] where
+instance LiftableToMetaML [CommonMetaPattern] where
     verbosityLiftToMeta _ =
         foldr applyConsPatternList nilPatternListMetaPattern
       where
         applyConsPatternList pat patList =
             Fix $ apply consPatternListHead [pat, patList]
 
+-- Section 9.2.8 Lift Patterns
 instance LiftableToMetaML (Variable Object) where
     verbosityLiftToMeta verb v = Fix $ apply variableHead
         [ verbosityLiftToMeta verb (variableName v)
         , verbosityLiftToMeta verb (variableSort v)]
 
+-- Section 9.2.8 Lift Patterns
 instance LiftableToMetaML UnifiedPattern where
     verbosityLiftToMeta verb = bottomUpVisitor (liftReducer verb)
 
 liftReducer
     :: MetaOrObject level
     => Bool
-    -> Pattern level Variable (MetaMLPattern Variable)
-    -> MetaMLPattern Variable
+    -> Pattern level Variable CommonMetaPattern
+    -> CommonMetaPattern
 liftReducer verb p = applyMetaObjectFunction
     (PatternObjectMeta p)
     MetaOrObjectTransformer
@@ -83,8 +110,8 @@ liftReducer verb p = applyMetaObjectFunction
 
 liftObjectReducer
     :: Bool
-    -> Pattern Object Variable (MetaMLPattern Variable)
-    -> MetaMLPattern Variable
+    -> Pattern Object Variable CommonMetaPattern
+    -> CommonMetaPattern
 liftObjectReducer verb p = case p of
     AndPattern ap -> Fix $ apply (metaMLPatternHead AndPatternType)
         (verbosityLiftToMeta verb (andSort ap) : getPatternChildren ap)
@@ -101,6 +128,11 @@ liftObjectReducer verb p = case p of
         , verbosityLiftToMeta verb (ceilResultSort cp)
         , ceilChild cp
         ]
+    DomainValuePattern dvp ->
+        Fix $ apply (metaMLPatternHead DomainValuePatternType)
+            [ verbosityLiftToMeta verb (domainValueSort dvp)
+            , domainValueChild dvp
+            ]
     EqualsPattern cp -> Fix $ apply (metaMLPatternHead EqualsPatternType)
         [ verbosityLiftToMeta verb (equalsOperandSort cp)
         , verbosityLiftToMeta verb (equalsResultSort cp)
@@ -147,6 +179,7 @@ liftAttributes :: Attributes -> MetaAttributes
 liftAttributes (Attributes as) =
     MetaAttributes (map liftToMeta as)
 
+-- Section 9.2.4 Lift Sort Declarations
 liftSortDeclaration
     :: KoreSentenceSort
     -> (MetaSentenceSymbol, MetaSentenceAxiom, MetaSentenceAxiom)
@@ -191,6 +224,7 @@ liftSortDeclaration ss =
             }
         }
 
+-- Section 9.2.6 Lift Object Symbol Declarations
 liftSymbolDeclaration
     :: KoreSentenceSymbol Object
     -> (MetaSentenceSymbol, MetaSentenceAxiom, MetaSentenceAxiom)
@@ -261,9 +295,13 @@ symbolOrAliasLiftedDeclaration sa = symbolDeclaration
         , sentenceSymbolAttributes = MetaAttributes []
         }
 
+-- Section 9.2.7 Lift Object Alias Declarations
 liftAliasDeclaration :: KoreSentenceAlias Object -> MetaSentenceSymbol
 liftAliasDeclaration = symbolOrAliasLiftedDeclaration
 
+{-|'liftSentence' transforms a 'Sentence' in one or more 'MetaSentences'
+encoding it.
+-}
 liftSentence :: Sentence -> [MetaSentence]
 liftSentence (MetaSentenceAliasSentence msa) =
     [ AliasMetaSentence msa

@@ -18,7 +18,7 @@ import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.Resolvers
 import           Data.Kore.ASTVerifier.SortVerifier
 import           Data.Kore.Error
-import           Data.Kore.ImplicitDefinitions
+import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.IndexedModule.IndexedModule
 import           Data.Kore.Unparser.Unparse
 

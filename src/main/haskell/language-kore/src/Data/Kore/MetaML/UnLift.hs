@@ -1,7 +1,15 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs             #-}
+{-|
+Module      : Data.Kore.MetaML.UnLift
+Description : Reverses the effects of 'Data.Kore.MetaML.Lift.liftToMeta'
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : traian.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : POSIX
+-}
 module Data.Kore.MetaML.UnLift where
-{- TODO(traiansf):   -}
 
 import           Control.Applicative
 import           Control.Monad.Reader
@@ -10,13 +18,13 @@ import           Data.Kore.Parser.ParserUtils          as Parser
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
-import           Data.Kore.ImplicitDefinitions
+import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.IndexedModule.IndexedModule
 import           Data.Kore.MetaML.AST
 import           Data.Kore.Parser.LexemeImpl
 
 class UnliftableFromMetaML mixed where
-    unliftFromMeta :: MetaMLPattern Variable -> Maybe mixed
+    unliftFromMeta :: CommonMetaPattern -> Maybe mixed
 
 parseObjectId :: String -> Maybe (Id Object)
 parseObjectId input =
@@ -83,10 +91,10 @@ type IndexedModuleReader a = Reader IndexedModule a
 
 data UnliftResult = UnliftResult
     { unliftResultFinal    :: UnifiedPattern
-    , unliftResultOriginal :: MetaMLPattern Variable
+    , unliftResultOriginal :: CommonMetaPattern
     }
 
-unliftPattern :: MetaMLPattern Variable -> IndexedModuleReader UnliftResult
+unliftPattern :: CommonMetaPattern -> IndexedModuleReader UnliftResult
 unliftPattern = cataM reducer
   where
     reducer p = do
@@ -107,6 +115,8 @@ unliftPatternReducer (ApplicationPattern a)
     = return (unliftBinaryOpPattern AndPattern And apChildren)
     | apHead == metaMLPatternHead BottomPatternType
     = return (unliftTopBottomPattern (BottomPattern . Bottom) apChildren)
+    | apHead == metaMLPatternHead DomainValuePatternType
+    = return (unliftDomainValuePattern apChildren)
     | apHead == metaMLPatternHead CeilPatternType
     = return (unliftCeilFloorPattern CeilPattern Ceil apChildren)
     | apHead == metaMLPatternHead EqualsPatternType
@@ -159,6 +169,14 @@ unliftUnaryOpPattern unifiedCtor ctor [rSort, rChild] =
         <*> unliftFromMeta (unliftResultOriginal rSort)
         <*> pure (unliftResultFinal rChild))
 unliftUnaryOpPattern _ _ _ = Nothing
+
+unliftDomainValuePattern
+    :: [UnliftResult] -> Maybe (Pattern Object Variable UnifiedPattern)
+unliftDomainValuePattern [rSort, rChild] =
+    DomainValuePattern <$> (pure DomainValue
+        <*> unliftFromMeta (unliftResultOriginal rSort)
+        <*> pure (unliftResultFinal rChild))
+unliftDomainValuePattern _ = Nothing
 
 unliftTopBottomPattern
     :: (Sort Object -> Pattern Object Variable UnifiedPattern)

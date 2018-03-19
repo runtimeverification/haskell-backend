@@ -18,6 +18,7 @@ import           Data.Kore.ASTVerifier.ModuleVerifier
 import           Data.Kore.Error
 import           Data.Kore.Implicit.ImplicitKore
 import           Data.Kore.IndexedModule.IndexedModule
+import           Data.Kore.MetaML.MetaToKore
 
 import qualified Data.Map                                 as Map
 import qualified Data.Set                                 as Set
@@ -76,7 +77,7 @@ verifyDefinition definition = do
         indexedModuleWithMetaSorts defaultModuleName
     getIndexedModule (ImplicitIndexedModule im) = im
     defaultModuleWithMetaSorts = getIndexedModule moduleWithMetaSorts
-    implicitModule = uncheckedKoreModule
+    implicitModule = moduleMetaToKore uncheckedKoreModule
     nameToModule =
         Map.fromList
             (map (\m -> (moduleName m, m)) (definitionModules definition))

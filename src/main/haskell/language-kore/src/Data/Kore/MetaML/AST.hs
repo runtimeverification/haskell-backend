@@ -1,21 +1,49 @@
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-|
+Module      : Data.Kore.MetaML.AST
+Description : Data Structures for representing a Meta-only version of the
+              Kore language AST
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : traian.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : portable
+
+This module specializes the 'Data.Kore.AST.Common' datastructures for
+representing definitions, modules, axioms, patterns that only use 'Meta'-level
+constructs.
+
+Please refer to Section 9 (The Kore Language) of the
+<http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
+-}
 module Data.Kore.MetaML.AST where
 
 import           Data.Fix
 
 import           Data.Kore.AST.Common
 
+{-|'MetaMLPattern' corresponds to "fixed point" representations
+of the 'Pattern' class where the level is fixed to 'Meta'.
+
+'var' is the type of variables.
+-}
 type MetaMLPattern var = Fix (Pattern Meta var)
 
+-- |'MetaAttributes' is the 'Meta'-only version of 'Attributes'
 newtype MetaAttributes = MetaAttributes
-    { getMetaAttributes :: [MetaMLPattern Variable] }
+    { getMetaAttributes :: [CommonMetaPattern] }
   deriving (Eq, Show)
 
 type MetaSentenceAxiom =
-    SentenceAxiom (SortVariable Meta) (MetaMLPattern Variable) MetaAttributes
+    SentenceAxiom (SortVariable Meta) CommonMetaPattern MetaAttributes
 type MetaSentenceAlias = SentenceAlias MetaAttributes Meta
 type MetaSentenceSymbol = SentenceSymbol MetaAttributes Meta
 type MetaSentenceImport = SentenceImport MetaAttributes
 
+-- |'MetaAttributes' is the 'Meta'-only version of 'Sentence'.
+-- Note that, as such, it does not contain sort definitions nor other 'Object'
+-- sentences.
 data MetaSentence
     = AliasMetaSentence !MetaSentenceAlias
     | SymbolMetaSentence !MetaSentenceSymbol
@@ -23,10 +51,32 @@ data MetaSentence
     | ImportMetaSentence !MetaSentenceImport
     deriving (Eq, Show)
 
+instance AsSentence MetaSentence (SentenceAlias MetaAttributes Meta) where
+    asSentence = AliasMetaSentence
+
+instance AsSentence MetaSentence (SentenceSymbol MetaAttributes Meta) where
+    asSentence = SymbolMetaSentence
+
+instance AsSentence MetaSentence (SentenceImport MetaAttributes) where
+    asSentence = ImportMetaSentence
+
+instance AsSentence MetaSentence
+    (SentenceAxiom (SortVariable Meta) CommonMetaPattern MetaAttributes)
+  where
+    asSentence = AxiomMetaSentence
+
+-- |'MetaModule' is the 'Meta'-only version of 'Module'.
 data MetaModule = MetaModule
     { metaModuleName       :: !ModuleName
     , metaModuleSentences  :: ![MetaSentence]
     , metaModuleAttributes :: !MetaAttributes
+    }
+    deriving (Eq, Show)
+
+-- |'MetaDefinition' is the 'Meta'-only version of 'Definition'.
+data MetaDefinition = MetaDefinition
+    { metaDefinitionModules    :: ![MetaModule]
+    , metaDefinitionAttributes :: !MetaAttributes
     }
     deriving (Eq, Show)
 
@@ -104,3 +154,14 @@ symbolHead = groundHead (Id "#symbol")
 
 applicationHead :: SymbolOrAlias Meta
 applicationHead = groundHead (Id "#application")
+
+type CommonMetaPattern = MetaMLPattern Variable
+type PatternMetaType = Pattern Meta Variable CommonMetaPattern
+
+type MetaPatternStub = PatternStub Meta Variable CommonMetaPattern
+
+{-|'dummyMetaSort' is used in error messages when we want to convert an
+'UnsortedPatternStub' to a pattern that can be displayed.
+-}
+dummyMetaSort :: Sort Meta
+dummyMetaSort = SortVariableSort (SortVariable (Id "#dummy"))

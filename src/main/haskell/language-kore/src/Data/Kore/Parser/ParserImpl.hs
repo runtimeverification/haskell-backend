@@ -112,7 +112,7 @@ sortParser x = do
             }
     stringNameNormalizer identifier@(Id i) =
         if isMeta x && (i == show StringSort)
-            then Id (show CharListSort)
+            then Id (show (MetaListSortType CharSort))
             else identifier
 
 {-|'validateMetaSort' checks that a @meta-sort@ is well-formed.
@@ -741,7 +741,7 @@ unifiedPatternParser = do
         '\'' -> MetaPattern . CharLiteralPattern <$> charLiteralParser
         _    -> unifiedVariableOrTermPatternParser
 
-metaPatternParser :: Parser (MetaMLPattern Variable)
+metaPatternParser :: Parser CommonMetaPattern
 metaPatternParser = do
     c <- ParserUtils.peekChar'
     case c of
@@ -937,7 +937,7 @@ axiomSentenceRemainderParser = SentenceAxiomSentence <$>
     )
 
 {-|'sortSentenceRemainderParser' parses the part after the starting
-'sort' keyword of a sort-declaration and constructs it.
+'sortMetaSort keyword of a sort-declaration and constructs it.
 
 BNF example:
 

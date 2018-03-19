@@ -12,7 +12,7 @@ module Data.Kore.AST.MLPatterns (MLPatternClass(..),
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
-import           Data.Kore.ImplicitDefinitions
+import           Data.Kore.Implicit.ImplicitSorts
 
 {-|'MLPatternClass' offers a common interface to ML patterns
   (those starting with '\', except for 'Exists' and 'Forall')
@@ -62,7 +62,7 @@ instance MLPatternClass Ceil where
 
 instance MLPatternClass DomainValue where
     getPatternType _ = DomainValuePatternType
-    getMLPatternOperandSorts x = [asUnified charListMetaSort]
+    getMLPatternOperandSorts _ = [asUnified charListMetaSort]
     getMLPatternResultSort = domainValueSort
     getPatternSorts d = [domainValueSort d]
     getPatternChildren d = [domainValueChild d]

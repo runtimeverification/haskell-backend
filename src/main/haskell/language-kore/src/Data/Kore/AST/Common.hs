@@ -1,9 +1,10 @@
-{-# LANGUAGE DeriveFoldable     #-}
-{-# LANGUAGE DeriveFunctor      #-}
-{-# LANGUAGE DeriveTraversable  #-}
-{-# LANGUAGE FlexibleContexts   #-}
-{-# LANGUAGE GADTs              #-}
-{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE DeriveFoldable         #-}
+{-# LANGUAGE DeriveFunctor          #-}
+{-# LANGUAGE DeriveTraversable      #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE GADTs                  #-}
+{-# LANGUAGE StandaloneDeriving     #-}
 {-|
 Module      : Data.Kore.AST.Common
 Description : Data Structures for representing the Kore language AST that do not
@@ -147,39 +148,48 @@ from the Semantics of K, Section 9.1.2 (Sorts).
 Ths is not represented directly in the AST, we're using the string
 representation instead.
 -}
-data MetaSortType
+data MetaBasicSortType
     = CharSort
-    | CharListSort
     | PatternSort
-    | PatternListSort
     | SortSort
-    | SortListSort
-    | StringSort
     | SymbolSort
-    | SymbolListSort
     | VariableSort
-    | VariableListSort
+
+data MetaSortType
+    = MetaBasicSortType MetaBasicSortType
+    | MetaListSortType MetaBasicSortType
+    | StringSort
+
+metaBasicSortsList :: [MetaBasicSortType]
+metaBasicSortsList =
+    [ CharSort
+    , PatternSort
+    , SortSort
+    , SymbolSort
+    , VariableSort
+    ]
 
 metaSortsList :: [MetaSortType]
-metaSortsList = [ CharSort, CharListSort, PatternSort, PatternListSort, SortSort
-    , SortListSort, SymbolSort, SymbolListSort
-    , VariableSort, VariableListSort
-    ]
-metaSortsListWithString :: [MetaSortType]
+metaSortsList =
+    map MetaBasicSortType metaBasicSortsList ++
+        map MetaListSortType metaBasicSortsList
+
 metaSortsListWithString = StringSort : metaSortsList
 
+metaBasicSortTypeString :: MetaBasicSortType -> String
+metaBasicSortTypeString CharSort     = "Char"
+metaBasicSortTypeString PatternSort  = "Pattern"
+metaBasicSortTypeString SortSort     = "Sort"
+metaBasicSortTypeString SymbolSort   = "Symbol"
+metaBasicSortTypeString VariableSort = "Variable"
+
+metaSortTypeString :: MetaSortType -> String
+metaSortTypeString (MetaBasicSortType s) = metaBasicSortTypeString s
+metaSortTypeString (MetaListSortType s)  = metaBasicSortTypeString s ++ "List"
+metaSortTypeString StringSort            = "String"
+
 instance Show MetaSortType where
-    show CharSort         = "#Char"
-    show CharListSort     = "#CharList"
-    show PatternSort      = "#Pattern"
-    show PatternListSort  = "#PatternList"
-    show SortSort         = "#Sort"
-    show SortListSort     = "#SortList"
-    show StringSort       = "#String"
-    show SymbolSort       = "#Symbol"
-    show SymbolListSort   = "#SymbolList"
-    show VariableSort     = "#Variable"
-    show VariableListSort = "#VariableList"
+    show sortType = '#' : metaSortTypeString sortType
 
 {-|'Variable' corresponds to the @object-variable@ and
 @meta-variable@ syntactic categories from the Semantics of K,
@@ -725,3 +735,18 @@ instance SentenceSymbolOrAlias SentenceSymbol where
     getSentenceSymbolOrAliasResultSort = sentenceSymbolResultSort
     getSentenceSymbolOrAliasAttributes = sentenceSymbolAttributes
     getSentenceSymbolOrAliasSentenceName _ = "symbol"
+
+class AsSentence sentenceType s | s -> sentenceType where
+    asSentence :: s -> sentenceType
+
+data SortedPattern level variable child = SortedPattern
+    { sortedPatternPattern :: !(Pattern level variable child)
+    , sortedPatternSort    :: !(Sort level)
+    }
+
+{-|'PatternStub' is either a pattern with a known sort, or a function that
+builds a pattern from a sort.
+-}
+data PatternStub level variable child
+    = SortedPatternStub !(SortedPattern level variable child)
+    | UnsortedPatternStub (Sort level -> Pattern level variable child)

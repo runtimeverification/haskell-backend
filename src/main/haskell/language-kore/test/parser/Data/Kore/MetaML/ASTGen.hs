@@ -7,7 +7,7 @@ import           Data.Kore.AST.Common
 import           Data.Kore.ASTGen
 import           Data.Kore.MetaML.AST
 
-metaMLPatternGen :: Gen (MetaMLPattern Variable)
+metaMLPatternGen :: Gen CommonMetaPattern
 metaMLPatternGen = Fix <$> patternGen metaMLPatternGen Meta
 
 metaAttributesGen :: Gen MetaAttributes

@@ -103,7 +103,8 @@ indexedModuleWithDefaultImports name (ImplicitIndexedModule implicitModule) =
 {-|'indexedModuleWithMetaSorts' provides an 'IndexedModule' with the implicit
 Kore definitions.
 -}
-indexedModuleWithMetaSorts :: ModuleName -> (ImplicitIndexedModule, Set.Set String)
+indexedModuleWithMetaSorts
+    :: ModuleName -> (ImplicitIndexedModule, Set.Set String)
 indexedModuleWithMetaSorts name =
     ( ImplicitIndexedModule (emptyIndexedModule name)
         { indexedModuleMetaSortDescriptions = metaSortDescriptions }

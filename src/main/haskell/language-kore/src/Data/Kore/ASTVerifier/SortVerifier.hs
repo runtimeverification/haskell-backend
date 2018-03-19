@@ -20,7 +20,7 @@ import qualified Data.Set                              as Set
 verifySort
     :: MetaOrObject level
     => (Id level -> Either (Error VerifyError) (SortDescription level))
-    -- ^ Provides a sort's description.
+    -- ^ Provides a sortMetaSorts description.
     -> Set.Set UnifiedSortVariable
     -- ^ Sort variables visible here.
     -> Sort level
