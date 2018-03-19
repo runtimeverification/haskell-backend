@@ -9,41 +9,6 @@ import           Data.Kore.MetaML.AST
 newtype ChildSort = ChildSort (Sort Meta)
 newtype ResultSort = ResultSort (Sort Meta)
 
-{-|'fillCheckSorts' matches a list of sorts to a list of 'MetaPatternStub',
-checking that the sorts are identical where possible, creating a pattern with
-the provided sort otherwise.
--}
-fillCheckSorts :: [Sort Meta] -> [MetaPatternStub] -> [CommonMetaPattern]
-fillCheckSorts [] []         = []
-fillCheckSorts [] _          = error "Not enough sorts!"
-fillCheckSorts _ []          = error "Not enough patterns!"
-fillCheckSorts (s:ss) (p:ps) = fillCheckSort s p : fillCheckSorts ss ps
-
-{-|'fillCheckSorts' matches a sort to a 'MetaPatternStub', checking
-that the pattern's sorts is identical if possible, creating a pattern with the
-provided sort otherwise.
--}
-fillCheckSort :: Sort Meta -> MetaPatternStub -> CommonMetaPattern
-fillCheckSort
-    desiredSort
-    ( SortedPatternStub SortedPattern
-        { sortedPatternPattern = p, sortedPatternSort = actualSort }
-    )
-  =
-    if desiredSort /= actualSort
-    then error
-        (  "Unmatched sorts, expected:\n"
-        ++ show desiredSort
-        ++ "\nbut got:\n"
-        ++ show actualSort
-        ++ "\nfor pattern\n"
-        ++ show p
-        ++ "."
-        )
-    else Fix p
-fillCheckSort desiredSort (UnsortedPatternStub p) =
-    Fix (p desiredSort)
-
 {-|'fillCheckPairSorts' takes two 'MetaPatternStub' objects, assumes that they
 must have the same sort, and tries to build 'UnifiedPattern's from them if
 possible, otherwise it returns functions that can build 'UnifiedPattern's.

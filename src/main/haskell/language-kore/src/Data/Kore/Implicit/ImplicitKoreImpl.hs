@@ -30,29 +30,6 @@ equalsSortParam = sortParameter "#esp"
 equalsSort :: Sort Meta
 equalsSort = SortVariableSort equalsSortParam
 
-{-|'withSort' transforms an 'UnsortedPatternStub' in a 'SortedPatternStub'.
--}
-withSort :: Sort Meta -> MetaPatternStub -> MetaPatternStub
-withSort s (UnsortedPatternStub p) =
-    SortedPatternStub SortedPattern
-        { sortedPatternPattern = p s
-        , sortedPatternSort = s
-        }
-withSort
-    s
-    p@(SortedPatternStub SortedPattern { sortedPatternSort = existingSort })
-  =
-    if s == existingSort
-        then p
-        else
-            error
-                (  "Unmatched sorts: "
-                ++ show s
-                ++ " and "
-                ++ show existingSort
-                ++ "."
-                )
-
 {-|'parameterizedAxiom' creates an axiom that has sort parameters from
 a pattern.
 -}

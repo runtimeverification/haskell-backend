@@ -2,6 +2,8 @@ module Data.Kore.MetaML.Builders ( module Data.Kore.MetaML.Builders
                                  , MetaPatternStub
                                  ) where
 
+import           Data.Fix
+
 import           Data.Kore.AST.Common
 import           Data.Kore.ASTHelpers
 import           Data.Kore.Error
@@ -12,6 +14,41 @@ import           Data.Kore.MetaML.BuildersImpl
 -}
 sortParameter :: String -> SortVariable Meta
 sortParameter name = SortVariable (Id name)
+
+{-|'fillCheckSorts' matches a list of sorts to a list of 'MetaPatternStub',
+checking that the sorts are identical where possible, creating a pattern with
+the provided sort otherwise.
+-}
+fillCheckSorts :: [Sort Meta] -> [MetaPatternStub] -> [CommonMetaPattern]
+fillCheckSorts [] []         = []
+fillCheckSorts [] _          = error "Not enough sorts!"
+fillCheckSorts _ []          = error "Not enough patterns!"
+fillCheckSorts (s:ss) (p:ps) = fillCheckSort s p : fillCheckSorts ss ps
+
+{-|'fillCheckSorts' matches a sort to a 'MetaPatternStub', checking
+that the pattern's sorts is identical if possible, creating a pattern with the
+provided sort otherwise.
+-}
+fillCheckSort :: Sort Meta -> MetaPatternStub -> CommonMetaPattern
+fillCheckSort
+    desiredSort
+    ( SortedPatternStub SortedPattern
+        { sortedPatternPattern = p, sortedPatternSort = actualSort }
+    )
+  =
+    if desiredSort /= actualSort
+    then error
+        (  "Unmatched sorts, expected:\n"
+        ++ show desiredSort
+        ++ "\nbut got:\n"
+        ++ show actualSort
+        ++ "\nfor pattern\n"
+        ++ show p
+        ++ "."
+        )
+    else Fix p
+fillCheckSort desiredSort (UnsortedPatternStub p) =
+    Fix (p desiredSort)
 
 {-|'applyPS' applies a symbol or alias declared by a given sentence to a list
 of operands, using the provided sort arguments.
@@ -73,6 +110,9 @@ unparameterizedVariable_ name =
                 , variableSort = sortS
                 }
         )
+
+parameterizedVariable_ :: Sort Meta -> String -> MetaPatternStub
+parameterizedVariable_ sort = withSort sort . unparameterizedVariable_
 
 symbol_ :: String -> [Sort Meta] -> Sort Meta -> MetaSentenceSymbol
 symbol_ name = parameterizedSymbol_ name []

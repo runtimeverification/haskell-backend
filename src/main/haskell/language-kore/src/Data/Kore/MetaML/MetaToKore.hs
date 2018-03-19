@@ -1,6 +1,22 @@
+{-|
+Module      : Data.Kore.MetaML.MetaToKore
+Description : Functionality for viewing 'Meta'-only as unified Kore constructs.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : traian.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : portable
+
+The name of the functions defined below are self-explanatory. They link
+'Meta' structures from 'Data.Kore.MetaML.AST' to their Kore counterparts in
+'Data.Kore.AST.Kore'
+
+-}
 module Data.Kore.MetaML.MetaToKore where
 
-import           Data.Kore.AST.Common
+import           Data.Kore.AST.Common (SentenceAlias (..), SentenceAxiom (..),
+                                       SentenceImport (..), SentenceSymbol (..),
+                                       asSentence)
 import           Data.Kore.AST.Kore
 import           Data.Kore.MetaML.AST
 

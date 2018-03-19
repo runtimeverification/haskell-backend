@@ -751,3 +751,29 @@ builds a pattern from a sort.
 data PatternStub level variable child
     = SortedPatternStub !(SortedPattern level variable child)
     | UnsortedPatternStub (Sort level -> Pattern level variable child)
+
+{-|'withSort' transforms an 'UnsortedPatternStub' in a 'SortedPatternStub'.
+-}
+withSort
+    :: Sort level
+    -> PatternStub level variable child
+    -> PatternStub level variable child
+withSort s (UnsortedPatternStub p) =
+    SortedPatternStub SortedPattern
+        { sortedPatternPattern = p s
+        , sortedPatternSort = s
+        }
+withSort
+    s
+    p@(SortedPatternStub SortedPattern { sortedPatternSort = existingSort })
+  =
+    if s == existingSort
+        then p
+        else
+            error
+                (  "Unmatched sorts: "
+                ++ show s
+                ++ " and "
+                ++ show existingSort
+                ++ "."
+                )

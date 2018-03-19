@@ -11,6 +11,13 @@ Portability : POSIX
 
 module Data.Kore.Implicit.ImplicitKore ( uncheckedKoreModule
                                        , uncheckedKoreDefinition
+                                       , str_
+                                       , sortList_
+                                       , patternList_
+                                       , sortA
+                                       , applicationA
+                                       , mlPatternA
+                                       , variableA
                                        ) where
 
 import           Data.Kore.AST.Common
@@ -42,6 +49,7 @@ epsilonA = applyS epsilon []
 epsilonAxiom = equalsAxiom epsilonA nilCharListA
 
 sort = symbol_ "#sort" [stringMetaSort, sortListMetaSort] sortMetaSort
+sortA = applyS sort
 
 symbol =
     symbol_
@@ -65,12 +73,73 @@ variableA = applyS variable
 
 applicationP = symbol_ "#application" [symbolMetaSort, patternListMetaSort] patternMetaSort
 applicationA = applyS applicationP
-andP = symbol_ "#\\and" [sortMetaSort, patternMetaSort, patternMetaSort] patternMetaSort
-andA = applyS andP
-notP = symbol_ "#\\not" [sortMetaSort, patternMetaSort] patternMetaSort
-notA = applyS notP
-existsP = symbol_ "#\\exists" [sortMetaSort, variableMetaSort, patternMetaSort] patternMetaSort
-existsA = applyS existsP
+
+mlPatternA :: MLPatternType -> ([MetaPatternStub] -> MetaPatternStub)
+mlPatternA patternType = applyS (mlPatternP patternType)
+
+mlPatternP :: MLPatternType -> MetaSentenceSymbol
+mlPatternP AndPatternType =
+    symbol_
+        "#\\and"
+        [sortMetaSort, patternMetaSort, patternMetaSort]
+        patternMetaSort
+mlPatternP NotPatternType =
+    symbol_ "#\\not" [sortMetaSort, patternMetaSort] patternMetaSort
+mlPatternP ExistsPatternType =
+    symbol_
+        "#\\exists"
+        [sortMetaSort, variableMetaSort, patternMetaSort]
+        patternMetaSort
+mlPatternP OrPatternType =
+    symbol_
+        "#\\or"
+        [sortMetaSort, patternMetaSort, patternMetaSort]
+        patternMetaSort
+mlPatternP ImpliesPatternType =
+    symbol_
+        "#\\implies"
+        [sortMetaSort, patternMetaSort, patternMetaSort]
+        patternMetaSort
+mlPatternP IffPatternType =
+    symbol_
+        "#\\iff"
+        [sortMetaSort, patternMetaSort, patternMetaSort]
+        patternMetaSort
+mlPatternP ForallPatternType =
+    symbol_
+        "#\\forall"
+        [sortMetaSort, variableMetaSort, patternMetaSort]
+        patternMetaSort
+mlPatternP CeilPatternType =
+    symbol_
+        "#\\ceil"
+        [sortMetaSort, sortMetaSort, patternMetaSort]
+        patternMetaSort
+mlPatternP FloorPatternType =
+    symbol_
+        "#\\floor"
+        [sortMetaSort, sortMetaSort, patternMetaSort]
+        patternMetaSort
+mlPatternP EqualsPatternType =
+    symbol_
+        "#\\equals"
+        [sortMetaSort, sortMetaSort, patternMetaSort, patternMetaSort]
+        patternMetaSort
+mlPatternP InPatternType =
+    symbol_
+        "#\\in"
+        [sortMetaSort, sortMetaSort, patternMetaSort, patternMetaSort]
+        patternMetaSort
+mlPatternP TopPatternType =
+    symbol_ "#\\top" [sortMetaSort] patternMetaSort
+mlPatternP BottomPatternType =
+    symbol_ "#\\bottom" [sortMetaSort] patternMetaSort
+
+[ andA, bottomA, ceilA, _, equalsA, existsA, floorA, forallA, iffA, impliesA,
+  inA, _, notA, orA, _, topA] = map mlPatternA allPatternTypes
+
+[ andP, bottomP, ceilP, _, equalsP, existsP, floorP, forallP, iffP, impliesP,
+  inP, _, notP, orP, _, topP] = map mlPatternP allPatternTypes
 
 variableAsPattern =
     symbol_ "#variableAsPattern" [variableMetaSort] patternMetaSort
@@ -96,35 +165,6 @@ variablePatternAxiom =
     equalsAxiom
         (variablePatternA [vx, vs])
         (variableAsPatternA [variableA [vx, vs]])
-
-orP =
-    symbol_
-        "#\\or"
-        [sortMetaSort, patternMetaSort, patternMetaSort]
-        patternMetaSort
-orA = applyS orP
-impliesP = symbol_ "#\\implies" [sortMetaSort, patternMetaSort, patternMetaSort] patternMetaSort
-impliesA = applyS impliesP
-iffP = symbol_ "#\\iff" [sortMetaSort, patternMetaSort, patternMetaSort] patternMetaSort
-iffA = applyS iffP
-forallP = symbol_ "#\\forall" [sortMetaSort, variableMetaSort, patternMetaSort] patternMetaSort
-forallA = applyS forallP
-ceilP = symbol_ "#\\ceil" [sortMetaSort, sortMetaSort, patternMetaSort] patternMetaSort
-ceilA = applyS ceilP
-floorP = symbol_ "#\\floor" [sortMetaSort, sortMetaSort, patternMetaSort] patternMetaSort
-floorA = applyS floorP
-equalsP = symbol_ "#\\equals" [sortMetaSort, sortMetaSort, patternMetaSort, patternMetaSort] patternMetaSort
-equalsA = applyS equalsP
-inP =
-    symbol_
-        "#\\in"
-        [sortMetaSort, sortMetaSort, patternMetaSort, patternMetaSort]
-        patternMetaSort
-inA = applyS inP
-topP = symbol_ "#\\top" [sortMetaSort] patternMetaSort
-topA = applyS topP
-bottomP = symbol_ "#\\bottom" [sortMetaSort] patternMetaSort
-bottomA = applyS bottomP
 
 patternAxioms =
     [ equalsAxiom

@@ -2,6 +2,16 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-|
+Module      : Data.Kore.Unparser.Unparse
+Description : Class for unparsing and instances for it for 'Meta' and
+              unified Kore constructs.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : traian.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : portable
+-}
 module Data.Kore.Unparser.Unparse (Unparse(..), unparseToString) where
 
 import           Data.Kore.AST.Common
@@ -15,14 +25,14 @@ import           Data.Kore.Parser.CString   (escapeCString)
 
 import           Data.Fix
 
-{-  Unparse to string instance
--}
+-- |'Unparse' class offers functionality to reverse the parsing process.
 class Unparse a where
     unparse :: PrinterOutput w m => a -> m ()
 
 stringUnparse :: Unparse a => a -> StringPrinter ()
 stringUnparse = unparse
 
+-- |'unparseToString' uses a 'StringPrinter' to serialize an object to 'String'.
 unparseToString :: Unparse a => a -> String
 unparseToString a = printToString (stringUnparse a)
 
