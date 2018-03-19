@@ -174,6 +174,7 @@ metaSortsList =
     map MetaBasicSortType metaBasicSortsList ++
         map MetaListSortType metaBasicSortsList
 
+metaSortsListWithString :: [MetaSortType]
 metaSortsListWithString = StringSort : metaSortsList
 
 metaBasicSortTypeString :: MetaBasicSortType -> String

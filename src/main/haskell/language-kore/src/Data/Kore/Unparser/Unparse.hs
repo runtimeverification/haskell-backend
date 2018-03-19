@@ -335,5 +335,12 @@ instance Unparse Definition where
         betweenLines
         unparseList betweenLines (definitionModules d)
 
+instance Unparse MetaDefinition where
+    unparse d = do
+        unparse (metaDefinitionAttributes d)
+        betweenLines
+        unparseList betweenLines (metaDefinitionModules d)
+
+
 instance Unparse (Fix (Pattern Meta Variable)) where
     unparse = unparse . unFix

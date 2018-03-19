@@ -4,7 +4,7 @@ import           Test.Tasty                       (TestTree, testGroup)
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
-import           Data.Kore.ImplicitDefinitions
+import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.Parser.ParserImpl
 import           Data.Kore.Parser.ParserTestUtils
 
@@ -165,7 +165,7 @@ metaSortListParserTests =
             , SortVariableSort (SortVariable (Id "#var2"))
             ]
         , success "{#Char{  }  , #var}"
-            [ metaSort CharSort
+            [ charMetaSort
             , SortVariableSort (SortVariable (Id "#var"))
             ]
         , FailureWithoutMessage

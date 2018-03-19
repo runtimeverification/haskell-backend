@@ -16,7 +16,23 @@ attributesMetaToKore ma =
 sentenceMetaToKore :: MetaSentence -> Sentence
 sentenceMetaToKore (AliasMetaSentence msa) = asSentence msa
     { sentenceAliasAttributes =
-          attributesMetaToKore (sentenceAliasAttributes msa)
+        attributesMetaToKore (sentenceAliasAttributes msa)
+    }
+sentenceMetaToKore (SymbolMetaSentence mss) = asSentence mss
+    { sentenceSymbolAttributes =
+        attributesMetaToKore (sentenceSymbolAttributes mss)
+    }
+sentenceMetaToKore (ImportMetaSentence msi) = asSentence msi
+    { sentenceImportAttributes =
+        attributesMetaToKore (sentenceImportAttributes msi)
+    }
+sentenceMetaToKore (AxiomMetaSentence msx) = asSentence SentenceAxiom
+    { sentenceAxiomAttributes =
+        attributesMetaToKore (sentenceAxiomAttributes msx)
+    , sentenceAxiomPattern =
+        patternMetaToKore (sentenceAxiomPattern msx)
+    , sentenceAxiomParameters =
+        map MetaSortVariable (sentenceAxiomParameters msx)
     }
 
 moduleMetaToKore :: MetaModule -> Module
