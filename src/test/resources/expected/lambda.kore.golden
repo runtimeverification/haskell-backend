@@ -451,15 +451,15 @@ Definition
                                                                     })
                                                                 ]
                                                             })
-                                                        , MetaPattern (VariablePattern Variable
-                                                            { variableName = Id Meta "#E"
-                                                            , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Meta "#Pattern"
-                                                                        , sortActualSorts = []
-                                                                        }
-                                                            })
                                                         ]
+                                                    })
+                                                , MetaPattern (VariablePattern Variable
+                                                    { variableName = Id Meta "#E"
+                                                    , variableSort =
+                                                        SortActualSortSortActual
+                                                                { sortActualName = Id Meta "#Pattern"
+                                                                , sortActualSorts = []
+                                                                }
                                                     })
                                                 ]
                                             })
