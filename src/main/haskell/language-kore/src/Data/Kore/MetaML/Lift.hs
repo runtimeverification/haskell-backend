@@ -175,9 +175,9 @@ liftObjectReducer verb p = case p of
     TopPattern bp -> Fix $ apply (metaMLPatternHead TopPatternType)
         [verbosityLiftToMeta verb (topSort bp)]
 
-liftAttributes :: Attributes -> MetaAttributes
+liftAttributes :: KoreAttributes -> MetaAttributes
 liftAttributes (Attributes as) =
-    MetaAttributes (map liftToMeta as)
+    Attributes (map liftToMeta as)
 
 -- Section 9.2.4 Lift Sort Declarations
 liftSortDeclaration
@@ -194,7 +194,7 @@ liftSortDeclaration ss =
         { sentenceSymbolSymbol = groundSymbol symbolId
         , sentenceSymbolSorts = map (const sortMetaSort) sortParameters
         , sentenceSymbolResultSort = sortMetaSort
-        , sentenceSymbolAttributes = MetaAttributes []
+        , sentenceSymbolAttributes = Attributes []
         }
     sortParam = SortVariable (Id "#s")
     sortParamAsSort = SortVariableSort sortParam
@@ -203,7 +203,7 @@ liftSortDeclaration ss =
         , sortActualSorts = sortParametersAsSorts
         }
     helperFunctionAxiom = SentenceAxiom
-        { sentenceAxiomAttributes = MetaAttributes []
+        { sentenceAxiomAttributes = Attributes []
         , sentenceAxiomParameters = [sortParam]
         , sentenceAxiomPattern = Fix $ EqualsPattern Equals
             { equalsOperandSort = sortMetaSort
@@ -213,7 +213,7 @@ liftSortDeclaration ss =
             }
         }
     declaredAxiom = SentenceAxiom
-        { sentenceAxiomAttributes = MetaAttributes []
+        { sentenceAxiomAttributes = Attributes []
         , sentenceAxiomParameters = [sortParam]
         , sentenceAxiomPattern = Fix $ ImpliesPattern Implies
             { impliesSort = SortVariableSort sortParam
@@ -252,7 +252,7 @@ liftSymbolDeclaration sd =
     sortParam = SortVariable (Id "#s")
     sortParamAsSort = SortVariableSort sortParam
     helperFunctionAxiom = SentenceAxiom
-        { sentenceAxiomAttributes = MetaAttributes []
+        { sentenceAxiomAttributes = Attributes []
         , sentenceAxiomParameters = [sortParam]
         , sentenceAxiomPattern = Fix $ EqualsPattern Equals
             { equalsOperandSort = patternMetaSort
@@ -264,7 +264,7 @@ liftSymbolDeclaration sd =
             }
         }
     declaredAxiom = SentenceAxiom
-        { sentenceAxiomAttributes = MetaAttributes []
+        { sentenceAxiomAttributes = Attributes []
         , sentenceAxiomParameters = [sortParam]
         , sentenceAxiomPattern = Fix $ ImpliesPattern Implies
             { impliesSort = SortVariableSort sortParam
@@ -292,7 +292,7 @@ symbolOrAliasLiftedDeclaration sa = symbolDeclaration
             map (const sortMetaSort) sortParameters ++
             patternSorts
         , sentenceSymbolResultSort = patternMetaSort
-        , sentenceSymbolAttributes = MetaAttributes []
+        , sentenceSymbolAttributes = Attributes []
         }
 
 -- Section 9.2.7 Lift Object Alias Declarations
@@ -351,9 +351,9 @@ liftSentence (SentenceImportSentence is) =
         }
     ]
 
-liftModule :: Module -> MetaModule
-liftModule m = MetaModule
-    { metaModuleName = moduleName m
-    , metaModuleAttributes = liftAttributes (moduleAttributes m)
-    , metaModuleSentences = concatMap liftSentence (moduleSentences m)
+liftModule :: KoreModule -> MetaModule
+liftModule m = Module
+    { moduleName = moduleName m
+    , moduleAttributes = liftAttributes (moduleAttributes m)
+    , moduleSentences = concatMap liftSentence (moduleSentences m)
     }

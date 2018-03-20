@@ -14,9 +14,10 @@ The name of the functions defined below are self-explanatory. They link
 -}
 module Data.Kore.MetaML.MetaToKore where
 
-import           Data.Kore.AST.Common (SentenceAlias (..), SentenceAxiom (..),
-                                       SentenceImport (..), SentenceSymbol (..),
-                                       asSentence)
+import           Data.Kore.AST.Common (Attributes (..), Definition (..),
+                                       Module (..), SentenceAlias (..),
+                                       SentenceAxiom (..), SentenceImport (..),
+                                       SentenceSymbol (..), asSentence)
 import           Data.Kore.AST.Kore
 import           Data.Kore.MetaML.AST
 
@@ -25,9 +26,9 @@ import           Data.Fix
 patternMetaToKore :: CommonMetaPattern -> UnifiedPattern
 patternMetaToKore = cata MetaPattern
 
-attributesMetaToKore :: MetaAttributes -> Attributes
+attributesMetaToKore :: MetaAttributes -> KoreAttributes
 attributesMetaToKore ma =
-    Attributes (map patternMetaToKore (getMetaAttributes ma))
+    Attributes (map patternMetaToKore (getAttributes ma))
 
 sentenceMetaToKore :: MetaSentence -> Sentence
 sentenceMetaToKore (AliasMetaSentence msa) = asSentence msa
@@ -51,15 +52,15 @@ sentenceMetaToKore (AxiomMetaSentence msx) = asSentence SentenceAxiom
         map MetaSortVariable (sentenceAxiomParameters msx)
     }
 
-moduleMetaToKore :: MetaModule -> Module
+moduleMetaToKore :: MetaModule -> KoreModule
 moduleMetaToKore mm = Module
-    { moduleName = metaModuleName mm
-    , moduleSentences = map sentenceMetaToKore (metaModuleSentences mm)
-    , moduleAttributes = attributesMetaToKore (metaModuleAttributes mm)
+    { moduleName = moduleName mm
+    , moduleSentences = map sentenceMetaToKore (moduleSentences mm)
+    , moduleAttributes = attributesMetaToKore (moduleAttributes mm)
     }
 
-definitionMetaToKore :: MetaDefinition -> Definition
+definitionMetaToKore :: MetaDefinition -> KoreDefinition
 definitionMetaToKore dm = Definition
-    { definitionAttributes = attributesMetaToKore (metaDefinitionAttributes dm)
-    , definitionModules = map moduleMetaToKore (metaDefinitionModules dm)
+    { definitionAttributes = attributesMetaToKore (definitionAttributes dm)
+    , definitionModules = map moduleMetaToKore (definitionModules dm)
     }

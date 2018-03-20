@@ -1238,7 +1238,7 @@ nameDuplicationTests =
             }
 
 duplicatedNameFailureTest
-    :: String -> String -> Module -> Module -> TestTree
+    :: String -> String -> KoreModule -> KoreModule -> TestTree
 duplicatedNameFailureTest message duplicatedName module1 module2 =
     expectFailureWithError
         message

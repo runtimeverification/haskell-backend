@@ -30,10 +30,8 @@ module Data.Kore.AST.Kore where
 
 import           Data.Kore.AST.Common
 
-import           Data.Hashable                          (hash)
-import           Data.Typeable                          (Typeable, cast)
-
-import           Data.Kore.Datastructures.EmptyTestable
+import           Data.Hashable        (hash)
+import           Data.Typeable        (Typeable, cast)
 
 {-|Class identifying a Kore level. It should only be implemented by the
 'Object' and 'Meta' types, and should verify:
@@ -200,18 +198,13 @@ type UnifiedPattern = FixedPattern Variable
 deriving instance Eq UnifiedPattern
 deriving instance Show UnifiedPattern
 
-newtype Attributes = Attributes { getAttributes :: [UnifiedPattern] }
-    deriving (Eq, Show)
+type KoreAttributes = Attributes UnifiedPattern
 
-instance EmptyTestable Attributes where
-    isEmpty = null . getAttributes
-
-type KoreSentenceAlias = SentenceAlias Attributes
-type KoreSentenceSymbol = SentenceSymbol Attributes
-type KoreSentenceImport = SentenceImport Attributes
-type KoreSentenceAxiom =
-    SentenceAxiom UnifiedSortVariable UnifiedPattern Attributes
-type KoreSentenceSort = SentenceSort Attributes Object
+type KoreSentenceAlias = SentenceAlias UnifiedPattern
+type KoreSentenceSymbol = SentenceSymbol UnifiedPattern
+type KoreSentenceImport = SentenceImport UnifiedPattern
+type KoreSentenceAxiom = SentenceAxiom UnifiedSortVariable UnifiedPattern
+type KoreSentenceSort = SentenceSort UnifiedPattern Object
 
 {-|The 'Sentence' type corresponds to the @declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
@@ -230,6 +223,10 @@ data Sentence
     | SentenceSortSentence !KoreSentenceSort
     deriving (Eq, Show)
 
+type KoreModule = Module Sentence UnifiedPattern
+
+type KoreDefinition = Definition Sentence UnifiedPattern
+
 asSentenceAliasSentence
     :: MetaOrObject level => KoreSentenceAlias level -> Sentence
 asSentenceAliasSentence v =
@@ -246,54 +243,25 @@ asSentenceSymbolSentence v =
         , metaTransformer = MetaSentenceSymbolSentence
         }
 
-{-|A 'Module' consists of a 'ModuleName' a list of 'Sentence's and some
-'Attributes'.
-
-They correspond to the second, third and forth non-terminals of the @definition@
-syntactic category from the Semantics of K, Section 9.1.6
-(Declaration and Definitions).
--}
-data Module = Module
-    { moduleName       :: !ModuleName
-    , moduleSentences  :: ![Sentence]
-    , moduleAttributes :: !Attributes
-    }
-    deriving (Eq, Show)
-
-{-|Currently, a 'Definition' consists of some 'Attributes' and a 'Module'
-
-Because there are plans to extend this to a list of 'Module's, the @definition@
-syntactic category from the Semantics of K, Section 9.1.6
-(Declaration and Definitions) is splitted here into 'Definition' and 'Module'.
-
-'definitionAttributes' corresponds to the first non-terminal of @definition@,
-while the remaining three are grouped into 'definitionModules'.
--}
-data Definition = Definition
-    { definitionAttributes :: !Attributes
-    , definitionModules    :: ![Module]
-    }
-    deriving (Eq, Show)
-
-instance AsSentence Sentence (SentenceAlias Attributes Meta) where
+instance AsSentence Sentence (SentenceAlias UnifiedPattern Meta) where
     asSentence = MetaSentenceAliasSentence
 
-instance AsSentence Sentence (SentenceAlias Attributes Object) where
+instance AsSentence Sentence (SentenceAlias UnifiedPattern Object) where
     asSentence = ObjectSentenceAliasSentence
 
-instance AsSentence Sentence (SentenceSymbol Attributes Meta) where
+instance AsSentence Sentence (SentenceSymbol UnifiedPattern Meta) where
     asSentence = MetaSentenceSymbolSentence
 
-instance AsSentence Sentence (SentenceSymbol Attributes Object) where
+instance AsSentence Sentence (SentenceSymbol UnifiedPattern Object) where
     asSentence = ObjectSentenceSymbolSentence
 
-instance AsSentence Sentence (SentenceImport Attributes) where
+instance AsSentence Sentence (SentenceImport UnifiedPattern) where
     asSentence = SentenceImportSentence
 
 instance AsSentence Sentence
-    (SentenceAxiom UnifiedSortVariable UnifiedPattern Attributes)
+    (SentenceAxiom UnifiedSortVariable UnifiedPattern)
   where
     asSentence = SentenceAxiomSentence
 
-instance AsSentence Sentence (SentenceSort Attributes Object) where
+instance AsSentence Sentence (SentenceSort UnifiedPattern Object) where
     asSentence = SentenceSortSentence

@@ -45,7 +45,7 @@ parameterizedAxiom
     SentenceAxiom
         { sentenceAxiomParameters = parameters
         , sentenceAxiomPattern = quantifyFreeVariables s (Fix p)
-        , sentenceAxiomAttributes = MetaAttributes []
+        , sentenceAxiomAttributes = Attributes []
         }
 
 {-|'parameterizedEqualsAxiom' is a special case for a 'parameterizedAxiom' that

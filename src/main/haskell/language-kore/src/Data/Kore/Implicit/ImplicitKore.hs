@@ -12,12 +12,21 @@ Portability : POSIX
 module Data.Kore.Implicit.ImplicitKore ( uncheckedKoreModule
                                        , uncheckedKoreDefinition
                                        , str_
+                                       , char_
                                        , sortList_
                                        , patternList_
                                        , sortA
                                        , applicationA
                                        , mlPatternA
+                                       , mlPatternP
+                                       , symbolA
                                        , variableA
+                                       , variable
+                                       , parameterizedAxiom
+                                       , equalsAxiom
+                                       , sortsDeclaredA
+                                       , sortDeclaredA
+                                       , symbolDeclaredA
                                        ) where
 
 import           Data.Kore.AST.Common
@@ -479,6 +488,13 @@ wellFormedImpliesProvableAxiom pattern1 =
 wellFormed = parameterizedSymbol_ "#wellFormed" [pS] [patternMetaSort] spS
 wellFormedA = applyPS wellFormed
 
+char_ :: Char -> MetaPatternStub
+char_ c =
+    SortedPatternStub SortedPattern
+        { sortedPatternPattern = CharLiteralPattern (CharLiteral c)
+        , sortedPatternSort    = charMetaSort
+        }
+
 str_ :: String -> MetaPatternStub
 str_ s =
     SortedPatternStub SortedPattern
@@ -793,9 +809,9 @@ ceilBTAxiom =
 
 uncheckedKoreModule :: MetaModule
 uncheckedKoreModule =
-    MetaModule
-        { metaModuleName       = ModuleName "kore"
-        , metaModuleSentences  =
+    Module
+        { moduleName       = ModuleName "kore"
+        , moduleSentences  =
             [ asSentence nilCharList, asSentence consCharList
             , asSentence appendCharList
             , asSentence inCharList
@@ -935,12 +951,12 @@ uncheckedKoreModule =
             [ asSentence ceilBT
             , asSentence ceilBTAxiom
             ]
-        , metaModuleAttributes = MetaAttributes []
+        , moduleAttributes = Attributes []
         }
 
 uncheckedKoreDefinition :: MetaDefinition
 uncheckedKoreDefinition =
-    MetaDefinition
-        { metaDefinitionAttributes = MetaAttributes []
-        , metaDefinitionModules    = [uncheckedKoreModule]
+    Definition
+        { definitionAttributes = Attributes []
+        , definitionModules    = [uncheckedKoreModule]
         }

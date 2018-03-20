@@ -300,63 +300,64 @@ unifiedPatternGen = sized (\n ->
 
 sentenceAliasGen
     :: MetaOrObject level
-    => Gen attributes -> level -> Gen (SentenceAlias attributes level)
-sentenceAliasGen attribGen x = pure SentenceAlias
+    => Gen pat -> level -> Gen (SentenceAlias pat level)
+sentenceAliasGen patGen x = pure SentenceAlias
     <*> scale (`div` 2) (aliasGen x)
     <*> couple (scale (`div` 2) (sortGen x))
     <*> scale (`div` 2) (sortGen x)
-    <*> scale (`div` 2) attribGen
+    <*> scale (`div` 2) (attributesGen patGen)
 
 sentenceSymbolGen
     :: MetaOrObject level
-    => Gen attributes -> level -> Gen (SentenceSymbol attributes level)
-sentenceSymbolGen attribGen x = pure SentenceSymbol
+    => Gen pat -> level -> Gen (SentenceSymbol pat level)
+sentenceSymbolGen patGen x = pure SentenceSymbol
     <*> scale (`div` 2) (symbolGen x)
     <*> couple (scale (`div` 2) (sortGen x))
     <*> scale (`div` 2) (sortGen x)
-    <*> scale (`div` 2) attribGen
+    <*> scale (`div` 2) (attributesGen patGen)
 
-sentenceImportGen :: Gen attributes -> Gen (SentenceImport attributes)
-sentenceImportGen attribGen = pure SentenceImport
+sentenceImportGen :: Gen pat -> Gen (SentenceImport pat)
+sentenceImportGen patGen = pure SentenceImport
     <*> scale (`div` 2) moduleNameGen
-    <*> scale (`div` 2) attribGen
+    <*> scale (`div` 2) (attributesGen patGen)
 
 sentenceAxiomGen :: Gen KoreSentenceAxiom
 sentenceAxiomGen = pure SentenceAxiom
     <*> couple (scale (`div` 2) unifiedSortVariableGen)
     <*> scale (`div` 2) unifiedPatternGen
-    <*> scale (`div` 2) attributesGen
+    <*> scale (`div` 2) (attributesGen unifiedPatternGen)
 
 sentenceSortGen :: Gen KoreSentenceSort
 sentenceSortGen = pure SentenceSort
     <*> scale (`div` 2) (idGen Object)
     <*> couple (scale (`div` 2) (sortVariableGen Object))
-    <*> scale (`div` 2) attributesGen
+    <*> scale (`div` 2) (attributesGen unifiedPatternGen)
 
-attributesGen :: Gen Attributes
-attributesGen = Attributes <$> couple (scale (`div` 4) unifiedPatternGen)
+attributesGen :: Gen pat -> Gen (Attributes pat)
+attributesGen patGen = Attributes <$> couple (scale (`div` 4) patGen)
 
 sentenceGen :: Gen Sentence
 sentenceGen = oneof
-    [ MetaSentenceAliasSentence <$> sentenceAliasGen attributesGen Meta
-    , ObjectSentenceAliasSentence <$> sentenceAliasGen attributesGen Object
-    , MetaSentenceSymbolSentence <$> sentenceSymbolGen attributesGen Meta
-    , ObjectSentenceSymbolSentence <$> sentenceSymbolGen attributesGen Object
-    , SentenceImportSentence <$> sentenceImportGen attributesGen
+    [ MetaSentenceAliasSentence <$> sentenceAliasGen unifiedPatternGen Meta
+    , ObjectSentenceAliasSentence <$> sentenceAliasGen unifiedPatternGen Object
+    , MetaSentenceSymbolSentence <$> sentenceSymbolGen unifiedPatternGen Meta
+    , ObjectSentenceSymbolSentence
+        <$> sentenceSymbolGen unifiedPatternGen Object
+    , SentenceImportSentence <$> sentenceImportGen unifiedPatternGen
     , SentenceAxiomSentence <$> sentenceAxiomGen
     , SentenceSortSentence <$> sentenceSortGen
     ]
 
-moduleGen :: Gen Module
-moduleGen = pure Module
+moduleGen :: Gen sentence -> Gen pat -> Gen (Module sentence pat)
+moduleGen senGen patGen = pure Module
     <*> scale (`div` 2) moduleNameGen
-    <*> couple (scale (`div` 2) sentenceGen)
-    <*> scale (`div` 2) attributesGen
+    <*> couple (scale (`div` 2) senGen)
+    <*> scale (`div` 2) (attributesGen patGen)
 
-modulesGen :: Gen [Module]
-modulesGen = couple1 (scale (`div` 2) moduleGen)
+modulesGen :: Gen sentence -> Gen pat -> Gen [Module sentence pat]
+modulesGen senGen patGen = couple1 (scale (`div` 2) (moduleGen senGen patGen))
 
-definitionGen :: Gen Definition
-definitionGen = pure Definition
-    <*> scale (`div` 2) attributesGen
-    <*> scale (`div` 2) modulesGen
+definitionGen :: Gen sentence -> Gen pat -> Gen (Definition sentence pat)
+definitionGen senGen patGen = pure Definition
+    <*> scale (`div` 2) (attributesGen patGen)
+    <*> scale (`div` 2) (modulesGen senGen patGen)

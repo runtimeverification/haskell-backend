@@ -22,6 +22,7 @@ instance (Ord v, TermWithVariablesClass t v)
 
 instance EmptyTestable (Substitution v t) where
     isEmpty = null . getSubstitution
+    empty = Substitution []
 
 instance Eq v => MapClass (Substitution v t) v t where
     lookup v (Substitution l) = Prelude.lookup v l

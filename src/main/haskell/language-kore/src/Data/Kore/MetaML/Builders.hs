@@ -11,8 +11,6 @@ module Data.Kore.MetaML.Builders ( module Data.Kore.MetaML.Builders
                                  , MetaPatternStub
                                  ) where
 
-import           Data.Fix
-
 import           Data.Kore.AST.Common
 import           Data.Kore.ASTHelpers
 import           Data.Kore.Error
@@ -32,7 +30,7 @@ can be applied to patterns.
 -}
 applyPS
     :: SentenceSymbolOrAlias s
-    => s MetaAttributes Meta
+    => s CommonMetaPattern Meta
     -> [Sort Meta]
     -> [MetaPatternStub]
     -> MetaPatternStub
@@ -40,11 +38,8 @@ applyPS sentence sortParameters patterns =
     SortedPatternStub SortedPattern
         { sortedPatternPattern =
             ApplicationPattern Application
-                { applicationSymbolOrAlias = SymbolOrAlias
-                    { symbolOrAliasConstructor =
-                        getSentenceSymbolOrAliasConstructor sentence
-                    , symbolOrAliasParams = sortParameters
-                    }
+                { applicationSymbolOrAlias =
+                    getSentenceSymbolOrAliasHead sentence sortParameters
                 , applicationChildren = fillCheckSorts argumentSorts patterns
                 }
         , sortedPatternSort = returnSort
@@ -65,8 +60,15 @@ can be applied to patterns.
 -}
 applyS
     :: SentenceSymbolOrAlias s
-    => s MetaAttributes Meta -> [MetaPatternStub] -> MetaPatternStub
+    => s CommonMetaPattern Meta -> [MetaPatternStub] -> MetaPatternStub
 applyS sentence = applyPS sentence []
+
+isImplicitHead
+    :: SentenceSymbolOrAlias s
+    => s CommonMetaPattern Meta
+    -> SymbolOrAlias Meta
+    -> Bool
+isImplicitHead sentence = (== getSentenceSymbolOrAliasHead sentence [])
 
 sort_ :: MetaSortType -> Sort Meta
 sort_ sortType =
@@ -102,11 +104,19 @@ parameterizedSymbol_ name parameters operandSorts resultSort =
             }
         , sentenceSymbolSorts = operandSorts
         , sentenceSymbolResultSort = resultSort
-        , sentenceSymbolAttributes = MetaAttributes []
+        , sentenceSymbolAttributes = Attributes []
         }
 
-equalsS_ :: Sort Meta -> MetaPatternStub -> MetaPatternStub -> MetaPatternStub
-equalsS_ s =
+bottom_ :: MetaPatternStub
+bottom_ = UnsortedPatternStub (BottomPattern . Bottom)
+
+top_ :: MetaPatternStub
+top_ = UnsortedPatternStub (BottomPattern . Bottom)
+
+equalsM_
+    :: Maybe (Sort Meta)
+    -> (MetaPatternStub -> MetaPatternStub -> MetaPatternStub)
+equalsM_ s =
     binarySortedPattern
         (\(ResultSort resultSort)
             (ChildSort childSort)
@@ -120,24 +130,80 @@ equalsS_ s =
                 , equalsSecond      = secondPattern
                 }
         )
-        (Just (ChildSort s))
+        (ChildSort <$> s)
+
+equalsS_ :: Sort Meta -> MetaPatternStub -> MetaPatternStub -> MetaPatternStub
+equalsS_ s = equalsM_ (Just s)
 
 equals_ :: MetaPatternStub -> MetaPatternStub -> MetaPatternStub
-equals_ =
+equals_ = equalsM_ Nothing
+
+inM_
+    :: Maybe (Sort Meta)
+    -> (MetaPatternStub -> MetaPatternStub -> MetaPatternStub)
+inM_ s =
     binarySortedPattern
         (\(ResultSort resultSort)
             (ChildSort childSort)
             firstPattern
             secondPattern
           ->
-            EqualsPattern Equals
-                { equalsOperandSort = childSort
-                , equalsResultSort  = resultSort
-                , equalsFirst       = firstPattern
-                , equalsSecond      = secondPattern
+            InPattern In
+                { inOperandSort     = childSort
+                , inResultSort      = resultSort
+                , inContainedChild  = firstPattern
+                , inContainingChild = secondPattern
                 }
         )
-        Nothing
+        (ChildSort <$> s)
+
+inS_ :: Sort Meta -> MetaPatternStub -> MetaPatternStub -> MetaPatternStub
+inS_ s = inM_ (Just s)
+
+in_ :: MetaPatternStub -> MetaPatternStub -> MetaPatternStub
+in_ = inM_ Nothing
+
+ceilM_ :: Maybe (Sort Meta) -> MetaPatternStub -> MetaPatternStub
+ceilM_ s =
+    unarySortedPattern
+        (\(ResultSort resultSort)
+            (ChildSort childSort)
+            childPattern
+          ->
+            CeilPattern Ceil
+                { ceilOperandSort = childSort
+                , ceilResultSort  = resultSort
+                , ceilChild       = childPattern
+                }
+        )
+        (ChildSort <$> s)
+
+ceilS_ :: Sort Meta -> MetaPatternStub -> MetaPatternStub
+ceilS_ s = ceilM_ (Just s)
+
+ceil_ :: MetaPatternStub -> MetaPatternStub
+ceil_ = ceilM_ Nothing
+
+floorM_ :: Maybe (Sort Meta) -> MetaPatternStub -> MetaPatternStub
+floorM_ s =
+    unarySortedPattern
+        (\(ResultSort resultSort)
+            (ChildSort childSort)
+            childPattern
+          ->
+            FloorPattern Floor
+                { floorOperandSort = childSort
+                , floorResultSort  = resultSort
+                , floorChild       = childPattern
+                }
+        )
+        (ChildSort <$> s)
+
+floorS_ :: Sort Meta -> MetaPatternStub -> MetaPatternStub
+floorS_ s = floorM_ (Just s)
+
+floor_ :: MetaPatternStub -> MetaPatternStub
+floor_ = floorM_ Nothing
 
 exists_ :: Variable Meta -> MetaPatternStub -> MetaPatternStub
 exists_ variable1 =
@@ -147,6 +213,17 @@ exists_ variable1 =
                 { existsSort     = sortS
                 , existsVariable = variable1
                 , existsChild    = pattern1
+                }
+        )
+
+forall_ :: Variable Meta -> MetaPatternStub -> MetaPatternStub
+forall_ variable1 =
+    unaryPattern
+        (\sortS pattern1 ->
+            ForallPattern Forall
+                { forallSort     = sortS
+                , forallVariable = variable1
+                , forallChild    = pattern1
                 }
         )
 
@@ -169,6 +246,17 @@ and_ =
                 { andSort   = commonSort
                 , andFirst  = firstPattern
                 , andSecond = secondPattern
+                }
+        )
+
+iff_ :: MetaPatternStub -> MetaPatternStub -> MetaPatternStub
+iff_ =
+    binaryPattern
+        (\commonSort firstPattern secondPattern ->
+            IffPattern Iff
+                { iffSort   = commonSort
+                , iffFirst  = firstPattern
+                , iffSecond = secondPattern
                 }
         )
 

@@ -50,6 +50,10 @@ instance
     (EmptyTestable s) => EmptyTestable (SubstitutionAndQuantifiedVars s var)
   where
     isEmpty = isEmpty . substitution
+    empty = SubstitutionAndQuantifiedVars
+        { substitution = empty
+        , quantifiedVars = Set.empty
+        }
 
 instance ( VariableClass var
          , SubstitutionClass s (UnifiedVariable var) (FixedPattern var)

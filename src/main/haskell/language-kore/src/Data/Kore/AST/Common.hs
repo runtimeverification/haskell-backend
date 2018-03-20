@@ -641,6 +641,9 @@ deriving instance Functor (Pattern level variable)
 deriving instance Foldable (Pattern level variable)
 deriving instance Traversable (Pattern level variable)
 
+newtype Attributes pat = Attributes { getAttributes :: [pat] }
+    deriving (Eq, Show)
+
 {-|'SentenceAlias' corresponds to the @object-alias-declaration@ and
 @meta-alias-declaration@ syntactic categories from the Semantics of K,
 Section 9.1.6 (Declaration and Definitions).
@@ -648,11 +651,11 @@ Section 9.1.6 (Declaration and Definitions).
 The 'level' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
-data SentenceAlias attributes level = SentenceAlias
+data SentenceAlias pat level = SentenceAlias
     { sentenceAliasAlias      :: !(Alias level)
     , sentenceAliasSorts      :: ![Sort level]
     , sentenceAliasResultSort :: !(Sort level)
-    , sentenceAliasAttributes :: !attributes
+    , sentenceAliasAttributes :: !(Attributes pat)
     }
     deriving (Eq, Show, Typeable)
 
@@ -663,11 +666,11 @@ Section 9.1.6 (Declaration and Definitions).
 The 'level' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
-data SentenceSymbol attributes level = SentenceSymbol
+data SentenceSymbol pat level = SentenceSymbol
     { sentenceSymbolSymbol     :: !(Symbol level)
     , sentenceSymbolSorts      :: ![Sort level]
     , sentenceSymbolResultSort :: !(Sort level)
-    , sentenceSymbolAttributes :: !attributes
+    , sentenceSymbolAttributes :: !(Attributes pat)
     }
     deriving (Eq, Show, Typeable)
 
@@ -680,45 +683,81 @@ newtype ModuleName = ModuleName { getModuleName :: String }
 {-|'SentenceImport' corresponds to the @import-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
-data SentenceImport attributes = SentenceImport
+data SentenceImport pat = SentenceImport
     { sentenceImportModuleName :: !ModuleName
-    , sentenceImportAttributes :: !attributes
+    , sentenceImportAttributes :: !(Attributes pat)
     }
     deriving (Eq, Show, Typeable)
 
 {-|'SentenceSort' corresponds to the @sort-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
-data SentenceSort attributes level = SentenceSort
+data SentenceSort pat level = SentenceSort
     { sentenceSortName       :: !(Id level)
     , sentenceSortParameters :: ![SortVariable level]
-    , sentenceSortAttributes :: !attributes
+    , sentenceSortAttributes :: !(Attributes pat)
     }
     deriving (Eq, Show)
 
 {-|'SentenceAxiom' corresponds to the @axiom-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
-data SentenceAxiom sortParam pat attributes = SentenceAxiom
+data SentenceAxiom sortParam pat = SentenceAxiom
     { sentenceAxiomParameters :: ![sortParam]
     , sentenceAxiomPattern    :: !pat
-    , sentenceAxiomAttributes :: !attributes
+    , sentenceAxiomAttributes :: !(Attributes pat)
+    }
+    deriving (Eq, Show)
+
+{-|A 'Module' consists of a 'ModuleName' a list of 'Sentence's and some
+'Attributes'.
+
+They correspond to the second, third and forth non-terminals of the @definition@
+syntactic category from the Semantics of K, Section 9.1.6
+(Declaration and Definitions).
+-}
+data Module sentence pat = Module
+    { moduleName       :: !ModuleName
+    , moduleSentences  :: ![sentence]
+    , moduleAttributes :: !(Attributes pat)
+    }
+    deriving (Eq, Show)
+
+{-|Currently, a 'Definition' consists of some 'Attributes' and a 'Module'
+
+Because there are plans to extend this to a list of 'Module's, the @definition@
+syntactic category from the Semantics of K, Section 9.1.6
+(Declaration and Definitions) is splitted here into 'Definition' and 'Module'.
+
+'definitionAttributes' corresponds to the first non-terminal of @definition@,
+while the remaining three are grouped into 'definitionModules'.
+-}
+data Definition sentence pat = Definition
+    { definitionAttributes :: !(Attributes pat)
+    , definitionModules    :: ![Module sentence pat]
     }
     deriving (Eq, Show)
 
 class SentenceSymbolOrAlias sentence where
     getSentenceSymbolOrAliasConstructor
-        :: sentence attributes level -> Id level
+        :: sentence pat level -> Id level
     getSentenceSymbolOrAliasSortParams
-        :: sentence attributes level -> [SortVariable level]
+        :: sentence pat level -> [SortVariable level]
     getSentenceSymbolOrAliasArgumentSorts
-        :: sentence attributes level -> [Sort level]
+        :: sentence pat level -> [Sort level]
     getSentenceSymbolOrAliasResultSort
-        :: sentence attributes level -> Sort level
+        :: sentence pat level -> Sort level
     getSentenceSymbolOrAliasAttributes
-        :: sentence attributes level -> attributes
+        :: sentence pat level -> Attributes pat
     getSentenceSymbolOrAliasSentenceName
-        :: sentence attributes level -> String
+        :: sentence pat level -> String
+    getSentenceSymbolOrAliasHead
+        :: sentence pat level -> [Sort level] -> SymbolOrAlias level
+    getSentenceSymbolOrAliasHead sentence sortParameters = SymbolOrAlias
+        { symbolOrAliasConstructor =
+            getSentenceSymbolOrAliasConstructor sentence
+        , symbolOrAliasParams = sortParameters
+        }
 
 instance SentenceSymbolOrAlias SentenceAlias where
     getSentenceSymbolOrAliasConstructor = aliasConstructor . sentenceAliasAlias

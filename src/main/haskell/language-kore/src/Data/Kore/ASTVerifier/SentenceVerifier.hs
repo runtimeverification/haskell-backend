@@ -64,7 +64,7 @@ definedNameForSentence (SentenceAxiomSentence _) = Nothing
 {-|'verifySentences' verifies the welformedness of a list of Kore 'Sentence's.
 -}
 verifySentences
-    :: IndexedModule
+    :: KoreIndexedModule
     -- ^ The module containing all definitions which are visible in this
     -- pattern.
     -> [Sentence]
@@ -76,7 +76,7 @@ verifySentences
     verifySuccess
 
 verifySentence
-    :: IndexedModule
+    :: KoreIndexedModule
     -> Sentence
     -> Either (Error VerifyError) VerifySuccess
 verifySentence
@@ -115,8 +115,8 @@ verifySentence _ (SentenceImportSentence _) =
 verifySymbolAliasSentence
     :: (MetaOrObject level, SentenceSymbolOrAlias ssa)
     => (Id level -> Either (Error VerifyError) (SortDescription level))
-    -> IndexedModule
-    -> ssa Attributes level
+    -> KoreIndexedModule
+    -> ssa UnifiedPattern level
     -> Either (Error VerifyError) VerifySuccess
 verifySymbolAliasSentence
     findSortDeclaration indexedModule sentence
@@ -146,7 +146,7 @@ verifySymbolAliasSentence
 
 verifyAxiomSentence
     :: KoreSentenceAxiom
-    -> IndexedModule
+    -> KoreIndexedModule
     -> Either (Error VerifyError) VerifySuccess
 verifyAxiomSentence axiom indexedModule =
     withContext
@@ -166,7 +166,7 @@ verifyAxiomSentence axiom indexedModule =
 
 verifySortSentence
     :: KoreSentenceSort
-    -> IndexedModule
+    -> KoreIndexedModule
     -> Either (Error VerifyError) VerifySuccess
 verifySortSentence sentenceSort indexedModule =
     withContext

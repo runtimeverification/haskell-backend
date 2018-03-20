@@ -132,6 +132,34 @@ unaryPattern
 unaryPattern constructor (UnsortedPatternStub p) =
     UnsortedPatternStub (\sortS -> constructor sortS (Fix (p sortS)))
 
+{-|'unarySortedPattern' is a helper for building 'MetaPatternStub's for unary
+operators where the result sort is different from the operand sort like \ceil.
+-}
+unarySortedPattern
+    :: (ResultSort
+        -> ChildSort
+        -> CommonMetaPattern
+        -> PatternMetaType)
+    -> Maybe ChildSort
+    -> MetaPatternStub
+    -> MetaPatternStub
+unarySortedPattern constructor maybeSort patternStub =
+    UnsortedPatternStub
+        (\sortS ->
+            constructor
+                (ResultSort sortS)
+                (ChildSort childSort)
+                (Fix $ sortedPatternPattern sortedPat)
+        )
+  where
+    (childSort, SortedPatternStub sortedPat) = case (maybeSort, patternStub) of
+        (Just (ChildSort sort), _) -> (sort, withSort sort patternStub)
+        (Nothing, SortedPatternStub sp) -> (sortedPatternSort sp, patternStub)
+        (_, UnsortedPatternStub usp) -> error
+            (  "Could not find a sort for child pattern: "
+            ++ show (usp dummyMetaSort)
+            )
+
 {-|'binaryPattern' is a helper for building 'MetaPatternStub's for binary
 operators like @\and@.
 -}

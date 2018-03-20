@@ -791,7 +791,7 @@ variablePatternParserTests =
 
 sentenceAliasParserTests :: [TestTree]
 sentenceAliasParserTests =
-    parseTree sentenceParser
+    parseTree koreSentenceParser
         [ success "alias a{s1}(s2):s3[\"a\"]"
             ( ObjectSentenceAliasSentence
                 SentenceAlias
@@ -859,7 +859,7 @@ sentenceAliasParserTests =
 
 sentenceAxiomParserTests :: [TestTree]
 sentenceAxiomParserTests =
-    parseTree sentenceParser
+    parseTree koreSentenceParser
         [ success "axiom{sv1}\"a\"[\"b\"]"
             ( SentenceAxiomSentence SentenceAxiom
                 { sentenceAxiomParameters =
@@ -911,7 +911,7 @@ sentenceAxiomParserTests =
 
 sentenceImportParserTests :: [TestTree]
 sentenceImportParserTests =
-    parseTree sentenceParser
+    parseTree koreSentenceParser
         [ success "import M[\"b\"]"
             ( SentenceImportSentence SentenceImport
                 { sentenceImportModuleName = ModuleName "M"
@@ -930,7 +930,7 @@ sentenceImportParserTests =
 
 sentenceSortParserTests :: [TestTree]
 sentenceSortParserTests =
-    parseTree sentenceParser
+    parseTree koreSentenceParser
         [ success "sort s1 { sv1 } [ \"a\" ]"
             ( SentenceSortSentence SentenceSort
                 { sentenceSortName = Id "s1"
@@ -964,7 +964,7 @@ sentenceSortParserTests =
 
 sentenceSymbolParserTests :: [TestTree]
 sentenceSymbolParserTests =
-    parseTree sentenceParser
+    parseTree koreSentenceParser
         [ success "symbol sy1 { s1 } ( s1 ) : s1 [\"a\"] "
             ( ObjectSentenceSymbolSentence
                 SentenceSymbol
@@ -1007,7 +1007,7 @@ sentenceSymbolParserTests =
 
 attributesParserTests :: [TestTree]
 attributesParserTests =
-    parseTree attributesParser
+    parseTree (attributesParser unifiedPatternParser)
         [ success "[\"a\"]"
             (Attributes
                 [MetaPattern $ StringLiteralPattern (StringLiteral "a")])
@@ -1024,7 +1024,7 @@ attributesParserTests =
 
 moduleParserTests :: [TestTree]
 moduleParserTests =
-    parseTree moduleParser
+    parseTree (moduleParser koreSentenceParser unifiedPatternParser)
         [ success "module MN sort c{}[] endmodule [\"a\"]"
             Module
                 { moduleName = ModuleName "MN"
@@ -1075,7 +1075,7 @@ moduleParserTests =
 
 definitionParserTests :: [TestTree]
 definitionParserTests =
-    parseTree definitionParser
+    parseTree (definitionParser koreSentenceParser unifiedPatternParser)
         [ success "[\"a\"] module M sort c{}[] endmodule [\"b\"]"
             Definition
                 { definitionAttributes =

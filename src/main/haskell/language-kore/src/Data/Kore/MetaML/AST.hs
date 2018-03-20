@@ -22,6 +22,7 @@ module Data.Kore.MetaML.AST where
 import           Data.Fix
 
 import           Data.Kore.AST.Common
+import           Data.Kore.IndexedModule.IndexedModule
 
 {-|'MetaMLPattern' corresponds to "fixed point" representations
 of the 'Pattern' class where the level is fixed to 'Meta'.
@@ -31,15 +32,13 @@ of the 'Pattern' class where the level is fixed to 'Meta'.
 type MetaMLPattern var = Fix (Pattern Meta var)
 
 -- |'MetaAttributes' is the 'Meta'-only version of 'Attributes'
-newtype MetaAttributes = MetaAttributes
-    { getMetaAttributes :: [CommonMetaPattern] }
-  deriving (Eq, Show)
+type MetaAttributes = Attributes CommonMetaPattern
 
 type MetaSentenceAxiom =
-    SentenceAxiom (SortVariable Meta) CommonMetaPattern MetaAttributes
-type MetaSentenceAlias = SentenceAlias MetaAttributes Meta
-type MetaSentenceSymbol = SentenceSymbol MetaAttributes Meta
-type MetaSentenceImport = SentenceImport MetaAttributes
+    SentenceAxiom (SortVariable Meta) CommonMetaPattern
+type MetaSentenceAlias = SentenceAlias CommonMetaPattern Meta
+type MetaSentenceSymbol = SentenceSymbol CommonMetaPattern Meta
+type MetaSentenceImport = SentenceImport CommonMetaPattern
 
 -- |'MetaAttributes' is the 'Meta'-only version of 'Sentence'.
 -- Note that, as such, it does not contain sort definitions nor other 'Object'
@@ -51,34 +50,28 @@ data MetaSentence
     | ImportMetaSentence !MetaSentenceImport
     deriving (Eq, Show)
 
-instance AsSentence MetaSentence (SentenceAlias MetaAttributes Meta) where
+instance AsSentence MetaSentence (SentenceAlias CommonMetaPattern Meta) where
     asSentence = AliasMetaSentence
 
-instance AsSentence MetaSentence (SentenceSymbol MetaAttributes Meta) where
+instance AsSentence MetaSentence (SentenceSymbol CommonMetaPattern Meta) where
     asSentence = SymbolMetaSentence
 
-instance AsSentence MetaSentence (SentenceImport MetaAttributes) where
+instance AsSentence MetaSentence (SentenceImport CommonMetaPattern) where
     asSentence = ImportMetaSentence
 
 instance AsSentence MetaSentence
-    (SentenceAxiom (SortVariable Meta) CommonMetaPattern MetaAttributes)
+    (SentenceAxiom (SortVariable Meta) CommonMetaPattern)
   where
     asSentence = AxiomMetaSentence
 
 -- |'MetaModule' is the 'Meta'-only version of 'Module'.
-data MetaModule = MetaModule
-    { metaModuleName       :: !ModuleName
-    , metaModuleSentences  :: ![MetaSentence]
-    , metaModuleAttributes :: !MetaAttributes
-    }
-    deriving (Eq, Show)
+type MetaModule = Module MetaSentence CommonMetaPattern
 
 -- |'MetaDefinition' is the 'Meta'-only version of 'Definition'.
-data MetaDefinition = MetaDefinition
-    { metaDefinitionModules    :: ![MetaModule]
-    , metaDefinitionAttributes :: !MetaAttributes
-    }
-    deriving (Eq, Show)
+type MetaDefinition = Definition MetaSentence CommonMetaPattern
+
+type MetaIndexedModule =
+    IndexedModule (SortVariable Meta) CommonMetaPattern
 
 groundHead :: Id a -> SymbolOrAlias a
 groundHead ctor = SymbolOrAlias

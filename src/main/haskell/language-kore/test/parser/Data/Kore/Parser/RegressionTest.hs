@@ -7,6 +7,7 @@ module Data.Kore.Parser.RegressionTest ( InputFileName (..)
 import           Test.Tasty                 (TestTree, testGroup)
 import           Test.Tasty.Golden          (findByExtension, goldenVsString)
 
+import           Data.Kore.AST.Kore         (KoreDefinition)
 import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.Parser.Parser
 
@@ -44,7 +45,7 @@ goldenFromInputFileName (InputFileName inputFile) =
         (directory </> "expected" </> addExtension fileName ".golden")
   where (directory, fileName) = splitFileName inputFile
 
-toByteString :: Either String Definition -> LazyByteString.ByteString
+toByteString :: Either String KoreDefinition -> LazyByteString.ByteString
 toByteString (Left err) =
     LazyChar8.pack ("Parse error: " ++ err ++ ".")
 toByteString (Right definition) =

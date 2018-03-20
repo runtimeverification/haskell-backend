@@ -43,7 +43,7 @@ e.g. for:
 @
 
 -}
-verifyDefinition :: Definition -> Either (Error VerifyError) VerifySuccess
+verifyDefinition :: KoreDefinition -> Either (Error VerifyError) VerifySuccess
 verifyDefinition definition = do
     defaultNames <- verifyUniqueNames sortNames implicitModule
     foldM_ verifyUniqueNames defaultNames (definitionModules definition)
@@ -86,7 +86,7 @@ verifyDefinition definition = do
 'Data.Kore.Implicit' package. It verifies the correctness of a definition
 containing only the 'kore' default module.
 -}
-verifyKoreDefinition :: Definition -> Either (Error VerifyError) VerifySuccess
+verifyKoreDefinition :: KoreDefinition -> Either (Error VerifyError) VerifySuccess
 verifyKoreDefinition definition =
     -- VerifyDefinition already checks the Kore module, so we skip it.
     verifyDefinition definition { definitionModules = [] }

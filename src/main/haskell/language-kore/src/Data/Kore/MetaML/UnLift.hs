@@ -18,9 +18,11 @@ import           Data.Kore.Parser.ParserUtils          as Parser
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.Implicit.ImplicitKore       (mlPatternP, variable)
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.IndexedModule.IndexedModule
 import           Data.Kore.MetaML.AST
+import           Data.Kore.MetaML.Builders             (isImplicitHead)
 import           Data.Kore.Parser.LexemeImpl
 
 class UnliftableFromMetaML mixed where
@@ -69,7 +71,7 @@ instance UnliftableFromMetaML (Sort Object) where
 
 instance UnliftableFromMetaML [Sort Object] where
     unliftFromMeta (Fix (ApplicationPattern a))
-        | applicationSymbolOrAlias a == consSortListHead =
+        | isImplicitHead consSortList (applicationSymbolOrAlias a) =
             case applicationChildren a of
                 [uSort, uSorts] ->
                     (:) <$> unliftFromMeta uSort <*> unliftFromMeta uSorts
@@ -78,7 +80,7 @@ instance UnliftableFromMetaML [Sort Object] where
 
 instance UnliftableFromMetaML (Variable Object) where
     unliftFromMeta (Fix (ApplicationPattern a))
-        | applicationSymbolOrAlias a == variableHead =
+        | isImplicitHead variable (applicationSymbolOrAlias a) =
             case applicationChildren a of
                 [uVariableName, uVariableSort] ->
                     pure Variable
@@ -87,7 +89,7 @@ instance UnliftableFromMetaML (Variable Object) where
                 _ -> Nothing
         | otherwise = Nothing
 
-type IndexedModuleReader a = Reader IndexedModule a
+type IndexedModuleReader a = Reader KoreIndexedModule a
 
 data UnliftResult = UnliftResult
     { unliftResultFinal    :: UnifiedPattern
@@ -111,37 +113,37 @@ unliftPatternReducer
     :: Pattern Meta Variable UnliftResult
     -> IndexedModuleReader (Maybe (Pattern Object Variable UnifiedPattern))
 unliftPatternReducer (ApplicationPattern a)
-    | apHead == metaMLPatternHead AndPatternType
+    | isImplicitHead (mlPatternP AndPatternType) apHead
     = return (unliftBinaryOpPattern AndPattern And apChildren)
-    | apHead == metaMLPatternHead BottomPatternType
+    | isImplicitHead (mlPatternP BottomPatternType) apHead
     = return (unliftTopBottomPattern (BottomPattern . Bottom) apChildren)
-    | apHead == metaMLPatternHead DomainValuePatternType
+    | isImplicitHead (mlPatternP DomainValuePatternType) apHead
     = return (unliftDomainValuePattern apChildren)
-    | apHead == metaMLPatternHead CeilPatternType
+    | isImplicitHead (mlPatternP CeilPatternType) apHead
     = return (unliftCeilFloorPattern CeilPattern Ceil apChildren)
-    | apHead == metaMLPatternHead EqualsPatternType
+    | isImplicitHead (mlPatternP EqualsPatternType) apHead
     = return (unliftEqualsInPattern EqualsPattern Equals apChildren)
-    | apHead == metaMLPatternHead ExistsPatternType
+    | isImplicitHead (mlPatternP ExistsPatternType) apHead
     = return (unliftQuantifiedPattern ExistsPattern Exists apChildren)
-    | apHead == metaMLPatternHead FloorPatternType
+    | isImplicitHead (mlPatternP FloorPatternType) apHead
     = return (unliftCeilFloorPattern FloorPattern Floor apChildren)
-    | apHead == metaMLPatternHead ForallPatternType
+    | isImplicitHead (mlPatternP ForallPatternType) apHead
     = return (unliftQuantifiedPattern ForallPattern Forall apChildren)
-    | apHead == metaMLPatternHead IffPatternType
+    | isImplicitHead (mlPatternP IffPatternType) apHead
     = return (unliftBinaryOpPattern IffPattern Iff apChildren)
-    | apHead == metaMLPatternHead ImpliesPatternType
+    | isImplicitHead (mlPatternP ImpliesPatternType) apHead
     = return (unliftBinaryOpPattern ImpliesPattern Implies apChildren)
-    | apHead == metaMLPatternHead InPatternType
+    | isImplicitHead (mlPatternP InPatternType) apHead
     = return (unliftEqualsInPattern InPattern In apChildren)
-    | apHead == metaMLPatternHead NextPatternType
+    | isImplicitHead (mlPatternP NextPatternType) apHead
     = return (unliftUnaryOpPattern NextPattern Next apChildren)
-    | apHead == metaMLPatternHead NotPatternType
+    | isImplicitHead (mlPatternP NotPatternType) apHead
     = return (unliftUnaryOpPattern NotPattern Not apChildren)
-    | apHead == metaMLPatternHead OrPatternType
+    | isImplicitHead (mlPatternP OrPatternType) apHead
     = return (unliftBinaryOpPattern OrPattern Or apChildren)
-    | apHead == metaMLPatternHead RewritesPatternType
+    | isImplicitHead (mlPatternP RewritesPatternType) apHead
     = return (unliftBinaryOpPattern RewritesPattern Rewrites apChildren)
-    | apHead == metaMLPatternHead TopPatternType
+    | isImplicitHead (mlPatternP TopPatternType) apHead
     = return (unliftTopBottomPattern (TopPattern . Top) apChildren)
   where
     apHead = applicationSymbolOrAlias a
