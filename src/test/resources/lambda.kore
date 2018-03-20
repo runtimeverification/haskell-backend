@@ -58,7 +58,10 @@ module LAMBDA
           app{}(
             lambda{}(X:Exp{},#E:#Pattern{}),
             #E':#Pattern{}),
-          #substitute{}(#E:#Pattern{}, #E':#Pattern{}, X:Exp{})))) []
+          #substitute{}(
+            #E:#Pattern{}, 
+            #E':#Pattern{}, 
+            #variable{}("X", #`Exp{}()))))) []
 
 
 
