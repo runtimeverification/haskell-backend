@@ -1,4 +1,13 @@
 module Data.Kore.Implicit.ImplicitSortsImpl where
+{-|
+Module      : Data.Kore.Implicit.ImplicitSortsImpl
+Description : Infrastructure for defining the implicit Kore 'Meta' sorts.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : virgil.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : POSIX
+-}
 
 import           Data.Kore.AST.Common
 import           Data.Kore.Implicit.ImplicitKoreImpl     (equalsAxiom,

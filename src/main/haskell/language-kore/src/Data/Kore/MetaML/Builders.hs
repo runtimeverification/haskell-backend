@@ -1,3 +1,12 @@
+{-|
+Module      : Data.Kore.MetaML.Builders
+Description : Safe way to build larger 'Meta' patterns from components.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : virgil.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : POSIX
+-}
 module Data.Kore.MetaML.Builders ( module Data.Kore.MetaML.Builders
                                  , MetaPatternStub
                                  ) where
@@ -14,41 +23,6 @@ import           Data.Kore.MetaML.BuildersImpl
 -}
 sortParameter :: String -> SortVariable Meta
 sortParameter name = SortVariable (Id name)
-
-{-|'fillCheckSorts' matches a list of sorts to a list of 'MetaPatternStub',
-checking that the sorts are identical where possible, creating a pattern with
-the provided sort otherwise.
--}
-fillCheckSorts :: [Sort Meta] -> [MetaPatternStub] -> [CommonMetaPattern]
-fillCheckSorts [] []         = []
-fillCheckSorts [] _          = error "Not enough sorts!"
-fillCheckSorts _ []          = error "Not enough patterns!"
-fillCheckSorts (s:ss) (p:ps) = fillCheckSort s p : fillCheckSorts ss ps
-
-{-|'fillCheckSorts' matches a sort to a 'MetaPatternStub', checking
-that the pattern's sorts is identical if possible, creating a pattern with the
-provided sort otherwise.
--}
-fillCheckSort :: Sort Meta -> MetaPatternStub -> CommonMetaPattern
-fillCheckSort
-    desiredSort
-    ( SortedPatternStub SortedPattern
-        { sortedPatternPattern = p, sortedPatternSort = actualSort }
-    )
-  =
-    if desiredSort /= actualSort
-    then error
-        (  "Unmatched sorts, expected:\n"
-        ++ show desiredSort
-        ++ "\nbut got:\n"
-        ++ show actualSort
-        ++ "\nfor pattern\n"
-        ++ show p
-        ++ "."
-        )
-    else Fix p
-fillCheckSort desiredSort (UnsortedPatternStub p) =
-    Fix (p desiredSort)
 
 {-|'applyPS' applies a symbol or alias declared by a given sentence to a list
 of operands, using the provided sort arguments.

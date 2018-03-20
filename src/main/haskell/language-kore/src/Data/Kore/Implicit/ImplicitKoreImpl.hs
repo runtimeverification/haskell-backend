@@ -1,6 +1,6 @@
 {-|
-Module      : Data.Kore.Implicit.ImplicitKore
-Description : Builds the implicit kore definitions.
+Module      : Data.Kore.Implicit.ImplicitKoreImpl
+Description : Helpers for building the implicit kore definitions.
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com

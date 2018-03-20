@@ -1,4 +1,14 @@
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
+{-|
+Module      : Data.Kore.Implicit.ImplicitSorts
+Description : Haskell definitions for the implicit Kore 'Meta' sorts.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : virgil.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : POSIX
+-}
+
 module Data.Kore.Implicit.ImplicitSorts where
 
 import           Data.Kore.AST.Common

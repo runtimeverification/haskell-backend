@@ -1,4 +1,13 @@
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
+{-|
+Module      : Data.Kore.Implicit.ImplicitVarsInternal
+Description : Variable defimitions shared by modules defining kore.kore
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : virgil.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : POSIX
+-}
 module Data.Kore.Implicit.ImplicitVarsInternal where
 
 import           Data.Kore.AST.Common
