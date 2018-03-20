@@ -351,6 +351,7 @@ liftSentence (SentenceImportSentence is) =
         }
     ]
 
+-- |'liftModule' transforms a 'KoreModule' into a 'MetaModule'
 liftModule :: KoreModule -> MetaModule
 liftModule m = Module
     { moduleName = moduleName m
