@@ -20,8 +20,6 @@ module IMP
 
   symbol plus{}(Int{}, Int{}) : Int{} []
 
-  symbol zero{}() : Int{} []
-
   symbol one{}() : Int{} []
 
   symbol two{}() : Int{} []
@@ -80,12 +78,12 @@ module IMP
   axiom{S1,S2,R}
     \equals{Ctxt{S1,S2},R}(
       gamma{S1,S2}(
-        #variableToPattern{}(#X:#Variable{}),
+        #variableAsPattern{}(#X:#Variable{}),
         #P:#Pattern{}),
       #\exists{}(#`Ctxt{}(#S1:#Sort{},#S2:#Sort{}),
         #X:#Variable{},
         gamma0{S1,S2}(
-          #variableToPattern{}(#X:#Variable{}),
+          #variableAsPattern{}(#X:#Variable{}),
           #P:#Pattern{}))) []
 
  alias idctxt{S}() : Ctxt{S,S} []
@@ -98,7 +96,7 @@ module IMP
   axiom{S,R}
     \equals{S,R}(
       T:S,
-      app{S,S}(idctxt{S,S}(), T:S)) []
+      app{S,S}(idctxt{S}(), T:S)) []
 
   sort AExp{} []
 
@@ -112,7 +110,7 @@ module IMP
     \implies{#R}(
       \not{#R}(
         #occursFree{#R}(
-          HOLE:S,
+          #variable{}("HOLE", #S:#Sort{}),
           divAExp{}(
             app{S,AExp{}}(
               #C:#Pattern{},
@@ -139,7 +137,7 @@ module IMP
     \implies{#R}(
       \not{#R}(
         #occursFree{#R}(
-          HOLE:S,
+          #variable{}("HOLE", #S:#Sort{}),
           divAExp{}(
             P:AExp{},
             app{S,AExp{}}(
@@ -162,6 +160,7 @@ module IMP
                   HOLE:S))),
             T:S)))) [#strict{}("divAExp", two{}())]
 
+  sort BExp{} []
 
   sort Block{} []
 
@@ -179,7 +178,7 @@ module IMP
     \implies{#R}(
       \not{#R}(
         #occursFree{#R}(
-          HOLE:S,
+          #variable{}("HOLE", #S:#Sort{}),
           asgn{}(
             ID:Id{},
             app{S,AExp{}}(
@@ -187,7 +186,7 @@ module IMP
               T:S)))),
       #provable{#R}(
         \equals{Stmt{},R}(
-          divAExp{}(
+          asgn{}(
             ID:Id{},
             app{S,AExp{}}(
               #C:#Pattern{},
@@ -209,7 +208,7 @@ module IMP
     \implies{#R}(
       \not{#R}(
         #occursFree{#R}(
-          HOLE:S,
+          #variable{}("HOLE", #S:#Sort{}),
           if{}(
             app{S,BExp{}}(
               #C:#Pattern{},
@@ -244,7 +243,7 @@ module IMP
     \implies{#R}(
       \not{#R}(
         #occursFree{#R}(
-          HOLE:S,
+          #variable{}("HOLE", #S:#Sort{}),
           seq{}(
             app{S,Stmt{}}(
               #C:#Pattern{},
@@ -282,12 +281,14 @@ module IMP
 
   sort TopCell{} []
 
+  symbol top{}(KCell{}, StateCell{}) : TopCell{} []
+
   symbol topcell{}(KCell{}, StateCell{}) : TopCell{} [#strict{}("topcell", one{}()), #strict{}("topcell", two{}())]
 
   symbol krun{}(Pgm{}) : TopCell{} []
 
   axiom{R}
-    \equals{Top{},R}(
+    \equals{TopCell{},R}(
       krun{}(P:Pgm{}),
       top{}(
         kcell{}(P:Pgm{}),
@@ -305,8 +306,8 @@ module IMP
         LEFT:S,
         next{S}(RIGHT:S))) []
 
-  axiom{S,R}
-    rewrites{S,R}(
+  axiom{S}
+    rewrites{S}(
       app{Map{Id{},Int{}},S}(
         app{AExp{}, Ctxt{Map{Id{},Int{}}, S}}(
           #C:#Pattern{},
