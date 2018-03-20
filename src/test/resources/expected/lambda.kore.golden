@@ -1,1 +1,1 @@
-Parse error: Error in module 'LAMBDA' -> axiom declaration -> \equals -> symbol or alias '#isExp' -> symbol or alias 'lambda': Expected 2 operands, but got 1..
+Parse error: Error in module 'LAMBDA' -> axiom declaration -> \implies -> symbol or alias '#provable' -> \equals -> symbol or alias '#substitute' -> variable 'X': Expecting meta sort '#Variable{}' but got object sort 'Exp{}'..
