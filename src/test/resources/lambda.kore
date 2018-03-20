@@ -41,8 +41,8 @@ module LAMBDA
       #isExp{#S}(
         lambda{}(
           #variableToPattern{}(
-            #variable{}(#NAME:#String{},#SORT:#Sort{}),
-            #E:#Pattern{}))),
+            #variable{}(#NAME:#String{},#SORT:#Sort{})),
+            #E:#Pattern{})),
       \and{#S}(
         \equals{#Sort{},#S}(#SORT:#Sort{}, #`Exp{}()),
         #isExp{#S}(#E:#Pattern{}))) []
