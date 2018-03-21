@@ -69,15 +69,15 @@ type MetaModule = Module MetaSentence CommonMetaPattern
 -- |'MetaDefinition' is the 'Meta'-only version of 'Definition'.
 type MetaDefinition = Definition MetaSentence CommonMetaPattern
 
-groundHead :: Id a -> SymbolOrAlias a
+groundHead :: String -> SymbolOrAlias a
 groundHead ctor = SymbolOrAlias
-    { symbolOrAliasConstructor = ctor
+    { symbolOrAliasConstructor = Id ctor
     , symbolOrAliasParams = []
     }
 
-groundSymbol :: Id a -> Symbol a
+groundSymbol :: String -> Symbol a
 groundSymbol ctor = Symbol
-    { symbolConstructor = ctor
+    { symbolConstructor = Id ctor
     , symbolParams = []
     }
 
@@ -91,35 +91,41 @@ constant :: SymbolOrAlias a -> Pattern a v p
 constant patternHead = apply patternHead []
 
 nilSortListHead :: SymbolOrAlias Meta
-nilSortListHead = groundHead (Id "#nilSortList")
+nilSortListHead = groundHead "#nilSortList"
 
 consSortListHead :: SymbolOrAlias Meta
-consSortListHead = groundHead (Id "#consSortList")
+consSortListHead = groundHead "#consSortList"
 
 nilSortListMetaPattern :: MetaMLPattern v
 nilSortListMetaPattern = Fix $ constant nilSortListHead
 
 nilPatternListHead :: SymbolOrAlias Meta
-nilPatternListHead = groundHead (Id "#nilPatternList")
+nilPatternListHead = groundHead "#nilPatternList"
 
 consPatternListHead :: SymbolOrAlias Meta
-consPatternListHead = groundHead (Id "#consPatternList")
+consPatternListHead = groundHead "#consPatternList"
 
 nilPatternListMetaPattern :: MetaMLPattern v
 nilPatternListMetaPattern = Fix $ constant nilPatternListHead
 
 variableHead :: SymbolOrAlias Meta
-variableHead = groundHead (Id "#variable")
+variableHead = groundHead "#variable"
 
 variableAsPatternHead :: SymbolOrAlias Meta
-variableAsPatternHead = groundHead (Id "#variableAsPattern")
+variableAsPatternHead = groundHead "#variableAsPattern"
 
 metaMLPatternHead :: MLPatternType -> SymbolOrAlias Meta
-metaMLPatternHead pt = groundHead (Id ('#' : '\\' : patternString pt))
+metaMLPatternHead pt = groundHead ('#' : '\\' : patternString pt)
 
 sortDeclaredHead :: Sort Meta -> SymbolOrAlias Meta
 sortDeclaredHead param = SymbolOrAlias
     { symbolOrAliasConstructor = Id "#sortDeclared"
+    , symbolOrAliasParams = [param]
+    }
+
+provableHead :: Sort Meta -> SymbolOrAlias Meta
+provableHead param = SymbolOrAlias
+    { symbolOrAliasConstructor = Id "#provable"
     , symbolOrAliasParams = [param]
     }
 
@@ -136,13 +142,13 @@ symbolDeclaredHead param = SymbolOrAlias
     }
 
 sortHead :: SymbolOrAlias Meta
-sortHead = groundHead (Id "#sort")
+sortHead = groundHead "#sort"
 
 symbolHead :: SymbolOrAlias Meta
-symbolHead = groundHead (Id "#symbol")
+symbolHead = groundHead "#symbol"
 
 applicationHead :: SymbolOrAlias Meta
-applicationHead = groundHead (Id "#application")
+applicationHead = groundHead "#application"
 
 type CommonMetaPattern = MetaMLPattern Variable
 type PatternMetaType = Pattern Meta Variable CommonMetaPattern
