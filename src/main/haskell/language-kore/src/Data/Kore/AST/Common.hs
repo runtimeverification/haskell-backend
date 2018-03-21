@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
+{-# LANGUAGE KindSignatures         #-}
 {-# LANGUAGE StandaloneDeriving     #-}
 {-|
 Module      : Data.Kore.AST.Common
@@ -641,7 +642,7 @@ deriving instance Functor (Pattern level variable)
 deriving instance Foldable (Pattern level variable)
 deriving instance Traversable (Pattern level variable)
 
-newtype Attributes pat = Attributes { getAttributes :: [pat] }
+newtype Attributes pat (variable :: * -> *) = Attributes { getAttributes :: [pat variable] }
     deriving (Eq, Show)
 
 {-|'SentenceAlias' corresponds to the @object-alias-declaration@ and
@@ -651,11 +652,11 @@ Section 9.1.6 (Declaration and Definitions).
 The 'level' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
-data SentenceAlias pat level = SentenceAlias
+data SentenceAlias level pat variable = SentenceAlias
     { sentenceAliasAlias      :: !(Alias level)
     , sentenceAliasSorts      :: ![Sort level]
     , sentenceAliasResultSort :: !(Sort level)
-    , sentenceAliasAttributes :: !(Attributes pat)
+    , sentenceAliasAttributes :: !(Attributes pat variable)
     }
     deriving (Eq, Show, Typeable)
 
@@ -666,11 +667,11 @@ Section 9.1.6 (Declaration and Definitions).
 The 'level' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
-data SentenceSymbol pat level = SentenceSymbol
+data SentenceSymbol level pat variable = SentenceSymbol
     { sentenceSymbolSymbol     :: !(Symbol level)
     , sentenceSymbolSorts      :: ![Sort level]
     , sentenceSymbolResultSort :: !(Sort level)
-    , sentenceSymbolAttributes :: !(Attributes pat)
+    , sentenceSymbolAttributes :: !(Attributes pat variable)
     }
     deriving (Eq, Show, Typeable)
 
@@ -683,31 +684,64 @@ newtype ModuleName = ModuleName { getModuleName :: String }
 {-|'SentenceImport' corresponds to the @import-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
-data SentenceImport pat = SentenceImport
+data SentenceImport pat variable = SentenceImport
     { sentenceImportModuleName :: !ModuleName
-    , sentenceImportAttributes :: !(Attributes pat)
+    , sentenceImportAttributes :: !(Attributes pat variable)
     }
     deriving (Eq, Show, Typeable)
 
 {-|'SentenceSort' corresponds to the @sort-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
-data SentenceSort pat level = SentenceSort
+data SentenceSort level pat variable = SentenceSort
     { sentenceSortName       :: !(Id level)
     , sentenceSortParameters :: ![SortVariable level]
-    , sentenceSortAttributes :: !(Attributes pat)
+    , sentenceSortAttributes :: !(Attributes pat variable)
     }
     deriving (Eq, Show)
 
 {-|'SentenceAxiom' corresponds to the @axiom-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
-data SentenceAxiom sortParam pat = SentenceAxiom
+data SentenceAxiom sortParam pat variable = SentenceAxiom
     { sentenceAxiomParameters :: ![sortParam]
-    , sentenceAxiomPattern    :: !pat
-    , sentenceAxiomAttributes :: !(Attributes pat)
+    , sentenceAxiomPattern    :: !(pat variable)
+    , sentenceAxiomAttributes :: !(Attributes pat variable)
     }
     deriving (Eq, Show)
+
+{-|The 'Sentence' type corresponds to the @declaration@ syntactic category
+from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
+
+The @symbol-declaration@ and @alias-declaration@ categories were also merged
+into 'Sentence', with distinct constructors for the @Meta@ and @Object@
+variants.
+-}
+data Sentence level sortParam pat variable where
+    SentenceAliasSentence
+        :: !(SentenceAlias level pat variable)
+        -> Sentence level sortParam pat variable
+    SentenceSymbolSentence
+        :: !(SentenceSymbol level pat variable)
+        -> Sentence level sortParam pat variable
+    SentenceImportSentence
+        :: !(SentenceImport pat variable)
+        -> Sentence Meta sortParam pat variable
+    SentenceAxiomSentence
+        :: !(SentenceAxiom sortParam pat variable)
+        -> Sentence Meta sortParam pat variable
+    SentenceSortSentence
+        :: !(SentenceSort Object pat variable)
+        -> Sentence Object sortParam pat variable
+
+deriving instance
+    ( Eq (pat variable)
+    , Eq sortParam
+    ) => Eq (Sentence level sortParam pat variable)
+deriving instance
+    ( Show (pat variable)
+    , Show sortParam
+    ) => Show (Sentence level sortParam pat variable)
 
 {-|A 'Module' consists of a 'ModuleName' a list of 'Sentence's and some
 'Attributes'.
@@ -716,10 +750,10 @@ They correspond to the second, third and forth non-terminals of the @definition@
 syntactic category from the Semantics of K, Section 9.1.6
 (Declaration and Definitions).
 -}
-data Module sentence pat = Module
+data Module sentence sortParam pat variable = Module
     { moduleName       :: !ModuleName
-    , moduleSentences  :: ![sentence]
-    , moduleAttributes :: !(Attributes pat)
+    , moduleSentences  :: ![sentence sortParam pat variable]
+    , moduleAttributes :: !(Attributes pat variable)
     }
     deriving (Eq, Show)
 
@@ -732,27 +766,27 @@ syntactic category from the Semantics of K, Section 9.1.6
 'definitionAttributes' corresponds to the first non-terminal of @definition@,
 while the remaining three are grouped into 'definitionModules'.
 -}
-data Definition sentence pat = Definition
-    { definitionAttributes :: !(Attributes pat)
-    , definitionModules    :: ![Module sentence pat]
+data Definition sentence sortParam pat variable = Definition
+    { definitionAttributes :: !(Attributes pat variable)
+    , definitionModules    :: ![Module sentence sortParam pat variable]
     }
     deriving (Eq, Show)
 
 class SentenceSymbolOrAlias sentence where
     getSentenceSymbolOrAliasConstructor
-        :: sentence pat level -> Id level
+        :: sentence level pat variable -> Id level
     getSentenceSymbolOrAliasSortParams
-        :: sentence pat level -> [SortVariable level]
+        :: sentence level pat variable -> [SortVariable level]
     getSentenceSymbolOrAliasArgumentSorts
-        :: sentence pat level -> [Sort level]
+        :: sentence level pat variable -> [Sort level]
     getSentenceSymbolOrAliasResultSort
-        :: sentence pat level -> Sort level
+        :: sentence level pat variable -> Sort level
     getSentenceSymbolOrAliasAttributes
-        :: sentence pat level -> Attributes pat
+        :: sentence level pat variable -> Attributes pat variable
     getSentenceSymbolOrAliasSentenceName
-        :: sentence pat level -> String
+        :: sentence level pat variable -> String
     getSentenceSymbolOrAliasHead
-        :: sentence pat level -> [Sort level] -> SymbolOrAlias level
+        :: sentence level pat variable -> [Sort level] -> SymbolOrAlias level
     getSentenceSymbolOrAliasHead sentence sortParameters = SymbolOrAlias
         { symbolOrAliasConstructor =
             getSentenceSymbolOrAliasConstructor sentence

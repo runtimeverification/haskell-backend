@@ -30,7 +30,7 @@ can be applied to patterns.
 -}
 applyPS
     :: SentenceSymbolOrAlias s
-    => s CommonMetaPattern Meta
+    => s Meta SentenceMetaPattern Variable
     -> [Sort Meta]
     -> [MetaPatternStub]
     -> MetaPatternStub
@@ -60,12 +60,14 @@ can be applied to patterns.
 -}
 applyS
     :: SentenceSymbolOrAlias s
-    => s CommonMetaPattern Meta -> [MetaPatternStub] -> MetaPatternStub
+    => s Meta SentenceMetaPattern Variable
+    -> [MetaPatternStub]
+    -> MetaPatternStub
 applyS sentence = applyPS sentence []
 
 isImplicitHead
     :: SentenceSymbolOrAlias s
-    => s CommonMetaPattern Meta
+    => s Meta SentenceMetaPattern Variable
     -> SymbolOrAlias Meta
     -> Bool
 isImplicitHead sentence = (== getSentenceSymbolOrAliasHead sentence [])

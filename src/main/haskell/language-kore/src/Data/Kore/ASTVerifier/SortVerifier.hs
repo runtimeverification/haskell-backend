@@ -69,4 +69,5 @@ verifySortMatchesDeclaration
     verifySuccess
   where
     actualSortCount = length (sortActualSorts sort)
-    declaredSortCount = length (sentenceSortParameters sortDescription)
+    declaredSortCount =
+        length (sentenceSortParameters (getSortDescription sortDescription))

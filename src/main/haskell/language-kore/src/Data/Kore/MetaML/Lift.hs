@@ -177,7 +177,7 @@ liftObjectReducer verb p = case p of
 
 liftAttributes :: KoreAttributes -> MetaAttributes
 liftAttributes (Attributes as) =
-    Attributes (map liftToMeta as)
+    Attributes (map (SentenceMetaPattern . liftToMeta) as)
 
 -- Section 9.2.4 Lift Sort Declarations
 liftSortDeclaration
@@ -205,23 +205,25 @@ liftSortDeclaration ss =
     helperFunctionAxiom = SentenceAxiom
         { sentenceAxiomAttributes = Attributes []
         , sentenceAxiomParameters = [sortParam]
-        , sentenceAxiomPattern = Fix $ EqualsPattern Equals
-            { equalsOperandSort = sortMetaSort
-            , equalsResultSort = sortParamAsSort
-            , equalsFirst = verbosityLiftToMeta False actualSort
-            , equalsSecond = verbosityLiftToMeta True actualSort
-            }
+        , sentenceAxiomPattern = SentenceMetaPattern . Fix . EqualsPattern
+            $ Equals
+                { equalsOperandSort = sortMetaSort
+                , equalsResultSort = sortParamAsSort
+                , equalsFirst = verbosityLiftToMeta False actualSort
+                , equalsSecond = verbosityLiftToMeta True actualSort
+                }
         }
     declaredAxiom = SentenceAxiom
         { sentenceAxiomAttributes = Attributes []
         , sentenceAxiomParameters = [sortParam]
-        , sentenceAxiomPattern = Fix $ ImpliesPattern Implies
-            { impliesSort = SortVariableSort sortParam
-            , impliesFirst = Fix $ apply (sortsDeclaredHead sortParamAsSort)
-                [verbosityLiftToMeta False sortParametersAsSorts]
-            , impliesSecond = Fix $ apply (sortDeclaredHead sortParamAsSort)
-                [verbosityLiftToMeta False actualSort]
-            }
+        , sentenceAxiomPattern = SentenceMetaPattern . Fix . ImpliesPattern
+            $ Implies
+                { impliesSort = SortVariableSort sortParam
+                , impliesFirst = Fix $ apply (sortsDeclaredHead sortParamAsSort)
+                    [verbosityLiftToMeta False sortParametersAsSorts]
+                , impliesSecond = Fix $ apply (sortDeclaredHead sortParamAsSort)
+                    [verbosityLiftToMeta False actualSort]
+                }
         }
 
 -- Section 9.2.6 Lift Object Symbol Declarations
@@ -254,30 +256,32 @@ liftSymbolDeclaration sd =
     helperFunctionAxiom = SentenceAxiom
         { sentenceAxiomAttributes = Attributes []
         , sentenceAxiomParameters = [sortParam]
-        , sentenceAxiomPattern = Fix $ EqualsPattern Equals
-            { equalsOperandSort = patternMetaSort
-            , equalsResultSort = sortParamAsSort
-            , equalsFirst = Fix $ apply (groundHead liftedSymbolId)
-                (map liftToMeta sortParametersAsSorts ++ phis)
-            , equalsSecond = Fix $ apply applicationHead
-                [ sigma, liftToMeta phis]
-            }
+        , sentenceAxiomPattern = SentenceMetaPattern . Fix . EqualsPattern
+            $ Equals
+                { equalsOperandSort = patternMetaSort
+                , equalsResultSort = sortParamAsSort
+                , equalsFirst = Fix $ apply (groundHead liftedSymbolId)
+                    (map liftToMeta sortParametersAsSorts ++ phis)
+                , equalsSecond = Fix $ apply applicationHead
+                    [ sigma, liftToMeta phis]
+                }
         }
     declaredAxiom = SentenceAxiom
         { sentenceAxiomAttributes = Attributes []
         , sentenceAxiomParameters = [sortParam]
-        , sentenceAxiomPattern = Fix $ ImpliesPattern Implies
-            { impliesSort = SortVariableSort sortParam
-            , impliesFirst = Fix $ apply (sortsDeclaredHead sortParamAsSort)
-                [verbosityLiftToMeta False sortParametersAsSorts]
-            , impliesSecond = Fix $ apply (symbolDeclaredHead sortParamAsSort)
-                [sigma]
-            }
+        , sentenceAxiomPattern = SentenceMetaPattern . Fix . ImpliesPattern
+            $ Implies
+                { impliesSort = SortVariableSort sortParam
+                , impliesFirst = Fix $ apply (sortsDeclaredHead sortParamAsSort)
+                    [verbosityLiftToMeta False sortParametersAsSorts]
+                , impliesSecond = Fix $ apply (symbolDeclaredHead sortParamAsSort)
+                    [sigma]
+                }
         }
 
 symbolOrAliasLiftedDeclaration
     :: SentenceSymbolOrAlias sa
-    => sa attributes Object
+    => sa Object pat variable
     -> MetaSentenceSymbol
 symbolOrAliasLiftedDeclaration sa = symbolDeclaration
   where
@@ -302,34 +306,34 @@ liftAliasDeclaration = symbolOrAliasLiftedDeclaration
 {-|'liftSentence' transforms a 'Sentence' in one or more 'MetaSentences'
 encoding it.
 -}
-liftSentence :: Sentence -> [MetaSentence]
-liftSentence (MetaSentenceAliasSentence msa) =
-    [ AliasMetaSentence msa
+liftSentence :: KoreSentence -> [MetaSentence]
+liftSentence (MetaSentence (SentenceAliasSentence msa)) =
+    [ SentenceAliasSentence msa
         { sentenceAliasAttributes = liftAttributes (sentenceAliasAttributes msa)
         }
     ]
-liftSentence (ObjectSentenceAliasSentence osa) =
-    [ SymbolMetaSentence (liftAliasDeclaration osa)]
-liftSentence (MetaSentenceSymbolSentence mss) =
-    [ SymbolMetaSentence mss
+liftSentence (ObjectSentence (SentenceAliasSentence osa)) =
+    [ SentenceSymbolSentence (liftAliasDeclaration osa)]
+liftSentence (MetaSentence (SentenceSymbolSentence mss)) =
+    [ SentenceSymbolSentence mss
         { sentenceSymbolAttributes =
             liftAttributes (sentenceSymbolAttributes mss)
         }
     ]
-liftSentence (ObjectSentenceSymbolSentence oss) =
+liftSentence (ObjectSentence (SentenceSymbolSentence oss)) =
     let (mss, axiom1, axiom2) = liftSymbolDeclaration oss in
-        [ SymbolMetaSentence mss
-        , AxiomMetaSentence axiom1
-        , AxiomMetaSentence axiom2
+        [ SentenceSymbolSentence mss
+        , SentenceAxiomSentence axiom1
+        , SentenceAxiomSentence axiom2
         ]
-liftSentence (SentenceSortSentence ss) =
+liftSentence (ObjectSentence (SentenceSortSentence ss)) =
     let (mss, axiom1, axiom2) = liftSortDeclaration ss in
-        [ SymbolMetaSentence mss
-        , AxiomMetaSentence axiom1
-        , AxiomMetaSentence axiom2
+        [ SentenceSymbolSentence mss
+        , SentenceAxiomSentence axiom1
+        , SentenceAxiomSentence axiom2
         ]
-liftSentence (SentenceAxiomSentence as) =
-    [ AxiomMetaSentence SentenceAxiom
+liftSentence (MetaSentence (SentenceAxiomSentence as)) =
+    [ SentenceAxiomSentence SentenceAxiom
         { sentenceAxiomParameters = metaParameters
         , sentenceAxiomAttributes = liftAttributes (sentenceAxiomAttributes as)
         , sentenceAxiomPattern =
@@ -343,9 +347,9 @@ liftSentence (SentenceAxiomSentence as) =
         [sv | MetaSortVariable sv <- sentenceAxiomParameters as]
     objectParameters =
         [sv | ObjectSortVariable sv <- sentenceAxiomParameters as]
-    liftedPattern = liftToMeta (sentenceAxiomPattern as)
-liftSentence (SentenceImportSentence is) =
-    [ ImportMetaSentence is
+    liftedPattern = SentenceMetaPattern (liftToMeta (sentenceAxiomPattern as))
+liftSentence (MetaSentence (SentenceImportSentence is)) =
+    [ SentenceImportSentence is
         { sentenceImportAttributes =
             liftAttributes (sentenceImportAttributes is)
         }

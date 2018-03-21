@@ -44,7 +44,8 @@ parameterizedAxiom
   =
     SentenceAxiom
         { sentenceAxiomParameters = parameters
-        , sentenceAxiomPattern = quantifyFreeVariables s (Fix p)
+        , sentenceAxiomPattern =
+            SentenceMetaPattern (quantifyFreeVariables s (Fix p))
         , sentenceAxiomAttributes = Attributes []
         }
 

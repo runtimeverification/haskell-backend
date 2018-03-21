@@ -104,9 +104,9 @@ writeFieldNewLine fieldName field object = do
         (betweenLines >> prettyPrint MaySkipParentheses (field object))
 
 writeAttributesField
-    :: (PrinterOutput w m, PrettyPrint pat)
+    :: (PrinterOutput w m, PrettyPrint (pat variable))
     => String
-    -> Attributes pat
+    -> Attributes pat variable
     -> m ()
 writeAttributesField fieldName attributes@(Attributes as) = do
     write fieldName
@@ -511,15 +511,17 @@ instance
     prettyPrint flags (VariablePattern p)      =
         writeOneFieldStruct flags "VariablePattern" p
 
-instance PrettyPrint pat => PrettyPrint (Attributes pat) where
+instance PrettyPrint (pat variable)
+    => PrettyPrint (Attributes pat variable)
+  where
     prettyPrint flags (Attributes a)
         | null a    = write "Attributes []"
         | otherwise = writeOneFieldStruct flags "Attributes" a
 
 instance
     ( MetaOrObject level
-    , PrettyPrint pat
-    ) => PrettyPrint (SentenceAlias pat level)
+    , PrettyPrint (pat variable)
+    ) => PrettyPrint (SentenceAlias level pat variable)
   where
     prettyPrint _ sa@(SentenceAlias _ _ _ _) =
         writeStructure
@@ -534,8 +536,8 @@ instance
 
 instance
     ( MetaOrObject level
-    , PrettyPrint pat
-    ) => PrettyPrint (SentenceSymbol pat level)
+    , PrettyPrint (pat variable)
+    ) => PrettyPrint (SentenceSymbol level pat variable)
   where
     prettyPrint _ sa@(SentenceSymbol _ _ _ _) =
         writeStructure
@@ -548,7 +550,10 @@ instance
                 "sentenceSymbolAttributes" (sentenceSymbolAttributes sa)
             ]
 
-instance PrettyPrint pat => PrettyPrint (SentenceImport pat) where
+instance
+    (PrettyPrint (pat variable)
+    ) => PrettyPrint (SentenceImport pat variable)
+  where
     prettyPrint _ sa@(SentenceImport _ _) =
         writeStructure
             "SentenceImport"
@@ -560,8 +565,8 @@ instance PrettyPrint pat => PrettyPrint (SentenceImport pat) where
 
 instance
     ( PrettyPrint sortParam
-    , PrettyPrint pat
-    ) => PrettyPrint (SentenceAxiom sortParam pat)
+    , PrettyPrint (pat variable)
+    ) => PrettyPrint (SentenceAxiom sortParam pat variable)
   where
     prettyPrint _ sa@(SentenceAxiom _ _ _) =
         writeStructure
@@ -576,8 +581,8 @@ instance
 
 instance
     ( MetaOrObject level
-    , PrettyPrint pat
-    ) => PrettyPrint (SentenceSort pat level)
+    , PrettyPrint (pat variable)
+    ) => PrettyPrint (SentenceSort level pat variable)
   where
     prettyPrint _ sa@(SentenceSort _ _ _) =
         writeStructure
@@ -589,15 +594,16 @@ instance
                 "sentenceSortAttributes" (sentenceSortAttributes sa)
             ]
 
-instance PrettyPrint Sentence where
-    prettyPrint flags (MetaSentenceAliasSentence s)    =
-        writeOneFieldStruct flags "MetaSentenceAliasSentence" s
-    prettyPrint flags (ObjectSentenceAliasSentence s)  =
-        writeOneFieldStruct flags "ObjectSentenceAliasSentence" s
-    prettyPrint flags (MetaSentenceSymbolSentence s)   =
-        writeOneFieldStruct flags "MetaSentenceSymbolSentence" s
-    prettyPrint flags (ObjectSentenceSymbolSentence s) =
-        writeOneFieldStruct flags "ObjectSentenceSymbolSentence" s
+instance
+    ( MetaOrObject level
+    , PrettyPrint sortParam
+    , PrettyPrint (pat variable)
+    ) => PrettyPrint (Sentence level sortParam pat variable)
+  where
+    prettyPrint flags (SentenceAliasSentence s)    =
+        writeOneFieldStruct flags "SentenceAliasSentence" s
+    prettyPrint flags (SentenceSymbolSentence s)   =
+        writeOneFieldStruct flags "SentenceSymbolSentence" s
     prettyPrint flags (SentenceImportSentence s)        =
         writeOneFieldStruct flags "SentenceImportSentence" s
     prettyPrint flags (SentenceAxiomSentence s)        =
@@ -606,9 +612,10 @@ instance PrettyPrint Sentence where
         writeOneFieldStruct flags "SentenceSortSentence" s
 
 instance
-    (PrettyPrint sentence
-    , PrettyPrint pat
-    ) => PrettyPrint (Module sentence pat)
+    (PrettyPrint (sentence sortParam pat variable)
+    , PrettyPrint sortParam
+    , PrettyPrint (pat variable)
+    ) => PrettyPrint (Module sentence sortParam pat variable)
   where
     prettyPrint _ m@(Module _ _ _) =
         writeStructure
@@ -619,9 +626,10 @@ instance
             ]
 
 instance
-    (PrettyPrint sentence
-    , PrettyPrint pat
-    ) => PrettyPrint (Definition sentence pat)
+    (PrettyPrint (sentence sortParam pat variable)
+    , PrettyPrint sortParam
+    , PrettyPrint (pat variable)
+    ) => PrettyPrint (Definition sentence sortParam pat variable)
   where
     prettyPrint _ d@(Definition _ _) =
         writeStructure

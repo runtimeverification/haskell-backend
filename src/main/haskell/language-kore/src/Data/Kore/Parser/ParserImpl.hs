@@ -784,7 +784,7 @@ BNF definition:
 
 Always starts with @[@.
 -}
-attributesParser :: Parser pat -> Parser (Attributes pat)
+attributesParser :: Parser (pat variable) -> Parser (Attributes pat variable)
 attributesParser patParser =
     Attributes <$> inSquareBracketsListParser patParser
 
@@ -799,7 +799,9 @@ koreDefinitionParser :: Parser KoreDefinition
 koreDefinitionParser = definitionParser koreSentenceParser unifiedPatternParser
 
 definitionParser
-    :: Parser sentence -> Parser pat -> Parser (Definition sentence pat)
+    :: Parser (sentence sortParam pat variable)
+    -> Parser (pat variable)
+    -> Parser (Definition sentence sortParam pat variable)
 definitionParser sentenceParser patParser =
     pure Definition
         <*> attributesParser patParser
@@ -813,7 +815,9 @@ BNF definition fragment:
 @
 -}
 moduleParser
-    :: Parser sentence -> Parser pat -> Parser (Module sentence pat)
+    :: Parser (sentence sortParam pat variable)
+    -> Parser (pat variable)
+    -> Parser (Module sentence sortParam pat variable)
 moduleParser sentenceParser patParser = do
     mlLexemeParser "module"
     name <- moduleNameParser
@@ -853,7 +857,7 @@ BNF definition fragments:
 ⟨meta-alias-declaration⟩ ::= ‘alias’ ...
 @
 -}
-koreSentenceParser :: Parser Sentence
+koreSentenceParser :: Parser KoreSentence
 koreSentenceParser = keywordBasedParsers
     [ ( "alias", sentenceConstructorRemainderParser AliasSentenceType )
     , ( "axiom", axiomSentenceRemainderParser )
@@ -865,30 +869,30 @@ koreSentenceParser = keywordBasedParsers
     sentenceConstructorRemainderParser sentenceType = do
         c <- ParserUtils.peekChar'
         case (c, sentenceType) of
-            ('#', AliasSentenceType) -> MetaSentenceAliasSentence <$>
+            ('#', AliasSentenceType) -> MetaSentence <$>
                 aliasSymbolSentenceRemainderParser
                     Meta
                     (aliasParser Meta)
                     unifiedPatternParser
-                    SentenceAlias
-            ('#', SymbolSentenceType) -> MetaSentenceSymbolSentence <$>
+                    (\a b c d -> SentenceAliasSentence (SentenceAlias a b c d))
+            ('#', SymbolSentenceType) -> MetaSentence <$>
                 aliasSymbolSentenceRemainderParser
                     Meta
                     (symbolParser Meta)
                     unifiedPatternParser
-                    SentenceSymbol
-            (_, AliasSentenceType) -> ObjectSentenceAliasSentence <$>
+                    (\a b c d -> SentenceSymbolSentence (SentenceSymbol a b c d))
+            (_, AliasSentenceType) -> ObjectSentence <$>
                 aliasSymbolSentenceRemainderParser
                     Object
                     (aliasParser Object)
                     unifiedPatternParser
-                    SentenceAlias
-            (_, SymbolSentenceType) -> ObjectSentenceSymbolSentence <$>
+                    (\a b c d -> SentenceAliasSentence (SentenceAlias a b c d))
+            (_, SymbolSentenceType) -> ObjectSentence <$>
                 aliasSymbolSentenceRemainderParser
                     Object
                     (symbolParser Object)
                     unifiedPatternParser
-                    SentenceSymbol
+                    (\a b c d -> SentenceSymbolSentence (SentenceSymbol a b c d))
 
 {-|'aliasSymbolSentenceRemainderParser' parses the part after the starting
 keyword of an alias or symbol declaration using the given head parser
@@ -907,8 +911,8 @@ aliasSymbolSentenceRemainderParser
     :: MetaOrObject level
     => level  -- ^ Distinguishes between the meta and non-meta elements.
     -> Parser (m level)  -- Head parser.
-    -> Parser pat -- attributes pattern parser
-    -> (m level -> [Sort level] -> Sort level -> Attributes pat -> as level)
+    -> Parser (pat variable) -- attributes pattern parser
+    -> (m level -> [Sort level] -> Sort level -> Attributes pat variable -> as level)
     -- ^ Element constructor.
     -> Parser (as level)
 aliasSymbolSentenceRemainderParser  x aliasSymbolParser patParser constructor
@@ -929,8 +933,9 @@ BNF example:
 ⟨import-declaration⟩ ::= ... ⟨module-name⟩ ⟨attribute⟩
 @
 -}
-importSentenceRemainderParser :: Parser Sentence
-importSentenceRemainderParser = SentenceImportSentence <$>
+importSentenceRemainderParser :: Parser KoreSentence
+importSentenceRemainderParser =
+    MetaSentence . SentenceImportSentence <$>
     ( pure SentenceImport
         <*> moduleNameParser
         <*> attributesParser unifiedPatternParser
@@ -947,8 +952,8 @@ BNF example:
 
 Always starts with @{@.
 -}
-axiomSentenceRemainderParser :: Parser Sentence
-axiomSentenceRemainderParser = SentenceAxiomSentence <$>
+axiomSentenceRemainderParser :: Parser KoreSentence
+axiomSentenceRemainderParser = MetaSentence . SentenceAxiomSentence <$>
     ( pure SentenceAxiom
         <*> inCurlyBracesListParser unifiedSortVariableParser
         <*> unifiedPatternParser
@@ -966,8 +971,8 @@ BNF example:
 
 Always starts with @{@.
 -}
-sortSentenceRemainderParser :: Parser Sentence
-sortSentenceRemainderParser = SentenceSortSentence <$>
+sortSentenceRemainderParser :: Parser KoreSentence
+sortSentenceRemainderParser = ObjectSentence . SentenceSortSentence <$>
     ( pure SentenceSort
         <*> idParser Object
         <*> inCurlyBracesListParser (sortVariableParser Object)

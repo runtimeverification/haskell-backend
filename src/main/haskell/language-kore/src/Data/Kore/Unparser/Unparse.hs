@@ -242,10 +242,12 @@ instance (Unparse (UnifiedVariable v), Unparse p, Unparse (v level))
     unparse (TopPattern p)           = unparse p
     unparse (VariablePattern p)      = unparse p
 
-instance Unparse pat => Unparse (Attributes pat) where
+instance Unparse (pat variable) => Unparse (Attributes pat variable) where
     unparse = inSquareBrackets . unparse . getAttributes
 
-instance Unparse pat => Unparse (SentenceAlias pat level) where
+instance
+    Unparse (pat variable) => Unparse (SentenceAlias level pat variable)
+  where
     unparse sa = do
         write "alias"
         write " "
@@ -255,7 +257,9 @@ instance Unparse pat => Unparse (SentenceAlias pat level) where
         unparse (sentenceAliasResultSort sa)
         unparse (sentenceAliasAttributes sa)
 
-instance Unparse pat => Unparse (SentenceSymbol pat level) where
+instance
+    Unparse (pat variable) => Unparse (SentenceSymbol level pat variable)
+  where
     unparse sa = do
         write "symbol"
         write " "
@@ -265,7 +269,7 @@ instance Unparse pat => Unparse (SentenceSymbol pat level) where
         unparse (sentenceSymbolResultSort sa)
         unparse (sentenceSymbolAttributes sa)
 
-instance Unparse pat => Unparse (SentenceImport pat) where
+instance Unparse (pat variable) => Unparse (SentenceImport pat variable) where
     unparse a = do
         write "import"
         write " "
@@ -274,8 +278,8 @@ instance Unparse pat => Unparse (SentenceImport pat) where
 
 instance
     ( Unparse param
-    , Unparse pat
-    ) => Unparse (SentenceAxiom param pat)
+    , Unparse (pat variable)
+    ) => Unparse (SentenceAxiom param pat variable)
   where
     unparse a = do
         write "axiom"
@@ -283,7 +287,9 @@ instance
         unparse (sentenceAxiomPattern a)
         unparse (sentenceAxiomAttributes a)
 
-instance Unparse pat => Unparse (SentenceSort pat level) where
+instance
+    Unparse (pat variable) => Unparse (SentenceSort level pat variable)
+  where
     unparse a = do
         write "sort"
         write " "
@@ -291,25 +297,20 @@ instance Unparse pat => Unparse (SentenceSort pat level) where
         inCurlyBraces (unparse (sentenceSortParameters a))
         unparse (sentenceSortAttributes a)
 
-instance Unparse Sentence where
-    unparse (MetaSentenceAliasSentence s)    = unparse s
-    unparse (ObjectSentenceAliasSentence s)  = unparse s
-    unparse (MetaSentenceSymbolSentence s)   = unparse s
-    unparse (ObjectSentenceSymbolSentence s) = unparse s
-    unparse (SentenceImportSentence s)       = unparse s
-    unparse (SentenceAxiomSentence s)        = unparse s
-    unparse (SentenceSortSentence s)         = unparse s
-
-instance Unparse MetaSentence where
-    unparse (AliasMetaSentence s)  = unparse s
-    unparse (SymbolMetaSentence s) = unparse s
-    unparse (ImportMetaSentence s) = unparse s
-    unparse (AxiomMetaSentence s)  = unparse s
+instance
+    ( Unparse sortParam
+    , Unparse (pat variable)
+    ) => Unparse (Sentence level sortParam pat variable) where
+    unparse (SentenceAliasSentence s)  = unparse s
+    unparse (SentenceSymbolSentence s) = unparse s
+    unparse (SentenceImportSentence s) = unparse s
+    unparse (SentenceAxiomSentence s)  = unparse s
+    unparse (SentenceSortSentence s)   = unparse s
 
 instance
-    ( Unparse sentence
-    , Unparse pat
-    ) => Unparse (Module sentence pat)
+    ( Unparse (sentence sortParam pat variable)
+    , Unparse (pat variable)
+    ) => Unparse (Module sentence sortParam pat variable)
   where
     unparse m = do
         write "module "
@@ -331,9 +332,9 @@ instance
         attributes = moduleAttributes m
 
 instance
-    ( Unparse sentence
-    , Unparse pat
-    ) => Unparse (Definition sentence pat)
+    ( Unparse (sentence sortParam pat variable)
+    , Unparse (pat variable)
+    ) => Unparse (Definition sentence sortParam pat variable)
   where
     unparse d = do
         unparse (definitionAttributes d)

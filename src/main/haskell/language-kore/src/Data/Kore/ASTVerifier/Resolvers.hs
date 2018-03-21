@@ -25,7 +25,8 @@ resolveMetaSort
     -> Id Meta
     -- ^ The ID of the sort.
     -> Either (Error VerifyError) (SortDescription Meta)
-resolveMetaSort = resolveSort indexedModuleMetaSortDescriptions
+resolveMetaSort =
+    resolveSort (Map.map SortDescription . indexedModuleMetaSortDescriptions)
 
 {-|'resolveObjectSort' resolves an object sort given its id. -}
 resolveObjectSort
@@ -34,7 +35,8 @@ resolveObjectSort
     -> Id Object
     -- ^ The ID of the sort.
     -> Either (Error VerifyError) (SortDescription Object)
-resolveObjectSort = resolveSort indexedModuleObjectSortDescriptions
+resolveObjectSort =
+    resolveSort (Map.map SortDescription . indexedModuleObjectSortDescriptions)
 
 {-|'resolveSort' resolves a sort given its id. -}
 resolveSort

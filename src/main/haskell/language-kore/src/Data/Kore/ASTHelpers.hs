@@ -17,7 +17,7 @@ pattern from the given sort parameters.
 symbolOrAliasSorts
     :: (SentenceSymbolOrAlias ssoa)
     => [Sort level]
-    -> ssoa pat level
+    -> ssoa level pat variable
     -> Either (Error b) (ApplicationSorts level)
 symbolOrAliasSorts params sentence = do
     variableToSort <-

@@ -198,70 +198,42 @@ type UnifiedPattern = FixedPattern Variable
 deriving instance Eq UnifiedPattern
 deriving instance Show UnifiedPattern
 
-type KoreAttributes = Attributes UnifiedPattern
+type KoreAttributes = Attributes FixedPattern Variable
 
-type KoreSentenceAlias = SentenceAlias UnifiedPattern
-type KoreSentenceSymbol = SentenceSymbol UnifiedPattern
-type KoreSentenceImport = SentenceImport UnifiedPattern
-type KoreSentenceAxiom = SentenceAxiom UnifiedSortVariable UnifiedPattern
-type KoreSentenceSort = SentenceSort UnifiedPattern Object
+type KoreSentenceAlias level = SentenceAlias level FixedPattern Variable
+type KoreSentenceSymbol level = SentenceSymbol level FixedPattern Variable
+type KoreSentenceImport = SentenceImport FixedPattern Variable
+type KoreSentenceAxiom = SentenceAxiom UnifiedSortVariable FixedPattern Variable
+type KoreSentenceSort = SentenceSort Object FixedPattern Variable
 
-{-|The 'Sentence' type corresponds to the @declaration@ syntactic category
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
+data UnifiedSentence sortParam pat variable
+    = MetaSentence (Sentence Meta sortParam pat variable)
+    | ObjectSentence (Sentence Object sortParam pat variable)
 
-The @symbol-declaration@ and @alias-declaration@ categories were also merged
-into 'Sentence', with distinct constructors for the @Meta@ and @Object@
-variants.
--}
-data Sentence
-    = MetaSentenceAliasSentence !(KoreSentenceAlias Meta)
-    | ObjectSentenceAliasSentence !(KoreSentenceAlias Object)
-    | MetaSentenceSymbolSentence !(KoreSentenceSymbol Meta)
-    | ObjectSentenceSymbolSentence !(KoreSentenceSymbol Object)
-    | SentenceImportSentence !KoreSentenceImport
-    | SentenceAxiomSentence !KoreSentenceAxiom
-    | SentenceSortSentence !KoreSentenceSort
-    deriving (Eq, Show)
+type KoreSentence = UnifiedSentence UnifiedSortVariable FixedPattern Variable
+type KoreModule =
+    Module UnifiedSentence UnifiedSortVariable FixedPattern Variable
 
-type KoreModule = Module Sentence UnifiedPattern
+type KoreDefinition =
+    Definition UnifiedSentence UnifiedSortVariable FixedPattern Variable
 
-type KoreDefinition = Definition Sentence UnifiedPattern
+instance AsSentence KoreSentence (KoreSentenceAlias Meta) where
+    asSentence = MetaSentence . SentenceAliasSentence
 
-asSentenceAliasSentence
-    :: MetaOrObject level => KoreSentenceAlias level -> Sentence
-asSentenceAliasSentence v =
-    applyMetaObjectFunction v MetaOrObjectTransformer
-        { objectTransformer = ObjectSentenceAliasSentence
-        , metaTransformer = MetaSentenceAliasSentence
-        }
+instance AsSentence KoreSentence (KoreSentenceAlias Object) where
+    asSentence = ObjectSentence . SentenceAliasSentence
 
-asSentenceSymbolSentence
-    :: MetaOrObject level => KoreSentenceSymbol level -> Sentence
-asSentenceSymbolSentence v =
-    applyMetaObjectFunction v MetaOrObjectTransformer
-        { objectTransformer = ObjectSentenceSymbolSentence
-        , metaTransformer = MetaSentenceSymbolSentence
-        }
+instance AsSentence KoreSentence (KoreSentenceSymbol Meta) where
+    asSentence = MetaSentence . SentenceSymbolSentence
 
-instance AsSentence Sentence (SentenceAlias UnifiedPattern Meta) where
-    asSentence = MetaSentenceAliasSentence
+instance AsSentence KoreSentence (KoreSentenceSymbol Object) where
+    asSentence = ObjectSentence . SentenceSymbolSentence
 
-instance AsSentence Sentence (SentenceAlias UnifiedPattern Object) where
-    asSentence = ObjectSentenceAliasSentence
+instance AsSentence KoreSentence KoreSentenceImport where
+    asSentence = MetaSentence . SentenceImportSentence
 
-instance AsSentence Sentence (SentenceSymbol UnifiedPattern Meta) where
-    asSentence = MetaSentenceSymbolSentence
+instance AsSentence KoreSentence KoreSentenceAxiom where
+    asSentence = MetaSentence . SentenceAxiomSentence
 
-instance AsSentence Sentence (SentenceSymbol UnifiedPattern Object) where
-    asSentence = ObjectSentenceSymbolSentence
-
-instance AsSentence Sentence (SentenceImport UnifiedPattern) where
-    asSentence = SentenceImportSentence
-
-instance AsSentence Sentence
-    (SentenceAxiom UnifiedSortVariable UnifiedPattern)
-  where
-    asSentence = SentenceAxiomSentence
-
-instance AsSentence Sentence (SentenceSort UnifiedPattern Object) where
-    asSentence = SentenceSortSentence
+instance AsSentence KoreSentence KoreSentenceSort where
+    asSentence = ObjectSentence . SentenceSortSentence

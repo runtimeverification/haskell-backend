@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 {-|
 Module      : Data.Kore.MetaML.MetaToKore
 Description : Functionality for viewing 'Meta'-only as unified Kore constructs.
@@ -14,36 +15,33 @@ The name of the functions defined below are self-explanatory. They link
 -}
 module Data.Kore.MetaML.MetaToKore where
 
-import           Data.Kore.AST.Common (Attributes (..), Definition (..),
-                                       Module (..), SentenceAlias (..),
-                                       SentenceAxiom (..), SentenceImport (..),
-                                       SentenceSymbol (..), asSentence)
+import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.MetaML.AST
 
 import           Data.Fix
 
-patternMetaToKore :: CommonMetaPattern -> UnifiedPattern
-patternMetaToKore = cata MetaPattern
+patternMetaToKore :: SentenceMetaPattern Variable -> UnifiedPattern
+patternMetaToKore = cata MetaPattern . getSentenceMetaPattern
 
 attributesMetaToKore :: MetaAttributes -> KoreAttributes
 attributesMetaToKore ma =
     Attributes (map patternMetaToKore (getAttributes ma))
 
-sentenceMetaToKore :: MetaSentence -> Sentence
-sentenceMetaToKore (AliasMetaSentence msa) = asSentence msa
+sentenceMetaToKore :: MetaSentence -> KoreSentence
+sentenceMetaToKore (SentenceAliasSentence msa) = asSentence msa
     { sentenceAliasAttributes =
         attributesMetaToKore (sentenceAliasAttributes msa)
     }
-sentenceMetaToKore (SymbolMetaSentence mss) = asSentence mss
+sentenceMetaToKore (SentenceSymbolSentence mss) = asSentence mss
     { sentenceSymbolAttributes =
         attributesMetaToKore (sentenceSymbolAttributes mss)
     }
-sentenceMetaToKore (ImportMetaSentence msi) = asSentence msi
+sentenceMetaToKore (SentenceImportSentence msi) = asSentence msi
     { sentenceImportAttributes =
         attributesMetaToKore (sentenceImportAttributes msi)
     }
-sentenceMetaToKore (AxiomMetaSentence msx) = asSentence SentenceAxiom
+sentenceMetaToKore (SentenceAxiomSentence msx) = asSentence SentenceAxiom
     { sentenceAxiomAttributes =
         attributesMetaToKore (sentenceAxiomAttributes msx)
     , sentenceAxiomPattern =
