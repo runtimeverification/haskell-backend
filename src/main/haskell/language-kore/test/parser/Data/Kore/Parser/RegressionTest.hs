@@ -2,20 +2,27 @@ module Data.Kore.Parser.RegressionTest ( InputFileName (..)
                                        , GoldenFileName (..)
                                        , regressionTest
                                        , regressionTests
-                                       , regressionTestsInputFiles) where
+                                       , regressionTestsInputFiles
+                                       , VerifyRequest(..)) where
 
-import           Test.Tasty                 (TestTree, testGroup)
-import           Test.Tasty.Golden          (findByExtension, goldenVsString)
+import           Test.Tasty                               (TestTree, testGroup)
+import           Test.Tasty.Golden                        (findByExtension,
+                                                           goldenVsString)
 
 import           Data.Kore.ASTPrettyPrint
+import           Data.Kore.ASTVerifier.DefinitionVerifier
+import           Data.Kore.Error
 import           Data.Kore.Parser.Parser
 
-import qualified Data.ByteString.Lazy       as LazyByteString
-import qualified Data.ByteString.Lazy.Char8 as LazyChar8
-import           System.FilePath            (addExtension, splitFileName, (</>))
+import qualified Data.ByteString.Lazy                     as LazyByteString
+import qualified Data.ByteString.Lazy.Char8               as LazyChar8
+import           System.FilePath                          (addExtension,
+                                                           splitFileName, (</>))
 
 newtype InputFileName = InputFileName FilePath
 newtype GoldenFileName = GoldenFileName FilePath
+
+data VerifyRequest = VerifyRequestYes | VerifyRequestNo
 
 regressionTests :: [InputFileName] -> TestTree
 regressionTests inputFiles =
@@ -29,14 +36,21 @@ regressionTestsInputFiles dir = do
 
 regressionTestFromInputFile :: InputFileName -> TestTree
 regressionTestFromInputFile inputFileName =
-    regressionTest inputFileName (goldenFromInputFileName inputFileName)
+    regressionTest
+        inputFileName
+        (goldenFromInputFileName inputFileName)
+        VerifyRequestYes
 
-regressionTest :: InputFileName -> GoldenFileName -> TestTree
-regressionTest (InputFileName inputFileName) (GoldenFileName goldenFileName) =
+regressionTest :: InputFileName -> GoldenFileName -> VerifyRequest -> TestTree
+regressionTest
+    (InputFileName inputFileName)
+    (GoldenFileName goldenFileName)
+    verifyRequest
+  =
     goldenVsString
         ("Testing '" ++ inputFileName ++ "'")
         goldenFileName
-        (runParser inputFileName)
+        (runParser inputFileName verifyRequest)
 
 goldenFromInputFileName :: InputFileName -> GoldenFileName
 goldenFromInputFileName (InputFileName inputFile) =
@@ -50,7 +64,21 @@ toByteString (Left err) =
 toByteString (Right definition) =
     LazyChar8.pack (prettyPrintToString definition)
 
-runParser :: String -> IO LazyByteString.ByteString
-runParser inputFileName = do
+verify :: Either String Definition -> Either String Definition
+verify (Left err) = Left err
+verify (Right definition) =
+    case verifyDefinition DoNotVerifyAttributes definition of
+        Left e  -> Left (printError e)
+        Right _ -> Right definition
+
+runParser :: String -> VerifyRequest -> IO LazyByteString.ByteString
+runParser inputFileName verifyRequest = do
     fileContent <- readFile inputFileName
-    return (toByteString (fromKore inputFileName fileContent))
+    let
+        unverifiedDefinition = fromKore inputFileName fileContent
+        definition =
+            case verifyRequest of
+                VerifyRequestYes -> verify unverifiedDefinition
+                VerifyRequestNo  -> unverifiedDefinition
+    return (toByteString definition)
+

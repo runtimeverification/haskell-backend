@@ -8,7 +8,7 @@ Definition
                     { sentenceSortName = Id Object "Map"
                     , sentenceSortParameters =
                         [ SortVariable (Id Object "S")
-                        , SortVariable (Id Object "S")
+                        , SortVariable (Id Object "T")
                         ]
                     , sentenceSortAttributes = Attributes []
                     }

@@ -7,6 +7,7 @@ import           Data.Kore.AST.Kore
 import           Data.Kore.Implicit.Verified     (implicitKoreDefinition)
 import           Data.Kore.Parser.RegressionTest (GoldenFileName (..),
                                                   InputFileName (..),
+                                                  VerifyRequest (..),
                                                   regressionTest)
 import           Data.Kore.Unparser.Unparse      (unparseToString)
 
@@ -17,7 +18,7 @@ implicitKoreRegressionTests :: InputFileName -> GoldenFileName -> TestTree
 implicitKoreRegressionTests inputFileName goldenFileName =
     testGroup "Implicit kore tests"
         [ implicitKoreTest inputFileName
-        , regressionTest inputFileName goldenFileName
+        , regressionTest inputFileName goldenFileName VerifyRequestNo
         ]
 
 implicitKoreTest :: InputFileName -> TestTree

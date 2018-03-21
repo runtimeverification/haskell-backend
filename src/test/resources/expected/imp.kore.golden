@@ -143,20 +143,6 @@ Definition
                 , ObjectSentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
-                            { symbolConstructor = Id Object "zero"
-                            , symbolParams = []
-                            }
-                    , sentenceSymbolSorts = []
-                    , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Int"
-                                , sortActualSorts = []
-                                }
-                    , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
-                    { sentenceSymbolSymbol =
-                        Symbol
                             { symbolConstructor = Id Object "one"
                             , symbolParams = []
                             }
@@ -732,7 +718,7 @@ Definition
                                         [ MetaPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
                                                 SymbolOrAlias
-                                                    { symbolOrAliasConstructor = Id Meta "#variableToPattern"
+                                                    { symbolOrAliasConstructor = Id Meta "#variableAsPattern"
                                                     , symbolOrAliasParams = []
                                                     }
                                             , applicationChildren =
@@ -810,7 +796,7 @@ Definition
                                                 [ MetaPattern (ApplicationPattern Application
                                                     { applicationSymbolOrAlias =
                                                         SymbolOrAlias
-                                                            { symbolOrAliasConstructor = Id Meta "#variableToPattern"
+                                                            { symbolOrAliasConstructor = Id Meta "#variableAsPattern"
                                                             , symbolOrAliasParams = []
                                                             }
                                                     , applicationChildren =
@@ -946,7 +932,6 @@ Definition
                                                     { symbolOrAliasConstructor = Id Object "idctxt"
                                                     , symbolOrAliasParams =
                                                         [ SortVariableSort (SortVariable (Id Object "S"))
-                                                        , SortVariableSort (SortVariable (Id Object "S"))
                                                         ]
                                                     }
                                             , applicationChildren = []
@@ -1051,10 +1036,23 @@ Definition
                                                         ]
                                                     }
                                             , applicationChildren =
-                                                [ ObjectPattern (VariablePattern Variable
-                                                    { variableName = Id Object "HOLE"
-                                                    , variableSort =
-                                                        SortVariableSort (SortVariable (Id Object "S"))
+                                                [ MetaPattern (ApplicationPattern Application
+                                                    { applicationSymbolOrAlias =
+                                                        SymbolOrAlias
+                                                            { symbolOrAliasConstructor = Id Meta "#variable"
+                                                            , symbolOrAliasParams = []
+                                                            }
+                                                    , applicationChildren =
+                                                        [ MetaPattern (StringLiteralPattern (StringLiteral "HOLE"))
+                                                        , MetaPattern (VariablePattern Variable
+                                                            { variableName = Id Meta "#S"
+                                                            , variableSort =
+                                                                SortActualSortSortActual
+                                                                        { sortActualName = Id Meta "#Sort"
+                                                                        , sortActualSorts = []
+                                                                        }
+                                                            })
+                                                        ]
                                                     })
                                                 , ObjectPattern (ApplicationPattern Application
                                                     { applicationSymbolOrAlias =
@@ -1304,10 +1302,23 @@ Definition
                                                         ]
                                                     }
                                             , applicationChildren =
-                                                [ ObjectPattern (VariablePattern Variable
-                                                    { variableName = Id Object "HOLE"
-                                                    , variableSort =
-                                                        SortVariableSort (SortVariable (Id Object "S"))
+                                                [ MetaPattern (ApplicationPattern Application
+                                                    { applicationSymbolOrAlias =
+                                                        SymbolOrAlias
+                                                            { symbolOrAliasConstructor = Id Meta "#variable"
+                                                            , symbolOrAliasParams = []
+                                                            }
+                                                    , applicationChildren =
+                                                        [ MetaPattern (StringLiteralPattern (StringLiteral "HOLE"))
+                                                        , MetaPattern (VariablePattern Variable
+                                                            { variableName = Id Meta "#S"
+                                                            , variableSort =
+                                                                SortActualSortSortActual
+                                                                        { sortActualName = Id Meta "#Sort"
+                                                                        , sortActualSorts = []
+                                                                        }
+                                                            })
+                                                        ]
                                                     })
                                                 , ObjectPattern (ApplicationPattern Application
                                                     { applicationSymbolOrAlias =
@@ -1534,6 +1545,11 @@ Definition
                             ]
                     }
                 , SentenceSortSentence SentenceSort
+                    { sentenceSortName = Id Object "BExp"
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    }
+                , SentenceSortSentence SentenceSort
                     { sentenceSortName = Id Object "Block"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
@@ -1662,10 +1678,23 @@ Definition
                                                         ]
                                                     }
                                             , applicationChildren =
-                                                [ ObjectPattern (VariablePattern Variable
-                                                    { variableName = Id Object "HOLE"
-                                                    , variableSort =
-                                                        SortVariableSort (SortVariable (Id Object "S"))
+                                                [ MetaPattern (ApplicationPattern Application
+                                                    { applicationSymbolOrAlias =
+                                                        SymbolOrAlias
+                                                            { symbolOrAliasConstructor = Id Meta "#variable"
+                                                            , symbolOrAliasParams = []
+                                                            }
+                                                    , applicationChildren =
+                                                        [ MetaPattern (StringLiteralPattern (StringLiteral "HOLE"))
+                                                        , MetaPattern (VariablePattern Variable
+                                                            { variableName = Id Meta "#S"
+                                                            , variableSort =
+                                                                SortActualSortSortActual
+                                                                        { sortActualName = Id Meta "#Sort"
+                                                                        , sortActualSorts = []
+                                                                        }
+                                                            })
+                                                        ]
                                                     })
                                                 , ObjectPattern (ApplicationPattern Application
                                                     { applicationSymbolOrAlias =
@@ -1737,7 +1766,7 @@ Definition
                                                 ObjectPattern (ApplicationPattern Application
                                                     { applicationSymbolOrAlias =
                                                         SymbolOrAlias
-                                                            { symbolOrAliasConstructor = Id Object "divAExp"
+                                                            { symbolOrAliasConstructor = Id Object "asgn"
                                                             , symbolOrAliasParams = []
                                                             }
                                                     , applicationChildren =
@@ -1962,10 +1991,23 @@ Definition
                                                         ]
                                                     }
                                             , applicationChildren =
-                                                [ ObjectPattern (VariablePattern Variable
-                                                    { variableName = Id Object "HOLE"
-                                                    , variableSort =
-                                                        SortVariableSort (SortVariable (Id Object "S"))
+                                                [ MetaPattern (ApplicationPattern Application
+                                                    { applicationSymbolOrAlias =
+                                                        SymbolOrAlias
+                                                            { symbolOrAliasConstructor = Id Meta "#variable"
+                                                            , symbolOrAliasParams = []
+                                                            }
+                                                    , applicationChildren =
+                                                        [ MetaPattern (StringLiteralPattern (StringLiteral "HOLE"))
+                                                        , MetaPattern (VariablePattern Variable
+                                                            { variableName = Id Meta "#S"
+                                                            , variableSort =
+                                                                SortActualSortSortActual
+                                                                        { sortActualName = Id Meta "#Sort"
+                                                                        , sortActualSorts = []
+                                                                        }
+                                                            })
+                                                        ]
                                                     })
                                                 , ObjectPattern (ApplicationPattern Application
                                                     { applicationSymbolOrAlias =
@@ -2305,10 +2347,23 @@ Definition
                                                         ]
                                                     }
                                             , applicationChildren =
-                                                [ ObjectPattern (VariablePattern Variable
-                                                    { variableName = Id Object "HOLE"
-                                                    , variableSort =
-                                                        SortVariableSort (SortVariable (Id Object "S"))
+                                                [ MetaPattern (ApplicationPattern Application
+                                                    { applicationSymbolOrAlias =
+                                                        SymbolOrAlias
+                                                            { symbolOrAliasConstructor = Id Meta "#variable"
+                                                            , symbolOrAliasParams = []
+                                                            }
+                                                    , applicationChildren =
+                                                        [ MetaPattern (StringLiteralPattern (StringLiteral "HOLE"))
+                                                        , MetaPattern (VariablePattern Variable
+                                                            { variableName = Id Meta "#S"
+                                                            , variableSort =
+                                                                SortActualSortSortActual
+                                                                        { sortActualName = Id Meta "#Sort"
+                                                                        , sortActualSorts = []
+                                                                        }
+                                                            })
+                                                        ]
                                                     })
                                                 , ObjectPattern (ApplicationPattern Application
                                                     { applicationSymbolOrAlias =
@@ -2710,6 +2765,29 @@ Definition
                 , ObjectSentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
+                            { symbolConstructor = Id Object "top"
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSortSortActual
+                                { sortActualName = Id Object "KCell"
+                                , sortActualSorts = []
+                                }
+                        , SortActualSortSortActual
+                                { sortActualName = Id Object "StateCell"
+                                , sortActualSorts = []
+                                }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSortSortActual
+                                { sortActualName = Id Object "TopCell"
+                                , sortActualSorts = []
+                                }
+                    , sentenceSymbolAttributes = Attributes []
+                    }
+                , ObjectSentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
                             { symbolConstructor = Id Object "topcell"
                             , symbolParams = []
                             }
@@ -2795,7 +2873,7 @@ Definition
                         ObjectPattern (EqualsPattern Equals
                             { equalsOperandSort =
                                 SortActualSortSortActual
-                                        { sortActualName = Id Object "Top"
+                                        { sortActualName = Id Object "TopCell"
                                         , sortActualSorts = []
                                         }
                             , equalsResultSort =
@@ -2972,7 +3050,6 @@ Definition
                 , SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ ObjectSortVariable (SortVariable (Id Object "S"))
-                        , ObjectSortVariable (SortVariable (Id Object "R"))
                         ]
                     , sentenceAxiomPattern =
                         ObjectPattern (ApplicationPattern Application
@@ -2981,7 +3058,6 @@ Definition
                                     { symbolOrAliasConstructor = Id Object "rewrites"
                                     , symbolOrAliasParams =
                                         [ SortVariableSort (SortVariable (Id Object "S"))
-                                        , SortVariableSort (SortVariable (Id Object "R"))
                                         ]
                                     }
                             , applicationChildren =
