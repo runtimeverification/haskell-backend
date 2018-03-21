@@ -68,14 +68,14 @@ expectSuccess description definition =
             ++ printDefinition definition
             )
             verifySuccess
-            (verifyDefinition definition)
+            (verifyDefinition VerifyAttributes definition)
         )
 
 expectFailureWithError :: String -> Error VerifyError -> KoreDefinition -> TestTree
 expectFailureWithError description expectedError definition =
     testCase
         description
-        ( case verifyDefinition definition of
+        ( case verifyDefinition VerifyAttributes definition of
             Right _ ->
                 assertFailure
                     (  "Expecting verification failure! Definition:\n"

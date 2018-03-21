@@ -22,7 +22,6 @@ module Data.Kore.MetaML.AST where
 import           Data.Fix
 
 import           Data.Kore.AST.Common
-import           Data.Kore.IndexedModule.IndexedModule
 
 {-|'MetaMLPattern' corresponds to "fixed point" representations
 of the 'Pattern' class where the level is fixed to 'Meta'.
@@ -69,9 +68,6 @@ type MetaModule = Module MetaSentence CommonMetaPattern
 
 -- |'MetaDefinition' is the 'Meta'-only version of 'Definition'.
 type MetaDefinition = Definition MetaSentence CommonMetaPattern
-
-type MetaIndexedModule =
-    IndexedModule (SortVariable Meta) CommonMetaPattern
 
 groundHead :: Id a -> SymbolOrAlias a
 groundHead ctor = SymbolOrAlias

@@ -380,9 +380,7 @@ definitionVerifierPatternVerifierTests =
             , oneSortSymbolSentence
             ]
             NeedsInternalDefinitions
-        , failureTestsForObjectPattern "Object pattern - unquantified variable"
-            (ExpectedErrorMessage "Unquantified variable: 'ObjectVariable'.")
-            (ErrorStack ["variable 'ObjectVariable'"])
+        , successTestsForObjectPattern "Object pattern - unquantified variable"
             (VariablePattern objectVariable)
             (NamePrefix "dummy")
             (TestedPatternSort objectSort)
@@ -390,19 +388,7 @@ definitionVerifierPatternVerifierTests =
             (DeclaredSort anotherSort)
             [ objectSortSentence, anotherSortSentence ]
             NeedsInternalDefinitions
-        , failureTestsForObjectPattern "Object pattern - unquantified variable"
-            (ExpectedErrorMessage "Unquantified variable: 'ObjectVariable'.")
-            (ErrorStack ["variable 'ObjectVariable'"])
-            (VariablePattern objectVariable)
-            (NamePrefix "dummy")
-            (TestedPatternSort objectSort)
-            (SortVariablesThatMustBeDeclared [])
-            (DeclaredSort anotherSort)
-            [ objectSortSentence, anotherSortSentence ]
-            NeedsInternalDefinitions
-        , failureTestsForMetaPattern "Meta pattern - unquantified variable"
-            (ExpectedErrorMessage "Unquantified variable: '#MetaVariable'.")
-            (ErrorStack ["variable '#MetaVariable'"])
+        , successTestsForMetaPattern "Meta pattern - unquantified variable"
             (VariablePattern metaVariable)
             (NamePrefix "#dummy")
             (TestedPatternSort metaSort1)

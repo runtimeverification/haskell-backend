@@ -2,6 +2,6 @@
 
 module TEST4
 
-  sort Map{S,S} []
+  sort Map{S,T} []
 
 endmodule []
