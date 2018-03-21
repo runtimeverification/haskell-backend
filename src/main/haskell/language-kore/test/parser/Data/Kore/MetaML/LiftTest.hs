@@ -12,7 +12,128 @@ liftTests :: TestTree
 liftTests =
     testGroup
         "Lifting Tests"
-        [ testCase "Testing lifting a pure object pattern."
+        [ testCase "Lifting an Id"
+            (assertEqual ""
+                (Fix (StringLiteralPattern (StringLiteral "object")))
+                (liftToMeta (Id "object" :: Id Object))
+            )
+        , testCase "Lifting an actual sort"
+            (assertEqual ""
+                (Fix
+                    (ApplicationPattern Application
+                        { applicationSymbolOrAlias = SymbolOrAlias
+                            { symbolOrAliasConstructor = Id "#consSortList"
+                            , symbolOrAliasParams = []
+                            }
+                        , applicationChildren=
+                            [ Fix
+                                 (ApplicationPattern Application
+                                     { applicationSymbolOrAlias = SymbolOrAlias
+                                         { symbolOrAliasConstructor = Id "#`Exp"
+                                         , symbolOrAliasParams = []
+                                         }
+                                     , applicationChildren =
+                                         [ Fix
+                                             (VariablePattern Variable
+                                                 { variableName = Id "#v"
+                                                 , variableSort =
+                                                     SortActualSort SortActual
+                                                         { sortActualName = Id "#Sort"
+                                                         , sortActualSorts = []
+                                                         }
+                                                 }
+                                             )
+                                         ]
+                                     }
+                                 )
+                            , Fix
+                                (ApplicationPattern Application
+                                    { applicationSymbolOrAlias = SymbolOrAlias
+                                        { symbolOrAliasConstructor = Id "#nilSortList"
+                                        , symbolOrAliasParams = []
+                                        }
+                                    , applicationChildren = []
+                                    }
+                                )
+                            ]
+                        }
+                    )
+                )
+                (liftToMeta
+                    [SortActualSort SortActual
+                        { sortActualName = Id "Exp" :: Id Object
+                        , sortActualSorts =
+                            [ SortVariableSort (SortVariable (Id "v")) ]
+                        }
+                    ]
+                )
+            )
+        , testCase "Lifting a Variable"
+            (assertEqual ""
+                (Fix
+                    (ApplicationPattern Application
+                        { applicationSymbolOrAlias = SymbolOrAlias
+                            { symbolOrAliasConstructor = Id "#consPatternList"
+                            , symbolOrAliasParams = []
+                            }
+                        , applicationChildren =
+                            [ Fix
+                                (ApplicationPattern Application
+                                    { applicationSymbolOrAlias = SymbolOrAlias
+                                        { symbolOrAliasConstructor =
+                                            Id "#variable"
+                                        , symbolOrAliasParams = []
+                                        }
+                                    , applicationChildren =
+                                        [ Fix
+                                            (StringLiteralPattern
+                                                (StringLiteral "object")
+                                            )
+                                        , Fix
+                                            (VariablePattern Variable
+                                                { variableName = Id "#v"
+                                                , variableSort =
+                                                    SortActualSort SortActual
+                                                    { sortActualName =
+                                                        Id "#Sort"
+                                                    , sortActualSorts = []
+                                                    }
+                                                }
+                                            )
+                                        ]
+                                    }
+                                )
+                            , Fix
+                                (ApplicationPattern Application
+                                    { applicationSymbolOrAlias = SymbolOrAlias
+                                        { symbolOrAliasConstructor =
+                                            Id "#nilPatternList"
+                                        , symbolOrAliasParams = []
+                                        }
+                                    , applicationChildren = []
+                                    }
+                                )
+                            ]
+                        }
+                    )
+                )
+                (liftToMeta
+                    [ liftToMeta
+                        (Variable
+                            { variableName = Id "object" :: Id Object
+                            , variableSort =
+                                SortVariableSort (SortVariable (Id "v"))
+                            }
+                        )
+                    ]
+                )
+            )
+        , testCase "Lifting Meta pattern"
+            (assertEqual ""
+                (Fix (StringLiteralPattern (StringLiteral "object")))
+                (liftToMeta (Id "object" :: Id Object))
+            )
+        , testCase "Testing lifting a pure object pattern."
             (assertEqual ""
                 ( Fix
                     ( ApplicationPattern Application
