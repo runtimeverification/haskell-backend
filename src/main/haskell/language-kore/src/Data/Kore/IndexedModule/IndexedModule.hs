@@ -95,8 +95,8 @@ indexedModuleRawSentences im =
     ++
     map SentenceAxiomSentence (indexedModuleAxioms im)
     ++
-    [SentenceImportSentence (SentenceImport (indexedModuleName m) attributes) |
-        (attributes, m) <- indexedModuleImports im
+    [ SentenceImportSentence (SentenceImport (indexedModuleName m) attributes)
+    | (attributes, m) <- indexedModuleImports im
     ]
 
 {-|'ImplicitIndexedModule' is the type for the 'IndexedModule' containing

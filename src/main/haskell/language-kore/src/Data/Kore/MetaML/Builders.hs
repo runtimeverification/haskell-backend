@@ -63,6 +63,10 @@ applyS
     => s CommonMetaPattern Meta -> [MetaPatternStub] -> MetaPatternStub
 applyS sentence = applyPS sentence []
 
+{-|'isImplicitHead' takes as arguments a 'Symbol' or 'Alias' definition
+sentence and a pattern head and tells whether the given head corresponds
+to the given definition.
+-}
 isImplicitHead
     :: SentenceSymbolOrAlias s
     => s CommonMetaPattern Meta
@@ -70,6 +74,7 @@ isImplicitHead
     -> Bool
 isImplicitHead sentence = (== getSentenceSymbolOrAliasHead sentence [])
 
+-- |Creates a 'Meta' 'Sort' from a given 'MetaSortType'
 sort_ :: MetaSortType -> Sort Meta
 sort_ sortType =
     SortActualSort SortActual
@@ -77,6 +82,8 @@ sort_ sortType =
         , sortActualSorts = []
         }
 
+-- |Given a string @name@, yields the 'UnsortedPatternStub' defining
+-- name as a variable.
 unparameterizedVariable_ :: String -> MetaPatternStub
 unparameterizedVariable_ name =
     UnsortedPatternStub
@@ -87,12 +94,18 @@ unparameterizedVariable_ name =
                 }
         )
 
+-- |Given a 'Sort' @sort@ and a string @name@, yields 'PatternStub' defining
+-- name as a variable of sort @sort@.
 parameterizedVariable_ :: Sort Meta -> String -> MetaPatternStub
 parameterizedVariable_ sort = withSort sort . unparameterizedVariable_
 
+-- |constructs an unparameterized Symbol declaration given the symbol name,
+-- operand sorts and result sort.
 symbol_ :: String -> [Sort Meta] -> Sort Meta -> MetaSentenceSymbol
 symbol_ name = parameterizedSymbol_ name []
 
+-- |constructs a Symbol declaration given symbol name, parameters,
+-- operand sorts and result sort.
 parameterizedSymbol_
     :: String -> [SortVariable Meta] -> [Sort Meta] -> Sort Meta
     -> MetaSentenceSymbol
@@ -107,104 +120,56 @@ parameterizedSymbol_ name parameters operandSorts resultSort =
         , sentenceSymbolAttributes = Attributes []
         }
 
+-- |A 'PatternStub' representing 'Bottom'.
 bottom_ :: MetaPatternStub
 bottom_ = UnsortedPatternStub (BottomPattern . Bottom)
 
+-- |A 'PatternStub' representing 'Top'.
 top_ :: MetaPatternStub
 top_ = UnsortedPatternStub (BottomPattern . Bottom)
 
-equalsM_
-    :: Maybe (Sort Meta)
-    -> (MetaPatternStub -> MetaPatternStub -> MetaPatternStub)
-equalsM_ s =
-    binarySortedPattern
-        (\(ResultSort resultSort)
-            (ChildSort childSort)
-            firstPattern
-            secondPattern
-          ->
-            EqualsPattern Equals
-                { equalsOperandSort = childSort
-                , equalsResultSort  = resultSort
-                , equalsFirst       = firstPattern
-                , equalsSecond      = secondPattern
-                }
-        )
-        (ChildSort <$> s)
-
+-- |Builds a 'PatternStub' representing 'Equals' given the sort of the
+-- operands and their corresponding 'PatternStub's.
 equalsS_ :: Sort Meta -> MetaPatternStub -> MetaPatternStub -> MetaPatternStub
 equalsS_ s = equalsM_ (Just s)
 
+-- |Builds a 'PatternStub' representing 'Equals' given the
+-- corresponding 'PatternStub's.  Assumes operand sort is inferrable.
 equals_ :: MetaPatternStub -> MetaPatternStub -> MetaPatternStub
 equals_ = equalsM_ Nothing
 
-inM_
-    :: Maybe (Sort Meta)
-    -> (MetaPatternStub -> MetaPatternStub -> MetaPatternStub)
-inM_ s =
-    binarySortedPattern
-        (\(ResultSort resultSort)
-            (ChildSort childSort)
-            firstPattern
-            secondPattern
-          ->
-            InPattern In
-                { inOperandSort     = childSort
-                , inResultSort      = resultSort
-                , inContainedChild  = firstPattern
-                , inContainingChild = secondPattern
-                }
-        )
-        (ChildSort <$> s)
-
+-- |Builds a 'PatternStub' representing 'In' given the sort of the
+-- operands and their corresponding 'PatternStub's.
 inS_ :: Sort Meta -> MetaPatternStub -> MetaPatternStub -> MetaPatternStub
 inS_ s = inM_ (Just s)
 
+-- |Builds a 'PatternStub' representing 'In' given the
+-- corresponding 'PatternStub's.  Assumes operand sort is inferrable.
 in_ :: MetaPatternStub -> MetaPatternStub -> MetaPatternStub
 in_ = inM_ Nothing
 
-ceilM_ :: Maybe (Sort Meta) -> MetaPatternStub -> MetaPatternStub
-ceilM_ s =
-    unarySortedPattern
-        (\(ResultSort resultSort)
-            (ChildSort childSort)
-            childPattern
-          ->
-            CeilPattern Ceil
-                { ceilOperandSort = childSort
-                , ceilResultSort  = resultSort
-                , ceilChild       = childPattern
-                }
-        )
-        (ChildSort <$> s)
-
+-- |Builds a PatternStub representing 'Ceil' given the sort of the
+-- operand and its corresponding 'PatternStub's.
 ceilS_ :: Sort Meta -> MetaPatternStub -> MetaPatternStub
 ceilS_ s = ceilM_ (Just s)
 
+-- |Builds a 'PatternStub' representing 'Ceil' given the corresponding
+-- operand 'PatternStub'.  Assumes operand sort is inferrable.
 ceil_ :: MetaPatternStub -> MetaPatternStub
 ceil_ = ceilM_ Nothing
 
-floorM_ :: Maybe (Sort Meta) -> MetaPatternStub -> MetaPatternStub
-floorM_ s =
-    unarySortedPattern
-        (\(ResultSort resultSort)
-            (ChildSort childSort)
-            childPattern
-          ->
-            FloorPattern Floor
-                { floorOperandSort = childSort
-                , floorResultSort  = resultSort
-                , floorChild       = childPattern
-                }
-        )
-        (ChildSort <$> s)
-
+-- |Builds a 'PatternStub' representing 'Floor' given the sort of the
+-- operand and its corresponding 'PatternStub's.
 floorS_ :: Sort Meta -> MetaPatternStub -> MetaPatternStub
 floorS_ s = floorM_ (Just s)
 
+-- |Builds a 'PatternStub' representing 'Floor' given the corresponding
+-- operand 'PatternStub'.  Assumes operand sort is inferrable.
 floor_ :: MetaPatternStub -> MetaPatternStub
 floor_ = floorM_ Nothing
 
+-- |Builds a 'PatternStub' representing 'Exists' given a variable and an
+-- operand 'PatternStub'.
 exists_ :: Variable Meta -> MetaPatternStub -> MetaPatternStub
 exists_ variable1 =
     unaryPattern
@@ -216,6 +181,8 @@ exists_ variable1 =
                 }
         )
 
+-- |Builds a 'PatternStub' representing 'Forall' given a variable and an
+-- operand 'PatternStub'.
 forall_ :: Variable Meta -> MetaPatternStub -> MetaPatternStub
 forall_ variable1 =
     unaryPattern
@@ -227,6 +194,8 @@ forall_ variable1 =
                 }
         )
 
+-- |Builds a 'PatternStub' representing 'Or' given 'PatternStub's for its
+-- operands.
 or_ :: MetaPatternStub -> MetaPatternStub -> MetaPatternStub
 or_ =
     binaryPattern
@@ -238,6 +207,8 @@ or_ =
                 }
         )
 
+-- |Builds a 'PatternStub' representing 'And' given 'PatternStub's for its
+-- operands.
 and_ :: MetaPatternStub -> MetaPatternStub -> MetaPatternStub
 and_ =
     binaryPattern
@@ -249,6 +220,8 @@ and_ =
                 }
         )
 
+-- |Builds a 'PatternStub' representing 'Iff' given 'PatternStub's for its
+-- operands.
 iff_ :: MetaPatternStub -> MetaPatternStub -> MetaPatternStub
 iff_ =
     binaryPattern
@@ -260,6 +233,8 @@ iff_ =
                 }
         )
 
+-- |Builds a 'PatternStub' representing 'Implies' given 'PatternStub's for
+-- its operands.
 implies_ :: MetaPatternStub -> MetaPatternStub -> MetaPatternStub
 implies_ =
     binaryPattern
@@ -271,6 +246,8 @@ implies_ =
                 }
         )
 
+-- |Builds a 'PatternStub' representing 'Not' given a 'PatternStub' for
+-- its operand.
 not_ :: MetaPatternStub -> MetaPatternStub
 not_ =
     unaryPattern

@@ -22,7 +22,9 @@ import qualified Data.Set                  as Set
 
 
 {-|'equalsSortParam' is the sort param implicitly used for 'equals' when no
-other sort can be inferred.
+other sort can be inferred. This parameter is assumed not to be used in
+any pattern, except for top-level pattern of an axiom. Using it will have
+unpredictable effects.
 -}
 equalsSortParam :: SortVariable Meta
 equalsSortParam = sortParameter "#esp"
@@ -50,6 +52,8 @@ parameterizedAxiom
 
 {-|'parameterizedEqualsAxiom' is a special case for a 'parameterizedAxiom' that
 contains an equals pattern.
+Note that 'equalsSortParam' is assumed not to be used in any of the patterns.
+Using it will have unpredictable effects.
 -}
 parameterizedEqualsAxiom
     :: [SortVariable Meta] -> MetaPatternStub -> MetaPatternStub -> MetaSentenceAxiom
@@ -59,6 +63,8 @@ parameterizedEqualsAxiom parameters first second =
         (withSort equalsSort (equals_ first second))
 
 {-|'equalsAxiom' is a special case for an axiom that contains an equals pattern.
+Note that 'equalsSortParam' is assumed not to be used in any of the patterns.
+Using it will have unpredictable effects.
 -}
 equalsAxiom :: MetaPatternStub -> MetaPatternStub -> MetaSentenceAxiom
 equalsAxiom = parameterizedEqualsAxiom []

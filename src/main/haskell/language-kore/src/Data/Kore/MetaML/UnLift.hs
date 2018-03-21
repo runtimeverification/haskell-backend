@@ -25,6 +25,8 @@ import           Data.Kore.MetaML.AST
 import           Data.Kore.MetaML.Builders             (isImplicitHead)
 import           Data.Kore.Parser.LexemeImpl
 
+-- |'UnliftableFromMetaML' specifies common functionality for constructs
+-- which can be "unlifted" from 'Meta'-only to full 'Kore' representations.
 class UnliftableFromMetaML mixed where
     unliftFromMeta :: CommonMetaPattern -> Maybe mixed
 
