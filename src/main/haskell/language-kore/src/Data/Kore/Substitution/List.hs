@@ -20,10 +20,9 @@ instance (Ord v, TermWithVariablesClass t v)
     => SubstitutionClass (Substitution v t) v t where
     substitutionTermsFreeVars = foldMap (freeVariables . snd) . getSubstitution
 
-instance EmptyTestable (Substitution v t) where
-    isEmpty = null . getSubstitution
-
 instance Eq v => MapClass (Substitution v t) v t where
+    isEmpty = null . getSubstitution
+    empty = Substitution []
     lookup v (Substitution l) = Prelude.lookup v l
     delete v = Substitution . filter ((v /=) . fst) . getSubstitution
     insert v t  =

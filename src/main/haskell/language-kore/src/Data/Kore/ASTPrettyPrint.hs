@@ -6,15 +6,12 @@ module Data.Kore.ASTPrettyPrint (prettyPrintToString) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
-import           Data.Kore.Datastructures.EmptyTestable
-import           Data.Kore.IndentingPrinter             (PrinterOutput,
-                                                         StringPrinter,
-                                                         betweenLines,
-                                                         printToString,
-                                                         withIndent, write)
-import           Data.Kore.Parser.CString               (escapeCString)
+import           Data.Kore.IndentingPrinter (PrinterOutput, StringPrinter,
+                                             betweenLines, printToString,
+                                             withIndent, write)
+import           Data.Kore.Parser.CString   (escapeCString)
 
-import           Data.List                              (intersperse)
+import           Data.List                  (intersperse)
 
 {-# ANN module "HLint: ignore Use record patterns" #-}
 {-
@@ -107,14 +104,14 @@ writeFieldNewLine fieldName field object = do
         (betweenLines >> prettyPrint MaySkipParentheses (field object))
 
 writeAttributesField
-    :: ( PrinterOutput w m, PrettyPrint attributes, EmptyTestable attributes)
+    :: (PrinterOutput w m, PrettyPrint pat)
     => String
-    -> attributes
+    -> Attributes pat
     -> m ()
-writeAttributesField fieldName attributes = do
+writeAttributesField fieldName attributes@(Attributes as) = do
     write fieldName
     write " ="
-    if isEmpty attributes
+    if null as
         then write " " >> prettyPrint MaySkipParentheses attributes
         else
             withIndent 4
@@ -514,16 +511,15 @@ instance
     prettyPrint flags (VariablePattern p)      =
         writeOneFieldStruct flags "VariablePattern" p
 
-instance PrettyPrint Attributes where
+instance PrettyPrint pat => PrettyPrint (Attributes pat) where
     prettyPrint flags (Attributes a)
         | null a    = write "Attributes []"
         | otherwise = writeOneFieldStruct flags "Attributes" a
 
 instance
     ( MetaOrObject level
-    , PrettyPrint attributes
-    , EmptyTestable attributes
-    ) => PrettyPrint (SentenceAlias attributes level)
+    , PrettyPrint pat
+    ) => PrettyPrint (SentenceAlias pat level)
   where
     prettyPrint _ sa@(SentenceAlias _ _ _ _) =
         writeStructure
@@ -538,9 +534,8 @@ instance
 
 instance
     ( MetaOrObject level
-    , PrettyPrint attributes
-    , EmptyTestable attributes
-    ) => PrettyPrint (SentenceSymbol attributes level)
+    , PrettyPrint pat
+    ) => PrettyPrint (SentenceSymbol pat level)
   where
     prettyPrint _ sa@(SentenceSymbol _ _ _ _) =
         writeStructure
@@ -553,10 +548,7 @@ instance
                 "sentenceSymbolAttributes" (sentenceSymbolAttributes sa)
             ]
 
-instance
-    ( PrettyPrint attributes
-    , EmptyTestable attributes
-    ) => PrettyPrint (SentenceImport attributes) where
+instance PrettyPrint pat => PrettyPrint (SentenceImport pat) where
     prettyPrint _ sa@(SentenceImport _ _) =
         writeStructure
             "SentenceImport"
@@ -569,9 +561,7 @@ instance
 instance
     ( PrettyPrint sortParam
     , PrettyPrint pat
-    , PrettyPrint attributes
-    , EmptyTestable attributes
-    ) => PrettyPrint (SentenceAxiom sortParam pat attributes)
+    ) => PrettyPrint (SentenceAxiom sortParam pat)
   where
     prettyPrint _ sa@(SentenceAxiom _ _ _) =
         writeStructure
@@ -586,9 +576,8 @@ instance
 
 instance
     ( MetaOrObject level
-    , PrettyPrint attributes
-    , EmptyTestable attributes
-    ) => PrettyPrint (SentenceSort attributes level)
+    , PrettyPrint pat
+    ) => PrettyPrint (SentenceSort pat level)
   where
     prettyPrint _ sa@(SentenceSort _ _ _) =
         writeStructure
@@ -616,7 +605,11 @@ instance PrettyPrint Sentence where
     prettyPrint flags (SentenceSortSentence s)         =
         writeOneFieldStruct flags "SentenceSortSentence" s
 
-instance PrettyPrint Module where
+instance
+    (PrettyPrint sentence
+    , PrettyPrint pat
+    ) => PrettyPrint (Module sentence pat)
+  where
     prettyPrint _ m@(Module _ _ _) =
         writeStructure
             "Module"
@@ -625,7 +618,11 @@ instance PrettyPrint Module where
             , writeAttributesField "moduleAttributes" (moduleAttributes m)
             ]
 
-instance PrettyPrint Definition where
+instance
+    (PrettyPrint sentence
+    , PrettyPrint pat
+    ) => PrettyPrint (Definition sentence pat)
+  where
     prettyPrint _ d@(Definition _ _) =
         writeStructure
             "Definition"

@@ -11,25 +11,27 @@ Portability : POSIX
 module Data.Kore.Implicit.Verified
     (implicitKoreModule, implicitKoreDefinition) where
 
-import           Data.Kore.AST.Kore
+import           Data.Kore.AST.Common                     (Definition (..))
 import           Data.Kore.ASTVerifier.DefinitionVerifier (AttributesVerification (..),
                                                            verifyKoreDefinition)
 import           Data.Kore.ASTVerifier.Error              (VerifyError)
 import           Data.Kore.Error                          (Error, printError)
 import           Data.Kore.Implicit.ImplicitKore          (uncheckedKoreDefinition)
+import           Data.Kore.MetaML.AST
+import           Data.Kore.MetaML.MetaToKore
 
-checkedKoreDefinition :: Either (Error VerifyError) Definition
+checkedKoreDefinition :: Either (Error VerifyError) MetaDefinition
 checkedKoreDefinition = do
-    verifyKoreDefinition VerifyAttributes uncheckedKoreDefinition
+    verifyKoreDefinition VerifyAttributes (definitionMetaToKore uncheckedKoreDefinition)
     return uncheckedKoreDefinition
 
-implicitKoreDefinition :: Definition
+implicitKoreDefinition :: MetaDefinition
 implicitKoreDefinition =
     case checkedKoreDefinition of
         Left err -> error (printError err)
         Right d  -> d
 
-implicitKoreModule :: Module
+implicitKoreModule :: MetaModule
 implicitKoreModule =
     case checkedKoreDefinition of
         Left err                                   -> error (printError err)

@@ -26,7 +26,7 @@ within the module and outside, using the provided name set. -}
 verifyUniqueNames
     :: Set.Set String
     -- ^ Names that are already defined.
-    -> Module
+    -> KoreModule
     -> Either (Error VerifyError) (Set.Set String)
     -- ^ On success returns the names that were previously defined together with
     -- the names defined in the given 'Module'.
@@ -40,7 +40,7 @@ verifyUniqueNames existingNames koreModule =
 {-|'verifyModule' verifies the welformedness of a Kore 'Module'. -}
 verifyModule
     :: AttributesVerification
-    -> IndexedModule
+    -> KoreIndexedModule
     -> Either (Error VerifyError) VerifySuccess
 verifyModule attributesVerification indexedModule =
     withContext

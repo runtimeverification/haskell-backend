@@ -167,5 +167,5 @@ definitionVerifierUniqueNamesTests =
             )
     ]
   where
-    stringSortName = SortName (show CharListSort)
+    stringSortName = SortName (show (MetaListSortType CharSort))
 

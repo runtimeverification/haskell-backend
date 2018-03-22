@@ -20,6 +20,7 @@ import           Data.Kore.ASTVerifier.ModuleVerifier
 import           Data.Kore.Error
 import           Data.Kore.Implicit.ImplicitKore
 import           Data.Kore.IndexedModule.IndexedModule
+import           Data.Kore.MetaML.MetaToKore
 
 import qualified Data.Map                                 as Map
 import qualified Data.Set                                 as Set
@@ -45,7 +46,7 @@ e.g.:
 -}
 verifyDefinition
     :: AttributesVerification
-    -> Definition
+    -> KoreDefinition
     -> Either (Error VerifyError) VerifySuccess
 verifyDefinition attributesVerification definition = do
     defaultNames <- verifyUniqueNames sortNames implicitModule
@@ -83,7 +84,7 @@ verifyDefinition attributesVerification definition = do
         indexedModuleWithMetaSorts defaultModuleName
     getIndexedModule (ImplicitIndexedModule im) = im
     defaultModuleWithMetaSorts = getIndexedModule moduleWithMetaSorts
-    implicitModule = uncheckedKoreModule
+    implicitModule = moduleMetaToKore uncheckedKoreModule
     nameToModule =
         Map.fromList
             (map (\m -> (moduleName m, m)) (definitionModules definition))
@@ -94,7 +95,7 @@ containing only the 'kore' default module.
 -}
 verifyKoreDefinition
     :: AttributesVerification
-    -> Definition
+    -> KoreDefinition
     -> Either (Error VerifyError) VerifySuccess
 verifyKoreDefinition attributesVerification definition =
     -- VerifyDefinition already checks the Kore module, so we skip it.

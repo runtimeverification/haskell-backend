@@ -8,7 +8,7 @@ import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
-import           Data.Kore.ImplicitDefinitions
+import           Data.Kore.Implicit.ImplicitSorts
 
 definitionVerifierMetaObjectTests :: TestTree
 definitionVerifierMetaObjectTests =

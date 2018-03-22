@@ -20,7 +20,7 @@ import qualified Data.Map                              as Map
 
 {-|'resolveMetaSort' resolves a meta sort given its id. -}
 resolveMetaSort
-    :: IndexedModule
+    :: KoreIndexedModule
     -- ^ Module containing the visible declarations.
     -> Id Meta
     -- ^ The ID of the sort.
@@ -29,7 +29,7 @@ resolveMetaSort = resolveSort indexedModuleMetaSortDescriptions
 
 {-|'resolveObjectSort' resolves an object sort given its id. -}
 resolveObjectSort
-    :: IndexedModule
+    :: KoreIndexedModule
     -- ^ Module containing the visible declarations.
     -> Id Object
     -- ^ The ID of the sort.
@@ -38,9 +38,9 @@ resolveObjectSort = resolveSort indexedModuleObjectSortDescriptions
 
 {-|'resolveSort' resolves a sort given its id. -}
 resolveSort
-    :: (IndexedModule -> Map.Map (Id level) (SortDescription level))
+    :: (KoreIndexedModule -> Map.Map (Id level) (SortDescription level))
     -- ^ Extracts the sort map to use.
-    -> IndexedModule
+    -> KoreIndexedModule
     -- ^ Module containing the visible declarations.
     -> Id level
     -- ^ The ID of the sort.

@@ -19,8 +19,9 @@ module Data.Kore.IndexedModule.IndexedModule
         , indexedModuleObjectSortDescriptions
         , indexedModuleMetaSortDescriptions, indexedModuleAxioms
         , indexedModuleAttributes, indexedModuleImports
-        , indexedModuleRawSentences
         )
+    , KoreIndexedModule
+    , indexedModuleRawSentences
     , indexModuleIfNeeded
     , metaNameForObjectSort
     , resolveThing
@@ -30,13 +31,13 @@ module Data.Kore.IndexedModule.IndexedModule
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.Error
-import           Data.Kore.ImplicitDefinitions
+import           Data.Kore.Implicit.ImplicitSorts
 
-import           Control.Monad                 (foldM)
-import qualified Data.Map                      as Map
-import qualified Data.Set                      as Set
+import           Control.Monad                    (foldM)
+import qualified Data.Map                         as Map
+import qualified Data.Set                         as Set
 
-type SortDescription = SentenceSort Attributes
+type SortDescription = SentenceSort UnifiedPattern
 
 {-|'IndexedModule' represents an AST 'Module' somewhat optimized for resolving
 IDs.
@@ -52,32 +53,62 @@ All 'IndexedModule' instances should either be returned by
 'indexedModuleWithMetaSorts' or they should start from an instance created by
 'indexedModuleWithDefaultImports'.
 -}
-data IndexedModule = IndexedModule
+data IndexedModule sortParam pat = IndexedModule
     { indexedModuleName          :: !ModuleName
     , indexedModuleMetaAliasSentences
-        :: !(Map.Map (Id Meta) (KoreSentenceAlias Meta))
+        :: !(Map.Map (Id Meta) (SentenceAlias pat Meta))
     , indexedModuleObjectAliasSentences
-        :: !(Map.Map (Id Object) (KoreSentenceAlias Object))
+        :: !(Map.Map (Id Object) (SentenceAlias pat Object))
     , indexedModuleMetaSymbolSentences
-        :: !(Map.Map (Id Meta) (KoreSentenceSymbol Meta))
+        :: !(Map.Map (Id Meta) (SentenceSymbol pat Meta))
     , indexedModuleObjectSymbolSentences
-        :: !(Map.Map (Id Object) (KoreSentenceSymbol Object))
+        :: !(Map.Map (Id Object) (SentenceSymbol pat Object))
     , indexedModuleObjectSortDescriptions
-        :: !(Map.Map (Id Object) (SortDescription Object))
+        :: !(Map.Map (Id Object) (SentenceSort pat Object))
     , indexedModuleMetaSortDescriptions
-        :: !(Map.Map (Id Meta) (SortDescription Meta))
-    , indexedModuleAxioms        :: ![KoreSentenceAxiom]
-    , indexedModuleAttributes    :: !Attributes
-    , indexedModuleImports       :: ![IndexedModule]
-    , indexedModuleRawSentences  :: ![Sentence]
+        :: !(Map.Map (Id Meta) (SentenceSort pat Meta))
+    , indexedModuleAxioms     :: ![SentenceAxiom sortParam pat]
+    , indexedModuleAttributes :: !(Attributes pat)
+    , indexedModuleImports
+        :: ![(Attributes pat, IndexedModule sortParam pat)]
     }
+
+type KoreIndexedModule =
+    IndexedModule UnifiedSortVariable UnifiedPattern
+
+indexedModuleRawSentences  :: KoreIndexedModule -> [Sentence]
+indexedModuleRawSentences im =
+    map MetaSentenceAliasSentence
+        (Map.elems (indexedModuleMetaAliasSentences im))
+    ++
+    map ObjectSentenceAliasSentence
+        (Map.elems (indexedModuleObjectAliasSentences im))
+    ++
+    map MetaSentenceSymbolSentence
+        (Map.elems (indexedModuleMetaSymbolSentences im))
+    ++
+    map ObjectSentenceSymbolSentence
+        (Map.elems (indexedModuleObjectSymbolSentences im))
+    ++
+    map SentenceSortSentence
+        (Map.elems (indexedModuleObjectSortDescriptions im))
+    ++
+    map SentenceAxiomSentence (indexedModuleAxioms im)
+    ++
+    [ SentenceImportSentence (SentenceImport (indexedModuleName m) attributes)
+    | (attributes, m) <- indexedModuleImports im
+    ]
 
 {-|'ImplicitIndexedModule' is the type for the 'IndexedModule' containing
 things that are implicitly defined.
 -}
-newtype ImplicitIndexedModule = ImplicitIndexedModule IndexedModule
+newtype ImplicitIndexedModule sortParam pat =
+    ImplicitIndexedModule (IndexedModule sortParam pat)
 
-emptyIndexedModule :: ModuleName -> IndexedModule
+type KoreImplicitIndexedModule =
+    ImplicitIndexedModule UnifiedSortVariable UnifiedPattern
+
+emptyIndexedModule :: ModuleName -> IndexedModule sortParam pat
 emptyIndexedModule name =
     IndexedModule
         { indexedModuleName = name
@@ -90,34 +121,39 @@ emptyIndexedModule name =
         , indexedModuleAxioms = []
         , indexedModuleAttributes = Attributes []
         , indexedModuleImports = []
-        , indexedModuleRawSentences = []
         }
 
 {-|'indexedModuleWithDefaultImports' provides an 'IndexedModule' with the given
 name and containing the implicit definitions module.
 -}
 indexedModuleWithDefaultImports
-    :: ModuleName -> ImplicitIndexedModule -> IndexedModule
+    :: ModuleName
+    -> ImplicitIndexedModule sortParam pat
+    -> IndexedModule sortParam pat
 indexedModuleWithDefaultImports name (ImplicitIndexedModule implicitModule) =
     (emptyIndexedModule name)
-        { indexedModuleImports = [implicitModule] }
+        { indexedModuleImports = [(Attributes [], implicitModule)] }
 
 {-|'indexedModuleWithMetaSorts' provides an 'IndexedModule' with the implicit
 Kore definitions.
 -}
-indexedModuleWithMetaSorts :: ModuleName -> (ImplicitIndexedModule, Set.Set String)
+indexedModuleWithMetaSorts
+    :: ModuleName
+    -> (ImplicitIndexedModule sortParam pat, Set.Set String)
 indexedModuleWithMetaSorts name =
     ( ImplicitIndexedModule (emptyIndexedModule name)
-        { indexedModuleMetaSortDescriptions = metaSortDescriptions }
+        { indexedModuleMetaSortDescriptions = msd }
     , Set.insert
         (show StringSort)
-        (Set.map getId (Map.keysSet metaSortDescriptions))
+        (Set.map getId (Map.keysSet msd))
     )
+  where
+    msd = metaSortDescriptions
 
-metaSortDescriptions :: Map.Map (Id Meta) (SortDescription Meta)
+metaSortDescriptions :: Map.Map (Id Meta) (SentenceSort attributes Meta)
 metaSortDescriptions = Map.fromList (map metaSortDescription metaSortsList)
 
-metaSortDescription :: MetaSortType -> (Id Meta, SortDescription Meta)
+metaSortDescription :: MetaSortType -> (Id Meta, SentenceSort attributes Meta)
 metaSortDescription sortType =
     ( sortId
     , SentenceSort
@@ -133,17 +169,17 @@ metaSortDescription sortType =
 the module is already in the 'IndexedModule' map.
 -}
 indexModuleIfNeeded
-    :: ImplicitIndexedModule
+    :: KoreImplicitIndexedModule
     -- ^ Module containing the implicit Kore definitions
-    -> Map.Map ModuleName Module
+    -> Map.Map ModuleName KoreModule
     -- ^ Map containing all defined modules, used for resolving imports.
-    -> Map.Map ModuleName IndexedModule
+    -> Map.Map ModuleName KoreIndexedModule
     -- ^ Map containing all modules that were already indexed.
-    -> Module
+    -> KoreModule
     -- ^ Module to be indexed
     -> Either
         (Error a)
-        (Map.Map ModuleName IndexedModule)
+        (Map.Map ModuleName KoreIndexedModule)
     -- ^ If the module was indexed succesfully, the map returned on 'Right'
     -- contains everything that the provided 'IndexedModule' map contained,
     -- plus the current module, plus all the modules that were indexed when
@@ -156,14 +192,14 @@ indexModuleIfNeeded
             implicitModule Set.empty nameToModule indexedModules koreModule
 
 internalIndexModuleIfNeeded
-    :: ImplicitIndexedModule
+    :: KoreImplicitIndexedModule
     -> Set.Set ModuleName
-    -> Map.Map ModuleName Module
-    -> Map.Map ModuleName IndexedModule
-    -> Module
+    -> Map.Map ModuleName KoreModule
+    -> Map.Map ModuleName KoreIndexedModule
+    -> KoreModule
     -> Either
         (Error a)
-        (Map.Map ModuleName IndexedModule, IndexedModule)
+        (Map.Map ModuleName KoreIndexedModule, KoreIndexedModule)
 internalIndexModuleIfNeeded
     implicitModule importingModules nameToModule indexedModules koreModule
   =
@@ -195,22 +231,20 @@ internalIndexModuleIfNeeded
                 (moduleName koreModule) implicitModule)
             { indexedModuleAttributes =
                 moduleAttributes koreModule
-            , indexedModuleRawSentences =
-                moduleSentences koreModule
             }
         )
     koreModuleName = moduleName koreModule
     importingModulesWithCurrentOne = Set.insert koreModuleName importingModules
 
 indexModuleSentence
-    :: ImplicitIndexedModule
+    :: KoreImplicitIndexedModule
     -> Set.Set ModuleName
-    -> Map.Map ModuleName Module
-    -> (Map.Map ModuleName IndexedModule, IndexedModule)
+    -> Map.Map ModuleName KoreModule
+    -> (Map.Map ModuleName KoreIndexedModule, KoreIndexedModule)
     -> Sentence
     -> Either
         (Error a)
-        (Map.Map ModuleName IndexedModule, IndexedModule)
+        (Map.Map ModuleName KoreIndexedModule, KoreIndexedModule)
 indexModuleSentence
     _ _ _
     ( indexedModules
@@ -341,7 +375,9 @@ indexModuleSentence
     , indexedModule @ IndexedModule { indexedModuleImports = indexedImports }
     )
     ( SentenceImportSentence SentenceImport
-        { sentenceImportModuleName = importedModuleName }
+        { sentenceImportModuleName = importedModuleName
+        , sentenceImportAttributes = attributes
+        }
     )
   = do
     (newIndexedModules, importedModule) <-
@@ -354,18 +390,20 @@ indexModuleSentence
     return
         ( newIndexedModules
         , indexedModule
-            { indexedModuleImports = importedModule : indexedImports }
+            { indexedModuleImports =
+                (attributes, importedModule) : indexedImports
+            }
         )
 
 indexImportedModule
-    :: ImplicitIndexedModule
+    :: KoreImplicitIndexedModule
     -> Set.Set ModuleName
-    -> Map.Map ModuleName Module
-    -> Map.Map ModuleName IndexedModule
+    -> Map.Map ModuleName KoreModule
+    -> Map.Map ModuleName KoreIndexedModule
     -> ModuleName
     -> Either
         (Error a)
-        (Map.Map ModuleName IndexedModule, IndexedModule)
+        (Map.Map ModuleName KoreIndexedModule, KoreIndexedModule)
 indexImportedModule
     implicitModule
     importingModules
@@ -393,9 +431,10 @@ indexImportedModule
 imported modules.
 -}
 resolveThing
-    :: (IndexedModule -> Map.Map (Id level) (thing level))
+    :: (IndexedModule sortParam par
+        -> Map.Map (Id level) (thing level))
     -- ^ extracts the map into which to look up the id
-    -> IndexedModule
+    -> IndexedModule sortParam par
     -> Id level
     -> Maybe (thing level)
 resolveThing
@@ -410,8 +449,9 @@ resolveThing
 
 resolveThingInternal
     :: (Maybe (thing level), Set.Set ModuleName)
-    -> (IndexedModule -> Map.Map (Id level) (thing level))
-    -> IndexedModule
+    -> (IndexedModule sortParam par
+        -> Map.Map (Id level) (thing level))
+    -> IndexedModule sortParam par
     -> Id level
     -> (Maybe (thing level), Set.Set ModuleName)
 resolveThingInternal x@(Just _, _) _ _ _ = x
@@ -427,7 +467,7 @@ resolveThingInternal
         Just thing -> (Just thing, searchedModules)
         Nothing ->
             foldr
-                (\m partialResult -> resolveThingInternal
+                (\(_, m) partialResult -> resolveThingInternal
                     partialResult
                     mapExtractor
                     m

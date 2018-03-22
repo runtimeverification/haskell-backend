@@ -4,7 +4,7 @@ import           Test.Tasty                       (TestTree, testGroup)
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
-import           Data.Kore.ImplicitDefinitions
+import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.Parser.ParserImpl
 import           Data.Kore.Parser.ParserTestUtils
 
@@ -135,7 +135,7 @@ metaSortConverterTests =
 
 objectSortListParserTests :: [TestTree]
 objectSortListParserTests =
-    parseTree (inParenthesesSortListParser Object)
+    parseTree (inParenthesesListParser (sortParser Object))
         [ success "()" []
         , success "(var)"
             [ sortVariableSort "var" ]
@@ -156,7 +156,7 @@ objectSortListParserTests =
 
 metaSortListParserTests :: [TestTree]
 metaSortListParserTests =
-    parseTree (inCurlyBracesSortListParser Meta)
+    parseTree (inCurlyBracesListParser (sortParser Meta))
         [ success "{}" []
         , success "{#var}"
             [SortVariableSort (SortVariable (Id "#var"))]
@@ -165,7 +165,7 @@ metaSortListParserTests =
             , SortVariableSort (SortVariable (Id "#var2"))
             ]
         , success "{#Char{  }  , #var}"
-            [ metaSort CharSort
+            [ charMetaSort
             , SortVariableSort (SortVariable (Id "#var"))
             ]
         , FailureWithoutMessage
@@ -188,7 +188,7 @@ metaSortVariableParserTests =
 
 objectInCurlyBracesSortVariableListParserTest :: [TestTree]
 objectInCurlyBracesSortVariableListParserTest =
-    parseTree (inCurlyBracesSortVariableListParser Object)
+    parseTree (inCurlyBracesListParser (sortVariableParser Object))
         [ success "{}" []
         , success "{var}"
             [ SortVariable (Id "var") ]
@@ -202,7 +202,7 @@ objectInCurlyBracesSortVariableListParserTest =
 
 metaInCurlyBracesSortVariableListParserTest :: [TestTree]
 metaInCurlyBracesSortVariableListParserTest =
-    parseTree (inCurlyBracesSortVariableListParser Meta)
+    parseTree (inCurlyBracesListParser (sortVariableParser Meta))
         [ success "{}" []
         , success "{#var}"
             [ SortVariable (Id "#var") ]
@@ -354,7 +354,7 @@ variableParserTests =
 
 andPatternParserTests :: [TestTree]
 andPatternParserTests =
-    parseTree patternParser
+    parseTree unifiedPatternParser
         [ success "\\and{s}(\"a\", \"b\")"
             ( ObjectPattern $ AndPattern And
                 { andSort = sortVariableSort "s"
@@ -375,7 +375,7 @@ andPatternParserTests =
         ]
 applicationPatternParserTests :: [TestTree]
 applicationPatternParserTests =
-    parseTree patternParser
+    parseTree unifiedPatternParser
         [ success "#v:#Char"
             ( MetaPattern $ VariablePattern Variable
                 { variableName = Id "#v"
@@ -427,7 +427,7 @@ applicationPatternParserTests =
         ]
 bottomPatternParserTests :: [TestTree]
 bottomPatternParserTests =
-    parseTree patternParser
+    parseTree unifiedPatternParser
         [ success "\\bottom{#Sort}()"
             (MetaPattern $ BottomPattern $ Bottom (sortVariableSort "#Sort"))
         , FailureWithoutMessage
@@ -440,7 +440,7 @@ bottomPatternParserTests =
         ]
 ceilPatternParserTests :: [TestTree]
 ceilPatternParserTests =
-    parseTree patternParser
+    parseTree unifiedPatternParser
         [ success "\\ceil{s1, s2}(\"a\")"
             (ObjectPattern $ CeilPattern Ceil
                     { ceilOperandSort = sortVariableSort "s1"
@@ -459,7 +459,7 @@ ceilPatternParserTests =
         ]
 domainValuePatternParserTests :: [TestTree]
 domainValuePatternParserTests =
-    parseTree patternParser
+    parseTree unifiedPatternParser
         [ success "\\dv{s1}(\"a\")"
             (ObjectPattern $ DomainValuePattern DomainValue
                     { domainValueSort = sortVariableSort "s1"
@@ -476,7 +476,7 @@ domainValuePatternParserTests =
         ]
 equalsPatternParserTests :: [TestTree]
 equalsPatternParserTests =
-    parseTree patternParser
+    parseTree unifiedPatternParser
         [ success "\\equals{s1, s2}(\"a\", \"b\")"
             ( ObjectPattern $ EqualsPattern Equals
                     { equalsOperandSort = sortVariableSort "s1"
@@ -498,7 +498,7 @@ equalsPatternParserTests =
         ]
 existsPatternParserTests :: [TestTree]
 existsPatternParserTests =
-    parseTree patternParser
+    parseTree unifiedPatternParser
         [ success "\\exists{#s}(#v:#Char, \"b\")"
             (MetaPattern $ ExistsPattern Exists
                     { existsSort = sortVariableSort "#s"
@@ -528,7 +528,7 @@ existsPatternParserTests =
         ]
 floorPatternParserTests :: [TestTree]
 floorPatternParserTests =
-    parseTree patternParser
+    parseTree unifiedPatternParser
         [ success "\\floor{s1, s2}(\"a\")"
             ( ObjectPattern $ FloorPattern Floor
                     { floorOperandSort = sortVariableSort "s1"
@@ -547,7 +547,7 @@ floorPatternParserTests =
         ]
 forallPatternParserTests :: [TestTree]
 forallPatternParserTests =
-    parseTree patternParser
+    parseTree unifiedPatternParser
         [ success "\\forall{s}(v:s1, \"b\")"
             ( ObjectPattern $ ForallPattern Forall
                     { forallSort = sortVariableSort "s"
@@ -577,7 +577,7 @@ forallPatternParserTests =
         ]
 iffPatternParserTests :: [TestTree]
 iffPatternParserTests =
-    parseTree patternParser
+    parseTree unifiedPatternParser
         [ success "\\iff{s}(\"a\", \"b\")"
             ( ObjectPattern $ IffPattern Iff
                     { iffSort = sortVariableSort "s"
@@ -597,7 +597,7 @@ iffPatternParserTests =
         ]
 impliesPatternParserTests :: [TestTree]
 impliesPatternParserTests =
-    parseTree patternParser
+    parseTree unifiedPatternParser
         [ success "\\implies{s}(\"a\", \"b\")"
             ( ObjectPattern $ ImpliesPattern Implies
                     { impliesSort = sortVariableSort "s"
@@ -617,7 +617,7 @@ impliesPatternParserTests =
         ]
 memPatternParserTests :: [TestTree]
 memPatternParserTests =
-    parseTree patternParser
+    parseTree unifiedPatternParser
         [ success "\\in{s1,s2}(v:s3, \"b\")"
             ( ObjectPattern $ InPattern In
                     { inOperandSort = sortVariableSort "s1"
@@ -658,7 +658,7 @@ memPatternParserTests =
         ]
 notPatternParserTests :: [TestTree]
 notPatternParserTests =
-    parseTree patternParser
+    parseTree unifiedPatternParser
         [ success "\\not{s}(\"a\")"
             ( ObjectPattern $ NotPattern Not
                     { notSort = sortVariableSort "s"
@@ -678,7 +678,7 @@ notPatternParserTests =
         ]
 nextPatternParserTests :: [TestTree]
 nextPatternParserTests =
-    parseTree patternParser
+    parseTree unifiedPatternParser
         [ success "\\next{s}(\"a\")"
             ( ObjectPattern $ NextPattern Next
                     { nextSort = sortVariableSort "s"
@@ -690,7 +690,7 @@ nextPatternParserTests =
             { failureInput = "\\next{#s}(\"a\")"
             , failureExpected =
                 "\"<test-string>\" (line 1, column 7):\n"
-                ++"Cannot have a \\next meta pattern."
+                ++"Cannot have a \\next Meta pattern."
             }
         , FailureWithoutMessage
             [ ""
@@ -704,7 +704,7 @@ nextPatternParserTests =
         ]
 orPatternParserTests :: [TestTree]
 orPatternParserTests =
-    parseTree patternParser
+    parseTree unifiedPatternParser
         [ success "\\or{s}(\"a\", \"b\")"
             ( ObjectPattern $ OrPattern Or
                     { orSort = sortVariableSort "s"
@@ -724,7 +724,7 @@ orPatternParserTests =
         ]
 rewritesPatternParserTests :: [TestTree]
 rewritesPatternParserTests =
-    parseTree patternParser
+    parseTree unifiedPatternParser
         [ success "\\rewrites{s}(\"a\", \"b\")"
             ( ObjectPattern $ RewritesPattern Rewrites
                     { rewritesSort = sortVariableSort "s"
@@ -738,7 +738,7 @@ rewritesPatternParserTests =
             { failureInput = "\\rewrites{#s}(\"a\", \"b\")"
             , failureExpected =
                 "\"<test-string>\" (line 1, column 11):\n"
-                ++ "Cannot have a \\rewrites meta pattern."
+                ++ "Cannot have a \\rewrites Meta pattern."
             }
         , FailureWithoutMessage
             [ ""
@@ -750,7 +750,7 @@ rewritesPatternParserTests =
         ]
 stringLiteralPatternParserTests :: [TestTree]
 stringLiteralPatternParserTests =
-    parseTree patternParser
+    parseTree unifiedPatternParser
         [ success "\"hello\""
             (MetaPattern $ StringLiteralPattern (StringLiteral "hello"))
         , success "\"\""
@@ -761,7 +761,7 @@ stringLiteralPatternParserTests =
         ]
 topPatternParserTests :: [TestTree]
 topPatternParserTests =
-    parseTree patternParser
+    parseTree unifiedPatternParser
         [ success "\\top{s}()"
             (ObjectPattern $ TopPattern $ Top (sortVariableSort "s"))
         , FailureWithoutMessage
@@ -769,7 +769,7 @@ topPatternParserTests =
         ]
 variablePatternParserTests :: [TestTree]
 variablePatternParserTests =
-    parseTree patternParser
+    parseTree unifiedPatternParser
         [ success "v:s"
             ( ObjectPattern $ VariablePattern Variable
                 { variableName = Id "v"
@@ -791,7 +791,7 @@ variablePatternParserTests =
 
 sentenceAliasParserTests :: [TestTree]
 sentenceAliasParserTests =
-    parseTree sentenceParser
+    parseTree koreSentenceParser
         [ success "alias a{s1}(s2):s3[\"a\"]"
             ( ObjectSentenceAliasSentence
                 SentenceAlias
@@ -859,7 +859,7 @@ sentenceAliasParserTests =
 
 sentenceAxiomParserTests :: [TestTree]
 sentenceAxiomParserTests =
-    parseTree sentenceParser
+    parseTree koreSentenceParser
         [ success "axiom{sv1}\"a\"[\"b\"]"
             ( SentenceAxiomSentence SentenceAxiom
                 { sentenceAxiomParameters =
@@ -911,7 +911,7 @@ sentenceAxiomParserTests =
 
 sentenceImportParserTests :: [TestTree]
 sentenceImportParserTests =
-    parseTree sentenceParser
+    parseTree koreSentenceParser
         [ success "import M[\"b\"]"
             ( SentenceImportSentence SentenceImport
                 { sentenceImportModuleName = ModuleName "M"
@@ -930,7 +930,7 @@ sentenceImportParserTests =
 
 sentenceSortParserTests :: [TestTree]
 sentenceSortParserTests =
-    parseTree sentenceParser
+    parseTree koreSentenceParser
         [ success "sort s1 { sv1 } [ \"a\" ]"
             ( SentenceSortSentence SentenceSort
                 { sentenceSortName = Id "s1"
@@ -964,7 +964,7 @@ sentenceSortParserTests =
 
 sentenceSymbolParserTests :: [TestTree]
 sentenceSymbolParserTests =
-    parseTree sentenceParser
+    parseTree koreSentenceParser
         [ success "symbol sy1 { s1 } ( s1 ) : s1 [\"a\"] "
             ( ObjectSentenceSymbolSentence
                 SentenceSymbol
@@ -1007,7 +1007,7 @@ sentenceSymbolParserTests =
 
 attributesParserTests :: [TestTree]
 attributesParserTests =
-    parseTree attributesParser
+    parseTree (attributesParser unifiedPatternParser)
         [ success "[\"a\"]"
             (Attributes
                 [MetaPattern $ StringLiteralPattern (StringLiteral "a")])
@@ -1024,7 +1024,7 @@ attributesParserTests =
 
 moduleParserTests :: [TestTree]
 moduleParserTests =
-    parseTree moduleParser
+    parseTree (moduleParser koreSentenceParser unifiedPatternParser)
         [ success "module MN sort c{}[] endmodule [\"a\"]"
             Module
                 { moduleName = ModuleName "MN"
@@ -1075,7 +1075,7 @@ moduleParserTests =
 
 definitionParserTests :: [TestTree]
 definitionParserTests =
-    parseTree definitionParser
+    parseTree (definitionParser koreSentenceParser unifiedPatternParser)
         [ success "[\"a\"] module M sort c{}[] endmodule [\"b\"]"
             Definition
                 { definitionAttributes =

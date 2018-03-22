@@ -11,7 +11,9 @@ module Data.Kore.ASTVerifier.AttributesVerifier (verifyAttributes,
                                                  AttributesVerification (..))
   where
 
-import           Data.Kore.AST.Kore
+import           Data.Kore.AST.Common                  (Attributes (..))
+import           Data.Kore.AST.Kore                    (KoreAttributes,
+                                                        UnifiedSortVariable)
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.PatternVerifier
 import           Data.Kore.Error
@@ -23,8 +25,8 @@ data AttributesVerification = VerifyAttributes | DoNotVerifyAttributes
 {-|'verifyAttributes' verifies the weldefinedness of the given attributes.
 -}
 verifyAttributes
-    :: Attributes
-    -> IndexedModule
+    :: KoreAttributes
+    -> KoreIndexedModule
     -- ^ Module with the declarations visible in these atributes.
     -> Set.Set UnifiedSortVariable
     -- ^ Sort variables visible in these atributes.

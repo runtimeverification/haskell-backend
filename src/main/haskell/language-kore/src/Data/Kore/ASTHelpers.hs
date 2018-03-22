@@ -1,4 +1,7 @@
-module Data.Kore.ASTHelpers (ApplicationSorts (..), symbolOrAliasSorts) where
+{-# LANGUAGE GADTs #-}
+module Data.Kore.ASTHelpers ( ApplicationSorts (..)
+                            , symbolOrAliasSorts
+                            ) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.Error
@@ -17,7 +20,7 @@ pattern from the given sort parameters.
 symbolOrAliasSorts
     :: (SentenceSymbolOrAlias ssoa)
     => [Sort level]
-    -> ssoa attributes level
+    -> ssoa pat level
     -> Either (Error b) (ApplicationSorts level)
 symbolOrAliasSorts params sentence = do
     variableToSort <-

@@ -9,6 +9,7 @@ import           Data.Kore.ASTTraversalsTest
 import           Data.Kore.ASTVerifier.ASTVerifierTest
 import           Data.Kore.Implicit.ImplicitKoreTest
 import           Data.Kore.IndentingPrinterTest
+import           Data.Kore.MetaML.LiftTest
 import           Data.Kore.Parser.CharDictTest
 import           Data.Kore.Parser.CharSetTest
 import           Data.Kore.Parser.CStringTest
@@ -58,4 +59,5 @@ unitTests =
         , variablesIntTests
         , substitutionListTests
         , substitutionClassTests
+        , liftTests
         ]

@@ -2,7 +2,17 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-module Data.Kore.Unparser.Unparse (Unparse, unparseToString) where
+{-|
+Module      : Data.Kore.Unparser.Unparse
+Description : Class for unparsing and instances for it for 'Meta' and
+              unified Kore constructs.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : traian.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : portable
+-}
+module Data.Kore.Unparser.Unparse (Unparse(..), unparseToString) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
@@ -10,16 +20,19 @@ import           Data.Kore.AST.MLPatterns
 import           Data.Kore.IndentingPrinter (PrinterOutput, StringPrinter,
                                              betweenLines, printToString,
                                              withIndent, write)
+import           Data.Kore.MetaML.AST
 import           Data.Kore.Parser.CString   (escapeCString)
 
-{-  Unparse to string instance
--}
+import           Data.Fix
+
+-- |'Unparse' class offers functionality to reverse the parsing process.
 class Unparse a where
     unparse :: PrinterOutput w m => a -> m ()
 
 stringUnparse :: Unparse a => a -> StringPrinter ()
 stringUnparse = unparse
 
+-- |'unparseToString' uses a 'StringPrinter' to serialize an object to 'String'.
 unparseToString :: Unparse a => a -> String
 unparseToString a = printToString (stringUnparse a)
 
@@ -229,10 +242,10 @@ instance (Unparse (UnifiedVariable v), Unparse p, Unparse (v level))
     unparse (TopPattern p)           = unparse p
     unparse (VariablePattern p)      = unparse p
 
-instance Unparse Attributes where
+instance Unparse pat => Unparse (Attributes pat) where
     unparse = inSquareBrackets . unparse . getAttributes
 
-instance Unparse attributes => Unparse (SentenceAlias attributes level) where
+instance Unparse pat => Unparse (SentenceAlias pat level) where
     unparse sa = do
         write "alias"
         write " "
@@ -242,7 +255,7 @@ instance Unparse attributes => Unparse (SentenceAlias attributes level) where
         unparse (sentenceAliasResultSort sa)
         unparse (sentenceAliasAttributes sa)
 
-instance Unparse attributes => Unparse (SentenceSymbol attributes level) where
+instance Unparse pat => Unparse (SentenceSymbol pat level) where
     unparse sa = do
         write "symbol"
         write " "
@@ -252,7 +265,7 @@ instance Unparse attributes => Unparse (SentenceSymbol attributes level) where
         unparse (sentenceSymbolResultSort sa)
         unparse (sentenceSymbolAttributes sa)
 
-instance Unparse attributes => Unparse (SentenceImport attributes) where
+instance Unparse pat => Unparse (SentenceImport pat) where
     unparse a = do
         write "import"
         write " "
@@ -260,10 +273,9 @@ instance Unparse attributes => Unparse (SentenceImport attributes) where
         unparse (sentenceImportAttributes a)
 
 instance
-    ( Unparse attributes
-    , Unparse param
+    ( Unparse param
     , Unparse pat
-    ) => Unparse (SentenceAxiom param pat attributes)
+    ) => Unparse (SentenceAxiom param pat)
   where
     unparse a = do
         write "axiom"
@@ -271,7 +283,7 @@ instance
         unparse (sentenceAxiomPattern a)
         unparse (sentenceAxiomAttributes a)
 
-instance Unparse attributes => Unparse (SentenceSort attributes level) where
+instance Unparse pat => Unparse (SentenceSort pat level) where
     unparse a = do
         write "sort"
         write " "
@@ -288,24 +300,45 @@ instance Unparse Sentence where
     unparse (SentenceAxiomSentence s)        = unparse s
     unparse (SentenceSortSentence s)         = unparse s
 
-instance Unparse Module where
+instance Unparse MetaSentence where
+    unparse (AliasMetaSentence s)  = unparse s
+    unparse (SymbolMetaSentence s) = unparse s
+    unparse (ImportMetaSentence s) = unparse s
+    unparse (AxiomMetaSentence s)  = unparse s
+
+instance
+    ( Unparse sentence
+    , Unparse pat
+    ) => Unparse (Module sentence pat)
+  where
     unparse m = do
         write "module "
-        unparse (moduleName m)
-        if moduleSentences m /= []
-            then do
+        unparse name
+        if null sentences
+            then betweenLines
+            else do
                 withIndent 4
                     (  betweenLines
-                    >> unparseList betweenLines (moduleSentences m)
+                    >> unparseList betweenLines sentences
                     )
                 betweenLines
-            else betweenLines
         write "endmodule"
         betweenLines
-        unparse (moduleAttributes m)
+        unparse attributes
+      where
+        name =moduleName m
+        sentences = moduleSentences m
+        attributes = moduleAttributes m
 
-instance Unparse Definition where
+instance
+    ( Unparse sentence
+    , Unparse pat
+    ) => Unparse (Definition sentence pat)
+  where
     unparse d = do
         unparse (definitionAttributes d)
         betweenLines
         unparseList betweenLines (definitionModules d)
+
+instance Unparse (Fix (Pattern Meta Variable)) where
+    unparse = unparse . unFix

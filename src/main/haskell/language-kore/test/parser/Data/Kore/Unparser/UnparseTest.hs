@@ -64,14 +64,15 @@ unparseUnitTests =
             \    )\n\
             \]"
         , unparseTest
-            Module
+            (Module
                 { moduleName = ModuleName "t"
                 , moduleSentences = []
                 , moduleAttributes = Attributes []
-                }
+                }::KoreModule
+            )
             "module t\nendmodule\n[]"
         , unparseParseTest
-            definitionParser
+            koreDefinitionParser
             Definition
                 { definitionAttributes = Attributes {getAttributes = []}
                 , definitionModules =
@@ -88,7 +89,7 @@ unparseUnitTests =
                     ]
                 }
         , unparseTest
-            Definition
+            (Definition
                 { definitionAttributes = Attributes {getAttributes = []}
                 , definitionModules =
                     [ Module
@@ -102,7 +103,8 @@ unparseUnitTests =
                         , moduleAttributes = Attributes {getAttributes = []}
                         }
                     ]
-                }
+                }::KoreDefinition
+            )
             (  "[]\n\n"
             ++ "    module i\n    endmodule\n    []\n"
             ++ "    module k\n    endmodule\n    []\n"
@@ -115,7 +117,7 @@ unparseUnitTests =
             )
             "import sl[]"
         , unparseTest
-            Attributes
+            (Attributes
                 { getAttributes =
                     [ MetaPattern
                         ( TopPattern Top
@@ -126,10 +128,11 @@ unparseUnitTests =
                             }
                         )
                     ]
-                }
+                }::KoreAttributes
+            )
         "[\n    \\top{#CharList{}}()\n]"
         , unparseTest
-            Attributes
+            (Attributes
                 { getAttributes =
                     [ MetaPattern
                         (CharLiteralPattern CharLiteral
@@ -140,7 +143,8 @@ unparseUnitTests =
                             { getCharLiteral = '\'' }
                         )
                     ]
-                }
+                }::KoreAttributes
+            )
             "[\n    '\\'',\n    '\\''\n]"
         ]
 
@@ -183,15 +187,28 @@ unparseParseTests =
         , testProperty "UnifiedVariable"
             (forAll unifiedVariableGen (unparseParseProp unifiedVariableParser))
         , testProperty "UnifiedPattern"
-            (forAll unifiedPatternGen (unparseParseProp patternParser))
+            (forAll unifiedPatternGen (unparseParseProp unifiedPatternParser))
         , testProperty "Attributes"
-            (forAll attributesGen (unparseParseProp attributesParser))
+            (forAll
+                (attributesGen unifiedPatternGen)
+                (unparseParseProp (attributesParser unifiedPatternParser))
+            )
         , testProperty "Sentence"
-            (forAll sentenceGen (unparseParseProp sentenceParser))
+            (forAll sentenceGen (unparseParseProp koreSentenceParser))
         , testProperty "Module"
-            (forAll moduleGen (unparseParseProp moduleParser))
+            (forAll
+                (moduleGen sentenceGen unifiedPatternGen)
+                (unparseParseProp
+                    (moduleParser koreSentenceParser unifiedPatternParser)
+                )
+            )
         , testProperty "Definition"
-            (forAll definitionGen (unparseParseProp definitionParser))
+            (forAll
+                (definitionGen sentenceGen unifiedPatternGen)
+                (unparseParseProp
+                    (definitionParser koreSentenceParser unifiedPatternParser)
+                )
+            )
         ]
 
 parse :: Parser.Parser a -> String -> Either String a

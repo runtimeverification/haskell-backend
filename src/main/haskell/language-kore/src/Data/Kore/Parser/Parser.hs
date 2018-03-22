@@ -28,14 +28,13 @@ main = do
 @
 
 -}
-module Data.Kore.Parser.Parser ( Definition
-                               , fromKore
+module Data.Kore.Parser.Parser ( fromKore
                                , koreParser
                                ) where
 
-import           Data.Kore.AST.Kore           (Definition)
+import           Data.Kore.AST.Kore           (KoreDefinition)
 import           Data.Kore.Parser.Lexeme      (skipWhitespace)
-import           Data.Kore.Parser.ParserImpl  (definitionParser)
+import           Data.Kore.Parser.ParserImpl  (koreDefinitionParser)
 import           Data.Kore.Parser.ParserUtils
 
 import           Text.Parsec.String           (Parser)
@@ -44,13 +43,13 @@ import           Text.Parsec.String           (Parser)
 
 The input must contain a full valid Kore defininition and nothing else.
 -}
-koreParser :: Parser Definition
-koreParser = skipWhitespace *> definitionParser <* endOfInput
+koreParser :: Parser KoreDefinition
+koreParser = skipWhitespace *> koreDefinitionParser <* endOfInput
 
 {-|'fromKore' takes a string repredentation of a Kore Definition and returns
 a 'Definition' or a parse error.
 
 The input must contain a full valid Kore defininition and nothing else.
 -}
-fromKore :: FilePath -> String -> Either String Definition
+fromKore :: FilePath -> String -> Either String KoreDefinition
 fromKore = parseOnly koreParser

@@ -20,7 +20,7 @@ newtype ErrorStack = ErrorStack [String]
 data TestData = TestData
     { testDataDescription :: !String
     , testDataError       :: !(Error VerifyError)
-    , testDataDefinition  :: !Definition
+    , testDataDefinition  :: !KoreDefinition
     }
 
 addPrefixToDescription :: String -> [TestData] -> [TestData]
@@ -59,7 +59,7 @@ successTestData :: TestData -> TestTree
 successTestData testData =
     expectSuccess (testDataDescription testData) (testDataDefinition testData)
 
-expectSuccess :: String -> Definition -> TestTree
+expectSuccess :: String -> KoreDefinition -> TestTree
 expectSuccess description definition =
     testCase
         description
@@ -71,7 +71,7 @@ expectSuccess description definition =
             (verifyDefinition VerifyAttributes definition)
         )
 
-expectFailureWithError :: String -> Error VerifyError -> Definition -> TestTree
+expectFailureWithError :: String -> Error VerifyError -> KoreDefinition -> TestTree
 expectFailureWithError description expectedError definition =
     testCase
         description
@@ -89,7 +89,7 @@ expectFailureWithError description expectedError definition =
                     expectedError actualError
         )
 
-printDefinition :: Definition -> String
+printDefinition :: KoreDefinition -> String
 printDefinition definition =
     prettyPrintToString definition
     ++ "\n----------------------\n"
@@ -111,7 +111,7 @@ newtype TestedPatternSort level = TestedPatternSort (Sort level)
 newtype SortVariablesThatMustBeDeclared level =
     SortVariablesThatMustBeDeclared [SortVariable level]
 
-simpleDefinitionFromSentences :: ModuleName -> [Sentence] -> Definition
+simpleDefinitionFromSentences :: ModuleName -> [Sentence] -> KoreDefinition
 simpleDefinitionFromSentences name sentences =
     Definition
         { definitionAttributes = Attributes []

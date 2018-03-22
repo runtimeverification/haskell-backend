@@ -9,6 +9,7 @@ import           Test.Tasty                               (TestTree, testGroup)
 import           Test.Tasty.Golden                        (findByExtension,
                                                            goldenVsString)
 
+import           Data.Kore.AST.Kore                       (KoreDefinition)
 import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.ASTVerifier.DefinitionVerifier
 import           Data.Kore.Error
@@ -58,13 +59,13 @@ goldenFromInputFileName (InputFileName inputFile) =
         (directory </> "expected" </> addExtension fileName ".golden")
   where (directory, fileName) = splitFileName inputFile
 
-toByteString :: Either String Definition -> LazyByteString.ByteString
+toByteString :: Either String KoreDefinition -> LazyByteString.ByteString
 toByteString (Left err) =
     LazyChar8.pack ("Parse error: " ++ err ++ ".")
 toByteString (Right definition) =
     LazyChar8.pack (prettyPrintToString definition)
 
-verify :: Either String Definition -> Either String Definition
+verify :: Either String KoreDefinition -> Either String KoreDefinition
 verify (Left err) = Left err
 verify (Right definition) =
     case verifyDefinition DoNotVerifyAttributes definition of
