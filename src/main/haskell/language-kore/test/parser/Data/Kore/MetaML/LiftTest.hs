@@ -603,7 +603,7 @@ liftTests =
             )
         , testCase "Lifting Object Symbol Declaration"
             (assertEqual ""
-                [ SymbolMetaSentence (symbol_ "#`alias" [] patternMetaSort)
+                [ SymbolMetaSentence (symbol_ "#`alias" [patternMetaSort] patternMetaSort)
                 , AxiomMetaSentence SentenceAxiom
                     { sentenceAxiomParameters = [sortParameter "#s"]
                     , sentenceAxiomPattern =
@@ -613,7 +613,13 @@ liftTests =
                                 , equalsResultSort =
                                     SortVariableSort (sortParameter "#s")
                                 , equalsFirst =
-                                    Fix (apply (groundHead "#`alias") [])
+                                    Fix
+                                        (apply (groundHead "#`alias")
+                                            [ variablePattern
+                                                "#P1"
+                                                patternMetaSort
+                                            ]
+                                        )
                                 , equalsSecond = Fix
                                     (apply applicationHead
                                         [ Fix
@@ -623,13 +629,34 @@ liftTests =
                                                         (StringLiteral "alias")
                                                     )
                                                 , Fix (apply nilSortListHead [])
-                                                , Fix (apply nilSortListHead [])
+                                                , Fix
+                                                    (apply consSortListHead
+                                                        [ variablePattern
+                                                            "#a"
+                                                            sortMetaSort
+                                                        , Fix
+                                                            (apply
+                                                                nilSortListHead
+                                                                []
+                                                            )
+                                                        ]
+                                                    )
                                                 , variablePattern
                                                     "#a"
                                                     sortMetaSort
                                                 ]
                                             )
-                                        , Fix (apply nilPatternListHead [])
+                                        , Fix
+                                            (apply consPatternListHead
+                                                [ variablePattern
+                                                    "#P1"
+                                                    patternMetaSort
+                                                , Fix
+                                                    (apply nilPatternListHead
+                                                        []
+                                                    )
+                                                ]
+                                            )
                                         ]
                                     )
                                 }
@@ -667,7 +694,18 @@ liftTests =
                                                         (StringLiteral "alias")
                                                     )
                                                 , Fix (apply nilSortListHead [])
-                                                , Fix (apply nilSortListHead [])
+                                                , Fix
+                                                    (apply consSortListHead
+                                                        [ variablePattern
+                                                            "#a"
+                                                            sortMetaSort
+                                                        , Fix
+                                                            (apply
+                                                                nilSortListHead
+                                                                []
+                                                            )
+                                                        ]
+                                                    )
                                                 , variablePattern
                                                     "#a"
                                                     sortMetaSort
@@ -686,7 +724,8 @@ liftTests =
                             { symbolConstructor = Id "alias"
                             , symbolParams = []
                             }
-                        , sentenceSymbolSorts = []
+                        , sentenceSymbolSorts =
+                            [ SortVariableSort (SortVariable (Id "a")) ]
                         , sentenceSymbolResultSort =
                                 SortVariableSort (SortVariable (Id "a"))
                         , sentenceSymbolAttributes = Attributes []
@@ -695,6 +734,8 @@ liftTests =
                 )
             )
         ]
+--TODO(traiansf): add more tests covering all sentences (esp. axiom),
+-- modules and definitions
 
 stringPattern :: Pattern Meta Variable child
 stringPattern = StringLiteralPattern (StringLiteral "a")

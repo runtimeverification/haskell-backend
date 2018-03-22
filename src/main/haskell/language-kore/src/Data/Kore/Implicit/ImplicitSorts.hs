@@ -1,5 +1,4 @@
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
-{-# LANGUAGE GADTs #-}
 {-|
 Module      : Data.Kore.Implicit.ImplicitSorts
 Description : Haskell definitions for the implicit Kore 'Meta' sorts.
@@ -67,26 +66,3 @@ import           Data.Kore.Implicit.ImplicitSortsImpl
     defineMetaSort PatternSort
 
 stringMetaSort = charListMetaSort
-
-getPatternResultSort :: Pattern level Variable child -> Sort level
-getPatternResultSort (AndPattern p) = andSort p
-getPatternResultSort (BottomPattern p) = bottomSort p
-getPatternResultSort (CeilPattern p) = ceilResultSort p
-getPatternResultSort (DomainValuePattern p) = domainValueSort p
-getPatternResultSort (EqualsPattern p) = equalsResultSort p
-getPatternResultSort (ExistsPattern p) = existsSort p
-getPatternResultSort (FloorPattern p) = floorResultSort p
-getPatternResultSort (ForallPattern p) = forallSort p
-getPatternResultSort (IffPattern p) = iffSort p
-getPatternResultSort (ImpliesPattern p) = impliesSort p
-getPatternResultSort (InPattern p) = inResultSort p
-getPatternResultSort (NextPattern p) = nextSort p
-getPatternResultSort (NotPattern p) = notSort p
-getPatternResultSort (OrPattern p) = orSort p
-getPatternResultSort (RewritesPattern p) = rewritesSort p
-getPatternResultSort (StringLiteralPattern _) = stringMetaSort
-getPatternResultSort (CharLiteralPattern _) = charMetaSort
-getPatternResultSort (TopPattern p) = topSort p
-getPatternResultSort (VariablePattern p) = variableSort p
-getPatternResultSort (ApplicationPattern _) =
-    error "Application pattern sort currently undefined"

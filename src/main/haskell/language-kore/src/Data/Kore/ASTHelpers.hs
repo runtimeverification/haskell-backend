@@ -1,4 +1,7 @@
-module Data.Kore.ASTHelpers (ApplicationSorts (..), symbolOrAliasSorts) where
+{-# LANGUAGE GADTs #-}
+module Data.Kore.ASTHelpers ( ApplicationSorts (..)
+                            , symbolOrAliasSorts
+                            ) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.Error

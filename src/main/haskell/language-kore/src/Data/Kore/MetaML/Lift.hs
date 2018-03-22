@@ -339,19 +339,22 @@ liftSentence (SentenceAxiomSentence as) =
     [ AxiomMetaSentence SentenceAxiom
         { sentenceAxiomParameters = metaParameters
         , sentenceAxiomAttributes = liftAttributes (sentenceAxiomAttributes as)
-        , sentenceAxiomPattern = Fix
-            (ImpliesPattern Implies
-                { impliesSort = axiomSort
-                , impliesFirst = Fix
-                    (apply (sortsDeclaredHead axiomSort)
-                        [liftToMeta (map SortVariableSort objectParameters)]
-                    )
-                , impliesSecond = case originalPattern of
-                    MetaPattern _   -> liftedPattern
-                    ObjectPattern _ ->
-                        Fix (apply (provableHead axiomSort) [liftedPattern])
-                }
-            )
+        , sentenceAxiomPattern =
+            if null objectParameters
+                then provableLiftedPattern
+                else
+                    Fix
+                        (ImpliesPattern Implies
+                            { impliesSort = axiomSort
+                            , impliesFirst = Fix
+                                (apply (sortsDeclaredHead axiomSort)
+                                    [ liftToMeta
+                                        (map SortVariableSort objectParameters)
+                                    ]
+                                )
+                            , impliesSecond = provableLiftedPattern
+                            }
+                        )
         }
     ]
   where
@@ -364,6 +367,11 @@ liftSentence (SentenceAxiomSentence as) =
     objectParameters =
         [sv | ObjectSortVariable sv <- sentenceAxiomParameters as]
     liftedPattern = liftToMeta originalPattern
+    provableLiftedPattern =
+        case originalPattern of
+            MetaPattern _   -> liftedPattern
+            ObjectPattern _ ->
+                Fix (apply (provableHead axiomSort) [liftedPattern])
 liftSentence (SentenceImportSentence is) =
     [ ImportMetaSentence is
         { sentenceImportAttributes =
@@ -378,3 +386,32 @@ liftModule m = Module
     , moduleAttributes = liftAttributes (moduleAttributes m)
     , moduleSentences = concatMap liftSentence (moduleSentences m)
     }
+
+-- |'getPatternResultSort' retrieves the result sort of a pattern.
+-- Currently fails if that pattern is not an application pattern.
+-- TODO(traiansf):
+-- - Consider making it work for Application, too (that requires passing
+--   an indexed module as an extra parameter.
+-- - Consider making it public (and moving it to a more appropriate module).
+getPatternResultSort :: Pattern level Variable child -> Sort level
+getPatternResultSort (AndPattern p) = andSort p
+getPatternResultSort (BottomPattern p) = bottomSort p
+getPatternResultSort (CeilPattern p) = ceilResultSort p
+getPatternResultSort (DomainValuePattern p) = domainValueSort p
+getPatternResultSort (EqualsPattern p) = equalsResultSort p
+getPatternResultSort (ExistsPattern p) = existsSort p
+getPatternResultSort (FloorPattern p) = floorResultSort p
+getPatternResultSort (ForallPattern p) = forallSort p
+getPatternResultSort (IffPattern p) = iffSort p
+getPatternResultSort (ImpliesPattern p) = impliesSort p
+getPatternResultSort (InPattern p) = inResultSort p
+getPatternResultSort (NextPattern p) = nextSort p
+getPatternResultSort (NotPattern p) = notSort p
+getPatternResultSort (OrPattern p) = orSort p
+getPatternResultSort (RewritesPattern p) = rewritesSort p
+getPatternResultSort (StringLiteralPattern _) = stringMetaSort
+getPatternResultSort (CharLiteralPattern _) = charMetaSort
+getPatternResultSort (TopPattern p) = topSort p
+getPatternResultSort (VariablePattern p) = variableSort p
+getPatternResultSort (ApplicationPattern _) =
+    error "Application pattern sort currently undefined"
