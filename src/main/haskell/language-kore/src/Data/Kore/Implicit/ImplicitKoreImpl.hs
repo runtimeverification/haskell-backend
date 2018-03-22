@@ -52,8 +52,8 @@ parameterizedAxiom
 
 {-|'parameterizedEqualsAxiom' is a special case for a 'parameterizedAxiom' that
 contains an equals pattern.
-Note that 'equalsSortParam' is assumed not to be used in any of the patterns.
-Using it will have unpredictable effects.
+Note that 'equalsSortParam' AKA @#esp@ is assumed not to be used in any of
+the patterns. Using it will have unpredictable effects.
 -}
 parameterizedEqualsAxiom
     :: [SortVariable Meta] -> MetaPatternStub -> MetaPatternStub -> MetaSentenceAxiom
@@ -63,8 +63,8 @@ parameterizedEqualsAxiom parameters first second =
         (withSort equalsSort (equals_ first second))
 
 {-|'equalsAxiom' is a special case for an axiom that contains an equals pattern.
-Note that 'equalsSortParam' is assumed not to be used in any of the patterns.
-Using it will have unpredictable effects.
+Note that 'equalsSortParam' AKA @#esp@ is assumed not to be used in any of
+the patterns. Using it will have unpredictable effects.
 -}
 equalsAxiom :: MetaPatternStub -> MetaPatternStub -> MetaSentenceAxiom
 equalsAxiom = parameterizedEqualsAxiom []
