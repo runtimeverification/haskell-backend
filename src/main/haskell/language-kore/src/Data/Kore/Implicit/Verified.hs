@@ -12,7 +12,8 @@ module Data.Kore.Implicit.Verified
     (implicitKoreModule, implicitKoreDefinition) where
 
 import           Data.Kore.AST.Common                     (Definition (..))
-import           Data.Kore.ASTVerifier.DefinitionVerifier (verifyKoreDefinition)
+import           Data.Kore.ASTVerifier.DefinitionVerifier (AttributesVerification (..),
+                                                           verifyKoreDefinition)
 import           Data.Kore.ASTVerifier.Error              (VerifyError)
 import           Data.Kore.Error                          (Error, printError)
 import           Data.Kore.Implicit.ImplicitKore          (uncheckedKoreDefinition)
@@ -21,7 +22,9 @@ import           Data.Kore.MetaML.MetaToKore
 
 checkedKoreDefinition :: Either (Error VerifyError) MetaDefinition
 checkedKoreDefinition = do
-    verifyKoreDefinition (definitionMetaToKore uncheckedKoreDefinition)
+    verifyKoreDefinition
+        VerifyAttributes
+        (definitionMetaToKore uncheckedKoreDefinition)
     return uncheckedKoreDefinition
 
 implicitKoreDefinition :: MetaDefinition

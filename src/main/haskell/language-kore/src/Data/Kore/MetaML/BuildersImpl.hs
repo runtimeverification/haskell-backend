@@ -113,7 +113,7 @@ fillCheckPairSorts
                 )
 
 {-|'unaryPattern' is a helper for building 'MetaPatternStub's for unary
-operators like @\not@.
+operators, like @\not@.
 -}
 unaryPattern
     :: (Sort Meta -> CommonMetaPattern -> PatternMetaType)
@@ -133,7 +133,7 @@ unaryPattern constructor (UnsortedPatternStub p) =
     UnsortedPatternStub (\sortS -> constructor sortS (Fix (p sortS)))
 
 {-|'unarySortedPattern' is a helper for building 'MetaPatternStub's for unary
-operators where the result sort is different from the operand sort like \ceil.
+operators where the result sort is different from the operand sort, like \ceil.
 -}
 unarySortedPattern
     :: (ResultSort
@@ -161,7 +161,7 @@ unarySortedPattern constructor maybeSort patternStub =
             )
 
 {-|'binaryPattern' is a helper for building 'MetaPatternStub's for binary
-operators like @\and@.
+operators, like @\and@.
 -}
 binaryPattern
     :: (Sort Meta
@@ -186,7 +186,8 @@ binaryPattern constructor first second =
                 }
 
 {-|'binarySortedPattern' is a helper for building 'MetaPatternStub's for binary
-operators where the result sort is different from the operand sort like \equals.
+operators where the result sort is different from the operand sort,
+like \equals.
 -}
 binarySortedPattern
     :: (ResultSort
@@ -241,3 +242,71 @@ binarySortedPattern constructor maybeSort first second =
                     firstPattern
                     secondPattern
             )
+
+equalsM_
+    :: Maybe (Sort Meta)
+    -> (MetaPatternStub -> MetaPatternStub -> MetaPatternStub)
+equalsM_ s =
+    binarySortedPattern
+        (\(ResultSort resultSort)
+            (ChildSort childSort)
+            firstPattern
+            secondPattern
+          ->
+            EqualsPattern Equals
+                { equalsOperandSort = childSort
+                , equalsResultSort  = resultSort
+                , equalsFirst       = firstPattern
+                , equalsSecond      = secondPattern
+                }
+        )
+        (ChildSort <$> s)
+
+inM_
+    :: Maybe (Sort Meta)
+    -> (MetaPatternStub -> MetaPatternStub -> MetaPatternStub)
+inM_ s =
+    binarySortedPattern
+        (\(ResultSort resultSort)
+            (ChildSort childSort)
+            firstPattern
+            secondPattern
+          ->
+            InPattern In
+                { inOperandSort     = childSort
+                , inResultSort      = resultSort
+                , inContainedChild  = firstPattern
+                , inContainingChild = secondPattern
+                }
+        )
+        (ChildSort <$> s)
+
+ceilM_ :: Maybe (Sort Meta) -> MetaPatternStub -> MetaPatternStub
+ceilM_ s =
+    unarySortedPattern
+        (\(ResultSort resultSort)
+            (ChildSort childSort)
+            childPattern
+          ->
+            CeilPattern Ceil
+                { ceilOperandSort = childSort
+                , ceilResultSort  = resultSort
+                , ceilChild       = childPattern
+                }
+        )
+        (ChildSort <$> s)
+
+floorM_ :: Maybe (Sort Meta) -> MetaPatternStub -> MetaPatternStub
+floorM_ s =
+    unarySortedPattern
+        (\(ResultSort resultSort)
+            (ChildSort childSort)
+            childPattern
+          ->
+            FloorPattern Floor
+                { floorOperandSort = childSort
+                , floorResultSort  = resultSort
+                , floorChild       = childPattern
+                }
+        )
+        (ChildSort <$> s)

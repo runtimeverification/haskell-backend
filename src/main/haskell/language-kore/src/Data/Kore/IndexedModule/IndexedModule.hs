@@ -24,6 +24,7 @@ module Data.Kore.IndexedModule.IndexedModule
     , KoreIndexedModule
     , indexedModuleRawSentences
     , indexModuleIfNeeded
+    , metaNameForObjectSort
     , resolveThing
     , SortDescription (..)
     ) where
@@ -31,10 +32,11 @@ module Data.Kore.IndexedModule.IndexedModule
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.Error
+import           Data.Kore.Implicit.ImplicitSorts
 
-import           Control.Monad        (foldM)
-import qualified Data.Map             as Map
-import qualified Data.Set             as Set
+import           Control.Monad                    (foldM)
+import qualified Data.Map                         as Map
+import qualified Data.Set                         as Set
 
 newtype SortDescription level = SortDescription
     { getSortDescription :: SentenceSort level FixedPattern Variable }
@@ -321,13 +323,37 @@ indexModuleSentence
             }
         )
 indexModuleSentence
-    _ _ _
-    ( indexedModules
-    , indexedModule @ IndexedModule
-        { indexedModuleObjectSortDescriptions = descriptions }
-    )
-    (ObjectSentence (SentenceSortSentence sentence))
-  =
+    implicitModule
+    importingModules
+    nameToModule
+    indexedStuff
+    (SentenceSortSentence sentence)
+  = do
+    (indexedModules, indexedModule) <-
+        indexModuleSentence
+            implicitModule
+            importingModules
+            nameToModule
+            indexedStuff
+            (MetaSentence
+                (SentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol = Symbol
+                        { symbolConstructor =
+                            Id
+                                (metaNameForObjectSort
+                                    (getId (sentenceSortName sentence))
+                                )
+                        , symbolParams = []
+                        }
+                    , sentenceSymbolSorts =
+                        map (const sortMetaSort)
+                            (sentenceSortParameters sentence)
+                    , sentenceSymbolResultSort = sortMetaSort
+                    , sentenceSymbolAttributes = Attributes []
+                    }
+                )
+            )
+
     return
         ( indexedModules
         , indexedModule
@@ -335,7 +361,7 @@ indexModuleSentence
                 Map.insert
                     (sentenceSortName sentence)
                     sentence
-                    descriptions
+                    (indexedModuleObjectSortDescriptions indexedModule)
             }
         )
 indexModuleSentence
@@ -463,3 +489,6 @@ resolveThingInternal
                 (indexedModuleImports indexedModule)
   where
     things = mapExtractor indexedModule
+
+metaNameForObjectSort :: String -> String
+metaNameForObjectSort name = "#`" ++ name

@@ -172,8 +172,8 @@ metaBasicSortsList =
 
 metaSortsList :: [MetaSortType]
 metaSortsList =
-    map MetaBasicSortType metaBasicSortsList ++
-        map MetaListSortType metaBasicSortsList
+    map MetaBasicSortType metaBasicSortsList
+    ++ map MetaListSortType metaBasicSortsList
 
 metaSortsListWithString :: [MetaSortType]
 metaSortsListWithString = StringSort : metaSortsList
@@ -187,7 +187,8 @@ metaBasicSortTypeString VariableSort = "Variable"
 
 metaSortTypeString :: MetaSortType -> String
 metaSortTypeString (MetaBasicSortType s) = metaBasicSortTypeString s
-metaSortTypeString (MetaListSortType s)  = metaBasicSortTypeString s ++ "List"
+metaSortTypeString (MetaListSortType s)  =
+    metaBasicSortTypeString s ++ "List"
 metaSortTypeString StringSort            = "String"
 
 instance Show MetaSortType where
@@ -642,8 +643,12 @@ deriving instance Functor (Pattern level variable)
 deriving instance Foldable (Pattern level variable)
 deriving instance Traversable (Pattern level variable)
 
-newtype Attributes pat (variable :: * -> *) = Attributes { getAttributes :: [pat variable] }
-    deriving (Eq, Show)
+{-|'Attributes' corresponds to the @attributes@ Kore syntactic declaration.
+It is parameterized by the types of Patterns, @pat@.
+-}
+newtype Attributes pat (variable :: * -> *) =
+    Attributes { getAttributes :: [pat variable] }
+  deriving (Eq, Show)
 
 {-|'SentenceAlias' corresponds to the @object-alias-declaration@ and
 @meta-alias-declaration@ syntactic categories from the Semantics of K,

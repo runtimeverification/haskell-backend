@@ -42,8 +42,8 @@ Conventions used:
 Variables start with 'v', a variable called '#a' will be denoted by the 'va'
 Haskell name. A variable may end with an apostrophe.
 
-Meta sorts are denoted by their name in camelCase followed by an
-apostrophe, e.g. patternListMetaSort.
+Meta sorts are denoted by their name in camelCase followed by @MetaSort@,
+e.g. patternListMetaSort.
 
 Constructors of meta objects that correspond to lexical symbols are followed by
 an underscore, e.g. symbol_, equals_.

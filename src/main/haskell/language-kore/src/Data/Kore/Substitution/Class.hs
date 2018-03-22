@@ -46,21 +46,17 @@ addFreeVariable
     -> SubstitutionAndQuantifiedVars s var
 addFreeVariable v s = s { quantifiedVars = v `Set.insert` quantifiedVars s }
 
-instance
-    (EmptyTestable s) => EmptyTestable (SubstitutionAndQuantifiedVars s var)
-  where
-    isEmpty = isEmpty . substitution
-    empty = SubstitutionAndQuantifiedVars
-        { substitution = empty
-        , quantifiedVars = Set.empty
-        }
-
 instance ( VariableClass var
          , SubstitutionClass s (UnifiedVariable var) (FixedPattern var)
          )
     => MapClass (SubstitutionAndQuantifiedVars s var)
         (UnifiedVariable var) (FixedPattern var)
   where
+    isEmpty = isEmpty . substitution
+    empty = SubstitutionAndQuantifiedVars
+        { substitution = empty
+        , quantifiedVars = Set.empty
+        }
     lookup v = lookup v . substitution
     delete v s = s { substitution = delete v (substitution s) }
     insert v t s =

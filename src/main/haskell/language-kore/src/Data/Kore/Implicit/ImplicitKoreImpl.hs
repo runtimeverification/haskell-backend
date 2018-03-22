@@ -22,7 +22,9 @@ import qualified Data.Set                  as Set
 
 
 {-|'equalsSortParam' is the sort param implicitly used for 'equals' when no
-other sort can be inferred.
+other sort can be inferred. This parameter is assumed not to be used in
+any pattern, except for top-level pattern of an axiom. Using it will have
+unpredictable effects.
 -}
 equalsSortParam :: SortVariable Meta
 equalsSortParam = sortParameter "#esp"
@@ -33,7 +35,8 @@ equalsSort = SortVariableSort equalsSortParam
 {-|'parameterizedAxiom' creates an axiom that has sort parameters from
 a pattern.
 -}
-parameterizedAxiom :: [SortVariable Meta] -> MetaPatternStub -> MetaSentenceAxiom
+parameterizedAxiom
+    :: [SortVariable Meta] -> MetaPatternStub -> MetaSentenceAxiom
 parameterizedAxiom _ (UnsortedPatternStub p) =
     error ("Cannot infer sort for " ++ show (p dummyMetaSort) ++ ".")
 parameterizedAxiom
@@ -51,15 +54,22 @@ parameterizedAxiom
 
 {-|'parameterizedEqualsAxiom' is a special case for a 'parameterizedAxiom' that
 contains an equals pattern.
+Note that 'equalsSortParam' AKA @#esp@ is assumed not to be used in any of
+the patterns. Using it will have unpredictable effects.
 -}
 parameterizedEqualsAxiom
-    :: [SortVariable Meta] -> MetaPatternStub -> MetaPatternStub -> MetaSentenceAxiom
+    :: [SortVariable Meta]
+    -> MetaPatternStub
+    -> MetaPatternStub
+    -> MetaSentenceAxiom
 parameterizedEqualsAxiom parameters first second =
     parameterizedAxiom
         (equalsSortParam : parameters)
         (withSort equalsSort (equals_ first second))
 
 {-|'equalsAxiom' is a special case for an axiom that contains an equals pattern.
+Note that 'equalsSortParam' AKA @#esp@ is assumed not to be used in any of
+the patterns. Using it will have unpredictable effects.
 -}
 equalsAxiom :: MetaPatternStub -> MetaPatternStub -> MetaSentenceAxiom
 equalsAxiom = parameterizedEqualsAxiom []

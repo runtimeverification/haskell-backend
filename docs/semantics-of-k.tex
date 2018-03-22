@@ -331,6 +331,8 @@
   \newcommand{\Kbottom}{\texttt{\sharpsymbol \slashsymbol  bottom}}
   \newcommand{\Kfloor}{\texttt{\sharpsymbol \slashsymbol  floor}}
   \newcommand{\Kceil}{\texttt{\sharpsymbol \slashsymbol  ceil}}
+  \newcommand{\Knext}{\texttt{\sharpsymbol \slashsymbol next}}
+  \newcommand{\Krewrites}{\texttt{\sharpsymbol \slashsymbol rewrites}}
   
   \newcommand{\Kdv}{\texttt{\sharpsymbol \slashsymbol dv}}
   
@@ -5573,6 +5575,8 @@ or one of the following:
 	\ttfamily \sharpsymbol \slashsymbol top &
 	\ttfamily \sharpsymbol \slashsymbol bottom &
 	\ttfamily \sharpsymbol \slashsymbol dv &
+	\ttfamily \sharpsymbol \slashsymbol next \\\hline
+	\ttfamily \sharpsymbol \slashsymbol rewrites &
 \end{tabular}
 \end{center}
 \end{itemize}
@@ -7030,6 +7034,16 @@ $\denote{\texttt{\slbottom\{$s$\}()}}
 =
 \texttt{\slbottom\{$s$\}()}$
 & if $s$ is \syntacc{meta-sort}
+\\
+$\denote{\texttt{\slnext\{$s$\}($\varphi$)}}
+=
+\texttt{\Knext\{\}($\denote{s}$,$\denote{\varphi}$)}$
+& if $s$ is \syntacc{object-sort}
+\\
+$\denote{\texttt{\slrewrites\{$s$\}($\varphi_1$,$\varphi_2$)}}
+=
+\texttt{\Krewrites\{\}($\denote{s}$,$\denote{\varphi_1}$,$\denote{\varphi_2}$)}$
+& if $s$ is \syntacc{object-sort}
 \end{longtable}
 
 \paragraph{Domain Value Patterns.}
