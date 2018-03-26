@@ -1,28 +1,40 @@
 module Data.Kore.MetaML.ASTGen where
 
 import           Data.Fix
-import           Test.QuickCheck.Gen  (Gen, oneof, scale)
+import           Test.QuickCheck.Gen  (Gen, frequency, oneof, scale, sized)
 
 import           Data.Kore.AST.Common
 import           Data.Kore.ASTGen
 import           Data.Kore.MetaML.AST
 
-metaMLPatternGen :: Gen CommonMetaPattern
-metaMLPatternGen = Fix <$> patternGen metaMLPatternGen Meta
+metaMLPatternGen :: Gen (MetaMLPattern Variable)
+metaMLPatternGen = Fix <$> sized (\n ->
+    if n<=0
+        then oneof
+            [ StringLiteralPattern <$> stringLiteralGen
+            , CharLiteralPattern <$> charLiteralGen
+            ]
+        else frequency
+            [ (15, patternGen metaMLPatternGen Meta)
+            , (1, StringLiteralPattern <$> stringLiteralGen)
+            , (1, CharLiteralPattern <$> charLiteralGen)
+            ]
+    )
+
+sentenceMetaPatternGen :: Gen (SentenceMetaPattern Variable)
+sentenceMetaPatternGen = SentenceMetaPattern <$> metaMLPatternGen
 
 metaAttributesGen :: Gen MetaAttributes
-metaAttributesGen = attributesGen (SentenceMetaPattern <$> metaMLPatternGen)
+metaAttributesGen = attributesGen sentenceMetaPatternGen
 
 metaSentenceGen :: Gen MetaSentence
-metaSentenceGen = sentenceGen
-    [ AliasMetaSentence <$> sentenceAliasGen metaMLPatternGen Meta
-    , SymbolMetaSentence <$> sentenceSymbolGen metaMLPatternGen Meta
-    , ImportMetaSentence <$> sentenceImportGen metaMLPatternGen
-    , AxiomMetaSentence <$> metaSentenceAxiomGen
+metaSentenceGen = frequency
+    [ (2, symbolOrAliasSentenceGen sentenceMetaPatternGen Meta)
+    , (1, SentenceImportSentence
+          <$> sentenceImportGen sentenceMetaPatternGen)
+    , (1, SentenceAxiomSentence
+          <$> sentenceAxiomGen (sortVariableGen Meta) sentenceMetaPatternGen)
     ]
 
 metaModuleGen :: Gen MetaModule
-metaModuleGen = pure Module
-    <*> scale (`div` 2) moduleNameGen
-    <*> couple (scale (`div` 2) metaSentenceGen)
-    <*> scale (`div` 2) metaAttributesGen
+metaModuleGen = moduleGen metaSentenceGen sentenceMetaPatternGen

@@ -342,8 +342,27 @@ sentenceSortGen patGen level =
 attributesGen :: Gen (pat variable) -> Gen (Attributes pat variable)
 attributesGen patGen = Attributes <$> couple (scale (`div` 4) patGen)
 
-sentenceGen
-    :: Gen (Sentence level sortParam pat variable)
+symbolOrAliasSentenceGen
+    :: MetaOrObject level
+    => Gen (pat variable)
+    -> level
+    -> Gen (Sentence level sortParam pat variable)
+symbolOrAliasSentenceGen patGen level = oneof
+    [ SentenceAliasSentence <$> sentenceAliasGen patGen level
+    , SentenceSymbolSentence <$> sentenceSymbolGen patGen level
+    ]
+
+koreSentenceGen :: Gen KoreSentence
+koreSentenceGen = frequency
+    [ (2, MetaSentence <$> symbolOrAliasSentenceGen unifiedPatternGen Meta)
+    , (2, ObjectSentence <$> symbolOrAliasSentenceGen unifiedPatternGen Object)
+    , (1, MetaSentence . SentenceImportSentence
+          <$> sentenceImportGen unifiedPatternGen)
+    , (1, MetaSentence . SentenceAxiomSentence
+          <$> sentenceAxiomGen unifiedSortVariableGen unifiedPatternGen)
+    , (1, ObjectSentence . SentenceSortSentence
+          <$> sentenceSortGen unifiedPatternGen Object)
+    ]
 
 moduleGen
     :: Gen (sentence sortParam pat variable)

@@ -20,12 +20,13 @@ unparseUnitTests =
     testGroup
         "Unparse unit tests"
         [ unparseTest
-            (SentenceSortSentence
+            (ObjectSentence $ SentenceSortSentence
                 SentenceSort
                     { sentenceSortName = Id "x"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
-                    })
+                    }::KoreSentence
+            )
             "sort x{}[]"
         , unparseTest
             Attributes
@@ -110,10 +111,10 @@ unparseUnitTests =
             ++ "    module k\n    endmodule\n    []\n"
             )
         , unparseTest
-            ( SentenceImportSentence SentenceImport
+            ( MetaSentence $ SentenceImportSentence SentenceImport
                 { sentenceImportModuleName = ModuleName {getModuleName = "sl"}
                 , sentenceImportAttributes = Attributes { getAttributes = [] }
-                }
+                }::KoreSentence
             )
             "import sl[]"
         , unparseTest
@@ -194,17 +195,17 @@ unparseParseTests =
                 (unparseParseProp (attributesParser unifiedPatternParser))
             )
         , testProperty "Sentence"
-            (forAll sentenceGen (unparseParseProp koreSentenceParser))
+            (forAll koreSentenceGen (unparseParseProp koreSentenceParser))
         , testProperty "Module"
             (forAll
-                (moduleGen sentenceGen unifiedPatternGen)
+                (moduleGen koreSentenceGen unifiedPatternGen)
                 (unparseParseProp
                     (moduleParser koreSentenceParser unifiedPatternParser)
                 )
             )
         , testProperty "Definition"
             (forAll
-                (definitionGen sentenceGen unifiedPatternGen)
+                (definitionGen koreSentenceGen unifiedPatternGen)
                 (unparseParseProp
                     (definitionParser koreSentenceParser unifiedPatternParser)
                 )

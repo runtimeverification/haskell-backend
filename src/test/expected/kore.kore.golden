@@ -4,7 +4,7 @@ Definition
         [ Module
             { moduleName = ModuleName "kore"
             , moduleSentences =
-                [ MetaSentenceSymbolSentence SentenceSymbol
+                [ MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#nilCharList"
@@ -17,8 +17,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#consCharList"
@@ -40,8 +40,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#appendCharList"
@@ -63,8 +63,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#inCharList"
@@ -85,8 +85,8 @@ Definition
                     , sentenceSymbolReturnSort =
                         SortVariableSort (SortVariable (Id Meta "#sp"))
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#deleteCharList"
@@ -108,8 +108,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -161,8 +161,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         , MetaSortVariable (SortVariable (Id Meta "#sp"))
@@ -323,8 +323,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -388,8 +388,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -532,8 +532,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -597,8 +597,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -861,8 +861,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#nilSortList"
@@ -875,8 +875,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#consSortList"
@@ -898,8 +898,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#appendSortList"
@@ -921,8 +921,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#inSortList"
@@ -943,8 +943,8 @@ Definition
                     , sentenceSymbolReturnSort =
                         SortVariableSort (SortVariable (Id Meta "#sp"))
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#deleteSortList"
@@ -966,8 +966,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -1019,8 +1019,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         , MetaSortVariable (SortVariable (Id Meta "#sp"))
@@ -1181,8 +1181,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -1246,8 +1246,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -1390,8 +1390,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -1455,8 +1455,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -1719,8 +1719,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#nilSymbolList"
@@ -1733,8 +1733,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#consSymbolList"
@@ -1756,8 +1756,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#appendSymbolList"
@@ -1779,8 +1779,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#inSymbolList"
@@ -1801,8 +1801,8 @@ Definition
                     , sentenceSymbolReturnSort =
                         SortVariableSort (SortVariable (Id Meta "#sp"))
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#deleteSymbolList"
@@ -1824,8 +1824,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -1877,8 +1877,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         , MetaSortVariable (SortVariable (Id Meta "#sp"))
@@ -2039,8 +2039,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -2104,8 +2104,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -2248,8 +2248,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -2313,8 +2313,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -2577,8 +2577,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#nilVariableList"
@@ -2591,8 +2591,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#consVariableList"
@@ -2614,8 +2614,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#appendVariableList"
@@ -2637,8 +2637,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#inVariableList"
@@ -2659,8 +2659,8 @@ Definition
                     , sentenceSymbolReturnSort =
                         SortVariableSort (SortVariable (Id Meta "#sp"))
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#deleteVariableList"
@@ -2682,8 +2682,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -2735,8 +2735,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         , MetaSortVariable (SortVariable (Id Meta "#sp"))
@@ -2897,8 +2897,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -2962,8 +2962,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -3106,8 +3106,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -3171,8 +3171,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -3435,8 +3435,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#nilPatternList"
@@ -3449,8 +3449,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#consPatternList"
@@ -3472,8 +3472,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#appendPatternList"
@@ -3495,8 +3495,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#inPatternList"
@@ -3517,8 +3517,8 @@ Definition
                     , sentenceSymbolReturnSort =
                         SortVariableSort (SortVariable (Id Meta "#sp"))
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#deletePatternList"
@@ -3540,8 +3540,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -3593,8 +3593,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         , MetaSortVariable (SortVariable (Id Meta "#sp"))
@@ -3755,8 +3755,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -3820,8 +3820,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -3964,8 +3964,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -4029,8 +4029,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -4293,8 +4293,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#epsilon"
@@ -4307,8 +4307,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -4341,8 +4341,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#sort"
@@ -4364,8 +4364,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#symbol"
@@ -4395,8 +4395,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#getArgumentSorts"
@@ -4414,8 +4414,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -4546,8 +4546,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#getReturnSort"
@@ -4565,8 +4565,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -4697,8 +4697,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#variable"
@@ -4720,8 +4720,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#application"
@@ -4743,8 +4743,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#\and"
@@ -4770,8 +4770,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#\not"
@@ -4793,8 +4793,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#\exists"
@@ -4820,8 +4820,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#variableAsPattern"
@@ -4839,8 +4839,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -4962,8 +4962,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#variablePattern"
@@ -4985,8 +4985,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -5090,8 +5090,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#\or"
@@ -5117,8 +5117,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#\implies"
@@ -5144,8 +5144,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#\iff"
@@ -5171,8 +5171,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#\forall"
@@ -5198,8 +5198,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#\ceil"
@@ -5225,8 +5225,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#\floor"
@@ -5252,8 +5252,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#\equals"
@@ -5283,8 +5283,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#\in"
@@ -5314,8 +5314,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#\top"
@@ -5333,8 +5333,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#\bottom"
@@ -5352,8 +5352,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -5529,8 +5529,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -5672,8 +5672,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -5848,8 +5848,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -6008,8 +6008,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -6160,8 +6160,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -6320,8 +6320,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -6493,8 +6493,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -6666,8 +6666,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -6805,8 +6805,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -6888,8 +6888,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#getFV"
@@ -6907,8 +6907,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#getFVFromPatterns"
@@ -6926,8 +6926,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -7009,8 +7009,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -7106,8 +7106,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -7251,8 +7251,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -7348,8 +7348,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -7484,8 +7484,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -7527,8 +7527,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -7650,8 +7650,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#occursFree"
@@ -7672,8 +7672,8 @@ Definition
                     , sentenceSymbolReturnSort =
                         SortVariableSort (SortVariable (Id Meta "#sp"))
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         , MetaSortVariable (SortVariable (Id Meta "#sp"))
@@ -7779,8 +7779,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#freshName"
@@ -7798,8 +7798,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -7900,8 +7900,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#substitute"
@@ -7927,8 +7927,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#substitutePatterns"
@@ -7954,8 +7954,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -8176,8 +8176,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -8350,8 +8350,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -8579,8 +8579,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -8753,8 +8753,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -9198,8 +9198,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -9285,8 +9285,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -9484,8 +9484,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -9782,8 +9782,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#sortDeclared"
@@ -9800,8 +9800,8 @@ Definition
                     , sentenceSymbolReturnSort =
                         SortVariableSort (SortVariable (Id Meta "#sp"))
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#symbolDeclared"
@@ -9818,8 +9818,8 @@ Definition
                     , sentenceSymbolReturnSort =
                         SortVariableSort (SortVariable (Id Meta "#sp"))
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#axiomDeclared"
@@ -9836,8 +9836,8 @@ Definition
                     , sentenceSymbolReturnSort =
                         SortVariableSort (SortVariable (Id Meta "#sp"))
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#sortsDeclared"
@@ -9854,8 +9854,8 @@ Definition
                     , sentenceSymbolReturnSort =
                         SortVariableSort (SortVariable (Id Meta "#sp"))
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -9880,8 +9880,8 @@ Definition
                                 ]
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         , MetaSortVariable (SortVariable (Id Meta "#sp"))
@@ -10004,8 +10004,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -10125,8 +10125,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#wellFormed"
@@ -10143,8 +10143,8 @@ Definition
                     , sentenceSymbolReturnSort =
                         SortVariableSort (SortVariable (Id Meta "#sp"))
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#wellFormedPatterns"
@@ -10161,8 +10161,8 @@ Definition
                     , sentenceSymbolReturnSort =
                         SortVariableSort (SortVariable (Id Meta "#sp"))
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -10187,8 +10187,8 @@ Definition
                                 ]
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         , MetaSortVariable (SortVariable (Id Meta "#sp"))
@@ -10311,8 +10311,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#getSort"
@@ -10330,8 +10330,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#getSortsFromPatterns"
@@ -10349,8 +10349,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -10392,8 +10392,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -10515,8 +10515,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         , MetaSortVariable (SortVariable (Id Meta "#sp"))
@@ -10623,8 +10623,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         , MetaSortVariable (SortVariable (Id Meta "#sp"))
@@ -10832,8 +10832,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         , MetaSortVariable (SortVariable (Id Meta "#sp"))
@@ -11062,8 +11062,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         , MetaSortVariable (SortVariable (Id Meta "#sp"))
@@ -11217,8 +11217,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         , MetaSortVariable (SortVariable (Id Meta "#sp"))
@@ -11428,8 +11428,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         , MetaSortVariable (SortVariable (Id Meta "#sp"))
@@ -11583,8 +11583,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         , MetaSortVariable (SortVariable (Id Meta "#sp"))
@@ -11734,8 +11734,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         , MetaSortVariable (SortVariable (Id Meta "#sp"))
@@ -11901,8 +11901,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         , MetaSortVariable (SortVariable (Id Meta "#sp"))
@@ -12038,8 +12038,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         , MetaSortVariable (SortVariable (Id Meta "#sp"))
@@ -12205,8 +12205,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#provable"
@@ -12223,8 +12223,8 @@ Definition
                     , sentenceSymbolReturnSort =
                         SortVariableSort (SortVariable (Id Meta "#sp"))
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -12416,8 +12416,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -12823,8 +12823,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -13134,8 +13134,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -13377,8 +13377,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -13831,8 +13831,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -14024,8 +14024,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -14551,8 +14551,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -14792,8 +14792,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -14951,8 +14951,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -15352,8 +15352,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -15547,8 +15547,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -15860,8 +15860,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -16173,8 +16173,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -16492,8 +16492,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -16991,8 +16991,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -17378,8 +17378,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -17953,8 +17953,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -19041,8 +19041,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#sp"))
                         ]
@@ -19131,8 +19131,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , MetaSentenceSymbolSentence SentenceSymbol
+                    })
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Meta "#`ceil"
@@ -19154,8 +19154,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ MetaSortVariable (SortVariable (Id Meta "#esp"))
                         ]
@@ -19310,7 +19310,7 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
+                    })
                 ]
             , moduleAttributes = Attributes []
             }

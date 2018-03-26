@@ -4,12 +4,12 @@ Definition
         [ Module
             { moduleName = ModuleName "IMP"
             , moduleSentences =
-                [ SentenceSortSentence SentenceSort
+                [ ObjectSentence (SentenceSortSentence SentenceSort
                     { sentenceSortName = Id Object "Bool"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "true"
@@ -22,8 +22,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "false"
@@ -36,8 +36,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "and"
@@ -59,8 +59,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "not"
@@ -78,13 +78,13 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceSortSentence SentenceSort
+                    })
+                , ObjectSentence (SentenceSortSentence SentenceSort
                     { sentenceSortName = Id Object "Int"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "zero"
@@ -97,8 +97,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "succ"
@@ -116,8 +116,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "plus"
@@ -139,8 +139,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "one"
@@ -153,8 +153,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "two"
@@ -167,8 +167,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "three"
@@ -181,8 +181,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "div"
@@ -204,8 +204,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "leq"
@@ -227,13 +227,13 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceSortSentence SentenceSort
+                    })
+                , ObjectSentence (SentenceSortSentence SentenceSort
                     { sentenceSortName = Id Object "Id"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "id"
@@ -251,15 +251,15 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceSortSentence SentenceSort
+                    })
+                , ObjectSentence (SentenceSortSentence SentenceSort
                     { sentenceSortName = Id Object "List"
                     , sentenceSortParameters =
                         [ SortVariable (Id Object "S")
                         ]
                     , sentenceSortAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "nil"
@@ -276,8 +276,8 @@ Definition
                                     ]
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "cons"
@@ -302,8 +302,8 @@ Definition
                                     ]
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "append"
@@ -333,8 +333,8 @@ Definition
                                     ]
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "listItem"
@@ -353,15 +353,15 @@ Definition
                                     ]
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceSortSentence SentenceSort
+                    })
+                , ObjectSentence (SentenceSortSentence SentenceSort
                     { sentenceSortName = Id Object "Set"
                     , sentenceSortParameters =
                         [ SortVariable (Id Object "S")
                         ]
                     , sentenceSortAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "emptySet"
@@ -378,8 +378,8 @@ Definition
                                     ]
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "union"
@@ -409,8 +409,8 @@ Definition
                                     ]
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "inSet"
@@ -433,8 +433,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ ObjectSortVariable (SortVariable (Id Object "S"))
                         , ObjectSortVariable (SortVariable (Id Object "R"))
@@ -495,16 +495,16 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceSortSentence SentenceSort
+                    })
+                , ObjectSentence (SentenceSortSentence SentenceSort
                     { sentenceSortName = Id Object "Map"
                     , sentenceSortParameters =
                         [ SortVariable (Id Object "S1")
                         , SortVariable (Id Object "S2")
                         ]
                     , sentenceSortAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "bind"
@@ -526,8 +526,8 @@ Definition
                                     ]
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "emp"
@@ -546,8 +546,8 @@ Definition
                                     ]
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "merge"
@@ -581,8 +581,8 @@ Definition
                                     ]
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "keys"
@@ -608,16 +608,16 @@ Definition
                                     ]
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceSortSentence SentenceSort
+                    })
+                , ObjectSentence (SentenceSortSentence SentenceSort
                     { sentenceSortName = Id Object "Ctxt"
                     , sentenceSortParameters =
                         [ SortVariable (Id Object "S1")
                         , SortVariable (Id Object "S2")
                         ]
                     , sentenceSortAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "gamma0"
@@ -639,8 +639,8 @@ Definition
                                     ]
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "app"
@@ -662,8 +662,8 @@ Definition
                     , sentenceSymbolReturnSort =
                         SortVariableSort (SortVariable (Id Object "S2"))
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceAliasSentence SentenceAlias
+                    })
+                , ObjectSentence (SentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias =
                         Alias
                             { aliasConstructor = Id Object "gamma"
@@ -685,8 +685,8 @@ Definition
                                     ]
                                 }
                     , sentenceAliasAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ ObjectSortVariable (SortVariable (Id Object "S1"))
                         , ObjectSortVariable (SortVariable (Id Object "S2"))
@@ -824,8 +824,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , ObjectSentenceAliasSentence SentenceAlias
+                    })
+                , ObjectSentence (SentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias =
                         Alias
                             { aliasConstructor = Id Object "idctxt"
@@ -843,8 +843,8 @@ Definition
                                     ]
                                 }
                     , sentenceAliasAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ ObjectSortVariable (SortVariable (Id Object "S"))
                         , ObjectSortVariable (SortVariable (Id Object "R"))
@@ -897,8 +897,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ ObjectSortVariable (SortVariable (Id Object "S"))
                         , ObjectSortVariable (SortVariable (Id Object "R"))
@@ -945,13 +945,13 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceSortSentence SentenceSort
+                    })
+                , ObjectSentence (SentenceSortSentence SentenceSort
                     { sentenceSortName = Id Object "AExp"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "intAsAExp"
@@ -969,8 +969,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "idAsAExp"
@@ -988,8 +988,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "divAExp"
@@ -1011,8 +1011,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ ObjectSortVariable (SortVariable (Id Object "S"))
                         , ObjectSortVariable (SortVariable (Id Object "R"))
@@ -1277,8 +1277,8 @@ Definition
                                     ]
                                 })
                             ]
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ ObjectSortVariable (SortVariable (Id Object "S"))
                         , ObjectSortVariable (SortVariable (Id Object "R"))
@@ -1543,18 +1543,18 @@ Definition
                                     ]
                                 })
                             ]
-                    }
-                , SentenceSortSentence SentenceSort
+                    })
+                , ObjectSentence (SentenceSortSentence SentenceSort
                     { sentenceSortName = Id Object "BExp"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
-                    }
-                , SentenceSortSentence SentenceSort
+                    })
+                , ObjectSentence (SentenceSortSentence SentenceSort
                     { sentenceSortName = Id Object "Block"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "emptyBlock"
@@ -1567,8 +1567,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "block"
@@ -1586,13 +1586,13 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceSortSentence SentenceSort
+                    })
+                , ObjectSentence (SentenceSortSentence SentenceSort
                     { sentenceSortName = Id Object "Stmt"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "blockAsStmt"
@@ -1610,8 +1610,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "asgn"
@@ -1653,8 +1653,8 @@ Definition
                                     ]
                                 })
                             ]
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ ObjectSortVariable (SortVariable (Id Object "S"))
                         , ObjectSortVariable (SortVariable (Id Object "R"))
@@ -1919,8 +1919,8 @@ Definition
                                     ]
                                 })
                             ]
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "if"
@@ -1966,8 +1966,8 @@ Definition
                                     ]
                                 })
                             ]
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ ObjectSortVariable (SortVariable (Id Object "S"))
                         , ObjectSortVariable (SortVariable (Id Object "R"))
@@ -2256,8 +2256,8 @@ Definition
                                     ]
                                 })
                             ]
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "while"
@@ -2279,8 +2279,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "seq"
@@ -2322,8 +2322,8 @@ Definition
                                     ]
                                 })
                             ]
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ ObjectSortVariable (SortVariable (Id Object "S"))
                         , ObjectSortVariable (SortVariable (Id Object "R"))
@@ -2588,13 +2588,13 @@ Definition
                                     ]
                                 })
                             ]
-                    }
-                , SentenceSortSentence SentenceSort
+                    })
+                , ObjectSentence (SentenceSortSentence SentenceSort
                     { sentenceSortName = Id Object "Pgm"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "pgm"
@@ -2659,13 +2659,13 @@ Definition
                                     ]
                                 })
                             ]
-                    }
-                , SentenceSortSentence SentenceSort
+                    })
+                , ObjectSentence (SentenceSortSentence SentenceSort
                     { sentenceSortName = Id Object "KCell"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "kcell"
@@ -2703,13 +2703,13 @@ Definition
                                     ]
                                 })
                             ]
-                    }
-                , SentenceSortSentence SentenceSort
+                    })
+                , ObjectSentence (SentenceSortSentence SentenceSort
                     { sentenceSortName = Id Object "StateCell"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "statecell"
@@ -2756,13 +2756,13 @@ Definition
                                     ]
                                 })
                             ]
-                    }
-                , SentenceSortSentence SentenceSort
+                    })
+                , ObjectSentence (SentenceSortSentence SentenceSort
                     { sentenceSortName = Id Object "TopCell"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "top"
@@ -2784,8 +2784,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "topcell"
@@ -2845,8 +2845,8 @@ Definition
                                     ]
                                 })
                             ]
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "krun"
@@ -2864,8 +2864,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ ObjectSortVariable (SortVariable (Id Object "R"))
                         ]
@@ -2951,8 +2951,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "next"
@@ -2966,8 +2966,8 @@ Definition
                     , sentenceSymbolReturnSort =
                         SortVariableSort (SortVariable (Id Object "S"))
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceAliasSentence SentenceAlias
+                    })
+                , ObjectSentence (SentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias =
                         Alias
                             { aliasConstructor = Id Object "rewrites"
@@ -2982,8 +2982,8 @@ Definition
                     , sentenceAliasReturnSort =
                         SortVariableSort (SortVariable (Id Object "S"))
                     , sentenceAliasAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ ObjectSortVariable (SortVariable (Id Object "S"))
                         , ObjectSortVariable (SortVariable (Id Object "RS"))
@@ -3046,8 +3046,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ ObjectSortVariable (SortVariable (Id Object "S"))
                         ]
@@ -3296,7 +3296,7 @@ Definition
                                 ]
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
+                    })
                 ]
             , moduleAttributes = Attributes []
             }

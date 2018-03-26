@@ -1,11 +1,9 @@
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE GADTs                  #-}
-{-# LANGUAGE KindSignatures         #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE Rank2Types             #-}
-{-# LANGUAGE StandaloneDeriving     #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE Rank2Types            #-}
+{-# LANGUAGE StandaloneDeriving    #-}
 {-|
 Module      : Data.Kore.AST.Kore
 Description : Data Structures for representing the Kore language AST with
@@ -31,9 +29,10 @@ module Data.Kore.AST.Kore where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.HaskellExtensions (Rotate41 (..))
 
-import           Data.Hashable              (hash)
-import           Data.Typeable              (Typeable)
+import           Data.Hashable               (hash)
+import           Data.Typeable               (Typeable)
 
 data UnifiedSort
     = ObjectSort !(Sort Object)
@@ -153,25 +152,9 @@ type KoreSentenceSort = SentenceSort Object FixedPattern Variable
 data UnifiedSentence sortParam pat variable
     = MetaSentence (Sentence Meta sortParam pat variable)
     | ObjectSentence (Sentence Object sortParam pat variable)
+  deriving (Show, Eq)
 
-newtype
-    Rotate31 t (pat :: (* -> *) -> *) (variable :: * -> *) level
-  = Rotate31 { unRotate31 :: t level pat variable}
-type LeveledSentenceAlias = Rotate31 SentenceAlias
-type LeveledSentenceSymbol = Rotate31 SentenceSymbol
-
-newtype
-    Rotate41 t sortParam (pat :: (* -> *) -> *) (variable :: * -> *) level
-  = Rotate41 { unRotate41 :: t level sortParam pat variable}
 type LeveledSentence = Rotate41 Sentence
-
-asKoreSymbolSentence
-    :: MetaOrObject level => KoreSentenceSymbol level -> KoreSentence
-asKoreSymbolSentence = asUnified . Rotate41 . SentenceSymbolSentence
-
-asKoreAliasSentence
-    :: MetaOrObject level => KoreSentenceAlias level -> KoreSentence
-asKoreAliasSentence = asUnified . Rotate41 . SentenceAliasSentence
 
 instance
     ( Typeable sortParam
@@ -185,6 +168,14 @@ instance
     destructor (ObjectSentence s) = Right (Rotate41 s)
     objectConstructor = ObjectSentence . unRotate41
     metaConstructor = MetaSentence . unRotate41
+
+asKoreSymbolSentence
+    :: MetaOrObject level => KoreSentenceSymbol level -> KoreSentence
+asKoreSymbolSentence = asUnified . Rotate41 . SentenceSymbolSentence
+
+asKoreAliasSentence
+    :: MetaOrObject level => KoreSentenceAlias level -> KoreSentence
+asKoreAliasSentence = asUnified . Rotate41 . SentenceAliasSentence
 
 type KoreSentence = UnifiedSentence UnifiedSortVariable FixedPattern Variable
 type KoreModule =

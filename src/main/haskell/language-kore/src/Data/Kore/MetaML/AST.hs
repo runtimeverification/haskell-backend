@@ -1,5 +1,8 @@
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE StandaloneDeriving    #-}
+{-# LANGUAGE UndecidableInstances  #-}
 {-|
 Module      : Data.Kore.MetaML.AST
 Description : Data Structures for representing a Meta-only version of the
@@ -32,6 +35,9 @@ type MetaMLPattern var = Fix (Pattern Meta var)
 
 newtype SentenceMetaPattern var = SentenceMetaPattern
     { getSentenceMetaPattern :: MetaMLPattern var }
+
+deriving instance Eq (SentenceMetaPattern Variable)
+deriving instance Show (SentenceMetaPattern Variable)
 
 -- |'MetaAttributes' is the 'Meta'-only version of 'Attributes'
 type MetaAttributes = Attributes SentenceMetaPattern Variable

@@ -197,14 +197,13 @@ liftTests =
                                     SortVariableSort (SortVariable (Id "a"))
                                 }
                             , forallChild =
-                                (ObjectPattern
+                                ObjectPattern
                                     (VariablePattern Variable
                                         { variableName = Id "x"
                                         , variableSort = SortVariableSort
                                             (SortVariable (Id "a"))
                                         }
                                     )
-                                )
                             }
                         )
                     )
@@ -248,14 +247,13 @@ liftTests =
                                     SortVariableSort (SortVariable (Id "a"))
                                 }
                             , existsChild =
-                                (ObjectPattern
+                                ObjectPattern
                                     (VariablePattern Variable
                                         { variableName = Id "x"
                                         , variableSort = SortVariableSort
                                             (SortVariable (Id "a"))
                                         }
                                     )
-                                )
                             }
                         )
                     )
@@ -291,7 +289,7 @@ liftTests =
                     (apply consSortListHead
                         [ Fix
                             (apply (groundHead "#`Exp")
-                                [ (variablePattern "#v" sortMetaSort) ]
+                                [ variablePattern "#v" sortMetaSort ]
                             )
                         , Fix (apply nilSortListHead [])
                         ]
@@ -325,12 +323,11 @@ liftTests =
                 )
                 (liftToMeta
                     [ liftToMeta
-                        (Variable
+                        Variable
                             { variableName = Id "object" :: Id Object
                             , variableSort =
                                 SortVariableSort (SortVariable (Id "v"))
                             }
-                        )
                     ]
                 )
             )
@@ -520,13 +517,12 @@ liftTests =
                 (liftToMeta
                     (ObjectPattern
                         (apply
-                            (SymbolOrAlias
+                            SymbolOrAlias
                                 { symbolOrAliasConstructor = Id "test"
                                 , symbolOrAliasParams =
                                     [ SortVariableSort (SortVariable (Id "Int"))
                                     ]
                                 }
-                            )
                             [unifiedStringPattern]
                         )
                     )
@@ -554,12 +550,12 @@ liftTests =
             )
         , testCase "Lifting Attributes"
             (assertEqual ""
-                (Attributes [metaStringPattern])
+                (Attributes [SentenceMetaPattern metaStringPattern])
                 (liftAttributes (Attributes [unifiedStringPattern]))
             )
         , testCase "Lifting Meta Alias Declaration"
             (assertEqual ""
-                [ AliasMetaSentence SentenceAlias
+                [ SentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = Id "#alias"
                         , aliasParams = []
@@ -571,7 +567,7 @@ liftTests =
                     }
                 ]
                 (liftSentence
-                    (MetaSentenceAliasSentence SentenceAlias
+                    (MetaSentence $ SentenceAliasSentence SentenceAlias
                         { sentenceAliasAlias = Alias
                             { aliasConstructor = Id "#alias"
                             , aliasParams = []
@@ -586,9 +582,9 @@ liftTests =
             )
         , testCase "Lifting Object Alias Declaration"
             (assertEqual ""
-                [ SymbolMetaSentence (symbol_ "#`alias" [] patternMetaSort) ]
+                [ SentenceSymbolSentence (symbol_ "#`alias" [] patternMetaSort) ]
                 (liftSentence
-                    (ObjectSentenceAliasSentence SentenceAlias
+                    (ObjectSentence $ SentenceAliasSentence SentenceAlias
                         { sentenceAliasAlias = Alias
                             { aliasConstructor = Id "alias"
                             , aliasParams = []
@@ -603,11 +599,11 @@ liftTests =
             )
         , testCase "Lifting Object Symbol Declaration"
             (assertEqual ""
-                [ SymbolMetaSentence (symbol_ "#`alias" [patternMetaSort] patternMetaSort)
-                , AxiomMetaSentence SentenceAxiom
+                [ SentenceSymbolSentence (symbol_ "#`alias" [patternMetaSort] patternMetaSort)
+                , SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters = [sortParameter "#s"]
                     , sentenceAxiomPattern =
-                        Fix
+                        SentenceMetaPattern $ Fix
                             (EqualsPattern Equals
                                 { equalsOperandSort = patternMetaSort
                                 , equalsResultSort =
@@ -663,9 +659,9 @@ liftTests =
                             )
                     , sentenceAxiomAttributes = Attributes []
                     }
-                , AxiomMetaSentence SentenceAxiom
+                , SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters = [ sortParameter "#s" ]
-                    , sentenceAxiomPattern = Fix
+                    , sentenceAxiomPattern = SentenceMetaPattern $ Fix
                         (ImpliesPattern Implies
                             { impliesSort =
                                 SortVariableSort (sortParameter "#s")
@@ -719,7 +715,7 @@ liftTests =
                     }
                 ]
                 (liftSentence
-                    (ObjectSentenceSymbolSentence SentenceSymbol
+                    (ObjectSentence $ SentenceSymbolSentence SentenceSymbol
                         { sentenceSymbolSymbol = Symbol
                             { symbolConstructor = Id "alias"
                             , symbolParams = []

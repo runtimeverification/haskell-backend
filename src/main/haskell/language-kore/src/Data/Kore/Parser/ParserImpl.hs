@@ -40,6 +40,7 @@ module Data.Kore.Parser.ParserImpl where
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.HaskellExtensions  (Rotate31 (..), (<....>))
 import           Data.Kore.MetaML.AST
 import           Data.Kore.Parser.Lexeme
 import qualified Data.Kore.Parser.ParserUtils as ParserUtils
@@ -866,38 +867,45 @@ koreSentenceParser = keywordBasedParsers
     , ( "symbol", sentenceConstructorRemainderParser SymbolSentenceType )
     , ( "import", importSentenceRemainderParser )
     ]
-  where
-    sentenceConstructorRemainderParser sentenceType
-      = undefined
-{-
-        do
+
+sentenceConstructorRemainderParser :: SentenceType -> Parser KoreSentence
+sentenceConstructorRemainderParser sentenceType
+      = do
         c <- ParserUtils.peekChar'
         case (c, sentenceType) of
-            ('#', AliasSentenceType) -> MetaSentence <$>
+            ('#', AliasSentenceType) ->
+                MetaSentence . SentenceAliasSentence . unRotate31
+                <$>
                 aliasSymbolSentenceRemainderParser
                     Meta
                     (aliasParser Meta)
                     unifiedPatternParser
-                    (\a b c d -> SentenceAliasSentence (SentenceAlias a b c d))
-            ('#', SymbolSentenceType) -> MetaSentence <$>
+                    (Rotate31 <....> SentenceAlias)
+            ('#', SymbolSentenceType) ->
+                MetaSentence . SentenceSymbolSentence . unRotate31
+                <$>
                 aliasSymbolSentenceRemainderParser
                     Meta
                     (symbolParser Meta)
                     unifiedPatternParser
-                    (\a b c d -> SentenceSymbolSentence (SentenceSymbol a b c d))
-            (_, AliasSentenceType) -> ObjectSentence <$>
+                    (Rotate31 <....> SentenceSymbol)
+            (_, AliasSentenceType) ->
+                ObjectSentence . SentenceAliasSentence . unRotate31
+                <$>
                 aliasSymbolSentenceRemainderParser
                     Object
                     (aliasParser Object)
                     unifiedPatternParser
-                    (\a b c d -> SentenceAliasSentence (SentenceAlias a b c d))
-            (_, SymbolSentenceType) -> ObjectSentence <$>
+                    (Rotate31 <....> SentenceAlias)
+            (_, SymbolSentenceType) ->
+                ObjectSentence . SentenceSymbolSentence . unRotate31
+                <$>
                 aliasSymbolSentenceRemainderParser
                     Object
                     (symbolParser Object)
                     unifiedPatternParser
-                    (\a b c d -> SentenceSymbolSentence (SentenceSymbol a b c d))
--}
+                    (Rotate31 <....> SentenceSymbol)
+
 {-|'aliasSymbolSentenceRemainderParser' parses the part after the starting
 keyword of an alias or symbol declaration using the given head parser
 to parse the head and constructs it using the given constructor.
@@ -916,7 +924,12 @@ aliasSymbolSentenceRemainderParser
     => level  -- ^ Distinguishes between the meta and non-meta elements.
     -> Parser (m level)  -- Head parser.
     -> Parser (pat variable) -- attributes pattern parser
-    -> (m level -> [Sort level] -> Sort level -> Attributes pat variable -> as level)
+    -> (m level
+        -> [Sort level]
+        -> Sort level
+        -> Attributes pat variable
+        -> as level
+       )
     -- ^ Element constructor.
     -> Parser (as level)
 aliasSymbolSentenceRemainderParser  x aliasSymbolParser patParser constructor

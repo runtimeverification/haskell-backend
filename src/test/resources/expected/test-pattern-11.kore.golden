@@ -4,7 +4,7 @@ Definition
         [ Module
             { moduleName = ModuleName "TEST-PATTERN-11"
             , moduleSentences =
-                [ SentenceAxiomSentence SentenceAxiom
+                [ MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ ObjectSortVariable (SortVariable (Id Object "S"))
                         ]
@@ -28,7 +28,7 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
+                    })
                 ]
             , moduleAttributes = Attributes []
             }

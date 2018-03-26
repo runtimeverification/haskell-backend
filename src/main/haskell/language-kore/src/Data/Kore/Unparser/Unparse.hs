@@ -352,3 +352,6 @@ instance
 
 instance Unparse (Fix (Pattern Meta Variable)) where
     unparse = unparse . unFix
+
+instance Unparse (SentenceMetaPattern Variable) where
+    unparse = unparse . getSentenceMetaPattern

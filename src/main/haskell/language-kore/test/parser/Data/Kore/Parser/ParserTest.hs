@@ -793,7 +793,7 @@ sentenceAliasParserTests :: [TestTree]
 sentenceAliasParserTests =
     parseTree koreSentenceParser
         [ success "alias a{s1}(s2):s3[\"a\"]"
-            ( ObjectSentenceAliasSentence
+            ( ObjectSentence $ SentenceAliasSentence
                 SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = Id "a"
@@ -808,7 +808,7 @@ sentenceAliasParserTests =
                     }
             )
         , success "alias a { s1 , s2 } ( s3, s4 ) : s5 [ \"a\" , \"b\" ]"
-            ( ObjectSentenceAliasSentence
+            ( ObjectSentence $ SentenceAliasSentence
                 SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = Id "a"
@@ -832,7 +832,7 @@ sentenceAliasParserTests =
                     }
             )
         , success "alias #a{}():#Char[]"
-            ( MetaSentenceAliasSentence
+            ( MetaSentence $ SentenceAliasSentence
                 SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = Id "#a"
@@ -861,7 +861,7 @@ sentenceAxiomParserTests :: [TestTree]
 sentenceAxiomParserTests =
     parseTree koreSentenceParser
         [ success "axiom{sv1}\"a\"[\"b\"]"
-            ( SentenceAxiomSentence SentenceAxiom
+            ( MetaSentence $ SentenceAxiomSentence SentenceAxiom
                 { sentenceAxiomParameters =
                     [ObjectSortVariable
                         (SortVariable (Id "sv1"))]
@@ -875,7 +875,7 @@ sentenceAxiomParserTests =
         {- TODO(virgil): The Scala parser allows empty sort variable lists
            while the semantics-of-k document does not. -}
         , success "axiom{}\"a\"[\"b\"]"
-            ( SentenceAxiomSentence SentenceAxiom
+            ( MetaSentence $ SentenceAxiomSentence SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
                     MetaPattern $ StringLiteralPattern (StringLiteral "a")
@@ -885,7 +885,7 @@ sentenceAxiomParserTests =
                 }
             )
         , success "axiom { sv1 , sv2 } \"a\" [ \"b\" ] "
-            ( SentenceAxiomSentence SentenceAxiom
+            ( MetaSentence $ SentenceAxiomSentence SentenceAxiom
                 { sentenceAxiomParameters =
                     [ ObjectSortVariable
                         (SortVariable (Id "sv1"))
@@ -913,7 +913,7 @@ sentenceImportParserTests :: [TestTree]
 sentenceImportParserTests =
     parseTree koreSentenceParser
         [ success "import M[\"b\"]"
-            ( SentenceImportSentence SentenceImport
+            ( MetaSentence $ SentenceImportSentence SentenceImport
                 { sentenceImportModuleName = ModuleName "M"
                 , sentenceImportAttributes =
                     Attributes
@@ -932,7 +932,7 @@ sentenceSortParserTests :: [TestTree]
 sentenceSortParserTests =
     parseTree koreSentenceParser
         [ success "sort s1 { sv1 } [ \"a\" ]"
-            ( SentenceSortSentence SentenceSort
+            ( ObjectSentence $ SentenceSortSentence SentenceSort
                 { sentenceSortName = Id "s1"
                 , sentenceSortParameters = [ sortVariable "sv1" ]
                 , sentenceSortAttributes =
@@ -943,7 +943,7 @@ sentenceSortParserTests =
         {- TODO(virgil): The Scala parser allows empty sort variable lists
            while the semantics-of-k document does not. -}
         , success "sort s1 {} [ \"a\" ]"
-            ( SentenceSortSentence SentenceSort
+            ( ObjectSentence $ SentenceSortSentence SentenceSort
                 { sentenceSortName = Id "s1"
                 , sentenceSortParameters = []
                 , sentenceSortAttributes =
@@ -966,7 +966,7 @@ sentenceSymbolParserTests :: [TestTree]
 sentenceSymbolParserTests =
     parseTree koreSentenceParser
         [ success "symbol sy1 { s1 } ( s1 ) : s1 [\"a\"] "
-            ( ObjectSentenceSymbolSentence
+            ( ObjectSentence $ SentenceSymbolSentence
                 SentenceSymbol
                     { sentenceSymbolSymbol = Symbol
                         { symbolConstructor = Id "sy1"
@@ -981,7 +981,7 @@ sentenceSymbolParserTests =
                     }
             )
         , success "symbol sy1 {} () : s1 [] "
-            ( ObjectSentenceSymbolSentence
+            ( ObjectSentence $ SentenceSymbolSentence
                 SentenceSymbol
                     { sentenceSymbolSymbol = Symbol
                         { symbolConstructor = Id "sy1"
@@ -1029,7 +1029,7 @@ moduleParserTests =
             Module
                 { moduleName = ModuleName "MN"
                 , moduleSentences =
-                    [ SentenceSortSentence SentenceSort
+                    [ ObjectSentence $ SentenceSortSentence SentenceSort
                         { sentenceSortName = Id "c"
                         , sentenceSortParameters = []
                         , sentenceSortAttributes = Attributes []
@@ -1043,12 +1043,12 @@ moduleParserTests =
             Module
                 { moduleName = ModuleName "MN"
                 , moduleSentences =
-                    [ SentenceSortSentence SentenceSort
+                    [ ObjectSentence $ SentenceSortSentence SentenceSort
                         { sentenceSortName = Id "c"
                         , sentenceSortParameters = []
                         , sentenceSortAttributes = Attributes []
                         }
-                    , SentenceSortSentence SentenceSort
+                    , ObjectSentence $ SentenceSortSentence SentenceSort
                         { sentenceSortName = Id "c"
                         , sentenceSortParameters = []
                         , sentenceSortAttributes = Attributes []
@@ -1085,7 +1085,7 @@ definitionParserTests =
                     [ Module
                         { moduleName = ModuleName "M"
                         , moduleSentences =
-                            [ SentenceSortSentence SentenceSort
+                            [ ObjectSentence $ SentenceSortSentence SentenceSort
                                 { sentenceSortName = Id "c"
                                 , sentenceSortParameters = []
                                 , sentenceSortAttributes = Attributes []
@@ -1111,7 +1111,7 @@ definitionParserTests =
                     [ Module
                         { moduleName = ModuleName "M"
                         , moduleSentences =
-                            [ SentenceSortSentence SentenceSort
+                            [ ObjectSentence $ SentenceSortSentence SentenceSort
                                 { sentenceSortName = Id "c"
                                 , sentenceSortParameters = []
                                 , sentenceSortAttributes = Attributes []
@@ -1125,7 +1125,7 @@ definitionParserTests =
                     , Module
                         { moduleName = ModuleName "N"
                         , moduleSentences =
-                            [ SentenceSortSentence SentenceSort
+                            [ ObjectSentence $ SentenceSortSentence SentenceSort
                                 { sentenceSortName = Id "d"
                                 , sentenceSortParameters = []
                                 , sentenceSortAttributes = Attributes []

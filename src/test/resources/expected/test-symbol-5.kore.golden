@@ -4,7 +4,7 @@ Definition
         [ Module
             { moduleName = ModuleName "TEST-SYMBOL-5"
             , moduleSentences =
-                [ ObjectSentenceSymbolSentence SentenceSymbol
+                [ ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "f"
@@ -18,7 +18,7 @@ Definition
                     , sentenceSymbolReturnSort =
                         SortVariableSort (SortVariable (Id Object "S"))
                     , sentenceSymbolAttributes = Attributes []
-                    }
+                    })
                 ]
             , moduleAttributes = Attributes []
             }

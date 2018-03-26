@@ -4,12 +4,12 @@ Definition
         [ Module
             { moduleName = ModuleName "TEST-SYMBOL-1"
             , moduleSentences =
-                [ SentenceSortSentence SentenceSort
+                [ ObjectSentence (SentenceSortSentence SentenceSort
                     { sentenceSortName = Id Object "S"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "f"
@@ -22,7 +22,7 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
+                    })
                 ]
             , moduleAttributes = Attributes []
             }

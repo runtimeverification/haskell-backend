@@ -4,14 +4,14 @@ Definition
         [ Module
             { moduleName = ModuleName "TEST-PATTERN-2"
             , moduleSentences =
-                [ SentenceAxiomSentence SentenceAxiom
+                [ MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ ObjectSortVariable (SortVariable (Id Object "S"))
                         ]
                     , sentenceAxiomPattern =
                         ObjectPattern (BottomPattern (Bottom (SortVariableSort (SortVariable (Id Object "S")))))
                     , sentenceAxiomAttributes = Attributes []
-                    }
+                    })
                 ]
             , moduleAttributes = Attributes []
             }
