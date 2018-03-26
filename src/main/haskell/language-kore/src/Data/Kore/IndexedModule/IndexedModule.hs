@@ -26,7 +26,7 @@ module Data.Kore.IndexedModule.IndexedModule
     , indexModuleIfNeeded
     , metaNameForObjectSort
     , resolveThing
-    , SortDescription (..)
+    , SortDescription
     ) where
 
 import           Data.Kore.AST.Common
@@ -38,8 +38,7 @@ import           Control.Monad                    (foldM)
 import qualified Data.Map                         as Map
 import qualified Data.Set                         as Set
 
-newtype SortDescription level = SortDescription
-    { getSortDescription :: SentenceSort level FixedPattern Variable }
+type SortDescription level = SentenceSort level FixedPattern Variable
 
 {-|'IndexedModule' represents an AST 'Module' somewhat optimized for resolving
 IDs.
@@ -327,7 +326,7 @@ indexModuleSentence
     importingModules
     nameToModule
     indexedStuff
-    (SentenceSortSentence sentence)
+    (ObjectSentence (SentenceSortSentence sentence))
   = do
     (indexedModules, indexedModule) <-
         indexModuleSentence
@@ -441,12 +440,12 @@ indexImportedModule
 imported modules.
 -}
 resolveThing
-    :: (IndexedModule sortParam par variable
-        -> Map.Map (Id level) (thing level))
+    :: (IndexedModule sortParam pat variable
+        -> Map.Map (Id level) (thing level pat variable))
     -- ^ extracts the map into which to look up the id
-    -> IndexedModule sortParam par variable
+    -> IndexedModule sortParam pat variable
     -> Id level
-    -> Maybe (thing level)
+    -> Maybe (thing level pat variable)
 resolveThing
     mapExtractor
     indexedModule
@@ -458,12 +457,12 @@ resolveThing
         )
 
 resolveThingInternal
-    :: (Maybe (thing level), Set.Set ModuleName)
-    -> (IndexedModule sortParam par variable
-        -> Map.Map (Id level) (thing level))
-    -> IndexedModule sortParam par variable
+    :: (Maybe (thing level pat variable), Set.Set ModuleName)
+    -> (IndexedModule sortParam pat variable
+        -> Map.Map (Id level) (thing level pat variable))
+    -> IndexedModule sortParam pat variable
     -> Id level
-    -> (Maybe (thing level), Set.Set ModuleName)
+    -> (Maybe (thing level pat variable), Set.Set ModuleName)
 resolveThingInternal x@(Just _, _) _ _ _ = x
 resolveThingInternal x@(Nothing, searchedModules) _ indexedModule _
     | indexedModuleName indexedModule `Set.member` searchedModules = x

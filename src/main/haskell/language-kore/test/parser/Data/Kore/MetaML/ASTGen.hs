@@ -11,16 +11,10 @@ metaMLPatternGen :: Gen CommonMetaPattern
 metaMLPatternGen = Fix <$> patternGen metaMLPatternGen Meta
 
 metaAttributesGen :: Gen MetaAttributes
-metaAttributesGen = Attributes <$> couple (scale (`div` 4) metaMLPatternGen)
-
-metaSentenceAxiomGen :: Gen MetaSentenceAxiom
-metaSentenceAxiomGen = pure SentenceAxiom
-    <*> couple (scale (`div` 2) (sortVariableGen Meta))
-    <*> scale (`div` 2) metaMLPatternGen
-    <*> scale (`div` 2) metaAttributesGen
+metaAttributesGen = attributesGen (SentenceMetaPattern <$> metaMLPatternGen)
 
 metaSentenceGen :: Gen MetaSentence
-metaSentenceGen = oneof
+metaSentenceGen = sentenceGen
     [ AliasMetaSentence <$> sentenceAliasGen metaMLPatternGen Meta
     , SymbolMetaSentence <$> sentenceSymbolGen metaMLPatternGen Meta
     , ImportMetaSentence <$> sentenceImportGen metaMLPatternGen

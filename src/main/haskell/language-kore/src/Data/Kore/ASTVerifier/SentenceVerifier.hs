@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 {-|
 Module      : Data.Kore.ASTVerifier.SentenceVerifier
 Description : Tools for verifying the wellformedness of a Kore 'Sentence'.
@@ -14,6 +15,7 @@ module Data.Kore.ASTVerifier.SentenceVerifier ( verifyUniqueNames
 import           Control.Monad                            (foldM)
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTVerifier.AttributesVerifier
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.PatternVerifier
@@ -27,7 +29,7 @@ import qualified Data.Set                                 as Set
 unique both within the list and outside, using the provided name set.
 -}
 verifyUniqueNames
-    :: [Sentence]
+    :: [KoreSentence]
     -> Set.Set String
     -- ^ Names that are already defined.
     -> Either (Error VerifyError) (Set.Set String)
@@ -46,20 +48,20 @@ verifyUniqueName set name =
         then koreFail ("Duplicated name: '" ++ name ++ "'.")
         else Right (Set.insert name set)
 
-definedNamesForSentence :: Sentence -> [String]
-definedNamesForSentence (MetaSentenceAliasSentence sentenceAlias) =
+definedNamesForSentence :: KoreSentence -> [String]
+definedNamesForSentence (MetaSentence (SentenceAliasSentence sentenceAlias)) =
     [ getId (getSentenceSymbolOrAliasConstructor sentenceAlias) ]
-definedNamesForSentence (ObjectSentenceAliasSentence sentenceAlias) =
+definedNamesForSentence (ObjectSentence (SentenceAliasSentence sentenceAlias)) =
     [ getId (getSentenceSymbolOrAliasConstructor sentenceAlias) ]
-definedNamesForSentence (MetaSentenceSymbolSentence sentenceSymbol) =
+definedNamesForSentence (MetaSentence (SentenceSymbolSentence sentenceSymbol)) =
     [ getId (getSentenceSymbolOrAliasConstructor sentenceSymbol) ]
-definedNamesForSentence (ObjectSentenceSymbolSentence sentenceSymbol) =
+definedNamesForSentence (ObjectSentence (SentenceSymbolSentence sentenceSymbol)) =
     [ getId (getSentenceSymbolOrAliasConstructor sentenceSymbol) ]
-definedNamesForSentence (SentenceSortSentence sentenceSort) =
+definedNamesForSentence (ObjectSentence (SentenceSortSentence sentenceSort)) =
     [sentenceName, metaNameForObjectSort sentenceName]
   where sentenceName = getId (sentenceSortName sentenceSort)
-definedNamesForSentence (SentenceImportSentence _) = []
-definedNamesForSentence (SentenceAxiomSentence _) = []
+definedNamesForSentence (MetaSentence (SentenceImportSentence _)) = []
+definedNamesForSentence (MetaSentence (SentenceAxiomSentence _)) = []
 
 {-|'verifySentences' verifies the welformedness of a list of Kore 'Sentence's.
 -}
@@ -68,7 +70,7 @@ verifySentences
     -- ^ The module containing all definitions which are visible in this
     -- pattern.
     -> AttributesVerification
-    -> [Sentence]
+    -> [KoreSentence]
     -> Either (Error VerifyError) VerifySuccess
 verifySentences
     indexedModule attributesVerification sentences
@@ -79,12 +81,12 @@ verifySentences
 verifySentence
     :: KoreIndexedModule
     -> AttributesVerification
-    -> Sentence
+    -> KoreSentence
     -> Either (Error VerifyError) VerifySuccess
 verifySentence
     indexedModule
     attributesVerification
-    (MetaSentenceAliasSentence aliasSentence)
+    (MetaSentence (SentenceAliasSentence aliasSentence))
   =
     verifySymbolAliasSentence
         (resolveMetaSort indexedModule)
@@ -94,7 +96,7 @@ verifySentence
 verifySentence
     indexedModule
     attributesVerification
-    (ObjectSentenceAliasSentence aliasSentence)
+    (ObjectSentence (SentenceAliasSentence aliasSentence))
   =
     verifySymbolAliasSentence
         (resolveObjectSort indexedModule)
@@ -104,7 +106,7 @@ verifySentence
 verifySentence
     indexedModule
     attributesVerification
-    (MetaSentenceSymbolSentence symbolSentence)
+    (MetaSentence (SentenceSymbolSentence symbolSentence))
   =
     verifySymbolAliasSentence
         (resolveMetaSort indexedModule)
@@ -114,7 +116,7 @@ verifySentence
 verifySentence
     indexedModule
     attributesVerification
-    (ObjectSentenceSymbolSentence symbolSentence)
+    (ObjectSentence (SentenceSymbolSentence symbolSentence))
   =
     verifySymbolAliasSentence
         (resolveObjectSort indexedModule)
@@ -124,16 +126,16 @@ verifySentence
 verifySentence
     indexedModule
     attributesVerification
-    (SentenceAxiomSentence axiomSentence)
+    (MetaSentence (SentenceAxiomSentence axiomSentence))
   =
     verifyAxiomSentence axiomSentence indexedModule attributesVerification
 verifySentence
     indexedModule
     attributesVerification
-    (SentenceSortSentence sortSentence)
+    (ObjectSentence (SentenceSortSentence sortSentence))
   =
     verifySortSentence sortSentence indexedModule attributesVerification
-verifySentence _ _ (SentenceImportSentence _) =
+verifySentence _ _ (MetaSentence (SentenceImportSentence _)) =
     -- Since we have an IndexedModule, we assume that imports were already
     -- resolved, so there is nothing left to verify here.
     verifySuccess
@@ -143,7 +145,7 @@ verifySymbolAliasSentence
     => (Id level -> Either (Error VerifyError) (SortDescription level))
     -> KoreIndexedModule
     -> AttributesVerification
-    -> ssa UnifiedPattern level
+    -> ssa level FixedPattern Variable
     -> Either (Error VerifyError) VerifySuccess
 verifySymbolAliasSentence
     findSortDeclaration indexedModule attributesVerification sentence

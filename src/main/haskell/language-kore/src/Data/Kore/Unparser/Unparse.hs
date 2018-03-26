@@ -300,12 +300,21 @@ instance
 instance
     ( Unparse sortParam
     , Unparse (pat variable)
-    ) => Unparse (Sentence level sortParam pat variable) where
+    ) => Unparse (Sentence level sortParam pat variable)
+  where
     unparse (SentenceAliasSentence s)  = unparse s
     unparse (SentenceSymbolSentence s) = unparse s
     unparse (SentenceImportSentence s) = unparse s
     unparse (SentenceAxiomSentence s)  = unparse s
     unparse (SentenceSortSentence s)   = unparse s
+
+instance
+    ( Unparse sortParam
+    , Unparse (pat variable)
+    ) => Unparse (UnifiedSentence sortParam pat variable)
+  where
+    unparse (MetaSentence s)   = unparse s
+    unparse (ObjectSentence s) = unparse s
 
 instance
     ( Unparse (sentence sortParam pat variable)

@@ -11,6 +11,7 @@ module Data.Kore.ASTVerifier.SortVerifier (verifySort) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.Error
 import           Data.Kore.IndexedModule.IndexedModule
@@ -70,4 +71,4 @@ verifySortMatchesDeclaration
   where
     actualSortCount = length (sortActualSorts sort)
     declaredSortCount =
-        length (sentenceSortParameters (getSortDescription sortDescription))
+        length (sentenceSortParameters sortDescription)

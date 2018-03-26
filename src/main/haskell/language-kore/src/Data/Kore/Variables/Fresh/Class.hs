@@ -6,6 +6,7 @@ module Data.Kore.Variables.Fresh.Class where
 import qualified Control.Monad.State                  as State
 
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Variables.Fresh.IntCounter
 import           Data.Kore.Variables.Int
 

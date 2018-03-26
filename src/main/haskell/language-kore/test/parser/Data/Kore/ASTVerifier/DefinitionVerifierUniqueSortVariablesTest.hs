@@ -89,7 +89,7 @@ definitionVerifierUniqueSortVariablesTests =
         ------------------------------------------------------------------
         , expectSuccess "Definition with object alias"
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
-                [ ObjectSentenceAliasSentence
+                [ ObjectSentence $ SentenceAliasSentence
                     (aliasSentenceWithSortParameters
                         (AliasName "a") (SortName "s") [])
                 , simpleSortSentence (SortName "s")
@@ -97,7 +97,7 @@ definitionVerifierUniqueSortVariablesTests =
             )
         , expectSuccess "Object alias with one sort parameter"
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
-                [ ObjectSentenceAliasSentence
+                [ ObjectSentence $ SentenceAliasSentence
                     (aliasSentenceWithSortParameters
                         (AliasName "a")
                         (SortName "s")
@@ -107,7 +107,7 @@ definitionVerifierUniqueSortVariablesTests =
             )
         , expectSuccess "Object alias with one sort parameter with same name"
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
-                [ ObjectSentenceAliasSentence
+                [ ObjectSentence $ SentenceAliasSentence
                     (aliasSentenceWithSortParameters
                         (AliasName "a")
                         (SortName "s")
@@ -118,7 +118,7 @@ definitionVerifierUniqueSortVariablesTests =
         , expectSuccess
             "Object alias with one sort parameter with same name as sort"
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
-                [ ObjectSentenceAliasSentence
+                [ ObjectSentence $ SentenceAliasSentence
                     (aliasSentenceWithSortParameters
                         (AliasName "a")
                         (SortName "s")
@@ -128,7 +128,7 @@ definitionVerifierUniqueSortVariablesTests =
             )
         , expectSuccess "Object alias with two sort parameters"
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
-                [ ObjectSentenceAliasSentence
+                [ ObjectSentence $ SentenceAliasSentence
                     (aliasSentenceWithSortParameters
                         (AliasName "a")
                         (SortName "s")
@@ -184,7 +184,7 @@ definitionVerifierUniqueSortVariablesTests =
         ------------------------------------------------------------------
         , expectSuccess "Definition with object symbol"
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
-                [ ObjectSentenceSymbolSentence
+                [ ObjectSentence $ SentenceSymbolSentence
                     (symbolSentenceWithSortParameters
                         (SymbolName "a") (SortName "s") []
                     )
@@ -193,7 +193,7 @@ definitionVerifierUniqueSortVariablesTests =
             )
         , expectSuccess "Object symbol with one sort parameter"
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
-                [ ObjectSentenceSymbolSentence
+                [ ObjectSentence $ SentenceSymbolSentence
                     (symbolSentenceWithSortParameters
                         (SymbolName "a")
                         (SortName "s")
@@ -204,7 +204,7 @@ definitionVerifierUniqueSortVariablesTests =
             )
         , expectSuccess "Object symbol with one sort parameter with same name"
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
-                [ ObjectSentenceSymbolSentence
+                [ ObjectSentence $ SentenceSymbolSentence
                     (symbolSentenceWithSortParameters
                         (SymbolName "a")
                         (SortName "s")
@@ -216,7 +216,7 @@ definitionVerifierUniqueSortVariablesTests =
         , expectSuccess
             "Object symbol with one sort parameter with same name as sort"
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
-                [ ObjectSentenceSymbolSentence
+                [ ObjectSentence $ SentenceSymbolSentence
                     (symbolSentenceWithSortParameters
                         (SymbolName "a")
                         (SortName "s")
@@ -227,7 +227,7 @@ definitionVerifierUniqueSortVariablesTests =
             )
         , expectSuccess "Object symbol with two sort parameters"
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
-                [ ObjectSentenceSymbolSentence
+                [ ObjectSentence $ SentenceSymbolSentence
                     (symbolSentenceWithSortParameters
                         (SymbolName "a")
                         (SortName "s")
@@ -323,7 +323,7 @@ definitionVerifierUniqueSortVariablesTests =
                 "Duplicated sort variable: 'sv'."
             )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
-                [ ObjectSentenceAliasSentence
+                [ ObjectSentence $ SentenceAliasSentence
                     (aliasSentenceWithSortParameters
                         (AliasName "a")
                         (SortName "s")
@@ -355,7 +355,7 @@ definitionVerifierUniqueSortVariablesTests =
                 "Duplicated sort variable: 'sv'."
             )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
-                [ ObjectSentenceSymbolSentence
+                [ ObjectSentence $ SentenceSymbolSentence
                     (symbolSentenceWithSortParameters
                         (SymbolName "a")
                         (SortName "s")

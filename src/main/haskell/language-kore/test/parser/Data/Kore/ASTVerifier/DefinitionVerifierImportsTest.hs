@@ -298,7 +298,7 @@ sortVisibilityTests =
         { sortActualName = Id "sort1"
         , sortActualSorts = []
         }
-    sortDeclaration = SentenceSortSentence SentenceSort
+    sortDeclaration = ObjectSentence $ SentenceSortSentence SentenceSort
         { sentenceSortName = Id "sort1"
         , sentenceSortParameters = []
         , sentenceSortAttributes = Attributes []
@@ -307,7 +307,7 @@ sortVisibilityTests =
         { sortActualName = Id "sort3"
         , sortActualSorts = []
         }
-    anotherSortDeclaration = SentenceSortSentence SentenceSort
+    anotherSortDeclaration = ObjectSentence $ SentenceSortSentence SentenceSort
         { sentenceSortName = Id "sort3"
         , sentenceSortParameters = []
         , sentenceSortAttributes = Attributes []
@@ -321,33 +321,33 @@ sortVisibilityTests =
             , sortActualSorts = [ sort ]
             }
     sortReferenceInSortSentence =
-        SentenceAxiomSentence SentenceAxiom
+        MetaSentence $ SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern = ObjectPattern
                 ( TopPattern Top { topSort = sortReferenceInSort } )
             , sentenceAxiomAttributes = Attributes []
             }
     sortReferenceInSortSupportingSentences =
-        [ SentenceSortSentence SentenceSort
+        [ ObjectSentence $ SentenceSortSentence SentenceSort
             { sentenceSortName = Id "sort2"
             , sentenceSortParameters = [SortVariable (Id "x")]
             , sentenceSortAttributes = Attributes []
             }
         ]
     sortReferenceInTopPatternSentence =
-        SentenceAxiomSentence SentenceAxiom
+        MetaSentence $ SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern = topSortPattern
             , sentenceAxiomAttributes = Attributes []
             }
     metaSortReferenceInTopPatternSentence =
-        SentenceAxiomSentence SentenceAxiom
+        MetaSentence $ SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern = metaTopSortPattern
             , sentenceAxiomAttributes = Attributes []
             }
     sortReferenceInExistsPatternSentence =
-        SentenceAxiomSentence SentenceAxiom
+        MetaSentence $ SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern = ObjectPattern
                 ( ExistsPattern Exists
@@ -367,7 +367,7 @@ sortVisibilityTests =
             , sentenceAxiomAttributes = Attributes []
             }
     sortReferenceInAndPatternSentence =
-        SentenceAxiomSentence SentenceAxiom
+        MetaSentence $ SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern = ObjectPattern
                 ( AndPattern And
@@ -379,7 +379,7 @@ sortVisibilityTests =
             , sentenceAxiomAttributes = Attributes []
             }
     sortReferenceInNextPatternSentence =
-        SentenceAxiomSentence SentenceAxiom
+        MetaSentence $ SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern = ObjectPattern
                 ( NextPattern Next
@@ -390,7 +390,7 @@ sortVisibilityTests =
             , sentenceAxiomAttributes = Attributes []
             }
     sortReferenceInPatternInPatternSentence =
-        SentenceAxiomSentence SentenceAxiom
+        MetaSentence $ SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern = ObjectPattern
                 ( NextPattern Next
@@ -410,7 +410,7 @@ sortVisibilityTests =
     sortReferenceInPatternInPatternSupportingSentences =
         [ anotherSortDeclaration ]
     sortReferenceInSentenceSymbolResultSortSentence =
-        ObjectSentenceSymbolSentence SentenceSymbol
+        ObjectSentence $ SentenceSymbolSentence SentenceSymbol
             { sentenceSymbolSymbol = Symbol
                 { symbolConstructor = Id "symbol1"
                 , symbolParams = []
@@ -420,7 +420,7 @@ sortVisibilityTests =
             , sentenceSymbolAttributes = Attributes []
             }
     sortReferenceInSentenceSymbolSortsSentence =
-        ObjectSentenceSymbolSentence SentenceSymbol
+        ObjectSentence $ SentenceSymbolSentence SentenceSymbol
             { sentenceSymbolSymbol = Symbol
                 { symbolConstructor = Id "symbol1"
                 , symbolParams = []
@@ -432,7 +432,7 @@ sortVisibilityTests =
     sortReferenceInSentenceSymbolSortsSupportSentences =
         [ anotherSortDeclaration ]
     sortReferenceInSentenceAliasResultSortSentence =
-        ObjectSentenceAliasSentence SentenceAlias
+        ObjectSentence $ SentenceAliasSentence SentenceAlias
             { sentenceAliasAlias = Alias
                 { aliasConstructor = Id "alias1"
                 , aliasParams = []
@@ -442,7 +442,7 @@ sortVisibilityTests =
             , sentenceAliasAttributes = Attributes []
             }
     sortReferenceInSentenceAliasSortsSentence =
-        ObjectSentenceAliasSentence SentenceAlias
+        ObjectSentence $ SentenceAliasSentence SentenceAlias
             { sentenceAliasAlias = Alias
                 { aliasConstructor = Id "alias1"
                 , aliasParams = []
@@ -454,7 +454,7 @@ sortVisibilityTests =
     sortReferenceInSentenceAliasSortsSupportSentences =
         [ anotherSortDeclaration ]
     sortReferenceInSymbolOrAliasSentence =
-        SentenceAxiomSentence SentenceAxiom
+        MetaSentence $ SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern = ObjectPattern
                 ( ApplicationPattern Application
@@ -468,7 +468,7 @@ sortVisibilityTests =
             , sentenceAxiomAttributes = Attributes []
             }
     sortReferenceInSymbolOrAliasSupportSentences =
-        [ ObjectSentenceSymbolSentence SentenceSymbol
+        [ ObjectSentence $ SentenceSymbolSentence SentenceSymbol
             { sentenceSymbolSymbol = Symbol
                 { symbolConstructor = Id "symbol2"
                 , symbolParams = [SortVariable (Id "sv1")]
@@ -576,7 +576,7 @@ symbolVisibilityTests =
             , applicationChildren = []
             }
         )
-    symbolDeclaration = ObjectSentenceSymbolSentence SentenceSymbol
+    symbolDeclaration = ObjectSentence $ SentenceSymbolSentence SentenceSymbol
         { sentenceSymbolSymbol = Symbol
             { symbolConstructor = Id "symbol1"
             , symbolParams = [SortVariable (Id "sv1")]
@@ -596,7 +596,7 @@ symbolVisibilityTests =
             , applicationChildren = []
             }
         )
-    metaSymbolDeclaration = MetaSentenceSymbolSentence SentenceSymbol
+    metaSymbolDeclaration = MetaSentence $ SentenceSymbolSentence SentenceSymbol
         { sentenceSymbolSymbol = Symbol
             { symbolConstructor = Id "#symbol1"
             , symbolParams = [SortVariable (Id "#sv1")]
@@ -607,25 +607,25 @@ symbolVisibilityTests =
         , sentenceSymbolAttributes = Attributes []
         }
     symbolReferenceInAxiomSentence =
-        SentenceAxiomSentence SentenceAxiom
+        MetaSentence $ SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern = symbolPattern
             , sentenceAxiomAttributes = Attributes []
             }
     metaSymbolReferenceInAxiomSentence =
-        SentenceAxiomSentence SentenceAxiom
+        MetaSentence $ SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern = metaSymbolPattern
             , sentenceAxiomAttributes = Attributes []
             }
     symbolReferenceInAttributesSentence =
-        SentenceSortSentence SentenceSort
+        ObjectSentence $ SentenceSortSentence SentenceSort
             { sentenceSortName = Id "sort2"
             , sentenceSortParameters = []
             , sentenceSortAttributes = Attributes [symbolPattern]
             }
     symbolReferenceInAndPatternSentence =
-        SentenceAxiomSentence SentenceAxiom
+        MetaSentence $ SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern = ObjectPattern
                 ( AndPattern And
@@ -637,7 +637,7 @@ symbolVisibilityTests =
             , sentenceAxiomAttributes = Attributes []
             }
     symbolReferenceInExistsPatternSentence =
-        SentenceAxiomSentence SentenceAxiom
+        MetaSentence $ SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern = ObjectPattern
                 ( ExistsPattern Exists
@@ -652,7 +652,7 @@ symbolVisibilityTests =
             , sentenceAxiomAttributes = Attributes []
             }
     symbolReferenceInNextPatternSentence =
-        SentenceAxiomSentence SentenceAxiom
+        MetaSentence $ SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern = ObjectPattern
                 ( NextPattern Next
@@ -663,7 +663,7 @@ symbolVisibilityTests =
             , sentenceAxiomAttributes = Attributes []
             }
     symbolReferenceInSymbolOrAliasSentence =
-        SentenceAxiomSentence SentenceAxiom
+        MetaSentence $ SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern = ObjectPattern
                 ( ApplicationPattern Application
@@ -677,7 +677,7 @@ symbolVisibilityTests =
             , sentenceAxiomAttributes = Attributes []
             }
     symbolReferenceInSymbolOrAliasSupportSentences =
-        ObjectSentenceSymbolSentence SentenceSymbol
+        ObjectSentence (SentenceSymbolSentence SentenceSymbol
             { sentenceSymbolSymbol = Symbol
                 { symbolConstructor = Id "symbol2"
                 , symbolParams = [SortVariable (Id "sv1")]
@@ -688,6 +688,7 @@ symbolVisibilityTests =
                 SortVariableSort (SortVariable (Id "sv1"))
             , sentenceSymbolAttributes = Attributes []
             }
+        )
         : defaultSymbolSupportSentences
 
 aliasVisibilityTests :: [TestTree]
@@ -786,7 +787,7 @@ aliasVisibilityTests =
             , applicationChildren = []
             }
         )
-    aliasDeclaration = ObjectSentenceAliasSentence SentenceAlias
+    aliasDeclaration = ObjectSentence $ SentenceAliasSentence SentenceAlias
         { sentenceAliasAlias = Alias
             { aliasConstructor = Id "alias1"
             , aliasParams = [SortVariable (Id "sv1")]
@@ -806,7 +807,7 @@ aliasVisibilityTests =
             , applicationChildren = []
             }
         )
-    metaAliasDeclaration = MetaSentenceAliasSentence SentenceAlias
+    metaAliasDeclaration = MetaSentence $ SentenceAliasSentence SentenceAlias
         { sentenceAliasAlias = Alias
             { aliasConstructor = Id "#alias1"
             , aliasParams = [SortVariable (Id "#sv1")]
@@ -817,25 +818,25 @@ aliasVisibilityTests =
         , sentenceAliasAttributes = Attributes []
         }
     aliasReferenceInAxiomSentence =
-        SentenceAxiomSentence SentenceAxiom
+        MetaSentence $ SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern = aliasPattern
             , sentenceAxiomAttributes = Attributes []
             }
     metaAliasReferenceInAxiomSentence =
-        SentenceAxiomSentence SentenceAxiom
+        MetaSentence $ SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern = metaAliasPattern
             , sentenceAxiomAttributes = Attributes []
             }
     aliasReferenceInAttributesSentence =
-        SentenceSortSentence SentenceSort
+        ObjectSentence $ SentenceSortSentence SentenceSort
             { sentenceSortName = Id "sort2"
             , sentenceSortParameters = []
             , sentenceSortAttributes = Attributes [aliasPattern]
             }
     aliasReferenceInAndPatternSentence =
-        SentenceAxiomSentence SentenceAxiom
+        MetaSentence $ SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern = ObjectPattern
                 ( AndPattern And
@@ -847,7 +848,7 @@ aliasVisibilityTests =
             , sentenceAxiomAttributes = Attributes []
             }
     aliasReferenceInExistsPatternSentence =
-        SentenceAxiomSentence SentenceAxiom
+        MetaSentence $ SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern = ObjectPattern
                 ( ExistsPattern Exists
@@ -862,7 +863,7 @@ aliasVisibilityTests =
             , sentenceAxiomAttributes = Attributes []
             }
     aliasReferenceInNextPatternSentence =
-        SentenceAxiomSentence SentenceAxiom
+        MetaSentence $ SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern = ObjectPattern
                 ( NextPattern Next
@@ -873,7 +874,7 @@ aliasVisibilityTests =
             , sentenceAxiomAttributes = Attributes []
             }
     aliasReferenceInAliasOrAliasSentence =
-        SentenceAxiomSentence SentenceAxiom
+        MetaSentence $ SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern = ObjectPattern
                 ( ApplicationPattern Application
@@ -887,7 +888,7 @@ aliasVisibilityTests =
             , sentenceAxiomAttributes = Attributes []
             }
     aliasReferenceInAliasOrAliasSupportSentences =
-        ObjectSentenceAliasSentence SentenceAlias
+        (ObjectSentence $ SentenceAliasSentence SentenceAlias
             { sentenceAliasAlias = Alias
                 { aliasConstructor = Id "alias2"
                 , aliasParams = [SortVariable (Id "sv1")]
@@ -898,6 +899,7 @@ aliasVisibilityTests =
                 SortVariableSort (SortVariable (Id "sv1"))
             , sentenceAliasAttributes = Attributes []
             }
+        )
         : defaultAliasSupportSentences
 
 
@@ -906,16 +908,16 @@ defaultSort = SortActualSort SortActual
     { sortActualName = Id "sort1"
     , sortActualSorts = []
     }
-defaultSortDeclaration :: Sentence
-defaultSortDeclaration = SentenceSortSentence SentenceSort
+defaultSortDeclaration :: KoreSentence
+defaultSortDeclaration = ObjectSentence $ SentenceSortSentence SentenceSort
     { sentenceSortName = Id "sort1"
     , sentenceSortParameters = []
     , sentenceSortAttributes = Attributes []
     }
 
-newtype DeclaringSentence = DeclaringSentence Sentence
-newtype UsingSentence = UsingSentence Sentence
-newtype SupportingSentences = SupportingSentences [Sentence]
+newtype DeclaringSentence = DeclaringSentence KoreSentence
+newtype UsingSentence = UsingSentence KoreSentence
+newtype SupportingSentences = SupportingSentences [KoreSentence]
 
 nameReferenceTests
     :: String
@@ -1194,7 +1196,7 @@ nameDuplicationTests =
         Module
             { moduleName = modName
             , moduleSentences =
-                [ SentenceSortSentence SentenceSort
+                [ ObjectSentence $ SentenceSortSentence SentenceSort
                     { sentenceSortName = Id sortName
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
@@ -1206,7 +1208,7 @@ nameDuplicationTests =
         Module
             { moduleName = modName
             , moduleSentences =
-                [ ObjectSentenceSymbolSentence SentenceSymbol
+                [ ObjectSentence $ SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol = Symbol
                         { symbolConstructor = Id symbolName
                         , symbolParams = [SortVariable (Id "sv1")]
@@ -1223,7 +1225,7 @@ nameDuplicationTests =
         Module
             { moduleName = modName
             , moduleSentences =
-                [ ObjectSentenceAliasSentence SentenceAlias
+                [ ObjectSentence $ SentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = Id aliasName
                         , aliasParams = [SortVariable (Id "sv1")]

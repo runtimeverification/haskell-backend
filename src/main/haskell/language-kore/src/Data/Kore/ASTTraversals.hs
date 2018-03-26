@@ -11,6 +11,7 @@ module Data.Kore.ASTTraversals ( bottomUpVisitor
 import           Control.Monad.Identity
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 
 {-|'topDownVisitorM' is a generalized monadic visitor for patterns.
 It takes as arguments a preprocess function and a postprocess function and

@@ -8,6 +8,7 @@ import           Test.Tasty.HUnit                         (assertEqual,
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.ASTVerifier.DefinitionVerifier
 import           Data.Kore.ASTVerifier.Error
@@ -111,7 +112,7 @@ newtype TestedPatternSort level = TestedPatternSort (Sort level)
 newtype SortVariablesThatMustBeDeclared level =
     SortVariablesThatMustBeDeclared [SortVariable level]
 
-simpleDefinitionFromSentences :: ModuleName -> [Sentence] -> KoreDefinition
+simpleDefinitionFromSentences :: ModuleName -> [KoreSentence] -> KoreDefinition
 simpleDefinitionFromSentences name sentences =
     Definition
         { definitionAttributes = Attributes []
@@ -124,21 +125,24 @@ simpleDefinitionFromSentences name sentences =
             ]
         }
 
-simpleSortSentence :: SortName -> Sentence
+simpleSortSentence :: SortName -> KoreSentence
 simpleSortSentence (SortName name) =
-    SentenceSortSentence SentenceSort
-        { sentenceSortName = Id name
-        , sentenceSortParameters = []
-        , sentenceSortAttributes = Attributes []
-        }
+    asSentence
+        (SentenceSort
+            { sentenceSortName = Id name
+            , sentenceSortParameters = []
+            , sentenceSortAttributes = Attributes []
+            }::KoreSentenceSort
+        )
 
-simpleMetaAliasSentence :: AliasName -> SortName -> Sentence
+simpleMetaAliasSentence :: AliasName -> SortName -> KoreSentence
 simpleMetaAliasSentence alias sort =
-    MetaSentenceAliasSentence (simpleAliasSentence alias sort)
+    asSentence
+        (simpleAliasSentence alias sort::KoreSentenceAlias Meta)
 
-simpleObjectAliasSentence :: AliasName -> SortName -> Sentence
+simpleObjectAliasSentence :: AliasName -> SortName -> KoreSentence
 simpleObjectAliasSentence alias sort =
-    ObjectSentenceAliasSentence (simpleAliasSentence alias sort)
+   asSentence (simpleAliasSentence alias sort::KoreSentenceAlias Object)
 
 simpleAliasSentence :: AliasName -> SortName -> KoreSentenceAlias level
 simpleAliasSentence (AliasName name) (SortName sort) =
@@ -156,13 +160,13 @@ simpleAliasSentence (AliasName name) (SortName sort) =
         , sentenceAliasAttributes = Attributes []
         }
 
-simpleMetaSymbolSentence :: SymbolName -> SortName -> Sentence
+simpleMetaSymbolSentence :: SymbolName -> SortName -> KoreSentence
 simpleMetaSymbolSentence name sort =
-    MetaSentenceSymbolSentence (simpleSymbolSentence name sort)
+    asSentence (simpleSymbolSentence name sort::KoreSentenceSymbol Meta)
 
-simpleObjectSymbolSentence :: SymbolName -> SortName -> Sentence
+simpleObjectSymbolSentence :: SymbolName -> SortName -> KoreSentence
 simpleObjectSymbolSentence name sort =
-    ObjectSentenceSymbolSentence (simpleSymbolSentence name sort)
+    asSentence (simpleSymbolSentence name sort::KoreSentenceSymbol Object)
 
 simpleSymbolSentence :: SymbolName -> SortName -> KoreSentenceSymbol level
 simpleSymbolSentence (SymbolName name) (SortName sort) =
@@ -180,56 +184,66 @@ simpleSymbolSentence (SymbolName name) (SortName sort) =
         , sentenceSymbolAttributes = Attributes []
         }
 
-simpleAxiomSentence :: UnifiedPattern -> Sentence
+simpleAxiomSentence :: UnifiedPattern -> KoreSentence
 simpleAxiomSentence unifiedPattern =
-    SentenceAxiomSentence SentenceAxiom
-        { sentenceAxiomParameters = []
-        , sentenceAxiomPattern = unifiedPattern
-        , sentenceAxiomAttributes = Attributes []
-        }
+    asSentence
+        (SentenceAxiom
+            { sentenceAxiomParameters = []
+            , sentenceAxiomPattern = unifiedPattern
+            , sentenceAxiomAttributes = Attributes []
+            }::KoreSentenceAxiom
+        )
 
-importSentence :: ModuleName -> Sentence
+importSentence :: ModuleName -> KoreSentence
 importSentence name =
-    SentenceImportSentence SentenceImport
-        { sentenceImportModuleName = name
-        , sentenceImportAttributes = Attributes []
-        }
+    asSentence
+        (SentenceImport
+            { sentenceImportModuleName = name
+            , sentenceImportAttributes = Attributes []
+            }::KoreSentenceImport
+        )
 
-sortSentenceWithSortParameters :: SortName -> [SortVariable Object] -> Sentence
+sortSentenceWithSortParameters
+    :: SortName -> [SortVariable Object] -> KoreSentence
 sortSentenceWithSortParameters (SortName name) parameters =
-    SentenceSortSentence SentenceSort
-        { sentenceSortName = Id name
-        , sentenceSortParameters = parameters
-        , sentenceSortAttributes = Attributes []
-        }
+    asSentence
+        (SentenceSort
+            { sentenceSortName = Id name
+            , sentenceSortParameters = parameters
+            , sentenceSortAttributes = Attributes []
+            }::KoreSentenceSort
+        )
 
 aliasSentenceWithSort
-    :: MetaOrObject level => AliasName -> Sort level -> Sentence
+    :: MetaOrObject level => AliasName -> Sort level -> KoreSentence
 aliasSentenceWithSort (AliasName name) sort =
-    asSentenceAliasSentence SentenceAlias
-        { sentenceAliasAlias = Alias
-            { aliasConstructor = Id name
-            , aliasParams = []
+    asKoreAliasSentence
+        SentenceAlias
+            { sentenceAliasAlias = Alias
+                { aliasConstructor = Id name
+                , aliasParams = []
+                }
+            , sentenceAliasSorts = []
+            , sentenceAliasResultSort = sort
+            , sentenceAliasAttributes = Attributes []
             }
-        , sentenceAliasSorts = []
-        , sentenceAliasResultSort = sort
-        , sentenceAliasAttributes = Attributes []
-        }
 
 metaAliasSentenceWithSortParameters
-    :: AliasName -> Sort Meta -> [SortVariable Meta] -> Sentence
+    :: AliasName -> Sort Meta -> [SortVariable Meta] -> KoreSentence
 metaAliasSentenceWithSortParameters
     (AliasName name) sort parameters
   =
-    MetaSentenceAliasSentence SentenceAlias
-        { sentenceAliasAlias = Alias
-            { aliasConstructor = Id name
-            , aliasParams = parameters
-            }
-        , sentenceAliasSorts = []
-        , sentenceAliasResultSort = sort
-        , sentenceAliasAttributes = Attributes []
-        }
+    asSentence
+        (SentenceAlias
+            { sentenceAliasAlias = Alias
+                { aliasConstructor = Id name
+                , aliasParams = parameters
+                }
+            , sentenceAliasSorts = []
+            , sentenceAliasResultSort = sort
+            , sentenceAliasAttributes = Attributes []
+            }::KoreSentenceAlias Meta
+        )
 
 aliasSentenceWithSortParameters
     :: AliasName -> SortName -> [SortVariable level] -> KoreSentenceAlias level
@@ -304,19 +318,21 @@ sentenceSymbolWithAttributes (SymbolName name) params sort attributes =
         }
 
 metaSymbolSentenceWithSortParameters
-    :: SymbolName -> Sort Meta -> [SortVariable Meta] -> Sentence
+    :: SymbolName -> Sort Meta -> [SortVariable Meta] -> KoreSentence
 metaSymbolSentenceWithSortParameters
     (SymbolName name) sort parameters
   =
-    MetaSentenceSymbolSentence SentenceSymbol
-        { sentenceSymbolSymbol = Symbol
-            { symbolConstructor = Id name
-            , symbolParams = parameters
-            }
-        , sentenceSymbolSorts = []
-        , sentenceSymbolResultSort = sort
-        , sentenceSymbolAttributes = Attributes []
-        }
+    asSentence
+        (SentenceSymbol
+            { sentenceSymbolSymbol = Symbol
+                { symbolConstructor = Id name
+                , symbolParams = parameters
+                }
+            , sentenceSymbolSorts = []
+            , sentenceSymbolResultSort = sort
+            , sentenceSymbolAttributes = Attributes []
+            }::KoreSentenceSymbol Meta
+        )
 
 symbolSentenceWithSortParameters
     :: SymbolName
@@ -341,22 +357,29 @@ symbolSentenceWithSortParameters
         }
 
 axiomSentenceWithSortParameters
-    :: UnifiedPattern -> [UnifiedSortVariable] -> Sentence
+    :: UnifiedPattern -> [UnifiedSortVariable] -> KoreSentence
 axiomSentenceWithSortParameters unifiedPattern parameters =
-    SentenceAxiomSentence SentenceAxiom
-        { sentenceAxiomParameters = parameters
-        , sentenceAxiomPattern = unifiedPattern
-        , sentenceAxiomAttributes = Attributes []
-        }
+    asSentence
+        (SentenceAxiom
+            { sentenceAxiomParameters = parameters
+            , sentenceAxiomPattern = unifiedPattern
+            , sentenceAxiomAttributes = Attributes []
+            }::KoreSentenceAxiom
+        )
 
 axiomSentenceWithAttributes
-    :: [UnifiedSortVariable] -> UnifiedPattern -> [UnifiedPattern] -> Sentence
+    :: [UnifiedSortVariable]
+    -> UnifiedPattern
+    -> [UnifiedPattern]
+    -> KoreSentence
 axiomSentenceWithAttributes parameters unifiedPattern attributes =
-    SentenceAxiomSentence SentenceAxiom
-        { sentenceAxiomParameters = parameters
-        , sentenceAxiomPattern = unifiedPattern
-        , sentenceAxiomAttributes = Attributes attributes
-        }
+    asSentence
+        (SentenceAxiom
+            { sentenceAxiomParameters = parameters
+            , sentenceAxiomPattern = unifiedPattern
+            , sentenceAxiomAttributes = Attributes attributes
+            }::KoreSentenceAxiom
+        )
 
 sentenceAliasWithResultSort
     :: AliasName
@@ -378,58 +401,59 @@ sentenceAliasWithResultSort
 
 symbolSentenceWithResultSort
     :: MetaOrObject level
-    => SymbolName -> Sort level -> [SortVariable level] -> Sentence
+    => SymbolName -> Sort level -> [SortVariable level] -> KoreSentence
 symbolSentenceWithResultSort
     (SymbolName name) sort parameters
-  =
-    asSentenceSymbolSentence SentenceSymbol
-        { sentenceSymbolSymbol = Symbol
-            { symbolConstructor = Id name
-            , symbolParams = parameters
+  = asKoreSymbolSentence
+        SentenceSymbol
+            { sentenceSymbolSymbol = Symbol
+                { symbolConstructor = Id name
+                , symbolParams = parameters
+                }
+            , sentenceSymbolSorts = []
+            , sentenceSymbolResultSort = sort
+            , sentenceSymbolAttributes = Attributes []
             }
-        , sentenceSymbolSorts = []
-        , sentenceSymbolResultSort = sort
-        , sentenceSymbolAttributes = Attributes []
-        }
 
 objectSymbolSentenceWithArguments
-    :: SymbolName -> Sort Object -> [Sort Object] -> Sentence
+    :: SymbolName -> Sort Object -> [Sort Object] -> KoreSentence
 objectSymbolSentenceWithArguments = symbolSentenceWithArguments
 
 symbolSentenceWithArguments
     :: MetaOrObject level
-    => SymbolName -> Sort level -> [Sort level] -> Sentence
+    => SymbolName -> Sort level -> [Sort level] -> KoreSentence
 symbolSentenceWithArguments
     (SymbolName name) sort operandSorts
-  =
-    asSentenceSymbolSentence SentenceSymbol
-        { sentenceSymbolSymbol = Symbol
-            { symbolConstructor = Id name
-            , symbolParams = []
+  = asKoreSymbolSentence
+        SentenceSymbol
+            { sentenceSymbolSymbol = Symbol
+                { symbolConstructor = Id name
+                , symbolParams = []
+                }
+            , sentenceSymbolSorts = operandSorts
+            , sentenceSymbolResultSort = sort
+            , sentenceSymbolAttributes = Attributes []
             }
-        , sentenceSymbolSorts = operandSorts
-        , sentenceSymbolResultSort = sort
-        , sentenceSymbolAttributes = Attributes []
-        }
 
 objectAliasSentenceWithArguments
-    :: AliasName -> Sort Object -> [Sort Object] -> Sentence
+    :: AliasName -> Sort Object -> [Sort Object] -> KoreSentence
 objectAliasSentenceWithArguments = aliasSentenceWithArguments
 
 aliasSentenceWithArguments
-    :: MetaOrObject level => AliasName -> Sort level -> [Sort level] -> Sentence
+    :: MetaOrObject level
+    => AliasName -> Sort level -> [Sort level] -> KoreSentence
 aliasSentenceWithArguments
     (AliasName name) sort operandSorts
-  =
-    asSentenceAliasSentence SentenceAlias
-        { sentenceAliasAlias = Alias
-            { aliasConstructor = Id name
-            , aliasParams = []
+  = asKoreAliasSentence
+        SentenceAlias
+            { sentenceAliasAlias = Alias
+                { aliasConstructor = Id name
+                , aliasParams = []
+                }
+            , sentenceAliasSorts = operandSorts
+            , sentenceAliasResultSort = sort
+            , sentenceAliasAttributes = Attributes []
             }
-        , sentenceAliasSorts = operandSorts
-        , sentenceAliasResultSort = sort
-        , sentenceAliasAttributes = Attributes []
-        }
 
 simpleSortActual :: SortName -> SortActual level
 simpleSortActual (SortName sort) =

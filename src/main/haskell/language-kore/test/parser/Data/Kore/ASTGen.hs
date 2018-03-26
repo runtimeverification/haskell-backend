@@ -8,6 +8,7 @@ import           Test.QuickCheck.Gen         (Gen, choose, chooseAny, elements,
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Parser.LexemeImpl
 
 couple :: Gen a -> Gen [a]
@@ -300,7 +301,7 @@ unifiedPatternGen = sized (\n ->
 
 sentenceAliasGen
     :: MetaOrObject level
-    => Gen pat -> level -> Gen (SentenceAlias pat level)
+    => Gen (pat variable) -> level -> Gen (SentenceAlias level pat variable)
 sentenceAliasGen patGen x = pure SentenceAlias
     <*> scale (`div` 2) (aliasGen x)
     <*> couple (scale (`div` 2) (sortGen x))
@@ -309,55 +310,59 @@ sentenceAliasGen patGen x = pure SentenceAlias
 
 sentenceSymbolGen
     :: MetaOrObject level
-    => Gen pat -> level -> Gen (SentenceSymbol pat level)
+    => Gen (pat variable) -> level -> Gen (SentenceSymbol level pat variable)
 sentenceSymbolGen patGen x = pure SentenceSymbol
     <*> scale (`div` 2) (symbolGen x)
     <*> couple (scale (`div` 2) (sortGen x))
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) (attributesGen patGen)
 
-sentenceImportGen :: Gen pat -> Gen (SentenceImport pat)
+sentenceImportGen :: Gen (pat variable) -> Gen (SentenceImport pat variable)
 sentenceImportGen patGen = pure SentenceImport
     <*> scale (`div` 2) moduleNameGen
     <*> scale (`div` 2) (attributesGen patGen)
 
-sentenceAxiomGen :: Gen KoreSentenceAxiom
-sentenceAxiomGen = pure SentenceAxiom
-    <*> couple (scale (`div` 2) unifiedSortVariableGen)
-    <*> scale (`div` 2) unifiedPatternGen
-    <*> scale (`div` 2) (attributesGen unifiedPatternGen)
+sentenceAxiomGen
+   :: Gen sortParam -> Gen (pat var) -> Gen (SentenceAxiom sortParam pat var)
+sentenceAxiomGen sortParamGen patGen =
+    pure SentenceAxiom
+        <*> couple (scale (`div` 2) sortParamGen)
+        <*> scale (`div` 2) patGen
+        <*> scale (`div` 2) (attributesGen patGen)
 
-sentenceSortGen :: Gen KoreSentenceSort
-sentenceSortGen = pure SentenceSort
-    <*> scale (`div` 2) (idGen Object)
-    <*> couple (scale (`div` 2) (sortVariableGen Object))
-    <*> scale (`div` 2) (attributesGen unifiedPatternGen)
+sentenceSortGen
+    :: MetaOrObject level
+    => Gen (pat var) -> level -> Gen (SentenceSort level pat var)
+sentenceSortGen patGen level =
+    pure SentenceSort
+        <*> scale (`div` 2) (idGen level)
+        <*> couple (scale (`div` 2) (sortVariableGen level))
+        <*> scale (`div` 2) (attributesGen patGen)
 
-attributesGen :: Gen pat -> Gen (Attributes pat)
+attributesGen :: Gen (pat variable) -> Gen (Attributes pat variable)
 attributesGen patGen = Attributes <$> couple (scale (`div` 4) patGen)
 
-sentenceGen :: Gen Sentence
-sentenceGen = oneof
-    [ MetaSentenceAliasSentence <$> sentenceAliasGen unifiedPatternGen Meta
-    , ObjectSentenceAliasSentence <$> sentenceAliasGen unifiedPatternGen Object
-    , MetaSentenceSymbolSentence <$> sentenceSymbolGen unifiedPatternGen Meta
-    , ObjectSentenceSymbolSentence
-        <$> sentenceSymbolGen unifiedPatternGen Object
-    , SentenceImportSentence <$> sentenceImportGen unifiedPatternGen
-    , SentenceAxiomSentence <$> sentenceAxiomGen
-    , SentenceSortSentence <$> sentenceSortGen
-    ]
+sentenceGen
+    :: Gen (Sentence level sortParam pat variable)
 
-moduleGen :: Gen sentence -> Gen pat -> Gen (Module sentence pat)
+moduleGen
+    :: Gen (sentence sortParam pat variable)
+    -> Gen (pat variable) -> Gen (Module sentence sortParam pat variable)
 moduleGen senGen patGen = pure Module
     <*> scale (`div` 2) moduleNameGen
     <*> couple (scale (`div` 2) senGen)
     <*> scale (`div` 2) (attributesGen patGen)
 
-modulesGen :: Gen sentence -> Gen pat -> Gen [Module sentence pat]
+modulesGen
+    :: Gen (sentence sortParam pat variable)
+    -> Gen (pat variable)
+    -> Gen [Module sentence sortParam pat variable]
 modulesGen senGen patGen = couple1 (scale (`div` 2) (moduleGen senGen patGen))
 
-definitionGen :: Gen sentence -> Gen pat -> Gen (Definition sentence pat)
+definitionGen
+    :: Gen (sentence sortParam pat variable)
+    -> Gen (pat variable)
+    -> Gen (Definition sentence sortParam pat variable)
 definitionGen senGen patGen = pure Definition
     <*> scale (`div` 2) (attributesGen patGen)
     <*> scale (`div` 2) (modulesGen senGen patGen)

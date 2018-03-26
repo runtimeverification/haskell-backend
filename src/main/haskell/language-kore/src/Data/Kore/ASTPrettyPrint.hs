@@ -6,6 +6,7 @@ module Data.Kore.ASTPrettyPrint (prettyPrintToString) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.IndentingPrinter (PrinterOutput, StringPrinter,
                                              betweenLines, printToString,
                                              withIndent, write)
@@ -610,6 +611,17 @@ instance
         writeOneFieldStruct flags "SentenceAxiomSentence" s
     prettyPrint flags (SentenceSortSentence s)         =
         writeOneFieldStruct flags "SentenceSortSentence" s
+
+instance
+    ( PrettyPrint sortParam
+    , PrettyPrint (pat variable)
+    ) => PrettyPrint (UnifiedSentence sortParam pat variable)
+  where
+    prettyPrint flags (MetaSentence s) =
+        writeOneFieldStruct flags "MetaSentence" s
+    prettyPrint flags (ObjectSentence s) =
+        writeOneFieldStruct flags "ObjectSentence" s
+
 
 instance
     (PrettyPrint (sentence sortParam pat variable)

@@ -22,6 +22,7 @@ import           Data.Fix
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
 import           Data.Kore.ASTTraversals
 import           Data.Kore.Implicit.ImplicitSorts
@@ -344,9 +345,9 @@ liftSentence (MetaSentence (SentenceAxiomSentence as)) =
         , sentenceAxiomAttributes = liftAttributes (sentenceAxiomAttributes as)
         , sentenceAxiomPattern =
             if null objectParameters
-                then provableLiftedPattern
+                then SentenceMetaPattern provableLiftedPattern
                 else
-                    Fix
+                    SentenceMetaPattern $ Fix
                         (ImpliesPattern Implies
                             { impliesSort = axiomSort
                             , impliesFirst = Fix
@@ -375,8 +376,8 @@ liftSentence (MetaSentence (SentenceAxiomSentence as)) =
             MetaPattern _   -> liftedPattern
             ObjectPattern _ ->
                 Fix (apply (provableHead axiomSort) [liftedPattern])
-liftSentence (SentenceImportSentence is) =
-    [ ImportMetaSentence is
+liftSentence (MetaSentence (SentenceImportSentence is)) =
+    [ SentenceImportSentence is
         { sentenceImportAttributes =
             liftAttributes (sentenceImportAttributes is)
         }

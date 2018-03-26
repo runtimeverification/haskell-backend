@@ -39,6 +39,7 @@ module Data.Kore.Parser.ParserImpl where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.MetaML.AST
 import           Data.Kore.Parser.Lexeme
 import qualified Data.Kore.Parser.ParserUtils as ParserUtils
@@ -866,7 +867,10 @@ koreSentenceParser = keywordBasedParsers
     , ( "import", importSentenceRemainderParser )
     ]
   where
-    sentenceConstructorRemainderParser sentenceType = do
+    sentenceConstructorRemainderParser sentenceType
+      = undefined
+{-
+        do
         c <- ParserUtils.peekChar'
         case (c, sentenceType) of
             ('#', AliasSentenceType) -> MetaSentence <$>
@@ -893,7 +897,7 @@ koreSentenceParser = keywordBasedParsers
                     (symbolParser Object)
                     unifiedPatternParser
                     (\a b c d -> SentenceSymbolSentence (SentenceSymbol a b c d))
-
+-}
 {-|'aliasSymbolSentenceRemainderParser' parses the part after the starting
 keyword of an alias or symbol declaration using the given head parser
 to parse the head and constructs it using the given constructor.

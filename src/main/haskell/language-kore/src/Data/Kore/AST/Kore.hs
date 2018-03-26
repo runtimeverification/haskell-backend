@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
+{-# LANGUAGE KindSignatures         #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE Rank2Types             #-}
 {-# LANGUAGE StandaloneDeriving     #-}
@@ -29,48 +30,10 @@ Please refer to Section 9 (The Kore Language) of the
 module Data.Kore.AST.Kore where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.MetaOrObject
 
-import           Data.Hashable        (hash)
-import           Data.Typeable        (Typeable, cast)
-
-{-|Class identifying a Kore level. It should only be implemented by the
-'Object' and 'Meta' types, and should verify:
-
-* @ isObject Object && not (isMeta Object) @
-* @ not (isObject Meta) && isMeta Meta @
--}
-class (Show level, Ord level, Eq level, Typeable level)
-    => MetaOrObject level
-  where
-    isObject :: level -> Bool
-    isMeta :: level -> Bool
-    isObject = not . isMeta
-    isMeta = not . isObject
-    {-# MINIMAL isObject | isMeta #-}
-
-instance MetaOrObject Meta where
-    isMeta _ = True
-instance MetaOrObject Object where
-    isObject _ = True
-
-data MetaOrObjectTransformer thing result = MetaOrObjectTransformer
-    { metaTransformer   :: thing Meta -> result
-    , objectTransformer :: thing Object -> result
-    }
-
-applyMetaObjectFunction
-    :: (Typeable thing, MetaOrObject level)
-    => thing level -> MetaOrObjectTransformer thing c -> c
-applyMetaObjectFunction x = applyMetaObjectFunctionCasted (cast x) (cast x)
-applyMetaObjectFunctionCasted
-    :: Maybe (thing Object)
-    -> Maybe (thing Meta)
-    -> MetaOrObjectTransformer thing c
-    -> c
-applyMetaObjectFunctionCasted (Just x) Nothing f = objectTransformer f x
-applyMetaObjectFunctionCasted Nothing (Just x) f = metaTransformer f x
-applyMetaObjectFunctionCasted _ _ _ =
-    error "applyMetaObjectFunctionCasted: this should not happen!"
+import           Data.Hashable              (hash)
+import           Data.Typeable              (Typeable)
 
 data UnifiedSort
     = ObjectSort !(Sort Object)
@@ -101,25 +64,6 @@ data UnifiedVariable variable
 deriving instance Eq (UnifiedVariable Variable)
 deriving instance Ord (UnifiedVariable Variable)
 deriving instance Show (UnifiedVariable Variable)
-
-class Typeable thing
-    => UnifiedThing unifiedThing thing | unifiedThing -> thing
-  where
-    destructor :: unifiedThing -> Either (thing Meta) (thing Object)
-    objectConstructor :: thing Object -> unifiedThing
-    metaConstructor :: thing Meta -> unifiedThing
-    transformUnified
-        :: (forall level . MetaOrObject level => thing level -> b)
-        -> (unifiedThing -> b)
-    transformUnified f unifiedStuff =
-        case destructor unifiedStuff of
-            Left x  -> f x
-            Right x -> f x
-    asUnified :: MetaOrObject level => thing level -> unifiedThing
-    asUnified x = applyMetaObjectFunction x MetaOrObjectTransformer
-        { objectTransformer = objectConstructor
-        , metaTransformer = metaConstructor
-        }
 
 instance UnifiedThing UnifiedSort Sort where
     destructor (MetaSort s)   = Left s
@@ -209,6 +153,38 @@ type KoreSentenceSort = SentenceSort Object FixedPattern Variable
 data UnifiedSentence sortParam pat variable
     = MetaSentence (Sentence Meta sortParam pat variable)
     | ObjectSentence (Sentence Object sortParam pat variable)
+
+newtype
+    Rotate31 t (pat :: (* -> *) -> *) (variable :: * -> *) level
+  = Rotate31 { unRotate31 :: t level pat variable}
+type LeveledSentenceAlias = Rotate31 SentenceAlias
+type LeveledSentenceSymbol = Rotate31 SentenceSymbol
+
+newtype
+    Rotate41 t sortParam (pat :: (* -> *) -> *) (variable :: * -> *) level
+  = Rotate41 { unRotate41 :: t level sortParam pat variable}
+type LeveledSentence = Rotate41 Sentence
+
+asKoreSymbolSentence
+    :: MetaOrObject level => KoreSentenceSymbol level -> KoreSentence
+asKoreSymbolSentence = asUnified . Rotate41 . SentenceSymbolSentence
+
+asKoreAliasSentence
+    :: MetaOrObject level => KoreSentenceAlias level -> KoreSentence
+asKoreAliasSentence = asUnified . Rotate41 . SentenceAliasSentence
+
+instance
+    ( Typeable sortParam
+    , Typeable pat
+    , Typeable variable
+    ) => UnifiedThing
+        (UnifiedSentence sortParam pat variable)
+        (LeveledSentence sortParam pat variable)
+  where
+    destructor (MetaSentence s)   = Left (Rotate41 s)
+    destructor (ObjectSentence s) = Right (Rotate41 s)
+    objectConstructor = ObjectSentence . unRotate41
+    metaConstructor = MetaSentence . unRotate41
 
 type KoreSentence = UnifiedSentence UnifiedSortVariable FixedPattern Variable
 type KoreModule =

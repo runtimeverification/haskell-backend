@@ -6,6 +6,7 @@ import           Test.Tasty                                          (TestTree,
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
 import           Data.Kore.Implicit.ImplicitSorts
@@ -498,7 +499,8 @@ definitionVerifierPatternVerifierTests =
         variable objectVariableName objectSortVariableSort
     oneSortSymbolRawName = "ObjectSymbol"
     oneSortSymbolSentence =
-        ObjectSentenceSymbolSentence SentenceSymbol
+        ObjectSentence . SentenceSymbolSentence
+        $ SentenceSymbol
             { sentenceSymbolSymbol = Symbol
                 { symbolConstructor = Id oneSortSymbolRawName
                 , symbolParams = [objectSortVariable]
@@ -508,7 +510,7 @@ definitionVerifierPatternVerifierTests =
             , sentenceSymbolAttributes = Attributes []
             }
 
-dummyVariableAndSentences :: NamePrefix -> (Variable Object, [Sentence])
+dummyVariableAndSentences :: NamePrefix -> (Variable Object, [KoreSentence])
 dummyVariableAndSentences (NamePrefix namePrefix) =
     (dummyVariable, [simpleSortSentence dummySortName])
   where
@@ -525,7 +527,7 @@ successTestsForObjectPattern
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
     -> DeclaredSort Object
-    -> [Sentence]
+    -> [KoreSentence]
     -> PatternRestrict
     -> TestTree
 successTestsForObjectPattern
@@ -572,7 +574,7 @@ successTestsForMetaPattern
     -> SortVariablesThatMustBeDeclared Object
     -> DeclaredSort Meta
     -> VariableOfDeclaredSort Meta
-    -> [Sentence]
+    -> [KoreSentence]
     -> PatternRestrict
     -> TestTree
 successTestsForMetaPattern
@@ -611,7 +613,7 @@ failureTestsForObjectPattern
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
     -> DeclaredSort Object
-    -> [Sentence]
+    -> [KoreSentence]
     -> PatternRestrict
     -> TestTree
 failureTestsForObjectPattern
@@ -669,7 +671,7 @@ failureTestsForMetaPattern
     -> SortVariablesThatMustBeDeclared Object
     -> DeclaredSort Meta
     -> VariableOfDeclaredSort Meta
-    -> [Sentence]
+    -> [KoreSentence]
     -> PatternRestrict
     -> TestTree
 failureTestsForMetaPattern
@@ -715,7 +717,7 @@ genericPatternInAllContexts
     -> SortVariablesThatMustBeDeclared Object
     -> DeclaredSort level
     -> VariableOfDeclaredSort level
-    -> [Sentence]
+    -> [KoreSentence]
     -> PatternRestrict
     -> [TestData]
 genericPatternInAllContexts
@@ -780,7 +782,7 @@ objectPatternInAllContexts
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
     -> DeclaredSort Object
-    -> [Sentence]
+    -> [KoreSentence]
     -> PatternRestrict
     -> [TestData]
 objectPatternInAllContexts
@@ -823,7 +825,7 @@ patternsInAllContexts
     -> SortVariablesThatMustBeDeclared level
     -> SortVariablesThatMustBeDeclared Object
     -> DeclaredSort level
-    -> [Sentence]
+    -> [KoreSentence]
     -> PatternRestrict
     -> [TestData]
 patternsInAllContexts
@@ -857,7 +859,7 @@ patternsInAllContexts
     sortVariableName = SortVariableName rawSortVariableName
     symbolAliasSort = sortVariableSort sortVariableName
     symbolSentence =
-        asSentenceSymbolSentence SentenceSymbol
+        asKoreSymbolSentence SentenceSymbol
             { sentenceSymbolSymbol = Symbol
                 { symbolConstructor = Id rawSymbolName
                 , symbolParams = [SortVariable (Id rawSortVariableName)]
@@ -867,7 +869,7 @@ patternsInAllContexts
             , sentenceSymbolAttributes = Attributes []
             }
     aliasSentence =
-        asSentenceAliasSentence SentenceAlias
+        asKoreAliasSentence SentenceAlias
             { sentenceAliasAlias = Alias
                 { aliasConstructor = Id rawAliasName
                 , aliasParams = [SortVariable (Id rawSortVariableName)]
@@ -1165,7 +1167,7 @@ testsForUnifiedPatternInTopLevelContext
     -> DeclaredSort level
     -> SortVariablesThatMustBeDeclared level
     -> SortVariablesThatMustBeDeclared Object
-    -> [Sentence]
+    -> [KoreSentence]
     -> PatternRestrict
     -> [TestPattern level -> TestData]
 testsForUnifiedPatternInTopLevelContext
@@ -1196,7 +1198,7 @@ testsForUnifiedPatternInTopLevelGenericContext
     -> NamePrefix
     -> DeclaredSort level
     -> SortVariablesThatMustBeDeclared level
-    -> [Sentence]
+    -> [KoreSentence]
     -> PatternRestrict
     -> [TestPattern level -> TestData]
 testsForUnifiedPatternInTopLevelGenericContext
@@ -1236,7 +1238,7 @@ testsForUnifiedPatternInTopLevelGenericContext
         , testDataDefinition =
             simpleDefinitionFromSentences
                 (ModuleName "MODULE")
-                ( asSentenceAliasSentence
+                ( asKoreAliasSentence
                     (sentenceAliasWithAttributes
                         aliasName
                         sortVariables
@@ -1259,7 +1261,7 @@ testsForUnifiedPatternInTopLevelGenericContext
         , testDataDefinition =
             simpleDefinitionFromSentences
                 (ModuleName "MODULE")
-                ( asSentenceSymbolSentence
+                ( asKoreSymbolSentence
                     (sentenceSymbolWithAttributes
                         symbolName
                         sortVariables
@@ -1359,7 +1361,7 @@ testsForUnifiedPatternInTopLevelObjectContext
     :: MetaOrObject level
     => SortName
     -> SortVariablesThatMustBeDeclared Object
-    -> [Sentence]
+    -> [KoreSentence]
     -> [TestPattern level -> TestData]
 testsForUnifiedPatternInTopLevelObjectContext
     (SortName rawSortName)
@@ -1378,7 +1380,7 @@ testsForUnifiedPatternInTopLevelObjectContext
                 defaultErrorMessage
         , testDataDefinition =
             simpleDefinitionFromSentences (ModuleName "MODULE")
-                ( SentenceSortSentence SentenceSort
+                ( asSentence SentenceSort
                     { sentenceSortName = Id rawSortName
                     , sentenceSortParameters = sortVariables
                     , sentenceSortAttributes =
