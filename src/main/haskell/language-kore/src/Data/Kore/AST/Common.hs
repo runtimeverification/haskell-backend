@@ -719,8 +719,11 @@ data SentenceAxiom sortParam pat variable = SentenceAxiom
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 
 The @symbol-declaration@ and @alias-declaration@ categories were also merged
-into 'Sentence', with distinct constructors for the @Meta@ and @Object@
-variants.
+into 'Sentence', using the @level@ parameter to distinguish the 'Meta' and
+'Object' variants.
+Since axioms and imports exist at both meta and kore levels, we use 'Meta'
+to qualify them. In contrast, since sort declarations are not available
+at the meta level, we qualify them with 'Object'.
 -}
 data Sentence level sortParam pat variable where
     SentenceAliasSentence

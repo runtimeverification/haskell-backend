@@ -106,13 +106,13 @@ verifyPattern
     -- ^ Sort variables which are visible in this pattern.
     -> Either (Error VerifyError) VerifySuccess
 verifyPattern unifiedPattern maybeExpectedSort indexedModule sortVariables = do
-    freeVariables <- verifyFreeVariables unifiedPattern
+    freeVariables1 <- verifyFreeVariables unifiedPattern
     internalVerifyPattern
         unifiedPattern
         maybeExpectedSort
         indexedModule
         sortVariables
-        freeVariables
+        freeVariables1
 
 internalVerifyPattern
     :: UnifiedPattern
