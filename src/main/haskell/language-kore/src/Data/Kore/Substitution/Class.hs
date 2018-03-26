@@ -13,6 +13,7 @@ import           Prelude                           hiding (lookup)
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
 import           Data.Kore.ASTTraversals           (topDownVisitorM)
 import           Data.Kore.Datastructures.MapClass

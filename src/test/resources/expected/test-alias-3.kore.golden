@@ -4,12 +4,12 @@ Definition
         [ Module
             { moduleName = ModuleName "TEST-ALIAS-3"
             , moduleSentences =
-                [ SentenceSortSentence SentenceSort
+                [ ObjectSentence (SentenceSortSentence SentenceSort
                     { sentenceSortName = Id Object "S"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
-                    }
-                , ObjectSentenceAliasSentence SentenceAlias
+                    })
+                , ObjectSentence (SentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias =
                         Alias
                             { aliasConstructor = Id Object "f"
@@ -31,7 +31,7 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceAliasAttributes = Attributes []
-                    }
+                    })
                 ]
             , moduleAttributes = Attributes []
             }

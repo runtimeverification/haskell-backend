@@ -4,12 +4,12 @@ Definition
         [ Module
             { moduleName = ModuleName "TEST-PATTERN-15"
             , moduleSentences =
-                [ SentenceSortSentence SentenceSort
+                [ ObjectSentence (SentenceSortSentence SentenceSort
                     { sentenceSortName = Id Object "Int"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters = []
                     , sentenceAxiomPattern =
                         ObjectPattern (DomainValuePattern DomainValue
@@ -22,7 +22,7 @@ Definition
                                 MetaPattern (StringLiteralPattern (StringLiteral "10"))
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
+                    })
                 ]
             , moduleAttributes = Attributes []
             }

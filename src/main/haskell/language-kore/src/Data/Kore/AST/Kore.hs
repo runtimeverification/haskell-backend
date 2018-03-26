@@ -1,10 +1,9 @@
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE GADTs                  #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE Rank2Types             #-}
-{-# LANGUAGE StandaloneDeriving     #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE Rank2Types            #-}
+{-# LANGUAGE StandaloneDeriving    #-}
 {-|
 Module      : Data.Kore.AST.Kore
 Description : Data Structures for representing the Kore language AST with
@@ -29,48 +28,11 @@ Please refer to Section 9 (The Kore Language) of the
 module Data.Kore.AST.Kore where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.HaskellExtensions (Rotate41 (..))
 
-import           Data.Hashable        (hash)
-import           Data.Typeable        (Typeable, cast)
-
-{-|Class identifying a Kore level. It should only be implemented by the
-'Object' and 'Meta' types, and should verify:
-
-* @ isObject Object && not (isMeta Object) @
-* @ not (isObject Meta) && isMeta Meta @
--}
-class (Show level, Ord level, Eq level, Typeable level)
-    => MetaOrObject level
-  where
-    isObject :: level -> Bool
-    isMeta :: level -> Bool
-    isObject = not . isMeta
-    isMeta = not . isObject
-    {-# MINIMAL isObject | isMeta #-}
-
-instance MetaOrObject Meta where
-    isMeta _ = True
-instance MetaOrObject Object where
-    isObject _ = True
-
-data MetaOrObjectTransformer thing result = MetaOrObjectTransformer
-    { metaTransformer   :: thing Meta -> result
-    , objectTransformer :: thing Object -> result
-    }
-
-applyMetaObjectFunction
-    :: (Typeable thing, MetaOrObject level)
-    => thing level -> MetaOrObjectTransformer thing c -> c
-applyMetaObjectFunction x = applyMetaObjectFunctionCasted (cast x) (cast x)
-applyMetaObjectFunctionCasted
-    :: Maybe (thing Object)
-    -> Maybe (thing Meta)
-    -> MetaOrObjectTransformer thing c
-    -> c
-applyMetaObjectFunctionCasted (Just x) Nothing f = objectTransformer f x
-applyMetaObjectFunctionCasted Nothing (Just x) f = metaTransformer f x
-applyMetaObjectFunctionCasted _ _ _ =
-    error "applyMetaObjectFunctionCasted: this should not happen!"
+import           Data.Hashable               (hash)
+import           Data.Typeable               (Typeable)
 
 data UnifiedSort
     = ObjectSort !(Sort Object)
@@ -101,25 +63,6 @@ data UnifiedVariable variable
 deriving instance Eq (UnifiedVariable Variable)
 deriving instance Ord (UnifiedVariable Variable)
 deriving instance Show (UnifiedVariable Variable)
-
-class Typeable thing
-    => UnifiedThing unifiedThing thing | unifiedThing -> thing
-  where
-    destructor :: unifiedThing -> Either (thing Meta) (thing Object)
-    objectConstructor :: thing Object -> unifiedThing
-    metaConstructor :: thing Meta -> unifiedThing
-    transformUnified
-        :: (forall level . MetaOrObject level => thing level -> b)
-        -> (unifiedThing -> b)
-    transformUnified f unifiedStuff =
-        case destructor unifiedStuff of
-            Left x  -> f x
-            Right x -> f x
-    asUnified :: MetaOrObject level => thing level -> unifiedThing
-    asUnified x = applyMetaObjectFunction x MetaOrObjectTransformer
-        { objectTransformer = objectConstructor
-        , metaTransformer = metaConstructor
-        }
 
 instance UnifiedThing UnifiedSort Sort where
     destructor (MetaSort s)   = Left s
@@ -198,70 +141,66 @@ type UnifiedPattern = FixedPattern Variable
 deriving instance Eq UnifiedPattern
 deriving instance Show UnifiedPattern
 
-type KoreAttributes = Attributes UnifiedPattern
+type KoreAttributes = Attributes FixedPattern Variable
 
-type KoreSentenceAlias = SentenceAlias UnifiedPattern
-type KoreSentenceSymbol = SentenceSymbol UnifiedPattern
-type KoreSentenceImport = SentenceImport UnifiedPattern
-type KoreSentenceAxiom = SentenceAxiom UnifiedSortVariable UnifiedPattern
-type KoreSentenceSort = SentenceSort UnifiedPattern Object
+type KoreSentenceAlias level = SentenceAlias level FixedPattern Variable
+type KoreSentenceSymbol level = SentenceSymbol level FixedPattern Variable
+type KoreSentenceImport = SentenceImport FixedPattern Variable
+type KoreSentenceAxiom = SentenceAxiom UnifiedSortVariable FixedPattern Variable
+type KoreSentenceSort = SentenceSort Object FixedPattern Variable
 
-{-|The 'Sentence' type corresponds to the @declaration@ syntactic category
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
+data UnifiedSentence sortParam pat variable
+    = MetaSentence (Sentence Meta sortParam pat variable)
+    | ObjectSentence (Sentence Object sortParam pat variable)
+  deriving (Show, Eq)
 
-The @symbol-declaration@ and @alias-declaration@ categories were also merged
-into 'Sentence', with distinct constructors for the @Meta@ and @Object@
-variants.
--}
-data Sentence
-    = MetaSentenceAliasSentence !(KoreSentenceAlias Meta)
-    | ObjectSentenceAliasSentence !(KoreSentenceAlias Object)
-    | MetaSentenceSymbolSentence !(KoreSentenceSymbol Meta)
-    | ObjectSentenceSymbolSentence !(KoreSentenceSymbol Object)
-    | SentenceImportSentence !KoreSentenceImport
-    | SentenceAxiomSentence !KoreSentenceAxiom
-    | SentenceSortSentence !KoreSentenceSort
-    deriving (Eq, Show)
+type LeveledSentence = Rotate41 Sentence
 
-type KoreModule = Module Sentence UnifiedPattern
-
-type KoreDefinition = Definition Sentence UnifiedPattern
-
-asSentenceAliasSentence
-    :: MetaOrObject level => KoreSentenceAlias level -> Sentence
-asSentenceAliasSentence v =
-    applyMetaObjectFunction v MetaOrObjectTransformer
-        { objectTransformer = ObjectSentenceAliasSentence
-        , metaTransformer = MetaSentenceAliasSentence
-        }
-
-asSentenceSymbolSentence
-    :: MetaOrObject level => KoreSentenceSymbol level -> Sentence
-asSentenceSymbolSentence v =
-    applyMetaObjectFunction v MetaOrObjectTransformer
-        { objectTransformer = ObjectSentenceSymbolSentence
-        , metaTransformer = MetaSentenceSymbolSentence
-        }
-
-instance AsSentence Sentence (SentenceAlias UnifiedPattern Meta) where
-    asSentence = MetaSentenceAliasSentence
-
-instance AsSentence Sentence (SentenceAlias UnifiedPattern Object) where
-    asSentence = ObjectSentenceAliasSentence
-
-instance AsSentence Sentence (SentenceSymbol UnifiedPattern Meta) where
-    asSentence = MetaSentenceSymbolSentence
-
-instance AsSentence Sentence (SentenceSymbol UnifiedPattern Object) where
-    asSentence = ObjectSentenceSymbolSentence
-
-instance AsSentence Sentence (SentenceImport UnifiedPattern) where
-    asSentence = SentenceImportSentence
-
-instance AsSentence Sentence
-    (SentenceAxiom UnifiedSortVariable UnifiedPattern)
+instance
+    ( Typeable sortParam
+    , Typeable pat
+    , Typeable variable
+    ) => UnifiedThing
+        (UnifiedSentence sortParam pat variable)
+        (LeveledSentence sortParam pat variable)
   where
-    asSentence = SentenceAxiomSentence
+    destructor (MetaSentence s)   = Left (Rotate41 s)
+    destructor (ObjectSentence s) = Right (Rotate41 s)
+    objectConstructor = ObjectSentence . unRotate41
+    metaConstructor = MetaSentence . unRotate41
 
-instance AsSentence Sentence (SentenceSort UnifiedPattern Object) where
-    asSentence = SentenceSortSentence
+asKoreSymbolSentence
+    :: MetaOrObject level => KoreSentenceSymbol level -> KoreSentence
+asKoreSymbolSentence = asUnified . Rotate41 . SentenceSymbolSentence
+
+asKoreAliasSentence
+    :: MetaOrObject level => KoreSentenceAlias level -> KoreSentence
+asKoreAliasSentence = asUnified . Rotate41 . SentenceAliasSentence
+
+type KoreSentence = UnifiedSentence UnifiedSortVariable FixedPattern Variable
+type KoreModule =
+    Module UnifiedSentence UnifiedSortVariable FixedPattern Variable
+
+type KoreDefinition =
+    Definition UnifiedSentence UnifiedSortVariable FixedPattern Variable
+
+instance AsSentence KoreSentence (KoreSentenceAlias Meta) where
+    asSentence = MetaSentence . SentenceAliasSentence
+
+instance AsSentence KoreSentence (KoreSentenceAlias Object) where
+    asSentence = ObjectSentence . SentenceAliasSentence
+
+instance AsSentence KoreSentence (KoreSentenceSymbol Meta) where
+    asSentence = MetaSentence . SentenceSymbolSentence
+
+instance AsSentence KoreSentence (KoreSentenceSymbol Object) where
+    asSentence = ObjectSentence . SentenceSymbolSentence
+
+instance AsSentence KoreSentence KoreSentenceImport where
+    asSentence = MetaSentence . SentenceImportSentence
+
+instance AsSentence KoreSentence KoreSentenceAxiom where
+    asSentence = MetaSentence . SentenceAxiomSentence
+
+instance AsSentence KoreSentence KoreSentenceSort where
+    asSentence = ObjectSentence . SentenceSortSentence

@@ -4,7 +4,7 @@ Definition
         [ Module
             { moduleName = ModuleName "TEST-ALIAS-4"
             , moduleSentences =
-                [ ObjectSentenceAliasSentence SentenceAlias
+                [ ObjectSentence (SentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias =
                         Alias
                             { aliasConstructor = Id Object "f"
@@ -16,7 +16,7 @@ Definition
                     , sentenceAliasReturnSort =
                         SortVariableSort (SortVariable (Id Object "S"))
                     , sentenceAliasAttributes = Attributes []
-                    }
+                    })
                 ]
             , moduleAttributes = Attributes []
             }

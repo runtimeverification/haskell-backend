@@ -4,12 +4,12 @@ Definition
         [ Module
             { moduleName = ModuleName "NAT"
             , moduleSentences =
-                [ SentenceSortSentence SentenceSort
+                [ ObjectSentence (SentenceSortSentence SentenceSort
                     { sentenceSortName = Id Object "Nat"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "zero"
@@ -22,8 +22,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "succ"
@@ -41,8 +41,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , ObjectSentenceSymbolSentence SentenceSymbol
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
                             { symbolConstructor = Id Object "plus"
@@ -64,8 +64,8 @@ Definition
                                 , sortActualSorts = []
                                 }
                     , sentenceSymbolAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ ObjectSortVariable (SortVariable (Id Object "S"))
                         ]
@@ -112,8 +112,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ ObjectSortVariable (SortVariable (Id Object "S"))
                         ]
@@ -169,8 +169,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ ObjectSortVariable (SortVariable (Id Object "S"))
                         ]
@@ -234,8 +234,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters = []
                     , sentenceAxiomPattern =
                         ObjectPattern (OrPattern Or
@@ -290,8 +290,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters = []
                     , sentenceAxiomPattern =
                         ObjectPattern (NotPattern Not
@@ -354,8 +354,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ ObjectSortVariable (SortVariable (Id Object "S"))
                         ]
@@ -405,8 +405,8 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
-                , SentenceAxiomSentence SentenceAxiom
+                    })
+                , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
                         [ ObjectSortVariable (SortVariable (Id Object "S"))
                         ]
@@ -491,7 +491,7 @@ Definition
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
-                    }
+                    })
                 ]
             , moduleAttributes = Attributes []
             }

@@ -17,12 +17,13 @@ Portability : portable
 module Data.Kore.Variables.Free ( TermWithVariablesClass(freeVariables)
                                 ) where
 
-import           Data.Fix                (cata)
-import           Data.Foldable           (fold)
-import qualified Data.Set                as Set
+import           Data.Fix                   (cata)
+import           Data.Foldable              (fold)
+import qualified Data.Set                   as Set
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTTraversals
 import           Data.Kore.MetaML.AST
 

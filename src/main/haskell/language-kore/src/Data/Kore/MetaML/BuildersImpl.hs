@@ -186,7 +186,8 @@ binaryPattern constructor first second =
                 }
 
 {-|'binarySortedPattern' is a helper for building 'MetaPatternStub's for binary
-operators where the result sort is different from the operand sort, like \equals.
+operators where the result sort is different from the operand sort,
+like \equals.
 -}
 binarySortedPattern
     :: (ResultSort

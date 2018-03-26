@@ -22,7 +22,9 @@ import           Data.Kore.MetaML.MetaToKore
 
 checkedKoreDefinition :: Either (Error VerifyError) MetaDefinition
 checkedKoreDefinition = do
-    verifyKoreDefinition VerifyAttributes (definitionMetaToKore uncheckedKoreDefinition)
+    verifyKoreDefinition
+        VerifyAttributes
+        (definitionMetaToKore uncheckedKoreDefinition)
     return uncheckedKoreDefinition
 
 implicitKoreDefinition :: MetaDefinition

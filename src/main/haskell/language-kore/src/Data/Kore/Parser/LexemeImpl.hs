@@ -25,7 +25,7 @@ Conventions used:
 module Data.Kore.Parser.LexemeImpl where
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore               (MetaOrObject (..))
+import           Data.Kore.AST.MetaOrObject   (MetaOrObject (..))
 import qualified Data.Kore.Parser.CharDict    as CharDict
 import           Data.Kore.Parser.CharSet     as CharSet
 import           Data.Kore.Parser.CString

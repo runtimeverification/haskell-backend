@@ -12,6 +12,7 @@ module Data.Kore.ASTVerifier.PatternVerifier (verifyPattern) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
 import           Data.Kore.ASTHelpers
 import           Data.Kore.ASTVerifier.Error
@@ -105,13 +106,13 @@ verifyPattern
     -- ^ Sort variables which are visible in this pattern.
     -> Either (Error VerifyError) VerifySuccess
 verifyPattern unifiedPattern maybeExpectedSort indexedModule sortVariables = do
-    freeVariables <- verifyFreeVariables unifiedPattern
+    freeVariables1 <- verifyFreeVariables unifiedPattern
     internalVerifyPattern
         unifiedPattern
         maybeExpectedSort
         indexedModule
         sortVariables
-        freeVariables
+        freeVariables1
 
 internalVerifyPattern
     :: UnifiedPattern
@@ -494,7 +495,7 @@ verifySymbolOrAlias symbolOrAlias verifyHelpers declaredSortVariables =
 applicationSortsFromSymbolOrAliasSentence
     :: (MetaOrObject level, SentenceSymbolOrAlias sa)
     => SymbolOrAlias level
-    -> sa pat level
+    -> sa level pat variable
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
     -> Either (Error VerifyError) (ApplicationSorts level)

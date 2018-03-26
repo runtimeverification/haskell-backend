@@ -4,14 +4,14 @@ Definition
         [ Module
             { moduleName = ModuleName "TEST4"
             , moduleSentences =
-                [ SentenceSortSentence SentenceSort
+                [ ObjectSentence (SentenceSortSentence SentenceSort
                     { sentenceSortName = Id Object "Map"
                     , sentenceSortParameters =
                         [ SortVariable (Id Object "S")
                         , SortVariable (Id Object "T")
                         ]
                     , sentenceSortAttributes = Attributes []
-                    }
+                    })
                 ]
             , moduleAttributes = Attributes []
             }

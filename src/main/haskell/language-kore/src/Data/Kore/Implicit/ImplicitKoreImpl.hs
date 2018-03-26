@@ -35,7 +35,8 @@ equalsSort = SortVariableSort equalsSortParam
 {-|'parameterizedAxiom' creates an axiom that has sort parameters from
 a pattern.
 -}
-parameterizedAxiom :: [SortVariable Meta] -> MetaPatternStub -> MetaSentenceAxiom
+parameterizedAxiom
+    :: [SortVariable Meta] -> MetaPatternStub -> MetaSentenceAxiom
 parameterizedAxiom _ (UnsortedPatternStub p) =
     error ("Cannot infer sort for " ++ show (p dummyMetaSort) ++ ".")
 parameterizedAxiom
@@ -46,7 +47,8 @@ parameterizedAxiom
   =
     SentenceAxiom
         { sentenceAxiomParameters = parameters
-        , sentenceAxiomPattern = quantifyFreeVariables s (Fix p)
+        , sentenceAxiomPattern =
+            SentenceMetaPattern (quantifyFreeVariables s (Fix p))
         , sentenceAxiomAttributes = Attributes []
         }
 
@@ -56,7 +58,10 @@ Note that 'equalsSortParam' AKA @#esp@ is assumed not to be used in any of
 the patterns. Using it will have unpredictable effects.
 -}
 parameterizedEqualsAxiom
-    :: [SortVariable Meta] -> MetaPatternStub -> MetaPatternStub -> MetaSentenceAxiom
+    :: [SortVariable Meta]
+    -> MetaPatternStub
+    -> MetaPatternStub
+    -> MetaSentenceAxiom
 parameterizedEqualsAxiom parameters first second =
     parameterizedAxiom
         (equalsSortParam : parameters)
