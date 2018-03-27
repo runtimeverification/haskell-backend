@@ -8,13 +8,17 @@ License     : UIUC/NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
+
+
+Currently, 'UnliftableFromMetaML' offers an inverse of 'LiftableToMeta'
+for all MetaML constructs up to patterns.
 -}
 module Data.Kore.MetaML.UnLift where
 
 import           Control.Applicative
 import           Control.Monad.Reader
 import           Data.Fix
-import           Data.Kore.Parser.ParserUtils          as Parser
+import           Data.Maybe
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
@@ -24,6 +28,7 @@ import           Data.Kore.IndexedModule.IndexedModule
 import           Data.Kore.MetaML.AST
 import           Data.Kore.MetaML.Builders             (isImplicitHead)
 import           Data.Kore.Parser.LexemeImpl
+import           Data.Kore.Parser.ParserUtils          as Parser
 
 -- |'UnliftableFromMetaML' specifies common functionality for constructs
 -- which can be "unlifted" from 'Meta'-only to full 'Kore' representations.
@@ -57,6 +62,12 @@ unliftSortConstructor SymbolOrAlias
     { symbolOrAliasConstructor = Id ('#' : '`' : name)
     , symbolOrAliasParams = []
     } = parseObjectId name
+unliftSortConstructor _ = Nothing
+
+unliftHeadConstructor :: SymbolOrAlias Meta -> Maybe (Id Object)
+unliftHeadConstructor sa = case unliftSortConstructor sa of
+    Just (Id "ceil") -> Nothing
+    x                -> x
 
 instance UnliftableFromMetaML (SortActual Object) where
     unliftFromMeta (Fix (ApplicationPattern sa)) = do
@@ -147,10 +158,35 @@ unliftPatternReducer (ApplicationPattern a)
     = return (unliftBinaryOpPattern RewritesPattern Rewrites apChildren)
     | isImplicitHead (mlPatternP TopPatternType) apHead
     = return (unliftTopBottomPattern (TopPattern . Top) apChildren)
+    | Just objectHeadId <- unliftHeadConstructor apHead
+    = return (unliftApplicationPattern objectHeadId apChildren)
   where
     apHead = applicationSymbolOrAlias a
     apChildren = applicationChildren a
 unliftPatternReducer _ = return Nothing
+
+unliftApplicationPattern
+    :: Id Object
+    -> ([UnliftResult] -> Maybe  (Pattern Object Variable UnifiedPattern))
+unliftApplicationPattern objectHeadId results =
+    Just $ ApplicationPattern Application
+        { applicationSymbolOrAlias = objectHead
+        , applicationChildren = unifiedPatterns
+        }
+  where
+    maybeSorts =
+        map
+            ( (unliftFromMeta :: CommonMetaPattern -> Maybe (Sort Object))
+            . unliftResultOriginal
+            )
+            results
+    (sorts, patterns) = break (isNothing . fst) (maybeSorts `zip` results)
+    objectHead = SymbolOrAlias
+        { symbolOrAliasConstructor = objectHeadId
+        , symbolOrAliasParams = [s | (Just s, _) <- sorts]
+        }
+    unifiedPatterns = map (unliftResultFinal . snd) patterns
+
 
 unliftBinaryOpPattern
     :: (p Object UnifiedPattern -> Pattern Object Variable UnifiedPattern)
