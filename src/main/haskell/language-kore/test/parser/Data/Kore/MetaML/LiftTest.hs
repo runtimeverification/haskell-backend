@@ -6,6 +6,7 @@ import           Test.Tasty.HUnit                 (assertEqual, testCase)
 import           Data.Fix
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.MetaML.AST
 import           Data.Kore.MetaML.Builders
@@ -20,17 +21,17 @@ liftTests =
     testGroup
         "Lifting Tests"
         [ testCase "Lifting an Id"
-            (assertEqual ""
+            (prettyAssertEqual
                 (Fix (StringLiteralPattern (StringLiteral "object")))
                 (liftToMeta (Id "object" :: Id Object))
             )
         , testCase "Lifting a Meta Pattern"
-            (assertEqual ""
+            (prettyAssertEqual
                 metaStringPattern
                 (liftToMeta unifiedStringPattern)
             )
         , testCase "Lifting Bottom"
-            (assertEqual ""
+            (prettyAssertEqual
                 (Fix
                     (apply (metaMLPatternHead BottomPatternType)
                         [ variablePattern "#a" sortMetaSort ]
@@ -47,7 +48,7 @@ liftTests =
                 )
             )
         , testCase "Lifting Top"
-            (assertEqual ""
+            (prettyAssertEqual
                 (Fix
                     (apply (metaMLPatternHead TopPatternType)
                         [ variablePattern "#a" sortMetaSort ]
@@ -64,7 +65,7 @@ liftTests =
                 )
             )
         , testCase "Lifting Ceil"
-            (assertEqual ""
+            (prettyAssertEqual
                 (Fix
                     (apply (metaMLPatternHead CeilPatternType)
                         [ variablePattern "#b" sortMetaSort
@@ -87,7 +88,7 @@ liftTests =
                 )
             )
         , testCase "Lifting Floor"
-            (assertEqual ""
+            (prettyAssertEqual
                 (Fix
                     (apply (metaMLPatternHead FloorPatternType)
                         [ variablePattern "#b" sortMetaSort
@@ -110,7 +111,7 @@ liftTests =
                 )
             )
         , testCase "Lifting Equals"
-            (assertEqual ""
+            (prettyAssertEqual
                 (Fix
                     (apply (metaMLPatternHead EqualsPatternType)
                         [ variablePattern "#b" sortMetaSort
@@ -135,7 +136,7 @@ liftTests =
                 )
             )
         , testCase "Lifting In"
-            (assertEqual ""
+            (prettyAssertEqual
                 (Fix
                     (apply (metaMLPatternHead InPatternType)
                         [ variablePattern "#b" sortMetaSort
@@ -160,7 +161,7 @@ liftTests =
                 )
             )
         , testCase "Lifting Forall"
-            (assertEqual ""
+            (prettyAssertEqual
                 (Fix
                     (apply (metaMLPatternHead ForallPatternType)
                         [ variablePattern "#a" sortMetaSort
@@ -210,7 +211,7 @@ liftTests =
                 )
             )
         , testCase "Lifting Exists"
-            (assertEqual ""
+            (prettyAssertEqual
                 (Fix
                     (apply (metaMLPatternHead ExistsPatternType)
                         [ variablePattern "#a" sortMetaSort
@@ -260,7 +261,7 @@ liftTests =
                 )
             )
         , testCase "Lifting Variable Pattern"
-            (assertEqual ""
+            (prettyAssertEqual
                 (Fix
                     (apply variableAsPatternHead
                         [ Fix
@@ -284,7 +285,7 @@ liftTests =
                 )
             )
         , testCase "Lifting an actual sort"
-            (assertEqual ""
+            (prettyAssertEqual
                 (Fix
                     (apply consSortListHead
                         [ Fix
@@ -305,7 +306,7 @@ liftTests =
                 )
             )
         , testCase "Lifting a Variable"
-            (assertEqual ""
+            (prettyAssertEqual
                 (Fix
                     (apply consPatternListHead
                         [ Fix
@@ -332,7 +333,7 @@ liftTests =
                 )
             )
         , testCase "Testing lifting a pure object pattern."
-            (assertEqual ""
+            (prettyAssertEqual
                 ( Fix
                     ( apply (metaMLPatternHead NotPatternType)
                         [ variablePattern "#a" sortMetaSort
@@ -359,7 +360,7 @@ liftTests =
                 )
             )
         , testCase "Lifting And pattern"
-            (assertEqual ""
+            (prettyAssertEqual
                 (Fix
                     (apply (metaMLPatternHead AndPatternType)
                         [ variablePattern "#a" sortMetaSort
@@ -380,7 +381,7 @@ liftTests =
                 )
             )
         , testCase "Lifting Or pattern"
-            (assertEqual ""
+            (prettyAssertEqual
                 (Fix
                     (apply (metaMLPatternHead OrPatternType)
                         [ variablePattern "#a" sortMetaSort
@@ -401,7 +402,7 @@ liftTests =
                 )
             )
         , testCase "Lifting Iff pattern"
-            (assertEqual ""
+            (prettyAssertEqual
                 (Fix
                     (apply (metaMLPatternHead IffPatternType)
                         [ variablePattern "#a" sortMetaSort
@@ -422,7 +423,7 @@ liftTests =
                 )
             )
         , testCase "Lifting Implies pattern"
-            (assertEqual ""
+            (prettyAssertEqual
                 (Fix
                     (apply (metaMLPatternHead ImpliesPatternType)
                         [ variablePattern "#a" sortMetaSort
@@ -443,7 +444,7 @@ liftTests =
                 )
             )
         , testCase "Lifting Not"
-            (assertEqual ""
+            (prettyAssertEqual
                 (Fix
                     (apply (metaMLPatternHead NotPatternType)
                         [ variablePattern "#a" sortMetaSort
@@ -463,7 +464,7 @@ liftTests =
                 )
             )
         , testCase "Lifting Rewrites pattern"
-            (assertEqual ""
+            (prettyAssertEqual
                 (Fix
                     (apply (metaMLPatternHead RewritesPatternType)
                         [ variablePattern "#a" sortMetaSort
@@ -485,7 +486,7 @@ liftTests =
                 )
             )
         , testCase "Lifting Domain Value"
-            (assertEqual ""
+            (prettyAssertEqual
                 (Fix
                     (apply (metaMLPatternHead DomainValuePatternType)
                         [ variablePattern "#Int" sortMetaSort
@@ -506,7 +507,7 @@ liftTests =
                 )
             )
         , testCase "Lifting Application"
-            (assertEqual ""
+            (prettyAssertEqual
                 (Fix
                     (apply (groundHead "#`test")
                         [ variablePattern "#Int" sortMetaSort
@@ -529,7 +530,7 @@ liftTests =
                 )
             )
         , testCase "Lifting Next"
-            (assertEqual ""
+            (prettyAssertEqual
                 (Fix
                     (apply (metaMLPatternHead NextPatternType)
                         [ variablePattern "#a" sortMetaSort
@@ -549,12 +550,12 @@ liftTests =
                 )
             )
         , testCase "Lifting Attributes"
-            (assertEqual ""
+            (prettyAssertEqual
                 (Attributes [SentenceMetaPattern metaStringPattern])
                 (liftAttributes (Attributes [unifiedStringPattern]))
             )
         , testCase "Lifting Meta Alias Declaration"
-            (assertEqual ""
+            (prettyAssertEqual
                 [ SentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = Id "#alias"
@@ -581,8 +582,9 @@ liftTests =
                 )
             )
         , testCase "Lifting Object Alias Declaration"
-            (assertEqual ""
-                [ SentenceSymbolSentence (symbol_ "#`alias" [] patternMetaSort) ]
+            (prettyAssertEqual
+                [ SentenceSymbolSentence (symbol_ "#`alias" [] patternMetaSort)
+                ]
                 (liftSentence
                     (ObjectSentence $ SentenceAliasSentence SentenceAlias
                         { sentenceAliasAlias = Alias
@@ -598,8 +600,12 @@ liftTests =
                 )
             )
         , testCase "Lifting Object Symbol Declaration"
-            (assertEqual ""
-                [ SentenceSymbolSentence (symbol_ "#`alias" [patternMetaSort] patternMetaSort)
+            (prettyAssertEqual
+                [ SentenceSymbolSentence
+                    (symbol_ "#`alias"
+                        [sortMetaSort, patternMetaSort]
+                        patternMetaSort
+                    )
                 , SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters = [sortParameter "#s"]
                     , sentenceAxiomPattern =
@@ -612,6 +618,9 @@ liftTests =
                                     Fix
                                         (apply (groundHead "#`alias")
                                             [ variablePattern
+                                                "#a"
+                                                sortMetaSort
+                                            , variablePattern
                                                 "#P1"
                                                 patternMetaSort
                                             ]
@@ -624,7 +633,18 @@ liftTests =
                                                     (StringLiteralPattern
                                                         (StringLiteral "alias")
                                                     )
-                                                , Fix (apply nilSortListHead [])
+                                                , Fix
+                                                    (apply consSortListHead
+                                                        [ variablePattern
+                                                            "#a"
+                                                            sortMetaSort
+                                                        , Fix
+                                                            (apply
+                                                                nilSortListHead
+                                                                []
+                                                            )
+                                                        ]
+                                                    )
                                                 , Fix
                                                     (apply consSortListHead
                                                         [ variablePattern
@@ -673,7 +693,20 @@ liftTests =
                                                 (sortParameter "#s")
                                             )
                                         )
-                                        [Fix (apply nilSortListHead [])]
+                                        [ Fix
+                                            (apply consSortListHead
+                                                [ variablePattern
+                                                    "#a"
+                                                    sortMetaSort
+                                                , Fix
+                                                    (apply
+                                                        nilSortListHead
+                                                        []
+                                                    )
+                                                ]
+                                            )
+
+                                        ]
                                     )
                             , impliesSecond =
                                 Fix
@@ -689,7 +722,18 @@ liftTests =
                                                     (StringLiteralPattern
                                                         (StringLiteral "alias")
                                                     )
-                                                , Fix (apply nilSortListHead [])
+                                                , Fix
+                                                    (apply consSortListHead
+                                                        [ variablePattern
+                                                            "#a"
+                                                            sortMetaSort
+                                                        , Fix
+                                                            (apply
+                                                                nilSortListHead
+                                                                []
+                                                            )
+                                                        ]
+                                                    )
                                                 , Fix
                                                     (apply consSortListHead
                                                         [ variablePattern
@@ -718,7 +762,7 @@ liftTests =
                     (ObjectSentence $ SentenceSymbolSentence SentenceSymbol
                         { sentenceSymbolSymbol = Symbol
                             { symbolConstructor = Id "alias"
-                            , symbolParams = []
+                            , symbolParams = [SortVariable (Id "a")]
                             }
                         , sentenceSymbolSorts =
                             [ SortVariableSort (SortVariable (Id "a")) ]
@@ -729,9 +773,238 @@ liftTests =
                     )
                 )
             )
+        , testCase "Lifting Meta Symbol Declaration"
+            (prettyAssertEqual
+                [ SentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol = Symbol
+                        { symbolConstructor = Id "#symbol"
+                        , symbolParams = []
+                        }
+                    , sentenceSymbolSorts = []
+                    , sentenceSymbolResultSort =
+                        SortVariableSort (SortVariable (Id "#a"))
+                    , sentenceSymbolAttributes = Attributes []
+                    }
+                ]
+                (liftSentence
+                    (MetaSentence $ SentenceSymbolSentence SentenceSymbol
+                        { sentenceSymbolSymbol = Symbol
+                            { symbolConstructor = Id "#symbol"
+                            , symbolParams = []
+                            }
+                        , sentenceSymbolSorts = []
+                        , sentenceSymbolResultSort =
+                                SortVariableSort (SortVariable (Id "#a"))
+                        , sentenceSymbolAttributes = Attributes []
+                        }
+                    )
+                )
+            )
+        , testCase "Lifting Sort Declaration"
+            (prettyAssertEqual
+                [ SentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol = Symbol
+                        { symbolConstructor = Id "#`List"
+                        , symbolParams = []
+                        }
+                    , sentenceSymbolSorts = [sortMetaSort]
+                    , sentenceSymbolResultSort = sortMetaSort
+                    , sentenceSymbolAttributes = Attributes []
+                    }
+                , SentenceAxiomSentence SentenceAxiom
+                    { sentenceAxiomParameters = [ sortParameter "#s" ]
+                    , sentenceAxiomPattern = SentenceMetaPattern
+                        (Fix
+                            (EqualsPattern Equals
+                                { equalsOperandSort = sortMetaSort
+                                , equalsResultSort =
+                                    SortVariableSort (sortParameter "#s")
+                                , equalsFirst = Fix
+                                    (apply (groundHead "#`List")
+                                        [ variablePattern "#a" sortMetaSort ]
+                                    )
+                                , equalsSecond = Fix
+                                    (apply sortHead
+                                        [ Fix
+                                            (StringLiteralPattern
+                                                (StringLiteral "List")
+                                            )
+                                        , Fix
+                                            (apply consSortListHead
+                                                [ variablePattern "#a"
+                                                    sortMetaSort
+                                                , Fix (apply nilSortListHead [])
+                                                ]
+                                            )
+                                        ]
+                                    )
+                                }
+                            )
+                        )
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+                , SentenceAxiomSentence SentenceAxiom
+                    { sentenceAxiomParameters = [sortParameter "#s"]
+                    , sentenceAxiomPattern = SentenceMetaPattern
+                        (Fix
+                            (ImpliesPattern Implies
+                                { impliesSort =
+                                    SortVariableSort (sortParameter "#s")
+                                , impliesFirst = Fix
+                                    (apply
+                                        (sortsDeclaredHead
+                                            (SortVariableSort
+                                                (sortParameter "#s")
+                                            )
+                                        )
+                                        [ Fix
+                                            (apply consSortListHead
+                                                [ variablePattern "#a"
+                                                    sortMetaSort
+                                                , Fix (apply nilSortListHead [])
+                                                ]
+                                            )
+                                        ]
+                                    )
+                                , impliesSecond = Fix
+                                    (apply
+                                        (sortDeclaredHead
+                                            (SortVariableSort
+                                                (sortParameter "#s")
+                                            )
+                                        )
+                                        [ Fix
+                                            (apply (groundHead "#`List")
+                                                [ variablePattern "#a"
+                                                    sortMetaSort
+                                                ]
+                                            )
+                                        ]
+                                    )
+                                }
+                            )
+                        )
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+                ]
+                (liftSentence
+                    (ObjectSentence $ SentenceSortSentence SentenceSort
+                        { sentenceSortName = Id "List"
+                        , sentenceSortParameters = [SortVariable (Id "a")]
+                        , sentenceSortAttributes = Attributes []
+                        }
+                    )
+                )
+            )
+        , testCase "Lifting Axiom topped in Object Pattern"
+            (prettyAssertEqual
+                [ SentenceAxiomSentence SentenceAxiom
+                    { sentenceAxiomParameters = [sortParameter "#a"]
+                    , sentenceAxiomPattern = SentenceMetaPattern $ Fix
+                        (ImpliesPattern Implies
+                            { impliesSort = patternMetaSort
+                            , impliesFirst = Fix
+                                (apply (sortsDeclaredHead patternMetaSort)
+                                    [ Fix
+                                        (apply consSortListHead
+                                            [ variablePattern "#a" sortMetaSort
+                                            , Fix (apply nilSortListHead [])
+                                            ]
+                                        )
+                                    ]
+                                )
+                            , impliesSecond = Fix
+                                (apply (provableHead patternMetaSort)
+                                    [ Fix
+                                        (apply (metaMLPatternHead TopPatternType)
+                                            [variablePattern "#a" sortMetaSort]
+                                        )
+                                    ]
+                                )
+                            }
+                        )
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+                ]
+                (liftSentence
+                    (MetaSentence $ SentenceAxiomSentence SentenceAxiom
+                        { sentenceAxiomParameters =
+                            [ ObjectSortVariable (SortVariable (Id "a"))
+                            , MetaSortVariable (SortVariable (Id "#a"))
+                            ]
+                        , sentenceAxiomPattern = ObjectPattern
+                            (TopPattern
+                                (Top
+                                    (SortVariableSort (SortVariable (Id "a")))
+                                )
+                            )
+                        , sentenceAxiomAttributes = Attributes []
+                        }
+                    )
+                )
+            )
+        , testCase "Lifting Axiom topped in Meta Pattern"
+            (prettyAssertEqual
+                [ SentenceAxiomSentence SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern = SentenceMetaPattern $ Fix
+                        (ImpliesPattern Implies
+                            { impliesSort = charListMetaSort
+                            , impliesFirst = Fix
+                                (apply (sortsDeclaredHead charListMetaSort)
+                                    [ Fix (apply nilSortListHead []) ]
+                                )
+                            , impliesSecond = metaStringPattern
+                            }
+                        )
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+                ]
+                (liftSentence
+                    (MetaSentence $ SentenceAxiomSentence SentenceAxiom
+                        { sentenceAxiomParameters = []
+                        , sentenceAxiomPattern = unifiedStringPattern
+                        , sentenceAxiomAttributes = Attributes []
+                        }
+                    )
+                )
+            )
+        , testCase "Lifting Import Sentence"
+            (prettyAssertEqual
+                [ metaSentenceImport ]
+                (liftSentence koreSentenceImport)
+            )
+        , testCase "Lifting Module"
+            (prettyAssertEqual
+                simpleMetaModule
+                (liftModule simpleKoreModule)
+            )
+        , testCase "Lifting Definition"
+            (prettyAssertEqual
+                simpleMetaDefinition
+                (liftDefinition simpleKoreDefinition)
+            )
         ]
 --TODO(traiansf): add more tests covering all sentences (esp. axiom),
 -- modules and definitions
+
+prettyAssertEqual :: (Eq a, Show a, PrettyPrint a) => a -> a -> IO ()
+prettyAssertEqual x y =
+    assertEqual
+        ( "Expected:\n"
+          ++ prettyPrintToString x
+          ++ "\nActual\n"
+          ++ prettyPrintToString y
+        )
+        x
+        y
+
+
+natSort :: Sort Object
+natSort = SortActualSort SortActual
+    { sortActualName = Id "Nat"
+    , sortActualSorts = []
+    }
 
 stringPattern :: Pattern Meta Variable child
 stringPattern = StringLiteralPattern (StringLiteral "a")
@@ -741,3 +1014,46 @@ unifiedStringPattern = MetaPattern stringPattern
 
 metaStringPattern :: CommonMetaPattern
 metaStringPattern = Fix stringPattern
+
+sentenceImport :: Sentence Meta sortParam pat variable
+sentenceImport =
+    SentenceImportSentence SentenceImport
+        { sentenceImportModuleName = ModuleName "MODULE"
+        , sentenceImportAttributes = Attributes []
+        }
+
+koreSentenceImport :: KoreSentence
+koreSentenceImport = MetaSentence sentenceImport
+
+metaSentenceImport :: MetaSentence
+metaSentenceImport = sentenceImport
+
+simpleKoreModule :: KoreModule
+simpleKoreModule =
+    Module
+        { moduleName = ModuleName "MODULE"
+        , moduleSentences = [koreSentenceImport]
+        , moduleAttributes = Attributes []
+        }
+
+simpleMetaModule :: MetaModule
+simpleMetaModule =
+    Module
+        { moduleName = ModuleName "MODULE"
+        , moduleSentences = [metaSentenceImport]
+        , moduleAttributes = Attributes []
+        }
+
+simpleKoreDefinition :: KoreDefinition
+simpleKoreDefinition =
+    Definition
+        { definitionModules = [simpleKoreModule]
+        , definitionAttributes = Attributes []
+        }
+
+simpleMetaDefinition :: MetaDefinition
+simpleMetaDefinition =
+    Definition
+        { definitionModules = [simpleMetaModule]
+        , definitionAttributes = Attributes []
+        }

@@ -12,7 +12,8 @@ Portability : POSIX
 Please refer to Section 9.2 (The Kore Language Semantics) of the
 <http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
 -}
-module Data.Kore.MetaML.Lift ( liftModule
+module Data.Kore.MetaML.Lift ( liftDefinition
+                             , liftModule
                              , liftSentence
                              , liftAttributes
                              , LiftableToMetaML(liftToMeta)
@@ -344,21 +345,18 @@ liftSentence (MetaSentence (SentenceAxiomSentence as)) =
         { sentenceAxiomParameters = metaParameters
         , sentenceAxiomAttributes = liftAttributes (sentenceAxiomAttributes as)
         , sentenceAxiomPattern =
-            if null objectParameters
-                then SentenceMetaPattern provableLiftedPattern
-                else
-                    SentenceMetaPattern $ Fix
-                        (ImpliesPattern Implies
-                            { impliesSort = axiomSort
-                            , impliesFirst = Fix
-                                (apply (sortsDeclaredHead axiomSort)
-                                    [ liftToMeta
-                                        (map SortVariableSort objectParameters)
-                                    ]
-                                )
-                            , impliesSecond = provableLiftedPattern
-                            }
+            SentenceMetaPattern $ Fix
+                (ImpliesPattern Implies
+                    { impliesSort = axiomSort
+                    , impliesFirst = Fix
+                        (apply (sortsDeclaredHead axiomSort)
+                            [ liftToMeta
+                                (map SortVariableSort objectParameters)
+                            ]
                         )
+                    , impliesSecond = provableLiftedPattern
+                    }
+                )
         }
     ]
   where
@@ -391,12 +389,21 @@ liftModule m = Module
     , moduleSentences = concatMap liftSentence (moduleSentences m)
     }
 
+-- |'liftDefinition' transforms a 'KoreDefinition' into a 'MetaDefinition'
+liftDefinition :: KoreDefinition -> MetaDefinition
+liftDefinition d = Definition
+    { definitionAttributes = liftAttributes (definitionAttributes d)
+    , definitionModules = map liftModule (definitionModules d)
+    }
+
+
 -- |'getPatternResultSort' retrieves the result sort of a pattern.
 -- Currently fails if that pattern is not an application pattern.
 -- TODO(traiansf):
--- - Consider making it work for Application, too (that requires passing
---   an indexed module as an extra parameter.
+-- - Consider making it work for Application, too (that requires storing some
+--   metadata / passing an indexed module as an extra parameter.
 -- - Consider making it public (and moving it to a more appropriate module).
+--   once we do that we should thoughly test it.
 getPatternResultSort :: Pattern level Variable child -> Sort level
 getPatternResultSort (AndPattern p) = andSort p
 getPatternResultSort (BottomPattern p) = bottomSort p
