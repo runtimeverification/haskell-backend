@@ -2,7 +2,9 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-module Data.Kore.ASTPrettyPrint (prettyPrintToString) where
+module Data.Kore.ASTPrettyPrint ( prettyPrintToString
+                                , PrettyPrint
+                                ) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
@@ -10,8 +12,10 @@ import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.IndentingPrinter (PrinterOutput, StringPrinter,
                                              betweenLines, printToString,
                                              withIndent, write)
+import           Data.Kore.MetaML.AST
 import           Data.Kore.Parser.CString   (escapeCString)
 
+import           Data.Fix
 import           Data.List                  (intersperse)
 
 {-# ANN module "HLint: ignore Use record patterns" #-}
@@ -69,17 +73,6 @@ writeOneFieldStruct flags name content =
             write name
             write " "
             prettyPrint NeedsParentheses content
-        )
-
-writeOneFieldStructNewLine
-    :: (PrinterOutput w m, PrettyPrint a)
-    => Flags -> String -> a -> m ()
-writeOneFieldStructNewLine flags name content =
-    betweenParentheses
-        flags
-        (do
-            write name
-            withIndent 4 (prettyPrint NeedsParentheses content)
         )
 
 writeFieldOneLine
@@ -181,7 +174,7 @@ instance MetaOrObject level => PrettyPrint (Sort level) where
     prettyPrint flags (SortVariableSort sv) =
         writeOneFieldStruct flags "SortVariableSort" sv
     prettyPrint flags (SortActualSort sa)   =
-        writeOneFieldStructNewLine flags "SortActualSort" sa
+        writeOneFieldStruct flags "SortActualSort" sa
 
 instance MetaOrObject level => PrettyPrint (SortActual level) where
     prettyPrint _ sa@(SortActual _ _) =
@@ -650,3 +643,11 @@ instance
                 "definitionAttributes" (definitionAttributes d)
             , writeListField "definitionModules" definitionModules d
             ]
+
+instance PrettyPrint (MetaMLPattern Variable) where
+    prettyPrint flags p =
+        writeOneFieldStruct flags "Fix" (unFix p)
+
+instance PrettyPrint (SentenceMetaPattern Variable) where
+    prettyPrint flags (SentenceMetaPattern smp) =
+        writeOneFieldStruct flags "SentenceMetaPattern" smp

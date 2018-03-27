@@ -14,10 +14,10 @@ Definition
                     , sentenceAxiomPattern =
                         ObjectPattern (DomainValuePattern DomainValue
                             { domainValueSort =
-                                SortActualSortSortActual
-                                        { sortActualName = Id Object "Int"
-                                        , sortActualSorts = []
-                                        }
+                                SortActualSort SortActual
+                                    { sortActualName = Id Object "Int"
+                                    , sortActualSorts = []
+                                    }
                             , domainValueChild =
                                 MetaPattern (StringLiteralPattern (StringLiteral "10"))
                             })

@@ -16,20 +16,20 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Exp"
-                                , sortActualSorts = []
-                                }
-                        , SortActualSortSortActual
-                                { sortActualName = Id Object "Exp"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Exp"
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = Id Object "Exp"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Exp"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Exp"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -39,20 +39,20 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Exp"
-                                , sortActualSorts = []
-                                }
-                        , SortActualSortSortActual
-                                { sortActualName = Id Object "Exp"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Exp"
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = Id Object "Exp"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Exp"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Exp"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceAliasSentence SentenceAlias
@@ -62,20 +62,20 @@ Definition
                             , aliasParams = []
                             }
                     , sentenceAliasSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Exp"
-                                , sortActualSorts = []
-                                }
-                        , SortActualSortSortActual
-                                { sortActualName = Id Object "Exp"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Exp"
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = Id Object "Exp"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceAliasReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Exp"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Exp"
+                            , sortActualSorts = []
+                            }
                     , sentenceAliasAttributes = Attributes []
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
@@ -85,10 +85,10 @@ Definition
                     , sentenceAxiomPattern =
                         ObjectPattern (EqualsPattern Equals
                             { equalsOperandSort =
-                                SortActualSortSortActual
-                                        { sortActualName = Id Object "Exp"
-                                        , sortActualSorts = []
-                                        }
+                                SortActualSort SortActual
+                                    { sortActualName = Id Object "Exp"
+                                    , sortActualSorts = []
+                                    }
                             , equalsResultSort =
                                 SortVariableSort (SortVariable (Id Object "R"))
                             , equalsFirst =
@@ -109,20 +109,20 @@ Definition
                                                 [ MetaPattern (VariablePattern Variable
                                                     { variableName = Id Meta "#X"
                                                     , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Meta "#Variable"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        SortActualSort SortActual
+                                                            { sortActualName = Id Meta "#Variable"
+                                                            , sortActualSorts = []
+                                                            }
                                                     })
                                                 ]
                                             })
                                         , MetaPattern (VariablePattern Variable
                                             { variableName = Id Meta "#E"
                                             , variableSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Meta "#Pattern"
-                                                        , sortActualSorts = []
-                                                        }
+                                                SortActualSort SortActual
+                                                    { sortActualName = Id Meta "#Pattern"
+                                                    , sortActualSorts = []
+                                                    }
                                             })
                                         ]
                                     })
@@ -137,18 +137,18 @@ Definition
                                         [ MetaPattern (VariablePattern Variable
                                             { variableName = Id Meta "#Exp"
                                             , variableSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Meta "#Sort"
-                                                        , sortActualSorts = []
-                                                        }
+                                                SortActualSort SortActual
+                                                    { sortActualName = Id Meta "#Sort"
+                                                    , sortActualSorts = []
+                                                    }
                                             })
                                         , MetaPattern (VariablePattern Variable
                                             { variableName = Id Meta "#X"
                                             , variableSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Meta "#Variable"
-                                                        , sortActualSorts = []
-                                                        }
+                                                SortActualSort SortActual
+                                                    { sortActualName = Id Meta "#Variable"
+                                                    , sortActualSorts = []
+                                                    }
                                             })
                                         , ObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
@@ -167,20 +167,20 @@ Definition
                                                         [ MetaPattern (VariablePattern Variable
                                                             { variableName = Id Meta "#X"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Meta "#Variable"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Meta "#Variable"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         ]
                                                     })
                                                 , MetaPattern (VariablePattern Variable
                                                     { variableName = Id Meta "#E"
                                                     , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Meta "#Pattern"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        SortActualSort SortActual
+                                                            { sortActualName = Id Meta "#Pattern"
+                                                            , sortActualSorts = []
+                                                            }
                                                     })
                                                 ]
                                             })
@@ -198,10 +198,10 @@ Definition
                                 ]
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Meta "#Pattern"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Meta "#Pattern"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
                         SortVariableSort (SortVariable (Id Meta "#S"))
@@ -245,18 +245,18 @@ Definition
                                                         [ MetaPattern (VariablePattern Variable
                                                             { variableName = Id Meta "#NAME"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Meta "#CharList"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Meta "#CharList"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         , MetaPattern (VariablePattern Variable
                                                             { variableName = Id Meta "#SORT"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Meta "#Sort"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Meta "#Sort"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         ]
                                                     })
@@ -267,20 +267,20 @@ Definition
                             , equalsSecond =
                                 MetaPattern (EqualsPattern Equals
                                     { equalsOperandSort =
-                                        SortActualSortSortActual
-                                                { sortActualName = Id Meta "#Sort"
-                                                , sortActualSorts = []
-                                                }
+                                        SortActualSort SortActual
+                                            { sortActualName = Id Meta "#Sort"
+                                            , sortActualSorts = []
+                                            }
                                     , equalsResultSort =
                                         SortVariableSort (SortVariable (Id Meta "#S"))
                                     , equalsFirst =
                                         MetaPattern (VariablePattern Variable
                                             { variableName = Id Meta "#SORT"
                                             , variableSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Meta "#Sort"
-                                                        , sortActualSorts = []
-                                                        }
+                                                SortActualSort SortActual
+                                                    { sortActualName = Id Meta "#Sort"
+                                                    , sortActualSorts = []
+                                                    }
                                             })
                                     , equalsSecond =
                                         MetaPattern (ApplicationPattern Application
@@ -326,18 +326,18 @@ Definition
                                                 [ MetaPattern (VariablePattern Variable
                                                     { variableName = Id Meta "#E1"
                                                     , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Meta "#Pattern"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        SortActualSort SortActual
+                                                            { sortActualName = Id Meta "#Pattern"
+                                                            , sortActualSorts = []
+                                                            }
                                                     })
                                                 , MetaPattern (VariablePattern Variable
                                                     { variableName = Id Meta "#E2"
                                                     , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Meta "#Pattern"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        SortActualSort SortActual
+                                                            { sortActualName = Id Meta "#Pattern"
+                                                            , sortActualSorts = []
+                                                            }
                                                     })
                                                 ]
                                             })
@@ -360,10 +360,10 @@ Definition
                                                 [ MetaPattern (VariablePattern Variable
                                                     { variableName = Id Meta "#E1"
                                                     , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Meta "#Pattern"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        SortActualSort SortActual
+                                                            { sortActualName = Id Meta "#Pattern"
+                                                            , sortActualSorts = []
+                                                            }
                                                     })
                                                 ]
                                             })
@@ -380,10 +380,10 @@ Definition
                                                 [ MetaPattern (VariablePattern Variable
                                                     { variableName = Id Meta "#E2"
                                                     , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Meta "#Pattern"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        SortActualSort SortActual
+                                                            { sortActualName = Id Meta "#Pattern"
+                                                            , sortActualSorts = []
+                                                            }
                                                     })
                                                 ]
                                             })
@@ -436,18 +436,18 @@ Definition
                                                                 [ MetaPattern (VariablePattern Variable
                                                                     { variableName = Id Meta "#NAME"
                                                                     , variableSort =
-                                                                        SortActualSortSortActual
-                                                                                { sortActualName = Id Meta "#CharList"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        SortActualSort SortActual
+                                                                            { sortActualName = Id Meta "#CharList"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                     })
                                                                 , MetaPattern (VariablePattern Variable
                                                                     { variableName = Id Meta "#SORT"
                                                                     , variableSort =
-                                                                        SortActualSortSortActual
-                                                                                { sortActualName = Id Meta "#Sort"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        SortActualSort SortActual
+                                                                            { sortActualName = Id Meta "#Sort"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                     })
                                                                 ]
                                                             })
@@ -456,10 +456,10 @@ Definition
                                                 , MetaPattern (VariablePattern Variable
                                                     { variableName = Id Meta "#E"
                                                     , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Meta "#Pattern"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        SortActualSort SortActual
+                                                            { sortActualName = Id Meta "#Pattern"
+                                                            , sortActualSorts = []
+                                                            }
                                                     })
                                                 ]
                                             })
@@ -472,20 +472,20 @@ Definition
                                     , andFirst =
                                         MetaPattern (EqualsPattern Equals
                                             { equalsOperandSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Meta "#Sort"
-                                                        , sortActualSorts = []
-                                                        }
+                                                SortActualSort SortActual
+                                                    { sortActualName = Id Meta "#Sort"
+                                                    , sortActualSorts = []
+                                                    }
                                             , equalsResultSort =
                                                 SortVariableSort (SortVariable (Id Meta "#S"))
                                             , equalsFirst =
                                                 MetaPattern (VariablePattern Variable
                                                     { variableName = Id Meta "#SORT"
                                                     , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Meta "#Sort"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        SortActualSort SortActual
+                                                            { sortActualName = Id Meta "#Sort"
+                                                            , sortActualSorts = []
+                                                            }
                                                     })
                                             , equalsSecond =
                                                 MetaPattern (ApplicationPattern Application
@@ -510,10 +510,10 @@ Definition
                                                 [ MetaPattern (VariablePattern Variable
                                                     { variableName = Id Meta "#E"
                                                     , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Meta "#Pattern"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        SortActualSort SortActual
+                                                            { sortActualName = Id Meta "#Pattern"
+                                                            , sortActualSorts = []
+                                                            }
                                                     })
                                                 ]
                                             })
@@ -557,28 +557,28 @@ Definition
                                                         [ ObjectPattern (VariablePattern Variable
                                                             { variableName = Id Object "X"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Object "Exp"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Object "Exp"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         , MetaPattern (VariablePattern Variable
                                                             { variableName = Id Meta "#E"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Meta "#Pattern"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Meta "#Pattern"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         ]
                                                     })
                                                 , MetaPattern (VariablePattern Variable
                                                     { variableName = Id Meta "#E'"
                                                     , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Meta "#Pattern"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        SortActualSort SortActual
+                                                            { sortActualName = Id Meta "#Pattern"
+                                                            , sortActualSorts = []
+                                                            }
                                                     })
                                                 ]
                                             })
@@ -596,10 +596,10 @@ Definition
                                     , applicationChildren =
                                         [ ObjectPattern (EqualsPattern Equals
                                             { equalsOperandSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Object "Exp"
-                                                        , sortActualSorts = []
-                                                        }
+                                                SortActualSort SortActual
+                                                    { sortActualName = Id Object "Exp"
+                                                    , sortActualSorts = []
+                                                    }
                                             , equalsResultSort =
                                                 SortVariableSort (SortVariable (Id Object "S"))
                                             , equalsFirst =
@@ -620,28 +620,28 @@ Definition
                                                                 [ ObjectPattern (VariablePattern Variable
                                                                     { variableName = Id Object "X"
                                                                     , variableSort =
-                                                                        SortActualSortSortActual
-                                                                                { sortActualName = Id Object "Exp"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        SortActualSort SortActual
+                                                                            { sortActualName = Id Object "Exp"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                     })
                                                                 , MetaPattern (VariablePattern Variable
                                                                     { variableName = Id Meta "#E"
                                                                     , variableSort =
-                                                                        SortActualSortSortActual
-                                                                                { sortActualName = Id Meta "#Pattern"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        SortActualSort SortActual
+                                                                            { sortActualName = Id Meta "#Pattern"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                     })
                                                                 ]
                                                             })
                                                         , MetaPattern (VariablePattern Variable
                                                             { variableName = Id Meta "#E'"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Meta "#Pattern"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Meta "#Pattern"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         ]
                                                     })
@@ -656,18 +656,18 @@ Definition
                                                         [ MetaPattern (VariablePattern Variable
                                                             { variableName = Id Meta "#E"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Meta "#Pattern"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Meta "#Pattern"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         , MetaPattern (VariablePattern Variable
                                                             { variableName = Id Meta "#E'"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Meta "#Pattern"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Meta "#Pattern"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         , MetaPattern (ApplicationPattern Application
                                                             { applicationSymbolOrAlias =
