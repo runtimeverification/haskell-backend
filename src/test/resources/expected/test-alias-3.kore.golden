@@ -16,20 +16,20 @@ Definition
                             , aliasParams = []
                             }
                     , sentenceAliasSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "S"
-                                , sortActualSorts = []
-                                }
-                        , SortActualSortSortActual
-                                { sortActualName = Id Object "S"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "S"
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = Id Object "S"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceAliasReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "S"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "S"
+                            , sortActualSorts = []
+                            }
                     , sentenceAliasAttributes = Attributes []
                     })
                 ]

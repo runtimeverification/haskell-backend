@@ -17,10 +17,10 @@ Definition
                             }
                     , sentenceSymbolSorts = []
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Bool"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Bool"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -31,10 +31,10 @@ Definition
                             }
                     , sentenceSymbolSorts = []
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Bool"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Bool"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -44,20 +44,20 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Bool"
-                                , sortActualSorts = []
-                                }
-                        , SortActualSortSortActual
-                                { sortActualName = Id Object "Bool"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Bool"
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = Id Object "Bool"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Bool"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Bool"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -67,16 +67,16 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Bool"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Bool"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Bool"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Bool"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSortSentence SentenceSort
@@ -92,10 +92,10 @@ Definition
                             }
                     , sentenceSymbolSorts = []
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Int"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Int"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -105,16 +105,16 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Int"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Int"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Int"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Int"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -124,20 +124,20 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Int"
-                                , sortActualSorts = []
-                                }
-                        , SortActualSortSortActual
-                                { sortActualName = Id Object "Int"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Int"
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = Id Object "Int"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Int"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Int"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -148,10 +148,10 @@ Definition
                             }
                     , sentenceSymbolSorts = []
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Int"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Int"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -162,10 +162,10 @@ Definition
                             }
                     , sentenceSymbolSorts = []
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Int"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Int"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -176,10 +176,10 @@ Definition
                             }
                     , sentenceSymbolSorts = []
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Int"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Int"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -189,20 +189,20 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Int"
-                                , sortActualSorts = []
-                                }
-                        , SortActualSortSortActual
-                                { sortActualName = Id Object "Int"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Int"
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = Id Object "Int"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Int"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Int"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -212,20 +212,20 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Int"
-                                , sortActualSorts = []
-                                }
-                        , SortActualSortSortActual
-                                { sortActualName = Id Object "Int"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Int"
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = Id Object "Int"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Bool"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Bool"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSortSentence SentenceSort
@@ -240,16 +240,16 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Int"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Int"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Id"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Id"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSortSentence SentenceSort
@@ -269,12 +269,12 @@ Definition
                             }
                     , sentenceSymbolSorts = []
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "List"
-                                , sortActualSorts =
-                                    [ SortVariableSort (SortVariable (Id Object "S"))
-                                    ]
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "List"
+                            , sortActualSorts =
+                                [ SortVariableSort (SortVariable (Id Object "S"))
+                                ]
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -287,20 +287,20 @@ Definition
                             }
                     , sentenceSymbolSorts =
                         [ SortVariableSort (SortVariable (Id Object "S"))
-                        , SortActualSortSortActual
-                                { sortActualName = Id Object "List"
-                                , sortActualSorts =
-                                    [ SortVariableSort (SortVariable (Id Object "S"))
-                                    ]
-                                }
+                        , SortActualSort SortActual
+                            { sortActualName = Id Object "List"
+                            , sortActualSorts =
+                                [ SortVariableSort (SortVariable (Id Object "S"))
+                                ]
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "List"
-                                , sortActualSorts =
-                                    [ SortVariableSort (SortVariable (Id Object "S"))
-                                    ]
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "List"
+                            , sortActualSorts =
+                                [ SortVariableSort (SortVariable (Id Object "S"))
+                                ]
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -312,26 +312,26 @@ Definition
                                 ]
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "List"
-                                , sortActualSorts =
-                                    [ SortVariableSort (SortVariable (Id Object "S"))
-                                    ]
-                                }
-                        , SortActualSortSortActual
-                                { sortActualName = Id Object "List"
-                                , sortActualSorts =
-                                    [ SortVariableSort (SortVariable (Id Object "S"))
-                                    ]
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "List"
+                            , sortActualSorts =
+                                [ SortVariableSort (SortVariable (Id Object "S"))
+                                ]
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = Id Object "List"
+                            , sortActualSorts =
+                                [ SortVariableSort (SortVariable (Id Object "S"))
+                                ]
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "List"
-                                , sortActualSorts =
-                                    [ SortVariableSort (SortVariable (Id Object "S"))
-                                    ]
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "List"
+                            , sortActualSorts =
+                                [ SortVariableSort (SortVariable (Id Object "S"))
+                                ]
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -346,12 +346,12 @@ Definition
                         [ SortVariableSort (SortVariable (Id Object "S"))
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "List"
-                                , sortActualSorts =
-                                    [ SortVariableSort (SortVariable (Id Object "S"))
-                                    ]
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "List"
+                            , sortActualSorts =
+                                [ SortVariableSort (SortVariable (Id Object "S"))
+                                ]
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSortSentence SentenceSort
@@ -371,12 +371,12 @@ Definition
                             }
                     , sentenceSymbolSorts = []
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Set"
-                                , sortActualSorts =
-                                    [ SortVariableSort (SortVariable (Id Object "S"))
-                                    ]
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Set"
+                            , sortActualSorts =
+                                [ SortVariableSort (SortVariable (Id Object "S"))
+                                ]
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -388,26 +388,26 @@ Definition
                                 ]
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Set"
-                                , sortActualSorts =
-                                    [ SortVariableSort (SortVariable (Id Object "S"))
-                                    ]
-                                }
-                        , SortActualSortSortActual
-                                { sortActualName = Id Object "Set"
-                                , sortActualSorts =
-                                    [ SortVariableSort (SortVariable (Id Object "S"))
-                                    ]
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Set"
+                            , sortActualSorts =
+                                [ SortVariableSort (SortVariable (Id Object "S"))
+                                ]
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = Id Object "Set"
+                            , sortActualSorts =
+                                [ SortVariableSort (SortVariable (Id Object "S"))
+                                ]
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Set"
-                                , sortActualSorts =
-                                    [ SortVariableSort (SortVariable (Id Object "S"))
-                                    ]
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Set"
+                            , sortActualSorts =
+                                [ SortVariableSort (SortVariable (Id Object "S"))
+                                ]
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -420,18 +420,18 @@ Definition
                             }
                     , sentenceSymbolSorts =
                         [ SortVariableSort (SortVariable (Id Object "S"))
-                        , SortActualSortSortActual
-                                { sortActualName = Id Object "Set"
-                                , sortActualSorts =
-                                    [ SortVariableSort (SortVariable (Id Object "S"))
-                                    ]
-                                }
+                        , SortActualSort SortActual
+                            { sortActualName = Id Object "Set"
+                            , sortActualSorts =
+                                [ SortVariableSort (SortVariable (Id Object "S"))
+                                ]
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Bool"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Bool"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
@@ -442,12 +442,12 @@ Definition
                     , sentenceAxiomPattern =
                         ObjectPattern (EqualsPattern Equals
                             { equalsOperandSort =
-                                SortActualSortSortActual
-                                        { sortActualName = Id Object "Set"
-                                        , sortActualSorts =
-                                            [ SortVariableSort (SortVariable (Id Object "S"))
-                                            ]
-                                        }
+                                SortActualSort SortActual
+                                    { sortActualName = Id Object "Set"
+                                    , sortActualSorts =
+                                        [ SortVariableSort (SortVariable (Id Object "S"))
+                                        ]
+                                    }
                             , equalsResultSort =
                                 SortVariableSort (SortVariable (Id Object "R"))
                             , equalsFirst =
@@ -463,12 +463,12 @@ Definition
                                         [ ObjectPattern (VariablePattern Variable
                                             { variableName = Id Object "S"
                                             , variableSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Object "Set"
-                                                        , sortActualSorts =
-                                                            [ SortVariableSort (SortVariable (Id Object "S"))
-                                                            ]
-                                                        }
+                                                SortActualSort SortActual
+                                                    { sortActualName = Id Object "Set"
+                                                    , sortActualSorts =
+                                                        [ SortVariableSort (SortVariable (Id Object "S"))
+                                                        ]
+                                                    }
                                             })
                                         , ObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
@@ -486,12 +486,12 @@ Definition
                                 ObjectPattern (VariablePattern Variable
                                     { variableName = Id Object "S"
                                     , variableSort =
-                                        SortActualSortSortActual
-                                                { sortActualName = Id Object "Set"
-                                                , sortActualSorts =
-                                                    [ SortVariableSort (SortVariable (Id Object "S"))
-                                                    ]
-                                                }
+                                        SortActualSort SortActual
+                                            { sortActualName = Id Object "Set"
+                                            , sortActualSorts =
+                                                [ SortVariableSort (SortVariable (Id Object "S"))
+                                                ]
+                                            }
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
@@ -518,13 +518,13 @@ Definition
                         , SortVariableSort (SortVariable (Id Object "S2"))
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Map"
-                                , sortActualSorts =
-                                    [ SortVariableSort (SortVariable (Id Object "S1"))
-                                    , SortVariableSort (SortVariable (Id Object "S2"))
-                                    ]
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Map"
+                            , sortActualSorts =
+                                [ SortVariableSort (SortVariable (Id Object "S1"))
+                                , SortVariableSort (SortVariable (Id Object "S2"))
+                                ]
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -538,13 +538,13 @@ Definition
                             }
                     , sentenceSymbolSorts = []
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Map"
-                                , sortActualSorts =
-                                    [ SortVariableSort (SortVariable (Id Object "S1"))
-                                    , SortVariableSort (SortVariable (Id Object "S2"))
-                                    ]
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Map"
+                            , sortActualSorts =
+                                [ SortVariableSort (SortVariable (Id Object "S1"))
+                                , SortVariableSort (SortVariable (Id Object "S2"))
+                                ]
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -557,29 +557,29 @@ Definition
                                 ]
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Map"
-                                , sortActualSorts =
-                                    [ SortVariableSort (SortVariable (Id Object "S1"))
-                                    , SortVariableSort (SortVariable (Id Object "S2"))
-                                    ]
-                                }
-                        , SortActualSortSortActual
-                                { sortActualName = Id Object "Map"
-                                , sortActualSorts =
-                                    [ SortVariableSort (SortVariable (Id Object "S1"))
-                                    , SortVariableSort (SortVariable (Id Object "S2"))
-                                    ]
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Map"
+                            , sortActualSorts =
+                                [ SortVariableSort (SortVariable (Id Object "S1"))
+                                , SortVariableSort (SortVariable (Id Object "S2"))
+                                ]
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = Id Object "Map"
+                            , sortActualSorts =
+                                [ SortVariableSort (SortVariable (Id Object "S1"))
+                                , SortVariableSort (SortVariable (Id Object "S2"))
+                                ]
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Map"
-                                , sortActualSorts =
-                                    [ SortVariableSort (SortVariable (Id Object "S1"))
-                                    , SortVariableSort (SortVariable (Id Object "S2"))
-                                    ]
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Map"
+                            , sortActualSorts =
+                                [ SortVariableSort (SortVariable (Id Object "S1"))
+                                , SortVariableSort (SortVariable (Id Object "S2"))
+                                ]
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -592,21 +592,21 @@ Definition
                                 ]
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Map"
-                                , sortActualSorts =
-                                    [ SortVariableSort (SortVariable (Id Object "S1"))
-                                    , SortVariableSort (SortVariable (Id Object "S2"))
-                                    ]
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Map"
+                            , sortActualSorts =
+                                [ SortVariableSort (SortVariable (Id Object "S1"))
+                                , SortVariableSort (SortVariable (Id Object "S2"))
+                                ]
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Set"
-                                , sortActualSorts =
-                                    [ SortVariableSort (SortVariable (Id Object "S1"))
-                                    ]
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Set"
+                            , sortActualSorts =
+                                [ SortVariableSort (SortVariable (Id Object "S1"))
+                                ]
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSortSentence SentenceSort
@@ -631,13 +631,13 @@ Definition
                         , SortVariableSort (SortVariable (Id Object "S2"))
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Ctxt"
-                                , sortActualSorts =
-                                    [ SortVariableSort (SortVariable (Id Object "S1"))
-                                    , SortVariableSort (SortVariable (Id Object "S2"))
-                                    ]
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Ctxt"
+                            , sortActualSorts =
+                                [ SortVariableSort (SortVariable (Id Object "S1"))
+                                , SortVariableSort (SortVariable (Id Object "S2"))
+                                ]
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -650,13 +650,13 @@ Definition
                                 ]
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Ctxt"
-                                , sortActualSorts =
-                                    [ SortVariableSort (SortVariable (Id Object "S1"))
-                                    , SortVariableSort (SortVariable (Id Object "S2"))
-                                    ]
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Ctxt"
+                            , sortActualSorts =
+                                [ SortVariableSort (SortVariable (Id Object "S1"))
+                                , SortVariableSort (SortVariable (Id Object "S2"))
+                                ]
+                            }
                         , SortVariableSort (SortVariable (Id Object "S1"))
                         ]
                     , sentenceSymbolReturnSort =
@@ -677,13 +677,13 @@ Definition
                         , SortVariableSort (SortVariable (Id Object "S2"))
                         ]
                     , sentenceAliasReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Ctxt"
-                                , sortActualSorts =
-                                    [ SortVariableSort (SortVariable (Id Object "S1"))
-                                    , SortVariableSort (SortVariable (Id Object "S2"))
-                                    ]
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Ctxt"
+                            , sortActualSorts =
+                                [ SortVariableSort (SortVariable (Id Object "S1"))
+                                , SortVariableSort (SortVariable (Id Object "S2"))
+                                ]
+                            }
                     , sentenceAliasAttributes = Attributes []
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
@@ -695,13 +695,13 @@ Definition
                     , sentenceAxiomPattern =
                         ObjectPattern (EqualsPattern Equals
                             { equalsOperandSort =
-                                SortActualSortSortActual
-                                        { sortActualName = Id Object "Ctxt"
-                                        , sortActualSorts =
-                                            [ SortVariableSort (SortVariable (Id Object "S1"))
-                                            , SortVariableSort (SortVariable (Id Object "S2"))
-                                            ]
-                                        }
+                                SortActualSort SortActual
+                                    { sortActualName = Id Object "Ctxt"
+                                    , sortActualSorts =
+                                        [ SortVariableSort (SortVariable (Id Object "S1"))
+                                        , SortVariableSort (SortVariable (Id Object "S2"))
+                                        ]
+                                    }
                             , equalsResultSort =
                                 SortVariableSort (SortVariable (Id Object "R"))
                             , equalsFirst =
@@ -725,20 +725,20 @@ Definition
                                                 [ MetaPattern (VariablePattern Variable
                                                     { variableName = Id Meta "#X"
                                                     , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Meta "#Variable"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        SortActualSort SortActual
+                                                            { sortActualName = Id Meta "#Variable"
+                                                            , sortActualSorts = []
+                                                            }
                                                     })
                                                 ]
                                             })
                                         , MetaPattern (VariablePattern Variable
                                             { variableName = Id Meta "#P"
                                             , variableSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Meta "#Pattern"
-                                                        , sortActualSorts = []
-                                                        }
+                                                SortActualSort SortActual
+                                                    { sortActualName = Id Meta "#Pattern"
+                                                    , sortActualSorts = []
+                                                    }
                                             })
                                         ]
                                     })
@@ -760,28 +760,28 @@ Definition
                                                 [ MetaPattern (VariablePattern Variable
                                                     { variableName = Id Meta "#S1"
                                                     , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Meta "#Sort"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        SortActualSort SortActual
+                                                            { sortActualName = Id Meta "#Sort"
+                                                            , sortActualSorts = []
+                                                            }
                                                     })
                                                 , MetaPattern (VariablePattern Variable
                                                     { variableName = Id Meta "#S2"
                                                     , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Meta "#Sort"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        SortActualSort SortActual
+                                                            { sortActualName = Id Meta "#Sort"
+                                                            , sortActualSorts = []
+                                                            }
                                                     })
                                                 ]
                                             })
                                         , MetaPattern (VariablePattern Variable
                                             { variableName = Id Meta "#X"
                                             , variableSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Meta "#Variable"
-                                                        , sortActualSorts = []
-                                                        }
+                                                SortActualSort SortActual
+                                                    { sortActualName = Id Meta "#Variable"
+                                                    , sortActualSorts = []
+                                                    }
                                             })
                                         , ObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
@@ -803,20 +803,20 @@ Definition
                                                         [ MetaPattern (VariablePattern Variable
                                                             { variableName = Id Meta "#X"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Meta "#Variable"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Meta "#Variable"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         ]
                                                     })
                                                 , MetaPattern (VariablePattern Variable
                                                     { variableName = Id Meta "#P"
                                                     , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Meta "#Pattern"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        SortActualSort SortActual
+                                                            { sortActualName = Id Meta "#Pattern"
+                                                            , sortActualSorts = []
+                                                            }
                                                     })
                                                 ]
                                             })
@@ -835,13 +835,13 @@ Definition
                             }
                     , sentenceAliasSorts = []
                     , sentenceAliasReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Ctxt"
-                                , sortActualSorts =
-                                    [ SortVariableSort (SortVariable (Id Object "S"))
-                                    , SortVariableSort (SortVariable (Id Object "S"))
-                                    ]
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Ctxt"
+                            , sortActualSorts =
+                                [ SortVariableSort (SortVariable (Id Object "S"))
+                                , SortVariableSort (SortVariable (Id Object "S"))
+                                ]
+                            }
                     , sentenceAliasAttributes = Attributes []
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
@@ -852,13 +852,13 @@ Definition
                     , sentenceAxiomPattern =
                         ObjectPattern (EqualsPattern Equals
                             { equalsOperandSort =
-                                SortActualSortSortActual
-                                        { sortActualName = Id Object "Ctxt"
-                                        , sortActualSorts =
-                                            [ SortVariableSort (SortVariable (Id Object "S"))
-                                            , SortVariableSort (SortVariable (Id Object "S"))
-                                            ]
-                                        }
+                                SortActualSort SortActual
+                                    { sortActualName = Id Object "Ctxt"
+                                    , sortActualSorts =
+                                        [ SortVariableSort (SortVariable (Id Object "S"))
+                                        , SortVariableSort (SortVariable (Id Object "S"))
+                                        ]
+                                    }
                             , equalsResultSort =
                                 SortVariableSort (SortVariable (Id Object "R"))
                             , equalsFirst =
@@ -958,16 +958,16 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Int"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Int"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "AExp"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "AExp"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -977,16 +977,16 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Id"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Id"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "AExp"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "AExp"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -996,20 +996,20 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "AExp"
-                                , sortActualSorts = []
-                                }
-                        , SortActualSortSortActual
-                                { sortActualName = Id Object "AExp"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "AExp"
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = Id Object "AExp"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "AExp"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "AExp"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
@@ -1047,10 +1047,10 @@ Definition
                                                         , MetaPattern (VariablePattern Variable
                                                             { variableName = Id Meta "#S"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Meta "#Sort"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Meta "#Sort"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         ]
                                                     })
@@ -1067,20 +1067,20 @@ Definition
                                                                     { symbolOrAliasConstructor = Id Object "app"
                                                                     , symbolOrAliasParams =
                                                                         [ SortVariableSort (SortVariable (Id Object "S"))
-                                                                        , SortActualSortSortActual
-                                                                                { sortActualName = Id Object "AExp"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        , SortActualSort SortActual
+                                                                            { sortActualName = Id Object "AExp"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                         ]
                                                                     }
                                                             , applicationChildren =
                                                                 [ MetaPattern (VariablePattern Variable
                                                                     { variableName = Id Meta "#C"
                                                                     , variableSort =
-                                                                        SortActualSortSortActual
-                                                                                { sortActualName = Id Meta "#Pattern"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        SortActualSort SortActual
+                                                                            { sortActualName = Id Meta "#Pattern"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                     })
                                                                 , ObjectPattern (VariablePattern Variable
                                                                     { variableName = Id Object "T"
@@ -1092,10 +1092,10 @@ Definition
                                                         , ObjectPattern (VariablePattern Variable
                                                             { variableName = Id Object "P"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Object "AExp"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Object "AExp"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         ]
                                                     })
@@ -1114,10 +1114,10 @@ Definition
                                     , applicationChildren =
                                         [ ObjectPattern (EqualsPattern Equals
                                             { equalsOperandSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Object "AExp"
-                                                        , sortActualSorts = []
-                                                        }
+                                                SortActualSort SortActual
+                                                    { sortActualName = Id Object "AExp"
+                                                    , sortActualSorts = []
+                                                    }
                                             , equalsResultSort =
                                                 SortVariableSort (SortVariable (Id Object "R"))
                                             , equalsFirst =
@@ -1134,20 +1134,20 @@ Definition
                                                                     { symbolOrAliasConstructor = Id Object "app"
                                                                     , symbolOrAliasParams =
                                                                         [ SortVariableSort (SortVariable (Id Object "S"))
-                                                                        , SortActualSortSortActual
-                                                                                { sortActualName = Id Object "AExp"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        , SortActualSort SortActual
+                                                                            { sortActualName = Id Object "AExp"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                         ]
                                                                     }
                                                             , applicationChildren =
                                                                 [ MetaPattern (VariablePattern Variable
                                                                     { variableName = Id Meta "#C"
                                                                     , variableSort =
-                                                                        SortActualSortSortActual
-                                                                                { sortActualName = Id Meta "#Pattern"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        SortActualSort SortActual
+                                                                            { sortActualName = Id Meta "#Pattern"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                     })
                                                                 , ObjectPattern (VariablePattern Variable
                                                                     { variableName = Id Object "T"
@@ -1159,10 +1159,10 @@ Definition
                                                         , ObjectPattern (VariablePattern Variable
                                                             { variableName = Id Object "P"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Object "AExp"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Object "AExp"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         ]
                                                     })
@@ -1173,10 +1173,10 @@ Definition
                                                             { symbolOrAliasConstructor = Id Object "app"
                                                             , symbolOrAliasParams =
                                                                 [ SortVariableSort (SortVariable (Id Object "S"))
-                                                                , SortActualSortSortActual
-                                                                        { sortActualName = Id Object "AExp"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                , SortActualSort SortActual
+                                                                    { sortActualName = Id Object "AExp"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                                 ]
                                                             }
                                                     , applicationChildren =
@@ -1186,10 +1186,10 @@ Definition
                                                                     { symbolOrAliasConstructor = Id Object "gamma"
                                                                     , symbolOrAliasParams =
                                                                         [ SortVariableSort (SortVariable (Id Object "S"))
-                                                                        , SortActualSortSortActual
-                                                                                { sortActualName = Id Object "AExp"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        , SortActualSort SortActual
+                                                                            { sortActualName = Id Object "AExp"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                         ]
                                                                     }
                                                             , applicationChildren =
@@ -1211,20 +1211,20 @@ Definition
                                                                                     { symbolOrAliasConstructor = Id Object "app"
                                                                                     , symbolOrAliasParams =
                                                                                         [ SortVariableSort (SortVariable (Id Object "S"))
-                                                                                        , SortActualSortSortActual
-                                                                                                { sortActualName = Id Object "AExp"
-                                                                                                , sortActualSorts = []
-                                                                                                }
+                                                                                        , SortActualSort SortActual
+                                                                                            { sortActualName = Id Object "AExp"
+                                                                                            , sortActualSorts = []
+                                                                                            }
                                                                                         ]
                                                                                     }
                                                                             , applicationChildren =
                                                                                 [ MetaPattern (VariablePattern Variable
                                                                                     { variableName = Id Meta "#C"
                                                                                     , variableSort =
-                                                                                        SortActualSortSortActual
-                                                                                                { sortActualName = Id Meta "#Pattern"
-                                                                                                , sortActualSorts = []
-                                                                                                }
+                                                                                        SortActualSort SortActual
+                                                                                            { sortActualName = Id Meta "#Pattern"
+                                                                                            , sortActualSorts = []
+                                                                                            }
                                                                                     })
                                                                                 , ObjectPattern (VariablePattern Variable
                                                                                     { variableName = Id Object "HOLE"
@@ -1236,10 +1236,10 @@ Definition
                                                                         , ObjectPattern (VariablePattern Variable
                                                                             { variableName = Id Object "P"
                                                                             , variableSort =
-                                                                                SortActualSortSortActual
-                                                                                        { sortActualName = Id Object "AExp"
-                                                                                        , sortActualSorts = []
-                                                                                        }
+                                                                                SortActualSort SortActual
+                                                                                    { sortActualName = Id Object "AExp"
+                                                                                    , sortActualSorts = []
+                                                                                    }
                                                                             })
                                                                         ]
                                                                     })
@@ -1313,10 +1313,10 @@ Definition
                                                         , MetaPattern (VariablePattern Variable
                                                             { variableName = Id Meta "#S"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Meta "#Sort"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Meta "#Sort"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         ]
                                                     })
@@ -1330,10 +1330,10 @@ Definition
                                                         [ ObjectPattern (VariablePattern Variable
                                                             { variableName = Id Object "P"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Object "AExp"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Object "AExp"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         , ObjectPattern (ApplicationPattern Application
                                                             { applicationSymbolOrAlias =
@@ -1341,20 +1341,20 @@ Definition
                                                                     { symbolOrAliasConstructor = Id Object "app"
                                                                     , symbolOrAliasParams =
                                                                         [ SortVariableSort (SortVariable (Id Object "S"))
-                                                                        , SortActualSortSortActual
-                                                                                { sortActualName = Id Object "AExp"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        , SortActualSort SortActual
+                                                                            { sortActualName = Id Object "AExp"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                         ]
                                                                     }
                                                             , applicationChildren =
                                                                 [ MetaPattern (VariablePattern Variable
                                                                     { variableName = Id Meta "#C"
                                                                     , variableSort =
-                                                                        SortActualSortSortActual
-                                                                                { sortActualName = Id Meta "#Pattern"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        SortActualSort SortActual
+                                                                            { sortActualName = Id Meta "#Pattern"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                     })
                                                                 , ObjectPattern (VariablePattern Variable
                                                                     { variableName = Id Object "T"
@@ -1380,10 +1380,10 @@ Definition
                                     , applicationChildren =
                                         [ ObjectPattern (EqualsPattern Equals
                                             { equalsOperandSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Object "AExp"
-                                                        , sortActualSorts = []
-                                                        }
+                                                SortActualSort SortActual
+                                                    { sortActualName = Id Object "AExp"
+                                                    , sortActualSorts = []
+                                                    }
                                             , equalsResultSort =
                                                 SortVariableSort (SortVariable (Id Object "R"))
                                             , equalsFirst =
@@ -1397,10 +1397,10 @@ Definition
                                                         [ ObjectPattern (VariablePattern Variable
                                                             { variableName = Id Object "P"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Object "AExp"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Object "AExp"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         , ObjectPattern (ApplicationPattern Application
                                                             { applicationSymbolOrAlias =
@@ -1408,20 +1408,20 @@ Definition
                                                                     { symbolOrAliasConstructor = Id Object "app"
                                                                     , symbolOrAliasParams =
                                                                         [ SortVariableSort (SortVariable (Id Object "S"))
-                                                                        , SortActualSortSortActual
-                                                                                { sortActualName = Id Object "AExp"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        , SortActualSort SortActual
+                                                                            { sortActualName = Id Object "AExp"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                         ]
                                                                     }
                                                             , applicationChildren =
                                                                 [ MetaPattern (VariablePattern Variable
                                                                     { variableName = Id Meta "#C"
                                                                     , variableSort =
-                                                                        SortActualSortSortActual
-                                                                                { sortActualName = Id Meta "#Pattern"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        SortActualSort SortActual
+                                                                            { sortActualName = Id Meta "#Pattern"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                     })
                                                                 , ObjectPattern (VariablePattern Variable
                                                                     { variableName = Id Object "T"
@@ -1439,10 +1439,10 @@ Definition
                                                             { symbolOrAliasConstructor = Id Object "app"
                                                             , symbolOrAliasParams =
                                                                 [ SortVariableSort (SortVariable (Id Object "S"))
-                                                                , SortActualSortSortActual
-                                                                        { sortActualName = Id Object "AExp"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                , SortActualSort SortActual
+                                                                    { sortActualName = Id Object "AExp"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                                 ]
                                                             }
                                                     , applicationChildren =
@@ -1452,10 +1452,10 @@ Definition
                                                                     { symbolOrAliasConstructor = Id Object "gamma"
                                                                     , symbolOrAliasParams =
                                                                         [ SortVariableSort (SortVariable (Id Object "S"))
-                                                                        , SortActualSortSortActual
-                                                                                { sortActualName = Id Object "AExp"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        , SortActualSort SortActual
+                                                                            { sortActualName = Id Object "AExp"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                         ]
                                                                     }
                                                             , applicationChildren =
@@ -1474,10 +1474,10 @@ Definition
                                                                         [ ObjectPattern (VariablePattern Variable
                                                                             { variableName = Id Object "P"
                                                                             , variableSort =
-                                                                                SortActualSortSortActual
-                                                                                        { sortActualName = Id Object "AExp"
-                                                                                        , sortActualSorts = []
-                                                                                        }
+                                                                                SortActualSort SortActual
+                                                                                    { sortActualName = Id Object "AExp"
+                                                                                    , sortActualSorts = []
+                                                                                    }
                                                                             })
                                                                         , ObjectPattern (ApplicationPattern Application
                                                                             { applicationSymbolOrAlias =
@@ -1485,20 +1485,20 @@ Definition
                                                                                     { symbolOrAliasConstructor = Id Object "app"
                                                                                     , symbolOrAliasParams =
                                                                                         [ SortVariableSort (SortVariable (Id Object "S"))
-                                                                                        , SortActualSortSortActual
-                                                                                                { sortActualName = Id Object "AExp"
-                                                                                                , sortActualSorts = []
-                                                                                                }
+                                                                                        , SortActualSort SortActual
+                                                                                            { sortActualName = Id Object "AExp"
+                                                                                            , sortActualSorts = []
+                                                                                            }
                                                                                         ]
                                                                                     }
                                                                             , applicationChildren =
                                                                                 [ MetaPattern (VariablePattern Variable
                                                                                     { variableName = Id Meta "#C"
                                                                                     , variableSort =
-                                                                                        SortActualSortSortActual
-                                                                                                { sortActualName = Id Meta "#Pattern"
-                                                                                                , sortActualSorts = []
-                                                                                                }
+                                                                                        SortActualSort SortActual
+                                                                                            { sortActualName = Id Meta "#Pattern"
+                                                                                            , sortActualSorts = []
+                                                                                            }
                                                                                     })
                                                                                 , ObjectPattern (VariablePattern Variable
                                                                                     { variableName = Id Object "HOLE"
@@ -1562,10 +1562,10 @@ Definition
                             }
                     , sentenceSymbolSorts = []
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Block"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Block"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -1575,16 +1575,16 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Stmt"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Stmt"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Block"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Block"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSortSentence SentenceSort
@@ -1599,16 +1599,16 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Block"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Block"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Stmt"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Stmt"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -1618,20 +1618,20 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Id"
-                                , sortActualSorts = []
-                                }
-                        , SortActualSortSortActual
-                                { sortActualName = Id Object "AExp"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Id"
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = Id Object "AExp"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Stmt"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Stmt"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes =
                         Attributes 
                             [ MetaPattern (ApplicationPattern Application
@@ -1689,10 +1689,10 @@ Definition
                                                         , MetaPattern (VariablePattern Variable
                                                             { variableName = Id Meta "#S"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Meta "#Sort"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Meta "#Sort"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         ]
                                                     })
@@ -1706,10 +1706,10 @@ Definition
                                                         [ ObjectPattern (VariablePattern Variable
                                                             { variableName = Id Object "ID"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Object "Id"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Object "Id"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         , ObjectPattern (ApplicationPattern Application
                                                             { applicationSymbolOrAlias =
@@ -1717,20 +1717,20 @@ Definition
                                                                     { symbolOrAliasConstructor = Id Object "app"
                                                                     , symbolOrAliasParams =
                                                                         [ SortVariableSort (SortVariable (Id Object "S"))
-                                                                        , SortActualSortSortActual
-                                                                                { sortActualName = Id Object "AExp"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        , SortActualSort SortActual
+                                                                            { sortActualName = Id Object "AExp"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                         ]
                                                                     }
                                                             , applicationChildren =
                                                                 [ MetaPattern (VariablePattern Variable
                                                                     { variableName = Id Meta "#C"
                                                                     , variableSort =
-                                                                        SortActualSortSortActual
-                                                                                { sortActualName = Id Meta "#Pattern"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        SortActualSort SortActual
+                                                                            { sortActualName = Id Meta "#Pattern"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                     })
                                                                 , ObjectPattern (VariablePattern Variable
                                                                     { variableName = Id Object "T"
@@ -1756,10 +1756,10 @@ Definition
                                     , applicationChildren =
                                         [ ObjectPattern (EqualsPattern Equals
                                             { equalsOperandSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Object "Stmt"
-                                                        , sortActualSorts = []
-                                                        }
+                                                SortActualSort SortActual
+                                                    { sortActualName = Id Object "Stmt"
+                                                    , sortActualSorts = []
+                                                    }
                                             , equalsResultSort =
                                                 SortVariableSort (SortVariable (Id Object "R"))
                                             , equalsFirst =
@@ -1773,10 +1773,10 @@ Definition
                                                         [ ObjectPattern (VariablePattern Variable
                                                             { variableName = Id Object "ID"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Object "Id"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Object "Id"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         , ObjectPattern (ApplicationPattern Application
                                                             { applicationSymbolOrAlias =
@@ -1784,20 +1784,20 @@ Definition
                                                                     { symbolOrAliasConstructor = Id Object "app"
                                                                     , symbolOrAliasParams =
                                                                         [ SortVariableSort (SortVariable (Id Object "S"))
-                                                                        , SortActualSortSortActual
-                                                                                { sortActualName = Id Object "AExp"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        , SortActualSort SortActual
+                                                                            { sortActualName = Id Object "AExp"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                         ]
                                                                     }
                                                             , applicationChildren =
                                                                 [ MetaPattern (VariablePattern Variable
                                                                     { variableName = Id Meta "#C"
                                                                     , variableSort =
-                                                                        SortActualSortSortActual
-                                                                                { sortActualName = Id Meta "#Pattern"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        SortActualSort SortActual
+                                                                            { sortActualName = Id Meta "#Pattern"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                     })
                                                                 , ObjectPattern (VariablePattern Variable
                                                                     { variableName = Id Object "T"
@@ -1815,10 +1815,10 @@ Definition
                                                             { symbolOrAliasConstructor = Id Object "app"
                                                             , symbolOrAliasParams =
                                                                 [ SortVariableSort (SortVariable (Id Object "S"))
-                                                                , SortActualSortSortActual
-                                                                        { sortActualName = Id Object "Stmt"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                , SortActualSort SortActual
+                                                                    { sortActualName = Id Object "Stmt"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                                 ]
                                                             }
                                                     , applicationChildren =
@@ -1828,10 +1828,10 @@ Definition
                                                                     { symbolOrAliasConstructor = Id Object "gamma"
                                                                     , symbolOrAliasParams =
                                                                         [ SortVariableSort (SortVariable (Id Object "S"))
-                                                                        , SortActualSortSortActual
-                                                                                { sortActualName = Id Object "Stmt"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        , SortActualSort SortActual
+                                                                            { sortActualName = Id Object "Stmt"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                         ]
                                                                     }
                                                             , applicationChildren =
@@ -1850,10 +1850,10 @@ Definition
                                                                         [ ObjectPattern (VariablePattern Variable
                                                                             { variableName = Id Object "ID"
                                                                             , variableSort =
-                                                                                SortActualSortSortActual
-                                                                                        { sortActualName = Id Object "Id"
-                                                                                        , sortActualSorts = []
-                                                                                        }
+                                                                                SortActualSort SortActual
+                                                                                    { sortActualName = Id Object "Id"
+                                                                                    , sortActualSorts = []
+                                                                                    }
                                                                             })
                                                                         , ObjectPattern (ApplicationPattern Application
                                                                             { applicationSymbolOrAlias =
@@ -1861,20 +1861,20 @@ Definition
                                                                                     { symbolOrAliasConstructor = Id Object "app"
                                                                                     , symbolOrAliasParams =
                                                                                         [ SortVariableSort (SortVariable (Id Object "S"))
-                                                                                        , SortActualSortSortActual
-                                                                                                { sortActualName = Id Object "AExp"
-                                                                                                , sortActualSorts = []
-                                                                                                }
+                                                                                        , SortActualSort SortActual
+                                                                                            { sortActualName = Id Object "AExp"
+                                                                                            , sortActualSorts = []
+                                                                                            }
                                                                                         ]
                                                                                     }
                                                                             , applicationChildren =
                                                                                 [ MetaPattern (VariablePattern Variable
                                                                                     { variableName = Id Meta "#C"
                                                                                     , variableSort =
-                                                                                        SortActualSortSortActual
-                                                                                                { sortActualName = Id Meta "#Pattern"
-                                                                                                , sortActualSorts = []
-                                                                                                }
+                                                                                        SortActualSort SortActual
+                                                                                            { sortActualName = Id Meta "#Pattern"
+                                                                                            , sortActualSorts = []
+                                                                                            }
                                                                                     })
                                                                                 , ObjectPattern (VariablePattern Variable
                                                                                     { variableName = Id Object "HOLE"
@@ -1927,24 +1927,24 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "BExp"
-                                , sortActualSorts = []
-                                }
-                        , SortActualSortSortActual
-                                { sortActualName = Id Object "Block"
-                                , sortActualSorts = []
-                                }
-                        , SortActualSortSortActual
-                                { sortActualName = Id Object "Block"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "BExp"
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = Id Object "Block"
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = Id Object "Block"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Stmt"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Stmt"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes =
                         Attributes 
                             [ MetaPattern (ApplicationPattern Application
@@ -2002,10 +2002,10 @@ Definition
                                                         , MetaPattern (VariablePattern Variable
                                                             { variableName = Id Meta "#S"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Meta "#Sort"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Meta "#Sort"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         ]
                                                     })
@@ -2022,20 +2022,20 @@ Definition
                                                                     { symbolOrAliasConstructor = Id Object "app"
                                                                     , symbolOrAliasParams =
                                                                         [ SortVariableSort (SortVariable (Id Object "S"))
-                                                                        , SortActualSortSortActual
-                                                                                { sortActualName = Id Object "BExp"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        , SortActualSort SortActual
+                                                                            { sortActualName = Id Object "BExp"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                         ]
                                                                     }
                                                             , applicationChildren =
                                                                 [ MetaPattern (VariablePattern Variable
                                                                     { variableName = Id Meta "#C"
                                                                     , variableSort =
-                                                                        SortActualSortSortActual
-                                                                                { sortActualName = Id Meta "#Pattern"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        SortActualSort SortActual
+                                                                            { sortActualName = Id Meta "#Pattern"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                     })
                                                                 , ObjectPattern (VariablePattern Variable
                                                                     { variableName = Id Object "T"
@@ -2047,18 +2047,18 @@ Definition
                                                         , ObjectPattern (VariablePattern Variable
                                                             { variableName = Id Object "B1"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Object "Block"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Object "Block"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         , ObjectPattern (VariablePattern Variable
                                                             { variableName = Id Object "B2"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Object "Block"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Object "Block"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         ]
                                                     })
@@ -2077,10 +2077,10 @@ Definition
                                     , applicationChildren =
                                         [ ObjectPattern (EqualsPattern Equals
                                             { equalsOperandSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Object "Stmt"
-                                                        , sortActualSorts = []
-                                                        }
+                                                SortActualSort SortActual
+                                                    { sortActualName = Id Object "Stmt"
+                                                    , sortActualSorts = []
+                                                    }
                                             , equalsResultSort =
                                                 SortVariableSort (SortVariable (Id Object "R"))
                                             , equalsFirst =
@@ -2097,20 +2097,20 @@ Definition
                                                                     { symbolOrAliasConstructor = Id Object "app"
                                                                     , symbolOrAliasParams =
                                                                         [ SortVariableSort (SortVariable (Id Object "S"))
-                                                                        , SortActualSortSortActual
-                                                                                { sortActualName = Id Object "BExp"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        , SortActualSort SortActual
+                                                                            { sortActualName = Id Object "BExp"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                         ]
                                                                     }
                                                             , applicationChildren =
                                                                 [ MetaPattern (VariablePattern Variable
                                                                     { variableName = Id Meta "#C"
                                                                     , variableSort =
-                                                                        SortActualSortSortActual
-                                                                                { sortActualName = Id Meta "#Pattern"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        SortActualSort SortActual
+                                                                            { sortActualName = Id Meta "#Pattern"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                     })
                                                                 , ObjectPattern (VariablePattern Variable
                                                                     { variableName = Id Object "T"
@@ -2122,18 +2122,18 @@ Definition
                                                         , ObjectPattern (VariablePattern Variable
                                                             { variableName = Id Object "B1"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Object "Block"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Object "Block"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         , ObjectPattern (VariablePattern Variable
                                                             { variableName = Id Object "B2"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Object "Block"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Object "Block"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         ]
                                                     })
@@ -2144,10 +2144,10 @@ Definition
                                                             { symbolOrAliasConstructor = Id Object "app"
                                                             , symbolOrAliasParams =
                                                                 [ SortVariableSort (SortVariable (Id Object "S"))
-                                                                , SortActualSortSortActual
-                                                                        { sortActualName = Id Object "Stmt"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                , SortActualSort SortActual
+                                                                    { sortActualName = Id Object "Stmt"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                                 ]
                                                             }
                                                     , applicationChildren =
@@ -2157,10 +2157,10 @@ Definition
                                                                     { symbolOrAliasConstructor = Id Object "gamma"
                                                                     , symbolOrAliasParams =
                                                                         [ SortVariableSort (SortVariable (Id Object "S"))
-                                                                        , SortActualSortSortActual
-                                                                                { sortActualName = Id Object "Stmt"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        , SortActualSort SortActual
+                                                                            { sortActualName = Id Object "Stmt"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                         ]
                                                                     }
                                                             , applicationChildren =
@@ -2182,20 +2182,20 @@ Definition
                                                                                     { symbolOrAliasConstructor = Id Object "app"
                                                                                     , symbolOrAliasParams =
                                                                                         [ SortVariableSort (SortVariable (Id Object "S"))
-                                                                                        , SortActualSortSortActual
-                                                                                                { sortActualName = Id Object "BExp"
-                                                                                                , sortActualSorts = []
-                                                                                                }
+                                                                                        , SortActualSort SortActual
+                                                                                            { sortActualName = Id Object "BExp"
+                                                                                            , sortActualSorts = []
+                                                                                            }
                                                                                         ]
                                                                                     }
                                                                             , applicationChildren =
                                                                                 [ MetaPattern (VariablePattern Variable
                                                                                     { variableName = Id Meta "#C"
                                                                                     , variableSort =
-                                                                                        SortActualSortSortActual
-                                                                                                { sortActualName = Id Meta "#Pattern"
-                                                                                                , sortActualSorts = []
-                                                                                                }
+                                                                                        SortActualSort SortActual
+                                                                                            { sortActualName = Id Meta "#Pattern"
+                                                                                            , sortActualSorts = []
+                                                                                            }
                                                                                     })
                                                                                 , ObjectPattern (VariablePattern Variable
                                                                                     { variableName = Id Object "HOLE"
@@ -2207,18 +2207,18 @@ Definition
                                                                         , ObjectPattern (VariablePattern Variable
                                                                             { variableName = Id Object "B1"
                                                                             , variableSort =
-                                                                                SortActualSortSortActual
-                                                                                        { sortActualName = Id Object "Block"
-                                                                                        , sortActualSorts = []
-                                                                                        }
+                                                                                SortActualSort SortActual
+                                                                                    { sortActualName = Id Object "Block"
+                                                                                    , sortActualSorts = []
+                                                                                    }
                                                                             })
                                                                         , ObjectPattern (VariablePattern Variable
                                                                             { variableName = Id Object "B2"
                                                                             , variableSort =
-                                                                                SortActualSortSortActual
-                                                                                        { sortActualName = Id Object "Block"
-                                                                                        , sortActualSorts = []
-                                                                                        }
+                                                                                SortActualSort SortActual
+                                                                                    { sortActualName = Id Object "Block"
+                                                                                    , sortActualSorts = []
+                                                                                    }
                                                                             })
                                                                         ]
                                                                     })
@@ -2264,20 +2264,20 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "BExp"
-                                , sortActualSorts = []
-                                }
-                        , SortActualSortSortActual
-                                { sortActualName = Id Object "Block"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "BExp"
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = Id Object "Block"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Stmt"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Stmt"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -2287,20 +2287,20 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Stmt"
-                                , sortActualSorts = []
-                                }
-                        , SortActualSortSortActual
-                                { sortActualName = Id Object "Stmt"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Stmt"
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = Id Object "Stmt"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Stmt"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Stmt"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes =
                         Attributes 
                             [ MetaPattern (ApplicationPattern Application
@@ -2358,10 +2358,10 @@ Definition
                                                         , MetaPattern (VariablePattern Variable
                                                             { variableName = Id Meta "#S"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Meta "#Sort"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Meta "#Sort"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         ]
                                                     })
@@ -2378,20 +2378,20 @@ Definition
                                                                     { symbolOrAliasConstructor = Id Object "app"
                                                                     , symbolOrAliasParams =
                                                                         [ SortVariableSort (SortVariable (Id Object "S"))
-                                                                        , SortActualSortSortActual
-                                                                                { sortActualName = Id Object "Stmt"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        , SortActualSort SortActual
+                                                                            { sortActualName = Id Object "Stmt"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                         ]
                                                                     }
                                                             , applicationChildren =
                                                                 [ MetaPattern (VariablePattern Variable
                                                                     { variableName = Id Meta "#C"
                                                                     , variableSort =
-                                                                        SortActualSortSortActual
-                                                                                { sortActualName = Id Meta "#Pattern"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        SortActualSort SortActual
+                                                                            { sortActualName = Id Meta "#Pattern"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                     })
                                                                 , ObjectPattern (VariablePattern Variable
                                                                     { variableName = Id Object "T"
@@ -2403,10 +2403,10 @@ Definition
                                                         , ObjectPattern (VariablePattern Variable
                                                             { variableName = Id Object "P"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Object "Stmt"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Object "Stmt"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         ]
                                                     })
@@ -2425,10 +2425,10 @@ Definition
                                     , applicationChildren =
                                         [ ObjectPattern (EqualsPattern Equals
                                             { equalsOperandSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Object "Stmt"
-                                                        , sortActualSorts = []
-                                                        }
+                                                SortActualSort SortActual
+                                                    { sortActualName = Id Object "Stmt"
+                                                    , sortActualSorts = []
+                                                    }
                                             , equalsResultSort =
                                                 SortVariableSort (SortVariable (Id Object "R"))
                                             , equalsFirst =
@@ -2445,20 +2445,20 @@ Definition
                                                                     { symbolOrAliasConstructor = Id Object "app"
                                                                     , symbolOrAliasParams =
                                                                         [ SortVariableSort (SortVariable (Id Object "S"))
-                                                                        , SortActualSortSortActual
-                                                                                { sortActualName = Id Object "Stmt"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        , SortActualSort SortActual
+                                                                            { sortActualName = Id Object "Stmt"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                         ]
                                                                     }
                                                             , applicationChildren =
                                                                 [ MetaPattern (VariablePattern Variable
                                                                     { variableName = Id Meta "#C"
                                                                     , variableSort =
-                                                                        SortActualSortSortActual
-                                                                                { sortActualName = Id Meta "#Pattern"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        SortActualSort SortActual
+                                                                            { sortActualName = Id Meta "#Pattern"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                     })
                                                                 , ObjectPattern (VariablePattern Variable
                                                                     { variableName = Id Object "T"
@@ -2470,10 +2470,10 @@ Definition
                                                         , ObjectPattern (VariablePattern Variable
                                                             { variableName = Id Object "P"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Object "Stmt"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Object "Stmt"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         ]
                                                     })
@@ -2484,10 +2484,10 @@ Definition
                                                             { symbolOrAliasConstructor = Id Object "app"
                                                             , symbolOrAliasParams =
                                                                 [ SortVariableSort (SortVariable (Id Object "S"))
-                                                                , SortActualSortSortActual
-                                                                        { sortActualName = Id Object "Stmt"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                , SortActualSort SortActual
+                                                                    { sortActualName = Id Object "Stmt"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                                 ]
                                                             }
                                                     , applicationChildren =
@@ -2497,10 +2497,10 @@ Definition
                                                                     { symbolOrAliasConstructor = Id Object "gamma"
                                                                     , symbolOrAliasParams =
                                                                         [ SortVariableSort (SortVariable (Id Object "S"))
-                                                                        , SortActualSortSortActual
-                                                                                { sortActualName = Id Object "Stmt"
-                                                                                , sortActualSorts = []
-                                                                                }
+                                                                        , SortActualSort SortActual
+                                                                            { sortActualName = Id Object "Stmt"
+                                                                            , sortActualSorts = []
+                                                                            }
                                                                         ]
                                                                     }
                                                             , applicationChildren =
@@ -2522,20 +2522,20 @@ Definition
                                                                                     { symbolOrAliasConstructor = Id Object "app"
                                                                                     , symbolOrAliasParams =
                                                                                         [ SortVariableSort (SortVariable (Id Object "S"))
-                                                                                        , SortActualSortSortActual
-                                                                                                { sortActualName = Id Object "Stmt"
-                                                                                                , sortActualSorts = []
-                                                                                                }
+                                                                                        , SortActualSort SortActual
+                                                                                            { sortActualName = Id Object "Stmt"
+                                                                                            , sortActualSorts = []
+                                                                                            }
                                                                                         ]
                                                                                     }
                                                                             , applicationChildren =
                                                                                 [ MetaPattern (VariablePattern Variable
                                                                                     { variableName = Id Meta "#C"
                                                                                     , variableSort =
-                                                                                        SortActualSortSortActual
-                                                                                                { sortActualName = Id Meta "#Pattern"
-                                                                                                , sortActualSorts = []
-                                                                                                }
+                                                                                        SortActualSort SortActual
+                                                                                            { sortActualName = Id Meta "#Pattern"
+                                                                                            , sortActualSorts = []
+                                                                                            }
                                                                                     })
                                                                                 , ObjectPattern (VariablePattern Variable
                                                                                     { variableName = Id Object "HOLE"
@@ -2547,10 +2547,10 @@ Definition
                                                                         , ObjectPattern (VariablePattern Variable
                                                                             { variableName = Id Object "P"
                                                                             , variableSort =
-                                                                                SortActualSortSortActual
-                                                                                        { sortActualName = Id Object "Stmt"
-                                                                                        , sortActualSorts = []
-                                                                                        }
+                                                                                SortActualSort SortActual
+                                                                                    { sortActualName = Id Object "Stmt"
+                                                                                    , sortActualSorts = []
+                                                                                    }
                                                                             })
                                                                         ]
                                                                     })
@@ -2601,25 +2601,25 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "List"
-                                , sortActualSorts =
-                                    [ SortActualSortSortActual
-                                            { sortActualName = Id Object "Id"
-                                            , sortActualSorts = []
-                                            }
-                                    ]
-                                }
-                        , SortActualSortSortActual
-                                { sortActualName = Id Object "Stmt"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "List"
+                            , sortActualSorts =
+                                [ SortActualSort SortActual
+                                    { sortActualName = Id Object "Id"
+                                    , sortActualSorts = []
+                                    }
+                                ]
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = Id Object "Stmt"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Pgm"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Pgm"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes =
                         Attributes 
                             [ MetaPattern (ApplicationPattern Application
@@ -2672,16 +2672,16 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Pgm"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Pgm"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "KCell"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "KCell"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes =
                         Attributes 
                             [ MetaPattern (ApplicationPattern Application
@@ -2716,25 +2716,25 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Map"
-                                , sortActualSorts =
-                                    [ SortActualSortSortActual
-                                            { sortActualName = Id Object "Id"
-                                            , sortActualSorts = []
-                                            }
-                                    , SortActualSortSortActual
-                                            { sortActualName = Id Object "Int"
-                                            , sortActualSorts = []
-                                            }
-                                    ]
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Map"
+                            , sortActualSorts =
+                                [ SortActualSort SortActual
+                                    { sortActualName = Id Object "Id"
+                                    , sortActualSorts = []
+                                    }
+                                , SortActualSort SortActual
+                                    { sortActualName = Id Object "Int"
+                                    , sortActualSorts = []
+                                    }
+                                ]
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "StateCell"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "StateCell"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes =
                         Attributes 
                             [ MetaPattern (ApplicationPattern Application
@@ -2769,20 +2769,20 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "KCell"
-                                , sortActualSorts = []
-                                }
-                        , SortActualSortSortActual
-                                { sortActualName = Id Object "StateCell"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "KCell"
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = Id Object "StateCell"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "TopCell"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "TopCell"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -2792,20 +2792,20 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "KCell"
-                                , sortActualSorts = []
-                                }
-                        , SortActualSortSortActual
-                                { sortActualName = Id Object "StateCell"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "KCell"
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = Id Object "StateCell"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "TopCell"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "TopCell"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes =
                         Attributes 
                             [ MetaPattern (ApplicationPattern Application
@@ -2853,16 +2853,16 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Pgm"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Pgm"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "TopCell"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "TopCell"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
@@ -2872,10 +2872,10 @@ Definition
                     , sentenceAxiomPattern =
                         ObjectPattern (EqualsPattern Equals
                             { equalsOperandSort =
-                                SortActualSortSortActual
-                                        { sortActualName = Id Object "TopCell"
-                                        , sortActualSorts = []
-                                        }
+                                SortActualSort SortActual
+                                    { sortActualName = Id Object "TopCell"
+                                    , sortActualSorts = []
+                                    }
                             , equalsResultSort =
                                 SortVariableSort (SortVariable (Id Object "R"))
                             , equalsFirst =
@@ -2889,10 +2889,10 @@ Definition
                                         [ ObjectPattern (VariablePattern Variable
                                             { variableName = Id Object "P"
                                             , variableSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Object "Pgm"
-                                                        , sortActualSorts = []
-                                                        }
+                                                SortActualSort SortActual
+                                                    { sortActualName = Id Object "Pgm"
+                                                    , sortActualSorts = []
+                                                    }
                                             })
                                         ]
                                     })
@@ -2914,10 +2914,10 @@ Definition
                                                 [ ObjectPattern (VariablePattern Variable
                                                     { variableName = Id Object "P"
                                                     , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Object "Pgm"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        SortActualSort SortActual
+                                                            { sortActualName = Id Object "Pgm"
+                                                            , sortActualSorts = []
+                                                            }
                                                     })
                                                 ]
                                             })
@@ -2933,14 +2933,14 @@ Definition
                                                         SymbolOrAlias
                                                             { symbolOrAliasConstructor = Id Object "emp"
                                                             , symbolOrAliasParams =
-                                                                [ SortActualSortSortActual
-                                                                        { sortActualName = Id Object "Id"
-                                                                        , sortActualSorts = []
-                                                                        }
-                                                                , SortActualSortSortActual
-                                                                        { sortActualName = Id Object "Int"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                [ SortActualSort SortActual
+                                                                    { sortActualName = Id Object "Id"
+                                                                    , sortActualSorts = []
+                                                                    }
+                                                                , SortActualSort SortActual
+                                                                    { sortActualName = Id Object "Int"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                                 ]
                                                             }
                                                     , applicationChildren = []
@@ -3066,19 +3066,19 @@ Definition
                                         SymbolOrAlias
                                             { symbolOrAliasConstructor = Id Object "app"
                                             , symbolOrAliasParams =
-                                                [ SortActualSortSortActual
-                                                        { sortActualName = Id Object "Map"
-                                                        , sortActualSorts =
-                                                            [ SortActualSortSortActual
-                                                                    { sortActualName = Id Object "Id"
-                                                                    , sortActualSorts = []
-                                                                    }
-                                                            , SortActualSortSortActual
-                                                                    { sortActualName = Id Object "Int"
-                                                                    , sortActualSorts = []
-                                                                    }
-                                                            ]
-                                                        }
+                                                [ SortActualSort SortActual
+                                                    { sortActualName = Id Object "Map"
+                                                    , sortActualSorts =
+                                                        [ SortActualSort SortActual
+                                                            { sortActualName = Id Object "Id"
+                                                            , sortActualSorts = []
+                                                            }
+                                                        , SortActualSort SortActual
+                                                            { sortActualName = Id Object "Int"
+                                                            , sortActualSorts = []
+                                                            }
+                                                        ]
+                                                    }
                                                 , SortVariableSort (SortVariable (Id Object "S"))
                                                 ]
                                             }
@@ -3088,39 +3088,39 @@ Definition
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = Id Object "app"
                                                     , symbolOrAliasParams =
-                                                        [ SortActualSortSortActual
-                                                                { sortActualName = Id Object "AExp"
-                                                                , sortActualSorts = []
-                                                                }
-                                                        , SortActualSortSortActual
-                                                                { sortActualName = Id Object "Ctxt"
-                                                                , sortActualSorts =
-                                                                    [ SortActualSortSortActual
-                                                                            { sortActualName = Id Object "Map"
-                                                                            , sortActualSorts =
-                                                                                [ SortActualSortSortActual
-                                                                                        { sortActualName = Id Object "Id"
-                                                                                        , sortActualSorts = []
-                                                                                        }
-                                                                                , SortActualSortSortActual
-                                                                                        { sortActualName = Id Object "Int"
-                                                                                        , sortActualSorts = []
-                                                                                        }
-                                                                                ]
+                                                        [ SortActualSort SortActual
+                                                            { sortActualName = Id Object "AExp"
+                                                            , sortActualSorts = []
+                                                            }
+                                                        , SortActualSort SortActual
+                                                            { sortActualName = Id Object "Ctxt"
+                                                            , sortActualSorts =
+                                                                [ SortActualSort SortActual
+                                                                    { sortActualName = Id Object "Map"
+                                                                    , sortActualSorts =
+                                                                        [ SortActualSort SortActual
+                                                                            { sortActualName = Id Object "Id"
+                                                                            , sortActualSorts = []
                                                                             }
-                                                                    , SortVariableSort (SortVariable (Id Object "S"))
-                                                                    ]
-                                                                }
+                                                                        , SortActualSort SortActual
+                                                                            { sortActualName = Id Object "Int"
+                                                                            , sortActualSorts = []
+                                                                            }
+                                                                        ]
+                                                                    }
+                                                                , SortVariableSort (SortVariable (Id Object "S"))
+                                                                ]
+                                                            }
                                                         ]
                                                     }
                                             , applicationChildren =
                                                 [ MetaPattern (VariablePattern Variable
                                                     { variableName = Id Meta "#C"
                                                     , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Meta "#Pattern"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        SortActualSort SortActual
+                                                            { sortActualName = Id Meta "#Pattern"
+                                                            , sortActualSorts = []
+                                                            }
                                                     })
                                                 , ObjectPattern (ApplicationPattern Application
                                                     { applicationSymbolOrAlias =
@@ -3132,10 +3132,10 @@ Definition
                                                         [ ObjectPattern (VariablePattern Variable
                                                             { variableName = Id Object "X"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Object "Id"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Object "Id"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         ]
                                                     })
@@ -3146,32 +3146,32 @@ Definition
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = Id Object "bind"
                                                     , symbolOrAliasParams =
-                                                        [ SortActualSortSortActual
-                                                                { sortActualName = Id Object "Id"
-                                                                , sortActualSorts = []
-                                                                }
-                                                        , SortActualSortSortActual
-                                                                { sortActualName = Id Object "Int"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        [ SortActualSort SortActual
+                                                            { sortActualName = Id Object "Id"
+                                                            , sortActualSorts = []
+                                                            }
+                                                        , SortActualSort SortActual
+                                                            { sortActualName = Id Object "Int"
+                                                            , sortActualSorts = []
+                                                            }
                                                         ]
                                                     }
                                             , applicationChildren =
                                                 [ ObjectPattern (VariablePattern Variable
                                                     { variableName = Id Object "X"
                                                     , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Object "Id"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        SortActualSort SortActual
+                                                            { sortActualName = Id Object "Id"
+                                                            , sortActualSorts = []
+                                                            }
                                                     })
                                                 , ObjectPattern (VariablePattern Variable
                                                     { variableName = Id Object "I"
                                                     , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Object "Int"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        SortActualSort SortActual
+                                                            { sortActualName = Id Object "Int"
+                                                            , sortActualSorts = []
+                                                            }
                                                     })
                                                 ]
                                             })
@@ -3182,19 +3182,19 @@ Definition
                                         SymbolOrAlias
                                             { symbolOrAliasConstructor = Id Object "app"
                                             , symbolOrAliasParams =
-                                                [ SortActualSortSortActual
-                                                        { sortActualName = Id Object "Map"
-                                                        , sortActualSorts =
-                                                            [ SortActualSortSortActual
-                                                                    { sortActualName = Id Object "Id"
-                                                                    , sortActualSorts = []
-                                                                    }
-                                                            , SortActualSortSortActual
-                                                                    { sortActualName = Id Object "Int"
-                                                                    , sortActualSorts = []
-                                                                    }
-                                                            ]
-                                                        }
+                                                [ SortActualSort SortActual
+                                                    { sortActualName = Id Object "Map"
+                                                    , sortActualSorts =
+                                                        [ SortActualSort SortActual
+                                                            { sortActualName = Id Object "Id"
+                                                            , sortActualSorts = []
+                                                            }
+                                                        , SortActualSort SortActual
+                                                            { sortActualName = Id Object "Int"
+                                                            , sortActualSorts = []
+                                                            }
+                                                        ]
+                                                    }
                                                 , SortVariableSort (SortVariable (Id Object "S"))
                                                 ]
                                             }
@@ -3204,39 +3204,39 @@ Definition
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = Id Object "app"
                                                     , symbolOrAliasParams =
-                                                        [ SortActualSortSortActual
-                                                                { sortActualName = Id Object "AExp"
-                                                                , sortActualSorts = []
-                                                                }
-                                                        , SortActualSortSortActual
-                                                                { sortActualName = Id Object "Ctxt"
-                                                                , sortActualSorts =
-                                                                    [ SortActualSortSortActual
-                                                                            { sortActualName = Id Object "Map"
-                                                                            , sortActualSorts =
-                                                                                [ SortActualSortSortActual
-                                                                                        { sortActualName = Id Object "Id"
-                                                                                        , sortActualSorts = []
-                                                                                        }
-                                                                                , SortActualSortSortActual
-                                                                                        { sortActualName = Id Object "Int"
-                                                                                        , sortActualSorts = []
-                                                                                        }
-                                                                                ]
+                                                        [ SortActualSort SortActual
+                                                            { sortActualName = Id Object "AExp"
+                                                            , sortActualSorts = []
+                                                            }
+                                                        , SortActualSort SortActual
+                                                            { sortActualName = Id Object "Ctxt"
+                                                            , sortActualSorts =
+                                                                [ SortActualSort SortActual
+                                                                    { sortActualName = Id Object "Map"
+                                                                    , sortActualSorts =
+                                                                        [ SortActualSort SortActual
+                                                                            { sortActualName = Id Object "Id"
+                                                                            , sortActualSorts = []
                                                                             }
-                                                                    , SortVariableSort (SortVariable (Id Object "S"))
-                                                                    ]
-                                                                }
+                                                                        , SortActualSort SortActual
+                                                                            { sortActualName = Id Object "Int"
+                                                                            , sortActualSorts = []
+                                                                            }
+                                                                        ]
+                                                                    }
+                                                                , SortVariableSort (SortVariable (Id Object "S"))
+                                                                ]
+                                                            }
                                                         ]
                                                     }
                                             , applicationChildren =
                                                 [ MetaPattern (VariablePattern Variable
                                                     { variableName = Id Meta "#C"
                                                     , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Meta "#Pattern"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        SortActualSort SortActual
+                                                            { sortActualName = Id Meta "#Pattern"
+                                                            , sortActualSorts = []
+                                                            }
                                                     })
                                                 , ObjectPattern (ApplicationPattern Application
                                                     { applicationSymbolOrAlias =
@@ -3248,10 +3248,10 @@ Definition
                                                         [ ObjectPattern (VariablePattern Variable
                                                             { variableName = Id Object "I"
                                                             , variableSort =
-                                                                SortActualSortSortActual
-                                                                        { sortActualName = Id Object "Int"
-                                                                        , sortActualSorts = []
-                                                                        }
+                                                                SortActualSort SortActual
+                                                                    { sortActualName = Id Object "Int"
+                                                                    , sortActualSorts = []
+                                                                    }
                                                             })
                                                         ]
                                                     })
@@ -3262,32 +3262,32 @@ Definition
                                                 SymbolOrAlias
                                                     { symbolOrAliasConstructor = Id Object "bind"
                                                     , symbolOrAliasParams =
-                                                        [ SortActualSortSortActual
-                                                                { sortActualName = Id Object "Id"
-                                                                , sortActualSorts = []
-                                                                }
-                                                        , SortActualSortSortActual
-                                                                { sortActualName = Id Object "Int"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        [ SortActualSort SortActual
+                                                            { sortActualName = Id Object "Id"
+                                                            , sortActualSorts = []
+                                                            }
+                                                        , SortActualSort SortActual
+                                                            { sortActualName = Id Object "Int"
+                                                            , sortActualSorts = []
+                                                            }
                                                         ]
                                                     }
                                             , applicationChildren =
                                                 [ ObjectPattern (VariablePattern Variable
                                                     { variableName = Id Object "X"
                                                     , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Object "Id"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        SortActualSort SortActual
+                                                            { sortActualName = Id Object "Id"
+                                                            , sortActualSorts = []
+                                                            }
                                                     })
                                                 , ObjectPattern (VariablePattern Variable
                                                     { variableName = Id Object "I"
                                                     , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Object "Int"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        SortActualSort SortActual
+                                                            { sortActualName = Id Object "Int"
+                                                            , sortActualSorts = []
+                                                            }
                                                     })
                                                 ]
                                             })

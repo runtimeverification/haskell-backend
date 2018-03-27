@@ -18,10 +18,10 @@ Definition
                                 ]
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Nat"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Nat"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
                         SortVariableSort (SortVariable (Id Object "S"))

@@ -28,20 +28,20 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Nat"
-                                , sortActualSorts = []
-                                }
-                        , SortActualSortSortActual
-                                { sortActualName = Id Object "Nat"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Nat"
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = Id Object "Nat"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Nat"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Nat"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes =
                         Attributes 
                             [ MetaPattern (ApplicationPattern Application

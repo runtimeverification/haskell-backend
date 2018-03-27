@@ -17,10 +17,10 @@ Definition
                             }
                     , sentenceSymbolSorts = []
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "S"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "S"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 ]

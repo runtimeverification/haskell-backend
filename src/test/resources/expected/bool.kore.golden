@@ -17,10 +17,10 @@ Definition
                             }
                     , sentenceSymbolSorts = []
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Bool"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Bool"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -31,10 +31,10 @@ Definition
                             }
                     , sentenceSymbolSorts = []
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Bool"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Bool"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -44,20 +44,20 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Bool"
-                                , sortActualSorts = []
-                                }
-                        , SortActualSortSortActual
-                                { sortActualName = Id Object "Bool"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Bool"
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = Id Object "Bool"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Bool"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Bool"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -67,20 +67,20 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Bool"
-                                , sortActualSorts = []
-                                }
-                        , SortActualSortSortActual
-                                { sortActualName = Id Object "Bool"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Bool"
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = Id Object "Bool"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Bool"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Bool"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
@@ -90,16 +90,16 @@ Definition
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
-                        [ SortActualSortSortActual
-                                { sortActualName = Id Object "Bool"
-                                , sortActualSorts = []
-                                }
+                        [ SortActualSort SortActual
+                            { sortActualName = Id Object "Bool"
+                            , sortActualSorts = []
+                            }
                         ]
                     , sentenceSymbolReturnSort =
-                        SortActualSortSortActual
-                                { sortActualName = Id Object "Bool"
-                                , sortActualSorts = []
-                                }
+                        SortActualSort SortActual
+                            { sortActualName = Id Object "Bool"
+                            , sortActualSorts = []
+                            }
                     , sentenceSymbolAttributes = Attributes []
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
@@ -107,10 +107,10 @@ Definition
                     , sentenceAxiomPattern =
                         ObjectPattern (OrPattern Or
                             { orSort =
-                                SortActualSortSortActual
-                                        { sortActualName = Id Object "Bool"
-                                        , sortActualSorts = []
-                                        }
+                                SortActualSort SortActual
+                                    { sortActualName = Id Object "Bool"
+                                    , sortActualSorts = []
+                                    }
                             , orFirst =
                                 ObjectPattern (ApplicationPattern Application
                                     { applicationSymbolOrAlias =
@@ -137,17 +137,17 @@ Definition
                     , sentenceAxiomPattern =
                         ObjectPattern (NotPattern Not
                             { notSort =
-                                SortActualSortSortActual
-                                        { sortActualName = Id Object "Bool"
-                                        , sortActualSorts = []
-                                        }
+                                SortActualSort SortActual
+                                    { sortActualName = Id Object "Bool"
+                                    , sortActualSorts = []
+                                    }
                             , notChild =
                                 ObjectPattern (AndPattern And
                                     { andSort =
-                                        SortActualSortSortActual
-                                                { sortActualName = Id Object "Bool"
-                                                , sortActualSorts = []
-                                                }
+                                        SortActualSort SortActual
+                                            { sortActualName = Id Object "Bool"
+                                            , sortActualSorts = []
+                                            }
                                     , andFirst =
                                         ObjectPattern (ApplicationPattern Application
                                             { applicationSymbolOrAlias =
@@ -182,28 +182,28 @@ Definition
                                 Variable
                                     { variableName = Id Object "T"
                                     , variableSort =
-                                        SortActualSortSortActual
-                                                { sortActualName = Id Object "Bool"
-                                                , sortActualSorts = []
-                                                }
+                                        SortActualSort SortActual
+                                            { sortActualName = Id Object "Bool"
+                                            , sortActualSorts = []
+                                            }
                                     }
                             , existsChild =
                                 ObjectPattern (EqualsPattern Equals
                                     { equalsOperandSort =
-                                        SortActualSortSortActual
-                                                { sortActualName = Id Object "Bool"
-                                                , sortActualSorts = []
-                                                }
+                                        SortActualSort SortActual
+                                            { sortActualName = Id Object "Bool"
+                                            , sortActualSorts = []
+                                            }
                                     , equalsResultSort =
                                         SortVariableSort (SortVariable (Id Object "S"))
                                     , equalsFirst =
                                         ObjectPattern (VariablePattern Variable
                                             { variableName = Id Object "T"
                                             , variableSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Object "Bool"
-                                                        , sortActualSorts = []
-                                                        }
+                                                SortActualSort SortActual
+                                                    { sortActualName = Id Object "Bool"
+                                                    , sortActualSorts = []
+                                                    }
                                             })
                                     , equalsSecond =
                                         ObjectPattern (ApplicationPattern Application
@@ -230,28 +230,28 @@ Definition
                                 Variable
                                     { variableName = Id Object "T"
                                     , variableSort =
-                                        SortActualSortSortActual
-                                                { sortActualName = Id Object "Bool"
-                                                , sortActualSorts = []
-                                                }
+                                        SortActualSort SortActual
+                                            { sortActualName = Id Object "Bool"
+                                            , sortActualSorts = []
+                                            }
                                     }
                             , existsChild =
                                 ObjectPattern (EqualsPattern Equals
                                     { equalsOperandSort =
-                                        SortActualSortSortActual
-                                                { sortActualName = Id Object "Bool"
-                                                , sortActualSorts = []
-                                                }
+                                        SortActualSort SortActual
+                                            { sortActualName = Id Object "Bool"
+                                            , sortActualSorts = []
+                                            }
                                     , equalsResultSort =
                                         SortVariableSort (SortVariable (Id Object "S"))
                                     , equalsFirst =
                                         ObjectPattern (VariablePattern Variable
                                             { variableName = Id Object "T"
                                             , variableSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Object "Bool"
-                                                        , sortActualSorts = []
-                                                        }
+                                                SortActualSort SortActual
+                                                    { sortActualName = Id Object "Bool"
+                                                    , sortActualSorts = []
+                                                    }
                                             })
                                     , equalsSecond =
                                         ObjectPattern (ApplicationPattern Application
@@ -278,28 +278,28 @@ Definition
                                 Variable
                                     { variableName = Id Object "T"
                                     , variableSort =
-                                        SortActualSortSortActual
-                                                { sortActualName = Id Object "Bool"
-                                                , sortActualSorts = []
-                                                }
+                                        SortActualSort SortActual
+                                            { sortActualName = Id Object "Bool"
+                                            , sortActualSorts = []
+                                            }
                                     }
                             , existsChild =
                                 ObjectPattern (EqualsPattern Equals
                                     { equalsOperandSort =
-                                        SortActualSortSortActual
-                                                { sortActualName = Id Object "Bool"
-                                                , sortActualSorts = []
-                                                }
+                                        SortActualSort SortActual
+                                            { sortActualName = Id Object "Bool"
+                                            , sortActualSorts = []
+                                            }
                                     , equalsResultSort =
                                         SortVariableSort (SortVariable (Id Object "S"))
                                     , equalsFirst =
                                         ObjectPattern (VariablePattern Variable
                                             { variableName = Id Object "T"
                                             , variableSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Object "Bool"
-                                                        , sortActualSorts = []
-                                                        }
+                                                SortActualSort SortActual
+                                                    { sortActualName = Id Object "Bool"
+                                                    , sortActualSorts = []
+                                                    }
                                             })
                                     , equalsSecond =
                                         ObjectPattern (ApplicationPattern Application
@@ -312,18 +312,18 @@ Definition
                                                 [ ObjectPattern (VariablePattern Variable
                                                     { variableName = Id Object "X"
                                                     , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Object "Bool"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        SortActualSort SortActual
+                                                            { sortActualName = Id Object "Bool"
+                                                            , sortActualSorts = []
+                                                            }
                                                     })
                                                 , ObjectPattern (VariablePattern Variable
                                                     { variableName = Id Object "Y"
                                                     , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Object "Bool"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        SortActualSort SortActual
+                                                            { sortActualName = Id Object "Bool"
+                                                            , sortActualSorts = []
+                                                            }
                                                     })
                                                 ]
                                             })
@@ -343,28 +343,28 @@ Definition
                                 Variable
                                     { variableName = Id Object "T"
                                     , variableSort =
-                                        SortActualSortSortActual
-                                                { sortActualName = Id Object "Bool"
-                                                , sortActualSorts = []
-                                                }
+                                        SortActualSort SortActual
+                                            { sortActualName = Id Object "Bool"
+                                            , sortActualSorts = []
+                                            }
                                     }
                             , existsChild =
                                 ObjectPattern (EqualsPattern Equals
                                     { equalsOperandSort =
-                                        SortActualSortSortActual
-                                                { sortActualName = Id Object "Bool"
-                                                , sortActualSorts = []
-                                                }
+                                        SortActualSort SortActual
+                                            { sortActualName = Id Object "Bool"
+                                            , sortActualSorts = []
+                                            }
                                     , equalsResultSort =
                                         SortVariableSort (SortVariable (Id Object "S"))
                                     , equalsFirst =
                                         ObjectPattern (VariablePattern Variable
                                             { variableName = Id Object "T"
                                             , variableSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Object "Bool"
-                                                        , sortActualSorts = []
-                                                        }
+                                                SortActualSort SortActual
+                                                    { sortActualName = Id Object "Bool"
+                                                    , sortActualSorts = []
+                                                    }
                                             })
                                     , equalsSecond =
                                         ObjectPattern (ApplicationPattern Application
@@ -377,18 +377,18 @@ Definition
                                                 [ ObjectPattern (VariablePattern Variable
                                                     { variableName = Id Object "X"
                                                     , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Object "Bool"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        SortActualSort SortActual
+                                                            { sortActualName = Id Object "Bool"
+                                                            , sortActualSorts = []
+                                                            }
                                                     })
                                                 , ObjectPattern (VariablePattern Variable
                                                     { variableName = Id Object "Y"
                                                     , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Object "Bool"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        SortActualSort SortActual
+                                                            { sortActualName = Id Object "Bool"
+                                                            , sortActualSorts = []
+                                                            }
                                                     })
                                                 ]
                                             })
@@ -408,28 +408,28 @@ Definition
                                 Variable
                                     { variableName = Id Object "T"
                                     , variableSort =
-                                        SortActualSortSortActual
-                                                { sortActualName = Id Object "Bool"
-                                                , sortActualSorts = []
-                                                }
+                                        SortActualSort SortActual
+                                            { sortActualName = Id Object "Bool"
+                                            , sortActualSorts = []
+                                            }
                                     }
                             , existsChild =
                                 ObjectPattern (EqualsPattern Equals
                                     { equalsOperandSort =
-                                        SortActualSortSortActual
-                                                { sortActualName = Id Object "Bool"
-                                                , sortActualSorts = []
-                                                }
+                                        SortActualSort SortActual
+                                            { sortActualName = Id Object "Bool"
+                                            , sortActualSorts = []
+                                            }
                                     , equalsResultSort =
                                         SortVariableSort (SortVariable (Id Object "S"))
                                     , equalsFirst =
                                         ObjectPattern (VariablePattern Variable
                                             { variableName = Id Object "T"
                                             , variableSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Object "Bool"
-                                                        , sortActualSorts = []
-                                                        }
+                                                SortActualSort SortActual
+                                                    { sortActualName = Id Object "Bool"
+                                                    , sortActualSorts = []
+                                                    }
                                             })
                                     , equalsSecond =
                                         ObjectPattern (ApplicationPattern Application
@@ -442,10 +442,10 @@ Definition
                                                 [ ObjectPattern (VariablePattern Variable
                                                     { variableName = Id Object "X"
                                                     , variableSort =
-                                                        SortActualSortSortActual
-                                                                { sortActualName = Id Object "Bool"
-                                                                , sortActualSorts = []
-                                                                }
+                                                        SortActualSort SortActual
+                                                            { sortActualName = Id Object "Bool"
+                                                            , sortActualSorts = []
+                                                            }
                                                     })
                                                 ]
                                             })
@@ -460,10 +460,10 @@ Definition
                     , sentenceAxiomPattern =
                         ObjectPattern (EqualsPattern Equals
                             { equalsOperandSort =
-                                SortActualSortSortActual
-                                        { sortActualName = Id Object "Bool"
-                                        , sortActualSorts = []
-                                        }
+                                SortActualSort SortActual
+                                    { sortActualName = Id Object "Bool"
+                                    , sortActualSorts = []
+                                    }
                             , equalsResultSort =
                                 SortVariableSort (SortVariable (Id Object "S"))
                             , equalsFirst =
@@ -485,10 +485,10 @@ Definition
                                         , ObjectPattern (VariablePattern Variable
                                             { variableName = Id Object "X"
                                             , variableSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Object "Bool"
-                                                        , sortActualSorts = []
-                                                        }
+                                                SortActualSort SortActual
+                                                    { sortActualName = Id Object "Bool"
+                                                    , sortActualSorts = []
+                                                    }
                                             })
                                         ]
                                     })
@@ -496,10 +496,10 @@ Definition
                                 ObjectPattern (VariablePattern Variable
                                     { variableName = Id Object "X"
                                     , variableSort =
-                                        SortActualSortSortActual
-                                                { sortActualName = Id Object "Bool"
-                                                , sortActualSorts = []
-                                                }
+                                        SortActualSort SortActual
+                                            { sortActualName = Id Object "Bool"
+                                            , sortActualSorts = []
+                                            }
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
@@ -511,10 +511,10 @@ Definition
                     , sentenceAxiomPattern =
                         ObjectPattern (EqualsPattern Equals
                             { equalsOperandSort =
-                                SortActualSortSortActual
-                                        { sortActualName = Id Object "Bool"
-                                        , sortActualSorts = []
-                                        }
+                                SortActualSort SortActual
+                                    { sortActualName = Id Object "Bool"
+                                    , sortActualSorts = []
+                                    }
                             , equalsResultSort =
                                 SortVariableSort (SortVariable (Id Object "S"))
                             , equalsFirst =
@@ -536,10 +536,10 @@ Definition
                                         , ObjectPattern (VariablePattern Variable
                                             { variableName = Id Object "X"
                                             , variableSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Object "Bool"
-                                                        , sortActualSorts = []
-                                                        }
+                                                SortActualSort SortActual
+                                                    { sortActualName = Id Object "Bool"
+                                                    , sortActualSorts = []
+                                                    }
                                             })
                                         ]
                                     })
@@ -562,10 +562,10 @@ Definition
                     , sentenceAxiomPattern =
                         ObjectPattern (EqualsPattern Equals
                             { equalsOperandSort =
-                                SortActualSortSortActual
-                                        { sortActualName = Id Object "Bool"
-                                        , sortActualSorts = []
-                                        }
+                                SortActualSort SortActual
+                                    { sortActualName = Id Object "Bool"
+                                    , sortActualSorts = []
+                                    }
                             , equalsResultSort =
                                 SortVariableSort (SortVariable (Id Object "S"))
                             , equalsFirst =
@@ -587,10 +587,10 @@ Definition
                                         , ObjectPattern (VariablePattern Variable
                                             { variableName = Id Object "X"
                                             , variableSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Object "Bool"
-                                                        , sortActualSorts = []
-                                                        }
+                                                SortActualSort SortActual
+                                                    { sortActualName = Id Object "Bool"
+                                                    , sortActualSorts = []
+                                                    }
                                             })
                                         ]
                                     })
@@ -613,10 +613,10 @@ Definition
                     , sentenceAxiomPattern =
                         ObjectPattern (EqualsPattern Equals
                             { equalsOperandSort =
-                                SortActualSortSortActual
-                                        { sortActualName = Id Object "Bool"
-                                        , sortActualSorts = []
-                                        }
+                                SortActualSort SortActual
+                                    { sortActualName = Id Object "Bool"
+                                    , sortActualSorts = []
+                                    }
                             , equalsResultSort =
                                 SortVariableSort (SortVariable (Id Object "S"))
                             , equalsFirst =
@@ -638,10 +638,10 @@ Definition
                                         , ObjectPattern (VariablePattern Variable
                                             { variableName = Id Object "X"
                                             , variableSort =
-                                                SortActualSortSortActual
-                                                        { sortActualName = Id Object "Bool"
-                                                        , sortActualSorts = []
-                                                        }
+                                                SortActualSort SortActual
+                                                    { sortActualName = Id Object "Bool"
+                                                    , sortActualSorts = []
+                                                    }
                                             })
                                         ]
                                     })
@@ -649,10 +649,10 @@ Definition
                                 ObjectPattern (VariablePattern Variable
                                     { variableName = Id Object "X"
                                     , variableSort =
-                                        SortActualSortSortActual
-                                                { sortActualName = Id Object "Bool"
-                                                , sortActualSorts = []
-                                                }
+                                        SortActualSort SortActual
+                                            { sortActualName = Id Object "Bool"
+                                            , sortActualSorts = []
+                                            }
                                     })
                             })
                     , sentenceAxiomAttributes = Attributes []
@@ -664,10 +664,10 @@ Definition
                     , sentenceAxiomPattern =
                         ObjectPattern (EqualsPattern Equals
                             { equalsOperandSort =
-                                SortActualSortSortActual
-                                        { sortActualName = Id Object "Bool"
-                                        , sortActualSorts = []
-                                        }
+                                SortActualSort SortActual
+                                    { sortActualName = Id Object "Bool"
+                                    , sortActualSorts = []
+                                    }
                             , equalsResultSort =
                                 SortVariableSort (SortVariable (Id Object "S"))
                             , equalsFirst =
@@ -707,10 +707,10 @@ Definition
                     , sentenceAxiomPattern =
                         ObjectPattern (EqualsPattern Equals
                             { equalsOperandSort =
-                                SortActualSortSortActual
-                                        { sortActualName = Id Object "Bool"
-                                        , sortActualSorts = []
-                                        }
+                                SortActualSort SortActual
+                                    { sortActualName = Id Object "Bool"
+                                    , sortActualSorts = []
+                                    }
                             , equalsResultSort =
                                 SortVariableSort (SortVariable (Id Object "S"))
                             , equalsFirst =
