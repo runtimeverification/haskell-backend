@@ -12,6 +12,7 @@ import           Data.Kore.MetaML.AST
 import           Data.Kore.MetaML.Builders
 import           Data.Kore.MetaML.BuildersImpl
 import           Data.Kore.MetaML.Lift
+import           Data.Kore.MetaML.Unlift
 
 variablePattern :: String -> Sort Meta -> CommonMetaPattern
 variablePattern name sort = fillCheckSort sort (unparameterizedVariable_ name)
@@ -998,6 +999,18 @@ prettyAssertEqual x y =
         )
         x
         y
+
+testLiftUnlift
+    :: (LiftableToMetaML a, UnliftableFromMetaML a)
+    => String
+    -> a
+    -> CommonMetaPattern
+    -> IO ()
+testLiftUnlift message mixed metaPattern =
+    testGroup message
+        [
+            testCase "Lifting"
+        ]
 
 
 natSort :: Sort Object
