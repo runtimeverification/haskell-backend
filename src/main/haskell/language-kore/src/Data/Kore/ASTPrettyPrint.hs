@@ -644,6 +644,11 @@ instance
             , writeListField "definitionModules" definitionModules d
             ]
 
+instance PrettyPrint a => PrettyPrint (Maybe a) where
+    prettyPrint flags (Just x) =
+        writeOneFieldStruct flags "Just" x
+    prettyPrint _ Nothing = write "Nothing"
+
 instance PrettyPrint (MetaMLPattern Variable) where
     prettyPrint flags p =
         writeOneFieldStruct flags "Fix" (unFix p)

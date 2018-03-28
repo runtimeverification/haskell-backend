@@ -1,9 +1,14 @@
-module Data.Kore.MetaML.LiftTest where
+{-# LANGUAGE FlexibleContexts #-}
+module Data.Kore.MetaML.LiftUnliftTest where
 
 import           Test.Tasty                       (TestTree, testGroup)
-import           Test.Tasty.HUnit                 (assertEqual, testCase)
+import           Test.Tasty.HUnit                 (testCase)
 
+import           Test.Tasty.HUnit.Extensions
+
+import           Data.CallStack
 import           Data.Fix
+
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.ASTPrettyPrint
@@ -21,542 +26,453 @@ liftTests :: TestTree
 liftTests =
     testGroup
         "Lifting Tests"
-        [ testCase "Lifting an Id"
-            (prettyAssertEqual
-                (Fix (StringLiteralPattern (StringLiteral "object")))
-                (liftToMeta (Id "object" :: Id Object))
-            )
-        , testCase "Lifting a Meta Pattern"
-            (prettyAssertEqual
-                metaStringPattern
-                (liftToMeta unifiedStringPattern)
-            )
-        , testCase "Lifting Bottom"
-            (prettyAssertEqual
-                (Fix
-                    (apply (metaMLPatternHead BottomPatternType)
-                        [ variablePattern "#a" sortMetaSort ]
-                    )
-                )
-                (liftToMeta
-                    (ObjectPattern
-                        ( BottomPattern Bottom
-                            { bottomSort = SortVariableSort
-                                (SortVariable (Id "a"))
-                            }
-                        )
-                    ::UnifiedPattern)
+        [ testLiftUnlift "Id"
+            (Fix (StringLiteralPattern (StringLiteral "object")))
+            (Id "object" :: Id Object)
+        , testLiftUnlift "Meta Pattern"
+            metaStringPattern
+            unifiedStringPattern
+        , testLiftUnlift "Bottom"
+            (Fix
+                (apply (metaMLPatternHead BottomPatternType)
+                    [ variablePattern "#a" sortMetaSort ]
                 )
             )
-        , testCase "Lifting Top"
-            (prettyAssertEqual
-                (Fix
-                    (apply (metaMLPatternHead TopPatternType)
-                        [ variablePattern "#a" sortMetaSort ]
-                    )
+            (ObjectPattern
+                ( BottomPattern Bottom
+                    { bottomSort = SortVariableSort
+                        (SortVariable (Id "a"))
+                    }
                 )
-                (liftToMeta
-                    (ObjectPattern
-                        ( TopPattern Top
-                            { topSort =
-                                SortVariableSort (SortVariable (Id "a"))
-                            }
-                        )
-                    ::UnifiedPattern)
+            ::UnifiedPattern)
+        , testLiftUnlift "Top"
+            (Fix
+                (apply (metaMLPatternHead TopPatternType)
+                    [ variablePattern "#a" sortMetaSort ]
                 )
             )
-        , testCase "Lifting Ceil"
-            (prettyAssertEqual
-                (Fix
-                    (apply (metaMLPatternHead CeilPatternType)
-                        [ variablePattern "#b" sortMetaSort
-                        , variablePattern "#a" sortMetaSort
-                        , metaStringPattern
-                        ]
-                    )
+            (ObjectPattern
+                ( TopPattern Top
+                    { topSort =
+                        SortVariableSort (SortVariable (Id "a"))
+                    }
                 )
-                (liftToMeta
-                    (ObjectPattern
-                        (CeilPattern Ceil
-                            { ceilResultSort =
-                                SortVariableSort (SortVariable (Id "a"))
-                            , ceilOperandSort =
-                                SortVariableSort (SortVariable (Id "b"))
-                            , ceilChild = unifiedStringPattern
-                            }
-                        )
-                    )
-                )
-            )
-        , testCase "Lifting Floor"
-            (prettyAssertEqual
-                (Fix
-                    (apply (metaMLPatternHead FloorPatternType)
-                        [ variablePattern "#b" sortMetaSort
-                        , variablePattern "#a" sortMetaSort
-                        , metaStringPattern
-                        ]
-                    )
-                )
-                (liftToMeta
-                    (ObjectPattern
-                        (FloorPattern Floor
-                            { floorResultSort =
-                                SortVariableSort (SortVariable (Id "a"))
-                            , floorOperandSort =
-                                SortVariableSort (SortVariable (Id "b"))
-                            , floorChild = unifiedStringPattern
-                            }
-                        )
-                    )
-                )
-            )
-        , testCase "Lifting Equals"
-            (prettyAssertEqual
-                (Fix
-                    (apply (metaMLPatternHead EqualsPatternType)
-                        [ variablePattern "#b" sortMetaSort
-                        , variablePattern "#a" sortMetaSort
-                        , metaStringPattern
-                        , metaStringPattern
-                        ]
-                    )
-                )
-                (liftToMeta
-                    (ObjectPattern
-                        (EqualsPattern Equals
-                            { equalsResultSort =
-                                SortVariableSort (SortVariable (Id "a"))
-                            , equalsOperandSort =
-                                SortVariableSort (SortVariable (Id "b"))
-                            , equalsFirst = unifiedStringPattern
-                            , equalsSecond = unifiedStringPattern
-                            }
-                        )
-                    )
-                )
-            )
-        , testCase "Lifting In"
-            (prettyAssertEqual
-                (Fix
-                    (apply (metaMLPatternHead InPatternType)
-                        [ variablePattern "#b" sortMetaSort
-                        , variablePattern "#a" sortMetaSort
-                        , metaStringPattern
-                        , metaStringPattern
-                        ]
-                    )
-                )
-                (liftToMeta
-                    (ObjectPattern
-                        (InPattern In
-                            { inResultSort =
-                                SortVariableSort (SortVariable (Id "a"))
-                            , inOperandSort =
-                                SortVariableSort (SortVariable (Id "b"))
-                            , inContainedChild = unifiedStringPattern
-                            , inContainingChild = unifiedStringPattern
-                            }
-                        )
-                    )
-                )
-            )
-        , testCase "Lifting Forall"
-            (prettyAssertEqual
-                (Fix
-                    (apply (metaMLPatternHead ForallPatternType)
-                        [ variablePattern "#a" sortMetaSort
-                        , Fix
-                            (apply variableHead
-                                [ Fix (StringLiteralPattern (StringLiteral "x"))
-                                , variablePattern "#a" sortMetaSort
-                                ]
-                            )
-                        , Fix
-                            (apply variableAsPatternHead
-                                [ Fix
-                                    (apply variableHead
-                                        [ Fix
-                                            (StringLiteralPattern
-                                                (StringLiteral "x")
-                                            )
-                                        , variablePattern "#a" sortMetaSort
-                                        ]
-                                    )
-                                ]
-                            )
-                        ]
-                    )
-                )
-                (liftToMeta
-                    (ObjectPattern
-                        (ForallPattern Forall
-                            { forallSort =
-                                SortVariableSort (SortVariable (Id "a"))
-                            , forallVariable = Variable
-                                { variableName = Id "x"
-                                , variableSort =
-                                    SortVariableSort (SortVariable (Id "a"))
-                                }
-                            , forallChild =
-                                ObjectPattern
-                                    (VariablePattern Variable
-                                        { variableName = Id "x"
-                                        , variableSort = SortVariableSort
-                                            (SortVariable (Id "a"))
-                                        }
-                                    )
-                            }
-                        )
-                    )
-                )
-            )
-        , testCase "Lifting Exists"
-            (prettyAssertEqual
-                (Fix
-                    (apply (metaMLPatternHead ExistsPatternType)
-                        [ variablePattern "#a" sortMetaSort
-                        , Fix
-                            (apply variableHead
-                                [ Fix (StringLiteralPattern (StringLiteral "x"))
-                                , variablePattern "#a" sortMetaSort
-                                ]
-                            )
-                        , Fix
-                            (apply variableAsPatternHead
-                                [ Fix
-                                    (apply variableHead
-                                        [ Fix
-                                            (StringLiteralPattern
-                                                (StringLiteral "x")
-                                            )
-                                        , variablePattern "#a" sortMetaSort
-                                        ]
-                                    )
-                                ]
-                            )
-                        ]
-                    )
-                )
-                (liftToMeta
-                    (ObjectPattern
-                        (ExistsPattern Exists
-                            { existsSort =
-                                SortVariableSort (SortVariable (Id "a"))
-                            , existsVariable = Variable
-                                { variableName = Id "x"
-                                , variableSort =
-                                    SortVariableSort (SortVariable (Id "a"))
-                                }
-                            , existsChild =
-                                ObjectPattern
-                                    (VariablePattern Variable
-                                        { variableName = Id "x"
-                                        , variableSort = SortVariableSort
-                                            (SortVariable (Id "a"))
-                                        }
-                                    )
-                            }
-                        )
-                    )
-                )
-            )
-        , testCase "Lifting Variable Pattern"
-            (prettyAssertEqual
-                (Fix
-                    (apply variableAsPatternHead
-                        [ Fix
-                            (apply variableHead
-                                [ Fix (StringLiteralPattern (StringLiteral "x"))
-                                , variablePattern "#a" sortMetaSort
-                                ]
-                            )
-                        ]
-                    )
-                )
-                (liftToMeta
-                    (ObjectPattern
-                        (VariablePattern Variable
-                            { variableName = Id "x"
-                            , variableSort = SortVariableSort
-                                (SortVariable (Id "a"))
-                            }
-                        )
-                    )
-                )
-            )
-        , testCase "Lifting an actual sort"
-            (prettyAssertEqual
-                (Fix
-                    (apply consSortListHead
-                        [ Fix
-                            (apply (groundHead "#`Exp")
-                                [ variablePattern "#v" sortMetaSort ]
-                            )
-                        , Fix (apply nilSortListHead [])
-                        ]
-                    )
-                )
-                (liftToMeta
-                    [SortActualSort SortActual
-                        { sortActualName = Id "Exp" :: Id Object
-                        , sortActualSorts =
-                            [ SortVariableSort (SortVariable (Id "v")) ]
-                        }
+            ::UnifiedPattern)
+        , testLiftUnlift "Ceil"
+            (Fix
+                (apply (metaMLPatternHead CeilPatternType)
+                    [ variablePattern "#b" sortMetaSort
+                    , variablePattern "#a" sortMetaSort
+                    , metaStringPattern
                     ]
                 )
             )
-        , testCase "Lifting a Variable"
-            (prettyAssertEqual
-                (Fix
-                    (apply consPatternListHead
-                        [ Fix
-                            (apply variableHead
-                                [ Fix
-                                    (StringLiteralPattern
-                                        (StringLiteral "object")
-                                    )
-                                , variablePattern "#v" sortMetaSort
-                                ]
-                            )
-                        , Fix (apply nilPatternListHead [])
-                        ]
-                    )
+            (ObjectPattern
+                (CeilPattern Ceil
+                    { ceilResultSort =
+                        SortVariableSort (SortVariable (Id "a"))
+                    , ceilOperandSort =
+                        SortVariableSort (SortVariable (Id "b"))
+                    , ceilChild = unifiedStringPattern
+                    }
                 )
-                (liftToMeta
-                    [ liftToMeta
-                        Variable
-                            { variableName = Id "object" :: Id Object
-                            , variableSort =
-                                SortVariableSort (SortVariable (Id "v"))
-                            }
+            )
+        , testLiftUnlift "Floor"
+            (Fix
+                (apply (metaMLPatternHead FloorPatternType)
+                    [ variablePattern "#b" sortMetaSort
+                    , variablePattern "#a" sortMetaSort
+                    , metaStringPattern
                     ]
                 )
             )
-        , testCase "Testing lifting a pure object pattern."
-            (prettyAssertEqual
-                ( Fix
-                    ( apply (metaMLPatternHead NotPatternType)
-                        [ variablePattern "#a" sortMetaSort
-                        , Fix
-                            ( apply (metaMLPatternHead TopPatternType)
-                                [ variablePattern "#a" sortMetaSort ]
-                            )
-                        ]
-                    )
-                )
-                ( liftToMeta
-                    ( ObjectPattern
-                        ( NotPattern Not
-                            { notSort = SortVariableSort (SortVariable (Id "a"))
-                            , notChild = ObjectPattern
-                                ( TopPattern Top
-                                    { topSort = SortVariableSort
-                                        (SortVariable (Id "a"))
-                                    }
-                                )
-                            }
-                        )
-                    ::UnifiedPattern)
+            (ObjectPattern
+                (FloorPattern Floor
+                    { floorResultSort =
+                        SortVariableSort (SortVariable (Id "a"))
+                    , floorOperandSort =
+                        SortVariableSort (SortVariable (Id "b"))
+                    , floorChild = unifiedStringPattern
+                    }
                 )
             )
-        , testCase "Lifting And pattern"
-            (prettyAssertEqual
-                (Fix
-                    (apply (metaMLPatternHead AndPatternType)
-                        [ variablePattern "#a" sortMetaSort
-                        , metaStringPattern
-                        , metaStringPattern
-                        ]
-                    )
-                )
-                (liftToMeta
-                    (ObjectPattern
-                        (AndPattern And
-                            { andSort = SortVariableSort (SortVariable (Id "a"))
-                            , andFirst = unifiedStringPattern
-                            , andSecond = unifiedStringPattern
-                            }
-                        )
-                    )
+        , testLiftUnlift "Equals"
+            (Fix
+                (apply (metaMLPatternHead EqualsPatternType)
+                    [ variablePattern "#b" sortMetaSort
+                    , variablePattern "#a" sortMetaSort
+                    , metaStringPattern
+                    , metaStringPattern
+                    ]
                 )
             )
-        , testCase "Lifting Or pattern"
-            (prettyAssertEqual
-                (Fix
-                    (apply (metaMLPatternHead OrPatternType)
-                        [ variablePattern "#a" sortMetaSort
-                        , metaStringPattern
-                        , metaStringPattern
-                        ]
-                    )
-                )
-                (liftToMeta
-                    (ObjectPattern
-                        (OrPattern Or
-                            { orSort = SortVariableSort (SortVariable (Id "a"))
-                            , orFirst = unifiedStringPattern
-                            , orSecond = unifiedStringPattern
-                            }
-                        )
-                    )
+            (ObjectPattern
+                (EqualsPattern Equals
+                    { equalsResultSort =
+                        SortVariableSort (SortVariable (Id "a"))
+                    , equalsOperandSort =
+                        SortVariableSort (SortVariable (Id "b"))
+                    , equalsFirst = unifiedStringPattern
+                    , equalsSecond = unifiedStringPattern
+                    }
                 )
             )
-        , testCase "Lifting Iff pattern"
-            (prettyAssertEqual
-                (Fix
-                    (apply (metaMLPatternHead IffPatternType)
-                        [ variablePattern "#a" sortMetaSort
-                        , metaStringPattern
-                        , metaStringPattern
-                        ]
-                    )
-                )
-                (liftToMeta
-                    (ObjectPattern
-                        (IffPattern Iff
-                            { iffSort = SortVariableSort (SortVariable (Id "a"))
-                            , iffFirst = unifiedStringPattern
-                            , iffSecond = unifiedStringPattern
-                            }
-                        )
-                    )
+        , testLiftUnlift "In"
+            (Fix
+                (apply (metaMLPatternHead InPatternType)
+                    [ variablePattern "#b" sortMetaSort
+                    , variablePattern "#a" sortMetaSort
+                    , metaStringPattern
+                    , metaStringPattern
+                    ]
                 )
             )
-        , testCase "Lifting Implies pattern"
-            (prettyAssertEqual
-                (Fix
-                    (apply (metaMLPatternHead ImpliesPatternType)
-                        [ variablePattern "#a" sortMetaSort
-                        , metaStringPattern
-                        , metaStringPattern
-                        ]
-                    )
-                )
-                (liftToMeta
-                    (ObjectPattern
-                        (ImpliesPattern Implies
-                            { impliesSort = SortVariableSort (SortVariable (Id "a"))
-                            , impliesFirst = unifiedStringPattern
-                            , impliesSecond = unifiedStringPattern
-                            }
-                        )
-                    )
+            (ObjectPattern
+                (InPattern In
+                    { inResultSort =
+                        SortVariableSort (SortVariable (Id "a"))
+                    , inOperandSort =
+                        SortVariableSort (SortVariable (Id "b"))
+                    , inContainedChild = unifiedStringPattern
+                    , inContainingChild = unifiedStringPattern
+                    }
                 )
             )
-        , testCase "Lifting Not"
-            (prettyAssertEqual
-                (Fix
-                    (apply (metaMLPatternHead NotPatternType)
-                        [ variablePattern "#a" sortMetaSort
-                        , metaStringPattern
-                        ]
-                    )
-                )
-                (liftToMeta
-                    (ObjectPattern
-                        (NotPattern Not
-                            { notSort =
-                                SortVariableSort (SortVariable (Id "a"))
-                            , notChild = unifiedStringPattern
-                            }
+        , testLiftUnlift "Forall"
+            (Fix
+                (apply (metaMLPatternHead ForallPatternType)
+                    [ variablePattern "#a" sortMetaSort
+                    , Fix
+                        (apply variableHead
+                            [ Fix (StringLiteralPattern (StringLiteral "x"))
+                            , variablePattern "#a" sortMetaSort
+                            ]
                         )
-                    )
-                )
-            )
-        , testCase "Lifting Rewrites pattern"
-            (prettyAssertEqual
-                (Fix
-                    (apply (metaMLPatternHead RewritesPatternType)
-                        [ variablePattern "#a" sortMetaSort
-                        , metaStringPattern
-                        , metaStringPattern
-                        ]
-                    )
-                )
-                (liftToMeta
-                    (ObjectPattern
-                        (RewritesPattern Rewrites
-                            { rewritesSort =
-                                SortVariableSort (SortVariable (Id "a"))
-                            , rewritesFirst = unifiedStringPattern
-                            , rewritesSecond = unifiedStringPattern
-                            }
-                        )
-                    )
-                )
-            )
-        , testCase "Lifting Domain Value"
-            (prettyAssertEqual
-                (Fix
-                    (apply (metaMLPatternHead DomainValuePatternType)
-                        [ variablePattern "#Int" sortMetaSort
-                        , metaStringPattern
-                        ]
-                    )
-                )
-                (liftToMeta
-                    (ObjectPattern
-                        (DomainValuePattern DomainValue
-                            { domainValueSort =
-                                SortVariableSort (SortVariable (Id "Int"))
-                            , domainValueChild =
-                                unifiedStringPattern
-                            }
-                        )
-                    )
-                )
-            )
-        , testCase "Lifting Application"
-            (prettyAssertEqual
-                (Fix
-                    (apply (groundHead "#`test")
-                        [ variablePattern "#Int" sortMetaSort
-                        , metaStringPattern
-                        ]
-                    )
-                )
-                (liftToMeta
-                    (ObjectPattern
-                        (apply
-                            SymbolOrAlias
-                                { symbolOrAliasConstructor = Id "test"
-                                , symbolOrAliasParams =
-                                    [ SortVariableSort (SortVariable (Id "Int"))
+                    , Fix
+                        (apply variableAsPatternHead
+                            [ Fix
+                                (apply variableHead
+                                    [ Fix
+                                        (StringLiteralPattern
+                                            (StringLiteral "x")
+                                        )
+                                    , variablePattern "#a" sortMetaSort
                                     ]
-                                }
-                            [unifiedStringPattern]
+                                )
+                            ]
                         )
-                    )
+                    ]
                 )
             )
-        , testCase "Lifting Next"
-            (prettyAssertEqual
-                (Fix
-                    (apply (metaMLPatternHead NextPatternType)
-                        [ variablePattern "#a" sortMetaSort
-                        , metaStringPattern
-                        ]
-                    )
+            (ObjectPattern
+                (ForallPattern Forall
+                    { forallSort =
+                        SortVariableSort (SortVariable (Id "a"))
+                    , forallVariable = Variable
+                        { variableName = Id "x"
+                        , variableSort =
+                            SortVariableSort (SortVariable (Id "a"))
+                        }
+                    , forallChild =
+                        ObjectPattern
+                            (VariablePattern Variable
+                                { variableName = Id "x"
+                                , variableSort = SortVariableSort
+                                    (SortVariable (Id "a"))
+                                }
+                            )
+                    }
                 )
-                (liftToMeta
-                    (ObjectPattern
-                        (NextPattern Next
-                            { nextSort =
-                                SortVariableSort (SortVariable (Id "a"))
-                            , nextChild = unifiedStringPattern
+            )
+        , testLiftUnlift "Exists"
+            (Fix
+                (apply (metaMLPatternHead ExistsPatternType)
+                    [ variablePattern "#a" sortMetaSort
+                    , Fix
+                        (apply variableHead
+                            [ Fix (StringLiteralPattern (StringLiteral "x"))
+                            , variablePattern "#a" sortMetaSort
+                            ]
+                        )
+                    , Fix
+                        (apply variableAsPatternHead
+                            [ Fix
+                                (apply variableHead
+                                    [ Fix
+                                        (StringLiteralPattern
+                                            (StringLiteral "x")
+                                        )
+                                    , variablePattern "#a" sortMetaSort
+                                    ]
+                                )
+                            ]
+                        )
+                    ]
+                )
+            )
+            (ObjectPattern
+                (ExistsPattern Exists
+                    { existsSort =
+                        SortVariableSort (SortVariable (Id "a"))
+                    , existsVariable = Variable
+                        { variableName = Id "x"
+                        , variableSort =
+                            SortVariableSort (SortVariable (Id "a"))
+                        }
+                    , existsChild =
+                        ObjectPattern
+                            (VariablePattern Variable
+                                { variableName = Id "x"
+                                , variableSort = SortVariableSort
+                                    (SortVariable (Id "a"))
+                                }
+                            )
+                    }
+                )
+            )
+        , testLiftUnlift "Variable Pattern"
+            (Fix
+                (apply variableAsPatternHead
+                    [ Fix
+                        (apply variableHead
+                            [ Fix (StringLiteralPattern (StringLiteral "x"))
+                            , variablePattern "#a" sortMetaSort
+                            ]
+                        )
+                    ]
+                )
+            )
+            (ObjectPattern
+                (VariablePattern Variable
+                    { variableName = Id "x"
+                    , variableSort = SortVariableSort
+                        (SortVariable (Id "a"))
+                    }
+                )
+            )
+        , testLiftUnlift "An actual sort"
+            (Fix
+                (apply consSortListHead
+                    [ Fix
+                        (apply (groundHead "#`Exp")
+                            [ variablePattern "#v" sortMetaSort ]
+                        )
+                    , Fix (apply nilSortListHead [])
+                    ]
+                )
+            )
+            [SortActualSort SortActual
+                { sortActualName = Id "Exp" :: Id Object
+                , sortActualSorts =
+                    [ SortVariableSort (SortVariable (Id "v")) ]
+                }
+            ]
+        , testLiftUnlift "Meta Pattern List"
+            (Fix
+                (apply consPatternListHead
+                    [ metaStringPattern
+                    , Fix (apply nilPatternListHead [])
+                    ]
+                )
+            )
+            [metaStringPattern]
+        , testLiftUnlift "A Variable"
+            (Fix
+                (apply variableHead
+                    [ Fix (StringLiteralPattern (StringLiteral "object"))
+                    , variablePattern "#v" sortMetaSort
+                    ]
+                )
+            )
+            Variable
+                { variableName = Id "object" :: Id Object
+                , variableSort =
+                    SortVariableSort (SortVariable (Id "v"))
+                }
+        , testLiftUnlift "A pure object pattern."
+            ( Fix
+                ( apply (metaMLPatternHead NotPatternType)
+                    [ variablePattern "#a" sortMetaSort
+                    , Fix
+                        ( apply (metaMLPatternHead TopPatternType)
+                            [ variablePattern "#a" sortMetaSort ]
+                        )
+                    ]
+                )
+            )
+            ( ObjectPattern
+                ( NotPattern Not
+                    { notSort = SortVariableSort (SortVariable (Id "a"))
+                    , notChild = ObjectPattern
+                        ( TopPattern Top
+                            { topSort = SortVariableSort
+                                (SortVariable (Id "a"))
                             }
                         )
-                    )
+                    }
+                )
+            ::UnifiedPattern)
+        , testLiftUnlift "And pattern"
+            (Fix
+                (apply (metaMLPatternHead AndPatternType)
+                    [ variablePattern "#a" sortMetaSort
+                    , metaStringPattern
+                    , metaStringPattern
+                    ]
                 )
             )
-        , testCase "Lifting Attributes"
-            (prettyAssertEqual
+            (ObjectPattern
+                (AndPattern And
+                    { andSort = SortVariableSort (SortVariable (Id "a"))
+                    , andFirst = unifiedStringPattern
+                    , andSecond = unifiedStringPattern
+                    }
+                )
+            )
+        , testLiftUnlift "Or pattern"
+            (Fix
+                (apply (metaMLPatternHead OrPatternType)
+                    [ variablePattern "#a" sortMetaSort
+                    , metaStringPattern
+                    , metaStringPattern
+                    ]
+                )
+            )
+            (ObjectPattern
+                (OrPattern Or
+                    { orSort = SortVariableSort (SortVariable (Id "a"))
+                    , orFirst = unifiedStringPattern
+                    , orSecond = unifiedStringPattern
+                    }
+                )
+            )
+        , testLiftUnlift "Iff pattern"
+            (Fix
+                (apply (metaMLPatternHead IffPatternType)
+                    [ variablePattern "#a" sortMetaSort
+                    , metaStringPattern
+                    , metaStringPattern
+                    ]
+                )
+            )
+            (ObjectPattern
+                (IffPattern Iff
+                    { iffSort = SortVariableSort (SortVariable (Id "a"))
+                    , iffFirst = unifiedStringPattern
+                    , iffSecond = unifiedStringPattern
+                    }
+                )
+            )
+        , testLiftUnlift "Implies pattern"
+            (Fix
+                (apply (metaMLPatternHead ImpliesPatternType)
+                    [ variablePattern "#a" sortMetaSort
+                    , metaStringPattern
+                    , metaStringPattern
+                    ]
+                )
+            )
+            (ObjectPattern
+                (ImpliesPattern Implies
+                    { impliesSort = SortVariableSort (SortVariable (Id "a"))
+                    , impliesFirst = unifiedStringPattern
+                    , impliesSecond = unifiedStringPattern
+                    }
+                )
+            )
+        , testLiftUnlift "Not"
+            (Fix
+                (apply (metaMLPatternHead NotPatternType)
+                    [ variablePattern "#a" sortMetaSort
+                    , metaStringPattern
+                    ]
+                )
+            )
+            (ObjectPattern
+                (NotPattern Not
+                    { notSort =
+                        SortVariableSort (SortVariable (Id "a"))
+                    , notChild = unifiedStringPattern
+                    }
+                )
+            )
+        , testLiftUnlift "Rewrites pattern"
+            (Fix
+                (apply (metaMLPatternHead RewritesPatternType)
+                    [ variablePattern "#a" sortMetaSort
+                    , metaStringPattern
+                    , metaStringPattern
+                    ]
+                )
+            )
+            (ObjectPattern
+                (RewritesPattern Rewrites
+                    { rewritesSort =
+                        SortVariableSort (SortVariable (Id "a"))
+                    , rewritesFirst = unifiedStringPattern
+                    , rewritesSecond = unifiedStringPattern
+                    }
+                )
+            )
+        , testLiftUnlift "Domain Value"
+            (Fix
+                (apply (metaMLPatternHead DomainValuePatternType)
+                    [ variablePattern "#Int" sortMetaSort
+                    , metaStringPattern
+                    ]
+                )
+            )
+            (ObjectPattern
+                (DomainValuePattern DomainValue
+                    { domainValueSort =
+                        SortVariableSort (SortVariable (Id "Int"))
+                    , domainValueChild =
+                        unifiedStringPattern
+                    }
+                )
+            )
+        , testLiftUnlift "Application"
+            (Fix
+                (apply (groundHead "#`test")
+                    [ variablePattern "#Int" sortMetaSort
+                    , metaStringPattern
+                    ]
+                )
+            )
+            (ObjectPattern
+                (apply
+                    SymbolOrAlias
+                        { symbolOrAliasConstructor = Id "test"
+                        , symbolOrAliasParams =
+                            [ SortVariableSort (SortVariable (Id "Int"))
+                            ]
+                        }
+                    [unifiedStringPattern]
+                )
+            )
+        , testLiftUnlift "Next"
+            (Fix
+                (apply (metaMLPatternHead NextPatternType)
+                    [ variablePattern "#a" sortMetaSort
+                    , metaStringPattern
+                    ]
+                )
+            )
+            (ObjectPattern
+                (NextPattern Next
+                    { nextSort =
+                        SortVariableSort (SortVariable (Id "a"))
+                    , nextChild = unifiedStringPattern
+                    }
+                )
+            )
+        , testCase "Lift Attributes"
+            (prettyAssertEqual ""
                 (Attributes [SentenceMetaPattern metaStringPattern])
                 (liftAttributes (Attributes [unifiedStringPattern]))
             )
-        , testCase "Lifting Meta Alias Declaration"
-            (prettyAssertEqual
+        , testCase "Lift Meta Alias Declaration"
+            (prettyAssertEqual ""
                 [ SentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = Id "#alias"
@@ -582,8 +498,8 @@ liftTests =
                     )
                 )
             )
-        , testCase "Lifting Object Alias Declaration"
-            (prettyAssertEqual
+        , testCase "Lift Object Alias Declaration"
+            (prettyAssertEqual ""
                 [ SentenceSymbolSentence (symbol_ "#`alias" [] patternMetaSort)
                 ]
                 (liftSentence
@@ -600,8 +516,8 @@ liftTests =
                     )
                 )
             )
-        , testCase "Lifting Object Symbol Declaration"
-            (prettyAssertEqual
+        , testCase "Lift Object Symbol Declaration"
+            (prettyAssertEqual ""
                 [ SentenceSymbolSentence
                     (symbol_ "#`alias"
                         [sortMetaSort, patternMetaSort]
@@ -774,8 +690,8 @@ liftTests =
                     )
                 )
             )
-        , testCase "Lifting Meta Symbol Declaration"
-            (prettyAssertEqual
+        , testCase "Lift Meta Symbol Declaration"
+            (prettyAssertEqual ""
                 [ SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol = Symbol
                         { symbolConstructor = Id "#symbol"
@@ -801,8 +717,8 @@ liftTests =
                     )
                 )
             )
-        , testCase "Lifting Sort Declaration"
-            (prettyAssertEqual
+        , testCase "Lift Sort Declaration"
+            (prettyAssertEqual ""
                 [ SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol = Symbol
                         { symbolConstructor = Id "#`List"
@@ -897,8 +813,8 @@ liftTests =
                     )
                 )
             )
-        , testCase "Lifting Axiom topped in Object Pattern"
-            (prettyAssertEqual
+        , testCase "Lift Axiom topped in Object Pattern"
+            (prettyAssertEqual ""
                 [ SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters = [sortParameter "#a"]
                     , sentenceAxiomPattern = SentenceMetaPattern $ Fix
@@ -944,8 +860,8 @@ liftTests =
                     )
                 )
             )
-        , testCase "Lifting Axiom topped in Meta Pattern"
-            (prettyAssertEqual
+        , testCase "Lift Axiom topped in Meta Pattern"
+            (prettyAssertEqual ""
                 [ SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters = []
                     , sentenceAxiomPattern = SentenceMetaPattern $ Fix
@@ -970,47 +886,53 @@ liftTests =
                     )
                 )
             )
-        , testCase "Lifting Import Sentence"
-            (prettyAssertEqual
+        , testCase "Lift Import Sentence"
+            (prettyAssertEqual ""
                 [ metaSentenceImport ]
                 (liftSentence koreSentenceImport)
             )
-        , testCase "Lifting Module"
-            (prettyAssertEqual
+        , testCase "Lift Module"
+            (prettyAssertEqual ""
                 simpleMetaModule
                 (liftModule simpleKoreModule)
             )
-        , testCase "Lifting Definition"
-            (prettyAssertEqual
+        , testCase "Lift Definition"
+            (prettyAssertEqual ""
                 simpleMetaDefinition
                 (liftDefinition simpleKoreDefinition)
             )
         ]
---TODO(traiansf): add more tests covering all sentences (esp. axiom),
--- modules and definitions
-
-prettyAssertEqual :: (Eq a, Show a, PrettyPrint a) => a -> a -> IO ()
-prettyAssertEqual x y =
-    assertEqual
-        ( "Expected:\n"
-          ++ prettyPrintToString x
-          ++ "\nActual\n"
-          ++ prettyPrintToString y
-        )
-        x
-        y
 
 testLiftUnlift
-    :: (LiftableToMetaML a, UnliftableFromMetaML a)
+    :: ( LiftableToMetaML a
+       , UnliftableFromMetaML a
+       , Eq a
+       , Show a
+       , PrettyPrint a
+       , HasCallStack
+       )
     => String
-    -> a
     -> CommonMetaPattern
-    -> IO ()
-testLiftUnlift message mixed metaPattern =
+    -> a
+    -> TestTree
+testLiftUnlift message metaPattern mixed =
     testGroup message
-        [
-            testCase "Lifting"
+        [ testCase "Lifting"
+            (prettyAssertEqual "" metaPattern (liftToMeta mixed))
+        , testCase "Unlifting"
+            (prettyAssertEqual ""
+                (Just mixed)
+                (unliftFromMeta metaPattern)
+            )
         ]
+
+prettyAssertEqual
+    :: (Eq a, PrettyPrint a, HasCallStack)
+    => String -- ^ The message prefix
+    -> a      -- ^ The expected value
+    -> a      -- ^ The actual value
+    -> IO ()
+prettyAssertEqual = assertEqualWithPrinter prettyPrintToString
 
 
 natSort :: Sort Object

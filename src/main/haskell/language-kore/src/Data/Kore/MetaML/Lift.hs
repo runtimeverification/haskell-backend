@@ -34,16 +34,20 @@ import           Data.Kore.MetaML.AST
 -}
 class LiftableToMetaML mixed where
     liftToMeta :: mixed -> CommonMetaPattern
-    verbosityLiftToMeta :: Bool -> mixed -> CommonMetaPattern
-    liftToMeta = verbosityLiftToMeta False
+
+{-|'VerboseLiftableToMetaML' describes functionality to verbosely
+lift mixed Kore 'Object' and 'Meta' constructs to pure 'Meta' constructs.
+-}
+class VerboseLiftableToMetaML mixed where
+    verboseLiftToMeta :: mixed -> CommonMetaPattern
 
 -- Section 9.2.1 Lift Object Identifiers to String Literals
 instance LiftableToMetaML (Id Object) where
-    verbosityLiftToMeta _ = Fix . StringLiteralPattern . StringLiteral . getId
+    liftToMeta = Fix . StringLiteralPattern . StringLiteral . getId
 
 -- Section 9.2.3 Lift Object Sorts and Object Sort Lists
 instance LiftableToMetaML (SortVariable Object) where
-    verbosityLiftToMeta _ sv = Fix $ VariablePattern Variable
+    liftToMeta sv = Fix $ VariablePattern Variable
         { variableName = Id $ ('#' :) $ getId $ getSortVariable sv
         , variableSort = sortMetaSort
         }
@@ -58,31 +62,47 @@ liftHeadConstructor = liftSortConstructor
 
 -- Section 9.2.3 Lift Object Sorts and Object Sort Lists
 instance LiftableToMetaML (SortActual Object) where
-    verbosityLiftToMeta False sa = Fix $ apply
+    liftToMeta sa = Fix $ apply
         (groundHead (liftSortConstructor (getId (sortActualName sa))))
         (fmap liftToMeta (sortActualSorts sa))
-    verbosityLiftToMeta True sa = Fix $ apply sortHead
-        [ liftToMeta (sortActualName sa)
-        , verbosityLiftToMeta True (sortActualSorts sa)
-        ]
+
+-- Section 9.2.3 Lift Object Sorts and Object Sort Lists
+instance VerboseLiftableToMetaML (SortActual Object) where
+    verboseLiftToMeta sa =
+        Fix $ apply sortHead
+            [ liftToMeta (sortActualName sa)
+            , verboseLiftToMeta (sortActualSorts sa)
+            ]
 
 -- Section 9.2.3 Lift Object Sorts and Object Sort Lists
 instance LiftableToMetaML (Sort Object) where
-    verbosityLiftToMeta verb (SortVariableSort sv) = verbosityLiftToMeta verb sv
-    verbosityLiftToMeta verb (SortActualSort sv)   = verbosityLiftToMeta verb sv
+    liftToMeta (SortVariableSort sv) = liftToMeta sv
+    liftToMeta (SortActualSort sv)   = liftToMeta sv
+
+instance VerboseLiftableToMetaML (Sort Object) where
+    verboseLiftToMeta (SortVariableSort sv) = liftToMeta sv
+    verboseLiftToMeta (SortActualSort sa)   = verboseLiftToMeta sa
 
 -- Section 9.2.3 Lift Object Sorts and Object Sort Lists
+liftSortListToMeta
+    :: (Sort Object -> CommonMetaPattern)
+    -> ([Sort Object] -> CommonMetaPattern)
+liftSortListToMeta sortLifter =
+    foldr
+        (applyConsSortList . sortLifter)
+        nilSortListMetaPattern
+  where
+    applyConsSortList sort sortList =
+        Fix $ apply consSortListHead [sort, sortList]
+
+instance VerboseLiftableToMetaML [Sort Object] where
+    verboseLiftToMeta = liftSortListToMeta verboseLiftToMeta
+
 instance LiftableToMetaML [Sort Object] where
-    verbosityLiftToMeta verb =
-        foldr
-            (applyConsSortList . verbosityLiftToMeta verb)
-            nilSortListMetaPattern
-      where
-        applyConsSortList sort sortList =
-            Fix $ apply consSortListHead [sort, sortList]
+    liftToMeta = liftSortListToMeta liftToMeta
 
 instance LiftableToMetaML [CommonMetaPattern] where
-    verbosityLiftToMeta _ =
+    liftToMeta =
         foldr applyConsPatternList nilPatternListMetaPattern
       where
         applyConsPatternList pat patList =
@@ -90,95 +110,92 @@ instance LiftableToMetaML [CommonMetaPattern] where
 
 -- Section 9.2.8 Lift Patterns
 instance LiftableToMetaML (Variable Object) where
-    verbosityLiftToMeta verb v = Fix $ apply variableHead
-        [ verbosityLiftToMeta verb (variableName v)
-        , verbosityLiftToMeta verb (variableSort v)]
+    liftToMeta v = Fix $ apply variableHead
+        [ liftToMeta (variableName v)
+        , liftToMeta (variableSort v)]
 
 -- Section 9.2.8 Lift Patterns
 instance LiftableToMetaML UnifiedPattern where
-    verbosityLiftToMeta verb = bottomUpVisitor (liftReducer verb)
+    liftToMeta = bottomUpVisitor liftReducer
 
 liftReducer
     :: MetaOrObject level
-    => Bool
-    -> Pattern level Variable CommonMetaPattern
+    => Pattern level Variable CommonMetaPattern
     -> CommonMetaPattern
-liftReducer verb p = applyMetaObjectFunction
+liftReducer p = applyMetaObjectFunction
     (PatternObjectMeta p)
     MetaOrObjectTransformer
-        { objectTransformer =
-            liftObjectReducer verb . getPatternObjectMeta
+        { objectTransformer = liftObjectReducer . getPatternObjectMeta
         , metaTransformer = Fix . getPatternObjectMeta
         }
 
 liftObjectReducer
-    :: Bool
-    -> Pattern Object Variable CommonMetaPattern
+    :: Pattern Object Variable CommonMetaPattern
     -> CommonMetaPattern
-liftObjectReducer verb p = case p of
+liftObjectReducer p = case p of
     AndPattern ap -> applyMetaMLPatternHead AndPatternType
-        (verbosityLiftToMeta verb (andSort ap) : getPatternChildren ap)
+        (liftToMeta (andSort ap) : getPatternChildren ap)
     ApplicationPattern ap -> let sa = applicationSymbolOrAlias ap in
         Fix $ apply
             (groundHead
                 (liftHeadConstructor (getId (symbolOrAliasConstructor sa))))
-            (map (verbosityLiftToMeta verb) (symbolOrAliasParams sa)
+            (map liftToMeta (symbolOrAliasParams sa)
                 ++ applicationChildren ap)
     BottomPattern bp -> applyMetaMLPatternHead BottomPatternType
-        [verbosityLiftToMeta verb (bottomSort bp)]
+        [liftToMeta (bottomSort bp)]
     CeilPattern cp -> applyMetaMLPatternHead CeilPatternType
-        [ verbosityLiftToMeta verb (ceilOperandSort cp)
-        , verbosityLiftToMeta verb (ceilResultSort cp)
+        [ liftToMeta (ceilOperandSort cp)
+        , liftToMeta (ceilResultSort cp)
         , ceilChild cp
         ]
     DomainValuePattern dvp ->
         applyMetaMLPatternHead DomainValuePatternType
-            [ verbosityLiftToMeta verb (domainValueSort dvp)
+            [ liftToMeta (domainValueSort dvp)
             , domainValueChild dvp
             ]
     EqualsPattern cp -> applyMetaMLPatternHead EqualsPatternType
-        [ verbosityLiftToMeta verb (equalsOperandSort cp)
-        , verbosityLiftToMeta verb (equalsResultSort cp)
+        [ liftToMeta (equalsOperandSort cp)
+        , liftToMeta (equalsResultSort cp)
         , equalsFirst cp
         , equalsSecond cp
         ]
     ExistsPattern ep -> applyMetaMLPatternHead ExistsPatternType
-        [ verbosityLiftToMeta verb (existsSort ep)
-        , verbosityLiftToMeta verb (existsVariable ep)
+        [ liftToMeta (existsSort ep)
+        , liftToMeta (existsVariable ep)
         , existsChild ep
         ]
     FloorPattern cp -> applyMetaMLPatternHead FloorPatternType
-        [ verbosityLiftToMeta verb (floorOperandSort cp)
-        , verbosityLiftToMeta verb (floorResultSort cp)
+        [ liftToMeta (floorOperandSort cp)
+        , liftToMeta (floorResultSort cp)
         , floorChild cp
         ]
     ForallPattern ep -> applyMetaMLPatternHead ForallPatternType
-        [ verbosityLiftToMeta verb (forallSort ep)
-        , verbosityLiftToMeta verb (forallVariable ep)
+        [ liftToMeta (forallSort ep)
+        , liftToMeta (forallVariable ep)
         , forallChild ep
         ]
     IffPattern ap -> applyMetaMLPatternHead IffPatternType
-        (verbosityLiftToMeta verb (iffSort ap) : getPatternChildren ap)
+        (liftToMeta (iffSort ap) : getPatternChildren ap)
     ImpliesPattern ap -> applyMetaMLPatternHead ImpliesPatternType
-        (verbosityLiftToMeta verb (impliesSort ap) : getPatternChildren ap)
+        (liftToMeta (impliesSort ap) : getPatternChildren ap)
     InPattern ap -> applyMetaMLPatternHead InPatternType
-        [ verbosityLiftToMeta verb (inOperandSort ap)
-        , verbosityLiftToMeta verb (inResultSort ap)
+        [ liftToMeta (inOperandSort ap)
+        , liftToMeta (inResultSort ap)
         , inContainedChild ap
         , inContainingChild ap
         ]
     NextPattern ap -> applyMetaMLPatternHead NextPatternType
-        [verbosityLiftToMeta verb (nextSort ap), nextChild ap]
+        [liftToMeta (nextSort ap), nextChild ap]
     NotPattern ap -> applyMetaMLPatternHead NotPatternType
-        [verbosityLiftToMeta verb (notSort ap), notChild ap]
+        [liftToMeta (notSort ap), notChild ap]
     OrPattern ap -> applyMetaMLPatternHead OrPatternType
-        (verbosityLiftToMeta verb (orSort ap) : getPatternChildren ap)
+        (liftToMeta (orSort ap) : getPatternChildren ap)
     RewritesPattern ap -> applyMetaMLPatternHead RewritesPatternType
-        (verbosityLiftToMeta verb (rewritesSort ap) : getPatternChildren ap)
+        (liftToMeta (rewritesSort ap) : getPatternChildren ap)
     TopPattern bp -> applyMetaMLPatternHead TopPatternType
-        [verbosityLiftToMeta verb (topSort bp)]
+        [liftToMeta (topSort bp)]
     VariablePattern vp ->
-        Fix $ apply variableAsPatternHead [verbosityLiftToMeta verb vp]
+        Fix $ apply variableAsPatternHead [liftToMeta vp]
   where
     applyMetaMLPatternHead patternType =
         Fix . apply (metaMLPatternHead patternType)
@@ -206,7 +223,7 @@ liftSortDeclaration ss =
         }
     sortParam = SortVariable (Id "#s")
     sortParamAsSort = SortVariableSort sortParam
-    actualSort = SortActual
+    actualSort = SortActualSort SortActual
         { sortActualName = sortName
         , sortActualSorts = sortParametersAsSorts
         }
@@ -217,8 +234,8 @@ liftSortDeclaration ss =
             $ Equals
                 { equalsOperandSort = sortMetaSort
                 , equalsResultSort = sortParamAsSort
-                , equalsFirst = verbosityLiftToMeta False actualSort
-                , equalsSecond = verbosityLiftToMeta True actualSort
+                , equalsFirst = liftToMeta actualSort
+                , equalsSecond = verboseLiftToMeta actualSort
                 }
         }
     declaredAxiom = SentenceAxiom
@@ -228,9 +245,9 @@ liftSortDeclaration ss =
             $ Implies
                 { impliesSort = SortVariableSort sortParam
                 , impliesFirst = Fix $ apply (sortsDeclaredHead sortParamAsSort)
-                    [verbosityLiftToMeta False sortParametersAsSorts]
+                    [liftToMeta sortParametersAsSorts]
                 , impliesSecond = Fix $ apply (sortDeclaredHead sortParamAsSort)
-                    [verbosityLiftToMeta False actualSort]
+                    [liftToMeta actualSort]
                 }
         }
 
@@ -281,7 +298,7 @@ liftSymbolDeclaration sd =
             $ Implies
                 { impliesSort = SortVariableSort sortParam
                 , impliesFirst = Fix $ apply (sortsDeclaredHead sortParamAsSort)
-                    [verbosityLiftToMeta False sortParametersAsSorts]
+                    [liftToMeta sortParametersAsSorts]
                 , impliesSecond =
                     Fix $ apply (symbolDeclaredHead sortParamAsSort) [sigma]
                 }
@@ -403,7 +420,7 @@ liftDefinition d = Definition
 -- - Consider making it work for Application, too (that requires storing some
 --   metadata / passing an indexed module as an extra parameter.
 -- - Consider making it public (and moving it to a more appropriate module).
---   once we do that we should thoughly test it.
+--   once we do that we should thoroughly test it.
 getPatternResultSort :: Pattern level Variable child -> Sort level
 getPatternResultSort (AndPattern p) = andSort p
 getPatternResultSort (BottomPattern p) = bottomSort p
