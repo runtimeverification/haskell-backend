@@ -11,6 +11,7 @@ import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.MetaML.AST
+import           Data.Kore.MetaML.MetaToKore
 import           Data.Kore.MetaML.Unlift
 
 unliftTests :: TestTree
@@ -65,23 +66,18 @@ unliftTests =
                 ::Maybe [CommonMetaPattern])
             )
         , testCase "Unlift to MetaPattern"
-            (prettyAssertEqual ""
-                (Just
-                    (MetaPattern
-                        (VariablePattern Variable
-                            { variableName = Id "#`a"
-                            , variableSort = sortMetaSort
-                            }
-                        )
-                    )
-                )
-                (unliftFromMeta
+            (let
+                metaPattern =
                     (Fix
                         (apply consSortListHead
                             [variablePattern "#`a" sortMetaSort]
                         )
                     )
-                ::Maybe UnifiedPattern)
+            in
+                (prettyAssertEqual ""
+                    (Just (patternMetaToKore (SentenceMetaPattern metaPattern)))
+                    (unliftFromMeta metaPattern ::Maybe UnifiedPattern)
+                )
             )
         ]
 
