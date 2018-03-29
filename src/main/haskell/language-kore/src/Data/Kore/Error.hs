@@ -57,3 +57,19 @@ withContext
   =
     Left err { errorContext = localContext : context }
 withContext _ result = result
+
+{-|'castError' changes an error's tag.
+-}
+castError :: Either (Error a) result -> Either (Error b) result
+castError
+    (Left Error
+        { errorContext = context
+        , errorError = err
+        }
+    )
+  =
+    Left Error
+        { errorContext = context
+        , errorError = err
+        }
+castError (Right r) = Right r

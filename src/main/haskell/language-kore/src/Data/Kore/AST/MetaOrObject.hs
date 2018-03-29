@@ -1,9 +1,15 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE Rank2Types             #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE GADTs                  #-}
 module Data.Kore.AST.MetaOrObject where
 
 import           Data.Kore.AST.Common
 import           Data.Typeable        (Typeable, cast)
+
+data IsMetaOrObject s where
+  IsMeta :: IsMetaOrObject Meta
+  IsObject :: IsMetaOrObject Object
 
 {-|Class identifying a Kore level. It should only be implemented by the
 'Object' and 'Meta' types, and should verify:
@@ -11,19 +17,20 @@ import           Data.Typeable        (Typeable, cast)
 * @ isObject Object && not (isMeta Object) @
 * @ not (isObject Meta) && isMeta Meta @
 -}
-class (Show level, Ord level, Eq level, Typeable level)
+class (Show level, Ord level, Eq level)
     => MetaOrObject level
   where
+    isMetaOrObject :: level -> IsMetaOrObject level
     isObject :: level -> Bool
+    isObject l = case isMetaOrObject l of IsObject -> True; _ -> False
     isMeta :: level -> Bool
-    isObject = not . isMeta
-    isMeta = not . isObject
-    {-# MINIMAL isObject | isMeta #-}
+    isMeta l = case isMetaOrObject l of IsMeta -> True; _ -> False
+    {-# MINIMAL isMetaOrObject #-}
 
 instance MetaOrObject Meta where
-    isMeta _ = True
+    isMetaOrObject _ = IsMeta
 instance MetaOrObject Object where
-    isObject _ = True
+    isMetaOrObject _ = IsObject
 
 data MetaOrObjectTransformer thing result = MetaOrObjectTransformer
     { metaTransformer   :: thing Meta -> result
@@ -31,18 +38,12 @@ data MetaOrObjectTransformer thing result = MetaOrObjectTransformer
     }
 
 applyMetaObjectFunction
-    :: (Typeable thing, MetaOrObject level)
+    :: forall level thing c . (MetaOrObject level)
     => thing level -> MetaOrObjectTransformer thing c -> c
-applyMetaObjectFunction x = applyMetaObjectFunctionCasted (cast x) (cast x)
-applyMetaObjectFunctionCasted
-    :: Maybe (thing Object)
-    -> Maybe (thing Meta)
-    -> MetaOrObjectTransformer thing c
-    -> c
-applyMetaObjectFunctionCasted (Just x) Nothing f = objectTransformer f x
-applyMetaObjectFunctionCasted Nothing (Just x) f = metaTransformer f x
-applyMetaObjectFunctionCasted _ _ _ =
-    error "applyMetaObjectFunctionCasted: this should not happen!"
+applyMetaObjectFunction x trans =
+  case isMetaOrObject (undefined :: level) of
+    IsObject -> objectTransformer trans x
+    IsMeta -> metaTransformer trans x
 
 class Typeable thing
     => UnifiedThing unifiedThing thing | unifiedThing -> thing
