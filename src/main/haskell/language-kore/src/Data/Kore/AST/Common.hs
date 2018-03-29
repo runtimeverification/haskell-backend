@@ -278,10 +278,10 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 This represents the 'andFirst ∧ andSecond' Matching Logic construct.
 -}
-data And level p = And
+data And level child = And
     { andSort   :: !(Sort level)
-    , andFirst  :: !p
-    , andSecond :: !p
+    , andFirst  :: !child
+    , andSecond :: !child
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
@@ -294,9 +294,9 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 This represents the σ(φ1, ..., φn) symbol patterns in Matching Logic.
 -}
-data Application level p = Application
+data Application level child = Application
     { applicationSymbolOrAlias :: !(SymbolOrAlias level)
-    , applicationChildren      :: ![p]
+    , applicationChildren      :: ![child]
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
@@ -311,7 +311,7 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 This represents the ⌈BottomPattern⌉ Matching Logic construct.
 -}
-newtype Bottom level p = Bottom { bottomSort :: Sort level}
+newtype Bottom level child = Bottom { bottomSort :: Sort level}
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
 {-|'Ceil' corresponds to the @\ceil@ branches of the @object-pattern@ and
@@ -327,10 +327,10 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 This represents the ⌈ceilPattern⌉ Matching Logic construct.
 -}
-data Ceil level p = Ceil
+data Ceil level child = Ceil
     { ceilOperandSort :: !(Sort level)
     , ceilResultSort  :: !(Sort level)
-    , ceilChild       :: !p
+    , ceilChild       :: !child
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
@@ -349,9 +349,9 @@ This represents the encoding of an object constant, e.g. we may use
 \dv{Int{}}{"123"} instead of a representation based on constructors,
 e.g. succesor(succesor(...succesor(0)...))
 -}
-data DomainValue level p = DomainValue
+data DomainValue level child = DomainValue
     { domainValueSort  :: !(Sort level)
-    , domainValueChild :: !p
+    , domainValueChild :: !child
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
@@ -368,11 +368,11 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 This represents the 'equalsFirst = equalsSecond' Matching Logic construct.
 -}
-data Equals level p = Equals
+data Equals level child = Equals
     { equalsOperandSort :: !(Sort level)
     , equalsResultSort  :: !(Sort level)
-    , equalsFirst       :: !p
-    , equalsSecond      :: !p
+    , equalsFirst       :: !child
+    , equalsSecond      :: !child
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
@@ -387,10 +387,10 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 This represents the '∃existsVariable(existsChild)' Matching Logic construct.
 -}
-data Exists level v p = Exists
+data Exists level v child = Exists
     { existsSort     :: !(Sort level)
     , existsVariable :: !(v level)
-    , existsChild    :: !p
+    , existsChild    :: !child
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
@@ -407,10 +407,10 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 This represents the '⌊floorPattern⌋' Matching Logic construct.
 -}
-data Floor level p = Floor
+data Floor level child = Floor
     { floorOperandSort :: !(Sort level)
     , floorResultSort  :: !(Sort level)
-    , floorChild       :: !p
+    , floorChild       :: !child
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
@@ -425,10 +425,10 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 This represents the '∀forallVariable(forallChild)' Matching Logic construct.
 -}
-data Forall level v p = Forall
+data Forall level v child = Forall
     { forallSort     :: !(Sort level)
     , forallVariable :: !(v level)
-    , forallChild    :: !p
+    , forallChild    :: !child
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
@@ -443,10 +443,10 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 This represents the 'iffFirst ⭤ iffSecond' Matching Logic construct.
 -}
-data Iff level p = Iff
+data Iff level child = Iff
     { iffSort   :: !(Sort level)
-    , iffFirst  :: !p
-    , iffSecond :: !p
+    , iffFirst  :: !child
+    , iffSecond :: !child
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
@@ -461,10 +461,10 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 This represents the 'impliesFirst ⭢ impliesSecond' Matching Logic construct.
 -}
-data Implies level p = Implies
+data Implies level child = Implies
     { impliesSort   :: !(Sort level)
-    , impliesFirst  :: !p
-    , impliesSecond :: !p
+    , impliesFirst  :: !child
+    , impliesSecond :: !child
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
@@ -484,11 +484,11 @@ construct, which, when 'inContainedChild' is a singleton (e.g. a variable),
 represents the set membership. However, in general, it actually means that the
 two patterns have a non-empty intersection.
 -}
-data In level p = In
+data In level child = In
     { inOperandSort     :: !(Sort level)
     , inResultSort      :: !(Sort level)
-    , inContainedChild  :: !p
-    , inContainingChild :: !p
+    , inContainedChild  :: !child
+    , inContainingChild :: !child
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
@@ -504,9 +504,9 @@ done at the 'Pattern' level.
 
 This represents the '∘ nextChild' Matching Logic construct.
 -}
-data Next level p = Next
+data Next level child = Next
     { nextSort  :: !(Sort level)
-    , nextChild :: !p
+    , nextChild :: !child
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
@@ -521,9 +521,9 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 This represents the '¬ notChild' Matching Logic construct.
 -}
-data Not level p = Not
+data Not level child = Not
     { notSort  :: !(Sort level)
-    , notChild :: !p
+    , notChild :: !child
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
@@ -538,10 +538,10 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 This represents the 'orFirst ∨ orSecond' Matching Logic construct.
 -}
-data Or level p = Or
+data Or level child = Or
     { orSort   :: !(Sort level)
-    , orFirst  :: !p
-    , orSecond :: !p
+    , orFirst  :: !child
+    , orSecond :: !child
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
@@ -557,10 +557,10 @@ done at the Pattern level.
 This represents the 'rewritesFirst ⇒ rewritesSecond' Matching Logic construct.
 -}
 
-data Rewrites level p = Rewrites
+data Rewrites level child = Rewrites
     { rewritesSort   :: !(Sort level)
-    , rewritesFirst  :: !p
-    , rewritesSecond :: !p
+    , rewritesFirst  :: !child
+    , rewritesSecond :: !child
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
@@ -575,7 +575,7 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 This represents the ⌈TopPattern⌉ Matching Logic construct.
 -}
-newtype Top level p = Top { topSort :: Sort level}
+newtype Top level child = Top { topSort :: Sort level}
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
 {-|'Pattern' corresponds to the @object-pattern@ and
