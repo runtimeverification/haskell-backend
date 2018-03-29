@@ -76,7 +76,7 @@ instance UnifiedThing UnifiedSortVariable SortVariable where
     metaConstructor = MetaSortVariable
     objectConstructor = ObjectSortVariable
 
-instance Typeable v => UnifiedThing (UnifiedVariable v) v where
+instance Typeable var => UnifiedThing (UnifiedVariable var) var where
     destructor (MetaVariable v)   = Left v
     destructor (ObjectVariable v) = Right v
     metaConstructor = MetaVariable
@@ -97,29 +97,32 @@ of the 'Pattern' class.
 
 'v' is the type of variables.
 -}
-class UnifiedThing (p v) (PatternObjectMeta v (p v))
-    => FixPattern v p
+class UnifiedThing (pat var) (PatternObjectMeta var (pat var))
+    => FixPattern var pat
   where
     {-|'fixPatternApply' "lifts" a function defined on 'Pattern' to the
-    domain of the fixed point 'p'.
+    domain of the fixed point 'pat'.
 
-    The resulting function unwraps the pattern from 'p' and maps it through
+    The resulting function unwraps the pattern from 'pat' and maps it through
     the argument function.
     -}
     fixPatternApply
-        :: (forall level . MetaOrObject level => Pattern level v (p v) -> b)
-        -> (p v -> b)
+        :: (forall level
+            . MetaOrObject level => Pattern level var (pat var) -> b)
+        -> (pat var -> b)
     fixPatternApply f = transformUnified (f . getPatternObjectMeta)
 
 data FixedPattern variable
     = MetaPattern !(Pattern Meta variable (FixedPattern variable))
     | ObjectPattern !(Pattern Object variable (FixedPattern variable))
 
-newtype PatternObjectMeta v p a = PatternObjectMeta
-    { getPatternObjectMeta :: Pattern a v p }
+newtype PatternObjectMeta variable child level = PatternObjectMeta
+    { getPatternObjectMeta :: Pattern level variable child }
 
-instance Typeable v
-    => UnifiedThing (FixedPattern v) (PatternObjectMeta v (FixedPattern v))
+instance Typeable var
+    => UnifiedThing
+        (FixedPattern var)
+        (PatternObjectMeta var (FixedPattern var))
   where
     destructor (MetaPattern p)   = Left (PatternObjectMeta p)
     destructor (ObjectPattern p) = Right (PatternObjectMeta p)
