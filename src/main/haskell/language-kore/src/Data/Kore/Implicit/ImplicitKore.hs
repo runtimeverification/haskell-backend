@@ -92,16 +92,41 @@ mlPatternP AndPatternType =
         "#\\and"
         [sortMetaSort, patternMetaSort, patternMetaSort]
         patternMetaSort
-mlPatternP NotPatternType =
-    symbol_ "#\\not" [sortMetaSort, patternMetaSort] patternMetaSort
+mlPatternP BottomPatternType =
+    symbol_ "#\\bottom" [sortMetaSort] patternMetaSort
+mlPatternP CeilPatternType =
+    symbol_
+        "#\\ceil"
+        [sortMetaSort, sortMetaSort, patternMetaSort]
+        patternMetaSort
+mlPatternP DomainValuePatternType =
+    symbol_
+        "#\\dv"
+        [sortMetaSort, stringMetaSort]
+        patternMetaSort
+mlPatternP EqualsPatternType =
+    symbol_
+        "#\\equals"
+        [sortMetaSort, sortMetaSort, patternMetaSort, patternMetaSort]
+        patternMetaSort
 mlPatternP ExistsPatternType =
     symbol_
         "#\\exists"
         [sortMetaSort, variableMetaSort, patternMetaSort]
         patternMetaSort
-mlPatternP OrPatternType =
+mlPatternP FloorPatternType =
     symbol_
-        "#\\or"
+        "#\\floor"
+        [sortMetaSort, sortMetaSort, patternMetaSort]
+        patternMetaSort
+mlPatternP ForallPatternType =
+    symbol_
+        "#\\forall"
+        [sortMetaSort, variableMetaSort, patternMetaSort]
+        patternMetaSort
+mlPatternP IffPatternType =
+    symbol_
+        "#\\iff"
         [sortMetaSort, patternMetaSort, patternMetaSort]
         patternMetaSort
 mlPatternP ImpliesPatternType =
@@ -109,40 +134,27 @@ mlPatternP ImpliesPatternType =
         "#\\implies"
         [sortMetaSort, patternMetaSort, patternMetaSort]
         patternMetaSort
-mlPatternP IffPatternType =
-    symbol_
-        "#\\iff"
-        [sortMetaSort, patternMetaSort, patternMetaSort]
-        patternMetaSort
-mlPatternP ForallPatternType =
-    symbol_
-        "#\\forall"
-        [sortMetaSort, variableMetaSort, patternMetaSort]
-        patternMetaSort
-mlPatternP CeilPatternType =
-    symbol_
-        "#\\ceil"
-        [sortMetaSort, sortMetaSort, patternMetaSort]
-        patternMetaSort
-mlPatternP FloorPatternType =
-    symbol_
-        "#\\floor"
-        [sortMetaSort, sortMetaSort, patternMetaSort]
-        patternMetaSort
-mlPatternP EqualsPatternType =
-    symbol_
-        "#\\equals"
-        [sortMetaSort, sortMetaSort, patternMetaSort, patternMetaSort]
-        patternMetaSort
 mlPatternP InPatternType =
     symbol_
         "#\\in"
         [sortMetaSort, sortMetaSort, patternMetaSort, patternMetaSort]
         patternMetaSort
+mlPatternP NextPatternType =
+    symbol_ "#\\next" [sortMetaSort, patternMetaSort] patternMetaSort
+mlPatternP NotPatternType =
+    symbol_ "#\\not" [sortMetaSort, patternMetaSort] patternMetaSort
+mlPatternP OrPatternType =
+    symbol_
+        "#\\or"
+        [sortMetaSort, patternMetaSort, patternMetaSort]
+        patternMetaSort
+mlPatternP RewritesPatternType =
+    symbol_
+        "#\\rewrites"
+        [sortMetaSort, patternMetaSort, patternMetaSort]
+        patternMetaSort
 mlPatternP TopPatternType =
     symbol_ "#\\top" [sortMetaSort] patternMetaSort
-mlPatternP BottomPatternType =
-    symbol_ "#\\bottom" [sortMetaSort] patternMetaSort
 
 [ andA, bottomA, ceilA, _, equalsA, existsA, floorA, forallA, iffA, impliesA,
   inA, _, notA, orA, _, topA] = map mlPatternA allPatternTypes

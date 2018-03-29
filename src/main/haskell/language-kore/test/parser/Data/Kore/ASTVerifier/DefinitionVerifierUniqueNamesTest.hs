@@ -7,6 +7,7 @@ import           Test.Tasty                                          (TestTree,
 import           Data.Kore.AST.Common
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
+import           Data.Kore.Implicit.ImplicitSorts
 
 definitionVerifierUniqueNamesTests :: TestTree
 definitionVerifierUniqueNamesTests =
@@ -68,6 +69,20 @@ definitionVerifierUniqueNamesTests =
                 [ simpleObjectSymbolSentence (SymbolName "a1") (SortName "s")
                 , simpleObjectSymbolSentence (SymbolName "a2") (SortName "s")
                 , simpleSortSentence (SortName "s")
+                ]
+            )
+        , expectSuccess "Sort Parameter Name Same as Variable Name"
+        {- This test should never fail, as lifting, for example,
+           transforms sort parameters into variables of sort @#Sort@ by
+           prefixing them with @#@.
+        -}
+            (simpleDefinitionFromSentences (ModuleName "MODULE")
+                [ axiomSentenceWithSortParameters
+                    (unifiedVariablePattern
+                        (VariableName "#a")
+                        sortMetaSort
+                    )
+                    [unifiedSortVariable Meta (SortVariableName "#a")]
                 ]
             )
         , expectFailureWithError "Definition with two identical sort names."

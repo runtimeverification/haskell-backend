@@ -1,7 +1,7 @@
 module Data.Kore.MetaML.ASTGen where
 
 import           Data.Fix
-import           Test.QuickCheck.Gen  (Gen, frequency, oneof, scale, sized)
+import           Test.QuickCheck.Gen  (Gen, frequency, oneof, sized)
 
 import           Data.Kore.AST.Common
 import           Data.Kore.ASTGen

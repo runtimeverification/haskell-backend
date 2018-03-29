@@ -1,29 +1,33 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs             #-}
 {-|
-Module      : Data.Kore.MetaML.UnLift
+Module      : Data.Kore.MetaML.Unlift
 Description : Reverses the effects of 'Data.Kore.MetaML.Lift.liftToMeta'
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
+
+
+Currently, 'UnliftableFromMetaML' offers an inverse of 'LiftableToMeta'
+for all MetaML constructs up to patterns.
 -}
-module Data.Kore.MetaML.UnLift where
+module Data.Kore.MetaML.Unlift ( UnliftableFromMetaML (..)
+                               ) where
 
 import           Control.Applicative
-import           Control.Monad.Reader
 import           Data.Fix
-import           Data.Kore.Parser.ParserUtils          as Parser
+import           Data.Maybe
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
-import           Data.Kore.Implicit.ImplicitKore       (mlPatternP, variable)
+import           Data.Kore.Implicit.ImplicitKore  (mlPatternP, variable)
 import           Data.Kore.Implicit.ImplicitSorts
-import           Data.Kore.IndexedModule.IndexedModule
 import           Data.Kore.MetaML.AST
-import           Data.Kore.MetaML.Builders             (isImplicitHead)
+import           Data.Kore.MetaML.Builders        (isImplicitHead)
 import           Data.Kore.Parser.LexemeImpl
+import           Data.Kore.Parser.ParserUtils     as Parser
 
 -- |'UnliftableFromMetaML' specifies common functionality for constructs
 -- which can be "unlifted" from 'Meta'-only to full 'Kore' representations.
@@ -43,7 +47,7 @@ unliftObjectId _           = Nothing
 
 instance UnliftableFromMetaML (Id Object) where
     unliftFromMeta (Fix (StringLiteralPattern (StringLiteral str))) =
-        unliftObjectId str
+        parseObjectId str
     unliftFromMeta _ = Nothing
 
 instance UnliftableFromMetaML (SortVariable Object) where
@@ -57,6 +61,12 @@ unliftSortConstructor SymbolOrAlias
     { symbolOrAliasConstructor = Id ('#' : '`' : name)
     , symbolOrAliasParams = []
     } = parseObjectId name
+unliftSortConstructor _ = Nothing
+
+unliftHeadConstructor :: SymbolOrAlias Meta -> Maybe (Id Object)
+unliftHeadConstructor sa = case unliftSortConstructor sa of
+    Just (Id "ceil") -> Nothing
+    x                -> x
 
 instance UnliftableFromMetaML (SortActual Object) where
     unliftFromMeta (Fix (ApplicationPattern sa)) = do
@@ -66,6 +76,7 @@ instance UnliftableFromMetaML (SortActual Object) where
             { sortActualName = sortConstructor
             , sortActualSorts = sortParams
             }
+    unliftFromMeta _ = Nothing
 
 instance UnliftableFromMetaML (Sort Object) where
     unliftFromMeta p = (SortVariableSort <$> unliftFromMeta p)
@@ -73,12 +84,17 @@ instance UnliftableFromMetaML (Sort Object) where
 
 instance UnliftableFromMetaML [Sort Object] where
     unliftFromMeta (Fix (ApplicationPattern a))
-        | isImplicitHead consSortList (applicationSymbolOrAlias a) =
-            case applicationChildren a of
+        | isImplicitHead consSortList apHead =
+            case apChildren of
                 [uSort, uSorts] ->
                     (:) <$> unliftFromMeta uSort <*> unliftFromMeta uSorts
                 _ -> Nothing
+        | isImplicitHead nilSortList apHead && null apChildren = Just []
         | otherwise = Nothing
+      where
+        apHead = applicationSymbolOrAlias a
+        apChildren = applicationChildren a
+    unliftFromMeta _ = Nothing
 
 instance UnliftableFromMetaML (Variable Object) where
     unliftFromMeta (Fix (ApplicationPattern a))
@@ -90,67 +106,110 @@ instance UnliftableFromMetaML (Variable Object) where
                         <*> unliftFromMeta uVariableSort
                 _ -> Nothing
         | otherwise = Nothing
+    unliftFromMeta _ = Nothing
 
-type IndexedModuleReader a = Reader KoreIndexedModule a
+instance UnliftableFromMetaML [CommonMetaPattern] where
+    unliftFromMeta (Fix (ApplicationPattern a))
+        | isImplicitHead consPatternList apHead =
+            case apChildren of
+                [uPattern, uPatterns] ->
+                    (uPattern :) <$> unliftFromMeta uPatterns
+                _ -> Nothing
+        | isImplicitHead nilPatternList apHead && null apChildren = Just []
+        | otherwise = Nothing
+      where
+        apHead = applicationSymbolOrAlias a
+        apChildren = applicationChildren a
+    unliftFromMeta _ = Nothing
+
+instance UnliftableFromMetaML UnifiedPattern where
+    unliftFromMeta = Just . unliftResultFinal . unliftPattern
+
 
 data UnliftResult = UnliftResult
     { unliftResultFinal    :: UnifiedPattern
     , unliftResultOriginal :: CommonMetaPattern
     }
 
-unliftPattern :: CommonMetaPattern -> IndexedModuleReader UnliftResult
-unliftPattern = cataM reducer
+unliftPattern :: CommonMetaPattern -> UnliftResult
+unliftPattern = cata reducer
   where
-    reducer p = do
-        mObjectPattern <- unliftPatternReducer p
-        return UnliftResult
-            { unliftResultOriginal = Fix $ fmap unliftResultOriginal p
-            , unliftResultFinal =
-                case mObjectPattern of
-                    Just pat -> ObjectPattern pat
-                    _        -> MetaPattern (fmap unliftResultFinal p)
-            }
+    reducer p = UnliftResult
+        { unliftResultOriginal = Fix $ fmap unliftResultOriginal p
+        , unliftResultFinal =
+            case  unliftPatternReducer p of
+                Just pat -> ObjectPattern pat
+                _        -> MetaPattern (fmap unliftResultFinal p)
+        }
 
 unliftPatternReducer
     :: Pattern Meta Variable UnliftResult
-    -> IndexedModuleReader (Maybe (Pattern Object Variable UnifiedPattern))
+    -> Maybe (Pattern Object Variable UnifiedPattern)
 unliftPatternReducer (ApplicationPattern a)
     | isImplicitHead (mlPatternP AndPatternType) apHead
-    = return (unliftBinaryOpPattern AndPattern And apChildren)
+    = unliftBinaryOpPattern AndPattern And apChildren
     | isImplicitHead (mlPatternP BottomPatternType) apHead
-    = return (unliftTopBottomPattern (BottomPattern . Bottom) apChildren)
+    = unliftTopBottomPattern (BottomPattern . Bottom) apChildren
     | isImplicitHead (mlPatternP DomainValuePatternType) apHead
-    = return (unliftDomainValuePattern apChildren)
+    = unliftDomainValuePattern apChildren
     | isImplicitHead (mlPatternP CeilPatternType) apHead
-    = return (unliftCeilFloorPattern CeilPattern Ceil apChildren)
+    = unliftCeilFloorPattern CeilPattern Ceil apChildren
     | isImplicitHead (mlPatternP EqualsPatternType) apHead
-    = return (unliftEqualsInPattern EqualsPattern Equals apChildren)
+    = unliftEqualsInPattern EqualsPattern Equals apChildren
     | isImplicitHead (mlPatternP ExistsPatternType) apHead
-    = return (unliftQuantifiedPattern ExistsPattern Exists apChildren)
+    = unliftQuantifiedPattern ExistsPattern Exists apChildren
     | isImplicitHead (mlPatternP FloorPatternType) apHead
-    = return (unliftCeilFloorPattern FloorPattern Floor apChildren)
+    = unliftCeilFloorPattern FloorPattern Floor apChildren
     | isImplicitHead (mlPatternP ForallPatternType) apHead
-    = return (unliftQuantifiedPattern ForallPattern Forall apChildren)
+    = unliftQuantifiedPattern ForallPattern Forall apChildren
     | isImplicitHead (mlPatternP IffPatternType) apHead
-    = return (unliftBinaryOpPattern IffPattern Iff apChildren)
+    = unliftBinaryOpPattern IffPattern Iff apChildren
     | isImplicitHead (mlPatternP ImpliesPatternType) apHead
-    = return (unliftBinaryOpPattern ImpliesPattern Implies apChildren)
+    = unliftBinaryOpPattern ImpliesPattern Implies apChildren
     | isImplicitHead (mlPatternP InPatternType) apHead
-    = return (unliftEqualsInPattern InPattern In apChildren)
+    = unliftEqualsInPattern InPattern In apChildren
     | isImplicitHead (mlPatternP NextPatternType) apHead
-    = return (unliftUnaryOpPattern NextPattern Next apChildren)
+    = unliftUnaryOpPattern NextPattern Next apChildren
     | isImplicitHead (mlPatternP NotPatternType) apHead
-    = return (unliftUnaryOpPattern NotPattern Not apChildren)
+    = unliftUnaryOpPattern NotPattern Not apChildren
     | isImplicitHead (mlPatternP OrPatternType) apHead
-    = return (unliftBinaryOpPattern OrPattern Or apChildren)
+    = unliftBinaryOpPattern OrPattern Or apChildren
     | isImplicitHead (mlPatternP RewritesPatternType) apHead
-    = return (unliftBinaryOpPattern RewritesPattern Rewrites apChildren)
+    = unliftBinaryOpPattern RewritesPattern Rewrites apChildren
     | isImplicitHead (mlPatternP TopPatternType) apHead
-    = return (unliftTopBottomPattern (TopPattern . Top) apChildren)
+    = unliftTopBottomPattern (TopPattern . Top) apChildren
+    | variableAsPatternHead == apHead && length apChildren == 1
+    = VariablePattern
+      <$> unliftFromMeta (unliftResultOriginal (head apChildren))
+    | Just objectHeadId <- unliftHeadConstructor apHead
+    = unliftApplicationPattern objectHeadId apChildren
   where
     apHead = applicationSymbolOrAlias a
     apChildren = applicationChildren a
-unliftPatternReducer _ = return Nothing
+unliftPatternReducer _ = Nothing
+
+unliftApplicationPattern
+    :: Id Object
+    -> ([UnliftResult] -> Maybe  (Pattern Object Variable UnifiedPattern))
+unliftApplicationPattern objectHeadId results =
+    Just $ ApplicationPattern Application
+        { applicationSymbolOrAlias = objectHead
+        , applicationChildren = unifiedPatterns
+        }
+  where
+    maybeSorts =
+        map
+            ( (unliftFromMeta :: CommonMetaPattern -> Maybe (Sort Object))
+            . unliftResultOriginal
+            )
+            results
+    (sorts, patterns) = break (isNothing . fst) (maybeSorts `zip` results)
+    objectHead = SymbolOrAlias
+        { symbolOrAliasConstructor = objectHeadId
+        , symbolOrAliasParams = [s | (Just s, _) <- sorts]
+        }
+    unifiedPatterns = map (unliftResultFinal . snd) patterns
+
 
 unliftBinaryOpPattern
     :: (p Object UnifiedPattern -> Pattern Object Variable UnifiedPattern)
