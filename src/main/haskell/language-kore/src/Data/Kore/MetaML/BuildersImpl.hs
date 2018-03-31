@@ -12,6 +12,7 @@ module Data.Kore.MetaML.BuildersImpl where
 import           Data.Fix
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.MetaML.AST
 
 
@@ -54,8 +55,8 @@ fillCheckSort desiredSort (UnsortedPatternStub p) =
     Fix (p desiredSort)
 
 {-|'fillCheckPairSorts' takes two 'MetaPatternStub' objects, assumes that they
-must have the same sort, and tries to build 'UnifiedPattern's from them if
-possible, otherwise it returns functions that can build 'UnifiedPattern's.
+must have the same sort, and tries to build 'CommonKorePattern's from them if
+possible, otherwise it returns functions that can build 'CommonKorePattern's.
 -}
 fillCheckPairSorts
     :: MetaPatternStub

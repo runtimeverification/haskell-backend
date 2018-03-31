@@ -208,7 +208,7 @@ equalsGen
 equalsGen childGen x = equalsInGen childGen x Equals
 
 domainValueGen
-    :: MetaOrObject level => level -> Gen (DomainValue level UnifiedPattern)
+    :: MetaOrObject level => level -> Gen (DomainValue level CommonKorePattern)
 domainValueGen x = pure DomainValue
     <*> scale (`div` 2) (sortGen x)
     <*> (MetaPattern . StringLiteralPattern <$> stringLiteralGen)
@@ -279,7 +279,7 @@ patternGen childGen x =
         , VariablePattern <$> variableGen x
         ]
 
-unifiedPatternGen :: Gen UnifiedPattern
+unifiedPatternGen :: Gen CommonKorePattern
 unifiedPatternGen = sized (\n ->
     if n<=0
         then oneof

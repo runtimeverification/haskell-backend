@@ -4,6 +4,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE Rank2Types            #-}
 {-# LANGUAGE StandaloneDeriving    #-}
+{-# LANGUAGE UndecidableInstances  #-}
 {-|
 Module      : Data.Kore.AST.Kore
 Description : Data Structures for representing the Kore language AST with
@@ -29,18 +30,15 @@ module Data.Kore.AST.Kore where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.HaskellExtensions (Rotate41 (..))
+import           Data.Kore.HaskellExtensions (Rotate31 (..), Rotate41 (..))
 
-import           Data.Hashable               (hash)
+import           Data.Fix
 import           Data.Typeable               (Typeable)
 
-data UnifiedSort
-    = ObjectSort !(Sort Object)
-    | MetaSort !(Sort Meta)
-    deriving (Show, Eq)
-
-class ( Ord (UnifiedVariable var)
-      , Show (var Object), Show (var Meta)
+{-
+import           Data.Hashable               (hash)
+class ( Ord (Unified var)
+      , ShowMetaOrObject var
       , Typeable var
       ) => VariableClass var
   where
@@ -52,158 +50,97 @@ class ( Ord (UnifiedVariable var)
 instance VariableClass Variable where
     getVariableSort = variableSort
     getVariableHash = hash . getId . variableName
-
-{-|'UnifiedVariable' corresponds to the @variable@ syntactic category from
-the Semantics of K, Section 9.1.4 (Patterns).
 -}
-data UnifiedVariable variable
-    = MetaVariable !(variable Meta)
-    | ObjectVariable !(variable Object)
 
-deriving instance Eq (UnifiedVariable Variable)
-deriving instance Ord (UnifiedVariable Variable)
-deriving instance Show (UnifiedVariable Variable)
-
-instance UnifiedThing UnifiedSort Sort where
-    destructor (MetaSort s)   = Left s
-    destructor (ObjectSort s) = Right s
-    metaConstructor = MetaSort
-    objectConstructor = ObjectSort
-
-instance UnifiedThing UnifiedSortVariable SortVariable where
-    destructor (MetaSortVariable v)   = Left v
-    destructor (ObjectSortVariable v) = Right v
-    metaConstructor = MetaSortVariable
-    objectConstructor = ObjectSortVariable
-
-instance Typeable var => UnifiedThing (UnifiedVariable var) var where
-    destructor (MetaVariable v)   = Left v
-    destructor (ObjectVariable v) = Right v
-    metaConstructor = MetaVariable
-    objectConstructor = ObjectVariable
-
-{-|'UnifiedSortVariable' corresponds to the @variable@ syntactic category
-from the Semantics of K, Section 9.1.2 (Sorts).
--}
-data UnifiedSortVariable
-    = ObjectSortVariable !(SortVariable Object)
-    | MetaSortVariable !(SortVariable Meta)
-    deriving (Show, Eq, Ord)
-
-{-|'FixPattern' class corresponds to "fixed point"-like representations
-of the 'Pattern' class.
-
-'p' is the fixed point wrapping pattern.
-
-'v' is the type of variables.
--}
-class UnifiedThing (pat var) (PatternObjectMeta var (pat var))
-    => FixPattern var pat
-  where
-    {-|'fixPatternApply' "lifts" a function defined on 'Pattern' to the
-    domain of the fixed point 'pat'.
-
-    The resulting function unwraps the pattern from 'pat' and maps it through
-    the argument function.
-    -}
-    fixPatternApply
-        :: (forall level
-            . MetaOrObject level => Pattern level var (pat var) -> b)
-        -> (pat var -> b)
-    fixPatternApply f = transformUnified (f . getPatternObjectMeta)
-
-data FixedPattern variable
-    = MetaPattern !(Pattern Meta variable (FixedPattern variable))
-    | ObjectPattern !(Pattern Object variable (FixedPattern variable))
-
-newtype PatternObjectMeta variable child level = PatternObjectMeta
-    { getPatternObjectMeta :: Pattern level variable child }
-
-instance Typeable var
-    => UnifiedThing
-        (FixedPattern var)
-        (PatternObjectMeta var (FixedPattern var))
-  where
-    destructor (MetaPattern p)   = Left (PatternObjectMeta p)
-    destructor (ObjectPattern p) = Right (PatternObjectMeta p)
-    metaConstructor = MetaPattern . getPatternObjectMeta
-    objectConstructor = ObjectPattern . getPatternObjectMeta
-
-asUnifiedPattern
-    :: (MetaOrObject level, VariableClass variable)
-    => Pattern level variable (FixedPattern variable) -> FixedPattern variable
-asUnifiedPattern = asUnified . PatternObjectMeta
-
-instance VariableClass variable => FixPattern variable FixedPattern where
+type PatternObjectMeta = Rotate31 Pattern
 
 {-|'UnifiedPattern' corresponds to the @pattern@ syntactic category from
 the Semantics of K, Section 9.1.4 (Patterns).
 -}
-type UnifiedPattern = FixedPattern Variable
+newtype UnifiedPattern variable child = UnifiedPattern
+    { getUnifiedPattern :: Unified (Rotate31 Pattern variable child) }
 
-deriving instance Eq UnifiedPattern
-deriving instance Show UnifiedPattern
+asUnifiedPattern
+    :: (MetaOrObject level, Typeable variable, Typeable child)
+    => Pattern level variable child -> UnifiedPattern variable child
+asUnifiedPattern = UnifiedPattern . asUnified . Rotate31
+
+deriving instance
+    ( Eq child
+    , EqMetaOrObject variable
+    ) => Eq (UnifiedPattern variable child)
+
+deriving instance
+    ( Show child
+    , ShowMetaOrObject variable
+    ) => Show (UnifiedPattern variable child)
+
+type FixedPattern = UnifiedPattern
+type KorePattern variable = (Fix (UnifiedPattern variable))
+
+asKorePattern
+    :: (MetaOrObject level, Typeable variable)
+    => Pattern level variable (KorePattern variable)
+    -> KorePattern variable
+asKorePattern = Fix . asUnifiedPattern
+
+type CommonKorePattern = KorePattern Variable
 
 type KoreAttributes = Attributes FixedPattern Variable
 
 type KoreSentenceAlias level = SentenceAlias level FixedPattern Variable
 type KoreSentenceSymbol level = SentenceSymbol level FixedPattern Variable
 type KoreSentenceImport = SentenceImport FixedPattern Variable
-type KoreSentenceAxiom = SentenceAxiom UnifiedSortVariable FixedPattern Variable
+type KoreSentenceAxiom = SentenceAxiom (Unified SortVariable) FixedPattern Variable
 type KoreSentenceSort = SentenceSort Object FixedPattern Variable
 
-data UnifiedSentence sortParam pat variable
-    = MetaSentence (Sentence Meta sortParam pat variable)
-    | ObjectSentence (Sentence Object sortParam pat variable)
-  deriving (Show, Eq)
+newtype UnifiedSentence sortParam pat variable = UnifiedSentence
+    { getUnifiedSentence :: Unified (Rotate41 Sentence sortParam pat variable) }
 
-type LeveledSentence = Rotate41 Sentence
+deriving instance
+    ( Eq (pat variable (Fix (pat variable)))
+    , Eq sortParam
+    ) => Eq (UnifiedSentence sortParam pat variable)
 
-instance
-    ( Typeable sortParam
-    , Typeable pat
-    , Typeable variable
-    ) => UnifiedThing
-        (UnifiedSentence sortParam pat variable)
-        (LeveledSentence sortParam pat variable)
-  where
-    destructor (MetaSentence s)   = Left (Rotate41 s)
-    destructor (ObjectSentence s) = Right (Rotate41 s)
-    objectConstructor = ObjectSentence . unRotate41
-    metaConstructor = MetaSentence . unRotate41
+deriving instance
+    ( Show (pat variable (Fix (pat variable)))
+    , Show sortParam
+    ) => Show (UnifiedSentence sortParam pat variable)
 
-asKoreSymbolSentence
-    :: MetaOrObject level => KoreSentenceSymbol level -> KoreSentence
-asKoreSymbolSentence = asUnified . Rotate41 . SentenceSymbolSentence
-
-asKoreAliasSentence
-    :: MetaOrObject level => KoreSentenceAlias level -> KoreSentence
-asKoreAliasSentence = asUnified . Rotate41 . SentenceAliasSentence
+type UnifiedSortVariable = Unified SortVariable
+type UnifiedSort = Unified Sort
 
 type KoreSentence = UnifiedSentence UnifiedSortVariable FixedPattern Variable
+
+asUnifiedSentence
+    :: (MetaOrObject level, Typeable pat, Typeable variable, Typeable sortParam)
+    => (a -> Sentence level sortParam pat variable)
+    -> (a -> UnifiedSentence sortParam pat variable)
+asUnifiedSentence ctor = UnifiedSentence . asUnified . Rotate41 . ctor
+
 type KoreModule =
     Module UnifiedSentence UnifiedSortVariable FixedPattern Variable
 
 type KoreDefinition =
     Definition UnifiedSentence UnifiedSortVariable FixedPattern Variable
 
-instance AsSentence KoreSentence (KoreSentenceAlias Meta) where
-    asSentence = MetaSentence . SentenceAliasSentence
+instance
+    ( MetaOrObject level
+    ) => AsSentence KoreSentence (KoreSentenceAlias level)
+  where
+    asSentence = asUnifiedSentence SentenceAliasSentence
 
-instance AsSentence KoreSentence (KoreSentenceAlias Object) where
-    asSentence = ObjectSentence . SentenceAliasSentence
-
-instance AsSentence KoreSentence (KoreSentenceSymbol Meta) where
-    asSentence = MetaSentence . SentenceSymbolSentence
-
-instance AsSentence KoreSentence (KoreSentenceSymbol Object) where
-    asSentence = ObjectSentence . SentenceSymbolSentence
+instance
+    ( MetaOrObject level
+    ) => AsSentence KoreSentence (KoreSentenceSymbol level)
+  where
+    asSentence = asUnifiedSentence SentenceSymbolSentence
 
 instance AsSentence KoreSentence KoreSentenceImport where
-    asSentence = MetaSentence . SentenceImportSentence
+    asSentence = asUnifiedSentence SentenceImportSentence
 
 instance AsSentence KoreSentence KoreSentenceAxiom where
-    asSentence = MetaSentence . SentenceAxiomSentence
+    asSentence = asUnifiedSentence SentenceAxiomSentence
 
 instance AsSentence KoreSentence KoreSentenceSort where
-    asSentence = ObjectSentence . SentenceSortSentence
+    asSentence = asUnifiedSentence SentenceSortSentence

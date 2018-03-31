@@ -17,12 +17,13 @@ module Data.Kore.MetaML.MetaToKore where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.MetaML.AST
 
 import           Data.Fix
 
-patternMetaToKore :: SentenceMetaPattern Variable -> UnifiedPattern
-patternMetaToKore = cata MetaPattern . getSentenceMetaPattern
+patternMetaToKore :: CommonMetaPattern -> CommonKorePattern
+patternMetaToKore = cata asKorePattern
 
 attributesMetaToKore :: MetaAttributes -> KoreAttributes
 attributesMetaToKore ma =
@@ -47,7 +48,7 @@ sentenceMetaToKore (SentenceAxiomSentence msx) = asSentence SentenceAxiom
     , sentenceAxiomPattern =
         patternMetaToKore (sentenceAxiomPattern msx)
     , sentenceAxiomParameters =
-        map MetaSortVariable (sentenceAxiomParameters msx)
+        map UnifiedMeta (sentenceAxiomParameters msx)
     }
 
 moduleMetaToKore :: MetaModule -> KoreModule

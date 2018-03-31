@@ -76,7 +76,7 @@ unliftTests =
             in
                 (prettyAssertEqual ""
                     (Just (patternMetaToKore (SentenceMetaPattern metaPattern)))
-                    (unliftFromMeta metaPattern ::Maybe UnifiedPattern)
+                    (unliftFromMeta metaPattern ::Maybe CommonKorePattern)
                 )
             )
         ]

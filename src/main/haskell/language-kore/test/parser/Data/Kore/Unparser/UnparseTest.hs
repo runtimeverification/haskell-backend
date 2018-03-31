@@ -187,7 +187,7 @@ unparseParseTests =
             )
         , testProperty "UnifiedVariable"
             (forAll unifiedVariableGen (unparseParseProp unifiedVariableParser))
-        , testProperty "UnifiedPattern"
+        , testProperty "CommonKorePattern"
             (forAll unifiedPatternGen (unparseParseProp unifiedPatternParser))
         , testProperty "Attributes"
             (forAll

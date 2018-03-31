@@ -500,7 +500,7 @@ BNF definitions:
     | ⟨meta-head⟩ ‘(’ ⟨pattern-list⟩ ‘)’
 @
 -}
-unifiedVariableOrTermPatternParser :: Parser UnifiedPattern
+unifiedVariableOrTermPatternParser :: Parser CommonKorePattern
 unifiedVariableOrTermPatternParser = do
     c <- ParserUtils.peekChar'
     if c == '#'
@@ -554,7 +554,7 @@ BNF definitions:
 
 Always starts with @\@.
 -}
-unifiedMLConstructorParser :: Parser UnifiedPattern
+unifiedMLConstructorParser :: Parser CommonKorePattern
 unifiedMLConstructorParser = do
     void (Parser.char '\\')
     mlPatternParser
@@ -734,7 +734,7 @@ BNF definitions:
 Note that the @meta-pattern@ can be a @string@, while the @object-pattern@
 can't.
 -}
-unifiedPatternParser :: Parser UnifiedPattern
+unifiedPatternParser :: Parser CommonKorePattern
 unifiedPatternParser = do
     c <- ParserUtils.peekChar'
     case c of

@@ -6,6 +6,7 @@
 {-# LANGUAGE GADTs                  #-}
 {-# LANGUAGE KindSignatures         #-}
 {-# LANGUAGE StandaloneDeriving     #-}
+{-# LANGUAGE UndecidableInstances   #-}
 {-|
 Module      : Data.Kore.AST.Common
 Description : Data Structures for representing the Kore language AST that do not
@@ -30,13 +31,10 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Data.Kore.AST.Common where
 
-import           Data.Typeable (Typeable)
+import           Data.Fix
+import           Data.Typeable              (Typeable)
 
-data Meta = Meta
-    deriving (Show, Eq, Ord, Typeable)
-
-data Object = Object
-    deriving (Show, Eq, Ord, Typeable)
+import           Data.Kore.AST.MetaOrObject
 
 {-|'Id' corresponds to the @object-identifier@ and @meta-identifier@
 syntactic categories from the Semantics of K, Section 9.1.1 (Lexicon).
@@ -206,6 +204,10 @@ data Variable level = Variable
     , variableSort :: !(Sort level)
     }
     deriving (Show, Eq, Ord, Typeable)
+
+instance ShowMetaOrObject Variable
+instance EqMetaOrObject Variable
+instance OrdMetaOrObject Variable
 
 {-|Enumeration of patterns starting with @\@
 -}
@@ -647,8 +649,15 @@ deriving instance Traversable (Pattern level variable)
 It is parameterized by the types of Patterns, @pat@.
 -}
 newtype Attributes pat (variable :: * -> *) =
-    Attributes { getAttributes :: [pat variable] }
-  deriving (Eq, Show)
+    Attributes { getAttributes :: [Fix (pat variable)] }
+
+deriving instance
+    (Eq (pat variable (Fix (pat variable))))
+     => Eq (Attributes pat variable)
+
+deriving instance
+    (Show (pat variable (Fix (pat variable))))
+     => Show (Attributes pat variable)
 
 {-|'SentenceAlias' corresponds to the @object-alias-declaration@ and
 @meta-alias-declaration@ syntactic categories from the Semantics of K,
@@ -663,7 +672,15 @@ data SentenceAlias level pat variable = SentenceAlias
     , sentenceAliasResultSort :: !(Sort level)
     , sentenceAliasAttributes :: !(Attributes pat variable)
     }
-    deriving (Eq, Show, Typeable)
+    deriving (Typeable)
+
+deriving instance
+    (Eq (pat variable (Fix (pat variable))))
+     => Eq (SentenceAlias level pat variable)
+
+deriving instance
+    (Show (pat variable (Fix (pat variable))))
+     => Show (SentenceAlias level pat variable)
 
 {-|'SentenceSymbol' corresponds to the @object-symbol-declaration@ and
 @meta-symbol-declaration@ syntactic categories from the Semantics of K,
@@ -678,7 +695,15 @@ data SentenceSymbol level pat variable = SentenceSymbol
     , sentenceSymbolResultSort :: !(Sort level)
     , sentenceSymbolAttributes :: !(Attributes pat variable)
     }
-    deriving (Eq, Show, Typeable)
+    deriving (Typeable)
+
+deriving instance
+    (Eq (pat variable (Fix (pat variable))))
+     => Eq (SentenceSymbol level pat variable)
+
+deriving instance
+    (Show (pat variable (Fix (pat variable))))
+     => Show (SentenceSymbol level pat variable)
 
 {-|'ModuleName' corresponds to the @module-name@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
@@ -693,7 +718,15 @@ data SentenceImport pat variable = SentenceImport
     { sentenceImportModuleName :: !ModuleName
     , sentenceImportAttributes :: !(Attributes pat variable)
     }
-    deriving (Eq, Show, Typeable)
+    deriving (Typeable)
+
+deriving instance
+    (Eq (pat variable (Fix (pat variable))))
+     => Eq (SentenceImport pat variable)
+
+deriving instance
+    (Show (pat variable (Fix (pat variable))))
+     => Show (SentenceImport pat variable)
 
 {-|'SentenceSort' corresponds to the @sort-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
@@ -703,17 +736,33 @@ data SentenceSort level pat variable = SentenceSort
     , sentenceSortParameters :: ![SortVariable level]
     , sentenceSortAttributes :: !(Attributes pat variable)
     }
-    deriving (Eq, Show)
+
+deriving instance
+    (Eq (pat variable (Fix (pat variable))))
+     => Eq (SentenceSort level pat variable)
+
+deriving instance
+    (Show (pat variable (Fix (pat variable))))
+     => Show (SentenceSort level pat variable)
 
 {-|'SentenceAxiom' corresponds to the @axiom-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
 data SentenceAxiom sortParam pat variable = SentenceAxiom
     { sentenceAxiomParameters :: ![sortParam]
-    , sentenceAxiomPattern    :: !(pat variable)
+    , sentenceAxiomPattern    :: !(Fix (pat variable))
     , sentenceAxiomAttributes :: !(Attributes pat variable)
     }
-    deriving (Eq, Show)
+
+deriving instance
+    ( Eq (pat variable (Fix (pat variable)))
+    , Eq sortParam
+    )  => Eq (SentenceAxiom sortParam pat variable)
+
+deriving instance
+    ( Show (pat variable (Fix (pat variable)))
+    , Show sortParam
+    ) => Show (SentenceAxiom sortParam pat variable)
 
 {-|The 'Sentence' type corresponds to the @declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
@@ -743,11 +792,12 @@ data Sentence level sortParam pat variable where
         -> Sentence Object sortParam pat variable
 
 deriving instance
-    ( Eq (pat variable)
+    ( Eq (pat variable (Fix (pat variable)))
     , Eq sortParam
     ) => Eq (Sentence level sortParam pat variable)
+
 deriving instance
-    ( Show (pat variable)
+    ( Show (pat variable (Fix (pat variable)))
     , Show sortParam
     ) => Show (Sentence level sortParam pat variable)
 
@@ -763,7 +813,16 @@ data Module sentence sortParam pat variable = Module
     , moduleSentences  :: ![sentence sortParam pat variable]
     , moduleAttributes :: !(Attributes pat variable)
     }
-    deriving (Eq, Show)
+
+deriving instance
+    ( Eq (pat variable (Fix (pat variable)))
+    , Eq (sentence sortParam pat variable)
+    ) => Eq (Module sentence sortParam pat variable)
+
+deriving instance
+    ( Show (pat variable (Fix (pat variable)))
+    , Show (sentence sortParam pat variable)
+    ) => Show (Module sentence sortParam pat variable)
 
 {-|Currently, a 'Definition' consists of some 'Attributes' and a 'Module'
 
@@ -778,7 +837,16 @@ data Definition sentence sortParam pat variable = Definition
     { definitionAttributes :: !(Attributes pat variable)
     , definitionModules    :: ![Module sentence sortParam pat variable]
     }
-    deriving (Eq, Show)
+
+deriving instance
+    ( Eq (pat variable (Fix (pat variable)))
+    , Eq (sentence sortParam pat variable)
+    ) => Eq (Definition sentence sortParam pat variable)
+
+deriving instance
+    ( Show (pat variable (Fix (pat variable)))
+    , Show (sentence sortParam pat variable)
+    ) => Show (Definition sentence sortParam pat variable)
 
 class SentenceSymbolOrAlias sentence where
     getSentenceSymbolOrAliasConstructor

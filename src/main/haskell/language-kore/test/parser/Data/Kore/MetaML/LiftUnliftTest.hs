@@ -44,7 +44,7 @@ liftTests =
                         (SortVariable (Id "a"))
                     }
                 )
-            ::UnifiedPattern)
+            ::CommonKorePattern)
         , testLiftUnlift "Top"
             (Fix
                 (apply (metaMLPatternHead TopPatternType)
@@ -57,7 +57,7 @@ liftTests =
                         SortVariableSort (SortVariable (Id "a"))
                     }
                 )
-            ::UnifiedPattern)
+            ::CommonKorePattern)
         , testLiftUnlift "Ceil"
             (Fix
                 (apply (metaMLPatternHead CeilPatternType)
@@ -311,7 +311,7 @@ liftTests =
                         )
                     }
                 )
-            ::UnifiedPattern)
+            ::CommonKorePattern)
         , testLiftUnlift "And pattern"
             (Fix
                 (apply (metaMLPatternHead AndPatternType)
@@ -944,7 +944,7 @@ natSort = SortActualSort SortActual
 stringPattern :: Pattern Meta Variable child
 stringPattern = StringLiteralPattern (StringLiteral "a")
 
-unifiedStringPattern :: UnifiedPattern
+unifiedStringPattern :: CommonKorePattern
 unifiedStringPattern = MetaPattern stringPattern
 
 metaStringPattern :: CommonMetaPattern

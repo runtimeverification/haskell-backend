@@ -9,6 +9,7 @@ module Data.Kore.ASTTraversals ( bottomUpVisitor
 
 
 import           Control.Monad.Identity
+import           Data.Fix
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
@@ -28,29 +29,19 @@ been visited and transformed into results and aggregates these results into a
 new result.
 -}
 topDownVisitorM
-    :: (FixPattern var fixedPoint, Monad m)
-    => ( forall level . MetaOrObject level
-        => Pattern level var (fixedPoint var)
-            -> m
-                ( Either
-                    result
-                    ( Pattern level var (fixedPoint var)
-                    , m result -> m result
-                    )
-                )
-            )
-    -> (forall level . MetaOrObject level
-        => Pattern level var result -> m result)
-    -> (fixedPoint var -> m result)
+    :: (Monad m, Traversable pat)
+    => (pat (Fix pat)
+        -> m (Either result ( pat (Fix pat) , m result -> m result))
+       )
+    -> (pat result -> m result)
+    -> (Fix pat -> m result)
 topDownVisitorM preprocess postprocess = self
   where
-    self = fixPatternApply (\p -> do
-        preP <- preprocess p
-        case preP of
+    self = preprocess . unFix >=> (\p ->
+        case p of
             Left r   -> return r
-            Right (p', f) -> do
-                recP <- traverse (f . self) p'
-                postprocess recP
+            Right (p', f) ->
+                traverse (f . self) p' >>= postprocess
         )
 
 {-|'bottomUpVisitorM' is the specialization of 'topDownVisitorM' where the
@@ -62,34 +53,29 @@ which assumes that all children patterns of a pattern have been visited and
 transformed into results and aggregates these results into a new result.
 -}
 bottomUpVisitorM
-    :: (FixPattern var fixedPoint, Monad m)
-    => (forall level . MetaOrObject level
-        => Pattern level var result -> m result)
-    -> (fixedPoint var -> m result)
-bottomUpVisitorM = topDownVisitorM (\x -> pure (Right (x, id)))
+    :: (Monad m, Traversable pat)
+    => (pat result -> m result) -> (Fix pat -> m result)
+bottomUpVisitorM = cataM
 
 -- |'topDownVisitor' is the non-monadic version of 'topDownVisitorM'.
 topDownVisitor
-    :: FixPattern var fixedPoint
-    => (forall level . MetaOrObject level
-        => Pattern level var (fixedPoint var)
-            -> Either result (Pattern level var (fixedPoint var)))
-    -> (forall level . MetaOrObject level
-        => Pattern level var result -> result)
-    -> (fixedPoint var -> result)
-topDownVisitor preprocess postprocess =
-    runIdentity .
-        topDownVisitorM preprocessM (pure . postprocess)
+    :: Functor pat
+    => (pat (Fix pat) -> Either result (pat (Fix pat)))
+    -> (pat result -> result)
+    -> (Fix pat -> result)
+topDownVisitor preprocess postprocess = self
   where
-    preprocessM x =
-        case preprocess x of
-            Left r  -> return (Left r)
-            Right p -> return (Right (p, id))
+    self =
+        (\p -> case p of
+            Left r   -> r
+            Right p' -> postprocess (fmap self p')
+        )
+        . preprocess . unFix
+
 
 -- |'bottomUpVisitor' is the non-monadic version of 'bottomUpVisitorM'.
 bottomUpVisitor
-    :: FixPattern var fixedPoint
-    => (forall level . MetaOrObject level => Pattern level var result -> result)
-    -> (fixedPoint var -> result)
-bottomUpVisitor reduce =
-    runIdentity . bottomUpVisitorM (pure . reduce)
+    :: Functor pat
+    => (pat result -> result)
+    -> (Fix pat -> result)
+bottomUpVisitor = cata

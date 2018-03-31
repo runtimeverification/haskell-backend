@@ -8,7 +8,7 @@ import           Data.Kore.AST.Kore
 import           Data.Kore.ASTTraversals
 
 
-lhs :: UnifiedPattern -> UnifiedPattern
+lhs :: CommonKorePattern -> CommonKorePattern
 lhs = topDownVisitor leftImplies asUnifiedPattern
   where
     leftImplies (ImpliesPattern ip) = Left (impliesFirst ip)

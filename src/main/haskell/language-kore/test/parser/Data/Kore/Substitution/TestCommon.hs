@@ -17,10 +17,10 @@ objectVariable = Variable
 unifiedObjectVariable :: UnifiedVariable Variable
 unifiedObjectVariable = ObjectVariable objectVariable
 
-objectVariablePattern :: Pattern Object Variable UnifiedPattern
+objectVariablePattern :: Pattern Object Variable CommonKorePattern
 objectVariablePattern = VariablePattern objectVariable
 
-objectVariableUnifiedPattern :: UnifiedPattern
+objectVariableUnifiedPattern :: CommonKorePattern
 objectVariableUnifiedPattern = ObjectPattern objectVariablePattern
 
 metaSort :: Sort Meta
@@ -35,14 +35,14 @@ metaVariable = Variable
 unifiedMetaVariable :: UnifiedVariable Variable
 unifiedMetaVariable = MetaVariable metaVariable
 
-metaVariablePattern :: Pattern Meta Variable UnifiedPattern
+metaVariablePattern :: Pattern Meta Variable CommonKorePattern
 metaVariablePattern = VariablePattern metaVariable
 
-metaVariableUnifiedPattern :: UnifiedPattern
+metaVariableUnifiedPattern :: CommonKorePattern
 metaVariableUnifiedPattern = MetaPattern metaVariablePattern
 
-objectTopPattern :: UnifiedPattern
+objectTopPattern :: CommonKorePattern
 objectTopPattern = ObjectPattern $ TopPattern $ Top objectSort
 
-objectBottomPattern :: UnifiedPattern
+objectBottomPattern :: CommonKorePattern
 objectBottomPattern = ObjectPattern $ BottomPattern $ Bottom objectSort

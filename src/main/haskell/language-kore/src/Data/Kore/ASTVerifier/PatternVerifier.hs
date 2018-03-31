@@ -94,9 +94,9 @@ addDeclaredVariable
             Map.insert (variableName variable) variable variablesDict
         }
 
-{-|'verifyPattern' verifies the welformedness of a Kore 'UnifiedPattern'. -}
+{-|'verifyPattern' verifies the welformedness of a Kore 'CommonKorePattern'. -}
 verifyPattern
-    :: UnifiedPattern
+    :: CommonKorePattern
     -> Maybe UnifiedSort
     -- ^ If present, represents the expected sort of the pattern.
     -> KoreIndexedModule
@@ -115,7 +115,7 @@ verifyPattern unifiedPattern maybeExpectedSort indexedModule sortVariables = do
         freeVariables1
 
 internalVerifyPattern
-    :: UnifiedPattern
+    :: CommonKorePattern
     -> Maybe UnifiedSort
     -> KoreIndexedModule
     -> Set.Set UnifiedSortVariable
@@ -206,7 +206,7 @@ internalVerifyPattern
 
 verifyParametrizedPattern
     :: MetaOrObject level
-    => Pattern level Variable UnifiedPattern
+    => Pattern level Variable CommonKorePattern
     -> KoreIndexedModule
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
@@ -230,7 +230,7 @@ verifyParametrizedPattern (TopPattern p)         = verifyMLPattern p
 verifyParametrizedPattern (VariablePattern p)    = verifyVariableUsage p
 
 verifyObjectPattern
-    :: Pattern Object v UnifiedPattern
+    :: Pattern Object v CommonKorePattern
     -> KoreIndexedModule
     -> VerifyHelpers Object
     -> Set.Set UnifiedSortVariable
@@ -244,7 +244,7 @@ verifyObjectPattern _                   = rightNothing
 
 maybeVerifyMLPattern
     :: (MLPatternClass p, MetaOrObject level)
-    => p level UnifiedPattern
+    => p level CommonKorePattern
     -> KoreIndexedModule
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
@@ -267,7 +267,7 @@ maybeVerifyMLPattern
 
 verifyMLPattern
     :: (MLPatternClass p, MetaOrObject level)
-    => p level UnifiedPattern
+    => p level CommonKorePattern
     -> KoreIndexedModule
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
@@ -300,7 +300,7 @@ verifyMLPattern
 
 verifyPatternsWithSorts
     :: [UnifiedSort]
-    -> [UnifiedPattern]
+    -> [CommonKorePattern]
     -> KoreIndexedModule
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
@@ -337,7 +337,7 @@ verifyPatternsWithSorts
 
 verifyApplication
     :: MetaOrObject level
-    => Application level UnifiedPattern
+    => Application level CommonKorePattern
     -> KoreIndexedModule
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
@@ -365,7 +365,7 @@ verifyApplication
 
 verifyBinder
     :: (MLBinderPatternClass p, MetaOrObject level)
-    => p level Variable UnifiedPattern
+    => p level Variable CommonKorePattern
     -> KoreIndexedModule
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
@@ -556,7 +556,7 @@ verifySameSort (ObjectSort expectedSort) (MetaSort actualSort) = do
     verifySuccess
 
 verifyFreeVariables
-    :: UnifiedPattern -> Either (Error VerifyError) DeclaredVariables
+    :: CommonKorePattern -> Either (Error VerifyError) DeclaredVariables
 verifyFreeVariables unifiedPattern =
     foldM
         addFreeVariable

@@ -115,7 +115,7 @@ instance LiftableToMetaML (Variable Object) where
         , liftToMeta (variableSort v)]
 
 -- Section 9.2.8 Lift Patterns
-instance LiftableToMetaML UnifiedPattern where
+instance LiftableToMetaML CommonKorePattern where
     liftToMeta = bottomUpVisitor liftReducer
 
 liftReducer

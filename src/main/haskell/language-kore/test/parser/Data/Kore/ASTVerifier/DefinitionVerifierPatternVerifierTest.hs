@@ -20,7 +20,7 @@ data PatternRestrict
     | NoRestrict
 
 data TestPattern level = TestPattern
-    { testPatternPattern    :: Pattern level Variable UnifiedPattern
+    { testPatternPattern    :: Pattern level Variable CommonKorePattern
     , testPatternErrorStack :: ErrorStack
     }
 
@@ -33,7 +33,7 @@ testPatternErrorStackStrings
     strings
 
 testPatternUnifiedPattern
-    :: MetaOrObject level => TestPattern level -> UnifiedPattern
+    :: MetaOrObject level => TestPattern level -> CommonKorePattern
 testPatternUnifiedPattern
     TestPattern {testPatternPattern = p}
   =
@@ -522,7 +522,7 @@ dummyVariableAndSentences (NamePrefix namePrefix) =
 
 successTestsForObjectPattern
     :: String
-    -> Pattern Object Variable UnifiedPattern
+    -> Pattern Object Variable CommonKorePattern
     -> NamePrefix
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
@@ -567,7 +567,7 @@ successTestsForObjectPattern
 
 successTestsForMetaPattern
     :: String
-    -> Pattern Meta Variable UnifiedPattern
+    -> Pattern Meta Variable CommonKorePattern
     -> NamePrefix
     -> TestedPatternSort Meta
     -> SortVariablesThatMustBeDeclared Meta
@@ -608,7 +608,7 @@ failureTestsForObjectPattern
     :: String
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> Pattern Object Variable UnifiedPattern
+    -> Pattern Object Variable CommonKorePattern
     -> NamePrefix
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
@@ -664,7 +664,7 @@ failureTestsForMetaPattern
     :: String
     -> ExpectedErrorMessage
     -> ErrorStack
-    -> Pattern Meta Variable UnifiedPattern
+    -> Pattern Meta Variable CommonKorePattern
     -> NamePrefix
     -> TestedPatternSort Meta
     -> SortVariablesThatMustBeDeclared Meta
@@ -710,7 +710,7 @@ failureTestsForMetaPattern
 genericPatternInAllContexts
     :: MetaOrObject level
     => level
-    -> Pattern level Variable UnifiedPattern
+    -> Pattern level Variable CommonKorePattern
     -> NamePrefix
     -> TestedPatternSort level
     -> SortVariablesThatMustBeDeclared level
@@ -777,7 +777,7 @@ genericPatternInAllContexts
             }
 
 objectPatternInAllContexts
-    :: Pattern Object Variable UnifiedPattern
+    :: Pattern Object Variable CommonKorePattern
     -> NamePrefix
     -> TestedPatternSort Object
     -> SortVariablesThatMustBeDeclared Object
@@ -881,8 +881,8 @@ patternsInAllContexts
 
 genericPatternInPatterns
     :: MetaOrObject level
-    => Pattern level Variable UnifiedPattern
-    -> Pattern level Variable UnifiedPattern
+    => Pattern level Variable CommonKorePattern
+    -> Pattern level Variable CommonKorePattern
     -> OperandSort level
     -> ResultSort level
     -> VariableOfDeclaredSort level
@@ -939,15 +939,15 @@ genericPatternInPatterns
         ]
 
 objectPatternInPatterns
-    :: Pattern Object Variable UnifiedPattern
-    -> Pattern Object Variable UnifiedPattern
+    :: Pattern Object Variable CommonKorePattern
+    -> Pattern Object Variable CommonKorePattern
     -> OperandSort Object
     -> [TestPattern Object]
 objectPatternInPatterns = patternInUnquantifiedObjectPatterns
 
 patternInQuantifiedPatterns
     :: MetaOrObject level
-    => Pattern level Variable UnifiedPattern
+    => Pattern level Variable CommonKorePattern
     -> Sort level
     -> Variable level
     -> [TestPattern level]
@@ -982,8 +982,8 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
 
 patternInUnquantifiedGenericPatterns
     :: MetaOrObject level
-    => Pattern level Variable UnifiedPattern
-    -> Pattern level Variable UnifiedPattern
+    => Pattern level Variable CommonKorePattern
+    -> Pattern level Variable CommonKorePattern
     -> OperandSort level
     -> ResultSort level
     -> [TestPattern level]
@@ -1122,8 +1122,8 @@ patternInUnquantifiedGenericPatterns
     testedUnifiedPattern = asUnifiedPattern testedPattern
 
 patternInUnquantifiedObjectPatterns
-    :: Pattern Object Variable UnifiedPattern
-    -> Pattern Object Variable UnifiedPattern
+    :: Pattern Object Variable CommonKorePattern
+    -> Pattern Object Variable CommonKorePattern
     -> OperandSort Object
     -> [TestPattern Object]
 patternInUnquantifiedObjectPatterns

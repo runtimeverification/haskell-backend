@@ -130,7 +130,7 @@ instance Unparse (UnifiedVariable Variable) where
     unparse (ObjectVariable sv) = unparse sv
     unparse (MetaVariable sv)   = unparse sv
 
-instance Unparse UnifiedPattern where
+instance Unparse CommonKorePattern where
     unparse (ObjectPattern sv) = unparse sv
     unparse (MetaPattern sv)   = unparse sv
 

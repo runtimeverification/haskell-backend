@@ -25,6 +25,7 @@ module Data.Kore.MetaML.AST where
 import           Data.Fix
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.MetaOrObject
 
 {-|'MetaMLPattern' corresponds to "fixed point" representations
 of the 'Pattern' class where the level is fixed to 'Meta'.
@@ -33,11 +34,7 @@ of the 'Pattern' class where the level is fixed to 'Meta'.
 -}
 type MetaMLPattern var = Fix (Pattern Meta var)
 
-newtype SentenceMetaPattern var = SentenceMetaPattern
-    { getSentenceMetaPattern :: MetaMLPattern var }
-
-deriving instance Eq (SentenceMetaPattern Variable)
-deriving instance Show (SentenceMetaPattern Variable)
+type SentenceMetaPattern = Pattern Meta
 
 -- |'MetaAttributes' is the 'Meta'-only version of 'Attributes'
 type MetaAttributes = Attributes SentenceMetaPattern Variable

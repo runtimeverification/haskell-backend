@@ -10,7 +10,7 @@ import           Data.Kore.Substitution.List
 import           Data.Kore.Substitution.TestCommon
 
 type UnifiedPatternSubstitution =
-    Substitution (UnifiedVariable Variable) UnifiedPattern
+    Substitution (UnifiedVariable Variable) CommonKorePattern
 
 substitution1 :: UnifiedPatternSubstitution
 substitution1 = fromList
