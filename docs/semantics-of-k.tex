@@ -2120,498 +2120,514 @@ all-path reachability relation $\varphi \Rightarrow^\forall\varphi'$ and to
 prove all the proof rules of reachability logic as lemmas/theorems using the
 more basic proof system of matching logic.
 
-\subsection{Fake Order-Sorted Algebras}
-\label{sec:dealing-with-OS}
-
-There are various motivations to study order-sorted algebras.
-Goguen in~\cite{Goguen1991types} used order-sorted algebras to treat errors in 
-abstract data types.
-Many algebraic specifications use {subsorts} as a mechanism to model 
-subtypes.
-In \K, an order-sorted frontend syntax is used to allow more intuitive and 
-compact \K definitions.
-Therefore, it might appear that in order to give \K a formal semantics, 
-one has to adopt some kinds of order-sorted algebras as its mathematical 
-foundation.
-
-Decades of years of research proved that order-sorted 
-algebras are intuitive, convenient, and easy to use in many practical cases.
-However, their power does come for a cost (and sometimes a big cost).
-Algorithms and decision procedures for order-sorted algebras have been proposed 
-and implemented in languages like Maude~\cite{clavel-et-al99a}, but in general 
-order-sorted algebras 
-are hard from a theoretical point of view and reasoning in an order-sorted 
-setting is even harder.
-On one hand, we allow (and welcome) \K backends to make use of order-sorted 
-decision procedures and algorithms, but at the same time we want to have a 
-crystal clear and easier mathematical foundation for \K, and thus we restrict 
-ourselves in matching logic and many-sorted algebras.
-In other words, \emph{order-sorted syntax is just a frontend feature in \K, not 
-a backend feature}.
-In this section, we will introduce techniques\footnote{The techniques are not 
-new.  There are many research about the reduction from order-sorted 
-algebras to many-sorted algebras, for example in~\cite{GOGUEN1992217}.} to 
-\emph{decorate} a matching logic 
-theory 
-with some additional structures such that it ``fakes'' and ``behaves like'' an 
-order-sorted theory.
-The results in this section can be used directly in defining the underlying 
-matching logic theory of a \K definition.
-
-%In Section~\ref{sec:dealing-with-OS}, we have shown how to embed order-sorted 
-%signatures and algebras in a many-sorted setting such as in matching logic. 
-%In this section, we will formalize the discussion we had in 
-%Section~\ref{sec:dealing-with-OS} and give axiomatization for these embeddings.
-%The intuition is that reasoning in an order-sorted theory can be seen as 
-%reasoning in a many-sorted theory plus some symbols and axioms that capture 
-%the 
-%order-sorted structures in the order-sorted theory.
-%This observation is an analogy to the observation that reasoning in a 
-%many-sorted theory can be 
-%seen as reasoning in a unsorted theory plus some symbols (i.e. indicator 
-%predicate symbols for every sorts) and axioms that capture the many-sorted 
-%structures 
-%in the many-sorted theory. 
-\subsubsection{Fake Subsort Relation}
-A \K definition defines a sort set $S$ and a partial-order relation $\preceq 
-\subseteq S \times S$ called the \emph{subsort relation}.
-If $s \preceq s'$, we say $s$ is a \emph{subsort} of $s'$ and $s'$ is a 
-\emph{supersort} of $s$.
-%In order-sorted algebras, the set of sorts $(S, \preceq)$ forms a partial 
-%order 
-%set and the subsort relation~$\preceq$ is a partial order relation.
-%To capture the subsort relation in order-sorted algebras, we define a 
-%predicate 
-%symbol
+%
+%
+%\subsection{Fake Order-Sorted Algebras}
+%\label{sec:dealing-with-OS}
+%
+%There are various motivations to study order-sorted algebras.
+%Goguen in~\cite{Goguen1991types} used order-sorted algebras to treat errors in 
+%abstract data types.
+%Many algebraic specifications use {subsorts} as a mechanism to model 
+%subtypes.
+%In \K, an order-sorted frontend syntax is used to allow more intuitive and 
+%compact \K definitions.
+%Therefore, it might appear that in order to give \K a formal semantics, 
+%one has to adopt some kinds of order-sorted algebras as its mathematical 
+%foundation.
+%
+%Decades of years of research proved that order-sorted 
+%algebras are intuitive, convenient, and easy to use in many practical cases.
+%However, their power does come for a cost (and sometimes a big cost).
+%Algorithms and decision procedures for order-sorted algebras have been 
+%proposed 
+%and implemented in languages like Maude~\cite{clavel-et-al99a}, but in general 
+%order-sorted algebras 
+%are hard from a theoretical point of view and reasoning in an order-sorted 
+%setting is even harder.
+%On one hand, we allow (and welcome) \K backends to make use of order-sorted 
+%decision procedures and algorithms, but at the same time we want to have a 
+%crystal clear and easier mathematical foundation for \K, and thus we restrict 
+%ourselves in matching logic and many-sorted algebras.
+%In other words, \emph{order-sorted syntax is just a frontend feature in \K, 
+%not 
+%a backend feature}.
+%In this section, we will introduce techniques\footnote{The techniques are not 
+%new.  There are many research about the reduction from order-sorted 
+%algebras to many-sorted algebras, for example in~\cite{GOGUEN1992217}.} to 
+%\emph{decorate} a matching logic 
+%theory 
+%with some additional structures such that it ``fakes'' and ``behaves like'' an 
+%order-sorted theory.
+%The results in this section can be used directly in defining the underlying 
+%matching logic theory of a \K definition.
+%
+%%In Section~\ref{sec:dealing-with-OS}, we have shown how to embed order-sorted 
+%%signatures and algebras in a many-sorted setting such as in matching logic. 
+%%In this section, we will formalize the discussion we had in 
+%%Section~\ref{sec:dealing-with-OS} and give axiomatization for these 
+%%embeddings.
+%%The intuition is that reasoning in an order-sorted theory can be seen as 
+%%reasoning in a many-sorted theory plus some symbols and axioms that capture 
+%%the 
+%%order-sorted structures in the order-sorted theory.
+%%This observation is an analogy to the observation that reasoning in a 
+%%many-sorted theory can be 
+%%seen as reasoning in a unsorted theory plus some symbols (i.e. indicator 
+%%predicate symbols for every sorts) and axioms that capture the many-sorted 
+%%structures 
+%%in the many-sorted theory. 
+%\subsubsection{Fake Subsort Relation}
+%A \K definition defines a sort set $S$ and a partial-order relation $\preceq 
+%\subseteq S \times S$ called the \emph{subsort relation}.
+%If $s \preceq s'$, we say $s$ is a \emph{subsort} of $s'$ and $s'$ is a 
+%\emph{supersort} of $s$.
+%%In order-sorted algebras, the set of sorts $(S, \preceq)$ forms a partial 
+%%order 
+%%set and the subsort relation~$\preceq$ is a partial order relation.
+%%To capture the subsort relation in order-sorted algebras, we define a 
+%%predicate 
+%%symbol
+%%$$
+%%\Ksubsort{\shs} \colon \KSort \times \KSort \to \shs \qquad 
+%%\text{for any sort $\shs \in S_K$}
+%%$$
+%%with the following axioms saying that it is a partial order relation
+%%\begin{align*}
+%%& \Ksubsort{\shs}(s, s) \\
+%%& \Ksubsort{\shs}(s_1, s_2) \wedge \Ksubsort{\shs}(s_2, s_1) \to s_1 = s_2 \\
+%%& \Ksubsort{\shs}(s_1, s_2) \wedge \Ksubsort{\shs}(s_2, s_3) \to 
+%%\Ksubsort{\shs}(s_1, s_3)
+%%\end{align*}
+%%Various functions and predicates for partial order sets can be easily defined.
+%%For example, the sort connected component of a sort $s$ can be defined as
+%%\begin{align*}
+%%& \KSortConnectedComponent \in \Sigma_{\KSort, \KSort} \\
+%%& \KSortConnectedComponent(s) = \exists{s'} . \Ksubsort{\shs}(s, s') 
+%%\vee \Ksubsort{\shs}(s', s)
+%%\end{align*}
+%%The parametric predicate symbol $\Ksubsort{\shs}$ can be easily 
+%%element-wisely 
+%%extended to lists 
+%%of sorts.
+%%It returns $\top_{\shs}$ if its two argument are of the same length and every 
+%%corresponding pairs of sorts satisfy $\Ksubsort{\shs}$.
+%%Otherwise, it return $\bot{\shs}$.
+%%\begin{align*}
+%%& \Ksubsorts{\shs} \colon \KSortList \times \KSortList \to \shs
+%%\qquad \text{for any sort $\shs \in S_K$} \\
+%%& \Ksubsorts{\shs}(\KnilKSortList, \KnilKSortList) = \top_{\shs} \\
+%%& \Ksubsorts{\shs}(\KnilKSortList, (s, S)) = \bot_{\shs} \\
+%%& \Ksubsorts{\shs}((s, S), \KnilKSortList) = \bot_{\shs} \\
+%%& \Ksubsorts{\shs}((s, S), (s', S')) = \Ksubsort{\shs}(s, s') \wedge 
+%%\Ksubsorts{\shs}(S, S')
+%%\end{align*}
+%%where $s, s'$ are variables of sort $\KSort$ and $S, S'$ are variables of 
+%%sort 
+%%$\KSortList$.
+%The subsort relation is a congruence relation w.r.t. sort parametricity.
+%For example,
+%\begin{center}
+%\begin{tabular}{rl}
+%	$\parametric{\List}{s}$ is a subsort of $\parametric{\List}{s'}$ 
+%	& if $s$ is a subsort of $s'$ \\
+%	$\parametric{\Map}{s_1,s_2}$ is a subsort of $\parametric{\Map}{s'_1,s'_2}$
+%	& if $s_1$ is a subsort of $s'_1$ and $s_2$ is a subsort of $s'_2$
+%\end{tabular}
+%\end{center}
+%In other words, an instance of a parametric sort is the subsort of the other 
+%instance if its sort parameters are subsorts of the other's element-wisely.
+%The intuition of $s \preceq s'$ is that any element in sort $s$ is included 
+%in sort $s'$.
+%We fake this intuition of inclusion by defining an injective function 
+%called the \emph{injection function}:
+%\begin{center}
+%	\begin{tabular}{rl}
+%		$\inj{s}{s'} \colon s \to s'$
+%		& \doubleslash a parametric function \\
+%		& \doubleslash defined for any $s \preceq 
+%		s'$ \\
+%		$\inj{s}{s}(x) = x$
+%		& \doubleslash (identity) axiom \\
+%		$x = y \to \inj{s}{s'}(x) = \inj{s}{s'}(y)$
+%		& \doubleslash (injectivity) axiom \\
+%		$\inj{s}{s''}(x) = \inj{s'}{s''}(\inj{s}{s'}(x))$
+%		& \doubleslash (transitivity) axiom \\
+%	\end{tabular}
+%\end{center}
+%
+%The dual of injection functions are \emph{retracts}. 
+%They are surjective partial functions that are the inverse of injection 
+%functions, which can be defined as follows:
+%\begin{center}
+%	\begin{tabular}{rl}
+%		$\retract{s'}{s} \colon s \rightharpoonup s'$
+%		& \doubleslash a parametric partial function \\
+%		& \doubleslash defined for any $s \preceq 
+%		s'$ \\
+%		$\retract{s'}{s}(x) = x$
+%		& \doubleslash for any $x$ is a variable of sort $s'$
+%	\end{tabular}
+%\end{center}
+%
+%%Injection functions and retracts are useful.
+%%In some occasions, we may want 
+%%parsers to generate them automatically when parsing \K definitions.
+%%Retracts might not be as well known as they should be, and they deserve an 
+%%example to illustrate their importance.
+%%Consider the following \K definition fragment where we define two 
+%%sorts for naturals and rationals\footnote{This example is borrowed 
+%%from a survey of order sorted algebras by Goguen and 
+%%Diaconescu~\cite{goguen1994oxford}.}
+%%\begin{Verbatim}
+%%  syntax Nat
+%%  syntax Rat ::= Nat
+%%               | Rat "+" Rat
+%%               | Rat "/" Rat
+%%  syntax Nat ::= "factorial" "(" Nat ")"   // factorial function
+%%\end{Verbatim}
+%%The pattern $\factorial(21 / 7)$ does not parse under the above grammar, 
+%%because $21 / 7$ is parsed as a rational and {\factorial} expects a natural 
+%%number.
+%%To resolve this issue, the parser may wrap $21 / 7$ with a retract and parse 
+%%it 
+%%as $\factorial(\retract{\Rat}{\Nat}(21 / 7))$.
+%
+%
+%
+%%\begin{align*}
+%%& \Ksubsorts{\shs}(S, S') \to \Ksubsort{\shs}(\KSort(str, S), \KSort(str, S'))
+%%\end{align*}
+%%where $str$ is a variable of $\KString$.
+%%
+%%There is a special sort, denoted as $K$ in the object-level theories and 
+%%denoted as $\KqK$ in the meta-theory, which contains every sorts as its 
+%%subsorts
+%%\begin{align*}
+%%& \KqK \colon \to \KSort \\
+%%& \KqK = \KSort(\qquottt{K}, \KnilKSortList) \\
+%%& \KsortDeclared{\shs}(\KqK) \qquad \text{for any $\shs \in S_K$} \\
+%%& \Ksubsort{\shs}(s, \KqK) = \top_{\shs} \qquad \text{for any $\shs \in S_K$}
+%%\end{align*}
+%%
+% 
+%\subsubsection{Fake Overloading}
+%Overloading, or often called \emph{polymorphism} in the context of 
+%programming languages, refers to the 
+%phenomenon that we use one name for multiple operations.
+%For example,
+%\begin{enumerate}[label=(\alph*).]
+%	\item Use $\_\doublecolon\_$ as the cons operation for lists of all types;
+%	\item Use $\_+\_$ as both the addition of naturals and rationals;
+%	\item Use $\_+\_$ as both the addition of naturals and concatenation of 
+%	strings;
+%\end{enumerate}
+%In literature, especially literature on order-sorted algebras, researchers 
+%have 
+%used various terminologies for different types of overloading and polymorphism.
+%In the above example, (a)~is often called \emph{parametric 
+%overloading}; (b)~is called \emph{subsort overloading} if naturals is seen 
+%as a subsort of rationals; (c)~is called \emph{ad hoc overloading} or 
+%\emph{strong overloading}.
+%In general, overloading and polymorphism allow us to write more compact and 
+%neat 
+%expressions and help to make formal languages look ``more human'', but those 
+%benefits do not come for free.
+%\improvement{Xiaohong: We need some concrete discussion about why OS makes 
+%things harder. Not even sure it is the right claim because OS people will 
+%argue 
+%the OS makes things simpler instead of harder.}
+%
+%Our proposal is to make implicit overloading explicit, or in other words, we 
+%think that \emph{overloading is a frontend feature, not a backend feature}.
+%We have seen an example in Section~\ref{sec:finite-mechanisms} where we show 
+%how 
+%parametric overloading is dealt with by explicit writing the sort parameters.
+%In there, one can think of that there exists a smart frontend parser that 
+%allows users to write the following compact expressions in frontends
+%\begin{center}
+%\begin{tabular}{rl}
+%$1 \doublecolon 2 \doublecolon \nil$ 
+%& \doubleslash a list of two naturals $1, 2$ \\
+%$\quot{1} \doublecolon \quot{2} \doublecolon \nil$
+%& \doubleslash a list of two strings $\quot{1}, \quot{2}$ \\
+%\end{tabular}
+%\end{center}
+%while it parses those expressions as the follows for backends
+%\begin{center}
+%	\begin{tabular}{rl}
+%		$1 {\ \parametric{\doublecolon}{\Nat}\ } 2 {\ 
+%		\parametric{\doublecolon}{\Nat}\ } {\parametric{\nil}{\Nat}}$ 
+%& \doubleslash a list of two naturals $1, 2$ \\
+%$\quot{1} {\ \parametric{\doublecolon}{\String}\ } \quot{2} {\ 
+%	\parametric{\doublecolon}{\String}\ } {\parametric{\nil}{\String}}$ 
+%& \doubleslash a list of two strings $\quot{1}, \quot{2}$ 
+%	\end{tabular}
+%\end{center}
+%where we define the following parametric sorts and symbols for lists, and the 
+%{\nil} and {\cons} operations:
 %$$
-%\Ksubsort{\shs} \colon \KSort \times \KSort \to \shs \qquad 
-%\text{for any sort $\shs \in S_K$}
-%$$
-%with the following axioms saying that it is a partial order relation
-%\begin{align*}
-%& \Ksubsort{\shs}(s, s) \\
-%& \Ksubsort{\shs}(s_1, s_2) \wedge \Ksubsort{\shs}(s_2, s_1) \to s_1 = s_2 \\
-%& \Ksubsort{\shs}(s_1, s_2) \wedge \Ksubsort{\shs}(s_2, s_3) \to 
-%\Ksubsort{\shs}(s_1, s_3)
-%\end{align*}
-%Various functions and predicates for partial order sets can be easily defined.
-%For example, the sort connected component of a sort $s$ can be defined as
-%\begin{align*}
-%& \KSortConnectedComponent \in \Sigma_{\KSort, \KSort} \\
-%& \KSortConnectedComponent(s) = \exists{s'} . \Ksubsort{\shs}(s, s') 
-%\vee \Ksubsort{\shs}(s', s)
-%\end{align*}
-%The parametric predicate symbol $\Ksubsort{\shs}$ can be easily element-wisely 
-%extended to lists 
-%of sorts.
-%It returns $\top_{\shs}$ if its two argument are of the same length and every 
-%corresponding pairs of sorts satisfy $\Ksubsort{\shs}$.
-%Otherwise, it return $\bot{\shs}$.
-%\begin{align*}
-%& \Ksubsorts{\shs} \colon \KSortList \times \KSortList \to \shs
-%\qquad \text{for any sort $\shs \in S_K$} \\
-%& \Ksubsorts{\shs}(\KnilKSortList, \KnilKSortList) = \top_{\shs} \\
-%& \Ksubsorts{\shs}(\KnilKSortList, (s, S)) = \bot_{\shs} \\
-%& \Ksubsorts{\shs}((s, S), \KnilKSortList) = \bot_{\shs} \\
-%& \Ksubsorts{\shs}((s, S), (s', S')) = \Ksubsort{\shs}(s, s') \wedge 
-%\Ksubsorts{\shs}(S, S')
-%\end{align*}
-%where $s, s'$ are variables of sort $\KSort$ and $S, S'$ are variables of sort 
-%$\KSortList$.
-The subsort relation is a congruence relation w.r.t. sort parametricity.
-For example,
-\begin{center}
-\begin{tabular}{rl}
-	$\parametric{\List}{s}$ is a subsort of $\parametric{\List}{s'}$ 
-	& if $s$ is a subsort of $s'$ \\
-	$\parametric{\Map}{s_1,s_2}$ is a subsort of $\parametric{\Map}{s'_1,s'_2}$
-	& if $s_1$ is a subsort of $s'_1$ and $s_2$ is a subsort of $s'_2$
-\end{tabular}
-\end{center}
-In other words, an instance of a parametric sort is the subsort of the other 
-instance if its sort parameters are subsorts of the other's element-wisely.
-The intuition of $s \preceq s'$ is that any element in sort $s$ is included 
-in sort $s'$.
-We fake this intuition of inclusion by defining an injective function 
-called the \emph{injection function}:
-\begin{center}
-	\begin{tabular}{rl}
-		$\inj{s}{s'} \colon s \to s'$
-		& \doubleslash a parametric function \\
-		& \doubleslash defined for any $s \preceq 
-		s'$ \\
-		$\inj{s}{s}(x) = x$
-		& \doubleslash (identity) axiom \\
-		$x = y \to \inj{s}{s'}(x) = \inj{s}{s'}(y)$
-		& \doubleslash (injectivity) axiom \\
-		$\inj{s}{s''}(x) = \inj{s'}{s''}(\inj{s}{s'}(x))$
-		& \doubleslash (transitivity) axiom \\
-	\end{tabular}
-\end{center}
-
-The dual of injection functions are \emph{retracts}. 
-They are surjective partial functions that are the inverse of injection 
-functions, which can be defined as follows:
-\begin{center}
-	\begin{tabular}{rl}
-		$\retract{s'}{s} \colon s \rightharpoonup s'$
-		& \doubleslash a parametric partial function \\
-		& \doubleslash defined for any $s \preceq 
-		s'$ \\
-		$\retract{s'}{s}(x) = x$
-		& \doubleslash for any $x$ is a variable of sort $s'$
-	\end{tabular}
-\end{center}
-
-%Injection functions and retracts are useful.
-%In some occasions, we may want 
-%parsers to generate them automatically when parsing \K definitions.
-%Retracts might not be as well known as they should be, and they deserve an 
-%example to illustrate their importance.
-%Consider the following \K definition fragment where we define two 
-%sorts for naturals and rationals\footnote{This example is borrowed 
-%from a survey of order sorted algebras by Goguen and 
-%Diaconescu~\cite{goguen1994oxford}.}
-%\begin{Verbatim}
-%  syntax Nat
-%  syntax Rat ::= Nat
-%               | Rat "+" Rat
-%               | Rat "/" Rat
-%  syntax Nat ::= "factorial" "(" Nat ")"   // factorial function
-%\end{Verbatim}
-%The pattern $\factorial(21 / 7)$ does not parse under the above grammar, 
-%because $21 / 7$ is parsed as a rational and {\factorial} expects a natural 
-%number.
-%To resolve this issue, the parser may wrap $21 / 7$ with a retract and parse 
-%it 
-%as $\factorial(\retract{\Rat}{\Nat}(21 / 7))$.
-
-
-
-%\begin{align*}
-%& \Ksubsorts{\shs}(S, S') \to \Ksubsort{\shs}(\KSort(str, S), \KSort(str, S'))
-%\end{align*}
-%where $str$ is a variable of $\KString$.
-%
-%There is a special sort, denoted as $K$ in the object-level theories and 
-%denoted as $\KqK$ in the meta-theory, which contains every sorts as its 
-%subsorts
-%\begin{align*}
-%& \KqK \colon \to \KSort \\
-%& \KqK = \KSort(\qquottt{K}, \KnilKSortList) \\
-%& \KsortDeclared{\shs}(\KqK) \qquad \text{for any $\shs \in S_K$} \\
-%& \Ksubsort{\shs}(s, \KqK) = \top_{\shs} \qquad \text{for any $\shs \in S_K$}
-%\end{align*}
-%
- 
-\subsubsection{Fake Overloading}
-Overloading, or often called \emph{polymorphism} in the context of 
-programming languages, refers to the 
-phenomenon that we use one name for multiple operations.
-For example,
-\begin{enumerate}[label=(\alph*).]
-	\item Use $\_\doublecolon\_$ as the cons operation for lists of all types;
-	\item Use $\_+\_$ as both the addition of naturals and rationals;
-	\item Use $\_+\_$ as both the addition of naturals and concatenation of 
-	strings;
-\end{enumerate}
-In literature, especially literature on order-sorted algebras, researchers have 
-used various terminologies for different types of overloading and polymorphism.
-In the above example, (a)~is often called \emph{parametric 
-overloading}; (b)~is called \emph{subsort overloading} if naturals is seen 
-as a subsort of rationals; (c)~is called \emph{ad hoc overloading} or 
-\emph{strong overloading}.
-In general, overloading and polymorphism allow us to write more compact and 
-neat 
-expressions and help to make formal languages look ``more human'', but those 
-benefits do not come for free.
-\improvement{Xiaohong: We need some concrete discussion about why OS makes 
-things harder. Not even sure it is the right claim because OS people will argue 
-the OS makes things simpler instead of harder.}
-
-Our proposal is to make implicit overloading explicit, or in other words, we 
-think that \emph{overloading is a frontend feature, not a backend feature}.
-We have seen an example in Section~\ref{sec:finite-mechanisms} where we show 
-how 
-parametric overloading is dealt with by explicit writing the sort parameters.
-In there, one can think of that there exists a smart frontend parser that 
-allows users to write the following compact expressions in frontends
-\begin{center}
-\begin{tabular}{rl}
-$1 \doublecolon 2 \doublecolon \nil$ 
-& \doubleslash a list of two naturals $1, 2$ \\
-$\quot{1} \doublecolon \quot{2} \doublecolon \nil$
-& \doubleslash a list of two strings $\quot{1}, \quot{2}$ \\
-\end{tabular}
-\end{center}
-while it parses those expressions as the follows for backends
-\begin{center}
-	\begin{tabular}{rl}
-		$1 {\ \parametric{\doublecolon}{\Nat}\ } 2 {\ 
-		\parametric{\doublecolon}{\Nat}\ } {\parametric{\nil}{\Nat}}$ 
-& \doubleslash a list of two naturals $1, 2$ \\
-$\quot{1} {\ \parametric{\doublecolon}{\String}\ } \quot{2} {\ 
-	\parametric{\doublecolon}{\String}\ } {\parametric{\nil}{\String}}$ 
-& \doubleslash a list of two strings $\quot{1}, \quot{2}$ 
-	\end{tabular}
-\end{center}
-where we define the following parametric sorts and symbols for lists, and the 
-{\nil} and {\cons} operations:
-$$
-\begin{array}{rl}
-\parametric{\List}{s} &
-\textrm{for any sort $s \in \{\Nat, \String\}$} \\
-\parametric{\nil}{s} \in \Sigma_{*,\parametricscript{\List}{s}} &
-\textrm{for any sort $s \in \{\Nat, \String\}$} \\
-\parametric{\cons}{s} \in 
-\Sigma_{s\times\parametricscript{\List}{s},\parametricscript{\List}{s}} &
-\textrm{for any sort $s \in \{\Nat, \String\}$}
-\end{array}
-$$
-
-In this section, we show that subsort overloading can be handled in the similar 
-way as we handle parametric overloading.
-For simplicity, we assume that every symbol $\sigma$ that is overloaded in 
-frontend syntax has their multiple instances explicitly defined using sort 
-parameters, and the sort parameters are its argument sorts plus its return sort.
-For example, we want to overload $\_+\_$ for both additions of naturals and 
-rationals. 
-Then we need to define all four instances for backend use:
-\info[inline]{Xiaohong: Alternatively, we can define just the first and the 
-last 
-instances. But 
-then the parser needs to explicitly add injection functions. It is hard to 
-argue which of the following is better to parse expression $1 + 2.5$:
-
-(A) $1 \parametric{+}{\Nat,\Rat,\Rat} 2.5$, with the homomorphism axiom saying 
-that $x \parametric{+}{\Nat,\Rat,\Rat} y = \inj{\Nat}{\Rat}(x) 
-\parametric{+}{\Rat,\Rat,\Rat} y$ for any $x$ of sort $\Nat$ and $y$ of the 
-sort $\Rat$
-
-(B) $\inj{\Nat}{\Rat}(1) \parametric{+}{\Rat,\Rat,\Rat} 2.5$
-
-Notice that (A) needs all four instances to be defined (as shown below), while 
-(B) only needs two (the first one and the last one).
-I personally am in favor of (A).
-}
-
-\begin{center}
-\begin{tabular}{rl}
-	$\_\parametric{+}{\Nat,\Nat,\Nat}\_ \colon \Nat \times \Nat \to \Nat$
-	& \doubleslash the addition for two naturals \\
-	$\_\parametric{+}{\Nat,\Rat,\Rat}\_ \colon \Nat \times \Rat \to \Rat$
-	& \doubleslash the addition for two naturals \\
-	$\_\parametric{+}{\Rat,\Nat,\Rat}\_ \colon \Rat \times \Nat \to \Rat$
-	& \doubleslash the addition for two naturals \\
-	$\_\parametric{+}{\Rat,\Rat,\Rat}\_ \colon \Rat \times \Rat \to \Rat$
-	& \doubleslash the addition for two naturals
-\end{tabular}
-\end{center}
-or more compactly defined as follows
-\begin{center}
-	\begin{tabular}{rl}
-		$\_\parametric{+}{s_1,s_2,s_3}\_ \colon s_1 \times s_2 \to s_3$
-		&  where $s_1,s_2,s_3 \in \{\Nat, \Rat\}$ \\
-		& and if one of $s_1$ and $s_2$ 
-		is $\Rat$, then $s_3$ is $\Rat$
-\end{tabular}
-\end{center}
-
-In general, it is a frontend issue to decide how to parse an expression with 
-overloading (e.g. how to calculate the least sort of an expression in an 
-order-sorted signature), and there 
-are a large volume of research about that.
-In particular, \K has a frontend syntax that is order-sorted, and thus it also 
-gets its own frontend parser, which might be different from other languages 
-with an order-sorted syntax, say Maude.
-In this section, we do not constrain ourselves in any particular frontend 
-syntax.
-Instead, we will provide \emph{a general theory of overloading} that supports 
-any order-sorted frontend syntax.
-In the following, we assume that all instances of an overloaded symbol are 
-defined properly and are ready for frontend parsers to use.
-The main technical result we will prove is that under some assumptions, 
-different parses of a frontend expression with overloading are equivalent 
-modulo injection functions.
-
-
-
-
-
-%As in order-sorted algebras,
-%we say two symbols $\sigma_1$ and $\sigma_2$ are \emph{subsort overloading}, 
-%if 
-%they have the same name and the argument sorts 
-%of $\sigma_1$ are subsorts of the argument sorts of $\sigma_2$ element-wisely.
-%\begin{align*}
-%& \KsubsortOverloading{\shs}(
-%\underbrace{\KSymbol(f, S_1, S'_1, s_1)}_{\sigma_1},
-%\underbrace{\KSymbol(f, S_2, S'_2, s_2)}_{\sigma_2}) 
-%=  \Ksubsorts{\shs}(S'_1, S'_2) 
-%\end{align*}
-%
-%If $\sigma_1$ and $\sigma_2$ are subsort overloading and the argument sorts of 
-%$\sigma_1$ are subsorts of the argument sorts of $\sigma_2$, then the return 
-%sort of $\sigma_1$ is a subsort of the return sort of $\sigma_2$.
-%It is known as the \emph{monotone property}.
-%\begin{align*}
-%& \KsubsortOverloading{\shs}(\sigma_1, \sigma_2) \to 
-%\Ksubsort{\shs}(\KgetReturnSort(\sigma_1), \KgetReturnSort(\sigma_2))
-%\end{align*}
-%
-%\subsubsection{Injective Functions}
-%Given $s_1$ is a subsort of $s_2$, there exists naturally an injective 
-%function\footnote{These injective functions are called inclusion operations 
-%	in~\cite{GOGUEN1992217}.}
-%$\inj{s_1}{s_2} \colon s_1 \to s_2$.
-%We denote these injective functions as $\Kqinj$ in the meta-theory and define
-%\begin{align*}
-%& \Kqinj \colon \KSort \times \KSort \to \KSymbol \\
-%& \Kqinj(s_1, s_2) = \KSymbol(\qquottt{inj}, (s_1, s_2), (s_1), s_2) \\
-%& \Ksubsort{\shs}(s_1, s_2) \to \KsymbolDeclared{\shs}(\Kqinj(s_1, s_2))
-%\end{align*}
-%Let us introduce the following notation
-%\begin{align*}
-%\inj{s_1}{s_2}(\varphi) \equiv \Kapplication(\Kqinj(s_1,s_2), \varphi)
-%\end{align*}
-%Injective functions satisfy the following properties
-%\begin{align*}
-%& \inj{s}{s}()
-%\end{align*}
-
-%\subsubsection{Order-Sorted Algebras}
-%
-%An order-sorted signature has a poset of the form $(S, \preceq)$. 
-%Matching logic is a many-sorted logic and all sorts in a matching logic 
-%signature forms a set which is often denoted as $S$.
-%Another popular and commonly used type of logic is \emph{order-sorted logic}.
-%In an order-sorted logic, all sorts of a signature forms a partial order set 
-%(poset) which is often denoted as $(S, \preceq)$. 
-%The binary relation $\preceq$ is called the \emph{subsort relation}. 
-%If $s_1 \preceq s_2$ we say $s_1$ is a subsort of $s_2$.
-%We denote the connected component of a sort $s$ as $[s]$.
-%Operators $f \colon s_1 \times \dots \times s_n \to s$ and $f \colon t_1 
-%\times \dots \times t_n \to t$ are called \emph{subsort overloading} if 
-%$[t_i] = [t'_i]$ for $i = 1,\dots,n$ and $[t] = [t']$.
-%Otherwise, they are called \emph{ad-hoc overloading}. 
-%Subsort overloading is the main focus when it comes to order-sorted signatures 
-%and algebras as ad-hoc overloading can be recognized and dealt with easily by 
-%calculating connected components of the poset of sorts.
-%
-%In order-sorted algebras, there is a standard approach that introduces for 
-%each 
-%connected component $[s]$ a top sort (or called a \emph{kind}), often denoted 
-%as just $[s]$.
-%Therefore for any $s \in [s]$, $s \preceq [s]$.
-%And for each operator $f \colon s_1 \times \dots \times s_n \to s$, we define 
-%a 
-%subsort overloading $f \colon [s_1] \times \dots \times [s_n] \to [s]$.
-%Intuitively, it allows us to parse (meaningful) terms and rules that are not 
-%guaranteed to be always well-formed syntactically.
-%One such example is $succ(pred(X)) \Rightarrow X$, where the term 
-%$succ(pred(X))$ does not have sort $Int$ but only have the kind $[Int]$.
-%Runtime checks will be made in order to make sure rules are applied to terms 
-%with expected sorts.
-
-%In matching logic we decided not to have order-sorted signatures because 
-%it makes reasoning a lot harder.
-%Instead, we mimic order-sorted signatures by multi-sorted signatures with 
-%explicit injection functions plus axioms that capture properties about these 
-%injection functions.
-%For any $s_1 \preceq s_2$, we define an injective function 
-%$\inj{s_1}{s_2} \colon s_1 \to s_2$.
-%Properties about subsorts are axiomatized.
-%For example, if $s_1 \preceq s_2 \preceq s_3$, 
-%the three injective functions
-%\begin{align*}
-%& \inj{s_1}{s_2} \colon s_1 \to s_2 \\
-%& \inj{s_2}{s_3} \colon s_2 \to s_3 \\
-%& \inj{s_1}{s_3} \colon s_1 \to s_3
-%\end{align*}
-%have property
-%$$
-%\inj{s_1}{s_3}(x) = \inj{s_2}{s_3}(\inj{s_1}{s_2}(x))
+%\begin{array}{rl}
+%\parametric{\List}{s} &
+%\textrm{for any sort $s \in \{\Nat, \String\}$} \\
+%\parametric{\nil}{s} \in \Sigma_{*,\parametricscript{\List}{s}} &
+%\textrm{for any sort $s \in \{\Nat, \String\}$} \\
+%\parametric{\cons}{s} \in 
+%\Sigma_{s\times\parametricscript{\List}{s},\parametricscript{\List}{s}} &
+%\textrm{for any sort $s \in \{\Nat, \String\}$}
+%\end{array}
 %$$
 %
-%For any operator $f \colon s_1 \times \dots \times s_n \to s$ in an 
-%order-sorted signature that might be subsort overloaded, we define for each 
-%$s'_1 \in [s_1], \dots, s'_n \in [s_n]$, a matching logic symbol
-%$$\parametric{f}{s'_1,\dots,s'_n} \in \Sigma_{s'_1,\dots,s'_n,s'}$$
-%where $s'$ is the \emph{least sort} of the term $f(x_1 \cln s'_1, \dots, x_n 
-%\cln x'_n)$ in the order-sorted signature.
-%Suppose $s'_1 \preceq s''_1 \in [s_1], \dots, s'_n \preceq s''_n \in [s_n]$ and
-%\begin{align*}
-%& \parametric{f}{s'_1,\dots,s'_n} \in \Sigma_{s'_1,\dots,s'_n,s'} \\
-%& \parametric{f}{s''_1,\dots,s''_n} \in \Sigma_{s''_1,\dots,s''_n,s''}
-%\end{align*}
-%By definition, $s' \preceq s'' \in [s]$ and thus there is an injection 
-%function 
-%$\inj{s'}{s''} \colon s' \to s''$.
-The following homomorphism axiom should hold for all symbols $\sigma$ that is 
-overloaded in frontend:
-$$
-\inj{s'}{s''}(
-\parametric{\sigma}{s'_1,\dots,s'_n,s'}(x_1 \cln s'_1,\dots,x_n \cln s'_n))
-=
-\parametric{\sigma}{s''_1,\dots,s''_n,s''}(
-  \inj{s'_1}{s''_1}(x_1\cln s'_1), \dots, \inj{s'_n}{s''_n}(x_n\cln s'_n))
-$$
-where $s'_i \preceq s''_i$ for any $i = 1, \dots, n$ and $s' \preceq s''$.
-
-\todo[inline]{The following needs revised.}
-The above property is especially useful.
-It allows us to do \emph{sort casting} however we want to.
-Together with the strictness axioms for injection functions which we introduce 
-later, it provides us full reasoning power of dealing with order-sorted 
-signatures in a multi-sorted setting.
-In other words, it tells us how to generate proof objects about sort casting 
-and etc. 
-How to design algorithms and data structures that make doing sort casting and 
-sort inference (introduced below) more efficient is of course another important 
-question.
-
-Notice that any term $t$ in an order-sorted signature is also a well-formed 
-pattern in the corresponding matching logic signature except that the sort 
-parameters of symbols (that correspond to the operators in the order-sorted 
-signature) are not yet decided.
-\emph{Sort inference in order-sorted signature} is the process of finding a 
-term $t$ its least sort $s$ in an order-sorted signature.
-We overload the terminology \emph{sort inference} here to 
-mean the process of finding sort parameters for symbols (that correspond to 
-the order-sorted operators) in a pattern $t$ (that correspond to the term $t$ 
-in the order-sorted signature) so that $t$ is well-formed.
-Suppose $f(t_1,\dots,t_n)$ is a term in an order-sorted signature.
-We want to find sort parameters $s_1,\dots,s_n$ such that
-$\parametric{f}{s_1,\dots,s_n}(t_1,\dots,t_n)$ is a well-formed pattern in 
-matching logic.
-In fact, we only need to pick $s_i$ to be the least sort of $t_i$ in the 
-order-sorted signature obtained by the sort inference in order-sorted signature.
-
-The same sort inference procedure works not only for symbols but also for logic 
-connectives.
-Suppose $l \Rightarrow r$ is a rewrite rule where the least sorts of $l$ and 
-$r$ are $s_l$ and $s_r$ respectively.
-Notice that in front-ends, we may not necessarily ask that $s_l$ and $s_r$ are 
-the same sort but just ask they belong to the same connected component.
-We denote $s$ as the lub of the least sorts of $l$ and $r$.
-Then $l \Rightarrow r$ is the syntactic sugar of the following axiom
-$$
-\inj{s_l}{s}(l) \to_s \parametric{\circ}{s} \inj{s_r}{s}(r)
-$$
-
-Injection function are strict.
-For any $s_1 \preceq s_2$ and the injection function $\inj{s_1}{s_2}$, the 
-following property holds
-$$
-\inj{s_1}{s_2}(C[T]) = (\gamma \square . \inj{s_1}{s_2}(C[\square]))[T]
-$$
-
-It is often convenient to assume that $(S,\preceq)$ is not just a poset but a  
-lattice.
-There are standard techniques that extend the poset $(S,\preceq)$ to a lattice 
-by introducing new sorts to $S$ if needed.
-It is orthogonal to what we have discussed.
-
+%In this section, we show that subsort overloading can be handled in the 
+%similar 
+%way as we handle parametric overloading.
+%For simplicity, we assume that every symbol $\sigma$ that is overloaded in 
+%frontend syntax has their multiple instances explicitly defined using sort 
+%parameters, and the sort parameters are its argument sorts plus its return 
+%sort.
+%For example, we want to overload $\_+\_$ for both additions of naturals and 
+%rationals. 
+%Then we need to define all four instances for backend use:
+%\info[inline]{Xiaohong: Alternatively, we can define just the first and the 
+%last 
+%instances. But 
+%then the parser needs to explicitly add injection functions. It is hard to 
+%argue which of the following is better to parse expression $1 + 2.5$:
+%
+%(A) $1 \parametric{+}{\Nat,\Rat,\Rat} 2.5$, with the homomorphism axiom saying 
+%that $x \parametric{+}{\Nat,\Rat,\Rat} y = \inj{\Nat}{\Rat}(x) 
+%\parametric{+}{\Rat,\Rat,\Rat} y$ for any $x$ of sort $\Nat$ and $y$ of the 
+%sort $\Rat$
+%
+%(B) $\inj{\Nat}{\Rat}(1) \parametric{+}{\Rat,\Rat,\Rat} 2.5$
+%
+%Notice that (A) needs all four instances to be defined (as shown below), while 
+%(B) only needs two (the first one and the last one).
+%I personally am in favor of (A).
+%}
+%
+%\begin{center}
+%\begin{tabular}{rl}
+%	$\_\parametric{+}{\Nat,\Nat,\Nat}\_ \colon \Nat \times \Nat \to \Nat$
+%	& \doubleslash the addition for two naturals \\
+%	$\_\parametric{+}{\Nat,\Rat,\Rat}\_ \colon \Nat \times \Rat \to \Rat$
+%	& \doubleslash the addition for two naturals \\
+%	$\_\parametric{+}{\Rat,\Nat,\Rat}\_ \colon \Rat \times \Nat \to \Rat$
+%	& \doubleslash the addition for two naturals \\
+%	$\_\parametric{+}{\Rat,\Rat,\Rat}\_ \colon \Rat \times \Rat \to \Rat$
+%	& \doubleslash the addition for two naturals
+%\end{tabular}
+%\end{center}
+%or more compactly defined as follows
+%\begin{center}
+%	\begin{tabular}{rl}
+%		$\_\parametric{+}{s_1,s_2,s_3}\_ \colon s_1 \times s_2 \to s_3$
+%		&  where $s_1,s_2,s_3 \in \{\Nat, \Rat\}$ \\
+%		& and if one of $s_1$ and $s_2$ 
+%		is $\Rat$, then $s_3$ is $\Rat$
+%\end{tabular}
+%\end{center}
+%
+%In general, it is a frontend issue to decide how to parse an expression with 
+%overloading (e.g. how to calculate the least sort of an expression in an 
+%order-sorted signature), and there 
+%are a large volume of research about that.
+%In particular, \K has a frontend syntax that is order-sorted, and thus it also 
+%gets its own frontend parser, which might be different from other languages 
+%with an order-sorted syntax, say Maude.
+%In this section, we do not constrain ourselves in any particular frontend 
+%syntax.
+%Instead, we will provide \emph{a general theory of overloading} that supports 
+%any order-sorted frontend syntax.
+%In the following, we assume that all instances of an overloaded symbol are 
+%defined properly and are ready for frontend parsers to use.
+%The main technical result we will prove is that under some assumptions, 
+%different parses of a frontend expression with overloading are equivalent 
+%modulo injection functions.
+%
+%
+%
+%
+%
+%%As in order-sorted algebras,
+%%we say two symbols $\sigma_1$ and $\sigma_2$ are \emph{subsort overloading}, 
+%%if 
+%%they have the same name and the argument sorts 
+%%of $\sigma_1$ are subsorts of the argument sorts of $\sigma_2$ element-wisely.
+%%\begin{align*}
+%%& \KsubsortOverloading{\shs}(
+%%\underbrace{\KSymbol(f, S_1, S'_1, s_1)}_{\sigma_1},
+%%\underbrace{\KSymbol(f, S_2, S'_2, s_2)}_{\sigma_2}) 
+%%=  \Ksubsorts{\shs}(S'_1, S'_2) 
+%%\end{align*}
+%%
+%%If $\sigma_1$ and $\sigma_2$ are subsort overloading and the argument sorts 
+%%of 
+%%$\sigma_1$ are subsorts of the argument sorts of $\sigma_2$, then the return 
+%%sort of $\sigma_1$ is a subsort of the return sort of $\sigma_2$.
+%%It is known as the \emph{monotone property}.
+%%\begin{align*}
+%%& \KsubsortOverloading{\shs}(\sigma_1, \sigma_2) \to 
+%%\Ksubsort{\shs}(\KgetReturnSort(\sigma_1), \KgetReturnSort(\sigma_2))
+%%\end{align*}
+%%
+%%\subsubsection{Injective Functions}
+%%Given $s_1$ is a subsort of $s_2$, there exists naturally an injective 
+%%function\footnote{These injective functions are called inclusion operations 
+%%	in~\cite{GOGUEN1992217}.}
+%%$\inj{s_1}{s_2} \colon s_1 \to s_2$.
+%%We denote these injective functions as $\Kqinj$ in the meta-theory and define
+%%\begin{align*}
+%%& \Kqinj \colon \KSort \times \KSort \to \KSymbol \\
+%%& \Kqinj(s_1, s_2) = \KSymbol(\qquottt{inj}, (s_1, s_2), (s_1), s_2) \\
+%%& \Ksubsort{\shs}(s_1, s_2) \to \KsymbolDeclared{\shs}(\Kqinj(s_1, s_2))
+%%\end{align*}
+%%Let us introduce the following notation
+%%\begin{align*}
+%%\inj{s_1}{s_2}(\varphi) \equiv \Kapplication(\Kqinj(s_1,s_2), \varphi)
+%%\end{align*}
+%%Injective functions satisfy the following properties
+%%\begin{align*}
+%%& \inj{s}{s}()
+%%\end{align*}
+%
+%%\subsubsection{Order-Sorted Algebras}
+%%
+%%An order-sorted signature has a poset of the form $(S, \preceq)$. 
+%%Matching logic is a many-sorted logic and all sorts in a matching logic 
+%%signature forms a set which is often denoted as $S$.
+%%Another popular and commonly used type of logic is \emph{order-sorted logic}.
+%%In an order-sorted logic, all sorts of a signature forms a partial order set 
+%%(poset) which is often denoted as $(S, \preceq)$. 
+%%The binary relation $\preceq$ is called the \emph{subsort relation}. 
+%%If $s_1 \preceq s_2$ we say $s_1$ is a subsort of $s_2$.
+%%We denote the connected component of a sort $s$ as $[s]$.
+%%Operators $f \colon s_1 \times \dots \times s_n \to s$ and $f \colon t_1 
+%%\times \dots \times t_n \to t$ are called \emph{subsort overloading} if 
+%%$[t_i] = [t'_i]$ for $i = 1,\dots,n$ and $[t] = [t']$.
+%%Otherwise, they are called \emph{ad-hoc overloading}. 
+%%Subsort overloading is the main focus when it comes to order-sorted 
+%%signatures 
+%%and algebras as ad-hoc overloading can be recognized and dealt with easily by 
+%%calculating connected components of the poset of sorts.
+%%
+%%In order-sorted algebras, there is a standard approach that introduces for 
+%%each 
+%%connected component $[s]$ a top sort (or called a \emph{kind}), often denoted 
+%%as just $[s]$.
+%%Therefore for any $s \in [s]$, $s \preceq [s]$.
+%%And for each operator $f \colon s_1 \times \dots \times s_n \to s$, we define 
+%%a 
+%%subsort overloading $f \colon [s_1] \times \dots \times [s_n] \to [s]$.
+%%Intuitively, it allows us to parse (meaningful) terms and rules that are not 
+%%guaranteed to be always well-formed syntactically.
+%%One such example is $succ(pred(X)) \Rightarrow X$, where the term 
+%%$succ(pred(X))$ does not have sort $Int$ but only have the kind $[Int]$.
+%%Runtime checks will be made in order to make sure rules are applied to terms 
+%%with expected sorts.
+%
+%%In matching logic we decided not to have order-sorted signatures because 
+%%it makes reasoning a lot harder.
+%%Instead, we mimic order-sorted signatures by multi-sorted signatures with 
+%%explicit injection functions plus axioms that capture properties about these 
+%%injection functions.
+%%For any $s_1 \preceq s_2$, we define an injective function 
+%%$\inj{s_1}{s_2} \colon s_1 \to s_2$.
+%%Properties about subsorts are axiomatized.
+%%For example, if $s_1 \preceq s_2 \preceq s_3$, 
+%%the three injective functions
+%%\begin{align*}
+%%& \inj{s_1}{s_2} \colon s_1 \to s_2 \\
+%%& \inj{s_2}{s_3} \colon s_2 \to s_3 \\
+%%& \inj{s_1}{s_3} \colon s_1 \to s_3
+%%\end{align*}
+%%have property
+%%$$
+%%\inj{s_1}{s_3}(x) = \inj{s_2}{s_3}(\inj{s_1}{s_2}(x))
+%%$$
+%%
+%%For any operator $f \colon s_1 \times \dots \times s_n \to s$ in an 
+%%order-sorted signature that might be subsort overloaded, we define for each 
+%%$s'_1 \in [s_1], \dots, s'_n \in [s_n]$, a matching logic symbol
+%%$$\parametric{f}{s'_1,\dots,s'_n} \in \Sigma_{s'_1,\dots,s'_n,s'}$$
+%%where $s'$ is the \emph{least sort} of the term $f(x_1 \cln s'_1, \dots, x_n 
+%%\cln x'_n)$ in the order-sorted signature.
+%%Suppose $s'_1 \preceq s''_1 \in [s_1], \dots, s'_n \preceq s''_n \in [s_n]$ 
+%%and
+%%\begin{align*}
+%%& \parametric{f}{s'_1,\dots,s'_n} \in \Sigma_{s'_1,\dots,s'_n,s'} \\
+%%& \parametric{f}{s''_1,\dots,s''_n} \in \Sigma_{s''_1,\dots,s''_n,s''}
+%%\end{align*}
+%%By definition, $s' \preceq s'' \in [s]$ and thus there is an injection 
+%%function 
+%%$\inj{s'}{s''} \colon s' \to s''$.
+%The following homomorphism axiom should hold for all symbols $\sigma$ that is 
+%overloaded in frontend:
+%$$
+%\inj{s'}{s''}(
+%\parametric{\sigma}{s'_1,\dots,s'_n,s'}(x_1 \cln s'_1,\dots,x_n \cln s'_n))
+%=
+%\parametric{\sigma}{s''_1,\dots,s''_n,s''}(
+%  \inj{s'_1}{s''_1}(x_1\cln s'_1), \dots, \inj{s'_n}{s''_n}(x_n\cln s'_n))
+%$$
+%where $s'_i \preceq s''_i$ for any $i = 1, \dots, n$ and $s' \preceq s''$.
+%
+%\todo[inline]{The following needs revised.}
+%The above property is especially useful.
+%It allows us to do \emph{sort casting} however we want to.
+%Together with the strictness axioms for injection functions which we introduce 
+%later, it provides us full reasoning power of dealing with order-sorted 
+%signatures in a multi-sorted setting.
+%In other words, it tells us how to generate proof objects about sort casting 
+%and etc. 
+%How to design algorithms and data structures that make doing sort casting and 
+%sort inference (introduced below) more efficient is of course another 
+%important 
+%question.
+%
+%Notice that any term $t$ in an order-sorted signature is also a well-formed 
+%pattern in the corresponding matching logic signature except that the sort 
+%parameters of symbols (that correspond to the operators in the order-sorted 
+%signature) are not yet decided.
+%\emph{Sort inference in order-sorted signature} is the process of finding a 
+%term $t$ its least sort $s$ in an order-sorted signature.
+%We overload the terminology \emph{sort inference} here to 
+%mean the process of finding sort parameters for symbols (that correspond to 
+%the order-sorted operators) in a pattern $t$ (that correspond to the term $t$ 
+%in the order-sorted signature) so that $t$ is well-formed.
+%Suppose $f(t_1,\dots,t_n)$ is a term in an order-sorted signature.
+%We want to find sort parameters $s_1,\dots,s_n$ such that
+%$\parametric{f}{s_1,\dots,s_n}(t_1,\dots,t_n)$ is a well-formed pattern in 
+%matching logic.
+%In fact, we only need to pick $s_i$ to be the least sort of $t_i$ in the 
+%order-sorted signature obtained by the sort inference in order-sorted 
+%signature.
+%
+%The same sort inference procedure works not only for symbols but also for 
+%logic 
+%connectives.
+%Suppose $l \Rightarrow r$ is a rewrite rule where the least sorts of $l$ and 
+%$r$ are $s_l$ and $s_r$ respectively.
+%Notice that in front-ends, we may not necessarily ask that $s_l$ and $s_r$ are 
+%the same sort but just ask they belong to the same connected component.
+%We denote $s$ as the lub of the least sorts of $l$ and $r$.
+%Then $l \Rightarrow r$ is the syntactic sugar of the following axiom
+%$$
+%\inj{s_l}{s}(l) \to_s \parametric{\circ}{s} \inj{s_r}{s}(r)
+%$$
+%
+%Injection function are strict.
+%For any $s_1 \preceq s_2$ and the injection function $\inj{s_1}{s_2}$, the 
+%following property holds
+%$$
+%\inj{s_1}{s_2}(C[T]) = (\gamma \square . \inj{s_1}{s_2}(C[\square]))[T]
+%$$
+%
+%It is often convenient to assume that $(S,\preceq)$ is not just a poset but a  
+%lattice.
+%There are standard techniques that extend the poset $(S,\preceq)$ to a lattice 
+%by introducing new sorts to $S$ if needed.
+%It is orthogonal to what we have discussed.
 
 
 \section{Built-ins}
