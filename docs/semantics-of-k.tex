@@ -245,6 +245,7 @@
   \newcommand{\smallshp}{\includegraphics[scale=0.8]{hash-symbol}\kern-0.1em}
   \newcommand{\sharpsymbol}{\#}
   \newcommand{\shs}{\shp s}
+  \newcommand{\shvs}{\shp vs}
   \newcommand{\smallshs}{\smallshp s}
   \newcommand{\sharpup}{\texttt{\sharpsymbol up}}
   \newcommand{\sharpdown}{\texttt{\sharpsymbol down}}
@@ -6871,14 +6872,23 @@ $$ \denote{\_} \colon \syntacc{object-alias-declaration} \to
 \syntacc{declaration}$$
 Consider the alias declaration
 \begin{center}
-	\ttfamily
-	alias $C$\{$v_1,\dots,v_m$\}($s_1,\dots,s_n$):$s$ [$\att$]
+\begin{tabular}{l}
+\texttt{
+alias $C$\{$v_1,\dots,v_m$\}($s_1,\dots,s_n$):$s$
+}\\
+\texttt{
+where $C$\{$v_1,\dots,v_m$\}($x_1 \cln s_1,\dots,x_n \cln s_n$)
+:= $\varphi$ [$att$]
+}
+\end{tabular}
 \end{center}
 where $C$ is an object alias constructor, $v_1,\dots,v_m$ are sort variables, 
 $s_1,\dots,s_n$ and $s$ are argument sorts and return sort which possibly use 
 sort variables $v_1,\dots,v_m$.
+$x_1 \cln s_1,\dots,x_n \cln s_n$ are $n$ distinct variables, and
+$\varphi$ is a pattern.
 
-The alias declaration is lifted to a symbol declaration for the corresponding 
+The symbol declaration is about the corresponding 
 helper function $\denote{C}$ of the alias constructor $C$.
 Since $C$ takes $m$ sort parameters and $n$ arguments, the helper function 
 $\denote{C}$ takes in total $m+n$ arguments.
