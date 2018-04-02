@@ -5566,35 +5566,26 @@ Table~\ref{tab:lexicon-tokens}) and the elements of the syntactic categories
 Identifiers are mostly used as symbols, sorts, and variable names.
 An \syntacc{identifier} is either of the following two cases:
 \begin{itemize}
-\item An \syntacc{object-identifier}, which is a nonempty sequence of letters,
-digits, the character~``\verb|'|'', and the character~``\verb|-|'' that starts 
-with a
-letter and is not a \syntacc{keyword}.
+\item An \syntacc{object-identifier},
+      which is either of the following two cases:
+      \begin{itemize}
+      \item An \syntacc{object-nonslash-identifier},
+            which is a nonempty sequence of letters, digits, the 
+            character~``\verb|'|'', and the character~``\verb|-|'' that starts 
+            with a letter and is not a \syntacc{keyword}.
+      \item An \syntacc{object-slash-identifier},
+            which is
+            the character \qquottt{\slashsymbol} followed
+            by an \syntacc{object-nonslash-identifier}
+      \end{itemize}
 \item A \syntacc{meta-identifier},
-which is either the character ``\verb|#|'' followed by an 
-\syntacc{object-identifier},
-or the string ``\verb|#`|'' followed by an \syntacc{object-identifier},
-or one of the following:
-\begin{center}
-\begin{tabular}{lllll}
-	\ttfamily \sharpsymbol \slashsymbol and &
-	\ttfamily \sharpsymbol \slashsymbol not &
-	\ttfamily \sharpsymbol \slashsymbol or &
-	\ttfamily \sharpsymbol \slashsymbol implies &
-	\ttfamily \sharpsymbol \slashsymbol iff \\\hline
-	\ttfamily \sharpsymbol \slashsymbol forall &
-	\ttfamily \sharpsymbol \slashsymbol exists &
-	\ttfamily \sharpsymbol \slashsymbol ceil &
-	\ttfamily \sharpsymbol \slashsymbol floor &
-	\ttfamily \sharpsymbol \slashsymbol equals \\\hline
-	\ttfamily \sharpsymbol \slashsymbol in &
-	\ttfamily \sharpsymbol \slashsymbol top &
-	\ttfamily \sharpsymbol \slashsymbol bottom &
-	\ttfamily \sharpsymbol \slashsymbol dv &
-	\ttfamily \sharpsymbol \slashsymbol next \\\hline
-	\ttfamily \sharpsymbol \slashsymbol rewrites &
-\end{tabular}
-\end{center}
+      which is either of the following two cases:
+      \begin{itemize}
+      \item The character \qquottt{\sharpsymbol}
+            followed by an \syntacc{object-identifier}
+      \item The string \qquottt{\sharpsymbol`}
+            followed by an \syntacc{object-nonslash-identifier}
+      \end{itemize}
 \end{itemize}
 
 Identifiers are building blocks of many syntactic categories in Kore,
