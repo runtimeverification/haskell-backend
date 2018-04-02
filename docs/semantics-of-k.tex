@@ -6231,12 +6231,26 @@ axiom.
 <object-alias-declaration> ::= \quad
 \alt `alias' <object-head-constructor> 
 `{' <object-sort-variable-list> `}' 
-`(' <object-sort-list> `)' `:' <object-sort> <attribute>
+`(' <object-sort-list> `)' `:' <object-sort> 
+`where' 
+<object-head-constructor> 
+`{' <object-sort-variable-list> `}'
+`(' <object-variable-list> `)' 
+`:='
+<object-pattern>
+<attribute>
 
 <meta-alias-declaration> ::= \quad
 \alt `alias' <meta-head-constructor> 
 `{'	<meta-sort-variable-list> `}'
-`(' <meta-sort-list> `)' `:' <meta-sort> <attribute>
+`(' <meta-sort-list> `)' `:' <meta-sort> 
+`where' 
+<meta-head-constructor> 
+`{' <meta-sort-variable-list> `}'
+`(' <meta-variable-list> `)' 
+`:='
+<meta-pattern>
+<attribute>
 
 <axiom-declaration> ::= `axiom' `{' <sort-variable-list> `}' <pattern> 
 <attribute>
