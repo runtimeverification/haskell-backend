@@ -6403,8 +6403,8 @@ wellformedness conditions.
 sort variable list; The sort variable lists should contain only distinct sort 
 variables (no duplicates);
 \item In any symbol or alias declaration, the head being declared should be of 
-the form \texttt{$C$\{$s_1,\dots,s_n$\}} where $C$ is a head constructor and 
-$s_1,\dots,s_n$ are $n$ distinct sort variables;
+the form \texttt{$C$\{$v_1,\dots,v_n$\}} where $C$ is a head constructor and 
+$v_1,\dots,v_n$ are $n$ distinct sort variables;
 \item Every declared symbol or alias should have their argument sorts and 
 return sorts declared;
 \item In any pattern that is a head being applied to a list of argument 
@@ -6418,6 +6418,28 @@ Similarly, any meta-symbol cannot have the same name as a meta-sort.
 \item Every sort constructor can be declared only once;
 \item In domain value pattern $\Kdv\{s\}(str)$, the meta-level pattern $str$ 
 should have sort $\KString$.
+\item In every alias declaration
+      \begin{center}
+      \begin{tabular}{l}
+      \texttt{
+      alias $C$\{$v_1,\dots,v_m$\}($s_1,\dots,s_n$):$s$
+      }\\
+      \texttt{
+      where $C$\{$v_1,\dots,v_m$\}($x_1 \cln s_1,\dots,x_n \cln s_n$)
+      := $\varphi$ [$att$]
+      }
+      \end{tabular}
+      \end{center}
+      the variables $x_1 \cln s_1,\dots,x_n \cln s_n$ are distinct, and
+      their number and sorts should match with the sorts
+      $s_1 ,\dots, s_n$.
+      The pattern $\varphi$ should  not contain any other free variables
+      other than $x_1 \cln s_1,\dots,x_n \cln s_n$.
+      The pattern $\varphi$ should be well-formed, and it must not
+      contain aliases that are not declared yet.
+      In other words, $\varphi$ can only use aliases that are declared
+      in prior to the current declaration. 
+      The sort of $\varphi$ must be the same as $s$.
 \end{enumerate}
 
 Besides the above wellformedness conditions for patterns, we have the following 
