@@ -246,7 +246,7 @@ instance PrettyPrint (UnifiedVariable Variable) where
     prettyPrint flags (ObjectVariable sv) =
         writeOneFieldStruct flags "ObjectVariable" sv
     prettyPrint flags (MetaVariable sv)   =
-        writeOneFieldStruct flags "SortVariable" sv
+        writeOneFieldStruct flags "MetaVariable" sv
 
 instance PrettyPrint UnifiedPattern where
     prettyPrint flags (ObjectPattern sv) =
