@@ -1,4 +1,2 @@
-Parse error: "../../../test/resources//test-exception-21.kore" (line 5, column 8):
-unexpected "#"
-expecting white space
-genericIdRawParser: Invalid first character '#'..
+Parse error: ../../../test/resources//test-exception-21.kore:5:8:
+genericIdRawParser: Invalid first character '#'.
