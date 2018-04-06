@@ -44,6 +44,7 @@ import           Data.Kore.HaskellExtensions  (Rotate31 (..), (<....>))
 import           Data.Kore.MetaML.AST
 import           Data.Kore.Parser.Lexeme
 import qualified Data.Kore.Parser.ParserUtils as ParserUtils
+import           Data.Kore.Parser.ParserUtils (Parser)
 import           Data.Kore.Unparser.Unparse
 
 import           Control.Arrow                ((&&&))
@@ -51,9 +52,12 @@ import           Control.Monad                (unless, void, when)
 import           Data.Fix
 
 import           Data.Maybe                   (isJust)
-import qualified Text.Parsec.Char             as Parser (char)
-import           Text.Parsec.Combinator       (many1)
-import           Text.Parsec.String           (Parser)
+import           Text.Megaparsec              (Parsec,many)
+import qualified Text.Megaparsec.Char         as Parser (char)
+
+many1 parser = do result <- parser
+                  rest <- many parser
+                  return $ result:rest
 
 {-|'sortVariableParser' parses either an @object-sort-variable@, or a
 @meta-sort-variable@.

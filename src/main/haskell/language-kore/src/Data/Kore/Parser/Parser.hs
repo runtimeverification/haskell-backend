@@ -12,7 +12,6 @@ This is a parser for the Kore language. Sample usage:
 @
 import Data.Kore.Parser.KoreParser
 
-import           Text.Parsec (parse)
 import           Data.Kore.Parser.ParserUtils (parseOnly)
 import           System.Environment (getArgs)
 
@@ -36,8 +35,6 @@ import           Data.Kore.AST.Kore           (KoreDefinition)
 import           Data.Kore.Parser.Lexeme      (skipWhitespace)
 import           Data.Kore.Parser.ParserImpl  (koreDefinitionParser)
 import           Data.Kore.Parser.ParserUtils
-
-import           Text.Parsec.String           (Parser)
 
 {-|'koreParser' is a parser for Kore.
 

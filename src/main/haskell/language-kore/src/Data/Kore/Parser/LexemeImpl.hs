@@ -1,4 +1,4 @@
-{-|
+{-
 Module      : Data.Kore.Parser.LexemeImpl
 Description : Lexical unit definitions for Kore and simple ways of composing
               parsers. Meant for internal use only.
@@ -22,6 +22,9 @@ Conventions used:
 
 4. The "Raw" parsers do not consume any whitespace.
 -}
+
+{-# LANGUAGE OverloadedStrings #-}
+
 module Data.Kore.Parser.LexemeImpl where
 
 import           Data.Kore.AST.Common
@@ -37,8 +40,9 @@ import qualified Data.ByteString.Char8        as Char8
 import           Data.Char                    (isHexDigit, isOctDigit)
 import           Data.Maybe                   (isJust)
 import qualified Data.Trie                    as Trie
-import qualified Text.Parsec.Char             as Parser (char, string)
-import           Text.Parsec.String           (Parser)
+import           Text.Megaparsec              (takeWhileP)
+import qualified Text.Megaparsec.Char.Lexer   as L
+import qualified Text.Megaparsec.Char         as Parser (char, string, space1)
 
 {-|'idParser' parses either an @object-identifier@, or a @meta-identifier@.
 
@@ -54,7 +58,7 @@ idParser x
 {-|'stringLiteralParser' parses a C-style string literal, unescaping it.
 
 Always starts with @"@.
--}
+-} {- " -}
 stringLiteralParser :: Parser StringLiteral
 stringLiteralParser = lexeme stringLiteralRawParser
 
@@ -69,61 +73,16 @@ charLiteralParser = lexeme charLiteralRawParser
 moduleNameParser :: Parser ModuleName
 moduleNameParser = lexeme moduleNameRawParser
 
-data CommentScannerState = COMMENT | STAR | END
-
-{-|'skipMultiLineCommentReminder' skips a C-style multiline comment after the
-leading @/*@ was already consumed.
--}
-skipMultiLineCommentReminder :: Parser ()
-skipMultiLineCommentReminder = do
-    (_,state) <- runScanner COMMENT delta'
-    case state of
-        END -> return ()
-        _   -> fail "Unfinished comment."
-  where
-    delta' s c = delta s (toEnum (fromEnum c))
-    delta END _    = Nothing
-    delta _ '*'    = Just STAR
-    delta STAR '/' = Just END
-    delta _ _      = Just COMMENT
-
-{-|'skipSingleLineCommentReminder' skips a C-style single line comment after the
-leading @//@ was already consumed.
--}
-skipSingleLineCommentReminder :: Parser ()
-skipSingleLineCommentReminder =
-    void (scan COMMENT delta)
-  where
-    delta END _  = Nothing
-    delta _ '\n' = Just END
-    delta _ _    = Just COMMENT
-
-
-{-# ANN spaceChars "HLint: ignore Use String" #-}
-spaceChars :: [Char]
-spaceChars = [' ', '\t', '\n', '\v', '\f', '\r']
-
-{-|'skipWhitespace' skips whitespace-like content until the first non-whitespace
-character or the end of the input.
--}
-skipWhitespace :: Parser ()
-skipWhitespace =
-    prefixBasedParsersWithDefault
-        skipString
-        (return ())
-        (
-            [ ("/*", skipMultiLineCommentReminder *> skipWhitespace)
-            , ("//", skipSingleLineCommentReminder *> skipWhitespace)
-            ]
-            ++
-            map (\c -> ([c], skipSpace *> skipWhitespace)) spaceChars
-        )
-
-{-|'lexeme' transforms a raw parser into one that skips the whitespace
-after the parsed element.
+{-|'lexeme' transforms a raw parser into one that skips the whitespace and any
+comments after the parsed element.
 -}
 lexeme :: Parser a -> Parser a
-lexeme p = p <* skipWhitespace
+lexeme = L.lexeme skipWhitespace
+
+{-|'skipWhitespace' skips whitespace and any comments.
+-}
+skipWhitespace :: Parser ()
+skipWhitespace = L.space Parser.space1 (L.skipLineComment "//") (L.skipBlockCommentNested "/*" "*/")
 
 koreKeywordsSet :: Trie.Trie ()
 koreKeywordsSet = Trie.fromList $ map (\s -> (Char8.pack s, ()))
@@ -173,14 +132,14 @@ moduleNameRawParser =
     genericIdRawParser
         moduleNameFirstCharSet moduleNameCharSet KeywordsForbidden
 
-{-# ANN idFirstChars "HLint: ignore Use String" #-}
+{-- ANN idFirstChars "HLint: ignore Use String" #-}
 idFirstChars :: [Char]
 idFirstChars = ['A'..'Z'] ++ ['a'..'z']
 
 idFirstCharSet :: CharSet
 idFirstCharSet = CharSet.makeCharSet idFirstChars
 
-{-# ANN idOtherChars "HLint: ignore Use String" #-}
+{-- ANN idOtherChars "HLint: ignore Use String" #-}
 idOtherChars :: [Char]
 idOtherChars = ['0'..'9'] ++ "'-"
 
@@ -283,7 +242,9 @@ stringCharLiteralRawParser delimiter nextCharState constructor = do
 Note that it does not enforce the existence of whitespace after the character.
 -}
 tokenCharParser :: Char -> Parser ()
-tokenCharParser = skipCharParser skipWhitespace
+tokenCharParser c = do
+      _ <- L.symbol skipWhitespace [c]
+      return ()
 
 {-|'colonParser' parses a @:@ character.-}
 colonParser :: Parser ()
