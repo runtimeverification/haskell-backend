@@ -52,12 +52,8 @@ import           Control.Monad                (unless, void, when)
 import           Data.Fix
 
 import           Data.Maybe                   (isJust)
-import           Text.Megaparsec              (Parsec,many)
+import           Text.Megaparsec              (Parsec,many,some)
 import qualified Text.Megaparsec.Char         as Parser (char)
-
-many1 parser = do result <- parser
-                  rest <- many parser
-                  return $ result:rest
 
 {-|'sortVariableParser' parses either an @object-sort-variable@, or a
 @meta-sort-variable@.
@@ -811,7 +807,7 @@ definitionParser
 definitionParser sentenceParser patParser =
     pure Definition
         <*> attributesParser patParser
-        <*> many1 (moduleParser sentenceParser patParser)
+        <*> some (moduleParser sentenceParser patParser)
 
 {-|'moduleParser' parses the module part of a Kore @definition@
 
