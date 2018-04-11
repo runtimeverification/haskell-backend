@@ -6294,6 +6294,49 @@ if an identifier is a sort variable or something else.
 All sort variables used in a declaration have to be declared in the sort 
 variable declaration (see Section~\ref{sec:kore-syntax-wellformedness}).
 
+\paragraph{Alias Declarations and Proof Rules}
+For every alias declaration
+\begin{center}
+\begin{tabular}{l}
+\texttt{
+alias $C$\{$v_1,\dots,v_m$\}($s_1,\dots,s_n$):$s$
+}\\
+\texttt{
+where $C$\{$v_1,\dots,v_m$\}($x_1 \cln s_1,\dots,x_n \cln s_n$)
+:= $\varphi$ [$att$]
+}
+\end{tabular}
+\end{center}
+there are two generated proof rules:
+the (Sugar) and (Desugar) rules.
+\begin{center}
+\begin{tabular}{cc}
+$
+\prftree[r]
+{$C$-Sugar}
+{
+\varphi
+}
+{
+\parametric{C}{v_1 ,\dots, v_n}(\varphi_1 ,\dots, \varphi_n)
+}
+$
+&
+$
+\prftree[r]
+{$C$-Desugar}
+{
+\parametric{C}{v_1 ,\dots, v_n}(\varphi_1 ,\dots, \varphi_n)
+}
+{
+\varphi
+}
+$
+\end{tabular}
+\end{center}
+
+
+
 \subsubsection{Kore Definitions}
 
 A Kore definition contains an attribute and a sequence of modules.
