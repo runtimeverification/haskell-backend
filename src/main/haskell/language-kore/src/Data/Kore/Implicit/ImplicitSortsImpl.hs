@@ -10,6 +10,7 @@ Portability : POSIX
 -}
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Implicit.ImplicitKoreImpl     (equalsAxiom,
                                                           parameterizedAxiom,
                                                           parameterizedEqualsAxiom)

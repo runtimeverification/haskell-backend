@@ -12,6 +12,7 @@ module Data.Kore.MetaML.Builders ( module Data.Kore.MetaML.Builders
                                  ) where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTHelpers
 import           Data.Kore.Error
 import           Data.Kore.MetaML.AST

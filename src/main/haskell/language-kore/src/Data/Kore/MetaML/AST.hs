@@ -80,13 +80,16 @@ groundSymbol ctor = Symbol
     , symbolParams = []
     }
 
-apply :: SymbolOrAlias a -> [p] -> Pattern a v p
+apply
+    :: MetaOrObject level
+    => SymbolOrAlias level -> [child] -> Pattern level variable child
 apply patternHead patterns = ApplicationPattern Application
     { applicationSymbolOrAlias = patternHead
     , applicationChildren = patterns
     }
 
-constant :: SymbolOrAlias a -> Pattern a v p
+constant
+    :: MetaOrObject level => SymbolOrAlias level -> Pattern level variable child
 constant patternHead = apply patternHead []
 
 nilSortListHead :: SymbolOrAlias Meta

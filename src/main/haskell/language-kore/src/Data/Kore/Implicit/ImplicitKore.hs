@@ -30,6 +30,7 @@ module Data.Kore.Implicit.ImplicitKore ( uncheckedKoreModule
                                        ) where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Implicit.ImplicitKoreImpl
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.Implicit.ImplicitVarsInternal

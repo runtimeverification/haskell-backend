@@ -33,13 +33,11 @@ import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.HaskellExtensions (Rotate31 (..), Rotate41 (..))
 
 import           Data.Fix
-import           Data.Typeable               (Typeable)
 
 {-
 import           Data.Hashable               (hash)
 class ( Ord (Unified var)
       , ShowMetaOrObject var
-      , Typeable var
       ) => VariableClass var
   where
     -- |Retrieves the sort of the variable
@@ -61,9 +59,15 @@ newtype UnifiedPattern variable child = UnifiedPattern
     { getUnifiedPattern :: Unified (Rotate31 Pattern variable child) }
 
 asUnifiedPattern
-    :: (MetaOrObject level, Typeable variable, Typeable child)
+    :: (MetaOrObject level)
     => Pattern level variable child -> UnifiedPattern variable child
 asUnifiedPattern = UnifiedPattern . asUnified . Rotate31
+
+applyUnifiedPattern
+    :: (forall level . Pattern level variable a -> b)
+    -> (UnifiedPattern variable a -> b)
+applyUnifiedPattern f =
+    applyUnified (f . unRotate31) . getUnifiedPattern
 
 deriving instance
     ( Eq child
@@ -75,11 +79,27 @@ deriving instance
     , ShowMetaOrObject variable
     ) => Show (UnifiedPattern variable child)
 
+instance Functor (UnifiedPattern variable) where
+    fmap f =
+        UnifiedPattern
+        . mapUnified (Rotate31 . fmap f . unRotate31)
+        . getUnifiedPattern
+instance Foldable (UnifiedPattern variable) where
+    foldMap f =
+        applyUnified (foldMap f . unRotate31)
+        . getUnifiedPattern
+instance Traversable (UnifiedPattern variable) where
+    sequenceA =
+        fmap UnifiedPattern
+        . sequenceUnified
+            (fmap Rotate31 . sequenceA . unRotate31)
+        . getUnifiedPattern
+
 type FixedPattern = UnifiedPattern
 type KorePattern variable = (Fix (UnifiedPattern variable))
 
 asKorePattern
-    :: (MetaOrObject level, Typeable variable)
+    :: (MetaOrObject level)
     => Pattern level variable (KorePattern variable)
     -> KorePattern variable
 asKorePattern = Fix . asUnifiedPattern
@@ -112,11 +132,20 @@ type UnifiedSort = Unified Sort
 
 type KoreSentence = UnifiedSentence UnifiedSortVariable FixedPattern Variable
 
-asUnifiedSentence
-    :: (MetaOrObject level, Typeable pat, Typeable variable, Typeable sortParam)
+constructUnifiedSentence
+    :: (MetaOrObject level)
     => (a -> Sentence level sortParam pat variable)
     -> (a -> UnifiedSentence sortParam pat variable)
-asUnifiedSentence ctor = UnifiedSentence . asUnified . Rotate41 . ctor
+constructUnifiedSentence ctor = UnifiedSentence . asUnified . Rotate41 . ctor
+
+applyUnifiedSentence
+    :: (Sentence Meta sortParam pat variable -> b)
+    -> (Sentence Object sortParam pat variable -> b)
+    -> (UnifiedSentence sortParam pat variable -> b)
+applyUnifiedSentence metaT _ (UnifiedSentence (UnifiedMeta rs)) =
+    metaT (unRotate41 rs)
+applyUnifiedSentence _ objectT (UnifiedSentence (UnifiedObject rs)) =
+    objectT (unRotate41 rs)
 
 type KoreModule =
     Module UnifiedSentence UnifiedSortVariable FixedPattern Variable
@@ -128,19 +157,19 @@ instance
     ( MetaOrObject level
     ) => AsSentence KoreSentence (KoreSentenceAlias level)
   where
-    asSentence = asUnifiedSentence SentenceAliasSentence
+    asSentence = constructUnifiedSentence SentenceAliasSentence
 
 instance
     ( MetaOrObject level
     ) => AsSentence KoreSentence (KoreSentenceSymbol level)
   where
-    asSentence = asUnifiedSentence SentenceSymbolSentence
+    asSentence = constructUnifiedSentence SentenceSymbolSentence
 
 instance AsSentence KoreSentence KoreSentenceImport where
-    asSentence = asUnifiedSentence SentenceImportSentence
+    asSentence = constructUnifiedSentence SentenceImportSentence
 
 instance AsSentence KoreSentence KoreSentenceAxiom where
-    asSentence = asUnifiedSentence SentenceAxiomSentence
+    asSentence = constructUnifiedSentence SentenceAxiomSentence
 
 instance AsSentence KoreSentence KoreSentenceSort where
-    asSentence = asUnifiedSentence SentenceSortSentence
+    asSentence = constructUnifiedSentence SentenceSortSentence

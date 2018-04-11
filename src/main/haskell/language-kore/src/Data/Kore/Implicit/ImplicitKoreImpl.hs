@@ -11,14 +11,15 @@ Portability : POSIX
 module Data.Kore.Implicit.ImplicitKoreImpl where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.MetaML.AST
 import           Data.Kore.MetaML.Builders
-import           Data.Kore.Variables.Free  (freeVariables)
+import           Data.Kore.Variables.Free   (freeVariables)
 
 import           Data.Fix
-import           Data.Foldable             (foldl')
-import qualified Data.Map                  as Map
-import qualified Data.Set                  as Set
+import           Data.Foldable              (foldl')
+import qualified Data.Map                   as Map
+import qualified Data.Set                   as Set
 
 
 {-|'equalsSortParam' is the sort param implicitly used for 'equals' when no
@@ -47,8 +48,7 @@ parameterizedAxiom
   =
     SentenceAxiom
         { sentenceAxiomParameters = parameters
-        , sentenceAxiomPattern =
-            SentenceMetaPattern (quantifyFreeVariables s (Fix p))
+        , sentenceAxiomPattern = quantifyFreeVariables s (Fix p)
         , sentenceAxiomAttributes = Attributes []
         }
 

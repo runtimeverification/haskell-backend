@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE UndecidableInstances  #-}
 {-|
 Module      : Data.Kore.Unparser.Unparse
 Description : Class for unparsing and instances for it for 'Meta' and
@@ -16,6 +17,7 @@ module Data.Kore.Unparser.Unparse (Unparse(..), unparseToString) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
 import           Data.Kore.IndentingPrinter (PrinterOutput, StringPrinter,
                                              betweenLines, printToString,
@@ -122,18 +124,13 @@ instance Unparse (Variable level) where
     unparse var =
         unparse (variableName var) >> write ":" >> unparse (variableSort var)
 
-instance Unparse UnifiedSortVariable where
-    unparse (ObjectSortVariable sv) = unparse sv
-    unparse (MetaSortVariable sv)   = unparse sv
-
-instance Unparse (UnifiedVariable Variable) where
-    unparse (ObjectVariable sv) = unparse sv
-    unparse (MetaVariable sv)   = unparse sv
-
-instance Unparse CommonKorePattern where
-    unparse (ObjectPattern sv) = unparse sv
-    unparse (MetaPattern sv)   = unparse sv
-
+instance
+    ( Unparse (thing Object)
+    , Unparse (thing Meta)
+    ) => Unparse (Unified thing)
+  where
+    unparse (UnifiedObject x) = unparse x
+    unparse (UnifiedMeta x)   = unparse x
 
 instance Unparse MLPatternType where
     unparse pt = write ('\\' : patternString pt)
@@ -219,7 +216,7 @@ instance Unparse (Top level p) where
         inCurlyBraces (unparse (topSort top))
         inParens (return ())
 
-instance (Unparse (UnifiedVariable v), Unparse p, Unparse (v level))
+instance (Unparse p, Unparse (v level))
     => Unparse (Pattern level v p) where
     unparse (AndPattern p)           = unparse p
     unparse (ApplicationPattern p)   = unparse p
@@ -242,11 +239,11 @@ instance (Unparse (UnifiedVariable v), Unparse p, Unparse (v level))
     unparse (TopPattern p)           = unparse p
     unparse (VariablePattern p)      = unparse p
 
-instance Unparse (pat variable) => Unparse (Attributes pat variable) where
+instance Unparse (Fix (pat variable)) => Unparse (Attributes pat variable) where
     unparse = inSquareBrackets . unparse . getAttributes
 
 instance
-    Unparse (pat variable) => Unparse (SentenceAlias level pat variable)
+    Unparse (Fix (pat variable)) => Unparse (SentenceAlias level pat variable)
   where
     unparse sa = do
         write "alias"
@@ -258,7 +255,7 @@ instance
         unparse (sentenceAliasAttributes sa)
 
 instance
-    Unparse (pat variable) => Unparse (SentenceSymbol level pat variable)
+    Unparse (Fix (pat variable)) => Unparse (SentenceSymbol level pat variable)
   where
     unparse sa = do
         write "symbol"
@@ -269,7 +266,9 @@ instance
         unparse (sentenceSymbolResultSort sa)
         unparse (sentenceSymbolAttributes sa)
 
-instance Unparse (pat variable) => Unparse (SentenceImport pat variable) where
+instance
+    Unparse (Fix (pat variable)) => Unparse (SentenceImport pat variable)
+  where
     unparse a = do
         write "import"
         write " "
@@ -278,7 +277,7 @@ instance Unparse (pat variable) => Unparse (SentenceImport pat variable) where
 
 instance
     ( Unparse param
-    , Unparse (pat variable)
+    , Unparse (Fix (pat variable))
     ) => Unparse (SentenceAxiom param pat variable)
   where
     unparse a = do
@@ -288,7 +287,7 @@ instance
         unparse (sentenceAxiomAttributes a)
 
 instance
-    Unparse (pat variable) => Unparse (SentenceSort level pat variable)
+    Unparse (Fix (pat variable)) => Unparse (SentenceSort level pat variable)
   where
     unparse a = do
         write "sort"
@@ -299,7 +298,7 @@ instance
 
 instance
     ( Unparse sortParam
-    , Unparse (pat variable)
+    , Unparse (Fix (pat variable))
     ) => Unparse (Sentence level sortParam pat variable)
   where
     unparse (SentenceAliasSentence s)  = unparse s
@@ -310,15 +309,14 @@ instance
 
 instance
     ( Unparse sortParam
-    , Unparse (pat variable)
+    , Unparse (Fix (pat variable))
     ) => Unparse (UnifiedSentence sortParam pat variable)
   where
-    unparse (MetaSentence s)   = unparse s
-    unparse (ObjectSentence s) = unparse s
+    unparse = applyUnifiedSentence unparse unparse
 
 instance
     ( Unparse (sentence sortParam pat variable)
-    , Unparse (pat variable)
+    , Unparse (Fix (pat variable))
     ) => Unparse (Module sentence sortParam pat variable)
   where
     unparse m = do
@@ -342,7 +340,7 @@ instance
 
 instance
     ( Unparse (sentence sortParam pat variable)
-    , Unparse (pat variable)
+    , Unparse (Fix (pat variable))
     ) => Unparse (Definition sentence sortParam pat variable)
   where
     unparse d = do
@@ -352,6 +350,3 @@ instance
 
 instance Unparse (Fix (Pattern Meta Variable)) where
     unparse = unparse . unFix
-
-instance Unparse (SentenceMetaPattern Variable) where
-    unparse = unparse . getSentenceMetaPattern

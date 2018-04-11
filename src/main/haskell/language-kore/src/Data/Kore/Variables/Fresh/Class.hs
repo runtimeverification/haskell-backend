@@ -5,7 +5,6 @@ module Data.Kore.Variables.Fresh.Class where
 
 import qualified Control.Monad.State                  as State
 
-import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Variables.Fresh.IntCounter
 import           Data.Kore.Variables.Int
@@ -14,7 +13,7 @@ import           Data.Kore.Variables.Int
 with a 'Monad' @m@ containing state needed to generate fresh
 variables and provides several functions to generate new variables.
 -}
-class (Monad m, VariableClass var) => FreshVariablesClass m var where
+class (Monad m) => FreshVariablesClass m var where
     {-|Given an existing variable, generate a fresh one of
     the same kind.
     -}
@@ -40,7 +39,7 @@ instance (State.MonadTrans t, Monad (t m), FreshVariablesClass m var)
   where
     freshVariable = State.lift . freshVariable
 
-instance (IntVariable var, VariableClass var)
+instance (IntVariable var)
     => FreshVariablesClass IntCounter var
   where
     freshVariable var = do
