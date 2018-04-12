@@ -106,6 +106,15 @@ asKorePattern = Fix . asUnifiedPattern
 
 type CommonKorePattern = KorePattern Variable
 
+applyKorePattern
+    :: (Pattern Meta variable (KorePattern variable) -> b)
+    -> (Pattern Object variable (KorePattern variable) -> b)
+    -> (KorePattern variable -> b)
+applyKorePattern metaT objectT korePattern =
+    case getUnifiedPattern (unFix korePattern) of
+        UnifiedMeta rp   -> metaT (unRotate31 rp)
+        UnifiedObject rp -> objectT (unRotate31 rp)
+
 type KoreAttributes = Attributes FixedPattern Variable
 
 type KoreSentenceAlias level = SentenceAlias level FixedPattern Variable

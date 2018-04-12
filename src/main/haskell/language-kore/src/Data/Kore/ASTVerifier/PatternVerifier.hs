@@ -76,9 +76,9 @@ objectVerifyHelpers indexedModule declaredVariables =
         }
 
 addDeclaredVariable
-    :: UnifiedVariable Variable -> DeclaredVariables -> DeclaredVariables
+    :: Unified Variable -> DeclaredVariables -> DeclaredVariables
 addDeclaredVariable
-    (MetaVariable variable)
+    (UnifiedMeta variable)
     variables@DeclaredVariables{ metaDeclaredVariables = variablesDict }
   =
     variables
@@ -86,7 +86,7 @@ addDeclaredVariable
             Map.insert (variableName variable) variable variablesDict
         }
 addDeclaredVariable
-    (ObjectVariable variable)
+    (UnifiedObject variable)
     variables@DeclaredVariables{ objectDeclaredVariables = variablesDict }
   =
     variables
@@ -121,10 +121,23 @@ internalVerifyPattern
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
     -> Either (Error VerifyError) VerifySuccess
-internalVerifyPattern
-    (MetaPattern p@(StringLiteralPattern _))
+internalVerifyPattern korePattern a b c d =
+    applyKorePattern
+        (internalVerifyMetaPattern a b c d)
+        (internalVerifyObjectPattern a b c d)
+        korePattern
+
+internalVerifyMetaPattern
+    :: Maybe UnifiedSort
+    -> KoreIndexedModule
+    -> Set.Set UnifiedSortVariable
+    -> DeclaredVariables
+    -> Pattern Meta Variable CommonKorePattern
+    -> Either (Error VerifyError) VerifySuccess
+internalVerifyMetaPattern
     maybeExpectedSort
     _ _ _
+    p@(StringLiteralPattern _)
   =
     withContext (patternNameForContext p) (do
         sort <- verifyStringPattern
@@ -132,29 +145,29 @@ internalVerifyPattern
             Just expectedSort ->
                 verifySameSort
                     expectedSort
-                    (MetaSort sort)
+                    (UnifiedMeta sort)
             Nothing ->
                 verifySuccess
     )
-internalVerifyPattern
-    (MetaPattern p@(CharLiteralPattern _))
+internalVerifyMetaPattern
     maybeExpectedSort
     _ _ _
+    p@(CharLiteralPattern _)
   =
     withContext (patternNameForContext p) (do
         sort <- verifyCharPattern
         case maybeExpectedSort of
             Just expectedSort ->
-                verifySameSort expectedSort (MetaSort sort)
+                verifySameSort expectedSort (UnifiedMeta sort)
             Nothing ->
                 verifySuccess
     )
-internalVerifyPattern
-    (MetaPattern p)
+internalVerifyMetaPattern
     maybeExpectedSort
     indexedModule
     sortVariables
     declaredVariables
+    p
   =
     withContext (patternNameForContext p) (do
         sort <-
@@ -168,16 +181,24 @@ internalVerifyPattern
             Just expectedSort ->
                 verifySameSort
                     expectedSort
-                    (MetaSort sort)
+                    (UnifiedMeta sort)
             Nothing ->
                 verifySuccess
     )
-internalVerifyPattern
-    (ObjectPattern p)
+
+internalVerifyObjectPattern
+    :: Maybe UnifiedSort
+    -> KoreIndexedModule
+    -> Set.Set UnifiedSortVariable
+    -> DeclaredVariables
+    -> Pattern Object Variable CommonKorePattern
+    -> Either (Error VerifyError) VerifySuccess
+internalVerifyObjectPattern
     maybeExpectedSort
     indexedModule
     sortVariables
     declaredVariables
+    p
   =
     withContext (patternNameForContext p) (do
         maybeSort <-
@@ -197,7 +218,7 @@ internalVerifyPattern
             Just expectedSort ->
                 verifySameSort
                     expectedSort
-                    (ObjectSort sort)
+                    (UnifiedObject sort)
             Nothing ->
                 verifySuccess
     )
@@ -511,10 +532,10 @@ applicationSortsFromSymbolOrAliasSentence
     symbolOrAliasSorts (symbolOrAliasParams symbolOrAlias) sentence
 
 verifySameSort
-    :: UnifiedSort
-    -> UnifiedSort
+    :: Unified Sort
+    -> Unified Sort
     -> Either (Error VerifyError) VerifySuccess
-verifySameSort (ObjectSort expectedSort) (ObjectSort actualSort) = do
+verifySameSort (UnifiedObject expectedSort) (UnifiedObject actualSort) = do
     koreFailWhen
         (expectedSort /= actualSort)
         (   "Expecting sort '"
@@ -524,7 +545,7 @@ verifySameSort (ObjectSort expectedSort) (ObjectSort actualSort) = do
             ++ "'."
         )
     verifySuccess
-verifySameSort (MetaSort expectedSort) (MetaSort actualSort) = do
+verifySameSort (UnifiedMeta expectedSort) (UnifiedMeta actualSort) = do
     koreFailWhen
         (expectedSort /= actualSort)
         (   "Expecting sort '"
@@ -534,7 +555,7 @@ verifySameSort (MetaSort expectedSort) (MetaSort actualSort) = do
             ++ "'."
         )
     verifySuccess
-verifySameSort (MetaSort expectedSort) (ObjectSort actualSort) = do
+verifySameSort (UnifiedMeta expectedSort) (UnifiedObject actualSort) = do
     koreFailWhen
         (expectedSort /= patternMetaSort)
         (   "Expecting meta sort '"
@@ -544,7 +565,7 @@ verifySameSort (MetaSort expectedSort) (ObjectSort actualSort) = do
             ++ "'."
         )
     verifySuccess
-verifySameSort (ObjectSort expectedSort) (MetaSort actualSort) = do
+verifySameSort (UnifiedObject expectedSort) (UnifiedMeta actualSort) = do
     koreFailWhen
         (actualSort /= patternMetaSort)
         (   "Expecting object sort '"
@@ -565,18 +586,18 @@ verifyFreeVariables unifiedPattern =
 
 addFreeVariable
     :: DeclaredVariables
-    -> UnifiedVariable Variable
+    -> Unified Variable
     -> Either (Error VerifyError) DeclaredVariables
 addFreeVariable
     vars @ DeclaredVariables { metaDeclaredVariables = metaVars }
-    (MetaVariable v)
+    (UnifiedMeta v)
   = do
     checkVariable v metaVars
     return vars
         { metaDeclaredVariables = Map.insert (variableName v) v metaVars }
 addFreeVariable
     vars @ DeclaredVariables { objectDeclaredVariables = objectVars }
-    (ObjectVariable v)
+    (UnifiedObject v)
   = do
     checkVariable v objectVars
     return vars

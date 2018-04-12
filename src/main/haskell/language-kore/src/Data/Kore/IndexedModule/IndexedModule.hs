@@ -247,7 +247,10 @@ indexModuleKoreSentence
     -> Either
         (Error a)
         (Map.Map ModuleName KoreIndexedModule, KoreIndexedModule)
-indexModuleKoreSentence a b c d koreSentence = undefined
+indexModuleKoreSentence a b c d =
+    applyUnifiedSentence
+        (indexModuleMetaSentence a b c d)
+        (indexModuleObjectSentence a b c d)
 
 indexModuleMetaSentence
     :: KoreImplicitIndexedModule

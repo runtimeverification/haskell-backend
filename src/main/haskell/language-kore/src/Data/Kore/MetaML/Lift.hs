@@ -25,7 +25,8 @@ import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
-import           Data.Kore.ASTTraversals
+import           Data.Kore.FixTraversals
+import           Data.Kore.HaskellExtensions      (Rotate31 (..))
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.MetaML.AST
 
@@ -116,18 +117,15 @@ instance LiftableToMetaML (Variable Object) where
 
 -- Section 9.2.8 Lift Patterns
 instance LiftableToMetaML CommonKorePattern where
-    liftToMeta = bottomUpVisitor liftReducer
+    liftToMeta = fixBottomUpVisitor liftReducer
 
 liftReducer
-    :: MetaOrObject level
-    => Pattern level Variable CommonMetaPattern
+    :: UnifiedPattern Variable CommonMetaPattern
     -> CommonMetaPattern
-liftReducer p = applyMetaObjectFunction
-    (PatternObjectMeta p)
-    MetaOrObjectTransformer
-        { objectTransformer = liftObjectReducer . getPatternObjectMeta
-        , metaTransformer = Fix . getPatternObjectMeta
-        }
+liftReducer up =
+    case getUnifiedPattern up of
+        UnifiedObject (Rotate31 p) -> liftObjectReducer p
+        UnifiedMeta (Rotate31 p)   -> Fix p
 
 liftObjectReducer
     :: Pattern Object Variable CommonMetaPattern
@@ -202,7 +200,7 @@ liftObjectReducer p = case p of
 
 liftAttributes :: KoreAttributes -> MetaAttributes
 liftAttributes (Attributes as) =
-    Attributes (map (SentenceMetaPattern . liftToMeta) as)
+    Attributes (map liftToMeta as)
 
 -- Section 9.2.4 Lift Sort Declarations
 liftSortDeclaration
@@ -230,7 +228,7 @@ liftSortDeclaration ss =
     helperFunctionAxiom = SentenceAxiom
         { sentenceAxiomAttributes = Attributes []
         , sentenceAxiomParameters = [sortParam]
-        , sentenceAxiomPattern = SentenceMetaPattern . Fix . EqualsPattern
+        , sentenceAxiomPattern = Fix . EqualsPattern
             $ Equals
                 { equalsOperandSort = sortMetaSort
                 , equalsResultSort = sortParamAsSort
@@ -241,7 +239,7 @@ liftSortDeclaration ss =
     declaredAxiom = SentenceAxiom
         { sentenceAxiomAttributes = Attributes []
         , sentenceAxiomParameters = [sortParam]
-        , sentenceAxiomPattern = SentenceMetaPattern . Fix . ImpliesPattern
+        , sentenceAxiomPattern = Fix . ImpliesPattern
             $ Implies
                 { impliesSort = SortVariableSort sortParam
                 , impliesFirst = Fix $ apply (sortsDeclaredHead sortParamAsSort)
@@ -281,7 +279,7 @@ liftSymbolDeclaration sd =
     helperFunctionAxiom = SentenceAxiom
         { sentenceAxiomAttributes = Attributes []
         , sentenceAxiomParameters = [sortParam]
-        , sentenceAxiomPattern = SentenceMetaPattern . Fix . EqualsPattern
+        , sentenceAxiomPattern = Fix . EqualsPattern
             $ Equals
                 { equalsOperandSort = patternMetaSort
                 , equalsResultSort = sortParamAsSort
@@ -294,7 +292,7 @@ liftSymbolDeclaration sd =
     declaredAxiom = SentenceAxiom
         { sentenceAxiomAttributes = Attributes []
         , sentenceAxiomParameters = [sortParam]
-        , sentenceAxiomPattern = SentenceMetaPattern . Fix . ImpliesPattern
+        , sentenceAxiomPattern = Fix . ImpliesPattern
             $ Implies
                 { impliesSort = SortVariableSort sortParam
                 , impliesFirst = Fix $ apply (sortsDeclaredHead sortParamAsSort)
@@ -332,37 +330,27 @@ liftAliasDeclaration = symbolOrAliasLiftedDeclaration
 encoding it.
 -}
 liftSentence :: KoreSentence -> [MetaSentence]
-liftSentence (MetaSentence (SentenceAliasSentence msa)) =
+liftSentence = applyUnifiedSentence liftMetaSentence liftObjectSentence
+
+liftMetaSentence
+    :: Sentence Meta UnifiedSortVariable FixedPattern Variable -> [MetaSentence]
+liftMetaSentence (SentenceAliasSentence msa) =
     [ SentenceAliasSentence msa
         { sentenceAliasAttributes = liftAttributes (sentenceAliasAttributes msa)
         }
     ]
-liftSentence (ObjectSentence (SentenceAliasSentence osa)) =
-    [ SentenceSymbolSentence (liftAliasDeclaration osa)]
-liftSentence (MetaSentence (SentenceSymbolSentence mss)) =
+liftMetaSentence (SentenceSymbolSentence mss) =
     [ SentenceSymbolSentence mss
         { sentenceSymbolAttributes =
             liftAttributes (sentenceSymbolAttributes mss)
         }
     ]
-liftSentence (ObjectSentence (SentenceSymbolSentence oss)) =
-    let (mss, axiom1, axiom2) = liftSymbolDeclaration oss in
-        [ SentenceSymbolSentence mss
-        , SentenceAxiomSentence axiom1
-        , SentenceAxiomSentence axiom2
-        ]
-liftSentence (ObjectSentence (SentenceSortSentence ss)) =
-    let (mss, axiom1, axiom2) = liftSortDeclaration ss in
-        [ SentenceSymbolSentence mss
-        , SentenceAxiomSentence axiom1
-        , SentenceAxiomSentence axiom2
-        ]
-liftSentence (MetaSentence (SentenceAxiomSentence as)) =
+liftMetaSentence (SentenceAxiomSentence as) =
     [ SentenceAxiomSentence SentenceAxiom
         { sentenceAxiomParameters = metaParameters
         , sentenceAxiomAttributes = liftAttributes (sentenceAxiomAttributes as)
         , sentenceAxiomPattern =
-            SentenceMetaPattern $ Fix
+            Fix
                 (ImpliesPattern Implies
                     { impliesSort = axiomSort
                     , impliesFirst = Fix
@@ -378,25 +366,42 @@ liftSentence (MetaSentence (SentenceAxiomSentence as)) =
     ]
   where
     metaParameters =
-        [sv | MetaSortVariable sv <- sentenceAxiomParameters as]
+        [sv | UnifiedMeta sv <- sentenceAxiomParameters as]
     originalPattern = sentenceAxiomPattern as
-    axiomSort = case originalPattern of
-        ObjectPattern _ -> patternMetaSort
-        MetaPattern p   -> getPatternResultSort p
+    axiomSort = case getUnifiedPattern (unFix originalPattern) of
+        UnifiedObject _ -> patternMetaSort
+        UnifiedMeta p   -> getPatternResultSort (unRotate31 p)
     objectParameters =
-        [sv | ObjectSortVariable sv <- sentenceAxiomParameters as]
+        [sv | UnifiedObject sv <- sentenceAxiomParameters as]
     liftedPattern = liftToMeta originalPattern
     provableLiftedPattern =
-        case originalPattern of
-            MetaPattern _   -> liftedPattern
-            ObjectPattern _ ->
+        case getUnifiedPattern (unFix originalPattern) of
+            UnifiedMeta _   -> liftedPattern
+            UnifiedObject _ ->
                 Fix (apply (provableHead axiomSort) [liftedPattern])
-liftSentence (MetaSentence (SentenceImportSentence is)) =
+liftMetaSentence (SentenceImportSentence is) =
     [ SentenceImportSentence is
         { sentenceImportAttributes =
             liftAttributes (sentenceImportAttributes is)
         }
     ]
+
+liftObjectSentence
+    :: Sentence Object UnifiedSortVariable FixedPattern Variable -> [MetaSentence]
+liftObjectSentence (SentenceAliasSentence osa) =
+    [ SentenceSymbolSentence (liftAliasDeclaration osa)]
+liftObjectSentence (SentenceSymbolSentence oss) =
+    let (mss, axiom1, axiom2) = liftSymbolDeclaration oss in
+        [ SentenceSymbolSentence mss
+        , SentenceAxiomSentence axiom1
+        , SentenceAxiomSentence axiom2
+        ]
+liftObjectSentence (SentenceSortSentence ss) =
+    let (mss, axiom1, axiom2) = liftSortDeclaration ss in
+        [ SentenceSymbolSentence mss
+        , SentenceAxiomSentence axiom1
+        , SentenceAxiomSentence axiom2
+        ]
 
 -- |'liftModule' transforms a 'KoreModule' into a 'MetaModule'
 liftModule :: KoreModule -> MetaModule

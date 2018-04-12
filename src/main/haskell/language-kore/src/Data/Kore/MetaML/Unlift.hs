@@ -22,6 +22,7 @@ import           Data.Maybe
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Implicit.ImplicitKore  (mlPatternP, variable)
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.MetaML.AST
@@ -138,8 +139,8 @@ unliftPattern = cata reducer
         { unliftResultOriginal = Fix $ fmap unliftResultOriginal p
         , unliftResultFinal =
             case  unliftPatternReducer p of
-                Just pat -> ObjectPattern pat
-                _        -> MetaPattern (fmap unliftResultFinal p)
+                Just pat -> asKorePattern pat
+                _        -> asKorePattern (fmap unliftResultFinal p)
         }
 
 unliftPatternReducer
