@@ -1,8 +1,9 @@
-import           Test.Tasty                               (TestTree, testGroup)
+import           Test.Tasty (TestTree, testGroup)
 
-import           Test.Tasty.Runners                       (consoleTestReporter, defaultMainWithIngredients,
-                                                           listingTests)
-import           Test.Tasty.Runners.AntXML                (antXMLRunner)
+import           Test.Tasty.Runners        (consoleTestReporter,
+                                            defaultMainWithIngredients,
+                                            listingTests)
+import           Test.Tasty.Runners.AntXML (antXMLRunner)
 
 import           Data.Kore.ASTHelpersTest
 import           Data.Kore.ASTTraversalsTest
@@ -11,9 +12,9 @@ import           Data.Kore.Implicit.ImplicitKoreTest
 import           Data.Kore.IndentingPrinterTest
 import           Data.Kore.MetaML.LiftUnliftTest
 import           Data.Kore.MetaML.UnliftTest
+import           Data.Kore.Parser.CStringTest
 import           Data.Kore.Parser.CharDictTest
 import           Data.Kore.Parser.CharSetTest
-import           Data.Kore.Parser.CStringTest
 import           Data.Kore.Parser.LexemeTest
 import           Data.Kore.Parser.ParserTest
 import           Data.Kore.Parser.RegressionTest
@@ -37,8 +38,8 @@ allParserTests regressionInputFiles =
         [ unitTests
         , regressionTests regressionInputFiles
         , implicitKoreRegressionTests
-            (InputFileName "../../kore/kore.kore")
-            (GoldenFileName "../../../test/expected/kore.kore.golden")
+              (InputFileName "../../kore/kore.kore")
+              (GoldenFileName "../../../test/expected/kore.kore.golden")
         ]
 
 unitTests :: TestTree

@@ -7,8 +7,10 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Data.Kore.AST.MLPatterns (MLPatternClass(..),
-                                 MLBinderPatternClass (..)) where
+module Data.Kore.AST.MLPatterns
+    ( MLPatternClass(..)
+    , MLBinderPatternClass(..)
+    ) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
@@ -37,7 +39,10 @@ class MLBinderPatternClass pat where
     -- The first argument is only needed in order to make the Haskell type
     -- system work.
     binderPatternConstructor
-        :: pat level variable child -> Sort level -> variable level -> child
+        :: pat level variable child
+        -> Sort level
+        -> variable level
+        -> child
         -> Pattern level variable child
 
 instance MLPatternClass And where
@@ -147,19 +152,21 @@ instance MLBinderPatternClass Exists where
     getBinderPatternSort = existsSort
     getBinderPatternVariable = existsVariable
     getBinderPatternChild = existsChild
-    binderPatternConstructor _ sort variable pat = ExistsPattern Exists
-        { existsSort = sort
-        , existsVariable = variable
-        , existsChild = pat
-        }
+    binderPatternConstructor _ sort variable pat =
+        ExistsPattern Exists
+            { existsSort = sort
+            , existsVariable = variable
+            , existsChild = pat
+            }
 
 instance MLBinderPatternClass Forall where
     getBinderPatternType _ = ForallPatternType
     getBinderPatternSort = forallSort
     getBinderPatternVariable = forallVariable
     getBinderPatternChild = forallChild
-    binderPatternConstructor _ sort variable pat = ForallPattern Forall
-        { forallSort = sort
-        , forallVariable = variable
-        , forallChild = pat
-        }
+    binderPatternConstructor _ sort variable pat =
+        ForallPattern Forall
+            { forallSort = sort
+            , forallVariable = variable
+            , forallChild = pat
+            }

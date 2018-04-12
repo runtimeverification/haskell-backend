@@ -29,31 +29,26 @@ printError e@(Error _ _) =
 
 {-|'koreError' constructs an error object with an empty context. -}
 koreError :: String -> Error a
-koreError err = Error
-    { errorContext = []
-    , errorError = err
-    }
+koreError err =
+    Error
+        { errorContext = []
+        , errorError = err
+        }
 
 {-|'koreFail' produces an error result with an empty context. -}
 koreFail :: String -> Either (Error a) b
-koreFail errorMessage =
-    Left (koreError errorMessage)
+koreFail errorMessage = Left (koreError errorMessage)
 
 {-|'koreFailWhen' produces an error result with an empty context whenever the
 provided flag is true.
 -}
 koreFailWhen :: Bool -> String -> Either (Error a) ()
-koreFailWhen condition errorMessage =
-    when condition (koreFail errorMessage)
+koreFailWhen condition errorMessage = when condition (koreFail errorMessage)
 
 {-|'withContext' prepends the given string to the context whenever the given
 action fails.
 -}
-withContext
-    :: String -> Either (Error a) result -> Either (Error a) result
-withContext
-    localContext
-    (Left err @ Error { errorContext = context })
-  =
+withContext :: String -> Either (Error a) result -> Either (Error a) result
+withContext localContext (Left err@Error {errorContext = context}) =
     Left err { errorContext = localContext : context }
 withContext _ result = result

@@ -1,8 +1,9 @@
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE StandaloneDeriving    #-}
-{-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE UndecidableInstances #-}
+
 {-|
 Module      : Data.Kore.MetaML.AST
 Description : Data Structures for representing a Meta-only version of the
@@ -36,20 +37,25 @@ type MetaMLPattern var = Fix (Pattern Meta var)
 newtype SentenceMetaPattern var = SentenceMetaPattern
     { getSentenceMetaPattern :: MetaMLPattern var }
 
+
 deriving instance Eq (SentenceMetaPattern Variable)
+
 deriving instance Show (SentenceMetaPattern Variable)
 
 -- |'MetaAttributes' is the 'Meta'-only version of 'Attributes'
 type MetaAttributes = Attributes SentenceMetaPattern Variable
 
-type MetaSentenceAxiom =
-    SentenceAxiom (SortVariable Meta) SentenceMetaPattern Variable
+type MetaSentenceAxiom
+     = SentenceAxiom (SortVariable Meta) SentenceMetaPattern Variable
+
 type MetaSentenceAlias = SentenceAlias Meta SentenceMetaPattern Variable
+
 type MetaSentenceSymbol = SentenceSymbol Meta SentenceMetaPattern Variable
+
 type MetaSentenceImport = SentenceImport SentenceMetaPattern Variable
 
-type MetaSentence =
-    Sentence Meta (SortVariable Meta) SentenceMetaPattern Variable
+type MetaSentence
+     = Sentence Meta (SortVariable Meta) SentenceMetaPattern Variable
 
 instance AsSentence MetaSentence MetaSentenceAlias where
     asSentence = SentenceAliasSentence
@@ -64,30 +70,33 @@ instance AsSentence MetaSentence MetaSentenceAxiom where
     asSentence = SentenceAxiomSentence
 
 -- |'MetaModule' is the 'Meta'-only version of 'Module'.
-type MetaModule =
-    Module (Sentence Meta) (SortVariable Meta) SentenceMetaPattern Variable
+type MetaModule
+     = Module (Sentence Meta) (SortVariable Meta) SentenceMetaPattern Variable
 
 -- |'MetaDefinition' is the 'Meta'-only version of 'Definition'.
-type MetaDefinition =
-    Definition (Sentence Meta) (SortVariable Meta) SentenceMetaPattern Variable
+type MetaDefinition
+     = Definition (Sentence Meta) (SortVariable Meta) SentenceMetaPattern Variable
 
 groundHead :: String -> SymbolOrAlias a
-groundHead ctor = SymbolOrAlias
-    { symbolOrAliasConstructor = Id ctor
-    , symbolOrAliasParams = []
-    }
+groundHead ctor =
+    SymbolOrAlias
+        { symbolOrAliasConstructor = Id ctor
+        , symbolOrAliasParams = []
+        }
 
 groundSymbol :: String -> Symbol a
-groundSymbol ctor = Symbol
-    { symbolConstructor = Id ctor
-    , symbolParams = []
-    }
+groundSymbol ctor =
+    Symbol
+        { symbolConstructor = Id ctor
+        , symbolParams = []
+        }
 
 apply :: SymbolOrAlias a -> [p] -> Pattern a v p
-apply patternHead patterns = ApplicationPattern Application
-    { applicationSymbolOrAlias = patternHead
-    , applicationChildren = patterns
-    }
+apply patternHead patterns =
+    ApplicationPattern Application
+        { applicationSymbolOrAlias = patternHead
+        , applicationChildren = patterns
+        }
 
 constant :: SymbolOrAlias a -> Pattern a v p
 constant patternHead = apply patternHead []
@@ -120,28 +129,32 @@ metaMLPatternHead :: MLPatternType -> SymbolOrAlias Meta
 metaMLPatternHead pt = groundHead ('#' : '\\' : patternString pt)
 
 sortDeclaredHead :: Sort Meta -> SymbolOrAlias Meta
-sortDeclaredHead param = SymbolOrAlias
-    { symbolOrAliasConstructor = Id "#sortDeclared"
-    , symbolOrAliasParams = [param]
-    }
+sortDeclaredHead param =
+    SymbolOrAlias
+        { symbolOrAliasConstructor = Id "#sortDeclared"
+        , symbolOrAliasParams = [param]
+        }
 
 provableHead :: Sort Meta -> SymbolOrAlias Meta
-provableHead param = SymbolOrAlias
-    { symbolOrAliasConstructor = Id "#provable"
-    , symbolOrAliasParams = [param]
-    }
+provableHead param =
+    SymbolOrAlias
+        { symbolOrAliasConstructor = Id "#provable"
+        , symbolOrAliasParams = [param]
+        }
 
 sortsDeclaredHead :: Sort Meta -> SymbolOrAlias Meta
-sortsDeclaredHead param = SymbolOrAlias
-    { symbolOrAliasConstructor = Id "#sortsDeclared"
-    , symbolOrAliasParams = [param]
-    }
+sortsDeclaredHead param =
+    SymbolOrAlias
+        { symbolOrAliasConstructor = Id "#sortsDeclared"
+        , symbolOrAliasParams = [param]
+        }
 
 symbolDeclaredHead :: Sort Meta -> SymbolOrAlias Meta
-symbolDeclaredHead param = SymbolOrAlias
-    { symbolOrAliasConstructor = Id "#symbolDeclared"
-    , symbolOrAliasParams = [param]
-    }
+symbolDeclaredHead param =
+    SymbolOrAlias
+        { symbolOrAliasConstructor = Id "#symbolDeclared"
+        , symbolOrAliasParams = [param]
+        }
 
 sortHead :: SymbolOrAlias Meta
 sortHead = groundHead "#sort"
@@ -153,6 +166,7 @@ applicationHead :: SymbolOrAlias Meta
 applicationHead = groundHead "#application"
 
 type CommonMetaPattern = MetaMLPattern Variable
+
 type PatternMetaType = Pattern Meta Variable CommonMetaPattern
 
 type MetaPatternStub = PatternStub Meta Variable CommonMetaPattern

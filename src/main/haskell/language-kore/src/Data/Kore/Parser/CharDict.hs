@@ -9,26 +9,28 @@ Stability   : experimental
 Portability : POSIX
 -}
 module Data.Kore.Parser.CharDict
-       ( CharDict
-       , makeCharDict
-       , memoize
-       , (!)
-       )
-  where
+    ( CharDict
+    , makeCharDict
+    , memoize
+    , (!)
+    ) where
 
 import qualified Data.Array as Array
 import           Data.Maybe (fromMaybe)
 
 newtype CharDict a = CharDict { getCharDict :: Array.Array Char a }
 
+
 memoize :: (Char -> a) -> CharDict a
 memoize f =
-    CharDict $ Array.array ('\0', '\255') [(c, f c) | c <- ['\0'..'\255']]
+    CharDict $ Array.array ('\0', '\255') [(c, f c) | c <- ['\0' .. '\255']]
 
-makeCharDict :: [(Char,a)] -> a -> CharDict a
+makeCharDict :: [(Char, a)] -> a -> CharDict a
 makeCharDict dict defaultValue =
-  CharDict $ Array.array ('\0', '\255')
-      [(c, fromMaybe defaultValue (lookup c dict))| c <- ['\0'..'\255']]
+    CharDict
+    $ Array.array
+        ('\0', '\255')
+        [(c, fromMaybe defaultValue (lookup c dict)) | c <- ['\0' .. '\255']]
 
 (!) :: CharDict a -> Char -> a
-dict ! c = getCharDict dict Array.! c
+dict !c = getCharDict dict Array.! c

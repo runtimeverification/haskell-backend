@@ -1,12 +1,14 @@
 {-# LANGUAGE GADTs #-}
-module Data.Kore.ASTHelpers ( ApplicationSorts (..)
-                            , symbolOrAliasSorts
-                            ) where
+
+module Data.Kore.ASTHelpers
+    ( ApplicationSorts(..)
+    , symbolOrAliasSorts
+    ) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.Error
 
-import qualified Data.Map             as Map
+import qualified Data.Map as Map
 
 data ApplicationSorts level = ApplicationSorts
     { applicationSortsOperands :: ![Sort level]
@@ -23,10 +25,7 @@ symbolOrAliasSorts
     -> ssoa level pat variable
     -> Either (Error b) (ApplicationSorts level)
 symbolOrAliasSorts params sentence = do
-    variableToSort <-
-        pairVariablesToSorts
-            paramVariables
-            params
+    variableToSort <- pairVariablesToSorts paramVariables params
     fullReturnSort <-
         substituteSortVariables
             (Map.fromList variableToSort)
@@ -35,15 +34,15 @@ symbolOrAliasSorts params sentence = do
         mapM
             (substituteSortVariables (Map.fromList variableToSort))
             parametrizedArgumentSorts
-    return ApplicationSorts
-        { applicationSortsOperands = operandSorts
-        , applicationSortsResult = fullReturnSort
-        }
+    return
+        ApplicationSorts
+            { applicationSortsOperands = operandSorts
+            , applicationSortsResult = fullReturnSort
+            }
   where
     paramVariables = getSentenceSymbolOrAliasSortParams sentence
     parametrizedArgumentSorts = getSentenceSymbolOrAliasArgumentSorts sentence
     parametrizedReturnSort = getSentenceSymbolOrAliasResultSort sentence
-
 
 substituteSortVariables
     :: Map.Map (SortVariable level) (Sort level)
@@ -52,15 +51,14 @@ substituteSortVariables
 substituteSortVariables variableToSort (SortVariableSort variable) =
     case Map.lookup variable variableToSort of
         Just sort -> Right sort
-        Nothing   ->
+        Nothing ->
             koreFail
                 (  "Sort variable not found: '"
-                ++ getId (getSortVariable variable)
-                ++ "'."
+                ++ getId (getSortVariable variable) ++ "'."
                 )
 substituteSortVariables
     variableToSort
-    (SortActualSort sort@SortActual { sortActualSorts = sortList })
+    (SortActualSort sort@SortActual {sortActualSorts = sortList})
   = do
     substituted <- mapM (substituteSortVariables variableToSort) sortList
     return (SortActualSort sort { sortActualSorts = substituted })

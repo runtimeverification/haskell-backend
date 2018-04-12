@@ -1,10 +1,12 @@
-module Data.Kore.IndentingPrinterTest (indentingPrinterTests) where
+module Data.Kore.IndentingPrinterTest
+    ( indentingPrinterTests
+    ) where
 
 import           Data.Kore.IndentingPrinter
-import           Data.List (intersperse)
+import           Data.List                  (intersperse)
 
-import           Test.Tasty                       (TestTree, testGroup)
-import           Test.Tasty.HUnit                 (assertEqual, testCase)
+import           Test.Tasty       (TestTree, testGroup)
+import           Test.Tasty.HUnit (assertEqual, testCase)
 
 class TestPrinter a where
     testPrint :: PrinterOutput w m => a -> m ()
@@ -21,19 +23,15 @@ instance TestPrinter Integer where
 newtype IntList = IntList [Integer]
 
 instance TestPrinter IntList where
-    testPrint (IntList []) =
-        do
-            write "["
-            betweenLines
-            write "]"
-    testPrint (IntList list) =
-        do
-            write "["
-            withIndent
-                2
-                (betweenLines >> sequence_ intPrintsWithSeparators)
-            betweenLines
-            write "]"
+    testPrint (IntList []) = do
+        write "["
+        betweenLines
+        write "]"
+    testPrint (IntList list) = do
+        write "["
+        withIndent 2 (betweenLines >> sequence_ intPrintsWithSeparators)
+        betweenLines
+        write "]"
       where
         intPrints = map testPrint list
         intPrintsWithSeparators =
@@ -44,21 +42,21 @@ indentingPrinterTests =
     testGroup
         "IndentingPrinter unit tests"
         [ testCase
-            "Simple serialization"
-            (assertEqual "Expecting no frills serialization!"
-                "10"
-                (testPrintToString (toInteger 10))
-            )
+              "Simple serialization"
+              (assertEqual
+                   "Expecting no frills serialization!"
+                   "10"
+                   (testPrintToString (toInteger 10)))
         , testCase
-            "Serialization with multiple lines"
-            (assertEqual "Expecting multiple lines!"
-                "[\n]"
-                (testPrintToString (IntList []))
-            )
+              "Serialization with multiple lines"
+              (assertEqual
+                   "Expecting multiple lines!"
+                   "[\n]"
+                   (testPrintToString (IntList [])))
         , testCase
-            "Serialization with indentation and multiple lines"
-            (assertEqual "Expecting multiple lines!"
-                "[\n  10,\n  11\n]"
-                (testPrintToString (IntList [10, 11]))
-            )
+              "Serialization with indentation and multiple lines"
+              (assertEqual
+                   "Expecting multiple lines!"
+                   "[\n  10,\n  11\n]"
+                   (testPrintToString (IntList [10, 11])))
         ]

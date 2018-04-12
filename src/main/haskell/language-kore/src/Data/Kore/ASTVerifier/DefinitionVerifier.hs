@@ -7,9 +7,11 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Data.Kore.ASTVerifier.DefinitionVerifier (verifyDefinition,
-                                                 verifyKoreDefinition,
-                                                 AttributesVerification (..)) where
+module Data.Kore.ASTVerifier.DefinitionVerifier
+    ( verifyDefinition
+    , verifyKoreDefinition
+    , AttributesVerification(..)
+    ) where
 
 import           Control.Monad                            (foldM, foldM_)
 import           Data.Kore.AST.Common
@@ -22,8 +24,8 @@ import           Data.Kore.Implicit.ImplicitKore
 import           Data.Kore.IndexedModule.IndexedModule
 import           Data.Kore.MetaML.MetaToKore
 
-import qualified Data.Map                                 as Map
-import qualified Data.Set                                 as Set
+import qualified Data.Map as Map
+import qualified Data.Set as Set
 
 {-|'verifyDefinition' verifies the welformedness of a Kore 'Definition'.
 
@@ -51,25 +53,20 @@ verifyDefinition
 verifyDefinition attributesVerification definition = do
     defaultNames <- verifyUniqueNames sortNames implicitModule
     foldM_ verifyUniqueNames defaultNames (definitionModules definition)
-
     implicitIndexedModules <-
         indexModuleIfNeeded
             moduleWithMetaSorts
             nameToModule
             (Map.singleton defaultModuleName defaultModuleWithMetaSorts)
             implicitModule
-    let
-        implicitIndexedModule =
-            case
-                Map.lookup (moduleName implicitModule) implicitIndexedModules
-            of
+    let implicitIndexedModule =
+            case Map.lookup (moduleName implicitModule) implicitIndexedModules of
                 Just m -> m
     indexedModules <-
         foldM
             (indexModuleIfNeeded
-                (ImplicitIndexedModule implicitIndexedModule)
-                nameToModule
-            )
+                 (ImplicitIndexedModule implicitIndexedModule)
+                 nameToModule)
             implicitIndexedModules
             (definitionModules definition)
     mapM_ (verifyModule attributesVerification) (Map.elems indexedModules)
@@ -97,6 +94,11 @@ verifyKoreDefinition
     :: AttributesVerification
     -> KoreDefinition
     -> Either (Error VerifyError) VerifySuccess
-verifyKoreDefinition attributesVerification definition =
+verifyKoreDefinition
+    attributesVerification
+    definition
     -- VerifyDefinition already checks the Kore module, so we skip it.
-    verifyDefinition attributesVerification definition { definitionModules = [] }
+  =
+    verifyDefinition
+        attributesVerification
+        definition { definitionModules = [] }

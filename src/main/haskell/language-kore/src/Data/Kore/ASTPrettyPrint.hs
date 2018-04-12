@@ -1,10 +1,12 @@
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-module Data.Kore.ASTPrettyPrint ( prettyPrintToString
-                                , PrettyPrint
-                                ) where
+
+module Data.Kore.ASTPrettyPrint
+    ( prettyPrintToString
+    , PrettyPrint
+    ) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
@@ -16,9 +18,10 @@ import           Data.Kore.MetaML.AST
 import           Data.Kore.Parser.CString   (escapeCString)
 
 import           Data.Fix
-import           Data.List                  (intersperse)
+import           Data.List (intersperse)
 
 {-# ANN module "HLint: ignore Use record patterns" #-}
+
 {-
 This module uses the following pattern repeatedly:
 instance PrettyPrint Something where
@@ -39,12 +42,12 @@ This pattern does a few things, which are very nice to have in a pretty printer:
 
 However, this generates the HLint error disabled above.
 -}
-
-data Flags = NeedsParentheses | MaySkipParentheses
+data Flags
+    = NeedsParentheses
+    | MaySkipParentheses
 
 {-  Print to string instance
 -}
-
 class PrettyPrint a where
     prettyPrint :: PrinterOutput w m => Flags -> a -> m ()
 
@@ -55,8 +58,7 @@ prettyPrintToString :: PrettyPrint a => a -> String
 prettyPrintToString a = printToString (stringPrettyPrint MaySkipParentheses a)
 
 {- utility functions -}
-
-betweenParentheses :: PrinterOutput w m => Flags -> m() -> m()
+betweenParentheses :: PrinterOutput w m => Flags -> m () -> m ()
 betweenParentheses NeedsParentheses thing = do
     write "("
     thing
@@ -64,16 +66,13 @@ betweenParentheses NeedsParentheses thing = do
 betweenParentheses MaySkipParentheses thing = thing
 
 writeOneFieldStruct
-    :: (PrinterOutput w m, PrettyPrint a)
-    => Flags -> String -> a -> m ()
+    :: (PrinterOutput w m, PrettyPrint a) => Flags -> String -> a -> m ()
 writeOneFieldStruct flags name content =
     betweenParentheses
         flags
-        (do
-            write name
+        (do write name
             write " "
-            prettyPrint NeedsParentheses content
-        )
+            prettyPrint NeedsParentheses content)
 
 writeFieldOneLine
     :: (PrinterOutput w m, PrettyPrint a) => String -> (b -> a) -> b -> m ()
@@ -94,8 +93,7 @@ writeFieldNewLine
 writeFieldNewLine fieldName field object = do
     write fieldName
     write " ="
-    withIndent 4
-        (betweenLines >> prettyPrint MaySkipParentheses (field object))
+    withIndent 4 (betweenLines >> prettyPrint MaySkipParentheses (field object))
 
 writeAttributesField
     :: (PrinterOutput w m, PrettyPrint (pat variable))
@@ -107,9 +105,9 @@ writeAttributesField fieldName attributes@(Attributes as) = do
     write " ="
     if null as
         then write " " >> prettyPrint MaySkipParentheses attributes
-        else
-            withIndent 4
-                (betweenLines >> prettyPrint MaySkipParentheses attributes)
+        else withIndent
+            4
+            (betweenLines >> prettyPrint MaySkipParentheses attributes)
 
 writeStructure :: PrinterOutput w m => String -> [m ()] -> m ()
 writeStructure name fields =
@@ -118,41 +116,43 @@ writeStructure name fields =
 printableList :: PrinterOutput w m => [m ()] -> [m ()]
 printableList = intersperse (betweenLines >> write ", ")
 
-instance (MetaOrObject level) => PrettyPrint (Id level) where
+instance
+    (MetaOrObject level)
+    => PrettyPrint (Id level)
+  where
     prettyPrint flags id'@(Id name) =
         betweenParentheses
             flags
-            (do
-                write "Id "
+            (do write "Id "
                 write
                     (applyMetaObjectFunction
-                        id'
-                        MetaOrObjectTransformer
-                            { metaTransformer = const "Meta"
-                            , objectTransformer = const "Object"
-                            }
-                    )
+                         id'
+                         MetaOrObjectTransformer
+                             { metaTransformer = const "Meta"
+                             , objectTransformer = const "Object"
+                             })
                 write " \""
                 write name
-                write "\""
-            )
+                write "\"")
 
-instance PrettyPrint a => PrettyPrint [a] where
+instance
+    PrettyPrint a
+    => PrettyPrint [a]
+  where
     prettyPrint _ list =
         inSquareBracketsIndent
             (printableList (map (prettyPrint MaySkipParentheses) list))
 
-listWithDelimiters
-    :: PrinterOutput w m => String -> String -> [m ()] -> m ()
-listWithDelimiters start end [] =
-    write " " >> write start >> write end
+listWithDelimiters :: PrinterOutput w m => String -> String -> [m ()] -> m ()
+listWithDelimiters start end [] = write " " >> write start >> write end
 listWithDelimiters start end list =
-    withIndent 4 (do
-        betweenLines
-        write start
-        write " "
-        sequence_ list
-        betweenLines >> write end)
+    withIndent
+        4
+        (do betweenLines
+            write start
+            write " "
+            sequence_ list
+            betweenLines >> write end)
 
 inCurlyBracesIndent :: PrinterOutput w m => [m ()] -> m ()
 inCurlyBracesIndent = listWithDelimiters "{" "}"
@@ -166,19 +166,29 @@ inDoubleQuotes thing = write "\"" >> thing >> write "\""
 inSingleQuotes :: PrinterOutput w m => m () -> m ()
 inSingleQuotes thing = write "\'" >> thing >> write "\'"
 
-instance MetaOrObject level => PrettyPrint (SortVariable level) where
+instance
+    MetaOrObject level
+    => PrettyPrint (SortVariable level)
+  where
     prettyPrint flags sv =
         writeOneFieldStruct flags "SortVariable" (getSortVariable sv)
 
-instance MetaOrObject level => PrettyPrint (Sort level) where
+instance
+    MetaOrObject level
+    => PrettyPrint (Sort level)
+  where
     prettyPrint flags (SortVariableSort sv) =
         writeOneFieldStruct flags "SortVariableSort" sv
-    prettyPrint flags (SortActualSort sa)   =
+    prettyPrint flags (SortActualSort sa) =
         writeOneFieldStruct flags "SortActualSort" sa
 
-instance MetaOrObject level => PrettyPrint (SortActual level) where
+instance
+    MetaOrObject level
+    => PrettyPrint (SortActual level)
+  where
     prettyPrint _ sa@(SortActual _ _) =
-        writeStructure "SortActual"
+        writeStructure
+            "SortActual"
             [ writeFieldOneLine "sortActualName" sortActualName sa
             , writeListField "sortActualSorts" sortActualSorts sa
             ]
@@ -199,24 +209,38 @@ instance PrettyPrint CharLiteral where
             >> inSingleQuotes (write (escapeCString [getCharLiteral s]))
             )
 
-instance MetaOrObject level => PrettyPrint (SymbolOrAlias level) where
+instance
+    MetaOrObject level
+    => PrettyPrint (SymbolOrAlias level)
+  where
     prettyPrint _ s@(SymbolOrAlias _ _) =
-        writeStructure "SymbolOrAlias"
+        writeStructure
+            "SymbolOrAlias"
             [ writeFieldOneLine
-                "symbolOrAliasConstructor" symbolOrAliasConstructor s
+                  "symbolOrAliasConstructor"
+                  symbolOrAliasConstructor
+                  s
             , writeListField "symbolOrAliasParams" symbolOrAliasParams s
             ]
 
-instance MetaOrObject level => PrettyPrint (Alias level) where
+instance
+    MetaOrObject level
+    => PrettyPrint (Alias level)
+  where
     prettyPrint _ s@(Alias _ _) =
-        writeStructure "Alias"
+        writeStructure
+            "Alias"
             [ writeFieldOneLine "aliasConstructor" aliasConstructor s
             , writeListField "aliasParams" aliasParams s
             ]
 
-instance MetaOrObject level => PrettyPrint (Symbol level) where
+instance
+    MetaOrObject level
+    => PrettyPrint (Symbol level)
+  where
     prettyPrint _ s@(Symbol _ _) =
-        writeStructure "Symbol"
+        writeStructure
+            "Symbol"
             [ writeFieldOneLine "symbolConstructor" symbolConstructor s
             , writeListField "symbolParams" symbolParams s
             ]
@@ -225,13 +249,15 @@ instance PrettyPrint ModuleName where
     prettyPrint flags s@(ModuleName _) =
         betweenParentheses
             flags
-            ( write "ModuleName "
-            >> inDoubleQuotes (write (getModuleName s))
-            )
+            (write "ModuleName " >> inDoubleQuotes (write (getModuleName s)))
 
-instance MetaOrObject level => PrettyPrint (Variable level) where
+instance
+    MetaOrObject level
+    => PrettyPrint (Variable level)
+  where
     prettyPrint _ var@(Variable _ _) =
-        writeStructure "Variable"
+        writeStructure
+            "Variable"
             [ writeFieldOneLine "variableName" variableName var
             , writeFieldNewLine "variableSort" variableSort var
             ]
@@ -239,25 +265,24 @@ instance MetaOrObject level => PrettyPrint (Variable level) where
 instance PrettyPrint UnifiedSortVariable where
     prettyPrint flags (ObjectSortVariable sv) =
         writeOneFieldStruct flags "ObjectSortVariable" sv
-    prettyPrint flags (MetaSortVariable sv)   =
+    prettyPrint flags (MetaSortVariable sv) =
         writeOneFieldStruct flags "MetaSortVariable" sv
 
 instance PrettyPrint (UnifiedVariable Variable) where
     prettyPrint flags (ObjectVariable sv) =
         writeOneFieldStruct flags "ObjectVariable" sv
-    prettyPrint flags (MetaVariable sv)   =
+    prettyPrint flags (MetaVariable sv) =
         writeOneFieldStruct flags "SortVariable" sv
 
 instance PrettyPrint UnifiedPattern where
     prettyPrint flags (ObjectPattern sv) =
         writeOneFieldStruct flags "ObjectPattern" sv
-    prettyPrint flags (MetaPattern sv)   =
+    prettyPrint flags (MetaPattern sv) =
         writeOneFieldStruct flags "MetaPattern" sv
 
 instance
-    ( MetaOrObject level
-    , PrettyPrint child
-    ) => PrettyPrint (And level child)
+    (MetaOrObject level, PrettyPrint child)
+    => PrettyPrint (And level child)
   where
     prettyPrint _ p@(And _ _ _) =
         writeStructure
@@ -268,26 +293,28 @@ instance
             ]
 
 instance
-    ( MetaOrObject level
-    , PrettyPrint child
-    ) => PrettyPrint (Application level child)
+    (MetaOrObject level, PrettyPrint child)
+    => PrettyPrint (Application level child)
   where
     prettyPrint _ p@(Application _ _) =
         writeStructure
             "Application"
             [ writeFieldNewLine
-                "applicationSymbolOrAlias" applicationSymbolOrAlias p
+                  "applicationSymbolOrAlias"
+                  applicationSymbolOrAlias
+                  p
             , writeListField "applicationChildren" applicationChildren p
             ]
 
-instance MetaOrObject level => PrettyPrint (Bottom level child) where
-    prettyPrint flags (Bottom p) =
-        writeOneFieldStruct flags "Bottom" p
+instance
+    MetaOrObject level
+    => PrettyPrint (Bottom level child)
+  where
+    prettyPrint flags (Bottom p) = writeOneFieldStruct flags "Bottom" p
 
 instance
-    ( MetaOrObject level
-    , PrettyPrint child
-    ) => PrettyPrint (Ceil level child)
+    (MetaOrObject level, PrettyPrint child)
+    => PrettyPrint (Ceil level child)
   where
     prettyPrint _ p@(Ceil _ _ _) =
         writeStructure
@@ -298,9 +325,8 @@ instance
             ]
 
 instance
-    ( MetaOrObject level
-    , PrettyPrint child
-    ) => PrettyPrint (DomainValue level child)
+    (MetaOrObject level, PrettyPrint child)
+    => PrettyPrint (DomainValue level child)
   where
     prettyPrint _ p@(DomainValue _ _) =
         writeStructure
@@ -310,9 +336,8 @@ instance
             ]
 
 instance
-    ( MetaOrObject level
-    , PrettyPrint child
-    ) => PrettyPrint (Equals level child)
+    (MetaOrObject level, PrettyPrint child)
+    => PrettyPrint (Equals level child)
   where
     prettyPrint _ p@(Equals _ _ _ _) =
         writeStructure
@@ -324,10 +349,8 @@ instance
             ]
 
 instance
-    ( MetaOrObject level
-    , PrettyPrint child
-    , PrettyPrint (variable level)
-    ) => PrettyPrint (Exists level variable child)
+    (MetaOrObject level, PrettyPrint child, PrettyPrint (variable level))
+    => PrettyPrint (Exists level variable child)
   where
     prettyPrint _ p@(Exists _ _ _) =
         writeStructure
@@ -338,9 +361,8 @@ instance
             ]
 
 instance
-    ( MetaOrObject level
-    , PrettyPrint child
-    ) => PrettyPrint (Floor level child)
+    (MetaOrObject level, PrettyPrint child)
+    => PrettyPrint (Floor level child)
   where
     prettyPrint _ p@(Floor _ _ _) =
         writeStructure
@@ -351,10 +373,9 @@ instance
             ]
 
 instance
-    ( MetaOrObject level
-    , PrettyPrint child
-    , PrettyPrint (variable level)
-    ) => PrettyPrint (Forall level variable child) where
+    (MetaOrObject level, PrettyPrint child, PrettyPrint (variable level))
+    => PrettyPrint (Forall level variable child)
+  where
     prettyPrint _ p@(Forall _ _ _) =
         writeStructure
             "Forall"
@@ -364,9 +385,8 @@ instance
             ]
 
 instance
-    ( MetaOrObject level
-    , PrettyPrint child
-    ) => PrettyPrint (Iff level child)
+    (MetaOrObject level, PrettyPrint child)
+    => PrettyPrint (Iff level child)
   where
     prettyPrint _ p@(Iff _ _ _) =
         writeStructure
@@ -377,9 +397,8 @@ instance
             ]
 
 instance
-    ( MetaOrObject level
-    , PrettyPrint child
-    ) => PrettyPrint (Implies level child)
+    (MetaOrObject level, PrettyPrint child)
+    => PrettyPrint (Implies level child)
   where
     prettyPrint _ p@(Implies _ _ _) =
         writeStructure
@@ -390,9 +409,8 @@ instance
             ]
 
 instance
-    ( MetaOrObject level
-    , PrettyPrint child
-    ) => PrettyPrint (In level child)
+    (MetaOrObject level, PrettyPrint child)
+    => PrettyPrint (In level child)
   where
     prettyPrint _ p@(In _ _ _ _) =
         writeStructure
@@ -404,9 +422,8 @@ instance
             ]
 
 instance
-    ( MetaOrObject level
-    , PrettyPrint child
-    ) => PrettyPrint (Next level child)
+    (MetaOrObject level, PrettyPrint child)
+    => PrettyPrint (Next level child)
   where
     prettyPrint _ p@(Next _ _) =
         writeStructure
@@ -416,9 +433,8 @@ instance
             ]
 
 instance
-    ( MetaOrObject level
-    , PrettyPrint child
-    ) => PrettyPrint (Not level child)
+    (MetaOrObject level, PrettyPrint child)
+    => PrettyPrint (Not level child)
   where
     prettyPrint _ p@(Not _ _) =
         writeStructure
@@ -428,9 +444,8 @@ instance
             ]
 
 instance
-    ( MetaOrObject level
-    , PrettyPrint child
-    ) => PrettyPrint (Or level child)
+    (MetaOrObject level, PrettyPrint child)
+    => PrettyPrint (Or level child)
   where
     prettyPrint _ p@(Or _ _ _) =
         writeStructure
@@ -441,9 +456,8 @@ instance
             ]
 
 instance
-    ( MetaOrObject level
-    , PrettyPrint child
-    ) => PrettyPrint (Rewrites level child)
+    (MetaOrObject level, PrettyPrint child)
+    => PrettyPrint (Rewrites level child)
   where
     prettyPrint _ p@(Rewrites _ _ _) =
         writeStructure
@@ -453,69 +467,66 @@ instance
             , writeFieldNewLine "rewritesSecond" rewritesSecond p
             ]
 
-instance MetaOrObject level => PrettyPrint (Top level child) where
-    prettyPrint flags (Top p) =
-        writeOneFieldStruct flags "Top" p
+instance
+    MetaOrObject level
+    => PrettyPrint (Top level child)
+  where
+    prettyPrint flags (Top p) = writeOneFieldStruct flags "Top" p
 
 instance
     ( MetaOrObject level
     , PrettyPrint child
     , PrettyPrint (variable level)
     , PrettyPrint (UnifiedVariable variable)
-    ) => PrettyPrint (Pattern level variable child)
+    )
+    => PrettyPrint (Pattern level variable child)
   where
-    prettyPrint flags (AndPattern p) =
-        writeOneFieldStruct flags "AndPattern" p
-    prettyPrint flags (ApplicationPattern p)   =
+    prettyPrint flags (AndPattern p) = writeOneFieldStruct flags "AndPattern" p
+    prettyPrint flags (ApplicationPattern p) =
         writeOneFieldStruct flags "ApplicationPattern" p
-    prettyPrint flags (BottomPattern p)        =
+    prettyPrint flags (BottomPattern p) =
         writeOneFieldStruct flags "BottomPattern" p
-    prettyPrint flags (CeilPattern p)          =
+    prettyPrint flags (CeilPattern p) =
         writeOneFieldStruct flags "CeilPattern" p
-    prettyPrint flags (DomainValuePattern p)          =
+    prettyPrint flags (DomainValuePattern p) =
         writeOneFieldStruct flags "DomainValuePattern" p
-    prettyPrint flags (EqualsPattern p)        =
+    prettyPrint flags (EqualsPattern p) =
         writeOneFieldStruct flags "EqualsPattern" p
-    prettyPrint flags (ExistsPattern p)        =
+    prettyPrint flags (ExistsPattern p) =
         writeOneFieldStruct flags "ExistsPattern" p
-    prettyPrint flags (FloorPattern p)         =
+    prettyPrint flags (FloorPattern p) =
         writeOneFieldStruct flags "FloorPattern" p
-    prettyPrint flags (ForallPattern p)        =
+    prettyPrint flags (ForallPattern p) =
         writeOneFieldStruct flags "ForallPattern" p
-    prettyPrint flags (IffPattern p)           =
-        writeOneFieldStruct flags "IffPattern" p
-    prettyPrint flags (ImpliesPattern p)       =
+    prettyPrint flags (IffPattern p) = writeOneFieldStruct flags "IffPattern" p
+    prettyPrint flags (ImpliesPattern p) =
         writeOneFieldStruct flags "ImpliesPattern" p
-    prettyPrint flags (InPattern p)            =
-        writeOneFieldStruct flags "InPattern" p
-    prettyPrint flags (NextPattern p)          =
+    prettyPrint flags (InPattern p) = writeOneFieldStruct flags "InPattern" p
+    prettyPrint flags (NextPattern p) =
         writeOneFieldStruct flags "NextPattern" p
-    prettyPrint flags (NotPattern p)           =
-        writeOneFieldStruct flags "NotPattern" p
-    prettyPrint flags (OrPattern p)            =
-        writeOneFieldStruct flags "OrPattern" p
-    prettyPrint flags (RewritesPattern p)      =
+    prettyPrint flags (NotPattern p) = writeOneFieldStruct flags "NotPattern" p
+    prettyPrint flags (OrPattern p) = writeOneFieldStruct flags "OrPattern" p
+    prettyPrint flags (RewritesPattern p) =
         writeOneFieldStruct flags "RewritesPattern" p
     prettyPrint flags (StringLiteralPattern p) =
         writeOneFieldStruct flags "StringLiteralPattern" p
     prettyPrint flags (CharLiteralPattern p) =
         writeOneFieldStruct flags "CharLiteralPattern" p
-    prettyPrint flags (TopPattern p)           =
-        writeOneFieldStruct flags "TopPattern" p
-    prettyPrint flags (VariablePattern p)      =
+    prettyPrint flags (TopPattern p) = writeOneFieldStruct flags "TopPattern" p
+    prettyPrint flags (VariablePattern p) =
         writeOneFieldStruct flags "VariablePattern" p
 
-instance PrettyPrint (pat variable)
+instance
+    PrettyPrint (pat variable)
     => PrettyPrint (Attributes pat variable)
   where
     prettyPrint flags (Attributes a)
-        | null a    = write "Attributes []"
+        | null a = write "Attributes []"
         | otherwise = writeOneFieldStruct flags "Attributes" a
 
 instance
-    ( MetaOrObject level
-    , PrettyPrint (pat variable)
-    ) => PrettyPrint (SentenceAlias level pat variable)
+    (MetaOrObject level, PrettyPrint (pat variable))
+    => PrettyPrint (SentenceAlias level pat variable)
   where
     prettyPrint _ sa@(SentenceAlias _ _ _ _) =
         writeStructure
@@ -523,15 +534,17 @@ instance
             [ writeFieldNewLine "sentenceAliasAlias" sentenceAliasAlias sa
             , writeListField "sentenceAliasSorts" sentenceAliasSorts sa
             , writeFieldNewLine
-                "sentenceAliasReturnSort" sentenceAliasResultSort sa
+                  "sentenceAliasReturnSort"
+                  sentenceAliasResultSort
+                  sa
             , writeAttributesField
-                "sentenceAliasAttributes" (sentenceAliasAttributes sa)
+                  "sentenceAliasAttributes"
+                  (sentenceAliasAttributes sa)
             ]
 
 instance
-    ( MetaOrObject level
-    , PrettyPrint (pat variable)
-    ) => PrettyPrint (SentenceSymbol level pat variable)
+    (MetaOrObject level, PrettyPrint (pat variable))
+    => PrettyPrint (SentenceSymbol level pat variable)
   where
     prettyPrint _ sa@(SentenceSymbol _ _ _ _) =
         writeStructure
@@ -539,88 +552,91 @@ instance
             [ writeFieldNewLine "sentenceSymbolSymbol" sentenceSymbolSymbol sa
             , writeListField "sentenceSymbolSorts" sentenceSymbolSorts sa
             , writeFieldNewLine
-                "sentenceSymbolReturnSort" sentenceSymbolResultSort sa
+                  "sentenceSymbolReturnSort"
+                  sentenceSymbolResultSort
+                  sa
             , writeAttributesField
-                "sentenceSymbolAttributes" (sentenceSymbolAttributes sa)
+                  "sentenceSymbolAttributes"
+                  (sentenceSymbolAttributes sa)
             ]
 
 instance
-    (PrettyPrint (pat variable)
-    ) => PrettyPrint (SentenceImport pat variable)
+    (PrettyPrint (pat variable))
+    => PrettyPrint (SentenceImport pat variable)
   where
     prettyPrint _ sa@(SentenceImport _ _) =
         writeStructure
             "SentenceImport"
             [ writeFieldNewLine
-                "sentenceImportModuleName" sentenceImportModuleName sa
+                  "sentenceImportModuleName"
+                  sentenceImportModuleName
+                  sa
             , writeAttributesField
-                "sentenceAxiomAttributes" (sentenceImportAttributes sa)
+                  "sentenceAxiomAttributes"
+                  (sentenceImportAttributes sa)
             ]
 
 instance
-    ( PrettyPrint sortParam
-    , PrettyPrint (pat variable)
-    ) => PrettyPrint (SentenceAxiom sortParam pat variable)
+    (PrettyPrint sortParam, PrettyPrint (pat variable))
+    => PrettyPrint (SentenceAxiom sortParam pat variable)
   where
     prettyPrint _ sa@(SentenceAxiom _ _ _) =
         writeStructure
             "SentenceAxiom"
             [ writeListField
-                "sentenceAxiomParameters" sentenceAxiomParameters sa
-            , writeFieldNewLine
-                "sentenceAxiomPattern" sentenceAxiomPattern sa
+                  "sentenceAxiomParameters"
+                  sentenceAxiomParameters
+                  sa
+            , writeFieldNewLine "sentenceAxiomPattern" sentenceAxiomPattern sa
             , writeAttributesField
-                "sentenceAxiomAttributes" (sentenceAxiomAttributes sa)
+                  "sentenceAxiomAttributes"
+                  (sentenceAxiomAttributes sa)
             ]
 
 instance
-    ( MetaOrObject level
-    , PrettyPrint (pat variable)
-    ) => PrettyPrint (SentenceSort level pat variable)
+    (MetaOrObject level, PrettyPrint (pat variable))
+    => PrettyPrint (SentenceSort level pat variable)
   where
     prettyPrint _ sa@(SentenceSort _ _ _) =
         writeStructure
             "SentenceSort"
             [ writeFieldOneLine "sentenceSortName" sentenceSortName sa
-            , writeListField
-                "sentenceSortParameters" sentenceSortParameters sa
+            , writeListField "sentenceSortParameters" sentenceSortParameters sa
             , writeAttributesField
-                "sentenceSortAttributes" (sentenceSortAttributes sa)
+                  "sentenceSortAttributes"
+                  (sentenceSortAttributes sa)
             ]
 
 instance
-    ( MetaOrObject level
-    , PrettyPrint sortParam
-    , PrettyPrint (pat variable)
-    ) => PrettyPrint (Sentence level sortParam pat variable)
+    (MetaOrObject level, PrettyPrint sortParam, PrettyPrint (pat variable))
+    => PrettyPrint (Sentence level sortParam pat variable)
   where
-    prettyPrint flags (SentenceAliasSentence s)    =
+    prettyPrint flags (SentenceAliasSentence s) =
         writeOneFieldStruct flags "SentenceAliasSentence" s
-    prettyPrint flags (SentenceSymbolSentence s)   =
+    prettyPrint flags (SentenceSymbolSentence s) =
         writeOneFieldStruct flags "SentenceSymbolSentence" s
-    prettyPrint flags (SentenceImportSentence s)        =
+    prettyPrint flags (SentenceImportSentence s) =
         writeOneFieldStruct flags "SentenceImportSentence" s
-    prettyPrint flags (SentenceAxiomSentence s)        =
+    prettyPrint flags (SentenceAxiomSentence s) =
         writeOneFieldStruct flags "SentenceAxiomSentence" s
-    prettyPrint flags (SentenceSortSentence s)         =
+    prettyPrint flags (SentenceSortSentence s) =
         writeOneFieldStruct flags "SentenceSortSentence" s
 
 instance
-    ( PrettyPrint sortParam
-    , PrettyPrint (pat variable)
-    ) => PrettyPrint (UnifiedSentence sortParam pat variable)
+    (PrettyPrint sortParam, PrettyPrint (pat variable))
+    => PrettyPrint (UnifiedSentence sortParam pat variable)
   where
     prettyPrint flags (MetaSentence s) =
         writeOneFieldStruct flags "MetaSentence" s
     prettyPrint flags (ObjectSentence s) =
         writeOneFieldStruct flags "ObjectSentence" s
 
-
 instance
-    (PrettyPrint (sentence sortParam pat variable)
+    ( PrettyPrint (sentence sortParam pat variable)
     , PrettyPrint sortParam
     , PrettyPrint (pat variable)
-    ) => PrettyPrint (Module sentence sortParam pat variable)
+    )
+    => PrettyPrint (Module sentence sortParam pat variable)
   where
     prettyPrint _ m@(Module _ _ _) =
         writeStructure
@@ -631,27 +647,30 @@ instance
             ]
 
 instance
-    (PrettyPrint (sentence sortParam pat variable)
+    ( PrettyPrint (sentence sortParam pat variable)
     , PrettyPrint sortParam
     , PrettyPrint (pat variable)
-    ) => PrettyPrint (Definition sentence sortParam pat variable)
+    )
+    => PrettyPrint (Definition sentence sortParam pat variable)
   where
     prettyPrint _ d@(Definition _ _) =
         writeStructure
             "Definition"
             [ writeAttributesField
-                "definitionAttributes" (definitionAttributes d)
+                  "definitionAttributes"
+                  (definitionAttributes d)
             , writeListField "definitionModules" definitionModules d
             ]
 
-instance PrettyPrint a => PrettyPrint (Maybe a) where
-    prettyPrint flags (Just x) =
-        writeOneFieldStruct flags "Just" x
-    prettyPrint _ Nothing = write "Nothing"
+instance
+    PrettyPrint a
+    => PrettyPrint (Maybe a)
+  where
+    prettyPrint flags (Just x) = writeOneFieldStruct flags "Just" x
+    prettyPrint _ Nothing      = write "Nothing"
 
 instance PrettyPrint (MetaMLPattern Variable) where
-    prettyPrint flags p =
-        writeOneFieldStruct flags "Fix" (unFix p)
+    prettyPrint flags p = writeOneFieldStruct flags "Fix" (unFix p)
 
 instance PrettyPrint (SentenceMetaPattern Variable) where
     prettyPrint flags (SentenceMetaPattern smp) =

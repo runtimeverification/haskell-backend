@@ -4,12 +4,10 @@ import           Data.Kore.ASTVerifier.DefinitionVerifier
 import           Data.Kore.Error
 import           Data.Kore.Parser.Parser
 
-import           Control.Exception                        (evaluate)
-import           Control.Monad                            (when)
-import           System.Clock                             (Clock (Monotonic),
-                                                           diffTimeSpec,
-                                                           getTime)
-import           System.Environment                       (getArgs)
+import           Control.Exception  (evaluate)
+import           Control.Monad      (when)
+import           System.Clock       (Clock(Monotonic), diffTimeSpec, getTime)
+import           System.Environment (getArgs)
 
 data CommandLineFlags = CommandLineFlags
     { commandLineFlagsFileName :: !(Maybe String)
@@ -17,9 +15,9 @@ data CommandLineFlags = CommandLineFlags
     , commandLineFlagsPrint    :: !Bool
     }
 
+
 usage :: String
-usage =
-    "Usage: kore-parser [--[no]verify] [--[no]print] fileName"
+usage = "Usage: kore-parser [--[no]verify] [--[no]print] fileName"
 
 -- TODO(virgil): Use a generic command line parsing library instead.
 parseCommandLineFlags :: [String] -> CommandLineFlags
@@ -29,7 +27,7 @@ parseCommandLineFlags [] =
         , commandLineFlagsVerify = True
         , commandLineFlagsPrint = True
         }
-parseCommandLineFlags (('-' : '-' : firstFlag) : commandLineReminder) =
+parseCommandLineFlags (('-':'-':firstFlag):commandLineReminder) =
     addFlagAndContinue firstFlag commandLineReminder
   where
     addFlagAndContinue flag commandLine
@@ -40,14 +38,12 @@ parseCommandLineFlags (('-' : '-' : firstFlag) : commandLineReminder) =
             (parseCommandLineFlags commandLine)
                 { commandLineFlagsVerify = False }
         | flag == "print" =
-            (parseCommandLineFlags commandLine)
-                { commandLineFlagsPrint = True }
+            (parseCommandLineFlags commandLine) { commandLineFlagsPrint = True }
         | flag == "noprint" =
             (parseCommandLineFlags commandLine)
                 { commandLineFlagsPrint = False }
-        | otherwise =
-            error ("Unknown flag: --" ++ flag)
-parseCommandLineFlags (flag : commandLine) =
+        | otherwise = error ("Unknown flag: --" ++ flag)
+parseCommandLineFlags (flag:commandLine) =
     (parseCommandLineFlags commandLine) { commandLineFlagsFileName = Just flag }
 
 clockSomething :: String -> a -> IO a
@@ -65,7 +61,6 @@ clockSomethingIO description something = do
 main :: IO ()
 main = do
     commandLineFlags <- parseCommandLineFlags <$> getArgs
-
     case commandLineFlagsFileName commandLineFlags of
         Nothing -> do
             print usage
@@ -85,13 +80,13 @@ main = do
                         verifyResult <-
                             clockSomething
                                 "Verifying the definition"
-                                (verifyDefinition DoNotVerifyAttributes unverifiedDefinition)
+                                (verifyDefinition
+                                     DoNotVerifyAttributes
+                                     unverifiedDefinition)
                         case verifyResult of
                             Left err1        -> error (printError err1)
                             Right definition -> return unverifiedDefinition
-                    else
-                        return unverifiedDefinition
+                    else return unverifiedDefinition
             when
                 (commandLineFlagsPrint commandLineFlags)
                 (print verifiedDefinition)
-

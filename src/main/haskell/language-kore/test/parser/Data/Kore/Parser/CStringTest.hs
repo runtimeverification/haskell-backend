@@ -1,8 +1,10 @@
-module Data.Kore.Parser.CStringTest (cStringTests) where
+module Data.Kore.Parser.CStringTest
+    ( cStringTests
+    ) where
 
-import           Test.Tasty               (TestTree, testGroup)
-import           Test.Tasty.HUnit         (assertEqual, testCase)
-import           Test.Tasty.QuickCheck    (testProperty)
+import           Test.Tasty            (TestTree, testGroup)
+import           Test.Tasty.HUnit      (assertEqual, testCase)
+import           Test.Tasty.QuickCheck (testProperty)
 
 import           Data.Kore.Parser.CString
 
@@ -37,53 +39,52 @@ cStringTests =
         , success (Input "\\U000120FF") (Expected "\73983")
         , success (Input "\\U000120FFF") (Expected ("\73983" ++ "F"))
         , testProperty "QuickCheck Escape&Unescape" escapeUnescapeProp
-
         , failureWithMessage
-            (Input "\\UFFFFFFFF")
-            (Expected
-                "Character code 4294967295 outside of the representable codes.")
+              (Input "\\UFFFFFFFF")
+              (Expected
+                   "Character code 4294967295 outside of the representable codes.")
         , failureWithMessage
-            (Input "\\u00F")
-            (Expected "Invalid unicode sequence length.")
+              (Input "\\u00F")
+              (Expected "Invalid unicode sequence length.")
         {- TODO(virgil: Add  nice error message for this.
         , failureWithMessage
             (Input "\\u00Fz")
             (Expected "Invalid unicode sequence length.")
         -}
         , failureWithMessage
-            (Input "\\U000000F")
-            (Expected "Invalid unicode sequence length.")
+              (Input "\\U000000F")
+              (Expected "Invalid unicode sequence length.")
         {- TODO(virgil: Add  nice error message for this.
         , failureWithMessage
             (Input "\\U000000Fz")
             (Expected "Invalid unicode sequence length.")
         -}
         , failureWithMessage
-            (Input "\\z")
-            (Expected "unescapeCString : Unknown escape sequence '\\z'.")
+              (Input "\\z")
+              (Expected "unescapeCString : Unknown escape sequence '\\z'.")
         ]
 
 newtype Input = Input String
+
 newtype Expected = Expected String
 
 success :: Input -> Expected -> TestTree
 success (Input input) (Expected expected) =
     testCase
         ("Unescaping '" ++ input ++ "'.")
-        (assertEqual "Expecting unescaping success."
-            (Right expected)
-            (unescapeCString input)
-        )
+        (assertEqual
+             "Expecting unescaping success."
+             (Right expected)
+             (unescapeCString input))
 
 failureWithMessage :: Input -> Expected -> TestTree
 failureWithMessage (Input input) (Expected expected) =
     testCase
         ("Failing to unescape '" ++ input ++ "'.")
-        (assertEqual "Expecting unescaping failure."
-            (Left expected)
-            (unescapeCString input)
-        )
+        (assertEqual
+             "Expecting unescaping failure."
+             (Left expected)
+             (unescapeCString input))
 
 escapeUnescapeProp :: String -> Bool
-escapeUnescapeProp str =
-    Right str == unescapeCString (escapeCString str)
+escapeUnescapeProp str = Right str == unescapeCString (escapeCString str)

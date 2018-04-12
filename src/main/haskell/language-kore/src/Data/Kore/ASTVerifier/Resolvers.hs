@@ -7,16 +7,17 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Data.Kore.ASTVerifier.Resolvers ( resolveMetaSort
-                                       , resolveObjectSort
-                                       ) where
+module Data.Kore.ASTVerifier.Resolvers
+    ( resolveMetaSort
+    , resolveObjectSort
+    ) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.Error
 import           Data.Kore.IndexedModule.IndexedModule
 
-import qualified Data.Map                              as Map
+import qualified Data.Map as Map
 
 {-|'resolveMetaSort' resolves a meta sort given its id. -}
 resolveMetaSort
@@ -25,8 +26,7 @@ resolveMetaSort
     -> Id Meta
     -- ^ The ID of the sort.
     -> Either (Error VerifyError) (SortDescription Meta)
-resolveMetaSort =
-    resolveSort indexedModuleMetaSortDescriptions
+resolveMetaSort = resolveSort indexedModuleMetaSortDescriptions
 
 {-|'resolveObjectSort' resolves an object sort given its id. -}
 resolveObjectSort
@@ -35,8 +35,7 @@ resolveObjectSort
     -> Id Object
     -- ^ The ID of the sort.
     -> Either (Error VerifyError) (SortDescription Object)
-resolveObjectSort =
-    resolveSort indexedModuleObjectSortDescriptions
+resolveObjectSort = resolveSort indexedModuleObjectSortDescriptions
 
 {-|'resolveSort' resolves a sort given its id. -}
 resolveSort
@@ -49,5 +48,5 @@ resolveSort
     -> Either (Error VerifyError) (SortDescription level)
 resolveSort mapExtractor indexedModule sortId =
     case resolveThing mapExtractor indexedModule sortId of
-        Nothing -> koreFail ("Sort '" ++ getId sortId ++  "' not declared.")
+        Nothing -> koreFail ("Sort '" ++ getId sortId ++ "' not declared.")
         Just sortDescription -> Right sortDescription

@@ -1,11 +1,12 @@
-{-# LANGUAGE DeriveFoldable         #-}
-{-# LANGUAGE DeriveFunctor          #-}
-{-# LANGUAGE DeriveTraversable      #-}
-{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE GADTs                  #-}
-{-# LANGUAGE KindSignatures         #-}
-{-# LANGUAGE StandaloneDeriving     #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE StandaloneDeriving #-}
+
 {-|
 Module      : Data.Kore.AST.Common
 Description : Data Structures for representing the Kore language AST that do not
@@ -114,8 +115,7 @@ Section 9.1.2 (Sorts).
 The 'level' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
-newtype SortVariable level = SortVariable
-    { getSortVariable  :: Id level }
+newtype SortVariable level = SortVariable { getSortVariable :: Id level }
     deriving (Show, Eq, Ord, Typeable)
 
 {-|'SortActual' corresponds to the @sort-constructor{sort-list}@ branch of the
@@ -162,13 +162,7 @@ data MetaSortType
     | StringSort
 
 metaBasicSortsList :: [MetaBasicSortType]
-metaBasicSortsList =
-    [ CharSort
-    , PatternSort
-    , SortSort
-    , SymbolSort
-    , VariableSort
-    ]
+metaBasicSortsList = [CharSort, PatternSort, SortSort, SymbolSort, VariableSort]
 
 metaSortsList :: [MetaSortType]
 metaSortsList =
@@ -187,8 +181,7 @@ metaBasicSortTypeString VariableSort = "Variable"
 
 metaSortTypeString :: MetaSortType -> String
 metaSortTypeString (MetaBasicSortType s) = metaBasicSortTypeString s
-metaSortTypeString (MetaListSortType s)  =
-    metaBasicSortTypeString s ++ "List"
+metaSortTypeString (MetaListSortType s)  = metaBasicSortTypeString s ++ "List"
 metaSortTypeString StringSort            = "String"
 
 instance Show MetaSortType where
@@ -226,7 +219,7 @@ data MLPatternType
     | OrPatternType
     | RewritesPatternType
     | TopPatternType
-    deriving Show
+    deriving (Show)
 
 allPatternTypes :: [MLPatternType]
 allPatternTypes =
@@ -249,23 +242,24 @@ allPatternTypes =
     ]
 
 patternString :: MLPatternType -> String
-patternString pt = case pt of
-    AndPatternType         -> "and"
-    BottomPatternType      -> "bottom"
-    CeilPatternType        -> "ceil"
-    DomainValuePatternType -> "dv"
-    EqualsPatternType      -> "equals"
-    ExistsPatternType      -> "exists"
-    FloorPatternType       -> "floor"
-    ForallPatternType      -> "forall"
-    IffPatternType         -> "iff"
-    ImpliesPatternType     -> "implies"
-    InPatternType          -> "in"
-    NextPatternType        -> "next"
-    NotPatternType         -> "not"
-    OrPatternType          -> "or"
-    RewritesPatternType    -> "rewrites"
-    TopPatternType         -> "top"
+patternString pt =
+    case pt of
+        AndPatternType         -> "and"
+        BottomPatternType      -> "bottom"
+        CeilPatternType        -> "ceil"
+        DomainValuePatternType -> "dv"
+        EqualsPatternType      -> "equals"
+        ExistsPatternType      -> "exists"
+        FloorPatternType       -> "floor"
+        ForallPatternType      -> "forall"
+        IffPatternType         -> "iff"
+        ImpliesPatternType     -> "implies"
+        InPatternType          -> "in"
+        NextPatternType        -> "next"
+        NotPatternType         -> "not"
+        OrPatternType          -> "or"
+        RewritesPatternType    -> "rewrites"
+        TopPatternType         -> "top"
 
 {-|'And' corresponds to the @\and@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -311,7 +305,7 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 This represents the ⌈BottomPattern⌉ Matching Logic construct.
 -}
-newtype Bottom level child = Bottom { bottomSort :: Sort level}
+newtype Bottom level child = Bottom { bottomSort :: Sort level }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
 {-|'Ceil' corresponds to the @\ceil@ branches of the @object-pattern@ and
@@ -492,7 +486,6 @@ data In level child = In
     }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
-
 {-|'Next' corresponds to the @\next@ branch of the @object-pattern@
 syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
 
@@ -556,7 +549,6 @@ done at the Pattern level.
 
 This represents the 'rewritesFirst ⇒ rewritesSecond' Matching Logic construct.
 -}
-
 data Rewrites level child = Rewrites
     { rewritesSort   :: !(Sort level)
     , rewritesFirst  :: !child
@@ -575,7 +567,7 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 This represents the ⌈TopPattern⌉ Matching Logic construct.
 -}
-newtype Top level child = Top { topSort :: Sort level}
+newtype Top level child = Top { topSort :: Sort level }
     deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
 
 {-|'Pattern' corresponds to the @object-pattern@ and
@@ -589,66 +581,52 @@ Note that the 'StringLiteralPattern' and 'CharLiteralPattern' should
 be members only of 'Pattern Meta'.
 -}
 data Pattern level variable child where
-    AndPattern
-        :: !(And level child) -> Pattern level variable child
+    AndPattern :: !(And level child) -> Pattern level variable child
     ApplicationPattern
         :: !(Application level child) -> Pattern level variable child
-    BottomPattern
-        :: !(Bottom level child) -> Pattern level variable child
-    CeilPattern
-        :: !(Ceil level child) -> Pattern level variable child
+    BottomPattern :: !(Bottom level child) -> Pattern level variable child
+    CeilPattern :: !(Ceil level child) -> Pattern level variable child
     DomainValuePattern
         :: !(DomainValue Object child) -> Pattern Object variable child
-    EqualsPattern
-        :: !(Equals level child) -> Pattern level variable child
+    EqualsPattern :: !(Equals level child) -> Pattern level variable child
     ExistsPattern
         :: !(Exists level variable child) -> Pattern level variable child
-    FloorPattern
-        :: !(Floor level child) -> Pattern level variable child
+    FloorPattern :: !(Floor level child) -> Pattern level variable child
     ForallPattern
         :: !(Forall level variable child) -> Pattern level variable child
-    IffPattern
-        :: !(Iff level child) -> Pattern level variable child
-    ImpliesPattern
-        :: !(Implies level child) -> Pattern level variable child
-    InPattern
-        :: !(In level child) -> Pattern level variable child
-    NextPattern
-        :: !(Next Object child) -> Pattern Object variable child
-    NotPattern
-        :: !(Not level child) -> Pattern level variable child
-    OrPattern
-        :: !(Or level child) -> Pattern level variable child
-    RewritesPattern
-        :: !(Rewrites Object child) -> Pattern Object variable child
-    StringLiteralPattern
-        :: !StringLiteral -> Pattern Meta variable child
-    CharLiteralPattern
-        :: !CharLiteral -> Pattern Meta variable child
-    TopPattern
-        :: !(Top level child) -> Pattern level variable child
-    VariablePattern
-        :: !(variable level) -> Pattern level variable child
-  deriving (Typeable)
+    IffPattern :: !(Iff level child) -> Pattern level variable child
+    ImpliesPattern :: !(Implies level child) -> Pattern level variable child
+    InPattern :: !(In level child) -> Pattern level variable child
+    NextPattern :: !(Next Object child) -> Pattern Object variable child
+    NotPattern :: !(Not level child) -> Pattern level variable child
+    OrPattern :: !(Or level child) -> Pattern level variable child
+    RewritesPattern :: !(Rewrites Object child) -> Pattern Object variable child
+    StringLiteralPattern :: !StringLiteral -> Pattern Meta variable child
+    CharLiteralPattern :: !CharLiteral -> Pattern Meta variable child
+    TopPattern :: !(Top level child) -> Pattern level variable child
+    VariablePattern :: !(variable level) -> Pattern level variable child
+    deriving (Typeable)
 
 deriving instance
-    ( Eq child
-    , Eq (variable level)
-    ) => Eq (Pattern level variable child)
+    (Eq child, Eq (variable level))
+    => Eq (Pattern level variable child)
+
 deriving instance
-    ( Show child
-    , Show (variable level)
-    ) => Show (Pattern level variable child)
+    (Show child, Show (variable level))
+    => Show (Pattern level variable child)
+
 deriving instance Functor (Pattern level variable)
+
 deriving instance Foldable (Pattern level variable)
+
 deriving instance Traversable (Pattern level variable)
 
 {-|'Attributes' corresponds to the @attributes@ Kore syntactic declaration.
 It is parameterized by the types of Patterns, @pat@.
 -}
-newtype Attributes pat (variable :: * -> *) =
-    Attributes { getAttributes :: [pat variable] }
-  deriving (Eq, Show)
+newtype Attributes pat (variable :: * -> *) = Attributes
+    { getAttributes :: [pat variable] }
+    deriving (Eq, Show)
 
 {-|'SentenceAlias' corresponds to the @object-alias-declaration@ and
 @meta-alias-declaration@ syntactic categories from the Semantics of K,
@@ -743,13 +721,12 @@ data Sentence level sortParam pat variable where
         -> Sentence Object sortParam pat variable
 
 deriving instance
-    ( Eq (pat variable)
-    , Eq sortParam
-    ) => Eq (Sentence level sortParam pat variable)
+    (Eq (pat variable), Eq sortParam)
+    => Eq (Sentence level sortParam pat variable)
+
 deriving instance
-    ( Show (pat variable)
-    , Show sortParam
-    ) => Show (Sentence level sortParam pat variable)
+    (Show (pat variable), Show sortParam)
+    => Show (Sentence level sortParam pat variable)
 
 {-|A 'Module' consists of a 'ModuleName' a list of 'Sentence's and some
 'Attributes'.
@@ -795,11 +772,12 @@ class SentenceSymbolOrAlias sentence where
         :: sentence level pat variable -> String
     getSentenceSymbolOrAliasHead
         :: sentence level pat variable -> [Sort level] -> SymbolOrAlias level
-    getSentenceSymbolOrAliasHead sentence sortParameters = SymbolOrAlias
-        { symbolOrAliasConstructor =
-            getSentenceSymbolOrAliasConstructor sentence
-        , symbolOrAliasParams = sortParameters
-        }
+    getSentenceSymbolOrAliasHead sentence sortParameters =
+        SymbolOrAlias
+            { symbolOrAliasConstructor =
+                  getSentenceSymbolOrAliasConstructor sentence
+            , symbolOrAliasParams = sortParameters
+            }
 
 instance SentenceSymbolOrAlias SentenceAlias where
     getSentenceSymbolOrAliasConstructor = aliasConstructor . sentenceAliasAlias
@@ -826,6 +804,7 @@ data SortedPattern level variable child = SortedPattern
     , sortedPatternSort    :: !(Sort level)
     }
 
+
 {-|'PatternStub' is either a pattern with a known sort, or a function that
 builds a pattern from a sort.
 -}
@@ -846,15 +825,11 @@ withSort s (UnsortedPatternStub p) =
         }
 withSort
     s
-    p@(SortedPatternStub SortedPattern { sortedPatternSort = existingSort })
+    p@(SortedPatternStub SortedPattern {sortedPatternSort = existingSort})
   =
     if s == existingSort
         then p
-        else
-            error
-                (  "Unmatched sorts: "
-                ++ show s
-                ++ " and "
-                ++ show existingSort
-                ++ "."
-                )
+        else error
+            (  "Unmatched sorts: "
+            ++ show s ++ " and " ++ show existingSort ++ "."
+            )

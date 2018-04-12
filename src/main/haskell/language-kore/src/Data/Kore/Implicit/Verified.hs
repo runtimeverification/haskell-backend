@@ -7,16 +7,17 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-
 module Data.Kore.Implicit.Verified
-    (implicitKoreModule, implicitKoreDefinition) where
+    ( implicitKoreModule
+    , implicitKoreDefinition
+    ) where
 
-import           Data.Kore.AST.Common                     (Definition (..))
-import           Data.Kore.ASTVerifier.DefinitionVerifier (AttributesVerification (..),
+import           Data.Kore.AST.Common                     (Definition(..))
+import           Data.Kore.ASTVerifier.DefinitionVerifier ( AttributesVerification(..),
                                                            verifyKoreDefinition)
 import           Data.Kore.ASTVerifier.Error              (VerifyError)
 import           Data.Kore.Error                          (Error, printError)
-import           Data.Kore.Implicit.ImplicitKore          (uncheckedKoreDefinition)
+import           Data.Kore.Implicit.ImplicitKore          ( uncheckedKoreDefinition)
 import           Data.Kore.MetaML.AST
 import           Data.Kore.MetaML.MetaToKore
 
@@ -36,5 +37,5 @@ implicitKoreDefinition =
 implicitKoreModule :: MetaModule
 implicitKoreModule =
     case checkedKoreDefinition of
-        Left err                                   -> error (printError err)
+        Left err -> error (printError err)
         Right Definition {definitionModules = [m]} -> m

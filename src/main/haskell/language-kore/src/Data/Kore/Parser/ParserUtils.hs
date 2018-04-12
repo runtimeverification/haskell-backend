@@ -11,7 +11,7 @@ Helper tools for parsing Kore. Meant for internal use only.
 -}
 module Data.Kore.Parser.ParserUtils where
 
-import           Control.Applicative    (many, (<|>))
+import           Control.Applicative    ((<|>), many)
 import           Control.Monad          (void)
 import           Data.Functor           (($>))
 import           Text.Parsec            (parse)
@@ -24,16 +24,14 @@ available character in the input, without consuming it. Returns 'Nothing'
 if the input does not have any available characters.
 -}
 peekChar :: Parser (Maybe Char)
-peekChar =
-    Just <$> peekChar' <|> return Nothing
+peekChar = Just <$> peekChar' <|> return Nothing
 
 {-|'peekChar'' is similar to Attoparsec's 'peekChar''. It returns the next
 available character in the input, without consuming it. Fails if the input
 does not have any available characters.
 -}
 peekChar' :: Parser Char
-peekChar' =
-    lookAhead Parser.anyChar
+peekChar' = lookAhead Parser.anyChar
 
 {-|'scan' is similar to Attoparsec's 'scan'. It does the same thing as
 'runScanner', but without returning the last state.
@@ -55,7 +53,7 @@ runScanner state delta = do
         Just s -> do
             c <- Parser.anyChar
             (reminder, finalState) <- runScanner s delta
-            return (c:reminder, finalState)
+            return (c : reminder, finalState)
 
 {-|'skipSpace' is similar to Attoparsec's 'skipSpace'. It consumes all
 characters until the first non-space one.
@@ -96,21 +94,22 @@ Returns a list of items.
 The difference between this and the standard 'many' construct is that this one
 returns any errors reported by the item parser.
 -}
-manyUntilChar :: Char       -- ^ The end character
-              -> Parser a   -- ^ The item parser
-              -> Parser [a]
+manyUntilChar
+    :: Char -- ^ The end character
+    -> Parser a -- ^ The item parser
+    -> Parser [a]
 manyUntilChar endChar itemParser = do
     mc <- peekChar
     if mc == Just endChar
-      then return []
-      else (:) <$> itemParser <*> manyUntilChar endChar itemParser
+        then return []
+        else (:) <$> itemParser <*> manyUntilChar endChar itemParser
 
 {-|'skipCharParser' skips the given character, using the provided parser to
 consume whatever is after the character.
 -}
 skipCharParser :: Parser () -> Char -> Parser ()
 skipCharParser skipWhitespace c = do
-    void(Parser.char c)
+    void (Parser.char c)
     skipWhitespace
 
 {-|'sepByCharWithDelimitingChars' parses a list of 0 or more 'a' items.
@@ -123,33 +122,37 @@ The difference between this and the standard 'sepBy' construct is that this one
 returns any errors reported by 'itemParser'
 -}
 sepByCharWithDelimitingChars
-    :: Parser()   -- ^ Skipping parser
-    -> Char       -- ^ The start character
-    -> Char       -- ^ The end character
-    -> Char       -- ^ The separator character
-    -> Parser a   -- ^ The item perser
+    :: Parser () -- ^ Skipping parser
+    -> Char -- ^ The start character
+    -> Char -- ^ The end character
+    -> Char -- ^ The separator character
+    -> Parser a -- ^ The item perser
     -> Parser [a]
 sepByCharWithDelimitingChars
-    skipWhitespace firstChar endChar delimiter itemParser = do
-        skipCharParser skipWhitespace firstChar
-        mc <- peekChar
-        case mc of
-            Nothing -> fail "Unexpected end of input."
-            Just c
-                | c == endChar ->
-                    skipCharParser skipWhitespace endChar $> []
-                | otherwise ->
-                    (:) <$> itemParser <*> sepByCharWithDelimitingChars'
+    skipWhitespace firstChar endChar delimiter itemParser
+  = do
+    skipCharParser skipWhitespace firstChar
+    mc <- peekChar
+    case mc of
+        Nothing -> fail "Unexpected end of input."
+        Just c
+            | c == endChar -> skipCharParser skipWhitespace endChar $> []
+            | otherwise -> (:) <$> itemParser <*> sepByCharWithDelimitingChars'
   where
     sepByCharWithDelimitingChars' = do
         mc <- peekChar
         case mc of
             Nothing -> fail "Unexpected end of input."
             Just c
-                | c == endChar ->
-                    skipCharParser skipWhitespace endChar $> []
+                | c == endChar -> skipCharParser skipWhitespace endChar $> []
                 | c == delimiter ->
-                    skipCharParser skipWhitespace delimiter *>
-                        ((:) <$> itemParser <*> sepByCharWithDelimitingChars')
-                | otherwise -> fail ("Unexpected character: '" ++ c:"'. " ++
-                    "Expecting '" ++ delimiter:"' or '" ++ endChar:"'.")
+                    skipCharParser skipWhitespace delimiter
+                    *> ((:) <$> itemParser <*> sepByCharWithDelimitingChars')
+                | otherwise ->
+                    fail
+                        (  "Unexpected character: '"
+                        ++ c
+                        : "'. "
+                        ++ "Expecting '"
+                        ++ delimiter : "' or '" ++ endChar : "'."
+                        )

@@ -21,24 +21,24 @@ Conventions used:
    whitespace before.
 -}
 module Data.Kore.Parser.Lexeme
-       ( colonParser
-       , commaParser
-       , curlyPairParser
-       , curlyPairRemainderParser
-       , idParser
-       , openCurlyBraceParser
-       , inCurlyBracesParser
-       , inCurlyBracesRemainderParser
-       , inParenthesesParser
-       , inSquareBracketsParser
-       , keywordBasedParsers
-       , metaSortConverter
-       , mlLexemeParser
-       , moduleNameParser
-       , parenPairParser
-       , skipWhitespace
-       , stringLiteralParser
-       , charLiteralParser
-       ) where
+    ( colonParser
+    , commaParser
+    , curlyPairParser
+    , curlyPairRemainderParser
+    , idParser
+    , openCurlyBraceParser
+    , inCurlyBracesParser
+    , inCurlyBracesRemainderParser
+    , inParenthesesParser
+    , inSquareBracketsParser
+    , keywordBasedParsers
+    , metaSortConverter
+    , mlLexemeParser
+    , moduleNameParser
+    , parenPairParser
+    , skipWhitespace
+    , stringLiteralParser
+    , charLiteralParser
+    ) where
 
 import           Data.Kore.Parser.LexemeImpl

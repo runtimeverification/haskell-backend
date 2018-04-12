@@ -1,8 +1,8 @@
 module Data.Kore.ASTVerifier.DefinitionVerifierTest
-    (definitionVerifierTests) where
+    ( definitionVerifierTests
+    ) where
 
-import           Test.Tasty                                                      (TestTree,
-                                                                                  testGroup)
+import           Test.Tasty (TestTree, testGroup)
 
 import           Data.Kore.ASTVerifier.DefinitionVerifierImportsTest
 import           Data.Kore.ASTVerifier.DefinitionVerifierMetaObjectTest

@@ -1,6 +1,8 @@
-module Data.Kore.Parser.ParserTest (koreParserTests) where
+module Data.Kore.Parser.ParserTest
+    ( koreParserTests
+    ) where
 
-import           Test.Tasty                       (TestTree, testGroup)
+import           Test.Tasty (TestTree, testGroup)
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
@@ -19,11 +21,11 @@ koreParserTests =
         , testGroup "objectSortVariableParser" objectSortVariableParserTests
         , testGroup "metaSortVariableParser" metaSortVariableParserTests
         , testGroup
-            "objectInCurlyBracesSortVariableListParser"
-            objectInCurlyBracesSortVariableListParserTest
+              "objectInCurlyBracesSortVariableListParser"
+              objectInCurlyBracesSortVariableListParserTest
         , testGroup
-            "metaInCurlyBracesSortVariableListParser"
-            metaInCurlyBracesSortVariableListParserTest
+              "metaInCurlyBracesSortVariableListParser"
+              metaInCurlyBracesSortVariableListParserTest
         , testGroup "sortVariableParser" sortVariableParserTests
         , testGroup "objectAliasParser" objectAliasParserTests
         , testGroup "objectSymbolParser" objectSymbolParserTests
@@ -61,47 +63,46 @@ koreParserTests =
 
 objectSortParserTests :: [TestTree]
 objectSortParserTests =
-    parseTree (sortParser Object)
-        [ success "var" $
-            SortVariableSort ( SortVariable (Id "var") )
-        , success "sort1{}" $
-            SortActualSort SortActual
-                { sortActualName = Id "sort1"
-                , sortActualSorts = []
-                }
-        , success "sort1{sort2}" $
-            SortActualSort SortActual
-                { sortActualName = Id "sort1"
-                , sortActualSorts =
-                    [ SortVariableSort ( SortVariable (Id "sort2") ) ]
-                }
-        , success "sort1{sort2, sort3}" $
-            SortActualSort SortActual
-                { sortActualName = Id "sort1"
-                , sortActualSorts =
-                    [ SortVariableSort ( SortVariable (Id "sort2") )
-                    , SortVariableSort ( SortVariable (Id "sort3") )
+    parseTree
+        (sortParser Object)
+        [ success "var" $ SortVariableSort (SortVariable (Id "var"))
+        , success "sort1{}"
+          $ SortActualSort SortActual
+              { sortActualName = Id "sort1"
+              , sortActualSorts = []
+              }
+        , success "sort1{sort2}"
+          $ SortActualSort SortActual
+              { sortActualName = Id "sort1"
+              , sortActualSorts = [SortVariableSort (SortVariable (Id "sort2"))]
+              }
+        , success "sort1{sort2, sort3}"
+          $ SortActualSort SortActual
+              { sortActualName = Id "sort1"
+              , sortActualSorts =
+                    [ SortVariableSort (SortVariable (Id "sort2"))
+                    , SortVariableSort (SortVariable (Id "sort3"))
                     ]
-                }
-        , success "sort1{sort2{sort3}}" $
-            SortActualSort SortActual
-                { sortActualName = Id "sort1"
-                , sortActualSorts =
+              }
+        , success "sort1{sort2{sort3}}"
+          $ SortActualSort SortActual
+              { sortActualName = Id "sort1"
+              , sortActualSorts =
                     [ SortActualSort SortActual
-                        { sortActualName = Id "sort2"
-                        , sortActualSorts =
-                            [ SortVariableSort (SortVariable (Id "sort3")) ]
-                        }
+                          { sortActualName = Id "sort2"
+                          , sortActualSorts =
+                                [SortVariableSort (SortVariable (Id "sort3"))]
+                          }
                     ]
-                }
+              }
         , FailureWithoutMessage ["var1, var2", "var1{var1 var2}"]
         ]
 
 metaSortConverterTests :: [TestTree]
 metaSortConverterTests =
-    parseTree (sortParser Meta)
-        [ success "#var"
-            (SortVariableSort (SortVariable (Id "#var")))
+    parseTree
+        (sortParser Meta)
+        [ success "#var" (SortVariableSort (SortVariable (Id "#var")))
         , success "#Char{}" charMetaSort
         , success "#CharList{}" charListMetaSort
         , success "#Pattern{}" patternMetaSort
@@ -114,1045 +115,1199 @@ metaSortConverterTests =
         , success "#Variable{}" variableMetaSort
         , success "#VariableList{}" variableListMetaSort
         , Failure FailureTest
-            { failureInput = "#Chart{}"
-            , failureExpected =
-                "\"<test-string>\" (line 1, column 9):\n"
-                ++ "unexpected end of input\n"
-                ++ "metaSortConverter: Invalid constructor: '#Chart'."
-            }
+              { failureInput = "#Chart{}"
+              , failureExpected =
+                    "\"<test-string>\" (line 1, column 9):\n"
+                    ++ "unexpected end of input\n"
+                    ++ "metaSortConverter: Invalid constructor: '#Chart'."
+              }
         , Failure FailureTest
-            { failureInput = "#Char{#Char}"
-            , failureExpected =
-                "\"<test-string>\" (line 1, column 13):\n"
-                ++ "unexpected end of input\n"
-                ++ "metaSortConverter: Non empty parameter sorts."
-            }
+              { failureInput = "#Char{#Char}"
+              , failureExpected =
+                    "\"<test-string>\" (line 1, column 13):\n"
+                    ++ "unexpected end of input\n"
+                    ++ "metaSortConverter: Non empty parameter sorts."
+              }
         , FailureWithoutMessage
-            [ "var1, var2", "var1{var1 var2}"
-            , "sort1{sort2, sort3}", "sort1{sort2{sort3}}"
-            ]
+              [ "var1, var2"
+              , "var1{var1 var2}"
+              , "sort1{sort2, sort3}"
+              , "sort1{sort2{sort3}}"
+              ]
         ]
 
 objectSortListParserTests :: [TestTree]
 objectSortListParserTests =
-    parseTree (inParenthesesListParser (sortParser Object))
+    parseTree
+        (inParenthesesListParser (sortParser Object))
         [ success "()" []
-        , success "(var)"
-            [ sortVariableSort "var" ]
-        , success "( var1  , var2   )  "
-            [ sortVariableSort "var1"
-            , sortVariableSort "var2"
-            ]
-        , success "(sort1{sort2}, var)"
-            [ SortActualSort SortActual
-                { sortActualName = Id "sort1"
-                , sortActualSorts =
-                    [ sortVariableSort "sort2" ]
-                }
-            , sortVariableSort "var"
-            ]
+        , success "(var)" [sortVariableSort "var"]
+        , success
+              "( var1  , var2   )  "
+              [sortVariableSort "var1", sortVariableSort "var2"]
+        , success
+              "(sort1{sort2}, var)"
+              [ SortActualSort SortActual
+                    { sortActualName = Id "sort1"
+                    , sortActualSorts = [sortVariableSort "sort2"]
+                    }
+              , sortVariableSort "var"
+              ]
         , FailureWithoutMessage ["(var1 var2)"]
         ]
 
 metaSortListParserTests :: [TestTree]
 metaSortListParserTests =
-    parseTree (inCurlyBracesListParser (sortParser Meta))
+    parseTree
+        (inCurlyBracesListParser (sortParser Meta))
         [ success "{}" []
-        , success "{#var}"
-            [SortVariableSort (SortVariable (Id "#var"))]
-        , success "{#var1, #var2}"
-            [ SortVariableSort (SortVariable (Id "#var1"))
-            , SortVariableSort (SortVariable (Id "#var2"))
-            ]
-        , success "{#Char{  }  , #var}"
-            [ charMetaSort
-            , SortVariableSort (SortVariable (Id "#var"))
-            ]
-        , FailureWithoutMessage
-            [ "{#var1 #var2}", "{#var1, var2}" ]
+        , success "{#var}" [SortVariableSort (SortVariable (Id "#var"))]
+        , success
+              "{#var1, #var2}"
+              [ SortVariableSort (SortVariable (Id "#var1"))
+              , SortVariableSort (SortVariable (Id "#var2"))
+              ]
+        , success
+              "{#Char{  }  , #var}"
+              [charMetaSort, SortVariableSort (SortVariable (Id "#var"))]
+        , FailureWithoutMessage ["{#var1 #var2}", "{#var1, var2}"]
         ]
 
 objectSortVariableParserTests :: [TestTree]
 objectSortVariableParserTests =
-    parseTree (sortVariableParser Object)
+    parseTree
+        (sortVariableParser Object)
         [ success "var" (SortVariable (Id "var"))
         , FailureWithoutMessage ["", "#", "#var"]
         ]
 
 metaSortVariableParserTests :: [TestTree]
 metaSortVariableParserTests =
-    parseTree (sortVariableParser Meta)
+    parseTree
+        (sortVariableParser Meta)
         [ success "#var" (SortVariable (Id "#var"))
         , FailureWithoutMessage ["", "#", "var"]
         ]
 
 objectInCurlyBracesSortVariableListParserTest :: [TestTree]
 objectInCurlyBracesSortVariableListParserTest =
-    parseTree (inCurlyBracesListParser (sortVariableParser Object))
+    parseTree
+        (inCurlyBracesListParser (sortVariableParser Object))
         [ success "{}" []
-        , success "{var}"
-            [ SortVariable (Id "var") ]
-        , success "{var1, var2}"
-            [ SortVariable (Id "var1")
-            , SortVariable (Id "var2")
-            ]
-        , FailureWithoutMessage
-            [ "{var1 var2}", "{#var1, var2}", "{var, Int{}}" ]
+        , success "{var}" [SortVariable (Id "var")]
+        , success
+              "{var1, var2}"
+              [SortVariable (Id "var1"), SortVariable (Id "var2")]
+        , FailureWithoutMessage ["{var1 var2}", "{#var1, var2}", "{var, Int{}}"]
         ]
 
 metaInCurlyBracesSortVariableListParserTest :: [TestTree]
 metaInCurlyBracesSortVariableListParserTest =
-    parseTree (inCurlyBracesListParser (sortVariableParser Meta))
+    parseTree
+        (inCurlyBracesListParser (sortVariableParser Meta))
         [ success "{}" []
-        , success "{#var}"
-            [ SortVariable (Id "#var") ]
-        , success "{#var1, #var2}"
-            [ SortVariable (Id "#var1")
-            , SortVariable (Id "#var2")
-            ]
+        , success "{#var}" [SortVariable (Id "#var")]
+        , success
+              "{#var1, #var2}"
+              [SortVariable (Id "#var1"), SortVariable (Id "#var2")]
         , FailureWithoutMessage
-            [ "{#var1 #var2}", "{#var1, var2}", "{#var, #Char{}}" ]
+              ["{#var1 #var2}", "{#var1, var2}", "{#var, #Char{}}"]
         ]
 
 sortVariableParserTests :: [TestTree]
 sortVariableParserTests =
-    parseTree unifiedSortVariableParser
-        [ success "var"
-            ( ObjectSortVariable
-                (SortVariable (Id "var"))
-            )
-        , success "#var"
-            ( MetaSortVariable
-                (SortVariable (Id "#var"))
-            )
+    parseTree
+        unifiedSortVariableParser
+        [ success "var" (ObjectSortVariable (SortVariable (Id "var")))
+        , success "#var" (MetaSortVariable (SortVariable (Id "#var")))
         , FailureWithoutMessage ["", "#"]
         ]
 
 objectAliasParserTests :: [TestTree]
 objectAliasParserTests =
-    parseTree (aliasParser Object)
-        [ success "c1{}"
-            Alias
-                { aliasConstructor = Id "c1"
-                , aliasParams = []
-                }
-        , success "c1{s1}"
-            Alias
-                { aliasConstructor = Id "c1"
-                , aliasParams = [ sortVariable "s1" ]
-                }
-        , success "c1{s1,s2}"
-            Alias
-                { aliasConstructor = Id "c1"
-                , aliasParams =
-                    [ sortVariable "s1"
-                    , sortVariable "s2"
-                    ]
-                }
+    parseTree
+        (aliasParser Object)
+        [ success
+              "c1{}"
+              Alias
+                  { aliasConstructor = Id "c1"
+                  , aliasParams = []
+                  }
+        , success
+              "c1{s1}"
+              Alias
+                  { aliasConstructor = Id "c1"
+                  , aliasParams = [sortVariable "s1"]
+                  }
+        , success
+              "c1{s1,s2}"
+              Alias
+                  { aliasConstructor = Id "c1"
+                  , aliasParams = [sortVariable "s1", sortVariable "s2"]
+                  }
         , FailureWithoutMessage
-            ["alias", "a1{a2},a1{a2}", "a1{a2 a2}", "a1{a2}a1{a2}", "c1{s1{}}"]
+              [ "alias"
+              , "a1{a2},a1{a2}"
+              , "a1{a2 a2}"
+              , "a1{a2}a1{a2}"
+              , "c1{s1{}}"
+              ]
         ]
 
 objectSymbolParserTests :: [TestTree]
 objectSymbolParserTests =
-    parseTree (symbolParser Object)
-        [ success "c1{}"
-            Symbol
-                { symbolConstructor = Id "c1"
-                , symbolParams = []
-                }
-        , success "c1{s1}"
-            Symbol
-                { symbolConstructor = Id "c1"
-                , symbolParams = [ sortVariable "s1" ]
-                }
-        , success "c1{s1,s2}"
-            Symbol
-                { symbolConstructor = Id "c1"
-                , symbolParams =
-                    [ sortVariable "s1"
-                    , sortVariable "s2"
-                    ]
-                }
+    parseTree
+        (symbolParser Object)
+        [ success
+              "c1{}"
+              Symbol
+                  { symbolConstructor = Id "c1"
+                  , symbolParams = []
+                  }
+        , success
+              "c1{s1}"
+              Symbol
+                  { symbolConstructor = Id "c1"
+                  , symbolParams = [sortVariable "s1"]
+                  }
+        , success
+              "c1{s1,s2}"
+              Symbol
+                  { symbolConstructor = Id "c1"
+                  , symbolParams = [sortVariable "s1", sortVariable "s2"]
+                  }
         , FailureWithoutMessage
-            ["symbol", "a1{a2},a1{a2}", "a1{a2 a2}", "a1{a2}a1{a2}", "c1{s1{}}"]
+              [ "symbol"
+              , "a1{a2},a1{a2}"
+              , "a1{a2 a2}"
+              , "a1{a2}a1{a2}"
+              , "c1{s1{}}"
+              ]
         ]
 
 metaAliasParserTests :: [TestTree]
 metaAliasParserTests =
-    parseTree (aliasParser Meta)
-        [ success "#c1{}"
-            Alias
-                { aliasConstructor = Id "#c1"
-                , aliasParams = []
-                }
-        , success "#c1{#s1}"
-            Alias
-                { aliasConstructor = Id "#c1"
-                , aliasParams = [sortVariable "#s1"]
-                }
-        , success "#c1{#s1,#s2}"
-            Alias
-                { aliasConstructor = Id "#c1"
-                , aliasParams =
-                    [ sortVariable "#s1"
-                    , sortVariable "#s2"
-                    ]
-                }
+    parseTree
+        (aliasParser Meta)
+        [ success
+              "#c1{}"
+              Alias
+                  { aliasConstructor = Id "#c1"
+                  , aliasParams = []
+                  }
+        , success
+              "#c1{#s1}"
+              Alias
+                  { aliasConstructor = Id "#c1"
+                  , aliasParams = [sortVariable "#s1"]
+                  }
+        , success
+              "#c1{#s1,#s2}"
+              Alias
+                  { aliasConstructor = Id "#c1"
+                  , aliasParams = [sortVariable "#s1", sortVariable "#s2"]
+                  }
         , FailureWithoutMessage
-            [ "#alias", "#a1{#a2},#a1{#a2}", "#a1{#a2 #a2}", "#a1{#a2}#a1{#a2}"
-            , "#c1{#Char{}}"
-            ]
+              [ "#alias"
+              , "#a1{#a2},#a1{#a2}"
+              , "#a1{#a2 #a2}"
+              , "#a1{#a2}#a1{#a2}"
+              , "#c1{#Char{}}"
+              ]
         ]
 
 metaSymbolParserTests :: [TestTree]
 metaSymbolParserTests =
-    parseTree (symbolParser Meta)
-        [ success "#c1{}"
-            Symbol
-                { symbolConstructor = Id "#c1"
-                , symbolParams = []
-                }
-        , success "#c1{#s1}"
-            Symbol
-                { symbolConstructor = Id "#c1"
-                , symbolParams = [sortVariable "#s1"]
-                }
-        , success "#c1{#s1,#s2}"
-            Symbol
-                { symbolConstructor = Id "#c1"
-                , symbolParams =
-                    [ sortVariable "#s1"
-                    , sortVariable "#s2"
-                    ]
-                }
+    parseTree
+        (symbolParser Meta)
+        [ success
+              "#c1{}"
+              Symbol
+                  { symbolConstructor = Id "#c1"
+                  , symbolParams = []
+                  }
+        , success
+              "#c1{#s1}"
+              Symbol
+                  { symbolConstructor = Id "#c1"
+                  , symbolParams = [sortVariable "#s1"]
+                  }
+        , success
+              "#c1{#s1,#s2}"
+              Symbol
+                  { symbolConstructor = Id "#c1"
+                  , symbolParams = [sortVariable "#s1", sortVariable "#s2"]
+                  }
         , FailureWithoutMessage
-            [ "#symbol", "#a1{#a2},#a1{#a2}", "#a1{#a2 #a2}", "#a1{#a2}#a1{#a2}"
-            , "#c1{#Char{}}"
-            ]
+              [ "#symbol"
+              , "#a1{#a2},#a1{#a2}"
+              , "#a1{#a2 #a2}"
+              , "#a1{#a2}#a1{#a2}"
+              , "#c1{#Char{}}"
+              ]
         ]
 
 variableParserTests :: [TestTree]
 variableParserTests =
-    parseTree (variableParser Object)
-        [ success "v:s"
-            Variable
-                { variableName = Id "v"
-                , variableSort = sortVariableSort "s"
-                }
-        , success "v:s1{s2}"
-            Variable
-                { variableName = Id "v"
-                , variableSort =
-                    SortActualSort SortActual
-                        { sortActualName = Id "s1"
-                        , sortActualSorts = [ sortVariableSort "s2" ]
-                        }
-                }
+    parseTree
+        (variableParser Object)
+        [ success
+              "v:s"
+              Variable
+                  { variableName = Id "v"
+                  , variableSort = sortVariableSort "s"
+                  }
+        , success
+              "v:s1{s2}"
+              Variable
+                  { variableName = Id "v"
+                  , variableSort =
+                        SortActualSort SortActual
+                            { sortActualName = Id "s1"
+                            , sortActualSorts = [sortVariableSort "s2"]
+                            }
+                  }
         , FailureWithoutMessage ["", "var", "v:", ":s"]
         ]
 
 andPatternParserTests :: [TestTree]
 andPatternParserTests =
-    parseTree unifiedPatternParser
-        [ success "\\and{s}(\"a\", \"b\")"
-            ( ObjectPattern $ AndPattern And
-                { andSort = sortVariableSort "s"
-                , andFirst =
-                    MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                , andSecond =
-                    MetaPattern $ StringLiteralPattern (StringLiteral "b")
-                }
-            )
+    parseTree
+        unifiedPatternParser
+        [ success
+              "\\and{s}(\"a\", \"b\")"
+              ( ObjectPattern
+              $ AndPattern And
+                  { andSort = sortVariableSort "s"
+                  , andFirst =
+                        MetaPattern $ StringLiteralPattern (StringLiteral "a")
+                  , andSecond =
+                        MetaPattern $ StringLiteralPattern (StringLiteral "b")
+                  }
+              )
         , FailureWithoutMessage
-            [ ""
-            , "\\and{s,s}(\"a\", \"b\")"
-            , "\\and{}(\"a\", \"b\")"
-            , "\\and{s}(\"a\")"
-            , "\\and{s}(\"a\", \"b\", \"c\")"
-            , "\\and{s}(\"a\" \"b\")"
-            ]
+              [ ""
+              , "\\and{s,s}(\"a\", \"b\")"
+              , "\\and{}(\"a\", \"b\")"
+              , "\\and{s}(\"a\")"
+              , "\\and{s}(\"a\", \"b\", \"c\")"
+              , "\\and{s}(\"a\" \"b\")"
+              ]
         ]
+
 applicationPatternParserTests :: [TestTree]
 applicationPatternParserTests =
-    parseTree unifiedPatternParser
-        [ success "#v:#Char"
-            ( MetaPattern $ VariablePattern Variable
-                { variableName = Id "#v"
-                , variableSort = sortVariableSort "#Char"
-                }
-            )
-        , success "v:s1{s2}"
-            ( ObjectPattern $ VariablePattern Variable
-                { variableName = Id "v"
-                , variableSort =
-                    SortActualSort SortActual
-                        { sortActualName = Id "s1"
-                        , sortActualSorts = [ sortVariableSort "s2" ]
-                        }
-                }
-            )
-        , success "c{s1,s2}(v1:s1, v2:s2)"
-            ( ObjectPattern $ ApplicationPattern Application
-                { applicationSymbolOrAlias =
-                    SymbolOrAlias
-                        { symbolOrAliasConstructor = Id "c"
-                        , symbolOrAliasParams =
-                            [ sortVariableSort "s1"
-                            , sortVariableSort "s2" ]
-                        }
-                , applicationChildren =
-                    [ ObjectPattern $ VariablePattern Variable
-                        { variableName = Id "v1"
-                        , variableSort = sortVariableSort "s1"
-                        }
-                    , ObjectPattern $ VariablePattern Variable
-                        { variableName = Id "v2"
-                        , variableSort = sortVariableSort "s2"
-                        }
-                    ]
-                }
-            )
-        , success "c{}()"
-            ( ObjectPattern $ ApplicationPattern Application
-                { applicationSymbolOrAlias =
-                    SymbolOrAlias
-                        { symbolOrAliasConstructor = Id "c"
-                        , symbolOrAliasParams = []
-                        }
-                , applicationChildren = []
-                }
-            )
+    parseTree
+        unifiedPatternParser
+        [ success
+              "#v:#Char"
+              ( MetaPattern
+              $ VariablePattern Variable
+                  { variableName = Id "#v"
+                  , variableSort = sortVariableSort "#Char"
+                  }
+              )
+        , success
+              "v:s1{s2}"
+              ( ObjectPattern
+              $ VariablePattern Variable
+                  { variableName = Id "v"
+                  , variableSort =
+                        SortActualSort SortActual
+                            { sortActualName = Id "s1"
+                            , sortActualSorts = [sortVariableSort "s2"]
+                            }
+                  }
+              )
+        , success
+              "c{s1,s2}(v1:s1, v2:s2)"
+              ( ObjectPattern
+              $ ApplicationPattern Application
+                  { applicationSymbolOrAlias =
+                        SymbolOrAlias
+                            { symbolOrAliasConstructor = Id "c"
+                            , symbolOrAliasParams =
+                                  [sortVariableSort "s1", sortVariableSort "s2"]
+                            }
+                  , applicationChildren =
+                        [ ObjectPattern
+                          $ VariablePattern Variable
+                              { variableName = Id "v1"
+                              , variableSort = sortVariableSort "s1"
+                              }
+                        , ObjectPattern
+                          $ VariablePattern Variable
+                              { variableName = Id "v2"
+                              , variableSort = sortVariableSort "s2"
+                              }
+                        ]
+                  }
+              )
+        , success
+              "c{}()"
+              ( ObjectPattern
+              $ ApplicationPattern Application
+                  { applicationSymbolOrAlias =
+                        SymbolOrAlias
+                            { symbolOrAliasConstructor = Id "c"
+                            , symbolOrAliasParams = []
+                            }
+                  , applicationChildren = []
+                  }
+              )
         , FailureWithoutMessage ["", "var", "v:", ":s", "c(s)", "c{s}"]
         ]
+
 bottomPatternParserTests :: [TestTree]
 bottomPatternParserTests =
-    parseTree unifiedPatternParser
-        [ success "\\bottom{#Sort}()"
-            (MetaPattern $ BottomPattern $ Bottom (sortVariableSort "#Sort"))
+    parseTree
+        unifiedPatternParser
+        [ success
+              "\\bottom{#Sort}()"
+              (MetaPattern $ BottomPattern $ Bottom (sortVariableSort "#Sort"))
         , FailureWithoutMessage
-            [ ""
-            , "\\bottom()"
-            , "\\bottom{}()"
-            , "\\bottom{s, s}()"
-            , "\\bottom{s}"
-            ]
+              [ ""
+              , "\\bottom()"
+              , "\\bottom{}()"
+              , "\\bottom{s, s}()"
+              , "\\bottom{s}"
+              ]
         ]
+
 ceilPatternParserTests :: [TestTree]
 ceilPatternParserTests =
-    parseTree unifiedPatternParser
-        [ success "\\ceil{s1, s2}(\"a\")"
-            (ObjectPattern $ CeilPattern Ceil
-                    { ceilOperandSort = sortVariableSort "s1"
-                    , ceilResultSort = sortVariableSort "s2"
-                    , ceilChild =
+    parseTree
+        unifiedPatternParser
+        [ success
+              "\\ceil{s1, s2}(\"a\")"
+              ( ObjectPattern
+              $ CeilPattern Ceil
+                  { ceilOperandSort = sortVariableSort "s1"
+                  , ceilResultSort = sortVariableSort "s2"
+                  , ceilChild =
                         MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                    }
-            )
+                  }
+              )
         , FailureWithoutMessage
-            [ ""
-            , "\\ceil{s1, s2}()"
-            , "\\ceil{s1}(\"a\")"
-            , "\\ceil{s1, s2, s3}(\"a\")"
-            , "\\ceil{s1 s2}(\"a\")"
-            ]
+              [ ""
+              , "\\ceil{s1, s2}()"
+              , "\\ceil{s1}(\"a\")"
+              , "\\ceil{s1, s2, s3}(\"a\")"
+              , "\\ceil{s1 s2}(\"a\")"
+              ]
         ]
+
 domainValuePatternParserTests :: [TestTree]
 domainValuePatternParserTests =
-    parseTree unifiedPatternParser
-        [ success "\\dv{s1}(\"a\")"
-            (ObjectPattern $ DomainValuePattern DomainValue
-                    { domainValueSort = sortVariableSort "s1"
-                    , domainValueChild =
+    parseTree
+        unifiedPatternParser
+        [ success
+              "\\dv{s1}(\"a\")"
+              ( ObjectPattern
+              $ DomainValuePattern DomainValue
+                  { domainValueSort = sortVariableSort "s1"
+                  , domainValueChild =
                         MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                    }
-            )
+                  }
+              )
         , FailureWithoutMessage
-            [ ""
-            , "\\dv{s1, s2}(\"a\")"
-            , "\\dv{}(\"a\")"
-            , "\\dv{s1}()"
-            ]
+              ["", "\\dv{s1, s2}(\"a\")", "\\dv{}(\"a\")", "\\dv{s1}()"]
         ]
+
 equalsPatternParserTests :: [TestTree]
 equalsPatternParserTests =
-    parseTree unifiedPatternParser
-        [ success "\\equals{s1, s2}(\"a\", \"b\")"
-            ( ObjectPattern $ EqualsPattern Equals
-                    { equalsOperandSort = sortVariableSort "s1"
-                    , equalsResultSort = sortVariableSort "s2"
-                    , equalsFirst =
+    parseTree
+        unifiedPatternParser
+        [ success
+              "\\equals{s1, s2}(\"a\", \"b\")"
+              ( ObjectPattern
+              $ EqualsPattern Equals
+                  { equalsOperandSort = sortVariableSort "s1"
+                  , equalsResultSort = sortVariableSort "s2"
+                  , equalsFirst =
                         MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                    , equalsSecond =
+                  , equalsSecond =
                         MetaPattern $ StringLiteralPattern (StringLiteral "b")
-                    }
-            )
+                  }
+              )
         , FailureWithoutMessage
-            [ ""
-            , "\\equals{s}(\"a\", \"b\")"
-            , "\\equals{s,s,s}(\"a\", \"b\")"
-            , "\\equals{s,s}(\"a\")"
-            , "\\equals{s,s}(\"a\", \"b\", \"c\")"
-            , "\\equals{s,s}(\"a\" \"b\")"
-            ]
+              [ ""
+              , "\\equals{s}(\"a\", \"b\")"
+              , "\\equals{s,s,s}(\"a\", \"b\")"
+              , "\\equals{s,s}(\"a\")"
+              , "\\equals{s,s}(\"a\", \"b\", \"c\")"
+              , "\\equals{s,s}(\"a\" \"b\")"
+              ]
         ]
+
 existsPatternParserTests :: [TestTree]
 existsPatternParserTests =
-    parseTree unifiedPatternParser
-        [ success "\\exists{#s}(#v:#Char, \"b\")"
-            (MetaPattern $ ExistsPattern Exists
-                    { existsSort = sortVariableSort "#s"
-                    , existsVariable =
+    parseTree
+        unifiedPatternParser
+        [ success
+              "\\exists{#s}(#v:#Char, \"b\")"
+              ( MetaPattern
+              $ ExistsPattern Exists
+                  { existsSort = sortVariableSort "#s"
+                  , existsVariable =
                         Variable
                             { variableName = Id "#v"
                             , variableSort = sortVariableSort "#Char"
                             }
-                    , existsChild =
+                  , existsChild =
                         MetaPattern $ StringLiteralPattern (StringLiteral "b")
-                    }
-            )
+                  }
+              )
         , FailureWithoutMessage
-            [ ""
-            , "\\exists{}(v:s1, \"b\")"
-            , "\\exists{s,s}(v:s1, \"b\")"
-            , "\\exists{s}(\"b\", \"b\")"
-            , "\\exists{s}(, \"b\")"
-            , "\\exists{s}(\"b\")"
-            , "\\exists{s}(v:s1, )"
-            , "\\exists{s}(v:s1)"
-            , "\\exists{s}()"
-            , "\\exists{s}"
-            , "\\exists"
-            , "\\exists(v:s1, \"b\")"
-            ]
+              [ ""
+              , "\\exists{}(v:s1, \"b\")"
+              , "\\exists{s,s}(v:s1, \"b\")"
+              , "\\exists{s}(\"b\", \"b\")"
+              , "\\exists{s}(, \"b\")"
+              , "\\exists{s}(\"b\")"
+              , "\\exists{s}(v:s1, )"
+              , "\\exists{s}(v:s1)"
+              , "\\exists{s}()"
+              , "\\exists{s}"
+              , "\\exists"
+              , "\\exists(v:s1, \"b\")"
+              ]
         ]
+
 floorPatternParserTests :: [TestTree]
 floorPatternParserTests =
-    parseTree unifiedPatternParser
-        [ success "\\floor{s1, s2}(\"a\")"
-            ( ObjectPattern $ FloorPattern Floor
-                    { floorOperandSort = sortVariableSort "s1"
-                    , floorResultSort = sortVariableSort "s2"
-                    , floorChild =
+    parseTree
+        unifiedPatternParser
+        [ success
+              "\\floor{s1, s2}(\"a\")"
+              ( ObjectPattern
+              $ FloorPattern Floor
+                  { floorOperandSort = sortVariableSort "s1"
+                  , floorResultSort = sortVariableSort "s2"
+                  , floorChild =
                         MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                    }
-            )
+                  }
+              )
         , FailureWithoutMessage
-            [ ""
-            , "\\floor{s1, s2}()"
-            , "\\floor{s1}(\"a\")"
-            , "\\floor{s1, s2, s3}(\"a\")"
-            , "\\floor{s1 s2}(\"a\")"
-            ]
+              [ ""
+              , "\\floor{s1, s2}()"
+              , "\\floor{s1}(\"a\")"
+              , "\\floor{s1, s2, s3}(\"a\")"
+              , "\\floor{s1 s2}(\"a\")"
+              ]
         ]
+
 forallPatternParserTests :: [TestTree]
 forallPatternParserTests =
-    parseTree unifiedPatternParser
-        [ success "\\forall{s}(v:s1, \"b\")"
-            ( ObjectPattern $ ForallPattern Forall
-                    { forallSort = sortVariableSort "s"
-                    , forallVariable =
+    parseTree
+        unifiedPatternParser
+        [ success
+              "\\forall{s}(v:s1, \"b\")"
+              ( ObjectPattern
+              $ ForallPattern Forall
+                  { forallSort = sortVariableSort "s"
+                  , forallVariable =
                         Variable
                             { variableName = Id "v"
                             , variableSort = sortVariableSort "s1"
                             }
-                    , forallChild =
+                  , forallChild =
                         MetaPattern $ StringLiteralPattern (StringLiteral "b")
-                    }
-            )
+                  }
+              )
         , FailureWithoutMessage
-            [ ""
-            , "\\forall{}(v:s1, \"b\")"
-            , "\\forall{s,s}(v:s1, \"b\")"
-            , "\\forall{s}(\"b\", \"b\")"
-            , "\\forall{s}(, \"b\")"
-            , "\\forall{s}(\"b\")"
-            , "\\forall{s}(v:s1, )"
-            , "\\forall{s}(v:s1)"
-            , "\\forall{s}()"
-            , "\\forall{s}"
-            , "\\forall"
-            , "\\forall(v:s1, \"b\")"
-            ]
+              [ ""
+              , "\\forall{}(v:s1, \"b\")"
+              , "\\forall{s,s}(v:s1, \"b\")"
+              , "\\forall{s}(\"b\", \"b\")"
+              , "\\forall{s}(, \"b\")"
+              , "\\forall{s}(\"b\")"
+              , "\\forall{s}(v:s1, )"
+              , "\\forall{s}(v:s1)"
+              , "\\forall{s}()"
+              , "\\forall{s}"
+              , "\\forall"
+              , "\\forall(v:s1, \"b\")"
+              ]
         ]
+
 iffPatternParserTests :: [TestTree]
 iffPatternParserTests =
-    parseTree unifiedPatternParser
-        [ success "\\iff{s}(\"a\", \"b\")"
-            ( ObjectPattern $ IffPattern Iff
-                    { iffSort = sortVariableSort "s"
-                    , iffFirst =
+    parseTree
+        unifiedPatternParser
+        [ success
+              "\\iff{s}(\"a\", \"b\")"
+              ( ObjectPattern
+              $ IffPattern Iff
+                  { iffSort = sortVariableSort "s"
+                  , iffFirst =
                         MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                    , iffSecond =
+                  , iffSecond =
                         MetaPattern $ StringLiteralPattern (StringLiteral "b")
-                    }
-            )
+                  }
+              )
         , FailureWithoutMessage
-            [ ""
-            , "\\iff{s,s}(\"a\", \"b\")"
-            , "\\iff{}(\"a\", \"b\")"
-            , "\\iff{s}(\"a\")"
-            , "\\iff{s}(\"a\", \"b\", \"c\")"
-            , "\\iff{s}(\"a\" \"b\")"]
+              [ ""
+              , "\\iff{s,s}(\"a\", \"b\")"
+              , "\\iff{}(\"a\", \"b\")"
+              , "\\iff{s}(\"a\")"
+              , "\\iff{s}(\"a\", \"b\", \"c\")"
+              , "\\iff{s}(\"a\" \"b\")"
+              ]
         ]
+
 impliesPatternParserTests :: [TestTree]
 impliesPatternParserTests =
-    parseTree unifiedPatternParser
-        [ success "\\implies{s}(\"a\", \"b\")"
-            ( ObjectPattern $ ImpliesPattern Implies
-                    { impliesSort = sortVariableSort "s"
-                    , impliesFirst =
+    parseTree
+        unifiedPatternParser
+        [ success
+              "\\implies{s}(\"a\", \"b\")"
+              ( ObjectPattern
+              $ ImpliesPattern Implies
+                  { impliesSort = sortVariableSort "s"
+                  , impliesFirst =
                         MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                    , impliesSecond =
+                  , impliesSecond =
                         MetaPattern $ StringLiteralPattern (StringLiteral "b")
-                    }
-            )
+                  }
+              )
         , FailureWithoutMessage
-            [ ""
-            , "\\implies{s,s}(\"a\", \"b\")"
-            , "\\implies{}(\"a\", \"b\")"
-            , "\\implies{s}(\"a\")"
-            , "\\implies{s}(\"a\", \"b\", \"c\")"
-            , "\\implies{s}(\"a\" \"b\")"]
+              [ ""
+              , "\\implies{s,s}(\"a\", \"b\")"
+              , "\\implies{}(\"a\", \"b\")"
+              , "\\implies{s}(\"a\")"
+              , "\\implies{s}(\"a\", \"b\", \"c\")"
+              , "\\implies{s}(\"a\" \"b\")"
+              ]
         ]
+
 memPatternParserTests :: [TestTree]
 memPatternParserTests =
-    parseTree unifiedPatternParser
-        [ success "\\in{s1,s2}(v:s3, \"b\")"
-            ( ObjectPattern $ InPattern In
-                    { inOperandSort = sortVariableSort "s1"
-                    , inResultSort = sortVariableSort "s2"
-                    , inContainedChild = ObjectPattern $
-                        VariablePattern Variable
+    parseTree
+        unifiedPatternParser
+        [ success
+              "\\in{s1,s2}(v:s3, \"b\")"
+              ( ObjectPattern
+              $ InPattern In
+                  { inOperandSort = sortVariableSort "s1"
+                  , inResultSort = sortVariableSort "s2"
+                  , inContainedChild =
+                        ObjectPattern
+                        $ VariablePattern Variable
                             { variableName = Id "v"
                             , variableSort = sortVariableSort "s3"
                             }
-                    , inContainingChild =
+                  , inContainingChild =
                         MetaPattern $ StringLiteralPattern (StringLiteral "b")
-                    }
-            )
-        , success "\\in{s1,s2}(\"a\", \"b\")"
-            ( ObjectPattern $ InPattern In
-                    { inOperandSort = sortVariableSort "s1"
-                    , inResultSort = sortVariableSort "s2"
-                    , inContainedChild =
+                  }
+              )
+        , success
+              "\\in{s1,s2}(\"a\", \"b\")"
+              ( ObjectPattern
+              $ InPattern In
+                  { inOperandSort = sortVariableSort "s1"
+                  , inResultSort = sortVariableSort "s2"
+                  , inContainedChild =
                         MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                    , inContainingChild =
+                  , inContainingChild =
                         MetaPattern $ StringLiteralPattern (StringLiteral "b")
-                    }
-            )
+                  }
+              )
         , FailureWithoutMessage
-            [ ""
-            , "\\mem{s1,s2}(v:s3, \"b\")"
-            , "\\in{s}(v:s1, \"b\")"
-            , "\\in{s,s,s}(v:s1, \"b\")"
-            , "\\in{s,s}(, \"b\")"
-            , "\\in{s,s}(\"b\")"
-            , "\\in{s,s}(v:s1, )"
-            , "\\in{s,s}(v:s1)"
-            , "\\in{s,s}()"
-            , "\\in{s,s}"
-            , "\\in"
-            , "\\in(v:s1, \"b\")"
-            ]
+              [ ""
+              , "\\mem{s1,s2}(v:s3, \"b\")"
+              , "\\in{s}(v:s1, \"b\")"
+              , "\\in{s,s,s}(v:s1, \"b\")"
+              , "\\in{s,s}(, \"b\")"
+              , "\\in{s,s}(\"b\")"
+              , "\\in{s,s}(v:s1, )"
+              , "\\in{s,s}(v:s1)"
+              , "\\in{s,s}()"
+              , "\\in{s,s}"
+              , "\\in"
+              , "\\in(v:s1, \"b\")"
+              ]
         ]
+
 notPatternParserTests :: [TestTree]
 notPatternParserTests =
-    parseTree unifiedPatternParser
-        [ success "\\not{s}(\"a\")"
-            ( ObjectPattern $ NotPattern Not
-                    { notSort = sortVariableSort "s"
-                    , notChild =
+    parseTree
+        unifiedPatternParser
+        [ success
+              "\\not{s}(\"a\")"
+              ( ObjectPattern
+              $ NotPattern Not
+                  { notSort = sortVariableSort "s"
+                  , notChild =
                         MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                    }
-            )
+                  }
+              )
         , FailureWithoutMessage
-            [ ""
-            , "\\not{s,s}(\"a\")"
-            , "\\not{}(\"a\")"
-            , "\\not{s}()"
-            , "\\not{s}(\"a\", \"b\")"
-            , "\\not{s}"
-            , "\\not(\"a\")"
-            ]
+              [ ""
+              , "\\not{s,s}(\"a\")"
+              , "\\not{}(\"a\")"
+              , "\\not{s}()"
+              , "\\not{s}(\"a\", \"b\")"
+              , "\\not{s}"
+              , "\\not(\"a\")"
+              ]
         ]
+
 nextPatternParserTests :: [TestTree]
 nextPatternParserTests =
-    parseTree unifiedPatternParser
-        [ success "\\next{s}(\"a\")"
-            ( ObjectPattern $ NextPattern Next
-                    { nextSort = sortVariableSort "s"
-                    , nextChild =
+    parseTree
+        unifiedPatternParser
+        [ success
+              "\\next{s}(\"a\")"
+              ( ObjectPattern
+              $ NextPattern Next
+                  { nextSort = sortVariableSort "s"
+                  , nextChild =
                         MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                    }
-            )
+                  }
+              )
         , Failure FailureTest
-            { failureInput = "\\next{#s}(\"a\")"
-            , failureExpected =
-                "\"<test-string>\" (line 1, column 7):\n"
-                ++"Cannot have a \\next Meta pattern."
-            }
+              { failureInput = "\\next{#s}(\"a\")"
+              , failureExpected =
+                    "\"<test-string>\" (line 1, column 7):\n"
+                    ++ "Cannot have a \\next Meta pattern."
+              }
         , FailureWithoutMessage
-            [ ""
-            , "\\next{s,s}(\"a\")"
-            , "\\next{}(\"a\")"
-            , "\\next{s}()"
-            , "\\next{s}(\"a\", \"b\")"
-            , "\\next{s}"
-            , "\\next(\"a\")"
-            ]
+              [ ""
+              , "\\next{s,s}(\"a\")"
+              , "\\next{}(\"a\")"
+              , "\\next{s}()"
+              , "\\next{s}(\"a\", \"b\")"
+              , "\\next{s}"
+              , "\\next(\"a\")"
+              ]
         ]
+
 orPatternParserTests :: [TestTree]
 orPatternParserTests =
-    parseTree unifiedPatternParser
-        [ success "\\or{s}(\"a\", \"b\")"
-            ( ObjectPattern $ OrPattern Or
-                    { orSort = sortVariableSort "s"
-                    , orFirst =
+    parseTree
+        unifiedPatternParser
+        [ success
+              "\\or{s}(\"a\", \"b\")"
+              ( ObjectPattern
+              $ OrPattern Or
+                  { orSort = sortVariableSort "s"
+                  , orFirst =
                         MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                    , orSecond =
+                  , orSecond =
                         MetaPattern $ StringLiteralPattern (StringLiteral "b")
-                    }
-            )
+                  }
+              )
         , FailureWithoutMessage
-            [ ""
-            , "\\or{s,s}(\"a\", \"b\")"
-            , "\\or{}(\"a\", \"b\")"
-            , "\\or{s}(\"a\")"
-            , "\\or{s}(\"a\", \"b\", \"c\")"
-            , "\\or{s}(\"a\" \"b\")"]
+              [ ""
+              , "\\or{s,s}(\"a\", \"b\")"
+              , "\\or{}(\"a\", \"b\")"
+              , "\\or{s}(\"a\")"
+              , "\\or{s}(\"a\", \"b\", \"c\")"
+              , "\\or{s}(\"a\" \"b\")"
+              ]
         ]
+
 rewritesPatternParserTests :: [TestTree]
 rewritesPatternParserTests =
-    parseTree unifiedPatternParser
-        [ success "\\rewrites{s}(\"a\", \"b\")"
-            ( ObjectPattern $ RewritesPattern Rewrites
-                    { rewritesSort = sortVariableSort "s"
-                    , rewritesFirst =
+    parseTree
+        unifiedPatternParser
+        [ success
+              "\\rewrites{s}(\"a\", \"b\")"
+              ( ObjectPattern
+              $ RewritesPattern Rewrites
+                  { rewritesSort = sortVariableSort "s"
+                  , rewritesFirst =
                         MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                    , rewritesSecond =
+                  , rewritesSecond =
                         MetaPattern $ StringLiteralPattern (StringLiteral "b")
-                    }
-            )
+                  }
+              )
         , Failure FailureTest
-            { failureInput = "\\rewrites{#s}(\"a\", \"b\")"
-            , failureExpected =
-                "\"<test-string>\" (line 1, column 11):\n"
-                ++ "Cannot have a \\rewrites Meta pattern."
-            }
+              { failureInput = "\\rewrites{#s}(\"a\", \"b\")"
+              , failureExpected =
+                    "\"<test-string>\" (line 1, column 11):\n"
+                    ++ "Cannot have a \\rewrites Meta pattern."
+              }
         , FailureWithoutMessage
-            [ ""
-            , "\\rewrites{s,s}(\"a\", \"b\")"
-            , "\\rewrites{}(\"a\", \"b\")"
-            , "\\rewrites{s}(\"a\")"
-            , "\\rewrites{s}(\"a\", \"b\", \"c\")"
-            , "\\rewrites{s}(\"a\" \"b\")"]
+              [ ""
+              , "\\rewrites{s,s}(\"a\", \"b\")"
+              , "\\rewrites{}(\"a\", \"b\")"
+              , "\\rewrites{s}(\"a\")"
+              , "\\rewrites{s}(\"a\", \"b\", \"c\")"
+              , "\\rewrites{s}(\"a\" \"b\")"
+              ]
         ]
+
 stringLiteralPatternParserTests :: [TestTree]
 stringLiteralPatternParserTests =
-    parseTree unifiedPatternParser
-        [ success "\"hello\""
-            (MetaPattern $ StringLiteralPattern (StringLiteral "hello"))
-        , success "\"\""
-            (MetaPattern $ StringLiteralPattern (StringLiteral ""))
-        , success "\"\\\"\""
-            (MetaPattern $ StringLiteralPattern (StringLiteral "\""))
+    parseTree
+        unifiedPatternParser
+        [ success
+              "\"hello\""
+              (MetaPattern $ StringLiteralPattern (StringLiteral "hello"))
+        , success "\"\"" (MetaPattern $ StringLiteralPattern (StringLiteral ""))
+        , success
+              "\"\\\"\""
+              (MetaPattern $ StringLiteralPattern (StringLiteral "\""))
         , FailureWithoutMessage ["", "\""]
         ]
+
 topPatternParserTests :: [TestTree]
 topPatternParserTests =
-    parseTree unifiedPatternParser
-        [ success "\\top{s}()"
-            (ObjectPattern $ TopPattern $ Top (sortVariableSort "s"))
+    parseTree
+        unifiedPatternParser
+        [ success
+              "\\top{s}()"
+              (ObjectPattern $ TopPattern $ Top (sortVariableSort "s"))
         , FailureWithoutMessage
-            ["", "\\top()", "\\top{}()", "\\top{s, s}()", "\\top{s}"]
+              ["", "\\top()", "\\top{}()", "\\top{s, s}()", "\\top{s}"]
         ]
+
 variablePatternParserTests :: [TestTree]
 variablePatternParserTests =
-    parseTree unifiedPatternParser
-        [ success "v:s"
-            ( ObjectPattern $ VariablePattern Variable
-                { variableName = Id "v"
-                , variableSort = sortVariableSort "s"
-                }
-            )
-        , success "v:s1{s2}"
-            ( ObjectPattern $ VariablePattern Variable
-                { variableName = Id "v"
-                , variableSort =
-                    SortActualSort SortActual
-                        { sortActualName=Id "s1"
-                        , sortActualSorts = [ sortVariableSort "s2" ]
-                        }
-                }
-            )
+    parseTree
+        unifiedPatternParser
+        [ success
+              "v:s"
+              ( ObjectPattern
+              $ VariablePattern Variable
+                  { variableName = Id "v"
+                  , variableSort = sortVariableSort "s"
+                  }
+              )
+        , success
+              "v:s1{s2}"
+              ( ObjectPattern
+              $ VariablePattern Variable
+                  { variableName = Id "v"
+                  , variableSort =
+                        SortActualSort SortActual
+                            { sortActualName = Id "s1"
+                            , sortActualSorts = [sortVariableSort "s2"]
+                            }
+                  }
+              )
         , FailureWithoutMessage ["", "var", "v:", ":s", "c(s)", "c{s}"]
         ]
 
 sentenceAliasParserTests :: [TestTree]
 sentenceAliasParserTests =
-    parseTree koreSentenceParser
-        [ success "alias a{s1}(s2):s3[\"a\"]"
-            ( ObjectSentence $ SentenceAliasSentence
-                SentenceAlias
-                    { sentenceAliasAlias = Alias
-                        { aliasConstructor = Id "a"
-                        , aliasParams = [ sortVariable "s1" ]
-                        }
-                    , sentenceAliasSorts = [ sortVariableSort "s2"]
-                    , sentenceAliasResultSort = sortVariableSort "s3"
-                    , sentenceAliasAttributes =
+    parseTree
+        koreSentenceParser
+        [ success
+              "alias a{s1}(s2):s3[\"a\"]"
+              ( ObjectSentence
+              $ SentenceAliasSentence SentenceAlias
+                  { sentenceAliasAlias =
+                        Alias
+                            { aliasConstructor = Id "a"
+                            , aliasParams = [sortVariable "s1"]
+                            }
+                  , sentenceAliasSorts = [sortVariableSort "s2"]
+                  , sentenceAliasResultSort = sortVariableSort "s3"
+                  , sentenceAliasAttributes =
                         Attributes
-                            [MetaPattern $
-                                StringLiteralPattern (StringLiteral "a")]
-                    }
-            )
-        , success "alias a { s1 , s2 } ( s3, s4 ) : s5 [ \"a\" , \"b\" ]"
-            ( ObjectSentence $ SentenceAliasSentence
-                SentenceAlias
-                    { sentenceAliasAlias = Alias
-                        { aliasConstructor = Id "a"
-                        , aliasParams =
-                            [ sortVariable "s1"
-                            , sortVariable "s2"
+                            [ MetaPattern
+                              $ StringLiteralPattern (StringLiteral "a")
                             ]
-                        }
-                    , sentenceAliasSorts =
-                        [ sortVariableSort "s3"
-                        , sortVariableSort "s4"
-                        ]
-                    , sentenceAliasResultSort = sortVariableSort "s5"
-                    , sentenceAliasAttributes =
+                  }
+              )
+        , success
+              "alias a { s1 , s2 } ( s3, s4 ) : s5 [ \"a\" , \"b\" ]"
+              ( ObjectSentence
+              $ SentenceAliasSentence SentenceAlias
+                  { sentenceAliasAlias =
+                        Alias
+                            { aliasConstructor = Id "a"
+                            , aliasParams =
+                                  [sortVariable "s1", sortVariable "s2"]
+                            }
+                  , sentenceAliasSorts =
+                        [sortVariableSort "s3", sortVariableSort "s4"]
+                  , sentenceAliasResultSort = sortVariableSort "s5"
+                  , sentenceAliasAttributes =
                         Attributes
-                            [ MetaPattern $
-                                StringLiteralPattern (StringLiteral "a")
-                            , MetaPattern $
-                                StringLiteralPattern (StringLiteral "b")
+                            [ MetaPattern
+                              $ StringLiteralPattern (StringLiteral "a")
+                            , MetaPattern
+                              $ StringLiteralPattern (StringLiteral "b")
                             ]
-                    }
-            )
-        , success "alias #a{}():#Char[]"
-            ( MetaSentence $ SentenceAliasSentence
-                SentenceAlias
-                    { sentenceAliasAlias = Alias
-                        { aliasConstructor = Id "#a"
-                        , aliasParams = []
-                        }
-                    , sentenceAliasSorts = []
-                    , sentenceAliasResultSort = sortVariableSort "#Char"
-                    , sentenceAliasAttributes = Attributes []
-                    }
-            )
+                  }
+              )
+        , success
+              "alias #a{}():#Char[]"
+              ( MetaSentence
+              $ SentenceAliasSentence SentenceAlias
+                  { sentenceAliasAlias =
+                        Alias
+                            { aliasConstructor = Id "#a"
+                            , aliasParams = []
+                            }
+                  , sentenceAliasSorts = []
+                  , sentenceAliasResultSort = sortVariableSort "#Char"
+                  , sentenceAliasAttributes = Attributes []
+                  }
+              )
         , FailureWithoutMessage
-            [ ""
-            , "a{s1}(s2):s3[\"a\"]"
-            , "alias {s1}(s2):s3[\"a\"]"
-            , "alias a{s1{}}(s2):s3[\"a\"]"
-            , "alias a(s2):s3[\"a\"]"
-            , "alias a{s1}:s3[\"a\"]"
-            , "alias a{s1}(s2)s3[\"a\"]"
-            , "alias a{s1}(s2):[\"a\"]"
-            , "alias a{s1}(s2)[\"a\"]"
-            , "alias a{s1}(s2):s3"
-            ]
+              [ ""
+              , "a{s1}(s2):s3[\"a\"]"
+              , "alias {s1}(s2):s3[\"a\"]"
+              , "alias a{s1{}}(s2):s3[\"a\"]"
+              , "alias a(s2):s3[\"a\"]"
+              , "alias a{s1}:s3[\"a\"]"
+              , "alias a{s1}(s2)s3[\"a\"]"
+              , "alias a{s1}(s2):[\"a\"]"
+              , "alias a{s1}(s2)[\"a\"]"
+              , "alias a{s1}(s2):s3"
+              ]
         ]
 
 sentenceAxiomParserTests :: [TestTree]
 sentenceAxiomParserTests =
-    parseTree koreSentenceParser
-        [ success "axiom{sv1}\"a\"[\"b\"]"
-            ( MetaSentence $ SentenceAxiomSentence SentenceAxiom
-                { sentenceAxiomParameters =
-                    [ObjectSortVariable
-                        (SortVariable (Id "sv1"))]
-                , sentenceAxiomPattern =
-                    MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                , sentenceAxiomAttributes =
-                    Attributes
-                        [MetaPattern $ StringLiteralPattern (StringLiteral "b")]
-                }
-            )
+    parseTree
+        koreSentenceParser
+        [ success
+              "axiom{sv1}\"a\"[\"b\"]"
+              ( MetaSentence
+              $ SentenceAxiomSentence SentenceAxiom
+                  { sentenceAxiomParameters =
+                        [ObjectSortVariable (SortVariable (Id "sv1"))]
+                  , sentenceAxiomPattern =
+                        MetaPattern $ StringLiteralPattern (StringLiteral "a")
+                  , sentenceAxiomAttributes =
+                        Attributes
+                            [ MetaPattern
+                              $ StringLiteralPattern (StringLiteral "b")
+                            ]
+                  }
+              )
         {- TODO(virgil): The Scala parser allows empty sort variable lists
            while the semantics-of-k document does not. -}
-        , success "axiom{}\"a\"[\"b\"]"
-            ( MetaSentence $ SentenceAxiomSentence SentenceAxiom
-                { sentenceAxiomParameters = []
-                , sentenceAxiomPattern =
-                    MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                , sentenceAxiomAttributes =
-                    Attributes
-                        [MetaPattern $ StringLiteralPattern (StringLiteral "b")]
-                }
-            )
-        , success "axiom { sv1 , sv2 } \"a\" [ \"b\" ] "
-            ( MetaSentence $ SentenceAxiomSentence SentenceAxiom
-                { sentenceAxiomParameters =
-                    [ ObjectSortVariable
-                        (SortVariable (Id "sv1"))
-                    , ObjectSortVariable
-                        (SortVariable (Id "sv2"))
-                    ]
-                , sentenceAxiomPattern =
-                    MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                , sentenceAxiomAttributes =
-                    Attributes
-                        [MetaPattern $ StringLiteralPattern (StringLiteral "b")]
-                }
-            )
+        , success
+              "axiom{}\"a\"[\"b\"]"
+              ( MetaSentence
+              $ SentenceAxiomSentence SentenceAxiom
+                  { sentenceAxiomParameters = []
+                  , sentenceAxiomPattern =
+                        MetaPattern $ StringLiteralPattern (StringLiteral "a")
+                  , sentenceAxiomAttributes =
+                        Attributes
+                            [ MetaPattern
+                              $ StringLiteralPattern (StringLiteral "b")
+                            ]
+                  }
+              )
+        , success
+              "axiom { sv1 , sv2 } \"a\" [ \"b\" ] "
+              ( MetaSentence
+              $ SentenceAxiomSentence SentenceAxiom
+                  { sentenceAxiomParameters =
+                        [ ObjectSortVariable (SortVariable (Id "sv1"))
+                        , ObjectSortVariable (SortVariable (Id "sv2"))
+                        ]
+                  , sentenceAxiomPattern =
+                        MetaPattern $ StringLiteralPattern (StringLiteral "a")
+                  , sentenceAxiomAttributes =
+                        Attributes
+                            [ MetaPattern
+                              $ StringLiteralPattern (StringLiteral "b")
+                            ]
+                  }
+              )
         , FailureWithoutMessage
-            [ ""
-            , "{sv1}\"a\"[\"b\"]"
-            , "axiom\"a\"[\"b\"]"
+              [ ""
+              , "{sv1}\"a\"[\"b\"]"
+              , "axiom\"a\"[\"b\"]"
             -- , "axiom{}\"a\"[\"b\"]" See the TODO above.
-            , "axiom{sv1}[\"b\"]"
-            , "axiom{sv1}\"a\""
-            ]
+              , "axiom{sv1}[\"b\"]"
+              , "axiom{sv1}\"a\""
+              ]
         ]
 
 sentenceImportParserTests :: [TestTree]
 sentenceImportParserTests =
-    parseTree koreSentenceParser
-        [ success "import M[\"b\"]"
-            ( MetaSentence $ SentenceImportSentence SentenceImport
-                { sentenceImportModuleName = ModuleName "M"
-                , sentenceImportAttributes =
-                    Attributes
-                        [MetaPattern $ StringLiteralPattern (StringLiteral "b")]
-                }
-            )
-        , FailureWithoutMessage
-            [ ""
-            , "M[\"b\"]"
-            , "import [\"b\"]"
-            , "import M"
-            ]
+    parseTree
+        koreSentenceParser
+        [ success
+              "import M[\"b\"]"
+              ( MetaSentence
+              $ SentenceImportSentence SentenceImport
+                  { sentenceImportModuleName = ModuleName "M"
+                  , sentenceImportAttributes =
+                        Attributes
+                            [ MetaPattern
+                              $ StringLiteralPattern (StringLiteral "b")
+                            ]
+                  }
+              )
+        , FailureWithoutMessage ["", "M[\"b\"]", "import [\"b\"]", "import M"]
         ]
 
 sentenceSortParserTests :: [TestTree]
 sentenceSortParserTests =
-    parseTree koreSentenceParser
-        [ success "sort s1 { sv1 } [ \"a\" ]"
-            ( ObjectSentence $ SentenceSortSentence SentenceSort
-                { sentenceSortName = Id "s1"
-                , sentenceSortParameters = [ sortVariable "sv1" ]
-                , sentenceSortAttributes =
-                    Attributes
-                        [MetaPattern $ StringLiteralPattern (StringLiteral "a")]
-                }
-            )
+    parseTree
+        koreSentenceParser
+        [ success
+              "sort s1 { sv1 } [ \"a\" ]"
+              ( ObjectSentence
+              $ SentenceSortSentence SentenceSort
+                  { sentenceSortName = Id "s1"
+                  , sentenceSortParameters = [sortVariable "sv1"]
+                  , sentenceSortAttributes =
+                        Attributes
+                            [ MetaPattern
+                              $ StringLiteralPattern (StringLiteral "a")
+                            ]
+                  }
+              )
         {- TODO(virgil): The Scala parser allows empty sort variable lists
            while the semantics-of-k document does not. -}
-        , success "sort s1 {} [ \"a\" ]"
-            ( ObjectSentence $ SentenceSortSentence SentenceSort
-                { sentenceSortName = Id "s1"
-                , sentenceSortParameters = []
-                , sentenceSortAttributes =
-                    Attributes
-                        [MetaPattern $ StringLiteralPattern (StringLiteral "a")]
-                }
-            )
+        , success
+              "sort s1 {} [ \"a\" ]"
+              ( ObjectSentence
+              $ SentenceSortSentence SentenceSort
+                  { sentenceSortName = Id "s1"
+                  , sentenceSortParameters = []
+                  , sentenceSortAttributes =
+                        Attributes
+                            [ MetaPattern
+                              $ StringLiteralPattern (StringLiteral "a")
+                            ]
+                  }
+              )
         , FailureWithoutMessage
-            [ ""
-            , "s1 { sv1 } [ \"a\" ]"
-            , "sort { sv1 } [ \"a\" ]"
-            , "sort s1 { sv1{} } [ \"a\" ]"
-            , "sort s1 [ \"a\" ]"
-            , "sort s1 { sv1 } "
-            , "sort { sv1 } s1 [ \"a\" ]"
-            ]
+              [ ""
+              , "s1 { sv1 } [ \"a\" ]"
+              , "sort { sv1 } [ \"a\" ]"
+              , "sort s1 { sv1{} } [ \"a\" ]"
+              , "sort s1 [ \"a\" ]"
+              , "sort s1 { sv1 } "
+              , "sort { sv1 } s1 [ \"a\" ]"
+              ]
         ]
 
 sentenceSymbolParserTests :: [TestTree]
 sentenceSymbolParserTests =
-    parseTree koreSentenceParser
-        [ success "symbol sy1 { s1 } ( s1 ) : s1 [\"a\"] "
-            ( ObjectSentence $ SentenceSymbolSentence
-                SentenceSymbol
-                    { sentenceSymbolSymbol = Symbol
-                        { symbolConstructor = Id "sy1"
-                        , symbolParams = [ sortVariable "s1" ]
-                        }
-                    , sentenceSymbolSorts = [ sortVariableSort "s1" ]
-                    , sentenceSymbolResultSort = sortVariableSort "s1"
-                    , sentenceSymbolAttributes =
+    parseTree
+        koreSentenceParser
+        [ success
+              "symbol sy1 { s1 } ( s1 ) : s1 [\"a\"] "
+              ( ObjectSentence
+              $ SentenceSymbolSentence SentenceSymbol
+                  { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = Id "sy1"
+                            , symbolParams = [sortVariable "s1"]
+                            }
+                  , sentenceSymbolSorts = [sortVariableSort "s1"]
+                  , sentenceSymbolResultSort = sortVariableSort "s1"
+                  , sentenceSymbolAttributes =
                         Attributes
-                            [MetaPattern $
-                                StringLiteralPattern (StringLiteral "a")]
-                    }
-            )
-        , success "symbol sy1 {} () : s1 [] "
-            ( ObjectSentence $ SentenceSymbolSentence
-                SentenceSymbol
-                    { sentenceSymbolSymbol = Symbol
-                        { symbolConstructor = Id "sy1"
-                        , symbolParams = []
-                        }
-                    , sentenceSymbolSorts = []
-                    , sentenceSymbolResultSort = sortVariableSort "s1"
-                    , sentenceSymbolAttributes = Attributes []
-                    }
-            )
+                            [ MetaPattern
+                              $ StringLiteralPattern (StringLiteral "a")
+                            ]
+                  }
+              )
+        , success
+              "symbol sy1 {} () : s1 [] "
+              ( ObjectSentence
+              $ SentenceSymbolSentence SentenceSymbol
+                  { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = Id "sy1"
+                            , symbolParams = []
+                            }
+                  , sentenceSymbolSorts = []
+                  , sentenceSymbolResultSort = sortVariableSort "s1"
+                  , sentenceSymbolAttributes = Attributes []
+                  }
+              )
         , FailureWithoutMessage
-            [ ""
-            , "sy1 { s1 } ( s1 ) : s1 [\"a\"] "
-            , "symbol { s1 } ( s1 ) : s1 [\"a\"] "
-            , "symbol sy1 ( s1 ) : s1 [\"a\"] "
-            , "symbol sy1 { s1 } : s1 [\"a\"] "
-            , "symbol sy1 { s1 } ( s1 ) s1 [\"a\"] "
-            , "symbol sy1 { s1 } ( s1 ) : [\"a\"] "
-            , "symbol sy1 { s1 } ( s1 ) : s1 "
-            , "symbol sy1 { s1 } ( s1 ) [\"a\"] "
-            ]
+              [ ""
+              , "sy1 { s1 } ( s1 ) : s1 [\"a\"] "
+              , "symbol { s1 } ( s1 ) : s1 [\"a\"] "
+              , "symbol sy1 ( s1 ) : s1 [\"a\"] "
+              , "symbol sy1 { s1 } : s1 [\"a\"] "
+              , "symbol sy1 { s1 } ( s1 ) s1 [\"a\"] "
+              , "symbol sy1 { s1 } ( s1 ) : [\"a\"] "
+              , "symbol sy1 { s1 } ( s1 ) : s1 "
+              , "symbol sy1 { s1 } ( s1 ) [\"a\"] "
+              ]
         ]
 
 attributesParserTests :: [TestTree]
 attributesParserTests =
-    parseTree (attributesParser unifiedPatternParser)
-        [ success "[\"a\"]"
-            (Attributes
-                [MetaPattern $ StringLiteralPattern (StringLiteral "a")])
-        , success "[]"
-            (Attributes [])
-        , success "[\"a\", \"b\"]"
-            (Attributes
-                [ MetaPattern $ StringLiteralPattern (StringLiteral "a")
-                , MetaPattern $ StringLiteralPattern (StringLiteral "b")
-                ])
+    parseTree
+        (attributesParser unifiedPatternParser)
+        [ success
+              "[\"a\"]"
+              (Attributes
+                   [MetaPattern $ StringLiteralPattern (StringLiteral "a")])
+        , success "[]" (Attributes [])
+        , success
+              "[\"a\", \"b\"]"
+              (Attributes
+                   [ MetaPattern $ StringLiteralPattern (StringLiteral "a")
+                   , MetaPattern $ StringLiteralPattern (StringLiteral "b")
+                   ])
         , FailureWithoutMessage ["", "a", "\"a\"", "[\"a\" \"a\"]"]
         ]
 
-
 moduleParserTests :: [TestTree]
 moduleParserTests =
-    parseTree (moduleParser koreSentenceParser unifiedPatternParser)
-        [ success "module MN sort c{}[] endmodule [\"a\"]"
-            Module
-                { moduleName = ModuleName "MN"
-                , moduleSentences =
-                    [ ObjectSentence $ SentenceSortSentence SentenceSort
-                        { sentenceSortName = Id "c"
-                        , sentenceSortParameters = []
-                        , sentenceSortAttributes = Attributes []
-                        }
-                    ]
-                , moduleAttributes =
-                    Attributes
-                        [MetaPattern $ StringLiteralPattern (StringLiteral "a")]
-                }
-        , success "module MN sort c{}[] sort c{}[] endmodule [\"a\"]"
-            Module
-                { moduleName = ModuleName "MN"
-                , moduleSentences =
-                    [ ObjectSentence $ SentenceSortSentence SentenceSort
-                        { sentenceSortName = Id "c"
-                        , sentenceSortParameters = []
-                        , sentenceSortAttributes = Attributes []
-                        }
-                    , ObjectSentence $ SentenceSortSentence SentenceSort
-                        { sentenceSortName = Id "c"
-                        , sentenceSortParameters = []
-                        , sentenceSortAttributes = Attributes []
-                        }
-                    ]
-                , moduleAttributes =
-                    Attributes
-                        [MetaPattern $ StringLiteralPattern (StringLiteral "a")]
-                }
-        , success "module MN endmodule []"
-            Module
-                { moduleName = ModuleName "MN"
-                , moduleSentences = []
-                , moduleAttributes = Attributes []
-                }
+    parseTree
+        (moduleParser koreSentenceParser unifiedPatternParser)
+        [ success
+              "module MN sort c{}[] endmodule [\"a\"]"
+              Module
+                  { moduleName = ModuleName "MN"
+                  , moduleSentences =
+                        [ ObjectSentence
+                          $ SentenceSortSentence SentenceSort
+                              { sentenceSortName = Id "c"
+                              , sentenceSortParameters = []
+                              , sentenceSortAttributes = Attributes []
+                              }
+                        ]
+                  , moduleAttributes =
+                        Attributes
+                            [ MetaPattern
+                              $ StringLiteralPattern (StringLiteral "a")
+                            ]
+                  }
+        , success
+              "module MN sort c{}[] sort c{}[] endmodule [\"a\"]"
+              Module
+                  { moduleName = ModuleName "MN"
+                  , moduleSentences =
+                        [ ObjectSentence
+                          $ SentenceSortSentence SentenceSort
+                              { sentenceSortName = Id "c"
+                              , sentenceSortParameters = []
+                              , sentenceSortAttributes = Attributes []
+                              }
+                        , ObjectSentence
+                          $ SentenceSortSentence SentenceSort
+                              { sentenceSortName = Id "c"
+                              , sentenceSortParameters = []
+                              , sentenceSortAttributes = Attributes []
+                              }
+                        ]
+                  , moduleAttributes =
+                        Attributes
+                            [ MetaPattern
+                              $ StringLiteralPattern (StringLiteral "a")
+                            ]
+                  }
+        , success
+              "module MN endmodule []"
+              Module
+                  { moduleName = ModuleName "MN"
+                  , moduleSentences = []
+                  , moduleAttributes = Attributes []
+                  }
         , FailureWithoutMessage
-            [ ""
-            , "MN sort c{}[] endmodule [\"a\"]"
-            , "module sort c{}[] endmodule [\"a\"]"
-            , "module MN sort c{}[] [\"a\"]"
-            , "module MN sort c{}[] endmodule"
-            ]
+              [ ""
+              , "MN sort c{}[] endmodule [\"a\"]"
+              , "module sort c{}[] endmodule [\"a\"]"
+              , "module MN sort c{}[] [\"a\"]"
+              , "module MN sort c{}[] endmodule"
+              ]
         ]
 
 definitionParserTests :: [TestTree]
 definitionParserTests =
-    parseTree (definitionParser koreSentenceParser unifiedPatternParser)
-        [ success "[\"a\"] module M sort c{}[] endmodule [\"b\"]"
-            Definition
-                { definitionAttributes =
-                    Attributes
-                        [MetaPattern $ StringLiteralPattern (StringLiteral "a")]
-                , definitionModules =
-                    [ Module
-                        { moduleName = ModuleName "M"
-                        , moduleSentences =
-                            [ ObjectSentence $ SentenceSortSentence SentenceSort
-                                { sentenceSortName = Id "c"
-                                , sentenceSortParameters = []
-                                , sentenceSortAttributes = Attributes []
-                                }
+    parseTree
+        (definitionParser koreSentenceParser unifiedPatternParser)
+        [ success
+              "[\"a\"] module M sort c{}[] endmodule [\"b\"]"
+              Definition
+                  { definitionAttributes =
+                        Attributes
+                            [ MetaPattern
+                              $ StringLiteralPattern (StringLiteral "a")
                             ]
-                        , moduleAttributes =
-                            Attributes
-                                [MetaPattern $
-                                    StringLiteralPattern (StringLiteral "b")]
-                        }
-                    ]
-                }
+                  , definitionModules =
+                        [ Module
+                              { moduleName = ModuleName "M"
+                              , moduleSentences =
+                                    [ ObjectSentence
+                                      $ SentenceSortSentence SentenceSort
+                                          { sentenceSortName = Id "c"
+                                          , sentenceSortParameters = []
+                                          , sentenceSortAttributes =
+                                                Attributes []
+                                          }
+                                    ]
+                              , moduleAttributes =
+                                    Attributes
+                                        [ MetaPattern
+                                          $ StringLiteralPattern
+                                              (StringLiteral "b")
+                                        ]
+                              }
+                        ]
+                  }
         , success
-            (  "[\"a\"] "
-                ++ "module M sort c{}[] endmodule [\"b\"] "
-                ++ "module N sort d{}[] endmodule [\"e\"]"
-                )
-            Definition
-                { definitionAttributes =
-                    Attributes
-                        [MetaPattern $ StringLiteralPattern (StringLiteral "a")]
-                , definitionModules =
-                    [ Module
-                        { moduleName = ModuleName "M"
-                        , moduleSentences =
-                            [ ObjectSentence $ SentenceSortSentence SentenceSort
-                                { sentenceSortName = Id "c"
-                                , sentenceSortParameters = []
-                                , sentenceSortAttributes = Attributes []
-                                }
+              (  "[\"a\"] "
+              ++ "module M sort c{}[] endmodule [\"b\"] "
+              ++ "module N sort d{}[] endmodule [\"e\"]"
+              )
+              Definition
+                  { definitionAttributes =
+                        Attributes
+                            [ MetaPattern
+                              $ StringLiteralPattern (StringLiteral "a")
                             ]
-                        , moduleAttributes =
-                            Attributes
-                                [MetaPattern $
-                                    StringLiteralPattern (StringLiteral "b")]
-                        }
-                    , Module
-                        { moduleName = ModuleName "N"
-                        , moduleSentences =
-                            [ ObjectSentence $ SentenceSortSentence SentenceSort
-                                { sentenceSortName = Id "d"
-                                , sentenceSortParameters = []
-                                , sentenceSortAttributes = Attributes []
-                                }
-                            ]
-                        , moduleAttributes =
-                            Attributes
-                                [MetaPattern $
-                                    StringLiteralPattern (StringLiteral "e")]
-                        }
-                    ]
-                }
+                  , definitionModules =
+                        [ Module
+                              { moduleName = ModuleName "M"
+                              , moduleSentences =
+                                    [ ObjectSentence
+                                      $ SentenceSortSentence SentenceSort
+                                          { sentenceSortName = Id "c"
+                                          , sentenceSortParameters = []
+                                          , sentenceSortAttributes =
+                                                Attributes []
+                                          }
+                                    ]
+                              , moduleAttributes =
+                                    Attributes
+                                        [ MetaPattern
+                                          $ StringLiteralPattern
+                                              (StringLiteral "b")
+                                        ]
+                              }
+                        , Module
+                              { moduleName = ModuleName "N"
+                              , moduleSentences =
+                                    [ ObjectSentence
+                                      $ SentenceSortSentence SentenceSort
+                                          { sentenceSortName = Id "d"
+                                          , sentenceSortParameters = []
+                                          , sentenceSortAttributes =
+                                                Attributes []
+                                          }
+                                    ]
+                              , moduleAttributes =
+                                    Attributes
+                                        [ MetaPattern
+                                          $ StringLiteralPattern
+                                              (StringLiteral "e")
+                                        ]
+                              }
+                        ]
+                  }
         , FailureWithoutMessage
-            [ ""
-            , "[]"
-            , "module M sort c{}[] endmodule [\"b\"]"
-            ]
+              ["", "[]", "module M sort c{}[] endmodule [\"b\"]"]
         ]
 
 ------------------------------------
 -- Generic test utilities
 ------------------------------------
-
 sortVariableSort :: String -> Sort a
-sortVariableSort name =
-    SortVariableSort (sortVariable name)
+sortVariableSort name = SortVariableSort (sortVariable name)
 
 sortVariable :: String -> SortVariable a
-sortVariable name =
-    SortVariable (Id name)
+sortVariable name = SortVariable (Id name)

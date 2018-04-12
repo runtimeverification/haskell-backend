@@ -7,7 +7,6 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-
 module Data.Kore.Implicit.ImplicitKoreImpl where
 
 import           Data.Kore.AST.Common
@@ -16,10 +15,9 @@ import           Data.Kore.MetaML.Builders
 import           Data.Kore.Variables.Free  (freeVariables)
 
 import           Data.Fix
-import           Data.Foldable             (foldl')
-import qualified Data.Map                  as Map
-import qualified Data.Set                  as Set
-
+import           Data.Foldable (foldl')
+import qualified Data.Map      as Map
+import qualified Data.Set      as Set
 
 {-|'equalsSortParam' is the sort param implicitly used for 'equals' when no
 other sort can be inferred. This parameter is assumed not to be used in
@@ -41,14 +39,14 @@ parameterizedAxiom _ (UnsortedPatternStub p) =
     error ("Cannot infer sort for " ++ show (p dummyMetaSort) ++ ".")
 parameterizedAxiom
     parameters
-    ( SortedPatternStub SortedPattern
-        { sortedPatternPattern = p, sortedPatternSort = s }
-    )
+    (SortedPatternStub SortedPattern { sortedPatternPattern = p
+                                     , sortedPatternSort = s
+                                     })
   =
     SentenceAxiom
         { sentenceAxiomParameters = parameters
         , sentenceAxiomPattern =
-            SentenceMetaPattern (quantifyFreeVariables s (Fix p))
+              SentenceMetaPattern (quantifyFreeVariables s (Fix p))
         , sentenceAxiomAttributes = Attributes []
         }
 
@@ -78,39 +76,28 @@ equalsAxiom = parameterizedEqualsAxiom []
 It assumes that the pattern has the provided sort.
 -}
 -- TODO(virgil): Make this generic and move it in ASTHelpers.hs
-quantifyFreeVariables
-    :: Sort Meta -> CommonMetaPattern -> CommonMetaPattern
+quantifyFreeVariables :: Sort Meta -> CommonMetaPattern -> CommonMetaPattern
 quantifyFreeVariables s p =
-    foldl'
-        (wrapAndQuantify s)
-        p
-        (checkUnique (freeVariables p))
+    foldl' (wrapAndQuantify s) p (checkUnique (freeVariables p))
 
 wrapAndQuantify
-    :: Sort Meta
-    -> CommonMetaPattern
-    -> Variable Meta
-    -> CommonMetaPattern
+    :: Sort Meta -> CommonMetaPattern -> Variable Meta -> CommonMetaPattern
 wrapAndQuantify s p var =
     Fix
         (ForallPattern Forall
-            { forallSort = s
-            , forallVariable = var
-            , forallChild = p
-            }
-        )
+             { forallSort = s
+             , forallVariable = var
+             , forallChild = p
+             })
 
-checkUnique
-    :: Set.Set (Variable Meta) -> Set.Set (Variable Meta)
+checkUnique :: Set.Set (Variable Meta) -> Set.Set (Variable Meta)
 checkUnique variables =
     case checkUniqueEither (Set.toList variables) Map.empty of
         Right _  -> variables
         Left err -> error err
 
 checkUniqueEither
-    :: [Variable Meta]
-    -> Map.Map String (Variable Meta)
-    -> Either String ()
+    :: [Variable Meta] -> Map.Map String (Variable Meta) -> Either String ()
 checkUniqueEither [] _ = Right ()
 checkUniqueEither (var:vars) indexed =
     case Map.lookup name indexed of
@@ -118,11 +105,7 @@ checkUniqueEither (var:vars) indexed =
         Just existingV ->
             Left
                 (  "Conflicting variables: "
-                ++ show var
-                ++ " and "
-                ++ show existingV
-                ++ "."
+                ++ show var ++ " and " ++ show existingV ++ "."
                 )
   where
     name = getId (variableName var)
-

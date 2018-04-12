@@ -14,6 +14,7 @@ import           Data.Kore.Error
 {-| 'VerifyError' is a tag for verification errors. -}
 newtype VerifyError = VerifyError ()
     deriving (Eq, Show)
+
 {-| 'VerifySuccess' is a tag for verification success. -}
 newtype VerifySuccess = VerifySuccess ()
     deriving (Eq, Show)

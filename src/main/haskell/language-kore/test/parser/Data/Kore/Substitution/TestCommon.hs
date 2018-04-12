@@ -1,5 +1,6 @@
-{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+
 module Data.Kore.Substitution.TestCommon where
 
 import           Data.Kore.AST.Common
@@ -9,10 +10,11 @@ objectSort :: Sort Object
 objectSort = SortVariableSort (SortVariable (Id "s"))
 
 objectVariable :: Variable Object
-objectVariable = Variable
-    { variableName = Id "v"
-    , variableSort = objectSort
-    }
+objectVariable =
+    Variable
+        { variableName = Id "v"
+        , variableSort = objectSort
+        }
 
 unifiedObjectVariable :: UnifiedVariable Variable
 unifiedObjectVariable = ObjectVariable objectVariable
@@ -27,10 +29,11 @@ metaSort :: Sort Meta
 metaSort = SortVariableSort (SortVariable (Id "#s"))
 
 metaVariable :: Variable Meta
-metaVariable = Variable
-    { variableName = Id "#v"
-    , variableSort = metaSort
-    }
+metaVariable =
+    Variable
+        { variableName = Id "#v"
+        , variableSort = metaSort
+        }
 
 unifiedMetaVariable :: UnifiedVariable Variable
 unifiedMetaVariable = MetaVariable metaVariable

@@ -1,12 +1,13 @@
-{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE Rank2Types            #-}
-module Data.Kore.ASTTraversals ( bottomUpVisitor
-                               , bottomUpVisitorM
-                               , topDownVisitor
-                               , topDownVisitorM
-                               ) where
+{-# LANGUAGE Rank2Types #-}
 
+module Data.Kore.ASTTraversals
+    ( bottomUpVisitor
+    , bottomUpVisitorM
+    , topDownVisitor
+    , topDownVisitorM
+    ) where
 
 import           Control.Monad.Identity
 import           Data.Kore.AST.Common
@@ -29,29 +30,25 @@ new result.
 -}
 topDownVisitorM
     :: (FixPattern var fixedPoint, Monad m)
-    => ( forall level . MetaOrObject level
+    => (forall level. MetaOrObject level
         => Pattern level var (fixedPoint var)
-            -> m
-                ( Either
-                    result
-                    ( Pattern level var (fixedPoint var)
-                    , m result -> m result
-                    )
-                )
-            )
-    -> (forall level . MetaOrObject level
-        => Pattern level var result -> m result)
+        -> m (Either result ( Pattern level var (fixedPoint var)
+                            , m result -> m result)))
+    -> (forall level. MetaOrObject level
+        => Pattern level var result
+        -> m result)
     -> (fixedPoint var -> m result)
 topDownVisitorM preprocess postprocess = self
   where
-    self = fixPatternApply (\p -> do
-        preP <- preprocess p
-        case preP of
-            Left r   -> return r
-            Right (p', f) -> do
-                recP <- traverse (f . self) p'
-                postprocess recP
-        )
+    self =
+        fixPatternApply
+            (\p -> do
+                 preP <- preprocess p
+                 case preP of
+                     Left r -> return r
+                     Right (p', f) -> do
+                         recP <- traverse (f . self) p'
+                         postprocess recP)
 
 {-|'bottomUpVisitorM' is the specialization of 'topDownVisitorM' where the
 preprocessor function always requests the recursive visitation of its children,
@@ -63,23 +60,24 @@ transformed into results and aggregates these results into a new result.
 -}
 bottomUpVisitorM
     :: (FixPattern var fixedPoint, Monad m)
-    => (forall level . MetaOrObject level
-        => Pattern level var result -> m result)
+    => (forall level. MetaOrObject level
+        => Pattern level var result
+        -> m result)
     -> (fixedPoint var -> m result)
 bottomUpVisitorM = topDownVisitorM (\x -> pure (Right (x, id)))
 
 -- |'topDownVisitor' is the non-monadic version of 'topDownVisitorM'.
 topDownVisitor
     :: FixPattern var fixedPoint
-    => (forall level . MetaOrObject level
+    => (forall level. MetaOrObject level
         => Pattern level var (fixedPoint var)
-            -> Either result (Pattern level var (fixedPoint var)))
-    -> (forall level . MetaOrObject level
-        => Pattern level var result -> result)
+        -> Either result (Pattern level var (fixedPoint var)))
+    -> (forall level. MetaOrObject level
+        => Pattern level var result
+        -> result)
     -> (fixedPoint var -> result)
 topDownVisitor preprocess postprocess =
-    runIdentity .
-        topDownVisitorM preprocessM (pure . postprocess)
+    runIdentity . topDownVisitorM preprocessM (pure . postprocess)
   where
     preprocessM x =
         case preprocess x of
@@ -89,7 +87,8 @@ topDownVisitor preprocess postprocess =
 -- |'bottomUpVisitor' is the non-monadic version of 'bottomUpVisitorM'.
 bottomUpVisitor
     :: FixPattern var fixedPoint
-    => (forall level . MetaOrObject level => Pattern level var result -> result)
+    => (forall level. MetaOrObject level
+        => Pattern level var result
+        -> result)
     -> (fixedPoint var -> result)
-bottomUpVisitor reduce =
-    runIdentity . bottomUpVisitorM (pure . reduce)
+bottomUpVisitor reduce = runIdentity . bottomUpVisitorM (pure . reduce)

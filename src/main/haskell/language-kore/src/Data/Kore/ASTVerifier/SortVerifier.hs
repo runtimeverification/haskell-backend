@@ -7,7 +7,9 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Data.Kore.ASTVerifier.SortVerifier (verifySort) where
+module Data.Kore.ASTVerifier.SortVerifier
+    ( verifySort
+    ) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
@@ -26,26 +28,23 @@ verifySort
     -- ^ Sort variables visible here.
     -> Sort level
     -> Either (Error VerifyError) VerifySuccess
-verifySort _ declaredSortVariables (SortVariableSort variable)
-  = do
-    koreFailWhen (not (unifiedVariable `Set.member` declaredSortVariables))
+verifySort _ declaredSortVariables (SortVariableSort variable) = do
+    koreFailWhen
+        (not (unifiedVariable `Set.member` declaredSortVariables))
         ("Sort variable '" ++ getId variableId ++ "' not declared.")
     verifySuccess
   where
     variableId = getSortVariable variable
     unifiedVariable = asUnified variable
-verifySort findSortDescription declaredSortVariables (SortActualSort sort)
-  =
+verifySort findSortDescription declaredSortVariables (SortActualSort sort) =
     withContext
         ("sort '" ++ getId (sortActualName sort) ++ "'")
-        ( do
-            sortDescription <- findSortDescription (sortActualName sort)
+        (do sortDescription <- findSortDescription (sortActualName sort)
             verifySortMatchesDeclaration
                 findSortDescription
                 declaredSortVariables
                 sort
-                sortDescription
-        )
+                sortDescription)
 
 verifySortMatchesDeclaration
     :: MetaOrObject level
@@ -57,12 +56,11 @@ verifySortMatchesDeclaration
 verifySortMatchesDeclaration
     findSortDescription declaredSortVariables sort sortDescription
   = do
-    koreFailWhen (actualSortCount /= declaredSortCount)
+    koreFailWhen
+        (actualSortCount /= declaredSortCount)
         (  "Expected "
         ++ show declaredSortCount
-        ++ " sort arguments, but got "
-        ++ show actualSortCount
-        ++ "."
+        ++ " sort arguments, but got " ++ show actualSortCount ++ "."
         )
     mapM_
         (verifySort findSortDescription declaredSortVariables)

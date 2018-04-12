@@ -40,20 +40,20 @@ module Data.Kore.Parser.ParserImpl where
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.HaskellExtensions  (Rotate31 (..), (<....>))
+import           Data.Kore.HaskellExtensions  (Rotate31(..), (<....>))
 import           Data.Kore.MetaML.AST
 import           Data.Kore.Parser.Lexeme
 import qualified Data.Kore.Parser.ParserUtils as ParserUtils
 import           Data.Kore.Unparser.Unparse
 
-import           Control.Arrow                ((&&&))
-import           Control.Monad                (unless, void, when)
+import           Control.Arrow ((&&&))
+import           Control.Monad (unless, void, when)
 import           Data.Fix
 
-import           Data.Maybe                   (isJust)
-import qualified Text.Parsec.Char             as Parser (char)
-import           Text.Parsec.Combinator       (many1)
-import           Text.Parsec.String           (Parser)
+import           Data.Maybe             (isJust)
+import qualified Text.Parsec.Char       as Parser (char)
+import           Text.Parsec.Combinator (many1)
+import           Text.Parsec.String     (Parser)
 
 {-|'sortVariableParser' parses either an @object-sort-variable@, or a
 @meta-sort-variable@.
@@ -69,7 +69,7 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 sortVariableParser
     :: MetaOrObject level
-    => level        -- ^ Distinguishes between the meta and non-meta elements.
+    => level -- ^ Distinguishes between the meta and non-meta elements.
     -> Parser (SortVariable level)
 sortVariableParser x = SortVariable <$> idParser x
 
@@ -96,7 +96,7 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 sortParser
     :: MetaOrObject level
-    => level        -- ^ Distinguishes between the meta and non-meta elements.
+    => level -- ^ Distinguishes between the meta and non-meta elements.
     -> Parser (Sort level)
 sortParser x = do
     identifier <- idParser x
@@ -108,10 +108,11 @@ sortParser x = do
     actualSortParser identifier = do
         sorts <- inCurlyBracesListParser (sortParser x)
         when (isMeta x) (validateMetaSort identifier sorts)
-        return $ SortActualSort SortActual
-            { sortActualName = stringNameNormalizer identifier
-            , sortActualSorts = sorts
-            }
+        return
+            $ SortActualSort SortActual
+                { sortActualName = stringNameNormalizer identifier
+                , sortActualSorts = sorts
+                }
     stringNameNormalizer identifier@(Id i) =
         if isMeta x && (i == show StringSort)
             then Id (show (MetaListSortType CharSort))
@@ -132,11 +133,12 @@ Relevant BNF definitions:
 -}
 validateMetaSort
     :: MetaOrObject level
-    => Id level     -- ^ The sort name
+    => Id level -- ^ The sort name
     -> [Sort level] -- ^ The sort arguments
     -> Parser ()
 validateMetaSort identifier [] =
-    unless (isJust (metaSortConverter metaId))
+    unless
+        (isJust (metaSortConverter metaId))
         (fail ("metaSortConverter: Invalid constructor: '" ++ metaId ++ "'."))
   where
     metaId = getId identifier
@@ -156,8 +158,8 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 symbolOrAliasDeclarationRawParser
     :: MetaOrObject level
-    => level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Id level -> [SortVariable level] -> m level)  -- ^ Element constructor.
+    => level -- ^ Distinguishes between the meta and non-meta elements.
+    -> (Id level -> [SortVariable level] -> m level) -- ^ Element constructor.
     -> Parser (m level)
 symbolOrAliasDeclarationRawParser x constructor = do
     headConstructor <- idParser x
@@ -177,8 +179,8 @@ Always starts with @{@.
 -}
 symbolOrAliasDeclarationRemainderRawParser
     :: MetaOrObject level
-    => level   -- ^ Distinguishes between the meta and non-meta elements.
-    -> ([SortVariable level] -> m level)  -- ^ Element constructor.
+    => level -- ^ Distinguishes between the meta and non-meta elements.
+    -> ([SortVariable level] -> m level) -- ^ Element constructor.
     -> Parser (m level)
 symbolOrAliasDeclarationRemainderRawParser x constructor =
     constructor <$> inCurlyBracesListParser (sortVariableParser x)
@@ -197,10 +199,9 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 aliasParser
     :: MetaOrObject level
-    => level        -- ^ Distinguishes between the meta and non-meta elements.
+    => level -- ^ Distinguishes between the meta and non-meta elements.
     -> Parser (Alias level)
 aliasParser x = symbolOrAliasDeclarationRawParser x Alias
-
 
 {-|'symbolParser' is the same as 'aliasParser', but it interprets the head
 as a symbol one.
@@ -225,14 +226,13 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 unaryOperatorRemainderParser
     :: MetaOrObject level
     => Parser child
-    -> level  -- ^ Distinguishes between the meta and non-meta elements.
+    -> level -- ^ Distinguishes between the meta and non-meta elements.
     -> (Sort level -> child -> m level child)
     -- ^ Element constructor.
     -> Parser (m level child)
 unaryOperatorRemainderParser childParser x constructor =
-    pure constructor
-        <*> inCurlyBracesRemainderParser (sortParser x)
-        <*> inParenthesesParser childParser
+    pure constructor <*> inCurlyBracesRemainderParser (sortParser x)
+    <*> inParenthesesParser childParser
 
 {-|'binaryOperatorRemainderParser' parses the part after a binary operator's
 name and the first open curly brace and constructs it using the provided
@@ -251,14 +251,13 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 binaryOperatorRemainderParser
     :: MetaOrObject level
     => Parser child
-    -> level  -- ^ Distinguishes between the meta and non-meta elements.
+    -> level -- ^ Distinguishes between the meta and non-meta elements.
     -> (Sort level -> child -> child -> m level child)
     -- ^ Element constructor.
     -> Parser (m level child)
 binaryOperatorRemainderParser childParser x constructor = do
     sort <- inCurlyBracesRemainderParser (sortParser x)
-    (child1, child2) <-
-        parenPairParser childParser childParser
+    (child1, child2) <- parenPairParser childParser childParser
     return (constructor sort child1 child2)
 
 {-|'existsForallRemainderParser' parses the part after an exists or forall
@@ -278,9 +277,8 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 existsForallRemainderParser
     :: MetaOrObject level
     => Parser child
-    -> level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort level -> Variable level -> child
-        -> m level Variable child)
+    -> level -- ^ Distinguishes between the meta and non-meta elements.
+    -> (Sort level -> Variable level -> child -> m level Variable child)
     -- ^ Element constructor.
     -> Parser (m level Variable child)
 existsForallRemainderParser childParser x constructor = do
@@ -305,7 +303,7 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 ceilFloorRemainderParser
     :: MetaOrObject level
     => Parser child
-    -> level  -- ^ Distinguishes between the meta and non-meta elements.
+    -> level -- ^ Distinguishes between the meta and non-meta elements.
     -> (Sort level -> Sort level -> child -> m level child)
     -- ^ Element constructor.
     -> Parser (m level child)
@@ -331,14 +329,13 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 equalsInRemainderParser
     :: MetaOrObject level
     => Parser child
-    -> level  -- ^ Distinguishes between the meta and non-meta elements.
+    -> level -- ^ Distinguishes between the meta and non-meta elements.
     -> (Sort level -> Sort level -> child -> child -> m level child)
     -- ^ Element constructor.
     -> Parser (m level child)
 equalsInRemainderParser childParser x constructor = do
     (sort1, sort2) <- curlyPairRemainderParser (sortParser x)
-    (child1, child2) <-
-        parenPairParser childParser childParser
+    (child1, child2) <- parenPairParser childParser childParser
     return (constructor sort1 sort2 child1 child2)
 
 {-|'topBottomRemainderParser' parses the part after a top or bottom
@@ -356,8 +353,8 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 topBottomRemainderParser
     :: MetaOrObject level
-    => level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> (Sort level -> m level child)  -- ^ Element constructor.
+    => level -- ^ Distinguishes between the meta and non-meta elements.
+    -> (Sort level -> m level child) -- ^ Element constructor.
     -> Parser (m level child)
 topBottomRemainderParser x constructor = do
     sort <- inCurlyBracesRemainderParser (sortParser x)
@@ -383,17 +380,15 @@ Always starts with @{@.
 symbolOrAliasPatternRemainderParser
     :: MetaOrObject level
     => Parser child
-    -> level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Id level  -- ^ The already parsed prefix.
+    -> level -- ^ Distinguishes between the meta and non-meta elements.
+    -> Id level -- ^ The already parsed prefix.
     -> Parser (Pattern level Variable child)
 symbolOrAliasPatternRemainderParser childParser x identifier =
-    ApplicationPattern <$>
-        ( pure Application
-            <*>
-                (   SymbolOrAlias identifier
-                <$> inCurlyBracesListParser (sortParser x))
-            <*> inParenthesesListParser childParser
-        )
+    ApplicationPattern
+    <$> (   pure Application
+    <*> (SymbolOrAlias identifier <$> inCurlyBracesListParser (sortParser x))
+    <*> inParenthesesListParser childParser
+    )
 
 {-|'variableRemainderParser' parses the part after a variable's name and
 constructs it.
@@ -408,16 +403,17 @@ Always starts with @:@.
 -}
 variableRemainderParser
     :: MetaOrObject level
-    => level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Id level  -- ^ The already parsed prefix.
+    => level -- ^ Distinguishes between the meta and non-meta elements.
+    -> Id level -- ^ The already parsed prefix.
     -> Parser (Variable level)
 variableRemainderParser x identifier = do
     colonParser
     sort <- sortParser x
-    return Variable
-        { variableName = identifier
-        , variableSort = sort
-        }
+    return
+        Variable
+            { variableName = identifier
+            , variableSort = sort
+            }
 
 {-|'variableParser' parses either an @object-variable@, or a @meta-variable@.
 
@@ -432,7 +428,7 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 variableParser
     :: MetaOrObject level
-    => level  -- ^ Distinguishes between the meta and non-meta elements.
+    => level -- ^ Distinguishes between the meta and non-meta elements.
     -> Parser (Variable level)
 variableParser x = idParser x >>= variableRemainderParser x
 
@@ -477,7 +473,7 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 variableOrTermPatternParser
     :: MetaOrObject level
     => Parser child
-    -> level  -- ^ Distinguishes between the meta and non-meta elements.
+    -> level -- ^ Distinguishes between the meta and non-meta elements.
     -> Parser (Pattern level Variable child)
 variableOrTermPatternParser childParser x = do
     identifier <- idParser x
@@ -504,14 +500,10 @@ unifiedVariableOrTermPatternParser :: Parser UnifiedPattern
 unifiedVariableOrTermPatternParser = do
     c <- ParserUtils.peekChar'
     if c == '#'
-        then
-            MetaPattern <$> variableOrTermPatternParser
-                unifiedPatternParser
-                Meta
-        else
-            ObjectPattern <$> variableOrTermPatternParser
-                unifiedPatternParser
-                Object
+        then MetaPattern
+        <$> variableOrTermPatternParser unifiedPatternParser Meta
+        else ObjectPattern
+        <$> variableOrTermPatternParser unifiedPatternParser Object
 
 {-|'unifiedMLConstructorParser' parses a pattern starting with @\@.
 
@@ -559,32 +551,43 @@ unifiedMLConstructorParser = do
     void (Parser.char '\\')
     mlPatternParser
   where
-    mlPatternParser = keywordBasedParsers
-        (map
-            (patternString &&& unifiedMLConstructorRemainderParser)
-            allPatternTypes
-        )
+    mlPatternParser =
+        keywordBasedParsers
+            (map (patternString &&& unifiedMLConstructorRemainderParser)
+                 allPatternTypes)
     unifiedMLConstructorRemainderParser patternType = do
         openCurlyBraceParser
         c <- ParserUtils.peekChar'
         if c == '#'
-            then MetaPattern <$>
-                mlConstructorRemainderParser unifiedPatternParser
-                    Meta patternType (unsupportedPatternType Meta)
-            else ObjectPattern <$>
-                mlConstructorRemainderParser unifiedPatternParser
-                    Object patternType objectMlConstructorRemainderParser
+            then MetaPattern
+            <$> mlConstructorRemainderParser
+                unifiedPatternParser
+                Meta
+                patternType
+                (unsupportedPatternType Meta)
+            else ObjectPattern
+            <$> mlConstructorRemainderParser
+                unifiedPatternParser
+                Object
+                patternType
+                objectMlConstructorRemainderParser
     objectMlConstructorRemainderParser patternType =
         case patternType of
-            DomainValuePatternType -> DomainValuePattern <$>
-                unaryOperatorRemainderParser
+            DomainValuePatternType ->
+                DomainValuePattern
+                <$> unaryOperatorRemainderParser
                     unifiedPatternParser
                     Object
                     DomainValue
-            NextPatternType -> NextPattern <$>
-                unaryOperatorRemainderParser unifiedPatternParser Object Next
-            RewritesPatternType -> RewritesPattern <$>
-                binaryOperatorRemainderParser
+            NextPatternType ->
+                NextPattern
+                <$> unaryOperatorRemainderParser
+                    unifiedPatternParser
+                    Object
+                    Next
+            RewritesPatternType ->
+                RewritesPattern
+                <$> binaryOperatorRemainderParser
                     unifiedPatternParser
                     Object
                     Rewrites
@@ -622,10 +625,8 @@ leveledMLConstructorParser
 leveledMLConstructorParser childParser level = do
     void (Parser.char '\\')
     keywordBasedParsers
-        (map
-            (patternString &&& leveledMLConstructorRemainderParser)
-            allPatternTypes
-        )
+        (map (patternString &&& leveledMLConstructorRemainderParser)
+             allPatternTypes)
   where
     leveledMLConstructorRemainderParser patternType = do
         openCurlyBraceParser
@@ -638,13 +639,12 @@ leveledMLConstructorParser childParser level = do
 {-|'unsupportedPatternType' reports an error for a missing parser for
 a 'MLPatternType'.
 -}
-unsupportedPatternType
-    :: Show level => level -> MLPatternType -> Parser a
+unsupportedPatternType :: Show level => level -> MLPatternType -> Parser a
 unsupportedPatternType level patternType =
     fail
         (  "Cannot have a "
-        ++ unparseToString patternType
-        ++ " " ++ show level ++ " pattern.")
+        ++ unparseToString patternType ++ " " ++ show level ++ " pattern."
+        )
 
 {-|'mlConstructorRemainderParser' represents a continuation parser for
 'leveledMLConstructorParser', called after the constructor and the open curly
@@ -661,32 +661,30 @@ mlConstructorRemainderParser
     -> Parser (Pattern level Variable child)
 mlConstructorRemainderParser childParser x patternType otherParsers =
     case patternType of
-        AndPatternType -> AndPattern <$>
-            binaryOperatorRemainderParser childParser x And
-        BottomPatternType -> BottomPattern <$>
-            topBottomRemainderParser x Bottom
-        CeilPatternType -> CeilPattern <$>
-            ceilFloorRemainderParser childParser x Ceil
-        EqualsPatternType -> EqualsPattern <$>
-            equalsInRemainderParser childParser x Equals
-        ExistsPatternType -> ExistsPattern <$>
-            existsForallRemainderParser childParser x Exists
-        FloorPatternType -> FloorPattern <$>
-            ceilFloorRemainderParser childParser x Floor
-        ForallPatternType -> ForallPattern <$>
-            existsForallRemainderParser childParser x Forall
-        IffPatternType -> IffPattern <$>
-            binaryOperatorRemainderParser childParser x Iff
-        ImpliesPatternType -> ImpliesPattern <$>
-            binaryOperatorRemainderParser childParser x Implies
-        InPatternType -> InPattern <$>
-            equalsInRemainderParser childParser x In
-        NotPatternType -> NotPattern <$>
-            unaryOperatorRemainderParser childParser x Not
-        OrPatternType -> OrPattern <$>
-            binaryOperatorRemainderParser childParser x Or
-        TopPatternType -> TopPattern <$>
-            topBottomRemainderParser x Top
+        AndPatternType ->
+            AndPattern <$> binaryOperatorRemainderParser childParser x And
+        BottomPatternType -> BottomPattern <$> topBottomRemainderParser x Bottom
+        CeilPatternType ->
+            CeilPattern <$> ceilFloorRemainderParser childParser x Ceil
+        EqualsPatternType ->
+            EqualsPattern <$> equalsInRemainderParser childParser x Equals
+        ExistsPatternType ->
+            ExistsPattern <$> existsForallRemainderParser childParser x Exists
+        FloorPatternType ->
+            FloorPattern <$> ceilFloorRemainderParser childParser x Floor
+        ForallPatternType ->
+            ForallPattern <$> existsForallRemainderParser childParser x Forall
+        IffPatternType ->
+            IffPattern <$> binaryOperatorRemainderParser childParser x Iff
+        ImpliesPatternType ->
+            ImpliesPattern
+            <$> binaryOperatorRemainderParser childParser x Implies
+        InPatternType -> InPattern <$> equalsInRemainderParser childParser x In
+        NotPatternType ->
+            NotPattern <$> unaryOperatorRemainderParser childParser x Not
+        OrPatternType ->
+            OrPattern <$> binaryOperatorRemainderParser childParser x Or
+        TopPatternType -> TopPattern <$> topBottomRemainderParser x Top
         _ -> otherParsers patternType
 
 {-|'unifiedPatternParser' parses an unifiedPattern
@@ -787,8 +785,7 @@ BNF definition:
 Always starts with @[@.
 -}
 attributesParser :: Parser (pat variable) -> Parser (Attributes pat variable)
-attributesParser patParser =
-    Attributes <$> inSquareBracketsListParser patParser
+attributesParser patParser = Attributes <$> inSquareBracketsListParser patParser
 
 {-|'koreDefinitionParser' parses a Kore @definition@
 
@@ -805,9 +802,8 @@ definitionParser
     -> Parser (pat variable)
     -> Parser (Definition sentence sortParam pat variable)
 definitionParser sentenceParser patParser =
-    pure Definition
-        <*> attributesParser patParser
-        <*> many1 (moduleParser sentenceParser patParser)
+    pure Definition <*> attributesParser patParser
+    <*> many1 (moduleParser sentenceParser patParser)
 
 {-|'moduleParser' parses the module part of a Kore @definition@
 
@@ -826,18 +822,18 @@ moduleParser sentenceParser patParser = do
     sentences <- ParserUtils.manyUntilChar 'e' sentenceParser
     mlLexemeParser "endmodule"
     attributes <- attributesParser patParser
-    return Module
-           { moduleName = name
-           , moduleSentences = sentences
-           , moduleAttributes = attributes
-           }
+    return
+        Module
+            { moduleName = name
+            , moduleSentences = sentences
+            , moduleAttributes = attributes
+            }
 
 {-|Enum for the sentence types that have meta- and object- versions.
 -}
 data SentenceType
     = AliasSentenceType
     | SymbolSentenceType
-
 
 {-|'koreSentenceParser' parses a @declaration@.
 
@@ -860,51 +856,47 @@ BNF definition fragments:
 @
 -}
 koreSentenceParser :: Parser KoreSentence
-koreSentenceParser = keywordBasedParsers
-    [ ( "alias", sentenceConstructorRemainderParser AliasSentenceType )
-    , ( "axiom", axiomSentenceRemainderParser )
-    , ( "sort", sortSentenceRemainderParser )
-    , ( "symbol", sentenceConstructorRemainderParser SymbolSentenceType )
-    , ( "import", importSentenceRemainderParser )
-    ]
+koreSentenceParser =
+    keywordBasedParsers
+        [ ("alias", sentenceConstructorRemainderParser AliasSentenceType)
+        , ("axiom", axiomSentenceRemainderParser)
+        , ("sort", sortSentenceRemainderParser)
+        , ("symbol", sentenceConstructorRemainderParser SymbolSentenceType)
+        , ("import", importSentenceRemainderParser)
+        ]
 
 sentenceConstructorRemainderParser :: SentenceType -> Parser KoreSentence
-sentenceConstructorRemainderParser sentenceType
-      = do
-        c <- ParserUtils.peekChar'
-        case (c, sentenceType) of
-            ('#', AliasSentenceType) ->
-                MetaSentence . SentenceAliasSentence . unRotate31
-                <$>
-                aliasSymbolSentenceRemainderParser
-                    Meta
-                    (aliasParser Meta)
-                    unifiedPatternParser
-                    (Rotate31 <....> SentenceAlias)
-            ('#', SymbolSentenceType) ->
-                MetaSentence . SentenceSymbolSentence . unRotate31
-                <$>
-                aliasSymbolSentenceRemainderParser
-                    Meta
-                    (symbolParser Meta)
-                    unifiedPatternParser
-                    (Rotate31 <....> SentenceSymbol)
-            (_, AliasSentenceType) ->
-                ObjectSentence . SentenceAliasSentence . unRotate31
-                <$>
-                aliasSymbolSentenceRemainderParser
-                    Object
-                    (aliasParser Object)
-                    unifiedPatternParser
-                    (Rotate31 <....> SentenceAlias)
-            (_, SymbolSentenceType) ->
-                ObjectSentence . SentenceSymbolSentence . unRotate31
-                <$>
-                aliasSymbolSentenceRemainderParser
-                    Object
-                    (symbolParser Object)
-                    unifiedPatternParser
-                    (Rotate31 <....> SentenceSymbol)
+sentenceConstructorRemainderParser sentenceType = do
+    c <- ParserUtils.peekChar'
+    case (c, sentenceType) of
+        ('#', AliasSentenceType) ->
+            MetaSentence . SentenceAliasSentence . unRotate31
+            <$> aliasSymbolSentenceRemainderParser
+                Meta
+                (aliasParser Meta)
+                unifiedPatternParser
+                (Rotate31 <....> SentenceAlias)
+        ('#', SymbolSentenceType) ->
+            MetaSentence . SentenceSymbolSentence . unRotate31
+            <$> aliasSymbolSentenceRemainderParser
+                Meta
+                (symbolParser Meta)
+                unifiedPatternParser
+                (Rotate31 <....> SentenceSymbol)
+        (_, AliasSentenceType) ->
+            ObjectSentence . SentenceAliasSentence . unRotate31
+            <$> aliasSymbolSentenceRemainderParser
+                Object
+                (aliasParser Object)
+                unifiedPatternParser
+                (Rotate31 <....> SentenceAlias)
+        (_, SymbolSentenceType) ->
+            ObjectSentence . SentenceSymbolSentence . unRotate31
+            <$> aliasSymbolSentenceRemainderParser
+                Object
+                (symbolParser Object)
+                unifiedPatternParser
+                (Rotate31 <....> SentenceSymbol)
 
 {-|'aliasSymbolSentenceRemainderParser' parses the part after the starting
 keyword of an alias or symbol declaration using the given head parser
@@ -921,19 +913,17 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 aliasSymbolSentenceRemainderParser
     :: MetaOrObject level
-    => level  -- ^ Distinguishes between the meta and non-meta elements.
-    -> Parser (m level)  -- Head parser.
+    => level -- ^ Distinguishes between the meta and non-meta elements.
+    -> Parser (m level) -- Head parser.
     -> Parser (pat variable) -- attributes pattern parser
     -> (m level
         -> [Sort level]
         -> Sort level
         -> Attributes pat variable
-        -> as level
-       )
+        -> as level)
     -- ^ Element constructor.
     -> Parser (as level)
-aliasSymbolSentenceRemainderParser  x aliasSymbolParser patParser constructor
-  = do
+aliasSymbolSentenceRemainderParser x aliasSymbolParser patParser constructor = do
     aliasSymbol <- aliasSymbolParser
     sorts <- inParenthesesListParser (sortParser x)
     colonParser
@@ -952,10 +942,9 @@ BNF example:
 -}
 importSentenceRemainderParser :: Parser KoreSentence
 importSentenceRemainderParser =
-    MetaSentence . SentenceImportSentence <$>
-    ( pure SentenceImport
-        <*> moduleNameParser
-        <*> attributesParser unifiedPatternParser
+    MetaSentence . SentenceImportSentence
+    <$> (   pure SentenceImport <*> moduleNameParser
+    <*> attributesParser unifiedPatternParser
     )
 
 {-|'axiomSentenceRemainderParser' parses the part after the starting
@@ -970,11 +959,12 @@ BNF example:
 Always starts with @{@.
 -}
 axiomSentenceRemainderParser :: Parser KoreSentence
-axiomSentenceRemainderParser = MetaSentence . SentenceAxiomSentence <$>
-    ( pure SentenceAxiom
-        <*> inCurlyBracesListParser unifiedSortVariableParser
-        <*> unifiedPatternParser
-        <*> attributesParser unifiedPatternParser
+axiomSentenceRemainderParser =
+    MetaSentence . SentenceAxiomSentence
+    <$> (   pure SentenceAxiom
+    <*> inCurlyBracesListParser unifiedSortVariableParser
+    <*> unifiedPatternParser
+    <*> attributesParser unifiedPatternParser
     )
 
 {-|'sortSentenceRemainderParser' parses the part after the starting
@@ -989,9 +979,9 @@ BNF example:
 Always starts with @{@.
 -}
 sortSentenceRemainderParser :: Parser KoreSentence
-sortSentenceRemainderParser = ObjectSentence . SentenceSortSentence <$>
-    ( pure SentenceSort
-        <*> idParser Object
-        <*> inCurlyBracesListParser (sortVariableParser Object)
-        <*> attributesParser unifiedPatternParser
+sortSentenceRemainderParser =
+    ObjectSentence . SentenceSortSentence
+    <$> (   pure SentenceSort <*> idParser Object
+    <*> inCurlyBracesListParser (sortVariableParser Object)
+    <*> attributesParser unifiedPatternParser
     )

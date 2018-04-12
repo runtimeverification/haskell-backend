@@ -1,5 +1,6 @@
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE Rank2Types             #-}
+{-# LANGUAGE Rank2Types #-}
+
 module Data.Kore.AST.MetaOrObject where
 
 import           Data.Kore.AST.Common
@@ -11,8 +12,8 @@ import           Data.Typeable        (Typeable, cast)
 * @ isObject Object && not (isMeta Object) @
 * @ not (isObject Meta) && isMeta Meta @
 -}
-class (Show level, Ord level, Eq level, Typeable level)
-    => MetaOrObject level
+class (Show level, Ord level, Eq level, Typeable level) =>
+      MetaOrObject level
   where
     isObject :: level -> Bool
     isMeta :: level -> Bool
@@ -22,6 +23,7 @@ class (Show level, Ord level, Eq level, Typeable level)
 
 instance MetaOrObject Meta where
     isMeta _ = True
+
 instance MetaOrObject Object where
     isObject _ = True
 
@@ -30,10 +32,14 @@ data MetaOrObjectTransformer thing result = MetaOrObjectTransformer
     , objectTransformer :: thing Object -> result
     }
 
+
 applyMetaObjectFunction
     :: (Typeable thing, MetaOrObject level)
-    => thing level -> MetaOrObjectTransformer thing c -> c
+    => thing level
+    -> MetaOrObjectTransformer thing c
+    -> c
 applyMetaObjectFunction x = applyMetaObjectFunctionCasted (cast x) (cast x)
+
 applyMetaObjectFunctionCasted
     :: Maybe (thing Object)
     -> Maybe (thing Meta)
@@ -44,21 +50,27 @@ applyMetaObjectFunctionCasted Nothing (Just x) f = metaTransformer f x
 applyMetaObjectFunctionCasted _ _ _ =
     error "applyMetaObjectFunctionCasted: this should not happen!"
 
-class Typeable thing
-    => UnifiedThing unifiedThing thing | unifiedThing -> thing
+class Typeable thing =>
+      UnifiedThing unifiedThing thing
+    | unifiedThing -> thing
   where
     destructor :: unifiedThing -> Either (thing Meta) (thing Object)
     objectConstructor :: thing Object -> unifiedThing
     metaConstructor :: thing Meta -> unifiedThing
     transformUnified
-        :: (forall level . MetaOrObject level => thing level -> b)
+        :: (forall level. MetaOrObject level
+            => thing level
+            -> b)
         -> (unifiedThing -> b)
     transformUnified f unifiedStuff =
         case destructor unifiedStuff of
             Left x  -> f x
             Right x -> f x
     asUnified :: MetaOrObject level => thing level -> unifiedThing
-    asUnified x = applyMetaObjectFunction x MetaOrObjectTransformer
-        { objectTransformer = objectConstructor
-        , metaTransformer = metaConstructor
-        }
+    asUnified x =
+        applyMetaObjectFunction
+            x
+            MetaOrObjectTransformer
+                { objectTransformer = objectConstructor
+                , metaTransformer = metaConstructor
+                }

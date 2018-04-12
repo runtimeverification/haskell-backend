@@ -7,11 +7,12 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Data.Kore.ASTVerifier.AttributesVerifier (verifyAttributes,
-                                                 AttributesVerification (..))
-  where
+module Data.Kore.ASTVerifier.AttributesVerifier
+    ( verifyAttributes
+    , AttributesVerification(..)
+    ) where
 
-import           Data.Kore.AST.Common                  (Attributes (..))
+import           Data.Kore.AST.Common                  (Attributes(..))
 import           Data.Kore.AST.Kore                    (KoreAttributes,
                                                         UnifiedSortVariable)
 import           Data.Kore.ASTVerifier.Error
@@ -20,7 +21,9 @@ import           Data.Kore.Error
 import           Data.Kore.IndexedModule.IndexedModule
 import qualified Data.Set                              as Set
 
-data AttributesVerification = VerifyAttributes | DoNotVerifyAttributes
+data AttributesVerification
+    = VerifyAttributes
+    | DoNotVerifyAttributes
 
 {-|'verifyAttributes' verifies the weldefinedness of the given attributes.
 -}
@@ -38,9 +41,7 @@ verifyAttributes
     withContext
         "attributes"
         (mapM_
-            (\p -> verifyPattern p Nothing indexedModule sortVariables)
-            patterns
-        )
+             (\p -> verifyPattern p Nothing indexedModule sortVariables)
+             patterns)
     verifySuccess
-verifyAttributes _ _ _ DoNotVerifyAttributes =
-    verifySuccess
+verifyAttributes _ _ _ DoNotVerifyAttributes = verifySuccess

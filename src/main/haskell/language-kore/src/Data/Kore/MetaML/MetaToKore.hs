@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+
 {-|
 Module      : Data.Kore.MetaML.MetaToKore
 Description : Functionality for viewing 'Meta'-only as unified Kore constructs.
@@ -25,40 +26,49 @@ patternMetaToKore :: SentenceMetaPattern Variable -> UnifiedPattern
 patternMetaToKore = cata MetaPattern . getSentenceMetaPattern
 
 attributesMetaToKore :: MetaAttributes -> KoreAttributes
-attributesMetaToKore ma =
-    Attributes (map patternMetaToKore (getAttributes ma))
+attributesMetaToKore ma = Attributes (map patternMetaToKore (getAttributes ma))
 
 sentenceMetaToKore :: MetaSentence -> KoreSentence
-sentenceMetaToKore (SentenceAliasSentence msa) = asSentence msa
-    { sentenceAliasAttributes =
-        attributesMetaToKore (sentenceAliasAttributes msa)
-    }
-sentenceMetaToKore (SentenceSymbolSentence mss) = asSentence mss
-    { sentenceSymbolAttributes =
-        attributesMetaToKore (sentenceSymbolAttributes mss)
-    }
-sentenceMetaToKore (SentenceImportSentence msi) = asSentence msi
-    { sentenceImportAttributes =
-        attributesMetaToKore (sentenceImportAttributes msi)
-    }
-sentenceMetaToKore (SentenceAxiomSentence msx) = asSentence SentenceAxiom
-    { sentenceAxiomAttributes =
-        attributesMetaToKore (sentenceAxiomAttributes msx)
-    , sentenceAxiomPattern =
-        patternMetaToKore (sentenceAxiomPattern msx)
-    , sentenceAxiomParameters =
-        map MetaSortVariable (sentenceAxiomParameters msx)
-    }
+sentenceMetaToKore (SentenceAliasSentence msa) =
+    asSentence
+        msa
+            { sentenceAliasAttributes =
+                 attributesMetaToKore (sentenceAliasAttributes msa)
+             }
+sentenceMetaToKore (SentenceSymbolSentence mss) =
+    asSentence
+        mss
+            { sentenceSymbolAttributes =
+                 attributesMetaToKore (sentenceSymbolAttributes mss)
+             }
+sentenceMetaToKore (SentenceImportSentence msi) =
+    asSentence
+        msi
+            { sentenceImportAttributes =
+                 attributesMetaToKore (sentenceImportAttributes msi)
+             }
+sentenceMetaToKore (SentenceAxiomSentence msx) =
+    asSentence
+        SentenceAxiom
+            { sentenceAxiomAttributes =
+                  attributesMetaToKore (sentenceAxiomAttributes msx)
+            , sentenceAxiomPattern =
+                  patternMetaToKore (sentenceAxiomPattern msx)
+            , sentenceAxiomParameters =
+                  map MetaSortVariable (sentenceAxiomParameters msx)
+            }
 
 moduleMetaToKore :: MetaModule -> KoreModule
-moduleMetaToKore mm = Module
-    { moduleName = moduleName mm
-    , moduleSentences = map sentenceMetaToKore (moduleSentences mm)
-    , moduleAttributes = attributesMetaToKore (moduleAttributes mm)
-    }
+moduleMetaToKore mm =
+    Module
+        { moduleName = moduleName mm
+        , moduleSentences = map sentenceMetaToKore (moduleSentences mm)
+        , moduleAttributes = attributesMetaToKore (moduleAttributes mm)
+        }
 
 definitionMetaToKore :: MetaDefinition -> KoreDefinition
-definitionMetaToKore dm = Definition
-    { definitionAttributes = attributesMetaToKore (definitionAttributes dm)
-    , definitionModules = map moduleMetaToKore (definitionModules dm)
-    }
+definitionMetaToKore dm =
+    Definition
+        { definitionAttributes = attributesMetaToKore (definitionAttributes dm)
+        , definitionModules = map moduleMetaToKore (definitionModules dm)
+        }

@@ -7,9 +7,10 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Data.Kore.MetaML.Builders ( module Data.Kore.MetaML.Builders
-                                 , MetaPatternStub
-                                 ) where
+module Data.Kore.MetaML.Builders
+    ( module Data.Kore.MetaML.Builders
+    , MetaPatternStub
+    ) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.ASTHelpers
@@ -37,11 +38,11 @@ applyPS
 applyPS sentence sortParameters patterns =
     SortedPatternStub SortedPattern
         { sortedPatternPattern =
-            ApplicationPattern Application
-                { applicationSymbolOrAlias =
-                    getSentenceSymbolOrAliasHead sentence sortParameters
-                , applicationChildren = fillCheckSorts argumentSorts patterns
-                }
+              ApplicationPattern Application
+                  { applicationSymbolOrAlias =
+                        getSentenceSymbolOrAliasHead sentence sortParameters
+                  , applicationChildren = fillCheckSorts argumentSorts patterns
+                  }
         , sortedPatternSort = returnSort
         }
   where
@@ -86,11 +87,10 @@ unparameterizedVariable_ :: String -> MetaPatternStub
 unparameterizedVariable_ name =
     UnsortedPatternStub
         (\sortS ->
-            VariablePattern Variable
-                { variableName = Id name
-                , variableSort = sortS
-                }
-        )
+             VariablePattern Variable
+                 { variableName = Id name
+                 , variableSort = sortS
+                 })
 
 -- |Given a 'Sort' @sort@ and a string @name@, yields 'PatternStub' defining
 -- name as a variable of sort @sort@.
@@ -105,14 +105,18 @@ symbol_ name = parameterizedSymbol_ name []
 -- |constructs a Symbol declaration given symbol name, parameters,
 -- operand sorts and result sort.
 parameterizedSymbol_
-    :: String -> [SortVariable Meta] -> [Sort Meta] -> Sort Meta
+    :: String
+    -> [SortVariable Meta]
+    -> [Sort Meta]
+    -> Sort Meta
     -> MetaSentenceSymbol
 parameterizedSymbol_ name parameters operandSorts resultSort =
     SentenceSymbol
-        { sentenceSymbolSymbol = Symbol
-            { symbolConstructor = Id name
-            , symbolParams = parameters
-            }
+        { sentenceSymbolSymbol =
+              Symbol
+                  { symbolConstructor = Id name
+                  , symbolParams = parameters
+                  }
         , sentenceSymbolSorts = operandSorts
         , sentenceSymbolResultSort = resultSort
         , sentenceSymbolAttributes = Attributes []
@@ -172,12 +176,11 @@ exists_ :: Variable Meta -> MetaPatternStub -> MetaPatternStub
 exists_ variable1 =
     unaryPattern
         (\sortS pattern1 ->
-            ExistsPattern Exists
-                { existsSort     = sortS
-                , existsVariable = variable1
-                , existsChild    = pattern1
-                }
-        )
+             ExistsPattern Exists
+                 { existsSort = sortS
+                 , existsVariable = variable1
+                 , existsChild = pattern1
+                 })
 
 -- |Builds a 'PatternStub' representing 'Forall' given a variable and an
 -- operand 'PatternStub'.
@@ -185,12 +188,11 @@ forall_ :: Variable Meta -> MetaPatternStub -> MetaPatternStub
 forall_ variable1 =
     unaryPattern
         (\sortS pattern1 ->
-            ForallPattern Forall
-                { forallSort     = sortS
-                , forallVariable = variable1
-                , forallChild    = pattern1
-                }
-        )
+             ForallPattern Forall
+                 { forallSort = sortS
+                 , forallVariable = variable1
+                 , forallChild = pattern1
+                 })
 
 -- |Builds a 'PatternStub' representing 'Or' given 'PatternStub's for its
 -- operands.
@@ -198,12 +200,11 @@ or_ :: MetaPatternStub -> MetaPatternStub -> MetaPatternStub
 or_ =
     binaryPattern
         (\commonSort firstPattern secondPattern ->
-            OrPattern Or
-                { orSort   = commonSort
-                , orFirst  = firstPattern
-                , orSecond = secondPattern
-                }
-        )
+             OrPattern Or
+                 { orSort = commonSort
+                 , orFirst = firstPattern
+                 , orSecond = secondPattern
+                 })
 
 -- |Builds a 'PatternStub' representing 'And' given 'PatternStub's for its
 -- operands.
@@ -211,12 +212,11 @@ and_ :: MetaPatternStub -> MetaPatternStub -> MetaPatternStub
 and_ =
     binaryPattern
         (\commonSort firstPattern secondPattern ->
-            AndPattern And
-                { andSort   = commonSort
-                , andFirst  = firstPattern
-                , andSecond = secondPattern
-                }
-        )
+             AndPattern And
+                 { andSort = commonSort
+                 , andFirst = firstPattern
+                 , andSecond = secondPattern
+                 })
 
 -- |Builds a 'PatternStub' representing 'Iff' given 'PatternStub's for its
 -- operands.
@@ -224,12 +224,11 @@ iff_ :: MetaPatternStub -> MetaPatternStub -> MetaPatternStub
 iff_ =
     binaryPattern
         (\commonSort firstPattern secondPattern ->
-            IffPattern Iff
-                { iffSort   = commonSort
-                , iffFirst  = firstPattern
-                , iffSecond = secondPattern
-                }
-        )
+             IffPattern Iff
+                 { iffSort = commonSort
+                 , iffFirst = firstPattern
+                 , iffSecond = secondPattern
+                 })
 
 -- |Builds a 'PatternStub' representing 'Implies' given 'PatternStub's for
 -- its operands.
@@ -237,12 +236,11 @@ implies_ :: MetaPatternStub -> MetaPatternStub -> MetaPatternStub
 implies_ =
     binaryPattern
         (\commonSort firstPattern secondPattern ->
-            ImpliesPattern Implies
-                { impliesSort   = commonSort
-                , impliesFirst  = firstPattern
-                , impliesSecond = secondPattern
-                }
-        )
+             ImpliesPattern Implies
+                 { impliesSort = commonSort
+                 , impliesFirst = firstPattern
+                 , impliesSecond = secondPattern
+                 })
 
 -- |Builds a 'PatternStub' representing 'Not' given a 'PatternStub' for
 -- its operand.
@@ -250,8 +248,7 @@ not_ :: MetaPatternStub -> MetaPatternStub
 not_ =
     unaryPattern
         (\sortS pattern1 ->
-            NotPattern Not
-                { notSort   = sortS
-                , notChild  = pattern1
-                }
-        )
+             NotPattern Not
+                 { notSort = sortS
+                 , notChild = pattern1
+                 })

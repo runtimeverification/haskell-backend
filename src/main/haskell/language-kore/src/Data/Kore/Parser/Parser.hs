@@ -28,16 +28,17 @@ main = do
 @
 
 -}
-module Data.Kore.Parser.Parser ( fromKore
-                               , koreParser
-                               ) where
+module Data.Kore.Parser.Parser
+    ( fromKore
+    , koreParser
+    ) where
 
 import           Data.Kore.AST.Kore           (KoreDefinition)
 import           Data.Kore.Parser.Lexeme      (skipWhitespace)
 import           Data.Kore.Parser.ParserImpl  (koreDefinitionParser)
 import           Data.Kore.Parser.ParserUtils
 
-import           Text.Parsec.String           (Parser)
+import           Text.Parsec.String (Parser)
 
 {-|'koreParser' is a parser for Kore.
 

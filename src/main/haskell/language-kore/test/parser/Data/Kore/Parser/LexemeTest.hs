@@ -1,6 +1,8 @@
-module Data.Kore.Parser.LexemeTest (koreLexemeTests) where
+module Data.Kore.Parser.LexemeTest
+    ( koreLexemeTests
+    ) where
 
-import           Test.Tasty                       (TestTree, testGroup)
+import           Test.Tasty (TestTree, testGroup)
 
 import           Data.Kore.AST.Common
 import           Data.Kore.Parser.Lexeme
@@ -29,33 +31,41 @@ koreLexemeTests =
 
 colonParserTests :: [TestTree]
 colonParserTests =
-    parseSkipTree colonParser
-        [ Skip [":", ": ", ":/**/"]
-        , FailureWithoutMessage ["", " :", " ", ","]
-        ]
+    parseSkipTree
+        colonParser
+        [Skip [":", ": ", ":/**/"], FailureWithoutMessage ["", " :", " ", ","]]
 
 commaParserTests :: [TestTree]
 commaParserTests =
-    parseSkipTree commaParser
-        [ Skip [",", ", ", ",/**/"]
-        , FailureWithoutMessage ["", " ,", " ", ":"]
-        ]
+    parseSkipTree
+        commaParser
+        [Skip [",", ", ", ",/**/"], FailureWithoutMessage ["", " ,", " ", ":"]]
 
 curlyPairParserTests :: [TestTree]
 curlyPairParserTests =
-    parseTree (curlyPairParser (idParser Object) moduleNameParser)
+    parseTree
+        (curlyPairParser (idParser Object) moduleNameParser)
         [ success "{a,B}" (Id "a", ModuleName "B")
         , success "{ a , B } " (Id "a", ModuleName "B")
         , success "{/**/a/**/,/**/B/**/}/**/" (Id "a", ModuleName "B")
         , success "{/*/**/a,/**/B/**/}/**/" (Id "a", ModuleName "B")
         , FailureWithoutMessage
-            [ "", " {a,B}", "{a}", "{B}", "{a,}", "{,B}", "{a{},b}"
-            , "{a,B,c}", "(a,B)"]
+              [ ""
+              , " {a,B}"
+              , "{a}"
+              , "{B}"
+              , "{a,}"
+              , "{,B}"
+              , "{a{},b}"
+              , "{a,B,c}"
+              , "(a,B)"
+              ]
         ]
 
 idParserTests :: [TestTree]
 idParserTests =
-    parseTree (idParser Object)
+    parseTree
+        (idParser Object)
         [ success "A" (Id "A")
         , success "a" (Id "a")
         , success "abc" (Id "abc")
@@ -65,29 +75,47 @@ idParserTests =
         , success "a " (Id "a")
         , success "a/**/ " (Id "a")
         , Failure FailureTest
-            { failureInput = "["
-            , failureExpected =
-                "\"<test-string>\" (line 1, column 1):\n"
-                ++ "genericIdRawParser: Invalid first character '['."
-            }
+              { failureInput = "["
+              , failureExpected =
+                    "\"<test-string>\" (line 1, column 1):\n"
+                    ++ "genericIdRawParser: Invalid first character '['."
+              }
         , Failure FailureTest
-            { failureInput = "module"
-            , failureExpected =
-                "\"<test-string>\" (line 1, column 7):\n"
-                ++ "unexpected end of input\n"
-                ++ "Identifiers should not be keywords: 'module'."
-            }
+              { failureInput = "module"
+              , failureExpected =
+                    "\"<test-string>\" (line 1, column 7):\n"
+                    ++ "unexpected end of input\n"
+                    ++ "Identifiers should not be keywords: 'module'."
+              }
         , FailureWithoutMessage
-            [   "",   "'",   "'a",   "2",   "2a", "`", "`a"
-            ,  "#",  "#'",  "#'a",  "#2",  "#2a"
-            , "#`", "#`'", "#`'a", "#`2", "#`2a"
-            , "a#", "#a"
-            , ",", " a"]
+              [ ""
+              , "'"
+              , "'a"
+              , "2"
+              , "2a"
+              , "`"
+              , "`a"
+              , "#"
+              , "#'"
+              , "#'a"
+              , "#2"
+              , "#2a"
+              , "#`"
+              , "#`'"
+              , "#`'a"
+              , "#`2"
+              , "#`2a"
+              , "a#"
+              , "#a"
+              , ","
+              , " a"
+              ]
         ]
 
 metaIdParserTests :: [TestTree]
 metaIdParserTests =
-    parseTree (idParser Meta)
+    parseTree
+        (idParser Meta)
         [ success "#a" (Id "#a")
         , success "#`a" (Id "#`a")
         , success "#abc" (Id "#abc")
@@ -108,51 +136,70 @@ metaIdParserTests =
         , success "#\\top" (Id "#\\top")
         , success "#\\bottom" (Id "#\\bottom")
         , FailureWithoutMessage
-            [   "",   "'",   "'a",   "2",   "2a", "`", "`a"
-            ,  "#",  "#'",  "#'a",  "#2",  "#2a"
-            , "#`", "#`'", "#`'a", "#`2", "#`2a"
-            , "a#", "#\\something"
-            , ",", " a", "a"]
+              [ ""
+              , "'"
+              , "'a"
+              , "2"
+              , "2a"
+              , "`"
+              , "`a"
+              , "#"
+              , "#'"
+              , "#'a"
+              , "#2"
+              , "#2a"
+              , "#`"
+              , "#`'"
+              , "#`'a"
+              , "#`2"
+              , "#`2a"
+              , "a#"
+              , "#\\something"
+              , ","
+              , " a"
+              , "a"
+              ]
         ]
 
 inCurlyBracesParserTests :: [TestTree]
 inCurlyBracesParserTests =
-    parseTree (inCurlyBracesParser (idParser Object))
+    parseTree
+        (inCurlyBracesParser (idParser Object))
         [ success "{a}" (Id "a")
         , success "{ a } " (Id "a")
         , success "{/**/a/**/}/**/" (Id "a")
-        , FailureWithoutMessage
-            [ "", "{}", " {a}", "{a,b}", "{a{}}", "a}", "{a"]
+        , FailureWithoutMessage ["", "{}", " {a}", "{a,b}", "{a{}}", "a}", "{a"]
         ]
 
 inParenthesesParserTests :: [TestTree]
 inParenthesesParserTests =
-    parseTree (inParenthesesParser (idParser Object))
+    parseTree
+        (inParenthesesParser (idParser Object))
         [ success "(a)" (Id "a")
         , success "( a ) " (Id "a")
         , success "(/**/a/**/)/**/" (Id "a")
-        , FailureWithoutMessage
-            [ "", "()", " (a)", "(a,b)", "(a())", "a)", "(a"]
+        , FailureWithoutMessage ["", "()", " (a)", "(a,b)", "(a())", "a)", "(a"]
         ]
 
 inSquareBracketsParserTests :: [TestTree]
 inSquareBracketsParserTests =
-    parseTree (inSquareBracketsParser (idParser Object))
+    parseTree
+        (inSquareBracketsParser (idParser Object))
         [ success "[a]" (Id "a")
         , success "[ a ] " (Id "a")
         , success "[/**/a/**/]/**/" (Id "a")
-        , FailureWithoutMessage
-            [ "", "[]", " [a]", "[a,b]", "[a[]]", "a]", "[a"]
+        , FailureWithoutMessage ["", "[]", " [a]", "[a,b]", "[a[]]", "a]", "[a"]
         ]
 
 keywordBasedParsersTests :: [TestTree]
 keywordBasedParsersTests =
     parseTree
         (keywordBasedParsers
-            [ ("abc", inCurlyBracesParser (idParser Object))
-            , ("de", inParenthesesParser (idParser Object))
-            , ("dd", idParser Object)
-            , ("df", inSquareBracketsParser (idParser Object))])
+             [ ("abc", inCurlyBracesParser (idParser Object))
+             , ("de", inParenthesesParser (idParser Object))
+             , ("dd", idParser Object)
+             , ("df", inSquareBracketsParser (idParser Object))
+             ])
         [ success "abc{a}" (Id "a")
         , success "de(a)" (Id "a")
         , success "df[a]" (Id "a")
@@ -160,79 +207,119 @@ keywordBasedParsersTests =
         , success "dd a" (Id "a")
         , success "df/**/ [/**/ a/**/ ]/**/ " (Id "a")
         , Failure FailureTest
-            { failureInput = "dg(a)"
-            , failureExpected =
-                "\"<test-string>\" (line 1, column 2):\n"
-                ++ "Keyword Based Parsers - unexpected character."
-            }
+              { failureInput = "dg(a)"
+              , failureExpected =
+                    "\"<test-string>\" (line 1, column 2):\n"
+                    ++ "Keyword Based Parsers - unexpected character."
+              }
         , Failure FailureTest
-            { failureInput = "dda"
-            , failureExpected =
-                "\"<test-string>\" (line 1, column 3):\n"
-                ++ "Expecting keyword to end."
-            }
+              { failureInput = "dda"
+              , failureExpected =
+                    "\"<test-string>\" (line 1, column 3):\n"
+                    ++ "Expecting keyword to end."
+              }
         , FailureWithoutMessage
-            [ "abc(a)", "abc[a]", "de{a}", "de[a]", "df{a}", "dfa)"
-            , "abc", "de", "df"
-            , "", " de(a)", "(a)"
-            ]
+              [ "abc(a)"
+              , "abc[a]"
+              , "de{a}"
+              , "de[a]"
+              , "df{a}"
+              , "dfa)"
+              , "abc"
+              , "de"
+              , "df"
+              , ""
+              , " de(a)"
+              , "(a)"
+              ]
         ]
 
 mlLexemeParserTests :: [TestTree]
 mlLexemeParserTests =
-    parseSkipTree (mlLexemeParser "hello")
-    [ Skip ["hello", "hello ", "hello/**/ "]
-    , FailureWithoutMessage ["", "Hello", " hello"]
-    ]
+    parseSkipTree
+        (mlLexemeParser "hello")
+        [ Skip ["hello", "hello ", "hello/**/ "]
+        , FailureWithoutMessage ["", "Hello", " hello"]
+        ]
 
 moduleNameParserTests :: [TestTree]
 moduleNameParserTests =
-    parseTree moduleNameParser
+    parseTree
+        moduleNameParser
         [ success "A" (ModuleName "A")
         , success "A-" (ModuleName "A-")
         , success "A2" (ModuleName "A2")
         , success "a'-2" (ModuleName "a'-2")
         , success "A " (ModuleName "A")
         , success "A/**/ " (ModuleName "A")
-        , FailureWithoutMessage
-            [  "",  "-",  "-A",  "2",  "2A"
-            , "#", "#A", " A", ","]
+        , FailureWithoutMessage ["", "-", "-A", "2", "2A", "#", "#A", " A", ","]
         ]
 
 parenPairParserTests :: [TestTree]
 parenPairParserTests =
-    parseTree (parenPairParser (idParser Object) moduleNameParser)
+    parseTree
+        (parenPairParser (idParser Object) moduleNameParser)
         [ success "(a,B)" (Id "a", ModuleName "B")
         , success "( a , B ) " (Id "a", ModuleName "B")
         , success "(/**/a/**/,/**/B/**/)/**/" (Id "a", ModuleName "B")
         , FailureWithoutMessage
-            [ "", " (a,B)", "(a)", "(B)", "(a,)", "(,B)", "(a(),b)"
-            , "(a,B,c)", "{a,B}"]
+              [ ""
+              , " (a,B)"
+              , "(a)"
+              , "(B)"
+              , "(a,)"
+              , "(,B)"
+              , "(a(),b)"
+              , "(a,B,c)"
+              , "{a,B}"
+              ]
         ]
 
 skipWhitespaceTests :: [TestTree]
 skipWhitespaceTests =
-    parseSkipTree skipWhitespace
+    parseSkipTree
+        skipWhitespace
         [ Skip
-            [ "", " ", "\n", "\r", "\t", "/**/", "//\n"
-            , "/*\n*/", "/*//*/", "/****/", "/* * / */", "/*/*/"
-            , "//hello\n", "//hello"
-            , "\t//hello\n /* world\n //*/  //!\n"]
+              [ ""
+              , " "
+              , "\n"
+              , "\r"
+              , "\t"
+              , "/**/"
+              , "//\n"
+              , "/*\n*/"
+              , "/*//*/"
+              , "/****/"
+              , "/* * / */"
+              , "/*/*/"
+              , "//hello\n"
+              , "//hello"
+              , "\t//hello\n /* world\n //*/  //!\n"
+              ]
         , Failure FailureTest
-            { failureInput = "/*/"
-            , failureExpected =
-                "\"<test-string>\" (line 1, column 4):\n"
-                ++ "unexpected end of input\n"
-                ++ "Unfinished comment."
-            }
+              { failureInput = "/*/"
+              , failureExpected =
+                    "\"<test-string>\" (line 1, column 4):\n"
+                    ++ "unexpected end of input\n" ++ "Unfinished comment."
+              }
         , FailureWithoutMessage
-            [ "a", "/*", "/**", "/***", "/*hello", "/*//", "*/"
-            , "/ /", "/**//", "//\na"]
+              [ "a"
+              , "/*"
+              , "/**"
+              , "/***"
+              , "/*hello"
+              , "/*//"
+              , "*/"
+              , "/ /"
+              , "/**//"
+              , "//\na"
+              ]
         ]
 
 stringLiteralParserTests :: [TestTree]
 stringLiteralParserTests =
-    parseTree stringLiteralParser
+    parseTree
+        stringLiteralParser
         [ success "\"\"" (StringLiteral "")
         , success "\"a\"" (StringLiteral "a")
         , success "\"\\'\"" (StringLiteral "'")
@@ -259,26 +346,32 @@ stringLiteralParserTests =
         , success "\"\\U000120FFa\"" (StringLiteral ("\73983" ++ "a"))
         , success "\"\\U000120ff\"" (StringLiteral "\73983")
         , Failure FailureTest
-            { failureInput = "\"\\UFFFFFFFF\""
-            , failureExpected =
-                "\"<test-string>\" (line 1, column 13):\n"
-                ++ "Character code 4294967295 outside of the representable "
-                ++ "codes."
-            }
+              { failureInput = "\"\\UFFFFFFFF\""
+              , failureExpected =
+                    "\"<test-string>\" (line 1, column 13):\n"
+                    ++ "Character code 4294967295 outside of the representable "
+                    ++ "codes."
+              }
         , FailureWithoutMessage
-            [ "", "'a'", "\"\\z\"", "\"\\xzf\"", "\"\\u123\"", "\"\\U1234567\""
+              [ ""
+              , "'a'"
+              , "\"\\z\""
+              , "\"\\xzf\""
+              , "\"\\u123\""
+              , "\"\\U1234567\""
             {-  TODO(virgil): It's not clear whether the strings below should
                 fail or not. A C hex sequence can be longer than 2 if it fits
                 into the char size being considered. Not sure if octals above
                 \377 are allowed or not.
             , "\"\\400\"", "\"\\xfff\""
             -}
-            ]
+              ]
         ]
 
 charLiteralParserTests :: [TestTree]
 charLiteralParserTests =
-    parseTree charLiteralParser
+    parseTree
+        charLiteralParser
         [ success "'a'" (CharLiteral 'a')
         , success "'\\''" (CharLiteral '\'')
         , success "'\\\"'" (CharLiteral '\"')
@@ -300,27 +393,34 @@ charLiteralParserTests =
         , success "'\\U000120FF'" (CharLiteral '\73983')
         , success "'\\U000120ff'" (CharLiteral '\73983')
         , Failure FailureTest
-            { failureInput = "'\\UFFFFFFFF'"
-            , failureExpected =
-                "\"<test-string>\" (line 1, column 13):\n"
-                ++ "Character code 4294967295 outside of the representable "
-                ++ "codes."
-            }
+              { failureInput = "'\\UFFFFFFFF'"
+              , failureExpected =
+                    "\"<test-string>\" (line 1, column 13):\n"
+                    ++ "Character code 4294967295 outside of the representable "
+                    ++ "codes."
+              }
         , Failure FailureTest
-            { failureInput = "''"
-            , failureExpected =
-                "\"<test-string>\" (line 1, column 3):\n"
-                ++ "'' is not a valid character literal."
-            }
+              { failureInput = "''"
+              , failureExpected =
+                    "\"<test-string>\" (line 1, column 3):\n"
+                    ++ "'' is not a valid character literal."
+              }
         , FailureWithoutMessage
-            [ "", "'\\z'", "'\\xzf'", "'\\u123'", "'\\U1234567'"
-            , "'\\U000120FFa'", "'\\xFr'", "'\\77a'", "'\\u1ABCa'"
-            , "'ab'"
+              [ ""
+              , "'\\z'"
+              , "'\\xzf'"
+              , "'\\u123'"
+              , "'\\U1234567'"
+              , "'\\U000120FFa'"
+              , "'\\xFr'"
+              , "'\\77a'"
+              , "'\\u1ABCa'"
+              , "'ab'"
             {-  TODO(virgil): It's not clear whether the strings below should
                 fail or not. A C hex sequence can be longer than 2 if it fits
                 into the char size being considered. Not sure if octals above
                 \377 are allowed or not.
             , "'\\400'", "'\\xfff'"
             -}
-            ]
+              ]
         ]
