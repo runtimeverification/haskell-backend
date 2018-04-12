@@ -593,48 +593,35 @@ be members only of 'Pattern Meta'.
 -}
 data Pattern level variable child where
     AndPattern
-        :: MetaOrObject level
-        => !(And level child) -> Pattern level variable child
+        :: !(And level child) -> Pattern level variable child
     ApplicationPattern
-        :: MetaOrObject level
-        => !(Application level child) -> Pattern level variable child
+        :: !(Application level child) -> Pattern level variable child
     BottomPattern
-        :: MetaOrObject level
-        => !(Bottom level child) -> Pattern level variable child
+        :: !(Bottom level child) -> Pattern level variable child
     CeilPattern
-        :: MetaOrObject level
-        => !(Ceil level child) -> Pattern level variable child
+        :: !(Ceil level child) -> Pattern level variable child
     DomainValuePattern
         :: !(DomainValue Object child) -> Pattern Object variable child
     EqualsPattern
-        :: MetaOrObject level
-        => !(Equals level child) -> Pattern level variable child
+        :: !(Equals level child) -> Pattern level variable child
     ExistsPattern
-        :: MetaOrObject level
-        => !(Exists level variable child) -> Pattern level variable child
+        :: !(Exists level variable child) -> Pattern level variable child
     FloorPattern
-        :: MetaOrObject level
-        => !(Floor level child) -> Pattern level variable child
+        :: !(Floor level child) -> Pattern level variable child
     ForallPattern
-        :: MetaOrObject level
-        => !(Forall level variable child) -> Pattern level variable child
+        :: !(Forall level variable child) -> Pattern level variable child
     IffPattern
-        :: MetaOrObject level
-        => !(Iff level child) -> Pattern level variable child
+        :: !(Iff level child) -> Pattern level variable child
     ImpliesPattern
-        :: MetaOrObject level
-        => !(Implies level child) -> Pattern level variable child
+        :: !(Implies level child) -> Pattern level variable child
     InPattern
-        :: MetaOrObject level
-        => !(In level child) -> Pattern level variable child
+        :: !(In level child) -> Pattern level variable child
     NextPattern
         :: !(Next Object child) -> Pattern Object variable child
     NotPattern
-        :: MetaOrObject level
-        => !(Not level child) -> Pattern level variable child
+        :: !(Not level child) -> Pattern level variable child
     OrPattern
-        :: MetaOrObject level
-        => !(Or level child) -> Pattern level variable child
+        :: !(Or level child) -> Pattern level variable child
     RewritesPattern
         :: !(Rewrites Object child) -> Pattern Object variable child
     StringLiteralPattern
@@ -642,11 +629,9 @@ data Pattern level variable child where
     CharLiteralPattern
         :: !CharLiteral -> Pattern Meta variable child
     TopPattern
-        :: MetaOrObject level
-        => !(Top level child) -> Pattern level variable child
+        :: !(Top level child) -> Pattern level variable child
     VariablePattern
-        :: MetaOrObject level
-        => !(variable level) -> Pattern level variable child
+        :: !(variable level) -> Pattern level variable child
 
 deriving instance
     ( Eq child

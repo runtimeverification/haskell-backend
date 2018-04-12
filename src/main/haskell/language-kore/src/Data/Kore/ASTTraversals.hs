@@ -31,13 +31,15 @@ new result.
 -}
 koreTopDownVisitorM
     :: (Monad m)
-    => (forall level . Pattern level variable (KorePattern variable)
+    => (forall level . MetaOrObject level
+        => Pattern level variable (KorePattern variable)
         -> m (Either result ( Pattern level variable (KorePattern variable)
                             , m result -> m result
                             )
              )
        )
-    -> (forall level . Pattern level variable result -> m result
+    -> (forall level . MetaOrObject level
+        => Pattern level variable result -> m result
        )
     -> (KorePattern variable -> m result)
 koreTopDownVisitorM preprocess postprocess =
@@ -48,7 +50,7 @@ koreTopDownVisitorM preprocess postprocess =
     fixPreprocess (UnifiedPattern (UnifiedMeta p))   = preproc p
     fixPreprocess (UnifiedPattern (UnifiedObject p)) = preproc p
     preproc p =
-        (fmap (first asUnifiedPattern)) <$> (preprocess (unRotate31 p))
+        fmap (first asUnifiedPattern) <$> preprocess (unRotate31 p)
     first f (a, b) = (f a, b)
 
 {-|'bottomUpVisitorM' is the specialization of 'topDownVisitorM' where the
@@ -61,16 +63,19 @@ transformed into results and aggregates these results into a new result.
 -}
 koreBottomUpVisitorM
     :: (Monad m)
-    => (forall level . Pattern level variable result -> m result)
+    => (forall level . MetaOrObject level
+        => Pattern level variable result -> m result)
     -> (KorePattern variable -> m result)
 koreBottomUpVisitorM reduce = cataM (applyUnifiedPattern reduce)
 
 -- |'koreTopDownVisitor' is the non-monadic version of 'koreTopDownVisitorM'.
 koreTopDownVisitor
-    :: (forall level . Pattern level variable (KorePattern variable)
+    :: (forall level . MetaOrObject level
+        => Pattern level variable (KorePattern variable)
         -> Either result (Pattern level variable (KorePattern variable))
        )
-    -> (forall level . Pattern level variable result -> result)
+    -> (forall level . MetaOrObject level
+        => Pattern level variable result -> result)
     -> (KorePattern variable -> result)
 koreTopDownVisitor preprocess postprocess =
     fixTopDownVisitor fixPreprocess fixPostprocess
@@ -82,6 +87,7 @@ koreTopDownVisitor preprocess postprocess =
 
 -- |'bottomUpVisitor' is the non-monadic version of 'bottomUpVisitorM'.
 koreBottomUpVisitor
-    :: (forall level . Pattern level variable result -> result)
+    :: (forall level . MetaOrObject level
+        => Pattern level variable result -> result)
     -> (KorePattern variable -> result)
 koreBottomUpVisitor reduce = cata (applyUnifiedPattern reduce)

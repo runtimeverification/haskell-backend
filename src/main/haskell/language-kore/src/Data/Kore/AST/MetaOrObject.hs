@@ -59,7 +59,7 @@ deriving instance (Ord (sort Object), Ord (sort Meta)) => Ord (Unified sort)
 deriving instance (Show (sort Object), Show (sort Meta)) => Show (Unified sort)
 
 applyUnified
-    :: (forall level . thing level -> b)
+    :: (forall level . MetaOrObject level => thing level -> b)
     -> (Unified thing -> b)
 applyUnified f (UnifiedObject o) = f o
 applyUnified f (UnifiedMeta o)   = f o

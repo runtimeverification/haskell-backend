@@ -33,7 +33,11 @@ provides 'freeVariables' for extracting the set of free variables of a term
 class TermWithVariablesClass term var | term -> var where
     freeVariables :: term -> Set.Set var
 
-instance TermWithVariablesClass CommonKorePattern (Unified Variable) where
+instance
+    ( Ord (variable Meta)
+    , Ord (variable Object)
+    ) => TermWithVariablesClass (KorePattern variable) (Unified variable)
+  where
     freeVariables = koreBottomUpVisitor freeVarsVisitor
       where
         freeVarsVisitor (VariablePattern v) = Set.singleton (asUnified v)

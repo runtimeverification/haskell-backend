@@ -22,7 +22,6 @@ import           Data.Kore.AST.MLPatterns
 import           Data.Kore.IndentingPrinter (PrinterOutput, StringPrinter,
                                              betweenLines, printToString,
                                              withIndent, write)
-import           Data.Kore.MetaML.AST
 import           Data.Kore.Parser.CString   (escapeCString)
 
 import           Data.Fix

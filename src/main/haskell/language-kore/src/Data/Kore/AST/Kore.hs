@@ -64,7 +64,7 @@ asUnifiedPattern
 asUnifiedPattern = UnifiedPattern . asUnified . Rotate31
 
 applyUnifiedPattern
-    :: (forall level . Pattern level variable a -> b)
+    :: (forall level . MetaOrObject level => Pattern level variable a -> b)
     -> (UnifiedPattern variable a -> b)
 applyUnifiedPattern f =
     applyUnified (f . unRotate31) . getUnifiedPattern
