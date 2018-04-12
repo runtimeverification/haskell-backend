@@ -93,6 +93,8 @@
   % Package for graphics
   \usepackage{graphicx}
   
+  \usepackage{xspace}
+  
   % Define ceiling and flooring symbols:
   \usepackage{mathtools}
   \DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
@@ -262,6 +264,13 @@
   %% We shouldn't need the follows.  
   \newcommand{\Kconcat}{\texttt{\sharpsymbol concat}}
   
+  \newcommand{\Kconstructor}{\texttt{\sharpsymbol constructor}}
+  \newcommand{\KconstructorP}[1]{\parametric{\Kconstructor}{#1}}
+  \newcommand{\Kinjective}{\texttt{\sharpsymbol injective}}
+  \newcommand{\KinjectiveP}[1]{\parametric{\Kinjective}{#1}}
+  
+  \newcommand{\KprovableP}[1]{\parametric{\Kdeduce}{#1}}
+  
   % Sec 3.3 Sorts and Symbols
   \newcommand{\KSort}{\texttt{\sharpsymbol Sort}}
   \newcommand{\Ksort}{\texttt{\sharpsymbol sort}}
@@ -304,7 +313,7 @@
   \newcommand{\KdeleteKSymbolList}{\texttt{\sharpsymbol deleteSymbolList}}
   \newcommand{\KnilKCharList}{\texttt{\sharpsymbol nilCharList}}
   \newcommand{\KconsKCharList}{\texttt{\sharpsymbol consCharList}}
-  \newcommand{\KVariableList}{\texttt{\sharpsymbol VariableList}}
+  \newcommand{\KVariableList}{\texttt{\sharpsymbol VariableList}\xspace}
   \newcommand{\KnilKVariableList}{\texttt{\sharpsymbol nilVariableList}}
   \newcommand{\KconsKVariableList}{\texttt{\sharpsymbol consVariableList}}
   \newcommand{\KinKVariableList}{\texttt{\sharpsymbol inVariableList}}
@@ -334,6 +343,9 @@
   \newcommand{\Kceil}{\texttt{\sharpsymbol \slashsymbol  ceil}}
   \newcommand{\Knext}{\texttt{\sharpsymbol \slashsymbol next}}
   \newcommand{\Krewrites}{\texttt{\sharpsymbol \slashsymbol rewrites}}
+  
+  \newcommand{\KVariableListAsKPatternList}
+    {\texttt{\sharpsymbol variableListAsPatternList}\xspace}
   
   \newcommand{\Kdv}{\texttt{\sharpsymbol \slashsymbol dv}}
   
@@ -3282,6 +3294,7 @@ The last two shorthands are defined in Notation~\ref{notation:lists}.
     meta-theory symbols.
 \end{remark}
 
+
 \subsection{Finite Lists}
 \label{sec:finite-lists}
 
@@ -3438,6 +3451,17 @@ It has axiom
 $$
 \KvariablePattern(x,s) = \KVariableAsKPattern(\Kvariable(x,s))
 $$
+It is useful to have an injective function from
+\KVariableList to \KPatternList, too:
+$$
+\KVariableListAsKPatternList \colon \KVariableList \to \KPatternList
+$$
+defined as
+\begin{align*}
+&\KVariableListAsKPatternList(\KnilKVariableList) = \KnilKPatternList \\
+&\KVariableListAsKPatternList(v, L) =
+ \KVariableAsKPattern(v), \KVariableListAsKPatternList(L)
+\end{align*}
 
 
 
@@ -4226,6 +4250,62 @@ $A \vdash \varphi$ if $\varphi \in A$.
 	provable 
 	in the current theory}
 \end{equation*}
+
+\subsection{More about Symbols}
+
+Symbols are important in matching logic.
+In practice, symbols may have various properties
+such as injectivity, commutative, associations, and more.
+In this section, we provide various predicates about symbols.
+These predicates will ease our specification of a matching logic theory.
+In particular, users can use these predicates to define their theories
+in the Kore language (see Section~\ref{sec:kore}).
+
+The predicate symbol
+$$
+\KinjectiveP{\shs} \colon \KSymbol \to \shs
+$$
+tells if a symbol $\sigma$ is an injective symbol.
+It has the axiom
+$$
+\KinjectiveP{\shs}(\sigma) \to
+\KprovableP{\shs}( 
+\overline{
+\sigma(L, \varphi, R) \wedge \sigma(L, \psi, R)
+\to
+\sigma(L, (\varphi \wedge \psi), R)
+}
+ )
+$$
+
+The predicate symbol
+$$
+\KconstructorP{\shs} \colon \KSymbol \to \shs
+$$
+tells if a symbol $\sigma$ is a constructor symbol of the sort $s$.
+If $\sigma$ is a constructor symbol,
+it is injective:
+$$
+\KconstructorP{\shs}(\sigma) \to \KinjectiveP{\shs}(\sigma) 
+$$
+If $\sigma_1$ and $\sigma_2$ are different constructors,
+they construct different things:
+\begin{align*}
+&
+\KconstructorP{\shs}(\sigma_1) \wedge
+\KconstructorP{\shs}(\sigma_2) \wedge
+\sigma_1 \neq \sigma_2 \to 
+\\
+&
+\KprovableP{\shs}(
+\overline{\neg (
+  \sigma_1(\KVariableListAsKPatternList(L_1)) \wedge 
+  \sigma_2(\KVariableListAsKPatternList(L_2)))}
+)
+\end{align*}
+where $L_1$ and $L_2$ are variables of sort $\KVariableList$.
+Recall that \KVariableListAsKPatternList takes a list of \KVariableList
+and map it to \KPatternList, defined in Section~\ref{sec:ML-patterns}.
 
 \subsection{A Summary of the Meta-Theory}
 \label{sec:K-summary}
