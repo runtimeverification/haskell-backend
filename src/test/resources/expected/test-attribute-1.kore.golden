@@ -5,14 +5,14 @@ Definition
             { moduleName = ModuleName "TEST-ATTRIBUTE-1"
             , moduleSentences =
                 [ ObjectSentence (SentenceSortSentence SentenceSort
-                    { sentenceSortName = Id  "Nat" :: Id Object
+                    { sentenceSortName = Id "Nat" :: Id Object
                     , sentenceSortParameters = []
                     , sentenceSortAttributes =
                         Attributes 
                             [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id  "#hook" :: Id Meta
+                                        { symbolOrAliasConstructor = Id "#hook" :: Id Meta
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =

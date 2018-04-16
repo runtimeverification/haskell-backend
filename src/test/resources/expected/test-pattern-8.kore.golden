@@ -6,23 +6,23 @@ Definition
             , moduleSentences =
                 [ MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ UnifiedObject (SortVariable (Id  "S" :: Id Object))
+                        [ UnifiedObject (SortVariable (Id "S" :: Id Object))
                         ]
                     , sentenceAxiomPattern =
                         Fix (UnifiedPattern (UnifiedObject (Rotate31 (ExistsPattern Exists
                             { existsSort =
-                                SortVariableSort (SortVariable (Id  "S" :: Id Object))
+                                SortVariableSort (SortVariable (Id "S" :: Id Object))
                             , existsVariable =
                                 Variable
-                                    { variableName = Id  "X" :: Id Object
+                                    { variableName = Id "X" :: Id Object
                                     , variableSort =
-                                        SortVariableSort (SortVariable (Id  "S" :: Id Object))
+                                        SortVariableSort (SortVariable (Id "S" :: Id Object))
                                     }
                             , existsChild =
                                 Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
-                                    { variableName = Id  "X" :: Id Object
+                                    { variableName = Id "X" :: Id Object
                                     , variableSort =
-                                        SortVariableSort (SortVariable (Id  "S" :: Id Object))
+                                        SortVariableSort (SortVariable (Id "S" :: Id Object))
                                     }))))
                             }))))
                     , sentenceAxiomAttributes = Attributes []

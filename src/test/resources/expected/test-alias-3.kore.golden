@@ -5,29 +5,29 @@ Definition
             { moduleName = ModuleName "TEST-ALIAS-3"
             , moduleSentences =
                 [ ObjectSentence (SentenceSortSentence SentenceSort
-                    { sentenceSortName = Id  "S" :: Id Object
+                    { sentenceSortName = Id "S" :: Id Object
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias =
                         Alias
-                            { aliasConstructor = Id  "f" :: Id Object
+                            { aliasConstructor = Id "f" :: Id Object
                             , aliasParams = []
                             }
                     , sentenceAliasSorts =
                         [ SortActualSort SortActual
-                            { sortActualName = Id  "S" :: Id Object
+                            { sortActualName = Id "S" :: Id Object
                             , sortActualSorts = []
                             }
                         , SortActualSort SortActual
-                            { sortActualName = Id  "S" :: Id Object
+                            { sortActualName = Id "S" :: Id Object
                             , sortActualSorts = []
                             }
                         ]
                     , sentenceAliasReturnSort =
                         SortActualSort SortActual
-                            { sortActualName = Id  "S" :: Id Object
+                            { sortActualName = Id "S" :: Id Object
                             , sortActualSorts = []
                             }
                     , sentenceAliasAttributes = Attributes []

@@ -132,7 +132,7 @@ instance MetaOrObject level => PrettyPrint (Id level) where
             flags
             (do
                 write "Id "
-                write " \""
+                write "\""
                 write (getId x)
                 write "\""
                 write " :: Id "

@@ -5,20 +5,20 @@ Definition
             { moduleName = ModuleName "TEST-SYMBOL-1"
             , moduleSentences =
                 [ ObjectSentence (SentenceSortSentence SentenceSort
-                    { sentenceSortName = Id  "S" :: Id Object
+                    { sentenceSortName = Id "S" :: Id Object
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
-                            { symbolConstructor = Id  "f" :: Id Object
+                            { symbolConstructor = Id "f" :: Id Object
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts = []
                     , sentenceSymbolReturnSort =
                         SortActualSort SortActual
-                            { sortActualName = Id  "S" :: Id Object
+                            { sortActualName = Id "S" :: Id Object
                             , sortActualSorts = []
                             }
                     , sentenceSymbolAttributes = Attributes []

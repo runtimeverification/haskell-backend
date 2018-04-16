@@ -1,8 +1,10 @@
 {-# LANGUAGE FlexibleContexts #-}
 module Test.Tasty.HUnit.Extensions where
+import           Control.Exception (SomeException, catch, evaluate)
 import           Control.Monad
 import           Data.CallStack
-import           Test.Tasty.HUnit (assertFailure)
+import           Data.List         (isInfixOf)
+import           Test.Tasty.HUnit  (assertBool, assertFailure)
 
 assertEqualWithPrinter
     :: (Eq a, HasCallStack)
@@ -17,3 +19,28 @@ assertEqualWithPrinter printer preface expected actual =
     msg =
         (if null preface then "" else preface ++ "\n")
         ++ "expected: " ++ printer expected ++ "\n but got: " ++ printer actual
+
+assertError :: HasCallStack => (String -> IO()) -> a -> IO()
+assertError errorTest action = do
+    maybeErr <-
+        catch
+            (do
+                evaluate action
+                return Nothing
+            )
+            (\err -> return (Just (show (err :: SomeException))))
+    case maybeErr of
+        Nothing  -> assertFailure "No error during action."
+        Just err -> errorTest err
+
+assertSubstring :: HasCallStack => String -> String -> String -> IO()
+assertSubstring message first second =
+    assertBool
+        (  message
+        ++ ": '"
+        ++ first
+        ++ "' is not a substring of '"
+        ++ second
+        ++ "'"
+        )
+        (first `isInfixOf` second)

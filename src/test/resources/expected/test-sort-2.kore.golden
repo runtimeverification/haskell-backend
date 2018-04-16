@@ -5,9 +5,9 @@ Definition
             { moduleName = ModuleName "TEST-SORT-2"
             , moduleSentences =
                 [ ObjectSentence (SentenceSortSentence SentenceSort
-                    { sentenceSortName = Id  "List" :: Id Object
+                    { sentenceSortName = Id "List" :: Id Object
                     , sentenceSortParameters =
-                        [ SortVariable (Id  "S" :: Id Object)
+                        [ SortVariable (Id "S" :: Id Object)
                         ]
                     , sentenceSortAttributes = Attributes []
                     })
