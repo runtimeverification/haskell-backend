@@ -44,7 +44,7 @@ unparseUnitTests =
                             { sortActualName = Id {getId = "G"}
                             , sortActualSorts = []
                             }
-                        , inContainedChild = ObjectPattern $ VariablePattern Variable
+                        , inContainedChild = asKorePattern $ VariablePattern Variable
                             { variableName = Id {getId = "T"}
                             , variableSort = SortVariableSort SortVariable
                                 { getSortVariable = Id {getId = "C"} }

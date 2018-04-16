@@ -184,7 +184,7 @@ binderPatternSubstitutePreprocess s q
     substitutionFreeVars = substitutionTermsFreeVars (delete unifiedVar s)
     allFreeVars = substitutionFreeVars `Set.union` quantifiedVars s
     allFreeVarsIds =
-        Set.map (applyUnified getVariableHash) allFreeVars
+        Set.map (transformUnified getVariableHash) allFreeVars
     substituteBinderBodyWith newVar fs =
         return
             (Right (binderPatternConstructor q sort newVar pat, local fs))

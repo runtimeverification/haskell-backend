@@ -17,7 +17,9 @@ instance IntVariable Variable where
         var { variableName = Id (metaObjectPrefix ++ "var_" ++ show n) }
       where
         metaObjectPrefix =
-            applyMetaObjectFunction var MetaOrObjectTransformer
-                { objectTransformer = const ""
-                , metaTransformer = const "#"
-                }
+            applyMetaObjectFunction
+                MetaOrObjectTransformer
+                    { objectTransformer = const ""
+                    , metaTransformer = const "#"
+                    }
+                var

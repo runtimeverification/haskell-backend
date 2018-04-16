@@ -9,6 +9,7 @@ import           Control.Exception                    (ErrorCall (ErrorCall),
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Variables.Fresh.Class
 import           Data.Kore.Variables.Fresh.IntCounter
 
@@ -24,8 +25,8 @@ metaVariable = Variable
     , variableSort = SortVariableSort (SortVariable (Id "#s"))
     }
 
-unifiedMetaVariable :: UnifiedVariable Variable
-unifiedMetaVariable = MetaVariable metaVariable
+unifiedMetaVariable :: Unified Variable
+unifiedMetaVariable = UnifiedMeta metaVariable
 
 variablesFreshIntCounterTests :: TestTree
 variablesFreshIntCounterTests =

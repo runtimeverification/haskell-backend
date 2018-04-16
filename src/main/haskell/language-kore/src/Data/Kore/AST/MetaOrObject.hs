@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE GADTs                #-}
+{-# LANGUAGE LambdaCase           #-}
 {-# LANGUAGE Rank2Types           #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE StandaloneDeriving   #-}
@@ -44,8 +45,8 @@ data MetaOrObjectTransformer thing result = MetaOrObjectTransformer
 
 applyMetaObjectFunction
     :: forall level thing c . MetaOrObject level
-    => thing level -> MetaOrObjectTransformer thing c -> c
-applyMetaObjectFunction x trans =
+    => MetaOrObjectTransformer thing c -> thing level -> c
+applyMetaObjectFunction trans x =
     case isMetaOrObject (undefined :: level) of
         IsObject -> objectTransformer trans x
         IsMeta   -> metaTransformer trans x
@@ -59,10 +60,19 @@ deriving instance (Ord (sort Object), Ord (sort Meta)) => Ord (Unified sort)
 deriving instance (Show (sort Object), Show (sort Meta)) => Show (Unified sort)
 
 applyUnified
+    :: (thing Meta -> b)
+    -> (thing Object -> b)
+    -> (Unified thing -> b)
+applyUnified metaT objectT =
+    \case
+        UnifiedMeta x -> metaT x
+        UnifiedObject x -> objectT x
+
+transformUnified
     :: (forall level . MetaOrObject level => thing level -> b)
     -> (Unified thing -> b)
-applyUnified f (UnifiedObject o) = f o
-applyUnified f (UnifiedMeta o)   = f o
+transformUnified f (UnifiedObject o) = f o
+transformUnified f (UnifiedMeta o)   = f o
 
 mapUnified
     :: (forall level . thing1 level -> thing2 level)
@@ -79,7 +89,7 @@ sequenceUnified f (UnifiedMeta o)   = UnifiedMeta <$> f o
 
 asUnified
     :: MetaOrObject level => thing level -> Unified thing
-asUnified x = applyMetaObjectFunction x MetaOrObjectTransformer
+asUnified = applyMetaObjectFunction MetaOrObjectTransformer
     { objectTransformer = UnifiedObject
     , metaTransformer = UnifiedMeta
     }

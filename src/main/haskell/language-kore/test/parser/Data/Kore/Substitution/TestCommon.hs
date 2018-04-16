@@ -42,7 +42,7 @@ metaVariableUnifiedPattern :: CommonKorePattern
 metaVariableUnifiedPattern = MetaPattern metaVariablePattern
 
 objectTopPattern :: CommonKorePattern
-objectTopPattern = ObjectPattern $ TopPattern $ Top objectSort
+objectTopPattern = asKorePattern $ TopPattern $ Top objectSort
 
 objectBottomPattern :: CommonKorePattern
-objectBottomPattern = ObjectPattern $ BottomPattern $ Bottom objectSort
+objectBottomPattern = asKorePattern $ BottomPattern $ Bottom objectSort

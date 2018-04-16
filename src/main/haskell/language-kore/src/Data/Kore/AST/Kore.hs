@@ -63,11 +63,11 @@ asUnifiedPattern
     => Pattern level variable child -> UnifiedPattern variable child
 asUnifiedPattern = UnifiedPattern . asUnified . Rotate31
 
-applyUnifiedPattern
+transformUnifiedPattern
     :: (forall level . MetaOrObject level => Pattern level variable a -> b)
     -> (UnifiedPattern variable a -> b)
-applyUnifiedPattern f =
-    applyUnified (f . unRotate31) . getUnifiedPattern
+transformUnifiedPattern f =
+    transformUnified (f . unRotate31) . getUnifiedPattern
 
 deriving instance
     ( Eq child
@@ -86,7 +86,7 @@ instance Functor (UnifiedPattern variable) where
         . getUnifiedPattern
 instance Foldable (UnifiedPattern variable) where
     foldMap f =
-        applyUnified (foldMap f . unRotate31)
+        transformUnified (foldMap f . unRotate31)
         . getUnifiedPattern
 instance Traversable (UnifiedPattern variable) where
     sequenceA =

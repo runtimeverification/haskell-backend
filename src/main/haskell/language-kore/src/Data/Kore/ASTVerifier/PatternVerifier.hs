@@ -449,7 +449,6 @@ verifyVariableDeclaration
     variable indexedModule declaredSortVariables
   =
     applyMetaObjectFunction
-        variable
         MetaOrObjectTransformer
             { objectTransformer =
                 verifyVariableDeclarationUsing
@@ -458,6 +457,7 @@ verifyVariableDeclaration
                 verifyVariableDeclarationUsing
                     declaredSortVariables (resolveMetaSort indexedModule)
             }
+        variable
 
 verifyVariableDeclarationUsing
     :: MetaOrObject level

@@ -45,7 +45,7 @@ koreTopDownVisitorM
 koreTopDownVisitorM preprocess postprocess =
     fixTopDownVisitorM
         fixPreprocess
-        (applyUnifiedPattern postprocess)
+        (transformUnifiedPattern postprocess)
   where
     fixPreprocess (UnifiedPattern (UnifiedMeta p))   = preproc p
     fixPreprocess (UnifiedPattern (UnifiedObject p)) = preproc p
@@ -66,7 +66,7 @@ koreBottomUpVisitorM
     => (forall level . MetaOrObject level
         => Pattern level variable result -> m result)
     -> (KorePattern variable -> m result)
-koreBottomUpVisitorM reduce = cataM (applyUnifiedPattern reduce)
+koreBottomUpVisitorM reduce = cataM (transformUnifiedPattern reduce)
 
 -- |'koreTopDownVisitor' is the non-monadic version of 'koreTopDownVisitorM'.
 koreTopDownVisitor
@@ -80,7 +80,7 @@ koreTopDownVisitor
 koreTopDownVisitor preprocess postprocess =
     fixTopDownVisitor fixPreprocess fixPostprocess
   where
-    fixPostprocess = applyUnifiedPattern postprocess
+    fixPostprocess = transformUnifiedPattern postprocess
     fixPreprocess (UnifiedPattern (UnifiedMeta p))   = preproc p
     fixPreprocess (UnifiedPattern (UnifiedObject p)) = preproc p
     preproc p = asUnifiedPattern <$> preprocess (unRotate31 p)
@@ -90,4 +90,4 @@ koreBottomUpVisitor
     :: (forall level . MetaOrObject level
         => Pattern level variable result -> result)
     -> (KorePattern variable -> result)
-koreBottomUpVisitor reduce = cata (applyUnifiedPattern reduce)
+koreBottomUpVisitor reduce = cata (transformUnifiedPattern reduce)

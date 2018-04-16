@@ -1,15 +1,16 @@
 module Data.Kore.ASTTraversalsTest where
 
-import           Test.Tasty              (TestTree, testGroup)
-import           Test.Tasty.HUnit        (assertEqual, testCase)
+import           Test.Tasty                 (TestTree, testGroup)
+import           Test.Tasty.HUnit           (assertEqual, testCase)
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTTraversals
 
 
 lhs :: CommonKorePattern -> CommonKorePattern
-lhs = topDownVisitor leftImplies asUnifiedPattern
+lhs = koreTopDownVisitor leftImplies asKorePattern
   where
     leftImplies (ImpliesPattern ip) = Left (impliesFirst ip)
     leftImplies p                   = Right p
@@ -20,39 +21,39 @@ astTraversalsTests =
         "ASTTraversal Tests"
         [ testCase "Testing topDownVisitor"
             (assertEqual ""
-                (ObjectPattern $ ApplicationPattern Application
+                (asKorePattern $ ApplicationPattern Application
                     { applicationSymbolOrAlias = SymbolOrAlias
-                        { symbolOrAliasConstructor = Id "sigma"
+                        { symbolOrAliasConstructor = Id "sigma" :: Id Object
                         , symbolOrAliasParams = []
                         }
                     , applicationChildren =
-                        [ MetaPattern $ StringLiteralPattern $
+                        [ asKorePattern $ StringLiteralPattern $
                                 StringLiteral "left1"
-                        ,  MetaPattern $ StringLiteralPattern $
+                        ,  asKorePattern $ StringLiteralPattern $
                                 StringLiteral "left2"
                         ]
                     }
                 )
-                (lhs $ ObjectPattern $ ApplicationPattern Application
+                (lhs $ asKorePattern $ ApplicationPattern Application
                     { applicationSymbolOrAlias = SymbolOrAlias
-                        { symbolOrAliasConstructor = Id "sigma"
+                        { symbolOrAliasConstructor = Id "sigma" :: Id Object
                         , symbolOrAliasParams = []
                         }
                     , applicationChildren =
-                        [ ObjectPattern $ ImpliesPattern Implies
+                        [ asKorePattern $ ImpliesPattern Implies
                             { impliesSort = SortVariableSort $ SortVariable $
-                                Id "#a"
-                            , impliesFirst = MetaPattern $ StringLiteralPattern
+                                Id "#a" :: Sort Meta
+                            , impliesFirst = asKorePattern $ StringLiteralPattern
                                 (StringLiteral "left1")
-                            , impliesSecond = MetaPattern $ StringLiteralPattern
+                            , impliesSecond = asKorePattern $ StringLiteralPattern
                                 (StringLiteral "right1")
                             }
-                        ,  ObjectPattern $ ImpliesPattern Implies
+                        ,  asKorePattern $ ImpliesPattern Implies
                             { impliesSort = SortVariableSort $ SortVariable $
-                                Id "#b"
-                            , impliesFirst = MetaPattern $ StringLiteralPattern
+                                Id "#b" :: Sort Meta
+                            , impliesFirst = asKorePattern $ StringLiteralPattern
                                 (StringLiteral "left2")
-                            , impliesSecond = MetaPattern $ StringLiteralPattern
+                            , impliesSecond = asKorePattern $ StringLiteralPattern
                                 (StringLiteral "right2")
                             }
                         ]

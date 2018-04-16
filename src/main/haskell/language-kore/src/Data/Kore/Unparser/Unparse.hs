@@ -238,6 +238,9 @@ instance (Unparse p, Unparse (v level))
     unparse (TopPattern p)           = unparse p
     unparse (VariablePattern p)      = unparse p
 
+instance Unparse CommonKorePattern where
+    unparse = applyKorePattern unparse unparse
+
 instance Unparse (Fix (pat variable)) => Unparse (Attributes pat variable) where
     unparse = inSquareBrackets . unparse . getAttributes
 

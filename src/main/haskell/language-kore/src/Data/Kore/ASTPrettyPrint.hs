@@ -69,12 +69,18 @@ writeOneFieldStruct
     :: (PrinterOutput w m, PrettyPrint a)
     => Flags -> String -> a -> m ()
 writeOneFieldStruct flags name content =
+    writeOneFieldStructK flags name (prettyPrint NeedsParentheses content)
+
+writeOneFieldStructK
+    :: (PrinterOutput w m)
+    => Flags -> String -> m () -> m ()
+writeOneFieldStructK flags name k =
     betweenParentheses
         flags
         (do
             write name
             write " "
-            prettyPrint NeedsParentheses content
+            k
         )
 
 writeFieldOneLine
@@ -120,11 +126,13 @@ writeStructure name fields =
 printableList :: PrinterOutput w m => [m ()] -> [m ()]
 printableList = intersperse (betweenLines >> write ", ")
 
-instance PrettyPrint (Id Object) where
-    prettyPrint flags (Id name) = prettyPrintId flags Object name
-
-instance PrettyPrint (Id Meta) where
-    prettyPrint flags (Id name) = prettyPrintId flags Meta name
+instance MetaOrObject level => PrettyPrint (Id level) where
+    prettyPrint flags =
+        applyMetaObjectFunction
+            MetaOrObjectTransformer
+                { objectTransformer = prettyPrintId flags Object . getId
+                , metaTransformer = prettyPrintId flags Meta . getId
+                }
 
 prettyPrintId
     :: (PrinterOutput w m, MetaOrObject level)
@@ -251,6 +259,7 @@ instance MetaOrObject level => PrettyPrint (Variable level) where
 
 instance
     ( PrettyPrint child
+    , MetaOrObject level
     ) => PrettyPrint (And level child)
   where
     prettyPrint _ p@(And _ _ _) =
@@ -263,6 +272,7 @@ instance
 
 instance
     ( PrettyPrint child
+    , MetaOrObject level
     ) => PrettyPrint (Application level child)
   where
     prettyPrint _ p@(Application _ _) =
@@ -279,6 +289,7 @@ instance MetaOrObject level => PrettyPrint (Bottom level child) where
 
 instance
     ( PrettyPrint child
+    , MetaOrObject level
     ) => PrettyPrint (Ceil level child)
   where
     prettyPrint _ p@(Ceil _ _ _) =
@@ -291,6 +302,7 @@ instance
 
 instance
     ( PrettyPrint child
+    , MetaOrObject level
     ) => PrettyPrint (DomainValue level child)
   where
     prettyPrint _ p@(DomainValue _ _) =
@@ -302,6 +314,7 @@ instance
 
 instance
     ( PrettyPrint child
+    , MetaOrObject level
     ) => PrettyPrint (Equals level child)
   where
     prettyPrint _ p@(Equals _ _ _ _) =
@@ -315,8 +328,8 @@ instance
 
 instance
     ( PrettyPrint child
-    , PrettyPrint (variable Object)
-    , PrettyPrint (variable Meta)
+    , PrettyPrint (variable level)
+    , MetaOrObject level
     ) => PrettyPrint (Exists level variable child)
   where
     prettyPrint _ p@(Exists _ _ _) =
@@ -329,6 +342,7 @@ instance
 
 instance
     ( PrettyPrint child
+    , MetaOrObject level
     ) => PrettyPrint (Floor level child)
   where
     prettyPrint _ p@(Floor _ _ _) =
@@ -342,6 +356,7 @@ instance
 instance
     ( PrettyPrint child
     , PrettyPrint (variable level)
+    , MetaOrObject level
     ) => PrettyPrint (Forall level variable child) where
     prettyPrint _ p@(Forall _ _ _) =
         writeStructure
@@ -353,6 +368,7 @@ instance
 
 instance
     ( PrettyPrint child
+    , MetaOrObject level
     ) => PrettyPrint (Iff level child)
   where
     prettyPrint _ p@(Iff _ _ _) =
@@ -365,6 +381,7 @@ instance
 
 instance
     ( PrettyPrint child
+    , MetaOrObject level
     ) => PrettyPrint (Implies level child)
   where
     prettyPrint _ p@(Implies _ _ _) =
@@ -377,6 +394,7 @@ instance
 
 instance
     ( PrettyPrint child
+    , MetaOrObject level
     ) => PrettyPrint (In level child)
   where
     prettyPrint _ p@(In _ _ _ _) =
@@ -390,6 +408,7 @@ instance
 
 instance
     ( PrettyPrint child
+    , MetaOrObject level
     ) => PrettyPrint (Next level child)
   where
     prettyPrint _ p@(Next _ _) =
@@ -401,6 +420,7 @@ instance
 
 instance
     ( PrettyPrint child
+    , MetaOrObject level
     ) => PrettyPrint (Not level child)
   where
     prettyPrint _ p@(Not _ _) =
@@ -412,6 +432,7 @@ instance
 
 instance
     ( PrettyPrint child
+    , MetaOrObject level
     ) => PrettyPrint (Or level child)
   where
     prettyPrint _ p@(Or _ _ _) =
@@ -424,6 +445,7 @@ instance
 
 instance
     ( PrettyPrint child
+    , MetaOrObject level
     ) => PrettyPrint (Rewrites level child)
   where
     prettyPrint _ p@(Rewrites _ _ _) =
@@ -440,8 +462,8 @@ instance MetaOrObject level => PrettyPrint (Top level child) where
 
 instance
     ( PrettyPrint child
-    , PrettyPrint (variable Object)
-    , PrettyPrint (variable Meta)
+    , PrettyPrint (variable level)
+    , MetaOrObject level
     ) => PrettyPrint (Pattern level variable child)
   where
     prettyPrint flags (AndPattern p) =
@@ -491,9 +513,15 @@ instance (PrettyPrint (t c a b)) => PrettyPrint (Rotate31 t a b c) where
 
 instance PrettyPrint CommonKorePattern where
     prettyPrint flags korePattern =
-        writeOneFieldStruct flags "Fix"
-        $ writeOneFieldStruct flags "UnifiedPattern"
-        $ getUnifiedPattern (unFix korePattern)
+        writeOneFieldStructK flags "Fix"
+        $ writeOneFieldStructK NeedsParentheses "UnifiedPattern"
+        $ case getUnifiedPattern (unFix korePattern) of
+            UnifiedMeta p ->
+                writeOneFieldStructK NeedsParentheses "UnifiedMeta"
+                $ writeOneFieldStruct NeedsParentheses "Rotate31" (unRotate31 p)
+            UnifiedObject p ->
+                writeOneFieldStructK NeedsParentheses "UnifiedObject"
+                $ writeOneFieldStruct NeedsParentheses "Rotate31" (unRotate31 p)
 
 instance PrettyPrint (Fix (pat variable))
     => PrettyPrint (Attributes pat variable)
