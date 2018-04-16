@@ -502,7 +502,7 @@ symbolVisibilityTests =
             , "symbol or alias 'symbol1'"
             ]
         )
-        (DeclaringSentence symbolDeclaration)
+        (DeclaringSentence symbolAttributeDeclaration)
         (UsingSentence symbolReferenceInAttributesSentence)
         (SupportingSentences defaultSymbolSupportSentences)
     , nameReferenceTests
@@ -586,6 +586,20 @@ symbolVisibilityTests =
             SortVariableSort (SortVariable (Id "sv1"))
         , sentenceSymbolAttributes = Attributes []
         }
+    symbolAttributeDeclaration =
+        ObjectSentence $ SentenceSymbolSentence SentenceSymbol
+            { sentenceSymbolSymbol = Symbol
+                { symbolConstructor = Id "symbol1"
+                , symbolParams = [SortVariable (Id "sv1")]
+                }
+            , sentenceSymbolSorts = []
+            , sentenceSymbolResultSort =
+                SortActualSort SortActual
+                    { sortActualName  = Id "Attribute"
+                    , sortActualSorts = []
+                    }
+            , sentenceSymbolAttributes = Attributes []
+            }
     defaultSymbolSupportSentences = [ defaultSortDeclaration ]
     metaSymbolPattern = MetaPattern
         ( ApplicationPattern Application
@@ -713,7 +727,7 @@ aliasVisibilityTests =
             , "symbol or alias 'alias1'"
             ]
         )
-        (DeclaringSentence aliasDeclaration)
+        (DeclaringSentence aliasAttributeDeclaration)
         (UsingSentence aliasReferenceInAttributesSentence)
         (SupportingSentences defaultAliasSupportSentences)
     , nameReferenceTests
@@ -797,6 +811,20 @@ aliasVisibilityTests =
             SortVariableSort (SortVariable (Id "sv1"))
         , sentenceAliasAttributes = Attributes []
         }
+    aliasAttributeDeclaration =
+        ObjectSentence $ SentenceAliasSentence SentenceAlias
+            { sentenceAliasAlias = Alias
+                { aliasConstructor = Id "alias1"
+                , aliasParams = [SortVariable (Id "sv1")]
+                }
+            , sentenceAliasSorts = []
+            , sentenceAliasResultSort =
+                SortActualSort SortActual
+                    { sortActualName  = Id "Attribute"
+                    , sortActualSorts = []
+                    }
+            , sentenceAliasAttributes = Attributes []
+            }
     defaultAliasSupportSentences = [ defaultSortDeclaration ]
     metaAliasPattern = MetaPattern
         ( ApplicationPattern Application

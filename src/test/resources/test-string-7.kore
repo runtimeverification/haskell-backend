@@ -1,4 +1,4 @@
-["\U000120FF"]
+[hook{}(\dv{Hook{}}("\U000120FF"))]
 
 module TEST-STRING-6
 

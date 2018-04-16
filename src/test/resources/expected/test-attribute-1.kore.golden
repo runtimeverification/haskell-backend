@@ -9,14 +9,22 @@ Definition
                     , sentenceSortParameters = []
                     , sentenceSortAttributes =
                         Attributes 
-                            [ MetaPattern (ApplicationPattern Application
+                            [ ObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Meta "#hook"
+                                        { symbolOrAliasConstructor = Id Object "hook"
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ MetaPattern (StringLiteralPattern (StringLiteral "Nat"))
+                                    [ ObjectPattern (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id Object "Hook"
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            MetaPattern (StringLiteralPattern (StringLiteral "Nat"))
+                                        })
                                     ]
                                 })
                             ]

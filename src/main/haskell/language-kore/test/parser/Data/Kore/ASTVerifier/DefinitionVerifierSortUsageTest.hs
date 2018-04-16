@@ -9,7 +9,9 @@ import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
+import           Data.Kore.Implicit.Attributes                       (attributeObjectSort)
 import           Data.Kore.Implicit.ImplicitSorts
+
 import qualified Data.List                                           as List
 import           Data.Maybe                                          (mapMaybe)
 
@@ -659,7 +661,8 @@ unfilteredTestExamplesForSort
                     [ "module 'MODULE'"
                     , "alias '" ++ rawAliasName ++ "' declaration"
                     , "attributes"
-                    , "\\exists '" ++ rawVariableName ++ "'"
+                    , "\\equals"
+                    , "\\equals"
                     ]
                     defaultErrorMessage
             , testDataDefinition =
@@ -670,7 +673,10 @@ unfilteredTestExamplesForSort
                             aliasName
                             sortVariables
                             additionalSort
-                            [ simpleExistsUnifiedPattern variableName1 sort ]
+                            [ asAttribute
+                                (simpleExistsUnifiedPattern variableName1 sort)
+                                sort
+                            ]
                         )
                     : additionalSentences
                     )
@@ -685,7 +691,8 @@ unfilteredTestExamplesForSort
                     [ "module 'MODULE'"
                     , "axiom declaration"
                     , "attributes"
-                    , "\\exists '" ++ rawVariableName ++ "'"
+                    , "\\equals"
+                    , "\\equals"
                     ]
                     defaultErrorMessage
             , testDataDefinition =
@@ -695,7 +702,10 @@ unfilteredTestExamplesForSort
                         (map asUnified sortVariables)
                         (simpleExistsUnifiedPattern
                             variableName1 additionalSort)
-                        [simpleExistsUnifiedPattern variableName1 sort]
+                        [asAttribute
+                            (simpleExistsUnifiedPattern variableName1 sort)
+                            sort
+                        ]
                     : additionalSentences
                     )
             }
@@ -708,7 +718,8 @@ unfilteredTestExamplesForSort
                 Error
                     [ "module 'MODULE'"
                     , "attributes"
-                    , "\\exists '" ++ rawVariableName ++ "'"
+                    , "\\equals"
+                    , "\\equals"
                     ]
                     defaultErrorMessage
             , testDataDefinition =
@@ -719,7 +730,12 @@ unfilteredTestExamplesForSort
                             { moduleName = ModuleName "MODULE"
                             , moduleSentences = additionalSentences
                             , moduleAttributes = Attributes
-                                [ simpleExistsUnifiedPattern variableName1 sort
+                                [ asAttribute
+                                    (simpleExistsUnifiedPattern
+                                        variableName1
+                                        sort
+                                    )
+                                    sort
                                 ]
                             }
                         ]
@@ -734,13 +750,17 @@ unfilteredTestExamplesForSort
             , testDataError =
                 Error
                     [ "attributes"
-                    , "\\exists '" ++ rawVariableName ++ "'"
+                    , "\\equals"
+                    , "\\equals"
                     ]
                     defaultErrorMessage
             , testDataDefinition =
                 Definition
                     { definitionAttributes = Attributes
-                        [simpleExistsUnifiedPattern variableName1 sort]
+                        [ asAttribute
+                            (simpleExistsUnifiedPattern variableName1 sort)
+                            sort
+                        ]
                     , definitionModules =
                         [ Module
                             { moduleName = ModuleName "MODULE"
@@ -829,7 +849,8 @@ unfilteredTestExamplesForObjectSort
                         ++ differentAdditionalSortRawName
                         ++ "' declaration"
                     , "attributes"
-                    , "\\exists 'v'"
+                    , "\\equals"
+                    , "\\equals"
                     ]
                     defaultErrorMessage
             , testDataDefinition =
@@ -843,8 +864,11 @@ unfilteredTestExamplesForObjectSort
                                 , sentenceSortParameters = sortVariables
                                 , sentenceSortAttributes =
                                     Attributes
-                                        [ simpleExistsUnifiedPattern
-                                            (VariableName "v")
+                                        [ objectAsAttribute
+                                            (simpleExistsUnifiedPattern
+                                                (VariableName "v")
+                                                sort
+                                            )
                                             sort
                                         ]
                                 }
@@ -876,7 +900,8 @@ unfilteredTestExamplesForMetaSort (TestedSort sort) =
                     [ "module 'MODULE'"
                     , "sort 'additionalSort' declaration"
                     , "attributes"
-                    , "\\exists 'v'"
+                    , "\\equals"
+                    , "\\equals"
                     ]
                     defaultErrorMessage
             , testDataDefinition =
@@ -888,8 +913,11 @@ unfilteredTestExamplesForMetaSort (TestedSort sort) =
                                 { sentenceSortName = Id "additionalSort"
                                 , sentenceSortParameters = []
                                 , sentenceSortAttributes = Attributes
-                                    [ simpleExistsUnifiedPattern
-                                        (VariableName "v") sort
+                                    [ metaAsAttribute
+                                        (simpleExistsUnifiedPattern
+                                            (VariableName "v") sort
+                                        )
+                                        sort
                                     ]
                                 }
                             )::KoreSentence
@@ -901,3 +929,57 @@ unfilteredTestExamplesForMetaSort (TestedSort sort) =
     ]
   where
     defaultErrorMessage = "Replace this with a real error message."
+
+asAttribute
+    :: (MetaOrObject level) => UnifiedPattern -> Sort level -> UnifiedPattern
+asAttribute pattern1 sort =
+    applyMetaObjectFunction
+        sort
+        MetaOrObjectTransformer
+            { metaTransformer   = metaAsAttribute pattern1
+            , objectTransformer = objectAsAttribute pattern1
+            }
+
+objectAsAttribute :: UnifiedPattern -> Sort Object -> UnifiedPattern
+objectAsAttribute pattern1 sort =
+    -- More complicated than it should be, but it's easier if it generates
+    -- the same error stack as the meta version.
+    asUnifiedPattern
+        ( EqualsPattern Equals
+            { equalsOperandSort = attributeObjectSort
+            , equalsResultSort  = attributeObjectSort
+            , equalsFirst       = patternPattern
+            , equalsSecond      = patternPattern
+            }
+        )
+  where
+    patternPattern =
+        asUnifiedPattern
+            (EqualsPattern Equals
+                { equalsOperandSort = sort
+                , equalsResultSort  = attributeObjectSort
+                , equalsFirst       = pattern1
+                , equalsSecond      = pattern1
+                }
+            )
+
+metaAsAttribute :: UnifiedPattern -> Sort Meta -> UnifiedPattern
+metaAsAttribute pattern1 sort =
+    asUnifiedPattern
+        ( EqualsPattern Equals
+            { equalsOperandSort = attributeObjectSort
+            , equalsResultSort  = attributeObjectSort
+            , equalsFirst       = patternPattern
+            , equalsSecond      = patternPattern
+            }
+        )
+  where
+    patternPattern =
+        asUnifiedPattern
+            (EqualsPattern Equals
+                { equalsOperandSort = sort
+                , equalsResultSort  = patternMetaSort
+                , equalsFirst       = pattern1
+                , equalsSecond      = pattern1
+                }
+            )

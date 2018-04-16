@@ -85,7 +85,8 @@ main = do
                         verifyResult <-
                             clockSomething
                                 "Verifying the definition"
-                                (verifyDefinition DoNotVerifyAttributes unverifiedDefinition)
+                                (verifyDefinition
+                                    VerifyAttributes unverifiedDefinition)
                         case verifyResult of
                             Left err1        -> error (printError err1)
                             Right definition -> return unverifiedDefinition

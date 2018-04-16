@@ -10,7 +10,6 @@ Portability : POSIX
 -}
 
 module Data.Kore.Implicit.ImplicitKore ( uncheckedKoreModule
-                                       , uncheckedKoreDefinition
                                        , str_
                                        , char_
                                        , sortList_
@@ -964,11 +963,4 @@ uncheckedKoreModule =
             , asSentence ceilBTAxiom
             ]
         , moduleAttributes = Attributes []
-        }
-
-uncheckedKoreDefinition :: MetaDefinition
-uncheckedKoreDefinition =
-    Definition
-        { definitionAttributes = Attributes []
-        , definitionModules    = [uncheckedKoreModule]
         }

@@ -896,36 +896,52 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ MetaPattern (ApplicationPattern Application
+                            [ ObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Meta "#strict"
+                                        { symbolOrAliasConstructor = Id Object "strict"
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ MetaPattern (StringLiteralPattern (StringLiteral "divAExp"))
+                                    [ ObjectPattern (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id Object "Strict"
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            MetaPattern (StringLiteralPattern (StringLiteral "plusAExp"))
+                                        })
                                     , ObjectPattern (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id Object "one"
+                                                { symbolOrAliasConstructor = Id Object "firstArgument"
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
                                         })
                                     ]
                                 })
-                            , MetaPattern (ApplicationPattern Application
+                            , ObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Meta "#strict"
+                                        { symbolOrAliasConstructor = Id Object "strict"
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ MetaPattern (StringLiteralPattern (StringLiteral "divAExp"))
+                                    [ ObjectPattern (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id Object "Strict"
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            MetaPattern (StringLiteralPattern (StringLiteral "plusAExp"))
+                                        })
                                     , ObjectPattern (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id Object "two"
+                                                { symbolOrAliasConstructor = Id Object "secondArgument"
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
@@ -957,36 +973,52 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ MetaPattern (ApplicationPattern Application
+                            [ ObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Meta "#strict"
+                                        { symbolOrAliasConstructor = Id Object "strict"
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ MetaPattern (StringLiteralPattern (StringLiteral "divAExp"))
+                                    [ ObjectPattern (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id Object "Strict"
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            MetaPattern (StringLiteralPattern (StringLiteral "divAExp"))
+                                        })
                                     , ObjectPattern (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id Object "one"
+                                                { symbolOrAliasConstructor = Id Object "firstArgument"
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
                                         })
                                     ]
                                 })
-                            , MetaPattern (ApplicationPattern Application
+                            , ObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Meta "#strict"
+                                        { symbolOrAliasConstructor = Id Object "strict"
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ MetaPattern (StringLiteralPattern (StringLiteral "divAExp"))
+                                    [ ObjectPattern (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id Object "Strict"
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            MetaPattern (StringLiteralPattern (StringLiteral "divAExp"))
+                                        })
                                     , ObjectPattern (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id Object "two"
+                                                { symbolOrAliasConstructor = Id Object "secondArgument"
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
@@ -1115,18 +1147,26 @@ Definition
                             })
                     , sentenceAxiomAttributes =
                         Attributes 
-                            [ MetaPattern (ApplicationPattern Application
+                            [ ObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Meta "#strict"
+                                        { symbolOrAliasConstructor = Id Object "strict"
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ MetaPattern (StringLiteralPattern (StringLiteral "divAExp"))
+                                    [ ObjectPattern (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id Object "Strict"
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            MetaPattern (StringLiteralPattern (StringLiteral "divAExp"))
+                                        })
                                     , ObjectPattern (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id Object "one"
+                                                { symbolOrAliasConstructor = Id Object "firstArgument"
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
@@ -1255,18 +1295,26 @@ Definition
                             })
                     , sentenceAxiomAttributes =
                         Attributes 
-                            [ MetaPattern (ApplicationPattern Application
+                            [ ObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Meta "#strict"
+                                        { symbolOrAliasConstructor = Id Object "strict"
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ MetaPattern (StringLiteralPattern (StringLiteral "divAExp"))
+                                    [ ObjectPattern (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id Object "Strict"
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            MetaPattern (StringLiteralPattern (StringLiteral "divAExp"))
+                                        })
                                     , ObjectPattern (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id Object "two"
+                                                { symbolOrAliasConstructor = Id Object "secondArgument"
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
@@ -1365,18 +1413,26 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ MetaPattern (ApplicationPattern Application
+                            [ ObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Meta "#strict"
+                                        { symbolOrAliasConstructor = Id Object "strict"
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ MetaPattern (StringLiteralPattern (StringLiteral "asgn"))
+                                    [ ObjectPattern (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id Object "Strict"
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            MetaPattern (StringLiteralPattern (StringLiteral "asgn"))
+                                        })
                                     , ObjectPattern (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id Object "two"
+                                                { symbolOrAliasConstructor = Id Object "secondArgument"
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
@@ -1505,18 +1561,26 @@ Definition
                             })
                     , sentenceAxiomAttributes =
                         Attributes 
-                            [ MetaPattern (ApplicationPattern Application
+                            [ ObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Meta "#strict"
+                                        { symbolOrAliasConstructor = Id Object "strict"
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ MetaPattern (StringLiteralPattern (StringLiteral "asgn"))
+                                    [ ObjectPattern (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id Object "Strict"
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            MetaPattern (StringLiteralPattern (StringLiteral "asgn"))
+                                        })
                                     , ObjectPattern (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id Object "two"
+                                                { symbolOrAliasConstructor = Id Object "secondArgument"
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
@@ -1552,18 +1616,26 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ MetaPattern (ApplicationPattern Application
+                            [ ObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Meta "#strict"
+                                        { symbolOrAliasConstructor = Id Object "strict"
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ MetaPattern (StringLiteralPattern (StringLiteral "if"))
+                                    [ ObjectPattern (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id Object "Strict"
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            MetaPattern (StringLiteralPattern (StringLiteral "if"))
+                                        })
                                     , ObjectPattern (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id Object "one"
+                                                { symbolOrAliasConstructor = Id Object "firstArgument"
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
@@ -1842,18 +1914,26 @@ Definition
                             })
                     , sentenceAxiomAttributes =
                         Attributes 
-                            [ MetaPattern (ApplicationPattern Application
+                            [ ObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Meta "#strict"
+                                        { symbolOrAliasConstructor = Id Object "strict"
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ MetaPattern (StringLiteralPattern (StringLiteral "if"))
+                                    [ ObjectPattern (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id Object "Strict"
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            MetaPattern (StringLiteralPattern (StringLiteral "if"))
+                                        })
                                     , ObjectPattern (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id Object "one"
+                                                { symbolOrAliasConstructor = Id Object "firstArgument"
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
@@ -1908,18 +1988,26 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ MetaPattern (ApplicationPattern Application
+                            [ ObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Meta "#strict"
+                                        { symbolOrAliasConstructor = Id Object "strict"
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ MetaPattern (StringLiteralPattern (StringLiteral "seq"))
+                                    [ ObjectPattern (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id Object "Strict"
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            MetaPattern (StringLiteralPattern (StringLiteral "seq"))
+                                        })
                                     , ObjectPattern (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id Object "one"
+                                                { symbolOrAliasConstructor = Id Object "firstArgument"
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
@@ -2174,18 +2262,26 @@ Definition
                             })
                     , sentenceAxiomAttributes =
                         Attributes 
-                            [ MetaPattern (ApplicationPattern Application
+                            [ ObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Meta "#strict"
+                                        { symbolOrAliasConstructor = Id Object "strict"
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ MetaPattern (StringLiteralPattern (StringLiteral "seq"))
+                                    [ ObjectPattern (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id Object "Strict"
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            MetaPattern (StringLiteralPattern (StringLiteral "seq"))
+                                        })
                                     , ObjectPattern (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id Object "one"
+                                                { symbolOrAliasConstructor = Id Object "firstArgument"
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
@@ -2227,36 +2323,52 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ MetaPattern (ApplicationPattern Application
+                            [ ObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Meta "#strict"
+                                        { symbolOrAliasConstructor = Id Object "strict"
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ MetaPattern (StringLiteralPattern (StringLiteral "pgm"))
+                                    [ ObjectPattern (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id Object "Strict"
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            MetaPattern (StringLiteralPattern (StringLiteral "pgm"))
+                                        })
                                     , ObjectPattern (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id Object "one"
+                                                { symbolOrAliasConstructor = Id Object "firstArgument"
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
                                         })
                                     ]
                                 })
-                            , MetaPattern (ApplicationPattern Application
+                            , ObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Meta "#strict"
+                                        { symbolOrAliasConstructor = Id Object "strict"
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ MetaPattern (StringLiteralPattern (StringLiteral "pgm"))
+                                    [ ObjectPattern (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id Object "Strict"
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            MetaPattern (StringLiteralPattern (StringLiteral "pgm"))
+                                        })
                                     , ObjectPattern (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id Object "two"
+                                                { symbolOrAliasConstructor = Id Object "secondArgument"
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
@@ -2289,18 +2401,26 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ MetaPattern (ApplicationPattern Application
+                            [ ObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Meta "#strict"
+                                        { symbolOrAliasConstructor = Id Object "strict"
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ MetaPattern (StringLiteralPattern (StringLiteral "kcell"))
+                                    [ ObjectPattern (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id Object "Strict"
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            MetaPattern (StringLiteralPattern (StringLiteral "kcell"))
+                                        })
                                     , ObjectPattern (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id Object "one"
+                                                { symbolOrAliasConstructor = Id Object "firstArgument"
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
@@ -2342,18 +2462,26 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ MetaPattern (ApplicationPattern Application
+                            [ ObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Meta "#strict"
+                                        { symbolOrAliasConstructor = Id Object "strict"
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ MetaPattern (StringLiteralPattern (StringLiteral "statecell"))
+                                    [ ObjectPattern (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id Object "Strict"
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            MetaPattern (StringLiteralPattern (StringLiteral "statecell"))
+                                        })
                                     , ObjectPattern (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id Object "one"
+                                                { symbolOrAliasConstructor = Id Object "firstArgument"
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
@@ -2413,36 +2541,52 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ MetaPattern (ApplicationPattern Application
+                            [ ObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Meta "#strict"
+                                        { symbolOrAliasConstructor = Id Object "strict"
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ MetaPattern (StringLiteralPattern (StringLiteral "topcell"))
+                                    [ ObjectPattern (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id Object "Strict"
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            MetaPattern (StringLiteralPattern (StringLiteral "topcell"))
+                                        })
                                     , ObjectPattern (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id Object "one"
+                                                { symbolOrAliasConstructor = Id Object "firstArgument"
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
                                         })
                                     ]
                                 })
-                            , MetaPattern (ApplicationPattern Application
+                            , ObjectPattern (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Meta "#strict"
+                                        { symbolOrAliasConstructor = Id Object "strict"
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ MetaPattern (StringLiteralPattern (StringLiteral "topcell"))
+                                    [ ObjectPattern (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id Object "Strict"
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            MetaPattern (StringLiteralPattern (StringLiteral "topcell"))
+                                        })
                                     , ObjectPattern (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id Object "two"
+                                                { symbolOrAliasConstructor = Id Object "secondArgument"
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []

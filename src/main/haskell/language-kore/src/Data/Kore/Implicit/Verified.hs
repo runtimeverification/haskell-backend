@@ -9,32 +9,45 @@ Portability : POSIX
 -}
 
 module Data.Kore.Implicit.Verified
-    (implicitKoreModule, implicitKoreDefinition) where
+    ( implicitKoreDefinition
+    , implicitMetaDefinition
+    )
+    where
 
 import           Data.Kore.AST.Common                     (Definition (..))
+import           Data.Kore.AST.Kore                       (KoreDefinition,
+                                                           KoreModule)
 import           Data.Kore.ASTVerifier.DefinitionVerifier (AttributesVerification (..),
                                                            verifyKoreDefinition)
 import           Data.Kore.ASTVerifier.Error              (VerifyError)
 import           Data.Kore.Error                          (Error, printError)
-import           Data.Kore.Implicit.ImplicitKore          (uncheckedKoreDefinition)
+import           Data.Kore.Implicit.Definitions           (uncheckedKoreDefinition,
+                                                           uncheckedMetaDefinition)
 import           Data.Kore.MetaML.AST
 import           Data.Kore.MetaML.MetaToKore
 
-checkedKoreDefinition :: Either (Error VerifyError) MetaDefinition
+checkedMetaDefinition :: Either (Error VerifyError) MetaDefinition
+checkedMetaDefinition = do
+    verifyKoreDefinition
+        VerifyAttributes
+        (definitionMetaToKore uncheckedMetaDefinition)
+    return uncheckedMetaDefinition
+
+implicitMetaDefinition :: MetaDefinition
+implicitMetaDefinition =
+    case checkedMetaDefinition of
+        Left err -> error (printError err)
+        Right d  -> d
+
+checkedKoreDefinition :: Either (Error VerifyError) KoreDefinition
 checkedKoreDefinition = do
     verifyKoreDefinition
         VerifyAttributes
-        (definitionMetaToKore uncheckedKoreDefinition)
+        uncheckedKoreDefinition
     return uncheckedKoreDefinition
 
-implicitKoreDefinition :: MetaDefinition
+implicitKoreDefinition :: KoreDefinition
 implicitKoreDefinition =
     case checkedKoreDefinition of
         Left err -> error (printError err)
         Right d  -> d
-
-implicitKoreModule :: MetaModule
-implicitKoreModule =
-    case checkedKoreDefinition of
-        Left err                                   -> error (printError err)
-        Right Definition {definitionModules = [m]} -> m

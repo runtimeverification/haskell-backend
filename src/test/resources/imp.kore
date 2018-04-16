@@ -99,12 +99,14 @@ module IMP
   symbol idAsAExp{}(Id{}) : AExp{} []
 
   symbol plusAExp{}(AExp{}, AExp{}) : AExp{}
-  [#strict{}("divAExp", one{}()) ,
-   #strict{}("divAExp", two{}())]
+  [ strict{}(\dv{Strict{}}("plusAExp"), firstArgument{}())
+  , strict{}(\dv{Strict{}}("plusAExp"), secondArgument{}())
+  ]
 
   symbol divAExp{}(AExp{}, AExp{}) : AExp{}
-  [#strict{}("divAExp", one{}()) ,
-   #strict{}("divAExp", two{}())]
+  [ strict{}(\dv{Strict{}}("divAExp"), firstArgument{}())
+  , strict{}(\dv{Strict{}}("divAExp"), secondArgument{}())
+  ]
 
   axiom{R}
     \equals{AExp{},R}(
@@ -114,7 +116,7 @@ module IMP
           HOLE:AExp{},
           divAExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
-  [#strict{}("divAExp", one{}())]
+  [strict{}(\dv{Strict{}}("divAExp"), firstArgument{}())]
 
   axiom{R}
     \equals{AExp{},R}(
@@ -124,7 +126,7 @@ module IMP
           HOLE:AExp{},
           divAExp{}(X:AExp{}, HOLE:AExp{})),
         Y:AExp{}))
-  [#strict{}("divAExp", two{}())]
+  [strict{}(\dv{Strict{}}("divAExp"), secondArgument{}())]
 
   sort BExp{} []
 
@@ -138,7 +140,8 @@ module IMP
 
   symbol blockAsStmt{}(Block{}) : Stmt{} []
 
-  symbol asgn{}(Id{}, AExp{}) : Stmt{} [#strict{}("asgn", two{}())]
+  symbol asgn{}(Id{}, AExp{}) : Stmt{}
+    [strict{}(\dv{Strict{}}("asgn"), secondArgument{}())]
 
   axiom{R}
     \equals{Stmt{},R}(
@@ -148,10 +151,11 @@ module IMP
           HOLE:AExp{},
           asgn{}(X:Id{}, HOLE:AExp{})),
         E:AExp{}))
-  [#strict{}("asgn", two{}())]
+  [strict{}(\dv{Strict{}}("asgn"), secondArgument{}())]
 
 
-  symbol if{}(BExp{}, Block{}, Block{}) : Stmt{} [#strict{}("if", one{}())]
+  symbol if{}(BExp{}, Block{}, Block{}) : Stmt{}
+    [strict{}(\dv{Strict{}}("if"), firstArgument{}())]
 
   axiom{S,R,#R}
     \implies{#R}(
@@ -181,12 +185,14 @@ module IMP
                   HOLE:S),
                 B1:Block{},
                 B2:Block{})),
-            T:S)))) [#strict{}("if", one{}())]
+            T:S))))
+    [strict{}(\dv{Strict{}}("if"), firstArgument{}())]
 
 
   symbol while{}(BExp{}, Block{}) : Stmt{} []
 
-  symbol seq{}(Stmt{}, Stmt{}) : Stmt{} [#strict{}("seq", one{}())]
+  symbol seq{}(Stmt{}, Stmt{}) : Stmt{}
+    [strict{}(\dv{Strict{}}("seq"), firstArgument{}())]
 
    axiom{S,R,#R}
     \implies{#R}(
@@ -213,26 +219,34 @@ module IMP
                   #C:#Pattern{},
                   HOLE:S),
                 P:Stmt{})),
-            T:S)))) [#strict{}("seq", one{}())]
+            T:S)))) [strict{}(\dv{Strict{}}("seq"), firstArgument{}())]
 
 
   sort Pgm{} []
 
-  symbol pgm{}(List{Id{}}, Stmt{}) : Pgm{} [#strict{}("pgm", one{}()), #strict{}("pgm", two{}())]
+  symbol pgm{}(List{Id{}}, Stmt{}) : Pgm{}
+    [ strict{}(\dv{Strict{}}("pgm"), firstArgument{}())
+    , strict{}(\dv{Strict{}}("pgm"), secondArgument{}())
+    ]
 
   sort KCell{} []
 
-  symbol kcell{}(Pgm{}) : KCell{} [#strict{}("kcell", one{}())]
+  symbol kcell{}(Pgm{}) : KCell{}
+    [strict{}(\dv{Strict{}}("kcell"), firstArgument{}())]
 
   sort StateCell{} []
 
-  symbol statecell{}(Map{Id{}, Int{}}) : StateCell{} [#strict{}("statecell", one{}())]
+  symbol statecell{}(Map{Id{}, Int{}}) : StateCell{}
+    [strict{}(\dv{Strict{}}("statecell"), firstArgument{}())]
 
   sort TopCell{} []
 
   symbol top{}(KCell{}, StateCell{}) : TopCell{} []
 
-  symbol topcell{}(KCell{}, StateCell{}) : TopCell{} [#strict{}("topcell", one{}()), #strict{}("topcell", two{}())]
+  symbol topcell{}(KCell{}, StateCell{}) : TopCell{}
+    [ strict{}(\dv{Strict{}}("topcell"), firstArgument{}())
+    , strict{}(\dv{Strict{}}("topcell"), secondArgument{}())
+    ]
 
   symbol krun{}(Pgm{}) : TopCell{} []
 

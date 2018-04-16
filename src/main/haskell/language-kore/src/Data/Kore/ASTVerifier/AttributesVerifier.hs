@@ -14,9 +14,11 @@ module Data.Kore.ASTVerifier.AttributesVerifier (verifyAttributes,
 import           Data.Kore.AST.Common                  (Attributes (..))
 import           Data.Kore.AST.Kore                    (KoreAttributes,
                                                         UnifiedSortVariable)
+import           Data.Kore.AST.MetaOrObject            (asUnified)
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.PatternVerifier
 import           Data.Kore.Error
+import           Data.Kore.Implicit.Attributes         (attributeObjectSort)
 import           Data.Kore.IndexedModule.IndexedModule
 import qualified Data.Set                              as Set
 
@@ -38,7 +40,13 @@ verifyAttributes
     withContext
         "attributes"
         (mapM_
-            (\p -> verifyPattern p Nothing indexedModule sortVariables)
+            (\p ->
+                verifyPattern
+                    p
+                    (Just (asUnified attributeObjectSort))
+                    indexedModule
+                    sortVariables
+            )
             patterns
         )
     verifySuccess

@@ -68,7 +68,7 @@ toByteString (Right definition) =
 verify :: Either String KoreDefinition -> Either String KoreDefinition
 verify (Left err) = Left err
 verify (Right definition) =
-    case verifyDefinition DoNotVerifyAttributes definition of
+    case verifyDefinition VerifyAttributes definition of
         Left e  -> Left (printError e)
         Right _ -> Right definition
 
