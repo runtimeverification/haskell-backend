@@ -30,6 +30,8 @@ module IMP
 
   symbol leq{}(Int{}, Int{}) : Bool{} []
 
+  symbol neq{}(Int{}, Int{}) : Bool{} []
+
   sort Id{} []
 
   symbol id{}(Int{}) : Id{} []
@@ -73,20 +75,9 @@ module IMP
 
   symbol app{S1,S2}(Ctxt{S1,S2}, S1) : S2 []
 
-  alias gamma{S1,S2}(S1,S2) : Ctxt{S1,S2} []
+  alias gamma{S1,S2}(S1,S2) : Ctxt{S1,S2} [] // we could make it a symbol
 
-  axiom{S1,S2,R}
-    \equals{Ctxt{S1,S2},R}(
-      gamma{S1,S2}(
-        #variableAsPattern{}(#X:#Variable{}),
-        #P:#Pattern{}),
-      #\exists{}(#`Ctxt{}(#S1:#Sort{},#S2:#Sort{}),
-        #X:#Variable{},
-        gamma0{S1,S2}(
-          #variableAsPattern{}(#X:#Variable{}),
-          #P:#Pattern{}))) []
-
- alias idctxt{S}() : Ctxt{S,S} []
+  alias idctxt{S}() : Ctxt{S,S} []
 
   axiom{S,R}
     \equals{Ctxt{S,S},R}(
@@ -98,67 +89,42 @@ module IMP
       T:S,
       app{S,S}(idctxt{S}(), T:S)) []
 
+
+  // Start with IMP Specific Definitions
+
   sort AExp{} []
 
   symbol intAsAExp{}(Int{}) : AExp{} []
 
   symbol idAsAExp{}(Id{}) : AExp{} []
 
-  symbol divAExp{}(AExp{}, AExp{}) : AExp{} []
+  symbol plusAExp{}(AExp{}, AExp{}) : AExp{}
+  [#strict{}("divAExp", one{}()) ,
+   #strict{}("divAExp", two{}())]
 
-  axiom{S,R,#R}
-    \implies{#R}(
-      \not{#R}(
-        #occursFree{#R}(
-          #variable{}("HOLE", #S:#Sort{}),
-          divAExp{}(
-            app{S,AExp{}}(
-              #C:#Pattern{},
-              T:S),
-            P:AExp{}))),
-      #provable{#R}(
-        \equals{AExp{},R}(
-          divAExp{}(
-            app{S,AExp{}}(
-              #C:#Pattern{},
-              T:S),
-            P:AExp{}),
-          app{S,AExp{}}(
-            gamma{S,AExp{}}(
-              HOLE:S,
-              divAExp{}(
-                app{S,AExp{}}(
-                  #C:#Pattern{},
-                  HOLE:S),
-                P:AExp{})),
-            T:S)))) [#strict{}("divAExp", one{}())]
+  symbol divAExp{}(AExp{}, AExp{}) : AExp{}
+  [#strict{}("divAExp", one{}()) ,
+   #strict{}("divAExp", two{}())]
 
-  axiom{S,R,#R}
-    \implies{#R}(
-      \not{#R}(
-        #occursFree{#R}(
-          #variable{}("HOLE", #S:#Sort{}),
-          divAExp{}(
-            P:AExp{},
-            app{S,AExp{}}(
-              #C:#Pattern{},
-              T:S)))),
-      #provable{#R}(
-        \equals{AExp{},R}(
-          divAExp{}(
-            P:AExp{},
-            app{S,AExp{}}(
-              #C:#Pattern{},
-              T:S)),
-          app{S,AExp{}}(
-            gamma{S,AExp{}}(
-              HOLE:S,
-              divAExp{}(
-                P:AExp{},
-                app{S,AExp{}}(
-                  #C:#Pattern{},
-                  HOLE:S))),
-            T:S)))) [#strict{}("divAExp", two{}())]
+  axiom{R}
+    \equals{AExp{},R}(
+      divAExp{}(X:AExp{}, Y:AExp{}),
+      app{AExp{},AExp{}}(
+        gamma{AExp{},AExp{}}(
+          HOLE:AExp{},
+          divAExp{}(HOLE:AExp{}, Y:AExp{})),
+        X:AExp{}))
+  [#strict{}("divAExp", one{}())]
+
+  axiom{R}
+    \equals{AExp{},R}(
+      divAExp{}(X:AExp{}, Y:AExp{}),
+      app{AExp{},AExp{}}(
+        gamma{AExp{},AExp{}}(
+          HOLE:AExp{},
+          divAExp{}(X:AExp{}, HOLE:AExp{})),
+        Y:AExp{}))
+  [#strict{}("divAExp", two{}())]
 
   sort BExp{} []
 
@@ -174,32 +140,15 @@ module IMP
 
   symbol asgn{}(Id{}, AExp{}) : Stmt{} [#strict{}("asgn", two{}())]
 
-  axiom{S,R,#R}
-    \implies{#R}(
-      \not{#R}(
-        #occursFree{#R}(
-          #variable{}("HOLE", #S:#Sort{}),
-          asgn{}(
-            ID:Id{},
-            app{S,AExp{}}(
-              #C:#Pattern{},
-              T:S)))),
-      #provable{#R}(
-        \equals{Stmt{},R}(
-          asgn{}(
-            ID:Id{},
-            app{S,AExp{}}(
-              #C:#Pattern{},
-              T:S)),
-          app{S,Stmt{}}(
-            gamma{S,Stmt{}}(
-              HOLE:S,
-              asgn{}(
-                ID:Id{},
-                app{S,AExp{}}(
-                  #C:#Pattern{},
-                  HOLE:S))),
-            T:S)))) [#strict{}("asgn", two{}())]
+  axiom{R}
+    \equals{Stmt{},R}(
+      asgn{}(X:Id{}, E:AExp{}),
+      app{AExp{},Stmt{}}(
+        gamma{AExp{},Stmt{}}(
+          HOLE:AExp{},
+          asgn{}(X:Id{}, HOLE:AExp{})),
+        E:AExp{}))
+  [#strict{}("asgn", two{}())]
 
 
   symbol if{}(BExp{}, Block{}, Block{}) : Stmt{} [#strict{}("if", one{}())]
@@ -295,32 +244,22 @@ module IMP
         statecell{}(emp{Id{},Int{}}()))) []
 
 
-  symbol next{S}(S) : S []
+  // Rewrite Rules
 
-  alias rewrites{S}(S, S) : S []
-
-  axiom{S,RS}
-    \equals{S,RS}(
-      rewrites{S}(LEFT:S, RIGHT:S),
-      \implies{S}(
-        LEFT:S,
-        next{S}(RIGHT:S))) []
+  // X + Y => X +Int Y
 
   axiom{S}
-    rewrites{S}(
-      app{Map{Id{},Int{}},S}(
-        app{AExp{}, Ctxt{Map{Id{},Int{}}, S}}(
-          #C:#Pattern{},
-          idAsAExp{}(X:Id{})),
-        bind{Id{},Int{}}(
-          X:Id{},
-          I:Int{})),
-      app{Map{Id{},Int{}},S}(
-        app{AExp{}, Ctxt{Map{Id{},Int{}}, S}}(
-          #C:#Pattern{},
-          intAsAExp{}(I:Int{})),
-        bind{Id{},Int{}}(
-          X:Id{},
-          I:Int{}))) []
+    app{AExp{},S}(
+      C:Ctxt{AExp{},S},
+      \rewrites{AExp{}}(
+        plusAExp{}(intAsAExp{}(X:Int{}), intAsAExp{}(Y:Int{})),
+        intAsAExp{}(plus{}(X:Int{}, Y:Int{}))))
+  []
+
+  // X / Y => X /Int Y requires X =/=Int Y
+
+
+     
+
 
 endmodule []
