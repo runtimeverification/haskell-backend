@@ -447,17 +447,13 @@ verifyVariableDeclaration
     -> Either (Error VerifyError) VerifySuccess
 verifyVariableDeclaration
     variable indexedModule declaredSortVariables
-  =
-    applyMetaObjectFunction
-        MetaOrObjectTransformer
-            { objectTransformer =
-                verifyVariableDeclarationUsing
-                    declaredSortVariables (resolveObjectSort indexedModule)
-            , metaTransformer =
-                verifyVariableDeclarationUsing
-                    declaredSortVariables (resolveMetaSort indexedModule)
-            }
-        variable
+  = case getMetaOrObjectType variable of
+        IsObject ->
+            verifyVariableDeclarationUsing
+                declaredSortVariables (resolveObjectSort indexedModule) variable
+        IsMeta ->
+            verifyVariableDeclarationUsing
+                declaredSortVariables (resolveMetaSort indexedModule) variable
 
 verifyVariableDeclarationUsing
     :: MetaOrObject level

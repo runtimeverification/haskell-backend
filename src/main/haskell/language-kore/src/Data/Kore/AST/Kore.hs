@@ -26,31 +26,34 @@ an AST term in a single data type (e.g. 'UnifiedSort' that can be either
 Please refer to Section 9 (The Kore Language) of the
 <http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
 -}
-module Data.Kore.AST.Kore where
+module Data.Kore.AST.Kore
+    ( KoreDefinition
+    , KoreModule
+    , KoreSentence
+    , KoreSentenceAlias
+    , KoreSentenceSymbol
+    , KoreSentenceSort
+    , KoreSentenceImport
+    , KoreSentenceAxiom
+    , UnifiedSentence (..)
+    , applyUnifiedSentence
+    , KoreAttributes
+    , CommonKorePattern
+    , KorePattern
+    , asKorePattern
+    , applyKorePattern
+    , UnifiedSortVariable
+    , UnifiedSort
+    , UnifiedPattern (..)
+    , asUnifiedPattern
+    , transformUnifiedPattern
+    ) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.HaskellExtensions (Rotate31 (..), Rotate41 (..))
 
 import           Data.Fix
-
-{-
-import           Data.Hashable               (hash)
-class ( Ord (Unified var)
-      , ShowMetaOrObject var
-      ) => VariableClass var
-  where
-    -- |Retrieves the sort of the variable
-    getVariableSort :: MetaOrObject level => var level -> Sort level
-    -- |Computes a hash identifying the variable
-    getVariableHash :: var level -> Int
-
-instance VariableClass Variable where
-    getVariableSort = variableSort
-    getVariableHash = hash . getId . variableName
--}
-
-type PatternObjectMeta = Rotate31 Pattern
 
 {-|'UnifiedPattern' corresponds to the @pattern@ syntactic category from
 the Semantics of K, Section 9.1.4 (Patterns).

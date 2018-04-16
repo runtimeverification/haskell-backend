@@ -1,3 +1,4 @@
+{-# LANGUAGE ConstraintKinds      #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE GADTs                #-}
 {-# LANGUAGE LambdaCase           #-}
@@ -5,7 +6,21 @@
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE StandaloneDeriving   #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Data.Kore.AST.MetaOrObject where
+module Data.Kore.AST.MetaOrObject
+    ( Meta (..)
+    , Object (..)
+    , MetaOrObject (isObject, isMeta)
+    , Unified (..)
+    , asUnified
+    , transformUnified
+    , mapUnified
+    , sequenceUnified
+    , ShowMetaOrObject
+    , EqMetaOrObject
+    , OrdMetaOrObject
+    , getMetaOrObjectType
+    , IsMetaOrObject (..)
+    ) where
 
 data Meta = Meta
     deriving (Show, Eq, Ord)
@@ -46,26 +61,17 @@ instance MetaOrObject Object where
 getMetaOrObjectType :: MetaOrObject level => thing level -> IsMetaOrObject level
 getMetaOrObjectType _ = isMetaOrObject (undefined :: level)
 
-data MetaOrObjectTransformer thing result = MetaOrObjectTransformer
-    { metaTransformer   :: thing Meta -> result
-    , objectTransformer :: thing Object -> result
-    }
-
-applyMetaObjectFunction
-    :: forall level thing c . MetaOrObject level
-    => MetaOrObjectTransformer thing c -> thing level -> c
-applyMetaObjectFunction trans x =
-    case getMetaOrObjectType x of
-        IsObject -> objectTransformer trans x
-        IsMeta   -> metaTransformer trans x
-
 data Unified thing
     = UnifiedObject !(thing Object)
     | UnifiedMeta !(thing Meta)
 
-deriving instance (Eq (sort Object), Eq (sort Meta)) => Eq (Unified sort)
-deriving instance (Ord (sort Object), Ord (sort Meta)) => Ord (Unified sort)
-deriving instance (Show (sort Object), Show (sort Meta)) => Show (Unified sort)
+type ShowMetaOrObject thing = (Show (thing Meta), Show (thing Object))
+type EqMetaOrObject thing = (Eq (thing Meta), Eq (thing Object))
+type OrdMetaOrObject thing = (Ord (thing Meta), Ord (thing Object))
+
+deriving instance (EqMetaOrObject thing) => Eq (Unified thing)
+deriving instance (OrdMetaOrObject thing) => Ord (Unified thing)
+deriving instance (ShowMetaOrObject thing) => Show (Unified thing)
 
 applyUnified
     :: (thing Meta -> b)
@@ -79,8 +85,7 @@ applyUnified metaT objectT =
 transformUnified
     :: (forall level . MetaOrObject level => thing level -> b)
     -> (Unified thing -> b)
-transformUnified f (UnifiedObject o) = f o
-transformUnified f (UnifiedMeta o)   = f o
+transformUnified f = applyUnified f f
 
 mapUnified
     :: (forall level . thing1 level -> thing2 level)
@@ -97,14 +102,6 @@ sequenceUnified f (UnifiedMeta o)   = UnifiedMeta <$> f o
 
 asUnified
     :: MetaOrObject level => thing level -> Unified thing
-asUnified = applyMetaObjectFunction MetaOrObjectTransformer
-    { objectTransformer = UnifiedObject
-    , metaTransformer = UnifiedMeta
-    }
-
-
-class (Show (thing Meta), Show (thing Object)) => ShowMetaOrObject thing
-
-class (Eq (thing Meta), Eq (thing Object)) => EqMetaOrObject thing
-
-class (Ord (thing Meta), Ord (thing Object)) => OrdMetaOrObject thing
+asUnified x = case getMetaOrObjectType x of
+    IsObject -> UnifiedObject x
+    IsMeta   -> UnifiedMeta x
