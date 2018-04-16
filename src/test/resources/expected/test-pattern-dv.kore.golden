@@ -5,22 +5,22 @@ Definition
             { moduleName = ModuleName "TEST-PATTERN-15"
             , moduleSentences =
                 [ ObjectSentence (SentenceSortSentence SentenceSort
-                    { sentenceSortName = Id Object "Int"
+                    { sentenceSortName = Id  "Int" :: Id Object
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters = []
                     , sentenceAxiomPattern =
-                        ObjectPattern (DomainValuePattern DomainValue
+                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
                             { domainValueSort =
                                 SortActualSort SortActual
-                                    { sortActualName = Id Object "Int"
+                                    { sortActualName = Id  "Int" :: Id Object
                                     , sortActualSorts = []
                                     }
                             , domainValueChild =
-                                MetaPattern (StringLiteralPattern (StringLiteral "10"))
-                            })
+                                Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "10")))))
+                            }))))
                     , sentenceAxiomAttributes = Attributes []
                     })
                 ]
