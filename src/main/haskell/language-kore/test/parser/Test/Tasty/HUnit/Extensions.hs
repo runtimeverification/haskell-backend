@@ -20,7 +20,7 @@ assertEqualWithPrinter printer preface expected actual =
         (if null preface then "" else preface ++ "\n")
         ++ "expected: " ++ printer expected ++ "\n but got: " ++ printer actual
 
-assertError :: (String -> IO()) -> a -> IO()
+assertError :: HasCallStack => (String -> IO()) -> a -> IO()
 assertError errorTest action = do
     maybeErr <-
         catch
@@ -33,7 +33,7 @@ assertError errorTest action = do
         Nothing  -> assertFailure "No error during action."
         Just err -> errorTest err
 
-assertSubstring :: String -> String -> String -> IO()
+assertSubstring :: HasCallStack => String -> String -> String -> IO()
 assertSubstring message first second =
     assertBool
         (  message
