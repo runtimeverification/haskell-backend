@@ -75,7 +75,7 @@ instance Hashable Variable where
     getVariableHash = hash . getId . variableName
 
 {-|'PatternSubstitutionClass' defines a generic 'substitute' function
-which given a 'FixedPattern' @p@ and an @s@ of class 'SubstitutionClass',
+which given a 'UnifiedPattern' @p@ and an @s@ of class 'SubstitutionClass',
 applies @s@ on @p@ in a monadic state used for generating fresh variables.
 -}
 class ( SubstitutionClass s (Unified var) (KorePattern var)

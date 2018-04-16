@@ -95,7 +95,6 @@ instance Traversable (UnifiedPattern variable) where
             (fmap Rotate31 . sequenceA . unRotate31)
         . getUnifiedPattern
 
-type FixedPattern = UnifiedPattern
 type KorePattern variable = (Fix (UnifiedPattern variable))
 
 asKorePattern
@@ -115,13 +114,13 @@ applyKorePattern metaT objectT korePattern =
         UnifiedMeta rp   -> metaT (unRotate31 rp)
         UnifiedObject rp -> objectT (unRotate31 rp)
 
-type KoreAttributes = Attributes FixedPattern Variable
+type KoreAttributes = Attributes UnifiedPattern Variable
 
-type KoreSentenceAlias level = SentenceAlias level FixedPattern Variable
-type KoreSentenceSymbol level = SentenceSymbol level FixedPattern Variable
-type KoreSentenceImport = SentenceImport FixedPattern Variable
-type KoreSentenceAxiom = SentenceAxiom (Unified SortVariable) FixedPattern Variable
-type KoreSentenceSort = SentenceSort Object FixedPattern Variable
+type KoreSentenceAlias level = SentenceAlias level UnifiedPattern Variable
+type KoreSentenceSymbol level = SentenceSymbol level UnifiedPattern Variable
+type KoreSentenceImport = SentenceImport UnifiedPattern Variable
+type KoreSentenceAxiom = SentenceAxiom UnifiedSortVariable UnifiedPattern Variable
+type KoreSentenceSort = SentenceSort Object UnifiedPattern Variable
 
 newtype UnifiedSentence sortParam pat variable = UnifiedSentence
     { getUnifiedSentence :: Unified (Rotate41 Sentence sortParam pat variable) }
@@ -139,7 +138,7 @@ deriving instance
 type UnifiedSortVariable = Unified SortVariable
 type UnifiedSort = Unified Sort
 
-type KoreSentence = UnifiedSentence UnifiedSortVariable FixedPattern Variable
+type KoreSentence = UnifiedSentence UnifiedSortVariable UnifiedPattern Variable
 
 constructUnifiedSentence
     :: (MetaOrObject level)
@@ -157,10 +156,10 @@ applyUnifiedSentence _ objectT (UnifiedSentence (UnifiedObject rs)) =
     objectT (unRotate41 rs)
 
 type KoreModule =
-    Module UnifiedSentence UnifiedSortVariable FixedPattern Variable
+    Module UnifiedSentence UnifiedSortVariable UnifiedPattern Variable
 
 type KoreDefinition =
-    Definition UnifiedSentence UnifiedSortVariable FixedPattern Variable
+    Definition UnifiedSentence UnifiedSortVariable UnifiedPattern Variable
 
 instance
     ( MetaOrObject level

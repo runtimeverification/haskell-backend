@@ -17,6 +17,11 @@ data IsMetaOrObject s where
     IsMeta :: IsMetaOrObject Meta
     IsObject :: IsMetaOrObject Object
 
+instance Show (IsMetaOrObject s) where
+    show IsMeta   = "Meta"
+    show IsObject = "Object"
+
+
 {-|Class identifying a Kore level. It should only be implemented by the
 'Object' and 'Meta' types, and should verify:
 
@@ -38,6 +43,9 @@ instance MetaOrObject Meta where
 instance MetaOrObject Object where
     isMetaOrObject _ = IsObject
 
+getMetaOrObjectType :: MetaOrObject level => thing level -> IsMetaOrObject level
+getMetaOrObjectType _ = isMetaOrObject (undefined :: level)
+
 data MetaOrObjectTransformer thing result = MetaOrObjectTransformer
     { metaTransformer   :: thing Meta -> result
     , objectTransformer :: thing Object -> result
@@ -47,7 +55,7 @@ applyMetaObjectFunction
     :: forall level thing c . MetaOrObject level
     => MetaOrObjectTransformer thing c -> thing level -> c
 applyMetaObjectFunction trans x =
-    case isMetaOrObject (undefined :: level) of
+    case getMetaOrObjectType x of
         IsObject -> objectTransformer trans x
         IsMeta   -> metaTransformer trans x
 

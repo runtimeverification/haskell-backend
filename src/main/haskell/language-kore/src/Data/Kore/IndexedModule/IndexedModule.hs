@@ -39,7 +39,7 @@ import           Control.Monad                    (foldM)
 import qualified Data.Map                         as Map
 import qualified Data.Set                         as Set
 
-type SortDescription level = SentenceSort level FixedPattern Variable
+type SortDescription level = SentenceSort level UnifiedPattern Variable
 
 {-|'IndexedModule' represents an AST 'Module' somewhat optimized for resolving
 IDs.
@@ -76,7 +76,7 @@ data IndexedModule sortParam pat variable = IndexedModule
     }
 
 type KoreIndexedModule =
-    IndexedModule UnifiedSortVariable FixedPattern Variable
+    IndexedModule UnifiedSortVariable UnifiedPattern Variable
 
 indexedModuleRawSentences  :: KoreIndexedModule -> [KoreSentence]
 indexedModuleRawSentences im =
@@ -108,7 +108,7 @@ newtype ImplicitIndexedModule sortParam pat variable =
     ImplicitIndexedModule (IndexedModule sortParam pat variable)
 
 type KoreImplicitIndexedModule =
-    ImplicitIndexedModule UnifiedSortVariable FixedPattern Variable
+    ImplicitIndexedModule UnifiedSortVariable UnifiedPattern Variable
 
 emptyIndexedModule :: ModuleName -> IndexedModule sortParam pat variable
 emptyIndexedModule name =
@@ -257,7 +257,7 @@ indexModuleMetaSentence
     -> Set.Set ModuleName
     -> Map.Map ModuleName KoreModule
     -> (Map.Map ModuleName KoreIndexedModule, KoreIndexedModule)
-    -> Sentence Meta UnifiedSortVariable FixedPattern Variable
+    -> Sentence Meta UnifiedSortVariable UnifiedPattern Variable
     -> Either
         (Error a)
         (Map.Map ModuleName KoreIndexedModule, KoreIndexedModule)
@@ -342,7 +342,7 @@ indexModuleObjectSentence
     -> Set.Set ModuleName
     -> Map.Map ModuleName KoreModule
     -> (Map.Map ModuleName KoreIndexedModule, KoreIndexedModule)
-    -> Sentence Object UnifiedSortVariable FixedPattern Variable
+    -> Sentence Object UnifiedSortVariable UnifiedPattern Variable
     -> Either
         (Error a)
         (Map.Map ModuleName KoreIndexedModule, KoreIndexedModule)

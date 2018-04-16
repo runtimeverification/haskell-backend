@@ -97,7 +97,7 @@ verifySentence a b =
 verifyMetaSentence
     :: KoreIndexedModule
     -> AttributesVerification
-    -> Sentence Meta (Unified SortVariable) FixedPattern Variable
+    -> Sentence Meta UnifiedSortVariable UnifiedPattern Variable
     -> Either (Error VerifyError) VerifySuccess
 verifyMetaSentence
     indexedModule
@@ -133,7 +133,7 @@ verifyMetaSentence _ _ (SentenceImportSentence _) =
 verifyObjectSentence
     :: KoreIndexedModule
     -> AttributesVerification
-    -> Sentence Object (Unified SortVariable) FixedPattern Variable
+    -> Sentence Object UnifiedSortVariable UnifiedPattern Variable
     -> Either (Error VerifyError) VerifySuccess
 verifyObjectSentence
     indexedModule
@@ -167,7 +167,7 @@ verifySymbolAliasSentence
     => (Id level -> Either (Error VerifyError) (SortDescription level))
     -> KoreIndexedModule
     -> AttributesVerification
-    -> ssa level FixedPattern Variable
+    -> ssa level UnifiedPattern Variable
     -> Either (Error VerifyError) VerifySuccess
 verifySymbolAliasSentence
     findSortDeclaration indexedModule attributesVerification sentence

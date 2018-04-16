@@ -4,6 +4,7 @@ module Data.Kore.Substitution.TestCommon where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 
 objectSort :: Sort Object
 objectSort = SortVariableSort (SortVariable (Id "s"))
@@ -14,14 +15,14 @@ objectVariable = Variable
     , variableSort = objectSort
     }
 
-unifiedObjectVariable :: UnifiedVariable Variable
-unifiedObjectVariable = ObjectVariable objectVariable
+unifiedObjectVariable :: Unified Variable
+unifiedObjectVariable = UnifiedObject objectVariable
 
 objectVariablePattern :: Pattern Object Variable CommonKorePattern
 objectVariablePattern = VariablePattern objectVariable
 
 objectVariableUnifiedPattern :: CommonKorePattern
-objectVariableUnifiedPattern = ObjectPattern objectVariablePattern
+objectVariableUnifiedPattern = asKorePattern objectVariablePattern
 
 metaSort :: Sort Meta
 metaSort = SortVariableSort (SortVariable (Id "#s"))
@@ -32,14 +33,14 @@ metaVariable = Variable
     , variableSort = metaSort
     }
 
-unifiedMetaVariable :: UnifiedVariable Variable
-unifiedMetaVariable = MetaVariable metaVariable
+unifiedMetaVariable :: Unified Variable
+unifiedMetaVariable = UnifiedMeta metaVariable
 
 metaVariablePattern :: Pattern Meta Variable CommonKorePattern
 metaVariablePattern = VariablePattern metaVariable
 
 metaVariableUnifiedPattern :: CommonKorePattern
-metaVariableUnifiedPattern = MetaPattern metaVariablePattern
+metaVariableUnifiedPattern = asKorePattern metaVariablePattern
 
 objectTopPattern :: CommonKorePattern
 objectTopPattern = asKorePattern $ TopPattern $ Top objectSort

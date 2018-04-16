@@ -333,7 +333,7 @@ liftSentence :: KoreSentence -> [MetaSentence]
 liftSentence = applyUnifiedSentence liftMetaSentence liftObjectSentence
 
 liftMetaSentence
-    :: Sentence Meta UnifiedSortVariable FixedPattern Variable -> [MetaSentence]
+    :: Sentence Meta UnifiedSortVariable UnifiedPattern Variable -> [MetaSentence]
 liftMetaSentence (SentenceAliasSentence msa) =
     [ SentenceAliasSentence msa
         { sentenceAliasAttributes = liftAttributes (sentenceAliasAttributes msa)
@@ -387,7 +387,7 @@ liftMetaSentence (SentenceImportSentence is) =
     ]
 
 liftObjectSentence
-    :: Sentence Object UnifiedSortVariable FixedPattern Variable -> [MetaSentence]
+    :: Sentence Object UnifiedSortVariable UnifiedPattern Variable -> [MetaSentence]
 liftObjectSentence (SentenceAliasSentence osa) =
     [ SentenceSymbolSentence (liftAliasDeclaration osa)]
 liftObjectSentence (SentenceSymbolSentence oss) =

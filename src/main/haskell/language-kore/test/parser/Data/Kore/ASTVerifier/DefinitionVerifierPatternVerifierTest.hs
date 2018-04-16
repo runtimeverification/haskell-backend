@@ -37,7 +37,7 @@ testPatternUnifiedPattern
 testPatternUnifiedPattern
     TestPattern {testPatternPattern = p}
   =
-    asUnifiedPattern p
+    asKorePattern p
 
 definitionVerifierPatternVerifierTests :: TestTree
 definitionVerifierPatternVerifierTests =
@@ -96,7 +96,7 @@ definitionVerifierPatternVerifierTests =
                 { existsSort = anotherSort
                 , existsVariable = anotherVariable
                 , existsChild =
-                    ObjectPattern
+                    asKorePattern
                         (simpleExistsPattern objectVariable objectSort)
                 }
             )
@@ -118,7 +118,7 @@ definitionVerifierPatternVerifierTests =
                 { existsSort = objectSort
                 , existsVariable = objectVariable
                 , existsChild =
-                    ObjectPattern (VariablePattern anotherVariable)
+                    asKorePattern (VariablePattern anotherVariable)
                 }
             )
             (NamePrefix "dummy")
@@ -150,7 +150,7 @@ definitionVerifierPatternVerifierTests =
                 { existsSort = objectSort
                 , existsVariable = objectVariable
                 , existsChild =
-                    ObjectPattern
+                    asKorePattern
                         (simpleExistsPattern
                             objectVariableSortVariable objectSortVariableSort)
                 }
@@ -461,6 +461,7 @@ definitionVerifierPatternVerifierTests =
         ]
   where
     objectSortName = SortName "ObjectSort"
+    objectSort :: Sort Object
     objectSort = simpleSort objectSortName
     objectVariableName = VariableName "ObjectVariable"
     objectVariable = variable objectVariableName objectSort
@@ -470,13 +471,16 @@ definitionVerifierPatternVerifierTests =
     dummyMetaSort = patternMetaSort
     dummyMetaVariable = variable (VariableName "#otherVariable") dummyMetaSort
     anotherSortName = SortName "anotherSort"
+    anotherSort :: Sort Object
     anotherSort = simpleSort anotherSortName
     anotherVariable = variable objectVariableName anotherSort
     anotherSortSentence = simpleSortSentence anotherSortName
     anotherMetaSort = symbolMetaSort
     anotherObjectSortName2 = SortName "anotherSort2"
+    anotherObjectSort2 :: Sort Object
     anotherObjectSort2 = simpleSort anotherObjectSortName2
     anotherObjectSortSentence2 = simpleSortSentence anotherObjectSortName2
+    invalidMetaSort :: Sort Meta
     invalidMetaSort = simpleSort (SortName "#InvalidMetaSort")
     anotherMetaSort2 = variableMetaSort
     objectSymbolName = SymbolName "ObjectSymbol"
@@ -494,20 +498,21 @@ definitionVerifierPatternVerifierTests =
             objectAliasName objectSort [anotherObjectSort2]
     objectSortVariableName = SortVariableName "ObjectSortVariable"
     objectSortVariable = sortVariable Object objectSortVariableName
+    objectSortVariableSort :: Sort Object
     objectSortVariableSort = sortVariableSort objectSortVariableName
     objectVariableSortVariable =
         variable objectVariableName objectSortVariableSort
     oneSortSymbolRawName = "ObjectSymbol"
     oneSortSymbolSentence =
-        ObjectSentence . SentenceSymbolSentence
-        $ SentenceSymbol
+        asSentence SentenceSymbol
             { sentenceSymbolSymbol = Symbol
-                { symbolConstructor = Id oneSortSymbolRawName
+                { symbolConstructor = Id oneSortSymbolRawName :: Id Object
                 , symbolParams = [objectSortVariable]
                 }
             , sentenceSymbolSorts = [anotherObjectSort2]
             , sentenceSymbolResultSort = objectSort
-            , sentenceSymbolAttributes = Attributes []
+            , sentenceSymbolAttributes =
+                Attributes [] :: KoreAttributes
             }
 
 dummyVariableAndSentences :: NamePrefix -> (Variable Object, [KoreSentence])
@@ -756,7 +761,7 @@ genericPatternInAllContexts
         ExistsPattern Exists
             { existsSort = testedSort
             , existsVariable = anotherVariable
-            , existsChild = asUnifiedPattern (VariablePattern anotherVariable)
+            , existsChild = asKorePattern (VariablePattern anotherVariable)
             }
     anotherVariable =
         Variable
@@ -809,7 +814,7 @@ objectPatternInAllContexts
         ExistsPattern Exists
             { existsSort = testedSort
             , existsVariable = anotherVariable
-            , existsChild = asUnifiedPattern (VariablePattern anotherVariable)
+            , existsChild = asKorePattern (VariablePattern anotherVariable)
             }
     anotherVariable =
         Variable
@@ -859,24 +864,26 @@ patternsInAllContexts
     sortVariableName = SortVariableName rawSortVariableName
     symbolAliasSort = sortVariableSort sortVariableName
     symbolSentence =
-        asKoreSymbolSentence SentenceSymbol
+        asSentence SentenceSymbol
             { sentenceSymbolSymbol = Symbol
                 { symbolConstructor = Id rawSymbolName
                 , symbolParams = [SortVariable (Id rawSortVariableName)]
                 }
             , sentenceSymbolSorts = [symbolAliasSort]
             , sentenceSymbolResultSort = anotherSort
-            , sentenceSymbolAttributes = Attributes []
+            , sentenceSymbolAttributes =
+                Attributes [] :: KoreAttributes
             }
     aliasSentence =
-        asKoreAliasSentence SentenceAlias
+        asSentence SentenceAlias
             { sentenceAliasAlias = Alias
                 { aliasConstructor = Id rawAliasName
                 , aliasParams = [SortVariable (Id rawSortVariableName)]
                 }
             , sentenceAliasSorts = [symbolAliasSort]
             , sentenceAliasResultSort = anotherSort
-            , sentenceAliasAttributes = Attributes []
+            , sentenceAliasAttributes =
+                Attributes [] :: KoreAttributes
             }
 
 genericPatternInPatterns
@@ -915,7 +922,7 @@ genericPatternInPatterns
         [ TestPattern
             { testPatternPattern = ApplicationPattern Application
                 { applicationSymbolOrAlias = symbol
-                , applicationChildren = [asUnifiedPattern testedPattern]
+                , applicationChildren = [asKorePattern testedPattern]
                 }
             , testPatternErrorStack =
                 ErrorStack
@@ -927,7 +934,7 @@ genericPatternInPatterns
         , TestPattern
             { testPatternPattern = ApplicationPattern Application
                 { applicationSymbolOrAlias = alias
-                , applicationChildren = [asUnifiedPattern testedPattern]
+                , applicationChildren = [asKorePattern testedPattern]
                 }
             , testPatternErrorStack =
                 ErrorStack
@@ -956,7 +963,7 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
         { testPatternPattern = ExistsPattern Exists
             { existsSort = testedSort
             , existsVariable = quantifiedVariable
-            , existsChild = asUnifiedPattern testedPattern
+            , existsChild = asKorePattern testedPattern
             }
         , testPatternErrorStack =
             ErrorStack
@@ -969,7 +976,7 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
         { testPatternPattern = ForallPattern Forall
             { forallSort = testedSort
             , forallVariable = quantifiedVariable
-            , forallChild = asUnifiedPattern testedPattern
+            , forallChild = asKorePattern testedPattern
             }
         , testPatternErrorStack =
             ErrorStack
@@ -1118,8 +1125,8 @@ patternInUnquantifiedGenericPatterns
         }
     ]
   where
-    anotherUnifiedPattern = asUnifiedPattern anotherPattern
-    testedUnifiedPattern = asUnifiedPattern testedPattern
+    anotherUnifiedPattern = asKorePattern anotherPattern
+    testedUnifiedPattern = asKorePattern testedPattern
 
 patternInUnquantifiedObjectPatterns
     :: Pattern Object Variable CommonKorePattern
@@ -1157,8 +1164,8 @@ patternInUnquantifiedObjectPatterns
 
     ]
   where
-    anotherUnifiedPattern = asUnifiedPattern anotherPattern
-    testedUnifiedPattern = asUnifiedPattern testedPattern
+    anotherUnifiedPattern = asKorePattern anotherPattern
+    testedUnifiedPattern = asKorePattern testedPattern
 
 testsForUnifiedPatternInTopLevelContext
     :: MetaOrObject level
@@ -1238,7 +1245,7 @@ testsForUnifiedPatternInTopLevelGenericContext
         , testDataDefinition =
             simpleDefinitionFromSentences
                 (ModuleName "MODULE")
-                ( asKoreAliasSentence
+                ( asSentence
                     (sentenceAliasWithAttributes
                         aliasName
                         sortVariables
@@ -1261,7 +1268,7 @@ testsForUnifiedPatternInTopLevelGenericContext
         , testDataDefinition =
             simpleDefinitionFromSentences
                 (ModuleName "MODULE")
-                ( asKoreSymbolSentence
+                ( asSentence
                     (sentenceSymbolWithAttributes
                         symbolName
                         sortVariables

@@ -127,26 +127,16 @@ printableList :: PrinterOutput w m => [m ()] -> [m ()]
 printableList = intersperse (betweenLines >> write ", ")
 
 instance MetaOrObject level => PrettyPrint (Id level) where
-    prettyPrint flags =
-        applyMetaObjectFunction
-            MetaOrObjectTransformer
-                { objectTransformer = prettyPrintId flags Object . getId
-                , metaTransformer = prettyPrintId flags Meta . getId
-                }
-
-prettyPrintId
-    :: (PrinterOutput w m, MetaOrObject level)
-    => Flags -> level -> String -> m ()
-prettyPrintId flags level name =
+    prettyPrint flags x =
         betweenParentheses
             flags
             (do
                 write "Id "
                 write " \""
-                write name
+                write (getId x)
                 write "\""
                 write " :: Id "
-                write (show level)
+                write (show (getMetaOrObjectType x))
             )
 
 instance

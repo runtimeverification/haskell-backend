@@ -8,6 +8,7 @@ import           Test.Tasty.HUnit                     (assertEqual, testCase)
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Substitution.Class
 import qualified Data.Kore.Substitution.List          as S
 import           Data.Kore.Variables.Fresh.IntCounter
@@ -16,7 +17,7 @@ import           Data.Kore.Variables.Int
 import           Data.Kore.Substitution.TestCommon
 
 type UnifiedPatternSubstitution =
-    S.Substitution (UnifiedVariable Variable) CommonKorePattern
+    S.Substitution (Unified Variable) CommonKorePattern
 
 instance PatternSubstitutionClass Variable UnifiedPatternSubstitution IntCounter
   where
@@ -121,14 +122,14 @@ metaVariableSubstitute = intVariable metaVariable
 
 metaVariableUnifiedPatternSubstitute :: Int -> CommonKorePattern
 metaVariableUnifiedPatternSubstitute =
-    MetaPattern . VariablePattern . metaVariableSubstitute
+    asKorePattern . VariablePattern . metaVariableSubstitute
 
 objectVariableSubstitute :: Int -> Variable Object
 objectVariableSubstitute = intVariable objectVariable
 
 objectVariableUnifiedPatternSubstitute :: Int -> CommonKorePattern
 objectVariableUnifiedPatternSubstitute =
-    ObjectPattern . VariablePattern . objectVariableSubstitute
+    asKorePattern . VariablePattern . objectVariableSubstitute
 
 substitution1 :: UnifiedPatternSubstitution
 substitution1 = S.fromList
@@ -215,7 +216,7 @@ forallExistsObjectUnifiedPattern1S2 = asKorePattern $ ForallPattern Forall
 testSubstitutionStatePattern :: CommonKorePattern
 testSubstitutionStatePattern = asKorePattern $ ApplicationPattern Application
     { applicationSymbolOrAlias = SymbolOrAlias
-        { symbolOrAliasConstructor = Id "sigma"
+        { symbolOrAliasConstructor = Id "sigma" :: Id Object
         , symbolOrAliasParams = []
         }
     , applicationChildren =
@@ -229,7 +230,7 @@ testSubstitutionStatePattern = asKorePattern $ ApplicationPattern Application
 testSubstitutionStatePatternS3 :: CommonKorePattern
 testSubstitutionStatePatternS3 = asKorePattern $ ApplicationPattern Application
     { applicationSymbolOrAlias = SymbolOrAlias
-        { symbolOrAliasConstructor = Id "sigma"
+        { symbolOrAliasConstructor = Id "sigma" :: Id Object
         , symbolOrAliasParams = []
         }
     , applicationChildren =

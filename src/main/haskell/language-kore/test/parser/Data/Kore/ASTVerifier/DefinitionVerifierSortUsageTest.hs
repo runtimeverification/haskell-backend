@@ -184,10 +184,11 @@ definitionVerifierSortUsageTests =
                 { testConfigurationDescription = "Correct sort count"
                 , testConfigurationAdditionalSentences =
                     [ simpleSortSentence additionalSortName
-                    , ObjectSentence $ SentenceSortSentence SentenceSort
-                        { sentenceSortName = Id "UnarySort"
+                    , asSentence SentenceSort
+                        { sentenceSortName = Id "UnarySort" :: Id Object
                         , sentenceSortParameters = [ SortVariable (Id "svn") ]
-                        , sentenceSortAttributes = Attributes []
+                        , sentenceSortAttributes =
+                            Attributes [] :: KoreAttributes
                         }
                     ]
                 , testConfigurationAdditionalSortVariables = []
@@ -213,10 +214,11 @@ definitionVerifierSortUsageTests =
                 { testConfigurationDescription = "Wrong sort count"
                 , testConfigurationAdditionalSentences =
                     [ simpleSortSentence additionalSortName
-                    , ObjectSentence $ SentenceSortSentence SentenceSort
-                        { sentenceSortName = Id "UnarySort"
+                    , asSentence SentenceSort
+                        { sentenceSortName = Id "UnarySort" :: Id Object
                         , sentenceSortParameters = [ SortVariable (Id "svn") ]
-                        , sentenceSortAttributes = Attributes []
+                        , sentenceSortAttributes =
+                            Attributes [] :: KoreAttributes
                         }
                     ]
                 , testConfigurationAdditionalSortVariables = []
@@ -421,8 +423,8 @@ flaggedObjectTestsForSort
         additionalSortActual
         sortVariables
         namePrefix
-        (ObjectSentence . SentenceAliasSentence)
-        (ObjectSentence . SentenceSymbolSentence)
+        asSentence
+        asSentence
     ++ unfilteredTestExamplesForObjectSort
         sort
         additionalSortActual
@@ -449,8 +451,8 @@ flaggedMetaTestsForSort
         additionalSortActual
         (testConfigurationAdditionalSortVariables testConfiguration)
         namePrefix
-        (MetaSentence . SentenceAliasSentence)
-        (MetaSentence . SentenceSymbolSentence)
+        asSentence
+        asSentence
     ++ unfilteredTestExamplesForMetaSort sort
 
 applyTestConfiguration
@@ -836,8 +838,8 @@ unfilteredTestExamplesForObjectSort
                 simpleDefinitionFromSentences
                     (ModuleName "MODULE")
                     (
-                        (ObjectSentence
-                            ( SentenceSortSentence SentenceSort
+                        (asSentence
+                            SentenceSort
                                 { sentenceSortName =
                                         Id differentAdditionalSortRawName
                                 , sentenceSortParameters = sortVariables
@@ -848,7 +850,6 @@ unfilteredTestExamplesForObjectSort
                                             sort
                                         ]
                                 }
-                            )::KoreSentence
                         )
                     : additionalSentences
                     )
@@ -883,16 +884,16 @@ unfilteredTestExamplesForMetaSort (TestedSort sort) =
                 simpleDefinitionFromSentences
                     (ModuleName "MODULE")
                     (
-                        (ObjectSentence
-                            ( SentenceSortSentence SentenceSort
-                                { sentenceSortName = Id "additionalSort"
+                        (asSentence
+                            SentenceSort
+                                { sentenceSortName =
+                                    Id "additionalSort" :: Id Object
                                 , sentenceSortParameters = []
                                 , sentenceSortAttributes = Attributes
                                     [ simpleExistsUnifiedPattern
                                         (VariableName "v") sort
                                     ]
                                 }
-                            )::KoreSentence
                         )
                     : additionalSentences
                     )

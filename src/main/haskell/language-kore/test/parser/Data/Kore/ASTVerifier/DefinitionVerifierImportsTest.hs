@@ -6,6 +6,7 @@ import           Test.Tasty                                          (TestTree,
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
 import           Data.Kore.Implicit.ImplicitSorts
@@ -19,77 +20,83 @@ definitionVerifierImportsTests =
         , nameDuplicationTests
         ]
 
+emptyKoreAttributes  :: KoreAttributes
+emptyKoreAttributes = Attributes []
+
+emptyKoreSortParams :: [UnifiedSortVariable]
+emptyKoreSortParams = []
+
 importTests :: TestTree
 importTests =
     testGroup
         "Module imports"
         [ expectSuccess "Simplest definition"
             Definition
-                { definitionAttributes = Attributes []
+                { definitionAttributes = emptyKoreAttributes
                 , definitionModules =
                     [ Module
                         { moduleName = ModuleName "M1"
                         , moduleSentences = []
-                        , moduleAttributes = Attributes []
+                        , moduleAttributes = emptyKoreAttributes
                         }
                     ]
                 }
         , expectSuccess "Two modules"
             Definition
-                { definitionAttributes = Attributes []
+                { definitionAttributes = emptyKoreAttributes
                 , definitionModules =
                     [ Module
                         { moduleName = ModuleName "M1"
                         , moduleSentences = []
-                        , moduleAttributes = Attributes []
+                        , moduleAttributes = emptyKoreAttributes
                         }
                     , Module
                         { moduleName = ModuleName "M2"
                         , moduleSentences = []
-                        , moduleAttributes = Attributes []
+                        , moduleAttributes = emptyKoreAttributes
                         }
                     ]
                 }
         , expectSuccess "Two modules with import"
             Definition
-                { definitionAttributes = Attributes []
+                { definitionAttributes = emptyKoreAttributes
                 , definitionModules =
                     [ Module
                         { moduleName = ModuleName "M1"
                         , moduleSentences = [ importSentence (ModuleName "M2") ]
-                        , moduleAttributes = Attributes []
+                        , moduleAttributes = emptyKoreAttributes
                         }
                     , Module
                         { moduleName = ModuleName "M2"
                         , moduleSentences = []
-                        , moduleAttributes = Attributes []
+                        , moduleAttributes = emptyKoreAttributes
                         }
                     ]
                 }
         , expectSuccess "Three modules with chain import"
             Definition
-                { definitionAttributes = Attributes []
+                { definitionAttributes = emptyKoreAttributes
                 , definitionModules =
                     [ Module
                         { moduleName = ModuleName "M1"
                         , moduleSentences = [ importSentence (ModuleName "M2") ]
-                        , moduleAttributes = Attributes []
+                        , moduleAttributes = emptyKoreAttributes
                         }
                     , Module
                         { moduleName = ModuleName "M2"
                         , moduleSentences = [ importSentence (ModuleName "M3") ]
-                        , moduleAttributes = Attributes []
+                        , moduleAttributes = emptyKoreAttributes
                         }
                     , Module
                         { moduleName = ModuleName "M3"
                         , moduleSentences = []
-                        , moduleAttributes = Attributes []
+                        , moduleAttributes = emptyKoreAttributes
                         }
                     ]
                 }
         , expectSuccess "Three modules with dag import"
             Definition
-                { definitionAttributes = Attributes []
+                { definitionAttributes = emptyKoreAttributes
                 , definitionModules =
                     [ Module
                         { moduleName = ModuleName "M1"
@@ -97,17 +104,17 @@ importTests =
                             [ importSentence (ModuleName "M2")
                             , importSentence (ModuleName "M3")
                             ]
-                        , moduleAttributes = Attributes []
+                        , moduleAttributes = emptyKoreAttributes
                         }
                     , Module
                         { moduleName = ModuleName "M2"
                         , moduleSentences = [ importSentence (ModuleName "M3") ]
-                        , moduleAttributes = Attributes []
+                        , moduleAttributes = emptyKoreAttributes
                         }
                     , Module
                         { moduleName = ModuleName "M3"
                         , moduleSentences = []
-                        , moduleAttributes = Attributes []
+                        , moduleAttributes = emptyKoreAttributes
                         }
                     ]
                 }
@@ -117,22 +124,22 @@ importTests =
                 "Circular module import dependency."
             )
             Definition
-                { definitionAttributes = Attributes []
+                { definitionAttributes = emptyKoreAttributes
                 , definitionModules =
                     [ Module
                         { moduleName = ModuleName "M1"
                         , moduleSentences = [ importSentence (ModuleName "M2") ]
-                        , moduleAttributes = Attributes []
+                        , moduleAttributes = emptyKoreAttributes
                         }
                     , Module
                         { moduleName = ModuleName "M2"
                         , moduleSentences = [ importSentence (ModuleName "M3") ]
-                        , moduleAttributes = Attributes []
+                        , moduleAttributes = emptyKoreAttributes
                         }
                     , Module
                         { moduleName = ModuleName "M3"
                         , moduleSentences = [ importSentence (ModuleName "M2") ]
-                        , moduleAttributes = Attributes []
+                        , moduleAttributes = emptyKoreAttributes
                         }
                     ]
                 }
@@ -295,68 +302,68 @@ sortVisibilityTests =
     ]
   where
     sort = SortActualSort SortActual
-        { sortActualName = Id "sort1"
+        { sortActualName = Id "sort1" :: Id Object
         , sortActualSorts = []
         }
-    sortDeclaration = ObjectSentence $ SentenceSortSentence SentenceSort
-        { sentenceSortName = Id "sort1"
+    sortDeclaration = asSentence SentenceSort
+        { sentenceSortName = Id "sort1" :: Id Object
         , sentenceSortParameters = []
-        , sentenceSortAttributes = Attributes []
+        , sentenceSortAttributes = emptyKoreAttributes
         }
     anotherSort = SortActualSort SortActual
-        { sortActualName = Id "sort3"
+        { sortActualName = Id "sort3" :: Id Object
         , sortActualSorts = []
         }
-    anotherSortDeclaration = ObjectSentence $ SentenceSortSentence SentenceSort
-        { sentenceSortName = Id "sort3"
+    anotherSortDeclaration = asSentence SentenceSort
+        { sentenceSortName = Id "sort3" :: Id Object
         , sentenceSortParameters = []
-        , sentenceSortAttributes = Attributes []
+        , sentenceSortAttributes = emptyKoreAttributes
         }
-    topSortPattern = ObjectPattern ( TopPattern Top { topSort = sort } )
+    topSortPattern = asKorePattern ( TopPattern Top { topSort = sort } )
     metaTopSortPattern =
-        MetaPattern ( TopPattern Top { topSort = charMetaSort } )
+        asKorePattern ( TopPattern Top { topSort = charMetaSort } )
     sortReferenceInSort =
         SortActualSort SortActual
-            { sortActualName = Id "sort2"
+            { sortActualName = Id "sort2" :: Id Object
             , sortActualSorts = [ sort ]
             }
     sortReferenceInSortSentence =
-        MetaSentence $ SentenceAxiomSentence SentenceAxiom
-            { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+        asSentence SentenceAxiom
+            { sentenceAxiomParameters = emptyKoreSortParams
+            , sentenceAxiomPattern = asKorePattern
                 ( TopPattern Top { topSort = sortReferenceInSort } )
-            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomAttributes = emptyKoreAttributes
             }
     sortReferenceInSortSupportingSentences =
-        [ ObjectSentence $ SentenceSortSentence SentenceSort
-            { sentenceSortName = Id "sort2"
+        [ asSentence SentenceSort
+            { sentenceSortName = Id "sort2" :: Id Object
             , sentenceSortParameters = [SortVariable (Id "x")]
-            , sentenceSortAttributes = Attributes []
+            , sentenceSortAttributes = emptyKoreAttributes
             }
         ]
     sortReferenceInTopPatternSentence =
-        MetaSentence $ SentenceAxiomSentence SentenceAxiom
-            { sentenceAxiomParameters = []
+        asSentence SentenceAxiom
+            { sentenceAxiomParameters = emptyKoreSortParams
             , sentenceAxiomPattern = topSortPattern
-            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomAttributes = emptyKoreAttributes
             }
     metaSortReferenceInTopPatternSentence =
-        MetaSentence $ SentenceAxiomSentence SentenceAxiom
-            { sentenceAxiomParameters = []
+        asSentence SentenceAxiom
+            { sentenceAxiomParameters = emptyKoreSortParams
             , sentenceAxiomPattern = metaTopSortPattern
-            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomAttributes = emptyKoreAttributes
             }
     sortReferenceInExistsPatternSentence =
-        MetaSentence $ SentenceAxiomSentence SentenceAxiom
-            { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+        asSentence SentenceAxiom
+            { sentenceAxiomParameters = emptyKoreSortParams
+            , sentenceAxiomPattern = asKorePattern
                 ( ExistsPattern Exists
                     { existsSort = sort
                     , existsVariable = Variable
                         { variableName = Id "var"
                         , variableSort = sort
                         }
-                    , existsChild = ObjectPattern
+                    , existsChild = asKorePattern
                         ( VariablePattern Variable
                             { variableName = Id "var"
                             , variableSort = sort
@@ -364,38 +371,38 @@ sortVisibilityTests =
                         )
                     }
                 )
-            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomAttributes = emptyKoreAttributes
             }
     sortReferenceInAndPatternSentence =
-        MetaSentence $ SentenceAxiomSentence SentenceAxiom
-            { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+        asSentence SentenceAxiom
+            { sentenceAxiomParameters = emptyKoreSortParams
+            , sentenceAxiomPattern = asKorePattern
                 ( AndPattern And
                     { andSort = sort
                     , andFirst = topSortPattern
                     , andSecond = topSortPattern
                     }
                 )
-            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomAttributes = emptyKoreAttributes
             }
     sortReferenceInNextPatternSentence =
-        MetaSentence $ SentenceAxiomSentence SentenceAxiom
-            { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+        asSentence SentenceAxiom
+            { sentenceAxiomParameters = emptyKoreSortParams
+            , sentenceAxiomPattern = asKorePattern
                 ( NextPattern Next
                     { nextSort = sort
                     , nextChild = topSortPattern
                     }
                 )
-            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomAttributes = emptyKoreAttributes
             }
     sortReferenceInPatternInPatternSentence =
-        MetaSentence $ SentenceAxiomSentence SentenceAxiom
-            { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+        asSentence SentenceAxiom
+            { sentenceAxiomParameters = emptyKoreSortParams
+            , sentenceAxiomPattern = asKorePattern
                 ( NextPattern Next
                     { nextSort = anotherSort
-                    , nextChild = ObjectPattern
+                    , nextChild = asKorePattern
                         ( EqualsPattern Equals
                             { equalsResultSort = anotherSort
                             , equalsOperandSort = sort
@@ -405,58 +412,58 @@ sortVisibilityTests =
                         )
                     }
                 )
-            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomAttributes = emptyKoreAttributes
             }
     sortReferenceInPatternInPatternSupportingSentences =
         [ anotherSortDeclaration ]
     sortReferenceInSentenceSymbolResultSortSentence =
-        ObjectSentence $ SentenceSymbolSentence SentenceSymbol
+        asSentence SentenceSymbol
             { sentenceSymbolSymbol = Symbol
                 { symbolConstructor = Id "symbol1"
                 , symbolParams = []
                 }
             , sentenceSymbolSorts = []
             , sentenceSymbolResultSort = sort
-            , sentenceSymbolAttributes = Attributes []
+            , sentenceSymbolAttributes = emptyKoreAttributes
             }
     sortReferenceInSentenceSymbolSortsSentence =
-        ObjectSentence $ SentenceSymbolSentence SentenceSymbol
+        asSentence SentenceSymbol
             { sentenceSymbolSymbol = Symbol
                 { symbolConstructor = Id "symbol1"
                 , symbolParams = []
                 }
             , sentenceSymbolSorts = [sort]
             , sentenceSymbolResultSort = anotherSort
-            , sentenceSymbolAttributes = Attributes []
+            , sentenceSymbolAttributes = emptyKoreAttributes
             }
     sortReferenceInSentenceSymbolSortsSupportSentences =
         [ anotherSortDeclaration ]
     sortReferenceInSentenceAliasResultSortSentence =
-        ObjectSentence $ SentenceAliasSentence SentenceAlias
+        asSentence SentenceAlias
             { sentenceAliasAlias = Alias
                 { aliasConstructor = Id "alias1"
                 , aliasParams = []
                 }
             , sentenceAliasSorts = []
             , sentenceAliasResultSort = sort
-            , sentenceAliasAttributes = Attributes []
+            , sentenceAliasAttributes = emptyKoreAttributes
             }
     sortReferenceInSentenceAliasSortsSentence =
-        ObjectSentence $ SentenceAliasSentence SentenceAlias
+        asSentence SentenceAlias
             { sentenceAliasAlias = Alias
                 { aliasConstructor = Id "alias1"
                 , aliasParams = []
                 }
             , sentenceAliasSorts = [sort]
             , sentenceAliasResultSort = anotherSort
-            , sentenceAliasAttributes = Attributes []
+            , sentenceAliasAttributes = emptyKoreAttributes
             }
     sortReferenceInSentenceAliasSortsSupportSentences =
         [ anotherSortDeclaration ]
     sortReferenceInSymbolOrAliasSentence =
-        MetaSentence $ SentenceAxiomSentence SentenceAxiom
-            { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+        asSentence SentenceAxiom
+            { sentenceAxiomParameters = emptyKoreSortParams
+            , sentenceAxiomPattern = asKorePattern
                 ( ApplicationPattern Application
                     { applicationSymbolOrAlias = SymbolOrAlias
                         { symbolOrAliasConstructor = Id "symbol2"
@@ -465,18 +472,18 @@ sortVisibilityTests =
                     , applicationChildren = []
                     }
                 )
-            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomAttributes = emptyKoreAttributes
             }
     sortReferenceInSymbolOrAliasSupportSentences =
-        [ ObjectSentence $ SentenceSymbolSentence SentenceSymbol
+        [ asSentence SentenceSymbol
             { sentenceSymbolSymbol = Symbol
-                { symbolConstructor = Id "symbol2"
+                { symbolConstructor = Id "symbol2" :: Id Object
                 , symbolParams = [SortVariable (Id "sv1")]
                 }
             , sentenceSymbolSorts = []
             , sentenceSymbolResultSort =
                 SortVariableSort (SortVariable (Id "sv1"))
-            , sentenceSymbolAttributes = Attributes []
+            , sentenceSymbolAttributes = emptyKoreAttributes
             }
         ]
 
@@ -566,8 +573,9 @@ symbolVisibilityTests =
         (SupportingSentences [])
     ]
   where
-    topSortPattern = ObjectPattern ( TopPattern Top { topSort = defaultSort } )
-    symbolPattern = ObjectPattern
+    topSortPattern = asKorePattern ( TopPattern Top { topSort = defaultSort } )
+    symbolPattern :: CommonKorePattern
+    symbolPattern = asKorePattern
         ( ApplicationPattern Application
             { applicationSymbolOrAlias = SymbolOrAlias
                 { symbolOrAliasConstructor = Id "symbol1"
@@ -576,18 +584,18 @@ symbolVisibilityTests =
             , applicationChildren = []
             }
         )
-    symbolDeclaration = ObjectSentence $ SentenceSymbolSentence SentenceSymbol
+    symbolDeclaration = asSentence SentenceSymbol
         { sentenceSymbolSymbol = Symbol
-            { symbolConstructor = Id "symbol1"
+            { symbolConstructor = Id "symbol1" :: Id Object
             , symbolParams = [SortVariable (Id "sv1")]
             }
         , sentenceSymbolSorts = []
         , sentenceSymbolResultSort =
             SortVariableSort (SortVariable (Id "sv1"))
-        , sentenceSymbolAttributes = Attributes []
+        , sentenceSymbolAttributes = emptyKoreAttributes
         }
     defaultSymbolSupportSentences = [ defaultSortDeclaration ]
-    metaSymbolPattern = MetaPattern
+    metaSymbolPattern = asKorePattern
         ( ApplicationPattern Application
             { applicationSymbolOrAlias = SymbolOrAlias
                 { symbolOrAliasConstructor = Id "#symbol1"
@@ -596,50 +604,50 @@ symbolVisibilityTests =
             , applicationChildren = []
             }
         )
-    metaSymbolDeclaration = MetaSentence $ SentenceSymbolSentence SentenceSymbol
+    metaSymbolDeclaration = asSentence SentenceSymbol
         { sentenceSymbolSymbol = Symbol
-            { symbolConstructor = Id "#symbol1"
+            { symbolConstructor = Id "#symbol1" :: Id Meta
             , symbolParams = [SortVariable (Id "#sv1")]
             }
         , sentenceSymbolSorts = []
         , sentenceSymbolResultSort =
             SortVariableSort (SortVariable (Id "#sv1"))
-        , sentenceSymbolAttributes = Attributes []
+        , sentenceSymbolAttributes = emptyKoreAttributes
         }
     symbolReferenceInAxiomSentence =
-        MetaSentence $ SentenceAxiomSentence SentenceAxiom
-            { sentenceAxiomParameters = []
+        asSentence SentenceAxiom
+            { sentenceAxiomParameters = emptyKoreSortParams
             , sentenceAxiomPattern = symbolPattern
-            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomAttributes = emptyKoreAttributes
             }
     metaSymbolReferenceInAxiomSentence =
-        MetaSentence $ SentenceAxiomSentence SentenceAxiom
-            { sentenceAxiomParameters = []
+        asSentence SentenceAxiom
+            { sentenceAxiomParameters = emptyKoreSortParams
             , sentenceAxiomPattern = metaSymbolPattern
-            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomAttributes = emptyKoreAttributes
             }
     symbolReferenceInAttributesSentence =
-        ObjectSentence $ SentenceSortSentence SentenceSort
-            { sentenceSortName = Id "sort2"
+        asSentence SentenceSort
+            { sentenceSortName = Id "sort2" :: Id Object
             , sentenceSortParameters = []
             , sentenceSortAttributes = Attributes [symbolPattern]
             }
     symbolReferenceInAndPatternSentence =
-        MetaSentence $ SentenceAxiomSentence SentenceAxiom
-            { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+        asSentence SentenceAxiom
+            { sentenceAxiomParameters = emptyKoreSortParams
+            , sentenceAxiomPattern = asKorePattern
                 ( AndPattern And
                     { andSort = defaultSort
                     , andFirst = symbolPattern
                     , andSecond = topSortPattern
                     }
                 )
-            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomAttributes = emptyKoreAttributes
             }
     symbolReferenceInExistsPatternSentence =
-        MetaSentence $ SentenceAxiomSentence SentenceAxiom
-            { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+        asSentence SentenceAxiom
+            { sentenceAxiomParameters = emptyKoreSortParams
+            , sentenceAxiomPattern = asKorePattern
                 ( ExistsPattern Exists
                     { existsSort = defaultSort
                     , existsVariable = Variable
@@ -649,23 +657,23 @@ symbolVisibilityTests =
                     , existsChild = symbolPattern
                     }
                 )
-            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomAttributes = emptyKoreAttributes
             }
     symbolReferenceInNextPatternSentence =
-        MetaSentence $ SentenceAxiomSentence SentenceAxiom
-            { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+        asSentence SentenceAxiom
+            { sentenceAxiomParameters = emptyKoreSortParams
+            , sentenceAxiomPattern = asKorePattern
                 ( NextPattern Next
                     { nextSort = defaultSort
                     , nextChild = symbolPattern
                     }
                 )
-            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomAttributes = emptyKoreAttributes
             }
     symbolReferenceInSymbolOrAliasSentence =
-        MetaSentence $ SentenceAxiomSentence SentenceAxiom
-            { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+        asSentence SentenceAxiom
+            { sentenceAxiomParameters = emptyKoreSortParams
+            , sentenceAxiomPattern = asKorePattern
                 ( ApplicationPattern Application
                     { applicationSymbolOrAlias = SymbolOrAlias
                         { symbolOrAliasConstructor = Id "symbol2"
@@ -674,21 +682,20 @@ symbolVisibilityTests =
                     , applicationChildren = [symbolPattern]
                     }
                 )
-            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomAttributes = emptyKoreAttributes
             }
     symbolReferenceInSymbolOrAliasSupportSentences =
-        ObjectSentence (SentenceSymbolSentence SentenceSymbol
+        asSentence SentenceSymbol
             { sentenceSymbolSymbol = Symbol
-                { symbolConstructor = Id "symbol2"
+                { symbolConstructor = Id "symbol2" :: Id Object
                 , symbolParams = [SortVariable (Id "sv1")]
                 }
             , sentenceSymbolSorts =
                 [ SortVariableSort (SortVariable (Id "sv1")) ]
             , sentenceSymbolResultSort =
                 SortVariableSort (SortVariable (Id "sv1"))
-            , sentenceSymbolAttributes = Attributes []
+            , sentenceSymbolAttributes = emptyKoreAttributes
             }
-        )
         : defaultSymbolSupportSentences
 
 aliasVisibilityTests :: [TestTree]
@@ -777,8 +784,9 @@ aliasVisibilityTests =
         (SupportingSentences [])
     ]
   where
-    topSortPattern = ObjectPattern ( TopPattern Top { topSort = defaultSort } )
-    aliasPattern = ObjectPattern
+    topSortPattern = asKorePattern ( TopPattern Top { topSort = defaultSort } )
+    aliasPattern :: CommonKorePattern
+    aliasPattern = asKorePattern
         ( ApplicationPattern Application
             { applicationSymbolOrAlias = SymbolOrAlias
                 { symbolOrAliasConstructor = Id "alias1"
@@ -787,18 +795,18 @@ aliasVisibilityTests =
             , applicationChildren = []
             }
         )
-    aliasDeclaration = ObjectSentence $ SentenceAliasSentence SentenceAlias
+    aliasDeclaration = asSentence SentenceAlias
         { sentenceAliasAlias = Alias
-            { aliasConstructor = Id "alias1"
+            { aliasConstructor = Id "alias1" :: Id Object
             , aliasParams = [SortVariable (Id "sv1")]
             }
         , sentenceAliasSorts = []
         , sentenceAliasResultSort =
             SortVariableSort (SortVariable (Id "sv1"))
-        , sentenceAliasAttributes = Attributes []
+        , sentenceAliasAttributes = emptyKoreAttributes
         }
     defaultAliasSupportSentences = [ defaultSortDeclaration ]
-    metaAliasPattern = MetaPattern
+    metaAliasPattern = asKorePattern
         ( ApplicationPattern Application
             { applicationSymbolOrAlias = SymbolOrAlias
                 { symbolOrAliasConstructor = Id "#alias1"
@@ -807,50 +815,50 @@ aliasVisibilityTests =
             , applicationChildren = []
             }
         )
-    metaAliasDeclaration = MetaSentence $ SentenceAliasSentence SentenceAlias
+    metaAliasDeclaration = asSentence SentenceAlias
         { sentenceAliasAlias = Alias
-            { aliasConstructor = Id "#alias1"
+            { aliasConstructor = Id "#alias1" :: Id Meta
             , aliasParams = [SortVariable (Id "#sv1")]
             }
         , sentenceAliasSorts = []
         , sentenceAliasResultSort =
             SortVariableSort (SortVariable (Id "#sv1"))
-        , sentenceAliasAttributes = Attributes []
+        , sentenceAliasAttributes = emptyKoreAttributes
         }
     aliasReferenceInAxiomSentence =
-        MetaSentence $ SentenceAxiomSentence SentenceAxiom
-            { sentenceAxiomParameters = []
+        asSentence SentenceAxiom
+            { sentenceAxiomParameters = emptyKoreSortParams
             , sentenceAxiomPattern = aliasPattern
-            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomAttributes = emptyKoreAttributes
             }
     metaAliasReferenceInAxiomSentence =
-        MetaSentence $ SentenceAxiomSentence SentenceAxiom
-            { sentenceAxiomParameters = []
+        asSentence SentenceAxiom
+            { sentenceAxiomParameters = emptyKoreSortParams
             , sentenceAxiomPattern = metaAliasPattern
-            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomAttributes = emptyKoreAttributes
             }
     aliasReferenceInAttributesSentence =
-        ObjectSentence $ SentenceSortSentence SentenceSort
-            { sentenceSortName = Id "sort2"
+        asSentence SentenceSort
+            { sentenceSortName = Id "sort2" :: Id Object
             , sentenceSortParameters = []
             , sentenceSortAttributes = Attributes [aliasPattern]
             }
     aliasReferenceInAndPatternSentence =
-        MetaSentence $ SentenceAxiomSentence SentenceAxiom
-            { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+        asSentence SentenceAxiom
+            { sentenceAxiomParameters = emptyKoreSortParams
+            , sentenceAxiomPattern = asKorePattern
                 ( AndPattern And
                     { andSort = defaultSort
                     , andFirst = aliasPattern
                     , andSecond = topSortPattern
                     }
                 )
-            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomAttributes = emptyKoreAttributes
             }
     aliasReferenceInExistsPatternSentence =
-        MetaSentence $ SentenceAxiomSentence SentenceAxiom
-            { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+        asSentence SentenceAxiom
+            { sentenceAxiomParameters = emptyKoreSortParams
+            , sentenceAxiomPattern = asKorePattern
                 ( ExistsPattern Exists
                     { existsSort = defaultSort
                     , existsVariable = Variable
@@ -860,23 +868,23 @@ aliasVisibilityTests =
                     , existsChild = aliasPattern
                     }
                 )
-            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomAttributes = emptyKoreAttributes
             }
     aliasReferenceInNextPatternSentence =
-        MetaSentence $ SentenceAxiomSentence SentenceAxiom
-            { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+        asSentence SentenceAxiom
+            { sentenceAxiomParameters = emptyKoreSortParams
+            , sentenceAxiomPattern = asKorePattern
                 ( NextPattern Next
                     { nextSort = defaultSort
                     , nextChild = aliasPattern
                     }
                 )
-            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomAttributes = emptyKoreAttributes
             }
     aliasReferenceInAliasOrAliasSentence =
-        MetaSentence $ SentenceAxiomSentence SentenceAxiom
-            { sentenceAxiomParameters = []
-            , sentenceAxiomPattern = ObjectPattern
+        asSentence SentenceAxiom
+            { sentenceAxiomParameters = emptyKoreSortParams
+            , sentenceAxiomPattern = asKorePattern
                 ( ApplicationPattern Application
                     { applicationSymbolOrAlias = SymbolOrAlias
                         { symbolOrAliasConstructor = Id "alias2"
@@ -885,19 +893,19 @@ aliasVisibilityTests =
                     , applicationChildren = [aliasPattern]
                     }
                 )
-            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomAttributes = emptyKoreAttributes
             }
     aliasReferenceInAliasOrAliasSupportSentences =
-        (ObjectSentence $ SentenceAliasSentence SentenceAlias
+        (asSentence SentenceAlias
             { sentenceAliasAlias = Alias
-                { aliasConstructor = Id "alias2"
+                { aliasConstructor = Id "alias2" :: Id Object
                 , aliasParams = [SortVariable (Id "sv1")]
                 }
             , sentenceAliasSorts =
                 [ SortVariableSort (SortVariable (Id "sv1")) ]
             , sentenceAliasResultSort =
                 SortVariableSort (SortVariable (Id "sv1"))
-            , sentenceAliasAttributes = Attributes []
+            , sentenceAliasAttributes = emptyKoreAttributes
             }
         )
         : defaultAliasSupportSentences
@@ -909,10 +917,10 @@ defaultSort = SortActualSort SortActual
     , sortActualSorts = []
     }
 defaultSortDeclaration :: KoreSentence
-defaultSortDeclaration = ObjectSentence $ SentenceSortSentence SentenceSort
-    { sentenceSortName = Id "sort1"
+defaultSortDeclaration = asSentence SentenceSort
+    { sentenceSortName = Id "sort1" :: Id Object
     , sentenceSortParameters = []
-    , sentenceSortAttributes = Attributes []
+    , sentenceSortAttributes = emptyKoreAttributes
     }
 
 newtype DeclaringSentence = DeclaringSentence KoreSentence
@@ -955,7 +963,7 @@ nameReferenceSuccessTests
   =
     [ expectSuccess "Successful reference: one module"
         Definition
-            { definitionAttributes = Attributes []
+            { definitionAttributes = emptyKoreAttributes
             , definitionModules =
                 [ Module
                     { moduleName = ModuleName "M1"
@@ -963,54 +971,54 @@ nameReferenceSuccessTests
                         usingSentence
                         : declaringSentence
                         : supportingSentences
-                    , moduleAttributes = Attributes []
+                    , moduleAttributes = emptyKoreAttributes
                     }
                 ]
             }
     , expectSuccess "Successful reference: two modules with import"
         Definition
-            { definitionAttributes = Attributes []
+            { definitionAttributes = emptyKoreAttributes
             , definitionModules =
                 [ Module
                     { moduleName = ModuleName "M1"
                     , moduleSentences =
                         [ importSentence (ModuleName "M2"), usingSentence]
-                    , moduleAttributes = Attributes []
+                    , moduleAttributes = emptyKoreAttributes
                     }
                 , Module
                     { moduleName = ModuleName "M2"
                     , moduleSentences =
                         declaringSentence : supportingSentences
-                    , moduleAttributes = Attributes []
+                    , moduleAttributes = emptyKoreAttributes
                     }
                 ]
             }
     , expectSuccess "Successful reference: three modules with chain import"
         Definition
-            { definitionAttributes = Attributes []
+            { definitionAttributes = emptyKoreAttributes
             , definitionModules =
                 [ Module
                     { moduleName = ModuleName "M1"
                     , moduleSentences =
                         [ importSentence (ModuleName "M2"), usingSentence]
-                    , moduleAttributes = Attributes []
+                    , moduleAttributes = emptyKoreAttributes
                     }
                 , Module
                     { moduleName = ModuleName "M2"
                     , moduleSentences = [ importSentence (ModuleName "M3") ]
-                    , moduleAttributes = Attributes []
+                    , moduleAttributes = emptyKoreAttributes
                     }
                 , Module
                     { moduleName = ModuleName "M3"
                     , moduleSentences =
                         declaringSentence : supportingSentences
-                    , moduleAttributes = Attributes []
+                    , moduleAttributes = emptyKoreAttributes
                     }
                 ]
             }
     , expectSuccess "Successful reference: three modules with tree import"
         Definition
-            { definitionAttributes = Attributes []
+            { definitionAttributes = emptyKoreAttributes
             , definitionModules =
                 [ Module
                     { moduleName = ModuleName "M1"
@@ -1019,24 +1027,24 @@ nameReferenceSuccessTests
                         , importSentence (ModuleName "M3")
                         , usingSentence
                         ]
-                    , moduleAttributes = Attributes []
+                    , moduleAttributes = emptyKoreAttributes
                     }
                 , Module
                     { moduleName = ModuleName "M2"
                     , moduleSentences = []
-                    , moduleAttributes = Attributes []
+                    , moduleAttributes = emptyKoreAttributes
                     }
                 , Module
                     { moduleName = ModuleName "M3"
                     , moduleSentences =
                         declaringSentence : supportingSentences
-                    , moduleAttributes = Attributes []
+                    , moduleAttributes = emptyKoreAttributes
                     }
                 ]
             }
     , expectSuccess "Successful reference: three modules with dag import"
         Definition
-            { definitionAttributes = Attributes []
+            { definitionAttributes = emptyKoreAttributes
             , definitionModules =
                 [ Module
                     { moduleName = ModuleName "M1"
@@ -1045,18 +1053,18 @@ nameReferenceSuccessTests
                         , importSentence (ModuleName "M3")
                         , usingSentence
                         ]
-                    , moduleAttributes = Attributes []
+                    , moduleAttributes = emptyKoreAttributes
                     }
                 , Module
                     { moduleName = ModuleName "M2"
                     , moduleSentences = [ importSentence (ModuleName "M3") ]
-                    , moduleAttributes = Attributes []
+                    , moduleAttributes = emptyKoreAttributes
                     }
                 , Module
                     { moduleName = ModuleName "M3"
                     , moduleSentences =
                         declaringSentence : supportingSentences
-                    , moduleAttributes = Attributes []
+                    , moduleAttributes = emptyKoreAttributes
                     }
                 ]
             }
@@ -1083,12 +1091,12 @@ nameReferenceFailureTests
             , errorError = expectedErrorMessage
             }
         Definition
-            { definitionAttributes = Attributes []
+            { definitionAttributes = emptyKoreAttributes
             , definitionModules =
                 [ Module
                     { moduleName = ModuleName "M1"
                     , moduleSentences = usingSentence : supportingSentences
-                    , moduleAttributes = Attributes []
+                    , moduleAttributes = emptyKoreAttributes
                     }
                 ]
             }
@@ -1099,17 +1107,17 @@ nameReferenceFailureTests
             , errorError = expectedErrorMessage
             }
         Definition
-            { definitionAttributes = Attributes []
+            { definitionAttributes = emptyKoreAttributes
             , definitionModules =
                 [ Module
                     { moduleName = ModuleName "M1"
                     , moduleSentences = usingSentence : supportingSentences
-                    , moduleAttributes = Attributes []
+                    , moduleAttributes = emptyKoreAttributes
                     }
                 , Module
                     { moduleName = ModuleName "M2"
                     , moduleSentences = [ declaringSentence ]
-                    , moduleAttributes = Attributes []
+                    , moduleAttributes = emptyKoreAttributes
                     }
                 ]
             }
@@ -1120,7 +1128,7 @@ nameReferenceFailureTests
             , errorError = expectedErrorMessage
             }
         Definition
-            { definitionAttributes = Attributes []
+            { definitionAttributes = emptyKoreAttributes
             , definitionModules =
                 [ Module
                     { moduleName = ModuleName "M1"
@@ -1128,12 +1136,12 @@ nameReferenceFailureTests
                         [ importSentence (ModuleName "M2")
                         , declaringSentence
                         ]
-                    , moduleAttributes = Attributes []
+                    , moduleAttributes = emptyKoreAttributes
                     }
                 , Module
                     { moduleName = ModuleName "M2"
                     , moduleSentences = usingSentence : supportingSentences
-                    , moduleAttributes = Attributes []
+                    , moduleAttributes = emptyKoreAttributes
                     }
                 ]
             }
@@ -1196,47 +1204,47 @@ nameDuplicationTests =
         Module
             { moduleName = modName
             , moduleSentences =
-                [ ObjectSentence $ SentenceSortSentence SentenceSort
-                    { sentenceSortName = Id sortName
+                [ asSentence SentenceSort
+                    { sentenceSortName = Id sortName :: Id Object
                     , sentenceSortParameters = []
-                    , sentenceSortAttributes = Attributes []
+                    , sentenceSortAttributes = emptyKoreAttributes
                     }
                 ]
-            , moduleAttributes = Attributes []
+            , moduleAttributes = emptyKoreAttributes
             }
     symbolDeclarationModule modName (SymbolName symbolName) =
         Module
             { moduleName = modName
             , moduleSentences =
-                [ ObjectSentence $ SentenceSymbolSentence SentenceSymbol
+                [ asSentence SentenceSymbol
                     { sentenceSymbolSymbol = Symbol
-                        { symbolConstructor = Id symbolName
+                        { symbolConstructor = Id symbolName :: Id Object
                         , symbolParams = [SortVariable (Id "sv1")]
                         }
                     , sentenceSymbolSorts = []
                     , sentenceSymbolResultSort =
                         SortVariableSort (SortVariable (Id "sv1"))
-                    , sentenceSymbolAttributes = Attributes []
+                    , sentenceSymbolAttributes = emptyKoreAttributes
                     }
                 ]
-            , moduleAttributes = Attributes []
+            , moduleAttributes = emptyKoreAttributes
             }
     aliasDeclarationModule modName (AliasName aliasName) =
         Module
             { moduleName = modName
             , moduleSentences =
-                [ ObjectSentence $ SentenceAliasSentence SentenceAlias
+                [ asSentence SentenceAlias
                     { sentenceAliasAlias = Alias
-                        { aliasConstructor = Id aliasName
+                        { aliasConstructor = Id aliasName :: Id Object
                         , aliasParams = [SortVariable (Id "sv1")]
                         }
                     , sentenceAliasSorts = []
                     , sentenceAliasResultSort =
                         SortVariableSort (SortVariable (Id "sv1"))
-                    , sentenceAliasAttributes = Attributes []
+                    , sentenceAliasAttributes = emptyKoreAttributes
                     }
                 ]
-            , moduleAttributes = Attributes []
+            , moduleAttributes = emptyKoreAttributes
             }
 
 duplicatedNameFailureTest
@@ -1249,7 +1257,7 @@ duplicatedNameFailureTest message duplicatedName module1 module2 =
             , errorError = "Duplicated name: '" ++ duplicatedName ++ "'."
             }
         Definition
-            { definitionAttributes = Attributes []
+            { definitionAttributes = emptyKoreAttributes
             , definitionModules =
                 [ module1
                 , module2

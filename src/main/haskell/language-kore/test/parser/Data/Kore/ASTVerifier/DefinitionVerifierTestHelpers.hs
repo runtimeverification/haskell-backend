@@ -225,7 +225,8 @@ aliasSentenceWithSort (AliasName name) sort =
                 }
             , sentenceAliasSorts = []
             , sentenceAliasResultSort = sort
-            , sentenceAliasAttributes = Attributes []
+            , sentenceAliasAttributes =
+                Attributes [] :: KoreAttributes
             }
 
 metaAliasSentenceWithSortParameters
@@ -412,7 +413,8 @@ symbolSentenceWithResultSort
                 }
             , sentenceSymbolSorts = []
             , sentenceSymbolResultSort = sort
-            , sentenceSymbolAttributes = Attributes []
+            , sentenceSymbolAttributes =
+                Attributes [] :: KoreAttributes
             }
 
 objectSymbolSentenceWithArguments
@@ -432,7 +434,8 @@ symbolSentenceWithArguments
                 }
             , sentenceSymbolSorts = operandSorts
             , sentenceSymbolResultSort = sort
-            , sentenceSymbolAttributes = Attributes []
+            , sentenceSymbolAttributes =
+                Attributes [] :: KoreAttributes
             }
 
 objectAliasSentenceWithArguments
@@ -452,7 +455,8 @@ aliasSentenceWithArguments
                 }
             , sentenceAliasSorts = operandSorts
             , sentenceAliasResultSort = sort
-            , sentenceAliasAttributes = Attributes []
+            , sentenceAliasAttributes =
+                Attributes [] :: KoreAttributes
             }
 
 simpleSortActual :: SortName -> SortActual level
