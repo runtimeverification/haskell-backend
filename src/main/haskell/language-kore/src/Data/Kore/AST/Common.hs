@@ -825,6 +825,7 @@ data SortedPattern level variable child = SortedPattern
     { sortedPatternPattern :: !(Pattern level variable child)
     , sortedPatternSort    :: !(Sort level)
     }
+    deriving (Eq, Show)
 
 {-|'PatternStub' is either a pattern with a known sort, or a function that
 builds a pattern from a sort.
