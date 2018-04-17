@@ -70,7 +70,8 @@ constant
 constant patternHead = apply patternHead []
 
 type CommonPurePattern level = PureMLPattern level Variable
-type PatternPureType level = Pattern level Variable (CommonPurePattern level)
+type UnFixedPureMLPattern level variable =
+    Pattern level variable (PureMLPattern level variable)
 
 type PurePatternStub level =
     PatternStub level Variable (CommonPurePattern level)

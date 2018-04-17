@@ -2,10 +2,13 @@
 {-# LANGUAGE DeriveFunctor          #-}
 {-# LANGUAGE DeriveTraversable      #-}
 {-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
 {-# LANGUAGE KindSignatures         #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE RankNTypes             #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE StandaloneDeriving     #-}
 {-# LANGUAGE UndecidableInstances   #-}
 {-|
@@ -919,3 +922,33 @@ withSort
                 ++ show existingSort
                 ++ "."
                 )
+
+getMetaOrObjectPatternType
+    :: MetaOrObject level
+    => Pattern level variable child -> IsMetaOrObject level
+getMetaOrObjectPatternType _ = isMetaOrObject (undefined :: level)
+
+class UnifiedPatternInterface pat where
+    unifyPattern
+        :: MetaOrObject level
+        => Pattern level variable child -> pat variable child
+    unifiedPatternApply
+        :: (forall level . MetaOrObject level
+            => Pattern level variable child -> result
+           )
+        -> (pat variable child -> result)
+
+instance
+    forall level . MetaOrObject level
+    => UnifiedPatternInterface (Pattern level)
+  where
+    unifyPattern p =
+        case isMetaOrObject (undefined :: level) of
+            IsMeta   ->
+                case getMetaOrObjectPatternType p of
+                    IsMeta   -> p
+            IsObject ->
+                case getMetaOrObjectPatternType p of
+                    IsObject -> p
+    unifiedPatternApply = id
+

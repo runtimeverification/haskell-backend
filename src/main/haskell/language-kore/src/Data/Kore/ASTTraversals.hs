@@ -30,10 +30,10 @@ been visited and transformed into results and aggregates these results into a
 new result.
 -}
 koreTopDownVisitorM
-    :: (Monad m)
-    => (forall level . MetaOrObject level
-        => Pattern level variable (KorePattern variable)
-        -> m (Either result ( Pattern level variable (KorePattern variable)
+    :: (Monad m, UnifiedPatternInterface pat, Traversable (pat variable))
+    => (forall level1 level2 . (MetaOrObject level1, MetaOrObject level2)
+        => Pattern level1 variable (Fix (pat variable))
+        -> m (Either result ( Pattern level2 variable (Fix (pat variable))
                             , m result -> m result
                             )
              )
@@ -41,17 +41,17 @@ koreTopDownVisitorM
     -> (forall level . MetaOrObject level
         => Pattern level variable result -> m result
        )
-    -> (KorePattern variable -> m result)
+    -> (Fix (pat variable) -> m result)
 koreTopDownVisitorM preprocess postprocess =
     fixTopDownVisitorM
         fixPreprocess
-        (transformUnifiedPattern postprocess)
+        (unifiedPatternApply postprocess)
   where
-    fixPreprocess (UnifiedPattern (UnifiedMeta p))   = preproc p
-    fixPreprocess (UnifiedPattern (UnifiedObject p)) = preproc p
-    preproc p =
-        fmap (first asUnifiedPattern) <$> preprocess (unRotate31 p)
-    first f (a, b) = (f a, b)
+    fixPreprocess fp = do
+        preproc <- unifiedPatternApply preprocess fp
+        case preproc of
+            Left r       -> return (Left r)
+            Right (p, t) -> return (Right (unifyPattern p, t))
 
 {-|'bottomUpVisitorM' is the specialization of 'topDownVisitorM' where the
 preprocessor function always requests the recursive visitation of its children,
