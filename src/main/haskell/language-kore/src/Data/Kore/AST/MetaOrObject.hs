@@ -9,7 +9,7 @@
 module Data.Kore.AST.MetaOrObject
     ( Meta (..)
     , Object (..)
-    , MetaOrObject (isObject, isMeta)
+    , MetaOrObject (..)
     , Unified (..)
     , asUnified
     , transformUnified

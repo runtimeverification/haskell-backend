@@ -10,6 +10,7 @@ import           Data.Fix
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.PureML
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.MetaML.AST
 import           Data.Kore.MetaML.MetaToKore
@@ -69,16 +70,14 @@ unliftTests =
         , testCase "Unlift to asKorePattern"
             (let
                 metaPattern =
-                    (Fix
+                    Fix
                         (apply consSortListHead
                             [variablePattern "#`a" sortMetaSort]
                         )
-                    )
             in
-                (prettyAssertEqual ""
+                prettyAssertEqual ""
                     (Just (patternMetaToKore metaPattern))
                     (unliftFromMeta metaPattern :: Maybe CommonKorePattern)
-                )
             )
         ]
 

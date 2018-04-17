@@ -25,6 +25,7 @@ import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
+import           Data.Kore.AST.PureML
 import           Data.Kore.FixTraversals
 import           Data.Kore.HaskellExtensions      (Rotate31 (..))
 import           Data.Kore.Implicit.ImplicitSorts

@@ -5,6 +5,7 @@
 {-# LANGUAGE Rank2Types            #-}
 {-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE UndecidableInstances  #-}
+
 {-|
 Module      : Data.Kore.AST.Kore
 Description : Data Structures for representing the Kore language AST with
@@ -105,6 +106,12 @@ asKorePattern
     => Pattern level variable (KorePattern variable)
     -> KorePattern variable
 asKorePattern = Fix . asUnifiedPattern
+
+instance
+    UnifiedPatternInterface UnifiedPattern
+  where
+    unifyPattern = asUnifiedPattern
+    unifiedPatternApply = transformUnifiedPattern
 
 type CommonKorePattern = KorePattern Variable
 
