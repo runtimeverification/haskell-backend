@@ -16,6 +16,7 @@ Stability   : experimental
 Portability : POSIX
 -}
 module Data.Kore.Building.Patterns where
+import           Data.Proxy(Proxy(Proxy))
 
 import           Data.Kore.AST.Common     (And (..), Bottom (..), Ceil (..),
                                            CharLiteral (..), DomainValue (..),
@@ -63,7 +64,7 @@ class AsAst UnifiedPattern patt => MetaPattern sort patt where
 instance forall level sort patt . (ProperPattern level sort patt)
          => AsAst UnifiedPattern patt
   where
-    asAst pat = case isMetaOrObject (undefined :: level) of
+    asAst pat = case isMetaOrObject (Proxy :: Proxy level) of
       IsMeta -> MetaPattern (asProperMetaPattern pat)
       IsObject -> ObjectPattern (asProperObjectPattern pat)
 

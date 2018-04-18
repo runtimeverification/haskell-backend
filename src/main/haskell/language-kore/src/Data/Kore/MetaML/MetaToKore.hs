@@ -34,12 +34,9 @@ extractMetaPattern
     => Pattern level Variable (MetaMLPattern Variable)
     -> MetaMLPattern Variable
 extractMetaPattern p =
-    applyMetaObjectFunction
-        (PatternObjectMeta p)
-        MetaOrObjectTransformer
-            { objectTransformer = error "Unexpected object pattern"
-            , metaTransformer = Fix . getPatternObjectMeta
-            }
+  case isMetaOrObject (PatternObjectMeta p) of
+    IsMeta -> Fix p
+    IsObject -> error "Undexpected object pattern"
 
 attributesMetaToKore :: MetaAttributes -> KoreAttributes
 attributesMetaToKore ma =

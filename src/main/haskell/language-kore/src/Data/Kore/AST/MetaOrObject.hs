@@ -1,11 +1,14 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE Rank2Types             #-}
-{-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE GADTs                  #-}
 module Data.Kore.AST.MetaOrObject where
+import           Data.Proxy(Proxy(Proxy))
+import           Data.Typeable        (Typeable, cast)
 
 import           Data.Kore.AST.Common
-import           Data.Typeable        (Typeable, cast)
+
+toProxy :: a -> Proxy a
+toProxy _ = Proxy
 
 data IsMetaOrObject s where
   IsMeta :: IsMetaOrObject Meta
@@ -20,30 +23,17 @@ data IsMetaOrObject s where
 class (Show level, Ord level, Eq level)
     => MetaOrObject level
   where
-    isMetaOrObject :: level -> IsMetaOrObject level
+    isMetaOrObject :: proxy level -> IsMetaOrObject level
     isObject :: level -> Bool
-    isObject l = case isMetaOrObject l of IsObject -> True; _ -> False
+    isObject l = case isMetaOrObject (toProxy l) of IsObject -> True; _ -> False
     isMeta :: level -> Bool
-    isMeta l = case isMetaOrObject l of IsMeta -> True; _ -> False
+    isMeta l = case isMetaOrObject (toProxy l) of IsMeta -> True; _ -> False
     {-# MINIMAL isMetaOrObject #-}
 
 instance MetaOrObject Meta where
     isMetaOrObject _ = IsMeta
 instance MetaOrObject Object where
     isMetaOrObject _ = IsObject
-
-data MetaOrObjectTransformer thing result = MetaOrObjectTransformer
-    { metaTransformer   :: thing Meta -> result
-    , objectTransformer :: thing Object -> result
-    }
-
-applyMetaObjectFunction
-    :: forall level thing c . (MetaOrObject level)
-    => thing level -> MetaOrObjectTransformer thing c -> c
-applyMetaObjectFunction x trans =
-  case isMetaOrObject (undefined :: level) of
-    IsObject -> objectTransformer trans x
-    IsMeta -> metaTransformer trans x
 
 class Typeable thing
     => UnifiedThing unifiedThing thing | unifiedThing -> thing
@@ -54,12 +44,8 @@ class Typeable thing
     transformUnified
         :: (forall level . MetaOrObject level => thing level -> b)
         -> (unifiedThing -> b)
-    transformUnified f unifiedStuff =
-        case destructor unifiedStuff of
-            Left x  -> f x
-            Right x -> f x
-    asUnified :: MetaOrObject level => thing level -> unifiedThing
-    asUnified x = applyMetaObjectFunction x MetaOrObjectTransformer
-        { objectTransformer = objectConstructor
-        , metaTransformer = metaConstructor
-        }
+    transformUnified f unifiedStuff = either f f (destructor unifiedStuff)
+    asUnified :: (MetaOrObject level) => thing level -> unifiedThing
+    asUnified x = case isMetaOrObject x of
+      IsMeta -> metaConstructor x
+      IsObject -> objectConstructor x
