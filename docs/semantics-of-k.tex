@@ -1390,6 +1390,9 @@ Section~\ref{sec:deduction}.
 \subsection{Binders}
 \label{sec:binders}
 
+\info[inline]{More recent research shows that binders can be defined as 
+functional symbols. Change section 4.1--4.3 to reflect that.}
+
 The \K framework allows to define binders, such as the $\lambda$ binder in
 $\lambda$-calculus, using the attribute \texttt{binder}.
 But what does that really mean?
@@ -1614,9 +1617,11 @@ $$
 \parametric{\Context}{s,s'} &
 \textrm{sort schema, where $s$ (hole sort) and}
 \\ &\textrm{$s'$ (result sort) range over any sorts}
-\\ \parametric{\gamma^0}{s,s'} \in \Sigma_{s \times s', \parametricscript{\Context}{s,s'}}
+\\ \parametric{\gamma^0}{s,s'} \in \Sigma_{s \times s', 
+\parametricscript{\Context}{s,s'}}
 & \textrm{symbol schema, for all sorts $s, s'$}
-\\ \parametric{\gamma\_.\_}{s,s'}(\hole\cln s,T\cln s') \equiv \exists \hole . \parametric{\gamma^0}{s,s'}(\hole,T)
+\\ \parametric{\gamma\_.\_}{s,s'}(\hole\cln s,T\cln s') \equiv \exists \hole . 
+\parametric{\gamma^0}{s,s'}(\hole,T)
 & \textrm{here, $\hole$ is an ordinary variable}
 \\
 \parametric{\_[\_]}{s,s'} \in \Sigma_{\parametricscript{\Context}{s,s'} \times s, s'}
@@ -1626,6 +1631,19 @@ $$
 & \textrm{axiom schema for identity contexts, for all sorts $s$}
 \end{array}
 $$
+\begin{align*}
+&\parametric{\_[\_]}{s',s''}(C_1 \cln \parametric{\Context}{s',s''},
+\parametric{\_[\_]}{s,s'}(C_2 \cln \parametric{\Context}{s,s'},
+T\cln s))
+\\
+= &
+\parametric{\_[\_]}{s,s''}(
+\parametric{\gamma\_.\_}{s,s''}(
+\parametric{\_[\_]}{s',s''}(C_1 \cln \parametric{\Context}{s',s''},
+\parametric{\_[\_]}{s,s'}(C_2 \cln \parametric{\Context}{s,s'},
+T\cln s))
+), T\cln s)
+\end{align*}
 The sort parameters of axiom schemas can usually be inferred from the context.
 To ease notation, from here on we assume they can be inferred and apply the
 mixfix notation for symbols containing ``$\_$'' in their names.
