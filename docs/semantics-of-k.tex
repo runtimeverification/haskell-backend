@@ -241,6 +241,8 @@
   
   \newcommand{\doubleslash}{/\!/{ }}
   
+  \newcommand{\compose}{\circ}
+  \newcommand{\strict}[1]{\textsf{strict(#1)}}
 
   \newcommand{\shp}{\includegraphics{hash-symbol}\kern-0.1em}
   \newcommand{\smallshp}{\includegraphics[scale=0.8]{hash-symbol}\kern-0.1em}
@@ -1631,6 +1633,7 @@ $$
 & \textrm{axiom schema for identity contexts, for all sorts $s$}
 \end{array}
 $$
+And the following axiom schema for composing nested contexts:
 \begin{align*}
 &\parametric{\_[\_]}{s',s''}(C_1 \cln \parametric{\Context}{s',s''},
 \parametric{\_[\_]}{s,s'}(C_2 \cln \parametric{\Context}{s,s'},
@@ -1638,18 +1641,27 @@ T\cln s))
 \\
 = &
 \parametric{\_[\_]}{s,s''}(
-\parametric{\gamma\_.\_}{s,s''}(
-\parametric{\_[\_]}{s',s''}(C_1 \cln \parametric{\Context}{s',s''},
+\parametric{\gamma\_.\_}{s,s''}(\hole\cln s,
+\parametric{\_[\_]}{s',s''}(
+C_1 \cln \parametric{\Context}{s',s''},
 \parametric{\_[\_]}{s,s'}(C_2 \cln \parametric{\Context}{s,s'},
-T\cln s))
+\hole\cln s))
 ), T\cln s)
 \end{align*}
 The sort parameters of axiom schemas can usually be inferred from the context.
 To ease notation, from here on we assume they can be inferred and apply the
 mixfix notation for symbols containing ``$\_$'' in their names.
-With these, the last axiom schema above becomes:
+With these, the last two axiom schemas above become:
+\begin{align*}
+& (\gamma \hole .\; \hole)[T] = T \\
+& C_1[C_2[T]] = (\gamma \hole . C_1[C_2[\hole]])[T]
+\end{align*}
+We write 
+$C_1 \compose C_2 \equiv \gamma \hole . C_1[C_2[\hole]]$
+for nested context.
+Using this notation, the last axiom becomes
 $$
-(\gamma \hole .\; \hole)[T] = T
+C_1[C_2[T]] = (C_1 \compose C_2) [T]
 $$
 
 The above sort, symbol and axiom schemas are generic and tacitly assumed in
@@ -1669,9 +1681,11 @@ Assuming that all reductions/rewrites apply in context, as discussed in
 Section~\ref{sec:rewriting}, we can state that $\ite$ is given permission to
 apply reductions within its first argument with the following axiom:
 $$
-\ite(C[T],S_1,S_2) = (\gamma\hole.\;\ite(C[\hole],S_1,S_2))[T]
+\ite(T,S_1,S_2) = (\gamma\hole.\;\ite(\hole,S_1,S_2))[T]
 $$
-In particular, $C$ can be the identity context, ``$\gamma \hole .\; \hole$''.
+In practice, the above equation is often oriented as two rewrite rules.
+The rewrite rule from left to right is called \emph{heating rule},
+and the one from right to left is called \emph{cooling rule}.
 In addition to sort/parameter inference, front-ends of implementations of
 matching logic are expected to provide shortcuts for such rather boring
 axioms.
@@ -1689,17 +1703,28 @@ Using these axioms, we can infer the following:
 $$
 \begin{array}{rcll}
 \ite(1 < x,S_1,S_2) & = &
-\ite(1 < (\gamma\hole.\;\hole)[x],S_1,S_2)
-& \textrm{\doubleslash context identity}
+(\gamma \hole . \ite(\hole, S_1, S_2))[1 < x]
+& \textrm{\doubleslash \strict{1} axiom for $\ite$}
 \\
 & = &
-\ite((\gamma\hole.\;1 < \hole)[x],S_1,S_2)
-& \textrm{\doubleslash \textsf{strict(2)} axiom for $\_<\_$}
+(\gamma \hole . \ite(\hole, S_1, S_2))[
+(\gamma \hole . 1 < \hole)[x]
+]
+& \textrm{\doubleslash \strict{2} axiom for $\_<\_$}
 \\
 & = &
-(\gamma\hole.\;\ite(1 < \hole,S_1,S_2))[x]
-& \textrm{\doubleslash \textsf{strict(1)} axiom for $\ite$ above}
+\gamma \hole . ((\gamma \hole . \ite(\hole, S_1, S_2))[
+(\gamma \hole . 1 < \hole)[\hole]
+])[x]
+& \textrm{\doubleslash axiom for nested context}
 \end{array}
+$$
+Notice that $\gamma$ is a binder,
+so the last pattern above is alpha-equivalent to
+$$
+\gamma \hole_1 . ((\gamma \hole_2 . \ite(\hole_2, S_1, S_2))[
+(\gamma \hole_3 . 1 < \hole_3)[\hole_1]
+])[x]
 $$
 Therefore, $\ite(1 < x,S_1,S_2)$ can be matched against a pattern
 of the form $C[x]$, where $C$ is a context of sort
@@ -1722,64 +1747,65 @@ a redex to be reduced, but it can be used for matching any relevant
 data from a program configuration.
 More examples below will illustrate that.
 
-\subsubsection{Nested Contexts}
-
-Nesting of contexts comes for free in our approach, that is, nothing but
-reasoning using the deduction system of matching logic needs to be done
-in order to achieve matching with nested contexts.
-For example:
-$$
-\begin{array}{rcll}
-\ite(1 < x,S_1,S_2) & = &
-\ite((\gamma\hole.\;\hole)[1 < x],S_1,S_2)
-& \textrm{\doubleslash context identity}
-\\
-& = &
-(\gamma\hole.\;\ite(\hole,S_1,S_2))[1 < x]
-& \textrm{\doubleslash \textsf{strict(1)} axiom for $\ite$}
-\\
-& = &
-(\gamma\hole.\;\ite(\hole,S_1,S_2))[(\gamma\hole.\;1 < \hole)[x]]
-& \textrm{\doubleslash \textsf{strict(2)} axiom for $\_<\_$}
-\end{array}
-$$
-Therefore, $\ite(1 < x,S_1,S_2)$ can also be matched against a pattern
-of the form $C_1[C_2[x]]$, where $C_1$ is a context of sort
-$\parametric{\Context}{\BExp,\Stmt}$ and $C_2$ of sort
-$\parametric{\Context}{\AExp,\BExp}$.
-More interestingly,
-$$
-\begin{array}{rcll}
-\ite(1 < x,S_1,S_2) & = &
-\ite(1 < (\gamma\hole.\;\hole)[x],S_1,S_2)
-& \textrm{\doubleslash context identity}
-\\
-& = &
-\ite((\gamma\hole.\;1 < \hole)[x],S_1,S_2)
-& \textrm{\doubleslash \textsf{strict(2)} axiom for $\_<\_$}
-\\
-& = &
-(\gamma\hole.\;\ite(1 < \hole,S_1,S_2))[x]
-& \textrm{\doubleslash \textsf{strict(1)} axiom for $\ite$}
-\\
-& = &
-(\gamma\hole.\;\ite((\gamma\hole.\;\hole)[1 < \hole],S_1,S_2))[x]
-& \textrm{\doubleslash context identity}
-\\
-& = &
-(\gamma\hole.\;(\gamma\hole.\;\ite(\hole,S_1,S_2))[1 < \hole])[x]
-& \textrm{\doubleslash \textsf{strict(1)} axiom for $\ite$}
-\end{array}
-$$
-Therefore, $\ite(1 < x,S_1,S_2)$ can also be matched against a pattern
-of the form ($\gamma\hole.\;C_1[T_2])[x]$, where $C_1$ is a context of
-sort $\parametric{\Context}{\BExp,\Stmt}$ and $C_2 = \gamma\hole.\;T_2$ is
-a context of sort $\parametric{\Context}{\AExp,\BExp}$.
-Notice that we cannot naively apply a context to another context, e.g.,
-$C_1[C2]$, because the sorts do not match.
-Once the hole is explicitly mentioned as a binder in a context, what we really
-mean by $C_1[C2]$ is in fact $\gamma\hole.\;C_1[T_2]$, where
-$C_2 = \gamma\hole.\;T_2$.
+%\subsubsection{Nested Contexts}
+%
+%As we already see, the axiom for composite contexts gives us
+%nesting of contexts for free. It is nothing but
+%reasoning using the deduction system of matching logic needs to be done
+%in order to achieve matching with nested contexts.
+%For example:
+%$$
+%\begin{array}{rcll}
+%\ite(1 < x,S_1,S_2) & = &
+%\ite((\gamma\hole.\;\hole)[1 < x],S_1,S_2)
+%& \textrm{\doubleslash context identity}
+%\\
+%& = &
+%(\gamma\hole.\;\ite(\hole,S_1,S_2))[1 < x]
+%& \textrm{\doubleslash \textsf{strict(1)} axiom for $\ite$}
+%\\
+%& = &
+%(\gamma\hole.\;\ite(\hole,S_1,S_2))[(\gamma\hole.\;1 < \hole)[x]]
+%& \textrm{\doubleslash \textsf{strict(2)} axiom for $\_<\_$}
+%\end{array}
+%$$
+%Therefore, $\ite(1 < x,S_1,S_2)$ can also be matched against a pattern
+%of the form $C_1[C_2[x]]$, where $C_1$ is a context of sort
+%$\parametric{\Context}{\BExp,\Stmt}$ and $C_2$ of sort
+%$\parametric{\Context}{\AExp,\BExp}$.
+%More interestingly,
+%$$
+%\begin{array}{rcll}
+%\ite(1 < x,S_1,S_2) & = &
+%\ite(1 < (\gamma\hole.\;\hole)[x],S_1,S_2)
+%& \textrm{\doubleslash context identity}
+%\\
+%& = &
+%\ite((\gamma\hole.\;1 < \hole)[x],S_1,S_2)
+%& \textrm{\doubleslash \textsf{strict(2)} axiom for $\_<\_$}
+%\\
+%& = &
+%(\gamma\hole.\;\ite(1 < \hole,S_1,S_2))[x]
+%& \textrm{\doubleslash \textsf{strict(1)} axiom for $\ite$}
+%\\
+%& = &
+%(\gamma\hole.\;\ite((\gamma\hole.\;\hole)[1 < \hole],S_1,S_2))[x]
+%& \textrm{\doubleslash context identity}
+%\\
+%& = &
+%(\gamma\hole.\;(\gamma\hole.\;\ite(\hole,S_1,S_2))[1 < \hole])[x]
+%& \textrm{\doubleslash \textsf{strict(1)} axiom for $\ite$}
+%\end{array}
+%$$
+%Therefore, $\ite(1 < x,S_1,S_2)$ can also be matched against a pattern
+%of the form ($\gamma\hole.\;C_1[T_2])[x]$, where $C_1$ is a context of
+%sort $\parametric{\Context}{\BExp,\Stmt}$ and $C_2 = \gamma\hole.\;T_2$ is
+%a context of sort $\parametric{\Context}{\AExp,\BExp}$.
+%Notice that we cannot naively apply a context to another context, e.g.,
+%$C_1[C2]$, because the sorts do not match.
+%Once the hole is explicitly mentioned as a binder in a context, what we really
+%mean by $C_1[C2]$ is in fact $\gamma\hole.\;C_1[T_2]$, where
+%$C_2 = \gamma\hole.\;T_2$.
 
 
 \subsubsection{Multi-Hole Contexts and Configuration Abstraction}
@@ -1789,7 +1815,11 @@ Contexts with multiple holes can also be easily supported by our approach,
 also without anything extra but the already existing deductive system of
 matching logic.
 A notation for multi-hole context application, however, is recommended in
-order to make patterns easier to read. Specifically,
+order to make patterns easier to read. 
+The way we define multi-hole contexts in matching logic
+is similar to how we define multi-arity functions in lambda calculus
+by curring them.
+Specifically,
 $$
 (\gamma \hole_1 \hole_2 \dots \hole_n . \; T)[T_1,T_2,\dots,T_n]
 \equiv (\gamma \hole_n .\; \dots (\gamma\hole_2.\;(\gamma\hole_1.\;T)[T_1])[T_2]\dots)[T_n]

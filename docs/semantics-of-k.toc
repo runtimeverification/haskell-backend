@@ -11,90 +11,89 @@
 \contentsline {subsection}{\numberline {4.2}Fixed Points}{13}{subsection.4.2}
 \contentsline {subsection}{\numberline {4.3}Contexts}{14}{subsection.4.3}
 \contentsline {subsubsection}{\numberline {4.3.1}Evaluation Strategies of Language Constructs}{15}{subsubsection.4.3.1}
-\contentsline {subsubsection}{\numberline {4.3.2}Nested Contexts}{16}{subsubsection.4.3.2}
-\contentsline {subsubsection}{\numberline {4.3.3}Multi-Hole Contexts and Configuration Abstraction}{16}{subsubsection.4.3.3}
+\contentsline {subsubsection}{\numberline {4.3.2}Multi-Hole Contexts and Configuration Abstraction}{16}{subsubsection.4.3.2}
 \contentsline {subsection}{\numberline {4.4}Rewriting and Reachability}{18}{subsection.4.4}
-\contentsline {section}{\numberline {5}Built-ins}{20}{section.5}
-\contentsline {section}{\numberline {6}Towards a Formal Semantics of {\unhbox \voidb@x \hbox {$\mathbb {K}$}\xspace }: The Need For a Meta-Theory}{21}{section.6}
-\contentsline {section}{\numberline {7}Meta-Theory of Matching Logic}{23}{section.7}
-\contentsline {subsection}{\numberline {7.1}Warming-Up}{23}{subsection.7.1}
-\contentsline {subsubsection}{\numberline {7.1.1}Variable Names}{23}{subsubsection.7.1.1}
+\contentsline {section}{\numberline {5}Built-ins}{19}{section.5}
+\contentsline {section}{\numberline {6}Towards a Formal Semantics of {\unhbox \voidb@x \hbox {$\mathbb {K}$}\xspace }: The Need For a Meta-Theory}{20}{section.6}
+\contentsline {section}{\numberline {7}Meta-Theory of Matching Logic}{22}{section.7}
+\contentsline {subsection}{\numberline {7.1}Warming-Up}{22}{subsection.7.1}
+\contentsline {subsubsection}{\numberline {7.1.1}Variable Names}{22}{subsubsection.7.1.1}
 \contentsline {subsubsection}{\numberline {7.1.2}Three Ways of Defining Predicate Symbols}{23}{subsubsection.7.1.2}
 \contentsline {subsubsection}{\numberline {7.1.3}Schemas do not Necessarily Make a Finite (Meta-)Theory Infinite}{24}{subsubsection.7.1.3}
-\contentsline {subsubsection}{\numberline {7.1.4}The Meta-Theory is Extended by Need}{25}{subsubsection.7.1.4}
-\contentsline {subsubsection}{\numberline {7.1.5}A Roadmap of Meta-Theory}{25}{subsubsection.7.1.5}
+\contentsline {subsubsection}{\numberline {7.1.4}The Meta-Theory is Extended by Need}{24}{subsubsection.7.1.4}
+\contentsline {subsubsection}{\numberline {7.1.5}A Roadmap of Meta-Theory}{24}{subsubsection.7.1.5}
 \contentsline {subsection}{\numberline {7.2}Characters and Strings}{25}{subsection.7.2}
 \contentsline {paragraph}{Strings as Finite Lists of Characters.}{25}{section*.14}
-\contentsline {subsection}{\numberline {7.3}Matching Logic Sorts and Symbols}{26}{subsection.7.3}
-\contentsline {paragraph}{Meta-Representations of Definedness Symbols.}{27}{section*.15}
-\contentsline {subsection}{\numberline {7.4}Finite Lists}{28}{subsection.7.4}
+\contentsline {subsection}{\numberline {7.3}Matching Logic Sorts and Symbols}{25}{subsection.7.3}
+\contentsline {paragraph}{Meta-Representations of Definedness Symbols.}{26}{section*.15}
+\contentsline {subsection}{\numberline {7.4}Finite Lists}{27}{subsection.7.4}
 \contentsline {subsubsection}{\numberline {7.4.1}Finite Lists of Sorts}{28}{subsubsection.7.4.1}
-\contentsline {subsubsection}{\numberline {7.4.2}Finite Lists of Characters, Symbols, Variables, and Patterns}{29}{subsubsection.7.4.2}
+\contentsline {subsubsection}{\numberline {7.4.2}Finite Lists of Characters, Symbols, Variables, and Patterns}{28}{subsubsection.7.4.2}
 \contentsline {subsection}{\numberline {7.5}Matching Logic Patterns}{29}{subsection.7.5}
 \contentsline {paragraph}{Matching Logic Variables.}{29}{section*.16}
 \contentsline {paragraph}{Matching Logic Patterns.}{29}{section*.17}
-\contentsline {paragraph}{Domain Values.}{32}{section*.19}
-\contentsline {paragraph}{Free Variable Collection.}{32}{section*.20}
-\contentsline {paragraph}{Fresh Variable Name Generation.}{33}{section*.21}
-\contentsline {paragraph}{Substitution.}{33}{section*.22}
-\contentsline {paragraph}{Alpha-Renaming and Alpha-Equivalence.}{34}{section*.23}
-\contentsline {subsection}{\numberline {7.6}Matching Logic Theories}{34}{subsection.7.6}
-\contentsline {paragraph}{Extensional and Intensional Definitions.}{35}{section*.24}
-\contentsline {paragraph}{Definedness Symbols are Defined in All Theories.}{35}{section*.25}
-\contentsline {paragraph}{Wellformed Patterns.}{35}{section*.26}
-\contentsline {subsection}{\numberline {7.7}Matching Logic Proof System}{36}{subsection.7.7}
-\contentsline {paragraph}{Propositional Logic Inference Rules.}{37}{section*.27}
-\contentsline {paragraph}{First-Order Logic with Equality Inference Rules.}{38}{section*.28}
-\contentsline {paragraph}{Definedness Axioms.}{39}{section*.29}
-\contentsline {paragraph}{Membership Rules.}{39}{section*.30}
-\contentsline {paragraph}{The Axiom Rule.}{40}{section*.31}
-\contentsline {subsection}{\numberline {7.8}More about Symbols}{40}{subsection.7.8}
-\contentsline {subsection}{\numberline {7.9}A Summary of the Meta-Theory}{40}{subsection.7.9}
-\contentsline {subsubsection}{\numberline {7.9.1}Sorts in Meta-Theory}{40}{subsubsection.7.9.1}
-\contentsline {subsubsection}{\numberline {7.9.2}Symbols in Meta-Theory}{41}{subsubsection.7.9.2}
-\contentsline {section}{\numberline {8}Representing Theories in the Meta-Theory}{42}{section.8}
-\contentsline {subsection}{\numberline {8.1}A Running Example}{43}{subsection.8.1}
-\contentsline {subsection}{\numberline {8.2}Naming Functions}{43}{subsection.8.2}
-\contentsline {subsection}{\numberline {8.3}Representing Sorts}{44}{subsection.8.3}
-\contentsline {paragraph}{Representing Sort Definedness.}{45}{section*.32}
-\contentsline {subsection}{\numberline {8.4}Representing Symbols}{45}{subsection.8.4}
-\contentsline {paragraph}{Representing Symbol Definedness.}{47}{section*.34}
-\contentsline {subsection}{\numberline {8.5}Representing Matching Logic Patterns and Axioms}{48}{subsection.8.5}
-\contentsline {subsubsection}{\numberline {8.5.1}Meta-Representations of Patterns}{48}{subsubsection.8.5.1}
-\contentsline {subsubsection}{\numberline {8.5.2}Representing Axioms}{50}{subsubsection.8.5.2}
-\contentsline {subsection}{\numberline {8.6}Faithfulness}{51}{subsection.8.6}
-\contentsline {section}{\numberline {9}The Kore Language}{51}{section.9}
-\contentsline {subsection}{\numberline {9.1}The Kore Language Syntax}{52}{subsection.9.1}
-\contentsline {subsubsection}{\numberline {9.1.1}Lexicon}{52}{subsubsection.9.1.1}
-\contentsline {paragraph}{Comments.}{52}{section*.35}
-\contentsline {paragraph}{Identifiers.}{53}{section*.36}
-\contentsline {paragraph}{Character and string literals.}{53}{section*.37}
-\contentsline {paragraph}{Keywords.}{53}{section*.38}
-\contentsline {subsubsection}{\numberline {9.1.2}Sorts}{53}{subsubsection.9.1.2}
-\contentsline {subsubsection}{\numberline {9.1.3}Heads}{54}{subsubsection.9.1.3}
-\contentsline {subsubsection}{\numberline {9.1.4}Patterns}{55}{subsubsection.9.1.4}
-\contentsline {paragraph}{No {\texttt {\#up}}, no {\texttt {\#down}}, no problem.}{56}{section*.39}
-\contentsline {subsubsection}{\numberline {9.1.5}Attributes}{57}{subsubsection.9.1.5}
-\contentsline {subsubsection}{\numberline {9.1.6}Kore Modules and Declarations}{58}{subsubsection.9.1.6}
-\contentsline {paragraph}{Alias Declarations and Proof Rules}{59}{section*.40}
-\contentsline {subsubsection}{\numberline {9.1.7}Kore Definitions}{59}{subsubsection.9.1.7}
-\contentsline {subsubsection}{\numberline {9.1.8}Wellformedness}{59}{subsubsection.9.1.8}
-\contentsline {subsection}{\numberline {9.2}The Kore Language Semantics}{60}{subsection.9.2}
-\contentsline {paragraph}{General Principle of Lifting.}{61}{section*.41}
-\contentsline {subsubsection}{\numberline {9.2.1}Lift Object Identifiers to String Literals}{61}{subsubsection.9.2.1}
-\contentsline {subsubsection}{\numberline {9.2.2}Lift Object Sort Constructors to Meta Symbols}{61}{subsubsection.9.2.2}
-\contentsline {subsubsection}{\numberline {9.2.3}Lift Object Sorts and Object Sort Lists}{61}{subsubsection.9.2.3}
-\contentsline {subsubsection}{\numberline {9.2.4}Lift Sort Declarations}{62}{subsubsection.9.2.4}
-\contentsline {subsubsection}{\numberline {9.2.5}Lift Object Head Constructors to Meta Symbols}{63}{subsubsection.9.2.5}
-\contentsline {subsubsection}{\numberline {9.2.6}Lift Object Symbol Declarations}{63}{subsubsection.9.2.6}
-\contentsline {subsubsection}{\numberline {9.2.7}Lift Object Alias Declarations}{64}{subsubsection.9.2.7}
-\contentsline {subsubsection}{\numberline {9.2.8}Lift Patterns}{65}{subsubsection.9.2.8}
-\contentsline {paragraph}{Variables.}{65}{section*.42}
-\contentsline {paragraph}{Patterns Constructed with Heads.}{65}{section*.43}
-\contentsline {paragraph}{Patterns Constructed with Logic Connectives.}{65}{section*.44}
-\contentsline {paragraph}{Domain Value Patterns.}{66}{section*.45}
-\contentsline {subsubsection}{\numberline {9.2.9}Lift Axiom Declarations}{66}{subsubsection.9.2.9}
-\contentsline {section}{\numberline {10}Conclusion and Future Work}{66}{section.10}
-\contentsline {paragraph}{Future Work.}{67}{section*.46}
-\contentsline {section}{\numberline {11}Proof of Faithfulness Theorem}{67}{section.11}
-\contentsline {paragraph}{Warning. }{67}{section*.47}
+\contentsline {paragraph}{Domain Values.}{31}{section*.19}
+\contentsline {paragraph}{Free Variable Collection.}{31}{section*.20}
+\contentsline {paragraph}{Fresh Variable Name Generation.}{32}{section*.21}
+\contentsline {paragraph}{Substitution.}{32}{section*.22}
+\contentsline {paragraph}{Alpha-Renaming and Alpha-Equivalence.}{33}{section*.23}
+\contentsline {subsection}{\numberline {7.6}Matching Logic Theories}{33}{subsection.7.6}
+\contentsline {paragraph}{Extensional and Intensional Definitions.}{34}{section*.24}
+\contentsline {paragraph}{Definedness Symbols are Defined in All Theories.}{34}{section*.25}
+\contentsline {paragraph}{Wellformed Patterns.}{34}{section*.26}
+\contentsline {subsection}{\numberline {7.7}Matching Logic Proof System}{35}{subsection.7.7}
+\contentsline {paragraph}{Propositional Logic Inference Rules.}{36}{section*.27}
+\contentsline {paragraph}{First-Order Logic with Equality Inference Rules.}{37}{section*.28}
+\contentsline {paragraph}{Definedness Axioms.}{38}{section*.29}
+\contentsline {paragraph}{Membership Rules.}{38}{section*.30}
+\contentsline {paragraph}{The Axiom Rule.}{39}{section*.31}
+\contentsline {subsection}{\numberline {7.8}More about Symbols}{39}{subsection.7.8}
+\contentsline {subsection}{\numberline {7.9}A Summary of the Meta-Theory}{39}{subsection.7.9}
+\contentsline {subsubsection}{\numberline {7.9.1}Sorts in Meta-Theory}{39}{subsubsection.7.9.1}
+\contentsline {subsubsection}{\numberline {7.9.2}Symbols in Meta-Theory}{40}{subsubsection.7.9.2}
+\contentsline {section}{\numberline {8}Representing Theories in the Meta-Theory}{41}{section.8}
+\contentsline {subsection}{\numberline {8.1}A Running Example}{42}{subsection.8.1}
+\contentsline {subsection}{\numberline {8.2}Naming Functions}{42}{subsection.8.2}
+\contentsline {subsection}{\numberline {8.3}Representing Sorts}{43}{subsection.8.3}
+\contentsline {paragraph}{Representing Sort Definedness.}{44}{section*.32}
+\contentsline {subsection}{\numberline {8.4}Representing Symbols}{44}{subsection.8.4}
+\contentsline {paragraph}{Representing Symbol Definedness.}{46}{section*.34}
+\contentsline {subsection}{\numberline {8.5}Representing Matching Logic Patterns and Axioms}{47}{subsection.8.5}
+\contentsline {subsubsection}{\numberline {8.5.1}Meta-Representations of Patterns}{47}{subsubsection.8.5.1}
+\contentsline {subsubsection}{\numberline {8.5.2}Representing Axioms}{49}{subsubsection.8.5.2}
+\contentsline {subsection}{\numberline {8.6}Faithfulness}{50}{subsection.8.6}
+\contentsline {section}{\numberline {9}The Kore Language}{50}{section.9}
+\contentsline {subsection}{\numberline {9.1}The Kore Language Syntax}{51}{subsection.9.1}
+\contentsline {subsubsection}{\numberline {9.1.1}Lexicon}{51}{subsubsection.9.1.1}
+\contentsline {paragraph}{Comments.}{51}{section*.35}
+\contentsline {paragraph}{Identifiers.}{52}{section*.36}
+\contentsline {paragraph}{Character and string literals.}{52}{section*.37}
+\contentsline {paragraph}{Keywords.}{52}{section*.38}
+\contentsline {subsubsection}{\numberline {9.1.2}Sorts}{52}{subsubsection.9.1.2}
+\contentsline {subsubsection}{\numberline {9.1.3}Heads}{53}{subsubsection.9.1.3}
+\contentsline {subsubsection}{\numberline {9.1.4}Patterns}{54}{subsubsection.9.1.4}
+\contentsline {paragraph}{No {\texttt {\#up}}, no {\texttt {\#down}}, no problem.}{55}{section*.39}
+\contentsline {subsubsection}{\numberline {9.1.5}Attributes}{56}{subsubsection.9.1.5}
+\contentsline {subsubsection}{\numberline {9.1.6}Kore Modules and Declarations}{57}{subsubsection.9.1.6}
+\contentsline {paragraph}{Alias Declarations and Proof Rules}{58}{section*.40}
+\contentsline {subsubsection}{\numberline {9.1.7}Kore Definitions}{58}{subsubsection.9.1.7}
+\contentsline {subsubsection}{\numberline {9.1.8}Wellformedness}{58}{subsubsection.9.1.8}
+\contentsline {subsection}{\numberline {9.2}The Kore Language Semantics}{59}{subsection.9.2}
+\contentsline {paragraph}{General Principle of Lifting.}{60}{section*.41}
+\contentsline {subsubsection}{\numberline {9.2.1}Lift Object Identifiers to String Literals}{60}{subsubsection.9.2.1}
+\contentsline {subsubsection}{\numberline {9.2.2}Lift Object Sort Constructors to Meta Symbols}{60}{subsubsection.9.2.2}
+\contentsline {subsubsection}{\numberline {9.2.3}Lift Object Sorts and Object Sort Lists}{60}{subsubsection.9.2.3}
+\contentsline {subsubsection}{\numberline {9.2.4}Lift Sort Declarations}{61}{subsubsection.9.2.4}
+\contentsline {subsubsection}{\numberline {9.2.5}Lift Object Head Constructors to Meta Symbols}{62}{subsubsection.9.2.5}
+\contentsline {subsubsection}{\numberline {9.2.6}Lift Object Symbol Declarations}{62}{subsubsection.9.2.6}
+\contentsline {subsubsection}{\numberline {9.2.7}Lift Object Alias Declarations}{63}{subsubsection.9.2.7}
+\contentsline {subsubsection}{\numberline {9.2.8}Lift Patterns}{64}{subsubsection.9.2.8}
+\contentsline {paragraph}{Variables.}{64}{section*.42}
+\contentsline {paragraph}{Patterns Constructed with Heads.}{64}{section*.43}
+\contentsline {paragraph}{Patterns Constructed with Logic Connectives.}{64}{section*.44}
+\contentsline {paragraph}{Domain Value Patterns.}{65}{section*.45}
+\contentsline {subsubsection}{\numberline {9.2.9}Lift Axiom Declarations}{65}{subsubsection.9.2.9}
+\contentsline {section}{\numberline {10}Conclusion and Future Work}{65}{section.10}
+\contentsline {paragraph}{Future Work.}{66}{section*.46}
+\contentsline {section}{\numberline {11}Proof of Faithfulness Theorem}{66}{section.11}
+\contentsline {paragraph}{Warning. }{66}{section*.47}
