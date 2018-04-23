@@ -1,6 +1,8 @@
+/* The complete Kore definition of imp.k */
+
 []
 
-module IMP
+module BOOL
 
   sort Bool{} []
 
@@ -8,9 +10,17 @@ module IMP
 
   symbol false{}() : Bool{} []
 
-  symbol and{}(Bool{}, Bool{}) : Bool{} []
+  symbol andBool{}(Bool{}, Bool{}) : Bool{} []
 
-  symbol not{}(Bool{}) : Bool{} []
+  symbol notBool{}(Bool{}) : Bool{} []
+
+  /* TODO:: Complete these axioms. */
+
+endmodule []
+
+module INT
+
+  import BOOL []
 
   sort Int{} []
 
@@ -32,9 +42,11 @@ module IMP
 
   symbol neq{}(Int{}, Int{}) : Bool{} []
 
-  sort Id{} []
+  /* TODO:: Complete these axioms. */
 
-  symbol id{}(Int{}) : Id{} []
+endmodule []
+
+module LIST
 
   sort List{S} []
 
@@ -45,6 +57,14 @@ module IMP
   symbol append{S}(List{S}, List{S}) : List{S} []
 
   symbol listItem{S}(S) : List{S} []
+
+  /* TODO:: Complete these axioms. */
+
+endmodule []
+
+module SET
+
+  import BOOL []
 
   sort Set{S} []
 
@@ -59,6 +79,14 @@ module IMP
       union{S}(S:Set{S}, emptySet{S}()),
       S:Set{S}) []
 
+  /* TODO:: Complete these axioms. */
+
+endmodule []
+
+module MAP
+
+  import SET []
+
   sort Map{S1,S2} []
 
   symbol bind{S1,S2}(S1,S2) : Map{S1,S2} []
@@ -69,13 +97,26 @@ module IMP
 
   symbol keys{S1,S2}(Map{S1,S2}) : Set{S1} []
 
+endmodule []
+
+module ID
+
+  import INT []
+
+  sort Id{} []
+  symbol id{}(Int{}) : Id{} []
+
+endmodule []
+
+module CONTEXT
+
   sort Ctxt{S1,S2} []
 
   symbol gamma0{S1,S2}(S1,S2) : Ctxt{S1,S2} []
 
   symbol app{S1,S2}(Ctxt{S1,S2}, S1) : S2 []
 
-  alias gamma{S1,S2}(S1,S2) : Ctxt{S1,S2} [] // we could make it a symbol
+  alias gamma{S1,S2}(S1,S2) : Ctxt{S1,S2} []
 
   alias idctxt{S}() : Ctxt{S,S} []
 
@@ -89,22 +130,57 @@ module IMP
       T:S,
       app{S,S}(idctxt{S}(), T:S)) []
 
+  /* TODO:: Complete these axioms. */
 
-  // Start with IMP Specific Definitions
+endmodule []
+
+module REWRITE
+
+  import CONTEXT []
+
+endmodule []
+
+module IMP-SYNTAX
+
+  import BOOL []
+
+  import INT []
+
+  import LIST []
+
+  import SET []
+
+  import MAP []
+
+  import ID []
+
+  import CONTEXT []
+
+  import REWRITE []
+
+  /* syntax AExp ::= ... */
 
   sort AExp{} []
 
+  /* syntax AExp ::= Int */
+
   symbol intAsAExp{}(Int{}) : AExp{} []
+
+  /* syntax AExp ::= Id */
 
   symbol idAsAExp{}(Id{}) : AExp{} []
 
-  symbol plusAExp{}(AExp{}, AExp{}) : AExp{}
-  [#strict{}("divAExp", one{}()) ,
-   #strict{}("divAExp", two{}())]
+  /* syntax AExp ::= "-" Int */
+
+  symbol minusAExp{}(Int{}) : AExp{} []
+
+  /* syntax AExp ::= AExp "/" AExp [strict] */
 
   symbol divAExp{}(AExp{}, AExp{}) : AExp{}
   [#strict{}("divAExp", one{}()) ,
    #strict{}("divAExp", two{}())]
+
+  /* (X / Y) = gamma HOLE . (HOLE / Y) [X] */
 
   axiom{R}
     \equals{AExp{},R}(
@@ -116,6 +192,8 @@ module IMP
         X:AExp{}))
   [#strict{}("divAExp", one{}())]
 
+  /* (X / Y) = gamma HOLE . (X / HOLE) [Y] */
+
   axiom{R}
     \equals{AExp{},R}(
       divAExp{}(X:AExp{}, Y:AExp{}),
@@ -126,17 +204,121 @@ module IMP
         Y:AExp{}))
   [#strict{}("divAExp", two{}())]
 
+  /* syntax AExp ::= AExp "+" AExp [strict] */
+
+  symbol plusAExp{}(AExp{}, AExp{}) : AExp{}
+  [#strict{}("plusAExp", one{}()) ,
+   #strict{}("plusAExp", two{}())]
+
+  /* (X + Y) = gamma HOLE . (HOLE + Y) [X] */
+
+  axiom{R}
+    \equals{AExp{},R}(
+      plusAExp{}(X:AExp{}, Y:AExp{}),
+      app{AExp{},AExp{}}(
+        gamma{AExp{},AExp{}}(
+          HOLE:AExp{},
+          plusAExp{}(HOLE:AExp{}, Y:AExp{})),
+        X:AExp{}))
+  [#strict{}("plusAExp", one{}())]
+
+  /* (X + Y) = gamma HOLE . (X + HOLE) [Y] */
+
+  axiom{R}
+    \equals{AExp{},R}(
+      plusAExp{}(X:AExp{}, Y:AExp{}),
+      app{AExp{},AExp{}}(
+        gamma{AExp{},AExp{}}(
+          HOLE:AExp{},
+          plusAExp{}(X:AExp{}, HOLE:AExp{})),
+        Y:AExp{}))
+  [#strict{}("plusAExp", two{}())]
+
+  /* syntax BExp ::= ... */
+
   sort BExp{} []
+
+  /* syntax BExp ::= Bool */
+
+  symbol boolAsBExp{}(Bool{}) : BExp{} []
+
+  /* syntax BExp ::= AExp "<=" AExp [seqstrict] */
+
+  symbol leBExp{}(AExp{}, AExp{}) : BExp{}
+  [#seqstrict{}("leBExp")]
+
+  axiom{R}
+    \equals{BExp{},R}(
+      leBExp{}(X:AExp{}, Y:AExp{}),
+      app{AExp{}, BExp{}}(
+        gamma{AExp{}, BExp{}}(
+          HOLE:AExp{},
+          leBExp{}(HOLE:AExp{}, Y:AExp{})),
+        X:AExp{}))
+  [#seqstrict{}("leBExp")]
+
+  axiom{R}
+    \equals{BExp{},R}(
+      leBExp{}(X:AExp{}, intAsAExp{}(Y:Int{})),
+      app{Int{}, BExp{}}(
+        gamma{Int{}, BExp{}}(
+          HOLE:Int{},
+          leBExp{}(X:AExp{}, intAsAExp{}(HOLE:Int{}))),
+        Y:Int{}))
+  [#seqstrict{}("leBExp")]
+
+  /* syntax BExp ::= "!" BExp [strict] */
+
+  symbol notBExp{}(BExp{}) : BExp{}
+  [#strict{}("notBExp", one{}())]
+      
+  axiom{R}
+    \equals{BExp{},R}(
+      notBExp{}(B:BExp{}),
+      app{BExp{},BExp{}}(
+        gamma{BExp{}, BExp{}}(
+          HOLE:BExp{},
+          notBExp{}(HOLE:BExp{})),
+        B:BExp{}))
+  [#strict{}("notBExp", one{}())]
+
+  /* syntax BExp ::= BExp "&&" BExp [strict(1)] */
+
+  symbol andBExp{}(BExp{}, BExp{}) : BExp{}
+  [#strict{}("andBExp", one{}())]
+
+  axiom{R}
+    \equals{BExp{},R}(
+      andBExp{}(X:BExp{}, Y:BExp{}),
+      app{BExp{}, BExp{}}(
+        gamma{BExp{}, BExp{}}(
+          HOLE:BExp{},
+          andBExp{}(HOLE:BExp{}, Y:BExp{})),
+        X:BExp{}))
+  [#strict{}("andBExp", one{}())]
+
+
+  /* syntax Block ::= ... */
 
   sort Block{} []
 
+  /* syntax Block ::= "{" "}" */
+
   symbol emptyBlock{}() : Block{} []
+
+  /* syntax Block ::= "{" Stmt "}" */
 
   symbol block{}(Stmt{}) : Block{} []
 
+  /* syntax Stmt ::= ... */
+
   sort Stmt{} []
 
+  /* syntax Stmt ::= Block */
+
   symbol blockAsStmt{}(Block{}) : Stmt{} []
+
+  /* syntax Stmt ::= Id "=" AExp ";" [strict(2)] */
 
   symbol asgn{}(Id{}, AExp{}) : Stmt{} [#strict{}("asgn", two{}())]
 
@@ -150,75 +332,52 @@ module IMP
         E:AExp{}))
   [#strict{}("asgn", two{}())]
 
+  /* syntax Stmt ::= "ite" "(" BExp ")" Block "else" Block [strict(1)] */
 
-  symbol if{}(BExp{}, Block{}, Block{}) : Stmt{} [#strict{}("if", one{}())]
+  symbol ite{}(BExp{}, Block{}, Block{}) : Stmt{}
+  [#strict{}("ite", one{}())]
 
-  axiom{S,R,#R}
-    \implies{#R}(
-      \not{#R}(
-        #occursFree{#R}(
-          #variable{}("HOLE", #S:#Sort{}),
-          if{}(
-            app{S,BExp{}}(
-              #C:#Pattern{},
-              T:S),
-            B1:Block{},
-            B2:Block{}))),
-      #provable{#R}(
-        \equals{Stmt{},R}(
-          if{}(
-            app{S,BExp{}}(
-              #C:#Pattern{},
-              T:S),
-            B1:Block{},
-            B2:Block{}),
-          app{S,Stmt{}}(
-            gamma{S,Stmt{}}(
-              HOLE:S,
-              if{}(
-                app{S,BExp{}}(
-                  #C:#Pattern{},
-                  HOLE:S),
-                B1:Block{},
-                B2:Block{})),
-            T:S)))) [#strict{}("if", one{}())]
+  axiom{R}
+    \equals{Stmt{},R}(
+      ite{}(B:BExp{}, S1:Block{}, S2:Block{}),
+      app{BExp{},Stmt{}}(
+        gamma{BExp{},Stmt{}}(
+          HOLE:BExp{},
+          ite{}(HOLE:BExp{}, S1:Block{}, S2:Block{})),
+        B:BExp{}))
+  [#strict{}("ite", one{}())]
 
+  /* syntax Stmt ::= "while" "(" BExp ")" Block */
 
   symbol while{}(BExp{}, Block{}) : Stmt{} []
 
-  symbol seq{}(Stmt{}, Stmt{}) : Stmt{} [#strict{}("seq", one{}())]
+  /* syntax Stmt ::= Stmt Stmt */
 
-   axiom{S,R,#R}
-    \implies{#R}(
-      \not{#R}(
-        #occursFree{#R}(
-          #variable{}("HOLE", #S:#Sort{}),
-          seq{}(
-            app{S,Stmt{}}(
-              #C:#Pattern{},
-              T:S),
-            P:Stmt{}))),
-      #provable{#R}(
-        \equals{Stmt{},R}(
-          seq{}(
-            app{S,Stmt{}}(
-              #C:#Pattern{},
-              T:S),
-            P:Stmt{}),
-          app{S,Stmt{}}(
-            gamma{S,Stmt{}}(
-              HOLE:S,
-              seq{}(
-                app{S,Stmt{}}(
-                  #C:#Pattern{},
-                  HOLE:S),
-                P:Stmt{})),
-            T:S)))) [#strict{}("seq", one{}())]
+  symbol seq{}(Stmt{}, Stmt{}) : Stmt{} []
 
+  /* syntax Pgm ::= ... */
 
   sort Pgm{} []
 
-  symbol pgm{}(List{Id{}}, Stmt{}) : Pgm{} [#strict{}("pgm", one{}()), #strict{}("pgm", two{}())]
+  /* syntax Pgm ::= "int" Ids ";" Stmt
+     syntax Ids ::= List{Id, ","}
+   */
+
+  symbol pgm{}(List{Id{}}, Stmt{}) : Pgm{} []
+
+endmodule []
+
+module IMP
+
+  import IMP-SYNTAX []
+
+  /* syntax KResult ::= Int | Bool */
+
+  /* KResult provides hints for applying heating and cooling rules.
+     These hints are used when we translate seqstrict attributes
+     to axioms in Kore.
+     We don't need explicit axioms about KResult.
+   */
 
   sort KCell{} []
 
@@ -256,10 +415,6 @@ module IMP
         intAsAExp{}(plus{}(X:Int{}, Y:Int{}))))
   []
 
-  // X / Y => X /Int Y requires X =/=Int Y
-
-
-     
-
+  // X / Y => X /Int Y requires X =/=Int 
 
 endmodule []
