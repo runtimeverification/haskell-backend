@@ -1,8 +1,11 @@
-import           Test.Tasty                (TestTree, testGroup)
-import           Test.Tasty.Runners        (consoleTestReporter,
-                                            defaultMainWithIngredients,
-                                            listingTests)
-import           Test.Tasty.Runners.AntXML (antXMLRunner)
+import           Test.Tasty                                        (TestTree,
+                                                                    testGroup)
+import           Test.Tasty.Runners                                (consoleTestReporter,
+                                                                    defaultMainWithIngredients,
+                                                                    listingTests)
+import           Test.Tasty.Runners.AntXML                         (antXMLRunner)
+
+import           Kore.MatchingLogic.ProofSystem.ProofAssistantTest
 
 main :: IO ()
 main =
@@ -21,5 +24,5 @@ unitTests :: TestTree
 unitTests =
     testGroup
         " Unit Tests"
-        [
+        [ proofAssistantTests
         ]

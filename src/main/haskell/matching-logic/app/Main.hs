@@ -52,7 +52,7 @@ proveCommand
     => proxy (SimpleSignature sig)
     -> IO (ProverState Text (MLRuleSig (SimpleSignature sig) Text)
             (WFPattern (SimpleSignature sig) Text))
-proveCommand _ = runProver pCommand (ProverState emptyProof)
+proveCommand _ = runProver dummyFormulaVerifier pCommand (ProverState emptyProof)
 
 banner :: InputT IO ()
 banner = outputStrLn "Welcome to the matching logic prover"

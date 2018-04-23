@@ -22,9 +22,12 @@ newtype DummyRule formula ix = DummyRule Text
   deriving (Functor,Foldable,Traversable)
 instance Show (DummyRule formula ix) where
   show (DummyRule rule) = unpack rule
+data DummyError = DummyError
 
 {-| The 'ProofSystem' accepts any dummy rule as justifcation
   for any derivation.
  -}
-instance (Eq formula) => ProofSystem (DummyRule formula) formula where
-  checkDerivation _ _ = True
+instance (Eq formula)
+  => ProofSystem DummyError (DummyRule formula) formula
+  where
+    checkDerivation _ _ = return ()

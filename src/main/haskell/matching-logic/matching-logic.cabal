@@ -55,10 +55,12 @@ library
                , language-kore
   exposed-modules: Kore.MatchingLogic.AST
                  , Kore.MatchingLogic.AST.Syntax
+                 , Kore.MatchingLogic.Error
                  , Kore.MatchingLogic.HilbertProof
                  , Kore.MatchingLogic.ProofSystem.Dummy
                  , Kore.MatchingLogic.ProofSystem.Minimal
                  , Kore.MatchingLogic.ProofSystem.Minimal.Syntax
+                 , Kore.MatchingLogic.ProofSystem.MLProofSystem
                  , Kore.MatchingLogic.ProverRepl
                  , Kore.MatchingLogic.Signature
                  , Kore.MatchingLogic.Signature.Simple
@@ -98,5 +100,5 @@ test-suite test
                , tasty-golden
                , tasty-hunit
                , tasty-quickcheck
-  other-modules:
+  other-modules: Kore.MatchingLogic.ProofSystem.ProofAssistantTest
   default-language: Haskell2010

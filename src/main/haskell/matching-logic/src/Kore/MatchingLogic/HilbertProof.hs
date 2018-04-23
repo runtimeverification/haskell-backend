@@ -20,7 +20,6 @@ module Kore.MatchingLogic.HilbertProof
   ,derive
   ,renderProof
   ) where
-import           Control.Monad             (guard)
 import           Data.Foldable
 import           Data.Map.Strict           (Map)
 import qualified Data.Map.Strict           as Map
@@ -28,6 +27,9 @@ import           Data.Sequence             (Seq, (|>))
 import qualified Data.Sequence             as Seq
 
 import           Data.Text.Prettyprint.Doc
+
+import           Data.Kore.Error
+import           Kore.MatchingLogic.Error
 
 data Proof ix rule formula =
   Proof
@@ -40,15 +42,20 @@ data Proof ix rule formula =
 emptyProof :: Proof ix rule formula
 emptyProof = Proof Map.empty Seq.empty Map.empty
 
-add :: (Ord ix)
-    => Proof ix rule formula -> ix -> formula -> Maybe (Proof ix rule formula)
-add proof ix formula
-  | not (Map.member ix (index proof)) = Just $
-    proof { index = Map.insert ix (Seq.length (claims proof), formula) (index proof)
-          , claims = claims proof |> (ix,formula)
-          , derivations = derivations proof
-          }
-  | otherwise = Nothing
+add :: (Pretty ix, Ord ix)
+    => (formula -> Either (Error error) ())
+    -> Proof ix rule formula -> ix -> formula
+    -> Either (Error error) (Proof ix rule formula)
+add verifier proof ix formula = do
+  mlFailWhen
+    (Map.member ix (index proof))
+    [pretty "A formula with ID '", pretty ix, pretty "' already exists"]
+  verifier formula
+  return proof
+    { index = Map.insert ix (Seq.length (claims proof), formula) (index proof)
+    , claims = claims proof |> (ix,formula)
+    , derivations = derivations proof
+    }
 
 renderProof :: (Ord ix, Pretty ix, Pretty (rule ix), Pretty formula)
             => Proof ix rule formula -> Doc ann
@@ -59,21 +66,46 @@ renderProof proof = vcat
      Just rule -> emptyDoc<+>pretty "by"<+>pretty rule
   | (ix,formula) <- toList (claims proof)]
 
-class (Traversable rule, Eq formula) => ProofSystem rule formula | rule -> formula where
-  checkDerivation :: formula -> rule formula -> Bool
+class (Traversable rule, Eq formula)
+    => ProofSystem error rule formula | rule -> formula error
+  where
+    checkDerivation
+        :: formula
+        -> rule formula
+        -> Either (Error error) ()
 
-derive :: (Ord ix, ProofSystem rule formula)
+derive :: (Pretty ix, Ord ix, ProofSystem error rule formula)
        => Proof ix rule formula
        -> ix -> formula -> rule ix
-       -> Maybe (Proof ix rule formula)
+       -> Either (Error error) (Proof ix rule formula)
 derive proof ix f rule = do
-  guard $ not (Map.member ix (derivations proof))
-  (offset,conclusion) <- Map.lookup ix (index proof)
-  guard (conclusion == f)
+  mlFailWhen (Map.member ix (derivations proof))
+    [ pretty "Formula with ID '"
+    , pretty ix
+    , pretty "' already has a derivation."
+    ]
+  (offset,conclusion) <-
+    case Map.lookup ix (index proof) of
+      Nothing ->
+        mlFail [pretty "Formula with ID '", pretty ix, pretty " not found."]
+      Just a  -> return a
+  mlFailWhen (conclusion /= f)
+    [pretty "Expected a different formula for id '", pretty ix, pretty "'."]
   let resolveIx name = do
-        (offset',formula') <- Map.lookup name (index proof)
-        guard (offset' < offset)
+        (offset',formula') <-
+          case Map.lookup name (index proof) of
+            Nothing ->
+              mlFail
+                [pretty "Formula with ID '", pretty name, pretty " not found."]
+            Just a -> return a
+        mlFailWhen (offset' >= offset)
+          [ pretty "One of the hypotheses ("
+          , pretty name
+          , pretty ") was not defined before the conclusion ("
+          , pretty ix
+          , pretty ")."
+          ]
         return formula'
   resolvedRule <- traverse resolveIx rule
-  guard $ checkDerivation conclusion resolvedRule
+  checkDerivation conclusion resolvedRule
   return (proof { derivations = Map.insert ix rule (derivations proof) })
