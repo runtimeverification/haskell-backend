@@ -93,6 +93,8 @@
   \usepackage{graphicx}
   
   \usepackage{xspace}
+  \usepackage{caption}
+  \usepackage{longtable}
   
   % Define ceiling and flooring symbols:
   \usepackage{mathtools}
@@ -113,6 +115,45 @@
   \usepackage{prftree}
   
   \usepackage{enumitem}
+  
+  % logic connectives
+  \newcommand{\imp}{\to}
+  \newcommand{\dimp}{\leftrightarrow}
+  \newcommand{\ddd}{,\dots,}
+  
+  % contexts
+  \newcommand{\CSub}[1]{C_{#1}}
+  \newcommand{\Csigma}{\CSub{\sigma}}
+  \newcommand{\Csigmai}{\CSub{\sigma,i}}
+  \newcommand{\Csigmaapp}[1]{\CSub{\sigma}[#1]}
+  \newcommand{\Csigmaiapp}[1]{\CSub{\sigma,i}[#1]}
+  \newcommand{\Capp}[1]{C[#1]}
+  
+  % name of the proof rules
+  \newcommand{\prule}[1]{\textsc{(#1)}}
+  
+  \newcommand{\modusponens}{\prule{Modus Ponens}\xspace}
+  \newcommand{\universalgeneralization}{\prule{Universal Generalization}\xspace}
+  \newcommand{\necessitation}{\prule{Necessitation}\xspace}
+  \newcommand{\existence}{\prule{Existence}\xspace}
+  \newcommand{\singletonvariable}{\prule{Singleton Variable}\xspace}
+  \newcommand{\propagationbottom}{\prule{Propagation$_\bot$}\xspace}
+  \newcommand{\propagationvee}{\prule{Propagation$_\vee$}\xspace}
+  \newcommand{\propagationexists}{\prule{Propagation$_\exists$}\xspace}
+  \newcommand{\variablesubstitution}{\prule{Variable Substitution}\xspace}
+  \newcommand{\framing}{\prule{Framing}\xspace}
+  \newcommand{\propositionaltautology}{\prule{Propositional Tautology}\xspace}
+  \newcommand{\forallrule}{\prule{$\forall$}\xspace}
+  \newcommand{\membership}{\prule{Membership}\xspace}
+  \newcommand{\membershipintroduction}{\prule{Membership Introduction}\xspace}
+  \newcommand{\membershipelimination}{\prule{Membership Elimination}\xspace}
+  \newcommand{\membershipneg}{\prule{Membership$_\neg$}\xspace}
+  \newcommand{\membershipwedge}{\prule{Membership$_\wedge$}\xspace}
+  \newcommand{\membershipexists}{\prule{Membership$_\exists$}\xspace}
+  \newcommand{\equalityelimination}{\prule{Equality Elimination}\xspace}
+  \newcommand{\membershipsymbol}{\prule{Membership Symbol}\xspace}
+  \newcommand{\membershipvariable}{\prule{Membership Variable}\xspace}
+  \newcommand{\functionalsubstitution}{\prule{Functional Substitution}\xspace}
     
   % Package for writing BNF syntax
   \usepackage{syntax}
@@ -985,22 +1026,6 @@ patterns~\cite{rosu-2017-lmcs}.
 \subsection{Sound and Complete Deduction}
 \label{sec:deduction}
 
-Currently, our sound and complete proof system for matching logic extends that
-of first-order logic with equality with axioms and proof rules for membership.
-In order for this to be feasible, we need equality and membership, which are
-available when the definedness symbol is available, as seen in
-Section~\ref{sec:useful}.
-Therefore, in this section we assume a matching logic theory $(S,\Sigma,A)$
-which includes all the definedness symbols discussed in Section~\ref{sec:useful}
-(and thus also totality, equality and membership).
-We conjecture that it is possible to craft a proof system that does not rely on
-the existence of definedness symbols.
-Nevertheless, that will not significantly change the \K semantics approach taken
-in this paper, because all the existing axioms and proof rules will be proven as
-lemmas in the new proof system.
-Therefore, any proofs done with the proof system below will be easily translatable
-to proofs done with the new proof system, whenever the latter will be available.
-
 \newcommand{\sequent}[2]{{#1}\vdash{#2}}
 
 Our proof system is a Hilbert-style proof system (not to be confused with a
@@ -1083,12 +1108,75 @@ regard them as proof rule schemas for matching logic.
 Note, however, that the \emph{meta-variables now range over patterns} of
 the same sort, and thus there is a schema for each sort.
 
-Matching logic also includes the proof system of first-order logic with
-equality.
-However, as explained in \cite{rosu-2017-lmcs}, we prefer to replace the
-FOL substitution proof rule with two rules, called
-\emph{functional substitution}
-and \emph{functional variable} below:
+Matching logic also includes some of the proof rules
+that deal with quantifiers from first order logic.
+Notice that as explained in \cite{rosu-2017-lmcs}, 
+the FOL substitution proof rule
+does not hold in its general form in matching logic.
+Instead, we only have
+\emph{variable substitution} in matching logic.
+
+\begin{figure}[hbtp]
+	\begin{tabular}{ll}
+		\hline
+		\prule{Proposition$_1$} &
+		$\varphi_1 \imp (\varphi_2 \imp \varphi_1) $
+		\\
+		\prule{Proposition$_2$} &
+		$(\varphi_1 \imp (\varphi_2 \imp \varphi_3))
+		\imp (\varphi_1 \imp \varphi_2)
+		\imp (\varphi_1 \imp \varphi_3)$
+		\\
+		\prule{Proposition$_3$} &
+		$(\neg \varphi_1 \imp \neg \varphi_2)
+		\imp (\varphi_2 \imp \varphi_1)$
+		\\
+		\modusponens &
+		From $\varphi_1$ and $\varphi_1 \imp \varphi_2$, deduce $\varphi_2$.
+		\\
+		\hline
+		\variablesubstitution &
+		$\forall x . \varphi \imp \varphi[y/x]$
+		\\
+		\prule{$\forall$} &
+		$\forall x . (\varphi_1 \imp \varphi_2) 
+		\imp (\varphi_1 \imp \forall x . \varphi_2)$
+		\quad if $x \not\in \FV(\varphi_1)$
+		\\
+		\universalgeneralization &
+		From $\varphi$, derive $\forall x . \varphi$.
+		\\
+		\hline
+		\propagationbottom &
+		$\CSub{\sigma}[\bot] \imp \bot$
+		\\
+		\propagationvee &
+		$\CSub{\sigma}[\varphi_1 \vee \varphi_2]
+		\imp \CSub{\sigma}[\varphi_1] \vee \CSub{\sigma}[\varphi_2] $
+		\\
+		\prule{Propagation$_\exists$} &
+		$\CSub{\sigma}[\exists x . \varphi]
+		\imp \exists x . \CSub{\sigma}[\varphi]$
+		\quad if $x \not\in \FV(\Csigmaapp{\exists x . \varphi})$
+		\\
+		\hline
+		\framing &
+		From $\varphi_1 \imp \varphi_2$, derive
+		$\CSub{\sigma}[\varphi_1] \imp \CSub{\sigma}[\varphi_2]$
+		\\
+		\hline
+		\existence &
+		$\exists x . x$
+		\\
+		\singletonvariable &
+		$\neg (C_1[x \wedge \varphi] \wedge C_2[x \wedge \neg \varphi])$
+		\\ & where $C_1$ and $C_2$ are symbol contexts.
+		\\
+		\hline
+	\end{tabular}
+	\caption{Sound and Complete Proof System of Matching Logic}
+	\label{proofsystem}
+\end{figure}
 
 \vspace*{2ex}
 
@@ -1107,68 +1195,82 @@ when $x\not\in\FV(\varphi_1)$
 \end{quote}
 
 \begin{quote}
-7. $\vdash (\forall x\,.\,\varphi) \wedge
-  (\exists y\,.\,\varphi'=y) \ra \varphi[\varphi'/x]$
-\hfill \textsc{(Functional Substitution)}
+7. $\vdash (\forall x\,.\,\varphi) \ra \varphi[y/x]$
+\hfill \textsc{(Variable Substitution)}
 \end{quote}
 
-\begin{quote}
-8. $\exists y\,.\,x=y$
-\hfill \textsc{(Functional Variable)}
-\end{quote}
-
-\begin{quote}
-9. $\varphi = \varphi$
-\hfill \textsc{(Equality Introduction)}
-\end{quote}
-
-\begin{quote}
-10. $\varphi_1=\varphi_2 \mathrel\wedge \varphi[\varphi_1/x] \ra \varphi[\varphi_2/x]$
-\hfill \textsc{(Equality Elimination)}
-\end{quote}
-
-In addition to the above rules borrowed from FOL with equality, matching
-logic also introduces the following rules for (reasoning about) membership.
+In addition to the above rules borrowed from FOL, matching
+logic also introduces the following rules for (reasoning about) structures.
 
 \vspace*{2ex}
 
 \noindent
-\underline{Membership rules:}
+\underline{Propagation rules:}
 
 \begin{quote}
-11. $\displaystyle\frac{\varphi}{\forall x\,.\,x\in\varphi}$
-\hfill \textsc{(Membership Introduction)}
+8. $\vdash \sigma(\varphi_1 \ddd \varphi_{i-1}, \bot,
+                  \varphi_{i+1} \ddd \varphi_n)
+           \imp \bot$
+\hfill \textsc{(Propagation$_\bot$)}
 \end{quote}
 
 \begin{quote}
-12. $\displaystyle\frac{\forall x\,.\,x\in\varphi}{\varphi}$
-\hfill \textsc{(Membership Elimination)}
+9.
+$
+\begin{array}{l}
+\sigma(
+\varphi_1 \ddd \varphi_{i-1}, 
+\varphi_i \vee \varphi'_i,
+\varphi_{i+1} \ddd \varphi_n) \imp
+\\
+\sigma(\varphi_1 \ddd \varphi_{i-1}, \varphi_i,
+\varphi_{i+1} \ddd \varphi_n)
+\\
+\vee
+\sigma(\varphi_1 \ddd \varphi_{i-1}, \varphi'_i,
+\varphi_{i+1} \ddd \varphi_n)
+\end{array}
+$
+\hfill \textsc{(Propagation$_\vee$)}
 \end{quote}
 
 \begin{quote}
-13. $x \in y = (x=y)$ when $x,y\in\Var$
-\hfill \textsc{(Membership Variable)}
+10.
+$
+\begin{array}{l}
+\sigma(
+\varphi_1 \ddd \varphi_{i-1}, 
+\exists x . \varphi_i,
+\varphi_{i+1} \ddd \varphi_n) \imp
+\\
+\exists x . 
+\sigma(\varphi_1 \ddd \varphi_{i-1}, \varphi_i,
+\varphi_{i+1} \ddd \varphi_n)
+\end{array}
+$
+when $x \not\in \bigcup_{j \neq i} \FV(\varphi_j)$
+\hfill \textsc{(Propagation$_\exists$)}
 \end{quote}
 
-\begin{quote}
-14. $x\in\neg\varphi = \neg(x\in\varphi)$
-\hfill \textsc{(Membership $\neg$)}
-\end{quote}
+\vspace*{2ex}
+
+\noindent
+\underline{Frame rule:}
 
 \begin{quote}
-15. $x\in\varphi_1\wedge\varphi_2 = (x\in\varphi_1) \wedge (x\in\varphi_2)$
-\hfill \textsc{(Membership $\wedge$)}
+11.
+$\displaystyle\frac{\varphi_i \imp \varphi'_i}
+{\sigma(\varphi_1 \ddd \varphi_{i-1} ,
+	    \varphi_i,
+	    \varphi_{i+1} \ddd \varphi_n)
+ \imp
+ \sigma(\varphi_1 \ddd \varphi_{i-1} ,
+ \varphi'_i,
+ \varphi_{i+1} \ddd \varphi_n)
+}$
+\hfill \textsc{(Framing)}
 \end{quote}
 
-\begin{quote}
-16. $(x\in\exists y\,.\,\varphi) = \exists y\,.\,(x\in\varphi)$ when $x,y\in\Var$ distinct
-\hfill \textsc{(Membership $\exists$)}
-\end{quote}
-
-\begin{quote}
-17. $\begin{array}{l}x\in\sigma(\varphi_1,...,\varphi_{i-1},\varphi_i,\varphi_{i+1},...,\varphi_n) = \\ \exists y\,.\, (y \in\varphi_i \mathrel\wedge x \in\sigma(\varphi_1,...,\varphi_{i-1},y,\varphi_{i+1},...,\varphi_n))\end{array}$
-\hfill \textsc{(Membership Symbol)}
-\end{quote}
 
 The following result establishes the soundness and completeness
 of the proof system above:
@@ -3950,8 +4052,8 @@ defined by the following axioms
 \subsection{Matching Logic Proof System}
 \label{sec:ML-proof-system}
 
-A sound and complete proof system of matching logic is firstly proposed 
-in~\cite{rosu-2017-lmcs} and reviewed in Section~\ref{sec:deduction}.
+A sound and complete proof system of matching logic is proposed 
+in an unpublished paper and is reviewed in Section~\ref{sec:deduction}.
 The proof system inductively defines a \emph{provability} relation of patterns.
 It consists of several inference rule schemas which are of the form
 $$
