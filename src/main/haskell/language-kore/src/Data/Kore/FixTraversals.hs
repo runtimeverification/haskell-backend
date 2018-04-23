@@ -103,7 +103,7 @@ fixTopDownTransformer preTransform postTransform =
     fixTopDownVisitor preprocess postprocess
   where
     preprocess x =
-        case (preTransform x) of
+        case preTransform x of
             Left p  -> Left (Fix p)
             Right p -> Right p
     postprocess = Fix . postTransform

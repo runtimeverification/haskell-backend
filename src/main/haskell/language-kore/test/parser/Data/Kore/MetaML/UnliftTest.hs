@@ -70,16 +70,14 @@ unliftTests =
         , testCase "Unlift to asKorePattern"
             (let
                 metaPattern =
-                    (Fix
+                    Fix
                         (apply consSortListHead
                             [variablePattern "#`a" sortMetaSort]
                         )
-                    )
             in
-                (prettyAssertEqual ""
+                prettyAssertEqual ""
                     (Just (patternMetaToKore metaPattern))
                     (unliftFromMeta metaPattern :: Maybe CommonKorePattern)
-                )
             )
         ]
 

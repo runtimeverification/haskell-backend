@@ -951,4 +951,3 @@ instance
                 case getMetaOrObjectPatternType p of
                     IsObject -> p
     unifiedPatternApply = id
-
