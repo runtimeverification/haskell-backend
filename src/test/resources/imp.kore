@@ -1,4 +1,7 @@
-/* The complete Kore definition of imp.k */
+/* This is the complete Kore definition of imp.k.
+   For comparison, K definitions are replicate
+   as comments, followed by the corresponding
+   Kore definitions. */
 
 []
 
@@ -28,19 +31,19 @@ module INT
 
   symbol succ{}(Int{}) : Int{} []
 
-  symbol plus{}(Int{}, Int{}) : Int{} []
-
   symbol one{}() : Int{} []
 
   symbol two{}() : Int{} []
 
   symbol three{}() : Int{} []
 
-  symbol div{}(Int{}, Int{}) : Int{} []
+  symbol plusInt{}(Int{}, Int{}) : Int{} []
 
-  symbol leq{}(Int{}, Int{}) : Bool{} []
+  symbol divInt{}(Int{}, Int{}) : Int{} []
 
-  symbol neq{}(Int{}, Int{}) : Bool{} []
+  symbol leqInt{}(Int{}, Int{}) : Bool{} []
+
+  symbol neqInt{}(Int{}, Int{}) : Bool{} []
 
   /* TODO:: Complete these axioms. */
 
@@ -112,23 +115,11 @@ module CONTEXT
 
   sort Ctxt{S1,S2} []
 
-  symbol gamma0{S1,S2}(S1,S2) : Ctxt{S1,S2} []
-
   symbol app{S1,S2}(Ctxt{S1,S2}, S1) : S2 []
 
-  alias gamma{S1,S2}(S1,S2) : Ctxt{S1,S2} []
+  symbol gamma{S1,S2}(S1,S2) : Ctxt{S1,S2} []
 
-  alias idctxt{S}() : Ctxt{S,S} []
-
-  axiom{S,R}
-    \equals{Ctxt{S,S},R}(
-      idctxt{S}(),
-      gamma{S,S}(X:S,X:S)) []
-
-  axiom{S,R}
-    \equals{S,R}(
-      T:S,
-      app{S,S}(idctxt{S}(), T:S)) []
+  symbol app2{S1,S2}(Ctxt{S1,S2}, S1) : S2 []
 
   /* TODO:: Complete these axioms. */
 
@@ -257,6 +248,13 @@ module IMP-SYNTAX
         X:AExp{}))
   [#seqstrict{}("leBExp")]
 
+  /* X <= intAsAExp(Y) = (gamma HOLE . X <= intAsAExp(HOLE)) [Y] 
+     where Y has sort Int.
+     This is because Int is the only subsort of AExp that is a KResult.
+     However, this information is not in the K module IMP-SYNTAX,
+     but in the K module IMP.
+   */
+
   axiom{R}
     \equals{BExp{},R}(
       leBExp{}(X:AExp{}, intAsAExp{}(Y:Int{})),
@@ -379,42 +377,70 @@ module IMP
      We don't need explicit axioms about KResult.
    */
 
-  sort KCell{} []
 
-  symbol kcell{}(Pgm{}) : KCell{} [#strict{}("kcell", one{}())]
+  /* configuration <T> <k> $PGM:Pgm </k> <state> .Map </state> </T> */
 
-  sort StateCell{} []
+  sort Configuration{} []
 
-  symbol statecell{}(Map{Id{}, Int{}}) : StateCell{} [#strict{}("statecell", one{}())]
+  symbol cfg{}(TopCell{}) : Configuration{} []
 
   sort TopCell{} []
 
-  symbol top{}(KCell{}, StateCell{}) : TopCell{} []
+  symbol topcell{}(KCell{}, StateCell{}) : TopCell{} []
 
-  symbol topcell{}(KCell{}, StateCell{}) : TopCell{} [#strict{}("topcell", one{}()), #strict{}("topcell", two{}())]
+  sort KCell{} []
 
-  symbol krun{}(Pgm{}) : TopCell{} []
+  symbol kcell{}(Pgm{}) : KCell{} []
 
-  axiom{R}
-    \equals{TopCell{},R}(
-      krun{}(P:Pgm{}),
-      top{}(
-        kcell{}(P:Pgm{}),
-        statecell{}(emp{Id{},Int{}}()))) []
+  sort StateCell{} []
+
+  symbol statecell{}(Map{Id{}, Int{}}) : StateCell{} []
 
 
-  // Rewrite Rules
+  /* In K:
+   * rule <k> X:Id => I ... <k>
+   *      <state> ... X |-> I ... </state>
+   * 
+   * In Kore (We need multi-hole contexts to write this rule.)
+   * C[X:Id => I, X |-> I]
+   */
 
-  // X + Y => X +Int Y
+
+
+  /* rule I1 / I2 => I1 /Int I2 requires I2 =/=Int 0 */
+
+  axiom{S}
+    \implies{S}(
+      \equals{Bool{},S}(true{}(),
+        neqInt{}(I2:Int{}, zero{}())),
+      app{AExp{},S}(
+        C:Ctxt{AExp{},S},
+        \rewrites{AExp{}}(
+          divAExp{}(intAsAExp{}(I1:Int{}), intAsAExp{}(I2:Int{})),
+          intAsAExp{}(divInt{}(I1:Int{}, I2:Int{})))))
+  []
+
+  /* rule I1 + I2 => I1 +Int I2 */
 
   axiom{S}
     app{AExp{},S}(
       C:Ctxt{AExp{},S},
       \rewrites{AExp{}}(
-        plusAExp{}(intAsAExp{}(X:Int{}), intAsAExp{}(Y:Int{})),
-        intAsAExp{}(plus{}(X:Int{}, Y:Int{}))))
+        plusAExp{}(intAsAExp{}(I1:Int{}), intAsAExp{}(I2:Int{})),
+        intAsAExp{}(plusInt{}(I1:Int{}, I2:Int{}))))
   []
 
-  // X / Y => X /Int Y requires X =/=Int 
+  /* rule -I1 => 0 -Int I1 */
+
+  /* TODO:: work from here. */
+
+  axiom{S}
+    app{AExp{},S}(
+      C:Ctxt{AExp{},S},
+      \rewrites{AExp{}}(
+        plusAExp{}(intAsAExp{}(I1:Int{}), intAsAExp{}(I2:Int{})),
+        intAsAExp{}(plusInt{}(I1:Int{}, I2:Int{}))))
+  []
+
 
 endmodule []
