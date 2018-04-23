@@ -1116,72 +1116,10 @@ does not hold in its general form in matching logic.
 Instead, we only have
 \emph{variable substitution} in matching logic.
 
-\begin{figure}[hbtp]
-	\begin{tabular}{ll}
-		\hline
-		\prule{Proposition$_1$} &
-		$\varphi_1 \imp (\varphi_2 \imp \varphi_1) $
-		\\
-		\prule{Proposition$_2$} &
-		$(\varphi_1 \imp (\varphi_2 \imp \varphi_3))
-		\imp (\varphi_1 \imp \varphi_2)
-		\imp (\varphi_1 \imp \varphi_3)$
-		\\
-		\prule{Proposition$_3$} &
-		$(\neg \varphi_1 \imp \neg \varphi_2)
-		\imp (\varphi_2 \imp \varphi_1)$
-		\\
-		\modusponens &
-		From $\varphi_1$ and $\varphi_1 \imp \varphi_2$, deduce $\varphi_2$.
-		\\
-		\hline
-		\variablesubstitution &
-		$\forall x . \varphi \imp \varphi[y/x]$
-		\\
-		\prule{$\forall$} &
-		$\forall x . (\varphi_1 \imp \varphi_2) 
-		\imp (\varphi_1 \imp \forall x . \varphi_2)$
-		\quad if $x \not\in \FV(\varphi_1)$
-		\\
-		\universalgeneralization &
-		From $\varphi$, derive $\forall x . \varphi$.
-		\\
-		\hline
-		\propagationbottom &
-		$\CSub{\sigma}[\bot] \imp \bot$
-		\\
-		\propagationvee &
-		$\CSub{\sigma}[\varphi_1 \vee \varphi_2]
-		\imp \CSub{\sigma}[\varphi_1] \vee \CSub{\sigma}[\varphi_2] $
-		\\
-		\prule{Propagation$_\exists$} &
-		$\CSub{\sigma}[\exists x . \varphi]
-		\imp \exists x . \CSub{\sigma}[\varphi]$
-		\quad if $x \not\in \FV(\Csigmaapp{\exists x . \varphi})$
-		\\
-		\hline
-		\framing &
-		From $\varphi_1 \imp \varphi_2$, derive
-		$\CSub{\sigma}[\varphi_1] \imp \CSub{\sigma}[\varphi_2]$
-		\\
-		\hline
-		\existence &
-		$\exists x . x$
-		\\
-		\singletonvariable &
-		$\neg (C_1[x \wedge \varphi] \wedge C_2[x \wedge \neg \varphi])$
-		\\ & where $C_1$ and $C_2$ are symbol contexts.
-		\\
-		\hline
-	\end{tabular}
-	\caption{Sound and Complete Proof System of Matching Logic}
-	\label{proofsystem}
-\end{figure}
-
 \vspace*{2ex}
 
 \noindent
-\underline{First-order logic with equality proof rules:}
+\underline{First-order logic proof rules:}
 
 \begin{quote}
 5. $\vdash (\forall x\,.\,\varphi_1\ra\varphi_2) \ra (\varphi_1 \ra \forall x\,.\,\varphi_2)$
@@ -1258,19 +1196,61 @@ when $x \not\in \bigcup_{j \neq i} \FV(\varphi_j)$
 \underline{Frame rule:}
 
 \begin{quote}
-11.
-$\displaystyle\frac{\varphi_i \imp \varphi'_i}
-{\sigma(\varphi_1 \ddd \varphi_{i-1} ,
-	    \varphi_i,
-	    \varphi_{i+1} \ddd \varphi_n)
- \imp
- \sigma(\varphi_1 \ddd \varphi_{i-1} ,
- \varphi'_i,
- \varphi_{i+1} \ddd \varphi_n)
-}$
-\hfill \textsc{(Framing)}
+	11.
+	$\displaystyle\frac{\varphi_i \imp \varphi'_i}
+	{\sigma(\varphi_1 \ddd \varphi_{i-1} ,
+		\varphi_i,
+		\varphi_{i+1} \ddd \varphi_n)
+		\imp
+		\sigma(\varphi_1 \ddd \varphi_{i-1} ,
+		\varphi'_i,
+		\varphi_{i+1} \ddd \varphi_n)
+	}$
+	\hfill \textsc{(Framing)}
 \end{quote}
 
+Besides the above rules, we need two more proof rules
+to make the proof system a complete one.
+These two rules are
+
+\vspace*{2ex}
+
+\noindent
+\underline{More rules:}
+
+\begin{quote}
+	12.
+	$\vdash \exists x . x$
+	\hfill \textsc{(Existence)}
+\end{quote}
+
+To ease our notation in writing the next proof rule,
+let us introduce \emph{symbol context}.
+We abbreviate
+$\sigma(\varphi_1 \ddd \varphi_{i-1}, \varphi_i,
+        \varphi_{i+1} \ddd \varphi_n)$
+as $\Csigmaiapp{\varphi_i}$.
+When the position $i$ is not important,
+we omit it and write $\Csigmaapp{\varphi_i}$.
+We inductively define what a \emph{symbol context} is.
+A symbol context $C$ is either the identity context, i.e.,
+$C[\varphi] = \varphi$,
+or $C[\varphi] = \Csigmaapp{C'[\varphi]}$
+where $C'$ is a symbol context.
+In other words, $C[\varphi]$ is a symbol context if
+the path of the occurrence of $\varphi$ in $C[\varphi]$
+contains only symbols and no logic connectives.
+
+Using our notation of symbol contexts, we present the last proof rule
+which captures the fact that variables are singletons:
+
+\begin{quote}
+	13.
+	$\vdash \neg ( C_1[x \wedge \varphi] 
+	 \wedge C_2[ x \wedge \neg \varphi ] )$
+	where $C_1, C_2$ are symbol contexts
+	\hfill \textsc{(Singleton Variables)}
+\end{quote}
 
 The following result establishes the soundness and completeness
 of the proof system above:
@@ -4231,7 +4211,7 @@ From now on, we will quickly list all the inference rule schemas of matching
 logic and their corresponding axioms in the meta-theory, and only add 
 explanations by need.
 
-\paragraph{First-Order Logic with Equality Inference Rules.} \quad
+\paragraph{First-Order Logic Rules.} \quad
 \\
 
 (\textsc{$\forall$}).\quad
@@ -4251,14 +4231,160 @@ If $\vdash \varphi$, then $\vdash \forall v . \varphi$.
 \parametric{\Kdeduce}{\shs}(\overline{\forall_s v . \varphi}).
 \end{equation*}
 
+(\textsc{Variable Substitution}).\quad
+$\vdash \forall v . \varphi \to \varphi[u/v]$ 
+\begin{equation*}
+\parametric{\Kdeduce}{\shs}(
+  \overline{
+	\forall_{s_1} v . \varphi \to_{s_1} \varphi[u/v]}).
+\end{equation*}
+
+\paragraph{Rules about Structures}\quad
+
+(\textsc{Propagation$_\bot$}).\quad
+$\vdash 
+ \sigma(
+ \varphi_1 \ddd \varphi_{i-1},
+ \bot,
+ \varphi_{i+1} \ddd \varphi_n) \imp \bot$ 
+\begin{equation*}
+\parametric{\Kdeduce}{\shs}(
+\overline{
+\sigma(L,\bot_s,R) \imp_s \bot_s
+}).
+\end{equation*}
+Here we remind readers that we omit 
+the wellformedness premise (see the discussion
+after we axiomatize (\textsc{Propositional$_1$})).
+In the case of (\textsc{Propagation$_\bot$})
+
+(\textsc{Propagation$_\vee$}).\quad
+$\vdash 
+\sigma(
+\varphi_1 \ddd \varphi_{i-1},
+\varphi_i \vee \varphi'_i,
+\varphi_{i+1} \ddd \varphi_n) \imp
+\sigma(
+\varphi_1 \ddd \varphi_{i-1},
+\varphi_i,
+\varphi_{i+1} \ddd \varphi_n)
+\vee
+\sigma(
+\varphi_1 \ddd \varphi_{i-1},
+\varphi'_i,
+\varphi_{i+1} \ddd \varphi_n)
+$ 
+\begin{equation*}
+\parametric{\Kdeduce}{\shs}(
+\overline{
+	\sigma(L,\varphi_i \vee \varphi'_i,R) \imp
+	\sigma(L, \varphi_i, R) \vee \sigma(L, \varphi'_i, R)
+}).
+\end{equation*}
+
+(\textsc{Propagation$_\exists$}).\quad
+$\vdash 
+\sigma(
+\varphi_1 \ddd \varphi_{i-1},
+\exists x . \varphi_i,
+\varphi_{i+1} \ddd \varphi_n) \imp
+\exists x .
+\sigma(
+\varphi_1 \ddd \varphi_{i-1},
+\varphi_i,
+\varphi_{i+1} \ddd \varphi_n)
+$
+if $x \not\in \bigcup_{j \neq i}\FV(\varphi_j)$
+\begin{equation*}
+\parametric{\KoccursFree}{\shs}(
+u,
+\overline{\sigma(L,\exists u . \varphi_i,R)}
+)
+\imp
+\parametric{\Kdeduce}{\shs}(
+\overline{
+	\sigma(L,\exists u . \varphi_i,R) \imp
+	\exists u . \sigma(L, \varphi_i, R)
+}).
+\end{equation*}
+
+(\textsc{Framing}).\quad
+If $\vdash \varphi_i \imp \varphi'_i$,
+then 
+$\vdash
+\sigma(
+\varphi_1 \ddd \varphi_{i-1},
+\varphi_i,
+\varphi_{i+1} \ddd \varphi_n)
+\imp
+\sigma(
+\varphi_1 \ddd \varphi_{i-1},
+\varphi'_i,
+\varphi_{i+1} \ddd \varphi_n)
+$
+\begin{equation*}
+\parametric{\Kdeduce}{\shs}(
+\overline{
+\varphi_i \imp \varphi'_i
+}
+)
+\imp
+\parametric{\Kdeduce}{\shs}(
+\overline{
+\sigma(L,\varphi_i,R) \imp
+\sigma(L,\varphi'_i,R)
+}).
+\end{equation*}
+
+\paragraph{Existence Rule}\quad
+
+(\textsc{Existence}).\quad
+$\vdash
+\exists x . x
+$
+\begin{equation*}
+\parametric{\Kdeduce}{\shs}(
+\overline{
+	\exists x . x
+}
+).
+\end{equation*}
+
+\paragraph{Singleton Variables Rule}\quad
+
+\paragraph{The Axiom Rule.}\quad
+\\
+
+(\textsc{Axiom}).\quad
+$A \vdash \varphi$ if $\varphi \in A$.
+\begin{equation*}
+\underbrace{\parametric{\KaxiomDeclared}{\shs}(\varphi)}_\text{if $\varphi$ is 
+	an axiom in the current theory} \to 
+\underbrace{\parametric{\Kdeduce}{\shs}(\varphi)}_\text{then $\varphi$ is 
+	provable 
+	in the current theory}
+\end{equation*}
+
+\subsubsection{Derived Proof Rules about Membership and Equality}
+
+When the definedness symbols are declared,
+we can define membership and equality
+as derived constructs.
+In~\cite{rosu-2017-lmcs},
+a sound and complete proof system using
+membership and equality is presented,
+which contains the following proof rules.
+We list them here and show how we can axiomatize them in
+the same way we axiomatize the others proof rules.
+
 (\textsc{Functional Substitution}).\quad
 $\vdash \exists u . u = \psi \wedge \forall v . \varphi \to \varphi[\psi/v]$ if 
 $u$ does not occur free in $\psi$.
 \begin{equation*}
 \parametric{\KoccursFree}{\shs}(u, \psi) \to
 \parametric{\Kdeduce}{\shs}(\overline{\exists_{s_2} u . u =_{s_1}^{s_2} \psi 
-\wedge_{s_2} 
-\forall_{s_2} v . \varphi \to_{s_2} \varphi[\psi/v]}).
+	\wedge_{s_2} 
+	\forall_{s_2} v . \varphi \to_{s_2} \varphi[\psi/v]}).
 \end{equation*}
 
 (\textsc{Functional Variable}). \quad
@@ -4275,8 +4401,8 @@ $$\parametric{\Kdeduce}{\shs}(\overline{\varphi =_{s_1}^{s_2} \varphi})$$
 $\vdash (\varphi_1 = \varphi_2) \to (\psi[\varphi_1/v] \to \psi[\varphi_2/v])$.
 \begin{equation*}
 \parametric{\Kdeduce}{\shs}(\overline{(\varphi_1 =_{s_1}^{s_2} \varphi_2) 
-\to_{s_2} 
-(\psi[\varphi_1/v] \to_{s_2} \psi[\varphi_2/v])}).
+	\to_{s_2} 
+	(\psi[\varphi_1/v] \to_{s_2} \psi[\varphi_2/v])}).
 \end{equation*}
 
 \paragraph{Definedness Axioms.}\quad
@@ -4299,7 +4425,7 @@ If $\vdash \varphi$, and $v$ does not occur free in $\varphi$, then $\vdash v
 \parametric{\Kdeduce}{\shs}(\varphi) \wedge \neg 
 \parametric{\KoccursFree}{\shs}(v, \varphi) \to 
 \parametric{\Kdeduce}{\shs}(\overline{v 
-\in_{s_1}^{s_2} \varphi}).
+	\in_{s_1}^{s_2} \varphi}).
 \end{equation*}
 
 (\textsc{Membership Elimination}).
@@ -4315,23 +4441,23 @@ $\vdash \varphi$.
 $\vdash (v \in u) = (v = u)$.
 \begin{equation*}
 \parametric{\Kdeduce}{\shs}(\overline{(v \in_{s_1}^{s_2} u) =_{s_2}^{s_3} (v 
-=_{s_1}^{s_2} u)}).
+	=_{s_1}^{s_2} u)}).
 \end{equation*}
 
 (\textsc{Membership $\wedge$}).
 $\vdash v \in (\varphi \wedge \psi) = (v \in \varphi) \wedge (v \in \psi).$
 \begin{equation*}
 \parametric{\Kdeduce}{\shs}(\overline{v \in_{s_1}^{s_2} (\varphi \wedge_{s_1} 
-\psi) =_{s_2}^{s_3} 
-(v \in_{s_1}^{s_2} \varphi) \wedge_{s_2} (v \in_{s_1}^{s_2} \psi)}).
+	\psi) =_{s_2}^{s_3} 
+	(v \in_{s_1}^{s_2} \varphi) \wedge_{s_2} (v \in_{s_1}^{s_2} \psi)}).
 \end{equation*}
 
 (\textsc{Membership $\neg$}).
 $\vdash v \in \neg \varphi = \neg (v \in \varphi)$.
 \begin{equation*}
 \parametric{\Kdeduce}{\shs}(\overline{v \in_{s_1}^{s_2} \neg_{s_1} \varphi 
-=_{s_2}^{s_3} 
-\neg_{s_2} (v \in_{s_1}^{s_2} \varphi)}).
+	=_{s_2}^{s_3} 
+	\neg_{s_2} (v \in_{s_1}^{s_2} \varphi)}).
 \end{equation*}
 
 (\textsc{Membership $\forall$}).
@@ -4339,9 +4465,9 @@ $\vdash v \in \forall u . \varphi = \forall u . v \in \varphi$ if $v$ is
 distinct from $u$.
 \begin{equation*}
 (v \neq u)  \to \parametric{\Kdeduce}{\shs}(\overline{(v \in_{s_1}^{s_2} 
-\forall_{s_1} u . 
-\varphi) =_{s_2}^{s_3} 
-(\forall_{s_2} u . (v \in_{s_1}^{s_2} \varphi))}).
+	\forall_{s_1} u . 
+	\varphi) =_{s_2}^{s_3} 
+	(\forall_{s_2} u . (v \in_{s_1}^{s_2} \varphi))}).
 \end{equation*}
 
 (\textsc{Membership Symbol}).
@@ -4350,27 +4476,14 @@ $\vdash v \in \sigma(\dots \varphi_i \dots) = \exists u . u \in \varphi_i
 not occur free in $\sigma(\dots \varphi_i \dots)$.
 \begin{align*}
 & (u \neq v) 
-  \wedge \neg \parametric{\KoccursFree}{\shs}(u, \overline{\sigma(L, \varphi_i, 
-  R)})
+\wedge \neg \parametric{\KoccursFree}{\shs}(u, \overline{\sigma(L, \varphi_i, 
+	R)})
 \\
 \to & \parametric{\Kdeduce}{\shs}(\overline{v \in_{s_1}^{s_2} \sigma(L, 
-\varphi_i, R) 
-=_{s_2}^{s_3} \exists_{s_2} u . (u \in_{s_4}^{s_2} \varphi_i \wedge_{s_2} v 
-\in_{s_1}^{s_2} \sigma(L, u, R))}),
+	\varphi_i, R) 
+	=_{s_2}^{s_3} \exists_{s_2} u . (u \in_{s_4}^{s_2} \varphi_i \wedge_{s_2} v 
+	\in_{s_1}^{s_2} \sigma(L, u, R))}),
 \end{align*}
-
-\paragraph{The Axiom Rule.}\quad
-\\
-
-(\textsc{Axiom}).\quad
-$A \vdash \varphi$ if $\varphi \in A$.
-\begin{equation*}
-\underbrace{\parametric{\KaxiomDeclared}{\shs}(\varphi)}_\text{if $\varphi$ is 
-	an axiom in the current theory} \to 
-\underbrace{\parametric{\Kdeduce}{\shs}(\varphi)}_\text{then $\varphi$ is 
-	provable 
-	in the current theory}
-\end{equation*}
 
 \subsection{More about Symbols}
 
