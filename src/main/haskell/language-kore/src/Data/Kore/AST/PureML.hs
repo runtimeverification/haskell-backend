@@ -73,5 +73,8 @@ type CommonPurePattern level = PureMLPattern level Variable
 type UnFixedPureMLPattern level variable =
     Pattern level variable (PureMLPattern level variable)
 
-type PurePatternStub level =
-    PatternStub level Variable (CommonPurePattern level)
+type PurePatternStub level variable =
+    PatternStub level variable (PureMLPattern level variable)
+
+type CommonPurePatternStub level =
+    PurePatternStub level Variable

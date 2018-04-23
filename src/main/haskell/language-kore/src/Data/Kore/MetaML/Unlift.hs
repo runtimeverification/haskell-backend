@@ -20,13 +20,13 @@ import           Control.Applicative
 import           Data.Fix
 import           Data.Maybe
 
+import           Data.Kore.AST.Builders           (isImplicitHead)
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Implicit.ImplicitKore  (mlPatternP, variable)
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.MetaML.AST
-import           Data.Kore.MetaML.Builders        (isImplicitHead)
 import           Data.Kore.Parser.LexemeImpl
 import           Data.Kore.Parser.ParserUtils     as Parser
 
