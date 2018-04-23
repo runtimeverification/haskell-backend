@@ -74,13 +74,13 @@ writeOneFieldStruct flags name content =
 writeOneFieldStructK
     :: (PrinterOutput w m)
     => Flags -> String -> m () -> m ()
-writeOneFieldStructK flags name k =
+writeOneFieldStructK flags name fieldWriterAction =
     betweenParentheses
         flags
         (do
             write name
             write " "
-            k
+            fieldWriterAction
         )
 
 writeFieldOneLine
@@ -127,16 +127,17 @@ printableList :: PrinterOutput w m => [m ()] -> [m ()]
 printableList = intersperse (betweenLines >> write ", ")
 
 instance MetaOrObject level => PrettyPrint (Id level) where
-    prettyPrint flags x =
+    prettyPrint flags id' =
         betweenParentheses
             flags
             (do
                 write "Id "
                 write "\""
-                write (getId x)
+                write (getId id')
+                -- TODO(virgil): use flags to qualify id only if necessary
                 write "\""
                 write " :: Id "
-                write (show (getMetaOrObjectType x))
+                write (show (getMetaOrObjectType id'))
             )
 
 instance
@@ -496,10 +497,6 @@ instance
         writeOneFieldStruct flags "TopPattern" p
     prettyPrint flags (VariablePattern p)      =
         writeOneFieldStruct flags "VariablePattern" p
-
-instance (PrettyPrint (t c a b)) => PrettyPrint (Rotate31 t a b c) where
-    prettyPrint flags (Rotate31 x) =
-        writeOneFieldStruct flags "Rotate31" x
 
 instance PrettyPrint CommonKorePattern where
     prettyPrint flags korePattern =

@@ -77,10 +77,8 @@ applyUnified
     :: (thing Meta -> b)
     -> (thing Object -> b)
     -> (Unified thing -> b)
-applyUnified metaT objectT =
-    \case
-        UnifiedMeta x -> metaT x
-        UnifiedObject x -> objectT x
+applyUnified metaT _ (UnifiedMeta x)     = metaT x
+applyUnified _ objectT (UnifiedObject x) = objectT x
 
 transformUnified
     :: (forall level . MetaOrObject level => thing level -> b)
@@ -88,14 +86,14 @@ transformUnified
 transformUnified f = applyUnified f f
 
 mapUnified
-    :: (forall level . thing1 level -> thing2 level)
+    :: (forall level . MetaOrObject level => thing1 level -> thing2 level)
     -> (Unified thing1 -> Unified thing2)
 mapUnified f (UnifiedObject o) = UnifiedObject (f o)
 mapUnified f (UnifiedMeta o)   = UnifiedMeta (f o)
 
 sequenceUnified
     :: Applicative a
-    => (forall level . thing1 level -> a (thing2 level))
+    => (forall level . MetaOrObject level => thing1 level -> a (thing2 level))
     -> (Unified thing1 -> a (Unified thing2))
 sequenceUnified f (UnifiedObject o) = UnifiedObject <$> f o
 sequenceUnified f (UnifiedMeta o)   = UnifiedMeta <$> f o
