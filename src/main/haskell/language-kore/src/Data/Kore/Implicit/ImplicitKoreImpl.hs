@@ -10,10 +10,10 @@ Portability : POSIX
 
 module Data.Kore.Implicit.ImplicitKoreImpl where
 
+import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.MetaML.AST
-import           Data.Kore.MetaML.Builders
 import           Data.Kore.Variables.Free   (freeVariables)
 
 import           Data.Fix
@@ -28,7 +28,7 @@ any pattern, except for top-level pattern of an axiom. Using it will have
 unpredictable effects.
 -}
 equalsSortParam :: SortVariable Meta
-equalsSortParam = sortParameter "#esp"
+equalsSortParam = sortParameter Meta "#esp"
 
 equalsSort :: Sort Meta
 equalsSort = SortVariableSort equalsSortParam

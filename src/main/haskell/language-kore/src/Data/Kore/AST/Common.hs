@@ -951,3 +951,15 @@ instance
                 case getMetaOrObjectPatternType p of
                     IsObject -> p
     unifiedPatternApply = id
+
+dummySort :: MetaOrObject level => level -> Sort level
+dummySort level =
+    SortVariableSort
+        (SortVariable
+            (Id
+                (case isMetaOrObject level of
+                    IsMeta   -> "#dummy"
+                    IsObject -> "dummy"
+                )
+            )
+        )

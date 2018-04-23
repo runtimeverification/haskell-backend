@@ -9,6 +9,8 @@ import           Test.Tasty.HUnit.Extensions
 import           Data.CallStack
 import           Data.Fix
 
+import           Data.Kore.AST.Builders
+import           Data.Kore.AST.BuildersImpl
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
@@ -16,8 +18,6 @@ import           Data.Kore.AST.PureML
 import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.MetaML.AST
-import           Data.Kore.MetaML.Builders
-import           Data.Kore.MetaML.BuildersImpl
 import           Data.Kore.MetaML.Lift
 import           Data.Kore.MetaML.Unlift
 
@@ -533,13 +533,13 @@ liftTests =
                         patternMetaSort
                     )
                 , SentenceAxiomSentence SentenceAxiom
-                    { sentenceAxiomParameters = [sortParameter "#s"]
+                    { sentenceAxiomParameters = [sortParameter Meta "#s"]
                     , sentenceAxiomPattern =
                         Fix
                             (EqualsPattern Equals
                                 { equalsOperandSort = patternMetaSort
                                 , equalsResultSort =
-                                    SortVariableSort (sortParameter "#s")
+                                    SortVariableSort (sortParameter Meta "#s")
                                 , equalsFirst =
                                     Fix
                                         (apply (groundHead "#`alias")
@@ -606,17 +606,17 @@ liftTests =
                     , sentenceAxiomAttributes = Attributes []
                     }
                 , SentenceAxiomSentence SentenceAxiom
-                    { sentenceAxiomParameters = [ sortParameter "#s" ]
+                    { sentenceAxiomParameters = [ sortParameter Meta "#s" ]
                     , sentenceAxiomPattern = Fix
                         (ImpliesPattern Implies
                             { impliesSort =
-                                SortVariableSort (sortParameter "#s")
+                                SortVariableSort (sortParameter Meta "#s")
                             , impliesFirst =
                                 Fix
                                     (apply
                                         (sortsDeclaredHead
                                             (SortVariableSort
-                                                (sortParameter "#s")
+                                                (sortParameter Meta "#s")
                                             )
                                         )
                                         [ Fix
@@ -639,7 +639,7 @@ liftTests =
                                     (apply
                                         (symbolDeclaredHead
                                             (SortVariableSort
-                                                (sortParameter "#s")
+                                                (sortParameter Meta "#s")
                                             )
                                         )
                                         [ Fix
@@ -740,12 +740,12 @@ liftTests =
                     , sentenceSymbolAttributes = Attributes []
                     }
                 , SentenceAxiomSentence SentenceAxiom
-                    { sentenceAxiomParameters = [ sortParameter "#s" ]
+                    { sentenceAxiomParameters = [ sortParameter Meta "#s" ]
                     , sentenceAxiomPattern = Fix
                             (EqualsPattern Equals
                                 { equalsOperandSort = sortMetaSort
                                 , equalsResultSort =
-                                    SortVariableSort (sortParameter "#s")
+                                    SortVariableSort (sortParameter Meta "#s")
                                 , equalsFirst = Fix
                                     (apply (groundHead "#`List")
                                         [ variablePattern "#a" sortMetaSort ]
@@ -770,16 +770,16 @@ liftTests =
                     , sentenceAxiomAttributes = Attributes []
                     }
                 , SentenceAxiomSentence SentenceAxiom
-                    { sentenceAxiomParameters = [sortParameter "#s"]
+                    { sentenceAxiomParameters = [sortParameter Meta "#s"]
                     , sentenceAxiomPattern = Fix
                             (ImpliesPattern Implies
                                 { impliesSort =
-                                    SortVariableSort (sortParameter "#s")
+                                    SortVariableSort (sortParameter Meta "#s")
                                 , impliesFirst = Fix
                                     (apply
                                         (sortsDeclaredHead
                                             (SortVariableSort
-                                                (sortParameter "#s")
+                                                (sortParameter Meta "#s")
                                             )
                                         )
                                         [ Fix
@@ -795,7 +795,7 @@ liftTests =
                                     (apply
                                         (sortDeclaredHead
                                             (SortVariableSort
-                                                (sortParameter "#s")
+                                                (sortParameter Meta "#s")
                                             )
                                         )
                                         [ Fix
@@ -824,7 +824,7 @@ liftTests =
         , testCase "Lift Axiom topped in Object Pattern"
             (prettyAssertEqual ""
                 [ SentenceAxiomSentence SentenceAxiom
-                    { sentenceAxiomParameters = [sortParameter "#a"]
+                    { sentenceAxiomParameters = [sortParameter Meta "#a"]
                     , sentenceAxiomPattern = Fix
                         (ImpliesPattern Implies
                             { impliesSort = patternMetaSort

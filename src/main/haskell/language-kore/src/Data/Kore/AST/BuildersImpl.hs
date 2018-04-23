@@ -7,33 +7,41 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Data.Kore.MetaML.BuildersImpl where
+module Data.Kore.AST.BuildersImpl where
 
 import           Data.Fix
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.MetaML.AST
+import           Data.Kore.AST.PureML
 
 
-newtype ChildSort = ChildSort (Sort Meta)
-newtype ResultSort = ResultSort (Sort Meta)
+newtype ChildSort level = ChildSort (Sort level)
+newtype ResultSort level = ResultSort (Sort level)
 
-{-|'fillCheckSorts' matches a list of sorts to a list of 'MetaPatternStub',
+{-|'fillCheckSorts' matches a list of sorts to a list of 'PurePatternStub's,
 checking that the sorts are identical where possible, creating a pattern with
 the provided sort otherwise.
 -}
-fillCheckSorts :: [Sort Meta] -> [MetaPatternStub] -> [CommonMetaPattern]
+fillCheckSorts
+    :: (Show (variable level))
+    => [Sort level]
+    -> [PurePatternStub level variable]
+    -> [PureMLPattern level variable]
 fillCheckSorts [] []         = []
 fillCheckSorts [] _          = error "Not enough sorts!"
 fillCheckSorts _ []          = error "Not enough patterns!"
 fillCheckSorts (s:ss) (p:ps) = fillCheckSort s p : fillCheckSorts ss ps
 
-{-|'fillCheckSorts' matches a sort to a 'MetaPatternStub', checking
+{-|'fillCheckSorts' matches a sort to a 'PurePatternStub', checking
 that the pattern's sorts is identical if possible, creating a pattern with the
 provided sort otherwise.
 -}
-fillCheckSort :: Sort Meta -> MetaPatternStub -> CommonMetaPattern
+fillCheckSort
+    :: (Show (variable level))
+    => Sort level
+    -> PurePatternStub level variable
+    -> PureMLPattern level variable
 fillCheckSort
     desiredSort
     ( SortedPatternStub SortedPattern
@@ -54,18 +62,18 @@ fillCheckSort
 fillCheckSort desiredSort (UnsortedPatternStub p) =
     Fix (p desiredSort)
 
-{-|'fillCheckPairSorts' takes two 'MetaPatternStub' objects, assumes that they
-must have the same sort, and tries to build 'CommonKorePattern's from them if
-possible, otherwise it returns functions that can build 'CommonKorePattern's.
+{-|'fillCheckPairSorts' takes two 'PurePatternStub' objects, assumes that
+they must have the same sort, and tries to build 'CommonKorePattern's from them
+if possible, otherwise it returns functions that can build 'CommonKorePattern's.
 -}
 fillCheckPairSorts
-    :: MetaPatternStub
-    -> MetaPatternStub
+    :: PurePatternStub level variable
+    -> PurePatternStub level variable
     -> Either
-        ( Sort Meta -> CommonMetaPattern
-        , Sort Meta -> CommonMetaPattern
+        ( Sort level -> PureMLPattern level variable
+        , Sort level -> PureMLPattern level variable
         )
-        (Sort Meta, CommonMetaPattern, CommonMetaPattern)
+        (Sort level, PureMLPattern level variable, PureMLPattern level variable)
 fillCheckPairSorts (UnsortedPatternStub first) (UnsortedPatternStub second) =
     Left (Fix . first, Fix . second)
 fillCheckPairSorts
@@ -113,13 +121,16 @@ fillCheckPairSorts
                 , Fix p2
                 )
 
-{-|'unaryPattern' is a helper for building 'MetaPatternStub's for unary
+{-|'unaryPattern' is a helper for building 'PurePatternStub's for unary
 operators, like @\not@.
 -}
 unaryPattern
-    :: (Sort Meta -> CommonMetaPattern -> PatternMetaType)
-    -> MetaPatternStub
-    -> MetaPatternStub
+    :: (Sort level
+        -> PureMLPattern level variable
+        -> UnFixedPureMLPattern level variable
+       )
+    -> PurePatternStub level variable
+    -> PurePatternStub level variable
 unaryPattern
     constructor
     ( SortedPatternStub SortedPattern
@@ -133,17 +144,18 @@ unaryPattern
 unaryPattern constructor (UnsortedPatternStub p) =
     UnsortedPatternStub (\sortS -> constructor sortS (Fix (p sortS)))
 
-{-|'unarySortedPattern' is a helper for building 'MetaPatternStub's for unary
+{-|'unarySortedPattern' is a helper for building 'PurePatternStub's for unary
 operators where the result sort is different from the operand sort, like \ceil.
 -}
 unarySortedPattern
-    :: (ResultSort
-        -> ChildSort
-        -> CommonMetaPattern
-        -> PatternMetaType)
-    -> Maybe ChildSort
-    -> MetaPatternStub
-    -> MetaPatternStub
+    :: (MetaOrObject level, Show (variable level))
+    => (ResultSort level
+        -> ChildSort level
+        -> PureMLPattern level variable
+        -> UnFixedPureMLPattern level variable)
+    -> Maybe (ChildSort level)
+    -> PurePatternStub level variable
+    -> PurePatternStub level variable
 unarySortedPattern constructor maybeSort patternStub =
     UnsortedPatternStub
         (\sortS ->
@@ -158,20 +170,20 @@ unarySortedPattern constructor maybeSort patternStub =
         (Nothing, SortedPatternStub sp) -> (sortedPatternSort sp, patternStub)
         (_, UnsortedPatternStub usp) -> error
             (  "Could not find a sort for child pattern: "
-            ++ show (usp dummyMetaSort)
+            ++ show (usp (dummySort (undefined :: level)))
             )
 
-{-|'binaryPattern' is a helper for building 'MetaPatternStub's for binary
+{-|'binaryPattern' is a helper for building 'PurePatternStub's for binary
 operators, like @\and@.
 -}
 binaryPattern
-    :: (Sort Meta
-        -> CommonMetaPattern
-        -> CommonMetaPattern
-        -> PatternMetaType)
-    -> MetaPatternStub
-    -> MetaPatternStub
-    -> MetaPatternStub
+    :: (Sort level
+        -> PureMLPattern level variable
+        -> PureMLPattern level variable
+        -> UnFixedPureMLPattern level variable)
+    -> PurePatternStub level variable
+    -> PurePatternStub level variable
+    -> PurePatternStub level variable
 binaryPattern constructor first second =
     case fillCheckPairSorts first second of
         Left (firstPattern, secondPattern) ->
@@ -186,20 +198,21 @@ binaryPattern constructor first second =
                 , sortedPatternSort    = commonSort
                 }
 
-{-|'binarySortedPattern' is a helper for building 'MetaPatternStub's for binary
+{-|'binarySortedPattern' is a helper for building 'PurePatternStub's for binary
 operators where the result sort is different from the operand sort,
 like \equals.
 -}
 binarySortedPattern
-    :: (ResultSort
-        -> ChildSort
-        -> CommonMetaPattern
-        -> CommonMetaPattern
-        -> PatternMetaType)
-    -> Maybe ChildSort
-    -> MetaPatternStub
-    -> MetaPatternStub
-    -> MetaPatternStub
+    :: (MetaOrObject level, Show (variable level))
+    => (ResultSort level
+        -> ChildSort level
+        -> PureMLPattern level variable
+        -> PureMLPattern level variable
+        -> UnFixedPureMLPattern level variable)
+    -> Maybe (ChildSort level)
+    -> PurePatternStub level variable
+    -> PurePatternStub level variable
+    -> PurePatternStub level variable
 binarySortedPattern constructor maybeSort first second =
     case fillCheckPairSorts first second of
         Left (firstPattern, secondPattern) ->
@@ -207,9 +220,9 @@ binarySortedPattern constructor maybeSort first second =
                 Nothing ->
                     error
                         (  "Could not find a sort for equals children: "
-                        ++ show (firstPattern dummyMetaSort)
+                        ++ show (firstPattern (dummySort (undefined :: level)))
                         ++ " and "
-                        ++ show (secondPattern dummyMetaSort)
+                        ++ show (secondPattern (dummySort (undefined :: level)))
                         ++ "."
                         )
                 Just childSort@(ChildSort s) ->
@@ -245,8 +258,12 @@ binarySortedPattern constructor maybeSort first second =
             )
 
 equalsM_
-    :: Maybe (Sort Meta)
-    -> (MetaPatternStub -> MetaPatternStub -> MetaPatternStub)
+    :: (MetaOrObject level, Show (variable level))
+    => Maybe (Sort level)
+    -> (PurePatternStub level variable
+        -> PurePatternStub level variable
+        -> PurePatternStub level variable
+       )
 equalsM_ s =
     binarySortedPattern
         (\(ResultSort resultSort)
@@ -264,8 +281,12 @@ equalsM_ s =
         (ChildSort <$> s)
 
 inM_
-    :: Maybe (Sort Meta)
-    -> (MetaPatternStub -> MetaPatternStub -> MetaPatternStub)
+    :: (MetaOrObject level, Show (variable level))
+    =>  Maybe (Sort level)
+    -> (PurePatternStub level variable
+        -> PurePatternStub level variable
+        -> PurePatternStub level variable
+       )
 inM_ s =
     binarySortedPattern
         (\(ResultSort resultSort)
@@ -282,7 +303,11 @@ inM_ s =
         )
         (ChildSort <$> s)
 
-ceilM_ :: Maybe (Sort Meta) -> MetaPatternStub -> MetaPatternStub
+ceilM_
+    :: (MetaOrObject level, Show (variable level))
+    => Maybe (Sort level)
+    -> PurePatternStub level variable
+    -> PurePatternStub level variable
 ceilM_ s =
     unarySortedPattern
         (\(ResultSort resultSort)
@@ -297,7 +322,11 @@ ceilM_ s =
         )
         (ChildSort <$> s)
 
-floorM_ :: Maybe (Sort Meta) -> MetaPatternStub -> MetaPatternStub
+floorM_
+    :: (MetaOrObject level, Show (variable level))
+    => Maybe (Sort level)
+    -> PurePatternStub level variable
+    -> PurePatternStub level variable
 floorM_ s =
     unarySortedPattern
         (\(ResultSort resultSort)
