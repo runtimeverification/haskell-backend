@@ -21,6 +21,7 @@ import           Data.Kore.Parser.ParserTest
 import           Data.Kore.Parser.RegressionTest
 import           Data.Kore.Substitution.ClassTest
 import           Data.Kore.Substitution.ListTest
+import           Data.Kore.Unification.UnifierTest
 import           Data.Kore.Unparser.UnparseTest
 import           Data.Kore.Variables.Fresh.IntCounterTest
 import           Data.Kore.Variables.IntTest
@@ -66,4 +67,5 @@ unitTests =
         , substitutionClassTests
         , liftTests
         , unliftTests
+        , unifierTests
         ]
