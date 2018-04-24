@@ -9,7 +9,8 @@ Portability : POSIX
 -}
 
 module Data.Kore.Implicit.Verified
-    ( implicitKoreDefinition
+    ( implicitAttributesDefinition
+    , implicitKoreDefinition
     , implicitMetaDefinition
     )
     where
@@ -21,7 +22,8 @@ import           Data.Kore.ASTVerifier.DefinitionVerifier (defaultAttributesVeri
                                                            verifyKoreDefinition)
 import           Data.Kore.ASTVerifier.Error              (VerifyError)
 import           Data.Kore.Error                          (Error, printError)
-import           Data.Kore.Implicit.Definitions           (uncheckedKoreDefinition,
+import           Data.Kore.Implicit.Definitions           (uncheckedAttributesDefinition,
+                                                           uncheckedKoreDefinition,
                                                            uncheckedMetaDefinition)
 import           Data.Kore.MetaML.AST
 import           Data.Kore.MetaML.MetaToKore
@@ -51,5 +53,19 @@ checkedKoreDefinition = do
 implicitKoreDefinition :: KoreDefinition
 implicitKoreDefinition =
     case checkedKoreDefinition of
+        Left err -> error (printError err)
+        Right d  -> d
+
+checkedAttributesDefinition :: Either (Error VerifyError) KoreDefinition
+checkedAttributesDefinition = do
+    attributesVerification <- defaultAttributesVerification
+    verifyKoreDefinition
+        attributesVerification
+        uncheckedAttributesDefinition
+    return uncheckedAttributesDefinition
+
+implicitAttributesDefinition :: KoreDefinition
+implicitAttributesDefinition =
+    case checkedAttributesDefinition of
         Left err -> error (printError err)
         Right d  -> d
