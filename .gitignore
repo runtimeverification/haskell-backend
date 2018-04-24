@@ -14,6 +14,7 @@ docs/*.synctex.gz
 !docs/hash-symbol.pdf
 docs/*.fdb_latexmk
 docs/*.fls
+docs/*.toc
 .*.swp
 .*.swo
 tags
