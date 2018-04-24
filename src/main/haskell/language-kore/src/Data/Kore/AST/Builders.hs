@@ -123,7 +123,7 @@ bottom_ = UnsortedPatternStub (BottomPattern . Bottom)
 
 -- |A 'PatternStub' representing 'Top'.
 top_ :: CommonPurePatternStub level
-top_ = UnsortedPatternStub (BottomPattern . Bottom)
+top_ = UnsortedPatternStub (TopPattern . Top)
 
 -- |Builds a 'PatternStub' representing 'Equals' given the sort of the
 -- operands and their corresponding 'PatternStub's.

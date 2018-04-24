@@ -67,5 +67,5 @@ unitTests =
         , substitutionClassTests
         , liftTests
         , unliftTests
-        , unifierTests
+        , unificationTests
         ]
