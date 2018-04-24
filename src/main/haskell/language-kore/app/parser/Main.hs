@@ -82,11 +82,16 @@ main = do
             verifiedDefinition <-
                 if commandLineFlagsVerify commandLineFlags
                     then do
+                        attributesVerification <-
+                            case defaultAttributesVerification of
+                                Left err           -> error (printError err)
+                                Right verification -> return verification
                         verifyResult <-
                             clockSomething
                                 "Verifying the definition"
                                 (verifyDefinition
-                                    VerifyAttributes unverifiedDefinition)
+                                    attributesVerification
+                                    unverifiedDefinition)
                         case verifyResult of
                             Left err1        -> error (printError err1)
                             Right definition -> return unverifiedDefinition

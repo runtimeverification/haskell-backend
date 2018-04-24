@@ -68,9 +68,15 @@ toByteString (Right definition) =
 verify :: Either String KoreDefinition -> Either String KoreDefinition
 verify (Left err) = Left err
 verify (Right definition) =
-    case verifyDefinition VerifyAttributes definition of
+    case verifyDefinition attributesVerification definition of
         Left e  -> Left (printError e)
         Right _ -> Right definition
+  where
+    attributesVerification :: AttributesVerification
+    attributesVerification = case defaultAttributesVerification of
+        Right verification -> verification
+        Left err           -> error (printError err)
+
 
 runParser :: String -> VerifyRequest -> IO LazyByteString.ByteString
 runParser inputFileName verifyRequest = do

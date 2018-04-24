@@ -7,10 +7,13 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Data.Kore.ASTVerifier.DefinitionVerifier (verifyDefinition,
-                                                 verifyAndIndexDefinition,
-                                                 verifyKoreDefinition,
-                                                 AttributesVerification (..)) where
+module Data.Kore.ASTVerifier.DefinitionVerifier
+    ( defaultAttributesVerification
+    , verifyDefinition
+    , verifyAndIndexDefinition
+    , verifyKoreDefinition
+    , AttributesVerification (..)
+    ) where
 
 import           Control.Monad                            (foldM, foldM_)
 import           Data.Kore.AST.Common
@@ -20,7 +23,8 @@ import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.ModuleVerifier
 import           Data.Kore.Error
 import           Data.Kore.Implicit.Attributes
-import           Data.Kore.Implicit.Definitions           (uncheckedKoreModules)
+import           Data.Kore.Implicit.Definitions           (uncheckedAttributesDefinition,
+                                                           uncheckedKoreModules)
 import           Data.Kore.IndexedModule.IndexedModule
 import           Data.Kore.MetaML.MetaToKore
 
@@ -107,6 +111,23 @@ verifyAndIndexDefinition attributesVerification definition = do
     implicitIndexedModuleAsIndexedModule im =
         case im of
             ImplicitIndexedModule m -> m
+
+
+defaultAttributesVerification
+    :: Either (Error VerifyError) AttributesVerification
+defaultAttributesVerification = do
+    modules <-
+        verifyAndIndexDefinition
+            DoNotVerifyAttributes uncheckedAttributesDefinition
+    attributesModule <- case uncheckedAttributesDefinition of
+        Definition { definitionModules = [ attributesModule ] } ->
+            return attributesModule
+        _ -> koreFail "Unexpected structure for the attributes definition."
+    attributesIndexedModule <-
+        case Map.lookup (moduleName attributesModule) modules of
+            Just m  -> return m
+            Nothing -> koreFail "Attributes module not indexed."
+    return (VerifyAttributes attributesIndexedModule)
 
 indexImplicitModules
     :: Either

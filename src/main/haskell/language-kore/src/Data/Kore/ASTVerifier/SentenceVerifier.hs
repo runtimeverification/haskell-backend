@@ -90,7 +90,6 @@ verifySentence
   =
     verifySymbolAliasSentence
         (resolveMetaSort indexedModule)
-        indexedModule
         attributesVerification
         aliasSentence
 verifySentence
@@ -100,7 +99,6 @@ verifySentence
   =
     verifySymbolAliasSentence
         (resolveObjectSort indexedModule)
-        indexedModule
         attributesVerification
         aliasSentence
 verifySentence
@@ -110,7 +108,6 @@ verifySentence
   =
     verifySymbolAliasSentence
         (resolveMetaSort indexedModule)
-        indexedModule
         attributesVerification
         symbolSentence
 verifySentence
@@ -120,7 +117,6 @@ verifySentence
   =
     verifySymbolAliasSentence
         (resolveObjectSort indexedModule)
-        indexedModule
         attributesVerification
         symbolSentence
 verifySentence
@@ -130,11 +126,11 @@ verifySentence
   =
     verifyAxiomSentence axiomSentence indexedModule attributesVerification
 verifySentence
-    indexedModule
+    _
     attributesVerification
     (ObjectSentence (SentenceSortSentence sortSentence))
   =
-    verifySortSentence sortSentence indexedModule attributesVerification
+    verifySortSentence sortSentence attributesVerification
 verifySentence _ _ (MetaSentence (SentenceImportSentence _)) =
     -- Since we have an IndexedModule, we assume that imports were already
     -- resolved, so there is nothing left to verify here.
@@ -143,12 +139,11 @@ verifySentence _ _ (MetaSentence (SentenceImportSentence _)) =
 verifySymbolAliasSentence
     :: (MetaOrObject level, SentenceSymbolOrAlias ssa)
     => (Id level -> Either (Error VerifyError) (SortDescription level))
-    -> KoreIndexedModule
     -> AttributesVerification
     -> ssa level FixedPattern Variable
     -> Either (Error VerifyError) VerifySuccess
 verifySymbolAliasSentence
-    findSortDeclaration indexedModule attributesVerification sentence
+    findSortDeclaration attributesVerification sentence
   =
     withContext
         (  getSentenceSymbolOrAliasSentenceName sentence
@@ -167,7 +162,6 @@ verifySymbolAliasSentence
                 (getSentenceSymbolOrAliasResultSort sentence)
             verifyAttributes
                 (getSentenceSymbolOrAliasAttributes sentence)
-                indexedModule
                 variables
                 attributesVerification
         )
@@ -193,17 +187,15 @@ verifyAxiomSentence axiom indexedModule attributesVerification =
                 variables
             verifyAttributes
                 (sentenceAxiomAttributes axiom)
-                indexedModule
                 variables
                 attributesVerification
         )
 
 verifySortSentence
     :: KoreSentenceSort
-    -> KoreIndexedModule
     -> AttributesVerification
     -> Either (Error VerifyError) VerifySuccess
-verifySortSentence sentenceSort indexedModule attributesVerification =
+verifySortSentence sentenceSort attributesVerification =
     withContext
         ("sort '" ++ getId (sentenceSortName sentenceSort) ++ "' declaration")
         (do
@@ -211,7 +203,6 @@ verifySortSentence sentenceSort indexedModule attributesVerification =
                 buildDeclaredSortVariables (sentenceSortParameters sentenceSort)
             verifyAttributes
                 (sentenceSortAttributes sentenceSort)
-                indexedModule
                 variables
                 attributesVerification
         )

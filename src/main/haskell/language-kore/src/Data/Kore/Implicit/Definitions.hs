@@ -8,10 +8,12 @@ Stability   : experimental
 Portability : POSIX
 -}
 
-module Data.Kore.Implicit.Definitions ( uncheckedKoreDefinition
-                                      , uncheckedKoreModules
-                                      , uncheckedMetaDefinition
-                                      ) where
+module Data.Kore.Implicit.Definitions
+    ( uncheckedAttributesDefinition
+    , uncheckedKoreDefinition
+    , uncheckedKoreModules
+    , uncheckedMetaDefinition
+    ) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
@@ -32,12 +34,18 @@ uncheckedMetaDefinition =
 
 uncheckedKoreModules :: [KoreModule]
 uncheckedKoreModules =
-    uncheckedAttributesModule
-    : map moduleMetaToKore metaModules
+    map moduleMetaToKore metaModules
 
 uncheckedKoreDefinition :: KoreDefinition
 uncheckedKoreDefinition =
     Definition
         { definitionAttributes = Attributes []
         , definitionModules    = uncheckedKoreModules
+        }
+
+uncheckedAttributesDefinition :: KoreDefinition
+uncheckedAttributesDefinition =
+    Definition
+        { definitionAttributes = Attributes []
+        , definitionModules    = [uncheckedAttributesModule]
         }

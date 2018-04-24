@@ -22,20 +22,22 @@ import           Data.Kore.Implicit.Attributes         (attributeObjectSort)
 import           Data.Kore.IndexedModule.IndexedModule
 import qualified Data.Set                              as Set
 
-data AttributesVerification = VerifyAttributes | DoNotVerifyAttributes
+data AttributesVerification
+    = VerifyAttributes KoreIndexedModule | DoNotVerifyAttributes
 
 {-|'verifyAttributes' verifies the weldefinedness of the given attributes.
 -}
 verifyAttributes
     :: KoreAttributes
-    -> KoreIndexedModule
-    -- ^ Module with the declarations visible in these atributes.
     -> Set.Set UnifiedSortVariable
     -- ^ Sort variables visible in these atributes.
     -> AttributesVerification
+    -- ^ Module with the declarations visible in these atributes.
     -> Either (Error VerifyError) VerifySuccess
 verifyAttributes
-    (Attributes patterns) indexedModule sortVariables VerifyAttributes
+    (Attributes patterns)
+    sortVariables
+    (VerifyAttributes indexedModule)
   = do
     withContext
         "attributes"
@@ -50,5 +52,5 @@ verifyAttributes
             patterns
         )
     verifySuccess
-verifyAttributes _ _ _ DoNotVerifyAttributes =
+verifyAttributes _ _ DoNotVerifyAttributes =
     verifySuccess

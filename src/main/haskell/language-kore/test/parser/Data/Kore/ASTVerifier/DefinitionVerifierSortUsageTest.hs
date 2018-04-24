@@ -9,7 +9,6 @@ import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
-import           Data.Kore.Implicit.Attributes                       (attributeObjectSort)
 import           Data.Kore.Implicit.ImplicitSorts
 
 import qualified Data.List                                           as List
@@ -453,7 +452,6 @@ flaggedMetaTestsForSort
         namePrefix
         (MetaSentence . SentenceAliasSentence)
         (MetaSentence . SentenceSymbolSentence)
-    ++ unfilteredTestExamplesForMetaSort sort
 
 applyTestConfiguration
     :: TestConfiguration level
@@ -652,125 +650,6 @@ unfilteredTestExamplesForSort
                     )
             }
         }
-    , FlaggedTestData
-        { flaggedTestDataFlags = []
-        , flaggedTestDataTestData = \additionalSentences -> TestData
-            { testDataDescription = "Definition with alias attributes"
-            , testDataError =
-                Error
-                    [ "module 'MODULE'"
-                    , "alias '" ++ rawAliasName ++ "' declaration"
-                    , "attributes"
-                    , "\\equals"
-                    , "\\equals"
-                    ]
-                    defaultErrorMessage
-            , testDataDefinition =
-                simpleDefinitionFromSentences
-                    (ModuleName "MODULE")
-                    ( sentenceAliasSentence
-                        (sentenceAliasWithAttributes
-                            aliasName
-                            sortVariables
-                            additionalSort
-                            [ asAttribute
-                                (simpleExistsUnifiedPattern variableName1 sort)
-                                sort
-                            ]
-                        )
-                    : additionalSentences
-                    )
-            }
-        }
-    , FlaggedTestData
-        { flaggedTestDataFlags = []
-        , flaggedTestDataTestData = \additionalSentences -> TestData
-            { testDataDescription = "Axiom with attributes"
-            , testDataError =
-                Error
-                    [ "module 'MODULE'"
-                    , "axiom declaration"
-                    , "attributes"
-                    , "\\equals"
-                    , "\\equals"
-                    ]
-                    defaultErrorMessage
-            , testDataDefinition =
-                simpleDefinitionFromSentences
-                    (ModuleName "MODULE")
-                    ( axiomSentenceWithAttributes
-                        (map asUnified sortVariables)
-                        (simpleExistsUnifiedPattern
-                            variableName1 additionalSort)
-                        [asAttribute
-                            (simpleExistsUnifiedPattern variableName1 sort)
-                            sort
-                        ]
-                    : additionalSentences
-                    )
-            }
-        }
-    , FlaggedTestData
-        { flaggedTestDataFlags = [ CannotSeeSortVariables ]
-        , flaggedTestDataTestData = \additionalSentences -> TestData
-            { testDataDescription = "Module with attributes"
-            , testDataError =
-                Error
-                    [ "module 'MODULE'"
-                    , "attributes"
-                    , "\\equals"
-                    , "\\equals"
-                    ]
-                    defaultErrorMessage
-            , testDataDefinition =
-                Definition
-                    { definitionAttributes = Attributes []
-                    , definitionModules =
-                        [ Module
-                            { moduleName = ModuleName "MODULE"
-                            , moduleSentences = additionalSentences
-                            , moduleAttributes = Attributes
-                                [ asAttribute
-                                    (simpleExistsUnifiedPattern
-                                        variableName1
-                                        sort
-                                    )
-                                    sort
-                                ]
-                            }
-                        ]
-                    }
-            }
-        }
-    , FlaggedTestData
-        { flaggedTestDataFlags =
-            [ CannotSeeSortVariables, CannotSeeSortDeclarations ]
-        , flaggedTestDataTestData = \additionalSentences -> TestData
-            { testDataDescription = "Definition with attributes"
-            , testDataError =
-                Error
-                    [ "attributes"
-                    , "\\equals"
-                    , "\\equals"
-                    ]
-                    defaultErrorMessage
-            , testDataDefinition =
-                Definition
-                    { definitionAttributes = Attributes
-                        [ asAttribute
-                            (simpleExistsUnifiedPattern variableName1 sort)
-                            sort
-                        ]
-                    , definitionModules =
-                        [ Module
-                            { moduleName = ModuleName "MODULE"
-                            , moduleSentences = additionalSentences
-                            , moduleAttributes = Attributes []
-                            }
-                        ]
-                    }
-            }
-        }
     ]
   where
     rawAliasName = identifierPrefix ++ "_alias"
@@ -837,47 +716,6 @@ unfilteredTestExamplesForObjectSort
                     )
             }
         }
-    -- TODO: This also has a Meta definition
-    , FlaggedTestData
-        { flaggedTestDataFlags = []
-        , flaggedTestDataTestData = \additionalSentences -> TestData
-            { testDataDescription = "Definition with sort attributes"
-            , testDataError =
-                Error
-                    [ "module 'MODULE'"
-                    , "sort '"
-                        ++ differentAdditionalSortRawName
-                        ++ "' declaration"
-                    , "attributes"
-                    , "\\equals"
-                    , "\\equals"
-                    ]
-                    defaultErrorMessage
-            , testDataDefinition =
-                simpleDefinitionFromSentences
-                    (ModuleName "MODULE")
-                    (
-                        (ObjectSentence
-                            ( SentenceSortSentence SentenceSort
-                                { sentenceSortName =
-                                        Id differentAdditionalSortRawName
-                                , sentenceSortParameters = sortVariables
-                                , sentenceSortAttributes =
-                                    Attributes
-                                        [ objectAsAttribute
-                                            (simpleExistsUnifiedPattern
-                                                (VariableName "v")
-                                                sort
-                                            )
-                                            sort
-                                        ]
-                                }
-                            )::KoreSentence
-                        )
-                    : additionalSentences
-                    )
-            }
-        }
     ]
   where
     sortVariableName1 = SortVariableName (namePrefix ++ "_sortVariable1")
@@ -886,100 +724,3 @@ unfilteredTestExamplesForObjectSort
     differentAdditionalSortRawName = additionalSortRawName ++ "1"
     differentAdditionalSortName = SortName differentAdditionalSortRawName
     defaultErrorMessage = "Replace this with a real error message."
-
-unfilteredTestExamplesForMetaSort
-    :: TestedSort Meta
-    -> [FlaggedTestData]
-unfilteredTestExamplesForMetaSort (TestedSort sort) =
-    [ FlaggedTestData
-        { flaggedTestDataFlags = [CannotSeeSortVariables]
-        , flaggedTestDataTestData = \additionalSentences -> TestData
-            { testDataDescription = "Definition with sort attributes"
-            , testDataError =
-                Error
-                    [ "module 'MODULE'"
-                    , "sort 'additionalSort' declaration"
-                    , "attributes"
-                    , "\\equals"
-                    , "\\equals"
-                    ]
-                    defaultErrorMessage
-            , testDataDefinition =
-                simpleDefinitionFromSentences
-                    (ModuleName "MODULE")
-                    (
-                        (ObjectSentence
-                            ( SentenceSortSentence SentenceSort
-                                { sentenceSortName = Id "additionalSort"
-                                , sentenceSortParameters = []
-                                , sentenceSortAttributes = Attributes
-                                    [ metaAsAttribute
-                                        (simpleExistsUnifiedPattern
-                                            (VariableName "v") sort
-                                        )
-                                        sort
-                                    ]
-                                }
-                            )::KoreSentence
-                        )
-                    : additionalSentences
-                    )
-            }
-        }
-    ]
-  where
-    defaultErrorMessage = "Replace this with a real error message."
-
-asAttribute
-    :: (MetaOrObject level) => UnifiedPattern -> Sort level -> UnifiedPattern
-asAttribute pattern1 sort =
-    applyMetaObjectFunction
-        sort
-        MetaOrObjectTransformer
-            { metaTransformer   = metaAsAttribute pattern1
-            , objectTransformer = objectAsAttribute pattern1
-            }
-
-objectAsAttribute :: UnifiedPattern -> Sort Object -> UnifiedPattern
-objectAsAttribute pattern1 sort =
-    -- More complicated than it should be, but it's easier if it generates
-    -- the same error stack as the meta version.
-    asUnifiedPattern
-        ( EqualsPattern Equals
-            { equalsOperandSort = attributeObjectSort
-            , equalsResultSort  = attributeObjectSort
-            , equalsFirst       = patternPattern
-            , equalsSecond      = patternPattern
-            }
-        )
-  where
-    patternPattern =
-        asUnifiedPattern
-            (EqualsPattern Equals
-                { equalsOperandSort = sort
-                , equalsResultSort  = attributeObjectSort
-                , equalsFirst       = pattern1
-                , equalsSecond      = pattern1
-                }
-            )
-
-metaAsAttribute :: UnifiedPattern -> Sort Meta -> UnifiedPattern
-metaAsAttribute pattern1 sort =
-    asUnifiedPattern
-        ( EqualsPattern Equals
-            { equalsOperandSort = attributeObjectSort
-            , equalsResultSort  = attributeObjectSort
-            , equalsFirst       = patternPattern
-            , equalsSecond      = patternPattern
-            }
-        )
-  where
-    patternPattern =
-        asUnifiedPattern
-            (EqualsPattern Equals
-                { equalsOperandSort = sort
-                , equalsResultSort  = patternMetaSort
-                , equalsFirst       = pattern1
-                , equalsSecond      = pattern1
-                }
-            )

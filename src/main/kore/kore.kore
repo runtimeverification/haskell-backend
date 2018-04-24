@@ -1,28 +1,5 @@
 []
 
-    module BUILTIN-attributes
-        
-            sort Attribute{}[]
-            sort Hook{}[]
-            symbol hook{}(
-                Hook{}
-            ):Attribute{}[]
-            sort ArgumentPosition{}[]
-            symbol firstArgument{}():ArgumentPosition{}[]
-            symbol secondArgument{}():ArgumentPosition{}[]
-            symbol thirdArgument{}():ArgumentPosition{}[]
-            symbol fourthArgument{}():ArgumentPosition{}[]
-            symbol fifthArgument{}():ArgumentPosition{}[]
-            sort Strict{}[]
-            symbol strict{}(
-                Strict{},
-                ArgumentPosition{}
-            ):Attribute{}[]
-            symbol associative{}():Attribute{}[]
-            symbol commutative{}():Attribute{}[]
-        
-    endmodule
-    []
     module kore
         
             symbol #nilCharList{}():#CharList{}[]

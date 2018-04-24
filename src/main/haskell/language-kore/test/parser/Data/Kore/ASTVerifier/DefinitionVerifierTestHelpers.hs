@@ -71,7 +71,7 @@ expectSuccess description definition =
             ++ printDefinition definition
             )
             verifySuccess
-            (verifyDefinition VerifyAttributes definition)
+            (verifyDefinition attributesVerificationForTests definition)
         )
 
 expectFailureWithError
@@ -79,7 +79,7 @@ expectFailureWithError
 expectFailureWithError description expectedError definition =
     testCase
         description
-        ( case verifyDefinition VerifyAttributes definition of
+        ( case verifyDefinition attributesVerificationForTests definition of
             Right _ ->
                 assertFailure
                     (  "Expecting verification failure! Definition:\n"
@@ -92,6 +92,11 @@ expectFailureWithError description expectedError definition =
                     )
                     expectedError actualError
         )
+
+attributesVerificationForTests :: AttributesVerification
+attributesVerificationForTests = case defaultAttributesVerification of
+    Right verification -> verification
+    Left err           -> error (printError err)
 
 printDefinition :: KoreDefinition -> String
 printDefinition definition =

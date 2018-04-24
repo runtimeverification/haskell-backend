@@ -17,7 +17,7 @@ module Data.Kore.Implicit.Verified
 import           Data.Kore.AST.Common                     (Definition (..))
 import           Data.Kore.AST.Kore                       (KoreDefinition,
                                                            KoreModule)
-import           Data.Kore.ASTVerifier.DefinitionVerifier (AttributesVerification (..),
+import           Data.Kore.ASTVerifier.DefinitionVerifier (defaultAttributesVerification,
                                                            verifyKoreDefinition)
 import           Data.Kore.ASTVerifier.Error              (VerifyError)
 import           Data.Kore.Error                          (Error, printError)
@@ -28,8 +28,9 @@ import           Data.Kore.MetaML.MetaToKore
 
 checkedMetaDefinition :: Either (Error VerifyError) MetaDefinition
 checkedMetaDefinition = do
+    attributesVerification <- defaultAttributesVerification
     verifyKoreDefinition
-        VerifyAttributes
+        attributesVerification
         (definitionMetaToKore uncheckedMetaDefinition)
     return uncheckedMetaDefinition
 
@@ -41,8 +42,9 @@ implicitMetaDefinition =
 
 checkedKoreDefinition :: Either (Error VerifyError) KoreDefinition
 checkedKoreDefinition = do
+    attributesVerification <- defaultAttributesVerification
     verifyKoreDefinition
-        VerifyAttributes
+        attributesVerification
         uncheckedKoreDefinition
     return uncheckedKoreDefinition
 

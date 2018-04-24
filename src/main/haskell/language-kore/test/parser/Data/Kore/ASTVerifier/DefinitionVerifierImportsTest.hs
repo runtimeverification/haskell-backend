@@ -494,18 +494,6 @@ symbolVisibilityTests =
         (UsingSentence symbolReferenceInAxiomSentence)
         (SupportingSentences defaultSymbolSupportSentences)
     , nameReferenceTests
-        "Symbol visibility in attributes"
-        (ExpectedErrorMessage "Symbol 'symbol1' not defined.")
-        (ErrorStack
-            [ "sort 'sort2' declaration"
-            , "attributes"
-            , "symbol or alias 'symbol1'"
-            ]
-        )
-        (DeclaringSentence symbolAttributeDeclaration)
-        (UsingSentence symbolReferenceInAttributesSentence)
-        (SupportingSentences defaultSymbolSupportSentences)
-    , nameReferenceTests
         "Symbol visibility in and pattern"
         (ExpectedErrorMessage "Symbol 'symbol1' not defined.")
         (ErrorStack
@@ -586,20 +574,6 @@ symbolVisibilityTests =
             SortVariableSort (SortVariable (Id "sv1"))
         , sentenceSymbolAttributes = Attributes []
         }
-    symbolAttributeDeclaration =
-        ObjectSentence $ SentenceSymbolSentence SentenceSymbol
-            { sentenceSymbolSymbol = Symbol
-                { symbolConstructor = Id "symbol1"
-                , symbolParams = [SortVariable (Id "sv1")]
-                }
-            , sentenceSymbolSorts = []
-            , sentenceSymbolResultSort =
-                SortActualSort SortActual
-                    { sortActualName  = Id "Attribute"
-                    , sortActualSorts = []
-                    }
-            , sentenceSymbolAttributes = Attributes []
-            }
     defaultSymbolSupportSentences = [ defaultSortDeclaration ]
     metaSymbolPattern = MetaPattern
         ( ApplicationPattern Application
@@ -719,18 +693,6 @@ aliasVisibilityTests =
         (UsingSentence aliasReferenceInAxiomSentence)
         (SupportingSentences defaultAliasSupportSentences)
     , nameReferenceTests
-        "Alias visibility in attributes"
-        (ExpectedErrorMessage "Symbol 'alias1' not defined.")
-        (ErrorStack
-            [ "sort 'sort2' declaration"
-            , "attributes"
-            , "symbol or alias 'alias1'"
-            ]
-        )
-        (DeclaringSentence aliasAttributeDeclaration)
-        (UsingSentence aliasReferenceInAttributesSentence)
-        (SupportingSentences defaultAliasSupportSentences)
-    , nameReferenceTests
         "Alias visibility in and pattern"
         (ExpectedErrorMessage "Symbol 'alias1' not defined.")
         (ErrorStack
@@ -811,20 +773,6 @@ aliasVisibilityTests =
             SortVariableSort (SortVariable (Id "sv1"))
         , sentenceAliasAttributes = Attributes []
         }
-    aliasAttributeDeclaration =
-        ObjectSentence $ SentenceAliasSentence SentenceAlias
-            { sentenceAliasAlias = Alias
-                { aliasConstructor = Id "alias1"
-                , aliasParams = [SortVariable (Id "sv1")]
-                }
-            , sentenceAliasSorts = []
-            , sentenceAliasResultSort =
-                SortActualSort SortActual
-                    { sortActualName  = Id "Attribute"
-                    , sortActualSorts = []
-                    }
-            , sentenceAliasAttributes = Attributes []
-            }
     defaultAliasSupportSentences = [ defaultSortDeclaration ]
     metaAliasPattern = MetaPattern
         ( ApplicationPattern Application
