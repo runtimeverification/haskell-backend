@@ -10,6 +10,7 @@ module Data.Kore.ASTPrettyPrint ( prettyPrintToString
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.PureML
 import           Data.Kore.HaskellExtensions
 import           Data.Kore.IndentingPrinter  (PrinterOutput, StringPrinter,
                                               betweenLines, printToString,
@@ -510,6 +511,10 @@ instance PrettyPrint CommonKorePattern where
                 writeOneFieldStructK NeedsParentheses "UnifiedObject"
                 $ writeOneFieldStruct NeedsParentheses "Rotate31" (unRotate31 p)
 
+instance MetaOrObject level => PrettyPrint (CommonPurePattern level) where
+    prettyPrint flags purePattern =
+        writeOneFieldStruct flags "Fix" (unFix purePattern)
+
 instance PrettyPrint (Fix (pat variable))
     => PrettyPrint (Attributes pat variable)
   where
@@ -653,7 +658,3 @@ instance PrettyPrint a => PrettyPrint (Maybe a) where
     prettyPrint flags (Just x) =
         writeOneFieldStruct flags "Just" x
     prettyPrint _ Nothing = write "Nothing"
-
-instance PrettyPrint (MetaMLPattern Variable) where
-    prettyPrint flags p =
-        writeOneFieldStruct flags "Fix" (unFix p)
