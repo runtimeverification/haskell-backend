@@ -1,7 +1,8 @@
 /* This is the complete Kore definition of imp.k.
-   For comparison, K definitions are replicate
-   as comments, followed by the corresponding
-   Kore definitions. */
+ * For comparison, K definitions are replicate
+ * as comments, followed by the corresponding
+ * Kore definitions. 
+ */
 
 []
 
@@ -38,6 +39,8 @@ module INT
   symbol three{}() : Int{} []
 
   symbol plusInt{}(Int{}, Int{}) : Int{} []
+
+  symbol minusInt{}(Int{}, Int{}) : Int{} []
 
   symbol divInt{}(Int{}, Int{}) : Int{} []
 
@@ -118,6 +121,15 @@ module CONTEXT
   symbol app{S1,S2}(Ctxt{S1,S2}, S1) : S2 []
 
   symbol gamma{S1,S2}(S1,S2) : Ctxt{S1,S2} []
+
+  /* Nothing is the "nothing" in K. In K definition,
+   * it is written as a single dot ".".
+   * Any context C applied to nothing is itself: C[nothing] = C.
+   * This is the same as in K, too. For example,
+   * . ~> K1 ~> K2  =  K1 ~> K2 
+   * WE NEED A DISCUSSION ABOUT THIS.
+   */
+
 
   symbol app2{S1,S2}(Ctxt{S1,S2}, S1) : S2 []
 
@@ -235,18 +247,18 @@ module IMP-SYNTAX
 
   /* syntax BExp ::= AExp "<=" AExp [seqstrict] */
 
-  symbol leBExp{}(AExp{}, AExp{}) : BExp{}
-  [#seqstrict{}("leBExp")]
+  symbol leqBExp{}(AExp{}, AExp{}) : BExp{}
+  [#seqstrict{}("leqBExp")]
 
   axiom{R}
     \equals{BExp{},R}(
-      leBExp{}(X:AExp{}, Y:AExp{}),
+      leqBExp{}(X:AExp{}, Y:AExp{}),
       app{AExp{}, BExp{}}(
         gamma{AExp{}, BExp{}}(
           HOLE:AExp{},
-          leBExp{}(HOLE:AExp{}, Y:AExp{})),
+          leqBExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
-  [#seqstrict{}("leBExp")]
+  [#seqstrict{}("leqBExp")]
 
   /* X <= intAsAExp(Y) = (gamma HOLE . X <= intAsAExp(HOLE)) [Y] 
      where Y has sort Int.
@@ -257,13 +269,13 @@ module IMP-SYNTAX
 
   axiom{R}
     \equals{BExp{},R}(
-      leBExp{}(X:AExp{}, intAsAExp{}(Y:Int{})),
+      leqBExp{}(X:AExp{}, intAsAExp{}(Y:Int{})),
       app{Int{}, BExp{}}(
         gamma{Int{}, BExp{}}(
           HOLE:Int{},
-          leBExp{}(X:AExp{}, intAsAExp{}(HOLE:Int{}))),
+          leqBExp{}(X:AExp{}, intAsAExp{}(HOLE:Int{}))),
         Y:Int{}))
-  [#seqstrict{}("leBExp")]
+  [#seqstrict{}("leqBExp")]
 
   /* syntax BExp ::= "!" BExp [strict] */
 
@@ -353,6 +365,14 @@ module IMP-SYNTAX
 
   symbol seq{}(Stmt{}, Stmt{}) : Stmt{} []
 
+  /* The symbol skip is not in imp.k. We introduced it here
+   * to encode K rules that rewrite some computation
+   * to "nothing". 
+   * skip is the unit of seq.
+   */
+
+  symbol skip{}() : Stmt{} []
+
   /* syntax Pgm ::= ... */
 
   sort Pgm{} []
@@ -405,8 +425,6 @@ module IMP
    * C[X:Id => I, X |-> I]
    */
 
-
-
   /* rule I1 / I2 => I1 /Int I2 requires I2 =/=Int 0 */
 
   axiom{S}
@@ -430,16 +448,75 @@ module IMP
         intAsAExp{}(plusInt{}(I1:Int{}, I2:Int{}))))
   []
 
-  /* rule -I1 => 0 -Int I1 */
-
-  /* TODO:: work from here. */
+  /* In K:
+   *   rule -I1 => 0 -Int I1
+   */ 
 
   axiom{S}
     app{AExp{},S}(
       C:Ctxt{AExp{},S},
       \rewrites{AExp{}}(
-        plusAExp{}(intAsAExp{}(I1:Int{}), intAsAExp{}(I2:Int{})),
-        intAsAExp{}(plusInt{}(I1:Int{}, I2:Int{}))))
+        minusAExp{}(I1:Int{}),
+        intAsAExp{}(minusInt{}(zero{}(), I1:Int{}))))
+  []
+
+  /* In K:
+   *   rule I1 <= I2 => I1 <=Int I2
+   */
+
+  axiom{S}
+    app{BExp{},S}(
+      C:Ctxt{BExp{},S},
+      \rewrites{BExp{}}(
+        leqBExp{}(intAsAExp{}(I1:Int{}), intAsAExp{}(I2:Int{})),
+        boolAsBExp{}(leqInt{}(I1:Int{}, I2:Int{}))))
+  []
+
+  /* In K:
+   *   rule ! T => notBool T
+   */
+
+  axiom{S}
+    app{BExp{},S}(
+      C:Ctxt{BExp{},S},
+      \rewrites{BExp{}}(
+        notBExp{}(boolAsBExp{}(T:Bool{})),
+        boolAsBExp{}(notBool{}(T:Bool{}))))
+  []
+
+  /* rule true && B => B */
+
+  axiom{S}
+    app{BExp{},S}(
+      C:Ctxt{BExp{},S},
+      \rewrites{BExp{}}(
+        andBExp{}(boolAsBExp{}(true{}()), B:BExp{}),
+        B:BExp{}))
+  []
+
+  /* rule false && _ => false */
+    
+  axiom{S}
+    app{BExp{},S}(
+      C:Ctxt{BExp{},S},
+      \rewrites{BExp{}}(
+        andBExp{}(boolAsBExp{}(false{}()), UNDERSCORE:BExp{}),
+        boolAsBExp{}(false{}())))
+  []
+
+
+  /* rule {} => . */
+
+  // TODO
+
+  /* rule {S} => S */
+
+  axiom{S}
+    app{Stmt{},S}(
+      C:Ctxt{Stmt{},S},
+      \rewrites{Stmt{}}(
+        blockAsStmt{}(block{}(S:Stmt{})),
+        S:Stmt{}))
   []
 
 
