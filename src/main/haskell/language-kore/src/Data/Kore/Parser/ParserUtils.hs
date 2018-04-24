@@ -11,13 +11,15 @@ Helper tools for parsing Kore. Meant for internal use only.
 -}
 module Data.Kore.Parser.ParserUtils where
 
-import           Control.Applicative    (many, (<|>))
-import           Control.Monad          (void)
-import           Data.Functor           (($>))
-import           Text.Parsec            (parse)
-import qualified Text.Parsec.Char       as Parser
-import           Text.Parsec.Combinator (eof, lookAhead)
-import           Text.Parsec.String     (Parser)
+import           Control.Applicative        (many, (<|>))
+import           Control.Monad              (void)
+import           Data.Functor               (($>))
+import           Data.Word
+import           Data.Char                  (chr)
+import           Text.Megaparsec            (parse, Parsec, eof, lookAhead, takeWhileP)
+import qualified Text.Megaparsec.Char       as Parser
+
+type Parser = Parsec String String
 
 {-|'peekChar' is similar to Attoparsec's 'peekChar'. It returns the next
 available character in the input, without consuming it. Returns 'Nothing'
@@ -55,20 +57,20 @@ runScanner state delta = do
         Just s -> do
             c <- Parser.anyChar
             (reminder, finalState) <- runScanner s delta
-            return (c:reminder, finalState)
+            return (c :reminder, finalState)
 
 {-|'skipSpace' is similar to Attoparsec's 'skipSpace'. It consumes all
-characters until the first non-space one.
+characters until the first non-space one.  It does not skip comments.
 -}
 skipSpace :: Parser ()
-skipSpace = Parser.spaces
+skipSpace = Parser.space
 
 {-|'takeWhile' is similar to Attoparsec's 'takeWhile'. It consumes all
 the input characters that satisfy the given predicate and returns them
 as a string.
 -}
 takeWhile :: (Char -> Bool) -> Parser String
-takeWhile = many . Parser.satisfy
+takeWhile p = takeWhileP Nothing p
 
 {-|'endOfInput' is similar to Attoparsec's 'endOfInput'. It matches only the
 end-of-input position.

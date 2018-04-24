@@ -24,6 +24,7 @@ description:         Please see the README on Github at <https://github.com/kfra
 dependencies:
 - base >= 4.7
 - parsec >=3.1
+- megaparsec >=6.4.0
 - bytestring >=0.10
 - containers
 - array
