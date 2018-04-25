@@ -31,16 +31,16 @@ of the 'Pattern' class where the level is fixed to 'Meta'.
 
 'var' is the type of variables.
 -}
-type MetaMLPattern var = Fix (Pattern Meta var)
+type MetaMLPattern metadata var = Fix (Pattern Meta var metadata)
 
-newtype SentenceMetaPattern var = SentenceMetaPattern
-    { getSentenceMetaPattern :: MetaMLPattern var }
+newtype SentenceMetaPattern metadata var = SentenceMetaPattern
+    { getSentenceMetaPattern :: MetaMLPattern metadata var }
 
 deriving instance Eq (SentenceMetaPattern Variable)
 deriving instance Show (SentenceMetaPattern Variable)
 
 -- |'MetaAttributes' is the 'Meta'-only version of 'Attributes'
-type MetaAttributes = Attributes SentenceMetaPattern Variable
+type MetaAttributes metadata = Attributes (SentenceMetaPattern metadata) Variable
 
 type MetaSentenceAxiom =
     SentenceAxiom (SortVariable Meta) SentenceMetaPattern Variable

@@ -4,6 +4,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE Rank2Types            #-}
 {-# LANGUAGE StandaloneDeriving    #-}
+{-# LANGUAGE UndecidableInstances  #-}
 {-|
 Module      : Data.Kore.AST.Kore
 Description : Data Structures for representing the Kore language AST with
@@ -28,6 +29,7 @@ Please refer to Section 9 (The Kore Language) of the
 module Data.Kore.AST.Kore where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Metadata
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.HaskellExtensions (Rotate41 (..))
 
@@ -97,8 +99,8 @@ of the 'Pattern' class.
 
 'v' is the type of variables.
 -}
-class UnifiedThing (pat var) (PatternObjectMeta var (pat var))
-    => FixPattern var pat
+class UnifiedThing (pat var) (PatternObjectMeta var (pat var) metadata)
+    => FixPattern var metadata pat
   where
     {-|'fixPatternApply' "lifts" a function defined on 'Pattern' to the
     domain of the fixed point 'pat'.
@@ -108,21 +110,21 @@ class UnifiedThing (pat var) (PatternObjectMeta var (pat var))
     -}
     fixPatternApply
         :: (forall level
-            . MetaOrObject level => Pattern level var (pat var) -> b)
+            . MetaOrObject level => Pattern level var metadata (pat var) -> b)
         -> (pat var -> b)
     fixPatternApply f = transformUnified (f . getPatternObjectMeta)
 
-data FixedPattern variable
-    = MetaPattern !(Pattern Meta variable (FixedPattern variable))
-    | ObjectPattern !(Pattern Object variable (FixedPattern variable))
+data FixedPattern metadata variable
+    = MetaPattern !(Pattern Meta variable metadata (FixedPattern metadata variable))
+    | ObjectPattern !(Pattern Object variable metadata (FixedPattern metadata variable))
 
-newtype PatternObjectMeta variable child level = PatternObjectMeta
-    { getPatternObjectMeta :: Pattern level variable child }
+newtype PatternObjectMeta variable child metadata level = PatternObjectMeta
+    { getPatternObjectMeta :: Pattern level variable metadata child }
 
 instance Typeable var
     => UnifiedThing
-        (FixedPattern var)
-        (PatternObjectMeta var (FixedPattern var))
+        (FixedPattern metadata var)
+        (PatternObjectMeta var (FixedPattern metadata var) metadata)
   where
     destructor (MetaPattern p)   = Left (PatternObjectMeta p)
     destructor (ObjectPattern p) = Right (PatternObjectMeta p)
@@ -134,23 +136,31 @@ asUnifiedPattern
     => Pattern level variable (FixedPattern variable) -> FixedPattern variable
 asUnifiedPattern = asUnified . PatternObjectMeta
 
-instance VariableClass variable => FixPattern variable FixedPattern where
+instance VariableClass variable => FixPattern variable metadata (FixedPattern metadata) where
 
 {-|'UnifiedPattern' corresponds to the @pattern@ syntactic category from
 the Semantics of K, Section 9.1.4 (Patterns).
 -}
 type UnifiedPattern = FixedPattern Variable
 
-deriving instance Eq UnifiedPattern
-deriving instance Show UnifiedPattern
+deriving instance
+    ( EqMetadata Object Variable (UnifiedPattern metadata) metadata
+    , EqMetadata Meta Variable (UnifiedPattern metadata) metadata
+    )
+    => Eq (UnifiedPattern metadata)
+deriving instance
+    ( ShowMetadata Object Variable (UnifiedPattern metadata) metadata
+    , ShowMetadata Meta Variable (UnifiedPattern metadata) metadata
+    )
+    => Show (UnifiedPattern metadata)
 
-type KoreAttributes = Attributes FixedPattern Variable
+type KoreAttributes metadata = Attributes (FixedPattern metadata) Variable
 
-type KoreSentenceAlias level = SentenceAlias level FixedPattern Variable
-type KoreSentenceSymbol level = SentenceSymbol level FixedPattern Variable
-type KoreSentenceImport = SentenceImport FixedPattern Variable
-type KoreSentenceAxiom = SentenceAxiom UnifiedSortVariable FixedPattern Variable
-type KoreSentenceSort = SentenceSort Object FixedPattern Variable
+type KoreSentenceAlias metadata level = SentenceAlias level (FixedPattern metadata) Variable
+type KoreSentenceSymbol metadata level = SentenceSymbol level (FixedPattern metadata) Variable
+type KoreSentenceImport metadata = SentenceImport (FixedPattern metadata) Variable
+type KoreSentenceAxiom metadata = SentenceAxiom UnifiedSortVariable (FixedPattern metadata) Variable
+type KoreSentenceSort metadata = SentenceSort Object (FixedPattern metadata) Variable
 
 data UnifiedSentence sortParam pat variable
     = MetaSentence (Sentence Meta sortParam pat variable)
@@ -180,30 +190,30 @@ asKoreAliasSentence
     :: MetaOrObject level => KoreSentenceAlias level -> KoreSentence
 asKoreAliasSentence = asUnified . Rotate41 . SentenceAliasSentence
 
-type KoreSentence = UnifiedSentence UnifiedSortVariable FixedPattern Variable
-type KoreModule =
-    Module UnifiedSentence UnifiedSortVariable FixedPattern Variable
+type KoreSentence metadata = UnifiedSentence UnifiedSortVariable (FixedPattern metadata) Variable
+type KoreModule metadata =
+    Module UnifiedSentence UnifiedSortVariable (FixedPattern metadata) Variable
 
-type KoreDefinition =
-    Definition UnifiedSentence UnifiedSortVariable FixedPattern Variable
+type KoreDefinition metadata =
+    Definition UnifiedSentence UnifiedSortVariable (FixedPattern metadata) Variable
 
-instance AsSentence KoreSentence (KoreSentenceAlias Meta) where
+instance AsSentence (KoreSentence metadata) (KoreSentenceAlias metadata Meta) where
     asSentence = MetaSentence . SentenceAliasSentence
 
-instance AsSentence KoreSentence (KoreSentenceAlias Object) where
+instance AsSentence (KoreSentence metadata) (KoreSentenceAlias metadata Object) where
     asSentence = ObjectSentence . SentenceAliasSentence
 
-instance AsSentence KoreSentence (KoreSentenceSymbol Meta) where
+instance AsSentence (KoreSentence metadata) (KoreSentenceSymbol metadata Meta) where
     asSentence = MetaSentence . SentenceSymbolSentence
 
-instance AsSentence KoreSentence (KoreSentenceSymbol Object) where
+instance AsSentence (KoreSentence metadata) (KoreSentenceSymbol metadata Object) where
     asSentence = ObjectSentence . SentenceSymbolSentence
 
-instance AsSentence KoreSentence KoreSentenceImport where
+instance AsSentence (KoreSentence metadata) (KoreSentenceImport metadata) where
     asSentence = MetaSentence . SentenceImportSentence
 
-instance AsSentence KoreSentence KoreSentenceAxiom where
+instance AsSentence (KoreSentence metadata) (KoreSentenceAxiom metadata) where
     asSentence = MetaSentence . SentenceAxiomSentence
 
-instance AsSentence KoreSentence KoreSentenceSort where
+instance AsSentence (KoreSentence metadata) (KoreSentenceSort metadata) where
     asSentence = ObjectSentence . SentenceSortSentence

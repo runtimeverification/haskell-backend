@@ -12,7 +12,7 @@ module Data.Kore.ASTVerifier.DefinitionVerifier (verifyDefinition,
                                                  verifyKoreDefinition,
                                                  AttributesVerification (..)) where
 
-import           Control.Monad                            (foldM, foldM_)
+import           Control.Monad                            (foldM, foldM_, void)
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.ASTVerifier.AttributesVerifier
@@ -50,7 +50,7 @@ verifyDefinition
     -> KoreDefinition
     -> Either (Error VerifyError) VerifySuccess
 verifyDefinition attributesVerification definition = do
-    verifyAndIndexDefinition attributesVerification definition
+    void (verifyAndIndexDefinition attributesVerification definition)
     verifySuccess
 
 {-|'verifyAndIndexDefinition' verifies a definition and returns an indexed
@@ -76,6 +76,7 @@ verifyAndIndexDefinition attributesVerification definition = do
                 Map.lookup (moduleName implicitModule) implicitIndexedModules
             of
                 Just m -> m
+                Nothing -> error ("Expected to find module " ++ show (moduleName implicitModule))
     indexedModules <-
         foldM
             (indexModuleIfNeeded

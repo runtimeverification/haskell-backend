@@ -20,11 +20,13 @@ import           Data.Kore.Implicit.ImplicitKore          (uncheckedKoreDefiniti
 import           Data.Kore.MetaML.AST
 import           Data.Kore.MetaML.MetaToKore
 
+import           Control.Monad                            (void)
+
 checkedKoreDefinition :: Either (Error VerifyError) MetaDefinition
 checkedKoreDefinition = do
-    verifyKoreDefinition
+    void (verifyKoreDefinition
         VerifyAttributes
-        (definitionMetaToKore uncheckedKoreDefinition)
+        (definitionMetaToKore uncheckedKoreDefinition))
     return uncheckedKoreDefinition
 
 implicitKoreDefinition :: MetaDefinition
@@ -38,3 +40,4 @@ implicitKoreModule =
     case checkedKoreDefinition of
         Left err                                   -> error (printError err)
         Right Definition {definitionModules = [m]} -> m
+        _ -> error "Unexpected definition modules"
