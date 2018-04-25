@@ -87,8 +87,8 @@ main = do
                                 "Verifying the definition"
                                 (verifyDefinition DoNotVerifyAttributes unverifiedDefinition)
                         case verifyResult of
-                            Left err1        -> error (printError err1)
-                            Right definition -> return unverifiedDefinition
+                            Left err1 -> error (printError err1)
+                            Right _   -> return unverifiedDefinition
                     else
                         return unverifiedDefinition
             when

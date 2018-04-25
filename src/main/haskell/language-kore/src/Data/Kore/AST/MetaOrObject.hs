@@ -1,9 +1,9 @@
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE Rank2Types             #-}
 {-# LANGUAGE GADTs                  #-}
+{-# LANGUAGE Rank2Types             #-}
 module Data.Kore.AST.MetaOrObject where
-import           Data.Proxy(Proxy(Proxy))
-import           Data.Typeable        (Typeable, cast)
+import           Data.Proxy           (Proxy (Proxy))
+import           Data.Typeable        (Typeable)
 
 import           Data.Kore.AST.Common
 
@@ -47,5 +47,5 @@ class Typeable thing
     transformUnified f unifiedStuff = either f f (destructor unifiedStuff)
     asUnified :: (MetaOrObject level) => thing level -> unifiedThing
     asUnified x = case isMetaOrObject x of
-      IsMeta -> metaConstructor x
+      IsMeta   -> metaConstructor x
       IsObject -> objectConstructor x

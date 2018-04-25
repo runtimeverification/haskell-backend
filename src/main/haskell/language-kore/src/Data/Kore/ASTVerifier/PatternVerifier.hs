@@ -228,6 +228,14 @@ verifyParametrizedPattern (NotPattern p)         = verifyMLPattern p
 verifyParametrizedPattern (OrPattern p)          = verifyMLPattern p
 verifyParametrizedPattern (TopPattern p)         = verifyMLPattern p
 verifyParametrizedPattern (VariablePattern p)    = verifyVariableUsage p
+verifyParametrizedPattern (NextPattern _) =
+    error "NextPattern should be handled by verifyObjectPattern"
+verifyParametrizedPattern (RewritesPattern _) =
+    error "RewritesPattern should be handled by verifyObjectPattern"
+verifyParametrizedPattern (StringLiteralPattern _) =
+    error "StringLiteralPattern should be handled by internalVerifyPattern"
+verifyParametrizedPattern (CharLiteralPattern _) =
+    error "CharLiteralPattern should be handled by internalVerifyPattern"
 
 verifyObjectPattern
     :: Pattern Object v UnifiedPattern
@@ -477,8 +485,10 @@ verifySymbolOrAlias symbolOrAlias verifyHelpers declaredSortVariables =
                 sentenceAlias
                 verifyHelpers
                 declaredSortVariables
+        (Just _, Just _) ->
+            koreFail ("Symbol/alias '" ++ getId applicationId ++ "' defined twice.")
         (Nothing, Nothing) ->
-            koreFail ("Symbol '" ++ getId applicationId ++ "' not defined.")
+            koreFail ("Symbol/alias '" ++ getId applicationId ++ "' not defined.")
         -- The (Just, Just) match should be caught by the unique names check.
   where
     applicationId = symbolOrAliasConstructor symbolOrAlias
