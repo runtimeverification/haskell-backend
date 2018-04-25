@@ -120,9 +120,3 @@ type CommonMetaPattern = MetaMLPattern Variable
 type PatternMetaType = Pattern Meta Variable CommonMetaPattern
 
 type MetaPatternStub = PatternStub Meta Variable CommonMetaPattern
-
-{-|'dummyMetaSort' is used in error messages when we want to convert an
-'UnsortedPatternStub' to a pattern that can be displayed.
--}
-dummyMetaSort :: Sort Meta
-dummyMetaSort = SortVariableSort (SortVariable (Id "#dummy"))

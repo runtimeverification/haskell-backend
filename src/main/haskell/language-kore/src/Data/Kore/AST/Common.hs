@@ -922,6 +922,21 @@ withSort
                 ++ "."
                 )
 
+{-|'dummySort' is used in error messages when we want to convert an
+'UnsortedPatternStub' to a pattern that can be displayed.
+-}
+dummySort :: MetaOrObject level => level -> Sort level
+dummySort level =
+    SortVariableSort
+        (SortVariable
+            (Id
+                (case isMetaOrObject level of
+                    IsMeta   -> "#dummy"
+                    IsObject -> "dummy"
+                )
+            )
+        )
+
 getMetaOrObjectPatternType
     :: MetaOrObject level
     => Pattern level variable child -> IsMetaOrObject level
@@ -950,15 +965,3 @@ instance
                 case getMetaOrObjectPatternType p of
                     IsObject -> p
     unifiedPatternApply = id
-
-dummySort :: MetaOrObject level => level -> Sort level
-dummySort level =
-    SortVariableSort
-        (SortVariable
-            (Id
-                (case isMetaOrObject level of
-                    IsMeta   -> "#dummy"
-                    IsObject -> "dummy"
-                )
-            )
-        )
