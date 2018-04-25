@@ -36,6 +36,7 @@ Please refer to Section 9 (The Kore Language) of the
 module Data.Kore.AST.Common where
 
 import           Data.Fix
+import           Data.Proxy
 
 import           Data.Kore.AST.MetaOrObject
 
@@ -923,10 +924,25 @@ withSort
                 ++ "."
                 )
 
+{-|'dummySort' is used in error messages when we want to convert an
+'UnsortedPatternStub' to a pattern that can be displayed.
+-}
+dummySort :: MetaOrObject level => proxy level -> Sort level
+dummySort proxy =
+    SortVariableSort
+        (SortVariable
+            (Id
+                (case isMetaOrObject proxy of
+                    IsMeta   -> "#dummy"
+                    IsObject -> "dummy"
+                )
+            )
+        )
+
 getMetaOrObjectPatternType
     :: MetaOrObject level
     => Pattern level variable child -> IsMetaOrObject level
-getMetaOrObjectPatternType _ = isMetaOrObject (undefined :: level)
+getMetaOrObjectPatternType _ = isMetaOrObject (Proxy :: Proxy level)
 
 class UnifiedPatternInterface pat where
     unifyPattern
@@ -943,7 +959,7 @@ instance
     => UnifiedPatternInterface (Pattern level)
   where
     unifyPattern p =
-        case isMetaOrObject (undefined :: level) of
+        case isMetaOrObject (Proxy :: Proxy level) of
             IsMeta   ->
                 case getMetaOrObjectPatternType p of
                     IsMeta   -> p
@@ -951,15 +967,3 @@ instance
                 case getMetaOrObjectPatternType p of
                     IsObject -> p
     unifiedPatternApply = id
-
-dummySort :: MetaOrObject level => level -> Sort level
-dummySort level =
-    SortVariableSort
-        (SortVariable
-            (Id
-                (case isMetaOrObject level of
-                    IsMeta   -> "#dummy"
-                    IsObject -> "dummy"
-                )
-            )
-        )

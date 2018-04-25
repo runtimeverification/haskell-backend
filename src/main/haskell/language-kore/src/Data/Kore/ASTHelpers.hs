@@ -1,4 +1,17 @@
 {-# LANGUAGE GADTs #-}
+{-|
+Module      : Data.Kore.ASTHelpers
+Description : Utilities for handling ASTs.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : virgil.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : portable
+
+Each time a function is added to this file, one should consider putting it in a
+more specific file. Also, one should consider extracting groups of functions in
+more specific files.
+-}
 module Data.Kore.ASTHelpers ( ApplicationSorts (..)
                             , symbolOrAliasSorts
                             ) where

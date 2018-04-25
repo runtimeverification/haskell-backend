@@ -8,6 +8,7 @@ Stability   : experimental
 Portability : POSIX
 -}
 module Data.Kore.ASTVerifier.DefinitionVerifier (verifyDefinition,
+                                                 verifyAndIndexDefinition,
                                                  verifyKoreDefinition,
                                                  AttributesVerification (..)) where
 
@@ -49,6 +50,17 @@ verifyDefinition
     -> KoreDefinition
     -> Either (Error VerifyError) VerifySuccess
 verifyDefinition attributesVerification definition = do
+    verifyAndIndexDefinition attributesVerification definition
+    verifySuccess
+
+{-|'verifyAndIndexDefinition' verifies a definition and returns an indexed
+collection of the definition's modules.
+-}
+verifyAndIndexDefinition
+    :: AttributesVerification
+    -> KoreDefinition
+    -> Either (Error VerifyError) (Map.Map ModuleName KoreIndexedModule)
+verifyAndIndexDefinition attributesVerification definition = do
     defaultNames <- verifyUniqueNames sortNames implicitModule
     foldM_ verifyUniqueNames defaultNames (definitionModules definition)
 
@@ -78,6 +90,7 @@ verifyDefinition attributesVerification definition = do
         implicitIndexedModule
         Set.empty
         attributesVerification
+    return indexedModules
   where
     defaultModuleName = ModuleName "Default module"
     (moduleWithMetaSorts, sortNames) =
@@ -96,7 +109,27 @@ containing only the 'kore' default module.
 verifyKoreDefinition
     :: AttributesVerification
     -> KoreDefinition
-    -> Either (Error VerifyError) VerifySuccess
-verifyKoreDefinition attributesVerification definition =
+    -> Either (Error VerifyError) KoreIndexedModule
+verifyKoreDefinition attributesVerification definition = do
     -- VerifyDefinition already checks the Kore module, so we skip it.
-    verifyDefinition attributesVerification definition { definitionModules = [] }
+    modules <-
+        verifyAndIndexDefinition
+            attributesVerification
+            definition { definitionModules = [] }
+    m <-
+        case definitionModules definition of
+            [] ->
+                koreFail
+                    (  "The kore implicit definition should have exactly"
+                    ++ " one module, but found none."
+                    )
+            [a] -> return a
+            _ ->
+                koreFail
+                    (  "The kore implicit definition should have exactly"
+                    ++ " one module, but found multiple ones."
+                    )
+    case Map.lookup (moduleName m) modules of
+        Just a -> return a
+        Nothing ->
+            koreFail "Internal error: the implicit kore module was not indexed."

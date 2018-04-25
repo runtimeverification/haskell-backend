@@ -18,6 +18,6 @@ instance IntVariable Variable where
         var { variableName = Id (metaObjectPrefix ++ "var_" ++ show n) }
       where
         metaObjectPrefix =
-            case getMetaOrObjectType var of
+            case isMetaOrObject var of
                 IsObject -> ""
                 IsMeta   -> "#"

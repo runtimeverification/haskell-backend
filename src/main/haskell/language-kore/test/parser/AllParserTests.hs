@@ -5,6 +5,7 @@ import           Test.Tasty.Runners                       (consoleTestReporter, 
 import           Test.Tasty.Runners.AntXML                (antXMLRunner)
 
 import           Data.Kore.AST.CommonTest
+import           Data.Kore.AST.MLPatternsTest
 import           Data.Kore.ASTHelpersTest
 import           Data.Kore.ASTPrettyPrintTest
 import           Data.Kore.ASTTraversalsTest
@@ -25,6 +26,7 @@ import           Data.Kore.Unification.UnifierTest
 import           Data.Kore.Unparser.UnparseTest
 import           Data.Kore.Variables.Fresh.IntCounterTest
 import           Data.Kore.Variables.IntTest
+import           Data.Kore.Variables.SortTest
 
 main :: IO ()
 main = do
@@ -60,11 +62,13 @@ unitTests =
         , astPrettyPrintTests
         , unparseUnitTests
         , unparseParseTests
+        , mlPatternsTests
         , astTraversalsTests
         , variablesFreshIntCounterTests
         , variablesIntTests
         , substitutionListTests
         , substitutionClassTests
+        , freeSortVariablesTests
         , liftTests
         , unliftTests
         , unificationTests
