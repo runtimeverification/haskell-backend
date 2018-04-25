@@ -25,6 +25,9 @@ import           Data.Kore.MetaML.MetaToKore     (moduleMetaToKore)
 metaModules :: [MetaModule]
 metaModules = [uncheckedKoreModule]
 
+{-| 'uncheckedMetaDefinition' contains all the implicit modules as 'MetaModule'.
+Does not do any validation for these modules.
+-}
 uncheckedMetaDefinition :: MetaDefinition
 uncheckedMetaDefinition =
     Definition
@@ -32,10 +35,16 @@ uncheckedMetaDefinition =
         , definitionModules    = metaModules
         }
 
+{-| 'uncheckedKoreModules' is the list of all the implicit modules as
+'KoreModule'. Does not do any validation for these modules.
+-}
 uncheckedKoreModules :: [KoreModule]
 uncheckedKoreModules =
     map moduleMetaToKore metaModules
 
+{-| 'uncheckedKoreDefinition' contains all the implicit modules as 'KoreModule'.
+Does not do any validation for these modules.
+-}
 uncheckedKoreDefinition :: KoreDefinition
 uncheckedKoreDefinition =
     Definition
@@ -43,6 +52,10 @@ uncheckedKoreDefinition =
         , definitionModules    = uncheckedKoreModules
         }
 
+{-| 'uncheckedAttributesDefinition' contains the module with
+definitions for everything that is visible in attributes.
+Does not do any validation for this module.
+-}
 uncheckedAttributesDefinition :: KoreDefinition
 uncheckedAttributesDefinition =
     Definition

@@ -171,7 +171,15 @@ metaSortDescription sortType =
   where
     sortId = Id (show sortType)
 
+{-|'indexImplicitModule' indexes a module containing implicit definitions, adds
+it to the map of defined modules and returns the new map together with the
+indexed module.
 
+It imports the module provided as an argument, which means that it contains all
+the symbols defined directly or indirectly in it. This makes it suitable for
+creating a chain of implicit modules, each including its predecessor, with
+the top one containing the symbols defined in all of them.
+-}
 indexImplicitModule
     :: (Map.Map ModuleName KoreIndexedModule, KoreImplicitIndexedModule)
     -> KoreModule

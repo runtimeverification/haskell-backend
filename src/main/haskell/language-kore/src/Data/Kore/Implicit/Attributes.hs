@@ -1,6 +1,7 @@
 {-|
 Module      : Data.Kore.Implicit.Attributes
 Description : Haskell definitions for the implicit constructs for attributes.
+              uncheckedAttributesModule gathers all of them in a Kore morule
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
@@ -32,6 +33,8 @@ noParameterObjectSortAndSentence name =
         )
     )
 
+{-| 'attributeObjectSort' is the sort for all top-level attribute patterns
+-}
 attributeObjectSort :: Sort Object
 attributeObjectSortSentence :: KoreSentence
 (attributeObjectSort, attributeObjectSortSentence) =
@@ -60,6 +63,9 @@ hookObjectSymbolSentence =
             }
         )
 
+{-| `hookAttribute` creates a hook attribute pattern containing the given
+string.
+-}
 hookAttribute :: String -> UnifiedPattern
 hookAttribute hook =
     ObjectPattern
@@ -150,6 +156,9 @@ commutativeObjectSymbolSentence :: KoreSentence
 commutativeObjectSymbolSentence =
     noArgumentOrParameterSentence "commutative" attributeObjectSort
 
+{-| 'uncheckedAttributesModule' contains declarations for all symbols visible
+in attributes;
+-}
 uncheckedAttributesModule :: KoreModule
 uncheckedAttributesModule =
     Module

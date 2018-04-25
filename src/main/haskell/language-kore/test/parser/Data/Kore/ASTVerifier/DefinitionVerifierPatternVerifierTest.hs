@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 module Data.Kore.ASTVerifier.DefinitionVerifierPatternVerifierTest
     (definitionVerifierPatternVerifierTests) where
 
@@ -1429,57 +1430,54 @@ testsForUnifiedPatternInTopLevelObjectContext
 
 asAttribute :: MetaOrObject level => TestPattern level -> TestPattern Object
 asAttribute testPattern =
-    applyMetaObjectFunction
-        testPattern
-        MetaOrObjectTransformer
-            { metaTransformer = \pattern1 ->
-                let
-                    patternPattern = EqualsPattern Equals
-                        { equalsOperandSort = testPatternSort pattern1
-                        , equalsResultSort  = patternMetaSort
-                        , equalsFirst       = testPatternUnifiedPattern pattern1
-                        , equalsSecond      = testPatternUnifiedPattern pattern1
-                        }
-                  in
-                    TestPattern
-                        { testPatternPattern = EqualsPattern Equals
-                            { equalsOperandSort = attributeObjectSort
-                            , equalsResultSort  = attributeObjectSort
-                            , equalsFirst       =
-                                asUnifiedPattern patternPattern
-                            , equalsSecond      =
-                                asUnifiedPattern patternPattern
-                            }
-                        , testPatternSort = attributeObjectSort
-                        , testPatternErrorStack =
-                            testPatternErrorStack testPattern
-                        }
-            , objectTransformer = \pattern1 ->
-                -- More complex than if should be, but tests are much easier to
-                -- write if I have the same stack trace on both the object and
-                -- meta versions.
-                let
-                    patternPattern = EqualsPattern Equals
-                        { equalsOperandSort = testPatternSort pattern1
+    case isMetaOrObject testPattern of
+        IsMeta ->
+            let
+                patternPattern = EqualsPattern Equals
+                    { equalsOperandSort = testPatternSort testPattern
+                    , equalsResultSort  = patternMetaSort
+                    , equalsFirst       = testPatternUnifiedPattern testPattern
+                    , equalsSecond      = testPatternUnifiedPattern testPattern
+                    }
+              in
+                TestPattern
+                    { testPatternPattern = EqualsPattern Equals
+                        { equalsOperandSort = attributeObjectSort
                         , equalsResultSort  = attributeObjectSort
-                        , equalsFirst       = testPatternUnifiedPattern pattern1
-                        , equalsSecond      = testPatternUnifiedPattern pattern1
+                        , equalsFirst       =
+                            asUnifiedPattern patternPattern
+                        , equalsSecond      =
+                            asUnifiedPattern patternPattern
                         }
-                  in
-                    TestPattern
-                        { testPatternPattern = EqualsPattern Equals
-                            { equalsOperandSort = attributeObjectSort
-                            , equalsResultSort  = attributeObjectSort
-                            , equalsFirst       =
-                                asUnifiedPattern patternPattern
-                            , equalsSecond      =
-                                asUnifiedPattern patternPattern
-                            }
-                        , testPatternSort = attributeObjectSort
-                        , testPatternErrorStack =
-                            testPatternErrorStack testPattern
+                    , testPatternSort = attributeObjectSort
+                    , testPatternErrorStack =
+                        testPatternErrorStack testPattern
+                    }
+        IsObject ->
+            -- More complex than if should be, but tests are much easier to
+            -- write if I have the same stack trace on both the object and
+            -- meta versions.
+            let
+                patternPattern = EqualsPattern Equals
+                    { equalsOperandSort = testPatternSort testPattern
+                    , equalsResultSort  = attributeObjectSort
+                    , equalsFirst       = testPatternUnifiedPattern testPattern
+                    , equalsSecond      = testPatternUnifiedPattern testPattern
+                    }
+                in
+                TestPattern
+                    { testPatternPattern = EqualsPattern Equals
+                        { equalsOperandSort = attributeObjectSort
+                        , equalsResultSort  = attributeObjectSort
+                        , equalsFirst       =
+                            asUnifiedPattern patternPattern
+                        , equalsSecond      =
+                            asUnifiedPattern patternPattern
                         }
-            }
+                    , testPatternSort = attributeObjectSort
+                    , testPatternErrorStack =
+                        testPatternErrorStack testPattern
+                    }
 
 defaultErrorMessage :: String
 defaultErrorMessage = "Replace this with a real error message."

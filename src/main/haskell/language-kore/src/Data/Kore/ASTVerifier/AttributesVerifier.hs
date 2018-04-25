@@ -12,8 +12,7 @@ module Data.Kore.ASTVerifier.AttributesVerifier (verifyAttributes,
   where
 
 import           Data.Kore.AST.Common                  (Attributes (..))
-import           Data.Kore.AST.Kore                    (KoreAttributes,
-                                                        UnifiedSortVariable)
+import           Data.Kore.AST.Kore                    (KoreAttributes)
 import           Data.Kore.AST.MetaOrObject            (asUnified)
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.PatternVerifier
@@ -22,21 +21,19 @@ import           Data.Kore.Implicit.Attributes         (attributeObjectSort)
 import           Data.Kore.IndexedModule.IndexedModule
 import qualified Data.Set                              as Set
 
+{--| Whether we should verify attributes and, when verifying, the module with
+declarations visible in these atributes. --}
 data AttributesVerification
     = VerifyAttributes KoreIndexedModule | DoNotVerifyAttributes
 
-{-|'verifyAttributes' verifies the weldefinedness of the given attributes.
+{-|'verifyAttributes' verifies the wellformedness of the given attributes.
 -}
 verifyAttributes
     :: KoreAttributes
-    -> Set.Set UnifiedSortVariable
-    -- ^ Sort variables visible in these atributes.
     -> AttributesVerification
-    -- ^ Module with the declarations visible in these atributes.
     -> Either (Error VerifyError) VerifySuccess
 verifyAttributes
     (Attributes patterns)
-    sortVariables
     (VerifyAttributes indexedModule)
   = do
     withContext
@@ -47,10 +44,10 @@ verifyAttributes
                     p
                     (Just (asUnified attributeObjectSort))
                     indexedModule
-                    sortVariables
+                    Set.empty
             )
             patterns
         )
     verifySuccess
-verifyAttributes _ _ DoNotVerifyAttributes =
+verifyAttributes _ DoNotVerifyAttributes =
     verifySuccess

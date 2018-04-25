@@ -15,11 +15,10 @@ module Data.Kore.Implicit.Verified
     )
     where
 
-import           Data.Kore.AST.Common                     (Definition (..))
-import           Data.Kore.AST.Kore                       (KoreDefinition,
-                                                           KoreModule)
+import           Data.Kore.AST.Kore                       (KoreDefinition)
 import           Data.Kore.ASTVerifier.DefinitionVerifier (defaultAttributesVerification,
-                                                           verifyKoreDefinition)
+                                                           verifyImplicitKoreDefinition,
+                                                           verifyNormalKoreDefinition)
 import           Data.Kore.ASTVerifier.Error              (VerifyError)
 import           Data.Kore.Error                          (Error, printError)
 import           Data.Kore.Implicit.Definitions           (uncheckedAttributesDefinition,
@@ -31,11 +30,15 @@ import           Data.Kore.MetaML.MetaToKore
 checkedMetaDefinition :: Either (Error VerifyError) MetaDefinition
 checkedMetaDefinition = do
     attributesVerification <- defaultAttributesVerification
-    verifyKoreDefinition
+    verifyImplicitKoreDefinition
         attributesVerification
         (definitionMetaToKore uncheckedMetaDefinition)
     return uncheckedMetaDefinition
 
+{-| 'implicitMetaDefinition' is a definition with everything Meta
+that is implicitly defined and visible everywhere. This definition passes
+validation checks.
+-}
 implicitMetaDefinition :: MetaDefinition
 implicitMetaDefinition =
     case checkedMetaDefinition of
@@ -45,11 +48,15 @@ implicitMetaDefinition =
 checkedKoreDefinition :: Either (Error VerifyError) KoreDefinition
 checkedKoreDefinition = do
     attributesVerification <- defaultAttributesVerification
-    verifyKoreDefinition
+    verifyImplicitKoreDefinition
         attributesVerification
         uncheckedKoreDefinition
     return uncheckedKoreDefinition
 
+{-| 'implicitKoreDefinition' is a definition with everything
+that is implicitly defined and visible everywhere. This definition passes
+validation checks.
+-}
 implicitKoreDefinition :: KoreDefinition
 implicitKoreDefinition =
     case checkedKoreDefinition of
@@ -59,11 +66,15 @@ implicitKoreDefinition =
 checkedAttributesDefinition :: Either (Error VerifyError) KoreDefinition
 checkedAttributesDefinition = do
     attributesVerification <- defaultAttributesVerification
-    verifyKoreDefinition
+    verifyNormalKoreDefinition
         attributesVerification
         uncheckedAttributesDefinition
     return uncheckedAttributesDefinition
 
+{-| 'implicitAttributesDefinition' is a definition with everything
+that is implicitly defined and visible in attributes. This definition passes
+validation checks.
+-}
 implicitAttributesDefinition :: KoreDefinition
 implicitAttributesDefinition =
     case checkedAttributesDefinition of

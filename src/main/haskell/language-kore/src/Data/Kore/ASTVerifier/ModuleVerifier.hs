@@ -48,7 +48,6 @@ verifyModule attributesVerification indexedModule =
         (do
             verifyAttributes
                 (indexedModuleAttributes indexedModule)
-                Set.empty
                 attributesVerification
             SentenceVerifier.verifySentences
                 indexedModule

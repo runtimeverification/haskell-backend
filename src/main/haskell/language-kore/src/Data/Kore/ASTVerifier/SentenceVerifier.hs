@@ -162,7 +162,6 @@ verifySymbolAliasSentence
                 (getSentenceSymbolOrAliasResultSort sentence)
             verifyAttributes
                 (getSentenceSymbolOrAliasAttributes sentence)
-                variables
                 attributesVerification
         )
   where
@@ -187,7 +186,6 @@ verifyAxiomSentence axiom indexedModule attributesVerification =
                 variables
             verifyAttributes
                 (sentenceAxiomAttributes axiom)
-                variables
                 attributesVerification
         )
 
@@ -199,11 +197,9 @@ verifySortSentence sentenceSort attributesVerification =
     withContext
         ("sort '" ++ getId (sentenceSortName sentenceSort) ++ "' declaration")
         (do
-            variables <-
-                buildDeclaredSortVariables (sentenceSortParameters sentenceSort)
+            buildDeclaredSortVariables (sentenceSortParameters sentenceSort)
             verifyAttributes
                 (sentenceSortAttributes sentenceSort)
-                variables
                 attributesVerification
         )
 
