@@ -14,7 +14,7 @@ module Data.Kore.IndexedModule.IndexedModule
     , IndexedModule
         -- the IndexedModule data constructor not included in the list on
         -- purpose.
-        (indexedModuleName, indexedModuleMetaAliasSentences
+        ( indexedModuleName, indexedModuleMetaAliasSentences
         , indexedModuleObjectAliasSentences, indexedModuleMetaSymbolSentences
         , indexedModuleObjectSymbolSentences
         , indexedModuleObjectSortDescriptions

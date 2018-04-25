@@ -138,7 +138,7 @@ instance MetaOrObject level => PrettyPrint (Id level) where
                 -- TODO(virgil): use flags to qualify id only if necessary
                 write "\""
                 write " :: Id "
-                write (show (getMetaOrObjectType id'))
+                write (show (isMetaOrObject id'))
             )
 
 instance

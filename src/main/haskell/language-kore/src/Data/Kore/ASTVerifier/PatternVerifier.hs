@@ -447,7 +447,7 @@ verifyVariableDeclaration
     -> Either (Error VerifyError) VerifySuccess
 verifyVariableDeclaration
     variable indexedModule declaredSortVariables
-  = case getMetaOrObjectType variable of
+  = case isMetaOrObject variable of
         IsObject ->
             verifyVariableDeclarationUsing
                 declaredSortVariables (resolveObjectSort indexedModule) variable

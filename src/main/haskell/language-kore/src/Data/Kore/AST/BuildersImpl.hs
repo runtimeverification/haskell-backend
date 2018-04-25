@@ -10,6 +10,7 @@ Portability : POSIX
 module Data.Kore.AST.BuildersImpl where
 
 import           Data.Fix
+import           Data.Proxy
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
@@ -170,7 +171,7 @@ unarySortedPattern constructor maybeSort patternStub =
         (Nothing, SortedPatternStub sp) -> (sortedPatternSort sp, patternStub)
         (_, UnsortedPatternStub usp) -> error
             (  "Could not find a sort for child pattern: "
-            ++ show (usp (dummySort (undefined :: level)))
+            ++ show (usp (dummySort childSort))
             )
 
 {-|'binaryPattern' is a helper for building 'PurePatternStub's for binary
@@ -220,9 +221,9 @@ binarySortedPattern constructor maybeSort first second =
                 Nothing ->
                     error
                         (  "Could not find a sort for equals children: "
-                        ++ show (firstPattern (dummySort (undefined :: level)))
+                        ++ show (firstPattern (dummySort (Proxy :: Proxy level)))
                         ++ " and "
-                        ++ show (secondPattern (dummySort (undefined :: level)))
+                        ++ show (secondPattern (dummySort (Proxy :: Proxy level)))
                         ++ "."
                         )
                 Just childSort@(ChildSort s) ->

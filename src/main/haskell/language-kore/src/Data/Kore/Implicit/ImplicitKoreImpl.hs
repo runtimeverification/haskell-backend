@@ -19,6 +19,7 @@ import           Data.Kore.Variables.Free   (freeVariables)
 import           Data.Fix
 import           Data.Foldable              (foldl')
 import qualified Data.Map                   as Map
+import           Data.Proxy
 import qualified Data.Set                   as Set
 
 
@@ -39,7 +40,7 @@ a pattern.
 parameterizedAxiom
     :: [SortVariable Meta] -> MetaPatternStub -> MetaSentenceAxiom
 parameterizedAxiom _ (UnsortedPatternStub p) =
-    error ("Cannot infer sort for " ++ show (p dummyMetaSort) ++ ".")
+    error ("Cannot infer sort for " ++ show (p (dummySort (Proxy :: Proxy Meta))) ++ ".")
 parameterizedAxiom
     parameters
     ( SortedPatternStub SortedPattern

@@ -7,7 +7,9 @@ import           Test.Tasty                                          (TestTree,
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
+import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers as Helpers
+import           Data.Kore.Building.Implicit
+import           Data.Kore.Building.Patterns                         as Patterns
 import           Data.Kore.Error
 import           Data.Kore.Implicit.ImplicitSorts
 
@@ -66,14 +68,7 @@ definitionVerifierPatternVerifierTests =
             -- at least in some cases.
             NeedsInternalDefinitions
         , successTestsForMetaPattern "implicit meta pattern"
-            (ApplicationPattern Application
-                { applicationSymbolOrAlias = SymbolOrAlias
-                    { symbolOrAliasConstructor = Id "#nilSortList"
-                    , symbolOrAliasParams = []
-                    }
-                , applicationChildren      = []
-                }
-            )
+            (asMetaPattern metaNilSortList)
             (NamePrefix "#dummy")
             (TestedPatternSort sortListMetaSort)
             (SortVariablesThatMustBeDeclared [])
@@ -752,7 +747,7 @@ genericPatternInAllContexts
             testedPattern
             anotherPattern
             (OperandSort testedSort)
-            (ResultSort anotherSort)
+            (Helpers.ResultSort anotherSort)
             dummyVariable
             (symbolFromSort testedSort)
             (aliasFromSort testedSort)
@@ -891,7 +886,7 @@ genericPatternInPatterns
     => Pattern level Variable CommonKorePattern
     -> Pattern level Variable CommonKorePattern
     -> OperandSort level
-    -> ResultSort level
+    -> Helpers.ResultSort level
     -> VariableOfDeclaredSort level
     -> SymbolOrAlias level
     -> SymbolOrAlias level
@@ -992,13 +987,13 @@ patternInUnquantifiedGenericPatterns
     => Pattern level Variable CommonKorePattern
     -> Pattern level Variable CommonKorePattern
     -> OperandSort level
-    -> ResultSort level
+    -> Helpers.ResultSort level
     -> [TestPattern level]
 patternInUnquantifiedGenericPatterns
     testedPattern
     anotherPattern
     (OperandSort testedSort)
-    (ResultSort resultSort)
+    (Helpers.ResultSort resultSort)
   =
     [ TestPattern
         { testPatternPattern = AndPattern And
