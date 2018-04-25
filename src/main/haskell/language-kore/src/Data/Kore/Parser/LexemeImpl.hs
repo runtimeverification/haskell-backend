@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 {-|
 Module      : Data.Kore.Parser.LexemeImpl
 Description : Lexical unit definitions for Kore and simple ways of composing
@@ -25,7 +26,8 @@ Conventions used:
 module Data.Kore.Parser.LexemeImpl where
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.MetaOrObject   (MetaOrObject (..))
+import           Data.Kore.AST.MetaOrObject   (IsMetaOrObject (..),
+                                               MetaOrObject (..), toProxy)
 import qualified Data.Kore.Parser.CharDict    as CharDict
 import           Data.Kore.Parser.CharSet     as CharSet
 import           Data.Kore.Parser.CString
@@ -47,9 +49,10 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 idParser :: MetaOrObject level
          => level  -- ^ Distinguishes between the meta and non-meta elements.
          -> Parser (Id level)
-idParser x
-    | isObject x = Id <$> lexeme (objectIdRawParser KeywordsForbidden)
-    | isMeta x = Id <$> lexeme metaIdRawParser
+idParser x =
+  case isMetaOrObject (toProxy x) of
+    IsObject -> Id <$> lexeme (objectIdRawParser KeywordsForbidden)
+    IsMeta   -> Id <$> lexeme metaIdRawParser
 
 {-|'stringLiteralParser' parses a C-style string literal, unescaping it.
 

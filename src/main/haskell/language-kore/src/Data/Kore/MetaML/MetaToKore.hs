@@ -17,12 +17,26 @@ module Data.Kore.MetaML.MetaToKore where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.ASTTraversals
 import           Data.Kore.MetaML.AST
 
 import           Data.Fix
 
 patternMetaToKore :: SentenceMetaPattern Variable -> UnifiedPattern
 patternMetaToKore = cata MetaPattern . getSentenceMetaPattern
+
+patternKoreToMeta :: UnifiedPattern -> MetaMLPattern Variable
+patternKoreToMeta = bottomUpVisitor extractMetaPattern
+
+extractMetaPattern
+    :: MetaOrObject level
+    => Pattern level Variable (MetaMLPattern Variable)
+    -> MetaMLPattern Variable
+extractMetaPattern p =
+  case isMetaOrObject (PatternObjectMeta p) of
+    IsMeta -> Fix p
+    IsObject -> error "Undexpected object pattern"
 
 attributesMetaToKore :: MetaAttributes -> KoreAttributes
 attributesMetaToKore ma =

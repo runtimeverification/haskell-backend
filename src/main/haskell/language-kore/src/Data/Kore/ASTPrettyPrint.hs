@@ -125,13 +125,9 @@ instance (MetaOrObject level) => PrettyPrint (Id level) where
             (do
                 write "Id "
                 write
-                    (applyMetaObjectFunction
-                        id'
-                        MetaOrObjectTransformer
-                            { metaTransformer = const "Meta"
-                            , objectTransformer = const "Object"
-                            }
-                    )
+                    (case isMetaOrObject id' of
+                       IsMeta -> "Meta"
+                       IsObject -> "Object")
                 write " \""
                 write name
                 write "\""
