@@ -121,10 +121,26 @@ internalVerifyPattern
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
     -> Either (Error VerifyError) VerifySuccess
-internalVerifyPattern korePattern a b c d =
+internalVerifyPattern
+    korePattern
+    mUnifiedSort
+    indexedModule
+    sortParamsSet
+    declaredVariables
+  =
     applyKorePattern
-        (internalVerifyMetaPattern a b c d)
-        (internalVerifyObjectPattern a b c d)
+        (internalVerifyMetaPattern
+            mUnifiedSort
+            indexedModule
+            sortParamsSet
+            declaredVariables
+        )
+        (internalVerifyObjectPattern
+            mUnifiedSort
+            indexedModule
+            sortParamsSet
+            declaredVariables
+        )
         korePattern
 
 internalVerifyMetaPattern
