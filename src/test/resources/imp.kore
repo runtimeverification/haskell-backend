@@ -122,20 +122,30 @@ module CONTEXT
 
   symbol gamma{S1,S2}(S1,S2) : Ctxt{S1,S2} []
 
-  /* Nothing is the "nothing" in K. In K definition,
-   * it is written as a single dot ".".
-   * Any context C applied to nothing is itself: C[nothing] = C.
-   * This is the same as in K, too. For example,
-   * . ~> K1 ~> K2  =  K1 ~> K2 
-   * WE NEED A DISCUSSION ABOUT THIS.
-   */
-
-
-  symbol app2{S1,S2}(Ctxt{S1,S2}, S1) : S2 []
+  
 
   /* TODO:: Complete these axioms. */
 
 endmodule []
+
+
+/** The module of "~>" and "." in K.
+  */
+module ARROW
+
+  sort K{} []
+
+  /* The injection function from any sort S to K. */
+  symbol inj{S}(S) : K{} []
+
+  /* TODO:: add axiom : inj is injective */
+
+  symbol arrow{}(K{}, K{}) : K{} []
+
+  symbol nothing{}() : K{} []
+
+endmodule []
+
 
 module REWRITE
 
@@ -518,6 +528,26 @@ module IMP
         blockAsStmt{}(block{}(S:Stmt{})),
         S:Stmt{}))
   []
+
+  /* rule <k> X = I:Int; => . ... </k>
+          <state> ... X |-> (_ => I) ... </state>
+   */
+
+  /* rule S1:Stmt S2:Stmt => S1 ~> S2 */
+
+
+  /* rule if (true) S else _ => S */
+
+  /* rule if (false) _ else S => S */
+
+  /* rule while (B) S => if (B) {S while (B) S} else {} */
+
+  /* rule <k> int (X,Xs => Xs);_ </k>
+          <state> Rho:Map (.Map => X |-> 0) </state>
+     requires notBool (X in keys(Rho))
+   */
+
+  /* rule int .Ids; S => S */
 
 
 endmodule []
