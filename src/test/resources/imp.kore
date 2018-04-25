@@ -114,21 +114,6 @@ module ID
 
 endmodule []
 
-module CONTEXT
-
-  sort Ctxt{S1,S2} []
-
-  symbol app{S1,S2}(Ctxt{S1,S2}, S1) : S2 []
-
-  symbol gamma{S1,S2}(S1,S2) : Ctxt{S1,S2} []
-
-  
-
-  /* TODO:: Complete these axioms. */
-
-endmodule []
-
-
 /** The module of "~>" and "." in K.
   */
 module ARROW
@@ -136,15 +121,53 @@ module ARROW
   sort K{} []
 
   /* The injection function from any sort S to K. */
-  symbol inj{S}(S) : K{} []
+  symbol asK{S}(S) : K{} []
 
-  /* TODO:: add axiom : inj is injective */
+  /* TODO:: add axiom : asK is injective */
 
   symbol arrow{}(K{}, K{}) : K{} []
 
   symbol nothing{}() : K{} []
 
+  /* TODO:: add axiom : arrow is associative and has nothing as unit.*/
+
 endmodule []
+
+module CONTEXT
+
+  import ARROW []
+
+  sort Ctxt{S1,S2} []
+
+  /* Context application are often written as _[_]. */
+  symbol app{S1,S2}(Ctxt{S1,S2}, S1) : S2 []
+
+  symbol gamma{S1,S2}(S1,S2) : Ctxt{S1,S2} []
+
+  /** Contexts are special cases of arrows.
+    * In particular, asK(C[T]) = asK(T) ~> asK(C). */
+  axiom{S1,S2,R}
+    \equals{K{},R}(
+      asK{S2}(app{S1,S2}(C:Ctxt{S1,S2}, T:S1)),
+      arrow{}(asK{S1}(T:S1), asK{Ctxt{S1,S2}}(C:Ctxt{S1,S2})))
+  []
+
+  /* Identity context. */
+  symbol idctxt{S}() : Ctxt{S,S} []
+
+  /* TODO:: add axiom about idctxt */
+
+
+  /** Axioms about contexts have monad-style. 
+    * That is, there are two axioms about contexts as follows.
+    * (Unit) idctxt[T] = T
+    * (Multiplication) C1[C2[T]] = C[T] where C = gamma HOLE . C1[C2[HOLE]]
+    */
+
+  /* TODO:: Complete these axioms. */
+
+endmodule []
+
 
 
 module REWRITE
