@@ -61,7 +61,7 @@ goldenFromInputFileName (InputFileName inputFile) =
 
 toByteString :: Either String KoreDefinition -> LazyByteString.ByteString
 toByteString (Left err) =
-    LazyChar8.pack ("Parse error: " ++ err ++ ".")
+    LazyChar8.pack ("Parse error: " ++ err)
 toByteString (Right definition) =
     LazyChar8.pack (prettyPrintToString definition)
 
