@@ -14,7 +14,7 @@ import           Data.Kore.Unparser.Unparse
 import           Test.Tasty                   (TestTree, testGroup)
 import           Test.Tasty.HUnit             (assertEqual, testCase)
 import           Test.Tasty.QuickCheck        (forAll, testProperty)
-import qualified Text.Parsec.String           as Parser
+import qualified Text.Megaparsec.Char         as Parser
 
 unparseUnitTests :: TestTree
 unparseUnitTests =
@@ -217,15 +217,15 @@ unparseParseTests =
             )
         ]
 
-parse :: Parser.Parser a -> String -> Either String a
+parse :: Parser a -> String -> Either String a
 parse parser =
     parseOnly (parser <* endOfInput) "<test-string>"
 
-unparseParseProp :: (Unparse a, Eq a) => Parser.Parser a -> a -> Bool
+unparseParseProp :: (Unparse a, Eq a) => Parser a -> a -> Bool
 unparseParseProp p a = parse p (unparseToString a) == Right a
 
 unparseParseTest
-    :: (Unparse a, Eq a, Show a) => Parser.Parser a -> a -> TestTree
+    :: (Unparse a, Eq a, Show a) => Parser a -> a -> TestTree
 unparseParseTest parser astInput =
     testCase
         "Parsing + unparsing."
