@@ -122,12 +122,9 @@ liftReducer
     :: MetaOrObject level
     => Pattern level Variable CommonMetaPattern
     -> CommonMetaPattern
-liftReducer p = applyMetaObjectFunction
-    (PatternObjectMeta p)
-    MetaOrObjectTransformer
-        { objectTransformer = liftObjectReducer . getPatternObjectMeta
-        , metaTransformer = Fix . getPatternObjectMeta
-        }
+liftReducer p = case isMetaOrObject (PatternObjectMeta p) of
+  IsMeta -> Fix p
+  IsObject -> liftObjectReducer p
 
 liftObjectReducer
     :: Pattern Object Variable CommonMetaPattern

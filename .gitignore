@@ -15,6 +15,7 @@ target
 *.fdb_latexmk
 *.fls
 *.toc
+.stack-work
 .*.swp
 .*.swo
 tags

@@ -1,6 +1,9 @@
+{-# LANGUAGE ExplicitForAll #-}
+{-# LANGUAGE GADTs          #-}
+{-# LANGUAGE Rank2Types     #-}
 {-|
 Module      : Data.Kore.MLPatterns
-Description : Classes for handling patterns in an uniform way.
+Description : Data structures and functions for handling patterns uniformly.
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
@@ -8,7 +11,9 @@ Stability   : experimental
 Portability : portable
 -}
 module Data.Kore.AST.MLPatterns (MLPatternClass(..),
-                                 MLBinderPatternClass (..)) where
+                                 MLBinderPatternClass (..),
+                                 PatternFunction(..),
+                                 applyPatternFunction) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
@@ -163,3 +168,69 @@ instance MLBinderPatternClass Forall where
         , forallVariable = variable
         , forallChild = pat
         }
+
+{-|`PatternFunction` holds a full set of functions that
+can be applied to the elements of a `Pattern` (e.g. `Implies`). Together
+with `applyPatternFunction` they form a function on patterns, hence the name.
+-}
+-- TODO: consider parameterizing on variable also
+data PatternFunction level child result = PatternFunction
+    { patternFunctionML
+        :: !(forall patt . MLPatternClass patt => patt level child -> result)
+    , patternFunctionMLBinder
+        :: !(forall patt . MLBinderPatternClass patt
+        => patt level Variable child
+        -> result)
+    , stringFunction :: StringLiteral -> result
+    , charFunction :: CharLiteral -> result
+    , applicationFunction :: !(Application level child -> result)
+    , variableFunction :: !(Variable level -> result)
+    }
+
+{-|`applyPatternFunction` applies a patternFunction on the inner element of a
+`Pattern`, returning the result.
+-}
+applyPatternFunction
+    :: PatternFunction level child result
+    -> Pattern level Variable child
+    -> result
+applyPatternFunction function (AndPattern a) =
+    patternFunctionML function a
+applyPatternFunction function (ApplicationPattern a) =
+    applicationFunction function a
+applyPatternFunction function (BottomPattern a) =
+    patternFunctionML function a
+applyPatternFunction function (CeilPattern a) =
+    patternFunctionML function a
+applyPatternFunction function (DomainValuePattern a) =
+    patternFunctionML function a
+applyPatternFunction function (EqualsPattern a) =
+    patternFunctionML function a
+applyPatternFunction function (ExistsPattern a) =
+    patternFunctionMLBinder function a
+applyPatternFunction function (FloorPattern a) =
+    patternFunctionML function a
+applyPatternFunction function (ForallPattern a) =
+    patternFunctionMLBinder function a
+applyPatternFunction function (IffPattern a) =
+    patternFunctionML function a
+applyPatternFunction function (ImpliesPattern a) =
+    patternFunctionML function a
+applyPatternFunction function (InPattern a) =
+    patternFunctionML function a
+applyPatternFunction function (NextPattern a) =
+    patternFunctionML function a
+applyPatternFunction function (NotPattern a) =
+    patternFunctionML function a
+applyPatternFunction function (OrPattern a) =
+    patternFunctionML function a
+applyPatternFunction function (RewritesPattern a) =
+    patternFunctionML function a
+applyPatternFunction function (StringLiteralPattern a) =
+    stringFunction function a
+applyPatternFunction function (CharLiteralPattern a) =
+    charFunction function a
+applyPatternFunction function (TopPattern a) =
+    patternFunctionML function a
+applyPatternFunction function (VariablePattern a) =
+    variableFunction function a

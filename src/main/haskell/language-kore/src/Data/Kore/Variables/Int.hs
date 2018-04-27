@@ -1,4 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE GADTs                 #-}
 module Data.Kore.Variables.Int ( IntVariable(..)
                                      ) where
 
@@ -17,7 +18,6 @@ instance IntVariable Variable where
         var { variableName = Id (metaObjectPrefix ++ "var_" ++ show n) }
       where
         metaObjectPrefix =
-            applyMetaObjectFunction var MetaOrObjectTransformer
-                { objectTransformer = const ""
-                , metaTransformer = const "#"
-                }
+            case isMetaOrObject var of
+                IsMeta -> "#"
+                IsObject -> ""

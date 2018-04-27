@@ -7,7 +7,7 @@ import           Test.Tasty.HUnit             (Assertion, assertBool,
 import           Data.Kore.Parser.ParserUtils
 
 import           Data.Either                  (isLeft)
-import qualified Text.Parsec.String           as Parser
+import qualified Text.Megaparsec.Char         as Parser
 
 data SuccessfulTest a = SuccessfulTest
     { successInput    :: String
@@ -37,10 +37,10 @@ failure input expected = Failure FailureTest
     , failureExpected = expected
     }
 
-parseTree :: (Show a, Eq a) => Parser.Parser a -> [ParserTest a] -> [TestTree]
+parseTree :: (Show a, Eq a) => Parser a -> [ParserTest a] -> [TestTree]
 parseTree parser = map (parseTest parser)
 
-parseTest :: (Show a, Eq a) => Parser.Parser a -> ParserTest a -> TestTree
+parseTest :: (Show a, Eq a) => Parser a -> ParserTest a -> TestTree
 parseTest parser (Success test) =
     testCase
         ("Parsing '" ++ successInput test ++ "'")
@@ -65,9 +65,9 @@ parseTest _ (Skip tests) =
         ("Parsing skip tests '" ++ show tests ++ "'")
         (assertBool "Not Expecting Skip Tests here" False)
 
-parseSkipTree :: Parser.Parser () -> [ParserTest ()] -> [TestTree]
+parseSkipTree :: Parser () -> [ParserTest ()] -> [TestTree]
 parseSkipTree parser = map (parseSkipTest parser)
-parseSkipTest :: Parser.Parser () -> ParserTest () -> TestTree
+parseSkipTest :: Parser () -> ParserTest () -> TestTree
 parseSkipTest parser (Skip tests) =
     testGroup "Tests for Parsers not creating ASTs"
     (map
@@ -84,21 +84,21 @@ parseSkipTest _ (Success test) =
         (assertBool "Not Expecting Success Tests here" False)
 parseSkipTest parser test = parseTest parser test
 
-parseSuccess :: (Show a, Eq a) => a -> Parser.Parser a -> String -> Assertion
+parseSuccess :: (Show a, Eq a) => a -> Parser a -> String -> Assertion
 parseSuccess expected parser input =
     assertEqual
         "Expecting parse success!"
         (Right expected)
         (parseOnly (parser <* endOfInput) "<test-string>" input)
 
-parseSkip :: Parser.Parser () -> String -> Assertion
+parseSkip :: Parser () -> String -> Assertion
 parseSkip parser input =
     assertEqual
         "Expecting skip success!"
         (Right ())
         (parseOnly (parser <* endOfInput) "<test-string>" input)
 
-parseFailureWithoutMessage :: Parser.Parser a -> String -> Assertion
+parseFailureWithoutMessage :: Parser a -> String -> Assertion
 parseFailureWithoutMessage parser input =
     assertBool
         "Expecting parse failure!"
@@ -108,7 +108,7 @@ parseFailureWithoutMessage parser input =
 
 parseFailureWithMessage
     :: (Show a, Eq a)
-    => String -> Parser.Parser a -> String -> Assertion
+    => String -> Parser a -> String -> Assertion
 parseFailureWithMessage expected parser input =
     assertEqual
         "Expecting parse failure!"
