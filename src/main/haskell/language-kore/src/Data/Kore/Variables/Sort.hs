@@ -35,9 +35,9 @@ provides 'sortVariables' for extracting the set of sort variables of a term.
 class TermWithSortVariablesClass term var where
     sortVariables :: term -> Set.Set var
 
-instance TermWithSortVariablesClass (FixedPattern Variable) UnifiedSortVariable
+instance TermWithSortVariablesClass CommonKorePattern UnifiedSortVariable
   where
-    sortVariables = bottomUpVisitor sortVarsVisitor
+    sortVariables = koreBottomUpVisitor sortVarsVisitor
       where
         sortVarsVisitor p =
             addPatternSortVariables p (addSortVariables asUnified) (fold p)

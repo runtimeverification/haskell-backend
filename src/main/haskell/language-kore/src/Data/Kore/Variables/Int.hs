@@ -1,5 +1,5 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Data.Kore.Variables.Int ( IntVariable(..)
                                      ) where
 
@@ -19,5 +19,5 @@ instance IntVariable Variable where
       where
         metaObjectPrefix =
             case isMetaOrObject var of
-                IsMeta -> "#"
                 IsObject -> ""
+                IsMeta   -> "#"

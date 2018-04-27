@@ -4,6 +4,7 @@ module Data.Kore.Unparser.UnparseTest ( unparseParseTests
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTGen
 import           Data.Kore.Parser.LexemeImpl
 import           Data.Kore.Parser.ParserImpl
@@ -20,36 +21,37 @@ unparseUnitTests =
     testGroup
         "Unparse unit tests"
         [ unparseTest
-            (ObjectSentence $ SentenceSortSentence
+            (asSentence
                 SentenceSort
-                    { sentenceSortName = Id "x"
+                    { sentenceSortName = Id "x" :: Id Object
                     , sentenceSortParameters = []
-                    , sentenceSortAttributes = Attributes []
-                    }::KoreSentence
+                    , sentenceSortAttributes = Attributes [] :: KoreAttributes
+                    }
             )
             "sort x{}[]"
         , unparseTest
             Attributes
                 { getAttributes =
-                    [ MetaPattern (TopPattern Top
+                    [ asKorePattern (TopPattern Top
                         { topSort = SortVariableSort SortVariable
-                            { getSortVariable = Id {getId = "#Fm"} }
+                            { getSortVariable = Id "#Fm" :: Id Meta }
                         })
-                    , ObjectPattern (InPattern In
+                    , asKorePattern (InPattern In
                         { inOperandSort = SortActualSort SortActual
-                            { sortActualName = Id {getId = "B"}
+                            { sortActualName = Id "B" :: Id Object
                             , sortActualSorts = []
                             }
                         , inResultSort = SortActualSort SortActual
-                            { sortActualName = Id {getId = "G"}
+                            { sortActualName = Id "G" :: Id Object
                             , sortActualSorts = []
                             }
-                        , inContainedChild = ObjectPattern $ VariablePattern Variable
-                            { variableName = Id {getId = "T"}
-                            , variableSort = SortVariableSort SortVariable
-                                { getSortVariable = Id {getId = "C"} }
-                            }
-                        , inContainingChild = MetaPattern (StringLiteralPattern
+                        , inContainedChild =
+                            asKorePattern $ VariablePattern Variable
+                                { variableName = Id "T" :: Id Object
+                                , variableSort = SortVariableSort SortVariable
+                                    { getSortVariable = Id {getId = "C"} }
+                                }
+                        , inContainingChild = asKorePattern (StringLiteralPattern
                             StringLiteral { getStringLiteral = "" })
                         })
                     ]
@@ -111,19 +113,20 @@ unparseUnitTests =
             ++ "    module k\n    endmodule\n    []\n"
             )
         , unparseTest
-            ( MetaSentence $ SentenceImportSentence SentenceImport
+            ( asSentence SentenceImport
                 { sentenceImportModuleName = ModuleName {getModuleName = "sl"}
-                , sentenceImportAttributes = Attributes { getAttributes = [] }
-                }::KoreSentence
+                , sentenceImportAttributes =
+                    Attributes { getAttributes = [] } :: KoreAttributes
+                }
             )
             "import sl[]"
         , unparseTest
             (Attributes
                 { getAttributes =
-                    [ MetaPattern
+                    [ asKorePattern
                         ( TopPattern Top
                             { topSort = SortActualSort SortActual
-                                { sortActualName = Id { getId = "#CharList" }
+                                { sortActualName = Id "#CharList" :: Id Meta
                                 , sortActualSorts = []
                                 }
                             }
@@ -135,11 +138,11 @@ unparseUnitTests =
         , unparseTest
             (Attributes
                 { getAttributes =
-                    [ MetaPattern
+                    [ asKorePattern
                         (CharLiteralPattern CharLiteral
                             { getCharLiteral = '\'' }
                         )
-                    , MetaPattern
+                    , asKorePattern
                         (CharLiteralPattern CharLiteral
                             { getCharLiteral = '\'' }
                         )
@@ -185,29 +188,31 @@ unparseParseTests =
             (forAll (sortGen Meta)
                 (unparseParseProp (sortParser Meta))
             )
+        {-
         , testProperty "UnifiedVariable"
             (forAll unifiedVariableGen (unparseParseProp unifiedVariableParser))
-        , testProperty "UnifiedPattern"
-            (forAll unifiedPatternGen (unparseParseProp unifiedPatternParser))
+        -}
+        , testProperty "CommonKorePattern"
+            (forAll korePatternGen (unparseParseProp korePatternParser))
         , testProperty "Attributes"
             (forAll
-                (attributesGen unifiedPatternGen)
-                (unparseParseProp (attributesParser unifiedPatternParser))
+                (attributesGen korePatternGen)
+                (unparseParseProp (attributesParser korePatternParser))
             )
         , testProperty "Sentence"
             (forAll koreSentenceGen (unparseParseProp koreSentenceParser))
         , testProperty "Module"
             (forAll
-                (moduleGen koreSentenceGen unifiedPatternGen)
+                (moduleGen koreSentenceGen korePatternGen)
                 (unparseParseProp
-                    (moduleParser koreSentenceParser unifiedPatternParser)
+                    (moduleParser koreSentenceParser korePatternParser)
                 )
             )
         , testProperty "Definition"
             (forAll
-                (definitionGen koreSentenceGen unifiedPatternGen)
+                (definitionGen koreSentenceGen korePatternGen)
                 (unparseParseProp
-                    (definitionParser koreSentenceParser unifiedPatternParser)
+                    (definitionParser koreSentenceParser korePatternParser)
                 )
             )
         ]

@@ -1,95 +1,127 @@
 {-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE Rank2Types            #-}
-module Data.Kore.ASTTraversals ( bottomUpVisitor
-                               , bottomUpVisitorM
-                               , topDownVisitor
-                               , topDownVisitorM
+{-|This module provides a specialization of the functionality described in
+the 'Data.Kore.FixTraversals' module to the case of Kore patterns.
+
+This specialization is meant to allow the user to write the local
+@preprocess@ and @postprocess@ functions to be written directly at the 'Pattern'
+level, although the visitation process takes place on 'KorePattern's, which
+requires several layers of constructors (including 'Fix') over Pattern.
+-}
+module Data.Kore.ASTTraversals ( koreBottomUpVisitor
+                               , koreBottomUpVisitorM
+                               , koreTopDownVisitor
+                               , koreTopDownVisitorM
                                ) where
 
 
-import           Control.Monad.Identity
+import           Control.Monad              ((>=>))
+import           Data.Fix
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.FixTraversals
 
-{-|'topDownVisitorM' is a generalized monadic visitor for patterns.
+{-|'koreTopDownVisitorM' is a generalized monadic visitor for Kore patterns.
 It takes as arguments a preprocess function and a postprocess function and
-produces a function transforming a 'FixPattern' into a monadic value.
+produces a function transforming a 'KorePattern' into a monadic value.
 
 The preprocess function takes an unwrapped 'Pattern' and works in two modes:
-* Transform the input directly into a result and skip the visiting recursion
-* Transform the input into a pattern which will be visited recursively. It also
-  returns a monad action modifier that will be used when visiting the pattern's
-  children (use 'id' if you don't need one).
+* Left case:
+    It transforms the input directly into a result and skips the visiting
+    recursion
+* Right case:
+    It transforms the input into a pattern which will be visited recursively.
+    This case must also return a monad action modifier that will be used
+    to update the results of visiting the pattern's children
+    (use 'id' if you don't need one).
 
 The postprocess function assumes that all children patterns of a pattern have
 been visited and transformed into results and aggregates these results into a
 new result.
--}
-topDownVisitorM
-    :: (FixPattern var fixedPoint, Monad m)
-    => ( forall level . MetaOrObject level
-        => Pattern level var (fixedPoint var)
-            -> m
-                ( Either
-                    result
-                    ( Pattern level var (fixedPoint var)
-                    , m result -> m result
-                    )
-                )
-            )
-    -> (forall level . MetaOrObject level
-        => Pattern level var result -> m result)
-    -> (fixedPoint var -> m result)
-topDownVisitorM preprocess postprocess = self
-  where
-    self = fixPatternApply (\p -> do
-        preP <- preprocess p
-        case preP of
-            Left r   -> return r
-            Right (p', f) -> do
-                recP <- traverse (f . self) p'
-                postprocess recP
-        )
 
-{-|'bottomUpVisitorM' is the specialization of 'topDownVisitorM' where the
-preprocessor function always requests the recursive visitation of its children,
-basically resulting in a bottom-up visitor given by the aggregation function.
+Briefly, given a pattern @p@ and functions @preprocess@ and @postprocess@,
+`koreTopDownVisitorM' performs the following actions:
+
+1. calls @preprocess@ on @p@ and,
+2. if preprocess returns @Left result@, then it returns that
+else, assume preprocess returns @Right (p', trans)@
+3.1 applies 'koreTopDownVisitorM' on the direct children of @p'@
+3.2 applies @trans@ on the results of (3.1)
+3.3 applies @postprocess@ on the @p''@ obtained from @p'@ by replacing
+    its direct children with the corresponding results from (3.2)
+-}
+koreTopDownVisitorM
+    :: (Monad m, UnifiedPatternInterface pat, Traversable (pat variable))
+    => (forall level . (MetaOrObject level)
+        => Pattern level variable (Fix (pat variable))
+        -> m (Either result ( Pattern level variable (Fix (pat variable))
+                            , m result -> m result
+                            )
+             )
+       )
+    -> (forall level . MetaOrObject level
+        => Pattern level variable result -> m result
+       )
+    -> (Fix (pat variable) -> m result)
+koreTopDownVisitorM preprocess postprocess =
+    fixTopDownVisitorM
+        fixPreprocess
+        (unifiedPatternApply postprocess)
+  where
+    {-
+    fixPreprocess
+        :: (pat' (Fix pat')
+        -> m (Either result ( pat' (Fix pat') , m result -> m result))
+        )
+      where pat' = pat variable
+    -}
+    fixPreprocess =
+        unifiedPatternApply
+            (preprocess
+            >=>
+            \case
+                Left r       -> return (Left r)
+                Right (p, t) -> return (Right (unifyPattern p, t))
+            )
+
+{-|'koreBottomUpVisitorM' is the specialization of 'koreTopDownVisitorM' where
+the preprocessor function always requests the recursive visitation of its
+children, basically resulting in a bottom-up visitor given by the aggregation
+function.
 
 The aggreagation function provided as argument is a local visitor/reducer
 which assumes that all children patterns of a pattern have been visited and
 transformed into results and aggregates these results into a new result.
 -}
-bottomUpVisitorM
-    :: (FixPattern var fixedPoint, Monad m)
+koreBottomUpVisitorM
+    :: (Monad m, UnifiedPatternInterface pat, Traversable (pat variable))
     => (forall level . MetaOrObject level
-        => Pattern level var result -> m result)
-    -> (fixedPoint var -> m result)
-bottomUpVisitorM = topDownVisitorM (\x -> pure (Right (x, id)))
+        => Pattern level variable result -> m result)
+    -> (Fix (pat variable) -> m result)
+koreBottomUpVisitorM reduce = cataM (unifiedPatternApply reduce)
 
--- |'topDownVisitor' is the non-monadic version of 'topDownVisitorM'.
-topDownVisitor
-    :: FixPattern var fixedPoint
+-- |'koreTopDownVisitor' is the non-monadic version of 'koreTopDownVisitorM'.
+koreTopDownVisitor
+    :: (UnifiedPatternInterface pat, Functor (pat variable))
     => (forall level . MetaOrObject level
-        => Pattern level var (fixedPoint var)
-            -> Either result (Pattern level var (fixedPoint var)))
+        => Pattern level variable (Fix (pat variable))
+        -> Either result (Pattern level variable (Fix (pat variable)))
+       )
     -> (forall level . MetaOrObject level
-        => Pattern level var result -> result)
-    -> (fixedPoint var -> result)
-topDownVisitor preprocess postprocess =
-    runIdentity .
-        topDownVisitorM preprocessM (pure . postprocess)
+        => Pattern level variable result -> result)
+    -> (Fix (pat variable) -> result)
+koreTopDownVisitor preprocess postprocess =
+    fixTopDownVisitor fixPreprocess fixPostprocess
   where
-    preprocessM x =
-        case preprocess x of
-            Left r  -> return (Left r)
-            Right p -> return (Right (p, id))
+    fixPostprocess = unifiedPatternApply postprocess
+    fixPreprocess = unifiedPatternApply (fmap unifyPattern . preprocess)
 
--- |'bottomUpVisitor' is the non-monadic version of 'bottomUpVisitorM'.
-bottomUpVisitor
-    :: FixPattern var fixedPoint
-    => (forall level . MetaOrObject level => Pattern level var result -> result)
-    -> (fixedPoint var -> result)
-bottomUpVisitor reduce =
-    runIdentity . bottomUpVisitorM (pure . reduce)
+-- |'koreBottomUpVisitor' is the non-monadic version of 'koreBottomUpVisitorM'.
+koreBottomUpVisitor
+    :: (UnifiedPatternInterface pat, Functor (pat variable))
+    => (forall level . MetaOrObject level
+        => Pattern level variable result -> result)
+    -> (Fix (pat variable) -> result)
+koreBottomUpVisitor reduce = cata (unifiedPatternApply reduce)

@@ -1,7 +1,6 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE UndecidableInstances  #-}
 {-|
 Module      : Data.Kore.MetaML.AST
@@ -22,40 +21,28 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Data.Kore.MetaML.AST where
 
-import           Data.Fix
-
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.PureML
 
 {-|'MetaMLPattern' corresponds to "fixed point" representations
 of the 'Pattern' class where the level is fixed to 'Meta'.
 
 'var' is the type of variables.
 -}
-type MetaMLPattern var = Fix (Pattern Meta var)
+type MetaMLPattern variable = PureMLPattern Meta variable
 
-newtype SentenceMetaPattern var = SentenceMetaPattern
-    { getSentenceMetaPattern :: MetaMLPattern var }
-
-deriving instance Eq (SentenceMetaPattern Variable)
-deriving instance Show (SentenceMetaPattern Variable)
+type SentenceMetaPattern = Pattern Meta
 
 -- |'MetaAttributes' is the 'Meta'-only version of 'Attributes'
-type MetaAttributes = Attributes SentenceMetaPattern Variable
+type MetaAttributes = PureAttributes Meta
 
-type MetaSentenceAxiom =
-    SentenceAxiom (SortVariable Meta) SentenceMetaPattern Variable
-type MetaSentenceAlias = SentenceAlias Meta SentenceMetaPattern Variable
-type MetaSentenceSymbol = SentenceSymbol Meta SentenceMetaPattern Variable
-type MetaSentenceImport = SentenceImport SentenceMetaPattern Variable
+type MetaSentenceAxiom = PureSentenceAxiom Meta
+type MetaSentenceAlias = PureSentenceAlias Meta
+type MetaSentenceSymbol = PureSentenceSymbol Meta
+type MetaSentenceImport = PureSentenceImport Meta
 
-type MetaSentence =
-    Sentence Meta (SortVariable Meta) SentenceMetaPattern Variable
-
-instance AsSentence MetaSentence MetaSentenceAlias where
-    asSentence = SentenceAliasSentence
-
-instance AsSentence MetaSentence MetaSentenceSymbol where
-    asSentence = SentenceSymbolSentence
+type MetaSentence = PureSentence Meta
 
 instance AsSentence MetaSentence MetaSentenceImport where
     asSentence = SentenceImportSentence
@@ -64,33 +51,10 @@ instance AsSentence MetaSentence MetaSentenceAxiom where
     asSentence = SentenceAxiomSentence
 
 -- |'MetaModule' is the 'Meta'-only version of 'Module'.
-type MetaModule =
-    Module (Sentence Meta) (SortVariable Meta) SentenceMetaPattern Variable
+type MetaModule = PureModule Meta
 
 -- |'MetaDefinition' is the 'Meta'-only version of 'Definition'.
-type MetaDefinition =
-    Definition (Sentence Meta) (SortVariable Meta) SentenceMetaPattern Variable
-
-groundHead :: String -> SymbolOrAlias a
-groundHead ctor = SymbolOrAlias
-    { symbolOrAliasConstructor = Id ctor
-    , symbolOrAliasParams = []
-    }
-
-groundSymbol :: String -> Symbol a
-groundSymbol ctor = Symbol
-    { symbolConstructor = Id ctor
-    , symbolParams = []
-    }
-
-apply :: SymbolOrAlias a -> [p] -> Pattern a v p
-apply patternHead patterns = ApplicationPattern Application
-    { applicationSymbolOrAlias = patternHead
-    , applicationChildren = patterns
-    }
-
-constant :: SymbolOrAlias a -> Pattern a v p
-constant patternHead = apply patternHead []
+type MetaDefinition = PureDefinition Meta
 
 nilSortListHead :: SymbolOrAlias Meta
 nilSortListHead = groundHead "#nilSortList"
@@ -99,7 +63,7 @@ consSortListHead :: SymbolOrAlias Meta
 consSortListHead = groundHead "#consSortList"
 
 nilSortListMetaPattern :: MetaMLPattern v
-nilSortListMetaPattern = Fix $ constant nilSortListHead
+nilSortListMetaPattern = asPurePattern $ constant nilSortListHead
 
 nilPatternListHead :: SymbolOrAlias Meta
 nilPatternListHead = groundHead "#nilPatternList"
@@ -108,7 +72,7 @@ consPatternListHead :: SymbolOrAlias Meta
 consPatternListHead = groundHead "#consPatternList"
 
 nilPatternListMetaPattern :: MetaMLPattern v
-nilPatternListMetaPattern = Fix $ constant nilPatternListHead
+nilPatternListMetaPattern = asPurePattern $ constant nilPatternListHead
 
 variableHead :: SymbolOrAlias Meta
 variableHead = groundHead "#variable"
@@ -156,9 +120,3 @@ type CommonMetaPattern = MetaMLPattern Variable
 type PatternMetaType = Pattern Meta Variable CommonMetaPattern
 
 type MetaPatternStub = PatternStub Meta Variable CommonMetaPattern
-
-{-|'dummyMetaSort' is used in error messages when we want to convert an
-'UnsortedPatternStub' to a pattern that can be displayed.
--}
-dummyMetaSort :: Sort Meta
-dummyMetaSort = SortVariableSort (SortVariable (Id "#dummy"))

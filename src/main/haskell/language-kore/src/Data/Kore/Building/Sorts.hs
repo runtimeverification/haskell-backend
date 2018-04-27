@@ -1,9 +1,9 @@
+{-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE UndecidableInstances  #-}
-{-# LANGUAGE ConstraintKinds #-}
 {-|
 Module      : Data.Kore.Building.Sorts
 Description : Builders for meta sorts and sort variables.
@@ -31,6 +31,7 @@ module Data.Kore.Building.Sorts
   ) where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Building.AsAst
 import           Data.Kore.Implicit.ImplicitSorts
 

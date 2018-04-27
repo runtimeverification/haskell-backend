@@ -1,11 +1,11 @@
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE UndecidableInstances  #-}
-{-# LANGUAGE FunctionalDependencies  #-}
+{-# LANGUAGE ConstraintKinds        #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE GADTs                  #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE UndecidableInstances   #-}
 {-|
 Module      : Data.Kore.Building.Patterns
 Description : Builders for the standard Kore patterns, without 'Application'.
@@ -16,19 +16,18 @@ Stability   : experimental
 Portability : POSIX
 -}
 module Data.Kore.Building.Patterns where
-import           Data.Proxy(Proxy(Proxy))
+import           Data.Proxy                 (Proxy (Proxy))
 
-import           Data.Kore.AST.Common     (And (..), Bottom (..), Ceil (..),
-                                           CharLiteral (..), DomainValue (..),
-                                           Equals (..), Exists (..), Floor (..),
-                                           Forall (..), Id (..), Iff (..),
-                                           Implies (..), In (..), Meta,
-                                           Next (..), Not (..), Object, Or (..),
-                                           Pattern (..), Rewrites (..),
-                                           StringLiteral (..), Top (..),
-                                           Variable (..),
-                                           Sort)
-import           Data.Kore.AST.Kore       (FixedPattern (..), UnifiedPattern)
+import           Data.Kore.AST.Common       (And (..), Bottom (..), Ceil (..),
+                                             CharLiteral (..), DomainValue (..),
+                                             Equals (..), Exists (..),
+                                             Floor (..), Forall (..), Id (..),
+                                             Iff (..), Implies (..), In (..),
+                                             Next (..), Not (..), Or (..),
+                                             Pattern (..), Rewrites (..), Sort,
+                                             StringLiteral (..), Top (..),
+                                             Variable (..))
+import           Data.Kore.AST.Kore         (CommonKorePattern, asKorePattern)
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Building.AsAst
 import           Data.Kore.Building.Sorts
@@ -40,33 +39,33 @@ users are expected to instantiate either
 -}
 class MetaOrObject level => ProperPattern level sort patt | patt -> sort level where
     asProperPattern
-        :: patt -> Pattern level Variable UnifiedPattern
+        :: patt -> Pattern level Variable CommonKorePattern
 type ProperMetaPattern = ProperPattern Meta
 type ProperObjectPattern = ProperPattern Object
 
 asProperObjectPattern :: (ProperPattern Object sort patt) =>
-  patt -> Pattern Object Variable UnifiedPattern
+  patt -> Pattern Object Variable CommonKorePattern
 asProperObjectPattern = asProperPattern
 asProperMetaPattern :: (ProperPattern Meta sort patt) =>
-  patt -> Pattern Meta Variable UnifiedPattern
+  patt -> Pattern Meta Variable CommonKorePattern
 asProperMetaPattern = asProperPattern
 
-class AsAst UnifiedPattern patt => AsMetaPattern patt where
-    asMetaPattern :: patt -> Pattern Meta Variable UnifiedPattern
-class AsAst UnifiedPattern patt => AsObjectPattern patt where
-    asObjectPattern :: patt -> Pattern Object Variable UnifiedPattern
+class AsAst CommonKorePattern patt => AsMetaPattern patt where
+    asMetaPattern :: patt -> Pattern Meta Variable CommonKorePattern
+class AsAst CommonKorePattern patt => AsObjectPattern patt where
+    asObjectPattern :: patt -> Pattern Object Variable CommonKorePattern
 
-class AsAst UnifiedPattern patt => ObjectPattern sort patt where
-class AsAst UnifiedPattern patt => MetaPattern sort patt where
+class AsAst CommonKorePattern patt => ObjectPattern sort patt where
+class AsAst CommonKorePattern patt => MetaPattern sort patt where
 
 -------------------------------------
 
 instance forall level sort patt . (ProperPattern level sort patt)
-         => AsAst UnifiedPattern patt
+         => AsAst CommonKorePattern patt
   where
     asAst pat = case isMetaOrObject (Proxy :: Proxy level) of
-      IsMeta -> MetaPattern (asProperMetaPattern pat)
-      IsObject -> ObjectPattern (asProperObjectPattern pat)
+      IsMeta   -> asKorePattern (asProperMetaPattern pat)
+      IsObject -> asKorePattern (asProperObjectPattern pat)
 
 instance ProperMetaPattern sort patt => MetaPattern sort patt where
 instance ProperMetaPattern sort patt => AsMetaPattern patt where

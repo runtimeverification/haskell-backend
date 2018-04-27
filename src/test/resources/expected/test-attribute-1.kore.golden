@@ -5,20 +5,20 @@ Definition
             { moduleName = ModuleName "TEST-ATTRIBUTE-1"
             , moduleSentences =
                 [ ObjectSentence (SentenceSortSentence SentenceSort
-                    { sentenceSortName = Id Object "Nat"
+                    { sentenceSortName = Id "Nat" :: Id Object
                     , sentenceSortParameters = []
                     , sentenceSortAttributes =
                         Attributes 
-                            [ MetaPattern (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Meta "#hook"
+                                        { symbolOrAliasConstructor = Id "#hook" :: Id Meta
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ MetaPattern (StringLiteralPattern (StringLiteral "Nat"))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "Nat")))))
                                     ]
-                                })
+                                }))))
                             ]
                     })
                 ]

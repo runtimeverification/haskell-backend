@@ -12,8 +12,9 @@ Portability : POSIX
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Data.Kore.Building.Implicit where
 
-import           Data.Kore.AST.Common        (Application (..), Id (..), Meta,
+import           Data.Kore.AST.Common        (Application (..), Id (..),
                                               Pattern (..), SymbolOrAlias (..))
+import           Data.Kore.AST.MetaOrObject  (Meta)
 import           Data.Kore.Building.Patterns
 import           Data.Kore.Building.Sorts
 

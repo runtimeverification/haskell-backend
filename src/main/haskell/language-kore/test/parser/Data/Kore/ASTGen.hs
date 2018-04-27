@@ -6,6 +6,7 @@ import           Test.QuickCheck.Gen         (Gen, choose, chooseAny, elements,
                                               frequency, getSize, listOf, oneof,
                                               scale, sized, suchThat, vectorOf)
 
+import           Data.Fix
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
@@ -103,8 +104,8 @@ sortGen x = oneof
 
 unifiedSortVariableGen :: Gen UnifiedSortVariable
 unifiedSortVariableGen = oneof
-    [ ObjectSortVariable <$> sortVariableGen Object
-    , MetaSortVariable <$> sortVariableGen Meta
+    [ UnifiedObject <$> sortVariableGen Object
+    , UnifiedMeta <$> sortVariableGen Meta
     ]
 
 moduleNameGen :: Gen ModuleName
@@ -116,10 +117,10 @@ variableGen x = pure Variable
     <*> scale (`div` 2) (idGen x)
     <*> scale (`div` 2) (sortGen x)
 
-unifiedVariableGen :: Gen (UnifiedVariable Variable)
+unifiedVariableGen :: Gen (Unified Variable)
 unifiedVariableGen = scale (`div` 2) $ oneof
-    [ ObjectVariable <$> variableGen Object
-    , MetaVariable <$> variableGen Meta
+    [ UnifiedObject <$> variableGen Object
+    , UnifiedMeta <$> variableGen Meta
     ]
 
 unaryOperatorGen
@@ -208,10 +209,10 @@ equalsGen
 equalsGen childGen x = equalsInGen childGen x Equals
 
 domainValueGen
-    :: MetaOrObject level => level -> Gen (DomainValue level UnifiedPattern)
+    :: MetaOrObject level => level -> Gen (DomainValue level CommonKorePattern)
 domainValueGen x = pure DomainValue
     <*> scale (`div` 2) (sortGen x)
-    <*> (MetaPattern . StringLiteralPattern <$> stringLiteralGen)
+    <*> (asKorePattern . StringLiteralPattern <$> stringLiteralGen)
 
 existsGen
     :: MetaOrObject level
@@ -279,29 +280,31 @@ patternGen childGen x =
         , VariablePattern <$> variableGen x
         ]
 
-unifiedPatternGen :: Gen UnifiedPattern
-unifiedPatternGen = sized (\n ->
+korePatternGen :: Gen CommonKorePattern
+korePatternGen = sized (\n ->
     if n<=0
         then oneof
-            [ MetaPattern . StringLiteralPattern <$> stringLiteralGen
-            , MetaPattern . CharLiteralPattern <$> charLiteralGen
+            [ asKorePattern . StringLiteralPattern <$> stringLiteralGen
+            , asKorePattern . CharLiteralPattern <$> charLiteralGen
             ]
         else frequency
-            [ (15, MetaPattern <$> patternGen unifiedPatternGen Meta)
-            , (15, ObjectPattern <$> patternGen unifiedPatternGen Object)
-            , (1, MetaPattern . StringLiteralPattern <$> stringLiteralGen)
-            , (1, MetaPattern . CharLiteralPattern <$> charLiteralGen)
-            , (1, ObjectPattern . DomainValuePattern <$> domainValueGen Object)
-            , (1, ObjectPattern . NextPattern
-                <$> nextGen unifiedPatternGen Object)
-            , (1, ObjectPattern . RewritesPattern
-                <$> rewritesGen unifiedPatternGen Object)
+            [ (15, asKorePattern <$> patternGen korePatternGen Meta)
+            , (15, asKorePattern <$> patternGen korePatternGen Object)
+            , (1, asKorePattern . StringLiteralPattern <$> stringLiteralGen)
+            , (1, asKorePattern . CharLiteralPattern <$> charLiteralGen)
+            , (1, asKorePattern . DomainValuePattern <$> domainValueGen Object)
+            , (1, asKorePattern . NextPattern
+                <$> nextGen korePatternGen Object)
+            , (1, asKorePattern . RewritesPattern
+                <$> rewritesGen korePatternGen Object)
             ]
     )
 
 sentenceAliasGen
     :: MetaOrObject level
-    => Gen (pat variable) -> level -> Gen (SentenceAlias level pat variable)
+    => Gen (Fix (pat variable))
+    -> level
+    -> Gen (SentenceAlias level pat variable)
 sentenceAliasGen patGen x = pure SentenceAlias
     <*> scale (`div` 2) (aliasGen x)
     <*> couple (scale (`div` 2) (sortGen x))
@@ -310,20 +313,25 @@ sentenceAliasGen patGen x = pure SentenceAlias
 
 sentenceSymbolGen
     :: MetaOrObject level
-    => Gen (pat variable) -> level -> Gen (SentenceSymbol level pat variable)
+    => Gen (Fix (pat variable))
+    -> level
+    -> Gen (SentenceSymbol level pat variable)
 sentenceSymbolGen patGen x = pure SentenceSymbol
     <*> scale (`div` 2) (symbolGen x)
     <*> couple (scale (`div` 2) (sortGen x))
     <*> scale (`div` 2) (sortGen x)
     <*> scale (`div` 2) (attributesGen patGen)
 
-sentenceImportGen :: Gen (pat variable) -> Gen (SentenceImport pat variable)
+sentenceImportGen
+    :: Gen (Fix (pat variable)) -> Gen (SentenceImport pat variable)
 sentenceImportGen patGen = pure SentenceImport
     <*> scale (`div` 2) moduleNameGen
     <*> scale (`div` 2) (attributesGen patGen)
 
 sentenceAxiomGen
-   :: Gen sortParam -> Gen (pat var) -> Gen (SentenceAxiom sortParam pat var)
+   :: Gen sortParam
+   -> Gen (Fix (pat var))
+   -> Gen (SentenceAxiom sortParam pat var)
 sentenceAxiomGen sortParamGen patGen =
     pure SentenceAxiom
         <*> couple (scale (`div` 2) sortParamGen)
@@ -332,19 +340,19 @@ sentenceAxiomGen sortParamGen patGen =
 
 sentenceSortGen
     :: MetaOrObject level
-    => Gen (pat var) -> level -> Gen (SentenceSort level pat var)
+    => Gen (Fix (pat var)) -> level -> Gen (SentenceSort level pat var)
 sentenceSortGen patGen level =
     pure SentenceSort
         <*> scale (`div` 2) (idGen level)
         <*> couple (scale (`div` 2) (sortVariableGen level))
         <*> scale (`div` 2) (attributesGen patGen)
 
-attributesGen :: Gen (pat variable) -> Gen (Attributes pat variable)
+attributesGen :: Gen (Fix (pat variable)) -> Gen (Attributes pat variable)
 attributesGen patGen = Attributes <$> couple (scale (`div` 4) patGen)
 
 symbolOrAliasSentenceGen
     :: MetaOrObject level
-    => Gen (pat variable)
+    => Gen (Fix (pat variable))
     -> level
     -> Gen (Sentence level sortParam pat variable)
 symbolOrAliasSentenceGen patGen level = oneof
@@ -353,20 +361,20 @@ symbolOrAliasSentenceGen patGen level = oneof
     ]
 
 koreSentenceGen :: Gen KoreSentence
-koreSentenceGen = frequency
-    [ (2, MetaSentence <$> symbolOrAliasSentenceGen unifiedPatternGen Meta)
-    , (2, ObjectSentence <$> symbolOrAliasSentenceGen unifiedPatternGen Object)
-    , (1, MetaSentence . SentenceImportSentence
-          <$> sentenceImportGen unifiedPatternGen)
-    , (1, MetaSentence . SentenceAxiomSentence
-          <$> sentenceAxiomGen unifiedSortVariableGen unifiedPatternGen)
-    , (1, ObjectSentence . SentenceSortSentence
-          <$> sentenceSortGen unifiedPatternGen Object)
+koreSentenceGen = oneof
+    [ asSentence <$> sentenceAliasGen korePatternGen Meta
+    , asSentence <$> sentenceSymbolGen korePatternGen Meta
+    , asSentence <$> sentenceAliasGen korePatternGen Object
+    , asSentence <$> sentenceSymbolGen korePatternGen Object
+    , asSentence <$> sentenceImportGen korePatternGen
+    , asSentence <$> sentenceAxiomGen unifiedSortVariableGen korePatternGen
+    , asSentence <$> sentenceSortGen korePatternGen Object
     ]
 
 moduleGen
     :: Gen (sentence sortParam pat variable)
-    -> Gen (pat variable) -> Gen (Module sentence sortParam pat variable)
+    -> Gen (Fix (pat variable))
+    -> Gen (Module sentence sortParam pat variable)
 moduleGen senGen patGen = pure Module
     <*> scale (`div` 2) moduleNameGen
     <*> couple (scale (`div` 2) senGen)
@@ -374,13 +382,13 @@ moduleGen senGen patGen = pure Module
 
 modulesGen
     :: Gen (sentence sortParam pat variable)
-    -> Gen (pat variable)
+    -> Gen (Fix (pat variable))
     -> Gen [Module sentence sortParam pat variable]
 modulesGen senGen patGen = couple1 (scale (`div` 2) (moduleGen senGen patGen))
 
 definitionGen
     :: Gen (sentence sortParam pat variable)
-    -> Gen (pat variable)
+    -> Gen (Fix (pat variable))
     -> Gen (Definition sentence sortParam pat variable)
 definitionGen senGen patGen = pure Definition
     <*> scale (`div` 2) (attributesGen patGen)

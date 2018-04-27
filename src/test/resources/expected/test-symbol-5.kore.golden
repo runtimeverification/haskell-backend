@@ -7,16 +7,16 @@ Definition
                 [ ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
-                            { symbolConstructor = Id Object "f"
+                            { symbolConstructor = Id "f" :: Id Object
                             , symbolParams =
-                                [ SortVariable (Id Object "S")
+                                [ SortVariable (Id "S" :: Id Object)
                                 ]
                             }
                     , sentenceSymbolSorts =
-                        [ SortVariableSort (SortVariable (Id Object "S"))
+                        [ SortVariableSort (SortVariable (Id "S" :: Id Object))
                         ]
                     , sentenceSymbolReturnSort =
-                        SortVariableSort (SortVariable (Id Object "S"))
+                        SortVariableSort (SortVariable (Id "S" :: Id Object))
                     , sentenceSymbolAttributes = Attributes []
                     })
                 ]
