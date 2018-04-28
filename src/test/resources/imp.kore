@@ -18,8 +18,104 @@ module BOOL
 
   symbol notBool{}(Bool{}) : Bool{} []
 
-  /* TODO:: Complete these axioms. */
-
+  /* Functional symbol axioms (one for each funcional symbol). */
+  
+  /* exists t . true = t
+   * exists t . false = t
+   * forall x y . exists t . andBool(x,y) = t
+   * forall x . exists t . notBool(x) = t
+   */
+  
+  axiom{R}
+    \exists{R}(
+      T:Bool{},
+      \equals{Bool{},R}(
+        true{}(),
+        T:Bool{}))
+  []
+  
+  axiom{R}
+    \exists{R}(
+      T:Bool{},
+      \equals{Bool{},R}(
+        false{}(),
+        T:Bool{}))
+  []   
+  
+  
+  axiom{R}
+    \forall{R}(
+      X:Bool{},
+      \forall{R}(
+        Y:Bool{},
+        \exists{R}(
+          T:Bool{},
+          \equals{Bool{},R}(
+            andBool{}(X:Bool{},Y:Bool{}),
+            T:Bool{}))))
+  []
+  
+  axiom{R}
+    \forall{R}(
+      X:Bool{},
+      \exists{R}(
+        T:Bool{},
+        \equals{Bool{},R}(
+          notBool{}(X:Bool{}),
+          T:Bool{})))
+  []
+  
+  /* Constructor axioms (See Matching Logic paper, Seciton 5.7)
+   * http://fsl.cs.illinois.edu/index.php/Matching_logic
+   *
+   * (No Junk) true \/ false  --- this is saying a boolean is either
+   *                          --- true or false
+   *                          --- Note: _\/_ is the disjunction in ML
+   * (No Confusion) not (true /\ false)
+   *                          --- this is saying a boolean cannot be
+   *                          --- both a true and a false.
+   *                          --- Note: _/\_ is the conjunction in ML.
+   *                          ---       It is not "andBool".
+   */
+ 
+  axiom{}
+    \or{Bool{}}(true{}(), false{}())
+  []
+  
+  axiom{}
+    \not{Bool{}}(\and{Bool{}}(true{}(), false{}()))
+  []
+  
+  /* Usual axioms about boolean operations:
+   * andBool(true,T) = T
+   * andBool(false,T) = false
+   * notBool(true) = false
+   * notBool(false) = true
+   */
+   
+  axiom{R}
+    \equals{Bool{},R}(
+      andBool{}(true{}(), T:Bool{}),
+      T:Bool{})
+  []
+  
+  axiom{R}
+    \equals{Bool{},R}(
+      andBool{}(false{}(), T:Bool{}),
+      false{}())
+  []
+  
+  axiom{R}
+    \equals{Bool{},R}(
+      notBool{}(true{}()), false{}())
+  []
+  
+  axiom{R}
+    \equals{Bool{},R}(
+      notBool{}(false{}()), true{}())
+  []
+  
+  
 endmodule []
 
 module INT
@@ -47,8 +143,18 @@ module INT
   symbol leqInt{}(Int{}, Int{}) : Bool{} []
 
   symbol neqInt{}(Int{}, Int{}) : Bool{} []
+  
+  /* TODO:: Functional axioms for all symbols */
+  
+  /* TODO:: Constructor axioms. Int has zero and succ as constructors:
+   * (No Junk) zero \/ exists x . succ(x)
+   * (No Confusion Diff Constructor) 
+   *    forall x . not(zero /\ succ(x))
+   * (No Confusion Same Constructor) 
+   *    forall x y . succ(x) /\ succ(y) -> succ(x /\ y)
+   */
 
-  /* TODO:: Complete these axioms. */
+  /* TODO:: Usual axioms about integers. */
 
 endmodule []
 
@@ -64,7 +170,11 @@ module LIST
 
   symbol listItem{S}(S) : List{S} []
 
-  /* TODO:: Complete these axioms. */
+  /* TODO:: Finish axioms.
+   * All symbols are functional.
+   * List has nil and cons has constructors.
+   * listItem builds singleton lists from elements.
+   */
 
 endmodule []
 
@@ -75,17 +185,27 @@ module SET
   sort Set{S} []
 
   symbol emptySet{S}() : Set{S} []
+  
+  symbol setItem{S}(S) : Set{S} []
 
   symbol union{S}(Set{S}, Set{S}) : Set{S} []
 
   symbol inSet{S}(S, Set{S}) : Bool{} []
+  
+  /* TODO:: Complete axioms.
+   * All symbols are funcitonal.
+   * (No Junk) emptySet \/ exists S1 S2 . union(S1,S2)
+   * We don't need (No Confusion) for sets, because
+   * union is not really a constructor.
+   * It is a constructor modulo associativity & commutativity.
+   * Just add some reasonable axioms.
+   */
 
   axiom{S,R}
     \equals{Set{S},R}(
       union{S}(S:Set{S}, emptySet{S}()),
       S:Set{S}) []
 
-  /* TODO:: Complete these axioms. */
 
 endmodule []
 
@@ -102,6 +222,15 @@ module MAP
   symbol merge{S1,S2}(Map{S1,S2}, Map{S1,S2}) : Map{S1,S2} []
 
   symbol keys{S1,S2}(Map{S1,S2}) : Set{S1} []
+  
+  /* See Matching Logic paper, Section 9.2.
+   * bind, emp, and keys are functional symbols.
+   * merge is partial function:
+   * forall m1 m2 . merge(m1, m2) = bottom 
+   *                \/ exists t . merge(m1, m2) = t
+   * merging two binds with the same key gets bottom
+   * merge(bind(X,Y),bind(X,Z)) = bottom
+   */
 
 endmodule []
 
