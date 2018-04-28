@@ -1,7 +1,7 @@
 /* This is the complete Kore definition of imp.k.
  * For comparison, K definitions are replicate
  * as comments, followed by the corresponding
- * Kore definitions. 
+ * Kore definitions.
  */
 
 []
@@ -19,13 +19,13 @@ module BOOL
   symbol notBool{}(Bool{}) : Bool{} []
 
   /* Functional symbol axioms (one for each funcional symbol). */
-  
+
   /* exists t . true = t
    * exists t . false = t
    * forall x y . exists t . andBool(x,y) = t
    * forall x . exists t . notBool(x) = t
    */
-  
+
   axiom{R}
     \exists{R}(
       T:Bool{},
@@ -33,16 +33,16 @@ module BOOL
         true{}(),
         T:Bool{}))
   []
-  
+
   axiom{R}
     \exists{R}(
       T:Bool{},
       \equals{Bool{},R}(
         false{}(),
         T:Bool{}))
-  []   
-  
-  
+  []
+
+
   axiom{R}
     \forall{R}(
       X:Bool{},
@@ -54,7 +54,7 @@ module BOOL
             andBool{}(X:Bool{},Y:Bool{}),
             T:Bool{}))))
   []
-  
+
   axiom{R}
     \forall{R}(
       X:Bool{},
@@ -64,7 +64,7 @@ module BOOL
           notBool{}(X:Bool{}),
           T:Bool{})))
   []
-  
+
   /* Constructor axioms (See Matching Logic paper, Seciton 5.7)
    * http://fsl.cs.illinois.edu/index.php/Matching_logic
    *
@@ -77,45 +77,45 @@ module BOOL
    *                          --- Note: _/\_ is the conjunction in ML.
    *                          ---       It is not "andBool".
    */
- 
+
   axiom{}
     \or{Bool{}}(true{}(), false{}())
   []
-  
+
   axiom{}
     \not{Bool{}}(\and{Bool{}}(true{}(), false{}()))
   []
-  
+
   /* Usual axioms about boolean operations:
    * andBool(true,T) = T
    * andBool(false,T) = false
    * notBool(true) = false
    * notBool(false) = true
    */
-   
+
   axiom{R}
     \equals{Bool{},R}(
       andBool{}(true{}(), T:Bool{}),
       T:Bool{})
   []
-  
+
   axiom{R}
     \equals{Bool{},R}(
       andBool{}(false{}(), T:Bool{}),
       false{}())
   []
-  
+
   axiom{R}
     \equals{Bool{},R}(
       notBool{}(true{}()), false{}())
   []
-  
+
   axiom{R}
     \equals{Bool{},R}(
       notBool{}(false{}()), true{}())
   []
-  
-  
+
+
 endmodule []
 
 module INT
@@ -143,14 +143,14 @@ module INT
   symbol leqInt{}(Int{}, Int{}) : Bool{} []
 
   symbol neqInt{}(Int{}, Int{}) : Bool{} []
-  
+
   /* TODO:: Functional axioms for all symbols */
-  
+
   /* TODO:: Constructor axioms. Int has zero and succ as constructors:
    * (No Junk) zero \/ exists x . succ(x)
-   * (No Confusion Diff Constructor) 
+   * (No Confusion Diff Constructor)
    *    forall x . not(zero /\ succ(x))
-   * (No Confusion Same Constructor) 
+   * (No Confusion Same Constructor)
    *    forall x y . succ(x) /\ succ(y) -> succ(x /\ y)
    */
 
@@ -185,13 +185,13 @@ module SET
   sort Set{S} []
 
   symbol emptySet{S}() : Set{S} []
-  
+
   symbol setItem{S}(S) : Set{S} []
 
   symbol union{S}(Set{S}, Set{S}) : Set{S} []
 
   symbol inSet{S}(S, Set{S}) : Bool{} []
-  
+
   /* TODO:: Complete axioms.
    * All symbols are funcitonal.
    * (No Junk) emptySet \/ exists S1 S2 . union(S1,S2)
@@ -222,11 +222,11 @@ module MAP
   symbol merge{S1,S2}(Map{S1,S2}, Map{S1,S2}) : Map{S1,S2} []
 
   symbol keys{S1,S2}(Map{S1,S2}) : Set{S1} []
-  
+
   /* See Matching Logic paper, Section 9.2.
    * bind, emp, and keys are functional symbols.
    * merge is partial function:
-   * forall m1 m2 . merge(m1, m2) = bottom 
+   * forall m1 m2 . merge(m1, m2) = bottom
    *                \/ exists t . merge(m1, m2) = t
    * merging two binds with the same key gets bottom
    * merge(bind(X,Y),bind(X,Z)) = bottom
@@ -239,32 +239,20 @@ module ID
   import INT []
 
   sort Id{} []
+
   symbol id{}(Int{}) : Id{} []
 
-endmodule []
+  /* id is injective. */
 
-/** The module of "~>" and "." in K.
-  */
-module ARROW
-
-  sort K{} []
-
-  /* The injection function from any sort S to K. */
-  symbol asK{S}(S) : K{} []
-
-  /* TODO:: add axiom : asK is injective */
-
-  symbol arrow{}(K{}, K{}) : K{} []
-
-  symbol nothing{}() : K{} []
-
-  /* TODO:: add axiom : arrow is associative and has "nothing" as unit.*/
+  axiom{}
+    \implies{Id{}}(
+      \and{Id{}}(id{}(I1:Int{}), id{}(I2:Int{})),
+      id{}(\and{Int{}}(I1:Int{}, I2:Int{})))
+  []
 
 endmodule []
 
 module CONTEXT
-
-  import ARROW []
 
   sort Ctxt{S1,S2} []
 
@@ -273,35 +261,154 @@ module CONTEXT
 
   symbol gamma{S1,S2}(S1,S2) : Ctxt{S1,S2} []
 
-  /** Contexts are special cases of arrows.
-    * In particular, asK(C[T]) = asK(T) ~> asK(C). */
+  /* app and gamma are functional symbols. */
+
   axiom{S1,S2,R}
-    \equals{K{},R}(
-      asK{S2}(app{S1,S2}(C:Ctxt{S1,S2}, T:S1)),
-      arrow{}(asK{S1}(T:S1), asK{Ctxt{S1,S2}}(C:Ctxt{S1,S2})))
+    \forall{R}(
+      C:Ctxt{S1,S2},
+      \forall{R}(
+        T:S1,
+	\exists{R}(
+	  Z:S2,
+	  \equals{S2,R}(
+	    app{S1,S2}(C:Ctxt{S1,S2}, T:S1),
+	    Z:S2))))
+  []
+
+  axiom{S1,S2,R}
+    \forall{R}(
+      HOLE:S1,
+      \forall{R}(
+        BODY:S2,
+	\exists{R}(
+	  C:Ctxt{S1,S2},
+	  \equals{Ctxt{S1,S2},R}(
+	    gamma{S1,S2}(HOLE:S1, BODY:S2),
+	    C:Ctxt{S1,S2}))))
   []
 
   /* Identity context. */
   symbol idctxt{S}() : Ctxt{S,S} []
 
-  /* TODO:: add axiom about idctxt */
-
-
-  /** Axioms about contexts have monad-style. 
+  /** Axioms about contexts have monad-style.
     * That is, there are two axioms about contexts as follows.
     * (Unit) idctxt[T] = T
     * (Multiplication) C1[C2[T]] = C[T] where C = gamma HOLE . C1[C2[HOLE]]
     */
 
-  /* TODO:: Complete these axioms. */
+  axiom{S,R}
+    \equals{S,R}(
+      app{S,S}(idctxt{S}(), T:S), T:S)
+  []
+
+  axiom{S,S1,S2,R}
+    \equals{S,R}(
+      app{S1,S}(
+        C1:Ctxt{S1,S},
+	app{S2,S1}(
+	  C2:Ctxt{S2,S1},
+	  T:S2)),
+      app{S2,S}(
+        gamma{S2,S}(
+	  HOLE:S2,
+          app{S1,S}(
+            C1:Ctxt{S1,S},
+	    app{S2,S1}(
+	      C2:Ctxt{S2,S1},
+	      HOLE:S2))),
+	T:S2))
+  []
 
 endmodule []
 
-
-
-module REWRITE
+/** The module of "~>" and "." in K.
+  */
+module ARROW
 
   import CONTEXT []
+
+  sort K{} []
+
+  /* The injection function from any sort S to K. */
+  symbol asK{S}(S) : K{} []
+
+  /* Two injectivity axioms:
+   *   not (asK{S1}(X:S1) /\ asK{S2}(Y:S2))
+   *   asK{S}(X:S) /\ asK{S}(Y:S) -> asK{S}(X:S /\ Y:S)
+   */
+
+  axiom{S1,S2}
+    \not{K{}}(
+      \and{K{}}(asK{S1}(X:S1), asK{S2}(Y:S2)))
+  []
+
+  axiom{S}
+    \implies{K{}}(
+      \and{K{}}(
+        asK{S}(X:S),
+        asK{S}(Y:S)),
+      asK{S}(\and{S}(X:S, Y:S)))
+  []
+
+  /* arrow and nothing forms the assoc list on K. */
+
+  symbol arrow{}(K{}, K{}) : K{} []
+
+  symbol nothing{}() : K{} []
+
+  /* arrow is assoc */
+  axiom{R}
+    \equals{K{},R}(
+      arrow{}(arrow{}(K1:K{}, K2:K{}), K3:K{}),
+      arrow{}(K1:K{}, arrow{}(K2:K{}, K3:K{})))
+  []
+
+  /* nothing is the left unit: arrow(nothing, K) = K */
+  axiom{R}
+    \equals{K{},R}(
+      arrow{}(nothing{}(), K:K{}), K:K{})
+  []
+
+  /* nothing is the right unit: arrow(nothing, K) = K */
+  axiom{R}
+    \equals{K{},R}(
+      arrow{}(K:K{}, nothing{}()), K:K{})
+  []
+
+  /* Contexts about arrows (we don't need these).
+   * K1 ~> K2 = (gamma HOLE . HOLE ~> K2)[K1]
+   * asK(T) = (gamma HOLE . asK(HOLE))[T]
+   */
+
+  /*
+  axiom{R}
+    \equals{K{},R}(
+      arrow{}(K1:K{}, K2:K{}),
+      app{K{},K{}}(
+        gamma{K{},K{}}(
+	  HOLE:K{},
+	  arrow{}(HOLE:K{}, K2:K{})),
+	K1:K{}))
+  []
+
+  axiom{S,R}
+    \equals{K{},R}(
+      asK{S}(T:S),
+      app{S,K{}}(
+        gamma{S,K{}}(
+	  HOLE:S,
+	  asK{S}(HOLE:S)),
+	T:S))
+  []
+  */
+
+  /** Convert contexts to arrows.
+    * asK(C[T]) = asK(T) ~> asK(C). */
+  axiom{S1,S2,R}
+    \equals{K{},R}(
+      asK{S2}(app{S1,S2}(C:Ctxt{S1,S2}, T:S1)),
+      arrow{}(asK{S1}(T:S1), asK{Ctxt{S1,S2}}(C:Ctxt{S1,S2})))
+  []
 
 endmodule []
 
@@ -319,9 +426,9 @@ module IMP-SYNTAX
 
   import ID []
 
-  import CONTEXT []
+  import ARROW []
 
-  import REWRITE []
+  import CONTEXT []
 
   /* syntax AExp ::= ... */
 
@@ -331,19 +438,80 @@ module IMP-SYNTAX
 
   symbol intAsAExp{}(Int{}) : AExp{} []
 
+  /* intAsAExp is injective */
+
+  axiom{}
+    \implies{AExp{}}(
+      \and{AExp{}}(intAsAExp{}(I1:Int{}), intAsAExp{}(I2:Int{})),
+      intAsAExp{}(\and{Int{}}(I1:Int{}, I2:Int{})))
+  []
+
+  /* intAsAExp is functional */
+
+  axiom{R}
+    \forall{R}(
+      I:Int{},
+      \exists{R}(
+        E:AExp{},
+	\equals{AExp{},R}(
+	  intAsAExp{}(I:Int{}),
+	  E:AExp{})))
+  []
+
   /* syntax AExp ::= Id */
 
   symbol idAsAExp{}(Id{}) : AExp{} []
 
+  /* idAsAExp is injective */
+
+  axiom{}
+    \implies{AExp{}}(
+      \and{AExp{}}(idAsAExp{}(I1:Id{}), idAsAExp{}(I2:Id{})),
+      idAsAExp{}(\and{Id{}}(I1:Id{}, I2:Id{})))
+  []
+
+  /* idAsAExp is functional */
+
+  axiom{R}
+    \forall{R}(
+      Id:Id{},
+      \exists{R}(
+        E:AExp{},
+	\equals{AExp{},R}(
+	  idAsAExp{}(Id:Id{}),
+	  E:AExp{})))
+  []
+
   /* syntax AExp ::= "-" Int */
 
   symbol minusAExp{}(Int{}) : AExp{} []
+
+  /* minusAExp is functional */
+
+  axiom{R}
+    \forall{R}(
+      I:Int{},
+      \exists{R}(
+        E:AExp{},
+	\equals{AExp{},R}(
+	  minusAExp{}(I:Int{}),
+	  E:AExp{})))
+  []
+
 
   /* syntax AExp ::= AExp "/" AExp [strict] */
 
   symbol divAExp{}(AExp{}, AExp{}) : AExp{}
   [#strict{}("divAExp", one{}()) ,
    #strict{}("divAExp", two{}())]
+
+  /* divAExp is functional */
+
+  axiom{R}
+    \forall{R}(E1:AExp{}, \forall{R}(E2:AExp{},
+      \exists{R}(E:AExp{},
+        \equals{AExp{},R}(divAExp{}(E1:AExp{},E2:AExp{}), E:AExp{}))))
+  []
 
   /* (X / Y) = gamma HOLE . (HOLE / Y) [X] */
 
@@ -374,6 +542,14 @@ module IMP-SYNTAX
   symbol plusAExp{}(AExp{}, AExp{}) : AExp{}
   [#strict{}("plusAExp", one{}()) ,
    #strict{}("plusAExp", two{}())]
+
+  /* plusAExp is functional */
+
+  axiom{R}
+    \forall{R}(E1:AExp{}, \forall{R}(E2:AExp{},
+      \exists{R}(E:AExp{},
+        \equals{AExp{},R}(plusAExp{}(E1:AExp{},E2:AExp{}), E:AExp{}))))
+  []
 
   /* (X + Y) = gamma HOLE . (HOLE + Y) [X] */
 
@@ -407,10 +583,38 @@ module IMP-SYNTAX
 
   symbol boolAsBExp{}(Bool{}) : BExp{} []
 
+  /* boolAsBExp is injective */
+
+  axiom{}
+    \implies{BExp{}}(
+      \and{BExp{}}(boolAsBExp{}(B1:Bool{}), boolAsBExp{}(B2:Bool{})),
+      boolAsBExp{}(\and{Bool{}}(B1:Bool{}, B2:Bool{})))
+  []
+
+  /* boolAsBExp is functional */
+
+  axiom{R}
+    \forall{R}(
+      B:Bool{},
+      \exists{R}(
+        E:BExp{},
+	\equals{BExp{},R}(
+	  boolAsBExp{}(B:Bool{}),
+	  E:BExp{})))
+  []  
+  
   /* syntax BExp ::= AExp "<=" AExp [seqstrict] */
 
   symbol leqBExp{}(AExp{}, AExp{}) : BExp{}
   [#seqstrict{}("leqBExp")]
+
+  /* leqBExp is functional */
+
+  axiom{R}
+    \forall{R}(E1:AExp{}, \forall{R}(E2:AExp{},
+      \exists{R}(E:BExp{},
+        \equals{BExp{},R}(leqBExp{}(E1:AExp{},E2:AExp{}), E:BExp{}))))
+  []
 
   axiom{R}
     \equals{BExp{},R}(
@@ -422,7 +626,7 @@ module IMP-SYNTAX
         X:AExp{}))
   [#seqstrict{}("leqBExp")]
 
-  /* X <= intAsAExp(Y) = (gamma HOLE . X <= intAsAExp(HOLE)) [Y] 
+  /* X <= intAsAExp(Y) = (gamma HOLE . X <= intAsAExp(HOLE)) [Y]
      where Y has sort Int.
      This is because Int is the only subsort of AExp that is a KResult.
      However, this information is not in the K module IMP-SYNTAX,
@@ -443,7 +647,7 @@ module IMP-SYNTAX
 
   symbol notBExp{}(BExp{}) : BExp{}
   [#strict{}("notBExp", one{}())]
-      
+
   axiom{R}
     \equals{BExp{},R}(
       notBExp{}(B:BExp{}),
@@ -527,14 +731,6 @@ module IMP-SYNTAX
 
   symbol seq{}(Stmt{}, Stmt{}) : Stmt{} []
 
-  /* The symbol skip is not in imp.k. We introduced it here
-   * to encode K rules that rewrite some computation
-   * to "nothing". 
-   * skip is the unit of seq.
-   */
-
-  symbol skip{}() : Stmt{} []
-
   /* syntax Pgm ::= ... */
 
   sort Pgm{} []
@@ -562,9 +758,9 @@ module IMP
 
   /* configuration <T> <k> $PGM:Pgm </k> <state> .Map </state> </T> */
 
-  sort Configuration{} []
+  sort Cfg{} []
 
-  symbol cfg{}(TopCell{}) : Configuration{} []
+  symbol cfg{}(TopCell{}) : Cfg{} []
 
   sort TopCell{} []
 
@@ -572,7 +768,7 @@ module IMP
 
   sort KCell{} []
 
-  symbol kcell{}(Pgm{}) : KCell{} []
+  symbol kcell{}(K{}) : KCell{} []
 
   sort StateCell{} []
 
@@ -582,10 +778,34 @@ module IMP
   /* In K:
    * rule <k> X:Id => I ... <k>
    *      <state> ... X |-> I ... </state>
-   * 
-   * In Kore (We need multi-hole contexts to write this rule.)
-   * C[X:Id => I, X |-> I]
+   *
+   * In Kore:
+   * C[kcell((X => I) ~> DOT1)]
+   *  [statecell(DOT2 merge X |-> I merge DOT3)]
    */
+
+  axiom{}
+    \forall{Cfg{}}(C:Ctxt{KCell{},Ctxt{StateCell{},Cfg{}}},
+    \forall{Cfg{}}(X:Id{},
+    \forall{Cfg{}}(I:Int{},
+    \forall{Cfg{}}(DOT1:K{},
+    \forall{Cfg{}}(DOT2:Map{Id{},Int{}},
+    \forall{Cfg{}}(DOT3:Map{Id{},Int{}},
+    app{StateCell{},Cfg{}}(
+    app{KCell{},Ctxt{StateCell{},Cfg{}}}(
+      C:Ctxt{KCell{},Ctxt{StateCell{},Cfg{}}},
+      kcell{}(
+        arrow{}(
+	  /* Here AExp is infered from X:Id and I:Int (their least common sort) */
+	  asK{AExp{}}(idAsAExp{}(X:Id{})),
+	  asK{AExp{}}(intAsAExp{}(I:Int{}))))),
+      statecell{}(
+        merge{Id{},Int{}}(
+        merge{Id{},Int{}}(
+	  DOT2:Map{Id{},Int{}},
+	  bind{Id{},Int{}}(X:Id{}, I:Int{})),
+	  DOT3:Map{Id{},Int{}})))))))))
+  []
 
   /* rule I1 / I2 => I1 /Int I2 requires I2 =/=Int 0 */
 
@@ -612,7 +832,7 @@ module IMP
 
   /* In K:
    *   rule -I1 => 0 -Int I1
-   */ 
+   */
 
   axiom{S}
     app{AExp{},S}(
@@ -657,7 +877,7 @@ module IMP
   []
 
   /* rule false && _ => false */
-    
+
   axiom{S}
     app{BExp{},S}(
       C:Ctxt{BExp{},S},
@@ -685,12 +905,12 @@ module IMP
           <state> ... X |-> (_ => I) ... </state>
    */
 
-  /* In K: 
+  /* In K:
    *   rule S1:Stmt S2:Stmt => S1 ~> S2 [structural]
    * In Kore:
-   *   asK(S1,S2) => 
+   *   asK(S1,S2) =>
 
-  
+
 
 
   /* rule if (true) S else _ => S */
