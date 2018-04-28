@@ -129,7 +129,7 @@ module ARROW
 
   symbol nothing{}() : K{} []
 
-  /* TODO:: add axiom : arrow is associative and has nothing as unit.*/
+  /* TODO:: add axiom : arrow is associative and has "nothing" as unit.*/
 
 endmodule []
 
@@ -556,7 +556,12 @@ module IMP
           <state> ... X |-> (_ => I) ... </state>
    */
 
-  /* rule S1:Stmt S2:Stmt => S1 ~> S2 */
+  /* In K: 
+   *   rule S1:Stmt S2:Stmt => S1 ~> S2 [structural]
+   * In Kore:
+   *   asK(S1,S2) => 
+
+  
 
 
   /* rule if (true) S else _ => S */
