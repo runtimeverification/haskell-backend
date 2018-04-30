@@ -1,8 +1,8 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE MonoLocalBinds        #-}
- -- to avoid warnings that constraints (AsAst UnifiedPattern p) can be simplified
+{-# LANGUAGE MultiParamTypeClasses #-}
+ -- to avoid warnings that constraints (AsAst CommonKorePattern p) can be simplified
 module Kore.MatchingLogic.ProofSystem.ProofAssistantTest
     (proofAssistantTests) where
 
@@ -14,7 +14,7 @@ import           Test.Tasty.HUnit                             (assertFailure,
 import           Data.Kore.AST.Common                         (Application (..),
                                                                Attributes (..),
                                                                Definition (..),
-                                                               Id (..), Meta,
+                                                               Id (..),
                                                                Module (..),
                                                                ModuleName (..),
                                                                Pattern (..),
@@ -23,8 +23,11 @@ import           Data.Kore.AST.Common                         (Application (..),
                                                                Sort (..),
                                                                Symbol (..),
                                                                SymbolOrAlias (..),
-                                                               Variable)
-import           Data.Kore.AST.Kore
+                                                               Variable,
+                                                               asSentence)
+import           Data.Kore.AST.Kore                           (CommonKorePattern,
+                                                               KoreSentenceSymbol)
+import           Data.Kore.AST.MetaOrObject                   (Meta)
 import           Data.Kore.ASTVerifier.DefinitionVerifier     (AttributesVerification (..),
                                                                verifyAndIndexDefinition)
 import           Data.Kore.Building.AsAst
@@ -2182,7 +2185,7 @@ stringError thing =
         Left err -> Left (printError err)
 
 addGoal
-    :: UnifiedPattern -> NewGoalId -> MLProof -> Either String MLProof
+    :: CommonKorePattern -> NewGoalId -> MLProof -> Either String MLProof
 addGoal formula (NewGoalId goalId) proof =
     stringError
         (HilbertProof.add
@@ -2207,8 +2210,8 @@ modusPonens phiId phiImpliesPsiId conclusionId proof =
             (ModusPonens phiId phiImpliesPsiId)
 
 proposition1
-    :: UnifiedPattern
-    -> UnifiedPattern
+    :: CommonKorePattern
+    -> CommonKorePattern
     -> GoalId
     -> MLProof
     -> Either String MLProof
@@ -2224,9 +2227,9 @@ proposition1 phip psip conclusionId proof =
             (Propositional1 (patternKoreToMeta phip) (patternKoreToMeta psip))
 
 proposition2
-    :: UnifiedPattern
-    -> UnifiedPattern
-    -> UnifiedPattern
+    :: CommonKorePattern
+    -> CommonKorePattern
+    -> CommonKorePattern
     -> GoalId
     -> MLProof
     -> Either String MLProof
@@ -2246,8 +2249,8 @@ proposition2 phi1p phi2p phi3p conclusionId proof =
             )
 
 proposition3
-    :: UnifiedPattern
-    -> UnifiedPattern
+    :: CommonKorePattern
+    -> CommonKorePattern
     -> GoalId
     -> MLProof
     -> Either String MLProof
@@ -2265,7 +2268,7 @@ proposition3 phi1p phi2p conclusionId proof =
 variableSubstitution
     :: SubstitutingVariable (Variable Meta)
     -> SubstitutedVariable (Variable Meta)
-    -> UnifiedPattern
+    -> CommonKorePattern
     -> GoalId
     -> MLProof
     -> Either String MLProof
@@ -2288,8 +2291,8 @@ variableSubstitution
 
 forallRule
     :: Variable Meta
-    -> UnifiedPattern
-    -> UnifiedPattern
+    -> CommonKorePattern
+    -> CommonKorePattern
     -> GoalId
     -> MLProof
     -> Either String MLProof
@@ -2324,8 +2327,8 @@ generalization variable phiId conclusionId proof =
 propagateOr
     :: SymbolOrAlias Meta
     -> Int
-    -> UnifiedPattern
-    -> UnifiedPattern
+    -> CommonKorePattern
+    -> CommonKorePattern
     -> GoalId
     -> MLProof -> Either String MLProof
 propagateOr symbol idx phi1p phi2p conclusionId proof =
@@ -2345,7 +2348,7 @@ propagateExists
     :: SymbolOrAlias Meta
     -> Int
     -> Variable Meta
-    -> UnifiedPattern
+    -> CommonKorePattern
     -> GoalId
     -> MLProof -> Either String MLProof
 propagateExists symbol idx variable phip conclusionId proof =
@@ -2393,7 +2396,7 @@ existence variable conclusionId proof =
 
 singvar
     :: Variable Meta
-    -> UnifiedPattern
+    -> CommonKorePattern
     -> [Int]
     -> [Int]
     -> GoalId
@@ -2456,7 +2459,7 @@ lookupFormula goalId proof =
         Just (_, formula) -> return formula
 
 testAddGoal
-    :: AsAst UnifiedPattern p
+    :: AsAst CommonKorePattern p
     => p
     -> NewGoalId
     -> (String, MLProof -> Either String MLProof)
@@ -2480,7 +2483,7 @@ testModusPonens implierId implicationId impliedId =
     )
 
 testProposition1
-    :: (AsAst UnifiedPattern p1, AsAst UnifiedPattern p2)
+    :: (AsAst CommonKorePattern p1, AsAst CommonKorePattern p2)
     => p1
     -> p2
     -> GoalId
@@ -2499,9 +2502,9 @@ testProposition1 phip psip conclusion =
     patPsi = asAst psip
 
 testProposition2
-    ::  ( AsAst UnifiedPattern p1
-        , AsAst UnifiedPattern p2
-        , AsAst UnifiedPattern p3
+    ::  ( AsAst CommonKorePattern p1
+        , AsAst CommonKorePattern p2
+        , AsAst CommonKorePattern p3
         )
     => p1
     -> p2
@@ -2521,7 +2524,7 @@ testProposition2 phi1p phi2p phi3p conclusion =
     pat3 = asAst phi3p
 
 testProposition3
-    :: (AsAst UnifiedPattern p1, AsAst UnifiedPattern p2)
+    :: (AsAst CommonKorePattern p1, AsAst CommonKorePattern p2)
     => p1
     -> p2
     -> GoalId
@@ -2537,7 +2540,7 @@ testProposition3 phi1p phi2p conclusion =
     pat2 = asAst phi2p
 
 testVariableSubstitution
-    :: AsAst UnifiedPattern p1
+    :: AsAst CommonKorePattern p1
     => SubstitutingVariable (Variable Meta)
     -> SubstitutedVariable (Variable Meta)
     -> p1
@@ -2555,7 +2558,7 @@ testVariableSubstitution
     phip = asAst unsubstitutedPattern
 
 testForall
-    :: (MetaSort s, AsAst UnifiedPattern p1, AsAst UnifiedPattern p2)
+    :: (MetaSort s, AsAst CommonKorePattern p1, AsAst CommonKorePattern p2)
     => MetaVariable s
     -> p1
     -> p2
@@ -2589,7 +2592,7 @@ testGeneralization variable phiId conclusionId =
     var = asMetaVariable variable
 
 testPropagateOr
-    :: (AsAst UnifiedPattern p1, AsAst UnifiedPattern p2)
+    :: (AsAst CommonKorePattern p1, AsAst CommonKorePattern p2)
     => SymbolOrAlias Meta
     -> Int
     -> p1
@@ -2608,7 +2611,7 @@ testPropagateOr symbol idx phi1p phi2p conclusionId =
     pat2 = asAst phi2p
 
 testPropagateExists
-    :: (MetaSort s, AsAst UnifiedPattern p1)
+    :: (MetaSort s, AsAst CommonKorePattern p1)
     => SymbolOrAlias Meta
     -> Int
     -> MetaVariable s
@@ -2652,7 +2655,7 @@ testExistence variable conclusionId =
     var = asMetaVariable variable
 
 testSingvar
-    :: (MetaSort s, AsAst UnifiedPattern p1)
+    :: (MetaSort s, AsAst CommonKorePattern p1)
     => MetaVariable s
     -> p1
     -> [Int]
@@ -2685,7 +2688,7 @@ goalCountAssertion count proof =
     actualGoalCount = goalCount proof
 
 assertGoal
-    :: AsAst UnifiedPattern p
+    :: AsAst CommonKorePattern p
     => GoalId
     -> p
     -> (String, MLProof -> Either String MLProof)
@@ -2697,7 +2700,7 @@ assertGoal goalId pattern1 =
     unifiedPattern = asAst pattern1
 goalAssertion
     :: GoalId
-    -> UnifiedPattern
+    -> CommonKorePattern
     -> (MLProof -> Either String MLProof)
 goalAssertion goalId pattern1 proof =
     case lookupGoal goalId proof of
@@ -2817,8 +2820,8 @@ defaultIndexedModuleWithError = do
             [ Module
                 { moduleName = moduleName1
                 , moduleSentences =
-                    [ MetaSentence
-                        ( SentenceSymbolSentence SentenceSymbol
+                    [ asSentence
+                        (SentenceSymbol
                             { sentenceSymbolSymbol = Symbol
                                 { symbolConstructor = sigmaId
                                 , symbolParams = []
@@ -2831,9 +2834,10 @@ defaultIndexedModuleWithError = do
                             , sentenceSymbolResultSort = asAst sigmaSort
                             , sentenceSymbolAttributes = Attributes []
                             }
+                        :: KoreSentenceSymbol Meta
                         )
-                    , MetaSentence
-                        ( SentenceSymbolSentence SentenceSymbol
+                    , asSentence
+                        (SentenceSymbol
                             { sentenceSymbolSymbol = Symbol
                                 { symbolConstructor = sigmoidId
                                 , symbolParams = []
@@ -2846,6 +2850,7 @@ defaultIndexedModuleWithError = do
                             , sentenceSymbolResultSort = asAst sigmaSort
                             , sentenceSymbolAttributes = Attributes []
                             }
+                        :: KoreSentenceSymbol Meta
                         )
                     ]
                 , moduleAttributes = Attributes []
