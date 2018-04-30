@@ -1,2 +1,2 @@
-Parse error: "../../../test/resources//test-exception-27.kore" (line 5, column 4):
-Keyword Based Parsers - unexpected character..
+Parse error: ../../../test/resources//test-exception-27.kore:5:3:
+Keyword Based Parsers - unexpected character.

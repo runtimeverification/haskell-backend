@@ -5,6 +5,16 @@
 *.iws
 target
 .idea
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.synctex.gz
+!docs/hash-symbol.pdf
+*.fdb_latexmk
+*.fls
+*.toc
 .stack-work
 .*.swp
 .*.swo

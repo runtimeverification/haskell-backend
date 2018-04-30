@@ -1,4 +1,2 @@
-Parse error: "../../../test/resources//test-exception-4.kore" (line 6, column 5):
-unexpected "2"
-expecting space
-genericIdRawParser: Invalid first character '2'..
+Parse error: ../../../test/resources//test-exception-4.kore:6:5:
+genericIdRawParser: Invalid first character '2'.

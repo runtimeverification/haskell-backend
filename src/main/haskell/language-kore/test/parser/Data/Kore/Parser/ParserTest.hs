@@ -117,16 +117,14 @@ metaSortConverterTests =
         , Failure FailureTest
             { failureInput = "#Chart{}"
             , failureExpected =
-                "\"<test-string>\" (line 1, column 9):\n"
-                ++ "unexpected end of input\n"
-                ++ "metaSortConverter: Invalid constructor: '#Chart'."
+                "<test-string>:1:9:\n"
+                ++ "metaSortConverter: Invalid constructor: '#Chart'.\n"
             }
         , Failure FailureTest
             { failureInput = "#Char{#Char}"
             , failureExpected =
-                "\"<test-string>\" (line 1, column 13):\n"
-                ++ "unexpected end of input\n"
-                ++ "metaSortConverter: Non empty parameter sorts."
+                "<test-string>:1:13:\n"
+                ++ "metaSortConverter: Non empty parameter sorts.\n"
             }
         , FailureWithoutMessage
             [ "var1, var2", "var1{var1 var2}"
@@ -692,8 +690,8 @@ nextPatternParserTests =
         , Failure FailureTest
             { failureInput = "\\next{#s}(\"a\")"
             , failureExpected =
-                "\"<test-string>\" (line 1, column 7):\n"
-                ++"Cannot have a \\next Meta pattern."
+                "<test-string>:1:7:\n"
+                ++"Cannot have a \\next Meta pattern.\n"
             }
         , FailureWithoutMessage
             [ ""
@@ -740,8 +738,8 @@ rewritesPatternParserTests =
         , Failure FailureTest
             { failureInput = "\\rewrites{#s}(\"a\", \"b\")"
             , failureExpected =
-                "\"<test-string>\" (line 1, column 11):\n"
-                ++ "Cannot have a \\rewrites Meta pattern."
+                "<test-string>:1:11:\n"
+                ++ "Cannot have a \\rewrites Meta pattern.\n"
             }
         , FailureWithoutMessage
             [ ""
