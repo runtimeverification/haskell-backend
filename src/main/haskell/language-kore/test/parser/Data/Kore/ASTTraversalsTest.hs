@@ -23,9 +23,9 @@ astTraversalsTests =
             (assertEqual ""
                 (asKorePattern $ ApplicationPattern Application
                     { applicationSymbolOrAlias = SymbolOrAlias
-                        { symbolOrAliasConstructor = Id "sigma" :: Id Object
+                        { symbolOrAliasConstructor = Id "sigma"
                         , symbolOrAliasParams = []
-                        }
+                        } :: SymbolOrAlias Object
                     , applicationChildren =
                         [ asKorePattern $ StringLiteralPattern $
                                 StringLiteral "left1"
@@ -36,9 +36,9 @@ astTraversalsTests =
                 )
                 (lhs $ asKorePattern $ ApplicationPattern Application
                     { applicationSymbolOrAlias = SymbolOrAlias
-                        { symbolOrAliasConstructor = Id "sigma" :: Id Object
+                        { symbolOrAliasConstructor = Id "sigma"
                         , symbolOrAliasParams = []
-                        }
+                        } :: SymbolOrAlias Object
                     , applicationChildren =
                         [ asKorePattern $ ImpliesPattern Implies
                             { impliesSort = SortVariableSort $ SortVariable $

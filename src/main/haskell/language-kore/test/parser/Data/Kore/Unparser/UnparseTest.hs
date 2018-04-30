@@ -22,11 +22,12 @@ unparseUnitTests =
         "Unparse unit tests"
         [ unparseTest
             (asSentence
-                SentenceSort
-                    { sentenceSortName = Id "x" :: Id Object
+                (SentenceSort
+                    { sentenceSortName = Id "x"
                     , sentenceSortParameters = []
-                    , sentenceSortAttributes = Attributes [] :: KoreAttributes
+                    , sentenceSortAttributes = Attributes []
                     }
+                :: KoreSentenceSort)
             )
             "sort x{}[]"
         , unparseTest

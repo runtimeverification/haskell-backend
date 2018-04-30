@@ -792,17 +792,14 @@ variablePatternParserTests =
         , FailureWithoutMessage ["", "var", "v:", ":s", "c(s)", "c{s}"]
         ]
 
-emptyKoreAttributes :: KoreAttributes
-emptyKoreAttributes = Attributes []
-
 sentenceAliasParserTests :: [TestTree]
 sentenceAliasParserTests =
     parseTree koreSentenceParser
         [ success "alias a{s1}(s2):s3[\"a\"]"
             ( asSentence
-                SentenceAlias
+                (SentenceAlias
                     { sentenceAliasAlias = Alias
-                        { aliasConstructor = Id "a" :: Id Object
+                        { aliasConstructor = Id "a"
                         , aliasParams = [ sortVariable "s1" ]
                         }
                     , sentenceAliasSorts = [ sortVariableSort "s2"]
@@ -811,14 +808,14 @@ sentenceAliasParserTests =
                         Attributes
                             [asKorePattern $
                                 StringLiteralPattern (StringLiteral "a")]
-                        :: KoreAttributes
                     }
+                :: KoreSentenceAlias Object)
             )
         , success "alias a { s1 , s2 } ( s3, s4 ) : s5 [ \"a\" , \"b\" ]"
             ( asSentence
-                SentenceAlias
+                (SentenceAlias
                     { sentenceAliasAlias = Alias
-                        { aliasConstructor = Id "a" :: Id Object
+                        { aliasConstructor = Id "a"
                         , aliasParams =
                             [ sortVariable "s1"
                             , sortVariable "s2"
@@ -836,20 +833,21 @@ sentenceAliasParserTests =
                             , asKorePattern $
                                 StringLiteralPattern (StringLiteral "b")
                             ]
-                        :: KoreAttributes
                     }
+                :: KoreSentenceAlias Object)
             )
         , success "alias #a{}():#Char[]"
             ( asSentence
-                SentenceAlias
+                (SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = Id "#a" :: Id Meta
                         , aliasParams = []
                         }
                     , sentenceAliasSorts = []
                     , sentenceAliasResultSort = sortVariableSort "#Char"
-                    , sentenceAliasAttributes = emptyKoreAttributes
+                    , sentenceAliasAttributes = Attributes []
                     }
+                :: KoreSentenceAlias Meta)
             )
         , FailureWithoutMessage
             [ ""
@@ -869,46 +867,55 @@ sentenceAxiomParserTests :: [TestTree]
 sentenceAxiomParserTests =
     parseTree koreSentenceParser
         [ success "axiom{sv1}\"a\"[\"b\"]"
-            ( asSentence SentenceAxiom
-                { sentenceAxiomParameters =
-                    [UnifiedObject
-                        (SortVariable (Id "sv1"))]
-                , sentenceAxiomPattern =
-                    asKorePattern $ StringLiteralPattern (StringLiteral "a")
-                , sentenceAxiomAttributes =
-                    Attributes
-                        [asKorePattern $ StringLiteralPattern (StringLiteral "b")]
-                    :: KoreAttributes
-                }
+            ( asSentence
+                (SentenceAxiom
+                    { sentenceAxiomParameters =
+                        [UnifiedObject
+                            (SortVariable (Id "sv1"))]
+                    , sentenceAxiomPattern =
+                        asKorePattern $ StringLiteralPattern (StringLiteral "a")
+                    , sentenceAxiomAttributes =
+                        Attributes
+                            [ asKorePattern
+                              $ StringLiteralPattern (StringLiteral "b")
+                            ]
+                    }
+                :: KoreSentenceAxiom)
             )
         {- TODO(virgil): The Scala parser allows empty sort variable lists
            while the semantics-of-k document does not. -}
         , success "axiom{}\"a\"[\"b\"]"
-            ( asSentence SentenceAxiom
-                { sentenceAxiomParameters = [] :: [UnifiedSortVariable]
-                , sentenceAxiomPattern =
-                    asKorePattern $ StringLiteralPattern (StringLiteral "a")
-                , sentenceAxiomAttributes =
-                    Attributes
-                        [asKorePattern $ StringLiteralPattern (StringLiteral "b")]
-                    :: KoreAttributes
-                }
+            ( asSentence
+                (SentenceAxiom
+                    { sentenceAxiomParameters = [] :: [UnifiedSortVariable]
+                    , sentenceAxiomPattern =
+                        asKorePattern $ StringLiteralPattern (StringLiteral "a")
+                    , sentenceAxiomAttributes =
+                        Attributes
+                            [ asKorePattern
+                              $ StringLiteralPattern (StringLiteral "b")
+                            ]
+                    }
+                :: KoreSentenceAxiom)
             )
         , success "axiom { sv1 , sv2 } \"a\" [ \"b\" ] "
-            ( asSentence SentenceAxiom
-                { sentenceAxiomParameters =
-                    [ UnifiedObject
-                        (SortVariable (Id "sv1"))
-                    , UnifiedObject
-                        (SortVariable (Id "sv2"))
-                    ]
-                , sentenceAxiomPattern =
-                    asKorePattern $ StringLiteralPattern (StringLiteral "a")
-                , sentenceAxiomAttributes =
-                    Attributes
-                        [asKorePattern $ StringLiteralPattern (StringLiteral "b")]
-                    :: KoreAttributes
-                }
+            ( asSentence
+                (SentenceAxiom
+                    { sentenceAxiomParameters =
+                        [ UnifiedObject
+                            (SortVariable (Id "sv1"))
+                        , UnifiedObject
+                            (SortVariable (Id "sv2"))
+                        ]
+                    , sentenceAxiomPattern =
+                        asKorePattern $ StringLiteralPattern (StringLiteral "a")
+                    , sentenceAxiomAttributes =
+                        Attributes
+                            [ asKorePattern
+                              $ StringLiteralPattern (StringLiteral "b")
+                            ]
+                    }
+                :: KoreSentenceAxiom)
             )
         , FailureWithoutMessage
             [ ""
@@ -924,13 +931,16 @@ sentenceImportParserTests :: [TestTree]
 sentenceImportParserTests =
     parseTree koreSentenceParser
         [ success "import M[\"b\"]"
-            ( asSentence SentenceImport
-                { sentenceImportModuleName = ModuleName "M"
-                , sentenceImportAttributes =
-                    Attributes
-                        [asKorePattern $ StringLiteralPattern (StringLiteral "b")]
-                    :: KoreAttributes
-                }
+            ( asSentence
+                (SentenceImport
+                    { sentenceImportModuleName = ModuleName "M"
+                    , sentenceImportAttributes =
+                        Attributes
+                            [ asKorePattern
+                              $ StringLiteralPattern (StringLiteral "b")
+                            ]
+                    }
+                :: KoreSentenceImport)
             )
         , FailureWithoutMessage
             [ ""
@@ -944,26 +954,28 @@ sentenceSortParserTests :: [TestTree]
 sentenceSortParserTests =
     parseTree koreSentenceParser
         [ success "sort s1 { sv1 } [ \"a\" ]"
-            ( asSentence SentenceSort
-                { sentenceSortName = Id "s1" :: Id Object
-                , sentenceSortParameters = [ sortVariable "sv1" ]
-                , sentenceSortAttributes =
-                    Attributes
-                        [asKorePattern $ StringLiteralPattern (StringLiteral "a")]
-                    :: KoreAttributes
-                }
+            ( asSentence
+                (SentenceSort
+                    { sentenceSortName = Id "s1"
+                    , sentenceSortParameters = [ sortVariable "sv1" ]
+                    , sentenceSortAttributes =
+                        Attributes
+                            [asKorePattern $ StringLiteralPattern (StringLiteral "a")]
+                    }
+                :: KoreSentenceSort)
             )
         {- TODO(virgil): The Scala parser allows empty sort variable lists
            while the semantics-of-k document does not. -}
         , success "sort s1 {} [ \"a\" ]"
-            ( asSentence SentenceSort
-                { sentenceSortName = Id "s1" :: Id Object
-                , sentenceSortParameters = []
-                , sentenceSortAttributes =
-                    Attributes
-                        [asKorePattern $ StringLiteralPattern (StringLiteral "a")]
-                    :: KoreAttributes
-                }
+            ( asSentence
+                (SentenceSort
+                    { sentenceSortName = Id "s1"
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes =
+                        Attributes
+                            [asKorePattern $ StringLiteralPattern (StringLiteral "a")]
+                    }
+                :: KoreSentenceSort)
             )
         , FailureWithoutMessage
             [ ""
@@ -981,9 +993,9 @@ sentenceSymbolParserTests =
     parseTree koreSentenceParser
         [ success "symbol sy1 { s1 } ( s1 ) : s1 [\"a\"] "
             ( asSentence
-                SentenceSymbol
+                (SentenceSymbol
                     { sentenceSymbolSymbol = Symbol
-                        { symbolConstructor = Id "sy1" :: Id Object
+                        { symbolConstructor = Id "sy1"
                         , symbolParams = [ sortVariable "s1" ]
                         }
                     , sentenceSymbolSorts = [ sortVariableSort "s1" ]
@@ -992,20 +1004,21 @@ sentenceSymbolParserTests =
                         Attributes
                             [asKorePattern $
                                 StringLiteralPattern (StringLiteral "a")]
-                    :: KoreAttributes
                     }
+                :: KoreSentenceSymbol Object)
             )
         , success "symbol sy1 {} () : s1 [] "
             ( asSentence
-                SentenceSymbol
+                (SentenceSymbol
                     { sentenceSymbolSymbol = Symbol
-                        { symbolConstructor = Id "sy1" :: Id Object
+                        { symbolConstructor = Id "sy1"
                         , symbolParams = []
                         }
                     , sentenceSymbolSorts = []
                     , sentenceSymbolResultSort = sortVariableSort "s1"
-                    , sentenceSymbolAttributes = emptyKoreAttributes
+                    , sentenceSymbolAttributes = Attributes []
                     }
+                :: KoreSentenceSymbol Object)
             )
         , FailureWithoutMessage
             [ ""
@@ -1026,7 +1039,7 @@ attributesParserTests =
         [ success "[\"a\"]"
             (Attributes
                 [asKorePattern $ StringLiteralPattern (StringLiteral "a")])
-        , success "[]" emptyKoreAttributes
+        , success "[]" (Attributes [])
         , success "[\"a\", \"b\"]"
             (Attributes
                 [ asKorePattern $ StringLiteralPattern (StringLiteral "a")
@@ -1043,11 +1056,13 @@ moduleParserTests =
             Module
                 { moduleName = ModuleName "MN"
                 , moduleSentences =
-                    [ asSentence SentenceSort
-                        { sentenceSortName = Id "c" :: Id Object
-                        , sentenceSortParameters = []
-                        , sentenceSortAttributes = emptyKoreAttributes
-                        }
+                    [ asSentence
+                        (SentenceSort
+                            { sentenceSortName = Id "c"
+                            , sentenceSortParameters = []
+                            , sentenceSortAttributes = Attributes []
+                            }
+                        :: KoreSentenceSort)
                     ]
                 , moduleAttributes =
                     Attributes
@@ -1057,16 +1072,20 @@ moduleParserTests =
             Module
                 { moduleName = ModuleName "MN"
                 , moduleSentences =
-                    [ asSentence SentenceSort
-                        { sentenceSortName = Id "c" :: Id Object
-                        , sentenceSortParameters = []
-                        , sentenceSortAttributes = emptyKoreAttributes
-                        }
-                    , asSentence SentenceSort
-                        { sentenceSortName = Id "c" :: Id Object
-                        , sentenceSortParameters = []
-                        , sentenceSortAttributes = emptyKoreAttributes
-                        }
+                    [ asSentence
+                        (SentenceSort
+                            { sentenceSortName = Id "c"
+                            , sentenceSortParameters = []
+                            , sentenceSortAttributes = Attributes []
+                            }
+                        :: KoreSentenceSort)
+                    , asSentence
+                        (SentenceSort
+                            { sentenceSortName = Id "c"
+                            , sentenceSortParameters = []
+                            , sentenceSortAttributes = Attributes []
+                            }
+                        :: KoreSentenceSort)
                     ]
                 , moduleAttributes =
                     Attributes
@@ -1076,7 +1095,7 @@ moduleParserTests =
             Module
                 { moduleName = ModuleName "MN"
                 , moduleSentences = []
-                , moduleAttributes = emptyKoreAttributes
+                , moduleAttributes = Attributes []
                 }
         , FailureWithoutMessage
             [ ""
@@ -1099,11 +1118,13 @@ definitionParserTests =
                     [ Module
                         { moduleName = ModuleName "M"
                         , moduleSentences =
-                            [ asSentence SentenceSort
-                                { sentenceSortName = Id "c" :: Id Object
-                                , sentenceSortParameters = []
-                                , sentenceSortAttributes = emptyKoreAttributes
-                                }
+                            [ asSentence
+                                (SentenceSort
+                                    { sentenceSortName = Id "c"
+                                    , sentenceSortParameters = []
+                                    , sentenceSortAttributes = Attributes []
+                                    }
+                                :: KoreSentenceSort)
                             ]
                         , moduleAttributes =
                             Attributes
@@ -1125,11 +1146,13 @@ definitionParserTests =
                     [ Module
                         { moduleName = ModuleName "M"
                         , moduleSentences =
-                            [ asSentence SentenceSort
-                                { sentenceSortName = Id "c" :: Id Object
-                                , sentenceSortParameters = []
-                                , sentenceSortAttributes = emptyKoreAttributes
-                                }
+                            [ asSentence
+                                (SentenceSort
+                                    { sentenceSortName = Id "c"
+                                    , sentenceSortParameters = []
+                                    , sentenceSortAttributes = Attributes []
+                                    }
+                                :: KoreSentenceSort)
                             ]
                         , moduleAttributes =
                             Attributes
@@ -1139,11 +1162,13 @@ definitionParserTests =
                     , Module
                         { moduleName = ModuleName "N"
                         , moduleSentences =
-                            [ asSentence SentenceSort
-                                { sentenceSortName = Id "d" :: Id Object
-                                , sentenceSortParameters = []
-                                , sentenceSortAttributes = emptyKoreAttributes
-                                }
+                            [ asSentence
+                                (SentenceSort
+                                    { sentenceSortName = Id "d"
+                                    , sentenceSortParameters = []
+                                    , sentenceSortAttributes = Attributes []
+                                    }
+                                :: KoreSentenceSort)
                             ]
                         , moduleAttributes =
                             Attributes

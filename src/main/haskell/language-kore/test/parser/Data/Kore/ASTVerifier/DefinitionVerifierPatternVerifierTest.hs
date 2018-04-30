@@ -499,16 +499,18 @@ definitionVerifierPatternVerifierTests =
         variable objectVariableName objectSortVariableSort
     oneSortSymbolRawName = "ObjectSymbol"
     oneSortSymbolSentence =
-        asSentence SentenceSymbol
-            { sentenceSymbolSymbol = Symbol
-                { symbolConstructor = Id oneSortSymbolRawName :: Id Object
-                , symbolParams = [objectSortVariable]
+        asSentence
+            (SentenceSymbol
+                { sentenceSymbolSymbol = Symbol
+                    { symbolConstructor = Id oneSortSymbolRawName
+                    , symbolParams = [objectSortVariable]
+                    }
+                , sentenceSymbolSorts = [anotherObjectSort2]
+                , sentenceSymbolResultSort = objectSort
+                , sentenceSymbolAttributes =
+                    Attributes []
                 }
-            , sentenceSymbolSorts = [anotherObjectSort2]
-            , sentenceSymbolResultSort = objectSort
-            , sentenceSymbolAttributes =
-                Attributes [] :: KoreAttributes
-            }
+            :: KoreSentenceSymbol Object)
 
 dummyVariableAndSentences :: NamePrefix -> (Variable Object, [KoreSentence])
 dummyVariableAndSentences (NamePrefix namePrefix) =

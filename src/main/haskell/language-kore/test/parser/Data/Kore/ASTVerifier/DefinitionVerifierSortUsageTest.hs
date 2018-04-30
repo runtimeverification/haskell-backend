@@ -184,12 +184,14 @@ definitionVerifierSortUsageTests =
                 { testConfigurationDescription = "Correct sort count"
                 , testConfigurationAdditionalSentences =
                     [ simpleSortSentence additionalSortName
-                    , asSentence SentenceSort
-                        { sentenceSortName = Id "UnarySort" :: Id Object
-                        , sentenceSortParameters = [ SortVariable (Id "svn") ]
-                        , sentenceSortAttributes =
-                            Attributes [] :: KoreAttributes
-                        }
+                    , asSentence
+                        (SentenceSort
+                            { sentenceSortName = Id "UnarySort"
+                            , sentenceSortParameters = [ SortVariable (Id "svn") ]
+                            , sentenceSortAttributes =
+                                Attributes []
+                            }
+                        :: KoreSentenceSort)
                     ]
                 , testConfigurationAdditionalSortVariables = []
                 , testConfigurationCaseBasedConfiguration =
@@ -214,12 +216,14 @@ definitionVerifierSortUsageTests =
                 { testConfigurationDescription = "Wrong sort count"
                 , testConfigurationAdditionalSentences =
                     [ simpleSortSentence additionalSortName
-                    , asSentence SentenceSort
-                        { sentenceSortName = Id "UnarySort" :: Id Object
-                        , sentenceSortParameters = [ SortVariable (Id "svn") ]
-                        , sentenceSortAttributes =
-                            Attributes [] :: KoreAttributes
-                        }
+                    , asSentence
+                        (SentenceSort
+                            { sentenceSortName = Id "UnarySort"
+                            , sentenceSortParameters = [ SortVariable (Id "svn") ]
+                            , sentenceSortAttributes =
+                                Attributes []
+                            }
+                        :: KoreSentenceSort)
                     ]
                 , testConfigurationAdditionalSortVariables = []
                 , testConfigurationCaseBasedConfiguration =
@@ -885,15 +889,16 @@ unfilteredTestExamplesForMetaSort (TestedSort sort) =
                     (ModuleName "MODULE")
                     (
                         (asSentence
-                            SentenceSort
+                            (SentenceSort
                                 { sentenceSortName =
-                                    Id "additionalSort" :: Id Object
+                                    Id "additionalSort"
                                 , sentenceSortParameters = []
                                 , sentenceSortAttributes = Attributes
                                     [ simpleExistsUnifiedPattern
                                         (VariableName "v") sort
                                     ]
                                 }
+                            :: KoreSentenceSort)
                         )
                     : additionalSentences
                     )

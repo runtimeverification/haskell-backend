@@ -492,17 +492,19 @@ liftTests =
                     }
                 ]
                 (liftSentence
-                    (asSentence SentenceAlias
-                        { sentenceAliasAlias = Alias
-                            { aliasConstructor = Id "#alias" :: Id Meta
-                            , aliasParams = []
+                    (asSentence
+                        (SentenceAlias
+                            { sentenceAliasAlias = Alias
+                                { aliasConstructor = Id "#alias"
+                                , aliasParams = []
+                                }
+                            , sentenceAliasSorts = []
+                            , sentenceAliasResultSort =
+                                    SortVariableSort (SortVariable (Id "#a"))
+                            , sentenceAliasAttributes =
+                                Attributes []
                             }
-                        , sentenceAliasSorts = []
-                        , sentenceAliasResultSort =
-                                SortVariableSort (SortVariable (Id "#a"))
-                        , sentenceAliasAttributes =
-                            Attributes [] :: KoreAttributes
-                        }
+                        :: KoreSentenceAlias Meta)
                     )
                 )
             )
@@ -511,17 +513,19 @@ liftTests =
                 [ SentenceSymbolSentence (symbol_ "#`alias" [] patternMetaSort)
                 ]
                 (liftSentence
-                    (asSentence SentenceAlias
-                        { sentenceAliasAlias = Alias
-                            { aliasConstructor = Id "alias" :: Id Object
-                            , aliasParams = []
+                    (asSentence
+                        (SentenceAlias
+                            { sentenceAliasAlias = Alias
+                                { aliasConstructor = Id "alias"
+                                , aliasParams = []
+                                }
+                            , sentenceAliasSorts = []
+                            , sentenceAliasResultSort =
+                                    SortVariableSort (SortVariable (Id "a"))
+                            , sentenceAliasAttributes =
+                                Attributes []
                             }
-                        , sentenceAliasSorts = []
-                        , sentenceAliasResultSort =
-                                SortVariableSort (SortVariable (Id "a"))
-                        , sentenceAliasAttributes =
-                            Attributes [] :: KoreAttributes
-                        }
+                        :: KoreSentenceAlias Object)
                     )
                 )
             )
@@ -685,18 +689,20 @@ liftTests =
                     }
                 ]
                 (liftSentence
-                    (asSentence SentenceSymbol
-                        { sentenceSymbolSymbol = Symbol
-                            { symbolConstructor = Id "alias" :: Id Object
-                            , symbolParams = [SortVariable (Id "a")]
+                    (asSentence
+                        (SentenceSymbol
+                            { sentenceSymbolSymbol = Symbol
+                                { symbolConstructor = Id "alias"
+                                , symbolParams = [SortVariable (Id "a")]
+                                }
+                            , sentenceSymbolSorts =
+                                [ SortVariableSort (SortVariable (Id "a")) ]
+                            , sentenceSymbolResultSort =
+                                    SortVariableSort (SortVariable (Id "a"))
+                            , sentenceSymbolAttributes =
+                                Attributes []
                             }
-                        , sentenceSymbolSorts =
-                            [ SortVariableSort (SortVariable (Id "a")) ]
-                        , sentenceSymbolResultSort =
-                                SortVariableSort (SortVariable (Id "a"))
-                        , sentenceSymbolAttributes =
-                            Attributes [] :: KoreAttributes
-                        }
+                        :: KoreSentenceSymbol Object)
                     )
                 )
             )
@@ -714,17 +720,19 @@ liftTests =
                     }
                 ]
                 (liftSentence
-                    (asSentence SentenceSymbol
-                        { sentenceSymbolSymbol = Symbol
-                            { symbolConstructor = Id "#symbol" :: Id Meta
-                            , symbolParams = []
+                    (asSentence
+                        (SentenceSymbol
+                            { sentenceSymbolSymbol = Symbol
+                                { symbolConstructor = Id "#symbol"
+                                , symbolParams = []
+                                }
+                            , sentenceSymbolSorts = []
+                            , sentenceSymbolResultSort =
+                                    SortVariableSort (SortVariable (Id "#a"))
+                            , sentenceSymbolAttributes =
+                                Attributes []
                             }
-                        , sentenceSymbolSorts = []
-                        , sentenceSymbolResultSort =
-                                SortVariableSort (SortVariable (Id "#a"))
-                        , sentenceSymbolAttributes =
-                            Attributes [] :: KoreAttributes
-                        }
+                        :: KoreSentenceSymbol Meta)
                     )
                 )
             )
@@ -812,12 +820,14 @@ liftTests =
                     }
                 ]
                 (liftSentence
-                    (asSentence SentenceSort
-                        { sentenceSortName = Id "List" :: Id Object
-                        , sentenceSortParameters = [SortVariable (Id "a")]
-                        , sentenceSortAttributes =
-                            Attributes [] :: KoreAttributes
-                        }
+                    (asSentence
+                        (SentenceSort
+                            { sentenceSortName = Id "List"
+                            , sentenceSortParameters = [SortVariable (Id "a")]
+                            , sentenceSortAttributes =
+                                Attributes []
+                            }
+                        :: KoreSentenceSort)
                     )
                 )
             )
