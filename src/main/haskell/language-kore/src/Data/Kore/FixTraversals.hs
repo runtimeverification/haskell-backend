@@ -52,7 +52,7 @@ Briefly, given a fixed object @p@ and functions @preprocess@ and @postprocess@,
 1. calls @preprocess@ on @p@ and,
 2. if preprocess returns @Left result@, then it returns that
 else, assume preprocess returns @Right (p', trans)@
-3.1 applies 'koreTopDownVisitorM' on the direct children of @p'@
+3.1 applies 'patternTopDownVisitorM' on the direct children of @p'@
 3.2 applies @trans@ on the results of (3.1)
 3.3 applies @postprocess@ on the @p''@ obtained from @p'@ by replacing
     its direct children with the corresponding results from (3.2)

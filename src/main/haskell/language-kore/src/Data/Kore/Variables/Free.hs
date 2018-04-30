@@ -14,45 +14,31 @@ Stability   : experimental
 Portability : portable
 
 -}
-module Data.Kore.Variables.Free ( TermWithVariablesClass(freeVariables)
+module Data.Kore.Variables.Free ( freeVariables
                                 ) where
 
-import           Data.Fix                   (cata)
+import           Data.Fix                   (Fix)
 import           Data.Foldable              (fold)
 import qualified Data.Set                   as Set
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTTraversals
-import           Data.Kore.MetaML.AST
 
 {-| 'TermWithVariableClass' links a @term@ type with a @var@ type and
 provides 'freeVariables' for extracting the set of free variables of a term
 -}
-class TermWithVariablesClass term var | term -> var where
-    freeVariables :: term -> Set.Set var
-
-instance
-    ( Ord (variable Meta)
-    , Ord (variable Object)
-    ) => TermWithVariablesClass (KorePattern variable) (Unified variable)
-  where
-    freeVariables = koreBottomUpVisitor freeVarsVisitor
-      where
-        freeVarsVisitor (VariablePattern v) = Set.singleton (asUnified v)
-        freeVarsVisitor (ExistsPattern e) =
-            Set.delete (asUnified (existsVariable e)) (existsChild e)
-        freeVarsVisitor (ForallPattern f) =
-            Set.delete (asUnified (forallVariable f)) (forallChild f)
-        freeVarsVisitor p = fold p  -- default rule
-
-instance TermWithVariablesClass CommonMetaPattern (Variable Meta) where
-    freeVariables = cata freeVarsVisitor
-      where
-        freeVarsVisitor (VariablePattern v) = Set.singleton v
-        freeVarsVisitor (ExistsPattern e) =
-            Set.delete (existsVariable e) (existsChild e)
-        freeVarsVisitor (ForallPattern e) =
-            Set.delete (forallVariable e) (forallChild e)
-        freeVarsVisitor p = fold p  -- default rule
+freeVariables
+    :: ( UnifiedPatternInterface pat
+       , Functor (pat var)
+       , Ord (var Object)
+       , Ord (var Meta))
+    => Fix (pat var) -> Set.Set (Unified var)
+freeVariables = patternBottomUpVisitor freeVarsVisitor
+    where
+    freeVarsVisitor (VariablePattern v) = Set.singleton (asUnified v)
+    freeVarsVisitor (ExistsPattern e) =
+        Set.delete (asUnified (existsVariable e)) (existsChild e)
+    freeVarsVisitor (ForallPattern f) =
+        Set.delete (asUnified (forallVariable f)) (forallChild f)
+    freeVarsVisitor p = fold p  -- default rule

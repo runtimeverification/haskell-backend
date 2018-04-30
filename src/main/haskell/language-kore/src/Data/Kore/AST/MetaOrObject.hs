@@ -12,6 +12,7 @@ module Data.Kore.AST.MetaOrObject
     , Unified (..)
     , asUnified
     , transformUnified
+    , transformUnifiedM
     , mapUnified
     , sequenceUnified
     , toProxy
@@ -85,6 +86,12 @@ transformUnified
     :: (forall level . MetaOrObject level => thing level -> b)
     -> (Unified thing -> b)
 transformUnified f = applyUnified f f
+
+transformUnifiedM
+    :: Monad m
+    => (forall level . MetaOrObject level => m (thing level) -> m b)
+    -> (m (Unified thing) -> m b)
+transformUnifiedM f mut = mut >>= transformUnified (f . return)
 
 mapUnified
     :: (forall level . MetaOrObject level => thing1 level -> thing2 level)

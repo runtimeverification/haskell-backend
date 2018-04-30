@@ -102,11 +102,13 @@ wrapAndQuantify s p var =
         )
 
 checkUnique
-    :: Set.Set (Variable Meta) -> Set.Set (Variable Meta)
-checkUnique variables =
+    :: Set.Set (Unified Variable) -> Set.Set (Variable Meta)
+checkUnique unifiedVariables =
     case checkUniqueEither (Set.toList variables) Map.empty of
         Right _  -> variables
         Left err -> error err
+  where
+    variables = Set.map (\ (UnifiedMeta var) -> var) unifiedVariables
 
 checkUniqueEither
     :: [Variable Meta]

@@ -37,7 +37,7 @@ class TermWithSortVariablesClass term var where
 
 instance TermWithSortVariablesClass CommonKorePattern UnifiedSortVariable
   where
-    sortVariables = koreBottomUpVisitor sortVarsVisitor
+    sortVariables = patternBottomUpVisitor sortVarsVisitor
       where
         sortVarsVisitor p =
             addPatternSortVariables p (addSortVariables asUnified) (fold p)

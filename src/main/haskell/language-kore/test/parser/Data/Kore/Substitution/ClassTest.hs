@@ -19,7 +19,9 @@ import           Data.Kore.Substitution.TestCommon
 type UnifiedPatternSubstitution =
     S.Substitution (Unified Variable) CommonKorePattern
 
-instance PatternSubstitutionClass Variable UnifiedPatternSubstitution IntCounter
+instance
+    PatternSubstitutionClass
+        S.Substitution Variable UnifiedPattern IntCounter
   where
 
 testSubstitute

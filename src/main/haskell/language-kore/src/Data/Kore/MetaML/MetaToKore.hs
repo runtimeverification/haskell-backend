@@ -28,7 +28,7 @@ patternMetaToKore :: CommonMetaPattern -> CommonKorePattern
 patternMetaToKore = cata asKorePattern
 
 patternKoreToMeta :: CommonKorePattern -> MetaMLPattern Variable
-patternKoreToMeta = koreBottomUpVisitor extractMetaPattern
+patternKoreToMeta = patternBottomUpVisitor extractMetaPattern
 
 extractMetaPattern
     :: MetaOrObject level

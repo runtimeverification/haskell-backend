@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Data.Kore.Substitution.List ( Substitution
@@ -7,20 +8,28 @@ module Data.Kore.Substitution.List ( Substitution
                                    , toList
                                    ) where
 
+import           Data.Fix
 import           Data.List                         (nubBy)
 
+import           Data.Kore.AST.Common
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Datastructures.MapClass
 import           Data.Kore.Substitution.Class
 import           Data.Kore.Variables.Free
 
 -- |A very simple substitution represented as a list of pairs
-newtype Substitution v t = Substitution { getSubstitution :: [(v,t)] }
+newtype Substitution var pat = Substitution { getSubstitution :: [(var, pat)] }
 
-instance (Ord v, TermWithVariablesClass t v)
-    => SubstitutionClass (Substitution v t) v t where
+instance
+    ( UnifiedPatternInterface pat
+    , Functor (pat var)
+    , Ord (var Object)
+    , Ord (var Meta)
+    ) => SubstitutionClass Substitution (Unified var) (Fix (pat var))
+  where
     substitutionTermsFreeVars = foldMap (freeVariables . snd) . getSubstitution
 
-instance Eq v => MapClass (Substitution v t) v t where
+instance Eq v => MapClass Substitution v t where
     isEmpty = null . getSubstitution
     empty = Substitution []
     lookup v (Substitution l) = Prelude.lookup v l

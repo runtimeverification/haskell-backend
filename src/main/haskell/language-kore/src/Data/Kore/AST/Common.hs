@@ -952,6 +952,23 @@ class UnifiedPatternInterface pat where
             => Pattern level variable child -> result
            )
         -> (pat variable child -> result)
+    unifiedPatternApplyM
+        :: Monad m
+        => (forall level . MetaOrObject level
+            => m (Pattern level variable child) -> m result
+           )
+        -> (m (pat variable child) -> m result)
+    unifiedPatternTransformM
+        :: (Monad m, UnifiedPatternInterface pat)
+        => (forall level . MetaOrObject level
+            => m (Pattern level variable (Fix (pat variable)))
+            -> m (Pattern level variable (Fix (pat variable)))
+           )
+        -> m (pat variable (Fix (pat variable)))
+            -> m (pat variable (Fix (pat variable)))
+    unifiedPatternTransformM t = unifiedPatternApplyM (fmap unifyPattern . t)
+
+
 
 instance
     forall level . MetaOrObject level
@@ -966,3 +983,4 @@ instance
                 case getMetaOrObjectPatternType p of
                     IsObject -> p
     unifiedPatternApply = id
+    unifiedPatternApplyM = id

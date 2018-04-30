@@ -48,6 +48,7 @@ module Data.Kore.AST.Kore
     , UnifiedPattern (..)
     , asUnifiedPattern
     , transformUnifiedPattern
+    , transformUnifiedPatternM
     ) where
 
 import           Data.Kore.AST.Common
@@ -72,6 +73,15 @@ transformUnifiedPattern
     -> (UnifiedPattern variable a -> b)
 transformUnifiedPattern f =
     transformUnified (f . unRotate31) . getUnifiedPattern
+
+transformUnifiedPatternM
+    :: Monad m
+    => (forall level . MetaOrObject level
+        => m (Pattern level variable a) -> m b)
+    -> (m (UnifiedPattern variable a) -> m b)
+transformUnifiedPatternM f =
+    transformUnifiedM (f . fmap unRotate31) . fmap getUnifiedPattern
+
 
 deriving instance
     ( Eq child
@@ -112,6 +122,7 @@ instance
   where
     unifyPattern = asUnifiedPattern
     unifiedPatternApply = transformUnifiedPattern
+    unifiedPatternApplyM = transformUnifiedPatternM
 
 type CommonKorePattern = KorePattern Variable
 

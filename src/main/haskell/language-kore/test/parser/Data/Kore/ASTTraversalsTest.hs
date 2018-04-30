@@ -10,7 +10,7 @@ import           Data.Kore.ASTTraversals
 
 
 lhs :: CommonKorePattern -> CommonKorePattern
-lhs = koreTopDownVisitor leftImplies asKorePattern
+lhs = patternTopDownVisitor leftImplies asKorePattern
   where
     leftImplies (ImpliesPattern ip) = Left (impliesFirst ip)
     leftImplies p                   = Right p

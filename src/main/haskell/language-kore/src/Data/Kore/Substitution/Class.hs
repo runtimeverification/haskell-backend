@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Data.Kore.Substitution.Class ( SubstitutionClass (..)
                                     , PatternSubstitutionClass (..)
@@ -7,16 +8,17 @@ module Data.Kore.Substitution.Class ( SubstitutionClass (..)
 
 import           Control.Monad.Reader              (ReaderT, ask, asks, local,
                                                     runReaderT)
+import           Data.Fix
 import           Data.Hashable                     (hash)
 import           Data.Maybe                        (isJust)
 import qualified Data.Set                          as Set
 import           Prelude                           hiding (lookup)
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
+--import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
-import           Data.Kore.ASTTraversals           (koreTopDownVisitorM)
+import           Data.Kore.ASTTraversals           (patternTopDownVisitorM)
 import           Data.Kore.Datastructures.MapClass
 import           Data.Kore.Variables.Free
 import           Data.Kore.Variables.Fresh.Class
@@ -30,27 +32,29 @@ class MapClass s v t => SubstitutionClass s v t where
     This can, e.g., be used to prevent collisions when generating
     fresh variables.
     -}
-    substitutionTermsFreeVars :: s -> Set.Set v
+    substitutionTermsFreeVars :: s v t -> Set.Set v
 
 {-'SubstitutionWithFreeVars' is a substitution which can hold more free
 variables than its terms can.  'freeVars' is used to track the free variables
 in a substitution context.
 -}
-data SubstitutionAndQuantifiedVars s var = SubstitutionAndQuantifiedVars
-    { substitution   :: s
-    , quantifiedVars :: Set.Set (Unified var)
+data SubstitutionAndQuantifiedVars s var pat = SubstitutionAndQuantifiedVars
+    { substitution   :: s var pat
+    , quantifiedVars :: Set.Set var
     }
 
+type FixedSubstitutionAndQuantifiedVars s var pat =
+    SubstitutionAndQuantifiedVars s (Unified var) (Fix (pat var))
+
 addFreeVariable
-    :: (Ord (var Object), Ord (var Meta))
-    => Unified var
-    -> SubstitutionAndQuantifiedVars s var
-    -> SubstitutionAndQuantifiedVars s var
+    :: (Ord var)
+    => var
+    -> SubstitutionAndQuantifiedVars s var pat
+    -> SubstitutionAndQuantifiedVars s var pat
 addFreeVariable v s = s { quantifiedVars = v `Set.insert` quantifiedVars s }
 
-instance (SubstitutionClass s (Unified var) (KorePattern var))
-    => MapClass (SubstitutionAndQuantifiedVars s var)
-        (Unified var) (KorePattern var)
+instance (SubstitutionClass s var pat)
+    => MapClass (SubstitutionAndQuantifiedVars s) var pat
   where
     isEmpty = isEmpty . substitution
     empty = SubstitutionAndQuantifiedVars
@@ -62,9 +66,8 @@ instance (SubstitutionClass s (Unified var) (KorePattern var))
     insert v t s =
         s { substitution = insert v t (substitution s) }
 
-instance (SubstitutionClass s (Unified var) (KorePattern var))
-    => SubstitutionClass (SubstitutionAndQuantifiedVars s var)
-        (Unified var) (KorePattern var)
+instance (SubstitutionClass s var pat)
+    => SubstitutionClass (SubstitutionAndQuantifiedVars s) var pat
   where
     substitutionTermsFreeVars = substitutionTermsFreeVars . substitution
 
@@ -74,43 +77,51 @@ class Hashable var where
 instance Hashable Variable where
     getVariableHash = hash . getId . variableName
 
-{-|'PatternSubstitutionClass' defines a generic 'substitute' function
-which given a 'UnifiedPattern' @p@ and an @s@ of class 'SubstitutionClass',
+{-|'KoreSubstitutionClass' defines a generic 'substitute' function
+which given a 'KorePattern' @p@ and an @s@ of class 'SubstitutionClass',
 applies @s@ on @p@ in a monadic state used for generating fresh variables.
 -}
-class ( SubstitutionClass s (Unified var) (KorePattern var)
+class ( UnifiedPatternInterface pat
+      , Traversable (pat var)
+      , SubstitutionClass s (Unified var) (Fix (pat var))
       , FreshVariablesClass m var
       , Ord (var Meta)
       , Ord (var Object)
       , Hashable var
       )
-    => PatternSubstitutionClass var s m
+    => PatternSubstitutionClass s var pat m
   where
     substitute
-        :: KorePattern var
-        -> s
-        -> m (KorePattern var)
+        :: Fix (pat var)
+        -> s (Unified var) (Fix (pat var))
+        -> m (Fix (pat var))
     substitute p s = runReaderT (substituteM p) SubstitutionAndQuantifiedVars
         { substitution = s
         , quantifiedVars = freeVariables p
         }
 
 substituteM
-    :: PatternSubstitutionClass var s m
-    => KorePattern var
-    -> ReaderT (SubstitutionAndQuantifiedVars s var) m (KorePattern var)
-substituteM = koreTopDownVisitorM substitutePreprocess substituteVariable
+    :: PatternSubstitutionClass s var pat m
+    => Fix (pat var)
+    -> ReaderT
+        (SubstitutionAndQuantifiedVars s (Unified var) (Fix (pat var)))
+        m
+        (Fix (pat var))
+substituteM = patternTopDownVisitorM substitutePreprocess substituteVariable
 
 substituteVariable
-    :: (PatternSubstitutionClass var s m, MetaOrObject level)
-    => Pattern level var (KorePattern var)
-    -> ReaderT (SubstitutionAndQuantifiedVars s var) m (KorePattern var)
+    :: (PatternSubstitutionClass s var pat m, MetaOrObject level)
+    => Pattern level var (Fix (pat var))
+    -> ReaderT
+        (SubstitutionAndQuantifiedVars s (Unified var) (Fix (pat var)))
+        m
+        (Fix (pat var))
 substituteVariable (VariablePattern v) = do
     subst <- asks substitution
     case lookup (asUnified v) subst of
         Just up -> return up
-        Nothing -> return $ asKorePattern (VariablePattern v)
-substituteVariable p = return $ asKorePattern p
+        Nothing -> return . Fix $ unifyPattern (VariablePattern v)
+substituteVariable p = return . Fix $ unifyPattern p
 
 {-
 * if the substitution is empty, return the pattern unchanged;
@@ -118,22 +129,25 @@ substituteVariable p = return $ asKorePattern p
 * if the pattern is not a binder recurse.
 -}
 substitutePreprocess
-    :: (PatternSubstitutionClass var s m, MetaOrObject level)
-    => Pattern level var (KorePattern var)
-    -> ReaderT (SubstitutionAndQuantifiedVars s var)
-        m (Either
-            (KorePattern var)
-            ( Pattern level var (KorePattern var)
-            , ReaderT (SubstitutionAndQuantifiedVars s var) m (KorePattern var)
+    :: (PatternSubstitutionClass s var pat m, MetaOrObject level)
+    => Pattern level var (Fix (pat var))
+    -> ReaderT (FixedSubstitutionAndQuantifiedVars s var pat)
+        m
+        (Either
+            (Fix (pat var))
+            ( Pattern level var (Fix (pat var))
+            , ReaderT
+                (FixedSubstitutionAndQuantifiedVars s var pat) m (Fix (pat var))
                 -> ReaderT
-                    (SubstitutionAndQuantifiedVars s var)
-                    m (KorePattern var)
+                    (FixedSubstitutionAndQuantifiedVars s var pat)
+                    m
+                    (Fix (pat var))
             )
         )
 substitutePreprocess p
   = do
     s <- ask
-    if isEmpty s then return $ Left (asKorePattern p)
+    if isEmpty s then return $ Left (Fix (unifyPattern p))
     else case p of
         ExistsPattern e -> binderPatternSubstitutePreprocess s e
         ForallPattern f -> binderPatternSubstitutePreprocess s f
@@ -149,17 +163,18 @@ substitutePreprocess p
 -}
 binderPatternSubstitutePreprocess
     :: ( MLBinderPatternClass q
-       , PatternSubstitutionClass var s m
+       , PatternSubstitutionClass s var pat m
        , MetaOrObject level)
-    => SubstitutionAndQuantifiedVars s var
-    -> q level var (KorePattern var)
-    -> ReaderT (SubstitutionAndQuantifiedVars s var)
+    => FixedSubstitutionAndQuantifiedVars s var pat
+    -> q level var (Fix (pat var))
+    -> ReaderT (FixedSubstitutionAndQuantifiedVars s var pat)
         m (Either
-            (KorePattern var)
-            ( Pattern level var (KorePattern var)
-            , ReaderT (SubstitutionAndQuantifiedVars s var) m (KorePattern var)
-                -> ReaderT (SubstitutionAndQuantifiedVars s var)
-                    m (KorePattern var)
+            (Fix (pat var))
+            ( Pattern level var (Fix (pat var))
+            , ReaderT
+                (FixedSubstitutionAndQuantifiedVars s var pat) m (Fix (pat var))
+                -> ReaderT (FixedSubstitutionAndQuantifiedVars s var pat)
+                    m (Fix (pat var))
             )
         )
 binderPatternSubstitutePreprocess s q
@@ -172,14 +187,15 @@ binderPatternSubstitutePreprocess s q
             . getVariableHash
             )
         substituteBinderBodyWith var'
-            (insert unifiedVar (variableToKorePattern var'))
-    | isJust (lookup unifiedVar s) = substituteFreeBinderBodyWith (delete unifiedVar)
+            (insert unifiedVar (variableToPattern var'))
+    | isJust (lookup unifiedVar s) =
+        substituteFreeBinderBodyWith (delete unifiedVar)
     | otherwise = substituteFreeBinderBodyWith id
   where
     sort = getBinderPatternSort q
     var = getBinderPatternVariable q
     unifiedVar = asUnified var
-    variableToKorePattern = asKorePattern . VariablePattern
+    variableToPattern = Fix . unifyPattern . VariablePattern
     pat = getBinderPatternChild q
     substitutionFreeVars = substitutionTermsFreeVars (delete unifiedVar s)
     allFreeVars = substitutionFreeVars `Set.union` quantifiedVars s
