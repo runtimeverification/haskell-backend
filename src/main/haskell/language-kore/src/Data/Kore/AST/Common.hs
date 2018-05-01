@@ -938,49 +938,43 @@ dummySort proxy =
             )
         )
 
+{-|'getMetaOrObjectPatternType' is a helper function useful to determine
+whether a 'Pattern' is 'Object' or 'Meta'.
+-}
 getMetaOrObjectPatternType
     :: MetaOrObject level
     => Pattern level variable child -> IsMetaOrObject level
 getMetaOrObjectPatternType _ = isMetaOrObject (Proxy :: Proxy level)
 
+{-|The 'UnifiedPatternInterface' class provides a common interface for
+algorithms providing common functionality for 'KorePattern' and 'PurePattern'.
+-}
 class UnifiedPatternInterface pat where
+    unifyMetaPattern :: Pattern Meta variable child -> pat variable child
+    unifyMetaPattern = unifyPattern
+    unifyObjectPattern :: Pattern Object variable child -> pat variable child
+    unifyObjectPattern = unifyPattern
     unifyPattern
         :: MetaOrObject level
         => Pattern level variable child -> pat variable child
+    unifyPattern p =
+        case getMetaOrObjectPatternType p of
+            IsMeta   -> unifyMetaPattern p
+            IsObject -> unifyObjectPattern p
     unifiedPatternApply
         :: (forall level . MetaOrObject level
             => Pattern level variable child -> result
            )
         -> (pat variable child -> result)
-    unifiedPatternApplyM
-        :: Monad m
-        => (forall level . MetaOrObject level
-            => m (Pattern level variable child) -> m result
-           )
-        -> (m (pat variable child) -> m result)
-    unifiedPatternTransformM
-        :: (Monad m, UnifiedPatternInterface pat)
-        => (forall level . MetaOrObject level
-            => m (Pattern level variable (Fix (pat variable)))
-            -> m (Pattern level variable (Fix (pat variable)))
-           )
-        -> m (pat variable (Fix (pat variable)))
-            -> m (pat variable (Fix (pat variable)))
-    unifiedPatternTransformM t = unifiedPatternApplyM (fmap unifyPattern . t)
-
-
 
 instance
     forall level . MetaOrObject level
     => UnifiedPatternInterface (Pattern level)
   where
-    unifyPattern p =
+    unifyMetaPattern p =
         case isMetaOrObject (Proxy :: Proxy level) of
-            IsMeta   ->
-                case getMetaOrObjectPatternType p of
-                    IsMeta   -> p
-            IsObject ->
-                case getMetaOrObjectPatternType p of
-                    IsObject -> p
+            IsMeta   -> p
+    unifyObjectPattern p =
+        case isMetaOrObject (Proxy :: Proxy level) of
+            IsObject   -> p
     unifiedPatternApply = id
-    unifiedPatternApplyM = id

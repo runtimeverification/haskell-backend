@@ -1,6 +1,18 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
+{-|
+Module      : Data.Kore.AST.PureML
+Description : Specifies the "pure" version of patterns, sentences, modules, and
+              definition, which can be specialized to 'Object'-only and
+              'Meta'-only objects.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : traian.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : portable
+
+-}
 module Data.Kore.AST.PureML where
 
 import           Data.Fix
@@ -17,18 +29,23 @@ asPurePattern
     :: Pattern level var (PureMLPattern level var) -> PureMLPattern level var
 asPurePattern = Fix
 
--- |'MetaAttributes' is the 'Meta'-only version of 'Attributes'
+-- |'PureAttributes' is the pure (fixed-@level@) version of 'Attributes'
 type PureAttributes level = Attributes (Pattern level) Variable
 
+-- |'PureSentenceAxiom' is the pure (fixed-@level@) version of 'SentenceAxiom'
 type PureSentenceAxiom level =
     SentenceAxiom (SortVariable level) (Pattern level) Variable
+-- |'PureSentenceAlias' is the pure (fixed-@level@) version of 'SentenceAlias'
 type PureSentenceAlias level =
     SentenceAlias level (Pattern level) Variable
+-- |'PureSentenceSymbol' is the pure (fixed-@level@) version of 'SentenceSymbol'
 type PureSentenceSymbol level =
     SentenceSymbol level (Pattern level) Variable
+-- |'PureSentenceImport' is the pure (fixed-@level@) version of 'SentenceImport'
 type PureSentenceImport level =
     SentenceImport (Pattern level) Variable
 
+-- |'PureSentence' is the pure (fixed-@level@) version of 'Sentence'
 type PureSentence level =
     Sentence level (SortVariable level) (Pattern level) Variable
 
@@ -38,11 +55,11 @@ instance AsSentence (PureSentence level) (PureSentenceAlias level) where
 instance AsSentence (PureSentence level) (PureSentenceSymbol level) where
     asSentence = SentenceSymbolSentence
 
--- |'PureModule' is the pure version of 'Module', with a fixed @level@.
+-- |'PureModule' is the pure (fixed-@level@) version of 'Module'
 type PureModule level =
     Module (Sentence level) (SortVariable level) (Pattern level) Variable
 
--- |'PureDefinition' is the pure version of 'Definition', with a fixed @level@.
+-- |'PureDefinition' is the pure (fixed-@level@) version of 'Definition'
 type PureDefinition level =
     Definition
         (Sentence level) (SortVariable level) (Pattern level) Variable

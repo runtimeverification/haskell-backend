@@ -5,6 +5,17 @@
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE StandaloneDeriving   #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-|
+Module      : Data.Kore.AST.MetaOrObject
+Description : Specifies the 'Meta', 'Object', and 'Unified' types, and common
+              functionality for them
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : traian.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : portable
+
+-}
 module Data.Kore.AST.MetaOrObject
     ( Meta (..)
     , Object (..)
@@ -12,7 +23,6 @@ module Data.Kore.AST.MetaOrObject
     , Unified (..)
     , asUnified
     , transformUnified
-    , transformUnifiedM
     , mapUnified
     , sequenceUnified
     , toProxy
@@ -63,6 +73,9 @@ instance MetaOrObject Meta where
 instance MetaOrObject Object where
     isMetaOrObject _ = IsObject
 
+{-|'Unified' provides a means to group together objects which are either
+'Meta' or 'Object'.
+-}
 data Unified thing
     = UnifiedObject !(thing Object)
     | UnifiedMeta !(thing Meta)
@@ -75,6 +88,10 @@ deriving instance (EqMetaOrObject thing) => Eq (Unified thing)
 deriving instance (OrdMetaOrObject thing) => Ord (Unified thing)
 deriving instance (ShowMetaOrObject thing) => Show (Unified thing)
 
+{-|Given a function transforming objects of 'Meta' type and another transforming
+objects of 'Object' type, 'applyUnified' builds the corresponding direct sum
+function combining their effects to transform an 'Unified' object.
+-}
 applyUnified
     :: (thing Meta -> b)
     -> (thing Object -> b)
@@ -82,23 +99,33 @@ applyUnified
 applyUnified metaT _ (UnifiedMeta x)     = metaT x
 applyUnified _ objectT (UnifiedObject x) = objectT x
 
+{-|Given a function transforming objects of any 'level', 'transformUnified'
+"lifts" the function to apply on 'Unified' objects.
+-}
 transformUnified
     :: (forall level . MetaOrObject level => thing level -> b)
     -> (Unified thing -> b)
 transformUnified f = applyUnified f f
 
-transformUnifiedM
-    :: Monad m
-    => (forall level . MetaOrObject level => m (thing level) -> m b)
-    -> (m (Unified thing) -> m b)
-transformUnifiedM f mut = mut >>= transformUnified (f . return)
+{-|Given a function transforming @thing1 level@ objects into @thing2 level@ ones,
+it builds one transforming 'Unified' @thing1@ objects into 'Unified' @thing2@
+ones.
 
+Its functionality is akin fo that of 'Functor.fmap'
+-}
 mapUnified
     :: (forall level . MetaOrObject level => thing1 level -> thing2 level)
     -> (Unified thing1 -> Unified thing2)
 mapUnified f (UnifiedObject o) = UnifiedObject (f o)
 mapUnified f (UnifiedMeta o)   = UnifiedMeta (f o)
 
+{-|Given a function transforming @thing1 level@ objects into an action
+producing @thing2 level@ objects,
+it builds one transforming 'Unified' @thing1@ objects into
+actions procuding 'Unified' @thing2@ objects.
+
+Its functionality is akin fo that of 'Applicative.sequence'
+-}
 sequenceUnified
     :: Applicative a
     => (forall level . MetaOrObject level => thing1 level -> a (thing2 level))
@@ -106,6 +133,9 @@ sequenceUnified
 sequenceUnified f (UnifiedObject o) = UnifiedObject <$> f o
 sequenceUnified f (UnifiedMeta o)   = UnifiedMeta <$> f o
 
+{-|'asUnified' takes an arbitrary 'Meta' or 'Object' @thing@ and transforms it
+into the corresponding 'Unified' @thing@.
+-}
 asUnified
     :: MetaOrObject level => thing level -> Unified thing
 asUnified x = case isMetaOrObject x of

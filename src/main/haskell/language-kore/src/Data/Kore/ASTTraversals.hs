@@ -14,7 +14,6 @@ module Data.Kore.ASTTraversals ( patternBottomUpVisitor
                                , patternBottomUpVisitorM
                                , patternTopDownVisitor
                                , patternTopDownVisitorM
-                               , patternTopDownTransformerM
                                ) where
 
 
@@ -86,53 +85,6 @@ patternTopDownVisitorM preprocess postprocess =
                 Left r       -> return (Left r)
                 Right (p, t) -> return (Right (unifyPattern p, t))
             )
-
-patternTopDownTransformerM
-    :: (Monad m, UnifiedPatternInterface pat, Traversable (pat variable))
-    => (forall level . MetaOrObject level
-        => Pattern level variable (Fix (pat variable))
-        -> m
-            (Either
-                ( Pattern level variable (Fix (pat variable)))
-                ( Pattern level variable (Fix (pat variable))
-                , m (pat variable (Fix (pat variable)))
-                    -> m (pat variable (Fix (pat variable)))
-                )
-            )
-       )
-    -> (forall level . MetaOrObject level
-        => Pattern level variable (Fix (pat variable))
-        -> m (Pattern level variable (Fix (pat variable))))
-    -> (Fix (pat variable) -> m (Fix (pat variable)))
-patternTopDownTransformerM preTransform postTransform =
-    fixTopDownTransformerM fixPreTransform fixPostTransform
-  where
-    {-
-    fixPreTransform
-        :: (pat variable (Fix (pat variable))
-        -> m
-            (Either
-                (pat variable (Fix (pat variable)))
-                ( pat variable (Fix (pat variable))
-                , m (pat variable (Fix (pat variable)))
-                    -> m (pat variable (Fix (pat variable))))
-            )
-    -}
-    fixPreTransform =
-        unifiedPatternApply
-            (preTransform
-            >=>
-            \case
-                Left p -> return (Left (unifyPattern p))
-                Right (p, t) -> return (Right (unifyPattern p, t))
-            )
-    {-
-    fixPostTransform
-        :: pat variable (Fix (pat variable))
-        -> m (pat variable (Fix (pat variable)))
-    -}
-    fixPostTransform = unifiedPatternApply (fmap unifyPattern . postTransform)
-
 
 {-|'patternBottomUpVisitorM' is the specialization of 'patternTopDownVisitorM' where
 the preprocessor function always requests the recursive visitation of its

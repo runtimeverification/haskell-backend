@@ -18,8 +18,6 @@ module Data.Kore.FixTraversals ( fixBottomUpVisitor
                                , fixBottomUpVisitorM
                                , fixTopDownVisitor
                                , fixTopDownVisitorM
-                               , fixTopDownTransformer
-                               , fixTopDownTransformerM
                                ) where
 
 
@@ -74,33 +72,6 @@ fixTopDownVisitorM preprocess postprocess = self
                 traverse (f . self) p' >>= postprocess
         )
 
-{-|'fixTopDownTransformerM; is the specialization of 'fixTopDownVisitorM' to the
-case in which the purpose of the visitation is to transform the original fixed
-object to another of the same type. To ease its usage, the local transformation
-functions have as result unfixed patterns, thus matching the type of their
-input.
--}
-fixTopDownTransformerM
-    :: (Monad m, Traversable pat)
-    => (pat (Fix pat)
-        -> m
-            (Either
-                (pat (Fix pat))
-                ( pat (Fix pat) , m (pat (Fix pat)) -> m (pat (Fix pat)))
-            )
-       )
-    -> (pat (Fix pat) -> m (pat (Fix pat)))
-    -> (Fix pat -> m (Fix pat))
-fixTopDownTransformerM preTransform postTransform =
-    fixTopDownVisitorM preprocess postprocess
-  where
-    preprocess x = do
-        pre <- preTransform x
-        case pre of
-            Left p        -> return (Left (Fix p))
-            Right (p, mf) -> return (Right (p, fmap Fix . mf . fmap unFix))
-    postprocess = fmap Fix . postTransform
-
 {-|'fixBottomUpVisitorM' is the specialization of 'fixTopDownVisitorM' where the
 preprocessor function always requests the recursive visitation of its children,
 basically resulting in a bottom-up visitor given by the aggregation function.
@@ -128,22 +99,6 @@ fixTopDownVisitor preprocess postprocess = self
             Right p' -> postprocess (fmap self p')
         )
         . preprocess . unFix
-
--- |'fixTopDownTransformer' is the non-monadic version of
---  'fixTopDownTransformerM'
-fixTopDownTransformer
-    :: Functor pat
-    => (pat (Fix pat) -> Either (pat (Fix pat)) (pat (Fix pat)))
-    -> (pat (Fix pat) -> pat (Fix pat))
-    -> (Fix pat -> Fix pat)
-fixTopDownTransformer preTransform postTransform =
-    fixTopDownVisitor preprocess postprocess
-  where
-    preprocess x =
-        case preTransform x of
-            Left p  -> Left (Fix p)
-            Right p -> Right p
-    postprocess = Fix . postTransform
 
 -- |'fixBottomUpVisitor' is the non-monadic version of 'fixBottomUpVisitorM'.
 fixBottomUpVisitor
