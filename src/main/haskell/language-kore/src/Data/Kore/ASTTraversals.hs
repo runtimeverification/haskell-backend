@@ -2,7 +2,17 @@
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE Rank2Types            #-}
-{-|This module provides a specialization of the functionality described in
+{-|
+Module      : Data.Kore.ASTTraversals
+Description : Defines traversals functions for patterns of
+              `UnifiedPatternInterface` class.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : traian.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : portable
+
+This module provides a specialization of the functionality described in
 the 'Data.Kore.FixTraversals' module to the case of Kore patterns.
 
 This specialization is meant to allow the user to write the local

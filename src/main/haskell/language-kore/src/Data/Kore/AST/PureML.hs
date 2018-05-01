@@ -64,28 +64,38 @@ type PureDefinition level =
     Definition
         (Sentence level) (SortVariable level) (Pattern level) Variable
 
+-- |Given a 'String', 'groundHead' produces the head of an 'Application'
+-- corresponding to that argument.  @level@ is inferred from context.
 groundHead :: String -> SymbolOrAlias level
 groundHead ctor = SymbolOrAlias
     { symbolOrAliasConstructor = Id ctor
     , symbolOrAliasParams = []
     }
 
+-- |Given a 'String', 'groundSymbol' produces the unparameterized 'Symbol'
+-- corresponding to that argument.  @level@ is inferred from context.
 groundSymbol :: String -> Symbol level
 groundSymbol ctor = Symbol
     { symbolConstructor = Id ctor
     , symbolParams = []
     }
 
+-- |Given a head and a list of children, produces an 'ApplicationPattern'
+--  applying the given head to the children
 apply :: SymbolOrAlias level -> [child] -> Pattern level variable child
 apply patternHead patterns = ApplicationPattern Application
     { applicationSymbolOrAlias = patternHead
     , applicationChildren = patterns
     }
 
+-- |Applies the given head to the empty list of children to obtain a
+-- constant 'ApplicationPattern'
 constant
     :: SymbolOrAlias level -> Pattern level variable child
 constant patternHead = apply patternHead []
 
+-- |'CommonPurePattern' is the instantiation of 'PureMLPattern' with common
+-- 'Variable's.
 type CommonPurePattern level = PureMLPattern level Variable
 type UnFixedPureMLPattern level variable =
     Pattern level variable (PureMLPattern level variable)

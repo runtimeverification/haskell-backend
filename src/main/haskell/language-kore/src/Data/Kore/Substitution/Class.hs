@@ -1,7 +1,17 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-|
+Module      : Data.Kore.Substitution.Class
+Description : Defines basic interfaces and main functionality needed
+              to implement substitution for an 'UnifiedPatternInterface'.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : traian.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : portable
+
+-}
 module Data.Kore.Substitution.Class ( SubstitutionClass (..)
                                     , PatternSubstitutionClass (..)
                                     ) where
@@ -15,7 +25,6 @@ import qualified Data.Set                          as Set
 import           Prelude                           hiding (lookup)
 
 import           Data.Kore.AST.Common
---import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
 import           Data.Kore.ASTTraversals           (patternTopDownVisitorM)
@@ -34,9 +43,9 @@ class MapClass s v t => SubstitutionClass s v t where
     -}
     substitutionTermsFreeVars :: s v t -> Set.Set v
 
-{-'SubstitutionWithFreeVars' is a substitution which can hold more free
-variables than its terms can.  'freeVars' is used to track the free variables
-in a substitution context.
+{-'SubstitutionAndQuantifiedVars' is a substitution which can hold more free
+variables than its terms can.  'quantifiedVars' is used to track the free
+variables in a substitution context.
 -}
 data SubstitutionAndQuantifiedVars s var pat = SubstitutionAndQuantifiedVars
     { substitution   :: s var pat
@@ -77,9 +86,10 @@ class Hashable var where
 instance Hashable Variable where
     getVariableHash = hash . getId . variableName
 
-{-|'KoreSubstitutionClass' defines a generic 'substitute' function
-which given a 'KorePattern' @p@ and an @s@ of class 'SubstitutionClass',
-applies @s@ on @p@ in a monadic state used for generating fresh variables.
+{-|'PatternSubstitutionClass' defines a generic 'substitute' function
+which given a @p@ of the 'UnifiedPatternInterface' class
+and an @s@ of 'SubstitutionClass', applies @s@ on @p@ in a monadic state
+used for generating fresh variables.
 -}
 class ( UnifiedPatternInterface pat
       , Traversable (pat var)

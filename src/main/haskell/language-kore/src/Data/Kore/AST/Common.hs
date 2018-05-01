@@ -950,10 +950,13 @@ getMetaOrObjectPatternType _ = isMetaOrObject (Proxy :: Proxy level)
 algorithms providing common functionality for 'KorePattern' and 'PurePattern'.
 -}
 class UnifiedPatternInterface pat where
+    -- |View a 'Meta' 'Pattern' as the parameter @pat@ of the class.
     unifyMetaPattern :: Pattern Meta variable child -> pat variable child
     unifyMetaPattern = unifyPattern
+    -- |View an 'Object' 'Pattern' as the parameter @pat@ of the class.
     unifyObjectPattern :: Pattern Object variable child -> pat variable child
     unifyObjectPattern = unifyPattern
+    -- |View a 'Meta' or an 'Object' 'Pattern' as the parameter of the class.
     unifyPattern
         :: MetaOrObject level
         => Pattern level variable child -> pat variable child
@@ -961,6 +964,8 @@ class UnifiedPatternInterface pat where
         case getMetaOrObjectPatternType p of
             IsMeta   -> unifyMetaPattern p
             IsObject -> unifyObjectPattern p
+    -- |Given a function appliable on all 'Meta' or 'Object' 'Pattern's,
+    -- apply it on an object of the parameter @pat@ of the class.
     unifiedPatternApply
         :: (forall level . MetaOrObject level
             => Pattern level variable child -> result

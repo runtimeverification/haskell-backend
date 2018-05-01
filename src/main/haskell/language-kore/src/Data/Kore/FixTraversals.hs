@@ -2,7 +2,16 @@
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE Rank2Types            #-}
-{-|This module is an extension of the 'Data.Fix' module, aimed toward supporting
+{-|
+Module      : Data.Kore.ASTTraversals
+Description : Defines traversals functions for terms defined using 'Fix' points.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : traian.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : portable
+
+This module is an extension of the 'Data.Fix' module, aimed toward supporting
 visiting and transforming ASTs.  To this aim, the 'cata' and 'cataM' functions
 provided by 'Data.Fix' were rebranded to 'fixBottomUpVisitor' and
 'fixBottomUpVisitorM', as providing a "bottom-up" visiting pattern, two more

@@ -1,6 +1,17 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-|
+Module      : Data.Kore.Variables.Fresh.Class
+Description : Specifies the 'FreshVariableClass' which provides an interface for
+              generating fresh variables.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : traian.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : portable
+
+-}
 module Data.Kore.Variables.Fresh.Class where
 
 import qualified Control.Monad.State                  as State

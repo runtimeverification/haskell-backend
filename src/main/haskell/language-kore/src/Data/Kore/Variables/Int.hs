@@ -1,5 +1,16 @@
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-|
+Module      : Data.Kore.Variables.Int
+Description : Defines the 'IntVariable' class providing functionality for
+              generating variables based on intergers.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : traian.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : portable
+
+-}
 module Data.Kore.Variables.Int ( IntVariable(..)
                                      ) where
 

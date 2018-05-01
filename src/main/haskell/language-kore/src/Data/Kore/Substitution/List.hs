@@ -1,6 +1,17 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-|
+Module      : Data.Kore.Substitution.List
+Description : Defines an instance of 'SubstitutionClass' using a list of
+              variable |-> pattern pairs.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : traian.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : portable
+
+-}
 module Data.Kore.Substitution.List ( Substitution
                                    , SubstitutionClass(..)
                                    , MapClass(..)

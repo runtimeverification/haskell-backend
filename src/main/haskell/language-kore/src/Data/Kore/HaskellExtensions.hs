@@ -1,4 +1,14 @@
 {-# LANGUAGE PolyKinds #-}
+{-|
+Module      : Data.Kore.ASTTraversals
+Description : Generic functionality to circumvent some issues occuring due to
+              the order of types in Haskell.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : traian.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : portable
+-}
 module Data.Kore.HaskellExtensions where
 
 {-|'Rotate31' is a helper type useful to bring the first argument

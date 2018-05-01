@@ -35,16 +35,19 @@ of the 'Pattern' class where the level is fixed to 'Meta'.
 -}
 type MetaMLPattern variable = PureMLPattern Meta variable
 
-type SentenceMetaPattern = Pattern Meta
-
 -- |'MetaAttributes' is the 'Meta'-only version of 'Attributes'
 type MetaAttributes = PureAttributes Meta
 
+-- |'MetaSentenceAxiom' is the 'Meta'-only version of 'SentenceAxiom'
 type MetaSentenceAxiom = PureSentenceAxiom Meta
+-- |'MetaSentenceAlias' is the 'Meta'-only version of 'SentenceAlias'
 type MetaSentenceAlias = PureSentenceAlias Meta
+-- |'MetaSentenceSymbol' is the 'Meta'-only version of 'SentenceSymbol'
 type MetaSentenceSymbol = PureSentenceSymbol Meta
+-- |'MetaSentenceImport' is the 'Meta'-only version of 'SentenceImport'
 type MetaSentenceImport = PureSentenceImport Meta
 
+-- |'MetaSentence' is the 'Meta'-only version of 'Sentence'
 type MetaSentence = PureSentence Meta
 
 instance AsSentence MetaSentence MetaSentenceImport where
@@ -58,6 +61,17 @@ type MetaModule = PureModule Meta
 
 -- |'MetaDefinition' is the 'Meta'-only version of 'Definition'.
 type MetaDefinition = PureDefinition Meta
+
+-- |'CommonMetaPattern' is the instantiation of 'MetaPattern' with common
+-- 'Variable's.
+type CommonMetaPattern = MetaMLPattern Variable
+type PatternMetaType = Pattern Meta Variable CommonMetaPattern
+
+type MetaPatternStub = PatternStub Meta Variable CommonMetaPattern
+
+-- |'metaFreeVariables' collects the free variables of a 'CommonMetaPattern'.
+metaFreeVariables :: CommonMetaPattern -> Set (Variable Meta)
+metaFreeVariables = pureFreeVariables Meta
 
 nilSortListHead :: SymbolOrAlias Meta
 nilSortListHead = groundHead "#nilSortList"
@@ -118,11 +132,3 @@ symbolHead = groundHead "#symbol"
 
 applicationHead :: SymbolOrAlias Meta
 applicationHead = groundHead "#application"
-
-type CommonMetaPattern = MetaMLPattern Variable
-type PatternMetaType = Pattern Meta Variable CommonMetaPattern
-
-type MetaPatternStub = PatternStub Meta Variable CommonMetaPattern
-
-metaFreeVariables :: CommonMetaPattern -> Set (Variable Meta)
-metaFreeVariables = pureFreeVariables Meta
