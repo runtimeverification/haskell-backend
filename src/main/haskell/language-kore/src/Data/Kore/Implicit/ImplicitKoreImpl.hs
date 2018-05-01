@@ -14,7 +14,6 @@ import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.MetaML.AST
-import           Data.Kore.Variables.Free   (freeVariables)
 
 import           Data.Fix
 import           Data.Foldable              (foldl')
@@ -85,7 +84,7 @@ quantifyFreeVariables s p =
     foldl'
         (wrapAndQuantify s)
         p
-        (checkUnique (freeVariables p))
+        (checkUnique (metaFreeVariables p))
 
 wrapAndQuantify
     :: Sort Meta
@@ -102,13 +101,11 @@ wrapAndQuantify s p var =
         )
 
 checkUnique
-    :: Set.Set (Unified Variable) -> Set.Set (Variable Meta)
-checkUnique unifiedVariables =
+    :: Set.Set (Variable Meta) -> Set.Set (Variable Meta)
+checkUnique variables =
     case checkUniqueEither (Set.toList variables) Map.empty of
         Right _  -> variables
         Left err -> error err
-  where
-    variables = Set.map (\ (UnifiedMeta var) -> var) unifiedVariables
 
 checkUniqueEither
     :: [Variable Meta]

@@ -11,24 +11,20 @@ import           Data.Kore.AST.Common                   (And (..),
                                                          SymbolOrAlias (..),
                                                          Variable)
 import qualified Data.Kore.AST.Common                   as Common (Forall (..))
-import           Data.Kore.AST.Kore                     (CommonKorePattern)
-{-
-                                                         UnifiedPattern,
-                                                         UnifiedSortVariable,
-                                                         UnifiedVariable (..))
-                                                         -}
+import           Data.Kore.AST.Kore                     (CommonKorePattern,
+                                                         UnifiedPattern)
 import           Data.Kore.AST.MetaOrObject             (Meta, Unified (..))
 import           Data.Kore.ASTVerifier.PatternVerifier  (verifyPattern)
 import           Data.Kore.Error
 import           Data.Kore.IndexedModule.IndexedModule  (KoreIndexedModule)
-import           Data.Kore.MetaML.AST                   (CommonMetaPattern, SentenceMetaPattern (..))
+import           Data.Kore.MetaML.AST                   (CommonMetaPattern, SentenceMetaPattern (..),
+                                                         metaFreeVariables)
 import           Data.Kore.MetaML.MetaToKore            (patternKoreToMeta,
                                                          patternMetaToKore)
 import           Data.Kore.Substitution.Class           (PatternSubstitutionClass (..))
 import qualified Data.Kore.Substitution.List            as Substitution
 import           Data.Kore.Unparser.Unparse             (Unparse,
                                                          unparseToString)
-import           Data.Kore.Variables.Free               (TermWithVariablesClass (freeVariables))
 import           Data.Kore.Variables.Fresh.Class        (FreshVariablesClass (..))
 import           Data.Kore.Variables.Sort               (TermWithSortVariablesClass (sortVariables))
 
@@ -290,8 +286,9 @@ type MetaPatternSubstitution =
 
 instance
     PatternSubstitutionClass
+        Substitution.Substitution
         Variable
-        MetaPatternSubstitution
+        UnifiedPattern
         (Either (Error MLError))
   where
 
@@ -409,7 +406,7 @@ checkForall variable phi1 phi2 conclusion
     testFormulaEquality
         psi4 (nameInKind "psi4")
         phi2 (nameInProposition "phi2")
-    let freeVars = freeVariables phi1
+    let freeVars = metaFreeVariables phi1
     koreFailWhen (variable `Set.member` freeVars)
         "v should not occur free in phi1 in Forall(v, phi1, phi3)"
     return ()
@@ -615,7 +612,7 @@ checkPropagateExists symbol idx variable phi conclusion
         ++ show (length patterns1)
         ++ ")."
         )
-    let freeVars = freeVariables application
+    let freeVars = metaFreeVariables application
     koreFailWhen (variable `Set.member` freeVars)
         (  "v should not occur free in ("
         ++ nameInKind1 "sigma1{...}(...)"

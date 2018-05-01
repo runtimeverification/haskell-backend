@@ -1,8 +1,8 @@
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE TypeSynonymInstances   #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeSynonymInstances  #-}
 {-|
 Module      : Data.Kore.Variables.Free
 Description : Specifies the 'TermWithVariablesClass' which is meant to define
@@ -15,6 +15,7 @@ Portability : portable
 
 -}
 module Data.Kore.Variables.Free ( freeVariables
+                                , pureFreeVariables
                                 ) where
 
 import           Data.Fix                   (Fix)
@@ -42,3 +43,30 @@ freeVariables = patternBottomUpVisitor freeVarsVisitor
     freeVarsVisitor (ForallPattern f) =
         Set.delete (asUnified (forallVariable f)) (forallChild f)
     freeVarsVisitor p = fold p  -- default rule
+
+pureFreeVariables
+    :: ( UnifiedPatternInterface pat
+       , Functor (pat var)
+       , Show (var Object)
+       , Show (var Meta)
+       , Ord (var Object)
+       , Ord (var Meta)
+       , MetaOrObject level)
+    => level -> Fix (pat var) -> Set.Set (var level)
+pureFreeVariables level p =
+    case isMetaOrObject (toProxy level) of
+        IsMeta   -> metaVars `ifSetEmpty` unifiedObjectVars
+        IsObject -> objectVars `ifSetEmpty` unifiedMetaVars
+  where
+    freeVars = freeVariables p
+    isUnifiedMeta (UnifiedMeta _) = True
+    isUnifiedMeta _               = False
+    (unifiedMetaVars, unifiedObjectVars) = Set.partition isUnifiedMeta freeVars
+    metaVars = Set.map (\ (UnifiedMeta v) -> v) unifiedMetaVars
+    objectVars = Set.map (\ (UnifiedObject v) -> v) unifiedObjectVars
+
+ifSetEmpty :: Show b => a -> Set.Set b -> a
+ifSetEmpty a bs =
+    if Set.null bs
+        then a
+        else error ("Expecting empty set " ++ show bs)

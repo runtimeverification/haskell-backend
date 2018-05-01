@@ -24,6 +24,9 @@ module Data.Kore.MetaML.AST where
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
+import           Data.Kore.Variables.Free   (pureFreeVariables)
+
+import           Data.Set                   (Set)
 
 {-|'MetaMLPattern' corresponds to "fixed point" representations
 of the 'Pattern' class where the level is fixed to 'Meta'.
@@ -120,3 +123,6 @@ type CommonMetaPattern = MetaMLPattern Variable
 type PatternMetaType = Pattern Meta Variable CommonMetaPattern
 
 type MetaPatternStub = PatternStub Meta Variable CommonMetaPattern
+
+metaFreeVariables :: CommonMetaPattern -> Set (Variable Meta)
+metaFreeVariables = pureFreeVariables Meta
