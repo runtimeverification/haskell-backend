@@ -6,6 +6,7 @@ import           Test.Tasty.HUnit                 (assertEqual, assertFailure,
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Implicit.ImplicitSorts
 import           Test.Tasty.HUnit.Extensions
 
@@ -64,8 +65,8 @@ commonTests =
         ]
 
 assertSortedStub
-    :: SortedPattern Meta Variable UnifiedPattern
-    -> PatternStub Meta Variable UnifiedPattern
+    :: SortedPattern Meta Variable CommonKorePattern
+    -> PatternStub Meta Variable CommonKorePattern
     -> IO()
 assertSortedStub expectedSorted stub =
     case stub of

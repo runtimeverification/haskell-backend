@@ -1,9 +1,10 @@
 module Data.Kore.Variables.IntTest where
 
-import           Test.Tasty              (TestTree, testGroup)
-import           Test.Tasty.HUnit        (assertEqual, testCase)
+import           Test.Tasty                 (TestTree, testGroup)
+import           Test.Tasty.HUnit           (assertEqual, testCase)
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Variables.Int
 
 variablesIntTests :: TestTree

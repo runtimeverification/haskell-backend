@@ -31,6 +31,7 @@ module Data.Kore.IndexedModule.IndexedModule
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Error
 import           Data.Kore.Implicit.ImplicitSorts
 
@@ -38,7 +39,7 @@ import           Control.Monad                    (foldM)
 import qualified Data.Map                         as Map
 import qualified Data.Set                         as Set
 
-type SortDescription level = SentenceSort level FixedPattern Variable
+type SortDescription level = SentenceSort level UnifiedPattern Variable
 
 {-|'IndexedModule' represents an AST 'Module' somewhat optimized for resolving
 IDs.
@@ -75,31 +76,28 @@ data IndexedModule sortParam pat variable = IndexedModule
     }
 
 type KoreIndexedModule =
-    IndexedModule UnifiedSortVariable FixedPattern Variable
+    IndexedModule UnifiedSortVariable UnifiedPattern Variable
 
 indexedModuleRawSentences  :: KoreIndexedModule -> [KoreSentence]
 indexedModuleRawSentences im =
-    map (MetaSentence .  SentenceAliasSentence)
+    map asSentence
         (Map.elems (indexedModuleMetaAliasSentences im))
     ++
-    map (ObjectSentence . SentenceAliasSentence)
+    map asSentence
         (Map.elems (indexedModuleObjectAliasSentences im))
     ++
-    map (MetaSentence . SentenceSymbolSentence)
+    map asSentence
         (Map.elems (indexedModuleMetaSymbolSentences im))
     ++
-    map (ObjectSentence . SentenceSymbolSentence)
+    map asSentence
         (Map.elems (indexedModuleObjectSymbolSentences im))
     ++
-    map (ObjectSentence . SentenceSortSentence)
+    map asSentence
         (Map.elems (indexedModuleObjectSortDescriptions im))
     ++
-    map (MetaSentence . SentenceAxiomSentence) (indexedModuleAxioms im)
+    map asSentence (indexedModuleAxioms im)
     ++
-    [ MetaSentence
-        (SentenceImportSentence
-            (SentenceImport (indexedModuleName m) attributes)
-         )
+    [ asSentence (SentenceImport (indexedModuleName m) attributes)
     | (attributes, m) <- indexedModuleImports im
     ]
 
@@ -110,7 +108,7 @@ newtype ImplicitIndexedModule sortParam pat variable =
     ImplicitIndexedModule (IndexedModule sortParam pat variable)
 
 type KoreImplicitIndexedModule =
-    ImplicitIndexedModule UnifiedSortVariable FixedPattern Variable
+    ImplicitIndexedModule UnifiedSortVariable UnifiedPattern Variable
 
 emptyIndexedModule :: ModuleName -> IndexedModule sortParam pat variable
 emptyIndexedModule name =
@@ -217,7 +215,7 @@ internalIndexModuleIfNeeded
                 Just indexedModule -> return (indexedModules, indexedModule)
                 Nothing -> do
                     (newIndex, newModule) <- foldM
-                        (indexModuleSentence
+                        (indexModuleKoreSentence
                             implicitModule
                             importingModulesWithCurrentOne
                             nameToModule)
@@ -240,7 +238,7 @@ internalIndexModuleIfNeeded
     koreModuleName = moduleName koreModule
     importingModulesWithCurrentOne = Set.insert koreModuleName importingModules
 
-indexModuleSentence
+indexModuleKoreSentence
     :: KoreImplicitIndexedModule
     -> Set.Set ModuleName
     -> Map.Map ModuleName KoreModule
@@ -249,13 +247,27 @@ indexModuleSentence
     -> Either
         (Error a)
         (Map.Map ModuleName KoreIndexedModule, KoreIndexedModule)
-indexModuleSentence
+indexModuleKoreSentence a b c d =
+    applyUnifiedSentence
+        (indexModuleMetaSentence a b c d)
+        (indexModuleObjectSentence a b c d)
+
+indexModuleMetaSentence
+    :: KoreImplicitIndexedModule
+    -> Set.Set ModuleName
+    -> Map.Map ModuleName KoreModule
+    -> (Map.Map ModuleName KoreIndexedModule, KoreIndexedModule)
+    -> Sentence Meta UnifiedSortVariable UnifiedPattern Variable
+    -> Either
+        (Error a)
+        (Map.Map ModuleName KoreIndexedModule, KoreIndexedModule)
+indexModuleMetaSentence
     _ _ _
     ( indexedModules
     , indexedModule @ IndexedModule
         { indexedModuleMetaAliasSentences = sentences }
     )
-    (MetaSentence (SentenceAliasSentence sentence))
+    (SentenceAliasSentence sentence)
   =
     return
         ( indexedModules
@@ -267,31 +279,13 @@ indexModuleSentence
                     sentences
             }
         )
-indexModuleSentence
-    _ _ _
-    ( indexedModules
-    , indexedModule @ IndexedModule
-        { indexedModuleObjectAliasSentences = sentences }
-    )
-    (ObjectSentence (SentenceAliasSentence sentence))
-  =
-    return
-        ( indexedModules
-        , indexedModule
-            { indexedModuleObjectAliasSentences =
-                Map.insert
-                    (aliasConstructor (sentenceAliasAlias sentence))
-                    sentence
-                    sentences
-            }
-        )
-indexModuleSentence
+indexModuleMetaSentence
     _ _ _
     ( indexedModules
     , indexedModule @ IndexedModule
         { indexedModuleMetaSymbolSentences = sentences }
     )
-    (MetaSentence (SentenceSymbolSentence sentence))
+    (SentenceSymbolSentence sentence)
   =
     return
         ( indexedModules
@@ -303,90 +297,28 @@ indexModuleSentence
                     sentences
             }
         )
-indexModuleSentence
-    _ _ _
-    ( indexedModules
-    , indexedModule @ IndexedModule
-        { indexedModuleObjectSymbolSentences = sentences }
-    )
-    (ObjectSentence (SentenceSymbolSentence sentence))
-  =
-    return
-        ( indexedModules
-        , indexedModule
-            { indexedModuleObjectSymbolSentences =
-                Map.insert
-                    (symbolConstructor (sentenceSymbolSymbol sentence))
-                    sentence
-                    sentences
-            }
-        )
-indexModuleSentence
-    implicitModule
-    importingModules
-    nameToModule
-    indexedStuff
-    (ObjectSentence (SentenceSortSentence sentence))
-  = do
-    (indexedModules, indexedModule) <-
-        indexModuleSentence
-            implicitModule
-            importingModules
-            nameToModule
-            indexedStuff
-            (MetaSentence
-                (SentenceSymbolSentence SentenceSymbol
-                    { sentenceSymbolSymbol = Symbol
-                        { symbolConstructor =
-                            Id
-                                (metaNameForObjectSort
-                                    (getId (sentenceSortName sentence))
-                                )
-                        , symbolParams = []
-                        }
-                    , sentenceSymbolSorts =
-                        map (const sortMetaSort)
-                            (sentenceSortParameters sentence)
-                    , sentenceSymbolResultSort = sortMetaSort
-                    , sentenceSymbolAttributes = Attributes []
-                    }
-                )
-            )
-
-    return
-        ( indexedModules
-        , indexedModule
-            { indexedModuleObjectSortDescriptions =
-                Map.insert
-                    (sentenceSortName sentence)
-                    sentence
-                    (indexedModuleObjectSortDescriptions indexedModule)
-            }
-        )
-indexModuleSentence
+indexModuleMetaSentence
     _ _ _
     ( indexedModules
     , indexedModule @ IndexedModule { indexedModuleAxioms = sentences }
     )
-    (MetaSentence (SentenceAxiomSentence sentence))
+    (SentenceAxiomSentence sentence)
   =
     return
         ( indexedModules
         , indexedModule { indexedModuleAxioms = sentence : sentences }
         )
-indexModuleSentence
+indexModuleMetaSentence
     implicitModule
     importingModules
     nameToModule
     ( indexedModules
     , indexedModule @ IndexedModule { indexedModuleImports = indexedImports }
     )
-    (MetaSentence
-        (SentenceImportSentence SentenceImport
-            { sentenceImportModuleName = importedModuleName
-            , sentenceImportAttributes = attributes
-            }
-        )
+    (SentenceImportSentence SentenceImport
+        { sentenceImportModuleName = importedModuleName
+        , sentenceImportAttributes = attributes
+        }
     )
   = do
     (newIndexedModules, importedModule) <-
@@ -401,6 +333,94 @@ indexModuleSentence
         , indexedModule
             { indexedModuleImports =
                 (attributes, importedModule) : indexedImports
+            }
+        )
+
+
+indexModuleObjectSentence
+    :: KoreImplicitIndexedModule
+    -> Set.Set ModuleName
+    -> Map.Map ModuleName KoreModule
+    -> (Map.Map ModuleName KoreIndexedModule, KoreIndexedModule)
+    -> Sentence Object UnifiedSortVariable UnifiedPattern Variable
+    -> Either
+        (Error a)
+        (Map.Map ModuleName KoreIndexedModule, KoreIndexedModule)
+indexModuleObjectSentence
+    _ _ _
+    ( indexedModules
+    , indexedModule @ IndexedModule
+        { indexedModuleObjectAliasSentences = sentences }
+    )
+    (SentenceAliasSentence sentence)
+  =
+    return
+        ( indexedModules
+        , indexedModule
+            { indexedModuleObjectAliasSentences =
+                Map.insert
+                    (aliasConstructor (sentenceAliasAlias sentence))
+                    sentence
+                    sentences
+            }
+        )
+indexModuleObjectSentence
+    _ _ _
+    ( indexedModules
+    , indexedModule @ IndexedModule
+        { indexedModuleObjectSymbolSentences = sentences }
+    )
+    (SentenceSymbolSentence sentence)
+  =
+    return
+        ( indexedModules
+        , indexedModule
+            { indexedModuleObjectSymbolSentences =
+                Map.insert
+                    (symbolConstructor (sentenceSymbolSymbol sentence))
+                    sentence
+                    sentences
+            }
+        )
+indexModuleObjectSentence
+    implicitModule
+    importingModules
+    nameToModule
+    indexedStuff
+    (SentenceSortSentence sentence)
+  = do
+    (indexedModules, indexedModule) <-
+        indexModuleMetaSentence
+            implicitModule
+            importingModules
+            nameToModule
+            indexedStuff
+            (SentenceSymbolSentence
+                SentenceSymbol
+                    { sentenceSymbolSymbol = Symbol
+                        { symbolConstructor =
+                            Id
+                                (metaNameForObjectSort
+                                    (getId (sentenceSortName sentence))
+                                )
+                        , symbolParams = []
+                        }
+                    , sentenceSymbolSorts =
+                        map (const sortMetaSort)
+                            (sentenceSortParameters sentence)
+                    , sentenceSymbolResultSort = sortMetaSort
+                    , sentenceSymbolAttributes = Attributes []
+                    }
+            )
+
+    return
+        ( indexedModules
+        , indexedModule
+            { indexedModuleObjectSortDescriptions =
+                Map.insert
+                    (sentenceSortName sentence)
+                    sentence
+                    (indexedModuleObjectSortDescriptions indexedModule)
             }
         )
 

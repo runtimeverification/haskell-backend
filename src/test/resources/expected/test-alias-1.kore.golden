@@ -5,20 +5,20 @@ Definition
             { moduleName = ModuleName "TEST-ALIAS-1"
             , moduleSentences =
                 [ ObjectSentence (SentenceSortSentence SentenceSort
-                    { sentenceSortName = Id Object "S"
+                    { sentenceSortName = Id "S" :: Id Object
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias =
                         Alias
-                            { aliasConstructor = Id Object "f"
+                            { aliasConstructor = Id "f" :: Id Object
                             , aliasParams = []
                             }
                     , sentenceAliasSorts = []
                     , sentenceAliasReturnSort =
                         SortActualSort SortActual
-                            { sortActualName = Id Object "S"
+                            { sortActualName = Id "S" :: Id Object
                             , sortActualSorts = []
                             }
                     , sentenceAliasAttributes = Attributes []

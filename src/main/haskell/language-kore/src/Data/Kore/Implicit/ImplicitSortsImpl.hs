@@ -9,13 +9,14 @@ Stability   : experimental
 Portability : POSIX
 -}
 
+import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Implicit.ImplicitKoreImpl     (equalsAxiom,
                                                           parameterizedAxiom,
                                                           parameterizedEqualsAxiom)
 import           Data.Kore.Implicit.ImplicitVarsInternal
 import           Data.Kore.MetaML.AST
-import           Data.Kore.MetaML.Builders
 
 {-|'defineMetaSort' is a helper function for defining meta sorts together
 with their constructors, helper functions and axioms.

@@ -1,30 +1,30 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Kore.MatchingLogic.ProofSystem.MLProofSystem where
 
 import           Data.Kore.AST.Common                   (And (..),
                                                          Application (..),
                                                          Exists (..),
-                                                         Implies (..), Meta,
-                                                         Not (..), Or (..),
-                                                         Pattern (..), Sort,
+                                                         Implies (..), Not (..),
+                                                         Or (..), Pattern (..),
+                                                         Sort, SortVariable,
                                                          SymbolOrAlias (..),
                                                          Variable)
 import qualified Data.Kore.AST.Common                   as Common (Forall (..))
-import           Data.Kore.AST.Kore                     (FixedPattern (..),
-                                                         UnifiedPattern,
-                                                         UnifiedSortVariable,
-                                                         UnifiedVariable (..))
+import           Data.Kore.AST.Kore                     (CommonKorePattern,
+                                                         UnifiedPattern)
+import           Data.Kore.AST.MetaOrObject             (Meta, Unified (..))
 import           Data.Kore.ASTVerifier.PatternVerifier  (verifyPattern)
 import           Data.Kore.Error
-import           Data.Kore.IndexedModule.IndexedModule  (IndexedModule)
-import           Data.Kore.MetaML.AST                   (CommonMetaPattern, SentenceMetaPattern (..))
+import           Data.Kore.IndexedModule.IndexedModule  (KoreIndexedModule)
+import           Data.Kore.MetaML.AST                   (CommonMetaPattern,
+                                                         metaFreeVariables)
 import           Data.Kore.MetaML.MetaToKore            (patternKoreToMeta,
                                                          patternMetaToKore)
 import           Data.Kore.Substitution.Class           (PatternSubstitutionClass (..))
 import qualified Data.Kore.Substitution.List            as Substitution
 import           Data.Kore.Unparser.Unparse             (Unparse,
                                                          unparseToString)
-import           Data.Kore.Variables.Free               (TermWithVariablesClass (freeVariables))
 import           Data.Kore.Variables.Fresh.Class        (FreshVariablesClass (..))
 import           Data.Kore.Variables.Sort               (TermWithSortVariablesClass (sortVariables))
 
@@ -40,7 +40,7 @@ type Symbol = SymbolOrAlias Meta
 
 -- To get an indexed module one can use `verifyAndIndexDefinition`
 formulaVerifier
-    :: IndexedModule UnifiedSortVariable FixedPattern Variable
+    :: KoreIndexedModule
     -> CommonMetaPattern
     -> Either (Error MLError) ()
 formulaVerifier indexedModule formula = do
@@ -53,7 +53,7 @@ formulaVerifier indexedModule formula = do
         )
     return ()
   where
-    unifiedFormula = patternMetaToKore (SentenceMetaPattern formula)
+    unifiedFormula = patternMetaToKore formula
 
 -- TODO(virgil): Check that symbols and not aliases are used in a few places
 -- like checkSingvar
@@ -282,12 +282,13 @@ instance FreshVariablesClass (Either (Error MLError)) Variable where
     freshVariableSuchThat v _ = freshVariable v
 
 type MetaPatternSubstitution =
-    Substitution.Substitution (UnifiedVariable Variable) UnifiedPattern
+    Substitution.Substitution (Unified Variable) CommonKorePattern
 
 instance
     PatternSubstitutionClass
+        Substitution.Substitution
         Variable
-        MetaPatternSubstitution
+        UnifiedPattern
         (Either (Error MLError))
   where
 
@@ -330,11 +331,11 @@ checkVariableSubstitution
         -- a hack, I should make substitutions work on all kinds of patterns.
         patternKoreToMeta <$>
             substitute
-                (patternMetaToKore (SentenceMetaPattern beforeSubstitution))
+                (patternMetaToKore beforeSubstitution)
                 (Substitution.fromList
-                    [   ( MetaVariable substituted
+                    [   ( UnifiedMeta substituted
                         , patternMetaToKore
-                            (SentenceMetaPattern substitutingPattern)
+                            substitutingPattern
                         )
                     ]
                 )
@@ -405,7 +406,7 @@ checkForall variable phi1 phi2 conclusion
     testFormulaEquality
         psi4 (nameInKind "psi4")
         phi2 (nameInProposition "phi2")
-    let freeVars = freeVariables phi1
+    let freeVars = metaFreeVariables phi1
     koreFailWhen (variable `Set.member` freeVars)
         "v should not occur free in phi1 in Forall(v, phi1, phi3)"
     return ()
@@ -611,7 +612,7 @@ checkPropagateExists symbol idx variable phi conclusion
         ++ show (length patterns1)
         ++ ")."
         )
-    let freeVars = freeVariables application
+    let freeVars = metaFreeVariables application
     koreFailWhen (variable `Set.member` freeVars)
         (  "v should not occur free in ("
         ++ nameInKind1 "sigma1{...}(...)"

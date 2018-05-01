@@ -42,7 +42,8 @@ class MLBinderPatternClass pat where
     -- The first argument is only needed in order to make the Haskell type
     -- system work.
     binderPatternConstructor
-        :: pat level variable child -> Sort level -> variable level -> child
+        :: MetaOrObject level
+        => pat level variable child -> Sort level -> variable level -> child
         -> Pattern level variable child
 
 instance MLPatternClass And where

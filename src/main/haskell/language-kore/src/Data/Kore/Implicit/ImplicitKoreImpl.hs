@@ -10,15 +10,16 @@ Portability : POSIX
 
 module Data.Kore.Implicit.ImplicitKoreImpl where
 
+import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.MetaML.AST
-import           Data.Kore.MetaML.Builders
-import           Data.Kore.Variables.Free  (freeVariables)
 
 import           Data.Fix
-import           Data.Foldable             (foldl')
-import qualified Data.Map                  as Map
-import qualified Data.Set                  as Set
+import           Data.Foldable              (foldl')
+import qualified Data.Map                   as Map
+import           Data.Proxy
+import qualified Data.Set                   as Set
 
 
 {-|'equalsSortParam' is the sort param implicitly used for 'equals' when no
@@ -27,7 +28,7 @@ any pattern, except for top-level pattern of an axiom. Using it will have
 unpredictable effects.
 -}
 equalsSortParam :: SortVariable Meta
-equalsSortParam = sortParameter "#esp"
+equalsSortParam = sortParameter Meta "#esp"
 
 equalsSort :: Sort Meta
 equalsSort = SortVariableSort equalsSortParam
@@ -38,7 +39,7 @@ a pattern.
 parameterizedAxiom
     :: [SortVariable Meta] -> MetaPatternStub -> MetaSentenceAxiom
 parameterizedAxiom _ (UnsortedPatternStub p) =
-    error ("Cannot infer sort for " ++ show (p dummyMetaSort) ++ ".")
+    error ("Cannot infer sort for " ++ show (p (dummySort (Proxy :: Proxy Meta))) ++ ".")
 parameterizedAxiom
     parameters
     ( SortedPatternStub SortedPattern
@@ -47,8 +48,7 @@ parameterizedAxiom
   =
     SentenceAxiom
         { sentenceAxiomParameters = parameters
-        , sentenceAxiomPattern =
-            SentenceMetaPattern (quantifyFreeVariables s (Fix p))
+        , sentenceAxiomPattern = quantifyFreeVariables s (Fix p)
         , sentenceAxiomAttributes = Attributes []
         }
 
@@ -84,7 +84,7 @@ quantifyFreeVariables s p =
     foldl'
         (wrapAndQuantify s)
         p
-        (checkUnique (freeVariables p))
+        (checkUnique (metaFreeVariables p))
 
 wrapAndQuantify
     :: Sort Meta
