@@ -17,7 +17,7 @@ import           Data.Kore.AST.MetaOrObject             (Meta, Unified (..))
 import           Data.Kore.ASTVerifier.PatternVerifier  (verifyPattern)
 import           Data.Kore.Error
 import           Data.Kore.IndexedModule.IndexedModule  (KoreIndexedModule)
-import           Data.Kore.MetaML.AST                   (CommonMetaPattern, SentenceMetaPattern (..),
+import           Data.Kore.MetaML.AST                   (CommonMetaPattern,
                                                          metaFreeVariables)
 import           Data.Kore.MetaML.MetaToKore            (patternKoreToMeta,
                                                          patternMetaToKore)
