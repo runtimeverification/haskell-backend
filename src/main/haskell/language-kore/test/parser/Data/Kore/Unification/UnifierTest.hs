@@ -166,14 +166,15 @@ unificationSuccess
     -> CommonPurePatternStub Object
     -> CommonPurePatternStub Object
     -> Substitution Object
+    -> UnificationProof Object
     -> TestTree
-unificationSuccess message term1 term2 term subst =
+unificationSuccess message term1 term2 term subst proof =
     testCase
         message
         (assertEqualWithPrinter
             prettyPrintToString
             ""
-            (Right (unificationResult term subst, UnificationProof))
+            (Right (unificationResult term subst, proof))
             (simplifyAnd tools (unificationProblem term1 term2))
         )
 
@@ -182,7 +183,7 @@ unificationFailure
     => String
     -> CommonPurePatternStub Object
     -> CommonPurePatternStub Object
-    -> UnificationError
+    -> UnificationError Object
     -> TestTree
 unificationFailure message term1 term2 err =
     testCase
@@ -204,26 +205,46 @@ unificationTests =
             aA
             aA
             []
+            (ConjunctionIdempotency (extractPurePattern aA))
         , unificationSuccess "Variable"
             x
             aA
             aA
             [("x", aA)]
+            (Proposition5243
+                [FunctionalHead headA]
+                (Variable (Id "x") s1)
+                (extractPurePattern aA)
+            )
         , unificationSuccess "one level"
             fx
             fa
             fa
             [("x", aA)]
+            (AndDistributionAndConstraintLifting
+                (getSentenceSymbolOrAliasHead f [])
+                [ Proposition5243
+                    [FunctionalHead headA]
+                    (Variable (Id "x") s1)
+                    (extractPurePattern aA)
+                ]
+            )
         , unificationSuccess "equal non-constructor patterns"
             a2A
             a2A
             a2A
             []
+            (ConjunctionIdempotency (extractPurePattern a2A))
         , unificationSuccess "variable + non-constructor pattern"
             a2A
             x
             a2A
             [("x", a2A)]
+            (Proposition5243
+                [FunctionalHead headA2]
+                (Variable (Id "x") s1)
+                (extractPurePattern a2A)
+            )
         , unificationSuccess
             "https://basics.sjtu.edu.cn/seminars/c_chu/Algorithm.pdf slide 3"
             (applyS ef [ex1, applyS eh [ex1], ex2])
@@ -233,10 +254,30 @@ unificationTests =
             , ("ex2", ex3)
             , ("ex4", applyS eh [ex1])
             ]
+            (AndDistributionAndConstraintLifting
+                (getSentenceSymbolOrAliasHead ef [])
+                [ Proposition5243
+                    [ FunctionalHead headEG
+                    , FunctionalVariable (Variable (Id "ex3") s1)
+                    ]
+                    (Variable (Id "ex1") s1)
+                    (extractPurePattern $ applyS eg [ex3])
+                , Proposition5243
+                    [ FunctionalHead headEH
+                    , FunctionalVariable (Variable (Id "ex1") s1)
+                    ]
+                    (Variable (Id "ex4") s1)
+                    (extractPurePattern $ applyS eh [ex1])
+                , Proposition5243
+                    [FunctionalVariable (Variable (Id "ex3") s1)]
+                    (Variable (Id "ex2") s1)
+                    (extractPurePattern ex3)
+                ]
+            )
         , unificationFailure "Unmatching constants"
             aA
             a1A
-            ConstructorClash
+            (ConstructorClash headA headA1)
         , unificationFailure "non-functional pattern"
             x
             a3A
@@ -244,15 +285,15 @@ unificationTests =
         , unificationFailure "non-constructor head right"
             aA
             a2A
-            NonConstructorHead
+            (NonConstructorHead headA2)
         , unificationFailure "non-constructor head left"
             a2A
             aA
-            NonConstructorHead
+            (NonConstructorHead headA2)
         , unificationFailure "nested failure"
             fa
             fa1
-            ConstructorClash
+            (ConstructorClash headA headA1)
         , unificationFailure "Unsupported constructs"
             fa
             faImpliesXa1
@@ -264,3 +305,9 @@ unificationTests =
             UnificationError
             -}
         ]
+  where
+    headA = getSentenceSymbolOrAliasHead a []
+    headA2 = getSentenceSymbolOrAliasHead a2 []
+    headA1 = getSentenceSymbolOrAliasHead a1 []
+    headEG = getSentenceSymbolOrAliasHead eg []
+    headEH = getSentenceSymbolOrAliasHead eh []

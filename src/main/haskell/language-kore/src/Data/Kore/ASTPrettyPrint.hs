@@ -72,6 +72,32 @@ writeOneFieldStruct
 writeOneFieldStruct flags name content =
     writeOneFieldStructK flags name (prettyPrint NeedsParentheses content)
 
+writeTwoFieldStruct
+    :: (PrinterOutput w m, PrettyPrint a, PrettyPrint b)
+    => Flags -> String -> a -> b -> m ()
+writeTwoFieldStruct flags name contenta contentb =
+    writeOneFieldStructK
+        flags
+        name
+        (  prettyPrint NeedsParentheses contenta
+        >> write " "
+        >> prettyPrint NeedsParentheses contentb
+        )
+
+writeThreeFieldStruct
+    :: (PrinterOutput w m, PrettyPrint a, PrettyPrint b, PrettyPrint c)
+    => Flags -> String -> a -> b -> c -> m ()
+writeThreeFieldStruct flags name contenta contentb contentc =
+    writeOneFieldStructK
+        flags
+        name
+        (  prettyPrint NeedsParentheses contenta
+        >> write " "
+        >> prettyPrint NeedsParentheses contentb
+        >> write " "
+        >> prettyPrint NeedsParentheses contentc
+        )
+
 writeOneFieldStructK
     :: (PrinterOutput w m)
     => Flags -> String -> m () -> m ()
@@ -685,11 +711,31 @@ instance MetaOrObject level => PrettyPrint (UnificationSolution level) where
                 us
             ]
 
-instance PrettyPrint UnificationProof where
-    prettyPrint _ UnificationProof = write "UnificationProof"
+instance MetaOrObject level => PrettyPrint (UnificationProof level) where
+    prettyPrint _ UnificationProof       = write "UnificationProof"
+    prettyPrint flags (ConjunctionIdempotency p) =
+        writeOneFieldStruct flags "ConjunctionIdempotency" p
+    prettyPrint flags (AndDistributionAndConstraintLifting patternHead proofs) =
+        writeTwoFieldStruct
+            flags
+            "AndDistributionAndConstraintLifting"
+            patternHead
+            proofs
+    prettyPrint flags (Proposition5243 funProof var pat) =
+        writeThreeFieldStruct flags "Proposition5243" funProof var pat
 
-instance PrettyPrint UnificationError where
-    prettyPrint _ ConstructorClash     = write "ConstructorClash"
-    prettyPrint _ NonConstructorHead   = write "NonConstructorHead"
+instance MetaOrObject level => PrettyPrint (UnificationError level) where
+    prettyPrint flags (ConstructorClash h1 h2) =
+        writeTwoFieldStruct flags "ConstructorClash" h1 h2
+    prettyPrint flags (NonConstructorHead h) =
+        writeOneFieldStruct flags "NonConstructorHead" h
+    prettyPrint flags (NonFunctionalHead h) =
+        writeOneFieldStruct flags "NonFunctionalHead" h
     prettyPrint _ NonFunctionalPattern = write "NonFunctionalPattern"
     prettyPrint _ UnsupportedPatterns  = write "UnsupportedPatterns"
+
+instance MetaOrObject level => PrettyPrint (FunctionalProof level) where
+    prettyPrint flags (FunctionalVariable v) =
+        writeOneFieldStruct flags "FunctionalVariable" v
+    prettyPrint flags (FunctionalHead h) =
+        writeOneFieldStruct flags "FunctionalHead" h
