@@ -334,7 +334,8 @@ liftSentence :: KoreSentence -> [MetaSentence]
 liftSentence = applyUnifiedSentence liftMetaSentence liftObjectSentence
 
 liftMetaSentence
-    :: Sentence Meta UnifiedSortVariable UnifiedPattern Variable -> [MetaSentence]
+    :: Sentence Meta UnifiedSortVariable UnifiedPattern Variable
+    -> [MetaSentence]
 liftMetaSentence (SentenceAliasSentence msa) =
     [ SentenceAliasSentence msa
         { sentenceAliasAttributes = liftAttributes (sentenceAliasAttributes msa)
@@ -371,7 +372,7 @@ liftMetaSentence (SentenceAxiomSentence as) =
     originalPattern = sentenceAxiomPattern as
     axiomSort = case getUnifiedPattern (unFix originalPattern) of
         UnifiedObject _ -> patternMetaSort
-        UnifiedMeta p   -> getPatternResultSort (unRotate31 p)
+        UnifiedMeta p   -> getPatternResultSort undefinedHeadSort (unRotate31 p)
     objectParameters =
         [sv | UnifiedObject sv <- sentenceAxiomParameters as]
     liftedPattern = liftToMeta originalPattern
@@ -388,7 +389,8 @@ liftMetaSentence (SentenceImportSentence is) =
     ]
 
 liftObjectSentence
-    :: Sentence Object UnifiedSortVariable UnifiedPattern Variable -> [MetaSentence]
+    :: Sentence Object UnifiedSortVariable UnifiedPattern Variable
+    -> [MetaSentence]
 liftObjectSentence (SentenceAliasSentence osa) =
     [ SentenceSymbolSentence (liftAliasDeclaration osa)]
 liftObjectSentence (SentenceSymbolSentence oss) =
@@ -418,34 +420,3 @@ liftDefinition d = Definition
     { definitionAttributes = liftAttributes (definitionAttributes d)
     , definitionModules = map liftModule (definitionModules d)
     }
-
-
--- |'getPatternResultSort' retrieves the result sort of a pattern.
--- Currently fails if that pattern is not an application pattern.
--- TODO(traiansf):
--- - Consider making it work for Application, too (that requires storing some
---   metadata / passing an indexed module as an extra parameter.
--- - Consider making it public (and moving it to a more appropriate module).
---   once we do that we should thoroughly test it.
-getPatternResultSort :: Pattern level Variable child -> Sort level
-getPatternResultSort (AndPattern p) = andSort p
-getPatternResultSort (BottomPattern p) = bottomSort p
-getPatternResultSort (CeilPattern p) = ceilResultSort p
-getPatternResultSort (DomainValuePattern p) = domainValueSort p
-getPatternResultSort (EqualsPattern p) = equalsResultSort p
-getPatternResultSort (ExistsPattern p) = existsSort p
-getPatternResultSort (FloorPattern p) = floorResultSort p
-getPatternResultSort (ForallPattern p) = forallSort p
-getPatternResultSort (IffPattern p) = iffSort p
-getPatternResultSort (ImpliesPattern p) = impliesSort p
-getPatternResultSort (InPattern p) = inResultSort p
-getPatternResultSort (NextPattern p) = nextSort p
-getPatternResultSort (NotPattern p) = notSort p
-getPatternResultSort (OrPattern p) = orSort p
-getPatternResultSort (RewritesPattern p) = rewritesSort p
-getPatternResultSort (StringLiteralPattern _) = stringMetaSort
-getPatternResultSort (CharLiteralPattern _) = charMetaSort
-getPatternResultSort (TopPattern p) = topSort p
-getPatternResultSort (VariablePattern p) = variableSort p
-getPatternResultSort (ApplicationPattern _) =
-    error "Application pattern sort currently undefined"

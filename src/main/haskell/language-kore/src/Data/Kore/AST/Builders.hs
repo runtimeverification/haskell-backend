@@ -301,3 +301,15 @@ not_ =
                 , notChild  = pattern1
                 }
         )
+
+-- |Builds a 'PatternStub' representing 'Next' given a 'PatternStub' for
+-- its operand.
+next_ :: CommonPurePatternStub Object -> CommonPurePatternStub Object
+next_ =
+    unaryPattern
+        (\sortS pattern1 ->
+            NextPattern Next
+                { nextSort   = sortS
+                , nextChild  = pattern1
+                }
+        )

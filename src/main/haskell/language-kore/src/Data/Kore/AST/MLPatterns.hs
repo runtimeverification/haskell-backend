@@ -13,7 +13,9 @@ Portability : portable
 module Data.Kore.AST.MLPatterns (MLPatternClass(..),
                                  MLBinderPatternClass (..),
                                  PatternFunction(..),
-                                 applyPatternFunction) where
+                                 applyPatternFunction,
+                                 getPatternResultSort,
+                                 undefinedHeadSort) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
@@ -235,3 +237,41 @@ applyPatternFunction function (TopPattern a) =
     patternFunctionML function a
 applyPatternFunction function (VariablePattern a) =
     variableFunction function a
+
+-- |'getPatternResultSort' retrieves the result sort of a pattern.
+--
+-- Since the sort of 'Application' patterns is not contained within
+-- the term itself, it takes as firts argument a function yielding the
+-- result sort corresponding to an application head.
+-- TODO(traiansf): add tests.
+getPatternResultSort
+    :: (SymbolOrAlias level -> Sort level)
+    -- ^Function to retrieve the sort of a given pattern Head
+    -> Pattern level Variable child
+    -> Sort level
+getPatternResultSort _ (AndPattern p) = andSort p
+getPatternResultSort _ (BottomPattern p) = bottomSort p
+getPatternResultSort _ (CeilPattern p) = ceilResultSort p
+getPatternResultSort _ (DomainValuePattern p) = domainValueSort p
+getPatternResultSort _ (EqualsPattern p) = equalsResultSort p
+getPatternResultSort _ (ExistsPattern p) = existsSort p
+getPatternResultSort _ (FloorPattern p) = floorResultSort p
+getPatternResultSort _ (ForallPattern p) = forallSort p
+getPatternResultSort _ (IffPattern p) = iffSort p
+getPatternResultSort _ (ImpliesPattern p) = impliesSort p
+getPatternResultSort _ (InPattern p) = inResultSort p
+getPatternResultSort _ (NextPattern p) = nextSort p
+getPatternResultSort _ (NotPattern p) = notSort p
+getPatternResultSort _ (OrPattern p) = orSort p
+getPatternResultSort _ (RewritesPattern p) = rewritesSort p
+getPatternResultSort _ (StringLiteralPattern _) = stringMetaSort
+getPatternResultSort _ (CharLiteralPattern _) = charMetaSort
+getPatternResultSort _ (TopPattern p) = topSort p
+getPatternResultSort _ (VariablePattern p) = variableSort p
+getPatternResultSort headSort (ApplicationPattern p) =
+    headSort (applicationSymbolOrAlias p)
+
+-- |Sample argument function for 'getPatternResultSort', failing for all input.
+undefinedHeadSort :: SymbolOrAlias level -> Sort level
+undefinedHeadSort _ =
+    error "Application pattern sort currently undefined"

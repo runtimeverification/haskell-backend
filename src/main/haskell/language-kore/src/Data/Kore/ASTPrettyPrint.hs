@@ -12,14 +12,14 @@ import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
 import           Data.Kore.HaskellExtensions
-import           Data.Kore.IndentingPrinter  (PrinterOutput, StringPrinter,
-                                              betweenLines, printToString,
-                                              withIndent, write)
-import           Data.Kore.MetaML.AST
-import           Data.Kore.Parser.CString    (escapeCString)
+import           Data.Kore.IndentingPrinter    (PrinterOutput, StringPrinter,
+                                                betweenLines, printToString,
+                                                withIndent, write)
+import           Data.Kore.Parser.CString      (escapeCString)
+import           Data.Kore.Unification.Unifier
 
 import           Data.Fix
-import           Data.List                   (intersperse)
+import           Data.List                     (intersperse)
 
 {-# ANN module "HLint: ignore Use record patterns" #-}
 {-
@@ -658,3 +658,38 @@ instance PrettyPrint a => PrettyPrint (Maybe a) where
     prettyPrint flags (Just x) =
         writeOneFieldStruct flags "Just" x
     prettyPrint _ Nothing = write "Nothing"
+
+instance (PrettyPrint a, PrettyPrint b) => PrettyPrint (Either a b) where
+    prettyPrint flags (Left x) =
+        writeOneFieldStruct flags "Left" x
+    prettyPrint flags (Right x) =
+        writeOneFieldStruct flags "Right" x
+
+instance (PrettyPrint a, PrettyPrint b) => PrettyPrint (a, b) where
+    prettyPrint _ (x, y) =
+        listWithDelimiters "(" ")"
+            (printableList
+                [ prettyPrint MaySkipParentheses x
+                , prettyPrint MaySkipParentheses y
+                ])
+
+instance MetaOrObject level => PrettyPrint (UnificationSolution level) where
+    prettyPrint _ us@(UnificationSolution _ _) =
+        writeStructure
+            "UnificationSolution"
+            [ writeFieldNewLine
+                "unificationSolutionTerm" unificationSolutionTerm us
+            , writeListField
+                "unificationSolutionConstraints"
+                unificationSolutionConstraints
+                us
+            ]
+
+instance PrettyPrint UnificationProof where
+    prettyPrint _ UnificationProof = write "UnificationProof"
+
+instance PrettyPrint UnificationError where
+    prettyPrint _ ConstructorClash     = write "ConstructorClash"
+    prettyPrint _ NonConstructorHead   = write "NonConstructorHead"
+    prettyPrint _ NonFunctionalPattern = write "NonFunctionalPattern"
+    prettyPrint _ UnsupportedPatterns  = write "UnsupportedPatterns"
