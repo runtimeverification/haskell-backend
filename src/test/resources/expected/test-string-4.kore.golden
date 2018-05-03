@@ -1,7 +1,7 @@
 Definition
     { definitionAttributes =
         Attributes 
-            [ MetaPattern (StringLiteralPattern (StringLiteral "\?77"))
+            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "\?77")))))
             ]
     , definitionModules =
         [ Module

@@ -1,11 +1,21 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-|
+Module      : Data.Kore.Variables.Fresh.Class
+Description : Specifies the 'FreshVariableClass' which provides an interface for
+              generating fresh variables.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : traian.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : portable
+
+-}
 module Data.Kore.Variables.Fresh.Class where
 
 import qualified Control.Monad.State                  as State
 
-import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Variables.Fresh.IntCounter
 import           Data.Kore.Variables.Int
@@ -14,7 +24,7 @@ import           Data.Kore.Variables.Int
 with a 'Monad' @m@ containing state needed to generate fresh
 variables and provides several functions to generate new variables.
 -}
-class (Monad m, VariableClass var) => FreshVariablesClass m var where
+class (Monad m) => FreshVariablesClass m var where
     {-|Given an existing variable, generate a fresh one of
     the same kind.
     -}
@@ -40,7 +50,7 @@ instance (State.MonadTrans t, Monad (t m), FreshVariablesClass m var)
   where
     freshVariable = State.lift . freshVariable
 
-instance (IntVariable var, VariableClass var)
+instance (IntVariable var)
     => FreshVariablesClass IntCounter var
   where
     freshVariable var = do

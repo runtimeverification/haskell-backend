@@ -9,13 +9,15 @@ import           Test.Tasty.HUnit.Extensions
 import           Data.CallStack
 import           Data.Fix
 
+import           Data.Kore.AST.Builders
+import           Data.Kore.AST.BuildersImpl
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.PureML
 import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.MetaML.AST
-import           Data.Kore.MetaML.Builders
-import           Data.Kore.MetaML.BuildersImpl
 import           Data.Kore.MetaML.Lift
 import           Data.Kore.MetaML.Unlift
 
@@ -38,26 +40,26 @@ liftTests =
                     [ variablePattern "#a" sortMetaSort ]
                 )
             )
-            (ObjectPattern
+            (asKorePattern
                 ( BottomPattern Bottom
                     { bottomSort = SortVariableSort
-                        (SortVariable (Id "a"))
+                        (SortVariable (Id "a" :: Id Object))
                     }
                 )
-            ::UnifiedPattern)
+            ::CommonKorePattern)
         , testLiftUnlift "Top"
             (Fix
                 (apply (metaMLPatternHead TopPatternType)
                     [ variablePattern "#a" sortMetaSort ]
                 )
             )
-            (ObjectPattern
+            (asKorePattern
                 ( TopPattern Top
                     { topSort =
-                        SortVariableSort (SortVariable (Id "a"))
+                        SortVariableSort (SortVariable (Id "a" :: Id Object))
                     }
                 )
-            ::UnifiedPattern)
+            ::CommonKorePattern)
         , testLiftUnlift "Ceil"
             (Fix
                 (apply (metaMLPatternHead CeilPatternType)
@@ -67,10 +69,10 @@ liftTests =
                     ]
                 )
             )
-            (ObjectPattern
+            (asKorePattern
                 (CeilPattern Ceil
                     { ceilResultSort =
-                        SortVariableSort (SortVariable (Id "a"))
+                        SortVariableSort (SortVariable (Id "a" :: Id Object))
                     , ceilOperandSort =
                         SortVariableSort (SortVariable (Id "b"))
                     , ceilChild = unifiedStringPattern
@@ -86,10 +88,10 @@ liftTests =
                     ]
                 )
             )
-            (ObjectPattern
+            (asKorePattern
                 (FloorPattern Floor
                     { floorResultSort =
-                        SortVariableSort (SortVariable (Id "a"))
+                        SortVariableSort (SortVariable (Id "a" :: Id Object))
                     , floorOperandSort =
                         SortVariableSort (SortVariable (Id "b"))
                     , floorChild = unifiedStringPattern
@@ -106,10 +108,10 @@ liftTests =
                     ]
                 )
             )
-            (ObjectPattern
+            (asKorePattern
                 (EqualsPattern Equals
                     { equalsResultSort =
-                        SortVariableSort (SortVariable (Id "a"))
+                        SortVariableSort (SortVariable (Id "a" :: Id Object))
                     , equalsOperandSort =
                         SortVariableSort (SortVariable (Id "b"))
                     , equalsFirst = unifiedStringPattern
@@ -127,10 +129,10 @@ liftTests =
                     ]
                 )
             )
-            (ObjectPattern
+            (asKorePattern
                 (InPattern In
                     { inResultSort =
-                        SortVariableSort (SortVariable (Id "a"))
+                        SortVariableSort (SortVariable (Id "a" :: Id Object))
                     , inOperandSort =
                         SortVariableSort (SortVariable (Id "b"))
                     , inContainedChild = unifiedStringPattern
@@ -164,19 +166,19 @@ liftTests =
                     ]
                 )
             )
-            (ObjectPattern
+            (asKorePattern
                 (ForallPattern Forall
                     { forallSort =
-                        SortVariableSort (SortVariable (Id "a"))
+                        SortVariableSort (SortVariable (Id "a" :: Id Object))
                     , forallVariable = Variable
                         { variableName = Id "x"
                         , variableSort =
                             SortVariableSort (SortVariable (Id "a"))
                         }
                     , forallChild =
-                        ObjectPattern
+                        asKorePattern
                             (VariablePattern Variable
-                                { variableName = Id "x"
+                                { variableName = Id "x" :: Id Object
                                 , variableSort = SortVariableSort
                                     (SortVariable (Id "a"))
                                 }
@@ -210,19 +212,19 @@ liftTests =
                     ]
                 )
             )
-            (ObjectPattern
+            (asKorePattern
                 (ExistsPattern Exists
                     { existsSort =
-                        SortVariableSort (SortVariable (Id "a"))
+                        SortVariableSort (SortVariable (Id "a" :: Id Object))
                     , existsVariable = Variable
                         { variableName = Id "x"
                         , variableSort =
                             SortVariableSort (SortVariable (Id "a"))
                         }
                     , existsChild =
-                        ObjectPattern
+                        asKorePattern
                             (VariablePattern Variable
-                                { variableName = Id "x"
+                                { variableName = Id "x" :: Id Object
                                 , variableSort = SortVariableSort
                                     (SortVariable (Id "a"))
                                 }
@@ -242,9 +244,9 @@ liftTests =
                     ]
                 )
             )
-            (ObjectPattern
+            (asKorePattern
                 (VariablePattern Variable
-                    { variableName = Id "x"
+                    { variableName = Id "x" :: Id Object
                     , variableSort = SortVariableSort
                         (SortVariable (Id "a"))
                     }
@@ -300,18 +302,19 @@ liftTests =
                     ]
                 )
             )
-            ( ObjectPattern
+            ( asKorePattern
                 ( NotPattern Not
-                    { notSort = SortVariableSort (SortVariable (Id "a"))
-                    , notChild = ObjectPattern
+                    { notSort =
+                        SortVariableSort (SortVariable (Id "a" :: Id Object))
+                    , notChild = asKorePattern
                         ( TopPattern Top
                             { topSort = SortVariableSort
-                                (SortVariable (Id "a"))
+                                (SortVariable (Id "a" :: Id Object))
                             }
                         )
                     }
                 )
-            ::UnifiedPattern)
+            ::CommonKorePattern)
         , testLiftUnlift "And pattern"
             (Fix
                 (apply (metaMLPatternHead AndPatternType)
@@ -321,9 +324,10 @@ liftTests =
                     ]
                 )
             )
-            (ObjectPattern
+            (asKorePattern
                 (AndPattern And
-                    { andSort = SortVariableSort (SortVariable (Id "a"))
+                    { andSort =
+                        SortVariableSort (SortVariable (Id "a" :: Id Object))
                     , andFirst = unifiedStringPattern
                     , andSecond = unifiedStringPattern
                     }
@@ -338,9 +342,10 @@ liftTests =
                     ]
                 )
             )
-            (ObjectPattern
+            (asKorePattern
                 (OrPattern Or
-                    { orSort = SortVariableSort (SortVariable (Id "a"))
+                    { orSort =
+                        SortVariableSort (SortVariable (Id "a" :: Id Object))
                     , orFirst = unifiedStringPattern
                     , orSecond = unifiedStringPattern
                     }
@@ -355,9 +360,10 @@ liftTests =
                     ]
                 )
             )
-            (ObjectPattern
+            (asKorePattern
                 (IffPattern Iff
-                    { iffSort = SortVariableSort (SortVariable (Id "a"))
+                    { iffSort =
+                        SortVariableSort (SortVariable (Id "a" :: Id Object))
                     , iffFirst = unifiedStringPattern
                     , iffSecond = unifiedStringPattern
                     }
@@ -372,9 +378,10 @@ liftTests =
                     ]
                 )
             )
-            (ObjectPattern
+            (asKorePattern
                 (ImpliesPattern Implies
-                    { impliesSort = SortVariableSort (SortVariable (Id "a"))
+                    { impliesSort =
+                        SortVariableSort (SortVariable (Id "a" :: Id Object))
                     , impliesFirst = unifiedStringPattern
                     , impliesSecond = unifiedStringPattern
                     }
@@ -388,10 +395,10 @@ liftTests =
                     ]
                 )
             )
-            (ObjectPattern
+            (asKorePattern
                 (NotPattern Not
                     { notSort =
-                        SortVariableSort (SortVariable (Id "a"))
+                        SortVariableSort (SortVariable (Id "a" :: Id Object))
                     , notChild = unifiedStringPattern
                     }
                 )
@@ -405,7 +412,7 @@ liftTests =
                     ]
                 )
             )
-            (ObjectPattern
+            (asKorePattern
                 (RewritesPattern Rewrites
                     { rewritesSort =
                         SortVariableSort (SortVariable (Id "a"))
@@ -422,7 +429,7 @@ liftTests =
                     ]
                 )
             )
-            (ObjectPattern
+            (asKorePattern
                 (DomainValuePattern DomainValue
                     { domainValueSort =
                         SortVariableSort (SortVariable (Id "Int"))
@@ -439,10 +446,10 @@ liftTests =
                     ]
                 )
             )
-            (ObjectPattern
+            (asKorePattern
                 (apply
                     SymbolOrAlias
-                        { symbolOrAliasConstructor = Id "test"
+                        { symbolOrAliasConstructor = Id "test" :: Id Object
                         , symbolOrAliasParams =
                             [ SortVariableSort (SortVariable (Id "Int"))
                             ]
@@ -458,7 +465,7 @@ liftTests =
                     ]
                 )
             )
-            (ObjectPattern
+            (asKorePattern
                 (NextPattern Next
                     { nextSort =
                         SortVariableSort (SortVariable (Id "a"))
@@ -468,7 +475,7 @@ liftTests =
             )
         , testCase "Lift Attributes"
             (prettyAssertEqual ""
-                (Attributes [SentenceMetaPattern metaStringPattern])
+                (Attributes [metaStringPattern])
                 (liftAttributes (Attributes [unifiedStringPattern]))
             )
         , testCase "Lift Meta Alias Declaration"
@@ -485,16 +492,19 @@ liftTests =
                     }
                 ]
                 (liftSentence
-                    (MetaSentence $ SentenceAliasSentence SentenceAlias
-                        { sentenceAliasAlias = Alias
-                            { aliasConstructor = Id "#alias"
-                            , aliasParams = []
+                    (asSentence
+                        (SentenceAlias
+                            { sentenceAliasAlias = Alias
+                                { aliasConstructor = Id "#alias"
+                                , aliasParams = []
+                                }
+                            , sentenceAliasSorts = []
+                            , sentenceAliasResultSort =
+                                    SortVariableSort (SortVariable (Id "#a"))
+                            , sentenceAliasAttributes =
+                                Attributes []
                             }
-                        , sentenceAliasSorts = []
-                        , sentenceAliasResultSort =
-                                SortVariableSort (SortVariable (Id "#a"))
-                        , sentenceAliasAttributes = Attributes []
-                        }
+                        :: KoreSentenceAlias Meta)
                     )
                 )
             )
@@ -503,16 +513,19 @@ liftTests =
                 [ SentenceSymbolSentence (symbol_ "#`alias" [] patternMetaSort)
                 ]
                 (liftSentence
-                    (ObjectSentence $ SentenceAliasSentence SentenceAlias
-                        { sentenceAliasAlias = Alias
-                            { aliasConstructor = Id "alias"
-                            , aliasParams = []
+                    (asSentence
+                        (SentenceAlias
+                            { sentenceAliasAlias = Alias
+                                { aliasConstructor = Id "alias"
+                                , aliasParams = []
+                                }
+                            , sentenceAliasSorts = []
+                            , sentenceAliasResultSort =
+                                    SortVariableSort (SortVariable (Id "a"))
+                            , sentenceAliasAttributes =
+                                Attributes []
                             }
-                        , sentenceAliasSorts = []
-                        , sentenceAliasResultSort =
-                                SortVariableSort (SortVariable (Id "a"))
-                        , sentenceAliasAttributes = Attributes []
-                        }
+                        :: KoreSentenceAlias Object)
                     )
                 )
             )
@@ -524,13 +537,13 @@ liftTests =
                         patternMetaSort
                     )
                 , SentenceAxiomSentence SentenceAxiom
-                    { sentenceAxiomParameters = [sortParameter "#s"]
+                    { sentenceAxiomParameters = [sortParameter Meta "#s"]
                     , sentenceAxiomPattern =
-                        SentenceMetaPattern $ Fix
+                        Fix
                             (EqualsPattern Equals
                                 { equalsOperandSort = patternMetaSort
                                 , equalsResultSort =
-                                    SortVariableSort (sortParameter "#s")
+                                    SortVariableSort (sortParameter Meta "#s")
                                 , equalsFirst =
                                     Fix
                                         (apply (groundHead "#`alias")
@@ -597,17 +610,17 @@ liftTests =
                     , sentenceAxiomAttributes = Attributes []
                     }
                 , SentenceAxiomSentence SentenceAxiom
-                    { sentenceAxiomParameters = [ sortParameter "#s" ]
-                    , sentenceAxiomPattern = SentenceMetaPattern $ Fix
+                    { sentenceAxiomParameters = [ sortParameter Meta "#s" ]
+                    , sentenceAxiomPattern = Fix
                         (ImpliesPattern Implies
                             { impliesSort =
-                                SortVariableSort (sortParameter "#s")
+                                SortVariableSort (sortParameter Meta "#s")
                             , impliesFirst =
                                 Fix
                                     (apply
                                         (sortsDeclaredHead
                                             (SortVariableSort
-                                                (sortParameter "#s")
+                                                (sortParameter Meta "#s")
                                             )
                                         )
                                         [ Fix
@@ -630,7 +643,7 @@ liftTests =
                                     (apply
                                         (symbolDeclaredHead
                                             (SortVariableSort
-                                                (sortParameter "#s")
+                                                (sortParameter Meta "#s")
                                             )
                                         )
                                         [ Fix
@@ -676,17 +689,20 @@ liftTests =
                     }
                 ]
                 (liftSentence
-                    (ObjectSentence $ SentenceSymbolSentence SentenceSymbol
-                        { sentenceSymbolSymbol = Symbol
-                            { symbolConstructor = Id "alias"
-                            , symbolParams = [SortVariable (Id "a")]
+                    (asSentence
+                        (SentenceSymbol
+                            { sentenceSymbolSymbol = Symbol
+                                { symbolConstructor = Id "alias"
+                                , symbolParams = [SortVariable (Id "a")]
+                                }
+                            , sentenceSymbolSorts =
+                                [ SortVariableSort (SortVariable (Id "a")) ]
+                            , sentenceSymbolResultSort =
+                                    SortVariableSort (SortVariable (Id "a"))
+                            , sentenceSymbolAttributes =
+                                Attributes []
                             }
-                        , sentenceSymbolSorts =
-                            [ SortVariableSort (SortVariable (Id "a")) ]
-                        , sentenceSymbolResultSort =
-                                SortVariableSort (SortVariable (Id "a"))
-                        , sentenceSymbolAttributes = Attributes []
-                        }
+                        :: KoreSentenceSymbol Object)
                     )
                 )
             )
@@ -704,16 +720,19 @@ liftTests =
                     }
                 ]
                 (liftSentence
-                    (MetaSentence $ SentenceSymbolSentence SentenceSymbol
-                        { sentenceSymbolSymbol = Symbol
-                            { symbolConstructor = Id "#symbol"
-                            , symbolParams = []
+                    (asSentence
+                        (SentenceSymbol
+                            { sentenceSymbolSymbol = Symbol
+                                { symbolConstructor = Id "#symbol"
+                                , symbolParams = []
+                                }
+                            , sentenceSymbolSorts = []
+                            , sentenceSymbolResultSort =
+                                    SortVariableSort (SortVariable (Id "#a"))
+                            , sentenceSymbolAttributes =
+                                Attributes []
                             }
-                        , sentenceSymbolSorts = []
-                        , sentenceSymbolResultSort =
-                                SortVariableSort (SortVariable (Id "#a"))
-                        , sentenceSymbolAttributes = Attributes []
-                        }
+                        :: KoreSentenceSymbol Meta)
                     )
                 )
             )
@@ -729,13 +748,12 @@ liftTests =
                     , sentenceSymbolAttributes = Attributes []
                     }
                 , SentenceAxiomSentence SentenceAxiom
-                    { sentenceAxiomParameters = [ sortParameter "#s" ]
-                    , sentenceAxiomPattern = SentenceMetaPattern
-                        (Fix
+                    { sentenceAxiomParameters = [ sortParameter Meta "#s" ]
+                    , sentenceAxiomPattern = Fix
                             (EqualsPattern Equals
                                 { equalsOperandSort = sortMetaSort
                                 , equalsResultSort =
-                                    SortVariableSort (sortParameter "#s")
+                                    SortVariableSort (sortParameter Meta "#s")
                                 , equalsFirst = Fix
                                     (apply (groundHead "#`List")
                                         [ variablePattern "#a" sortMetaSort ]
@@ -757,21 +775,19 @@ liftTests =
                                     )
                                 }
                             )
-                        )
                     , sentenceAxiomAttributes = Attributes []
                     }
                 , SentenceAxiomSentence SentenceAxiom
-                    { sentenceAxiomParameters = [sortParameter "#s"]
-                    , sentenceAxiomPattern = SentenceMetaPattern
-                        (Fix
+                    { sentenceAxiomParameters = [sortParameter Meta "#s"]
+                    , sentenceAxiomPattern = Fix
                             (ImpliesPattern Implies
                                 { impliesSort =
-                                    SortVariableSort (sortParameter "#s")
+                                    SortVariableSort (sortParameter Meta "#s")
                                 , impliesFirst = Fix
                                     (apply
                                         (sortsDeclaredHead
                                             (SortVariableSort
-                                                (sortParameter "#s")
+                                                (sortParameter Meta "#s")
                                             )
                                         )
                                         [ Fix
@@ -787,7 +803,7 @@ liftTests =
                                     (apply
                                         (sortDeclaredHead
                                             (SortVariableSort
-                                                (sortParameter "#s")
+                                                (sortParameter Meta "#s")
                                             )
                                         )
                                         [ Fix
@@ -800,24 +816,26 @@ liftTests =
                                     )
                                 }
                             )
-                        )
                     , sentenceAxiomAttributes = Attributes []
                     }
                 ]
                 (liftSentence
-                    (ObjectSentence $ SentenceSortSentence SentenceSort
-                        { sentenceSortName = Id "List"
-                        , sentenceSortParameters = [SortVariable (Id "a")]
-                        , sentenceSortAttributes = Attributes []
-                        }
+                    (asSentence
+                        (SentenceSort
+                            { sentenceSortName = Id "List"
+                            , sentenceSortParameters = [SortVariable (Id "a")]
+                            , sentenceSortAttributes =
+                                Attributes []
+                            }
+                        :: KoreSentenceSort)
                     )
                 )
             )
         , testCase "Lift Axiom topped in Object Pattern"
             (prettyAssertEqual ""
                 [ SentenceAxiomSentence SentenceAxiom
-                    { sentenceAxiomParameters = [sortParameter "#a"]
-                    , sentenceAxiomPattern = SentenceMetaPattern $ Fix
+                    { sentenceAxiomParameters = [sortParameter Meta "#a"]
+                    , sentenceAxiomPattern = Fix
                         (ImpliesPattern Implies
                             { impliesSort = patternMetaSort
                             , impliesFirst = Fix
@@ -844,18 +862,21 @@ liftTests =
                     }
                 ]
                 (liftSentence
-                    (MetaSentence $ SentenceAxiomSentence SentenceAxiom
+                    (asSentence SentenceAxiom
                         { sentenceAxiomParameters =
-                            [ ObjectSortVariable (SortVariable (Id "a"))
-                            , MetaSortVariable (SortVariable (Id "#a"))
+                            [ UnifiedObject (SortVariable (Id "a"))
+                            , UnifiedMeta (SortVariable (Id "#a"))
                             ]
-                        , sentenceAxiomPattern = ObjectPattern
+                        , sentenceAxiomPattern = asKorePattern
                             (TopPattern
                                 (Top
-                                    (SortVariableSort (SortVariable (Id "a")))
+                                    (SortVariableSort
+                                        (SortVariable (Id "a" :: Id Object))
+                                    )
                                 )
                             )
-                        , sentenceAxiomAttributes = Attributes []
+                        , sentenceAxiomAttributes =
+                            Attributes [] :: KoreAttributes
                         }
                     )
                 )
@@ -864,7 +885,7 @@ liftTests =
             (prettyAssertEqual ""
                 [ SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters = []
-                    , sentenceAxiomPattern = SentenceMetaPattern $ Fix
+                    , sentenceAxiomPattern = Fix
                         (ImpliesPattern Implies
                             { impliesSort = charListMetaSort
                             , impliesFirst = Fix
@@ -878,10 +899,11 @@ liftTests =
                     }
                 ]
                 (liftSentence
-                    (MetaSentence $ SentenceAxiomSentence SentenceAxiom
-                        { sentenceAxiomParameters = []
+                    (asSentence SentenceAxiom
+                        { sentenceAxiomParameters = [] :: [UnifiedSortVariable]
                         , sentenceAxiomPattern = unifiedStringPattern
-                        , sentenceAxiomAttributes = Attributes []
+                        , sentenceAxiomAttributes =
+                            Attributes [] :: KoreAttributes
                         }
                     )
                 )
@@ -944,24 +966,24 @@ natSort = SortActualSort SortActual
 stringPattern :: Pattern Meta Variable child
 stringPattern = StringLiteralPattern (StringLiteral "a")
 
-unifiedStringPattern :: UnifiedPattern
-unifiedStringPattern = MetaPattern stringPattern
+unifiedStringPattern :: CommonKorePattern
+unifiedStringPattern = asKorePattern stringPattern
 
 metaStringPattern :: CommonMetaPattern
 metaStringPattern = Fix stringPattern
 
-sentenceImport :: Sentence Meta sortParam pat variable
+sentenceImport :: SentenceImport pat variable
 sentenceImport =
-    SentenceImportSentence SentenceImport
+    SentenceImport
         { sentenceImportModuleName = ModuleName "MODULE"
         , sentenceImportAttributes = Attributes []
         }
 
 koreSentenceImport :: KoreSentence
-koreSentenceImport = MetaSentence sentenceImport
+koreSentenceImport = asSentence (sentenceImport :: KoreSentenceImport)
 
 metaSentenceImport :: MetaSentence
-metaSentenceImport = sentenceImport
+metaSentenceImport = SentenceImportSentence sentenceImport
 
 simpleKoreModule :: KoreModule
 simpleKoreModule =
