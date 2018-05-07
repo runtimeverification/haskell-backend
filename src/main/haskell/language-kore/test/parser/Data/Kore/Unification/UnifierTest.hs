@@ -211,7 +211,7 @@ unificationTests =
             aA
             aA
             [("x", aA)]
-            (Proposition5243
+            (Proposition_5_24_3
                 [FunctionalHead headA]
                 (Variable (Id "x") s1)
                 (extractPurePattern aA)
@@ -223,7 +223,7 @@ unificationTests =
             [("x", aA)]
             (AndDistributionAndConstraintLifting
                 (getSentenceSymbolOrAliasHead f [])
-                [ Proposition5243
+                [ Proposition_5_24_3
                     [FunctionalHead headA]
                     (Variable (Id "x") s1)
                     (extractPurePattern aA)
@@ -240,7 +240,7 @@ unificationTests =
             x
             a2A
             [("x", a2A)]
-            (Proposition5243
+            (Proposition_5_24_3
                 [FunctionalHead headA2]
                 (Variable (Id "x") s1)
                 (extractPurePattern a2A)
@@ -256,19 +256,19 @@ unificationTests =
             ]
             (AndDistributionAndConstraintLifting
                 (getSentenceSymbolOrAliasHead ef [])
-                [ Proposition5243
+                [ Proposition_5_24_3
                     [ FunctionalHead headEG
                     , FunctionalVariable (Variable (Id "ex3") s1)
                     ]
                     (Variable (Id "ex1") s1)
                     (extractPurePattern $ applyS eg [ex3])
-                , Proposition5243
+                , Proposition_5_24_3
                     [ FunctionalHead headEH
                     , FunctionalVariable (Variable (Id "ex1") s1)
                     ]
                     (Variable (Id "ex4") s1)
                     (extractPurePattern $ applyS eh [ex1])
-                , Proposition5243
+                , Proposition_5_24_3
                     [FunctionalVariable (Variable (Id "ex3") s1)]
                     (Variable (Id "ex2") s1)
                     (extractPurePattern ex3)

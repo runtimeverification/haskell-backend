@@ -54,45 +54,66 @@ unificationSolutionToPurePattern
     -> UnificationSolution level
     -> CommonPurePattern level
 unificationSolutionToPurePattern tools ucp =
-    foldr
-        (andEquals
-            (getPatternResultSort (getResultSort tools) (unFix unifiedTerm)))
-        unifiedTerm
-        (unificationSolutionConstraints ucp)
+    case unificationSolutionConstraints ucp of
+        [] -> unifiedTerm
+        (constraint:constraints) ->
+            andPat unifiedTerm (foldr andEquals (equals constraint) constraints)
   where
+    resultSort = getPatternResultSort (getResultSort tools) (unFix unifiedTerm)
     unifiedTerm = unificationSolutionTerm ucp
-    andEquals sort (var, p) second = Fix $ AndPattern And
-        { andSort = sort
-        , andFirst = Fix $ EqualsPattern Equals
+    andEquals = andPat . equals
+    andPat first second =
+        Fix $ AndPattern And
+            { andSort = resultSort
+            , andFirst = first
+            , andSecond = second
+            }
+    equals (var, p) =
+        Fix $ EqualsPattern Equals
             { equalsOperandSort = variableSort var
-            , equalsResultSort = sort
+            , equalsResultSort = resultSort
             , equalsFirst = Fix $ VariablePattern var
             , equalsSecond = p
             }
-        , andSecond = second
-        }
 
 -- |'UnificationProof' is meant to represent proof term stubs for various
 -- steps performed during unification
 data UnificationProof level
-    = UnificationProof -- ^dummy constructor to specify dummy proof
+    = UnificationProof
+    -- ^Dummy constructor to specify dummy proof
     | ConjunctionIdempotency (CommonPurePattern level)
-    -- ^used to specify the reduction a/\a <-> a
-    | Proposition5243
+    -- ^Used to specify the reduction a/\a <-> a
+    | Proposition_5_24_3
         [FunctionalProof level]
         (Variable level)
         (CommonPurePattern level)
-    -- ^used to specify the application of Proposition 5.24 (3)
+    -- ^Used to specify the application of Proposition 5.24 (3)
+    -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
+    -- if ϕ and ϕ' are functional patterns, then
+    -- |= (ϕ ∧ ϕ') = (ϕ ∧ (ϕ = ϕ'))
     | AndDistributionAndConstraintLifting
         (SymbolOrAlias level)
         [UnificationProof level]
-    -- ^Used to specify both the application of the constructor axiom and the
-    -- lifting of the constraints.
+    -- ^Used to specify both the application of the constructor axiom
+    -- c(x1, .., xn) /\ c(y1, ..., yn) -> c(x1 /\ y1, ..., xn /\ yn)
+    -- and of Proposition 5.12 (Constraint propagation) after unification:
+    -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.2
+    -- if ϕ is a predicate, then:
+    -- |= c(ϕ1, ..., ϕi /\ ϕ, ..., ϕn) = c(ϕ1, ..., ϕi, ..., ϕn) /\ ϕ
   deriving (Eq)
 
+-- ^'FunctionalProof' is used for providing arguments that a pattern is
+-- functional.  Currently we only support arguments stating that a
+-- pattern consists only of functional symbols and variables.
+-- Hence, a proof that a pattern is functional is a list of 'FunctionalProof'.
 data FunctionalProof level
     = FunctionalVariable (Variable level)
+    -- ^Variables are functional as per Corollary 5.19
+    -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
+    -- |= ∃y . x = y
     | FunctionalHead (SymbolOrAlias level)
+    -- ^Head of a total function, conforming to Definition 5.21
+    -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
   deriving (Eq)
 
 -- |'UnificationError' specifies various error cases encountered during
@@ -151,10 +172,10 @@ preTransform tools (AndPattern ap) = if left == right
         )
     else case (unFix left, unFix right) of
         (VariablePattern vp, _) ->
-            Left (mlProposition5243 tools vp right)
+            Left (mlProposition_5_24_3 tools vp right)
 
         (_, VariablePattern vp) -> -- add commutativity here
-            Left (mlProposition5243 tools vp left)
+            Left (mlProposition_5_24_3 tools vp left)
         (ApplicationPattern ap1, ApplicationPattern ap2) ->
             let
                 head1 = applicationSymbolOrAlias ap1
@@ -180,10 +201,11 @@ preTransform tools (AndPattern ap) = if left == right
   where
     left = andFirst ap
     right = andSecond ap
+preTransform _ _ = Left $ Left UnsupportedPatterns
 
 -- applies Proposition 5.24 (3) which replaces x /\ phi with phi /\ x = phi
 -- if phi is a functional pattern.
-mlProposition5243
+mlProposition_5_24_3
     :: MetadataTools level
     -> Variable level
     -- ^variable pattern
@@ -192,7 +214,7 @@ mlProposition5243
     -> Either
         (UnificationError level)
         (UnificationSolution level, UnificationProof level)
-mlProposition5243
+mlProposition_5_24_3
     tools
     v
     functionalPattern
@@ -202,7 +224,7 @@ mlProposition5243
                 { unificationSolutionTerm        = functionalPattern
                 , unificationSolutionConstraints = [ (v, functionalPattern) ]
                 }
-            , Proposition5243 functionalProof v functionalPattern
+            , Proposition_5_24_3 functionalProof v functionalPattern
             )
         _ -> Left NonFunctionalPattern
 

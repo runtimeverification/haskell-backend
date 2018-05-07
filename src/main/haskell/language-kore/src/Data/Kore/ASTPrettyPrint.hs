@@ -721,8 +721,8 @@ instance MetaOrObject level => PrettyPrint (UnificationProof level) where
             "AndDistributionAndConstraintLifting"
             patternHead
             proofs
-    prettyPrint flags (Proposition5243 funProof var pat) =
-        writeThreeFieldStruct flags "Proposition5243" funProof var pat
+    prettyPrint flags (Proposition_5_24_3 funProof var pat) =
+        writeThreeFieldStruct flags "Proposition_5_24_3" funProof var pat
 
 instance MetaOrObject level => PrettyPrint (UnificationError level) where
     prettyPrint flags (ConstructorClash h1 h2) =
