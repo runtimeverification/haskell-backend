@@ -451,7 +451,7 @@ module IMP-SYNTAX
       I:Int{},
       \exists{R}(
         E:AExp{},
-	\equals{AExp{},R}(
+        \equals{AExp{},R}(
 	  intAsAExp{}(I:Int{}),
 	  E:AExp{})))
   []
