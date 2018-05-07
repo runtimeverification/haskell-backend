@@ -27,6 +27,8 @@ import           Data.Fix
 import           Data.Function            (on)
 import           Data.List                (sortBy)
 
+-- import           Debug.Trace
+
 -- |'MetadataTools' defines a dictionary of functions which can be used to
 -- access metadata needed during the unification process.
 data MetadataTools level = MetadataTools
@@ -44,7 +46,7 @@ data UnificationSolution level = UnificationSolution
     , unificationSolutionConstraints :: ![( Variable level
                                           , CommonPurePattern level)]
     }
-  deriving (Eq)
+  deriving (Eq, Show)
 
 -- |'unificationSolutionToPurePattern' packages an unification solution into
 -- a 'CommonPurePattern' by transforming the constraints into a conjunction of
@@ -100,7 +102,7 @@ data UnificationProof level
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.2
     -- if ϕ is a predicate, then:
     -- |= c(ϕ1, ..., ϕi /\ ϕ, ..., ϕn) = c(ϕ1, ..., ϕi, ..., ϕn) /\ ϕ
-  deriving (Eq)
+  deriving (Eq, Show)
 
 -- ^'FunctionalProof' is used for providing arguments that a pattern is
 -- functional.  Currently we only support arguments stating that a
@@ -114,7 +116,7 @@ data FunctionalProof level
     | FunctionalHead (SymbolOrAlias level)
     -- ^Head of a total function, conforming to Definition 5.21
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
-  deriving (Eq)
+  deriving (Eq, Show)
 
 -- |'UnificationError' specifies various error cases encountered during
 -- unification
@@ -124,7 +126,7 @@ data UnificationError level
     | NonFunctionalHead (SymbolOrAlias level)
     | NonFunctionalPattern
     | UnsupportedPatterns
-  deriving (Eq)
+  deriving (Eq, Show)
 
 -- checks whether a pattern is functional or not
 isFunctionalPattern
@@ -159,8 +161,12 @@ preTransform
     :: MetadataTools level
     -> UnFixedPureMLPattern level Variable
     -> Either
-        ( Either (UnificationError level) (UnificationSolution level
-        , UnificationProof level))
+        ( Either
+            (UnificationError level)
+            ( UnificationSolution level
+            , UnificationProof level
+            )
+        )
         (UnFixedPureMLPattern level Variable)
 preTransform tools (AndPattern ap) = if left == right
     then Left $ Right
@@ -239,25 +245,24 @@ postTransform
     -> Either
         (UnificationError level)
         (UnificationSolution level, UnificationProof level)
-postTransform (ApplicationPattern ap) =
-    case sequenceA (applicationChildren ap) of
-        Left err -> Left err
-        Right children ->
-            let (subSolutions, subProofs) = unzip children in
-                Right
-                    ( UnificationSolution
-                        { unificationSolutionTerm = Fix $ ApplicationPattern ap
-                            { applicationChildren =
-                                    map unificationSolutionTerm subSolutions
-                            }
-                        , unificationSolutionConstraints =
-                            sortBy (compare `on` fst)
-                                (concatMap
-                                    unificationSolutionConstraints
-                                    subSolutions
-                                )
-                        }
-                    , AndDistributionAndConstraintLifting
-                        (applicationSymbolOrAlias ap)
-                        subProofs
+postTransform (ApplicationPattern ap) = do
+    -- traceM (show ap)
+    children <- sequenceA (applicationChildren ap)
+    let (subSolutions, subProofs) = unzip children
+    return
+        ( UnificationSolution
+            { unificationSolutionTerm = Fix $ ApplicationPattern ap
+                { applicationChildren =
+                        map unificationSolutionTerm subSolutions
+                }
+            , unificationSolutionConstraints =
+                sortBy (compare `on` fst)
+                    (concatMap
+                        unificationSolutionConstraints
+                        subSolutions
                     )
+            }
+        , AndDistributionAndConstraintLifting
+            (applicationSymbolOrAlias ap)
+            subProofs
+        )

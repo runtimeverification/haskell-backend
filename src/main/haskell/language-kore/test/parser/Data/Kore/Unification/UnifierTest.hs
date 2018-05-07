@@ -39,6 +39,27 @@ ef = symbol_ "ef" [s1, s1, s1] s1
 eg = symbol_ "eg" [s1] s1
 eh = symbol_ "eh" [s1] s1
 
+nonLinF, nonLinG, nonLinAS :: PureSentenceSymbol Object
+nonLinF = symbol_ "nonLinF" [s1, s1] s1
+nonLinG = symbol_ "nonLinG" [s1] s1
+nonLinAS = symbol_ "nonLinA" [] s1
+
+nonLinA, nonLinX, nonLinY :: CommonPurePatternStub Object
+nonLinX = parameterizedVariable_ s1 "x"
+nonLinY = parameterizedVariable_ s1 "y"
+
+nonLinA = applyS nonLinAS []
+
+expBin :: PureSentenceSymbol Object
+expBin = symbol_ "times" [s1, s1] s1
+
+expA, expX, expY, expZ, expW :: CommonPurePatternStub Object
+expA = parameterizedVariable_ s1 "a"
+expX = parameterizedVariable_ s1 "x"
+expY = parameterizedVariable_ s1 "y"
+expZ = parameterizedVariable_ s1 "z"
+expW = parameterizedVariable_ s1 "w"
+
 ex1, ex2, ex3, ex4 :: CommonPurePatternStub Object
 ex1 = parameterizedVariable_ s1 "ex1"
 ex2 = parameterizedVariable_ s1 "ex2"
@@ -85,7 +106,7 @@ symbols :: [(SymbolOrAlias Object, PureSentenceSymbol Object)]
 symbols =
     map
         (\s -> (getSentenceSymbolOrAliasHead s [], s))
-        [a, a1, a2, a3, b, c, f, g, h, ef, eg, eh]
+        [a, a1, a2, a3, b, c, f, g, h, ef, eg, eh, nonLinF, nonLinG, nonLinAS]
 
 mockIsConstructor, mockIsFunctional :: SymbolOrAlias Object -> Bool
 mockIsConstructor patternHead
@@ -274,6 +295,26 @@ unificationTests =
                     (extractPurePattern ex3)
                 ]
             )
+        , unificationSuccess
+            "f(g(X),X) = f(Y,a) https://en.wikipedia.org/wiki/Unification_(computer_science)#Examples_of_syntactic_unification_of_first-order_terms"
+            (applyS nonLinF [applyS nonLinG [nonLinX], nonLinX])
+            (applyS nonLinF [nonLinY, nonLinA])
+            (applyS nonLinF [applyS nonLinG [nonLinX], nonLinA])
+            [ ("x", nonLinA), ("y", applyS nonLinG [nonLinX])]
+            (AndDistributionAndConstraintLifting
+                headNonLinF
+                [ Proposition_5_24_3
+                    [ FunctionalHead headNonLinG
+                    , FunctionalVariable (Variable (Id "x") s1)
+                    ]
+                    (Variable (Id "y") s1)
+                    (extractPurePattern (applyS nonLinG [nonLinX]))
+                , Proposition_5_24_3
+                    [ FunctionalHead headNonLinA ]
+                    (Variable (Id "x") s1)
+                    (extractPurePattern nonLinA)
+                ]
+            )
         , unificationFailure "Unmatching constants"
             aA
             a1A
@@ -311,3 +352,6 @@ unificationTests =
     headA1 = getSentenceSymbolOrAliasHead a1 []
     headEG = getSentenceSymbolOrAliasHead eg []
     headEH = getSentenceSymbolOrAliasHead eh []
+    headNonLinA = getSentenceSymbolOrAliasHead nonLinAS []
+    headNonLinG = getSentenceSymbolOrAliasHead nonLinG []
+    headNonLinF = getSentenceSymbolOrAliasHead nonLinF []
