@@ -22,14 +22,14 @@ astPrettyPrintTests =
             )
         , testCase "Meta unified variable"
             (assertEqual ""
-                (  "MetaVariable Variable\n"
-                ++ "    { variableName = Id Meta \"#v\"\n"
+                (  "UnifiedMeta Variable\n"
+                ++ "    { variableName = Id \"#v\" :: Id Meta\n"
                 ++ "    , variableSort =\n"
-                ++ "        SortVariableSort (SortVariable (Id Meta \"#sv\"))\n"
+                ++ "        SortVariableSort (SortVariable (Id \"#sv\" :: Id Meta))\n"
                 ++ "    }"
                 )
                 (prettyPrintToString
-                    (MetaVariable Variable
+                    (UnifiedMeta Variable
                         { variableName = Id "#v"
                         , variableSort =
                             SortVariableSort (SortVariable (Id "#sv"))
@@ -39,14 +39,14 @@ astPrettyPrintTests =
             )
         , testCase "Object unified variable"
             (assertEqual ""
-                (  "ObjectVariable Variable\n"
-                ++ "    { variableName = Id Object \"v\"\n"
+                (  "UnifiedObject Variable\n"
+                ++ "    { variableName = Id \"v\" :: Id Object\n"
                 ++ "    , variableSort =\n"
-                ++ "        SortVariableSort (SortVariable (Id Object \"sv\"))\n"
+                ++ "        SortVariableSort (SortVariable (Id \"sv\" :: Id Object))\n"
                 ++ "    }"
                 )
                 (prettyPrintToString
-                    (ObjectVariable Variable
+                    (UnifiedObject Variable
                         { variableName = Id "v"
                         , variableSort =
                             SortVariableSort (SortVariable (Id "sv"))
@@ -56,7 +56,7 @@ astPrettyPrintTests =
             )
         , testCase "Maybe - Just"
             (assertEqual ""
-                "Just (Id Object \"v\")"
+                "Just (Id \"v\" :: Id Object)"
                 (prettyPrintToString
                     (Just (Id "v" :: Id Object))
                 )
@@ -69,7 +69,7 @@ astPrettyPrintTests =
             , testCase "MetaMLPattern - Top"
             (assertEqual ""
                 (  "Fix (TopPattern (Top (SortActualSort SortActual\n"
-                ++ "    { sortActualName = Id Meta \"#Char\"\n"
+                ++ "    { sortActualName = Id \"#Char\" :: Id Meta\n"
                 ++ "    , sortActualSorts = []\n"
                 ++ "    })))"
                 )
@@ -79,21 +79,8 @@ astPrettyPrintTests =
                     )
                 )
             )
-        , testCase "SentenceMetaPattern - Top"
-            (assertEqual ""
-                (  "SentenceMetaPattern (Fix (TopPattern (Top (SortActualSort SortActual\n"
-                ++ "    { sortActualName = Id Meta \"#Char\"\n"
-                ++ "    , sortActualSorts = []\n"
-                ++ "    }))))"
-                )
-                (prettyPrintToString
-                    (SentenceMetaPattern (Fix (TopPattern (Top charMetaSort)))
-                    :: SentenceMetaPattern Variable
-                    )
-                )
-            )
         ]
 
 prettyPrintPattern
-    :: MetaOrObject level => Pattern level Variable UnifiedPattern -> String
+    :: MetaOrObject level => Pattern level Variable CommonKorePattern -> String
 prettyPrintPattern = prettyPrintToString

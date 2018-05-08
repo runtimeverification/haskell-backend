@@ -192,7 +192,7 @@ simpleSymbolSentence (SymbolName name) (SortName sort) =
         , sentenceSymbolAttributes = Attributes []
         }
 
-simpleAxiomSentence :: UnifiedPattern -> KoreSentence
+simpleAxiomSentence :: CommonKorePattern -> KoreSentence
 simpleAxiomSentence unifiedPattern =
     asSentence
         (SentenceAxiom
@@ -225,7 +225,7 @@ sortSentenceWithSortParameters (SortName name) parameters =
 aliasSentenceWithSort
     :: MetaOrObject level => AliasName -> Sort level -> KoreSentence
 aliasSentenceWithSort (AliasName name) sort =
-    asKoreAliasSentence
+    asSentence
         SentenceAlias
             { sentenceAliasAlias = Alias
                 { aliasConstructor = Id name
@@ -233,7 +233,8 @@ aliasSentenceWithSort (AliasName name) sort =
                 }
             , sentenceAliasSorts = []
             , sentenceAliasResultSort = sort
-            , sentenceAliasAttributes = Attributes []
+            , sentenceAliasAttributes =
+                Attributes [] :: KoreAttributes
             }
 
 metaAliasSentenceWithSortParameters
@@ -295,7 +296,7 @@ sentenceAliasWithAttributes
     :: AliasName
     -> [SortVariable level]
     -> Sort level
-    -> [UnifiedPattern]
+    -> [CommonKorePattern]
     -> KoreSentenceAlias level
 sentenceAliasWithAttributes (AliasName name) params sort attributes =
     SentenceAlias
@@ -312,7 +313,7 @@ sentenceSymbolWithAttributes
     :: SymbolName
     -> [SortVariable level]
     -> Sort level
-    -> [UnifiedPattern]
+    -> [CommonKorePattern]
     -> KoreSentenceSymbol level
 sentenceSymbolWithAttributes (SymbolName name) params sort attributes =
     SentenceSymbol
@@ -365,7 +366,7 @@ symbolSentenceWithSortParameters
         }
 
 axiomSentenceWithSortParameters
-    :: UnifiedPattern -> [UnifiedSortVariable] -> KoreSentence
+    :: CommonKorePattern -> [UnifiedSortVariable] -> KoreSentence
 axiomSentenceWithSortParameters unifiedPattern parameters =
     asSentence
         (SentenceAxiom
@@ -377,8 +378,8 @@ axiomSentenceWithSortParameters unifiedPattern parameters =
 
 axiomSentenceWithAttributes
     :: [UnifiedSortVariable]
-    -> UnifiedPattern
-    -> [UnifiedPattern]
+    -> CommonKorePattern
+    -> [CommonKorePattern]
     -> KoreSentence
 axiomSentenceWithAttributes parameters unifiedPattern attributes =
     asSentence
@@ -412,7 +413,7 @@ symbolSentenceWithResultSort
     => SymbolName -> Sort level -> [SortVariable level] -> KoreSentence
 symbolSentenceWithResultSort
     (SymbolName name) sort parameters
-  = asKoreSymbolSentence
+  = asSentence
         SentenceSymbol
             { sentenceSymbolSymbol = Symbol
                 { symbolConstructor = Id name
@@ -420,7 +421,8 @@ symbolSentenceWithResultSort
                 }
             , sentenceSymbolSorts = []
             , sentenceSymbolResultSort = sort
-            , sentenceSymbolAttributes = Attributes []
+            , sentenceSymbolAttributes =
+                Attributes [] :: KoreAttributes
             }
 
 objectSymbolSentenceWithArguments
@@ -432,7 +434,7 @@ symbolSentenceWithArguments
     => SymbolName -> Sort level -> [Sort level] -> KoreSentence
 symbolSentenceWithArguments
     (SymbolName name) sort operandSorts
-  = asKoreSymbolSentence
+  = asSentence
         SentenceSymbol
             { sentenceSymbolSymbol = Symbol
                 { symbolConstructor = Id name
@@ -440,7 +442,8 @@ symbolSentenceWithArguments
                 }
             , sentenceSymbolSorts = operandSorts
             , sentenceSymbolResultSort = sort
-            , sentenceSymbolAttributes = Attributes []
+            , sentenceSymbolAttributes =
+                Attributes [] :: KoreAttributes
             }
 
 objectAliasSentenceWithArguments
@@ -452,7 +455,7 @@ aliasSentenceWithArguments
     => AliasName -> Sort level -> [Sort level] -> KoreSentence
 aliasSentenceWithArguments
     (AliasName name) sort operandSorts
-  = asKoreAliasSentence
+  = asSentence
         SentenceAlias
             { sentenceAliasAlias = Alias
                 { aliasConstructor = Id name
@@ -460,7 +463,8 @@ aliasSentenceWithArguments
                 }
             , sentenceAliasSorts = operandSorts
             , sentenceAliasResultSort = sort
-            , sentenceAliasAttributes = Attributes []
+            , sentenceAliasAttributes =
+                Attributes [] :: KoreAttributes
             }
 
 simpleSortActual :: SortName -> SortActual level
@@ -489,9 +493,9 @@ unifiedSortVariable
 unifiedSortVariable x name =
     asUnified (sortVariable x name)
 
-stringUnifiedPattern :: String -> UnifiedPattern
+stringUnifiedPattern :: String -> CommonKorePattern
 stringUnifiedPattern s =
-    MetaPattern (StringLiteralPattern (StringLiteral s))
+    asKorePattern (StringLiteralPattern (StringLiteral s))
 
 variable :: VariableName -> Sort level -> Variable level
 variable (VariableName name) sort =
@@ -502,7 +506,7 @@ variable (VariableName name) sort =
 
 unifiedVariable
     :: MetaOrObject level
-    => VariableName -> Sort level -> UnifiedVariable Variable
+    => VariableName -> Sort level -> Unified Variable
 unifiedVariable name sort =
     asUnified (variable name sort)
 
@@ -511,36 +515,36 @@ variablePattern name sort =
     VariablePattern (variable name sort)
 
 unifiedVariablePattern
-    :: MetaOrObject level => VariableName -> Sort level -> UnifiedPattern
+    :: MetaOrObject level => VariableName -> Sort level -> CommonKorePattern
 unifiedVariablePattern name sort =
-    asUnifiedPattern (variablePattern name sort)
+    asKorePattern (variablePattern name sort)
 
 simpleExistsPattern
     :: MetaOrObject level
-    => Variable level -> Sort level -> Pattern level Variable UnifiedPattern
+    => Variable level -> Sort level -> Pattern level Variable CommonKorePattern
 simpleExistsPattern quantifiedVariable resultSort =
     ExistsPattern Exists
         { existsSort = resultSort
         , existsVariable = quantifiedVariable
-        , existsChild = asUnifiedPattern (VariablePattern quantifiedVariable)
+        , existsChild = asKorePattern (VariablePattern quantifiedVariable)
         }
 
 simpleExistsUnifiedPattern
-    :: MetaOrObject level => VariableName -> Sort level -> UnifiedPattern
+    :: MetaOrObject level => VariableName -> Sort level -> CommonKorePattern
 simpleExistsUnifiedPattern name sort =
-    asUnifiedPattern
+    asKorePattern
         ( simpleExistsPattern
             (variable name sort)
             sort
         )
 
 simpleExistsObjectUnifiedPattern
-    :: VariableName -> Sort Object -> UnifiedPattern
+    :: VariableName -> Sort Object -> CommonKorePattern
 simpleExistsObjectUnifiedPattern = simpleExistsUnifiedPattern
 
 simpleExistsUnifiedPatternWithType
     :: MetaOrObject level
-    => level -> VariableName -> Sort level -> UnifiedPattern
+    => level -> VariableName -> Sort level -> CommonKorePattern
 simpleExistsUnifiedPatternWithType _ = simpleExistsUnifiedPattern
 
 simpleExistsEqualsUnifiedPattern
@@ -548,17 +552,17 @@ simpleExistsEqualsUnifiedPattern
     => VariableName
     -> OperandSort level
     -> ResultSort level
-    -> UnifiedPattern
+    -> CommonKorePattern
 simpleExistsEqualsUnifiedPattern
     name
     (OperandSort operandSort)
     (ResultSort resultSort)
   =
-    asUnifiedPattern
+    asKorePattern
         (ExistsPattern Exists
             { existsSort = resultSort
             , existsVariable = variable name operandSort
-            , existsChild = asUnifiedPattern
+            , existsChild = asKorePattern
                 (EqualsPattern Equals
                     { equalsOperandSort = operandSort
                     , equalsResultSort = resultSort
@@ -572,12 +576,14 @@ simpleExistsEqualsUnifiedPattern
         )
 
 applicationObjectUnifiedPatternWithChildren
-    :: SymbolName -> [UnifiedPattern] -> UnifiedPattern
+    :: SymbolName -> [CommonKorePattern] -> CommonKorePattern
 applicationObjectUnifiedPatternWithChildren name unifiedPatterns =
-    ObjectPattern (applicationPatternWithChildren name unifiedPatterns)
+    asKorePattern
+        ( applicationPatternWithChildren name unifiedPatterns
+        :: Pattern Meta Variable CommonKorePattern)
 
 applicationPatternWithChildren
-    :: SymbolName -> [UnifiedPattern] -> Pattern level v UnifiedPattern
+    :: SymbolName -> [CommonKorePattern] -> Pattern level v CommonKorePattern
 applicationPatternWithChildren (SymbolName name) unifiedPatterns =
     ApplicationPattern Application
         { applicationSymbolOrAlias = SymbolOrAlias
@@ -588,9 +594,9 @@ applicationPatternWithChildren (SymbolName name) unifiedPatterns =
         }
 
 applicationUnifiedPatternWithParams
-    :: MetaOrObject level => SymbolName -> [Sort level] -> UnifiedPattern
+    :: MetaOrObject level => SymbolName -> [Sort level] -> CommonKorePattern
 applicationUnifiedPatternWithParams (SymbolName name) params =
-    asUnifiedPattern
+    asKorePattern
         (ApplicationPattern Application
             { applicationSymbolOrAlias = SymbolOrAlias
                 { symbolOrAliasConstructor = Id name

@@ -5,87 +5,71 @@ Definition
             { moduleName = ModuleName "TEST-ATTRIBUTE-2"
             , moduleSentences =
                 [ ObjectSentence (SentenceSortSentence SentenceSort
-                    { sentenceSortName = Id Object "Nat"
+                    { sentenceSortName = Id "Nat" :: Id Object
                     , sentenceSortParameters = []
                     , sentenceSortAttributes =
                         Attributes 
-                            [ ObjectPattern (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Object "hook"
+                                        { symbolOrAliasConstructor = Id "#hook" :: Id Meta
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ ObjectPattern (DomainValuePattern DomainValue
-                                        { domainValueSort =
-                                            SortActualSort SortActual
-                                                { sortActualName = Id Object "Hook"
-                                                , sortActualSorts = []
-                                                }
-                                        , domainValueChild =
-                                            MetaPattern (StringLiteralPattern (StringLiteral "plus"))
-                                        })
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "Nat")))))
                                     ]
-                                })
+                                }))))
                             ]
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
-                            { symbolConstructor = Id Object "plus"
+                            { symbolConstructor = Id "plus" :: Id Object
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
                         [ SortActualSort SortActual
-                            { sortActualName = Id Object "Nat"
+                            { sortActualName = Id "Nat" :: Id Object
                             , sortActualSorts = []
                             }
                         , SortActualSort SortActual
-                            { sortActualName = Id Object "Nat"
+                            { sortActualName = Id "Nat" :: Id Object
                             , sortActualSorts = []
                             }
                         ]
                     , sentenceSymbolReturnSort =
                         SortActualSort SortActual
-                            { sortActualName = Id Object "Nat"
+                            { sortActualName = Id "Nat" :: Id Object
                             , sortActualSorts = []
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ ObjectPattern (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Object "hook"
+                                        { symbolOrAliasConstructor = Id "#hook" :: Id Meta
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ ObjectPattern (DomainValuePattern DomainValue
-                                        { domainValueSort =
-                                            SortActualSort SortActual
-                                                { sortActualName = Id Object "Hook"
-                                                , sortActualSorts = []
-                                                }
-                                        , domainValueChild =
-                                            MetaPattern (StringLiteralPattern (StringLiteral "plus"))
-                                        })
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "plus")))))
                                     ]
-                                })
-                            , ObjectPattern (ApplicationPattern Application
+                                }))))
+                            , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Object "associative"
+                                        { symbolOrAliasConstructor = Id "#assoc" :: Id Meta
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren = []
-                                })
-                            , ObjectPattern (ApplicationPattern Application
+                                }))))
+                            , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id Object "commutative"
+                                        { symbolOrAliasConstructor = Id "#comm" :: Id Meta
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren = []
-                                })
+                                }))))
                             ]
                     })
                 ]

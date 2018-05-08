@@ -5,10 +5,10 @@ Definition
             { moduleName = ModuleName "TEST4"
             , moduleSentences =
                 [ ObjectSentence (SentenceSortSentence SentenceSort
-                    { sentenceSortName = Id Object "Map"
+                    { sentenceSortName = Id "Map" :: Id Object
                     , sentenceSortParameters =
-                        [ SortVariable (Id Object "S")
-                        , SortVariable (Id Object "T")
+                        [ SortVariable (Id "S" :: Id Object)
+                        , SortVariable (Id "T" :: Id Object)
                         ]
                     , sentenceSortAttributes = Attributes []
                     })

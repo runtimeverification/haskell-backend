@@ -28,12 +28,13 @@ module Data.Kore.Implicit.ImplicitKore ( uncheckedKoreModule
                                        , symbolDeclaredA
                                        ) where
 
+import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Implicit.ImplicitKoreImpl
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.Implicit.ImplicitVarsInternal
 import           Data.Kore.MetaML.AST
-import           Data.Kore.MetaML.Builders
 
 {-
 Conventions used:

@@ -7,7 +7,8 @@ import           Test.Tasty                  (TestTree, testGroup)
 import           Test.Tasty.HUnit            (assertEqual, testCase)
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore          (UnifiedPattern)
+import           Data.Kore.AST.Kore          (CommonKorePattern)
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
 import           Data.Kore.Building.AsAst
 import           Data.Kore.Building.Patterns
@@ -190,7 +191,7 @@ applyPatternFunctionTests =
     mVariable = metaVariable "#x" sort
     oVariable = objectVariable "x" objectSort
 
-metaFunctionApplier :: Pattern Meta Variable UnifiedPattern -> Sort Meta
+metaFunctionApplier :: Pattern Meta Variable CommonKorePattern -> Sort Meta
 metaFunctionApplier =
     applyPatternFunction
         PatternFunction
@@ -203,7 +204,7 @@ metaFunctionApplier =
             , variableFunction = variableSort
             }
 
-objectFunctionApplier :: Pattern Object Variable UnifiedPattern -> Sort Object
+objectFunctionApplier :: Pattern Object Variable CommonKorePattern -> Sort Object
 objectFunctionApplier =
     applyPatternFunction
         PatternFunction

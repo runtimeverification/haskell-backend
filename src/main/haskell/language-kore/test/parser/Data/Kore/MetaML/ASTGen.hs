@@ -1,9 +1,10 @@
 module Data.Kore.MetaML.ASTGen where
 
 import           Data.Fix
-import           Test.QuickCheck.Gen  (Gen, frequency, oneof, sized)
+import           Test.QuickCheck.Gen        (Gen, frequency, oneof, sized)
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTGen
 import           Data.Kore.MetaML.AST
 
@@ -21,20 +22,17 @@ metaMLPatternGen = Fix <$> sized (\n ->
             ]
     )
 
-sentenceMetaPatternGen :: Gen (SentenceMetaPattern Variable)
-sentenceMetaPatternGen = SentenceMetaPattern <$> metaMLPatternGen
-
 metaAttributesGen :: Gen MetaAttributes
-metaAttributesGen = attributesGen sentenceMetaPatternGen
+metaAttributesGen = attributesGen metaMLPatternGen
 
 metaSentenceGen :: Gen MetaSentence
 metaSentenceGen = frequency
-    [ (2, symbolOrAliasSentenceGen sentenceMetaPatternGen Meta)
+    [ (2, symbolOrAliasSentenceGen metaMLPatternGen Meta)
     , (1, SentenceImportSentence
-          <$> sentenceImportGen sentenceMetaPatternGen)
+          <$> sentenceImportGen metaMLPatternGen)
     , (1, SentenceAxiomSentence
-          <$> sentenceAxiomGen (sortVariableGen Meta) sentenceMetaPatternGen)
+          <$> sentenceAxiomGen (sortVariableGen Meta) metaMLPatternGen)
     ]
 
 metaModuleGen :: Gen MetaModule
-metaModuleGen = moduleGen metaSentenceGen sentenceMetaPatternGen
+metaModuleGen = moduleGen metaSentenceGen metaMLPatternGen

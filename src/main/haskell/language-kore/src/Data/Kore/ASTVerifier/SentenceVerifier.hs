@@ -49,19 +49,27 @@ verifyUniqueName set name =
         else Right (Set.insert name set)
 
 definedNamesForSentence :: KoreSentence -> [String]
-definedNamesForSentence (MetaSentence (SentenceAliasSentence sentenceAlias)) =
+definedNamesForSentence =
+    applyUnifiedSentence
+        definedNamesForMetaSentence
+        definedNamesForObjectSentence
+
+definedNamesForMetaSentence :: Sentence Meta sortParam pat variable -> [String]
+definedNamesForMetaSentence (SentenceAliasSentence sentenceAlias) =
     [ getId (getSentenceSymbolOrAliasConstructor sentenceAlias) ]
-definedNamesForSentence (ObjectSentence (SentenceAliasSentence sentenceAlias)) =
+definedNamesForMetaSentence (SentenceSymbolSentence sentenceSymbol) =
+    [ getId (getSentenceSymbolOrAliasConstructor sentenceSymbol) ]
+definedNamesForMetaSentence (SentenceImportSentence _) = []
+definedNamesForMetaSentence (SentenceAxiomSentence _)  = []
+
+definedNamesForObjectSentence :: Sentence Object sortParam pat variable -> [String]
+definedNamesForObjectSentence (SentenceAliasSentence sentenceAlias) =
     [ getId (getSentenceSymbolOrAliasConstructor sentenceAlias) ]
-definedNamesForSentence (MetaSentence (SentenceSymbolSentence sentenceSymbol)) =
+definedNamesForObjectSentence (SentenceSymbolSentence sentenceSymbol) =
     [ getId (getSentenceSymbolOrAliasConstructor sentenceSymbol) ]
-definedNamesForSentence (ObjectSentence (SentenceSymbolSentence sentenceSymbol)) =
-    [ getId (getSentenceSymbolOrAliasConstructor sentenceSymbol) ]
-definedNamesForSentence (ObjectSentence (SentenceSortSentence sentenceSort)) =
+definedNamesForObjectSentence (SentenceSortSentence sentenceSort) =
     [sentenceName, metaNameForObjectSort sentenceName]
   where sentenceName = getId (sentenceSortName sentenceSort)
-definedNamesForSentence (MetaSentence (SentenceImportSentence _)) = []
-definedNamesForSentence (MetaSentence (SentenceAxiomSentence _)) = []
 
 {-|'verifySentences' verifies the welformedness of a list of Kore 'Sentence's.
 -}
@@ -83,67 +91,88 @@ verifySentence
     -> AttributesVerification
     -> KoreSentence
     -> Either (Error VerifyError) VerifySuccess
-verifySentence
+verifySentence indexedModule attributesVerification =
+    applyUnifiedSentence
+        (verifyMetaSentence indexedModule attributesVerification)
+        (verifyObjectSentence indexedModule attributesVerification)
+
+verifyMetaSentence
+    :: KoreIndexedModule
+    -> AttributesVerification
+    -> Sentence Meta UnifiedSortVariable UnifiedPattern Variable
+    -> Either (Error VerifyError) VerifySuccess
+verifyMetaSentence
     indexedModule
     attributesVerification
-    (MetaSentence (SentenceAliasSentence aliasSentence))
+    (SentenceAliasSentence aliasSentence)
   =
     verifySymbolAliasSentence
         (resolveMetaSort indexedModule)
+        indexedModule
         attributesVerification
         aliasSentence
-verifySentence
+verifyMetaSentence
     indexedModule
     attributesVerification
-    (ObjectSentence (SentenceAliasSentence aliasSentence))
-  =
-    verifySymbolAliasSentence
-        (resolveObjectSort indexedModule)
-        attributesVerification
-        aliasSentence
-verifySentence
-    indexedModule
-    attributesVerification
-    (MetaSentence (SentenceSymbolSentence symbolSentence))
+    (SentenceSymbolSentence symbolSentence)
   =
     verifySymbolAliasSentence
         (resolveMetaSort indexedModule)
+        indexedModule
         attributesVerification
         symbolSentence
-verifySentence
+verifyMetaSentence
     indexedModule
     attributesVerification
-    (ObjectSentence (SentenceSymbolSentence symbolSentence))
-  =
-    verifySymbolAliasSentence
-        (resolveObjectSort indexedModule)
-        attributesVerification
-        symbolSentence
-verifySentence
-    indexedModule
-    attributesVerification
-    (MetaSentence (SentenceAxiomSentence axiomSentence))
+    (SentenceAxiomSentence axiomSentence)
   =
     verifyAxiomSentence axiomSentence indexedModule attributesVerification
-verifySentence
-    _
-    attributesVerification
-    (ObjectSentence (SentenceSortSentence sortSentence))
-  =
-    verifySortSentence sortSentence attributesVerification
-verifySentence _ _ (MetaSentence (SentenceImportSentence _)) =
+verifyMetaSentence _ _ (SentenceImportSentence _) =
     -- Since we have an IndexedModule, we assume that imports were already
     -- resolved, so there is nothing left to verify here.
     verifySuccess
 
+verifyObjectSentence
+    :: KoreIndexedModule
+    -> AttributesVerification
+    -> Sentence Object UnifiedSortVariable UnifiedPattern Variable
+    -> Either (Error VerifyError) VerifySuccess
+verifyObjectSentence
+    indexedModule
+    attributesVerification
+    (SentenceAliasSentence aliasSentence)
+  =
+    verifySymbolAliasSentence
+        (resolveObjectSort indexedModule)
+        indexedModule
+        attributesVerification
+        aliasSentence
+verifyObjectSentence
+    indexedModule
+    attributesVerification
+    (SentenceSymbolSentence symbolSentence)
+  =
+    verifySymbolAliasSentence
+        (resolveObjectSort indexedModule)
+        indexedModule
+        attributesVerification
+        symbolSentence
+verifyObjectSentence
+    indexedModule
+    attributesVerification
+    (SentenceSortSentence sortSentence)
+  =
+    verifySortSentence sortSentence indexedModule attributesVerification
+
 verifySymbolAliasSentence
     :: (MetaOrObject level, SentenceSymbolOrAlias ssa)
     => (Id level -> Either (Error VerifyError) (SortDescription level))
+    -> KoreIndexedModule
     -> AttributesVerification
-    -> ssa level FixedPattern Variable
+    -> ssa level UnifiedPattern Variable
     -> Either (Error VerifyError) VerifySuccess
 verifySymbolAliasSentence
-    findSortDeclaration attributesVerification sentence
+    findSortDeclaration indexedModule attributesVerification sentence
   =
     withContext
         (  getSentenceSymbolOrAliasSentenceName sentence
@@ -223,7 +252,7 @@ buildDeclaredUnifiedSortVariables (unifiedVariable : list) = do
                 ++ "'.")
     return (Set.insert unifiedVariable variables)
   where
-    extractVariableName (ObjectSortVariable variable) =
+    extractVariableName (UnifiedObject variable) =
         getId (getSortVariable variable)
-    extractVariableName (MetaSortVariable variable) =
+    extractVariableName (UnifiedMeta variable) =
         getId (getSortVariable variable)

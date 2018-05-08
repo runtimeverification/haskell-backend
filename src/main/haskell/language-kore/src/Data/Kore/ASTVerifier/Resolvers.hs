@@ -12,6 +12,7 @@ module Data.Kore.ASTVerifier.Resolvers ( resolveMetaSort
                                        ) where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.Error
 import           Data.Kore.IndexedModule.IndexedModule
