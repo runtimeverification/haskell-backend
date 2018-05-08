@@ -14,7 +14,7 @@ import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.PureML
 import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
-import           Data.Kore.Unification.Unifier
+import           Data.Kore.Unification.UnifierImpl
 
 import           Data.Fix
 
