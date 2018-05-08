@@ -1,4 +1,4 @@
-["\?"]
+[hook{}(\dv{Hook{}}("\?"))]
 
 module TEST-STRING-1
 

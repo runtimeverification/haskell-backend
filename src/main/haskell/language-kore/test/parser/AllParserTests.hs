@@ -11,6 +11,8 @@ import           Data.Kore.ASTPrettyPrintTest
 import           Data.Kore.ASTTraversalsTest
 import           Data.Kore.ASTVerifier.ASTVerifierTest
 import           Data.Kore.Implicit.ImplicitKoreTest
+import           Data.Kore.Implicit.Verified              (implicitAttributesDefinition,
+                                                           implicitKoreDefinition)
 import           Data.Kore.IndentingPrinterTest
 import           Data.Kore.MetaML.LiftUnliftTest
 import           Data.Kore.MetaML.UnliftTest
@@ -42,8 +44,13 @@ allParserTests regressionInputFiles =
         [ unitTests
         , regressionTests regressionInputFiles
         , implicitKoreRegressionTests
+            implicitKoreDefinition
             (InputFileName "../../kore/kore.kore")
             (GoldenFileName "../../../test/expected/kore.kore.golden")
+        , implicitKoreRegressionTests
+            implicitAttributesDefinition
+            (InputFileName "../../kore/attributes.kore")
+            (GoldenFileName "../../../test/expected/attributes.kore.golden")
         ]
 
 unitTests :: TestTree

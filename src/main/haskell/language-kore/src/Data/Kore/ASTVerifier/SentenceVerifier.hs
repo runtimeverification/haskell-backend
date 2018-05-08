@@ -91,8 +91,10 @@ verifySentence
     -> AttributesVerification
     -> KoreSentence
     -> Either (Error VerifyError) VerifySuccess
-verifySentence a b =
-    applyUnifiedSentence (verifyMetaSentence a b) (verifyObjectSentence a b)
+verifySentence indexedModule attributesVerification =
+    applyUnifiedSentence
+        (verifyMetaSentence indexedModule attributesVerification)
+        (verifyObjectSentence indexedModule attributesVerification)
 
 verifyMetaSentence
     :: KoreIndexedModule
@@ -156,11 +158,11 @@ verifyObjectSentence
         attributesVerification
         symbolSentence
 verifyObjectSentence
-    indexedModule
+    _
     attributesVerification
     (SentenceSortSentence sortSentence)
   =
-    verifySortSentence sortSentence indexedModule attributesVerification
+    verifySortSentence sortSentence attributesVerification
 
 verifySymbolAliasSentence
     :: (MetaOrObject level, SentenceSymbolOrAlias ssa)
@@ -170,7 +172,7 @@ verifySymbolAliasSentence
     -> ssa level UnifiedPattern Variable
     -> Either (Error VerifyError) VerifySuccess
 verifySymbolAliasSentence
-    findSortDeclaration indexedModule attributesVerification sentence
+    findSortDeclaration _ attributesVerification sentence
   =
     withContext
         (  getSentenceSymbolOrAliasSentenceName sentence
@@ -189,8 +191,6 @@ verifySymbolAliasSentence
                 (getSentenceSymbolOrAliasResultSort sentence)
             verifyAttributes
                 (getSentenceSymbolOrAliasAttributes sentence)
-                indexedModule
-                variables
                 attributesVerification
         )
   where
@@ -215,26 +215,20 @@ verifyAxiomSentence axiom indexedModule attributesVerification =
                 variables
             verifyAttributes
                 (sentenceAxiomAttributes axiom)
-                indexedModule
-                variables
                 attributesVerification
         )
 
 verifySortSentence
     :: KoreSentenceSort
-    -> KoreIndexedModule
     -> AttributesVerification
     -> Either (Error VerifyError) VerifySuccess
-verifySortSentence sentenceSort indexedModule attributesVerification =
+verifySortSentence sentenceSort attributesVerification =
     withContext
         ("sort '" ++ getId (sentenceSortName sentenceSort) ++ "' declaration")
         (do
-            variables <-
-                buildDeclaredSortVariables (sentenceSortParameters sentenceSort)
+            buildDeclaredSortVariables (sentenceSortParameters sentenceSort)
             verifyAttributes
                 (sentenceSortAttributes sentenceSort)
-                indexedModule
-                variables
                 attributesVerification
         )
 

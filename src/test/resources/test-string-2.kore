@@ -1,4 +1,4 @@
-["\a"]
+[hook{}(\dv{Hook{}}("\a"))]
 
 module TEST-STRING-2
 
