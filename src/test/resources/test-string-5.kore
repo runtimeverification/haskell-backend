@@ -1,4 +1,4 @@
-["\x7777"]
+[hook{}(\dv{Hook{}}("\x7777"))]
 
 module TEST-STRING-5
 

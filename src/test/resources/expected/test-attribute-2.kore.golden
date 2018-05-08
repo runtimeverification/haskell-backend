@@ -9,14 +9,22 @@ Definition
                     , sentenceSortParameters = []
                     , sentenceSortAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "#hook" :: Id Meta
+                                        { symbolOrAliasConstructor = Id "hook" :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "Nat")))))
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Hook" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "plus")))))
+                                        }))))
                                     ]
                                 }))))
                             ]
@@ -44,28 +52,36 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "#hook" :: Id Meta
+                                        { symbolOrAliasConstructor = Id "hook" :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "plus")))))
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Hook" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "plus")))))
+                                        }))))
                                     ]
                                 }))))
-                            , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "#assoc" :: Id Meta
+                                        { symbolOrAliasConstructor = Id "associative" :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren = []
                                 }))))
-                            , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "#comm" :: Id Meta
+                                        { symbolOrAliasConstructor = Id "commutative" :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren = []
