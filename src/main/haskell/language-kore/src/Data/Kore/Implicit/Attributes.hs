@@ -42,7 +42,6 @@ attributeObjectSortSentence :: KoreSentence
 (attributeObjectSort, attributeObjectSortSentence) =
     noParameterObjectSortAndSentence "Attribute"
 
-
 hookObjectSort :: Sort Object
 hookObjectSortSentence :: KoreSentence
 (hookObjectSort, hookObjectSortSentence) =

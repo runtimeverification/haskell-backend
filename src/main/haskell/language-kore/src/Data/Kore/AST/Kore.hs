@@ -117,13 +117,13 @@ asKorePattern
     -> KorePattern variable
 asKorePattern = Fix . asUnifiedPattern
 
--- |View a 'Meta' as a 'KorePattern'
+-- |View a 'Meta' 'Pattern' as a 'KorePattern'
 asMetaKorePattern
     :: Pattern Meta variable (KorePattern variable)
     -> KorePattern variable
 asMetaKorePattern = asKorePattern
 
--- |View a 'Meta' as a 'KorePattern'
+-- |View a 'Object' 'Pattern' as a 'KorePattern'
 asObjectKorePattern
     :: Pattern Object variable (KorePattern variable)
     -> KorePattern variable
