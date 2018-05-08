@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 module Data.Kore.ASTVerifier.DefinitionVerifierPatternVerifierTest
     (definitionVerifierPatternVerifierTests) where
 
@@ -22,7 +23,7 @@ data PatternRestrict
     | NeedsAttributes
 
 data TestPattern level = TestPattern
-    { testPatternPattern    :: !(Pattern level Variable UnifiedPattern)
+    { testPatternPattern    :: !(Pattern level Variable CommonKorePattern)
     , testPatternSort       :: !(Sort level)
     , testPatternErrorStack :: !ErrorStack
     }
@@ -1275,7 +1276,7 @@ testsForUnifiedPatternInTopLevelGenericContext
                 , testDataDefinition =
                     simpleDefinitionFromSentences
                         (ModuleName "MODULE")
-                        ( asKoreAliasSentence
+                        ( asSentence
                             (sentenceAliasWithAttributes
                                 aliasName
                                 sortVariables
@@ -1300,7 +1301,7 @@ testsForUnifiedPatternInTopLevelGenericContext
                 , testDataDefinition =
                     simpleDefinitionFromSentences
                         (ModuleName "MODULE")
-                        ( asKoreSymbolSentence
+                        ( asSentence
                             (sentenceSymbolWithAttributes
                                 symbolName
                                 sortVariables
@@ -1453,9 +1454,9 @@ asAttribute testPattern =
                         { equalsOperandSort = attributeObjectSort
                         , equalsResultSort  = attributeObjectSort
                         , equalsFirst       =
-                            asUnifiedPattern patternPattern
+                            asKorePattern patternPattern
                         , equalsSecond      =
-                            asUnifiedPattern patternPattern
+                            asKorePattern patternPattern
                         }
                     , testPatternSort = attributeObjectSort
                     , testPatternErrorStack =
@@ -1478,9 +1479,9 @@ asAttribute testPattern =
                         { equalsOperandSort = attributeObjectSort
                         , equalsResultSort  = attributeObjectSort
                         , equalsFirst       =
-                            asUnifiedPattern patternPattern
+                            asKorePattern patternPattern
                         , equalsSecond      =
-                            asUnifiedPattern patternPattern
+                            asKorePattern patternPattern
                         }
                     , testPatternSort = attributeObjectSort
                     , testPatternErrorStack =

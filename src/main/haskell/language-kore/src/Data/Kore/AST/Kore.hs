@@ -42,6 +42,8 @@ module Data.Kore.AST.Kore
     , CommonKorePattern
     , KorePattern
     , asKorePattern
+    , asMetaKorePattern
+    , asObjectKorePattern
     , applyKorePattern
     , UnifiedSortVariable
     , UnifiedSort
@@ -114,6 +116,18 @@ asKorePattern
     => Pattern level variable (KorePattern variable)
     -> KorePattern variable
 asKorePattern = Fix . asUnifiedPattern
+
+-- |View a 'Meta' as a 'KorePattern'
+asMetaKorePattern
+    :: Pattern Meta variable (KorePattern variable)
+    -> KorePattern variable
+asMetaKorePattern = asKorePattern
+
+-- |View a 'Meta' as a 'KorePattern'
+asObjectKorePattern
+    :: Pattern Object variable (KorePattern variable)
+    -> KorePattern variable
+asObjectKorePattern = asKorePattern
 
 instance
     UnifiedPatternInterface UnifiedPattern

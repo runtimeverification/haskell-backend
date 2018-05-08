@@ -158,11 +158,11 @@ verifyObjectSentence
         attributesVerification
         symbolSentence
 verifyObjectSentence
-    indexedModule
+    _
     attributesVerification
     (SentenceSortSentence sortSentence)
   =
-    verifySortSentence sortSentence indexedModule attributesVerification
+    verifySortSentence sortSentence attributesVerification
 
 verifySymbolAliasSentence
     :: (MetaOrObject level, SentenceSymbolOrAlias ssa)
@@ -172,7 +172,7 @@ verifySymbolAliasSentence
     -> ssa level UnifiedPattern Variable
     -> Either (Error VerifyError) VerifySuccess
 verifySymbolAliasSentence
-    findSortDeclaration indexedModule attributesVerification sentence
+    findSortDeclaration _ attributesVerification sentence
   =
     withContext
         (  getSentenceSymbolOrAliasSentenceName sentence

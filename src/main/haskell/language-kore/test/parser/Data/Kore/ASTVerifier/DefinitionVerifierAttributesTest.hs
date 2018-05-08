@@ -6,6 +6,7 @@ import           Test.Tasty                                          (TestTree,
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
 import           Data.Kore.Implicit.Attributes                       (attributeObjectSort)
@@ -17,7 +18,7 @@ definitionVerifierAttributesTests =
         [ expectSuccess "Attribute sorts and symbols visible in attributes"
             Definition
                 { definitionAttributes = Attributes
-                    [ ObjectPattern (ApplicationPattern Application
+                    [ asObjectKorePattern (ApplicationPattern Application
                         { applicationSymbolOrAlias =
                             SymbolOrAlias
                                 { symbolOrAliasConstructor = Id "strict"
@@ -135,26 +136,26 @@ definitionVerifierAttributesTests =
   where
     mySortName :: SortName
     mySortName = SortName "mySort"
-    strictDomainValuePattern :: UnifiedPattern
+    strictDomainValuePattern :: CommonKorePattern
     strictDomainValuePattern = domainValuePattern (SortName "Strict")
-    domainValuePattern :: SortName -> UnifiedPattern
+    domainValuePattern :: SortName -> CommonKorePattern
     domainValuePattern sortName =
-        asUnifiedPattern
+        asKorePattern
             (DomainValuePattern DomainValue
                 { domainValueSort = simpleSort sortName
                 , domainValueChild =
-                    MetaPattern (StringLiteralPattern (StringLiteral "asgn"))
+                    asKorePattern (StringLiteralPattern (StringLiteral "asgn"))
                 }
             )
     sortSwitchingEquals
         :: OperandSort Object
         -> ResultSort Object
-        -> UnifiedPattern
-        -> UnifiedPattern
+        -> CommonKorePattern
+        -> CommonKorePattern
     sortSwitchingEquals
         (OperandSort operandSort) (ResultSort resultSort) child
       =
-        asUnifiedPattern
+        asKorePattern
             (EqualsPattern Equals
                 { equalsOperandSort = operandSort
                 , equalsResultSort = resultSort
@@ -162,9 +163,9 @@ definitionVerifierAttributesTests =
                 , equalsSecond = child
                 }
             )
-    argumentPositionPattern :: UnifiedPattern
+    argumentPositionPattern :: CommonKorePattern
     argumentPositionPattern =
-        ObjectPattern
+        asObjectKorePattern
             (ApplicationPattern Application
                 { applicationSymbolOrAlias =
                     SymbolOrAlias

@@ -17,6 +17,7 @@ module Data.Kore.Implicit.Attributes
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 
 noParameterObjectSortAndSentence :: String -> (Sort Object, KoreSentence)
 noParameterObjectSortAndSentence name =
@@ -24,12 +25,13 @@ noParameterObjectSortAndSentence name =
         { sortActualName = Id name
         , sortActualSorts = []
         }
-    , ObjectSentence
-        ( SentenceSortSentence SentenceSort
+    , asSentence
+        (SentenceSort
             { sentenceSortName       = Id name
             , sentenceSortParameters = []
             , sentenceSortAttributes = Attributes []
             }
+        :: KoreSentenceSort
         )
     )
 
@@ -51,8 +53,8 @@ hookName = "hook"
 
 hookObjectSymbolSentence :: KoreSentence
 hookObjectSymbolSentence =
-    ObjectSentence
-        ( SentenceSymbolSentence SentenceSymbol
+    asSentence
+        ( SentenceSymbol
             { sentenceSymbolSymbol     = Symbol
                 { symbolConstructor = Id hookName
                 , symbolParams      = []
@@ -61,25 +63,26 @@ hookObjectSymbolSentence =
             , sentenceSymbolResultSort = attributeObjectSort
             , sentenceSymbolAttributes = Attributes []
             }
+        :: KoreSentenceSymbol Object
         )
 
 {-| `hookAttribute` creates a hook attribute pattern containing the given
 string.
 -}
-hookAttribute :: String -> UnifiedPattern
+hookAttribute :: String -> CommonKorePattern
 hookAttribute hook =
-    ObjectPattern
+    asObjectKorePattern
         ( ApplicationPattern Application
             { applicationSymbolOrAlias = SymbolOrAlias
                 { symbolOrAliasConstructor = Id hookName
                 , symbolOrAliasParams      = []
                 }
             , applicationChildren      =
-                [ ObjectPattern
+                [ asKorePattern
                     ( DomainValuePattern DomainValue
                         { domainValueSort  = hookObjectSort
                         , domainValueChild =
-                            MetaPattern
+                            asKorePattern
                                 (StringLiteralPattern (StringLiteral hook))
                         }
                     )
@@ -119,8 +122,8 @@ strictObjectSortSentence :: KoreSentence
 
 strictObjectSymbolSentence :: KoreSentence
 strictObjectSymbolSentence =
-    ObjectSentence
-        ( SentenceSymbolSentence SentenceSymbol
+    asSentence
+        ( SentenceSymbol
             { sentenceSymbolSymbol     = Symbol
                 { symbolConstructor = Id "strict"
                 , symbolParams      = []
@@ -132,12 +135,13 @@ strictObjectSymbolSentence =
             , sentenceSymbolResultSort = attributeObjectSort
             , sentenceSymbolAttributes = Attributes []
             }
+        :: KoreSentenceSymbol Object
         )
 
 noArgumentOrParameterSentence :: String -> Sort Object -> KoreSentence
 noArgumentOrParameterSentence name sort =
-    ObjectSentence
-        ( SentenceSymbolSentence SentenceSymbol
+    asSentence
+        ( SentenceSymbol
             { sentenceSymbolSymbol     = Symbol
                 { symbolConstructor = Id name
                 , symbolParams      = []
@@ -146,6 +150,7 @@ noArgumentOrParameterSentence name sort =
             , sentenceSymbolResultSort = sort
             , sentenceSymbolAttributes = Attributes []
             }
+        :: KoreSentenceSymbol Object
         )
 
 associativeObjectSymbolSentence :: KoreSentence
