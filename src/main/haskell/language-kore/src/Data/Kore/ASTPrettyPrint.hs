@@ -712,7 +712,9 @@ instance MetaOrObject level => PrettyPrint (UnificationSolution level) where
             ]
 
 instance MetaOrObject level => PrettyPrint (UnificationProof level) where
-    prettyPrint _ UnificationProof       = write "UnificationProof"
+    prettyPrint _ EmptyUnificationProof = write "EmptyUnificationProof"
+    prettyPrint flags (CombinedUnificationProof p) =
+        writeOneFieldStruct flags "CombinedUnificationProof" p
     prettyPrint flags (ConjunctionIdempotency p) =
         writeOneFieldStruct flags "ConjunctionIdempotency" p
     prettyPrint flags (AndDistributionAndConstraintLifting patternHead proofs) =
@@ -723,10 +725,14 @@ instance MetaOrObject level => PrettyPrint (UnificationProof level) where
             proofs
     prettyPrint flags (Proposition_5_24_3 funProof var pat) =
         writeThreeFieldStruct flags "Proposition_5_24_3" funProof var pat
+    prettyPrint flags (SubstitutionMerge var pat1 pat2) =
+        writeThreeFieldStruct flags "SubstitutionMerge" var pat1 pat2
 
 instance MetaOrObject level => PrettyPrint (UnificationError level) where
     prettyPrint flags (ConstructorClash h1 h2) =
         writeTwoFieldStruct flags "ConstructorClash" h1 h2
+    prettyPrint flags (SortClash s1 s2) =
+        writeTwoFieldStruct flags "SortClash" s1 s2
     prettyPrint flags (NonConstructorHead h) =
         writeOneFieldStruct flags "NonConstructorHead" h
     prettyPrint flags (NonFunctionalHead h) =

@@ -91,7 +91,7 @@ bA :: CommonPurePatternStub Object
 bA = applyS b []
 
 x :: CommonPurePatternStub Object
-x = unparameterizedVariable_ "x"
+x = parameterizedVariable_ s1 "x"
 
 fx :: CommonPurePatternStub Object
 fx = applyS f [x]
@@ -106,7 +106,11 @@ symbols :: [(SymbolOrAlias Object, PureSentenceSymbol Object)]
 symbols =
     map
         (\s -> (getSentenceSymbolOrAliasHead s [], s))
-        [a, a1, a2, a3, b, c, f, g, h, ef, eg, eh, nonLinF, nonLinG, nonLinAS]
+        [ a, a1, a2, a3, b, c, f, g, h
+        , ef, eg, eh
+        , nonLinF, nonLinG, nonLinAS
+        , expBin
+        ]
 
 mockIsConstructor, mockIsFunctional :: SymbolOrAlias Object -> Bool
 mockIsConstructor patternHead
@@ -216,6 +220,48 @@ unificationFailure message term1 term2 err =
             (simplifyAnd tools (unificationProblem term1 term2))
         )
 
+unificationProcedureSuccess
+    :: (HasCallStack)
+    => String
+    -> CommonPurePatternStub Object
+    -> CommonPurePatternStub Object
+    -> Substitution Object
+    -> UnificationProof Object
+    -> TestTree
+unificationProcedureSuccess message term1 term2 subst proof =
+    testCase
+        message
+        (assertEqualWithPrinter
+            prettyPrintToString
+            ""
+            (Right (unificationSubstitution subst, proof))
+            (unificationProcedure
+                tools
+                (extractPurePattern term1)
+                (extractPurePattern term2)
+            )
+        )
+
+unificationProcedureFailure
+    :: (HasCallStack)
+    => String
+    -> CommonPurePatternStub Object
+    -> CommonPurePatternStub Object
+    -> UnificationError Object
+    -> TestTree
+unificationProcedureFailure message term1 term2 err =
+    testCase
+        message
+        (assertEqualWithPrinter
+            prettyPrintToString
+            ""
+            (Left err)
+            (unificationProcedure
+                tools
+                (extractPurePattern term1)
+                (extractPurePattern term2)
+            )
+        )
 
 unificationTests :: TestTree
 unificationTests =
@@ -233,8 +279,8 @@ unificationTests =
             aA
             [("x", aA)]
             (Proposition_5_24_3
-                [FunctionalHead headA]
-                (Variable (Id "x") s1)
+                [FunctionalHead (symbolHead a)]
+                (var x)
                 (extractPurePattern aA)
             )
         , unificationSuccess "one level"
@@ -245,8 +291,8 @@ unificationTests =
             (AndDistributionAndConstraintLifting
                 (getSentenceSymbolOrAliasHead f [])
                 [ Proposition_5_24_3
-                    [FunctionalHead headA]
-                    (Variable (Id "x") s1)
+                    [FunctionalHead (symbolHead a)]
+                    (var x)
                     (extractPurePattern aA)
                 ]
             )
@@ -262,8 +308,8 @@ unificationTests =
             a2A
             [("x", a2A)]
             (Proposition_5_24_3
-                [FunctionalHead headA2]
-                (Variable (Id "x") s1)
+                [FunctionalHead (symbolHead a2)]
+                (var x)
                 (extractPurePattern a2A)
             )
         , unificationSuccess
@@ -278,20 +324,20 @@ unificationTests =
             (AndDistributionAndConstraintLifting
                 (getSentenceSymbolOrAliasHead ef [])
                 [ Proposition_5_24_3
-                    [ FunctionalHead headEG
-                    , FunctionalVariable (Variable (Id "ex3") s1)
+                    [ FunctionalHead (symbolHead eg)
+                    , FunctionalVariable (var ex3)
                     ]
-                    (Variable (Id "ex1") s1)
+                    (var ex1)
                     (extractPurePattern $ applyS eg [ex3])
                 , Proposition_5_24_3
-                    [ FunctionalHead headEH
-                    , FunctionalVariable (Variable (Id "ex1") s1)
+                    [ FunctionalHead (symbolHead eh)
+                    , FunctionalVariable (var ex1)
                     ]
-                    (Variable (Id "ex4") s1)
+                    (var ex4)
                     (extractPurePattern $ applyS eh [ex1])
                 , Proposition_5_24_3
-                    [FunctionalVariable (Variable (Id "ex3") s1)]
-                    (Variable (Id "ex2") s1)
+                    [FunctionalVariable (var ex3)]
+                    (var ex2)
                     (extractPurePattern ex3)
                 ]
             )
@@ -302,39 +348,122 @@ unificationTests =
             (applyS nonLinF [applyS nonLinG [nonLinX], nonLinA])
             [ ("x", nonLinA), ("y", applyS nonLinG [nonLinX])]
             (AndDistributionAndConstraintLifting
-                headNonLinF
+                (symbolHead nonLinF)
                 [ Proposition_5_24_3
-                    [ FunctionalHead headNonLinG
-                    , FunctionalVariable (Variable (Id "x") s1)
+                    [ FunctionalHead (symbolHead nonLinG)
+                    , FunctionalVariable (var nonLinX)
                     ]
-                    (Variable (Id "y") s1)
+                    (var nonLinY)
                     (extractPurePattern (applyS nonLinG [nonLinX]))
                 , Proposition_5_24_3
-                    [ FunctionalHead headNonLinA ]
-                    (Variable (Id "x") s1)
+                    [ FunctionalHead (symbolHead nonLinAS) ]
+                    (var nonLinX)
                     (extractPurePattern nonLinA)
                 ]
             )
-        , unificationFailure "Unmatching constants"
+        , unificationSuccess
+            "times(times(a, y), x) = times(x, times(y, a))"
+            (applyS expBin [applyS expBin [expA, expY], expX])
+            (applyS expBin [expX, applyS expBin [expY, expA]])
+            (applyS
+                expBin
+                [ applyS expBin [expA, expY]
+                , applyS expBin [expY, expA]
+                ]
+            )
+            [ ("x", applyS expBin [expA, expY])
+            , ("x", applyS expBin [expY, expA])
+            ]
+            (AndDistributionAndConstraintLifting
+                (symbolHead expBin)
+                [ Proposition_5_24_3
+                    [ FunctionalHead (symbolHead expBin)
+                    , FunctionalVariable (var expA)
+                    , FunctionalVariable (var expY)
+                    ]
+                    (var expX)
+                    (extractPurePattern (applyS expBin [expA, expY]))
+                , Proposition_5_24_3
+                    [ FunctionalHead (symbolHead expBin)
+                    , FunctionalVariable (var expY)
+                    , FunctionalVariable (var expA)
+                    ]
+                    (var expX)
+                    (extractPurePattern (applyS expBin [expY, expA]))
+                ]
+            )
+        , unificationProcedureSuccess
+            "times(times(a, y), x) = times(x, times(y, a))"
+            (applyS expBin [applyS expBin [expA, expY], expX])
+            (applyS expBin [expX, applyS expBin [expY, expA]])
+            [ ("a", expY)
+            , ("x", applyS expBin [expY, expA])
+            , ("y", expA)
+            ]
+            (CombinedUnificationProof
+                [ AndDistributionAndConstraintLifting
+                    (symbolHead expBin)
+                    [ Proposition_5_24_3
+                        [ FunctionalHead (symbolHead expBin)
+                        , FunctionalVariable (var expA)
+                        , FunctionalVariable (var expY)
+                        ]
+                        (var expX)
+                        (extractPurePattern (applyS expBin [expA, expY]))
+                    , Proposition_5_24_3
+                        [ FunctionalHead (symbolHead expBin)
+                        , FunctionalVariable (var expY)
+                        , FunctionalVariable (var expA)
+                        ]
+                        (var expX)
+                        (extractPurePattern (applyS expBin [expY, expA]))
+                    ]
+                , CombinedUnificationProof
+                    [ CombinedUnificationProof
+                        [ CombinedUnificationProof
+                            [ SubstitutionMerge
+                                (var expX)
+                                (extractPurePattern
+                                    (applyS expBin [expA, expY]))
+                                (extractPurePattern
+                                    (applyS expBin [expY, expA]))
+                            , AndDistributionAndConstraintLifting
+                                (symbolHead expBin)
+                                [ Proposition_5_24_3
+                                    [FunctionalVariable (var expY)]
+                                    (var expA)
+                                    (extractPurePattern expY)
+                                , Proposition_5_24_3
+                                    [FunctionalVariable (var expA)]
+                                    (var expY)
+                                    (extractPurePattern expA)
+                                ]
+                            ]
+                        ]
+                    , EmptyUnificationProof
+                    ]
+                ]
+            )
+         , unificationFailure "Unmatching constants"
             aA
             a1A
-            (ConstructorClash headA headA1)
+            (ConstructorClash (symbolHead a) (symbolHead a1))
         , unificationFailure "non-functional pattern"
             x
             a3A
             NonFunctionalPattern
-        , unificationFailure "non-constructor head right"
+        , unificationFailure "non-constructor symbolHead right"
             aA
             a2A
-            (NonConstructorHead headA2)
-        , unificationFailure "non-constructor head left"
+            (NonConstructorHead (symbolHead a2))
+        , unificationFailure "non-constructor symbolHead left"
             a2A
             aA
-            (NonConstructorHead headA2)
+            (NonConstructorHead (symbolHead a2))
         , unificationFailure "nested failure"
             fa
             fa1
-            (ConstructorClash headA headA1)
+            (ConstructorClash (symbolHead a) (symbolHead a1))
         , unificationFailure "Unsupported constructs"
             fa
             faImpliesXa1
@@ -347,11 +476,6 @@ unificationTests =
             -}
         ]
   where
-    headA = getSentenceSymbolOrAliasHead a []
-    headA2 = getSentenceSymbolOrAliasHead a2 []
-    headA1 = getSentenceSymbolOrAliasHead a1 []
-    headEG = getSentenceSymbolOrAliasHead eg []
-    headEH = getSentenceSymbolOrAliasHead eh []
-    headNonLinA = getSentenceSymbolOrAliasHead nonLinAS []
-    headNonLinG = getSentenceSymbolOrAliasHead nonLinG []
-    headNonLinF = getSentenceSymbolOrAliasHead nonLinF []
+    symbolHead symbol = getSentenceSymbolOrAliasHead symbol []
+    var ps = case unFix (extractPurePattern ps) of
+        VariablePattern v -> v

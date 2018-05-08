@@ -16,6 +16,7 @@ module Data.Kore.Unification.Unifier
     , unificationSolutionToPurePattern
     , UnificationSolution (..)
     , UnificationError (..)
+    , unificationProcedure
     ) where
 
 import           Data.Kore.AST.Common
@@ -28,6 +29,8 @@ import           Data.Function            (on)
 import           Data.List                (sortBy)
 
 -- import           Debug.Trace
+
+type UnificationSubstitution level = [(Variable level, CommonPurePattern level)]
 
 -- |'MetadataTools' defines a dictionary of functions which can be used to
 -- access metadata needed during the unification process.
@@ -43,8 +46,7 @@ data MetadataTools level = MetadataTools
 -- obtained during unification.
 data UnificationSolution level = UnificationSolution
     { unificationSolutionTerm        :: !(CommonPurePattern level)
-    , unificationSolutionConstraints :: ![( Variable level
-                                          , CommonPurePattern level)]
+    , unificationSolutionConstraints :: !(UnificationSubstitution level)
     }
   deriving (Eq, Show)
 
@@ -81,8 +83,10 @@ unificationSolutionToPurePattern tools ucp =
 -- |'UnificationProof' is meant to represent proof term stubs for various
 -- steps performed during unification
 data UnificationProof level
-    = UnificationProof
-    -- ^Dummy constructor to specify dummy proof
+    = EmptyUnificationProof
+    -- ^Empty proof (nothing to prove)
+    | CombinedUnificationProof [UnificationProof level]
+    -- ^Putting multiple proofs together
     | ConjunctionIdempotency (CommonPurePattern level)
     -- ^Used to specify the reduction a/\a <-> a
     | Proposition_5_24_3
@@ -102,6 +106,21 @@ data UnificationProof level
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.2
     -- if ϕ is a predicate, then:
     -- |= c(ϕ1, ..., ϕi /\ ϕ, ..., ϕn) = c(ϕ1, ..., ϕi, ..., ϕn) /\ ϕ
+    | SubstitutionMerge
+        (Variable level)
+        (CommonPurePattern level)
+        (CommonPurePattern level)
+    -- merging of x = t1 /\ x = t2 into x = (t1 /\ t2)
+    -- Semantics of K, 7.7.1:
+    -- (Equality Elimination). |- (ϕ1 = ϕ2) → (ψ[ϕ1/v] → ψ[ϕ2/v])
+    -- if we instantiate it using  ϕ1 = x, ϕ2 = y and ψ = (v = t2), we get
+    -- |- x = t1 -> ((x = t2) -> (t1 = t2))
+    -- by boolean manipulation, we can get
+    -- |- x = t1 /\ x = t2 -> (x = t1 /\ t1 = t2)
+    -- By some ??magic?? similar to Proposition 5.12
+    -- (x = t1 /\ t1 = t2) = (x = (t1 /\ (t1 = t2)))
+    -- then, applying Proposition 5.24(3), this further gets to
+    -- (x = (t1 /\ t2))
   deriving (Eq, Show)
 
 -- ^'FunctionalProof' is used for providing arguments that a pattern is
@@ -122,6 +141,7 @@ data FunctionalProof level
 -- unification
 data UnificationError level
     = ConstructorClash (SymbolOrAlias level) (SymbolOrAlias level)
+    | SortClash (Sort level) (Sort level)
     | NonConstructorHead (SymbolOrAlias level)
     | NonFunctionalHead (SymbolOrAlias level)
     | NonFunctionalPattern
@@ -266,3 +286,110 @@ postTransform (ApplicationPattern ap) = do
             (applicationSymbolOrAlias ap)
             subProofs
         )
+
+-- finds ocurrences of x = t1 /\ x = t2 and transforms them
+-- into x = (t1 /\ t2)
+normalizeSubstitution1
+    :: UnificationSubstitution level
+    -> [( Variable level
+        , Either
+            (CommonPurePattern level, UnificationProof level)
+            (CommonPurePattern level)
+        )
+       ]
+normalizeSubstitution1 ((x, t1): rest@((y, t2): subst))
+    | x == y =
+        ( x
+        , Left
+            ( Fix $ AndPattern And
+                { andSort = variableSort x
+                , andFirst = t1
+                , andSecond = t2
+                }
+            , SubstitutionMerge x t1 t2
+            )
+        ) : normalizeSubstitution1 subst
+    | otherwise =
+        ( x, Right t1) : normalizeSubstitution1 rest
+normalizeSubstitution1 [(x, t)] = [(x, Right t)]
+normalizeSubstitution1 [] = []
+
+-- solves x = (t1 /\ t2), producing x = t /\ subst
+solveEqualityConstraint
+    :: MetadataTools level
+    -> (Variable level, CommonPurePattern level, UnificationProof level)
+    -> Either
+        (UnificationError level)
+        ( UnificationSubstitution level
+        , UnificationProof level
+        )
+solveEqualityConstraint tools (v, p, ecProof) = do
+    (solution, proof) <- simplifyAnd tools p
+    return
+        ( (v, unificationSolutionTerm solution)
+          : unificationSolutionConstraints solution
+        , CombinedUnificationProof [ecProof, proof]
+        )
+
+-- iteratively finds ocurrences of x = t1 /\ x = t2, solves them, and
+-- computes the new substitution
+normalizeSubstitution
+    :: MetadataTools level
+    -> UnificationSubstitution level
+    -> Either
+        (UnificationError level)
+        (UnificationSubstitution level, UnificationProof level)
+normalizeSubstitution tools subst =
+    case mergedEqualities of
+        [] -> return (subst, EmptyUnificationProof)
+        _ -> do
+            solvedEquals <-
+                traverse (solveEqualityConstraint tools) mergedEqualities
+            let (substs, proofs) = unzip solvedEquals
+            let combinedSubst =
+                    sortBy (compare `on` fst) (concat (remainingSubst:substs))
+            (finalSubst, proof) <- normalizeSubstitution tools combinedSubst
+            return
+                ( finalSubst
+                , CombinedUnificationProof
+                    [ CombinedUnificationProof proofs
+                    , proof
+                    ]
+                )
+  where
+    mergedSubstitution = normalizeSubstitution1 subst
+    mergedEqualities = [(x, p, pf) | (x, Left (p, pf)) <- mergedSubstitution]
+    remainingSubst = [(x, t) | (x, Right t) <- mergedSubstitution]
+
+-- ^'unificationProcedure' atempts to simplify @t1 = t2@, assuming @t1@ and @t2@
+-- are terms (functional patterns) to a substitution.
+-- If successful, it also produces a proof of how the substitution was obtained.
+-- If failing, it gives a 'UnificationError' reason for the failure.
+unificationProcedure
+    :: MetadataTools level
+    -- ^functions yielding metadata for pattern heads
+    -> CommonPurePattern level
+    -- ^left-hand-side of unification
+    -> CommonPurePattern level
+    -> Either
+        (UnificationError level)
+        (UnificationSubstitution level, UnificationProof level)
+unificationProcedure tools p1 p2
+    | p1Sort /= p2Sort
+    = Left (SortClash p1Sort p2Sort)
+    | otherwise
+    =  do
+    (solution, proof) <- simplifyAnd tools conjunct
+    (normSubst, normProof) <-
+        normalizeSubstitution tools (unificationSolutionConstraints solution)
+    return (normSubst, CombinedUnificationProof [proof, normProof])
+  where
+    resultSort = getPatternResultSort (getResultSort tools)
+    p1Sort =  resultSort (unFix p1)
+    p2Sort =  resultSort (unFix p2)
+    conjunct = Fix $ AndPattern And
+        { andSort = p1Sort
+        , andFirst = p1
+        , andSecond = p2
+        }
+
