@@ -14,6 +14,7 @@ import qualified Data.Kore.Substitution.List          as S
 import           Data.Kore.Variables.Fresh.IntCounter
 import           Data.Kore.Variables.Int
 
+import           Data.Kore.KoreHelpers
 import           Data.Kore.Substitution.TestCommon
 
 type UnifiedPatternSubstitution =
@@ -218,7 +219,7 @@ forallExistsObjectUnifiedPattern1S2 = asKorePattern $ ForallPattern Forall
 testSubstitutionStatePattern :: CommonKorePattern
 testSubstitutionStatePattern = asKorePattern $ ApplicationPattern Application
     { applicationSymbolOrAlias = SymbolOrAlias
-        { symbolOrAliasConstructor = Id "sigma" :: Id Object
+        { symbolOrAliasConstructor = testId "sigma" :: Id Object
         , symbolOrAliasParams = []
         }
     , applicationChildren =
@@ -232,7 +233,7 @@ testSubstitutionStatePattern = asKorePattern $ ApplicationPattern Application
 testSubstitutionStatePatternS3 :: CommonKorePattern
 testSubstitutionStatePatternS3 = asKorePattern $ ApplicationPattern Application
     { applicationSymbolOrAlias = SymbolOrAlias
-        { symbolOrAliasConstructor = Id "sigma" :: Id Object
+        { symbolOrAliasConstructor = testId "sigma" :: Id Object
         , symbolOrAliasParams = []
         }
     , applicationChildren =
