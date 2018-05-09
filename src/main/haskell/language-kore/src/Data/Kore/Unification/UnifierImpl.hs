@@ -14,22 +14,15 @@ import           Data.Kore.AST.Common
 import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.PureML
 import           Data.Kore.FixTraversals
+import           Data.Kore.IndexedModule.MetadataTools
 
-import           Control.Monad            (foldM)
+import           Control.Monad                         (foldM)
 import           Data.Fix
-import           Data.Function            (on)
-import           Data.List                (groupBy, partition, sortBy)
+import           Data.Function                         (on)
+import           Data.List                             (groupBy, partition,
+                                                        sortBy)
 
 type UnificationSubstitution level = [(Variable level, CommonPurePattern level)]
-
--- |'MetadataTools' defines a dictionary of functions which can be used to
--- access the metadata needed during the unification process.
-data MetadataTools level = MetadataTools
-    { isConstructor    :: SymbolOrAlias level -> Bool
-    , isFunctional     :: SymbolOrAlias level -> Bool
-    , getArgumentSorts :: SymbolOrAlias level -> [Sort level]
-    , getResultSort    :: SymbolOrAlias level -> Sort level
-    }
 
 -- |'UnificationSolution' describes the solution of an unification problem,
 -- consisting of the unified term and the set of constraints (equalities)
@@ -412,4 +405,3 @@ unificationProcedure tools p1 p2
         , andFirst = p1
         , andSecond = p2
         }
-
