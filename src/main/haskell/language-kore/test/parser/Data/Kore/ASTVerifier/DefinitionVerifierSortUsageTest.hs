@@ -10,6 +10,7 @@ import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
 import           Data.Kore.Implicit.ImplicitSorts
+
 import qualified Data.List                                           as List
 import           Data.Maybe                                          (mapMaybe)
 
@@ -457,7 +458,6 @@ flaggedMetaTestsForSort
         namePrefix
         asSentence
         asSentence
-    ++ unfilteredTestExamplesForMetaSort sort
 
 applyTestConfiguration
     :: TestConfiguration level
@@ -656,107 +656,6 @@ unfilteredTestExamplesForSort
                     )
             }
         }
-    , FlaggedTestData
-        { flaggedTestDataFlags = []
-        , flaggedTestDataTestData = \additionalSentences -> TestData
-            { testDataDescription = "Definition with alias attributes"
-            , testDataError =
-                Error
-                    [ "module 'MODULE'"
-                    , "alias '" ++ rawAliasName ++ "' declaration"
-                    , "attributes"
-                    , "\\exists '" ++ rawVariableName ++ "'"
-                    ]
-                    defaultErrorMessage
-            , testDataDefinition =
-                simpleDefinitionFromSentences
-                    (ModuleName "MODULE")
-                    ( sentenceAliasSentence
-                        (sentenceAliasWithAttributes
-                            aliasName
-                            sortVariables
-                            additionalSort
-                            [ simpleExistsUnifiedPattern variableName1 sort ]
-                        )
-                    : additionalSentences
-                    )
-            }
-        }
-    , FlaggedTestData
-        { flaggedTestDataFlags = []
-        , flaggedTestDataTestData = \additionalSentences -> TestData
-            { testDataDescription = "Axiom with attributes"
-            , testDataError =
-                Error
-                    [ "module 'MODULE'"
-                    , "axiom declaration"
-                    , "attributes"
-                    , "\\exists '" ++ rawVariableName ++ "'"
-                    ]
-                    defaultErrorMessage
-            , testDataDefinition =
-                simpleDefinitionFromSentences
-                    (ModuleName "MODULE")
-                    ( axiomSentenceWithAttributes
-                        (map asUnified sortVariables)
-                        (simpleExistsUnifiedPattern
-                            variableName1 additionalSort)
-                        [simpleExistsUnifiedPattern variableName1 sort]
-                    : additionalSentences
-                    )
-            }
-        }
-    , FlaggedTestData
-        { flaggedTestDataFlags = [ CannotSeeSortVariables ]
-        , flaggedTestDataTestData = \additionalSentences -> TestData
-            { testDataDescription = "Module with attributes"
-            , testDataError =
-                Error
-                    [ "module 'MODULE'"
-                    , "attributes"
-                    , "\\exists '" ++ rawVariableName ++ "'"
-                    ]
-                    defaultErrorMessage
-            , testDataDefinition =
-                Definition
-                    { definitionAttributes = Attributes []
-                    , definitionModules =
-                        [ Module
-                            { moduleName = ModuleName "MODULE"
-                            , moduleSentences = additionalSentences
-                            , moduleAttributes = Attributes
-                                [ simpleExistsUnifiedPattern variableName1 sort
-                                ]
-                            }
-                        ]
-                    }
-            }
-        }
-    , FlaggedTestData
-        { flaggedTestDataFlags =
-            [ CannotSeeSortVariables, CannotSeeSortDeclarations ]
-        , flaggedTestDataTestData = \additionalSentences -> TestData
-            { testDataDescription = "Definition with attributes"
-            , testDataError =
-                Error
-                    [ "attributes"
-                    , "\\exists '" ++ rawVariableName ++ "'"
-                    ]
-                    defaultErrorMessage
-            , testDataDefinition =
-                Definition
-                    { definitionAttributes = Attributes
-                        [simpleExistsUnifiedPattern variableName1 sort]
-                    , definitionModules =
-                        [ Module
-                            { moduleName = ModuleName "MODULE"
-                            , moduleSentences = additionalSentences
-                            , moduleAttributes = Attributes []
-                            }
-                        ]
-                    }
-            }
-        }
     ]
   where
     rawAliasName = identifierPrefix ++ "_alias"
@@ -823,42 +722,6 @@ unfilteredTestExamplesForObjectSort
                     )
             }
         }
-    -- TODO: This also has a Meta definition
-    , FlaggedTestData
-        { flaggedTestDataFlags = []
-        , flaggedTestDataTestData = \additionalSentences -> TestData
-            { testDataDescription = "Definition with sort attributes"
-            , testDataError =
-                Error
-                    [ "module 'MODULE'"
-                    , "sort '"
-                        ++ differentAdditionalSortRawName
-                        ++ "' declaration"
-                    , "attributes"
-                    , "\\exists 'v'"
-                    ]
-                    defaultErrorMessage
-            , testDataDefinition =
-                simpleDefinitionFromSentences
-                    (ModuleName "MODULE")
-                    (
-                        (asSentence
-                            SentenceSort
-                                { sentenceSortName =
-                                        Id differentAdditionalSortRawName
-                                , sentenceSortParameters = sortVariables
-                                , sentenceSortAttributes =
-                                    Attributes
-                                        [ simpleExistsUnifiedPattern
-                                            (VariableName "v")
-                                            sort
-                                        ]
-                                }
-                        )
-                    : additionalSentences
-                    )
-            }
-        }
     ]
   where
     sortVariableName1 = SortVariableName (namePrefix ++ "_sortVariable1")
@@ -866,44 +729,4 @@ unfilteredTestExamplesForObjectSort
     additionalSortRawName = getId (sortActualName additionalSortActual)
     differentAdditionalSortRawName = additionalSortRawName ++ "1"
     differentAdditionalSortName = SortName differentAdditionalSortRawName
-    defaultErrorMessage = "Replace this with a real error message."
-
-unfilteredTestExamplesForMetaSort
-    :: TestedSort Meta
-    -> [FlaggedTestData]
-unfilteredTestExamplesForMetaSort (TestedSort sort) =
-    [ FlaggedTestData
-        { flaggedTestDataFlags = [CannotSeeSortVariables]
-        , flaggedTestDataTestData = \additionalSentences -> TestData
-            { testDataDescription = "Definition with sort attributes"
-            , testDataError =
-                Error
-                    [ "module 'MODULE'"
-                    , "sort 'additionalSort' declaration"
-                    , "attributes"
-                    , "\\exists 'v'"
-                    ]
-                    defaultErrorMessage
-            , testDataDefinition =
-                simpleDefinitionFromSentences
-                    (ModuleName "MODULE")
-                    (
-                        (asSentence
-                            (SentenceSort
-                                { sentenceSortName =
-                                    Id "additionalSort"
-                                , sentenceSortParameters = []
-                                , sentenceSortAttributes = Attributes
-                                    [ simpleExistsUnifiedPattern
-                                        (VariableName "v") sort
-                                    ]
-                                }
-                            :: KoreSentenceSort)
-                        )
-                    : additionalSentences
-                    )
-            }
-        }
-    ]
-  where
     defaultErrorMessage = "Replace this with a real error message."

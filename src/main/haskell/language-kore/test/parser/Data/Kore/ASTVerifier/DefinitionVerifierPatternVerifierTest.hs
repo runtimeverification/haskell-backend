@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 module Data.Kore.ASTVerifier.DefinitionVerifierPatternVerifierTest
     (definitionVerifierPatternVerifierTests) where
 
@@ -11,19 +12,20 @@ import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers as Helpers
 import           Data.Kore.Building.Implicit
 import           Data.Kore.Building.Patterns                         as Patterns
 import           Data.Kore.Error
+import           Data.Kore.Implicit.Attributes                       (attributeObjectSort)
 import           Data.Kore.Implicit.ImplicitSorts
 
 import qualified Data.List                                           as List
 
 data PatternRestrict
-    = NeedsSortVariables
-    | NeedsInternalDefinitions
+    = NeedsInternalDefinitions
     | NeedsSortedParent
-    | NoRestrict
+    | NeedsAttributes
 
 data TestPattern level = TestPattern
-    { testPatternPattern    :: Pattern level Variable CommonKorePattern
-    , testPatternErrorStack :: ErrorStack
+    { testPatternPattern    :: !(Pattern level Variable CommonKorePattern)
+    , testPatternSort       :: !(Sort level)
+    , testPatternErrorStack :: !ErrorStack
     }
 
 newtype VariableOfDeclaredSort level = VariableOfDeclaredSort (Variable level)
@@ -131,7 +133,7 @@ definitionVerifierPatternVerifierTests =
             (SortVariablesThatMustBeDeclared [objectSortVariable])
             (DeclaredSort anotherSort)
             [anotherSortSentence]
-            NeedsSortVariables
+            NeedsInternalDefinitions
         , failureTestsForObjectPattern
             "Object pattern - sort variable not defined"
             (ExpectedErrorMessage
@@ -155,7 +157,7 @@ definitionVerifierPatternVerifierTests =
             (SortVariablesThatMustBeDeclared [])
             (DeclaredSort anotherSort)
             [objectSortSentence, anotherSortSentence]
-            NeedsSortVariables
+            NeedsInternalDefinitions
         , failureTestsForMetaPattern "Meta pattern - sort not defined"
             (ExpectedErrorMessage "Sort '#InvalidMetaSort' not declared.")
             (ErrorStack
@@ -912,6 +914,7 @@ genericPatternInPatterns
         _ ->
             [ TestPattern
                 { testPatternPattern = testedPattern
+                , testPatternSort = testedSort
                 , testPatternErrorStack = ErrorStack []
                 }
             ]
@@ -921,6 +924,7 @@ genericPatternInPatterns
                 { applicationSymbolOrAlias = symbol
                 , applicationChildren = [asKorePattern testedPattern]
                 }
+            , testPatternSort = testedSort
             , testPatternErrorStack =
                 ErrorStack
                     [ "symbol or alias '"
@@ -933,6 +937,7 @@ genericPatternInPatterns
                 { applicationSymbolOrAlias = alias
                 , applicationChildren = [asKorePattern testedPattern]
                 }
+            , testPatternSort = testedSort
             , testPatternErrorStack =
                 ErrorStack
                     [ "symbol or alias '"
@@ -962,6 +967,7 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
             , existsVariable = quantifiedVariable
             , existsChild = asKorePattern testedPattern
             }
+        , testPatternSort = testedSort
         , testPatternErrorStack =
             ErrorStack
                 [ "\\exists '"
@@ -975,6 +981,7 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
             , forallVariable = quantifiedVariable
             , forallChild = asKorePattern testedPattern
             }
+        , testPatternSort = testedSort
         , testPatternErrorStack =
             ErrorStack
                 [ "\\forall '"
@@ -1003,6 +1010,7 @@ patternInUnquantifiedGenericPatterns
             , andFirst = testedUnifiedPattern
             , andSecond = anotherUnifiedPattern
             }
+        , testPatternSort = testedSort
         , testPatternErrorStack = ErrorStack ["\\and"]
         }
     , TestPattern
@@ -1011,6 +1019,7 @@ patternInUnquantifiedGenericPatterns
             , andFirst = anotherUnifiedPattern
             , andSecond = testedUnifiedPattern
             }
+        , testPatternSort = testedSort
         , testPatternErrorStack = ErrorStack ["\\and"]
         }
     , TestPattern
@@ -1019,6 +1028,7 @@ patternInUnquantifiedGenericPatterns
             , ceilResultSort = resultSort
             , ceilChild = testedUnifiedPattern
             }
+        , testPatternSort = resultSort
         , testPatternErrorStack = ErrorStack ["\\ceil"]
         }
     , TestPattern
@@ -1028,6 +1038,7 @@ patternInUnquantifiedGenericPatterns
             , equalsFirst = testedUnifiedPattern
             , equalsSecond = anotherUnifiedPattern
             }
+        , testPatternSort = resultSort
         , testPatternErrorStack = ErrorStack ["\\equals"]
         }
     , TestPattern
@@ -1037,6 +1048,7 @@ patternInUnquantifiedGenericPatterns
             , equalsFirst = anotherUnifiedPattern
             , equalsSecond = testedUnifiedPattern
             }
+        , testPatternSort = resultSort
         , testPatternErrorStack = ErrorStack ["\\equals"]
         }
     , TestPattern
@@ -1045,6 +1057,7 @@ patternInUnquantifiedGenericPatterns
             , floorResultSort = resultSort
             , floorChild = testedUnifiedPattern
             }
+        , testPatternSort = resultSort
         , testPatternErrorStack = ErrorStack ["\\floor"]
         }
     , TestPattern
@@ -1053,6 +1066,7 @@ patternInUnquantifiedGenericPatterns
             , iffFirst = testedUnifiedPattern
             , iffSecond = anotherUnifiedPattern
             }
+        , testPatternSort = testedSort
         , testPatternErrorStack = ErrorStack ["\\iff"]
         }
     , TestPattern
@@ -1061,6 +1075,7 @@ patternInUnquantifiedGenericPatterns
             , iffFirst = anotherUnifiedPattern
             , iffSecond = testedUnifiedPattern
             }
+        , testPatternSort = testedSort
         , testPatternErrorStack = ErrorStack ["\\iff"]
         }
     , TestPattern
@@ -1069,6 +1084,7 @@ patternInUnquantifiedGenericPatterns
             , impliesFirst = testedUnifiedPattern
             , impliesSecond = anotherUnifiedPattern
             }
+        , testPatternSort = testedSort
         , testPatternErrorStack = ErrorStack ["\\implies"]
         }
     , TestPattern
@@ -1077,6 +1093,7 @@ patternInUnquantifiedGenericPatterns
             , impliesFirst = anotherUnifiedPattern
             , impliesSecond = testedUnifiedPattern
             }
+        , testPatternSort = testedSort
         , testPatternErrorStack = ErrorStack ["\\implies"]
         }
     , TestPattern
@@ -1086,6 +1103,7 @@ patternInUnquantifiedGenericPatterns
             , inContainedChild = testedUnifiedPattern
             , inContainingChild = anotherUnifiedPattern
             }
+        , testPatternSort = resultSort
         , testPatternErrorStack = ErrorStack ["\\in"]
         }
     , TestPattern
@@ -1095,6 +1113,7 @@ patternInUnquantifiedGenericPatterns
             , inContainedChild = anotherUnifiedPattern
             , inContainingChild = testedUnifiedPattern
             }
+        , testPatternSort = resultSort
         , testPatternErrorStack = ErrorStack ["\\in"]
         }
     , TestPattern
@@ -1102,6 +1121,7 @@ patternInUnquantifiedGenericPatterns
             { notSort = testedSort
             , notChild = testedUnifiedPattern
             }
+        , testPatternSort = testedSort
         , testPatternErrorStack = ErrorStack ["\\not"]
         }
     , TestPattern
@@ -1110,6 +1130,7 @@ patternInUnquantifiedGenericPatterns
             , orFirst = testedUnifiedPattern
             , orSecond = anotherUnifiedPattern
             }
+        , testPatternSort = testedSort
         , testPatternErrorStack = ErrorStack ["\\or"]
         }
     , TestPattern
@@ -1118,6 +1139,7 @@ patternInUnquantifiedGenericPatterns
             , orFirst = anotherUnifiedPattern
             , orSecond = testedUnifiedPattern
             }
+        , testPatternSort = testedSort
         , testPatternErrorStack = ErrorStack ["\\or"]
         }
     ]
@@ -1140,6 +1162,7 @@ patternInUnquantifiedObjectPatterns
             { nextSort = testedSort
             , nextChild = testedUnifiedPattern
             }
+        , testPatternSort = testedSort
         , testPatternErrorStack = ErrorStack ["\\next"]
         }
     , TestPattern
@@ -1148,6 +1171,7 @@ patternInUnquantifiedObjectPatterns
             , rewritesFirst = testedUnifiedPattern
             , rewritesSecond = anotherUnifiedPattern
             }
+        , testPatternSort = testedSort
         , testPatternErrorStack = ErrorStack ["\\rewrites"]
         }
     , TestPattern
@@ -1156,6 +1180,7 @@ patternInUnquantifiedObjectPatterns
             , rewritesFirst = anotherUnifiedPattern
             , rewritesSecond = testedUnifiedPattern
             }
+        , testPatternSort = testedSort
         , testPatternErrorStack = ErrorStack ["\\rewrites"]
         }
 
@@ -1194,6 +1219,7 @@ testsForUnifiedPatternInTopLevelContext
         (SortName sortName)
         objectSortVariables
         additionalSentences
+        patternRestrict
   where sortName = "sort_tfupitlc"
 
 testsForUnifiedPatternInTopLevelGenericContext
@@ -1212,100 +1238,110 @@ testsForUnifiedPatternInTopLevelGenericContext
     (SortVariablesThatMustBeDeclared sortVariables)
     additionalSentences
     patternRestrict
- =
-    [ \testPattern -> TestData
-        { testDataDescription = "Pattern in axiom"
-        , testDataError =
-            Error
-                ( "module 'MODULE'"
-                : "axiom declaration"
-                : testPatternErrorStackStrings testPattern
-                )
-                defaultErrorMessage
-        , testDataDefinition =
-            simpleDefinitionFromSentences (ModuleName "MODULE")
-                ( axiomSentenceWithSortParameters
-                    (testPatternUnifiedPattern testPattern) unifiedSortVariables
-                : additionalSentences
-                )
-        }
-    , \testPattern -> TestData
-        { testDataDescription = "Pattern in alias definition attributes"
-        , testDataError =
-            Error
-                ( "module 'MODULE'"
-                : ("alias '" ++ rawAliasName ++ "' declaration")
-                : "attributes"
-                : testPatternErrorStackStrings testPattern
-                )
-                defaultErrorMessage
-        , testDataDefinition =
-            simpleDefinitionFromSentences
-                (ModuleName "MODULE")
-                ( asSentence
-                    (sentenceAliasWithAttributes
-                        aliasName
-                        sortVariables
-                        additionalSort
-                        [ testPatternUnifiedPattern testPattern ]
+  =
+    let
+        axiomPattern testPattern = TestData
+            { testDataDescription = "Pattern in axiom"
+            , testDataError =
+                Error
+                    ( "module 'MODULE'"
+                    : "axiom declaration"
+                    : testPatternErrorStackStrings testPattern
                     )
-                : additionalSentences
-                )
-        }
-    , \testPattern -> TestData
-        { testDataDescription = "Pattern in symbol definition attributes"
-        , testDataError =
-            Error
-                ( "module 'MODULE'"
-                : ("symbol '" ++ rawSymbolName ++ "' declaration")
-                : "attributes"
-                : testPatternErrorStackStrings testPattern
-                )
-                defaultErrorMessage
-        , testDataDefinition =
-            simpleDefinitionFromSentences
-                (ModuleName "MODULE")
-                ( asSentence
-                    (sentenceSymbolWithAttributes
-                        symbolName
-                        sortVariables
-                        additionalSort
-                        [ testPatternUnifiedPattern testPattern ]
+                    defaultErrorMessage
+            , testDataDefinition =
+                simpleDefinitionFromSentences (ModuleName "MODULE")
+                    ( axiomSentenceWithSortParameters
+                        (testPatternUnifiedPattern testPattern)
+                        unifiedSortVariables
+                    : additionalSentences
                     )
-                : additionalSentences
-                )
-        }
-    , \testPattern -> TestData
-        { testDataDescription = "Axiom with attributes"
-        , testDataError =
-            Error
-                ( "module 'MODULE'"
-                : "axiom declaration"
-                : "attributes"
-                : testPatternErrorStackStrings testPattern
-                )
-                defaultErrorMessage
-        , testDataDefinition =
-            simpleDefinitionFromSentences
-                (ModuleName "MODULE")
-                ( axiomSentenceWithAttributes
-                    unifiedSortVariables
-                    (simpleExistsUnifiedPatternWithType
-                        x  variableName1 additionalSort)
-                    [ testPatternUnifiedPattern testPattern ]
-                : additionalSentences
-                )
-        }
-    ]
-    ++ case patternRestrict of
-        NeedsSortVariables -> []
-        _ ->
+            }
+    in case patternRestrict of
+        NeedsInternalDefinitions -> [axiomPattern]
+        NeedsSortedParent -> [axiomPattern]
+        NeedsAttributes ->
             [ \testPattern -> TestData
+                { testDataDescription = "Pattern in alias definition attributes"
+                , testDataError =
+                    Error
+                        ( "module 'MODULE'"
+                        : ("alias '" ++ rawAliasName ++ "' declaration")
+                        : "attributes"
+                        : "\\equals"
+                        : "\\equals"
+                        : testPatternErrorStackStrings testPattern
+                        )
+                        defaultErrorMessage
+                , testDataDefinition =
+                    simpleDefinitionFromSentences
+                        (ModuleName "MODULE")
+                        ( asSentence
+                            (sentenceAliasWithAttributes
+                                aliasName
+                                sortVariables
+                                additionalSort
+                                [ testPatternUnifiedPattern (asAttribute testPattern) ]
+                            )
+                        : additionalSentences
+                        )
+                }
+            , \testPattern -> TestData
+                { testDataDescription = "Pattern in symbol definition attributes"
+                , testDataError =
+                    Error
+                        ( "module 'MODULE'"
+                        : ("symbol '" ++ rawSymbolName ++ "' declaration")
+                        : "attributes"
+                        : "\\equals"
+                        : "\\equals"
+                        : testPatternErrorStackStrings testPattern
+                        )
+                        defaultErrorMessage
+                , testDataDefinition =
+                    simpleDefinitionFromSentences
+                        (ModuleName "MODULE")
+                        ( asSentence
+                            (sentenceSymbolWithAttributes
+                                symbolName
+                                sortVariables
+                                additionalSort
+                                [ testPatternUnifiedPattern (asAttribute testPattern) ]
+                            )
+                        : additionalSentences
+                        )
+                }
+            , \testPattern -> TestData
+                { testDataDescription = "Axiom with attributes"
+                , testDataError =
+                    Error
+                        ( "module 'MODULE'"
+                        : "axiom declaration"
+                        : "attributes"
+                        : "\\equals"
+                        : "\\equals"
+                        : testPatternErrorStackStrings testPattern
+                        )
+                        defaultErrorMessage
+                , testDataDefinition =
+                    simpleDefinitionFromSentences
+                        (ModuleName "MODULE")
+                        ( axiomSentenceWithAttributes
+                            unifiedSortVariables
+                            (simpleExistsUnifiedPatternWithType
+                                x  variableName1 additionalSort)
+                            [ testPatternUnifiedPattern (asAttribute testPattern) ]
+                        : additionalSentences
+                        )
+                }
+            , \testPattern -> TestData
                 { testDataDescription = "Module with attributes"
                 , testDataError =
                     Error
                         ( "module 'MODULE'"
                         : "attributes"
+                        : "\\equals"
+                        : "\\equals"
                         : testPatternErrorStackStrings testPattern
                         )
                         defaultErrorMessage
@@ -1318,18 +1354,14 @@ testsForUnifiedPatternInTopLevelGenericContext
                                 , moduleSentences = additionalSentences
                                 , moduleAttributes =
                                     Attributes
-                                        [ testPatternUnifiedPattern testPattern ]
+                                        [ testPatternUnifiedPattern
+                                            (asAttribute testPattern)
+                                        ]
                                 }
                             ]
                         }
                 }
-            ]
-    ++ case patternRestrict of
-        NeedsSortVariables -> []
-        NeedsInternalDefinitions -> []
-        NeedsSortedParent -> []
-        _ ->
-            [ \testPattern -> TestData
+            , \testPattern -> TestData
                 { testDataDescription = "Definition with attributes"
                 , testDataError =
                     Error
@@ -1366,34 +1398,95 @@ testsForUnifiedPatternInTopLevelObjectContext
     => SortName
     -> SortVariablesThatMustBeDeclared Object
     -> [KoreSentence]
+    -> PatternRestrict
     -> [TestPattern level -> TestData]
 testsForUnifiedPatternInTopLevelObjectContext
     (SortName rawSortName)
     (SortVariablesThatMustBeDeclared sortVariables)
     additionalSentences
+    patternRestrict
   =
-    [ \testPattern -> TestData
-        { testDataDescription = "Pattern in Sort declaration"
-        , testDataError =
-            Error
-                ( "module 'MODULE'"
-                : ("sort '" ++ rawSortName ++ "' declaration")
-                : "attributes"
-                : testPatternErrorStackStrings testPattern
-                )
-                defaultErrorMessage
-        , testDataDefinition =
-            simpleDefinitionFromSentences (ModuleName "MODULE")
-                ( asSentence SentenceSort
-                    { sentenceSortName = Id rawSortName
-                    , sentenceSortParameters = sortVariables
-                    , sentenceSortAttributes =
-                        Attributes [ testPatternUnifiedPattern testPattern ]
+    case patternRestrict of
+        NeedsInternalDefinitions -> []
+        _ ->
+            [ \testPattern -> TestData
+                { testDataDescription = "Pattern in Sort declaration"
+                , testDataError =
+                    Error
+                        ( "module 'MODULE'"
+                        : ("sort '" ++ rawSortName ++ "' declaration")
+                        : "attributes"
+                        : "\\equals"
+                        : "\\equals"
+                        : testPatternErrorStackStrings testPattern
+                        )
+                        defaultErrorMessage
+                , testDataDefinition =
+                    simpleDefinitionFromSentences (ModuleName "MODULE")
+                        ( asSentence SentenceSort
+                            { sentenceSortName = Id rawSortName
+                            , sentenceSortParameters = sortVariables
+                            , sentenceSortAttributes =
+                                Attributes
+                                    [ testPatternUnifiedPattern
+                                        (asAttribute testPattern)
+                                    ]
+                            }
+                        : additionalSentences
+                        )
+                }
+            ]
+
+asAttribute :: MetaOrObject level => TestPattern level -> TestPattern Object
+asAttribute testPattern =
+    case isMetaOrObject testPattern of
+        IsMeta ->
+            let
+                patternPattern = EqualsPattern Equals
+                    { equalsOperandSort = testPatternSort testPattern
+                    , equalsResultSort  = patternMetaSort
+                    , equalsFirst       = testPatternUnifiedPattern testPattern
+                    , equalsSecond      = testPatternUnifiedPattern testPattern
                     }
-                : additionalSentences
-                )
-        }
-    ]
+              in
+                TestPattern
+                    { testPatternPattern = EqualsPattern Equals
+                        { equalsOperandSort = attributeObjectSort
+                        , equalsResultSort  = attributeObjectSort
+                        , equalsFirst       =
+                            asKorePattern patternPattern
+                        , equalsSecond      =
+                            asKorePattern patternPattern
+                        }
+                    , testPatternSort = attributeObjectSort
+                    , testPatternErrorStack =
+                        testPatternErrorStack testPattern
+                    }
+        IsObject ->
+            -- More complex than if should be, but tests are much easier to
+            -- write if I have the same stack trace on both the object and
+            -- meta versions.
+            let
+                patternPattern = EqualsPattern Equals
+                    { equalsOperandSort = testPatternSort testPattern
+                    , equalsResultSort  = attributeObjectSort
+                    , equalsFirst       = testPatternUnifiedPattern testPattern
+                    , equalsSecond      = testPatternUnifiedPattern testPattern
+                    }
+                in
+                TestPattern
+                    { testPatternPattern = EqualsPattern Equals
+                        { equalsOperandSort = attributeObjectSort
+                        , equalsResultSort  = attributeObjectSort
+                        , equalsFirst       =
+                            asKorePattern patternPattern
+                        , equalsSecond      =
+                            asKorePattern patternPattern
+                        }
+                    , testPatternSort = attributeObjectSort
+                    , testPatternErrorStack =
+                        testPatternErrorStack testPattern
+                    }
 
 defaultErrorMessage :: String
 defaultErrorMessage = "Replace this with a real error message."

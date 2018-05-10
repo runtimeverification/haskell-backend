@@ -527,18 +527,6 @@ symbolVisibilityTests =
         (UsingSentence symbolReferenceInAxiomSentence)
         (SupportingSentences defaultSymbolSupportSentences)
     , nameReferenceTests
-        "Symbol visibility in attributes"
-        (ExpectedErrorMessage "Symbol 'symbol1' not defined.")
-        (ErrorStack
-            [ "sort 'sort2' declaration"
-            , "attributes"
-            , "symbol or alias 'symbol1'"
-            ]
-        )
-        (DeclaringSentence symbolDeclaration)
-        (UsingSentence symbolReferenceInAttributesSentence)
-        (SupportingSentences defaultSymbolSupportSentences)
-    , nameReferenceTests
         "Symbol visibility in and pattern"
         (ExpectedErrorMessage "Symbol 'symbol1' not defined.")
         (ErrorStack
@@ -756,18 +744,6 @@ aliasVisibilityTests =
         )
         (DeclaringSentence aliasDeclaration)
         (UsingSentence aliasReferenceInAxiomSentence)
-        (SupportingSentences defaultAliasSupportSentences)
-    , nameReferenceTests
-        "Alias visibility in attributes"
-        (ExpectedErrorMessage "Symbol 'alias1' not defined.")
-        (ErrorStack
-            [ "sort 'sort2' declaration"
-            , "attributes"
-            , "symbol or alias 'alias1'"
-            ]
-        )
-        (DeclaringSentence aliasDeclaration)
-        (UsingSentence aliasReferenceInAttributesSentence)
         (SupportingSentences defaultAliasSupportSentences)
     , nameReferenceTests
         "Alias visibility in and pattern"
