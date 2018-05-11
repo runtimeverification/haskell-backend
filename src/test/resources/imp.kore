@@ -625,7 +625,7 @@ module IMP-SYNTAX
           leqBExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
   []
-  //  [seqstrict{}(\dv{Strict{}}("leqBExp"))]
+  //[seqstrict{}(\dv{Strict{}}("leqBExp"))]
 
   /* X <= intAsAExp(Y) = (gamma HOLE . X <= intAsAExp(HOLE)) [Y]
      where Y has sort Int.
