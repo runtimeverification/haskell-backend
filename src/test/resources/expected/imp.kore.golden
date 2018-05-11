@@ -3062,36 +3062,52 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "#strict" :: Id Meta
+                                        { symbolOrAliasConstructor = Id "strict" :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "divAExp")))))
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Strict" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "divAExp")))))
+                                        }))))
                                     , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id "one" :: Id Object
+                                                { symbolOrAliasConstructor = Id "firstArgument" :: Id Object
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
                                         }))))
                                     ]
                                 }))))
-                            , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "#strict" :: Id Meta
+                                        { symbolOrAliasConstructor = Id "strict" :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "divAExp")))))
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Strict" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "divAExp")))))
+                                        }))))
                                     , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id "two" :: Id Object
+                                                { symbolOrAliasConstructor = Id "secondArgument" :: Id Object
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
@@ -3313,18 +3329,26 @@ Definition
                             }))))
                     , sentenceAxiomAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "#strict" :: Id Meta
+                                        { symbolOrAliasConstructor = Id "strict" :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "divAExp")))))
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Strict" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "divAExp")))))
+                                        }))))
                                     , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id "one" :: Id Object
+                                                { symbolOrAliasConstructor = Id "firstArgument" :: Id Object
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
@@ -3453,18 +3477,26 @@ Definition
                             }))))
                     , sentenceAxiomAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "#strict" :: Id Meta
+                                        { symbolOrAliasConstructor = Id "strict" :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "divAExp")))))
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Strict" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "divAExp")))))
+                                        }))))
                                     , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id "two" :: Id Object
+                                                { symbolOrAliasConstructor = Id "secondArgument" :: Id Object
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
@@ -3496,36 +3528,52 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "#strict" :: Id Meta
+                                        { symbolOrAliasConstructor = Id "strict" :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "plusAExp")))))
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Strict" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "plusAExp")))))
+                                        }))))
                                     , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id "one" :: Id Object
+                                                { symbolOrAliasConstructor = Id "firstArgument" :: Id Object
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
                                         }))))
                                     ]
                                 }))))
-                            , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "#strict" :: Id Meta
+                                        { symbolOrAliasConstructor = Id "strict" :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "plusAExp")))))
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Strict" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "plusAExp")))))
+                                        }))))
                                     , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id "two" :: Id Object
+                                                { symbolOrAliasConstructor = Id "secondArgument" :: Id Object
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
@@ -3747,18 +3795,26 @@ Definition
                             }))))
                     , sentenceAxiomAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "#strict" :: Id Meta
+                                        { symbolOrAliasConstructor = Id "strict" :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "plusAExp")))))
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Strict" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "plusAExp")))))
+                                        }))))
                                     , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id "one" :: Id Object
+                                                { symbolOrAliasConstructor = Id "firstArgument" :: Id Object
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
@@ -3887,18 +3943,26 @@ Definition
                             }))))
                     , sentenceAxiomAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "#strict" :: Id Meta
+                                        { symbolOrAliasConstructor = Id "strict" :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "plusAExp")))))
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Strict" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "plusAExp")))))
+                                        }))))
                                     , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id "two" :: Id Object
+                                                { symbolOrAliasConstructor = Id "secondArgument" :: Id Object
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
@@ -4114,19 +4178,7 @@ Definition
                             { sortActualName = Id "BExp" :: Id Object
                             , sortActualSorts = []
                             }
-                    , sentenceSymbolAttributes =
-                        Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
-                                { applicationSymbolOrAlias =
-                                    SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "#seqstrict" :: Id Meta
-                                        , symbolOrAliasParams = []
-                                        }
-                                , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "leqBExp")))))
-                                    ]
-                                }))))
-                            ]
+                    , sentenceSymbolAttributes = Attributes []
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
@@ -4339,19 +4391,7 @@ Definition
                                         ]
                                     }))))
                             }))))
-                    , sentenceAxiomAttributes =
-                        Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
-                                { applicationSymbolOrAlias =
-                                    SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "#seqstrict" :: Id Meta
-                                        , symbolOrAliasParams = []
-                                        }
-                                , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "leqBExp")))))
-                                    ]
-                                }))))
-                            ]
+                    , sentenceAxiomAttributes = Attributes []
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
@@ -4489,19 +4529,7 @@ Definition
                                         ]
                                     }))))
                             }))))
-                    , sentenceAxiomAttributes =
-                        Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
-                                { applicationSymbolOrAlias =
-                                    SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "#seqstrict" :: Id Meta
-                                        , symbolOrAliasParams = []
-                                        }
-                                , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "leqBExp")))))
-                                    ]
-                                }))))
-                            ]
+                    , sentenceAxiomAttributes = Attributes []
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
@@ -4522,18 +4550,26 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "#strict" :: Id Meta
+                                        { symbolOrAliasConstructor = Id "strict" :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "notBExp")))))
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Strict" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "notBExp")))))
+                                        }))))
                                     , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id "one" :: Id Object
+                                                { symbolOrAliasConstructor = Id "firstArgument" :: Id Object
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
@@ -4646,18 +4682,26 @@ Definition
                             }))))
                     , sentenceAxiomAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "#strict" :: Id Meta
+                                        { symbolOrAliasConstructor = Id "strict" :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "notBExp")))))
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Strict" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "notBExp")))))
+                                        }))))
                                     , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id "one" :: Id Object
+                                                { symbolOrAliasConstructor = Id "firstArgument" :: Id Object
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
@@ -4689,18 +4733,26 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "#strict" :: Id Meta
+                                        { symbolOrAliasConstructor = Id "strict" :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "andBExp")))))
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Strict" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "andBExp")))))
+                                        }))))
                                     , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id "one" :: Id Object
+                                                { symbolOrAliasConstructor = Id "firstArgument" :: Id Object
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
@@ -4829,18 +4881,26 @@ Definition
                             }))))
                     , sentenceAxiomAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "#strict" :: Id Meta
+                                        { symbolOrAliasConstructor = Id "strict" :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "andBExp")))))
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Strict" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "andBExp")))))
+                                        }))))
                                     , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id "one" :: Id Object
+                                                { symbolOrAliasConstructor = Id "firstArgument" :: Id Object
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
@@ -4934,18 +4994,26 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "#strict" :: Id Meta
+                                        { symbolOrAliasConstructor = Id "strict" :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "asgn")))))
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Strict" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "asgn")))))
+                                        }))))
                                     , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id "two" :: Id Object
+                                                { symbolOrAliasConstructor = Id "secondArgument" :: Id Object
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
@@ -5074,18 +5142,26 @@ Definition
                             }))))
                     , sentenceAxiomAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "#strict" :: Id Meta
+                                        { symbolOrAliasConstructor = Id "strict" :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "asgn")))))
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Strict" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "asgn")))))
+                                        }))))
                                     , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id "two" :: Id Object
+                                                { symbolOrAliasConstructor = Id "secondArgument" :: Id Object
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
@@ -5121,18 +5197,26 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "#strict" :: Id Meta
+                                        { symbolOrAliasConstructor = Id "strict" :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "ite")))))
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Strict" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "ite")))))
+                                        }))))
                                     , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id "one" :: Id Object
+                                                { symbolOrAliasConstructor = Id "firstArgument" :: Id Object
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []
@@ -5277,18 +5361,26 @@ Definition
                             }))))
                     , sentenceAxiomAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "#strict" :: Id Meta
+                                        { symbolOrAliasConstructor = Id "strict" :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "ite")))))
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Strict" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "ite")))))
+                                        }))))
                                     , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                         { applicationSymbolOrAlias =
                                             SymbolOrAlias
-                                                { symbolOrAliasConstructor = Id "one" :: Id Object
+                                                { symbolOrAliasConstructor = Id "firstArgument" :: Id Object
                                                 , symbolOrAliasParams = []
                                                 }
                                         , applicationChildren = []

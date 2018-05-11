@@ -4,6 +4,7 @@ module Data.Kore.ASTVerifier.DefinitionVerifierTest
 import           Test.Tasty                                                      (TestTree,
                                                                                   testGroup)
 
+import           Data.Kore.ASTVerifier.DefinitionVerifierAttributesTest
 import           Data.Kore.ASTVerifier.DefinitionVerifierImportsTest
 import           Data.Kore.ASTVerifier.DefinitionVerifierMetaObjectTest
 import           Data.Kore.ASTVerifier.DefinitionVerifierPatternVerifierTest
@@ -19,6 +20,7 @@ definitionVerifierTests =
         , definitionVerifierUniqueSortVariablesTests
         , definitionVerifierSortUsageTests
         , definitionVerifierPatternVerifierTests
+        , definitionVerifierAttributesTests
         , definitionVerifierImportsTests
         , definitionVerifierMetaObjectTests
         ]

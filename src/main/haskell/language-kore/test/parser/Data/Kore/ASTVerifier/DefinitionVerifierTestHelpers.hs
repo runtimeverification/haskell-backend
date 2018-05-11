@@ -1,7 +1,9 @@
+{-# LANGUAGE FlexibleContexts #-}
 module Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers where
 
 import           Test.Tasty                               (TestTree, testGroup)
-import           Test.Tasty.HUnit                         (assertEqual,
+import           Test.Tasty.HUnit                         (HasCallStack,
+                                                           assertEqual,
                                                            assertFailure,
                                                            testCase)
 
@@ -52,15 +54,15 @@ failureTestData
   where
     err = testDataError testData
 
-successTestDataGroup :: String -> [TestData] -> TestTree
+successTestDataGroup :: HasCallStack => String -> [TestData] -> TestTree
 successTestDataGroup description testDatas =
     testGroup description (map successTestData testDatas)
 
-successTestData :: TestData -> TestTree
+successTestData :: HasCallStack => TestData -> TestTree
 successTestData testData =
     expectSuccess (testDataDescription testData) (testDataDefinition testData)
 
-expectSuccess :: String -> KoreDefinition -> TestTree
+expectSuccess :: HasCallStack => String -> KoreDefinition -> TestTree
 expectSuccess description definition =
     testCase
         description
@@ -69,14 +71,15 @@ expectSuccess description definition =
             ++ printDefinition definition
             )
             verifySuccess
-            (verifyDefinition VerifyAttributes definition)
+            (verifyDefinition attributesVerificationForTests definition)
         )
 
-expectFailureWithError :: String -> Error VerifyError -> KoreDefinition -> TestTree
+expectFailureWithError
+    :: HasCallStack => String -> Error VerifyError -> KoreDefinition -> TestTree
 expectFailureWithError description expectedError definition =
     testCase
         description
-        ( case verifyDefinition VerifyAttributes definition of
+        ( case verifyDefinition attributesVerificationForTests definition of
             Right _ ->
                 assertFailure
                     (  "Expecting verification failure! Definition:\n"
@@ -89,6 +92,11 @@ expectFailureWithError description expectedError definition =
                     )
                     expectedError actualError
         )
+
+attributesVerificationForTests :: AttributesVerification
+attributesVerificationForTests = case defaultAttributesVerification of
+    Right verification -> verification
+    Left err           -> error (printError err)
 
 printDefinition :: KoreDefinition -> String
 printDefinition definition =

@@ -1,4 +1,4 @@
-["\u00A9"]
+[hook{}(\dv{Hook{}}("\u00A9"))]
 
 module TEST-STRING-6
 

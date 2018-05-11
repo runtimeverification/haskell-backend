@@ -268,11 +268,11 @@ module CONTEXT
       C:Ctxt{S1,S2},
       \forall{R}(
         T:S1,
-	\exists{R}(
-	  Z:S2,
-	  \equals{S2,R}(
-	    app{S1,S2}(C:Ctxt{S1,S2}, T:S1),
-	    Z:S2))))
+        \exists{R}(
+          Z:S2,
+          \equals{S2,R}(
+            app{S1,S2}(C:Ctxt{S1,S2}, T:S1),
+            Z:S2))))
   []
 
   axiom{S1,S2,R}
@@ -280,11 +280,11 @@ module CONTEXT
       HOLE:S1,
       \forall{R}(
         BODY:S2,
-	\exists{R}(
-	  C:Ctxt{S1,S2},
-	  \equals{Ctxt{S1,S2},R}(
-	    gamma{S1,S2}(HOLE:S1, BODY:S2),
-	    C:Ctxt{S1,S2}))))
+        \exists{R}(
+          C:Ctxt{S1,S2},
+          \equals{Ctxt{S1,S2},R}(
+            gamma{S1,S2}(HOLE:S1, BODY:S2),
+            C:Ctxt{S1,S2}))))
   []
 
   /* Identity context. */
@@ -305,18 +305,18 @@ module CONTEXT
     \equals{S,R}(
       app{S1,S}(
         C1:Ctxt{S1,S},
-	app{S2,S1}(
-	  C2:Ctxt{S2,S1},
-	  T:S2)),
+        app{S2,S1}(
+          C2:Ctxt{S2,S1},
+          T:S2)),
       app{S2,S}(
         gamma{S2,S}(
-	  HOLE:S2,
+          HOLE:S2,
           app{S1,S}(
             C1:Ctxt{S1,S},
-	    app{S2,S1}(
-	      C2:Ctxt{S2,S1},
-	      HOLE:S2))),
-	T:S2))
+            app{S2,S1}(
+              C2:Ctxt{S2,S1},
+              HOLE:S2))),
+        T:S2))
   []
 
 endmodule []
@@ -385,9 +385,9 @@ module ARROW
       arrow{}(K1:K{}, K2:K{}),
       app{K{},K{}}(
         gamma{K{},K{}}(
-	  HOLE:K{},
-	  arrow{}(HOLE:K{}, K2:K{})),
-	K1:K{}))
+          HOLE:K{},
+          arrow{}(HOLE:K{}, K2:K{})),
+        K1:K{}))
   []
 
   axiom{S,R}
@@ -395,9 +395,9 @@ module ARROW
       asK{S}(T:S),
       app{S,K{}}(
         gamma{S,K{}}(
-	  HOLE:S,
-	  asK{S}(HOLE:S)),
-	T:S))
+          HOLE:S,
+          asK{S}(HOLE:S)),
+        T:S))
   []
 
   /** Convert contexts to arrows.
@@ -452,8 +452,8 @@ module IMP-SYNTAX
       \exists{R}(
         E:AExp{},
         \equals{AExp{},R}(
-	  intAsAExp{}(I:Int{}),
-	  E:AExp{})))
+          intAsAExp{}(I:Int{}),
+          E:AExp{})))
   []
 
   /* syntax AExp ::= Id */
@@ -475,9 +475,9 @@ module IMP-SYNTAX
       Id:Id{},
       \exists{R}(
         E:AExp{},
-	\equals{AExp{},R}(
-	  idAsAExp{}(Id:Id{}),
-	  E:AExp{})))
+        \equals{AExp{},R}(
+          idAsAExp{}(Id:Id{}),
+          E:AExp{})))
   []
 
   /* syntax AExp ::= "-" Int */
@@ -491,17 +491,18 @@ module IMP-SYNTAX
       I:Int{},
       \exists{R}(
         E:AExp{},
-	\equals{AExp{},R}(
-	  minusAExp{}(I:Int{}),
-	  E:AExp{})))
+        \equals{AExp{},R}(
+          minusAExp{}(I:Int{}),
+          E:AExp{})))
   []
 
 
   /* syntax AExp ::= AExp "/" AExp [strict] */
 
   symbol divAExp{}(AExp{}, AExp{}) : AExp{}
-  [#strict{}("divAExp", one{}()) ,
-   #strict{}("divAExp", two{}())]
+  [ strict{}(\dv{Strict{}}("divAExp"), firstArgument{}())
+  , strict{}(\dv{Strict{}}("divAExp"), secondArgument{}())
+  ]
 
   /* divAExp is functional */
 
@@ -521,7 +522,7 @@ module IMP-SYNTAX
           HOLE:AExp{},
           divAExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
-  [#strict{}("divAExp", one{}())]
+  [strict{}(\dv{Strict{}}("divAExp"), firstArgument{}())]
 
   /* (X / Y) = gamma HOLE . (X / HOLE) [Y] */
 
@@ -533,13 +534,13 @@ module IMP-SYNTAX
           HOLE:AExp{},
           divAExp{}(X:AExp{}, HOLE:AExp{})),
         Y:AExp{}))
-  [#strict{}("divAExp", two{}())]
+  [strict{}(\dv{Strict{}}("divAExp"), secondArgument{}())]
 
   /* syntax AExp ::= AExp "+" AExp [strict] */
 
   symbol plusAExp{}(AExp{}, AExp{}) : AExp{}
-  [#strict{}("plusAExp", one{}()) ,
-   #strict{}("plusAExp", two{}())]
+  [strict{}(\dv{Strict{}}("plusAExp"), firstArgument{}()) ,
+   strict{}(\dv{Strict{}}("plusAExp"), secondArgument{}())]
 
   /* plusAExp is functional */
 
@@ -559,7 +560,7 @@ module IMP-SYNTAX
           HOLE:AExp{},
           plusAExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
-  [#strict{}("plusAExp", one{}())]
+  [strict{}(\dv{Strict{}}("plusAExp"), firstArgument{}())]
 
   /* (X + Y) = gamma HOLE . (X + HOLE) [Y] */
 
@@ -571,7 +572,7 @@ module IMP-SYNTAX
           HOLE:AExp{},
           plusAExp{}(X:AExp{}, HOLE:AExp{})),
         Y:AExp{}))
-  [#strict{}("plusAExp", two{}())]
+  [strict{}(\dv{Strict{}}("plusAExp"), secondArgument{}())]
 
   /* syntax BExp ::= ... */
 
@@ -596,15 +597,16 @@ module IMP-SYNTAX
       B:Bool{},
       \exists{R}(
         E:BExp{},
-	\equals{BExp{},R}(
-	  boolAsBExp{}(B:Bool{}),
-	  E:BExp{})))
+        \equals{BExp{},R}(
+          boolAsBExp{}(B:Bool{}),
+          E:BExp{})))
   []  
   
   /* syntax BExp ::= AExp "<=" AExp [seqstrict] */
 
   symbol leqBExp{}(AExp{}, AExp{}) : BExp{}
-  [#seqstrict{}("leqBExp")]
+  []
+  // [seqstrict{}(\dv{Strict{}}("leqBExp"))]
 
   /* leqBExp is functional */
 
@@ -622,7 +624,8 @@ module IMP-SYNTAX
           HOLE:AExp{},
           leqBExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
-  [#seqstrict{}("leqBExp")]
+  []
+  //  [seqstrict{}(\dv{Strict{}}("leqBExp"))]
 
   /* X <= intAsAExp(Y) = (gamma HOLE . X <= intAsAExp(HOLE)) [Y]
      where Y has sort Int.
@@ -639,12 +642,13 @@ module IMP-SYNTAX
           HOLE:Int{},
           leqBExp{}(X:AExp{}, intAsAExp{}(HOLE:Int{}))),
         Y:Int{}))
-  [#seqstrict{}("leqBExp")]
+  []
+  // [seqstrict{}(\dv{Strict{}}("leqBExp"))]
 
   /* syntax BExp ::= "!" BExp [strict] */
 
   symbol notBExp{}(BExp{}) : BExp{}
-  [#strict{}("notBExp", one{}())]
+  [strict{}(\dv{Strict{}}("notBExp"), firstArgument{}())]
 
   axiom{R}
     \equals{BExp{},R}(
@@ -654,12 +658,12 @@ module IMP-SYNTAX
           HOLE:BExp{},
           notBExp{}(HOLE:BExp{})),
         B:BExp{}))
-  [#strict{}("notBExp", one{}())]
+  [strict{}(\dv{Strict{}}("notBExp"), firstArgument{}())]
 
   /* syntax BExp ::= BExp "&&" BExp [strict(1)] */
 
   symbol andBExp{}(BExp{}, BExp{}) : BExp{}
-  [#strict{}("andBExp", one{}())]
+  [strict{}(\dv{Strict{}}("andBExp"), firstArgument{}())]
 
   axiom{R}
     \equals{BExp{},R}(
@@ -669,7 +673,7 @@ module IMP-SYNTAX
           HOLE:BExp{},
           andBExp{}(HOLE:BExp{}, Y:BExp{})),
         X:BExp{}))
-  [#strict{}("andBExp", one{}())]
+  [strict{}(\dv{Strict{}}("andBExp"), firstArgument{}())]
 
 
   /* syntax Block ::= ... */
@@ -694,7 +698,8 @@ module IMP-SYNTAX
 
   /* syntax Stmt ::= Id "=" AExp ";" [strict(2)] */
 
-  symbol asgn{}(Id{}, AExp{}) : Stmt{} [#strict{}("asgn", two{}())]
+  symbol asgn{}(Id{}, AExp{}) : Stmt{}
+  [strict{}(\dv{Strict{}}("asgn"), secondArgument{}())]
 
   axiom{R}
     \equals{Stmt{},R}(
@@ -704,12 +709,13 @@ module IMP-SYNTAX
           HOLE:AExp{},
           asgn{}(X:Id{}, HOLE:AExp{})),
         E:AExp{}))
-  [#strict{}("asgn", two{}())]
+  [strict{}(\dv{Strict{}}("asgn"), secondArgument{}())]
 
   /* syntax Stmt ::= "ite" "(" BExp ")" Block "else" Block [strict(1)] */
 
+
   symbol ite{}(BExp{}, Block{}, Block{}) : Stmt{}
-  [#strict{}("ite", one{}())]
+  [strict{}(\dv{Strict{}}("ite"), firstArgument{}())]
 
   axiom{R}
     \equals{Stmt{},R}(
@@ -719,7 +725,7 @@ module IMP-SYNTAX
           HOLE:BExp{},
           ite{}(HOLE:BExp{}, S1:Block{}, S2:Block{})),
         B:BExp{}))
-  [#strict{}("ite", one{}())]
+  [strict{}(\dv{Strict{}}("ite"), firstArgument{}())]
 
   /* syntax Stmt ::= "while" "(" BExp ")" Block */
 
@@ -772,7 +778,6 @@ module IMP
 
   symbol statecell{}(Map{Id{}, Int{}}) : StateCell{} []
 
-
   /* In K:
    * rule <k> X:Id => I ... <k>
    *      <state> ... X |-> I ... </state>
@@ -788,15 +793,15 @@ module IMP
       C:Ctxt{KCell{},Ctxt{StateCell{},S}},
       kcell{}(
         arrow{}(
-	  /* Here AExp is infered from X:Id and I:Int (their least common sort) */
-	  asK{AExp{}}(idAsAExp{}(X:Id{})),
-	  asK{AExp{}}(intAsAExp{}(I:Int{}))))),
+          /* Here AExp is infered from X:Id and I:Int (their least common sort) */
+          asK{AExp{}}(idAsAExp{}(X:Id{})),
+          asK{AExp{}}(intAsAExp{}(I:Int{}))))),
       statecell{}(
         merge{Id{},Int{}}(
         merge{Id{},Int{}}(
-	  DOT2:Map{Id{},Int{}},
-	  bind{Id{},Int{}}(X:Id{}, I:Int{})),
-	  DOT3:Map{Id{},Int{}})))
+          DOT2:Map{Id{},Int{}},
+          bind{Id{},Int{}}(X:Id{}, I:Int{})),
+          DOT3:Map{Id{},Int{}})))
   []
 
   /* rule I1 / I2 => I1 /Int I2 requires I2 =/=Int 0 */
@@ -911,18 +916,18 @@ module IMP
       C:Ctxt{KCell{},Ctxt{StateCell{},S}},
       kcell{}(
         arrow{}(
-	  \rewrites{K{}}(
-	    asK{Stmt{}}(asgn{}(X:Id{}, intAsAExp{}(I:Int{}))),
-	    nothing{}()),
-	  DOT1:K{}))),
+          \rewrites{K{}}(
+            asK{Stmt{}}(asgn{}(X:Id{}, intAsAExp{}(I:Int{}))),
+            nothing{}()),
+          DOT1:K{}))),
       statecell{}(
         merge{Id{},Int{}}(
         merge{Id{},Int{}}(
-	  DOT2:Map{Id{},Int{}},
-	  bind{Id{},Int{}}(X:Id{}, \rewrites{Int{}}(UNDERSCORE:Int{}, I:Int{}))),
-	  DOT3:Map{Id{},Int{}})))
+          DOT2:Map{Id{},Int{}},
+          bind{Id{},Int{}}(X:Id{}, \rewrites{Int{}}(UNDERSCORE:Int{}, I:Int{}))),
+          DOT3:Map{Id{},Int{}})))
   []
-	  
+          
 
 
   /* In K:
@@ -947,9 +952,9 @@ module IMP
       C:Ctxt{Stmt{},S},
       \rewrites{Stmt{}}(
         ite{}(boolAsBExp{}(true{}()),
-	      S:Block{},
-	      UNDERSCORE:Block{}),
-	blockAsStmt{}(S:Block{})))
+              S:Block{},
+              UNDERSCORE:Block{}),
+        blockAsStmt{}(S:Block{})))
   []
 
   /* rule if (false) _ else S => S */
@@ -959,9 +964,9 @@ module IMP
       C:Ctxt{Stmt{},S},
       \rewrites{Stmt{}}(
         ite{}(boolAsBExp{}(false{}()),
-	      UNDERSCORE:Block{},
-	      S:Block{}),
-	blockAsStmt{}(S:Block{})))
+              UNDERSCORE:Block{},
+              S:Block{}),
+        blockAsStmt{}(S:Block{})))
   []
 
   /* rule while (B) S => if (B) {S while (B) S} else {} [structural] */
@@ -971,13 +976,13 @@ module IMP
       C:Ctxt{Stmt{},S},
       \rewrites{Stmt{}}(
         while{}(B:BExp{}, S:Block{}),
-	ite{}(B:BExp{},
-	      block{}(
-	        seq{}(blockAsStmt{}(S:Block{}),
+        ite{}(B:BExp{},
+              block{}(
+                seq{}(blockAsStmt{}(S:Block{}),
                       while{}(B:BExp{}, S:Block{}))),
-	      emptyBlock{}())))
+              emptyBlock{}())))
   []
-	          
+                  
     
 
   /* rule <k> int (X,Xs => Xs);_ </k>
@@ -989,25 +994,25 @@ module IMP
     \implies{S}(
       \equals{Bool{},S}(
         notBool{}(inSet{Id{}}(X:Id{}, keys{Id{},Int{}}(Rho:Map{Id{},Int{}}))),
-	true{}()),
+        true{}()),
       app{StateCell{},S}(
       app{KCell{},Ctxt{StateCell{},S}}(
         C:Ctxt{KCell{},Ctxt{StateCell{},S}},
         kcell{}(
-	  asK{Pgm{}}(
-	    pgm{}(
+          asK{Pgm{}}(
+            pgm{}(
               \rewrites{List{Id{}}}(
-	        cons{Id{}}(X:Id{}, Xs:List{Id{}}),
-	        Xs:List{Id{}}),
-	      UNDERSCORE:Stmt{})))),
+                cons{Id{}}(X:Id{}, Xs:List{Id{}}),
+                Xs:List{Id{}}),
+              UNDERSCORE:Stmt{})))),
         statecell{}(
           merge{Id{},Int{}}(
-	    Rho:Map{Id{},Int{}},
-	    \rewrites{Map{Id{},Int{}}}(
-	      emp{Id{},Int{}}(),
+            Rho:Map{Id{},Int{}},
+            \rewrites{Map{Id{},Int{}}}(
+              emp{Id{},Int{}}(),
               bind{Id{},Int{}}(X:Id{}, zero{}()))))))
   []  
-	 
+         
 
   /* rule int .Ids; S => S */
 
@@ -1019,7 +1024,7 @@ module IMP
       C:Ctxt{K{},S},
       \rewrites{K{}}(
         asK{Pgm{}}(pgm{}(nil{Id{}}(), S:Stmt{})),
-	asK{Stmt{}}(S:Stmt{})))
+        asK{Stmt{}}(S:Stmt{})))
   []
     
 

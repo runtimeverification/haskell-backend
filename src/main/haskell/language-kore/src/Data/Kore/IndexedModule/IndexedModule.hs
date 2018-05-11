@@ -10,6 +10,7 @@ Portability : POSIX
 -}
 module Data.Kore.IndexedModule.IndexedModule
     ( ImplicitIndexedModule (ImplicitIndexedModule)
+    , indexImplicitModule
     , indexedModuleWithMetaSorts
     , IndexedModule
         -- the IndexedModule data constructor not included in the list on
@@ -21,6 +22,7 @@ module Data.Kore.IndexedModule.IndexedModule
         , indexedModuleMetaSortDescriptions, indexedModuleAxioms
         , indexedModuleAttributes, indexedModuleImports
         )
+    , KoreImplicitIndexedModule
     , KoreIndexedModule
     , indexedModuleRawSentences
     , indexModuleIfNeeded
@@ -166,6 +168,38 @@ metaSortDescription sortType =
     )
   where
     sortId = Id (show sortType)
+
+{-|'indexImplicitModule' indexes a module containing implicit definitions, adds
+it to the map of defined modules and returns the new map together with the
+indexed module.
+
+It imports the module provided as an argument, which means that it contains all
+the symbols defined directly or indirectly in it. This makes it suitable for
+creating a chain of implicit modules, each including its predecessor, with
+the top one containing the symbols defined in all of them.
+-}
+indexImplicitModule
+    :: (Map.Map ModuleName KoreIndexedModule, KoreImplicitIndexedModule)
+    -> KoreModule
+    -> Either
+        (Error a)
+        (Map.Map ModuleName KoreIndexedModule, KoreImplicitIndexedModule)
+indexImplicitModule (indexedModules, lastIndexedModule) rawModule = do
+    newModules <-
+        indexModuleIfNeeded
+            lastIndexedModule
+            Map.empty
+            indexedModules
+            rawModule
+    case Map.lookup (moduleName rawModule) newModules of
+        Just m -> return (newModules, ImplicitIndexedModule m)
+        Nothing ->
+            koreFail
+                (  "InternalError: indexed module not found: '"
+                ++ getModuleName (moduleName rawModule)
+                ++ "'"
+                )
+
 
 {-|'indexModuleIfNeeded' transforms a 'Module' into an 'IndexedModule', unless
 the module is already in the 'IndexedModule' map.

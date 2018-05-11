@@ -1,7 +1,24 @@
 Definition
     { definitionAttributes =
         Attributes 
-            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "\U000120ff")))))
+            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                { applicationSymbolOrAlias =
+                    SymbolOrAlias
+                        { symbolOrAliasConstructor = Id "hook" :: Id Object
+                        , symbolOrAliasParams = []
+                        }
+                , applicationChildren =
+                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                        { domainValueSort =
+                            SortActualSort SortActual
+                                { sortActualName = Id "Hook" :: Id Object
+                                , sortActualSorts = []
+                                }
+                        , domainValueChild =
+                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "\U000120ff")))))
+                        }))))
+                    ]
+                }))))
             ]
     , definitionModules =
         [ Module
