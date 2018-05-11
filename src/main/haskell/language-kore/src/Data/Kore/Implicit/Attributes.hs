@@ -137,6 +137,23 @@ strictObjectSymbolSentence =
         :: KoreSentenceSymbol Object
         )
 
+seqstrictObjectSymbolSentence :: KoreSentence
+seqstrictObjectSymbolSentence =
+    asSentence
+        ( SentenceSymbol
+            { sentenceSymbolSymbol     = Symbol
+                { symbolConstructor = Id "seqstrict"
+                , symbolParams      = []
+                }
+            , sentenceSymbolSorts      =
+                [ strictObjectSort
+                ]
+            , sentenceSymbolResultSort = attributeObjectSort
+            , sentenceSymbolAttributes = Attributes []
+            }
+        :: KoreSentenceSymbol Object
+        )
+
 noArgumentOrParameterSentence :: String -> Sort Object -> KoreSentence
 noArgumentOrParameterSentence name sort =
     asSentence
@@ -179,6 +196,7 @@ uncheckedAttributesModule =
             , fifthArgumentObjectSymbolSentence
             , strictObjectSortSentence
             , strictObjectSymbolSentence
+            , seqstrictObjectSymbolSentence
             , associativeObjectSymbolSentence
             , commutativeObjectSymbolSentence
             ]
