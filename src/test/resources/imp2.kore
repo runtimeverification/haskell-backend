@@ -778,8 +778,7 @@ module IMP
   /* syntax BExp ::= AExp "<=" AExp [seqstrict] */
 
   symbol leqBExp{}(AExp{}, AExp{}) : BExp{}
-  []
-  // [seqstrict{}(\dv{Strict{}}("leqBExp"))]
+  [seqstrict{}(\dv{Strict{}}("leqBExp"))]
 
   /* leqBExp is functional */
 
@@ -815,7 +814,7 @@ module IMP
           gamma{AExp{}, BExp{}}(
             HOLE:AExp{},
             leqBExp{}(HOLE:AExp{}, Y:AExp{})))))
-  []
+  [seqstrict{}(\dv{Strict{}}("leqBExp"))]
       
     
   /* cooling rule
@@ -832,7 +831,7 @@ module IMP
             leqBExp{}(HOLE:AExp{}, Y:AExp{})))),
       asK{BExp{}}(
         leqBExp{}(intAsAExp{}(I:Int{}), Y:AExp{})))
-  []
+  [seqstrict{}(\dv{Strict{}}("leqBExp"))]
 
   /* X <= intAsAExp(Y) = (gamma HOLE . X <= intAsAExp(HOLE)) [Y]
      where Y has sort Int.
@@ -867,7 +866,7 @@ module IMP
           gamma{AExp{}, BExp{}}(
             HOLE:AExp{},
             leqBExp{}(intAsAExp{}(I:Int{}), HOLE:AExp{})))))
-  []
+  [seqstrict{}(\dv{Strict{}}("leqBExp"))]
       
     
   /* cooling rule
@@ -884,7 +883,7 @@ module IMP
             leqBExp{}(intAsAExp{}(J:Int{}), HOLE:AExp{})))),
       asK{BExp{}}(
         leqBExp{}(intAsAExp{}(J:Int{}), intAsAExp{}(I:Int{}))))
-  []
+  [seqstrict{}(\dv{Strict{}}("leqBExp"))]
 
 
   /* syntax BExp ::= "!" BExp [strict] */
@@ -919,7 +918,7 @@ module IMP
           gamma{BExp{}, BExp{}}(
             HOLE:BExp{},
             notBExp{}(HOLE:BExp{})))))
-  []
+  [strict{}(\dv{Strict{}}("notBExp"), firstArgument{}())]
       
     
   /* cooling rule
@@ -936,7 +935,7 @@ module IMP
             notBExp{}(HOLE:BExp{})))),
       asK{BExp{}}(
         notBExp{}(boolAsBExp{}(B:Bool{}))))
-  []
+  [strict{}(\dv{Strict{}}("notBExp"), firstArgument{}())]
 
 
   /* syntax BExp ::= BExp "&&" BExp [strict(1)] */
@@ -970,7 +969,7 @@ module IMP
           gamma{BExp{}, BExp{}}(
             HOLE:BExp{},
             andBExp{}(HOLE:BExp{}, Y:BExp{})))))
-  []
+  [strict{}(\dv{Strict{}}("andBExp"), firstArgument{}())]
       
     
   /* cooling rule
@@ -987,7 +986,7 @@ module IMP
             andBExp{}(HOLE:BExp{}, Y:BExp{})))),
       asK{BExp{}}(
         andBExp{}(boolAsBExp{}(B:Bool{}), Y:BExp{})))
-  []
+  [strict{}(\dv{Strict{}}("andBExp"), firstArgument{}())]
 
   /* syntax Block ::= ... */
 

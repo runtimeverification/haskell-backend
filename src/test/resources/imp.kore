@@ -631,8 +631,7 @@ module IMP-SYNTAX
   /* syntax BExp ::= AExp "<=" AExp [seqstrict] */
 
   symbol leqBExp{}(AExp{}, AExp{}) : BExp{}
-  []
-  // [seqstrict{}(\dv{Strict{}}("leqBExp"))]
+  [seqstrict{}(\dv{Strict{}}("leqBExp"))]
 
   /* leqBExp is functional */
 
@@ -650,8 +649,7 @@ module IMP-SYNTAX
           HOLE:AExp{},
           leqBExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
-  []
-  //[seqstrict{}(\dv{Strict{}}("leqBExp"))]
+  [seqstrict{}(\dv{Strict{}}("leqBExp"))]
 
   /* X <= intAsAExp(Y) = (gamma HOLE . X <= intAsAExp(HOLE)) [Y]
      where Y has sort Int.
@@ -668,8 +666,7 @@ module IMP-SYNTAX
           HOLE:Int{},
           leqBExp{}(X:AExp{}, intAsAExp{}(HOLE:Int{}))),
         Y:Int{}))
-  []
-  // [seqstrict{}(\dv{Strict{}}("leqBExp"))]
+  [seqstrict{}(\dv{Strict{}}("leqBExp"))]
 
   /* syntax BExp ::= "!" BExp [strict] */
 

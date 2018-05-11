@@ -5115,7 +5115,27 @@ Definition
                             { sortActualName = Id "BExp" :: Id Object
                             , sortActualSorts = []
                             }
-                    , sentenceSymbolAttributes = Attributes []
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = Id "seqstrict" :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Strict" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "leqBExp")))))
+                                        }))))
+                                    ]
+                                }))))
+                            ]
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
@@ -5370,7 +5390,27 @@ Definition
                                         ]
                                     }))))
                             }))))
-                    , sentenceAxiomAttributes = Attributes []
+                    , sentenceAxiomAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = Id "seqstrict" :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Strict" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "leqBExp")))))
+                                        }))))
+                                    ]
+                                }))))
+                            ]
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
@@ -5550,7 +5590,27 @@ Definition
                                         ]
                                     }))))
                             }))))
-                    , sentenceAxiomAttributes = Attributes []
+                    , sentenceAxiomAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = Id "seqstrict" :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Strict" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "leqBExp")))))
+                                        }))))
+                                    ]
+                                }))))
+                            ]
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
@@ -5730,7 +5790,27 @@ Definition
                                         ]
                                     }))))
                             }))))
-                    , sentenceAxiomAttributes = Attributes []
+                    , sentenceAxiomAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = Id "seqstrict" :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Strict" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "leqBExp")))))
+                                        }))))
+                                    ]
+                                }))))
+                            ]
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
@@ -5928,7 +6008,27 @@ Definition
                                         ]
                                     }))))
                             }))))
-                    , sentenceAxiomAttributes = Attributes []
+                    , sentenceAxiomAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = Id "seqstrict" :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Strict" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "leqBExp")))))
+                                        }))))
+                                    ]
+                                }))))
+                            ]
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
@@ -6121,7 +6221,35 @@ Definition
                                         ]
                                     }))))
                             }))))
-                    , sentenceAxiomAttributes = Attributes []
+                    , sentenceAxiomAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = Id "strict" :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Strict" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "notBExp")))))
+                                        }))))
+                                    , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                        { applicationSymbolOrAlias =
+                                            SymbolOrAlias
+                                                { symbolOrAliasConstructor = Id "firstArgument" :: Id Object
+                                                , symbolOrAliasParams = []
+                                                }
+                                        , applicationChildren = []
+                                        }))))
+                                    ]
+                                }))))
+                            ]
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
@@ -6285,7 +6413,35 @@ Definition
                                         ]
                                     }))))
                             }))))
-                    , sentenceAxiomAttributes = Attributes []
+                    , sentenceAxiomAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = Id "strict" :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Strict" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "notBExp")))))
+                                        }))))
+                                    , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                        { applicationSymbolOrAlias =
+                                            SymbolOrAlias
+                                                { symbolOrAliasConstructor = Id "firstArgument" :: Id Object
+                                                , symbolOrAliasParams = []
+                                                }
+                                        , applicationChildren = []
+                                        }))))
+                                    ]
+                                }))))
+                            ]
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
@@ -6498,7 +6654,35 @@ Definition
                                         ]
                                     }))))
                             }))))
-                    , sentenceAxiomAttributes = Attributes []
+                    , sentenceAxiomAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = Id "strict" :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Strict" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "andBExp")))))
+                                        }))))
+                                    , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                        { applicationSymbolOrAlias =
+                                            SymbolOrAlias
+                                                { symbolOrAliasConstructor = Id "firstArgument" :: Id Object
+                                                , symbolOrAliasParams = []
+                                                }
+                                        , applicationChildren = []
+                                        }))))
+                                    ]
+                                }))))
+                            ]
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
@@ -6678,7 +6862,35 @@ Definition
                                         ]
                                     }))))
                             }))))
-                    , sentenceAxiomAttributes = Attributes []
+                    , sentenceAxiomAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = Id "strict" :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = Id "Strict" :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "andBExp")))))
+                                        }))))
+                                    , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                        { applicationSymbolOrAlias =
+                                            SymbolOrAlias
+                                                { symbolOrAliasConstructor = Id "firstArgument" :: Id Object
+                                                , symbolOrAliasParams = []
+                                                }
+                                        , applicationChildren = []
+                                        }))))
+                                    ]
+                                }))))
+                            ]
                     })
                 , ObjectSentence (SentenceSortSentence SentenceSort
                     { sentenceSortName = Id "Block" :: Id Object
