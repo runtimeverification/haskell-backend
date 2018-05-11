@@ -1,5 +1,5 @@
 /* This is the complete Kore definition of imp.k.
- * For comparison, K definitions are replicate
+ * For comparison, K definitions are replicated
  * as comments, followed by the corresponding
  * Kore definitions.
  */
@@ -144,6 +144,10 @@ module INT
 
   symbol neqInt{}(Int{}, Int{}) : Bool{} []
 
+  /* Builtin theories are in this PR
+   * https://github.com/kframework/kore/pull/101
+   */
+
   /* TODO:: Functional axioms for all symbols */
 
   /* TODO:: Constructor axioms. Int has zero and succ as constructors:
@@ -170,6 +174,10 @@ module LIST
 
   symbol listItem{S}(S) : List{S} []
 
+  /* Builtin theories are in this PR
+   * https://github.com/kframework/kore/pull/101
+   */
+
   /* TODO:: Finish axioms.
    * All symbols are functional.
    * List has nil and cons has constructors.
@@ -191,6 +199,10 @@ module SET
   symbol union{S}(Set{S}, Set{S}) : Set{S} []
 
   symbol inSet{S}(S, Set{S}) : Bool{} []
+
+  /* Builtin theories are in this PR
+   * https://github.com/kframework/kore/pull/101
+   */
 
   /* TODO:: Complete axioms.
    * All symbols are funcitonal.
@@ -222,6 +234,10 @@ module MAP
   symbol merge{S1,S2}(Map{S1,S2}, Map{S1,S2}) : Map{S1,S2} []
 
   symbol keys{S1,S2}(Map{S1,S2}) : Set{S1} []
+
+  /* Builtin theories are in this PR
+   * https://github.com/kframework/kore/pull/101
+   */
 
   /* See Matching Logic paper, Section 9.2.
    * bind, emp, and keys are functional symbols.
@@ -290,7 +306,7 @@ module CONTEXT
   /* Identity context. */
   symbol idctxt{S}() : Ctxt{S,S} []
 
-  /** Axioms about contexts have monad-style.
+  /** Axioms about contexts following the monad style.
     * That is, there are two axioms about contexts as follows.
     * (Unit) idctxt[T] = T
     * (Multiplication) C1[C2[T]] = C[T] where C = gamma HOLE . C1[C2[HOLE]]
@@ -350,7 +366,11 @@ module ARROW
       asK{S}(\and{S}(X:S, Y:S)))
   []
 
-  /* arrow and nothing forms the assoc list on K. */
+  /* The sort K is basically the sort of assoc lists.
+   * The injective function asK constructs singleton lists.
+   * Besides that, we have two more symbols. One constructs
+   * the empty list while the other append two lists.
+   * They are arrow and nothing defined as follows. */
 
   symbol arrow{}(K{}, K{}) : K{} []
 
@@ -369,7 +389,7 @@ module ARROW
       arrow{}(nothing{}(), K:K{}), K:K{})
   []
 
-  /* nothing is the right unit: arrow(nothing, K) = K */
+  /* nothing is the right unit: arrow(K, nothing) = K */
   axiom{R}
     \equals{K{},R}(
       arrow{}(K:K{}, nothing{}()), K:K{})
@@ -938,10 +958,10 @@ module IMP
 
   axiom{S}
     app{K{},S}(
-    C:Ctxt{K{},S},
+      C:Ctxt{K{},S},
       \rewrites{K{}}(
-      asK{Stmt{}}(seq{}(S1:Stmt{},S2:Stmt{})),
-      arrow{}(asK{Stmt{}}(S1:Stmt{}), asK{Stmt{}}(S2:Stmt{}))))
+        asK{Stmt{}}(seq{}(S1:Stmt{},S2:Stmt{})),
+        arrow{}(asK{Stmt{}}(S1:Stmt{}), asK{Stmt{}}(S2:Stmt{}))))
   []
 
 
@@ -951,9 +971,10 @@ module IMP
     app{Stmt{},S}(
       C:Ctxt{Stmt{},S},
       \rewrites{Stmt{}}(
-        ite{}(boolAsBExp{}(true{}()),
-              S:Block{},
-              UNDERSCORE:Block{}),
+        ite{}(
+          boolAsBExp{}(true{}()),
+          S:Block{},
+          UNDERSCORE:Block{}),
         blockAsStmt{}(S:Block{})))
   []
 
@@ -963,9 +984,10 @@ module IMP
     app{Stmt{},S}(
       C:Ctxt{Stmt{},S},
       \rewrites{Stmt{}}(
-        ite{}(boolAsBExp{}(false{}()),
-              UNDERSCORE:Block{},
-              S:Block{}),
+        ite{}(
+          boolAsBExp{}(false{}()),
+          UNDERSCORE:Block{},
+          S:Block{}),
         blockAsStmt{}(S:Block{})))
   []
 
@@ -976,11 +998,12 @@ module IMP
       C:Ctxt{Stmt{},S},
       \rewrites{Stmt{}}(
         while{}(B:BExp{}, S:Block{}),
-        ite{}(B:BExp{},
-              block{}(
-                seq{}(blockAsStmt{}(S:Block{}),
-                      while{}(B:BExp{}, S:Block{}))),
-              emptyBlock{}())))
+        ite{}(
+          B:BExp{},
+          block{}(
+            seq{}(blockAsStmt{}(S:Block{}),
+                  while{}(B:BExp{}, S:Block{}))),
+          emptyBlock{}())))
   []
                   
     
