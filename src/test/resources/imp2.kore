@@ -2,6 +2,8 @@
  * not using any AC matching and contexts.
  */
 
+
+
 []
 
 module BOOL
@@ -142,6 +144,10 @@ module INT
 
   symbol neqInt{}(Int{}, Int{}) : Bool{} []
 
+  /* Builtin theories are in this PR
+   * https://github.com/kframework/kore/pull/101
+   */
+
   /* TODO:: Functional axioms for all symbols */
 
   /* TODO:: Constructor axioms. Int has zero and succ as constructors:
@@ -168,6 +174,10 @@ module LIST
 
   symbol listItem{S}(S) : List{S} []
 
+  /* Builtin theories are in this PR
+   * https://github.com/kframework/kore/pull/101
+   */
+
   /* TODO:: Finish axioms.
    * All symbols are functional.
    * List has nil and cons has constructors.
@@ -189,6 +199,10 @@ module SET
   symbol union{S}(Set{S}, Set{S}) : Set{S} []
 
   symbol inSet{S}(S, Set{S}) : Bool{} []
+
+  /* Builtin theories are in this PR
+   * https://github.com/kframework/kore/pull/101
+   */
 
   /* TODO:: Complete axioms.
    * All symbols are funcitonal.
@@ -220,6 +234,10 @@ module MAP
   symbol merge{S1,S2}(Map{S1,S2}, Map{S1,S2}) : Map{S1,S2} []
 
   symbol keys{S1,S2}(Map{S1,S2}) : Set{S1} []
+
+  /* Builtin theories are in this PR
+   * https://github.com/kframework/kore/pull/101
+   */
 
   /* See Matching Logic paper, Section 9.2.
    * bind, emp, and keys are functional symbols.
@@ -295,7 +313,7 @@ module CONTEXT
   /* Identity context. */
   symbol idctxt{S}() : Ctxt{S,S} []
 
-  /** Axioms about contexts have monad-style.
+  /** Axioms about contexts following the monad style.
     * That is, there are two axioms about contexts as follows.
     * (Unit) idctxt[T] = T
     * (Multiplication) C1[C2[T]] = C[T] where C = gamma HOLE . C1[C2[HOLE]]
@@ -338,13 +356,19 @@ module ARROW
   symbol asK{S}(S) : K{} []
 
   /* Two injectivity axioms:
-   *   not (asK{S1}(X:S1) /\ asK{S2}(Y:S2))
+   *   not (asK{S1}(X:S1) /\ asK{S2}(Y:S2)) if S1 and S2 are different
    *   asK{S}(X:S) /\ asK{S}(Y:S) -> asK{S}(X:S /\ Y:S)
    */
 
-  axiom{S1,S2}
-    \not{K{}}(
-      \and{K{}}(asK{S1}(X:S1), asK{S2}(Y:S2)))
+  axiom{S1,S2,#R}
+    \implies{#R}(
+      \not{#R}(
+        \equals{#Sort{},#R}(
+          #S1:#Sort{}, 
+          #S2:#Sort{})),
+      #provable{#R}(
+        \not{K{}}(
+          \and{K{}}(asK{S1}(X:S1), asK{S2}(Y:S2)))))
   []
 
   axiom{S}
@@ -374,7 +398,7 @@ module ARROW
       arrow{}(nothing{}(), K:K{}), K:K{})
   []
 
-  /* nothing is the right unit: arrow(nothing, K) = K */
+  /* nothing is the right unit: arrow(K, nothing) = K */
   axiom{R}
     \equals{K{},R}(
       arrow{}(K:K{}, nothing{}()), K:K{})
@@ -1689,11 +1713,13 @@ module IMP
        kcell{}(
          arrow{}(
            asK{Stmt{}}(
-             ite{}(B:BExp{},
-                   block{}(
-                     seq{}(blockAsStmt{}(S:Block{}),
-                           while{}(B:BExp{}, S:Block{}))),
-                   emptyBlock{}())),
+             ite{}(
+               B:BExp{},
+               block{}(
+                 seq{}(
+                   blockAsStmt{}(S:Block{}),
+                   while{}(B:BExp{}, S:Block{}))),
+               emptyBlock{}())),
            REST:K{})),
        statecell{}(M:Map{Id{},Int{}}))))
   []

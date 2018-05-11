@@ -349,13 +349,19 @@ module ARROW
   symbol asK{S}(S) : K{} []
 
   /* Two injectivity axioms:
-   *   not (asK{S1}(X:S1) /\ asK{S2}(Y:S2))
+   *   not (asK{S1}(X:S1) /\ asK{S2}(Y:S2)) if S1 and S2 are different
    *   asK{S}(X:S) /\ asK{S}(Y:S) -> asK{S}(X:S /\ Y:S)
    */
 
-  axiom{S1,S2}
-    \not{K{}}(
-      \and{K{}}(asK{S1}(X:S1), asK{S2}(Y:S2)))
+  axiom{S1,S2,#R}
+    \implies{#R}(
+      \not{#R}(
+        \equals{#Sort{},#R}(
+          #S1:#Sort{}, 
+          #S2:#Sort{})),
+      #provable{#R}(
+        \not{K{}}(
+          \and{K{}}(asK{S1}(X:S1), asK{S2}(Y:S2)))))
   []
 
   axiom{S}
