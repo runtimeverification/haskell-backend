@@ -318,7 +318,11 @@ postTransform (ApplicationPattern ap) = do
 groupSubstitutionByVariable
     :: UnificationSubstitution level -> [UnificationSubstitution level]
 groupSubstitutionByVariable =
-    groupBy ((==) `on` fst) . sortBy (compare `on` fst)
+    groupBy ((==) `on` fst) . sortBy (compare `on` fst) . map sortRenaming
+  where
+    sortRenaming (var, Fix (VariablePattern var'))
+        | var' < var = (var', Fix (VariablePattern var))
+    sortRenaming eq = eq
 
 -- simplifies x = t1 /\ x = t2 /\ ... /\ x = tn by transforming it into
 -- x = ((t1 /\ t2) /\ (..)) /\ tn

@@ -1,23 +1,112 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-module  Data.Kore.AST.MLPatternsTest (mlPatternsTests) where
+module  Data.Kore.AST.MLPatternsTest
+    ( mlPatternsTests
+    , extractPurePattern
+    ) where
 
-import           Test.Tasty                  (TestTree, testGroup)
-import           Test.Tasty.HUnit            (assertEqual, testCase)
+import           Test.Tasty                       (TestTree, testGroup)
+import           Test.Tasty.HUnit                 (assertEqual, testCase)
 
+import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore          (CommonKorePattern)
+import           Data.Kore.AST.Kore               (CommonKorePattern)
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
+import           Data.Kore.AST.PureML
 import           Data.Kore.Building.AsAst
 import           Data.Kore.Building.Patterns
-import           Data.Kore.Building.Sorts    as Sorts
+import           Data.Kore.Building.Sorts         as Sorts
+import           Data.Kore.Implicit.ImplicitSorts
+
+import           Data.Fix
+
+extractPurePattern
+    :: MetaOrObject level
+    => CommonPurePatternStub level -> CommonPurePattern level
+extractPurePattern (SortedPatternStub sp) =
+    asPurePattern $ sortedPatternPattern sp
+extractPurePattern (UnsortedPatternStub ups) =
+    error ("Cannot find a sort for "
+        ++ show (ups (dummySort (undefined :: level))))
 
 mlPatternsTests :: TestTree
 mlPatternsTests =
-    testGroup "Tests for generic pattern handling"
-        [applyPatternFunctionTests]
+    testGroup "MLPatternsTests"
+        [ testGroup "Tests for generic pattern handling"
+            [applyPatternFunctionTests]
+        , testGroup "Tests for getPatternResultSort"
+            [ testCase "MLPatternClas"
+                (assertEqual ""
+                    charListMetaSort
+                    (getPatternResultSort
+                        undefinedHeadSort
+                        (unFix
+                         $ extractPurePattern
+                            (withSort charListMetaSort top_)
+                        )
+                    )
+                )
+            , testCase "MLBinderPatternClas"
+                (assertEqual ""
+                    charListMetaSort
+                    (getPatternResultSort
+                        undefinedHeadSort
+                        (unFix
+                         $ extractPurePattern
+                            (withSort charListMetaSort
+                                (forall_
+                                    (Variable
+                                        (Id "x")
+                                        charListMetaSort
+                                    )
+                                    top_
+                                )
+                            )
+                        )
+                    )
+                )
+            , testCase "StringLiteral"
+                (assertEqual ""
+                    charListMetaSort
+                    (getPatternResultSort
+                        undefinedHeadSort
+                        (StringLiteralPattern (StringLiteral "Hello!"))
+                    )
+                )
+            , testCase "CharLiteral"
+                (assertEqual ""
+                    charMetaSort
+                    (getPatternResultSort
+                        undefinedHeadSort
+                        (CharLiteralPattern (CharLiteral 'h'))
+                    )
+                )
+            , testCase "Variable"
+                (assertEqual ""
+                    charListMetaSort
+                    (getPatternResultSort
+                        undefinedHeadSort
+                        (VariablePattern (Variable (Id "x") charListMetaSort))
+                    )
+                )
+            , let
+                s = symbol_ "test" [] charListMetaSort
+                headSort x
+                    | x == getSentenceSymbolOrAliasHead s [] = charListMetaSort
+                    | otherwise = charMetaSort
+               in
+                testCase "Application"
+                    (assertEqual ""
+                        charListMetaSort
+                        (getPatternResultSort
+                            headSort
+                            (unFix $ extractPurePattern (applyS s []))
+                        )
+                    )
+                ]
+        ]
 
 applyPatternFunctionTests :: TestTree
 applyPatternFunctionTests =

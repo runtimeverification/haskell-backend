@@ -11,6 +11,7 @@ import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
+import           Data.Kore.AST.MLPatternsTest                        (extractPurePattern)
 import           Data.Kore.AST.PureML
 import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
@@ -74,15 +75,6 @@ aA = applyS a []
 a1A :: CommonPurePatternStub Object
 a1A = applyS a1 []
 
-nextA1 :: CommonPurePatternStub Object
-nextA1 = next_ a1A
-
-aImpliesXa1 :: CommonPurePatternStub Object
-aImpliesXa1 = implies_ aA nextA1
-
-faImpliesXa1 :: CommonPurePatternStub Object
-faImpliesXa1 = applyS f [aImpliesXa1]
-
 a2A :: CommonPurePatternStub Object
 a2A = applyS a2 []
 
@@ -94,15 +86,6 @@ bA = applyS b []
 
 x :: CommonPurePatternStub Object
 x = parameterizedVariable_ s1 "x"
-
-fx :: CommonPurePatternStub Object
-fx = applyS f [x]
-
-fa :: CommonPurePatternStub Object
-fa = applyS f [aA]
-
-fa1 :: CommonPurePatternStub Object
-fa1 = applyS f [a1A]
 
 symbols :: [(SymbolOrAlias Object, PureSentenceSymbol Object)]
 symbols =
@@ -144,21 +127,13 @@ tools = MetadataTools
     , getResultSort = mockGetResultSort
     }
 
-extractPurePattern
-    :: MetaOrObject level
-    => CommonPurePatternStub level -> CommonPurePattern level
-extractPurePattern (SortedPatternStub sp) =
-    asPurePattern $ sortedPatternPattern sp
-extractPurePattern (UnsortedPatternStub ups) =
-    error ("Cannot find a sort for "
-        ++ show (ups (dummySort (undefined :: level))))
-
 unificationProblem
     :: MetaOrObject level
-    => CommonPurePatternStub level
-    -> CommonPurePatternStub level
+    => UnificationTerm level
+    -> UnificationTerm level
     -> CommonPurePattern level
-unificationProblem term1 term2 = extractPurePattern (and_ term1 term2)
+unificationProblem (UnificationTerm term1) (UnificationTerm term2) =
+    extractPurePattern (and_ term1 term2)
 
 type Substitution level =  [(String, CommonPurePatternStub level)]
 
@@ -178,30 +153,35 @@ unificationSubstitution = map trans
             )
 
 unificationResult
-    :: CommonPurePatternStub Object
+    :: UnificationResultTerm Object
     -> Substitution Object
     -> UnificationSolution Object
-unificationResult pat sub = UnificationSolution
+unificationResult (UnificationResultTerm pat) sub = UnificationSolution
     { unificationSolutionTerm = extractPurePattern pat
     , unificationSolutionConstraints = unificationSubstitution sub
     }
 
-unificationSuccess
+newtype UnificationTerm level =
+    UnificationTerm (CommonPurePatternStub level)
+newtype UnificationResultTerm level =
+    UnificationResultTerm (CommonPurePatternStub level)
+
+andSimplifySuccess
     :: (HasCallStack)
     => String
-    -> CommonPurePatternStub Object
-    -> CommonPurePatternStub Object
-    -> CommonPurePatternStub Object
+    -> UnificationTerm Object
+    -> UnificationTerm Object
+    -> UnificationResultTerm Object
     -> Substitution Object
     -> UnificationProof Object
     -> TestTree
-unificationSuccess message term1 term2 term subst proof =
+andSimplifySuccess message term1 term2 resultTerm subst proof =
     testCase
         message
         (assertEqualWithPrinter
             prettyPrintToString
             ""
-            (unificationResult term subst, proof)
+            (unificationResult resultTerm subst, proof)
             (subst'', proof')
         )
   where
@@ -212,14 +192,14 @@ unificationSuccess message term1 term2 term subst proof =
         }
 
 
-unificationFailure
+andSimplifyFailure
     :: (HasCallStack)
     => String
-    -> CommonPurePatternStub Object
-    -> CommonPurePatternStub Object
+    -> UnificationTerm Object
+    -> UnificationTerm Object
     -> UnificationError Object
     -> TestTree
-unificationFailure message term1 term2 err =
+andSimplifyFailure message term1 term2 err =
     testCase
         message
         (assertEqualWithPrinter
@@ -232,13 +212,18 @@ unificationFailure message term1 term2 err =
 unificationProcedureSuccess
     :: (HasCallStack)
     => String
-    -> CommonPurePatternStub Object
-    -> CommonPurePatternStub Object
+    -> UnificationTerm Object
+    -> UnificationTerm Object
     -> Substitution Object
     -> UnificationProof Object
     -> TestTree
-unificationProcedureSuccess message term1 term2 subst proof =
-    testCase
+unificationProcedureSuccess
+    message
+    (UnificationTerm term1)
+    (UnificationTerm term2)
+    subst
+    proof
+  = testCase
         message
         (assertEqualWithPrinter
             prettyPrintToString
@@ -278,26 +263,26 @@ unificationTests :: TestTree
 unificationTests =
     testGroup
         "Unification Tests"
-        [ unificationSuccess "Constant"
-            aA
-            aA
-            aA
+        [ andSimplifySuccess "Constant"
+            (UnificationTerm aA)
+            (UnificationTerm aA)
+            (UnificationResultTerm aA)
             []
             (ConjunctionIdempotency (extractPurePattern aA))
-        , unificationSuccess "Variable"
-            x
-            aA
-            aA
+        , andSimplifySuccess "Variable"
+            (UnificationTerm x)
+            (UnificationTerm aA)
+            (UnificationResultTerm aA)
             [("x", aA)]
             (Proposition_5_24_3
                 [FunctionalHead (symbolHead a)]
                 (var x)
                 (extractPurePattern aA)
             )
-        , unificationSuccess "one level"
-            fx
-            fa
-            fa
+        , andSimplifySuccess "one level"
+            (UnificationTerm (applyS f [x]))
+            (UnificationTerm (applyS f [aA]))
+            (UnificationResultTerm (applyS f [aA]))
             [("x", aA)]
             (AndDistributionAndConstraintLifting
                 (getSentenceSymbolOrAliasHead f [])
@@ -307,27 +292,29 @@ unificationTests =
                     (extractPurePattern aA)
                 ]
             )
-        , unificationSuccess "equal non-constructor patterns"
-            a2A
-            a2A
-            a2A
+        , andSimplifySuccess "equal non-constructor patterns"
+            (UnificationTerm a2A)
+            (UnificationTerm a2A)
+            (UnificationResultTerm a2A)
             []
             (ConjunctionIdempotency (extractPurePattern a2A))
-        , unificationSuccess "variable + non-constructor pattern"
-            a2A
-            x
-            a2A
+        , andSimplifySuccess "variable + non-constructor pattern"
+            (UnificationTerm a2A)
+            (UnificationTerm x)
+            (UnificationResultTerm a2A)
             [("x", a2A)]
             (Proposition_5_24_3
                 [FunctionalHead (symbolHead a2)]
                 (var x)
                 (extractPurePattern a2A)
             )
-        , unificationSuccess
+        , andSimplifySuccess
             "https://basics.sjtu.edu.cn/seminars/c_chu/Algorithm.pdf slide 3"
-            (applyS ef [ex1, applyS eh [ex1], ex2])
-            (applyS ef [applyS eg [ex3], ex4, ex3])
-            (applyS ef [applyS eg [ex3], applyS eh [ex1], ex3])
+            (UnificationTerm (applyS ef [ex1, applyS eh [ex1], ex2]))
+            (UnificationTerm (applyS ef [applyS eg [ex3], ex4, ex3]))
+            (UnificationResultTerm
+                (applyS ef [applyS eg [ex3], applyS eh [ex1], ex3])
+            )
             [ ("ex1", applyS eg [ex3])
             , ("ex2", ex3)
             , ("ex4", applyS eh [ex1])
@@ -352,11 +339,15 @@ unificationTests =
                     (extractPurePattern ex3)
                 ]
             )
-        , unificationSuccess
+        , andSimplifySuccess
             "f(g(X),X) = f(Y,a) https://en.wikipedia.org/wiki/Unification_(computer_science)#Examples_of_syntactic_unification_of_first-order_terms"
-            (applyS nonLinF [applyS nonLinG [nonLinX], nonLinX])
-            (applyS nonLinF [nonLinY, nonLinA])
-            (applyS nonLinF [applyS nonLinG [nonLinX], nonLinA])
+            (UnificationTerm
+                (applyS nonLinF [applyS nonLinG [nonLinX], nonLinX])
+            )
+            (UnificationTerm (applyS nonLinF [nonLinY, nonLinA]))
+            (UnificationResultTerm
+                (applyS nonLinF [applyS nonLinG [nonLinX], nonLinA])
+            )
             [ ("x", nonLinA), ("y", applyS nonLinG [nonLinX])]
             (AndDistributionAndConstraintLifting
                 (symbolHead nonLinF)
@@ -372,16 +363,16 @@ unificationTests =
                     (extractPurePattern nonLinA)
                 ]
             )
-        , unificationSuccess
+        , andSimplifySuccess
             "times(times(a, y), x) = times(x, times(y, a))"
-            (applyS expBin [applyS expBin [expA, expY], expX])
-            (applyS expBin [expX, applyS expBin [expY, expA]])
-            (applyS
+            (UnificationTerm (applyS expBin [applyS expBin [expA, expY], expX]))
+            (UnificationTerm (applyS expBin [expX, applyS expBin [expY, expA]]))
+            (UnificationResultTerm (applyS
                 expBin
                 [ applyS expBin [expA, expY]
                 , applyS expBin [expY, expA]
                 ]
-            )
+            ))
             [ ("x", applyS expBin [expA, expY])
             , ("x", applyS expBin [expY, expA])
             ]
@@ -404,12 +395,50 @@ unificationTests =
                 ]
             )
         , unificationProcedureSuccess
+            "times(x, g(x)) = times(a, a) -- cycles are resolved elsewhere"
+            (UnificationTerm (applyS expBin [expX, applyS eg [expX]]))
+            (UnificationTerm (applyS expBin [expA, expA]))
+            [ ("a", applyS eg [expX])
+            , ("x", applyS eg [expX])
+            ]
+            (CombinedUnificationProof
+                [ AndDistributionAndConstraintLifting
+                    (symbolHead expBin)
+                    [ Proposition_5_24_3
+                        [ FunctionalVariable (var expA)
+                        ]
+                        (var expX)
+                        (extractPurePattern expA)
+                    , Proposition_5_24_3
+                        [ FunctionalHead (symbolHead eg)
+                        , FunctionalVariable (var expX)
+                        ]
+                        (var expA)
+                        (extractPurePattern (applyS eg [expX]))
+                    ]
+                , CombinedUnificationProof
+                    [ CombinedUnificationProof
+                        [ CombinedUnificationProof
+                            [ EmptyUnificationProof
+                            , Proposition_5_24_3
+                                [ FunctionalHead (symbolHead eg)
+                                , FunctionalVariable (var expX)
+                                ]
+                                (var expX)
+                                (extractPurePattern (applyS eg [expX]))
+                            ]
+                        , EmptyUnificationProof
+                        ]
+                    , EmptyUnificationProof
+                    ]
+                ]
+            )
+        , unificationProcedureSuccess
             "times(times(a, y), x) = times(x, times(y, a))"
-            (applyS expBin [applyS expBin [expA, expY], expX])
-            (applyS expBin [expX, applyS expBin [expY, expA]])
+            (UnificationTerm (applyS expBin [applyS expBin [expA, expY], expX]))
+            (UnificationTerm (applyS expBin [expX, applyS expBin [expY, expA]]))
             [ ("a", expY)
             , ("x", applyS expBin [expY, expA])
-            , ("y", expA)
             ]
             (CombinedUnificationProof
                 [ AndDistributionAndConstraintLifting
@@ -447,38 +476,48 @@ unificationTests =
                             ]
                         , EmptyUnificationProof
                         ]
-                    , EmptyUnificationProof
+                    , CombinedUnificationProof
+                        [ CombinedUnificationProof
+                            [ CombinedUnificationProof
+                                [ EmptyUnificationProof
+                                , ConjunctionIdempotency
+                                    (extractPurePattern expY)
+                                ]
+                            , EmptyUnificationProof
+                            ]
+                        , EmptyUnificationProof
+                        ]
                     ]
                 ]
             )
-         , unificationFailure "Unmatching constants"
-            aA
-            a1A
+         , andSimplifyFailure "Unmatching constants"
+            (UnificationTerm aA)
+            (UnificationTerm a1A)
             (ConstructorClash (symbolHead a) (symbolHead a1))
-        , unificationFailure "non-functional pattern"
-            x
-            a3A
+        , andSimplifyFailure "non-functional pattern"
+            (UnificationTerm x)
+            (UnificationTerm a3A)
             NonFunctionalPattern
-        , unificationFailure "non-constructor symbolHead right"
-            aA
-            a2A
+        , andSimplifyFailure "non-constructor symbolHead right"
+            (UnificationTerm aA)
+            (UnificationTerm a2A)
             (NonConstructorHead (symbolHead a2))
-        , unificationFailure "non-constructor symbolHead left"
-            a2A
-            aA
+        , andSimplifyFailure "non-constructor symbolHead left"
+            (UnificationTerm a2A)
+            (UnificationTerm aA)
             (NonConstructorHead (symbolHead a2))
-        , unificationFailure "nested failure"
-            fa
-            fa1
+        , andSimplifyFailure "nested failure"
+            (UnificationTerm (applyS f [aA]))
+            (UnificationTerm (applyS f [a1A]))
             (ConstructorClash (symbolHead a) (symbolHead a1))
-        , unificationFailure "Unsupported constructs"
-            fa
-            faImpliesXa1
+        , andSimplifyFailure "Unsupported constructs"
+            (UnificationTerm (applyS f [aA]))
+            (UnificationTerm (applyS f [implies_ aA (next_ a1A)]))
             UnsupportedPatterns
              {- currently this cannot even be built because of builder checkd
-        , unificationFailure "Unmatching sorts"
-            aA
-            bA
+        , andSimplifyFailure "Unmatching sorts"
+            (UnificationTerm aA)
+            (UnificationTerm bA)
             UnificationError
             -}
         ]
