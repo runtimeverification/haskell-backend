@@ -18,15 +18,15 @@ Portability : POSIX
 module Data.Kore.Building.Patterns where
 import           Data.Proxy                 (Proxy (Proxy))
 
-import           Data.Kore.AST.Common       (And (..), Bottom (..), Ceil (..),
-                                             CharLiteral (..), DomainValue (..),
-                                             Equals (..), Exists (..),
-                                             Floor (..), Forall (..), Id (..),
-                                             Iff (..), Implies (..), In (..),
-                                             Next (..), Not (..), Or (..),
-                                             Pattern (..), Rewrites (..), Sort,
-                                             StringLiteral (..), Top (..),
-                                             Variable (..))
+import           Data.Kore.AST.Common       (And (..), AstLocation, Bottom (..),
+                                             Ceil (..), CharLiteral (..),
+                                             DomainValue (..), Equals (..),
+                                             Exists (..), Floor (..),
+                                             Forall (..), Id (..), Iff (..),
+                                             Implies (..), In (..), Next (..),
+                                             Not (..), Or (..), Pattern (..),
+                                             Rewrites (..), StringLiteral (..),
+                                             Top (..), Variable (..))
 import           Data.Kore.AST.Kore         (CommonKorePattern, asKorePattern)
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Building.AsAst
@@ -641,8 +641,9 @@ metaChar = MetaChar
 -------------------------------------
 
 data PatternVariable sort level = PatternVariable
-    { metaVariableName :: !String
-    , metaVariableSort :: !sort
+    { metaVariableName     :: !String
+    , metaVariableLocation :: AstLocation
+    , metaVariableSort     :: !sort
     }
 
 instance ( MetaOrObject level
@@ -653,22 +654,23 @@ instance ( MetaOrObject level
         VariablePattern (asVariable var)
 asVariable :: (MetaOrObject level, AsSort level sort)
            => PatternVariable sort level -> Variable level
-asVariable (PatternVariable name sort) = Variable (Id name) (asAst sort)
+asVariable (PatternVariable name location sort) =
+    Variable (Id name location) (asAst sort)
 
 type MetaVariable sort = PatternVariable sort Meta
 metaVariable
     :: MetaSort sort
-    => String -> sort -> MetaVariable sort
+    => String -> AstLocation -> sort -> MetaVariable sort
 metaVariable = PatternVariable
 asMetaVariable :: MetaSort sort => MetaVariable sort -> Variable Meta
-asMetaVariable (PatternVariable name sort) = Variable (Id name) (asAst sort)
+asMetaVariable (PatternVariable name location sort) =
+    Variable (Id name location) (asAst sort)
 
 type ObjectVariable sort = PatternVariable sort Object
 objectVariable
     :: ObjectSort sort
-    => String -> sort -> ObjectVariable sort
+    => String -> AstLocation -> sort -> ObjectVariable sort
 objectVariable = PatternVariable
 asObjectVariable :: ObjectSort sort => ObjectVariable sort -> Variable Object
-asObjectVariable (PatternVariable name sort) = Variable (Id name) (asAst sort)
-
-
+asObjectVariable (PatternVariable name location sort) =
+    Variable (Id name location) (asAst sort)

@@ -30,7 +30,8 @@ definitionVerifierMetaObjectTests =
         , expectFailureWithError "Object pattern with meta-char sort."
             Error
                 { errorContext =
-                    [ "module 'test'", "axiom declaration", "\\not", "\\top" ]
+                    [ "module 'test'", "axiom declaration", "\\not", "\\top"
+                    , "(<implicitly defined entity>, <test data>)" ]
                 , errorError   =
                     "Expecting meta sort '#Char{}' but got object "
                     ++ "sort 'ObjectSort{}'."
@@ -64,7 +65,9 @@ definitionVerifierMetaObjectTests =
             "Meta pattern with meta-char sort in object pattern."
             Error
                 { errorContext =
-                    [ "module 'test'", "axiom declaration", "\\not", "\\top" ]
+                    [ "module 'test'", "axiom declaration", "\\not", "\\top"
+                    , "(<test data>, <implicitly defined entity>)"
+                    ]
                 , errorError   =
                     "Expecting object sort 'ObjectSort{}' but got meta "
                     ++ "sort '#Char{}'."

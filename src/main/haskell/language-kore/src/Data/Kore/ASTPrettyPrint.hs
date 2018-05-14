@@ -154,16 +154,16 @@ printableList :: PrinterOutput w m => [m ()] -> [m ()]
 printableList = intersperse (betweenLines >> write ", ")
 
 instance MetaOrObject level => PrettyPrint (Id level) where
-    prettyPrint flags id' =
+    prettyPrint flags id'@(Id _ _) =
         betweenParentheses
             flags
             (do
-                write "Id "
+                write "(Id "
                 write "\""
                 write (getId id')
                 -- TODO(virgil): use flags to qualify id only if necessary
                 write "\""
-                write " :: Id "
+                write " AstLocationNone) :: Id "
                 write (show (isMetaOrObject id'))
             )
 

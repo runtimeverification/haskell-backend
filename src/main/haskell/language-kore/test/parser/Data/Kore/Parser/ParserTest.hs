@@ -6,6 +6,7 @@ import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Implicit.ImplicitSorts
+import           Data.Kore.KoreHelpers
 import           Data.Kore.Parser.ParserImpl
 import           Data.Kore.Parser.ParserTestUtils
 
@@ -64,34 +65,34 @@ objectSortParserTests :: [TestTree]
 objectSortParserTests =
     parseTree (sortParser Object)
         [ success "var" $
-            SortVariableSort ( SortVariable (Id "var") )
+            SortVariableSort ( SortVariable (testId "var") )
         , success "sort1{}" $
             SortActualSort SortActual
-                { sortActualName = Id "sort1"
+                { sortActualName = testId "sort1"
                 , sortActualSorts = []
                 }
         , success "sort1{sort2}" $
             SortActualSort SortActual
-                { sortActualName = Id "sort1"
+                { sortActualName = testId "sort1"
                 , sortActualSorts =
-                    [ SortVariableSort ( SortVariable (Id "sort2") ) ]
+                    [ SortVariableSort ( SortVariable (testId "sort2") ) ]
                 }
         , success "sort1{sort2, sort3}" $
             SortActualSort SortActual
-                { sortActualName = Id "sort1"
+                { sortActualName = testId "sort1"
                 , sortActualSorts =
-                    [ SortVariableSort ( SortVariable (Id "sort2") )
-                    , SortVariableSort ( SortVariable (Id "sort3") )
+                    [ SortVariableSort ( SortVariable (testId "sort2") )
+                    , SortVariableSort ( SortVariable (testId "sort3") )
                     ]
                 }
         , success "sort1{sort2{sort3}}" $
             SortActualSort SortActual
-                { sortActualName = Id "sort1"
+                { sortActualName = testId "sort1"
                 , sortActualSorts =
                     [ SortActualSort SortActual
-                        { sortActualName = Id "sort2"
+                        { sortActualName = testId "sort2"
                         , sortActualSorts =
-                            [ SortVariableSort (SortVariable (Id "sort3")) ]
+                            [ SortVariableSort (SortVariable (testId "sort3")) ]
                         }
                     ]
                 }
@@ -102,7 +103,7 @@ metaSortConverterTests :: [TestTree]
 metaSortConverterTests =
     parseTree (sortParser Meta)
         [ success "#var"
-            (SortVariableSort (SortVariable (Id "#var")))
+            (SortVariableSort (SortVariable (testId "#var")))
         , success "#Char{}" charMetaSort
         , success "#CharList{}" charListMetaSort
         , success "#Pattern{}" patternMetaSort
@@ -144,7 +145,7 @@ objectSortListParserTests =
             ]
         , success "(sort1{sort2}, var)"
             [ SortActualSort SortActual
-                { sortActualName = Id "sort1"
+                { sortActualName = testId "sort1"
                 , sortActualSorts =
                     [ sortVariableSort "sort2" ]
                 }
@@ -158,14 +159,14 @@ metaSortListParserTests =
     parseTree (inCurlyBracesListParser (sortParser Meta))
         [ success "{}" []
         , success "{#var}"
-            [SortVariableSort (SortVariable (Id "#var"))]
+            [SortVariableSort (SortVariable (testId "#var"))]
         , success "{#var1, #var2}"
-            [ SortVariableSort (SortVariable (Id "#var1"))
-            , SortVariableSort (SortVariable (Id "#var2"))
+            [ SortVariableSort (SortVariable (testId "#var1"))
+            , SortVariableSort (SortVariable (testId "#var2"))
             ]
         , success "{#Char{  }  , #var}"
             [ charMetaSort
-            , SortVariableSort (SortVariable (Id "#var"))
+            , SortVariableSort (SortVariable (testId "#var"))
             ]
         , FailureWithoutMessage
             [ "{#var1 #var2}", "{#var1, var2}" ]
@@ -174,14 +175,14 @@ metaSortListParserTests =
 objectSortVariableParserTests :: [TestTree]
 objectSortVariableParserTests =
     parseTree (sortVariableParser Object)
-        [ success "var" (SortVariable (Id "var"))
+        [ success "var" (SortVariable (testId "var"))
         , FailureWithoutMessage ["", "#", "#var"]
         ]
 
 metaSortVariableParserTests :: [TestTree]
 metaSortVariableParserTests =
     parseTree (sortVariableParser Meta)
-        [ success "#var" (SortVariable (Id "#var"))
+        [ success "#var" (SortVariable (testId "#var"))
         , FailureWithoutMessage ["", "#", "var"]
         ]
 
@@ -190,10 +191,10 @@ objectInCurlyBracesSortVariableListParserTest =
     parseTree (inCurlyBracesListParser (sortVariableParser Object))
         [ success "{}" []
         , success "{var}"
-            [ SortVariable (Id "var") ]
+            [ SortVariable (testId "var") ]
         , success "{var1, var2}"
-            [ SortVariable (Id "var1")
-            , SortVariable (Id "var2")
+            [ SortVariable (testId "var1")
+            , SortVariable (testId "var2")
             ]
         , FailureWithoutMessage
             [ "{var1 var2}", "{#var1, var2}", "{var, Int{}}" ]
@@ -204,10 +205,10 @@ metaInCurlyBracesSortVariableListParserTest =
     parseTree (inCurlyBracesListParser (sortVariableParser Meta))
         [ success "{}" []
         , success "{#var}"
-            [ SortVariable (Id "#var") ]
+            [ SortVariable (testId "#var") ]
         , success "{#var1, #var2}"
-            [ SortVariable (Id "#var1")
-            , SortVariable (Id "#var2")
+            [ SortVariable (testId "#var1")
+            , SortVariable (testId "#var2")
             ]
         , FailureWithoutMessage
             [ "{#var1 #var2}", "{#var1, var2}", "{#var, #Char{}}" ]
@@ -218,11 +219,11 @@ sortVariableParserTests =
     parseTree unifiedSortVariableParser
         [ success "var"
             ( UnifiedObject
-                (SortVariable (Id "var"))
+                (SortVariable (testId "var"))
             )
         , success "#var"
             ( UnifiedMeta
-                (SortVariable (Id "#var"))
+                (SortVariable (testId "#var"))
             )
         , FailureWithoutMessage ["", "#"]
         ]
@@ -232,17 +233,17 @@ objectAliasParserTests =
     parseTree (aliasParser Object)
         [ success "c1{}"
             Alias
-                { aliasConstructor = Id "c1"
+                { aliasConstructor = testId "c1"
                 , aliasParams = []
                 }
         , success "c1{s1}"
             Alias
-                { aliasConstructor = Id "c1"
+                { aliasConstructor = testId "c1"
                 , aliasParams = [ sortVariable "s1" ]
                 }
         , success "c1{s1,s2}"
             Alias
-                { aliasConstructor = Id "c1"
+                { aliasConstructor = testId "c1"
                 , aliasParams =
                     [ sortVariable "s1"
                     , sortVariable "s2"
@@ -257,17 +258,17 @@ objectSymbolParserTests =
     parseTree (symbolParser Object)
         [ success "c1{}"
             Symbol
-                { symbolConstructor = Id "c1"
+                { symbolConstructor = testId "c1"
                 , symbolParams = []
                 }
         , success "c1{s1}"
             Symbol
-                { symbolConstructor = Id "c1"
+                { symbolConstructor = testId "c1"
                 , symbolParams = [ sortVariable "s1" ]
                 }
         , success "c1{s1,s2}"
             Symbol
-                { symbolConstructor = Id "c1"
+                { symbolConstructor = testId "c1"
                 , symbolParams =
                     [ sortVariable "s1"
                     , sortVariable "s2"
@@ -282,17 +283,17 @@ metaAliasParserTests =
     parseTree (aliasParser Meta)
         [ success "#c1{}"
             Alias
-                { aliasConstructor = Id "#c1"
+                { aliasConstructor = testId "#c1"
                 , aliasParams = []
                 }
         , success "#c1{#s1}"
             Alias
-                { aliasConstructor = Id "#c1"
+                { aliasConstructor = testId "#c1"
                 , aliasParams = [sortVariable "#s1"]
                 }
         , success "#c1{#s1,#s2}"
             Alias
-                { aliasConstructor = Id "#c1"
+                { aliasConstructor = testId "#c1"
                 , aliasParams =
                     [ sortVariable "#s1"
                     , sortVariable "#s2"
@@ -309,17 +310,17 @@ metaSymbolParserTests =
     parseTree (symbolParser Meta)
         [ success "#c1{}"
             Symbol
-                { symbolConstructor = Id "#c1"
+                { symbolConstructor = testId "#c1"
                 , symbolParams = []
                 }
         , success "#c1{#s1}"
             Symbol
-                { symbolConstructor = Id "#c1"
+                { symbolConstructor = testId "#c1"
                 , symbolParams = [sortVariable "#s1"]
                 }
         , success "#c1{#s1,#s2}"
             Symbol
-                { symbolConstructor = Id "#c1"
+                { symbolConstructor = testId "#c1"
                 , symbolParams =
                     [ sortVariable "#s1"
                     , sortVariable "#s2"
@@ -336,15 +337,15 @@ variableParserTests =
     parseTree (variableParser Object)
         [ success "v:s"
             Variable
-                { variableName = Id "v"
+                { variableName = testId "v"
                 , variableSort = sortVariableSort "s"
                 }
         , success "v:s1{s2}"
             Variable
-                { variableName = Id "v"
+                { variableName = testId "v"
                 , variableSort =
                     SortActualSort SortActual
-                        { sortActualName = Id "s1"
+                        { sortActualName = testId "s1"
                         , sortActualSorts = [ sortVariableSort "s2" ]
                         }
                 }
@@ -377,16 +378,16 @@ applicationPatternParserTests =
     parseTree korePatternParser
         [ success "#v:#Char"
             ( asKorePattern $ VariablePattern Variable
-                { variableName = Id "#v" :: Id Meta
+                { variableName = testId "#v" :: Id Meta
                 , variableSort = sortVariableSort "#Char"
                 }
             )
         , success "v:s1{s2}"
             ( asKorePattern $ VariablePattern Variable
-                { variableName = Id "v" :: Id Object
+                { variableName = testId "v" :: Id Object
                 , variableSort =
                     SortActualSort SortActual
-                        { sortActualName = Id "s1"
+                        { sortActualName = testId "s1"
                         , sortActualSorts = [ sortVariableSort "s2" ]
                         }
                 }
@@ -395,18 +396,18 @@ applicationPatternParserTests =
             ( asKorePattern $ ApplicationPattern Application
                 { applicationSymbolOrAlias =
                     SymbolOrAlias
-                        { symbolOrAliasConstructor = Id "c" :: Id Object
+                        { symbolOrAliasConstructor = testId "c" :: Id Object
                         , symbolOrAliasParams =
                             [ sortVariableSort "s1"
                             , sortVariableSort "s2" ]
                         }
                 , applicationChildren =
                     [ asKorePattern $ VariablePattern Variable
-                        { variableName = Id "v1" :: Id Object
+                        { variableName = testId "v1" :: Id Object
                         , variableSort = sortVariableSort "s1"
                         }
                     , asKorePattern $ VariablePattern Variable
-                        { variableName = Id "v2" :: Id Object
+                        { variableName = testId "v2" :: Id Object
                         , variableSort = sortVariableSort "s2"
                         }
                     ]
@@ -416,7 +417,7 @@ applicationPatternParserTests =
             ( asKorePattern $ ApplicationPattern Application
                 { applicationSymbolOrAlias =
                     SymbolOrAlias
-                        { symbolOrAliasConstructor = Id "c" :: Id Object
+                        { symbolOrAliasConstructor = testId "c" :: Id Object
                         , symbolOrAliasParams = []
                         }
                 , applicationChildren = []
@@ -505,7 +506,7 @@ existsPatternParserTests =
                     { existsSort = sortVariableSort "#s" :: Sort Meta
                     , existsVariable =
                         Variable
-                            { variableName = Id "#v"
+                            { variableName = testId "#v"
                             , variableSort = sortVariableSort "#Char"
                             }
                     , existsChild =
@@ -554,7 +555,7 @@ forallPatternParserTests =
                     { forallSort = sortVariableSort "s" :: Sort Object
                     , forallVariable =
                         Variable
-                            { variableName = Id "v"
+                            { variableName = testId "v"
                             , variableSort = sortVariableSort "s1"
                             }
                     , forallChild =
@@ -625,7 +626,7 @@ memPatternParserTests =
                     , inResultSort = sortVariableSort "s2"
                     , inContainedChild = asKorePattern $
                         VariablePattern Variable
-                            { variableName = Id "v" :: Id Object
+                            { variableName = testId "v" :: Id Object
                             , variableSort = sortVariableSort "s3"
                             }
                     , inContainingChild =
@@ -775,16 +776,16 @@ variablePatternParserTests =
     parseTree korePatternParser
         [ success "v:s"
             ( asKorePattern $ VariablePattern Variable
-                { variableName = Id "v" :: Id Object
+                { variableName = testId "v" :: Id Object
                 , variableSort = sortVariableSort "s"
                 }
             )
         , success "v:s1{s2}"
             ( asKorePattern $ VariablePattern Variable
-                { variableName = Id "v" :: Id Object
+                { variableName = testId "v" :: Id Object
                 , variableSort =
                     SortActualSort SortActual
-                        { sortActualName=Id "s1"
+                        { sortActualName=testId "s1"
                         , sortActualSorts = [ sortVariableSort "s2" ]
                         }
                 }
@@ -799,7 +800,7 @@ sentenceAliasParserTests =
             ( asSentence
                 (SentenceAlias
                     { sentenceAliasAlias = Alias
-                        { aliasConstructor = Id "a"
+                        { aliasConstructor = testId "a"
                         , aliasParams = [ sortVariable "s1" ]
                         }
                     , sentenceAliasSorts = [ sortVariableSort "s2"]
@@ -815,7 +816,7 @@ sentenceAliasParserTests =
             ( asSentence
                 (SentenceAlias
                     { sentenceAliasAlias = Alias
-                        { aliasConstructor = Id "a"
+                        { aliasConstructor = testId "a"
                         , aliasParams =
                             [ sortVariable "s1"
                             , sortVariable "s2"
@@ -840,7 +841,7 @@ sentenceAliasParserTests =
             ( asSentence
                 (SentenceAlias
                     { sentenceAliasAlias = Alias
-                        { aliasConstructor = Id "#a" :: Id Meta
+                        { aliasConstructor = testId "#a" :: Id Meta
                         , aliasParams = []
                         }
                     , sentenceAliasSorts = []
@@ -871,7 +872,7 @@ sentenceAxiomParserTests =
                 (SentenceAxiom
                     { sentenceAxiomParameters =
                         [UnifiedObject
-                            (SortVariable (Id "sv1"))]
+                            (SortVariable (testId "sv1"))]
                     , sentenceAxiomPattern =
                         asKorePattern $ StringLiteralPattern (StringLiteral "a")
                     , sentenceAxiomAttributes =
@@ -903,9 +904,9 @@ sentenceAxiomParserTests =
                 (SentenceAxiom
                     { sentenceAxiomParameters =
                         [ UnifiedObject
-                            (SortVariable (Id "sv1"))
+                            (SortVariable (testId "sv1"))
                         , UnifiedObject
-                            (SortVariable (Id "sv2"))
+                            (SortVariable (testId "sv2"))
                         ]
                     , sentenceAxiomPattern =
                         asKorePattern $ StringLiteralPattern (StringLiteral "a")
@@ -956,7 +957,7 @@ sentenceSortParserTests =
         [ success "sort s1 { sv1 } [ \"a\" ]"
             ( asSentence
                 (SentenceSort
-                    { sentenceSortName = Id "s1"
+                    { sentenceSortName = testId "s1"
                     , sentenceSortParameters = [ sortVariable "sv1" ]
                     , sentenceSortAttributes =
                         Attributes
@@ -969,7 +970,7 @@ sentenceSortParserTests =
         , success "sort s1 {} [ \"a\" ]"
             ( asSentence
                 (SentenceSort
-                    { sentenceSortName = Id "s1"
+                    { sentenceSortName = testId "s1"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes =
                         Attributes
@@ -995,7 +996,7 @@ sentenceSymbolParserTests =
             ( asSentence
                 (SentenceSymbol
                     { sentenceSymbolSymbol = Symbol
-                        { symbolConstructor = Id "sy1"
+                        { symbolConstructor = testId "sy1"
                         , symbolParams = [ sortVariable "s1" ]
                         }
                     , sentenceSymbolSorts = [ sortVariableSort "s1" ]
@@ -1011,7 +1012,7 @@ sentenceSymbolParserTests =
             ( asSentence
                 (SentenceSymbol
                     { sentenceSymbolSymbol = Symbol
-                        { symbolConstructor = Id "sy1"
+                        { symbolConstructor = testId "sy1"
                         , symbolParams = []
                         }
                     , sentenceSymbolSorts = []
@@ -1058,7 +1059,7 @@ moduleParserTests =
                 , moduleSentences =
                     [ asSentence
                         (SentenceSort
-                            { sentenceSortName = Id "c"
+                            { sentenceSortName = testId "c"
                             , sentenceSortParameters = []
                             , sentenceSortAttributes = Attributes []
                             }
@@ -1074,14 +1075,14 @@ moduleParserTests =
                 , moduleSentences =
                     [ asSentence
                         (SentenceSort
-                            { sentenceSortName = Id "c"
+                            { sentenceSortName = testId "c"
                             , sentenceSortParameters = []
                             , sentenceSortAttributes = Attributes []
                             }
                         :: KoreSentenceSort)
                     , asSentence
                         (SentenceSort
-                            { sentenceSortName = Id "c"
+                            { sentenceSortName = testId "c"
                             , sentenceSortParameters = []
                             , sentenceSortAttributes = Attributes []
                             }
@@ -1120,7 +1121,7 @@ definitionParserTests =
                         , moduleSentences =
                             [ asSentence
                                 (SentenceSort
-                                    { sentenceSortName = Id "c"
+                                    { sentenceSortName = testId "c"
                                     , sentenceSortParameters = []
                                     , sentenceSortAttributes = Attributes []
                                     }
@@ -1148,7 +1149,7 @@ definitionParserTests =
                         , moduleSentences =
                             [ asSentence
                                 (SentenceSort
-                                    { sentenceSortName = Id "c"
+                                    { sentenceSortName = testId "c"
                                     , sentenceSortParameters = []
                                     , sentenceSortAttributes = Attributes []
                                     }
@@ -1164,7 +1165,7 @@ definitionParserTests =
                         , moduleSentences =
                             [ asSentence
                                 (SentenceSort
-                                    { sentenceSortName = Id "d"
+                                    { sentenceSortName = testId "d"
                                     , sentenceSortParameters = []
                                     , sentenceSortAttributes = Attributes []
                                     }
@@ -1194,4 +1195,4 @@ sortVariableSort name =
 
 sortVariable :: String -> SortVariable a
 sortVariable name =
-    SortVariable (Id name)
+    SortVariable (testId name)

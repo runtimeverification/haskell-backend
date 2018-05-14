@@ -37,6 +37,7 @@ import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Error
 import           Data.Kore.Implicit.ImplicitSorts
 
+import           Control.Arrow                    ((&&&))
 import           Control.Monad                    (foldM)
 import qualified Data.Map                         as Map
 import qualified Data.Set                         as Set
@@ -143,13 +144,21 @@ Kore definitions.
 -}
 indexedModuleWithMetaSorts
     :: ModuleName
-    -> (ImplicitIndexedModule sortParam pat variable, Set.Set String)
+    ->  ( ImplicitIndexedModule sortParam pat variable
+        , Map.Map String AstLocation
+        )
 indexedModuleWithMetaSorts name =
     ( ImplicitIndexedModule (emptyIndexedModule name)
         { indexedModuleMetaSortDescriptions = msd }
-    , Set.insert
+    , Map.insert
         (show StringSort)
-        (Set.map getId (Map.keysSet msd))
+        AstLocationImplicit
+        (Map.fromList
+            (map
+                (getId &&& idLocation)
+                (Set.toList (Map.keysSet msd))
+            )
+        )
     )
   where
     msd = metaSortDescriptions
@@ -167,7 +176,10 @@ metaSortDescription sortType =
         }
     )
   where
-    sortId = Id (show sortType)
+    sortId = Id
+        { getId = show sortType
+        , idLocation = AstLocationImplicit
+        }
 
 {-|'indexImplicitModule' indexes a module containing implicit definitions, adds
 it to the map of defined modules and returns the new map together with the
@@ -423,6 +435,7 @@ indexModuleObjectSentence
     indexedStuff
     (SentenceSortSentence sentence)
   = do
+    let sortId = sentenceSortName sentence
     (indexedModules, indexedModule) <-
         indexModuleMetaSentence
             implicitModule
@@ -432,11 +445,10 @@ indexModuleObjectSentence
             (SentenceSymbolSentence
                 SentenceSymbol
                     { sentenceSymbolSymbol = Symbol
-                        { symbolConstructor =
-                            Id
-                                (metaNameForObjectSort
-                                    (getId (sentenceSortName sentence))
-                                )
+                        { symbolConstructor = Id
+                            { getId = metaNameForObjectSort (getId sortId)
+                            , idLocation = AstLocationLifted (idLocation sortId)
+                            }
                         , symbolParams = []
                         }
                     , sentenceSymbolSorts =

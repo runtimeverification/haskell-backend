@@ -5,21 +5,21 @@ Definition
             { moduleName = ModuleName "TEST-ATTRIBUTE-2"
             , moduleSentences =
                 [ ObjectSentence (SentenceSortSentence SentenceSort
-                    { sentenceSortName = Id "Nat" :: Id Object
+                    { sentenceSortName = (Id "Nat" AstLocationNone) :: Id Object
                     , sentenceSortParameters = []
                     , sentenceSortAttributes =
                         Attributes 
                             [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "hook" :: Id Object
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
                                     [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
                                         { domainValueSort =
                                             SortActualSort SortActual
-                                                { sortActualName = Id "Hook" :: Id Object
+                                                { sortActualName = (Id "Hook" AstLocationNone) :: Id Object
                                                 , sortActualSorts = []
                                                 }
                                         , domainValueChild =
@@ -32,22 +32,22 @@ Definition
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
-                            { symbolConstructor = Id "plus" :: Id Object
+                            { symbolConstructor = (Id "plus" AstLocationNone) :: Id Object
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
                         [ SortActualSort SortActual
-                            { sortActualName = Id "Nat" :: Id Object
+                            { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
                             , sortActualSorts = []
                             }
                         , SortActualSort SortActual
-                            { sortActualName = Id "Nat" :: Id Object
+                            { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
                             , sortActualSorts = []
                             }
                         ]
                     , sentenceSymbolReturnSort =
                         SortActualSort SortActual
-                            { sortActualName = Id "Nat" :: Id Object
+                            { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
                             , sortActualSorts = []
                             }
                     , sentenceSymbolAttributes =
@@ -55,14 +55,14 @@ Definition
                             [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "hook" :: Id Object
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
                                     [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
                                         { domainValueSort =
                                             SortActualSort SortActual
-                                                { sortActualName = Id "Hook" :: Id Object
+                                                { sortActualName = (Id "Hook" AstLocationNone) :: Id Object
                                                 , sortActualSorts = []
                                                 }
                                         , domainValueChild =
@@ -73,7 +73,7 @@ Definition
                             , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "associative" :: Id Object
+                                        { symbolOrAliasConstructor = (Id "associative" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren = []
@@ -81,7 +81,7 @@ Definition
                             , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "commutative" :: Id Object
+                                        { symbolOrAliasConstructor = (Id "commutative" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren = []

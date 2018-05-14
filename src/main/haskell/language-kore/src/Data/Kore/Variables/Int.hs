@@ -26,7 +26,12 @@ class IntVariable var where
 
 instance IntVariable Variable where
     intVariable var n =
-        var { variableName = Id (metaObjectPrefix ++ "var_" ++ show n) }
+        var
+            { variableName = Id
+                { getId = metaObjectPrefix ++ "var_" ++ show n
+                , idLocation = AstLocationGeneratedVariable
+                }
+            }
       where
         metaObjectPrefix =
             case isMetaOrObject var of

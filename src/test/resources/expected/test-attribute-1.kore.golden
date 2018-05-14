@@ -5,21 +5,21 @@ Definition
             { moduleName = ModuleName "TEST-ATTRIBUTE-1"
             , moduleSentences =
                 [ ObjectSentence (SentenceSortSentence SentenceSort
-                    { sentenceSortName = Id "Nat" :: Id Object
+                    { sentenceSortName = (Id "Nat" AstLocationNone) :: Id Object
                     , sentenceSortParameters = []
                     , sentenceSortAttributes =
                         Attributes 
                             [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = Id "hook" :: Id Object
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
                                     [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
                                         { domainValueSort =
                                             SortActualSort SortActual
-                                                { sortActualName = Id "Hook" :: Id Object
+                                                { sortActualName = (Id "Hook" AstLocationNone) :: Id Object
                                                 , sortActualSorts = []
                                                 }
                                         , domainValueChild =

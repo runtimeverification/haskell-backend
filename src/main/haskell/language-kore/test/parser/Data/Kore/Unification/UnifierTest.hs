@@ -15,6 +15,7 @@ import           Data.Kore.AST.MLPatternsTest                        (extractPur
 import           Data.Kore.AST.PureML
 import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
+import           Data.Kore.KoreHelpers
 import           Data.Kore.Unification.UnifierImpl
 
 import           Data.Fix
@@ -27,47 +28,47 @@ s2 = simpleSort (SortName "s2")
 s3 = simpleSort (SortName "s3")
 
 a, a1, a2, a3, b, c, f, g, h :: PureSentenceSymbol Object
-a = symbol_ "a" [] s1
-a1 = symbol_ "a1" [] s1
-a2 = symbol_ "a2" [] s1
-a3 = symbol_ "a3" [] s1
-b = symbol_ "b" [] s2
-c = symbol_ "c" [] s3
-f = symbol_ "f" [s1] s2
-g = symbol_ "g" [s1, s2] s3
-h = symbol_ "h" [s1, s2, s3] s1
+a = symbol_ "a" AstLocationTest [] s1
+a1 = symbol_ "a1" AstLocationTest [] s1
+a2 = symbol_ "a2" AstLocationTest [] s1
+a3 = symbol_ "a3" AstLocationTest [] s1
+b = symbol_ "b" AstLocationTest [] s2
+c = symbol_ "c" AstLocationTest [] s3
+f = symbol_ "f" AstLocationTest [s1] s2
+g = symbol_ "g" AstLocationTest [s1, s2] s3
+h = symbol_ "h" AstLocationTest [s1, s2, s3] s1
 
 ef, eg, eh :: PureSentenceSymbol Object
-ef = symbol_ "ef" [s1, s1, s1] s1
-eg = symbol_ "eg" [s1] s1
-eh = symbol_ "eh" [s1] s1
+ef = symbol_ "ef" AstLocationTest [s1, s1, s1] s1
+eg = symbol_ "eg" AstLocationTest [s1] s1
+eh = symbol_ "eh" AstLocationTest [s1] s1
 
 nonLinF, nonLinG, nonLinAS :: PureSentenceSymbol Object
-nonLinF = symbol_ "nonLinF" [s1, s1] s1
-nonLinG = symbol_ "nonLinG" [s1] s1
-nonLinAS = symbol_ "nonLinA" [] s1
+nonLinF = symbol_ "nonLinF" AstLocationTest [s1, s1] s1
+nonLinG = symbol_ "nonLinG" AstLocationTest [s1] s1
+nonLinAS = symbol_ "nonLinA" AstLocationTest [] s1
 
 nonLinA, nonLinX, nonLinY :: CommonPurePatternStub Object
-nonLinX = parameterizedVariable_ s1 "x"
-nonLinY = parameterizedVariable_ s1 "y"
+nonLinX = parameterizedVariable_ s1 "x" AstLocationTest
+nonLinY = parameterizedVariable_ s1 "y" AstLocationTest
 
 nonLinA = applyS nonLinAS []
 
 expBin :: PureSentenceSymbol Object
-expBin = symbol_ "times" [s1, s1] s1
+expBin = symbol_ "times" AstLocationTest [s1, s1] s1
 
 expA, expX, expY, expZ, expW :: CommonPurePatternStub Object
-expA = parameterizedVariable_ s1 "a"
-expX = parameterizedVariable_ s1 "x"
-expY = parameterizedVariable_ s1 "y"
-expZ = parameterizedVariable_ s1 "z"
-expW = parameterizedVariable_ s1 "w"
+expA = parameterizedVariable_ s1 "a" AstLocationTest
+expX = parameterizedVariable_ s1 "x" AstLocationTest
+expY = parameterizedVariable_ s1 "y" AstLocationTest
+expZ = parameterizedVariable_ s1 "z" AstLocationTest
+expW = parameterizedVariable_ s1 "w" AstLocationTest
 
 ex1, ex2, ex3, ex4 :: CommonPurePatternStub Object
-ex1 = parameterizedVariable_ s1 "ex1"
-ex2 = parameterizedVariable_ s1 "ex2"
-ex3 = parameterizedVariable_ s1 "ex3"
-ex4 = parameterizedVariable_ s1 "ex4"
+ex1 = parameterizedVariable_ s1 "ex1" AstLocationTest
+ex2 = parameterizedVariable_ s1 "ex2" AstLocationTest
+ex3 = parameterizedVariable_ s1 "ex3" AstLocationTest
+ex4 = parameterizedVariable_ s1 "ex4" AstLocationTest
 
 aA :: CommonPurePatternStub Object
 aA = applyS a []
@@ -85,7 +86,7 @@ bA :: CommonPurePatternStub Object
 bA = applyS b []
 
 x :: CommonPurePatternStub Object
-x = parameterizedVariable_ s1 "x"
+x = parameterizedVariable_ s1 "x" AstLocationTest
 
 symbols :: [(SymbolOrAlias Object, PureSentenceSymbol Object)]
 symbols =
@@ -147,7 +148,7 @@ unificationSubstitution = map trans
             ( Variable
                 { variableSort =
                     getPatternResultSort mockGetResultSort (unFix pp)
-                , variableName = Id v
+                , variableName = testId v
                 }
             , pp
             )

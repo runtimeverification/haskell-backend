@@ -35,39 +35,50 @@ import           Data.Kore.Parser.ParserUtils     as Parser
 class UnliftableFromMetaML mixed where
     unliftFromMeta :: CommonMetaPattern -> Maybe mixed
 
-parseObjectId :: String -> Maybe (Id Object)
-parseObjectId input =
+parseObjectId :: String -> AstLocation -> Maybe (Id Object)
+parseObjectId input location =
     case Parser.parseOnly objectIdParser "<unlift>" input of
-        Right parsed -> Just parsed
+        Right parsed -> Just parsed {idLocation = location}
         _            -> Nothing
   where objectIdParser = idParser Object <* Parser.endOfInput
 
-unliftObjectId :: String -> Maybe (Id Object)
-unliftObjectId ('#' : oid) = parseObjectId oid
-unliftObjectId _           = Nothing
+unliftObjectId :: Id Meta -> Maybe (Id Object)
+unliftObjectId
+    Id
+        { getId = ('#' : oid)
+        , idLocation = location
+        }
+  =
+    parseObjectId oid location
+unliftObjectId _  = Nothing
 
 instance UnliftableFromMetaML (Id Object) where
     unliftFromMeta (Fix (StringLiteralPattern (StringLiteral str))) =
-        parseObjectId str
+        parseObjectId str AstLocationNone
     unliftFromMeta _ = Nothing
 
 instance UnliftableFromMetaML (SortVariable Object) where
     unliftFromMeta (Fix (VariablePattern v))
         | variableSort v == sortMetaSort
-        = SortVariable <$> unliftObjectId (getId (variableName v))
+        = SortVariable <$> unliftObjectId (variableName v)
     unliftFromMeta _ = Nothing
 
 unliftSortConstructor :: SymbolOrAlias Meta -> Maybe (Id Object)
-unliftSortConstructor SymbolOrAlias
-    { symbolOrAliasConstructor = Id ('#' : '`' : name)
-    , symbolOrAliasParams = []
-    } = parseObjectId name
+unliftSortConstructor
+    SymbolOrAlias
+        { symbolOrAliasConstructor = Id
+            { getId = ('#' : '`' : name)
+            , idLocation = location
+            }
+        , symbolOrAliasParams = []
+        }
+  = parseObjectId name location
 unliftSortConstructor _ = Nothing
 
 unliftHeadConstructor :: SymbolOrAlias Meta -> Maybe (Id Object)
 unliftHeadConstructor sa = case unliftSortConstructor sa of
-    Just (Id "ceil") -> Nothing
-    x                -> x
+    Just Id {getId = "ceil"} -> Nothing
+    x                        -> x
 
 instance UnliftableFromMetaML (SortActual Object) where
     unliftFromMeta (Fix (ApplicationPattern sa)) = do

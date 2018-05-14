@@ -5,7 +5,7 @@ Definition
             { moduleName = ModuleName "TEST-PATTERN-15"
             , moduleSentences =
                 [ ObjectSentence (SentenceSortSentence SentenceSort
-                    { sentenceSortName = Id "Int" :: Id Object
+                    { sentenceSortName = (Id "Int" AstLocationNone) :: Id Object
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
                     })
@@ -15,7 +15,7 @@ Definition
                         Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
                             { domainValueSort =
                                 SortActualSort SortActual
-                                    { sortActualName = Id "Int" :: Id Object
+                                    { sortActualName = (Id "Int" AstLocationNone) :: Id Object
                                     , sortActualSorts = []
                                     }
                             , domainValueChild =

@@ -100,7 +100,7 @@ indexImplicitModules
         (Error VerifyError)
         ( Map.Map ModuleName KoreIndexedModule
         , KoreImplicitIndexedModule
-        , Set.Set String
+        , Map.Map String AstLocation
         )
 indexImplicitModules = do
     defaultNames <- foldM verifyUniqueNames sortNames uncheckedKoreModules

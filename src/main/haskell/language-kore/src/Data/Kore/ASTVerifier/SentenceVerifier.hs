@@ -1,4 +1,5 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE GADTs                 #-}
 {-|
 Module      : Data.Kore.ASTVerifier.SentenceVerifier
 Description : Tools for verifying the wellformedness of a Kore 'Sentence'.
@@ -14,6 +15,7 @@ module Data.Kore.ASTVerifier.SentenceVerifier ( verifyUniqueNames
 
 import           Control.Monad                            (foldM)
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Error
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTVerifier.AttributesVerifier
@@ -23,6 +25,8 @@ import           Data.Kore.ASTVerifier.Resolvers
 import           Data.Kore.ASTVerifier.SortVerifier
 import           Data.Kore.Error
 import           Data.Kore.IndexedModule.IndexedModule
+
+import qualified Data.Map                                 as Map
 import qualified Data.Set                                 as Set
 
 {-|'verifyUniqueNames' verifies that names defined in a list of sentences are
@@ -30,46 +34,68 @@ unique both within the list and outside, using the provided name set.
 -}
 verifyUniqueNames
     :: [KoreSentence]
-    -> Set.Set String
+    -> Map.Map String AstLocation
     -- ^ Names that are already defined.
-    -> Either (Error VerifyError) (Set.Set String)
+    -> Either (Error VerifyError) (Map.Map String AstLocation)
     -- ^ On success returns the names that were previously defined together with
     -- the names defined in the given 'Module'.
 verifyUniqueNames sentences existingNames =
-    foldM verifyUniqueName existingNames
+    foldM verifyUniqueId existingNames
         (concatMap definedNamesForSentence sentences)
 
-verifyUniqueName
-    :: Set.Set String
-    -> String
-    -> Either (Error VerifyError) (Set.Set String)
-verifyUniqueName set name =
-    if name `Set.member` set
-        then koreFail ("Duplicated name: '" ++ name ++ "'.")
-        else Right (Set.insert name set)
+data UnparameterizedId = UnparameterizedId
+    { unparameterizedIdName     :: String
+    , unparameterizedIdLocation :: AstLocation
+    }
+toUnparameterizedId :: Id level -> UnparameterizedId
+toUnparameterizedId Id {getId = name, idLocation = location} =
+    UnparameterizedId
+        { unparameterizedIdName = name
+        , unparameterizedIdLocation = location
+        }
 
-definedNamesForSentence :: KoreSentence -> [String]
+verifyUniqueId
+    :: Map.Map String AstLocation
+    -> UnparameterizedId
+    -> Either (Error VerifyError) (Map.Map String AstLocation)
+verifyUniqueId existing (UnparameterizedId name location) =
+    case Map.lookup name existing of
+        Just location' ->
+            koreFailWithLocations [location, location']
+                ("Duplicated name: '" ++ name ++ "'.")
+        _ -> Right (Map.insert name location existing)
+
+definedNamesForSentence :: KoreSentence -> [UnparameterizedId]
 definedNamesForSentence =
     applyUnifiedSentence
         definedNamesForMetaSentence
         definedNamesForObjectSentence
 
-definedNamesForMetaSentence :: Sentence Meta sortParam pat variable -> [String]
+definedNamesForMetaSentence
+    :: Sentence Meta sortParam pat variable -> [UnparameterizedId]
 definedNamesForMetaSentence (SentenceAliasSentence sentenceAlias) =
-    [ getId (getSentenceSymbolOrAliasConstructor sentenceAlias) ]
+    [ toUnparameterizedId (getSentenceSymbolOrAliasConstructor sentenceAlias) ]
 definedNamesForMetaSentence (SentenceSymbolSentence sentenceSymbol) =
-    [ getId (getSentenceSymbolOrAliasConstructor sentenceSymbol) ]
+    [ toUnparameterizedId (getSentenceSymbolOrAliasConstructor sentenceSymbol) ]
 definedNamesForMetaSentence (SentenceImportSentence _) = []
 definedNamesForMetaSentence (SentenceAxiomSentence _)  = []
 
-definedNamesForObjectSentence :: Sentence Object sortParam pat variable -> [String]
+definedNamesForObjectSentence
+    :: Sentence Object sortParam pat variable -> [UnparameterizedId]
 definedNamesForObjectSentence (SentenceAliasSentence sentenceAlias) =
-    [ getId (getSentenceSymbolOrAliasConstructor sentenceAlias) ]
+    [ toUnparameterizedId (getSentenceSymbolOrAliasConstructor sentenceAlias) ]
 definedNamesForObjectSentence (SentenceSymbolSentence sentenceSymbol) =
-    [ getId (getSentenceSymbolOrAliasConstructor sentenceSymbol) ]
+    [ toUnparameterizedId (getSentenceSymbolOrAliasConstructor sentenceSymbol) ]
 definedNamesForObjectSentence (SentenceSortSentence sentenceSort) =
-    [sentenceName, metaNameForObjectSort sentenceName]
-  where sentenceName = getId (sentenceSortName sentenceSort)
+    [ sentenceName
+    , UnparameterizedId
+        { unparameterizedIdName =
+            metaNameForObjectSort (unparameterizedIdName sentenceName)
+        , unparameterizedIdLocation =
+            AstLocationLifted (unparameterizedIdLocation sentenceName)
+        }
+    ]
+  where sentenceName = toUnparameterizedId (sentenceSortName sentenceSort)
 
 {-|'verifySentences' verifies the welformedness of a list of Kore 'Sentence's.
 -}
@@ -174,7 +200,8 @@ verifySymbolAliasSentence
 verifySymbolAliasSentence
     findSortDeclaration _ attributesVerification sentence
   =
-    withContext
+    withLocationAndContext
+        (getSentenceSymbolOrAliasConstructor sentence)
         (  getSentenceSymbolOrAliasSentenceName sentence
         ++ " '"
         ++ getId (getSentenceSymbolOrAliasConstructor sentence)
@@ -223,7 +250,8 @@ verifySortSentence
     -> AttributesVerification
     -> Either (Error VerifyError) VerifySuccess
 verifySortSentence sentenceSort attributesVerification =
-    withContext
+    withLocationAndContext
+        (sentenceSortName sentenceSort)
         ("sort '" ++ getId (sentenceSortName sentenceSort) ++ "' declaration")
         (do
             buildDeclaredSortVariables (sentenceSortParameters sentenceSort)
@@ -246,10 +274,12 @@ buildDeclaredUnifiedSortVariables
 buildDeclaredUnifiedSortVariables [] = Right Set.empty
 buildDeclaredUnifiedSortVariables (unifiedVariable : list) = do
     variables <- buildDeclaredUnifiedSortVariables list
-    koreFailWhen (unifiedVariable `Set.member` variables)
-                (  "Duplicated sort variable: '"
-                ++ extractVariableName unifiedVariable
-                ++ "'.")
+    koreFailWithLocationsWhen
+        (unifiedVariable `Set.member` variables)
+        [unifiedVariable]
+        (  "Duplicated sort variable: '"
+        ++ extractVariableName unifiedVariable
+        ++ "'.")
     return (Set.insert unifiedVariable variables)
   where
     extractVariableName (UnifiedObject variable) =

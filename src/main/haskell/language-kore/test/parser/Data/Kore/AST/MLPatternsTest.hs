@@ -19,6 +19,7 @@ import           Data.Kore.Building.AsAst
 import           Data.Kore.Building.Patterns
 import           Data.Kore.Building.Sorts         as Sorts
 import           Data.Kore.Implicit.ImplicitSorts
+import           Data.Kore.KoreHelpers
 
 import           Data.Fix
 
@@ -58,7 +59,7 @@ mlPatternsTests =
                             (withSort charListMetaSort
                                 (forall_
                                     (Variable
-                                        (Id "x")
+                                        (testId "x")
                                         charListMetaSort
                                     )
                                     top_
@@ -88,11 +89,11 @@ mlPatternsTests =
                     charListMetaSort
                     (getPatternResultSort
                         undefinedHeadSort
-                        (VariablePattern (Variable (Id "x") charListMetaSort))
+                        (VariablePattern (Variable (testId "x") charListMetaSort))
                     )
                 )
             , let
-                s = symbol_ "test" [] charListMetaSort
+                s = symbol_ "test" AstLocationTest [] charListMetaSort
                 headSort x
                     | x == getSentenceSymbolOrAliasHead s [] = charListMetaSort
                     | otherwise = charMetaSort
@@ -126,7 +127,7 @@ applyPatternFunctionTests =
                 (metaFunctionApplier
                     (ApplicationPattern Application
                         { applicationSymbolOrAlias = SymbolOrAlias
-                            { symbolOrAliasConstructor = Id "#sigma"
+                            { symbolOrAliasConstructor = testId "#sigma"
                             , symbolOrAliasParams = [asAst SortListSort]
                             }
                         , applicationChildren = []
@@ -277,8 +278,8 @@ applyPatternFunctionTests =
     sort = Sorts.CharSort
     otherSort = Sorts.SortSort
     objectSort = SomeObjectSort
-    mVariable = metaVariable "#x" sort
-    oVariable = objectVariable "x" objectSort
+    mVariable = metaVariable "#x" AstLocationTest sort
+    oVariable = objectVariable "x" AstLocationTest objectSort
 
 metaFunctionApplier :: Pattern Meta Variable CommonKorePattern -> Sort Meta
 metaFunctionApplier =
@@ -310,7 +311,7 @@ data SomeObjectSort = SomeObjectSort
 instance AsAst (Sort Object) SomeObjectSort where
     asAst _ =
         SortActualSort SortActual
-            { sortActualName = Id "SomeObjectSort"
+            { sortActualName = testId "SomeObjectSort"
             , sortActualSorts = []
             }
 

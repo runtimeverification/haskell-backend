@@ -6,6 +6,7 @@ import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTGen
+import           Data.Kore.KoreHelpers
 import           Data.Kore.Parser.LexemeImpl
 import           Data.Kore.Parser.ParserImpl
 import           Data.Kore.Parser.ParserUtils
@@ -14,7 +15,6 @@ import           Data.Kore.Unparser.Unparse
 import           Test.Tasty                   (TestTree, testGroup)
 import           Test.Tasty.HUnit             (assertEqual, testCase)
 import           Test.Tasty.QuickCheck        (forAll, testProperty)
-import qualified Text.Megaparsec.Char         as Parser
 
 unparseUnitTests :: TestTree
 unparseUnitTests =
@@ -23,7 +23,7 @@ unparseUnitTests =
         [ unparseTest
             (asSentence
                 (SentenceSort
-                    { sentenceSortName = Id "x"
+                    { sentenceSortName = testId "x"
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
                     }
@@ -35,22 +35,22 @@ unparseUnitTests =
                 { getAttributes =
                     [ asKorePattern (TopPattern Top
                         { topSort = SortVariableSort SortVariable
-                            { getSortVariable = Id "#Fm" :: Id Meta }
+                            { getSortVariable = testId "#Fm" :: Id Meta }
                         })
                     , asKorePattern (InPattern In
                         { inOperandSort = SortActualSort SortActual
-                            { sortActualName = Id "B" :: Id Object
+                            { sortActualName = testId "B" :: Id Object
                             , sortActualSorts = []
                             }
                         , inResultSort = SortActualSort SortActual
-                            { sortActualName = Id "G" :: Id Object
+                            { sortActualName = testId "G" :: Id Object
                             , sortActualSorts = []
                             }
                         , inContainedChild =
                             asKorePattern $ VariablePattern Variable
-                                { variableName = Id "T" :: Id Object
+                                { variableName = testId "T" :: Id Object
                                 , variableSort = SortVariableSort SortVariable
-                                    { getSortVariable = Id {getId = "C"} }
+                                    { getSortVariable = testId "C" }
                                 }
                         , inContainingChild = asKorePattern (StringLiteralPattern
                             StringLiteral { getStringLiteral = "" })
@@ -127,7 +127,7 @@ unparseUnitTests =
                     [ asKorePattern
                         ( TopPattern Top
                             { topSort = SortActualSort SortActual
-                                { sortActualName = Id "#CharList" :: Id Meta
+                                { sortActualName = testId "#CharList" :: Id Meta
                                 , sortActualSorts = []
                                 }
                             }
@@ -157,9 +157,9 @@ unparseParseTests :: TestTree
 unparseParseTests =
     testGroup
         "QuickCheck Unparse&Parse Tests"
-        [ testProperty "Object Id"
+        [ testProperty "Object testId"
             (forAll (idGen Object) (unparseParseProp (idParser Object)))
-        , testProperty "Meta Id"
+        , testProperty "Meta testId"
             (forAll (idGen Meta) (unparseParseProp (idParser Meta)))
         , testProperty "StringLiteral"
             (forAll stringLiteralGen (unparseParseProp stringLiteralParser))
