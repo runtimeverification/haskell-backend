@@ -11,6 +11,7 @@ Portability : POSIX
 module Data.Kore.ASTVerifier.PatternVerifier (verifyPattern) where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Error
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
@@ -444,8 +445,9 @@ verifyVariableUsage variable _ verifyHelpers _ _ = do
     declaredVariable <-
         findVariableDeclaration
             (variableName variable) verifyHelpers
-    koreFailWhen
+    koreFailWithLocationsWhen
         (variableSort variable /= variableSort declaredVariable)
+        [ variable, declaredVariable ]
         "The declared sort is different."
     return (variableSort variable)
 
@@ -490,7 +492,9 @@ findVariableDeclaration
 findVariableDeclaration variableId verifyHelpers =
     case findVariables variableId of
         Nothing ->
-            koreFail ("Unquantified variable: '" ++ getId variableId ++ "'.")
+            koreFailWithLocations
+                [variableId]
+                ("Unquantified variable: '" ++ getId variableId ++ "'.")
         Just variable -> Right variable
   where
     findVariables = verifyHelpersFindDeclaredVariables verifyHelpers
@@ -516,7 +520,9 @@ verifySymbolOrAlias symbolOrAlias verifyHelpers declaredSortVariables =
                 verifyHelpers
                 declaredSortVariables
         (Nothing, Nothing) ->
-            koreFail ("Symbol '" ++ getId applicationId ++ "' not defined.")
+            koreFailWithLocations
+                [applicationId]
+                ("Symbol '" ++ getId applicationId ++ "' not defined.")
         -- The (Just, Just) match should be caught by the unique names check.
   where
     applicationId = symbolOrAliasConstructor symbolOrAlias
@@ -548,8 +554,9 @@ verifySameSort
     -> Unified Sort
     -> Either (Error VerifyError) VerifySuccess
 verifySameSort (UnifiedObject expectedSort) (UnifiedObject actualSort) = do
-    koreFailWhen
+    koreFailWithLocationsWhen
         (expectedSort /= actualSort)
+        [expectedSort, actualSort]
         (   "Expecting sort '"
             ++ unparseToString expectedSort
             ++ "' but got '"
@@ -558,8 +565,9 @@ verifySameSort (UnifiedObject expectedSort) (UnifiedObject actualSort) = do
         )
     verifySuccess
 verifySameSort (UnifiedMeta expectedSort) (UnifiedMeta actualSort) = do
-    koreFailWhen
+    koreFailWithLocationsWhen
         (expectedSort /= actualSort)
+        [expectedSort, actualSort]
         (   "Expecting sort '"
             ++ unparseToString expectedSort
             ++ "' but got '"
@@ -568,8 +576,9 @@ verifySameSort (UnifiedMeta expectedSort) (UnifiedMeta actualSort) = do
         )
     verifySuccess
 verifySameSort (UnifiedMeta expectedSort) (UnifiedObject actualSort) = do
-    koreFailWhen
+    koreFailWithLocationsWhen
         (expectedSort /= patternMetaSort)
+        [asUnified expectedSort, asUnified actualSort]
         (   "Expecting meta sort '"
             ++ unparseToString expectedSort
             ++ "' but got object sort '"
@@ -578,8 +587,9 @@ verifySameSort (UnifiedMeta expectedSort) (UnifiedObject actualSort) = do
         )
     verifySuccess
 verifySameSort (UnifiedObject expectedSort) (UnifiedMeta actualSort) = do
-    koreFailWhen
+    koreFailWithLocationsWhen
         (actualSort /= patternMetaSort)
+        [asUnified expectedSort, asUnified actualSort]
         (   "Expecting object sort '"
             ++ unparseToString expectedSort
             ++ "' but got meta sort '"
@@ -623,7 +633,8 @@ checkVariable var vars =
     case Map.lookup (variableName var) vars of
         Nothing -> verifySuccess
         Just v ->
-            koreFail
+            koreFailWithLocations
+                [v, var]
                 ("Inconsistent free variable usage: "
                 ++ unparseToString v
                 ++ " and "

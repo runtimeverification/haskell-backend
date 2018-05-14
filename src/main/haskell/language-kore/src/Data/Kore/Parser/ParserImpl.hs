@@ -43,8 +43,8 @@ import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.HaskellExtensions  (Rotate31 (..), (<....>))
 import           Data.Kore.MetaML.AST
 import           Data.Kore.Parser.Lexeme
-import qualified Data.Kore.Parser.ParserUtils as ParserUtils
 import           Data.Kore.Parser.ParserUtils (Parser)
+import qualified Data.Kore.Parser.ParserUtils as ParserUtils
 import           Data.Kore.Unparser.Unparse
 
 import           Control.Arrow                ((&&&))
@@ -52,7 +52,7 @@ import           Control.Monad                (unless, void, when)
 import           Data.Fix
 
 import           Data.Maybe                   (isJust)
-import           Text.Megaparsec              (Parsec,many,some)
+import           Text.Megaparsec              (some)
 import qualified Text.Megaparsec.Char         as Parser (char)
 
 {-|'sortVariableParser' parses either an @object-sort-variable@, or a
@@ -112,9 +112,11 @@ sortParser x = do
             { sortActualName = stringNameNormalizer identifier
             , sortActualSorts = sorts
             }
-    stringNameNormalizer identifier@(Id i) =
+    stringNameNormalizer :: Id level -> Id level
+    stringNameNormalizer identifier@Id {getId = i} =
         if isMeta x && (i == show StringSort)
-            then Id (show (MetaListSortType CharSort))
+            then identifier
+                { getId = show (MetaListSortType CharSort) }
             else identifier
 
 {-|'validateMetaSort' checks that a @meta-sort@ is well-formed.

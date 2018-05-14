@@ -12,6 +12,7 @@ module Data.Kore.ASTVerifier.Resolvers ( resolveMetaSort
                                        ) where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Error
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.Error
@@ -50,5 +51,8 @@ resolveSort
     -> Either (Error VerifyError) (SortDescription level)
 resolveSort mapExtractor indexedModule sortId =
     case resolveThing mapExtractor indexedModule sortId of
-        Nothing -> koreFail ("Sort '" ++ getId sortId ++  "' not declared.")
+        Nothing ->
+            koreFailWithLocations
+                [sortId]
+                ("Sort '" ++ getId sortId ++  "' not declared.")
         Just sortDescription -> Right sortDescription

@@ -5,13 +5,14 @@ module Data.Kore.Substitution.TestCommon where
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.KoreHelpers
 
 objectSort :: Sort Object
-objectSort = SortVariableSort (SortVariable (Id "s"))
+objectSort = SortVariableSort (SortVariable (testId "s"))
 
 objectVariable :: Variable Object
 objectVariable = Variable
-    { variableName = Id "v"
+    { variableName = testId "v"
     , variableSort = objectSort
     }
 
@@ -25,11 +26,11 @@ objectVariableUnifiedPattern :: CommonKorePattern
 objectVariableUnifiedPattern = asKorePattern objectVariablePattern
 
 metaSort :: Sort Meta
-metaSort = SortVariableSort (SortVariable (Id "#s"))
+metaSort = SortVariableSort (SortVariable (testId "#s"))
 
 metaVariable :: Variable Meta
 metaVariable = Variable
-    { variableName = Id "#v"
+    { variableName = testId "#v"
     , variableSort = metaSort
     }
 

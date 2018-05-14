@@ -3,6 +3,7 @@ module Data.Kore.Variables.SortTest (freeSortVariablesTests) where
 import           Test.Tasty                  (TestTree, testGroup)
 import           Test.Tasty.HUnit            (assertEqual, testCase)
 
+import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Building.AsAst
@@ -18,11 +19,17 @@ freeSortVariablesTests =
     [ testCase "identifies variable"
         (assertEqual "Expected to find sort variable"
             (Set.singleton
-                (UnifiedMeta (asMetaSortVariable (MetaSortVariable1 "#s")))
+                (UnifiedMeta
+                    (asMetaSortVariable
+                        (MetaSortVariable1 "#s" AstLocationTest)))
             )
             (sortVariables
                 (asAst
-                    (metaVariable "#s" (MetaSortVariable1 "#s"))
+                    (metaVariable
+                        "#s"
+                        AstLocationTest
+                        (MetaSortVariable1 "#s" AstLocationTest)
+                    )
                     :: CommonKorePattern
                 )
             )
