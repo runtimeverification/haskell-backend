@@ -17,14 +17,12 @@ import           Data.Kore.FixTraversals
 
 import           Data.Fix
 import           Data.Function            (on)
-import           Data.List                (sortBy)
-
--- import           Debug.Trace
+import           Data.List                (groupBy, sortBy)
 
 type UnificationSubstitution level = [(Variable level, CommonPurePattern level)]
 
 -- |'MetadataTools' defines a dictionary of functions which can be used to
--- access metadata needed during the unification process.
+-- access the metadata needed during the unification process.
 data MetadataTools level = MetadataTools
     { isConstructor    :: SymbolOrAlias level -> Bool
     , isFunctional     :: SymbolOrAlias level -> Bool
@@ -101,15 +99,15 @@ data UnificationProof level
         (Variable level)
         (CommonPurePattern level)
         (CommonPurePattern level)
-    -- merging of x = t1 /\ x = t2 into x = (t1 /\ t2)
+    -- ^Specifies the merging of (x = t1) /\ (x = t2) into x = (t1 /\ t2)
     -- Semantics of K, 7.7.1:
     -- (Equality Elimination). |- (ϕ1 = ϕ2) → (ψ[ϕ1/v] → ψ[ϕ2/v])
     -- if we instantiate it using  ϕ1 = x, ϕ2 = y and ψ = (v = t2), we get
     -- |- x = t1 -> ((x = t2) -> (t1 = t2))
     -- by boolean manipulation, we can get
-    -- |- x = t1 /\ x = t2 -> (x = t1 /\ t1 = t2)
+    -- |- (x = t1) /\ (x = t2) -> ((x = t1) /\ (t1 = t2))
     -- By some ??magic?? similar to Proposition 5.12
-    -- (x = t1 /\ t1 = t2) = (x = (t1 /\ (t1 = t2)))
+    -- ((x = t1) /\ (t1 = t2)) = (x = (t1 /\ (t1 = t2)))
     -- then, applying Proposition 5.24(3), this further gets to
     -- (x = (t1 /\ t2))
   deriving (Eq, Show)
@@ -257,7 +255,6 @@ postTransform
         (UnificationError level)
         (UnificationSolution level, UnificationProof level)
 postTransform (ApplicationPattern ap) = do
-    -- traceM (show ap)
     children <- sequenceA (applicationChildren ap)
     let (subSolutions, subProofs) = unzip children
     return
@@ -277,6 +274,11 @@ postTransform (ApplicationPattern ap) = do
             (applicationSymbolOrAlias ap)
             subProofs
         )
+
+groupSubstitutionByVariable
+    :: UnificationSubstitution level -> [UnificationSubstitution level]
+groupSubstitutionByVariable =
+    groupBy ((==) `on` fst) . sortBy (compare `on` fst)
 
 -- finds ocurrences of x = t1 /\ x = t2 and transforms them
 -- into x = (t1 /\ t2)
