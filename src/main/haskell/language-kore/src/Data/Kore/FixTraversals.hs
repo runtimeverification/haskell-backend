@@ -16,9 +16,7 @@ visiting and transforming ASTs.  To this aim, the 'cata' and 'cataM' functions
 provided by 'Data.Fix' were rebranded to 'fixBottomUpVisitor' and
 'fixBottomUpVisitorM', as providing a "bottom-up" visiting pattern, two more
 functions, 'fixTopDownVisitor' and 'fixTopDownVisitorM' were added to give more
-control over the traversal process, and two specializations of the top-down
-visitors to the case where a transformation rather than a visitation is needed
-('fixTopDownTransformer' and 'fixTopDownTransformerM').
+control over the traversal process.
 
 The functions in this module can be used directly to visit and transform
 PurePattern objects.

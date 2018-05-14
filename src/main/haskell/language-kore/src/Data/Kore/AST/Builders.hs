@@ -147,7 +147,7 @@ bottom_ = UnsortedPatternStub (BottomPattern . Bottom)
 
 -- |A 'PatternStub' representing 'Top'.
 top_ :: CommonPurePatternStub level
-top_ = UnsortedPatternStub (BottomPattern . Bottom)
+top_ = UnsortedPatternStub (TopPattern . Top)
 
 -- |Builds a 'PatternStub' representing 'Equals' given the sort of the
 -- operands and their corresponding 'PatternStub's.
@@ -323,5 +323,17 @@ not_ =
             NotPattern Not
                 { notSort   = sortS
                 , notChild  = pattern1
+                }
+        )
+
+-- |Builds a 'PatternStub' representing 'Next' given a 'PatternStub' for
+-- its operand.
+next_ :: CommonPurePatternStub Object -> CommonPurePatternStub Object
+next_ =
+    unaryPattern
+        (\sortS pattern1 ->
+            NextPattern Next
+                { nextSort   = sortS
+                , nextChild  = pattern1
                 }
         )
