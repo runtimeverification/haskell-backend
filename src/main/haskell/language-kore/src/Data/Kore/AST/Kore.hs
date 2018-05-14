@@ -45,7 +45,6 @@ module Data.Kore.AST.Kore
     , asMetaKorePattern
     , asObjectKorePattern
     , applyKorePattern
-    , UnifiedId
     , UnifiedSortVariable
     , UnifiedSort
     , UnifiedPattern (..)
