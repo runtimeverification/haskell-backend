@@ -12,6 +12,7 @@ import           Test.Tasty.HUnit                             (assertFailure,
                                                                testCase)
 
 import           Data.Kore.AST.Common                         (Application (..),
+                                                               AstLocation (..),
                                                                Attributes (..),
                                                                Definition (..),
                                                                Id (..),
@@ -179,37 +180,37 @@ proofAssistantTests =
         ]
 
 x :: MetaVariable MetaSortVariable1
-x = metaVariable "#x" xSort
+x = metaVariable "#x" AstLocationTest xSort
 
 y :: MetaVariable MetaSortVariable1
-y = metaVariable "#y" xSort
+y = metaVariable "#y" AstLocationTest xSort
 
 z :: MetaVariable MetaSortVariable1
-z = metaVariable "#z" xSort
+z = metaVariable "#z" AstLocationTest xSort
 
 xSort :: MetaSortVariable1
-xSort = MetaSortVariable1 "#xsort"
+xSort = MetaSortVariable1 "#xsort" AstLocationTest
 
 phi :: MetaVariable CharListSort
-phi = metaVariable "#phi" phiSort
+phi = metaVariable "#phi" AstLocationTest phiSort
 
 phi' :: MetaVariable CharListSort
-phi' = metaVariable "#phi'" phiSort
+phi' = metaVariable "#phi'" AstLocationTest phiSort
 
 phi1 :: MetaVariable CharListSort
-phi1 = metaVariable "#phi1" phiSort
+phi1 = metaVariable "#phi1" AstLocationTest phiSort
 
 phi2 :: MetaVariable CharListSort
-phi2 = metaVariable "#phi2" phiSort
+phi2 = metaVariable "#phi2" AstLocationTest phiSort
 
 phi3 :: MetaVariable CharListSort
-phi3 = metaVariable "#phi3" phiSort
+phi3 = metaVariable "#phi3" AstLocationTest phiSort
 
 psi :: MetaVariable CharListSort
-psi = metaVariable "#psi" phiSort
+psi = metaVariable "#psi" AstLocationTest phiSort
 
 psi1 :: MetaVariable CharListSort
-psi1 = metaVariable "#psi1" phiSort
+psi1 = metaVariable "#psi1" AstLocationTest phiSort
 
 thingEqualsThing
     :: (MetaSort s, MetaPattern s p) => s -> p -> MetaEquals s p p CharListSort
@@ -278,12 +279,12 @@ proposition1Tests =
             ]
         ]
   where
-    psip = metaVariable "#psi" psiSort
+    psip = metaVariable "#psi" AstLocationTest psiSort
     qphi = metaExists phiSort phi phi
     qpsi = metaExists phiSort psi psi
     qpsiS = metaExists psiSort psi psip
     qphi' = metaExists phiSort phi' phi'
-    psiSort = MetaSortVariable1 "#s2"
+    psiSort = MetaSortVariable1 "#s2" AstLocationTest
 
 -- (phi1 -> (phi2 -> phi3)) -> (phi1 -> phi2) -> (phi1 -> phi3)
 proposition2Tests :: TestTree
@@ -861,10 +862,10 @@ sigmoid2p
 sigmoid2p phip psip = metaSigmoid phiSort psip phip psip
 
 sigmaId :: Id Meta
-sigmaId = Id "#sigma"
+sigmaId = Id "#sigma" AstLocationTest
 
 sigmoidId :: Id Meta
-sigmoidId = Id "#sigmoid"
+sigmoidId = Id "#sigmoid" AstLocationTest
 
 sigmaSymbol :: SymbolOrAlias Meta
 sigmaSymbol = SymbolOrAlias
@@ -877,7 +878,7 @@ sigmaSort = phiSort
 
 sigmoidSymbol :: SymbolOrAlias Meta
 sigmoidSymbol = SymbolOrAlias
-    { symbolOrAliasConstructor = Id "#sigmoid"
+    { symbolOrAliasConstructor = Id "#sigmoid" AstLocationTest
     , symbolOrAliasParams = []
     }
 
