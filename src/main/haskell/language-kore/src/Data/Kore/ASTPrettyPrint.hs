@@ -711,6 +711,8 @@ instance MetaOrObject level => PrettyPrint (UnificationSolution level) where
                 us
             ]
 
+-- TODO: when refactoring these, consider removing `writeTwoFieldStruct`
+-- TODO: when refactoring these, consider removing `writeThreeFieldStruct`
 instance MetaOrObject level => PrettyPrint (UnificationProof level) where
     prettyPrint _ EmptyUnificationProof = write "EmptyUnificationProof"
     prettyPrint flags (CombinedUnificationProof p) =
@@ -728,6 +730,7 @@ instance MetaOrObject level => PrettyPrint (UnificationProof level) where
     prettyPrint flags (SubstitutionMerge var pat1 pat2) =
         writeThreeFieldStruct flags "SubstitutionMerge" var pat1 pat2
 
+-- TODO: when refactoring these, consider removing `writeTwoFieldStruct`
 instance MetaOrObject level => PrettyPrint (UnificationError level) where
     prettyPrint flags (ConstructorClash h1 h2) =
         writeTwoFieldStruct flags "ConstructorClash" h1 h2

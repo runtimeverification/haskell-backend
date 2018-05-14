@@ -17,6 +17,8 @@ import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Unification.UnifierImpl
 
 import           Data.Fix
+import           Data.Function                                       (on)
+import           Data.List                                           (sortBy)
 
 s1, s2, s3 :: Sort Object
 s1 = simpleSort (SortName "s1")
@@ -199,9 +201,16 @@ unificationSuccess message term1 term2 term subst proof =
         (assertEqualWithPrinter
             prettyPrintToString
             ""
-            (Right (unificationResult term subst, proof))
-            (simplifyAnd tools (unificationProblem term1 term2))
+            (unificationResult term subst, proof)
+            (subst'', proof')
         )
+  where
+    Right (subst', proof') = simplifyAnd tools (unificationProblem term1 term2)
+    subst'' = subst'
+        { unificationSolutionConstraints =
+            sortBy (compare `on` fst) (unificationSolutionConstraints subst')
+        }
+
 
 unificationFailure
     :: (HasCallStack)
@@ -234,13 +243,15 @@ unificationProcedureSuccess message term1 term2 subst proof =
         (assertEqualWithPrinter
             prettyPrintToString
             ""
-            (Right (unificationSubstitution subst, proof))
-            (unificationProcedure
-                tools
-                (extractPurePattern term1)
-                (extractPurePattern term2)
-            )
+            (unificationSubstitution subst, proof)
+            (sortBy (compare `on` fst) subst', proof')
         )
+  where
+    Right (subst', proof') =
+        unificationProcedure
+            tools
+            (extractPurePattern term1)
+            (extractPurePattern term2)
 
 unificationProcedureFailure
     :: (HasCallStack)
@@ -421,12 +432,7 @@ unificationTests =
                 , CombinedUnificationProof
                     [ CombinedUnificationProof
                         [ CombinedUnificationProof
-                            [ SubstitutionMerge
-                                (var expX)
-                                (extractPurePattern
-                                    (applyS expBin [expA, expY]))
-                                (extractPurePattern
-                                    (applyS expBin [expY, expA]))
+                            [ EmptyUnificationProof
                             , AndDistributionAndConstraintLifting
                                 (symbolHead expBin)
                                 [ Proposition_5_24_3
@@ -439,6 +445,7 @@ unificationTests =
                                     (extractPurePattern expA)
                                 ]
                             ]
+                        , EmptyUnificationProof
                         ]
                     , EmptyUnificationProof
                     ]

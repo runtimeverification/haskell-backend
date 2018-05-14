@@ -15,9 +15,10 @@ import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.PureML
 import           Data.Kore.FixTraversals
 
+import           Control.Monad            (foldM)
 import           Data.Fix
 import           Data.Function            (on)
-import           Data.List                (groupBy, sortBy)
+import           Data.List                (groupBy, partition, sortBy)
 
 type UnificationSubstitution level = [(Variable level, CommonPurePattern level)]
 
@@ -71,6 +72,8 @@ unificationSolutionToPurePattern tools ucp =
 
 -- |'UnificationProof' is meant to represent proof term stubs for various
 -- steps performed during unification
+-- TODO: replace this datastructures with proper ones representing
+-- both hypotheses and conclusions in the proof object.
 data UnificationProof level
     = EmptyUnificationProof
     -- ^Empty proof (nothing to prove)
@@ -116,6 +119,8 @@ data UnificationProof level
 -- functional.  Currently we only support arguments stating that a
 -- pattern consists only of functional symbols and variables.
 -- Hence, a proof that a pattern is functional is a list of 'FunctionalProof'.
+-- TODO: replace this datastructures with proper ones representing
+-- both hypotheses and conclusions in the proof object.
 data FunctionalProof level
     = FunctionalVariable (Variable level)
     -- ^Variables are functional as per Corollary 5.19
@@ -135,6 +140,7 @@ data UnificationError level
     | NonFunctionalHead (SymbolOrAlias level)
     | NonFunctionalPattern
     | UnsupportedPatterns
+    | EmptyPatternList
   deriving (Eq, Show)
 
 -- checks whether a pattern is functional or not
@@ -154,6 +160,42 @@ isFunctionalPattern tools = fixBottomUpVisitorM reduceM
         patternHead = applicationSymbolOrAlias ap
         proofs = applicationChildren ap
     reduceM _ = Left NonFunctionalPattern
+
+simplifyAnds
+    :: MetadataTools level
+    -> [CommonPurePattern level]
+    -> Either
+        (UnificationError level)
+        (UnificationSolution level, UnificationProof level)
+simplifyAnds _ [] = Left EmptyPatternList
+simplifyAnds tools (p:ps) =
+    foldM
+        simplifyAnds'
+        ( UnificationSolution
+            { unificationSolutionTerm = p
+            , unificationSolutionConstraints = []
+            }
+        , EmptyUnificationProof
+        )
+        ps
+  where
+    resultSort = getPatternResultSort (getResultSort tools) (unFix p)
+    simplifyAnds' (solution,proof) pat = do
+        let
+            conjunct = Fix $ AndPattern And
+                { andSort = resultSort
+                , andFirst = unificationSolutionTerm solution
+                , andSecond = pat
+                }
+        (solution', proof') <- simplifyAnd tools conjunct
+        return
+            ( solution'
+                { unificationSolutionConstraints =
+                    unificationSolutionConstraints solution
+                    ++ unificationSolutionConstraints solution'
+                }
+            , CombinedUnificationProof [proof, proof']
+            )
 
 simplifyAnd
     :: MetadataTools level
@@ -264,11 +306,9 @@ postTransform (ApplicationPattern ap) = do
                         map unificationSolutionTerm subSolutions
                 }
             , unificationSolutionConstraints =
-                sortBy (compare `on` fst)
-                    (concatMap
-                        unificationSolutionConstraints
-                        subSolutions
-                    )
+                concatMap
+                    unificationSolutionConstraints
+                    subSolutions
             }
         , AndDistributionAndConstraintLifting
             (applicationSymbolOrAlias ap)
@@ -280,52 +320,33 @@ groupSubstitutionByVariable
 groupSubstitutionByVariable =
     groupBy ((==) `on` fst) . sortBy (compare `on` fst)
 
--- finds ocurrences of x = t1 /\ x = t2 and transforms them
--- into x = (t1 /\ t2)
-normalizeSubstitution1
-    :: UnificationSubstitution level
-    -> [( Variable level
-        , Either
-            (CommonPurePattern level, UnificationProof level)
-            (CommonPurePattern level)
-        )
-       ]
-normalizeSubstitution1 ((x, t1): rest@((y, t2): subst))
-    | x == y =
-        ( x
-        , Left
-            ( Fix $ AndPattern And
-                { andSort = variableSort x
-                , andFirst = t1
-                , andSecond = t2
-                }
-            , SubstitutionMerge x t1 t2
-            )
-        ) : normalizeSubstitution1 subst
-    | otherwise =
-        ( x, Right t1) : normalizeSubstitution1 rest
-normalizeSubstitution1 [(x, t)] = [(x, Right t)]
-normalizeSubstitution1 [] = []
-
--- solves x = (t1 /\ t2), producing x = t /\ subst
-solveEqualityConstraint
+-- simplifies x = t1 /\ x = t2 /\ ... /\ x = tn by transforming it into
+-- x = ((t1 /\ t2) /\ (..)) /\ tn
+-- then recursively reducing that to finally get x = t /\ subst
+solveGroupedSubstitution
     :: MetadataTools level
-    -> (Variable level, CommonPurePattern level, UnificationProof level)
+    -> UnificationSubstitution level
     -> Either
         (UnificationError level)
-        ( UnificationSubstitution level
-        , UnificationProof level
-        )
-solveEqualityConstraint tools (v, p, ecProof) = do
-    (solution, proof) <- simplifyAnd tools p
+        (UnificationSubstitution level, UnificationProof level)
+solveGroupedSubstitution _ [] = Left EmptyPatternList
+solveGroupedSubstitution tools ((x,p):subst) = do
+    (solution, proof) <- simplifyAnds tools (p : map snd subst)
     return
-        ( (v, unificationSolutionTerm solution)
+        ( (x,unificationSolutionTerm solution)
           : unificationSolutionConstraints solution
-        , CombinedUnificationProof [ecProof, proof]
-        )
+        , proof)
 
--- iteratively finds ocurrences of x = t1 /\ x = t2, solves them, and
--- computes the new substitution
+instance Monoid (UnificationProof level) where
+    mempty = EmptyUnificationProof
+    mappend proof1 proof2 = CombinedUnificationProof [proof1, proof2]
+    mconcat = CombinedUnificationProof
+
+-- Takes a potentially non-normalized substitution,
+-- and if it contains multiple assignments to the same variable,
+-- it solves all such assignments.
+-- As new assignments may be produced during the solving process,
+-- `normalizeSubstitution` recursively calls itself until it stabilizes.
 normalizeSubstitution
     :: MetadataTools level
     -> UnificationSubstitution level
@@ -333,26 +354,29 @@ normalizeSubstitution
         (UnificationError level)
         (UnificationSubstitution level, UnificationProof level)
 normalizeSubstitution tools subst =
-    case mergedEqualities of
-        [] -> return (subst, EmptyUnificationProof)
-        _ -> do
-            solvedEquals <-
-                traverse (solveEqualityConstraint tools) mergedEqualities
-            let (substs, proofs) = unzip solvedEquals
-            let combinedSubst =
-                    sortBy (compare `on` fst) (concat (remainingSubst:substs))
-            (finalSubst, proof) <- normalizeSubstitution tools combinedSubst
+    if null nonSingletonSubstitutions
+        then return (subst, EmptyUnificationProof)
+        else do
+            (subst', proof') <- mconcat <$>
+                mapM (solveGroupedSubstitution tools) nonSingletonSubstitutions
+            (finalSubst, proof) <-
+                normalizeSubstitution tools
+                    (concat singletonSubstitutions
+                     ++ subst'
+                    )
             return
                 ( finalSubst
                 , CombinedUnificationProof
-                    [ CombinedUnificationProof proofs
+                    [ proof'
                     , proof
                     ]
                 )
   where
-    mergedSubstitution = normalizeSubstitution1 subst
-    mergedEqualities = [(x, p, pf) | (x, Left (p, pf)) <- mergedSubstitution]
-    remainingSubst = [(x, t) | (x, Right t) <- mergedSubstitution]
+    groupedSubstitution = groupSubstitutionByVariable subst
+    isSingleton [_] = True
+    isSingleton _   = False
+    (singletonSubstitutions, nonSingletonSubstitutions) =
+        partition isSingleton groupedSubstitution
 
 -- ^'unificationProcedure' atempts to simplify @t1 = t2@, assuming @t1@ and @t2@
 -- are terms (functional patterns) to a substitution.
@@ -368,14 +392,13 @@ unificationProcedure
         (UnificationError level)
         (UnificationSubstitution level, UnificationProof level)
 unificationProcedure tools p1 p2
-    | p1Sort /= p2Sort
-    = Left (SortClash p1Sort p2Sort)
-    | otherwise
-    =  do
-    (solution, proof) <- simplifyAnd tools conjunct
-    (normSubst, normProof) <-
-        normalizeSubstitution tools (unificationSolutionConstraints solution)
-    return (normSubst, CombinedUnificationProof [proof, normProof])
+    | p1Sort /= p2Sort =
+        Left (SortClash p1Sort p2Sort)
+    | otherwise = do
+        (solution, proof) <- simplifyAnd tools conjunct
+        (normSubst, normProof) <-
+            normalizeSubstitution tools (unificationSolutionConstraints solution)
+        return (normSubst, CombinedUnificationProof [proof, normProof])
   where
     resultSort = getPatternResultSort (getResultSort tools)
     p1Sort =  resultSort (unFix p1)
