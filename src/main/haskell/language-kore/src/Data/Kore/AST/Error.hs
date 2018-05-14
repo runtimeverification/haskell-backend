@@ -8,8 +8,7 @@ Stability   : experimental
 Portability : POSIX
 -}
 module Data.Kore.AST.Error
-    ( koreFailWhen
-    , koreFailWithLocations
+    ( koreFailWithLocations
     , koreFailWithLocationsWhen
     , withLocationAndContext
     , withLocationsContext

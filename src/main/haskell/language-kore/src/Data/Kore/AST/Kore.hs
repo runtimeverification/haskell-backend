@@ -188,7 +188,6 @@ deriving instance
 
 type UnifiedSortVariable = Unified SortVariable
 type UnifiedSort = Unified Sort
-type UnifiedId = Unified Id
 
 -- |'KoreSentence' instantiates 'UnifiedSentence' to describe sentences fully
 -- corresponding to the @declaration@ syntactic category

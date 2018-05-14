@@ -53,6 +53,6 @@ resolveSort mapExtractor indexedModule sortId =
     case resolveThing mapExtractor indexedModule sortId of
         Nothing ->
             koreFailWithLocations
-            [sortId]
-            ("Sort '" ++ getId sortId ++  "' not declared.")
+                [sortId]
+                ("Sort '" ++ getId sortId ++  "' not declared.")
         Just sortDescription -> Right sortDescription

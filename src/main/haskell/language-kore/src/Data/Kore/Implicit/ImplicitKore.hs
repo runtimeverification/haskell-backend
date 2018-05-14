@@ -47,7 +47,7 @@ Meta sorts are denoted by their name in camelCase followed by @MetaSort@,
 e.g. patternListMetaSort.
 
 Constructors of meta objects that correspond to lexical symbols are followed by
-an underscore, e.g. implicitSymbol, equals_.
+an underscore, e.g. symbol_, equals_.
 
 Some of the helper functions for building meta-objects are denoted in the same
 way, e.g. sort_.

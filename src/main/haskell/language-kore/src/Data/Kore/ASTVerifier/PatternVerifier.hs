@@ -493,8 +493,8 @@ findVariableDeclaration variableId verifyHelpers =
     case findVariables variableId of
         Nothing ->
             koreFailWithLocations
-            [variableId]
-            ("Unquantified variable: '" ++ getId variableId ++ "'.")
+                [variableId]
+                ("Unquantified variable: '" ++ getId variableId ++ "'.")
         Just variable -> Right variable
   where
     findVariables = verifyHelpersFindDeclaredVariables verifyHelpers
