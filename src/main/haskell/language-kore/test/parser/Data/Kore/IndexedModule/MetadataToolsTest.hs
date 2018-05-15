@@ -9,18 +9,19 @@ import           Data.Kore.AST.PureToKore
 import           Data.Kore.ASTVerifier.DefinitionVerifier
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
+import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.IndexedModule.IndexedModule
 import           Data.Kore.IndexedModule.MetadataTools
+import           Data.Kore.KoreHelpers
 
+
+import qualified Data.Map                                            as Map
+import           Data.Maybe                                          (fromMaybe)
 
 import           Test.Tasty                                          (TestTree,
                                                                       testGroup)
 import           Test.Tasty.HUnit                                    (assertEqual,
                                                                       testCase)
-import           Test.Tasty.QuickCheck                               (forAll, testProperty)
-
-import qualified Data.Map                                            as Map
-import           Data.Maybe                                          (fromMaybe)
 
 objectS1 :: Sort Object
 objectS1 = simpleSort (SortName "s1")
@@ -32,7 +33,7 @@ objectA :: PureSentenceSymbol Object
 objectA = symbol_ "a" AstLocationTest [] objectS1
 
 metaA :: PureSentenceSymbol Meta
-metaA = symbol_ "a" AstLocationTest [] metaS1
+metaA = symbol_ "#a" AstLocationTest [] charListMetaSort
 
 testObjectModuleName :: ModuleName
 testObjectModuleName = ModuleName "TEST-OBJECT-MODULE"
@@ -47,7 +48,16 @@ testObjectModule :: PureModule Object
 testObjectModule =
     Module
         { moduleName = testObjectModuleName
-        , moduleSentences = [ asSentence objectA ]
+        , moduleSentences =
+            [ SentenceSortSentence
+                SentenceSort
+                    { sentenceSortName = testId "s1"
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    }
+
+            , asSentence objectA
+            ]
         , moduleAttributes = Attributes []
         }
 
@@ -98,15 +108,45 @@ metadataToolsTests :: TestTree
 metadataToolsTests =
     testGroup
         "MetadataTools unit tests"
-        [ testCase "constructor 1"
+        [ testCase "constructor object"
             (assertEqual ""
                 True
                 (isConstructor metadataTools (symbolHead objectA))
             )
-        , testCase "constructor 2"
+        , testCase "constructor meta"
             (assertEqual ""
                 True
                 (isConstructor metadataTools (symbolHead metaA))
+            )
+        , testCase "functional object"
+            (assertEqual ""
+                True
+                (isFunctional metadataTools (symbolHead metaA))
+            )
+        , testCase "functional meta"
+            (assertEqual ""
+                True
+                (isFunctional metadataTools (symbolHead metaA))
+            )
+        , testCase "getArgumentSorts object"
+            (assertEqual ""
+                []
+                (getArgumentSorts metadataTools (symbolHead objectA))
+            )
+        , testCase "getArgumentSorts meta"
+            (assertEqual ""
+                []
+                (getArgumentSorts metadataTools (symbolHead metaA))
+            )
+        , testCase "getResultSort object"
+            (assertEqual ""
+                objectS1
+                (getResultSort metadataTools (symbolHead objectA))
+            )
+        , testCase "getResultSort meta"
+            (assertEqual ""
+                charListMetaSort
+                (getResultSort metadataTools (symbolHead metaA))
             )
         ]
   where

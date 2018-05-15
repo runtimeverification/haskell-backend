@@ -69,7 +69,7 @@ getHeadApplicationSorts
     -> SymbolOrAlias level
     -> ApplicationSorts level
 getHeadApplicationSorts m patternHead =
-    case Map.lookup headName symbolsMap of
+    case resolveThing symbolsMapExtractor m headName of
         Just sentence ->
             case symbolOrAliasSorts headParams sentence of
                 Left err     -> error (printError err)
@@ -78,4 +78,4 @@ getHeadApplicationSorts m patternHead =
   where
     headName = symbolOrAliasConstructor patternHead
     headParams = symbolOrAliasParams patternHead
-    symbolsMap = symbolSentencesMap patternHead m
+    symbolsMapExtractor = symbolSentencesMap patternHead

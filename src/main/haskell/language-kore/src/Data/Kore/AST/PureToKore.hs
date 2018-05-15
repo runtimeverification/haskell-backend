@@ -71,6 +71,11 @@ sentencePureToKore (SentenceAxiomSentence msx) = asSentence SentenceAxiom
     , sentenceAxiomParameters =
         map asUnified (sentenceAxiomParameters msx)
     }
+sentencePureToKore (SentenceSortSentence mss) = asSentence SentenceSort
+    { sentenceSortName = sentenceSortName mss
+    , sentenceSortParameters = sentenceSortParameters mss
+    , sentenceSortAttributes = attributesPureToKore (sentenceSortAttributes mss)
+    }
 
 modulePureToKore
     :: MetaOrObject level => PureModule level -> KoreModule

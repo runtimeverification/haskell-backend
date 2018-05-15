@@ -1,4 +1,8 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE GADTs                #-}
+{-# LANGUAGE StandaloneDeriving   #-}
+{-# LANGUAGE UndecidableInstances #-}
+
 {-|
 Module      : Data.Kore.IndexedModule.IndexedModule
 Description : Indexed representation for a module.
@@ -42,6 +46,8 @@ import           Control.Monad                    (foldM)
 import qualified Data.Map                         as Map
 import qualified Data.Set                         as Set
 
+import           Data.Fix                         (Fix)
+
 type SortDescription level = SentenceSort level UnifiedPattern Variable
 
 {-|'IndexedModule' represents an AST 'Module' somewhat optimized for resolving
@@ -77,6 +83,11 @@ data IndexedModule sortParam pat variable = IndexedModule
     , indexedModuleImports
         :: ![(Attributes pat variable, IndexedModule sortParam pat variable)]
     }
+
+deriving instance
+    ( Show (pat variable (Fix (pat variable)))
+    , Show sortParam
+    ) => Show (IndexedModule sortParam pat variable)
 
 type KoreIndexedModule =
     IndexedModule UnifiedSortVariable UnifiedPattern Variable
