@@ -1,5 +1,5 @@
 {-|
-Module      : Data.Kore.Unification.Unifier
+Module      : Data.Kore.Unification.UnifierImpl
 Description : Datastructures and functionality for performing unification on
               Pure patterns
 Copyright   : (c) Runtime Verification, 2018

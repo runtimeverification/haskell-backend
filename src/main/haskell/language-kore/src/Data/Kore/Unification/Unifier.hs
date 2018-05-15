@@ -13,7 +13,6 @@ module Data.Kore.Unification.Unifier
     ) where
 
 import           Data.Kore.Unification.UnifierImpl as UnifierImpl (FunctionalProof (..),
-                                                                   MetadataTools (..),
                                                                    UnificationError (..),
                                                                    UnificationProof (..),
                                                                    UnificationSolution (..),
