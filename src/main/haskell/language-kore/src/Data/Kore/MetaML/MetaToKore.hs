@@ -27,7 +27,7 @@ import           Data.Fix
 patternMetaToKore :: CommonMetaPattern -> CommonKorePattern
 patternMetaToKore = cata asKorePattern
 
-patternKoreToMeta :: CommonKorePattern -> MetaMLPattern Variable
+patternKoreToMeta :: CommonKorePattern -> CommonMetaPattern
 patternKoreToMeta = patternBottomUpVisitor extractMetaPattern
 
 extractMetaPattern

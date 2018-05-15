@@ -20,7 +20,7 @@ module Data.Kore.Building.Sorts
   , ObjectSort
   , CharSort (CharSort)
   , CharListSort (CharListSort)
-  , PatternSort
+  , PatternSort (PatternSort)
   , PatternListSort
   , SortSort (SortSort)
   , SortListSort (SortListSort)
@@ -48,11 +48,11 @@ data CharListSort = CharListSort
 instance AsAst (Sort Meta) CharListSort where
     asAst _ = charListMetaSort
 
-data PatternSort
+data PatternSort = PatternSort
 instance AsAst (Sort Meta) PatternSort where
     asAst _ = patternMetaSort
 
-data PatternListSort
+data PatternListSort = PatternListSort
 instance AsAst (Sort Meta) PatternListSort where
     asAst _ = patternListMetaSort
 
