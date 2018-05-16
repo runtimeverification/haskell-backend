@@ -15,6 +15,7 @@ import           Data.Kore.Implicit.Verified               (implicitAttributesDe
                                                             implicitKoreDefinition)
 import           Data.Kore.IndentingPrinterTest
 import           Data.Kore.IndexedModule.MetadataToolsTest
+import           Data.Kore.IndexedModule.ResolversTest
 import           Data.Kore.MetaML.LiftUnliftTest
 import           Data.Kore.MetaML.UnliftTest
 import           Data.Kore.Parser.CharDictTest
@@ -81,4 +82,5 @@ unitTests =
         , unliftTests
         , unificationTests
         , metadataToolsTests
+        , resolversTests
         ]

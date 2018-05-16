@@ -31,7 +31,6 @@ module Data.Kore.IndexedModule.IndexedModule
     , indexedModuleRawSentences
     , indexModuleIfNeeded
     , metaNameForObjectSort
-    , resolveThing
     , SortDescription
     ) where
 
@@ -512,59 +511,6 @@ indexImportedModule
         nameToModule
         indexedModules
         koreModule
-
-{-|'resolveThing' looks up an id in an 'IndexedModule', also searching in the
-imported modules.
--}
-resolveThing
-    :: (IndexedModule sortParam pat variable
-        -> Map.Map (Id level) (thing level pat variable))
-    -- ^ extracts the map into which to look up the id
-    -> IndexedModule sortParam pat variable
-    -> Id level
-    -> Maybe (thing level pat variable)
-resolveThing
-    mapExtractor
-    indexedModule
-    thingId
-  =
-    fst
-        ( resolveThingInternal
-            (Nothing, Set.empty) mapExtractor indexedModule thingId
-        )
-
-resolveThingInternal
-    :: (Maybe (thing level pat variable), Set.Set ModuleName)
-    -> (IndexedModule sortParam pat variable
-        -> Map.Map (Id level) (thing level pat variable))
-    -> IndexedModule sortParam pat variable
-    -> Id level
-    -> (Maybe (thing level pat variable), Set.Set ModuleName)
-resolveThingInternal x@(Just _, _) _ _ _ = x
-resolveThingInternal x@(Nothing, searchedModules) _ indexedModule _
-    | indexedModuleName indexedModule `Set.member` searchedModules = x
-resolveThingInternal
-    (Nothing, searchedModules)
-    mapExtractor
-    indexedModule
-    thingId
-  =
-    case Map.lookup thingId things of
-        Just thing -> (Just thing, searchedModules)
-        Nothing ->
-            foldr
-                (\(_, m) partialResult -> resolveThingInternal
-                    partialResult
-                    mapExtractor
-                    m
-                    thingId
-                )
-                ( Nothing
-                , Set.insert (indexedModuleName indexedModule) searchedModules
-                )
-                (indexedModuleImports indexedModule)
-  where
-    things = mapExtractor indexedModule
 
 metaNameForObjectSort :: String -> String
 metaNameForObjectSort name = "#`" ++ name

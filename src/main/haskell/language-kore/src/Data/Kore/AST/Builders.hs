@@ -141,6 +141,39 @@ parameterizedSymbol_ name location parameters operandSorts resultSort =
         , sentenceSymbolAttributes = Attributes []
         }
 
+-- |constructs an unparameterized Alias declaration given the alias name,
+-- operand sorts and result sort.
+alias_
+    :: String
+    -> AstLocation
+    -> [Sort level]
+    -> Sort level
+    -> PureSentenceAlias level
+alias_ name location = parameterizedAlias_ name location []
+
+-- |constructs a Alias declaration given alias name, parameters,
+-- operand sorts and result sort.
+parameterizedAlias_
+    :: String
+    -> AstLocation
+    -> [SortVariable level]
+    -> [Sort level]
+    -> Sort level
+    -> PureSentenceAlias level
+parameterizedAlias_ name location parameters operandSorts resultSort =
+    SentenceAlias
+        { sentenceAliasAlias = Alias
+            { aliasConstructor = Id
+                { getId = name
+                , idLocation = location
+                }
+            , aliasParams = parameters
+            }
+        , sentenceAliasSorts = operandSorts
+        , sentenceAliasResultSort = resultSort
+        , sentenceAliasAttributes = Attributes []
+        }
+
 -- |A 'PatternStub' representing 'Bottom'.
 bottom_ :: CommonPurePatternStub level
 bottom_ = UnsortedPatternStub (BottomPattern . Bottom)
