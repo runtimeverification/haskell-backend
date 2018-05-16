@@ -13,7 +13,9 @@ Portability : portable
 module Data.Kore.AST.MLPatterns (MLPatternClass(..),
                                  MLBinderPatternClass (..),
                                  PatternFunction(..),
+                                 PatternLeveledFunction(..),
                                  applyPatternFunction,
+                                 applyPatternLeveledFunction,
                                  getPatternResultSort,
                                  undefinedHeadSort) where
 

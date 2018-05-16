@@ -1,5 +1,5 @@
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 {-|
 Module      : Data.Kore.Parser.ParserUtils
 Description : Helper tools for parsing Kore. Meant for internal use only.
@@ -13,14 +13,14 @@ Helper tools for parsing Kore. Meant for internal use only.
 -}
 module Data.Kore.Parser.ParserUtils where
 
-import           Control.Applicative        (many, (<|>))
-import           Control.Monad              (void)
-import           Data.Functor               (($>))
-import           Data.Word
-import           Data.Char                  (chr)
-import           Text.Megaparsec            (parse, Parsec, eof, lookAhead, takeWhileP)
-import qualified Text.Megaparsec.Char       as Parser
-import           Text.Megaparsec.Error      (ShowErrorComponent(..),parseErrorPretty)
+import           Control.Applicative   ((<|>))
+import           Control.Monad         (void)
+import           Data.Functor          (($>))
+import           Text.Megaparsec       (Parsec, eof, lookAhead, parse,
+                                        takeWhileP)
+import qualified Text.Megaparsec.Char  as Parser
+import           Text.Megaparsec.Error (ShowErrorComponent (..),
+                                        parseErrorPretty)
 
 type Parser = Parsec String String
 
@@ -73,7 +73,7 @@ the input characters that satisfy the given predicate and returns them
 as a string.
 -}
 takeWhile :: (Char -> Bool) -> Parser String
-takeWhile p = takeWhileP Nothing p
+takeWhile = takeWhileP Nothing
 
 {-|'endOfInput' is similar to Attoparsec's 'endOfInput'. It matches only the
 end-of-input position.
@@ -92,7 +92,7 @@ parseOnly :: Parser a -> FilePath -> String -> Either String a
 parseOnly parser filePathForErrors input =
     case parse parser filePathForErrors input of
         Left err -> Left (parseErrorPretty err)
-        Right v -> Right v
+        Right v  -> Right v
 
 {-|'manyUntilChar' parses a list of 'a' items.
 

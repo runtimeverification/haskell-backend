@@ -153,34 +153,6 @@ internalVerifyMetaPattern
     -> Either (Error VerifyError) VerifySuccess
 internalVerifyMetaPattern
     maybeExpectedSort
-    _ _ _
-    p@(StringLiteralPattern _)
-  =
-    withContext (patternNameForContext p) (do
-        sort <- verifyStringPattern
-        case maybeExpectedSort of
-            Just expectedSort ->
-                verifySameSort
-                    expectedSort
-                    (UnifiedMeta sort)
-            Nothing ->
-                verifySuccess
-    )
-internalVerifyMetaPattern
-    maybeExpectedSort
-    _ _ _
-    p@(CharLiteralPattern _)
-  =
-    withContext (patternNameForContext p) (do
-        sort <- verifyCharPattern
-        case maybeExpectedSort of
-            Just expectedSort ->
-                verifySameSort expectedSort (UnifiedMeta sort)
-            Nothing ->
-                verifySuccess
-    )
-internalVerifyMetaPattern
-    maybeExpectedSort
     indexedModule
     sortVariables
     declaredVariables
@@ -188,7 +160,7 @@ internalVerifyMetaPattern
   =
     withContext (patternNameForContext p) (do
         sort <-
-            verifyParametrizedPattern
+            verifyParameterizedPattern
                 p
                 indexedModule
                 (metaVerifyHelpers indexedModule declaredVariables)
@@ -218,19 +190,12 @@ internalVerifyObjectPattern
     p
   =
     withContext (patternNameForContext p) (do
-        maybeSort <-
-            verifyObjectPattern
-                p indexedModule verifyHelpers sortVariables declaredVariables
-        sort <-
-            case maybeSort of
-                Just s -> return s
-                Nothing ->
-                    verifyParametrizedPattern
-                        p
-                        indexedModule
-                        verifyHelpers
-                        sortVariables
-                        declaredVariables
+        sort <- verifyParameterizedPattern
+                    p
+                    indexedModule
+                    verifyHelpers
+                    sortVariables
+                    declaredVariables
         case maybeExpectedSort of
             Just expectedSort ->
                 verifySameSort
@@ -242,7 +207,10 @@ internalVerifyObjectPattern
   where
     verifyHelpers = objectVerifyHelpers indexedModule declaredVariables
 
-verifyParametrizedPattern
+newtype SortOrError level =
+    SortOrLevel { getSortOrLevel :: Either (Error VerifyError) (Sort level) }
+
+verifyParameterizedPattern
     :: MetaOrObject level
     => Pattern level Variable CommonKorePattern
     -> KoreIndexedModule
@@ -250,58 +218,23 @@ verifyParametrizedPattern
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
     -> Either (Error VerifyError) (Sort level)
-verifyParametrizedPattern (AndPattern p)         = verifyMLPattern p
-verifyParametrizedPattern (ApplicationPattern p) = verifyApplication p
-verifyParametrizedPattern (BottomPattern p)      = verifyMLPattern p
-verifyParametrizedPattern (CeilPattern p)        = verifyMLPattern p
-verifyParametrizedPattern (DomainValuePattern p) = verifyMLPattern p
-verifyParametrizedPattern (EqualsPattern p)      = verifyMLPattern p
-verifyParametrizedPattern (ExistsPattern p)      = verifyBinder p
-verifyParametrizedPattern (FloorPattern p)       = verifyMLPattern p
-verifyParametrizedPattern (ForallPattern p)      = verifyBinder p
-verifyParametrizedPattern (IffPattern p)         = verifyMLPattern p
-verifyParametrizedPattern (ImpliesPattern p)     = verifyMLPattern p
-verifyParametrizedPattern (InPattern p)          = verifyMLPattern p
-verifyParametrizedPattern (NotPattern p)         = verifyMLPattern p
-verifyParametrizedPattern (OrPattern p)          = verifyMLPattern p
-verifyParametrizedPattern (TopPattern p)         = verifyMLPattern p
-verifyParametrizedPattern (VariablePattern p)    = verifyVariableUsage p
+verifyParameterizedPattern pat indexedModule helpers sortParams vars =
+    getSortOrLevel
+    $ applyPatternLeveledFunction
+        PatternLeveledFunction
+            { patternLeveledFunctionML = \p -> SortOrLevel $
+                verifyMLPattern p indexedModule helpers sortParams vars
+            , patternLeveledFunctionMLBinder = \p -> SortOrLevel $
+                verifyBinder p indexedModule helpers sortParams vars
+            , stringLeveledFunction = const (SortOrLevel verifyStringPattern)
+            , charLeveledFunction = const (SortOrLevel verifyCharPattern)
+            , applicationLeveledFunction = \p -> SortOrLevel $
+                verifyApplication p indexedModule helpers sortParams vars
+            , variableLeveledFunction = \p -> SortOrLevel $
+                verifyVariableUsage p indexedModule helpers sortParams vars
 
-verifyObjectPattern
-    :: Pattern Object v CommonKorePattern
-    -> KoreIndexedModule
-    -> VerifyHelpers Object
-    -> Set.Set UnifiedSortVariable
-    -> DeclaredVariables
-    -> Either (Error VerifyError) (Maybe (Sort Object))
-verifyObjectPattern (NextPattern p)     = maybeVerifyMLPattern p
-verifyObjectPattern (RewritesPattern p) = maybeVerifyMLPattern p
-verifyObjectPattern _                   = rightNothing
-  where
-    rightNothing _ _ _ _ = Right Nothing
-
-maybeVerifyMLPattern
-    :: (MLPatternClass p, MetaOrObject level)
-    => p level CommonKorePattern
-    -> KoreIndexedModule
-    -> VerifyHelpers level
-    -> Set.Set UnifiedSortVariable
-    -> DeclaredVariables
-    -> Either (Error VerifyError) (Maybe (Sort level))
-maybeVerifyMLPattern
-    mlPattern
-    indexedModule
-    verifyHelpers
-    declaredSortVariables
-    declaredVariables
-  =
-    Just <$>
-        verifyMLPattern
-            mlPattern
-            indexedModule
-            verifyHelpers
-            declaredSortVariables
-            declaredVariables
+            }
+        pat
 
 verifyMLPattern
     :: (MLPatternClass p, MetaOrObject level)
@@ -523,7 +456,8 @@ verifySymbolOrAlias symbolOrAlias verifyHelpers declaredSortVariables =
             koreFailWithLocations
                 [applicationId]
                 ("Symbol '" ++ getId applicationId ++ "' not defined.")
-        -- The (Just, Just) match should be caught by the unique names check.
+        (Just _, Just _) -> error
+            "The (Just, Just) match should be caught by the unique names check."
   where
     applicationId = symbolOrAliasConstructor symbolOrAlias
     symbolLookup = verifyHelpersLookupSymbolDeclaration verifyHelpers

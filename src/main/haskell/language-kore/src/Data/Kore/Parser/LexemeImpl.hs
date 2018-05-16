@@ -236,6 +236,7 @@ charLiteralRawParser =
   where
     toCharLiteral []  = fail "'' is not a valid character literal."
     toCharLiteral [c] = return (CharLiteral c)
+    toCharLiteral _   = error "This should not have happened"
 
 stringCharLiteralRawParser
     :: Char -> StringScannerState -> (String -> Parser a) -> Parser a

@@ -15,13 +15,14 @@ module Data.Kore.IndexedModule.MetadataTools
     )
   where
 
+import qualified Data.Map                              as Map
+
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore                    (UnifiedPattern)
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTHelpers
 import           Data.Kore.Error
 import           Data.Kore.IndexedModule.IndexedModule
-import qualified Data.Map                              as Map (Map, lookup)
 
 -- |'MetadataTools' defines a dictionary of functions which can be used to
 -- access the metadata needed during the unification process.

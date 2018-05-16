@@ -307,6 +307,7 @@ postTransform (ApplicationPattern ap) = do
             (applicationSymbolOrAlias ap)
             subProofs
         )
+postTransform _ = error "Unexpected, non-application, pattern."
 
 groupSubstitutionByVariable
     :: UnificationSubstitution level -> [UnificationSubstitution level]
