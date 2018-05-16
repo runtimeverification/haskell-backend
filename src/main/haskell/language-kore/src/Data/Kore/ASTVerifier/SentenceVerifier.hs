@@ -254,7 +254,8 @@ verifySortSentence sentenceSort attributesVerification =
         (sentenceSortName sentenceSort)
         ("sort '" ++ getId (sentenceSortName sentenceSort) ++ "' declaration")
         (do
-            buildDeclaredSortVariables (sentenceSortParameters sentenceSort)
+            _ <-
+                buildDeclaredSortVariables (sentenceSortParameters sentenceSort)
             verifyAttributes
                 (sentenceSortAttributes sentenceSort)
                 attributesVerification

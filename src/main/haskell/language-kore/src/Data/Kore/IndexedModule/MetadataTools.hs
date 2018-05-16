@@ -15,8 +15,6 @@ module Data.Kore.IndexedModule.MetadataTools
     )
   where
 
-import qualified Data.Map                              as Map
-
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTHelpers
