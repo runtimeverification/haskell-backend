@@ -40,9 +40,9 @@ extractPurePattern
     -> CommonPurePattern level
 extractPurePattern level p =
   case (isMetaOrObject (Rotate31 p), isMetaOrObject (toProxy level)) of
-    (IsMeta, IsMeta)     -> Fix p
+    (IsMeta, IsMeta) -> Fix p
     (IsObject, IsObject) -> Fix p
-    _ -> error ("Unexpected non-" ++ show level ++ "object pattern")
+    _ -> error ("Undexpected non-" ++ show level ++ " pattern")
 
 attributesPureToKore
     :: MetaOrObject level => PureAttributes level -> KoreAttributes

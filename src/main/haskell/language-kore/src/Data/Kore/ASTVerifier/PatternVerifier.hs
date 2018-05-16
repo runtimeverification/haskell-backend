@@ -17,11 +17,11 @@ import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
 import           Data.Kore.ASTHelpers
 import           Data.Kore.ASTVerifier.Error
-import           Data.Kore.ASTVerifier.Resolvers
 import           Data.Kore.ASTVerifier.SortVerifier
 import           Data.Kore.Error
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.IndexedModule.IndexedModule
+import           Data.Kore.IndexedModule.Resolvers
 import           Data.Kore.Unparser.Unparse
 import           Data.Kore.Variables.Free              (freeVariables)
 
@@ -44,9 +44,9 @@ data VerifyHelpers level = VerifyHelpers
     { verifyHelpersFindSort
         :: !(Id level -> Either (Error VerifyError) (SortDescription level))
     , verifyHelpersLookupAliasDeclaration
-        :: !(Id level -> Maybe (KoreSentenceAlias level))
+        :: !(Id level -> Either (Error VerifyError) (KoreSentenceAlias level))
     , verifyHelpersLookupSymbolDeclaration
-        :: !(Id level -> Maybe (KoreSentenceSymbol level))
+        :: !(Id level -> Either (Error VerifyError) (KoreSentenceSymbol level))
     , verifyHelpersFindDeclaredVariables
         :: !(Id level -> Maybe (Variable level))
     }
@@ -54,11 +54,11 @@ data VerifyHelpers level = VerifyHelpers
 metaVerifyHelpers :: KoreIndexedModule -> DeclaredVariables -> VerifyHelpers Meta
 metaVerifyHelpers indexedModule declaredVariables =
     VerifyHelpers
-        { verifyHelpersFindSort = resolveMetaSort indexedModule
+        { verifyHelpersFindSort = resolveSort indexedModule
         , verifyHelpersLookupAliasDeclaration =
-            resolveThing indexedModuleMetaAliasSentences indexedModule
+            resolveAlias indexedModule
         , verifyHelpersLookupSymbolDeclaration =
-            resolveThing indexedModuleMetaSymbolSentences indexedModule
+            resolveSymbol indexedModule
         , verifyHelpersFindDeclaredVariables =
             flip Map.lookup (metaDeclaredVariables declaredVariables)
         }
@@ -67,11 +67,11 @@ objectVerifyHelpers
     :: KoreIndexedModule -> DeclaredVariables -> VerifyHelpers Object
 objectVerifyHelpers indexedModule declaredVariables =
     VerifyHelpers
-        { verifyHelpersFindSort = resolveObjectSort indexedModule
+        { verifyHelpersFindSort = resolveSort indexedModule
         , verifyHelpersLookupAliasDeclaration =
-            resolveThing indexedModuleObjectAliasSentences indexedModule
+            resolveAlias indexedModule
         , verifyHelpersLookupSymbolDeclaration =
-            resolveThing indexedModuleObjectSymbolSentences indexedModule
+            resolveSymbol indexedModule
         , verifyHelpersFindDeclaredVariables =
             flip Map.lookup (objectDeclaredVariables declaredVariables)
         }
@@ -398,13 +398,8 @@ verifyVariableDeclaration
     -> Either (Error VerifyError) VerifySuccess
 verifyVariableDeclaration
     variable indexedModule declaredSortVariables
-  = case isMetaOrObject variable of
-        IsObject ->
-            verifyVariableDeclarationUsing
-                declaredSortVariables (resolveObjectSort indexedModule) variable
-        IsMeta ->
-            verifyVariableDeclarationUsing
-                declaredSortVariables (resolveMetaSort indexedModule) variable
+  = verifyVariableDeclarationUsing
+        declaredSortVariables (resolveSort indexedModule) variable
 
 verifyVariableDeclarationUsing
     :: MetaOrObject level
@@ -440,24 +435,21 @@ verifySymbolOrAlias
     -> Either (Error VerifyError) (ApplicationSorts level)
 verifySymbolOrAlias symbolOrAlias verifyHelpers declaredSortVariables =
     case (maybeSentenceSymbol, maybeSentenceAlias) of
-        (Just sentenceSymbol, Nothing) ->
+        (Right sentenceSymbol, Left _) ->
             applicationSortsFromSymbolOrAliasSentence
                 symbolOrAlias
                 sentenceSymbol
                 verifyHelpers
                 declaredSortVariables
-        (Nothing, Just sentenceAlias) ->
+        (Left _, Right sentenceAlias) ->
             applicationSortsFromSymbolOrAliasSentence
                 symbolOrAlias
                 sentenceAlias
                 verifyHelpers
                 declaredSortVariables
-        (Nothing, Nothing) ->
-            koreFailWithLocations
-                [applicationId]
-                ("Symbol '" ++ getId applicationId ++ "' not defined.")
-        (Just _, Just _) -> error
-            "The (Just, Just) match should be caught by the unique names check."
+        (Left err, Left _) -> Left err
+        (Right _, Right _) -> error
+            "The (Right, Right) match should be caught by the unique names check."
   where
     applicationId = symbolOrAliasConstructor symbolOrAlias
     symbolLookup = verifyHelpersLookupSymbolDeclaration verifyHelpers

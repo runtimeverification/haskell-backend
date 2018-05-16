@@ -1,5 +1,13 @@
 module Data.Kore.IndexedModule.MetadataToolsTest where
 
+import           Test.Tasty                                          (TestTree,
+                                                                      testGroup)
+import           Test.Tasty.HUnit                                    (assertEqual,
+                                                                      testCase)
+
+import qualified Data.Map                                            as Map
+import           Data.Maybe                                          (fromMaybe)
+
 import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
@@ -14,20 +22,8 @@ import           Data.Kore.IndexedModule.IndexedModule
 import           Data.Kore.IndexedModule.MetadataTools
 import           Data.Kore.KoreHelpers
 
-
-import qualified Data.Map                                            as Map
-import           Data.Maybe                                          (fromMaybe)
-
-import           Test.Tasty                                          (TestTree,
-                                                                      testGroup)
-import           Test.Tasty.HUnit                                    (assertEqual,
-                                                                      testCase)
-
 objectS1 :: Sort Object
 objectS1 = simpleSort (SortName "s1")
-
-metaS1 :: Sort Meta
-metaS1 = simpleSort (SortName "#s1")
 
 objectA :: PureSentenceSymbol Object
 objectA = symbol_ "a" AstLocationTest [] objectS1
