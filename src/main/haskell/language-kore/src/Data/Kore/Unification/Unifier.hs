@@ -15,7 +15,6 @@ module Data.Kore.Unification.Unifier
 
 import           Data.Kore.Unification.Error       as Error (UnificationError (..))
 import           Data.Kore.Unification.UnifierImpl as UnifierImpl (FunctionalProof (..),
-                                                                   MetadataTools (..),
                                                                    UnificationProof (..),
                                                                    UnificationSolution (..),
                                                                    unificationProcedure)

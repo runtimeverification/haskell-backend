@@ -9,6 +9,7 @@ import           Test.Tasty.Runners.AntXML                           (antXMLRunn
 import           Data.Kore.Algorithm.TopologicalSortTest
 import           Data.Kore.AST.CommonTest
 import           Data.Kore.AST.MLPatternsTest
+import           Data.Kore.AST.PureToKoreTest
 import           Data.Kore.ASTHelpersTest
 import           Data.Kore.ASTPrettyPrintTest
 import           Data.Kore.ASTTraversalsTest
@@ -17,6 +18,8 @@ import           Data.Kore.Implicit.ImplicitKoreTest
 import           Data.Kore.Implicit.Verified                         (implicitAttributesDefinition,
                                                                       implicitKoreDefinition)
 import           Data.Kore.IndentingPrinterTest
+import           Data.Kore.IndexedModule.MetadataToolsTest
+import           Data.Kore.IndexedModule.ResolversTest
 import           Data.Kore.MetaML.LiftUnliftTest
 import           Data.Kore.MetaML.UnliftTest
 import           Data.Kore.Parser.CharDictTest
@@ -83,6 +86,9 @@ unitTests =
         , liftTests
         , unliftTests
         , unificationTests
+        , metadataToolsTests
+        , resolversTests
+        , pureToKoreTests
         , substitutionNormalizationTests
         , topologicalSortTest
         ]

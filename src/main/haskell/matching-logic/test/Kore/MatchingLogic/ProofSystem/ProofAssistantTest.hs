@@ -28,7 +28,8 @@ import           Data.Kore.AST.Common                         (Application (..),
                                                                asSentence)
 import           Data.Kore.AST.Kore                           (CommonKorePattern,
                                                                KoreSentenceSymbol)
-import           Data.Kore.AST.MetaOrObject                   (Meta)
+import           Data.Kore.AST.MetaOrObject                   (Meta (..))
+import           Data.Kore.AST.PureToKore
 import           Data.Kore.ASTVerifier.DefinitionVerifier     (AttributesVerification (..),
                                                                verifyAndIndexDefinition)
 import           Data.Kore.Building.AsAst
@@ -37,7 +38,6 @@ import           Data.Kore.Building.Sorts
 import           Data.Kore.Error
 import           Data.Kore.IndexedModule.IndexedModule
 import           Data.Kore.MetaML.AST                         (MetaMLPattern)
-import           Data.Kore.MetaML.MetaToKore
 
 import           Kore.MatchingLogic.Error
 import           Kore.MatchingLogic.HilbertProof              as HilbertProof (Proof (..),
@@ -2193,9 +2193,9 @@ addGoal formula (NewGoalId goalId) proof =
             (formulaVerifier defaultIndexedModule)
             proof
             (GoalId goalId)
-            -- TODO(virgil) remove this patternKoreToMeta nonsense and generate
+            -- TODO(virgil) remove this patternKoreToPure Meta nonsense and generate
             -- MetaMLPatterns directly
-            (patternKoreToMeta formula)
+            (patternKoreToPure Meta formula)
         )
 modusPonens
     :: GoalId -> GoalId -> GoalId -> MLProof -> Either String MLProof
@@ -2225,7 +2225,7 @@ proposition1 phip psip conclusionId proof =
             proof
             conclusionId
             conclusionFormula
-            (Propositional1 (patternKoreToMeta phip) (patternKoreToMeta psip))
+            (Propositional1 (patternKoreToPure Meta phip) (patternKoreToPure Meta psip))
 
 proposition2
     :: CommonKorePattern
@@ -2244,9 +2244,9 @@ proposition2 phi1p phi2p phi3p conclusionId proof =
             conclusionId
             conclusionFormula
             (Propositional2
-                (patternKoreToMeta phi1p)
-                (patternKoreToMeta phi2p)
-                (patternKoreToMeta phi3p)
+                (patternKoreToPure Meta phi1p)
+                (patternKoreToPure Meta phi2p)
+                (patternKoreToPure Meta phi3p)
             )
 
 proposition3
@@ -2264,7 +2264,7 @@ proposition3 phi1p phi2p conclusionId proof =
             proof
             conclusionId
             conclusionFormula
-            (Propositional3 (patternKoreToMeta phi1p) (patternKoreToMeta phi2p))
+            (Propositional3 (patternKoreToPure Meta phi1p) (patternKoreToPure Meta phi2p))
 
 variableSubstitution
     :: SubstitutingVariable (Variable Meta)
@@ -2286,7 +2286,7 @@ variableSubstitution
             conclusionFormula
             (VariableSubstitution
                 substituted
-                (patternKoreToMeta unsubstitutedPattern)
+                (patternKoreToPure Meta unsubstitutedPattern)
                 substituting
             )
 
@@ -2309,7 +2309,7 @@ forallRule
             conclusionId
             conclusionFormula
             (ForallRule
-                variable (patternKoreToMeta phi1p) (patternKoreToMeta phi2p)
+                variable (patternKoreToPure Meta phi1p) (patternKoreToPure Meta phi2p)
             )
 
 generalization
@@ -2342,7 +2342,7 @@ propagateOr symbol idx phi1p phi2p conclusionId proof =
             conclusionId
             conclusionFormula
             (PropagateOr
-                symbol idx (patternKoreToMeta phi1p) (patternKoreToMeta phi2p)
+                symbol idx (patternKoreToPure Meta phi1p) (patternKoreToPure Meta phi2p)
             )
 
 propagateExists
@@ -2361,7 +2361,7 @@ propagateExists symbol idx variable phip conclusionId proof =
             proof
             conclusionId
             conclusionFormula
-            (PropagateExists symbol idx variable (patternKoreToMeta phip))
+            (PropagateExists symbol idx variable (patternKoreToPure Meta phip))
 
 framing
     :: SymbolOrAlias Meta
@@ -2411,7 +2411,7 @@ singvar variable phip path1 path2 conclusionId proof =
             proof
             conclusionId
             conclusionFormula
-            (Singvar variable (patternKoreToMeta phip) path1 path2)
+            (Singvar variable (patternKoreToPure Meta phip) path1 path2)
 
 -- Inefficient implementation, but good enough for tests.
 goalState :: GoalId -> MLProof -> Maybe GoalMLProofState
@@ -2707,7 +2707,7 @@ goalAssertion goalId pattern1 proof =
     case lookupGoal goalId proof of
         Nothing -> Left ("Goal with id " ++ show goalId ++ " not found.")
         Just actualPattern ->
-            if actualPattern /= patternKoreToMeta pattern1
+            if actualPattern /= patternKoreToPure Meta pattern1
                 then Left ("the actual goal is" ++ show actualPattern)
                 else Right proof
 

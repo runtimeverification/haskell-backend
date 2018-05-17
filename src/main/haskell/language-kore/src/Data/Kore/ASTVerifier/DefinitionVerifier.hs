@@ -28,7 +28,6 @@ import           Data.Kore.Implicit.Definitions           (uncheckedAttributesDe
 import           Data.Kore.IndexedModule.IndexedModule
 
 import qualified Data.Map                                 as Map
-import qualified Data.Set                                 as Set
 
 {-|'verifyDefinition' verifies the welformedness of a Kore 'Definition'.
 

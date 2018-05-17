@@ -13,14 +13,15 @@ import           Data.Kore.AST.Common                   (And (..),
 import qualified Data.Kore.AST.Common                   as Common (Forall (..))
 import           Data.Kore.AST.Kore                     (CommonKorePattern,
                                                          UnifiedPattern)
-import           Data.Kore.AST.MetaOrObject             (Meta, Unified (..))
+import           Data.Kore.AST.MetaOrObject             (Meta (..),
+                                                         Unified (..))
+import           Data.Kore.AST.PureToKore               (patternKoreToPure,
+                                                         patternPureToKore)
 import           Data.Kore.ASTVerifier.PatternVerifier  (verifyPattern)
 import           Data.Kore.Error
 import           Data.Kore.IndexedModule.IndexedModule  (KoreIndexedModule)
 import           Data.Kore.MetaML.AST                   (CommonMetaPattern,
                                                          metaFreeVariables)
-import           Data.Kore.MetaML.MetaToKore            (patternKoreToMeta,
-                                                         patternMetaToKore)
 import           Data.Kore.Substitution.Class           (PatternSubstitutionClass (..))
 import qualified Data.Kore.Substitution.List            as Substitution
 import           Data.Kore.Unparser.Unparse             (Unparse,
@@ -53,7 +54,7 @@ formulaVerifier indexedModule formula = do
         )
     return ()
   where
-    unifiedFormula = patternMetaToKore formula
+    unifiedFormula = patternPureToKore formula
 
 -- TODO(virgil): Check that symbols and not aliases are used in a few places
 -- like checkSingvar
@@ -329,12 +330,12 @@ checkVariableSubstitution
     afterSubstitution <-
         -- TODO(virgil): this meta-to-kore and kore-to-meta transformation is
         -- a hack, I should make substitutions work on all kinds of patterns.
-        patternKoreToMeta <$>
+        patternKoreToPure Meta <$>
             substitute
-                (patternMetaToKore beforeSubstitution)
+                (patternPureToKore beforeSubstitution)
                 (Substitution.fromList
                     [   ( UnifiedMeta substituted
-                        , patternMetaToKore
+                        , patternPureToKore
                             substitutingPattern
                         )
                     ]

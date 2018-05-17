@@ -13,12 +13,12 @@ import           Data.Kore.AST.Common                            (AstLocation (.
                                                                   Variable)
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML                            (CommonPurePattern)
+import           Data.Kore.AST.PureToKore                        (patternKoreToPure)
 import           Data.Kore.Building.AsAst
 import           Data.Kore.Building.Patterns
 import           Data.Kore.Building.Sorts
 import           Data.Kore.Error
 import           Data.Kore.MetaML.AST                            (CommonMetaPattern)
-import           Data.Kore.MetaML.MetaToKore                     (patternKoreToMeta)
 import           Data.Kore.Unification.Error                     (UnificationError)
 import           Data.Kore.Unification.SubstitutionNormalization
 import           Data.Kore.Unification.UnifierImpl               (UnificationSubstitution)
@@ -156,7 +156,7 @@ substitutionNormalizationTests =
     x1 = metaVariable "x1" AstLocationTest
     asPureMetaPattern
         :: ProperPattern level sort patt => patt -> CommonMetaPattern
-    asPureMetaPattern patt = patternKoreToMeta (asAst patt)
+    asPureMetaPattern patt = patternKoreToPure Meta (asAst patt)
 
 runNormalizeSubstitution
     :: MetaOrObject level

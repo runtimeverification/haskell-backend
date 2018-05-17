@@ -21,10 +21,10 @@ import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTVerifier.AttributesVerifier
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.PatternVerifier
-import           Data.Kore.ASTVerifier.Resolvers
 import           Data.Kore.ASTVerifier.SortVerifier
 import           Data.Kore.Error
 import           Data.Kore.IndexedModule.IndexedModule
+import           Data.Kore.IndexedModule.Resolvers
 
 import qualified Data.Map                                 as Map
 import qualified Data.Set                                 as Set
@@ -133,7 +133,7 @@ verifyMetaSentence
     (SentenceAliasSentence aliasSentence)
   =
     verifySymbolAliasSentence
-        (resolveMetaSort indexedModule)
+        (resolveSort indexedModule)
         indexedModule
         attributesVerification
         aliasSentence
@@ -143,7 +143,7 @@ verifyMetaSentence
     (SentenceSymbolSentence symbolSentence)
   =
     verifySymbolAliasSentence
-        (resolveMetaSort indexedModule)
+        (resolveSort indexedModule)
         indexedModule
         attributesVerification
         symbolSentence
@@ -169,7 +169,7 @@ verifyObjectSentence
     (SentenceAliasSentence aliasSentence)
   =
     verifySymbolAliasSentence
-        (resolveObjectSort indexedModule)
+        (resolveSort indexedModule)
         indexedModule
         attributesVerification
         aliasSentence
@@ -179,7 +179,7 @@ verifyObjectSentence
     (SentenceSymbolSentence symbolSentence)
   =
     verifySymbolAliasSentence
-        (resolveObjectSort indexedModule)
+        (resolveSort indexedModule)
         indexedModule
         attributesVerification
         symbolSentence
