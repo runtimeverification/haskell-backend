@@ -1,9 +1,12 @@
-import           Test.Tasty                                (TestTree, testGroup)
+import           Test.Tasty                                          (TestTree,
+                                                                      testGroup)
 
-import           Test.Tasty.Runners                        (consoleTestReporter, defaultMainWithIngredients,
-                                                            listingTests)
-import           Test.Tasty.Runners.AntXML                 (antXMLRunner)
+import           Test.Tasty.Runners                                  (consoleTestReporter,
+                                                                      defaultMainWithIngredients,
+                                                                      listingTests)
+import           Test.Tasty.Runners.AntXML                           (antXMLRunner)
 
+import           Data.Kore.Algorithm.TopologicalSortTest
 import           Data.Kore.AST.CommonTest
 import           Data.Kore.AST.MLPatternsTest
 import           Data.Kore.AST.PureToKoreTest
@@ -12,8 +15,8 @@ import           Data.Kore.ASTPrettyPrintTest
 import           Data.Kore.ASTTraversalsTest
 import           Data.Kore.ASTVerifier.ASTVerifierTest
 import           Data.Kore.Implicit.ImplicitKoreTest
-import           Data.Kore.Implicit.Verified               (implicitAttributesDefinition,
-                                                            implicitKoreDefinition)
+import           Data.Kore.Implicit.Verified                         (implicitAttributesDefinition,
+                                                                      implicitKoreDefinition)
 import           Data.Kore.IndentingPrinterTest
 import           Data.Kore.IndexedModule.MetadataToolsTest
 import           Data.Kore.IndexedModule.ResolversTest
@@ -27,6 +30,7 @@ import           Data.Kore.Parser.ParserTest
 import           Data.Kore.Parser.RegressionTest
 import           Data.Kore.Substitution.ClassTest
 import           Data.Kore.Substitution.ListTest
+import           Data.Kore.Unification.SubstitutionNormalizationTest
 import           Data.Kore.Unification.UnifierTest
 import           Data.Kore.Unparser.UnparseTest
 import           Data.Kore.Variables.Fresh.IntCounterTest
@@ -85,4 +89,6 @@ unitTests =
         , metadataToolsTests
         , resolversTests
         , pureToKoreTests
+        , substitutionNormalizationTests
+        , topologicalSortTest
         ]
