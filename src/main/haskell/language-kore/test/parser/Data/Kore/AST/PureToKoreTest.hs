@@ -63,7 +63,7 @@ pureToKoreTests =
                                     :: KoreSentenceImport
                                     )
                                 ]
-      }
+                            }
 
                         ]
                     }
