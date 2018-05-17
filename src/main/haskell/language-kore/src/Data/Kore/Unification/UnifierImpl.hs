@@ -14,11 +14,12 @@ import           Data.Kore.AST.Common
 import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.PureML
 import           Data.Kore.FixTraversals
+import           Data.Kore.Unification.Error
 
-import           Control.Monad            (foldM)
+import           Control.Monad               (foldM)
 import           Data.Fix
-import           Data.Function            (on)
-import           Data.List                (groupBy, partition, sortBy)
+import           Data.Function               (on)
+import           Data.List                   (groupBy, partition, sortBy)
 
 type UnificationSubstitution level = [(Variable level, CommonPurePattern level)]
 
@@ -129,18 +130,6 @@ data FunctionalProof level
     | FunctionalHead (SymbolOrAlias level)
     -- ^Head of a total function, conforming to Definition 5.21
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
-  deriving (Eq, Show)
-
--- |'UnificationError' specifies various error cases encountered during
--- unification
-data UnificationError level
-    = ConstructorClash (SymbolOrAlias level) (SymbolOrAlias level)
-    | SortClash (Sort level) (Sort level)
-    | NonConstructorHead (SymbolOrAlias level)
-    | NonFunctionalHead (SymbolOrAlias level)
-    | NonFunctionalPattern
-    | UnsupportedPatterns
-    | EmptyPatternList
   deriving (Eq, Show)
 
 -- checks whether a pattern is functional or not

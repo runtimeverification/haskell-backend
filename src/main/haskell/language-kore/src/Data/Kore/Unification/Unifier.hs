@@ -10,11 +10,12 @@ Portability : portable
 -}
 module Data.Kore.Unification.Unifier
     ( module UnifierImpl
+    , module Error
     ) where
 
+import           Data.Kore.Unification.Error       as Error (UnificationError (..))
 import           Data.Kore.Unification.UnifierImpl as UnifierImpl (FunctionalProof (..),
                                                                    MetadataTools (..),
-                                                                   UnificationError (..),
                                                                    UnificationProof (..),
                                                                    UnificationSolution (..),
                                                                    unificationProcedure)
