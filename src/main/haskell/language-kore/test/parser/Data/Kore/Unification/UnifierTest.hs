@@ -17,6 +17,7 @@ import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.IndexedModule.MetadataTools
 import           Data.Kore.KoreHelpers
+import           Data.Kore.Unification.Error
 import           Data.Kore.Unification.UnifierImpl
 
 import           Data.Fix

@@ -13,7 +13,14 @@ The name of the functions defined below are self-explanatory. They link
 'Data.Kore.AST.Kore'
 
 -}
-module Data.Kore.AST.PureToKore where
+module Data.Kore.AST.PureToKore
+    ( patternPureToKore
+    , attributesPureToKore
+    , sentencePureToKore
+    , modulePureToKore
+    , definitionPureToKore
+    , patternKoreToPure
+    ) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
@@ -28,6 +35,11 @@ patternPureToKore
     :: MetaOrObject level => CommonPurePattern level -> CommonKorePattern
 patternPureToKore = cata asKorePattern
 
+-- |Given a level, this function attempts to extract a pure patten
+-- of this level from a KorePattern.
+-- Note that this function does not lift the term, but rather fails with
+-- 'error' any part of the pattern if of a different level.
+-- For lifting functions see 'Data.Kore.MetaML.Lift'.
 patternKoreToPure
     :: MetaOrObject level
     => level -> CommonKorePattern -> CommonPurePattern level
