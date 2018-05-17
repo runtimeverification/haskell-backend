@@ -6,6 +6,7 @@ import           Test.Tasty.Runners.AntXML                 (antXMLRunner)
 
 import           Data.Kore.AST.CommonTest
 import           Data.Kore.AST.MLPatternsTest
+import           Data.Kore.AST.PureToKoreTest
 import           Data.Kore.ASTHelpersTest
 import           Data.Kore.ASTPrettyPrintTest
 import           Data.Kore.ASTTraversalsTest
@@ -83,4 +84,5 @@ unitTests =
         , unificationTests
         , metadataToolsTests
         , resolversTests
+        , pureToKoreTests
         ]
