@@ -1,4 +1,14 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-|
+Module      : Data.Kore.Unification.SubstitutionNormalization
+Description : Normalization for substitutions resulting from unification, so
+              that they can be safely used on the unified term.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : virgil.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : portable
+-}
 module Data.Kore.Unification.SubstitutionNormalization
     (normalizeSubstitution)
   where
@@ -29,6 +39,16 @@ instance
         IntCounter
   where
 
+{--| 'normalizeSubstitution' transforms a substitution into an equivalent one
+in which no variable that occurs on the left hand side also occurs on the
+right side.
+
+Returns an error when the substitution is not normalizable (i.e. it contains
+x = f(x) or something equivalent).
+
+Also returns an error when the substitution contains x = x, although that
+should be solvable.
+--}
 normalizeSubstitution
     :: MetaOrObject level
     => UnificationSubstitution level

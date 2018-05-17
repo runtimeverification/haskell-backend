@@ -1,4 +1,14 @@
+
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-|
+Module      : Data.Kore.Algorithm.TopologicalSort
+Description : Topological sorting algorithm.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : virgil.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : portable
+-}
 module Data.Kore.Algorithm.TopologicalSort
     (topologicalSort)
   where
@@ -9,6 +19,15 @@ import qualified Data.Set                    as Set
 import           Data.Kore.Error
 import           Data.Kore.HaskellExtensions
 
+{--| 'topologicalSort' sorts a graph topologically, starting with nodes which
+have no 'next' nodes.
+
+The graph is provided as a map form nodes to the list of their adjacent 'next'
+nodes. All nodes must be present as keys in the map, even if they have no 'next'
+nodes.
+
+Returns an error for graphs that have cycles.
+--}
 topologicalSort
     :: Ord node
     => Map.Map node [node]
@@ -19,8 +38,8 @@ topologicalSort edges nodePrinter =
         topologicalSortReversed
             nodePrinter (Map.keys edges) edges Set.empty emptyReversedList
 {-
-    Data.Graph would be nice in theory but its topsort does not fail for
-    unsortable graphs.
+    Data.Graph would be nice in theory (see the reminder of this comment),
+    but its topSort function does not fail for unsortable graphs.
 
 topologicalSort edges =
     map indexNode (Graph.topSort graph)
