@@ -208,7 +208,7 @@ internalVerifyObjectPattern
     verifyHelpers = objectVerifyHelpers indexedModule declaredVariables
 
 newtype SortOrError level =
-    SortOrLevel { getSortOrLevel :: Either (Error VerifyError) (Sort level) }
+    SortOrError { getSortOrError :: Either (Error VerifyError) (Sort level) }
 
 verifyParameterizedPattern
     :: MetaOrObject level
@@ -219,18 +219,18 @@ verifyParameterizedPattern
     -> DeclaredVariables
     -> Either (Error VerifyError) (Sort level)
 verifyParameterizedPattern pat indexedModule helpers sortParams vars =
-    getSortOrLevel
+    getSortOrError
     $ applyPatternLeveledFunction
         PatternLeveledFunction
-            { patternLeveledFunctionML = \p -> SortOrLevel $
+            { patternLeveledFunctionML = \p -> SortOrError $
                 verifyMLPattern p indexedModule helpers sortParams vars
-            , patternLeveledFunctionMLBinder = \p -> SortOrLevel $
+            , patternLeveledFunctionMLBinder = \p -> SortOrError $
                 verifyBinder p indexedModule helpers sortParams vars
-            , stringLeveledFunction = const (SortOrLevel verifyStringPattern)
-            , charLeveledFunction = const (SortOrLevel verifyCharPattern)
-            , applicationLeveledFunction = \p -> SortOrLevel $
+            , stringLeveledFunction = const (SortOrError verifyStringPattern)
+            , charLeveledFunction = const (SortOrError verifyCharPattern)
+            , applicationLeveledFunction = \p -> SortOrError $
                 verifyApplication p indexedModule helpers sortParams vars
-            , variableLeveledFunction = \p -> SortOrLevel $
+            , variableLeveledFunction = \p -> SortOrError $
                 verifyVariableUsage p indexedModule helpers sortParams vars
 
             }
