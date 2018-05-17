@@ -21,7 +21,7 @@ module Data.Kore.Building.Sorts
   , CharSort (CharSort)
   , CharListSort (CharListSort)
   , PatternSort (PatternSort)
-  , PatternListSort
+  , PatternListSort (PatternListSort)
   , SortSort (SortSort)
   , SortListSort (SortListSort)
   , VariableSort

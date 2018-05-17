@@ -1,10 +1,10 @@
 module Data.Kore.IndentingPrinterTest (indentingPrinterTests) where
 
 import           Data.Kore.IndentingPrinter
-import           Data.List (intersperse)
+import           Data.List                  (intersperse)
 
-import           Test.Tasty                       (TestTree, testGroup)
-import           Test.Tasty.HUnit                 (assertEqual, testCase)
+import           Test.Tasty                 (TestTree, testGroup)
+import           Test.Tasty.HUnit           (assertEqual, testCase)
 
 class TestPrinter a where
     testPrint :: PrinterOutput w m => a -> m ()
@@ -47,7 +47,7 @@ indentingPrinterTests =
             "Simple serialization"
             (assertEqual "Expecting no frills serialization!"
                 "10"
-                (testPrintToString (toInteger 10))
+                (testPrintToString (10 :: Integer))
             )
         , testCase
             "Serialization with multiple lines"

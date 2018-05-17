@@ -1046,7 +1046,9 @@ instance
     unifyMetaPattern p =
         case isMetaOrObject (Proxy :: Proxy level) of
             IsMeta   -> p
+            IsObject -> error "Expecting Meta pattern"
     unifyObjectPattern p =
         case isMetaOrObject (Proxy :: Proxy level) of
-            IsObject   -> p
+            IsObject -> p
+            IsMeta   -> error "Expecting Object pattern"
     unifiedPatternApply = id

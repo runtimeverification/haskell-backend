@@ -528,3 +528,4 @@ unificationTests =
     symbolHead symbol = getSentenceSymbolOrAliasHead symbol []
     var ps = case unFix (extractPurePattern ps) of
         VariablePattern v -> v
+        _                 -> error "Expecting a variable"

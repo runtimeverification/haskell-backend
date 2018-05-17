@@ -741,7 +741,8 @@ instance MetaOrObject level => PrettyPrint (UnificationError level) where
     prettyPrint flags (NonFunctionalHead h) =
         writeOneFieldStruct flags "NonFunctionalHead" h
     prettyPrint _ NonFunctionalPattern = write "NonFunctionalPattern"
-    prettyPrint _ UnsupportedPatterns  = write "UnsupportedPatterns"
+    prettyPrint _ UnsupportedPatterns = write "UnsupportedPatterns"
+    prettyPrint _ EmptyPatternList = write "EmptyPatternList"
 
 instance MetaOrObject level => PrettyPrint (FunctionalProof level) where
     prettyPrint flags (FunctionalVariable v) =

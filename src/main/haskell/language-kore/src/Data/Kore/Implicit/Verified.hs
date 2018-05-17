@@ -30,7 +30,7 @@ import           Data.Kore.MetaML.AST
 checkedMetaDefinition :: Either (Error VerifyError) MetaDefinition
 checkedMetaDefinition = do
     attributesVerification <- defaultAttributesVerification
-    verifyImplicitKoreDefinition
+    _ <- verifyImplicitKoreDefinition
         attributesVerification
         (definitionPureToKore uncheckedMetaDefinition)
     return uncheckedMetaDefinition
@@ -48,7 +48,7 @@ implicitMetaDefinition =
 checkedKoreDefinition :: Either (Error VerifyError) KoreDefinition
 checkedKoreDefinition = do
     attributesVerification <- defaultAttributesVerification
-    verifyImplicitKoreDefinition
+    _ <- verifyImplicitKoreDefinition
         attributesVerification
         uncheckedKoreDefinition
     return uncheckedKoreDefinition
@@ -66,7 +66,7 @@ implicitKoreDefinition =
 checkedAttributesDefinition :: Either (Error VerifyError) KoreDefinition
 checkedAttributesDefinition = do
     attributesVerification <- defaultAttributesVerification
-    verifyNormalKoreDefinition
+    _ <- verifyNormalKoreDefinition
         attributesVerification
         uncheckedAttributesDefinition
     return uncheckedAttributesDefinition

@@ -53,7 +53,7 @@ verifyDefinition
     -> KoreDefinition
     -> Either (Error VerifyError) VerifySuccess
 verifyDefinition attributesVerification definition = do
-    verifyAndIndexDefinition attributesVerification definition
+    _ <- verifyAndIndexDefinition attributesVerification definition
     verifySuccess
 
 {-|'verifyAndIndexDefinition' verifies a definition and returns an indexed
