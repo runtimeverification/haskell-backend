@@ -74,7 +74,9 @@ mlPatternsTests =
                     charListMetaSort
                     (getPatternResultSort
                         undefinedHeadSort
-                        (StringLiteralPattern (StringLiteral "Hello!"))
+                        (StringLiteralPattern (StringLiteral "Hello!")
+                        :: UnFixedPureMLPattern Meta Variable
+                        )
                     )
                 )
             , testCase "CharLiteral"
@@ -82,7 +84,9 @@ mlPatternsTests =
                     charMetaSort
                     (getPatternResultSort
                         undefinedHeadSort
-                        (CharLiteralPattern (CharLiteral 'h'))
+                        (CharLiteralPattern (CharLiteral 'h')
+                        :: UnFixedPureMLPattern Meta Variable
+                        )
                     )
                 )
             , testCase "Variable"

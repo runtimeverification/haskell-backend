@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
 {-|
@@ -106,3 +107,65 @@ type PurePatternStub level variable =
 
 type CommonPurePatternStub level =
     PurePatternStub level Variable
+
+{--| 'mapPatternVariables' replaces all variables in a 'PureMLPattern'
+using the provided mapping.
+--}
+mapPatternVariables
+    :: (variableFrom level -> variableTo level)
+    -> PureMLPattern level variableFrom
+    -> PureMLPattern level variableTo
+mapPatternVariables mapper = cata (mapPatternVariable mapper)
+
+{--| 'mapPatternVariables' replaces the variables occurring directly
+(i.e. without recursion) in a 'Pattern', using the provided mapping.
+--}
+mapPatternVariable
+    :: (variableFrom level -> variableTo level)
+    -> Pattern level variableFrom (PureMLPattern level variableTo)
+    -> PureMLPattern level variableTo
+mapPatternVariable _ (AndPattern (And a b c)) =
+    Fix (AndPattern (And a b c))
+mapPatternVariable _ (ApplicationPattern (Application a b)) =
+    Fix (ApplicationPattern (Application a b))
+mapPatternVariable _ (BottomPattern (Bottom a)) =
+    Fix (BottomPattern (Bottom a))
+mapPatternVariable _ (CeilPattern (Ceil a b c)) =
+    Fix (CeilPattern (Ceil a b c))
+mapPatternVariable _ (DomainValuePattern (DomainValue a b)) =
+    Fix (DomainValuePattern (DomainValue a b))
+mapPatternVariable _ (EqualsPattern (Equals a b c d)) =
+    Fix (EqualsPattern (Equals a b c d))
+mapPatternVariable wrapper (ExistsPattern exists) =
+    Fix (ExistsPattern exists
+        { existsVariable = wrapper (existsVariable exists)
+        }
+    )
+mapPatternVariable _ (FloorPattern (Floor a b c)) =
+    Fix (FloorPattern (Floor a b c))
+mapPatternVariable wrapper (ForallPattern forall) =
+    Fix (ForallPattern forall
+        { forallVariable = wrapper (forallVariable forall)}
+    )
+mapPatternVariable _ (IffPattern (Iff a b c)) =
+    Fix (IffPattern (Iff a b c))
+mapPatternVariable _ (ImpliesPattern (Implies a b c)) =
+    Fix (ImpliesPattern (Implies a b c))
+mapPatternVariable _ (InPattern (In a b c d)) =
+    Fix (InPattern (In a b c d))
+mapPatternVariable _ (NextPattern (Next a b)) =
+    Fix (NextPattern (Next a b))
+mapPatternVariable _ (NotPattern (Not a b)) =
+    Fix (NotPattern (Not a b))
+mapPatternVariable _ (OrPattern (Or a b c)) =
+    Fix (OrPattern (Or a b c))
+mapPatternVariable _ (RewritesPattern (Rewrites a b c)) =
+    Fix (RewritesPattern (Rewrites a b c))
+mapPatternVariable _ (StringLiteralPattern (StringLiteral a)) =
+    Fix (StringLiteralPattern (StringLiteral a))
+mapPatternVariable _ (CharLiteralPattern (CharLiteral a)) =
+    Fix (CharLiteralPattern (CharLiteral a))
+mapPatternVariable _ (TopPattern (Top a)) =
+    Fix (TopPattern (Top a))
+mapPatternVariable wrapper (VariablePattern variable) =
+    Fix (VariablePattern (wrapper variable))

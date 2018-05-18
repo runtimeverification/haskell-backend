@@ -7,7 +7,6 @@ import           Test.Tasty.HUnit                    (assertEqual, testCase)
 import qualified Data.Map                            as Map
 
 import           Data.Kore.Algorithm.TopologicalSort
-import           Data.Kore.Error
 
 topologicalSortTest :: TestTree
 topologicalSortTest =
@@ -18,7 +17,6 @@ topologicalSortTest =
                 (Right [])
                 (topologicalSort
                     (Map.empty :: Map.Map Integer [Integer])
-                    show
                 )
             )
         , testCase "One node"
@@ -26,7 +24,6 @@ topologicalSortTest =
                 (Right [1])
                 (topologicalSort
                     (Map.fromList [(1, [])] :: Map.Map Integer [Integer])
-                    show
                 )
             )
         , testCase "Two ordered nodes"
@@ -39,7 +36,6 @@ topologicalSortTest =
                         ]
                     :: Map.Map Integer [Integer]
                     )
-                    show
                 )
             )
         , testCase "Three ordered nodes, minimal edges"
@@ -53,7 +49,6 @@ topologicalSortTest =
                         ]
                     :: Map.Map Integer [Integer]
                     )
-                    show
                 )
             )
         , testCase "Three nodes, one lower than the others"
@@ -67,7 +62,6 @@ topologicalSortTest =
                         ]
                     :: Map.Map Integer [Integer]
                     )
-                    show
                 )
             )
         , testCase "Three nodes, total order"
@@ -81,7 +75,6 @@ topologicalSortTest =
                         ]
                     :: Map.Map Integer [Integer]
                     )
-                    show
                 )
             )
         , testCase "Four nodes, diamond"
@@ -96,36 +89,22 @@ topologicalSortTest =
                         ]
                     :: Map.Map Integer [Integer]
                     )
-                    show
                 )
             )
         , testCase "Simple cycle"
             (assertEqual ""
-                (Left
-                    (Error
-                        []
-                        "Graph cycle starting at 1 and containing [\"1\"]."
-                    )
-                )
+                (Left (ToplogicalSortCycle [1, 1]))
                 (topologicalSort
                     (Map.fromList
                         [ (1, [1])
                         ]
                     :: Map.Map Integer [Integer]
                     )
-                    show
                 )
             )
         , testCase "Long cycle"
             (assertEqual ""
-                (Left
-                    (Error
-                        []
-                        (  "Graph cycle starting at 1 and containing "
-                        ++ "[\"1\",\"2\",\"3\"]."
-                        )
-                    )
-                )
+                (Left (ToplogicalSortCycle [1, 2, 3, 1]))
                 (topologicalSort
                     (Map.fromList
                         [ (1, [2])
@@ -134,7 +113,19 @@ topologicalSortTest =
                         ]
                     :: Map.Map Integer [Integer]
                     )
-                    show
+                )
+            )
+        , testCase "Cycle not starting at the first visited node"
+            (assertEqual ""
+                (Left (ToplogicalSortCycle [2, 3, 2]))
+                (topologicalSort
+                    (Map.fromList
+                        [ (1, [2])
+                        , (2, [3])
+                        , (3, [2])
+                        ]
+                    :: Map.Map Integer [Integer]
+                    )
                 )
             )
         ]

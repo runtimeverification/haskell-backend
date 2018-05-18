@@ -16,6 +16,8 @@ Portability : portable
 -}
 module Data.Kore.Variables.Free ( freeVariables
                                 , pureFreeVariables
+                                , allVariables
+                                , pureAllVariables
                                 ) where
 
 import           Data.Fix                   (Fix)
@@ -27,9 +29,7 @@ import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTTraversals
 
-{-| 'TermWithVariableClass' links a @term@ type with a @var@ type and
-provides 'freeVariables' for extracting the set of free variables of a term
--}
+{-| 'freeVariables' extracts the set of free variables of a pattern. -}
 freeVariables
     :: ( UnifiedPatternInterface pat
        , Functor (pat var)
@@ -44,6 +44,24 @@ freeVariables = patternBottomUpVisitor freeVarsVisitor
     freeVarsVisitor (ForallPattern f) =
         Set.delete (asUnified (forallVariable f)) (forallChild f)
     freeVarsVisitor p = fold p  -- default rule
+
+{-| 'allVariables' extracts all variables in a pattern as a set, regardless of
+whether they are quantified or not.
+-}
+allVariables
+    :: ( UnifiedPatternInterface pat
+       , Functor (pat var)
+       , Ord (var Object)
+       , Ord (var Meta))
+    => Fix (pat var) -> Set.Set (Unified var)
+allVariables = patternBottomUpVisitor allVarsVisitor
+  where
+    allVarsVisitor (VariablePattern v) = Set.singleton (asUnified v)
+    allVarsVisitor (ExistsPattern e) =
+        Set.insert (asUnified (existsVariable e)) (existsChild e)
+    allVarsVisitor (ForallPattern f) =
+        Set.insert (asUnified (forallVariable f)) (forallChild f)
+    allVarsVisitor p = fold p  -- default rule
 
 pureFreeVariables
     :: ( UnifiedPatternInterface pat
@@ -63,6 +81,30 @@ pureFreeVariables level p =
     isUnifiedMeta (UnifiedMeta _) = True
     isUnifiedMeta _               = False
     (unifiedMetaVars, unifiedObjectVars) = Set.partition isUnifiedMeta freeVars
+    metaVars = Set.map (\ (UnifiedMeta v) -> v) unifiedMetaVars
+    objectVars = Set.map (\ (UnifiedObject v) -> v) unifiedObjectVars
+
+{-| 'allVariables' extracts all variables of a given level in a pattern as a
+set, regardless of whether they are quantified or not.
+-}
+pureAllVariables
+    :: ( UnifiedPatternInterface pat
+       , Functor (pat var)
+       , Show (var Object)
+       , Show (var Meta)
+       , Ord (var Object)
+       , Ord (var Meta)
+       , MetaOrObject level)
+    => level -> Fix (pat var) -> Set.Set (var level)
+pureAllVariables level p =
+    case isMetaOrObject (toProxy level) of
+        IsMeta   -> metaVars `ifSetEmpty` unifiedObjectVars
+        IsObject -> objectVars `ifSetEmpty` unifiedMetaVars
+  where
+    allVars = allVariables p
+    isUnifiedMeta (UnifiedMeta _) = True
+    isUnifiedMeta _               = False
+    (unifiedMetaVars, unifiedObjectVars) = Set.partition isUnifiedMeta allVars
     metaVars = Set.map (\ (UnifiedMeta v) -> v) unifiedMetaVars
     objectVars = Set.map (\ (UnifiedObject v) -> v) unifiedObjectVars
 

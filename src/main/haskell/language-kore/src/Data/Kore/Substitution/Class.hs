@@ -14,6 +14,7 @@ Portability : portable
 -}
 module Data.Kore.Substitution.Class ( SubstitutionClass (..)
                                     , PatternSubstitutionClass (..)
+                                    , Hashable (..)
                                     ) where
 
 import           Control.Monad.Reader              (ReaderT, ask, asks, local,
