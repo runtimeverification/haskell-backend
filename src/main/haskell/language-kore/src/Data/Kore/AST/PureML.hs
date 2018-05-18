@@ -64,19 +64,22 @@ type PureDefinition level =
     Definition
         (Sentence level) (SortVariable level) (Pattern level) Variable
 
--- |Given a 'String', 'groundHead' produces the head of an 'Application'
--- corresponding to that argument.  @level@ is inferred from context.
-groundHead :: String -> SymbolOrAlias level
-groundHead ctor = SymbolOrAlias
-    { symbolOrAliasConstructor = Id ctor
+-- |Given an 'Id', 'groundHead' produces the head of an 'Application'
+-- corresponding to that argument.
+groundHead :: String -> AstLocation -> SymbolOrAlias level
+groundHead ctor location = SymbolOrAlias
+    { symbolOrAliasConstructor = Id
+        { getId = ctor
+        , idLocation = location
+        }
     , symbolOrAliasParams = []
     }
 
--- |Given a 'String', 'groundSymbol' produces the unparameterized 'Symbol'
--- corresponding to that argument.  @level@ is inferred from context.
-groundSymbol :: String -> Symbol level
+-- |Given an 'Id', 'groundSymbol' produces the unparameterized 'Symbol'
+-- corresponding to that argument.
+groundSymbol :: Id level -> Symbol level
 groundSymbol ctor = Symbol
-    { symbolConstructor = Id ctor
+    { symbolConstructor = ctor
     , symbolParams = []
     }
 

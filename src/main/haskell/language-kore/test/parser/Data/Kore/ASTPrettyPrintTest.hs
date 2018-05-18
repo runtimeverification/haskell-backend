@@ -8,6 +8,7 @@ import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.Implicit.ImplicitSorts (charMetaSort)
+import           Data.Kore.KoreHelpers
 import           Data.Kore.MetaML.AST
 
 import           Data.Fix                         (Fix (..))
@@ -23,16 +24,16 @@ astPrettyPrintTests =
         , testCase "Meta unified variable"
             (assertEqual ""
                 (  "UnifiedMeta Variable\n"
-                ++ "    { variableName = Id \"#v\" :: Id Meta\n"
+                ++ "    { variableName = (Id \"#v\" AstLocationNone) :: Id Meta\n"
                 ++ "    , variableSort =\n"
-                ++ "        SortVariableSort (SortVariable (Id \"#sv\" :: Id Meta))\n"
+                ++ "        SortVariableSort (SortVariable ((Id \"#sv\" AstLocationNone) :: Id Meta))\n"
                 ++ "    }"
                 )
                 (prettyPrintToString
                     (UnifiedMeta Variable
-                        { variableName = Id "#v"
+                        { variableName = testId "#v"
                         , variableSort =
-                            SortVariableSort (SortVariable (Id "#sv"))
+                            SortVariableSort (SortVariable (testId "#sv"))
                         }
                     )
                 )
@@ -40,25 +41,25 @@ astPrettyPrintTests =
         , testCase "Object unified variable"
             (assertEqual ""
                 (  "UnifiedObject Variable\n"
-                ++ "    { variableName = Id \"v\" :: Id Object\n"
+                ++ "    { variableName = (Id \"v\" AstLocationNone) :: Id Object\n"
                 ++ "    , variableSort =\n"
-                ++ "        SortVariableSort (SortVariable (Id \"sv\" :: Id Object))\n"
+                ++ "        SortVariableSort (SortVariable ((Id \"sv\" AstLocationNone) :: Id Object))\n"
                 ++ "    }"
                 )
                 (prettyPrintToString
                     (UnifiedObject Variable
-                        { variableName = Id "v"
+                        { variableName = testId "v"
                         , variableSort =
-                            SortVariableSort (SortVariable (Id "sv"))
+                            SortVariableSort (SortVariable (testId "sv"))
                         }
                     )
                 )
             )
         , testCase "Maybe - Just"
             (assertEqual ""
-                "Just (Id \"v\" :: Id Object)"
+                "Just ((Id \"v\" AstLocationNone) :: Id Object)"
                 (prettyPrintToString
-                    (Just (Id "v" :: Id Object))
+                    (Just (testId "v" :: Id Object))
                 )
             )
         , testCase "Maybe - Nothing"
@@ -69,7 +70,7 @@ astPrettyPrintTests =
             , testCase "MetaMLPattern - Top"
             (assertEqual ""
                 (  "Fix (TopPattern (Top (SortActualSort SortActual\n"
-                ++ "    { sortActualName = Id \"#Char\" :: Id Meta\n"
+                ++ "    { sortActualName = (Id \"#Char\" AstLocationNone) :: Id Meta\n"
                 ++ "    , sortActualSorts = []\n"
                 ++ "    })))"
                 )

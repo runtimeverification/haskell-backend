@@ -1,12 +1,13 @@
 module Data.Kore.ASTHelpersTest (astHelperTests) where
 
-import           Test.Tasty           (TestTree, testGroup)
-import           Test.Tasty.HUnit     (assertEqual, testCase)
+import           Test.Tasty            (TestTree, testGroup)
+import           Test.Tasty.HUnit      (assertEqual, testCase)
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.ASTHelpers
 import           Data.Kore.Error
+import           Data.Kore.KoreHelpers
 
 astHelperTests :: TestTree
 astHelperTests =
@@ -105,7 +106,7 @@ symbolOrAliasSortsTests =
 
 sortVariable :: String -> SortVariable level
 sortVariable name =
-    SortVariable { getSortVariable = Id name }
+    SortVariable { getSortVariable = testId name }
 
 sortVariableSort :: String -> Sort level
 sortVariableSort name =
@@ -114,7 +115,7 @@ sortVariableSort name =
 sortActual :: String -> [Sort level] -> Sort level
 sortActual name sorts =
     SortActualSort SortActual
-        { sortActualName = Id name
+        { sortActualName = testId name
         , sortActualSorts = sorts
         }
 
@@ -134,7 +135,7 @@ symbolSentence
 symbolSentence sortParameters operandSorts resultSort =
     SentenceSymbol
         { sentenceSymbolSymbol     = Symbol
-            { symbolConstructor = Id "symb"
+            { symbolConstructor = testId "symb"
             , symbolParams = sortParameters
             }
         , sentenceSymbolSorts      = operandSorts

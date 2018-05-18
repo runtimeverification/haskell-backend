@@ -16,6 +16,7 @@ module Data.Kore.Implicit.Verified
     where
 
 import           Data.Kore.AST.Kore                       (KoreDefinition)
+import           Data.Kore.AST.PureToKore
 import           Data.Kore.ASTVerifier.DefinitionVerifier (defaultAttributesVerification,
                                                            verifyImplicitKoreDefinition,
                                                            verifyNormalKoreDefinition)
@@ -25,14 +26,13 @@ import           Data.Kore.Implicit.Definitions           (uncheckedAttributesDe
                                                            uncheckedKoreDefinition,
                                                            uncheckedMetaDefinition)
 import           Data.Kore.MetaML.AST
-import           Data.Kore.MetaML.MetaToKore
 
 checkedMetaDefinition :: Either (Error VerifyError) MetaDefinition
 checkedMetaDefinition = do
     attributesVerification <- defaultAttributesVerification
-    verifyImplicitKoreDefinition
+    _ <- verifyImplicitKoreDefinition
         attributesVerification
-        (definitionMetaToKore uncheckedMetaDefinition)
+        (definitionPureToKore uncheckedMetaDefinition)
     return uncheckedMetaDefinition
 
 {-| 'implicitMetaDefinition' is a definition with everything Meta
@@ -48,7 +48,7 @@ implicitMetaDefinition =
 checkedKoreDefinition :: Either (Error VerifyError) KoreDefinition
 checkedKoreDefinition = do
     attributesVerification <- defaultAttributesVerification
-    verifyImplicitKoreDefinition
+    _ <- verifyImplicitKoreDefinition
         attributesVerification
         uncheckedKoreDefinition
     return uncheckedKoreDefinition
@@ -66,7 +66,7 @@ implicitKoreDefinition =
 checkedAttributesDefinition :: Either (Error VerifyError) KoreDefinition
 checkedAttributesDefinition = do
     attributesVerification <- defaultAttributesVerification
-    verifyNormalKoreDefinition
+    _ <- verifyNormalKoreDefinition
         attributesVerification
         uncheckedAttributesDefinition
     return uncheckedAttributesDefinition

@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs             #-}
 {-|
 Module      : Data.Kore.Parser.LexemeImpl
 Description : Lexical unit definitions for Kore and simple ways of composing
@@ -38,14 +38,29 @@ import           Data.Kore.Parser.ParserUtils as ParserUtils
 
 import           Control.Arrow                ((&&&))
 import           Control.Monad                (void, when)
-import           Control.Monad.Combinators    ((<|>),manyTill)
+import           Control.Monad.Combinators    (manyTill, (<|>))
 import qualified Data.ByteString.Char8        as Char8
 import           Data.Char                    (isHexDigit, isOctDigit)
 import           Data.Maybe                   (isJust)
 import qualified Data.Trie                    as Trie
-import           Text.Megaparsec              (takeWhileP,(<?>),eof)
+import           Text.Megaparsec              (SourcePos (..), eof, getPosition,
+                                               unPos)
+import qualified Text.Megaparsec.Char         as Parser (anyChar, char, space1,
+                                                         string)
 import qualified Text.Megaparsec.Char.Lexer   as L
-import qualified Text.Megaparsec.Char         as Parser (char, string, anyChar, space1)
+
+sourcePosToFileLocation :: SourcePos -> FileLocation
+sourcePosToFileLocation
+    SourcePos
+        { sourceName = name
+        , sourceLine = line'
+        , sourceColumn = column'
+        }
+  = FileLocation
+    { fileName = name
+    , line     = unPos line'
+    , column   = unPos column'
+    }
 
 {-|'idParser' parses either an @object-identifier@, or a @meta-identifier@.
 
@@ -56,8 +71,20 @@ idParser :: MetaOrObject level
          -> Parser (Id level)
 idParser x =
   case isMetaOrObject (toProxy x) of
-    IsObject -> Id <$> lexeme (objectIdRawParser KeywordsForbidden)
-    IsMeta   -> Id <$> lexeme metaIdRawParser
+    IsObject -> do
+        pos <- sourcePosToFileLocation <$> getPosition
+        name <- lexeme (objectIdRawParser KeywordsForbidden)
+        return Id
+            { getId = name
+            , idLocation = AstLocationFile pos
+            }
+    IsMeta -> do
+        pos <- sourcePosToFileLocation <$> getPosition
+        name <- lexeme metaIdRawParser
+        return Id
+            { getId = name
+            , idLocation = AstLocationFile pos
+            }
 
 {-|'stringLiteralParser' parses a C-style string literal, unescaping it.
 
@@ -139,12 +166,14 @@ moduleNameRawParser =
     genericIdRawParser
         moduleNameFirstCharSet moduleNameCharSet KeywordsForbidden
 
+{-# ANN idFirstChars ("HLint: ignore Use String" :: String) #-}
 idFirstChars :: [Char]
 idFirstChars = ['A'..'Z'] ++ ['a'..'z']
 
 idFirstCharSet :: CharSet
 idFirstCharSet = CharSet.makeCharSet idFirstChars
 
+{-# ANN idOtherChars ("HLint: ignore Use String" :: String) #-}
 idOtherChars :: [Char]
 idOtherChars = ['0'..'9'] ++ "'-"
 
@@ -207,6 +236,7 @@ charLiteralRawParser =
   where
     toCharLiteral []  = fail "'' is not a valid character literal."
     toCharLiteral [c] = return (CharLiteral c)
+    toCharLiteral _   = error "This should not have happened"
 
 stringCharLiteralRawParser
     :: Char -> StringScannerState -> (String -> Parser a) -> Parser a

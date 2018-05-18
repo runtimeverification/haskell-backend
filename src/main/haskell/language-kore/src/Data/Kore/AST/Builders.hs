@@ -18,8 +18,12 @@ import           Data.Kore.Error
 
 {-|'sortParameter' defines a sort parameter that can be used in declarations.
 -}
-sortParameter :: level -> String -> SortVariable level
-sortParameter _ name = SortVariable (Id name)
+sortParameter :: level -> String -> AstLocation -> SortVariable level
+sortParameter _ name location =
+    SortVariable Id
+        { getId = name
+        , idLocation = location
+        }
 
 {-|'applyPS' applies a symbol or alias declared by a given sentence to a list
 of operands, using the provided sort arguments.
@@ -75,46 +79,99 @@ isImplicitHead sentence = (== getSentenceSymbolOrAliasHead sentence [])
 sort_ :: MetaSortType -> Sort level
 sort_ sortType =
     SortActualSort SortActual
-        { sortActualName = Id (show sortType)
+        { sortActualName = Id
+            { getId = show sortType
+            , idLocation = AstLocationImplicit
+            }
         , sortActualSorts = []
         }
 
 -- |Given a string @name@, yields the 'UnsortedPatternStub' defining
 -- name as a variable.
-unparameterizedVariable_ :: String -> CommonPurePatternStub level
-unparameterizedVariable_ name =
+unparameterizedVariable_ :: String -> AstLocation -> CommonPurePatternStub level
+unparameterizedVariable_ name location =
     UnsortedPatternStub
         (\sortS ->
             VariablePattern Variable
-                { variableName = Id name
+                { variableName = Id
+                    { getId = name
+                    , idLocation = location
+                    }
                 , variableSort = sortS
                 }
         )
 
 -- |Given a 'Sort' @sort@ and a string @name@, yields 'PatternStub' defining
 -- name as a variable of sort @sort@.
-parameterizedVariable_ :: Sort level -> String -> CommonPurePatternStub level
-parameterizedVariable_ sort = withSort sort . unparameterizedVariable_
+parameterizedVariable_
+    :: Sort level -> String -> AstLocation -> CommonPurePatternStub level
+parameterizedVariable_ sort name location =
+    withSort sort (unparameterizedVariable_ name location)
 
 -- |constructs an unparameterized Symbol declaration given the symbol name,
 -- operand sorts and result sort.
-symbol_ :: String -> [Sort level] -> Sort level -> PureSentenceSymbol level
-symbol_ name = parameterizedSymbol_ name []
+symbol_
+    :: String
+    -> AstLocation
+    -> [Sort level]
+    -> Sort level
+    -> PureSentenceSymbol level
+symbol_ name location = parameterizedSymbol_ name location []
 
 -- |constructs a Symbol declaration given symbol name, parameters,
 -- operand sorts and result sort.
 parameterizedSymbol_
-    :: String -> [SortVariable level] -> [Sort level] -> Sort level
+    :: String
+    -> AstLocation
+    -> [SortVariable level]
+    -> [Sort level]
+    -> Sort level
     -> PureSentenceSymbol level
-parameterizedSymbol_ name parameters operandSorts resultSort =
+parameterizedSymbol_ name location parameters operandSorts resultSort =
     SentenceSymbol
         { sentenceSymbolSymbol = Symbol
-            { symbolConstructor = Id name
+            { symbolConstructor = Id
+                { getId = name
+                , idLocation = location
+                }
             , symbolParams = parameters
             }
         , sentenceSymbolSorts = operandSorts
         , sentenceSymbolResultSort = resultSort
         , sentenceSymbolAttributes = Attributes []
+        }
+
+-- |constructs an unparameterized Alias declaration given the alias name,
+-- operand sorts and result sort.
+alias_
+    :: String
+    -> AstLocation
+    -> [Sort level]
+    -> Sort level
+    -> PureSentenceAlias level
+alias_ name location = parameterizedAlias_ name location []
+
+-- |constructs a Alias declaration given alias name, parameters,
+-- operand sorts and result sort.
+parameterizedAlias_
+    :: String
+    -> AstLocation
+    -> [SortVariable level]
+    -> [Sort level]
+    -> Sort level
+    -> PureSentenceAlias level
+parameterizedAlias_ name location parameters operandSorts resultSort =
+    SentenceAlias
+        { sentenceAliasAlias = Alias
+            { aliasConstructor = Id
+                { getId = name
+                , idLocation = location
+                }
+            , aliasParams = parameters
+            }
+        , sentenceAliasSorts = operandSorts
+        , sentenceAliasResultSort = resultSort
+        , sentenceAliasAttributes = Attributes []
         }
 
 -- |A 'PatternStub' representing 'Bottom'.
@@ -123,7 +180,7 @@ bottom_ = UnsortedPatternStub (BottomPattern . Bottom)
 
 -- |A 'PatternStub' representing 'Top'.
 top_ :: CommonPurePatternStub level
-top_ = UnsortedPatternStub (BottomPattern . Bottom)
+top_ = UnsortedPatternStub (TopPattern . Top)
 
 -- |Builds a 'PatternStub' representing 'Equals' given the sort of the
 -- operands and their corresponding 'PatternStub's.
@@ -299,5 +356,17 @@ not_ =
             NotPattern Not
                 { notSort   = sortS
                 , notChild  = pattern1
+                }
+        )
+
+-- |Builds a 'PatternStub' representing 'Next' given a 'PatternStub' for
+-- its operand.
+next_ :: CommonPurePatternStub Object -> CommonPurePatternStub Object
+next_ =
+    unaryPattern
+        (\sortS pattern1 ->
+            NextPattern Next
+                { nextSort   = sortS
+                , nextChild  = pattern1
                 }
         )

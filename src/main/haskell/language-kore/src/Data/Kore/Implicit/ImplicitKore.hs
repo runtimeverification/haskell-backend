@@ -31,6 +31,7 @@ module Data.Kore.Implicit.ImplicitKore ( uncheckedKoreModule
 import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.PureML                    (PureSentenceSymbol)
 import           Data.Kore.Implicit.ImplicitKoreImpl
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.Implicit.ImplicitVarsInternal
@@ -53,34 +54,53 @@ way, e.g. sort_.
 
 -}
 
-epsilon = symbol_ "#epsilon" [] stringMetaSort
+implicitSymbol
+    :: String
+    -> [Sort level]
+    -> Sort level
+    -> PureSentenceSymbol level
+implicitSymbol name = symbol_ name AstLocationImplicit
+
+implicitParameterizedSymbol
+    :: String
+    -> [SortVariable level]
+    -> [Sort level]
+    -> Sort level
+    -> PureSentenceSymbol level
+implicitParameterizedSymbol name = parameterizedSymbol_ name AstLocationImplicit
+
+epsilon = implicitSymbol "#epsilon" [] stringMetaSort
 epsilonA = applyS epsilon []
 epsilonAxiom = equalsAxiom epsilonA nilCharListA
 
-sort = symbol_ "#sort" [stringMetaSort, sortListMetaSort] sortMetaSort
+sort = implicitSymbol "#sort" [stringMetaSort, sortListMetaSort] sortMetaSort
 sortA = applyS sort
 
 symbol =
-    symbol_
+    implicitSymbol
         "#symbol"
         [stringMetaSort, sortListMetaSort, sortListMetaSort, sortMetaSort]
         symbolMetaSort
 symbolA = applyS symbol
 
-getArgumentSorts = symbol_ "#getArgumentSorts" [symbolMetaSort] sortListMetaSort
+getArgumentSorts =
+    implicitSymbol "#getArgumentSorts" [symbolMetaSort] sortListMetaSort
 getArgumentSortsA = applyS getArgumentSorts
 getArgumentSortsAxiom =
     equalsAxiom (getArgumentSortsA [symbolA [vf, vS, vS', vs]]) vS'
 
-getReturnSort = symbol_ "#getReturnSort" [symbolMetaSort] sortMetaSort
+getReturnSort = implicitSymbol "#getReturnSort" [symbolMetaSort] sortMetaSort
 getReturnSortA = applyS getReturnSort
 getReturnSortAxiom =
     equalsAxiom (getReturnSortA [symbolA [vf, vS, vS', vs]]) vs
 
-variable = symbol_ "#variable" [stringMetaSort, sortMetaSort] variableMetaSort
+variable =
+    implicitSymbol "#variable" [stringMetaSort, sortMetaSort] variableMetaSort
 variableA = applyS variable
 
-applicationP = symbol_ "#application" [symbolMetaSort, patternListMetaSort] patternMetaSort
+applicationP =
+    implicitSymbol
+        "#application" [symbolMetaSort, patternListMetaSort] patternMetaSort
 applicationA = applyS applicationP
 
 mlPatternA :: MLPatternType -> ([MetaPatternStub] -> MetaPatternStub)
@@ -88,73 +108,73 @@ mlPatternA patternType = applyS (mlPatternP patternType)
 
 mlPatternP :: MLPatternType -> MetaSentenceSymbol
 mlPatternP AndPatternType =
-    symbol_
+    implicitSymbol
         "#\\and"
         [sortMetaSort, patternMetaSort, patternMetaSort]
         patternMetaSort
 mlPatternP BottomPatternType =
-    symbol_ "#\\bottom" [sortMetaSort] patternMetaSort
+    implicitSymbol "#\\bottom" [sortMetaSort] patternMetaSort
 mlPatternP CeilPatternType =
-    symbol_
+    implicitSymbol
         "#\\ceil"
         [sortMetaSort, sortMetaSort, patternMetaSort]
         patternMetaSort
 mlPatternP DomainValuePatternType =
-    symbol_
+    implicitSymbol
         "#\\dv"
         [sortMetaSort, stringMetaSort]
         patternMetaSort
 mlPatternP EqualsPatternType =
-    symbol_
+    implicitSymbol
         "#\\equals"
         [sortMetaSort, sortMetaSort, patternMetaSort, patternMetaSort]
         patternMetaSort
 mlPatternP ExistsPatternType =
-    symbol_
+    implicitSymbol
         "#\\exists"
         [sortMetaSort, variableMetaSort, patternMetaSort]
         patternMetaSort
 mlPatternP FloorPatternType =
-    symbol_
+    implicitSymbol
         "#\\floor"
         [sortMetaSort, sortMetaSort, patternMetaSort]
         patternMetaSort
 mlPatternP ForallPatternType =
-    symbol_
+    implicitSymbol
         "#\\forall"
         [sortMetaSort, variableMetaSort, patternMetaSort]
         patternMetaSort
 mlPatternP IffPatternType =
-    symbol_
+    implicitSymbol
         "#\\iff"
         [sortMetaSort, patternMetaSort, patternMetaSort]
         patternMetaSort
 mlPatternP ImpliesPatternType =
-    symbol_
+    implicitSymbol
         "#\\implies"
         [sortMetaSort, patternMetaSort, patternMetaSort]
         patternMetaSort
 mlPatternP InPatternType =
-    symbol_
+    implicitSymbol
         "#\\in"
         [sortMetaSort, sortMetaSort, patternMetaSort, patternMetaSort]
         patternMetaSort
 mlPatternP NextPatternType =
-    symbol_ "#\\next" [sortMetaSort, patternMetaSort] patternMetaSort
+    implicitSymbol "#\\next" [sortMetaSort, patternMetaSort] patternMetaSort
 mlPatternP NotPatternType =
-    symbol_ "#\\not" [sortMetaSort, patternMetaSort] patternMetaSort
+    implicitSymbol "#\\not" [sortMetaSort, patternMetaSort] patternMetaSort
 mlPatternP OrPatternType =
-    symbol_
+    implicitSymbol
         "#\\or"
         [sortMetaSort, patternMetaSort, patternMetaSort]
         patternMetaSort
 mlPatternP RewritesPatternType =
-    symbol_
+    implicitSymbol
         "#\\rewrites"
         [sortMetaSort, patternMetaSort, patternMetaSort]
         patternMetaSort
 mlPatternP TopPatternType =
-    symbol_ "#\\top" [sortMetaSort] patternMetaSort
+    implicitSymbol "#\\top" [sortMetaSort] patternMetaSort
 
 [ andA, bottomA, ceilA, _, equalsA, existsA, floorA, forallA, iffA, impliesA,
   inA, _, notA, orA, _, topA] = map mlPatternA allPatternTypes
@@ -163,7 +183,7 @@ mlPatternP TopPatternType =
   inP, _, notP, orP, _, topP] = map mlPatternP allPatternTypes
 
 variableAsPattern =
-    symbol_ "#variableAsPattern" [variableMetaSort] patternMetaSort
+    implicitSymbol "#variableAsPattern" [variableMetaSort] patternMetaSort
 variableAsPatternA = applyS variableAsPattern
 variableAsPatternAxiom =
     parameterizedAxiom
@@ -180,7 +200,9 @@ variableAsPatternAxiom =
             )
         )
 
-variablePattern = symbol_ "#variablePattern" [stringMetaSort, sortMetaSort] patternMetaSort
+variablePattern =
+    implicitSymbol
+        "#variablePattern" [stringMetaSort, sortMetaSort] patternMetaSort
 variablePatternA = applyS variablePattern
 variablePatternAxiom =
     equalsAxiom
@@ -227,9 +249,9 @@ patternAxioms =
         (notA [vs, topA [vs]])
     ]
 
-getFV = symbol_ "#getFV" [patternMetaSort] variableListMetaSort
+getFV = implicitSymbol "#getFV" [patternMetaSort] variableListMetaSort
 getFVA = applyS getFV
-getFVFromPatterns = symbol_ "#getFVFromPatterns" [patternListMetaSort] variableListMetaSort
+getFVFromPatterns = implicitSymbol "#getFVFromPatterns" [patternListMetaSort] variableListMetaSort
 getFVFromPatternsA = applyS getFVFromPatterns
 
 getFVAxioms =
@@ -256,14 +278,16 @@ getFVAxioms =
         (appendVariableListA [getFVA [vphi], getFVFromPatternsA [vL]])
     ]
 
-occursFree = parameterizedSymbol_ "#occursFree" [pS] [variableMetaSort, patternMetaSort] spS
+occursFree =
+    implicitParameterizedSymbol
+        "#occursFree" [pS] [variableMetaSort, patternMetaSort] spS
 occursFreeA = applyPS occursFree
 occursFreeAxiom =
     parameterizedEqualsAxiom [pS]
         (occursFreeA [spS] [v, vphi])
         (inVariableListA [spS] [v, getFVA [vphi]])
 
-freshName = symbol_ "#freshName" [patternListMetaSort] stringMetaSort
+freshName = implicitSymbol "#freshName" [patternListMetaSort] stringMetaSort
 freshNameA = applyS freshName
 freshNameAxiom =
     parameterizedAxiom [pS]
@@ -273,10 +297,14 @@ freshNameAxiom =
             )
         )
 
-substitute = symbol_ "#substitute" [patternMetaSort, patternMetaSort, variableMetaSort] patternMetaSort
+substitute =
+    implicitSymbol
+        "#substitute"
+        [patternMetaSort, patternMetaSort, variableMetaSort]
+        patternMetaSort
 substituteA = applyS substitute
 substitutePatterns =
-    symbol_ "#substitutePatterns"
+    implicitSymbol "#substitutePatterns"
         [patternListMetaSort, patternMetaSort, variableMetaSort]
         patternListMetaSort
 substitutePatternsA = applyS substitutePatterns
@@ -353,17 +381,18 @@ alphaEquivalenceAxiom =
 
 -- 7.6 Matching Logic Theories
 
-sortDeclared = parameterizedSymbol_ "#sortDeclared" [pS] [sortMetaSort] spS
+sortDeclared =
+    implicitParameterizedSymbol "#sortDeclared" [pS] [sortMetaSort] spS
 sortDeclaredA = applyPS sortDeclared
 symbolDeclared =
-    parameterizedSymbol_ "#symbolDeclared" [pS] [symbolMetaSort] spS
+    implicitParameterizedSymbol "#symbolDeclared" [pS] [symbolMetaSort] spS
 symbolDeclaredA = applyPS symbolDeclared
 axiomDeclared =
-    parameterizedSymbol_ "#axiomDeclared" [pS] [patternMetaSort] spS
+    implicitParameterizedSymbol "#axiomDeclared" [pS] [patternMetaSort] spS
 axiomDeclaredA = applyPS axiomDeclared
 
 sortsDeclared =
-    parameterizedSymbol_ "#sortsDeclared" [pS] [sortListMetaSort] spS
+    implicitParameterizedSymbol "#sortsDeclared" [pS] [sortListMetaSort] spS
 sortsDeclaredA = applyPS sortsDeclared
 sortsDeclaredAxioms =
     [ parameterizedAxiom [pS] (sortsDeclaredA [spS] [nilSortListA])
@@ -380,7 +409,8 @@ ceilBTDeclaredAxiom =
         )
 
 wellFormedPatterns =
-    parameterizedSymbol_ "#wellFormedPatterns" [pS] [patternListMetaSort] spS
+    implicitParameterizedSymbol
+        "#wellFormedPatterns" [pS] [patternListMetaSort] spS
 wellFormedPatternsA = applyPS wellFormedPatterns
 wellFormedPatternsAxioms =
     [ parameterizedAxiom [pS]
@@ -390,10 +420,12 @@ wellFormedPatternsAxioms =
         (and_ (wellFormedA [spS] [vphi]) (wellFormedPatternsA [spS] [vL]))
     ]
 
-getSort = symbol_ "#getSort" [patternMetaSort] sortMetaSort
+getSort = implicitSymbol "#getSort" [patternMetaSort] sortMetaSort
 getSortA = applyS getSort
 
-getSortsFromPatterns = symbol_ "#getSortsFromPatterns" [patternListMetaSort] sortListMetaSort
+getSortsFromPatterns =
+    implicitSymbol
+        "#getSortsFromPatterns" [patternListMetaSort] sortListMetaSort
 getSortsFromPatternsA = applyS getSortsFromPatterns
 getSortsFromPattersAxioms =
     [ equalsAxiom
@@ -497,7 +529,8 @@ wellFormedImpliesProvableAxiom pattern1 =
             (provableA [spS] [pattern1])
         )
 
-wellFormed = parameterizedSymbol_ "#wellFormed" [pS] [patternMetaSort] spS
+wellFormed =
+    implicitParameterizedSymbol "#wellFormed" [pS] [patternMetaSort] spS
 wellFormedA = applyPS wellFormed
 
 char_ :: Char -> MetaPatternStub
@@ -523,13 +556,16 @@ patternList_ = foldr (\p ps -> consPatternListA [p, ps]) nilPatternListA
 stringVariable_ :: String -> Variable Meta
 stringVariable_ name =
     Variable
-        { variableName = Id name
+        { variableName = Id
+            { getId = name
+            , idLocation = AstLocationImplicit
+            }
         , variableSort = stringMetaSort
         }
 
 -- 7.7 Matching logic Proof System
 
-provable = parameterizedSymbol_ "#provable" [pS] [patternMetaSort] spS
+provable = implicitParameterizedSymbol "#provable" [pS] [patternMetaSort] spS
 provableA = applyPS provable
 
 propositionalLogicAxioms =
@@ -812,7 +848,7 @@ axiomAxiom =
             )
         )
 
-ceilBT = symbol_ "#`ceil" [sortMetaSort, sortMetaSort] symbolMetaSort
+ceilBT = implicitSymbol "#`ceil" [sortMetaSort, sortMetaSort] symbolMetaSort
 ceilBTA = applyS ceilBT
 ceilBTAxiom =
     equalsAxiom

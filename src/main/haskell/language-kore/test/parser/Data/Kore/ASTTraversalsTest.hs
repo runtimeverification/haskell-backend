@@ -7,6 +7,7 @@ import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTTraversals
+import           Data.Kore.KoreHelpers
 
 import           Control.Monad.Identity
 
@@ -18,7 +19,7 @@ lhs = patternTopDownVisitor leftImplies asKorePattern
     leftImplies p                   = Right p
 
 lhs2 :: CommonKorePattern -> CommonKorePattern
-lhs2 = runIdentity . (patternBottomUpVisitorM leftImplies)
+lhs2 = runIdentity . patternBottomUpVisitorM leftImplies
   where
     leftImplies (ImpliesPattern ip) = return (impliesFirst ip)
     leftImplies p                   = return (asKorePattern p)
@@ -42,7 +43,7 @@ astTraversalsTests =
     samplePatternExpected =
         asKorePattern $ ApplicationPattern Application
             { applicationSymbolOrAlias = SymbolOrAlias
-                { symbolOrAliasConstructor = Id "sigma"
+                { symbolOrAliasConstructor = testId "sigma"
                 , symbolOrAliasParams = []
                 } :: SymbolOrAlias Object
             , applicationChildren =
@@ -53,13 +54,13 @@ astTraversalsTests =
     samplePattern =
         asKorePattern $ ApplicationPattern Application
             { applicationSymbolOrAlias = SymbolOrAlias
-                { symbolOrAliasConstructor = Id "sigma"
+                { symbolOrAliasConstructor = testId "sigma"
                 , symbolOrAliasParams = []
                 } :: SymbolOrAlias Object
             , applicationChildren =
                 [ asKorePattern $ ImpliesPattern Implies
                     { impliesSort = SortVariableSort $ SortVariable $
-                        Id "#a" :: Sort Meta
+                        testId "#a" :: Sort Meta
                     , impliesFirst = asKorePattern $ StringLiteralPattern
                         (StringLiteral "left1")
                     , impliesSecond = asKorePattern $ StringLiteralPattern
@@ -67,7 +68,7 @@ astTraversalsTests =
                     }
                 ,  asKorePattern $ ImpliesPattern Implies
                     { impliesSort = SortVariableSort $ SortVariable $
-                        Id "#b" :: Sort Meta
+                        testId "#b" :: Sort Meta
                     , impliesFirst = asKorePattern $ StringLiteralPattern
                         (StringLiteral "left2")
                     , impliesSecond = asKorePattern $ StringLiteralPattern
