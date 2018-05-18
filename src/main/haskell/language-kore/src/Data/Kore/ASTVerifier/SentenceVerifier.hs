@@ -80,7 +80,7 @@ definedNamesForMetaSentence (SentenceSymbolSentence sentenceSymbol) =
 definedNamesForMetaSentence (SentenceImportSentence _) = []
 definedNamesForMetaSentence (SentenceAxiomSentence _)  = []
 definedNamesForMetaSentence (SentenceSortSentence sentenceSort)  =
-  [ getId (sentenceSortName sentenceSort) ]
+  [ toUnparameterizedId (sentenceSortName sentenceSort) ]
 
 definedNamesForObjectSentence
     :: Sentence Object sortParam pat variable -> [UnparameterizedId]

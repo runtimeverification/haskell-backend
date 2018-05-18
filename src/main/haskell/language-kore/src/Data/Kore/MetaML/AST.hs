@@ -46,6 +46,8 @@ type MetaSentenceAlias = PureSentenceAlias Meta
 type MetaSentenceSymbol = PureSentenceSymbol Meta
 -- |'MetaSentenceImport' is the 'Meta'-only version of 'SentenceImport'
 type MetaSentenceImport = PureSentenceImport Meta
+-- |'MetaSentenceImport' is the 'Meta'-only version of 'SentenceImport'
+type MetaSentenceSort = PureSentenceSort Meta
 
 -- |'MetaSentence' is the 'Meta'-only version of 'Sentence'
 type MetaSentence = PureSentence Meta
@@ -55,6 +57,7 @@ instance AsSentence MetaSentence MetaSentenceImport where
 
 instance AsSentence MetaSentence MetaSentenceAxiom where
     asSentence = SentenceAxiomSentence
+
 
 -- |'MetaModule' is the 'Meta'-only version of 'Module'.
 type MetaModule = PureModule Meta
