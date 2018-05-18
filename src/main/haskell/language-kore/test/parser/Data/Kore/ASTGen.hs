@@ -10,6 +10,7 @@ import           Data.Fix
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.KoreHelpers
 import           Data.Kore.Parser.LexemeImpl
 
 couple :: Gen a -> Gen [a]
@@ -34,8 +35,8 @@ genericIdGen firstChars nextChars = do
 
 idGen :: MetaOrObject level => level -> Gen (Id level)
 idGen x
-    | isObject x = Id <$> objectId
-    | otherwise  = Id . ('#' :) <$> objectId
+    | isObject x = testId <$> objectId
+    | otherwise  = testId . ('#' :) <$> objectId
   where
     objectId = genericIdGen idFirstChars (idFirstChars ++ idOtherChars)
 
@@ -94,7 +95,7 @@ sortActualGen x
         <*> scale (`div` 2) (idGen x)
         <*> couple (scale (`div` 2) (sortGen x))
     | otherwise = SortActual <$>
-        (Id <$> elements (map show metaSortsList)) <*> pure []
+        (testId <$> elements (map show metaSortsList)) <*> pure []
 
 sortGen :: MetaOrObject level => level -> Gen (Sort level)
 sortGen x = oneof

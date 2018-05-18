@@ -28,7 +28,7 @@ any pattern, except for top-level pattern of an axiom. Using it will have
 unpredictable effects.
 -}
 equalsSortParam :: SortVariable Meta
-equalsSortParam = sortParameter Meta "#esp"
+equalsSortParam = sortParameter Meta "#esp" AstLocationImplicit
 
 equalsSort :: Sort Meta
 equalsSort = SortVariableSort equalsSortParam

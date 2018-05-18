@@ -11,7 +11,8 @@ module Data.Kore.ASTVerifier.AttributesVerifier (verifyAttributes,
                                                  AttributesVerification (..))
   where
 
-import           Data.Kore.AST.Common                  (Attributes (..))
+import           Data.Kore.AST.Common                  (AstLocation (..),
+                                                        Attributes (..))
 import           Data.Kore.AST.Kore                    (KoreAttributes)
 import           Data.Kore.AST.MetaOrObject            (asUnified)
 import           Data.Kore.ASTVerifier.Error
@@ -42,7 +43,7 @@ verifyAttributes
             (\p ->
                 verifyPattern
                     p
-                    (Just (asUnified attributeObjectSort))
+                    (Just (asUnified (attributeObjectSort AstLocationNone)))
                     indexedModule
                     Set.empty
             )

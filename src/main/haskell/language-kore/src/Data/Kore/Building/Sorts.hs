@@ -1,4 +1,5 @@
 {-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
@@ -19,8 +20,8 @@ module Data.Kore.Building.Sorts
   , ObjectSort
   , CharSort (CharSort)
   , CharListSort (CharListSort)
-  , PatternSort
-  , PatternListSort
+  , PatternSort (PatternSort)
+  , PatternListSort (PatternListSort)
   , SortSort (SortSort)
   , SortListSort (SortListSort)
   , VariableSort
@@ -47,11 +48,11 @@ data CharListSort = CharListSort
 instance AsAst (Sort Meta) CharListSort where
     asAst _ = charListMetaSort
 
-data PatternSort
+data PatternSort = PatternSort
 instance AsAst (Sort Meta) PatternSort where
     asAst _ = patternMetaSort
 
-data PatternListSort
+data PatternListSort = PatternListSort
 instance AsAst (Sort Meta) PatternListSort where
     asAst _ = patternListMetaSort
 
@@ -73,12 +74,38 @@ instance AsAst (Sort Meta) VariableListSort where
 
 -- TODO(virgil): rename. Also, it is likely that each variable should have sort
 -- distinct type.
-data MetaSortVariable1 = MetaSortVariable1 !String
+data MetaSortVariable1 = MetaSortVariable1
+    { metaSortVariableName     :: String
+    , metaSortVariableLocation :: AstLocation
+    }
 instance AsAst (Sort Meta) MetaSortVariable1 where
     asAst v = SortVariableSort (asMetaSortVariable v)
 asMetaSortVariable :: MetaSortVariable1 -> SortVariable Meta
-asMetaSortVariable (MetaSortVariable1 name) = SortVariable (Id name)
+asMetaSortVariable
+    MetaSortVariable1
+        { metaSortVariableName = name'
+        , metaSortVariableLocation = location
+        }
+  =
+    SortVariable Id
+        { getId = name'
+        , idLocation = location
+        }
 
-data ObjectSortVariable1 = ObjectSortVariable1 !String
+data ObjectSortVariable1 = ObjectSortVariable1
+    { objectSortVariableName     :: String
+    , objectSortVariableLocation :: AstLocation
+    }
 instance AsAst (Sort Object) ObjectSortVariable1 where
-    asAst (ObjectSortVariable1 name) = SortVariableSort (SortVariable (Id name))
+    asAst
+        ObjectSortVariable1
+            { objectSortVariableName = name'
+            , objectSortVariableLocation = location
+            }
+      =
+        SortVariableSort
+            (SortVariable Id
+                { getId = name'
+                , idLocation = location
+                }
+            )

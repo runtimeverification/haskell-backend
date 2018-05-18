@@ -1,8 +1,8 @@
 module Data.Kore.AST.CommonTest (commonTests) where
 
 import           Test.Tasty                       (TestTree, testGroup)
-import           Test.Tasty.HUnit                 (assertEqual, assertFailure,
-                                                   testCase)
+import           Test.Tasty.HUnit                 (assertBool, assertEqual,
+                                                   assertFailure, testCase)
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
@@ -13,6 +13,14 @@ import           Test.Tasty.HUnit.Extensions
 commonTests :: TestTree
 commonTests =
     testGroup "Common AST Tests"
+        [ withSortTests
+        , prettyPrintAstLocationTests
+        , idTests
+        ]
+
+withSortTests :: TestTree
+withSortTests =
+    testGroup "withSort Tests"
         [ testCase "withSort fills missing sort"
             (assertSortedStub
                 SortedPattern
@@ -48,9 +56,13 @@ commonTests =
                     "Expecting unmatched sorts error"
                     (  "Unmatched sorts: "
                     ++ "SortActualSort (SortActual {sortActualName = Id "
-                    ++ "{getId = \"#PatternList\"}, sortActualSorts = []}) "
+                    ++ "{getId = \"#PatternList\", "
+                    ++ "idLocation = AstLocationImplicit}, "
+                    ++ "sortActualSorts = []}) "
                     ++ "and SortActualSort (SortActual {sortActualName = Id "
-                    ++ "{getId = \"#SortList\"}, sortActualSorts = []})."
+                    ++ "{getId = \"#SortList\""
+                    ++ ", idLocation = AstLocationImplicit}"
+                    ++ ", sortActualSorts = []})."
                     )
                 )
                 (withSort patternListMetaSort
@@ -61,6 +73,77 @@ commonTests =
                         }
                     )
                 )
+            )
+        ]
+
+prettyPrintAstLocationTests :: TestTree
+prettyPrintAstLocationTests =
+    testGroup "prettyPrintAstLocation Tests"
+        [ testCase "prints AstLocationNone"
+            (assertEqual ""
+                "<unknown location>"
+                (prettyPrintAstLocation AstLocationNone)
+            )
+        , testCase "prints AstLocationImplicit"
+            (assertEqual ""
+                "<implicitly defined entity>"
+                (prettyPrintAstLocation AstLocationImplicit)
+            )
+        , testCase "prints AstLocationGeneratedVariable"
+            (assertEqual ""
+                "<variable generated internally>"
+                (prettyPrintAstLocation AstLocationGeneratedVariable)
+            )
+        , testCase "prints AstLocationFile"
+            (assertEqual ""
+                "some-file-name 10:3"
+                (prettyPrintAstLocation
+                    (AstLocationFile FileLocation
+                        { fileName = "some-file-name"
+                        , line = 10
+                        , column = 3
+                        }
+                    )
+                )
+            )
+        , testCase "prints AstLocationLifted"
+            (assertEqual ""
+                "<lifted(<implicitly defined entity>)>"
+                (prettyPrintAstLocation (AstLocationLifted AstLocationImplicit))
+            )
+        ]
+
+idTests :: TestTree
+idTests =
+    testGroup "Id Tests"
+        [ testCase "Id comparison"
+            (do
+                assertBool ""
+                    (Id "a" AstLocationNone <= Id "b" AstLocationNone)
+                assertBool ""
+                    (Id "b" AstLocationNone >= Id "a" AstLocationNone)
+                assertBool ""
+                    (Id "a" AstLocationNone == Id "a" AstLocationNone)
+            )
+        , testCase "Id comparison ignores location"
+            (do
+                assertBool ""
+                    (Id "a" AstLocationNone == Id "a" AstLocationImplicit)
+                assertBool ""
+                    (Id "a" AstLocationImplicit == Id "a" AstLocationNone)
+            )
+        , testCase "Id show"
+            (assertEqual ""
+                "Id {getId = \"a\", idLocation = AstLocationNone}"
+                (show (Id "a" AstLocationNone))
+            )
+        , testCase "noLocationId"
+            (assertEqual ""
+                Id
+                    { getId = "a"
+                    , idLocation = AstLocationNone
+                    }
+                (noLocationId "a")
             )
         ]
 

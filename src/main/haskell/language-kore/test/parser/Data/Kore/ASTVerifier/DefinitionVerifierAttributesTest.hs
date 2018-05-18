@@ -10,6 +10,7 @@ import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
 import           Data.Kore.Implicit.Attributes                       (attributeObjectSort)
+import           Data.Kore.KoreHelpers
 
 definitionVerifierAttributesTests :: TestTree
 definitionVerifierAttributesTests =
@@ -21,7 +22,7 @@ definitionVerifierAttributesTests =
                     [ asObjectKorePattern (ApplicationPattern Application
                         { applicationSymbolOrAlias =
                             SymbolOrAlias
-                                { symbolOrAliasConstructor = Id "strict"
+                                { symbolOrAliasConstructor = testId "strict"
                                 , symbolOrAliasParams = []
                                 }
                         , applicationChildren =
@@ -34,7 +35,12 @@ definitionVerifierAttributesTests =
                 }
         , expectFailureWithError "Attribute sort not visible outside attributes"
             (Error
-                [ "module 'M1'", "axiom declaration", "\\dv", "sort 'Strict'" ]
+                [ "module 'M1'"
+                , "axiom declaration"
+                , "\\dv"
+                , "sort 'Strict' (<test data>)"
+                , "(<test data>)"
+                ]
                 "Sort 'Strict' not declared."
             )
             Definition
@@ -62,7 +68,8 @@ definitionVerifierAttributesTests =
                 , "axiom declaration"
                 , "attributes"
                 , "\\equals"
-                , "sort 'mySort'"
+                , "sort 'mySort' (<test data>)"
+                , "(<test data>)"
                 ]
                 "Sort 'mySort' not declared."
             )
@@ -79,7 +86,9 @@ definitionVerifierAttributesTests =
                                         domainValuePattern mySortName
                                     , sentenceAxiomAttributes = Attributes
                                         [ sortSwitchingEquals
-                                            (OperandSort attributeObjectSort)
+                                            (OperandSort
+                                                (attributeObjectSort
+                                                    AstLocationTest))
                                             (ResultSort (simpleSort mySortName))
                                             (domainValuePattern mySortName)
                                         ]
@@ -87,7 +96,7 @@ definitionVerifierAttributesTests =
                                 )
                             , asSentence
                                 (SentenceSort
-                                    { sentenceSortName = Id "mySort"
+                                    { sentenceSortName = testId "mySort"
                                     , sentenceSortParameters = []
                                     , sentenceSortAttributes = Attributes []
                                     }::KoreSentenceSort
@@ -103,6 +112,7 @@ definitionVerifierAttributesTests =
                 [ "module 'M1'"
                 , "axiom declaration"
                 , "symbol or alias 'secondArgument'"
+                , "(<test data>)"
                 ]
                 "Symbol 'secondArgument' not defined."
             )
@@ -122,7 +132,7 @@ definitionVerifierAttributesTests =
                                 )
                             , asSentence
                                 (SentenceSort
-                                    { sentenceSortName = Id "mySort"
+                                    { sentenceSortName = testId "mySort"
                                     , sentenceSortParameters = []
                                     , sentenceSortAttributes = Attributes []
                                     }::KoreSentenceSort
@@ -169,7 +179,7 @@ definitionVerifierAttributesTests =
             (ApplicationPattern Application
                 { applicationSymbolOrAlias =
                     SymbolOrAlias
-                        { symbolOrAliasConstructor = Id "secondArgument"
+                        { symbolOrAliasConstructor = testId "secondArgument"
                         , symbolOrAliasParams = []
                         }
                 , applicationChildren = []

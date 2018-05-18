@@ -11,9 +11,9 @@ import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
+import           Data.Kore.AST.PureToKore
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.MetaML.AST
-import           Data.Kore.MetaML.MetaToKore
 import           Data.Kore.MetaML.Unlift
 
 unliftTests :: TestTree
@@ -76,7 +76,7 @@ unliftTests =
                         )
             in
                 prettyAssertEqual ""
-                    (Just (patternMetaToKore metaPattern))
+                    (Just (patternPureToKore metaPattern))
                     (unliftFromMeta metaPattern :: Maybe CommonKorePattern)
             )
         ]

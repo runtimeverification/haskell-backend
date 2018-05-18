@@ -1,4 +1,8 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE GADTs                #-}
+{-# LANGUAGE StandaloneDeriving   #-}
+{-# LANGUAGE UndecidableInstances #-}
+
 {-|
 Module      : Data.Kore.IndexedModule.IndexedModule
 Description : Indexed representation for a module.
@@ -27,7 +31,6 @@ module Data.Kore.IndexedModule.IndexedModule
     , indexedModuleRawSentences
     , indexModuleIfNeeded
     , metaNameForObjectSort
-    , resolveThing
     , SortDescription
     ) where
 
@@ -37,9 +40,12 @@ import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Error
 import           Data.Kore.Implicit.ImplicitSorts
 
+import           Control.Arrow                    ((&&&))
 import           Control.Monad                    (foldM)
 import qualified Data.Map                         as Map
 import qualified Data.Set                         as Set
+
+import           Data.Fix                         (Fix)
 
 type SortDescription level = SentenceSort level UnifiedPattern Variable
 
@@ -76,6 +82,11 @@ data IndexedModule sortParam pat variable = IndexedModule
     , indexedModuleImports
         :: ![(Attributes pat variable, IndexedModule sortParam pat variable)]
     }
+
+deriving instance
+    ( Show (pat variable (Fix (pat variable)))
+    , Show sortParam
+    ) => Show (IndexedModule sortParam pat variable)
 
 type KoreIndexedModule =
     IndexedModule UnifiedSortVariable UnifiedPattern Variable
@@ -143,13 +154,21 @@ Kore definitions.
 -}
 indexedModuleWithMetaSorts
     :: ModuleName
-    -> (ImplicitIndexedModule sortParam pat variable, Set.Set String)
+    ->  ( ImplicitIndexedModule sortParam pat variable
+        , Map.Map String AstLocation
+        )
 indexedModuleWithMetaSorts name =
     ( ImplicitIndexedModule (emptyIndexedModule name)
         { indexedModuleMetaSortDescriptions = msd }
-    , Set.insert
+    , Map.insert
         (show StringSort)
-        (Set.map getId (Map.keysSet msd))
+        AstLocationImplicit
+        (Map.fromList
+            (map
+                (getId &&& idLocation)
+                (Set.toList (Map.keysSet msd))
+            )
+        )
     )
   where
     msd = metaSortDescriptions
@@ -167,7 +186,10 @@ metaSortDescription sortType =
         }
     )
   where
-    sortId = Id (show sortType)
+    sortId = Id
+        { getId = show sortType
+        , idLocation = AstLocationImplicit
+        }
 
 {-|'indexImplicitModule' indexes a module containing implicit definitions, adds
 it to the map of defined modules and returns the new map together with the
@@ -423,6 +445,7 @@ indexModuleObjectSentence
     indexedStuff
     (SentenceSortSentence sentence)
   = do
+    let sortId = sentenceSortName sentence
     (indexedModules, indexedModule) <-
         indexModuleMetaSentence
             implicitModule
@@ -432,11 +455,10 @@ indexModuleObjectSentence
             (SentenceSymbolSentence
                 SentenceSymbol
                     { sentenceSymbolSymbol = Symbol
-                        { symbolConstructor =
-                            Id
-                                (metaNameForObjectSort
-                                    (getId (sentenceSortName sentence))
-                                )
+                        { symbolConstructor = Id
+                            { getId = metaNameForObjectSort (getId sortId)
+                            , idLocation = AstLocationLifted (idLocation sortId)
+                            }
                         , symbolParams = []
                         }
                     , sentenceSymbolSorts =
@@ -489,59 +511,6 @@ indexImportedModule
         nameToModule
         indexedModules
         koreModule
-
-{-|'resolveThing' looks up an id in an 'IndexedModule', also searching in the
-imported modules.
--}
-resolveThing
-    :: (IndexedModule sortParam pat variable
-        -> Map.Map (Id level) (thing level pat variable))
-    -- ^ extracts the map into which to look up the id
-    -> IndexedModule sortParam pat variable
-    -> Id level
-    -> Maybe (thing level pat variable)
-resolveThing
-    mapExtractor
-    indexedModule
-    thingId
-  =
-    fst
-        ( resolveThingInternal
-            (Nothing, Set.empty) mapExtractor indexedModule thingId
-        )
-
-resolveThingInternal
-    :: (Maybe (thing level pat variable), Set.Set ModuleName)
-    -> (IndexedModule sortParam pat variable
-        -> Map.Map (Id level) (thing level pat variable))
-    -> IndexedModule sortParam pat variable
-    -> Id level
-    -> (Maybe (thing level pat variable), Set.Set ModuleName)
-resolveThingInternal x@(Just _, _) _ _ _ = x
-resolveThingInternal x@(Nothing, searchedModules) _ indexedModule _
-    | indexedModuleName indexedModule `Set.member` searchedModules = x
-resolveThingInternal
-    (Nothing, searchedModules)
-    mapExtractor
-    indexedModule
-    thingId
-  =
-    case Map.lookup thingId things of
-        Just thing -> (Just thing, searchedModules)
-        Nothing ->
-            foldr
-                (\(_, m) partialResult -> resolveThingInternal
-                    partialResult
-                    mapExtractor
-                    m
-                    thingId
-                )
-                ( Nothing
-                , Set.insert (indexedModuleName indexedModule) searchedModules
-                )
-                (indexedModuleImports indexedModule)
-  where
-    things = mapExtractor indexedModule
 
 metaNameForObjectSort :: String -> String
 metaNameForObjectSort name = "#`" ++ name

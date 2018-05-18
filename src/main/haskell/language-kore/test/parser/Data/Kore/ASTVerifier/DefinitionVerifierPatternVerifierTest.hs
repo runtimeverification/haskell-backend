@@ -14,6 +14,7 @@ import           Data.Kore.Building.Patterns                         as Patterns
 import           Data.Kore.Error
 import           Data.Kore.Implicit.Attributes                       (attributeObjectSort)
 import           Data.Kore.Implicit.ImplicitSorts
+import           Data.Kore.KoreHelpers
 
 import qualified Data.List                                           as List
 
@@ -50,7 +51,7 @@ definitionVerifierPatternVerifierTests =
         [ expectSuccess "Simplest definition"
             (simpleDefinitionFromSentences (ModuleName "MODULE") [])
         , successTestsForObjectPattern "Simple object pattern"
-            (simpleExistsPattern objectVariable objectSort)
+            (simpleExistsPattern objectVariable' objectSort)
             (NamePrefix "dummy")
             (TestedPatternSort objectSort)
             (SortVariablesThatMustBeDeclared [])
@@ -58,7 +59,7 @@ definitionVerifierPatternVerifierTests =
             [objectSortSentence, anotherSortSentence]
             NeedsInternalDefinitions
         , successTestsForMetaPattern "Simple meta pattern"
-            (simpleExistsPattern metaVariable metaSort1)
+            (simpleExistsPattern metaVariable' metaSort1)
             (NamePrefix "#dummy")
             (TestedPatternSort metaSort1)
             (SortVariablesThatMustBeDeclared [])
@@ -86,7 +87,8 @@ definitionVerifierPatternVerifierTests =
             (ErrorStack
                 [ "\\exists 'ObjectVariable'"
                 , "\\exists 'ObjectVariable'"
-                , "sort 'ObjectSort'"
+                , "sort 'ObjectSort' (<test data>)"
+                , "(<test data>)"
                 ]
             )
             (ExistsPattern Exists
@@ -94,7 +96,7 @@ definitionVerifierPatternVerifierTests =
                 , existsVariable = anotherVariable
                 , existsChild =
                     asKorePattern
-                        (simpleExistsPattern objectVariable objectSort)
+                        (simpleExistsPattern objectVariable' objectSort)
                 }
             )
             (NamePrefix "dummy")
@@ -109,11 +111,12 @@ definitionVerifierPatternVerifierTests =
             (ErrorStack
                 [ "\\exists 'ObjectVariable'"
                 , "variable 'ObjectVariable'"
+                , "(<test data>, <test data>)"
                 ]
             )
             (ExistsPattern Exists
                 { existsSort = objectSort
-                , existsVariable = objectVariable
+                , existsVariable = objectVariable'
                 , existsChild =
                     asKorePattern (VariablePattern anotherVariable)
                 }
@@ -141,11 +144,12 @@ definitionVerifierPatternVerifierTests =
             (ErrorStack
                 [ "\\exists 'ObjectVariable'"
                 , "\\exists 'ObjectVariable'"
+                , "(<test data>)"
                 ]
             )
             (ExistsPattern Exists
                 { existsSort = objectSort
-                , existsVariable = objectVariable
+                , existsVariable = objectVariable'
                 , existsChild =
                     asKorePattern
                         (simpleExistsPattern
@@ -162,10 +166,11 @@ definitionVerifierPatternVerifierTests =
             (ExpectedErrorMessage "Sort '#InvalidMetaSort' not declared.")
             (ErrorStack
                 [ "\\exists '#MetaVariable'"
-                , "sort '#InvalidMetaSort'"
+                , "sort '#InvalidMetaSort' (<test data>)"
+                , "(<test data>)"
                 ]
             )
-            (simpleExistsPattern metaVariable invalidMetaSort)
+            (simpleExistsPattern metaVariable' invalidMetaSort)
             (NamePrefix "#dummy")
             (TestedPatternSort metaSort1)
             (SortVariablesThatMustBeDeclared [])
@@ -180,9 +185,10 @@ definitionVerifierPatternVerifierTests =
             (ErrorStack
                 [ "\\exists 'ObjectVariable'"
                 , "variable 'ObjectVariable'"
+                , "(<test data>, <test data>)"
                 ]
             )
-            (simpleExistsPattern objectVariable anotherObjectSort2)
+            (simpleExistsPattern objectVariable' anotherObjectSort2)
             (NamePrefix "dummy")
             (TestedPatternSort objectSort)
             (SortVariablesThatMustBeDeclared [])
@@ -198,9 +204,10 @@ definitionVerifierPatternVerifierTests =
             (ErrorStack
                 [ "\\exists '#MetaVariable'"
                 , "variable '#MetaVariable'"
+                , "(<implicitly defined entity>, <implicitly defined entity>)"
                 ]
             )
-            (simpleExistsPattern metaVariable anotherMetaSort2)
+            (simpleExistsPattern metaVariable' anotherMetaSort2)
             (NamePrefix "#dummy")
             (TestedPatternSort metaSort1)
             (SortVariablesThatMustBeDeclared [])
@@ -244,7 +251,7 @@ definitionVerifierPatternVerifierTests =
         , failureTestsForObjectPattern
             "Application pattern - symbol not declared"
             (ExpectedErrorMessage "Symbol 'ObjectSymbol' not defined.")
-            (ErrorStack ["symbol or alias 'ObjectSymbol'"])
+            (ErrorStack ["symbol or alias 'ObjectSymbol'", "(<test data>)"])
             (applicationPatternWithChildren
                 objectSymbolName
                 [ simpleExistsObjectUnifiedPattern
@@ -336,7 +343,7 @@ definitionVerifierPatternVerifierTests =
             (ErrorStack ["symbol or alias 'ObjectSymbol'"])
             (ApplicationPattern Application
                 { applicationSymbolOrAlias = SymbolOrAlias
-                    { symbolOrAliasConstructor = Id oneSortSymbolRawName
+                    { symbolOrAliasConstructor = testId oneSortSymbolRawName
                     , symbolOrAliasParams = []
                     }
                 , applicationChildren =
@@ -360,7 +367,7 @@ definitionVerifierPatternVerifierTests =
             (ErrorStack ["symbol or alias 'ObjectSymbol'"])
             (ApplicationPattern Application
                 { applicationSymbolOrAlias = SymbolOrAlias
-                    { symbolOrAliasConstructor = Id oneSortSymbolRawName
+                    { symbolOrAliasConstructor = testId oneSortSymbolRawName
                     , symbolOrAliasParams = [objectSort, objectSort]
                     }
                 , applicationChildren =
@@ -379,7 +386,7 @@ definitionVerifierPatternVerifierTests =
             ]
             NeedsInternalDefinitions
         , successTestsForObjectPattern "Object pattern - unquantified variable"
-            (VariablePattern objectVariable)
+            (VariablePattern objectVariable')
             (NamePrefix "dummy")
             (TestedPatternSort objectSort)
             (SortVariablesThatMustBeDeclared [])
@@ -387,7 +394,7 @@ definitionVerifierPatternVerifierTests =
             [ objectSortSentence, anotherSortSentence ]
             NeedsInternalDefinitions
         , successTestsForMetaPattern "Meta pattern - unquantified variable"
-            (VariablePattern metaVariable)
+            (VariablePattern metaVariable')
             (NamePrefix "#dummy")
             (TestedPatternSort metaSort1)
             (SortVariablesThatMustBeDeclared [])
@@ -423,7 +430,11 @@ definitionVerifierPatternVerifierTests =
         , failureTestsForMetaPattern "String pattern - sort not matched"
             (ExpectedErrorMessage
                 "Expecting sort '#Char{}' but got '#CharList{}'.")
-            (ErrorStack ["<string>"])
+            (ErrorStack
+                [ "<string>"
+                , "(<implicitly defined entity>, <implicitly defined entity>)"
+                ]
+            )
             (StringLiteralPattern (StringLiteral "MetaString"))
             (NamePrefix "#dummy")
             (TestedPatternSort charMetaSort)
@@ -461,10 +472,10 @@ definitionVerifierPatternVerifierTests =
     objectSort :: Sort Object
     objectSort = simpleSort objectSortName
     objectVariableName = VariableName "ObjectVariable"
-    objectVariable = variable objectVariableName objectSort
+    objectVariable' = variable objectVariableName objectSort
     objectSortSentence = simpleSortSentence objectSortName
     metaSort1 = charListMetaSort
-    metaVariable = variable (VariableName "#MetaVariable") metaSort1
+    metaVariable' = variable (VariableName "#MetaVariable") metaSort1
     dummyMetaSort = patternMetaSort
     dummyMetaVariable = variable (VariableName "#otherVariable") dummyMetaSort
     anotherSortName = SortName "anotherSort"
@@ -504,7 +515,7 @@ definitionVerifierPatternVerifierTests =
         asSentence
             (SentenceSymbol
                 { sentenceSymbolSymbol = Symbol
-                    { symbolConstructor = Id oneSortSymbolRawName
+                    { symbolConstructor = testId oneSortSymbolRawName
                     , symbolParams = [objectSortVariable]
                     }
                 , sentenceSymbolSorts = [anotherObjectSort2]
@@ -519,9 +530,9 @@ dummyVariableAndSentences (NamePrefix namePrefix) =
     (dummyVariable, [simpleSortSentence dummySortName])
   where
     dummySortName = SortName (namePrefix ++ "_OtherSort")
-    dummySort = simpleSort dummySortName
+    dummySort' = simpleSort dummySortName
     dummyVariable =
-        variable (VariableName (namePrefix ++ "_OtherVariable")) dummySort
+        variable (VariableName (namePrefix ++ "_OtherVariable")) dummySort'
 
 
 successTestsForObjectPattern
@@ -639,9 +650,9 @@ failureTestsForObjectPattern
         testData
   where
     dummySortName = SortName (rawNamePrefix ++ "_OtherSort")
-    dummySort = simpleSort dummySortName
+    dummySort' = simpleSort dummySortName
     dummyVariable =
-        variable (VariableName (rawNamePrefix ++ "_OtherVariable")) dummySort
+        variable (VariableName (rawNamePrefix ++ "_OtherVariable")) dummySort'
     dummySortSentence = simpleSortSentence dummySortName
     testData =
         genericPatternInAllContexts
@@ -764,19 +775,19 @@ genericPatternInAllContexts
             }
     anotherVariable =
         Variable
-            { variableName = Id (namePrefix ++ "_anotherVar")
+            { variableName = testId (namePrefix ++ "_anotherVar")
             , variableSort = testedSort
             }
     rawSymbolName = namePrefix ++ "_anotherSymbol"
     rawAliasName = namePrefix ++ "_anotherAlias"
     symbolFromSort sort =
         SymbolOrAlias
-            { symbolOrAliasConstructor = Id rawSymbolName
+            { symbolOrAliasConstructor = testId rawSymbolName
             , symbolOrAliasParams = [sort]
             }
     aliasFromSort sort =
         SymbolOrAlias
-            { symbolOrAliasConstructor = Id rawAliasName
+            { symbolOrAliasConstructor = testId rawAliasName
             , symbolOrAliasParams = [sort]
             }
 
@@ -817,7 +828,7 @@ objectPatternInAllContexts
             }
     anotherVariable =
         Variable
-            { variableName = Id (namePrefix ++ "_anotherVar")
+            { variableName = testId (namePrefix ++ "_anotherVar")
             , variableSort = testedSort
             }
 
@@ -865,8 +876,8 @@ patternsInAllContexts
     symbolSentence =
         asSentence SentenceSymbol
             { sentenceSymbolSymbol = Symbol
-                { symbolConstructor = Id rawSymbolName
-                , symbolParams = [SortVariable (Id rawSortVariableName)]
+                { symbolConstructor = testId rawSymbolName
+                , symbolParams = [SortVariable (testId rawSortVariableName)]
                 }
             , sentenceSymbolSorts = [symbolAliasSort]
             , sentenceSymbolResultSort = anotherSort
@@ -876,8 +887,8 @@ patternsInAllContexts
     aliasSentence =
         asSentence SentenceAlias
             { sentenceAliasAlias = Alias
-                { aliasConstructor = Id rawAliasName
-                , aliasParams = [SortVariable (Id rawSortVariableName)]
+                { aliasConstructor = testId rawAliasName
+                , aliasParams = [SortVariable (testId rawSortVariableName)]
                 }
             , sentenceAliasSorts = [symbolAliasSort]
             , sentenceAliasResultSort = anotherSort
@@ -1414,7 +1425,10 @@ testsForUnifiedPatternInTopLevelObjectContext
                 , testDataError =
                     Error
                         ( "module 'MODULE'"
-                        : ("sort '" ++ rawSortName ++ "' declaration")
+                        :   (  "sort '"
+                            ++ rawSortName
+                            ++ "' declaration (<test data>)"
+                            )
                         : "attributes"
                         : "\\equals"
                         : "\\equals"
@@ -1424,7 +1438,7 @@ testsForUnifiedPatternInTopLevelObjectContext
                 , testDataDefinition =
                     simpleDefinitionFromSentences (ModuleName "MODULE")
                         ( asSentence SentenceSort
-                            { sentenceSortName = Id rawSortName
+                            { sentenceSortName = testId rawSortName
                             , sentenceSortParameters = sortVariables
                             , sentenceSortAttributes =
                                 Attributes
@@ -1451,14 +1465,16 @@ asAttribute testPattern =
               in
                 TestPattern
                     { testPatternPattern = EqualsPattern Equals
-                        { equalsOperandSort = attributeObjectSort
-                        , equalsResultSort  = attributeObjectSort
+                        { equalsOperandSort =
+                            attributeObjectSort AstLocationTest
+                        , equalsResultSort  =
+                            attributeObjectSort AstLocationTest
                         , equalsFirst       =
                             asKorePattern patternPattern
                         , equalsSecond      =
                             asKorePattern patternPattern
                         }
-                    , testPatternSort = attributeObjectSort
+                    , testPatternSort = attributeObjectSort AstLocationTest
                     , testPatternErrorStack =
                         testPatternErrorStack testPattern
                     }
@@ -1469,21 +1485,23 @@ asAttribute testPattern =
             let
                 patternPattern = EqualsPattern Equals
                     { equalsOperandSort = testPatternSort testPattern
-                    , equalsResultSort  = attributeObjectSort
+                    , equalsResultSort  = attributeObjectSort AstLocationTest
                     , equalsFirst       = testPatternUnifiedPattern testPattern
                     , equalsSecond      = testPatternUnifiedPattern testPattern
                     }
                 in
                 TestPattern
                     { testPatternPattern = EqualsPattern Equals
-                        { equalsOperandSort = attributeObjectSort
-                        , equalsResultSort  = attributeObjectSort
+                        { equalsOperandSort =
+                            attributeObjectSort AstLocationTest
+                        , equalsResultSort  =
+                            attributeObjectSort AstLocationTest
                         , equalsFirst       =
                             asKorePattern patternPattern
                         , equalsSecond      =
                             asKorePattern patternPattern
                         }
-                    , testPatternSort = attributeObjectSort
+                    , testPatternSort = attributeObjectSort AstLocationTest
                     , testPatternErrorStack =
                         testPatternErrorStack testPattern
                     }
