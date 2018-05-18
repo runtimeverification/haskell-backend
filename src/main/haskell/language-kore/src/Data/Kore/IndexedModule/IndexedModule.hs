@@ -339,6 +339,24 @@ indexModuleMetaSentence
     _ _ _
     ( indexedModules
     , indexedModule @ IndexedModule
+        { indexedModuleMetaSortDescriptions = sentences }
+    )
+    (SentenceSortSentence sentence)
+  =
+    return
+        ( indexedModules
+        , indexedModule
+          { indexedModuleMetaSortDescriptions =
+                Map.insert
+                    (sentenceSortName sentence)
+                    sentence
+                    sentences
+          }
+        )
+indexModuleMetaSentence
+    _ _ _
+    ( indexedModules
+    , indexedModule @ IndexedModule
         { indexedModuleMetaSymbolSentences = sentences }
     )
     (SentenceSymbolSentence sentence)
