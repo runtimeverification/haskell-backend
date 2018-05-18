@@ -44,6 +44,8 @@ type PureSentenceSymbol level =
 -- |'PureSentenceImport' is the pure (fixed-@level@) version of 'SentenceImport'
 type PureSentenceImport level =
     SentenceImport (Pattern level) Variable
+type PureSentenceSort level =
+    SentenceSort level (Pattern level) Variable
 
 -- |'PureSentence' is the pure (fixed-@level@) version of 'Sentence'
 type PureSentence level =
@@ -54,6 +56,9 @@ instance AsSentence (PureSentence level) (PureSentenceAlias level) where
 
 instance AsSentence (PureSentence level) (PureSentenceSymbol level) where
     asSentence = SentenceSymbolSentence
+
+instance AsSentence (PureSentence level) (PureSentenceSort level) where
+    asSentence = SentenceSortSentence
 
 -- |'PureModule' is the pure (fixed-@level@) version of 'Module'
 type PureModule level =
