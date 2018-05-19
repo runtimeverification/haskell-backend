@@ -79,6 +79,8 @@ definedNamesForMetaSentence (SentenceSymbolSentence sentenceSymbol) =
     [ toUnparameterizedId (getSentenceSymbolOrAliasConstructor sentenceSymbol) ]
 definedNamesForMetaSentence (SentenceImportSentence _) = []
 definedNamesForMetaSentence (SentenceAxiomSentence _)  = []
+definedNamesForMetaSentence (SentenceSortSentence sentenceSort)  =
+  [ toUnparameterizedId (sentenceSortName sentenceSort) ]
 
 definedNamesForObjectSentence
     :: Sentence Object sortParam pat variable -> [UnparameterizedId]
@@ -246,7 +248,8 @@ verifyAxiomSentence axiom indexedModule attributesVerification =
         )
 
 verifySortSentence
-    :: KoreSentenceSort
+    :: MetaOrObject level
+    => KoreSentenceSort level
     -> AttributesVerification
     -> Either (Error VerifyError) VerifySuccess
 verifySortSentence sentenceSort attributesVerification =

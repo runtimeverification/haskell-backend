@@ -165,9 +165,8 @@ type KoreSentenceImport = SentenceImport UnifiedPattern Variable
 -- |'KoreSentenceAxiom' is the Kore ('Meta' and 'Object') version of
 -- 'SentenceAxiom'
 type KoreSentenceAxiom = SentenceAxiom UnifiedSortVariable UnifiedPattern Variable
--- |'KoreSentenceSort' is the Kore ('Meta' and 'Object') version of
--- 'SentenceSort'
-type KoreSentenceSort = SentenceSort Object UnifiedPattern Variable
+-- |'KoreSentenceSort is the Kore ('Meta' and 'Object') version of
+type KoreSentenceSort level = SentenceSort level UnifiedPattern Variable
 
 {-|'UnifiedPattern' is joining the 'Meta' and 'Object' versions of 'Sentence',
 to allow using toghether both 'Meta' and 'Object' sentences.
@@ -237,5 +236,7 @@ instance AsSentence KoreSentence KoreSentenceImport where
 instance AsSentence KoreSentence KoreSentenceAxiom where
     asSentence = constructUnifiedSentence SentenceAxiomSentence
 
-instance AsSentence KoreSentence KoreSentenceSort where
+instance
+    ( MetaOrObject level )
+      => AsSentence KoreSentence (KoreSentenceSort level) where
     asSentence = constructUnifiedSentence SentenceSortSentence

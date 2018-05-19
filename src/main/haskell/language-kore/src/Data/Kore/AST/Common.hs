@@ -850,8 +850,8 @@ data Sentence level sortParam pat variable where
         :: !(SentenceAxiom sortParam pat variable)
         -> Sentence Meta sortParam pat variable
     SentenceSortSentence
-        :: !(SentenceSort Object pat variable)
-        -> Sentence Object sortParam pat variable
+        :: !(SentenceSort level pat variable)
+        -> Sentence level sortParam pat variable
 
 deriving instance
     ( Eq (pat variable (Fix (pat variable)))
