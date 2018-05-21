@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-|
 Description: The minimal matching logic proof system
 
@@ -8,8 +10,8 @@ module Kore.MatchingLogic.ProofSystem.Minimal where
 
 import           Data.Text.Prettyprint.Doc       (Pretty (pretty))
 
-import           Data.Functor.Foldable           (Fix (..))
 import           Control.Lens
+import           Data.Functor.Foldable           (Fix (..))
 
 import           Kore.MatchingLogic.AST          as AST
 import           Kore.MatchingLogic.Error
@@ -175,7 +177,7 @@ instance (IsSignature sig, Eq (Sort sig), Eq (Label sig), Eq var) =>
                 phi1 == Just term1a, phi2 == Just term1b -> Right ()
             _ -> Left (Error [] "not proved")
 
-     -- ^ sigma(before ..,\phi1 \/ \phi2,.. after) <->
+     --   sigma(before ..,\phi1 \/ \phi2,.. after) <->
      --     sigma(before ..,\phi1, .. after) \/ sigma(before ..,\phi2,.. after)
       PropagateExists label pos var term ->
           case conclusion of
@@ -192,13 +194,13 @@ instance (IsSignature sig, Eq (Sort sig), Eq (Label sig), Eq var) =>
                   -> Right ()
             _ -> Left (Error [] "not proved")
 
-      -- ^ sigma(before ..,Ex x. phi,.. after) <-> Ex x.sigma(before ..,phi,.. after)
+      -- sigma(before ..,Ex x. phi,.. after) <-> Ex x.sigma(before ..,phi,.. after)
       Existence var ->
           case conclusion of
             ExistsP _ sVar var1 (VariableP sVar' var2)
               | sVar == sVar', var1 == var2, var == var1 -> Right ()
             _ -> Left (Error [] "not exists")
-     -- ^ Ex x.x
+     -- Ex x.x
       Singvar var term path1 path2 ->
           case conclusion of
             NotP s (AndP _ term1 term2) -> do
