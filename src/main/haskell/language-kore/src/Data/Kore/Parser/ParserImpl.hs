@@ -847,10 +847,12 @@ data SentenceType
 BNF definition fragments:
 @
 ⟨declaration⟩ ::=
+    | ⟨import-declaration⟩
     | ⟨sort-declaration⟩
     | ⟨symbol-declaration⟩
     | ⟨alias-declaration⟩
     | ⟨axiom-declaration⟩
+    | ⟨hook-declaration⟩
 ⟨axiom-declaration⟩ ::= ‘axiom’ ...
 ⟨sort-declaration⟩ ::= ‘sort’ ...
 ⟨import-declaration⟩ ::= ‘import’ ⟨module-name⟩ ⟨attribute⟩
@@ -860,15 +862,18 @@ BNF definition fragments:
 ⟨alias-declaration⟩ ::= ( ⟨object-alias-declaration⟩ | ⟨meta-alias-declaration⟩ ) ⟨attribute⟩
 ⟨object-alias-declaration⟩ ::= ‘alias’ ...
 ⟨meta-alias-declaration⟩ ::= ‘alias’ ...
+⟨hook-declararion⟩ ::= ‘hooked-sort ... | 'hooked-symbol' ...
 @
 -}
 koreSentenceParser :: Parser KoreSentence
 koreSentenceParser = keywordBasedParsers
     [ ( "alias", sentenceConstructorRemainderParser AliasSentenceType )
     , ( "axiom", axiomSentenceRemainderParser )
-    , ( "sort", sortSentenceRemainderParser )
+    , ( "sort", asSentence <$> sortSentenceRemainderParser )
     , ( "symbol", sentenceConstructorRemainderParser SymbolSentenceType )
     , ( "import", importSentenceRemainderParser )
+    , ( "hooked-sort", hookedSortSentenceRemainderParser )
+    , ( "hooked-symbol", hookedSymbolSentenceRemainderParser )
     ]
 
 sentenceConstructorRemainderParser :: SentenceType -> Parser KoreSentence
@@ -991,10 +996,27 @@ BNF example:
 
 Always starts with @{@.
 -}
-sortSentenceRemainderParser :: Parser KoreSentence
-sortSentenceRemainderParser = asSentence <$>
-    ( pure SentenceSort
+sortSentenceRemainderParser :: Parser KoreSentenceSort
+sortSentenceRemainderParser =
+    pure SentenceSort
         <*> idParser Object
         <*> inCurlyBracesListParser (sortVariableParser Object)
         <*> attributesParser korePatternParser
-    )
+
+{-|'hookedSymbolSentenceRemainderParser' parses the part after the starting
+@hooked-symbol@ keyword of an hook-declaration as a 'SentenceSymbol' and
+constructs the corresponding 'SentenceHook'.
+-}
+hookedSymbolSentenceRemainderParser :: Parser KoreSentence
+hookedSymbolSentenceRemainderParser =
+    asSentence . SentenceHookedSymbol . unRotate31
+    <$>
+    aliasSymbolSentenceRemainderParser
+        Object
+        (symbolParser Object)
+        korePatternParser
+        (Rotate31 <....> SentenceSymbol)
+
+hookedSortSentenceRemainderParser :: Parser KoreSentence
+hookedSortSentenceRemainderParser =
+    asSentence . SentenceHookedSort <$> sortSentenceRemainderParser
