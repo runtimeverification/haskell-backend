@@ -299,6 +299,16 @@ instance
         unparse (sentenceSortAttributes a)
 
 instance
+    Unparse (Fix (pat variable)) => Unparse (SentenceHook level pat variable)
+  where
+    unparse (SentenceHookedSort a) = do
+        write "hooked-"
+        unparse a
+    unparse (SentenceHookedSymbol a) = do
+        write "hooked-"
+        unparse a
+
+instance
     ( Unparse sortParam
     , Unparse (Fix (pat variable))
     ) => Unparse (Sentence level sortParam pat variable)
@@ -308,6 +318,7 @@ instance
     unparse (SentenceImportSentence s) = unparse s
     unparse (SentenceAxiomSentence s)  = unparse s
     unparse (SentenceSortSentence s)   = unparse s
+    unparse (SentenceHookSentence s)   = unparse s
 
 instance
     ( Unparse sortParam
