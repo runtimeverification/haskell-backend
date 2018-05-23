@@ -65,10 +65,15 @@ import           Kore.MatchingLogic.Signature
 -- | The base functor of patterns
 --
 -- Argument description:
--- - @sort@ represents the type of sorts
--- - @label@ represents the type of labels (sometimes used for aliases as well as symbols)
--- - @v@ represents the type of variables
--- - @p@ represents the type of subterms
+--
+--  - @sort@ represents the type of sorts
+--
+--  - @label@ represents the type of labels
+--    (sometimes used for aliases as well as symbols)
+--
+--  - @v@ represents the type of variables
+--
+--  - @p@ represents the type of subterms
 data PatternF sort label v p
   = Variable sort v
   | Application label [p]

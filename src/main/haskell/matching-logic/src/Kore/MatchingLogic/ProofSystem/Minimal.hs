@@ -162,6 +162,10 @@ instance (IsSignature sig, Eq (Sort sig), Eq (Label sig), Eq var) =>
               _ -> Left (Error [] "conclusion has wrong form")
       Framing _ _ _ ->
           Left (Error [] "hypothesis has wrong form")
+
+      -- PropagateOr:
+      --   sigma(before ..,\phi1 \/ \phi2,.. after) <->
+      --     sigma(before ..,\phi1, .. after) \/ sigma(before ..,\phi2,.. after)
       PropagateOr label pos phi1 phi2 -> do
           case conclusion of
             IffP s (ApplicationP label1 args1)
@@ -177,8 +181,9 @@ instance (IsSignature sig, Eq (Sort sig), Eq (Label sig), Eq var) =>
                 phi1 == Just term1a, phi2 == Just term1b -> Right ()
             _ -> Left (Error [] "not proved")
 
-     --   sigma(before ..,\phi1 \/ \phi2,.. after) <->
-     --     sigma(before ..,\phi1, .. after) \/ sigma(before ..,\phi2,.. after)
+      -- PropagateExists:
+      --  sigma(before ..,Ex x. phi,.. after)
+      --    <-> Ex x.sigma(before ..,phi,.. after)
       PropagateExists label pos var term ->
           case conclusion of
             IffP s (ApplicationP label1 args1)
@@ -194,13 +199,14 @@ instance (IsSignature sig, Eq (Sort sig), Eq (Label sig), Eq var) =>
                   -> Right ()
             _ -> Left (Error [] "not proved")
 
-      -- sigma(before ..,Ex x. phi,.. after) <-> Ex x.sigma(before ..,phi,.. after)
+      -- Existence:
+      --  Ex x.x
       Existence var ->
           case conclusion of
             ExistsP _ sVar var1 (VariableP sVar' var2)
               | sVar == sVar', var1 == var2, var == var1 -> Right ()
             _ -> Left (Error [] "not exists")
-     -- Ex x.x
+
       Singvar var term path1 path2 ->
           case conclusion of
             NotP s (AndP _ term1 term2) -> do
