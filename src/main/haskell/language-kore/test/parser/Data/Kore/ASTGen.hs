@@ -372,7 +372,7 @@ koreSentenceGen = oneof
     , asSentence <$> sentenceSortGen korePatternGen Object
     , asSentence . SentenceHookedSort <$> sentenceSortGen korePatternGen Object
     , asSentence . SentenceHookedSymbol
-      <$> sentenceSymbolGen korePatternGen Object
+        <$> sentenceSymbolGen korePatternGen Object
     ]
 
 moduleGen

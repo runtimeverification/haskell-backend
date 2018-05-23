@@ -986,7 +986,7 @@ axiomSentenceRemainderParser = asSentence <$>
     )
 
 {-|'sortSentenceRemainderParser' parses the part after the starting
-'sortMetaSort keyword of a sort-declaration and constructs it.
+@sort@ keyword of a sort-declaration and constructs it.
 
 BNF example:
 
@@ -1017,6 +1017,10 @@ hookedSymbolSentenceRemainderParser =
         korePatternParser
         (Rotate31 <....> SentenceSymbol)
 
+{-|'hookedSortSentenceRemainderParser' parses the part after the starting
+'hooked-sort@ keyword of a sort-declaration as a 'SentenceSort' and constructs
+the corresponding 'SentenceHook'.
+-}
 hookedSortSentenceRemainderParser :: Parser KoreSentence
 hookedSortSentenceRemainderParser =
     asSentence . SentenceHookedSort <$> sortSentenceRemainderParser
