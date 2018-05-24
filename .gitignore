@@ -22,3 +22,4 @@ tags
 .classpath
 .project
 .settings
+*-kompiled/
