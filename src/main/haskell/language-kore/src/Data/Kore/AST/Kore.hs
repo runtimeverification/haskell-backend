@@ -33,6 +33,7 @@ module Data.Kore.AST.Kore
     , KoreSentence
     , KoreSentenceAlias
     , KoreSentenceSymbol
+    , KoreSentenceHook
     , KoreSentenceSort
     , KoreSentenceImport
     , KoreSentenceAxiom
@@ -168,6 +169,9 @@ type KoreSentenceAxiom = SentenceAxiom UnifiedSortVariable UnifiedPattern Variab
 -- |'KoreSentenceSort' is the Kore ('Meta' and 'Object') version of
 -- 'SentenceSort'
 type KoreSentenceSort = SentenceSort Object UnifiedPattern Variable
+-- |'KoreSentenceHook' Kore ('Meta' and 'Object') version of
+-- 'SentenceHook'
+type KoreSentenceHook = SentenceHook Object UnifiedPattern Variable
 
 {-|'UnifiedPattern' is joining the 'Meta' and 'Object' versions of 'Sentence',
 to allow using toghether both 'Meta' and 'Object' sentences.
@@ -239,3 +243,6 @@ instance AsSentence KoreSentence KoreSentenceAxiom where
 
 instance AsSentence KoreSentence KoreSentenceSort where
     asSentence = constructUnifiedSentence SentenceSortSentence
+
+instance AsSentence KoreSentence KoreSentenceHook where
+    asSentence = constructUnifiedSentence SentenceHookSentence

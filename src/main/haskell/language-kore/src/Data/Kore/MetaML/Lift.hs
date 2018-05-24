@@ -431,6 +431,13 @@ liftObjectSentence (SentenceSortSentence ss) =
         , SentenceAxiomSentence axiom1
         , SentenceAxiomSentence axiom2
         ]
+-- TODO(traiansf): add information that the two lifted definitions
+-- below correspond to hooks once this is added to the Semantics-of-K document.
+liftObjectSentence (SentenceHookSentence (SentenceHookedSort hss)) =
+    liftObjectSentence (SentenceSortSentence hss)
+liftObjectSentence (SentenceHookSentence (SentenceHookedSymbol hss)) =
+    liftObjectSentence (SentenceSymbolSentence hss)
+
 
 -- |'liftModule' transforms a 'KoreModule' into a 'MetaModule'
 liftModule :: KoreModule -> MetaModule

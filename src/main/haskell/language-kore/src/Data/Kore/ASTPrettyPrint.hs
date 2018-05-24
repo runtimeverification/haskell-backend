@@ -626,6 +626,16 @@ instance
 
 instance
     ( MetaOrObject level
+    , PrettyPrint (Fix (pat variable))
+    ) => PrettyPrint (SentenceHook level pat variable)
+  where
+    prettyPrint flags (SentenceHookedSymbol s)   =
+        writeOneFieldStruct flags "SentenceHookedSymbol" s
+    prettyPrint flags (SentenceHookedSort s)         =
+        writeOneFieldStruct flags "SentenceHookedSort" s
+
+instance
+    ( MetaOrObject level
     , PrettyPrint sortParam
     , PrettyPrint (Fix (pat variable))
     ) => PrettyPrint (Sentence level sortParam pat variable)
@@ -640,6 +650,8 @@ instance
         writeOneFieldStruct flags "SentenceAxiomSentence" s
     prettyPrint flags (SentenceSortSentence s)         =
         writeOneFieldStruct flags "SentenceSortSentence" s
+    prettyPrint flags (SentenceHookSentence s)         =
+        writeOneFieldStruct flags "SentenceHookSentence" s
 
 instance
     ( PrettyPrint sortParam

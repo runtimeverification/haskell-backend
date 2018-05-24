@@ -96,6 +96,12 @@ definedNamesForObjectSentence (SentenceSortSentence sentenceSort) =
         }
     ]
   where sentenceName = toUnparameterizedId (sentenceSortName sentenceSort)
+definedNamesForObjectSentence
+    (SentenceHookSentence (SentenceHookedSort sentence))
+  = definedNamesForObjectSentence (SentenceSortSentence sentence)
+definedNamesForObjectSentence
+    (SentenceHookSentence (SentenceHookedSymbol sentence))
+  = definedNamesForObjectSentence (SentenceSymbolSentence sentence)
 
 {-|'verifySentences' verifies the welformedness of a list of Kore 'Sentence's.
 -}
@@ -189,6 +195,22 @@ verifyObjectSentence
     (SentenceSortSentence sortSentence)
   =
     verifySortSentence sortSentence attributesVerification
+verifyObjectSentence
+    _
+    attributesVerification
+    (SentenceHookSentence (SentenceHookedSort sortSentence))
+  =
+    verifySortSentence sortSentence attributesVerification
+verifyObjectSentence
+    indexedModule
+    attributesVerification
+    (SentenceHookSentence (SentenceHookedSymbol symbolSentence))
+  =
+    verifySymbolAliasSentence
+        (resolveSort indexedModule)
+        indexedModule
+        attributesVerification
+        symbolSentence
 
 verifySymbolAliasSentence
     :: (MetaOrObject level, SentenceSymbolOrAlias ssa)
