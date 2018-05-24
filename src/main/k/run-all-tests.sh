@@ -4,20 +4,20 @@ echo "Kompiling ..."
 kompile --backend java kore.k
 
 total=0
-error=0
+fail=0
+pass=0
 
 echo "Testing ..."
 for f in ../../test/resources/*.kore
 do
+  (( total += 1 ))
   echo "Parsing $f"
   krun --output none $f
-  (( total += 1 ))
   if [ $? -eq 0 ]
   then
-    :
+    (( pass += 1 ))
   else
-    (( error += 1 ))
+    (( fail += 1 ))
   fi
+  echo "----- $pass/ $total ----"
 done
-
-echo "Results (errors): $ERROR / $TOTAL"
