@@ -299,6 +299,9 @@ class TextToKoreTest {
   @Test def test_imp(): Unit = {
     parseFromFile("imp.kore")
   }
+  @Test def test_imp2(): Unit = {
+    parseFromFile("imp2.kore")
+  }
 
 
   def strip(s: String): String = {
