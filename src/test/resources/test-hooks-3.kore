@@ -4,6 +4,6 @@ module TEST-HOOKSYMBOL-1
 
   sort S{} []
 
-  hook-symbol f{}() : S{} []
+  hooked-symbol f{}() : S{} []
 
 endmodule []

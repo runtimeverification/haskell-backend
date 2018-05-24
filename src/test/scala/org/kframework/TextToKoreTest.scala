@@ -60,9 +60,9 @@ class TextToKoreTest {
   /**
     * Tests for hooks.
     */
-  // @Test def test_hooks_1(): Unit = {
-  //   parseFromFile("test-hooks-1.kore")
-  // }
+  @Test def test_hooks_1(): Unit = {
+    parseFromFile("test-hooks-1.kore")
+  }
 
   @Test def test_hooks_2(): Unit = {
     parseFromFile("test-hooks-2.kore")

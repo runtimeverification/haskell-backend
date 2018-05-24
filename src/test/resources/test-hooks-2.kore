@@ -2,7 +2,7 @@
 
 module TEST-HOOKSORT-1
 
-  hook-sort S{} []
+  hooked-sort S{} []
 
   alias f{}() : S{} []
 
