@@ -19,3 +19,9 @@ class (Eq (Sort sig), Eq (Label sig)) => IsSignature sig where
   labelResult l = fst (labelSignature l)
   labelArguments :: Label sig -> [Sort sig]
   labelArguments l = snd (labelSignature l)
+
+class (IsSignature sig) => CheckableSignature sig where
+  type RawLabel sig :: *
+  type RawSort sig :: *
+  resolveLabel :: RawLabel sig -> Maybe (Label sig)
+  resolveSort :: RawSort sig -> Maybe (Sort sig)

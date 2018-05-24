@@ -29,6 +29,7 @@ module Kore.MatchingLogic.AST
   , wfPatSort
   , checkSorts1
   , checkSorts
+  , resolvePattern
   , ToPattern(..)
   , FromPattern(..)
   , notFree
@@ -155,6 +156,15 @@ checkSorts :: (IsSignature sig, Eq (Sort sig))
            => SigPattern sig var
            -> Maybe (WFPattern sig var)
 checkSorts pat = cata (sequenceA >=> checkSorts1) pat
+
+{- | Check if all the raw sorts and labels in a pattern are
+     labels in the given signature -}
+resolvePattern :: forall sig var . CheckableSignature sig
+                 => Pattern (RawSort sig) (RawLabel sig) var
+                 -> Maybe (SigPattern sig var)
+resolvePattern p = cata (\p -> recognizeLayer p >>= sequenceA >>= return . Fix) p
+  where
+    recognizeLayer = visitPatternF resolveSort resolveLabel pure pure
 
 class ToPattern p sort label var | p -> sort label var where
   toPattern :: p -> PatternF sort label var p
