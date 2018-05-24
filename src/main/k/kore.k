@@ -1,14 +1,14 @@
-module KORE-SYNTAX
+module KORE-COMMON
 
-  imports DOMAINS-SYNTAX
+  syntax Name // defined in KORE-SYNTAX
 
-  syntax Sort ::= Id "{" Sorts "}"
+  syntax Sort ::= Name | Name "{" Sorts "}"
 
   syntax Sorts ::= List{Sort, ","}
 
-  syntax Symbol ::= Id "{" Sorts "}"
+  syntax Symbol ::= Name "{" Sorts "}"
 
-  syntax Variable ::= Id ":" Sort
+  syntax Variable ::= Name ":" Sort
 
   syntax Pattern ::= Variable
                    | Symbol "(" Patterns ")"
@@ -32,16 +32,16 @@ module KORE-SYNTAX
   syntax Attribute ::= "[" Patterns "]"
   
   syntax Declaration ::=
-    "import" Id Attribute
-  | "sort" Id "{" Ids "}" Attribute
-  | "symbol" Id "{" Ids "}" "(" Sorts ")" ":" Sort Attribute
-  | "axiom" "{" Ids "}" Pattern Attribute
+    "import" Name Attribute
+  | "sort" Name "{" Names "}" Attribute
+  | "symbol" Name "{" Names "}" "(" Sorts ")" ":" Sort Attribute
+  | "axiom" "{" Names "}" Pattern Attribute
   
-  syntax Ids ::= List{Id, ","}
-  
+  syntax Names ::= List{Name, ","}
+
   syntax Declarations ::= List{Declaration, ""}
   
-  syntax Module ::= "module" Id Declarations "endmodule" Attribute
+  syntax Module ::= "module" Name Declarations "endmodule" Attribute
   
   syntax Modules ::= List{Module, ""}
   
@@ -49,13 +49,20 @@ module KORE-SYNTAX
 
 endmodule
 
+module KORE-SYNTAX
+
+  imports KORE-COMMON
+
+  // TODO:: Fix this regexp.
+  syntax Name ::= r"[_a-zA-Z0-9]*"     [autoReject, token, prec(2)]
+
+endmodule
+
 
 module KORE
 
-  import KORE-SYNTAX
+  imports KORE-COMMON  // don't import KORE-SYNTAX
   
-  configuration <T>
-                  <k> $PGM:Definition </k>
-                </T>
+  configuration <T> <k> $PGM:Definition </k> </T>
 
 endmodule
