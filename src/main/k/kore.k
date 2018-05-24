@@ -1,5 +1,7 @@
 module KORE-COMMON
 
+  imports STRING-SYNTAX
+
   syntax Name // defined in KORE-SYNTAX
 
   syntax Sort ::= Name | Name "{" Sorts "}"
@@ -10,7 +12,12 @@ module KORE-COMMON
 
   syntax Variable ::= Name ":" Sort
 
+  // Copied from domains.k
+  syntax String [hook(STRING.String)]
+  syntax String ::= r"[\\\"](([^\\\"\\n\\r\\\\])|([\\\\][nrtf\\\"\\\\])|([\\\\][x][0-9a-fA-F]{2})|([\\\\][u][0-9a-fA-F]{4})|([\\\\][U][0-9a-fA-F]{8}))*[\\\"]"      [token]
+
   syntax Pattern ::= Variable
+                   | String
                    | Symbol "(" Patterns ")"
                    | "\\and" "{" Sort "}" "(" Pattern "," Pattern ")"
                    | "\\not" "{" Sort "}" "(" Pattern ")"
@@ -34,7 +41,9 @@ module KORE-COMMON
   syntax Declaration ::=
     "import" Name Attribute
   | "sort" Name "{" Names "}" Attribute
+  | "hook-sort" Name "{" Names "}" Attribute
   | "symbol" Name "{" Names "}" "(" Sorts ")" ":" Sort Attribute
+  | "hook-symbol" Name "{" Names "}" "(" Sorts ")" ":" Sort Attribute
   | "axiom" "{" Names "}" Pattern Attribute
   
   syntax Names ::= List{Name, ","}
@@ -54,7 +63,7 @@ module KORE-SYNTAX
   imports KORE-COMMON
 
   // TODO:: Fix this regexp.
-  syntax Name ::= r"[_a-zA-Z0-9]*"     [autoReject, token, prec(2)]
+  syntax Name ::= r"[-#a-zA-Z0-9]*"     [autoReject, token, prec(2)]
 
 endmodule
 
