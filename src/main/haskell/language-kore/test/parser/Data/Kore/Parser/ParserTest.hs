@@ -57,6 +57,8 @@ koreParserTests =
         , testGroup "sentenceSortParser" sentenceSortParserTests
         , testGroup "sentenceSymbolParser" sentenceSymbolParserTests
         , testGroup "attributesParser" attributesParserTests
+        , testGroup "sentenceHookedSortParser" sentenceHookedSortParserTests
+        , testGroup "sentenceHookedSymbolParser" sentenceHookedSymbolParserTests
         , testGroup "moduleParser" moduleParserTests
         , testGroup "definitionParser" definitionParserTests
         ]
@@ -1031,6 +1033,94 @@ sentenceSymbolParserTests =
             , "symbol sy1 { s1 } ( s1 ) : [\"a\"] "
             , "symbol sy1 { s1 } ( s1 ) : s1 "
             , "symbol sy1 { s1 } ( s1 ) [\"a\"] "
+            ]
+        ]
+
+sentenceHookedSortParserTests :: [TestTree]
+sentenceHookedSortParserTests =
+    parseTree koreSentenceParser
+        [ success "hooked-sort s1 { sv1 } [ \"a\" ]"
+            ( asSentence
+                (SentenceHookedSort
+                    SentenceSort
+                        { sentenceSortName = testId "s1"
+                        , sentenceSortParameters = [ sortVariable "sv1" ]
+                        , sentenceSortAttributes =
+                            Attributes
+                                [asKorePattern $ StringLiteralPattern (StringLiteral "a")]
+                        }
+
+                :: KoreSentenceHook)
+            )
+        {- TODO(virgil): The Scala parser allows empty sort variable lists
+           while the semantics-of-k document does not. -}
+        , success "hooked-sort s1 {} [ \"a\" ]"
+            ( asSentence
+                (SentenceHookedSort
+                    SentenceSort
+                        { sentenceSortName = testId "s1"
+                        , sentenceSortParameters = []
+                        , sentenceSortAttributes =
+                            Attributes
+                                [asKorePattern $ StringLiteralPattern (StringLiteral "a")]
+                        }
+                :: KoreSentenceHook)
+            )
+        , FailureWithoutMessage
+            [ ""
+            , "s1 { sv1 } [ \"a\" ]"
+            , "hooked-sort { sv1 } [ \"a\" ]"
+            , "hooked-sort s1 { sv1{} } [ \"a\" ]"
+            , "hooked-sort s1 [ \"a\" ]"
+            , "hooked-sort s1 { sv1 } "
+            , "hooked-sort { sv1 } s1 [ \"a\" ]"
+            ]
+        ]
+
+sentenceHookedSymbolParserTests :: [TestTree]
+sentenceHookedSymbolParserTests =
+    parseTree koreSentenceParser
+        [ success "hooked-symbol sy1 { s1 } ( s1 ) : s1 [\"a\"] "
+            ( asSentence
+                (SentenceHookedSymbol
+                    SentenceSymbol
+                        { sentenceSymbolSymbol = Symbol
+                            { symbolConstructor = testId "sy1"
+                            , symbolParams = [ sortVariable "s1" ]
+                            }
+                        , sentenceSymbolSorts = [ sortVariableSort "s1" ]
+                        , sentenceSymbolResultSort = sortVariableSort "s1"
+                        , sentenceSymbolAttributes =
+                            Attributes
+                                [asKorePattern $
+                                    StringLiteralPattern (StringLiteral "a")]
+                        }
+                :: KoreSentenceHook)
+            )
+        , success "hooked-symbol sy1 {} () : s1 [] "
+            ( asSentence
+                (SentenceHookedSymbol
+                    SentenceSymbol
+                        { sentenceSymbolSymbol = Symbol
+                            { symbolConstructor = testId "sy1"
+                            , symbolParams = []
+                            }
+                        , sentenceSymbolSorts = []
+                        , sentenceSymbolResultSort = sortVariableSort "s1"
+                        , sentenceSymbolAttributes = Attributes []
+                        }
+                :: KoreSentenceHook)
+            )
+        , FailureWithoutMessage
+            [ ""
+            , "sy1 { s1 } ( s1 ) : s1 [\"a\"] "
+            , "hooked-symbol { s1 } ( s1 ) : s1 [\"a\"] "
+            , "hooked-symbol sy1 ( s1 ) : s1 [\"a\"] "
+            , "hooked-symbol sy1 { s1 } : s1 [\"a\"] "
+            , "hooked-symbol sy1 { s1 } ( s1 ) s1 [\"a\"] "
+            , "hooked-symbol sy1 { s1 } ( s1 ) : [\"a\"] "
+            , "hooked-symbol sy1 { s1 } ( s1 ) : s1 "
+            , "hooked-symbol sy1 { s1 } ( s1 ) [\"a\"] "
             ]
         ]
 

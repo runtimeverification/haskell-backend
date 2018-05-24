@@ -81,6 +81,8 @@ data IndexedModule sortParam pat variable = IndexedModule
     , indexedModuleAttributes :: !(Attributes pat variable)
     , indexedModuleImports
         :: ![(Attributes pat variable, IndexedModule sortParam pat variable)]
+    , indexedModuleHookedIdentifiers
+        :: !(Set.Set (Id Object))
     }
 
 deriving instance
@@ -102,17 +104,31 @@ indexedModuleRawSentences im =
     map asSentence
         (Map.elems (indexedModuleMetaSymbolSentences im))
     ++
-    map asSentence
-        (Map.elems (indexedModuleObjectSymbolSentences im))
+    map hookSymbolIfNeeded
+        (Map.toList (indexedModuleObjectSymbolSentences im))
     ++
-    map asSentence
-        (Map.elems (indexedModuleObjectSortDescriptions im))
+    map hookSortIfNeeded
+        (Map.toList (indexedModuleObjectSortDescriptions im))
     ++
     map asSentence (indexedModuleAxioms im)
     ++
     [ asSentence (SentenceImport (indexedModuleName m) attributes)
     | (attributes, m) <- indexedModuleImports im
     ]
+  where
+    hookedIds :: Set.Set (Id Object)
+    hookedIds = indexedModuleHookedIdentifiers im
+    hookSortIfNeeded :: (Id Object, SortDescription Object) -> KoreSentence
+    hookSortIfNeeded (x, sortDescription)
+        | x `Set.member` hookedIds =
+            asSentence (SentenceHookedSort sortDescription)
+        | otherwise = asSentence sortDescription
+    hookSymbolIfNeeded
+        :: (Id Object, KoreSentenceSymbol Object) -> KoreSentence
+    hookSymbolIfNeeded (x, symbolSentence)
+        | x `Set.member` hookedIds =
+            asSentence (SentenceHookedSymbol symbolSentence)
+        | otherwise = asSentence symbolSentence
 
 {-|'ImplicitIndexedModule' is the type for the 'IndexedModule' containing
 things that are implicitly defined.
@@ -136,6 +152,7 @@ emptyIndexedModule name =
         , indexedModuleAxioms = []
         , indexedModuleAttributes = Attributes []
         , indexedModuleImports = []
+        , indexedModuleHookedIdentifiers = Set.empty
         }
 
 {-|'indexedModuleWithDefaultImports' provides an 'IndexedModule' with the given
@@ -479,6 +496,48 @@ indexModuleObjectSentence
                     (indexedModuleObjectSortDescriptions indexedModule)
             }
         )
+indexModuleObjectSentence
+    implicitModule
+    importingModules
+    nameToModule
+    indexedStuff
+    (SentenceHookSentence (SentenceHookedSort sentence))
+  = do
+    let sortId = sentenceSortName sentence
+    (indexedModules, indexedModule) <-
+        indexModuleObjectSentence implicitModule importingModules nameToModule
+            indexedStuff (SentenceSortSentence sentence)
+    return
+        ( indexedModules
+        , indexedModule
+            { indexedModuleHookedIdentifiers =
+                Set.insert sortId (indexedModuleHookedIdentifiers indexedModule)
+
+            }
+        )
+indexModuleObjectSentence
+    _ _ _
+    ( indexedModules
+    , indexedModule @ IndexedModule
+        { indexedModuleObjectSymbolSentences = sentences
+        , indexedModuleHookedIdentifiers = hookedIds
+        }
+    )
+    (SentenceHookSentence (SentenceHookedSymbol sentence))
+    =
+    return
+        ( indexedModules
+        , indexedModule
+            { indexedModuleObjectSymbolSentences =
+                Map.insert
+                    symbolId
+                    sentence
+                    sentences
+            , indexedModuleHookedIdentifiers = Set.insert symbolId hookedIds
+            }
+        )
+  where
+    symbolId = symbolConstructor (sentenceSymbolSymbol sentence)
 
 indexImportedModule
     :: KoreImplicitIndexedModule

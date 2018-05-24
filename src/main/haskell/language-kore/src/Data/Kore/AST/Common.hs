@@ -826,6 +826,23 @@ deriving instance
     , Show sortParam
     ) => Show (SentenceAxiom sortParam pat variable)
 
+{-|@SentenceHook@ corresponds to @hook-declaration@ syntactic category
+from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
+Note that we are reusing the 'SentenceSort' and 'SentenceSymbol' structures to
+represent hooked sorts and hooked symbols.
+-}
+data SentenceHook level pat variable
+    = SentenceHookedSort !(SentenceSort level pat variable)
+    | SentenceHookedSymbol !(SentenceSymbol level pat variable)
+
+deriving instance
+    (Eq (pat variable (Fix (pat variable))))
+     => Eq (SentenceHook level pat variable)
+
+deriving instance
+    (Show (pat variable (Fix (pat variable))))
+     => Show (SentenceHook level pat variable)
+
 {-|The 'Sentence' type corresponds to the @declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 
@@ -851,6 +868,9 @@ data Sentence level sortParam pat variable where
         -> Sentence Meta sortParam pat variable
     SentenceSortSentence
         :: !(SentenceSort Object pat variable)
+        -> Sentence Object sortParam pat variable
+    SentenceHookSentence
+        :: !(SentenceHook Object pat variable)
         -> Sentence Object sortParam pat variable
 
 deriving instance

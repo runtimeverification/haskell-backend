@@ -1,5 +1,8 @@
 {-# LANGUAGE ConstraintKinds            #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE PatternSynonyms            #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
@@ -60,10 +63,18 @@ import           Data.Text.Prettyprint.Doc
 import           Kore.MatchingLogic.Signature
 
 -- | The base functor of patterns
-data PatternF sort -- ^ The type of sorts
-              label -- ^ The type of labels (sometimes used for aliases as well as symbols)
-              v -- ^ The type of variables
-              p -- ^ The the type of subterms
+--
+-- Argument description:
+--
+--  - @sort@ represents the type of sorts
+--
+--  - @label@ represents the type of labels
+--    (sometimes used for aliases as well as symbols)
+--
+--  - @v@ represents the type of variables
+--
+--  - @p@ represents the type of subterms
+data PatternF sort label v p
   = Variable sort v
   | Application label [p]
   | And sort p p
@@ -82,11 +93,11 @@ visitPatternF :: (Applicative f)
               -> (PatternF sort label var pat
                    -> f (PatternF sort' label' var' pat'))
 visitPatternF sort label var pat term = case term of
-  Variable s v -> Variable <$> sort s <*> var v
+  Variable s v       -> Variable <$> sort s <*> var v
   Application l args -> Application <$> label l <*> traverse pat args
-  And s p1 p2 -> And <$> sort s <*> pat p1 <*> pat p2
-  Not s p -> Not <$> sort s <*> pat p
-  Exists s sVar v p -> Exists <$> sort s <*> sort sVar <*> var v <*> pat p
+  And s p1 p2        -> And <$> sort s <*> pat p1 <*> pat p2
+  Not s p            -> Not <$> sort s <*> pat p
+  Exists s sVar v p  -> Exists <$> sort s <*> sort sVar <*> var v <*> pat p
 
 -- | Specializing 'PatternF' to use the sort and label from a signature 'sig'.
 type SigPatternF sig = PatternF (Sort sig) (Label sig)
@@ -112,7 +123,7 @@ newtype WFPattern sig var = WFPattern {fromWFPattern :: SigPattern sig var}
 deriving instance (Eq (Sort sig), Eq (Label sig), Eq var) => Eq (WFPattern sig var)
 deriving instance (Show (Sort sig), Show (Label sig), Show var) => Show (WFPattern sig var)
 deriving instance (Pretty (SigPatternF sig var (SigPattern sig var)))
-                  -- ^ expanded according to Pretty (f (Fix f)) => Pretty (Fix f)
+                  -- expanded according to Pretty (f (Fix f)) => Pretty (Fix f)
                   -- to avoid warning
                 => Pretty (WFPattern sig var)
 
