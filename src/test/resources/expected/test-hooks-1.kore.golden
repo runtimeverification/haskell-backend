@@ -1,0 +1,30 @@
+Definition
+    { definitionAttributes = Attributes []
+    , definitionModules =
+        [ Module
+            { moduleName = ModuleName "TEST-HOOKS-1"
+            , moduleSentences =
+                [ ObjectSentence (SentenceHookSentence (SentenceHookedSort SentenceSort
+                    { sentenceSortName = (Id "S" AstLocationNone) :: Id Object
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "f" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts = []
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "S" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes = Attributes []
+                    }))
+                ]
+            , moduleAttributes = Attributes []
+            }
+        ]
+    }
