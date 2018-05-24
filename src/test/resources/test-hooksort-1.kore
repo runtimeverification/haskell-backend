@@ -1,0 +1,9 @@
+[]
+
+module TEST-HOOKSORT-1
+
+  hook-sort S{} []
+
+  alias f{}() : S{} []
+
+endmodule []

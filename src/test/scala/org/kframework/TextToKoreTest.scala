@@ -28,6 +28,14 @@ class TextToKoreTest {
     parseFromFile("test-sort-4.kore")
   }
 
+
+  /**
+    * Tests for parsing hook sorts.
+    */
+  @Test def test_hooksort_1(): Unit = {
+    parseFromFile("test-hooksort-1.kore")
+  }
+
   /**
     * Tests for parsing symbols.
     */
@@ -54,6 +62,13 @@ class TextToKoreTest {
   }
   @Test def test_symbol_8(): Unit = {
     parseFromFile("test-symbol-8.kore")
+  }
+
+  /**
+    * Tests for parsing hook symbols.
+    */
+  @Test def test_hooksymbol_1(): Unit = {
+    parseFromFile("test-hooksymbol-1.kore")
   }
 
   /**
