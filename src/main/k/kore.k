@@ -32,6 +32,8 @@ module KORE-COMMON
                    | "\\in" "{" Sort "," Sort "}" "(" Pattern "," Pattern ")"
                    | "\\top" "{" Sort "}" "(" ")"
                    | "\\bottom" "{" Sort "}" "(" ")"
+                   | "\\next" "{" Sort "}" "(" Pattern ")"
+                   | "\\rewrites" "{" Sort "}" "(" Pattern "," Pattern ")"
                    | "\\dv" "{" Sort "}" "(" Pattern ")"
 
   syntax Patterns ::= List{Pattern, ","}
