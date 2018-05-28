@@ -12,6 +12,8 @@ Portability : POSIX
 module Data.Kore.Implicit.Attributes
     ( attributeObjectSort
     , hookAttribute
+    , functionalAttribute
+    , constructorAttribute
     , uncheckedAttributesModule
     ) where
 
@@ -67,7 +69,7 @@ hookObjectSymbolSentence =
         )
 
 {-| `hookAttribute` creates a hook attribute pattern containing the given
-string.
+string. 
 -}
 hookAttribute :: String -> AstLocation -> CommonKorePattern
 hookAttribute hook location =
@@ -89,6 +91,27 @@ hookAttribute hook location =
                 ]
             }
         )
+
+functionalAttribute :: Pattern level variable child
+functionalAttribute  = simpleAttribute "functional"
+
+constructorAttribute :: Pattern level variable child
+constructorAttribute = simpleAttribute "constructor"
+
+{-| Creates an attribute consisting of a single keyword with no arguments.
+-}
+simpleAttribute :: String -> Pattern level variable child
+simpleAttribute name =
+        ( ApplicationPattern Application
+            { applicationSymbolOrAlias = SymbolOrAlias
+                { symbolOrAliasConstructor = Id name AstLocationImplicit
+                , symbolOrAliasParams      = []
+                }
+            , applicationChildren = []
+            }
+        )
+
+
 
 argumentPositionObjectSort :: AstLocation -> Sort Object
 argumentPositionObjectSortSentence :: KoreSentence

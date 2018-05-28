@@ -10,11 +10,13 @@ Portability : POSIX
 -}
 module Data.Kore.IndexedModule.Resolvers
     ( getHeadApplicationSorts
+    , getAttributeList
     , resolveSort
     , resolveAlias
     , resolveSymbol
     ) where
 
+import           Data.Fix
 import qualified Data.Map                              as Map
 import           Data.Proxy                            (Proxy (..))
 import qualified Data.Set                              as Set
@@ -23,7 +25,11 @@ import           Data.Kore.AST.Common                  (Id (..), ModuleName,
                                                         SentenceAlias,
                                                         SentenceSymbol,
                                                         SymbolOrAlias (..),
-                                                        Variable)
+                                                        sentenceSymbolAttributes,
+                                                        sentenceAliasAttributes,
+                                                        Pattern,
+                                                        Variable,
+                                                        getAttributes)
 import           Data.Kore.AST.Error                   (koreFailWithLocations)
 import           Data.Kore.AST.Kore                    (KoreSentenceAlias,
                                                         KoreSentenceSymbol,
@@ -37,6 +43,9 @@ import           Data.Kore.Error                       (Error, printError)
 import           Data.Kore.IndexedModule.IndexedModule (IndexedModule (..),
                                                         KoreIndexedModule,
                                                         SortDescription)
+
+
+
 
 symbolSentencesMap
     :: MetaOrObject level
@@ -99,6 +108,29 @@ getHeadApplicationSorts m patternHead =
   where
     headName = symbolOrAliasConstructor patternHead
     headParams = symbolOrAliasParams patternHead
+
+-- |Given a KoreIndexedModule and a head, it looks up the 'SentenceSymbol' or
+-- 'SentenceAlias', and returns its list of attributes.
+-- FIXME: duplicated code as in getHeadApplicationSorts, i.e. use (<|>)
+-- The problem is resolveSymbol and resolveAlias return different types
+-- you could work around this with some rearrangement
+-- but rather just change the types
+getAttributeList
+    :: MetaOrObject level
+    => KoreIndexedModule   -- ^module representing a verified definition
+    -> SymbolOrAlias level -- ^the head we want to find sorts for
+    -> [Fix (UnifiedPattern Variable)] 
+getAttributeList m patternHead = 
+    case resolveSymbol m headName of
+        Right sentence -> getAttributes $ sentenceSymbolAttributes sentence
+        Left _ ->
+            case resolveAlias m headName of
+                Right sentence -> getAttributes $ sentenceAliasAttributes sentence
+                Left _ ->
+                    error ("Head " ++ show patternHead ++ " not defined.")
+  where
+    headName = symbolOrAliasConstructor patternHead
+
 
 {-|'resolveThing' looks up an id in an 'IndexedModule', also searching in the
 imported modules.
