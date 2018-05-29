@@ -93,8 +93,11 @@ module KORE
 
   syntax ObjectVariable ::= ObjectIdentifier ":" ObjectSort
 
+  syntax String [hook(STRING.String)]
+  syntax String ::= r"[\\\"](([^\\\"\\n\\r\\\\])|([\\\\][nrtf\\\"\\\\])|([\\\\][x][0-9a-fA-F]{2})|([\\\\][u][0-9a-fA-F]{4})|([\\\\][U][0-9a-fA-F]{8}))*[\\\"]"      [token]
+
   syntax MetaPattern ::= MetaVariable
-                      //   | String
+                         | String
                          | r"'.'"
                          | MetaHead "(" PatternList ")"
                          | "\\and" "{" MetaSort "}" "(" Pattern "," Pattern ")"
