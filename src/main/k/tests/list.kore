@@ -1,0 +1,162 @@
+module LIST
+
+  sort List{S} []
+
+  symbol nil{S}() : List{S} []
+
+  symbol cons{S}(S, List{S}) : List{S} []
+
+  symbol append{S}(List{S}, List{S}) : List{S} []
+
+  symbol listItem{S}(S) : List{S} []
+
+  /* TODO:: Finish axioms.
+   * All symbols are functional.
+   * List has nil and cons has constructors.
+   * listItem builds singleton lists from elements.
+   */
+
+  /* Functional Axioms */
+
+  axiom{S,R}
+    \exists{R}(
+        T:List{S},
+        \equals{List{S},R}(
+           T:List{S},nil{S}()))
+  []
+
+  axiom{S,R}
+    \exists{S}(
+        T:List{S},
+        \exists{S}(
+           X:S,
+           \exists{S}(
+              XS:List{S},
+              \equals{List{S},R}(
+                 T:List{S},
+                 cons{S}(X:S,XS:List{S})))))
+  []
+
+  axiom{S,R}
+    \exists{R}(
+        T:List{S},
+        \exists{R}(
+           X:List{S},
+           \exists{R}(
+              Y:List{S},
+              \equals{List{S},R}(
+                 T:List{S},
+                 append{S}(X:List{S},Y:List{S})))))
+  []
+
+  axiom{S,R}
+    \exists{R}(
+        T:List{S},
+        \exists{R}(
+           X:S,
+           \equals{List{S},R}(
+              T:List{S},
+              listItem{S}(X:S))))
+  []
+
+  /* No junk */
+
+  axiom{S}
+    \or{List{S}}(
+       nil{}(),
+       \exists{S}(
+          X:S,
+          \exists{S}(
+             XS:List{S},
+             cons{S}(X:S,XS:List{S}))))
+  []
+
+  /* No confusion, different constructors */
+
+  axiom{S}
+    \not{List{S}}(
+       \and{List{S}}(
+          nil{}(),
+          \exists{S}(
+             X:S,
+             \exists{S}(
+                XS:List{S},
+                cons{S}(X:S,XS:List{S}))))
+  []
+
+  /* No confusion, same constructors */
+
+  axiom{S}
+    \forall{}(
+       X:S,
+       \forall{}(
+          XS:List{S},
+          \forall{}(
+             Y:S,
+             \forall{}(
+                YS:List{S},
+                \implies{}(
+                   \and{List{S}}(
+                      cons{S}(X:S,XS:List{S}),
+                      cons{S}(Y:S,YS:List{S})),
+                   \and{List{S}}(
+                     \and{List{S}}(X:S, Y:S),
+                     \and{List{S}}(XS:List{S}, YS:List{S})))))))
+  []
+
+  /* Axioms
+     forall x . listItem(x) = cons(x,nil)
+     forall xs. append(xs,nil) = xs
+     forall xs. append(nil,xs) = xs
+     forall x xs ys . append(cons(x,xs),ys) = cons(x,append(xs,ys))
+     forall xs ys zs . append(append(xs,ys),zs) = append(xs,append(ys,zs))
+   */
+
+  axiom{S,R}
+    \forall{R}(
+       X:S,
+       \equals{List{S},R}(
+          listItem{S}(X:S),
+          Cons{S}(X:S,nil{S}())))
+  []
+
+  axiom{S,R}
+    \forall{R}(
+       XS:List{S},
+       \equals{List{S},R}(
+          append{S}(XS:List{S}, nil{S}()),
+          XS:S))
+  []
+
+  axiom{S,R}
+    \forall{R}(
+       XS:List{S},
+       \equals{List{S},R}(
+          append{S}(nil{S}(), XS:List{S}),
+          XS:S))
+  []
+
+  axiom{S,R}
+    \forall{R}(
+       X:S,
+       \forall{R}(
+          XS:List{S},
+          \forall{R}(
+             YS:List{S},
+             \equals{List{S},R}(
+                append{S}(cons{S}(X:S, XS:List{S}), YS:List{S}),
+                cons{S}(X:S,append{S}(XS:List{S},YS:List{S}))))))
+   []
+
+   axiom{S,R}
+     \forall{R}(
+        XS:List{S},
+        \forall{R}(
+           YS:List{S},
+           \forall{R}(
+              ZS:List{S},
+              \equals{List{S},R}(
+                 append{S}(append{S}(XS:List{S},YS:List{S}),ZS:List{S})))))
+   []
+
+endmodule []
