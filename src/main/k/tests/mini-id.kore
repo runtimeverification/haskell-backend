@@ -1,0 +1,9 @@
+module ID
+
+  import INT []
+
+  sort Id{} []
+
+  symbol id{}(Int{}) : Id{} []
+
+endmodule []
