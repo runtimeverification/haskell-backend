@@ -1,0 +1,146 @@
+module SET
+
+  import BOOL []
+
+  sort Set{S} []
+
+  symbol emptySet{S}() : Set{S} []
+
+  symbol setItem{S}(S) : Set{S} []
+
+  symbol union{S}(Set{S}, Set{S}) : Set{S} []
+
+  symbol inSet{S}(S, Set{S}) : Bool{} []
+
+  /* TODO:: Complete axioms.
+   * All symbols are functional.
+   * (No Junk) emptySet \/ exists S1 S2 . union(S1,S2)
+   * We don't need (No Confusion) for sets, because
+   * union is not really a constructor.
+   * It is a constructor modulo associativity & commutativity.
+   * Just add some reasonable axioms.
+   */
+
+  // emptySet
+
+  axiom{S,R}
+    \exists{R}(
+       T:Set{S},
+       \equals{Set{S},R}(
+          emptySet{S}(),
+          T:Set{S}))
+  []
+
+  // union
+
+  axiom{S,R}
+    \forall{R}(
+       S1:Set{S},
+       \forall{R}(
+          S2:Set{S},
+          \exists{R}(
+             T:Set{S},
+             \equals{Set{S},R}(
+                union{S}(S1:Set{S},S2:Set{S}),
+                T:Set{S}))))
+  []
+
+  // inSet
+
+  axiom{S,R}
+    \forall{R}(
+       Elt:S,
+       \forall{R}(
+          S1:Set{S},
+          \exists{R}(
+             T:Bool{},
+             \equals{Set{S},R}(
+                inSet{S}(Elt:S,S1:Set{S}),
+                T:Bool{}))))
+  []
+
+  // setItem
+
+  axiom{S,R}
+    \forall{R}(
+       Elt:S,
+       \exists{R}(
+          T:Set{S},
+          \equals{T:Set{S},R}(
+             T:Set{S},
+             setItem{S}(Elt:S))))
+  []
+ 
+  // (No Junk) emptySet \/ exists S1 S2 . union(S1,S2)
+
+  axiom{S}
+    \or{Set{S}}(
+       emptySet{S}(),
+       \exists{}(
+          S1:Set{S},
+          \exists{}(
+             S2:Set{S},
+             union{S}(S1:Set{S},S2:Set{S})))))
+   []
+
+
+  /* Set Axioms
+   *
+   * forall s . union s emptySet == s
+   * forall s1 s2 . union s1 s2 == union s2 s1
+   *
+   * forall s . not s in emptySet
+   * forall s . s in (setItem s)
+   * forall s s1 s2 . s in (union s1 s2) -> s in s1 \/ s in s2
+  */
+
+  axiom{S,R}
+    \forall{R}(
+       S1:Set{S},
+       \equals{Set{S},R}(
+         union{S}(S1:Set{S}, emptySet{S}()),
+         S1:Set{S}))
+  []
+
+  axiom{S,R}
+    \forall{R}(
+       S1:Set{S},
+       \forall{R}(
+         S2:Set{S},
+         \equals{Set{S},R}(
+            \union{S}(S1:Set{S},S2:Set{S}),
+            \union{S}(S2:Set{S},S1:Set{S}))))
+  []
+
+  axiom{S,R}
+    \forall{R}(
+       Elt:S,
+       \equals{Set{S},R}(
+          inSet{S}(Elt:S,emptySet{S}()),
+          false{}()))
+  []
+
+  axiom{S,R}
+    \forall{R}(
+       Elt:S,
+       \equals{Set{S},R}(
+          inSet{S}(Elt:S,setItem{S}()),
+          true{}()))
+  []
+
+
+  axiom{S,R}
+    \forall{R}(
+       S1:Set{S},
+       \forall{R}(
+         S2:Set{S},
+         \forall{R}(
+           Elt:S,
+           \implies{Set{S},R}(
+              inSet{S}(Elt:S,union{S}(S1:Set{S},S2:Set{S})),
+              \or{Set{S}}(
+                inSet{S}(Elt:S,S1:Set{S}),
+                inSet{S}(Elt:S,S2:Set{S}))))))
+  []
+ 
+endmodule []
