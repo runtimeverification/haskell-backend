@@ -95,10 +95,17 @@ hookAttribute hook location =
 functionalAttribute :: Pattern level variable child
 functionalAttribute  = simpleAttribute "functional"
 
+functionalSymbolSentence :: KoreSentence
+functionalSymbolSentence  = simpleAttributeSentence "functional"
+
 constructorAttribute :: Pattern level variable child
 constructorAttribute = simpleAttribute "constructor"
 
-{-| Creates an attribute consisting of a single keyword with no arguments.
+constructorSymbolSentence :: KoreSentence
+constructorSymbolSentence  = simpleAttributeSentence "constructor"
+
+{-| Creates a Pattern for an attribute 
+consisting of a single keyword with no arguments.
 -}
 simpleAttribute :: String -> Pattern level variable child
 simpleAttribute name =
@@ -110,7 +117,22 @@ simpleAttribute name =
             , applicationChildren = []
             }
         )
-
+{-| Creates a sentence declaring a simpleAttribute
+-}
+simpleAttributeSentence :: String -> KoreSentence
+simpleAttributeSentence name =
+    asSentence
+        ( SentenceSymbol
+            { sentenceSymbolSymbol     = Symbol
+                { symbolConstructor = Id name AstLocationImplicit
+                , symbolParams      = []
+                }
+            , sentenceSymbolSorts      = []
+            , sentenceSymbolResultSort = attributeObjectSort AstLocationImplicit
+            , sentenceSymbolAttributes = Attributes []
+            }
+        :: KoreSentenceSymbol Object
+        )
 
 
 argumentPositionObjectSort :: AstLocation -> Sort Object
@@ -209,6 +231,8 @@ uncheckedAttributesModule =
             [ attributeObjectSortSentence
             , hookObjectSortSentence
             , hookObjectSymbolSentence
+            , functionalSymbolSentence
+            , constructorSymbolSentence
             , argumentPositionObjectSortSentence
             , firstArgumentObjectSymbolSentence
             , secondArgumentObjectSymbolSentence

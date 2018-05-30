@@ -33,6 +33,34 @@ Definition
                             }
                     , sentenceSymbolAttributes = Attributes []
                     })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "functional" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts = []
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Attribute" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes = Attributes []
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "constructor" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts = []
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Attribute" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes = Attributes []
+                    })
                 , ObjectSentence (SentenceSortSentence SentenceSort
                     { sentenceSortName = (Id "ArgumentPosition" AstLocationNone) :: Id Object
                     , sentenceSortParameters = []
