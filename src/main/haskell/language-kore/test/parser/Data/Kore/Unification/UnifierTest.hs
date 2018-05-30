@@ -278,7 +278,7 @@ unificationTests =
             (UnificationResultTerm aA)
             [("x", aA)]
             (Proposition_5_24_3
-                [FunctionalHead (symbolHead a)]
+                (FunctionalHeadAndChildren (symbolHead a) [])
                 (var x)
                 (extractPurePattern aA)
             )
@@ -290,7 +290,7 @@ unificationTests =
             (AndDistributionAndConstraintLifting
                 (getSentenceSymbolOrAliasHead f [])
                 [ Proposition_5_24_3
-                    [FunctionalHead (symbolHead a)]
+                    (FunctionalHeadAndChildren (symbolHead a) [])
                     (var x)
                     (extractPurePattern aA)
                 ]
@@ -307,7 +307,7 @@ unificationTests =
             (UnificationResultTerm a2A)
             [("x", a2A)]
             (Proposition_5_24_3
-                [FunctionalHead (symbolHead a2)]
+                (FunctionalHeadAndChildren (symbolHead a2) [])
                 (var x)
                 (extractPurePattern a2A)
             )
@@ -325,19 +325,21 @@ unificationTests =
             (AndDistributionAndConstraintLifting
                 (getSentenceSymbolOrAliasHead ef [])
                 [ Proposition_5_24_3
-                    [ FunctionalHead (symbolHead eg)
-                    , FunctionalVariable (var ex3)
+                    ( FunctionalHeadAndChildren (symbolHead eg)
+                    [ FunctionalVariable (var ex3)
                     ]
+                    )
                     (var ex1)
                     (extractPurePattern $ applyS eg [ex3])
                 , Proposition_5_24_3
-                    [ FunctionalHead (symbolHead eh)
-                    , FunctionalVariable (var ex1)
+                    ( FunctionalHeadAndChildren (symbolHead eh)
+                    [ FunctionalVariable (var ex1)
                     ]
+                    )
                     (var ex4)
                     (extractPurePattern $ applyS eh [ex1])
                 , Proposition_5_24_3
-                    [FunctionalVariable (var ex3)]
+                    (FunctionalVariable (var ex3))
                     (var ex2)
                     (extractPurePattern ex3)
                 ]
@@ -355,13 +357,13 @@ unificationTests =
             (AndDistributionAndConstraintLifting
                 (symbolHead nonLinF)
                 [ Proposition_5_24_3
-                    [ FunctionalHead (symbolHead nonLinG)
-                    , FunctionalVariable (var nonLinX)
-                    ]
+                    (FunctionalHeadAndChildren (symbolHead nonLinG)
+                     [FunctionalVariable (var nonLinX)]
+                    )
                     (var nonLinY)
                     (extractPurePattern (applyS nonLinG [nonLinX]))
                 , Proposition_5_24_3
-                    [ FunctionalHead (symbolHead nonLinAS) ]
+                    (FunctionalHeadAndChildren (symbolHead nonLinAS) [])
                     (var nonLinX)
                     (extractPurePattern nonLinA)
                 ]
@@ -382,17 +384,19 @@ unificationTests =
             (AndDistributionAndConstraintLifting
                 (symbolHead expBin)
                 [ Proposition_5_24_3
-                    [ FunctionalHead (symbolHead expBin)
-                    , FunctionalVariable (var expA)
+                    ( FunctionalHeadAndChildren (symbolHead expBin)
+                    [ FunctionalVariable (var expA)
                     , FunctionalVariable (var expY)
                     ]
+                    )
                     (var expX)
                     (extractPurePattern (applyS expBin [expA, expY]))
                 , Proposition_5_24_3
-                    [ FunctionalHead (symbolHead expBin)
-                    , FunctionalVariable (var expY)
+                    ( FunctionalHeadAndChildren (symbolHead expBin)
+                    [ FunctionalVariable (var expY)
                     , FunctionalVariable (var expA)
                     ]
+                    )
                     (var expX)
                     (extractPurePattern (applyS expBin [expY, expA]))
                 ]
@@ -408,14 +412,15 @@ unificationTests =
                 [ AndDistributionAndConstraintLifting
                     (symbolHead expBin)
                     [ Proposition_5_24_3
-                        [ FunctionalVariable (var expA)
-                        ]
+                        ( FunctionalVariable (var expA)
+                        )
                         (var expX)
                         (extractPurePattern expA)
                     , Proposition_5_24_3
-                        [ FunctionalHead (symbolHead eg)
-                        , FunctionalVariable (var expX)
+                        ( FunctionalHeadAndChildren (symbolHead eg)
+                        [ FunctionalVariable (var expX)
                         ]
+                        )
                         (var expA)
                         (extractPurePattern (applyS eg [expX]))
                     ]
@@ -424,9 +429,10 @@ unificationTests =
                         [ CombinedUnificationProof
                             [ EmptyUnificationProof
                             , Proposition_5_24_3
-                                [ FunctionalHead (symbolHead eg)
-                                , FunctionalVariable (var expX)
+                                ( FunctionalHeadAndChildren (symbolHead eg)
+                                [ FunctionalVariable (var expX)
                                 ]
+                                )
                                 (var expX)
                                 (extractPurePattern (applyS eg [expX]))
                             ]
@@ -447,17 +453,19 @@ unificationTests =
                 [ AndDistributionAndConstraintLifting
                     (symbolHead expBin)
                     [ Proposition_5_24_3
-                        [ FunctionalHead (symbolHead expBin)
-                        , FunctionalVariable (var expA)
+                        ( FunctionalHeadAndChildren (symbolHead expBin)
+                        [ FunctionalVariable (var expA)
                         , FunctionalVariable (var expY)
                         ]
+                        )
                         (var expX)
                         (extractPurePattern (applyS expBin [expA, expY]))
                     , Proposition_5_24_3
-                        [ FunctionalHead (symbolHead expBin)
-                        , FunctionalVariable (var expY)
+                        ( FunctionalHeadAndChildren (symbolHead expBin)
+                        [ FunctionalVariable (var expY)
                         , FunctionalVariable (var expA)
                         ]
+                        )
                         (var expX)
                         (extractPurePattern (applyS expBin [expY, expA]))
                     ]
@@ -468,11 +476,11 @@ unificationTests =
                             , AndDistributionAndConstraintLifting
                                 (symbolHead expBin)
                                 [ Proposition_5_24_3
-                                    [FunctionalVariable (var expY)]
+                                    (FunctionalVariable (var expY))
                                     (var expA)
                                     (extractPurePattern expY)
                                 , Proposition_5_24_3
-                                    [FunctionalVariable (var expA)]
+                                    (FunctionalVariable (var expA))
                                     (var expY)
                                     (extractPurePattern expA)
                                 ]

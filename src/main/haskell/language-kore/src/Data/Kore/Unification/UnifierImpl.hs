@@ -76,7 +76,7 @@ data UnificationProof level
     | ConjunctionIdempotency (CommonPurePattern level)
     -- ^Used to specify the reduction a/\a <-> a
     | Proposition_5_24_3
-        [FunctionalProof level]
+        (FunctionalProof level)
         (Variable level)
         (CommonPurePattern level)
     -- ^Used to specify the application of Proposition 5.24 (3)
@@ -120,7 +120,7 @@ data FunctionalProof level
     -- ^Variables are functional as per Corollary 5.19
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     -- |= ∃y . x = y
-    | FunctionalHead (SymbolOrAlias level)
+    | FunctionalHeadAndChildren (SymbolOrAlias level) [FunctionalProof level]
     -- ^Head of a total function, conforming to Definition 5.21
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
   deriving (Eq, Show)
@@ -129,19 +129,33 @@ data FunctionalProof level
 isFunctionalPattern
     :: MetadataTools level
     -> PureMLPattern level Variable
-    -> Either (UnificationError level) [FunctionalProof level]
-isFunctionalPattern tools = fixBottomUpVisitorM reduceM
-  where
-    reduceM (VariablePattern v) =
-        Right [FunctionalVariable v]
-    reduceM (ApplicationPattern ap) =
-        if isFunctional tools patternHead
-            then return (FunctionalHead patternHead : concat proofs)
-            else Left (NonFunctionalHead patternHead)
-      where
-        patternHead = applicationSymbolOrAlias ap
-        proofs = applicationChildren ap
-    reduceM _ = Left NonFunctionalPattern
+    -> Either (UnificationError level) (FunctionalProof level)
+isFunctionalPattern tools (Fix (VariablePattern v)) 
+  = Right (FunctionalVariable $ v)
+isFunctionalPattern tools (Fix (ApplicationPattern ap))
+  = if isFunctional tools patternHead
+    then do
+      functionalChildren <- mapM (isFunctionalPattern tools) patternChildren
+      Right $ FunctionalHeadAndChildren patternHead functionalChildren
+    else Left (NonFunctionalHead patternHead)
+  where 
+    patternHead = applicationSymbolOrAlias ap
+    patternChildren = applicationChildren ap
+isFunctionalPattern tools _ 
+  = Left NonFunctionalPattern
+
+-- isFunctionalPattern tools = fixBottomUpVisitorM reduceM
+--   where
+--     reduceM (VariablePattern v) =
+--         Right [FunctionalVariable v]
+--     reduceM (ApplicationPattern ap) =
+--         if isFunctional tools patternHead
+--             then return (FunctionalHead patternHead : concat proofs)
+--             else Left (NonFunctionalHead patternHead)
+--       where
+--         patternHead = applicationSymbolOrAlias ap
+--         proofs = applicationChildren ap
+--     reduceM _ = Left NonFunctionalPattern
 
 simplifyAnds
     :: MetadataTools level

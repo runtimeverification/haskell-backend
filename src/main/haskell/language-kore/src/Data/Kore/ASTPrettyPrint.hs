@@ -759,5 +759,5 @@ instance MetaOrObject level => PrettyPrint (UnificationError level) where
 instance MetaOrObject level => PrettyPrint (FunctionalProof level) where
     prettyPrint flags (FunctionalVariable v) =
         writeOneFieldStruct flags "FunctionalVariable" v
-    prettyPrint flags (FunctionalHead h) =
-        writeOneFieldStruct flags "FunctionalHead" h
+    prettyPrint flags (FunctionalHeadAndChildren h c) =
+        writeTwoFieldStruct flags "FunctionalHeadAndChildren" h c
