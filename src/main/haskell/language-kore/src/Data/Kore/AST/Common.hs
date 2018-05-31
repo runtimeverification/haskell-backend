@@ -38,6 +38,8 @@ import           Data.Fix
 import           Data.Proxy
 
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.HaskellExtensions (Rotate31 (..), Rotate41 (..))
+
 
 {-| 'FileLocation' represents a position in a source file.
 -}
@@ -713,16 +715,98 @@ deriving instance Traversable (Pattern level variable)
 {-|'Attributes' corresponds to the @attributes@ Kore syntactic declaration.
 It is parameterized by the types of Patterns, @pat@.
 -}
-newtype Attributes pat (variable :: * -> *) =
-    Attributes { getAttributes :: [Fix (pat variable)] }
+
+newtype Attributes =
+    Attributes { getAttributes :: [CommonKorePattern] }
 
 deriving instance
-    (Eq (pat variable (Fix (pat variable))))
-     => Eq (Attributes pat variable)
+    (Eq CommonKorePattern)
+     => Eq (Attributes)
 
 deriving instance
-    (Show (pat variable (Fix (pat variable))))
-     => Show (Attributes pat variable)
+    (Show CommonKorePattern)
+     => Show (Attributes)
+
+{-|'UnifiedPattern' is joining the 'Meta' and 'Object' versions of 'Pattern', to
+allow using toghether both 'Meta' and 'Object' patterns.
+-}
+newtype UnifiedPattern variable child = UnifiedPattern
+    { getUnifiedPattern :: Unified (Rotate31 Pattern variable child) }
+
+-- |View a 'Meta' or an 'Object' 'Pattern' as an 'UnifiedPattern'
+asUnifiedPattern
+    :: (MetaOrObject level)
+    => Pattern level variable child -> UnifiedPattern variable child
+asUnifiedPattern = UnifiedPattern . asUnified . Rotate31
+
+-- |Given a function appliable on all 'Meta' or 'Object' 'Pattern's,
+-- apply it on an 'UnifiedPattern'.
+transformUnifiedPattern
+    :: (forall level . MetaOrObject level => Pattern level variable a -> b)
+    -> (UnifiedPattern variable a -> b)
+transformUnifiedPattern f =
+    transformUnified (f . unRotate31) . getUnifiedPattern
+
+deriving instance
+    ( Eq child
+    , EqMetaOrObject variable
+    ) => Eq (UnifiedPattern variable child)
+
+deriving instance
+    ( Show child
+    , ShowMetaOrObject variable
+    ) => Show (UnifiedPattern variable child)
+
+instance Functor (UnifiedPattern variable) where
+    fmap f =
+        UnifiedPattern
+        . mapUnified (Rotate31 . fmap f . unRotate31)
+        . getUnifiedPattern
+instance Foldable (UnifiedPattern variable) where
+    foldMap f =
+        transformUnified (foldMap f . unRotate31)
+        . getUnifiedPattern
+instance Traversable (UnifiedPattern variable) where
+    sequenceA =
+        fmap UnifiedPattern
+        . sequenceUnified
+            (fmap Rotate31 . sequenceA . unRotate31)
+        . getUnifiedPattern
+
+-- |'KorePattern' is a 'Fix' point of 'Pattern' comprising both
+-- 'Meta' and 'Object' 'Pattern's
+-- 'KorePattern' corresponds to the @pattern@ syntactic category from
+-- the Semantics of K, Section 9.1.4 (Patterns).
+type KorePattern variable = (Fix (UnifiedPattern variable))
+
+-- |View a 'Meta' or an 'Object' 'Pattern' as a 'KorePattern'
+asKorePattern
+    :: (MetaOrObject level)
+    => Pattern level variable (KorePattern variable)
+    -> KorePattern variable
+asKorePattern = Fix . asUnifiedPattern
+
+-- |View a 'Meta' 'Pattern' as a 'KorePattern'
+asMetaKorePattern
+    :: Pattern Meta variable (KorePattern variable)
+    -> KorePattern variable
+asMetaKorePattern = asKorePattern
+
+-- |View a 'Object' 'Pattern' as a 'KorePattern'
+asObjectKorePattern
+    :: Pattern Object variable (KorePattern variable)
+    -> KorePattern variable
+asObjectKorePattern = asKorePattern
+
+instance
+    UnifiedPatternInterface UnifiedPattern
+  where
+    unifyPattern = asUnifiedPattern
+    unifiedPatternApply = transformUnifiedPattern
+
+-- |'CommonKorePattern' is the instantiation of 'KorePattern' with common
+-- 'Variable's.
+type CommonKorePattern = KorePattern Variable
 
 {-|'SentenceAlias' corresponds to the @object-alias-declaration@ and
 @meta-alias-declaration@ syntactic categories from the Semantics of K,
@@ -731,11 +815,12 @@ Section 9.1.6 (Declaration and Definitions).
 The 'level' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
-data SentenceAlias level pat variable = SentenceAlias
+data SentenceAlias level (pat :: (* -> *) -> * -> *) (variable :: * -> *)
+ = SentenceAlias
     { sentenceAliasAlias      :: !(Alias level)
     , sentenceAliasSorts      :: ![Sort level]
     , sentenceAliasResultSort :: !(Sort level)
-    , sentenceAliasAttributes :: !(Attributes pat variable)
+    , sentenceAliasAttributes :: !(Attributes)
     }
 
 deriving instance
@@ -753,11 +838,12 @@ Section 9.1.6 (Declaration and Definitions).
 The 'level' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
-data SentenceSymbol level pat variable = SentenceSymbol
+data SentenceSymbol level (pat :: (* -> *) -> * -> *) (variable :: * -> *)
+ = SentenceSymbol
     { sentenceSymbolSymbol     :: !(Symbol level)
     , sentenceSymbolSorts      :: ![Sort level]
     , sentenceSymbolResultSort :: !(Sort level)
-    , sentenceSymbolAttributes :: !(Attributes pat variable)
+    , sentenceSymbolAttributes :: !(Attributes)
     }
 
 deriving instance
@@ -777,9 +863,10 @@ newtype ModuleName = ModuleName { getModuleName :: String }
 {-|'SentenceImport' corresponds to the @import-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
-data SentenceImport pat variable = SentenceImport
+data SentenceImport (pat :: (* -> *) -> * -> *) (variable :: * -> *)
+ = SentenceImport
     { sentenceImportModuleName :: !ModuleName
-    , sentenceImportAttributes :: !(Attributes pat variable)
+    , sentenceImportAttributes :: !(Attributes)
     }
 
 deriving instance
@@ -793,10 +880,11 @@ deriving instance
 {-|'SentenceSort' corresponds to the @sort-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
-data SentenceSort level pat variable = SentenceSort
+data SentenceSort level (pat :: (* -> *) -> * -> *) (variable :: * -> *)
+ = SentenceSort
     { sentenceSortName       :: !(Id level)
     , sentenceSortParameters :: ![SortVariable level]
-    , sentenceSortAttributes :: !(Attributes pat variable)
+    , sentenceSortAttributes :: !(Attributes)
     }
 
 deriving instance
@@ -810,10 +898,11 @@ deriving instance
 {-|'SentenceAxiom' corresponds to the @axiom-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
-data SentenceAxiom sortParam pat variable = SentenceAxiom
+data SentenceAxiom sortParam (pat :: (* -> *) -> * -> *) (variable :: * -> *)
+ = SentenceAxiom
     { sentenceAxiomParameters :: ![sortParam]
     , sentenceAxiomPattern    :: !(Fix (pat variable))
-    , sentenceAxiomAttributes :: !(Attributes pat variable)
+    , sentenceAxiomAttributes :: !(Attributes)
     }
 
 deriving instance
@@ -831,7 +920,7 @@ from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 Note that we are reusing the 'SentenceSort' and 'SentenceSymbol' structures to
 represent hooked sorts and hooked symbols.
 -}
-data SentenceHook level pat variable
+data SentenceHook level (pat :: (* -> *) -> * -> *) (variable :: * -> *)
     = SentenceHookedSort !(SentenceSort level pat variable)
     | SentenceHookedSymbol !(SentenceSymbol level pat variable)
 
@@ -853,7 +942,7 @@ Since axioms and imports exist at both meta and kore levels, we use 'Meta'
 to qualify them. In contrast, since sort declarations are not available
 at the meta level, we qualify them with 'Object'.
 -}
-data Sentence level sortParam pat variable where
+data Sentence level sortParam (pat :: (* -> *) -> * -> *) (variable :: * -> *) where
     SentenceAliasSentence
         :: !(SentenceAlias level pat variable)
         -> Sentence level sortParam pat variable
@@ -890,10 +979,11 @@ They correspond to the second, third and forth non-terminals of the @definition@
 syntactic category from the Semantics of K, Section 9.1.6
 (Declaration and Definitions).
 -}
-data Module sentence sortParam pat variable = Module
+data Module sentence sortParam (pat :: (* -> *) -> * -> *) (variable :: * -> *)
+ = Module
     { moduleName       :: !ModuleName
     , moduleSentences  :: ![sentence sortParam pat variable]
-    , moduleAttributes :: !(Attributes pat variable)
+    , moduleAttributes :: !(Attributes)
     }
 
 deriving instance
@@ -915,8 +1005,9 @@ syntactic category from the Semantics of K, Section 9.1.6
 'definitionAttributes' corresponds to the first non-terminal of @definition@,
 while the remaining three are grouped into 'definitionModules'.
 -}
-data Definition sentence sortParam pat variable = Definition
-    { definitionAttributes :: !(Attributes pat variable)
+data Definition sentence sortParam (pat :: (* -> *) -> * -> *) (variable :: * -> *)
+ = Definition
+    { definitionAttributes :: !(Attributes)
     , definitionModules    :: ![Module sentence sortParam pat variable]
     }
 
@@ -930,7 +1021,7 @@ deriving instance
     , Show (sentence sortParam pat variable)
     ) => Show (Definition sentence sortParam pat variable)
 
-class SentenceSymbolOrAlias sentence where
+class SentenceSymbolOrAlias (sentence :: * -> ((* -> *) -> * -> *) -> (* -> *) -> *) where
     getSentenceSymbolOrAliasConstructor
         :: sentence level pat variable -> Id level
     getSentenceSymbolOrAliasSortParams
@@ -940,7 +1031,7 @@ class SentenceSymbolOrAlias sentence where
     getSentenceSymbolOrAliasResultSort
         :: sentence level pat variable -> Sort level
     getSentenceSymbolOrAliasAttributes
-        :: sentence level pat variable -> Attributes pat variable
+        :: sentence level pat variable -> Attributes
     getSentenceSymbolOrAliasSentenceName
         :: sentence level pat variable -> String
     getSentenceSymbolOrAliasHead

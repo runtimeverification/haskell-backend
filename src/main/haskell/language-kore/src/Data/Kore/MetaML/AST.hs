@@ -35,9 +35,6 @@ of the 'Pattern' class where the level is fixed to 'Meta'.
 -}
 type MetaMLPattern variable = PureMLPattern Meta variable
 
--- |'MetaAttributes' is the 'Meta'-only version of 'Attributes'
-type MetaAttributes = PureAttributes Meta
-
 -- |'MetaSentenceAxiom' is the 'Meta'-only version of 'SentenceAxiom'
 type MetaSentenceAxiom = PureSentenceAxiom Meta
 -- |'MetaSentenceAlias' is the 'Meta'-only version of 'SentenceAlias'

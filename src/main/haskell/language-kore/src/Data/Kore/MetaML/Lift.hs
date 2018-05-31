@@ -218,8 +218,7 @@ liftObjectReducer p = case p of
             )
 
 liftAttributes :: KoreAttributes -> MetaAttributes
-liftAttributes (Attributes as) =
-    Attributes (map liftToMeta as)
+liftAttributes (Attributes as) = coerce -- FIXME : remove all references to "pure/meta/obj attr"
 
 -- Section 9.2.4 Lift Sort Declarations
 liftSortDeclaration

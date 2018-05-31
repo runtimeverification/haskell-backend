@@ -348,7 +348,7 @@ sentenceSortGen patGen level =
         <*> couple (scale (`div` 2) (sortVariableGen level))
         <*> scale (`div` 2) (attributesGen patGen)
 
-attributesGen :: Gen (Fix (pat variable)) -> Gen (Attributes pat variable)
+attributesGen :: Gen (Fix (pat variable)) -> Gen (Attributes)
 attributesGen patGen = Attributes <$> couple (scale (`div` 4) patGen)
 
 symbolOrAliasSentenceGen

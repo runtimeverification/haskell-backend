@@ -78,9 +78,9 @@ data IndexedModule sortParam pat variable = IndexedModule
     , indexedModuleMetaSortDescriptions
         :: !(Map.Map (Id Meta) (SentenceSort Meta pat variable))
     , indexedModuleAxioms     :: ![SentenceAxiom sortParam pat variable]
-    , indexedModuleAttributes :: !(Attributes pat variable)
+    , indexedModuleAttributes :: !(Attributes)
     , indexedModuleImports
-        :: ![(Attributes pat variable, IndexedModule sortParam pat variable)]
+        :: ![(Attributes, IndexedModule sortParam pat variable)]
     , indexedModuleHookedIdentifiers
         :: !(Set.Set (Id Object))
     }

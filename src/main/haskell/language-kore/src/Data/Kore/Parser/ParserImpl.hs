@@ -789,7 +789,7 @@ BNF definition:
 Always starts with @[@.
 -}
 attributesParser
-    :: Parser (Fix (pat variable)) -> Parser (Attributes pat variable)
+    :: Parser (Fix (pat variable)) -> Parser (Attributes)
 attributesParser patParser =
     Attributes <$> inSquareBracketsListParser patParser
 
@@ -935,7 +935,7 @@ aliasSymbolSentenceRemainderParser
     -> (m level
         -> [Sort level]
         -> Sort level
-        -> Attributes pat variable
+        -> Attributes
         -> as level
        )
     -- ^ Element constructor.

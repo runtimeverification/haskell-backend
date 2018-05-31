@@ -29,9 +29,6 @@ asPurePattern
     :: Pattern level var (PureMLPattern level var) -> PureMLPattern level var
 asPurePattern = Fix
 
--- |'PureAttributes' is the pure (fixed-@level@) version of 'Attributes'
-type PureAttributes level = Attributes (Pattern level) Variable
-
 -- |'PureSentenceAxiom' is the pure (fixed-@level@) version of 'SentenceAxiom'
 type PureSentenceAxiom level =
     SentenceAxiom (SortVariable level) (Pattern level) Variable

@@ -38,6 +38,7 @@ module Data.Kore.AST.Kore
     , KoreSentenceImport
     , KoreSentenceAxiom
     , UnifiedSentence (..)
+    , constructUnifiedSentence
     , applyUnifiedSentence
     , KoreAttributes
     , CommonKorePattern
@@ -59,87 +60,6 @@ import           Data.Kore.HaskellExtensions (Rotate31 (..), Rotate41 (..))
 
 import           Data.Fix
 
-{-|'UnifiedPattern' is joining the 'Meta' and 'Object' versions of 'Pattern', to
-allow using toghether both 'Meta' and 'Object' patterns.
--}
-newtype UnifiedPattern variable child = UnifiedPattern
-    { getUnifiedPattern :: Unified (Rotate31 Pattern variable child) }
-
--- |View a 'Meta' or an 'Object' 'Pattern' as an 'UnifiedPattern'
-asUnifiedPattern
-    :: (MetaOrObject level)
-    => Pattern level variable child -> UnifiedPattern variable child
-asUnifiedPattern = UnifiedPattern . asUnified . Rotate31
-
--- |Given a function appliable on all 'Meta' or 'Object' 'Pattern's,
--- apply it on an 'UnifiedPattern'.
-transformUnifiedPattern
-    :: (forall level . MetaOrObject level => Pattern level variable a -> b)
-    -> (UnifiedPattern variable a -> b)
-transformUnifiedPattern f =
-    transformUnified (f . unRotate31) . getUnifiedPattern
-
-deriving instance
-    ( Eq child
-    , EqMetaOrObject variable
-    ) => Eq (UnifiedPattern variable child)
-
-deriving instance
-    ( Show child
-    , ShowMetaOrObject variable
-    ) => Show (UnifiedPattern variable child)
-
-instance Functor (UnifiedPattern variable) where
-    fmap f =
-        UnifiedPattern
-        . mapUnified (Rotate31 . fmap f . unRotate31)
-        . getUnifiedPattern
-instance Foldable (UnifiedPattern variable) where
-    foldMap f =
-        transformUnified (foldMap f . unRotate31)
-        . getUnifiedPattern
-instance Traversable (UnifiedPattern variable) where
-    sequenceA =
-        fmap UnifiedPattern
-        . sequenceUnified
-            (fmap Rotate31 . sequenceA . unRotate31)
-        . getUnifiedPattern
-
--- |'KorePattern' is a 'Fix' point of 'Pattern' comprising both
--- 'Meta' and 'Object' 'Pattern's
--- 'KorePattern' corresponds to the @pattern@ syntactic category from
--- the Semantics of K, Section 9.1.4 (Patterns).
-type KorePattern variable = (Fix (UnifiedPattern variable))
-
--- |View a 'Meta' or an 'Object' 'Pattern' as a 'KorePattern'
-asKorePattern
-    :: (MetaOrObject level)
-    => Pattern level variable (KorePattern variable)
-    -> KorePattern variable
-asKorePattern = Fix . asUnifiedPattern
-
--- |View a 'Meta' 'Pattern' as a 'KorePattern'
-asMetaKorePattern
-    :: Pattern Meta variable (KorePattern variable)
-    -> KorePattern variable
-asMetaKorePattern = asKorePattern
-
--- |View a 'Object' 'Pattern' as a 'KorePattern'
-asObjectKorePattern
-    :: Pattern Object variable (KorePattern variable)
-    -> KorePattern variable
-asObjectKorePattern = asKorePattern
-
-instance
-    UnifiedPatternInterface UnifiedPattern
-  where
-    unifyPattern = asUnifiedPattern
-    unifiedPatternApply = transformUnifiedPattern
-
--- |'CommonKorePattern' is the instantiation of 'KorePattern' with common
--- 'Variable's.
-type CommonKorePattern = KorePattern Variable
-
 -- |Given functions appliable to 'Meta' 'Pattern's and 'Object' 'Pattern's,
 -- builds a combined function which can be applied on an 'KorePattern'.
 applyKorePattern
@@ -152,7 +72,7 @@ applyKorePattern metaT objectT korePattern =
         UnifiedObject rp -> objectT (unRotate31 rp)
 
 -- |'KoreAttributes' is the Kore ('Meta' and 'Object') version of 'Attributes'
-type KoreAttributes = Attributes UnifiedPattern Variable
+type KoreAttributes = Attributes
 
 -- |'KoreSentenceAlias' is the Kore ('Meta' and 'Object') version of
 -- 'SentenceAlias'

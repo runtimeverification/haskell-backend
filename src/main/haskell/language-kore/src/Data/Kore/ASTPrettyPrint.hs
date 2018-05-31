@@ -135,7 +135,7 @@ writeFieldNewLine fieldName field object = do
 writeAttributesField
     :: (PrinterOutput w m, PrettyPrint (Fix (pat variable)))
     => String
-    -> Attributes pat variable
+    -> Attributes
     -> m ()
 writeAttributesField fieldName attributes@(Attributes as) = do
     write fieldName
@@ -542,7 +542,7 @@ instance MetaOrObject level => PrettyPrint (CommonPurePattern level) where
         writeOneFieldStruct flags "Fix" (unFix purePattern)
 
 instance PrettyPrint (Fix (pat variable))
-    => PrettyPrint (Attributes pat variable)
+    => PrettyPrint (Attributes)
   where
     prettyPrint flags (Attributes a)
         | null a    = write "Attributes []"
