@@ -217,8 +217,8 @@ liftObjectReducer p = case p of
                 (AstLocationLifted AstLocationImplicit)
             )
 
-liftAttributes :: KoreAttributes -> MetaAttributes
-liftAttributes (Attributes as) = coerce -- FIXME : remove all references to "pure/meta/obj attr"
+liftAttributes :: KoreAttributes -> Attributes
+liftAttributes (Attributes as) = Attributes as
 
 -- Section 9.2.4 Lift Sort Declarations
 liftSortDeclaration

@@ -112,7 +112,8 @@ indexedModuleRawSentences im =
     ++
     map asSentence (indexedModuleAxioms im)
     ++
-    [ asSentence (SentenceImport (indexedModuleName m) attributes)
+    [ constructUnifiedSentence SentenceImportSentence 
+      (SentenceImport (indexedModuleName m) attributes)
     | (attributes, m) <- indexedModuleImports im
     ]
   where

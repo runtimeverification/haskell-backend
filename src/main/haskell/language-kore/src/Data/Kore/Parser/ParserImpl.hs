@@ -778,7 +778,7 @@ inCurlyBracesListParser :: Parser item -> Parser [item]
 inCurlyBracesListParser =
     ParserUtils.sepByCharWithDelimitingChars skipWhitespace '{' '}' ','
 
-{-|'attributesParser' parses an @attribute@.
+{-|'`' parses an @attribute@.
 
 BNF definition:
 
@@ -789,9 +789,9 @@ BNF definition:
 Always starts with @[@.
 -}
 attributesParser
-    :: Parser (Fix (pat variable)) -> Parser (Attributes)
-attributesParser patParser =
-    Attributes <$> inSquareBracketsListParser patParser
+    :: Parser (Attributes)
+attributesParser = undefined
+    -- Attributes <$> inSquareBracketsListParser patParser
 
 {-|'koreDefinitionParser' parses a Kore @definition@
 
@@ -809,7 +809,7 @@ definitionParser
     -> Parser (Definition sentence sortParam pat variable)
 definitionParser sentenceParser patParser =
     pure Definition
-        <*> attributesParser patParser
+        <*> attributesParser
         <*> some (moduleParser sentenceParser patParser)
 
 {-|'moduleParser' parses the module part of a Kore @definition@
@@ -828,7 +828,7 @@ moduleParser sentenceParser patParser = do
     name <- moduleNameParser
     sentences <- ParserUtils.manyUntilChar 'e' sentenceParser
     mlLexemeParser "endmodule"
-    attributes <- attributesParser patParser
+    attributes <- attributesParser
     return Module
            { moduleName = name
            , moduleSentences = sentences
@@ -882,36 +882,32 @@ sentenceConstructorRemainderParser sentenceType
         c <- ParserUtils.peekChar'
         case (c, sentenceType) of
             ('#', AliasSentenceType) ->
-                asSentence . unRotate31
+                constructUnifiedSentence SentenceAliasSentence . unRotate31
                 <$>
                 aliasSymbolSentenceRemainderParser
                     Meta
                     (aliasParser Meta)
-                    korePatternParser
                     (Rotate31 <....> SentenceAlias)
             ('#', SymbolSentenceType) ->
-                asSentence . unRotate31
+                constructUnifiedSentence SentenceSymbolSentence . unRotate31
                 <$>
                 aliasSymbolSentenceRemainderParser
                     Meta
                     (symbolParser Meta)
-                    korePatternParser
                     (Rotate31 <....> SentenceSymbol)
             (_, AliasSentenceType) ->
-                asSentence . unRotate31
+                constructUnifiedSentence SentenceAliasSentence . unRotate31
                 <$>
                 aliasSymbolSentenceRemainderParser
                     Object
                     (aliasParser Object)
-                    korePatternParser
                     (Rotate31 <....> SentenceAlias)
             (_, SymbolSentenceType) ->
-                asSentence . unRotate31
+                constructUnifiedSentence SentenceSymbolSentence . unRotate31
                 <$>
                 aliasSymbolSentenceRemainderParser
                     Object
                     (symbolParser Object)
-                    korePatternParser
                     (Rotate31 <....> SentenceSymbol)
 
 {-|'aliasSymbolSentenceRemainderParser' parses the part after the starting
@@ -931,7 +927,6 @@ aliasSymbolSentenceRemainderParser
     :: MetaOrObject level
     => level  -- ^ Distinguishes between the meta and non-meta elements.
     -> Parser (m level)  -- Head parser.
-    -> Parser (Fix (pat variable)) -- attributes pattern parser
     -> (m level
         -> [Sort level]
         -> Sort level
@@ -940,13 +935,13 @@ aliasSymbolSentenceRemainderParser
        )
     -- ^ Element constructor.
     -> Parser (as level)
-aliasSymbolSentenceRemainderParser  x aliasSymbolParser patParser constructor
+aliasSymbolSentenceRemainderParser  x aliasSymbolParser constructor
   = do
     aliasSymbol <- aliasSymbolParser
     sorts <- inParenthesesListParser (sortParser x)
     colonParser
     resultSort <- sortParser x
-    attributes <- attributesParser patParser
+    attributes <- attributesParser
     return (constructor aliasSymbol sorts resultSort attributes)
 
 {-|'importSentenceRemainderParser' parses the part after the starting
@@ -960,10 +955,10 @@ BNF example:
 -}
 importSentenceRemainderParser :: Parser KoreSentence
 importSentenceRemainderParser =
-    asSentence <$>
+    constructUnifiedSentence SentenceImportSentence <$>
     ( pure SentenceImport
         <*> moduleNameParser
-        <*> attributesParser korePatternParser
+        <*> attributesParser
     )
 
 {-|'axiomSentenceRemainderParser' parses the part after the starting
@@ -982,7 +977,7 @@ axiomSentenceRemainderParser = asSentence <$>
     ( pure SentenceAxiom
         <*> inCurlyBracesListParser unifiedSortVariableParser
         <*> korePatternParser
-        <*> attributesParser korePatternParser
+        <*> attributesParser
     )
 
 {-|'sortSentenceRemainderParser' parses the part after the starting
@@ -1001,7 +996,7 @@ sortSentenceRemainderParser =
     pure SentenceSort
         <*> idParser Object
         <*> inCurlyBracesListParser (sortVariableParser Object)
-        <*> attributesParser korePatternParser
+        <*> attributesParser
 
 {-|'hookedSymbolSentenceRemainderParser' parses the part after the starting
 @hooked-symbol@ keyword of an hook-declaration as a 'SentenceSymbol' and
@@ -1009,12 +1004,11 @@ constructs the corresponding 'SentenceHook'.
 -}
 hookedSymbolSentenceRemainderParser :: Parser KoreSentence
 hookedSymbolSentenceRemainderParser =
-    asSentence . SentenceHookedSymbol . unRotate31
+    constructUnifiedSentence SentenceHookSentence . SentenceHookedSymbol . unRotate31
     <$>
     aliasSymbolSentenceRemainderParser
         Object
         (symbolParser Object)
-        korePatternParser
         (Rotate31 <....> SentenceSymbol)
 
 {-|'hookedSortSentenceRemainderParser' parses the part after the starting

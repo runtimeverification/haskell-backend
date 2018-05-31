@@ -57,32 +57,34 @@ extractPurePattern level p =
     _ -> error ("Undexpected non-" ++ show level ++ " pattern")
 
 -- FIXME : all of this attribute record syntax stuff
+-- FIXME: unfortunate that sillyCoerce is necessary
+-- need further refactoring to remove it
 
 sentencePureToKore
     :: MetaOrObject level => PureSentence level -> KoreSentence
-sentencePureToKore = undefined
--- sentencePureToKore (SentenceAliasSentence msa) = constructUnifiedSentence SentenceAliasSentence msa
--- sentencePureToKore (SentenceSymbolSentence mss) = asSentence mss
---     { sentenceSymbolAttributes =
---         (sentenceSymbolAttributes mss)
---     }
--- sentencePureToKore (SentenceImportSentence msi) = asSentence msi
---     { sentenceImportAttributes =
---         (sentenceImportAttributes msi)
---     }
--- sentencePureToKore (SentenceAxiomSentence msx) = asSentence SentenceAxiom
---     { sentenceAxiomAttributes =
---         (sentenceAxiomAttributes msx)
---     , sentenceAxiomPattern =
---         patternPureToKore (sentenceAxiomPattern msx)
---     , sentenceAxiomParameters =
---         map asUnified (sentenceAxiomParameters msx)
---     }
--- sentencePureToKore (SentenceSortSentence mss) = asSentence SentenceSort
---     { sentenceSortName = sentenceSortName mss
---     , sentenceSortParameters = sentenceSortParameters mss
---     , sentenceSortAttributes = (sentenceSortAttributes mss)
---     }
+-- sentencePureToKore = undefined
+sentencePureToKore (SentenceAliasSentence msa) = 
+  constructUnifiedSentence SentenceAliasSentence $ sillyCoerce msa
+  where sillyCoerce (SentenceAlias a b c d) = SentenceAlias a b c d
+sentencePureToKore (SentenceSymbolSentence mss) = 
+  constructUnifiedSentence SentenceSymbolSentence $ sillyCoerce mss
+  where sillyCoerce (SentenceSymbol a b c d) = SentenceSymbol a b c d
+sentencePureToKore (SentenceImportSentence msi) = 
+  constructUnifiedSentence SentenceImportSentence $ sillyCoerce msi
+  where sillyCoerce (SentenceImport a b) = SentenceImport a b
+sentencePureToKore (SentenceAxiomSentence msx) = asSentence SentenceAxiom
+    { sentenceAxiomAttributes =
+        (sentenceAxiomAttributes msx)
+    , sentenceAxiomPattern =
+        patternPureToKore (sentenceAxiomPattern msx)
+    , sentenceAxiomParameters =
+        map asUnified (sentenceAxiomParameters msx)
+    }
+sentencePureToKore (SentenceSortSentence mss) =
+  constructUnifiedSentence SentenceSortSentence mss
+    { sentenceSortName = sentenceSortName mss
+    , sentenceSortParameters = sentenceSortParameters mss
+    }
 
 modulePureToKore
     :: MetaOrObject level => PureModule level -> KoreModule
