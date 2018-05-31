@@ -112,9 +112,6 @@ data UnificationProof level
 -- ^'FunctionalProof' is used for providing arguments that a pattern is
 -- functional.  Currently we only support arguments stating that a
 -- pattern consists only of functional symbols and variables.
--- Hence, a proof that a pattern is functional is a list of 'FunctionalProof'.
--- TODO: replace this datastructures with proper ones representing
--- both hypotheses and conclusions in the proof object.
 data FunctionalProof level
     = FunctionalVariable (Variable level)
     -- ^Variables are functional as per Corollary 5.19
@@ -143,19 +140,6 @@ isFunctionalPattern tools (Fix (ApplicationPattern ap))
     patternChildren = applicationChildren ap
 isFunctionalPattern tools _ 
   = Left NonFunctionalPattern
-
--- isFunctionalPattern tools = fixBottomUpVisitorM reduceM
---   where
---     reduceM (VariablePattern v) =
---         Right [FunctionalVariable v]
---     reduceM (ApplicationPattern ap) =
---         if isFunctional tools patternHead
---             then return (FunctionalHead patternHead : concat proofs)
---             else Left (NonFunctionalHead patternHead)
---       where
---         patternHead = applicationSymbolOrAlias ap
---         proofs = applicationChildren ap
---     reduceM _ = Left NonFunctionalPattern
 
 simplifyAnds
     :: MetadataTools level
@@ -215,7 +199,8 @@ preTransform
             )
         )
         (UnFixedPureMLPattern level Variable)
-preTransform tools (AndPattern ap) = if left == right
+preTransform tools (AndPattern (And _ left right)) = 
+    if left == right
     then Left $ Right
         ( UnificationSolution
             { unificationSolutionTerm = left
@@ -230,30 +215,31 @@ preTransform tools (AndPattern ap) = if left == right
         (_, VariablePattern vp) -> -- add commutativity here
             Left (mlProposition_5_24_3 tools vp left)
         (ApplicationPattern ap1, ApplicationPattern ap2) ->
-            let
+            if 
+                 isConstructor tools head1 
+              && isConstructor tools head2 
+              && head1 == head2
+            then Right $ ApplicationPattern Application
+                  { applicationSymbolOrAlias = head1
+                  , applicationChildren = 
+                      Fix . AndPattern <$>
+                        zipWith3 And 
+                          (getArgumentSorts tools head1)
+                          (applicationChildren ap1)
+                          (applicationChildren ap2)
+                  }
+            else Left $ Left $
+            if not (isConstructor tools head1)
+            then NonConstructorHead head1
+            else if not (isConstructor tools head2)
+            then NonConstructorHead head2
+            else if head1 /= head2
+            then ConstructorClash head1 head2
+            else error "This case should be unreachable"
+              where                 
                 head1 = applicationSymbolOrAlias ap1
                 head2 = applicationSymbolOrAlias ap2
-            in
-                if isConstructor tools head1
-                    then if head1 == head2
-                        then Right
-                            $ ApplicationPattern Application
-                                { applicationSymbolOrAlias = head1
-                                , applicationChildren =
-                                    Fix . AndPattern
-                                        <$> zipWith3 And
-                                            (getArgumentSorts tools head1)
-                                            (applicationChildren ap1)
-                                            (applicationChildren ap2)
-                                }
-                        else if isConstructor tools head2
-                            then Left $ Left (ConstructorClash head1 head2)
-                            else Left $ Left (NonConstructorHead head2)
-                    else Left $ Left (NonConstructorHead head1)
         _ -> Left $ Left UnsupportedPatterns
-  where
-    left = andFirst ap
-    right = andSecond ap
 preTransform _ _ = Left $ Left UnsupportedPatterns
 
 -- applies Proposition 5.24 (3) which replaces x /\ phi with phi /\ x = phi
