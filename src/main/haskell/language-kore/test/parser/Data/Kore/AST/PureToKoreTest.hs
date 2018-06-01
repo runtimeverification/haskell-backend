@@ -79,7 +79,7 @@ pureToKoreTests =
                                         { sentenceImportModuleName =
                                             ModuleName "TEST-MODULE"
                                         , sentenceImportAttributes = Attributes
-                                            [ Fix
+                                            [ asMetaKorePattern
                                                 ( TopPattern Top
                                                     { topSort =
                                                         SortVariableSort

@@ -36,7 +36,7 @@ objectA = SentenceSymbol
           }
     , sentenceSymbolSorts = []
     , sentenceSymbolResultSort = objectS1
-    , sentenceSymbolAttributes = Attributes [ Fix constructorAttribute ]
+    , sentenceSymbolAttributes = Attributes [ constructorAttribute ]
     }
 
 metaA :: PureSentenceSymbol Meta

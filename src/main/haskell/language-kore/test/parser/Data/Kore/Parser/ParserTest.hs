@@ -799,7 +799,7 @@ sentenceAliasParserTests :: [TestTree]
 sentenceAliasParserTests =
     parseTree koreSentenceParser
         [ success "alias a{s1}(s2):s3[\"a\"]"
-            ( asSentence
+            ( constructUnifiedSentence SentenceAliasSentence $ 
                 (SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = testId "a"
@@ -815,7 +815,7 @@ sentenceAliasParserTests =
                 :: KoreSentenceAlias Object)
             )
         , success "alias a { s1 , s2 } ( s3, s4 ) : s5 [ \"a\" , \"b\" ]"
-            ( asSentence
+            ( constructUnifiedSentence SentenceAliasSentence $ 
                 (SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = testId "a"
@@ -840,7 +840,7 @@ sentenceAliasParserTests =
                 :: KoreSentenceAlias Object)
             )
         , success "alias #a{}():#Char[]"
-            ( asSentence
+            ( constructUnifiedSentence SentenceAliasSentence $ 
                 (SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = testId "#a" :: Id Meta
@@ -870,7 +870,7 @@ sentenceAxiomParserTests :: [TestTree]
 sentenceAxiomParserTests =
     parseTree koreSentenceParser
         [ success "axiom{sv1}\"a\"[\"b\"]"
-            ( asSentence
+            ( constructUnifiedSentence SentenceAxiomSentence $
                 (SentenceAxiom
                     { sentenceAxiomParameters =
                         [UnifiedObject
@@ -888,7 +888,7 @@ sentenceAxiomParserTests =
         {- TODO(virgil): The Scala parser allows empty sort variable lists
            while the semantics-of-k document does not. -}
         , success "axiom{}\"a\"[\"b\"]"
-            ( asSentence
+            ( constructUnifiedSentence SentenceAxiomSentence $
                 (SentenceAxiom
                     { sentenceAxiomParameters = [] :: [UnifiedSortVariable]
                     , sentenceAxiomPattern =
@@ -902,7 +902,7 @@ sentenceAxiomParserTests =
                 :: KoreSentenceAxiom)
             )
         , success "axiom { sv1 , sv2 } \"a\" [ \"b\" ] "
-            ( asSentence
+            ( constructUnifiedSentence SentenceAxiomSentence $
                 (SentenceAxiom
                     { sentenceAxiomParameters =
                         [ UnifiedObject
@@ -934,7 +934,7 @@ sentenceImportParserTests :: [TestTree]
 sentenceImportParserTests =
     parseTree koreSentenceParser
         [ success "import M[\"b\"]"
-            ( asSentence
+            ( constructUnifiedSentence SentenceImportSentence $
                 (SentenceImport
                     { sentenceImportModuleName = ModuleName "M"
                     , sentenceImportAttributes =
@@ -957,7 +957,7 @@ sentenceSortParserTests :: [TestTree]
 sentenceSortParserTests =
     parseTree koreSentenceParser
         [ success "sort s1 { sv1 } [ \"a\" ]"
-            ( asSentence
+            ( constructUnifiedSentence SentenceSortSentence $
                 (SentenceSort
                     { sentenceSortName = testId "s1"
                     , sentenceSortParameters = [ sortVariable "sv1" ]
@@ -970,7 +970,7 @@ sentenceSortParserTests =
         {- TODO(virgil): The Scala parser allows empty sort variable lists
            while the semantics-of-k document does not. -}
         , success "sort s1 {} [ \"a\" ]"
-            ( asSentence
+            ( constructUnifiedSentence SentenceSortSentence $
                 (SentenceSort
                     { sentenceSortName = testId "s1"
                     , sentenceSortParameters = []
@@ -995,7 +995,7 @@ sentenceSymbolParserTests :: [TestTree]
 sentenceSymbolParserTests =
     parseTree koreSentenceParser
         [ success "symbol sy1 { s1 } ( s1 ) : s1 [\"a\"] "
-            ( asSentence
+            ( constructUnifiedSentence SentenceSymbolSentence $
                 (SentenceSymbol
                     { sentenceSymbolSymbol = Symbol
                         { symbolConstructor = testId "sy1"
@@ -1011,7 +1011,7 @@ sentenceSymbolParserTests =
                 :: KoreSentenceSymbol Object)
             )
         , success "symbol sy1 {} () : s1 [] "
-            ( asSentence
+            ( constructUnifiedSentence SentenceSymbolSentence $
                 (SentenceSymbol
                     { sentenceSymbolSymbol = Symbol
                         { symbolConstructor = testId "sy1"
@@ -1040,7 +1040,7 @@ sentenceHookedSortParserTests :: [TestTree]
 sentenceHookedSortParserTests =
     parseTree koreSentenceParser
         [ success "hooked-sort s1 { sv1 } [ \"a\" ]"
-            ( asSentence
+            ( constructUnifiedSentence SentenceHookSentence $
                 (SentenceHookedSort
                     SentenceSort
                         { sentenceSortName = testId "s1"
@@ -1055,7 +1055,7 @@ sentenceHookedSortParserTests =
         {- TODO(virgil): The Scala parser allows empty sort variable lists
            while the semantics-of-k document does not. -}
         , success "hooked-sort s1 {} [ \"a\" ]"
-            ( asSentence
+            ( constructUnifiedSentence SentenceHookSentence $
                 (SentenceHookedSort
                     SentenceSort
                         { sentenceSortName = testId "s1"
@@ -1081,7 +1081,7 @@ sentenceHookedSymbolParserTests :: [TestTree]
 sentenceHookedSymbolParserTests =
     parseTree koreSentenceParser
         [ success "hooked-symbol sy1 { s1 } ( s1 ) : s1 [\"a\"] "
-            ( asSentence
+            ( constructUnifiedSentence SentenceHookSentence $
                 (SentenceHookedSymbol
                     SentenceSymbol
                         { sentenceSymbolSymbol = Symbol
@@ -1098,7 +1098,7 @@ sentenceHookedSymbolParserTests =
                 :: KoreSentenceHook)
             )
         , success "hooked-symbol sy1 {} () : s1 [] "
-            ( asSentence
+            ( constructUnifiedSentence SentenceHookSentence $
                 (SentenceHookedSymbol
                     SentenceSymbol
                         { sentenceSymbolSymbol = Symbol
@@ -1126,7 +1126,7 @@ sentenceHookedSymbolParserTests =
 
 attributesParserTests :: [TestTree]
 attributesParserTests =
-    parseTree (attributesParser korePatternParser)
+    parseTree attributesParser
         [ success "[\"a\"]"
             (Attributes
                 [asKorePattern $ StringLiteralPattern (StringLiteral "a")])
@@ -1163,14 +1163,14 @@ moduleParserTests =
             Module
                 { moduleName = ModuleName "MN"
                 , moduleSentences =
-                    [ asSentence
+                    [ constructUnifiedSentence SentenceSortSentence $
                         (SentenceSort
                             { sentenceSortName = testId "c"
                             , sentenceSortParameters = []
                             , sentenceSortAttributes = Attributes []
                             }
                         :: KoreSentenceSort)
-                    , asSentence
+                    , constructUnifiedSentence SentenceSortSentence $
                         (SentenceSort
                             { sentenceSortName = testId "c"
                             , sentenceSortParameters = []

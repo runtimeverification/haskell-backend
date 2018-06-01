@@ -1,4 +1,7 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 {-|
 Module      : Data.Kore.AST.PureToKore
 Description : Functionality for viewing "Pure"-only as unified Kore constructs.
@@ -83,6 +86,7 @@ sentencePureToKore (SentenceSortSentence mss) =
     { sentenceSortName = sentenceSortName mss
     , sentenceSortParameters = sentenceSortParameters mss
     }
+
 
 modulePureToKore
     :: MetaOrObject level => PureModule level -> KoreModule

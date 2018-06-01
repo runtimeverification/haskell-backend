@@ -92,13 +92,13 @@ hookAttribute hook location =
             }
         )
 
-functionalAttribute :: Pattern level variable child
+functionalAttribute :: CommonKorePattern
 functionalAttribute  = simpleAttribute "functional"
 
 functionalSymbolSentence :: KoreSentence
 functionalSymbolSentence  = simpleAttributeSentence "functional"
 
-constructorAttribute :: Pattern level variable child
+constructorAttribute :: CommonKorePattern
 constructorAttribute = simpleAttribute "constructor"
 
 constructorSymbolSentence :: KoreSentence
@@ -107,8 +107,8 @@ constructorSymbolSentence  = simpleAttributeSentence "constructor"
 {-| Creates a Pattern for an attribute 
 consisting of a single keyword with no arguments.
 -}
-simpleAttribute :: String -> Pattern level variable child
-simpleAttribute name =
+simpleAttribute :: String -> CommonKorePattern
+simpleAttribute name = asObjectKorePattern
         ( ApplicationPattern Application
             { applicationSymbolOrAlias = SymbolOrAlias
                 { symbolOrAliasConstructor = Id name AstLocationImplicit

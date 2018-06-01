@@ -874,7 +874,8 @@ patternsInAllContexts
     sortVariableName = SortVariableName rawSortVariableName
     symbolAliasSort = sortVariableSort sortVariableName
     symbolSentence =
-        asSentence SentenceSymbol
+        constructUnifiedSentence SentenceSymbolSentence $
+         SentenceSymbol
             { sentenceSymbolSymbol = Symbol
                 { symbolConstructor = testId rawSymbolName
                 , symbolParams = [SortVariable (testId rawSortVariableName)]
@@ -885,7 +886,8 @@ patternsInAllContexts
                 Attributes [] :: KoreAttributes
             }
     aliasSentence =
-        asSentence SentenceAlias
+        constructUnifiedSentence SentenceAliasSentence $
+         SentenceAlias
             { sentenceAliasAlias = Alias
                 { aliasConstructor = testId rawAliasName
                 , aliasParams = [SortVariable (testId rawSortVariableName)]
@@ -1437,7 +1439,8 @@ testsForUnifiedPatternInTopLevelObjectContext
                         defaultErrorMessage
                 , testDataDefinition =
                     simpleDefinitionFromSentences (ModuleName "MODULE")
-                        ( asSentence SentenceSort
+                        ( constructUnifiedSentence SentenceSortSentence (
+                           SentenceSort
                             { sentenceSortName = testId rawSortName
                             , sentenceSortParameters = sortVariables
                             , sentenceSortAttributes =
@@ -1446,6 +1449,7 @@ testsForUnifiedPatternInTopLevelObjectContext
                                         (asAttribute testPattern)
                                     ]
                             }
+                            )
                         : additionalSentences
                         )
                 }

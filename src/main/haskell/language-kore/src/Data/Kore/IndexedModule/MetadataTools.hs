@@ -55,9 +55,9 @@ extractMetadataTools m =
     } 
     where hasAttribute 
             :: MetaOrObject level 
-            => Pattern level Variable (Fix (UnifiedPattern Variable)) 
+            => CommonKorePattern
             -> KoreIndexedModule 
             -> SymbolOrAlias level 
             -> Bool
           hasAttribute attr m =
-            elem (coerce $ asUnifiedPattern attr) . getAttributeList m
+            elem attr . getAttributeList m

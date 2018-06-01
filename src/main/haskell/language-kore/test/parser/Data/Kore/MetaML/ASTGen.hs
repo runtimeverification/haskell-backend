@@ -22,9 +22,6 @@ metaMLPatternGen = Fix <$> sized (\n ->
             ]
     )
 
-metaAttributesGen :: Gen MetaAttributes
-metaAttributesGen = attributesGen metaMLPatternGen
-
 metaSentenceGen :: Gen MetaSentence
 metaSentenceGen = frequency
     [ (2, symbolOrAliasSentenceGen metaMLPatternGen Meta)

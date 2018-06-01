@@ -482,11 +482,6 @@ liftTests =
                     }
                 )
             )
-        , testCase "Lift Attributes"
-            (prettyAssertEqual ""
-                (Attributes [metaStringPattern])
-                (liftAttributes (Attributes [unifiedStringPattern]))
-            )
         , testCase "Lift Meta Alias Declaration"
             (prettyAssertEqual ""
                 [ SentenceAliasSentence SentenceAlias
@@ -894,7 +889,7 @@ liftTests =
                     }
                 ]
                 (liftSentence
-                    (asSentence SentenceAxiom
+                    (constructUnifiedSentence SentenceAxiomSentence $ SentenceAxiom
                         { sentenceAxiomParameters =
                             [ UnifiedObject (SortVariable (testId "a"))
                             , UnifiedMeta (SortVariable (testId "#a"))

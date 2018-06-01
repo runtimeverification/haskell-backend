@@ -226,7 +226,7 @@ sortSentenceWithSortParameters (SortName name) parameters =
 aliasSentenceWithSort
     :: MetaOrObject level => AliasName -> Sort level -> KoreSentence
 aliasSentenceWithSort (AliasName name) sort =
-    asSentence
+    constructUnifiedSentence SentenceAliasSentence $ 
         SentenceAlias
             { sentenceAliasAlias = Alias
                 { aliasConstructor = testId name
@@ -414,7 +414,7 @@ symbolSentenceWithResultSort
     => SymbolName -> Sort level -> [SortVariable level] -> KoreSentence
 symbolSentenceWithResultSort
     (SymbolName name) sort parameters
-  = asSentence
+  = constructUnifiedSentence SentenceSymbolSentence $ 
         SentenceSymbol
             { sentenceSymbolSymbol = Symbol
                 { symbolConstructor = testId name
@@ -435,7 +435,7 @@ symbolSentenceWithArguments
     => SymbolName -> Sort level -> [Sort level] -> KoreSentence
 symbolSentenceWithArguments
     (SymbolName name) sort operandSorts
-  = asSentence
+  = constructUnifiedSentence SentenceSymbolSentence $ 
         SentenceSymbol
             { sentenceSymbolSymbol = Symbol
                 { symbolConstructor = testId name
@@ -456,7 +456,7 @@ aliasSentenceWithArguments
     => AliasName -> Sort level -> [Sort level] -> KoreSentence
 aliasSentenceWithArguments
     (AliasName name) sort operandSorts
-  = asSentence
+  = constructUnifiedSentence SentenceAliasSentence $ 
         SentenceAlias
             { sentenceAliasAlias = Alias
                 { aliasConstructor = testId name
