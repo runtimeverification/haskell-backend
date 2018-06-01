@@ -2,7 +2,7 @@
 module KORE
   // imports STRING
 
-  syntax Module ::= "module" ModuleName Declarations "endmodule" Attribute
+  syntax Module ::= Attribute "module" ModuleName Declarations "endmodule" Attribute
 
   // Lexicals form p49
   
@@ -150,12 +150,12 @@ module KORE
 
   syntax AliasDeclaration ::= ObjectAliasDeclaration | MetaAliasDeclaration
 
-  syntax ObjectAliasDeclaration ::= "symbol" ObjectHeadConstructor "{" ObjectSortVariableList "}"
+  syntax ObjectAliasDeclaration ::= "alias" ObjectHeadConstructor "{" ObjectSortVariableList "}"
         "(" ObjectSortList ")" ":" ObjectSort "where"
         ObjectHeadConstructor "{" ObjectSortVariableList "}"
         "(" ObjectVariableList ")" ":=" ObjectPattern Attribute
 
-  syntax MetaAliasDeclaration ::= "symbol" MetaHeadConstructor "{" MetaSortVariableList "}"
+  syntax MetaAliasDeclaration ::= "alias" MetaHeadConstructor "{" MetaSortVariableList "}"
         "(" MetaSortList ")" ":" MetaSort "where"
         MetaHeadConstructor "{" MetaSortVariableList "}"
         "(" MetaVariableList ")" ":=" MetaPattern Attribute
