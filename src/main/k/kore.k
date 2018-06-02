@@ -1,5 +1,5 @@
 // Copyright (c) 2018 K Team. All Rights Reserved.
-module KORE
+module KORE-SYNTAX
   // imports STRING
 
   syntax Module ::= Attribute "module" ModuleName Declarations "endmodule" Attribute
@@ -15,8 +15,14 @@ module KORE
   syntax ObjectNonSlashIdentifier ::= r"[A-Za-z][-A-Za-z0-9_']*" [prec(1), notInRules, token, autoReject] 
   syntax ObjectSlashIdentifier ::= r"\\[A-Za-z][-A-Za-z0-9_']*"  [prec(1), notInRules, token, autoReject]
 
-  syntax MetaIdentifier ::= r"#\\?[A-Za-z][A-Za-z0-9_'-]*"  [prec(1), notInRules, token, autoReject]
-                          | r"#'[A-Za-z][A-Za-z0-9_'-]*"    [prec(1), notInRules, token, autoReject]
+ 
+  /**
+  syntax MetaIdentifier ::= r"#[A-Za-z][A-Za-z0-9_'-]*"    [prec(1), notInRules, token, autoReject]
+                          | r"#\\[A-Za-z][A-Za-z0-9_'-]*"  [prec(1), notInRules, token, autoReject]
+                          | r"#`[A-Za-z][A-Za-z0-9_'-]*"   [prec(1), notInRules, token, autoReject]
+  **/
+  // the above doesn't work. I have to use the following, which accepts more things
+  syntax MetaIdentifier ::= r"#.?[A-Za-z][A-Za-z0-9_'-]*"    [prec(1), notInRules, token, autoReject]
 
   // Lexicals from p50
 
@@ -125,6 +131,12 @@ module KORE
 
   // Modules
 
+  syntax Definition ::= Attribute Modules
+
+  syntax Modules ::= Module | Module Modules
+
+  syntax Module ::= "module" ObjectIdentifier Declarations "endmodule" Attribute
+
   syntax Declarations ::= Declaration Declarations
   syntax Declarations ::= ""
 
@@ -150,6 +162,7 @@ module KORE
 
   syntax AliasDeclaration ::= ObjectAliasDeclaration | MetaAliasDeclaration
 
+  /**
   syntax ObjectAliasDeclaration ::= "alias" ObjectHeadConstructor "{" ObjectSortVariableList "}"
         "(" ObjectSortList ")" ":" ObjectSort "where"
         ObjectHeadConstructor "{" ObjectSortVariableList "}"
@@ -159,6 +172,14 @@ module KORE
         "(" MetaSortList ")" ":" MetaSort "where"
         MetaHeadConstructor "{" MetaSortVariableList "}"
         "(" MetaVariableList ")" ":=" MetaPattern Attribute
+  **/
+  // Update the alias syntax to the above when tests are updated.
+
+  syntax ObjectAliasDeclaration ::= "alias" ObjectHeadConstructor "{" ObjectSortVariableList "}"
+                                     "(" ObjectSortList ")" ":" ObjectSort Attribute
+
+  syntax MetaAliasDeclaration ::= "alias" MetaHeadConstructor "{" MetaSortVariableList "}"
+                                     "(" MetaSortList ")" ":" MetaSort Attribute
 
   syntax AxiomDeclaration ::= "axiom" "{" SortVariableList "}" Pattern Attribute
 
@@ -197,5 +218,13 @@ module KORE
       MetaVariable
     | MetaVariable "," MetaVariableList
     | ""
+
+endmodule
+
+module KORE
+
+  imports KORE-SYNTAX
+
+  configuration <k> $PGM:Definition </k>
 
 endmodule

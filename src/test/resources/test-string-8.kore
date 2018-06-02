@@ -1,0 +1,5 @@
+[hook{}(\dv{Hook{}}("test string"))]
+
+module TEST-STRING-8
+
+endmodule []

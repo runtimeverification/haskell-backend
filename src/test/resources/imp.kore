@@ -67,7 +67,7 @@ module IMP
 
   symbol merge{S1,S2}(Map{S1,S2}, Map{S1,S2}) : Map{S1,S2} []
 
-  symbol keys{S1,S2}(Map{S1,S2}) : Set{S1} []
+  symbol domains{S1,S2}(Map{S1,S2}) : Set{S1} []
 
   sort Ctxt{S1,S2} []
 
