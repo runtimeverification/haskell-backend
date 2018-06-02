@@ -3,7 +3,7 @@
 # except string tests and exception tests.
 
 echo "Kompiling ..."
-kompile --backend java --syntax-module KORE kore.k
+kompile --backend java kore.k
 
 total=0
 fail=0
