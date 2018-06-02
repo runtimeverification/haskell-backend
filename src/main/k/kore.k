@@ -1,8 +1,6 @@
 // Copyright (c) 2018 K Team. All Rights Reserved.
-module KORE-SYNTAX
-  // imports STRING
 
-  syntax Module ::= Attribute "module" ModuleName Declarations "endmodule" Attribute
+module KORE-SYNTAX
 
   // Lexicals form p49
   
@@ -16,12 +14,15 @@ module KORE-SYNTAX
   syntax ObjectSlashIdentifier ::= r"\\[A-Za-z][-A-Za-z0-9_']*"  [prec(1), notInRules, token, autoReject]
 
  
-  /**
+  /*
   syntax MetaIdentifier ::= r"#[A-Za-z][A-Za-z0-9_'-]*"    [prec(1), notInRules, token, autoReject]
                           | r"#\\[A-Za-z][A-Za-z0-9_'-]*"  [prec(1), notInRules, token, autoReject]
                           | r"#`[A-Za-z][A-Za-z0-9_'-]*"   [prec(1), notInRules, token, autoReject]
-  **/
-  // the above doesn't work. I have to use the following, which accepts more things
+  */
+
+  // Unexpectedly, the above (the second line) doesn't work, 
+  // and thus the parse cannot parse patterns like #\exists{}(...).
+  // The following is a temporary solution, which parse more things.
   syntax MetaIdentifier ::= r"#.?[A-Za-z][A-Za-z0-9_'-]*"    [prec(1), notInRules, token, autoReject]
 
   // Lexicals from p50
@@ -38,6 +39,8 @@ module KORE-SYNTAX
 
   syntax ObjectSortConstructor ::= ObjectIdentifier
 
+  // The built-in List{...} is not used here because that
+  // introduces circularity issue.
   syntax ObjectSortList ::=
        ObjectSort
      | ObjectSort "," ObjectSortList
@@ -99,6 +102,7 @@ module KORE-SYNTAX
 
   syntax ObjectVariable ::= ObjectIdentifier ":" ObjectSort
 
+  // The syntax for string literals, copied from "domains.k".
   syntax String [hook(STRING.String)]
   syntax String ::= r"[\\\"](([^\\\"\\n\\r\\\\])|([\\\\][nrtf\\\"\\\\])|([\\\\][x][0-9a-fA-F]{2})|([\\\\][u][0-9a-fA-F]{4})|([\\\\][U][0-9a-fA-F]{8}))*[\\\"]"      [token]
 
@@ -162,7 +166,7 @@ module KORE-SYNTAX
 
   syntax AliasDeclaration ::= ObjectAliasDeclaration | MetaAliasDeclaration
 
-  /**
+  /*
   syntax ObjectAliasDeclaration ::= "alias" ObjectHeadConstructor "{" ObjectSortVariableList "}"
         "(" ObjectSortList ")" ":" ObjectSort "where"
         ObjectHeadConstructor "{" ObjectSortVariableList "}"
@@ -172,14 +176,19 @@ module KORE-SYNTAX
         "(" MetaSortList ")" ":" MetaSort "where"
         MetaHeadConstructor "{" MetaSortVariableList "}"
         "(" MetaVariableList ")" ":=" MetaPattern Attribute
-  **/
-  // Update the alias syntax to the above when tests are updated.
+  */
+  // The above is the correct syntax for aliases w.r.t. the semantics of K document.
+  // Currently, the tests are using an out-dated syntax for alises, so we use the following
+  // definitions instead.
 
   syntax ObjectAliasDeclaration ::= "alias" ObjectHeadConstructor "{" ObjectSortVariableList "}"
                                      "(" ObjectSortList ")" ":" ObjectSort Attribute
 
   syntax MetaAliasDeclaration ::= "alias" MetaHeadConstructor "{" MetaSortVariableList "}"
                                      "(" MetaSortList ")" ":" MetaSort Attribute
+
+
+
 
   syntax AxiomDeclaration ::= "axiom" "{" SortVariableList "}" Pattern Attribute
 
