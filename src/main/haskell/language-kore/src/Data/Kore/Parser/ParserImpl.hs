@@ -791,7 +791,7 @@ Always starts with @[@.
 attributesParser
     :: Parser (Attributes)
 attributesParser =
-    Attributes <$> inSquareBracketsListParser koreVariableOrTermPatternParser
+    Attributes <$> inSquareBracketsListParser korePatternParser
 
 {-|'koreDefinitionParser' parses a Kore @definition@
 

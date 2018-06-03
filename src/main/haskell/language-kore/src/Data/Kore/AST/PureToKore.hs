@@ -64,15 +64,12 @@ extractPurePattern level p =
 -- temporary measure
 sentencePureToKore
     :: MetaOrObject level => PureSentence level -> KoreSentence
-sentencePureToKore (SentenceAliasSentence msa) =
-  constructUnifiedSentence SentenceAliasSentence $ sillyCoerce msa
-  where sillyCoerce (SentenceAlias a b c d) = SentenceAlias a b c d
-sentencePureToKore (SentenceSymbolSentence mss) = 
-  constructUnifiedSentence SentenceSymbolSentence $ sillyCoerce mss
-  where sillyCoerce (SentenceSymbol a b c d) = SentenceSymbol a b c d
-sentencePureToKore (SentenceImportSentence msi) = 
-  constructUnifiedSentence SentenceImportSentence $ sillyCoerce msi
-  where sillyCoerce (SentenceImport a b) = SentenceImport a b
+sentencePureToKore (SentenceAliasSentence (SentenceAlias a b c d)) =
+  constructUnifiedSentence SentenceAliasSentence $ SentenceAlias a b c d
+sentencePureToKore (SentenceSymbolSentence (SentenceSymbol a b c d)) = 
+  constructUnifiedSentence SentenceSymbolSentence $ SentenceSymbol a b c d
+sentencePureToKore (SentenceImportSentence (SentenceImport a b)) = 
+  constructUnifiedSentence SentenceImportSentence $ SentenceImport a b
 sentencePureToKore (SentenceAxiomSentence msx) = asSentence SentenceAxiom
     { sentenceAxiomAttributes =
         (sentenceAxiomAttributes msx)
