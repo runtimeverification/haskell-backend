@@ -15,13 +15,13 @@ Please refer to Section 9.2 (The Kore Language Semantics) of the
 module Data.Kore.MetaML.Lift ( liftDefinition
                              , liftModule
                              , liftSentence
-                             , liftAttributes
                              , LiftableToMetaML(liftToMeta)
                              ) where
 
 import           Data.Fix
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
@@ -217,9 +217,6 @@ liftObjectReducer p = case p of
                 (AstLocationLifted AstLocationImplicit)
             )
 
-liftAttributes :: KoreAttributes -> Attributes
-liftAttributes (Attributes as) = Attributes as
-
 -- Section 9.2.4 Lift Sort Declarations
 liftSortDeclaration
     :: KoreSentenceSort
@@ -363,19 +360,19 @@ liftMetaSentence
     -> [MetaSentence]
 liftMetaSentence (SentenceAliasSentence msa) =
     [ SentenceAliasSentence msa
-        { sentenceAliasAttributes = liftAttributes (sentenceAliasAttributes msa)
+        { sentenceAliasAttributes = sentenceAliasAttributes msa
         }
     ]
 liftMetaSentence (SentenceSymbolSentence mss) =
     [ SentenceSymbolSentence mss
         { sentenceSymbolAttributes =
-            liftAttributes (sentenceSymbolAttributes mss)
+            sentenceSymbolAttributes mss
         }
     ]
 liftMetaSentence (SentenceAxiomSentence as) =
     [ SentenceAxiomSentence SentenceAxiom
         { sentenceAxiomParameters = metaParameters
-        , sentenceAxiomAttributes = liftAttributes (sentenceAxiomAttributes as)
+        , sentenceAxiomAttributes = sentenceAxiomAttributes as
         , sentenceAxiomPattern =
             Fix
                 (ImpliesPattern Implies
@@ -409,7 +406,7 @@ liftMetaSentence (SentenceAxiomSentence as) =
 liftMetaSentence (SentenceImportSentence is) =
     [ SentenceImportSentence is
         { sentenceImportAttributes =
-            liftAttributes (sentenceImportAttributes is)
+            sentenceImportAttributes is
         }
     ]
 
@@ -442,13 +439,13 @@ liftObjectSentence (SentenceHookSentence (SentenceHookedSymbol hss)) =
 liftModule :: KoreModule -> MetaModule
 liftModule m = Module
     { moduleName = moduleName m
-    , moduleAttributes = liftAttributes (moduleAttributes m)
+    , moduleAttributes = moduleAttributes m
     , moduleSentences = concatMap liftSentence (moduleSentences m)
     }
 
 -- |'liftDefinition' transforms a 'KoreDefinition' into a 'MetaDefinition'
 liftDefinition :: KoreDefinition -> MetaDefinition
 liftDefinition d = Definition
-    { definitionAttributes = liftAttributes (definitionAttributes d)
+    { definitionAttributes = definitionAttributes d
     , definitionModules = map liftModule (definitionModules d)
     }

@@ -10,6 +10,7 @@ import           Data.Maybe                                          (fromMaybe)
 
 import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML

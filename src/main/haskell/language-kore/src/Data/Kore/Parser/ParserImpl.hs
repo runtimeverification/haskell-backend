@@ -38,6 +38,7 @@ Conventions used:
 module Data.Kore.Parser.ParserImpl where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.HaskellExtensions  (Rotate31 (..), (<....>))

@@ -9,7 +9,9 @@ import           Test.Tasty                               (TestTree, testGroup)
 import           Test.Tasty.Golden                        (findByExtension,
                                                            goldenVsString)
 
-import           Data.Kore.AST.Kore                       (KoreDefinition)
+import           Data.Kore.AST.Kore    
+import           Data.Kore.AST.Sentence                       
+import           Data.Kore.AST.Common                       
 import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.ASTVerifier.DefinitionVerifier
 import           Data.Kore.Error

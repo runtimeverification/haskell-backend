@@ -23,6 +23,7 @@ import           Data.Foldable              (fold)
 import qualified Data.Set                   as Set
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTTraversals
 

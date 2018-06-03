@@ -3,6 +3,7 @@ module Data.Kore.Unparser.UnparseTest ( unparseParseTests
                                       ) where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTGen
@@ -118,7 +119,7 @@ unparseUnitTests =
         --     ( constructUnifiedSentence SentenceImportSentence $ SentenceImport
         --         { sentenceImportModuleName = ModuleName {getModuleName = "sl"}
         --         , sentenceImportAttributes =
-        --             Attributes { getAttributes = [] } :: KoreAttributes
+        --             Attributes { getAttributes = [] } :: Attributes
         --         }
         --     )
         --     "import sl[]"
@@ -134,7 +135,7 @@ unparseUnitTests =
                             }
                         )
                     ]
-                }::KoreAttributes
+                }::Attributes
             )
         "[\n    \\top{#CharList{}}()\n]"
         , unparseTest
@@ -149,7 +150,7 @@ unparseUnitTests =
                             { getCharLiteral = '\'' }
                         )
                     ]
-                }::KoreAttributes
+                }::Attributes
             )
             "[\n    '\\'',\n    '\\''\n]"
         ]

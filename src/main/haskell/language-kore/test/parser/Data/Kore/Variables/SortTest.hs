@@ -4,6 +4,7 @@ import           Test.Tasty                  (TestTree, testGroup)
 import           Test.Tasty.HUnit            (assertEqual, testCase)
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Building.AsAst

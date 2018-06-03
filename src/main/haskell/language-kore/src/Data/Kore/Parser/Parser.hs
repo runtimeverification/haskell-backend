@@ -31,7 +31,8 @@ module Data.Kore.Parser.Parser ( fromKore
                                , koreParser
                                ) where
 
-import           Data.Kore.AST.Kore           (KoreDefinition)
+import           Data.Kore.AST.Kore           
+import           Data.Kore.AST.Sentence           
 import           Data.Kore.Parser.Lexeme      (skipWhitespace)
 import           Data.Kore.Parser.ParserImpl  (koreDefinitionParser)
 import           Data.Kore.Parser.ParserUtils

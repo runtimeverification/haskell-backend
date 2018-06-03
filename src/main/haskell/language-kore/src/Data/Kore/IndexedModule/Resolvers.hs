@@ -21,19 +21,10 @@ import qualified Data.Map                              as Map
 import           Data.Proxy                            (Proxy (..))
 import qualified Data.Set                              as Set
 
-import           Data.Kore.AST.Common                  (Id (..), ModuleName,
-                                                        SentenceAlias,
-                                                        SentenceSymbol,
-                                                        SymbolOrAlias (..),
-                                                        sentenceSymbolAttributes,
-                                                        sentenceAliasAttributes,
-                                                        Pattern,
-                                                        Variable,
-                                                        getAttributes)
+import           Data.Kore.AST.Common                  
 import           Data.Kore.AST.Error                   (koreFailWithLocations)
-import           Data.Kore.AST.Kore                    (KoreSentenceAlias,
-                                                        KoreSentenceSymbol,
-                                                        UnifiedPattern)
+import           Data.Kore.AST.Kore                    
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.MetaOrObject            (IsMetaOrObject (..),
                                                         MetaOrObject,
                                                         isMetaOrObject)

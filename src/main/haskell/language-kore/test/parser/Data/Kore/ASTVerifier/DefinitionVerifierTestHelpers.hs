@@ -9,6 +9,7 @@ import           Test.Tasty.HUnit                         (HasCallStack,
 
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTPrettyPrint
@@ -235,7 +236,7 @@ aliasSentenceWithSort (AliasName name) sort =
             , sentenceAliasSorts = []
             , sentenceAliasResultSort = sort
             , sentenceAliasAttributes =
-                Attributes [] :: KoreAttributes
+                Attributes [] :: Attributes
             }
 
 metaAliasSentenceWithSortParameters
@@ -423,7 +424,7 @@ symbolSentenceWithResultSort
             , sentenceSymbolSorts = []
             , sentenceSymbolResultSort = sort
             , sentenceSymbolAttributes =
-                Attributes [] :: KoreAttributes
+                Attributes [] :: Attributes
             }
 
 objectSymbolSentenceWithArguments
@@ -444,7 +445,7 @@ symbolSentenceWithArguments
             , sentenceSymbolSorts = operandSorts
             , sentenceSymbolResultSort = sort
             , sentenceSymbolAttributes =
-                Attributes [] :: KoreAttributes
+                Attributes [] :: Attributes
             }
 
 objectAliasSentenceWithArguments
@@ -465,7 +466,7 @@ aliasSentenceWithArguments
             , sentenceAliasSorts = operandSorts
             , sentenceAliasResultSort = sort
             , sentenceAliasAttributes =
-                Attributes [] :: KoreAttributes
+                Attributes [] :: Attributes
             }
 
 simpleSortActual :: SortName -> SortActual level

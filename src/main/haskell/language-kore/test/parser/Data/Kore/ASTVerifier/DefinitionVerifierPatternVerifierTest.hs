@@ -6,6 +6,7 @@ import           Test.Tasty                                          (TestTree,
                                                                       testGroup)
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers as Helpers
@@ -883,7 +884,7 @@ patternsInAllContexts
             , sentenceSymbolSorts = [symbolAliasSort]
             , sentenceSymbolResultSort = anotherSort
             , sentenceSymbolAttributes =
-                Attributes [] :: KoreAttributes
+                Attributes [] :: Attributes
             }
     aliasSentence =
         constructUnifiedSentence SentenceAliasSentence $
@@ -895,7 +896,7 @@ patternsInAllContexts
             , sentenceAliasSorts = [symbolAliasSort]
             , sentenceAliasResultSort = anotherSort
             , sentenceAliasAttributes =
-                Attributes [] :: KoreAttributes
+                Attributes [] :: Attributes
             }
 
 genericPatternInPatterns

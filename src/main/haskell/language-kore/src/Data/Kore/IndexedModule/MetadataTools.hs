@@ -18,6 +18,7 @@ import           Data.Fix
 import           Data.Coerce
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTHelpers
 import           Data.Kore.IndexedModule.IndexedModule
