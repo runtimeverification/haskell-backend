@@ -18,6 +18,7 @@ import           Data.Kore.IndexedModule.MetadataTools
 import           Data.Kore.Unification.Error
 
 import           Control.Monad                         (foldM)
+import           Control.Monad.Error
 import           Data.Fix
 import           Data.Function                         (on)
 import           Data.List                             (groupBy, partition,
@@ -128,18 +129,17 @@ isFunctionalPattern
     -> PureMLPattern level Variable
     -> Either (UnificationError level) (FunctionalProof level)
 isFunctionalPattern tools (Fix (VariablePattern v)) 
-  = Right (FunctionalVariable $ v)
+  = return $ FunctionalVariable v
 isFunctionalPattern tools (Fix (ApplicationPattern ap))
-  = if isFunctional tools patternHead
-    then do
+  | isFunctional tools patternHead = do
       functionalChildren <- mapM (isFunctionalPattern tools) patternChildren
-      Right $ FunctionalHeadAndChildren patternHead functionalChildren
-    else Left (NonFunctionalHead patternHead)
-  where 
-    patternHead = applicationSymbolOrAlias ap
-    patternChildren = applicationChildren ap
-isFunctionalPattern tools _ 
-  = Left NonFunctionalPattern
+      return $ FunctionalHeadAndChildren patternHead functionalChildren
+  | otherwise = throwError (NonFunctionalHead patternHead)
+      where patternHead     = applicationSymbolOrAlias ap
+            patternChildren = applicationChildren      ap
+
+-- noConfusion (Fix left) (Fix right) =
+--   let headLeft = applicationSymbolOrAlias left
 
 simplifyAnds
     :: MetadataTools level
