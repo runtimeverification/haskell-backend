@@ -37,7 +37,6 @@ import           Data.Kore.IndexedModule.IndexedModule (IndexedModule (..),
 
 
 
-
 symbolSentencesMap
     :: MetaOrObject level
     => a level

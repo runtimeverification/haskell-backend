@@ -114,12 +114,12 @@ unparseUnitTests =
             ++ "    module i\n    endmodule\n    []\n"
             ++ "    module k\n    endmodule\n    []\n"
             )
-            -- FIXME: Put this test back in. What Unparse instance does it want?
+            -- FIXME: Put this test back in. Ambiguous sortParam0 for inferring Unparse.
         -- , unparseTest
         --     ( constructUnifiedSentence SentenceImportSentence $ SentenceImport
         --         { sentenceImportModuleName = ModuleName {getModuleName = "sl"}
         --         , sentenceImportAttributes =
-        --             Attributes { getAttributes = [] } :: Attributes
+        --             Attributes { getAttributes = [] }
         --         }
         --     )
         --     "import sl[]"

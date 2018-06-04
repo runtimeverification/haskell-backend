@@ -134,7 +134,7 @@ writeFieldNewLine fieldName field object = do
         (betweenLines >> prettyPrint MaySkipParentheses (field object))
 
 writeAttributesField
-    :: (PrinterOutput w m, PrettyPrint (Attributes))
+    :: (PrinterOutput w m)
     => String
     -> Attributes
     -> m ()
@@ -542,8 +542,7 @@ instance MetaOrObject level => PrettyPrint (CommonPurePattern level) where
     prettyPrint flags purePattern =
         writeOneFieldStruct flags "Fix" (unFix purePattern)
 
-instance PrettyPrint (CommonKorePattern)
-    => PrettyPrint (Attributes)
+instance PrettyPrint (Attributes)
   where
     prettyPrint flags (Attributes a)
         | null a    = write "Attributes []"

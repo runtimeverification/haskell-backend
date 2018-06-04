@@ -70,7 +70,7 @@ hookObjectSymbolSentence =
         )
 
 {-| `hookAttribute` creates a hook attribute pattern containing the given
-string. 
+string.
 -}
 hookAttribute :: String -> AstLocation -> CommonKorePattern
 hookAttribute hook location =

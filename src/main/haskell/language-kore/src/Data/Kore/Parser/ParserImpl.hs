@@ -779,7 +779,7 @@ inCurlyBracesListParser :: Parser item -> Parser [item]
 inCurlyBracesListParser =
     ParserUtils.sepByCharWithDelimitingChars skipWhitespace '{' '}' ','
 
-{-|'`' parses an @attribute@.
+{-|'attributesParser' parses an @attribute@.
 
 BNF definition:
 

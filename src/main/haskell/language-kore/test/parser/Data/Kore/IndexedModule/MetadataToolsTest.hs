@@ -24,7 +24,6 @@ import           Data.Kore.IndexedModule.IndexedModule
 import           Data.Kore.IndexedModule.MetadataTools
 import           Data.Kore.KoreHelpers
 
-
 objectS1 :: Sort Object
 objectS1 = simpleSort (SortName "s1")
 
