@@ -246,7 +246,6 @@ useTransitivity ix1 ix2 = do
   proof .= p'
   return (ix3, claim line3)
 
-
 occursCheck = return () --FIXME: 
 
 sameVariable a b = (getVariable a) == (getVariable b)
