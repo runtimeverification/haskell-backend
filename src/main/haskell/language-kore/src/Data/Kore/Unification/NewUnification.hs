@@ -37,7 +37,7 @@ import           Control.Lens
 
 type Eqn ix pat = (ix, (pat, pat))
 
-pattern Equated ix left right = (ix, (left, right))
+pattern Equated ix left right = (ix, Fix (EqualsPattern (Equals _ _ left right)))
 
 type UnificationBag ix pat = (S.Set (Eqn ix pat), S.Set (Eqn ix pat))
 
@@ -67,7 +67,7 @@ splitConstructor
   => MetadataTools level
   -> Eqn ix pat
   -> m (S.Set (Eqn ix pat))
-splitConstructor tools (ix, (left, right))
+splitConstructor tools (Equated ix left right)
   | left == right 
       = return S.empty
   | not undefined --(isConstructor tools headLeft)
@@ -88,7 +88,7 @@ equateChildren
   :: UnificationContext ix pat level m
   => Eqn ix pat
   -> m (S.Set (Eqn ix pat))
-equateChildren (ix, (left, right)) = do
+equateChildren (Equated ix left right) = do
   (ix', _) <- useNoConfusion ix
   eqns <- splitConjunction ix'
   return $ S.fromList eqns
@@ -99,7 +99,19 @@ equateChildren (ix, (left, right)) = do
 -- given the index of a prop of the form C(a1,...,an) = C(b1,...,bn)
 -- applies no confusion for that constructor 
 -- and returns the index of new prop a1 = b1 /\ ... /\ an = bn
-useNoConfusion ix = undefined
+useNoConfusion ix = do
+  p <- use proof
+  let Just line = M.lookup ix p
+  let line' = 
+        Line
+        { claim = undefined
+        , justification = NoConfusion ix --false, there is plenty of confusion
+        , assumptions = assumptions line 
+        }
+  let (ix',p') = addLine line' p
+  proof .= p
+  return (ix', claim line)
+
 splitConjunction 
   :: UnificationContext ix pat level m
   => ix 
@@ -107,8 +119,8 @@ splitConjunction
 splitConjunction ix = do
   p <- use proof
   let Just line = M.lookup ix p
-  case line of
-    isConjunction -> do
+  case claim line of
+    IsConjunction _ _ -> do
       let leftProp  = andL ix p
       let rightProp = andR ix p
       let (ixL, p')  = addLine leftProp  p
@@ -117,7 +129,9 @@ splitConjunction ix = do
       ixL' <- splitConjunction ixL 
       ixR' <- splitConjunction ixR
       return (union ixL' ixR')
-    isntConjunction -> return [(ix, claim line)]
+    _ -> return [(ix, claim line)]
+
+pattern IsConjunction a b <- Fix (AndPattern (And _ a b))
 
 andL ix proof =
   Line 
@@ -182,7 +196,7 @@ reArrange [eqn] = return [eqn]
 reArrange (eqn : es) = (eqn :) <$> go ix es
   where (ix, _) = eqn
         go ix (eqn : es) = do
-          let (ix', (left, right)) = eqn
+          let (Equated ix' left right) = eqn
           eqn' <- useTransitivity ix ix'
           (eqn' :) <$> go ix' es
         go _ [] = return []
@@ -191,7 +205,20 @@ reArrange (eqn : es) = (eqn :) <$> go ix es
 -- ix  : a = b
 -- ix' : a = c
 -- returns index of new prop, b = c
-useTransitivity ix ix' = undefined
+useTransitivity ix1 ix2 = do
+  p <- use proof
+  let Just line1 = M.lookup ix1 p
+  let Just line2 = M.lookup ix2 p
+  let line3 = 
+        Line
+        { claim = undefined
+        , justification = Transitive ix1 ix2
+        , assumptions = assumptions line1 `S.union` assumptions line2
+        }
+  let (ix3, p') = addLine line3 p
+  proof .= p'
+  return (ix3, claim line3)
+
 
 occursCheck = undefined
 
@@ -205,7 +232,7 @@ unify
   => MetadataTools level
   -> Eqn ix pat
   -> m ()
-unify tools eqn@(ix, (left, right)) = do
+unify tools eqn@(Equated ix left right) = do
   activeSet .= (S.empty, S.singleton eqn)
   loop
     where loop = do
