@@ -61,8 +61,7 @@ extractPurePattern level p =
     _ -> error ("Undexpected non-" ++ show level ++ " pattern")
 
 -- FIXME : all of this attribute record syntax stuff
--- FIXME: sillyCoerce should not exist for long
--- temporary measure
+-- Should be temporary measure
 sentencePureToKore
     :: MetaOrObject level => PureSentence level -> KoreSentence
 sentencePureToKore (SentenceAliasSentence (SentenceAlias a b c d)) =
