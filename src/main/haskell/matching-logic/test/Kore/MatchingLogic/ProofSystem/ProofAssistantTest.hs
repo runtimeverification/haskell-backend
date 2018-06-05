@@ -13,21 +13,14 @@ import           Test.Tasty.HUnit                             (assertFailure,
 
 import           Data.Kore.AST.Common                         (Application (..),
                                                                AstLocation (..),
-                                                               Attributes (..),
-                                                               Definition (..),
                                                                Id (..),
-                                                               Module (..),
-                                                               ModuleName (..),
                                                                Pattern (..),
-                                                               Sentence (..),
-                                                               SentenceSymbol (..),
                                                                Sort (..),
                                                                Symbol (..),
                                                                SymbolOrAlias (..),
-                                                               Variable,
-                                                               asSentence)
-import           Data.Kore.AST.Kore                           (CommonKorePattern,
-                                                               KoreSentenceSymbol)
+                                                               Variable)
+import           Data.Kore.AST.Kore                           (CommonKorePattern)
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.MetaOrObject                   (Meta (..))
 import           Data.Kore.AST.PureToKore
 import           Data.Kore.ASTVerifier.DefinitionVerifier     (AttributesVerification (..),

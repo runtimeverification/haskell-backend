@@ -12,6 +12,7 @@ module Data.Kore.ASTVerifier.ModuleVerifier ( verifyModule
                                             ) where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.ASTVerifier.AttributesVerifier
 import           Data.Kore.ASTVerifier.Error

@@ -16,6 +16,7 @@ module Data.Kore.Implicit.Definitions
     ) where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.PureToKore        (modulePureToKore)
 import           Data.Kore.Implicit.Attributes   (uncheckedAttributesModule)

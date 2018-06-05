@@ -17,6 +17,7 @@ module Data.Kore.AST.PureML where
 
 import           Data.Fix
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 
 {-|'PureMLPattern' corresponds to "fixed point" representations
 of the 'Pattern' class where the level is fixed to a given @level@.
@@ -28,9 +29,6 @@ type PureMLPattern level var = Fix (Pattern level var)
 asPurePattern
     :: Pattern level var (PureMLPattern level var) -> PureMLPattern level var
 asPurePattern = Fix
-
--- |'PureAttributes' is the pure (fixed-@level@) version of 'Attributes'
-type PureAttributes level = Attributes (Pattern level) Variable
 
 -- |'PureSentenceAxiom' is the pure (fixed-@level@) version of 'SentenceAxiom'
 type PureSentenceAxiom level =

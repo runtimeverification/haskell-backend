@@ -28,19 +28,7 @@ Please refer to Section 9 (The Kore Language) of the
 <http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
 -}
 module Data.Kore.AST.Kore
-    ( KoreDefinition
-    , KoreModule
-    , KoreSentence
-    , KoreSentenceAlias
-    , KoreSentenceSymbol
-    , KoreSentenceHook
-    , KoreSentenceSort
-    , KoreSentenceImport
-    , KoreSentenceAxiom
-    , UnifiedSentence (..)
-    , applyUnifiedSentence
-    , KoreAttributes
-    , CommonKorePattern
+    ( CommonKorePattern
     , KorePattern
     , asKorePattern
     , asMetaKorePattern
@@ -58,6 +46,8 @@ import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.HaskellExtensions (Rotate31 (..), Rotate41 (..))
 
 import           Data.Fix
+
+
 
 {-|'UnifiedPattern' is joining the 'Meta' and 'Object' versions of 'Pattern', to
 allow using toghether both 'Meta' and 'Object' patterns.
@@ -151,98 +141,5 @@ applyKorePattern metaT objectT korePattern =
         UnifiedMeta rp   -> metaT (unRotate31 rp)
         UnifiedObject rp -> objectT (unRotate31 rp)
 
--- |'KoreAttributes' is the Kore ('Meta' and 'Object') version of 'Attributes'
-type KoreAttributes = Attributes UnifiedPattern Variable
-
--- |'KoreSentenceAlias' is the Kore ('Meta' and 'Object') version of
--- 'SentenceAlias'
-type KoreSentenceAlias level = SentenceAlias level UnifiedPattern Variable
--- |'KoreSentenceSymbol' is the Kore ('Meta' and 'Object') version of
--- 'SentenceSymbol'
-type KoreSentenceSymbol level = SentenceSymbol level UnifiedPattern Variable
--- |'KoreSentenceImport' is the Kore ('Meta' and 'Object') version of
--- 'SentenceImport'
-type KoreSentenceImport = SentenceImport UnifiedPattern Variable
--- |'KoreSentenceAxiom' is the Kore ('Meta' and 'Object') version of
--- 'SentenceAxiom'
-type KoreSentenceAxiom = SentenceAxiom UnifiedSortVariable UnifiedPattern Variable
--- |'KoreSentenceSort' is the Kore ('Meta' and 'Object') version of
--- 'SentenceSort'
-type KoreSentenceSort = SentenceSort Object UnifiedPattern Variable
--- |'KoreSentenceHook' Kore ('Meta' and 'Object') version of
--- 'SentenceHook'
-type KoreSentenceHook = SentenceHook Object UnifiedPattern Variable
-
-{-|'UnifiedPattern' is joining the 'Meta' and 'Object' versions of 'Sentence',
-to allow using toghether both 'Meta' and 'Object' sentences.
--}
-newtype UnifiedSentence sortParam pat variable = UnifiedSentence
-    { getUnifiedSentence :: Unified (Rotate41 Sentence sortParam pat variable) }
-
-deriving instance
-    ( Eq (pat variable (Fix (pat variable)))
-    , Eq sortParam
-    ) => Eq (UnifiedSentence sortParam pat variable)
-
-deriving instance
-    ( Show (pat variable (Fix (pat variable)))
-    , Show sortParam
-    ) => Show (UnifiedSentence sortParam pat variable)
-
 type UnifiedSortVariable = Unified SortVariable
 type UnifiedSort = Unified Sort
-
--- |'KoreSentence' instantiates 'UnifiedSentence' to describe sentences fully
--- corresponding to the @declaration@ syntactic category
--- from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
-type KoreSentence = UnifiedSentence UnifiedSortVariable UnifiedPattern Variable
-
-constructUnifiedSentence
-    :: (MetaOrObject level)
-    => (a -> Sentence level sortParam pat variable)
-    -> (a -> UnifiedSentence sortParam pat variable)
-constructUnifiedSentence ctor = UnifiedSentence . asUnified . Rotate41 . ctor
-
--- |Given functions appliable to 'Meta' 'Sentence's and 'Object' 'Sentences's,
--- builds a combined function which can be applied on 'UnifiedSentence's.
-applyUnifiedSentence
-    :: (Sentence Meta sortParam pat variable -> b)
-    -> (Sentence Object sortParam pat variable -> b)
-    -> (UnifiedSentence sortParam pat variable -> b)
-applyUnifiedSentence metaT _ (UnifiedSentence (UnifiedMeta rs)) =
-    metaT (unRotate41 rs)
-applyUnifiedSentence _ objectT (UnifiedSentence (UnifiedObject rs)) =
-    objectT (unRotate41 rs)
-
--- |'KoreModule' fully instantiates 'Module' to correspond to the second, third,
--- and forth non-terminals of the @definition@ syntactic category from the
--- Semantics of K, Section 9.1.6 (Declaration and Definitions).
-type KoreModule =
-    Module UnifiedSentence UnifiedSortVariable UnifiedPattern Variable
-
-type KoreDefinition =
-    Definition UnifiedSentence UnifiedSortVariable UnifiedPattern Variable
-
-instance
-    ( MetaOrObject level
-    ) => AsSentence KoreSentence (KoreSentenceAlias level)
-  where
-    asSentence = constructUnifiedSentence SentenceAliasSentence
-
-instance
-    ( MetaOrObject level
-    ) => AsSentence KoreSentence (KoreSentenceSymbol level)
-  where
-    asSentence = constructUnifiedSentence SentenceSymbolSentence
-
-instance AsSentence KoreSentence KoreSentenceImport where
-    asSentence = constructUnifiedSentence SentenceImportSentence
-
-instance AsSentence KoreSentence KoreSentenceAxiom where
-    asSentence = constructUnifiedSentence SentenceAxiomSentence
-
-instance AsSentence KoreSentence KoreSentenceSort where
-    asSentence = constructUnifiedSentence SentenceSortSentence
-
-instance AsSentence KoreSentence KoreSentenceHook where
-    asSentence = constructUnifiedSentence SentenceHookSentence

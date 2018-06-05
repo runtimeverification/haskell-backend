@@ -30,6 +30,7 @@ module Data.Kore.Implicit.ImplicitKore ( uncheckedKoreModule
 
 import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML                    (PureSentenceSymbol)
 import           Data.Kore.Implicit.ImplicitKoreImpl
