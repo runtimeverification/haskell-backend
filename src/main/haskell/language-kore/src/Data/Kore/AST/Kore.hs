@@ -182,11 +182,15 @@ newtype UnifiedSentence sortParam pat variable = UnifiedSentence
 deriving instance
     ( Eq (pat variable (Fix (pat variable)))
     , Eq sortParam
+    , Eq (variable Meta)
+    , Eq (variable Object)
     ) => Eq (UnifiedSentence sortParam pat variable)
 
 deriving instance
     ( Show (pat variable (Fix (pat variable)))
     , Show sortParam
+    , Show (variable Meta)
+    , Show (variable Object)
     ) => Show (UnifiedSentence sortParam pat variable)
 
 type UnifiedSortVariable = Unified SortVariable
