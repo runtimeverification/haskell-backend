@@ -731,10 +731,13 @@ Section 9.1.6 (Declaration and Definitions).
 The 'level' type parameter is used to distiguish between the meta- and object-
 versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
-data SentenceAlias level pat variable = SentenceAlias
+
+{- data SentenceAlias level pat variable = SentenceAlias
     { sentenceAliasAlias      :: !(Alias level)
     , sentenceAliasSorts      :: ![Sort level]
     , sentenceAliasResultSort :: !(Sort level)
+    --, leftPattern             :: !(Pattern level variable (Fix (pat variable)))
+    --, rightPattern            :: !(Pattern level variable (Fix (pat variable)))
     , sentenceAliasAttributes :: !(Attributes pat variable)
     }
 
@@ -744,6 +747,25 @@ deriving instance
 
 deriving instance
     (Show (pat variable (Fix (pat variable))))
+     => Show (SentenceAlias level pat variable) -}
+
+
+data SentenceAlias level pat variable = SentenceAlias
+    { sentenceAliasAlias      :: !(Alias level)
+    , sentenceAliasSorts      :: ![Sort level]
+    , sentenceAliasResultSort :: !(Sort level)
+    , leftPattern             :: !(Pattern level variable (Fix (pat variable)))
+    , rightPattern            :: !(Pattern level variable (Fix (pat variable)))
+    , sentenceAliasAttributes :: !(Attributes pat variable)
+    }
+deriving instance
+     (Eq (pat variable (Fix (pat variable)))
+     ,Eq (variable level))
+      => Eq (SentenceAlias level pat variable)
+ 
+deriving instance
+     (Show (pat variable (Fix (pat variable)))
+     ,Show (variable level))
      => Show (SentenceAlias level pat variable)
 
 {-|'SentenceSymbol' corresponds to the @object-symbol-declaration@ and
@@ -876,11 +898,13 @@ data Sentence level sortParam pat variable where
 deriving instance
     ( Eq (pat variable (Fix (pat variable)))
     , Eq sortParam
+    , Eq (variable level)
     ) => Eq (Sentence level sortParam pat variable)
 
 deriving instance
     ( Show (pat variable (Fix (pat variable)))
     , Show sortParam
+    , Show (variable level)
     ) => Show (Sentence level sortParam pat variable)
 
 {-|A 'Module' consists of a 'ModuleName' a list of 'Sentence's and some
