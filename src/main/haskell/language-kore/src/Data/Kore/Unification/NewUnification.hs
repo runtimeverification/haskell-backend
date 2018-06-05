@@ -17,6 +17,7 @@ Portability : portable
 module Data.Kore.Unification.NewUnification where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.PureML
 import           Data.Kore.FixTraversals
@@ -35,9 +36,24 @@ import           Data.List
 import           Data.Function
 import           Control.Lens
 
-type Eqn ix pat = (ix, (pat, pat))
 
-pattern Equated ix left right = (ix, Fix (EqualsPattern (Equals _ _ left right)))
+{-
+
+ACHTUNG!
+
+Everything here is very sloppy and preliminary.
+
+Type params 'level' and 'pat' have been fixed to an arbitrary value
+to avoid type errors. 
+
+All the state monad stuff with Proof should be refactored.
+
+-}
+type Pat = PureMLPattern Meta Variable
+
+type Eqn ix pat = (ix, Pat)
+
+pattern Equated ix s1 s2 left right = (ix, Fix (EqualsPattern (Equals s1 s2 left right)))
 
 type UnificationBag ix pat = (S.Set (Eqn ix pat), S.Set (Eqn ix pat))
 
@@ -51,44 +67,44 @@ data AdHocRules ix
 data UnificationState ix pat
   = UnificationState
   { _activeSet :: UnificationBag ix pat 
-  , _proof     :: Proof ix AdHocRules (pat, pat)
+  , _proof     :: Proof ix AdHocRules pat
   }
 
 makeLenses ''UnificationState
 
 type UnificationContext ix pat level m
-  = ( Ord ix , Ord pat
-  , MonadState (UnificationState ix pat) m
-  , MonadError (UnificationError level) m
+  = ( Ord ix -- , Ord Pat, Eq Pat
+  , MonadState (UnificationState ix Pat) m
+  , MonadError (UnificationError Meta) m
   ) 
 
 splitConstructor 
   :: UnificationContext ix pat level m
-  => MetadataTools level
+  => MetadataTools Meta
   -> Eqn ix pat
   -> m (S.Set (Eqn ix pat))
-splitConstructor tools (Equated ix left right)
+splitConstructor tools (Equated ix s1 s2 left right)
   | left == right 
       = return S.empty
-  | not undefined --(isConstructor tools headLeft)
-      = throwError $ undefined --NonConstructorHead headLeft
-  | not undefined --(isConstructor tools headRight)
-      = throwError $ undefined --NonConstructorHead headRight
+  | not (isConstructor tools headLeft)
+      = throwError $ NonConstructorHead headLeft
+  | not (isConstructor tools headRight)
+      = throwError $ NonConstructorHead headRight
   | headLeft /= headRight
-      = throwError $ undefined --ConstructorClash headLeft headRight
+      = throwError $ ConstructorClash headLeft headRight
   | otherwise
-      = equateChildren (ix, (left, right))
+      = equateChildren (Equated ix s1 s2 left right)
     where 
-      headLeft  = getHead left -- applicationSymbolOrAlias $ unFix left
-      headRight = getHead right --applicationSymbolOrAlias $ unFix right
+      ApplicationPattern (Application headLeft  _) = unFix left
+      ApplicationPattern (Application headRight _) = unFix right
 
-getHead = id
+-- getHead = id
 
 equateChildren
   :: UnificationContext ix pat level m
   => Eqn ix pat
   -> m (S.Set (Eqn ix pat))
-equateChildren (Equated ix left right) = do
+equateChildren (Equated ix s1 s2 left right) = do
   (ix', _) <- useNoConfusion ix
   eqns <- splitConjunction ix'
   return $ S.fromList eqns
@@ -135,18 +151,21 @@ pattern IsConjunction a b <- Fix (AndPattern (And _ a b))
 
 andL ix proof =
   Line 
- { claim = undefined $ claim line
+ { claim = getAndL $ claim line
  , justification = AndL ix
  , assumptions = assumptions line
  } where Just line = M.lookup ix proof
 
+getAndL (Fix (AndPattern x)) = andFirst x
+
 andR ix proof =
   Line 
- { claim = undefined $ claim line
+ { claim = getAndR $ claim line
  , justification = AndR ix
  , assumptions = assumptions line
  } where Just line = M.lookup ix proof
 
+getAndR (Fix (AndPattern x)) = andSecond x
 
 -- (varEqns, otherEqns)
 -- varEqns holds only equations of the form x = t, where x is a variable
@@ -154,7 +173,7 @@ andR ix proof =
 
 step 
   :: UnificationContext ix pat level m
-  => MetadataTools level
+  => MetadataTools Meta
   -> m Bool
 step tools = do
   (varEqns, otherEqns) <- use activeSet
@@ -169,8 +188,16 @@ step tools = do
            activeSet .= (varEqns, S.union splitCons rest)
            return False
 
-isVarEqn = undefined
-orient = undefined
+isVarEqn (_, Fix (EqualsPattern (Equals s1 s2 left right)))
+ = isVar left || isVar right
+
+isVar (Fix (VariablePattern _)) = True
+isVar _ = False
+
+orient (ix, Fix (EqualsPattern (Equals s1 s2 left right))) = 
+  if isVar left
+  then (ix, Fix (EqualsPattern (Equals s1 s2 left right)))
+  else (ix, Fix (EqualsPattern (Equals s1 s2 right left))) --FIXME: Use symmetry axiom
 
 
 handleVarEqns
@@ -196,7 +223,7 @@ reArrange [eqn] = return [eqn]
 reArrange (eqn : es) = (eqn :) <$> go ix es
   where (ix, _) = eqn
         go ix (eqn : es) = do
-          let (Equated ix' left right) = eqn
+          let (Equated ix' s1 s2 left right) = eqn
           eqn' <- useTransitivity ix ix'
           (eqn' :) <$> go ix' es
         go _ [] = return []
@@ -220,19 +247,18 @@ useTransitivity ix1 ix2 = do
   return (ix3, claim line3)
 
 
-occursCheck = undefined
+occursCheck = return () --FIXME: 
 
 sameVariable a b = (getVariable a) == (getVariable b)
-getVariable :: Eqn ix pat -> pat
-getVariable = undefined
+getVariable (Equated ix s1 s2 left right) = left
 -- getVariable (ix, (Fix (VariablePattern vp, right))) = vp 
 
 unify
   :: UnificationContext ix pat level m
-  => MetadataTools level
+  => MetadataTools Meta
   -> Eqn ix pat
   -> m ()
-unify tools eqn@(Equated ix left right) = do
+unify tools eqn@(Equated ix s1 s2 left right) = do
   activeSet .= (S.empty, S.singleton eqn)
   loop
     where loop = do
