@@ -1,8 +1,8 @@
-/* This is the complete Kore definition of imp.k.
- * For comparison, K definitions are replicated
- * as comments, followed by the corresponding
- * Kore definitions.
+/* This is the "compiled" Kore definition of imp.k,
+ * not using any AC matching and contexts.
  */
+
+
 
 []
 
@@ -248,6 +248,13 @@ module MAP
    * merge(bind(X,Y),bind(X,Z)) = bottom
    */
 
+   /* lookup, update, and insert will be hooked to external libraries. */
+   symbol lookup{S1,S2}(Map{S1,S2}, S1) : S2 []
+
+   symbol update{S1,S2}(Map{S1,S2}, S1, S2) : Map{S1,S2} []
+
+   symbol insert{S1,S2}(Map{S1,S2}, S1, S2) : Map{S1,S2} []
+
 endmodule []
 
 module ID
@@ -372,11 +379,7 @@ module ARROW
       asK{S}(\and{S}(X:S, Y:S)))
   []
 
-  /* The sort K is basically the sort of assoc lists.
-   * The injective function asK constructs singleton lists.
-   * Besides that, we have two more symbols. One constructs
-   * the empty list while the other append two lists.
-   * They are arrow and nothing defined as follows. */
+  /* arrow and nothing forms the assoc list on K. */
 
   symbol arrow{}(K{}, K{}) : K{} []
 
@@ -436,7 +439,9 @@ module ARROW
 
 endmodule []
 
-module IMP-SYNTAX
+/* We merge IMP-SYNTAX and IMP into one module */
+
+module IMP
 
   import BOOL []
 
@@ -540,6 +545,7 @@ module IMP-SYNTAX
 
   /* (X / Y) = gamma HOLE . (HOLE / Y) [X] */
 
+  /*
   axiom{R}
     \equals{AExp{},R}(
       divAExp{}(X:AExp{}, Y:AExp{}),
@@ -549,9 +555,44 @@ module IMP-SYNTAX
           divAExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
   [strict{}(\dv{Strict{}}("divAExp"), firstArgument{}())]
+  */
+
+  /* heating rule
+   *   X / Y = X ~> gamma HOLE . (HOLE / Y) 
+   */
+
+  axiom{R}
+    \equals{K{},R}(
+      asK{AExp{}}(
+        divAExp{}(X:AExp{}, Y:AExp{})),
+      arrow{}(
+        asK{AExp{}}(X:AExp{}),
+        asK{Ctxt{AExp{}, AExp{}}}(
+          gamma{AExp{}, AExp{}}(
+            HOLE:AExp{},
+            divAExp{}(HOLE:AExp{}, Y:AExp{})))))
+  [strict{}(\dv{Strict{}}("divAExp"), firstArgument{}())]
+      
+    
+  /* cooling rule
+   * I ~> gamma HOLE . (HOLE / Y) = I / Y if I has sort Int
+   */
+
+  axiom{R}
+    \equals{K{},R}(
+      arrow{}(
+        asK{AExp{}}(intAsAExp{}(I:Int{})),
+        asK{Ctxt{AExp{}, AExp{}}}(
+          gamma{AExp{}, AExp{}}(
+            HOLE:AExp{},
+            divAExp{}(HOLE:AExp{}, Y:AExp{})))),
+      asK{AExp{}}(
+        divAExp{}(intAsAExp{}(I:Int{}), Y:AExp{})))
+  []
 
   /* (X / Y) = gamma HOLE . (X / HOLE) [Y] */
 
+  /*
   axiom{R}
     \equals{AExp{},R}(
       divAExp{}(X:AExp{}, Y:AExp{}),
@@ -560,7 +601,41 @@ module IMP-SYNTAX
           HOLE:AExp{},
           divAExp{}(X:AExp{}, HOLE:AExp{})),
         Y:AExp{}))
-  [strict{}(\dv{Strict{}}("divAExp"), secondArgument{}())]
+  [#strict{}("divAExp", two{}())]
+  */
+
+  /* heating rule
+   *   X / Y = Y ~> gamma HOLE . (X / HOLE) 
+   */
+
+  axiom{R}
+    \equals{K{},R}(
+      asK{AExp{}}(
+        divAExp{}(X:AExp{}, Y:AExp{})),
+      arrow{}(
+        asK{AExp{}}(Y:AExp{}),
+        asK{Ctxt{AExp{}, AExp{}}}(
+          gamma{AExp{}, AExp{}}(
+            HOLE:AExp{},
+            divAExp{}(X:AExp{}, HOLE:AExp{})))))
+  []
+      
+    
+  /* cooling rule
+   * I ~> gamma HOLE . (X / HOLE) = X / I if I has sort Int
+   */
+
+  axiom{R}
+    \equals{K{},R}(
+      arrow{}(
+        asK{AExp{}}(intAsAExp{}(I:Int{})),
+        asK{Ctxt{AExp{}, AExp{}}}(
+          gamma{AExp{}, AExp{}}(
+            HOLE:AExp{},
+            divAExp{}(X:AExp{}, HOLE:AExp{})))),
+      asK{AExp{}}(
+        divAExp{}(X:AExp{}, intAsAExp{}(I:Int{}))))
+  []
 
   /* syntax AExp ::= AExp "+" AExp [strict] */
 
@@ -578,6 +653,7 @@ module IMP-SYNTAX
 
   /* (X + Y) = gamma HOLE . (HOLE + Y) [X] */
 
+  /*
   axiom{R}
     \equals{AExp{},R}(
       plusAExp{}(X:AExp{}, Y:AExp{}),
@@ -586,10 +662,46 @@ module IMP-SYNTAX
           HOLE:AExp{},
           plusAExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
-  [strict{}(\dv{Strict{}}("plusAExp"), firstArgument{}())]
+  [#strict{}("plusAExp", one{}())]
+  */
+
+  /* heating rule
+   *   X + Y = X ~> gamma HOLE . (HOLE + Y) 
+   */
+
+  axiom{R}
+    \equals{K{},R}(
+      asK{AExp{}}(
+        plusAExp{}(X:AExp{}, Y:AExp{})),
+      arrow{}(
+        asK{AExp{}}(X:AExp{}),
+        asK{Ctxt{AExp{}, AExp{}}}(
+          gamma{AExp{}, AExp{}}(
+            HOLE:AExp{},
+            plusAExp{}(HOLE:AExp{}, Y:AExp{})))))
+  []
+      
+    
+  /* cooling rule
+   * I ~> gamma HOLE . (HOLE + Y) = I + Y if I has sort Int
+   */
+
+  axiom{R}
+    \equals{K{},R}(
+      arrow{}(
+        asK{AExp{}}(intAsAExp{}(I:Int{})),
+        asK{Ctxt{AExp{}, AExp{}}}(
+          gamma{AExp{}, AExp{}}(
+            HOLE:AExp{},
+            plusAExp{}(HOLE:AExp{}, Y:AExp{})))),
+      asK{AExp{}}(
+        plusAExp{}(intAsAExp{}(I:Int{}), Y:AExp{})))
+  []
+
 
   /* (X + Y) = gamma HOLE . (X + HOLE) [Y] */
 
+  /*
   axiom{R}
     \equals{AExp{},R}(
       plusAExp{}(X:AExp{}, Y:AExp{}),
@@ -598,7 +710,42 @@ module IMP-SYNTAX
           HOLE:AExp{},
           plusAExp{}(X:AExp{}, HOLE:AExp{})),
         Y:AExp{}))
-  [strict{}(\dv{Strict{}}("plusAExp"), secondArgument{}())]
+  [#strict{}("plusAExp", two{}())]
+  */
+
+  /* heating rule
+   *   X + Y = Y ~> gamma HOLE . (X + HOLE) 
+   */
+
+  axiom{R}
+    \equals{K{},R}(
+      asK{AExp{}}(
+        plusAExp{}(X:AExp{}, Y:AExp{})),
+      arrow{}(
+        asK{AExp{}}(Y:AExp{}),
+        asK{Ctxt{AExp{}, AExp{}}}(
+          gamma{AExp{}, AExp{}}(
+            HOLE:AExp{},
+            plusAExp{}(X:AExp{}, HOLE:AExp{})))))
+  []
+      
+    
+  /* cooling rule
+   * I ~> gamma HOLE . (X + HOLE) = X + I if I has sort Int
+   */
+
+  axiom{R}
+    \equals{K{},R}(
+      arrow{}(
+        asK{AExp{}}(intAsAExp{}(I:Int{})),
+        asK{Ctxt{AExp{}, AExp{}}}(
+          gamma{AExp{}, AExp{}}(
+            HOLE:AExp{},
+            plusAExp{}(X:AExp{}, HOLE:AExp{})))),
+      asK{AExp{}}(
+        plusAExp{}(X:AExp{}, intAsAExp{}(I:Int{}))))
+  []
+
 
   /* syntax BExp ::= ... */
 
@@ -641,6 +788,7 @@ module IMP-SYNTAX
         \equals{BExp{},R}(leqBExp{}(E1:AExp{},E2:AExp{}), E:BExp{}))))
   []
 
+  /*
   axiom{R}
     \equals{BExp{},R}(
       leqBExp{}(X:AExp{}, Y:AExp{}),
@@ -650,6 +798,40 @@ module IMP-SYNTAX
           leqBExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
   [seqstrict{}(\dv{Strict{}}("leqBExp"))]
+  */
+
+  /* heating rule
+   *   X <= Y = X ~> gamma HOLE . (HOLE <= Y) 
+   */
+
+  axiom{R}
+    \equals{K{},R}(
+      asK{BExp{}}(
+        leqBExp{}(X:AExp{}, Y:AExp{})),
+      arrow{}(
+        asK{AExp{}}(X:AExp{}),
+        asK{Ctxt{AExp{}, BExp{}}}(
+          gamma{AExp{}, BExp{}}(
+            HOLE:AExp{},
+            leqBExp{}(HOLE:AExp{}, Y:AExp{})))))
+  [seqstrict{}(\dv{Strict{}}("leqBExp"))]
+      
+    
+  /* cooling rule
+   * I ~> gamma HOLE . (HOLE <= Y) = I <= Y if I has sort Int
+   */
+
+  axiom{R}
+    \equals{K{},R}(
+      arrow{}(
+        asK{AExp{}}(intAsAExp{}(I:Int{})),
+        asK{Ctxt{AExp{}, BExp{}}}(
+          gamma{AExp{}, BExp{}}(
+            HOLE:AExp{},
+            leqBExp{}(HOLE:AExp{}, Y:AExp{})))),
+      asK{BExp{}}(
+        leqBExp{}(intAsAExp{}(I:Int{}), Y:AExp{})))
+  [seqstrict{}(\dv{Strict{}}("leqBExp"))]
 
   /* X <= intAsAExp(Y) = (gamma HOLE . X <= intAsAExp(HOLE)) [Y]
      where Y has sort Int.
@@ -658,6 +840,7 @@ module IMP-SYNTAX
      but in the K module IMP.
    */
 
+  /*
   axiom{R}
     \equals{BExp{},R}(
       leqBExp{}(X:AExp{}, intAsAExp{}(Y:Int{})),
@@ -666,13 +849,49 @@ module IMP-SYNTAX
           HOLE:Int{},
           leqBExp{}(X:AExp{}, intAsAExp{}(HOLE:Int{}))),
         Y:Int{}))
+  [#seqstrict{}("leqBExp")]
+  */
+
+  /* heating rule
+   *   I <= Y = Y ~> gamma HOLE . (I <= HOLE) when I is a Int
+   */
+
+  axiom{R}
+    \equals{K{},R}(
+      asK{BExp{}}(
+        leqBExp{}(intAsAExp{}(I:Int{}), Y:AExp{})),
+      arrow{}(
+        asK{AExp{}}(Y:AExp{}),
+        asK{Ctxt{AExp{}, BExp{}}}(
+          gamma{AExp{}, BExp{}}(
+            HOLE:AExp{},
+            leqBExp{}(intAsAExp{}(I:Int{}), HOLE:AExp{})))))
   [seqstrict{}(\dv{Strict{}}("leqBExp"))]
+      
+    
+  /* cooling rule
+   * J ~> gamma HOLE . (I <= HOLE) = I <= J if I and J are Int
+   */
+
+  axiom{R}
+    \equals{K{},R}(
+      arrow{}(
+        asK{AExp{}}(intAsAExp{}(J:Int{})),
+        asK{Ctxt{AExp{}, BExp{}}}(
+          gamma{AExp{}, BExp{}}(
+            HOLE:AExp{},
+            leqBExp{}(intAsAExp{}(J:Int{}), HOLE:AExp{})))),
+      asK{BExp{}}(
+        leqBExp{}(intAsAExp{}(J:Int{}), intAsAExp{}(I:Int{}))))
+  [seqstrict{}(\dv{Strict{}}("leqBExp"))]
+
 
   /* syntax BExp ::= "!" BExp [strict] */
 
   symbol notBExp{}(BExp{}) : BExp{}
   [strict{}(\dv{Strict{}}("notBExp"), firstArgument{}())]
 
+  /*
   axiom{R}
     \equals{BExp{},R}(
       notBExp{}(B:BExp{}),
@@ -682,12 +901,49 @@ module IMP-SYNTAX
           notBExp{}(HOLE:BExp{})),
         B:BExp{}))
   [strict{}(\dv{Strict{}}("notBExp"), firstArgument{}())]
+  */
+
+
+  /* heating rule
+   *   ! B = B ~> gamma HOLE . ! HOLE
+   */
+
+  axiom{R}
+    \equals{K{},R}(
+      asK{BExp{}}(
+        notBExp{}(B:BExp{})),
+      arrow{}(
+        asK{BExp{}}(B:BExp{}),
+        asK{Ctxt{BExp{}, BExp{}}}(
+          gamma{BExp{}, BExp{}}(
+            HOLE:BExp{},
+            notBExp{}(HOLE:BExp{})))))
+  [strict{}(\dv{Strict{}}("notBExp"), firstArgument{}())]
+      
+    
+  /* cooling rule
+   * B ~> gamma HOLE . ! HOLE = ! B if B is Bool
+   */
+
+  axiom{R}
+    \equals{K{},R}(
+      arrow{}(
+        asK{BExp{}}(boolAsBExp{}(B:Bool{})),
+        asK{Ctxt{BExp{}, BExp{}}}(
+          gamma{BExp{}, BExp{}}(
+            HOLE:BExp{},
+            notBExp{}(HOLE:BExp{})))),
+      asK{BExp{}}(
+        notBExp{}(boolAsBExp{}(B:Bool{}))))
+  [strict{}(\dv{Strict{}}("notBExp"), firstArgument{}())]
+
 
   /* syntax BExp ::= BExp "&&" BExp [strict(1)] */
 
   symbol andBExp{}(BExp{}, BExp{}) : BExp{}
   [strict{}(\dv{Strict{}}("andBExp"), firstArgument{}())]
 
+  /*
   axiom{R}
     \equals{BExp{},R}(
       andBExp{}(X:BExp{}, Y:BExp{}),
@@ -697,7 +953,40 @@ module IMP-SYNTAX
           andBExp{}(HOLE:BExp{}, Y:BExp{})),
         X:BExp{}))
   [strict{}(\dv{Strict{}}("andBExp"), firstArgument{}())]
+  */
 
+  /* heating rule
+   *   X && Y = X ~> gamma HOLE . (HOLE && Y) 
+   */
+
+  axiom{R}
+    \equals{K{},R}(
+      asK{BExp{}}(
+        andBExp{}(X:BExp{}, Y:BExp{})),
+      arrow{}(
+        asK{BExp{}}(X:BExp{}),
+        asK{Ctxt{BExp{}, BExp{}}}(
+          gamma{BExp{}, BExp{}}(
+            HOLE:BExp{},
+            andBExp{}(HOLE:BExp{}, Y:BExp{})))))
+  [strict{}(\dv{Strict{}}("andBExp"), firstArgument{}())]
+      
+    
+  /* cooling rule
+   * B ~> gamma HOLE . (HOLE && Y) = B && Y if B has sort Bool
+   */
+
+  axiom{R}
+    \equals{K{},R}(
+      arrow{}(
+        asK{BExp{}}(boolAsBExp{}(B:Bool{})),
+        asK{Ctxt{BExp{}, BExp{}}}(
+          gamma{BExp{}, BExp{}}(
+            HOLE:BExp{},
+            andBExp{}(HOLE:BExp{}, Y:BExp{})))),
+      asK{BExp{}}(
+        andBExp{}(boolAsBExp{}(B:Bool{}), Y:BExp{})))
+  [strict{}(\dv{Strict{}}("andBExp"), firstArgument{}())]
 
   /* syntax Block ::= ... */
 
@@ -721,9 +1010,10 @@ module IMP-SYNTAX
 
   /* syntax Stmt ::= Id "=" AExp ";" [strict(2)] */
 
-  symbol asgn{}(Id{}, AExp{}) : Stmt{}
+  symbol asgn{}(Id{}, AExp{}) : Stmt{} 
   [strict{}(\dv{Strict{}}("asgn"), secondArgument{}())]
 
+  /*
   axiom{R}
     \equals{Stmt{},R}(
       asgn{}(X:Id{}, E:AExp{}),
@@ -733,13 +1023,48 @@ module IMP-SYNTAX
           asgn{}(X:Id{}, HOLE:AExp{})),
         E:AExp{}))
   [strict{}(\dv{Strict{}}("asgn"), secondArgument{}())]
+  */
+
+  /* heating rule
+   *   X = E; = E ~> gamma HOLE . (X = HOLE;) 
+   */
+
+  axiom{R}
+    \equals{K{},R}(
+      asK{Stmt{}}(
+        asgn{}(X:Id{}, E:AExp{})),
+      arrow{}(
+        asK{AExp{}}(E:AExp{}),
+        asK{Ctxt{AExp{}, Stmt{}}}(
+          gamma{AExp{}, Stmt{}}(
+            HOLE:AExp{},
+            asgn{}(X:Id{}, HOLE:AExp{})))))
+  []
+      
+    
+  /* cooling rule
+   * I ~> gamma HOLE . (X = HOLE;) = X = I; where I is Int
+   */
+
+  axiom{R}
+    \equals{K{},R}(
+      arrow{}(
+        asK{AExp{}}(intAsAExp{}(I:Int{})),
+        asK{Ctxt{AExp{}, Stmt{}}}(
+          gamma{AExp{}, Stmt{}}(
+            HOLE:AExp{},
+            asgn{}(X:Id{}, HOLE:AExp{})))),
+      asK{Stmt{}}(
+        asgn{}(X:Id{}, intAsAExp{}(I:Int{}))))
+  []
+
 
   /* syntax Stmt ::= "ite" "(" BExp ")" Block "else" Block [strict(1)] */
-
 
   symbol ite{}(BExp{}, Block{}, Block{}) : Stmt{}
   [strict{}(\dv{Strict{}}("ite"), firstArgument{}())]
 
+  /*
   axiom{R}
     \equals{Stmt{},R}(
       ite{}(B:BExp{}, S1:Block{}, S2:Block{}),
@@ -749,7 +1074,40 @@ module IMP-SYNTAX
           ite{}(HOLE:BExp{}, S1:Block{}, S2:Block{})),
         B:BExp{}))
   [strict{}(\dv{Strict{}}("ite"), firstArgument{}())]
+  */
 
+  /* heating rule
+   * ite B S1 S2 = B ~> gamma HOLE . ite HOLE S1 S2 
+   */
+
+  axiom{R}
+    \equals{K{},R}(
+      asK{Stmt{}}(
+        ite{}(B:BExp{}, S1:Block{}, S2:Block{})),
+      arrow{}(
+        asK{BExp{}}(B:BExp{}),
+        asK{Ctxt{BExp{}, Stmt{}}}(
+          gamma{BExp{}, Stmt{}}(
+            HOLE:BExp{},
+            ite{}(HOLE:BExp{}, S1:Block{}, S2:Block{})))))
+  []
+      
+    
+  /* cooling rule
+   * B ~> gamma HOLE . ite HOLE S1 S2 = ite B S1 S2 if B is a Bool
+   */
+
+  axiom{R}
+    \equals{K{},R}(
+      arrow{}(
+        asK{BExp{}}(boolAsBExp{}(B:Bool{})),
+        asK{Ctxt{BExp{}, Stmt{}}}(
+          gamma{BExp{}, Stmt{}}(
+            HOLE:BExp{},
+            ite{}(HOLE:BExp{}, S1:Block{}, S2:Block{})))),
+      asK{Stmt{}}(
+        ite{}(boolAsBExp{}(B:Bool{}), S1:Block{}, S2:Block{})))
+  []
   /* syntax Stmt ::= "while" "(" BExp ")" Block */
 
   symbol while{}(BExp{}, Block{}) : Stmt{} []
@@ -768,11 +1126,6 @@ module IMP-SYNTAX
 
   symbol pgm{}(List{Id{}}, Stmt{}) : Pgm{} []
 
-endmodule []
-
-module IMP
-
-  import IMP-SYNTAX []
 
   /* syntax KResult ::= Int | Bool */
 
@@ -801,6 +1154,11 @@ module IMP
 
   symbol statecell{}(Map{Id{}, Int{}}) : StateCell{} []
 
+  /* In the following rules, we make sure that
+   * <k> cell contains only AExp, BExp, Stmt, and Pgm. (aka Non KRestul sorts).
+   */
+
+
   /* In K:
    * rule <k> X:Id => I ... <k>
    *      <state> ... X |-> I ... </state>
@@ -810,13 +1168,13 @@ module IMP
    *  [statecell(DOT2 merge X |-> I merge DOT3)]
    */
 
+  /*
   axiom{S}
     app{StateCell{},S}(
     app{KCell{},Ctxt{StateCell{},S}}(
       C:Ctxt{KCell{},Ctxt{StateCell{},S}},
       kcell{}(
         arrow{}(
-          /* Here AExp is infered from X:Id and I:Int (their least common sort) */
           asK{AExp{}}(idAsAExp{}(X:Id{})),
           asK{AExp{}}(intAsAExp{}(I:Int{}))))),
       statecell{}(
@@ -826,9 +1184,29 @@ module IMP
           bind{Id{},Int{}}(X:Id{}, I:Int{})),
           DOT3:Map{Id{},Int{}})))
   []
+  */
+  axiom{}
+    \rewrites{Cfg{}}(
+      cfg{}(topcell{}(
+        kcell{}(
+          arrow{}(
+            asK{AExp{}}(idAsAExp{}(X:Id{})),
+            DOT1:K{})),
+        statecell{}(
+          M:Map{Id{},Int{}}))),
+      cfg{}(topcell{}(
+        kcell{}(
+          arrow{}(
+            asK{AExp{}}(
+              intAsAExp{}(lookup{Id{},Int{}}(M:Map{Id{},Int{}}, X:Id{}))),
+            DOT1:K{})),
+        statecell{}(
+          M:Map{Id{},Int{}}))))
+  []
 
   /* rule I1 / I2 => I1 /Int I2 requires I2 =/=Int 0 */
 
+  /*
   axiom{S}
     \implies{S}(
       \equals{Bool{},S}(true{}(),
@@ -839,9 +1217,43 @@ module IMP
           divAExp{}(intAsAExp{}(I1:Int{}), intAsAExp{}(I2:Int{})),
           intAsAExp{}(divInt{}(I1:Int{}, I2:Int{})))))
   []
+  */
+
+  /* <T> <k> I1 / I2 ~> REST </k> <state> M </statem> </T>
+   * and I2 =/=Int 0 equals true
+   * =>
+   * <T> <k> I1 /Int I2 ~> REST </k> <state> M </statem> </T>
+   */
+
+  axiom{}
+    \rewrites{Cfg{}}(
+      \and{Cfg{}}(
+        cfg{}(topcell{}(
+          kcell{}(
+            arrow{}(
+              asK{AExp{}}(
+                divAExp{}(
+                  intAsAExp{}(I1:Int{}),
+                  intAsAExp{}(I2:Int{}))),
+              REST:K{})),
+          statecell{}(M:Map{Id{},Int{}}))),
+        \equals{Bool{},Cfg{}}(
+          neqInt{}(I2:Int{}, zero{}()),
+          true{}())),
+     cfg{}(topcell{}(
+       kcell{}(
+         arrow{}(
+           asK{AExp{}}(
+             intAsAExp{}(divInt{}(I1:Int{}, I2:Int{}))),
+           REST:K{})),
+       statecell{}(M:Map{Id{},Int{}}))))
+  []
+
+          
 
   /* rule I1 + I2 => I1 +Int I2 */
 
+/*
   axiom{S}
     app{AExp{},S}(
       C:Ctxt{AExp{},S},
@@ -849,11 +1261,33 @@ module IMP
         plusAExp{}(intAsAExp{}(I1:Int{}), intAsAExp{}(I2:Int{})),
         intAsAExp{}(plusInt{}(I1:Int{}, I2:Int{}))))
   []
+*/
+
+  axiom{}
+    \rewrites{Cfg{}}(
+      cfg{}(topcell{}(
+        kcell{}(
+          arrow{}(
+            asK{AExp{}}(
+              plusAExp{}(
+                intAsAExp{}(I1:Int{}),
+                intAsAExp{}(I2:Int{}))),
+            REST:K{})),
+        statecell{}(M:Map{Id{},Int{}}))),
+     cfg{}(topcell{}(
+       kcell{}(
+         arrow{}(
+           asK{AExp{}}(
+             intAsAExp{}(plusInt{}(I1:Int{}, I2:Int{}))),
+           REST:K{})),
+       statecell{}(M:Map{Id{},Int{}}))))
+  []
 
   /* In K:
    *   rule -I1 => 0 -Int I1
    */
 
+  /*
   axiom{S}
     app{AExp{},S}(
       C:Ctxt{AExp{},S},
@@ -861,11 +1295,32 @@ module IMP
         minusAExp{}(I1:Int{}),
         intAsAExp{}(minusInt{}(zero{}(), I1:Int{}))))
   []
+  */
+
+  axiom{}
+    \rewrites{Cfg{}}(
+      cfg{}(topcell{}(
+        kcell{}(
+          arrow{}(
+            asK{AExp{}}(
+              minusAExp{}(
+                I1:Int{})),
+            REST:K{})),
+        statecell{}(M:Map{Id{},Int{}}))),
+     cfg{}(topcell{}(
+       kcell{}(
+         arrow{}(
+           asK{AExp{}}(
+             intAsAExp{}(minusInt{}(zero{}(), I1:Int{}))),
+           REST:K{})),
+       statecell{}(M:Map{Id{},Int{}}))))
+  []
 
   /* In K:
    *   rule I1 <= I2 => I1 <=Int I2
    */
 
+  /*
   axiom{S}
     app{BExp{},S}(
       C:Ctxt{BExp{},S},
@@ -873,10 +1328,35 @@ module IMP
         leqBExp{}(intAsAExp{}(I1:Int{}), intAsAExp{}(I2:Int{})),
         boolAsBExp{}(leqInt{}(I1:Int{}, I2:Int{}))))
   []
+  */
+
+  axiom{}
+    \rewrites{Cfg{}}(
+      cfg{}(topcell{}(
+        kcell{}(
+          arrow{}(
+            asK{BExp{}}(
+              leqBExp{}(
+                intAsAExp{}(I1:Int{}),
+                intAsAExp{}(I2:Int{}))),
+            REST:K{})),
+        statecell{}(M:Map{Id{},Int{}}))),
+     cfg{}(topcell{}(
+       kcell{}(
+         arrow{}(
+           asK{BExp{}}(
+             boolAsBExp{}(leqInt{}(I1:Int{}, I2:Int{}))),
+           REST:K{})),
+       statecell{}(M:Map{Id{},Int{}}))))
+  []
+
+
 
   /* In K:
    *   rule ! T => notBool T
    */
+
+  /*
 
   axiom{S}
     app{BExp{},S}(
@@ -885,9 +1365,32 @@ module IMP
         notBExp{}(boolAsBExp{}(T:Bool{})),
         boolAsBExp{}(notBool{}(T:Bool{}))))
   []
+  */
+
+  axiom{}
+    \rewrites{Cfg{}}(
+      cfg{}(topcell{}(
+        kcell{}(
+          arrow{}(
+            asK{BExp{}}(
+              notBExp{}(
+                boolAsBExp{}(T:Bool{}))),
+            REST:K{})),
+        statecell{}(M:Map{Id{},Int{}}))),
+     cfg{}(topcell{}(
+       kcell{}(
+         arrow{}(
+           asK{BExp{}}(
+             boolAsBExp{}(notBool{}(T:Bool{}))),
+           REST:K{})),
+       statecell{}(M:Map{Id{},Int{}}))))
+  []
+
+
 
   /* rule true && B => B */
 
+  /*
   axiom{S}
     app{BExp{},S}(
       C:Ctxt{BExp{},S},
@@ -895,9 +1398,31 @@ module IMP
         andBExp{}(boolAsBExp{}(true{}()), B:BExp{}),
         B:BExp{}))
   []
+  */
+
+  axiom{}
+    \rewrites{Cfg{}}(
+      cfg{}(topcell{}(
+        kcell{}(
+          arrow{}(
+            asK{BExp{}}(
+              andBExp{}(
+                boolAsBExp{}(true{}()),
+                B:BExp{})),
+            REST:K{})),
+        statecell{}(M:Map{Id{},Int{}}))),
+     cfg{}(topcell{}(
+       kcell{}(
+         arrow{}(
+           asK{BExp{}}(
+             B:BExp{}),
+           REST:K{})),
+       statecell{}(M:Map{Id{},Int{}}))))
+  []
 
   /* rule false && _ => false */
 
+  /*
   axiom{S}
     app{BExp{},S}(
       C:Ctxt{BExp{},S},
@@ -905,18 +1430,58 @@ module IMP
         andBExp{}(boolAsBExp{}(false{}()), UNDERSCORE:BExp{}),
         boolAsBExp{}(false{}())))
   []
+  */
 
+  axiom{}
+    \rewrites{Cfg{}}(
+      cfg{}(topcell{}(
+        kcell{}(
+          arrow{}(
+            asK{BExp{}}(
+              andBExp{}(
+                boolAsBExp{}(false{}()),
+                B:BExp{})),
+            REST:K{})),
+        statecell{}(M:Map{Id{},Int{}}))),
+     cfg{}(topcell{}(
+       kcell{}(
+         arrow{}(
+           asK{BExp{}}(
+             boolAsBExp{}(false{}())),
+           REST:K{})),
+       statecell{}(M:Map{Id{},Int{}}))))
+  []
 
   /* rule {} => . */
 
+  /*
   axiom{S}
     app{K{},S}(
       C:Ctxt{K{},S},
       \rewrites{K{}}(asK{Block{}}(emptyBlock{}()), nothing{}()))
   []
+  */
+
+  axiom{}
+    \rewrites{Cfg{}}(
+      cfg{}(topcell{}(
+        kcell{}(
+          arrow{}(
+            asK{Stmt{}}(blockAsStmt{}(emptyBlock{}())),
+            REST:K{})),
+        statecell{}(M:Map{Id{},Int{}}))),
+      cfg{}(topcell{}(
+        kcell{}(
+          arrow{}(
+            nothing{}(),
+            REST:K{})),
+        statecell{}(M:Map{Id{},Int{}}))))
+  []
+
 
   /* rule {S} => S */
 
+  /*
   axiom{S}
     app{Stmt{},S}(
       C:Ctxt{Stmt{},S},
@@ -924,6 +1489,26 @@ module IMP
         blockAsStmt{}(block{}(S:Stmt{})),
         S:Stmt{}))
   []
+  */
+
+  axiom{}
+    \rewrites{Cfg{}}(
+      cfg{}(topcell{}(
+        kcell{}(
+          arrow{}(
+            asK{Stmt{}}(blockAsStmt{}(block{}(S:Stmt{}))),
+            REST:K{})),
+        statecell{}(M:Map{Id{},Int{}}))),
+      cfg{}(topcell{}(
+        kcell{}(
+          arrow{}(
+            asK{Stmt{}}(S:Stmt{}),
+            REST:K{})),
+        statecell{}(M:Map{Id{},Int{}}))))
+  []
+
+
+
 
   /* In K:
    *   rule <k> X = I:Int; => . ... </k>
@@ -933,6 +1518,7 @@ module IMP
    *    [statecell(DOT2 merge X |-> (UNDERSCORE => I) merge DOT3)]
    */
  
+  /*
   axiom{S}
     app{StateCell{},S}(
     app{KCell{},Ctxt{StateCell{},S}}(
@@ -950,6 +1536,34 @@ module IMP
           bind{Id{},Int{}}(X:Id{}, \rewrites{Int{}}(UNDERSCORE:Int{}, I:Int{}))),
           DOT3:Map{Id{},Int{}})))
   []
+  */
+
+  /* <T> <k> X = I; ~> DOT1 </k> <state> M </state> </T>
+   * =>
+   * <T> <k> . ~> DOT1 </k> <state> update(M, X, I) </state> </T>
+   */
+
+  axiom{}
+    \rewrites{Cfg{}}(
+      cfg{}(topcell{}(
+        kcell{}(
+          arrow{}(
+            asK{Stmt{}}(
+              asgn{}(X:Id{}, intAsAExp{}(I:Int{}))),
+            DOT1:K{})),
+        statecell{}(
+          M:Map{Id{},Int{}}))),
+      cfg{}(topcell{}(
+        kcell{}(
+          arrow{}(
+            nothing{}(),
+            DOT1:K{})),
+        statecell{}(
+          update{Id{},Int{}}(
+            M:Map{Id{},Int{}},
+            X:Id{},
+            I:Int{})))))
+  []
           
 
 
@@ -959,62 +1573,162 @@ module IMP
    *   asK(seq(S1,S2)) => asK(S1) ~> asK(S2)
    */
 
+  /*
   axiom{S}
     app{K{},S}(
-      C:Ctxt{K{},S},
+    C:Ctxt{K{},S},
       \rewrites{K{}}(
-        asK{Stmt{}}(seq{}(S1:Stmt{},S2:Stmt{})),
-        arrow{}(asK{Stmt{}}(S1:Stmt{}), asK{Stmt{}}(S2:Stmt{}))))
+      asK{Stmt{}}(seq{}(S1:Stmt{},S2:Stmt{})),
+      arrow{}(asK{Stmt{}}(S1:Stmt{}), asK{Stmt{}}(S2:Stmt{}))))
+  []
+  */
+  
+  axiom{}
+    \rewrites{Cfg{}}(
+      cfg{}(topcell{}(
+        kcell{}(
+          arrow{}(
+            asK{Stmt{}}(
+              seq{}(S1:Stmt{}, S2:Stmt{})),
+            DOT1:K{})),
+        statecell{}(
+          M:Map{Id{},Int{}}))),
+      cfg{}(topcell{}(
+        kcell{}(
+          arrow{}(
+            arrow{}(
+              asK{Stmt{}}(S1:Stmt{}),
+              asK{Stmt{}}(S1:Stmt{})),
+            DOT1:K{})),
+        statecell{}(
+          update{Id{},Int{}}(
+            M:Map{Id{},Int{}},
+            X:Id{},
+            I:Int{})))))
   []
 
 
   /* rule if (true) S else _ => S */
 
+
+  /*
   axiom{S}
     app{Stmt{},S}(
       C:Ctxt{Stmt{},S},
       \rewrites{Stmt{}}(
-        ite{}(
-          boolAsBExp{}(true{}()),
-          S:Block{},
-          UNDERSCORE:Block{}),
+        ite{}(boolAsBExp{}(true{}()),
+              S:Block{},
+              UNDERSCORE:Block{}),
         blockAsStmt{}(S:Block{})))
   []
+  */
+
+  axiom{}
+    \rewrites{Cfg{}}(
+      cfg{}(topcell{}(
+        kcell{}(
+          arrow{}(
+            asK{Stmt{}}(
+              ite{}(
+                boolAsBExp{}(true{}()),
+                S:Block{},
+                UNDERSCORE:Block{})),
+            REST:K{})),
+        statecell{}(M:Map{Id{},Int{}}))),
+     cfg{}(topcell{}(
+       kcell{}(
+         arrow{}(
+           asK{Stmt{}}(
+             blockAsStmt{}(S:Block{})),
+           REST:K{})),
+       statecell{}(M:Map{Id{},Int{}}))))
+  []
+
+
 
   /* rule if (false) _ else S => S */
 
+  /*
   axiom{S}
     app{Stmt{},S}(
       C:Ctxt{Stmt{},S},
       \rewrites{Stmt{}}(
-        ite{}(
-          boolAsBExp{}(false{}()),
-          UNDERSCORE:Block{},
-          S:Block{}),
+        ite{}(boolAsBExp{}(false{}()),
+              UNDERSCORE:Block{},
+              S:Block{}),
         blockAsStmt{}(S:Block{})))
+  []
+  */
+
+  axiom{}
+    \rewrites{Cfg{}}(
+      cfg{}(topcell{}(
+        kcell{}(
+          arrow{}(
+            asK{Stmt{}}(
+              ite{}(
+                boolAsBExp{}(false{}()),
+                UNDERSCORE:Block{},
+                S:Block{})),
+            REST:K{})),
+        statecell{}(M:Map{Id{},Int{}}))),
+     cfg{}(topcell{}(
+       kcell{}(
+         arrow{}(
+           asK{Stmt{}}(
+             blockAsStmt{}(S:Block{})),
+           REST:K{})),
+       statecell{}(M:Map{Id{},Int{}}))))
   []
 
   /* rule while (B) S => if (B) {S while (B) S} else {} [structural] */
 
+  /*
   axiom{S}
     app{Stmt{},S}(
       C:Ctxt{Stmt{},S},
       \rewrites{Stmt{}}(
         while{}(B:BExp{}, S:Block{}),
-        ite{}(
-          B:BExp{},
-          block{}(
-            seq{}(blockAsStmt{}(S:Block{}),
-                  while{}(B:BExp{}, S:Block{}))),
-          emptyBlock{}())))
+        ite{}(B:BExp{},
+              block{}(
+                seq{}(blockAsStmt{}(S:Block{}),
+                      while{}(B:BExp{}, S:Block{}))),
+              emptyBlock{}())))
   []
-                  
-    
+  */
 
+  axiom{}
+    \rewrites{Cfg{}}(
+      cfg{}(topcell{}(
+        kcell{}(
+          arrow{}(
+            asK{Stmt{}}(
+              while{}(
+                B:BExp{},
+                S:Block{})),
+            REST:K{})),
+        statecell{}(M:Map{Id{},Int{}}))),
+     cfg{}(topcell{}(
+       kcell{}(
+         arrow{}(
+           asK{Stmt{}}(
+             ite{}(
+               B:BExp{},
+               block{}(
+                 seq{}(
+                   blockAsStmt{}(S:Block{}),
+                   while{}(B:BExp{}, S:Block{}))),
+               emptyBlock{}())),
+           REST:K{})),
+       statecell{}(M:Map{Id{},Int{}}))))
+  []
+    
   /* rule <k> int (X,Xs => Xs);_ </k>
           <state> Rho:Map (.Map => X |-> 0) </state>
      requires notBool (X in keys(Rho))
    */
+
+  /*
 
   axiom{S}
     \implies{S}(
@@ -1038,13 +1752,44 @@ module IMP
               emp{Id{},Int{}}(),
               bind{Id{},Int{}}(X:Id{}, zero{}()))))))
   []  
+
+  */
+
+  /* <T> <k> int (X, Xs); S </k> <state> Rho </statem> </T>
+   * and notBool(X in keys(Rho)) == true
+   * =>
+   * <T> <k> int Xs; S </k> <state> insert(Rho, X, 0) </statem> </T>
+   */
          
+  axiom{}
+    \rewrites{Cfg{}}(
+      cfg{}(topcell{}(
+        kcell{}(
+          asK{Pgm{}}(
+            pgm{}(
+              cons{Id{}}(X:Id{}, Xs:List{Id{}}),
+              UNDERSCORE:Stmt{}))),
+        statecell{}(Rho:Map{Id{},Int{}}))),
+     cfg{}(topcell{}(
+       kcell{}(
+         asK{Pgm{}}(
+           pgm{}(
+             Xs:List{Id{}},
+             UNDERSCORE:Stmt{}))),
+       statecell{}(
+         insert{Id{},Int{}}(
+           Rho:Map{Id{},Int{}},
+           X:Id{},
+           zero{}())))))
+  []
 
   /* rule int .Ids; S => S */
 
   /* From type inference, the only common sort of the l.h.s. (Pgm)
    * and the r.h.s. (Stmt) is K, so this rewrite rule has sort K.
    */
+
+  /*
   axiom{S}
     app{K{},S}(
       C:Ctxt{K{},S},
@@ -1052,7 +1797,22 @@ module IMP
         asK{Pgm{}}(pgm{}(nil{Id{}}(), S:Stmt{})),
         asK{Stmt{}}(S:Stmt{})))
   []
+  */
     
-
+  axiom{}
+    \rewrites{Cfg{}}(
+      cfg{}(topcell{}(
+        kcell{}(
+          asK{Pgm{}}(
+            pgm{}(
+              nil{Id{}}(),
+              UNDERSCORE:Stmt{}))),
+        statecell{}(Rho:Map{Id{},Int{}}))),
+     cfg{}(topcell{}(
+       kcell{}(
+         asK{Stmt{}}(
+           UNDERSCORE:Stmt{})),
+       statecell{}(Rho:Map{Id{},Int{}}))))
+  []
 
 endmodule []
