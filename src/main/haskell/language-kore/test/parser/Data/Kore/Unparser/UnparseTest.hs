@@ -114,7 +114,6 @@ unparseUnitTests =
             ++ "    module i\n    endmodule\n    []\n"
             ++ "    module k\n    endmodule\n    []\n"
             )
-            -- FIXME: Put this test back in. What Unparse instance does it want?
         , unparseTest
             ( constructUnifiedSentence SentenceImportSentence $ SentenceImport
                 { sentenceImportModuleName = ModuleName {getModuleName = "sl"}

@@ -33,7 +33,7 @@ import           Data.Kore.ASTTraversals
 import           Data.Kore.HaskellExtensions (Rotate31 (..))
 
 import           Data.Fix
-import           Data.Coerce
+
 
 patternPureToKore
     :: MetaOrObject level => CommonPurePattern level -> CommonKorePattern

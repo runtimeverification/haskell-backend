@@ -884,7 +884,7 @@ patternsInAllContexts
             , sentenceSymbolSorts = [symbolAliasSort]
             , sentenceSymbolResultSort = anotherSort
             , sentenceSymbolAttributes =
-                Attributes [] :: Attributes
+                Attributes [] 
             }
     aliasSentence =
         constructUnifiedSentence SentenceAliasSentence $
@@ -896,7 +896,7 @@ patternsInAllContexts
             , sentenceAliasSorts = [symbolAliasSort]
             , sentenceAliasResultSort = anotherSort
             , sentenceAliasAttributes =
-                Attributes [] :: Attributes
+                Attributes [] 
             }
 
 genericPatternInPatterns
@@ -1450,7 +1450,7 @@ testsForUnifiedPatternInTopLevelObjectContext
                                         (asAttribute testPattern)
                                     ]
                             }
-                            )
+                          )
                         : additionalSentences
                         )
                 }
