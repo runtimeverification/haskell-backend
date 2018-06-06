@@ -9,6 +9,7 @@ import           Test.Tasty.HUnit                         (HasCallStack,
 
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTPrettyPrint
@@ -226,7 +227,7 @@ sortSentenceWithSortParameters (SortName name) parameters =
 aliasSentenceWithSort
     :: MetaOrObject level => AliasName -> Sort level -> KoreSentence
 aliasSentenceWithSort (AliasName name) sort =
-    asSentence
+    constructUnifiedSentence SentenceAliasSentence $ 
         SentenceAlias
             { sentenceAliasAlias = Alias
                 { aliasConstructor = testId name
@@ -235,7 +236,7 @@ aliasSentenceWithSort (AliasName name) sort =
             , sentenceAliasSorts = []
             , sentenceAliasResultSort = sort
             , sentenceAliasAttributes =
-                Attributes [] :: KoreAttributes
+                Attributes [] :: Attributes
             }
 
 metaAliasSentenceWithSortParameters
@@ -414,7 +415,7 @@ symbolSentenceWithResultSort
     => SymbolName -> Sort level -> [SortVariable level] -> KoreSentence
 symbolSentenceWithResultSort
     (SymbolName name) sort parameters
-  = asSentence
+  = constructUnifiedSentence SentenceSymbolSentence $ 
         SentenceSymbol
             { sentenceSymbolSymbol = Symbol
                 { symbolConstructor = testId name
@@ -423,7 +424,7 @@ symbolSentenceWithResultSort
             , sentenceSymbolSorts = []
             , sentenceSymbolResultSort = sort
             , sentenceSymbolAttributes =
-                Attributes [] :: KoreAttributes
+                Attributes [] :: Attributes
             }
 
 objectSymbolSentenceWithArguments
@@ -435,7 +436,7 @@ symbolSentenceWithArguments
     => SymbolName -> Sort level -> [Sort level] -> KoreSentence
 symbolSentenceWithArguments
     (SymbolName name) sort operandSorts
-  = asSentence
+  = constructUnifiedSentence SentenceSymbolSentence $ 
         SentenceSymbol
             { sentenceSymbolSymbol = Symbol
                 { symbolConstructor = testId name
@@ -444,7 +445,7 @@ symbolSentenceWithArguments
             , sentenceSymbolSorts = operandSorts
             , sentenceSymbolResultSort = sort
             , sentenceSymbolAttributes =
-                Attributes [] :: KoreAttributes
+                Attributes [] :: Attributes
             }
 
 objectAliasSentenceWithArguments
@@ -456,7 +457,7 @@ aliasSentenceWithArguments
     => AliasName -> Sort level -> [Sort level] -> KoreSentence
 aliasSentenceWithArguments
     (AliasName name) sort operandSorts
-  = asSentence
+  = constructUnifiedSentence SentenceAliasSentence $ 
         SentenceAlias
             { sentenceAliasAlias = Alias
                 { aliasConstructor = testId name
@@ -465,7 +466,7 @@ aliasSentenceWithArguments
             , sentenceAliasSorts = operandSorts
             , sentenceAliasResultSort = sort
             , sentenceAliasAttributes =
-                Attributes [] :: KoreAttributes
+                Attributes [] :: Attributes
             }
 
 simpleSortActual :: SortName -> SortActual level

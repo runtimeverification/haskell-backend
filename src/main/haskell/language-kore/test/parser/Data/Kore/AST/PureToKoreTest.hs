@@ -7,6 +7,7 @@ import           Test.Tasty.QuickCheck      (forAll, testProperty)
 import           Data.Fix
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
@@ -79,7 +80,7 @@ pureToKoreTests =
                                         { sentenceImportModuleName =
                                             ModuleName "TEST-MODULE"
                                         , sentenceImportAttributes = Attributes
-                                            [ Fix
+                                            [ asMetaKorePattern
                                                 ( TopPattern Top
                                                     { topSort =
                                                         SortVariableSort

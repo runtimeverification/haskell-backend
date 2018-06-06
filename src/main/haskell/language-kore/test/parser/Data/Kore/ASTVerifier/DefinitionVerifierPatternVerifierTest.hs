@@ -6,6 +6,7 @@ import           Test.Tasty                                          (TestTree,
                                                                       testGroup)
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers as Helpers
@@ -874,7 +875,8 @@ patternsInAllContexts
     sortVariableName = SortVariableName rawSortVariableName
     symbolAliasSort = sortVariableSort sortVariableName
     symbolSentence =
-        asSentence SentenceSymbol
+        constructUnifiedSentence SentenceSymbolSentence $
+         SentenceSymbol
             { sentenceSymbolSymbol = Symbol
                 { symbolConstructor = testId rawSymbolName
                 , symbolParams = [SortVariable (testId rawSortVariableName)]
@@ -882,10 +884,11 @@ patternsInAllContexts
             , sentenceSymbolSorts = [symbolAliasSort]
             , sentenceSymbolResultSort = anotherSort
             , sentenceSymbolAttributes =
-                Attributes [] :: KoreAttributes
+                Attributes [] 
             }
     aliasSentence =
-        asSentence SentenceAlias
+        constructUnifiedSentence SentenceAliasSentence $
+         SentenceAlias
             { sentenceAliasAlias = Alias
                 { aliasConstructor = testId rawAliasName
                 , aliasParams = [SortVariable (testId rawSortVariableName)]
@@ -893,7 +896,7 @@ patternsInAllContexts
             , sentenceAliasSorts = [symbolAliasSort]
             , sentenceAliasResultSort = anotherSort
             , sentenceAliasAttributes =
-                Attributes [] :: KoreAttributes
+                Attributes [] 
             }
 
 genericPatternInPatterns
@@ -1437,7 +1440,8 @@ testsForUnifiedPatternInTopLevelObjectContext
                         defaultErrorMessage
                 , testDataDefinition =
                     simpleDefinitionFromSentences (ModuleName "MODULE")
-                        ( asSentence SentenceSort
+                        ( constructUnifiedSentence SentenceSortSentence (
+                           SentenceSort
                             { sentenceSortName = testId rawSortName
                             , sentenceSortParameters = sortVariables
                             , sentenceSortAttributes =
@@ -1446,6 +1450,7 @@ testsForUnifiedPatternInTopLevelObjectContext
                                         (asAttribute testPattern)
                                     ]
                             }
+                          )
                         : additionalSentences
                         )
                 }

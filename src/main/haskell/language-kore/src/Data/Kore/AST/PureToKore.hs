@@ -1,4 +1,7 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 {-|
 Module      : Data.Kore.AST.PureToKore
 Description : Functionality for viewing "Pure"-only as unified Kore constructs.
@@ -15,7 +18,6 @@ The name of the functions defined below are self-explanatory. They link
 -}
 module Data.Kore.AST.PureToKore
     ( patternPureToKore
-    , attributesPureToKore
     , sentencePureToKore
     , modulePureToKore
     , definitionPureToKore
@@ -23,6 +25,7 @@ module Data.Kore.AST.PureToKore
     ) where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
@@ -30,6 +33,7 @@ import           Data.Kore.ASTTraversals
 import           Data.Kore.HaskellExtensions (Rotate31 (..))
 
 import           Data.Fix
+
 
 patternPureToKore
     :: MetaOrObject level => CommonPurePattern level -> CommonKorePattern
@@ -56,50 +60,42 @@ extractPurePattern level p =
     (IsObject, IsObject) -> Fix p
     _ -> error ("Undexpected non-" ++ show level ++ " pattern")
 
-attributesPureToKore
-    :: MetaOrObject level => PureAttributes level -> KoreAttributes
-attributesPureToKore ma =
-    Attributes (map patternPureToKore (getAttributes ma))
-
+-- FIXME : all of this attribute record syntax stuff
+-- Should be temporary measure
 sentencePureToKore
     :: MetaOrObject level => PureSentence level -> KoreSentence
-sentencePureToKore (SentenceAliasSentence msa) = asSentence msa
-    { sentenceAliasAttributes =
-        attributesPureToKore (sentenceAliasAttributes msa)
-    }
-sentencePureToKore (SentenceSymbolSentence mss) = asSentence mss
-    { sentenceSymbolAttributes =
-        attributesPureToKore (sentenceSymbolAttributes mss)
-    }
-sentencePureToKore (SentenceImportSentence msi) = asSentence msi
-    { sentenceImportAttributes =
-        attributesPureToKore (sentenceImportAttributes msi)
-    }
+sentencePureToKore (SentenceAliasSentence (SentenceAlias a b c d)) =
+  constructUnifiedSentence SentenceAliasSentence $ SentenceAlias a b c d
+sentencePureToKore (SentenceSymbolSentence (SentenceSymbol a b c d)) = 
+  constructUnifiedSentence SentenceSymbolSentence $ SentenceSymbol a b c d
+sentencePureToKore (SentenceImportSentence (SentenceImport a b)) = 
+  constructUnifiedSentence SentenceImportSentence $ SentenceImport a b
 sentencePureToKore (SentenceAxiomSentence msx) = asSentence SentenceAxiom
     { sentenceAxiomAttributes =
-        attributesPureToKore (sentenceAxiomAttributes msx)
+        (sentenceAxiomAttributes msx)
     , sentenceAxiomPattern =
         patternPureToKore (sentenceAxiomPattern msx)
     , sentenceAxiomParameters =
         map asUnified (sentenceAxiomParameters msx)
     }
-sentencePureToKore (SentenceSortSentence mss) = asSentence SentenceSort
+sentencePureToKore (SentenceSortSentence mss) =
+  constructUnifiedSentence SentenceSortSentence mss
     { sentenceSortName = sentenceSortName mss
     , sentenceSortParameters = sentenceSortParameters mss
-    , sentenceSortAttributes = attributesPureToKore (sentenceSortAttributes mss)
     }
+
 
 modulePureToKore
     :: MetaOrObject level => PureModule level -> KoreModule
 modulePureToKore mm = Module
     { moduleName = moduleName mm
     , moduleSentences = map sentencePureToKore (moduleSentences mm)
-    , moduleAttributes = attributesPureToKore (moduleAttributes mm)
+    , moduleAttributes =  (moduleAttributes mm)
     }
 
 definitionPureToKore
     :: MetaOrObject level => PureDefinition level -> KoreDefinition
 definitionPureToKore dm = Definition
-    { definitionAttributes = attributesPureToKore (definitionAttributes dm)
+    { definitionAttributes = (definitionAttributes dm)
     , definitionModules = map modulePureToKore (definitionModules dm)
     }

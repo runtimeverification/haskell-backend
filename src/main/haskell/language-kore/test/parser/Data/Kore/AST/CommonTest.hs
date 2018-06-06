@@ -5,6 +5,7 @@ import           Test.Tasty.HUnit                 (assertBool, assertEqual,
                                                    assertFailure, testCase)
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Implicit.ImplicitSorts
