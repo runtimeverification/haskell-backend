@@ -405,7 +405,8 @@
   \newcommand{\KgetSymbols}{\texttt{\sharpsymbol getSymbols}}
   \newcommand{\KsortDeclared}[1]{
   	\parametric{\texttt{\sharpsymbol sortDeclared}}{#1}}
-  \newcommand{\KsortsDeclared}{\texttt{\sharpsymbol sortsDeclared}}
+  \newcommand{\KsortsDeclared}[1]{
+        \parametric{\texttt{\sharpsymbol sortsDeclared}}{#1}}
   \newcommand{\KsymbolDeclared}[1]{
   	\parametric{\texttt{\sharpsymbol symbolDeclared}}{#1}}
   \newcommand{\KaxiomDeclared}{\texttt{\sharpsymbol axiomDeclared}}
@@ -1353,7 +1354,7 @@ $$
 \textrm{for any sorts $s,s'$} \\
 \end{array}
 $$
-And here are some \emph{pattern schemas}, each defining infinitely many patters:
+And here are some \emph{pattern schemas}, each defining infinitely many patterns:
 $$
 \begin{array}{rl}
 \parametric{\append}{s}(\parametric{\nil}{s},l'\cln\parametric{\List}{s})
@@ -1453,7 +1454,7 @@ $$
 $$
 
 One of the major goals of this paper is to propose a formal language
-and an implementation of it that allow us to finitely specify potentially
+and implementation that allow us to finitely specify potentially
 infinite matching logic theories presented with finitely many sort, symbol
 and pattern schemas.
 
@@ -1498,7 +1499,7 @@ are in $\Var_\Exp$ and all patterns have sort $\Exp$.
 
 The key observation here is that the $\lambda\_.\_$ construct in
 $\lambda$-calculus \emph{performs two important operations}: on the one hand
-it builds a binding of its first argument into its second, and one the other
+it builds a binding of its first argument into its second, and on the other
 hand it builds a term.
 Fortunately, matching logic allows us to separate these two operations, and
 use the builtin existential quantifier for binding.
@@ -1892,7 +1893,7 @@ mechanism to allow compact and modular language semantic definitions.
 The idea is to allow users to only write the parts of the program
 configuration that are necessary in semantic rules, the rest of the
 configuration being inferred automatically.
-This configuration abstracton process that is a crucial and distinctive
+This configuration abstraction process that is a crucial and distinctive
 feature of \K can be now elegantly explained with multi-hole contexts.
 
 To make the discussion concrete, suppose that we have a program configuration
@@ -3860,7 +3861,7 @@ $$
 We have defined a universe of meta-representations of matching logic sorts, 
 symbols, and patterns, with which we represent all possible sorts, symbols, and 
 patterns coming from all kinds of matching logic theories.
-When fix a theory $T$, the meta-representations of sorts, symbols, and patterns 
+When we fix a theory $T$, the meta-representations of sorts, symbols, and patterns 
 in the theory $T$ only stand for a small portion of the universe of sort, 
 symbol, and pattern meta-representations in $K$.
 For example, $\Nat$ is a sort in Presburger arithmetic, but not in lambda 
@@ -3880,16 +3881,13 @@ They are
 \end{align*}
 A related predicate symbol
 \begin{equation}
-	\parametric{\KsortsDeclared}{\shs} \colon \KSortList \to \shs
+	\KsortsDeclared{\shs} \colon \KSortList \to \shs
 \end{equation}
 checks whether a list of sorts are declared:
 \begin{align*}
-& \KsortsDeclared{\shs} \colon \KSortList \to \shs \\
 & \KsortsDeclared{\shs}(\KnilKSortList) \\
 & \KsortsDeclared{\shs}(\KconsKSortList(s,S)) \\
-& = 
-\KsortDeclared{\shs}(s) \wedge 
-\parametric{\KsortsDeclared}{\shs}(S)
+& = \KsortDeclared{\shs}(s) \wedge \KsortsDeclared{\shs}(S)
 \end{align*}
 
 These predicate symbols give us what we call an \emph{intensional definition} 
@@ -4170,9 +4168,9 @@ $$
 $$
 When we use them in the inference rule schema, they are mathematical variables 
 or the so-called meta-variables for wellformed matching logic patterns.
-When we use then in the meta-theory axiom, they are $\KPattern$ variables and 
+When we use them in the meta-theory axiom, they are $\KPattern$ variables and 
 thus can be quantified.
-This abuse use of notations is intended because \emph{meta-variables in 
+This abuse of notations is intended because \emph{meta-variables in 
 object theories are variables in the meta-theory}.
 
 Let us move on and define the axioms for the other two propositional logic 
@@ -4720,7 +4718,7 @@ There are in total 10 sorts in the meta-theory.
 	    \KsortDeclared{$\shs$} & Check whether a sort is declared 
 	    in the current theory 
 	    \\
-	    \parametric{\KsortsDeclared}{$\shs$}  & Check whether a list of sorts 
+	    \KsortsDeclared{$\shs$}  & Check whether a list of sorts 
 	    are declared in the current theory 
 	    \\
 	    \KsymbolDeclared{$\shs$} & Check whether a symbol is 
@@ -5850,8 +5848,8 @@ that could ever be implemented.
 The Kore language is a formal specification language that allows one to specify 
 (both finite and recursively enumerable infinite) theories using a finite 
 number of characters and space.
-Before we present the syntax and semantics of Kore, we would like to recall 
-the readers again of the reflection property that we firstly introduced 
+Before we present the syntax and semantics of Kore, we would like to remind 
+readers of the reflection property that we first introduced 
 in Section~\ref{sec:meta-theory-reflection}
 \begin{center}
 $T \vdash \varphi$ \quad iff \quad 
@@ -5874,8 +5872,8 @@ used to, and are always able to write meta-level definitions and specifications
 to use the full power of the meta-theory and the faithful reflection relation.
 Object-level declarations and specifications are seen as just syntactic sugar 
 of the more verbose meta-level declarations.
-This process of ``desugaring object specifications to meta-specifications'' are 
-called \emph{lifting process}, which is giving Kore a semantics as a 
+This process of ``desugaring object specifications to meta-specifications'' is 
+called the \emph{lifting process}, which gives Kore a semantics as a 
 specification 
 language (Section~\ref{sec:kore-semantics}).
 
@@ -6226,7 +6224,7 @@ respectively, as shown in the next grammar.
 	<meta-head-constructor> ::= <meta-identifier>
 \end{grammar}
 A head is of the form \texttt{$C$\{$s_1,\dots,s_n$\}} for some $n \ge 0$, where 
-$C$ is head constructor and $s_1,\dots,s_n$ are sort parameters.
+$C$ is a head constructor and $s_1,\dots,s_n$ are sort parameters.
 In the case when $n = 0$, we say the head constructor $C$ is a non-parametric 
 head constructor and the head \texttt{$C$\{\}} is a non-parametric head.
 Notice that an object head constructor can only take object sorts as 
@@ -6295,7 +6293,7 @@ parameters.
 %String literals are meta-patterns.
 
 Apart from a few exceptions, patterns in Kore have a highly unified 
-prefix form representations.
+prefix form representation.
 Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
  
 \begin{grammar}
@@ -7157,7 +7155,7 @@ axiom\{$\shs$\} \\
 \qquad 
 \slimplies\{\shs\}( \\
 \ttfamily
-\qquad\qquad\KsortsDeclared\{\shs\}($\denote{
+\qquad\qquad\KsortsDeclared{\shs}($\denote{
 	s_1,\dots,s_n}_\llist$),\\
 \ttfamily
 \qquad\qquad\KsortDeclared{\shs}($\denote{
@@ -7276,10 +7274,10 @@ $v_1,\dots,v_m$ are declared.
 		\qquad 
 		\slimplies\{\shs\}( \\
 		\ttfamily
-		\qquad\qquad\KsortsDeclared\{\shs\}($\denote{
+		\qquad\qquad\KsortsDeclared{\shs}($\denote{
 			v_1,\dots,v_m}_\llist$),\\
 		\ttfamily
-		\qquad\qquad\KsymbolDeclared\{\shs\}($\sigma$))
+		\qquad\qquad\KsymbolDeclared{\shs}($\sigma$))
 		[]
 	\end{tabular}
 \end{center}
