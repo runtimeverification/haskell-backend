@@ -405,7 +405,8 @@
   \newcommand{\KgetSymbols}{\texttt{\sharpsymbol getSymbols}}
   \newcommand{\KsortDeclared}[1]{
   	\parametric{\texttt{\sharpsymbol sortDeclared}}{#1}}
-  \newcommand{\KsortsDeclared}{\texttt{\sharpsymbol sortsDeclared}}
+  \newcommand{\KsortsDeclared}[1]{
+        \parametric{\texttt{\sharpsymbol sortsDeclared}}{#1}}
   \newcommand{\KsymbolDeclared}[1]{
   	\parametric{\texttt{\sharpsymbol symbolDeclared}}{#1}}
   \newcommand{\KaxiomDeclared}{\texttt{\sharpsymbol axiomDeclared}}
@@ -3880,15 +3881,13 @@ They are
 \end{align*}
 A related predicate symbol
 \begin{equation}
-	\parametric{\KsortsDeclared}{\shs} \colon \KSortList \to \shs
+	\KsortsDeclared{\shs} \colon \KSortList \to \shs
 \end{equation}
 checks whether a list of sorts are declared:
 \begin{align*}
 & \KsortsDeclared{\shs}(\KnilKSortList) \\
 & \KsortsDeclared{\shs}(\KconsKSortList(s,S)) \\
-& = 
-\KsortDeclared{\shs}(s) \wedge 
-\parametric{\KsortsDeclared}{\shs}(S)
+& = \KsortDeclared{\shs}(s) \wedge \KsortsDeclared{\shs}(S)
 \end{align*}
 
 These predicate symbols give us what we call an \emph{intensional definition} 
@@ -4719,7 +4718,7 @@ There are in total 10 sorts in the meta-theory.
 	    \KsortDeclared{$\shs$} & Check whether a sort is declared 
 	    in the current theory 
 	    \\
-	    \parametric{\KsortsDeclared}{$\shs$}  & Check whether a list of sorts 
+	    \KsortsDeclared{$\shs$}  & Check whether a list of sorts 
 	    are declared in the current theory 
 	    \\
 	    \KsymbolDeclared{$\shs$} & Check whether a symbol is 
@@ -7156,7 +7155,7 @@ axiom\{$\shs$\} \\
 \qquad 
 \slimplies\{\shs\}( \\
 \ttfamily
-\qquad\qquad\KsortsDeclared\{\shs\}($\denote{
+\qquad\qquad\KsortsDeclared{\shs}($\denote{
 	s_1,\dots,s_n}_\llist$),\\
 \ttfamily
 \qquad\qquad\KsortDeclared{\shs}($\denote{
@@ -7275,10 +7274,10 @@ $v_1,\dots,v_m$ are declared.
 		\qquad 
 		\slimplies\{\shs\}( \\
 		\ttfamily
-		\qquad\qquad\KsortsDeclared\{\shs\}($\denote{
+		\qquad\qquad\KsortsDeclared{\shs}($\denote{
 			v_1,\dots,v_m}_\llist$),\\
 		\ttfamily
-		\qquad\qquad\KsymbolDeclared\{\shs\}($\sigma$))
+		\qquad\qquad\KsymbolDeclared{\shs}($\sigma$))
 		[]
 	\end{tabular}
 \end{center}
