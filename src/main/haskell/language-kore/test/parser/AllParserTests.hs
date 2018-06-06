@@ -6,7 +6,6 @@ import           Test.Tasty.Runners                                  (consoleTes
                                                                       listingTests)
 import           Test.Tasty.Runners.AntXML                           (antXMLRunner)
 
-import           Data.Kore.Algorithm.SetWithInsertionOrderTest
 import           Data.Kore.Algorithm.TopologicalSortTest
 import           Data.Kore.AST.CommonTest
 import           Data.Kore.AST.MLPatternsTest
@@ -92,7 +91,6 @@ unitTests =
         , resolversTests
         , pureToKoreTests
         , substitutionNormalizationTests
-        , setWithInsertionOrderTest
         , topologicalSortTest
         , baseStepTests
         ]

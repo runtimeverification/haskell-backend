@@ -82,7 +82,7 @@ normalizeSubstitution substitution = do
     dependencies = buildDependencies substitution interestingVariables
     topologicalSortConverted =
         case topologicalSort dependencies of
-            Left (ToplogicalSortCycle vars) ->
+            Left (ToplogicalSortCycles vars) ->
                 Left (CircularVariableDependency vars)
             Right result -> Right result
 

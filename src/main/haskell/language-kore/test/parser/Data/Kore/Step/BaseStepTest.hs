@@ -537,9 +537,7 @@ baseStepTests =
             (assertEqualWithExplanation ""
                 (Left $ StepErrorSubstitution
                     (CircularVariableDependency
-                        [ asMetaVariable (b1 PatternSort)
-                        , asMetaVariable (b1 PatternSort)
-                        ]
+                        [ asMetaVariable (b1 PatternSort) ]
                     )
                 )
                 (runStep

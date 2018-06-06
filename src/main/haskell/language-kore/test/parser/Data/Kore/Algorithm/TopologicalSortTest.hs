@@ -4,9 +4,11 @@ module Data.Kore.Algorithm.TopologicalSortTest
 import           Test.Tasty                          (TestTree, testGroup)
 import           Test.Tasty.HUnit                    (assertEqual, testCase)
 
+import           Control.Applicative                 ((<|>))
 import qualified Data.Map                            as Map
 
 import           Data.Kore.Algorithm.TopologicalSort
+import           Test.Tasty.HUnit.Extensions
 
 topologicalSortTest :: TestTree
 topologicalSortTest =
@@ -51,10 +53,9 @@ topologicalSortTest =
                     )
                 )
             )
-        , testCase "Three nodes, one lower than the others"
-            (assertEqual ""
-                (Right [2, 1, 3])
-                (topologicalSort
+        , let
+            sorted =
+                topologicalSort
                     (Map.fromList
                         [ (1, [2])
                         , (3, [2])
@@ -62,8 +63,9 @@ topologicalSortTest =
                         ]
                     :: Map.Map Integer [Integer]
                     )
-                )
-            )
+          in
+            testCase "Three nodes, one lower than the others"
+                (assertInList "" [Right [2, 1, 3], Right [2, 3, 1]] sorted)
         , testCase "Three nodes, total order"
             (assertEqual ""
                 (Right [3, 2, 1])
@@ -93,7 +95,7 @@ topologicalSortTest =
             )
         , testCase "Simple cycle"
             (assertEqual ""
-                (Left (ToplogicalSortCycle [1, 1]))
+                (Left (ToplogicalSortCycles [1]))
                 (topologicalSort
                     (Map.fromList
                         [ (1, [1])
@@ -104,7 +106,7 @@ topologicalSortTest =
             )
         , testCase "Long cycle"
             (assertEqual ""
-                (Left (ToplogicalSortCycle [1, 2, 3, 1]))
+                (Left (ToplogicalSortCycles [1, 2, 3]))
                 (topologicalSort
                     (Map.fromList
                         [ (1, [2])
@@ -117,7 +119,7 @@ topologicalSortTest =
             )
         , testCase "Cycle not starting at the first visited node"
             (assertEqual ""
-                (Left (ToplogicalSortCycle [2, 3, 2]))
+                (Left (ToplogicalSortCycles [2, 3]))
                 (topologicalSort
                     (Map.fromList
                         [ (1, [2])

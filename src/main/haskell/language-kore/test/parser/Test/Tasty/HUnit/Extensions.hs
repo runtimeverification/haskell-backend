@@ -27,6 +27,27 @@ assertEqualWithPrinter printer preface expected actual =
         (if null preface then "" else preface ++ "\n")
         ++ "expected: " ++ printer expected ++ "\n but got: " ++ printer actual
 
+assertInListP
+    :: (Eq a, HasCallStack)
+    => (a -> String)
+    -> String -- ^ The message prefix
+    -> [a]    -- ^ The expected value list
+    -> a      -- ^ The actual value
+    -> IO ()
+assertInListP printer message expectedList actual =
+    foldr
+        (\ expected -> unless (expected == actual))
+        (assertFailure ("No match for: " ++ printer actual ++ "\n" ++ message))
+        expectedList
+
+assertInList
+    :: (Eq a, Show a, HasCallStack)
+    => String -- ^ The message prefix
+    -> [a]    -- ^ The expected value list
+    -> a      -- ^ The actual value
+    -> IO ()
+assertInList = assertInListP show
+
 assertError :: HasCallStack => (String -> IO()) -> a -> IO()
 assertError errorTest action = do
     maybeErr <-

@@ -107,7 +107,7 @@ substitutionNormalizationTests =
           in
             testCase "Simplest cycle"
                 (assertEqual ""
-                    (Left (CircularVariableDependency [var1, var1]))
+                    (Left (CircularVariableDependency [var1]))
                     (runNormalizeSubstitution
                         [   ( var1
                             , asPureMetaPattern (v1 PatternSort)
@@ -121,7 +121,7 @@ substitutionNormalizationTests =
           in
             testCase "Length 2 cycle"
                 (assertEqual ""
-                    (Left (CircularVariableDependency [var1, varx1, var1]))
+                    (Left (CircularVariableDependency [var1, varx1]))
                     (runNormalizeSubstitution
                         [   ( var1
                             , asPureMetaPattern (x1 PatternSort)
@@ -138,7 +138,7 @@ substitutionNormalizationTests =
           in
             testCase "Cycle with 'and'"
                 (assertEqual ""
-                    (Left (CircularVariableDependency [var1, varx1, var1]))
+                    (Left (CircularVariableDependency [var1, varx1]))
                     (runNormalizeSubstitution
                         [   ( var1
                             , asPureMetaPattern
