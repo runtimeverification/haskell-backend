@@ -32,6 +32,7 @@ module Data.Kore.Building.Sorts
   ) where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Building.AsAst
 import           Data.Kore.Implicit.ImplicitSorts

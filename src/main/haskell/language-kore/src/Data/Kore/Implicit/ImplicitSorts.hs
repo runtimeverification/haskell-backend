@@ -12,6 +12,7 @@ Portability : POSIX
 module Data.Kore.Implicit.ImplicitSorts where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.Implicit.ImplicitSortsImpl
 
 -- TODO(virgil-serbanuta): Add tests for "defined but not used" symbols

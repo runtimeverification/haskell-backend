@@ -22,6 +22,7 @@ import           Data.Maybe
 
 import           Data.Kore.AST.Builders           (isImplicitHead)
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Implicit.ImplicitKore  (mlPatternP, variable)

@@ -15,6 +15,7 @@ module Data.Kore.Variables.Int ( IntVariable(..)
                                      ) where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.MetaOrObject
 
 class IntVariable var where

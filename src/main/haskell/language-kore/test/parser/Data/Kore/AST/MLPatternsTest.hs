@@ -11,6 +11,7 @@ import           Test.Tasty.HUnit                 (assertEqual, testCase)
 
 import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore               (CommonKorePattern)
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns

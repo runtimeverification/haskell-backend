@@ -12,6 +12,7 @@ module Data.Kore.Implicit.ImplicitVarsInternal where
 
 import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML       (CommonPurePatternStub)
 import           Data.Kore.MetaML.AST

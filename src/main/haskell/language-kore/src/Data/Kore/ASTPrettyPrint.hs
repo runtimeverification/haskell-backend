@@ -8,6 +8,7 @@ module Data.Kore.ASTPrettyPrint ( prettyPrintToString
                                 ) where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
@@ -133,9 +134,9 @@ writeFieldNewLine fieldName field object = do
         (betweenLines >> prettyPrint MaySkipParentheses (field object))
 
 writeAttributesField
-    :: (PrinterOutput w m, PrettyPrint (Fix (pat variable)))
+    :: (PrinterOutput w m)
     => String
-    -> Attributes pat variable
+    -> Attributes
     -> m ()
 writeAttributesField fieldName attributes@(Attributes as) = do
     write fieldName
@@ -541,8 +542,7 @@ instance MetaOrObject level => PrettyPrint (CommonPurePattern level) where
     prettyPrint flags purePattern =
         writeOneFieldStruct flags "Fix" (unFix purePattern)
 
-instance PrettyPrint (Fix (pat variable))
-    => PrettyPrint (Attributes pat variable)
+instance PrettyPrint (Attributes)
   where
     prettyPrint flags (Attributes a)
         | null a    = write "Attributes []"
