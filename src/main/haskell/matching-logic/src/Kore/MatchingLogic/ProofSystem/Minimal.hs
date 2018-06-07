@@ -123,7 +123,7 @@ instance (IsSignature sig, Eq (Sort sig), Eq (Label sig), Eq var) =>
           expect $ (notP' a --> notP' b) --> (b --> a)
       ModusPonens a (ImpliesP _ a' b) | a == a' ->
           expect $ Just b
-      ModusPonens _ _ -> Left (Error [] "hypotheses have wrong form")
+      ModusPonens _ _ -> Left (Error [] "hypotheses have wrong form, modus ponens requires hypotheses of the form A->B and A")
       VariableSubstitution (SubstitutedVariable x) term (SubstitutingVariable y) ->
           case conclusion of
             ImpliesP _ (ForallP _ sVar var1 body) term2

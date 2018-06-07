@@ -106,14 +106,28 @@ data Simple_rule =
  | Ax_out_or Ctx Formula Formula
  | Ax_existence Nat
  | Ax_singvar Ctx_path Ctx_path Nat Formula
- | Ax_definedness
+ {- Additional rules used in the Coq proof.
+    Some can be hypotheses of the final proof, but
+    most are axiom schemes. -}
+ | Ax_definedness -- This becomes a hypothesis in the output proof
+ -- proj1 proves A /\ B -> A
  | Ax_proj1 Formula Formula
+ -- proj2 proves A /\ B -> B
  | Ax_proj2 Formula Formula
+ -- and_intro proves A -> B -> A /\ B
  | Ax_and_intro Formula Formula
+ -- or_elim proves (A -> C) -> (B -> C) -> (A \/ B -> C)
  | Ax_or_elim Formula Formula Formula
+ -- or_intro1 proves A -> A \/ B
  | Ax_or_intro1 Formula Formula
+ -- or_intro1 proves B -> A \/ B
  | Ax_or_intro2 Formula Formula
+ -- zero_functional is Ex 1 . 1 = zero()
+ -- This becomes a hypothesis
+ -- recall variables are just numbers.
  | Ax_zero_functional
+ -- succ_functional is Ex 1 . 1 = succ(0)
+ -- This becomes a hypothesis
  | Ax_succ_functional
   deriving (Read,Show,Eq,Generic,Data)
 
@@ -275,6 +289,10 @@ convertFormula f = case f of
 
 type TextPat = AST.Pattern Text Text Int
 type TextRule = MLRule Text Text Int TextPat
+{- The ConvM is for building a proof
+   It tracks the next free formula index in the proof,
+   and proof lines produced so far, stored in reverse order
+ -}
 newtype ConvM a = ConvM {runConvM :: State (Int, [(Int,TextPat,TextRule Int)]) a}
   deriving (Functor,Applicative,Monad)
 
@@ -306,6 +324,9 @@ loadCoqOutput = do
         Left err -> error (parseErrorPretty err)
         Right proof -> return proof
 
+{- ^ runConversion takes the number of indices to leave free at the beginning,
+   and returns a list of formula lines, with integer indices.
+ -}
 runConversion :: Int -> Simple_proof -> [(Int,TextPat,TextRule Int)]
 runConversion numHyps proof =
     let (_,proofLines) = execState (runConvM (convert proof)) (numHyps,[])
@@ -372,6 +393,10 @@ loadConverted :: IO [(Int,TextPat,TextRule Int)]
 loadConverted = do
     p <- loadCoqOutput
     return (runConversion 5 p)
+      {- Hypothesis ids 0,1,2 are used for definedness, zero functional, and one-functional
+         in the translation above, and the 1+1 proof has two further hypotheses
+         about plus(zero,x) and plus(succ(x),y),
+         so 5 is the next free id -}
 
 startProof :: (ReifiesSignature s)
            => proxy (SimpleSignature s)
