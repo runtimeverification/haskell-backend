@@ -7,7 +7,6 @@ import           Data.Kore.AST.Common                   (And (..),
                                                          Exists (..),
                                                          Implies (..), Not (..),
                                                          Or (..), Pattern (..),
-                                                         Sort, SortVariable,
                                                          SymbolOrAlias (..),
                                                          Variable)
 import qualified Data.Kore.AST.Common                   as Common (Forall (..))
@@ -18,7 +17,9 @@ import           Data.Kore.AST.MetaOrObject             (Meta (..),
 import           Data.Kore.AST.PureToKore               (patternKoreToPure,
                                                          patternPureToKore)
 import           Data.Kore.ASTVerifier.PatternVerifier  (verifyPattern)
-import           Data.Kore.Error
+import           Data.Kore.Error                        (Error, castError,
+                                                         koreFail, koreFailWhen,
+                                                         withContext)
 import           Data.Kore.IndexedModule.IndexedModule  (KoreIndexedModule)
 import           Data.Kore.MetaML.AST                   (CommonMetaPattern,
                                                          metaFreeVariables)
@@ -29,9 +30,11 @@ import           Data.Kore.Unparser.Unparse             (Unparse,
 import           Data.Kore.Variables.Fresh.Class        (FreshVariablesClass (..))
 import           Data.Kore.Variables.Sort               (TermWithSortVariablesClass (sortVariables))
 
-import           Kore.MatchingLogic.Error
-import           Kore.MatchingLogic.HilbertProof
-import           Kore.MatchingLogic.ProofSystem.Minimal
+import           Kore.MatchingLogic.Error               (MLError)
+import           Kore.MatchingLogic.HilbertProof        (ProofSystem(..))
+import           Kore.MatchingLogic.ProofSystem.Minimal (MLRule(..),
+                                                         SubstitutingVariable(..),
+                                                         SubstitutedVariable(..))
 
 import           Data.Fix
 import qualified Data.Set                               as Set
@@ -61,7 +64,6 @@ formulaVerifier indexedModule formula = do
 instance ProofSystem
         MLError
         (MLRule
-            (Sort Meta)
             (SymbolOrAlias Meta)
             (Variable Meta)
             CommonMetaPattern)

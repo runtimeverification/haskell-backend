@@ -1,14 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Main where
-import           Control.Applicative                           (some)
-import           Control.Monad.IO.Class                        (liftIO)
-import           Control.Monad.State.Strict                    (MonadState (..),
-                                                                StateT,
-                                                                runStateT)
-import           Data.Char                                     (isAlphaNum,
-                                                                isSpace)
-import           Data.List                                     (isPrefixOf,
-                                                                isSuffixOf)
+import           Data.Char                                     (isAlphaNum)
 import qualified Data.Map.Strict                               as Map
 import qualified Data.Set                                      as Set
 import           Data.Text
@@ -16,19 +7,13 @@ import           Data.Text
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 
-import           Data.Text.Prettyprint.Doc                     hiding (space)
-import qualified Data.Text.Prettyprint.Doc                     as Doc
-
 import           Data.Reflection
-
-import           System.Console.Haskeline
 
 import           Kore.MatchingLogic.AST
 import           Kore.MatchingLogic.AST.Syntax
 import           Kore.MatchingLogic.HilbertProof
 import           Kore.MatchingLogic.ProofSystem.Minimal
-import           Kore.MatchingLogic.ProofSystem.Minimal.Syntax (parseId,
-                                                                parseMLRuleSig)
+import           Kore.MatchingLogic.ProofSystem.Minimal.Syntax (parseMLRuleSig)
 import           Kore.MatchingLogic.ProverRepl
 import           Kore.MatchingLogic.Signature.Simple
 
@@ -53,9 +38,6 @@ proveCommand
     -> IO (ProverState Text (MLRuleSig (SimpleSignature sig) Text)
             (WFPattern (SimpleSignature sig) Text))
 proveCommand _ = runProver dummyFormulaVerifier pCommand (ProverState emptyProof)
-
-banner :: InputT IO ()
-banner = outputStrLn "Welcome to the matching logic prover"
 
 testSignature :: SignatureInfo
 testSignature = SignatureInfo

@@ -20,17 +20,14 @@ module Kore.MatchingLogic.Signature.Poly
   ,PolySignature
   ,ReifiesSignature
   ,resolveLabel,resolveSort
-  ,reifySignature) where
+  ,reifySignature
+  ,prettyPolyTerm) where
   -- ,ValidatedSignature,fromValidated,findLabel) where
-import           Control.Monad             ((>=>))
 import           Data.Char                 (isAlpha, isAlphaNum)
 import           Data.Coerce
-import           Data.Functor.Foldable
 import           Data.Map.Strict           (Map)
 import qualified Data.Map.Strict           as Map
 import           Data.Proxy
-import           Data.Set                  (Set)
-import qualified Data.Set                  as Set
 import           Data.Text                 (Text)
 import qualified Data.Text                 as Text
 
@@ -65,10 +62,10 @@ instance Show ValidatedSignature where
 data PolySignature s
 
 sortTermValid :: Map Text Int -> Int -> SortPat -> Bool
-sortTermValid sortCons nargs t = check t
+sortTermValid sortArities nargs t = check t
   where check (Var v) = 0 <= v && v < nargs
         check (PApp c ts) =
-          case Map.lookup c sortCons of
+          case Map.lookup c sortArities of
             Just arity -> arity == length ts && all check ts
             Nothing    -> False
 
@@ -96,10 +93,10 @@ prettyPolyTerm name args = prettyName name <> braced (map pretty args)
 instance Show RawPolySort where
   showsPrec _ (RawPolySort con args) s = shows con (showsBraces args s)
 instance Pretty RawPolySort where
-  pretty (RawPolySort con args) = prettyName con
+  pretty (RawPolySort con args) = prettyName con <> (braced (map pretty args))
 
 showsBraces :: (Show a) => [a] -> ShowS
-showsBraces items s = '{':showsItems items ('}':s)
+showsBraces items rest = '{':showsItems items ('}':rest)
    where showsItems [] s          = s
          showsItems [x] s         = shows x s
          showsItems (x:l@(_:_)) s = shows x (',':showsItems l s)
@@ -130,8 +127,10 @@ instance (Reifies s ValidatedSignature) => IsSignature (PolySignature s) where
   newtype Sort (PolySignature s) = PolySort RawPolySort
   labelSignature (PolyLabel name sortArgs) =
     case Map.lookup name (labels sig) of
-      Just (arity,return,args) | arity == length sortArgs -> coerce
-        (instantiate sortArgs return, map (instantiate sortArgs) args)
+      Just (arity,result,args)
+          | arity == length sortArgs -> coerce
+            (instantiate sortArgs result, map (instantiate sortArgs) args)
+          | otherwise -> error $ "Encapsulation failure, label "++show name++" applied to incorrect number "++show (length args)++" of sort parameters"
       Nothing -> error $ "Encapsulation failure, invalid label "++show name++" found in a reflected signature"
    where sig = fromValidated (reflect @s Proxy)
 
@@ -163,4 +162,4 @@ reifySignature :: ValidatedSignature
                -> (forall s . (Reifies s ValidatedSignature)
                            => Proxy (PolySignature s) -> a)
                -> a
-reifySignature sig f = reify sig (\(proxy :: Proxy s) -> f @s Proxy)
+reifySignature sig f = reify sig (\(_proxy :: Proxy s) -> f @s Proxy)

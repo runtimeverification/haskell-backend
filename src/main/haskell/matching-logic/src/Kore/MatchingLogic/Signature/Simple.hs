@@ -20,7 +20,6 @@ module Kore.MatchingLogic.Signature.Simple
   ,reifySignature) where
 import           Data.Char
 import           Data.Coerce
-import           Data.Functor.Foldable
 import           Data.Map.Strict           (Map)
 import qualified Data.Map.Strict           as Map
 import           Data.Proxy
@@ -28,8 +27,8 @@ import           Data.Set                  (Set)
 import qualified Data.Set                  as Set
 import           Data.Text                 (Text)
 import qualified Data.Text                 as Text
-import           Data.Text.Prettyprint.Doc
 
+import           Data.Text.Prettyprint.Doc
 import           Data.Reflection
 
 import           Kore.MatchingLogic.Signature
@@ -69,14 +68,14 @@ reifySignature :: ValidatedSignature
                -> (forall s . (Reifies s ValidatedSignature)
                            => Proxy (SimpleSignature s) -> a)
                -> a
-reifySignature sig f = reify sig (\(proxy :: Proxy s) -> f @s Proxy)
+reifySignature sig f = reify sig (\(_proxy :: Proxy s) -> f @s Proxy)
 
 instance (Reifies s ValidatedSignature) => IsSignature (SimpleSignature s) where
   newtype Label (SimpleSignature s) = SimpleLabel Text
   newtype Sort (SimpleSignature s) = SimpleSort Text
   labelSignature (SimpleLabel name) =
     case Map.lookup name (labels sig) of
-      Just labelSignature -> coerce labelSignature
+      Just signature -> coerce signature
       Nothing -> error $ "This should be impossible!"
         ++" Encapsulation failure, invalid label "++show name
         ++" found in a reflected signature"
