@@ -19,18 +19,15 @@ module Kore.MatchingLogic.Signature.Poly
   ,SignatureInfo(..),ValidatedSignature,fromValidated,validate
   ,PolySignature
   ,ReifiesSignature
-  ,resolveLabel,resolveSort,resolvePattern
-  ,reifySignature) where
+  ,resolveLabel,resolveSort
+  ,reifySignature
+  ,prettyPolyTerm) where
   -- ,ValidatedSignature,fromValidated,findLabel) where
-import           Control.Monad             ((>=>))
 import           Data.Char                 (isAlpha, isAlphaNum)
 import           Data.Coerce
-import           Data.Functor.Foldable
 import           Data.Map.Strict           (Map)
 import qualified Data.Map.Strict           as Map
 import           Data.Proxy
-import           Data.Set                  (Set)
-import qualified Data.Set                  as Set
 import           Data.Text                 (Text)
 import qualified Data.Text                 as Text
 
@@ -38,6 +35,7 @@ import           Data.Reflection
 import           Data.Text.Prettyprint.Doc
 
 import           Kore.MatchingLogic.AST
+import           Kore.MatchingLogic.Signature
 
 -- | A tree of applied sort constructors,
 -- which also allows for sort variables.
@@ -64,10 +62,10 @@ instance Show ValidatedSignature where
 data PolySignature s
 
 sortTermValid :: Map Text Int -> Int -> SortPat -> Bool
-sortTermValid sortCons nargs t = check t
+sortTermValid sortArities nargs t = check t
   where check (Var v) = 0 <= v && v < nargs
         check (PApp c ts) =
-          case Map.lookup c sortCons of
+          case Map.lookup c sortArities of
             Just arity -> arity == length ts && all check ts
             Nothing    -> False
 
@@ -79,9 +77,9 @@ isValid sigInfo =
 validate :: SignatureInfo -> Maybe ValidatedSignature
 validate sig = if isValid sig then Just (ValidatedSignature sig) else Nothing
 
-data RawSort = RawSort Text [RawSort]
+data RawPolySort = RawPolySort Text [RawPolySort]
   deriving Eq
-data RawLabel = RawLabel Text [RawSort]
+data RawPolyLabel = RawPolyLabel Text [RawPolySort]
   deriving Eq
 
 prettyName :: Text -> Doc ann
@@ -92,48 +90,22 @@ prettyName name
 prettyPolyTerm :: (Pretty t) => Text -> [t] -> Doc ann
 prettyPolyTerm name args = prettyName name <> braced (map pretty args)
 
-instance Show RawSort where
-  showsPrec _ (RawSort con args) s = shows con (showsBraces args s)
-instance Pretty RawSort where
-  pretty (RawSort con args) = prettyName con
+instance Show RawPolySort where
+  showsPrec _ (RawPolySort con args) s = shows con (showsBraces args s)
+instance Pretty RawPolySort where
+  pretty (RawPolySort con args) = prettyName con <> (braced (map pretty args))
 
 showsBraces :: (Show a) => [a] -> ShowS
-showsBraces items s = '{':showsItems items ('}':s)
+showsBraces items rest = '{':showsItems items ('}':rest)
    where showsItems [] s          = s
          showsItems [x] s         = shows x s
          showsItems (x:l@(_:_)) s = shows x (',':showsItems l s)
 
-instantiate :: [RawSort] -> SortPat -> RawSort
+instantiate :: [RawPolySort] -> SortPat -> RawPolySort
 instantiate args (Var v)          = args !! v
-instantiate args (PApp con cargs) = RawSort con (map (instantiate args) cargs)
+instantiate args (PApp con cargs) = RawPolySort con (map (instantiate args) cargs)
 
 type ReifiesSignature s = Reifies s ValidatedSignature
-
-resolveSort1 :: forall s . (Reifies s ValidatedSignature) =>
-  Text -> [Sort (PolySignature s)] -> Maybe (Sort (PolySignature s))
-resolveSort1 sortName args =
-  case Map.lookupGE sortName (sortCons sig) of
-    Just (sort',arity) | sort' == sortName, arity == length args
-                         -> Just (PolySort (RawSort sort' (coerce args)))
-    _ -> Nothing
- where sig = fromValidated (reflect @s Proxy)
-
-resolveSort :: forall s . (Reifies s ValidatedSignature) =>
-  RawSort -> Maybe (Sort (PolySignature s))
-resolveSort (RawSort name args) = traverse resolveSort args >>= resolveSort1 name
-
-resolveLabel1 :: forall s . (Reifies s ValidatedSignature) =>
-  Text -> [Sort (PolySignature s)] -> Maybe (Label (PolySignature s))
-resolveLabel1 labelName args =
-  case Map.lookupGE labelName (labels sig) of
-    Just (label',(arity,_,_)) | label' == labelName, arity == length args
-                                -> Just (PolyLabel label' (coerce args))
-    _ -> Nothing
- where sig = fromValidated (reflect @s Proxy)
-
-resolveLabel :: forall s . (Reifies s ValidatedSignature) =>
-  RawLabel -> Maybe (Label (PolySignature s))
-resolveLabel (RawLabel name args) = traverse resolveSort args >>= resolveLabel1 name
 
 deriving instance Eq (Label (PolySignature s))
 instance Show (Label (PolySignature s)) where
@@ -151,26 +123,43 @@ instance Pretty (Sort (PolySignature s)) where
   pretty (PolySort s) = pretty s
 
 instance (Reifies s ValidatedSignature) => IsSignature (PolySignature s) where
-  data Label (PolySignature s) = PolyLabel Text [RawSort]
-  newtype Sort (PolySignature s) = PolySort RawSort
+  data Label (PolySignature s) = PolyLabel Text [RawPolySort]
+  newtype Sort (PolySignature s) = PolySort RawPolySort
   labelSignature (PolyLabel name sortArgs) =
     case Map.lookup name (labels sig) of
-      Just (arity,return,args) | arity == length sortArgs -> coerce
-        (instantiate sortArgs return, map (instantiate sortArgs) args)
+      Just (arity,result,args)
+          | arity == length sortArgs -> coerce
+            (instantiate sortArgs result, map (instantiate sortArgs) args)
+          | otherwise -> error $ "Encapsulation failure, label "++show name++" applied to incorrect number "++show (length args)++" of sort parameters"
       Nothing -> error $ "Encapsulation failure, invalid label "++show name++" found in a reflected signature"
    where sig = fromValidated (reflect @s Proxy)
+
+resolveSort1 :: forall s . (Reifies s ValidatedSignature) =>
+  Text -> [Sort (PolySignature s)] -> Maybe (Sort (PolySignature s))
+resolveSort1 sortName args =
+  case Map.lookupGE sortName (sortCons sig) of
+    Just (sort',arity) | sort' == sortName, arity == length args
+                         -> Just (PolySort (RawPolySort sort' (coerce args)))
+    _ -> Nothing
+ where sig = fromValidated (reflect @s Proxy)
+
+resolveLabel1 :: forall s . (Reifies s ValidatedSignature) =>
+  Text -> [Sort (PolySignature s)] -> Maybe (Label (PolySignature s))
+resolveLabel1 labelName args =
+  case Map.lookupGE labelName (labels sig) of
+    Just (label',(arity,_,_)) | label' == labelName, arity == length args
+                                -> Just (PolyLabel label' (coerce args))
+    _ -> Nothing
+ where sig = fromValidated (reflect @s Proxy)
+
+instance (Reifies s ValidatedSignature) => CheckableSignature (PolySignature s) where
+    type RawLabel (PolySignature s) = RawPolyLabel
+    type RawSort (PolySignature s) = RawPolySort
+    resolveSort (RawPolySort name args) = traverse resolveSort args >>= resolveSort1 name
+    resolveLabel (RawPolyLabel name args) = traverse resolveSort args >>= resolveLabel1 name
 
 reifySignature :: ValidatedSignature
                -> (forall s . (Reifies s ValidatedSignature)
                            => Proxy (PolySignature s) -> a)
                -> a
-reifySignature sig f = reify sig (\(proxy :: Proxy s) -> f @s Proxy)
-
-resolvePattern :: forall s var . (Reifies s ValidatedSignature)
-               => Pattern RawSort RawLabel var
-               -> Maybe (SigPattern (PolySignature s) var)
-resolvePattern = cata (recognizeLayer >=> fmap Fix . sequenceA)
-  where
-    recognizeLayer :: PatternF RawSort RawLabel var p
-                   -> Maybe (SigPatternF (PolySignature s) var p)
-    recognizeLayer = visitPatternF resolveSort resolveLabel pure pure
+reifySignature sig f = reify sig (\(_proxy :: Proxy s) -> f @s Proxy)
