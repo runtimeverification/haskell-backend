@@ -12,8 +12,8 @@ Portability : portable
 -}
 module Data.Kore.AST.MLPatterns (MLPatternClass(..),
                                  MLBinderPatternClass (..),
-                                 PatternFunction(..),
-                                 PatternLeveledFunction(..),
+                                 PatternFunction (..),
+                                 PatternLeveledFunction (..),
                                  applyPatternFunction,
                                  applyPatternLeveledFunction,
                                  getPatternResultSort,
@@ -180,26 +180,26 @@ can be applied to the elements of a `Pattern` (e.g. `Implies`). Together
 with `applyPatternLeveledFunction` they form a function on patterns, hence the name.
 -}
 -- TODO: consider parameterizing on variable also
-data PatternLeveledFunction level child result = PatternLeveledFunction
+data PatternLeveledFunction level variable child result = PatternLeveledFunction
     { patternLeveledFunctionML
         :: !(forall patt . MLPatternClass patt
             => patt level child -> result level)
     , patternLeveledFunctionMLBinder
         :: !(forall patt . MLBinderPatternClass patt
-        => patt level Variable child
+        => patt level variable child
         -> result level)
     , stringLeveledFunction :: StringLiteral -> result Meta
     , charLeveledFunction :: CharLiteral -> result Meta
     , applicationLeveledFunction :: !(Application level child -> result level)
-    , variableLeveledFunction :: !(Variable level -> result level)
+    , variableLeveledFunction :: !(variable level -> result level)
     }
 
 {-|`applyPatternLeveledFunction` applies a patternFunction on the inner element of a
 `Pattern`, returning the result.
 -}
 applyPatternLeveledFunction
-    :: PatternLeveledFunction level child result
-    -> Pattern level Variable child
+    :: PatternLeveledFunction level variable child result
+    -> Pattern level variable child
     -> result level
 applyPatternLeveledFunction function (AndPattern a) =
     patternLeveledFunctionML function a
@@ -247,17 +247,17 @@ can be applied to the elements of a `Pattern` (e.g. `Implies`). Together
 with `applyPatternFunction` they form a function on patterns, hence the name.
 -}
 -- TODO: consider parameterizing on variable also
-data PatternFunction level child result = PatternFunction
+data PatternFunction level variable child result = PatternFunction
     { patternFunctionML
         :: !(forall patt . MLPatternClass patt => patt level child -> result)
     , patternFunctionMLBinder
         :: !(forall patt . MLBinderPatternClass patt
-        => patt level Variable child
+        => patt level variable child
         -> result)
     , stringFunction :: StringLiteral -> result
     , charFunction :: CharLiteral -> result
     , applicationFunction :: !(Application level child -> result)
-    , variableFunction :: !(Variable level -> result)
+    , variableFunction :: !(variable level -> result)
     }
 
 newtype ParameterizedProxy result level = ParameterizedProxy
@@ -267,8 +267,8 @@ newtype ParameterizedProxy result level = ParameterizedProxy
 `Pattern`, returning the result.
 -}
 applyPatternFunction
-    :: PatternFunction level child result
-    -> Pattern level Variable child
+    :: PatternFunction level variable child result
+    -> Pattern level variable child
     -> result
 applyPatternFunction patternFunction =
     getParameterizedProxy
@@ -295,9 +295,10 @@ applyPatternFunction patternFunction =
 -- result sort corresponding to an application head.
 -- TODO(traiansf): add tests.
 getPatternResultSort
-    :: (SymbolOrAlias level -> Sort level)
+    :: SortedVariable variable
+    => (SymbolOrAlias level -> Sort level)
     -- ^Function to retrieve the sort of a given pattern Head
-    -> Pattern level Variable child
+    -> Pattern level variable child
     -> Sort level
 getPatternResultSort headSort =
     applyPatternLeveledFunction PatternLeveledFunction
@@ -306,7 +307,7 @@ getPatternResultSort headSort =
         , stringLeveledFunction = const stringMetaSort
         , charLeveledFunction = const charMetaSort
         , applicationLeveledFunction = headSort . applicationSymbolOrAlias
-        , variableLeveledFunction = variableSort
+        , variableLeveledFunction = sortedVariableSort
         }
 
 -- |Sample argument function for 'getPatternResultSort', failing for all input.

@@ -277,6 +277,14 @@ data Variable level = Variable
     }
     deriving (Show, Eq, Ord)
 
+{--| 'SortedVariable' is a variable which has a sort.
+--}
+class SortedVariable variable where
+    sortedVariableSort :: variable level -> Sort level
+
+instance SortedVariable Variable where
+    sortedVariableSort = variableSort
+
 {-|Enumeration of patterns starting with @\@
 -}
 data MLPatternType
@@ -711,7 +719,6 @@ deriving instance
 deriving instance Functor (Pattern level variable)
 deriving instance Foldable (Pattern level variable)
 deriving instance Traversable (Pattern level variable)
-
 
 data SortedPattern level variable child = SortedPattern
     { sortedPatternPattern :: !(Pattern level variable child)

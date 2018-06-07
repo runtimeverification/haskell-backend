@@ -16,6 +16,7 @@ import           Data.Kore.AST.MLPatternsTest                        (extractPur
 import           Data.Kore.AST.PureML
 import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
+import           Data.Kore.Comparators                               ()
 import           Data.Kore.IndexedModule.MetadataTools
 import           Data.Kore.KoreHelpers
 import           Data.Kore.Unification.Error
@@ -159,7 +160,7 @@ unificationSubstitution = map trans
 unificationResult
     :: UnificationResultTerm Object
     -> Substitution Object
-    -> UnificationSolution Object
+    -> UnificationSolution Object Variable
 unificationResult (UnificationResultTerm pat) sub = UnificationSolution
     { unificationSolutionTerm = extractPurePattern pat
     , unificationSolutionConstraints = unificationSubstitution sub
@@ -177,13 +178,12 @@ andSimplifySuccess
     -> UnificationTerm Object
     -> UnificationResultTerm Object
     -> Substitution Object
-    -> UnificationProof Object
+    -> UnificationProof Object Variable
     -> TestTree
 andSimplifySuccess message term1 term2 resultTerm subst proof =
     testCase
         message
-        (assertEqualWithPrinter
-            prettyPrintToString
+        (assertEqualWithExplanation
             ""
             (unificationResult resultTerm subst, proof)
             (subst'', proof')
@@ -219,7 +219,7 @@ unificationProcedureSuccess
     -> UnificationTerm Object
     -> UnificationTerm Object
     -> Substitution Object
-    -> UnificationProof Object
+    -> UnificationProof Object Variable
     -> TestTree
 unificationProcedureSuccess
     message
@@ -229,8 +229,7 @@ unificationProcedureSuccess
     proof
   = testCase
         message
-        (assertEqualWithPrinter
-            prettyPrintToString
+        (assertEqualWithExplanation
             ""
             (unificationSubstitution subst, proof)
             (sortBy (compare `on` fst) subst', proof')
@@ -420,21 +419,12 @@ unificationTests =
                         (var expA)
                         (extractPurePattern (applyS eg [expX]))
                     ]
-                , CombinedUnificationProof
-                    [ CombinedUnificationProof
-                        [ CombinedUnificationProof
-                            [ EmptyUnificationProof
-                            , Proposition_5_24_3
-                                [ FunctionalHead (symbolHead eg)
-                                , FunctionalVariable (var expX)
-                                ]
-                                (var expX)
-                                (extractPurePattern (applyS eg [expX]))
-                            ]
-                        , EmptyUnificationProof
-                        ]
-                    , EmptyUnificationProof
+                , Proposition_5_24_3
+                    [ FunctionalHead (symbolHead eg)
+                    , FunctionalVariable (var expX)
                     ]
+                    (var expX)
+                    (extractPurePattern (applyS eg [expX]))
                 ]
             )
         , unificationProcedureSuccess
@@ -462,36 +452,19 @@ unificationTests =
                         (var expX)
                         (extractPurePattern (applyS expBin [expY, expA]))
                     ]
-                , CombinedUnificationProof
-                    [ CombinedUnificationProof
-                        [ CombinedUnificationProof
-                            [ EmptyUnificationProof
-                            , AndDistributionAndConstraintLifting
-                                (symbolHead expBin)
-                                [ Proposition_5_24_3
-                                    [FunctionalVariable (var expY)]
-                                    (var expA)
-                                    (extractPurePattern expY)
-                                , Proposition_5_24_3
-                                    [FunctionalVariable (var expA)]
-                                    (var expY)
-                                    (extractPurePattern expA)
-                                ]
-                            ]
-                        , EmptyUnificationProof
-                        ]
-                    , CombinedUnificationProof
-                        [ CombinedUnificationProof
-                            [ CombinedUnificationProof
-                                [ EmptyUnificationProof
-                                , ConjunctionIdempotency
-                                    (extractPurePattern expY)
-                                ]
-                            , EmptyUnificationProof
-                            ]
-                        , EmptyUnificationProof
-                        ]
+                , AndDistributionAndConstraintLifting
+                    (symbolHead expBin)
+                    [ Proposition_5_24_3
+                        [FunctionalVariable (var expY)]
+                        (var expA)
+                        (extractPurePattern expY)
+                    , Proposition_5_24_3
+                        [FunctionalVariable (var expA)]
+                        (var expY)
+                        (extractPurePattern expA)
                     ]
+                , ConjunctionIdempotency
+                    (extractPurePattern expY)
                 ]
             )
          , andSimplifyFailure "Unmatching constants"

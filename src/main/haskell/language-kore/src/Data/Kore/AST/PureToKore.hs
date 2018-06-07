@@ -34,7 +34,6 @@ import           Data.Kore.HaskellExtensions (Rotate31 (..))
 
 import           Data.Fix
 
-
 patternPureToKore
     :: MetaOrObject level => CommonPurePattern level -> CommonKorePattern
 patternPureToKore = cata asKorePattern
@@ -83,7 +82,6 @@ sentencePureToKore (SentenceSortSentence mss) =
     { sentenceSortName = sentenceSortName mss
     , sentenceSortParameters = sentenceSortParameters mss
     }
-
 
 modulePureToKore
     :: MetaOrObject level => PureModule level -> KoreModule

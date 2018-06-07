@@ -24,14 +24,15 @@ import           Data.Function                         (on)
 import           Data.List                             (groupBy, partition,
                                                         sortBy)
 
-type UnificationSubstitution level = [(Variable level, CommonPurePattern level)]
+type UnificationSubstitution level variable
+    = [(variable level, PureMLPattern level variable)]
 
 -- |'UnificationSolution' describes the solution of an unification problem,
 -- consisting of the unified term and the set of constraints (equalities)
 -- obtained during unification.
-data UnificationSolution level = UnificationSolution
-    { unificationSolutionTerm        :: !(CommonPurePattern level)
-    , unificationSolutionConstraints :: !(UnificationSubstitution level)
+data UnificationSolution level variable = UnificationSolution
+    { unificationSolutionTerm        :: !(PureMLPattern level variable)
+    , unificationSolutionConstraints :: !(UnificationSubstitution level variable)
     }
   deriving (Eq, Show)
 
@@ -39,9 +40,10 @@ data UnificationSolution level = UnificationSolution
 -- a 'CommonPurePattern' by transforming the constraints into a conjunction of
 -- equalities and conjoining them with the unified term.
 unificationSolutionToPurePattern
-    :: MetadataTools level
-    -> UnificationSolution level
-    -> CommonPurePattern level
+    :: SortedVariable variable
+    => MetadataTools level
+    -> UnificationSolution level variable
+    -> PureMLPattern level variable
 unificationSolutionToPurePattern tools ucp =
     case unificationSolutionConstraints ucp of
         [] -> unifiedTerm
@@ -59,7 +61,7 @@ unificationSolutionToPurePattern tools ucp =
             }
     equals (var, p) =
         Fix $ EqualsPattern Equals
-            { equalsOperandSort = variableSort var
+            { equalsOperandSort = sortedVariableSort var
             , equalsResultSort = resultSort
             , equalsFirst = Fix $ VariablePattern var
             , equalsSecond = p
@@ -69,24 +71,24 @@ unificationSolutionToPurePattern tools ucp =
 -- steps performed during unification
 -- TODO: replace this datastructures with proper ones representing
 -- both hypotheses and conclusions in the proof object.
-data UnificationProof level
+data UnificationProof level variable
     = EmptyUnificationProof
     -- ^Empty proof (nothing to prove)
-    | CombinedUnificationProof [UnificationProof level]
+    | CombinedUnificationProof [UnificationProof level variable]
     -- ^Putting multiple proofs together
-    | ConjunctionIdempotency (CommonPurePattern level)
+    | ConjunctionIdempotency (PureMLPattern level variable)
     -- ^Used to specify the reduction a/\a <-> a
     | Proposition_5_24_3
-        [FunctionalProof level]
-        (Variable level)
-        (CommonPurePattern level)
+        [FunctionalProof level variable]
+        (variable level)
+        (PureMLPattern level variable)
     -- ^Used to specify the application of Proposition 5.24 (3)
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     -- if ϕ and ϕ' are functional patterns, then
     -- |= (ϕ ∧ ϕ') = (ϕ ∧ (ϕ = ϕ'))
     | AndDistributionAndConstraintLifting
         (SymbolOrAlias level)
-        [UnificationProof level]
+        [UnificationProof level variable]
     -- ^Used to specify both the application of the constructor axiom
     -- c(x1, .., xn) /\ c(y1, ..., yn) -> c(x1 /\ y1, ..., xn /\ yn)
     -- and of Proposition 5.12 (Constraint propagation) after unification:
@@ -94,9 +96,9 @@ data UnificationProof level
     -- if ϕ is a predicate, then:
     -- |= c(ϕ1, ..., ϕi /\ ϕ, ..., ϕn) = c(ϕ1, ..., ϕi, ..., ϕn) /\ ϕ
     | SubstitutionMerge
-        (Variable level)
-        (CommonPurePattern level)
-        (CommonPurePattern level)
+        (variable level)
+        (PureMLPattern level variable)
+        (PureMLPattern level variable)
     -- ^Specifies the merging of (x = t1) /\ (x = t2) into x = (t1 /\ t2)
     -- Semantics of K, 7.7.1:
     -- (Equality Elimination). |- (ϕ1 = ϕ2) → (ψ[ϕ1/v] → ψ[ϕ2/v])
@@ -110,14 +112,52 @@ data UnificationProof level
     -- (x = (t1 /\ t2))
   deriving (Eq, Show)
 
--- ^'FunctionalProof' is used for providing arguments that a pattern is
+{-# ANN simplifyUnificationProof "HLint: ignore Use record patterns" #-}
+simplifyUnificationProof
+    :: UnificationProof level variable
+    -> UnificationProof level variable
+simplifyUnificationProof EmptyUnificationProof = EmptyUnificationProof
+simplifyUnificationProof (CombinedUnificationProof []) =
+    EmptyUnificationProof
+simplifyUnificationProof (CombinedUnificationProof [a]) =
+    simplifyUnificationProof a
+simplifyUnificationProof (CombinedUnificationProof items) =
+    case simplifyCombinedItems items of
+        []  -> EmptyUnificationProof
+        [a] -> a
+        as  -> CombinedUnificationProof as
+simplifyUnificationProof a@(ConjunctionIdempotency _) = a
+simplifyUnificationProof a@(Proposition_5_24_3 _ _ _) = a
+simplifyUnificationProof
+    (AndDistributionAndConstraintLifting symbolOrAlias unificationProof)
+  =
+    AndDistributionAndConstraintLifting
+        symbolOrAlias
+        (simplifyCombinedItems unificationProof)
+simplifyUnificationProof a@(SubstitutionMerge _ _ _) = a
+
+simplifyCombinedItems
+    :: [UnificationProof level variable] -> [UnificationProof level variable]
+simplifyCombinedItems =
+    foldr (addContents . simplifyUnificationProof) []
+  where
+    addContents
+        :: UnificationProof level variable
+        -> [UnificationProof level variable]
+        -> [UnificationProof level variable]
+    addContents EmptyUnificationProof  proofItems           = proofItems
+    addContents (CombinedUnificationProof items) proofItems =
+        items ++ proofItems
+    addContents other proofItems = other : proofItems
+
+-- |'FunctionalProof' is used for providing arguments that a pattern is
 -- functional.  Currently we only support arguments stating that a
 -- pattern consists only of functional symbols and variables.
 -- Hence, a proof that a pattern is functional is a list of 'FunctionalProof'.
 -- TODO: replace this datastructures with proper ones representing
 -- both hypotheses and conclusions in the proof object.
-data FunctionalProof level
-    = FunctionalVariable (Variable level)
+data FunctionalProof level variable
+    = FunctionalVariable (variable level)
     -- ^Variables are functional as per Corollary 5.19
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     -- |= ∃y . x = y
@@ -126,11 +166,23 @@ data FunctionalProof level
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
   deriving (Eq, Show)
 
+{--| 'mapFunctionalProofVariables' replaces all variables in a 'FunctionalProof'
+using the provided mapping.
+--}
+mapFunctionalProofVariables
+    :: (variableFrom level -> variableTo level)
+    -> FunctionalProof level variableFrom
+    -> FunctionalProof level variableTo
+mapFunctionalProofVariables mapper (FunctionalVariable variable) =
+    FunctionalVariable (mapper variable)
+mapFunctionalProofVariables _ (FunctionalHead functionalHead) =
+    FunctionalHead functionalHead
+
 -- checks whether a pattern is functional or not
 isFunctionalPattern
     :: MetadataTools level
-    -> PureMLPattern level Variable
-    -> Either (UnificationError level) [FunctionalProof level]
+    -> PureMLPattern level variable
+    -> Either (UnificationError level) [FunctionalProof level variable]
 isFunctionalPattern tools = fixBottomUpVisitorM reduceM
   where
     reduceM (VariablePattern v) =
@@ -145,11 +197,12 @@ isFunctionalPattern tools = fixBottomUpVisitorM reduceM
     reduceM _ = Left NonFunctionalPattern
 
 simplifyAnds
-    :: MetadataTools level
-    -> [CommonPurePattern level]
+    :: (SortedVariable variable, Ord (variable level))
+    => MetadataTools level
+    -> [PureMLPattern level variable]
     -> Either
         (UnificationError level)
-        (UnificationSolution level, UnificationProof level)
+        (UnificationSolution level variable, UnificationProof level variable)
 simplifyAnds _ [] = Left EmptyPatternList
 simplifyAnds tools (p:ps) =
     foldM
@@ -181,27 +234,29 @@ simplifyAnds tools (p:ps) =
             )
 
 simplifyAnd
-    :: MetadataTools level
-    -> PureMLPattern level Variable
+    :: Ord (variable level)
+    => MetadataTools level
+    -> PureMLPattern level variable
     -> Either
         (UnificationError level)
-        (UnificationSolution level, UnificationProof level)
+        (UnificationSolution level variable, UnificationProof level variable)
 simplifyAnd tools =
     fixTopDownVisitor (preTransform tools) postTransform
 
 -- Performs variable and equality checks and distributes the conjunction
 -- to the children, creating sub-unification problems
 preTransform
-    :: MetadataTools level
-    -> UnFixedPureMLPattern level Variable
+    :: Ord (variable level)
+    => MetadataTools level
+    -> UnFixedPureMLPattern level variable
     -> Either
         ( Either
             (UnificationError level)
-            ( UnificationSolution level
-            , UnificationProof level
+            ( UnificationSolution level variable
+            , UnificationProof level variable
             )
         )
-        (UnFixedPureMLPattern level Variable)
+        (UnFixedPureMLPattern level variable)
 preTransform tools (AndPattern ap) = if left == right
     then Left $ Right
         ( UnificationSolution
@@ -247,13 +302,13 @@ preTransform _ _ = Left $ Left UnsupportedPatterns
 -- if phi is a functional pattern.
 mlProposition_5_24_3
     :: MetadataTools level
-    -> Variable level
+    -> variable level
     -- ^variable pattern
-    -> PureMLPattern level Variable
+    -> PureMLPattern level variable
     -- ^functional (term) pattern
     -> Either
         (UnificationError level)
-        (UnificationSolution level, UnificationProof level)
+        (UnificationSolution level variable, UnificationProof level variable)
 mlProposition_5_24_3
     tools
     v
@@ -271,14 +326,16 @@ mlProposition_5_24_3
 -- returns from the recursion, building the unified term and
 -- pushing up the constraints (substitution)
 postTransform
-    :: Pattern level Variable
+    :: Pattern level variable
         (Either
             (UnificationError level)
-            (UnificationSolution level, UnificationProof level)
+            ( UnificationSolution level variable
+            , UnificationProof level variable
+            )
         )
     -> Either
         (UnificationError level)
-        (UnificationSolution level, UnificationProof level)
+        (UnificationSolution level variable, UnificationProof level variable)
 postTransform (ApplicationPattern ap) = do
     children <- sequenceA (applicationChildren ap)
     let (subSolutions, subProofs) = unzip children
@@ -300,7 +357,9 @@ postTransform (ApplicationPattern ap) = do
 postTransform _ = error "Unexpected, non-application, pattern."
 
 groupSubstitutionByVariable
-    :: UnificationSubstitution level -> [UnificationSubstitution level]
+    :: Ord (variable level)
+    => UnificationSubstitution level variable
+    -> [UnificationSubstitution level variable]
 groupSubstitutionByVariable =
     groupBy ((==) `on` fst) . sortBy (compare `on` fst) . map sortRenaming
   where
@@ -312,11 +371,12 @@ groupSubstitutionByVariable =
 -- x = ((t1 /\ t2) /\ (..)) /\ tn
 -- then recursively reducing that to finally get x = t /\ subst
 solveGroupedSubstitution
-    :: MetadataTools level
-    -> UnificationSubstitution level
+    :: (SortedVariable variable, Ord (variable level))
+    => MetadataTools level
+    -> UnificationSubstitution level variable
     -> Either
         (UnificationError level)
-        (UnificationSubstitution level, UnificationProof level)
+        (UnificationSubstitution level variable, UnificationProof level variable)
 solveGroupedSubstitution _ [] = Left EmptyPatternList
 solveGroupedSubstitution tools ((x,p):subst) = do
     (solution, proof) <- simplifyAnds tools (p : map snd subst)
@@ -325,7 +385,7 @@ solveGroupedSubstitution tools ((x,p):subst) = do
           : unificationSolutionConstraints solution
         , proof)
 
-instance Monoid (UnificationProof level) where
+instance Monoid (UnificationProof level variable) where
     mempty = EmptyUnificationProof
     mappend proof1 proof2 = CombinedUnificationProof [proof1, proof2]
     mconcat = CombinedUnificationProof
@@ -336,11 +396,14 @@ instance Monoid (UnificationProof level) where
 -- As new assignments may be produced during the solving process,
 -- `normalizeSubstitution` recursively calls itself until it stabilizes.
 normalizeSubstitution
-    :: MetadataTools level
-    -> UnificationSubstitution level
+    :: (SortedVariable variable, Ord (variable level))
+    => MetadataTools level
+    -> UnificationSubstitution level variable
     -> Either
         (UnificationError level)
-        (UnificationSubstitution level, UnificationProof level)
+        ( UnificationSubstitution level variable
+        , UnificationProof level variable
+        )
 normalizeSubstitution tools subst =
     if null nonSingletonSubstitutions
         then return (subst, EmptyUnificationProof)
@@ -366,27 +429,33 @@ normalizeSubstitution tools subst =
     (singletonSubstitutions, nonSingletonSubstitutions) =
         partition isSingleton groupedSubstitution
 
--- ^'unificationProcedure' atempts to simplify @t1 = t2@, assuming @t1@ and @t2@
+-- |'unificationProcedure' atempts to simplify @t1 = t2@, assuming @t1@ and @t2@
 -- are terms (functional patterns) to a substitution.
 -- If successful, it also produces a proof of how the substitution was obtained.
 -- If failing, it gives a 'UnificationError' reason for the failure.
 unificationProcedure
-    :: MetadataTools level
+    :: (SortedVariable variable, Ord (variable level))
+    => MetadataTools level
     -- ^functions yielding metadata for pattern heads
-    -> CommonPurePattern level
+    -> PureMLPattern level variable
     -- ^left-hand-side of unification
-    -> CommonPurePattern level
+    -> PureMLPattern level variable
     -> Either
         (UnificationError level)
-        (UnificationSubstitution level, UnificationProof level)
+        (UnificationSubstitution level variable, UnificationProof level variable)
 unificationProcedure tools p1 p2
     | p1Sort /= p2Sort =
         Left (SortClash p1Sort p2Sort)
     | otherwise = do
         (solution, proof) <- simplifyAnd tools conjunct
         (normSubst, normProof) <-
-            normalizeSubstitution tools (unificationSolutionConstraints solution)
-        return (normSubst, CombinedUnificationProof [proof, normProof])
+            normalizeSubstitution
+                tools (unificationSolutionConstraints solution)
+        return
+            ( normSubst
+            , simplifyUnificationProof
+                (CombinedUnificationProof [proof, normProof])
+            )
   where
     resultSort = getPatternResultSort (getResultSort tools)
     p1Sort =  resultSort (unFix p1)
