@@ -720,12 +720,6 @@ deriving instance Functor (Pattern level variable)
 deriving instance Foldable (Pattern level variable)
 deriving instance Traversable (Pattern level variable)
 
-patternConstructorName
-    :: (Show child, Show (variable level))
-    => Pattern level variable child -> String
-patternConstructorName = head . words . show
-
-
 data SortedPattern level variable child = SortedPattern
     { sortedPatternPattern :: !(Pattern level variable child)
     , sortedPatternSort    :: !(Sort level)

@@ -18,8 +18,7 @@ import           Data.Kore.Building.AsAst
 import           Data.Kore.Building.Patterns
 import           Data.Kore.Building.Sorts
 import           Data.Kore.MetaML.AST                            (CommonMetaPattern)
-import           Data.Kore.Unification.Error                     (SubstitutionError (..),
-                                                                  UnificationError (..))
+import           Data.Kore.Unification.Error                     (SubstitutionError (..))
 import           Data.Kore.Unification.SubstitutionNormalization
 import           Data.Kore.Unification.UnifierImpl               (UnificationSubstitution)
 import           Data.Kore.Variables.Fresh.IntCounter            (runIntCounter)

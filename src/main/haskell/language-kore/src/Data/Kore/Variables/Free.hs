@@ -84,7 +84,7 @@ pureFreeVariables level p =
     metaVars = Set.map (\ (UnifiedMeta v) -> v) unifiedMetaVars
     objectVars = Set.map (\ (UnifiedObject v) -> v) unifiedObjectVars
 
-{-| 'allVariables' extracts all variables of a given level in a pattern as a
+{-| 'pureAllVariables' extracts all variables of a given level in a pattern as a
 set, regardless of whether they are quantified or not.
 -}
 pureAllVariables

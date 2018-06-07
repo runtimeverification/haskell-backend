@@ -73,11 +73,40 @@ assertSubstring message first second =
         )
         (first `isInfixOf` second)
 
-data EqWrap = forall a . EqualWithExplanation a => EqWrap String a a
+{--| 'EqualWithExplanation' is a class for objects that can be compared for
+equality, and for which an explanation of an equality failure is desired.
 
+This can be used with, e.g., assertEqualWithExplanation.
+--}
 class EqualWithExplanation a where
+    {--| 'compareWithExplanation' compares two values, returning Nothing
+    if they are equal or (Just explanation) if they are different.
+
+    This explanation is assumed to be a human readable representation of the
+    two input values that highlights why they are not equal. As an example,
+    whn comparing (a, b) with (a, c), this function may return
+    (..., b <vs> c).
+    --}
     compareWithExplanation :: a -> a -> Maybe String
+    {--| 'printWithExplanation' should display the data passed to it.
+    TODO: Consider removing it and using 'show'.
+    --}
     printWithExplanation :: a -> String
+
+assertEqualWithExplanation
+    :: (EqualWithExplanation a, HasCallStack)
+    => String -- ^ The message prefix
+    -> a      -- ^ The expected value
+    -> a      -- ^ The actual value
+    -> IO ()
+assertEqualWithExplanation prefix expected actual =
+    case compareWithExplanation expected actual of
+        Just explanation ->
+            assertFailure
+                ((if null prefix then "" else prefix ++ "\n") ++ explanation)
+        Nothing -> pure ()
+
+data EqWrap = forall a . EqualWithExplanation a => EqWrap String a a
 
 formatDiffForExplanation :: String -> String -> String
 formatDiffForExplanation expected actual =
@@ -220,6 +249,9 @@ data StructEWEField struct = StructEWEField
         -> struct
         -> (forall field . EqualWithExplanation field => (field, field))
     }
+{--| 'StructEqualWithExplanation' is a helper class for declaring structs
+as instances of 'EqualWithExplanation'
+--}
 class EqualWithExplanation struct => StructEqualWithExplanation struct where
     structFieldsWithNames :: struct -> struct -> [EqWrap]
     structConstructorName :: struct -> String
@@ -269,9 +301,12 @@ data SumConstructor
     = SumConstructorDifferent String String
     | SumConstructorSameNoArguments
     | SumConstructorSameWithArguments EqWrap
-class EqualWithExplanation struct => SumEqualWithExplanation struct where
-    sumConstructorPair :: struct -> struct -> SumConstructor
-    sumCompareWithExplanation :: struct -> struct -> Maybe String
+{--| 'SumEqualWithExplanation' is a helper class for declaring sum types
+as instances of 'EqualWithExplanation'
+--}
+class EqualWithExplanation sum => SumEqualWithExplanation sum where
+    sumConstructorPair :: sum -> sum -> SumConstructor
+    sumCompareWithExplanation :: sum -> sum -> Maybe String
     sumCompareWithExplanation expected actual =
         case sumConstructorPair expected actual of
             SumConstructorDifferent expectedConstructor actualConstructor ->
@@ -285,16 +320,3 @@ class EqualWithExplanation struct => SumEqualWithExplanation struct where
                 case compareListWithExplanation [eqWrap] of
                     Just err -> Just ("(" ++ err ++ ")")
                     Nothing  -> Nothing
-
-assertEqualWithExplanation
-    :: (EqualWithExplanation a, HasCallStack)
-    => String -- ^ The message prefix
-    -> a      -- ^ The expected value
-    -> a      -- ^ The actual value
-    -> IO ()
-assertEqualWithExplanation prefix expected actual =
-    case compareWithExplanation expected actual of
-        Just explanation ->
-            assertFailure
-                ((if null prefix then "" else prefix ++ "\n") ++ explanation)
-        Nothing -> pure ()

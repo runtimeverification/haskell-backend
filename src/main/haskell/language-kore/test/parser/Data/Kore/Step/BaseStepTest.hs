@@ -176,8 +176,8 @@ baseStepTests =
                         }
                 )
             )
-        -- sigma(x, x) -> x   vs   sigma(a, f(b))
-        -- sigma(f(b), f(b)) and a=f(b)
+        -- sigma(x, x) => x   vs   sigma(a, f(b))
+        -- Expected: sigma(f(b), f(b)) and a=f(b)
         , testCase "Merging configuration patterns."
             (assertEqualWithExplanation ""
                 (Right
@@ -250,7 +250,8 @@ baseStepTests =
                         }
                 )
             )
-        -- sigma(x, x) -> x   vs   sigma(f(a), f(b))
+        -- sigma(x, x) => x   vs   sigma(f(a), f(b))
+        -- Expected: f(b) and a=b
         , testCase "Substitution with symbol matching."
             (assertEqualWithExplanation ""
                 (Right
@@ -327,14 +328,19 @@ baseStepTests =
                         }
                 )
             )
-        -- sigma(x, x) -> x   vs   sigma(y, y)
+        -- sigma(x, x) => x   vs   sigma(y, y)
+        -- Expected: y
         , testCase "Identical variables have no condition, alphabetical larger."
             (identicalVariablesAssertion y1)
-        -- sigma(x, x) -> x   vs   sigma(a, a)
+        -- sigma(x, x) => x   vs   sigma(a, a)
+        -- Expected: a
         , testCase "Identical variables have no condition, alphabetical lower."
             (identicalVariablesAssertion a1)
 
-        -- sigma(sigma(x, x), sigma(y, y)) -> sigma(x, y)   vs   sigma(sigma(a, b), sigma(b, a))
+        -- sigma(sigma(x, x), sigma(y, y)) => sigma(x, y)
+        -- vs
+        -- sigma(sigma(a, b), sigma(b, a))
+        -- Expected: sigma(b, b) and a=b
         , testCase "Merge multiple variables."
             (assertEqualWithExplanation ""
                 (Right
@@ -446,7 +452,8 @@ baseStepTests =
                         }
                 )
             )
-        -- x -> exists a . x    vs    a
+        -- x => exists a . x    vs    a
+        -- Expected: exists <newvar> . a
         , testCase "Rename quantified rhs variables."
             (assertEqualWithExplanation ""
                 (Right
@@ -506,6 +513,7 @@ baseStepTests =
                 )
             )
         -- sigma(x, x) -> x   vs   sigma(g(a), f(b))
+        -- Expected: error because g(a) != f(b)
         , testCase "Symbol clashes."
             (assertEqualWithExplanation ""
                 (Left $ StepErrorUnification $ ConstructorClash gSymbol fSymbol)
@@ -533,6 +541,7 @@ baseStepTests =
         -- sigma(sigma(x, x), sigma(y, y)) -> sigma(x, y)
         -- vs
         -- sigma(sigma(a, f(b)), sigma(b, a))
+        -- Expected: Error because a=f(b) and b=a.
         , testCase "Impossible substitution."
             (assertEqualWithExplanation ""
                 (Left $ StepErrorSubstitution
@@ -578,11 +587,11 @@ baseStepTests =
             )
 
         -- TODO(virgil): add tests for these after we implement
-        -- a -> sigma(x, y) substitutions where a is a configuration variable
+        -- a => sigma(x, y) substitutions where a is a configuration variable
         -- and x, y are axiom variables.
 
-        -- sigma(x, y) -> y    vs    a
-        -- sigma(x, sigma(y, z)) -> sigma(x, sigma(y, z))    vs    sigma(y, a)
+        -- sigma(x, y) => y    vs    a
+        -- sigma(x, sigma(y, z)) => sigma(x, sigma(y, z))    vs    sigma(y, a)
         ]
   where
     v1 :: MetaSort sort => sort -> MetaVariable sort

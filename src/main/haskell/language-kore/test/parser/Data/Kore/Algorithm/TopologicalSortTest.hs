@@ -4,7 +4,6 @@ module Data.Kore.Algorithm.TopologicalSortTest
 import           Test.Tasty                          (TestTree, testGroup)
 import           Test.Tasty.HUnit                    (assertEqual, testCase)
 
-import           Control.Applicative                 ((<|>))
 import qualified Data.Map                            as Map
 
 import           Data.Kore.Algorithm.TopologicalSort

@@ -2,6 +2,16 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs             #-}
+{-|
+Module      : Data.Kore.Comparators
+Description : Declares various data types involved in testing as instances of
+              the 'EqualWithExplanation' class.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : virgil.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : portable
+-}
 module Data.Kore.Comparators where
 
 import           Test.Tasty.HUnit.Extensions
