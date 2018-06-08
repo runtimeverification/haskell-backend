@@ -15,9 +15,8 @@ module Data.Kore.Implicit.Verified
     )
     where
 
-import           Data.Kore.AST.Kore    
-import           Data.Kore.AST.Sentence                      
 import           Data.Kore.AST.PureToKore
+import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTVerifier.DefinitionVerifier (defaultAttributesVerification,
                                                            verifyImplicitKoreDefinition,
                                                            verifyNormalKoreDefinition)

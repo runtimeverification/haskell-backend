@@ -43,7 +43,7 @@ module Data.Kore.AST.Kore
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.HaskellExtensions (Rotate31 (..), Rotate41 (..))
+import           Data.Kore.HaskellExtensions (Rotate31 (..))
 
 import           Data.Fix
 

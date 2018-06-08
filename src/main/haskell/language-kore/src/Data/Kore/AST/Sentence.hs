@@ -1,7 +1,5 @@
-{-# LANGUAGE DeriveFoldable         #-}
-{-# LANGUAGE DeriveFunctor          #-}
-{-# LANGUAGE DeriveTraversable      #-}
 {-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
 {-# LANGUAGE KindSignatures         #-}
@@ -9,9 +7,8 @@
 {-# LANGUAGE RankNTypes             #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE StandaloneDeriving     #-}
-{-# LANGUAGE UndecidableInstances   #-}
 {-# LANGUAGE TypeSynonymInstances   #-}
-{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE UndecidableInstances   #-}
 {-|
 Module      : Data.Kore.AST.Common
 Description : Data Structures for representing the Kore language AST that do not
@@ -37,12 +34,11 @@ Please refer to Section 9 (The Kore Language) of the
 module Data.Kore.AST.Sentence where
 
 import           Data.Fix
-import           Data.Proxy
 
-import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
-import           Data.Kore.HaskellExtensions (Rotate31 (..), Rotate41 (..))
+import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.HaskellExtensions (Rotate41 (..))
 
 
 {-|'Attributes' corresponds to the @attributes@ Kore syntactic declaration.
@@ -54,11 +50,11 @@ newtype Attributes =
 
 deriving instance
     (Eq CommonKorePattern)
-     => Eq (Attributes)
+     => Eq Attributes
 
 deriving instance
     (Show CommonKorePattern)
-     => Show (Attributes)
+     => Show Attributes
 
 {-|'SentenceAlias' corresponds to the @object-alias-declaration@ and
 @meta-alias-declaration@ syntactic categories from the Semantics of K,
@@ -72,7 +68,7 @@ data SentenceAlias level (pat :: (* -> *) -> * -> *) (variable :: * -> *)
     { sentenceAliasAlias      :: !(Alias level)
     , sentenceAliasSorts      :: ![Sort level]
     , sentenceAliasResultSort :: !(Sort level)
-    , sentenceAliasAttributes :: !(Attributes)
+    , sentenceAliasAttributes :: !Attributes
     }
 
 deriving instance
@@ -95,7 +91,7 @@ data SentenceSymbol level (pat :: (* -> *) -> * -> *) (variable :: * -> *)
     { sentenceSymbolSymbol     :: !(Symbol level)
     , sentenceSymbolSorts      :: ![Sort level]
     , sentenceSymbolResultSort :: !(Sort level)
-    , sentenceSymbolAttributes :: !(Attributes)
+    , sentenceSymbolAttributes :: !Attributes
     }
 
 deriving instance
@@ -118,7 +114,7 @@ from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 data SentenceImport (pat :: (* -> *) -> * -> *) (variable :: * -> *)
  = SentenceImport
     { sentenceImportModuleName :: !ModuleName
-    , sentenceImportAttributes :: !(Attributes)
+    , sentenceImportAttributes :: !Attributes
     }
 
 deriving instance
@@ -136,7 +132,7 @@ data SentenceSort level (pat :: (* -> *) -> * -> *) (variable :: * -> *)
  = SentenceSort
     { sentenceSortName       :: !(Id level)
     , sentenceSortParameters :: ![SortVariable level]
-    , sentenceSortAttributes :: !(Attributes)
+    , sentenceSortAttributes :: !Attributes
     }
 
 deriving instance
@@ -154,7 +150,7 @@ data SentenceAxiom sortParam (pat :: (* -> *) -> * -> *) (variable :: * -> *)
  = SentenceAxiom
     { sentenceAxiomParameters :: ![sortParam]
     , sentenceAxiomPattern    :: !(Fix (pat variable))
-    , sentenceAxiomAttributes :: !(Attributes)
+    , sentenceAxiomAttributes :: !Attributes
     }
 
 deriving instance
@@ -235,7 +231,7 @@ data Module sentence sortParam (pat :: (* -> *) -> * -> *) (variable :: * -> *)
  = Module
     { moduleName       :: !ModuleName
     , moduleSentences  :: ![sentence sortParam pat variable]
-    , moduleAttributes :: !(Attributes)
+    , moduleAttributes :: !Attributes
     }
 
 deriving instance
@@ -259,7 +255,7 @@ while the remaining three are grouped into 'definitionModules'.
 -}
 data Definition sentence sortParam (pat :: (* -> *) -> * -> *) (variable :: * -> *)
  = Definition
-    { definitionAttributes :: !(Attributes)
+    { definitionAttributes :: !Attributes
     , definitionModules    :: ![Module sentence sortParam pat variable]
     }
 

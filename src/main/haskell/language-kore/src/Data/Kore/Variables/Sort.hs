@@ -22,7 +22,6 @@ import           Data.List                  (foldl')
 import qualified Data.Set                   as Set
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns

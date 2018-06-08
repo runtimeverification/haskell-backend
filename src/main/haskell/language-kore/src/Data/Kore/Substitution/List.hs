@@ -23,7 +23,6 @@ import           Data.Fix
 import           Data.List                         (nubBy)
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Datastructures.MapClass
 import           Data.Kore.Substitution.Class

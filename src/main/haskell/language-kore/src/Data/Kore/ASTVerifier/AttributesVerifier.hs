@@ -11,10 +11,9 @@ module Data.Kore.ASTVerifier.AttributesVerifier (verifyAttributes,
                                                  AttributesVerification (..))
   where
 
-import           Data.Kore.AST.Common    
-import           Data.Kore.AST.Sentence                  
-import           Data.Kore.AST.Kore                    
+import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject            (asUnified)
+import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.PatternVerifier
 import           Data.Kore.Error

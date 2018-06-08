@@ -3,9 +3,9 @@ module Data.Kore.Unparser.UnparseTest ( unparseParseTests
                                       ) where
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTGen
 import           Data.Kore.KoreHelpers
 import           Data.Kore.Parser.LexemeImpl
@@ -205,16 +205,16 @@ unparseParseTests =
             (forAll koreSentenceGen (unparseParseProp koreSentenceParser))
         , testProperty "Module"
             (forAll
-                (moduleGen koreSentenceGen korePatternGen)
+                (moduleGen koreSentenceGen)
                 (unparseParseProp
-                    (moduleParser koreSentenceParser korePatternParser)
+                    (moduleParser koreSentenceParser)
                 )
             )
         , testProperty "Definition"
             (forAll
-                (definitionGen koreSentenceGen korePatternGen)
+                (definitionGen koreSentenceGen)
                 (unparseParseProp
-                    (definitionParser koreSentenceParser korePatternParser)
+                    (definitionParser koreSentenceParser)
                 )
             )
         ]

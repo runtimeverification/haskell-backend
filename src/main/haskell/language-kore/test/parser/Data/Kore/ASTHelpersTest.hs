@@ -1,11 +1,10 @@
 module Data.Kore.ASTHelpersTest (astHelperTests) where
 
-import           Test.Tasty            (TestTree, testGroup)
-import           Test.Tasty.HUnit      (assertEqual, testCase)
+import           Test.Tasty             (TestTree, testGroup)
+import           Test.Tasty.HUnit       (assertEqual, testCase)
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Sentence
-import           Data.Kore.AST.Kore
 import           Data.Kore.ASTHelpers
 import           Data.Kore.Error
 import           Data.Kore.KoreHelpers

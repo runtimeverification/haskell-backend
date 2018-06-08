@@ -9,9 +9,7 @@ import           Test.Tasty                               (TestTree, testGroup)
 import           Test.Tasty.Golden                        (findByExtension,
                                                            goldenVsString)
 
-import           Data.Kore.AST.Kore    
-import           Data.Kore.AST.Sentence                       
-import           Data.Kore.AST.Common                       
+import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.ASTVerifier.DefinitionVerifier
 import           Data.Kore.Error
@@ -58,8 +56,8 @@ regressionTest
 goldenFromInputFileName :: InputFileName -> GoldenFileName
 goldenFromInputFileName (InputFileName inputFile) =
     GoldenFileName
-        (directory </> "expected" </> addExtension fileName ".golden")
-  where (directory, fileName) = splitFileName inputFile
+        (directory </> "expected" </> addExtension inputFileName ".golden")
+  where (directory, inputFileName) = splitFileName inputFile
 
 toByteString :: Either String KoreDefinition -> LazyByteString.ByteString
 toByteString (Left err) =

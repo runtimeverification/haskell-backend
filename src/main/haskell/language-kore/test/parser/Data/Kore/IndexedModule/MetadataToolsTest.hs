@@ -1,25 +1,23 @@
 module Data.Kore.IndexedModule.MetadataToolsTest where
 
+import qualified Data.Map                                            as Map
+import           Data.Maybe                                          (fromMaybe)
 import           Test.Tasty                                          (TestTree,
                                                                       testGroup)
 import           Test.Tasty.HUnit                                    (assertEqual,
                                                                       testCase)
-import           Data.Fix
-import qualified Data.Map                                            as Map
-import           Data.Maybe                                          (fromMaybe)
 
 import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
-import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
 import           Data.Kore.AST.PureToKore
+import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTVerifier.DefinitionVerifier
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
-import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.Implicit.Attributes
+import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.IndexedModule.IndexedModule
 import           Data.Kore.IndexedModule.MetadataTools
 import           Data.Kore.KoreHelpers
@@ -29,7 +27,7 @@ objectS1 = simpleSort (SortName "s1")
 
 objectA :: PureSentenceSymbol Object
 objectA = SentenceSymbol
-    { sentenceSymbolSymbol = 
+    { sentenceSymbolSymbol =
         Symbol
           { symbolConstructor = (Id "b" AstLocationNone)
           , symbolParams = []
