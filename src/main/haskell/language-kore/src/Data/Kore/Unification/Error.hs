@@ -17,7 +17,6 @@ module Data.Kore.Unification.Error
 import qualified Data.Set             as Set
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 
 -- |'UnificationError' specifies various error cases encountered during
 -- unification

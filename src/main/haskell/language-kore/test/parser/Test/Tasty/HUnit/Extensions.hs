@@ -53,7 +53,7 @@ assertError errorTest action = do
     maybeErr <-
         catch
             (do
-                evaluate action
+                _ <- evaluate action
                 return Nothing
             )
             (\err -> return (Just (show (err :: SomeException))))

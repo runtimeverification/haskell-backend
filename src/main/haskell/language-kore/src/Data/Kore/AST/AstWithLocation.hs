@@ -12,7 +12,6 @@ Portability : POSIX
 module Data.Kore.AST.AstWithLocation (AstWithLocation(..)) where
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.MetaOrObject
 
 {-| 'AstWithLocation' should be implemented by all AST terms that have

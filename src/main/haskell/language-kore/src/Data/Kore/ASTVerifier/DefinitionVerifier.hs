@@ -19,7 +19,6 @@ module Data.Kore.ASTVerifier.DefinitionVerifier
 import           Control.Monad                            (foldM, foldM_)
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Sentence
-import           Data.Kore.AST.Kore
 import           Data.Kore.ASTVerifier.AttributesVerifier
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.ModuleVerifier

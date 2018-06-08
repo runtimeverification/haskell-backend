@@ -40,8 +40,10 @@ charDictTests =
                 7)
         ]
   where
+    makeDict :: CharDict Int
     makeDict = makeCharDict [('a', 2), ('B', 3)] 1
     memoizeDict = memoize f
+    f :: Char -> Int
     f 'A' = 5
     f 'b' = 6
     f _   = 7

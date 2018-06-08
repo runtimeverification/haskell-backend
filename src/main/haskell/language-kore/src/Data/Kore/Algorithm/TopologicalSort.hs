@@ -34,7 +34,7 @@ topologicalSort edges =
         extractSortedNode
         (stronglyConnComp
             (map
-                (\ (node, edges) -> (node, node, edges))
+                (\ (node, edges') -> (node, node, edges'))
                 (Map.toList edges)
             )
         )

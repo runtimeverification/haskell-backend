@@ -11,7 +11,6 @@ Portability : portable
 module Data.Kore.Unification.UnifierImpl where
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.PureML
 import           Data.Kore.FixTraversals

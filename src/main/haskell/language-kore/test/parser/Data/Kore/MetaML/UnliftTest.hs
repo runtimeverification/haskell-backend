@@ -8,7 +8,6 @@ import           Data.Kore.MetaML.LiftUnliftTest
 
 import           Data.Fix
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
