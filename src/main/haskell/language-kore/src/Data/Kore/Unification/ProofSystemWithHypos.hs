@@ -14,7 +14,7 @@ Portability : portable
 {-# LANGUAGE Rank2Types             #-}
 {-# LANGUAGE AllowAmbiguousTypes    #-}
 
-module Data.Kore.Unification.NewProof where
+module Data.Kore.Unification.ProofSystemWithHypos where
 
 import qualified Data.Set as S
 import qualified Data.Map as M
@@ -56,7 +56,7 @@ makeRule1 formula rule ix1 = do
   Just line1 <- M.lookup ix1 <$> get
   addLine ProofLine 
     { claim = formula (claim line1)
-    , justification = rule ix
+    , justification = rule ix1
     , assumptions = assumptions line1
     }
 
