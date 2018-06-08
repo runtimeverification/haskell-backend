@@ -8,24 +8,25 @@ import           Control.Exception                    (ErrorCall (ErrorCall),
                                                        catch, evaluate)
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.KoreHelpers
 import           Data.Kore.Variables.Fresh.Class
 import           Data.Kore.Variables.Fresh.IntCounter
 
 objectVariable :: Variable Object
 objectVariable = Variable
-    { variableName = Id "v"
-    , variableSort = SortVariableSort (SortVariable (Id "s"))
+    { variableName = testId "v"
+    , variableSort = SortVariableSort (SortVariable (testId "s"))
     }
 
 metaVariable :: Variable Meta
 metaVariable = Variable
-    { variableName = Id "#v"
-    , variableSort = SortVariableSort (SortVariable (Id "#s"))
+    { variableName = testId "#v"
+    , variableSort = SortVariableSort (SortVariable (testId "#s"))
     }
 
-unifiedMetaVariable :: UnifiedVariable Variable
-unifiedMetaVariable = MetaVariable metaVariable
+unifiedMetaVariable :: Unified Variable
+unifiedMetaVariable = UnifiedMeta metaVariable
 
 variablesFreshIntCounterTests :: TestTree
 variablesFreshIntCounterTests =
@@ -33,18 +34,18 @@ variablesFreshIntCounterTests =
         "Variables.Fresh.IntCounter Tests"
         [ testCase "Testing freshVariable Object 2."
             (assertEqual ""
-                (objectVariable { variableName = Id "var_2" }, 3)
+                (objectVariable { variableName = testId "var_2" }, 3)
                 (runIntCounter (freshVariable objectVariable) 2)
             )
         , testCase "Testing freshVariable Meta 2."
             (assertEqual ""
-                (metaVariable { variableName = Id "#var_2" }, 3)
+                (metaVariable { variableName = testId "#var_2" }, 3)
                 (runIntCounter (freshVariable metaVariable) 2)
             )
         , testCase "Testing freshVariable Functor Meta 1."
             (assertEqual ""
-                (( metaVariable { variableName = Id "#var_1" }
-                 , metaVariable { variableName = Id "#var_2" }), 3)
+                (( metaVariable { variableName = testId "#var_1" }
+                 , metaVariable { variableName = testId "#var_2" }), 3)
                 (runIntCounter
                     ((,)
                         <$> freshVariable metaVariable
@@ -53,7 +54,7 @@ variablesFreshIntCounterTests =
              )
         , testCase "Testing freshUnifiedVariable Meta 2."
             (assertEqual ""
-                (metaVariable { variableName = Id "#var_2" }, 3)
+                (metaVariable { variableName = testId "#var_2" }, 3)
                 (runIntCounter
                     (freshVariable metaVariable) 2)
             )
@@ -70,7 +71,7 @@ variablesFreshIntCounterTests =
             )
         , testCase "Testing freshVariableSuchThat Meta 1."
             (assertEqual ""
-                (metaVariable { variableName = Id "#var_2" }, 3)
+                (metaVariable { variableName = testId "#var_2" }, 3)
                 (runIntCounter
                     (freshVariableSuchThat
                         metaVariable

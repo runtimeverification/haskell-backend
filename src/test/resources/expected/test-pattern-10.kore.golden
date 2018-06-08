@@ -6,27 +6,27 @@ Definition
             , moduleSentences =
                 [ MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ ObjectSortVariable (SortVariable (Id Object "S"))
+                        [ UnifiedObject (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                         ]
                     , sentenceAxiomPattern =
-                        ObjectPattern (EqualsPattern Equals
+                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (EqualsPattern Equals
                             { equalsOperandSort =
-                                SortVariableSort (SortVariable (Id Object "S"))
+                                SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                             , equalsResultSort =
-                                SortVariableSort (SortVariable (Id Object "S"))
+                                SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                             , equalsFirst =
-                                ObjectPattern (VariablePattern Variable
-                                    { variableName = Id Object "X"
+                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                    { variableName = (Id "X" AstLocationNone) :: Id Object
                                     , variableSort =
-                                        SortVariableSort (SortVariable (Id Object "S"))
-                                    })
+                                        SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
+                                    }))))
                             , equalsSecond =
-                                ObjectPattern (VariablePattern Variable
-                                    { variableName = Id Object "X"
+                                Fix (UnifiedPattern (UnifiedObject (Rotate31 (VariablePattern Variable
+                                    { variableName = (Id "X" AstLocationNone) :: Id Object
                                     , variableSort =
-                                        SortVariableSort (SortVariable (Id Object "S"))
-                                    })
-                            })
+                                        SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
+                                    }))))
+                            }))))
                     , sentenceAxiomAttributes = Attributes []
                     })
                 ]

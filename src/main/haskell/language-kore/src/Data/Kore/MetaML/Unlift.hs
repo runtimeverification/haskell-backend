@@ -20,12 +20,13 @@ import           Control.Applicative
 import           Data.Fix
 import           Data.Maybe
 
+import           Data.Kore.AST.Builders           (isImplicitHead)
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Implicit.ImplicitKore  (mlPatternP, variable)
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.MetaML.AST
-import           Data.Kore.MetaML.Builders        (isImplicitHead)
 import           Data.Kore.Parser.LexemeImpl
 import           Data.Kore.Parser.ParserUtils     as Parser
 
@@ -34,39 +35,50 @@ import           Data.Kore.Parser.ParserUtils     as Parser
 class UnliftableFromMetaML mixed where
     unliftFromMeta :: CommonMetaPattern -> Maybe mixed
 
-parseObjectId :: String -> Maybe (Id Object)
-parseObjectId input =
+parseObjectId :: String -> AstLocation -> Maybe (Id Object)
+parseObjectId input location =
     case Parser.parseOnly objectIdParser "<unlift>" input of
-        Right parsed -> Just parsed
+        Right parsed -> Just parsed {idLocation = location}
         _            -> Nothing
   where objectIdParser = idParser Object <* Parser.endOfInput
 
-unliftObjectId :: String -> Maybe (Id Object)
-unliftObjectId ('#' : oid) = parseObjectId oid
-unliftObjectId _           = Nothing
+unliftObjectId :: Id Meta -> Maybe (Id Object)
+unliftObjectId
+    Id
+        { getId = ('#' : oid)
+        , idLocation = location
+        }
+  =
+    parseObjectId oid location
+unliftObjectId _  = Nothing
 
 instance UnliftableFromMetaML (Id Object) where
     unliftFromMeta (Fix (StringLiteralPattern (StringLiteral str))) =
-        parseObjectId str
+        parseObjectId str AstLocationNone
     unliftFromMeta _ = Nothing
 
 instance UnliftableFromMetaML (SortVariable Object) where
     unliftFromMeta (Fix (VariablePattern v))
         | variableSort v == sortMetaSort
-        = SortVariable <$> unliftObjectId (getId (variableName v))
+        = SortVariable <$> unliftObjectId (variableName v)
     unliftFromMeta _ = Nothing
 
 unliftSortConstructor :: SymbolOrAlias Meta -> Maybe (Id Object)
-unliftSortConstructor SymbolOrAlias
-    { symbolOrAliasConstructor = Id ('#' : '`' : name)
-    , symbolOrAliasParams = []
-    } = parseObjectId name
+unliftSortConstructor
+    SymbolOrAlias
+        { symbolOrAliasConstructor = Id
+            { getId = ('#' : '`' : name)
+            , idLocation = location
+            }
+        , symbolOrAliasParams = []
+        }
+  = parseObjectId name location
 unliftSortConstructor _ = Nothing
 
 unliftHeadConstructor :: SymbolOrAlias Meta -> Maybe (Id Object)
 unliftHeadConstructor sa = case unliftSortConstructor sa of
-    Just (Id "ceil") -> Nothing
-    x                -> x
+    Just Id {getId = "ceil"} -> Nothing
+    x                        -> x
 
 instance UnliftableFromMetaML (SortActual Object) where
     unliftFromMeta (Fix (ApplicationPattern sa)) = do
@@ -122,12 +134,12 @@ instance UnliftableFromMetaML [CommonMetaPattern] where
         apChildren = applicationChildren a
     unliftFromMeta _ = Nothing
 
-instance UnliftableFromMetaML UnifiedPattern where
+instance UnliftableFromMetaML CommonKorePattern where
     unliftFromMeta = Just . unliftResultFinal . unliftPattern
 
 
 data UnliftResult = UnliftResult
-    { unliftResultFinal    :: UnifiedPattern
+    { unliftResultFinal    :: CommonKorePattern
     , unliftResultOriginal :: CommonMetaPattern
     }
 
@@ -138,13 +150,13 @@ unliftPattern = cata reducer
         { unliftResultOriginal = Fix $ fmap unliftResultOriginal p
         , unliftResultFinal =
             case  unliftPatternReducer p of
-                Just pat -> ObjectPattern pat
-                _        -> MetaPattern (fmap unliftResultFinal p)
+                Just pat -> asKorePattern pat
+                _        -> asKorePattern (fmap unliftResultFinal p)
         }
 
 unliftPatternReducer
     :: Pattern Meta Variable UnliftResult
-    -> Maybe (Pattern Object Variable UnifiedPattern)
+    -> Maybe (Pattern Object Variable CommonKorePattern)
 unliftPatternReducer (ApplicationPattern a)
     | isImplicitHead (mlPatternP AndPatternType) apHead
     = unliftBinaryOpPattern AndPattern And apChildren
@@ -190,7 +202,7 @@ unliftPatternReducer _ = Nothing
 
 unliftApplicationPattern
     :: Id Object
-    -> ([UnliftResult] -> Maybe  (Pattern Object Variable UnifiedPattern))
+    -> ([UnliftResult] -> Maybe  (Pattern Object Variable CommonKorePattern))
 unliftApplicationPattern objectHeadId results =
     Just $ ApplicationPattern Application
         { applicationSymbolOrAlias = objectHead
@@ -212,10 +224,10 @@ unliftApplicationPattern objectHeadId results =
 
 
 unliftBinaryOpPattern
-    :: (p Object UnifiedPattern -> Pattern Object Variable UnifiedPattern)
-    -> (Sort Object -> UnifiedPattern -> UnifiedPattern
-        -> p Object UnifiedPattern)
-    -> ([UnliftResult] -> Maybe (Pattern Object Variable UnifiedPattern))
+    :: (p Object CommonKorePattern -> Pattern Object Variable CommonKorePattern)
+    -> (Sort Object -> CommonKorePattern -> CommonKorePattern
+        -> p Object CommonKorePattern)
+    -> ([UnliftResult] -> Maybe (Pattern Object Variable CommonKorePattern))
 unliftBinaryOpPattern unifiedCtor ctor [rSort, rFirst, rSecond] =
     unifiedCtor <$> (pure ctor
         <*> unliftFromMeta (unliftResultOriginal rSort)
@@ -224,9 +236,9 @@ unliftBinaryOpPattern unifiedCtor ctor [rSort, rFirst, rSecond] =
 unliftBinaryOpPattern _ _ _ = Nothing
 
 unliftUnaryOpPattern
-    :: (p Object UnifiedPattern -> Pattern Object Variable UnifiedPattern)
-    -> (Sort Object -> UnifiedPattern -> p Object UnifiedPattern)
-    -> ([UnliftResult] -> Maybe (Pattern Object Variable UnifiedPattern))
+    :: (p Object CommonKorePattern -> Pattern Object Variable CommonKorePattern)
+    -> (Sort Object -> CommonKorePattern -> p Object CommonKorePattern)
+    -> ([UnliftResult] -> Maybe (Pattern Object Variable CommonKorePattern))
 unliftUnaryOpPattern unifiedCtor ctor [rSort, rChild] =
     unifiedCtor <$> (pure ctor
         <*> unliftFromMeta (unliftResultOriginal rSort)
@@ -234,7 +246,7 @@ unliftUnaryOpPattern unifiedCtor ctor [rSort, rChild] =
 unliftUnaryOpPattern _ _ _ = Nothing
 
 unliftDomainValuePattern
-    :: [UnliftResult] -> Maybe (Pattern Object Variable UnifiedPattern)
+    :: [UnliftResult] -> Maybe (Pattern Object Variable CommonKorePattern)
 unliftDomainValuePattern [rSort, rChild] =
     DomainValuePattern <$> (pure DomainValue
         <*> unliftFromMeta (unliftResultOriginal rSort)
@@ -242,16 +254,16 @@ unliftDomainValuePattern [rSort, rChild] =
 unliftDomainValuePattern _ = Nothing
 
 unliftTopBottomPattern
-    :: (Sort Object -> Pattern Object Variable UnifiedPattern)
-    -> ([UnliftResult] -> Maybe (Pattern Object Variable UnifiedPattern))
+    :: (Sort Object -> Pattern Object Variable CommonKorePattern)
+    -> ([UnliftResult] -> Maybe (Pattern Object Variable CommonKorePattern))
 unliftTopBottomPattern unifiedCtor [rSort] =
     unifiedCtor <$> unliftFromMeta (unliftResultOriginal rSort)
 unliftTopBottomPattern _ _ = Nothing
 
 unliftCeilFloorPattern
-    :: (p Object UnifiedPattern -> Pattern Object Variable UnifiedPattern)
-    -> (Sort Object -> Sort Object -> UnifiedPattern -> p Object UnifiedPattern)
-    -> ([UnliftResult] -> Maybe (Pattern Object Variable UnifiedPattern))
+    :: (p Object CommonKorePattern -> Pattern Object Variable CommonKorePattern)
+    -> (Sort Object -> Sort Object -> CommonKorePattern -> p Object CommonKorePattern)
+    -> ([UnliftResult] -> Maybe (Pattern Object Variable CommonKorePattern))
 unliftCeilFloorPattern unifiedCtor ctor [rOperandSort, rResultSort, rChild] =
     unifiedCtor <$> (pure ctor
         <*> unliftFromMeta (unliftResultOriginal rOperandSort)
@@ -260,10 +272,10 @@ unliftCeilFloorPattern unifiedCtor ctor [rOperandSort, rResultSort, rChild] =
 unliftCeilFloorPattern _ _ _ = Nothing
 
 unliftEqualsInPattern
-    :: (p Object UnifiedPattern -> Pattern Object Variable UnifiedPattern)
-    -> (Sort Object -> Sort Object -> UnifiedPattern -> UnifiedPattern
-        -> p Object UnifiedPattern)
-    -> ([UnliftResult] -> Maybe (Pattern Object Variable UnifiedPattern))
+    :: (p Object CommonKorePattern -> Pattern Object Variable CommonKorePattern)
+    -> (Sort Object -> Sort Object -> CommonKorePattern -> CommonKorePattern
+        -> p Object CommonKorePattern)
+    -> ([UnliftResult] -> Maybe (Pattern Object Variable CommonKorePattern))
 unliftEqualsInPattern unifiedCtor ctor
     [rOperandSort, rResultSort, rFirst, rSecond] =
         unifiedCtor <$> (pure ctor
@@ -274,11 +286,11 @@ unliftEqualsInPattern unifiedCtor ctor
 unliftEqualsInPattern _ _ _ = Nothing
 
 unliftQuantifiedPattern
-    :: (p Object Variable UnifiedPattern
-        -> Pattern Object Variable UnifiedPattern)
-    -> (Sort Object -> Variable Object -> UnifiedPattern
-        -> p Object Variable UnifiedPattern)
-    -> ([UnliftResult] -> Maybe (Pattern Object Variable UnifiedPattern))
+    :: (p Object Variable CommonKorePattern
+        -> Pattern Object Variable CommonKorePattern)
+    -> (Sort Object -> Variable Object -> CommonKorePattern
+        -> p Object Variable CommonKorePattern)
+    -> ([UnliftResult] -> Maybe (Pattern Object Variable CommonKorePattern))
 unliftQuantifiedPattern unifiedCtor ctor
     [rSort, rVariable, rChild] =
         unifiedCtor <$> (pure ctor

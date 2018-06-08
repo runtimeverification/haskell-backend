@@ -1,7 +1,6 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE UndecidableInstances  #-}
 {-|
 Module      : Data.Kore.MetaML.AST
@@ -22,40 +21,34 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Data.Kore.MetaML.AST where
 
-import           Data.Fix
-
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.PureML
+import           Data.Kore.Variables.Free   (pureFreeVariables)
+
+import           Data.Set                   (Set)
 
 {-|'MetaMLPattern' corresponds to "fixed point" representations
 of the 'Pattern' class where the level is fixed to 'Meta'.
 
 'var' is the type of variables.
 -}
-type MetaMLPattern var = Fix (Pattern Meta var)
-
-newtype SentenceMetaPattern var = SentenceMetaPattern
-    { getSentenceMetaPattern :: MetaMLPattern var }
-
-deriving instance Eq (SentenceMetaPattern Variable)
-deriving instance Show (SentenceMetaPattern Variable)
+type MetaMLPattern variable = PureMLPattern Meta variable
 
 -- |'MetaAttributes' is the 'Meta'-only version of 'Attributes'
-type MetaAttributes = Attributes SentenceMetaPattern Variable
+type MetaAttributes = PureAttributes Meta
 
-type MetaSentenceAxiom =
-    SentenceAxiom (SortVariable Meta) SentenceMetaPattern Variable
-type MetaSentenceAlias = SentenceAlias Meta SentenceMetaPattern Variable
-type MetaSentenceSymbol = SentenceSymbol Meta SentenceMetaPattern Variable
-type MetaSentenceImport = SentenceImport SentenceMetaPattern Variable
+-- |'MetaSentenceAxiom' is the 'Meta'-only version of 'SentenceAxiom'
+type MetaSentenceAxiom = PureSentenceAxiom Meta
+-- |'MetaSentenceAlias' is the 'Meta'-only version of 'SentenceAlias'
+type MetaSentenceAlias = PureSentenceAlias Meta
+-- |'MetaSentenceSymbol' is the 'Meta'-only version of 'SentenceSymbol'
+type MetaSentenceSymbol = PureSentenceSymbol Meta
+-- |'MetaSentenceImport' is the 'Meta'-only version of 'SentenceImport'
+type MetaSentenceImport = PureSentenceImport Meta
 
-type MetaSentence =
-    Sentence Meta (SortVariable Meta) SentenceMetaPattern Variable
-
-instance AsSentence MetaSentence MetaSentenceAlias where
-    asSentence = SentenceAliasSentence
-
-instance AsSentence MetaSentence MetaSentenceSymbol where
-    asSentence = SentenceSymbolSentence
+-- |'MetaSentence' is the 'Meta'-only version of 'Sentence'
+type MetaSentence = PureSentence Meta
 
 instance AsSentence MetaSentence MetaSentenceImport where
     asSentence = SentenceImportSentence
@@ -64,101 +57,78 @@ instance AsSentence MetaSentence MetaSentenceAxiom where
     asSentence = SentenceAxiomSentence
 
 -- |'MetaModule' is the 'Meta'-only version of 'Module'.
-type MetaModule =
-    Module (Sentence Meta) (SortVariable Meta) SentenceMetaPattern Variable
+type MetaModule = PureModule Meta
 
 -- |'MetaDefinition' is the 'Meta'-only version of 'Definition'.
-type MetaDefinition =
-    Definition (Sentence Meta) (SortVariable Meta) SentenceMetaPattern Variable
+type MetaDefinition = PureDefinition Meta
 
-groundHead :: String -> SymbolOrAlias a
-groundHead ctor = SymbolOrAlias
-    { symbolOrAliasConstructor = Id ctor
-    , symbolOrAliasParams = []
-    }
-
-groundSymbol :: String -> Symbol a
-groundSymbol ctor = Symbol
-    { symbolConstructor = Id ctor
-    , symbolParams = []
-    }
-
-apply :: SymbolOrAlias a -> [p] -> Pattern a v p
-apply patternHead patterns = ApplicationPattern Application
-    { applicationSymbolOrAlias = patternHead
-    , applicationChildren = patterns
-    }
-
-constant :: SymbolOrAlias a -> Pattern a v p
-constant patternHead = apply patternHead []
-
-nilSortListHead :: SymbolOrAlias Meta
-nilSortListHead = groundHead "#nilSortList"
-
-consSortListHead :: SymbolOrAlias Meta
-consSortListHead = groundHead "#consSortList"
-
-nilSortListMetaPattern :: MetaMLPattern v
-nilSortListMetaPattern = Fix $ constant nilSortListHead
-
-nilPatternListHead :: SymbolOrAlias Meta
-nilPatternListHead = groundHead "#nilPatternList"
-
-consPatternListHead :: SymbolOrAlias Meta
-consPatternListHead = groundHead "#consPatternList"
-
-nilPatternListMetaPattern :: MetaMLPattern v
-nilPatternListMetaPattern = Fix $ constant nilPatternListHead
-
-variableHead :: SymbolOrAlias Meta
-variableHead = groundHead "#variable"
-
-variableAsPatternHead :: SymbolOrAlias Meta
-variableAsPatternHead = groundHead "#variableAsPattern"
-
-metaMLPatternHead :: MLPatternType -> SymbolOrAlias Meta
-metaMLPatternHead pt = groundHead ('#' : '\\' : patternString pt)
-
-sortDeclaredHead :: Sort Meta -> SymbolOrAlias Meta
-sortDeclaredHead param = SymbolOrAlias
-    { symbolOrAliasConstructor = Id "#sortDeclared"
-    , symbolOrAliasParams = [param]
-    }
-
-provableHead :: Sort Meta -> SymbolOrAlias Meta
-provableHead param = SymbolOrAlias
-    { symbolOrAliasConstructor = Id "#provable"
-    , symbolOrAliasParams = [param]
-    }
-
-sortsDeclaredHead :: Sort Meta -> SymbolOrAlias Meta
-sortsDeclaredHead param = SymbolOrAlias
-    { symbolOrAliasConstructor = Id "#sortsDeclared"
-    , symbolOrAliasParams = [param]
-    }
-
-symbolDeclaredHead :: Sort Meta -> SymbolOrAlias Meta
-symbolDeclaredHead param = SymbolOrAlias
-    { symbolOrAliasConstructor = Id "#symbolDeclared"
-    , symbolOrAliasParams = [param]
-    }
-
-sortHead :: SymbolOrAlias Meta
-sortHead = groundHead "#sort"
-
-symbolHead :: SymbolOrAlias Meta
-symbolHead = groundHead "#symbol"
-
-applicationHead :: SymbolOrAlias Meta
-applicationHead = groundHead "#application"
-
+-- |'CommonMetaPattern' is the instantiation of 'MetaPattern' with common
+-- 'Variable's.
 type CommonMetaPattern = MetaMLPattern Variable
 type PatternMetaType = Pattern Meta Variable CommonMetaPattern
 
 type MetaPatternStub = PatternStub Meta Variable CommonMetaPattern
 
-{-|'dummyMetaSort' is used in error messages when we want to convert an
-'UnsortedPatternStub' to a pattern that can be displayed.
--}
-dummyMetaSort :: Sort Meta
-dummyMetaSort = SortVariableSort (SortVariable (Id "#dummy"))
+-- |'metaFreeVariables' collects the free variables of a 'CommonMetaPattern'.
+metaFreeVariables :: CommonMetaPattern -> Set (Variable Meta)
+metaFreeVariables = pureFreeVariables Meta
+
+nilSortListHead :: SymbolOrAlias Meta
+nilSortListHead = groundHead "#nilSortList" AstLocationImplicit
+
+consSortListHead :: SymbolOrAlias Meta
+consSortListHead = groundHead "#consSortList" AstLocationImplicit
+
+nilSortListMetaPattern :: MetaMLPattern v
+nilSortListMetaPattern = asPurePattern $ constant nilSortListHead
+
+nilPatternListHead :: SymbolOrAlias Meta
+nilPatternListHead = groundHead "#nilPatternList" AstLocationImplicit
+
+consPatternListHead :: SymbolOrAlias Meta
+consPatternListHead = groundHead "#consPatternList" AstLocationImplicit
+
+nilPatternListMetaPattern :: MetaMLPattern v
+nilPatternListMetaPattern = asPurePattern $ constant nilPatternListHead
+
+variableHead :: SymbolOrAlias Meta
+variableHead = groundHead "#variable" AstLocationImplicit
+
+variableAsPatternHead :: SymbolOrAlias Meta
+variableAsPatternHead = groundHead "#variableAsPattern" AstLocationImplicit
+
+metaMLPatternHead :: MLPatternType -> AstLocation -> SymbolOrAlias Meta
+metaMLPatternHead pt = groundHead ('#' : '\\' : patternString pt)
+
+sortDeclaredHead :: Sort Meta -> SymbolOrAlias Meta
+sortDeclaredHead param = SymbolOrAlias
+    { symbolOrAliasConstructor = Id "#sortDeclared" AstLocationImplicit
+    , symbolOrAliasParams = [param]
+    }
+
+provableHead :: Sort Meta -> SymbolOrAlias Meta
+provableHead param = SymbolOrAlias
+    { symbolOrAliasConstructor = Id "#provable" AstLocationImplicit
+    , symbolOrAliasParams = [param]
+    }
+
+sortsDeclaredHead :: Sort Meta -> SymbolOrAlias Meta
+sortsDeclaredHead param = SymbolOrAlias
+    { symbolOrAliasConstructor = Id "#sortsDeclared" AstLocationImplicit
+    , symbolOrAliasParams = [param]
+    }
+
+symbolDeclaredHead :: Sort Meta -> SymbolOrAlias Meta
+symbolDeclaredHead param = SymbolOrAlias
+    { symbolOrAliasConstructor = Id "#symbolDeclared" AstLocationImplicit
+    , symbolOrAliasParams = [param]
+    }
+
+sortHead :: SymbolOrAlias Meta
+sortHead = groundHead "#sort" AstLocationImplicit
+
+symbolHead :: SymbolOrAlias Meta
+symbolHead = groundHead "#symbol" AstLocationImplicit
+
+applicationHead :: SymbolOrAlias Meta
+applicationHead = groundHead "#application" AstLocationImplicit

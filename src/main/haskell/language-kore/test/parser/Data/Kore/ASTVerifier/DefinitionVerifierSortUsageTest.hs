@@ -10,6 +10,8 @@ import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
 import           Data.Kore.Implicit.ImplicitSorts
+import           Data.Kore.KoreHelpers
+
 import qualified Data.List                                           as List
 import           Data.Maybe                                          (mapMaybe)
 
@@ -85,7 +87,7 @@ definitionVerifierSortUsageTests =
                 }
             )
             (ExpectedErrorMessage "Sort 's' not declared.")
-            (ErrorStack ["sort 's'"])
+            (ErrorStack ["sort 's' (<test data>)", "(<test data>)"])
             (TestedSort (simpleSort (SortName "s")))
             (NamePrefix "#internal")
         , testsForObjectSort
@@ -111,7 +113,7 @@ definitionVerifierSortUsageTests =
                 }
             )
             (ExpectedErrorMessage "Sort variable 's' not declared.")
-            (ErrorStack [])
+            (ErrorStack ["(<test data>)"])
             (TestedSort (objectVariableSort (SortVariableName "s")))
             (NamePrefix "internal")
         , let
@@ -160,7 +162,7 @@ definitionVerifierSortUsageTests =
                 }
             )
             (ExpectedErrorMessage "Sort '#s' not declared.")
-            (ErrorStack ["sort '#s'"])
+            (ErrorStack ["sort '#s' (<test data>)", "(<test data>)"])
             (TestedSort (simpleSort (SortName "#s")))
             (SortActualThatIsDeclared (simpleSortActual (SortName "#Char")))
             (NamePrefix "#internal")
@@ -184,11 +186,14 @@ definitionVerifierSortUsageTests =
                 { testConfigurationDescription = "Correct sort count"
                 , testConfigurationAdditionalSentences =
                     [ simpleSortSentence additionalSortName
-                    , ObjectSentence $ SentenceSortSentence SentenceSort
-                        { sentenceSortName = Id "UnarySort"
-                        , sentenceSortParameters = [ SortVariable (Id "svn") ]
-                        , sentenceSortAttributes = Attributes []
-                        }
+                    , asSentence
+                        (SentenceSort
+                            { sentenceSortName = testId "UnarySort"
+                            , sentenceSortParameters = [ SortVariable (testId "svn") ]
+                            , sentenceSortAttributes =
+                                Attributes []
+                            }
+                        :: KoreSentenceSort)
                     ]
                 , testConfigurationAdditionalSortVariables = []
                 , testConfigurationCaseBasedConfiguration =
@@ -200,7 +205,7 @@ definitionVerifierSortUsageTests =
             (ErrorStack [])
             (TestedSort
                 (SortActualSort SortActual
-                    { sortActualName = Id "UnarySort"
+                    { sortActualName = testId "UnarySort"
                     , sortActualSorts = [ simpleSort additionalSortName ]
                     }
                 )
@@ -213,11 +218,14 @@ definitionVerifierSortUsageTests =
                 { testConfigurationDescription = "Wrong sort count"
                 , testConfigurationAdditionalSentences =
                     [ simpleSortSentence additionalSortName
-                    , ObjectSentence $ SentenceSortSentence SentenceSort
-                        { sentenceSortName = Id "UnarySort"
-                        , sentenceSortParameters = [ SortVariable (Id "svn") ]
-                        , sentenceSortAttributes = Attributes []
-                        }
+                    , asSentence
+                        (SentenceSort
+                            { sentenceSortName = testId "UnarySort"
+                            , sentenceSortParameters = [ SortVariable (testId "svn") ]
+                            , sentenceSortAttributes =
+                                Attributes []
+                            }
+                        :: KoreSentenceSort)
                     ]
                 , testConfigurationAdditionalSortVariables = []
                 , testConfigurationCaseBasedConfiguration =
@@ -225,10 +233,10 @@ definitionVerifierSortUsageTests =
                 }
             )
             (ExpectedErrorMessage "Expected 1 sort arguments, but got 2.")
-            (ErrorStack ["sort 'UnarySort'"])
+            (ErrorStack ["sort 'UnarySort' (<test data>)"])
             (TestedSort
                 (SortActualSort SortActual
-                    { sortActualName = Id "UnarySort"
+                    { sortActualName = testId "UnarySort"
                     , sortActualSorts =
                         [ simpleSort additionalSortName
                         , simpleSort additionalSortName]
@@ -421,8 +429,8 @@ flaggedObjectTestsForSort
         additionalSortActual
         sortVariables
         namePrefix
-        (ObjectSentence . SentenceAliasSentence)
-        (ObjectSentence . SentenceSymbolSentence)
+        asSentence
+        asSentence
     ++ unfilteredTestExamplesForObjectSort
         sort
         additionalSortActual
@@ -449,9 +457,8 @@ flaggedMetaTestsForSort
         additionalSortActual
         (testConfigurationAdditionalSortVariables testConfiguration)
         namePrefix
-        (MetaSentence . SentenceAliasSentence)
-        (MetaSentence . SentenceSymbolSentence)
-    ++ unfilteredTestExamplesForMetaSort sort
+        asSentence
+        asSentence
 
 applyTestConfiguration
     :: TestConfiguration level
@@ -513,7 +520,7 @@ unfilteredTestExamplesForSort
             , testDataError =
                 Error
                     [ "module 'MODULE'"
-                    , "alias '" ++ rawAliasName ++ "' declaration"
+                    , "alias '" ++ rawAliasName ++ "' declaration (<test data>)"
                     ]
                     defaultErrorMessage
             , testDataDefinition =
@@ -533,7 +540,7 @@ unfilteredTestExamplesForSort
             , testDataError =
                 Error
                     [ "module 'MODULE'"
-                    , "alias '" ++ rawAliasName ++ "' declaration"
+                    , "alias '" ++ rawAliasName ++ "' declaration (<test data>)"
                     ]
                     defaultErrorMessage
             , testDataDefinition =
@@ -650,107 +657,6 @@ unfilteredTestExamplesForSort
                     )
             }
         }
-    , FlaggedTestData
-        { flaggedTestDataFlags = []
-        , flaggedTestDataTestData = \additionalSentences -> TestData
-            { testDataDescription = "Definition with alias attributes"
-            , testDataError =
-                Error
-                    [ "module 'MODULE'"
-                    , "alias '" ++ rawAliasName ++ "' declaration"
-                    , "attributes"
-                    , "\\exists '" ++ rawVariableName ++ "'"
-                    ]
-                    defaultErrorMessage
-            , testDataDefinition =
-                simpleDefinitionFromSentences
-                    (ModuleName "MODULE")
-                    ( sentenceAliasSentence
-                        (sentenceAliasWithAttributes
-                            aliasName
-                            sortVariables
-                            additionalSort
-                            [ simpleExistsUnifiedPattern variableName1 sort ]
-                        )
-                    : additionalSentences
-                    )
-            }
-        }
-    , FlaggedTestData
-        { flaggedTestDataFlags = []
-        , flaggedTestDataTestData = \additionalSentences -> TestData
-            { testDataDescription = "Axiom with attributes"
-            , testDataError =
-                Error
-                    [ "module 'MODULE'"
-                    , "axiom declaration"
-                    , "attributes"
-                    , "\\exists '" ++ rawVariableName ++ "'"
-                    ]
-                    defaultErrorMessage
-            , testDataDefinition =
-                simpleDefinitionFromSentences
-                    (ModuleName "MODULE")
-                    ( axiomSentenceWithAttributes
-                        (map asUnified sortVariables)
-                        (simpleExistsUnifiedPattern
-                            variableName1 additionalSort)
-                        [simpleExistsUnifiedPattern variableName1 sort]
-                    : additionalSentences
-                    )
-            }
-        }
-    , FlaggedTestData
-        { flaggedTestDataFlags = [ CannotSeeSortVariables ]
-        , flaggedTestDataTestData = \additionalSentences -> TestData
-            { testDataDescription = "Module with attributes"
-            , testDataError =
-                Error
-                    [ "module 'MODULE'"
-                    , "attributes"
-                    , "\\exists '" ++ rawVariableName ++ "'"
-                    ]
-                    defaultErrorMessage
-            , testDataDefinition =
-                Definition
-                    { definitionAttributes = Attributes []
-                    , definitionModules =
-                        [ Module
-                            { moduleName = ModuleName "MODULE"
-                            , moduleSentences = additionalSentences
-                            , moduleAttributes = Attributes
-                                [ simpleExistsUnifiedPattern variableName1 sort
-                                ]
-                            }
-                        ]
-                    }
-            }
-        }
-    , FlaggedTestData
-        { flaggedTestDataFlags =
-            [ CannotSeeSortVariables, CannotSeeSortDeclarations ]
-        , flaggedTestDataTestData = \additionalSentences -> TestData
-            { testDataDescription = "Definition with attributes"
-            , testDataError =
-                Error
-                    [ "attributes"
-                    , "\\exists '" ++ rawVariableName ++ "'"
-                    ]
-                    defaultErrorMessage
-            , testDataDefinition =
-                Definition
-                    { definitionAttributes = Attributes
-                        [simpleExistsUnifiedPattern variableName1 sort]
-                    , definitionModules =
-                        [ Module
-                            { moduleName = ModuleName "MODULE"
-                            , moduleSentences = additionalSentences
-                            , moduleAttributes = Attributes []
-                            }
-                        ]
-                    }
-            }
-        }
     ]
   where
     rawAliasName = identifierPrefix ++ "_alias"
@@ -784,7 +690,9 @@ unfilteredTestExamplesForObjectSort
                     [ "module 'MODULE'"
                     , "axiom declaration"
                     , "symbol or alias 'a'"
-                    , "sort '" ++ differentAdditionalSortRawName ++ "'"
+                    , "sort '"
+                        ++ differentAdditionalSortRawName
+                        ++ "' (<test data>)"
                     ]
                     defaultErrorMessage
             , testDataDefinition =
@@ -795,7 +703,7 @@ unfilteredTestExamplesForObjectSort
                             (SymbolName "a")
                             [ SortActualSort SortActual
                                 { sortActualName =
-                                    Id differentAdditionalSortRawName
+                                    testId differentAdditionalSortRawName
                                 , sortActualSorts = [sort]
                                 }
                             ]
@@ -804,7 +712,7 @@ unfilteredTestExamplesForObjectSort
                     : symbolSentenceWithResultSort
                         (SymbolName "a")
                         (SortActualSort SortActual
-                            { sortActualName = Id differentAdditionalSortRawName
+                            { sortActualName = testId differentAdditionalSortRawName
                             , sortActualSorts =
                                 [ objectVariableSort sortVariableName1 ]
                             }
@@ -817,43 +725,6 @@ unfilteredTestExamplesForObjectSort
                     )
             }
         }
-    -- TODO: This also has a Meta definition
-    , FlaggedTestData
-        { flaggedTestDataFlags = []
-        , flaggedTestDataTestData = \additionalSentences -> TestData
-            { testDataDescription = "Definition with sort attributes"
-            , testDataError =
-                Error
-                    [ "module 'MODULE'"
-                    , "sort '"
-                        ++ differentAdditionalSortRawName
-                        ++ "' declaration"
-                    , "attributes"
-                    , "\\exists 'v'"
-                    ]
-                    defaultErrorMessage
-            , testDataDefinition =
-                simpleDefinitionFromSentences
-                    (ModuleName "MODULE")
-                    (
-                        (ObjectSentence
-                            ( SentenceSortSentence SentenceSort
-                                { sentenceSortName =
-                                        Id differentAdditionalSortRawName
-                                , sentenceSortParameters = sortVariables
-                                , sentenceSortAttributes =
-                                    Attributes
-                                        [ simpleExistsUnifiedPattern
-                                            (VariableName "v")
-                                            sort
-                                        ]
-                                }
-                            )::KoreSentence
-                        )
-                    : additionalSentences
-                    )
-            }
-        }
     ]
   where
     sortVariableName1 = SortVariableName (namePrefix ++ "_sortVariable1")
@@ -861,43 +732,4 @@ unfilteredTestExamplesForObjectSort
     additionalSortRawName = getId (sortActualName additionalSortActual)
     differentAdditionalSortRawName = additionalSortRawName ++ "1"
     differentAdditionalSortName = SortName differentAdditionalSortRawName
-    defaultErrorMessage = "Replace this with a real error message."
-
-unfilteredTestExamplesForMetaSort
-    :: TestedSort Meta
-    -> [FlaggedTestData]
-unfilteredTestExamplesForMetaSort (TestedSort sort) =
-    [ FlaggedTestData
-        { flaggedTestDataFlags = [CannotSeeSortVariables]
-        , flaggedTestDataTestData = \additionalSentences -> TestData
-            { testDataDescription = "Definition with sort attributes"
-            , testDataError =
-                Error
-                    [ "module 'MODULE'"
-                    , "sort 'additionalSort' declaration"
-                    , "attributes"
-                    , "\\exists 'v'"
-                    ]
-                    defaultErrorMessage
-            , testDataDefinition =
-                simpleDefinitionFromSentences
-                    (ModuleName "MODULE")
-                    (
-                        (ObjectSentence
-                            ( SentenceSortSentence SentenceSort
-                                { sentenceSortName = Id "additionalSort"
-                                , sentenceSortParameters = []
-                                , sentenceSortAttributes = Attributes
-                                    [ simpleExistsUnifiedPattern
-                                        (VariableName "v") sort
-                                    ]
-                                }
-                            )::KoreSentence
-                        )
-                    : additionalSentences
-                    )
-            }
-        }
-    ]
-  where
     defaultErrorMessage = "Replace this with a real error message."

@@ -1,6 +1,9 @@
+{-# LANGUAGE ExplicitForAll #-}
+{-# LANGUAGE GADTs          #-}
+{-# LANGUAGE Rank2Types     #-}
 {-|
 Module      : Data.Kore.MLPatterns
-Description : Classes for handling patterns in an uniform way.
+Description : Data structures and functions for handling patterns uniformly.
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
@@ -8,7 +11,13 @@ Stability   : experimental
 Portability : portable
 -}
 module Data.Kore.AST.MLPatterns (MLPatternClass(..),
-                                 MLBinderPatternClass (..)) where
+                                 MLBinderPatternClass (..),
+                                 PatternFunction(..),
+                                 PatternLeveledFunction(..),
+                                 applyPatternFunction,
+                                 applyPatternLeveledFunction,
+                                 getPatternResultSort,
+                                 undefinedHeadSort) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
@@ -37,7 +46,8 @@ class MLBinderPatternClass pat where
     -- The first argument is only needed in order to make the Haskell type
     -- system work.
     binderPatternConstructor
-        :: pat level variable child -> Sort level -> variable level -> child
+        :: MetaOrObject level
+        => pat level variable child -> Sort level -> variable level -> child
         -> Pattern level variable child
 
 instance MLPatternClass And where
@@ -163,3 +173,142 @@ instance MLBinderPatternClass Forall where
         , forallVariable = variable
         , forallChild = pat
         }
+
+{-|`PatternLeveledFunction` holds a full set of functions that
+can be applied to the elements of a `Pattern` (e.g. `Implies`). Together
+with `applyPatternLeveledFunction` they form a function on patterns, hence the name.
+-}
+-- TODO: consider parameterizing on variable also
+data PatternLeveledFunction level child result = PatternLeveledFunction
+    { patternLeveledFunctionML
+        :: !(forall patt . MLPatternClass patt
+            => patt level child -> result level)
+    , patternLeveledFunctionMLBinder
+        :: !(forall patt . MLBinderPatternClass patt
+        => patt level Variable child
+        -> result level)
+    , stringLeveledFunction :: StringLiteral -> result Meta
+    , charLeveledFunction :: CharLiteral -> result Meta
+    , applicationLeveledFunction :: !(Application level child -> result level)
+    , variableLeveledFunction :: !(Variable level -> result level)
+    }
+
+{-|`applyPatternLeveledFunction` applies a patternFunction on the inner element of a
+`Pattern`, returning the result.
+-}
+applyPatternLeveledFunction
+    :: PatternLeveledFunction level child result
+    -> Pattern level Variable child
+    -> result level
+applyPatternLeveledFunction function (AndPattern a) =
+    patternLeveledFunctionML function a
+applyPatternLeveledFunction function (ApplicationPattern a) =
+    applicationLeveledFunction function a
+applyPatternLeveledFunction function (BottomPattern a) =
+    patternLeveledFunctionML function a
+applyPatternLeveledFunction function (CeilPattern a) =
+    patternLeveledFunctionML function a
+applyPatternLeveledFunction function (DomainValuePattern a) =
+    patternLeveledFunctionML function a
+applyPatternLeveledFunction function (EqualsPattern a) =
+    patternLeveledFunctionML function a
+applyPatternLeveledFunction function (ExistsPattern a) =
+    patternLeveledFunctionMLBinder function a
+applyPatternLeveledFunction function (FloorPattern a) =
+    patternLeveledFunctionML function a
+applyPatternLeveledFunction function (ForallPattern a) =
+    patternLeveledFunctionMLBinder function a
+applyPatternLeveledFunction function (IffPattern a) =
+    patternLeveledFunctionML function a
+applyPatternLeveledFunction function (ImpliesPattern a) =
+    patternLeveledFunctionML function a
+applyPatternLeveledFunction function (InPattern a) =
+    patternLeveledFunctionML function a
+applyPatternLeveledFunction function (NextPattern a) =
+    patternLeveledFunctionML function a
+applyPatternLeveledFunction function (NotPattern a) =
+    patternLeveledFunctionML function a
+applyPatternLeveledFunction function (OrPattern a) =
+    patternLeveledFunctionML function a
+applyPatternLeveledFunction function (RewritesPattern a) =
+    patternLeveledFunctionML function a
+applyPatternLeveledFunction function (StringLiteralPattern a) =
+    stringLeveledFunction function a
+applyPatternLeveledFunction function (CharLiteralPattern a) =
+    charLeveledFunction function a
+applyPatternLeveledFunction function (TopPattern a) =
+    patternLeveledFunctionML function a
+applyPatternLeveledFunction function (VariablePattern a) =
+    variableLeveledFunction function a
+
+{-|`PatternFunction` holds a full set of functions that
+can be applied to the elements of a `Pattern` (e.g. `Implies`). Together
+with `applyPatternFunction` they form a function on patterns, hence the name.
+-}
+-- TODO: consider parameterizing on variable also
+data PatternFunction level child result = PatternFunction
+    { patternFunctionML
+        :: !(forall patt . MLPatternClass patt => patt level child -> result)
+    , patternFunctionMLBinder
+        :: !(forall patt . MLBinderPatternClass patt
+        => patt level Variable child
+        -> result)
+    , stringFunction :: StringLiteral -> result
+    , charFunction :: CharLiteral -> result
+    , applicationFunction :: !(Application level child -> result)
+    , variableFunction :: !(Variable level -> result)
+    }
+
+newtype ParameterizedProxy result level = ParameterizedProxy
+    { getParameterizedProxy :: result }
+
+{-|`applyPatternFunction` applies a patternFunction on the inner element of a
+`Pattern`, returning the result.
+-}
+applyPatternFunction
+    :: PatternFunction level child result
+    -> Pattern level Variable child
+    -> result
+applyPatternFunction patternFunction =
+    getParameterizedProxy
+    . applyPatternLeveledFunction
+        PatternLeveledFunction
+            { patternLeveledFunctionML =
+                ParameterizedProxy . patternFunctionML patternFunction
+            , patternLeveledFunctionMLBinder =
+                ParameterizedProxy . patternFunctionMLBinder patternFunction
+            , stringLeveledFunction =
+                ParameterizedProxy . stringFunction patternFunction
+            , charLeveledFunction =
+                ParameterizedProxy . charFunction patternFunction
+            , applicationLeveledFunction =
+                ParameterizedProxy . applicationFunction patternFunction
+            , variableLeveledFunction =
+                ParameterizedProxy . variableFunction patternFunction
+            }
+
+-- |'getPatternResultSort' retrieves the result sort of a pattern.
+--
+-- Since the sort of 'Application' patterns is not contained within
+-- the term itself, it takes as firts argument a function yielding the
+-- result sort corresponding to an application head.
+-- TODO(traiansf): add tests.
+getPatternResultSort
+    :: (SymbolOrAlias level -> Sort level)
+    -- ^Function to retrieve the sort of a given pattern Head
+    -> Pattern level Variable child
+    -> Sort level
+getPatternResultSort headSort =
+    applyPatternLeveledFunction PatternLeveledFunction
+        { patternLeveledFunctionML = getMLPatternResultSort
+        , patternLeveledFunctionMLBinder = getBinderPatternSort
+        , stringLeveledFunction = const stringMetaSort
+        , charLeveledFunction = const charMetaSort
+        , applicationLeveledFunction = headSort . applicationSymbolOrAlias
+        , variableLeveledFunction = variableSort
+        }
+
+-- |Sample argument function for 'getPatternResultSort', failing for all input.
+undefinedHeadSort :: SymbolOrAlias level -> Sort level
+undefinedHeadSort _ =
+    error "Application pattern sort currently undefined"

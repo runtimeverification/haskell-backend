@@ -1,26 +1,29 @@
 {-|
 Module      : Data.Kore.MetaML.Builders
-Description : Safe way to build larger 'Meta' patterns from components.
+Description : Safe way to build larger 'level' patterns from components.
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Data.Kore.MetaML.Builders ( module Data.Kore.MetaML.Builders
-                                 , MetaPatternStub
-                                 ) where
+module Data.Kore.AST.Builders where
 
+import           Data.Kore.AST.BuildersImpl
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.PureML
 import           Data.Kore.ASTHelpers
 import           Data.Kore.Error
-import           Data.Kore.MetaML.AST
-import           Data.Kore.MetaML.BuildersImpl
 
 {-|'sortParameter' defines a sort parameter that can be used in declarations.
 -}
-sortParameter :: String -> SortVariable Meta
-sortParameter name = SortVariable (Id name)
+sortParameter :: level -> String -> AstLocation -> SortVariable level
+sortParameter _ name location =
+    SortVariable Id
+        { getId = name
+        , idLocation = location
+        }
 
 {-|'applyPS' applies a symbol or alias declared by a given sentence to a list
 of operands, using the provided sort arguments.
@@ -30,10 +33,10 @@ can be applied to patterns.
 -}
 applyPS
     :: SentenceSymbolOrAlias s
-    => s Meta SentenceMetaPattern Variable
-    -> [Sort Meta]
-    -> [MetaPatternStub]
-    -> MetaPatternStub
+    => s level (Pattern level) Variable
+    -> [Sort level]
+    -> [CommonPurePatternStub level]
+    -> CommonPurePatternStub level
 applyPS sentence sortParameters patterns =
     SortedPatternStub SortedPattern
         { sortedPatternPattern =
@@ -60,57 +63,77 @@ can be applied to patterns.
 -}
 applyS
     :: SentenceSymbolOrAlias s
-    => s Meta SentenceMetaPattern Variable
-    -> [MetaPatternStub]
-    -> MetaPatternStub
+    => s level (Pattern level) Variable
+    -> [CommonPurePatternStub level]
+    -> CommonPurePatternStub level
 applyS sentence = applyPS sentence []
 
 isImplicitHead
     :: SentenceSymbolOrAlias s
-    => s Meta SentenceMetaPattern Variable
-    -> SymbolOrAlias Meta
+    => s level (Pattern level) Variable
+    -> SymbolOrAlias level
     -> Bool
 isImplicitHead sentence = (== getSentenceSymbolOrAliasHead sentence [])
 
--- |Creates a 'Meta' 'Sort' from a given 'MetaSortType'
-sort_ :: MetaSortType -> Sort Meta
+-- |Creates a 'level' 'Sort' from a given 'MetaSortType'
+sort_ :: MetaSortType -> Sort level
 sort_ sortType =
     SortActualSort SortActual
-        { sortActualName = Id (show sortType)
+        { sortActualName = Id
+            { getId = show sortType
+            , idLocation = AstLocationImplicit
+            }
         , sortActualSorts = []
         }
 
 -- |Given a string @name@, yields the 'UnsortedPatternStub' defining
 -- name as a variable.
-unparameterizedVariable_ :: String -> MetaPatternStub
-unparameterizedVariable_ name =
+unparameterizedVariable_ :: String -> AstLocation -> CommonPurePatternStub level
+unparameterizedVariable_ name location =
     UnsortedPatternStub
         (\sortS ->
             VariablePattern Variable
-                { variableName = Id name
+                { variableName = Id
+                    { getId = name
+                    , idLocation = location
+                    }
                 , variableSort = sortS
                 }
         )
 
 -- |Given a 'Sort' @sort@ and a string @name@, yields 'PatternStub' defining
 -- name as a variable of sort @sort@.
-parameterizedVariable_ :: Sort Meta -> String -> MetaPatternStub
-parameterizedVariable_ sort = withSort sort . unparameterizedVariable_
+parameterizedVariable_
+    :: Sort level -> String -> AstLocation -> CommonPurePatternStub level
+parameterizedVariable_ sort name location =
+    withSort sort (unparameterizedVariable_ name location)
 
 -- |constructs an unparameterized Symbol declaration given the symbol name,
 -- operand sorts and result sort.
-symbol_ :: String -> [Sort Meta] -> Sort Meta -> MetaSentenceSymbol
-symbol_ name = parameterizedSymbol_ name []
+symbol_
+    :: String
+    -> AstLocation
+    -> [Sort level]
+    -> Sort level
+    -> PureSentenceSymbol level
+symbol_ name location = parameterizedSymbol_ name location []
 
 -- |constructs a Symbol declaration given symbol name, parameters,
 -- operand sorts and result sort.
 parameterizedSymbol_
-    :: String -> [SortVariable Meta] -> [Sort Meta] -> Sort Meta
-    -> MetaSentenceSymbol
-parameterizedSymbol_ name parameters operandSorts resultSort =
+    :: String
+    -> AstLocation
+    -> [SortVariable level]
+    -> [Sort level]
+    -> Sort level
+    -> PureSentenceSymbol level
+parameterizedSymbol_ name location parameters operandSorts resultSort =
     SentenceSymbol
         { sentenceSymbolSymbol = Symbol
-            { symbolConstructor = Id name
+            { symbolConstructor = Id
+                { getId = name
+                , idLocation = location
+                }
             , symbolParams = parameters
             }
         , sentenceSymbolSorts = operandSorts
@@ -118,57 +141,122 @@ parameterizedSymbol_ name parameters operandSorts resultSort =
         , sentenceSymbolAttributes = Attributes []
         }
 
+-- |constructs an unparameterized Alias declaration given the alias name,
+-- operand sorts and result sort.
+alias_
+    :: String
+    -> AstLocation
+    -> [Sort level]
+    -> Sort level
+    -> PureSentenceAlias level
+alias_ name location = parameterizedAlias_ name location []
+
+-- |constructs a Alias declaration given alias name, parameters,
+-- operand sorts and result sort.
+parameterizedAlias_
+    :: String
+    -> AstLocation
+    -> [SortVariable level]
+    -> [Sort level]
+    -> Sort level
+    -> PureSentenceAlias level
+parameterizedAlias_ name location parameters operandSorts resultSort =
+    SentenceAlias
+        { sentenceAliasAlias = Alias
+            { aliasConstructor = Id
+                { getId = name
+                , idLocation = location
+                }
+            , aliasParams = parameters
+            }
+        , sentenceAliasSorts = operandSorts
+        , sentenceAliasResultSort = resultSort
+        , sentenceAliasAttributes = Attributes []
+        }
+
 -- |A 'PatternStub' representing 'Bottom'.
-bottom_ :: MetaPatternStub
+bottom_ :: CommonPurePatternStub level
 bottom_ = UnsortedPatternStub (BottomPattern . Bottom)
 
 -- |A 'PatternStub' representing 'Top'.
-top_ :: MetaPatternStub
-top_ = UnsortedPatternStub (BottomPattern . Bottom)
+top_ :: CommonPurePatternStub level
+top_ = UnsortedPatternStub (TopPattern . Top)
 
 -- |Builds a 'PatternStub' representing 'Equals' given the sort of the
 -- operands and their corresponding 'PatternStub's.
-equalsS_ :: Sort Meta -> MetaPatternStub -> MetaPatternStub -> MetaPatternStub
+equalsS_
+    :: (MetaOrObject level)
+    => Sort level
+    -> CommonPurePatternStub level
+    -> CommonPurePatternStub level
+    -> CommonPurePatternStub level
 equalsS_ s = equalsM_ (Just s)
 
 -- |Builds a 'PatternStub' representing 'Equals' given the
 -- corresponding 'PatternStub's.  Assumes operand sort is inferrable.
-equals_ :: MetaPatternStub -> MetaPatternStub -> MetaPatternStub
+equals_
+    :: (MetaOrObject level)
+    => CommonPurePatternStub level
+    -> CommonPurePatternStub level
+    -> CommonPurePatternStub level
 equals_ = equalsM_ Nothing
 
 -- |Builds a 'PatternStub' representing 'In' given the sort of the
 -- operands and their corresponding 'PatternStub's.
-inS_ :: Sort Meta -> MetaPatternStub -> MetaPatternStub -> MetaPatternStub
+inS_
+    :: (MetaOrObject level)
+    => Sort level
+    -> CommonPurePatternStub level
+    -> CommonPurePatternStub level
+    -> CommonPurePatternStub level
 inS_ s = inM_ (Just s)
 
 -- |Builds a 'PatternStub' representing 'In' given the
 -- corresponding 'PatternStub's.  Assumes operand sort is inferrable.
-in_ :: MetaPatternStub -> MetaPatternStub -> MetaPatternStub
+in_
+    :: (MetaOrObject level)
+    => CommonPurePatternStub level
+    -> CommonPurePatternStub level
+    -> CommonPurePatternStub level
 in_ = inM_ Nothing
 
 -- |Builds a PatternStub representing 'Ceil' given the sort of the
 -- operand and its corresponding 'PatternStub's.
-ceilS_ :: Sort Meta -> MetaPatternStub -> MetaPatternStub
+ceilS_
+    :: (MetaOrObject level)
+    => Sort level
+    -> CommonPurePatternStub level
+    -> CommonPurePatternStub level
 ceilS_ s = ceilM_ (Just s)
 
 -- |Builds a 'PatternStub' representing 'Ceil' given the corresponding
 -- operand 'PatternStub'.  Assumes operand sort is inferrable.
-ceil_ :: MetaPatternStub -> MetaPatternStub
+ceil_
+    :: (MetaOrObject level)
+    => CommonPurePatternStub level -> CommonPurePatternStub level
 ceil_ = ceilM_ Nothing
 
 -- |Builds a 'PatternStub' representing 'Floor' given the sort of the
 -- operand and its corresponding 'PatternStub's.
-floorS_ :: Sort Meta -> MetaPatternStub -> MetaPatternStub
+floorS_
+    :: (MetaOrObject level)
+    => Sort level -> CommonPurePatternStub level -> CommonPurePatternStub level
 floorS_ s = floorM_ (Just s)
 
 -- |Builds a 'PatternStub' representing 'Floor' given the corresponding
 -- operand 'PatternStub'.  Assumes operand sort is inferrable.
-floor_ :: MetaPatternStub -> MetaPatternStub
+floor_
+    :: (MetaOrObject level)
+    => CommonPurePatternStub level -> CommonPurePatternStub level
 floor_ = floorM_ Nothing
 
 -- |Builds a 'PatternStub' representing 'Exists' given a variable and an
 -- operand 'PatternStub'.
-exists_ :: Variable Meta -> MetaPatternStub -> MetaPatternStub
+exists_
+    :: (MetaOrObject level)
+    => Variable level
+    -> CommonPurePatternStub level
+    -> CommonPurePatternStub level
 exists_ variable1 =
     unaryPattern
         (\sortS pattern1 ->
@@ -181,7 +269,10 @@ exists_ variable1 =
 
 -- |Builds a 'PatternStub' representing 'Forall' given a variable and an
 -- operand 'PatternStub'.
-forall_ :: Variable Meta -> MetaPatternStub -> MetaPatternStub
+forall_
+    :: Variable level
+    -> CommonPurePatternStub level
+    -> CommonPurePatternStub level
 forall_ variable1 =
     unaryPattern
         (\sortS pattern1 ->
@@ -194,7 +285,10 @@ forall_ variable1 =
 
 -- |Builds a 'PatternStub' representing 'Or' given 'PatternStub's for its
 -- operands.
-or_ :: MetaPatternStub -> MetaPatternStub -> MetaPatternStub
+or_
+    :: CommonPurePatternStub level
+    -> CommonPurePatternStub level
+    -> CommonPurePatternStub level
 or_ =
     binaryPattern
         (\commonSort firstPattern secondPattern ->
@@ -207,7 +301,10 @@ or_ =
 
 -- |Builds a 'PatternStub' representing 'And' given 'PatternStub's for its
 -- operands.
-and_ :: MetaPatternStub -> MetaPatternStub -> MetaPatternStub
+and_
+    :: CommonPurePatternStub level
+    -> CommonPurePatternStub level
+    -> CommonPurePatternStub level
 and_ =
     binaryPattern
         (\commonSort firstPattern secondPattern ->
@@ -220,7 +317,10 @@ and_ =
 
 -- |Builds a 'PatternStub' representing 'Iff' given 'PatternStub's for its
 -- operands.
-iff_ :: MetaPatternStub -> MetaPatternStub -> MetaPatternStub
+iff_
+    :: CommonPurePatternStub level
+    -> CommonPurePatternStub level
+    -> CommonPurePatternStub level
 iff_ =
     binaryPattern
         (\commonSort firstPattern secondPattern ->
@@ -233,7 +333,10 @@ iff_ =
 
 -- |Builds a 'PatternStub' representing 'Implies' given 'PatternStub's for
 -- its operands.
-implies_ :: MetaPatternStub -> MetaPatternStub -> MetaPatternStub
+implies_
+    :: CommonPurePatternStub level
+    -> CommonPurePatternStub level
+    -> CommonPurePatternStub level
 implies_ =
     binaryPattern
         (\commonSort firstPattern secondPattern ->
@@ -246,12 +349,24 @@ implies_ =
 
 -- |Builds a 'PatternStub' representing 'Not' given a 'PatternStub' for
 -- its operand.
-not_ :: MetaPatternStub -> MetaPatternStub
+not_ :: CommonPurePatternStub level -> CommonPurePatternStub level
 not_ =
     unaryPattern
         (\sortS pattern1 ->
             NotPattern Not
                 { notSort   = sortS
                 , notChild  = pattern1
+                }
+        )
+
+-- |Builds a 'PatternStub' representing 'Next' given a 'PatternStub' for
+-- its operand.
+next_ :: CommonPurePatternStub Object -> CommonPurePatternStub Object
+next_ =
+    unaryPattern
+        (\sortS pattern1 ->
+            NextPattern Next
+                { nextSort   = sortS
+                , nextChild  = pattern1
                 }
         )

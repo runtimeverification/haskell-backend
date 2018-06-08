@@ -1,0 +1,190 @@
+Definition
+    { definitionAttributes = Attributes []
+    , definitionModules =
+        [ Module
+            { moduleName = ModuleName "BUILTIN-attributes"
+            , moduleSentences =
+                [ ObjectSentence (SentenceSortSentence SentenceSort
+                    { sentenceSortName = (Id "Attribute" AstLocationNone) :: Id Object
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    })
+                , ObjectSentence (SentenceSortSentence SentenceSort
+                    { sentenceSortName = (Id "Hook" AstLocationNone) :: Id Object
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "hook" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Hook" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Attribute" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes = Attributes []
+                    })
+                , ObjectSentence (SentenceSortSentence SentenceSort
+                    { sentenceSortName = (Id "ArgumentPosition" AstLocationNone) :: Id Object
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "firstArgument" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts = []
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "ArgumentPosition" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes = Attributes []
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "secondArgument" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts = []
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "ArgumentPosition" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes = Attributes []
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "thirdArgument" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts = []
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "ArgumentPosition" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes = Attributes []
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "fourthArgument" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts = []
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "ArgumentPosition" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes = Attributes []
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "fifthArgument" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts = []
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "ArgumentPosition" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes = Attributes []
+                    })
+                , ObjectSentence (SentenceSortSentence SentenceSort
+                    { sentenceSortName = (Id "Strict" AstLocationNone) :: Id Object
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "strict" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Strict" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "ArgumentPosition" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Attribute" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes = Attributes []
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "seqstrict" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Strict" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Attribute" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes = Attributes []
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "associative" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts = []
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Attribute" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes = Attributes []
+                    })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "commutative" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts = []
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Attribute" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes = Attributes []
+                    })
+                ]
+            , moduleAttributes = Attributes []
+            }
+        ]
+    }

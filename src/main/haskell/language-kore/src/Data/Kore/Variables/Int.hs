@@ -1,4 +1,16 @@
+{-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-|
+Module      : Data.Kore.Variables.Int
+Description : Defines the 'IntVariable' class providing functionality for
+              generating variables based on intergers.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : traian.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : portable
+
+-}
 module Data.Kore.Variables.Int ( IntVariable(..)
                                      ) where
 
@@ -14,10 +26,14 @@ class IntVariable var where
 
 instance IntVariable Variable where
     intVariable var n =
-        var { variableName = Id (metaObjectPrefix ++ "var_" ++ show n) }
+        var
+            { variableName = Id
+                { getId = metaObjectPrefix ++ "var_" ++ show n
+                , idLocation = AstLocationGeneratedVariable
+                }
+            }
       where
         metaObjectPrefix =
-            applyMetaObjectFunction var MetaOrObjectTransformer
-                { objectTransformer = const ""
-                , metaTransformer = const "#"
-                }
+            case isMetaOrObject var of
+                IsObject -> ""
+                IsMeta   -> "#"

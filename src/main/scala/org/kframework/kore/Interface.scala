@@ -3,11 +3,11 @@ package org.kframework.kore
 trait Definition {
   def att: Attributes
 
-  def module: Module
+  def modules: Seq[Module]
 }
 
 object Definition {
-  def unapply(arg: Definition): Option[(Module, Attributes)] = Some(arg.module, arg.att)
+  def unapply(arg: Definition): Option[(Seq[Module], Attributes)] = Some(arg.modules, arg.att)
 }
 
 trait Module {
@@ -24,15 +24,15 @@ object Module {
 
 trait Declaration
 
-// trait Import extends Declaration {
-//   def name: ModuleName
-//
-//   def att: Attributes
-// }
-//
-// object Import {
-//   def unapply(arg: Import): Option[(ModuleName, Attributes)] = Some(arg.name, arg.att)
-// }
+trait Import extends Declaration {
+  def name: String
+
+  def att: Attributes
+}
+
+object Import {
+  def unapply(arg: Import): Option[(String, Attributes)] = Some(arg.name, arg.att)
+}
 
 trait SortDeclaration extends Declaration {
   def params: Seq[SortVariable]
@@ -47,22 +47,21 @@ object SortDeclaration {
   = Some(arg.params, arg.sort, arg.att)
 }
 
-trait SymbolDeclaration extends Declaration {
-  def symbol: Symbol
+trait HookSortDeclaration extends Declaration {
+  def params: Seq[SortVariable]
 
-  def argSorts: Seq[Sort]
-
-  def returnSort: Sort
+  def sort: Sort
 
   def att: Attributes
 }
 
-object AliasDeclaration {
-  def unapply(arg: AliasDeclaration): Option[(Alias, Seq[Sort], Sort, Attributes)]
-  = Some(arg.alias, arg.argSorts, arg.returnSort, arg.att)
+object HookSortDeclaration {
+  def unapply(arg: HookSortDeclaration): Option[(Seq[SortVariable], Sort, Attributes)]
+  = Some(arg.params, arg.sort, arg.att)
 }
-trait AliasDeclaration extends Declaration {
-  def alias: Alias
+
+trait SymbolDeclaration extends Declaration {
+  def symbol: Symbol
 
   def argSorts: Seq[Sort]
 
@@ -75,6 +74,40 @@ object SymbolDeclaration {
   def unapply(arg: SymbolDeclaration): Option[(Symbol, Seq[Sort], Sort, Attributes)]
   = Some(arg.symbol, arg.argSorts, arg.returnSort, arg.att)
 }
+
+trait HookSymbolDeclaration extends Declaration {
+  def symbol: Symbol
+
+  def argSorts: Seq[Sort]
+
+  def returnSort: Sort
+
+  def att: Attributes
+}
+
+object HookSymbolDeclaration {
+  def unapply(arg: HookSymbolDeclaration): Option[(Symbol, Seq[Sort], Sort, Attributes)]
+  = Some(arg.symbol, arg.argSorts, arg.returnSort, arg.att)
+}
+
+trait AliasDeclaration extends Declaration {
+  def alias: Alias
+
+  def argSorts: Seq[Sort]
+
+  def returnSort: Sort
+
+  def att: Attributes
+}
+
+object AliasDeclaration {
+  def unapply(arg: AliasDeclaration): Option[(Alias, Seq[Sort], Sort, Attributes)]
+  = Some(arg.alias, arg.argSorts, arg.returnSort, arg.att)
+}
+
+
+
+
 
 trait AxiomDeclaration extends Declaration {
   def params: Seq[SortVariable]
@@ -301,6 +334,19 @@ object Mem {
 }
 
 /**
+  * Any domain-specific value represented as a string.
+  */
+trait DomainValue extends Pattern {
+  def s: Sort // the sort of X and P
+
+  def str: String // the value
+}
+
+object DomainValue {
+  def unapply(arg: DomainValue): Option[(Sort, String)] = Some(arg.s, arg.str)
+}
+
+/**
   * \subset(P,Q) is a predicate pattern that checks whether P is a subset of Q.
   */
 // trait Subset extends Pattern {
@@ -400,17 +446,26 @@ object Alias {
 
 trait Builders {
 
-  def Definition(att: Attributes, module: Module): Definition
+  def Definition(att: Attributes, modules: Seq[Module]): Definition
 
   def Module(name: String, sens: Seq[Declaration], att: Attributes): Module
 
-  // def Import(name: ModuleName, att: Attributes): Declaration
+  def Import(name: String, att: Attributes): Declaration
 
   def SortDeclaration(params: Seq[SortVariable],
                       sort: Sort,
                       att: Attributes): Declaration
 
+  def HookSortDeclaration(params: Seq[SortVariable],
+                      sort: Sort,
+                      att: Attributes): Declaration
+
   def SymbolDeclaration(symbol: Symbol,
+                        argSorts: Seq[Sort],
+                        returnSort: Sort,
+                        att: Attributes): Declaration
+
+  def HookSymbolDeclaration(symbol: Symbol,
                         argSorts: Seq[Sort],
                         returnSort: Sort,
                         att: Attributes): Declaration
@@ -460,11 +515,11 @@ trait Builders {
 
   def Mem(s: Sort, rs:Sort, p: Pattern, q: Pattern): Pattern
 
+  def DomainValue(s: Sort, str:String): Pattern
+
   // def Subset(s: Sort, rs:Sort, _1: Pattern, _2: Pattern): Pattern
 
   def StringLiteral(str: String): Pattern
-
-  // def DomainValue(sortStr: String, valueStr: String): Pattern
 
   def SortVariable(name: String): SortVariable
 

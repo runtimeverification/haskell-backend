@@ -1,7 +1,9 @@
+{-# LANGUAGE FlexibleContexts #-}
 module Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers where
 
 import           Test.Tasty                               (TestTree, testGroup)
-import           Test.Tasty.HUnit                         (assertEqual,
+import           Test.Tasty.HUnit                         (HasCallStack,
+                                                           assertEqual,
                                                            assertFailure,
                                                            testCase)
 
@@ -13,6 +15,7 @@ import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.ASTVerifier.DefinitionVerifier
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.Error
+import           Data.Kore.KoreHelpers
 import           Data.Kore.Unparser.Unparse
 
 newtype ExpectedErrorMessage = ExpectedErrorMessage String
@@ -52,15 +55,15 @@ failureTestData
   where
     err = testDataError testData
 
-successTestDataGroup :: String -> [TestData] -> TestTree
+successTestDataGroup :: HasCallStack => String -> [TestData] -> TestTree
 successTestDataGroup description testDatas =
     testGroup description (map successTestData testDatas)
 
-successTestData :: TestData -> TestTree
+successTestData :: HasCallStack => TestData -> TestTree
 successTestData testData =
     expectSuccess (testDataDescription testData) (testDataDefinition testData)
 
-expectSuccess :: String -> KoreDefinition -> TestTree
+expectSuccess :: HasCallStack => String -> KoreDefinition -> TestTree
 expectSuccess description definition =
     testCase
         description
@@ -69,14 +72,15 @@ expectSuccess description definition =
             ++ printDefinition definition
             )
             verifySuccess
-            (verifyDefinition VerifyAttributes definition)
+            (verifyDefinition attributesVerificationForTests definition)
         )
 
-expectFailureWithError :: String -> Error VerifyError -> KoreDefinition -> TestTree
+expectFailureWithError
+    :: HasCallStack => String -> Error VerifyError -> KoreDefinition -> TestTree
 expectFailureWithError description expectedError definition =
     testCase
         description
-        ( case verifyDefinition VerifyAttributes definition of
+        ( case verifyDefinition attributesVerificationForTests definition of
             Right _ ->
                 assertFailure
                     (  "Expecting verification failure! Definition:\n"
@@ -89,6 +93,11 @@ expectFailureWithError description expectedError definition =
                     )
                     expectedError actualError
         )
+
+attributesVerificationForTests :: AttributesVerification
+attributesVerificationForTests = case defaultAttributesVerification of
+    Right verification -> verification
+    Left err           -> error (printError err)
 
 printDefinition :: KoreDefinition -> String
 printDefinition definition =
@@ -129,7 +138,7 @@ simpleSortSentence :: SortName -> KoreSentence
 simpleSortSentence (SortName name) =
     asSentence
         (SentenceSort
-            { sentenceSortName = Id name
+            { sentenceSortName = testId name
             , sentenceSortParameters = []
             , sentenceSortAttributes = Attributes []
             }::KoreSentenceSort
@@ -148,13 +157,13 @@ simpleAliasSentence :: AliasName -> SortName -> KoreSentenceAlias level
 simpleAliasSentence (AliasName name) (SortName sort) =
     SentenceAlias
         { sentenceAliasAlias = Alias
-            { aliasConstructor = Id name
+            { aliasConstructor = testId name
             , aliasParams = []
             }
         , sentenceAliasSorts = []
         , sentenceAliasResultSort =
             SortActualSort SortActual
-                { sortActualName = Id sort
+                { sortActualName = testId sort
                 , sortActualSorts = []
                 }
         , sentenceAliasAttributes = Attributes []
@@ -172,19 +181,19 @@ simpleSymbolSentence :: SymbolName -> SortName -> KoreSentenceSymbol level
 simpleSymbolSentence (SymbolName name) (SortName sort) =
     SentenceSymbol
         { sentenceSymbolSymbol = Symbol
-            { symbolConstructor = Id name
+            { symbolConstructor = testId name
             , symbolParams = []
             }
         , sentenceSymbolSorts = []
         , sentenceSymbolResultSort =
             SortActualSort SortActual
-                { sortActualName = Id sort
+                { sortActualName = testId sort
                 , sortActualSorts = []
                 }
         , sentenceSymbolAttributes = Attributes []
         }
 
-simpleAxiomSentence :: UnifiedPattern -> KoreSentence
+simpleAxiomSentence :: CommonKorePattern -> KoreSentence
 simpleAxiomSentence unifiedPattern =
     asSentence
         (SentenceAxiom
@@ -208,7 +217,7 @@ sortSentenceWithSortParameters
 sortSentenceWithSortParameters (SortName name) parameters =
     asSentence
         (SentenceSort
-            { sentenceSortName = Id name
+            { sentenceSortName = testId name
             , sentenceSortParameters = parameters
             , sentenceSortAttributes = Attributes []
             }::KoreSentenceSort
@@ -217,15 +226,16 @@ sortSentenceWithSortParameters (SortName name) parameters =
 aliasSentenceWithSort
     :: MetaOrObject level => AliasName -> Sort level -> KoreSentence
 aliasSentenceWithSort (AliasName name) sort =
-    asKoreAliasSentence
+    asSentence
         SentenceAlias
             { sentenceAliasAlias = Alias
-                { aliasConstructor = Id name
+                { aliasConstructor = testId name
                 , aliasParams = []
                 }
             , sentenceAliasSorts = []
             , sentenceAliasResultSort = sort
-            , sentenceAliasAttributes = Attributes []
+            , sentenceAliasAttributes =
+                Attributes [] :: KoreAttributes
             }
 
 metaAliasSentenceWithSortParameters
@@ -236,7 +246,7 @@ metaAliasSentenceWithSortParameters
     asSentence
         (SentenceAlias
             { sentenceAliasAlias = Alias
-                { aliasConstructor = Id name
+                { aliasConstructor = testId name
                 , aliasParams = parameters
                 }
             , sentenceAliasSorts = []
@@ -252,13 +262,13 @@ aliasSentenceWithSortParameters
   =
     SentenceAlias
         { sentenceAliasAlias = Alias
-            { aliasConstructor = Id name
+            { aliasConstructor = testId name
             , aliasParams = parameters
             }
         , sentenceAliasSorts = []
         , sentenceAliasResultSort =
             SortActualSort SortActual
-                { sortActualName = Id sort
+                { sortActualName = testId sort
                 , sortActualSorts = []
                 }
         , sentenceAliasAttributes = Attributes []
@@ -275,7 +285,7 @@ sentenceAliasWithSortArgument
   =
     SentenceAlias
         { sentenceAliasAlias = Alias
-            { aliasConstructor = Id name
+            { aliasConstructor = testId name
             , aliasParams = parameters
             }
         , sentenceAliasSorts = [sortArgument]
@@ -287,12 +297,12 @@ sentenceAliasWithAttributes
     :: AliasName
     -> [SortVariable level]
     -> Sort level
-    -> [UnifiedPattern]
+    -> [CommonKorePattern]
     -> KoreSentenceAlias level
 sentenceAliasWithAttributes (AliasName name) params sort attributes =
     SentenceAlias
         { sentenceAliasAlias = Alias
-            { aliasConstructor = Id name
+            { aliasConstructor = testId name
             , aliasParams = params
             }
         , sentenceAliasSorts = []
@@ -304,12 +314,12 @@ sentenceSymbolWithAttributes
     :: SymbolName
     -> [SortVariable level]
     -> Sort level
-    -> [UnifiedPattern]
+    -> [CommonKorePattern]
     -> KoreSentenceSymbol level
 sentenceSymbolWithAttributes (SymbolName name) params sort attributes =
     SentenceSymbol
         { sentenceSymbolSymbol = Symbol
-            { symbolConstructor = Id name
+            { symbolConstructor = testId name
             , symbolParams = params
             }
         , sentenceSymbolSorts = []
@@ -325,7 +335,7 @@ metaSymbolSentenceWithSortParameters
     asSentence
         (SentenceSymbol
             { sentenceSymbolSymbol = Symbol
-                { symbolConstructor = Id name
+                { symbolConstructor = testId name
                 , symbolParams = parameters
                 }
             , sentenceSymbolSorts = []
@@ -344,20 +354,20 @@ symbolSentenceWithSortParameters
   =
     SentenceSymbol
         { sentenceSymbolSymbol = Symbol
-            { symbolConstructor = Id name
+            { symbolConstructor = testId name
             , symbolParams = parameters
             }
         , sentenceSymbolSorts = []
         , sentenceSymbolResultSort =
             SortActualSort SortActual
-                { sortActualName = Id sort
+                { sortActualName = testId sort
                 , sortActualSorts = []
                 }
         , sentenceSymbolAttributes = Attributes []
         }
 
 axiomSentenceWithSortParameters
-    :: UnifiedPattern -> [UnifiedSortVariable] -> KoreSentence
+    :: CommonKorePattern -> [UnifiedSortVariable] -> KoreSentence
 axiomSentenceWithSortParameters unifiedPattern parameters =
     asSentence
         (SentenceAxiom
@@ -369,8 +379,8 @@ axiomSentenceWithSortParameters unifiedPattern parameters =
 
 axiomSentenceWithAttributes
     :: [UnifiedSortVariable]
-    -> UnifiedPattern
-    -> [UnifiedPattern]
+    -> CommonKorePattern
+    -> [CommonKorePattern]
     -> KoreSentence
 axiomSentenceWithAttributes parameters unifiedPattern attributes =
     asSentence
@@ -391,7 +401,7 @@ sentenceAliasWithResultSort
   =
     SentenceAlias
         { sentenceAliasAlias = Alias
-            { aliasConstructor = Id name
+            { aliasConstructor = testId name
             , aliasParams = parameters
             }
         , sentenceAliasSorts = []
@@ -404,15 +414,16 @@ symbolSentenceWithResultSort
     => SymbolName -> Sort level -> [SortVariable level] -> KoreSentence
 symbolSentenceWithResultSort
     (SymbolName name) sort parameters
-  = asKoreSymbolSentence
+  = asSentence
         SentenceSymbol
             { sentenceSymbolSymbol = Symbol
-                { symbolConstructor = Id name
+                { symbolConstructor = testId name
                 , symbolParams = parameters
                 }
             , sentenceSymbolSorts = []
             , sentenceSymbolResultSort = sort
-            , sentenceSymbolAttributes = Attributes []
+            , sentenceSymbolAttributes =
+                Attributes [] :: KoreAttributes
             }
 
 objectSymbolSentenceWithArguments
@@ -424,15 +435,16 @@ symbolSentenceWithArguments
     => SymbolName -> Sort level -> [Sort level] -> KoreSentence
 symbolSentenceWithArguments
     (SymbolName name) sort operandSorts
-  = asKoreSymbolSentence
+  = asSentence
         SentenceSymbol
             { sentenceSymbolSymbol = Symbol
-                { symbolConstructor = Id name
+                { symbolConstructor = testId name
                 , symbolParams = []
                 }
             , sentenceSymbolSorts = operandSorts
             , sentenceSymbolResultSort = sort
-            , sentenceSymbolAttributes = Attributes []
+            , sentenceSymbolAttributes =
+                Attributes [] :: KoreAttributes
             }
 
 objectAliasSentenceWithArguments
@@ -444,21 +456,22 @@ aliasSentenceWithArguments
     => AliasName -> Sort level -> [Sort level] -> KoreSentence
 aliasSentenceWithArguments
     (AliasName name) sort operandSorts
-  = asKoreAliasSentence
+  = asSentence
         SentenceAlias
             { sentenceAliasAlias = Alias
-                { aliasConstructor = Id name
+                { aliasConstructor = testId name
                 , aliasParams = []
                 }
             , sentenceAliasSorts = operandSorts
             , sentenceAliasResultSort = sort
-            , sentenceAliasAttributes = Attributes []
+            , sentenceAliasAttributes =
+                Attributes [] :: KoreAttributes
             }
 
 simpleSortActual :: SortName -> SortActual level
 simpleSortActual (SortName sort) =
     SortActual
-        { sortActualName = Id sort
+        { sortActualName = testId sort
         , sortActualSorts = []
         }
 
@@ -471,30 +484,30 @@ objectVariableSort = sortVariableSort
 
 sortVariableSort :: SortVariableName -> Sort level
 sortVariableSort (SortVariableName sort) =
-    SortVariableSort (SortVariable (Id sort))
+    SortVariableSort (SortVariable (testId sort))
 
 sortVariable :: level -> SortVariableName -> SortVariable level
-sortVariable _ (SortVariableName name) = SortVariable (Id name)
+sortVariable _ (SortVariableName name) = SortVariable (testId name)
 
 unifiedSortVariable
     :: MetaOrObject level => level -> SortVariableName -> UnifiedSortVariable
 unifiedSortVariable x name =
     asUnified (sortVariable x name)
 
-stringUnifiedPattern :: String -> UnifiedPattern
+stringUnifiedPattern :: String -> CommonKorePattern
 stringUnifiedPattern s =
-    MetaPattern (StringLiteralPattern (StringLiteral s))
+    asKorePattern (StringLiteralPattern (StringLiteral s))
 
 variable :: VariableName -> Sort level -> Variable level
 variable (VariableName name) sort =
     Variable
-        { variableName = Id name
+        { variableName = testId name
         , variableSort = sort
         }
 
 unifiedVariable
     :: MetaOrObject level
-    => VariableName -> Sort level -> UnifiedVariable Variable
+    => VariableName -> Sort level -> Unified Variable
 unifiedVariable name sort =
     asUnified (variable name sort)
 
@@ -503,36 +516,36 @@ variablePattern name sort =
     VariablePattern (variable name sort)
 
 unifiedVariablePattern
-    :: MetaOrObject level => VariableName -> Sort level -> UnifiedPattern
+    :: MetaOrObject level => VariableName -> Sort level -> CommonKorePattern
 unifiedVariablePattern name sort =
-    asUnifiedPattern (variablePattern name sort)
+    asKorePattern (variablePattern name sort)
 
 simpleExistsPattern
     :: MetaOrObject level
-    => Variable level -> Sort level -> Pattern level Variable UnifiedPattern
+    => Variable level -> Sort level -> Pattern level Variable CommonKorePattern
 simpleExistsPattern quantifiedVariable resultSort =
     ExistsPattern Exists
         { existsSort = resultSort
         , existsVariable = quantifiedVariable
-        , existsChild = asUnifiedPattern (VariablePattern quantifiedVariable)
+        , existsChild = asKorePattern (VariablePattern quantifiedVariable)
         }
 
 simpleExistsUnifiedPattern
-    :: MetaOrObject level => VariableName -> Sort level -> UnifiedPattern
+    :: MetaOrObject level => VariableName -> Sort level -> CommonKorePattern
 simpleExistsUnifiedPattern name sort =
-    asUnifiedPattern
+    asKorePattern
         ( simpleExistsPattern
             (variable name sort)
             sort
         )
 
 simpleExistsObjectUnifiedPattern
-    :: VariableName -> Sort Object -> UnifiedPattern
+    :: VariableName -> Sort Object -> CommonKorePattern
 simpleExistsObjectUnifiedPattern = simpleExistsUnifiedPattern
 
 simpleExistsUnifiedPatternWithType
     :: MetaOrObject level
-    => level -> VariableName -> Sort level -> UnifiedPattern
+    => level -> VariableName -> Sort level -> CommonKorePattern
 simpleExistsUnifiedPatternWithType _ = simpleExistsUnifiedPattern
 
 simpleExistsEqualsUnifiedPattern
@@ -540,17 +553,17 @@ simpleExistsEqualsUnifiedPattern
     => VariableName
     -> OperandSort level
     -> ResultSort level
-    -> UnifiedPattern
+    -> CommonKorePattern
 simpleExistsEqualsUnifiedPattern
     name
     (OperandSort operandSort)
     (ResultSort resultSort)
   =
-    asUnifiedPattern
+    asKorePattern
         (ExistsPattern Exists
             { existsSort = resultSort
             , existsVariable = variable name operandSort
-            , existsChild = asUnifiedPattern
+            , existsChild = asKorePattern
                 (EqualsPattern Equals
                     { equalsOperandSort = operandSort
                     , equalsResultSort = resultSort
@@ -564,28 +577,30 @@ simpleExistsEqualsUnifiedPattern
         )
 
 applicationObjectUnifiedPatternWithChildren
-    :: SymbolName -> [UnifiedPattern] -> UnifiedPattern
+    :: SymbolName -> [CommonKorePattern] -> CommonKorePattern
 applicationObjectUnifiedPatternWithChildren name unifiedPatterns =
-    ObjectPattern (applicationPatternWithChildren name unifiedPatterns)
+    asKorePattern
+        ( applicationPatternWithChildren name unifiedPatterns
+        :: Pattern Meta Variable CommonKorePattern)
 
 applicationPatternWithChildren
-    :: SymbolName -> [UnifiedPattern] -> Pattern level v UnifiedPattern
+    :: SymbolName -> [CommonKorePattern] -> Pattern level v CommonKorePattern
 applicationPatternWithChildren (SymbolName name) unifiedPatterns =
     ApplicationPattern Application
         { applicationSymbolOrAlias = SymbolOrAlias
-            { symbolOrAliasConstructor = Id name
+            { symbolOrAliasConstructor = testId name
             , symbolOrAliasParams = []
             }
         , applicationChildren = unifiedPatterns
         }
 
 applicationUnifiedPatternWithParams
-    :: MetaOrObject level => SymbolName -> [Sort level] -> UnifiedPattern
+    :: MetaOrObject level => SymbolName -> [Sort level] -> CommonKorePattern
 applicationUnifiedPatternWithParams (SymbolName name) params =
-    asUnifiedPattern
+    asKorePattern
         (ApplicationPattern Application
             { applicationSymbolOrAlias = SymbolOrAlias
-                { symbolOrAliasConstructor = Id name
+                { symbolOrAliasConstructor = testId name
                 , symbolOrAliasParams = params
                 }
             , applicationChildren = []

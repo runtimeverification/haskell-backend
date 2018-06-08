@@ -5,7 +5,7 @@ Definition
             { moduleName = ModuleName "TEST-COMMENT-5"
             , moduleSentences =
                 [ ObjectSentence (SentenceSortSentence SentenceSort
-                    { sentenceSortName = Id Object "Nat"
+                    { sentenceSortName = (Id "Nat" AstLocationNone) :: Id Object
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
                     })

@@ -1,4 +1,5 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE GADTs                 #-}
 {-|
 Module      : Data.Kore.ASTVerifier.SentenceVerifier
 Description : Tools for verifying the wellformedness of a Kore 'Sentence'.
@@ -14,15 +15,18 @@ module Data.Kore.ASTVerifier.SentenceVerifier ( verifyUniqueNames
 
 import           Control.Monad                            (foldM)
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Error
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTVerifier.AttributesVerifier
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.PatternVerifier
-import           Data.Kore.ASTVerifier.Resolvers
 import           Data.Kore.ASTVerifier.SortVerifier
 import           Data.Kore.Error
 import           Data.Kore.IndexedModule.IndexedModule
+import           Data.Kore.IndexedModule.Resolvers
+
+import qualified Data.Map                                 as Map
 import qualified Data.Set                                 as Set
 
 {-|'verifyUniqueNames' verifies that names defined in a list of sentences are
@@ -30,38 +34,74 @@ unique both within the list and outside, using the provided name set.
 -}
 verifyUniqueNames
     :: [KoreSentence]
-    -> Set.Set String
+    -> Map.Map String AstLocation
     -- ^ Names that are already defined.
-    -> Either (Error VerifyError) (Set.Set String)
+    -> Either (Error VerifyError) (Map.Map String AstLocation)
     -- ^ On success returns the names that were previously defined together with
     -- the names defined in the given 'Module'.
 verifyUniqueNames sentences existingNames =
-    foldM verifyUniqueName existingNames
+    foldM verifyUniqueId existingNames
         (concatMap definedNamesForSentence sentences)
 
-verifyUniqueName
-    :: Set.Set String
-    -> String
-    -> Either (Error VerifyError) (Set.Set String)
-verifyUniqueName set name =
-    if name `Set.member` set
-        then koreFail ("Duplicated name: '" ++ name ++ "'.")
-        else Right (Set.insert name set)
+data UnparameterizedId = UnparameterizedId
+    { unparameterizedIdName     :: String
+    , unparameterizedIdLocation :: AstLocation
+    }
+toUnparameterizedId :: Id level -> UnparameterizedId
+toUnparameterizedId Id {getId = name, idLocation = location} =
+    UnparameterizedId
+        { unparameterizedIdName = name
+        , unparameterizedIdLocation = location
+        }
 
-definedNamesForSentence :: KoreSentence -> [String]
-definedNamesForSentence (MetaSentence (SentenceAliasSentence sentenceAlias)) =
-    [ getId (getSentenceSymbolOrAliasConstructor sentenceAlias) ]
-definedNamesForSentence (ObjectSentence (SentenceAliasSentence sentenceAlias)) =
-    [ getId (getSentenceSymbolOrAliasConstructor sentenceAlias) ]
-definedNamesForSentence (MetaSentence (SentenceSymbolSentence sentenceSymbol)) =
-    [ getId (getSentenceSymbolOrAliasConstructor sentenceSymbol) ]
-definedNamesForSentence (ObjectSentence (SentenceSymbolSentence sentenceSymbol)) =
-    [ getId (getSentenceSymbolOrAliasConstructor sentenceSymbol) ]
-definedNamesForSentence (ObjectSentence (SentenceSortSentence sentenceSort)) =
-    [sentenceName, metaNameForObjectSort sentenceName]
-  where sentenceName = getId (sentenceSortName sentenceSort)
-definedNamesForSentence (MetaSentence (SentenceImportSentence _)) = []
-definedNamesForSentence (MetaSentence (SentenceAxiomSentence _)) = []
+verifyUniqueId
+    :: Map.Map String AstLocation
+    -> UnparameterizedId
+    -> Either (Error VerifyError) (Map.Map String AstLocation)
+verifyUniqueId existing (UnparameterizedId name location) =
+    case Map.lookup name existing of
+        Just location' ->
+            koreFailWithLocations [location, location']
+                ("Duplicated name: '" ++ name ++ "'.")
+        _ -> Right (Map.insert name location existing)
+
+definedNamesForSentence :: KoreSentence -> [UnparameterizedId]
+definedNamesForSentence =
+    applyUnifiedSentence
+        definedNamesForMetaSentence
+        definedNamesForObjectSentence
+
+definedNamesForMetaSentence
+    :: Sentence Meta sortParam pat variable -> [UnparameterizedId]
+definedNamesForMetaSentence (SentenceAliasSentence sentenceAlias) =
+    [ toUnparameterizedId (getSentenceSymbolOrAliasConstructor sentenceAlias) ]
+definedNamesForMetaSentence (SentenceSymbolSentence sentenceSymbol) =
+    [ toUnparameterizedId (getSentenceSymbolOrAliasConstructor sentenceSymbol) ]
+definedNamesForMetaSentence (SentenceImportSentence _) = []
+definedNamesForMetaSentence (SentenceAxiomSentence _)  = []
+
+definedNamesForObjectSentence
+    :: Sentence Object sortParam pat variable -> [UnparameterizedId]
+definedNamesForObjectSentence (SentenceAliasSentence sentenceAlias) =
+    [ toUnparameterizedId (getSentenceSymbolOrAliasConstructor sentenceAlias) ]
+definedNamesForObjectSentence (SentenceSymbolSentence sentenceSymbol) =
+    [ toUnparameterizedId (getSentenceSymbolOrAliasConstructor sentenceSymbol) ]
+definedNamesForObjectSentence (SentenceSortSentence sentenceSort) =
+    [ sentenceName
+    , UnparameterizedId
+        { unparameterizedIdName =
+            metaNameForObjectSort (unparameterizedIdName sentenceName)
+        , unparameterizedIdLocation =
+            AstLocationLifted (unparameterizedIdLocation sentenceName)
+        }
+    ]
+  where sentenceName = toUnparameterizedId (sentenceSortName sentenceSort)
+definedNamesForObjectSentence
+    (SentenceHookSentence (SentenceHookedSort sentence))
+  = definedNamesForObjectSentence (SentenceSortSentence sentence)
+definedNamesForObjectSentence
+    (SentenceHookSentence (SentenceHookedSymbol sentence))
+  = definedNamesForObjectSentence (SentenceSymbolSentence sentence)
 
 {-|'verifySentences' verifies the welformedness of a list of Kore 'Sentence's.
 -}
@@ -83,74 +123,107 @@ verifySentence
     -> AttributesVerification
     -> KoreSentence
     -> Either (Error VerifyError) VerifySuccess
-verifySentence
+verifySentence indexedModule attributesVerification =
+    applyUnifiedSentence
+        (verifyMetaSentence indexedModule attributesVerification)
+        (verifyObjectSentence indexedModule attributesVerification)
+
+verifyMetaSentence
+    :: KoreIndexedModule
+    -> AttributesVerification
+    -> Sentence Meta UnifiedSortVariable UnifiedPattern Variable
+    -> Either (Error VerifyError) VerifySuccess
+verifyMetaSentence
     indexedModule
     attributesVerification
-    (MetaSentence (SentenceAliasSentence aliasSentence))
+    (SentenceAliasSentence aliasSentence)
   =
     verifySymbolAliasSentence
-        (resolveMetaSort indexedModule)
+        (resolveSort indexedModule)
         indexedModule
         attributesVerification
         aliasSentence
-verifySentence
+verifyMetaSentence
     indexedModule
     attributesVerification
-    (ObjectSentence (SentenceAliasSentence aliasSentence))
+    (SentenceSymbolSentence symbolSentence)
   =
     verifySymbolAliasSentence
-        (resolveObjectSort indexedModule)
-        indexedModule
-        attributesVerification
-        aliasSentence
-verifySentence
-    indexedModule
-    attributesVerification
-    (MetaSentence (SentenceSymbolSentence symbolSentence))
-  =
-    verifySymbolAliasSentence
-        (resolveMetaSort indexedModule)
+        (resolveSort indexedModule)
         indexedModule
         attributesVerification
         symbolSentence
-verifySentence
+verifyMetaSentence
     indexedModule
     attributesVerification
-    (ObjectSentence (SentenceSymbolSentence symbolSentence))
-  =
-    verifySymbolAliasSentence
-        (resolveObjectSort indexedModule)
-        indexedModule
-        attributesVerification
-        symbolSentence
-verifySentence
-    indexedModule
-    attributesVerification
-    (MetaSentence (SentenceAxiomSentence axiomSentence))
+    (SentenceAxiomSentence axiomSentence)
   =
     verifyAxiomSentence axiomSentence indexedModule attributesVerification
-verifySentence
-    indexedModule
-    attributesVerification
-    (ObjectSentence (SentenceSortSentence sortSentence))
-  =
-    verifySortSentence sortSentence indexedModule attributesVerification
-verifySentence _ _ (MetaSentence (SentenceImportSentence _)) =
+verifyMetaSentence _ _ (SentenceImportSentence _) =
     -- Since we have an IndexedModule, we assume that imports were already
     -- resolved, so there is nothing left to verify here.
     verifySuccess
+
+verifyObjectSentence
+    :: KoreIndexedModule
+    -> AttributesVerification
+    -> Sentence Object UnifiedSortVariable UnifiedPattern Variable
+    -> Either (Error VerifyError) VerifySuccess
+verifyObjectSentence
+    indexedModule
+    attributesVerification
+    (SentenceAliasSentence aliasSentence)
+  =
+    verifySymbolAliasSentence
+        (resolveSort indexedModule)
+        indexedModule
+        attributesVerification
+        aliasSentence
+verifyObjectSentence
+    indexedModule
+    attributesVerification
+    (SentenceSymbolSentence symbolSentence)
+  =
+    verifySymbolAliasSentence
+        (resolveSort indexedModule)
+        indexedModule
+        attributesVerification
+        symbolSentence
+verifyObjectSentence
+    _
+    attributesVerification
+    (SentenceSortSentence sortSentence)
+  =
+    verifySortSentence sortSentence attributesVerification
+verifyObjectSentence
+    _
+    attributesVerification
+    (SentenceHookSentence (SentenceHookedSort sortSentence))
+  =
+    verifySortSentence sortSentence attributesVerification
+verifyObjectSentence
+    indexedModule
+    attributesVerification
+    (SentenceHookSentence (SentenceHookedSymbol symbolSentence))
+  =
+    verifySymbolAliasSentence
+        (resolveSort indexedModule)
+        indexedModule
+        attributesVerification
+        symbolSentence
 
 verifySymbolAliasSentence
     :: (MetaOrObject level, SentenceSymbolOrAlias ssa)
     => (Id level -> Either (Error VerifyError) (SortDescription level))
     -> KoreIndexedModule
     -> AttributesVerification
-    -> ssa level FixedPattern Variable
+    -> ssa level UnifiedPattern Variable
     -> Either (Error VerifyError) VerifySuccess
 verifySymbolAliasSentence
-    findSortDeclaration indexedModule attributesVerification sentence
+    findSortDeclaration _ attributesVerification sentence
   =
-    withContext
+    withLocationAndContext
+        (getSentenceSymbolOrAliasConstructor sentence)
         (  getSentenceSymbolOrAliasSentenceName sentence
         ++ " '"
         ++ getId (getSentenceSymbolOrAliasConstructor sentence)
@@ -167,8 +240,6 @@ verifySymbolAliasSentence
                 (getSentenceSymbolOrAliasResultSort sentence)
             verifyAttributes
                 (getSentenceSymbolOrAliasAttributes sentence)
-                indexedModule
-                variables
                 attributesVerification
         )
   where
@@ -193,26 +264,22 @@ verifyAxiomSentence axiom indexedModule attributesVerification =
                 variables
             verifyAttributes
                 (sentenceAxiomAttributes axiom)
-                indexedModule
-                variables
                 attributesVerification
         )
 
 verifySortSentence
     :: KoreSentenceSort
-    -> KoreIndexedModule
     -> AttributesVerification
     -> Either (Error VerifyError) VerifySuccess
-verifySortSentence sentenceSort indexedModule attributesVerification =
-    withContext
+verifySortSentence sentenceSort attributesVerification =
+    withLocationAndContext
+        (sentenceSortName sentenceSort)
         ("sort '" ++ getId (sentenceSortName sentenceSort) ++ "' declaration")
         (do
-            variables <-
+            _ <-
                 buildDeclaredSortVariables (sentenceSortParameters sentenceSort)
             verifyAttributes
                 (sentenceSortAttributes sentenceSort)
-                indexedModule
-                variables
                 attributesVerification
         )
 
@@ -230,13 +297,15 @@ buildDeclaredUnifiedSortVariables
 buildDeclaredUnifiedSortVariables [] = Right Set.empty
 buildDeclaredUnifiedSortVariables (unifiedVariable : list) = do
     variables <- buildDeclaredUnifiedSortVariables list
-    koreFailWhen (unifiedVariable `Set.member` variables)
-                (  "Duplicated sort variable: '"
-                ++ extractVariableName unifiedVariable
-                ++ "'.")
+    koreFailWithLocationsWhen
+        (unifiedVariable `Set.member` variables)
+        [unifiedVariable]
+        (  "Duplicated sort variable: '"
+        ++ extractVariableName unifiedVariable
+        ++ "'.")
     return (Set.insert unifiedVariable variables)
   where
-    extractVariableName (ObjectSortVariable variable) =
+    extractVariableName (UnifiedObject variable) =
         getId (getSortVariable variable)
-    extractVariableName (MetaSortVariable variable) =
+    extractVariableName (UnifiedMeta variable) =
         getId (getSortVariable variable)

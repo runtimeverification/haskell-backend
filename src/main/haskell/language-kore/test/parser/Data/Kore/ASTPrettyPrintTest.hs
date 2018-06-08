@@ -8,6 +8,7 @@ import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.Implicit.ImplicitSorts (charMetaSort)
+import           Data.Kore.KoreHelpers
 import           Data.Kore.MetaML.AST
 
 import           Data.Fix                         (Fix (..))
@@ -22,43 +23,43 @@ astPrettyPrintTests =
             )
         , testCase "Meta unified variable"
             (assertEqual ""
-                (  "MetaVariable Variable\n"
-                ++ "    { variableName = Id Meta \"#v\"\n"
+                (  "UnifiedMeta Variable\n"
+                ++ "    { variableName = (Id \"#v\" AstLocationNone) :: Id Meta\n"
                 ++ "    , variableSort =\n"
-                ++ "        SortVariableSort (SortVariable (Id Meta \"#sv\"))\n"
+                ++ "        SortVariableSort (SortVariable ((Id \"#sv\" AstLocationNone) :: Id Meta))\n"
                 ++ "    }"
                 )
                 (prettyPrintToString
-                    (MetaVariable Variable
-                        { variableName = Id "#v"
+                    (UnifiedMeta Variable
+                        { variableName = testId "#v"
                         , variableSort =
-                            SortVariableSort (SortVariable (Id "#sv"))
+                            SortVariableSort (SortVariable (testId "#sv"))
                         }
                     )
                 )
             )
         , testCase "Object unified variable"
             (assertEqual ""
-                (  "ObjectVariable Variable\n"
-                ++ "    { variableName = Id Object \"v\"\n"
+                (  "UnifiedObject Variable\n"
+                ++ "    { variableName = (Id \"v\" AstLocationNone) :: Id Object\n"
                 ++ "    , variableSort =\n"
-                ++ "        SortVariableSort (SortVariable (Id Object \"sv\"))\n"
+                ++ "        SortVariableSort (SortVariable ((Id \"sv\" AstLocationNone) :: Id Object))\n"
                 ++ "    }"
                 )
                 (prettyPrintToString
-                    (ObjectVariable Variable
-                        { variableName = Id "v"
+                    (UnifiedObject Variable
+                        { variableName = testId "v"
                         , variableSort =
-                            SortVariableSort (SortVariable (Id "sv"))
+                            SortVariableSort (SortVariable (testId "sv"))
                         }
                     )
                 )
             )
         , testCase "Maybe - Just"
             (assertEqual ""
-                "Just (Id Object \"v\")"
+                "Just ((Id \"v\" AstLocationNone) :: Id Object)"
                 (prettyPrintToString
-                    (Just (Id "v" :: Id Object))
+                    (Just (testId "v" :: Id Object))
                 )
             )
         , testCase "Maybe - Nothing"
@@ -69,7 +70,7 @@ astPrettyPrintTests =
             , testCase "MetaMLPattern - Top"
             (assertEqual ""
                 (  "Fix (TopPattern (Top (SortActualSort SortActual\n"
-                ++ "    { sortActualName = Id Meta \"#Char\"\n"
+                ++ "    { sortActualName = (Id \"#Char\" AstLocationNone) :: Id Meta\n"
                 ++ "    , sortActualSorts = []\n"
                 ++ "    })))"
                 )
@@ -79,21 +80,8 @@ astPrettyPrintTests =
                     )
                 )
             )
-        , testCase "SentenceMetaPattern - Top"
-            (assertEqual ""
-                (  "SentenceMetaPattern (Fix (TopPattern (Top (SortActualSort SortActual\n"
-                ++ "    { sortActualName = Id Meta \"#Char\"\n"
-                ++ "    , sortActualSorts = []\n"
-                ++ "    }))))"
-                )
-                (prettyPrintToString
-                    (SentenceMetaPattern (Fix (TopPattern (Top charMetaSort)))
-                    :: SentenceMetaPattern Variable
-                    )
-                )
-            )
         ]
 
 prettyPrintPattern
-    :: MetaOrObject level => Pattern level Variable UnifiedPattern -> String
+    :: MetaOrObject level => Pattern level Variable CommonKorePattern -> String
 prettyPrintPattern = prettyPrintToString

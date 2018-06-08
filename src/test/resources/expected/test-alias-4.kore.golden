@@ -7,14 +7,14 @@ Definition
                 [ ObjectSentence (SentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias =
                         Alias
-                            { aliasConstructor = Id Object "f"
+                            { aliasConstructor = (Id "f" AstLocationNone) :: Id Object
                             , aliasParams =
-                                [ SortVariable (Id Object "S")
+                                [ SortVariable ((Id "S" AstLocationNone) :: Id Object)
                                 ]
                             }
                     , sentenceAliasSorts = []
                     , sentenceAliasReturnSort =
-                        SortVariableSort (SortVariable (Id Object "S"))
+                        SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                     , sentenceAliasAttributes = Attributes []
                     })
                 ]

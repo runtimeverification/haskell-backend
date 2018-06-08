@@ -13,7 +13,7 @@ object KoreToText {
     apply(d.att) +
     System.lineSeparator() +
     System.lineSeparator() +
-    apply(d.module) +
+    d.modules.map(m => apply(m)).mkString(System.lineSeparator()) +
     System.lineSeparator() +
     System.lineSeparator()
   }
@@ -32,8 +32,8 @@ object KoreToText {
   /** Returns a string from [[kore.Declaration]]. */
   def apply(d: Declaration): String = d match {
 
-    // case Import(ModuleName(name), att) =>
-    //   "import " + apply(name) + " " + apply(att)
+    case Import(name, att) =>
+      "import " + " " + apply(name) + " " + apply(att)
 
     case SortDeclaration(params, sort, att) =>
       "sort" +
@@ -42,8 +42,25 @@ object KoreToText {
       " " +
       apply(att)
 
+    case HookSortDeclaration(params, sort, att) =>
+      "hooked-sort" +
+      " " +
+      apply(sort) +
+      " " +
+      apply(att)
+
     case SymbolDeclaration(symbol, argSorts, returnSort, att) =>
       "symbol " +
+       apply(symbol) +
+       "(" +
+       argSorts.map(s => apply(s)).mkString(",") +
+       ") : " +
+       apply(returnSort) +
+       " " +
+       apply(att)
+
+    case HookSymbolDeclaration(symbol, argSorts, returnSort, att) =>
+      "hooked-symbol " +
       apply(symbol) +
       "(" +
       argSorts.map(s => apply(s)).mkString(",") +
@@ -143,6 +160,9 @@ object KoreToText {
     case Mem(s, rs, p, q) =>
       "\\in" + "{" + apply(s) + "," + apply(rs) + "}" +
         "(" + apply(p) + "," + apply(q) + ")"
+    case DomainValue(s, str) =>
+      "\\dv" + "{" + apply(s) + "}" +
+        "(\"" + str + "\")"
     // case Subset(s, rs, p, q) =>
     //   "\\subset" + "{" + apply(s) + "," + apply(rs) + "}" +
     //     "(" + apply(p) + "," + apply(q) + ")"

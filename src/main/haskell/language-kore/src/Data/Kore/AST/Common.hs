@@ -5,7 +5,11 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
 {-# LANGUAGE KindSignatures         #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE RankNTypes             #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE StandaloneDeriving     #-}
+{-# LANGUAGE UndecidableInstances   #-}
 {-|
 Module      : Data.Kore.AST.Common
 Description : Data Structures for representing the Kore language AST that do not
@@ -30,13 +34,56 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Data.Kore.AST.Common where
 
-import           Data.Typeable (Typeable)
+import           Data.Fix
+import           Data.Proxy
 
-data Meta = Meta
-    deriving (Show, Eq, Ord, Typeable)
+import           Data.Kore.AST.MetaOrObject
 
-data Object = Object
-    deriving (Show, Eq, Ord, Typeable)
+{-| 'FileLocation' represents a position in a source file.
+-}
+data FileLocation = FileLocation
+    { fileName :: FilePath
+    , line     :: Int
+    , column   :: Int
+    }
+    deriving Show
+
+{-| 'AstLocation' represents the origin of an AST node.
+
+Its representation may change, e.g. the `AstLocationFile` branch could become a
+range instead of a single character position. You should treat the entire
+AstLocation as much as possible as an opaque token, i.e. hopefully only
+the kore parsing code and pretty printing code below would access
+the AstLocationFile branch.
+-}
+data AstLocation
+    = AstLocationNone
+    | AstLocationImplicit
+    | AstLocationGeneratedVariable
+    | AstLocationTest
+    | AstLocationFile FileLocation
+    | AstLocationLifted AstLocation
+    deriving Show
+
+{-| 'prettyPrintAstLocation' displays an `AstLocation` in a way that's
+(sort of) user friendly.
+-}
+prettyPrintAstLocation :: AstLocation -> String
+prettyPrintAstLocation AstLocationNone = "<unknown location>"
+prettyPrintAstLocation AstLocationImplicit = "<implicitly defined entity>"
+prettyPrintAstLocation AstLocationGeneratedVariable =
+    "<variable generated internally>"
+prettyPrintAstLocation AstLocationTest = "<test data>"
+prettyPrintAstLocation
+    (AstLocationFile FileLocation
+        { fileName = name
+        , line = line'
+        , column = column'
+        }
+    )
+    = name ++ " " ++ show line' ++ ":" ++ show column'
+prettyPrintAstLocation (AstLocationLifted location) =
+    "<lifted(" ++ prettyPrintAstLocation location ++ ")>"
 
 {-|'Id' corresponds to the @object-identifier@ and @meta-identifier@
 syntactic categories from the Semantics of K, Section 9.1.1 (Lexicon).
@@ -46,9 +93,30 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 
 We may chage the Id's representation in the future so one should treat it as
 an opaque entity as much as possible.
+
+Note that Id comparison ignores the AstLocation.
 -}
-newtype Id level = Id { getId :: String }
-    deriving (Show, Eq, Ord, Typeable)
+data Id level = Id
+    { getId      :: !String
+    , idLocation :: !AstLocation
+    }
+    deriving Show
+instance Ord (Id level) where
+    compare first@(Id _ _) second@(Id _ _) =
+        compare (getId first) (getId second)
+{-# ANN module "HLint: ignore Redundant compare" #-}
+instance Eq (Id level) where
+    first == second = compare first second == EQ
+
+{-| 'noLocationId' creates an Id without a source location. While there are some
+narrow cases where this makes sense, you should really consider other options
+(including adding a new entry to the `AstLocation` data definition).
+-}
+noLocationId :: String -> Id level
+noLocationId value = Id
+    { getId = value
+    , idLocation = AstLocationNone
+    }
 
 {-|'StringLiteral' corresponds to the @string@ literal from the Semantics of K,
 Section 9.1.1 (Lexicon).
@@ -73,7 +141,7 @@ data SymbolOrAlias level = SymbolOrAlias
     { symbolOrAliasConstructor :: !(Id level)
     , symbolOrAliasParams      :: ![Sort level]
     }
-    deriving (Show, Eq, Ord, Typeable)
+    deriving (Show, Eq, Ord)
 
 {-|'Symbol' corresponds to the
 @object-head-constructor{object-sort-variable-list}@ part of the
@@ -89,7 +157,7 @@ data Symbol level = Symbol
     { symbolConstructor :: !(Id level)
     , symbolParams      :: ![SortVariable level]
     }
-    deriving (Show, Eq, Ord, Typeable)
+    deriving (Show, Eq, Ord)
 
 {-|'Alias' corresponds to the
 @object-head-constructor{object-sort-variable-list}@ part of the
@@ -105,7 +173,7 @@ data Alias level = Alias
     { aliasConstructor :: !(Id level)
     , aliasParams      :: ![SortVariable level]
     }
-    deriving (Show, Eq, Ord, Typeable)
+    deriving (Show, Eq, Ord)
 
 {-|'SortVariable' corresponds to the @object-sort-variable@ and
 @meta-sort-variable@ syntactic categories from the Semantics of K,
@@ -116,7 +184,7 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
 newtype SortVariable level = SortVariable
     { getSortVariable  :: Id level }
-    deriving (Show, Eq, Ord, Typeable)
+    deriving (Show, Eq, Ord)
 
 {-|'SortActual' corresponds to the @sort-constructor{sort-list}@ branch of the
 @object-sort@ and @meta-sort@ syntactic categories from the Semantics of K,
@@ -129,7 +197,7 @@ data SortActual level = SortActual
     { sortActualName  :: !(Id level)
     , sortActualSorts :: ![Sort level]
     }
-    deriving (Show, Eq, Ord, Typeable)
+    deriving (Show, Eq, Ord)
 
 {-|'Sort' corresponds to the @object-sort@ and
 @meta-sort@ syntactic categories from the Semantics of K,
@@ -141,7 +209,7 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 data Sort level
     = SortVariableSort !(SortVariable level)
     | SortActualSort !(SortActual level)
-    deriving (Show, Eq, Ord, Typeable)
+    deriving (Show, Eq, Ord)
 
 {-|'MetaSortType' corresponds to the @meta-sort-constructor@ syntactic category
 from the Semantics of K, Section 9.1.2 (Sorts).
@@ -205,7 +273,7 @@ data Variable level = Variable
     { variableName :: !(Id level)
     , variableSort :: !(Sort level)
     }
-    deriving (Show, Eq, Ord, Typeable)
+    deriving (Show, Eq, Ord)
 
 {-|Enumeration of patterns starting with @\@
 -}
@@ -283,7 +351,7 @@ data And level child = And
     , andFirst  :: !child
     , andSecond :: !child
     }
-    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
+    deriving (Eq, Show, Functor, Foldable, Traversable)
 
 {-|'Application' corresponds to the @head(pattern-list)@ branches of the
 @object-pattern@ and @meta-pattern@ syntactic categories from
@@ -298,7 +366,7 @@ data Application level child = Application
     { applicationSymbolOrAlias :: !(SymbolOrAlias level)
     , applicationChildren      :: ![child]
     }
-    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
+    deriving (Eq, Show, Functor, Foldable, Traversable)
 
 {-|'Bottom' corresponds to the @\bottom@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -312,7 +380,7 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 This represents the ⌈BottomPattern⌉ Matching Logic construct.
 -}
 newtype Bottom level child = Bottom { bottomSort :: Sort level}
-    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
+    deriving (Eq, Show, Functor, Foldable, Traversable)
 
 {-|'Ceil' corresponds to the @\ceil@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -332,7 +400,7 @@ data Ceil level child = Ceil
     , ceilResultSort  :: !(Sort level)
     , ceilChild       :: !child
     }
-    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
+    deriving (Eq, Show, Functor, Foldable, Traversable)
 
 {-|'DomainValue' corresponds to the @\dv@ branch of the @object-pattern@
 syntactic category, which are not yet in the Semantics of K document,
@@ -353,7 +421,7 @@ data DomainValue level child = DomainValue
     { domainValueSort  :: !(Sort level)
     , domainValueChild :: !child
     }
-    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
+    deriving (Eq, Show, Functor, Foldable, Traversable)
 
 {-|'Equals' corresponds to the @\equals@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -374,7 +442,7 @@ data Equals level child = Equals
     , equalsFirst       :: !child
     , equalsSecond      :: !child
     }
-    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
+    deriving (Eq, Show, Functor, Foldable, Traversable)
 
 {-|'Exists' corresponds to the @\exists@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -392,7 +460,7 @@ data Exists level v child = Exists
     , existsVariable :: !(v level)
     , existsChild    :: !child
     }
-    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
+    deriving (Eq, Show, Functor, Foldable, Traversable)
 
 {-|'Floor' corresponds to the @\floor@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -412,7 +480,7 @@ data Floor level child = Floor
     , floorResultSort  :: !(Sort level)
     , floorChild       :: !child
     }
-    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
+    deriving (Eq, Show, Functor, Foldable, Traversable)
 
 {-|'Forall' corresponds to the @\forall@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -430,7 +498,7 @@ data Forall level v child = Forall
     , forallVariable :: !(v level)
     , forallChild    :: !child
     }
-    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
+    deriving (Eq, Show, Functor, Foldable, Traversable)
 
 {-|'Iff' corresponds to the @\iff@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -448,7 +516,7 @@ data Iff level child = Iff
     , iffFirst  :: !child
     , iffSecond :: !child
     }
-    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
+    deriving (Eq, Show, Functor, Foldable, Traversable)
 
 {-|'Implies' corresponds to the @\implies@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -466,7 +534,7 @@ data Implies level child = Implies
     , impliesFirst  :: !child
     , impliesSecond :: !child
     }
-    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
+    deriving (Eq, Show, Functor, Foldable, Traversable)
 
 {-|'In' corresponds to the @\in@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -490,7 +558,7 @@ data In level child = In
     , inContainedChild  :: !child
     , inContainingChild :: !child
     }
-    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
+    deriving (Eq, Show, Functor, Foldable, Traversable)
 
 
 {-|'Next' corresponds to the @\next@ branch of the @object-pattern@
@@ -508,7 +576,7 @@ data Next level child = Next
     { nextSort  :: !(Sort level)
     , nextChild :: !child
     }
-    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
+    deriving (Eq, Show, Functor, Foldable, Traversable)
 
 {-|'Not' corresponds to the @\not@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -525,7 +593,7 @@ data Not level child = Not
     { notSort  :: !(Sort level)
     , notChild :: !child
     }
-    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
+    deriving (Eq, Show, Functor, Foldable, Traversable)
 
 {-|'Or' corresponds to the @\or@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -543,7 +611,7 @@ data Or level child = Or
     , orFirst  :: !child
     , orSecond :: !child
     }
-    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
+    deriving (Eq, Show, Functor, Foldable, Traversable)
 
 {-|'Rewrites' corresponds to the @\rewrites@ branch of the @object-pattern@
 syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
@@ -562,7 +630,7 @@ data Rewrites level child = Rewrites
     , rewritesFirst  :: !child
     , rewritesSecond :: !child
     }
-    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
+    deriving (Eq, Show, Functor, Foldable, Traversable)
 
 {-|'Top' corresponds to the @\top@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -576,7 +644,7 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 This represents the ⌈TopPattern⌉ Matching Logic construct.
 -}
 newtype Top level child = Top { topSort :: Sort level}
-    deriving (Eq, Show, Typeable, Functor, Foldable, Traversable)
+    deriving (Eq, Show, Functor, Foldable, Traversable)
 
 {-|'Pattern' corresponds to the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -629,7 +697,6 @@ data Pattern level variable child where
         :: !(Top level child) -> Pattern level variable child
     VariablePattern
         :: !(variable level) -> Pattern level variable child
-  deriving (Typeable)
 
 deriving instance
     ( Eq child
@@ -647,8 +714,15 @@ deriving instance Traversable (Pattern level variable)
 It is parameterized by the types of Patterns, @pat@.
 -}
 newtype Attributes pat (variable :: * -> *) =
-    Attributes { getAttributes :: [pat variable] }
-  deriving (Eq, Show)
+    Attributes { getAttributes :: [Fix (pat variable)] }
+
+deriving instance
+    (Eq (pat variable (Fix (pat variable))))
+     => Eq (Attributes pat variable)
+
+deriving instance
+    (Show (pat variable (Fix (pat variable))))
+     => Show (Attributes pat variable)
 
 {-|'SentenceAlias' corresponds to the @object-alias-declaration@ and
 @meta-alias-declaration@ syntactic categories from the Semantics of K,
@@ -663,7 +737,14 @@ data SentenceAlias level pat variable = SentenceAlias
     , sentenceAliasResultSort :: !(Sort level)
     , sentenceAliasAttributes :: !(Attributes pat variable)
     }
-    deriving (Eq, Show, Typeable)
+
+deriving instance
+    (Eq (pat variable (Fix (pat variable))))
+     => Eq (SentenceAlias level pat variable)
+
+deriving instance
+    (Show (pat variable (Fix (pat variable))))
+     => Show (SentenceAlias level pat variable)
 
 {-|'SentenceSymbol' corresponds to the @object-symbol-declaration@ and
 @meta-symbol-declaration@ syntactic categories from the Semantics of K,
@@ -678,7 +759,14 @@ data SentenceSymbol level pat variable = SentenceSymbol
     , sentenceSymbolResultSort :: !(Sort level)
     , sentenceSymbolAttributes :: !(Attributes pat variable)
     }
-    deriving (Eq, Show, Typeable)
+
+deriving instance
+    (Eq (pat variable (Fix (pat variable))))
+     => Eq (SentenceSymbol level pat variable)
+
+deriving instance
+    (Show (pat variable (Fix (pat variable))))
+     => Show (SentenceSymbol level pat variable)
 
 {-|'ModuleName' corresponds to the @module-name@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
@@ -693,7 +781,14 @@ data SentenceImport pat variable = SentenceImport
     { sentenceImportModuleName :: !ModuleName
     , sentenceImportAttributes :: !(Attributes pat variable)
     }
-    deriving (Eq, Show, Typeable)
+
+deriving instance
+    (Eq (pat variable (Fix (pat variable))))
+     => Eq (SentenceImport pat variable)
+
+deriving instance
+    (Show (pat variable (Fix (pat variable))))
+     => Show (SentenceImport pat variable)
 
 {-|'SentenceSort' corresponds to the @sort-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
@@ -703,17 +798,50 @@ data SentenceSort level pat variable = SentenceSort
     , sentenceSortParameters :: ![SortVariable level]
     , sentenceSortAttributes :: !(Attributes pat variable)
     }
-    deriving (Eq, Show)
+
+deriving instance
+    (Eq (pat variable (Fix (pat variable))))
+     => Eq (SentenceSort level pat variable)
+
+deriving instance
+    (Show (pat variable (Fix (pat variable))))
+     => Show (SentenceSort level pat variable)
 
 {-|'SentenceAxiom' corresponds to the @axiom-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
 data SentenceAxiom sortParam pat variable = SentenceAxiom
     { sentenceAxiomParameters :: ![sortParam]
-    , sentenceAxiomPattern    :: !(pat variable)
+    , sentenceAxiomPattern    :: !(Fix (pat variable))
     , sentenceAxiomAttributes :: !(Attributes pat variable)
     }
-    deriving (Eq, Show)
+
+deriving instance
+    ( Eq (pat variable (Fix (pat variable)))
+    , Eq sortParam
+    )  => Eq (SentenceAxiom sortParam pat variable)
+
+deriving instance
+    ( Show (pat variable (Fix (pat variable)))
+    , Show sortParam
+    ) => Show (SentenceAxiom sortParam pat variable)
+
+{-|@SentenceHook@ corresponds to @hook-declaration@ syntactic category
+from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
+Note that we are reusing the 'SentenceSort' and 'SentenceSymbol' structures to
+represent hooked sorts and hooked symbols.
+-}
+data SentenceHook level pat variable
+    = SentenceHookedSort !(SentenceSort level pat variable)
+    | SentenceHookedSymbol !(SentenceSymbol level pat variable)
+
+deriving instance
+    (Eq (pat variable (Fix (pat variable))))
+     => Eq (SentenceHook level pat variable)
+
+deriving instance
+    (Show (pat variable (Fix (pat variable))))
+     => Show (SentenceHook level pat variable)
 
 {-|The 'Sentence' type corresponds to the @declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
@@ -741,13 +869,17 @@ data Sentence level sortParam pat variable where
     SentenceSortSentence
         :: !(SentenceSort Object pat variable)
         -> Sentence Object sortParam pat variable
+    SentenceHookSentence
+        :: !(SentenceHook Object pat variable)
+        -> Sentence Object sortParam pat variable
 
 deriving instance
-    ( Eq (pat variable)
+    ( Eq (pat variable (Fix (pat variable)))
     , Eq sortParam
     ) => Eq (Sentence level sortParam pat variable)
+
 deriving instance
-    ( Show (pat variable)
+    ( Show (pat variable (Fix (pat variable)))
     , Show sortParam
     ) => Show (Sentence level sortParam pat variable)
 
@@ -763,7 +895,16 @@ data Module sentence sortParam pat variable = Module
     , moduleSentences  :: ![sentence sortParam pat variable]
     , moduleAttributes :: !(Attributes pat variable)
     }
-    deriving (Eq, Show)
+
+deriving instance
+    ( Eq (pat variable (Fix (pat variable)))
+    , Eq (sentence sortParam pat variable)
+    ) => Eq (Module sentence sortParam pat variable)
+
+deriving instance
+    ( Show (pat variable (Fix (pat variable)))
+    , Show (sentence sortParam pat variable)
+    ) => Show (Module sentence sortParam pat variable)
 
 {-|Currently, a 'Definition' consists of some 'Attributes' and a 'Module'
 
@@ -778,7 +919,16 @@ data Definition sentence sortParam pat variable = Definition
     { definitionAttributes :: !(Attributes pat variable)
     , definitionModules    :: ![Module sentence sortParam pat variable]
     }
-    deriving (Eq, Show)
+
+deriving instance
+    ( Eq (pat variable (Fix (pat variable)))
+    , Eq (sentence sortParam pat variable)
+    ) => Eq (Definition sentence sortParam pat variable)
+
+deriving instance
+    ( Show (pat variable (Fix (pat variable)))
+    , Show (sentence sortParam pat variable)
+    ) => Show (Definition sentence sortParam pat variable)
 
 class SentenceSymbolOrAlias sentence where
     getSentenceSymbolOrAliasConstructor
@@ -859,3 +1009,66 @@ withSort
                 ++ show existingSort
                 ++ "."
                 )
+
+{-|'dummySort' is used in error messages when we want to convert an
+'UnsortedPatternStub' to a pattern that can be displayed.
+-}
+dummySort :: MetaOrObject level => proxy level -> Sort level
+dummySort proxy =
+    SortVariableSort
+        (SortVariable
+            (noLocationId
+                (case isMetaOrObject proxy of
+                    IsMeta   -> "#dummy"
+                    IsObject -> "dummy"
+                )
+            )
+        )
+
+{-|'getMetaOrObjectPatternType' is a helper function useful to determine
+whether a 'Pattern' is 'Object' or 'Meta'.
+-}
+getMetaOrObjectPatternType
+    :: MetaOrObject level
+    => Pattern level variable child -> IsMetaOrObject level
+getMetaOrObjectPatternType _ = isMetaOrObject (Proxy :: Proxy level)
+
+{-|The 'UnifiedPatternInterface' class provides a common interface for
+algorithms providing common functionality for 'KorePattern' and 'PurePattern'.
+-}
+class UnifiedPatternInterface pat where
+    -- |View a 'Meta' 'Pattern' as the parameter @pat@ of the class.
+    unifyMetaPattern :: Pattern Meta variable child -> pat variable child
+    unifyMetaPattern = unifyPattern
+    -- |View an 'Object' 'Pattern' as the parameter @pat@ of the class.
+    unifyObjectPattern :: Pattern Object variable child -> pat variable child
+    unifyObjectPattern = unifyPattern
+    -- |View a 'Meta' or an 'Object' 'Pattern' as the parameter of the class.
+    unifyPattern
+        :: MetaOrObject level
+        => Pattern level variable child -> pat variable child
+    unifyPattern p =
+        case getMetaOrObjectPatternType p of
+            IsMeta   -> unifyMetaPattern p
+            IsObject -> unifyObjectPattern p
+    -- |Given a function appliable on all 'Meta' or 'Object' 'Pattern's,
+    -- apply it on an object of the parameter @pat@ of the class.
+    unifiedPatternApply
+        :: (forall level . MetaOrObject level
+            => Pattern level variable child -> result
+           )
+        -> (pat variable child -> result)
+
+instance
+    forall level . MetaOrObject level
+    => UnifiedPatternInterface (Pattern level)
+  where
+    unifyMetaPattern p =
+        case isMetaOrObject (Proxy :: Proxy level) of
+            IsMeta   -> p
+            IsObject -> error "Expecting Meta pattern"
+    unifyObjectPattern p =
+        case isMetaOrObject (Proxy :: Proxy level) of
+            IsObject -> p
+            IsMeta   -> error "Expecting Object pattern"
+    unifiedPatternApply = id

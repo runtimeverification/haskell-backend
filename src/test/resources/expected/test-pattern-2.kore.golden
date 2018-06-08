@@ -6,10 +6,10 @@ Definition
             , moduleSentences =
                 [ MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
-                        [ ObjectSortVariable (SortVariable (Id Object "S"))
+                        [ UnifiedObject (SortVariable ((Id "S" AstLocationNone) :: Id Object))
                         ]
                     , sentenceAxiomPattern =
-                        ObjectPattern (BottomPattern (Bottom (SortVariableSort (SortVariable (Id Object "S")))))
+                        Fix (UnifiedPattern (UnifiedObject (Rotate31 (BottomPattern (Bottom (SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))))))))
                     , sentenceAxiomAttributes = Attributes []
                     })
                 ]

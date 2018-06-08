@@ -1,4 +1,3 @@
-module Data.Kore.Implicit.ImplicitSortsImpl where
 {-|
 Module      : Data.Kore.Implicit.ImplicitSortsImpl
 Description : Infrastructure for defining the implicit Kore 'Meta' sorts.
@@ -8,14 +7,16 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
+module Data.Kore.Implicit.ImplicitSortsImpl where
 
+import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Implicit.ImplicitKoreImpl     (equalsAxiom,
                                                           parameterizedAxiom,
                                                           parameterizedEqualsAxiom)
 import           Data.Kore.Implicit.ImplicitVarsInternal
 import           Data.Kore.MetaML.AST
-import           Data.Kore.MetaML.Builders
 
 {-|'defineMetaSort' is a helper function for defining meta sorts together
 with their constructors, helper functions and axioms.
@@ -83,18 +84,34 @@ defineMetaSort sortType =
     listSortName =  metaSortTypeString listSortType
     objectSort = sort_ objectSortType
     listSort = sort_ listSortType
-    emptyList = symbol_ ("#nil" ++ listSortName) [] listSort
+    emptyList = symbol_ ("#nil" ++ listSortName) AstLocationImplicit [] listSort
     emptyListA = applyS emptyList []
     listConstructor =
-        symbol_ ("#cons" ++ listSortName) [objectSort, listSort] listSort
+        symbol_
+            ("#cons" ++ listSortName)
+            AstLocationImplicit
+            [objectSort, listSort]
+            listSort
     listConstructorA = applyS listConstructor
     append =
-        symbol_ ("#append" ++ listSortName) [listSort, listSort] listSort
+        symbol_
+            ("#append" ++ listSortName)
+            AstLocationImplicit
+            [listSort, listSort]
+            listSort
     appendA = applyS append
     inList =
         parameterizedSymbol_
-            ("#in" ++ listSortName) [pS] [objectSort, listSort] spS
+            ("#in" ++ listSortName)
+            AstLocationImplicit
+            [pS]
+            [objectSort, listSort]
+            spS
     inListA = applyPS inList
     delete =
-        symbol_ ("#delete" ++ listSortName) [objectSort, listSort] listSort
+        symbol_
+            ("#delete" ++ listSortName)
+            AstLocationImplicit
+            [objectSort, listSort]
+            listSort
     deleteA = applyS delete

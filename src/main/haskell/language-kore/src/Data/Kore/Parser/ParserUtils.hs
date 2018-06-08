@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 {-|
 Module      : Data.Kore.Parser.ParserUtils
 Description : Helper tools for parsing Kore. Meant for internal use only.
@@ -11,13 +13,16 @@ Helper tools for parsing Kore. Meant for internal use only.
 -}
 module Data.Kore.Parser.ParserUtils where
 
-import           Control.Applicative    (many, (<|>))
-import           Control.Monad          (void)
-import           Data.Functor           (($>))
-import           Text.Parsec            (parse)
-import qualified Text.Parsec.Char       as Parser
-import           Text.Parsec.Combinator (eof, lookAhead)
-import           Text.Parsec.String     (Parser)
+import           Control.Applicative   ((<|>))
+import           Control.Monad         (void)
+import           Data.Functor          (($>))
+import           Text.Megaparsec       (Parsec, eof, lookAhead, parse,
+                                        takeWhileP)
+import qualified Text.Megaparsec.Char  as Parser
+import           Text.Megaparsec.Error (ShowErrorComponent (..),
+                                        parseErrorPretty)
+
+type Parser = Parsec String String
 
 {-|'peekChar' is similar to Attoparsec's 'peekChar'. It returns the next
 available character in the input, without consuming it. Returns 'Nothing'
@@ -55,26 +60,29 @@ runScanner state delta = do
         Just s -> do
             c <- Parser.anyChar
             (reminder, finalState) <- runScanner s delta
-            return (c:reminder, finalState)
+            return (c :reminder, finalState)
 
 {-|'skipSpace' is similar to Attoparsec's 'skipSpace'. It consumes all
-characters until the first non-space one.
+characters until the first non-space one.  It does not skip comments.
 -}
 skipSpace :: Parser ()
-skipSpace = Parser.spaces
+skipSpace = Parser.space
 
 {-|'takeWhile' is similar to Attoparsec's 'takeWhile'. It consumes all
 the input characters that satisfy the given predicate and returns them
 as a string.
 -}
 takeWhile :: (Char -> Bool) -> Parser String
-takeWhile = many . Parser.satisfy
+takeWhile = takeWhileP Nothing
 
 {-|'endOfInput' is similar to Attoparsec's 'endOfInput'. It matches only the
 end-of-input position.
 -}
 endOfInput :: Parser ()
 endOfInput = eof
+
+instance ShowErrorComponent String where
+    showErrorComponent str = str
 
 {-|'parseOnly' is similar to Attoparsec's 'parseOnly'. It takes a parser,
 a FilePath that is used for generating error messages and an input string
@@ -83,8 +91,8 @@ and produces either a parsed object, or an error message.
 parseOnly :: Parser a -> FilePath -> String -> Either String a
 parseOnly parser filePathForErrors input =
     case parse parser filePathForErrors input of
-        Left err         -> Left (show err)
-        Right definition -> Right definition
+        Left err -> Left (parseErrorPretty err)
+        Right v  -> Right v
 
 {-|'manyUntilChar' parses a list of 'a' items.
 

@@ -8,23 +8,27 @@ import           Test.Tasty.HUnit                     (assertEqual, testCase)
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Substitution.Class
 import qualified Data.Kore.Substitution.List          as S
 import           Data.Kore.Variables.Fresh.IntCounter
 import           Data.Kore.Variables.Int
 
+import           Data.Kore.KoreHelpers
 import           Data.Kore.Substitution.TestCommon
 
 type UnifiedPatternSubstitution =
-    S.Substitution (UnifiedVariable Variable) UnifiedPattern
+    S.Substitution (Unified Variable) CommonKorePattern
 
-instance PatternSubstitutionClass Variable UnifiedPatternSubstitution IntCounter
+instance
+    PatternSubstitutionClass
+        S.Substitution Variable UnifiedPattern IntCounter
   where
 
 testSubstitute
-    :: UnifiedPattern
+    :: CommonKorePattern
     -> UnifiedPatternSubstitution
-    -> IntCounter UnifiedPattern
+    -> IntCounter CommonKorePattern
 testSubstitute = substitute
 
 substitutionClassTests :: TestTree
@@ -119,16 +123,16 @@ substitutionClassTests =
 metaVariableSubstitute :: Int -> Variable Meta
 metaVariableSubstitute = intVariable metaVariable
 
-metaVariableUnifiedPatternSubstitute :: Int -> UnifiedPattern
+metaVariableUnifiedPatternSubstitute :: Int -> CommonKorePattern
 metaVariableUnifiedPatternSubstitute =
-    MetaPattern . VariablePattern . metaVariableSubstitute
+    asKorePattern . VariablePattern . metaVariableSubstitute
 
 objectVariableSubstitute :: Int -> Variable Object
 objectVariableSubstitute = intVariable objectVariable
 
-objectVariableUnifiedPatternSubstitute :: Int -> UnifiedPattern
+objectVariableUnifiedPatternSubstitute :: Int -> CommonKorePattern
 objectVariableUnifiedPatternSubstitute =
-    ObjectPattern . VariablePattern . objectVariableSubstitute
+    asKorePattern . VariablePattern . objectVariableSubstitute
 
 substitution1 :: UnifiedPatternSubstitution
 substitution1 = S.fromList
@@ -142,80 +146,80 @@ substitution3 :: UnifiedPatternSubstitution
 substitution3 = S.fromList
   [ (unifiedObjectVariable, metaVariableUnifiedPattern) ]
 
-existsObjectUnifiedPattern1 :: UnifiedPattern
-existsObjectUnifiedPattern1 = ObjectPattern $ ExistsPattern Exists
+existsObjectUnifiedPattern1 :: CommonKorePattern
+existsObjectUnifiedPattern1 = asKorePattern $ ExistsPattern Exists
     { existsSort = objectSort
     , existsVariable = objectVariable
     , existsChild = objectVariableUnifiedPattern
     }
 
-existsMetaUnifiedPattern1 :: UnifiedPattern
-existsMetaUnifiedPattern1 = MetaPattern $ ExistsPattern Exists
+existsMetaUnifiedPattern1 :: CommonKorePattern
+existsMetaUnifiedPattern1 = asKorePattern $ ExistsPattern Exists
     { existsSort = metaSort
     , existsVariable = metaVariable
     , existsChild = metaVariableUnifiedPattern
     }
 
-existsMetaUnifiedPattern1S3 :: UnifiedPattern
-existsMetaUnifiedPattern1S3 = MetaPattern $ ExistsPattern Exists
+existsMetaUnifiedPattern1S3 :: CommonKorePattern
+existsMetaUnifiedPattern1S3 = asKorePattern $ ExistsPattern Exists
     { existsSort = metaSort
     , existsVariable = metaVariableSubstitute 17
     , existsChild = metaVariableUnifiedPatternSubstitute 17
     }
 
-existsObjectUnifiedPattern1S :: Int -> UnifiedPattern
-existsObjectUnifiedPattern1S n = ObjectPattern $ ExistsPattern Exists
+existsObjectUnifiedPattern1S :: Int -> CommonKorePattern
+existsObjectUnifiedPattern1S n = asKorePattern $ ExistsPattern Exists
     { existsSort = objectSort
     , existsVariable = objectVariableSubstitute n
     , existsChild = objectVariableUnifiedPatternSubstitute n
     }
 
-forallObjectUnifiedPattern1 :: UnifiedPattern
-forallObjectUnifiedPattern1 = MetaPattern $ ForallPattern Forall
+forallObjectUnifiedPattern1 :: CommonKorePattern
+forallObjectUnifiedPattern1 = asKorePattern $ ForallPattern Forall
     { forallSort = metaSort
     , forallVariable = metaVariable
     , forallChild = objectVariableUnifiedPattern
     }
 
-forallObjectUnifiedPattern2 :: UnifiedPattern
-forallObjectUnifiedPattern2 = MetaPattern $ ForallPattern Forall
+forallObjectUnifiedPattern2 :: CommonKorePattern
+forallObjectUnifiedPattern2 = asKorePattern $ ForallPattern Forall
     { forallSort = metaSort
     , forallVariable = metaVariable
     , forallChild = objectTopPattern
     }
 
-forallObjectUnifiedPattern1S3 :: UnifiedPattern
-forallObjectUnifiedPattern1S3 = MetaPattern $ ForallPattern Forall
+forallObjectUnifiedPattern1S3 :: CommonKorePattern
+forallObjectUnifiedPattern1S3 = asKorePattern $ ForallPattern Forall
     { forallSort = metaSort
     , forallVariable = metaVariableSubstitute 5
     , forallChild = metaVariableUnifiedPattern
     }
 
-forallExistsObjectUnifiedPattern1 :: UnifiedPattern
-forallExistsObjectUnifiedPattern1 = ObjectPattern $ ForallPattern Forall
+forallExistsObjectUnifiedPattern1 :: CommonKorePattern
+forallExistsObjectUnifiedPattern1 = asKorePattern $ ForallPattern Forall
     { forallSort = objectSort
     , forallVariable = objectVariable
     , forallChild = existsObjectUnifiedPattern1
     }
 
-forallExistsObjectUnifiedPattern2 :: UnifiedPattern
-forallExistsObjectUnifiedPattern2 = MetaPattern $ ForallPattern Forall
+forallExistsObjectUnifiedPattern2 :: CommonKorePattern
+forallExistsObjectUnifiedPattern2 = asKorePattern $ ForallPattern Forall
     { forallSort = metaSort
     , forallVariable = metaVariable
     , forallChild = existsObjectUnifiedPattern1
     }
 
-forallExistsObjectUnifiedPattern1S2 :: UnifiedPattern
-forallExistsObjectUnifiedPattern1S2 = ObjectPattern $ ForallPattern Forall
+forallExistsObjectUnifiedPattern1S2 :: CommonKorePattern
+forallExistsObjectUnifiedPattern1S2 = asKorePattern $ ForallPattern Forall
     { forallSort = objectSort
     , forallVariable = objectVariableSubstitute 7
     , forallChild = existsObjectUnifiedPattern1S 8
     }
 
-testSubstitutionStatePattern :: UnifiedPattern
-testSubstitutionStatePattern = ObjectPattern $ ApplicationPattern Application
+testSubstitutionStatePattern :: CommonKorePattern
+testSubstitutionStatePattern = asKorePattern $ ApplicationPattern Application
     { applicationSymbolOrAlias = SymbolOrAlias
-        { symbolOrAliasConstructor = Id "sigma"
+        { symbolOrAliasConstructor = testId "sigma" :: Id Object
         , symbolOrAliasParams = []
         }
     , applicationChildren =
@@ -226,10 +230,10 @@ testSubstitutionStatePattern = ObjectPattern $ ApplicationPattern Application
         ]
     }
 
-testSubstitutionStatePatternS3 :: UnifiedPattern
-testSubstitutionStatePatternS3 = ObjectPattern $ ApplicationPattern Application
+testSubstitutionStatePatternS3 :: CommonKorePattern
+testSubstitutionStatePatternS3 = asKorePattern $ ApplicationPattern Application
     { applicationSymbolOrAlias = SymbolOrAlias
-        { symbolOrAliasConstructor = Id "sigma"
+        { symbolOrAliasConstructor = testId "sigma" :: Id Object
         , symbolOrAliasParams = []
         }
     , applicationChildren =

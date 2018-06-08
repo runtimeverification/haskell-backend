@@ -10,32 +10,42 @@ Portability : POSIX
 -}
 module Data.Kore.Implicit.ImplicitVarsInternal where
 
+import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
-import           Data.Kore.MetaML.Builders
+import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.PureML       (CommonPurePatternStub)
+import           Data.Kore.MetaML.AST
 
-vf = unparameterizedVariable_ "#f"
-vL = unparameterizedVariable_ "#L"
-vphi = unparameterizedVariable_ "#phi"
-vphi1 = unparameterizedVariable_ "#phi1"
-vphi2 = unparameterizedVariable_ "#phi2"
-vphi3 = unparameterizedVariable_ "#phi3"
-vphii = unparameterizedVariable_ "#phii"
-vpsi = unparameterizedVariable_ "#psi"
-vR = unparameterizedVariable_ "#R"
-vS = unparameterizedVariable_ "#S"
-vS' = unparameterizedVariable_ "#S'"
-vs = unparameterizedVariable_ "#s"
-vs1 = unparameterizedVariable_ "#s1"
-vs2 = unparameterizedVariable_ "#s2"
-vs3 = unparameterizedVariable_ "#s3"
-vs' = unparameterizedVariable_ "#s'"
-vsigma = unparameterizedVariable_ "#sigma"
-vu = unparameterizedVariable_ "#u"
-v = unparameterizedVariable_ "#v"
-v1 = unparameterizedVariable_ "#v1"
-v2 = unparameterizedVariable_ "#v2"
-vx = unparameterizedVariable_ "#x"
-vx' = unparameterizedVariable_ "#x'"
+vf, vL, vphi, vphi1, vphi2, vphi3, vphii, vpsi, vR, vS, vS', vs, vs1, vs2, vs3
+    , vs', vsigma, vu, v1, v2, vx, vx' :: MetaPatternStub
 
-pS = sortParameter "#sp"
+implicitUnparameterizedVariable :: String -> CommonPurePatternStub level
+implicitUnparameterizedVariable name =
+    unparameterizedVariable_ name AstLocationImplicit
+
+vf = implicitUnparameterizedVariable "#f"
+vL = implicitUnparameterizedVariable "#L"
+vphi = implicitUnparameterizedVariable "#phi"
+vphi1 = implicitUnparameterizedVariable "#phi1"
+vphi2 = implicitUnparameterizedVariable "#phi2"
+vphi3 = implicitUnparameterizedVariable "#phi3"
+vphii = implicitUnparameterizedVariable "#phii"
+vpsi = implicitUnparameterizedVariable "#psi"
+vR = implicitUnparameterizedVariable "#R"
+vS = implicitUnparameterizedVariable "#S"
+vS' = implicitUnparameterizedVariable "#S'"
+vs = implicitUnparameterizedVariable "#s"
+vs1 = implicitUnparameterizedVariable "#s1"
+vs2 = implicitUnparameterizedVariable "#s2"
+vs3 = implicitUnparameterizedVariable "#s3"
+vs' = implicitUnparameterizedVariable "#s'"
+vsigma = implicitUnparameterizedVariable "#sigma"
+vu = implicitUnparameterizedVariable "#u"
+v = implicitUnparameterizedVariable "#v"
+v1 = implicitUnparameterizedVariable "#v1"
+v2 = implicitUnparameterizedVariable "#v2"
+vx = implicitUnparameterizedVariable "#x"
+vx' = implicitUnparameterizedVariable "#x'"
+
+pS = sortParameter Meta "#sp" AstLocationImplicit
 spS = SortVariableSort pS

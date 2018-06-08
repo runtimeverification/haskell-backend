@@ -5,6 +5,7 @@ import           Test.Tasty                                          (TestTree,
                                                                       testGroup)
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
 import           Data.Kore.Implicit.ImplicitSorts
@@ -86,7 +87,12 @@ definitionVerifierUniqueNamesTests =
                 ]
             )
         , expectFailureWithError "Definition with two identical sort names."
-            (Error ["module 'MODULE'"] "Duplicated name: 's'.")
+            (Error
+                [ "module 'MODULE'"
+                , "(<test data>, <test data>)"
+                ]
+                "Duplicated name: 's'."
+            )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
                 [ simpleSortSentence (SortName "s")
                 , simpleSortSentence (SortName "s")
@@ -94,7 +100,12 @@ definitionVerifierUniqueNamesTests =
             )
         , expectFailureWithError
             "Definition with two identical meta alias names"
-            (Error ["module 'MODULE'"] "Duplicated name: '#a'.")
+            (Error
+                [ "module 'MODULE'"
+                , "(<test data>, <test data>)"
+                ]
+                "Duplicated name: '#a'."
+            )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
                 [ simpleMetaAliasSentence (AliasName "#a") stringSortName
                 , simpleMetaAliasSentence (AliasName "#a") stringSortName
@@ -102,7 +113,12 @@ definitionVerifierUniqueNamesTests =
             )
         , expectFailureWithError
             "Definition with two identical object alias names"
-            (Error ["module 'MODULE'"] "Duplicated name: 'a'.")
+            (Error
+                [ "module 'MODULE'"
+                , "(<test data>, <test data>)"
+                ]
+                "Duplicated name: 'a'."
+            )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
                 [ simpleObjectAliasSentence (AliasName "a") (SortName "s")
                 , simpleObjectAliasSentence (AliasName "a") (SortName "s")
@@ -111,7 +127,12 @@ definitionVerifierUniqueNamesTests =
             )
         , expectFailureWithError
             "Definition with two identical meta symbol names"
-            (Error ["module 'MODULE'"] "Duplicated name: '#a'.")
+            (Error
+                [ "module 'MODULE'"
+                , "(<test data>, <test data>)"
+                ]
+                "Duplicated name: '#a'."
+            )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
                 [ simpleMetaAliasSentence (AliasName "#a") stringSortName
                 , simpleMetaAliasSentence (AliasName "#a") stringSortName
@@ -119,7 +140,12 @@ definitionVerifierUniqueNamesTests =
             )
         , expectFailureWithError
             "Definition with two identical object symbol names"
-            (Error ["module 'MODULE'"] "Duplicated name: 'a'.")
+            (Error
+                [ "module 'MODULE'"
+                , "(<test data>, <test data>)"
+                ]
+                "Duplicated name: 'a'."
+            )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
                 [ simpleObjectSymbolSentence (SymbolName "a") (SortName "s")
                 , simpleObjectSymbolSentence (SymbolName "a") (SortName "s")
@@ -128,13 +154,23 @@ definitionVerifierUniqueNamesTests =
             )
         , expectFailureWithError
             "Definition with meta alias with same name as sort"
-            (Error ["module 'MODULE'"] "Duplicated name: '#String'.")
+            (Error
+                [ "module 'MODULE'"
+                , "(<test data>, <implicitly defined entity>)"
+                ]
+                "Duplicated name: '#String'."
+            )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
                 [ simpleMetaAliasSentence (AliasName "#String") stringSortName ]
             )
         , expectFailureWithError
             "Definition with object alias with same name as sort"
-            (Error ["module 'MODULE'"] "Duplicated name: 's'.")
+            (Error
+                [ "module 'MODULE'"
+                , "(<test data>, <test data>)"
+                ]
+                "Duplicated name: 's'."
+            )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
                 [ simpleObjectAliasSentence (AliasName "s") (SortName "s")
                 , simpleSortSentence (SortName "s")
@@ -142,7 +178,12 @@ definitionVerifierUniqueNamesTests =
             )
         , expectFailureWithError
             "Definition with meta alias with same name as symbol"
-            (Error ["module 'MODULE'"] "Duplicated name: '#a'.")
+            (Error
+                [ "module 'MODULE'"
+                , "(<test data>, <test data>)"
+                ]
+                "Duplicated name: '#a'."
+            )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
                 [ simpleMetaAliasSentence (AliasName "#a") stringSortName
                 , simpleMetaSymbolSentence (SymbolName "#a") stringSortName
@@ -150,7 +191,12 @@ definitionVerifierUniqueNamesTests =
             )
         , expectFailureWithError
             "Definition with object alias with same name as symbol"
-            (Error ["module 'MODULE'"] "Duplicated name: 'a'.")
+            (Error
+                [ "module 'MODULE'"
+                , "(<test data>, <test data>)"
+                ]
+                "Duplicated name: 'a'."
+                )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
                 [ simpleObjectAliasSentence (AliasName "a") (SortName "s")
                 , simpleObjectSymbolSentence (SymbolName "a") (SortName "s")
@@ -159,7 +205,12 @@ definitionVerifierUniqueNamesTests =
             )
        , expectFailureWithError
             "Definition with meta symbol with same name as sort"
-            (Error ["module 'MODULE'"] "Duplicated name: '#String'.")
+            (Error
+                [ "module 'MODULE'"
+                , "(<test data>, <implicitly defined entity>)"
+                ]
+                "Duplicated name: '#String'."
+            )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
                 [ simpleMetaSymbolSentence
                     (SymbolName "#String") stringSortName
@@ -167,7 +218,12 @@ definitionVerifierUniqueNamesTests =
             )
         , expectFailureWithError
             "Definition with object symbol with same name as sort"
-            (Error ["module 'MODULE'"] "Duplicated name: 's'.")
+            (Error
+                [ "module 'MODULE'"
+                , "(<test data>, <test data>)"
+                ]
+                "Duplicated name: 's'."
+            )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
                 [ simpleObjectSymbolSentence (SymbolName "s") (SortName "s")
                 , simpleSortSentence (SortName "s")
@@ -175,7 +231,12 @@ definitionVerifierUniqueNamesTests =
             )
         , expectFailureWithError
             "Definition with an implicit meta symbol name"
-            (Error ["module 'MODULE'"] "Duplicated name: '#nilCharList'.")
+            (Error
+                [ "module 'MODULE'"
+                , "(<test data>, <implicitly defined entity>)"
+                ]
+                "Duplicated name: '#nilCharList'."
+            )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
                 [ simpleMetaAliasSentence (AliasName "#nilCharList") stringSortName
                 ]

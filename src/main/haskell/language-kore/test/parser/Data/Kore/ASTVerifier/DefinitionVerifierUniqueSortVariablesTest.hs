@@ -6,6 +6,7 @@ import           Test.Tasty                                          (TestTree,
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
 import           Data.Kore.Implicit.ImplicitSorts
@@ -89,15 +90,17 @@ definitionVerifierUniqueSortVariablesTests =
         ------------------------------------------------------------------
         , expectSuccess "Definition with object alias"
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
-                [ ObjectSentence $ SentenceAliasSentence
+                [ asSentence
                     (aliasSentenceWithSortParameters
-                        (AliasName "a") (SortName "s") [])
+                        (AliasName "a") (SortName "s") []
+                    :: KoreSentenceAlias Object
+                    )
                 , simpleSortSentence (SortName "s")
                 ]
             )
         , expectSuccess "Object alias with one sort parameter"
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
-                [ ObjectSentence $ SentenceAliasSentence
+                [ asSentence
                     (aliasSentenceWithSortParameters
                         (AliasName "a")
                         (SortName "s")
@@ -107,7 +110,7 @@ definitionVerifierUniqueSortVariablesTests =
             )
         , expectSuccess "Object alias with one sort parameter with same name"
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
-                [ ObjectSentence $ SentenceAliasSentence
+                [ asSentence
                     (aliasSentenceWithSortParameters
                         (AliasName "a")
                         (SortName "s")
@@ -118,7 +121,7 @@ definitionVerifierUniqueSortVariablesTests =
         , expectSuccess
             "Object alias with one sort parameter with same name as sort"
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
-                [ ObjectSentence $ SentenceAliasSentence
+                [ asSentence
                     (aliasSentenceWithSortParameters
                         (AliasName "a")
                         (SortName "s")
@@ -128,7 +131,7 @@ definitionVerifierUniqueSortVariablesTests =
             )
         , expectSuccess "Object alias with two sort parameters"
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
-                [ ObjectSentence $ SentenceAliasSentence
+                [ asSentence
                     (aliasSentenceWithSortParameters
                         (AliasName "a")
                         (SortName "s")
@@ -184,16 +187,17 @@ definitionVerifierUniqueSortVariablesTests =
         ------------------------------------------------------------------
         , expectSuccess "Definition with object symbol"
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
-                [ ObjectSentence $ SentenceSymbolSentence
+                [ asSentence
                     (symbolSentenceWithSortParameters
                         (SymbolName "a") (SortName "s") []
+                    :: KoreSentenceSymbol Object
                     )
                 , simpleSortSentence (SortName "s")
                 ]
             )
         , expectSuccess "Object symbol with one sort parameter"
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
-                [ ObjectSentence $ SentenceSymbolSentence
+                [ asSentence
                     (symbolSentenceWithSortParameters
                         (SymbolName "a")
                         (SortName "s")
@@ -204,7 +208,7 @@ definitionVerifierUniqueSortVariablesTests =
             )
         , expectSuccess "Object symbol with one sort parameter with same name"
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
-                [ ObjectSentence $ SentenceSymbolSentence
+                [ asSentence
                     (symbolSentenceWithSortParameters
                         (SymbolName "a")
                         (SortName "s")
@@ -216,7 +220,7 @@ definitionVerifierUniqueSortVariablesTests =
         , expectSuccess
             "Object symbol with one sort parameter with same name as sort"
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
-                [ ObjectSentence $ SentenceSymbolSentence
+                [ asSentence
                     (symbolSentenceWithSortParameters
                         (SymbolName "a")
                         (SortName "s")
@@ -227,7 +231,7 @@ definitionVerifierUniqueSortVariablesTests =
             )
         , expectSuccess "Object symbol with two sort parameters"
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
-                [ ObjectSentence $ SentenceSymbolSentence
+                [ asSentence
                     (symbolSentenceWithSortParameters
                         (SymbolName "a")
                         (SortName "s")
@@ -290,7 +294,10 @@ definitionVerifierUniqueSortVariablesTests =
         , expectFailureWithError
             "Sort with two sort parameters with same name"
             (Error
-                ["module 'MODULE'", "sort 's' declaration"]
+                ["module 'MODULE'"
+                , "sort 's' declaration (<test data>)"
+                , "(<test data>)"
+                ]
                 "Duplicated sort variable: 'sv'."
             )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
@@ -304,7 +311,10 @@ definitionVerifierUniqueSortVariablesTests =
         , expectFailureWithError
             "Meta alias with two sort parameters with same name"
             (Error
-                ["module 'MODULE'", "alias '#a' declaration"]
+                [ "module 'MODULE'"
+                , "alias '#a' declaration (<test data>)"
+                , "(<test data>)"
+                ]
                 "Duplicated sort variable: '#sv'."
             )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
@@ -319,11 +329,14 @@ definitionVerifierUniqueSortVariablesTests =
         , expectFailureWithError
             "Object alias with two sort parameters with same name"
             (Error
-                ["module 'MODULE'", "alias 'a' declaration"]
+                [ "module 'MODULE'"
+                , "alias 'a' declaration (<test data>)"
+                , "(<test data>)"
+                ]
                 "Duplicated sort variable: 'sv'."
             )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
-                [ ObjectSentence $ SentenceAliasSentence
+                [ asSentence
                     (aliasSentenceWithSortParameters
                         (AliasName "a")
                         (SortName "s")
@@ -336,7 +349,10 @@ definitionVerifierUniqueSortVariablesTests =
         , expectFailureWithError
             "Meta symbol with two sort parameters with same name"
             (Error
-                ["module 'MODULE'", "symbol '#a' declaration"]
+                [ "module 'MODULE'"
+                , "symbol '#a' declaration (<test data>)"
+                , "(<test data>)"
+                ]
                 "Duplicated sort variable: '#sv'."
             )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
@@ -351,11 +367,14 @@ definitionVerifierUniqueSortVariablesTests =
         , expectFailureWithError
             "Object symbol with two sort parameters with same name"
             (Error
-                ["module 'MODULE'", "symbol 'a' declaration"]
+                [ "module 'MODULE'"
+                , "symbol 'a' declaration (<test data>)"
+                , "(<test data>)"
+                ]
                 "Duplicated sort variable: 'sv'."
             )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
-                [ ObjectSentence $ SentenceSymbolSentence
+                [ asSentence
                     (symbolSentenceWithSortParameters
                         (SymbolName "a")
                         (SortName "s")
@@ -369,7 +388,7 @@ definitionVerifierUniqueSortVariablesTests =
         , expectFailureWithError
             "Axiom with two object sort parameters with same name"
             (Error
-                ["module 'MODULE'", "axiom declaration"]
+                ["module 'MODULE'", "axiom declaration", "(<test data>)"]
                 "Duplicated sort variable: 'sv'."
             )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
@@ -383,7 +402,7 @@ definitionVerifierUniqueSortVariablesTests =
         , expectFailureWithError
             "Axiom with two meta sort parameters with same name"
             (Error
-                ["module 'MODULE'", "axiom declaration"]
+                ["module 'MODULE'", "axiom declaration", "(<test data>)"]
                 "Duplicated sort variable: '#sv'."
             )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
