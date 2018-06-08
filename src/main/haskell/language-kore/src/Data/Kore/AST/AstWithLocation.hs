@@ -13,6 +13,7 @@ module Data.Kore.AST.AstWithLocation (AstWithLocation(..)) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.MLPatterns
 
 {-| 'AstWithLocation' should be implemented by all AST terms that have
 an 'AstLocation'.
@@ -47,3 +48,25 @@ instance AstWithLocation (Sort level) where
 
 instance AstWithLocation (Variable level) where
     locationFromAst = locationFromAst . variableName
+
+instance AstWithLocation (Alias level) where
+    locationFromAst = locationFromAst . aliasConstructor
+
+instance AstWithLocation (SymbolOrAlias level) where
+    locationFromAst = locationFromAst . symbolOrAliasConstructor
+
+instance AstWithLocation (Symbol level) where
+    locationFromAst = locationFromAst . symbolConstructor
+
+instance
+    AstWithLocation (variable level)
+    => AstWithLocation (Pattern level variable child)
+  where
+    locationFromAst = applyPatternFunction PatternFunction
+        { patternFunctionML = locationFromAst . getMLPatternResultSort
+        , patternFunctionMLBinder = locationFromAst . getBinderPatternSort
+        , applicationFunction = locationFromAst . applicationSymbolOrAlias
+        , variableFunction = locationFromAst
+        , stringFunction = const AstLocationUnknown
+        , charFunction = const AstLocationUnknown
+        }
