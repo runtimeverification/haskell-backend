@@ -1753,7 +1753,7 @@ all definitions that make use of contexts.
 Let us now illustrate specific uses of contexts.
 
 \subsubsection{Evaluation Strategies of Language Constructs}
-
+\label{sec:evaluationstrategies}
 Suppose that a programming language has an if-then-else statement,
 say $\ite\in\Sigma_{\BExp\times\Stmt\times\Stmt,\Stmt}$,
 whose evaluation strategy is to first evaluate its first argument and then, depending
@@ -1810,11 +1810,43 @@ $$
 (\gamma \hole_3 . 1 < \hole_3)[\hole_1]
 ])[x]
 $$
+in which we rename all placeholder variables to prevent confusion.
+Again, we use strictness axioms, but this time from right to left,
+and simplify the above pattern as follows:
+$$
+\begin{array}{rcll}
+& &
+\gamma \hole_1 . ((\gamma \hole_2 . \ite(\hole_2, S_1, S_2))[
+(\gamma \hole_3 . 1 < \hole_3)[\hole_1]
+])[x]
+\\
+& = &
+\gamma \hole_1 . ((\gamma \hole_2 . \ite(\hole_2, S_1, S_2))[
+1 < \hole_1
+])[x]
+& \textrm{\doubleslash \strict{2} axiom for $\_<\_$}
+\\
+& = &
+\gamma \hole_1 . (\ite(1 < \hole_1, S_1, S_2))[x]
+& \textrm{\doubleslash \strict{1} axiom for \ite}
+\end{array}
+$$
+
 Therefore, $\ite(1 < x,S_1,S_2)$ can be matched against a pattern
-of the form $C[x]$, where $C$ is a context of sort
-$\parametric{\Context}{\AExp,\Stmt}$.
-That is, $x$ has been ``pulled'' out of the $\ite$ context;
-now other semantic rules or axioms can be applied to reduce $x$, by
+of the form $C[x]$, where $C$,
+as expected, is $\gamma \hole_1 . (\ite(1 < \hole_1, S_1, S_2))$,
+a context of sort $\parametric{\Context}{\AExp,\Stmt}$.
+That is, $x$ has been ``pulled'' out of the $\ite$ context.
+We point out that the above is a typical example of reasoning
+about contexts in matching logic.
+One applies a sequence of strictness axioms, from left to right,
+to pull out the redex.
+Then, the resulting nested contexts can be combined and merged
+to one uniform context with the axiom for nested context.
+Finally, the body of the uniform context can be simplified
+by applying the sequence of strictness axiom from right to left.
+
+Now other semantic rules or axioms can be applied to reduce $x$, by
 simply matching $x$ in a context.
 At any moment during the reduction, the axioms above can be applied
 backwards and thus whatever $x$ reduces to can be ``plugged'' back into
@@ -1912,6 +1944,10 @@ Although $\gamma \hole_1 \hole_2 \dots \hole_n . \; T$ correspond to no
 patterns, we take a freedom to call them \emph{multi-hole contexts} and
 let meta-variables $C$ range over them, i.e., we take the freedom to write
 $C[T_1,T_2,\dots,T_n]$.
+Notice that we require placeholder variables
+$\hole_1 \ddd \hole_n$ to be different,
+and $T_1 \ddd T_n$ should not have free occurrences
+of any placeholder variables.
 We believe multi-hole contexts can be formalized as patterns, but we have
 not found any need for it yet.
 
@@ -1956,17 +1992,17 @@ configuration where we want to match patterns in context.
 In our case, we do that everywhere:
 $$
 \begin{array}{l}
-\textsf{cfg}(C[T],E,M) = (\gamma\hole.\;\textsf{cfg}(C[\hole],E,M))[T]
+\textsf{cfg}(T,E,M) = (\gamma\hole.\;\textsf{cfg}(\hole,E,M))[T]
 \\
-\textsf{cfg}(K,C[T],M) = (\gamma\hole.\;\textsf{cfg}(K,C[\hole],M))[T]
+\textsf{cfg}(K,T,M) = (\gamma\hole.\;\textsf{cfg}(K,\hole,M))[T]
 \\
-\textsf{cfg}(K,E,C[T]) = (\gamma\hole.\;\textsf{cfg}(K,E,C[\hole]))[T]
+\textsf{cfg}(K,E,T) = (\gamma\hole.\;\textsf{cfg}(K,E,\hole))[T]
 \\
-\textsf{k}(C[T]) = (\gamma\hole.\;\textsf{k}(\hole))[T]
+\textsf{k}(T) = (\gamma\hole.\;\textsf{k}(\hole))[T]
 \\
-\textsf{env}(C[T]) = (\gamma\hole.\;\textsf{env}(\hole))[T]
+\textsf{env}(T) = (\gamma\hole.\;\textsf{env}(\hole))[T]
 \\
-\textsf{mem}(C[T]) = (\gamma\hole.\;\textsf{mem}(\hole))[T]
+\textsf{mem}(T) = (\gamma\hole.\;\textsf{mem}(\hole))[T]
 \end{array}
 $$
 Additionally, we also give permission for contextual matchings to
@@ -1975,7 +2011,9 @@ the infix pairing construct ``$\_\mapsto\_$'' and an associative and
 commutative merge operation, here denoted as a comma ``$\_,\_$'', which
 has additional properties which are not relevant here:
 $$
-(C[M_1],M_2) = (\gamma\hole.\;(\hole,M_2))[M_1]
+(M_1,M_2) 
+= (\gamma\hole.\;(M_1,\hole))[M_2]
+= (\gamma\hole.\;(\hole,M_2))[M_1]
 $$
 The following matching logic proof shows how the configuration above
 can be transformed so that it can be matched by a multi-hole context
@@ -1992,42 +2030,12 @@ $$
 )
 &=&
 \\
-\textsf{cfg}
-(
-\textsf{k}(\ite(1 < x,S_1,S_2)\textsf{;\ }S_3),
-\ \textsf{env}(x \mapsto l, R_\textit{env})
-,
-\ \textsf{mem}((\gamma\hole_3.\;\hole_3)[l \mapsto a], R_\textit{mem})
-)
-&=&
-\\
-\textsf{cfg}
-(
-\textsf{k}(\ite(1 < x,S_1,S_2)\textsf{;\ }S_3),
-\ \textsf{env}(x \mapsto l, R_\textit{env})
-,
-\ \textsf{mem}((\gamma\hole_3.\;(\hole_3,R_\textit{mem}))[l \mapsto a])
-)
-&=&
-\\
-\textsf{cfg}
-(
-\textsf{k}(\ite(1 < x,S_1,S_2)\textsf{;\ }S_3),
-\ \textsf{env}(x \mapsto l, R_\textit{env})
-,
-\ (\gamma\hole_3.\;\textsf{mem}(\hole_3,R_\textit{mem}))[l \mapsto a]
-)
-&=&
-\\
 (\gamma\hole_3.\;\textsf{cfg}
 (
 \textsf{k}(\ite(1 < x,S_1,S_2)\textsf{;\ }S_3),
 \ \textsf{env}(x \mapsto l, R_\textit{env})
 ,
 \ \textsf{mem}(\hole_3,R_\textit{mem})))[l \mapsto a]
-&=&
-\\
-...
 &=&
 \\
 (\gamma\hole_3.\;
@@ -2047,9 +2055,6 @@ $$
 \ \textsf{env}(\hole_2, R_\textit{env})
 ,
 \ \textsf{mem}(\hole_3,R_\textit{mem})))[x \mapsto l,l \mapsto a]
-&=&
-\\
-...
 &=&
 \\
 (\gamma\hole_2\hole_3.\;
@@ -2074,7 +2079,10 @@ $$
 [x, x \mapsto l, l \mapsto a]
 \end{array}
 $$
-
+Here, the first, the second, and the fourth equations
+are by context reasoning as in Section~\ref{sec:evaluationstrategies}
+while the third and the fifth equations are by
+multi-hole context definition.
 Therefore, the configuration pattern
 $$
 \textsf{cfg}
