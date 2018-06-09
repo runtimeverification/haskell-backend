@@ -5,8 +5,8 @@ import           Test.Tasty                                          (TestTree,
                                                                       testGroup)
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
 import           Data.Kore.Implicit.ImplicitSorts
@@ -348,7 +348,9 @@ successTestsForMetaSort
             sort
             additionalSortActual
             namePrefix
-
+successTestsForMetaSort
+    (CommonDescription commonDescription) SuccessConfigurationSkipAll _ _ _
+  = testGroup commonDescription []
 
 failureTestsForMetaSort
     :: CommonDescription
@@ -380,6 +382,9 @@ failureTestsForMetaSort
             sort
             additionalSortActual
             namePrefix
+failureTestsForMetaSort
+    (CommonDescription commonDescription) FailureConfigurationSkipAll _ _ _ _ _
+  = testGroup commonDescription []
 
 expectSuccessFlaggedTests
     :: SuccessConfiguration level
@@ -393,6 +398,7 @@ expectSuccessFlaggedTests
         (map successTestData
             (applyTestConfiguration testConfiguration flaggedTests)
         )
+expectSuccessFlaggedTests SuccessConfigurationSkipAll _ = testGroup "" []
 
 expectFailureWithErrorFlaggedTests
     :: FailureConfiguration level
@@ -411,6 +417,8 @@ expectFailureWithErrorFlaggedTests
             (failureTestData errorMessage additionalErrorStack)
             (applyTestConfiguration testConfiguration flaggedTests)
         )
+expectFailureWithErrorFlaggedTests FailureConfigurationSkipAll _ _ _ =
+    testGroup "" []
 
 flaggedObjectTestsForSort
     :: TestConfiguration Object

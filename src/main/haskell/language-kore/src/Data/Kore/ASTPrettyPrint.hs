@@ -8,6 +8,7 @@ module Data.Kore.ASTPrettyPrint ( prettyPrintToString
                                 ) where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
@@ -133,9 +134,9 @@ writeFieldNewLine fieldName field object = do
         (betweenLines >> prettyPrint MaySkipParentheses (field object))
 
 writeAttributesField
-    :: (PrinterOutput w m, PrettyPrint (Fix (pat variable)))
+    :: (PrinterOutput w m)
     => String
-    -> Attributes pat variable
+    -> Attributes
     -> m ()
 writeAttributesField fieldName attributes@(Attributes as) = do
     write fieldName
@@ -537,12 +538,13 @@ instance PrettyPrint CommonKorePattern where
                 writeOneFieldStructK NeedsParentheses "UnifiedObject"
                 $ writeOneFieldStruct NeedsParentheses "Rotate31" (unRotate31 p)
 
-instance MetaOrObject level => PrettyPrint (CommonPurePattern level) where
+instance (MetaOrObject level, PrettyPrint (variable level))
+    => PrettyPrint (PureMLPattern level variable)
+  where
     prettyPrint flags purePattern =
         writeOneFieldStruct flags "Fix" (unFix purePattern)
 
-instance PrettyPrint (Fix (pat variable))
-    => PrettyPrint (Attributes pat variable)
+instance PrettyPrint (Attributes)
   where
     prettyPrint flags (Attributes a)
         | null a    = write "Attributes []"
@@ -711,7 +713,9 @@ instance (PrettyPrint a, PrettyPrint b) => PrettyPrint (a, b) where
                 , prettyPrint MaySkipParentheses y
                 ])
 
-instance MetaOrObject level => PrettyPrint (UnificationSolution level) where
+instance (MetaOrObject level, PrettyPrint (variable level))
+    => PrettyPrint (UnificationSolution level variable)
+  where
     prettyPrint _ us@(UnificationSolution _ _) =
         writeStructure
             "UnificationSolution"
@@ -725,7 +729,9 @@ instance MetaOrObject level => PrettyPrint (UnificationSolution level) where
 
 -- TODO: when refactoring these, consider removing `writeTwoFieldStruct`
 -- TODO: when refactoring these, consider removing `writeThreeFieldStruct`
-instance MetaOrObject level => PrettyPrint (UnificationProof level) where
+instance (MetaOrObject level, PrettyPrint (variable level))
+    => PrettyPrint (UnificationProof level variable)
+  where
     prettyPrint _ EmptyUnificationProof = write "EmptyUnificationProof"
     prettyPrint flags (CombinedUnificationProof p) =
         writeOneFieldStruct flags "CombinedUnificationProof" p
@@ -756,7 +762,9 @@ instance MetaOrObject level => PrettyPrint (UnificationError level) where
     prettyPrint _ UnsupportedPatterns = write "UnsupportedPatterns"
     prettyPrint _ EmptyPatternList = write "EmptyPatternList"
 
-instance MetaOrObject level => PrettyPrint (FunctionalProof level) where
+instance (MetaOrObject level, PrettyPrint (variable level))
+    => PrettyPrint (FunctionalProof level variable)
+  where
     prettyPrint flags (FunctionalVariable v) =
         writeOneFieldStruct flags "FunctionalVariable" v
     prettyPrint flags (FunctionalHead h) =
