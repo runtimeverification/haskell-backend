@@ -13,6 +13,8 @@ Portability : portable
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE Rank2Types             #-}
 {-# LANGUAGE AllowAmbiguousTypes    #-}
+{-# LANGUAGE FlexibleContexts       #-}
+
 
 module Data.Kore.Unification.ProofSystemWithHypos where
 
@@ -80,7 +82,7 @@ makeRule3 formula rule ix1 ix2 ix3 = do
     }
 
 lookupLine 
-  :: Indexing ix 
+  :: (Indexing ix)
   => ix 
   -> State (Proof ix rule formula) (ProofLine ix rule formula)
 lookupLine ix = do
@@ -92,6 +94,11 @@ lookupLine ix = do
       ++ show ix 
       ++ " not found."
       -- This shouldn't ever be a user error, I think. 
+
+
+(%%%=) :: MonadState a m => Lens' a b -> State b r -> m r
+lens %%%= x = lens %%= (runState x)
+
 class 
   ( Indexing ix
   , Rules rule

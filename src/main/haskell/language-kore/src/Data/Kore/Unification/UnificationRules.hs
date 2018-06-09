@@ -17,7 +17,7 @@ Portability : portable
 {-# LANGUAGE DeriveFunctor          #-}
 {-# LANGUAGE DeriveTraversable      #-}
 {-# LANGUAGE PatternSynonyms        #-}
-
+{-# LANGUAGE FlexibleContexts       #-}
 
 module Data.Kore.Unification.UnificationRules where
 
@@ -38,7 +38,10 @@ data UnificationRules ix
   | Discharge ix ix
   | EqSymmetric ix -- (a = b) => (b = a)
   | Substitution ix ix --ix2[LHS of ix1 \ RHS of ix2]
-  deriving(Functor, Foldable, Traversable)
+  | NoConfusion ix -- result is a conjunction
+  | AndL ix -- a /\ b => a
+  | AndR ix 
+  deriving(Functor, Foldable, Traversable, Show)
 
 type Term = CommonPurePattern Meta
 
@@ -57,7 +60,6 @@ instance Formula Term where
     , impliesSecond = b
     }
 
-
 placeholderSort =
   SortVariableSort $ SortVariable 
     { getSortVariable = noLocationId "S" } --FIXME
@@ -69,22 +71,85 @@ pattern Equation s1 s2 a b =
 
 flipEqn (Equation s1 s2 a b) = Equation s1 s2 b a
 
-applyCommutativity 
+applySymmetry 
   :: Int 
   -> State (Proof Int UnificationRules Term) Int
-applyCommutativity = makeRule1 flipEqn EqSymmetric
+applySymmetry = makeRule1 flipEqn EqSymmetric
+
+getLHS (Equation s1 s2 a b) = a
+getRHS (Equation s1 s2 a b) = b
 
 lhsIsVariable (Equation s1 s2 a b) = 
   case a of
     Fix (VariablePattern _) -> True
     _ -> False
 
-subst (Equation s1 s2 a b) p2 = cata $
-  \pat -> if pat == unFix a then b else Fix pat
+subst eqn@(Equation s1 s2 a b) pat =
+  if pat == a then b else Fix $ fmap (subst eqn) $ unFix pat
+
+applySubstitution
+  :: Int
+  -> Int
+  -> State (Proof Int UnificationRules Term) Int
+applySubstitution = makeRule2 subst Substitution
+
+isTrivial (Equation s1 s2 a b) = (a == b)
+
+applyNoConfusion
+  :: Int 
+  -> State (Proof Int UnificationRules Term) Int
+applyNoConfusion = makeRule1 splitConstructor NoConfusion
+
+splitConstructor (Equation s1 s2 a b) = 
+  let ApplicationPattern (Application _ aChildren) = unFix a
+      ApplicationPattern (Application _ bChildren) = unFix b
+  in if length aChildren == 0
+  then undefined -- "True"
+  else 
+    foldr1 conj $
+    zipWith 
+      (\ac bc -> Equation s1 s2 ac bc) 
+      aChildren 
+      bChildren 
+
+applyAndL
+  :: Int 
+  -> State (Proof Int UnificationRules Term) Int
+applyAndL = makeRule1 getAndL AndL
+
+applyAndR
+  :: Int 
+  -> State (Proof Int UnificationRules Term) Int
+applyAndR = makeRule1 getAndR AndL
+
+getAndL (Fix (AndPattern (And _ x _ ))) = x
+getAndR (Fix (AndPattern (And _ _ y ))) = y
+
+conj a b = Fix $ AndPattern $ And 
+  { andSort = placeholderSort
+  , andFirst = a 
+  , andSecond = b
+  }
+
+isConjunction (Fix (AndPattern _)) = True
+isConjunction _                    = False
+
+-- FIXME: not s2, but the sort of that pair of children
+-- pain to get sorts. 
 
 a = Fix $ VariablePattern $ Variable (noLocationId "a") placeholderSort 
 b = Fix $ VariablePattern $ Variable (noLocationId "b") placeholderSort 
 c = Fix $ VariablePattern $ Variable (noLocationId "c") placeholderSort 
+
+app x y = Fix $ ApplicationPattern $ Application 
+  { applicationSymbolOrAlias = x
+  , applicationChildren = [y]
+  }
+
+sym x = SymbolOrAlias 
+  { symbolOrAliasConstructor = noLocationId x 
+  , symbolOrAliasParams = [] 
+  }
 
 aEqb :: Term
 aEqb = Fix $ EqualsPattern $ Equals placeholderSort placeholderSort a b 
@@ -92,71 +157,13 @@ aEqb = Fix $ EqualsPattern $ Equals placeholderSort placeholderSort a b
 bEqc :: Term
 bEqc = Fix $ EqualsPattern $ Equals placeholderSort placeholderSort b c 
 
--- pattern VarEquation s1 s2 s3 a b = 
---   Fix (EqualsPattern (Equals s1 s2 (
---     Fix (VariablePattern
---       (Variable a s3) --FIXME: we have always s1 == s3!!! annoying!!
---       )
---     ) b
---   ))
+ca :: Term 
+ca = app (sym "C") a
 
--- pattern FlippedVarEquation s1 s2 s3 a b = 
---   Fix (EqualsPattern (Equals s1 s2 a (
---     Fix (VariablePattern
---       (Variable b s3) 
---       )
---   )))
--- class 
---   ( Indexing ix
---   , Rules rule
---   , Formula formula) 
---   => ProofSystem ix rule formula where 
+cb :: Term 
+cb = app (sym "C") b
 
---   getNextIx :: State (Proof ix rule formula) ix
---   getNextIx = do 
---     maxIx <- M.lookupMax <$> get
---     return $ case maxIx of 
---       Just (ix,_) -> nextIx ix 
---       Nothing     -> zeroIx
-
---   assume :: formula -> State (Proof ix rule formula) ix
---   assume formula = do
---     ix <- getNextIx
---     let line = ProofLine
---           { claim = formula
---           , justification = assumption
---           , assumptions = S.singleton ix
---           }
---     modify $ M.insert ix line
---     return ix
-
---   discharge :: ix -> ix -> State (Proof ix rule formula) ix
---   discharge ix1 ix2 = do
---     Just hypothesis <- M.lookup ix1 <$> get
---     Just conclusion <- M.lookup ix2 <$> get
---     let line = ProofLine
---           { claim = implies (claim hypothesis) (claim conclusion)
---           , justification = elim ix1 ix2
---           , assumptions = S.delete ix1 $ assumptions conclusion
---           }
---     addLine line
-
---   addLine :: ProofLine ix rule formula -> State (Proof ix rule formula) ix
---   addLine line = do
---     ix <- getNextIx
---     modify $ M.insert ix line
---     return ix
-
-  
-
-  -- Can also deal with quantifiers:
-  
-  -- forall :: var -> formula -> var
-  -- abs :: var -> ix -> rule ix
-
-  -- abstract :: var -> ix -> State (Proof ix rule formula) ix
-
-  -- etc
+-- subst (flipEqn aEqb) bEqc == aEqc
 
 
 
