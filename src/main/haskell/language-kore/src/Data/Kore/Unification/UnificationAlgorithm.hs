@@ -46,6 +46,9 @@ import           Data.Kore.Unification.UnificationRules
 import           Data.Kore.Unification.Error
 import           Data.Kore.Unparser.Unparse
 
+import Debug.Trace
+import Text.Groom
+spy x = trace (groom x) x
 
 {- 
 NOTE:
@@ -92,7 +95,7 @@ loop
   => m ()
 loop = do
   eqns <- use activeSet
-  case S.maxView eqns of 
+  case trace"BOO" $ spy $ S.maxView eqns of 
     Nothing -> return () -- we are done
     Just (ix, rest) -> do
       activeSet .= rest
@@ -108,24 +111,23 @@ process ix = do
   if isTrivial eqn
   then do 
     activeSet %= S.delete ix
-  else if lhsIsVariable eqn
+  else if spy $ lhsIsVariable $ spy eqn
   then do
-    if occursInTerm (getLHS eqn) (getRHS eqn)
+    if spy $ occursInTerm (getLHS eqn) (getRHS eqn)
     then do throwError $ undefined -- circularity error
     else do
       occursInSets <- checkIfOccursInSets $ getLHS eqn
-      if occursInSets
+      if spy $ occursInSets
       then do
         substituteEverythingInSet ix activeSet
         substituteEverythingInSet ix finishedSet
-      else do 
-        activeSet %= S.delete ix 
-        finishedSet %= S.insert ix
+      else return ()
+      finishedSet %= S.insert ix
   else if lhsIsVariable (flipEqn eqn)
   then do
     activeSet %= S.delete ix
     ix' <- proof %%%= applySymmetry ix
-    activeSet %= S.insert ix
+    activeSet %= S.insert ix'
   else do 
     tools <- ask
     goSplitConstructor tools ix eqn
@@ -162,7 +164,7 @@ substituteEverythingInSet
 substituteEverythingInSet ix set = do
   rest <- use set
   forM_ rest $ \ix' -> do
-      set %= S.delete ix 
+      set %= S.delete ix'
       ix'' <- proof %%%= applySubstitution ix ix' 
       set %= S.insert ix''
 
@@ -192,7 +194,7 @@ equateChildren
 equateChildren ix = do
   ix' <- proof %%%= applyNoConfusion ix
   ixs' <- splitConjunction ix'
-  activeSet %= S.union ixs'
+  activeSet %= S.union (trace "IXS" $ spy ixs')
 
 -- applyNoConfusion = undefined
 splitConjunction ix = do
@@ -203,18 +205,46 @@ splitConjunction ix = do
     ixRight <- proof %%%= applyAndR ix
     splitResultLeft  <- splitConjunction ixLeft 
     splitResultRight <- splitConjunction ixRight 
-    return $ S.union splitResultLeft splitResultLeft
-  else return S.empty
+    return $ S.union splitResultLeft splitResultRight
+  else return $ S.singleton ix
 
 occursInItself :: Term -> Bool
 occursInItself = const False
   
+-- FIRST TEST:
+
+a = Fix $ VariablePattern $ Variable (noLocationId "a") placeholderSort 
+b = Fix $ VariablePattern $ Variable (noLocationId "b") placeholderSort 
+c = Fix $ VariablePattern $ Variable (noLocationId "c") placeholderSort 
+
+app x ys = Fix $ ApplicationPattern $ Application 
+  { applicationSymbolOrAlias = x
+  , applicationChildren = ys
+  }
+
+sym x = SymbolOrAlias 
+  { symbolOrAliasConstructor = noLocationId x 
+  , symbolOrAliasParams = [] 
+  }
+
+aEqb :: Term
+aEqb = Fix $ EqualsPattern $ Equals placeholderSort placeholderSort a b 
+
+bEqc :: Term
+bEqc = Fix $ EqualsPattern $ Equals placeholderSort placeholderSort b c 
+
+x :: Term 
+x = app (sym "C") [a,b,c]
+
+y :: Term 
+y = app (sym "C") [a,app (sym "D") [],app (sym "C") [a,a,a]]
+
 bar 
   :: ExceptT (UnificationError Meta) (
      StateT UnificationState (
      Reader (MetadataTools Meta))
      ) ()
-bar = unificationProcedure ca cb
+bar = unificationProcedure x y
 
 foo :: UnificationState
 foo = 

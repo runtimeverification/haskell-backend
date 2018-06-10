@@ -120,7 +120,7 @@ applyAndL = makeRule1 getAndL AndL
 applyAndR
   :: Int 
   -> State (Proof Int UnificationRules Term) Int
-applyAndR = makeRule1 getAndR AndL
+applyAndR = makeRule1 getAndR AndR
 
 getAndL (Fix (AndPattern (And _ x _ ))) = x
 getAndR (Fix (AndPattern (And _ _ y ))) = y
@@ -133,37 +133,6 @@ conj a b = Fix $ AndPattern $ And
 
 isConjunction (Fix (AndPattern _)) = True
 isConjunction _                    = False
-
--- FIXME: not s2, but the sort of that pair of children
--- pain to get sorts. 
-
-a = Fix $ VariablePattern $ Variable (noLocationId "a") placeholderSort 
-b = Fix $ VariablePattern $ Variable (noLocationId "b") placeholderSort 
-c = Fix $ VariablePattern $ Variable (noLocationId "c") placeholderSort 
-
-app x y = Fix $ ApplicationPattern $ Application 
-  { applicationSymbolOrAlias = x
-  , applicationChildren = [y]
-  }
-
-sym x = SymbolOrAlias 
-  { symbolOrAliasConstructor = noLocationId x 
-  , symbolOrAliasParams = [] 
-  }
-
-aEqb :: Term
-aEqb = Fix $ EqualsPattern $ Equals placeholderSort placeholderSort a b 
-
-bEqc :: Term
-bEqc = Fix $ EqualsPattern $ Equals placeholderSort placeholderSort b c 
-
-ca :: Term 
-ca = app (sym "C") a
-
-cb :: Term 
-cb = app (sym "C") b
-
--- subst (flipEqn aEqb) bEqc == aEqc
 
 
 
