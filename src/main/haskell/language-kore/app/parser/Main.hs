@@ -29,8 +29,8 @@ data KoreParserOptions = KoreParserOptions
 
                     
 {-| Command Line Argument Parser -}
-cliParser :: Parser KoreParserOptions
-cliParser = KoreParserOptions
+commandLineParser :: Parser KoreParserOptions
+commandLineParser = KoreParserOptions
       <$> argument str
               ( metavar "FILE"
               <> help "Kore source file to parse [and verify]" )
@@ -49,7 +49,7 @@ cliParser = KoreParserOptions
 commandLineParse :: IO KoreParserOptions
 commandLineParse = execParser opts
   where
-    opts = info (cliParser <**> helper)
+    opts = info (commandLineParser <**> helper)
       ( fullDesc
      <> progDesc "Parses Kore definition in FILE; optionally, \
                  \Verifies well-formedness"
