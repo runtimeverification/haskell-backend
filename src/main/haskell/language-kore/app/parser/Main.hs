@@ -3,7 +3,7 @@ module Main where
 import           Data.Kore.ASTVerifier.DefinitionVerifier
 import           Data.Kore.Error
 import           Data.Kore.Parser.Parser                  (fromKore)
-import           Data.Kore.AST.Kore                       (KoreDefinition)
+import           Data.Kore.AST.Sentence                   (KoreDefinition)
 
 import           Control.Exception                        (evaluate)
 import           Control.Monad                            (when)
