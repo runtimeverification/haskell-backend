@@ -12,10 +12,13 @@ Portability : POSIX
 module Data.Kore.Implicit.Attributes
     ( attributeObjectSort
     , hookAttribute
+    , functionalAttribute
+    , constructorAttribute
     , uncheckedAttributesModule
     ) where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 
@@ -89,6 +92,49 @@ hookAttribute hook location =
                 ]
             }
         )
+
+functionalAttribute :: CommonKorePattern
+functionalAttribute  = simpleAttribute "functional"
+
+functionalSymbolSentence :: KoreSentence
+functionalSymbolSentence  = simpleAttributeSentence "functional"
+
+constructorAttribute :: CommonKorePattern
+constructorAttribute = simpleAttribute "constructor"
+
+constructorSymbolSentence :: KoreSentence
+constructorSymbolSentence  = simpleAttributeSentence "constructor"
+
+{-| Creates a Pattern for an attribute 
+consisting of a single keyword with no arguments.
+-}
+simpleAttribute :: String -> CommonKorePattern
+simpleAttribute name = asObjectKorePattern
+        ( ApplicationPattern Application
+            { applicationSymbolOrAlias = SymbolOrAlias
+                { symbolOrAliasConstructor = Id name AstLocationImplicit
+                , symbolOrAliasParams      = []
+                }
+            , applicationChildren = []
+            }
+        )
+{-| Creates a sentence declaring a simpleAttribute
+-}
+simpleAttributeSentence :: String -> KoreSentence
+simpleAttributeSentence name =
+    asSentence
+        ( SentenceSymbol
+            { sentenceSymbolSymbol     = Symbol
+                { symbolConstructor = Id name AstLocationImplicit
+                , symbolParams      = []
+                }
+            , sentenceSymbolSorts      = []
+            , sentenceSymbolResultSort = attributeObjectSort AstLocationImplicit
+            , sentenceSymbolAttributes = Attributes []
+            }
+        :: KoreSentenceSymbol Object
+        )
+
 
 argumentPositionObjectSort :: AstLocation -> Sort Object
 argumentPositionObjectSortSentence :: KoreSentence
@@ -203,6 +249,8 @@ uncheckedAttributesModule =
             [ attributeObjectSortSentence
             , hookObjectSortSentence
             , hookObjectSymbolSentence
+            , functionalSymbolSentence
+            , constructorSymbolSentence
             , argumentPositionObjectSortSentence
             , firstArgumentObjectSymbolSentence
             , secondArgumentObjectSymbolSentence

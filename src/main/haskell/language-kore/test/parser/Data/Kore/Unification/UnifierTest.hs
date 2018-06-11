@@ -9,6 +9,7 @@ import           Test.Tasty.HUnit.Extensions
 
 import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.MLPatternsTest                        (extractPurePattern)

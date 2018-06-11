@@ -3,6 +3,7 @@ module Data.Kore.Unparser.UnparseTest ( unparseParseTests
                                       ) where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTGen
@@ -114,11 +115,11 @@ unparseUnitTests =
             ++ "    module k\n    endmodule\n    []\n"
             )
         , unparseTest
-            ( asSentence SentenceImport
+            ( constructUnifiedSentence SentenceImportSentence $ SentenceImport
                 { sentenceImportModuleName = ModuleName {getModuleName = "sl"}
                 , sentenceImportAttributes =
-                    Attributes { getAttributes = [] } :: KoreAttributes
-                }
+                    Attributes { getAttributes = [] } :: Attributes
+                } :: KoreSentence
             )
             "import sl[]"
         , unparseTest
@@ -133,7 +134,7 @@ unparseUnitTests =
                             }
                         )
                     ]
-                }::KoreAttributes
+                }::Attributes
             )
         "[\n    \\top{#CharList{}}()\n]"
         , unparseTest
@@ -148,7 +149,7 @@ unparseUnitTests =
                             { getCharLiteral = '\'' }
                         )
                     ]
-                }::KoreAttributes
+                }::Attributes
             )
             "[\n    '\\'',\n    '\\''\n]"
         ]
@@ -197,8 +198,8 @@ unparseParseTests =
             (forAll korePatternGen (unparseParseProp korePatternParser))
         , testProperty "Attributes"
             (forAll
-                (attributesGen korePatternGen)
-                (unparseParseProp (attributesParser korePatternParser))
+                attributesGen
+                (unparseParseProp attributesParser)
             )
         , testProperty "Sentence"
             (forAll koreSentenceGen (unparseParseProp koreSentenceParser))

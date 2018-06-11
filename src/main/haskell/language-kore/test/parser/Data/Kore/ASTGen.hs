@@ -8,6 +8,7 @@ import           Test.QuickCheck.Gen         (Gen, choose, chooseAny, elements,
 
 import           Data.Fix
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.KoreHelpers
@@ -310,7 +311,7 @@ sentenceAliasGen patGen x = pure SentenceAlias
     <*> scale (`div` 2) (aliasGen x)
     <*> couple (scale (`div` 2) (sortGen x))
     <*> scale (`div` 2) (sortGen x)
-    <*> scale (`div` 2) (attributesGen patGen)
+    <*> scale (`div` 2) (attributesGen)
 
 sentenceSymbolGen
     :: MetaOrObject level
@@ -321,13 +322,13 @@ sentenceSymbolGen patGen x = pure SentenceSymbol
     <*> scale (`div` 2) (symbolGen x)
     <*> couple (scale (`div` 2) (sortGen x))
     <*> scale (`div` 2) (sortGen x)
-    <*> scale (`div` 2) (attributesGen patGen)
+    <*> scale (`div` 2) (attributesGen)
 
 sentenceImportGen
     :: Gen (Fix (pat variable)) -> Gen (SentenceImport pat variable)
 sentenceImportGen patGen = pure SentenceImport
     <*> scale (`div` 2) moduleNameGen
-    <*> scale (`div` 2) (attributesGen patGen)
+    <*> scale (`div` 2) (attributesGen)
 
 sentenceAxiomGen
    :: Gen sortParam
@@ -337,7 +338,7 @@ sentenceAxiomGen sortParamGen patGen =
     pure SentenceAxiom
         <*> couple (scale (`div` 2) sortParamGen)
         <*> scale (`div` 2) patGen
-        <*> scale (`div` 2) (attributesGen patGen)
+        <*> scale (`div` 2) (attributesGen)
 
 sentenceSortGen
     :: MetaOrObject level
@@ -346,10 +347,10 @@ sentenceSortGen patGen level =
     pure SentenceSort
         <*> scale (`div` 2) (idGen level)
         <*> couple (scale (`div` 2) (sortVariableGen level))
-        <*> scale (`div` 2) (attributesGen patGen)
+        <*> scale (`div` 2) (attributesGen)
 
-attributesGen :: Gen (Fix (pat variable)) -> Gen (Attributes pat variable)
-attributesGen patGen = Attributes <$> couple (scale (`div` 4) patGen)
+attributesGen :: Gen (Attributes)
+attributesGen = Attributes <$> couple (scale (`div` 4) korePatternGen)
 
 symbolOrAliasSentenceGen
     :: MetaOrObject level
@@ -382,7 +383,7 @@ moduleGen
 moduleGen senGen patGen = pure Module
     <*> scale (`div` 2) moduleNameGen
     <*> couple (scale (`div` 2) senGen)
-    <*> scale (`div` 2) (attributesGen patGen)
+    <*> scale (`div` 2) (attributesGen)
 
 modulesGen
     :: Gen (sentence sortParam pat variable)
@@ -395,5 +396,5 @@ definitionGen
     -> Gen (Fix (pat variable))
     -> Gen (Definition sentence sortParam pat variable)
 definitionGen senGen patGen = pure Definition
-    <*> scale (`div` 2) (attributesGen patGen)
+    <*> scale (`div` 2) (attributesGen)
     <*> scale (`div` 2) (modulesGen senGen patGen)

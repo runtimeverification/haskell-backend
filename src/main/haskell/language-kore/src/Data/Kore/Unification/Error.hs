@@ -10,6 +10,7 @@ Portability : portable
 module Data.Kore.Unification.Error (UnificationError(..)) where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 
 -- |'UnificationError' specifies various error cases encountered during
 -- unification

@@ -16,6 +16,7 @@ Portability : portable
 module Data.Kore.Unparser.Unparse (Unparse(..), unparseToString) where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
@@ -241,7 +242,7 @@ instance (Unparse p, Unparse (v level))
 instance Unparse CommonKorePattern where
     unparse = applyKorePattern unparse unparse
 
-instance Unparse (Fix (pat variable)) => Unparse (Attributes pat variable) where
+instance Unparse (Attributes) where
     unparse = inSquareBrackets . unparse . getAttributes
 
 instance

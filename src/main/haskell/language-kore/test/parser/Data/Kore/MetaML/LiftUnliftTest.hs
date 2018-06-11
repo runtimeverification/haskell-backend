@@ -12,6 +12,7 @@ import           Data.Fix
 import           Data.Kore.AST.Builders
 import           Data.Kore.AST.BuildersImpl
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
@@ -482,11 +483,6 @@ liftTests =
                     }
                 )
             )
-        , testCase "Lift Attributes"
-            (prettyAssertEqual ""
-                (Attributes [metaStringPattern])
-                (liftAttributes (Attributes [unifiedStringPattern]))
-            )
         , testCase "Lift Meta Alias Declaration"
             (prettyAssertEqual ""
                 [ SentenceAliasSentence SentenceAlias
@@ -894,7 +890,7 @@ liftTests =
                     }
                 ]
                 (liftSentence
-                    (asSentence SentenceAxiom
+                    (constructUnifiedSentence SentenceAxiomSentence $ SentenceAxiom
                         { sentenceAxiomParameters =
                             [ UnifiedObject (SortVariable (testId "a"))
                             , UnifiedMeta (SortVariable (testId "#a"))
@@ -908,7 +904,7 @@ liftTests =
                                 )
                             )
                         , sentenceAxiomAttributes =
-                            Attributes [] :: KoreAttributes
+                            Attributes [] :: Attributes
                         }
                     )
                 )
@@ -935,7 +931,7 @@ liftTests =
                         { sentenceAxiomParameters = [] :: [UnifiedSortVariable]
                         , sentenceAxiomPattern = unifiedStringPattern
                         , sentenceAxiomAttributes =
-                            Attributes [] :: KoreAttributes
+                            Attributes [] :: Attributes
                         }
                     )
                 )
