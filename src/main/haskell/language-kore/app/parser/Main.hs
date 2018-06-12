@@ -3,6 +3,7 @@ module Main where
 import           Data.Kore.ASTVerifier.DefinitionVerifier
 import           Data.Kore.Error
 import           Data.Kore.Parser.Parser
+import           Data.Kore.ASTPrettyPrint                 (prettyPrintToString)
 
 import           Control.Exception                        (evaluate)
 import           Control.Monad                            (when)
@@ -99,5 +100,4 @@ main = do
                         return unverifiedDefinition
             when
                 (commandLineFlagsPrint commandLineFlags)
-                (print verifiedDefinition)
-
+                (putStrLn (prettyPrintToString verifiedDefinition))
