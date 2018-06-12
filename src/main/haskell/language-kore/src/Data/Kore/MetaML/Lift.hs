@@ -346,8 +346,15 @@ symbolOrAliasLiftedDeclaration sa = symbolDeclaration
         }
 
 -- Section 9.2.7 Lift Object Alias Declarations
-liftAliasDeclaration :: KoreSentenceAlias Object -> MetaSentenceSymbol
-liftAliasDeclaration = symbolOrAliasLiftedDeclaration
+liftAliasDeclaration :: KoreSentenceAlias Object -> (MetaSentenceSymbol, MetaSentenceAxiom)
+liftAliasDeclaration as = (symbolOrAliasLiftedDeclaration as, axiom) 
+  where
+    axiom = SentenceAxiom
+        { sentenceAxiomAttributes = Attributes []
+        , sentenceAxiomParameters = []
+        , sentenceAxiomPattern = Fix . TopPattern -- TODO: still to decide what exactly goes here (certainly not Top!)
+            $ Top { topSort = patternMetaSort }
+        }
 
 {-|'liftSentence' transforms a 'Sentence' in one or more 'MetaSentences'
 encoding it.
@@ -358,9 +365,11 @@ liftSentence = applyUnifiedSentence liftMetaSentence liftObjectSentence
 liftMetaSentence
     :: Sentence Meta UnifiedSortVariable UnifiedPattern Variable
     -> [MetaSentence]
-liftMetaSentence (SentenceAliasSentence msa) =
+liftMetaSentence (SentenceAliasSentence msa) = 
     [ SentenceAliasSentence msa
         { sentenceAliasAttributes = sentenceAliasAttributes msa
+        , sentenceAliasLeftPattern  = fmap liftToMeta (sentenceAliasLeftPattern msa)
+        , sentenceAliasRightPattern = fmap liftToMeta (sentenceAliasRightPattern msa)
         }
     ]
 liftMetaSentence (SentenceSymbolSentence mss) =
@@ -414,7 +423,10 @@ liftObjectSentence
     :: Sentence Object UnifiedSortVariable UnifiedPattern Variable
     -> [MetaSentence]
 liftObjectSentence (SentenceAliasSentence osa) =
-    [ SentenceSymbolSentence (liftAliasDeclaration osa)]
+    let (mas, axiom) = liftAliasDeclaration osa in 
+        [ SentenceSymbolSentence mas
+        , SentenceAxiomSentence axiom
+        ]
 liftObjectSentence (SentenceSymbolSentence oss) =
     let (mss, axiom1, axiom2) = liftSymbolDeclaration oss in
         [ SentenceSymbolSentence mss

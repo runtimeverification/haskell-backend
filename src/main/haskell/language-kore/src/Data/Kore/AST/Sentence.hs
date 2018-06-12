@@ -65,18 +65,22 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
 data SentenceAlias level (pat :: (* -> *) -> * -> *) (variable :: * -> *)
  = SentenceAlias
-    { sentenceAliasAlias      :: !(Alias level)
-    , sentenceAliasSorts      :: ![Sort level]
-    , sentenceAliasResultSort :: !(Sort level)
-    , sentenceAliasAttributes :: !Attributes
+    { sentenceAliasAlias        :: !(Alias level)
+    , sentenceAliasSorts        :: ![Sort level]
+    , sentenceAliasResultSort   :: !(Sort level)
+    , sentenceAliasLeftPattern  :: !(Pattern level variable (Fix (pat variable)))
+    , sentenceAliasRightPattern :: !(Pattern level variable (Fix (pat variable)))
+    , sentenceAliasAttributes   :: !Attributes
     }
 
 deriving instance
-    (Eq (pat variable (Fix (pat variable))))
+    (Eq (pat variable (Fix (pat variable)))
+    ,Eq (variable level))
      => Eq (SentenceAlias level pat variable)
 
 deriving instance
-    (Show (pat variable (Fix (pat variable))))
+    (Show (pat variable (Fix (pat variable)))
+    ,Show (variable level))
      => Show (SentenceAlias level pat variable)
 
 {-|'SentenceSymbol' corresponds to the @object-symbol-declaration@ and
@@ -213,11 +217,13 @@ data Sentence level sortParam (pat :: (* -> *) -> * -> *) (variable :: * -> *) w
 deriving instance
     ( Eq (pat variable (Fix (pat variable)))
     , Eq sortParam
+    , Eq (variable level)
     ) => Eq (Sentence level sortParam pat variable)
 
 deriving instance
     ( Show (pat variable (Fix (pat variable)))
     , Show sortParam
+    , Show (variable level)
     ) => Show (Sentence level sortParam pat variable)
 
 {-|A 'Module' consists of a 'ModuleName' a list of 'Sentence's and some
@@ -338,11 +344,15 @@ newtype UnifiedSentence sortParam pat variable = UnifiedSentence
 deriving instance
     ( Eq (pat variable (Fix (pat variable)))
     , Eq sortParam
+    , Eq (variable Meta)
+    , Eq (variable Object)
     ) => Eq (UnifiedSentence sortParam pat variable)
 
 deriving instance
     ( Show (pat variable (Fix (pat variable)))
     , Show sortParam
+    , Show (variable Meta)
+    , Show (variable Object)
     ) => Show (UnifiedSentence sortParam pat variable)
 
 
