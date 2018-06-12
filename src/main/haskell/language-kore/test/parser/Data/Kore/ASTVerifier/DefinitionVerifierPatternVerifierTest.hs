@@ -1,14 +1,16 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs            #-}
 module Data.Kore.ASTVerifier.DefinitionVerifierPatternVerifierTest
     (definitionVerifierPatternVerifierTests) where
 
 import           Test.Tasty                                          (TestTree,
                                                                       testGroup)
+import           Test.Tasty.HUnit                                    (HasCallStack)
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers as Helpers
 import           Data.Kore.Building.Implicit
 import           Data.Kore.Building.Patterns                         as Patterns
@@ -86,8 +88,8 @@ definitionVerifierPatternVerifierTests =
         , failureTestsForObjectPattern "Object pattern - sort not defined"
             (ExpectedErrorMessage "Sort 'ObjectSort' not declared.")
             (ErrorStack
-                [ "\\exists 'ObjectVariable'"
-                , "\\exists 'ObjectVariable'"
+                [ "\\exists 'ObjectVariable' (<test data>)"
+                , "\\exists 'ObjectVariable' (<test data>)"
                 , "sort 'ObjectSort' (<test data>)"
                 , "(<test data>)"
                 ]
@@ -110,7 +112,7 @@ definitionVerifierPatternVerifierTests =
             "Object pattern - different variable sort"
             (ExpectedErrorMessage "The declared sort is different.")
             (ErrorStack
-                [ "\\exists 'ObjectVariable'"
+                [ "\\exists 'ObjectVariable' (<test data>)"
                 , "variable 'ObjectVariable'"
                 , "(<test data>, <test data>)"
                 ]
@@ -143,8 +145,8 @@ definitionVerifierPatternVerifierTests =
             (ExpectedErrorMessage
                 "Sort variable 'ObjectSortVariable' not declared.")
             (ErrorStack
-                [ "\\exists 'ObjectVariable'"
-                , "\\exists 'ObjectVariable'"
+                [ "\\exists 'ObjectVariable' (<test data>)"
+                , "\\exists 'ObjectVariable' (<test data>)"
                 , "(<test data>)"
                 ]
             )
@@ -166,7 +168,7 @@ definitionVerifierPatternVerifierTests =
         , failureTestsForMetaPattern "Meta pattern - sort not defined"
             (ExpectedErrorMessage "Sort '#InvalidMetaSort' not declared.")
             (ErrorStack
-                [ "\\exists '#MetaVariable'"
+                [ "\\exists '#MetaVariable' (<test data>)"
                 , "sort '#InvalidMetaSort' (<test data>)"
                 , "(<test data>)"
                 ]
@@ -184,7 +186,7 @@ definitionVerifierPatternVerifierTests =
             (ExpectedErrorMessage
                 "Expecting sort 'anotherSort2{}' but got 'ObjectSort{}'.")
             (ErrorStack
-                [ "\\exists 'ObjectVariable'"
+                [ "\\exists 'ObjectVariable' (<test data>)"
                 , "variable 'ObjectVariable'"
                 , "(<test data>, <test data>)"
                 ]
@@ -203,7 +205,7 @@ definitionVerifierPatternVerifierTests =
             (ExpectedErrorMessage
                 "Expecting sort '#Variable{}' but got '#CharList{}'.")
             (ErrorStack
-                [ "\\exists '#MetaVariable'"
+                [ "\\exists '#MetaVariable' (<test data>)"
                 , "variable '#MetaVariable'"
                 , "(<implicitly defined entity>, <implicitly defined entity>)"
                 ]
@@ -621,7 +623,8 @@ successTestsForMetaPattern
             patternRestrict
 
 failureTestsForObjectPattern
-    :: String
+    :: HasCallStack
+    => String
     -> ExpectedErrorMessage
     -> ErrorStack
     -> Pattern Object Variable CommonKorePattern
@@ -884,7 +887,7 @@ patternsInAllContexts
             , sentenceSymbolSorts = [symbolAliasSort]
             , sentenceSymbolResultSort = anotherSort
             , sentenceSymbolAttributes =
-                Attributes [] 
+                Attributes []
             }
     aliasSentence =
         constructUnifiedSentence SentenceAliasSentence $
@@ -896,7 +899,7 @@ patternsInAllContexts
             , sentenceAliasSorts = [symbolAliasSort]
             , sentenceAliasResultSort = anotherSort
             , sentenceAliasAttributes =
-                Attributes [] 
+                Attributes []
             }
 
 genericPatternInPatterns
@@ -986,7 +989,7 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
             ErrorStack
                 [ "\\exists '"
                     ++ getId (variableName quantifiedVariable)
-                    ++ "'"
+                    ++ "' (<test data>)"
                 ]
         }
     , TestPattern
