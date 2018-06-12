@@ -1,5 +1,3 @@
-{-# LANGUAGE DuplicateRecordFields #-}
-
 module Main where
 
 import           Data.Kore.ASTVerifier.DefinitionVerifier
@@ -23,10 +21,10 @@ TODO: add command line argument tab-completion
 
 -- | Main options record
 data KoreParserOptions = KoreParserOptions
-    { fileName    :: !String -- ^ Filename to parse and verify
-    , willPrint   :: !Bool   -- ^ Option to print definition
-    , willVerify  :: !Bool   -- ^ Option to verify definition
-    , willChkAttr :: !Bool   -- ^ Option to check attributes during verification
+    { fileNameArgument  :: !String -- ^ Filename to parse and verify
+    , willPrintOption   :: !Bool   -- ^ Option to print definition
+    , willVerifyOption  :: !Bool   -- ^ Option to verify definition
+    , willChkAttrOption :: !Bool   -- ^ Option to check attributes during verification
     }
 
 -- | Command Line Argument Parser
@@ -62,10 +60,10 @@ main :: IO ()
 main =
     do {
     ; KoreParserOptions
-      { fileName    = fileName
-      , willPrint   = willPrint
-      , willVerify  = willVerify
-      , willChkAttr = willChkAttr
+      { fileNameArgument  = fileName
+      , willPrintOption   = willPrint
+      , willVerifyOption  = willVerify
+      , willChkAttrOption = willChkAttr
       } <- commandLineParse
     ; contents <-
         clockSomethingIO "Reading the input file" (readFile fileName)
