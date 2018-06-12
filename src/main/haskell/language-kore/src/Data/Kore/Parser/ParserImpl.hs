@@ -1,3 +1,5 @@
+{-# LANGUAGE GADTs                  #-}
+
 {-|
 Module      : Data.Kore.Parser.ParserImpl
 Description : Parser definition for Kore. Meant for internal use only.
@@ -37,10 +39,11 @@ Conventions used:
 -}
 module Data.Kore.Parser.ParserImpl where
 
+import           Data.Kore.AST.PureML                            (CommonPurePattern)
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.HaskellExtensions  (Rotate31 (..), (<....>))
+import           Data.Kore.HaskellExtensions  (Rotate31 (..), (<....>), (<......>))
 import           Data.Kore.MetaML.AST
 import           Data.Kore.Parser.Lexeme
 import           Data.Kore.Parser.ParserUtils (Parser)
@@ -745,13 +748,6 @@ korePatternParser = do
         '\'' -> asKorePattern . CharLiteralPattern <$> charLiteralParser
         _    -> koreVariableOrTermPatternParser
 
-metaPatternParser :: Parser CommonMetaPattern
-metaPatternParser = do
-    c <- ParserUtils.peekChar'
-    case c of
-        '\\' -> Fix <$> leveledMLConstructorParser metaPatternParser Meta
-        '"'  -> Fix . StringLiteralPattern <$> stringLiteralParser
-        _    -> Fix <$> variableOrTermPatternParser metaPatternParser Meta
 
 {-|'inSquareBracketsListParser' parses a @list@ of items delimited by
 square brackets and separated by commas.
@@ -884,15 +880,11 @@ sentenceConstructorRemainderParser sentenceType
             ('#', AliasSentenceType) ->
                 asSentence . unRotate31
                 <$>
-                aliasSymbolSentenceRemainderParser
-                    Meta
-                    (aliasParser Meta)
-                    korePatternParser
-                    (Rotate31 <....> SentenceAlias)
+                aliasSentenceRemainderParser Meta
             ('#', SymbolSentenceType) ->
                 asSentence . unRotate31
                 <$>
-                aliasSymbolSentenceRemainderParser
+                symbolSentenceRemainderParser
                     Meta
                     (symbolParser Meta)
                     korePatternParser
@@ -900,15 +892,11 @@ sentenceConstructorRemainderParser sentenceType
             (_, AliasSentenceType) ->
                 asSentence . unRotate31
                 <$>
-                aliasSymbolSentenceRemainderParser
-                    Object
-                    (aliasParser Object)
-                    korePatternParser
-                    (Rotate31 <....> SentenceAlias)
+                aliasSentenceRemainderParser Object
             (_, SymbolSentenceType) ->
                 asSentence . unRotate31
                 <$>
-                aliasSymbolSentenceRemainderParser
+                symbolSentenceRemainderParser
                     Object
                     (symbolParser Object)
                     korePatternParser
@@ -927,7 +915,7 @@ BNF fragment example:
 
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
-aliasSymbolSentenceRemainderParser
+symbolSentenceRemainderParser
     :: MetaOrObject level
     => level  -- ^ Distinguishes between the meta and non-meta elements.
     -> Parser (m level)  -- Head parser.
@@ -940,7 +928,7 @@ aliasSymbolSentenceRemainderParser
        )
     -- ^ Element constructor.
     -> Parser (as level)
-aliasSymbolSentenceRemainderParser  x aliasSymbolParser patParser constructor
+symbolSentenceRemainderParser x aliasSymbolParser patParser constructor
   = do
     aliasSymbol <- aliasSymbolParser
     sorts <- inParenthesesListParser (sortParser x)
@@ -948,6 +936,37 @@ aliasSymbolSentenceRemainderParser  x aliasSymbolParser patParser constructor
     resultSort <- sortParser x
     attributes <- attributesParser patParser
     return (constructor aliasSymbol sorts resultSort attributes)
+
+
+{-|'aliasSentenceRemainderParser' parses the part after the starting
+keyword of an alias declaration. 
+
+BNF fragment example:
+
+@
+... ::=  `alias` ⟨object-head-constructor⟩ ‘{’ ⟨object-sort-variable-list⟩ ‘}’ ‘(’ ⟨object-sort-list⟩ ‘)’ ‘:’ ⟨object-sort⟩ ⟨attribute⟩
+         `where` ⟨object-head-constructor⟩ ‘{’ ⟨object-sort-variable-list⟩ ‘}’ ‘(’ ⟨object-variable-list⟩ ‘)’ `:=` ⟨object-pattern⟩
+@
+
+The @meta-@ version always starts with @#@, while the @object-@ one does not.
+-}
+aliasSentenceRemainderParser
+    :: MetaOrObject level
+    => level  -- ^ Distinguishes between the meta and non-meta elements.
+    -> Parser ((Rotate31 SentenceAlias UnifiedPattern Variable) level)
+aliasSentenceRemainderParser x
+  = do
+    aliasSymbol <- (aliasParser x)
+    sorts <- inParenthesesListParser (sortParser x)
+    colonParser
+    resultSort <- sortParser x
+    mlLexemeParser "where"
+    leftPattern <- leveledPatternParser korePatternParser x -- NB: this should have restrictions!  
+    mlLexemeParser ":="    
+    rightPattern <- leveledPatternParser korePatternParser x 
+    attributes <- attributesParser korePatternParser
+    let constructor = (Rotate31 <......> SentenceAlias) in 
+        return (constructor aliasSymbol sorts resultSort leftPattern rightPattern attributes)
 
 {-|'importSentenceRemainderParser' parses the part after the starting
 'import' keyword of an import-declaration and constructs it.
@@ -1011,7 +1030,7 @@ hookedSymbolSentenceRemainderParser :: Parser KoreSentence
 hookedSymbolSentenceRemainderParser =
     asSentence . SentenceHookedSymbol . unRotate31
     <$>
-    aliasSymbolSentenceRemainderParser
+    symbolSentenceRemainderParser
         Object
         (symbolParser Object)
         korePatternParser
@@ -1024,3 +1043,29 @@ the corresponding 'SentenceHook'.
 hookedSortSentenceRemainderParser :: Parser KoreSentence
 hookedSortSentenceRemainderParser =
     asSentence . SentenceHookedSort <$> sortSentenceRemainderParser
+
+leveledPatternParser
+    :: MetaOrObject level
+    => Parser child
+    -> level
+    -> Parser (Pattern level Variable child)
+leveledPatternParser patternParser level = do
+    c <- ParserUtils.peekChar'
+    case c of
+        '\\' -> leveledMLConstructorParser patternParser level
+        _ -> case isMetaOrObject (toProxy level) of
+            IsMeta -> case c of
+                '"'  -> StringLiteralPattern <$> stringLiteralParser
+                '\'' -> CharLiteralPattern <$> charLiteralParser
+                _    -> variableOrTermPatternParser patternParser Meta
+            IsObject -> variableOrTermPatternParser patternParser Object
+
+purePatternParser
+    :: MetaOrObject level
+    => level
+    -> Parser (CommonPurePattern level)
+purePatternParser level =
+    Fix <$> leveledPatternParser (purePatternParser level) level
+
+metaPatternParser :: Parser CommonMetaPattern
+metaPatternParser = purePatternParser Meta

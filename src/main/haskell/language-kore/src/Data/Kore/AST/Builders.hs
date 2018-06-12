@@ -15,6 +15,7 @@ import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
 import           Data.Kore.ASTHelpers
 import           Data.Kore.Error
+import           Data.Fix
 
 {-|'sortParameter' defines a sort parameter that can be used in declarations.
 -}
@@ -148,6 +149,8 @@ alias_
     -> AstLocation
     -> [Sort level]
     -> Sort level
+    -> Pattern level Variable (Fix (Pattern level Variable))
+    -> Pattern level Variable (Fix (Pattern level Variable))
     -> PureSentenceAlias level
 alias_ name location = parameterizedAlias_ name location []
 
@@ -159,8 +162,10 @@ parameterizedAlias_
     -> [SortVariable level]
     -> [Sort level]
     -> Sort level
+    -> Pattern level Variable (Fix (Pattern level Variable))
+    -> Pattern level Variable (Fix (Pattern level Variable))
     -> PureSentenceAlias level
-parameterizedAlias_ name location parameters operandSorts resultSort =
+parameterizedAlias_ name location parameters operandSorts resultSort leftPat rightPat =
     SentenceAlias
         { sentenceAliasAlias = Alias
             { aliasConstructor = Id
@@ -171,9 +176,10 @@ parameterizedAlias_ name location parameters operandSorts resultSort =
             }
         , sentenceAliasSorts = operandSorts
         , sentenceAliasResultSort = resultSort
+        , sentenceAliasLeftPattern = leftPat
+        , sentenceAliasRightPattern = rightPat
         , sentenceAliasAttributes = Attributes []
         }
-
 -- |A 'PatternStub' representing 'Bottom'.
 bottom_ :: CommonPurePatternStub level
 bottom_ = UnsortedPatternStub (BottomPattern . Bottom)

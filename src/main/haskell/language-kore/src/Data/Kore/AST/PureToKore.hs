@@ -66,6 +66,8 @@ sentencePureToKore
 sentencePureToKore (SentenceAliasSentence msa) = asSentence msa
     { sentenceAliasAttributes =
         attributesPureToKore (sentenceAliasAttributes msa)
+    , sentenceAliasLeftPattern = patternPureToKore <$> sentenceAliasLeftPattern msa
+    , sentenceAliasRightPattern = patternPureToKore <$> sentenceAliasRightPattern msa
     }
 sentencePureToKore (SentenceSymbolSentence mss) = asSentence mss
     { sentenceSymbolAttributes =
