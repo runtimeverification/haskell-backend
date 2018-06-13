@@ -924,7 +924,7 @@ symbolSentenceRemainderParser
        )
     -- ^ Element constructor.
     -> Parser (as level)
-aliasSymbolSentenceRemainderParser  x aliasSymbolParser constructor
+symbolSentenceRemainderParser  x aliasSymbolParser constructor
   = do
     aliasSymbol <- aliasSymbolParser
     sorts <- inParenthesesListParser (sortParser x)
@@ -960,7 +960,7 @@ aliasSentenceRemainderParser x
     leftPattern <- leveledPatternParser korePatternParser x -- NB: this should have restrictions!  
     mlLexemeParser ":="    
     rightPattern <- leveledPatternParser korePatternParser x 
-    attributes <- attributesParser korePatternParser
+    attributes <- attributesParser
     let constructor = (Rotate31 <......> SentenceAlias) in 
         return (constructor aliasSymbol sorts resultSort leftPattern rightPattern attributes)
 
