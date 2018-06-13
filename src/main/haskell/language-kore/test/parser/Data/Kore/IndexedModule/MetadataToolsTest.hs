@@ -1,22 +1,22 @@
 module Data.Kore.IndexedModule.MetadataToolsTest where
 
+import qualified Data.Map                                            as Map
+import           Data.Maybe                                          (fromMaybe)
 import           Test.Tasty                                          (TestTree,
                                                                       testGroup)
 import           Test.Tasty.HUnit                                    (assertEqual,
                                                                       testCase)
 
-import qualified Data.Map                                            as Map
-import           Data.Maybe                                          (fromMaybe)
-
 import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
 import           Data.Kore.AST.PureToKore
+import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTVerifier.DefinitionVerifier
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
+import           Data.Kore.Implicit.Attributes
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.IndexedModule.IndexedModule
 import           Data.Kore.IndexedModule.MetadataTools
@@ -26,7 +26,16 @@ objectS1 :: Sort Object
 objectS1 = simpleSort (SortName "s1")
 
 objectA :: PureSentenceSymbol Object
-objectA = symbol_ "a" AstLocationTest [] objectS1
+objectA = SentenceSymbol
+    { sentenceSymbolSymbol =
+        Symbol
+          { symbolConstructor = (Id "b" AstLocationNone)
+          , symbolParams = []
+          }
+    , sentenceSymbolSorts = []
+    , sentenceSymbolResultSort = objectS1
+    , sentenceSymbolAttributes = Attributes [ constructorAttribute ]
+    }
 
 metaA :: PureSentenceSymbol Meta
 metaA = symbol_ "#a" AstLocationTest [] charListMetaSort
@@ -111,17 +120,17 @@ metadataToolsTests =
             )
         , testCase "constructor meta"
             (assertEqual ""
-                True
+                False
                 (isConstructor metadataTools (symbolHead metaA))
             )
         , testCase "functional object"
             (assertEqual ""
-                True
+                False
                 (isFunctional metadataTools (symbolHead metaA))
             )
         , testCase "functional meta"
             (assertEqual ""
-                True
+                False
                 (isFunctional metadataTools (symbolHead metaA))
             )
         , testCase "getArgumentSorts object"

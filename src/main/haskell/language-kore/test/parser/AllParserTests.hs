@@ -28,6 +28,7 @@ import           Data.Kore.Parser.CStringTest
 import           Data.Kore.Parser.LexemeTest
 import           Data.Kore.Parser.ParserTest
 import           Data.Kore.Parser.RegressionTest
+import           Data.Kore.Step.BaseStepTest
 import           Data.Kore.Substitution.ClassTest
 import           Data.Kore.Substitution.ListTest
 import           Data.Kore.Unification.SubstitutionNormalizationTest
@@ -91,4 +92,5 @@ unitTests =
         , pureToKoreTests
         , substitutionNormalizationTests
         , topologicalSortTest
+        , baseStepTests
         ]

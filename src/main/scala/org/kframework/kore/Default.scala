@@ -6,15 +6,19 @@ object implementation {
 
   private object ConcreteClasses {
 
-    case class Definition(att: i.Attributes, module: i.Module) extends i.Definition
+    case class Definition(att: i.Attributes, modules: Seq[i.Module]) extends i.Definition
 
     case class Module(name: String, decls: Seq[i.Declaration], att: i.Attributes) extends i.Module
 
-    // case class Import(name: i.ModuleName, att: i.Attributes) extends i.Import
+    case class Import(name: String, att: i.Attributes) extends i.Import
 
     case class SortDeclaration(params: Seq[i.SortVariable], sort: i.Sort, att: i.Attributes) extends i.SortDeclaration
 
+    case class HookSortDeclaration(params: Seq[i.SortVariable], sort: i.Sort, att: i.Attributes) extends i.HookSortDeclaration
+
     case class SymbolDeclaration(symbol: i.Symbol, argSorts: Seq[i.Sort], returnSort: i.Sort, att: i.Attributes) extends i.SymbolDeclaration
+
+    case class HookSymbolDeclaration(symbol: i.Symbol, argSorts: Seq[i.Sort], returnSort: i.Sort, att: i.Attributes) extends i.HookSymbolDeclaration
 
     case class AliasDeclaration(alias: i.Alias, argSorts: Seq[i.Sort], returnSort: i.Sort, att: i.Attributes) extends i.AliasDeclaration
 
@@ -77,15 +81,19 @@ object implementation {
 
     import org.kframework.kore.implementation.{ConcreteClasses => d}
 
-    def Definition(att: i.Attributes, module: i.Module): i.Definition = d.Definition(att, module)
+    def Definition(att: i.Attributes, modules: Seq[i.Module]): i.Definition = d.Definition(att, modules)
 
     def Module(name: String, decls: Seq[i.Declaration], att: i.Attributes): i.Module = d.Module(name, decls, att)
 
-    // def Import(name: i.ModuleName, att: i.Attributes): i.Declaration = d.Import(name, att)
+    def Import(name: String, att: i.Attributes): i.Declaration = d.Import(name, att)
 
     def SortDeclaration(params: Seq[i.SortVariable], sort: i.Sort, att: i.Attributes): i.Declaration = d.SortDeclaration(params, sort, att)
 
+    def HookSortDeclaration(params: Seq[i.SortVariable], sort: i.Sort, att: i.Attributes): i.Declaration = d.HookSortDeclaration(params, sort, att)
+
     def SymbolDeclaration(symbol: i.Symbol, argSorts: Seq[i.Sort], returnSort: i.Sort, att: i.Attributes): i.Declaration = d.SymbolDeclaration(symbol, argSorts, returnSort, att)
+
+    def HookSymbolDeclaration(symbol: i.Symbol, argSorts: Seq[i.Sort], returnSort: i.Sort, att: i.Attributes): i.Declaration = d.HookSymbolDeclaration(symbol, argSorts, returnSort, att)
 
     def AliasDeclaration(alias: i.Alias, argSorts: Seq[i.Sort], returnSort: i.Sort, att: i.Attributes): i.Declaration = d.AliasDeclaration(alias, argSorts, returnSort, att)
 

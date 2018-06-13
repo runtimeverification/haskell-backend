@@ -282,6 +282,8 @@
   
   \newcommand{\doubleslash}{/\!/{ }}
   
+  \newcommand{\compose}{\circ}
+  \newcommand{\strict}[1]{\textsf{strict(#1)}}
 
   \newcommand{\shp}{\includegraphics{hash-symbol}\kern-0.1em}
   \newcommand{\smallshp}{\includegraphics[scale=0.8]{hash-symbol}\kern-0.1em}
@@ -405,7 +407,8 @@
   \newcommand{\KgetSymbols}{\texttt{\sharpsymbol getSymbols}}
   \newcommand{\KsortDeclared}[1]{
   	\parametric{\texttt{\sharpsymbol sortDeclared}}{#1}}
-  \newcommand{\KsortsDeclared}{\texttt{\sharpsymbol sortsDeclared}}
+  \newcommand{\KsortsDeclared}[1]{
+        \parametric{\texttt{\sharpsymbol sortsDeclared}}{#1}}
   \newcommand{\KsymbolDeclared}[1]{
   	\parametric{\texttt{\sharpsymbol symbolDeclared}}{#1}}
   \newcommand{\KaxiomDeclared}{\texttt{\sharpsymbol axiomDeclared}}
@@ -1353,7 +1356,7 @@ $$
 \textrm{for any sorts $s,s'$} \\
 \end{array}
 $$
-And here are some \emph{pattern schemas}, each defining infinitely many patters:
+And here are some \emph{pattern schemas}, each defining infinitely many patterns:
 $$
 \begin{array}{rl}
 \parametric{\append}{s}(\parametric{\nil}{s},l'\cln\parametric{\List}{s})
@@ -1453,7 +1456,7 @@ $$
 $$
 
 One of the major goals of this paper is to propose a formal language
-and an implementation of it that allow us to finitely specify potentially
+and implementation that allow us to finitely specify potentially
 infinite matching logic theories presented with finitely many sort, symbol
 and pattern schemas.
 
@@ -1498,7 +1501,7 @@ are in $\Var_\Exp$ and all patterns have sort $\Exp$.
 
 The key observation here is that the $\lambda\_.\_$ construct in
 $\lambda$-calculus \emph{performs two important operations}: on the one hand
-it builds a binding of its first argument into its second, and one the other
+it builds a binding of its first argument into its second, and on the other
 hand it builds a term.
 Fortunately, matching logic allows us to separate these two operations, and
 use the builtin existential quantifier for binding.
@@ -1715,6 +1718,7 @@ $$
 & \textrm{axiom schema for identity contexts, for all sorts $s$}
 \end{array}
 $$
+And the following axiom schema for composing nested contexts:
 \begin{align*}
 &\parametric{\_[\_]}{s',s''}(C_1 \cln \parametric{\Context}{s',s''},
 \parametric{\_[\_]}{s,s'}(C_2 \cln \parametric{\Context}{s,s'},
@@ -1722,18 +1726,27 @@ T\cln s))
 \\
 = &
 \parametric{\_[\_]}{s,s''}(
-\parametric{\gamma\_.\_}{s,s''}(
-\parametric{\_[\_]}{s',s''}(C_1 \cln \parametric{\Context}{s',s''},
+\parametric{\gamma\_.\_}{s,s''}(\hole\cln s,
+\parametric{\_[\_]}{s',s''}(
+C_1 \cln \parametric{\Context}{s',s''},
 \parametric{\_[\_]}{s,s'}(C_2 \cln \parametric{\Context}{s,s'},
-T\cln s))
+\hole\cln s))
 ), T\cln s)
 \end{align*}
 The sort parameters of axiom schemas can usually be inferred from the context.
 To ease notation, from here on we assume they can be inferred and apply the
 mixfix notation for symbols containing ``$\_$'' in their names.
-With these, the last axiom schema above becomes:
+With these, the last two axiom schemas above become:
+\begin{align*}
+& (\gamma \hole .\; \hole)[T] = T \\
+& C_1[C_2[T]] = (\gamma \hole . C_1[C_2[\hole]])[T]
+\end{align*}
+We write 
+$C_1 \compose C_2 \equiv \gamma \hole . C_1[C_2[\hole]]$
+for nested context.
+Using this notation, the last axiom becomes
 $$
-(\gamma \hole .\; \hole)[T] = T
+C_1[C_2[T]] = (C_1 \compose C_2) [T]
 $$
 
 The above sort, symbol and axiom schemas are generic and tacitly assumed in
@@ -1741,7 +1754,7 @@ all definitions that make use of contexts.
 Let us now illustrate specific uses of contexts.
 
 \subsubsection{Evaluation Strategies of Language Constructs}
-
+\label{sec:evaluationstrategies}
 Suppose that a programming language has an if-then-else statement,
 say $\ite\in\Sigma_{\BExp\times\Stmt\times\Stmt,\Stmt}$,
 whose evaluation strategy is to first evaluate its first argument and then, depending
@@ -1753,9 +1766,11 @@ Assuming that all reductions/rewrites apply in context, as discussed in
 Section~\ref{sec:rewriting}, we can state that $\ite$ is given permission to
 apply reductions within its first argument with the following axiom:
 $$
-\ite(C[T],S_1,S_2) = (\gamma\hole.\;\ite(C[\hole],S_1,S_2))[T]
+\ite(T,S_1,S_2) = (\gamma\hole.\;\ite(\hole,S_1,S_2))[T]
 $$
-In particular, $C$ can be the identity context, ``$\gamma \hole .\; \hole$''.
+In practice, the above equation is often oriented as two rewrite rules.
+The rewrite rule from left to right is called \emph{heating rule},
+and the one from right to left is called \emph{cooling rule}.
 In addition to sort/parameter inference, front-ends of implementations of
 matching logic are expected to provide shortcuts for such rather boring
 axioms.
@@ -1773,23 +1788,66 @@ Using these axioms, we can infer the following:
 $$
 \begin{array}{rcll}
 \ite(1 < x,S_1,S_2) & = &
-\ite(1 < (\gamma\hole.\;\hole)[x],S_1,S_2)
-& \textrm{\doubleslash context identity}
+(\gamma \hole . \ite(\hole, S_1, S_2))[1 < x]
+& \textrm{\doubleslash \strict{1} axiom for $\ite$}
 \\
 & = &
-\ite((\gamma\hole.\;1 < \hole)[x],S_1,S_2)
-& \textrm{\doubleslash \textsf{strict(2)} axiom for $\_<\_$}
+(\gamma \hole . \ite(\hole, S_1, S_2))[
+(\gamma \hole . 1 < \hole)[x]
+]
+& \textrm{\doubleslash \strict{2} axiom for $\_<\_$}
 \\
 & = &
-(\gamma\hole.\;\ite(1 < \hole,S_1,S_2))[x]
-& \textrm{\doubleslash \textsf{strict(1)} axiom for $\ite$ above}
+\gamma \hole . ((\gamma \hole . \ite(\hole, S_1, S_2))[
+(\gamma \hole . 1 < \hole)[\hole]
+])[x]
+& \textrm{\doubleslash axiom for nested context}
 \end{array}
 $$
+Notice that $\gamma$ is a binder,
+so the last pattern above is alpha-equivalent to
+$$
+\gamma \hole_1 . ((\gamma \hole_2 . \ite(\hole_2, S_1, S_2))[
+(\gamma \hole_3 . 1 < \hole_3)[\hole_1]
+])[x]
+$$
+in which we rename all placeholder variables to prevent confusion.
+Again, we use strictness axioms, but this time from right to left,
+and simplify the above pattern as follows:
+$$
+\begin{array}{rcll}
+& &
+\gamma \hole_1 . ((\gamma \hole_2 . \ite(\hole_2, S_1, S_2))[
+(\gamma \hole_3 . 1 < \hole_3)[\hole_1]
+])[x]
+\\
+& = &
+\gamma \hole_1 . ((\gamma \hole_2 . \ite(\hole_2, S_1, S_2))[
+1 < \hole_1
+])[x]
+& \textrm{\doubleslash \strict{2} axiom for $\_<\_$}
+\\
+& = &
+\gamma \hole_1 . (\ite(1 < \hole_1, S_1, S_2))[x]
+& \textrm{\doubleslash \strict{1} axiom for \ite}
+\end{array}
+$$
+
 Therefore, $\ite(1 < x,S_1,S_2)$ can be matched against a pattern
-of the form $C[x]$, where $C$ is a context of sort
-$\parametric{\Context}{\AExp,\Stmt}$.
-That is, $x$ has been ``pulled'' out of the $\ite$ context;
-now other semantic rules or axioms can be applied to reduce $x$, by
+of the form $C[x]$, where $C$,
+as expected, is $\gamma \hole_1 . (\ite(1 < \hole_1, S_1, S_2))$,
+a context of sort $\parametric{\Context}{\AExp,\Stmt}$.
+That is, $x$ has been ``pulled'' out of the $\ite$ context.
+We point out that the above is a typical example of reasoning
+about contexts in matching logic.
+One applies a sequence of strictness axioms, from left to right,
+to pull out the redex.
+Then, the resulting nested contexts can be combined and merged
+to one uniform context with the axiom for nested context.
+Finally, the body of the uniform context can be simplified
+by applying the sequence of strictness axiom from right to left.
+
+Now other semantic rules or axioms can be applied to reduce $x$, by
 simply matching $x$ in a context.
 At any moment during the reduction, the axioms above can be applied
 backwards and thus whatever $x$ reduces to can be ``plugged'' back into
@@ -1806,64 +1864,65 @@ a redex to be reduced, but it can be used for matching any relevant
 data from a program configuration.
 More examples below will illustrate that.
 
-\subsubsection{Nested Contexts}
-
-Nesting of contexts comes for free in our approach, that is, nothing but
-reasoning using the deduction system of matching logic needs to be done
-in order to achieve matching with nested contexts.
-For example:
-$$
-\begin{array}{rcll}
-\ite(1 < x,S_1,S_2) & = &
-\ite((\gamma\hole.\;\hole)[1 < x],S_1,S_2)
-& \textrm{\doubleslash context identity}
-\\
-& = &
-(\gamma\hole.\;\ite(\hole,S_1,S_2))[1 < x]
-& \textrm{\doubleslash \textsf{strict(1)} axiom for $\ite$}
-\\
-& = &
-(\gamma\hole.\;\ite(\hole,S_1,S_2))[(\gamma\hole.\;1 < \hole)[x]]
-& \textrm{\doubleslash \textsf{strict(2)} axiom for $\_<\_$}
-\end{array}
-$$
-Therefore, $\ite(1 < x,S_1,S_2)$ can also be matched against a pattern
-of the form $C_1[C_2[x]]$, where $C_1$ is a context of sort
-$\parametric{\Context}{\BExp,\Stmt}$ and $C_2$ of sort
-$\parametric{\Context}{\AExp,\BExp}$.
-More interestingly,
-$$
-\begin{array}{rcll}
-\ite(1 < x,S_1,S_2) & = &
-\ite(1 < (\gamma\hole.\;\hole)[x],S_1,S_2)
-& \textrm{\doubleslash context identity}
-\\
-& = &
-\ite((\gamma\hole.\;1 < \hole)[x],S_1,S_2)
-& \textrm{\doubleslash \textsf{strict(2)} axiom for $\_<\_$}
-\\
-& = &
-(\gamma\hole.\;\ite(1 < \hole,S_1,S_2))[x]
-& \textrm{\doubleslash \textsf{strict(1)} axiom for $\ite$}
-\\
-& = &
-(\gamma\hole.\;\ite((\gamma\hole.\;\hole)[1 < \hole],S_1,S_2))[x]
-& \textrm{\doubleslash context identity}
-\\
-& = &
-(\gamma\hole.\;(\gamma\hole.\;\ite(\hole,S_1,S_2))[1 < \hole])[x]
-& \textrm{\doubleslash \textsf{strict(1)} axiom for $\ite$}
-\end{array}
-$$
-Therefore, $\ite(1 < x,S_1,S_2)$ can also be matched against a pattern
-of the form ($\gamma\hole.\;C_1[T_2])[x]$, where $C_1$ is a context of
-sort $\parametric{\Context}{\BExp,\Stmt}$ and $C_2 = \gamma\hole.\;T_2$ is
-a context of sort $\parametric{\Context}{\AExp,\BExp}$.
-Notice that we cannot naively apply a context to another context, e.g.,
-$C_1[C2]$, because the sorts do not match.
-Once the hole is explicitly mentioned as a binder in a context, what we really
-mean by $C_1[C2]$ is in fact $\gamma\hole.\;C_1[T_2]$, where
-$C_2 = \gamma\hole.\;T_2$.
+%\subsubsection{Nested Contexts}
+%
+%As we already see, the axiom for composite contexts gives us
+%nesting of contexts for free. It is nothing but
+%reasoning using the deduction system of matching logic needs to be done
+%in order to achieve matching with nested contexts.
+%For example:
+%$$
+%\begin{array}{rcll}
+%\ite(1 < x,S_1,S_2) & = &
+%\ite((\gamma\hole.\;\hole)[1 < x],S_1,S_2)
+%& \textrm{\doubleslash context identity}
+%\\
+%& = &
+%(\gamma\hole.\;\ite(\hole,S_1,S_2))[1 < x]
+%& \textrm{\doubleslash \textsf{strict(1)} axiom for $\ite$}
+%\\
+%& = &
+%(\gamma\hole.\;\ite(\hole,S_1,S_2))[(\gamma\hole.\;1 < \hole)[x]]
+%& \textrm{\doubleslash \textsf{strict(2)} axiom for $\_<\_$}
+%\end{array}
+%$$
+%Therefore, $\ite(1 < x,S_1,S_2)$ can also be matched against a pattern
+%of the form $C_1[C_2[x]]$, where $C_1$ is a context of sort
+%$\parametric{\Context}{\BExp,\Stmt}$ and $C_2$ of sort
+%$\parametric{\Context}{\AExp,\BExp}$.
+%More interestingly,
+%$$
+%\begin{array}{rcll}
+%\ite(1 < x,S_1,S_2) & = &
+%\ite(1 < (\gamma\hole.\;\hole)[x],S_1,S_2)
+%& \textrm{\doubleslash context identity}
+%\\
+%& = &
+%\ite((\gamma\hole.\;1 < \hole)[x],S_1,S_2)
+%& \textrm{\doubleslash \textsf{strict(2)} axiom for $\_<\_$}
+%\\
+%& = &
+%(\gamma\hole.\;\ite(1 < \hole,S_1,S_2))[x]
+%& \textrm{\doubleslash \textsf{strict(1)} axiom for $\ite$}
+%\\
+%& = &
+%(\gamma\hole.\;\ite((\gamma\hole.\;\hole)[1 < \hole],S_1,S_2))[x]
+%& \textrm{\doubleslash context identity}
+%\\
+%& = &
+%(\gamma\hole.\;(\gamma\hole.\;\ite(\hole,S_1,S_2))[1 < \hole])[x]
+%& \textrm{\doubleslash \textsf{strict(1)} axiom for $\ite$}
+%\end{array}
+%$$
+%Therefore, $\ite(1 < x,S_1,S_2)$ can also be matched against a pattern
+%of the form ($\gamma\hole.\;C_1[T_2])[x]$, where $C_1$ is a context of
+%sort $\parametric{\Context}{\BExp,\Stmt}$ and $C_2 = \gamma\hole.\;T_2$ is
+%a context of sort $\parametric{\Context}{\AExp,\BExp}$.
+%Notice that we cannot naively apply a context to another context, e.g.,
+%$C_1[C2]$, because the sorts do not match.
+%Once the hole is explicitly mentioned as a binder in a context, what we really
+%mean by $C_1[C2]$ is in fact $\gamma\hole.\;C_1[T_2]$, where
+%$C_2 = \gamma\hole.\;T_2$.
 
 
 \subsubsection{Multi-Hole Contexts and Configuration Abstraction}
@@ -1873,7 +1932,11 @@ Contexts with multiple holes can also be easily supported by our approach,
 also without anything extra but the already existing deductive system of
 matching logic.
 A notation for multi-hole context application, however, is recommended in
-order to make patterns easier to read. Specifically,
+order to make patterns easier to read. 
+The way we define multi-hole contexts in matching logic
+is similar to how we define multi-arity functions in lambda calculus
+by curring them.
+Specifically,
 $$
 (\gamma \hole_1 \hole_2 \dots \hole_n . \; T)[T_1,T_2,\dots,T_n]
 \equiv (\gamma \hole_n .\; \dots (\gamma\hole_2.\;(\gamma\hole_1.\;T)[T_1])[T_2]\dots)[T_n]
@@ -1882,6 +1945,10 @@ Although $\gamma \hole_1 \hole_2 \dots \hole_n . \; T$ correspond to no
 patterns, we take a freedom to call them \emph{multi-hole contexts} and
 let meta-variables $C$ range over them, i.e., we take the freedom to write
 $C[T_1,T_2,\dots,T_n]$.
+Notice that we require placeholder variables
+$\hole_1 \ddd \hole_n$ to be different,
+and $T_1 \ddd T_n$ should not have free occurrences
+of any placeholder variables.
 We believe multi-hole contexts can be formalized as patterns, but we have
 not found any need for it yet.
 
@@ -1892,7 +1959,7 @@ mechanism to allow compact and modular language semantic definitions.
 The idea is to allow users to only write the parts of the program
 configuration that are necessary in semantic rules, the rest of the
 configuration being inferred automatically.
-This configuration abstracton process that is a crucial and distinctive
+This configuration abstraction process that is a crucial and distinctive
 feature of \K can be now elegantly explained with multi-hole contexts.
 
 To make the discussion concrete, suppose that we have a program configuration
@@ -1926,17 +1993,17 @@ configuration where we want to match patterns in context.
 In our case, we do that everywhere:
 $$
 \begin{array}{l}
-\textsf{cfg}(C[T],E,M) = (\gamma\hole.\;\textsf{cfg}(C[\hole],E,M))[T]
+\textsf{cfg}(T,E,M) = (\gamma\hole.\;\textsf{cfg}(\hole,E,M))[T]
 \\
-\textsf{cfg}(K,C[T],M) = (\gamma\hole.\;\textsf{cfg}(K,C[\hole],M))[T]
+\textsf{cfg}(K,T,M) = (\gamma\hole.\;\textsf{cfg}(K,\hole,M))[T]
 \\
-\textsf{cfg}(K,E,C[T]) = (\gamma\hole.\;\textsf{cfg}(K,E,C[\hole]))[T]
+\textsf{cfg}(K,E,T) = (\gamma\hole.\;\textsf{cfg}(K,E,\hole))[T]
 \\
-\textsf{k}(C[T]) = (\gamma\hole.\;\textsf{k}(\hole))[T]
+\textsf{k}(T) = (\gamma\hole.\;\textsf{k}(\hole))[T]
 \\
-\textsf{env}(C[T]) = (\gamma\hole.\;\textsf{env}(\hole))[T]
+\textsf{env}(T) = (\gamma\hole.\;\textsf{env}(\hole))[T]
 \\
-\textsf{mem}(C[T]) = (\gamma\hole.\;\textsf{mem}(\hole))[T]
+\textsf{mem}(T) = (\gamma\hole.\;\textsf{mem}(\hole))[T]
 \end{array}
 $$
 Additionally, we also give permission for contextual matchings to
@@ -1945,7 +2012,9 @@ the infix pairing construct ``$\_\mapsto\_$'' and an associative and
 commutative merge operation, here denoted as a comma ``$\_,\_$'', which
 has additional properties which are not relevant here:
 $$
-(C[M_1],M_2) = (\gamma\hole.\;(\hole,M_2))[M_1]
+(M_1,M_2) 
+= (\gamma\hole.\;(M_1,\hole))[M_2]
+= (\gamma\hole.\;(\hole,M_2))[M_1]
 $$
 The following matching logic proof shows how the configuration above
 can be transformed so that it can be matched by a multi-hole context
@@ -1962,42 +2031,12 @@ $$
 )
 &=&
 \\
-\textsf{cfg}
-(
-\textsf{k}(\ite(1 < x,S_1,S_2)\textsf{;\ }S_3),
-\ \textsf{env}(x \mapsto l, R_\textit{env})
-,
-\ \textsf{mem}((\gamma\hole_3.\;\hole_3)[l \mapsto a], R_\textit{mem})
-)
-&=&
-\\
-\textsf{cfg}
-(
-\textsf{k}(\ite(1 < x,S_1,S_2)\textsf{;\ }S_3),
-\ \textsf{env}(x \mapsto l, R_\textit{env})
-,
-\ \textsf{mem}((\gamma\hole_3.\;(\hole_3,R_\textit{mem}))[l \mapsto a])
-)
-&=&
-\\
-\textsf{cfg}
-(
-\textsf{k}(\ite(1 < x,S_1,S_2)\textsf{;\ }S_3),
-\ \textsf{env}(x \mapsto l, R_\textit{env})
-,
-\ (\gamma\hole_3.\;\textsf{mem}(\hole_3,R_\textit{mem}))[l \mapsto a]
-)
-&=&
-\\
 (\gamma\hole_3.\;\textsf{cfg}
 (
 \textsf{k}(\ite(1 < x,S_1,S_2)\textsf{;\ }S_3),
 \ \textsf{env}(x \mapsto l, R_\textit{env})
 ,
 \ \textsf{mem}(\hole_3,R_\textit{mem})))[l \mapsto a]
-&=&
-\\
-...
 &=&
 \\
 (\gamma\hole_3.\;
@@ -2017,9 +2056,6 @@ $$
 \ \textsf{env}(\hole_2, R_\textit{env})
 ,
 \ \textsf{mem}(\hole_3,R_\textit{mem})))[x \mapsto l,l \mapsto a]
-&=&
-\\
-...
 &=&
 \\
 (\gamma\hole_2\hole_3.\;
@@ -2044,7 +2080,10 @@ $$
 [x, x \mapsto l, l \mapsto a]
 \end{array}
 $$
-
+Here, the first, the second, and the fourth equations
+are by context reasoning as in Section~\ref{sec:evaluationstrategies}
+while the third and the fifth equations are by
+multi-hole context definition.
 Therefore, the configuration pattern
 $$
 \textsf{cfg}
@@ -3860,7 +3899,7 @@ $$
 We have defined a universe of meta-representations of matching logic sorts, 
 symbols, and patterns, with which we represent all possible sorts, symbols, and 
 patterns coming from all kinds of matching logic theories.
-When fix a theory $T$, the meta-representations of sorts, symbols, and patterns 
+When we fix a theory $T$, the meta-representations of sorts, symbols, and patterns 
 in the theory $T$ only stand for a small portion of the universe of sort, 
 symbol, and pattern meta-representations in $K$.
 For example, $\Nat$ is a sort in Presburger arithmetic, but not in lambda 
@@ -3880,16 +3919,13 @@ They are
 \end{align*}
 A related predicate symbol
 \begin{equation}
-	\parametric{\KsortsDeclared}{\shs} \colon \KSortList \to \shs
+	\KsortsDeclared{\shs} \colon \KSortList \to \shs
 \end{equation}
 checks whether a list of sorts are declared:
 \begin{align*}
-& \KsortsDeclared{\shs} \colon \KSortList \to \shs \\
 & \KsortsDeclared{\shs}(\KnilKSortList) \\
 & \KsortsDeclared{\shs}(\KconsKSortList(s,S)) \\
-& = 
-\KsortDeclared{\shs}(s) \wedge 
-\parametric{\KsortsDeclared}{\shs}(S)
+& = \KsortDeclared{\shs}(s) \wedge \KsortsDeclared{\shs}(S)
 \end{align*}
 
 These predicate symbols give us what we call an \emph{intensional definition} 
@@ -4170,9 +4206,9 @@ $$
 $$
 When we use them in the inference rule schema, they are mathematical variables 
 or the so-called meta-variables for wellformed matching logic patterns.
-When we use then in the meta-theory axiom, they are $\KPattern$ variables and 
+When we use them in the meta-theory axiom, they are $\KPattern$ variables and 
 thus can be quantified.
-This abuse use of notations is intended because \emph{meta-variables in 
+This abuse of notations is intended because \emph{meta-variables in 
 object theories are variables in the meta-theory}.
 
 Let us move on and define the axioms for the other two propositional logic 
@@ -4720,7 +4756,7 @@ There are in total 10 sorts in the meta-theory.
 	    \KsortDeclared{$\shs$} & Check whether a sort is declared 
 	    in the current theory 
 	    \\
-	    \parametric{\KsortsDeclared}{$\shs$}  & Check whether a list of sorts 
+	    \KsortsDeclared{$\shs$}  & Check whether a list of sorts 
 	    are declared in the current theory 
 	    \\
 	    \KsymbolDeclared{$\shs$} & Check whether a symbol is 
@@ -5850,8 +5886,8 @@ that could ever be implemented.
 The Kore language is a formal specification language that allows one to specify 
 (both finite and recursively enumerable infinite) theories using a finite 
 number of characters and space.
-Before we present the syntax and semantics of Kore, we would like to recall 
-the readers again of the reflection property that we firstly introduced 
+Before we present the syntax and semantics of Kore, we would like to remind 
+readers of the reflection property that we first introduced 
 in Section~\ref{sec:meta-theory-reflection}
 \begin{center}
 $T \vdash \varphi$ \quad iff \quad 
@@ -5874,8 +5910,8 @@ used to, and are always able to write meta-level definitions and specifications
 to use the full power of the meta-theory and the faithful reflection relation.
 Object-level declarations and specifications are seen as just syntactic sugar 
 of the more verbose meta-level declarations.
-This process of ``desugaring object specifications to meta-specifications'' are 
-called \emph{lifting process}, which is giving Kore a semantics as a 
+This process of ``desugaring object specifications to meta-specifications'' is 
+called the \emph{lifting process}, which gives Kore a semantics as a 
 specification 
 language (Section~\ref{sec:kore-semantics}).
 
@@ -6226,7 +6262,7 @@ respectively, as shown in the next grammar.
 	<meta-head-constructor> ::= <meta-identifier>
 \end{grammar}
 A head is of the form \texttt{$C$\{$s_1,\dots,s_n$\}} for some $n \ge 0$, where 
-$C$ is head constructor and $s_1,\dots,s_n$ are sort parameters.
+$C$ is a head constructor and $s_1,\dots,s_n$ are sort parameters.
 In the case when $n = 0$, we say the head constructor $C$ is a non-parametric 
 head constructor and the head \texttt{$C$\{\}} is a non-parametric head.
 Notice that an object head constructor can only take object sorts as 
@@ -6295,7 +6331,7 @@ parameters.
 %String literals are meta-patterns.
 
 Apart from a few exceptions, patterns in Kore have a highly unified 
-prefix form representations.
+prefix form representation.
 Patterns include \syntacc{object-pattern} and \syntacc{meta-pattern}.
  
 \begin{grammar}
@@ -7157,7 +7193,7 @@ axiom\{$\shs$\} \\
 \qquad 
 \slimplies\{\shs\}( \\
 \ttfamily
-\qquad\qquad\KsortsDeclared\{\shs\}($\denote{
+\qquad\qquad\KsortsDeclared{\shs}($\denote{
 	s_1,\dots,s_n}_\llist$),\\
 \ttfamily
 \qquad\qquad\KsortDeclared{\shs}($\denote{
@@ -7276,10 +7312,10 @@ $v_1,\dots,v_m$ are declared.
 		\qquad 
 		\slimplies\{\shs\}( \\
 		\ttfamily
-		\qquad\qquad\KsortsDeclared\{\shs\}($\denote{
+		\qquad\qquad\KsortsDeclared{\shs}($\denote{
 			v_1,\dots,v_m}_\llist$),\\
 		\ttfamily
-		\qquad\qquad\KsymbolDeclared\{\shs\}($\sigma$))
+		\qquad\qquad\KsymbolDeclared{\shs}($\sigma$))
 		[]
 	\end{tabular}
 \end{center}

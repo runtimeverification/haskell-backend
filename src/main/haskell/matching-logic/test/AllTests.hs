@@ -10,6 +10,7 @@ import           Text.Megaparsec
 import           Text.Megaparsec.Char
 
 import           Kore.MatchingLogic.ProofSystem.ProofAssistantTest
+import           Kore.MatchingLogic.ProofSystem.OnePlusOne
 import           RuleParserTests
 
 main :: IO ()
@@ -30,6 +31,7 @@ unitTests =
     testGroup
         " Unit Tests"
         [ proofAssistantTests
+        , testMinimalOnePlusOne
         , parserUnitTests
         ]
 

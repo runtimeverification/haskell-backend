@@ -17,6 +17,7 @@ module Data.Kore.ASTHelpers ( ApplicationSorts (..)
                             ) where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.Error
 
 import qualified Data.Map             as Map

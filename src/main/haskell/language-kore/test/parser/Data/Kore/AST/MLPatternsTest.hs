@@ -11,6 +11,7 @@ import           Test.Tasty.HUnit                 (assertEqual, testCase)
 
 import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore               (CommonKorePattern)
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
@@ -73,7 +74,9 @@ mlPatternsTests =
                     charListMetaSort
                     (getPatternResultSort
                         undefinedHeadSort
-                        (StringLiteralPattern (StringLiteral "Hello!"))
+                        (StringLiteralPattern (StringLiteral "Hello!")
+                        :: UnFixedPureMLPattern Meta Variable
+                        )
                     )
                 )
             , testCase "CharLiteral"
@@ -81,7 +84,9 @@ mlPatternsTests =
                     charMetaSort
                     (getPatternResultSort
                         undefinedHeadSort
-                        (CharLiteralPattern (CharLiteral 'h'))
+                        (CharLiteralPattern (CharLiteral 'h')
+                        :: UnFixedPureMLPattern Meta Variable
+                        )
                     )
                 )
             , testCase "Variable"
