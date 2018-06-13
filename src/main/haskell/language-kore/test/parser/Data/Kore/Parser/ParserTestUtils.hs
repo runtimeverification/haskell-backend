@@ -7,7 +7,6 @@ import           Test.Tasty.HUnit             (Assertion, assertBool,
 import           Data.Kore.Parser.ParserUtils
 
 import           Data.Either                  (isLeft)
-import qualified Text.Megaparsec.Char         as Parser
 
 data SuccessfulTest a = SuccessfulTest
     { successInput    :: String

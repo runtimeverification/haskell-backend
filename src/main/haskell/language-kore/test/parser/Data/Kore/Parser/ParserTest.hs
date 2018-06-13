@@ -3,9 +3,9 @@ module Data.Kore.Parser.ParserTest (koreParserTests) where
 import           Test.Tasty                       (TestTree, testGroup)
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.Sentence
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.KoreHelpers
 import           Data.Kore.Parser.ParserImpl
@@ -800,7 +800,7 @@ sentenceAliasParserTests :: [TestTree]
 sentenceAliasParserTests =
     parseTree koreSentenceParser
         [ success "alias a{s1}(s2):s3[\"a\"]"
-            ( constructUnifiedSentence SentenceAliasSentence $ 
+            ( constructUnifiedSentence SentenceAliasSentence $
                 (SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = testId "a"
@@ -816,7 +816,7 @@ sentenceAliasParserTests =
                 :: KoreSentenceAlias Object)
             )
         , success "alias a { s1 , s2 } ( s3, s4 ) : s5 [ \"a\" , \"b\" ]"
-            ( constructUnifiedSentence SentenceAliasSentence $ 
+            ( constructUnifiedSentence SentenceAliasSentence $
                 (SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = testId "a"
@@ -841,7 +841,7 @@ sentenceAliasParserTests =
                 :: KoreSentenceAlias Object)
             )
         , success "alias #a{}():#Char[]"
-            ( constructUnifiedSentence SentenceAliasSentence $ 
+            ( constructUnifiedSentence SentenceAliasSentence $
                 (SentenceAlias
                     { sentenceAliasAlias = Alias
                         { aliasConstructor = testId "#a" :: Id Meta
@@ -1143,7 +1143,7 @@ attributesParserTests =
 
 moduleParserTests :: [TestTree]
 moduleParserTests =
-    parseTree (moduleParser koreSentenceParser korePatternParser)
+    parseTree (moduleParser koreSentenceParser)
         [ success "module MN sort c{}[] endmodule [\"a\"]"
             Module
                 { moduleName = ModuleName "MN"
@@ -1200,7 +1200,7 @@ moduleParserTests =
 
 definitionParserTests :: [TestTree]
 definitionParserTests =
-    parseTree (definitionParser koreSentenceParser korePatternParser)
+    parseTree (definitionParser koreSentenceParser)
         [ success "[\"a\"] module M sort c{}[] endmodule [\"b\"]"
             Definition
                 { definitionAttributes =

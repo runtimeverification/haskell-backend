@@ -9,24 +9,18 @@ module Kore.MatchingLogic.ProofSystem.Minimal.Syntax
   , parseMLRuleSig)
   where
 import           Control.Applicative                    (some)
-import           Control.Monad.IO.Class                 (liftIO)
-import           Control.Monad.State.Strict             (MonadState (..),
-                                                         StateT, runStateT)
-import           Data.Char                              (isAlphaNum, isSpace)
-import           Data.Functor.Foldable                  (Fix (Fix))
-import           Data.List                              (isPrefixOf, isSuffixOf)
+import           Control.Monad                          (void)
+import           Data.Char                              (isAlphaNum)
 import           Data.Text                              (Text)
 import           Data.Void
 
 import           Data.Text.Prettyprint.Doc              (Doc, Pretty (pretty),
                                                          sep, tupled, (<>))
-import qualified Data.Text.Prettyprint.Doc              as Doc
 import           Text.Megaparsec                        hiding (some)
 import           Text.Megaparsec.Char
 
 import qualified Kore.MatchingLogic.AST                 as AST
 import           Kore.MatchingLogic.AST.Syntax          (mlPattern)
-import           Kore.MatchingLogic.HilbertProof
 import           Kore.MatchingLogic.ProofSystem.Minimal
 import           Kore.MatchingLogic.Signature
 
@@ -52,17 +46,17 @@ parseId :: Parser Text
 parseId = lexeme $ takeWhile1P Nothing isAlphaNum
 
 infixl 4 `arg`
+arg :: Parser (a -> b) -> Parser a -> Parser b
 arg l r = l <* comma <*> r
 
 -- | Parse an rule of the minimal proof system,
 -- given parsers for all the components
-parseMLRule :: Parser sort
-            -> Parser label
+parseMLRule :: Parser label
             -> Parser var
             -> Parser term
             -> Parser ix
-            -> Parser (MLRule sort label var term ix)
-parseMLRule pSort pLabel pVar pTerm pIx =
+            -> Parser (MLRule label var term ix)
+parseMLRule pLabel pVar pTerm pIx =
         propositionalRules
     <|> propagationRules
     <|> modusPonens
@@ -77,7 +71,7 @@ parseMLRule pSort pLabel pVar pTerm pIx =
     rule name body = string name >> space >> parens body
 
     propositionalRules = try $ do
-      string "propositional"
+      void $ string "propositional"
       prop1 <|> prop2 <|> prop3
 
     prop1 = rule "1" $ Propositional1 <$> pTerm `arg` pTerm
@@ -99,7 +93,7 @@ parseMLRule pSort pLabel pVar pTerm pIx =
       Framing <$> pLabel `arg` number `arg` pIx
 
     propagationRules = do
-      string "propagate-"
+      void $ string "propagate-"
       propagateOr <|> propagateExists
 
     propagateOr = rule "or" $
@@ -123,7 +117,7 @@ parseMLRuleSig :: forall sig var ix . (AST.IsSignature sig)
                   -> Parser ix
                   -> Parser (MLRuleSig sig var ix)
 parseMLRuleSig pSort pLabel pVar pIx =
-    parseMLRule pSort pLabel pVar parseFormula pIx
+    parseMLRule pLabel pVar parseFormula pIx
   where
     parseFormula :: Parser (AST.WFPattern sig var)
     parseFormula = do
@@ -134,12 +128,12 @@ parseMLRuleSig pSort pLabel pVar pIx =
 
 -- | Displays proof rules in the documented concrete syntax,
 -- assuming pretty-printing instances for all the type parameters
-instance (Pretty sort, Pretty label, Pretty var, Pretty term, Pretty hyp)
-       => Pretty (MLRule sort label var term hyp) where
-  pretty p = let
+instance (Pretty label, Pretty var, Pretty term, Pretty hyp)
+       => Pretty (MLRule label var term hyp) where
+  pretty proofRule = let
       rule :: Text -> [Doc ann] -> Doc ann
       rule prefix args = pretty prefix <> tupled args
-    in case p of
+    in case proofRule of
     Propositional1 p1 p2 -> rule "propositional1" [pretty p1,pretty p2]
     Propositional2 p1 p2 p3 -> rule "propositional2" [pretty p1,pretty p2,pretty p3]
     Propositional3 p1 p2 -> rule "propositional3" [pretty p1, pretty p2]

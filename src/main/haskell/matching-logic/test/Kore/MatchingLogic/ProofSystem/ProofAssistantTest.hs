@@ -2154,7 +2154,6 @@ type MLProof =
     Proof
         GoalId
         (MLRule
-            (Sort Meta)
             (SymbolOrAlias Meta)
             (Variable Meta)
             (MetaMLPattern Variable)

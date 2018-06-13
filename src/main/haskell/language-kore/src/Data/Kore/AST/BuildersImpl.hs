@@ -13,7 +13,6 @@ import           Data.Fix
 import           Data.Proxy
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
 

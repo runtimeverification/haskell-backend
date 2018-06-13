@@ -1,3 +1,6 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-|
 Module      : Data.Kore.Unification.SubstitutionNormalization
@@ -15,16 +18,15 @@ module Data.Kore.Unification.SubstitutionNormalization
 
 import           Data.Kore.Algorithm.TopologicalSort
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
-import           Data.Kore.Error
 import           Data.Kore.Substitution.Class
 import qualified Data.Kore.Substitution.List          as ListSubstitution
-import           Data.Kore.Unification.Error          (UnificationError)
+import           Data.Kore.Unification.Error          (SubstitutionError (..))
 import           Data.Kore.Unification.UnifierImpl    (UnificationSubstitution)
 import           Data.Kore.Variables.Free
 import           Data.Kore.Variables.Fresh.IntCounter (IntCounter)
+import           Data.Kore.Variables.Int              (IntVariable)
 
 
 import qualified Data.Map                             as Map
@@ -32,10 +34,15 @@ import           Data.Maybe                           (mapMaybe)
 import qualified Data.Set                             as Set
 
 instance
-    MetaOrObject level
+    ( MetaOrObject level
+    , Ord (variable Object)
+    , Ord (variable Meta)
+    , Hashable variable
+    , IntVariable variable
+    )
     => PatternSubstitutionClass
         ListSubstitution.Substitution
-        Variable
+        variable
         (Pattern level)
         IntCounter
   where
@@ -51,13 +58,20 @@ Also returns an error when the substitution contains x = x, although that
 should be solvable.
 --}
 normalizeSubstitution
-    :: MetaOrObject level
-    => UnificationSubstitution level
+    ::  ( MetaOrObject level
+        , Ord (variable level)
+        , Ord (variable Meta)
+        , Ord (variable Object)
+        , Hashable variable
+        , IntVariable variable
+        , Show (variable level)
+        )
+    => UnificationSubstitution level variable
     -> Either
-        (Error (UnificationError level))
-        (IntCounter (UnificationSubstitution level))
+        (SubstitutionError level variable)
+        (IntCounter (UnificationSubstitution level variable))
 normalizeSubstitution substitution = do
-    sorted <- topologicalSort dependencies (getId . variableName)
+    sorted <- topologicalSortConverted
     let
         sortedSubstitution =
             map (variableToSubstitution variableToPattern) sorted
@@ -66,22 +80,33 @@ normalizeSubstitution substitution = do
     interestingVariables = extractVariables substitution
     variableToPattern = Map.fromList substitution
     dependencies = buildDependencies substitution interestingVariables
+    topologicalSortConverted =
+        case topologicalSort dependencies of
+            Left (ToplogicalSortCycles vars) ->
+                Left (CircularVariableDependency vars)
+            Right result -> Right result
 
 variableToSubstitution
-    :: Map.Map (Variable level) (CommonPurePattern level)
-    -> Variable level
-    -> (Variable level, CommonPurePattern level)
+    :: (Ord (variable level), Show (variable level))
+    => Map.Map (variable level) (PureMLPattern level variable)
+    -> variable level
+    -> (variable level, PureMLPattern level variable)
 variableToSubstitution varToPattern var =
     case Map.lookup var varToPattern of
         Just patt -> (var, patt)
-        Nothing   -> error ("Variable " ++ show var ++ " not found.")
+        Nothing   -> error ("variable " ++ show var ++ " not found.")
 
 normalizeSortedSubstitution
-    :: MetaOrObject level
-    => UnificationSubstitution level
-    -> UnificationSubstitution level
-    -> [(Unified Variable, CommonPurePattern level)]
-    -> IntCounter (UnificationSubstitution level)
+    ::  ( MetaOrObject level
+        , Ord (variable Meta)
+        , Ord (variable Object)
+        , Hashable variable
+        , IntVariable variable
+        )
+    => UnificationSubstitution level variable
+    -> UnificationSubstitution level variable
+    -> [(Unified variable, PureMLPattern level variable)]
+    -> IntCounter (UnificationSubstitution level variable)
 normalizeSortedSubstitution [] result _ = return result
 normalizeSortedSubstitution
     ((var, varPattern) : unprocessed)
@@ -96,9 +121,12 @@ normalizeSortedSubstitution
         ((asUnified var, substitutedVarPattern) : substitution)
 
 extractVariables
-    :: MetaOrObject level
-    => UnificationSubstitution level
-    -> Map.Map (Unified Variable) (Variable level)
+    ::  ( MetaOrObject level
+        , Ord (variable Meta)
+        , Ord (variable Object)
+        )
+    => UnificationSubstitution level variable
+    -> Map.Map (Unified variable) (variable level)
 extractVariables unification =
     Map.fromList
         (map
@@ -107,10 +135,14 @@ extractVariables unification =
         )
 
 buildDependencies
-    :: MetaOrObject level
-    => UnificationSubstitution level
-    -> Map.Map (Unified Variable) (Variable level)
-    -> Map.Map (Variable level) [Variable level]
+    ::  ( MetaOrObject level
+        , Ord (variable level)
+        , Ord (variable Meta)
+        , Ord (variable Object)
+        )
+    => UnificationSubstitution level variable
+    -> Map.Map (Unified variable) (variable level)
+    -> Map.Map (variable level) [variable level]
 buildDependencies [] _ = Map.empty
 buildDependencies
     ((var, patt) : reminder)

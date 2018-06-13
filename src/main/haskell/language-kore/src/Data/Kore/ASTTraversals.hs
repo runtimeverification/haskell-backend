@@ -30,7 +30,6 @@ module Data.Kore.ASTTraversals ( patternBottomUpVisitor
 import           Control.Monad              ((>=>))
 import           Data.Fix
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.FixTraversals
 

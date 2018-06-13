@@ -17,4 +17,5 @@ import           Data.Kore.Unification.Error       as Error (UnificationError (.
 import           Data.Kore.Unification.UnifierImpl as UnifierImpl (FunctionalProof (..),
                                                                    UnificationProof (..),
                                                                    UnificationSolution (..),
+                                                                   UnificationSubstitution,
                                                                    unificationProcedure)

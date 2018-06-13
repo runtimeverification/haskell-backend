@@ -38,9 +38,9 @@ Conventions used:
 module Data.Kore.Parser.ParserImpl where
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.Sentence
 import           Data.Kore.HaskellExtensions  (Rotate31 (..), (<....>))
 import           Data.Kore.MetaML.AST
 import           Data.Kore.Parser.Lexeme
@@ -790,7 +790,7 @@ BNF definition:
 Always starts with @[@.
 -}
 attributesParser
-    :: Parser (Attributes)
+    :: Parser Attributes
 attributesParser =
     Attributes <$> inSquareBracketsListParser korePatternParser
 
@@ -802,16 +802,15 @@ BNF definition:
 @
 -}
 koreDefinitionParser :: Parser KoreDefinition
-koreDefinitionParser = definitionParser koreSentenceParser korePatternParser
+koreDefinitionParser = definitionParser koreSentenceParser
 
 definitionParser
     :: Parser (sentence sortParam pat variable)
-    -> Parser (Fix (pat variable))
     -> Parser (Definition sentence sortParam pat variable)
-definitionParser sentenceParser patParser =
+definitionParser sentenceParser =
     pure Definition
         <*> attributesParser
-        <*> some (moduleParser sentenceParser patParser)
+        <*> some (moduleParser sentenceParser)
 
 {-|'moduleParser' parses the module part of a Kore @definition@
 
@@ -822,9 +821,8 @@ BNF definition fragment:
 -}
 moduleParser
     :: Parser (sentence sortParam pat variable)
-    -> Parser (Fix (pat variable))
     -> Parser (Module sentence sortParam pat variable)
-moduleParser sentenceParser patParser = do
+moduleParser sentenceParser = do
     mlLexemeParser "module"
     name <- moduleNameParser
     sentences <- ParserUtils.manyUntilChar 'e' sentenceParser

@@ -11,7 +11,6 @@ module Data.Kore.Implicit.ImplicitSortsImpl where
 
 import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Implicit.ImplicitKoreImpl     (equalsAxiom,
                                                           parameterizedAxiom,

@@ -1,7 +1,7 @@
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeSynonymInstances  #-}
 {-|
 Module      : Data.Kore.AST.PureToKore
 Description : Functionality for viewing "Pure"-only as unified Kore constructs.
@@ -25,15 +25,14 @@ module Data.Kore.AST.PureToKore
     ) where
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
+import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTTraversals
 import           Data.Kore.HaskellExtensions (Rotate31 (..))
 
 import           Data.Fix
-
 
 patternPureToKore
     :: MetaOrObject level => CommonPurePattern level -> CommonKorePattern
@@ -66,9 +65,9 @@ sentencePureToKore
     :: MetaOrObject level => PureSentence level -> KoreSentence
 sentencePureToKore (SentenceAliasSentence (SentenceAlias a b c d)) =
   constructUnifiedSentence SentenceAliasSentence $ SentenceAlias a b c d
-sentencePureToKore (SentenceSymbolSentence (SentenceSymbol a b c d)) = 
+sentencePureToKore (SentenceSymbolSentence (SentenceSymbol a b c d)) =
   constructUnifiedSentence SentenceSymbolSentence $ SentenceSymbol a b c d
-sentencePureToKore (SentenceImportSentence (SentenceImport a b)) = 
+sentencePureToKore (SentenceImportSentence (SentenceImport a b)) =
   constructUnifiedSentence SentenceImportSentence $ SentenceImport a b
 sentencePureToKore (SentenceAxiomSentence msx) = asSentence SentenceAxiom
     { sentenceAxiomAttributes =
@@ -83,7 +82,13 @@ sentencePureToKore (SentenceSortSentence mss) =
     { sentenceSortName = sentenceSortName mss
     , sentenceSortParameters = sentenceSortParameters mss
     }
-
+sentencePureToKore (SentenceHookSentence (SentenceHookedSort mss)) =
+  constructUnifiedSentence (SentenceHookSentence . SentenceHookedSort) mss
+    { sentenceSortName = sentenceSortName mss
+    , sentenceSortParameters = sentenceSortParameters mss
+    }
+sentencePureToKore (SentenceHookSentence (SentenceHookedSymbol (SentenceSymbol a b c d))) =
+  constructUnifiedSentence (SentenceHookSentence . SentenceHookedSymbol) $ SentenceSymbol a b c d
 
 modulePureToKore
     :: MetaOrObject level => PureModule level -> KoreModule

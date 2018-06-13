@@ -1,15 +1,13 @@
-{-# LANGUAGE DeriveFoldable         #-}
-{-# LANGUAGE DeriveFunctor          #-}
-{-# LANGUAGE DeriveTraversable      #-}
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE GADTs                  #-}
-{-# LANGUAGE KindSignatures         #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE RankNTypes             #-}
-{-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE StandaloneDeriving     #-}
-{-# LANGUAGE UndecidableInstances   #-}
+{-# LANGUAGE DeriveFoldable        #-}
+{-# LANGUAGE DeriveFunctor         #-}
+{-# LANGUAGE DeriveTraversable     #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE StandaloneDeriving    #-}
+{-# LANGUAGE UndecidableInstances  #-}
 {-|
 Module      : Data.Kore.AST.Common
 Description : Data Structures for representing the Kore language AST that do not
@@ -34,11 +32,9 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Data.Kore.AST.Common where
 
-import           Data.Fix
 import           Data.Proxy
 
 import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.HaskellExtensions (Rotate31 (..), Rotate41 (..))
 
 
 {-| 'FileLocation' represents a position in a source file.
@@ -276,6 +272,14 @@ data Variable level = Variable
     , variableSort :: !(Sort level)
     }
     deriving (Show, Eq, Ord)
+
+{--| 'SortedVariable' is a variable which has a sort.
+--}
+class SortedVariable variable where
+    sortedVariableSort :: variable level -> Sort level
+
+instance SortedVariable Variable where
+    sortedVariableSort = variableSort
 
 {-|Enumeration of patterns starting with @\@
 -}
@@ -711,7 +715,6 @@ deriving instance
 deriving instance Functor (Pattern level variable)
 deriving instance Foldable (Pattern level variable)
 deriving instance Traversable (Pattern level variable)
-
 
 data SortedPattern level variable child = SortedPattern
     { sortedPatternPattern :: !(Pattern level variable child)
