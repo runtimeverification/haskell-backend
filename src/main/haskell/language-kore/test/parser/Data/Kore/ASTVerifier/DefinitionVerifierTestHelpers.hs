@@ -9,9 +9,9 @@ import           Test.Tasty.HUnit                         (HasCallStack,
 
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.ASTVerifier.DefinitionVerifier
 import           Data.Kore.ASTVerifier.Error
@@ -34,13 +34,16 @@ addPrefixToDescription prefix =
         (\t -> t {testDataDescription = prefix ++ testDataDescription t})
 
 failureTestDataGroup
-    :: String -> ExpectedErrorMessage -> ErrorStack -> [TestData] -> TestTree
+    :: HasCallStack
+    => String -> ExpectedErrorMessage -> ErrorStack -> [TestData] -> TestTree
 failureTestDataGroup description errorMessage errorStack testData =
     testGroup
         description
         (map (failureTestData errorMessage errorStack) testData)
 
-failureTestData :: ExpectedErrorMessage -> ErrorStack -> TestData -> TestTree
+failureTestData
+    :: HasCallStack
+    => ExpectedErrorMessage -> ErrorStack -> TestData -> TestTree
 failureTestData
     (ExpectedErrorMessage message)
     (ErrorStack stack)
@@ -227,7 +230,7 @@ sortSentenceWithSortParameters (SortName name) parameters =
 aliasSentenceWithSort
     :: MetaOrObject level => AliasName -> Sort level -> KoreSentence
 aliasSentenceWithSort (AliasName name) sort =
-    constructUnifiedSentence SentenceAliasSentence $ 
+    constructUnifiedSentence SentenceAliasSentence $
         SentenceAlias
             { sentenceAliasAlias = Alias
                 { aliasConstructor = testId name
@@ -415,7 +418,7 @@ symbolSentenceWithResultSort
     => SymbolName -> Sort level -> [SortVariable level] -> KoreSentence
 symbolSentenceWithResultSort
     (SymbolName name) sort parameters
-  = constructUnifiedSentence SentenceSymbolSentence $ 
+  = constructUnifiedSentence SentenceSymbolSentence $
         SentenceSymbol
             { sentenceSymbolSymbol = Symbol
                 { symbolConstructor = testId name
@@ -436,7 +439,7 @@ symbolSentenceWithArguments
     => SymbolName -> Sort level -> [Sort level] -> KoreSentence
 symbolSentenceWithArguments
     (SymbolName name) sort operandSorts
-  = constructUnifiedSentence SentenceSymbolSentence $ 
+  = constructUnifiedSentence SentenceSymbolSentence $
         SentenceSymbol
             { sentenceSymbolSymbol = Symbol
                 { symbolConstructor = testId name
@@ -457,7 +460,7 @@ aliasSentenceWithArguments
     => AliasName -> Sort level -> [Sort level] -> KoreSentence
 aliasSentenceWithArguments
     (AliasName name) sort operandSorts
-  = constructUnifiedSentence SentenceAliasSentence $ 
+  = constructUnifiedSentence SentenceAliasSentence $
         SentenceAlias
             { sentenceAliasAlias = Alias
                 { aliasConstructor = testId name
