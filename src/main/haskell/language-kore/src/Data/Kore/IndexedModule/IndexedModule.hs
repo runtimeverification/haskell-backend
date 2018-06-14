@@ -35,6 +35,7 @@ module Data.Kore.IndexedModule.IndexedModule
     ) where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Error
@@ -78,9 +79,9 @@ data IndexedModule sortParam pat variable = IndexedModule
     , indexedModuleMetaSortDescriptions
         :: !(Map.Map (Id Meta) (SentenceSort Meta pat variable))
     , indexedModuleAxioms     :: ![SentenceAxiom sortParam pat variable]
-    , indexedModuleAttributes :: !(Attributes pat variable)
+    , indexedModuleAttributes :: !(Attributes)
     , indexedModuleImports
-        :: ![(Attributes pat variable, IndexedModule sortParam pat variable)]
+        :: ![(Attributes, IndexedModule sortParam pat variable)]
     , indexedModuleHookedIdentifiers
         :: !(Set.Set (Id Object))
     }
@@ -112,7 +113,8 @@ indexedModuleRawSentences im =
     ++
     map asSentence (indexedModuleAxioms im)
     ++
-    [ asSentence (SentenceImport (indexedModuleName m) attributes)
+    [ constructUnifiedSentence SentenceImportSentence 
+      (SentenceImport (indexedModuleName m) attributes)
     | (attributes, m) <- indexedModuleImports im
     ]
   where

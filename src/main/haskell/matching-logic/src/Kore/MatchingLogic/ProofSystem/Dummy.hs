@@ -9,6 +9,7 @@ the generic hilbert proof structure.
  -}
 module Kore.MatchingLogic.ProofSystem.Dummy
   (DummyRule(DummyRule)
+  ,DummyError(DummyError)
   ) where
 import           Data.Text
 

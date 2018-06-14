@@ -1,15 +1,13 @@
-{-# LANGUAGE DeriveFoldable         #-}
-{-# LANGUAGE DeriveFunctor          #-}
-{-# LANGUAGE DeriveTraversable      #-}
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE GADTs                  #-}
-{-# LANGUAGE KindSignatures         #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE RankNTypes             #-}
-{-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE StandaloneDeriving     #-}
-{-# LANGUAGE UndecidableInstances   #-}
+{-# LANGUAGE DeriveFoldable        #-}
+{-# LANGUAGE DeriveFunctor         #-}
+{-# LANGUAGE DeriveTraversable     #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE StandaloneDeriving    #-}
+{-# LANGUAGE UndecidableInstances  #-}
 {-|
 Module      : Data.Kore.AST.Common
 Description : Data Structures for representing the Kore language AST that do not
@@ -34,10 +32,10 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Data.Kore.AST.Common where
 
-import           Data.Fix
 import           Data.Proxy
 
 import           Data.Kore.AST.MetaOrObject
+
 
 {-| 'FileLocation' represents a position in a source file.
 -}
@@ -274,6 +272,14 @@ data Variable level = Variable
     , variableSort :: !(Sort level)
     }
     deriving (Show, Eq, Ord)
+
+{--| 'SortedVariable' is a variable which has a sort.
+--}
+class SortedVariable variable where
+    sortedVariableSort :: variable level -> Sort level
+
+instance SortedVariable Variable where
+    sortedVariableSort = variableSort
 
 {-|Enumeration of patterns starting with @\@
 -}
@@ -709,267 +715,6 @@ deriving instance
 deriving instance Functor (Pattern level variable)
 deriving instance Foldable (Pattern level variable)
 deriving instance Traversable (Pattern level variable)
-
-{-|'Attributes' corresponds to the @attributes@ Kore syntactic declaration.
-It is parameterized by the types of Patterns, @pat@.
--}
-newtype Attributes pat (variable :: * -> *) =
-    Attributes { getAttributes :: [Fix (pat variable)] }
-
-deriving instance
-    (Eq (pat variable (Fix (pat variable))))
-     => Eq (Attributes pat variable)
-
-deriving instance
-    (Show (pat variable (Fix (pat variable))))
-     => Show (Attributes pat variable)
-
-{-|'SentenceAlias' corresponds to the @object-alias-declaration@ and
-@meta-alias-declaration@ syntactic categories from the Semantics of K,
-Section 9.1.6 (Declaration and Definitions).
-
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
--}
-data SentenceAlias level pat variable = SentenceAlias
-    { sentenceAliasAlias      :: !(Alias level)
-    , sentenceAliasSorts      :: ![Sort level]
-    , sentenceAliasResultSort :: !(Sort level)
-    , sentenceAliasAttributes :: !(Attributes pat variable)
-    }
-
-deriving instance
-    (Eq (pat variable (Fix (pat variable))))
-     => Eq (SentenceAlias level pat variable)
-
-deriving instance
-    (Show (pat variable (Fix (pat variable))))
-     => Show (SentenceAlias level pat variable)
-
-{-|'SentenceSymbol' corresponds to the @object-symbol-declaration@ and
-@meta-symbol-declaration@ syntactic categories from the Semantics of K,
-Section 9.1.6 (Declaration and Definitions).
-
-The 'level' type parameter is used to distiguish between the meta- and object-
-versions of symbol declarations. It should verify 'MetaOrObject level'.
--}
-data SentenceSymbol level pat variable = SentenceSymbol
-    { sentenceSymbolSymbol     :: !(Symbol level)
-    , sentenceSymbolSorts      :: ![Sort level]
-    , sentenceSymbolResultSort :: !(Sort level)
-    , sentenceSymbolAttributes :: !(Attributes pat variable)
-    }
-
-deriving instance
-    (Eq (pat variable (Fix (pat variable))))
-     => Eq (SentenceSymbol level pat variable)
-
-deriving instance
-    (Show (pat variable (Fix (pat variable))))
-     => Show (SentenceSymbol level pat variable)
-
-{-|'ModuleName' corresponds to the @module-name@ syntactic category
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
--}
-newtype ModuleName = ModuleName { getModuleName :: String }
-    deriving (Show, Eq, Ord)
-
-{-|'SentenceImport' corresponds to the @import-declaration@ syntactic category
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
--}
-data SentenceImport pat variable = SentenceImport
-    { sentenceImportModuleName :: !ModuleName
-    , sentenceImportAttributes :: !(Attributes pat variable)
-    }
-
-deriving instance
-    (Eq (pat variable (Fix (pat variable))))
-     => Eq (SentenceImport pat variable)
-
-deriving instance
-    (Show (pat variable (Fix (pat variable))))
-     => Show (SentenceImport pat variable)
-
-{-|'SentenceSort' corresponds to the @sort-declaration@ syntactic category
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
--}
-data SentenceSort level pat variable = SentenceSort
-    { sentenceSortName       :: !(Id level)
-    , sentenceSortParameters :: ![SortVariable level]
-    , sentenceSortAttributes :: !(Attributes pat variable)
-    }
-
-deriving instance
-    (Eq (pat variable (Fix (pat variable))))
-     => Eq (SentenceSort level pat variable)
-
-deriving instance
-    (Show (pat variable (Fix (pat variable))))
-     => Show (SentenceSort level pat variable)
-
-{-|'SentenceAxiom' corresponds to the @axiom-declaration@ syntactic category
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
--}
-data SentenceAxiom sortParam pat variable = SentenceAxiom
-    { sentenceAxiomParameters :: ![sortParam]
-    , sentenceAxiomPattern    :: !(Fix (pat variable))
-    , sentenceAxiomAttributes :: !(Attributes pat variable)
-    }
-
-deriving instance
-    ( Eq (pat variable (Fix (pat variable)))
-    , Eq sortParam
-    )  => Eq (SentenceAxiom sortParam pat variable)
-
-deriving instance
-    ( Show (pat variable (Fix (pat variable)))
-    , Show sortParam
-    ) => Show (SentenceAxiom sortParam pat variable)
-
-{-|@SentenceHook@ corresponds to @hook-declaration@ syntactic category
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
-Note that we are reusing the 'SentenceSort' and 'SentenceSymbol' structures to
-represent hooked sorts and hooked symbols.
--}
-data SentenceHook level pat variable
-    = SentenceHookedSort !(SentenceSort level pat variable)
-    | SentenceHookedSymbol !(SentenceSymbol level pat variable)
-
-deriving instance
-    (Eq (pat variable (Fix (pat variable))))
-     => Eq (SentenceHook level pat variable)
-
-deriving instance
-    (Show (pat variable (Fix (pat variable))))
-     => Show (SentenceHook level pat variable)
-
-{-|The 'Sentence' type corresponds to the @declaration@ syntactic category
-from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
-
-The @symbol-declaration@ and @alias-declaration@ categories were also merged
-into 'Sentence', using the @level@ parameter to distinguish the 'Meta' and
-'Object' variants.
-Since axioms and imports exist at both meta and kore levels, we use 'Meta'
-to qualify them. In contrast, since sort declarations are not available
-at the meta level, we qualify them with 'Object'.
--}
-data Sentence level sortParam pat variable where
-    SentenceAliasSentence
-        :: !(SentenceAlias level pat variable)
-        -> Sentence level sortParam pat variable
-    SentenceSymbolSentence
-        :: !(SentenceSymbol level pat variable)
-        -> Sentence level sortParam pat variable
-    SentenceImportSentence
-        :: !(SentenceImport pat variable)
-        -> Sentence Meta sortParam pat variable
-    SentenceAxiomSentence
-        :: !(SentenceAxiom sortParam pat variable)
-        -> Sentence Meta sortParam pat variable
-    SentenceSortSentence
-        :: !(SentenceSort Object pat variable)
-        -> Sentence Object sortParam pat variable
-    SentenceHookSentence
-        :: !(SentenceHook Object pat variable)
-        -> Sentence Object sortParam pat variable
-
-deriving instance
-    ( Eq (pat variable (Fix (pat variable)))
-    , Eq sortParam
-    ) => Eq (Sentence level sortParam pat variable)
-
-deriving instance
-    ( Show (pat variable (Fix (pat variable)))
-    , Show sortParam
-    ) => Show (Sentence level sortParam pat variable)
-
-{-|A 'Module' consists of a 'ModuleName' a list of 'Sentence's and some
-'Attributes'.
-
-They correspond to the second, third and forth non-terminals of the @definition@
-syntactic category from the Semantics of K, Section 9.1.6
-(Declaration and Definitions).
--}
-data Module sentence sortParam pat variable = Module
-    { moduleName       :: !ModuleName
-    , moduleSentences  :: ![sentence sortParam pat variable]
-    , moduleAttributes :: !(Attributes pat variable)
-    }
-
-deriving instance
-    ( Eq (pat variable (Fix (pat variable)))
-    , Eq (sentence sortParam pat variable)
-    ) => Eq (Module sentence sortParam pat variable)
-
-deriving instance
-    ( Show (pat variable (Fix (pat variable)))
-    , Show (sentence sortParam pat variable)
-    ) => Show (Module sentence sortParam pat variable)
-
-{-|Currently, a 'Definition' consists of some 'Attributes' and a 'Module'
-
-Because there are plans to extend this to a list of 'Module's, the @definition@
-syntactic category from the Semantics of K, Section 9.1.6
-(Declaration and Definitions) is splitted here into 'Definition' and 'Module'.
-
-'definitionAttributes' corresponds to the first non-terminal of @definition@,
-while the remaining three are grouped into 'definitionModules'.
--}
-data Definition sentence sortParam pat variable = Definition
-    { definitionAttributes :: !(Attributes pat variable)
-    , definitionModules    :: ![Module sentence sortParam pat variable]
-    }
-
-deriving instance
-    ( Eq (pat variable (Fix (pat variable)))
-    , Eq (sentence sortParam pat variable)
-    ) => Eq (Definition sentence sortParam pat variable)
-
-deriving instance
-    ( Show (pat variable (Fix (pat variable)))
-    , Show (sentence sortParam pat variable)
-    ) => Show (Definition sentence sortParam pat variable)
-
-class SentenceSymbolOrAlias sentence where
-    getSentenceSymbolOrAliasConstructor
-        :: sentence level pat variable -> Id level
-    getSentenceSymbolOrAliasSortParams
-        :: sentence level pat variable -> [SortVariable level]
-    getSentenceSymbolOrAliasArgumentSorts
-        :: sentence level pat variable -> [Sort level]
-    getSentenceSymbolOrAliasResultSort
-        :: sentence level pat variable -> Sort level
-    getSentenceSymbolOrAliasAttributes
-        :: sentence level pat variable -> Attributes pat variable
-    getSentenceSymbolOrAliasSentenceName
-        :: sentence level pat variable -> String
-    getSentenceSymbolOrAliasHead
-        :: sentence level pat variable -> [Sort level] -> SymbolOrAlias level
-    getSentenceSymbolOrAliasHead sentence sortParameters = SymbolOrAlias
-        { symbolOrAliasConstructor =
-            getSentenceSymbolOrAliasConstructor sentence
-        , symbolOrAliasParams = sortParameters
-        }
-
-instance SentenceSymbolOrAlias SentenceAlias where
-    getSentenceSymbolOrAliasConstructor = aliasConstructor . sentenceAliasAlias
-    getSentenceSymbolOrAliasSortParams = aliasParams . sentenceAliasAlias
-    getSentenceSymbolOrAliasArgumentSorts = sentenceAliasSorts
-    getSentenceSymbolOrAliasResultSort = sentenceAliasResultSort
-    getSentenceSymbolOrAliasAttributes = sentenceAliasAttributes
-    getSentenceSymbolOrAliasSentenceName _ = "alias"
-
-instance SentenceSymbolOrAlias SentenceSymbol where
-    getSentenceSymbolOrAliasConstructor =
-        symbolConstructor . sentenceSymbolSymbol
-    getSentenceSymbolOrAliasSortParams = symbolParams . sentenceSymbolSymbol
-    getSentenceSymbolOrAliasArgumentSorts = sentenceSymbolSorts
-    getSentenceSymbolOrAliasResultSort = sentenceSymbolResultSort
-    getSentenceSymbolOrAliasAttributes = sentenceSymbolAttributes
-    getSentenceSymbolOrAliasSentenceName _ = "symbol"
-
-class AsSentence sentenceType s | s -> sentenceType where
-    asSentence :: s -> sentenceType
 
 data SortedPattern level variable child = SortedPattern
     { sortedPatternPattern :: !(Pattern level variable child)

@@ -11,6 +11,7 @@ Portability : POSIX
 module Data.Kore.ASTVerifier.PatternVerifier (verifyPattern) where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Error
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject

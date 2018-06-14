@@ -7,6 +7,8 @@
             symbol hook{}(
                 Hook{}
             ):Attribute{}[]
+            symbol functional{}():Attribute{}[]
+            symbol constructor{}():Attribute{}[]
             sort ArgumentPosition{}[]
             symbol firstArgument{}():ArgumentPosition{}[]
             symbol secondArgument{}():ArgumentPosition{}[]
@@ -17,6 +19,9 @@
             symbol strict{}(
                 Strict{},
                 ArgumentPosition{}
+            ):Attribute{}[]
+            symbol seqstrict{}(
+                Strict{}
             ):Attribute{}[]
             symbol associative{}():Attribute{}[]
             symbol commutative{}():Attribute{}[]
