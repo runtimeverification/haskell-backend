@@ -12,6 +12,7 @@ module Data.Kore.Implicit.ImplicitKoreImpl where
 
 import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.MetaML.AST
 
@@ -28,7 +29,7 @@ any pattern, except for top-level pattern of an axiom. Using it will have
 unpredictable effects.
 -}
 equalsSortParam :: SortVariable Meta
-equalsSortParam = sortParameter Meta "#esp"
+equalsSortParam = sortParameter Meta "#esp" AstLocationImplicit
 
 equalsSort :: Sort Meta
 equalsSort = SortVariableSort equalsSortParam

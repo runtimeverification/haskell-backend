@@ -18,7 +18,7 @@ module Data.Kore.ASTVerifier.DefinitionVerifier
 
 import           Control.Monad                            (foldM, foldM_)
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
+import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTVerifier.AttributesVerifier
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.ModuleVerifier
@@ -28,7 +28,6 @@ import           Data.Kore.Implicit.Definitions           (uncheckedAttributesDe
 import           Data.Kore.IndexedModule.IndexedModule
 
 import qualified Data.Map                                 as Map
-import qualified Data.Set                                 as Set
 
 {-|'verifyDefinition' verifies the welformedness of a Kore 'Definition'.
 
@@ -54,7 +53,7 @@ verifyDefinition
     -> KoreDefinition
     -> Either (Error VerifyError) VerifySuccess
 verifyDefinition attributesVerification definition = do
-    verifyAndIndexDefinition attributesVerification definition
+    _ <- verifyAndIndexDefinition attributesVerification definition
     verifySuccess
 
 {-|'verifyAndIndexDefinition' verifies a definition and returns an indexed
@@ -100,7 +99,7 @@ indexImplicitModules
         (Error VerifyError)
         ( Map.Map ModuleName KoreIndexedModule
         , KoreImplicitIndexedModule
-        , Set.Set String
+        , Map.Map String AstLocation
         )
 indexImplicitModules = do
     defaultNames <- foldM verifyUniqueNames sortNames uncheckedKoreModules

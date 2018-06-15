@@ -10,6 +10,8 @@ Portability : POSIX
 module Data.Kore.ASTVerifier.SortVerifier (verifySort) where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
+import           Data.Kore.AST.Error
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTVerifier.Error
@@ -28,7 +30,9 @@ verifySort
     -> Either (Error VerifyError) VerifySuccess
 verifySort _ declaredSortVariables (SortVariableSort variable)
   = do
-    koreFailWhen (not (unifiedVariable `Set.member` declaredSortVariables))
+    koreFailWithLocationsWhen
+        (not (unifiedVariable `Set.member` declaredSortVariables))
+        [variableId]
         ("Sort variable '" ++ getId variableId ++ "' not declared.")
     verifySuccess
   where
@@ -36,7 +40,8 @@ verifySort _ declaredSortVariables (SortVariableSort variable)
     unifiedVariable = asUnified variable
 verifySort findSortDescription declaredSortVariables (SortActualSort sort)
   =
-    withContext
+    withLocationAndContext
+        (sortActualName sort)
         ("sort '" ++ getId (sortActualName sort) ++ "'")
         ( do
             sortDescription <- findSortDescription (sortActualName sort)

@@ -16,6 +16,7 @@ Portability : portable
 module Data.Kore.Unparser.Unparse (Unparse(..), unparseToString) where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
@@ -241,7 +242,7 @@ instance (Unparse p, Unparse (v level))
 instance Unparse CommonKorePattern where
     unparse = applyKorePattern unparse unparse
 
-instance Unparse (Fix (pat variable)) => Unparse (Attributes pat variable) where
+instance Unparse (Attributes) where
     unparse = inSquareBrackets . unparse . getAttributes
 
 instance
@@ -299,6 +300,16 @@ instance
         unparse (sentenceSortAttributes a)
 
 instance
+    Unparse (Fix (pat variable)) => Unparse (SentenceHook level pat variable)
+  where
+    unparse (SentenceHookedSort a) = do
+        write "hooked-"
+        unparse a
+    unparse (SentenceHookedSymbol a) = do
+        write "hooked-"
+        unparse a
+
+instance
     ( Unparse sortParam
     , Unparse (Fix (pat variable))
     ) => Unparse (Sentence level sortParam pat variable)
@@ -308,6 +319,7 @@ instance
     unparse (SentenceImportSentence s) = unparse s
     unparse (SentenceAxiomSentence s)  = unparse s
     unparse (SentenceSortSentence s)   = unparse s
+    unparse (SentenceHookSentence s)   = unparse s
 
 instance
     ( Unparse sortParam

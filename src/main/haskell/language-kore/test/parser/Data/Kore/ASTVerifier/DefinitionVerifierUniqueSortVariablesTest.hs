@@ -4,9 +4,8 @@ module Data.Kore.ASTVerifier.DefinitionVerifierUniqueSortVariablesTest
 import           Test.Tasty                                          (TestTree,
                                                                       testGroup)
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
 import           Data.Kore.Implicit.ImplicitSorts
@@ -294,7 +293,10 @@ definitionVerifierUniqueSortVariablesTests =
         , expectFailureWithError
             "Sort with two sort parameters with same name"
             (Error
-                ["module 'MODULE'", "sort 's' declaration"]
+                ["module 'MODULE'"
+                , "sort 's' declaration (<test data>)"
+                , "(<test data>)"
+                ]
                 "Duplicated sort variable: 'sv'."
             )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
@@ -308,7 +310,10 @@ definitionVerifierUniqueSortVariablesTests =
         , expectFailureWithError
             "Meta alias with two sort parameters with same name"
             (Error
-                ["module 'MODULE'", "alias '#a' declaration"]
+                [ "module 'MODULE'"
+                , "alias '#a' declaration (<test data>)"
+                , "(<test data>)"
+                ]
                 "Duplicated sort variable: '#sv'."
             )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
@@ -323,7 +328,10 @@ definitionVerifierUniqueSortVariablesTests =
         , expectFailureWithError
             "Object alias with two sort parameters with same name"
             (Error
-                ["module 'MODULE'", "alias 'a' declaration"]
+                [ "module 'MODULE'"
+                , "alias 'a' declaration (<test data>)"
+                , "(<test data>)"
+                ]
                 "Duplicated sort variable: 'sv'."
             )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
@@ -340,7 +348,10 @@ definitionVerifierUniqueSortVariablesTests =
         , expectFailureWithError
             "Meta symbol with two sort parameters with same name"
             (Error
-                ["module 'MODULE'", "symbol '#a' declaration"]
+                [ "module 'MODULE'"
+                , "symbol '#a' declaration (<test data>)"
+                , "(<test data>)"
+                ]
                 "Duplicated sort variable: '#sv'."
             )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
@@ -355,7 +366,10 @@ definitionVerifierUniqueSortVariablesTests =
         , expectFailureWithError
             "Object symbol with two sort parameters with same name"
             (Error
-                ["module 'MODULE'", "symbol 'a' declaration"]
+                [ "module 'MODULE'"
+                , "symbol 'a' declaration (<test data>)"
+                , "(<test data>)"
+                ]
                 "Duplicated sort variable: 'sv'."
             )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
@@ -373,7 +387,7 @@ definitionVerifierUniqueSortVariablesTests =
         , expectFailureWithError
             "Axiom with two object sort parameters with same name"
             (Error
-                ["module 'MODULE'", "axiom declaration"]
+                ["module 'MODULE'", "axiom declaration", "(<test data>)"]
                 "Duplicated sort variable: 'sv'."
             )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")
@@ -387,7 +401,7 @@ definitionVerifierUniqueSortVariablesTests =
         , expectFailureWithError
             "Axiom with two meta sort parameters with same name"
             (Error
-                ["module 'MODULE'", "axiom declaration"]
+                ["module 'MODULE'", "axiom declaration", "(<test data>)"]
                 "Duplicated sort variable: '#sv'."
             )
             ( simpleDefinitionFromSentences (ModuleName "MODULE")

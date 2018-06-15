@@ -15,12 +15,11 @@ module Data.Kore.Implicit.Definitions
     , uncheckedMetaDefinition
     ) where
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
+import           Data.Kore.AST.PureToKore        (modulePureToKore)
+import           Data.Kore.AST.Sentence
 import           Data.Kore.Implicit.Attributes   (uncheckedAttributesModule)
 import           Data.Kore.Implicit.ImplicitKore (uncheckedKoreModule)
 import           Data.Kore.MetaML.AST
-import           Data.Kore.MetaML.MetaToKore     (moduleMetaToKore)
 
 metaModules :: [MetaModule]
 metaModules = [uncheckedKoreModule]
@@ -40,7 +39,7 @@ uncheckedMetaDefinition =
 -}
 uncheckedKoreModules :: [KoreModule]
 uncheckedKoreModules =
-    map moduleMetaToKore metaModules
+    map modulePureToKore metaModules
 
 {-| 'uncheckedKoreDefinition' contains all the implicit modules as 'KoreModule'.
 Does not do any validation for these modules.

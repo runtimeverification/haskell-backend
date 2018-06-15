@@ -8,18 +8,19 @@ module Data.Kore.ASTPrettyPrint ( prettyPrintToString
                                 ) where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
 import           Data.Kore.HaskellExtensions
-import           Data.Kore.IndentingPrinter  (PrinterOutput, StringPrinter,
-                                              betweenLines, printToString,
-                                              withIndent, write)
-import           Data.Kore.MetaML.AST
-import           Data.Kore.Parser.CString    (escapeCString)
+import           Data.Kore.IndentingPrinter    (PrinterOutput, StringPrinter,
+                                                betweenLines, printToString,
+                                                withIndent, write)
+import           Data.Kore.Parser.CString      (escapeCString)
+import           Data.Kore.Unification.Unifier
 
 import           Data.Fix
-import           Data.List                   (intersperse)
+import           Data.List                     (intersperse)
 
 {-# ANN module "HLint: ignore Use record patterns" #-}
 {-
@@ -72,6 +73,32 @@ writeOneFieldStruct
 writeOneFieldStruct flags name content =
     writeOneFieldStructK flags name (prettyPrint NeedsParentheses content)
 
+writeTwoFieldStruct
+    :: (PrinterOutput w m, PrettyPrint a, PrettyPrint b)
+    => Flags -> String -> a -> b -> m ()
+writeTwoFieldStruct flags name contenta contentb =
+    writeOneFieldStructK
+        flags
+        name
+        (  prettyPrint NeedsParentheses contenta
+        >> write " "
+        >> prettyPrint NeedsParentheses contentb
+        )
+
+writeThreeFieldStruct
+    :: (PrinterOutput w m, PrettyPrint a, PrettyPrint b, PrettyPrint c)
+    => Flags -> String -> a -> b -> c -> m ()
+writeThreeFieldStruct flags name contenta contentb contentc =
+    writeOneFieldStructK
+        flags
+        name
+        (  prettyPrint NeedsParentheses contenta
+        >> write " "
+        >> prettyPrint NeedsParentheses contentb
+        >> write " "
+        >> prettyPrint NeedsParentheses contentc
+        )
+
 writeOneFieldStructK
     :: (PrinterOutput w m)
     => Flags -> String -> m () -> m ()
@@ -107,9 +134,9 @@ writeFieldNewLine fieldName field object = do
         (betweenLines >> prettyPrint MaySkipParentheses (field object))
 
 writeAttributesField
-    :: (PrinterOutput w m, PrettyPrint (Fix (pat variable)))
+    :: (PrinterOutput w m)
     => String
-    -> Attributes pat variable
+    -> Attributes
     -> m ()
 writeAttributesField fieldName attributes@(Attributes as) = do
     write fieldName
@@ -128,16 +155,16 @@ printableList :: PrinterOutput w m => [m ()] -> [m ()]
 printableList = intersperse (betweenLines >> write ", ")
 
 instance MetaOrObject level => PrettyPrint (Id level) where
-    prettyPrint flags id' =
+    prettyPrint flags id'@(Id _ _) =
         betweenParentheses
             flags
             (do
-                write "Id "
+                write "(Id "
                 write "\""
                 write (getId id')
                 -- TODO(virgil): use flags to qualify id only if necessary
                 write "\""
-                write " :: Id "
+                write " AstLocationNone) :: Id "
                 write (show (isMetaOrObject id'))
             )
 
@@ -511,12 +538,13 @@ instance PrettyPrint CommonKorePattern where
                 writeOneFieldStructK NeedsParentheses "UnifiedObject"
                 $ writeOneFieldStruct NeedsParentheses "Rotate31" (unRotate31 p)
 
-instance MetaOrObject level => PrettyPrint (CommonPurePattern level) where
+instance (MetaOrObject level, PrettyPrint (variable level))
+    => PrettyPrint (PureMLPattern level variable)
+  where
     prettyPrint flags purePattern =
         writeOneFieldStruct flags "Fix" (unFix purePattern)
 
-instance PrettyPrint (Fix (pat variable))
-    => PrettyPrint (Attributes pat variable)
+instance PrettyPrint (Attributes)
   where
     prettyPrint flags (Attributes a)
         | null a    = write "Attributes []"
@@ -600,6 +628,16 @@ instance
 
 instance
     ( MetaOrObject level
+    , PrettyPrint (Fix (pat variable))
+    ) => PrettyPrint (SentenceHook level pat variable)
+  where
+    prettyPrint flags (SentenceHookedSymbol s)   =
+        writeOneFieldStruct flags "SentenceHookedSymbol" s
+    prettyPrint flags (SentenceHookedSort s)         =
+        writeOneFieldStruct flags "SentenceHookedSort" s
+
+instance
+    ( MetaOrObject level
     , PrettyPrint sortParam
     , PrettyPrint (Fix (pat variable))
     ) => PrettyPrint (Sentence level sortParam pat variable)
@@ -614,6 +652,8 @@ instance
         writeOneFieldStruct flags "SentenceAxiomSentence" s
     prettyPrint flags (SentenceSortSentence s)         =
         writeOneFieldStruct flags "SentenceSortSentence" s
+    prettyPrint flags (SentenceHookSentence s)         =
+        writeOneFieldStruct flags "SentenceHookSentence" s
 
 instance
     ( PrettyPrint sortParam
@@ -658,3 +698,74 @@ instance PrettyPrint a => PrettyPrint (Maybe a) where
     prettyPrint flags (Just x) =
         writeOneFieldStruct flags "Just" x
     prettyPrint _ Nothing = write "Nothing"
+
+instance (PrettyPrint a, PrettyPrint b) => PrettyPrint (Either a b) where
+    prettyPrint flags (Left x) =
+        writeOneFieldStruct flags "Left" x
+    prettyPrint flags (Right x) =
+        writeOneFieldStruct flags "Right" x
+
+instance (PrettyPrint a, PrettyPrint b) => PrettyPrint (a, b) where
+    prettyPrint _ (x, y) =
+        listWithDelimiters "(" ")"
+            (printableList
+                [ prettyPrint MaySkipParentheses x
+                , prettyPrint MaySkipParentheses y
+                ])
+
+instance (MetaOrObject level, PrettyPrint (variable level))
+    => PrettyPrint (UnificationSolution level variable)
+  where
+    prettyPrint _ us@(UnificationSolution _ _) =
+        writeStructure
+            "UnificationSolution"
+            [ writeFieldNewLine
+                "unificationSolutionTerm" unificationSolutionTerm us
+            , writeListField
+                "unificationSolutionConstraints"
+                unificationSolutionConstraints
+                us
+            ]
+
+-- TODO: when refactoring these, consider removing `writeTwoFieldStruct`
+-- TODO: when refactoring these, consider removing `writeThreeFieldStruct`
+instance (MetaOrObject level, PrettyPrint (variable level))
+    => PrettyPrint (UnificationProof level variable)
+  where
+    prettyPrint _ EmptyUnificationProof = write "EmptyUnificationProof"
+    prettyPrint flags (CombinedUnificationProof p) =
+        writeOneFieldStruct flags "CombinedUnificationProof" p
+    prettyPrint flags (ConjunctionIdempotency p) =
+        writeOneFieldStruct flags "ConjunctionIdempotency" p
+    prettyPrint flags (AndDistributionAndConstraintLifting patternHead proofs) =
+        writeTwoFieldStruct
+            flags
+            "AndDistributionAndConstraintLifting"
+            patternHead
+            proofs
+    prettyPrint flags (Proposition_5_24_3 funProof var pat) =
+        writeThreeFieldStruct flags "Proposition_5_24_3" funProof var pat
+    prettyPrint flags (SubstitutionMerge var pat1 pat2) =
+        writeThreeFieldStruct flags "SubstitutionMerge" var pat1 pat2
+
+-- TODO: when refactoring these, consider removing `writeTwoFieldStruct`
+instance MetaOrObject level => PrettyPrint (UnificationError level) where
+    prettyPrint flags (ConstructorClash h1 h2) =
+        writeTwoFieldStruct flags "ConstructorClash" h1 h2
+    prettyPrint flags (SortClash s1 s2) =
+        writeTwoFieldStruct flags "SortClash" s1 s2
+    prettyPrint flags (NonConstructorHead h) =
+        writeOneFieldStruct flags "NonConstructorHead" h
+    prettyPrint flags (NonFunctionalHead h) =
+        writeOneFieldStruct flags "NonFunctionalHead" h
+    prettyPrint _ NonFunctionalPattern = write "NonFunctionalPattern"
+    prettyPrint _ UnsupportedPatterns = write "UnsupportedPatterns"
+    prettyPrint _ EmptyPatternList = write "EmptyPatternList"
+
+instance (MetaOrObject level, PrettyPrint (variable level))
+    => PrettyPrint (FunctionalProof level variable)
+  where
+    prettyPrint flags (FunctionalVariable v) =
+        writeOneFieldStruct flags "FunctionalVariable" v
+    prettyPrint flags (FunctionalHead h) =
+        writeOneFieldStruct flags "FunctionalHead" h

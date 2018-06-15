@@ -7,20 +7,22 @@ import           Data.Kore.AST.Common                   (And (..),
                                                          Exists (..),
                                                          Implies (..), Not (..),
                                                          Or (..), Pattern (..),
-                                                         Sort, SortVariable,
                                                          SymbolOrAlias (..),
                                                          Variable)
 import qualified Data.Kore.AST.Common                   as Common (Forall (..))
 import           Data.Kore.AST.Kore                     (CommonKorePattern,
                                                          UnifiedPattern)
-import           Data.Kore.AST.MetaOrObject             (Meta, Unified (..))
+import           Data.Kore.AST.MetaOrObject             (Meta (..),
+                                                         Unified (..))
+import           Data.Kore.AST.PureToKore               (patternKoreToPure,
+                                                         patternPureToKore)
 import           Data.Kore.ASTVerifier.PatternVerifier  (verifyPattern)
-import           Data.Kore.Error
+import           Data.Kore.Error                        (Error, castError,
+                                                         koreFail, koreFailWhen,
+                                                         withContext)
 import           Data.Kore.IndexedModule.IndexedModule  (KoreIndexedModule)
 import           Data.Kore.MetaML.AST                   (CommonMetaPattern,
                                                          metaFreeVariables)
-import           Data.Kore.MetaML.MetaToKore            (patternKoreToMeta,
-                                                         patternMetaToKore)
 import           Data.Kore.Substitution.Class           (PatternSubstitutionClass (..))
 import qualified Data.Kore.Substitution.List            as Substitution
 import           Data.Kore.Unparser.Unparse             (Unparse,
@@ -28,9 +30,11 @@ import           Data.Kore.Unparser.Unparse             (Unparse,
 import           Data.Kore.Variables.Fresh.Class        (FreshVariablesClass (..))
 import           Data.Kore.Variables.Sort               (TermWithSortVariablesClass (sortVariables))
 
-import           Kore.MatchingLogic.Error
-import           Kore.MatchingLogic.HilbertProof
-import           Kore.MatchingLogic.ProofSystem.Minimal
+import           Kore.MatchingLogic.Error               (MLError)
+import           Kore.MatchingLogic.HilbertProof        (ProofSystem(..))
+import           Kore.MatchingLogic.ProofSystem.Minimal (MLRule(..),
+                                                         SubstitutingVariable(..),
+                                                         SubstitutedVariable(..))
 
 import           Data.Fix
 import qualified Data.Set                               as Set
@@ -53,14 +57,13 @@ formulaVerifier indexedModule formula = do
         )
     return ()
   where
-    unifiedFormula = patternMetaToKore formula
+    unifiedFormula = patternPureToKore formula
 
 -- TODO(virgil): Check that symbols and not aliases are used in a few places
 -- like checkSingvar
 instance ProofSystem
         MLError
         (MLRule
-            (Sort Meta)
             (SymbolOrAlias Meta)
             (Variable Meta)
             CommonMetaPattern)
@@ -329,12 +332,12 @@ checkVariableSubstitution
     afterSubstitution <-
         -- TODO(virgil): this meta-to-kore and kore-to-meta transformation is
         -- a hack, I should make substitutions work on all kinds of patterns.
-        patternKoreToMeta <$>
+        patternKoreToPure Meta <$>
             substitute
-                (patternMetaToKore beforeSubstitution)
+                (patternPureToKore beforeSubstitution)
                 (Substitution.fromList
                     [   ( UnifiedMeta substituted
-                        , patternMetaToKore
+                        , patternPureToKore
                             substitutingPattern
                         )
                     ]

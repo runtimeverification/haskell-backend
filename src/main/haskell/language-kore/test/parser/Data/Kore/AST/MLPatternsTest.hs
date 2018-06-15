@@ -1,23 +1,118 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-module  Data.Kore.AST.MLPatternsTest (mlPatternsTests) where
+module  Data.Kore.AST.MLPatternsTest
+    ( mlPatternsTests
+    , extractPurePattern
+    ) where
 
-import           Test.Tasty                  (TestTree, testGroup)
-import           Test.Tasty.HUnit            (assertEqual, testCase)
+import           Test.Tasty                       (TestTree, testGroup)
+import           Test.Tasty.HUnit                 (assertEqual, testCase)
 
+import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore          (CommonKorePattern)
+import           Data.Kore.AST.Sentence
+import           Data.Kore.AST.Kore               (CommonKorePattern)
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
+import           Data.Kore.AST.PureML
 import           Data.Kore.Building.AsAst
 import           Data.Kore.Building.Patterns
-import           Data.Kore.Building.Sorts    as Sorts
+import           Data.Kore.Building.Sorts         as Sorts
+import           Data.Kore.Implicit.ImplicitSorts
+import           Data.Kore.KoreHelpers
+
+import           Data.Fix
+
+extractPurePattern
+    :: MetaOrObject level
+    => CommonPurePatternStub level -> CommonPurePattern level
+extractPurePattern (SortedPatternStub sp) =
+    asPurePattern $ sortedPatternPattern sp
+extractPurePattern (UnsortedPatternStub ups) =
+    error ("Cannot find a sort for "
+        ++ show (ups (dummySort (undefined :: level))))
 
 mlPatternsTests :: TestTree
 mlPatternsTests =
-    testGroup "Tests for generic pattern handling"
-        [applyPatternFunctionTests]
+    testGroup "MLPatternsTests"
+        [ testGroup "Tests for generic pattern handling"
+            [applyPatternFunctionTests]
+        , testGroup "Tests for getPatternResultSort"
+            [ testCase "MLPatternClas"
+                (assertEqual ""
+                    charListMetaSort
+                    (getPatternResultSort
+                        undefinedHeadSort
+                        (unFix
+                         $ extractPurePattern
+                            (withSort charListMetaSort top_)
+                        )
+                    )
+                )
+            , testCase "MLBinderPatternClas"
+                (assertEqual ""
+                    charListMetaSort
+                    (getPatternResultSort
+                        undefinedHeadSort
+                        (unFix
+                         $ extractPurePattern
+                            (withSort charListMetaSort
+                                (forall_
+                                    (Variable
+                                        (testId "x")
+                                        charListMetaSort
+                                    )
+                                    top_
+                                )
+                            )
+                        )
+                    )
+                )
+            , testCase "StringLiteral"
+                (assertEqual ""
+                    charListMetaSort
+                    (getPatternResultSort
+                        undefinedHeadSort
+                        (StringLiteralPattern (StringLiteral "Hello!")
+                        :: UnFixedPureMLPattern Meta Variable
+                        )
+                    )
+                )
+            , testCase "CharLiteral"
+                (assertEqual ""
+                    charMetaSort
+                    (getPatternResultSort
+                        undefinedHeadSort
+                        (CharLiteralPattern (CharLiteral 'h')
+                        :: UnFixedPureMLPattern Meta Variable
+                        )
+                    )
+                )
+            , testCase "Variable"
+                (assertEqual ""
+                    charListMetaSort
+                    (getPatternResultSort
+                        undefinedHeadSort
+                        (VariablePattern (Variable (testId "x") charListMetaSort))
+                    )
+                )
+            , let
+                s = symbol_ "test" AstLocationTest [] charListMetaSort
+                headSort x
+                    | x == getSentenceSymbolOrAliasHead s [] = charListMetaSort
+                    | otherwise = charMetaSort
+               in
+                testCase "Application"
+                    (assertEqual ""
+                        charListMetaSort
+                        (getPatternResultSort
+                            headSort
+                            (unFix $ extractPurePattern (applyS s []))
+                        )
+                    )
+                ]
+        ]
 
 applyPatternFunctionTests :: TestTree
 applyPatternFunctionTests =
@@ -37,7 +132,7 @@ applyPatternFunctionTests =
                 (metaFunctionApplier
                     (ApplicationPattern Application
                         { applicationSymbolOrAlias = SymbolOrAlias
-                            { symbolOrAliasConstructor = Id "#sigma"
+                            { symbolOrAliasConstructor = testId "#sigma"
                             , symbolOrAliasParams = [asAst SortListSort]
                             }
                         , applicationChildren = []
@@ -188,8 +283,8 @@ applyPatternFunctionTests =
     sort = Sorts.CharSort
     otherSort = Sorts.SortSort
     objectSort = SomeObjectSort
-    mVariable = metaVariable "#x" sort
-    oVariable = objectVariable "x" objectSort
+    mVariable = metaVariable "#x" AstLocationTest sort
+    oVariable = objectVariable "x" AstLocationTest objectSort
 
 metaFunctionApplier :: Pattern Meta Variable CommonKorePattern -> Sort Meta
 metaFunctionApplier =
@@ -221,7 +316,7 @@ data SomeObjectSort = SomeObjectSort
 instance AsAst (Sort Object) SomeObjectSort where
     asAst _ =
         SortActualSort SortActual
-            { sortActualName = Id "SomeObjectSort"
+            { sortActualName = testId "SomeObjectSort"
             , sortActualSorts = []
             }
 

@@ -1,5 +1,8 @@
 {-# LANGUAGE ConstraintKinds            #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE PatternSynonyms            #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
@@ -26,6 +29,7 @@ module Kore.MatchingLogic.AST
   , wfPatSort
   , checkSorts1
   , checkSorts
+  , resolvePattern
   , ToPattern(..)
   , FromPattern(..)
   , notFree
@@ -60,10 +64,18 @@ import           Data.Text.Prettyprint.Doc
 import           Kore.MatchingLogic.Signature
 
 -- | The base functor of patterns
-data PatternF sort -- ^ The type of sorts
-              label -- ^ The type of labels (sometimes used for aliases as well as symbols)
-              v -- ^ The type of variables
-              p -- ^ The the type of subterms
+--
+-- Argument description:
+--
+--  - @sort@ represents the type of sorts
+--
+--  - @label@ represents the type of labels
+--    (sometimes used for aliases as well as symbols)
+--
+--  - @v@ represents the type of variables
+--
+--  - @p@ represents the type of subterms
+data PatternF sort label v p
   = Variable sort v
   | Application label [p]
   | And sort p p
@@ -82,11 +94,11 @@ visitPatternF :: (Applicative f)
               -> (PatternF sort label var pat
                    -> f (PatternF sort' label' var' pat'))
 visitPatternF sort label var pat term = case term of
-  Variable s v -> Variable <$> sort s <*> var v
+  Variable s v       -> Variable <$> sort s <*> var v
   Application l args -> Application <$> label l <*> traverse pat args
-  And s p1 p2 -> And <$> sort s <*> pat p1 <*> pat p2
-  Not s p -> Not <$> sort s <*> pat p
-  Exists s sVar v p -> Exists <$> sort s <*> sort sVar <*> var v <*> pat p
+  And s p1 p2        -> And <$> sort s <*> pat p1 <*> pat p2
+  Not s p            -> Not <$> sort s <*> pat p
+  Exists s sVar v p  -> Exists <$> sort s <*> sort sVar <*> var v <*> pat p
 
 -- | Specializing 'PatternF' to use the sort and label from a signature 'sig'.
 type SigPatternF sig = PatternF (Sort sig) (Label sig)
@@ -112,7 +124,7 @@ newtype WFPattern sig var = WFPattern {fromWFPattern :: SigPattern sig var}
 deriving instance (Eq (Sort sig), Eq (Label sig), Eq var) => Eq (WFPattern sig var)
 deriving instance (Show (Sort sig), Show (Label sig), Show var) => Show (WFPattern sig var)
 deriving instance (Pretty (SigPatternF sig var (SigPattern sig var)))
-                  -- ^ expanded according to Pretty (f (Fix f)) => Pretty (Fix f)
+                  -- expanded according to Pretty (f (Fix f)) => Pretty (Fix f)
                   -- to avoid warning
                 => Pretty (WFPattern sig var)
 
@@ -144,6 +156,15 @@ checkSorts :: (IsSignature sig, Eq (Sort sig))
            => SigPattern sig var
            -> Maybe (WFPattern sig var)
 checkSorts pat = cata (sequenceA >=> checkSorts1) pat
+
+{- | Check if all the raw sorts and labels in a pattern are
+     labels in the given signature -}
+resolvePattern :: forall sig var . CheckableSignature sig
+                 => Pattern (RawSort sig) (RawLabel sig) var
+                 -> Maybe (SigPattern sig var)
+resolvePattern = cata (sequenceA >=> recognizeLayer >=> return . Fix)
+  where
+    recognizeLayer = visitPatternF resolveSort resolveLabel pure pure
 
 class ToPattern p sort label var | p -> sort label var where
   toPattern :: p -> PatternF sort label var p
@@ -198,18 +219,26 @@ notP s p = fromPattern (Not s p)
 existsP :: (FromPattern p sort label var) => sort -> sort -> var -> p -> p
 existsP s sVar var p = fromPattern (Exists s sVar var p)
 
+pattern OrP :: (ToPattern p sort label var, Eq sort) => sort -> p -> p -> p
 pattern OrP s p1 p2 <- NotP s (AndP ((==s)->True)
                                 (NotP ((==s)->True) p1)
                                 (NotP ((==s)->True) p2))
+
+orP :: FromPattern p sort label var => sort -> p -> p -> p
 orP s p1 p2 = notP s (andP s (notP s p1) (notP s p2))
 
+pattern ImpliesP :: (ToPattern p sort label var, Eq sort) => sort -> p -> p -> p
 pattern ImpliesP s p1 p2 <- OrP s (NotP ((==s)->True) p1) p2
+impliesP :: FromPattern p sort label var => sort -> p -> p -> p
 impliesP s p1 p2 = orP s (notP s p1) p2
 
+pattern IffP :: (ToPattern p sort label var, Eq p, Eq sort) => sort -> p -> p -> p
 pattern IffP s p1 p2 <- AndP s (ImpliesP ((==s)->True) p1 p2)
                                (ImpliesP ((==s)->True) ((==p2)->True) ((==p1)->True))
+iffP :: FromPattern p sort label var => sort -> p -> p -> p
 iffP s p1 p2 = andP s (impliesP s p1 p2) (impliesP s p2 p1)
 
+pattern ForallP :: (ToPattern p sort label var, Eq sort) => sort -> sort -> var -> p -> p
 pattern ForallP s sVar var p <-
     NotP s (ExistsP ((==s)->True) sVar var (NotP ((==s)->True) p))
 

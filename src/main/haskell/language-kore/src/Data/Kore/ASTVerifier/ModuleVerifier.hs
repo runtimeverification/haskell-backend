@@ -12,22 +12,22 @@ module Data.Kore.ASTVerifier.ModuleVerifier ( verifyModule
                                             ) where
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
+import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTVerifier.AttributesVerifier
 import           Data.Kore.ASTVerifier.Error
 import qualified Data.Kore.ASTVerifier.SentenceVerifier   as SentenceVerifier
 import           Data.Kore.Error
 import           Data.Kore.IndexedModule.IndexedModule
 
-import qualified Data.Set                                 as Set
+import qualified Data.Map                                 as Map
 
 {-|'verifyUniqueNames' verifies that names defined in a module are unique both
 within the module and outside, using the provided name set. -}
 verifyUniqueNames
-    :: Set.Set String
+    :: Map.Map String AstLocation
     -- ^ Names that are already defined.
     -> KoreModule
-    -> Either (Error VerifyError) (Set.Set String)
+    -> Either (Error VerifyError) (Map.Map String AstLocation)
     -- ^ On success returns the names that were previously defined together with
     -- the names defined in the given 'Module'.
 verifyUniqueNames existingNames koreModule =

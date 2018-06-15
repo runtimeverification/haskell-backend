@@ -1,15 +1,18 @@
+{-# LANGUAGE FlexibleContexts #-}
 module Data.Kore.ASTVerifier.DefinitionVerifierSortUsageTest
     (definitionVerifierSortUsageTests) where
 
 import           Test.Tasty                                          (TestTree,
                                                                       testGroup)
+import           Test.Tasty.HUnit                                    (HasCallStack)
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
 import           Data.Kore.Implicit.ImplicitSorts
+import           Data.Kore.KoreHelpers
 
 import qualified Data.List                                           as List
 import           Data.Maybe                                          (mapMaybe)
@@ -86,7 +89,7 @@ definitionVerifierSortUsageTests =
                 }
             )
             (ExpectedErrorMessage "Sort 's' not declared.")
-            (ErrorStack ["sort 's'"])
+            (ErrorStack ["sort 's' (<test data>)", "(<test data>)"])
             (TestedSort (simpleSort (SortName "s")))
             (NamePrefix "#internal")
         , testsForObjectSort
@@ -112,7 +115,7 @@ definitionVerifierSortUsageTests =
                 }
             )
             (ExpectedErrorMessage "Sort variable 's' not declared.")
-            (ErrorStack [])
+            (ErrorStack ["(<test data>)"])
             (TestedSort (objectVariableSort (SortVariableName "s")))
             (NamePrefix "internal")
         , let
@@ -161,7 +164,7 @@ definitionVerifierSortUsageTests =
                 }
             )
             (ExpectedErrorMessage "Sort '#s' not declared.")
-            (ErrorStack ["sort '#s'"])
+            (ErrorStack ["sort '#s' (<test data>)", "(<test data>)"])
             (TestedSort (simpleSort (SortName "#s")))
             (SortActualThatIsDeclared (simpleSortActual (SortName "#Char")))
             (NamePrefix "#internal")
@@ -187,8 +190,8 @@ definitionVerifierSortUsageTests =
                     [ simpleSortSentence additionalSortName
                     , asSentence
                         (SentenceSort
-                            { sentenceSortName = Id "UnarySort"
-                            , sentenceSortParameters = [ SortVariable (Id "svn") ]
+                            { sentenceSortName = testId "UnarySort"
+                            , sentenceSortParameters = [ SortVariable (testId "svn") ]
                             , sentenceSortAttributes =
                                 Attributes []
                             }
@@ -204,7 +207,7 @@ definitionVerifierSortUsageTests =
             (ErrorStack [])
             (TestedSort
                 (SortActualSort SortActual
-                    { sortActualName = Id "UnarySort"
+                    { sortActualName = testId "UnarySort"
                     , sortActualSorts = [ simpleSort additionalSortName ]
                     }
                 )
@@ -219,8 +222,8 @@ definitionVerifierSortUsageTests =
                     [ simpleSortSentence additionalSortName
                     , asSentence
                         (SentenceSort
-                            { sentenceSortName = Id "UnarySort"
-                            , sentenceSortParameters = [ SortVariable (Id "svn") ]
+                            { sentenceSortName = testId "UnarySort"
+                            , sentenceSortParameters = [ SortVariable (testId "svn") ]
                             , sentenceSortAttributes =
                                 Attributes []
                             }
@@ -232,10 +235,10 @@ definitionVerifierSortUsageTests =
                 }
             )
             (ExpectedErrorMessage "Expected 1 sort arguments, but got 2.")
-            (ErrorStack ["sort 'UnarySort'"])
+            (ErrorStack ["sort 'UnarySort' (<test data>)"])
             (TestedSort
                 (SortActualSort SortActual
-                    { sortActualName = Id "UnarySort"
+                    { sortActualName = testId "UnarySort"
                     , sortActualSorts =
                         [ simpleSort additionalSortName
                         , simpleSort additionalSortName]
@@ -250,7 +253,8 @@ definitionVerifierSortUsageTests =
 newtype CommonDescription = CommonDescription String
 
 testsForObjectSort
-    :: CommonDescription
+    :: HasCallStack
+    => CommonDescription
     -> SuccessConfiguration Object
     -> FailureConfiguration Object
     -> ExpectedErrorMessage
@@ -347,7 +351,9 @@ successTestsForMetaSort
             sort
             additionalSortActual
             namePrefix
-
+successTestsForMetaSort
+    (CommonDescription commonDescription) SuccessConfigurationSkipAll _ _ _
+  = testGroup commonDescription []
 
 failureTestsForMetaSort
     :: CommonDescription
@@ -379,6 +385,9 @@ failureTestsForMetaSort
             sort
             additionalSortActual
             namePrefix
+failureTestsForMetaSort
+    (CommonDescription commonDescription) FailureConfigurationSkipAll _ _ _ _ _
+  = testGroup commonDescription []
 
 expectSuccessFlaggedTests
     :: SuccessConfiguration level
@@ -392,9 +401,11 @@ expectSuccessFlaggedTests
         (map successTestData
             (applyTestConfiguration testConfiguration flaggedTests)
         )
+expectSuccessFlaggedTests SuccessConfigurationSkipAll _ = testGroup "" []
 
 expectFailureWithErrorFlaggedTests
-    :: FailureConfiguration level
+    :: HasCallStack
+    => FailureConfiguration level
     -> ExpectedErrorMessage
     -> ErrorStack
     -> [FlaggedTestData]
@@ -410,6 +421,8 @@ expectFailureWithErrorFlaggedTests
             (failureTestData errorMessage additionalErrorStack)
             (applyTestConfiguration testConfiguration flaggedTests)
         )
+expectFailureWithErrorFlaggedTests FailureConfigurationSkipAll _ _ _ =
+    testGroup "" []
 
 flaggedObjectTestsForSort
     :: TestConfiguration Object
@@ -519,7 +532,7 @@ unfilteredTestExamplesForSort
             , testDataError =
                 Error
                     [ "module 'MODULE'"
-                    , "alias '" ++ rawAliasName ++ "' declaration"
+                    , "alias '" ++ rawAliasName ++ "' declaration (<test data>)"
                     ]
                     defaultErrorMessage
             , testDataDefinition =
@@ -539,7 +552,7 @@ unfilteredTestExamplesForSort
             , testDataError =
                 Error
                     [ "module 'MODULE'"
-                    , "alias '" ++ rawAliasName ++ "' declaration"
+                    , "alias '" ++ rawAliasName ++ "' declaration (<test data>)"
                     ]
                     defaultErrorMessage
             , testDataDefinition =
@@ -561,7 +574,7 @@ unfilteredTestExamplesForSort
                 Error
                     [ "module 'MODULE'"
                     , "axiom declaration"
-                    , "\\exists '" ++ rawVariableName ++ "'"
+                    , "\\exists '" ++ rawVariableName ++ "' (<test data>)"
                     ]
                     defaultErrorMessage
             , testDataDefinition =
@@ -583,7 +596,7 @@ unfilteredTestExamplesForSort
                 Error
                     [ "module 'MODULE'"
                     , "axiom declaration"
-                    , "\\exists '" ++ rawVariableName ++ "'"
+                    , "\\exists '" ++ rawVariableName ++ "' (<test data>)"
                     ]
                     defaultErrorMessage
             , testDataDefinition =
@@ -609,7 +622,7 @@ unfilteredTestExamplesForSort
                 Error
                     [ "module 'MODULE'"
                     , "axiom declaration"
-                    , "\\exists '" ++ rawVariableName ++ "'"
+                    , "\\exists '" ++ rawVariableName ++ "' (<test data>)"
                     ]
                     defaultErrorMessage
             , testDataDefinition =
@@ -634,7 +647,7 @@ unfilteredTestExamplesForSort
                 Error
                     [ "module 'MODULE'"
                     , "axiom declaration"
-                    , "symbol or alias '" ++ rawAliasName ++ "'"
+                    , "symbol or alias '" ++ rawAliasName ++ "' (<test data>)"
                     ]
                     defaultErrorMessage
             , testDataDefinition =
@@ -688,8 +701,10 @@ unfilteredTestExamplesForObjectSort
                 Error
                     [ "module 'MODULE'"
                     , "axiom declaration"
-                    , "symbol or alias 'a'"
-                    , "sort '" ++ differentAdditionalSortRawName ++ "'"
+                    , "symbol or alias 'a' (<test data>)"
+                    , "sort '"
+                        ++ differentAdditionalSortRawName
+                        ++ "' (<test data>)"
                     ]
                     defaultErrorMessage
             , testDataDefinition =
@@ -700,7 +715,7 @@ unfilteredTestExamplesForObjectSort
                             (SymbolName "a")
                             [ SortActualSort SortActual
                                 { sortActualName =
-                                    Id differentAdditionalSortRawName
+                                    testId differentAdditionalSortRawName
                                 , sortActualSorts = [sort]
                                 }
                             ]
@@ -709,7 +724,7 @@ unfilteredTestExamplesForObjectSort
                     : symbolSentenceWithResultSort
                         (SymbolName "a")
                         (SortActualSort SortActual
-                            { sortActualName = Id differentAdditionalSortRawName
+                            { sortActualName = testId differentAdditionalSortRawName
                             , sortActualSorts =
                                 [ objectVariableSort sortVariableName1 ]
                             }

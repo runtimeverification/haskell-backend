@@ -12,7 +12,8 @@ Portability : POSIX
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Data.Kore.Building.Implicit where
 
-import           Data.Kore.AST.Common        (Application (..), Id (..),
+import           Data.Kore.AST.Common        (Application (..),
+                                              AstLocation (..), Id (..),
                                               Pattern (..), SymbolOrAlias (..))
 import           Data.Kore.AST.MetaOrObject  (Meta)
 import           Data.Kore.Building.Patterns
@@ -23,7 +24,10 @@ instance ProperPattern Meta SortListSort MetaNilSortList where
     asProperPattern _ =
         ApplicationPattern Application
             { applicationSymbolOrAlias = SymbolOrAlias
-                { symbolOrAliasConstructor = Id "#nilSortList"
+                { symbolOrAliasConstructor = Id
+                    { getId = "#nilSortList"
+                    , idLocation = AstLocationImplicit
+                    }
                 , symbolOrAliasParams = []
                 }
             , applicationChildren      = []

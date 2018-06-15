@@ -27,7 +27,7 @@ labelParser      :: DummyParser DummyLabel
 ixParser         :: DummyParser DummyIx
 varParser        :: DummyParser DummyVar
 termParser       :: DummyParser DummyTerm
-mlRuleTestParser :: DummyParser (MLRule DummySort DummyLabel DummyVar DummyTerm DummyIx)
+mlRuleTestParser :: DummyParser (MLRule DummyLabel DummyVar DummyTerm DummyIx)
 
 -- Implementations for Dummy Parsers, shared by tests
 sortParser       = T.pack <$> some alphaNumChar
@@ -35,7 +35,7 @@ labelParser      = T.pack <$> some alphaNumChar
 ixParser         = read   <$> some digitChar
 varParser        = T.pack <$> some alphaNumChar
 termParser       = T.pack <$> some alphaNumChar
-mlRuleTestParser = parseMLRule sortParser labelParser varParser mlPatternParser ixParser
+mlRuleTestParser = parseMLRule labelParser varParser mlPatternParser ixParser
 
 mlTestPatterns :: [DummyParser DummyTerm]
 
@@ -49,7 +49,7 @@ mlPatternParser = choice mlTestPatterns
 
 
 -- Dummy Rule Type instantiated with Dummy Parsers
-type DummyRule = MLRule DummySort DummyLabel DummyVar DummyTerm DummyIx
+type DummyRule = MLRule DummyLabel DummyVar DummyTerm DummyIx
 
 parseTestRule :: String -> DummyRule
 

@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -24,6 +25,7 @@ module Data.Kore.MetaML.AST where
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
+import           Data.Kore.AST.Sentence
 import           Data.Kore.Variables.Free   (pureFreeVariables)
 
 import           Data.Set                   (Set)
@@ -34,9 +36,6 @@ of the 'Pattern' class where the level is fixed to 'Meta'.
 'var' is the type of variables.
 -}
 type MetaMLPattern variable = PureMLPattern Meta variable
-
--- |'MetaAttributes' is the 'Meta'-only version of 'Attributes'
-type MetaAttributes = PureAttributes Meta
 
 -- |'MetaSentenceAxiom' is the 'Meta'-only version of 'SentenceAxiom'
 type MetaSentenceAxiom = PureSentenceAxiom Meta
@@ -74,61 +73,61 @@ metaFreeVariables :: CommonMetaPattern -> Set (Variable Meta)
 metaFreeVariables = pureFreeVariables Meta
 
 nilSortListHead :: SymbolOrAlias Meta
-nilSortListHead = groundHead "#nilSortList"
+nilSortListHead = groundHead "#nilSortList" AstLocationImplicit
 
 consSortListHead :: SymbolOrAlias Meta
-consSortListHead = groundHead "#consSortList"
+consSortListHead = groundHead "#consSortList" AstLocationImplicit
 
 nilSortListMetaPattern :: MetaMLPattern v
 nilSortListMetaPattern = asPurePattern $ constant nilSortListHead
 
 nilPatternListHead :: SymbolOrAlias Meta
-nilPatternListHead = groundHead "#nilPatternList"
+nilPatternListHead = groundHead "#nilPatternList" AstLocationImplicit
 
 consPatternListHead :: SymbolOrAlias Meta
-consPatternListHead = groundHead "#consPatternList"
+consPatternListHead = groundHead "#consPatternList" AstLocationImplicit
 
 nilPatternListMetaPattern :: MetaMLPattern v
 nilPatternListMetaPattern = asPurePattern $ constant nilPatternListHead
 
 variableHead :: SymbolOrAlias Meta
-variableHead = groundHead "#variable"
+variableHead = groundHead "#variable" AstLocationImplicit
 
 variableAsPatternHead :: SymbolOrAlias Meta
-variableAsPatternHead = groundHead "#variableAsPattern"
+variableAsPatternHead = groundHead "#variableAsPattern" AstLocationImplicit
 
-metaMLPatternHead :: MLPatternType -> SymbolOrAlias Meta
+metaMLPatternHead :: MLPatternType -> AstLocation -> SymbolOrAlias Meta
 metaMLPatternHead pt = groundHead ('#' : '\\' : patternString pt)
 
 sortDeclaredHead :: Sort Meta -> SymbolOrAlias Meta
 sortDeclaredHead param = SymbolOrAlias
-    { symbolOrAliasConstructor = Id "#sortDeclared"
+    { symbolOrAliasConstructor = Id "#sortDeclared" AstLocationImplicit
     , symbolOrAliasParams = [param]
     }
 
 provableHead :: Sort Meta -> SymbolOrAlias Meta
 provableHead param = SymbolOrAlias
-    { symbolOrAliasConstructor = Id "#provable"
+    { symbolOrAliasConstructor = Id "#provable" AstLocationImplicit
     , symbolOrAliasParams = [param]
     }
 
 sortsDeclaredHead :: Sort Meta -> SymbolOrAlias Meta
 sortsDeclaredHead param = SymbolOrAlias
-    { symbolOrAliasConstructor = Id "#sortsDeclared"
+    { symbolOrAliasConstructor = Id "#sortsDeclared" AstLocationImplicit
     , symbolOrAliasParams = [param]
     }
 
 symbolDeclaredHead :: Sort Meta -> SymbolOrAlias Meta
 symbolDeclaredHead param = SymbolOrAlias
-    { symbolOrAliasConstructor = Id "#symbolDeclared"
+    { symbolOrAliasConstructor = Id "#symbolDeclared" AstLocationImplicit
     , symbolOrAliasParams = [param]
     }
 
 sortHead :: SymbolOrAlias Meta
-sortHead = groundHead "#sort"
+sortHead = groundHead "#sort" AstLocationImplicit
 
 symbolHead :: SymbolOrAlias Meta
-symbolHead = groundHead "#symbol"
+symbolHead = groundHead "#symbol" AstLocationImplicit
 
 applicationHead :: SymbolOrAlias Meta
-applicationHead = groundHead "#application"
+applicationHead = groundHead "#application" AstLocationImplicit
