@@ -17,33 +17,32 @@ AST because the proof was done assuming the forall quantifier is primitive.
 -}
 module Kore.MatchingLogic.ProofSystem.OnePlusOne(testMinimalOnePlusOne) where
 import           Prelude                                hiding (all, and, not,
-                                                         succ)
+                                                         succ, lines)
 
 import           Control.Applicative
 import           Control.Monad                          (foldM)
 import           Control.Monad.State.Strict
 
-import qualified Data.ByteString                        as B
+--import qualified Data.ByteString                        as B
 import qualified Data.ByteString.Lazy                   as L
-import           Data.IntMap                            (IntMap)
-import qualified Data.IntMap                            as IntMap
-import           Data.List                              (foldl')
-import qualified Data.Map.Strict                        as Map
+--import           Data.IntMap                            (IntMap)
+--import qualified Data.IntMap                            as IntMap
+--import           Data.List                              (foldl')
 import qualified Data.Map.Strict                        as Map
 import qualified Data.Set                               as Set
 import           Data.Text                              (Text)
-import           Data.Text.Prettyprint.Doc              hiding (parens,space)
+--import           Data.Text.Prettyprint.Doc              hiding (parens,space)
 import qualified Data.Tree                              as Tree
 import           Data.Word
 
 import           GHC.Generics
 import           Data.Data
 
-import           Control.Lens
+--import           Control.Lens
 import           Data.Functor.Foldable                  (Fix (Fix))
 import           Data.Void(Void)
 
-import           Text.Megaparsec(Parsec,tokens,parse,parseErrorPretty,eof)
+import           Text.Megaparsec(Parsec,parse,parseErrorPretty,eof)
 import           Text.Megaparsec.Byte
 import qualified Text.Megaparsec.Byte.Lexer as Lexer
 
@@ -51,11 +50,10 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
 
 import qualified Kore.MatchingLogic.ProofSystem.OnePlusOne.ForallAST as AST
-import           Kore.MatchingLogic.HilbertProof        as HilbertProof (Proof (..),
-                                                                         ProofSystem,
-                                                                         add,
-                                                                         derive,
-                                                                         emptyProof)
+import           Kore.MatchingLogic.HilbertProof        as HilbertProof (Proof(..)
+                                                                        ,add
+                                                                        ,derive
+                                                                        ,emptyProof)
 import           Kore.MatchingLogic.ProofSystem.OnePlusOne.ProofSystem ( MLRule (..)
                                                         , MLRuleSig
                                                         , transformRule
@@ -154,10 +152,11 @@ fromChar c = fromIntegral (fromEnum c)
 
 parens :: Parser a -> Parser a
 parens p = do
-    char (fromChar '(')
+    _ <- char (fromChar '(')
     result <- p
-    lexeme (char (fromChar ')'))
+    _ <- lexeme (char (fromChar ')'))
     return result
+
 
 pNat :: Parser Nat
 pNat = parens (S <$ symbol "S" <*> pNat) <|> O <$ symbol "O"
@@ -218,6 +217,7 @@ pSimple_proof' = Conclusion <$ symbol "Conclusion" <*> pFormula <*> pSimple_rule
 pSimple_proof = parens pSimple_proof'
 
 
+nat2Int :: Num i => Nat -> i
 nat2Int n = go 0 n
   where go !x O      = x
         go !x (S n') = go (x+1) n'
@@ -255,7 +255,7 @@ convertRule convertHyp r = case r of
     Ax_propositional1 f1 f2 -> Propositional1 (convertFormula f1) (convertFormula f2)
     Ax_propositional2 f1 f2 f3 -> Propositional2 (convertFormula f1) (convertFormula f2) (convertFormula f3)
     Ax_propositional3 f1 f2 -> Propositional3 (convertFormula f1) (convertFormula f2)
-    Ax_varSubst x y p1 p2 -> VariableSubstitution (SubstitutedVariable (nat2Int x))
+    Ax_varSubst x y p1 _ -> VariableSubstitution (SubstitutedVariable (nat2Int x))
                                                   (convertFormula p1)
                                                   (SubstitutingVariable (nat2Int y))
     Ax_allImp x f1 f2 -> ForallRule (nat2Int x) (convertFormula f1) (convertFormula f2)
@@ -269,7 +269,7 @@ convertRule convertHyp r = case r of
     Ax_or_elim f1 f2 f3 -> OrElim (convertFormula f1) (convertFormula f2) (convertFormula f3)
     Ax_or_intro1 f1 f2 -> OrIntroL (convertFormula f1) (convertFormula f2)
     Ax_or_intro2 f1 f2 -> OrIntroR (convertFormula f1) (convertFormula f2)
-
+    rule -> error $ "This case should be handled earlier: " ++ show rule
 convertFormula :: Formula -> TextPat
 convertFormula f = case f of
     Plus f1 f2 -> app "plus" [convertFormula f1, convertFormula f2]
@@ -285,7 +285,7 @@ convertFormula f = case f of
     and f1 f2 = Fix (AST.And "Nat" f1 f2)
     all v body = Fix (AST.Forall "Nat" "Nat" v body)
     var v = Fix (AST.Variable "Nat" v)
-    not f = Fix (AST.Not "Nat" f)
+    not form = Fix (AST.Not "Nat" form)
 
 type TextPat = AST.Pattern Text Text Int
 type TextRule = MLRule Text Text Int TextPat
