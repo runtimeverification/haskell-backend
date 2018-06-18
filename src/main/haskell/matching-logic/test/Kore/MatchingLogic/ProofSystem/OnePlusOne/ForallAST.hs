@@ -4,8 +4,8 @@
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE ViewPatterns               #-}
-{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
+
+{-# OPTIONS_GHC -fno-warn-orphans       #-}
 {-|
 Description: A copy of Kore.MatchingLogic.AST, but with
 Exists defined in terms of Forall rather than the other way around
@@ -210,15 +210,20 @@ pattern OrP :: (ToPattern p sort label var, Eq sort) => sort -> p -> p -> p
 pattern OrP s p1 p2 <- NotP s (AndP ((==s)->True)
                                 (NotP ((==s)->True) p1)
                                 (NotP ((==s)->True) p2))
+orP :: FromPattern p sort label var => sort -> p -> p -> p
 orP s p1 p2 = notP s (andP s (notP s p1) (notP s p2))
 
 pattern ImpliesP :: (ToPattern p sort label var, Eq sort) => sort -> p -> p -> p
 pattern ImpliesP s p1 p2 <- OrP s (NotP ((==s)->True) p1) p2
+impliesP :: FromPattern p sort label var => sort -> p -> p -> p
 impliesP s p1 p2 = orP s (notP s p1) p2
 
-pattern IffP :: (ToPattern p sort label var, Eq p, Eq sort) => sort -> p -> p -> p                  
+pattern IffP
+    :: (ToPattern p sort label var, Eq p, Eq sort)
+    => sort -> p -> p -> p
 pattern IffP s p1 p2 <- AndP s (ImpliesP ((==s)->True) p1 p2)
                                (ImpliesP ((==s)->True) ((==p2)->True) ((==p1)->True))
+iffP :: FromPattern p sort label var => sort -> p -> p -> p
 iffP s p1 p2 = andP s (impliesP s p1 p2) (impliesP s p2 p1)
 
 pattern ExistsP :: (ToPattern p sort label var, Eq sort) => sort -> sort -> var -> p -> p
