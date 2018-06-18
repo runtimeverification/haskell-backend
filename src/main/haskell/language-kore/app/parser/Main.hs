@@ -94,10 +94,10 @@ verifyMain willChkAttr definition =
     in do {
        ; verifyResult <-
             clockSomething
-              "Verifying the definition"
-              ( verifyDefinition
-                attributesVerification
-                definition )
+       "Verifying the definition"
+                ( verifyDefinition
+                  attributesVerification
+                  definition )
       ; case verifyResult of
             Left err1 -> error (printError err1)
             Right _   -> return ()
@@ -112,11 +112,11 @@ Parser builder to create a boolean argument,
 with a positive and negative 'flag'
 and default value (True)
 -}
-switch3 
-    :: String -- ^ flag name
-    -> String -- ^ Positive help text
-    -> String -- ^ Negative help text
-    -> Parser Bool
+switch3 ::
+    String -> -- ^ flag name
+    String -> -- ^ Positive help text
+    String -> -- ^ Negative help text
+    Parser Bool
 switch3 longName posHelpText negHelpText =
     flag' False
         (  long ("no"++longName)
