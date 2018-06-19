@@ -144,7 +144,7 @@ occursInSet
 occursInSet pat set = do
   ixs <- S.toList <$> use set 
   eqns <- mapM (\ix -> claim <$> proof %%%= lookupLine ix) ixs
-  return $ any (occursInTerm pat) eqns --FIXME: Should really just hashcons
+  return $ any (occursInTerm pat) eqns 
 
 occursInTerm pat bigPat =
   if pat == bigPat 
@@ -160,7 +160,7 @@ substituteEverythingInSet ix set = do
   rest <- use set
   forM_ rest $ \ix' -> do
       set %= S.delete ix'
-      ix'' <- proof %%%= applySubstitution ix ix' 
+      ix'' <- proof %%%= applySubstitution ix ix' -- TODO: elim no-op proof steps?
       set %= S.insert ix''
 
 goSplitConstructor 
@@ -191,7 +191,6 @@ equateChildren ix = do
   ixs' <- splitConjunction ix'
   activeSet %= S.union ixs'
 
--- applyNoConfusion = undefined
 splitConjunction ix = do
   eqn <- claim <$> proof %%%= lookupLine ix
   if isConjunction eqn
@@ -203,10 +202,11 @@ splitConjunction ix = do
     return $ S.union splitResultLeft splitResultRight
   else return $ S.singleton ix
 
+-- TODO: occurs check
 occursInItself :: Term -> Bool
 occursInItself = const False
   
-
+-- TODO: functionality check (fairly trivial)
 
 
 
