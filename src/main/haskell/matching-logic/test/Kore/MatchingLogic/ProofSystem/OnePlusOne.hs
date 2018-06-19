@@ -7,7 +7,10 @@
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RecordWildCards            #-}
-{-# LANGUAGE PartialTypeSignatures   #-}
+{-# LANGUAGE PartialTypeSignatures      #-}
+
+{-# OPTIONS_GHC -fno-warn-unused-top-binds #-}
+
 {- |
 Description: A test checking a proof of 1+1=2 in the mimimal proof system
 
@@ -17,33 +20,29 @@ AST because the proof was done assuming the forall quantifier is primitive.
 -}
 module Kore.MatchingLogic.ProofSystem.OnePlusOne(testMinimalOnePlusOne) where
 import           Prelude                                hiding (all, and, not,
-                                                         succ)
+                                                         succ, lines, pred)
 
 import           Control.Applicative
 import           Control.Monad                          (foldM)
 import           Control.Monad.State.Strict
 
-import qualified Data.ByteString                        as B
 import qualified Data.ByteString.Lazy                   as L
-import           Data.IntMap                            (IntMap)
-import qualified Data.IntMap                            as IntMap
-import           Data.List                              (foldl')
-import qualified Data.Map.Strict                        as Map
 import qualified Data.Map.Strict                        as Map
 import qualified Data.Set                               as Set
 import           Data.Text                              (Text)
-import           Data.Text.Prettyprint.Doc              hiding (parens,space)
 import qualified Data.Tree                              as Tree
 import           Data.Word
 
 import           GHC.Generics
 import           Data.Data
 
-import           Control.Lens
 import           Data.Functor.Foldable                  (Fix (Fix))
-import           Data.Void(Void)
+import           Data.Void                              (Void)
 
-import           Text.Megaparsec(Parsec,tokens,parse,parseErrorPretty,eof)
+import           Text.Megaparsec                        (Parsec
+                                                        ,parse
+                                                        ,eof
+                                                        ,parseErrorPretty)
 import           Text.Megaparsec.Byte
 import qualified Text.Megaparsec.Byte.Lexer as Lexer
 
@@ -51,11 +50,10 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
 
 import qualified Kore.MatchingLogic.ProofSystem.OnePlusOne.ForallAST as AST
-import           Kore.MatchingLogic.HilbertProof        as HilbertProof (Proof (..),
-                                                                         ProofSystem,
-                                                                         add,
-                                                                         derive,
-                                                                         emptyProof)
+import           Kore.MatchingLogic.HilbertProof        as HilbertProof (Proof(..)
+                                                                        ,add
+                                                                        ,derive
+                                                                        ,emptyProof)
 import           Kore.MatchingLogic.ProofSystem.OnePlusOne.ProofSystem ( MLRule (..)
                                                         , MLRuleSig
                                                         , transformRule
@@ -154,10 +152,11 @@ fromChar c = fromIntegral (fromEnum c)
 
 parens :: Parser a -> Parser a
 parens p = do
-    char (fromChar '(')
+    _ <- char (fromChar '(')
     result <- p
-    lexeme (char (fromChar ')'))
+    _ <- lexeme (char (fromChar ')'))
     return result
+
 
 pNat :: Parser Nat
 pNat = parens (S <$ symbol "S" <*> pNat) <|> O <$ symbol "O"
@@ -218,6 +217,7 @@ pSimple_proof' = Conclusion <$ symbol "Conclusion" <*> pFormula <*> pSimple_rule
 pSimple_proof = parens pSimple_proof'
 
 
+nat2Int :: Num i => Nat -> i
 nat2Int n = go 0 n
   where go !x O      = x
         go !x (S n') = go (x+1) n'
@@ -255,7 +255,7 @@ convertRule convertHyp r = case r of
     Ax_propositional1 f1 f2 -> Propositional1 (convertFormula f1) (convertFormula f2)
     Ax_propositional2 f1 f2 f3 -> Propositional2 (convertFormula f1) (convertFormula f2) (convertFormula f3)
     Ax_propositional3 f1 f2 -> Propositional3 (convertFormula f1) (convertFormula f2)
-    Ax_varSubst x y p1 p2 -> VariableSubstitution (SubstitutedVariable (nat2Int x))
+    Ax_varSubst x y p1 _ -> VariableSubstitution (SubstitutedVariable (nat2Int x))
                                                   (convertFormula p1)
                                                   (SubstitutingVariable (nat2Int y))
     Ax_allImp x f1 f2 -> ForallRule (nat2Int x) (convertFormula f1) (convertFormula f2)
@@ -269,7 +269,7 @@ convertRule convertHyp r = case r of
     Ax_or_elim f1 f2 f3 -> OrElim (convertFormula f1) (convertFormula f2) (convertFormula f3)
     Ax_or_intro1 f1 f2 -> OrIntroL (convertFormula f1) (convertFormula f2)
     Ax_or_intro2 f1 f2 -> OrIntroR (convertFormula f1) (convertFormula f2)
-
+    rule -> error $ "This case should be handled earlier: " ++ show rule
 convertFormula :: Formula -> TextPat
 convertFormula f = case f of
     Plus f1 f2 -> app "plus" [convertFormula f1, convertFormula f2]
@@ -285,7 +285,7 @@ convertFormula f = case f of
     and f1 f2 = Fix (AST.And "Nat" f1 f2)
     all v body = Fix (AST.Forall "Nat" "Nat" v body)
     var v = Fix (AST.Variable "Nat" v)
-    not f = Fix (AST.Not "Nat" f)
+    not form = Fix (AST.Not "Nat" form)
 
 type TextPat = AST.Pattern Text Text Int
 type TextRule = MLRule Text Text Int TextPat
@@ -310,12 +310,12 @@ emit pat rule = ConvM (state (\(next,lines) -> (next,(next+1,(next,pat,rule):lin
 
 convert :: Simple_proof -> ConvM Int
 convert (Conclusion formula rule) = convertRule convert rule >>= \case
-    Right rule -> emit (convertFormula formula) rule
-    Left ix' -> return ix'
-
+    Right rule' -> emit (convertFormula formula) rule'
+    Left ix -> return ix
+               
 useHyp :: (Applicative f) => (Nat -> f Nat) -> (Simple_proof -> f Simple_proof)
 useHyp f (Conclusion pat (Rule_use_hyp v)) = Conclusion pat . Rule_use_hyp <$> f v
-useHyp f proof = pure proof
+useHyp _ proof = pure proof
 
 loadCoqOutput :: IO Simple_proof
 loadCoqOutput = do
@@ -354,18 +354,19 @@ checkEntry' _proxy = checkEntry
 
 
 balance :: String -> Tree.Tree String
-balance str = go 0 "<TOP>" [] [] str
+balance treeString = go (0 :: Int) "<TOP>" [] [] treeString
   where
-    go depth parent siblings stack string@('(':string')
-      = go (depth+1) string [] ((parent,siblings):stack) string'
-    go depth parent siblings ((grandparent,siblings'):stack) string@(')':string')
-      = go (depth-1) grandparent (Tree.Node parent (reverse siblings):siblings') stack string'
+    go depth parent siblings stack str@('(':str')
+      = go (depth+1) str [] ((parent,siblings):stack) str'
+    go depth parent siblings ((grandparent,siblings'):stack) (')':str')
+      = go (depth-1) grandparent (Tree.Node parent (reverse siblings):siblings') stack str'
     go 0 _ [n] [] "" = n
-    go depth parent siblings stack (_:string) =
-      go depth parent siblings stack string
+    go depth parent siblings stack (_:str)
+      = go depth parent siblings stack str
+    go _ _ _ _ "" = error "balance on the empty string is undefined"
 
 filterTree :: (a -> Bool) -> Tree.Tree a -> Tree.Forest a
-filterTree pred t@(Tree.Node x children) =
+filterTree pred (Tree.Node x children) =
     let children' = concatMap (filterTree pred) children
     in if pred x then [Tree.Node x children'] else children'
 
@@ -375,12 +376,14 @@ leaves t@(Tree.Node _ children)
     | otherwise = concatMap leaves children
 
 chomp :: String -> String
-chomp str = go 0 str
+chomp str' = go 0 str'
   where
+    go :: Int -> String -> String
     go depth ('(':str) = '(':go (depth+1) str
-    go 1     (')':str) = ")"
+    go 1     (')':_)   = ")"
     go depth (')':str) = ')':go (depth-1) str
     go depth (c  :str) = c:go depth str
+    go _     ""        = error "chomp on the empty string is undefined" 
 
 findBadThings :: ReifiesSignature s
               => proxy (SimpleSignature s)
@@ -463,7 +466,7 @@ example :: IO [(Int,TextPat,TextRule Int)]
 example = do
     entries <- loadConverted
     return $ reifySignature plusSignature (flip findBadThings entries)
-
+           
 testMinimalOnePlusOne :: TestTree
 testMinimalOnePlusOne = testCase "Check minimal 1+1=2 proof" $
     withProof (\result -> case result of
