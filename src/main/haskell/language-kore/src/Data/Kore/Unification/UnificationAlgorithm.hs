@@ -46,6 +46,10 @@ import           Data.Kore.Unification.UnificationRules
 import           Data.Kore.Unification.Error
 import           Data.Kore.Unparser.Unparse
 
+import Debug.Trace
+import Text.Groom
+spy x = trace (groom x) x
+
 {- 
 NOTE:
 1) Carrying around ix=Int and constantly dereferencing
@@ -80,10 +84,7 @@ unificationProcedure
   -> m ()
 unificationProcedure a b = do
   ixAB <- proof %%%= assume (Equation placeholderSort placeholderSort a b)
-  let q = Fix $ VariablePattern $ Variable (noLocationId "Q") placeholderSort
-  ixqA <- proof %%%= assume (Equation placeholderSort placeholderSort q a)
   activeSet %= S.insert ixAB 
-  finishedSet %= S.insert ixqA
   loop 
 
 loop 
@@ -117,7 +118,8 @@ process ix = do
       then do
         substituteEverythingInSet ix activeSet
         substituteEverythingInSet ix finishedSet
-      else finishedSet %= S.insert ix
+      else do 
+        finishedSet %= S.insert ix
   else if lhsIsVariable (flipEqn eqn)
   then do
     activeSet %= S.delete ix

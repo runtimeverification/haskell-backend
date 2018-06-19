@@ -91,7 +91,18 @@ applySubstitution
   :: Int
   -> Int
   -> State (Proof Int UnificationRules Term) Int
-applySubstitution = makeRule2 subst Substitution
+-- applySubstitution = makeRule2 subst Substitution
+applySubstitution ix1 ix2 = do
+  Just line1 <- M.lookup ix1 <$> get
+  Just line2 <- M.lookup ix2 <$> get
+  let substitutedClaim2 = subst (claim line1) (claim line2)
+  if substitutedClaim2 == claim line2 -- substitution was a noop
+  then return ix1 
+  else addLine ProofLine 
+    { claim = substitutedClaim2
+    , justification = Substitution ix1 ix2
+    , assumptions = S.unions [assumptions line1, assumptions line2]
+    }
 
 isTrivial (Equation s1 s2 a b) = (a == b)
 
