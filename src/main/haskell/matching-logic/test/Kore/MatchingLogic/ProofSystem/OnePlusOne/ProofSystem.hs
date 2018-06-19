@@ -7,8 +7,6 @@ connectives, which were needed to complete the 1+1=2 proof.
  -}
 module Kore.MatchingLogic.ProofSystem.OnePlusOne.ProofSystem where
 
---import           Data.Text.Prettyprint.Doc       (Pretty (pretty))
-
 import           Data.Functor.Foldable           (Fix (..))
 import           Control.Lens                    ((&),(%~))
 
@@ -74,7 +72,7 @@ transformRule :: (Applicative f)
               -> (hyp -> f hyp')
               -> (MLRule sort label var term hyp
                   -> f (MLRule sort' label' var' term' hyp'))
-transformRule _ label var term hypothesis rule = case rule of
+transformRule _sort label var term hypothesis rule = case rule of
     Propositional1 t1 t2 -> Propositional1 <$> term t1 <*> term t2
     Propositional2 t1 t2 t3 -> Propositional2 <$> term t1 <*> term t2 <*> term t3
     Propositional3 t1 t2 -> Propositional3 <$> term t1 <*> term t2
@@ -155,17 +153,18 @@ instance (IsSignature sig, Eq (Sort sig), Eq (Label sig), Eq var) =>
                   Left (Error [] "right hand term does not match phi[y/x]")
               | otherwise -> Left (Error [] "conclusion does not agree with arguments")
             _ -> Left (Error [] "malformed conclusion")
-      ForallRule _ term1 term2 ->
+      ForallRule var term1 term2 ->
           case conclusion of
             ImpliesP _ (ForallP _ sVar var1 (ImpliesP _ p1 p2))
-                       (ImpliesP _ p3 (ForallP _ sVar1 _ p4))
-              | sVar == sVar1, p1 == p3, p2 == p4, AST.notFree sVar var1 p1 ->
+                       (ImpliesP _ p3 (ForallP _ sVar1 var2 p4))
+              | var == var1, var1 == var2, sVar == sVar1,
+                p1 == p3, p2 == p4, AST.notFree sVar var1 p1 ->
                 if term1 == Just p1 && term2 == Just p2
                 then Right () else Left (Error [] "conclusion does not match rule arguments")
             _ -> Left (Error [] "conclusion not of right form")
       Generalization var hyp ->
           case conclusion of
-            ForallP _ _ var1 body
+            ForallP _ _sVar var1 body
               | var1 == var, hyp == body -> Right ()
             _ -> Left (Error [] "")
       Framing label pos (ImpliesP _ term1 term2) ->
@@ -179,11 +178,11 @@ instance (IsSignature sig, Eq (Sort sig), Eq (Label sig), Eq var) =>
               _ -> Left (Error [] "conclusion has wrong form")
       Framing _ _ _ ->
           Left (Error [] "hypothesis has wrong form")
-      PropagateOr _ pos phi1 phi2 -> do
+      PropagateOr label pos phi1 phi2 -> do
           case conclusion of
             ImpliesP _ (ApplicationP label1 args1)
                    (OrP _ (ApplicationP label2a args2a) (ApplicationP label2b args2b))
-              | label1 == label2a, label1 == label2b,
+              | label == label1, label1 == label2a, label1 == label2b,
                 (before1,OrP _ term1a term1b:after1) <- splitAt pos args1,
                 (before2a,term2a:after2a) <- splitAt pos args2a,
                 (before2b,term2b:after2b) <- splitAt pos args2b,
@@ -196,11 +195,11 @@ instance (IsSignature sig, Eq (Sort sig), Eq (Label sig), Eq var) =>
 
      -- ^ sigma(before ..,\phi1 \/ \phi2,.. after) <->
      --     sigma(before ..,\phi1, .. after) \/ sigma(before ..,\phi2,.. after)
-      PropagateExists _ pos var term ->
+      PropagateExists label pos var term ->
           case conclusion of
             ImpliesP _ (ApplicationP label1 args1)
                    (ExistsP _ sVar2 var2 (ApplicationP label2 args2))
-              | label1 == label2,
+              | label == label1, label1 == label2,
                 take pos args1 == take pos args2,
                 drop (pos+1) args1 == drop (pos+1) args2,
                 (ExistsP _ sVar1 var1 term1:_) <- drop pos args1,

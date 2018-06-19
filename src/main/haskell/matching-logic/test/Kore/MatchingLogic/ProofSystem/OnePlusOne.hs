@@ -461,12 +461,12 @@ withProof body = do
         axioms <- startProof proxy
         foldM (\pf -> (maybe (Left "Check failed") Right . checkEntry)
                       >=> runEntry pf) axioms entries)
-{-
+
 example :: IO [(Int,TextPat,TextRule Int)]
 example = do
     entries <- loadConverted
     return $ reifySignature plusSignature (flip findBadThings entries)
--}
+           
 testMinimalOnePlusOne :: TestTree
 testMinimalOnePlusOne = testCase "Check minimal 1+1=2 proof" $
     withProof (\result -> case result of
