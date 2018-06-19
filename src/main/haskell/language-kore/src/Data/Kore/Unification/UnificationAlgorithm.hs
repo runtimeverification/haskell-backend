@@ -43,12 +43,7 @@ import           Data.Kore.IndexedModule.MetadataTools
 
 import           Data.Kore.Unification.ProofSystemWithHypos
 import           Data.Kore.Unification.UnificationRules
-import           Data.Kore.Unification.Error
 import           Data.Kore.Unparser.Unparse
-
-import Debug.Trace
-import Text.Groom
-spy x = trace (groom x) x
 
 {- 
 NOTE:
@@ -67,14 +62,20 @@ data UnificationState
   , _proof :: Proof Int UnificationRules Term
   } 
   deriving(Show)
-  
+
+data UnificationError
+    = ConstructorClash     Term Term
+    | NonConstructorHead   Term
+    | NonFunctionalPattern Term
+    | OccursCheck          Term Term
+  deriving (Eq, Show)
 
 makeLenses ''UnificationState
 
 type UnificationContext m = 
   ( MonadState UnificationState m
   , MonadReader (MetadataTools Meta) m
-  , MonadError (UnificationError Meta) m
+  , MonadError UnificationError m
   ) 
 
 unificationProcedure 
@@ -104,14 +105,14 @@ process
   => Int 
   -> m ()
 process ix = do
-  eqn <- claim <$> (proof %%%= lookupLine ix)
+  eqn@(Equation s1 s2 a b) <- claim <$> (proof %%%= lookupLine ix)
   if isTrivial eqn
   then do 
     activeSet %= S.delete ix
   else if lhsIsVariable eqn
   then do
-    if occursInTerm (getLHS eqn) (getRHS eqn)
-    then do throwError $ undefined -- occurs check error
+    if occursInTerm a b
+    then do throwError $ OccursCheck a b
     else do
       occursInSets <- checkIfOccursInSets $ getLHS eqn
       if occursInSets
@@ -173,11 +174,11 @@ goSplitConstructor
   -> m ()
 goSplitConstructor tools ix e@(Equation s1 s2 a b)
   | not (isConstructor tools headA)
-      = throwError $ NonConstructorHead headA
+      = throwError $ NonConstructorHead a
   | not (isConstructor tools headB)
-      = throwError $ NonConstructorHead headB
+      = throwError $ NonConstructorHead b
   | headA /= headB
-      = throwError $ ConstructorClash headA headB
+      = throwError $ ConstructorClash a b 
   | otherwise
       = equateChildren ix
     where 
@@ -204,10 +205,6 @@ splitConjunction ix = do
     return $ S.union splitResultLeft splitResultRight
   else return $ S.singleton ix
 
--- TODO: occurs check
-occursInItself :: Term -> Bool
-occursInItself = const False
-  
 -- TODO: functionality check (fairly trivial)
 
 

@@ -44,7 +44,6 @@ import           Data.Kore.IndexedModule.MetadataTools
 import           Data.Kore.Unification.ProofSystemWithHypos
 import           Data.Kore.Unification.UnificationRules
 import           Data.Kore.Unification.UnificationAlgorithm
-import           Data.Kore.Unification.Error
 import           Data.Kore.Unparser.Unparse
 
 import           Data.Kore.Unparser.Unparse
@@ -53,7 +52,8 @@ import Debug.Trace
 import Text.Groom
 spy x = trace (groom x) x
 
-var x = Fix $ VariablePattern $ Variable (noLocationId x) placeholderSort 
+var x = 
+  Fix $ VariablePattern $ Variable (noLocationId x) placeholderSort 
 
 app x ys = Fix $ ApplicationPattern $ Application 
   { applicationSymbolOrAlias = x
@@ -93,15 +93,17 @@ t4 = undefined
 example1 
   :: ReaderT (MetadataTools Meta) (
      StateT UnificationState (
-     ExceptT (UnificationError Meta) Identity)
-     ) ()
+     ExceptT (UnificationError) 
+     Identity))
+    ()
 example1 = unificationProcedure t1 t2
 
 example2 
   :: ReaderT (MetadataTools Meta) (
      StateT UnificationState (
-     ExceptT (UnificationError Meta) Identity)
-     ) ()
+     ExceptT (UnificationError) 
+     Identity))
+    ()
 example2 = unificationProcedure t2 t3
 
 -- AWFUL HACK! I just wanted legible output as fast as possible
@@ -116,7 +118,7 @@ run =
   (\x -> case x of 
     Right (UnificationState activeSet finishedSet proof) -> 
       show (finishedSet, (fmap.fmap) (("\n" ++) . unparseToString) proof)
-    Left err -> show (err :: UnificationError Meta)
+    Left err -> show (err :: UnificationError)
   ) . 
   runExcept .
   flip execStateT emptyUnificationState .
@@ -128,11 +130,6 @@ unescapeLol s =
   case (reads s, break (=='"') s) of 
     ([(here, later)], _) -> here ++ unescapeLol later
     (_, (earlier, here)) -> earlier ++ unescapeLol here  
-
-newtype UnparseWrapper = UnparseWrapper { unUnparseWrapper :: Term}
-
-instance Show UnparseWrapper where
-  show = unparseToString . unUnparseWrapper 
 
 emptyProof :: Proof Int UnificationRules Term 
 emptyProof = M.empty
