@@ -85,26 +85,42 @@ t2 =
   ]
 
 t3 :: Term
-t3 = app (sym "F") []
+t3 = app (sym "D") []
 
 t4 :: Term 
-t4 = undefined
+t4 = 
+  app (sym "E")
+  [ app (sym "E")
+      [ var "a"
+      , var "b"
+      ]
+  , app (sym "E")
+      [ var "c"
+      , var "d"
+      ]
+  ]
 
-example1 
-  :: ReaderT (MetadataTools Meta) (
-     StateT UnificationState (
-     ExceptT (UnificationError) 
-     Identity))
-    ()
+t5 :: Term 
+t5 = 
+  app (sym "E")
+  [ app (sym "E")
+      [ var "b"
+      , var "c"
+      ]
+  , app (sym "E")
+      [ var "d"
+      , var "a"
+      ]
+  ]
+
+example1 :: Unification ()
 example1 = unificationProcedure t1 t2
 
-example2 
-  :: ReaderT (MetadataTools Meta) (
-     StateT UnificationState (
-     ExceptT (UnificationError) 
-     Identity))
-    ()
+example2 :: Unification ()
 example2 = unificationProcedure t2 t3
+
+example3 :: Unification ()
+example3 = unificationProcedure t4 t5
 
 -- AWFUL HACK! I just wanted legible output as fast as possible
 -- Pretty print properly soon.

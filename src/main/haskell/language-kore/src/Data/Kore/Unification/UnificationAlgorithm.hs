@@ -78,6 +78,13 @@ type UnificationContext m =
   , MonadError UnificationError m
   ) 
 
+type Unification a = 
+  ReaderT (MetadataTools Meta) (
+  StateT UnificationState (
+  ExceptT (UnificationError) 
+  Identity))
+  ()
+
 unificationProcedure 
   :: UnificationContext m 
   => Term 
@@ -93,7 +100,7 @@ loop
   => m ()
 loop = do
   eqns <- use activeSet
-  case S.maxView eqns of 
+  case S.maxView eqns of
     Nothing -> return () -- we are done
     Just (ix, rest) -> do
       activeSet .= rest
@@ -119,8 +126,8 @@ process ix = do
       then do
         substituteEverythingInSet ix activeSet
         substituteEverythingInSet ix finishedSet
-      else do 
-        finishedSet %= S.insert ix
+      else return ()
+      finishedSet %= S.insert ix
   else if lhsIsVariable (flipEqn eqn)
   then do
     activeSet %= S.delete ix

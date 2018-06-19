@@ -39,8 +39,10 @@ data UnificationRules ix
   | EqSymmetric ix -- (a = b) => (b = a)
   | Substitution ix ix --ix2[LHS of ix1 \ RHS of ix2]
   | NoConfusion ix -- result is a conjunction
+  | AndIntro ix ix 
   | AndL ix -- a /\ b => a
   | AndR ix 
+  | ModusPonens ix ix
   deriving(Functor, Foldable, Traversable, Show)
 
 type Term = CommonPurePattern Meta
@@ -97,7 +99,7 @@ applySubstitution ix1 ix2 = do
   Just line2 <- M.lookup ix2 <$> get
   let substitutedClaim2 = subst (claim line1) (claim line2)
   if substitutedClaim2 == claim line2 -- substitution was a noop
-  then return ix1 
+  then return ix2 
   else addLine ProofLine 
     { claim = substitutedClaim2
     , justification = Substitution ix1 ix2
