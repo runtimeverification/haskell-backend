@@ -85,7 +85,7 @@ unificationProcedure
 unificationProcedure a b = do
   ixAB <- proof %%%= assume (Equation placeholderSort placeholderSort a b)
   activeSet %= S.insert ixAB 
-  loop 
+  loop
 
 loop 
   :: UnificationContext m
@@ -182,7 +182,7 @@ goSplitConstructor tools ix e@(Equation s1 s2 a b)
       = equateChildren ix
     where 
       ApplicationPattern (Application headA _) = unFix a
-      ApplicationPattern (Application headB _) = unFix a
+      ApplicationPattern (Application headB _) = unFix b
 
 equateChildren
   :: UnificationContext m

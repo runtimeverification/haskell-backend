@@ -27,12 +27,18 @@ import           Control.Monad.State
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 
+import           Data.Kore.ASTPrettyPrint
+
 data ProofLine ix rule formula
   = ProofLine
   { claim         :: formula
   , justification :: rule ix
   , assumptions   :: S.Set ix
   } deriving (Show)
+
+instance Functor (ProofLine ix rule) where
+  fmap f (ProofLine claim justification assumptions) 
+    = ProofLine (f claim) justification assumptions
 
 type Proof ix rule formula = M.Map ix (ProofLine ix rule formula)
 
@@ -140,7 +146,6 @@ class
     modify $ M.insert ix line
     return ix
 
-  
 
   -- Can also deal with quantifiers:
   

@@ -47,13 +47,13 @@ import           Data.Kore.Unification.UnificationAlgorithm
 import           Data.Kore.Unification.Error
 import           Data.Kore.Unparser.Unparse
 
+import           Data.Kore.Unparser.Unparse
+
 import Debug.Trace
 import Text.Groom
 spy x = trace (groom x) x
 
-a = Fix $ VariablePattern $ Variable (noLocationId "a") placeholderSort 
-b = Fix $ VariablePattern $ Variable (noLocationId "b") placeholderSort 
-c = Fix $ VariablePattern $ Variable (noLocationId "c") placeholderSort 
+var x = Fix $ VariablePattern $ Variable (noLocationId x) placeholderSort 
 
 app x ys = Fix $ ApplicationPattern $ Application 
   { applicationSymbolOrAlias = x
@@ -65,32 +65,74 @@ sym x = SymbolOrAlias
   , symbolOrAliasParams = [] 
   }
 
-aEqb :: Term
-aEqb = Fix $ EqualsPattern $ Equals placeholderSort placeholderSort a b 
+t1 :: Term 
+t1 =
+  app (sym "C") 
+  [ var "a"
+  , var "b"
+  , var "c"
+  ]
 
-bEqc :: Term
-bEqc = Fix $ EqualsPattern $ Equals placeholderSort placeholderSort b c 
+t2 :: Term 
+t2 = 
+  app (sym "C") 
+  [ var "a"
+  , app (sym "D") []
+  , app (sym "C") 
+    [ var "a"
+    , var "a"
+    , var "a"]
+  ]
 
-x :: Term 
-x = app (sym "C") [a,b,c]
+t3 :: Term
+t3 = app (sym "F") []
 
-y :: Term 
-y = app (sym "C") [a,app (sym "D") [],app (sym "C") [a,a,a]]
+t4 :: Term 
+t4 = undefined
 
 example1 
-  :: ExceptT (UnificationError Meta) (
+  :: ReaderT (MetadataTools Meta) (
      StateT UnificationState (
-     Reader (MetadataTools Meta))
+     ExceptT (UnificationError Meta) Identity)
      ) ()
-example1 = unificationProcedure x y
+example1 = unificationProcedure t1 t2
 
+example2 
+  :: ReaderT (MetadataTools Meta) (
+     StateT UnificationState (
+     ExceptT (UnificationError Meta) Identity)
+     ) ()
+example2 = unificationProcedure t2 t3
+
+-- AWFUL HACK! I just wanted legible output as fast as possible
+-- Pretty print properly soon.
 -- putStrLn $ run example1
 run = 
-  groom .
-  flip runReader dummyMetaTools .
+  unescapeLol . 
+  groomString .
+  -- (\(UnificationState activeSet finishedSet proof) -> 
+  --   (finishedSet, (fmap.fmap) UnparseWrapper proof)
+  -- ) . 
+  (\x -> case x of 
+    Right (UnificationState activeSet finishedSet proof) -> 
+      show (finishedSet, (fmap.fmap) (("\n" ++) . unparseToString) proof)
+    Left err -> show (err :: UnificationError Meta)
+  ) . 
+  runExcept .
   flip execStateT emptyUnificationState .
-  runExceptT
+  flip runReaderT dummyMetaTools 
   
+
+unescapeLol [] = []
+unescapeLol s = 
+  case (reads s, break (=='"') s) of 
+    ([(here, later)], _) -> here ++ unescapeLol later
+    (_, (earlier, here)) -> earlier ++ unescapeLol here  
+
+newtype UnparseWrapper = UnparseWrapper { unUnparseWrapper :: Term}
+
+instance Show UnparseWrapper where
+  show = unparseToString . unUnparseWrapper 
 
 emptyProof :: Proof Int UnificationRules Term 
 emptyProof = M.empty
