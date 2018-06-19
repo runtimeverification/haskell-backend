@@ -46,10 +46,6 @@ import           Data.Kore.Unification.UnificationRules
 import           Data.Kore.Unification.Error
 import           Data.Kore.Unparser.Unparse
 
-import Debug.Trace
-import Text.Groom
-spy x = trace (groom x) x
-
 {- 
 NOTE:
 1) Carrying around ix=Int and constantly dereferencing
@@ -84,7 +80,7 @@ unificationProcedure
   -> m ()
 unificationProcedure a b = do
   ixAB <- proof %%%= assume (Equation placeholderSort placeholderSort a b)
-  let q = Fix $ VariablePattern $ Variable (noLocationId "q") placeholderSort
+  let q = Fix $ VariablePattern $ Variable (noLocationId "Q") placeholderSort
   ixqA <- proof %%%= assume (Equation placeholderSort placeholderSort q a)
   activeSet %= S.insert ixAB 
   finishedSet %= S.insert ixqA
@@ -95,7 +91,7 @@ loop
   => m ()
 loop = do
   eqns <- use activeSet
-  case trace"BOO" $ spy $ S.maxView eqns of 
+  case S.maxView eqns of 
     Nothing -> return () -- we are done
     Just (ix, rest) -> do
       activeSet .= rest
@@ -111,18 +107,17 @@ process ix = do
   if isTrivial eqn
   then do 
     activeSet %= S.delete ix
-  else if spy $ lhsIsVariable $ spy eqn
+  else if lhsIsVariable eqn
   then do
-    if spy $ occursInTerm (getLHS eqn) (getRHS eqn)
-    then do throwError $ undefined -- circularity error
+    if occursInTerm (getLHS eqn) (getRHS eqn)
+    then do throwError $ undefined -- occurs check error
     else do
       occursInSets <- checkIfOccursInSets $ getLHS eqn
-      if spy $ occursInSets
+      if occursInSets
       then do
         substituteEverythingInSet ix activeSet
         substituteEverythingInSet ix finishedSet
-      else return ()
-      finishedSet %= S.insert ix
+      else finishedSet %= S.insert ix
   else if lhsIsVariable (flipEqn eqn)
   then do
     activeSet %= S.delete ix
@@ -194,7 +189,7 @@ equateChildren
 equateChildren ix = do
   ix' <- proof %%%= applyNoConfusion ix
   ixs' <- splitConjunction ix'
-  activeSet %= S.union (trace "IXS" $ spy ixs')
+  activeSet %= S.union ixs'
 
 -- applyNoConfusion = undefined
 splitConjunction ix = do
@@ -211,64 +206,6 @@ splitConjunction ix = do
 occursInItself :: Term -> Bool
 occursInItself = const False
   
--- FIRST TEST:
-
-a = Fix $ VariablePattern $ Variable (noLocationId "a") placeholderSort 
-b = Fix $ VariablePattern $ Variable (noLocationId "b") placeholderSort 
-c = Fix $ VariablePattern $ Variable (noLocationId "c") placeholderSort 
-
-app x ys = Fix $ ApplicationPattern $ Application 
-  { applicationSymbolOrAlias = x
-  , applicationChildren = ys
-  }
-
-sym x = SymbolOrAlias 
-  { symbolOrAliasConstructor = noLocationId x 
-  , symbolOrAliasParams = [] 
-  }
-
-aEqb :: Term
-aEqb = Fix $ EqualsPattern $ Equals placeholderSort placeholderSort a b 
-
-bEqc :: Term
-bEqc = Fix $ EqualsPattern $ Equals placeholderSort placeholderSort b c 
-
-x :: Term 
-x = app (sym "C") [a,b,c]
-
-y :: Term 
-y = app (sym "C") [a,app (sym "D") [],app (sym "C") [a,a,a]]
-
-bar 
-  :: ExceptT (UnificationError Meta) (
-     StateT UnificationState (
-     Reader (MetadataTools Meta))
-     ) ()
-bar = unificationProcedure x y
-
-foo :: UnificationState
-foo = 
-  flip runReader metaTools $
-  flip execStateT emptyUnificationState $ 
-  runExceptT $
-  bar
-
-emptyProof :: Proof Int UnificationRules Term 
-emptyProof = M.empty
-
-emptyUnificationState = 
-  UnificationState
-  { _activeSet   = S.empty
-  , _finishedSet = S.empty
-  , _proof       = emptyProof
-  }
-
-metaTools = MetadataTools
-    { isConstructor    = const True
-    , isFunctional     = const True
-    , getArgumentSorts = const []
-    , getResultSort    = const placeholderSort
-    }
 
 
 
