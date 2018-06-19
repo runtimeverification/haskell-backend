@@ -312,11 +312,11 @@ convert :: Simple_proof -> ConvM Int
 convert (Conclusion formula rule) = convertRule convert rule >>= \case
     Right rule' -> emit (convertFormula formula) rule'
     Left ix -> return ix
-{-
+               
 useHyp :: (Applicative f) => (Nat -> f Nat) -> (Simple_proof -> f Simple_proof)
 useHyp f (Conclusion pat (Rule_use_hyp v)) = Conclusion pat . Rule_use_hyp <$> f v
 useHyp _ proof = pure proof
--}
+
 loadCoqOutput :: IO Simple_proof
 loadCoqOutput = do
     text <- L.readFile "test/resources/proof_tree.txt"
