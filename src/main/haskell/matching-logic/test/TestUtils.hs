@@ -60,7 +60,7 @@ parseTestRule ruleStr = case (parse mlRuleTestParser "" (T.pack ruleStr)) of
 
 
 prop1RuleStr :: String
-prop1RuleStr = "propositional1(P, Q)"0
+prop1RuleStr = "propositional1(P, Q)"
 
                
                

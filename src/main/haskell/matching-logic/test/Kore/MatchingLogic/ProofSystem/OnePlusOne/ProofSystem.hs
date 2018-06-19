@@ -226,7 +226,7 @@ instance (IsSignature sig, Eq (Sort sig), Eq (Label sig), Eq var) =>
                 AndP _ (VariableP sVar1 var1) term1' ->
                   case occ2 of
                     AndP _ (VariableP sVar2 var2) (NotP _ term2')
-                      | sVar1 == sVar2, var1 == var2, term1 == term2',
+                      | sVar1 == sVar2, var1 == var2, term1' == term2',
                         var == var1, term == Just term1' -> Right ()
                     _ -> Left (Error [] "")
                 _ -> Left (Error [] "")
