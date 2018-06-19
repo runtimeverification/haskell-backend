@@ -35,10 +35,11 @@ dependencies:
 - data-fix
 - clock
 - optparse-applicative
-
+- gitrev
+  
 library:
   source-dirs: src
-
+  
 executables:
   kore-parser:
     main:                Main.hs
