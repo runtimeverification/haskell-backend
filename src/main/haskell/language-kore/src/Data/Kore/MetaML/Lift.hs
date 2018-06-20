@@ -352,9 +352,17 @@ liftAliasDeclaration as = (symbolOrAliasLiftedDeclaration as, axiom)
     axiom = SentenceAxiom
         { sentenceAxiomAttributes = Attributes []
         , sentenceAxiomParameters = []
-        , sentenceAxiomPattern = Fix . TopPattern -- TODO: still to decide what exactly goes here (certainly not Top!)
-            $ Top { topSort = patternMetaSort }
+        , sentenceAxiomPattern    = pat 
         }
+    pat = Fix . EqualsPattern $ 
+        Equals 
+            { equalsOperandSort = sortMetaSort
+            , equalsResultSort  = sortMetaSort
+            , equalsFirst       = left
+            , equalsSecond      = right
+            }
+    left  = liftToMeta (asKorePattern (sentenceAliasLeftPattern as))
+    right = liftToMeta (asKorePattern (sentenceAliasRightPattern as))
 
 {-|'liftSentence' transforms a 'Sentence' in one or more 'MetaSentences'
 encoding it.
