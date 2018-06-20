@@ -11,7 +11,7 @@ Portability : portable
 -}
 module Data.Kore.HaskellExtensions
     (Rotate31(..), Rotate41(..)
-    , (<..>), (<...>), (<....>), (<.....>), (<......>) 
+    , (<..>), (<...>), (<....>) 
     , ReversedList, reversedAdd, reversedToList, emptyReversedList)
   where
 
@@ -67,18 +67,6 @@ second function has four arguments.  It satisfies that
     -> (a1 -> a2 -> a3 -> a4 -> b)
     -> (a1 -> a2 -> a3 -> a4 -> c)
 (<....>) = (<...>) . (.)
-
--- only used to define (<......>), below
-(<.....>) :: (b -> c)
-          -> (a1 -> a2 -> a3 -> a4 -> a5 -> b)
-          -> (a1 -> a2 -> a3 -> a4 -> a5 -> c)
-(<.....>)  = (<....>) . (.)
-
--- hmm, this is gettin too long, and it's only used once. Do we really need it?
-(<......>) :: (b -> c)
-           -> (a1 -> a2 -> a3 -> a4 -> a5 -> a6 -> b)
-           -> (a1 -> a2 -> a3 -> a4 -> a5 -> a6 -> c)
-(<......>) = (<.....>) . (.)
 
 newtype ReversedList a = ReversedList [a]
     deriving (Show, Eq)

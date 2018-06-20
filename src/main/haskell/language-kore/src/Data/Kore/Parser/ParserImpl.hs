@@ -44,7 +44,7 @@ import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.Sentence
-import           Data.Kore.HaskellExtensions  (Rotate31 (..), (<....>), (<......>))
+import           Data.Kore.HaskellExtensions  (Rotate31 (..), (<....>))
 import           Data.Kore.MetaML.AST
 import           Data.Kore.Parser.Lexeme
 import           Data.Kore.Parser.ParserUtils (Parser)
@@ -961,8 +961,7 @@ aliasSentenceRemainderParser x
     mlLexemeParser ":="    
     rightPattern <- leveledPatternParser korePatternParser x 
     attributes <- attributesParser
-    let constructor = (Rotate31 <......> SentenceAlias) in 
-        return (constructor aliasSymbol sorts resultSort leftPattern rightPattern attributes)
+    return (Rotate31 (SentenceAlias aliasSymbol sorts resultSort leftPattern rightPattern attributes)) 
 
 {-|'importSentenceRemainderParser' parses the part after the starting
 'import' keyword of an import-declaration and constructs it.
