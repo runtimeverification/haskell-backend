@@ -139,7 +139,7 @@ verifyMetaSentence
     attributesVerification
     (SentenceAliasSentence aliasSentence)
   =
-    verifySymbolAliasSentence
+    verifyAliasSentence
         (resolveSort indexedModule)
         indexedModule
         attributesVerification
@@ -149,7 +149,7 @@ verifyMetaSentence
     attributesVerification
     (SentenceSymbolSentence symbolSentence)
   =
-    verifySymbolAliasSentence
+    verifySymbolSentence
         (resolveSort indexedModule)
         indexedModule
         attributesVerification
@@ -175,7 +175,7 @@ verifyObjectSentence
     attributesVerification
     (SentenceAliasSentence aliasSentence)
   =
-    verifySymbolAliasSentence
+    verifyAliasSentence
         (resolveSort indexedModule)
         indexedModule
         attributesVerification
@@ -185,7 +185,7 @@ verifyObjectSentence
     attributesVerification
     (SentenceSymbolSentence symbolSentence)
   =
-    verifySymbolAliasSentence
+    verifySymbolSentence
         (resolveSort indexedModule)
         indexedModule
         attributesVerification
@@ -207,20 +207,20 @@ verifyObjectSentence
     attributesVerification
     (SentenceHookSentence (SentenceHookedSymbol symbolSentence))
   =
-    verifySymbolAliasSentence
+    verifySymbolSentence
         (resolveSort indexedModule)
         indexedModule
         attributesVerification
         symbolSentence
 
-verifySymbolAliasSentence
+verifySymbolSentence
     :: (MetaOrObject level, SentenceSymbolOrAlias ssa)
     => (Id level -> Either (Error VerifyError) (SortDescription level))
     -> KoreIndexedModule
     -> AttributesVerification
     -> ssa level UnifiedPattern Variable
     -> Either (Error VerifyError) VerifySuccess
-verifySymbolAliasSentence
+verifySymbolSentence
     findSortDeclaration _ attributesVerification sentence
   =
     withLocationAndContext
@@ -239,6 +239,43 @@ verifySymbolAliasSentence
                 findSortDeclaration
                 variables
                 (getSentenceSymbolOrAliasResultSort sentence)
+            verifyAttributes
+                (getSentenceSymbolOrAliasAttributes sentence)
+                attributesVerification
+        )
+  where
+    sortParams = getSentenceSymbolOrAliasSortParams sentence
+
+-- TODO: currently, this is the same as `verifySymbolSentence`. 
+-- It should be modified to do something specific (or removed if not needed!)
+verifyAliasSentence
+    :: (MetaOrObject level, SentenceSymbolOrAlias ssa)
+    => (Id level -> Either (Error VerifyError) (SortDescription level))
+    -> KoreIndexedModule
+    -> AttributesVerification
+    -> ssa level UnifiedPattern Variable
+    -> Either (Error VerifyError) VerifySuccess
+verifyAliasSentence
+    findSortDeclaration _ attributesVerification sentence
+  =
+    withLocationAndContext
+        (getSentenceSymbolOrAliasConstructor sentence)
+        (  getSentenceSymbolOrAliasSentenceName sentence
+        ++ " '"
+        ++ getId (getSentenceSymbolOrAliasConstructor sentence)
+        ++ "' declaration"
+        )
+        (do
+            variables <- buildDeclaredSortVariables sortParams
+            mapM_
+                (verifySort findSortDeclaration variables)
+                (getSentenceSymbolOrAliasArgumentSorts sentence)
+            verifySort
+                findSortDeclaration
+                variables
+                (getSentenceSymbolOrAliasResultSort sentence)
+            -- TODO: verify left pattern 
+            -- TODO: verify right pattern 
             verifyAttributes
                 (getSentenceSymbolOrAliasAttributes sentence)
                 attributesVerification

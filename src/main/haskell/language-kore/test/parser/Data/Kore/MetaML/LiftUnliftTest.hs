@@ -27,6 +27,9 @@ variablePattern :: String -> Sort Meta -> CommonMetaPattern
 variablePattern name sort =
     fillCheckSort sort (unparameterizedVariable_ name AstLocationTest)
 
+-- TODO: this is a copy/paste. Remove.
+newtype SortName = SortName String
+
 liftTests :: TestTree
 liftTests =
     testGroup
@@ -483,7 +486,7 @@ liftTests =
                     }
                 )
             )
-        , testCase "Lift Meta Alias Declaration"
+       , testCase "Lift Meta Alias Declaration"
             (prettyAssertEqual ""
                 [ SentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias = Alias
@@ -491,6 +494,8 @@ liftTests =
                         , aliasParams = []
                         }
                     , sentenceAliasSorts = []
+                    , sentenceAliasLeftPattern  = topPatMeta
+                    , sentenceAliasRightPattern = topPatMeta
                     , sentenceAliasResultSort =
                         SortVariableSort (SortVariable (testId "#a"))
                     , sentenceAliasAttributes = Attributes []
@@ -507,13 +512,15 @@ liftTests =
                             , sentenceAliasResultSort =
                                     SortVariableSort
                                         (SortVariable (testId "#a"))
+                            , sentenceAliasLeftPattern  = topPatMeta
+                            , sentenceAliasRightPattern = topPatMeta
                             , sentenceAliasAttributes =
                                 Attributes []
                             }
                         :: KoreSentenceAlias Meta)
                     )
                 )
-            )
+            ) 
         , testCase "Lift Object Alias Declaration"
             (prettyAssertEqual ""
                 [ SentenceSymbolSentence
@@ -529,6 +536,8 @@ liftTests =
                             , sentenceAliasSorts = []
                             , sentenceAliasResultSort =
                                     SortVariableSort (SortVariable (testId "a"))
+                            , sentenceAliasLeftPattern = topPatObj
+                            , sentenceAliasRightPattern = topPatObj
                             , sentenceAliasAttributes =
                                 Attributes []
                             }
@@ -952,6 +961,16 @@ liftTests =
                 (liftDefinition simpleKoreDefinition)
             )
         ]
+  where
+    objectS    = simpleSort (SortName "s3")
+    topPatMeta = TopPattern $ Top { topSort = patternMetaSort }
+    topPatObj  = TopPattern $ Top { topSort = objectS }
+    simpleSortActual (SortName sort) =
+        SortActual
+            { sortActualName = testId sort
+            , sortActualSorts = []
+            }
+    simpleSort sortName = SortActualSort (simpleSortActual sortName)
 
 testLiftUnlift
     :: ( LiftableToMetaML a

@@ -782,24 +782,28 @@ variablePatternParserTests =
                 { variableName = testId "v" :: Id Object
                 , variableSort = sortVariableSort "s"
                 }
-            )
-        , success "v:s1{s2}"
-            ( asKorePattern $ VariablePattern Variable
+                )
+                , success "v:s1{s2}"
+                ( asKorePattern $ VariablePattern Variable
                 { variableName = testId "v" :: Id Object
                 , variableSort =
                     SortActualSort SortActual
-                        { sortActualName=testId "s1"
-                        , sortActualSorts = [ sortVariableSort "s2" ]
-                        }
-                }
-            )
-        , FailureWithoutMessage ["", "var", "v:", ":s", "c(s)", "c{s}"]
-        ]
+                    { sortActualName=testId "s1"
+                    , sortActualSorts = [ sortVariableSort "s2" ]
+                    }
+                    }
+                    )
+                    , FailureWithoutMessage ["", "var", "v:", ":s", "c(s)", "c{s}"]
+                    ]
+
+-- TODO: this is a copy/paste. Remove.
+newtype SortName = SortName String
 
 sentenceAliasParserTests :: [TestTree]
 sentenceAliasParserTests =
     parseTree koreSentenceParser
-        [ success "alias a{s1}(s2):s3[\"a\"]"
+        [ 
+          success "alias a{s1}(s2):s3[\"a\"]"
             ( constructUnifiedSentence SentenceAliasSentence $
                 (SentenceAlias
                     { sentenceAliasAlias = Alias
@@ -808,6 +812,8 @@ sentenceAliasParserTests =
                         }
                     , sentenceAliasSorts = [ sortVariableSort "s2"]
                     , sentenceAliasResultSort = sortVariableSort "s3"
+                    , sentenceAliasLeftPattern = topPatObj
+                    , sentenceAliasRightPattern = topPatObj
                     , sentenceAliasAttributes =
                         Attributes
                             [asKorePattern $
@@ -830,6 +836,8 @@ sentenceAliasParserTests =
                         , sortVariableSort "s4"
                         ]
                     , sentenceAliasResultSort = sortVariableSort "s5"
+                    , sentenceAliasLeftPattern = topPatObj
+                    , sentenceAliasRightPattern = topPatObj
                     , sentenceAliasAttributes =
                         Attributes
                             [ asKorePattern $
@@ -849,6 +857,8 @@ sentenceAliasParserTests =
                         }
                     , sentenceAliasSorts = []
                     , sentenceAliasResultSort = sortVariableSort "#Char"
+                    , sentenceAliasLeftPattern  = topPatMeta
+                    , sentenceAliasRightPattern = topPatMeta
                     , sentenceAliasAttributes = Attributes []
                     }
                 :: KoreSentenceAlias Meta)
@@ -866,6 +876,17 @@ sentenceAliasParserTests =
             , "alias a{s1}(s2):s3"
             ]
         ]
+  where
+    objectS    = simpleSort (SortName "s3")
+    topPatMeta = TopPattern $ Top { topSort = patternMetaSort }
+    topPatObj  = TopPattern $ Top { topSort = objectS }
+    simpleSortActual (SortName sort) =
+        SortActual
+            { sortActualName = testId sort
+            , sortActualSorts = []
+            }
+    simpleSort sortName = SortActualSort (simpleSortActual sortName)
+
 
 sentenceAxiomParserTests :: [TestTree]
 sentenceAxiomParserTests =
