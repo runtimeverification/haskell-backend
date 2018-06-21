@@ -523,9 +523,6 @@ liftTests =
             ) 
         , testCase "Lift Object Alias Declaration"
             (prettyAssertEqual ""
-                -- [ SentenceSymbolSentence
-                --     (symbol_ "#`alias" AstLocationTest [] patternMetaSort)
-                -- ]
                 [ SentenceSymbolSentence
                     (symbol_ "#`alias" AstLocationTest [] patternMetaSort)
                 -- TODO: use builder (like _symbol_) here as well?
