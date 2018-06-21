@@ -21,12 +21,13 @@ Portability : portable
 {-# LANGUAGE ConstraintKinds        #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE StandaloneDeriving     #-}
+{-# LANGUAGE BangPatterns           #-}
 
 
 module Data.Kore.Unification.UnificationAlgorithm where
 
 import qualified Data.Set as S
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 import           Data.Fix
 
 import           Control.Lens
@@ -45,6 +46,8 @@ import           Data.Kore.Unification.ProofSystemWithHypos
 import           Data.Kore.Unification.UnificationRules
 import           Data.Kore.Unparser.Unparse
 
+import Debug.Trace
+
 {- 
 NOTE:
 1) Carrying around ix=Int and constantly dereferencing
@@ -57,9 +60,9 @@ and I don't see many better options.
 
 data UnificationState
   = UnificationState 
-  { _activeSet :: S.Set Int
-  , _finishedSet :: S.Set Int
-  , _proof :: Proof Int UnificationRules Term
+  { _activeSet :: ![Int]
+  , _finishedSet :: ![Int]
+  , _proof :: !(Proof Int UnificationRules Term)
   } 
   deriving(Show)
 
@@ -83,26 +86,53 @@ type Unification a =
   StateT UnificationState (
   ExceptT (UnificationError) 
   Identity))
-  ()
+  a
 
 unificationProcedure 
   :: UnificationContext m 
   => Term 
   -> Term 
-  -> m ()
+  -> m Idx
 unificationProcedure a b = do
   ixAB <- proof %%%= assume (Equation placeholderSort placeholderSort a b)
-  activeSet %= S.insert ixAB 
+  activeSet %= (ixAB :)
   loop
+  eqns <- use finishedSet
+  ixMGU <- makeConjunction eqns
+  forwardDirection <- proof %%%= discharge ixAB ixMGU
+  backwardsDirection <-
+    (claim <$> proof %%%= lookupLine ixMGU)
+    >>= proveBackwardsDirection a b
+  proof %%%= applyIffIntro forwardDirection backwardsDirection
+
+proveBackwardsDirection
+  :: UnificationContext m
+  => Term 
+  -> Term
+  -> Term 
+  -> m Idx 
+proveBackwardsDirection a b mgu = do 
+  ixMGU <- proof %%%= assume mgu
+  ixAA  <- proof %%%= applyRefl a
+  ixBB  <- proof %%%= applyRefl b
+  mgus <- S.toList <$> splitConjunction ixMGU
+  ixAB <- go ixAA ixBB mgus
+  proof %%%= discharge ixMGU ixAB
+    where go ix1 ix2 [] = proof %%%= applyLocalSubstitution ix1 ix2 [0]
+          go ix1 ix2 (eqn : eqns) = do
+            ix1' <- proof %%%= applyLocalSubstitution eqn ix1 [0]
+            ix2' <- proof %%%= applyLocalSubstitution eqn ix2 [0]
+            go ix1' ix2' eqns
+
 
 loop 
   :: UnificationContext m
   => m ()
 loop = do
   eqns <- use activeSet
-  case S.maxView eqns of
-    Nothing -> return () -- we are done
-    Just (ix, rest) -> do
+  case eqns of
+    [] -> return () -- we are done
+    (ix : rest) -> do
       activeSet .= rest
       process ix
       loop
@@ -111,52 +141,45 @@ process
   :: (UnificationContext m)
   => Int 
   -> m ()
-process ix = do
+process !ix = do
   eqn@(Equation s1 s2 a b) <- claim <$> (proof %%%= lookupLine ix)
   if isTrivial eqn
-  then do 
-    activeSet %= S.delete ix
+  then do return ()
   else if lhsIsVariable eqn
   then do
     if occursInTerm a b
     then do throwError $ OccursCheck a b
     else do
-      occursInSets <- checkIfOccursInSets $ getLHS eqn
-      if occursInSets
-      then do
-        substituteEverythingInSet ix activeSet
-        substituteEverythingInSet ix finishedSet
-      else return ()
-      finishedSet %= S.insert ix
+      substituteEverythingInSet ix activeSet
+      substituteEverythingInSet ix finishedSet
+      finishedSet %= (ix :)
   else if lhsIsVariable (flipEqn eqn)
   then do
-    activeSet %= S.delete ix
     ix' <- proof %%%= applySymmetry ix
-    activeSet %= S.insert ix'
+    activeSet %= (ix' :)
   else do 
     tools <- ask
     goSplitConstructor tools ix eqn
-
 
 checkIfOccursInSets 
   :: (UnificationContext m)
   => Term 
   -> m Bool
-checkIfOccursInSets pat = liftM2 (||)
+checkIfOccursInSets !pat = liftM2 (||)
   (occursInSet pat activeSet)
   (occursInSet pat finishedSet)
 
 occursInSet
   :: UnificationContext m 
   => Term 
-  -> Lens' UnificationState (S.Set Int)
+  -> Lens' UnificationState [Int]
   -> m Bool
-occursInSet pat set = do
-  ixs <- S.toList <$> use set 
+occursInSet !pat !set = do
+  ixs <- use set 
   eqns <- mapM (\ix -> claim <$> proof %%%= lookupLine ix) ixs
   return $ any (occursInTerm pat) eqns 
 
-occursInTerm pat bigPat =
+occursInTerm !pat !bigPat =
   if pat == bigPat 
     then True
     else foldr (||) False $ fmap (occursInTerm pat) $ unFix bigPat
@@ -164,14 +187,17 @@ occursInTerm pat bigPat =
 substituteEverythingInSet
   :: UnificationContext m 
   => Int 
-  -> Lens' UnificationState (S.Set Int) 
+  -> Lens' UnificationState [Int]
   -> m ()
-substituteEverythingInSet ix set = do
+substituteEverythingInSet !ix !set = do
   rest <- use set
-  forM_ rest $ \ix' -> do
-      set %= S.delete ix'
-      ix'' <- proof %%%= applySubstitution ix ix' -- TODO: elim no-op proof steps?
-      set %= S.insert ix''
+  rest' <- (forM rest $ \ix' -> proof %%%= applyLocalSubstitution ix ix' [])
+  set .= rest' 
+  -- pretty unhappy with lens combinators here. 
+  -- am i missing something? 
+  -- googled it. seems not. 
+  -- TODO: elim no-op proof steps?
+      
 
 goSplitConstructor 
   :: UnificationContext m
@@ -179,7 +205,7 @@ goSplitConstructor
   -> Int
   -> Term
   -> m ()
-goSplitConstructor tools ix e@(Equation s1 s2 a b)
+goSplitConstructor !tools !ix !e@(Equation s1 s2 a b)
   | not (isConstructor tools headA)
       = throwError $ NonConstructorHead a
   | not (isConstructor tools headB)
@@ -196,12 +222,12 @@ equateChildren
   :: UnificationContext m
   => Int
   -> m ()
-equateChildren ix = do
+equateChildren !ix = do
   ix' <- proof %%%= applyNoConfusion ix
   ixs' <- splitConjunction ix'
-  activeSet %= S.union ixs'
+  activeSet %= (S.toList ixs' ++)
 
-splitConjunction ix = do
+splitConjunction !ix = do
   eqn <- claim <$> proof %%%= lookupLine ix
   if isConjunction eqn
   then do
@@ -211,6 +237,12 @@ splitConjunction ix = do
     splitResultRight <- splitConjunction ixRight 
     return $ S.union splitResultLeft splitResultRight
   else return $ S.singleton ix
+
+makeConjunction [ix] = return ix
+makeConjunction (ix : ixs) = do
+  ix' <- makeConjunction ixs 
+  proof %%%= applyAndIntro ix ix' 
+
 
 -- TODO: functionality check (fairly trivial)
 

@@ -18,6 +18,8 @@ Portability : portable
 {-# LANGUAGE DeriveTraversable      #-}
 {-# LANGUAGE PatternSynonyms        #-}
 {-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE GADTs                  #-}
+{-# LANGUAGE BangPatterns           #-}
 
 module Data.Kore.Unification.UnificationRules where
 
@@ -35,17 +37,22 @@ import           Data.Kore.Unification.ProofSystemWithHypos
 import           Data.Kore.Unparser.Unparse
 data UnificationRules ix
   = Assumption
-  | Discharge ix ix
-  | EqSymmetric ix -- (a = b) => (b = a)
-  | Substitution ix ix --ix2[LHS of ix1 \ RHS of ix2]
-  | NoConfusion ix -- result is a conjunction
-  | AndIntro ix ix 
-  | AndL ix -- a /\ b => a
-  | AndR ix 
-  | ModusPonens ix ix
+  | Discharge !ix !ix
+  | EqSymmetric !ix -- (a = b) => (b = a)
+  | Refl Term 
+  | Substitution !ix !ix --ix2[LHS of ix1 \ RHS of ix2]
+  | LocalSubstitution !ix !ix !Path
+  | NoConfusion !ix -- result is a conjunction
+  | AndIntro !ix !ix 
+  | AndL !ix -- a /\ b => a
+  | AndR !ix 
+  | ModusPonens !ix !ix
+  | IffIntro !ix !ix
   deriving(Functor, Foldable, Traversable, Show)
 
-type Term = CommonPurePattern Meta
+type Term  = CommonPurePattern Meta
+type Idx = Int
+type Path  = [Int]
 
 instance Indexing Int where 
   zeroIx = 0
@@ -74,9 +81,28 @@ pattern Equation s1 s2 a b =
 flipEqn (Equation s1 s2 a b) = Equation s1 s2 b a
 
 applySymmetry 
-  :: Int 
-  -> State (Proof Int UnificationRules Term) Int
+  :: Idx 
+  -> State (Proof Int UnificationRules Term) Idx
 applySymmetry = makeRule1 flipEqn EqSymmetric
+
+applyIffIntro
+  :: Idx
+  -> Idx 
+  -> State (Proof Int UnificationRules Term) Idx
+applyIffIntro = makeRule2 iffIntro IffIntro 
+
+iffIntro :: Term -> Term -> Term
+iffIntro (Fix (ImpliesPattern (Implies s1 a b))) _ = Fix (IffPattern (Iff s1 a b))
+
+applyRefl
+  :: Term 
+  -> State (Proof Int UnificationRules Term) Idx
+applyRefl term = do
+  addLine ProofLine
+    { claim = Equation placeholderSort placeholderSort term term 
+    , justification = Refl term
+    , assumptions = S.empty
+    }
 
 getLHS (Equation s1 s2 a b) = a
 getRHS (Equation s1 s2 a b) = b
@@ -89,20 +115,89 @@ lhsIsVariable (Equation s1 s2 a b) =
 subst eqn@(Equation s1 s2 a b) pat =
   if pat == a then b else Fix $ fmap (subst eqn) $ unFix pat
 
-applySubstitution
-  :: Int
-  -> Int
+localInPattern []     f pat = f pat
+localInPattern (n:ns) f pat = Fix $
+  case unFix pat of
+    AndPattern (And s1 a b) 
+      -> AndPattern $ case n of 
+           0 -> And s1 (localInPattern ns f a) b
+           1 -> And s1 a (localInPattern ns f b)
+    ApplicationPattern (Application head children)
+      -> let (a, b : bs) = splitAt n children 
+             children'   = a ++ [localInPattern ns f b] ++ bs 
+         in ApplicationPattern (Application head $ children')
+    CeilPattern (Ceil s1 s2 a) 
+      -> CeilPattern $ Ceil s1 s2 (localInPattern ns f a)
+    DomainValuePattern (DomainValue s1 a) 
+      -> DomainValuePattern $ DomainValue s1 (localInPattern ns f a)
+    EqualsPattern (Equals s1 s2 a b)
+      -> EqualsPattern $ case n of 
+           0 -> Equals s1 s2 (localInPattern ns f a) b 
+           1 -> Equals s1 s2 a (localInPattern ns f b)
+    ExistsPattern (Exists s1 v a) 
+      -> ExistsPattern $ Exists s1 v (localInPattern ns f a)
+    FloorPattern (Floor s1 s2 a)
+      -> FloorPattern $ Floor s1 s2 (localInPattern ns f a)
+    ForallPattern (Forall s1 v a)
+      -> ForallPattern $ Forall s1 v (localInPattern ns f a)
+    IffPattern (Iff s1 a b)
+      -> IffPattern $ case n of 
+           0 -> Iff s1 (localInPattern ns f a) b 
+           1 -> Iff s1 a (localInPattern ns f b)
+    ImpliesPattern (Implies s1 a b)
+      -> ImpliesPattern $ case n of 
+          0 -> Implies s1 (localInPattern ns f a) b
+          1 -> Implies s1 a (localInPattern ns f b)
+    InPattern (In s1 s2 a b)
+      -> InPattern $ case n of 
+           0 -> In s1 s2 (localInPattern ns f a) b 
+           1 -> In s1 s2 a (localInPattern ns f b)
+    NextPattern (Next s1 a)
+      -> NextPattern $ Next s1 (localInPattern ns f a)
+    NotPattern (Not s1 a)
+      -> NotPattern $ Not s1 (localInPattern ns f a)
+    OrPattern (Or s1 a b)
+      -> OrPattern $ case n of 
+           0 -> Or s1 (localInPattern ns f a) b 
+           1 -> Or s1 a (localInPattern ns f b)
+    RewritesPattern (Rewrites s1 a b)
+      -> RewritesPattern $ case n of 
+           0 -> Rewrites s1 (localInPattern ns f a) b 
+           1 -> Rewrites s1 a (localInPattern ns f b)
+
+
+
+-- applySubstitution
+--   :: Int
+--   -> Int
+--   -> State (Proof Int UnificationRules Term) Int
+-- -- applySubstitution = makeRule2 subst Substitution
+-- applySubstitution ix1 ix2 = do
+--   Just line1 <- M.lookup ix1 <$> get
+--   Just line2 <- M.lookup ix2 <$> get
+--   let substitutedClaim2 = subst (claim line1) (claim line2)
+--   if substitutedClaim2 == claim line2 -- substitution was a noop
+--   then return ix2 
+--   else addLine ProofLine 
+--     { claim = substitutedClaim2
+--     , justification = Substitution ix1 ix2
+--     , assumptions = S.unions [assumptions line1, assumptions line2]
+--     }
+
+applyLocalSubstitution
+  :: Idx
+  -> Idx 
+  -> Path 
   -> State (Proof Int UnificationRules Term) Int
--- applySubstitution = makeRule2 subst Substitution
-applySubstitution ix1 ix2 = do
+applyLocalSubstitution ix1 ix2 path = do 
   Just line1 <- M.lookup ix1 <$> get
-  Just line2 <- M.lookup ix2 <$> get
-  let substitutedClaim2 = subst (claim line1) (claim line2)
+  Just line2 <- M.lookup ix2 <$> get 
+  let substitutedClaim2 = localInPattern path (subst (claim line1)) (claim line2)
   if substitutedClaim2 == claim line2 -- substitution was a noop
   then return ix2 
   else addLine ProofLine 
     { claim = substitutedClaim2
-    , justification = Substitution ix1 ix2
+    , justification = LocalSubstitution ix1 ix2 path
     , assumptions = S.unions [assumptions line1, assumptions line2]
     }
 
@@ -137,6 +232,21 @@ applyAndR = makeRule1 getAndR AndR
 
 getAndL (Fix (AndPattern (And _ x _ ))) = x
 getAndR (Fix (AndPattern (And _ _ y ))) = y
+
+applyAndIntro
+  :: Int
+  -> Int 
+  -> State (Proof Int UnificationRules Term) Int
+applyAndIntro = makeRule2 makeAnd AndIntro
+makeAnd 
+  :: Term
+  -> Term
+  -> Term
+makeAnd a b = Fix $ AndPattern $ And 
+  { andSort = placeholderSort
+  , andFirst = a
+  , andSecond = b
+  }
 
 conj a b = Fix $ AndPattern $ And 
   { andSort = placeholderSort

@@ -14,12 +14,13 @@ Portability : portable
 {-# LANGUAGE Rank2Types             #-}
 {-# LANGUAGE AllowAmbiguousTypes    #-}
 {-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE BangPatterns           #-}
 
 
 module Data.Kore.Unification.ProofSystemWithHypos where
 
 import qualified Data.Set as S
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 import           Data.Fix
 import           Control.Lens
 import           Control.Lens.Operators
@@ -31,9 +32,9 @@ import           Data.Kore.ASTPrettyPrint
 
 data ProofLine ix rule formula
   = ProofLine
-  { claim         :: formula
-  , justification :: rule ix
-  , assumptions   :: S.Set ix
+  { claim         :: !formula
+  , justification :: !(rule ix)
+  , assumptions   :: !(S.Set ix)
   } deriving (Show)
 
 instance Functor (ProofLine ix rule) where
