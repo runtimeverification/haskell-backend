@@ -56,6 +56,9 @@ singleStepTests =
     testGroup
         "Single step Tests"
         [ testCase "Applies a simple axiom."
+            -- Axiom: X1 => X1
+            -- Start pattern: V1
+            -- Expected: V1
             (assertEqualWithExplanation ""
                 [   ( StepperConfiguration
                         { stepperConfigurationPattern =
@@ -99,6 +102,11 @@ singleStepTests =
                 )
             )
         , testCase "Applies two simple axioms."
+            -- Axiom: X1 => X1
+            -- Axiom: X1 => and(X1, X1)
+            -- Start pattern: V1
+            -- Expected: V1
+            -- Expected: and(V1, V1)
             (assertEqualWithExplanation ""
                 [   ( StepperConfiguration
                         { stepperConfigurationPattern =
@@ -180,6 +188,9 @@ singleStepTests =
                 )
             )
         , testCase "Fails to apply a simple axiom."
+            -- Axiom: sigma(X1, X1) => X1
+            -- Start pattern: sigma(f(A1), g(B1))
+            -- Expected: empty result list
             (assertEqualWithExplanation ""
                 []
                 (runStep
@@ -211,6 +222,9 @@ multipleStepPickFirstTests =
     testGroup
         "Pick-first stepper Tests"
         [ testCase "Runs one step."
+            -- Axiom: f(X1) => g(X1)
+            -- Start pattern: f(V1)
+            -- Expected: g(V1)
             (assertEqualWithExplanation ""
                 ( StepperConfiguration
                     { stepperConfigurationPattern =
@@ -262,6 +276,10 @@ multipleStepPickFirstTests =
                 )
             )
         , testCase "Runs two steps."
+            -- Axiom: f(X1) => g(X1)
+            -- Axiom: g(X1) => h(X1)
+            -- Start pattern: f(V1)
+            -- Expected: h(V1)
             (assertEqualWithExplanation ""
                 ( StepperConfiguration
                     { stepperConfigurationPattern =
@@ -340,6 +358,10 @@ multipleStepPickFirstTests =
                 )
             )
         , testCase "Obeys step limit."
+            -- Axiom: f(X1) => g(X1)
+            -- Axiom: g(X1) => h(X1)
+            -- Start pattern: f(V1)
+            -- Expected: g(V1)
             (assertEqualWithExplanation ""
                 ( StepperConfiguration
                     { stepperConfigurationPattern =
@@ -397,6 +419,10 @@ multipleStepPickFirstTests =
                 )
             )
         , testCase "0 step limit."
+            -- Axiom: f(X1) => g(X1)
+            -- Axiom: g(X1) => h(X1)
+            -- Start pattern: f(V1)
+            -- Expected: f(V1)
             (assertEqualWithExplanation ""
                 ( StepperConfiguration
                     { stepperConfigurationPattern =
