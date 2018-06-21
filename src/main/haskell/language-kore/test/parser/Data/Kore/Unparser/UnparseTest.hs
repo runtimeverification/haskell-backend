@@ -55,8 +55,8 @@ unparseUnitTests =
                         , sentenceAliasAttributes = Attributes {getAttributes = []}
                         })
                     })
-                })
-        "sort x{}[] -- TODO!!"
+                } :: KoreSentence)
+                "alias i{}() : z where \\top{i{}}() := \\top{q}()[]"
         , unparseTest
             Attributes
                 { getAttributes =

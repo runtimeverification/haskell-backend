@@ -253,16 +253,20 @@ instance
         write " "
         unparse (sentenceAliasAlias sa)
         inParens (unparse (sentenceAliasSorts sa))
+        write " "
         write ":"
+        write " "
         unparse (sentenceAliasResultSort sa)
+        write " "
         write "where"
         write " "
         unparse (sentenceAliasLeftPattern sa)
+        write " "
         write ":="
+        write " "
         unparse (sentenceAliasRightPattern sa)
         unparse (sentenceAliasAttributes sa)
         
-
 instance
     Unparse (Fix (pat variable)) => Unparse (SentenceSymbol level pat variable)
   where
