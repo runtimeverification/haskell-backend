@@ -7,6 +7,7 @@
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE ViewPatterns               #-}
+{-# OPTIONS_GHC -fno-warn-orphans       #-}
 {-|
 Description: A type of matching logic patterns
 
