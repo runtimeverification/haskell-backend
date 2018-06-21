@@ -86,7 +86,7 @@ addPatternSortVariables pattern1 addSortVariables1 existing =
         pattern1
 
 addMLPatternSortVariables
-    :: (MLPatternClass p)
+    :: (MLPatternClass p level)
     => p level child
     -> (Set.Set sortvar -> Sort level -> Set.Set sortvar)
     -> Set.Set sortvar

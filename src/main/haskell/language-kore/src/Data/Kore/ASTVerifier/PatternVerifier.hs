@@ -1,4 +1,5 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-|
 Module      : Data.Kore.ASTVerifier.PatternVerifier
 Description : Tools for verifying the wellformedness of a Kore 'Pattern'.
@@ -252,7 +253,7 @@ verifyParameterizedPattern pat indexedModule helpers sortParams vars =
         pat
 
 verifyMLPattern
-    :: (MLPatternClass p, MetaOrObject level)
+    :: (MLPatternClass p level, MetaOrObject level)
     => p level CommonKorePattern
     -> KoreIndexedModule
     -> VerifyHelpers level
