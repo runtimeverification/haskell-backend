@@ -1279,57 +1279,59 @@ testsForUnifiedPatternInTopLevelGenericContext
         NeedsInternalDefinitions -> [axiomPattern]
         NeedsSortedParent -> [axiomPattern]
         NeedsAttributes ->
-            -- [ \testPattern -> TestData
-            --     { testDataDescription = "Pattern in alias definition attributes"
-            --     , testDataError =
-            --         Error
-            --             ( "module 'MODULE'"
-            --             : ("alias '" ++ rawAliasName ++ "' declaration")
-            --             : "attributes"
-            --             : "\\equals"
-            --             : "\\equals"
-            --             : testPatternErrorStackStrings testPattern
-            --             )
-            --             defaultErrorMessage
-            --     , testDataDefinition =
-            --         simpleDefinitionFromSentences
-            --             (ModuleName "MODULE")
-            --             ( asSentence
-            --                 (sentenceAliasWithAttributes
-            --                     aliasName
-            --                     sortVariables
-            --                     additionalSort
-            --                     [ testPatternUnifiedPattern (asAttribute testPattern) ]
-            --                 )
-            --             : additionalSentences
-            --             )
-            --     }
-            -- , \testPattern -> TestData
-            --     { testDataDescription = "Pattern in symbol definition attributes"
-            --     , testDataError =
-            --         Error
-            --             ( "module 'MODULE'"
-            --             : ("symbol '" ++ rawSymbolName ++ "' declaration")
-            --             : "attributes"
-            --             : "\\equals"
-            --             : "\\equals"
-            --             : testPatternErrorStackStrings testPattern
-            --             )
-            --             defaultErrorMessage
-            --     , testDataDefinition =
-            --         simpleDefinitionFromSentences
-            --             (ModuleName "MODULE")
-            --             ( asSentence
-            --                 (sentenceSymbolWithAttributes
-            --                     symbolName
-            --                     sortVariables
-            --                     additionalSort
-            --                     [ testPatternUnifiedPattern (asAttribute testPattern) ]
-            --                 )
-            --             : additionalSentences
-            --             )
-            --     }
             [ \testPattern -> TestData
+                { testDataDescription = "Pattern in alias definition attributes"
+                , testDataError =
+                    Error
+                        ( "module 'MODULE'"
+                        : ("alias '" ++ rawAliasName ++ "' declaration")
+                        : "attributes"
+                        : "\\equals"
+                        : "\\equals"
+                        : testPatternErrorStackStrings testPattern
+                        )
+                        defaultErrorMessage
+                , testDataDefinition =
+                    simpleDefinitionFromSentences
+                        (ModuleName "MODULE")
+                        ( asSentence
+                            (sentenceAliasWithAttributes
+                                aliasName
+                                sortVariables
+                                additionalSort
+                                [ testPatternUnifiedPattern (asAttribute testPattern) ]
+                                (TopPattern $ Top additionalSort)
+                                (TopPattern $ Top additionalSort)
+                            )
+                        : additionalSentences
+                        )
+                }
+            , \testPattern -> TestData
+                { testDataDescription = "Pattern in symbol definition attributes"
+                , testDataError =
+                    Error
+                        ( "module 'MODULE'"
+                        : ("symbol '" ++ rawSymbolName ++ "' declaration")
+                        : "attributes"
+                        : "\\equals"
+                        : "\\equals"
+                        : testPatternErrorStackStrings testPattern
+                        )
+                        defaultErrorMessage
+                , testDataDefinition =
+                    simpleDefinitionFromSentences
+                        (ModuleName "MODULE")
+                        ( asSentence
+                            (sentenceSymbolWithAttributes
+                                symbolName
+                                sortVariables
+                                additionalSort
+                                [ testPatternUnifiedPattern (asAttribute testPattern) ]
+                            )
+                        : additionalSentences
+                        )
+                }
+            , \testPattern -> TestData
                 { testDataDescription = "Axiom with attributes"
                 , testDataError =
                     Error

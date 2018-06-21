@@ -521,51 +521,56 @@ unfilteredTestExamplesForSort
     sentenceAliasSentence
     sentenceSymbolSentence
   =
-    -- [ FlaggedTestData
-    --     { flaggedTestDataFlags = []
-    --     , flaggedTestDataTestData = \additionalSentences -> TestData
-    --         { testDataDescription = "Alias definition with result sort"
-    --         , testDataError =
-    --             Error
-    --                 [ "module 'MODULE'"
-    --                 , "alias '" ++ rawAliasName ++ "' declaration (<test data>)"
-    --                 ]
-    --                 defaultErrorMessage
-    --         , testDataDefinition =
-    --             simpleDefinitionFromSentences
-    --                 (ModuleName "MODULE")
-    --                 (sentenceAliasSentence
-    --                     (sentenceAliasWithResultSort
-    --                         aliasName 
-    --                         sort 
-    --                         sortVariables
-    --                         topPatObj1
-    --                         topPatObj1 )
-    --                 : additionalSentences
-    --                 )
-    --         }
-    --     }
-    -- , FlaggedTestData
-    --     { flaggedTestDataFlags = []
-    --     , flaggedTestDataTestData = \additionalSentences -> TestData
-    --         { testDataDescription = "Alias definition with sort argument"
-    --         , testDataError =
-    --             Error
-    --                 [ "module 'MODULE'"
-    --                 , "alias '" ++ rawAliasName ++ "' declaration (<test data>)"
-    --                 ]
-    --                 defaultErrorMessage
-    --         , testDataDefinition =
-    --             simpleDefinitionFromSentences
-    --                 (ModuleName "MODULE")
-    --                 (sentenceAliasSentence
-    --                     (sentenceAliasWithSortArgument
-    --                         aliasName sort additionalSort sortVariables topPatObj1 topPatObj1)
-    --                 : additionalSentences
-    --                 )
-    --         }
-    --     }
     [ FlaggedTestData
+        { flaggedTestDataFlags = []
+        , flaggedTestDataTestData = \additionalSentences -> TestData
+            { testDataDescription = "Alias definition with result sort"
+            , testDataError =
+                Error
+                    [ "module 'MODULE'"
+                    , "alias '" ++ rawAliasName ++ "' declaration (<test data>)"
+                    ]
+                    defaultErrorMessage
+            , testDataDefinition =
+                simpleDefinitionFromSentences
+                    (ModuleName "MODULE")
+                    (sentenceAliasSentence
+                        (sentenceAliasWithResultSort
+                            aliasName 
+                            sort 
+                            sortVariables
+                            (TopPattern $ Top sort)
+                            (TopPattern $ Top sort) )
+                    : additionalSentences
+                    )
+            }
+        }
+    , FlaggedTestData
+        { flaggedTestDataFlags = []
+        , flaggedTestDataTestData = \additionalSentences -> TestData
+            { testDataDescription = "Alias definition with sort argument"
+            , testDataError =
+                Error
+                    [ "module 'MODULE'"
+                    , "alias '" ++ rawAliasName ++ "' declaration (<test data>)"
+                    ]
+                    defaultErrorMessage
+            , testDataDefinition =
+                simpleDefinitionFromSentences
+                    (ModuleName "MODULE")
+                    (sentenceAliasSentence
+                        (sentenceAliasWithSortArgument
+                            aliasName 
+                            sort 
+                            additionalSort 
+                            sortVariables
+                            (TopPattern $ Top sort) 
+                            (TopPattern $ Top sort) )
+                    : additionalSentences
+                    )
+            }
+        }
+    , FlaggedTestData
         { flaggedTestDataFlags = []
         , flaggedTestDataTestData = \additionalSentences -> TestData
             { testDataDescription =

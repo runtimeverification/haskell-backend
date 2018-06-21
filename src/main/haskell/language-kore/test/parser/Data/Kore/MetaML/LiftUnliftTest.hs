@@ -523,8 +523,65 @@ liftTests =
             ) 
         , testCase "Lift Object Alias Declaration"
             (prettyAssertEqual ""
+                -- [ SentenceSymbolSentence
+                --     (symbol_ "#`alias" AstLocationTest [] patternMetaSort)
+                -- ]
                 [ SentenceSymbolSentence
                     (symbol_ "#`alias" AstLocationTest [] patternMetaSort)
+                -- TODO: use builder (like _symbol_) here as well?
+                , SentenceAxiomSentence SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        Fix (EqualsPattern Equals
+                            { equalsOperandSort =
+                                SortActualSort SortActual
+                                    { sortActualName = (Id "#Sort" AstLocationNone) :: Id Meta
+                                    , sortActualSorts = []
+                                    }
+                            , equalsResultSort =
+                                SortActualSort SortActual
+                                    { sortActualName = (Id "#Sort" AstLocationNone) :: Id Meta
+                                    , sortActualSorts = []
+                                    }
+                            , equalsFirst =
+                                Fix (ApplicationPattern Application
+                                    { applicationSymbolOrAlias =
+                                        SymbolOrAlias
+                                            { symbolOrAliasConstructor = (Id "#\\top" AstLocationNone) :: Id Meta
+                                            , symbolOrAliasParams = []
+                                            }
+                                    , applicationChildren =
+                                        [ Fix (ApplicationPattern Application
+                                            { applicationSymbolOrAlias =
+                                                SymbolOrAlias
+                                                    { symbolOrAliasConstructor = (Id "#`s3" AstLocationNone) :: Id Meta
+                                                    , symbolOrAliasParams = []
+                                                    }
+                                            , applicationChildren = []
+                                            })
+                                        ]
+                                    })
+                            , equalsSecond =
+                                Fix (ApplicationPattern Application
+                                    { applicationSymbolOrAlias =
+                                        SymbolOrAlias
+                                            { symbolOrAliasConstructor = (Id "#\\top" AstLocationNone) :: Id Meta
+                                            , symbolOrAliasParams = []
+                                            }
+                                    , applicationChildren =
+                                        [ Fix (ApplicationPattern Application
+                                            { applicationSymbolOrAlias =
+                                                SymbolOrAlias
+                                                    { symbolOrAliasConstructor = (Id "#`s3" AstLocationNone) :: Id Meta
+                                                    , symbolOrAliasParams = []
+                                                    }
+                                            , applicationChildren = []
+                                            })
+                                        ]
+                                    })
+                            })
+                    , sentenceAxiomAttributes = Attributes []
+                    }
                 ]
                 (liftSentence
                     (asSentence
