@@ -78,9 +78,7 @@ main =
                 Left err         -> error err
                 Right definition -> definition
     ; when (willVerify) (verifyMain willChkAttr parsedDefinition)
-    ; when (willPrint) (print parsedDefinition)
-    -- TODO(Daniele): pretty print
-    -- (putStrLn (prettyPrintToString verifiedDefinition))
+    ; when (willPrint) (putStrLn (prettyPrintToString parsedDefinition))
     }
 
 {-|
