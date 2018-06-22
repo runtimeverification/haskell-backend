@@ -1,8 +1,10 @@
+{-# LANGUAGE FlexibleContexts #-}
 module Data.Kore.ASTVerifier.DefinitionVerifierSortUsageTest
     (definitionVerifierSortUsageTests) where
 
 import           Test.Tasty                                          (TestTree,
                                                                       testGroup)
+import           Test.Tasty.HUnit                                    (HasCallStack)
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
@@ -251,7 +253,8 @@ definitionVerifierSortUsageTests =
 newtype CommonDescription = CommonDescription String
 
 testsForObjectSort
-    :: CommonDescription
+    :: HasCallStack
+    => CommonDescription
     -> SuccessConfiguration Object
     -> FailureConfiguration Object
     -> ExpectedErrorMessage
@@ -401,7 +404,8 @@ expectSuccessFlaggedTests
 expectSuccessFlaggedTests SuccessConfigurationSkipAll _ = testGroup "" []
 
 expectFailureWithErrorFlaggedTests
-    :: FailureConfiguration level
+    :: HasCallStack
+    => FailureConfiguration level
     -> ExpectedErrorMessage
     -> ErrorStack
     -> [FlaggedTestData]
@@ -579,7 +583,7 @@ unfilteredTestExamplesForSort
                 Error
                     [ "module 'MODULE'"
                     , "axiom declaration"
-                    , "\\exists '" ++ rawVariableName ++ "'"
+                    , "\\exists '" ++ rawVariableName ++ "' (<test data>)"
                     ]
                     defaultErrorMessage
             , testDataDefinition =
@@ -601,7 +605,7 @@ unfilteredTestExamplesForSort
                 Error
                     [ "module 'MODULE'"
                     , "axiom declaration"
-                    , "\\exists '" ++ rawVariableName ++ "'"
+                    , "\\exists '" ++ rawVariableName ++ "' (<test data>)"
                     ]
                     defaultErrorMessage
             , testDataDefinition =
@@ -627,7 +631,7 @@ unfilteredTestExamplesForSort
                 Error
                     [ "module 'MODULE'"
                     , "axiom declaration"
-                    , "\\exists '" ++ rawVariableName ++ "'"
+                    , "\\exists '" ++ rawVariableName ++ "' (<test data>)"
                     ]
                     defaultErrorMessage
             , testDataDefinition =
@@ -652,7 +656,7 @@ unfilteredTestExamplesForSort
                 Error
                     [ "module 'MODULE'"
                     , "axiom declaration"
-                    , "symbol or alias '" ++ rawAliasName ++ "'"
+                    , "symbol or alias '" ++ rawAliasName ++ "' (<test data>)"
                     ]
                     defaultErrorMessage
             , testDataDefinition =
@@ -706,7 +710,7 @@ unfilteredTestExamplesForObjectSort
                 Error
                     [ "module 'MODULE'"
                     , "axiom declaration"
-                    , "symbol or alias 'a'"
+                    , "symbol or alias 'a' (<test data>)"
                     , "sort '"
                         ++ differentAdditionalSortRawName
                         ++ "' (<test data>)"

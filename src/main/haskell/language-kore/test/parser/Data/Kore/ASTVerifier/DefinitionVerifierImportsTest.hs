@@ -5,9 +5,9 @@ import           Test.Tasty                                          (TestTree,
                                                                       testGroup)
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
 import           Data.Kore.Implicit.ImplicitSorts
@@ -159,7 +159,7 @@ sortVisibilityTests =
         (ExpectedErrorMessage "Sort 'sort1' not declared.")
         (ErrorStack
             [ "axiom declaration"
-            , "\\top"
+            , "\\top (<test data>)"
             , "sort 'sort2' (<test data>)"
             , "sort 'sort1' (<test data>)"
             , "(<test data>)"
@@ -173,7 +173,7 @@ sortVisibilityTests =
         (ExpectedErrorMessage "Sort 'sort1' not declared.")
         (ErrorStack
             [ "axiom declaration"
-            , "\\top"
+            , "\\top (<test data>)"
             , "sort 'sort1' (<test data>)"
             , "(<test data>)"
             ]
@@ -186,7 +186,7 @@ sortVisibilityTests =
         (ExpectedErrorMessage "Sort 'sort1' not declared.")
         (ErrorStack
             [ "axiom declaration"
-            , "\\exists 'var'"
+            , "\\exists 'var' (<test data>)"
             , "sort 'sort1' (<test data>)"
             , "(<test data>)"
             ]
@@ -199,7 +199,7 @@ sortVisibilityTests =
         (ExpectedErrorMessage "Sort 'sort1' not declared.")
         (ErrorStack
             [ "axiom declaration"
-            , "\\and"
+            , "\\and (<test data>)"
             , "sort 'sort1' (<test data>)"
             , "(<test data>)"
             ]
@@ -212,7 +212,7 @@ sortVisibilityTests =
         (ExpectedErrorMessage "Sort 'sort1' not declared.")
         (ErrorStack
             [ "axiom declaration"
-            , "\\next"
+            , "\\next (<test data>)"
             , "sort 'sort1' (<test data>)"
             , "(<test data>)"
             ]
@@ -225,8 +225,8 @@ sortVisibilityTests =
         (ExpectedErrorMessage "Sort 'sort1' not declared.")
         (ErrorStack
             [ "axiom declaration"
-            , "\\next"
-            , "\\equals"
+            , "\\next (<test data>)"
+            , "\\equals (<test data>)"
             , "sort 'sort1' (<test data>)"
             , "(<test data>)"
             ]
@@ -290,7 +290,7 @@ sortVisibilityTests =
         (ExpectedErrorMessage "Sort 'sort1' not declared.")
         (ErrorStack
             [ "axiom declaration"
-            , "symbol or alias 'symbol2'"
+            , "symbol or alias 'symbol2' (<test data>)"
             , "sort 'sort1' (<test data>)"
             , "(<test data>)"
             ]
@@ -537,7 +537,7 @@ symbolVisibilityTests =
         (ExpectedErrorMessage "Symbol 'symbol1' not defined.")
         (ErrorStack
             [ "axiom declaration"
-            , "symbol or alias 'symbol1'"
+            , "symbol or alias 'symbol1' (<test data>)"
             , "(<test data>)"
             ]
         )
@@ -549,8 +549,8 @@ symbolVisibilityTests =
         (ExpectedErrorMessage "Symbol 'symbol1' not defined.")
         (ErrorStack
             [ "axiom declaration"
-            , "\\and"
-            , "symbol or alias 'symbol1'"
+            , "\\and (<test data>)"
+            , "symbol or alias 'symbol1' (<test data>)"
             , "(<test data>)"
             ]
         )
@@ -562,8 +562,8 @@ symbolVisibilityTests =
         (ExpectedErrorMessage "Symbol 'symbol1' not defined.")
         (ErrorStack
             [ "axiom declaration"
-            , "\\exists 'var'"
-            , "symbol or alias 'symbol1'"
+            , "\\exists 'var' (<test data>)"
+            , "symbol or alias 'symbol1' (<test data>)"
             , "(<test data>)"
             ]
         )
@@ -575,8 +575,8 @@ symbolVisibilityTests =
         (ExpectedErrorMessage "Symbol 'symbol1' not defined.")
         (ErrorStack
             [ "axiom declaration"
-            , "\\next"
-            , "symbol or alias 'symbol1'"
+            , "\\next (<test data>)"
+            , "symbol or alias 'symbol1' (<test data>)"
             , "(<test data>)"
             ]
         )
@@ -588,8 +588,8 @@ symbolVisibilityTests =
         (ExpectedErrorMessage "Symbol 'symbol1' not defined.")
         (ErrorStack
             [ "axiom declaration"
-            , "symbol or alias 'symbol2'"
-            , "symbol or alias 'symbol1'"
+            , "symbol or alias 'symbol2' (<test data>)"
+            , "symbol or alias 'symbol1' (<test data>)"
             , "(<test data>)"
             ]
         )
@@ -601,7 +601,7 @@ symbolVisibilityTests =
         (ExpectedErrorMessage "Symbol '#symbol1' not defined.")
         (ErrorStack
             [ "axiom declaration"
-            , "symbol or alias '#symbol1'"
+            , "symbol or alias '#symbol1' (<test data>)"
             , "(<test data>)"
             ]
         )
@@ -754,7 +754,7 @@ aliasVisibilityTests =
         (ExpectedErrorMessage "Symbol 'alias1' not defined.")
         (ErrorStack
             [ "axiom declaration"
-            , "symbol or alias 'alias1'"
+            , "symbol or alias 'alias1' (<test data>)"
             , "(<test data>)"
             ]
         )
@@ -766,8 +766,8 @@ aliasVisibilityTests =
         (ExpectedErrorMessage "Symbol 'alias1' not defined.")
         (ErrorStack
             [ "axiom declaration"
-            , "\\and"
-            , "symbol or alias 'alias1'"
+            , "\\and (<test data>)"
+            , "symbol or alias 'alias1' (<test data>)"
             , "(<test data>)"
             ]
         )
@@ -779,8 +779,8 @@ aliasVisibilityTests =
         (ExpectedErrorMessage "Symbol 'alias1' not defined.")
         (ErrorStack
             [ "axiom declaration"
-            , "\\exists 'var'"
-            , "symbol or alias 'alias1'"
+            , "\\exists 'var' (<test data>)"
+            , "symbol or alias 'alias1' (<test data>)"
             , "(<test data>)"
             ]
         )
@@ -792,8 +792,8 @@ aliasVisibilityTests =
         (ExpectedErrorMessage "Symbol 'alias1' not defined.")
         (ErrorStack
             [ "axiom declaration"
-            , "\\next"
-            , "symbol or alias 'alias1'"
+            , "\\next (<test data>)"
+            , "symbol or alias 'alias1' (<test data>)"
             , "(<test data>)"
             ]
         )
@@ -805,8 +805,8 @@ aliasVisibilityTests =
         (ExpectedErrorMessage "Symbol 'alias1' not defined.")
         (ErrorStack
             [ "axiom declaration"
-            , "symbol or alias 'alias2'"
-            , "symbol or alias 'alias1'"
+            , "symbol or alias 'alias2' (<test data>)"
+            , "symbol or alias 'alias1' (<test data>)"
             , "(<test data>)"
             ]
         )
@@ -818,7 +818,7 @@ aliasVisibilityTests =
         (ExpectedErrorMessage "Symbol '#alias1' not defined.")
         (ErrorStack
             [ "axiom declaration"
-            , "symbol or alias '#alias1'"
+            , "symbol or alias '#alias1' (<test data>)"
             , "(<test data>)"
             ]
         )

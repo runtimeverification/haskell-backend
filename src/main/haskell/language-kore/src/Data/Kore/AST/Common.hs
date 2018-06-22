@@ -61,6 +61,8 @@ data AstLocation
     | AstLocationTest
     | AstLocationFile FileLocation
     | AstLocationLifted AstLocation
+    | AstLocationUnknown
+    -- ^ This should not be used and should be eliminated in further releases
     deriving Show
 
 {-| 'prettyPrintAstLocation' displays an `AstLocation` in a way that's
@@ -82,6 +84,7 @@ prettyPrintAstLocation
     = name ++ " " ++ show line' ++ ":" ++ show column'
 prettyPrintAstLocation (AstLocationLifted location) =
     "<lifted(" ++ prettyPrintAstLocation location ++ ")>"
+prettyPrintAstLocation AstLocationUnknown = "<unknown location>"
 
 {-|'Id' corresponds to the @object-identifier@ and @meta-identifier@
 syntactic categories from the Semantics of K, Section 9.1.1 (Lexicon).

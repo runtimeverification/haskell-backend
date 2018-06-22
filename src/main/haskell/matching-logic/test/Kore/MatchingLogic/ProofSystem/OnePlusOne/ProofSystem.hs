@@ -7,10 +7,8 @@ connectives, which were needed to complete the 1+1=2 proof.
  -}
 module Kore.MatchingLogic.ProofSystem.OnePlusOne.ProofSystem where
 
-import           Data.Text.Prettyprint.Doc       (Pretty (pretty))
-
 import           Data.Functor.Foldable           (Fix (..))
-import           Control.Lens
+import           Control.Lens                    ((&),(%~))
 
 import qualified          Kore.MatchingLogic.ProofSystem.OnePlusOne.ForallAST          as AST
 import Kore.MatchingLogic.ProofSystem.OnePlusOne.ForallAST
@@ -74,7 +72,7 @@ transformRule :: (Applicative f)
               -> (hyp -> f hyp')
               -> (MLRule sort label var term hyp
                   -> f (MLRule sort' label' var' term' hyp'))
-transformRule sort label var term hypothesis rule = case rule of
+transformRule _sort label var term hypothesis rule = case rule of
     Propositional1 t1 t2 -> Propositional1 <$> term t1 <*> term t2
     Propositional2 t1 t2 t3 -> Propositional2 <$> term t1 <*> term t2 <*> term t3
     Propositional3 t1 t2 -> Propositional3 <$> term t1 <*> term t2
@@ -124,12 +122,12 @@ substVar :: (Eq sort, Eq var)
          -> Maybe (Pattern sort label var)
 substVar sort varFrom varTo pat = go pat
   where
-    go pat@(Fix (AST.Forall _ sortBound varBound _))
+    go (Fix (AST.Forall _ sortBound varBound _))
       | (sortBound,varBound) == (sort,varFrom) = Just pat
       | (sortBound,varBound) == (sort,varTo) = Nothing
-    go pat@(Fix (AST.Variable sortVar varVar))
+    go (Fix (AST.Variable sortVar varVar))
       | (sortVar,varVar) == (sort,varFrom) = Just (Fix (AST.Variable sort varTo))
-    go (Fix pat) = Fix <$> traverse go pat
+    go (Fix pat') = Fix <$> traverse go pat'
 
 -- | This checks the minimal proof system over Kore.AST patterns.
 instance (IsSignature sig, Eq (Sort sig), Eq (Label sig), Eq var) =>
@@ -141,12 +139,12 @@ instance (IsSignature sig, Eq (Sort sig), Eq (Label sig), Eq var) =>
           expect $ (a --> b --> c) --> (a --> b) --> (a --> c)
       Propositional3 a b ->
           expect $ (notP' a --> notP' b) --> (b --> a)
-      ModusPonens a (ImpliesP s a' b) | a == a' ->
+      ModusPonens a (ImpliesP _ a' b) | a == a' ->
           expect $ Just b
       ModusPonens _ _ -> Left (Error [] "hypotheses have wrong form")
       VariableSubstitution (SubstitutedVariable x) term (SubstitutingVariable y) ->
           case conclusion of
-            ImpliesP s term1@(ForallP _ sVar var1 body) term2
+            ImpliesP s (ForallP _ _ var1 body) term2
               | Just body == term, var1 == x ->
                 if Just (AST.fromWFPattern term2)
                    == substVar s x y (AST.fromWFPattern body) then
@@ -159,13 +157,14 @@ instance (IsSignature sig, Eq (Sort sig), Eq (Label sig), Eq var) =>
           case conclusion of
             ImpliesP _ (ForallP _ sVar var1 (ImpliesP _ p1 p2))
                        (ImpliesP _ p3 (ForallP _ sVar1 var2 p4))
-              | sVar == sVar1, p1 == p3, p2 == p4, AST.notFree sVar var1 p1 ->
+              | var == var1, var1 == var2, sVar == sVar1,
+                p1 == p3, p2 == p4, AST.notFree sVar var1 p1 ->
                 if term1 == Just p1 && term2 == Just p2
                 then Right () else Left (Error [] "conclusion does not match rule arguments")
             _ -> Left (Error [] "conclusion not of right form")
       Generalization var hyp ->
           case conclusion of
-            ForallP _ sVar var1 body
+            ForallP _ _sVar var1 body
               | var1 == var, hyp == body -> Right ()
             _ -> Left (Error [] "")
       Framing label pos (ImpliesP _ term1 term2) ->
@@ -181,9 +180,9 @@ instance (IsSignature sig, Eq (Sort sig), Eq (Label sig), Eq var) =>
           Left (Error [] "hypothesis has wrong form")
       PropagateOr label pos phi1 phi2 -> do
           case conclusion of
-            ImpliesP s (ApplicationP label1 args1)
+            ImpliesP _ (ApplicationP label1 args1)
                    (OrP _ (ApplicationP label2a args2a) (ApplicationP label2b args2b))
-              | label1 == label2a, label1 == label2b,
+              | label == label1, label1 == label2a, label1 == label2b,
                 (before1,OrP _ term1a term1b:after1) <- splitAt pos args1,
                 (before2a,term2a:after2a) <- splitAt pos args2a,
                 (before2b,term2b:after2b) <- splitAt pos args2b,
@@ -198,9 +197,9 @@ instance (IsSignature sig, Eq (Sort sig), Eq (Label sig), Eq var) =>
      --     sigma(before ..,\phi1, .. after) \/ sigma(before ..,\phi2,.. after)
       PropagateExists label pos var term ->
           case conclusion of
-            ImpliesP s (ApplicationP label1 args1)
+            ImpliesP _ (ApplicationP label1 args1)
                    (ExistsP _ sVar2 var2 (ApplicationP label2 args2))
-              | label1 == label2,
+              | label == label1, label1 == label2,
                 take pos args1 == take pos args2,
                 drop (pos+1) args1 == drop (pos+1) args2,
                 (ExistsP _ sVar1 var1 term1:_) <- drop pos args1,
@@ -220,17 +219,18 @@ instance (IsSignature sig, Eq (Sort sig), Eq (Label sig), Eq var) =>
      -- ^ Ex x.x
       Singvar var term path1 path2 ->
           case conclusion of
-            NotP s (AndP _ term1 term2) -> do
+            NotP _ (AndP _ term1 term2) -> do
               occ1 <- followPath path1 term1
               occ2 <- followPath path2 term2
               case occ1 of
-                AndP _ (VariableP sVar1 var1) term1 ->
+                AndP _ (VariableP sVar1 var1) term1' ->
                   case occ2 of
-                    AndP _ (VariableP sVar2 var2) (NotP _ term2)
-                      | sVar1 == sVar2, var1 == var2, term1 == term2,
-                        var == var1, term == Just term1 -> Right ()
+                    AndP _ (VariableP sVar2 var2) (NotP _ term2')
+                      | sVar1 == sVar2, var1 == var2, term1' == term2',
+                        var == var1, term == Just term1' -> Right ()
                     _ -> Left (Error [] "")
                 _ -> Left (Error [] "")
+            _ -> Left (Error [] "")
       Proj1 a b ->
           case conclusion of
             ImpliesP sVar (AndP sVar' a1 b1) a2

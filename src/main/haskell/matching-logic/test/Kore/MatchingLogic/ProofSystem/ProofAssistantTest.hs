@@ -3,6 +3,8 @@
 {-# LANGUAGE MonoLocalBinds        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
  -- to avoid warnings that constraints (AsAst CommonKorePattern p) can be simplified
+{-# OPTIONS_GHC -fno-warn-unused-top-binds #-}
+
 module Kore.MatchingLogic.ProofSystem.ProofAssistantTest
     (proofAssistantTests) where
 
@@ -15,7 +17,6 @@ import           Data.Kore.AST.Common                         (Application (..),
                                                                AstLocation (..),
                                                                Id (..),
                                                                Pattern (..),
-                                                               Sort (..),
                                                                Symbol (..),
                                                                SymbolOrAlias (..),
                                                                Variable)
@@ -2437,6 +2438,7 @@ goalState goalId proof =
         (childIdx, _)
       =
         (idx, Just (GoalPartlyProven (GoalNeeds (childIdx:idxs))))
+    combineStates _ _ = error "`goalState` helper `combineStates` case not implemented"
 
 lookupGoal :: GoalId -> MLProof -> Maybe (MetaMLPattern Variable)
 lookupGoal goalId proof = snd <$> Map.lookup goalId (index proof)

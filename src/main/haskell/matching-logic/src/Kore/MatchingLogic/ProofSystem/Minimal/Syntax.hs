@@ -1,4 +1,5 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings    #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-| Description: Parser and pretty-printer for the minimal proof system
 
 Parser and pretty-printer for the minimal proof system.

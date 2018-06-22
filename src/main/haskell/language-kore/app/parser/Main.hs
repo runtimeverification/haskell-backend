@@ -1,103 +1,146 @@
+{-# LANGUAGE  NamedFieldPuns #-}
+
 module Main where
 
 import           Data.Kore.ASTVerifier.DefinitionVerifier
 import           Data.Kore.Error
-import           Data.Kore.Parser.Parser
-import           Data.Kore.ASTPrettyPrint                 (prettyPrintToString)
 
-import           Control.Exception                        (evaluate)
-import           Control.Monad                            (when)
-import           System.Clock                             (Clock (Monotonic),
-                                                           diffTimeSpec,
-                                                           getTime)
-import           System.Environment                       (getArgs)
+import           Data.Kore.Parser.Parser                    (fromKore)
+import           Data.Kore.ASTPrettyPrint                   (prettyPrintToString)
+import           Data.Kore.AST.Sentence                     (KoreDefinition)
 
-data CommandLineFlags = CommandLineFlags
-    { commandLineFlagsFileName :: !(Maybe String)
-    , commandLineFlagsVerify   :: !Bool
-    , commandLineFlagsPrint    :: !Bool
+import           Control.Exception                          (evaluate)
+import           Control.Monad                              (when)
+import           System.Clock                               (Clock (Monotonic)
+                                                            ,diffTimeSpec
+                                                            ,getTime)
+
+import           Options.Applicative
+import           Data.Semigroup                             ((<>))
+
+{-
+Main module to run kore-parser
+TODO: add command line argument tab-completion
+-}
+
+-- | Main options record
+data KoreParserOptions = KoreParserOptions
+    { fileName    :: !String -- ^ Filename to parse and verify
+    , willPrint   :: !Bool   -- ^ Option to print definition
+    , willVerify  :: !Bool   -- ^ Option to verify definition
+    , willChkAttr :: !Bool   -- ^ Option to check attributes during verification
     }
 
-usage :: String
-usage =
-    "Usage: kore-parser [--[no]verify] [--[no]print] fileName"
+-- | Command Line Argument Parser
+commandLineParser :: Parser KoreParserOptions
+commandLineParser =
+    KoreParserOptions
+    <$> argument str
+        (  metavar "FILE"
+        <> help "Kore source file to parse [and verify]" )
+    <*> switch3 "print"
+        "Print parsed definition to stdout [default]"
+        "Do not print parsed definition to stdout"
+    <*> switch3 "verify"
+            "Verify well-formedness of parsed definition [default]"
+            "Do not verify well-formedness of parsed definition"
+    <*> switch3 "chkattr"
+            "Check attributes during verification [default]"
+            "Ignore attributes during verification"
 
--- TODO(virgil): Use a generic command line parsing library instead.
-parseCommandLineFlags :: [String] -> CommandLineFlags
-parseCommandLineFlags [] =
-    CommandLineFlags
-        { commandLineFlagsFileName = Nothing
-        , commandLineFlagsVerify = True
-        , commandLineFlagsPrint = True
-        }
-parseCommandLineFlags (('-' : '-' : firstFlag) : commandLineReminder) =
-    addFlagAndContinue firstFlag commandLineReminder
-  where
-    addFlagAndContinue flag commandLine
-        | flag == "verify" =
-            (parseCommandLineFlags commandLine)
-                { commandLineFlagsVerify = True }
-        | flag == "noverify" =
-            (parseCommandLineFlags commandLine)
-                { commandLineFlagsVerify = False }
-        | flag == "print" =
-            (parseCommandLineFlags commandLine)
-                { commandLineFlagsPrint = True }
-        | flag == "noprint" =
-            (parseCommandLineFlags commandLine)
-                { commandLineFlagsPrint = False }
-        | otherwise =
-            error ("Unknown flag: --" ++ flag)
-parseCommandLineFlags (flag : commandLine) =
-    (parseCommandLineFlags commandLine) { commandLineFlagsFileName = Just flag }
+-- | Run argument parser for kore-parser
+commandLineParse :: IO KoreParserOptions
+commandLineParse = execParser opts
+    where
+      opts = info
+             ( commandLineParser <**> helper )
+             (  fullDesc
+             <> progDesc "Parses Kore definition in FILE; optionally, \
+                         \Verifies well-formedness"
+             <> header "kore-parser - a parser for Kore definitions" )
 
+
+main :: IO ()
+main =
+    do {
+    ; KoreParserOptions
+      { fileName    = fileName
+      , willPrint   = willPrint
+      , willVerify  = willVerify
+      , willChkAttr = willChkAttr
+      } <- commandLineParse
+    ; contents <-
+        clockSomethingIO "Reading the input file" (readFile fileName)
+    ; parseResult <-
+        clockSomething "Parsing the file" (fromKore fileName contents)
+    ; let parsedDefinition =
+            case parseResult of
+                Left err         -> error err
+                Right definition -> definition
+    ; when (willVerify) (verifyMain willChkAttr parsedDefinition)
+    ; when (willPrint) (print parsedDefinition)
+    -- TODO(Daniele): pretty print
+    -- (putStrLn (prettyPrintToString verifiedDefinition))
+    }
+
+{-|
+IO subprocess to verify well-formedness of Kore definition
+Bool argument determines if attributes are checked (True), or ignored.
+-}
+verifyMain :: Bool -> KoreDefinition -> IO ()
+verifyMain willChkAttr definition =
+    let attributesVerification =
+            if willChkAttr
+            then case defaultAttributesVerification of
+                    Left err           -> error (printError err)
+                    Right verification -> verification
+            else DoNotVerifyAttributes
+    in do {
+       ; verifyResult <-
+            clockSomething
+       "Verifying the definition"
+                ( verifyDefinition
+                  attributesVerification
+                  definition )
+      ; case verifyResult of
+            Left err1 -> error (printError err1)
+            Right _   -> return ()
+      }
+
+
+----------------------
+-- Helper Functions --
+
+{-|
+Parser builder to create a boolean argument,
+with a positive and negative 'flag'
+and default value (True)
+-}
+switch3 ::
+    String -> -- ^ flag name
+    String -> -- ^ Positive help text
+    String -> -- ^ Negative help text
+    Parser Bool
+switch3 longName posHelpText negHelpText =
+    flag' False
+        (  long ("no"++longName)
+        <> help negHelpText )
+    <|> flag True True  -- first argument to 'flag' is the default
+        (  long longName
+        <> help posHelpText )
+
+
+-- | Time a pure computation and print results.
 clockSomething :: String -> a -> IO a
 clockSomething description something =
     clockSomethingIO description (evaluate something)
 
+
+-- | Time an IO computation and print results.
 clockSomethingIO :: String -> IO a -> IO a
 clockSomethingIO description something = do
     start <- getTime Monotonic
     x <- something
     end <- getTime Monotonic
-    print (description ++ show (diffTimeSpec end start))
+    putStrLn (description ++" "++ show (diffTimeSpec end start))
     return x
-
-main :: IO ()
-main = do
-    commandLineFlags <- parseCommandLineFlags <$> getArgs
-
-    case commandLineFlagsFileName commandLineFlags of
-        Nothing -> do
-            print usage
-            error "Invalid command line flags."
-        Just fileName -> do
-            contents <-
-                clockSomethingIO "Reading the input file" (readFile fileName)
-            parseResult <-
-                clockSomething "Parsing the file" (fromKore fileName contents)
-            unverifiedDefinition <-
-                case parseResult of
-                    Left err         -> error err
-                    Right definition -> return definition
-            verifiedDefinition <-
-                if commandLineFlagsVerify commandLineFlags
-                    then do
-                        attributesVerification <-
-                            case defaultAttributesVerification of
-                                Left err           -> error (printError err)
-                                Right verification -> return verification
-                        verifyResult <-
-                            clockSomething
-                                "Verifying the definition"
-                                (verifyDefinition
-                                    attributesVerification
-                                    unverifiedDefinition)
-                        case verifyResult of
-                            Left err1 -> error (printError err1)
-                            Right _   -> return unverifiedDefinition
-                    else
-                        return unverifiedDefinition
-            when
-                (commandLineFlagsPrint commandLineFlags)
-                (putStrLn (prettyPrintToString verifiedDefinition))

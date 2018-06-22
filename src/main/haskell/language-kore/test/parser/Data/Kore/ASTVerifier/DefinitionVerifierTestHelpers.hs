@@ -35,13 +35,16 @@ addPrefixToDescription prefix =
         (\t -> t {testDataDescription = prefix ++ testDataDescription t})
 
 failureTestDataGroup
-    :: String -> ExpectedErrorMessage -> ErrorStack -> [TestData] -> TestTree
+    :: HasCallStack
+    => String -> ExpectedErrorMessage -> ErrorStack -> [TestData] -> TestTree
 failureTestDataGroup description errorMessage errorStack testData =
     testGroup
         description
         (map (failureTestData errorMessage errorStack) testData)
 
-failureTestData :: ExpectedErrorMessage -> ErrorStack -> TestData -> TestTree
+failureTestData
+    :: HasCallStack
+    => ExpectedErrorMessage -> ErrorStack -> TestData -> TestTree
 failureTestData
     (ExpectedErrorMessage message)
     (ErrorStack stack)

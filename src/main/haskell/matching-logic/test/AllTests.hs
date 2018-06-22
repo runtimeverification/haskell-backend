@@ -1,13 +1,9 @@
 import           Test.Tasty                                        (TestTree,
                                                                     testGroup)
-import           Test.Tasty.HUnit
 import           Test.Tasty.Runners                                (consoleTestReporter,
                                                                     defaultMainWithIngredients,
                                                                     listingTests)
 import           Test.Tasty.Runners.AntXML                         (antXMLRunner)
-
-import           Text.Megaparsec
-import           Text.Megaparsec.Char
 
 import           Kore.MatchingLogic.ProofSystem.ProofAssistantTest
 import           Kore.MatchingLogic.ProofSystem.OnePlusOne
