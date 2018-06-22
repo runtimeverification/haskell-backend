@@ -58,7 +58,7 @@ var x =
   Fix $ VariablePattern $ Variable (noLocationId x) placeholderSort 
 
 app x ys = Fix $ ApplicationPattern $ Application 
-  { applicationSymbolOrAlias = x
+  { applicationSymbolOrAlias = sym x
   , applicationChildren = ys
   }
 
@@ -67,9 +67,23 @@ sym x = SymbolOrAlias
   , symbolOrAliasParams = [] 
   }
 
+pab :: Term 
+pab =
+  app "Pair"
+  [ app "A" []
+  , app "B" []
+  ]
+
+pxy :: Term 
+pxy =
+  app "Pair"
+  [ var "x"
+  , var "y"
+  ]
+
 cabc :: Term 
 cabc =
-  app (sym "C") 
+  app "C"
   [ var "a"
   , var "b"
   , var "c"
@@ -77,26 +91,26 @@ cabc =
 
 cadcaaa :: Term 
 cadcaaa = 
-  app (sym "C") 
+  app "C"
   [ var "a"
-  , app (sym "D") []
-  , app (sym "C") 
+  , app "D" []
+  , app "C"
     [ var "a"
     , var "a"
     , var "a"]
   ]
 
 d :: Term
-d = app (sym "D") []
+d = app "D" []
 
 eabcd :: Term 
 eabcd = 
-  app (sym "E")
-  [ app (sym "E")
+  app "E"
+  [ app "E"
       [ var "a"
       , var "b"
       ]
-  , app (sym "E")
+  , app "E"
       [ var "c"
       , var "d"
       ]
@@ -104,12 +118,12 @@ eabcd =
 
 ebcda :: Term 
 ebcda = 
-  app (sym "E")
-  [ app (sym "E")
+  app "E"
+  [ app "E"
       [ var "b"
       , var "c"
       ]
-  , app (sym "E")
+  , app "E"
       [ var "d"
       , var "a"
       ]
@@ -117,7 +131,7 @@ ebcda =
 
 exx :: Term 
 exx = 
-  app (sym "E")
+  app "E"
   [ var "x"
   , var "x"
   ]
@@ -133,7 +147,7 @@ large1 :: Term
 large2 = bigTerm 8 1
 
 bigTerm 0 k = var $ "v" ++ show k
-bigTerm n k = app (sym "E") [ bigTerm (n-1) (k+1), bigTerm (n-1) (k*2)]
+bigTerm n k = app "E" [ bigTerm (n-1) (k+1), bigTerm (n-1) (k*2)]
 
 emptyProof :: Proof Int UnificationRules Term 
 emptyProof = M.empty

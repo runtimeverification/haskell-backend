@@ -32,9 +32,11 @@ import           Control.Monad.State
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.PureML
+import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Unification.ProofSystemWithHypos
 import           Data.Kore.Unparser.Unparse
+import           Data.Kore.IndexedModule.MetadataTools
 data UnificationRules ix
   = Assumption
   | Discharge !ix !ix
@@ -48,6 +50,9 @@ data UnificationRules ix
   | AndR !ix 
   | ModusPonens !ix !ix
   | IffIntro !ix !ix
+  | IffRight !ix 
+  | IffLeft !ix 
+  | Prop5243 !ix -- t1 /\ t2 <-> t1 /\ (t1 = t2)
   deriving(Functor, Foldable, Traversable, Show)
 
 type Term  = CommonPurePattern Meta
@@ -89,17 +94,19 @@ applyIffIntro
   :: Idx
   -> Idx 
   -> State (Proof Int UnificationRules Term) Idx
-applyIffIntro = makeRule2 iffIntro IffIntro 
+applyIffIntro = makeRule2 makeIff IffIntro 
 
-iffIntro :: Term -> Term -> Term
-iffIntro (Fix (ImpliesPattern (Implies s1 a b))) _ = Fix (IffPattern (Iff s1 a b))
+makeIff :: Term -> Term -> Term
+makeIff (Fix (ImpliesPattern (Implies s1 a b))) _ = Fix (IffPattern (Iff s1 a b))
 
+-- | Given term a, returns index of newly proved statement (a=a)
 applyRefl
-  :: Term 
+  :: MetadataTools Meta
+  -> Term 
   -> State (Proof Int UnificationRules Term) Idx
-applyRefl term = do
+applyRefl tools term = do
   addLine ProofLine
-    { claim = Equation placeholderSort placeholderSort term term 
+    { claim = Equation (getSort tools term) (getSort tools term) term term 
     , justification = Refl term
     , assumptions = S.empty
     }
@@ -107,14 +114,29 @@ applyRefl term = do
 getLHS (Equation s1 s2 a b) = a
 getRHS (Equation s1 s2 a b) = b
 
+lhsIsVariable
+  :: CommonPurePattern level 
+  -> Bool
 lhsIsVariable (Equation s1 s2 a b) = 
   case a of
     Fix (VariablePattern _) -> True
     _ -> False
 
+-- | Given pattern (a=b) and C[a], returns C[b]
+subst
+  :: CommonPurePattern level 
+  -> CommonPurePattern level 
+  -> CommonPurePattern level
 subst eqn@(Equation s1 s2 a b) pat =
   if pat == a then b else Fix $ fmap (subst eqn) $ unFix pat
 
+-- | apply a transformation locally, at position given by the path
+-- TODO: Make this a lens. 
+localInPattern 
+   :: Path 
+   -> (CommonPurePattern level -> CommonPurePattern level)
+   -> CommonPurePattern level 
+   -> CommonPurePattern level 
 localInPattern []     f pat = f pat
 localInPattern (n:ns) f pat = Fix $
   case unFix pat of
@@ -165,6 +187,11 @@ localInPattern (n:ns) f pat = Fix $
            0 -> Rewrites s1 (localInPattern ns f a) b 
            1 -> Rewrites s1 a (localInPattern ns f b)
 
+-- | applyLocalSubstitution with path [] takes index of statement (a=b) 
+-- and index of a statement P[a]
+-- and returns index of newly proved P[b]
+-- If the path is nontrivial, it only substitutes a for b in the subterm
+-- given by the path. 
 applyLocalSubstitution
   :: Idx
   -> Idx 
@@ -184,28 +211,54 @@ applyLocalSubstitution ix1 ix2 path = do
 
 isTrivial (Equation s1 s2 a b) = (a == b)
 
+-- | applyNoConfusion takes index of a statement like C(a,b)=C(x,y)
+-- and returns index of newly proved statement (a=x)/\(b=y)
+-- Assumes constructor heads of LHS and RHS match.
 applyNoConfusion
-  :: Int 
+  :: MetadataTools Meta 
+  -> Idx
   -> State (Proof Int UnificationRules Term) Int
-applyNoConfusion = makeRule1 splitConstructor NoConfusion
+applyNoConfusion tools = makeRule1 (splitConstructor tools) NoConfusion
 
-splitConstructor (Equation s1 s2 a b) = 
+-- | splitConstructor takes an eqn pattern C(a,b)=C(x,y) to (a=x)/\(b=y)
+-- Assumes constructor heads of LHS and RHS match.
+splitConstructor 
+  :: MetadataTools Meta 
+  -> CommonPurePattern Meta 
+  -> CommonPurePattern Meta
+splitConstructor tools (Equation s1 s2 a b) = 
   let ApplicationPattern (Application _ aChildren) = unFix a
       ApplicationPattern (Application _ bChildren) = unFix b
   in if length aChildren == 0
   then undefined -- "True"
   else 
-    foldr1 makeAnd $
+    foldr1 (makeAnd tools) $
     zipWith 
-      (\ac bc -> Equation s1 s2 ac bc) 
+      (\ac bc -> 
+        Equation (getSort tools ac) 
+        s2 
+        ac 
+        bc
+      ) 
       aChildren 
       bChildren 
 
+-- getSort 
+--   :: MetaOrObject level 
+--   => MetadataTools level 
+--   -> CommonPurePattern level
+--   -> Sort level
+getSort tools x = (getPatternResultSort (getResultSort tools) $ unFix x)
+
+-- | applyAndL takes the index of a statement a /\ b
+-- and returns index of newly proved statement a
 applyAndL
   :: Int 
   -> State (Proof Int UnificationRules Term) Int
 applyAndL = makeRule1 getAndL AndL
 
+-- | applyAndR takes the index of a statement a /\ b
+-- and returns index of newly proved statement b
 applyAndR
   :: Int 
   -> State (Proof Int UnificationRules Term) Int
@@ -214,25 +267,45 @@ applyAndR = makeRule1 getAndR AndR
 getAndL (Fix (AndPattern (And _ x _ ))) = x
 getAndR (Fix (AndPattern (And _ _ y ))) = y
 
+applyProp5243 tools = makeRule1 (makeProp5243 tools) Prop5243
+makeProp5243 tools e = 
+  let t1 = getAndL e
+      t2 = getAndR e 
+      sort = (getSort tools t1)
+  in makeIff e (makeAnd tools t1 (Equation sort sort t1 t2))
+
+
+-- | applyAndIntro takes the indices of two statements a and b
+-- and returns the index of newly proved statement a /\ b 
 applyAndIntro
-  :: Int
+  :: MetadataTools Meta
+  -> Int
   -> Int 
   -> State (Proof Int UnificationRules Term) Int
-applyAndIntro = makeRule2 makeAnd AndIntro
+applyAndIntro tools = makeRule2 (makeAnd tools) AndIntro
+
+
+-- | makeAnd a b = a /\ b
 makeAnd 
-  :: Term
+  :: MetadataTools Meta
   -> Term
   -> Term
-makeAnd a b = Fix $ AndPattern $ And 
-  { andSort = placeholderSort
+  -> Term
+makeAnd tools a b = Fix $ AndPattern $ And 
+  { andSort = getSort tools a
   , andFirst = a
   , andSecond = b
   }
 
-makeConjunction [ix] = return ix
-makeConjunction (ix : ixs) = do
-  ix' <- makeConjunction ixs 
-  applyAndIntro ix ix' 
+-- | makeConjunction [a, b, c] = a /\ (b /\ c)
+makeConjunction
+  :: MetadataTools Meta 
+  -> [Idx]
+  -> State (Proof Int UnificationRules Term) Idx
+makeConjunction tools [ix] = return ix
+makeConjunction tools (ix : ixs) = do
+  ix' <- makeConjunction tools ixs 
+  applyAndIntro tools ix ix' 
 
 splitConjunction ix = do
   eqn <- claim <$> lookupLine ix

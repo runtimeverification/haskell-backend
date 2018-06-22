@@ -60,8 +60,8 @@ and I don't see many better options.
 
 data UnificationState
   = UnificationState 
-  { _activeSet :: ![Int]
-  , _finishedSet :: ![Int]
+  { _activeSet :: ![Idx]
+  , _finishedSet :: ![Idx]
   , _proof :: !(Proof Int UnificationRules Term)
   } 
   deriving(Show)
@@ -94,16 +94,26 @@ unificationProcedure
   -> Term 
   -> m Idx
 unificationProcedure a b = do
-  ixAB <- proof %%%= assume (Equation placeholderSort placeholderSort a b)
-  activeSet %= (ixAB :)
-  loop
-  eqns <- use finishedSet
-  ixMGU <- proof %%%= makeConjunction eqns
-  forwardDirection <- proof %%%= discharge ixAB ixMGU
+  (ixMGU, forwardsDirection) <- proveForwardsDirection a b
   backwardsDirection <-
     (claim <$> proof %%%= lookupLine ixMGU)
     >>= proveBackwardsDirection a b
-  proof %%%= applyIffIntro forwardDirection backwardsDirection
+  proof %%%= applyIffIntro forwardsDirection backwardsDirection
+
+proveForwardsDirection
+  :: UnificationContext m 
+  => Term 
+  -> Term 
+  -> m (Idx, Idx)
+proveForwardsDirection a b = do 
+  tools <- ask
+  ixAB <- proof %%%= assume (Equation placeholderSort placeholderSort a b)
+  activeSet %= (ixAB :)
+  mainLoop
+  eqns <- use finishedSet
+  ixMGU <- proof %%%= makeConjunction tools eqns
+  forwardsDirection <- proof %%%= discharge ixAB ixMGU
+  return (ixMGU, forwardsDirection)
 
 proveBackwardsDirection
   :: UnificationContext m
@@ -112,9 +122,10 @@ proveBackwardsDirection
   -> Term 
   -> m Idx 
 proveBackwardsDirection a b mgu = do 
+  tools <- ask
   ixMGU <- proof %%%= assume mgu
-  ixAA  <- proof %%%= applyRefl a
-  ixBB  <- proof %%%= applyRefl b
+  ixAA  <- proof %%%= applyRefl tools a
+  ixBB  <- proof %%%= applyRefl tools b
   mgus <- S.toList <$> proof %%%= splitConjunction ixMGU
   ixAB <- go ixAA ixBB mgus
   proof %%%= discharge ixMGU ixAB
@@ -124,26 +135,25 @@ proveBackwardsDirection a b mgu = do
             ix2' <- proof %%%= applyLocalSubstitution eqn ix2 [0]
             go ix1' ix2' eqns
 
-
-loop 
+mainLoop 
   :: UnificationContext m
   => m ()
-loop = do
+mainLoop = do
   eqns <- use activeSet
   case eqns of
     [] -> return () -- we are done
     (ix : rest) -> do
       activeSet .= rest
       process ix
-      loop
+      mainLoop
 
 process
   :: (UnificationContext m)
   => Int 
   -> m ()
-process !ix = do
+process ix = do
   eqn@(Equation s1 s2 a b) <- claim <$> (proof %%%= lookupLine ix)
-  if isTrivial eqn
+  if a == b
   then do return ()
   else if lhsIsVariable eqn
   then do
@@ -206,24 +216,24 @@ goSplitConstructor
   -> Term
   -> m ()
 goSplitConstructor !tools !ix !e@(Equation s1 s2 a b)
-  | not (isConstructor tools headA)
+  | not (isConstructor tools $ getHead a)
       = throwError $ NonConstructorHead a
-  | not (isConstructor tools headB)
+  | not (isConstructor tools $ getHead a)
       = throwError $ NonConstructorHead b
-  | headA /= headB
+  | getHead a /= getHead b
       = throwError $ ConstructorClash a b 
   | otherwise
       = equateChildren ix
-    where 
-      ApplicationPattern (Application headA _) = unFix a
-      ApplicationPattern (Application headB _) = unFix b
+
+getHead (Fix (ApplicationPattern (Application head _))) = head
 
 equateChildren
   :: UnificationContext m
   => Int
   -> m ()
 equateChildren !ix = do
-  ix' <- proof %%%= applyNoConfusion ix
+  tools <- ask
+  ix' <- proof %%%= applyNoConfusion tools ix
   ixs' <- proof %%%= splitConjunction ix'
   activeSet %= (S.toList ixs' ++)
 
