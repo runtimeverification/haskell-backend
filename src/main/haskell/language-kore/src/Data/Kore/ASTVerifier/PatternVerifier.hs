@@ -8,7 +8,7 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Data.Kore.ASTVerifier.PatternVerifier (verifyPattern, aliasLeftPatternVerifier) where
+module Data.Kore.ASTVerifier.PatternVerifier (verifyPattern, verifyAliasLeftPattern) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Error
@@ -97,7 +97,7 @@ addDeclaredVariable
         }
 
 -- TODO: additional checks
-aliasLeftPatternVerifier
+verifyAliasLeftPattern
     :: CommonKorePattern
     -> Maybe UnifiedSort
     -- ^ If present, represents the expected sort of the pattern.
@@ -107,7 +107,9 @@ aliasLeftPatternVerifier
     -> Set.Set UnifiedSortVariable
     -- ^ Sort variables which are visible in this pattern.
     -> Either (Error VerifyError) VerifySuccess
-aliasLeftPatternVerifier = verifyPattern
+verifyAliasLeftPattern unifiedPattern maybeExpectedSort indexedModule sortVariables = do
+    verifyPattern unifiedPattern maybeExpectedSort indexedModule sortVariables
+    -- ...
 
 {-|'verifyPattern' verifies the welformedness of a Kore 'CommonKorePattern'. -}
 verifyPattern

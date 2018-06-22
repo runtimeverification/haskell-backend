@@ -274,7 +274,7 @@ verifyAliasSentence
                 findSortDeclaration
                 variables
                 (sentenceAliasResultSort sentence)
-            aliasLeftPatternVerifier
+            verifyAliasLeftPattern
                 (asKorePattern $ sentenceAliasLeftPattern sentence)
                 Nothing
                 indexedModule
