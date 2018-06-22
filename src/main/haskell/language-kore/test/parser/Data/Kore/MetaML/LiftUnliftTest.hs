@@ -1016,9 +1016,8 @@ liftTests =
             )
         ]
   where
-    objectS    = simpleSort (SortName "s3")
     topPatMeta = TopPattern $ Top { topSort = patternMetaSort }
-    topPatObj  = TopPattern $ Top { topSort = objectS }
+    topPatObj  = TopPattern $ Top { topSort = simpleSort (SortName "s3") }
     simpleSortActual (SortName sort) =
         SortActual
             { sortActualName = testId sort

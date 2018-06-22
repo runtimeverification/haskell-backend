@@ -24,11 +24,11 @@ import           Data.Kore.IndexedModule.IndexedModule
 import           Data.Kore.IndexedModule.Resolvers
 import           Data.Kore.KoreHelpers
 
-topPatMeta = TopPattern $ Top { topSort = patternMetaSort }
-topPatObj  = TopPattern $ Top { topSort = objectS1 }
-
 objectS1 :: Sort Object
 objectS1 = simpleSort (SortName "s1")
+
+topPatMeta = TopPattern $ Top { topSort = patternMetaSort }
+topPatObj  = TopPattern $ Top { topSort = objectS1 }
 
 objectA :: PureSentenceSymbol Object
 objectA = symbol_ "a" AstLocationTest [] objectS1

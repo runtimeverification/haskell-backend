@@ -20,7 +20,6 @@ import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.KoreHelpers
 import           Data.Kore.Unparser.Unparse
 
-
 newtype ExpectedErrorMessage = ExpectedErrorMessage String
 newtype ErrorStack = ErrorStack [String]
 
@@ -152,21 +151,15 @@ simpleMetaAliasSentence alias sort =
     asSentence
         (simpleAliasSentence alias sort l r ::KoreSentenceAlias Meta)
   where
-    l = topPatMeta1
-    r = topPatMeta1
+    l = TopPattern $ Top { topSort = patternMetaSort }
+    r = TopPattern $ Top { topSort = patternMetaSort }
 
 simpleObjectAliasSentence :: AliasName -> SortName -> KoreSentence
 simpleObjectAliasSentence alias sort =
    asSentence (simpleAliasSentence alias sort l r ::KoreSentenceAlias Object)
    where
-    l = topPatObj1
-    r = topPatObj1
-
-topPatMeta1 = TopPattern $ Top { topSort = patternMetaSort }
-topPatObj1  = TopPattern $ Top { topSort = objectS2 }
-
-objectS2 :: Sort Object
-objectS2 = simpleSort (SortName "s1")
+    l = TopPattern $ Top { topSort = simpleSort (SortName "s1") }
+    r = TopPattern $ Top { topSort = simpleSort (SortName "s1") }
 
 simpleAliasSentence
     :: AliasName
@@ -256,8 +249,8 @@ aliasSentenceWithSort (AliasName name) sort =
                 }
             , sentenceAliasSorts = []
             , sentenceAliasResultSort = sort
-            , sentenceAliasLeftPattern = topPatMeta1
-            , sentenceAliasRightPattern = topPatMeta1
+            , sentenceAliasLeftPattern = TopPattern $ Top { topSort = patternMetaSort }
+            , sentenceAliasRightPattern = TopPattern $ Top { topSort = patternMetaSort }
             , sentenceAliasAttributes =
                 Attributes [] :: Attributes
             }
@@ -275,11 +268,12 @@ metaAliasSentenceWithSortParameters
                 }
             , sentenceAliasSorts = []
             , sentenceAliasResultSort = sort
-            , sentenceAliasLeftPattern = topPatMeta1
-            , sentenceAliasRightPattern = topPatMeta1
+            , sentenceAliasLeftPattern = TopPattern $ Top { topSort = patternMetaSort }
+            , sentenceAliasRightPattern = TopPattern $ Top { topSort = patternMetaSort }
             , sentenceAliasAttributes = Attributes []
             }::KoreSentenceAlias Meta
         )
+
 
 aliasSentenceWithSortParameters
     :: AliasName
@@ -494,7 +488,13 @@ symbolSentenceWithArguments
 
 objectAliasSentenceWithArguments
     :: AliasName -> Sort Object -> [Sort Object] -> KoreSentence
-objectAliasSentenceWithArguments a b c = aliasSentenceWithArguments a b c topPatObj1 topPatObj1
+objectAliasSentenceWithArguments a b c = 
+    aliasSentenceWithArguments 
+        a 
+        b 
+        c 
+        (TopPattern $ Top { topSort = simpleSort (SortName "s1") })
+        (TopPattern $ Top { topSort = simpleSort (SortName "s1") })
 
 aliasSentenceWithArguments
     :: MetaOrObject level
