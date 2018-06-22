@@ -98,7 +98,7 @@ unificationProcedure a b = do
   activeSet %= (ixAB :)
   loop
   eqns <- use finishedSet
-  ixMGU <- makeConjunction eqns
+  ixMGU <- proof %%%= makeConjunction eqns
   forwardDirection <- proof %%%= discharge ixAB ixMGU
   backwardsDirection <-
     (claim <$> proof %%%= lookupLine ixMGU)
@@ -115,7 +115,7 @@ proveBackwardsDirection a b mgu = do
   ixMGU <- proof %%%= assume mgu
   ixAA  <- proof %%%= applyRefl a
   ixBB  <- proof %%%= applyRefl b
-  mgus <- S.toList <$> splitConjunction ixMGU
+  mgus <- S.toList <$> proof %%%= splitConjunction ixMGU
   ixAB <- go ixAA ixBB mgus
   proof %%%= discharge ixMGU ixAB
     where go ix1 ix2 [] = proof %%%= applyLocalSubstitution ix1 ix2 [0]
@@ -224,24 +224,12 @@ equateChildren
   -> m ()
 equateChildren !ix = do
   ix' <- proof %%%= applyNoConfusion ix
-  ixs' <- splitConjunction ix'
+  ixs' <- proof %%%= splitConjunction ix'
   activeSet %= (S.toList ixs' ++)
 
-splitConjunction !ix = do
-  eqn <- claim <$> proof %%%= lookupLine ix
-  if isConjunction eqn
-  then do
-    ixLeft  <- proof %%%= applyAndL ix
-    ixRight <- proof %%%= applyAndR ix
-    splitResultLeft  <- splitConjunction ixLeft 
-    splitResultRight <- splitConjunction ixRight 
-    return $ S.union splitResultLeft splitResultRight
-  else return $ S.singleton ix
 
-makeConjunction [ix] = return ix
-makeConjunction (ix : ixs) = do
-  ix' <- makeConjunction ixs 
-  proof %%%= applyAndIntro ix ix' 
+
+
 
 
 -- TODO: functionality check (fairly trivial)

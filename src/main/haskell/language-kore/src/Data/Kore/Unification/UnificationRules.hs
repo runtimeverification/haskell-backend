@@ -165,25 +165,6 @@ localInPattern (n:ns) f pat = Fix $
            0 -> Rewrites s1 (localInPattern ns f a) b 
            1 -> Rewrites s1 a (localInPattern ns f b)
 
-
-
--- applySubstitution
---   :: Int
---   -> Int
---   -> State (Proof Int UnificationRules Term) Int
--- -- applySubstitution = makeRule2 subst Substitution
--- applySubstitution ix1 ix2 = do
---   Just line1 <- M.lookup ix1 <$> get
---   Just line2 <- M.lookup ix2 <$> get
---   let substitutedClaim2 = subst (claim line1) (claim line2)
---   if substitutedClaim2 == claim line2 -- substitution was a noop
---   then return ix2 
---   else addLine ProofLine 
---     { claim = substitutedClaim2
---     , justification = Substitution ix1 ix2
---     , assumptions = S.unions [assumptions line1, assumptions line2]
---     }
-
 applyLocalSubstitution
   :: Idx
   -> Idx 
@@ -214,7 +195,7 @@ splitConstructor (Equation s1 s2 a b) =
   in if length aChildren == 0
   then undefined -- "True"
   else 
-    foldr1 conj $
+    foldr1 makeAnd $
     zipWith 
       (\ac bc -> Equation s1 s2 ac bc) 
       aChildren 
@@ -248,11 +229,21 @@ makeAnd a b = Fix $ AndPattern $ And
   , andSecond = b
   }
 
-conj a b = Fix $ AndPattern $ And 
-  { andSort = placeholderSort
-  , andFirst = a 
-  , andSecond = b
-  }
+makeConjunction [ix] = return ix
+makeConjunction (ix : ixs) = do
+  ix' <- makeConjunction ixs 
+  applyAndIntro ix ix' 
+
+splitConjunction ix = do
+  eqn <- claim <$> lookupLine ix
+  if isConjunction eqn
+  then do
+    ixLeft  <- applyAndL ix
+    ixRight <- applyAndR ix
+    splitResultLeft  <- splitConjunction ixLeft 
+    splitResultRight <- splitConjunction ixRight 
+    return $ S.union splitResultLeft splitResultRight
+  else return $ S.singleton ix
 
 isConjunction (Fix (AndPattern _)) = True
 isConjunction _                    = False

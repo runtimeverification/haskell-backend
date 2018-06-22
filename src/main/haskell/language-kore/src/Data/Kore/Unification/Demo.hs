@@ -24,7 +24,7 @@ Portability : portable
 {-# LANGUAGE ViewPatterns           #-}
 
 
-module Data.Kore.Unification.UnificationAlgorithmBasicExamples where
+module Data.Kore.Unification.Demo where
 
 import qualified Data.Set as S
 import qualified Data.Map as M
@@ -67,16 +67,16 @@ sym x = SymbolOrAlias
   , symbolOrAliasParams = [] 
   }
 
-t1 :: Term 
-t1 =
+cabc :: Term 
+cabc =
   app (sym "C") 
   [ var "a"
   , var "b"
   , var "c"
   ]
 
-t2 :: Term 
-t2 = 
+cadcaaa :: Term 
+cadcaaa = 
   app (sym "C") 
   [ var "a"
   , app (sym "D") []
@@ -86,11 +86,11 @@ t2 =
     , var "a"]
   ]
 
-t3 :: Term
-t3 = app (sym "D") []
+d :: Term
+d = app (sym "D") []
 
-t4 :: Term 
-t4 = 
+eabcd :: Term 
+eabcd = 
   app (sym "E")
   [ app (sym "E")
       [ var "a"
@@ -102,8 +102,8 @@ t4 =
       ]
   ]
 
-t5 :: Term 
-t5 = 
+ebcda :: Term 
+ebcda = 
   app (sym "E")
   [ app (sym "E")
       [ var "b"
@@ -115,45 +115,25 @@ t5 =
       ]
   ]
 
-t6 :: Term 
-t6 = 
+exx :: Term 
+exx = 
   app (sym "E")
   [ var "x"
   , var "x"
   ]
 
-t7 :: Term
-t7 = 
+x :: Term
+x = 
   var "x"
 
-t8 :: Term
-t8 = bigTerm 8 0
+large2 :: Term
+large1 = bigTerm 8 0
 
-t9 :: Term 
-t9 = bigTerm 8 1
+large1 :: Term 
+large2 = bigTerm 8 1
 
 bigTerm 0 k = var $ "v" ++ show k
 bigTerm n k = app (sym "E") [ bigTerm (n-1) (k+1), bigTerm (n-1) (k*2)]
-
-example1 :: Unification Idx
-example1 = unificationProcedure t1 t2
-
---cyclic equalities -- several equivalence MGU
---should output 3 equalities
-example2 :: Unification Idx
-example2 = unificationProcedure t2 t3
-
---constructor clash
-example3 :: Unification Idx
-example3 = unificationProcedure t4 t5
-
---occurs check
-example4 :: Unification Idx
-example4 = unificationProcedure t6 t7
-
---stress test
-example5 :: Unification Idx
-example5 = unificationProcedure t8 t9
 
 emptyProof :: Proof Int UnificationRules Term 
 emptyProof = M.empty
@@ -173,7 +153,7 @@ dummyMetaTools = MetadataTools
     }
 
 -- putStrLn $ run example1
-run = display . runStack
+testUnify x y = putStrLn $ display $ runStack $ unificationProcedure x y
   
 runStack = 
   runExcept .
