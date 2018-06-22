@@ -4,6 +4,8 @@ module TEST-ALIAS-1
 
   sort S{} []
 
+  symbol g{}() : S{} []
+
   alias f{}() : S{}
   where f{}() := g{}() []
 

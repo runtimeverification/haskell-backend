@@ -4,7 +4,23 @@ Definition
         [ Module
             { moduleName = ModuleName "TEST-ALIAS-6"
             , moduleSentences =
-                [ ObjectSentence (SentenceAliasSentence SentenceAlias
+                [ ObjectSentence (SentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "g" AstLocationNone) :: Id Object
+                            , symbolParams =
+                                [ SortVariable ((Id "S" AstLocationNone) :: Id Object)
+                                ]
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
+                        , SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
+                    , sentenceSymbolAttributes = Attributes []
+                    })
+                , ObjectSentence (SentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias =
                         Alias
                             { aliasConstructor = (Id "f" AstLocationNone) :: Id Object

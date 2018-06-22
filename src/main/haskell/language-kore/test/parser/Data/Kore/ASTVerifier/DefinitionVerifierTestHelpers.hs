@@ -161,8 +161,8 @@ simpleObjectAliasSentence :: AliasName -> SortName -> KoreSentence
 simpleObjectAliasSentence alias sort =
    asSentence (simpleAliasSentence alias sort l r ::KoreSentenceAlias Object)
    where
-    l = TopPattern $ Top { topSort = simpleSort (SortName "s1") }
-    r = TopPattern $ Top { topSort = simpleSort (SortName "s1") }
+    l = TopPattern $ Top { topSort = simpleSort sort }
+    r = TopPattern $ Top { topSort = simpleSort sort }
 
 simpleAliasSentence
     :: AliasName
@@ -496,8 +496,8 @@ objectAliasSentenceWithArguments a b c =
         a 
         b 
         c 
-        (TopPattern $ Top { topSort = simpleSort (SortName "s1") })
-        (TopPattern $ Top { topSort = simpleSort (SortName "s1") })
+        (TopPattern $ Top { topSort = b })
+        (TopPattern $ Top { topSort = b })
 
 aliasSentenceWithArguments
     :: MetaOrObject level

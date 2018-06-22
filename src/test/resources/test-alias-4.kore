@@ -2,7 +2,9 @@
 
 module TEST-ALIAS-4
 
+  symbol g{S}() : S []
+
   alias f{S}() : S 
-  where f{S}() := g{}() []
+  where f{S}() := g{S}() []
 
 endmodule []

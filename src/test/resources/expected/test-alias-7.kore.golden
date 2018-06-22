@@ -9,6 +9,24 @@ Definition
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
                     })
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "g" AstLocationNone) :: Id Object
+                            , symbolParams =
+                                [ SortVariable ((Id "S" AstLocationNone) :: Id Object)
+                                ]
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Nat" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortVariableSort (SortVariable ((Id "S" AstLocationNone) :: Id Object))
+                    , sentenceSymbolAttributes = Attributes []
+                    })
                 , ObjectSentence (SentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias =
                         Alias
