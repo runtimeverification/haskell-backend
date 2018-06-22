@@ -274,12 +274,16 @@ verifyAliasSentence
                 findSortDeclaration
                 variables
                 (sentenceAliasResultSort sentence)
-            -- verifyParameterizedPattern
-            --     (sentenceAliasLeftPattern sentence)
-            --     indexedModule
-            --     Nothing
-            --     variables
-            -- TODO: verify right pattern 
+            aliasLeftPatternVerifier
+                (asKorePattern $ sentenceAliasLeftPattern sentence)
+                Nothing
+                indexedModule
+                variables
+            verifyPattern
+                (asKorePattern $ sentenceAliasRightPattern sentence)
+                Nothing
+                indexedModule
+                variables
             verifyAttributes
                 (sentenceAliasAttributes sentence)
                 attributesVerification
