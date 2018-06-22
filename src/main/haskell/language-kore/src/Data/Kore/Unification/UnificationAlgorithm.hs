@@ -58,40 +58,41 @@ but with a few combinators it becomes fairly unobtrusive
 and I don't see many better options. 
 -}
 
-data UnificationState
+data UnificationState level
   = UnificationState 
   { _activeSet :: ![Idx]
   , _finishedSet :: ![Idx]
-  , _proof :: !(Proof Int UnificationRules Term)
+  , _proof :: !(Proof Int (UnificationRules level) (Term level))
   } 
   deriving(Show)
 
-data UnificationError
-    = ConstructorClash     Term Term
-    | NonConstructorHead   Term
-    | NonFunctionalPattern Term
-    | OccursCheck          Term Term
+data UnificationError level
+    = ConstructorClash     (Term level) (Term level)
+    | NonConstructorHead   (Term level)
+    | NonFunctionalPattern (Term level)
+    | OccursCheck          (Term level) (Term level)
   deriving (Eq, Show)
 
 makeLenses ''UnificationState
 
-type UnificationContext m = 
-  ( MonadState UnificationState m
-  , MonadReader (MetadataTools Meta) m
-  , MonadError UnificationError m
+type UnificationContext level m = 
+  ( MonadState (UnificationState level) m
+  , MonadReader (MetadataTools level) m
+  , MonadError (UnificationError level) m
   ) 
 
-type Unification a = 
-  ReaderT (MetadataTools Meta) (
-  StateT UnificationState (
-  ExceptT (UnificationError) 
+type Unification level a = 
+  ReaderT (MetadataTools level) (
+  StateT (UnificationState level) (
+  ExceptT (UnificationError level) 
   Identity))
   a
 
 unificationProcedure 
-  :: UnificationContext m 
-  => Term 
-  -> Term 
+  :: (MetaOrObject level
+  ,  UnificationContext level m)
+  => Term level
+  -> Term level
   -> m Idx
 unificationProcedure a b = do
   (ixMGU, forwardsDirection) <- proveForwardsDirection a b
@@ -101,9 +102,10 @@ unificationProcedure a b = do
   proof %%%= applyIffIntro forwardsDirection backwardsDirection
 
 proveForwardsDirection
-  :: UnificationContext m 
-  => Term 
-  -> Term 
+  :: (MetaOrObject level
+  ,  UnificationContext level m)
+  => Term level
+  -> Term level 
   -> m (Idx, Idx)
 proveForwardsDirection a b = do 
   tools <- ask
@@ -116,10 +118,11 @@ proveForwardsDirection a b = do
   return (ixMGU, forwardsDirection)
 
 proveBackwardsDirection
-  :: UnificationContext m
-  => Term 
-  -> Term
-  -> Term 
+  :: (MetaOrObject level
+  ,  UnificationContext level m)
+  => Term level
+  -> Term level
+  -> Term level 
   -> m Idx 
 proveBackwardsDirection a b mgu = do 
   tools <- ask
@@ -136,7 +139,8 @@ proveBackwardsDirection a b mgu = do
             go ix1' ix2' eqns
 
 mainLoop 
-  :: UnificationContext m
+  :: (MetaOrObject level
+  ,  UnificationContext level m)
   => m ()
 mainLoop = do
   eqns <- use activeSet
@@ -148,8 +152,9 @@ mainLoop = do
       mainLoop
 
 process
-  :: (UnificationContext m)
-  => Int 
+  :: (MetaOrObject level
+  ,  UnificationContext level m)
+  => Idx 
   -> m ()
 process ix = do
   eqn@(Equation s1 s2 a b) <- claim <$> (proof %%%= lookupLine ix)
@@ -172,17 +177,19 @@ process ix = do
     goSplitConstructor tools ix eqn
 
 checkIfOccursInSets 
-  :: (UnificationContext m)
-  => Term 
+  :: (MetaOrObject level
+  ,  UnificationContext level m)
+  => Term level 
   -> m Bool
 checkIfOccursInSets !pat = liftM2 (||)
   (occursInSet pat activeSet)
   (occursInSet pat finishedSet)
 
 occursInSet
-  :: UnificationContext m 
-  => Term 
-  -> Lens' UnificationState [Int]
+  :: (MetaOrObject level
+  ,  UnificationContext level m)
+  => Term level 
+  -> Lens' (UnificationState level) [Int]
   -> m Bool
 occursInSet !pat !set = do
   ixs <- use set 
@@ -195,9 +202,10 @@ occursInTerm !pat !bigPat =
     else foldr (||) False $ fmap (occursInTerm pat) $ unFix bigPat
 
 substituteEverythingInSet
-  :: UnificationContext m 
+  :: (MetaOrObject level
+  ,  UnificationContext level m)
   => Int 
-  -> Lens' UnificationState [Int]
+  -> Lens' (UnificationState level) [Int]
   -> m ()
 substituteEverythingInSet !ix !set = do
   rest <- use set
@@ -210,10 +218,11 @@ substituteEverythingInSet !ix !set = do
       
 
 goSplitConstructor 
-  :: UnificationContext m
-  => MetadataTools Meta
-  -> Int
-  -> Term
+  :: (MetaOrObject level
+  ,  UnificationContext level m)
+  => MetadataTools level
+  -> Idx
+  -> Term level
   -> m ()
 goSplitConstructor !tools !ix !e@(Equation s1 s2 a b)
   | not (isConstructor tools $ getHead a)
@@ -228,8 +237,9 @@ goSplitConstructor !tools !ix !e@(Equation s1 s2 a b)
 getHead (Fix (ApplicationPattern (Application head _))) = head
 
 equateChildren
-  :: UnificationContext m
-  => Int
+  :: (MetaOrObject level
+  ,  UnificationContext level m)
+  => Idx
   -> m ()
 equateChildren !ix = do
   tools <- ask

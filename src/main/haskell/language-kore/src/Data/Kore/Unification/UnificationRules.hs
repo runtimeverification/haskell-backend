@@ -37,11 +37,11 @@ import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Unification.ProofSystemWithHypos
 import           Data.Kore.Unparser.Unparse
 import           Data.Kore.IndexedModule.MetadataTools
-data UnificationRules ix
+data UnificationRules level ix
   = Assumption
   | Discharge !ix !ix
   | EqSymmetric !ix -- (a = b) => (b = a)
-  | Refl Term 
+  | Refl (Term level) 
   | Substitution !ix !ix --ix2[LHS of ix1 \ RHS of ix2]
   | LocalSubstitution !ix !ix !Path
   | NoConfusion !ix -- result is a conjunction
@@ -55,19 +55,22 @@ data UnificationRules ix
   | Prop5243 !ix -- t1 /\ t2 <-> t1 /\ (t1 = t2)
   deriving(Functor, Foldable, Traversable, Show)
 
-type Term  = CommonPurePattern Meta
+type Term level = CommonPurePattern level
 type Idx = Int
 type Path  = [Int]
+type ProofState level = State (Proof Int (UnificationRules level) (Term level))
 
 instance Indexing Int where 
   zeroIx = 0
   nextIx = (+1)
 
-instance Rules UnificationRules where
+instance MetaOrObject level 
+  => Rules (UnificationRules level) where
   assumption = Assumption
   elim = Discharge
 
-instance Formula Term where
+instance MetaOrObject level 
+  => Formula (Term level) where
   implies a b = Fix $ ImpliesPattern $ Implies
     { impliesSort = placeholderSort
     , impliesFirst = a 
@@ -78,7 +81,8 @@ placeholderSort =
   SortVariableSort $ SortVariable 
     { getSortVariable = noLocationId "S" } --FIXME
 
-instance ProofSystem Int UnificationRules Term where 
+instance MetaOrObject level 
+  => ProofSystem Int (UnificationRules level) (Term level) where 
   
 pattern Equation s1 s2 a b = 
   Fix (EqualsPattern (Equals s1 s2 a b))
@@ -86,24 +90,29 @@ pattern Equation s1 s2 a b =
 flipEqn (Equation s1 s2 a b) = Equation s1 s2 b a
 
 applySymmetry 
-  :: Idx 
-  -> State (Proof Int UnificationRules Term) Idx
+  :: MetaOrObject level 
+  => Idx 
+  -> ProofState level Idx
 applySymmetry = makeRule1 flipEqn EqSymmetric
 
 applyIffIntro
-  :: Idx
+  :: MetaOrObject level
+  => Idx
   -> Idx 
-  -> State (Proof Int UnificationRules Term) Idx
+  -> ProofState level Idx
 applyIffIntro = makeRule2 makeIff IffIntro 
 
-makeIff :: Term -> Term -> Term
+makeIff 
+  :: MetaOrObject level
+  => Term level -> Term level -> Term level
 makeIff (Fix (ImpliesPattern (Implies s1 a b))) _ = Fix (IffPattern (Iff s1 a b))
 
 -- | Given term a, returns index of newly proved statement (a=a)
 applyRefl
-  :: MetadataTools Meta
-  -> Term 
-  -> State (Proof Int UnificationRules Term) Idx
+  :: MetaOrObject level
+  => MetadataTools level
+  -> Term level
+  -> ProofState level Idx
 applyRefl tools term = do
   addLine ProofLine
     { claim = Equation (getSort tools term) (getSort tools term) term term 
@@ -115,7 +124,8 @@ getLHS (Equation s1 s2 a b) = a
 getRHS (Equation s1 s2 a b) = b
 
 lhsIsVariable
-  :: CommonPurePattern level 
+  :: MetaOrObject level
+  => CommonPurePattern level 
   -> Bool
 lhsIsVariable (Equation s1 s2 a b) = 
   case a of
@@ -124,7 +134,8 @@ lhsIsVariable (Equation s1 s2 a b) =
 
 -- | Given pattern (a=b) and C[a], returns C[b]
 subst
-  :: CommonPurePattern level 
+  :: MetaOrObject level 
+  => CommonPurePattern level 
   -> CommonPurePattern level 
   -> CommonPurePattern level
 subst eqn@(Equation s1 s2 a b) pat =
@@ -133,7 +144,8 @@ subst eqn@(Equation s1 s2 a b) pat =
 -- | apply a transformation locally, at position given by the path
 -- TODO: Make this a lens. 
 localInPattern 
-   :: Path 
+   :: MetaOrObject level 
+   => Path 
    -> (CommonPurePattern level -> CommonPurePattern level)
    -> CommonPurePattern level 
    -> CommonPurePattern level 
@@ -193,10 +205,11 @@ localInPattern (n:ns) f pat = Fix $
 -- If the path is nontrivial, it only substitutes a for b in the subterm
 -- given by the path. 
 applyLocalSubstitution
-  :: Idx
+  :: MetaOrObject level 
+  => Idx
   -> Idx 
   -> Path 
-  -> State (Proof Int UnificationRules Term) Int
+  -> State (Proof Int (UnificationRules level) (Term level)) Int
 applyLocalSubstitution ix1 ix2 path = do 
   Just line1 <- M.lookup ix1 <$> get
   Just line2 <- M.lookup ix2 <$> get 
@@ -215,17 +228,19 @@ isTrivial (Equation s1 s2 a b) = (a == b)
 -- and returns index of newly proved statement (a=x)/\(b=y)
 -- Assumes constructor heads of LHS and RHS match.
 applyNoConfusion
-  :: MetadataTools Meta 
+  :: MetaOrObject level
+  => MetadataTools level 
   -> Idx
-  -> State (Proof Int UnificationRules Term) Int
+  -> ProofState level Int
 applyNoConfusion tools = makeRule1 (splitConstructor tools) NoConfusion
 
 -- | splitConstructor takes an eqn pattern C(a,b)=C(x,y) to (a=x)/\(b=y)
 -- Assumes constructor heads of LHS and RHS match.
 splitConstructor 
-  :: MetadataTools Meta 
-  -> CommonPurePattern Meta 
-  -> CommonPurePattern Meta
+  :: MetaOrObject level
+  => MetadataTools level 
+  -> CommonPurePattern level 
+  -> CommonPurePattern level
 splitConstructor tools (Equation s1 s2 a b) = 
   let ApplicationPattern (Application _ aChildren) = unFix a
       ApplicationPattern (Application _ bChildren) = unFix b
@@ -253,15 +268,17 @@ getSort tools x = (getPatternResultSort (getResultSort tools) $ unFix x)
 -- | applyAndL takes the index of a statement a /\ b
 -- and returns index of newly proved statement a
 applyAndL
-  :: Int 
-  -> State (Proof Int UnificationRules Term) Int
+  :: MetaOrObject level
+  => Int 
+  -> ProofState level Int
 applyAndL = makeRule1 getAndL AndL
 
 -- | applyAndR takes the index of a statement a /\ b
 -- and returns index of newly proved statement b
 applyAndR
-  :: Int 
-  -> State (Proof Int UnificationRules Term) Int
+  :: MetaOrObject level
+  => Int 
+  -> ProofState level Int
 applyAndR = makeRule1 getAndR AndR
 
 getAndL (Fix (AndPattern (And _ x _ ))) = x
@@ -278,19 +295,21 @@ makeProp5243 tools e =
 -- | applyAndIntro takes the indices of two statements a and b
 -- and returns the index of newly proved statement a /\ b 
 applyAndIntro
-  :: MetadataTools Meta
+  :: MetaOrObject level
+  => MetadataTools level
   -> Int
   -> Int 
-  -> State (Proof Int UnificationRules Term) Int
+  -> ProofState level Int
 applyAndIntro tools = makeRule2 (makeAnd tools) AndIntro
 
 
 -- | makeAnd a b = a /\ b
 makeAnd 
-  :: MetadataTools Meta
-  -> Term
-  -> Term
-  -> Term
+  :: MetaOrObject level
+  => MetadataTools level
+  -> Term level
+  -> Term level
+  -> Term level
 makeAnd tools a b = Fix $ AndPattern $ And 
   { andSort = getSort tools a
   , andFirst = a
@@ -299,9 +318,10 @@ makeAnd tools a b = Fix $ AndPattern $ And
 
 -- | makeConjunction [a, b, c] = a /\ (b /\ c)
 makeConjunction
-  :: MetadataTools Meta 
+  :: MetaOrObject level
+  => MetadataTools level 
   -> [Idx]
-  -> State (Proof Int UnificationRules Term) Idx
+  -> ProofState level Idx
 makeConjunction tools [ix] = return ix
 makeConjunction tools (ix : ixs) = do
   ix' <- makeConjunction tools ixs 

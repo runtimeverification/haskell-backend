@@ -67,21 +67,21 @@ sym x = SymbolOrAlias
   , symbolOrAliasParams = [] 
   }
 
-pab :: Term 
+pab :: MetaOrObject level => Term level  
 pab =
   app "Pair"
   [ app "A" []
   , app "B" []
   ]
 
-pxy :: Term 
+pxy :: MetaOrObject level => Term level  
 pxy =
   app "Pair"
   [ var "x"
   , var "y"
   ]
 
-cabc :: Term 
+cabc :: MetaOrObject level => Term level  
 cabc =
   app "C"
   [ var "a"
@@ -89,7 +89,7 @@ cabc =
   , var "c"
   ]
 
-cadcaaa :: Term 
+cadcaaa :: MetaOrObject level => Term level  
 cadcaaa = 
   app "C"
   [ var "a"
@@ -100,10 +100,10 @@ cadcaaa =
     , var "a"]
   ]
 
-d :: Term
+d :: MetaOrObject level => Term level 
 d = app "D" []
 
-eabcd :: Term 
+eabcd :: MetaOrObject level => Term level  
 eabcd = 
   app "E"
   [ app "E"
@@ -116,7 +116,7 @@ eabcd =
       ]
   ]
 
-ebcda :: Term 
+ebcda :: MetaOrObject level => Term level  
 ebcda = 
   app "E"
   [ app "E"
@@ -129,27 +129,27 @@ ebcda =
       ]
   ]
 
-exx :: Term 
+exx :: MetaOrObject level => Term level 
 exx = 
   app "E"
   [ var "x"
   , var "x"
   ]
 
-x :: Term
+x :: MetaOrObject level => Term level 
 x = 
   var "x"
 
-large2 :: Term
+large2 :: MetaOrObject level => Term level 
 large1 = bigTerm 8 0
 
-large1 :: Term 
+large1 :: MetaOrObject level => Term level 
 large2 = bigTerm 8 1
 
 bigTerm 0 k = var $ "v" ++ show k
 bigTerm n k = app "E" [ bigTerm (n-1) (k+1), bigTerm (n-1) (k*2)]
 
-emptyProof :: Proof Int UnificationRules Term 
+emptyProof :: Proof Int (UnificationRules level) (Term level) 
 emptyProof = M.empty
 
 emptyUnificationState = 
@@ -174,7 +174,9 @@ runStack =
   flip execStateT emptyUnificationState .
   flip runReaderT dummyMetaTools 
 
-display :: Either UnificationError UnificationState -> String
+display 
+  :: MetaOrObject level
+  => Either (UnificationError level) (UnificationState level) -> String
 display (Right state) = myShow (_proof state)
 display (Left e) = show e
 
@@ -232,7 +234,7 @@ instance MyShow Int where
 instance MyShow a => MyShow [a] where 
   myShow xs = "[" ++ intercalate "," (map myShow xs) ++ "]"
 
-instance MyShow Term where 
+instance MetaOrObject level => MyShow (Term level) where 
   myShow (Equation _ _ a b) = myShow a ++ " = " ++ myShow b
   myShow (unFix -> VariablePattern (Variable v _)) = getId v
   myShow (unFix -> AndPattern (And _ a b)) = myShow a ++ " /\\ " ++ myShow b
@@ -246,7 +248,8 @@ instance MyShow Term where
 
   -- myShow t = compactSpaces $ compactIndentedOutput $ unparseToString t
 
-instance MyShow (Idx, ProofLine Idx UnificationRules Term) where 
+instance MetaOrObject level 
+  => MyShow (Idx, ProofLine Idx (UnificationRules level) (Term level)) where 
   myShow (ix, line) = flip execState "" $ do 
    print $ myShow ix 
    print ":"
@@ -265,10 +268,12 @@ instance MyShow (Idx, ProofLine Idx UnificationRules Term) where
              text <- get 
              put (text ++ take (m - length text) (repeat ' '))
 
-instance MyShow (Proof Idx UnificationRules Term) where 
+instance MetaOrObject level 
+  => MyShow (Proof Idx (UnificationRules level) (Term level)) where 
   myShow m = unlines (map myShow $ M.toList m)
 
-instance MyShow a => MyShow (UnificationRules a) where
+instance (MetaOrObject level, MyShow a) 
+  => MyShow (UnificationRules level a) where
   myShow Assumption = "assumption"
   myShow (Discharge x y) 
     = "discharging hypothesis " ++ myShow x ++ " from " ++ myShow y
