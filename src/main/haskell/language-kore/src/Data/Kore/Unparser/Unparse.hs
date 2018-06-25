@@ -257,7 +257,7 @@ instance
         write ":"
         write " "
         unparse (sentenceAliasResultSort sa)
-        write " "
+        write "\n"
         write "where"
         write " "
         unparse (sentenceAliasLeftPattern sa)
@@ -266,7 +266,7 @@ instance
         write " "
         unparse (sentenceAliasRightPattern sa)
         unparse (sentenceAliasAttributes sa)
-        
+
 instance
     Unparse (Fix (pat variable)) => Unparse (SentenceSymbol level pat variable)
   where

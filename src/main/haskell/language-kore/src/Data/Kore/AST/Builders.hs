@@ -181,6 +181,7 @@ parameterizedAlias_ name location parameters operandSorts resultSort leftPat rig
         , sentenceAliasRightPattern = rightPat
         , sentenceAliasAttributes = Attributes []
         }
+
 -- |A 'PatternStub' representing 'Bottom'.
 bottom_ :: CommonPurePatternStub level
 bottom_ = UnsortedPatternStub (BottomPattern . Bottom)

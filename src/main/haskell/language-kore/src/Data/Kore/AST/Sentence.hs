@@ -74,14 +74,16 @@ data SentenceAlias level (pat :: (* -> *) -> * -> *) (variable :: * -> *)
     }
 
 deriving instance
-    (Eq (pat variable (Fix (pat variable)))
-    ,Eq (variable level))
-     => Eq (SentenceAlias level pat variable)
+    ( Eq (pat variable (Fix (pat variable)))
+    , Eq (variable level)
+    )
+    => Eq (SentenceAlias level pat variable)
 
 deriving instance
-    (Show (pat variable (Fix (pat variable)))
-    ,Show (variable level))
-     => Show (SentenceAlias level pat variable)
+    ( Show (pat variable (Fix (pat variable)))
+    , Show (variable level)
+    )
+    => Show (SentenceAlias level pat variable)
 
 {-|'SentenceSymbol' corresponds to the @object-symbol-declaration@ and
 @meta-symbol-declaration@ syntactic categories from the Semantics of K,

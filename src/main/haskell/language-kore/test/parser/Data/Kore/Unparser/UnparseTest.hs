@@ -56,7 +56,7 @@ unparseUnitTests =
                         })
                     })
                 } :: KoreSentence)
-                "alias i{}() : z where \\top{i{}}() := \\top{q}()[]"
+                "alias i{}() : z\nwhere \\top{i{}}() := \\top{q}()[]"
         , unparseTest
             Attributes
                 { getAttributes =

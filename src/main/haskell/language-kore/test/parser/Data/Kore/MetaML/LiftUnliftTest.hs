@@ -520,7 +520,7 @@ liftTests =
                         :: KoreSentenceAlias Meta)
                     )
                 )
-            ) 
+            )
         , testCase "Lift Object Alias Declaration"
             (prettyAssertEqual ""
                 [ SentenceSymbolSentence

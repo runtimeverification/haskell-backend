@@ -782,22 +782,19 @@ variablePatternParserTests =
                 { variableName = testId "v" :: Id Object
                 , variableSort = sortVariableSort "s"
                 }
-                )
-                , success "v:s1{s2}"
-                ( asKorePattern $ VariablePattern Variable
+            )
+        , success "v:s1{s2}"
+            ( asKorePattern $ VariablePattern Variable
                 { variableName = testId "v" :: Id Object
                 , variableSort =
                     SortActualSort SortActual
                     { sortActualName=testId "s1"
                     , sortActualSorts = [ sortVariableSort "s2" ]
                     }
-                    }
-                    )
-                    , FailureWithoutMessage ["", "var", "v:", ":s", "c(s)", "c{s}"]
-                    ]
-
--- TODO: this is a copy/paste. Remove.
-newtype SortName = SortName String
+                }
+            )
+            , FailureWithoutMessage ["", "var", "v:", ":s", "c(s)", "c{s}"]
+        ]
 
 sentenceAliasParserTests :: [TestTree]
 sentenceAliasParserTests =
@@ -947,8 +944,8 @@ sentenceAliasParserTests =
         ]
   where
     topPatMeta = TopPattern $ Top { topSort = patternMetaSort }
-    topPatObj  = TopPattern $ Top { topSort = simpleSort (SortName "s3") }
-    simpleSortActual (SortName sort) =
+    topPatObj  = TopPattern $ Top { topSort = simpleSort "s3" }
+    simpleSortActual sort =
         SortActual
             { sortActualName = testId sort
             , sortActualSorts = []

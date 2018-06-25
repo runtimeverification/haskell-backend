@@ -23,7 +23,6 @@ metaMLPatternGen = Fix <$> sized (\n ->
             ]
     )
 
--- metaSentenceGen :: Gen MetaSentence
 metaSentenceGen :: Gen MetaSentence
 metaSentenceGen = frequency
     [ (1, symbolSentenceGen Meta)

@@ -109,7 +109,7 @@ verifyAliasLeftPattern
     -> Either (Error VerifyError) VerifySuccess
 verifyAliasLeftPattern unifiedPattern maybeExpectedSort indexedModule sortVariables = do
     verifyPattern unifiedPattern maybeExpectedSort indexedModule sortVariables
-    -- ...
+    -- TODO: check that the left pattern is the alias symbol applied to non-repeating variables
 
 {-|'verifyPattern' verifies the welformedness of a Kore 'CommonKorePattern'. -}
 verifyPattern

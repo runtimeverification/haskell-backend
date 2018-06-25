@@ -11,7 +11,7 @@ Portability : portable
 -}
 module Data.Kore.HaskellExtensions
     (Rotate31(..), Rotate41(..)
-    , (<..>), (<...>), (<....>) 
+    , (<..>), (<...>), (<....>)
     , ReversedList, reversedAdd, reversedToList, emptyReversedList)
   where
 

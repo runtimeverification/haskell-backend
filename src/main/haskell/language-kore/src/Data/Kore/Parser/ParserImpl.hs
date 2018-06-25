@@ -957,7 +957,7 @@ aliasSentenceRemainderParser x
     colonParser
     resultSort <- sortParser x
     mlLexemeParser "where"
-    leftPattern <- leveledPatternParser korePatternParser x -- NB: this should have restrictions!  
+    leftPattern <- leveledPatternParser korePatternParser x -- ^ constraints for left pattern checked in `verifySentence`
     mlLexemeParser ":="    
     rightPattern <- leveledPatternParser korePatternParser x 
     attributes <- attributesParser

@@ -373,7 +373,7 @@ liftSentence = applyUnifiedSentence liftMetaSentence liftObjectSentence
 liftMetaSentence
     :: Sentence Meta UnifiedSortVariable UnifiedPattern Variable
     -> [MetaSentence]
-liftMetaSentence (SentenceAliasSentence msa) = 
+liftMetaSentence (SentenceAliasSentence msa) =
     [ SentenceAliasSentence msa
         { sentenceAliasAttributes = sentenceAliasAttributes msa
         , sentenceAliasLeftPattern  = fmap liftToMeta (sentenceAliasLeftPattern msa)
