@@ -195,6 +195,7 @@ isFunctionalPattern tools = fixBottomUpVisitorM reduceM
         proofs = applicationChildren ap
     reduceM _ = Left NonFunctionalPattern
 
+
 simplifyAnds
     :: (SortedVariable variable, Ord (variable level))
     => MetadataTools level
