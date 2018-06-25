@@ -45,31 +45,33 @@ patternPureToKore = cata asKorePattern
 -- For lifting functions see 'Data.Kore.MetaML.Lift'.
 patternKoreToPure
     :: MetaOrObject level
-    => level -> CommonKorePattern -> CommonPurePattern level
-patternKoreToPure level = patternBottomUpVisitor (extractPurePattern level)
+    => level
+    -> CommonKorePattern
+    -> Either String (CommonPurePattern level)
+patternKoreToPure level = patternBottomUpVisitorM (extractPurePattern level)
 
 extractPurePattern
     :: (MetaOrObject level, MetaOrObject level1)
     => level
     -> Pattern level1 Variable (CommonPurePattern level)
-    -> CommonPurePattern level
+    -> Either String (CommonPurePattern level)
 extractPurePattern level p =
-  case (isMetaOrObject (Rotate31 p), isMetaOrObject (toProxy level)) of
-    (IsMeta, IsMeta) -> Fix p
-    (IsObject, IsObject) -> Fix p
-    _ -> error ("Undexpected non-" ++ show level ++ " pattern")
+    case (isMetaOrObject (Rotate31 p), isMetaOrObject (toProxy level)) of
+        (IsMeta, IsMeta) -> return (Fix p)
+        (IsObject, IsObject) -> return (Fix p)
+        _ -> Left ("Undexpected non-" ++ show level ++ " pattern")
 
 -- FIXME : all of this attribute record syntax stuff
 -- Should be temporary measure
 sentencePureToKore
     :: MetaOrObject level => PureSentence level -> KoreSentence
 sentencePureToKore (SentenceAliasSentence (SentenceAlias a b c d e f)) =
-  constructUnifiedSentence SentenceAliasSentence $ 
-    SentenceAlias a b c (patternPureToKore <$> d) (patternPureToKore <$> e) f
+    constructUnifiedSentence SentenceAliasSentence $ 
+        SentenceAlias a b c (patternPureToKore <$> d) (patternPureToKore <$> e) f
 sentencePureToKore (SentenceSymbolSentence (SentenceSymbol a b c d)) =
-  constructUnifiedSentence SentenceSymbolSentence $ SentenceSymbol a b c d
+    constructUnifiedSentence SentenceSymbolSentence $ SentenceSymbol a b c d
 sentencePureToKore (SentenceImportSentence (SentenceImport a b)) =
-  constructUnifiedSentence SentenceImportSentence $ SentenceImport a b
+    constructUnifiedSentence SentenceImportSentence $ SentenceImport a b
 sentencePureToKore (SentenceAxiomSentence msx) = asSentence SentenceAxiom
     { sentenceAxiomAttributes =
         (sentenceAxiomAttributes msx)
@@ -89,7 +91,7 @@ sentencePureToKore (SentenceHookSentence (SentenceHookedSort mss)) =
     , sentenceSortParameters = sentenceSortParameters mss
     }
 sentencePureToKore (SentenceHookSentence (SentenceHookedSymbol (SentenceSymbol a b c d))) =
-  constructUnifiedSentence (SentenceHookSentence . SentenceHookedSymbol) $ SentenceSymbol a b c d
+    constructUnifiedSentence (SentenceHookSentence . SentenceHookedSymbol) $ SentenceSymbol a b c d
 
 modulePureToKore
     :: MetaOrObject level => PureModule level -> KoreModule

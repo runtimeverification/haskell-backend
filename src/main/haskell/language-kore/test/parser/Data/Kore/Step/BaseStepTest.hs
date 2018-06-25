@@ -621,7 +621,10 @@ baseStepTests =
             }
     asPureMetaPattern
         :: ProperPattern Meta sort patt => patt -> CommonMetaPattern
-    asPureMetaPattern patt = patternKoreToPure Meta (asAst patt)
+    asPureMetaPattern patt =
+        case patternKoreToPure Meta (asAst patt) of
+            Left err  -> error err
+            Right pat -> pat
     functionalVariable
         :: MetaSort sort => MetaVariable sort -> FunctionalProof Meta Variable
     functionalVariable = FunctionalVariable . asMetaVariable
