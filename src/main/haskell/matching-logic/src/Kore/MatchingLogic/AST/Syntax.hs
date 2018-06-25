@@ -1,5 +1,6 @@
-{-# LANGUAGE GADTs             #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE GADTs                #-}
+{-# LANGUAGE OverloadedStrings    #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 {- |
 Description: Parser and printer for matching logic patterns, using a subset of Kore syntax.
 
