@@ -942,16 +942,6 @@ sentenceAliasParserTests =
             , "alias a{s1}(s2):s3"
             ]
         ]
-  where
-    topPatMeta = TopPattern $ Top { topSort = patternMetaSort }
-    topPatObj  = TopPattern $ Top { topSort = simpleSort "s3" }
-    simpleSortActual sort =
-        SortActual
-            { sortActualName = testId sort
-            , sortActualSorts = []
-            }
-    simpleSort sortName = SortActualSort (simpleSortActual sortName)
-
 
 sentenceAxiomParserTests :: [TestTree]
 sentenceAxiomParserTests =
