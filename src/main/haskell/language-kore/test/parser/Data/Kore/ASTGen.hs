@@ -354,8 +354,7 @@ attributesGen :: Gen Attributes
 attributesGen = Attributes <$> couple (scale (`div` 4) korePatternGen)
 
 symbolSentenceGen :: MetaOrObject level => level -> Gen (Sentence level sortParam pat Variable)
-symbolSentenceGen level = oneof
-    [ SentenceSymbolSentence <$> sentenceSymbolGen level ]
+symbolSentenceGen level = SentenceSymbolSentence <$> sentenceSymbolGen level
 
 -- TODO: this is not used yet!!!
 aliasSentenceGen :: MetaOrObject level => level -> Gen (Sentence level sortParam UnifiedPattern Variable)
