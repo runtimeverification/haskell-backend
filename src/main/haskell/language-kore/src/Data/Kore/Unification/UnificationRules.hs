@@ -34,7 +34,7 @@ import           Data.Kore.AST.Kore
 import           Data.Kore.AST.PureML
 import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.Unification.ProofSystemWithHypos
+import           Data.Kore.Proof.ProofSystemWithHypos
 import           Data.Kore.Unparser.Unparse
 import           Data.Kore.IndexedModule.MetadataTools
 data UnificationRules level ix
@@ -58,7 +58,8 @@ data UnificationRules level ix
 type Term level = CommonPurePattern level
 type Idx = Int
 type Path  = [Int]
-type ProofState level = State (Proof Int (UnificationRules level) (Term level))
+type ProofState level 
+  = State (Proof Int (UnificationRules level) (Term level))
 
 instance Indexing Int where 
   zeroIx = 0
@@ -87,6 +88,10 @@ instance MetaOrObject level
 pattern Equation s1 s2 a b = 
   Fix (EqualsPattern (Equals s1 s2 a b))
 
+flipEqn
+  :: MetaOrObject level 
+  => CommonPurePattern level 
+  -> CommonPurePattern level 
 flipEqn (Equation s1 s2 a b) = Equation s1 s2 b a
 
 applySymmetry 
@@ -222,6 +227,10 @@ applyLocalSubstitution ix1 ix2 path = do
     , assumptions = S.unions [assumptions line1, assumptions line2]
     }
 
+isTrivial 
+  :: MetaOrObject level
+  => CommonPurePattern level 
+  -> Bool
 isTrivial (Equation s1 s2 a b) = (a == b)
 
 -- | applyNoConfusion takes index of a statement like C(a,b)=C(x,y)

@@ -43,7 +43,7 @@ import           Data.Kore.AST.PureML
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.IndexedModule.MetadataTools
 
-import           Data.Kore.Unification.ProofSystemWithHypos
+import           Data.Kore.Proof.ProofSystemWithHypos
 import           Data.Kore.Unification.UnificationRules
 import           Data.Kore.Unification.UnificationAlgorithm
 import           Data.Kore.Unparser.Unparse
