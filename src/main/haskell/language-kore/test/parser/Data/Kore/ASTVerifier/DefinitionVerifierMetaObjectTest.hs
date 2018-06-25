@@ -4,9 +4,11 @@ module Data.Kore.ASTVerifier.DefinitionVerifierMetaObjectTest
 import           Test.Tasty                                          (TestTree,
                                                                       testGroup)
 
+import           Data.Kore.AST.AstWithLocation
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
 import           Data.Kore.Implicit.ImplicitSorts
@@ -20,7 +22,7 @@ definitionVerifierMetaObjectTests =
                 [ simpleAxiomSentence
                     (asKorePattern
                         (notPattern
-                            patternMetaSort
+                            (updateAstLocation patternMetaSort AstLocationTest)
                             (asKorePattern (topPattern objectSort))
                         )
                     )
@@ -30,8 +32,12 @@ definitionVerifierMetaObjectTests =
         , expectFailureWithError "Object pattern with meta-char sort."
             Error
                 { errorContext =
-                    [ "module 'test'", "axiom declaration", "\\not", "\\top"
-                    , "(<implicitly defined entity>, <test data>)" ]
+                    [ "module 'test'"
+                    , "axiom declaration"
+                    , "\\not (<test data>)"
+                    , "\\top (<test data>)"
+                    , "(<test data>, <test data>)"
+                    ]
                 , errorError   =
                     "Expecting meta sort '#Char{}' but got object "
                     ++ "sort 'ObjectSort{}'."
@@ -41,7 +47,7 @@ definitionVerifierMetaObjectTests =
                 [ simpleAxiomSentence
                     (asKorePattern
                         (notPattern
-                            charMetaSort
+                            (updateAstLocation charMetaSort AstLocationTest)
                             (asKorePattern (topPattern objectSort))
                         )
                     )
@@ -55,7 +61,13 @@ definitionVerifierMetaObjectTests =
                     (asKorePattern
                         (notPattern
                             objectSort
-                            (asKorePattern (topPattern patternMetaSort))
+                            (asKorePattern
+                                (topPattern
+                                    (updateAstLocation
+                                        patternMetaSort AstLocationTest
+                                    )
+                                )
+                            )
                         )
                     )
                 , objectSortSentence
@@ -65,8 +77,11 @@ definitionVerifierMetaObjectTests =
             "Meta pattern with meta-char sort in object pattern."
             Error
                 { errorContext =
-                    [ "module 'test'", "axiom declaration", "\\not", "\\top"
-                    , "(<test data>, <implicitly defined entity>)"
+                    [ "module 'test'"
+                    , "axiom declaration"
+                    , "\\not (<test data>)"
+                    , "\\top (<test data>)"
+                    , "(<test data>, <test data>)"
                     ]
                 , errorError   =
                     "Expecting object sort 'ObjectSort{}' but got meta "
@@ -78,7 +93,12 @@ definitionVerifierMetaObjectTests =
                     (asKorePattern
                         (notPattern
                             objectSort
-                            (asKorePattern (topPattern charMetaSort))
+                            (asKorePattern
+                                (topPattern
+                                    (updateAstLocation
+                                        charMetaSort AstLocationTest)
+                                )
+                            )
                         )
                     )
                 , objectSortSentence

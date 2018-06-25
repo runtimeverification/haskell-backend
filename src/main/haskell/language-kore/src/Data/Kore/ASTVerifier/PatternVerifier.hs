@@ -15,6 +15,7 @@ import           Data.Kore.AST.Error
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
+import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTHelpers
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.SortVerifier
@@ -158,7 +159,7 @@ internalVerifyMetaPattern
     declaredVariables
     p
   =
-    withContext (patternNameForContext p) (do
+    withLocationAndContext p (patternNameForContext p) (do
         sort <-
             verifyParameterizedPattern
                 p
@@ -189,7 +190,7 @@ internalVerifyObjectPattern
     declaredVariables
     p
   =
-    withContext (patternNameForContext p) (do
+    withLocationAndContext p (patternNameForContext p) (do
         sort <- verifyParameterizedPattern
                     p
                     indexedModule

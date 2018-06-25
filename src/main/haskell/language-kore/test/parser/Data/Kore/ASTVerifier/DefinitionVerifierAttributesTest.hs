@@ -7,6 +7,7 @@ import           Test.Tasty                                          (TestTree,
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
 import           Data.Kore.Implicit.Attributes                       (attributeObjectSort)
@@ -37,7 +38,7 @@ definitionVerifierAttributesTests =
             (Error
                 [ "module 'M1'"
                 , "axiom declaration"
-                , "\\dv"
+                , "\\dv (<test data>)"
                 , "sort 'Strict' (<test data>)"
                 , "(<test data>)"
                 ]
@@ -67,7 +68,7 @@ definitionVerifierAttributesTests =
                 [ "module 'M1'"
                 , "axiom declaration"
                 , "attributes"
-                , "\\equals"
+                , "\\equals (<test data>)"
                 , "sort 'mySort' (<test data>)"
                 , "(<test data>)"
                 ]
@@ -111,7 +112,7 @@ definitionVerifierAttributesTests =
             (Error
                 [ "module 'M1'"
                 , "axiom declaration"
-                , "symbol or alias 'secondArgument'"
+                , "symbol or alias 'secondArgument' (<test data>)"
                 , "(<test data>)"
                 ]
                 "Symbol 'secondArgument' not defined."

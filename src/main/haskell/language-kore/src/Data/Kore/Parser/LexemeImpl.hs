@@ -29,6 +29,7 @@ Conventions used:
 module Data.Kore.Parser.LexemeImpl where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.MetaOrObject   (IsMetaOrObject (..),
                                                MetaOrObject (..), toProxy)
 import qualified Data.Kore.Parser.CharDict    as CharDict

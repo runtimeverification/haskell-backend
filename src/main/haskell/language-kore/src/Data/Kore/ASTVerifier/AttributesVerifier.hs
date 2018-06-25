@@ -11,10 +11,9 @@ module Data.Kore.ASTVerifier.AttributesVerifier (verifyAttributes,
                                                  AttributesVerification (..))
   where
 
-import           Data.Kore.AST.Common                  (AstLocation (..),
-                                                        Attributes (..))
-import           Data.Kore.AST.Kore                    (KoreAttributes)
+import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject            (asUnified)
+import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.PatternVerifier
 import           Data.Kore.Error
@@ -30,7 +29,7 @@ data AttributesVerification
 {-|'verifyAttributes' verifies the wellformedness of the given attributes.
 -}
 verifyAttributes
-    :: KoreAttributes
+    :: Attributes
     -> AttributesVerification
     -> Either (Error VerifyError) VerifySuccess
 verifyAttributes

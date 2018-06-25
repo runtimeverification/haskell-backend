@@ -15,7 +15,6 @@ module Data.Kore.AST.Error
     ) where
 
 import           Data.Kore.AST.AstWithLocation
-import           Data.Kore.AST.Common          (prettyPrintAstLocation)
 import           Data.Kore.Error
 
 import           Data.List                     (intercalate)
@@ -45,7 +44,10 @@ withLocationsContext
     => [astWithLocation] -> Either (Error a) result -> Either (Error a) result
 withLocationsContext locations =
     withContext
-        ("(" ++ intercalate ", " (map prettyPrintLocation locations) ++ ")")
+        (  "("
+        ++ intercalate ", " (map prettyPrintLocationFromAst locations)
+        ++ ")"
+        )
 
 {-|'withLocationsContext' prepends the given message, associated with the
 location, to the error context whenever the given action fails.
@@ -57,9 +59,4 @@ withLocationAndContext
     -> Either (Error a) result
     -> Either (Error a) result
 withLocationAndContext location message =
-    withContext (message ++ " (" ++ prettyPrintLocation location ++ ")")
-
-prettyPrintLocation
-    :: AstWithLocation astWithLocation
-    => astWithLocation -> String
-prettyPrintLocation ast = prettyPrintAstLocation (locationFromAst ast)
+    withContext (message ++ " (" ++ prettyPrintLocationFromAst location ++ ")")
