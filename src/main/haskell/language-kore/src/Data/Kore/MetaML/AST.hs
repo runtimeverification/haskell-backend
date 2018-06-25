@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -24,6 +25,7 @@ module Data.Kore.MetaML.AST where
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
+import           Data.Kore.AST.Sentence
 import           Data.Kore.Variables.Free   (pureFreeVariables)
 
 import           Data.Set                   (Set)
@@ -34,9 +36,6 @@ of the 'Pattern' class where the level is fixed to 'Meta'.
 'var' is the type of variables.
 -}
 type MetaMLPattern variable = PureMLPattern Meta variable
-
--- |'MetaAttributes' is the 'Meta'-only version of 'Attributes'
-type MetaAttributes = PureAttributes Meta
 
 -- |'MetaSentenceAxiom' is the 'Meta'-only version of 'SentenceAxiom'
 type MetaSentenceAxiom = PureSentenceAxiom Meta

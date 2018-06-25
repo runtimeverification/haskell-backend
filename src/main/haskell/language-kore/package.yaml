@@ -37,6 +37,7 @@ dependencies:
 - lens
 - groom
 - deepseq
+- optparse-applicative
 
 library:
   source-dirs: src

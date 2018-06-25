@@ -1,5 +1,6 @@
-{-# LANGUAGE GADTs             #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE GADTs                #-}
+{-# LANGUAGE OverloadedStrings    #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 {- |
 Description: Parser and printer for matching logic patterns, using a subset of Kore syntax.
 
@@ -16,7 +17,7 @@ module Kore.MatchingLogic.AST.Syntax
   , simpleSigSort
   ) where
 import           Control.Applicative
-import           Data.Char                           (isAlphaNum)
+import           Control.Monad                       (void)
 import           Data.Text                           (Text)
 import           Data.Void
 
@@ -34,8 +35,6 @@ import           Kore.MatchingLogic.Signature.Simple
 
 type Parser = Parsec Void Text
 
-lexeme p = p <* space
-
 delimit :: Char -> Char -> Parser a -> Parser a
 delimit l r = between (char l *> space) (char r *> space)
 
@@ -43,12 +42,8 @@ parens, braces :: Parser a -> Parser a
 parens p = delimit '(' ')' p
 braces p = delimit '{' '}' p
 
+comma :: Parser ()
 comma = char ',' *> space
-
-symbol s = lexeme (string s)
-
-name :: Parser Text
-name = fst <$> match (letterChar <* takeWhileP Nothing isAlphaNum)
 
 mlPattern :: forall sort label var . Parser sort -> Parser label -> Parser var
           -> Parser (Pattern sort label var)
@@ -63,7 +58,7 @@ mlPattern pSort pLabel pVar = pat
       <|> try (Application <$> pLabel <*> parens (sepBy pat comma))
       <|> uncurry Variable <$> annVar
     annVar :: Parser (sort, var)
-    annVar = do v <- pVar; char ':'; space; s <- pSort; return (s,v)
+    annVar = do v <- pVar; void $ char ':'; space; s <- pSort; return (s,v)
     sort1 :: Parser ((sort -> a) -> a)
     sort1 = arg1 pSort
     arg1 :: Parser a -> Parser ((a -> b) -> b)
@@ -71,8 +66,8 @@ mlPattern pSort pLabel pVar = pat
     arg2 :: Parser a -> Parser b -> Parser ((a -> b -> c) -> c)
     arg2 p1 p2 = do x <- p1; comma; y <- p2; return (\f -> f x y)
     alt :: Text -> a -> Parser (a -> b) -> Parser (b -> c) -> Parser c
-    alt name con sorts args =
-      (con <$ string name) <**> braces sorts <**> parens args
+    alt name con sortArgs args =
+      (con <$ string name) <**> braces sortArgs <**> parens args
 
 simpleSigPattern :: (Reifies sig ValidatedSignature)
                  => Parser Text -> Parser Text -> Parser var
@@ -102,8 +97,6 @@ simpleSigSort pName = do
     Just srt -> return srt
     Nothing  -> fail "Unknown label"
 
--- formula :: Parser Label
-
 prettyPat :: (sort -> Doc ann) -> (label -> Doc ann) -> (var -> Doc ann) -> (child -> Doc ann)
           -> (PatternF sort label var child -> Doc ann)
 prettyPat pSort pLabel pVar pChild = pPat
@@ -114,7 +107,7 @@ prettyPat pSort pLabel pVar pChild = pPat
       And s p1 p2 -> pretty ("\\and"::Text) <> Doc.braces (pSort s)
         <> Doc.parens (pChild p1 <> Doc.comma <> pChild p2)
       Not s p -> pretty ("\\not"::Text) <> Doc.braces (pSort s) <> Doc.parens (pChild p)
-      Exists s sVar v p ->
+      Exists s _sVar v p ->
         pretty ("\\exists"::Text) <> Doc.braces (pSort s)
           <> Doc.parens (pVar v <> Doc.colon <> pSort s <> Doc.comma <> pChild p)
 

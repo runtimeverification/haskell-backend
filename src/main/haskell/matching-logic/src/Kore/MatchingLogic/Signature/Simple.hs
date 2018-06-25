@@ -16,11 +16,10 @@ module Kore.MatchingLogic.Signature.Simple
   (SignatureInfo(..),ValidatedSignature,fromValidated,validate
   ,SimpleSignature
   ,ReifiesSignature
-  ,resolveLabel,resolveSort,resolvePattern
+  ,resolveLabel,resolveSort
   ,reifySignature) where
 import           Data.Char
 import           Data.Coerce
-import           Data.Functor.Foldable
 import           Data.Map.Strict           (Map)
 import qualified Data.Map.Strict           as Map
 import           Data.Proxy
@@ -28,11 +27,11 @@ import           Data.Set                  (Set)
 import qualified Data.Set                  as Set
 import           Data.Text                 (Text)
 import qualified Data.Text                 as Text
-import           Data.Text.Prettyprint.Doc
 
+import           Data.Text.Prettyprint.Doc
 import           Data.Reflection
 
-import           Kore.MatchingLogic.AST
+import           Kore.MatchingLogic.Signature
 
 -- | A finite signatures of sorts and labels written as text
 data SignatureInfo = SignatureInfo
@@ -69,14 +68,14 @@ reifySignature :: ValidatedSignature
                -> (forall s . (Reifies s ValidatedSignature)
                            => Proxy (SimpleSignature s) -> a)
                -> a
-reifySignature sig f = reify sig (\(proxy :: Proxy s) -> f @s Proxy)
+reifySignature sig f = reify sig (\(_proxy :: Proxy s) -> f @s Proxy)
 
 instance (Reifies s ValidatedSignature) => IsSignature (SimpleSignature s) where
   newtype Label (SimpleSignature s) = SimpleLabel Text
   newtype Sort (SimpleSignature s) = SimpleSort Text
   labelSignature (SimpleLabel name) =
     case Map.lookup name (labels sig) of
-      Just labelSignature -> coerce labelSignature
+      Just signature -> coerce signature
       Nothing -> error $ "This should be impossible!"
         ++" Encapsulation failure, invalid label "++show name
         ++" found in a reflected signature"
@@ -102,34 +101,21 @@ instance Pretty (Sort (SimpleSignature s)) where
     | isAlpha (Text.head l) && Text.all isAlphaNum l = pretty l
     | otherwise = pretty (show l)
 
-resolveSort :: forall s . (Reifies s ValidatedSignature)
-            => Text -> Maybe (Sort (SimpleSignature s))
-resolveSort sortName =
-    {- this uses lookupGE to return the existing value from in the set,
-       to avoid keeping multiple Text values with identical contents -}
-    case Set.lookupGE sortName (sorts sig) of
-      Just sort' | sort' == sortName -> Just (SimpleSort sort')
-      _          -> Nothing
-  where sig = fromValidated (reflect @s Proxy)
+instance (Reifies s ValidatedSignature) => CheckableSignature (SimpleSignature s) where
+    type RawLabel (SimpleSignature s) = Text
+    type RawSort (SimpleSignature s) = Text
+    resolveSort sortName =
+        {- this uses lookupGE to return the existing value from in the set,
+           to avoid keeping multiple Text values with identical contents -}
+        case Set.lookupGE sortName (sorts sig) of
+            Just sort' | sort' == sortName -> Just (SimpleSort sort')
+            _          -> Nothing
+      where sig = fromValidated (reflect @s Proxy)
 
-resolveLabel :: forall s . (Reifies s ValidatedSignature)
-             => Text -> Maybe (Label (SimpleSignature s))
-resolveLabel labelName =
-    {- this uses lookupGE to return the existing value from in the set,
-       to avoid keeping multiple Text values with identical contents -}
-    case Map.lookupGE labelName (labels sig) of
-      Just (label',_) | label' == labelName -> Just (SimpleLabel label')
-      _               -> Nothing
-  where sig = fromValidated (reflect @s Proxy)
-
--- | Check if all sorts and labels in a `Pattern` of `Text` are
--- part of the signature, and transform to a `SigPattern` over
--- the signature if they are.
-resolvePattern :: forall s var . (Reifies s ValidatedSignature)
-                 => Pattern Text Text var
-                 -> Maybe (SigPattern (SimpleSignature s) var)
-resolvePattern p = cata (\p -> recognizeLayer p >>= sequenceA >>= return . Fix) p
-  where
-    recognizeLayer :: PatternF Text Text var p
-                   -> Maybe (SigPatternF (SimpleSignature s) var p)
-    recognizeLayer = visitPatternF resolveSort resolveLabel pure pure
+    resolveLabel labelName =
+        {- this uses lookupGE to return the existing value from in the set,
+           to avoid keeping multiple Text values with identical contents -}
+        case Map.lookupGE labelName (labels sig) of
+            Just (label',_) | label' == labelName -> Just (SimpleLabel label')
+            _               -> Nothing
+      where sig = fromValidated (reflect @s Proxy)

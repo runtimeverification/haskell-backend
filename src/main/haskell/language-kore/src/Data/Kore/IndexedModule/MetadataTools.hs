@@ -14,15 +14,13 @@ module Data.Kore.IndexedModule.MetadataTools
     )
   where
 
-import           Data.Fix
-import           Data.Coerce
-import           Data.Kore.AST.Kore
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTHelpers
+import           Data.Kore.Implicit.Attributes
 import           Data.Kore.IndexedModule.IndexedModule
 import           Data.Kore.IndexedModule.Resolvers
-import           Data.Kore.Implicit.Attributes
 
 -- |'MetadataTools' defines a dictionary of functions which can be used to
 -- access the metadata needed during the unification process.
@@ -46,18 +44,17 @@ extractMetadataTools
     :: MetaOrObject level
     => KoreIndexedModule
     -> MetadataTools level
-extractMetadataTools m = 
+extractMetadataTools m =
   MetadataTools
-    { isConstructor    = hasAttribute constructorAttribute m
-    , isFunctional     = hasAttribute functionalAttribute  m
+    { isConstructor    = hasAttribute constructorAttribute
+    , isFunctional     = hasAttribute functionalAttribute
     , getArgumentSorts = applicationSortsOperands . getHeadApplicationSorts m
     , getResultSort    = applicationSortsResult   . getHeadApplicationSorts m
-    } 
-    where hasAttribute 
-            :: MetaOrObject level 
-            => Pattern level Variable (Fix (UnifiedPattern Variable)) 
-            -> KoreIndexedModule 
-            -> SymbolOrAlias level 
+    }
+    where hasAttribute
+            :: MetaOrObject level
+            => CommonKorePattern
+            -> SymbolOrAlias level
             -> Bool
-          hasAttribute attr m =
-            elem (coerce $ asUnifiedPattern attr) . getAttributeList m
+          hasAttribute attr =
+            elem attr . getAttributeList m

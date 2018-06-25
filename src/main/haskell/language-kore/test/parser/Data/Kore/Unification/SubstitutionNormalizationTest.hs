@@ -17,9 +17,8 @@ import           Data.Kore.AST.PureToKore                        (patternKoreToP
 import           Data.Kore.Building.AsAst
 import           Data.Kore.Building.Patterns
 import           Data.Kore.Building.Sorts
-import           Data.Kore.Error
 import           Data.Kore.MetaML.AST                            (CommonMetaPattern)
-import           Data.Kore.Unification.Error                     (UnificationError)
+import           Data.Kore.Unification.Error                     (SubstitutionError (..))
 import           Data.Kore.Unification.SubstitutionNormalization
 import           Data.Kore.Unification.UnifierImpl               (UnificationSubstitution)
 import           Data.Kore.Variables.Fresh.IntCounter            (runIntCounter)
@@ -102,52 +101,63 @@ substitutionNormalizationTests =
                     ]
                 )
             )
-        , testCase "Simplest cycle"
-            (assertEqual ""
-                (Left (Error [] "Graph cycle starting at v1 and containing [\"v1\"]."))
-                (runNormalizeSubstitution
-                    [   ( asVariable (v1 PatternSort)
-                        , asPureMetaPattern (v1 PatternSort)
-                        )
-                    ]
-                )
-            )
-        , testCase "Length 2 cycle"
-            (assertEqual ""
-                (Left (Error [] "Graph cycle starting at v1 and containing [\"v1\",\"x1\"]."))
-                (runNormalizeSubstitution
-                    [   ( asVariable (v1 PatternSort)
-                        , asPureMetaPattern (x1 PatternSort)
-                        )
-                    ,   ( asVariable (x1 PatternSort)
-                        , asPureMetaPattern (v1 PatternSort)
-                        )
-                    ]
-                )
-            )
-        , testCase "Cycle with 'and'"
-            (assertEqual ""
-                (Left (Error [] "Graph cycle starting at v1 and containing [\"v1\",\"x1\"]."))
-                (runNormalizeSubstitution
-                    [   ( asVariable (v1 PatternSort)
-                        , asPureMetaPattern
-                            ( metaAnd
-                                PatternSort
-                                (x1 PatternSort)
-                                (metaTop PatternSort)
+        , let
+            var1 = asVariable (v1 PatternSort)
+          in
+            testCase "Simplest cycle"
+                (assertEqual ""
+                    (Left (CircularVariableDependency [var1]))
+                    (runNormalizeSubstitution
+                        [   ( var1
+                            , asPureMetaPattern (v1 PatternSort)
                             )
-                        )
-                    ,   ( asVariable (x1 PatternSort)
-                        , asPureMetaPattern
-                            ( metaAnd
-                                PatternSort
-                                (v1 PatternSort)
-                                (metaTop PatternSort)
-                            )
-                        )
-                    ]
+                        ]
+                    )
                 )
-            )
+        , let
+            var1 = asVariable (v1 PatternSort)
+            varx1 = asVariable (x1 PatternSort)
+          in
+            testCase "Length 2 cycle"
+                (assertEqual ""
+                    (Left (CircularVariableDependency [var1, varx1]))
+                    (runNormalizeSubstitution
+                        [   ( var1
+                            , asPureMetaPattern (x1 PatternSort)
+                            )
+                        ,   ( varx1
+                            , asPureMetaPattern (v1 PatternSort)
+                            )
+                        ]
+                    )
+                )
+        , let
+            var1 = asVariable (v1 PatternSort)
+            varx1 = asVariable (x1 PatternSort)
+          in
+            testCase "Cycle with 'and'"
+                (assertEqual ""
+                    (Left (CircularVariableDependency [var1, varx1]))
+                    (runNormalizeSubstitution
+                        [   ( var1
+                            , asPureMetaPattern
+                                ( metaAnd
+                                    PatternSort
+                                    (x1 PatternSort)
+                                    (metaTop PatternSort)
+                                )
+                            )
+                        ,   ( varx1
+                            , asPureMetaPattern
+                                ( metaAnd
+                                    PatternSort
+                                    (v1 PatternSort)
+                                    (metaTop PatternSort)
+                                )
+                            )
+                        ]
+                    )
+                )
         ]
   where
     v1 :: MetaSort sort => sort -> MetaVariable sort
@@ -160,10 +170,10 @@ substitutionNormalizationTests =
 
 runNormalizeSubstitution
     :: MetaOrObject level
-    => UnificationSubstitution level
+    => UnificationSubstitution level Variable
     -> Either
-        (Error (UnificationError level))
-        (UnificationSubstitution level)
+        (SubstitutionError level Variable)
+        (UnificationSubstitution level Variable)
 runNormalizeSubstitution substitution =
     case normalizeSubstitution substitution of
         Left err     -> Left err

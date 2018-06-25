@@ -11,6 +11,7 @@ module Data.Kore.AST.Builders where
 
 import           Data.Kore.AST.BuildersImpl
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
 import           Data.Kore.ASTHelpers
