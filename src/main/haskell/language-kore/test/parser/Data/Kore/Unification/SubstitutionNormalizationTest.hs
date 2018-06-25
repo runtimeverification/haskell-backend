@@ -166,7 +166,10 @@ substitutionNormalizationTests =
     x1 = metaVariable "x1" AstLocationTest
     asPureMetaPattern
         :: ProperPattern level sort patt => patt -> CommonMetaPattern
-    asPureMetaPattern patt = patternKoreToPure Meta (asAst patt)
+    asPureMetaPattern patt =
+        case patternKoreToPure Meta (asAst patt) of
+            Left err  -> error err
+            Right pat -> pat
 
 runNormalizeSubstitution
     :: MetaOrObject level

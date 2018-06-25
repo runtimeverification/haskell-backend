@@ -553,7 +553,10 @@ metaH = MetaH
 
 asPureMetaPattern
     :: ProperPattern Meta sort patt => patt -> CommonMetaPattern
-asPureMetaPattern patt = patternKoreToPure Meta (asAst patt)
+asPureMetaPattern patt =
+    case patternKoreToPure Meta (asAst patt) of
+        Left err  -> error err
+        Right pat -> pat
 
 variableRenaming
     :: MetaSort sort
