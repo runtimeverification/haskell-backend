@@ -9,10 +9,10 @@ module Data.Kore.Step.AxiomPatterns
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.PureML
 import           Data.Kore.AST.PureToKore              (patternKoreToPure)
 import           Data.Kore.AST.Sentence
 import           Data.Kore.IndexedModule.IndexedModule
-import           Data.Kore.Step.BaseStep
 
 import           Data.Maybe                            (mapMaybe)
 
@@ -32,8 +32,10 @@ koreIndexedModuleToAxiomPatterns
     => level -- ^expected level for the axiom pattern
     -> KoreIndexedModule -- ^'IndexedModule' containing the definition
     -> [AxiomPattern level]
-koreIndexedModuleToAxiomPatterns level mod =
-    mapMaybe (koreSentenceToAxiomPattern level) (indexedModuleRawSentences mod)
+koreIndexedModuleToAxiomPatterns level idxMod =
+    mapMaybe
+        (koreSentenceToAxiomPattern level)
+        (indexedModuleRawSentences idxMod)
 
 -- | Attempts to extract an 'AxiomPattern' of the given @level@ from
 -- a given 'Sentence'.
