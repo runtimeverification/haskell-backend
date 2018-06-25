@@ -31,22 +31,46 @@ import qualified Data.Map.Strict as M
 import           Data.Fix
 
 import           Control.Lens
-import           Control.Lens.Operators
 import           Control.Monad.State
 import           Control.Monad.Reader
 import           Control.Monad.Except
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.PureML
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.IndexedModule.MetadataTools
+import           Data.Kore.AST.Common                     ( Pattern(..)
+                                                          , Application(..)
+                                                          )
 
-import           Data.Kore.Proof.ProofSystemWithHypos
-import           Data.Kore.Unification.UnificationRules
-import           Data.Kore.Unparser.Unparse
+import           Data.Kore.AST.MetaOrObject               ( MetaOrObject
+                                                          )
+import           Data.Kore.IndexedModule.MetadataTools    ( MetadataTools(..)
+                                                          , isConstructor
+                                                          , isFunctional
+                                                          , 
+                                                          ) 
 
-import Debug.Trace
+import           Data.Kore.Proof.ProofSystemWithHypos     ( Proof(..)
+                                                          , claim 
+                                                          , justification
+                                                          , assumptions
+                                                          , lookupLine
+                                                          , assume
+                                                          , discharge
+                                                          , (%%%=)
+                                                          )
+import           Data.Kore.Unification.UnificationRules   ( UnificationRules(..)
+                                                          , Term
+                                                          , Idx
+                                                          , makeConjunction
+                                                          , splitConjunction
+                                                          , pattern Equation
+                                                          , lhsIsVariable
+                                                          , flipEqn
+                                                          , applyRefl
+                                                          , applySymmetry
+                                                          , applyNoConfusion                                                       , placeholderSort
+                                                          , applyIffIntro
+                                                          , applyLocalSubstitution
+                                                          )
+
 
 {- 
 NOTE:
@@ -89,11 +113,10 @@ type Unification level a =
   a
 
 unificationProcedure 
-  :: (MetaOrObject level
-  ,  UnificationContext level m)
+  :: MetaOrObject level
   => Term level
   -> Term level
-  -> m Idx
+  -> Unification level Idx
 unificationProcedure a b = do
   (ixMGU, forwardsDirection) <- proveForwardsDirection a b
   backwardsDirection <-
@@ -102,11 +125,10 @@ unificationProcedure a b = do
   proof %%%= applyIffIntro forwardsDirection backwardsDirection
 
 proveForwardsDirection
-  :: (MetaOrObject level
-  ,  UnificationContext level m)
+  :: MetaOrObject level
   => Term level
   -> Term level 
-  -> m (Idx, Idx)
+  -> Unification level (Idx, Idx)
 proveForwardsDirection a b = do 
   tools <- ask
   ixAB <- proof %%%= assume (Equation placeholderSort placeholderSort a b)
@@ -118,12 +140,11 @@ proveForwardsDirection a b = do
   return (ixMGU, forwardsDirection)
 
 proveBackwardsDirection
-  :: (MetaOrObject level
-  ,  UnificationContext level m)
+  :: MetaOrObject level
   => Term level
   -> Term level
   -> Term level 
-  -> m Idx 
+  -> Unification level Idx 
 proveBackwardsDirection a b mgu = do 
   tools <- ask
   ixMGU <- proof %%%= assume mgu
@@ -139,9 +160,8 @@ proveBackwardsDirection a b mgu = do
             go ix1' ix2' eqns
 
 mainLoop 
-  :: (MetaOrObject level
-  ,  UnificationContext level m)
-  => m ()
+  :: MetaOrObject level
+  => Unification level ()
 mainLoop = do
   eqns <- use activeSet
   case eqns of
@@ -152,10 +172,9 @@ mainLoop = do
       mainLoop
 
 process
-  :: (MetaOrObject level
-  ,  UnificationContext level m)
+  :: MetaOrObject level
   => Idx 
-  -> m ()
+  -> Unification level ()
 process ix = do
   eqn@(Equation s1 s2 a b) <- claim <$> (proof %%%= lookupLine ix)
   if a == b

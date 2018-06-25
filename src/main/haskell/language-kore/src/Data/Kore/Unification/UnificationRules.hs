@@ -27,16 +27,37 @@ import qualified Data.Set as S
 import qualified Data.Map as M
 import           Data.Fix
 import           Control.Lens
-import           Control.Lens.Operators
 import           Control.Monad.State
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.PureML
-import           Data.Kore.AST.MLPatterns
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.Proof.ProofSystemWithHypos
-import           Data.Kore.Unparser.Unparse
-import           Data.Kore.IndexedModule.MetadataTools
+
+
+import           Data.Kore.AST.Common                     
+import           Data.Kore.AST.PureML                     ( CommonPurePattern
+                                                          )
+import           Data.Kore.AST.MLPatterns                 ( getPatternResultSort
+                                                          )
+import           Data.Kore.AST.MetaOrObject               ( MetaOrObject
+                                                          )
+import           Data.Kore.Proof.ProofSystemWithHypos     ( Proof(..)
+                                                          , ProofSystem(..) 
+                                                          , ProofLine(..) 
+                                                          , Formula(..)
+                                                          , Rules(..)
+                                                          , Indexing(..) 
+                                                          , claim 
+                                                          , justification
+                                                          , assumptions
+                                                          , lookupLine
+                                                          , assume
+                                                          , discharge
+                                                          , (%%%=)
+                                                          , makeRule0
+                                                          , makeRule1
+                                                          , makeRule2
+                                                          )
+import           Data.Kore.IndexedModule.MetadataTools    ( MetadataTools
+                                                          , getResultSort
+                                                          )
+
 data UnificationRules level ix
   = Assumption
   | Discharge !ix !ix

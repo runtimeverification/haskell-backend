@@ -50,22 +50,20 @@ import           Data.Kore.Unparser.Unparse
 
 import           Data.Kore.Unparser.Unparse
 
-import Debug.Trace
-import Text.Groom
-spy x = trace (groom x) x
-
+var :: MetaOrObject level => String -> Term level
 var x = 
   Fix $ VariablePattern $ Variable (noLocationId x) placeholderSort 
 
+app :: MetaOrObject level => String -> [Term level] -> Term level
 app x ys = Fix $ ApplicationPattern $ Application 
   { applicationSymbolOrAlias = sym x
   , applicationChildren = ys
   }
-
-sym x = SymbolOrAlias 
-  { symbolOrAliasConstructor = noLocationId x 
-  , symbolOrAliasParams = [] 
-  }
+  where sym x = 
+          SymbolOrAlias 
+            { symbolOrAliasConstructor = noLocationId x 
+            , symbolOrAliasParams = [] 
+            }
 
 pab :: MetaOrObject level => Term level  
 pab =
@@ -146,12 +144,20 @@ large1 = bigTerm 8 0
 large1 :: MetaOrObject level => Term level 
 large2 = bigTerm 8 1
 
+bigTerm 
+  :: MetaOrObject level 
+  => Int 
+  -> Int 
+  -> Term level 
 bigTerm 0 k = var $ "v" ++ show k
 bigTerm n k = app "E" [ bigTerm (n-1) (k+1), bigTerm (n-1) (k*2)]
 
 emptyProof :: Proof Int (UnificationRules level) (Term level) 
 emptyProof = M.empty
 
+emptyUnificationState
+  :: MetaOrObject level 
+  => UnificationState level 
 emptyUnificationState = 
   UnificationState
   { _activeSet   = []
@@ -159,6 +165,9 @@ emptyUnificationState =
   , _proof       = emptyProof
   }
 
+dummyMetaTools 
+  :: MetaOrObject level 
+  => MetadataTools level
 dummyMetaTools = MetadataTools
     { isConstructor    = const True 
     , isFunctional     = const True 
@@ -166,9 +175,17 @@ dummyMetaTools = MetadataTools
     , getResultSort    = const placeholderSort
     }
 
--- putStrLn $ run example1
+testUnify
+  :: MetaOrObject level 
+  => Term level 
+  -> Term level
+  -> IO ()
 testUnify x y = putStrLn $ display $ runStack $ unificationProcedure x y
   
+runStack
+  :: MetaOrObject level
+  => Unification level Idx 
+  -> Either (UnificationError level) (UnificationState level)
 runStack = 
   runExcept .
   flip execStateT emptyUnificationState .
@@ -176,29 +193,10 @@ runStack =
 
 display 
   :: MetaOrObject level
-  => Either (UnificationError level) (UnificationState level) -> String
+  => Either (UnificationError level) (UnificationState level) 
+  -> String
 display (Right state) = myShow (_proof state)
 display (Left e) = show e
-
--- -- AWFUL HACK! I just wanted legible output as fast as possible
--- -- Pretty print properly soon.
--- display = 
---   unescapeLol . 
---   groomString .
---   -- (\(UnificationState activeSet finishedSet proof) -> 
---   --   (finishedSet, (fmap.fmap) UnparseWrapper proof)
---   -- ) . 
---   (\x -> case x of 
---     Right (UnificationState activeSet finishedSet proof) -> 
---       show (finishedSet, (fmap.fmap) (("\n" ++) . unparseToString) proof)
---     Left err -> show (err :: UnificationError)
---   ) 
-
--- unescapeLol [] = []
--- unescapeLol s = 
---   case (reads s, break (=='"') s) of 
---     ([(here, later)], _) -> here ++ unescapeLol later
---     (_, (earlier, here)) -> earlier ++ unescapeLol here  
 
 class MyShow a where
   myShow :: a -> String
