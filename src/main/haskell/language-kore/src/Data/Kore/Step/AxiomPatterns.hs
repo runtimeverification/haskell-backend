@@ -25,11 +25,18 @@ data AxiomPattern level = AxiomPattern
     }
     deriving (Show, Eq)
 
+-- | Extracts all 'AxiomPattern' structures matching a given @level@ from
+-- a verified definition.
 koreIndexedModuleToAxiomPatterns
-    :: MetaOrObject level => level -> KoreIndexedModule -> [AxiomPattern level]
+    :: MetaOrObject level
+    => level -- ^expected level for the axiom pattern
+    -> KoreIndexedModule -- ^'IndexedModule' containing the definition
+    -> [AxiomPattern level]
 koreIndexedModuleToAxiomPatterns level mod =
     mapMaybe (koreSentenceToAxiomPattern level) (indexedModuleRawSentences mod)
 
+-- | Attempts to extract an 'AxiomPattern' of the given @level@ from
+-- a given 'Sentence'.
 koreSentenceToAxiomPattern
     :: MetaOrObject level => level -> KoreSentence -> Maybe (AxiomPattern level)
 koreSentenceToAxiomPattern level sen =
