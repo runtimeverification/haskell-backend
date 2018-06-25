@@ -37,14 +37,14 @@ import           Options.Applicative                    ( Parser
 {- | Record Type containing common command-line arguments to each executable in 
 the project -}
 data GlobalOptions = GlobalOptions
-    { willVersion    :: Bool -- ^ Version flag [default=false]
+    { willVersion    :: !Bool -- ^ Version flag [default=false]
     }
 
 
 -- | Record type to store all state and options for the subMain operations
 data MainOptions a = MainOptions
-    { globalOptions :: GlobalOptions
-    , localOptions :: Maybe a
+    { globalOptions :: !GlobalOptions
+    , localOptions  :: !(Maybe a)
     }
 
 
