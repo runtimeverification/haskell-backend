@@ -1,5 +1,4 @@
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE CPP             #-}
 
 module GlobalMain
@@ -41,11 +40,13 @@ data GlobalOptions = GlobalOptions
     { willVersion    :: Bool -- ^ Version flag [default=false]
     }
 
+
 -- | Record type to store all state and options for the subMain operations
 data MainOptions a = MainOptions
     { globalOptions :: GlobalOptions
     , localOptions :: Maybe a
     }
+
 
 {- |
 Global main function parses command line arguments, handles global flags
@@ -56,11 +57,8 @@ mainGlobal
     -> InfoMod (MainOptions options) -- ^ option parser information
     -> IO      (MainOptions options)
 mainGlobal localOptionsParser modifiers = do
-  options@MainOptions
-            { globalOptions = GlobalOptions{..}
-            , localOptions = _
-            } <- commandLineParse localOptionsParser modifiers
-  when willVersion mainVersion
+  options <- commandLineParse localOptionsParser modifiers
+  when ( willVersion $ globalOptions options ) mainVersion
   return options
 
 
@@ -82,6 +80,7 @@ mainVersion = mapM_ putStrLn
       formatExe time                 = time
       gitTime = (unwords . formatGit . words) $gitCommitDate
       exeTime = (unwords . formatExe . words) (__DATE__++" "++ __TIME__)
+
 
 --------------------
 -- Option Parsers --
@@ -155,7 +154,7 @@ clockSomething description something =
 clockSomethingIO :: String -> IO a -> IO a
 clockSomethingIO description something = do
     start <- getTime Monotonic
-    x <- something
-    end <- getTime Monotonic
+    x     <- something
+    end   <- getTime Monotonic
     putStrLn $ description ++" "++ show (diffTimeSpec end start)
     return x

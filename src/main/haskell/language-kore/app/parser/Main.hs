@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module Main
   ( main
@@ -72,13 +72,18 @@ parserInfoModifiers =
 -- | Parses a kore file and Check wellformedness
 main :: IO ()
 main = do
-  MainOptions{..} <- mainGlobal commandLineParser parserInfoModifiers
-  case localOptions of
+  options <- mainGlobal commandLineParser parserInfoModifiers
+  case localOptions options of
     Nothing -> return () -- global options parsed, but local failed; exit gracefully
-    Just KoreParserOptions{..} -> do
-            parsedDefinition <- mainParse fileName
-            when willVerify $ mainVerify willChkAttr parsedDefinition
-            when willPrint  $ print parsedDefinition
+    Just KoreParserOptions
+         { fileName
+         , willPrint
+         , willVerify
+         , willChkAttr
+         } -> do
+      parsedDefinition <- mainParse fileName
+      when willVerify $ mainVerify willChkAttr parsedDefinition
+      when willPrint  $ print parsedDefinition
 
 
 -- | IO action that parses a kore definition from a filename and prints timing information.
