@@ -18,7 +18,6 @@ import           Data.Kore.IndexedModule.MetadataTools
 import           Data.Kore.Unification.Error
 
 import           Control.Monad                         (foldM)
-import           Control.Monad.Error
 import           Data.Fix
 import           Data.Function                         (on)
 import           Data.List                             (groupBy, partition,
@@ -79,9 +78,9 @@ data UnificationProof level variable
     | ConjunctionIdempotency (PureMLPattern level variable)
     -- ^Used to specify the reduction a/\a <-> a
     | Proposition_5_24_3
-        (FunctionalProof level)
-        (Variable level)
-        (CommonPurePattern level)
+        [FunctionalProof level variable]
+        (variable level)
+        (PureMLPattern level variable)
     -- ^Used to specify the application of Proposition 5.24 (3)
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     -- if ϕ and ϕ' are functional patterns, then
@@ -153,12 +152,15 @@ simplifyCombinedItems =
 -- |'FunctionalProof' is used for providing arguments that a pattern is
 -- functional.  Currently we only support arguments stating that a
 -- pattern consists only of functional symbols and variables.
-data FunctionalProof level
-    = FunctionalVariable (Variable level)
+-- Hence, a proof that a pattern is functional is a list of 'FunctionalProof'.
+-- TODO: replace this datastructures with proper ones representing
+-- both hypotheses and conclusions in the proof object.
+data FunctionalProof level variable
+    = FunctionalVariable (variable level)
     -- ^Variables are functional as per Corollary 5.19
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     -- |= ∃y . x = y
-    | FunctionalHeadAndChildren (SymbolOrAlias level) [FunctionalProof level]
+    | FunctionalHead (SymbolOrAlias level)
     -- ^Head of a total function, conforming to Definition 5.21
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
   deriving (Eq, Show)
@@ -178,21 +180,20 @@ mapFunctionalProofVariables _ (FunctionalHead functionalHead) =
 -- checks whether a pattern is functional or not
 isFunctionalPattern
     :: MetadataTools level
-    -> PureMLPattern level Variable
-    -> Either (UnificationError level) (FunctionalProof level)
-isFunctionalPattern tools (Fix (VariablePattern v)) 
-  = return $ FunctionalVariable v
-isFunctionalPattern tools (Fix (ApplicationPattern ap))
-  | isFunctional tools patternHead = do
-      functionalChildren <- mapM (isFunctionalPattern tools) patternChildren
-      return $ FunctionalHeadAndChildren patternHead functionalChildren
-  | otherwise = throwError (NonFunctionalHead patternHead)
-      where patternHead     = applicationSymbolOrAlias ap
-            patternChildren = applicationChildren      ap
-
--- noConfusion (Fix left) (Fix right) =
---   let headLeft = applicationSymbolOrAlias left
-
+    -> PureMLPattern level variable
+    -> Either (UnificationError level) [FunctionalProof level variable]
+isFunctionalPattern tools = fixBottomUpVisitorM reduceM
+  where
+    reduceM (VariablePattern v) =
+        Right [FunctionalVariable v]
+    reduceM (ApplicationPattern ap) =
+        if isFunctional tools patternHead
+            then return (FunctionalHead patternHead : concat proofs)
+            else Left (NonFunctionalHead patternHead)
+      where
+        patternHead = applicationSymbolOrAlias ap
+        proofs = applicationChildren ap
+    reduceM _ = Left NonFunctionalPattern
 
 simplifyAnds
     :: (SortedVariable variable, Ord (variable level))
@@ -254,9 +255,8 @@ preTransform
             , UnificationProof level variable
             )
         )
-        (UnFixedPureMLPattern level Variable)
-preTransform tools (AndPattern (And _ left right)) = 
-    if left == right
+        (UnFixedPureMLPattern level variable)
+preTransform tools (AndPattern ap) = if left == right
     then Left $ Right
         ( UnificationSolution
             { unificationSolutionTerm = left
@@ -271,31 +271,30 @@ preTransform tools (AndPattern (And _ left right)) =
         (_, VariablePattern vp) -> -- add commutativity here
             Left (mlProposition_5_24_3 tools vp left)
         (ApplicationPattern ap1, ApplicationPattern ap2) ->
-            if 
-                 isConstructor tools head1 
-              && isConstructor tools head2 
-              && head1 == head2
-            then Right $ ApplicationPattern Application
-                  { applicationSymbolOrAlias = head1
-                  , applicationChildren = 
-                      Fix . AndPattern <$>
-                        zipWith3 And 
-                          (getArgumentSorts tools head1)
-                          (applicationChildren ap1)
-                          (applicationChildren ap2)
-                  }
-            else Left $ Left $
-            if not (isConstructor tools head1)
-            then NonConstructorHead head1
-            else if not (isConstructor tools head2)
-            then NonConstructorHead head2
-            else if head1 /= head2
-            then ConstructorClash head1 head2
-            else error "This case should be unreachable"
-              where                 
+            let
                 head1 = applicationSymbolOrAlias ap1
                 head2 = applicationSymbolOrAlias ap2
+            in
+                if isConstructor tools head1
+                    then if head1 == head2
+                        then Right
+                            $ ApplicationPattern Application
+                                { applicationSymbolOrAlias = head1
+                                , applicationChildren =
+                                    Fix . AndPattern
+                                        <$> zipWith3 And
+                                            (getArgumentSorts tools head1)
+                                            (applicationChildren ap1)
+                                            (applicationChildren ap2)
+                                }
+                        else if isConstructor tools head2
+                            then Left $ Left (ConstructorClash head1 head2)
+                            else Left $ Left (NonConstructorHead head2)
+                    else Left $ Left (NonConstructorHead head1)
         _ -> Left $ Left UnsupportedPatterns
+  where
+    left = andFirst ap
+    right = andSecond ap
 preTransform _ _ = Left $ Left UnsupportedPatterns
 
 -- applies Proposition 5.24 (3) which replaces x /\ phi with phi /\ x = phi

@@ -43,11 +43,6 @@ library:
   source-dirs: src
 
 executables:
-  unification-stress:
-    main: Main.hs
-    source-dirs: app/stress
-    dependencies:
-    - language-kore
   kore-parser:
     main:                Main.hs
     source-dirs:         app/parser
