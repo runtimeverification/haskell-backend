@@ -27,7 +27,10 @@ import           Data.Kore.KoreHelpers
 objectS1 :: Sort Object
 objectS1 = simpleSort (SortName "s1")
 
+topPatMeta :: Pattern Meta variable (Fix (pat variable))
 topPatMeta = TopPattern $ Top { topSort = patternMetaSort }
+
+topPatObj :: Pattern Object variable (Fix (pat variable))
 topPatObj  = TopPattern $ Top { topSort = objectS1 }
 
 objectA :: PureSentenceSymbol Object
