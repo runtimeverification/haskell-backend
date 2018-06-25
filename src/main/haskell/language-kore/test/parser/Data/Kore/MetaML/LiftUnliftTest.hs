@@ -27,9 +27,6 @@ variablePattern :: String -> Sort Meta -> CommonMetaPattern
 variablePattern name sort =
     fillCheckSort sort (unparameterizedVariable_ name AstLocationTest)
 
--- TODO: this is a copy/paste. Remove.
-newtype SortName = SortName String
-
 liftTests :: TestTree
 liftTests =
     testGroup
@@ -1017,8 +1014,8 @@ liftTests =
         ]
   where
     topPatMeta = TopPattern $ Top { topSort = patternMetaSort }
-    topPatObj  = TopPattern $ Top { topSort = simpleSort (SortName "s3") }
-    simpleSortActual (SortName sort) =
+    topPatObj  = TopPattern $ Top { topSort = simpleSort "s3" }
+    simpleSortActual sort =
         SortActual
             { sortActualName = testId sort
             , sortActualSorts = []
