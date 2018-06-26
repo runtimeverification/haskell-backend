@@ -16,6 +16,7 @@ module Data.Kore.ASTVerifier.SentenceVerifier ( verifyUniqueNames
 import           Control.Monad                            (foldM)
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Sentence
+import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.Error
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
@@ -23,6 +24,7 @@ import           Data.Kore.ASTVerifier.AttributesVerifier
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.PatternVerifier
 import           Data.Kore.ASTVerifier.SortVerifier
+import           Data.Kore.ASTHelpers
 import           Data.Kore.Error
 import           Data.Kore.IndexedModule.IndexedModule
 import           Data.Kore.IndexedModule.Resolvers
@@ -274,6 +276,11 @@ verifyAliasSentence
                 findSortDeclaration
                 variables
                 (sentenceAliasResultSort sentence)
+            if leftPatternSort == rightPatternSort 
+                then
+                    verifySuccess
+                else 
+                    koreFail "Left and Right sorts do not match"
             verifyAliasLeftPattern
                 (asKorePattern $ sentenceAliasLeftPattern sentence)
                 Nothing
@@ -289,7 +296,13 @@ verifyAliasSentence
                 attributesVerification
         )
   where
-    sortParams = (aliasParams . sentenceAliasAlias) sentence
+    sortParams       = (aliasParams . sentenceAliasAlias) sentence
+    leftPatternSort  = patternSort leftPattern
+    rightPatternSort = patternSort rightPattern
+    headSort         = applicationSortsResult . getHeadApplicationSorts indexedModule
+    patternSort      = getPatternResultSort headSort 
+    leftPattern      = sentenceAliasLeftPattern sentence
+    rightPattern     = sentenceAliasRightPattern sentence
 
 verifyAxiomSentence
     :: KoreSentenceAxiom
