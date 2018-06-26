@@ -21,9 +21,9 @@ import           Data.Kore.AST.Common                         (Application (..),
                                                                SymbolOrAlias (..),
                                                                Variable)
 import           Data.Kore.AST.Kore                           (CommonKorePattern)
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.MetaOrObject                   (Meta (..))
 import           Data.Kore.AST.PureToKore
+import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTVerifier.DefinitionVerifier     (AttributesVerification (..),
                                                                verifyAndIndexDefinition)
 import           Data.Kore.Building.AsAst
@@ -2178,6 +2178,11 @@ stringError thing =
         Right a  -> Right a
         Left err -> Left (printError err)
 
+mlErrorWrap :: Either (Error a) b -> Either (Error MLError) b
+mlErrorWrap errErr = case errErr of
+    Left err -> koreFail (printError err)
+    Right p  -> Right p
+
 addGoal
     :: CommonKorePattern -> NewGoalId -> MLProof -> Either String MLProof
 addGoal formula (NewGoalId goalId) proof =
@@ -2188,7 +2193,7 @@ addGoal formula (NewGoalId goalId) proof =
             (GoalId goalId)
             -- TODO(virgil) remove this patternKoreToPure Meta nonsense and generate
             -- MetaMLPatterns directly
-            (patternKoreToPure Meta formula)
+            =<< mlErrorWrap (patternKoreToPure Meta formula)
         )
 modusPonens
     :: GoalId -> GoalId -> GoalId -> MLProof -> Either String MLProof
@@ -2218,7 +2223,11 @@ proposition1 phip psip conclusionId proof =
             proof
             conclusionId
             conclusionFormula
-            (Propositional1 (patternKoreToPure Meta phip) (patternKoreToPure Meta psip))
+            =<< mlErrorWrap
+                (   Propositional1
+                <$> patternKoreToPure Meta phip
+                <*> patternKoreToPure Meta psip
+                )
 
 proposition2
     :: CommonKorePattern
@@ -2236,11 +2245,12 @@ proposition2 phi1p phi2p phi3p conclusionId proof =
             proof
             conclusionId
             conclusionFormula
-            (Propositional2
-                (patternKoreToPure Meta phi1p)
-                (patternKoreToPure Meta phi2p)
-                (patternKoreToPure Meta phi3p)
-            )
+            =<< mlErrorWrap
+                (   Propositional2
+                <$> patternKoreToPure Meta phi1p
+                <*> patternKoreToPure Meta phi2p
+                <*> patternKoreToPure Meta phi3p
+                )
 
 proposition3
     :: CommonKorePattern
@@ -2257,7 +2267,11 @@ proposition3 phi1p phi2p conclusionId proof =
             proof
             conclusionId
             conclusionFormula
-            (Propositional3 (patternKoreToPure Meta phi1p) (patternKoreToPure Meta phi2p))
+            =<< mlErrorWrap
+                (   Propositional3
+                <$> patternKoreToPure Meta phi1p
+                <*> patternKoreToPure Meta phi2p
+                )
 
 variableSubstitution
     :: SubstitutingVariable (Variable Meta)
@@ -2277,11 +2291,11 @@ variableSubstitution
             proof
             conclusionId
             conclusionFormula
-            (VariableSubstitution
-                substituted
-                (patternKoreToPure Meta unsubstitutedPattern)
-                substituting
-            )
+            =<< mlErrorWrap
+                (   VariableSubstitution substituted
+                <$> patternKoreToPure Meta unsubstitutedPattern
+                <*> pure substituting
+                )
 
 forallRule
     :: Variable Meta
@@ -2301,9 +2315,11 @@ forallRule
             proof
             conclusionId
             conclusionFormula
-            (ForallRule
-                variable (patternKoreToPure Meta phi1p) (patternKoreToPure Meta phi2p)
-            )
+            =<< mlErrorWrap
+                (   ForallRule variable
+                <$> patternKoreToPure Meta phi1p
+                <*> patternKoreToPure Meta phi2p
+                )
 
 generalization
     :: Variable Meta -> GoalId -> GoalId -> MLProof -> Either String MLProof
@@ -2334,9 +2350,11 @@ propagateOr symbol idx phi1p phi2p conclusionId proof =
             proof
             conclusionId
             conclusionFormula
-            (PropagateOr
-                symbol idx (patternKoreToPure Meta phi1p) (patternKoreToPure Meta phi2p)
-            )
+            =<< mlErrorWrap
+                (   PropagateOr symbol idx
+                <$> patternKoreToPure Meta phi1p
+                <*> patternKoreToPure Meta phi2p
+                )
 
 propagateExists
     :: SymbolOrAlias Meta
@@ -2354,7 +2372,10 @@ propagateExists symbol idx variable phip conclusionId proof =
             proof
             conclusionId
             conclusionFormula
-            (PropagateExists symbol idx variable (patternKoreToPure Meta phip))
+            =<< mlErrorWrap
+                (   PropagateExists symbol idx variable
+                <$> patternKoreToPure Meta phip
+                )
 
 framing
     :: SymbolOrAlias Meta
@@ -2404,7 +2425,12 @@ singvar variable phip path1 path2 conclusionId proof =
             proof
             conclusionId
             conclusionFormula
-            (Singvar variable (patternKoreToPure Meta phip) path1 path2)
+            =<< mlErrorWrap
+                (   Singvar variable
+                <$> patternKoreToPure Meta phip
+                <*> pure path1
+                <*> pure path2
+                )
 
 -- Inefficient implementation, but good enough for tests.
 goalState :: GoalId -> MLProof -> Maybe GoalMLProofState
@@ -2701,7 +2727,7 @@ goalAssertion goalId pattern1 proof =
     case lookupGoal goalId proof of
         Nothing -> Left ("Goal with id " ++ show goalId ++ " not found.")
         Just actualPattern ->
-            if actualPattern /= patternKoreToPure Meta pattern1
+            if Right actualPattern /= patternKoreToPure Meta pattern1
                 then Left ("the actual goal is" ++ show actualPattern)
                 else Right proof
 
@@ -2852,3 +2878,4 @@ defaultIndexedModuleWithError = do
                 }
             ]
         }
+
