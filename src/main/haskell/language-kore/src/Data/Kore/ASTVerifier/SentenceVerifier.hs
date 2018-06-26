@@ -283,12 +283,12 @@ verifyAliasSentence
                     koreFail "Left and Right sorts do not match"
             verifyAliasLeftPattern
                 (asKorePattern $ sentenceAliasLeftPattern sentence)
-                Nothing
+                (Just $ (asUnified leftPatternSort))
                 indexedModule
                 variables
             verifyPattern
                 (asKorePattern $ sentenceAliasRightPattern sentence)
-                Nothing
+                (Just $ (asUnified rightPatternSort))
                 indexedModule
                 variables
             verifyAttributes
