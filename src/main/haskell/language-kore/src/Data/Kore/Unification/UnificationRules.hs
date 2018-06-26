@@ -1,7 +1,8 @@
 {-|
-Module      : Data.Kore.Unification.UnifierImpl
-Description : Datastructures and functionality for performing unification on
-              Pure patterns
+Module      : Data.Kore.Unification.UnificationRules
+Description : Inference rules underlying unificatoin
+              Should desugar to ML axioms, but this
+              will all be replaced anyway. 
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
 Maintainer  : phillip.harris@runtimeverification.com

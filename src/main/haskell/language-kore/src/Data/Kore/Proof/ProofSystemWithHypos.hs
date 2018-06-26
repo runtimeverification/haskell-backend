@@ -1,7 +1,6 @@
 {-|
-Module      : Data.Kore.Unification.UnifierImpl
-Description : Datastructures and functionality for performing unification on
-              Pure patterns
+Module      : Data.Kore.Proof.ProofSystemWithHypos
+Description : Line-based proofs with introduction/discharging of hypotheses
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
 Maintainer  : phillip.harris@runtimeverification.com
