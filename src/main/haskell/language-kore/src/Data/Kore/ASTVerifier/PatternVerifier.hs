@@ -96,7 +96,6 @@ addDeclaredVariable
             Map.insert (variableName variable) variable variablesDict
         }
 
--- TODO: additional checks
 verifyAliasLeftPattern
     :: CommonKorePattern
     -> Maybe UnifiedSort
