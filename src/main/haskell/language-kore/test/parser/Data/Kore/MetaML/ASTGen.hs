@@ -25,7 +25,8 @@ metaMLPatternGen = Fix <$> sized (\n ->
 
 metaSentenceGen :: Gen MetaSentence
 metaSentenceGen = frequency
-    [ (1, symbolSentenceGen Meta)
+    [ (1, SentenceSymbolSentence <$> sentenceSymbolGen Meta)
+    , (1, SentenceAliasSentence <$> sentenceAliasGen Meta metaMLPatternGen)
     , (1, SentenceImportSentence
           <$> sentenceImportGen)
     , (1, SentenceAxiomSentence
