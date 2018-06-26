@@ -20,13 +20,16 @@ Portability : portable
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE GADTs                  #-}
 {-# LANGUAGE BangPatterns           #-}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
+{-# OPTIONS_GHC -Wno-unused-matches #-}
+{-# OPTIONS_GHC -Wno-orphans        #-}
+
 
 module Data.Kore.Unification.UnificationRules where
 
 import qualified Data.Set as S
 import qualified Data.Map as M
 import           Data.Fix
-import           Control.Lens
 import           Control.Monad.State
 
 
@@ -37,7 +40,7 @@ import           Data.Kore.AST.MLPatterns                 ( getPatternResultSort
                                                           )
 import           Data.Kore.AST.MetaOrObject               ( MetaOrObject
                                                           )
-import           Data.Kore.Proof.ProofSystemWithHypos     ( Proof(..)
+import           Data.Kore.Proof.ProofSystemWithHypos     ( Proof
                                                           , ProofSystem(..) 
                                                           , ProofLine(..) 
                                                           , Formula(..)
@@ -47,10 +50,6 @@ import           Data.Kore.Proof.ProofSystemWithHypos     ( Proof(..)
                                                           , justification
                                                           , assumptions
                                                           , lookupLine
-                                                          , assume
-                                                          , discharge
-                                                          , (%%%=)
-                                                          , makeRule0
                                                           , makeRule1
                                                           , makeRule2
                                                           )
@@ -99,6 +98,9 @@ instance MetaOrObject level
     , impliesSecond = b
     }
 
+placeholderSort 
+  :: MetaOrObject level 
+  => Sort level
 placeholderSort =
   SortVariableSort $ SortVariable 
     { getSortVariable = noLocationId "S" } --FIXME
@@ -182,6 +184,7 @@ localInPattern (n:ns) f pat = Fix $
       -> AndPattern $ case n of 
            0 -> And s1 (localInPattern ns f a) b
            1 -> And s1 a (localInPattern ns f b)
+           m -> error ("No " ++ show m ++ " position")
     ApplicationPattern (Application head children)
       -> let (a, b : bs) = splitAt n children 
              children'   = a ++ [localInPattern ns f b] ++ bs 
@@ -194,6 +197,7 @@ localInPattern (n:ns) f pat = Fix $
       -> EqualsPattern $ case n of 
            0 -> Equals s1 s2 (localInPattern ns f a) b 
            1 -> Equals s1 s2 a (localInPattern ns f b)
+           m -> error ("No " ++ show m ++ " position")
     ExistsPattern (Exists s1 v a) 
       -> ExistsPattern $ Exists s1 v (localInPattern ns f a)
     FloorPattern (Floor s1 s2 a)
@@ -204,14 +208,17 @@ localInPattern (n:ns) f pat = Fix $
       -> IffPattern $ case n of 
            0 -> Iff s1 (localInPattern ns f a) b 
            1 -> Iff s1 a (localInPattern ns f b)
+           m -> error ("No " ++ show m ++ " position")
     ImpliesPattern (Implies s1 a b)
       -> ImpliesPattern $ case n of 
           0 -> Implies s1 (localInPattern ns f a) b
           1 -> Implies s1 a (localInPattern ns f b)
+          m -> error ("No " ++ show m ++ " position")
     InPattern (In s1 s2 a b)
       -> InPattern $ case n of 
            0 -> In s1 s2 (localInPattern ns f a) b 
            1 -> In s1 s2 a (localInPattern ns f b)
+           m -> error ("No " ++ show m ++ " position")
     NextPattern (Next s1 a)
       -> NextPattern $ Next s1 (localInPattern ns f a)
     NotPattern (Not s1 a)
@@ -220,10 +227,13 @@ localInPattern (n:ns) f pat = Fix $
       -> OrPattern $ case n of 
            0 -> Or s1 (localInPattern ns f a) b 
            1 -> Or s1 a (localInPattern ns f b)
+           m -> error ("No " ++ show m ++ " position")
     RewritesPattern (Rewrites s1 a b)
       -> RewritesPattern $ case n of 
            0 -> Rewrites s1 (localInPattern ns f a) b 
            1 -> Rewrites s1 a (localInPattern ns f b)
+           m -> error ("No " ++ show m ++ " position")
+    _ -> error "FIXME: Add more constructors here"
 
 -- | applyLocalSubstitution with path [] takes index of statement (a=b) 
 -- and index of a statement P[a]
@@ -287,12 +297,13 @@ splitConstructor tools (Equation s1 s2 a b) =
       ) 
       aChildren 
       bChildren 
+splitConstructor _ _ = error "Input should be Equation"
 
--- getSort 
---   :: MetaOrObject level 
---   => MetadataTools level 
---   -> CommonPurePattern level
---   -> Sort level
+getSort 
+  :: MetaOrObject level 
+  => MetadataTools level 
+  -> CommonPurePattern level
+  -> Sort level
 getSort tools x = (getPatternResultSort (getResultSort tools) $ unFix x)
 
 -- | applyAndL takes the index of a statement a /\ b
@@ -311,10 +322,26 @@ applyAndR
   -> ProofState level Int
 applyAndR = makeRule1 getAndR AndR
 
+getAndL :: MetaOrObject level => Term level -> Term level
 getAndL (Fix (AndPattern (And _ x _ ))) = x
-getAndR (Fix (AndPattern (And _ _ y ))) = y
+getAndL _ = error "Argument should be AndPattern"
 
+getAndR :: MetaOrObject level => Term level -> Term level
+getAndR (Fix (AndPattern (And _ _ y ))) = y
+getAndR _ = error "Argument should be AndPattern"
+
+applyProp5243
+  :: MetaOrObject level 
+  => MetadataTools level 
+  -> Idx 
+  -> ProofState level Idx
 applyProp5243 tools = makeRule1 (makeProp5243 tools) Prop5243
+
+makeProp5243 
+  :: MetaOrObject level 
+  => MetadataTools level 
+  -> Term level 
+  -> Term level 
 makeProp5243 tools e = 
   let t1 = getAndL e
       t2 = getAndR e 
@@ -356,7 +383,12 @@ makeConjunction tools [ix] = return ix
 makeConjunction tools (ix : ixs) = do
   ix' <- makeConjunction tools ixs 
   applyAndIntro tools ix ix' 
+makeConjunction tools [] = error "FIXME: all this should be replaced anyway"
 
+splitConjunction
+  :: MetaOrObject level 
+  => Idx 
+  -> ProofState level (S.Set Idx)
 splitConjunction ix = do
   eqn <- claim <$> lookupLine ix
   if isConjunction eqn
@@ -368,6 +400,10 @@ splitConjunction ix = do
     return $ S.union splitResultLeft splitResultRight
   else return $ S.singleton ix
 
+isConjunction
+  :: MetaOrObject level 
+  => Term level
+  -> Bool
 isConjunction (Fix (AndPattern _)) = True
 isConjunction _                    = False
 

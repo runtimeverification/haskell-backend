@@ -15,20 +15,17 @@ Portability : portable
 {-# LANGUAGE AllowAmbiguousTypes    #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE BangPatterns           #-}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
+{-# OPTIONS_GHC -Wno-unused-matches #-}
 
 
 module Data.Kore.Proof.ProofSystemWithHypos where
 
 import qualified Data.Set as S
 import qualified Data.Map.Strict as M
-import           Data.Fix
 import           Control.Lens
-import           Control.Lens.Operators
 import           Control.Monad.State
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
 
-import           Data.Kore.ASTPrettyPrint
 
 data ProofLine ix rule formula
   = ProofLine

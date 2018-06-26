@@ -22,13 +22,14 @@ Portability : portable
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE StandaloneDeriving     #-}
 {-# LANGUAGE BangPatterns           #-}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
+{-# OPTIONS_GHC -Wno-unused-matches #-}
 
 
 module Data.Kore.Unification.UnificationAlgorithm where
 
 import qualified Data.Set as S
 import qualified Data.Map.Strict as M
-import           Data.Fix
 
 import           Control.Lens
 import           Control.Monad.State
