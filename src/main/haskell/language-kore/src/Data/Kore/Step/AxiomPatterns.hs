@@ -1,10 +1,14 @@
 {-# LANGUAGE GADTs #-}
 module Data.Kore.Step.AxiomPatterns
     ( AxiomPattern(..)
+    , AxiomPatternError(..)
     , koreSentenceToAxiomPattern
     , koreIndexedModuleToAxiomPatterns
     )
   where
+
+import           Data.Either                           (rights)
+import           Data.Fix
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
@@ -15,7 +19,7 @@ import           Data.Kore.AST.Sentence
 import           Data.Kore.Error
 import           Data.Kore.IndexedModule.IndexedModule
 
-import           Data.Maybe                            (mapMaybe)
+newtype AxiomPatternError = AxiomPatternError ()
 
 {--| 'AxiomPattern' is a rewriting axiom in a normalized form. Right now
 it can only represent axioms that look like left-pattern => right-pattern.
@@ -34,48 +38,46 @@ koreIndexedModuleToAxiomPatterns
     -> KoreIndexedModule -- ^'IndexedModule' containing the definition
     -> [AxiomPattern level]
 koreIndexedModuleToAxiomPatterns level idxMod =
-    mapMaybe
+    rights $ map
         (koreSentenceToAxiomPattern level)
         (indexedModuleRawSentences idxMod)
 
 -- | Attempts to extract an 'AxiomPattern' of the given @level@ from
 -- a given 'Sentence'.
 koreSentenceToAxiomPattern
-    :: MetaOrObject level => level -> KoreSentence -> Maybe (AxiomPattern level)
-koreSentenceToAxiomPattern level sen =
-    case
-        applyUnifiedSentence
-            (sentenceToAxiomPattern level)
-            (sentenceToAxiomPattern level)
-            sen
-    of
-        Right axiomPattern -> Just axiomPattern
-        _                  -> Nothing
+    :: MetaOrObject level
+    => level
+    -> KoreSentence
+    -> Either (Error AxiomPatternError) (AxiomPattern level)
+koreSentenceToAxiomPattern level =
+    applyUnifiedSentence
+        (sentenceToAxiomPattern level)
+        (sentenceToAxiomPattern level)
 
 sentenceToAxiomPattern
     :: MetaOrObject level
     => level
     -> Sentence level' UnifiedSortVariable UnifiedPattern Variable
-    -> Either (Error String) (AxiomPattern level)
-sentenceToAxiomPattern level (SentenceAxiomSentence sa) =
-    applyKorePattern
-        (patternToAxiomPattern level)
-        (patternToAxiomPattern level)
-        (sentenceAxiomPattern sa)
+    -> Either (Error AxiomPatternError) (AxiomPattern level)
+sentenceToAxiomPattern level (SentenceAxiomSentence sa) = do
+    let pat = patternKoreToPure level (sentenceAxiomPattern sa)
+    case pat of
+        Right (Fix
+            (AndPattern And
+                { andFirst = Fix (TopPattern _)
+                , andSecond =
+                    Fix
+                        (AndPattern And
+                            { andFirst = Fix (TopPattern _)
+                            , andSecond = Fix (RewritesPattern p)
+                            }
+                        )
+                }
+            )) -> return AxiomPattern
+                { axiomPatternLeft = rewritesFirst p
+                , axiomPatternRight = rewritesSecond p
+                }
+        Left err -> koreFail (printError err)
+        _ -> koreFail "Unsupported pattern type in axiom"
 sentenceToAxiomPattern _ _ =
     koreFail "Only axiom sentences can be translated to AxiomPatterns"
-
-patternToAxiomPattern
-    :: MetaOrObject level
-    => level
-    -> Pattern level'' Variable CommonKorePattern
-    -> Either (Error String) (AxiomPattern level)
-patternToAxiomPattern level (RewritesPattern rp) = do
-    left <- patternKoreToPure level (rewritesFirst rp)
-    right <- patternKoreToPure level (rewritesSecond rp)
-    return AxiomPattern
-        { axiomPatternLeft = left
-        , axiomPatternRight = right
-        }
-patternToAxiomPattern _ _ =
-    koreFail "Only Rewrites patterns are currently supported"
