@@ -34,7 +34,7 @@ import           Options.Applicative                    ( Parser
                                                         , execParser )
 
 
-{- | Record Type containing common command-line arguments to each executable in 
+{- | Record Type containing common command-line arguments for each executable in 
 the project -}
 data GlobalOptions = GlobalOptions
     { willVersion    :: !Bool -- ^ Version flag [default=false]
