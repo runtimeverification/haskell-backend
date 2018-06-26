@@ -28,8 +28,8 @@ Portability : portable
 
 module Data.Kore.Unification.UnificationAlgorithm where
 
+import           Data.Fix
 import qualified Data.Set as S
-import qualified Data.Map.Strict as M
 
 import           Control.Lens
 import           Control.Monad.State
@@ -38,20 +38,16 @@ import           Control.Monad.Except
 
 import           Data.Kore.AST.Common                     ( Pattern(..)
                                                           , Application(..)
+                                                          , SymbolOrAlias(..)
                                                           )
 
 import           Data.Kore.AST.MetaOrObject               ( MetaOrObject
                                                           )
 import           Data.Kore.IndexedModule.MetadataTools    ( MetadataTools(..)
-                                                          , isConstructor
-                                                          , isFunctional
-                                                          , 
                                                           ) 
 
-import           Data.Kore.Proof.ProofSystemWithHypos     ( Proof(..)
+import           Data.Kore.Proof.ProofSystemWithHypos     ( Proof
                                                           , claim 
-                                                          , justification
-                                                          , assumptions
                                                           , lookupLine
                                                           , assume
                                                           , discharge
@@ -228,6 +224,11 @@ occursInSet !pat !set = do
   eqns <- mapM (\ix -> claim <$> proof %%%= lookupLine ix) ixs
   return $ any (occursInTerm pat) eqns 
 
+occursInTerm 
+  :: MetaOrObject level 
+  => Term level 
+  -> Term level 
+  -> Bool 
 occursInTerm !pat !bigPat =
   if pat == bigPat 
     then True
@@ -265,8 +266,14 @@ goSplitConstructor !tools !ix !e@(Equation s1 s2 a b)
       = throwError $ ConstructorClash a b 
   | otherwise
       = equateChildren ix
+goSplitConstructor _ _ _ = error "Input should be Equation"
 
+getHead 
+  :: MetaOrObject level
+  => Term level
+  -> SymbolOrAlias level
 getHead (Fix (ApplicationPattern (Application head _))) = head
+getHead _ = error "Input should be ApplicationPattern"
 
 equateChildren
   :: (MetaOrObject level

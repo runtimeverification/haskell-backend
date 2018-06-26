@@ -108,6 +108,12 @@ placeholderSort =
 instance MetaOrObject level 
   => ProofSystem Int (UnificationRules level) (Term level) where 
   
+pattern Equation
+  :: Sort level
+     -> Sort level
+     -> Fix (Pattern level variable)
+     -> Fix (Pattern level variable)
+     -> Fix (Pattern level variable)
 pattern Equation s1 s2 a b = 
   Fix (EqualsPattern (Equals s1 s2 a b))
 
@@ -116,6 +122,7 @@ flipEqn
   => CommonPurePattern level 
   -> CommonPurePattern level 
 flipEqn (Equation s1 s2 a b) = Equation s1 s2 b a
+flipEqn _ = error "Input should be Equation"
 
 applySymmetry 
   :: MetaOrObject level 
@@ -134,6 +141,7 @@ makeIff
   :: MetaOrObject level
   => Term level -> Term level -> Term level
 makeIff (Fix (ImpliesPattern (Implies s1 a b))) _ = Fix (IffPattern (Iff s1 a b))
+makeIff _ _ = error "Input should be ImpliesPattern"
 
 -- | Given term a, returns index of newly proved statement (a=a)
 applyRefl
@@ -148,8 +156,19 @@ applyRefl tools term = do
     , assumptions = S.empty
     }
 
+getLHS
+  :: MetaOrObject level 
+  => Term level 
+  -> Term level 
 getLHS (Equation s1 s2 a b) = a
+getLHS _ = error "Input should be Equation"
+
+getRHS
+  :: MetaOrObject level 
+  => Term level 
+  -> Term level 
 getRHS (Equation s1 s2 a b) = b
+getRHS _ = error "Input should be Equation"
 
 lhsIsVariable
   :: MetaOrObject level
@@ -159,6 +178,7 @@ lhsIsVariable (Equation s1 s2 a b) =
   case a of
     Fix (VariablePattern _) -> True
     _ -> False
+lhsIsVariable _ = error "Input should be Equation"
 
 -- | Given pattern (a=b) and C[a], returns C[b]
 subst
@@ -168,6 +188,7 @@ subst
   -> CommonPurePattern level
 subst eqn@(Equation s1 s2 a b) pat =
   if pat == a then b else Fix $ fmap (subst eqn) $ unFix pat
+subst _ _ = error "Input should be Equation"
 
 -- | apply a transformation locally, at position given by the path
 -- TODO: Make this a lens. 
@@ -263,6 +284,7 @@ isTrivial
   => CommonPurePattern level 
   -> Bool
 isTrivial (Equation s1 s2 a b) = (a == b)
+isTrivial _ = error "Input should be Equation"
 
 -- | applyNoConfusion takes index of a statement like C(a,b)=C(x,y)
 -- and returns index of newly proved statement (a=x)/\(b=y)

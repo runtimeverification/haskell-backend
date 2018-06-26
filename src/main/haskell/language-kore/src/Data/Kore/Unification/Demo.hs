@@ -22,7 +22,8 @@ Portability : portable
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE StandaloneDeriving     #-}
 {-# LANGUAGE ViewPatterns           #-}
-
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
+{-# OPTIONS_GHC -Wno-unused-matches #-}
 
 module Data.Kore.Unification.Demo where
 
@@ -31,24 +32,17 @@ import qualified Data.Map as M
 import           Data.Fix
 import           Data.List 
 
-import           Control.Lens
-import           Control.Lens.Operators
 import           Control.Monad.State
 import           Control.Monad.Reader
 import           Control.Monad.Except
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.PureML
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.IndexedModule.MetadataTools
 
 import           Data.Kore.Proof.ProofSystemWithHypos
 import           Data.Kore.Unification.UnificationRules
 import           Data.Kore.Unification.UnificationAlgorithm
-import           Data.Kore.Unparser.Unparse
-
-import           Data.Kore.Unparser.Unparse
 
 var :: MetaOrObject level => String -> Term level
 var x = 
@@ -133,10 +127,6 @@ exx =
   [ var "x"
   , var "x"
   ]
-
-x :: MetaOrObject level => Term level 
-x = 
-  var "x"
 
 large2 :: MetaOrObject level => Term level 
 large1 = bigTerm 8 0
@@ -243,6 +233,7 @@ instance MetaOrObject level => MyShow (Term level) where
    ++ if null children then "" else "(" 
    ++ intercalate ", " (map myShow children) 
    ++ ")"
+  myShow _ = error "Add constructors here"
 
   -- myShow t = compactSpaces $ compactIndentedOutput $ unparseToString t
 
@@ -304,6 +295,7 @@ instance (MetaOrObject level, MyShow a)
    ++ myShow x 
    ++ " and " 
    ++ myShow y
+  myShow _ = error "Add constructors here"
 
 
 
