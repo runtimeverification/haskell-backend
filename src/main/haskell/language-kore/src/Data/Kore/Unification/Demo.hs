@@ -212,7 +212,7 @@ compactIndentedOutput = concatMap $ \c ->
     '\t' -> ""
     '\n' -> " "
     c    -> [c]
-
+ 
 instance Show a => MyShow (S.Set a) where
   myShow set = show $ S.toList set
 

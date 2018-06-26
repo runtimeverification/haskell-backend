@@ -79,6 +79,9 @@ but with a few combinators it becomes fairly unobtrusive
 and I don't see many better options. 
 -}
 
+-- FIXME: Functionality check
+-- FIXME: Prop 5.24.3 wrapper
+
 data UnificationState level
   = UnificationState 
   { _activeSet :: ![Idx]
@@ -286,12 +289,6 @@ equateChildren !ix = do
   ixs' <- proof %%%= splitConjunction ix'
   activeSet %= (S.toList ixs' ++)
 
-
-
-
-
-
--- TODO: functionality check (fairly trivial)
 
 
 
