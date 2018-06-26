@@ -346,23 +346,28 @@ symbolOrAliasLiftedDeclaration sa = symbolDeclaration
         }
 
 -- Section 9.2.7 Lift Object Alias Declarations
-liftAliasDeclaration :: KoreSentenceAlias Object -> (MetaSentenceSymbol, MetaSentenceAxiom)
+liftAliasDeclaration 
+    :: KoreSentenceAlias Object 
+    -> (MetaSentenceSymbol, MetaSentenceAxiom)
 liftAliasDeclaration as = (symbolOrAliasLiftedDeclaration as, axiom) 
   where
     axiom = SentenceAxiom
         { sentenceAxiomAttributes = Attributes []
-        , sentenceAxiomParameters = []
+        , sentenceAxiomParameters = [ sortParam ]
         , sentenceAxiomPattern    = pat 
         }
     pat = Fix . EqualsPattern $ 
         Equals 
-            { equalsOperandSort = sortMetaSort
-            , equalsResultSort  = sortMetaSort
+            { equalsOperandSort = patternMetaSort 
+            , equalsResultSort  = SortVariableSort sortParam
             , equalsFirst       = left
             , equalsSecond      = right
             }
     left  = liftToMeta (asKorePattern (sentenceAliasLeftPattern as))
     right = liftToMeta (asKorePattern (sentenceAliasRightPattern as))
+    sortParam = SortVariable (Id "#s" liftedSymbolLocation)
+    sortName = (aliasConstructor . sentenceAliasAlias) as
+    liftedSymbolLocation = AstLocationLifted (idLocation sortName)
 
 {-|'liftSentence' transforms a 'Sentence' in one or more 'MetaSentences'
 encoding it.

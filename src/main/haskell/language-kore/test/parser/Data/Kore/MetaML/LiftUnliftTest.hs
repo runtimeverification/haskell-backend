@@ -524,19 +524,16 @@ liftTests =
                     (symbol_ "#`alias" AstLocationTest [] patternMetaSort)
                 -- TODO: use builder (like _symbol_) here as well?
                 , SentenceAxiomSentence SentenceAxiom
-                    { sentenceAxiomParameters = []
+                    { sentenceAxiomParameters = [ SortVariable ((Id "#s" AstLocationNone) :: Id Meta) ]
                     , sentenceAxiomPattern =
                         Fix (EqualsPattern Equals
                             { equalsOperandSort =
                                 SortActualSort SortActual
-                                    { sortActualName = (Id "#Sort" AstLocationNone) :: Id Meta
+                                    { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
                                     , sortActualSorts = []
                                     }
                             , equalsResultSort =
-                                SortActualSort SortActual
-                                    { sortActualName = (Id "#Sort" AstLocationNone) :: Id Meta
-                                    , sortActualSorts = []
-                                    }
+                                SortVariableSort (SortVariable ((Id "#s" AstLocationNone) :: Id Meta))
                             , equalsFirst =
                                 Fix (ApplicationPattern Application
                                     { applicationSymbolOrAlias =
