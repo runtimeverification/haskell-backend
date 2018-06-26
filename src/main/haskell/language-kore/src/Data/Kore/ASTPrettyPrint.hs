@@ -768,4 +768,4 @@ instance (MetaOrObject level, PrettyPrint (variable level))
     prettyPrint flags (FunctionalVariable v) =
         writeOneFieldStruct flags "FunctionalVariable" v
     prettyPrint flags (FunctionalHead h) =
-        writeOneFieldStruct flags "FunctionalHead" h 
+        writeOneFieldStruct flags "FunctionalHead" h
