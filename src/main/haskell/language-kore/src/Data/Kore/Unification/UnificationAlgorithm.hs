@@ -112,6 +112,18 @@ type Unification level a =
   Identity))
   a
 
+-- unificationProcedure x y >>= getSubstList
+getSubstList 
+  :: MetaOrObject level 
+  => Idx 
+  -> Unification level [(Term level, Term level)]
+getSubstList ix = do 
+  ixs <- S.toList <$> proof %%%= splitConjunction ix 
+  eqns <- forM ixs $ \ix' -> do 
+    (Equation _ _ a b) <- claim <$> proof %%%= lookupLine ix 
+    return (a,b)
+  return eqns
+
 unificationProcedure 
   :: MetaOrObject level
   => Term level
