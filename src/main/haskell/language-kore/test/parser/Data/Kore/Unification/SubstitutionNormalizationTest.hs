@@ -17,6 +17,7 @@ import           Data.Kore.AST.PureToKore                        (patternKoreToP
 import           Data.Kore.Building.AsAst
 import           Data.Kore.Building.Patterns
 import           Data.Kore.Building.Sorts
+import           Data.Kore.Error
 import           Data.Kore.MetaML.AST                            (CommonMetaPattern)
 import           Data.Kore.Unification.Error                     (SubstitutionError (..))
 import           Data.Kore.Unification.SubstitutionNormalization
@@ -168,7 +169,7 @@ substitutionNormalizationTests =
         :: ProperPattern level sort patt => patt -> CommonMetaPattern
     asPureMetaPattern patt =
         case patternKoreToPure Meta (asAst patt) of
-            Left err  -> error err
+            Left err  -> error (printError err)
             Right pat -> pat
 
 runNormalizeSubstitution

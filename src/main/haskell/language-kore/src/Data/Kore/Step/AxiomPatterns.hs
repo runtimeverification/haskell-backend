@@ -12,6 +12,7 @@ import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
 import           Data.Kore.AST.PureToKore              (patternKoreToPure)
 import           Data.Kore.AST.Sentence
+import           Data.Kore.Error
 import           Data.Kore.IndexedModule.IndexedModule
 
 import           Data.Maybe                            (mapMaybe)
@@ -55,20 +56,20 @@ sentenceToAxiomPattern
     :: MetaOrObject level
     => level
     -> Sentence level' UnifiedSortVariable UnifiedPattern Variable
-    -> Either String (AxiomPattern level)
+    -> Either (Error String) (AxiomPattern level)
 sentenceToAxiomPattern level (SentenceAxiomSentence sa) =
     applyKorePattern
         (patternToAxiomPattern level)
         (patternToAxiomPattern level)
         (sentenceAxiomPattern sa)
 sentenceToAxiomPattern _ _ =
-    Left "Only axiom sentences can be translated to AxiomPatterns"
+    koreFail "Only axiom sentences can be translated to AxiomPatterns"
 
 patternToAxiomPattern
     :: MetaOrObject level
     => level
     -> Pattern level'' Variable CommonKorePattern
-    -> Either String (AxiomPattern level)
+    -> Either (Error String) (AxiomPattern level)
 patternToAxiomPattern level (RewritesPattern rp) = do
     left <- patternKoreToPure level (rewritesFirst rp)
     right <- patternKoreToPure level (rewritesSecond rp)
@@ -77,4 +78,4 @@ patternToAxiomPattern level (RewritesPattern rp) = do
         , axiomPatternRight = right
         }
 patternToAxiomPattern _ _ =
-    Left "Only Rewrites patterns are currently supported"
+    koreFail "Only Rewrites patterns are currently supported"
