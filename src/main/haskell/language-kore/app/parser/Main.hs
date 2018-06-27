@@ -22,6 +22,7 @@ import           Data.Kore.AST.Sentence                     ( KoreDefinition )
 import           Data.Kore.ASTVerifier.DefinitionVerifier   ( defaultAttributesVerification
                                                             , AttributesVerification(DoNotVerifyAttributes)
                                                             , verifyDefinition )
+import           Data.Kore.ASTPrettyPrint                   ( prettyPrintToString )
 
 import           GlobalMain                                 ( MainOptions(..)
                                                             , mainGlobal
@@ -83,7 +84,7 @@ main = do
          } -> do
       parsedDefinition <- mainParse fileName
       when willVerify $ mainVerify willChkAttr parsedDefinition
-      when willPrint  $ print parsedDefinition
+      when willPrint  $ putStrLn (prettyPrintToString parsedDefinition)
 
 
 -- | IO action that parses a kore definition from a filename and prints timing information.
@@ -119,3 +120,4 @@ mainVerify willChkAttr definition =
       case verifyResult of
         Left err1 -> error (printError err1)
         Right _   -> return ()
+        

@@ -89,6 +89,8 @@ data IndexedModule sortParam pat variable = IndexedModule
 deriving instance
     ( Show (pat variable (Fix (pat variable)))
     , Show sortParam
+    , Show (variable Meta)
+    , Show (variable Object)
     ) => Show (IndexedModule sortParam pat variable)
 
 type KoreIndexedModule =

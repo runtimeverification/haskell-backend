@@ -16,6 +16,7 @@ module Data.Kore.ASTVerifier.SentenceVerifier ( verifyUniqueNames
 import           Control.Monad                            (foldM)
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Sentence
+import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.Error
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
@@ -23,6 +24,7 @@ import           Data.Kore.ASTVerifier.AttributesVerifier
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.PatternVerifier
 import           Data.Kore.ASTVerifier.SortVerifier
+import           Data.Kore.ASTHelpers
 import           Data.Kore.Error
 import           Data.Kore.IndexedModule.IndexedModule
 import           Data.Kore.IndexedModule.Resolvers
@@ -139,7 +141,7 @@ verifyMetaSentence
     attributesVerification
     (SentenceAliasSentence aliasSentence)
   =
-    verifySymbolAliasSentence
+    verifyAliasSentence
         (resolveSort indexedModule)
         indexedModule
         attributesVerification
@@ -149,7 +151,7 @@ verifyMetaSentence
     attributesVerification
     (SentenceSymbolSentence symbolSentence)
   =
-    verifySymbolAliasSentence
+    verifySymbolSentence
         (resolveSort indexedModule)
         indexedModule
         attributesVerification
@@ -175,7 +177,7 @@ verifyObjectSentence
     attributesVerification
     (SentenceAliasSentence aliasSentence)
   =
-    verifySymbolAliasSentence
+    verifyAliasSentence
         (resolveSort indexedModule)
         indexedModule
         attributesVerification
@@ -185,7 +187,7 @@ verifyObjectSentence
     attributesVerification
     (SentenceSymbolSentence symbolSentence)
   =
-    verifySymbolAliasSentence
+    verifySymbolSentence
         (resolveSort indexedModule)
         indexedModule
         attributesVerification
@@ -207,44 +209,98 @@ verifyObjectSentence
     attributesVerification
     (SentenceHookSentence (SentenceHookedSymbol symbolSentence))
   =
-    verifySymbolAliasSentence
+    verifySymbolSentence
         (resolveSort indexedModule)
         indexedModule
         attributesVerification
         symbolSentence
 
-verifySymbolAliasSentence
-    :: (MetaOrObject level, SentenceSymbolOrAlias ssa)
+verifySymbolSentence
+    :: (MetaOrObject level)
     => (Id level -> Either (Error VerifyError) (SortDescription level))
     -> KoreIndexedModule
     -> AttributesVerification
-    -> ssa level UnifiedPattern Variable
+    -> KoreSentenceSymbol level
     -> Either (Error VerifyError) VerifySuccess
-verifySymbolAliasSentence
+verifySymbolSentence
     findSortDeclaration _ attributesVerification sentence
   =
     withLocationAndContext
-        (getSentenceSymbolOrAliasConstructor sentence)
-        (  getSentenceSymbolOrAliasSentenceName sentence
+        ((symbolConstructor . sentenceSymbolSymbol) sentence)
+        (  "symbol"
         ++ " '"
-        ++ getId (getSentenceSymbolOrAliasConstructor sentence)
+        ++ getId ((symbolConstructor . sentenceSymbolSymbol) sentence)
         ++ "' declaration"
         )
         (do
             variables <- buildDeclaredSortVariables sortParams
             mapM_
                 (verifySort findSortDeclaration variables)
-                (getSentenceSymbolOrAliasArgumentSorts sentence)
+                (sentenceSymbolSorts sentence)
             verifySort
                 findSortDeclaration
                 variables
-                (getSentenceSymbolOrAliasResultSort sentence)
+                (sentenceSymbolResultSort sentence)
             verifyAttributes
-                (getSentenceSymbolOrAliasAttributes sentence)
+                (sentenceSymbolAttributes sentence)
                 attributesVerification
         )
   where
-    sortParams = getSentenceSymbolOrAliasSortParams sentence
+    sortParams = (symbolParams . sentenceSymbolSymbol) sentence
+
+verifyAliasSentence
+    :: (MetaOrObject level)
+    => (Id level -> Either (Error VerifyError) (SortDescription level))
+    -> KoreIndexedModule
+    -> AttributesVerification
+    -> KoreSentenceAlias level
+    -> Either (Error VerifyError) VerifySuccess
+verifyAliasSentence
+    findSortDeclaration indexedModule attributesVerification sentence
+  =
+    withLocationAndContext
+        (aliasConstructor $ sentenceAliasAlias sentence)
+        (  "alias"
+        ++ " '"
+        ++ getId (aliasConstructor $ sentenceAliasAlias sentence)
+        ++ "' declaration"
+        )
+        (do
+            variables <- buildDeclaredSortVariables sortParams
+            mapM_
+                (verifySort findSortDeclaration variables)
+                (sentenceAliasSorts sentence)
+            verifySort
+                findSortDeclaration
+                variables
+                (sentenceAliasResultSort sentence)
+            if leftPatternSort == rightPatternSort 
+                then
+                    verifySuccess
+                else 
+                    koreFail "Left and Right sorts do not match"
+            verifyAliasLeftPattern
+                (asKorePattern $ sentenceAliasLeftPattern sentence)
+                (Just $ (asUnified leftPatternSort))
+                indexedModule
+                variables
+            verifyPattern
+                (asKorePattern $ sentenceAliasRightPattern sentence)
+                (Just $ (asUnified rightPatternSort))
+                indexedModule
+                variables
+            verifyAttributes
+                (sentenceAliasAttributes sentence)
+                attributesVerification
+        )
+  where
+    sortParams       = (aliasParams . sentenceAliasAlias) sentence
+    leftPatternSort  = patternSort leftPattern
+    rightPatternSort = patternSort rightPattern
+    headSort         = applicationSortsResult . getHeadApplicationSorts indexedModule
+    patternSort      = getPatternResultSort headSort 
+    leftPattern      = sentenceAliasLeftPattern sentence
+    rightPattern     = sentenceAliasRightPattern sentence
 
 verifyAxiomSentence
     :: KoreSentenceAxiom
