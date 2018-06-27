@@ -63,8 +63,9 @@ extractPurePattern level p =
 -- Should be temporary measure
 sentencePureToKore
     :: MetaOrObject level => PureSentence level -> KoreSentence
-sentencePureToKore (SentenceAliasSentence (SentenceAlias a b c d)) =
-  constructUnifiedSentence SentenceAliasSentence $ SentenceAlias a b c d
+sentencePureToKore (SentenceAliasSentence (SentenceAlias a b c d e f)) =
+  constructUnifiedSentence SentenceAliasSentence $ 
+    SentenceAlias a b c (patternPureToKore <$> d) (patternPureToKore <$> e) f
 sentencePureToKore (SentenceSymbolSentence (SentenceSymbol a b c d)) =
   constructUnifiedSentence SentenceSymbolSentence $ SentenceSymbol a b c d
 sentencePureToKore (SentenceImportSentence (SentenceImport a b)) =

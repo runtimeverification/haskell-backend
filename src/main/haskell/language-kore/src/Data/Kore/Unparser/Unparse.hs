@@ -246,15 +246,25 @@ instance Unparse (Attributes) where
     unparse = inSquareBrackets . unparse . getAttributes
 
 instance
-    Unparse (Fix (pat variable)) => Unparse (SentenceAlias level pat variable)
+    (Unparse (Fix (pat variable)), Unparse (variable level)) => Unparse (SentenceAlias level pat variable)
   where
     unparse sa = do
         write "alias"
         write " "
         unparse (sentenceAliasAlias sa)
         inParens (unparse (sentenceAliasSorts sa))
+        write " "
         write ":"
+        write " "
         unparse (sentenceAliasResultSort sa)
+        write "\n"
+        write "where"
+        write " "
+        unparse (sentenceAliasLeftPattern sa)
+        write " "
+        write ":="
+        write " "
+        unparse (sentenceAliasRightPattern sa)
         unparse (sentenceAliasAttributes sa)
 
 instance
@@ -312,6 +322,7 @@ instance
 instance
     ( Unparse sortParam
     , Unparse (Fix (pat variable))
+    , Unparse (variable level)
     ) => Unparse (Sentence level sortParam pat variable)
   where
     unparse (SentenceAliasSentence s)  = unparse s
@@ -324,6 +335,8 @@ instance
 instance
     ( Unparse sortParam
     , Unparse (Fix (pat variable))
+    , Unparse (variable Meta)
+    , Unparse (variable Object)
     ) => Unparse (UnifiedSentence sortParam pat variable)
   where
     unparse = applyUnifiedSentence unparse unparse

@@ -8,7 +8,7 @@ module LAMBDA
 
   symbol app{}(Exp{},Exp{}) : Exp{} []
 
-  alias lambda{}(Exp{},Exp{}) : Exp{} []
+  symbol lambda{}(Exp{},Exp{}) : Exp{} []
 
   axiom{R}
     \equals{Exp{},R}(

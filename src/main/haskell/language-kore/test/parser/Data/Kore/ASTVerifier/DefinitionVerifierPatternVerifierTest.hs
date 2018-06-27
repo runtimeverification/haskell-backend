@@ -884,29 +884,33 @@ patternsInAllContexts
     sortVariableName = SortVariableName rawSortVariableName
     symbolAliasSort = sortVariableSort sortVariableName
     symbolSentence =
-        constructUnifiedSentence SentenceSymbolSentence $
-         SentenceSymbol
-            { sentenceSymbolSymbol = Symbol
-                { symbolConstructor = testId rawSymbolName
-                , symbolParams = [SortVariable (testId rawSortVariableName)]
+        constructUnifiedSentence
+            SentenceSymbolSentence
+            SentenceSymbol
+                { sentenceSymbolSymbol = Symbol
+                    { symbolConstructor = testId rawSymbolName
+                    , symbolParams = [SortVariable (testId rawSortVariableName)]
+                    }
+                , sentenceSymbolSorts = [symbolAliasSort]
+                , sentenceSymbolResultSort = anotherSort
+                , sentenceSymbolAttributes =
+                    Attributes []
                 }
-            , sentenceSymbolSorts = [symbolAliasSort]
-            , sentenceSymbolResultSort = anotherSort
-            , sentenceSymbolAttributes =
-                Attributes []
-            }
     aliasSentence =
-        constructUnifiedSentence SentenceAliasSentence $
-         SentenceAlias
-            { sentenceAliasAlias = Alias
-                { aliasConstructor = testId rawAliasName
-                , aliasParams = [SortVariable (testId rawSortVariableName)]
+        constructUnifiedSentence
+            SentenceAliasSentence
+            SentenceAlias
+                { sentenceAliasAlias = Alias
+                    { aliasConstructor = testId rawAliasName
+                    , aliasParams = [SortVariable (testId rawSortVariableName)]
+                    }
+                , sentenceAliasSorts = [symbolAliasSort]
+                , sentenceAliasResultSort = anotherSort
+                , sentenceAliasLeftPattern = TopPattern $ Top anotherSort
+                , sentenceAliasRightPattern = TopPattern $ Top anotherSort
+                , sentenceAliasAttributes =
+                    Attributes []
                 }
-            , sentenceAliasSorts = [symbolAliasSort]
-            , sentenceAliasResultSort = anotherSort
-            , sentenceAliasAttributes =
-                Attributes []
-            }
 
 genericPatternInPatterns
     :: MetaOrObject level
@@ -1305,6 +1309,8 @@ testsForUnifiedPatternInTopLevelGenericContext
                                 sortVariables
                                 additionalSort
                                 [ testPatternUnifiedPattern (asAttribute testPattern) ]
+                                (TopPattern $ Top additionalSort)
+                                (TopPattern $ Top additionalSort)
                             )
                         : additionalSentences
                         )
@@ -1449,17 +1455,17 @@ testsForUnifiedPatternInTopLevelObjectContext
                         defaultErrorMessage
                 , testDataDefinition =
                     simpleDefinitionFromSentences (ModuleName "MODULE")
-                        ( constructUnifiedSentence SentenceSortSentence (
-                           SentenceSort
-                            { sentenceSortName = testId rawSortName
-                            , sentenceSortParameters = sortVariables
-                            , sentenceSortAttributes =
-                                Attributes
-                                    [ testPatternUnifiedPattern
-                                        (asAttribute testPattern)
-                                    ]
-                            }
-                          )
+                        ( constructUnifiedSentence
+                            SentenceSortSentence
+                            SentenceSort
+                                { sentenceSortName = testId rawSortName
+                                , sentenceSortParameters = sortVariables
+                                , sentenceSortAttributes =
+                                    Attributes
+                                        [ testPatternUnifiedPattern
+                                            (asAttribute testPattern)
+                                        ]
+                                }
                         : additionalSentences
                         )
                 }

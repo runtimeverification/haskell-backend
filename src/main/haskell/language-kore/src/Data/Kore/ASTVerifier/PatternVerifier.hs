@@ -8,7 +8,7 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Data.Kore.ASTVerifier.PatternVerifier (verifyPattern) where
+module Data.Kore.ASTVerifier.PatternVerifier (verifyPattern, verifyAliasLeftPattern) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Error
@@ -95,6 +95,20 @@ addDeclaredVariable
         { objectDeclaredVariables =
             Map.insert (variableName variable) variable variablesDict
         }
+
+verifyAliasLeftPattern
+    :: CommonKorePattern
+    -> Maybe UnifiedSort
+    -- ^ If present, represents the expected sort of the pattern.
+    -> KoreIndexedModule
+    -- ^ The module containing all definitions which are visible in this
+    -- pattern.
+    -> Set.Set UnifiedSortVariable
+    -- ^ Sort variables which are visible in this pattern.
+    -> Either (Error VerifyError) VerifySuccess
+verifyAliasLeftPattern unifiedPattern maybeExpectedSort indexedModule sortVariables = do
+    verifyPattern unifiedPattern maybeExpectedSort indexedModule sortVariables
+    -- TODO: check that the left pattern is the alias symbol applied to non-repeating variables
 
 {-|'verifyPattern' verifies the welformedness of a Kore 'CommonKorePattern'. -}
 verifyPattern
