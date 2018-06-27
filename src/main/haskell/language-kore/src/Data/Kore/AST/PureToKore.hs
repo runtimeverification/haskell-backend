@@ -48,14 +48,14 @@ patternKoreToPure
     :: MetaOrObject level
     => level
     -> CommonKorePattern
-    -> Either (Error String) (CommonPurePattern level)
+    -> Either (Error a) (CommonPurePattern level)
 patternKoreToPure level = patternBottomUpVisitorM (extractPurePattern level)
 
 extractPurePattern
     :: (MetaOrObject level, MetaOrObject level1)
     => level
     -> Pattern level1 Variable (CommonPurePattern level)
-    -> Either (Error String) (CommonPurePattern level)
+    -> Either (Error a) (CommonPurePattern level)
 extractPurePattern level p =
     case (isMetaOrObject (Rotate31 p), isMetaOrObject (toProxy level)) of
         (IsMeta, IsMeta) -> return (Fix p)

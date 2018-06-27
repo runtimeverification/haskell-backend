@@ -2178,11 +2178,6 @@ stringError thing =
         Right a  -> Right a
         Left err -> Left (printError err)
 
-mlErrorWrap :: Either (Error a) b -> Either (Error MLError) b
-mlErrorWrap errErr = case errErr of
-    Left err -> koreFail (printError err)
-    Right p  -> Right p
-
 addGoal
     :: CommonKorePattern -> NewGoalId -> MLProof -> Either String MLProof
 addGoal formula (NewGoalId goalId) proof =
@@ -2193,7 +2188,7 @@ addGoal formula (NewGoalId goalId) proof =
             (GoalId goalId)
             -- TODO(virgil) remove this patternKoreToPure Meta nonsense and generate
             -- MetaMLPatterns directly
-            =<< mlErrorWrap (patternKoreToPure Meta formula)
+            =<< patternKoreToPure Meta formula
         )
 modusPonens
     :: GoalId -> GoalId -> GoalId -> MLProof -> Either String MLProof
@@ -2223,8 +2218,7 @@ proposition1 phip psip conclusionId proof =
             proof
             conclusionId
             conclusionFormula
-            =<< mlErrorWrap
-                (   Propositional1
+            =<< (   Propositional1
                 <$> patternKoreToPure Meta phip
                 <*> patternKoreToPure Meta psip
                 )
@@ -2245,8 +2239,7 @@ proposition2 phi1p phi2p phi3p conclusionId proof =
             proof
             conclusionId
             conclusionFormula
-            =<< mlErrorWrap
-                (   Propositional2
+            =<< (   Propositional2
                 <$> patternKoreToPure Meta phi1p
                 <*> patternKoreToPure Meta phi2p
                 <*> patternKoreToPure Meta phi3p
@@ -2267,8 +2260,7 @@ proposition3 phi1p phi2p conclusionId proof =
             proof
             conclusionId
             conclusionFormula
-            =<< mlErrorWrap
-                (   Propositional3
+            =<< (   Propositional3
                 <$> patternKoreToPure Meta phi1p
                 <*> patternKoreToPure Meta phi2p
                 )
@@ -2291,8 +2283,7 @@ variableSubstitution
             proof
             conclusionId
             conclusionFormula
-            =<< mlErrorWrap
-                (   VariableSubstitution substituted
+            =<< (   VariableSubstitution substituted
                 <$> patternKoreToPure Meta unsubstitutedPattern
                 <*> pure substituting
                 )
@@ -2315,8 +2306,7 @@ forallRule
             proof
             conclusionId
             conclusionFormula
-            =<< mlErrorWrap
-                (   ForallRule variable
+            =<< (   ForallRule variable
                 <$> patternKoreToPure Meta phi1p
                 <*> patternKoreToPure Meta phi2p
                 )
@@ -2350,8 +2340,7 @@ propagateOr symbol idx phi1p phi2p conclusionId proof =
             proof
             conclusionId
             conclusionFormula
-            =<< mlErrorWrap
-                (   PropagateOr symbol idx
+            =<< (   PropagateOr symbol idx
                 <$> patternKoreToPure Meta phi1p
                 <*> patternKoreToPure Meta phi2p
                 )
@@ -2372,8 +2361,7 @@ propagateExists symbol idx variable phip conclusionId proof =
             proof
             conclusionId
             conclusionFormula
-            =<< mlErrorWrap
-                (   PropagateExists symbol idx variable
+            =<< (   PropagateExists symbol idx variable
                 <$> patternKoreToPure Meta phip
                 )
 
@@ -2425,8 +2413,7 @@ singvar variable phip path1 path2 conclusionId proof =
             proof
             conclusionId
             conclusionFormula
-            =<< mlErrorWrap
-                (   Singvar variable
+            =<< (   Singvar variable
                 <$> patternKoreToPure Meta phip
                 <*> pure path1
                 <*> pure path2
