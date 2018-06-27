@@ -1,0 +1,2608 @@
+[]
+
+module BASIC-K
+  sort K{} []
+  sort KItem{} []
+endmodule []
+
+module KSEQ
+  import BASIC-K []
+
+  symbol kseq{}(KItem{}, K{}) : K{} []
+  symbol append{}(K{}, K{}) : K{} []
+  symbol dotk{}() : K{} []
+
+  axiom{R}
+    \equals{K{},R}(
+      append{}(dotk{}(),K2:K{}),
+      K2:K{})
+  []
+
+  axiom{R}
+    \equals{K{},R}(
+      append{}(kseq{}(K1:KItem{},K2:K{}),K3:K{}),
+      kseq{}(K1:KItem{},append{}(K2:K{},K3:K{})))
+  []
+
+endmodule []
+
+module INJ
+  symbol inj{From,To}(From) : To []
+ 
+  axiom{S1,S2,S3,R} 
+    \equals{S3,R}(
+      inj{S2,S3}(inj{S1,S2}(T:S1)),
+      inj{S1,S3}(T:S1))
+  []
+
+endmodule []
+
+module K
+  import KSEQ []
+  import INJ []
+endmodule []
+
+module IMP
+
+// imports
+  import K []
+
+// sorts
+  sort List{} []
+  sort TCellFragment{} []
+  sort StateCell{} []
+  sort KConfigVar{} []
+  sort TCell{} []
+  sort BExp{} []
+  sort StateCellOpt{} []
+  sort Cell{} []
+  hooked-sort Bool{} []
+  sort Assignment{} []
+  sort KCell{} []
+  sort KResult{} []
+  sort ABool{} []
+  sort Map{} []
+  sort KCellOpt{} []
+  sort Stmt{} []
+  sort AId{} []
+  sort AInt{} []
+  hooked-sort Int{} []
+  sort Pgm{} []
+  sort Block{} []
+  sort Set{} []
+  sort State{} []
+  sort AExp{} []
+
+// symbols
+  symbol LblinitKCell{}(Map{}) : KCell{} []
+  symbol Lbl'Stop'Set{}() : Set{} []
+  hooked-symbol Lblkeys'Unds'list'LParUndsRParUnds'MAP'UndsUnds'Map{}(Map{}) : List{} []
+  symbol LblZero'Unds'ABOOL-SYNTAX'Unds'{}() : ABool{} []
+  symbol Lbl'BangUndsUnds'IMP-SYNTAX'UndsUnds'BExp{}(BExp{}) : BExp{} []
+  symbol LblisKResult{}(K{}) : Bool{} []
+  hooked-symbol LblListItem{}(K{}) : List{} []
+  symbol LblisStateCellOpt{}(K{}) : Bool{} []
+  symbol Lbl'Stop'AInt'Unds'AINT-SYNTAX'Unds'{}() : AInt{} []
+  hooked-symbol LblintersectSet{}(Set{}, Set{}) : Set{} []
+  symbol LblisKCellOpt{}(K{}) : Bool{} []
+  symbol Lblsum'Unds'AID-SYNTAX'Unds'{}() : AId{} []
+  symbol LblisBool{}(K{}) : Bool{} []
+  hooked-symbol Lbl'UndsLSqBUnds-LT-'-undef'RSqB'{}(Map{}, K{}) : Map{} []
+  hooked-symbol LblremoveAll{}(Map{}, Set{}) : Map{} []
+  symbol Lbl'-LT-'T'-GT-'{}(KCell{}, StateCell{}) : TCell{} []
+  symbol LblisTCell{}(K{}) : Bool{} []
+  symbol LblisAInt{}(K{}) : Bool{} []
+  hooked-symbol LblSet'Coln'in{}(K{}, Set{}) : Bool{} []
+  hooked-symbol Lbl'Unds'orBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(Bool{}, Bool{}) : Bool{} []
+  symbol LblisStmt{}(K{}) : Bool{} []
+  hooked-symbol Lbl'Unds'andThenBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(Bool{}, Bool{}) : Bool{} []
+  hooked-symbol LblMap'Coln'choice{}(Map{}) : K{} []
+  symbol Lbl'Hash'freezer'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp0'Unds'{}(K{}) : KItem{} []
+  symbol Lbl'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(AExp{}, AExp{}) : BExp{} []
+  symbol Lbl'Unds'Map'Unds'{}(Map{}, Map{}) : Map{} []
+  symbol Lbli'Unds'AID-SYNTAX'Unds'{}() : AId{} []
+  symbol Lbl'Unds'List'Unds'{}(List{}, List{}) : List{} []
+  hooked-symbol LblSet'Coln'choice{}(Set{}) : K{} []
+  symbol LblisBExp{}(K{}) : Bool{} []
+  symbol Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp{}(AId{}, AExp{}) : Stmt{} []
+  symbol Lbl'Stop'State'Unds'STATE'Unds'{}() : State{} []
+  symbol Lbl'UndsUndsUnds'STATE'UndsUnds'Assignment'Unds'State{}(Assignment{}, State{}) : State{} []
+  symbol Lblset{}(State{}, AId{}, AInt{}) : State{} []
+  symbol Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(K{}) : KItem{} []
+  hooked-symbol Lblsize{}(Set{}) : Int{} []
+  symbol Lblwhile'LParUndsRParUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block{}(BExp{}, Block{}) : Stmt{} []
+  symbol Lbl'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp{}(BExp{}, BExp{}) : BExp{} []
+  symbol Lbl'Unds-LT-Eqls'AInt'UndsUnds'AINT'UndsUnds'AInt'Unds'AInt{}(AInt{}, AInt{}) : ABool{} []
+  symbol LblisK{}(K{}) : Bool{} []
+  hooked-symbol Lbl'Unds'inList'Unds'{}(K{}, List{}) : Bool{} []
+  symbol Lbl'Stop'List{}() : List{} []
+  symbol LblisMap{}(K{}) : Bool{} []
+  symbol Lbl'UndsEqlsSlshEqls'AId'UndsUnds'AID'UndsUnds'AId'Unds'AId{}(AId{}, AId{}) : Bool{} []
+  symbol LblnoStateCell{}() : StateCellOpt{} []
+  symbol LblisTCellFragment{}(K{}) : Bool{} []
+  symbol Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(K{}) : KItem{} []
+  hooked-symbol Lbl'UndsLSqBUnds-LT-'-'UndsRSqBUnds'MAP'UndsUnds'Map'Unds'K'Unds'K{}(Map{}, K{}, K{}) : Map{} []
+  hooked-symbol Lbl'UndsEqlsSlshEqls'Bool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(Bool{}, Bool{}) : Bool{} []
+  symbol LblisAId{}(K{}) : Bool{} []
+  symbol LblinitTCell{}(Map{}) : TCell{} []
+  symbol LblisSet{}(K{}) : Bool{} []
+  hooked-symbol LblupdateMap{}(Map{}, Map{}) : Map{} []
+  hooked-symbol LblMap'Coln'lookup{}(Map{}, K{}) : K{} []
+  hooked-symbol Lblvalues{}(Map{}) : List{} []
+  hooked-symbol Lbl'Unds'xorBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(Bool{}, Bool{}) : Bool{} []
+  symbol Lblget{}(State{}, AId{}) : AInt{} []
+  hooked-symbol Lbl'Unds'-Map'UndsUnds'MAP'UndsUnds'Map'Unds'Map{}(Map{}, Map{}) : Map{} []
+  symbol LblisInt{}(K{}) : Bool{} []
+  symbol LblisCell{}(K{}) : Bool{} []
+  hooked-symbol Lbl'Unds'orElseBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(Bool{}, Bool{}) : Bool{} []
+  symbol Lbl'UndsPipe'-'-GT-UndsUnds'STATE'UndsUnds'AId'Unds'AInt{}(AId{}, AInt{}) : Assignment{} []
+  symbol Lbl'Hash'freezerif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block1'Unds'{}(K{}, K{}) : KItem{} []
+  hooked-symbol LblList'Coln'get{}(List{}, Int{}) : K{} []
+  symbol Lbl'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(AExp{}, AExp{}) : AExp{} []
+  symbol LblisAssignment{}(K{}) : Bool{} []
+  symbol LblleqWithCarry{}(AInt{}, AInt{}, ABool{}) : ABool{} []
+  hooked-symbol LblsizeMap{}(Map{}) : Int{} []
+  symbol LblOne'Unds'ABOOL-SYNTAX'Unds'{}() : ABool{} []
+  symbol Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(K{}) : KItem{} []
+  hooked-symbol LblnotBool'Unds'{}(Bool{}) : Bool{} []
+  hooked-symbol LblList'Coln'range{}(List{}, Int{}, Int{}) : List{} []
+  symbol Lbl'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(AExp{}, AExp{}) : AExp{} []
+  symbol Lbl'UndsUndsUnds'IMP-SYNTAX'UndsUnds'Stmt'Unds'Stmt{}(Stmt{}, Stmt{}) : Stmt{} []
+  symbol Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(K{}) : KItem{} []
+  hooked-symbol Lbl'Unds'impliesBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(Bool{}, Bool{}) : Bool{} []
+  hooked-symbol Lbl'Unds-LT-Eqls'Map'UndsUnds'MAP'UndsUnds'Map'Unds'Map{}(Map{}, Map{}) : Bool{} []
+  symbol LbladdWithCarry{}(AInt{}, AInt{}, ABool{}) : AInt{} []
+  symbol LblisStateCell{}(K{}) : Bool{} []
+  symbol Lbl'Hash'freezer'BangUndsUnds'IMP-SYNTAX'UndsUnds'BExp0'Unds'{}() : KItem{} []
+  symbol LblisABool{}(K{}) : Bool{} []
+  hooked-symbol Lbl'UndsPipe'-'-GT-Unds'{}(K{}, K{}) : Map{} []
+  hooked-symbol LblMap'Coln'lookupOrDefault{}(Map{}, K{}, K{}) : K{} []
+  symbol Lbl'UndsPlus'AInt'UndsUnds'AINT'UndsUnds'AInt'Unds'AInt{}(AInt{}, AInt{}) : AInt{} []
+  symbol LblisList{}(K{}) : Bool{} []
+  symbol Lbln'Unds'AID-SYNTAX'Unds'{}() : AId{} []
+  hooked-symbol LblSetItem{}(K{}) : Set{} []
+  symbol LblinitStateCell{}() : StateCell{} []
+  symbol Lbl'Stop'Map{}() : Map{} []
+  hooked-symbol Lblkeys{}(Map{}) : Set{} []
+  symbol LblisKItem{}(K{}) : Bool{} []
+  hooked-symbol LblSet'Coln'difference{}(Set{}, Set{}) : Set{} []
+  hooked-symbol Lbl'Unds-LT-Eqls'Set'UndsUnds'SET'UndsUnds'Set'Unds'Set{}(Set{}, Set{}) : Bool{} []
+  symbol Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(K{}) : KItem{} []
+  hooked-symbol LblsizeList{}(List{}) : Int{} []
+  symbol LblisKConfigVar{}(K{}) : Bool{} []
+  symbol Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(K{}) : KItem{} []
+  symbol Lbl'LBraRBraUnds'IMP-SYNTAX'Unds'{}() : Block{} []
+  symbol Lbl'-LT-'T'-GT-'-fragment{}(KCellOpt{}, StateCellOpt{}) : TCellFragment{} []
+  hooked-symbol Lbl'UndsEqlsEqls'Bool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(Bool{}, Bool{}) : Bool{} []
+  symbol LblnoKCell{}() : KCellOpt{} []
+  symbol LblisState{}(K{}) : Bool{} []
+  symbol LblisKCell{}(K{}) : Bool{} []
+  symbol LblisPgm{}(K{}) : Bool{} []
+  symbol Lbl'-LT-'k'-GT-'{}(K{}) : KCell{} []
+  hooked-symbol Lbl'Unds'andBool'Unds'{}(Bool{}, Bool{}) : Bool{} []
+  symbol LblisAExp{}(K{}) : Bool{} []
+  symbol Lbl'Unds'Set'Unds'{}(Set{}, Set{}) : Set{} []
+  symbol Lblif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block{}(BExp{}, Block{}, Block{}) : Stmt{} []
+  symbol Lbl'Hash'freezer'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp1'Unds'{}(K{}) : KItem{} []
+  symbol Lbl'-LT-'state'-GT-'{}(State{}) : StateCell{} []
+  symbol Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(ABool{}, AInt{}) : AInt{} []
+  symbol Lbl'LBraUndsRBraUnds'IMP-SYNTAX'UndsUnds'Stmt{}(Stmt{}) : Block{} []
+  symbol LblisBlock{}(K{}) : Bool{} []
+  hooked-symbol Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'UndsUnds'K'Unds'Map{}(K{}, Map{}) : Bool{} []
+
+// generated axioms
+  axiom{R} \exists{R} (Val:KCell{}, \equals{KCell{}, R} (Val:KCell{}, LblinitKCell{}(K0:Map{}))) [] // functional
+  axiom{R} \exists{R} (Val:Set{}, \equals{Set{}, R} (Val:Set{}, Lbl'Stop'Set{}())) [] // functional
+  axiom{R} \exists{R} (Val:List{}, \equals{List{}, R} (Val:List{}, Lblkeys'Unds'list'LParUndsRParUnds'MAP'UndsUnds'Map{}(K0:Map{}))) [] // functional
+  axiom{R} \exists{R} (Val:ABool{}, \equals{ABool{}, R} (Val:ABool{}, LblZero'Unds'ABOOL-SYNTAX'Unds'{}())) [] // functional
+  axiom{}\not{ABool{}} (\and{ABool{}} (LblZero'Unds'ABOOL-SYNTAX'Unds'{}(), LblOne'Unds'ABOOL-SYNTAX'Unds'{}())) [] // no confusion different constructors
+  axiom{R} \exists{R} (Val:BExp{}, \equals{BExp{}, R} (Val:BExp{}, Lbl'BangUndsUnds'IMP-SYNTAX'UndsUnds'BExp{}(K0:BExp{}))) [] // functional
+  axiom{}\implies{BExp{}} (\and{BExp{}} (Lbl'BangUndsUnds'IMP-SYNTAX'UndsUnds'BExp{}(X0:BExp{}), Lbl'BangUndsUnds'IMP-SYNTAX'UndsUnds'BExp{}(Y0:BExp{})), Lbl'BangUndsUnds'IMP-SYNTAX'UndsUnds'BExp{}(\and{BExp{}} (X0:BExp{}, Y0:BExp{}))) [] // no confusion same constructor
+  axiom{}\not{BExp{}} (\and{BExp{}} (Lbl'BangUndsUnds'IMP-SYNTAX'UndsUnds'BExp{}(X0:BExp{}), Lbl'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(Y0:AExp{}, Y1:AExp{}))) [] // no confusion different constructors
+  axiom{}\not{BExp{}} (\and{BExp{}} (Lbl'BangUndsUnds'IMP-SYNTAX'UndsUnds'BExp{}(X0:BExp{}), Lbl'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp{}(Y0:BExp{}, Y1:BExp{}))) [] // no confusion different constructors
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblisKResult{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:List{}, \equals{List{}, R} (Val:List{}, LblListItem{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblisStateCellOpt{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:AInt{}, \equals{AInt{}, R} (Val:AInt{}, Lbl'Stop'AInt'Unds'AINT-SYNTAX'Unds'{}())) [] // functional
+  axiom{}\not{AInt{}} (\and{AInt{}} (Lbl'Stop'AInt'Unds'AINT-SYNTAX'Unds'{}(), Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(Y0:ABool{}, Y1:AInt{}))) [] // no confusion different constructors
+  axiom{R} \exists{R} (Val:Set{}, \equals{Set{}, R} (Val:Set{}, LblintersectSet{}(K0:Set{}, K1:Set{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblisKCellOpt{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:AId{}, \equals{AId{}, R} (Val:AId{}, Lblsum'Unds'AID-SYNTAX'Unds'{}())) [] // functional
+  axiom{}\not{AId{}} (\and{AId{}} (Lblsum'Unds'AID-SYNTAX'Unds'{}(), Lbli'Unds'AID-SYNTAX'Unds'{}())) [] // no confusion different constructors
+  axiom{}\not{AId{}} (\and{AId{}} (Lblsum'Unds'AID-SYNTAX'Unds'{}(), Lbln'Unds'AID-SYNTAX'Unds'{}())) [] // no confusion different constructors
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblisBool{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:Map{}, \equals{Map{}, R} (Val:Map{}, Lbl'UndsLSqBUnds-LT-'-undef'RSqB'{}(K0:Map{}, K1:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:Map{}, \equals{Map{}, R} (Val:Map{}, LblremoveAll{}(K0:Map{}, K1:Set{}))) [] // functional
+  axiom{R} \exists{R} (Val:TCell{}, \equals{TCell{}, R} (Val:TCell{}, Lbl'-LT-'T'-GT-'{}(K0:KCell{}, K1:StateCell{}))) [] // functional
+  axiom{}\implies{TCell{}} (\and{TCell{}} (Lbl'-LT-'T'-GT-'{}(X0:KCell{}, X1:StateCell{}), Lbl'-LT-'T'-GT-'{}(Y0:KCell{}, Y1:StateCell{})), Lbl'-LT-'T'-GT-'{}(\and{KCell{}} (X0:KCell{}, Y0:KCell{}), \and{StateCell{}} (X1:StateCell{}, Y1:StateCell{}))) [] // no confusion same constructor
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblisTCell{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblisAInt{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblSet'Coln'in{}(K0:K{}, K1:Set{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, Lbl'Unds'orBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(K0:Bool{}, K1:Bool{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblisStmt{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, Lbl'Unds'andThenBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(K0:Bool{}, K1:Bool{}))) [] // functional
+  axiom{R} \exists{R} (Val:K{}, \equals{K{}, R} (Val:K{}, LblMap'Coln'choice{}(K0:Map{}))) [] // functional
+  axiom{R} \exists{R} (Val:KItem{}, \equals{KItem{}, R} (Val:KItem{}, Lbl'Hash'freezer'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp0'Unds'{}(K0:K{}))) [] // functional
+  axiom{}\implies{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp0'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp0'Unds'{}(Y0:K{})), Lbl'Hash'freezer'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp0'Unds'{}(\and{K{}} (X0:K{}, Y0:K{}))) [] // no confusion same constructor
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp0'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp0'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp0'Unds'{}(X0:K{}), Lbl'Hash'freezerif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block1'Unds'{}(Y0:K{}, Y1:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp0'Unds'{}(X0:K{}), Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp0'Unds'{}(X0:K{}), Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp0'Unds'{}(X0:K{}), Lbl'Hash'freezer'BangUndsUnds'IMP-SYNTAX'UndsUnds'BExp0'Unds'{}())) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp0'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp0'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp0'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp1'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{R} \exists{R} (Val:BExp{}, \equals{BExp{}, R} (Val:BExp{}, Lbl'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(K0:AExp{}, K1:AExp{}))) [] // functional
+  axiom{}\implies{BExp{}} (\and{BExp{}} (Lbl'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(X0:AExp{}, X1:AExp{}), Lbl'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(Y0:AExp{}, Y1:AExp{})), Lbl'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(\and{AExp{}} (X0:AExp{}, Y0:AExp{}), \and{AExp{}} (X1:AExp{}, Y1:AExp{}))) [] // no confusion same constructor
+  axiom{}\not{BExp{}} (\and{BExp{}} (Lbl'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(X0:AExp{}, X1:AExp{}), Lbl'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp{}(Y0:BExp{}, Y1:BExp{}))) [] // no confusion different constructors
+  axiom{R} \equals{Map{}, R} (Lbl'Unds'Map'Unds'{}(Lbl'Unds'Map'Unds'{}(K1:Map{},K2:Map{}),K3:Map{}),Lbl'Unds'Map'Unds'{}(K1:Map{},Lbl'Unds'Map'Unds'{}(K2:Map{},K3:Map{}))) [] // associativity
+  axiom{R} \equals{Map{}, R} (Lbl'Unds'Map'Unds'{}(K1:Map{},K2:Map{}),Lbl'Unds'Map'Unds'{}(K2:Map{},K1:Map{})) [] // commutativity
+  axiom{R} \exists{R} (Val:Map{}, \equals{Map{}, R} (Val:Map{}, Lbl'Unds'Map'Unds'{}(K0:Map{}, K1:Map{}))) [] // functional
+  axiom{R} \exists{R} (Val:AId{}, \equals{AId{}, R} (Val:AId{}, Lbli'Unds'AID-SYNTAX'Unds'{}())) [] // functional
+  axiom{}\not{AId{}} (\and{AId{}} (Lbli'Unds'AID-SYNTAX'Unds'{}(), Lbln'Unds'AID-SYNTAX'Unds'{}())) [] // no confusion different constructors
+  axiom{R} \equals{List{}, R} (Lbl'Unds'List'Unds'{}(Lbl'Unds'List'Unds'{}(K1:List{},K2:List{}),K3:List{}),Lbl'Unds'List'Unds'{}(K1:List{},Lbl'Unds'List'Unds'{}(K2:List{},K3:List{}))) [] // associativity
+  axiom{R} \exists{R} (Val:List{}, \equals{List{}, R} (Val:List{}, Lbl'Unds'List'Unds'{}(K0:List{}, K1:List{}))) [] // functional
+  axiom{R} \exists{R} (Val:K{}, \equals{K{}, R} (Val:K{}, LblSet'Coln'choice{}(K0:Set{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblisBExp{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:Stmt{}, \equals{Stmt{}, R} (Val:Stmt{}, Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp{}(K0:AId{}, K1:AExp{}))) [] // functional
+  axiom{}\implies{Stmt{}} (\and{Stmt{}} (Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp{}(X0:AId{}, X1:AExp{}), Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp{}(Y0:AId{}, Y1:AExp{})), Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp{}(\and{AId{}} (X0:AId{}, Y0:AId{}), \and{AExp{}} (X1:AExp{}, Y1:AExp{}))) [] // no confusion same constructor
+  axiom{}\not{Stmt{}} (\and{Stmt{}} (Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp{}(X0:AId{}, X1:AExp{}), Lblwhile'LParUndsRParUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block{}(Y0:BExp{}, Y1:Block{}))) [] // no confusion different constructors
+  axiom{}\not{Stmt{}} (\and{Stmt{}} (Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp{}(X0:AId{}, X1:AExp{}), Lbl'UndsUndsUnds'IMP-SYNTAX'UndsUnds'Stmt'Unds'Stmt{}(Y0:Stmt{}, Y1:Stmt{}))) [] // no confusion different constructors
+  axiom{}\not{Stmt{}} (\and{Stmt{}} (Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp{}(X0:AId{}, X1:AExp{}), Lblif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block{}(Y0:BExp{}, Y1:Block{}, Y2:Block{}))) [] // no confusion different constructors
+  axiom{R} \exists{R} (Val:State{}, \equals{State{}, R} (Val:State{}, Lbl'Stop'State'Unds'STATE'Unds'{}())) [] // functional
+  axiom{}\not{State{}} (\and{State{}} (Lbl'Stop'State'Unds'STATE'Unds'{}(), Lbl'UndsUndsUnds'STATE'UndsUnds'Assignment'Unds'State{}(Y0:Assignment{}, Y1:State{}))) [] // no confusion different constructors
+  axiom{R} \exists{R} (Val:State{}, \equals{State{}, R} (Val:State{}, Lbl'UndsUndsUnds'STATE'UndsUnds'Assignment'Unds'State{}(K0:Assignment{}, K1:State{}))) [] // functional
+  axiom{}\implies{State{}} (\and{State{}} (Lbl'UndsUndsUnds'STATE'UndsUnds'Assignment'Unds'State{}(X0:Assignment{}, X1:State{}), Lbl'UndsUndsUnds'STATE'UndsUnds'Assignment'Unds'State{}(Y0:Assignment{}, Y1:State{})), Lbl'UndsUndsUnds'STATE'UndsUnds'Assignment'Unds'State{}(\and{Assignment{}} (X0:Assignment{}, Y0:Assignment{}), \and{State{}} (X1:State{}, Y1:State{}))) [] // no confusion same constructor
+  axiom{R} \exists{R} (Val:State{}, \equals{State{}, R} (Val:State{}, Lblset{}(K0:State{}, K1:AId{}, K2:AInt{}))) [] // functional
+  axiom{R} \exists{R} (Val:KItem{}, \equals{KItem{}, R} (Val:KItem{}, Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(K0:K{}))) [] // functional
+  axiom{}\implies{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(Y0:K{})), Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(\and{K{}} (X0:K{}, Y0:K{}))) [] // no confusion same constructor
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(X0:K{}), Lbl'Hash'freezerif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block1'Unds'{}(Y0:K{}, Y1:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(X0:K{}), Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(X0:K{}), Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(X0:K{}), Lbl'Hash'freezer'BangUndsUnds'IMP-SYNTAX'UndsUnds'BExp0'Unds'{}())) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp1'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{R} \exists{R} (Val:Int{}, \equals{Int{}, R} (Val:Int{}, Lblsize{}(K0:Set{}))) [] // functional
+  axiom{R} \exists{R} (Val:Stmt{}, \equals{Stmt{}, R} (Val:Stmt{}, Lblwhile'LParUndsRParUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block{}(K0:BExp{}, K1:Block{}))) [] // functional
+  axiom{}\implies{Stmt{}} (\and{Stmt{}} (Lblwhile'LParUndsRParUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block{}(X0:BExp{}, X1:Block{}), Lblwhile'LParUndsRParUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block{}(Y0:BExp{}, Y1:Block{})), Lblwhile'LParUndsRParUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block{}(\and{BExp{}} (X0:BExp{}, Y0:BExp{}), \and{Block{}} (X1:Block{}, Y1:Block{}))) [] // no confusion same constructor
+  axiom{}\not{Stmt{}} (\and{Stmt{}} (Lblwhile'LParUndsRParUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block{}(X0:BExp{}, X1:Block{}), Lbl'UndsUndsUnds'IMP-SYNTAX'UndsUnds'Stmt'Unds'Stmt{}(Y0:Stmt{}, Y1:Stmt{}))) [] // no confusion different constructors
+  axiom{}\not{Stmt{}} (\and{Stmt{}} (Lblwhile'LParUndsRParUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block{}(X0:BExp{}, X1:Block{}), Lblif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block{}(Y0:BExp{}, Y1:Block{}, Y2:Block{}))) [] // no confusion different constructors
+  axiom{R} \exists{R} (Val:BExp{}, \equals{BExp{}, R} (Val:BExp{}, Lbl'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp{}(K0:BExp{}, K1:BExp{}))) [] // functional
+  axiom{}\implies{BExp{}} (\and{BExp{}} (Lbl'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp{}(X0:BExp{}, X1:BExp{}), Lbl'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp{}(Y0:BExp{}, Y1:BExp{})), Lbl'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp{}(\and{BExp{}} (X0:BExp{}, Y0:BExp{}), \and{BExp{}} (X1:BExp{}, Y1:BExp{}))) [] // no confusion same constructor
+  axiom{R} \exists{R} (Val:ABool{}, \equals{ABool{}, R} (Val:ABool{}, Lbl'Unds-LT-Eqls'AInt'UndsUnds'AINT'UndsUnds'AInt'Unds'AInt{}(K0:AInt{}, K1:AInt{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblisK{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, Lbl'Unds'inList'Unds'{}(K0:K{}, K1:List{}))) [] // functional
+  axiom{R} \exists{R} (Val:List{}, \equals{List{}, R} (Val:List{}, Lbl'Stop'List{}())) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblisMap{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, Lbl'UndsEqlsSlshEqls'AId'UndsUnds'AID'UndsUnds'AId'Unds'AId{}(K0:AId{}, K1:AId{}))) [] // functional
+  axiom{R} \exists{R} (Val:StateCellOpt{}, \equals{StateCellOpt{}, R} (Val:StateCellOpt{}, LblnoStateCell{}())) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblisTCellFragment{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:KItem{}, \equals{KItem{}, R} (Val:KItem{}, Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(K0:K{}))) [] // functional
+  axiom{}\implies{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(Y0:K{})), Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(\and{K{}} (X0:K{}, Y0:K{}))) [] // no confusion same constructor
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(X0:K{}), Lbl'Hash'freezerif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block1'Unds'{}(Y0:K{}, Y1:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(X0:K{}), Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(X0:K{}), Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(X0:K{}), Lbl'Hash'freezer'BangUndsUnds'IMP-SYNTAX'UndsUnds'BExp0'Unds'{}())) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp1'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{R} \exists{R} (Val:Map{}, \equals{Map{}, R} (Val:Map{}, Lbl'UndsLSqBUnds-LT-'-'UndsRSqBUnds'MAP'UndsUnds'Map'Unds'K'Unds'K{}(K0:Map{}, K1:K{}, K2:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, Lbl'UndsEqlsSlshEqls'Bool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(K0:Bool{}, K1:Bool{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblisAId{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:TCell{}, \equals{TCell{}, R} (Val:TCell{}, LblinitTCell{}(K0:Map{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblisSet{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:Map{}, \equals{Map{}, R} (Val:Map{}, LblupdateMap{}(K0:Map{}, K1:Map{}))) [] // functional
+  axiom{R} \exists{R} (Val:K{}, \equals{K{}, R} (Val:K{}, LblMap'Coln'lookup{}(K0:Map{}, K1:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:List{}, \equals{List{}, R} (Val:List{}, Lblvalues{}(K0:Map{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, Lbl'Unds'xorBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(K0:Bool{}, K1:Bool{}))) [] // functional
+  axiom{R} \exists{R} (Val:AInt{}, \equals{AInt{}, R} (Val:AInt{}, Lblget{}(K0:State{}, K1:AId{}))) [] // functional
+  axiom{R} \exists{R} (Val:Map{}, \equals{Map{}, R} (Val:Map{}, Lbl'Unds'-Map'UndsUnds'MAP'UndsUnds'Map'Unds'Map{}(K0:Map{}, K1:Map{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblisInt{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblisCell{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, Lbl'Unds'orElseBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(K0:Bool{}, K1:Bool{}))) [] // functional
+  axiom{R} \exists{R} (Val:Assignment{}, \equals{Assignment{}, R} (Val:Assignment{}, Lbl'UndsPipe'-'-GT-UndsUnds'STATE'UndsUnds'AId'Unds'AInt{}(K0:AId{}, K1:AInt{}))) [] // functional
+  axiom{}\implies{Assignment{}} (\and{Assignment{}} (Lbl'UndsPipe'-'-GT-UndsUnds'STATE'UndsUnds'AId'Unds'AInt{}(X0:AId{}, X1:AInt{}), Lbl'UndsPipe'-'-GT-UndsUnds'STATE'UndsUnds'AId'Unds'AInt{}(Y0:AId{}, Y1:AInt{})), Lbl'UndsPipe'-'-GT-UndsUnds'STATE'UndsUnds'AId'Unds'AInt{}(\and{AId{}} (X0:AId{}, Y0:AId{}), \and{AInt{}} (X1:AInt{}, Y1:AInt{}))) [] // no confusion same constructor
+  axiom{R} \exists{R} (Val:KItem{}, \equals{KItem{}, R} (Val:KItem{}, Lbl'Hash'freezerif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block1'Unds'{}(K0:K{}, K1:K{}))) [] // functional
+  axiom{}\implies{KItem{}} (\and{KItem{}} (Lbl'Hash'freezerif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block1'Unds'{}(X0:K{}, X1:K{}), Lbl'Hash'freezerif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block1'Unds'{}(Y0:K{}, Y1:K{})), Lbl'Hash'freezerif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block1'Unds'{}(\and{K{}} (X0:K{}, Y0:K{}), \and{K{}} (X1:K{}, Y1:K{}))) [] // no confusion same constructor
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezerif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block1'Unds'{}(X0:K{}, X1:K{}), Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezerif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block1'Unds'{}(X0:K{}, X1:K{}), Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezerif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block1'Unds'{}(X0:K{}, X1:K{}), Lbl'Hash'freezer'BangUndsUnds'IMP-SYNTAX'UndsUnds'BExp0'Unds'{}())) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezerif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block1'Unds'{}(X0:K{}, X1:K{}), Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezerif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block1'Unds'{}(X0:K{}, X1:K{}), Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezerif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block1'Unds'{}(X0:K{}, X1:K{}), Lbl'Hash'freezer'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp1'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{R} \exists{R} (Val:K{}, \equals{K{}, R} (Val:K{}, LblList'Coln'get{}(K0:List{}, K1:Int{}))) [] // functional
+  axiom{R} \exists{R} (Val:AExp{}, \equals{AExp{}, R} (Val:AExp{}, Lbl'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(K0:AExp{}, K1:AExp{}))) [] // functional
+  axiom{}\implies{AExp{}} (\and{AExp{}} (Lbl'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(X0:AExp{}, X1:AExp{}), Lbl'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(Y0:AExp{}, Y1:AExp{})), Lbl'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(\and{AExp{}} (X0:AExp{}, Y0:AExp{}), \and{AExp{}} (X1:AExp{}, Y1:AExp{}))) [] // no confusion same constructor
+  axiom{}\not{AExp{}} (\and{AExp{}} (Lbl'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(X0:AExp{}, X1:AExp{}), Lbl'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(Y0:AExp{}, Y1:AExp{}))) [] // no confusion different constructors
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblisAssignment{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:ABool{}, \equals{ABool{}, R} (Val:ABool{}, LblleqWithCarry{}(K0:AInt{}, K1:AInt{}, K2:ABool{}))) [] // functional
+  axiom{R} \exists{R} (Val:Int{}, \equals{Int{}, R} (Val:Int{}, LblsizeMap{}(K0:Map{}))) [] // functional
+  axiom{R} \exists{R} (Val:ABool{}, \equals{ABool{}, R} (Val:ABool{}, LblOne'Unds'ABOOL-SYNTAX'Unds'{}())) [] // functional
+  axiom{R} \exists{R} (Val:KItem{}, \equals{KItem{}, R} (Val:KItem{}, Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(K0:K{}))) [] // functional
+  axiom{}\implies{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(X0:K{}), Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(Y0:K{})), Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(\and{K{}} (X0:K{}, Y0:K{}))) [] // no confusion same constructor
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(X0:K{}), Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(X0:K{}), Lbl'Hash'freezer'BangUndsUnds'IMP-SYNTAX'UndsUnds'BExp0'Unds'{}())) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp1'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblnotBool'Unds'{}(K0:Bool{}))) [] // functional
+  axiom{R} \exists{R} (Val:List{}, \equals{List{}, R} (Val:List{}, LblList'Coln'range{}(K0:List{}, K1:Int{}, K2:Int{}))) [] // functional
+  axiom{R} \exists{R} (Val:AExp{}, \equals{AExp{}, R} (Val:AExp{}, Lbl'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(K0:AExp{}, K1:AExp{}))) [] // functional
+  axiom{}\implies{AExp{}} (\and{AExp{}} (Lbl'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(X0:AExp{}, X1:AExp{}), Lbl'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(Y0:AExp{}, Y1:AExp{})), Lbl'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(\and{AExp{}} (X0:AExp{}, Y0:AExp{}), \and{AExp{}} (X1:AExp{}, Y1:AExp{}))) [] // no confusion same constructor
+  axiom{R} \exists{R} (Val:Stmt{}, \equals{Stmt{}, R} (Val:Stmt{}, Lbl'UndsUndsUnds'IMP-SYNTAX'UndsUnds'Stmt'Unds'Stmt{}(K0:Stmt{}, K1:Stmt{}))) [] // functional
+  axiom{}\implies{Stmt{}} (\and{Stmt{}} (Lbl'UndsUndsUnds'IMP-SYNTAX'UndsUnds'Stmt'Unds'Stmt{}(X0:Stmt{}, X1:Stmt{}), Lbl'UndsUndsUnds'IMP-SYNTAX'UndsUnds'Stmt'Unds'Stmt{}(Y0:Stmt{}, Y1:Stmt{})), Lbl'UndsUndsUnds'IMP-SYNTAX'UndsUnds'Stmt'Unds'Stmt{}(\and{Stmt{}} (X0:Stmt{}, Y0:Stmt{}), \and{Stmt{}} (X1:Stmt{}, Y1:Stmt{}))) [] // no confusion same constructor
+  axiom{}\not{Stmt{}} (\and{Stmt{}} (Lbl'UndsUndsUnds'IMP-SYNTAX'UndsUnds'Stmt'Unds'Stmt{}(X0:Stmt{}, X1:Stmt{}), Lblif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block{}(Y0:BExp{}, Y1:Block{}, Y2:Block{}))) [] // no confusion different constructors
+  axiom{R} \exists{R} (Val:KItem{}, \equals{KItem{}, R} (Val:KItem{}, Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(K0:K{}))) [] // functional
+  axiom{}\implies{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(X0:K{}), Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(Y0:K{})), Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(\and{K{}} (X0:K{}, Y0:K{}))) [] // no confusion same constructor
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(X0:K{}), Lbl'Hash'freezer'BangUndsUnds'IMP-SYNTAX'UndsUnds'BExp0'Unds'{}())) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp1'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, Lbl'Unds'impliesBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(K0:Bool{}, K1:Bool{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, Lbl'Unds-LT-Eqls'Map'UndsUnds'MAP'UndsUnds'Map'Unds'Map{}(K0:Map{}, K1:Map{}))) [] // functional
+  axiom{R} \exists{R} (Val:AInt{}, \equals{AInt{}, R} (Val:AInt{}, LbladdWithCarry{}(K0:AInt{}, K1:AInt{}, K2:ABool{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblisStateCell{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:KItem{}, \equals{KItem{}, R} (Val:KItem{}, Lbl'Hash'freezer'BangUndsUnds'IMP-SYNTAX'UndsUnds'BExp0'Unds'{}())) [] // functional
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'BangUndsUnds'IMP-SYNTAX'UndsUnds'BExp0'Unds'{}(), Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'BangUndsUnds'IMP-SYNTAX'UndsUnds'BExp0'Unds'{}(), Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'BangUndsUnds'IMP-SYNTAX'UndsUnds'BExp0'Unds'{}(), Lbl'Hash'freezer'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp1'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblisABool{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:Map{}, \equals{Map{}, R} (Val:Map{}, Lbl'UndsPipe'-'-GT-Unds'{}(K0:K{}, K1:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:K{}, \equals{K{}, R} (Val:K{}, LblMap'Coln'lookupOrDefault{}(K0:Map{}, K1:K{}, K2:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:AInt{}, \equals{AInt{}, R} (Val:AInt{}, Lbl'UndsPlus'AInt'UndsUnds'AINT'UndsUnds'AInt'Unds'AInt{}(K0:AInt{}, K1:AInt{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblisList{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:AId{}, \equals{AId{}, R} (Val:AId{}, Lbln'Unds'AID-SYNTAX'Unds'{}())) [] // functional
+  axiom{R} \exists{R} (Val:Set{}, \equals{Set{}, R} (Val:Set{}, LblSetItem{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:StateCell{}, \equals{StateCell{}, R} (Val:StateCell{}, LblinitStateCell{}())) [] // functional
+  axiom{R} \exists{R} (Val:Map{}, \equals{Map{}, R} (Val:Map{}, Lbl'Stop'Map{}())) [] // functional
+  axiom{R} \exists{R} (Val:Set{}, \equals{Set{}, R} (Val:Set{}, Lblkeys{}(K0:Map{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblisKItem{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:Set{}, \equals{Set{}, R} (Val:Set{}, LblSet'Coln'difference{}(K0:Set{}, K1:Set{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, Lbl'Unds-LT-Eqls'Set'UndsUnds'SET'UndsUnds'Set'Unds'Set{}(K0:Set{}, K1:Set{}))) [] // functional
+  axiom{R} \exists{R} (Val:KItem{}, \equals{KItem{}, R} (Val:KItem{}, Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(K0:K{}))) [] // functional
+  axiom{}\implies{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(Y0:K{})), Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(\and{K{}} (X0:K{}, Y0:K{}))) [] // no confusion same constructor
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp1'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{R} \exists{R} (Val:Int{}, \equals{Int{}, R} (Val:Int{}, LblsizeList{}(K0:List{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblisKConfigVar{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:KItem{}, \equals{KItem{}, R} (Val:KItem{}, Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(K0:K{}))) [] // functional
+  axiom{}\implies{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(Y0:K{})), Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(\and{K{}} (X0:K{}, Y0:K{}))) [] // no confusion same constructor
+  axiom{}\not{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp1'Unds'{}(Y0:K{}))) [] // no confusion different constructors
+  axiom{R} \exists{R} (Val:Block{}, \equals{Block{}, R} (Val:Block{}, Lbl'LBraRBraUnds'IMP-SYNTAX'Unds'{}())) [] // functional
+  axiom{}\not{Block{}} (\and{Block{}} (Lbl'LBraRBraUnds'IMP-SYNTAX'Unds'{}(), Lbl'LBraUndsRBraUnds'IMP-SYNTAX'UndsUnds'Stmt{}(Y0:Stmt{}))) [] // no confusion different constructors
+  axiom{R} \exists{R} (Val:TCellFragment{}, \equals{TCellFragment{}, R} (Val:TCellFragment{}, Lbl'-LT-'T'-GT-'-fragment{}(K0:KCellOpt{}, K1:StateCellOpt{}))) [] // functional
+  axiom{}\implies{TCellFragment{}} (\and{TCellFragment{}} (Lbl'-LT-'T'-GT-'-fragment{}(X0:KCellOpt{}, X1:StateCellOpt{}), Lbl'-LT-'T'-GT-'-fragment{}(Y0:KCellOpt{}, Y1:StateCellOpt{})), Lbl'-LT-'T'-GT-'-fragment{}(\and{KCellOpt{}} (X0:KCellOpt{}, Y0:KCellOpt{}), \and{StateCellOpt{}} (X1:StateCellOpt{}, Y1:StateCellOpt{}))) [] // no confusion same constructor
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, Lbl'UndsEqlsEqls'Bool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(K0:Bool{}, K1:Bool{}))) [] // functional
+  axiom{R} \exists{R} (Val:KCellOpt{}, \equals{KCellOpt{}, R} (Val:KCellOpt{}, LblnoKCell{}())) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblisState{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblisKCell{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblisPgm{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:KCell{}, \equals{KCell{}, R} (Val:KCell{}, Lbl'-LT-'k'-GT-'{}(K0:K{}))) [] // functional
+  axiom{}\implies{KCell{}} (\and{KCell{}} (Lbl'-LT-'k'-GT-'{}(X0:K{}), Lbl'-LT-'k'-GT-'{}(Y0:K{})), Lbl'-LT-'k'-GT-'{}(\and{K{}} (X0:K{}, Y0:K{}))) [] // no confusion same constructor
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, Lbl'Unds'andBool'Unds'{}(K0:Bool{}, K1:Bool{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblisAExp{}(K0:K{}))) [] // functional
+  axiom{R} \equals{Set{}, R} (Lbl'Unds'Set'Unds'{}(Lbl'Unds'Set'Unds'{}(K1:Set{},K2:Set{}),K3:Set{}),Lbl'Unds'Set'Unds'{}(K1:Set{},Lbl'Unds'Set'Unds'{}(K2:Set{},K3:Set{}))) [] // associativity
+  axiom{R} \equals{Set{}, R} (Lbl'Unds'Set'Unds'{}(K1:Set{},K2:Set{}),Lbl'Unds'Set'Unds'{}(K2:Set{},K1:Set{})) [] // commutativity
+  axiom{R} \equals{Set{}, R} (Lbl'Unds'Set'Unds'{}(K:Set{},K:Set{}),K:Set{}) [] // idempotency
+  axiom{R} \exists{R} (Val:Set{}, \equals{Set{}, R} (Val:Set{}, Lbl'Unds'Set'Unds'{}(K0:Set{}, K1:Set{}))) [] // functional
+  axiom{R} \exists{R} (Val:Stmt{}, \equals{Stmt{}, R} (Val:Stmt{}, Lblif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block{}(K0:BExp{}, K1:Block{}, K2:Block{}))) [] // functional
+  axiom{}\implies{Stmt{}} (\and{Stmt{}} (Lblif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block{}(X0:BExp{}, X1:Block{}, X2:Block{}), Lblif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block{}(Y0:BExp{}, Y1:Block{}, Y2:Block{})), Lblif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block{}(\and{BExp{}} (X0:BExp{}, Y0:BExp{}), \and{Block{}} (X1:Block{}, Y1:Block{}), \and{Block{}} (X2:Block{}, Y2:Block{}))) [] // no confusion same constructor
+  axiom{R} \exists{R} (Val:KItem{}, \equals{KItem{}, R} (Val:KItem{}, Lbl'Hash'freezer'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp1'Unds'{}(K0:K{}))) [] // functional
+  axiom{}\implies{KItem{}} (\and{KItem{}} (Lbl'Hash'freezer'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp1'Unds'{}(X0:K{}), Lbl'Hash'freezer'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp1'Unds'{}(Y0:K{})), Lbl'Hash'freezer'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp1'Unds'{}(\and{K{}} (X0:K{}, Y0:K{}))) [] // no confusion same constructor
+  axiom{R} \exists{R} (Val:StateCell{}, \equals{StateCell{}, R} (Val:StateCell{}, Lbl'-LT-'state'-GT-'{}(K0:State{}))) [] // functional
+  axiom{}\implies{StateCell{}} (\and{StateCell{}} (Lbl'-LT-'state'-GT-'{}(X0:State{}), Lbl'-LT-'state'-GT-'{}(Y0:State{})), Lbl'-LT-'state'-GT-'{}(\and{State{}} (X0:State{}, Y0:State{}))) [] // no confusion same constructor
+  axiom{R} \exists{R} (Val:AInt{}, \equals{AInt{}, R} (Val:AInt{}, Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(K0:ABool{}, K1:AInt{}))) [] // functional
+  axiom{}\implies{AInt{}} (\and{AInt{}} (Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(X0:ABool{}, X1:AInt{}), Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(Y0:ABool{}, Y1:AInt{})), Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(\and{ABool{}} (X0:ABool{}, Y0:ABool{}), \and{AInt{}} (X1:AInt{}, Y1:AInt{}))) [] // no confusion same constructor
+  axiom{R} \exists{R} (Val:Block{}, \equals{Block{}, R} (Val:Block{}, Lbl'LBraUndsRBraUnds'IMP-SYNTAX'UndsUnds'Stmt{}(K0:Stmt{}))) [] // functional
+  axiom{}\implies{Block{}} (\and{Block{}} (Lbl'LBraUndsRBraUnds'IMP-SYNTAX'UndsUnds'Stmt{}(X0:Stmt{}), Lbl'LBraUndsRBraUnds'IMP-SYNTAX'UndsUnds'Stmt{}(Y0:Stmt{})), Lbl'LBraUndsRBraUnds'IMP-SYNTAX'UndsUnds'Stmt{}(\and{Stmt{}} (X0:Stmt{}, Y0:Stmt{}))) [] // no confusion same constructor
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, LblisBlock{}(K0:K{}))) [] // functional
+  axiom{R} \exists{R} (Val:Bool{}, \equals{Bool{}, R} (Val:Bool{}, Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'UndsUnds'K'Unds'Map{}(K0:K{}, K1:Map{}))) [] // functional
+  axiom{} \or{KItem{}} (\exists{KItem{}} (Val:Int{}, inj{Int{}, KItem{}} (Val:Int{})), \or{KItem{}} (\exists{KItem{}} (Val:Pgm{}, inj{Pgm{}, KItem{}} (Val:Pgm{})), \or{KItem{}} (\exists{KItem{}} (Val:KCell{}, inj{KCell{}, KItem{}} (Val:KCell{})), \or{KItem{}} (\exists{KItem{}} (Val:StateCellOpt{}, inj{StateCellOpt{}, KItem{}} (Val:StateCellOpt{})), \or{KItem{}} (\exists{KItem{}} (Val:Set{}, inj{Set{}, KItem{}} (Val:Set{})), \or{KItem{}} (\exists{KItem{}} (Val:AId{}, inj{AId{}, KItem{}} (Val:AId{})), \or{KItem{}} (\exists{KItem{}} (Val:Assignment{}, inj{Assignment{}, KItem{}} (Val:Assignment{})), \or{KItem{}} (\exists{KItem{}} (Val:AExp{}, inj{AExp{}, KItem{}} (Val:AExp{})), \or{KItem{}} (\exists{KItem{}} (X0:K{}, Lbl'Hash'freezer'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp0'Unds'{}(X0:K{})), \or{KItem{}} (\exists{KItem{}} (X0:K{}, Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(X0:K{})), \or{KItem{}} (\exists{KItem{}} (Val:Map{}, inj{Map{}, KItem{}} (Val:Map{})), \or{KItem{}} (\exists{KItem{}} (Val:TCell{}, inj{TCell{}, KItem{}} (Val:TCell{})), \or{KItem{}} (\exists{KItem{}} (Val:List{}, inj{List{}, KItem{}} (Val:List{})), \or{KItem{}} (\exists{KItem{}} (X0:K{}, Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(X0:K{})), \or{KItem{}} (\exists{KItem{}} (Val:TCellFragment{}, inj{TCellFragment{}, KItem{}} (Val:TCellFragment{})), \or{KItem{}} (\exists{KItem{}} (Val:AInt{}, inj{AInt{}, KItem{}} (Val:AInt{})), \or{KItem{}} (\exists{KItem{}} (Val:StateCell{}, inj{StateCell{}, KItem{}} (Val:StateCell{})), \or{KItem{}} (\exists{KItem{}} (X0:K{}, \exists{KItem{}} (X1:K{}, Lbl'Hash'freezerif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block1'Unds'{}(X0:K{}, X1:K{}))), \or{KItem{}} (\exists{KItem{}} (X0:K{}, Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(X0:K{})), \or{KItem{}} (\exists{KItem{}} (Val:State{}, inj{State{}, KItem{}} (Val:State{})), \or{KItem{}} (\exists{KItem{}} (X0:K{}, Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(X0:K{})), \or{KItem{}} (\exists{KItem{}} (Val:Cell{}, inj{Cell{}, KItem{}} (Val:Cell{})), \or{KItem{}} (\exists{KItem{}} (Val:Bool{}, inj{Bool{}, KItem{}} (Val:Bool{})), \or{KItem{}} (Lbl'Hash'freezer'BangUndsUnds'IMP-SYNTAX'UndsUnds'BExp0'Unds'{}(), \or{KItem{}} (\exists{KItem{}} (Val:ABool{}, inj{ABool{}, KItem{}} (Val:ABool{})), \or{KItem{}} (\exists{KItem{}} (X0:K{}, Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(X0:K{})), \or{KItem{}} (\exists{KItem{}} (X0:K{}, Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(X0:K{})), \or{KItem{}} (\exists{KItem{}} (Val:Stmt{}, inj{Stmt{}, KItem{}} (Val:Stmt{})), \or{KItem{}} (\exists{KItem{}} (Val:BExp{}, inj{BExp{}, KItem{}} (Val:BExp{})), \or{KItem{}} (\exists{KItem{}} (Val:KCellOpt{}, inj{KCellOpt{}, KItem{}} (Val:KCellOpt{})), \or{KItem{}} (\exists{KItem{}} (X0:K{}, Lbl'Hash'freezer'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp1'Unds'{}(X0:K{})), \or{KItem{}} (\exists{KItem{}} (Val:KResult{}, inj{KResult{}, KItem{}} (Val:KResult{})), \or{KItem{}} (\exists{KItem{}} (Val:Block{}, inj{Block{}, KItem{}} (Val:Block{})), \bottom{KItem{}}()))))))))))))))))))))))))))))))))) [] // no junk
+  axiom{} \or{List{}} (\exists{List{}} (X0:List{}, \exists{List{}} (X1:List{}, Lbl'Unds'List'Unds'{}(X0:List{}, X1:List{}))), \or{List{}} (Lbl'Stop'List{}(), \bottom{List{}}())) [] // no junk
+  axiom{} \or{TCellFragment{}} (\exists{TCellFragment{}} (X0:KCellOpt{}, \exists{TCellFragment{}} (X1:StateCellOpt{}, Lbl'-LT-'T'-GT-'-fragment{}(X0:KCellOpt{}, X1:StateCellOpt{}))), \bottom{TCellFragment{}}()) [] // no junk
+  axiom{} \or{StateCell{}} (\exists{StateCell{}} (X0:State{}, Lbl'-LT-'state'-GT-'{}(X0:State{})), \bottom{StateCell{}}()) [] // no junk
+  axiom{} \or{KConfigVar{}} (\top{KConfigVar{}}(), \bottom{KConfigVar{}}()) [] // no junk (TODO: fix bug with \dv)
+  axiom{} \or{TCell{}} (\exists{TCell{}} (X0:KCell{}, \exists{TCell{}} (X1:StateCell{}, Lbl'-LT-'T'-GT-'{}(X0:KCell{}, X1:StateCell{}))), \bottom{TCell{}}()) [] // no junk
+  axiom{} \or{BExp{}} (\exists{BExp{}} (X0:BExp{}, Lbl'BangUndsUnds'IMP-SYNTAX'UndsUnds'BExp{}(X0:BExp{})), \or{BExp{}} (\exists{BExp{}} (X0:AExp{}, \exists{BExp{}} (X1:AExp{}, Lbl'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(X0:AExp{}, X1:AExp{}))), \or{BExp{}} (\exists{BExp{}} (X0:BExp{}, \exists{BExp{}} (X1:BExp{}, Lbl'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp{}(X0:BExp{}, X1:BExp{}))), \or{BExp{}} (\exists{BExp{}} (Val:ABool{}, inj{ABool{}, BExp{}} (Val:ABool{})), \bottom{BExp{}}())))) [] // no junk
+  axiom{} \or{StateCellOpt{}} (LblnoStateCell{}(), \or{StateCellOpt{}} (\exists{StateCellOpt{}} (Val:StateCell{}, inj{StateCell{}, StateCellOpt{}} (Val:StateCell{})), \bottom{StateCellOpt{}}())) [] // no junk
+  axiom{} \or{Cell{}} (\exists{Cell{}} (Val:KCell{}, inj{KCell{}, Cell{}} (Val:KCell{})), \or{Cell{}} (\exists{Cell{}} (Val:TCell{}, inj{TCell{}, Cell{}} (Val:TCell{})), \or{Cell{}} (\exists{Cell{}} (Val:StateCell{}, inj{StateCell{}, Cell{}} (Val:StateCell{})), \bottom{Cell{}}()))) [] // no junk
+  axiom{} \or{Bool{}} (\top{Bool{}}(), \bottom{Bool{}}()) [] // no junk (TODO: fix bug with \dv)
+  axiom{} \or{Assignment{}} (\exists{Assignment{}} (X0:AId{}, \exists{Assignment{}} (X1:AInt{}, Lbl'UndsPipe'-'-GT-UndsUnds'STATE'UndsUnds'AId'Unds'AInt{}(X0:AId{}, X1:AInt{}))), \bottom{Assignment{}}()) [] // no junk
+  axiom{} \or{KCell{}} (\exists{KCell{}} (X0:K{}, Lbl'-LT-'k'-GT-'{}(X0:K{})), \bottom{KCell{}}()) [] // no junk
+  axiom{} \or{K{}} (\exists{K{}} (Val:KItem{}, inj{KItem{}, K{}} (Val:KItem{})), \bottom{K{}}()) [] // no junk
+  axiom{} \or{KResult{}} (\exists{KResult{}} (Val:AInt{}, inj{AInt{}, KResult{}} (Val:AInt{})), \or{KResult{}} (\exists{KResult{}} (Val:ABool{}, inj{ABool{}, KResult{}} (Val:ABool{})), \bottom{KResult{}}())) [] // no junk
+  axiom{} \or{ABool{}} (LblZero'Unds'ABOOL-SYNTAX'Unds'{}(), \or{ABool{}} (LblOne'Unds'ABOOL-SYNTAX'Unds'{}(), \bottom{ABool{}}())) [] // no junk
+  axiom{} \or{Map{}} (\exists{Map{}} (X0:Map{}, \exists{Map{}} (X1:Map{}, Lbl'Unds'Map'Unds'{}(X0:Map{}, X1:Map{}))), \or{Map{}} (Lbl'Stop'Map{}(), \bottom{Map{}}())) [] // no junk
+  axiom{} \or{KCellOpt{}} (\exists{KCellOpt{}} (Val:KCell{}, inj{KCell{}, KCellOpt{}} (Val:KCell{})), \or{KCellOpt{}} (LblnoKCell{}(), \bottom{KCellOpt{}}())) [] // no junk
+  axiom{} \or{Stmt{}} (\exists{Stmt{}} (Val:Block{}, inj{Block{}, Stmt{}} (Val:Block{})), \or{Stmt{}} (\exists{Stmt{}} (X0:AId{}, \exists{Stmt{}} (X1:AExp{}, Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp{}(X0:AId{}, X1:AExp{}))), \or{Stmt{}} (\exists{Stmt{}} (X0:BExp{}, \exists{Stmt{}} (X1:Block{}, Lblwhile'LParUndsRParUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block{}(X0:BExp{}, X1:Block{}))), \or{Stmt{}} (\exists{Stmt{}} (X0:Stmt{}, \exists{Stmt{}} (X1:Stmt{}, Lbl'UndsUndsUnds'IMP-SYNTAX'UndsUnds'Stmt'Unds'Stmt{}(X0:Stmt{}, X1:Stmt{}))), \or{Stmt{}} (\exists{Stmt{}} (X0:BExp{}, \exists{Stmt{}} (X1:Block{}, \exists{Stmt{}} (X2:Block{}, Lblif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block{}(X0:BExp{}, X1:Block{}, X2:Block{})))), \bottom{Stmt{}}()))))) [] // no junk
+  axiom{} \or{AId{}} (Lblsum'Unds'AID-SYNTAX'Unds'{}(), \or{AId{}} (Lbli'Unds'AID-SYNTAX'Unds'{}(), \or{AId{}} (Lbln'Unds'AID-SYNTAX'Unds'{}(), \bottom{AId{}}()))) [] // no junk
+  axiom{} \or{AInt{}} (Lbl'Stop'AInt'Unds'AINT-SYNTAX'Unds'{}(), \or{AInt{}} (\exists{AInt{}} (X0:ABool{}, \exists{AInt{}} (X1:AInt{}, Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(X0:ABool{}, X1:AInt{}))), \bottom{AInt{}}())) [] // no junk
+  axiom{} \or{Int{}} (\top{Int{}}(), \bottom{Int{}}()) [] // no junk (TODO: fix bug with \dv)
+  axiom{} \or{Pgm{}} (\exists{Pgm{}} (Val:Stmt{}, inj{Stmt{}, Pgm{}} (Val:Stmt{})), \bottom{Pgm{}}()) [] // no junk
+  axiom{} \or{Block{}} (Lbl'LBraRBraUnds'IMP-SYNTAX'Unds'{}(), \or{Block{}} (\exists{Block{}} (X0:Stmt{}, Lbl'LBraUndsRBraUnds'IMP-SYNTAX'UndsUnds'Stmt{}(X0:Stmt{})), \bottom{Block{}}())) [] // no junk
+  axiom{} \or{Set{}} (Lbl'Stop'Set{}(), \or{Set{}} (\exists{Set{}} (X0:Set{}, \exists{Set{}} (X1:Set{}, Lbl'Unds'Set'Unds'{}(X0:Set{}, X1:Set{}))), \bottom{Set{}}())) [] // no junk
+  axiom{} \or{State{}} (Lbl'Stop'State'Unds'STATE'Unds'{}(), \or{State{}} (\exists{State{}} (X0:Assignment{}, \exists{State{}} (X1:State{}, Lbl'UndsUndsUnds'STATE'UndsUnds'Assignment'Unds'State{}(X0:Assignment{}, X1:State{}))), \bottom{State{}}())) [] // no junk
+  axiom{} \or{AExp{}} (\exists{AExp{}} (Val:AId{}, inj{AId{}, AExp{}} (Val:AId{})), \or{AExp{}} (\exists{AExp{}} (X0:AExp{}, \exists{AExp{}} (X1:AExp{}, Lbl'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(X0:AExp{}, X1:AExp{}))), \or{AExp{}} (\exists{AExp{}} (X0:AExp{}, \exists{AExp{}} (X1:AExp{}, Lbl'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(X0:AExp{}, X1:AExp{}))), \or{AExp{}} (\exists{AExp{}} (Val:AInt{}, inj{AInt{}, AExp{}} (Val:AInt{})), \bottom{AExp{}}())))) [] // no junk
+
+// rules
+// rule `notBool_`(#token("false","Bool"))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(283) org.kframework.attributes.Location(Location(283,8,283,29)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblnotBool'Unds'{}(\dv{Bool{}}("false")),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule `_=/=AId__AID__AId_AId`(`i_AID-SYNTAX_`(.KList),`i_AID-SYNTAX_`(.KList))=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(71) org.kframework.attributes.Location(Location(71,8,71,27)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'UndsEqlsSlshEqls'AId'UndsUnds'AID'UndsUnds'AId'Unds'AId{}(Lbli'Unds'AID-SYNTAX'Unds'{}(),Lbli'Unds'AID-SYNTAX'Unds'{}()),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule `<T>`(`<k>`(inj{BExp,KItem}(`_<=__IMP-SYNTAX__AExp_AExp`(K0,HOLE))~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{AExp,KItem}(HOLE)~>`#freezer_<=__IMP-SYNTAX__AExp_AExp0_`(inj{AExp,K}(K0))~>DotVar1),DotVar0) requires isKResult(inj{AExp,K}(K0)) ensures #token("true","Bool") [heat() latex({#1}\leq{#2}) org.kframework.attributes.Location(Location(88,20,88,78)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) productionID(1935122449) seqstrict()]
+  axiom{} \and{TCell{}} (
+    \equals{Bool{},TCell{}}(
+        LblisKResult{}(inj{AExp{}, K{}}(VarK0:AExp{})),
+        \dv{Bool{}}("true")), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{BExp{}, KItem{}}(Lbl'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(VarK0:AExp{},VarHOLE:AExp{})),VarDotVar1:K{})),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{AExp{}, KItem{}}(VarHOLE:AExp{}),kseq{}(Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(inj{AExp{}, K{}}(VarK0:AExp{})),VarDotVar1:K{}))),VarDotVar0:StateCell{}))))
+  []
+
+// rule isKItem(inj{KItem,K}(KItem))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKItem{}(inj{KItem{}, K{}}(VarKItem:KItem{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule `_=/=AId__AID__AId_AId`(`sum_AID-SYNTAX_`(.KList),`i_AID-SYNTAX_`(.KList))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(75) org.kframework.attributes.Location(Location(75,8,75,28)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'UndsEqlsSlshEqls'AId'UndsUnds'AID'UndsUnds'AId'Unds'AId{}(Lblsum'Unds'AID-SYNTAX'Unds'{}(),Lbli'Unds'AID-SYNTAX'Unds'{}()),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isBExp(inj{BExp,K}(BExp))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisBExp{}(inj{BExp{}, K{}}(VarBExp:BExp{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule `<T>`(`<k>`(inj{Stmt,KItem}(`_=_;_IMP-SYNTAX__AId_AExp`(K0,HOLE))~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{AExp,KItem}(HOLE)~>`#freezer_=_;_IMP-SYNTAX__AId_AExp0_`(inj{AId,K}(K0))~>DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [heat() org.kframework.attributes.Location(Location(95,20,95,58)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) productionID(1006751649) strict(2)]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{Stmt{}, KItem{}}(Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp{}(VarK0:AId{},VarHOLE:AExp{})),VarDotVar1:K{})),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{AExp{}, KItem{}}(VarHOLE:AExp{}),kseq{}(Lbl'Hash'freezer'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp0'Unds'{}(inj{AId{}, K{}}(VarK0:AId{})),VarDotVar1:K{}))),VarDotVar0:StateCell{}))))
+  []
+
+// rule isKCell(inj{KCell,K}(KCell))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKCell{}(inj{KCell{}, K{}}(VarKCell:KCell{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule `_impliesBool__BOOL__Bool_Bool`(#token("false","Bool"),_15)=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(311) org.kframework.attributes.Location(Location(311,8,311,40)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'Unds'impliesBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(\dv{Bool{}}("false"),Var'Unds'15:Bool{}),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule `_andThenBool__BOOL__Bool_Bool`(K,#token("true","Bool"))=>K requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(291) org.kframework.attributes.Location(Location(291,8,291,37)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'Unds'andThenBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(VarK:Bool{},\dv{Bool{}}("true")),
+        VarK:Bool{}),
+      \top{R}()))
+  []
+
+// rule `<T>`(`<k>`(inj{BExp,KItem}(`_<=__IMP-SYNTAX__AExp_AExp`(inj{AInt,AExp}(I1),inj{AInt,AExp}(I2)))~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{ABool,KItem}(`_<=AInt__AINT__AInt_AInt`(I1,I2))~>DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(147) org.kframework.attributes.Location(Location(147,8,147,42)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{BExp{}, KItem{}}(Lbl'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(inj{AInt{}, AExp{}}(VarI1:AInt{}),inj{AInt{}, AExp{}}(VarI2:AInt{}))),VarDotVar1:K{})),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{ABool{}, KItem{}}(Lbl'Unds-LT-Eqls'AInt'UndsUnds'AINT'UndsUnds'AInt'Unds'AInt{}(VarI1:AInt{},VarI2:AInt{})),VarDotVar1:K{})),VarDotVar0:StateCell{}))))
+  []
+
+// rule isBool(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [owise()]
+  axiom{R} \implies{R} (
+    \and{R} (
+      \not{R} (
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarBool:Bool{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisBool{}(inj{Bool{}, K{}}(VarBool:Bool{}))))),
+        \bottom{R}())),
+      \top{R}()),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisBool{}(VarK:K{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule isStateCellOpt(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [owise()]
+  axiom{R} \implies{R} (
+    \and{R} (
+      \not{R} (
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarStateCell:StateCell{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisStateCellOpt{}(inj{StateCell{}, K{}}(VarStateCell:StateCell{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarStateCellOpt:StateCellOpt{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisStateCellOpt{}(inj{StateCellOpt{}, K{}}(VarStateCellOpt:StateCellOpt{}))))),
+        \bottom{R}()))),
+      \top{R}()),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisStateCellOpt{}(VarK:K{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule `_xorBool__BOOL__Bool_Bool`(B1,B2)=>`notBool_`(`_==Bool__BOOL__Bool_Bool`(B1,B2)) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(298) org.kframework.attributes.Location(Location(298,8,298,57)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'Unds'xorBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(VarB1:Bool{},VarB2:Bool{}),
+        LblnotBool'Unds'{}(Lbl'UndsEqlsEqls'Bool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(VarB1:Bool{},VarB2:Bool{}))),
+      \top{R}()))
+  []
+
+// rule leqWithCarry(`.AInt_AINT-SYNTAX_`(.KList),`.AInt_AINT-SYNTAX_`(.KList),B)=>B requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(43) org.kframework.attributes.Location(Location(43,8,43,48)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{ABool{},R} (
+        LblleqWithCarry{}(Lbl'Stop'AInt'Unds'AINT-SYNTAX'Unds'{}(),Lbl'Stop'AInt'Unds'AINT-SYNTAX'Unds'{}(),VarB:ABool{}),
+        VarB:ABool{}),
+      \top{R}()))
+  []
+
+// rule addWithCarry(I,`.AInt_AINT-SYNTAX_`(.KList),`One_ABOOL-SYNTAX_`(.KList))=>addWithCarry(I,`___AINT-SYNTAX__ABool_AInt`(`One_ABOOL-SYNTAX_`(.KList),`.AInt_AINT-SYNTAX_`(.KList)),`Zero_ABOOL-SYNTAX_`(.KList)) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(25) org.kframework.attributes.Location(Location(25,8,25,76)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{AInt{},R} (
+        LbladdWithCarry{}(VarI:AInt{},Lbl'Stop'AInt'Unds'AINT-SYNTAX'Unds'{}(),LblOne'Unds'ABOOL-SYNTAX'Unds'{}()),
+        LbladdWithCarry{}(VarI:AInt{},Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(LblOne'Unds'ABOOL-SYNTAX'Unds'{}(),Lbl'Stop'AInt'Unds'AINT-SYNTAX'Unds'{}()),LblZero'Unds'ABOOL-SYNTAX'Unds'{}())),
+      \top{R}()))
+  []
+
+// rule `_andBool_`(_11,#token("false","Bool"))=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(288) org.kframework.attributes.Location(Location(288,8,288,37)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'Unds'andBool'Unds'{}(Var'Unds'11:Bool{},\dv{Bool{}}("false")),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule `<T>`(`<k>`(inj{AExp,KItem}(HOLE)~>`#freezer_<=__IMP-SYNTAX__AExp_AExp0_`(inj{AExp,K}(K0))~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{BExp,KItem}(`_<=__IMP-SYNTAX__AExp_AExp`(K0,HOLE))~>DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [cool() latex({#1}\leq{#2}) org.kframework.attributes.Location(Location(88,20,88,78)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) productionID(1935122449) seqstrict()]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{AExp{}, KItem{}}(VarHOLE:AExp{}),kseq{}(Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(inj{AExp{}, K{}}(VarK0:AExp{})),VarDotVar1:K{}))),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{BExp{}, KItem{}}(Lbl'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(VarK0:AExp{},VarHOLE:AExp{})),VarDotVar1:K{})),VarDotVar0:StateCell{}))))
+  []
+
+// rule `<T>`(`<k>`(inj{Stmt,KItem}(`___IMP-SYNTAX__Stmt_Stmt`(S1,S2))~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{Stmt,KItem}(S1)~>inj{Stmt,KItem}(S2)~>DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(139) org.kframework.attributes.Location(Location(139,8,139,35)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{Stmt{}, KItem{}}(Lbl'UndsUndsUnds'IMP-SYNTAX'UndsUnds'Stmt'Unds'Stmt{}(VarS1:Stmt{},VarS2:Stmt{})),VarDotVar1:K{})),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{Stmt{}, KItem{}}(VarS1:Stmt{}),kseq{}(inj{Stmt{}, KItem{}}(VarS2:Stmt{}),VarDotVar1:K{}))),VarDotVar0:StateCell{}))))
+  []
+
+// rule isKItem(inj{KCellOpt,K}(KCellOpt))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKItem{}(inj{KCellOpt{}, K{}}(VarKCellOpt:KCellOpt{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule addWithCarry(`___AINT-SYNTAX__ABool_AInt`(B,I1),`___AINT-SYNTAX__ABool_AInt`(`Zero_ABOOL-SYNTAX_`(.KList),I2),`Zero_ABOOL-SYNTAX_`(.KList))=>`___AINT-SYNTAX__ABool_AInt`(B,addWithCarry(I1,I2,`Zero_ABOOL-SYNTAX_`(.KList))) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(28) org.kframework.attributes.Location(Location(28,8,28,89)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{AInt{},R} (
+        LbladdWithCarry{}(Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(VarB:ABool{},VarI1:AInt{}),Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(LblZero'Unds'ABOOL-SYNTAX'Unds'{}(),VarI2:AInt{}),LblZero'Unds'ABOOL-SYNTAX'Unds'{}()),
+        Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(VarB:ABool{},LbladdWithCarry{}(VarI1:AInt{},VarI2:AInt{},LblZero'Unds'ABOOL-SYNTAX'Unds'{}()))),
+      \top{R}()))
+  []
+
+// rule isTCell(inj{TCell,K}(TCell))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisTCell{}(inj{TCell{}, K{}}(VarTCell:TCell{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule `notBool_`(#token("true","Bool"))=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(282) org.kframework.attributes.Location(Location(282,8,282,29)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblnotBool'Unds'{}(\dv{Bool{}}("true")),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule isKItem(inj{List,K}(List))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKItem{}(inj{List{}, K{}}(VarList:List{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule `_+AInt__AINT__AInt_AInt`(I1,I2)=>addWithCarry(I1,I2,`Zero_ABOOL-SYNTAX_`(.KList)) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(20) org.kframework.attributes.Location(Location(20,8,20,59)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{AInt{},R} (
+        Lbl'UndsPlus'AInt'UndsUnds'AINT'UndsUnds'AInt'Unds'AInt{}(VarI1:AInt{},VarI2:AInt{}),
+        LbladdWithCarry{}(VarI1:AInt{},VarI2:AInt{},LblZero'Unds'ABOOL-SYNTAX'Unds'{}())),
+      \top{R}()))
+  []
+
+// rule `_orElseBool__BOOL__Bool_Bool`(#token("true","Bool"),_10)=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(305) org.kframework.attributes.Location(Location(305,8,305,33)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'Unds'orElseBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(\dv{Bool{}}("true"),Var'Unds'10:Bool{}),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isSet(inj{Set,K}(Set))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisSet{}(inj{Set{}, K{}}(VarSet:Set{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isKItem(inj{KCell,K}(KCell))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKItem{}(inj{KCell{}, K{}}(VarKCell:KCell{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isAExp(inj{AExp,K}(AExp))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisAExp{}(inj{AExp{}, K{}}(VarAExp:AExp{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isCell(inj{StateCell,K}(StateCell))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisCell{}(inj{StateCell{}, K{}}(VarStateCell:StateCell{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule addWithCarry(`.AInt_AINT-SYNTAX_`(.KList),I,`One_ABOOL-SYNTAX_`(.KList))=>addWithCarry(`___AINT-SYNTAX__ABool_AInt`(`One_ABOOL-SYNTAX_`(.KList),`.AInt_AINT-SYNTAX_`(.KList)),I,`Zero_ABOOL-SYNTAX_`(.KList)) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(23) org.kframework.attributes.Location(Location(23,8,23,76)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{AInt{},R} (
+        LbladdWithCarry{}(Lbl'Stop'AInt'Unds'AINT-SYNTAX'Unds'{}(),VarI:AInt{},LblOne'Unds'ABOOL-SYNTAX'Unds'{}()),
+        LbladdWithCarry{}(Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(LblOne'Unds'ABOOL-SYNTAX'Unds'{}(),Lbl'Stop'AInt'Unds'AINT-SYNTAX'Unds'{}()),VarI:AInt{},LblZero'Unds'ABOOL-SYNTAX'Unds'{}())),
+      \top{R}()))
+  []
+
+// rule `_andThenBool__BOOL__Bool_Bool`(#token("true","Bool"),K)=>K requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(290) org.kframework.attributes.Location(Location(290,8,290,37)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'Unds'andThenBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(\dv{Bool{}}("true"),VarK:Bool{}),
+        VarK:Bool{}),
+      \top{R}()))
+  []
+
+// rule `_xorBool__BOOL__Bool_Bool`(#token("false","Bool"),B)=>B requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(295) org.kframework.attributes.Location(Location(295,8,295,38)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'Unds'xorBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(\dv{Bool{}}("false"),VarB:Bool{}),
+        VarB:Bool{}),
+      \top{R}()))
+  []
+
+// rule isPgm(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [owise()]
+  axiom{R} \implies{R} (
+    \and{R} (
+      \not{R} (
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarBlock:Block{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisPgm{}(inj{Block{}, K{}}(VarBlock:Block{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarStmt:Stmt{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisPgm{}(inj{Stmt{}, K{}}(VarStmt:Stmt{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarPgm:Pgm{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisPgm{}(inj{Pgm{}, K{}}(VarPgm:Pgm{}))))),
+        \bottom{R}())))),
+      \top{R}()),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisPgm{}(VarK:K{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule `<T>`(`<k>`(inj{Stmt,KItem}(`while(_)__IMP-SYNTAX__BExp_Block`(C,S))~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{Stmt,KItem}(`if(_)_else__IMP-SYNTAX__BExp_Block_Block`(C,`{_}_IMP-SYNTAX__Stmt`(`___IMP-SYNTAX__Stmt_Stmt`(inj{Block,Stmt}(S),`while(_)__IMP-SYNTAX__BExp_Block`(C,S))),`{}_IMP-SYNTAX_`(.KList)))~>DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(143) org.kframework.attributes.Location(Location(143,8,143,66)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{Stmt{}, KItem{}}(Lblwhile'LParUndsRParUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block{}(VarC:BExp{},VarS:Block{})),VarDotVar1:K{})),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{Stmt{}, KItem{}}(Lblif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block{}(VarC:BExp{},Lbl'LBraUndsRBraUnds'IMP-SYNTAX'UndsUnds'Stmt{}(Lbl'UndsUndsUnds'IMP-SYNTAX'UndsUnds'Stmt'Unds'Stmt{}(inj{Block{}, Stmt{}}(VarS:Block{}),Lblwhile'LParUndsRParUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block{}(VarC:BExp{},VarS:Block{}))),Lbl'LBraRBraUnds'IMP-SYNTAX'Unds'{}())),VarDotVar1:K{})),VarDotVar0:StateCell{}))))
+  []
+
+// rule set(`___STATE__Assignment_State`(`_|->__STATE__AId_AInt`(X,J),S),Y,I)=>`___STATE__Assignment_State`(`_|->__STATE__AId_AInt`(X,J),set(S,Y,I)) requires `_=/=AId__AID__AId_AId`(X,Y) ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(119) org.kframework.attributes.Location(Location(119,8,120,24)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K "requires" K)]
+  axiom{R} \implies{R} (
+    \equals{Bool{},R}(
+        Lbl'UndsEqlsSlshEqls'AId'UndsUnds'AID'UndsUnds'AId'Unds'AId{}(VarX:AId{},VarY:AId{}),
+        \dv{Bool{}}("true")),
+    \and{R} (
+      \equals{State{},R} (
+        Lblset{}(Lbl'UndsUndsUnds'STATE'UndsUnds'Assignment'Unds'State{}(Lbl'UndsPipe'-'-GT-UndsUnds'STATE'UndsUnds'AId'Unds'AInt{}(VarX:AId{},VarJ:AInt{}),VarS:State{}),VarY:AId{},VarI:AInt{}),
+        Lbl'UndsUndsUnds'STATE'UndsUnds'Assignment'Unds'State{}(Lbl'UndsPipe'-'-GT-UndsUnds'STATE'UndsUnds'AId'Unds'AInt{}(VarX:AId{},VarJ:AInt{}),Lblset{}(VarS:State{},VarY:AId{},VarI:AInt{}))),
+      \top{R}()))
+  []
+
+// rule `_xorBool__BOOL__Bool_Bool`(B,#token("false","Bool"))=>B requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(296) org.kframework.attributes.Location(Location(296,8,296,38)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'Unds'xorBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(VarB:Bool{},\dv{Bool{}}("false")),
+        VarB:Bool{}),
+      \top{R}()))
+  []
+
+// rule isKConfigVar(inj{KConfigVar,K}(KConfigVar))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKConfigVar{}(inj{KConfigVar{}, K{}}(VarKConfigVar:KConfigVar{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule `_=/=AId__AID__AId_AId`(`i_AID-SYNTAX_`(.KList),`sum_AID-SYNTAX_`(.KList))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(72) org.kframework.attributes.Location(Location(72,8,72,28)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'UndsEqlsSlshEqls'AId'UndsUnds'AID'UndsUnds'AId'Unds'AId{}(Lbli'Unds'AID-SYNTAX'Unds'{}(),Lblsum'Unds'AID-SYNTAX'Unds'{}()),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isKResult(inj{AInt,K}(AInt))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKResult{}(inj{AInt{}, K{}}(VarAInt:AInt{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule `<T>`(`<k>`(inj{BExp,KItem}(`_<=__IMP-SYNTAX__AExp_AExp`(HOLE,K1))~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{AExp,KItem}(HOLE)~>`#freezer_<=__IMP-SYNTAX__AExp_AExp1_`(inj{AExp,K}(K1))~>DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [heat() latex({#1}\leq{#2}) org.kframework.attributes.Location(Location(88,20,88,78)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) productionID(1935122449) seqstrict()]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{BExp{}, KItem{}}(Lbl'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(VarHOLE:AExp{},VarK1:AExp{})),VarDotVar1:K{})),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{AExp{}, KItem{}}(VarHOLE:AExp{}),kseq{}(Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(inj{AExp{}, K{}}(VarK1:AExp{})),VarDotVar1:K{}))),VarDotVar0:StateCell{}))))
+  []
+
+// rule isAInt(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [owise()]
+  axiom{R} \implies{R} (
+    \and{R} (
+      \not{R} (
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarAInt:AInt{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisAInt{}(inj{AInt{}, K{}}(VarAInt:AInt{}))))),
+        \bottom{R}())),
+      \top{R}()),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisAInt{}(VarK:K{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule isKResult(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [owise()]
+  axiom{R} \implies{R} (
+    \and{R} (
+      \not{R} (
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarAInt:AInt{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKResult{}(inj{AInt{}, K{}}(VarAInt:AInt{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarABool:ABool{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKResult{}(inj{ABool{}, K{}}(VarABool:ABool{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarKResult:KResult{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKResult{}(inj{KResult{}, K{}}(VarKResult:KResult{}))))),
+        \bottom{R}())))),
+      \top{R}()),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKResult{}(VarK:K{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule isKItem(inj{KResult,K}(KResult))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKItem{}(inj{KResult{}, K{}}(VarKResult:KResult{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule `<T>`(`<k>`(inj{AExp,KItem}(HOLE)~>`#freezer_=_;_IMP-SYNTAX__AId_AExp0_`(inj{AId,K}(K0))~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{Stmt,KItem}(`_=_;_IMP-SYNTAX__AId_AExp`(K0,HOLE))~>DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [cool() org.kframework.attributes.Location(Location(95,20,95,58)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) productionID(1006751649) strict(2)]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{AExp{}, KItem{}}(VarHOLE:AExp{}),kseq{}(Lbl'Hash'freezer'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp0'Unds'{}(inj{AId{}, K{}}(VarK0:AId{})),VarDotVar1:K{}))),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{Stmt{}, KItem{}}(Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp{}(VarK0:AId{},VarHOLE:AExp{})),VarDotVar1:K{})),VarDotVar0:StateCell{}))))
+  []
+
+// rule isK(K)=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisK{}(VarK:K{}),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule initStateCell(.KList)=>`<state>`(`.State_STATE_`(.KList)) requires #token("true","Bool") ensures #token("true","Bool") [initializer()]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{StateCell{},R} (
+        LblinitStateCell{}(),
+        Lbl'-LT-'state'-GT-'{}(Lbl'Stop'State'Unds'STATE'Unds'{}())),
+      \top{R}()))
+  []
+
+// rule addWithCarry(`___AINT-SYNTAX__ABool_AInt`(B,I1),`___AINT-SYNTAX__ABool_AInt`(`One_ABOOL-SYNTAX_`(.KList),I2),`One_ABOOL-SYNTAX_`(.KList))=>`___AINT-SYNTAX__ABool_AInt`(B,addWithCarry(I1,I2,`One_ABOOL-SYNTAX_`(.KList))) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(32) org.kframework.attributes.Location(Location(32,8,32,86)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{AInt{},R} (
+        LbladdWithCarry{}(Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(VarB:ABool{},VarI1:AInt{}),Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(LblOne'Unds'ABOOL-SYNTAX'Unds'{}(),VarI2:AInt{}),LblOne'Unds'ABOOL-SYNTAX'Unds'{}()),
+        Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(VarB:ABool{},LbladdWithCarry{}(VarI1:AInt{},VarI2:AInt{},LblOne'Unds'ABOOL-SYNTAX'Unds'{}()))),
+      \top{R}()))
+  []
+
+// rule isAExp(inj{AId,K}(AId))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisAExp{}(inj{AId{}, K{}}(VarAId:AId{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isStmt(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [owise()]
+  axiom{R} \implies{R} (
+    \and{R} (
+      \not{R} (
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarBlock:Block{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisStmt{}(inj{Block{}, K{}}(VarBlock:Block{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarStmt:Stmt{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisStmt{}(inj{Stmt{}, K{}}(VarStmt:Stmt{}))))),
+        \bottom{R}()))),
+      \top{R}()),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisStmt{}(VarK:K{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule `<T>`(`<k>`(inj{Stmt,KItem}(`if(_)_else__IMP-SYNTAX__BExp_Block_Block`(HOLE,K1,K2))~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{BExp,KItem}(HOLE)~>`#freezerif(_)_else__IMP-SYNTAX__BExp_Block_Block1_`(inj{Block,K}(K1),inj{Block,K}(K2))~>DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [heat() org.kframework.attributes.Location(Location(96,20,97,57)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) productionID(1171434979) strict(1)]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{Stmt{}, KItem{}}(Lblif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block{}(VarHOLE:BExp{},VarK1:Block{},VarK2:Block{})),VarDotVar1:K{})),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{BExp{}, KItem{}}(VarHOLE:BExp{}),kseq{}(Lbl'Hash'freezerif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block1'Unds'{}(inj{Block{}, K{}}(VarK1:Block{}),inj{Block{}, K{}}(VarK2:Block{})),VarDotVar1:K{}))),VarDotVar0:StateCell{}))))
+  []
+
+// rule `<T>`(`<k>`(inj{AExp,KItem}(HOLE)~>`#freezer_+__IMP-SYNTAX__AExp_AExp0_`(inj{AExp,K}(K0))~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{AExp,KItem}(`_+__IMP-SYNTAX__AExp_AExp`(K0,HOLE))~>DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [cool() left() org.kframework.attributes.Location(Location(85,20,85,60)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) productionID(1047478056) strict()]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{AExp{}, KItem{}}(VarHOLE:AExp{}),kseq{}(Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(inj{AExp{}, K{}}(VarK0:AExp{})),VarDotVar1:K{}))),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{AExp{}, KItem{}}(Lbl'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(VarK0:AExp{},VarHOLE:AExp{})),VarDotVar1:K{})),VarDotVar0:StateCell{}))))
+  []
+
+// rule isKCell(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [owise()]
+  axiom{R} \implies{R} (
+    \and{R} (
+      \not{R} (
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarKCell:KCell{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKCell{}(inj{KCell{}, K{}}(VarKCell:KCell{}))))),
+        \bottom{R}())),
+      \top{R}()),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKCell{}(VarK:K{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule `_xorBool__BOOL__Bool_Bool`(B,B)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(297) org.kframework.attributes.Location(Location(297,8,297,38)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'Unds'xorBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(VarB:Bool{},VarB:Bool{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule `_impliesBool__BOOL__Bool_Bool`(#token("true","Bool"),B)=>B requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(310) org.kframework.attributes.Location(Location(310,8,310,36)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'Unds'impliesBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(\dv{Bool{}}("true"),VarB:Bool{}),
+        VarB:Bool{}),
+      \top{R}()))
+  []
+
+// rule isKItem(inj{BExp,K}(BExp))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKItem{}(inj{BExp{}, K{}}(VarBExp:BExp{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isStateCell(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [owise()]
+  axiom{R} \implies{R} (
+    \and{R} (
+      \not{R} (
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarStateCell:StateCell{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisStateCell{}(inj{StateCell{}, K{}}(VarStateCell:StateCell{}))))),
+        \bottom{R}())),
+      \top{R}()),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisStateCell{}(VarK:K{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule isABool(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [owise()]
+  axiom{R} \implies{R} (
+    \and{R} (
+      \not{R} (
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarABool:ABool{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisABool{}(inj{ABool{}, K{}}(VarABool:ABool{}))))),
+        \bottom{R}())),
+      \top{R}()),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisABool{}(VarK:K{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule isKResult(inj{ABool,K}(ABool))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKResult{}(inj{ABool{}, K{}}(VarABool:ABool{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isKConfigVar(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [owise()]
+  axiom{R} \implies{R} (
+    \and{R} (
+      \not{R} (
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarKConfigVar:KConfigVar{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKConfigVar{}(inj{KConfigVar{}, K{}}(VarKConfigVar:KConfigVar{}))))),
+        \bottom{R}())),
+      \top{R}()),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKConfigVar{}(VarK:K{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule isTCell(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [owise()]
+  axiom{R} \implies{R} (
+    \and{R} (
+      \not{R} (
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarTCell:TCell{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisTCell{}(inj{TCell{}, K{}}(VarTCell:TCell{}))))),
+        \bottom{R}())),
+      \top{R}()),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisTCell{}(VarK:K{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule isMap(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [owise()]
+  axiom{R} \implies{R} (
+    \and{R} (
+      \not{R} (
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarMap:Map{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisMap{}(inj{Map{}, K{}}(VarMap:Map{}))))),
+        \bottom{R}())),
+      \top{R}()),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisMap{}(VarK:K{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule `<T>`(`<k>`(inj{Stmt,KItem}(`if(_)_else__IMP-SYNTAX__BExp_Block_Block`(inj{ABool,BExp}(`One_ABOOL-SYNTAX_`(.KList)),S,_19))~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{Block,KItem}(S)~>DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(149) org.kframework.attributes.Location(Location(149,8,149,36)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{Stmt{}, KItem{}}(Lblif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block{}(inj{ABool{}, BExp{}}(LblOne'Unds'ABOOL-SYNTAX'Unds'{}()),VarS:Block{},Var'Unds'19:Block{})),VarDotVar1:K{})),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{Block{}, KItem{}}(VarS:Block{}),VarDotVar1:K{})),VarDotVar0:StateCell{}))))
+  []
+
+// rule get(`___STATE__Assignment_State`(`_|->__STATE__AId_AInt`(X,_17),S),Y)=>get(S,Y) requires `_=/=AId__AID__AId_AId`(X,Y) ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(125) org.kframework.attributes.Location(Location(125,8,126,24)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K "requires" K)]
+  axiom{R} \implies{R} (
+    \equals{Bool{},R}(
+        Lbl'UndsEqlsSlshEqls'AId'UndsUnds'AID'UndsUnds'AId'Unds'AId{}(VarX:AId{},VarY:AId{}),
+        \dv{Bool{}}("true")),
+    \and{R} (
+      \equals{AInt{},R} (
+        Lblget{}(Lbl'UndsUndsUnds'STATE'UndsUnds'Assignment'Unds'State{}(Lbl'UndsPipe'-'-GT-UndsUnds'STATE'UndsUnds'AId'Unds'AInt{}(VarX:AId{},Var'Unds'17:AInt{}),VarS:State{}),VarY:AId{}),
+        Lblget{}(VarS:State{},VarY:AId{})),
+      \top{R}()))
+  []
+
+// rule `<T>`(`<k>`(inj{AExp,KItem}(`_+__IMP-SYNTAX__AExp_AExp`(HOLE,K1))~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{AExp,KItem}(HOLE)~>`#freezer_+__IMP-SYNTAX__AExp_AExp1_`(inj{AExp,K}(K1))~>DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [heat() left() org.kframework.attributes.Location(Location(85,20,85,60)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) productionID(1047478056) strict()]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{AExp{}, KItem{}}(Lbl'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(VarHOLE:AExp{},VarK1:AExp{})),VarDotVar1:K{})),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{AExp{}, KItem{}}(VarHOLE:AExp{}),kseq{}(Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(inj{AExp{}, K{}}(VarK1:AExp{})),VarDotVar1:K{}))),VarDotVar0:StateCell{}))))
+  []
+
+// rule get(`___STATE__Assignment_State`(`_|->__STATE__AId_AInt`(X,I),S),X)=>I requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(124) org.kframework.attributes.Location(Location(124,8,124,47)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{AInt{},R} (
+        Lblget{}(Lbl'UndsUndsUnds'STATE'UndsUnds'Assignment'Unds'State{}(Lbl'UndsPipe'-'-GT-UndsUnds'STATE'UndsUnds'AId'Unds'AInt{}(VarX:AId{},VarI:AInt{}),VarS:State{}),VarX:AId{}),
+        VarI:AInt{}),
+      \top{R}()))
+  []
+
+// rule `<T>`(`<k>`(inj{AExp,KItem}(HOLE)~>`#freezer_/__IMP-SYNTAX__AExp_AExp1_`(inj{AExp,K}(K1))~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{AExp,KItem}(`_/__IMP-SYNTAX__AExp_AExp`(HOLE,K1))~>DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [cool() left() org.kframework.attributes.Location(Location(84,20,84,60)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) productionID(817686795) strict()]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{AExp{}, KItem{}}(VarHOLE:AExp{}),kseq{}(Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(inj{AExp{}, K{}}(VarK1:AExp{})),VarDotVar1:K{}))),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{AExp{}, KItem{}}(Lbl'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(VarHOLE:AExp{},VarK1:AExp{})),VarDotVar1:K{})),VarDotVar0:StateCell{}))))
+  []
+
+// rule `_andThenBool__BOOL__Bool_Bool`(_6,#token("false","Bool"))=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(293) org.kframework.attributes.Location(Location(293,8,293,36)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'Unds'andThenBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(Var'Unds'6:Bool{},\dv{Bool{}}("false")),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule isKItem(inj{Block,K}(Block))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKItem{}(inj{Block{}, K{}}(VarBlock:Block{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule leqWithCarry(_5,`.AInt_AINT-SYNTAX_`(.KList),`Zero_ABOOL-SYNTAX_`(.KList))=>`Zero_ABOOL-SYNTAX_`(.KList) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(44) org.kframework.attributes.Location(Location(44,8,44,44)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{ABool{},R} (
+        LblleqWithCarry{}(Var'Unds'5:AInt{},Lbl'Stop'AInt'Unds'AINT-SYNTAX'Unds'{}(),LblZero'Unds'ABOOL-SYNTAX'Unds'{}()),
+        LblZero'Unds'ABOOL-SYNTAX'Unds'{}()),
+      \top{R}()))
+  []
+
+// rule `<T>`(`<k>`(inj{AExp,KItem}(HOLE)~>`#freezer_<=__IMP-SYNTAX__AExp_AExp1_`(inj{AExp,K}(K1))~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{BExp,KItem}(`_<=__IMP-SYNTAX__AExp_AExp`(HOLE,K1))~>DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [cool() latex({#1}\leq{#2}) org.kframework.attributes.Location(Location(88,20,88,78)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) productionID(1935122449) seqstrict()]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{AExp{}, KItem{}}(VarHOLE:AExp{}),kseq{}(Lbl'Hash'freezer'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(inj{AExp{}, K{}}(VarK1:AExp{})),VarDotVar1:K{}))),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{BExp{}, KItem{}}(Lbl'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(VarHOLE:AExp{},VarK1:AExp{})),VarDotVar1:K{})),VarDotVar0:StateCell{}))))
+  []
+
+// rule isSet(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [owise()]
+  axiom{R} \implies{R} (
+    \and{R} (
+      \not{R} (
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarSet:Set{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisSet{}(inj{Set{}, K{}}(VarSet:Set{}))))),
+        \bottom{R}())),
+      \top{R}()),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisSet{}(VarK:K{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule `_=/=Bool__BOOL__Bool_Bool`(B1,B2)=>`notBool_`(`_==Bool__BOOL__Bool_Bool`(B1,B2)) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(315) org.kframework.attributes.Location(Location(315,8,315,57)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'UndsEqlsSlshEqls'Bool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(VarB1:Bool{},VarB2:Bool{}),
+        LblnotBool'Unds'{}(Lbl'UndsEqlsEqls'Bool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(VarB1:Bool{},VarB2:Bool{}))),
+      \top{R}()))
+  []
+
+// rule `<T>`(`<k>`(inj{BExp,KItem}(HOLE)~>`#freezer_&&__IMP-SYNTAX__BExp_BExp1_`(inj{BExp,K}(K1))~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{BExp,KItem}(`_&&__IMP-SYNTAX__BExp_BExp`(HOLE,K1))~>DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [cool() left() org.kframework.attributes.Location(Location(90,20,90,63)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) productionID(91323447) strict(1)]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{BExp{}, KItem{}}(VarHOLE:BExp{}),kseq{}(Lbl'Hash'freezer'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp1'Unds'{}(inj{BExp{}, K{}}(VarK1:BExp{})),VarDotVar1:K{}))),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{BExp{}, KItem{}}(Lbl'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp{}(VarHOLE:BExp{},VarK1:BExp{})),VarDotVar1:K{})),VarDotVar0:StateCell{}))))
+  []
+
+// rule `_=/=AId__AID__AId_AId`(`n_AID-SYNTAX_`(.KList),`n_AID-SYNTAX_`(.KList))=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(66) org.kframework.attributes.Location(Location(66,8,66,27)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'UndsEqlsSlshEqls'AId'UndsUnds'AID'UndsUnds'AId'Unds'AId{}(Lbln'Unds'AID-SYNTAX'Unds'{}(),Lbln'Unds'AID-SYNTAX'Unds'{}()),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule `<T>`(`<k>`(inj{Stmt,KItem}(`_=_;_IMP-SYNTAX__AId_AExp`(X,inj{AInt,AExp}(I)))~>DotVar1),`<state>`(S))=>`<T>`(`<k>`(DotVar1),`<state>`(set(S,X,I))) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(141) org.kframework.attributes.Location(Location(141,8,141,83)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{Stmt{}, KItem{}}(Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'AId'Unds'AExp{}(VarX:AId{},inj{AInt{}, AExp{}}(VarI:AInt{}))),VarDotVar1:K{})),Lbl'-LT-'state'-GT-'{}(VarS:State{})),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(VarDotVar1:K{}),Lbl'-LT-'state'-GT-'{}(Lblset{}(VarS:State{},VarX:AId{},VarI:AInt{}))))))
+  []
+
+// rule isAId(inj{AId,K}(AId))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisAId{}(inj{AId{}, K{}}(VarAId:AId{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isStateCellOpt(inj{StateCell,K}(StateCell))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisStateCellOpt{}(inj{StateCell{}, K{}}(VarStateCell:StateCell{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isKItem(inj{Cell,K}(Cell))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKItem{}(inj{Cell{}, K{}}(VarCell:Cell{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule `<T>`(`<k>`(inj{BExp,KItem}(`!__IMP-SYNTAX__BExp`(HOLE))~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{BExp,KItem}(HOLE)~>`#freezer!__IMP-SYNTAX__BExp0_`(.KList)~>DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [heat() org.kframework.attributes.Location(Location(89,20,89,54)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) productionID(872826668) strict()]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{BExp{}, KItem{}}(Lbl'BangUndsUnds'IMP-SYNTAX'UndsUnds'BExp{}(VarHOLE:BExp{})),VarDotVar1:K{})),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{BExp{}, KItem{}}(VarHOLE:BExp{}),kseq{}(Lbl'Hash'freezer'BangUndsUnds'IMP-SYNTAX'UndsUnds'BExp0'Unds'{}(),VarDotVar1:K{}))),VarDotVar0:StateCell{}))))
+  []
+
+// rule isKItem(inj{Stmt,K}(Stmt))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKItem{}(inj{Stmt{}, K{}}(VarStmt:Stmt{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule `_orBool__BOOL__Bool_Bool`(#token("false","Bool"),B)=>B requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(302) org.kframework.attributes.Location(Location(302,8,302,32)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'Unds'orBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(\dv{Bool{}}("false"),VarB:Bool{}),
+        VarB:Bool{}),
+      \top{R}()))
+  []
+
+// rule isBlock(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [owise()]
+  axiom{R} \implies{R} (
+    \and{R} (
+      \not{R} (
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarBlock:Block{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisBlock{}(inj{Block{}, K{}}(VarBlock:Block{}))))),
+        \bottom{R}())),
+      \top{R}()),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisBlock{}(VarK:K{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule leqWithCarry(`___AINT-SYNTAX__ABool_AInt`(`Zero_ABOOL-SYNTAX_`(.KList),I),`.AInt_AINT-SYNTAX_`(.KList),`One_ABOOL-SYNTAX_`(.KList))=>leqWithCarry(I,`.AInt_AINT-SYNTAX_`(.KList),`One_ABOOL-SYNTAX_`(.KList)) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(45) org.kframework.attributes.Location(Location(45,8,45,50)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{ABool{},R} (
+        LblleqWithCarry{}(Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(LblZero'Unds'ABOOL-SYNTAX'Unds'{}(),VarI:AInt{}),Lbl'Stop'AInt'Unds'AINT-SYNTAX'Unds'{}(),LblOne'Unds'ABOOL-SYNTAX'Unds'{}()),
+        LblleqWithCarry{}(VarI:AInt{},Lbl'Stop'AInt'Unds'AINT-SYNTAX'Unds'{}(),LblOne'Unds'ABOOL-SYNTAX'Unds'{}())),
+      \top{R}()))
+  []
+
+// rule isPgm(inj{Stmt,K}(Stmt))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisPgm{}(inj{Stmt{}, K{}}(VarStmt:Stmt{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isInt(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [owise()]
+  axiom{R} \implies{R} (
+    \and{R} (
+      \not{R} (
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarInt:Int{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisInt{}(inj{Int{}, K{}}(VarInt:Int{}))))),
+        \bottom{R}())),
+      \top{R}()),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisInt{}(VarK:K{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule isKItem(inj{StateCell,K}(StateCell))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKItem{}(inj{StateCell{}, K{}}(VarStateCell:StateCell{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isCell(inj{TCell,K}(TCell))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisCell{}(inj{TCell{}, K{}}(VarTCell:TCell{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isKItem(inj{ABool,K}(ABool))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKItem{}(inj{ABool{}, K{}}(VarABool:ABool{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule leqWithCarry(`___AINT-SYNTAX__ABool_AInt`(`Zero_ABOOL-SYNTAX_`(.KList),I1),`___AINT-SYNTAX__ABool_AInt`(`Zero_ABOOL-SYNTAX_`(.KList),I2),R)=>leqWithCarry(I1,I2,R) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(47) org.kframework.attributes.Location(Location(47,8,47,84)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{ABool{},R} (
+        LblleqWithCarry{}(Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(LblZero'Unds'ABOOL-SYNTAX'Unds'{}(),VarI1:AInt{}),Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(LblZero'Unds'ABOOL-SYNTAX'Unds'{}(),VarI2:AInt{}),VarR:ABool{}),
+        LblleqWithCarry{}(VarI1:AInt{},VarI2:AInt{},VarR:ABool{})),
+      \top{R}()))
+  []
+
+// rule leqWithCarry(`.AInt_AINT-SYNTAX_`(.KList),`___AINT-SYNTAX__ABool_AInt`(`One_ABOOL-SYNTAX_`(.KList),I),_4)=>`One_ABOOL-SYNTAX_`(.KList) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(42) org.kframework.attributes.Location(Location(42,8,42,49)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{ABool{},R} (
+        LblleqWithCarry{}(Lbl'Stop'AInt'Unds'AINT-SYNTAX'Unds'{}(),Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(LblOne'Unds'ABOOL-SYNTAX'Unds'{}(),VarI:AInt{}),Var'Unds'4:ABool{}),
+        LblOne'Unds'ABOOL-SYNTAX'Unds'{}()),
+      \top{R}()))
+  []
+
+// rule `<T>`(`<k>`(inj{BExp,KItem}(`_&&__IMP-SYNTAX__BExp_BExp`(HOLE,K1))~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{BExp,KItem}(HOLE)~>`#freezer_&&__IMP-SYNTAX__BExp_BExp1_`(inj{BExp,K}(K1))~>DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [heat() left() org.kframework.attributes.Location(Location(90,20,90,63)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) productionID(91323447) strict(1)]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{BExp{}, KItem{}}(Lbl'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp{}(VarHOLE:BExp{},VarK1:BExp{})),VarDotVar1:K{})),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{BExp{}, KItem{}}(VarHOLE:BExp{}),kseq{}(Lbl'Hash'freezer'UndsAndAndUndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'BExp1'Unds'{}(inj{BExp{}, K{}}(VarK1:BExp{})),VarDotVar1:K{}))),VarDotVar0:StateCell{}))))
+  []
+
+// rule `<T>`(`<k>`(inj{AExp,KItem}(`_+__IMP-SYNTAX__AExp_AExp`(inj{AInt,AExp}(I1),inj{AInt,AExp}(I2)))~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{AInt,KItem}(`_+AInt__AINT__AInt_AInt`(I1,I2))~>DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(155) org.kframework.attributes.Location(Location(155,8,155,40)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{AExp{}, KItem{}}(Lbl'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(inj{AInt{}, AExp{}}(VarI1:AInt{}),inj{AInt{}, AExp{}}(VarI2:AInt{}))),VarDotVar1:K{})),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{AInt{}, KItem{}}(Lbl'UndsPlus'AInt'UndsUnds'AINT'UndsUnds'AInt'Unds'AInt{}(VarI1:AInt{},VarI2:AInt{})),VarDotVar1:K{})),VarDotVar0:StateCell{}))))
+  []
+
+// rule isStateCell(inj{StateCell,K}(StateCell))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisStateCell{}(inj{StateCell{}, K{}}(VarStateCell:StateCell{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isKCellOpt(inj{KCellOpt,K}(KCellOpt))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKCellOpt{}(inj{KCellOpt{}, K{}}(VarKCellOpt:KCellOpt{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule `_orElseBool__BOOL__Bool_Bool`(#token("false","Bool"),K)=>K requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(307) org.kframework.attributes.Location(Location(307,8,307,37)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'Unds'orElseBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(\dv{Bool{}}("false"),VarK:Bool{}),
+        VarK:Bool{}),
+      \top{R}()))
+  []
+
+// rule `_orBool__BOOL__Bool_Bool`(#token("true","Bool"),_14)=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(300) org.kframework.attributes.Location(Location(300,8,300,34)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'Unds'orBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(\dv{Bool{}}("true"),Var'Unds'14:Bool{}),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule leqWithCarry(`___AINT-SYNTAX__ABool_AInt`(`One_ABOOL-SYNTAX_`(.KList),I),`.AInt_AINT-SYNTAX_`(.KList),_3)=>`Zero_ABOOL-SYNTAX_`(.KList) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(46) org.kframework.attributes.Location(Location(46,8,46,50)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{ABool{},R} (
+        LblleqWithCarry{}(Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(LblOne'Unds'ABOOL-SYNTAX'Unds'{}(),VarI:AInt{}),Lbl'Stop'AInt'Unds'AINT-SYNTAX'Unds'{}(),Var'Unds'3:ABool{}),
+        LblZero'Unds'ABOOL-SYNTAX'Unds'{}()),
+      \top{R}()))
+  []
+
+// rule isKItem(inj{AExp,K}(AExp))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKItem{}(inj{AExp{}, K{}}(VarAExp:AExp{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isKCellOpt(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [owise()]
+  axiom{R} \implies{R} (
+    \and{R} (
+      \not{R} (
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarKCellOpt:KCellOpt{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKCellOpt{}(inj{KCellOpt{}, K{}}(VarKCellOpt:KCellOpt{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarKCell:KCell{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKCellOpt{}(inj{KCell{}, K{}}(VarKCell:KCell{}))))),
+        \bottom{R}()))),
+      \top{R}()),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKCellOpt{}(VarK:K{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule isPgm(inj{Pgm,K}(Pgm))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisPgm{}(inj{Pgm{}, K{}}(VarPgm:Pgm{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule `<T>`(`<k>`(inj{AExp,KItem}(`_/__IMP-SYNTAX__AExp_AExp`(K0,HOLE))~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{AExp,KItem}(HOLE)~>`#freezer_/__IMP-SYNTAX__AExp_AExp0_`(inj{AExp,K}(K0))~>DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [heat() left() org.kframework.attributes.Location(Location(84,20,84,60)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) productionID(817686795) strict()]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{AExp{}, KItem{}}(Lbl'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(VarK0:AExp{},VarHOLE:AExp{})),VarDotVar1:K{})),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{AExp{}, KItem{}}(VarHOLE:AExp{}),kseq{}(Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(inj{AExp{}, K{}}(VarK0:AExp{})),VarDotVar1:K{}))),VarDotVar0:StateCell{}))))
+  []
+
+// rule `_orBool__BOOL__Bool_Bool`(B,#token("false","Bool"))=>B requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(303) org.kframework.attributes.Location(Location(303,8,303,32)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'Unds'orBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(VarB:Bool{},\dv{Bool{}}("false")),
+        VarB:Bool{}),
+      \top{R}()))
+  []
+
+// rule `<T>`(`<k>`(inj{AExp,KItem}(HOLE)~>`#freezer_+__IMP-SYNTAX__AExp_AExp1_`(inj{AExp,K}(K1))~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{AExp,KItem}(`_+__IMP-SYNTAX__AExp_AExp`(HOLE,K1))~>DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [cool() left() org.kframework.attributes.Location(Location(85,20,85,60)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) productionID(1047478056) strict()]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{AExp{}, KItem{}}(VarHOLE:AExp{}),kseq{}(Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(inj{AExp{}, K{}}(VarK1:AExp{})),VarDotVar1:K{}))),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{AExp{}, KItem{}}(Lbl'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(VarHOLE:AExp{},VarK1:AExp{})),VarDotVar1:K{})),VarDotVar0:StateCell{}))))
+  []
+
+// rule `_=/=AId__AID__AId_AId`(`i_AID-SYNTAX_`(.KList),`n_AID-SYNTAX_`(.KList))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(70) org.kframework.attributes.Location(Location(70,8,70,26)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'UndsEqlsSlshEqls'AId'UndsUnds'AID'UndsUnds'AId'Unds'AId{}(Lbli'Unds'AID-SYNTAX'Unds'{}(),Lbln'Unds'AID-SYNTAX'Unds'{}()),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule `_orElseBool__BOOL__Bool_Bool`(K,#token("false","Bool"))=>K requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(308) org.kframework.attributes.Location(Location(308,8,308,37)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'Unds'orElseBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(VarK:Bool{},\dv{Bool{}}("false")),
+        VarK:Bool{}),
+      \top{R}()))
+  []
+
+// rule isKItem(inj{Set,K}(Set))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKItem{}(inj{Set{}, K{}}(VarSet:Set{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isCell(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [owise()]
+  axiom{R} \implies{R} (
+    \and{R} (
+      \not{R} (
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarStateCell:StateCell{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisCell{}(inj{StateCell{}, K{}}(VarStateCell:StateCell{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarCell:Cell{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisCell{}(inj{Cell{}, K{}}(VarCell:Cell{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarKCell:KCell{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisCell{}(inj{KCell{}, K{}}(VarKCell:KCell{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarTCell:TCell{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisCell{}(inj{TCell{}, K{}}(VarTCell:TCell{}))))),
+        \bottom{R}()))))),
+      \top{R}()),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisCell{}(VarK:K{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule isInt(inj{Int,K}(Int))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisInt{}(inj{Int{}, K{}}(VarInt:Int{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isKItem(inj{Assignment,K}(Assignment))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKItem{}(inj{Assignment{}, K{}}(VarAssignment:Assignment{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule initKCell(Init)=>`<k>`(`Map:lookup`(Init,inj{KConfigVar,K}(#token("$PGM","KConfigVar")))) requires #token("true","Bool") ensures #token("true","Bool") [initializer()]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{KCell{},R} (
+        LblinitKCell{}(VarInit:Map{}),
+        Lbl'-LT-'k'-GT-'{}(LblMap'Coln'lookup{}(VarInit:Map{},inj{KConfigVar{}, K{}}(\dv{KConfigVar{}}("$PGM"))))),
+      \top{R}()))
+  []
+
+// rule addWithCarry(`___AINT-SYNTAX__ABool_AInt`(`Zero_ABOOL-SYNTAX_`(.KList),I1),`___AINT-SYNTAX__ABool_AInt`(`Zero_ABOOL-SYNTAX_`(.KList),I2),B)=>`___AINT-SYNTAX__ABool_AInt`(B,addWithCarry(I1,I2,`Zero_ABOOL-SYNTAX_`(.KList))) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(29) org.kframework.attributes.Location(Location(29,8,29,89)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{AInt{},R} (
+        LbladdWithCarry{}(Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(LblZero'Unds'ABOOL-SYNTAX'Unds'{}(),VarI1:AInt{}),Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(LblZero'Unds'ABOOL-SYNTAX'Unds'{}(),VarI2:AInt{}),VarB:ABool{}),
+        Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(VarB:ABool{},LbladdWithCarry{}(VarI1:AInt{},VarI2:AInt{},LblZero'Unds'ABOOL-SYNTAX'Unds'{}()))),
+      \top{R}()))
+  []
+
+// rule isAssignment(inj{Assignment,K}(Assignment))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisAssignment{}(inj{Assignment{}, K{}}(VarAssignment:Assignment{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isState(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [owise()]
+  axiom{R} \implies{R} (
+    \and{R} (
+      \not{R} (
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarState:State{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisState{}(inj{State{}, K{}}(VarState:State{}))))),
+        \bottom{R}())),
+      \top{R}()),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisState{}(VarK:K{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule isKItem(inj{Pgm,K}(Pgm))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKItem{}(inj{Pgm{}, K{}}(VarPgm:Pgm{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isKItem(inj{Map,K}(Map))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKItem{}(inj{Map{}, K{}}(VarMap:Map{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isStmt(inj{Block,K}(Block))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisStmt{}(inj{Block{}, K{}}(VarBlock:Block{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isAInt(inj{AInt,K}(AInt))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisAInt{}(inj{AInt{}, K{}}(VarAInt:AInt{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isKItem(inj{TCellFragment,K}(TCellFragment))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKItem{}(inj{TCellFragment{}, K{}}(VarTCellFragment:TCellFragment{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isKItem(inj{Bool,K}(Bool))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKItem{}(inj{Bool{}, K{}}(VarBool:Bool{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isKResult(inj{KResult,K}(KResult))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKResult{}(inj{KResult{}, K{}}(VarKResult:KResult{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule `_<=AInt__AINT__AInt_AInt`(I1,I2)=>leqWithCarry(I1,I2,`One_ABOOL-SYNTAX_`(.KList)) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(38) org.kframework.attributes.Location(Location(38,8,38,59)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{ABool{},R} (
+        Lbl'Unds-LT-Eqls'AInt'UndsUnds'AINT'UndsUnds'AInt'Unds'AInt{}(VarI1:AInt{},VarI2:AInt{}),
+        LblleqWithCarry{}(VarI1:AInt{},VarI2:AInt{},LblOne'Unds'ABOOL-SYNTAX'Unds'{}())),
+      \top{R}()))
+  []
+
+// rule isBExp(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [owise()]
+  axiom{R} \implies{R} (
+    \and{R} (
+      \not{R} (
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarABool:ABool{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisBExp{}(inj{ABool{}, K{}}(VarABool:ABool{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarBExp:BExp{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisBExp{}(inj{BExp{}, K{}}(VarBExp:BExp{}))))),
+        \bottom{R}()))),
+      \top{R}()),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisBExp{}(VarK:K{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule addWithCarry(`___AINT-SYNTAX__ABool_AInt`(`One_ABOOL-SYNTAX_`(.KList),I1),`___AINT-SYNTAX__ABool_AInt`(`One_ABOOL-SYNTAX_`(.KList),I2),B)=>`___AINT-SYNTAX__ABool_AInt`(B,addWithCarry(I1,I2,`One_ABOOL-SYNTAX_`(.KList))) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(30) org.kframework.attributes.Location(Location(30,8,30,86)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{AInt{},R} (
+        LbladdWithCarry{}(Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(LblOne'Unds'ABOOL-SYNTAX'Unds'{}(),VarI1:AInt{}),Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(LblOne'Unds'ABOOL-SYNTAX'Unds'{}(),VarI2:AInt{}),VarB:ABool{}),
+        Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(VarB:ABool{},LbladdWithCarry{}(VarI1:AInt{},VarI2:AInt{},LblOne'Unds'ABOOL-SYNTAX'Unds'{}()))),
+      \top{R}()))
+  []
+
+// rule isBExp(inj{ABool,K}(ABool))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisBExp{}(inj{ABool{}, K{}}(VarABool:ABool{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule leqWithCarry(`___AINT-SYNTAX__ABool_AInt`(`Zero_ABOOL-SYNTAX_`(.KList),I1),`___AINT-SYNTAX__ABool_AInt`(`One_ABOOL-SYNTAX_`(.KList),I2),_2)=>leqWithCarry(I1,I2,`One_ABOOL-SYNTAX_`(.KList)) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(49) org.kframework.attributes.Location(Location(49,8,49,85)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{ABool{},R} (
+        LblleqWithCarry{}(Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(LblZero'Unds'ABOOL-SYNTAX'Unds'{}(),VarI1:AInt{}),Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(LblOne'Unds'ABOOL-SYNTAX'Unds'{}(),VarI2:AInt{}),Var'Unds'2:ABool{}),
+        LblleqWithCarry{}(VarI1:AInt{},VarI2:AInt{},LblOne'Unds'ABOOL-SYNTAX'Unds'{}())),
+      \top{R}()))
+  []
+
+// rule addWithCarry(`.AInt_AINT-SYNTAX_`(.KList),I,`Zero_ABOOL-SYNTAX_`(.KList))=>I requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(22) org.kframework.attributes.Location(Location(22,8,22,46)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{AInt{},R} (
+        LbladdWithCarry{}(Lbl'Stop'AInt'Unds'AINT-SYNTAX'Unds'{}(),VarI:AInt{},LblZero'Unds'ABOOL-SYNTAX'Unds'{}()),
+        VarI:AInt{}),
+      \top{R}()))
+  []
+
+// rule isBlock(inj{Block,K}(Block))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisBlock{}(inj{Block{}, K{}}(VarBlock:Block{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule `_=/=AId__AID__AId_AId`(`n_AID-SYNTAX_`(.KList),`sum_AID-SYNTAX_`(.KList))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(68) org.kframework.attributes.Location(Location(68,8,68,28)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'UndsEqlsSlshEqls'AId'UndsUnds'AID'UndsUnds'AId'Unds'AId{}(Lbln'Unds'AID-SYNTAX'Unds'{}(),Lblsum'Unds'AID-SYNTAX'Unds'{}()),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isList(inj{List,K}(List))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisList{}(inj{List{}, K{}}(VarList:List{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule set(`.State_STATE_`(.KList),X,I)=>`___STATE__Assignment_State`(`_|->__STATE__AId_AInt`(X,I),`.State_STATE_`(.KList)) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(116) org.kframework.attributes.Location(Location(116,8,116,54)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{State{},R} (
+        Lblset{}(Lbl'Stop'State'Unds'STATE'Unds'{}(),VarX:AId{},VarI:AInt{}),
+        Lbl'UndsUndsUnds'STATE'UndsUnds'Assignment'Unds'State{}(Lbl'UndsPipe'-'-GT-UndsUnds'STATE'UndsUnds'AId'Unds'AInt{}(VarX:AId{},VarI:AInt{}),Lbl'Stop'State'Unds'STATE'Unds'{}())),
+      \top{R}()))
+  []
+
+// rule isKItem(inj{AInt,K}(AInt))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKItem{}(inj{AInt{}, K{}}(VarAInt:AInt{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isStmt(inj{Stmt,K}(Stmt))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisStmt{}(inj{Stmt{}, K{}}(VarStmt:Stmt{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule `<T>`(`<k>`(inj{BExp,KItem}(HOLE)~>`#freezerif(_)_else__IMP-SYNTAX__BExp_Block_Block1_`(inj{Block,K}(K1),inj{Block,K}(K2))~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{Stmt,KItem}(`if(_)_else__IMP-SYNTAX__BExp_Block_Block`(HOLE,K1,K2))~>DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [cool() org.kframework.attributes.Location(Location(96,20,97,57)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) productionID(1171434979) strict(1)]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{BExp{}, KItem{}}(VarHOLE:BExp{}),kseq{}(Lbl'Hash'freezerif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block1'Unds'{}(inj{Block{}, K{}}(VarK1:Block{}),inj{Block{}, K{}}(VarK2:Block{})),VarDotVar1:K{}))),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{Stmt{}, KItem{}}(Lblif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block{}(VarHOLE:BExp{},VarK1:Block{},VarK2:Block{})),VarDotVar1:K{})),VarDotVar0:StateCell{}))))
+  []
+
+// rule leqWithCarry(`___AINT-SYNTAX__ABool_AInt`(`One_ABOOL-SYNTAX_`(.KList),I1),`___AINT-SYNTAX__ABool_AInt`(`One_ABOOL-SYNTAX_`(.KList),I2),R)=>leqWithCarry(I1,I2,R) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(50) org.kframework.attributes.Location(Location(50,8,50,82)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{ABool{},R} (
+        LblleqWithCarry{}(Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(LblOne'Unds'ABOOL-SYNTAX'Unds'{}(),VarI1:AInt{}),Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(LblOne'Unds'ABOOL-SYNTAX'Unds'{}(),VarI2:AInt{}),VarR:ABool{}),
+        LblleqWithCarry{}(VarI1:AInt{},VarI2:AInt{},VarR:ABool{})),
+      \top{R}()))
+  []
+
+// rule addWithCarry(`___AINT-SYNTAX__ABool_AInt`(`One_ABOOL-SYNTAX_`(.KList),I1),`___AINT-SYNTAX__ABool_AInt`(B,I2),`One_ABOOL-SYNTAX_`(.KList))=>`___AINT-SYNTAX__ABool_AInt`(B,addWithCarry(I1,I2,`One_ABOOL-SYNTAX_`(.KList))) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(31) org.kframework.attributes.Location(Location(31,8,31,86)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{AInt{},R} (
+        LbladdWithCarry{}(Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(LblOne'Unds'ABOOL-SYNTAX'Unds'{}(),VarI1:AInt{}),Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(VarB:ABool{},VarI2:AInt{}),LblOne'Unds'ABOOL-SYNTAX'Unds'{}()),
+        Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(VarB:ABool{},LbladdWithCarry{}(VarI1:AInt{},VarI2:AInt{},LblOne'Unds'ABOOL-SYNTAX'Unds'{}()))),
+      \top{R}()))
+  []
+
+// rule `<T>`(`<k>`(inj{Block,KItem}(`{_}_IMP-SYNTAX__Stmt`(S))~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{Stmt,KItem}(S)~>DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(153) org.kframework.attributes.Location(Location(153,8,153,23)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{Block{}, KItem{}}(Lbl'LBraUndsRBraUnds'IMP-SYNTAX'UndsUnds'Stmt{}(VarS:Stmt{})),VarDotVar1:K{})),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{Stmt{}, KItem{}}(VarS:Stmt{}),VarDotVar1:K{})),VarDotVar0:StateCell{}))))
+  []
+
+// rule `<T>`(`<k>`(inj{BExp,KItem}(HOLE)~>`#freezer!__IMP-SYNTAX__BExp0_`(.KList)~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{BExp,KItem}(`!__IMP-SYNTAX__BExp`(HOLE))~>DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [cool() org.kframework.attributes.Location(Location(89,20,89,54)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) productionID(872826668) strict()]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{BExp{}, KItem{}}(VarHOLE:BExp{}),kseq{}(Lbl'Hash'freezer'BangUndsUnds'IMP-SYNTAX'UndsUnds'BExp0'Unds'{}(),VarDotVar1:K{}))),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{BExp{}, KItem{}}(Lbl'BangUndsUnds'IMP-SYNTAX'UndsUnds'BExp{}(VarHOLE:BExp{})),VarDotVar1:K{})),VarDotVar0:StateCell{}))))
+  []
+
+// rule `_=/=AId__AID__AId_AId`(`sum_AID-SYNTAX_`(.KList),`sum_AID-SYNTAX_`(.KList))=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(76) org.kframework.attributes.Location(Location(76,8,76,31)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'UndsEqlsSlshEqls'AId'UndsUnds'AID'UndsUnds'AId'Unds'AId{}(Lblsum'Unds'AID-SYNTAX'Unds'{}(),Lblsum'Unds'AID-SYNTAX'Unds'{}()),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule `_=/=AId__AID__AId_AId`(`sum_AID-SYNTAX_`(.KList),`n_AID-SYNTAX_`(.KList))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(74) org.kframework.attributes.Location(Location(74,8,74,28)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'UndsEqlsSlshEqls'AId'UndsUnds'AID'UndsUnds'AId'Unds'AId{}(Lblsum'Unds'AID-SYNTAX'Unds'{}(),Lbln'Unds'AID-SYNTAX'Unds'{}()),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule `_andBool_`(#token("true","Bool"),B)=>B requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(285) org.kframework.attributes.Location(Location(285,8,285,37)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'Unds'andBool'Unds'{}(\dv{Bool{}}("true"),VarB:Bool{}),
+        VarB:Bool{}),
+      \top{R}()))
+  []
+
+// rule isMap(inj{Map,K}(Map))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisMap{}(inj{Map{}, K{}}(VarMap:Map{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isKItem(inj{State,K}(State))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKItem{}(inj{State{}, K{}}(VarState:State{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isAExp(inj{AInt,K}(AInt))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisAExp{}(inj{AInt{}, K{}}(VarAInt:AInt{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule leqWithCarry(`.AInt_AINT-SYNTAX_`(.KList),_1,`One_ABOOL-SYNTAX_`(.KList))=>`One_ABOOL-SYNTAX_`(.KList) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(40) org.kframework.attributes.Location(Location(40,8,40,42)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{ABool{},R} (
+        LblleqWithCarry{}(Lbl'Stop'AInt'Unds'AINT-SYNTAX'Unds'{}(),Var'Unds'1:AInt{},LblOne'Unds'ABOOL-SYNTAX'Unds'{}()),
+        LblOne'Unds'ABOOL-SYNTAX'Unds'{}()),
+      \top{R}()))
+  []
+
+// rule `<T>`(`<k>`(inj{AExp,KItem}(`_/__IMP-SYNTAX__AExp_AExp`(HOLE,K1))~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{AExp,KItem}(HOLE)~>`#freezer_/__IMP-SYNTAX__AExp_AExp1_`(inj{AExp,K}(K1))~>DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [heat() left() org.kframework.attributes.Location(Location(84,20,84,60)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) productionID(817686795) strict()]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{AExp{}, KItem{}}(Lbl'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(VarHOLE:AExp{},VarK1:AExp{})),VarDotVar1:K{})),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{AExp{}, KItem{}}(VarHOLE:AExp{}),kseq{}(Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp1'Unds'{}(inj{AExp{}, K{}}(VarK1:AExp{})),VarDotVar1:K{}))),VarDotVar0:StateCell{}))))
+  []
+
+// rule `_andBool_`(B,#token("true","Bool"))=>B requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(286) org.kframework.attributes.Location(Location(286,8,286,37)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'Unds'andBool'Unds'{}(VarB:Bool{},\dv{Bool{}}("true")),
+        VarB:Bool{}),
+      \top{R}()))
+  []
+
+// rule isKItem(inj{StateCellOpt,K}(StateCellOpt))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKItem{}(inj{StateCellOpt{}, K{}}(VarStateCellOpt:StateCellOpt{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isKItem(inj{Int,K}(Int))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKItem{}(inj{Int{}, K{}}(VarInt:Int{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isState(inj{State,K}(State))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisState{}(inj{State{}, K{}}(VarState:State{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isTCellFragment(inj{TCellFragment,K}(TCellFragment))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisTCellFragment{}(inj{TCellFragment{}, K{}}(VarTCellFragment:TCellFragment{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isAExp(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [owise()]
+  axiom{R} \implies{R} (
+    \and{R} (
+      \not{R} (
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarAExp:AExp{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisAExp{}(inj{AExp{}, K{}}(VarAExp:AExp{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarAId:AId{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisAExp{}(inj{AId{}, K{}}(VarAId:AId{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarAInt:AInt{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisAExp{}(inj{AInt{}, K{}}(VarAInt:AInt{}))))),
+        \bottom{R}())))),
+      \top{R}()),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisAExp{}(VarK:K{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule set(`___STATE__Assignment_State`(`_|->__STATE__AId_AInt`(X,_16),S),X,I)=>`___STATE__Assignment_State`(`_|->__STATE__AId_AInt`(X,I),S) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(118) org.kframework.attributes.Location(Location(118,8,118,65)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{State{},R} (
+        Lblset{}(Lbl'UndsUndsUnds'STATE'UndsUnds'Assignment'Unds'State{}(Lbl'UndsPipe'-'-GT-UndsUnds'STATE'UndsUnds'AId'Unds'AInt{}(VarX:AId{},Var'Unds'16:AInt{}),VarS:State{}),VarX:AId{},VarI:AInt{}),
+        Lbl'UndsUndsUnds'STATE'UndsUnds'Assignment'Unds'State{}(Lbl'UndsPipe'-'-GT-UndsUnds'STATE'UndsUnds'AId'Unds'AInt{}(VarX:AId{},VarI:AInt{}),VarS:State{})),
+      \top{R}()))
+  []
+
+// rule isCell(inj{KCell,K}(KCell))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisCell{}(inj{KCell{}, K{}}(VarKCell:KCell{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule `_andThenBool__BOOL__Bool_Bool`(#token("false","Bool"),_12)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(292) org.kframework.attributes.Location(Location(292,8,292,36)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'Unds'andThenBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(\dv{Bool{}}("false"),Var'Unds'12:Bool{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule `_impliesBool__BOOL__Bool_Bool`(B,#token("false","Bool"))=>`notBool_`(B) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(313) org.kframework.attributes.Location(Location(313,8,313,45)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'Unds'impliesBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(VarB:Bool{},\dv{Bool{}}("false")),
+        LblnotBool'Unds'{}(VarB:Bool{})),
+      \top{R}()))
+  []
+
+// rule isStateCellOpt(inj{StateCellOpt,K}(StateCellOpt))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisStateCellOpt{}(inj{StateCellOpt{}, K{}}(VarStateCellOpt:StateCellOpt{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isPgm(inj{Block,K}(Block))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisPgm{}(inj{Block{}, K{}}(VarBlock:Block{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isKCellOpt(inj{KCell,K}(KCell))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKCellOpt{}(inj{KCell{}, K{}}(VarKCell:KCell{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isList(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [owise()]
+  axiom{R} \implies{R} (
+    \and{R} (
+      \not{R} (
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarList:List{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisList{}(inj{List{}, K{}}(VarList:List{}))))),
+        \bottom{R}())),
+      \top{R}()),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisList{}(VarK:K{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule `_impliesBool__BOOL__Bool_Bool`(_7,#token("true","Bool"))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(312) org.kframework.attributes.Location(Location(312,8,312,39)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'Unds'impliesBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(Var'Unds'7:Bool{},\dv{Bool{}}("true")),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isBool(inj{Bool,K}(Bool))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisBool{}(inj{Bool{}, K{}}(VarBool:Bool{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule `<T>`(`<k>`(inj{AId,KItem}(X)~>DotVar1),`<state>`(S))=>`<T>`(`<k>`(inj{AInt,KItem}(get(S,X))~>DotVar1),`<state>`(S)) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(145) org.kframework.attributes.Location(Location(145,8,145,62)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{AId{}, KItem{}}(VarX:AId{}),VarDotVar1:K{})),Lbl'-LT-'state'-GT-'{}(VarS:State{})),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{AInt{}, KItem{}}(Lblget{}(VarS:State{},VarX:AId{})),VarDotVar1:K{})),Lbl'-LT-'state'-GT-'{}(VarS:State{})))))
+  []
+
+// rule isKItem(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [owise()]
+  axiom{R} \implies{R} (
+    \and{R} (
+      \not{R} (
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarStateCell:StateCell{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKItem{}(inj{StateCell{}, K{}}(VarStateCell:StateCell{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarAInt:AInt{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKItem{}(inj{AInt{}, K{}}(VarAInt:AInt{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarSet:Set{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKItem{}(inj{Set{}, K{}}(VarSet:Set{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarInt:Int{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKItem{}(inj{Int{}, K{}}(VarInt:Int{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarAssignment:Assignment{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKItem{}(inj{Assignment{}, K{}}(VarAssignment:Assignment{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarTCell:TCell{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKItem{}(inj{TCell{}, K{}}(VarTCell:TCell{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarAExp:AExp{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKItem{}(inj{AExp{}, K{}}(VarAExp:AExp{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarTCellFragment:TCellFragment{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKItem{}(inj{TCellFragment{}, K{}}(VarTCellFragment:TCellFragment{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarStmt:Stmt{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKItem{}(inj{Stmt{}, K{}}(VarStmt:Stmt{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarPgm:Pgm{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKItem{}(inj{Pgm{}, K{}}(VarPgm:Pgm{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarKCellOpt:KCellOpt{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKItem{}(inj{KCellOpt{}, K{}}(VarKCellOpt:KCellOpt{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarKCell:KCell{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKItem{}(inj{KCell{}, K{}}(VarKCell:KCell{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarStateCellOpt:StateCellOpt{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKItem{}(inj{StateCellOpt{}, K{}}(VarStateCellOpt:StateCellOpt{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarMap:Map{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKItem{}(inj{Map{}, K{}}(VarMap:Map{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarList:List{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKItem{}(inj{List{}, K{}}(VarList:List{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarCell:Cell{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKItem{}(inj{Cell{}, K{}}(VarCell:Cell{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarABool:ABool{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKItem{}(inj{ABool{}, K{}}(VarABool:ABool{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarState:State{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKItem{}(inj{State{}, K{}}(VarState:State{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarBlock:Block{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKItem{}(inj{Block{}, K{}}(VarBlock:Block{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarKResult:KResult{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKItem{}(inj{KResult{}, K{}}(VarKResult:KResult{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarBExp:BExp{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKItem{}(inj{BExp{}, K{}}(VarBExp:BExp{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarBool:Bool{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKItem{}(inj{Bool{}, K{}}(VarBool:Bool{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarAId:AId{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKItem{}(inj{AId{}, K{}}(VarAId:AId{}))))),
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarKItem:KItem{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisKItem{}(inj{KItem{}, K{}}(VarKItem:KItem{}))))),
+        \bottom{R}()))))))))))))))))))))))))),
+      \top{R}()),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKItem{}(VarK:K{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule `_=/=AId__AID__AId_AId`(`n_AID-SYNTAX_`(.KList),`i_AID-SYNTAX_`(.KList))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(67) org.kframework.attributes.Location(Location(67,8,67,26)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'UndsEqlsSlshEqls'AId'UndsUnds'AID'UndsUnds'AId'Unds'AId{}(Lbln'Unds'AID-SYNTAX'Unds'{}(),Lbli'Unds'AID-SYNTAX'Unds'{}()),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule `_orElseBool__BOOL__Bool_Bool`(_13,#token("true","Bool"))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(306) org.kframework.attributes.Location(Location(306,8,306,33)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'Unds'orElseBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(Var'Unds'13:Bool{},\dv{Bool{}}("true")),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule addWithCarry(I,`.AInt_AINT-SYNTAX_`(.KList),`Zero_ABOOL-SYNTAX_`(.KList))=>I requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(24) org.kframework.attributes.Location(Location(24,8,24,46)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{AInt{},R} (
+        LbladdWithCarry{}(VarI:AInt{},Lbl'Stop'AInt'Unds'AINT-SYNTAX'Unds'{}(),LblZero'Unds'ABOOL-SYNTAX'Unds'{}()),
+        VarI:AInt{}),
+      \top{R}()))
+  []
+
+// rule isCell(inj{Cell,K}(Cell))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisCell{}(inj{Cell{}, K{}}(VarCell:Cell{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isABool(inj{ABool,K}(ABool))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisABool{}(inj{ABool{}, K{}}(VarABool:ABool{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule get(`.State_STATE_`(.KList),X)=>`.AInt_AINT-SYNTAX_`(.KList) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(122) org.kframework.attributes.Location(Location(122,8,122,35)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{AInt{},R} (
+        Lblget{}(Lbl'Stop'State'Unds'STATE'Unds'{}(),VarX:AId{}),
+        Lbl'Stop'AInt'Unds'AINT-SYNTAX'Unds'{}()),
+      \top{R}()))
+  []
+
+// rule `_andBool_`(#token("false","Bool"),_9)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(287) org.kframework.attributes.Location(Location(287,8,287,37)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'Unds'andBool'Unds'{}(\dv{Bool{}}("false"),Var'Unds'9:Bool{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule leqWithCarry(`___AINT-SYNTAX__ABool_AInt`(`One_ABOOL-SYNTAX_`(.KList),I1),`___AINT-SYNTAX__ABool_AInt`(`Zero_ABOOL-SYNTAX_`(.KList),I2),_0)=>leqWithCarry(I1,I2,`Zero_ABOOL-SYNTAX_`(.KList)) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(48) org.kframework.attributes.Location(Location(48,8,48,86)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{ABool{},R} (
+        LblleqWithCarry{}(Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(LblOne'Unds'ABOOL-SYNTAX'Unds'{}(),VarI1:AInt{}),Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(LblZero'Unds'ABOOL-SYNTAX'Unds'{}(),VarI2:AInt{}),Var'Unds'0:ABool{}),
+        LblleqWithCarry{}(VarI1:AInt{},VarI2:AInt{},LblZero'Unds'ABOOL-SYNTAX'Unds'{}())),
+      \top{R}()))
+  []
+
+// rule isAssignment(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [owise()]
+  axiom{R} \implies{R} (
+    \and{R} (
+      \not{R} (
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarAssignment:Assignment{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisAssignment{}(inj{Assignment{}, K{}}(VarAssignment:Assignment{}))))),
+        \bottom{R}())),
+      \top{R}()),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisAssignment{}(VarK:K{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule leqWithCarry(`.AInt_AINT-SYNTAX_`(.KList),`___AINT-SYNTAX__ABool_AInt`(`Zero_ABOOL-SYNTAX_`(.KList),I),`Zero_ABOOL-SYNTAX_`(.KList))=>leqWithCarry(`.AInt_AINT-SYNTAX_`(.KList),I,`Zero_ABOOL-SYNTAX_`(.KList)) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(41) org.kframework.attributes.Location(Location(41,8,41,51)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{ABool{},R} (
+        LblleqWithCarry{}(Lbl'Stop'AInt'Unds'AINT-SYNTAX'Unds'{}(),Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(LblZero'Unds'ABOOL-SYNTAX'Unds'{}(),VarI:AInt{}),LblZero'Unds'ABOOL-SYNTAX'Unds'{}()),
+        LblleqWithCarry{}(Lbl'Stop'AInt'Unds'AINT-SYNTAX'Unds'{}(),VarI:AInt{},LblZero'Unds'ABOOL-SYNTAX'Unds'{}())),
+      \top{R}()))
+  []
+
+// rule addWithCarry(`___AINT-SYNTAX__ABool_AInt`(`Zero_ABOOL-SYNTAX_`(.KList),I1),`___AINT-SYNTAX__ABool_AInt`(B,I2),`Zero_ABOOL-SYNTAX_`(.KList))=>`___AINT-SYNTAX__ABool_AInt`(B,addWithCarry(I1,I2,`Zero_ABOOL-SYNTAX_`(.KList))) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(27) org.kframework.attributes.Location(Location(27,8,27,89)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{AInt{},R} (
+        LbladdWithCarry{}(Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(LblZero'Unds'ABOOL-SYNTAX'Unds'{}(),VarI1:AInt{}),Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(VarB:ABool{},VarI2:AInt{}),LblZero'Unds'ABOOL-SYNTAX'Unds'{}()),
+        Lbl'UndsUndsUnds'AINT-SYNTAX'UndsUnds'ABool'Unds'AInt{}(VarB:ABool{},LbladdWithCarry{}(VarI1:AInt{},VarI2:AInt{},LblZero'Unds'ABOOL-SYNTAX'Unds'{}()))),
+      \top{R}()))
+  []
+
+// rule isAId(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [owise()]
+  axiom{R} \implies{R} (
+    \and{R} (
+      \not{R} (
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarAId:AId{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisAId{}(inj{AId{}, K{}}(VarAId:AId{}))))),
+        \bottom{R}())),
+      \top{R}()),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisAId{}(VarK:K{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule `<T>`(`<k>`(inj{AExp,KItem}(HOLE)~>`#freezer_/__IMP-SYNTAX__AExp_AExp0_`(inj{AExp,K}(K0))~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{AExp,KItem}(`_/__IMP-SYNTAX__AExp_AExp`(K0,HOLE))~>DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [cool() left() org.kframework.attributes.Location(Location(84,20,84,60)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) productionID(817686795) strict()]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{AExp{}, KItem{}}(VarHOLE:AExp{}),kseq{}(Lbl'Hash'freezer'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(inj{AExp{}, K{}}(VarK0:AExp{})),VarDotVar1:K{}))),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{AExp{}, KItem{}}(Lbl'UndsSlshUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(VarK0:AExp{},VarHOLE:AExp{})),VarDotVar1:K{})),VarDotVar0:StateCell{}))))
+  []
+
+// rule `<T>`(`<k>`(inj{Stmt,KItem}(`if(_)_else__IMP-SYNTAX__BExp_Block_Block`(inj{ABool,BExp}(`Zero_ABOOL-SYNTAX_`(.KList)),_18,S))~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{Block,KItem}(S)~>DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(151) org.kframework.attributes.Location(Location(151,8,151,37)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{Stmt{}, KItem{}}(Lblif'LParUndsRParUnds'else'UndsUnds'IMP-SYNTAX'UndsUnds'BExp'Unds'Block'Unds'Block{}(inj{ABool{}, BExp{}}(LblZero'Unds'ABOOL-SYNTAX'Unds'{}()),Var'Unds'18:Block{},VarS:Block{})),VarDotVar1:K{})),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{Block{}, KItem{}}(VarS:Block{}),VarDotVar1:K{})),VarDotVar0:StateCell{}))))
+  []
+
+// rule `<T>`(`<k>`(inj{Block,KItem}(`{}_IMP-SYNTAX_`(.KList))~>DotVar1),DotVar0)=>`<T>`(`<k>`(DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(157) org.kframework.attributes.Location(Location(157,8,157,16)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{Block{}, KItem{}}(Lbl'LBraRBraUnds'IMP-SYNTAX'Unds'{}()),VarDotVar1:K{})),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(VarDotVar1:K{}),VarDotVar0:StateCell{}))))
+  []
+
+// rule initTCell(Init)=>`<T>`(initKCell(Init),initStateCell(.KList)) requires #token("true","Bool") ensures #token("true","Bool") [initializer()]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{TCell{},R} (
+        LblinitTCell{}(VarInit:Map{}),
+        Lbl'-LT-'T'-GT-'{}(LblinitKCell{}(VarInit:Map{}),LblinitStateCell{}())),
+      \top{R}()))
+  []
+
+// rule `<T>`(`<k>`(inj{AExp,KItem}(`_+__IMP-SYNTAX__AExp_AExp`(K0,HOLE))~>DotVar1),DotVar0)=>`<T>`(`<k>`(inj{AExp,KItem}(HOLE)~>`#freezer_+__IMP-SYNTAX__AExp_AExp0_`(inj{AExp,K}(K0))~>DotVar1),DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [heat() left() org.kframework.attributes.Location(Location(85,20,85,60)) org.kframework.attributes.Source(Source(/home/traian/Documents/kore/src/main/k/imp-no-domains/./imp.k)) productionID(1047478056) strict()]
+  axiom{} \and{TCell{}} (
+    \top{TCell{}}(), \and{TCell{}} (
+    \top{TCell{}}(), \rewrites{TCell{}}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{AExp{}, KItem{}}(Lbl'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(VarK0:AExp{},VarHOLE:AExp{})),VarDotVar1:K{})),VarDotVar0:StateCell{}),Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{AExp{}, KItem{}}(VarHOLE:AExp{}),kseq{}(Lbl'Hash'freezer'UndsPlusUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp0'Unds'{}(inj{AExp{}, K{}}(VarK0:AExp{})),VarDotVar1:K{}))),VarDotVar0:StateCell{}))))
+  []
+
+// rule isTCellFragment(K)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [owise()]
+  axiom{R} \implies{R} (
+    \and{R} (
+      \not{R} (
+        \or{R} (
+          \ceil{Bool{},R} (
+            \exists{Bool{}} (VarTCellFragment:TCellFragment{}, 
+              \and{Bool{}} (
+                \top{Bool{}}(),
+                LblisTCellFragment{}(inj{TCellFragment{}, K{}}(VarTCellFragment:TCellFragment{}))))),
+        \bottom{R}())),
+      \top{R}()),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisTCellFragment{}(VarK:K{}),
+        \dv{Bool{}}("false")),
+      \top{R}()))
+  []
+
+// rule isKItem(inj{AId,K}(AId))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKItem{}(inj{AId{}, K{}}(VarAId:AId{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule isKItem(inj{TCell,K}(TCell))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") []
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        LblisKItem{}(inj{TCell{}, K{}}(VarTCell:TCell{})),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+// rule `_orBool__BOOL__Bool_Bool`(_8,#token("true","Bool"))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") [contentStartColumn(8) contentStartLine(301) org.kframework.attributes.Location(Location(301,8,301,34)) org.kframework.attributes.Source(Source(/home/traian/Documents/k5/k-distribution/target/release/k/include/builtin/domains.k)) org.kframework.definition.Production(syntax RuleContent ::= K)]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{Bool{},R} (
+        Lbl'Unds'orBool'UndsUnds'BOOL'UndsUnds'Bool'Unds'Bool{}(Var'Unds'8:Bool{},\dv{Bool{}}("true")),
+        \dv{Bool{}}("true")),
+      \top{R}()))
+  []
+
+endmodule []
