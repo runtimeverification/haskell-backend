@@ -35,6 +35,7 @@ dependencies:
 - data-fix
 - clock
 - optparse-applicative
+- gitrev
 
 library:
   source-dirs: src
