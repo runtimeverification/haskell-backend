@@ -45,25 +45,39 @@ axiomPatternsIntegrationTests =
 
 testAxiomString1 :: String
 testAxiomString1 =
-  "axiom{} \\and{TCell{}} (\n\
-  \  \\top{TCell{}}(), \\and{TCell{}} (\n\
-  \  \\top{TCell{}}(), \\rewrites{TCell{}}(\
-    \Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(\
-      \kseq{}(inj{BExp{}, KItem{}}(\
-        \Lbl'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp{}(\
-          \inj{AInt{}, AExp{}}(VarI1:AInt{}),\
-          \inj{AInt{}, AExp{}}(VarI2:AInt{})\
-        \)\
-      \),VarDotVar1:K{})),VarDotVar0:StateCell{}),\
-    \Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(\
-      \kseq{}(inj{ABool{}, KItem{}}(\
-        \Lbl'Unds-LT-Eqls'AInt'UndsUnds'AINT'UndsUnds'AInt'Unds'AInt{}(\
-          \VarI1:AInt{},\
-          \VarI2:AInt{}\
-        \)\
-      \),VarDotVar1:K{})),VarDotVar0:StateCell{})\
-    \)))\n\
-\[]"
+    "axiom{}\\and{TCell{}}(\n\
+    \    \\top{TCell{}}(),\n\
+    \    \\and{TCell{}}(\n\
+    \        \\top{TCell{}}(),\n\
+    \        \\rewrites{TCell{}}(\n\
+    \            T{}(\n\
+    \                k{}(\n\
+    \                    kseq{}(\n\
+    \                        inj{BExp{}, KItem{}}(\n\
+    \                            leqAExp{}(\n\
+    \                                inj{AInt{}, AExp{}}(VarI1:AInt{}),\n\
+    \                                inj{AInt{}, AExp{}}(VarI2:AInt{})\n\
+    \                            )\n\
+    \                        ),\n\
+    \                        VarDotVar1:K{}\n\
+    \                    )\n\
+    \                ),\n\
+    \                VarDotVar0:StateCell{}\n\
+    \            ),\n\
+    \            T{}(\n\
+    \                k{}(\n\
+    \                    kseq{}(\n\
+    \                        inj{ABool{}, KItem{}}(\n\
+    \                            leqAInt{}(VarI1:AInt{}, VarI2:AInt{})\n\
+    \                        ),\n\
+    \                        VarDotVar1:K{}\n\
+    \                    )\n\
+    \                ),\n\
+    \                VarDotVar0:StateCell{}\n\
+    \            )\n\
+    \        )\n\
+    \    )\n\
+    \)[]"
 
 sortK, sortKItem, sortKCell, sortStateCell, sortTCell, sortState :: Sort Object
 sortK = simpleSort (SortName "K")
@@ -89,13 +103,13 @@ sortParamSort = SortVariableSort . sortParam
 
 symbolTCell, symbolStateCell, symbolKCell :: PureSentenceSymbol Object
 symbolTCell =
-    symbol_ "Lbl'-LT-'T'-GT-'" AstLocationTest
+    symbol_ "T" AstLocationTest
         [sortKCell, sortStateCell] sortTCell
--- symbol Lbl'-LT-'T'-GT-'{}(KCell{}, StateCell{}) : TCell{} []
+-- symbol T{}(KCell{}, StateCell{}) : TCell{} []
 symbolStateCell =
     symbol_ "Lbl'-LT-'state'-GT-'" AstLocationTest [sortState] sortStateCell
 symbolKCell =
-    symbol_ "Lbl'-LT-'k'-GT-'" AstLocationTest [sortK] sortKCell
+    symbol_ "k" AstLocationTest [sortK] sortKCell
 
 symbolKSeq, symbolInj :: PureSentenceSymbol Object
 symbolKSeq =
@@ -109,12 +123,12 @@ symbolInj =
 
 symbolLeqAExp :: PureSentenceSymbol Object
 symbolLeqAExp =
-    symbol_ "Lbl'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp"
+    symbol_ "leqAExp"
         AstLocationTest [sortAExp, sortAExp] sortBExp
 
 symbolLeqAInt :: PureSentenceSymbol Object
 symbolLeqAInt =
-    symbol_ "Lbl'Unds-LT-Eqls'AInt'UndsUnds'AINT'UndsUnds'AInt'Unds'AInt"
+    symbol_ "leqAInt"
         AstLocationTest [sortAInt, sortAInt] sortABool
 
 varI1, varI2, varKRemainder, varStateCell :: CommonPurePatternStub Object
@@ -152,16 +166,6 @@ expectedAxiomPattern1 = AxiomPattern
           , varStateCell
           ]
     }
-
-{-
-  AxiomPattern {axiomPatternLeft = Fix (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "Lbl'-LT-'T'-GT-'", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 39})}, symbolOrAliasParams = []}, applicationChildren = [Fix (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "Lbl'-LT-'k'-GT-'", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3,
-  column = 58})}, symbolOrAliasParams = []}, applicationChildren = [Fix (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "kseq", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 77})}, symbolOrAliasParams = []}, applicationChildren = [Fix (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "inj", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 84})}, symbolOrAliasParams = [SortActualSort (SortActual {sortActualName = Id {getId = "BExp", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 88})}, sortActualSorts = []}),SortActualSort (SortActual {sortActualName = Id
-  {getId = "KItem", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 96})}, sortActualSorts = []})]}, applicationChildren = [Fix (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "Lbl'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'UndsUnds'AExp'Unds'AExp", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 105})}, symbolOrAliasParams = []}, applicationChildren = [Fix (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "inj", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 167})}, symbolOrAliasParams = [SortActualSort (SortActual {sortActualName = Id {getId = "AInt", idLocation =
-  AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 171})}, sortActualSorts = []}),SortActualSort (SortActual {sortActualName = Id {getId = "AExp", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 179})}, sortActualSorts = []})]}, applicationChildren = [Fix (VariablePattern (Variable {variableName = Id {getId = "VarI1", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 187})}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "AInt", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 193})}, sortActualSorts = []})}))]})),Fix (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "inj", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 201})}, symbolOrAliasParams = [SortActualSort (SortActual {sortActualName = Id {getId = "AInt", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 205})}, sortActualSorts = []}),SortActualSort (SortActual {sortActualName = Id {getId = "AExp", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 213})}, sortActualSorts = []})]}, applicationChildren = [Fix (VariablePattern (Variable {variableName = Id {getId = "VarI2", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 221})}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "AInt", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 227})}, sortActualSorts = []})}))]}))]}))]})),Fix (VariablePattern (Variable {variableName = Id {getId = "VarDotVar1", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 237})}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "K", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 248})}, sortActualSorts = []})}))]}))]})),Fix (VariablePattern (Variable {variableName = Id {getId = "VarDotVar0", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 254})}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "StateCell", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 265})}, sortActualSorts = []})}))]})), axiomPatternRight = Fix (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "Lbl'-LT-'T'-GT-'", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3,
-  column = 278})}, symbolOrAliasParams = []}, applicationChildren = [Fix (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "Lbl'-LT-'k'-GT-'", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 297})}, symbolOrAliasParams = []}, applicationChildren = [Fix (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "kseq", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 316})}, symbolOrAliasParams = []}, applicationChildren = [Fix (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "inj", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 323})}, symbolOrAliasParams = [SortActualSort (SortActual {sortActualName = Id {getId = "ABool", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 327})}, sortActualSorts = []}),SortActualSort (SortActual {sortActualName = Id {getId = "KItem", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 336})}, sortActualSorts = []})]}, applicationChildren = [Fix (ApplicationPattern (Application {applicationSymbolOrAlias = SymbolOrAlias {symbolOrAliasConstructor = Id {getId = "Lbl'Unds-LT-Eqls'AInt'UndsUnds'AINT'UndsUnds'AInt'Unds'AInt", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 345})}, symbolOrAliasParams = []}, applicationChildren = [Fix (VariablePattern (Variable {variableName = Id {getId = "VarI1", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 407})}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "AInt", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 413})}, sortActualSorts = []})})),Fix (VariablePattern (Variable {variableName = Id {getId = "VarI2", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 420})}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "AInt", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 426})}, sortActualSorts = []})}))]}))]})),Fix (VariablePattern (Variable {variableName = Id {getId = "VarDotVar1", idLocation = AstLocationFile
-  (FileLocation {fileName = "<test-string>", line = 3, column = 435})}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "K", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 446})}, sortActualSorts = []})}))]}))]})),Fix (VariablePattern (Variable {variableName = Id {getId = "VarDotVar0", idLocation = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 452})}, variableSort = SortActualSort (SortActual {sortActualName = Id {getId = "StateCell", idLocation
-  = AstLocationFile (FileLocation {fileName = "<test-string>", line = 3, column = 463})}, sortActualSorts = []})}))]}))}
--}
 
 testAxiom1 :: KoreSentence
 testAxiom1 = case parseAxiom testAxiomString1 of
