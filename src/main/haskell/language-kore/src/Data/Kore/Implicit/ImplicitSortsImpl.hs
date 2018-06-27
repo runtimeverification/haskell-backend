@@ -12,9 +12,6 @@ module Data.Kore.Implicit.ImplicitSortsImpl where
 import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.Implicit.ImplicitKoreImpl     (equalsAxiom,
-                                                          parameterizedAxiom,
-                                                          parameterizedEqualsAxiom)
 import           Data.Kore.Implicit.ImplicitVarsInternal
 import           Data.Kore.MetaML.AST
 
@@ -51,23 +48,23 @@ defineMetaSort sortType =
     , delete
     , deleteA
         -- inList
-    ,   [ parameterizedAxiom [pS] (not_ (inListA [spS] [vs, emptyListA]))
-        , parameterizedEqualsAxiom [pS]
+    ,   [ parameterizedAxiom_ [pS] (not_ (inListA [spS] [vs, emptyListA]))
+        , parameterizedEqualsAxiom_ [pS]
             (inListA [spS] [vs, listConstructorA [vs', vS]])
             (or_
                 (equalsS_ objectSort vs vs')
                 (inListA [spS] [vs, vS])
             )
         -- append
-        , equalsAxiom (appendA [emptyListA, vS]) vS
-        , equalsAxiom
+        , equalsAxiom_ (appendA [emptyListA, vS]) vS
+        , equalsAxiom_
             (appendA [listConstructorA [vs, vS'], vS])
             (listConstructorA [vs, appendA [vS', vS]])
         -- delete
-        , equalsAxiom
+        , equalsAxiom_
             (deleteA [vs, emptyListA])
             emptyListA
-        , equalsAxiom
+        , equalsAxiom_
             (deleteA [vs, listConstructorA [vs', vS]])
             (or_
                 (and_ (equalsS_ objectSort vs vs') (deleteA [vs, vS]))

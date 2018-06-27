@@ -12,6 +12,7 @@ import           Data.Kore.AST.MLPatternsTest                        (extractPur
 import           Data.Kore.AST.PureML
 import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
+import           Data.Kore.Error
 import           Data.Kore.Parser.ParserImpl
 import           Data.Kore.Parser.ParserUtils
 import           Data.Kore.Step.AxiomPatterns
@@ -28,56 +29,96 @@ axiomPatternsUnitTests :: TestTree
 axiomPatternsUnitTests =
     testGroup
         "AxiomPatterns Unit Tests"
-        []
+        [ testCase "A => B"
+            (assertEqual ""
+                undefined
+                (koreSentenceToAxiomPattern Object
+                    ( undefined
+                    )
+                )
+            )
+        ]
 
 axiomPatternsIntegrationTests :: TestTree
 axiomPatternsIntegrationTests =
     testGroup
         "AxiomPatterns Unit Tests"
-        [ testCase "I1 <= I2 => I1 <=Int I2"
-            (assertEqual
-                ""
-                (Right expectedAxiomPattern1)
-                (koreSentenceToAxiomPattern Object testAxiom1)
+        [ testCase "I1 <= I2 => I1 <=Int I2 (generated)"
+            (assertEqual ""
+                (Right AxiomPattern
+                    { axiomPatternLeft = extractPurePattern $
+                        applyS symbolTCell
+                          [ applyS symbolKCell
+                              [ applyS symbolKSeq
+                                  [ applyPS symbolInj [sortBExp, sortKItem]
+                                      [ applyS symbolLeqAExp
+                                          [ applyPS symbolInj
+                                              [sortAInt, sortAExp] [varI1]
+                                          , applyPS symbolInj
+                                              [sortAInt, sortAExp] [varI2]
+                                          ]
+                                      ]
+                                  , varKRemainder
+                                  ]
+                              ]
+                          , varStateCell
+                          ]
+                    , axiomPatternRight = extractPurePattern $
+                        applyS symbolTCell
+                          [ applyS symbolKCell
+                              [ applyS symbolKSeq
+                                  [ applyPS symbolInj [sortABool, sortKItem]
+                                      [ applyS symbolLeqAInt [ varI1, varI2 ] ]
+                                  , varKRemainder
+                                  ]
+                              ]
+                          , varStateCell
+                          ]
+                    }
+                )
+                (koreSentenceToAxiomPattern Object =<< parseAxiom
+                    "axiom{}\\and{TCell{}}(\n\
+                    \    \\top{TCell{}}(),\n\
+                    \    \\and{TCell{}}(\n\
+                    \        \\top{TCell{}}(),\n\
+                    \        \\rewrites{TCell{}}(\n\
+                    \            T{}(\n\
+                    \                k{}(\n\
+                    \                    kseq{}(\n\
+                    \                        inj{BExp{}, KItem{}}(\n\
+                    \                            leqAExp{}(\n\
+                    \                                inj{AInt{}, AExp{}}(\n\
+                    \                                    VarI1:AInt{}\n\
+                    \                                ),\n\
+                    \                                inj{AInt{}, AExp{}}(\n\
+                    \                                    VarI2:AInt{}\n\
+                    \                                )\n\
+                    \                            )\n\
+                    \                        ),\n\
+                    \                        VarDotVar1:K{}\n\
+                    \                    )\n\
+                    \                ),\n\
+                    \                VarDotVar0:StateCell{}\n\
+                    \            ),\n\
+                    \            T{}(\n\
+                    \                k{}(\n\
+                    \                    kseq{}(\n\
+                    \                        inj{ABool{}, KItem{}}(\n\
+                    \                            leqAInt{}(\n\
+                    \                                VarI1:AInt{},\n\
+                    \                                VarI2:AInt{})\n\
+                    \                        ),\n\
+                    \                        VarDotVar1:K{}\n\
+                    \                    )\n\
+                    \                ),\n\
+                    \                VarDotVar0:StateCell{}\n\
+                    \            )\n\
+                    \        )\n\
+                    \    )\n\
+                    \)[]"
+                )
             )
-
         ]
-
-testAxiomString1 :: String
-testAxiomString1 =
-    "axiom{}\\and{TCell{}}(\n\
-    \    \\top{TCell{}}(),\n\
-    \    \\and{TCell{}}(\n\
-    \        \\top{TCell{}}(),\n\
-    \        \\rewrites{TCell{}}(\n\
-    \            T{}(\n\
-    \                k{}(\n\
-    \                    kseq{}(\n\
-    \                        inj{BExp{}, KItem{}}(\n\
-    \                            leqAExp{}(\n\
-    \                                inj{AInt{}, AExp{}}(VarI1:AInt{}),\n\
-    \                                inj{AInt{}, AExp{}}(VarI2:AInt{})\n\
-    \                            )\n\
-    \                        ),\n\
-    \                        VarDotVar1:K{}\n\
-    \                    )\n\
-    \                ),\n\
-    \                VarDotVar0:StateCell{}\n\
-    \            ),\n\
-    \            T{}(\n\
-    \                k{}(\n\
-    \                    kseq{}(\n\
-    \                        inj{ABool{}, KItem{}}(\n\
-    \                            leqAInt{}(VarI1:AInt{}, VarI2:AInt{})\n\
-    \                        ),\n\
-    \                        VarDotVar1:K{}\n\
-    \                    )\n\
-    \                ),\n\
-    \                VarDotVar0:StateCell{}\n\
-    \            )\n\
-    \        )\n\
-    \    )\n\
-    \)[]"
 
 sortK, sortKItem, sortKCell, sortStateCell, sortTCell, sortState :: Sort Object
 sortK = simpleSort (SortName "K")
@@ -137,40 +178,8 @@ varI2 = parameterizedVariable_ sortAInt "VarI2" AstLocationTest
 varKRemainder = parameterizedVariable_ sortK "VarDotVar1" AstLocationTest
 varStateCell = parameterizedVariable_ sortStateCell "VarDotVar0" AstLocationTest
 
-expectedAxiomPattern1 :: AxiomPattern Object
-expectedAxiomPattern1 = AxiomPattern
-    { axiomPatternLeft = extractPurePattern $
-        applyS symbolTCell
-          [ applyS symbolKCell
-              [ applyS symbolKSeq
-                  [ applyPS symbolInj [sortBExp, sortKItem]
-                      [ applyS symbolLeqAExp
-                          [ applyPS symbolInj [sortAInt, sortAExp] [varI1]
-                          , applyPS symbolInj [sortAInt, sortAExp] [varI2]
-                          ]
-                      ]
-                  , varKRemainder
-                  ]
-              ]
-          , varStateCell
-          ]
-    , axiomPatternRight = extractPurePattern $
-        applyS symbolTCell
-          [ applyS symbolKCell
-              [ applyS symbolKSeq
-                  [ applyPS symbolInj [sortABool, sortKItem]
-                      [ applyS symbolLeqAInt [ varI1, varI2 ] ]
-                  , varKRemainder
-                  ]
-              ]
-          , varStateCell
-          ]
-    }
-
-testAxiom1 :: KoreSentence
-testAxiom1 = case parseAxiom testAxiomString1 of
-    Left err -> error err
-    Right ax -> ax
-
-parseAxiom :: String -> Either String KoreSentence
-parseAxiom = parseOnly (koreSentenceParser <* endOfInput) "<test-string>"
+parseAxiom :: String -> Either (Error a) KoreSentence
+parseAxiom str =
+    case parseOnly (koreSentenceParser <* endOfInput) "<test-string>" str of
+        Left err  -> koreFail err
+        Right sen -> return sen

@@ -20,10 +20,10 @@ import           Control.Applicative
 import           Data.Fix
 import           Data.Maybe
 
-import           Data.Kore.AST.Builders           (isImplicitHead)
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.Sentence           (SentenceSymbolOrAlias (..))
 import           Data.Kore.Implicit.ImplicitKore  (mlPatternP, variable)
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.MetaML.AST
@@ -34,6 +34,13 @@ import           Data.Kore.Parser.ParserUtils     as Parser
 -- which can be "unlifted" from 'Meta'-only to full 'Kore' representations.
 class UnliftableFromMetaML mixed where
     unliftFromMeta :: CommonMetaPattern -> Maybe mixed
+
+isImplicitHead
+    :: SentenceSymbolOrAlias s
+    => s level (Pattern level) Variable
+    -> SymbolOrAlias level
+    -> Bool
+isImplicitHead sentence = (== getSentenceSymbolOrAliasHead sentence [])
 
 parseObjectId :: String -> AstLocation -> Maybe (Id Object)
 parseObjectId input location =
