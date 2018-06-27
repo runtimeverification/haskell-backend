@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 {-|
 Module      : Data.Kore.MetaML.Builders
 Description : Safe way to build larger 'level' patterns from components.
@@ -7,13 +8,47 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Data.Kore.AST.Builders where
+module Data.Kore.AST.Builders
+    ( alias_
+    , and_
+    , applyPS
+    , applyS
+    , bottom_ -- TODO: not used yet
+    , ceilS_ -- TODO: not used yet
+    , ceil_ -- TODO: not used yet
+    , equalsAxiom_
+    , equalsS_
+    , equals_
+    , exists_
+    , floorS_ -- TODO: not used yet
+    , floor_ -- TODO: not used yet
+    , forall_
+    , iff_ -- TODO: not used yet
+    , implies_
+    , inS_ -- TODO: not used yet
+    , in_ -- TODO: not used yet
+    , next_
+    , not_
+    , or_
+    , parameterizedAxiom_
+    , parameterizedEqualsAxiom_
+    , parameterizedSymbol_
+    , parameterizedVariable_
+    , sortParameter
+    , sort_
+    , symbol_
+    , top_
+    , unparameterizedVariable_
+    ) where
+
+import           Data.Fix                   (Fix (..))
+import           Data.Proxy                 (Proxy (..))
 
 import           Data.Kore.AST.BuildersImpl
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
+import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTHelpers
 import           Data.Kore.Error
 
@@ -68,13 +103,6 @@ applyS
     -> [CommonPurePatternStub level]
     -> CommonPurePatternStub level
 applyS sentence = applyPS sentence []
-
-isImplicitHead
-    :: SentenceSymbolOrAlias s
-    => s level (Pattern level) Variable
-    -> SymbolOrAlias level
-    -> Bool
-isImplicitHead sentence = (== getSentenceSymbolOrAliasHead sentence [])
 
 -- |Creates a 'level' 'Sort' from a given 'MetaSortType'
 sort_ :: MetaSortType -> Sort level
@@ -371,3 +399,69 @@ next_ =
                 , nextChild  = pattern1
                 }
         )
+
+{-|'equalsSortParam' is the sort param implicitly used for 'equals' when no
+other sort can be inferred. This parameter is assumed not to be used in
+any pattern, except for top-level pattern of an axiom. Using it will have
+unpredictable effects.
+-}
+equalsSortParam :: MetaOrObject level => proxy level -> SortVariable level
+equalsSortParam proxy =
+    case isMetaOrObject proxy of
+        IsMeta   -> sortParameter Meta "#esp" AstLocationImplicit
+        IsObject -> sortParameter Object "esp" AstLocationImplicit
+
+equalsSort :: MetaOrObject level => proxy level -> Sort level
+equalsSort = SortVariableSort . equalsSortParam
+
+{-|'parameterizedAxiom_' creates an axiom that has sort parameters from
+a pattern.
+-}
+parameterizedAxiom_
+    :: MetaOrObject level
+    => [SortVariable level]
+    -> CommonPurePatternStub level
+    -> PureSentenceAxiom level
+parameterizedAxiom_ _ (UnsortedPatternStub p) =
+    error
+        (  "Cannot infer sort for "
+        ++ show (p (dummySort (Proxy :: Proxy level))) ++ "."
+        )
+parameterizedAxiom_
+    parameters
+    ( SortedPatternStub SortedPattern
+        { sortedPatternPattern = p, sortedPatternSort = s }
+    )
+  =
+    SentenceAxiom
+        { sentenceAxiomParameters = parameters
+        , sentenceAxiomPattern = quantifyFreeVariables s (Fix p)
+        , sentenceAxiomAttributes = Attributes []
+        }
+
+{-|'parameterizedEqualsAxiom_' is a special case for a 'parameterizedAxiom_' that
+contains an equals pattern.
+Note that 'equalsSortParam' AKA @#esp@ is assumed not to be used in any of
+the patterns. Using it will have unpredictable effects.
+-}
+parameterizedEqualsAxiom_
+    :: MetaOrObject level
+    => [SortVariable level]
+    -> CommonPurePatternStub level
+    -> CommonPurePatternStub level
+    -> PureSentenceAxiom level
+parameterizedEqualsAxiom_ parameters first second =
+    parameterizedAxiom_
+        (equalsSortParam (Proxy :: Proxy level) : parameters)
+        (withSort (equalsSort (Proxy :: Proxy level)) (equals_ first second))
+
+{-|'equalsAxiom_' is a special case for an axiom that contains an equals pattern.
+Note that 'equalsSortParam' AKA @#esp@ is assumed not to be used in any of
+the patterns. Using it will have unpredictable effects.
+-}
+equalsAxiom_
+    :: MetaOrObject level
+    => CommonPurePatternStub level
+    -> CommonPurePatternStub level
+    -> PureSentenceAxiom level
+equalsAxiom_ = parameterizedEqualsAxiom_ []
