@@ -5,6 +5,9 @@ import           Test.Tasty                                          (TestTree,
 import           Test.Tasty.HUnit                                    (assertEqual,
                                                                       testCase)
 
+import qualified Data.Map                                            as Map
+import           Data.Maybe                                          (fromMaybe)
+
 import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore                                  (asKorePattern)
@@ -13,8 +16,12 @@ import           Data.Kore.AST.MLPatternsTest                        (extractPur
 import           Data.Kore.AST.PureML
 import           Data.Kore.AST.PureToKore
 import           Data.Kore.AST.Sentence
+import           Data.Kore.ASTVerifier.DefinitionVerifier            (AttributesVerification (..),
+                                                                      verifyAndIndexDefinition)
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
+import           Data.Kore.IndexedModule.IndexedModule               (KoreIndexedModule)
+import           Data.Kore.KoreHelpers                               (testId)
 import           Data.Kore.Parser.ParserImpl
 import           Data.Kore.Parser.ParserUtils
 import           Data.Kore.Step.AxiomPatterns
@@ -49,6 +56,75 @@ axiomPatternsUnitTests =
                     :: PureSentenceAxiom Object)
                 )
             )
+        , testCase "definition containing I1:AInt => I2:AInt"
+            (assertEqual ""
+                [AxiomPattern
+                    { axiomPatternLeft = extractPurePattern varI1
+                    , axiomPatternRight = extractPurePattern varI2
+                    }
+                ]
+                ( koreIndexedModuleToAxiomPatterns Object
+                $ extractIndexedModule "TEST"
+                    (verifyAndIndexDefinition DoNotVerifyAttributes
+                        (Definition
+                            { definitionAttributes = Attributes []
+                            , definitionModules =
+                                [ Module
+                                    { moduleName = ModuleName "TEST"
+                                    , moduleSentences =
+                                        [ asSentence $ axiomSentencePureToKore
+                                            (axiom_
+                                                (and_ top_
+                                                    (and_ top_
+                                                        (rewrites_ varI1 varI2)
+                                                    )
+                                                )
+                                            :: PureSentenceAxiom Object)
+                                        , asSentence $ axiomSentencePureToKore
+                                            (axiom_
+                                                (and_ top_
+                                                    (and_ top_
+                                                        (applyPS symbolInj
+                                                            [sortAInt
+                                                            , sortKItem
+                                                            ]
+                                                            [rewrites_
+                                                                varI1
+                                                                varI2
+                                                            ]
+                                                        )
+                                                    )
+                                                )
+                                            :: PureSentenceAxiom Object)
+                                        , asSentence
+                                            (SentenceSort
+                                                { sentenceSortName =
+                                                    testId "AInt"
+                                                , sentenceSortParameters = []
+                                                , sentenceSortAttributes =
+                                                    Attributes []
+                                                }
+                                            ::KoreSentenceSort)
+                                        , asSentence
+                                            (SentenceSort
+                                                { sentenceSortName =
+                                                    testId "KItem"
+                                                , sentenceSortParameters = []
+                                                , sentenceSortAttributes =
+                                                    Attributes []
+                                                }
+                                            ::KoreSentenceSort)
+                                        , sentencePureToKore $
+                                            asSentence symbolInj
+                                        ]
+                                    , moduleAttributes = Attributes []
+                                    }
+                                ]
+                            }
+                        )
+                    )
+                )
+            )
         , testCase "\"a\" => \"b\""
             (assertEqual ""
                 (koreFail "Unexpected non-Object pattern")
@@ -60,9 +136,11 @@ axiomPatternsUnitTests =
                                 { rewritesSort =
                                     sortVariableSort (SortVariableName "s")
                                 , rewritesFirst =
-                                    asKorePattern $ StringLiteralPattern (StringLiteral "a")
+                                    asKorePattern $
+                                        StringLiteralPattern (StringLiteral "a")
                                 , rewritesSecond =
-                                    asKorePattern $ StringLiteralPattern (StringLiteral "b")
+                                    asKorePattern $
+                                        StringLiteralPattern (StringLiteral "b")
                                 }
                         , sentenceAxiomParameters = []
                         , sentenceAxiomAttributes = Attributes []
@@ -232,3 +310,14 @@ parseAxiom str =
     case parseOnly (koreSentenceParser <* endOfInput) "<test-string>" str of
         Left err  -> koreFail err
         Right sen -> return sen
+
+extractIndexedModule
+    :: String
+    -> Either (Error a) (Map.Map ModuleName KoreIndexedModule)
+    -> KoreIndexedModule
+extractIndexedModule name eModules =
+    case eModules of
+        Left err -> error (printError err)
+        Right modules -> fromMaybe
+            (error ("Module " ++ name ++ " not found."))
+            (Map.lookup (ModuleName name) modules)
