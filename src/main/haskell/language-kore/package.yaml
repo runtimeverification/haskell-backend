@@ -30,7 +30,6 @@ dependencies:
 - array
 - bytestring-trie
 - mtl
-- containers
 - hashable
 - data-fix
 - clock
