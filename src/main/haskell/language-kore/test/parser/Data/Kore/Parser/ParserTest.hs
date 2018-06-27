@@ -786,8 +786,7 @@ variablePatternParserTests =
         , success "v:s1{s2}"
             ( asKorePattern $ VariablePattern Variable
                 { variableName = testId "v" :: Id Object
-                , variableSort =
-                    SortActualSort SortActual
+                , variableSort = SortActualSort SortActual
                     { sortActualName=testId "s1"
                     , sortActualSorts = [ sortVariableSort "s2" ]
                     }

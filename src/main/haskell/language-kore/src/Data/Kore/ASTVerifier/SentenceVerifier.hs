@@ -248,8 +248,6 @@ verifySymbolSentence
   where
     sortParams = (symbolParams . sentenceSymbolSymbol) sentence
 
--- TODO: currently, this is the same as `verifySymbolSentence`. 
--- It should be modified to do something specific (or removed if not needed!)
 verifyAliasSentence
     :: (MetaOrObject level)
     => (Id level -> Either (Error VerifyError) (SortDescription level))

@@ -556,7 +556,7 @@ instance
     , PrettyPrint (variable level)
     ) => PrettyPrint (SentenceAlias level pat variable)
   where
-    prettyPrint _ sa@(SentenceAlias _ _ _ _ _ _) = --
+    prettyPrint _ sa@(SentenceAlias _ _ _ _ _ _) =
         writeStructure
             "SentenceAlias"
             [ writeFieldNewLine "sentenceAliasAlias" sentenceAliasAlias sa

@@ -4,7 +4,6 @@ module Main where
 
 import           Data.Kore.ASTVerifier.DefinitionVerifier
 import           Data.Kore.Error
-
 import           Data.Kore.Parser.Parser                    (fromKore)
 import           Data.Kore.ASTPrettyPrint                   (prettyPrintToString)
 import           Data.Kore.AST.Sentence                     (KoreDefinition)
