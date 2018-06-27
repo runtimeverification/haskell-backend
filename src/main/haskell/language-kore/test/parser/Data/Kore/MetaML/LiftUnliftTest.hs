@@ -522,54 +522,27 @@ liftTests =
             (prettyAssertEqual ""
                 [ SentenceSymbolSentence
                     (symbol_ "#`alias" AstLocationTest [] patternMetaSort)
-                -- TODO: use builder (like _symbol_) here as well?
                 , SentenceAxiomSentence SentenceAxiom
-                    { sentenceAxiomParameters = [ SortVariable ((Id "#s" AstLocationNone) :: Id Meta) ]
-                    , sentenceAxiomPattern =
-                        Fix (EqualsPattern Equals
+                    { sentenceAxiomParameters = 
+                        [ sortParameter Meta "#s" AstLocationTest ]
+                    , sentenceAxiomPattern = Fix 
+                        (EqualsPattern Equals
                             { equalsOperandSort =
                                 SortActualSort SortActual
-                                    { sortActualName = (Id "#Pattern" AstLocationNone) :: Id Meta
+                                    { sortActualName = testId "#Pattern" :: Id Meta
                                     , sortActualSorts = []
                                     }
                             , equalsResultSort =
-                                SortVariableSort (SortVariable ((Id "#s" AstLocationNone) :: Id Meta))
-                            , equalsFirst =
-                                Fix (ApplicationPattern Application
-                                    { applicationSymbolOrAlias =
-                                        SymbolOrAlias
-                                            { symbolOrAliasConstructor = (Id "#\\top" AstLocationNone) :: Id Meta
-                                            , symbolOrAliasParams = []
-                                            }
-                                    , applicationChildren =
-                                        [ Fix (ApplicationPattern Application
-                                            { applicationSymbolOrAlias =
-                                                SymbolOrAlias
-                                                    { symbolOrAliasConstructor = (Id "#`s3" AstLocationNone) :: Id Meta
-                                                    , symbolOrAliasParams = []
-                                                    }
-                                            , applicationChildren = []
-                                            })
-                                        ]
-                                    })
-                            , equalsSecond =
-                                Fix (ApplicationPattern Application
-                                    { applicationSymbolOrAlias =
-                                        SymbolOrAlias
-                                            { symbolOrAliasConstructor = (Id "#\\top" AstLocationNone) :: Id Meta
-                                            , symbolOrAliasParams = []
-                                            }
-                                    , applicationChildren =
-                                        [ Fix (ApplicationPattern Application
-                                            { applicationSymbolOrAlias =
-                                                SymbolOrAlias
-                                                    { symbolOrAliasConstructor = (Id "#`s3" AstLocationNone) :: Id Meta
-                                                    , symbolOrAliasParams = []
-                                                    }
-                                            , applicationChildren = []
-                                            })
-                                        ]
-                                    })
+                                SortVariableSort 
+                                    (sortParameter Meta "#s" AstLocationTest)
+                            , equalsFirst = Fix 
+                                (apply (groundHead "#\\top" AstLocationImplicit)
+                                    [ Fix (apply (groundHead "#`s3" AstLocationImplicit) []) ]
+                                )
+                            , equalsSecond = Fix
+                                (apply (groundHead "#\\top" AstLocationImplicit)
+                                   [ Fix (apply (groundHead "#`s3" AstLocationImplicit) []) ]
+                                )
                             })
                     , sentenceAxiomAttributes = Attributes []
                     }
