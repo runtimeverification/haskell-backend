@@ -483,7 +483,7 @@ liftTests =
                     }
                 )
             )
-        , testCase "Lift Meta Alias Declaration"
+       , testCase "Lift Meta Alias Declaration"
             (prettyAssertEqual ""
                 [ SentenceAliasSentence SentenceAlias
                     { sentenceAliasAlias = Alias
@@ -491,6 +491,8 @@ liftTests =
                         , aliasParams = []
                         }
                     , sentenceAliasSorts = []
+                    , sentenceAliasLeftPattern  = topPatMeta
+                    , sentenceAliasRightPattern = topPatMeta
                     , sentenceAliasResultSort =
                         SortVariableSort (SortVariable (testId "#a"))
                     , sentenceAliasAttributes = Attributes []
@@ -507,6 +509,8 @@ liftTests =
                             , sentenceAliasResultSort =
                                     SortVariableSort
                                         (SortVariable (testId "#a"))
+                            , sentenceAliasLeftPattern  = topPatMeta
+                            , sentenceAliasRightPattern = topPatMeta
                             , sentenceAliasAttributes =
                                 Attributes []
                             }
@@ -518,6 +522,30 @@ liftTests =
             (prettyAssertEqual ""
                 [ SentenceSymbolSentence
                     (symbol_ "#`alias" AstLocationTest [] patternMetaSort)
+                , SentenceAxiomSentence SentenceAxiom
+                    { sentenceAxiomParameters = 
+                        [ sortParameter Meta "#s" AstLocationTest ]
+                    , sentenceAxiomPattern = Fix 
+                        (EqualsPattern Equals
+                            { equalsOperandSort =
+                                SortActualSort SortActual
+                                    { sortActualName = testId "#Pattern" :: Id Meta
+                                    , sortActualSorts = []
+                                    }
+                            , equalsResultSort =
+                                SortVariableSort 
+                                    (sortParameter Meta "#s" AstLocationTest)
+                            , equalsFirst = Fix 
+                                (apply (groundHead "#\\top" AstLocationImplicit)
+                                    [ Fix (apply (groundHead "#`s3" AstLocationImplicit) []) ]
+                                )
+                            , equalsSecond = Fix
+                                (apply (groundHead "#\\top" AstLocationImplicit)
+                                   [ Fix (apply (groundHead "#`s3" AstLocationImplicit) []) ]
+                                )
+                            })
+                    , sentenceAxiomAttributes = Attributes []
+                    }
                 ]
                 (liftSentence
                     (asSentence
@@ -529,6 +557,8 @@ liftTests =
                             , sentenceAliasSorts = []
                             , sentenceAliasResultSort =
                                     SortVariableSort (SortVariable (testId "a"))
+                            , sentenceAliasLeftPattern = topPatObj
+                            , sentenceAliasRightPattern = topPatObj
                             , sentenceAliasAttributes =
                                 Attributes []
                             }
@@ -952,6 +982,15 @@ liftTests =
                 (liftDefinition simpleKoreDefinition)
             )
         ]
+  where
+    topPatMeta = TopPattern $ Top { topSort = patternMetaSort }
+    topPatObj  = TopPattern $ Top { topSort = simpleSort "s3" }
+    simpleSortActual sort =
+        SortActual
+            { sortActualName = testId sort
+            , sortActualSorts = []
+            }
+    simpleSort sortName = SortActualSort (simpleSortActual sortName)
 
 testLiftUnlift
     :: ( LiftableToMetaML a

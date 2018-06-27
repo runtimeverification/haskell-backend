@@ -55,13 +55,13 @@ Definition
                             }
                     , sentenceSymbolAttributes = Attributes []
                     })
-                , ObjectSentence (SentenceAliasSentence SentenceAlias
-                    { sentenceAliasAlias =
-                        Alias
-                            { aliasConstructor = (Id "lambda" AstLocationNone) :: Id Object
-                            , aliasParams = []
+                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "lambda" AstLocationNone) :: Id Object
+                            , symbolParams = []
                             }
-                    , sentenceAliasSorts =
+                    , sentenceSymbolSorts =
                         [ SortActualSort SortActual
                             { sortActualName = (Id "Exp" AstLocationNone) :: Id Object
                             , sortActualSorts = []
@@ -71,12 +71,12 @@ Definition
                             , sortActualSorts = []
                             }
                         ]
-                    , sentenceAliasReturnSort =
+                    , sentenceSymbolReturnSort =
                         SortActualSort SortActual
                             { sortActualName = (Id "Exp" AstLocationNone) :: Id Object
                             , sortActualSorts = []
                             }
-                    , sentenceAliasAttributes = Attributes []
+                    , sentenceSymbolAttributes = Attributes []
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =

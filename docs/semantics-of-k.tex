@@ -7322,8 +7322,10 @@ $v_1,\dots,v_m$ are declared.
 where $\shs$ is a fresh meta-level sort variable.
 
 \subsubsection{Lift Object Alias Declarations}
-An object alias declaration is lifted to a symbol declaration.
+An object alias declaration is lifted to a symbol declaration
+and an axiom declaration.
 $$ \denote{\_} \colon \syntacc{object-alias-declaration} \to 
+\syntacc{declaration} \times
 \syntacc{declaration}$$
 Consider the alias declaration
 \begin{center}
@@ -7356,6 +7358,19 @@ $\denote{C}$ takes in total $m+n$ arguments.
 		times}$):\parametric{\KPattern}{}
 	[]
 \end{center}
+
+The axiom declaration is about the definition of the alias
+\texttt{$C$\{$v_1,\dots,v_m$\}($x_1 \cln s_1,\dots,x_n \cln s_n$)
+:= $\varphi$},
+which is lifted in the same way as an object axiom
+(see Section~\ref{sec:lift-axiom-decl})
+\begin{center}
+\texttt{axiom\{$s',v_1,\dots,v_n$\}
+\Kequals\{s,s'\}($C$\{$v_1,\dots,v_m$\}($x_1 \cln s_1,\dots,x_n \cln 
+s_n$),$\varphi$)}
+\end{center}
+where $s$ is the sort of the pattern $\varphi$ and $s'$ is an object sort 
+variable.
 
 %\subsubsection{Lift Connective Constructors To Meta Symbols}
 %Connective constructors are lifted to non-parametric meta-symbols as 
@@ -7646,6 +7661,7 @@ $\denote{\texttt{\sldv\{$s$\}($str$)}}
 %\end{align*}
 
 \subsubsection{Lift Axiom Declarations}
+\label{sec:lift-axiom-decl}
 In Kore, an axiom declaration is lifted as follows.
 \begin{align*}
   &\denote{\_} \colon \syntacc{axiom-declaration} \to 
