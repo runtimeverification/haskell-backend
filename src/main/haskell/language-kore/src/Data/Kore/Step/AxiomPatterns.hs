@@ -59,25 +59,31 @@ sentenceToAxiomPattern
     => level
     -> Sentence level' UnifiedSortVariable UnifiedPattern Variable
     -> Either (Error AxiomPatternError) (AxiomPattern level)
-sentenceToAxiomPattern level (SentenceAxiomSentence sa) = do
-    let pat = patternKoreToPure level (sentenceAxiomPattern sa)
-    case pat of
-        Right (Fix
-            (AndPattern And
-                { andFirst = Fix (TopPattern _)
-                , andSecond =
-                    Fix
-                        (AndPattern And
-                            { andFirst = Fix (TopPattern _)
-                            , andSecond = Fix (RewritesPattern p)
-                            }
-                        )
-                }
-            )) -> return AxiomPattern
+sentenceToAxiomPattern level (SentenceAxiomSentence sa) =
+    case patternKoreToPure level (sentenceAxiomPattern sa) of
+        Right pat -> patternToAxiomPattern pat
+        Left err  -> Left err
+sentenceToAxiomPattern _ _ =
+    koreFail "Only axiom sentences can be translated to AxiomPatterns"
+
+patternToAxiomPattern
+    :: MetaOrObject level
+    => CommonPurePattern level
+    -> Either (Error AxiomPatternError) (AxiomPattern level)
+patternToAxiomPattern pat =
+    case unFix pat of
+        AndPattern And
+            { andFirst = Fix (TopPattern _)
+            , andSecond =
+                Fix
+                    (AndPattern And
+                        { andFirst = Fix (TopPattern _)
+                        , andSecond = Fix (RewritesPattern p)
+                        }
+                    )
+            } -> return AxiomPattern
                 { axiomPatternLeft = rewritesFirst p
                 , axiomPatternRight = rewritesSecond p
                 }
-        Left err -> koreFail (printError err)
+        ForallPattern fap -> patternToAxiomPattern (forallChild fap)
         _ -> koreFail "Unsupported pattern type in axiom"
-sentenceToAxiomPattern _ _ =
-    koreFail "Only axiom sentences can be translated to AxiomPatterns"

@@ -19,6 +19,7 @@ The name of the functions defined below are self-explanatory. They link
 module Data.Kore.AST.PureToKore
     ( patternPureToKore
     , sentencePureToKore
+    , axiomSentencePureToKore
     , modulePureToKore
     , definitionPureToKore
     , patternKoreToPure
@@ -60,7 +61,7 @@ extractPurePattern level p =
     case (isMetaOrObject (Rotate31 p), isMetaOrObject (toProxy level)) of
         (IsMeta, IsMeta) -> return (Fix p)
         (IsObject, IsObject) -> return (Fix p)
-        _ -> koreFail ("Undexpected non-" ++ show level ++ " pattern")
+        _ -> koreFail ("Unexpected non-" ++ show level ++ " pattern")
 
 -- FIXME : all of this attribute record syntax stuff
 -- Should be temporary measure
@@ -73,14 +74,8 @@ sentencePureToKore (SentenceSymbolSentence (SentenceSymbol a b c d)) =
     constructUnifiedSentence SentenceSymbolSentence $ SentenceSymbol a b c d
 sentencePureToKore (SentenceImportSentence (SentenceImport a b)) =
     constructUnifiedSentence SentenceImportSentence $ SentenceImport a b
-sentencePureToKore (SentenceAxiomSentence msx) = asSentence SentenceAxiom
-    { sentenceAxiomAttributes =
-        (sentenceAxiomAttributes msx)
-    , sentenceAxiomPattern =
-        patternPureToKore (sentenceAxiomPattern msx)
-    , sentenceAxiomParameters =
-        map asUnified (sentenceAxiomParameters msx)
-    }
+sentencePureToKore (SentenceAxiomSentence msx) =
+    asSentence (axiomSentencePureToKore msx)
 sentencePureToKore (SentenceSortSentence mss) =
   constructUnifiedSentence SentenceSortSentence mss
     { sentenceSortName = sentenceSortName mss
@@ -94,17 +89,30 @@ sentencePureToKore (SentenceHookSentence (SentenceHookedSort mss)) =
 sentencePureToKore (SentenceHookSentence (SentenceHookedSymbol (SentenceSymbol a b c d))) =
     constructUnifiedSentence (SentenceHookSentence . SentenceHookedSymbol) $ SentenceSymbol a b c d
 
+axiomSentencePureToKore
+    :: MetaOrObject level
+    => PureSentenceAxiom level
+    -> KoreSentenceAxiom
+axiomSentencePureToKore msx = SentenceAxiom
+    { sentenceAxiomAttributes =
+        sentenceAxiomAttributes msx
+    , sentenceAxiomPattern =
+        patternPureToKore (sentenceAxiomPattern msx)
+    , sentenceAxiomParameters =
+        map asUnified (sentenceAxiomParameters msx)
+    }
+
 modulePureToKore
     :: MetaOrObject level => PureModule level -> KoreModule
 modulePureToKore mm = Module
     { moduleName = moduleName mm
     , moduleSentences = map sentencePureToKore (moduleSentences mm)
-    , moduleAttributes =  (moduleAttributes mm)
+    , moduleAttributes =  moduleAttributes mm
     }
 
 definitionPureToKore
     :: MetaOrObject level => PureDefinition level -> KoreDefinition
 definitionPureToKore dm = Definition
-    { definitionAttributes = (definitionAttributes dm)
+    { definitionAttributes = definitionAttributes dm
     , definitionModules = map modulePureToKore (definitionModules dm)
     }

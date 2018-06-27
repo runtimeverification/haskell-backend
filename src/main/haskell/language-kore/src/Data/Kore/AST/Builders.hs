@@ -11,6 +11,7 @@ Portability : POSIX
 module Data.Kore.AST.Builders
     ( alias_
     , and_
+    , axiom_
     , applyPS
     , applyS
     , bottom_ -- TODO: not used yet
@@ -34,6 +35,7 @@ module Data.Kore.AST.Builders
     , parameterizedEqualsAxiom_
     , parameterizedSymbol_
     , parameterizedVariable_
+    , rewrites_
     , sortParameter
     , sort_
     , symbol_
@@ -407,6 +409,22 @@ next_ =
                 }
         )
 
+-- |Builds a 'PatternStub' representing 'Rewrites' given 'PatternStub's for its
+-- operands.
+rewrites_
+    :: CommonPurePatternStub Object
+    -> CommonPurePatternStub Object
+    -> CommonPurePatternStub Object
+rewrites_ =
+    binaryPattern
+        (\commonSort firstPattern secondPattern ->
+            RewritesPattern Rewrites
+                { rewritesSort   = commonSort
+                , rewritesFirst  = firstPattern
+                , rewritesSecond = secondPattern
+                }
+        )
+
 {-|'equalsSortParam' is the sort param implicitly used for 'equals' when no
 other sort can be inferred. This parameter is assumed not to be used in
 any pattern, except for top-level pattern of an axiom. Using it will have
@@ -445,6 +463,13 @@ parameterizedAxiom_
         , sentenceAxiomPattern = quantifyFreeVariables s (Fix p)
         , sentenceAxiomAttributes = Attributes []
         }
+{-|Creates an axiom with no sort parameters from a pattern.
+-}
+axiom_
+    :: MetaOrObject level
+    => CommonPurePatternStub level
+    -> PureSentenceAxiom level
+axiom_ = parameterizedAxiom_ []
 
 {-|'parameterizedEqualsAxiom_' is a special case for a 'parameterizedAxiom_' that
 contains an equals pattern.

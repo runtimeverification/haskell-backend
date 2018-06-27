@@ -7,9 +7,11 @@ import           Test.Tasty.HUnit                                    (assertEqua
 
 import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.Kore                                  (asKorePattern)
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatternsTest                        (extractPurePattern)
 import           Data.Kore.AST.PureML
+import           Data.Kore.AST.PureToKore
 import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
@@ -29,12 +31,59 @@ axiomPatternsUnitTests :: TestTree
 axiomPatternsUnitTests =
     testGroup
         "AxiomPatterns Unit Tests"
-        [ testCase "A => B"
+        [ testCase "I1:AInt => I2:AInt"
             (assertEqual ""
-                undefined
+                (Right AxiomPattern
+                    { axiomPatternLeft = extractPurePattern varI1
+                    , axiomPatternRight = extractPurePattern varI2
+                    }
+                )
+                ( koreSentenceToAxiomPattern Object
+                $ asSentence $ axiomSentencePureToKore
+                    (axiom_
+                        (and_ top_
+                            (and_ top_
+                                (rewrites_ varI1 varI2)
+                            )
+                        )
+                    :: PureSentenceAxiom Object)
+                )
+            )
+        , testCase "\"a\" => \"b\""
+            (assertEqual ""
+                (koreFail "Unexpected non-Object pattern")
+                ( koreSentenceToAxiomPattern Object
+                $ asSentence
+                    (SentenceAxiom
+                        { sentenceAxiomPattern =
+                            asKorePattern $ RewritesPattern Rewrites
+                                { rewritesSort =
+                                    sortVariableSort (SortVariableName "s")
+                                , rewritesFirst =
+                                    asKorePattern $ StringLiteralPattern (StringLiteral "a")
+                                , rewritesSecond =
+                                    asKorePattern $ StringLiteralPattern (StringLiteral "b")
+                                }
+                        , sentenceAxiomParameters = []
+                        , sentenceAxiomAttributes = Attributes []
+                        }
+                    :: KoreSentenceAxiom)
+                )
+            )
+        , testCase "(I1:AInt => I2:AInt)::KItem"
+            (assertEqual ""
+                (koreFail "Unsupported pattern type in axiom")
                 (koreSentenceToAxiomPattern Object
-                    ( undefined
-                    )
+                $ asSentence $ axiomSentencePureToKore
+                    (axiom_
+                        (and_ top_
+                            (and_ top_
+                                (applyPS symbolInj [sortAInt, sortKItem]
+                                    [rewrites_ varI1 varI2]
+                                )
+                            )
+                        )
+                    :: PureSentenceAxiom Object)
                 )
             )
         ]
