@@ -155,7 +155,8 @@ main = do
                     mainModule (ModuleName mainModuleName) indexedModules
                 functionResult <-
                     mainEvaluatePattern indexedModule parsedPattern
-                when willPrint $ putStrLn (prettyPrintToString functionResult)
+                when willPrint $
+                    putStrLn (prettyPrintToString functionResult)
 
 mainModule
     :: ModuleName
@@ -240,8 +241,8 @@ mainEvaluatePattern
     -> CommonKorePattern -- ^ Parsed pattern to check well-formedness
     -> IO (FunctionResult Object)
 mainEvaluatePattern indexedModule patt =
-    clockSomethingIO "Evaluating the pattern"
-        (evaluatePattern indexedModule patt)
+    clockSomethingIO "Evaluating the pattern" $
+        evaluatePattern indexedModule patt
 
 evaluatePattern
     :: KoreIndexedModule

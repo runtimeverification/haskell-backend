@@ -19,6 +19,8 @@ import           Data.Kore.AST.Common                  (Application (..),
 import           Data.Kore.AST.MetaOrObject            (MetaOrObject)
 import           Data.Kore.AST.PureML                  (CommonPurePattern,
                                                         asPurePattern)
+import           Data.Kore.AST.PureToKore              (patternPureToKore)
+import           Data.Kore.ASTPrettyPrint              (prettyPrintToString)
 import           Data.Kore.IndexedModule.MetadataTools (MetadataTools (..))
 import           Data.Kore.Step.BaseStep               (AxiomPattern, StepperConfiguration (..),
                                                         stepWithAxiom)
@@ -28,6 +30,7 @@ import           Data.Kore.Step.Function.Data          (CommonPurePatternFunctio
                                                         ConditionEvaluator (..),
                                                         FunctionEvaluation (..),
                                                         FunctionResult (..))
+import           Data.Kore.Unparser.Unparse            (unparseToString)
 import           Data.Kore.Variables.Fresh.IntCounter  (IntCounter)
 
 import           Debug.Trace
@@ -48,12 +51,12 @@ axiomFunctionEvaluator
     (ConditionEvaluator conditionEvaluator)
     functionEvaluator
     app
-  = trace "axiomFunctionEvaluator" $
+  = --trace "axiomFunctionEvaluator" $
     case stepResult of
-        Left err -> do
+        Left _ -> {-do
             e <- err
-            trace ("axiomFunctionEvaluator-Left " ++ show e) $ return NotApplicable
-        Right configurationWithProof -> trace "axiomFunctionEvaluator-Right" $
+            trace ("axiomFunctionEvaluator-Left " ++ show e) $ -}return NotApplicable
+        Right configurationWithProof -> --trace "axiomFunctionEvaluator-Right" $
             do
                 (   StepperConfiguration
                         { stepperConfigurationPattern = rewrittenPattern
@@ -63,14 +66,15 @@ axiomFunctionEvaluator
                     ) <- configurationWithProof
                 evaluatedRewritingCondition <-
                     conditionEvaluator (UnevaluatedCondition rewritingCondition)
-                axiomFunctionEvaluatorAfterStep
-                    metadataTools
-                    conditionSort
-                    functionEvaluator
-                    FunctionResult
-                        { functionResultPattern   = rewrittenPattern
-                        , functionResultCondition = evaluatedRewritingCondition
-                        }
+                trace "" $ trace "---------------------------------" $ trace ("Pattern: " ++ unparseToString (patternPureToKore $ asPurePattern $ ApplicationPattern app) ++ "  -->  " ++ unparseToString (patternPureToKore rewrittenPattern)) $ trace ("Condition: " ++ prettyPrintToString evaluatedRewritingCondition) $ trace "---------------------------------" $
+                    axiomFunctionEvaluatorAfterStep
+                        metadataTools
+                        conditionSort
+                        functionEvaluator
+                        FunctionResult
+                            { functionResultPattern   = rewrittenPattern
+                            , functionResultCondition = evaluatedRewritingCondition
+                            }
   where
     stepResult =
         stepWithAxiom

@@ -40,11 +40,11 @@ import           Data.Kore.Step.Function.Data          (ApplicationFunctionEvalu
                                                         FunctionResult (..))
 import           Data.Kore.Variables.Fresh.IntCounter  (IntCounter)
 
-import           Debug.Trace
+-- import           Debug.Trace
 
-multiTrace :: [String] -> a -> a
-multiTrace [] a     = a
-multiTrace (x:xs) a = trace x $ multiTrace xs a
+-- multiTrace :: [String] -> a -> a
+-- multiTrace [] a     = a
+-- multiTrace (x:xs) a = trace x $ multiTrace xs a
 
 evaluateFunctions
     :: MetadataTools level
@@ -53,7 +53,7 @@ evaluateFunctions
     -> CommonPurePattern level
     -> IntCounter (FunctionResult level)
 evaluateFunctions metadataTools functionIdToEvaluator conditionSort =
-    trace "Evaluate functions" $
+    --trace ("Evaluating functions on: " ++ prettyPrintToString ) $
     fixTopDownVisitor
         (filterUnhandledPatterns metadataTools)
         (evaluateLocalFunction
@@ -89,10 +89,12 @@ filterUnhandledPatterns metadataTools patt =
                 , charLeveledFunction = wrapUnchanged . CharLiteralPattern
                 , applicationLeveledFunction =
                     \ app@Application {applicationSymbolOrAlias = symbol} ->
-                        trace ("Hi " ++ getId (symbolOrAliasConstructor symbol)) $
+                        -- trace ("Hi " ++ getId (symbolOrAliasConstructor symbol)) $
                         if isConstructor metadataTools symbol || isFunction metadataTools symbol
-                            then trace "Right" $ FilterWrapper $ Right $ ApplicationPattern app
-                            else trace "Left" $ wrapUnchanged $ ApplicationPattern app
+                            then -- trace "Right" $
+                                FilterWrapper $ Right $ ApplicationPattern app
+                            else -- trace "Left" $
+                                wrapUnchanged $ ApplicationPattern app
                 , variableLeveledFunction = wrapUnchanged . VariablePattern
                 }
             patt
@@ -190,7 +192,7 @@ evaluateApplication
             -- TODO: Also use the symbolOrAliasParams.
             { symbolOrAliasConstructor = symbolId }
         }
-  = trace "evaluate-application" $
+  = -- trace "evaluate-application" $
     EvaluationWrapper $
         case Map.lookup symbolId symbolIdToEvaluator of
             Nothing -> return unchanged
@@ -199,7 +201,8 @@ evaluateApplication
                 mergedResults <-
                     mapM (mergeWithCondition conditionEvaluator conditionSort childrenCondition) results
                 -- TODO: nub is O(n^2), should do better than that
-                trace (show results) $ case nub (filter notNotApplicable mergedResults) of
+                -- trace (show results) $
+                case nub (filter notNotApplicable mergedResults) of
                     [] -> return unchanged
                     [NotApplicable] -> error "Should not reach this line."
                     [Symbolic condition] ->
@@ -208,7 +211,8 @@ evaluateApplication
                                 asPurePattern $ ApplicationPattern app
                             , functionResultCondition = condition
                             }
-                    [Applied functionResult] -> trace ("evaluate-application " ++ show functionResult) $ return functionResult
+                    [Applied functionResult] -> -- trace ("evaluate-application " ++ show functionResult) $
+                            return functionResult
                     r@(_ : _ : _) -> error ("Not implemented yet: " ++ show r)
   where
     unchanged = FunctionResult
@@ -233,7 +237,7 @@ mergeWithCondition
     -> IntCounter (FunctionEvaluation level)
 mergeWithCondition _ _ _ NotApplicable = return NotApplicable
 mergeWithCondition conditionEvaluator conditionSort toMerge (Symbolic condition)
-  = trace ("mergeWithCondition - Symbolic: " ++ show toMerge) $ do
+  = {-trace ("mergeWithCondition - Symbolic: " ++ show toMerge) $-} do
     mergedCondition <-
         mergeConditions conditionEvaluator conditionSort condition toMerge
     case mergedCondition of
@@ -244,7 +248,7 @@ mergeWithCondition
     conditionSort
     toMerge
     (Applied functionResult)
-  = multiTrace ["mergeWithCondition - Applied: ", "  " ++ show toMerge, "  "  ++ show (functionResultCondition functionResult), "  "  ++ show (functionResultPattern functionResult)] $ do
+  = {-multiTrace ["mergeWithCondition - Applied: ", "  " ++ show toMerge, "  "  ++ show (functionResultCondition functionResult), "  "  ++ show (functionResultPattern functionResult)] $-} do
     mergedCondition <-
         mergeConditions
             conditionEvaluator
@@ -253,7 +257,7 @@ mergeWithCondition
             toMerge
     case mergedCondition of
         ConditionFalse -> return NotApplicable
-        _ -> trace ("mergeWithCondition - Applied: " ++ show mergedCondition) $ return $
+        _ -> {-trace ("mergeWithCondition - Applied: " ++ show mergedCondition) $-} return $
             Applied functionResult {functionResultCondition = mergedCondition}
 
 mergeConditions
