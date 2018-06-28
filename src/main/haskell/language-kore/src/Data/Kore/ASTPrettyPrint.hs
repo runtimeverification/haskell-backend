@@ -8,19 +8,23 @@ module Data.Kore.ASTPrettyPrint ( prettyPrintToString
                                 ) where
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
+import           Data.Kore.AST.Sentence
 import           Data.Kore.HaskellExtensions
-import           Data.Kore.IndentingPrinter    (PrinterOutput, StringPrinter,
-                                                betweenLines, printToString,
-                                                withIndent, write)
-import           Data.Kore.Parser.CString      (escapeCString)
+import           Data.Kore.IndentingPrinter         (PrinterOutput,
+                                                     StringPrinter,
+                                                     betweenLines,
+                                                     printToString, withIndent,
+                                                     write)
+import           Data.Kore.Parser.CString           (escapeCString)
+import           Data.Kore.Step.Condition.Condition (EvaluatedCondition (..))
+import           Data.Kore.Step.Function.Data       (FunctionResult (..))
 import           Data.Kore.Unification.Unifier
 
 import           Data.Fix
-import           Data.List                     (intersperse)
+import           Data.List                          (intersperse)
 
 {-# ANN module "HLint: ignore Use record patterns" #-}
 {-
@@ -544,7 +548,7 @@ instance (MetaOrObject level, PrettyPrint (variable level))
     prettyPrint flags purePattern =
         writeOneFieldStruct flags "Fix" (unFix purePattern)
 
-instance PrettyPrint (Attributes)
+instance PrettyPrint Attributes
   where
     prettyPrint flags (Attributes a)
         | null a    = write "Attributes []"
@@ -643,7 +647,7 @@ instance
     ( MetaOrObject level
     , PrettyPrint sortParam
     , PrettyPrint (Fix (pat variable))
-    , PrettyPrint (variable level)    
+    , PrettyPrint (variable level)
     ) => PrettyPrint (Sentence level sortParam pat variable)
   where
     prettyPrint flags (SentenceAliasSentence s)    =
@@ -774,3 +778,21 @@ instance (MetaOrObject level, PrettyPrint (variable level))
         writeOneFieldStruct flags "FunctionalVariable" v
     prettyPrint flags (FunctionalHead h) =
         writeOneFieldStruct flags "FunctionalHead" h
+
+instance (MetaOrObject level) => PrettyPrint (EvaluatedCondition level)
+  where
+    prettyPrint _ ConditionTrue = write "ConditionTrue"
+    prettyPrint _ ConditionFalse = write "ConditionFalse"
+    prettyPrint flags (ConditionUnevaluable condition) =
+        writeOneFieldStruct flags "ConditionFalse" condition
+
+instance (MetaOrObject level) => PrettyPrint (FunctionResult level)
+  where
+    prettyPrint _ fr@(FunctionResult _ _) =
+        writeStructure
+            "FunctionResult"
+            [ writeFieldNewLine
+                "functionResultPattern" functionResultPattern fr
+            , writeFieldNewLine
+                "functionResultCondition" functionResultCondition fr
+            ]
