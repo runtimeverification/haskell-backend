@@ -707,6 +707,7 @@ mockMetadataTools :: MetadataTools Meta
 mockMetadataTools = MetadataTools
     { isConstructor = const True
     , isFunctional = const True
+    , isFunction = const False
     , getArgumentSorts = const [asAst PatternSort, asAst PatternSort]
     , getResultSort = const (asAst PatternSort)
     }

@@ -16,10 +16,10 @@ Portability : portable
 module Data.Kore.Unparser.Unparse (Unparse(..), unparseToString) where
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
+import           Data.Kore.AST.Sentence
 import           Data.Kore.IndentingPrinter (PrinterOutput, StringPrinter,
                                              betweenLines, printToString,
                                              withIndent, write)
@@ -135,7 +135,7 @@ instance
 instance Unparse MLPatternType where
     unparse pt = write ('\\' : patternString pt)
 
-unparseMLPattern :: (PrinterOutput w m, MLPatternClass p, Unparse rpt)
+unparseMLPattern :: (PrinterOutput w m, MLPatternClass p level, Unparse rpt)
     => p level rpt -> m ()
 unparseMLPattern p = do
     unparse (getPatternType p)
@@ -172,7 +172,7 @@ instance Unparse (Bottom level p) where
 instance Unparse p => Unparse (Ceil level p) where
     unparse = unparseMLPattern
 
-instance Unparse p => Unparse (DomainValue level p) where
+instance Unparse p => Unparse (DomainValue Object p) where
     unparse = unparseMLPattern
 
 instance Unparse p => Unparse (Equals level p) where
@@ -198,7 +198,7 @@ instance Unparse p => Unparse (Implies level p) where
 instance Unparse p => Unparse (In level p) where
     unparse = unparseMLPattern
 
-instance Unparse p => Unparse (Next level p) where
+instance Unparse p => Unparse (Next Object p) where
     unparse = unparseMLPattern
 
 instance Unparse p => Unparse (Not level p) where
@@ -207,7 +207,7 @@ instance Unparse p => Unparse (Not level p) where
 instance Unparse p => Unparse (Or level p) where
     unparse = unparseMLPattern
 
-instance Unparse p => Unparse (Rewrites level p) where
+instance Unparse p => Unparse (Rewrites Object p) where
     unparse = unparseMLPattern
 
 instance Unparse (Top level p) where
@@ -242,7 +242,7 @@ instance (Unparse p, Unparse (v level))
 instance Unparse CommonKorePattern where
     unparse = applyKorePattern unparse unparse
 
-instance Unparse (Attributes) where
+instance Unparse Attributes where
     unparse = inSquareBrackets . unparse . getAttributes
 
 instance
