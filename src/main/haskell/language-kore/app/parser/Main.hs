@@ -40,15 +40,16 @@ TODO: add command line argument tab-completion
 
 -- | Main options record
 data KoreParserOptions = KoreParserOptions
-    { fileName        :: !String
+    { fileName            :: !String
     -- ^ Name for a file containing a definition to parse and verify
-    , patternFileName :: !String
+    , patternFileName     :: !String
     -- ^ Name for file containing a pattern to parse and verify
-    , mainModuleName  :: !String
+    , mainModuleName      :: !String
     -- ^ the name of the main module in the definition
-    , willPrint       :: !Bool   -- ^ Option to print definition
-    , willVerify      :: !Bool   -- ^ Option to verify definition
-    , willChkAttr     :: !Bool   -- ^ Option to check attributes during verification
+    , willPrintDefinition :: !Bool   -- ^ Option to print definition
+    , willPrintPattern    :: !Bool   -- ^ Option to print pattern
+    , willVerify          :: !Bool   -- ^ Option to verify definition
+    , willChkAttr         :: !Bool   -- ^ Option to check attributes during verification
     }
 
 -- | Command Line Argument Parser
@@ -68,9 +69,12 @@ commandLineParser =
         <> long "module"
         <> help "The name of the main module in the Kore definition"
         <> value "" )
-    <*> enableDisableFlag "print"
+    <*> enableDisableFlag "print-definition"
         True False True
         "printing parsed definition to stdout [default enabled]"
+    <*> enableDisableFlag "print-pattern"
+        True False True
+        "printing parsed pattern to stdout [default enabled]"
     <*> enableDisableFlag "verify"
         True False True
         "Verify well-formedness of parsed definition [default enabled]"
@@ -98,7 +102,8 @@ main = do
         { fileName
         , patternFileName
         , mainModuleName
-        , willPrint
+        , willPrintDefinition
+        , willPrintPattern
         , willVerify
         , willChkAttr
         }
@@ -107,7 +112,8 @@ main = do
         indexedModules <- if willVerify
             then mainVerify willChkAttr parsedDefinition
             else return Map.empty
-        when willPrint $ putStrLn (prettyPrintToString parsedDefinition)
+        when willPrintDefinition $
+            putStrLn (prettyPrintToString parsedDefinition)
 
         when (patternFileName /= "") $ do
             parsedPattern <- mainPatternParse patternFileName
@@ -115,7 +121,8 @@ main = do
                 indexedModule <-
                     mainModule (ModuleName mainModuleName) indexedModules
                 mainPatternVerify indexedModule parsedPattern
-            when willPrint  $ putStrLn (prettyPrintToString parsedPattern)
+            when willPrintPattern $
+                putStrLn (prettyPrintToString parsedPattern)
 
 mainModule
     :: ModuleName
