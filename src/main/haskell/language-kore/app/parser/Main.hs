@@ -92,6 +92,7 @@ parserInfoModifiers =
     <> header "kore-parser - a parser for Kore definitions"
 
 
+-- TODO(virgil): Maybe add a regression test for main.
 -- | Parses a kore file and Check wellformedness
 main :: IO ()
 main = do
