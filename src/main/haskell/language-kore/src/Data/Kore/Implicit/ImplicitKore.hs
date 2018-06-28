@@ -52,6 +52,21 @@ way, e.g. sort_.
 
 -}
 
+parameterizedEqualsAxiom
+    :: [SortVariable Meta]
+    -> MetaPatternStub
+    -> MetaPatternStub
+    -> MetaSentenceAxiom
+parameterizedEqualsAxiom parameters =
+    parameterizedEqualsAxiom_ parameters
+        (sortParameter Meta "#esp" AstLocationImplicit)
+
+equalsAxiom
+    :: MetaPatternStub
+    -> MetaPatternStub
+    -> MetaSentenceAxiom
+equalsAxiom = parameterizedEqualsAxiom []
+
 implicitSymbol
     :: String
     -> [Sort level]
@@ -69,7 +84,7 @@ implicitParameterizedSymbol name = parameterizedSymbol_ name AstLocationImplicit
 
 epsilon = implicitSymbol "#epsilon" [] stringMetaSort
 epsilonA = applyS epsilon []
-epsilonAxiom = equalsAxiom_ epsilonA nilCharListA
+epsilonAxiom = equalsAxiom epsilonA nilCharListA
 
 sort = implicitSymbol "#sort" [stringMetaSort, sortListMetaSort] sortMetaSort
 sortA = applyS sort
@@ -85,12 +100,12 @@ getArgumentSorts =
     implicitSymbol "#getArgumentSorts" [symbolMetaSort] sortListMetaSort
 getArgumentSortsA = applyS getArgumentSorts
 getArgumentSortsAxiom =
-    equalsAxiom_ (getArgumentSortsA [symbolA [vf, vS, vS', vs]]) vS'
+    equalsAxiom (getArgumentSortsA [symbolA [vf, vS, vS', vs]]) vS'
 
 getReturnSort = implicitSymbol "#getReturnSort" [symbolMetaSort] sortMetaSort
 getReturnSortA = applyS getReturnSort
 getReturnSortAxiom =
-    equalsAxiom_ (getReturnSortA [symbolA [vf, vS, vS', vs]]) vs
+    equalsAxiom (getReturnSortA [symbolA [vf, vS, vS', vs]]) vs
 
 variable =
     implicitSymbol "#variable" [stringMetaSort, sortMetaSort] variableMetaSort
@@ -203,38 +218,38 @@ variablePattern =
         "#variablePattern" [stringMetaSort, sortMetaSort] patternMetaSort
 variablePatternA = applyS variablePattern
 variablePatternAxiom =
-    equalsAxiom_
+    equalsAxiom
         (variablePatternA [vx, vs])
         (variableAsPatternA [variableA [vx, vs]])
 
 patternAxioms =
-    [ equalsAxiom_
+    [ equalsAxiom
         (orA [vs, vphi, vpsi])
         (notA [vs, andA [vs, notA [vs, vphi], notA[vs, vpsi]]])
-    , equalsAxiom_
+    , equalsAxiom
         (impliesA [vs, vphi, vpsi])
         (orA [vs, notA [vs, vphi], vpsi])
-    , equalsAxiom_
+    , equalsAxiom
         (iffA [vs, vphi, vpsi])
         (andA [vs, impliesA [vs, vphi, vpsi], impliesA [vs, vphi, vpsi]])
-    , equalsAxiom_
+    , equalsAxiom
         (forallA [vs, v, vphi])
         (notA [vs, existsA [vs, v, notA [vs, vphi]]])
-    , equalsAxiom_
+    , equalsAxiom
         (ceilA [vs1, vs2, vphi])
         (applicationA
             [ceilBTA [vs1, vs2], consPatternListA [vphi, nilPatternListA]]
         )
-    , equalsAxiom_
+    , equalsAxiom
         (floorA [vs1, vs2, vphi])
         (notA [vs2, ceilA [vs1, vs2, notA [vs1, vphi]]])
-    , equalsAxiom_
+    , equalsAxiom
         (equalsA [vs1, vs2, vphi, vpsi])
         (floorA [vs1, vs2, iffA [vs1, vphi, vpsi]])
-    , equalsAxiom_
+    , equalsAxiom
         (inA [vs1, vs2, vphi, vpsi])
         (ceilA [vs1, vs2, andA [vs1, vphi, vpsi]])
-    , equalsAxiom_
+    , equalsAxiom
         (topA [vs])
         (existsA
             [ vs
@@ -242,7 +257,7 @@ patternAxioms =
             , variableAsPatternA [variableA [vx, vs]]
             ]
         )
-    , equalsAxiom_
+    , equalsAxiom
         (bottomA [vs])
         (notA [vs, topA [vs]])
     ]
@@ -253,25 +268,25 @@ getFVFromPatterns = implicitSymbol "#getFVFromPatterns" [patternListMetaSort] va
 getFVFromPatternsA = applyS getFVFromPatterns
 
 getFVAxioms =
-    [ equalsAxiom_
+    [ equalsAxiom
         (getFVA [variableAsPatternA [v]])
         (consVariableListA [v, nilVariableListA])
-    , equalsAxiom_
+    , equalsAxiom
         (getFVA [applicationA [vsigma, vL]])
         (getFVFromPatternsA [vL])
-    , equalsAxiom_
+    , equalsAxiom
         (getFVA [andA [vs, vphi, vpsi]])
         (appendVariableListA [getFVA [vphi], getFVA [vpsi]])
-    , equalsAxiom_
+    , equalsAxiom
         (getFVA [notA [vs, vphi]])
         (getFVA [vphi])
-    , equalsAxiom_
+    , equalsAxiom
         (getFVA [existsA [vs, v, vphi]])
         (deleteVariableListA [v, getFVA [vphi]])
-    , equalsAxiom_
+    , equalsAxiom
         (getFVFromPatternsA [nilPatternListA])
         nilVariableListA
-    , equalsAxiom_
+    , equalsAxiom
         (getFVFromPatternsA [consPatternListA [vphi, vL]])
         (appendVariableListA [getFVA [vphi], getFVFromPatternsA [vL]])
     ]
@@ -281,7 +296,7 @@ occursFree =
         "#occursFree" [pS] [variableMetaSort, patternMetaSort] spS
 occursFreeA = applyPS occursFree
 occursFreeAxiom =
-    parameterizedEqualsAxiom_ [pS]
+    parameterizedEqualsAxiom [pS]
         (occursFreeA [spS] [v, vphi])
         (inVariableListA [spS] [v, getFVA [vphi]])
 
@@ -308,7 +323,7 @@ substitutePatterns =
 substitutePatternsA = applyS substitutePatterns
 
 substitutePatternAxioms =
-    [ equalsAxiom_
+    [ equalsAxiom
         (substituteA [variableAsPatternA [vu], vpsi, v])
         (or_
             (and_ (equalsS_ variableMetaSort vu v) vpsi)
@@ -317,16 +332,16 @@ substitutePatternAxioms =
                 (variableAsPatternA [vu])
             )
         )
-    , equalsAxiom_
+    , equalsAxiom
         (substituteA [applicationA [vsigma, vL], vpsi, v])
         (applicationA [vsigma, substitutePatternsA [vL, vpsi, v]])
-    , equalsAxiom_
+    , equalsAxiom
         (substituteA [orA [vs, vphi1, vphi2], vpsi, v])
         (orA [vs, substituteA [vphi1, vpsi, v], substituteA [vphi2, vpsi, v]])
-    , equalsAxiom_
+    , equalsAxiom
         (substituteA [notA [vs, vphi], vpsi, v])
         (notA [vs, substituteA [vphi, vpsi, v]])
-    , equalsAxiom_
+    , equalsAxiom
         (substituteA [existsA [vs', variableA [vx, vs], vphi], vpsi, v])
         (exists_ (stringVariable_ "#x'")
             (and_
@@ -352,10 +367,10 @@ substitutePatternAxioms =
                 )
             )
         )
-    , equalsAxiom_
+    , equalsAxiom
         (substitutePatternsA [nilPatternListA, vpsi, v])
         nilPatternListA
-    , equalsAxiom_
+    , equalsAxiom
         (substitutePatternsA [consPatternListA [vphi, vL], vpsi, v])
         (consPatternListA
             [substituteA [vphi, vpsi, v], substitutePatternsA [vL, vpsi, v]]
@@ -394,7 +409,7 @@ sortsDeclared =
 sortsDeclaredA = applyPS sortsDeclared
 sortsDeclaredAxioms =
     [ parameterizedAxiom_ [pS] (sortsDeclaredA [spS] [nilSortListA])
-    , parameterizedEqualsAxiom_ [pS]
+    , parameterizedEqualsAxiom [pS]
         (sortsDeclaredA [spS] [consSortListA [vs, vS]])
         (and_ (sortDeclaredA [spS] [vs]) (sortsDeclaredA [spS] [vS]))
     ]
@@ -413,7 +428,7 @@ wellFormedPatternsA = applyPS wellFormedPatterns
 wellFormedPatternsAxioms =
     [ parameterizedAxiom_ [pS]
         (wellFormedPatternsA [spS] [nilPatternListA])
-    , parameterizedEqualsAxiom_ [pS]
+    , parameterizedEqualsAxiom [pS]
         (wellFormedPatternsA [spS] [consPatternListA [vphi, vL]])
         (and_ (wellFormedA [spS] [vphi]) (wellFormedPatternsA [spS] [vL]))
     ]
@@ -426,19 +441,19 @@ getSortsFromPatterns =
         "#getSortsFromPatterns" [patternListMetaSort] sortListMetaSort
 getSortsFromPatternsA = applyS getSortsFromPatterns
 getSortsFromPattersAxioms =
-    [ equalsAxiom_
+    [ equalsAxiom
         (getSortsFromPatternsA [nilPatternListA])
         nilSortListA
-    , equalsAxiom_
+    , equalsAxiom
         (getSortsFromPatternsA [consPatternListA [vphi, vL]])
         (consSortListA [getSortA [vphi], getSortsFromPatternsA [vL]])
     ]
 
 wellFormedGetSortAxioms =
-    [ parameterizedEqualsAxiom_ [pS]
+    [ parameterizedEqualsAxiom [pS]
         (wellFormedA [spS] [variableAsPatternA [variableA [vx, vs]]])
         (sortDeclaredA [spS] [vs])
-    , parameterizedEqualsAxiom_ [pS]
+    , parameterizedEqualsAxiom [pS]
         (wellFormedA [spS] [applicationA [vsigma, vL]])
         (and_
             (and_
@@ -453,7 +468,7 @@ wellFormedGetSortAxioms =
                 )
             )
         )
-    , parameterizedEqualsAxiom_ [pS]
+    , parameterizedEqualsAxiom [pS]
         (wellFormedA [spS] [andA [vs, vphi, vpsi]])
         (and_
             (and_
@@ -465,13 +480,13 @@ wellFormedGetSortAxioms =
                 (equals_ (getSortA [vpsi]) vs)
             )
         )
-    , parameterizedEqualsAxiom_ [pS]
+    , parameterizedEqualsAxiom [pS]
         (wellFormedA [spS] [notA [vs, vphi]])
         (and_
             (wellFormedA [spS] [vphi])
             (equals_ (getSortA [vpsi]) vs)
         )
-    , parameterizedEqualsAxiom_ [pS]
+    , parameterizedEqualsAxiom [pS]
         (wellFormedA [spS] [existsA [vs, v, vphi]])
         (and_
             (wellFormedA [spS] [variableAsPatternA [v]])
@@ -480,7 +495,7 @@ wellFormedGetSortAxioms =
                 (equals_ (getSortA [vpsi]) vs)
             )
         )
-    , parameterizedEqualsAxiom_ [pS]
+    , parameterizedEqualsAxiom [pS]
         (getSortA [variableAsPatternA [variableA [vx, vs]]])
         (and_
             (wellFormedA
@@ -489,25 +504,25 @@ wellFormedGetSortAxioms =
             )
             vs
         )
-    , parameterizedEqualsAxiom_ [pS]
+    , parameterizedEqualsAxiom [pS]
         (getSortA [applicationA [vsigma, vL]])
         (and_
             (wellFormedA [sortMetaSort] [applicationA [vsigma, vL]])
             vs
         )
-    , parameterizedEqualsAxiom_ [pS]
+    , parameterizedEqualsAxiom [pS]
         (getSortA [andA [vs, vphi, vpsi]])
         (and_
             (wellFormedA [sortMetaSort] [andA [vs, vphi, vpsi]])
             vs
         )
-    , parameterizedEqualsAxiom_ [pS]
+    , parameterizedEqualsAxiom [pS]
         (getSortA [notA [vs, vphi]])
         (and_
             (wellFormedA [sortMetaSort] [notA [vs, vphi]])
             vs
         )
-    , parameterizedEqualsAxiom_ [pS]
+    , parameterizedEqualsAxiom [pS]
         (getSortA [existsA [vs, v, vphi]])
         (and_
             (wellFormedA [sortMetaSort] [existsA [vs, v, vphi]])
@@ -849,7 +864,7 @@ axiomAxiom =
 ceilBT = implicitSymbol "#`ceil" [sortMetaSort, sortMetaSort] symbolMetaSort
 ceilBTA = applyS ceilBT
 ceilBTAxiom =
-    equalsAxiom_
+    equalsAxiom
         (ceilBTA [vs, vs'])
         (symbolA [str_ "ceil", sortList_ [vs, vs'], sortList_ [vs], vs'])
 

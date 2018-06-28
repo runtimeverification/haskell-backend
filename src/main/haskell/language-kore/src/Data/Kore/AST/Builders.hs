@@ -424,20 +424,6 @@ rewrites_ =
                 }
         )
 
-{-|'equalsSortParam' is the sort param implicitly used for 'equals' when no
-other sort can be inferred. This parameter is assumed not to be used in
-any pattern, except for top-level pattern of an axiom. Using it will have
-unpredictable effects.
--}
-equalsSortParam :: MetaOrObject level => proxy level -> SortVariable level
-equalsSortParam proxy =
-    case isMetaOrObject proxy of
-        IsMeta   -> sortParameter Meta "#esp" AstLocationImplicit
-        IsObject -> sortParameter Object "esp" AstLocationImplicit
-
-equalsSort :: MetaOrObject level => proxy level -> Sort level
-equalsSort = SortVariableSort . equalsSortParam
-
 {-|'parameterizedAxiom_' creates an axiom that has sort parameters from
 a pattern.
 -}
@@ -472,27 +458,33 @@ axiom_ = parameterizedAxiom_ []
 
 {-|'parameterizedEqualsAxiom_' is a special case for a 'parameterizedAxiom_' that
 contains an equals pattern.
-Note that 'equalsSortParam' AKA @#esp@ is assumed not to be used in any of
+Since the result sort of equals is a parameter, this builder requires
+passing as argument that `SortVariable`.
+It is assumed that the sort variable is not used in any of
 the patterns. Using it will have unpredictable effects.
 -}
 parameterizedEqualsAxiom_
     :: MetaOrObject level
     => [SortVariable level]
+    -> SortVariable level
     -> CommonPurePatternStub level
     -> CommonPurePatternStub level
     -> PureSentenceAxiom level
-parameterizedEqualsAxiom_ parameters first second =
+parameterizedEqualsAxiom_ parameters equalsSortParam first second =
     parameterizedAxiom_
-        (equalsSortParam (Proxy :: Proxy level) : parameters)
-        (withSort (equalsSort (Proxy :: Proxy level)) (equals_ first second))
+        (equalsSortParam : parameters)
+        (withSort (SortVariableSort equalsSortParam) (equals_ first second))
 
 {-|'equalsAxiom_' is a special case for an axiom that contains an equals pattern.
-Note that 'equalsSortParam' AKA @#esp@ is assumed not to be used in any of
+Since the result sort of equals is a parameter, this builder requires
+passing as argument that `SortVariable`.
+It is assumed that the sort variable is not used in any of
 the patterns. Using it will have unpredictable effects.
 -}
 equalsAxiom_
     :: MetaOrObject level
-    => CommonPurePatternStub level
+    => SortVariable level
+    -> CommonPurePatternStub level
     -> CommonPurePatternStub level
     -> PureSentenceAxiom level
 equalsAxiom_ = parameterizedEqualsAxiom_ []

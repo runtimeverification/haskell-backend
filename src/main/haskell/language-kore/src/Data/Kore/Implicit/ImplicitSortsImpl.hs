@@ -15,6 +15,21 @@ import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Implicit.ImplicitVarsInternal
 import           Data.Kore.MetaML.AST
 
+parameterizedEqualsAxiom
+    :: [SortVariable Meta]
+    -> MetaPatternStub
+    -> MetaPatternStub
+    -> MetaSentenceAxiom
+parameterizedEqualsAxiom parameters =
+    parameterizedEqualsAxiom_ parameters
+        (sortParameter Meta "#esp" AstLocationImplicit)
+
+equalsAxiom
+    :: MetaPatternStub
+    -> MetaPatternStub
+    -> MetaSentenceAxiom
+equalsAxiom = parameterizedEqualsAxiom []
+
 {-|'defineMetaSort' is a helper function for defining meta sorts together
 with their constructors, helper functions and axioms.
 -}
@@ -49,22 +64,22 @@ defineMetaSort sortType =
     , deleteA
         -- inList
     ,   [ parameterizedAxiom_ [pS] (not_ (inListA [spS] [vs, emptyListA]))
-        , parameterizedEqualsAxiom_ [pS]
+        , parameterizedEqualsAxiom [pS]
             (inListA [spS] [vs, listConstructorA [vs', vS]])
             (or_
                 (equalsS_ objectSort vs vs')
                 (inListA [spS] [vs, vS])
             )
         -- append
-        , equalsAxiom_ (appendA [emptyListA, vS]) vS
-        , equalsAxiom_
+        , equalsAxiom (appendA [emptyListA, vS]) vS
+        , equalsAxiom
             (appendA [listConstructorA [vs, vS'], vS])
             (listConstructorA [vs, appendA [vS', vS]])
         -- delete
-        , equalsAxiom_
+        , equalsAxiom
             (deleteA [vs, emptyListA])
             emptyListA
-        , equalsAxiom_
+        , equalsAxiom
             (deleteA [vs, listConstructorA [vs', vS]])
             (or_
                 (and_ (equalsS_ objectSort vs vs') (deleteA [vs, vS]))
