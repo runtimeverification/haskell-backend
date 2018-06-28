@@ -70,7 +70,7 @@ type MetaPatternStub = PatternStub Meta Variable CommonMetaPattern
 
 -- |'metaFreeVariables' collects the free variables of a 'CommonMetaPattern'.
 metaFreeVariables :: CommonMetaPattern -> Set (Variable Meta)
-metaFreeVariables = pureFreeVariables Meta
+metaFreeVariables = pureFreeVariables (toProxy Meta)
 
 nilSortListHead :: SymbolOrAlias Meta
 nilSortListHead = groundHead "#nilSortList" AstLocationImplicit

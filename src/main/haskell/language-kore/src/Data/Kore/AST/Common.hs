@@ -61,6 +61,7 @@ data AstLocation
     | AstLocationTest
     | AstLocationFile FileLocation
     | AstLocationLifted AstLocation
+    | AstLocationConditionSortVariable
     | AstLocationUnknown
     -- ^ This should not be used and should be eliminated in further releases
     deriving Show
@@ -74,6 +75,8 @@ prettyPrintAstLocation AstLocationImplicit = "<implicitly defined entity>"
 prettyPrintAstLocation AstLocationGeneratedVariable =
     "<variable generated internally>"
 prettyPrintAstLocation AstLocationTest = "<test data>"
+prettyPrintAstLocation AstLocationConditionSortVariable =
+    "<dummy sort for conditions>"
 prettyPrintAstLocation
     (AstLocationFile FileLocation
         { fileName = name

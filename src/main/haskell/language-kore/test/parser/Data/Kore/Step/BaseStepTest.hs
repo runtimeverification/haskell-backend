@@ -18,6 +18,7 @@ import           Data.Kore.Building.AsAst
 import           Data.Kore.Building.Patterns
 import           Data.Kore.Building.Sorts
 import           Data.Kore.Comparators                 ()
+import           Data.Kore.Error
 import           Data.Kore.IndexedModule.MetadataTools (MetadataTools (..))
 import           Data.Kore.MetaML.AST                  (CommonMetaPattern)
 import           Data.Kore.Step.BaseStep
@@ -621,7 +622,10 @@ baseStepTests =
             }
     asPureMetaPattern
         :: ProperPattern Meta sort patt => patt -> CommonMetaPattern
-    asPureMetaPattern patt = patternKoreToPure Meta (asAst patt)
+    asPureMetaPattern patt =
+        case patternKoreToPure Meta (asAst patt) of
+            Left err  -> error (printError err)
+            Right pat -> pat
     functionalVariable
         :: MetaSort sort => MetaVariable sort -> FunctionalProof Meta Variable
     functionalVariable = FunctionalVariable . asMetaVariable
@@ -703,6 +707,7 @@ mockMetadataTools :: MetadataTools Meta
 mockMetadataTools = MetadataTools
     { isConstructor = const True
     , isFunctional = const True
+    , isFunction = const False
     , getArgumentSorts = const [asAst PatternSort, asAst PatternSort]
     , getResultSort = const (asAst PatternSort)
     }

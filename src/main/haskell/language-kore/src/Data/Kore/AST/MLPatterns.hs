@@ -1,6 +1,8 @@
-{-# LANGUAGE ExplicitForAll #-}
-{-# LANGUAGE GADTs          #-}
-{-# LANGUAGE Rank2Types     #-}
+{-# LANGUAGE ExplicitForAll        #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE Rank2Types            #-}
 {-|
 Module      : Data.Kore.MLPatterns
 Description : Data structures and functions for handling patterns uniformly.
@@ -27,13 +29,14 @@ import           Data.Kore.Implicit.ImplicitSorts
 {-|'MLPatternClass' offers a common interface to ML patterns
   (those starting with '\', except for 'Exists' and 'Forall')
 -}
-class MLPatternClass pat where
+class MLPatternClass pat level where
     getPatternType :: pat level child -> MLPatternType
     getMLPatternOperandSorts
         :: MetaOrObject level => pat level child -> [UnifiedSort]
     getMLPatternResultSort :: pat level child -> Sort level
     getPatternSorts :: pat level child -> [Sort level]
     getPatternChildren :: pat level child -> [child]
+    mlPatternToPattern :: pat level child -> Pattern level variable child
 
 {-|'MLBinderPatternClass' offers a common interface to the 'Exists' and 'Forall'
 ML patterns.
@@ -49,108 +52,123 @@ class MLBinderPatternClass pat where
         :: MetaOrObject level
         => pat level variable child -> Sort level -> variable level -> child
         -> Pattern level variable child
+    mlBinderPatternToPattern :: pat level variable child -> Pattern level variable child
 
-instance MLPatternClass And where
+instance MLPatternClass And level where
     getPatternType _ = AndPatternType
     getMLPatternOperandSorts x = [asUnified (andSort x), asUnified (andSort x)]
     getMLPatternResultSort = andSort
     getPatternSorts a = [andSort a]
     getPatternChildren a = [andFirst a, andSecond a]
+    mlPatternToPattern = AndPattern
 
-instance MLPatternClass Bottom where
+instance MLPatternClass Bottom level where
     getPatternType _ = BottomPatternType
     getMLPatternOperandSorts _ = []
     getMLPatternResultSort = bottomSort
     getPatternSorts t = [bottomSort t]
     getPatternChildren _ = []
+    mlPatternToPattern = BottomPattern
 
-instance MLPatternClass Ceil where
+instance MLPatternClass Ceil level where
     getPatternType _ = CeilPatternType
     getMLPatternOperandSorts x = [asUnified (ceilOperandSort x)]
     getMLPatternResultSort = ceilResultSort
     getPatternSorts c = [ceilOperandSort c, ceilResultSort c]
     getPatternChildren c = [ceilChild c]
+    mlPatternToPattern = CeilPattern
 
-instance MLPatternClass DomainValue where
+instance MLPatternClass DomainValue Object where
     getPatternType _ = DomainValuePatternType
     getMLPatternOperandSorts _ = [asUnified charListMetaSort]
     getMLPatternResultSort = domainValueSort
     getPatternSorts d = [domainValueSort d]
     getPatternChildren d = [domainValueChild d]
+    mlPatternToPattern = DomainValuePattern
 
-instance MLPatternClass Equals where
+instance MLPatternClass Equals level where
     getPatternType _ = EqualsPatternType
     getMLPatternOperandSorts x =
         [asUnified (equalsOperandSort x), asUnified (equalsOperandSort x)]
     getMLPatternResultSort = equalsResultSort
     getPatternSorts e = [equalsOperandSort e, equalsResultSort e]
     getPatternChildren e = [equalsFirst e, equalsSecond e]
+    mlPatternToPattern = EqualsPattern
 
-instance MLPatternClass Floor where
+instance MLPatternClass Floor level where
     getPatternType _ = FloorPatternType
     getMLPatternOperandSorts x = [asUnified (floorOperandSort x)]
     getMLPatternResultSort = floorResultSort
     getPatternSorts f = [floorOperandSort f, floorResultSort f]
     getPatternChildren f = [floorChild f]
+    mlPatternToPattern = FloorPattern
 
-instance MLPatternClass Iff where
+instance MLPatternClass Iff level where
     getPatternType _ = IffPatternType
     getMLPatternOperandSorts x = [asUnified (iffSort x), asUnified (iffSort x)]
     getMLPatternResultSort = iffSort
     getPatternSorts i = [iffSort i]
     getPatternChildren i = [iffFirst i, iffSecond i]
+    mlPatternToPattern = IffPattern
 
-instance MLPatternClass Implies where
+instance MLPatternClass Implies level where
     getPatternType _ = ImpliesPatternType
     getMLPatternOperandSorts x =
         [asUnified (impliesSort x), asUnified (impliesSort x)]
     getMLPatternResultSort = impliesSort
     getPatternSorts i = [impliesSort i]
     getPatternChildren i = [impliesFirst i, impliesSecond i]
+    mlPatternToPattern = ImpliesPattern
 
-instance MLPatternClass In where
+instance MLPatternClass In level where
     getPatternType _ = InPatternType
     getMLPatternOperandSorts x =
         [asUnified (inOperandSort x), asUnified (inOperandSort x)]
     getMLPatternResultSort = inResultSort
     getPatternSorts i = [inOperandSort i, inResultSort i]
     getPatternChildren i = [inContainedChild i, inContainingChild i]
+    mlPatternToPattern = InPattern
 
-instance MLPatternClass Next where
+instance MLPatternClass Next Object where
     getPatternType _ = NextPatternType
     getMLPatternOperandSorts x = [asUnified (nextSort x)]
     getMLPatternResultSort = nextSort
     getPatternSorts e = [nextSort e]
     getPatternChildren e = [nextChild e]
+    mlPatternToPattern = NextPattern
 
-instance MLPatternClass Not where
+instance MLPatternClass Not level where
     getPatternType _ = NotPatternType
     getMLPatternOperandSorts x = [asUnified (notSort x)]
     getMLPatternResultSort = notSort
     getPatternSorts n = [notSort n]
     getPatternChildren n = [notChild n]
+    mlPatternToPattern = NotPattern
 
-instance MLPatternClass Or where
+instance MLPatternClass Or level where
     getPatternType _ = OrPatternType
     getMLPatternOperandSorts x = [asUnified (orSort x), asUnified (orSort x)]
     getMLPatternResultSort = orSort
     getPatternSorts a = [orSort a]
     getPatternChildren a = [orFirst a, orSecond a]
+    mlPatternToPattern = OrPattern
 
-instance MLPatternClass Rewrites where
+instance MLPatternClass Rewrites Object where
     getPatternType _ = RewritesPatternType
     getMLPatternOperandSorts x =
         [asUnified (rewritesSort x), asUnified (rewritesSort x)]
     getMLPatternResultSort = rewritesSort
     getPatternSorts e = [rewritesSort e]
     getPatternChildren e = [rewritesFirst e, rewritesSecond e]
+    mlPatternToPattern = RewritesPattern
 
-instance MLPatternClass Top where
+instance MLPatternClass Top level where
     getPatternType _ = TopPatternType
     getMLPatternOperandSorts _ = []
     getMLPatternResultSort = topSort
     getPatternSorts t = [topSort t]
     getPatternChildren _ = []
+    mlPatternToPattern = TopPattern
 
 instance MLBinderPatternClass Exists where
     getBinderPatternType _ = ExistsPatternType
@@ -162,6 +180,7 @@ instance MLBinderPatternClass Exists where
         , existsVariable = variable
         , existsChild = pat
         }
+    mlBinderPatternToPattern = ExistsPattern
 
 instance MLBinderPatternClass Forall where
     getBinderPatternType _ = ForallPatternType
@@ -173,6 +192,7 @@ instance MLBinderPatternClass Forall where
         , forallVariable = variable
         , forallChild = pat
         }
+    mlBinderPatternToPattern = ForallPattern
 
 {-|`PatternLeveledFunction` holds a full set of functions that
 can be applied to the elements of a `Pattern` (e.g. `Implies`). Together
@@ -181,7 +201,7 @@ with `applyPatternLeveledFunction` they form a function on patterns, hence the n
 -- TODO: consider parameterizing on variable also
 data PatternLeveledFunction level variable child result = PatternLeveledFunction
     { patternLeveledFunctionML
-        :: !(forall patt . MLPatternClass patt
+        :: !(forall patt . MLPatternClass patt level
             => patt level child -> result level)
     , patternLeveledFunctionMLBinder
         :: !(forall patt . MLBinderPatternClass patt
@@ -248,7 +268,7 @@ with `applyPatternFunction` they form a function on patterns, hence the name.
 -- TODO: consider parameterizing on variable also
 data PatternFunction level variable child result = PatternFunction
     { patternFunctionML
-        :: !(forall patt . MLPatternClass patt => patt level child -> result)
+        :: !(forall patt . MLPatternClass patt level => patt level child -> result)
     , patternFunctionMLBinder
         :: !(forall patt . MLBinderPatternClass patt
         => patt level variable child

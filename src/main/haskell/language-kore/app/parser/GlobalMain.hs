@@ -1,5 +1,5 @@
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE CPP             #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module GlobalMain
     ( MainOptions(..)
@@ -10,31 +10,17 @@ module GlobalMain
     , clockSomethingIO
     ) where
 
-import           Control.Monad                          ( when )
-import           Control.Exception                      ( evaluate )
-import           Data.Semigroup                         ( (<>) )
-import           Development.GitRev                     ( gitBranch
-                                                        , gitHash
-                                                        , gitCommitDate )
-import           System.Clock                           ( Clock (Monotonic)
-                                                        , diffTimeSpec
-                                                        , getTime )
-import           Options.Applicative                    ( Parser
-                                                        , InfoMod
-                                                        , (<|>)
-                                                        , (<**>)
-                                                        , flag
-                                                        , flag'
-                                                        , long
-                                                        , hidden
-                                                        , internal
-                                                        , help
-                                                        , helper
-                                                        , info
-                                                        , execParser )
+import           Control.Exception   (evaluate)
+import           Control.Monad       (when)
+import           Data.Semigroup      ((<>))
+import           Development.GitRev  (gitBranch, gitCommitDate, gitHash)
+import           Options.Applicative (InfoMod, Parser, execParser, flag, flag',
+                                      help, helper, hidden, info, internal,
+                                      long, (<**>), (<|>))
+import           System.Clock        (Clock (Monotonic), diffTimeSpec, getTime)
 
 
-{- | Record Type containing common command-line arguments for each executable in 
+{- | Record Type containing common command-line arguments for each executable in
 the project -}
 data GlobalOptions = GlobalOptions
     { willVersion    :: !Bool -- ^ Version flag [default=false]
@@ -76,8 +62,8 @@ mainVersion = mapM_ putStrLn
       packageVersion = "UNKNOWN" -- for now, TODO: reify package.yaml or some other source
       formatGit (_:mm:dd:tt:yy:tz:_) = [yy,mm,dd,tt,tz]
       formatGit time                 = time
-      formatExe (mm:dd:yy:tt:_)      = [yy,mm,dd,tt,"LOCAL"]
-      formatExe time                 = time
+      formatExe (mm:dd:yy:tt:_) = [yy,mm,dd,tt,"LOCAL"]
+      formatExe time            = time
       gitTime = (unwords . formatGit . words) $gitCommitDate
       exeTime = (unwords . formatExe . words) (__DATE__++" "++ __TIME__)
 
@@ -155,6 +141,7 @@ clockSomethingIO :: String -> IO a -> IO a
 clockSomethingIO description something = do
     start <- getTime Monotonic
     x     <- something
-    end   <- getTime Monotonic
+    let _ = x `seq` evaluate x
+    end   <- x `seq` getTime Monotonic
     putStrLn $ description ++" "++ show (diffTimeSpec end start)
     return x
