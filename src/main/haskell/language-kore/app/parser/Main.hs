@@ -43,7 +43,7 @@ import           Data.Kore.ASTVerifier.PatternVerifier    (verifyStandalonePatte
 import           Data.Kore.Error                          (printError)
 import           Data.Kore.IndexedModule.IndexedModule    (IndexedModule (..),
                                                            KoreIndexedModule)
-import           Data.Kore.IndexedModule.MetadataTools    (MetadataTools,
+import           Data.Kore.IndexedModule.MetadataTools    (MetadataTools (..),
                                                            extractMetadataTools)
 import           Data.Kore.Parser.Parser                  (fromKore,
                                                            fromKorePattern)
@@ -141,7 +141,7 @@ main = do
         indexedModules <- if willVerify
             then mainVerify willChkAttr parsedDefinition
             else return Map.empty
-        when willPrint $ putStrLn (prettyPrintToString parsedDefinition)
+        -- when willPrint $ putStrLn (prettyPrintToString parsedDefinition)
 
         when (patternFileName /= "") $ do
             parsedPattern <- mainPatternParse patternFileName
@@ -255,7 +255,7 @@ evaluatePattern indexedModule patt = do
     return
         (fst $ runIntCounter
             (evaluateFunctions
-                (extractMetadataTools indexedModule)
+                (mockMetadataTools (extractMetadataTools indexedModule))
                 (extractEvaluators Object conditionSort indexedModule)
                 conditionSort
                 purePattern
@@ -285,7 +285,7 @@ extractEvaluators level conditionSort indexedModule =
                 (mapMaybe
                     (axiomToIdEvaluatorPair
                         level
-                        (extractMetadataTools indexedModule)
+                        (mockMetadataTools (extractMetadataTools indexedModule))
                         conditionSort
                     )
                     (indexedModuleAxioms indexedModule))
@@ -349,3 +349,12 @@ axiomToIdEvaluatorPair
             )
         )
 axiomToIdEvaluatorPair _ _ _ _ = Nothing
+
+mockMetadataTools :: MetadataTools level -> MetadataTools level
+mockMetadataTools tools = MetadataTools
+    { isConstructor = const True
+    , isFunctional = const True
+    , isFunction = const True
+    , getArgumentSorts = getArgumentSorts tools
+    , getResultSort = getResultSort tools
+    }

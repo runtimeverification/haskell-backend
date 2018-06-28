@@ -207,7 +207,7 @@ evaluateApplication
                             , functionResultCondition = condition
                             }
                     [Applied functionResult] -> trace ("evaluate-application " ++ show functionResult) $ return functionResult
-                    (_ : _ : _) -> error "Not implemented yet."
+                    r@(_ : _ : _) -> error ("Not implemented yet: " ++ show r)
   where
     unchanged = FunctionResult
         { functionResultPattern   = asPurePattern $ ApplicationPattern app
