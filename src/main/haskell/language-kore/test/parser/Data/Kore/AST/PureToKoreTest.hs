@@ -16,7 +16,7 @@ import           Data.Kore.MetaML.ASTGen
 
 
 pureToKoreToPureProp :: CommonMetaPattern -> Bool
-pureToKoreToPureProp p = p == patternKoreToPure Meta (patternPureToKore p)
+pureToKoreToPureProp p = Right p == patternKoreToPure Meta (patternPureToKore p)
 
 pureToKoreToPureTests :: TestTree
 pureToKoreToPureTests =
