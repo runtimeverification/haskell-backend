@@ -110,7 +110,7 @@ main = do
         when willPrint $ putStrLn (prettyPrintToString parsedDefinition)
 
         when (patternFileName /= "") $ do
-            parsedPattern <- mainPatternParse fileName
+            parsedPattern <- mainPatternParse patternFileName
             when willVerify $ do
                 indexedModule <-
                     mainModule (ModuleName mainModuleName) indexedModules
