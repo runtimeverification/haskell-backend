@@ -31,7 +31,7 @@ data EvaluatedCondition level
     -- the SMT solver. When doing that, also change the make{And,Or,...}
     -- functions to return somenthing that forces reevaluation.
     | ConditionUnevaluable !(CommonPurePattern level)
-  deriving Show
+  deriving (Show, Eq)
 
 newtype UnevaluatedCondition level =
     UnevaluatedCondition (CommonPurePattern level)

@@ -13,6 +13,7 @@ module Data.Kore.Step.Function.Evaluator
     ( evaluateFunctions
     ) where
 
+import           Data.List                             (nub)
 import qualified Data.Map                              as Map
 
 import           Data.Kore.AST.Common                  (Application (..),
@@ -197,7 +198,8 @@ evaluateApplication
                 results <- mapM (applyEvaluator app) evaluators
                 mergedResults <-
                     mapM (mergeWithCondition conditionEvaluator conditionSort childrenCondition) results
-                trace (show results) $ case filter notNotApplicable mergedResults of
+                -- TODO: nub is O(n^2), should do better than that
+                trace (show results) $ case nub (filter notNotApplicable mergedResults) of
                     [] -> return unchanged
                     [NotApplicable] -> error "Should not reach this line."
                     [Symbolic condition] ->
