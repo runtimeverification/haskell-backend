@@ -42,48 +42,84 @@ import           Data.Kore.ASTPrettyPrint
 -- especially since with ML patterns you need to look up
 -- sort information to construct predicates. 
 
-data PropF formula rules subproof
-  = ByF
-  { conclusion :: formula
-  , justification :: Maybe (rules subproof)
-  }
-  deriving(Functor, Foldable, Traversable)
+-- data PropF formula rules subproof
+--   = ByF
+--   { conclusion    :: formula
+--   , justification :: rules subproof
+--   , assumptions   :: S.Set formula
+--   }
+--   deriving(Functor, Foldable, Traversable)
 
-type Prop formula rules = Fix (PropF formula rules)
+-- type Prop formula rules = Fix (PropF formula rules)
 
-pattern By conclusion justification = Fix (ByF conclusion justification)
+-- pattern By conclusion justification assumptions = 
+--   Fix (ByF conclusion justification assumptions)
 
-type Path = [Int]
+-- type Path = [Int]
 
-data LargeRules subproof
- = Tautology 
+-- data LargeRules subproof
+--  = Tautology 
 
-class Ord variable 
-  => HasFreeVars formula variable | formula -> variable where 
-  getFreeVars :: formula -> S.Set variable
+-- class (Eq variable, Ord variable)
+--   => HasFreeVars formula variable | formula -> variable where 
+--   getFreeVars :: formula -> S.Set variable
 
-class (Foldable rules, Functor rules, Ord formula) 
-  => ProofSystem formula rules where 
+-- class Ord formula => Formula formula where 
+--   implies :: formula -> formula -> formula
+--   forall :: HasFreeVars formula variable => variable -> formula -> formula
 
+-- class (Foldable rules, Functor rules) => Rules rules where 
 
-  useRule 
-    :: rules (Prop formula rules) 
-    -> Prop formula rules
+-- class (Formula formula, Rules rules) 
+--   => ProofSystem formula rules | formula -> rules where 
 
-  freeVars 
-    :: HasFreeVars formula variable
-    => Prop formula rules 
-    -> S.Set variable
-  freeVars = S.unions . toList . S.map getFreeVars . freeHypotheses
+--   byAssumption :: formula -> rules (Prop formula rules)
+ 
+--   assume :: formula -> Prop formula rules 
+--   assume formula = By formula (byAssumption formula) (S.singleton formula)
 
-  freeHypotheses 
-    :: (Functor rules, Foldable rules, Ord formula) 
-    => Prop formula rules 
-    -> S.Set formula
+--   discharging :: formula -> Prop formula rules -> rules (Prop formula rules)
 
-  freeHypotheses (By a Nothing) = S.singleton a
-  freeHypotheses (By a (Just rule)) = 
-   S.unions $ map freeHypotheses $ toList rule
+--   discharge :: formula -> Prop formula rules -> Prop formula rules
+--   discharge hypothesis prop@(By conclusion justification assumptions)
+--     = By 
+--     (implies hypothesis conclusion) 
+--     (discharging hypothesis prop) 
+--     (S.delete hypothesis assumptions)
 
+--   ruleToFormula
+--     :: rules (Prop formula rules)
+--     -> formula
+
+--   useRule 
+--     :: rules (Prop formula rules) 
+--     -> Prop formula rules 
+--   useRule rule = By
+--     (ruleToFormula rule)
+--     rule 
+--     (S.unions $ map (assumptions . unFix) $ toList rule)
+
+--   freeVars 
+--     :: HasFreeVars formula variable
+--     => Prop formula rules 
+--     -> S.Set variable
+--   freeVars = S.unions . map getFreeVars . toList . assumptions . unFix
+
+--   byAbstraction 
+--     :: variable 
+--     -> Prop formula rules 
+--     -> rules (Prop formula rules)
+
+--   abstract 
+--     :: (HasFreeVars formula variable, Show variable)
+--     => variable 
+--     -> Prop formula rules 
+--     -> Prop formula rules 
+--   abstract var prop@(By conclusion justification assumptions)
+--     | not (elem var $ freeVars prop) = By 
+--       (forall var conclusion)
+--       (byAbstraction var prop)
+--       (assumptions)
+--     | otherwise = error $ "variable " ++ show var ++ " appears in assumptions"
   
 
