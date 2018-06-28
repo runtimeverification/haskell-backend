@@ -38,13 +38,13 @@ data FunctionResult level = FunctionResult
     { functionResultPattern   :: !(CommonPurePattern level)
     , functionResultCondition :: !(EvaluatedCondition level)
     }
-  deriving Show
+  deriving (Show, Eq)
 
 data FunctionEvaluation level
     = NotApplicable
     | Symbolic !(EvaluatedCondition level)
     | Applied !(FunctionResult level)
-  deriving Show
+  deriving (Show, Eq)
 
 newtype ConditionEvaluator level = ConditionEvaluator
     (UnevaluatedCondition level -> IntCounter (EvaluatedCondition level))
