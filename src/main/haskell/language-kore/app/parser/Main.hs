@@ -5,6 +5,7 @@ module Main
   ) where
 
 import           Control.Monad                            (when)
+import           Data.Char                                (isSpace)
 import qualified Data.Map                                 as Map
 import           Data.Maybe                               (mapMaybe)
 import           Data.Ord                                 (comparing)
@@ -49,9 +50,11 @@ import           Data.Kore.Parser.Parser                  (fromKore,
                                                            fromKorePattern)
 import           Data.Kore.Step.BaseStep                  (AxiomPattern (..))
 import           Data.Kore.Step.Function.Data             (ApplicationFunctionEvaluator (..),
-                                                           FunctionResult)
+                                                           FunctionResult (..))
 import           Data.Kore.Step.Function.Evaluator        (evaluateFunctions)
 import           Data.Kore.Step.Function.UserDefined      (axiomFunctionEvaluator)
+import           Data.Kore.Unparser.Unparse               (Unparse,
+                                                           unparseToString)
 import           Data.Kore.Variables.Fresh.IntCounter     (runIntCounter)
 import           Data.List                                (groupBy, sortBy)
 
@@ -149,14 +152,14 @@ main = do
                 indexedModule <-
                     mainModule (ModuleName mainModuleName) indexedModules
                 mainPatternVerify indexedModule parsedPattern
-            when willPrint  $ putStrLn (prettyPrintToString parsedPattern)
+            when willPrint  $ putStrLn (prettyUnparseToString parsedPattern)
             when willEvaluate $ do
                 indexedModule <-
                     mainModule (ModuleName mainModuleName) indexedModules
                 functionResult <-
                     mainEvaluatePattern indexedModule parsedPattern
                 when willPrint $
-                    putStrLn (prettyPrintToString functionResult)
+                    putStrLn (prettyUnparseToString (functionResultPattern functionResult))
 
 mainModule
     :: ModuleName
@@ -359,3 +362,7 @@ mockMetadataTools tools = MetadataTools
     , getArgumentSorts = getArgumentSorts tools
     , getResultSort = getResultSort tools
     }
+
+prettyUnparseToString :: Unparse x => x -> String
+prettyUnparseToString =
+    filter (not . (\x -> isSpace x || x `elem` ['{','}'])) . unparseToString

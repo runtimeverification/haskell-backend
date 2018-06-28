@@ -41,6 +41,7 @@ import           Data.Kore.Step.Function.Data          (ApplicationFunctionEvalu
 import           Data.Kore.Variables.Fresh.IntCounter  (IntCounter)
 
 -- import           Debug.Trace
+import           Data.Kore.Unparser.Unparse            (unparseToString)
 
 -- multiTrace :: [String] -> a -> a
 -- multiTrace [] a     = a
@@ -213,7 +214,7 @@ evaluateApplication
                             }
                     [Applied functionResult] -> -- trace ("evaluate-application " ++ show functionResult) $
                             return functionResult
-                    r@(_ : _ : _) -> error ("Not implemented yet: " ++ show r)
+                    r@(_ : _ : _) -> error ("Not implemented yet: " ++ unparseToString app ++ " -> " ++ show (map (\(Applied fr) -> unparseToString (functionResultPattern fr)) r))
   where
     unchanged = FunctionResult
         { functionResultPattern   = asPurePattern $ ApplicationPattern app

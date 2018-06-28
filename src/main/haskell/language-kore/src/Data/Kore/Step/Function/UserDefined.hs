@@ -66,8 +66,8 @@ axiomFunctionEvaluator
                     ) <- configurationWithProof
                 evaluatedRewritingCondition <-
                     conditionEvaluator (UnevaluatedCondition rewritingCondition)
-                trace "" $ trace "---------------------------------" $ trace ("Pattern: " ++ unparseToString (patternPureToKore $ asPurePattern $ ApplicationPattern app) ++ "  -->  " ++ unparseToString (patternPureToKore rewrittenPattern)) $ trace ("Condition: " ++ prettyPrintToString evaluatedRewritingCondition) $ trace "---------------------------------" $
-                    axiomFunctionEvaluatorAfterStep
+                --trace "" $ trace "---------------------------------" $ trace ("Pattern: " ++ unparseToString (patternPureToKore $ asPurePattern $ ApplicationPattern app) ++ "  -->  " ++ unparseToString (patternPureToKore rewrittenPattern)) $ trace ("Condition: " ++ prettyPrintToString evaluatedRewritingCondition) $ trace "---------------------------------" $
+                axiomFunctionEvaluatorAfterStep
                         metadataTools
                         conditionSort
                         functionEvaluator

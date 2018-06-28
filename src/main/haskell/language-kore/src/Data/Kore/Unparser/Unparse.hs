@@ -375,5 +375,5 @@ instance
         betweenLines
         unparseList betweenLines (definitionModules d)
 
-instance Unparse (Fix (Pattern Meta Variable)) where
+instance Unparse (Fix (Pattern level Variable)) where
     unparse = unparse . unFix
