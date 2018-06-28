@@ -35,9 +35,9 @@ module Data.Kore.IndexedModule.IndexedModule
     ) where
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.Sentence
 import           Data.Kore.Error
 import           Data.Kore.Implicit.ImplicitSorts
 
@@ -115,7 +115,7 @@ indexedModuleRawSentences im =
     ++
     map asSentence (indexedModuleAxioms im)
     ++
-    [ constructUnifiedSentence SentenceImportSentence 
+    [ constructUnifiedSentence SentenceImportSentence
       (SentenceImport (indexedModuleName m) attributes)
     | (attributes, m) <- indexedModuleImports im
     ]
