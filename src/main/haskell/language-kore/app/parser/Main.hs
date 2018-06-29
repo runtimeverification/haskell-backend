@@ -36,7 +36,6 @@ import           Data.Kore.AST.PureToKore                 (patternKoreToPure)
 import           Data.Kore.AST.Sentence                   (KoreDefinition,
                                                            ModuleName (..),
                                                            SentenceAxiom (..))
-import           Data.Kore.ASTPrettyPrint                 (prettyPrintToString)
 import           Data.Kore.ASTVerifier.DefinitionVerifier (AttributesVerification (DoNotVerifyAttributes),
                                                            defaultAttributesVerification,
                                                            verifyAndIndexDefinition)

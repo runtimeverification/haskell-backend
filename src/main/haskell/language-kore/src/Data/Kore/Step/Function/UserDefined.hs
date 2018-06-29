@@ -19,8 +19,6 @@ import           Data.Kore.AST.Common                  (Application (..),
 import           Data.Kore.AST.MetaOrObject            (MetaOrObject)
 import           Data.Kore.AST.PureML                  (CommonPurePattern,
                                                         asPurePattern)
-import           Data.Kore.AST.PureToKore              (patternPureToKore)
-import           Data.Kore.ASTPrettyPrint              (prettyPrintToString)
 import           Data.Kore.IndexedModule.MetadataTools (MetadataTools (..))
 import           Data.Kore.Step.BaseStep               (AxiomPattern, StepperConfiguration (..),
                                                         stepWithAxiom)
@@ -30,10 +28,7 @@ import           Data.Kore.Step.Function.Data          (CommonPurePatternFunctio
                                                         ConditionEvaluator (..),
                                                         FunctionEvaluation (..),
                                                         FunctionResult (..))
-import           Data.Kore.Unparser.Unparse            (unparseToString)
 import           Data.Kore.Variables.Fresh.IntCounter  (IntCounter)
-
-import           Debug.Trace
 
 axiomFunctionEvaluator
     :: MetaOrObject level
