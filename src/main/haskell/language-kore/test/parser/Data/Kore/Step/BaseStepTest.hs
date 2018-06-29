@@ -10,6 +10,7 @@ import           Data.Kore.AST.Common                  (Application (..),
                                                         AstLocation (..),
                                                         Id (..),
                                                         Pattern (ApplicationPattern),
+                                                        Sort,
                                                         SymbolOrAlias (..),
                                                         Variable)
 import           Data.Kore.AST.MetaOrObject
@@ -21,6 +22,7 @@ import           Data.Kore.Comparators                 ()
 import           Data.Kore.IndexedModule.MetadataTools (MetadataTools (..))
 import           Data.Kore.MetaML.AST                  (CommonMetaPattern)
 import           Data.Kore.Step.BaseStep
+import           Data.Kore.Step.Condition.Condition    (ConditionSort (..))
 import           Data.Kore.Step.Error
 import           Data.Kore.Unification.Error
 import           Data.Kore.Unification.Unifier         (FunctionalProof (..),
@@ -39,7 +41,8 @@ baseStepTests =
                     ( StepperConfiguration
                         { stepperConfigurationPattern =
                             asPureMetaPattern (v1 PatternSort)
-                        , stepperConfigurationConditionSort = asAst SortSort
+                        , stepperConfigurationConditionSort =
+                            conditionSort SortSort
                         , stepperConfigurationCondition =
                             asPureMetaPattern
                                 (metaAnd
@@ -67,7 +70,8 @@ baseStepTests =
                     StepperConfiguration
                         { stepperConfigurationPattern =
                             asPureMetaPattern (v1 PatternSort)
-                        , stepperConfigurationConditionSort = asAst SortSort
+                        , stepperConfigurationConditionSort =
+                            conditionSort SortSort
                         , stepperConfigurationCondition = top SortSort
                         }
                     AxiomPattern
@@ -82,7 +86,8 @@ baseStepTests =
                     ( StepperConfiguration
                         { stepperConfigurationPattern =
                             asPureMetaPattern (y1 PatternSort)
-                        , stepperConfigurationConditionSort = asAst SortSort
+                        , stepperConfigurationConditionSort =
+                            conditionSort SortSort
                         , stepperConfigurationCondition =
                             asPureMetaPattern
                                 (metaAnd
@@ -110,7 +115,8 @@ baseStepTests =
                     StepperConfiguration
                         { stepperConfigurationPattern =
                             asPureMetaPattern (y1 PatternSort)
-                        , stepperConfigurationConditionSort = asAst SortSort
+                        , stepperConfigurationConditionSort =
+                            conditionSort SortSort
                         , stepperConfigurationCondition = top SortSort
                         }
                     AxiomPattern
@@ -125,7 +131,8 @@ baseStepTests =
                     ( StepperConfiguration
                         { stepperConfigurationPattern =
                             asPureMetaPattern (v1 PatternSort)
-                        , stepperConfigurationConditionSort = asAst SortSort
+                        , stepperConfigurationConditionSort =
+                            conditionSort SortSort
                         , stepperConfigurationCondition =
                             asPureMetaPattern
                                 (metaAnd
@@ -165,7 +172,8 @@ baseStepTests =
                         { stepperConfigurationPattern =
                             asPureMetaPattern
                                 (metaSigma (v1 PatternSort) (v1 PatternSort))
-                        , stepperConfigurationConditionSort = asAst SortSort
+                        , stepperConfigurationConditionSort =
+                            conditionSort SortSort
                         , stepperConfigurationCondition = top SortSort
                         }
                     AxiomPattern
@@ -185,7 +193,8 @@ baseStepTests =
                         { stepperConfigurationPattern =
                             asPureMetaPattern
                                 (metaF (b1 PatternSort))
-                        , stepperConfigurationConditionSort = asAst SortSort
+                        , stepperConfigurationConditionSort =
+                            conditionSort SortSort
                         , stepperConfigurationCondition =
                             asPureMetaPattern
                                 (metaAnd
@@ -239,7 +248,8 @@ baseStepTests =
                                     (a1 PatternSort)
                                     (metaF (b1 PatternSort))
                                 )
-                        , stepperConfigurationConditionSort = asAst SortSort
+                        , stepperConfigurationConditionSort =
+                            conditionSort SortSort
                         , stepperConfigurationCondition = top SortSort
                         }
                     AxiomPattern
@@ -259,7 +269,8 @@ baseStepTests =
                         { stepperConfigurationPattern =
                             asPureMetaPattern
                                 (metaF (b1 PatternSort))
-                        , stepperConfigurationConditionSort = asAst SortSort
+                        , stepperConfigurationConditionSort =
+                            conditionSort SortSort
                         , stepperConfigurationCondition =
                             asPureMetaPattern
                                 (metaAnd
@@ -317,7 +328,8 @@ baseStepTests =
                                     (metaF (a1 PatternSort))
                                     (metaF (b1 PatternSort))
                                 )
-                        , stepperConfigurationConditionSort = asAst SortSort
+                        , stepperConfigurationConditionSort =
+                            conditionSort SortSort
                         , stepperConfigurationCondition = top SortSort
                         }
                     AxiomPattern
@@ -348,7 +360,8 @@ baseStepTests =
                         { stepperConfigurationPattern =
                             asPureMetaPattern
                                 (metaSigma (b1 PatternSort) (b1 PatternSort))
-                        , stepperConfigurationConditionSort = asAst SortSort
+                        , stepperConfigurationConditionSort =
+                            conditionSort SortSort
                         , stepperConfigurationCondition =
                             asPureMetaPattern
                                 (metaAnd
@@ -432,7 +445,8 @@ baseStepTests =
                                         (a1 PatternSort)
                                     )
                                 )
-                        , stepperConfigurationConditionSort = asAst SortSort
+                        , stepperConfigurationConditionSort =
+                            conditionSort SortSort
                         , stepperConfigurationCondition = top SortSort
                         }
                     AxiomPattern
@@ -465,7 +479,8 @@ baseStepTests =
                                     (var_0 PatternSort)
                                     (a1 PatternSort)
                                 )
-                        , stepperConfigurationConditionSort = asAst SortSort
+                        , stepperConfigurationConditionSort =
+                            conditionSort SortSort
                         , stepperConfigurationCondition =
                             asPureMetaPattern
                                 (metaAnd
@@ -496,7 +511,8 @@ baseStepTests =
                     StepperConfiguration
                         { stepperConfigurationPattern =
                             asPureMetaPattern (a1 PatternSort)
-                        , stepperConfigurationConditionSort = asAst SortSort
+                        , stepperConfigurationConditionSort =
+                            conditionSort SortSort
                         , stepperConfigurationCondition = top SortSort
                         }
                     AxiomPattern
@@ -526,7 +542,8 @@ baseStepTests =
                                     (metaG (a1 PatternSort))
                                     (metaF (b1 PatternSort))
                                 )
-                        , stepperConfigurationConditionSort = asAst SortSort
+                        , stepperConfigurationConditionSort =
+                            conditionSort SortSort
                         , stepperConfigurationCondition = top SortSort
                         }
                     AxiomPattern
@@ -563,7 +580,8 @@ baseStepTests =
                                         (a1 PatternSort) (b1 PatternSort)
                                     )
                                 )
-                        , stepperConfigurationConditionSort = asAst SortSort
+                        , stepperConfigurationConditionSort =
+                            conditionSort SortSort
                         , stepperConfigurationCondition = top SortSort
                         }
                     AxiomPattern
@@ -642,7 +660,7 @@ baseStepTests =
                 ( StepperConfiguration
                     { stepperConfigurationPattern =
                         asPureMetaPattern (var PatternSort)
-                    , stepperConfigurationConditionSort = asAst SortSort
+                    , stepperConfigurationConditionSort = conditionSort SortSort
                     , stepperConfigurationCondition =
                         asPureMetaPattern
                             (metaAnd
@@ -687,7 +705,7 @@ baseStepTests =
                                 (var PatternSort)
                                 (var PatternSort)
                             )
-                    , stepperConfigurationConditionSort = asAst SortSort
+                    , stepperConfigurationConditionSort = conditionSort SortSort
                     , stepperConfigurationCondition = top SortSort
                     }
                 AxiomPattern
@@ -698,6 +716,8 @@ baseStepTests =
                     }
             )
 
+conditionSort :: AsAst (Sort level) s => s -> ConditionSort level
+conditionSort sort = ConditionSort (asAst sort)
 
 mockMetadataTools :: MetadataTools Meta
 mockMetadataTools = MetadataTools

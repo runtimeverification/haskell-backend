@@ -8,14 +8,15 @@ Stability   : experimental
 Portability : portable
 -}
 module Data.Kore.Step.Condition.Condition
-    ( EvaluatedCondition (..)
+    ( ConditionProof (..)
+    , ConditionSort (..)
+    , EvaluatedCondition (..)
     , UnevaluatedCondition (..)
     , makeEvaluatedAnd
     , makeEvaluatedIff
     , makeEvaluatedImplies
     , makeEvaluatedNot
     , makeEvaluatedOr
-    , makeUnevaluatedAnd
     ) where
 
 import           Data.Kore.AST.Common (And (..), Iff (..), Implies (..),
@@ -23,7 +24,21 @@ import           Data.Kore.AST.Common (And (..), Iff (..), Implies (..),
                                        Sort (..))
 import           Data.Kore.AST.PureML (CommonPurePattern, asPurePattern)
 
--- TODO: Maybe rename
+{--| 'ConditionProof' is a placeholder for a proof about a condition's
+evaluation.
+--}
+data ConditionProof level = ConditionProof
+    deriving (Show, Eq)
+
+{--| 'ConditionSort' represents a sort that is meant to be used when building
+conditions. Usually it is assumed that the existing condition pieces already
+have this sort.
+--}
+newtype ConditionSort level = ConditionSort (Sort level)
+    deriving (Show, Eq)
+
+{--| 'EvaluatedCondition' holds the result of evaluating a condition.
+--}
 data EvaluatedCondition level
     = ConditionTrue
     | ConditionFalse
@@ -33,75 +48,111 @@ data EvaluatedCondition level
     | ConditionUnevaluable !(CommonPurePattern level)
   deriving (Show, Eq)
 
+{--| 'UnevaluatedCondition' holds a condition that was not yet evaluated.
+--}
 newtype UnevaluatedCondition level =
     UnevaluatedCondition (CommonPurePattern level)
   deriving Show
 
+{--| 'makeEvaluatedAnd' combines two evaluated conditions with an 'and',
+doing some simplification.
+--}
 makeEvaluatedAnd
-    :: Sort level
+    :: ConditionSort level
     -> EvaluatedCondition level
     -> EvaluatedCondition level
-    -> EvaluatedCondition level
-makeEvaluatedAnd _ ConditionFalse _ = ConditionFalse
-makeEvaluatedAnd _ _ ConditionFalse = ConditionFalse
-makeEvaluatedAnd _ ConditionTrue second = second
-makeEvaluatedAnd _ first ConditionTrue = first
-makeEvaluatedAnd sort (ConditionUnevaluable first) (ConditionUnevaluable second) =
-    ConditionUnevaluable $ asPurePattern $ AndPattern $ And sort first second
+    -> (EvaluatedCondition level, ConditionProof level)
+makeEvaluatedAnd _ ConditionFalse _ = (ConditionFalse, ConditionProof)
+makeEvaluatedAnd _ _ ConditionFalse = (ConditionFalse, ConditionProof)
+makeEvaluatedAnd _ ConditionTrue second = (second, ConditionProof)
+makeEvaluatedAnd _ first ConditionTrue = (first, ConditionProof)
+makeEvaluatedAnd
+    (ConditionSort sort)
+    (ConditionUnevaluable first)
+    (ConditionUnevaluable second)
+  =
+    ( ConditionUnevaluable $ asPurePattern $ AndPattern $ And sort first second
+    , ConditionProof
+    )
 
--- TODO: Do I need this?
-makeUnevaluatedAnd
-    :: Sort level
-    -> UnevaluatedCondition level
-    -> UnevaluatedCondition level
-    -> UnevaluatedCondition level
-makeUnevaluatedAnd sort (UnevaluatedCondition first) (UnevaluatedCondition second) =
-    UnevaluatedCondition $ asPurePattern $ AndPattern $ And sort first second
-
-
+{--| 'makeEvaluatedOr' combines two evaluated conditions with an 'or', doing
+some simplification.
+--}
 makeEvaluatedOr
-    :: Sort level
+    :: ConditionSort level
     -> EvaluatedCondition level
     -> EvaluatedCondition level
-    -> EvaluatedCondition level
-makeEvaluatedOr _ ConditionTrue _ = ConditionTrue
-makeEvaluatedOr _ _ ConditionTrue = ConditionTrue
-makeEvaluatedOr _ ConditionFalse second = second
-makeEvaluatedOr _ first ConditionFalse = first
-makeEvaluatedOr sort (ConditionUnevaluable first) (ConditionUnevaluable second) =
-    ConditionUnevaluable $ asPurePattern $ OrPattern $ Or sort first second
+    -> (EvaluatedCondition level, ConditionProof level)
+makeEvaluatedOr _ ConditionTrue _ = (ConditionTrue, ConditionProof)
+makeEvaluatedOr _ _ ConditionTrue = (ConditionTrue, ConditionProof)
+makeEvaluatedOr _ ConditionFalse second = (second, ConditionProof)
+makeEvaluatedOr _ first ConditionFalse = (first, ConditionProof)
+makeEvaluatedOr
+    (ConditionSort sort)
+    (ConditionUnevaluable first)
+    (ConditionUnevaluable second)
+  =
+    ( ConditionUnevaluable $ asPurePattern $ OrPattern $ Or sort first second
+    , ConditionProof
+    )
 
+{--| 'makeEvaluatedImplies' combines two evaluated conditions into an
+implication, doing some simplification.
+--}
 makeEvaluatedImplies
-    :: Sort level
+    :: ConditionSort level
     -> EvaluatedCondition level
     -> EvaluatedCondition level
-    -> EvaluatedCondition level
--- TODO: Is it reasonable to use a different thing here?
-makeEvaluatedImplies _ ConditionFalse _ = ConditionTrue
-makeEvaluatedImplies _ _ ConditionTrue = ConditionTrue
-makeEvaluatedImplies _ ConditionTrue second = second
-makeEvaluatedImplies sort first ConditionFalse = makeEvaluatedNot sort first
-makeEvaluatedImplies sort (ConditionUnevaluable first) (ConditionUnevaluable second) =
-    ConditionUnevaluable $ asPurePattern $ ImpliesPattern $ Implies sort first second
+    -> (EvaluatedCondition level, ConditionProof level)
+makeEvaluatedImplies _ ConditionFalse _ = (ConditionTrue, ConditionProof)
+makeEvaluatedImplies _ _ ConditionTrue = (ConditionTrue, ConditionProof)
+makeEvaluatedImplies _ ConditionTrue second = (second, ConditionProof)
+makeEvaluatedImplies sort first ConditionFalse =
+    (fst $ makeEvaluatedNot sort first, ConditionProof)
+makeEvaluatedImplies
+    (ConditionSort sort)
+    (ConditionUnevaluable first)
+    (ConditionUnevaluable second)
+  =
+    ( ConditionUnevaluable $ asPurePattern $ ImpliesPattern $
+        Implies sort first second
+    , ConditionProof
+    )
 
+{--| 'makeEvaluatedIff' combines two evaluated conditions with an 'iff', doing
+some simplification.
+--}
 makeEvaluatedIff
-    :: Sort level
+    :: ConditionSort level
     -> EvaluatedCondition level
     -> EvaluatedCondition level
-    -> EvaluatedCondition level
--- TODO: Is it reasonable to use a different thing here?
-makeEvaluatedIff sort ConditionFalse second = makeEvaluatedNot sort second
-makeEvaluatedIff _ ConditionTrue second = second
-makeEvaluatedIff sort first@(ConditionUnevaluable _) ConditionFalse = makeEvaluatedNot sort first
-makeEvaluatedIff _ first@(ConditionUnevaluable _) ConditionTrue = first
-makeEvaluatedIff sort (ConditionUnevaluable first) (ConditionUnevaluable second) =
-    ConditionUnevaluable $ asPurePattern $ IffPattern $ Iff sort first second
+    -> (EvaluatedCondition level, ConditionProof level)
+makeEvaluatedIff sort ConditionFalse second =
+    (fst $ makeEvaluatedNot sort second, ConditionProof)
+makeEvaluatedIff _ ConditionTrue second = (second, ConditionProof)
+makeEvaluatedIff sort first@(ConditionUnevaluable _) ConditionFalse =
+    (fst $ makeEvaluatedNot sort first, ConditionProof)
+makeEvaluatedIff _ first@(ConditionUnevaluable _) ConditionTrue =
+    (first, ConditionProof)
+makeEvaluatedIff
+    (ConditionSort sort)
+    (ConditionUnevaluable first)
+    (ConditionUnevaluable second)
+  =
+    ( ConditionUnevaluable $ asPurePattern $ IffPattern $ Iff sort first second
+    , ConditionProof
+    )
 
+{--| 'makeEvaluatedNot' negates an evaluated condition, doing some
+simplification.
+--}
 makeEvaluatedNot
-    :: Sort level
+    :: ConditionSort level
     -> EvaluatedCondition level
-    -> EvaluatedCondition level
-makeEvaluatedNot _ ConditionFalse = ConditionTrue
-makeEvaluatedNot _ ConditionTrue  = ConditionFalse
-makeEvaluatedNot sort (ConditionUnevaluable condition) =
-    ConditionUnevaluable $ asPurePattern $ NotPattern $ Not sort condition
+    -> (EvaluatedCondition level, ConditionProof level)
+makeEvaluatedNot _ ConditionFalse = (ConditionTrue, ConditionProof)
+makeEvaluatedNot _ ConditionTrue  = (ConditionFalse, ConditionProof)
+makeEvaluatedNot (ConditionSort sort) (ConditionUnevaluable condition) =
+    ( ConditionUnevaluable $ asPurePattern $ NotPattern $ Not sort condition
+    , ConditionProof
+    )

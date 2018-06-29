@@ -1,7 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-|
 Module      : Data.Kore.Step.Function.UserDefined
-Description : Evaluates user-defined functions in a pattern
+Description : Evaluates user-defined functions in a pattern.
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
@@ -14,33 +14,44 @@ module Data.Kore.Step.Function.UserDefined
     ) where
 
 import           Data.Kore.AST.Common                  (Application (..),
-                                                        Pattern (..), Sort (..),
-                                                        Top (..))
+                                                        Pattern (..), Top (..))
 import           Data.Kore.AST.MetaOrObject            (MetaOrObject)
 import           Data.Kore.AST.PureML                  (CommonPurePattern,
                                                         asPurePattern)
 import           Data.Kore.IndexedModule.MetadataTools (MetadataTools (..))
 import           Data.Kore.Step.BaseStep               (AxiomPattern, StepperConfiguration (..),
                                                         stepWithAxiom)
-import           Data.Kore.Step.Condition.Condition    (EvaluatedCondition (..), UnevaluatedCondition (..),
+import           Data.Kore.Step.Condition.Condition    (ConditionSort (..),
+                                                        EvaluatedCondition (..),
+                                                        UnevaluatedCondition (..),
                                                         makeEvaluatedAnd)
-import           Data.Kore.Step.Function.Data          (CommonPurePatternFunctionEvaluator (..),
+import           Data.Kore.Step.Function.Data          (AttemptedFunctionResult (..),
+                                                        CommonPurePatternFunctionEvaluator (..),
                                                         ConditionEvaluator (..),
-                                                        FunctionEvaluation (..),
-                                                        FunctionResult (..))
+                                                        FunctionResult (..),
+                                                        FunctionResultProof (..))
 import           Data.Kore.Variables.Fresh.IntCounter  (IntCounter)
 
-import           Debug.Trace
+{--| 'axiomFunctionEvaluator' evaluates a user-defined function. After
+evaluating the function, it tries to re-evaluate all functions on the result.
 
+The function is assumed to be defined through an axiom.
+--}
 axiomFunctionEvaluator
     :: MetaOrObject level
     => MetadataTools level
-    -> Sort level
+    -> ConditionSort level
+    -- ^ Sort used for conditions. This function assumes that all conditions
+    -- have this sort and will use it to create new conditions.
     -> AxiomPattern level
+    -- ^ Axiom defining the current function.
     -> ConditionEvaluator level
+    -- ^ Evaluates conditions
     -> CommonPurePatternFunctionEvaluator level
+    -- ^ Evaluates functions in patterns
     -> Application level (CommonPurePattern level)
-    -> IntCounter (FunctionEvaluation level)
+    -- ^ The function on which to evaluate the current function.
+    -> IntCounter (AttemptedFunctionResult level, FunctionResultProof level)
 axiomFunctionEvaluator
     metadataTools
     conditionSort
@@ -48,12 +59,10 @@ axiomFunctionEvaluator
     (ConditionEvaluator conditionEvaluator)
     functionEvaluator
     app
-  = trace "axiomFunctionEvaluator" $
+  =
     case stepResult of
-        Left err -> do
-            e <- err
-            trace ("axiomFunctionEvaluator-Left " ++ show e) $ return NotApplicable
-        Right configurationWithProof -> trace "axiomFunctionEvaluator-Right" $
+        Left _ -> return (NotApplicable, FunctionResultProof)
+        Right configurationWithProof ->
             do
                 (   StepperConfiguration
                         { stepperConfigurationPattern = rewrittenPattern
@@ -61,10 +70,11 @@ axiomFunctionEvaluator
                         }
                     , _
                     ) <- configurationWithProof
-                evaluatedRewritingCondition <-
+                -- TODO(virgil): Get the step substitution and use it on the
+                -- condition.
+                (evaluatedRewritingCondition, _) <-
                     conditionEvaluator (UnevaluatedCondition rewritingCondition)
-                axiomFunctionEvaluatorAfterStep
-                    metadataTools
+                reevaluateFunctions
                     conditionSort
                     functionEvaluator
                     FunctionResult
@@ -78,24 +88,31 @@ axiomFunctionEvaluator
             (stepperConfiguration conditionSort app)
             axiom
     stepperConfiguration
-        :: Sort level
+        :: ConditionSort level
         -> Application level (CommonPurePattern level)
         -> StepperConfiguration level
-    stepperConfiguration conditionSort' app' = StepperConfiguration
-        { stepperConfigurationPattern = asPurePattern $ ApplicationPattern app'
-        , stepperConfigurationCondition =
-            asPurePattern $ TopPattern $ Top conditionSort'
-        , stepperConfigurationConditionSort = conditionSort'
-        }
+    stepperConfiguration conditionSort'@(ConditionSort sort) app' =
+        StepperConfiguration
+            { stepperConfigurationPattern =
+                asPurePattern $ ApplicationPattern app'
+            , stepperConfigurationCondition =
+                asPurePattern $ TopPattern $ Top sort
+            , stepperConfigurationConditionSort = conditionSort'
+            }
 
-axiomFunctionEvaluatorAfterStep
-    :: MetadataTools level
-    -> Sort level
+{--| 'reevaluateFunctions' re-evaluates functions after a user-defined function
+was evaluated.
+--}
+reevaluateFunctions
+    :: ConditionSort level
+    -- ^ Sort used for conditions. This function assumes that all conditions
+    -- have this sort and will use it to create new conditions.
     -> CommonPurePatternFunctionEvaluator level
+    -- ^ Evaluates functions in patterns.
     -> FunctionResult level
-    -> IntCounter (FunctionEvaluation level)
-axiomFunctionEvaluatorAfterStep
-    _
+    -- ^ Function evaluation result.
+    -> IntCounter (AttemptedFunctionResult level, FunctionResultProof level)
+reevaluateFunctions
     conditionSort
     (CommonPurePatternFunctionEvaluator functionEvaluator)
     FunctionResult
@@ -103,60 +120,48 @@ axiomFunctionEvaluatorAfterStep
         , functionResultCondition = rewritingCondition
         }
   = case rewritingCondition of
-        ConditionFalse -> return NotApplicable
+        ConditionFalse -> return (NotApplicable, FunctionResultProof)
         _ -> do
-            FunctionResult
+            ( FunctionResult
                 { functionResultPattern = simplifiedPattern
                 , functionResultCondition = simplificationCondition
-                } <- functionEvaluator rewrittenPattern
-            return $ resultFromSimplification
-                conditionSort
-                simplifiedPattern
-                --TODO: Maybe call a ConditionEvaluator
-                (makeEvaluatedAnd conditionSort rewritingCondition simplificationCondition)
-                rewrittenPattern
-                rewritingCondition
+                }
+             , _
+             ) <- functionEvaluator rewrittenPattern
+            return
+                ( firstSatisfiablePattern
+                    [   ( simplifiedPattern
+                        -- TODO(virgil): Maybe evaluate the 'and'
+                        , fst $ makeEvaluatedAnd
+                            conditionSort
+                            rewritingCondition
+                            simplificationCondition
+                        )
+                    , (rewrittenPattern, rewritingCondition)
+                    ]
+                , FunctionResultProof
+                )
 
-resultFromSimplification
-    :: Sort level
-    -> CommonPurePattern level
-    -> EvaluatedCondition level
-    -> CommonPurePattern level
-    -> EvaluatedCondition level
-    -> FunctionEvaluation level
-resultFromSimplification
-    _ simplifiedPattern ConditionTrue _ _
+{--| Returns the first pattern if its condition might be satisfiable, otherwise
+returns the second. Assumes that at least one pattern might be satisfiable.
+--}
+firstSatisfiablePattern
+    :: [(CommonPurePattern level, EvaluatedCondition level)]
+    -> AttemptedFunctionResult level
+firstSatisfiablePattern
+    ((patt, ConditionTrue) : _)
   = Applied FunctionResult
-        { functionResultPattern   = simplifiedPattern
+        { functionResultPattern   = patt
         , functionResultCondition = ConditionTrue
         }
-resultFromSimplification
-    _
-    simplifiedPattern
-    simplificationCondition @ (ConditionUnevaluable _)
-    _ _
+firstSatisfiablePattern
+    ((patt, condition @ (ConditionUnevaluable _)) : _)
   = Applied FunctionResult
-        { functionResultPattern   = simplifiedPattern
-        , functionResultCondition = simplificationCondition
+        { functionResultPattern   = patt
+        , functionResultCondition = condition
         }
-resultFromSimplification
-    _ _
-    ConditionFalse
-    rewrittenPattern
-    ConditionTrue
-  = Applied FunctionResult
-        { functionResultPattern   = rewrittenPattern
-        , functionResultCondition = ConditionTrue
-        }
-resultFromSimplification
-    _ _
-    ConditionFalse
-    rewrittenPattern
-    rewritingCondition @ (ConditionUnevaluable _)
-  = Applied FunctionResult
-        { functionResultPattern   = rewrittenPattern
-        , functionResultCondition = rewritingCondition
-        }
-resultFromSimplification
-    _ _ ConditionFalse _ ConditionFalse
-  = error "Unexpected case."
+firstSatisfiablePattern
+    ((_, ConditionFalse) : reminder)
+  = firstSatisfiablePattern reminder
+firstSatisfiablePattern [] =
+    error "Unexpected case."

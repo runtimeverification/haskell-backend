@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MonoLocalBinds        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Data.Kore.Step.Function.IntegrationTest (functionIntegrationTests) where
 
@@ -23,12 +24,14 @@ import           Data.Kore.Building.Sorts
 import           Data.Kore.Comparators                 ()
 import           Data.Kore.MetaML.AST                  (CommonMetaPattern)
 import           Data.Kore.Step.BaseStep               (AxiomPattern (..))
-import           Data.Kore.Step.Condition.Condition    (EvaluatedCondition (..))
+import           Data.Kore.Step.Condition.Condition    (ConditionSort (..),
+                                                        EvaluatedCondition (..))
 import           Data.Kore.Step.Function.Data          (ApplicationFunctionEvaluator (..),
+                                                        AttemptedFunctionResult (..),
                                                         CommonPurePatternFunctionEvaluator,
                                                         ConditionEvaluator,
-                                                        FunctionEvaluation (..),
-                                                        FunctionResult (..))
+                                                        FunctionResult (..),
+                                                        FunctionResultProof (..))
 import           Data.Kore.Step.Function.Evaluator     (evaluateFunctions)
 import           Data.Kore.Step.Function.UserDefined   (axiomFunctionEvaluator)
 import           Data.Kore.Variables.Fresh.IntCounter  (IntCounter,
@@ -49,42 +52,33 @@ functionIntegrationTests =
                 (evaluate
                     mockMetadataTools
                     (Map.singleton fId
-                        [ ApplicationFunctionEvaluator $ axiomFunctionEvaluator
-                            mockMetadataTools
-                            (asAst SortSort)
-                            AxiomPattern
-                                { axiomPatternLeft  =
-                                    asPureMetaPattern (metaF (v1 PatternSort))
-                                , axiomPatternRight =
-                                    asPureMetaPattern (metaG (v1 PatternSort))
-                                }
+                        [ axiomEvaluator
+                            (conditionSort SortSort)
+                            (asPureMetaPattern (metaF (v1 PatternSort)))
+                            (asPureMetaPattern (metaG (v1 PatternSort)))
                         ]
                     )
-                    (asAst SortSort)
+                    (conditionSort SortSort)
                     (asPureMetaPattern (metaF metaC))
                 )
             )
         , testCase "Evaluates inside functions"
             (assertEqualWithExplanation ""
                 FunctionResult
-                    { functionResultPattern = asPureMetaPattern (metaG (metaG metaC))
+                    { functionResultPattern =
+                        asPureMetaPattern (metaG (metaG metaC))
                     , functionResultCondition = ConditionTrue
                     }
                 (evaluate
                     mockMetadataTools
                     (Map.singleton fId
-                        [ ApplicationFunctionEvaluator $ axiomFunctionEvaluator
-                            mockMetadataTools
-                            (asAst SortSort)
-                            AxiomPattern
-                                { axiomPatternLeft  =
-                                    asPureMetaPattern (metaF (v1 PatternSort))
-                                , axiomPatternRight =
-                                    asPureMetaPattern (metaG (v1 PatternSort))
-                                }
+                        [ axiomEvaluator
+                            (conditionSort SortSort)
+                            (asPureMetaPattern (metaF (v1 PatternSort)))
+                            (asPureMetaPattern (metaG (v1 PatternSort)))
                         ]
                     )
-                    (asAst SortSort)
+                    (conditionSort SortSort)
                     (asPureMetaPattern (metaF (metaF metaC)))
                 )
             )
@@ -98,18 +92,13 @@ functionIntegrationTests =
                 (evaluate
                     mockMetadataTools
                     (Map.singleton fId
-                        [ ApplicationFunctionEvaluator $ axiomFunctionEvaluator
-                            mockMetadataTools
-                            (asAst SortSort)
-                            AxiomPattern
-                                { axiomPatternLeft  =
-                                    asPureMetaPattern (metaF (v1 PatternSort))
-                                , axiomPatternRight =
-                                    asPureMetaPattern (metaG (v1 PatternSort))
-                                }
+                        [ axiomEvaluator
+                            (conditionSort SortSort)
+                            (asPureMetaPattern (metaF (v1 PatternSort)))
+                            (asPureMetaPattern (metaG (v1 PatternSort)))
                         ]
                     )
-                    (asAst SortSort)
+                    (conditionSort SortSort)
                     (asPureMetaPattern
                         (metaF (metaOr PatternSort (metaF metaC) (metaF metaC)))
                     )
@@ -125,18 +114,13 @@ functionIntegrationTests =
                 (evaluate
                     mockMetadataTools
                     (Map.singleton fId
-                        [ ApplicationFunctionEvaluator $ axiomFunctionEvaluator
-                            mockMetadataTools
-                            (asAst SortSort)
-                            AxiomPattern
-                                { axiomPatternLeft  =
-                                    asPureMetaPattern (metaF (v1 PatternSort))
-                                , axiomPatternRight =
-                                    asPureMetaPattern (metaG (v1 PatternSort))
-                                }
+                        [ axiomEvaluator
+                            (conditionSort SortSort)
+                            (asPureMetaPattern (metaF (v1 PatternSort)))
+                            (asPureMetaPattern (metaG (v1 PatternSort)))
                         ]
                     )
-                    (asAst SortSort)
+                    (conditionSort SortSort)
                     (asPureMetaPattern
                         (metaF (metaSigma (metaF metaC) (metaF metaC)))
                     )
@@ -146,73 +130,77 @@ functionIntegrationTests =
             (assertEqualWithExplanation ""
                 FunctionResult
                     { functionResultPattern = asPureMetaPattern (metaF metaD)
-                    , functionResultCondition = ConditionUnevaluable (asPureMetaPattern metaC)
+                    , functionResultCondition = conditionUnevaluable metaC
                     }
                 (evaluate
                     mockMetadataTools
                     (Map.singleton cId
-                        [ ApplicationFunctionEvaluator $ mockEvaluator
-                            (Applied FunctionResult
-                                { functionResultPattern   = asPureMetaPattern metaD
-                                , functionResultCondition =
-                                    ConditionUnevaluable (asPureMetaPattern metaC)
-                                }
-                            )
+                        [ appliedMockEvaluator FunctionResult
+                            { functionResultPattern   = asPureMetaPattern metaD
+                            , functionResultCondition =
+                                conditionUnevaluable metaC
+                            }
                         ]
                     )
-                    (asAst SortSort)
+                    (conditionSort SortSort)
                     (asPureMetaPattern (metaF metaC))
                 )
             )
         , testCase "Merges conditions"
             (assertEqualWithExplanation ""
                 FunctionResult
-                    { functionResultPattern = asPureMetaPattern (metaG (metaSigma metaE metaE))
+                    { functionResultPattern =
+                        asPureMetaPattern (metaG (metaSigma metaE metaE))
                     , functionResultCondition =
-                        ConditionUnevaluable $ asPureMetaPattern
+                        conditionUnevaluable
                             (metaAnd SortSort
-                                (metaCeil (ResultSort SortSort) PatternSort metaC)
-                                (metaCeil (ResultSort SortSort) PatternSort metaD)
+                                (metaCeil
+                                    (ResultSort SortSort) PatternSort metaC
+                                )
+                                (metaCeil
+                                    (ResultSort SortSort) PatternSort metaD
+                                )
                             )
                     }
                 (evaluate
                     mockMetadataTools
                     (Map.fromList
                         [   ( cId
-                            ,   [ ApplicationFunctionEvaluator $ mockEvaluator
-                                    (Applied FunctionResult
-                                        { functionResultPattern   = asPureMetaPattern metaE
-                                        , functionResultCondition =
-                                            ConditionUnevaluable (asPureMetaPattern (metaCeil (ResultSort SortSort) PatternSort metaC))
-                                        }
-                                    )
+                            ,   [ appliedMockEvaluator FunctionResult
+                                    { functionResultPattern   =
+                                        asPureMetaPattern metaE
+                                    , functionResultCondition =
+                                        conditionUnevaluable
+                                            (metaCeil
+                                                (ResultSort SortSort)
+                                                PatternSort
+                                                metaC)
+                                    }
                                 ]
                             )
                         ,   ( dId
-                            ,   [ ApplicationFunctionEvaluator $ mockEvaluator
-                                    (Applied FunctionResult
-                                        { functionResultPattern   = asPureMetaPattern metaE
-                                        , functionResultCondition =
-                                            ConditionUnevaluable (asPureMetaPattern (metaCeil (ResultSort SortSort) PatternSort metaD))
-                                        }
-                                    )
+                            ,   [ appliedMockEvaluator FunctionResult
+                                    { functionResultPattern   =
+                                        asPureMetaPattern metaE
+                                    , functionResultCondition =
+                                        conditionUnevaluable
+                                            (metaCeil
+                                                (ResultSort SortSort)
+                                                PatternSort
+                                                metaD)
+                                    }
                                 ]
                             )
                         ,   (fId
-                            ,   [ ApplicationFunctionEvaluator $ axiomFunctionEvaluator
-                                    mockMetadataTools
-                                    (asAst SortSort)
-                                    AxiomPattern
-                                        { axiomPatternLeft  =
-                                            asPureMetaPattern (metaF (v1 PatternSort))
-                                        , axiomPatternRight =
-                                            asPureMetaPattern (metaG (v1 PatternSort))
-                                        }
+                            ,   [ axiomEvaluator
+                                    (conditionSort SortSort)
+                                    (asPureMetaPattern (metaF (v1 PatternSort)))
+                                    (asPureMetaPattern (metaG (v1 PatternSort)))
                                 ]
                             )
                         ]
                     )
-                    (asAst SortSort)
+                    (conditionSort SortSort)
                     (asPureMetaPattern (metaF (metaSigma metaC metaD)))
                 )
             )
@@ -220,81 +208,90 @@ functionIntegrationTests =
             (assertEqualWithExplanation ""
                 FunctionResult
                     { functionResultPattern = asPureMetaPattern (metaF metaE)
-                    , functionResultCondition = ConditionUnevaluable (asPureMetaPattern metaD)
+                    , functionResultCondition = conditionUnevaluable metaD
                     }
                 (evaluate
                     mockMetadataTools
                     (Map.fromList
                         [   ( cId
-                            ,   [ ApplicationFunctionEvaluator $ axiomFunctionEvaluator
-                                    mockMetadataTools
-                                    (asAst SortSort)
-                                    AxiomPattern
-                                        { axiomPatternLeft  =
-                                            asPureMetaPattern metaC
-                                        , axiomPatternRight =
-                                            asPureMetaPattern metaD
-                                        }
+                            ,   [ axiomEvaluator
+                                    (conditionSort SortSort)
+                                    (asPureMetaPattern metaC)
+                                    (asPureMetaPattern metaD)
                                 ]
                             )
                         ,   ( dId
-                            ,   [ ApplicationFunctionEvaluator $ mockEvaluator
-                                    (Applied FunctionResult
-                                        { functionResultPattern   = asPureMetaPattern metaE
-                                        , functionResultCondition =
-                                            ConditionUnevaluable (asPureMetaPattern metaD)
-                                        }
-                                    )
+                            ,   [ appliedMockEvaluator FunctionResult
+                                    { functionResultPattern   =
+                                        asPureMetaPattern metaE
+                                    , functionResultCondition =
+                                        conditionUnevaluable metaD
+                                    }
                                 ]
                             )
                         ]
                     )
-                    (asAst SortSort)
+                    (conditionSort SortSort)
                     (asPureMetaPattern (metaF metaC))
                 )
             )
         ]
 
+axiomEvaluator
+    :: ConditionSort Meta
+    -> CommonPurePattern Meta
+    -> CommonPurePattern Meta
+    -> ApplicationFunctionEvaluator Meta
+axiomEvaluator sort left right =
+    ApplicationFunctionEvaluator
+        (axiomFunctionEvaluator
+            mockMetadataTools
+            sort
+            AxiomPattern
+                { axiomPatternLeft  = left
+                , axiomPatternRight = right
+                }
+        )
+
+conditionSort :: AsAst (Sort level) s => s -> ConditionSort level
+conditionSort sort = ConditionSort (asAst sort)
+
+appliedMockEvaluator
+    :: FunctionResult level -> ApplicationFunctionEvaluator level
+appliedMockEvaluator result =
+    ApplicationFunctionEvaluator (mockEvaluator (Applied result))
+
 mockEvaluator
-    :: FunctionEvaluation level
+    :: AttemptedFunctionResult level
     -> ConditionEvaluator level
     -> CommonPurePatternFunctionEvaluator level
     -> Application level (CommonPurePattern level)
-    -> IntCounter (FunctionEvaluation level)
+    -> IntCounter (AttemptedFunctionResult level, FunctionResultProof level)
 mockEvaluator evaluation _ _ _ =
-    return evaluation
+    return (evaluation, FunctionResultProof)
 
 evaluate
     :: MetadataTools level
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
-    -> Sort level
+    -> ConditionSort level
     -> CommonPurePattern level
     -> FunctionResult level
-evaluate metadataTools functionIdToEvaluator conditionSort patt =
-    fst
+evaluate metadataTools functionIdToEvaluator conditionSort' patt =
+    fst $ fst
         (runIntCounter
             (evaluateFunctions
-                metadataTools functionIdToEvaluator conditionSort patt
+                metadataTools functionIdToEvaluator conditionSort' patt
             )
             0
         )
 
 v1 :: MetaSort sort => sort -> MetaVariable sort
 v1 = metaVariable "#v1" AstLocationTest
-a1 :: MetaSort sort => sort -> MetaVariable sort
-a1 = metaVariable "#a1" AstLocationTest
-b1 :: MetaSort sort => sort -> MetaVariable sort
-b1 = metaVariable "#b1" AstLocationTest
-x1 :: MetaSort sort => sort -> MetaVariable sort
-x1 = metaVariable "#x1" AstLocationTest
-y1 :: MetaSort sort => sort -> MetaVariable sort
-y1 = metaVariable "#y1" AstLocationTest
-var_0 :: MetaSort sort => sort -> MetaVariable sort
-var_0 = metaVariable "#var_0" AstLocationTest
-var_1 :: MetaSort sort => sort -> MetaVariable sort
-var_1 = metaVariable "#var_1" AstLocationTest
-top :: MetaSort sort => sort -> CommonMetaPattern
-top sort = asPureMetaPattern $ metaTop sort
+
+conditionUnevaluable
+    :: ProperPattern Meta sort patt => patt -> EvaluatedCondition Meta
+conditionUnevaluable patt =
+    ConditionUnevaluable (asPureMetaPattern patt)
 
 asPureMetaPattern
     :: ProperPattern Meta sort patt => patt -> CommonMetaPattern

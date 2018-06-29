@@ -767,3 +767,17 @@ instance EqualWithExplanation (EvaluatedCondition level)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
+
+
+instance SumEqualWithExplanation (ConditionSort level)
+  where
+    sumConstructorPair
+        (ConditionSort a1) (ConditionSort a2)
+      =
+        SumConstructorSameWithArguments
+            (EqWrap "ConditionSort" a1 a2)
+
+instance EqualWithExplanation (ConditionSort level)
+  where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
