@@ -77,7 +77,7 @@ mainVersion time =
     where
       packageVersion = "UNKNOWN" -- for now, TODO: reify package.yaml or some other source
       formatGit (_:mm:dd:tt:yy:tz:_) = [yy,mm,dd,tt,tz]
-      formatGit time                 = time
+      formatGit t                    = t
       gitTime = (unwords . formatGit . words) $gitCommitDate
       exeTime = formatTime defaultTimeLocale  "%Y %b %d %X %z" time
 
