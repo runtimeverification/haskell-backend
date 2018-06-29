@@ -1,5 +1,4 @@
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE CPP             #-}
 
 module GlobalMain
     ( MainOptions(..)
@@ -16,6 +15,8 @@ import           Data.Semigroup                         ( (<>) )
 import           Development.GitRev                     ( gitBranch
                                                         , gitHash
                                                         , gitCommitDate )
+import           Data.Time.LocalTime                    (ZonedTime, getZonedTime)
+import           Data.Time.Format                       (formatTime, defaultTimeLocale)
 import           System.Clock                           ( Clock (Monotonic)
                                                         , diffTimeSpec
                                                         , getTime )
@@ -58,29 +59,27 @@ mainGlobal
     -> IO      (MainOptions options)
 mainGlobal localOptionsParser modifiers = do
   options <- commandLineParse localOptionsParser modifiers
-  when ( willVersion $ globalOptions options ) mainVersion
+  when (willVersion $ globalOptions options) (getZonedTime >>= mainVersion)
   return options
 
 
 -- | main function to print version information
-mainVersion :: IO ()
-mainVersion = mapM_ putStrLn
-              [ "K framework version " ++ packageVersion
-              , "Git:"
-              , "  revision:\t"    ++ $gitHash
-              , "  branch:\t"      ++ $gitBranch
-              , "  last commit:\t" ++  gitTime
-              , "Build date:\t"    ++  exeTime
-              ]
+mainVersion :: ZonedTime -> IO ()
+mainVersion time =
+      mapM_ putStrLn
+      [ "K framework version " ++ packageVersion
+      , "Git:"
+      , "  revision:\t"    ++ $gitHash
+      , "  branch:\t"      ++ $gitBranch
+      , "  last commit:\t" ++  gitTime
+      , "Build date:\t"    ++  exeTime
+      ]
     where
       packageVersion = "UNKNOWN" -- for now, TODO: reify package.yaml or some other source
       formatGit (_:mm:dd:tt:yy:tz:_) = [yy,mm,dd,tt,tz]
       formatGit time                 = time
-      formatExe (mm:dd:yy:tt:_)      = [yy,mm,dd,tt,"LOCAL"]
-      formatExe time                 = time
       gitTime = (unwords . formatGit . words) $gitCommitDate
-      exeTime = (unwords . formatExe . words) (__DATE__++" "++ __TIME__)
-
+      exeTime = formatTime defaultTimeLocale  "%Y %b %d %X %z" time
 
 --------------------
 -- Option Parsers --
