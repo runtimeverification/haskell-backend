@@ -20,10 +20,13 @@ Portability : portable
 {-# LANGUAGE DeriveTraversable      #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE PatternSynonyms        #-}
+{-# LANGUAGE ConstraintKinds        #-}
+
 
 
 module Data.Kore.Proof.MLProofSystem where
 
+import           Data.Reflection
 import           Data.Fix
 import           Data.Foldable
 import qualified Data.Set as S
@@ -36,9 +39,13 @@ import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
+import           Data.Kore.IndexedModule.MetadataTools
 
 
 import           Data.Kore.ASTPrettyPrint
+import           Data.Kore.Proof.SmartConstructors
+import           Data.Kore.Proof.Substitution
+
 
 type Term = CommonPurePattern Object
 type Var = Variable Object
@@ -64,7 +71,9 @@ data LargeRule subproof
  | Discharge Term subproof 
  | Abstract Var subproof
  | ModusPonens subproof subproof
- | FunctionalSubst subproof
+ -- (\forall x. phi) /\ (\exists y. phi' = y) -> phi[phi'/x]
+ -- FunctionalSubst x phi y phi'
+ | FunctionalSubst Var Term Var Term
  -- | \exists y . x = y
  -- FunctionalVar x y 
  | FunctionalVar Var Var
@@ -93,6 +102,7 @@ data LargeRule subproof
  -- \exists y . (y \in \phi_i /\ x \in \sigma(phi_1,...,y,...,phi_n))
  -- MembershipCong x y i (\sigma(...))
  | MembershipCong Var Var Int Term
+ deriving(Show,Functor,Foldable)
 
 
 assume :: Term -> Proof 
@@ -101,9 +111,6 @@ assume formula = By formula (Assumption formula) (S.singleton formula)
 implies :: Term -> Term -> Term
 implies a b = Fix $ ImpliesPattern $ Implies placeholderSort a b
 
-placeholderSort :: Sort Object
-placeholderSort = SortVariableSort $ SortVariable $ noLocationId "S"
-
 discharge :: Term -> Proof -> Proof
 discharge hypothesis prop@(By conclusion justification assumptions)
    = By 
@@ -111,16 +118,35 @@ discharge hypothesis prop@(By conclusion justification assumptions)
   (Discharge hypothesis prop) 
   (S.delete hypothesis assumptions)
 
-interpretRule
-  :: LargeRule Proof
+useRule
+  :: Given (MetadataTools Object) 
+  => LargeRule Proof
   -> Proof
-interpretRule (Assumption formula) 
+useRule (Assumption formula) 
  = assume formula
-interpretRule (Discharge hypothesis conclusion) 
+useRule (Discharge hypothesis conclusion) 
  = discharge hypothesis conclusion
-interpretRule (Abstract var conclusion)
+useRule (Abstract var conclusion)
  | elem var (getFreeVars conclusion) = abstract var conclusion
  | otherwise = error $ "Variable " ++ show var ++ " appears in assumptions."
+useRule rule = 
+  By 
+  (interpretRule rule)
+  rule
+  (S.unions $ map (assumptions . unFix) $ toList rule)
+
+interpretRule
+  :: Given (MetadataTools Object)
+  => LargeRule Proof 
+  -> Term 
+interpretRule (ModusPonens a b) = 
+  let (Implies_ _ a' b') = conclusion $ unFix b 
+  in b'
+interpretRule (FunctionalSubst x phi y phi') = 
+  ((mkForall x phi) `mkAnd` (mkExists y (phi' `mkEquals` Var_ y))) 
+  `mkImplies` 
+  (subst (Equals_ fixmeSort fixmeSort (Var_ x) phi' ) phi)
+interpretRule (FunctionalVar x y) = mkExists y (Var_ x `mkEquals` Var_ y)
 
 abstract :: Var -> Proof -> Proof
 abstract var prop@(By conclusion justification assumptions)

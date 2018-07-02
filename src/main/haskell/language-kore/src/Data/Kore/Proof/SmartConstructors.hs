@@ -102,7 +102,7 @@ pattern Not_          s2   a   = Fix (NotPattern (Not s2 a))
 pattern Or_           s2   a b = Fix (OrPattern (Or s2 a b))
 pattern Rewrites_     s2   a b = Fix (RewritesPattern (Rewrites s2 a b))
 pattern Top_          s2       = Fix (TopPattern (Top s2))
-pattern Var_          s2 v     = Fix (VariablePattern (Variable v s2))   
+pattern Var_             v     = Fix (VariablePattern v)   
 
 patternLens
   :: (Applicative f, MetaOrObject level) 
@@ -123,7 +123,7 @@ patternLens
   Bottom_    s2       -> Bottom_   <$>          o s2
   Ceil_   s1 s2   a   -> Ceil_     <$> i s1 <*> o s2           <*> f a
   DV_        s2   a   -> DV_       <$>          o s2           <*> r a
-  Equals_ s1 s2   a b -> Equals_   <$> i s1 <*> o s2           <*> f a <*> f b
+  Equals_ s1 s2   a b -> Equals_   <$> i s1 <*> o s2           <*> r a <*> r b
   Exists_    s2 v a   -> Exists_   <$>          o s2 <*> var v <*> r a
   Floor_  s1 s2   a   -> Floor_    <$> i s1 <*> o s2           <*> f a
   Forall_    s2 v a   -> Forall_   <$>          o s2 <*> var v <*> r a
@@ -135,7 +135,7 @@ patternLens
   Or_        s2   a b -> Or_       <$>          o s2           <*> r a <*> r b
   Rewrites_  s2   a b -> Rewrites_ <$>          o s2           <*> r a <*> r b
   Top_       s2       -> Top_      <$>          o s2
-  -- Var_       s2 v     -> Var_      <$>          o s2 <*> var v
+  Var_          v     -> Var_      <$>                   var v
  
 resultSort       f = patternLens pure f    pure pure pure
 inputSort        f = patternLens f    pure pure pure pure
@@ -152,70 +152,15 @@ forceSort
   -> Maybe (CommonPurePattern level)
 forceSort s p = 
   if isRigid p
-  then checkAlreadyCorrectSort s p
+    then checkAlreadyCorrectSort s p
   else if isFlexible p 
-  then Just $ p & resultSort .~ s
-  else traverseOf rigidChildren (forceSort s) p
+    then Just $ p & resultSort .~ s
+    else traverseOf rigidChildren (forceSort s) p
 
 checkAlreadyCorrectSort s p
  | getSort p == s = Just p 
  | otherwise = Nothing
 
---TODO: make "sortRelevantChildren" and "resultSort" lenses. 
--- forceSort 
---   :: MetaOrObject level
---   => Sort level 
---   -> CommonPurePattern level
---   -> Maybe (CommonPurePattern level)
--- forceSort s p = Fix <$> 
---   case unFix p of 
---     AndPattern (And _ a b) -> do 
---       a' <- forceSort s a 
---       b' <- forceSort s b 
---       return $ AndPattern (And s a' b')
---     BottomPattern (Bottom _) -> 
---       return $ BottomPattern (Bottom s)
---     CeilPattern (Ceil s1 _ a) -> 
---       return $ CeilPattern (Ceil s1 s a)
---     EqualsPattern (Equals s1 _ a b) -> 
---       return $ EqualsPattern (Equals s1 s a b)
---     ExistsPattern (Exists s1 v a) -> do
---       a' <- forceSort s a 
---       return $ ExistsPattern (Exists s v a)
---     FloorPattern (Floor s1 _ a) -> 
---       return $ FloorPattern (Floor s1 s a)
---     ForallPattern (Forall s1 v a) -> do
---       a' <- forceSort s a 
---       return $ ForallPattern (Forall s v a) 
---     IffPattern (Iff s1 a b) -> do 
---       a' <- forceSort s a 
---       b' <- forceSort s b 
---       return $ IffPattern (Iff s a' b')  
---     ImpliesPattern (Implies s1 a b) -> do 
---       a' <- forceSort s a 
---       b' <- forceSort s b 
---       return $ ImpliesPattern (Implies s a' b')  
---     InPattern (In s1 _ a b) ->
---       return $ InPattern (In s1 s a b)
---     NextPattern (Next _ a) -> do 
---       a' <- forceSort s a 
---       return $ NextPattern (Next s a')
---     NotPattern (Not _ a) -> do 
---       a' <- forceSort s a 
---       return $ NotPattern (Not s a')
---     OrPattern (Or _ a b) -> do 
---       a' <- forceSort s a 
---       b' <- forceSort s b 
---       return $ OrPattern (Or s a' b')
---     RewritesPattern (Rewrites _ a b) -> do 
---       a' <- forceSort s a 
---       b' <- forceSort s b 
---       return $ RewritesPattern (Rewrites s a' b')
---     TopPattern (Top _) -> 
---       return $ TopPattern (Top s)
---     _ -> Nothing 
-    -- we can't change the sort of an application
-    -- OR CAN WE???
 
 makeSortsAgree
   :: (MetaOrObject level, Given (MetadataTools level))
@@ -307,8 +252,17 @@ mkTop
   => CommonPurePattern level 
 mkTop = Top_ flexibleSort
 
+mkVar = Var_
+
 test :: CommonPurePattern Object
-test = dummyEnvironment @Object (mkOr mkTop mkBottom)
+test = dummyEnvironment @Object testPattern
+
+testPattern :: Given (MetadataTools Object) => CommonPurePattern Object
+testPattern = 
+  mkOr 
+  (mkExists (Variable (noLocationId "a") placeholderSort) 
+    (mkVar (Variable (noLocationId "A") placeholderSort)) )
+  (mkVar (Variable (noLocationId "A") placeholderSort))
 
 dummyEnvironment
   :: forall level r . MetaOrObject level => (Given (MetadataTools level) => r) -> r
@@ -323,6 +277,10 @@ dummyMetadataTools = MetadataTools
     , getArgumentSorts = const [] 
     , getResultSort    = const placeholderSort
     }
+
+var :: MetaOrObject level => String -> Variable level
+var x = 
+  Variable (noLocationId x) placeholderSort 
 
 placeholderSort 
   :: MetaOrObject level 
