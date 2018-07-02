@@ -67,9 +67,8 @@ extractPurePattern level p =
 -- Should be temporary measure
 sentencePureToKore
     :: MetaOrObject level => PureSentence level -> KoreSentence
-sentencePureToKore (SentenceAliasSentence (SentenceAlias a b c d e f)) =
-  constructUnifiedSentence SentenceAliasSentence $
-    SentenceAlias a b c (patternPureToKore <$> d) (patternPureToKore <$> e) f
+sentencePureToKore (SentenceAliasSentence sa) =
+    asSentence $ aliasSentencePureToKore sa
 sentencePureToKore (SentenceSymbolSentence (SentenceSymbol a b c d)) =
     constructUnifiedSentence SentenceSymbolSentence $ SentenceSymbol a b c d
 sentencePureToKore (SentenceImportSentence (SentenceImport a b)) =
@@ -89,14 +88,23 @@ sentencePureToKore (SentenceHookSentence (SentenceHookedSort mss)) =
 sentencePureToKore (SentenceHookSentence (SentenceHookedSymbol (SentenceSymbol a b c d))) =
     constructUnifiedSentence (SentenceHookSentence . SentenceHookedSymbol) $ SentenceSymbol a b c d
 
+aliasSentencePureToKore
+    :: MetaOrObject level
+    => PureSentenceAlias level
+    -> KoreSentenceAlias level
+aliasSentencePureToKore msx = msx
+    { sentenceAliasLeftPattern =
+        patternPureToKore <$> sentenceAliasLeftPattern msx
+    , sentenceAliasRightPattern =
+        patternPureToKore <$> sentenceAliasRightPattern msx
+    }
+
 axiomSentencePureToKore
     :: MetaOrObject level
     => PureSentenceAxiom level
     -> KoreSentenceAxiom
-axiomSentencePureToKore msx = SentenceAxiom
-    { sentenceAxiomAttributes =
-        sentenceAxiomAttributes msx
-    , sentenceAxiomPattern =
+axiomSentencePureToKore msx = msx
+    { sentenceAxiomPattern =
         patternPureToKore (sentenceAxiomPattern msx)
     , sentenceAxiomParameters =
         map asUnified (sentenceAxiomParameters msx)
