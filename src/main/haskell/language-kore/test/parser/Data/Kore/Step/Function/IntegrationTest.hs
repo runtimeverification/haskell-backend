@@ -22,6 +22,7 @@ import           Data.Kore.Building.AsAst
 import           Data.Kore.Building.Patterns
 import           Data.Kore.Building.Sorts
 import           Data.Kore.Comparators                 ()
+import           Data.Kore.Error                       (printError)
 import           Data.Kore.MetaML.AST                  (CommonMetaPattern)
 import           Data.Kore.Step.BaseStep               (AxiomPattern (..))
 import           Data.Kore.Step.Condition.Condition    (ConditionSort (..),
@@ -295,7 +296,10 @@ conditionUnevaluable patt =
 
 asPureMetaPattern
     :: ProperPattern Meta sort patt => patt -> CommonMetaPattern
-asPureMetaPattern patt = patternKoreToPure Meta (asAst patt)
+asPureMetaPattern patt =
+    case patternKoreToPure Meta (asAst patt) of
+        Left err -> error (printError err)
+        Right p  -> p
 
 mockMetadataTools :: MetadataTools Meta
 mockMetadataTools = MetadataTools
