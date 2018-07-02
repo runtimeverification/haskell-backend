@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 {-|
 Module      : Data.Kore.MetaML.Builders
 Description : Safe way to build larger 'level' patterns from components.
@@ -7,16 +8,51 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Data.Kore.AST.Builders where
+module Data.Kore.AST.Builders
+    ( alias_
+    , and_
+    , axiom_
+    , applyPS
+    , applyS
+    , bottom_ -- TODO: not used yet
+    , ceilS_ -- TODO: not used yet
+    , ceil_ -- TODO: not used yet
+    , equalsAxiom_
+    , equalsS_
+    , equals_
+    , exists_
+    , floorS_ -- TODO: not used yet
+    , floor_ -- TODO: not used yet
+    , forall_
+    , iff_ -- TODO: not used yet
+    , implies_
+    , inS_ -- TODO: not used yet
+    , in_ -- TODO: not used yet
+    , next_
+    , not_
+    , or_
+    , parameterizedAxiom_
+    , parameterizedEqualsAxiom_
+    , parameterizedSymbol_
+    , parameterizedVariable_
+    , rewrites_
+    , sortParameter
+    , sort_
+    , symbol_
+    , top_
+    , unparameterizedVariable_
+    ) where
+
+import           Data.Fix                   (Fix (..))
+import           Data.Proxy                 (Proxy (..))
 
 import           Data.Kore.AST.BuildersImpl
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
+import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTHelpers
 import           Data.Kore.Error
-import           Data.Fix
 
 {-|'sortParameter' defines a sort parameter that can be used in declarations.
 -}
@@ -69,13 +105,6 @@ applyS
     -> [CommonPurePatternStub level]
     -> CommonPurePatternStub level
 applyS sentence = applyPS sentence []
-
-isImplicitHead
-    :: SentenceSymbolOrAlias s
-    => s level (Pattern level) Variable
-    -> SymbolOrAlias level
-    -> Bool
-isImplicitHead sentence = (== getSentenceSymbolOrAliasHead sentence [])
 
 -- |Creates a 'level' 'Sort' from a given 'MetaSortType'
 sort_ :: MetaSortType -> Sort level
@@ -378,3 +407,84 @@ next_ =
                 , nextChild  = pattern1
                 }
         )
+
+-- |Builds a 'PatternStub' representing 'Rewrites' given 'PatternStub's for its
+-- operands.
+rewrites_
+    :: CommonPurePatternStub Object
+    -> CommonPurePatternStub Object
+    -> CommonPurePatternStub Object
+rewrites_ =
+    binaryPattern
+        (\commonSort firstPattern secondPattern ->
+            RewritesPattern Rewrites
+                { rewritesSort   = commonSort
+                , rewritesFirst  = firstPattern
+                , rewritesSecond = secondPattern
+                }
+        )
+
+{-|'parameterizedAxiom_' creates an axiom that has sort parameters from
+a pattern.
+-}
+parameterizedAxiom_
+    :: MetaOrObject level
+    => [SortVariable level]
+    -> CommonPurePatternStub level
+    -> PureSentenceAxiom level
+parameterizedAxiom_ _ (UnsortedPatternStub p) =
+    error
+        (  "Cannot infer sort for "
+        ++ show (p (dummySort (Proxy :: Proxy level))) ++ "."
+        )
+parameterizedAxiom_
+    parameters
+    ( SortedPatternStub SortedPattern
+        { sortedPatternPattern = p, sortedPatternSort = s }
+    )
+  =
+    SentenceAxiom
+        { sentenceAxiomParameters = parameters
+        , sentenceAxiomPattern = quantifyFreeVariables s (Fix p)
+        , sentenceAxiomAttributes = Attributes []
+        }
+{-|Creates an axiom with no sort parameters from a pattern.
+-}
+axiom_
+    :: MetaOrObject level
+    => CommonPurePatternStub level
+    -> PureSentenceAxiom level
+axiom_ = parameterizedAxiom_ []
+
+{-|'parameterizedEqualsAxiom_' is a special case for a 'parameterizedAxiom_' that
+contains an equals pattern.
+Since the result sort of equals is a parameter, this builder requires
+passing as argument that `SortVariable`.
+It is assumed that the sort variable is not used in any of
+the patterns. Using it will have unpredictable effects.
+-}
+parameterizedEqualsAxiom_
+    :: MetaOrObject level
+    => [SortVariable level]
+    -> SortVariable level
+    -> CommonPurePatternStub level
+    -> CommonPurePatternStub level
+    -> PureSentenceAxiom level
+parameterizedEqualsAxiom_ parameters equalsSortParam first second =
+    parameterizedAxiom_
+        (equalsSortParam : parameters)
+        (withSort (SortVariableSort equalsSortParam) (equals_ first second))
+
+{-|'equalsAxiom_' is a special case for an axiom that contains an equals pattern.
+Since the result sort of equals is a parameter, this builder requires
+passing as argument that `SortVariable`.
+It is assumed that the sort variable is not used in any of
+the patterns. Using it will have unpredictable effects.
+-}
+equalsAxiom_
+    :: MetaOrObject level
+    => SortVariable level
+    -> CommonPurePatternStub level
+    -> CommonPurePatternStub level
+    -> PureSentenceAxiom level
+equalsAxiom_ = parameterizedEqualsAxiom_ []

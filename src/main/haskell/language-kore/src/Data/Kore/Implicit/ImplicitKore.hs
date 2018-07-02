@@ -21,8 +21,6 @@ module Data.Kore.Implicit.ImplicitKore ( uncheckedKoreModule
                                        , symbolA
                                        , variableA
                                        , variable
-                                       , parameterizedAxiom
-                                       , equalsAxiom
                                        , sortsDeclaredA
                                        , sortDeclaredA
                                        , symbolDeclaredA
@@ -30,10 +28,9 @@ module Data.Kore.Implicit.ImplicitKore ( uncheckedKoreModule
 
 import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML                    (PureSentenceSymbol)
-import           Data.Kore.Implicit.ImplicitKoreImpl
+import           Data.Kore.AST.Sentence
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.Implicit.ImplicitVarsInternal
 import           Data.Kore.MetaML.AST
@@ -54,6 +51,21 @@ Some of the helper functions for building meta-objects are denoted in the same
 way, e.g. sort_.
 
 -}
+
+parameterizedEqualsAxiom
+    :: [SortVariable Meta]
+    -> MetaPatternStub
+    -> MetaPatternStub
+    -> MetaSentenceAxiom
+parameterizedEqualsAxiom parameters =
+    parameterizedEqualsAxiom_ parameters
+        (sortParameter Meta "#esp" AstLocationImplicit)
+
+equalsAxiom
+    :: MetaPatternStub
+    -> MetaPatternStub
+    -> MetaSentenceAxiom
+equalsAxiom = parameterizedEqualsAxiom []
 
 implicitSymbol
     :: String
@@ -187,7 +199,7 @@ variableAsPattern =
     implicitSymbol "#variableAsPattern" [variableMetaSort] patternMetaSort
 variableAsPatternA = applyS variableAsPattern
 variableAsPatternAxiom =
-    parameterizedAxiom
+    parameterizedAxiom_
         [pS]
         (withSort spS
             (implies_
@@ -291,7 +303,7 @@ occursFreeAxiom =
 freshName = implicitSymbol "#freshName" [patternListMetaSort] stringMetaSort
 freshNameA = applyS freshName
 freshNameAxiom =
-    parameterizedAxiom [pS]
+    parameterizedAxiom_ [pS]
         (not_
             (inVariableListA [spS]
                 [variableA [freshNameA [vL], vs], getFVFromPatternsA [vL]]
@@ -366,7 +378,7 @@ substitutePatternAxioms =
     ]
 
 alphaEquivalenceAxiom =
-    parameterizedAxiom [pS]
+    parameterizedAxiom_ [pS]
         (implies_
             (and_
                 (not_ (occursFreeA [spS] [v1, vphi]))
@@ -396,14 +408,14 @@ sortsDeclared =
     implicitParameterizedSymbol "#sortsDeclared" [pS] [sortListMetaSort] spS
 sortsDeclaredA = applyPS sortsDeclared
 sortsDeclaredAxioms =
-    [ parameterizedAxiom [pS] (sortsDeclaredA [spS] [nilSortListA])
+    [ parameterizedAxiom_ [pS] (sortsDeclaredA [spS] [nilSortListA])
     , parameterizedEqualsAxiom [pS]
         (sortsDeclaredA [spS] [consSortListA [vs, vS]])
         (and_ (sortDeclaredA [spS] [vs]) (sortsDeclaredA [spS] [vS]))
     ]
 
 ceilBTDeclaredAxiom =
-    parameterizedAxiom [pS]
+    parameterizedAxiom_ [pS]
         (implies_
             (and_ (sortDeclaredA [spS] [vs1]) (sortDeclaredA [spS] [vs2]))
             (symbolDeclaredA [spS] [ceilBTA [vs1, vs2]])
@@ -414,7 +426,7 @@ wellFormedPatterns =
         "#wellFormedPatterns" [pS] [patternListMetaSort] spS
 wellFormedPatternsA = applyPS wellFormedPatterns
 wellFormedPatternsAxioms =
-    [ parameterizedAxiom [pS]
+    [ parameterizedAxiom_ [pS]
         (wellFormedPatternsA [spS] [nilPatternListA])
     , parameterizedEqualsAxiom [pS]
         (wellFormedPatternsA [spS] [consPatternListA [vphi, vL]])
@@ -524,7 +536,7 @@ meta-theory of K.
 -}
 wellFormedImpliesProvableAxiom :: MetaPatternStub -> MetaSentenceAxiom
 wellFormedImpliesProvableAxiom pattern1 =
-    parameterizedAxiom [pS]
+    parameterizedAxiom_ [pS]
         (implies_
             (wellFormedA [spS] [pattern1])
             (provableA [spS] [pattern1])
@@ -590,7 +602,7 @@ propositionalLogicAxioms =
             ]
         )
     -- modus ponens
-    , parameterizedAxiom [pS]
+    , parameterizedAxiom_ [pS]
         (implies_
             (and_
                 (wellFormedA [spS] [vphi])
@@ -623,7 +635,7 @@ firstOrderLogicWithEqualityAxioms =
                     ]
                 ]
       in
-        parameterizedAxiom [pS]
+        parameterizedAxiom_ [pS]
             (implies_
                 (and_
                     (wellFormedA [spS] [variableAsPatternA [v]])
@@ -638,7 +650,7 @@ firstOrderLogicWithEqualityAxioms =
                 )
             )
     -- universal generalization
-    , parameterizedAxiom [pS]
+    , parameterizedAxiom_ [pS]
         (implies_
             (and_
                 (wellFormedA [spS] [vphi])
@@ -666,7 +678,7 @@ firstOrderLogicWithEqualityAxioms =
                 , substituteA [vphi, vpsi, v]
                 ]
       in
-        parameterizedAxiom [pS]
+        parameterizedAxiom_ [pS]
             (implies_
                 (and_
                     (wellFormedA [spS] [vpsi])
@@ -706,7 +718,7 @@ membershipAxioms =
     [ let
         introductionFormula = inA [vs1, vs2, variableAsPatternA [v], vphi]
       in
-        parameterizedAxiom [pS]
+        parameterizedAxiom_ [pS]
             (implies_
                 (and_
                     (wellFormedA [spS] [vphi])
@@ -727,7 +739,7 @@ membershipAxioms =
     , let
         introductionFormula = inA [vs1, vs2, variableAsPatternA [v], vphi]
       in
-        parameterizedAxiom [pS]
+        parameterizedAxiom_ [pS]
             (implies_
                 (and_
                     (wellFormedA [spS] [vphi])
@@ -776,7 +788,7 @@ membershipAxioms =
                 , forallA
                     [vs2, vu, inA [vs1, vs2, variableAsPatternA [v], vphi]]]
       in
-        parameterizedAxiom [pS]
+        parameterizedAxiom_ [pS]
             (implies_
                 (and_
                     (wellFormedA [spS] [variableAsPatternA [vu]])
@@ -817,7 +829,7 @@ membershipAxioms =
                     ]
                 ]
       in
-        parameterizedAxiom [pS]
+        parameterizedAxiom_ [pS]
             (implies_
                 (and_
                     (and_
@@ -840,7 +852,7 @@ membershipAxioms =
     ]
 
 axiomAxiom =
-    parameterizedAxiom [pS]
+    parameterizedAxiom_ [pS]
         (implies_
             (wellFormedA [spS] [vphi])
             (implies_
