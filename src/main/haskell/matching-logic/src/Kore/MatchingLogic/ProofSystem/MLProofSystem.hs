@@ -10,12 +10,10 @@ import           Data.Kore.AST.Common                   (And (..),
                                                          SymbolOrAlias (..),
                                                          Variable)
 import qualified Data.Kore.AST.Common                   as Common (Forall (..))
-import           Data.Kore.AST.Kore                     (CommonKorePattern,
-                                                         UnifiedPattern)
+import           Data.Kore.AST.Kore                     (CommonKorePattern)
 import           Data.Kore.AST.MetaOrObject             (Meta (..),
                                                          Unified (..))
-import           Data.Kore.AST.PureToKore               (patternKoreToPure,
-                                                         patternPureToKore)
+import           Data.Kore.AST.PureToKore               (patternPureToKore)
 import           Data.Kore.ASTVerifier.PatternVerifier  (verifyPattern)
 import           Data.Kore.Error                        (Error, castError,
                                                          koreFail, koreFailWhen,
@@ -31,10 +29,9 @@ import           Data.Kore.Variables.Fresh.Class        (FreshVariablesClass (..
 import           Data.Kore.Variables.Sort               (TermWithSortVariablesClass (sortVariables))
 
 import           Kore.MatchingLogic.Error               (MLError)
-import           Kore.MatchingLogic.HilbertProof        (ProofSystem(..))
-import           Kore.MatchingLogic.ProofSystem.Minimal (MLRule(..),
-                                                         SubstitutingVariable(..),
-                                                         SubstitutedVariable(..))
+import           Kore.MatchingLogic.HilbertProof        (ProofSystem (..))
+import           Kore.MatchingLogic.ProofSystem.Minimal (MLRule (..), SubstitutedVariable (..),
+                                                         SubstitutingVariable (..))
 
 import           Data.Fix
 import qualified Data.Set                               as Set
@@ -291,7 +288,7 @@ instance
     PatternSubstitutionClass
         Substitution.Substitution
         Variable
-        UnifiedPattern
+        (Pattern Meta)
         (Either (Error MLError))
   where
 
@@ -330,18 +327,14 @@ checkVariableSubstitution
         psi1 (nameInKind "psi1")
         beforeSubstitution (nameInProposition "phi")
     afterSubstitution <-
-        -- TODO(virgil): this meta-to-kore and kore-to-meta transformation is
-        -- a hack, I should make substitutions work on all kinds of patterns.
-        patternKoreToPure Meta <$>
-            substitute
-                (patternPureToKore beforeSubstitution)
-                (Substitution.fromList
-                    [   ( UnifiedMeta substituted
-                        , patternPureToKore
-                            substitutingPattern
-                        )
-                    ]
-                )
+        substitute
+            beforeSubstitution
+            (Substitution.fromList
+                [   ( UnifiedMeta substituted
+                    , substitutingPattern
+                    )
+                ]
+            )
     testFormulaEquality
         psi2 (nameInKind "psi2")
         afterSubstitution (nameInProposition "phi[substituting/substituted]")

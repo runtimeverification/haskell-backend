@@ -33,6 +33,7 @@ import           Data.Kore.AST.PureML                            (CommonPurePatt
 import           Data.Kore.FixTraversals                         (fixBottomUpVisitor)
 import           Data.Kore.IndexedModule.MetadataTools           (MetadataTools)
 import           Data.Kore.Step.Condition.Condition              (ConditionSort (..))
+import           Data.Kore.Step.AxiomPatterns
 import           Data.Kore.Step.Error
 import           Data.Kore.Substitution.Class                    (Hashable (..), PatternSubstitutionClass (..))
 import qualified Data.Kore.Substitution.List                     as ListSubstitution
