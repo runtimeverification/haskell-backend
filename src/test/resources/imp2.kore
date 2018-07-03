@@ -2,8 +2,6 @@
  * not using any AC matching and contexts.
  */
 
-
-
 []
 
 module BOOL
@@ -144,13 +142,119 @@ module INT
 
   symbol neqInt{}(Int{}, Int{}) : Bool{} []
 
-  /* Builtin theories are in this PR
-   * https://github.com/kframework/kore/pull/101
-   */
-
   /* TODO:: Functional axioms for all symbols */
 
-  /* TODO:: Constructor axioms. Int has zero and succ as constructors:
+  /* exists t . zero = t
+     exists t . one = t
+     exists t . two = t
+     exists t . three = t
+  */
+  
+  axiom{R}
+    \exists{R}(
+      T:Int{},
+      \equals{Int{},R}(
+        zero{}(),
+        T:Int{}))
+  []
+
+  axiom{R}
+    \exists{R}(
+      T:Int{},
+      \equals{Int{},R}(
+        one{}(),
+        T:Int{}))
+  []
+
+  axiom{R}
+    \exists{R}(
+      T:Int{},
+      \equals{Int{},R}(
+        two{}(),
+        T:Int{}))
+  []
+
+  axiom{R}
+    \exists{R}(
+      T:Int{},
+      \equals{Int{},R}(
+        three{}(),
+        T:Int{}))
+  []
+
+  /*
+     forall x y . exists t . plusInt(x,y) = t
+     forall x y . exists t . minusInt(x,y) = t
+     forall x y . exists t . divInt(x,y) = t
+     forall x y . exists t . leqInt(x,y) = t  (t is Bool)
+     forall x y . exists t . neqInt(x,y) = t  (t is Bool)
+  */
+
+  axiom{R}
+    \forall{R}(
+      X:Int{},
+      \forall{R}(
+        Y:Int{},
+        \exists{R}(
+          T:Int{},
+          \equals{Int{},R}(
+            plusInt{}(X:Int{},Y:Int{}),
+            T:Int{}))))
+  []
+
+  axiom{R}
+    \forall{R}(
+      X:Int{},
+      \forall{R}(
+        Y:Int{},
+        \exists{R}(
+          T:Int{},
+          \equals{Int{},R}(
+            minusInt{}(X:Int{},Y:Int{}),
+            T:Int{}))))
+  []
+
+  axiom{R}
+    \forall{R}(
+      X:Int{},
+      \forall{R}(
+        Y:Int{},
+        \and{Int{}}(
+          \not{Int{},R}(
+            \equals{Int{},R}(Y:Int{},zero{}()),
+            \exists{R}(
+              T:Int{},
+              \equals{Int{},R}(
+                divInt{}(X:Int{},Y:Int{}),
+                T:Int{}),
+              \not))))
+  []
+
+  axiom{R}
+    \forall{R}(
+      X:Int{},
+      \forall{R}(
+        Y:Int{},
+        \exists{R}(
+          T:Bool{},
+          \equals{Bool{},R}(
+            leqInt{}(X:Int{},Y:Int{}),
+            T:Bool{}))))
+  []
+
+  axiom{R}
+    \forall{R}(
+      X:Int{},
+      \forall{R}(
+        Y:Int{},
+        \exists{R}(
+          T:Bool{},
+          \equals{Bool{},R}(
+            neqInt{}(X:Int{},Y:Int{}),
+            T:Bool{}))))
+  []
+
+  /* Constructor axioms. Int has zero and succ as constructors:
    * (No Junk) zero \/ exists x . succ(x)
    * (No Confusion Diff Constructor)
    *    forall x . not(zero /\ succ(x))
@@ -158,7 +262,90 @@ module INT
    *    forall x y . succ(x) /\ succ(y) -> succ(x /\ y)
    */
 
-  /* TODO:: Usual axioms about integers. */
+  axiom{}
+    \or{Int{}}(zero{}(),\exists{}(X:Int(),succ{}(X:Int{})))
+  []
+
+  axiom{}
+    \not{Int{}}(\and{Int{}}(zero{}(),\exists{}(X:Int(),succ{}(X:Int{}):Int()) ))
+  []
+
+  axiom{}
+    \forall{}(
+      X:Int{},
+      \forall{}(
+        Y:Int{},
+        \implies{}(
+          \and{Int{}}(succ{}(X:Int{}),succ{}(Y:Int{})),
+          succ{}(\and{Int{}}(succ{}(X:Int{}),succ{}(Y:Int{}))))))
+
+  /* Usual axioms about integers.
+
+     0 + n = n
+     S(x) + y = S(x + y)
+
+     x - 0 = x
+     S(x) - S(y) = x - y
+
+     x / 1 = x
+     x / y = 1 + (x-y) / y
+*/
+
+  axiom{R}
+    \forall{R}(
+       X:Int{},
+       \equals{Int{},R}(
+          plusInt{}(zero{}(),X:Int{}),
+          X:Int{}))
+  []
+  
+  axiom{R}
+    \forall{R}(
+       X:Int{},
+       \forall{R}(
+         Y:Int{},
+         \equals{Int{},R}(
+            plusInt{}(succ{}(X:Int),Y:Int),
+            succ{}(plusInt{}(X:Int,Y:Int)))))
+  []
+
+  axiom{R}
+    \forall{R}(
+       X:Int{},
+       \equals{Int{},R}(
+          minusInt{}(X:Int,zero{}()),
+          X:Int{}))
+  []
+
+  axiom{R}
+    \forall{R}(
+       X:Int{},
+       \forall{R}(
+         Y:Int{},
+         \equals{Int{},R}(
+            minusInt{}(succ{}(X:Int{}),succ{}(Y:Int{})),
+            minusInt{}(X:Int{},Y:Int{}))))
+  []
+
+  axiom{R}
+    \forall{R}(
+       X:Int{},
+       \equals{Int{},R}(
+          divInt{}(X:Int{},one{}()),
+          X:Int{}))
+  []
+
+  /* Do I need to say Y != 0 here? */
+  axiom{R}
+    \forall{R}(
+       X:Int{},
+       \forall{R}(
+          Y:Int{},
+          \equals{Int{},R}(
+             divInt{}(X:Int{},Y:Int{}),
+             succ{}(divInt{}(minusInt{}(X:Int{},Y:Int{}),
+                             Y:Int{})))))
+  []
 
 endmodule []
 
@@ -174,15 +361,154 @@ module LIST
 
   symbol listItem{S}(S) : List{S} []
 
-  /* Builtin theories are in this PR
-   * https://github.com/kframework/kore/pull/101
-   */
-
   /* TODO:: Finish axioms.
    * All symbols are functional.
    * List has nil and cons has constructors.
    * listItem builds singleton lists from elements.
    */
+
+  /* Functional Axioms */
+
+  axiom{S,R}
+    \exists{R}(
+        T:List{S},
+        \equals{List{S},R}(
+           T:List{S},nil{S}()))
+  []
+
+  axiom{S,R}
+    \exists{S}(
+        T:List{S},
+        \exists{S}(
+           X:S,
+           \exists{S}(
+              XS:List{S},
+              \equals{List{S},R}(
+                 T:List{S},
+                 cons{S}(X:S,XS:List{S})))))
+  []
+
+  axiom{S,R}
+    \exists{R}(
+        T:List{S},
+        \exists{R}(
+           X:List{S},
+           \exists{R}(
+              Y:List{S},
+              \equals{List{S}}(
+                 T:List{S},
+                 append{S}(X:List{S},Y:List{S})))))
+  []
+
+  axiom{S,R}
+    \exists{R}(
+        T:List{S},
+        \exists{R}(
+           X:S,
+           \equals{List{S},R}(
+              T:List{S},
+              listItem{S}(X:S))))
+  []
+
+  /* No junk */
+
+  axiom{S}
+    \or{List{S}}(
+       nil{}(),
+       \exists{}(  // \exists{S} ?
+          X:S,
+          \exists{}(
+             XS:List{S},
+             cons{S}(X:S,XS:List{S}))))
+  []
+
+  /* No confusion, different constructors */
+
+  axiom{S}
+    \not{List{S}}(
+       \and{List{S}}(
+          nil{}(),
+          \exists{}(
+             X:S,
+             \exists{}(
+                XS:List{S},
+                cons{S}(X:S,XS:List{S}))))
+  []
+
+  /* No confusion, same constructors */
+
+  axiom{S}
+    \forall{}(
+       X:S,
+       \forall{}(
+          XS:List{S},
+          \forall{}(
+             Y:S,
+             \forall{}(
+                YS:List{S},
+                \implies{}(
+                   \and{List{S}}(
+                      cons{S}(X:S,XS:List{S}),
+                      cons{S}(Y:S,YS:List{S})),
+                   \and{List{S}}(
+                     \and{List{S}}(X:S, Y:S),
+                     \and{List{S}}(XS:List{S}, YS:List{S})))))))
+  []
+
+  /* Axioms
+     forall x . listItem(x) = cons(x,nil)
+     forall xs. append(xs,nil) = xs
+     forall xs. append(nil,xs) = xs
+     forall x xs ys . append(cons(x,xs),ys) = cons(x,append(xs,ys))
+     forall xs ys zs . append(append(xs,ys),zs) = append(xs,append(ys,zs))
+   */
+
+  axiom{S,R}
+    \forall{R}(
+       X:S,
+       \equals{List{S},R}(
+          listItem{S}(X:S),
+          Cons{S}(X:S,nil{S}())))
+  []
+
+  axiom{S,R}
+    \forall{R}(
+       XS:List{S},
+       \equals{List{S},R}(
+          append{S}(XS:List{S}, nil{S}()),
+          XS:S))
+  []
+
+  axiom{S,R}
+    \forall{R}(
+       XS:List{S},
+       \equals{List{S},R}(
+          append{S}(nil{S}(), XS:List{S}),
+          XS:S))
+  []
+
+  axiom{S,R}
+    \forall{R}(
+       X:S,
+       \forall{R}(
+          XS:List{S},
+          \forall{R}(
+             YS:List{S},
+             \equal{List{S},R}(
+                append{S}(cons{S}(X:S, XS:List{S}), YS:List{S}),
+                cons{S}(X:S,append{S}(XS:List{S},YS:List{S}))))))
+   []
+
+   axiom{S,R}
+     \forall{R}(
+        XS:List{S},
+        \forall{R}(
+           YS:List{S},
+           \forall{R}(
+              ZS:List{S},
+              \equals{List{S},R}(
+                 append{S}(append{S}(XS:List{S},YS:List{S}),ZS:List{S})))))
+   []
 
 endmodule []
 
@@ -200,12 +526,9 @@ module SET
 
   symbol inSet{S}(S, Set{S}) : Bool{} []
 
-  /* Builtin theories are in this PR
-   * https://github.com/kframework/kore/pull/101
-   */
 
   /* TODO:: Complete axioms.
-   * All symbols are funcitonal.
+   * All symbols are functional.
    * (No Junk) emptySet \/ exists S1 S2 . union(S1,S2)
    * We don't need (No Confusion) for sets, because
    * union is not really a constructor.
@@ -213,12 +536,128 @@ module SET
    * Just add some reasonable axioms.
    */
 
+  // emptySet
+
   axiom{S,R}
-    \equals{Set{S},R}(
-      union{S}(S:Set{S}, emptySet{S}()),
-      S:Set{S}) []
+    \exists{R}(
+       T:Set{S},
+       \equals{Set{S},R}(
+          emptySet{S}(),
+          T:Set{S}))
+  []
+
+  // union
+
+  axiom{S,R}
+    \forall{R}(
+       S1:Set{S},
+       \forall{R}(
+          S2:Set{S},
+          \exists{R}(
+             T:Set{S},
+             \equals{Set{S},R}(
+                union{S}(S1:Set{S},S2:Set{S}),
+                T:Set{S}))))
+  []
+
+  // inSet
+
+  axiom{S,R}
+    \forall{R}(
+       Elt:S,
+       \forall{R}(
+          S1:Set{S},
+          \exists{R}(
+             T:Bool{},
+             \equals{Set{S},R}(
+                inSet{S}(Elt:S,S1:Set{S}),
+                T:Bool{}))))
+  []
+
+  // setItem
+
+  axiom{S,R}
+    \forall{R}(
+       Elt:S,
+       \exists{R}(
+          T:Set{S},
+          \equals{T:Set{S},R}(
+             T:Set{S},
+             setItem{S}(Elt:S))))
+  []
+ 
+  // (No Junk) emptySet \/ exists S1 S2 . union(S1,S2)
+
+  axiom{S}
+    \or{Set{S}}(
+       emptySet{S}(),
+       \exists{}(
+          S1:Set{S},
+          \exists{}(
+             S2:Set{S},
+             union{S}(S1:Set{S},S2:Set{S})))))
+   []
 
 
+  /* Set Axioms
+   *
+   * forall s . union s emptySet == s
+   * forall s1 s2 . union s1 s2 == union s2 s1
+   *
+   * forall s . not s in emptySet
+   * forall s . s in (setItem s)
+   * forall s s1 s2 . s in (union s1 s2) -> s in s1 \/ s in s2
+  */
+
+  axiom{S,R}
+    \forall{R}(
+       S1:Set{S},
+       \equals{Set{S},R}(
+         union{S}(S1:Set{S}, emptySet{S}()),
+         S1:Set{S}))
+  []
+
+  axiom{S,R}
+    \forall{R}(
+       S1:Set{S},
+       \forall{R}(
+         S2:Set{S},
+         \equals{Set{S},R}(
+            \union{S}(S1:Set{S},S2:Set{S}),
+            \union{S}(S2:Set{S},S1:Set{S}))))
+  []
+
+  axiom{S,R}
+    \forall{R}(
+       Elt:S,
+       \equals{Set{S},R}(
+          inSet{S}(Elt:S,emptySet{S}()),
+          false{}()))
+  []
+
+  axiom{S,R}
+    \forall{R}(
+       Elt:S,
+       \equals{Set{S},R}(
+          inSet{S}(Elt:S,setItem{S}()),
+          true{}()))
+  []
+
+
+  axiom{S,R}
+    \forall{R}(
+       S1:Set{S},
+       \forall{R}(
+         S2:Set{S},
+         \forall{R}(
+           Elt:S,
+           \implies{Set{S},R}(
+              inSet{S}(Elt:S,union{S}(S1:Set{S},S2:Set{S})),
+              \or{Set{S}}(
+                inSet{S}(Elt:S,S1:Set{S}),
+                inSet{S}(Elt:S,S2:Set{S}))))))
+  []
+ 
 endmodule []
 
 module MAP
@@ -235,10 +674,6 @@ module MAP
 
   symbol keys{S1,S2}(Map{S1,S2}) : Set{S1} []
 
-  /* Builtin theories are in this PR
-   * https://github.com/kframework/kore/pull/101
-   */
-
   /* See Matching Logic paper, Section 9.2.
    * bind, emp, and keys are functional symbols.
    * merge is partial function:
@@ -247,6 +682,103 @@ module MAP
    * merging two binds with the same key gets bottom
    * merge(bind(X,Y),bind(X,Z)) = bottom
    */
+
+   axiom{R,S1,S2}
+     \exists{R}(
+        M:Map{S1,S2},
+        \equals{Map{S1,S2},R}(
+           M:Map{S1,S2},
+           emp{S1,S2}()))
+   []
+
+   axiom{R,S1,S2}
+     \exists{R}(
+        M:Map{S1,S2},
+        \forall{R}(
+           K:S1,
+           \forall{R}(
+             V:S2,
+             \equals{Map{S1,S2},R}(
+                bind{S1,S2}(K:S1,V:S2),
+                M))))
+   []
+
+   axiom{R,S1,S2}
+     \exists{R}(
+        K:Set{S1},
+        \forall{R}(
+           M:Map{S1,S2},
+           \equals{Set{S1},R}(
+              K:Set{S1},
+              keys{S1,S2}(M:Map{S1,S2}))))
+   []
+
+
+   axiom{R,S1,S2}
+     \forall{R}(
+        M1:Map{S1,S2},
+        \forall{R}(
+           M2:Map{S1,S2},
+           \or{R}(
+              \equals{Map{S1,S2},R}(
+                 merge{Map{S1,S2}}(M1:Map{S1,S2},M2:Map{S1,S2}),
+                 \bottom{Map{S1,S2}}),
+              \exists{R}(
+                 T:Map{S1,S2},
+                 \equals{Map{S1,S2},R}(
+                    T:Map{S1,S2},
+                    merge{Map{S1,S2}}(M1:Map{S1,S2},M2:Map{S1,S2}))))))
+   []
+
+   // merge(empty,M) = M
+
+   axiom{R,S1,S2}
+     \forall{R}(
+        M:Map{S1,S2},
+        \equals{Map{S1,S2},R}(
+           merge{S1,S2}(emp{S1,S2}(),M:Map{S1,S2}),
+           M:Map{S1,S2}))
+   []
+
+   // merge is commutative
+
+   axiom{R,S1,S2}
+     \forall{R}(
+        M1:Map{S1,S2},
+        \forall{R}(
+           M2:Map{S1,S2},
+           \equals{Map{S1,S2},R}(
+              merge{S1,S2}(M1:Map{S1,S2},M2:Map{S1,S2}),
+              merge{S1,S2}(M2:Map{S1,S2},M1:Map{S1,S2}))))
+   []
+
+   // merge is associative
+
+   axiom{R,S1,S2}
+     \forall{R}(
+        M1:Map{S1,S2},
+        \forall{R}(
+           M2:Map{S1,S2},
+           \forall{R}(
+              M3:Map{S1,S2},
+              \equals{Map{S1,S2},R}(
+                 merge{S1,S2}(merge{S1,S2}(M1:Map{S1,S2},M2:Map{S1,S2}),M3:Map{S1,S2}),
+                 merge{S1,S2}(M1:Map{S1,S2},merge{S1,S2}(M2:Map{S1,S2},M3:Map{S1,S2}))))))
+   []
+
+   // merge is disjoint
+
+   axiom{R,S1,S2}
+     \forall{R}(
+        K:S1,
+        \forall{R}(
+           V1:S2,
+           \forall{R}(
+              V2:S2,
+              \equals{Map{S1,S2},R}(
+                 merge{S1,S2}(bind{S1,S2}(K:S1,V1:S2),bind{S1,S2}(K:S1,V2:S2)),
+                 \bottom{Map{S1,S2}}))))
+   []
 
    /* lookup, update, and insert will be hooked to external libraries. */
    symbol lookup{S1,S2}(Map{S1,S2}, S1) : S2 []
@@ -531,6 +1063,10 @@ module IMP
   /* syntax AExp ::= AExp "/" AExp [strict] */
 
   symbol divAExp{}(AExp{}, AExp{}) : AExp{}
+
+  // [#strict{}("divAExp", one{}()) ,
+  //  #strict{}("divAExp", two{}())]
+
   [ strict{}(\dv{Strict{}}("divAExp"), firstArgument{}())
   , strict{}(\dv{Strict{}}("divAExp"), secondArgument{}())
   ]
@@ -554,7 +1090,9 @@ module IMP
           HOLE:AExp{},
           divAExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
+  // [#strict{}("divAExp", one{}())]
   [strict{}(\dv{Strict{}}("divAExp"), firstArgument{}())]
+  
   */
 
   /* heating rule
@@ -640,6 +1178,9 @@ module IMP
   /* syntax AExp ::= AExp "+" AExp [strict] */
 
   symbol plusAExp{}(AExp{}, AExp{}) : AExp{}
+  
+  // [#strict{}("plusAExp", one{}()) ,
+  //  #strict{}("plusAExp", two{}())]
   [strict{}(\dv{Strict{}}("plusAExp"), firstArgument{}()) ,
    strict{}(\dv{Strict{}}("plusAExp"), secondArgument{}())]
 
@@ -778,6 +1319,7 @@ module IMP
   /* syntax BExp ::= AExp "<=" AExp [seqstrict] */
 
   symbol leqBExp{}(AExp{}, AExp{}) : BExp{}
+  // [#seqstrict{}("leqBExp")]
   [seqstrict{}(\dv{Strict{}}("leqBExp"))]
 
   /* leqBExp is functional */
@@ -798,6 +1340,7 @@ module IMP
           leqBExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
   [seqstrict{}(\dv{Strict{}}("leqBExp"))]
+  
   */
 
   /* heating rule
@@ -815,7 +1358,6 @@ module IMP
             HOLE:AExp{},
             leqBExp{}(HOLE:AExp{}, Y:AExp{})))))
   [seqstrict{}(\dv{Strict{}}("leqBExp"))]
-      
     
   /* cooling rule
    * I ~> gamma HOLE . (HOLE <= Y) = I <= Y if I has sort Int
@@ -867,7 +1409,6 @@ module IMP
             HOLE:AExp{},
             leqBExp{}(intAsAExp{}(I:Int{}), HOLE:AExp{})))))
   [seqstrict{}(\dv{Strict{}}("leqBExp"))]
-      
     
   /* cooling rule
    * J ~> gamma HOLE . (I <= HOLE) = I <= J if I and J are Int
@@ -918,8 +1459,7 @@ module IMP
           gamma{BExp{}, BExp{}}(
             HOLE:BExp{},
             notBExp{}(HOLE:BExp{})))))
-  [strict{}(\dv{Strict{}}("notBExp"), firstArgument{}())]
-      
+  [strict{}(\dv{Strict{}}("notBExp"), firstArgument{}())]      
     
   /* cooling rule
    * B ~> gamma HOLE . ! HOLE = ! B if B is Bool
@@ -937,7 +1477,6 @@ module IMP
         notBExp{}(boolAsBExp{}(B:Bool{}))))
   [strict{}(\dv{Strict{}}("notBExp"), firstArgument{}())]
 
-
   /* syntax BExp ::= BExp "&&" BExp [strict(1)] */
 
   symbol andBExp{}(BExp{}, BExp{}) : BExp{}
@@ -952,8 +1491,8 @@ module IMP
           HOLE:BExp{},
           andBExp{}(HOLE:BExp{}, Y:BExp{})),
         X:BExp{}))
-  [strict{}(\dv{Strict{}}("andBExp"), firstArgument{}())]
-  */
+]  [strict{}(\dv{Strict{}}("andBExp"), firstArgument{}())]
+ */
 
   /* heating rule
    *   X && Y = X ~> gamma HOLE . (HOLE && Y) 
@@ -969,8 +1508,7 @@ module IMP
           gamma{BExp{}, BExp{}}(
             HOLE:BExp{},
             andBExp{}(HOLE:BExp{}, Y:BExp{})))))
-  [strict{}(\dv{Strict{}}("andBExp"), firstArgument{}())]
-      
+  [strict{}(\dv{Strict{}}("andBExp"), firstArgument{}())]      
     
   /* cooling rule
    * B ~> gamma HOLE . (HOLE && Y) = B && Y if B has sort Bool
@@ -1012,6 +1550,7 @@ module IMP
 
   symbol asgn{}(Id{}, AExp{}) : Stmt{} 
   [strict{}(\dv{Strict{}}("asgn"), secondArgument{}())]
+  
 
   /*
   axiom{R}
@@ -1564,7 +2103,6 @@ module IMP
             X:Id{},
             I:Int{})))))
   []
-          
 
 
   /* In K:
@@ -1760,8 +2298,8 @@ module IMP
    * =>
    * <T> <k> int Xs; S </k> <state> insert(Rho, X, 0) </statem> </T>
    */
-         
-  axiom{}
+
+ axiom{}
     \rewrites{Cfg{}}(
       cfg{}(topcell{}(
         kcell{}(
