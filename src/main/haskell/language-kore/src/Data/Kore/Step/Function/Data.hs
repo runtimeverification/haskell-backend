@@ -23,8 +23,8 @@ import           Data.Kore.Step.Condition.Condition   (ConditionProof,
                                                        UnevaluatedCondition)
 import           Data.Kore.Variables.Fresh.IntCounter (IntCounter)
 
-{--| 'FunctionResultProof' is a placeholder for proofs about a Kore function
-evaluation's result correctness.
+{--| 'FunctionResultProof' is a placeholder for proofs showing that a Kore
+function evaluation was correct.
 --}
 data FunctionResultProof level = FunctionResultProof
     deriving (Show, Eq)

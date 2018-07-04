@@ -134,8 +134,6 @@ evaluateFunctionConditionInternal
                 }
             , _
             ) = secondValue
-    -- TODO(virgil): This is more complex than implemented here, e.g.
-    -- we should evaluate functions on these patterns.
     if firstPattern == secondPattern
         -- TODO(virgil): this should probably call evaluateFunctionCondition
         then return $

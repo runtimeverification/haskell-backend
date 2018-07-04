@@ -24,8 +24,8 @@ import           Data.Kore.AST.Common (And (..), Iff (..), Implies (..),
                                        Sort (..))
 import           Data.Kore.AST.PureML (CommonPurePattern, asPurePattern)
 
-{--| 'ConditionProof' is a placeholder for a proof about a condition's
-evaluation.
+{--| 'ConditionProof' is a placeholder for a proof showing that a condition
+evaluation was correct.
 --}
 data ConditionProof level = ConditionProof
     deriving (Show, Eq)
