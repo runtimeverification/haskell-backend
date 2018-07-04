@@ -28,6 +28,7 @@ import           Data.Kore.Parser.CStringTest
 import           Data.Kore.Parser.LexemeTest
 import           Data.Kore.Parser.ParserTest
 import           Data.Kore.Parser.RegressionTest
+import           Data.Kore.Step.AxiomPatternsTest
 import           Data.Kore.Step.BaseStepTest
 import           Data.Kore.Step.StepTest
 import           Data.Kore.Substitution.ClassTest
@@ -95,4 +96,5 @@ unitTests =
         , topologicalSortTest
         , baseStepTests
         , stepTests
+        , axiomPatternsTests
         ]

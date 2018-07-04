@@ -32,6 +32,7 @@ import           Data.Kore.AST.PureML                            (CommonPurePatt
                                                                   mapPatternVariables)
 import           Data.Kore.FixTraversals                         (fixBottomUpVisitor)
 import           Data.Kore.IndexedModule.MetadataTools           (MetadataTools)
+import           Data.Kore.Step.AxiomPatterns
 import           Data.Kore.Step.Error
 import           Data.Kore.Substitution.Class                    (Hashable (..), PatternSubstitutionClass (..))
 import qualified Data.Kore.Substitution.List                     as ListSubstitution
@@ -45,15 +46,6 @@ import           Data.Kore.Variables.Fresh.Class                 (FreshVariables
 import           Data.Kore.Variables.Fresh.IntCounter            (IntCounter)
 import           Data.Kore.Variables.Int                         (IntVariable (..))
 import           Data.Maybe                                      (fromMaybe)
-
-{--| 'AxiomPattern' is a rewriting axiom in a normalized form. Right now
-it can only represent axioms that look like left-pattern => right-pattern.
---}
-data AxiomPattern level = AxiomPattern
-    { axiomPatternLeft  :: !(CommonPurePattern level)
-    , axiomPatternRight :: !(CommonPurePattern level)
-    }
-    deriving (Show, Eq)
 
 {--| 'StepperConfiguration' represents the configuration to which a rewriting
 axiom is applied.
