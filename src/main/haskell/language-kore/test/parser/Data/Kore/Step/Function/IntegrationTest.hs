@@ -260,7 +260,8 @@ conditionSort sort = ConditionSort (asAst sort)
 appliedMockEvaluator
     :: FunctionResult level -> ApplicationFunctionEvaluator level
 appliedMockEvaluator result =
-    ApplicationFunctionEvaluator (mockEvaluator (Applied result))
+    ApplicationFunctionEvaluator
+        (mockEvaluator (AttemptedFunctionResultApplied result))
 
 mockEvaluator
     :: AttemptedFunctionResult level

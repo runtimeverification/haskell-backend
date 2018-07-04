@@ -263,8 +263,9 @@ evaluateApplication
                 -- TODO(virgil): nub is O(n^2), should do better than that.
                 case nub (filter notNotApplicable mergedResults) of
                     [] -> return unchanged
-                    [(NotApplicable, _)] -> error "Should not reach this line."
-                    [(Symbolic condition, proof)] ->
+                    [(AttemptedFunctionResultNotApplicable, _)] ->
+                        error "Should not reach this line."
+                    [(AttemptedFunctionResultSymbolic condition, proof)] ->
                         return
                             ( FunctionResult
                                 { functionResultPattern =
@@ -273,7 +274,7 @@ evaluateApplication
                                 }
                             , proof
                             )
-                    [(Applied functionResult, proof)] ->
+                    [(AttemptedFunctionResultApplied functionResult, proof)] ->
                         return (functionResult, proof)
                     (_ : _ : _) -> error "Not implemented yet."
   where
@@ -291,7 +292,7 @@ evaluateApplication
             app'
     notNotApplicable =
         \case
-            (NotApplicable, _) -> False
+            (AttemptedFunctionResultNotApplicable, _) -> False
             _ -> True
 
 {--| 'mergeWithCondition' ands the given condition to the given function
@@ -308,24 +309,29 @@ mergeWithCondition
     -> (AttemptedFunctionResult level, FunctionResultProof level)
     -- ^ AttemptedFunctionResult to which the condition should be added.
     -> IntCounter (AttemptedFunctionResult level, FunctionResultProof level)
-mergeWithCondition _ _ _ (NotApplicable, _) =
-    return (NotApplicable, FunctionResultProof)
+mergeWithCondition _ _ _ (AttemptedFunctionResultNotApplicable, _) =
+    return (AttemptedFunctionResultNotApplicable, FunctionResultProof)
 mergeWithCondition
     conditionEvaluator
     conditionSort
     toMerge
-    (Symbolic condition, _)
+    (AttemptedFunctionResultSymbolic condition, _)
   = do
     (mergedCondition, _) <-
         mergeConditions conditionEvaluator conditionSort condition toMerge
     case mergedCondition of
-        ConditionFalse -> return (NotApplicable, FunctionResultProof)
-        _              -> return (Symbolic mergedCondition, FunctionResultProof)
+        ConditionFalse ->
+            return (AttemptedFunctionResultNotApplicable, FunctionResultProof)
+        _              ->
+            return
+                ( AttemptedFunctionResultSymbolic mergedCondition
+                , FunctionResultProof
+                )
 mergeWithCondition
     conditionEvaluator
     conditionSort
     toMerge
-    (Applied functionResult, _)
+    (AttemptedFunctionResultApplied functionResult, _)
   = do
     mergedCondition <-
         mergeConditions
@@ -334,9 +340,10 @@ mergeWithCondition
             (functionResultCondition functionResult)
             toMerge
     case mergedCondition of
-        (ConditionFalse, _) -> return (NotApplicable, FunctionResultProof)
+        (ConditionFalse, _) ->
+            return (AttemptedFunctionResultNotApplicable, FunctionResultProof)
         _ -> return
-            ( Applied functionResult
+            ( AttemptedFunctionResultApplied functionResult
                 {functionResultCondition = fst mergedCondition}
             , FunctionResultProof
             )

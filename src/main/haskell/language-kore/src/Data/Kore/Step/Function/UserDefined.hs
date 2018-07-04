@@ -61,7 +61,8 @@ axiomFunctionEvaluator
     app
   =
     case stepResult of
-        Left _ -> return (NotApplicable, FunctionResultProof)
+        Left _ ->
+            return (AttemptedFunctionResultNotApplicable, FunctionResultProof)
         Right configurationWithProof ->
             do
                 (   StepperConfiguration
@@ -120,13 +121,18 @@ reevaluateFunctions
         , functionResultCondition = rewritingCondition
         }
   = case rewritingCondition of
-        ConditionFalse -> return (NotApplicable, FunctionResultProof)
+        ConditionFalse ->
+            return (AttemptedFunctionResultNotApplicable, FunctionResultProof)
         _ -> do
             ( FunctionResult
                 { functionResultPattern = simplifiedPattern
                 , functionResultCondition = simplificationCondition
                 }
              , _
+             -- TODO(virgil): This call should be done in Evaluator.hs, but,
+             -- for optimization purposes, it's done here. Make sure that
+             -- this still makes sense after the evaluation code is fully
+             -- optimized.
              ) <- functionEvaluator rewrittenPattern
             return
                 ( firstSatisfiablePattern
@@ -137,6 +143,8 @@ reevaluateFunctions
                             rewritingCondition
                             simplificationCondition
                         )
+                    -- TODO(virgil): Returning the rewrittenPattern here is
+                    -- fishy.
                     , (rewrittenPattern, rewritingCondition)
                     ]
                 , FunctionResultProof
@@ -150,13 +158,13 @@ firstSatisfiablePattern
     -> AttemptedFunctionResult level
 firstSatisfiablePattern
     ((patt, ConditionTrue) : _)
-  = Applied FunctionResult
+  = AttemptedFunctionResultApplied FunctionResult
         { functionResultPattern   = patt
         , functionResultCondition = ConditionTrue
         }
 firstSatisfiablePattern
     ((patt, condition @ (ConditionUnevaluable _)) : _)
-  = Applied FunctionResult
+  = AttemptedFunctionResultApplied FunctionResult
         { functionResultPattern   = patt
         , functionResultCondition = condition
         }

@@ -52,7 +52,7 @@ data EvaluatedCondition level
 --}
 newtype UnevaluatedCondition level =
     UnevaluatedCondition (CommonPurePattern level)
-  deriving Show
+  deriving (Show, Eq)
 
 {--| 'makeEvaluatedAnd' combines two evaluated conditions with an 'and',
 doing some simplification.

@@ -781,3 +781,38 @@ instance EqualWithExplanation (ConditionSort level)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
+
+
+instance SumEqualWithExplanation (AttemptedFunctionResult level)
+  where
+    sumConstructorPair
+        AttemptedFunctionResultNotApplicable
+        AttemptedFunctionResultNotApplicable
+      =
+        SumConstructorSameNoArguments
+    sumConstructorPair a1@AttemptedFunctionResultNotApplicable a2 =
+        SumConstructorDifferent
+            (printWithExplanation a1) (printWithExplanation a2)
+
+    sumConstructorPair
+        (AttemptedFunctionResultSymbolic a1) (AttemptedFunctionResultSymbolic a2)
+      =
+        SumConstructorSameWithArguments
+            (EqWrap "Symbolic" a1 a2)
+    sumConstructorPair a1@(AttemptedFunctionResultSymbolic _) a2 =
+        SumConstructorDifferent
+            (printWithExplanation a1) (printWithExplanation a2)
+
+    sumConstructorPair
+        (AttemptedFunctionResultApplied a1) (AttemptedFunctionResultApplied a2)
+      =
+        SumConstructorSameWithArguments
+            (EqWrap "Applied" a1 a2)
+    sumConstructorPair a1@(AttemptedFunctionResultApplied _) a2 =
+        SumConstructorDifferent
+            (printWithExplanation a1) (printWithExplanation a2)
+
+instance EqualWithExplanation (AttemptedFunctionResult level)
+  where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show

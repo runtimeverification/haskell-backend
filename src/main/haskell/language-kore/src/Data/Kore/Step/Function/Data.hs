@@ -63,9 +63,9 @@ data FunctionResult level = FunctionResult
 cases where the function can't be fully evaluated.
 --}
 data AttemptedFunctionResult level
-    = NotApplicable
-    | Symbolic !(EvaluatedCondition level)
-    | Applied !(FunctionResult level)
+    = AttemptedFunctionResultNotApplicable
+    | AttemptedFunctionResultSymbolic !(EvaluatedCondition level)
+    | AttemptedFunctionResultApplied !(FunctionResult level)
   deriving (Show, Eq)
 
 {--| 'ConditionEvaluator' is a wrapper for a function that evaluates conditions.
