@@ -37,26 +37,6 @@ fromPurePattern
     :: PureMLPattern level var -> Pattern level var (PureMLPattern level var)
 fromPurePattern (Fix p) = p
 
-{-
-pattern PureMLAnd p <- Fix (PatternAnd p)
-pattern PureMLApplication p <- Fix (PatternApplication p)
-pattern PureMLBottom p <- Fix (PatternBottom p)
-pattern PureMLCeil p <- Fix (PatternCeil p)
-pattern PureMLDomainValue p <- Fix (PatternDomainValue p)
-pattern PureMLEquals p <- Fix (PatternEquals p)
-pattern PureMLExists p <- Fix (PatternExists p)
-pattern PureMLForall p <- Fix (PatternForall p)
-pattern PureMLIff p <- Fix (PatternIff p)
-pattern PureMLImplies p <- Fix (PatternImplies p)
-pattern PureMLIn p <- Fix (PatternIn p)
-pattern PureMLNext p <- Fix (PatternNext p)
-pattern PureMLNot p <- Fix (PatternNot p)
-pattern PureMLOr p <- Fix (PatternOr p)
-pattern PureMLRewrites p <- Fix (PatternRewrites p)
-pattern PureMLTop p <- Fix (PatternTop p)
-and so on
--}
-
 -- |'PureSentenceAxiom' is the pure (fixed-@level@) version of 'SentenceAxiom'
 type PureSentenceAxiom level =
     SentenceAxiom (SortVariable level) (Pattern level) Variable
