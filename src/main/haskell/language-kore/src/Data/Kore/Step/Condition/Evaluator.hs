@@ -134,6 +134,8 @@ evaluateFunctionConditionInternal
                 }
             , _
             ) = secondValue
+    -- TODO(virgil): This is wrong, because `variable=pattern` is not
+    -- necessarily false. Fix this.
     if firstPattern == secondPattern
         -- TODO(virgil): this should probably call evaluateFunctionCondition
         then return $
