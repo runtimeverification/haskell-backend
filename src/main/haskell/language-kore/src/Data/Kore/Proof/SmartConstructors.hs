@@ -23,7 +23,10 @@ Portability : portable
 {-# LANGUAGE PatternSynonyms        #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TypeApplications       #-}
-
+{-# LANGUAGE StandaloneDeriving     #-}
+{-# LANGUAGE TypeSynonymInstances   #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Data.Kore.Proof.SmartConstructors where
 
@@ -32,6 +35,7 @@ import           Control.Applicative
 import           Control.Lens
 import           Control.Monad.State
 
+import           Data.Hashable
 import           Data.Maybe
 import           Data.Fix
 import           Data.Reflection
@@ -47,6 +51,8 @@ import           Data.Kore.AST.PureML
 
 
 import Debug.Trace
+
+-- instance Hashable (CommonPurePattern Object)
 
 getSort 
   :: (MetaOrObject level, Given (MetadataTools level))
@@ -237,6 +243,8 @@ mkNext
   => CommonPurePattern Object 
   -> CommonPurePattern Object 
 mkNext a = ensureSortAgreement $ Next_ fixmeSort a 
+
+mkNot a = ensureSortAgreement $ Not_ fixmeSort a 
 
 mkOr a b = ensureSortAgreement $ Or_ fixmeSort a b 
 

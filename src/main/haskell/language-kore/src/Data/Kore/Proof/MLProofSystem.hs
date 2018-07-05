@@ -21,11 +21,12 @@ Portability : portable
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE PatternSynonyms        #-}
 {-# LANGUAGE ConstraintKinds        #-}
-
+{-# LANGUAGE NoMonomorphismRestriction #-}
 
 
 module Data.Kore.Proof.MLProofSystem where
 
+import           Data.Maybe
 import           Data.Reflection
 import           Data.Fix
 import           Data.Foldable
@@ -88,15 +89,15 @@ data LargeRule subproof
  -- | NOTE: Should probably rewrite axiom 8 to \forall x. x \in phi = \phi
  -- This should be exactly equivalent, and it fits the other axioms better.
  -- (\forall x . x \in phi) = phi
- | MembershipForall Term
+ | MembershipForall Var Term
  -- | x \in y = (x = y)
  | MembershipEq Var Var 
  -- | x \in \not phi = \not (x \in phi)
- | MembershipNot
+ | MembershipNot Var Term 
  -- | (x \in phi_1 /\ phi_2) = (x \in phi_1) /\ (x \in phi_2)
- | MembershipAnd
+ | MembershipAnd Var Term Term 
  -- | (x \in exists y . phi) = exists y . (x \in phi)
- | MembershipExists
+ | MembershipExists Var Var Term
  -- | x \in \sigma(phi_1,...,phi_i,...,phi_n) 
  -- = 
  -- \exists y . (y \in \phi_i /\ x \in \sigma(phi_1,...,y,...,phi_n))
@@ -145,8 +146,38 @@ interpretRule (ModusPonens a b) =
 interpretRule (FunctionalSubst x phi y phi') = 
   ((mkForall x phi) `mkAnd` (mkExists y (phi' `mkEquals` Var_ y))) 
   `mkImplies` 
-  (subst (Equals_ fixmeSort fixmeSort (Var_ x) phi' ) phi)
+  (subst (Var_ x) phi' phi)
 interpretRule (FunctionalVar x y) = mkExists y (Var_ x `mkEquals` Var_ y)
+interpretRule (EqualityIntro a) = mkEquals a a
+interpretRule (EqualityElim phi1 phi2 phi path) =
+  ((phi1 `mkEquals` phi2) `mkAnd` phi) 
+  `mkImplies` 
+  (localInPattern path (subst phi1 phi2) phi)
+interpretRule (MembershipForall x phi) = 
+  (mkForall x (Var_ x `mkIn` phi)) `mkEquals` phi
+interpretRule (MembershipEq x y) = 
+  (Var_ x `mkIn` Var_ y)
+  `mkEquals`
+  (Var_ x `mkEquals` Var_ y)
+interpretRule (MembershipNot x phi) = 
+  (Var_ x `mkIn` (mkNot phi))
+  `mkEquals`
+  (mkNot (Var_ x `mkIn` phi))
+interpretRule (MembershipAnd x phi1 phi2) = 
+  (Var_ x `mkIn` (phi1 `mkAnd` phi2))
+  `mkEquals`
+  ((Var_ x `mkIn` phi1) `mkAnd` (Var_ x `mkIn` phi2))
+interpretRule (MembershipExists x y phi) = 
+  (Var_ x `mkIn` (mkExists y phi))
+  `mkEquals`
+  (mkExists y (Var_ x `mkIn` phi))
+interpretRule (MembershipCong x y i phi) = 
+  (Var_ x `mkIn` phi)
+  `mkEquals`
+  (mkExists y $ (Var_ y `mkIn` phi_i) `mkAnd` (Var_ x `mkIn` phi'))
+    where phi'  = phi & childIx i .~ (Var_ y)
+          phi_i = fromJust $ phi ^? childIx i
+
 
 abstract :: Var -> Proof -> Proof
 abstract var prop@(By conclusion justification assumptions)
