@@ -1,5 +1,5 @@
 {-|
-Module      : Data.Kore.Proof.Substitution
+Module      : Data.Kore.ASTUtils.Substitution
 Description : Substitute phi_1 for phi_2, avoiding capture
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
@@ -22,34 +22,26 @@ Portability : portable
 {-# LANGUAGE PatternSynonyms        #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TypeApplications       #-}
+{-# OPTIONS_GHC -Wno-unused-matches #-}
+{-# OPTIONS_GHC -Wno-missing-signatures #-}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
+
+module Data.Kore.ASTUtils.Substitution where
 
 
-module Data.Kore.Proof.Substitution where
-
-
-import           Control.Applicative
 import           Control.Lens
-import           Control.Monad.State
 
 import qualified Data.Set as S
-import           Data.Maybe
 import           Data.Fix
-import           Data.Reflection
-import           Data.Foldable
 import           Data.List
 
 
-import           Data.Kore.IndexedModule.MetadataTools
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
 
-import           Data.Kore.Variables.Free
-import           Data.Kore.Proof.SmartConstructors
+import           Data.Kore.ASTUtils.SmartConstructors
 
-import           Data.Kore.Unparser.Unparse
 
 subst
   :: MetaOrObject level 
@@ -102,79 +94,24 @@ alphaRename = (\case
            (subst (Var_ v) (Var_ replacementVar) p)
            where replacementVar = head $ alternatives v \\ (S.toList $ freeVars p)
                  alternatives (Variable (Id name loc) sort) =  -- FIXME: lens. 
-                   [Variable (Id (name ++ show n) loc) sort | n <- [0..] ]
+                   [Variable (Id (name ++ show n) loc) sort | n <- [(0::Integer)..] ]
 
-subTest :: CommonPurePattern Object 
-subTest = dummyEnvironment @Object $ 
-  subst (Var_ $ var "hi") (Var_ $ var "hello") $ 
-  mkExists (var "ho") (Var_ $ var "hi")
+inPath
+  :: (MetaOrObject level, Applicative f)
+  => [Int]
+  -> (CommonPurePattern level -> f (CommonPurePattern level))
+  -> (CommonPurePattern level -> f (CommonPurePattern level))
+inPath [] = id --aka the identity lens
+inPath (n : ns) = partsOf allChildren . ix n . inPath ns 
 
-
--- localInPattern 
---    :: MetaOrObject level 
---    => Path 
---    -> (CommonPurePattern level -> CommonPurePattern level)
---    -> CommonPurePattern level 
---    -> CommonPurePattern level 
--- localInPattern []     f pat = f pat
--- localInPattern (n:ns) f pat = Fix $
---   case unFix pat of
---     AndPattern (And s1 a b) 
---       -> AndPattern $ case n of 
---            0 -> And s1 (localInPattern ns f a) b
---            1 -> And s1 a (localInPattern ns f b)
---            m -> error ("No " ++ show m ++ " position")
---     ApplicationPattern (Application head children)
---       -> let (a, b : bs) = splitAt n children 
---              children'   = a ++ [localInPattern ns f b] ++ bs 
---          in ApplicationPattern (Application head $ children')
---     CeilPattern (Ceil s1 s2 a) 
---       -> CeilPattern $ Ceil s1 s2 (localInPattern ns f a)
---     DomainValuePattern (DomainValue s1 a) 
---       -> DomainValuePattern $ DomainValue s1 (localInPattern ns f a)
---     EqualsPattern (Equals s1 s2 a b)
---       -> EqualsPattern $ case n of 
---            0 -> Equals s1 s2 (localInPattern ns f a) b 
---            1 -> Equals s1 s2 a (localInPattern ns f b)
---            m -> error ("No " ++ show m ++ " position")
---     ExistsPattern (Exists s1 v a) 
---       -> ExistsPattern $ Exists s1 v (localInPattern ns f a)
---     FloorPattern (Floor s1 s2 a)
---       -> FloorPattern $ Floor s1 s2 (localInPattern ns f a)
---     ForallPattern (Forall s1 v a)
---       -> ForallPattern $ Forall s1 v (localInPattern ns f a)
---     IffPattern (Iff s1 a b)
---       -> IffPattern $ case n of 
---            0 -> Iff s1 (localInPattern ns f a) b 
---            1 -> Iff s1 a (localInPattern ns f b)
---            m -> error ("No " ++ show m ++ " position")
---     ImpliesPattern (Implies s1 a b)
---       -> ImpliesPattern $ case n of 
---           0 -> Implies s1 (localInPattern ns f a) b
---           1 -> Implies s1 a (localInPattern ns f b)
---           m -> error ("No " ++ show m ++ " position")
---     InPattern (In s1 s2 a b)
---       -> InPattern $ case n of 
---            0 -> In s1 s2 (localInPattern ns f a) b 
---            1 -> In s1 s2 a (localInPattern ns f b)
---            m -> error ("No " ++ show m ++ " position")
---     NextPattern (Next s1 a)
---       -> NextPattern $ Next s1 (localInPattern ns f a)
---     NotPattern (Not s1 a)
---       -> NotPattern $ Not s1 (localInPattern ns f a)
---     OrPattern (Or s1 a b)
---       -> OrPattern $ case n of 
---            0 -> Or s1 (localInPattern ns f a) b 
---            1 -> Or s1 a (localInPattern ns f b)
---            m -> error ("No " ++ show m ++ " position")
---     RewritesPattern (Rewrites s1 a b)
---       -> RewritesPattern $ case n of 
---            0 -> Rewrites s1 (localInPattern ns f a) b 
---            1 -> Rewrites s1 a (localInPattern ns f b)
---            m -> error ("No " ++ show m ++ " position")
---     _ -> error "FIXME: Add more constructors here"
-
-childIx n = partsOf allChildren . ix n
+localSubst
+  :: MetaOrObject level 
+  => CommonPurePattern level 
+  -> CommonPurePattern level 
+  -> [Int]
+  -> CommonPurePattern level 
+  -> CommonPurePattern level
+localSubst a b path pat = pat & (inPath path) %~ (subst a b)
 
 localInPattern
   :: MetaOrObject level 
