@@ -75,6 +75,18 @@ sortAgreement = testGroup "Sort agreement"
       assertEqual "" 
         (sortAgreement2 ^? (inPath [1] . resultSort ))
         (Just $ testSort "Y")
+  , testCase "flexibleSort.1" $ 
+      assertEqual ""
+        (dummyEnvironment @Object mkBottom ^? resultSort)
+        (Just (flexibleSort :: Sort Object))
+  , testCase "flexibleSort.2" $ 
+      assertEqual ""
+        (dummyEnvironment @Object mkTop ^? resultSort)
+        (Just (flexibleSort :: Sort Object))
+  , testCase "flexibleSort.3" $ 
+      assertEqual ""
+        (dummyEnvironment @Object (mkExists (var_ "a" "A") mkBottom) ^? resultSort)
+        (Just (flexibleSort :: Sort Object))
   ]
 
 

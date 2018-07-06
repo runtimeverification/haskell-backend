@@ -188,7 +188,7 @@ ensureSortAgreement
   -> CommonPurePattern level 
 ensureSortAgreement p = 
   case makeSortsAgree $ p ^. partsOf allChildren of 
-    Just []       -> p
+    Just []       -> p & resultSort .~ flexibleSort
     Just children -> 
       p & (partsOf allChildren) .~ children 
         & resultSort .~ (getSort $ head children)
