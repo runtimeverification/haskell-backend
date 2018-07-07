@@ -7557,13 +7557,18 @@ $\denote{\texttt{\slrewrites\{$s$\}($\varphi_1$,$\varphi_2$)}}
 & if $s$ is \syntacc{object-sort}
 \end{longtable}
 
-\paragraph{Domain Value Patterns.}
+\paragraph{String Literals and Domain Value Patterns.}
 
 \begin{center}
+\begin{tabular}{ll}
+$\denote{str} = str$
+& if $str$ is \syntacc{string}
+\\
 $\denote{\texttt{\sldv\{$s$\}($str$)}}
-= \texttt{\sharpsymbol\slashsymbol dv\{\}($\denote{s}, str$)}$
- if $s$ is \syntacc{object-sort}
-  and $str$ is \syntacc{string}
+= \texttt{\sharpsymbol\slashsymbol dv\{\}($\denote{s}, \denote{str}$)}$
+&if $s$ is \syntacc{object-sort}
+  and $str$ is a \syntacc{meta-pattern} of sort \KString
+\end{tabular}
 \end{center}
 
 %\subsubsection{Lift Patterns To Meta Patterns of Sort \KPattern}
