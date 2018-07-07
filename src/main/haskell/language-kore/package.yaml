@@ -34,7 +34,9 @@ dependencies:
 - hashable
 - data-fix
 - clock
+- time
 - optparse-applicative
+- gitrev
 
 library:
   source-dirs: src

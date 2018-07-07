@@ -7,6 +7,7 @@ import           Test.Tasty.HUnit                                    (assertEqua
 
 import qualified Data.Map                                            as Map
 import           Data.Maybe                                          (fromMaybe)
+import           Data.Fix
 
 import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
@@ -26,17 +27,23 @@ import           Data.Kore.KoreHelpers
 objectS1 :: Sort Object
 objectS1 = simpleSort (SortName "s1")
 
+topPatMeta :: Pattern Meta variable (Fix (pat variable))
+topPatMeta = TopPattern $ Top { topSort = patternMetaSort }
+
+topPatObj :: Pattern Object variable (Fix (pat variable))
+topPatObj  = TopPattern $ Top { topSort = objectS1 }
+
 objectA :: PureSentenceSymbol Object
 objectA = symbol_ "a" AstLocationTest [] objectS1
 
 objectB :: PureSentenceAlias Object
-objectB = alias_ "b" AstLocationTest [] objectS1
+objectB = alias_ "b" AstLocationTest [] objectS1 topPatObj topPatObj
 
 metaA :: PureSentenceSymbol Meta
 metaA = symbol_ "#a" AstLocationTest [] charListMetaSort
 
 metaB :: PureSentenceAlias Meta
-metaB = alias_ "#b" AstLocationTest [] charListMetaSort
+metaB = alias_ "#b" AstLocationTest [] charListMetaSort topPatMeta topPatMeta
 
 testObjectModuleName :: ModuleName
 testObjectModuleName = ModuleName "TEST-OBJECT-MODULE"
@@ -174,6 +181,8 @@ resolversTests =
                     { sentenceAliasAttributes = Attributes []
                     , sentenceAliasAlias = sentenceAliasAlias objectB
                     , sentenceAliasSorts = []
+                    , sentenceAliasLeftPattern = topPatObj
+                    , sentenceAliasRightPattern = topPatObj
                     , sentenceAliasResultSort = objectS1
                     }
                 )
@@ -185,6 +194,8 @@ resolversTests =
                     { sentenceAliasAttributes = Attributes []
                     , sentenceAliasAlias = sentenceAliasAlias metaB
                     , sentenceAliasSorts = []
+                    , sentenceAliasLeftPattern = topPatMeta
+                    , sentenceAliasRightPattern = topPatMeta
                     , sentenceAliasResultSort = charListMetaSort
                     }
                 )

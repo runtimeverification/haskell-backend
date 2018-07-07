@@ -540,7 +540,11 @@ unfilteredTestExamplesForSort
                     (ModuleName "MODULE")
                     (sentenceAliasSentence
                         (sentenceAliasWithResultSort
-                            aliasName sort sortVariables)
+                            aliasName 
+                            sort 
+                            sortVariables
+                            (TopPattern $ Top sort)
+                            (TopPattern $ Top sort) )
                     : additionalSentences
                     )
             }
@@ -560,7 +564,12 @@ unfilteredTestExamplesForSort
                     (ModuleName "MODULE")
                     (sentenceAliasSentence
                         (sentenceAliasWithSortArgument
-                            aliasName sort additionalSort sortVariables)
+                            aliasName 
+                            sort 
+                            additionalSort 
+                            sortVariables
+                            (TopPattern $ Top sort) 
+                            (TopPattern $ Top sort) )
                     : additionalSentences
                     )
             }

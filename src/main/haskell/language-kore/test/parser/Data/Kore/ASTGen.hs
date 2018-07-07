@@ -305,11 +305,14 @@ korePatternGen = sized (\n ->
 sentenceAliasGen
     :: MetaOrObject level
     => level
-    -> Gen (SentenceAlias level pat variable)
-sentenceAliasGen x = pure SentenceAlias
+    -> Gen (Fix (pat Variable))
+    -> Gen (SentenceAlias level pat Variable)
+sentenceAliasGen x patGen = pure SentenceAlias
     <*> scale (`div` 2) (aliasGen x)
     <*> couple (scale (`div` 2) (sortGen x))
     <*> scale (`div` 2) (sortGen x)
+    <*> scale (`div` 2) (patternGen patGen x)
+    <*> scale (`div` 2) (patternGen patGen x)
     <*> scale (`div` 2) attributesGen
 
 sentenceSymbolGen
@@ -350,23 +353,14 @@ sentenceSortGen level =
 attributesGen :: Gen Attributes
 attributesGen = Attributes <$> couple (scale (`div` 4) korePatternGen)
 
-symbolOrAliasSentenceGen
-    :: MetaOrObject level
-    => level
-    -> Gen (Sentence level sortParam pat variable)
-symbolOrAliasSentenceGen level = oneof
-    [ SentenceAliasSentence <$> sentenceAliasGen level
-    , SentenceSymbolSentence <$> sentenceSymbolGen level
-    ]
-
 koreSentenceGen :: Gen KoreSentence
 koreSentenceGen = oneof
     [ constructUnifiedSentence SentenceAliasSentence
-        <$> sentenceAliasGen Meta
+        <$> sentenceAliasGen Meta korePatternGen
     , constructUnifiedSentence SentenceSymbolSentence
         <$> sentenceSymbolGen Meta
     , constructUnifiedSentence SentenceAliasSentence
-        <$> sentenceAliasGen Object
+        <$> sentenceAliasGen Object korePatternGen
     , constructUnifiedSentence SentenceSymbolSentence
         <$> sentenceSymbolGen Object
     , constructUnifiedSentence SentenceImportSentence
