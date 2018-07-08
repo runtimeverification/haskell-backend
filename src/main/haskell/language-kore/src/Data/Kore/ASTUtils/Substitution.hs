@@ -34,7 +34,7 @@ import           Control.Lens
 import qualified Data.Set as S
 import           Data.Fix
 import           Data.List
-
+import           Data.Foldable
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
@@ -49,10 +49,14 @@ subst
   -> CommonPurePattern level 
   -> CommonPurePattern level 
   -> CommonPurePattern level
-subst a b (Forall_ s1 v p) = handleBinder a b Forall_ s1 v p
-subst a b (Exists_ s1 v p) = handleBinder a b Exists_ s1 v p
-subst a b pat =
-  if pat == a then b else Fix $ fmap (subst a b) $ unFix pat
+subst a b = \case 
+  Forall_ s1 v p -> handleBinder a b Forall_ s1 v p 
+  Exists_ s1 v p -> handleBinder a b Exists_ s1 v p 
+  pat 
+   | pat == a  -> b 
+   | otherwise -> Fix $ fmap (subst a b) $ unFix pat 
+
+-- subst2 a b = cata (\pat -> if Fix pat == a then b else Fix pat)
 
 handleBinder
   :: MetaOrObject level 
@@ -64,13 +68,13 @@ handleBinder
   -> CommonPurePattern level 
   -> CommonPurePattern level 
 handleBinder a b binder s1 v p = 
-  let fa = freeVars a 
-      fb = freeVars b
-  in if S.member v fa 
-    then binder s1 v p 
-  else if S.member v fb
-    then subst a b $ alphaRename $ binder s1 v p 
-    else binder s1 v $ subst a b p
+    let fa = freeVars a 
+        fb = freeVars b
+    in if S.member v fa 
+        then binder s1 v p 
+    else if S.member v fb
+        then subst a b $ alphaRename $ binder s1 v p 
+        else binder s1 v $ subst a b p
 
 freeVars
   :: MetaOrObject level 
@@ -88,13 +92,15 @@ alphaRename
 alphaRename = (\case 
  Forall_ s1 v p -> go Forall_ s1 v p 
  Exists_ s1 v p -> go Exists_ s1 v p
+ -- x -> x
  _ -> error "Input must be an Exist or Forall at the top level"
- ) where go binder s1 v p = 
-           binder s1 replacementVar 
-           (subst (Var_ v) (Var_ replacementVar) p)
-           where replacementVar = head $ alternatives v \\ (S.toList $ freeVars p)
-                 alternatives (Variable (Id name loc) sort) =  -- FIXME: lens. 
-                   [Variable (Id (name ++ show n) loc) sort | n <- [(0::Integer)..] ]
+ ) where 
+    go binder s1 v p = 
+        binder s1 (replacementVar v p)
+        (subst (Var_ v) (Var_ $ replacementVar v p) p)
+    replacementVar v p = head $ alternatives v \\ (S.toList $ freeVars p)
+    alternatives (Variable (Id name loc) sort) =  -- FIXME: lens. 
+        [Variable (Id (name ++ show n) loc) sort | n <- [(0::Integer)..] ]
 
 inPath
   :: (MetaOrObject level, Applicative f)

@@ -311,6 +311,7 @@ mkVar
   -> CommonPurePattern level 
 mkVar = Var_
 
+
 --should never appear in output of 'mk' funcs
 fixmeSort 
   :: MetaOrObject level 
