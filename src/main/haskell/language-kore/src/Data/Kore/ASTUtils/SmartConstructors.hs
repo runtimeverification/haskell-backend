@@ -30,7 +30,65 @@ Portability : portable
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
 {-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
-module Data.Kore.ASTUtils.SmartConstructors where
+
+module Data.Kore.ASTUtils.SmartConstructors 
+( -- * Utility funcs for dealing with sorts
+  getSort 
+, forceSort
+, flexibleSort
+, isRigid
+, isFlexible
+, makeSortsAgree
+, ensureSortAgreement
+-- * Lenses -- all applicative   
+, patternLens
+, inputSort   -- | will have 0 or 1 inhabitants
+, resultSort  -- | will have 0 or 1 inhabitants
+, variable    -- | will have 0 or 1 inhabitants
+, allChildren -- | will have 0+ inhabitants
+-- * Pattern synonyms
+, pattern And_  
+, pattern App_ 
+, pattern Bottom_   
+, pattern Ceil_ 
+, pattern DV_     
+, pattern Equals_  
+, pattern Exists_ 
+, pattern Floor_ 
+, pattern Forall_  
+, pattern Iff_  
+, pattern Implies_ 
+, pattern In_  
+, pattern Next_ 
+, pattern Not_ 
+, pattern Or_ 
+, pattern Rewrites_ 
+, pattern Top_   
+, pattern Var_ 
+, pattern StringLiteral_
+, pattern CharLiteral_
+, mkAnd
+, mkApp
+, mkBottom
+, mkCeil
+, mkDomainValue
+, mkEquals
+, mkExists
+, mkFloor
+, mkForall
+, mkIff
+, mkImplies
+, mkIn
+, mkNext 
+, mkNot 
+, mkOr 
+, mkRewrites 
+, mkTop 
+, mkVar 
+, mkStringLiteral 
+, mkCharLiteral
+)
+where
 
 
 import           Control.Lens
@@ -47,12 +105,20 @@ import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML 
 
+
+-- | Gets the sort of of a pattern, taking the Metadatatools implicitly
+-- from the context. 
+-- The smart constructors `mkAnd`, etc also require this context. 
+-- Usage: give metadatatools (... computation with Given Metadatatools ..)
 getSort 
   :: (MetaOrObject level, Given (MetadataTools level))
   => CommonPurePattern level
   -> Sort level
 getSort x = (getPatternResultSort (getResultSort given) $ unFix x)
 
+-- | Placeholder sort for when we construct a new predicate
+-- But we don't know yet where it's going to be attached.
+-- This will probably happen often during proof routines. 
 flexibleSort 
   :: MetaOrObject level 
   => Sort level
@@ -78,6 +144,8 @@ pattern Ceil_
   -> Sort level
   -> CommonPurePattern level
   -> CommonPurePattern level
+-- Due to the interaction of pattern synonyms and GADTS
+-- I don't think I can write this type signature.
 -- pattern DV_
   -- :: Sort Object
   -- -> CommonPurePattern Object 
@@ -147,15 +215,15 @@ pattern Var_
   -> CommonPurePattern level
 
 -- pattern StringLiteral_ 
-  -- :: StringLiteral 
-  -- -> Fix (Pattern Meta Variable) 
+--   :: StringLiteral 
+--   -> Fix (Pattern level Variable) 
 
 -- pattern CharLiteral_ 
 --   :: CharLiteral 
 --   -> CommonPurePattern Meta
 
 -- No way to make multiline pragma?
-{-# COMPLETE And_, App_, Bottom_, Ceil_, DV_, Equals_, Exists_, Floor_, Forall_, Iff_, Implies_, In_, Next_, Not_, Or_, Rewrites_, Top_, Var_, StringLiteral_, CharLiteral_#-}
+{-# COMPLETE And_, App_, Bottom_, Ceil_, DV_, Equals_, Exists_, Floor_, Forall_, Iff_, Implies_, In_, Next_, Not_, Or_, Rewrites_, Top_, Var_, StringLiteral_, CharLiteral_ #-}
 
 pattern And_          s2   a b = Fix (AndPattern (And s2 a b))
 pattern App_ h c               = Fix (ApplicationPattern (Application h c))
@@ -187,13 +255,13 @@ patternLens
   -> (CommonPurePattern level -> f (CommonPurePattern level))
   -> (CommonPurePattern level -> f (CommonPurePattern level))
 patternLens 
-  i  --input sort
-  o -- result sort
+  i   -- input sort
+  o   -- result sort
   var -- variable
-  c -- child
+  c   -- child
   = \case 
   And_       s2   a b -> And_      <$>          o s2           <*> c a <*> c b
-  Bottom_    s2    -> Bottom_   <$>          o s2
+  Bottom_    s2       -> Bottom_   <$>          o s2
   Ceil_   s1 s2   a   -> Ceil_     <$> i s1 <*> o s2           <*> c a
   DV_        s2   a   -> DV_       <$>          o s2           <*> c a
   Equals_ s1 s2   a b -> Equals_   <$> i s1 <*> o s2           <*> c a <*> c b
@@ -207,11 +275,11 @@ patternLens
   Not_       s2   a   -> Not_      <$>          o s2           <*> c a
   Or_        s2   a b -> Or_       <$>          o s2           <*> c a <*> c b
   Rewrites_  s2   a b -> Rewrites_ <$>          o s2           <*> c a <*> c b
-  Top_       s2    -> Top_      <$>          o s2
-  Var_          v  -> Var_      <$>                   var v
+  Top_       s2       -> Top_      <$>          o s2
+  Var_          v     -> Var_      <$>                   var v
   StringLiteral_ s -> pure (StringLiteral_ s)
   CharLiteral_   c -> pure (CharLiteral_   c)
-  other -> error $ "Unknown constructor " ++ show other
+  App_ h children -> App_ h <$> (traverse c children)
 
 -- | The sort of a,b in \equals(a,b), \ceil(a) etc. 
 inputSort        f = patternLens f    pure pure pure 
@@ -267,6 +335,7 @@ isFlexible p = case unFix p of
   TopPattern    _ -> True 
   _ -> False
 
+-- | Tries to modify p to have sort s.  
 forceSort 
   :: (MetaOrObject level, Given (MetadataTools level))
   => Sort level 
@@ -286,6 +355,7 @@ checkIfAlreadyCorrectSort s p
  | getSort p == s = Just p 
  | otherwise = Nothing
 
+-- Modify all patterns in a list to have the same sort. 
 makeSortsAgree
   :: (MetaOrObject level, Given (MetadataTools level))
   => [CommonPurePattern level]
@@ -304,7 +374,10 @@ getRigidSort p =
   case forceSort flexibleSort p of 
     Nothing -> Just $ getSort p 
     Just _  -> Nothing
--- ensures that the subpatterns of a pattern match in their sorts
+
+
+
+-- | Ensures that the subpatterns of a pattern match in their sorts
 -- and assigns the correct sort to the top level pattern
 -- i.e. converts the invalid (x : Int /\ ( x < 3 : Float)) : Bool
 -- to the valid (x : Int /\ (x < 3 : Int)) : Int
@@ -448,10 +521,3 @@ fixmeSort
 fixmeSort =
   SortVariableSort $ SortVariable 
     { getSortVariable = noLocationId "FIXME" } --FIXME
-
-placeholderSort 
-  :: MetaOrObject level 
-  => Sort level
-placeholderSort =
-  SortVariableSort $ SortVariable 
-    { getSortVariable = noLocationId "S" } --FIXME

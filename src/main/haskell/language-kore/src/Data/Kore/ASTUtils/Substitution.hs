@@ -34,7 +34,6 @@ import           Control.Lens
 import qualified Data.Set as S
 import           Data.Fix
 import           Data.List
-import           Data.Foldable
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
