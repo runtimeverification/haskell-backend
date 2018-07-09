@@ -9,6 +9,7 @@
 {-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE UndecidableInstances  #-}
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE LambdaCase            #-}
 {-|
 Module      : Data.Kore.AST.Common
 Description : Data Structures for representing the Kore language AST that do not
@@ -782,6 +783,30 @@ data Pattern level variable child where
 -- instance (Hashable child, Generic child, Hashable (variable level))
 -- => Hashable (Pattern level variable child) 
 
+instance (Hashable (child), Hashable (variable level))
+ => Hashable (Pattern level variable child) where 
+  hashWithSalt s = \case 
+    AndPattern           p -> hashWithSalt s p
+    ApplicationPattern   p -> hashWithSalt s p
+    BottomPattern        p -> hashWithSalt s p
+    CeilPattern          p -> hashWithSalt s p
+    DomainValuePattern   p -> hashWithSalt s p
+    EqualsPattern        p -> hashWithSalt s p
+    ExistsPattern        p -> hashWithSalt s p
+    FloorPattern         p -> hashWithSalt s p
+    ForallPattern        p -> hashWithSalt s p
+    IffPattern           p -> hashWithSalt s p
+    ImpliesPattern       p -> hashWithSalt s p
+    InPattern            p -> hashWithSalt s p
+    NextPattern          p -> hashWithSalt s p
+    NotPattern           p -> hashWithSalt s p
+    OrPattern            p -> hashWithSalt s p
+    RewritesPattern      p -> hashWithSalt s p
+    StringLiteralPattern p -> hashWithSalt s p
+    CharLiteralPattern   p -> hashWithSalt s p
+    TopPattern           p -> hashWithSalt s p
+    VariablePattern      p -> hashWithSalt s p
+    -- FIXME: How to factor this out? with existentials?
 deriving instance
     ( Eq child
     , Eq (variable level)
@@ -802,7 +827,10 @@ data SortedPattern level variable child = SortedPattern
     { sortedPatternPattern :: !(Pattern level variable child)
     , sortedPatternSort    :: !(Sort level)
     }
-    deriving (Eq, Show)
+    deriving (Eq, Show, Generic)
+
+instance (Hashable child, Hashable (variable level))
+  => Hashable (SortedPattern level variable child)
 
 {-|'PatternStub' is either a pattern with a known sort, or a function that
 builds a pattern from a sort.
@@ -810,6 +838,9 @@ builds a pattern from a sort.
 data PatternStub level variable child
     = SortedPatternStub !(SortedPattern level variable child)
     | UnsortedPatternStub (Sort level -> Pattern level variable child)
+    deriving(Generic)
+
+-- cannot hash. 
 
 {-|'withSort' transforms an 'UnsortedPatternStub' in a 'SortedPatternStub'.
 -}
