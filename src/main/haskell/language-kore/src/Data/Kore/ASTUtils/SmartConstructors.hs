@@ -154,6 +154,8 @@ pattern Var_
 --   :: CharLiteral 
 --   -> CommonPurePattern Meta
 
+-- No way to make multiline pragma?
+{-# COMPLETE And_, App_, Bottom_, Ceil_, DV_, Equals_, Exists_, Floor_, Forall_, Iff_, Implies_, In_, Next_, Not_, Or_, Rewrites_, Top_, Var_, StringLiteral_, CharLiteral_#-}
 
 pattern And_          s2   a b = Fix (AndPattern (And s2 a b))
 pattern App_ h c               = Fix (ApplicationPattern (Application h c))
@@ -211,20 +213,29 @@ patternLens
   CharLiteral_   c -> pure (CharLiteral_   c)
   other -> error $ "Unknown constructor " ++ show other
 
+-- | The sort of a,b in \equals(a,b), \ceil(a) etc. 
 inputSort        f = patternLens f    pure pure pure 
+-- | The sort returned by a top level constructor. 
+-- NOTE ABOUT NOTATION:
+-- In the this haskell code, this is always `s2`.
+-- In the semantics.pdf documentation, the sorts are written 
+-- {s1} if there is one sort parameter, and {s1, s2}
+-- if there are two sort parameters. This has the effect
+-- that the result sort is sometimes s1 and sometimes s2. 
+-- I believe this convention is less confusing. 
+-- Note that a few constructors like App, StringLiteral and Var
+-- Lack a result sort. 
 resultSort       f = patternLens pure f    pure pure 
+-- | Points to the bound variable in Forall/Exists,
+-- and also the Variable in VariablePattern
 variable         f = patternLens pure pure f    pure
+-- All sub-expressions which are Patterns. 
+-- use partsOf allChildren to get a lens to a List. 
 allChildren      f = patternLens pure pure pure f   
 
-getRigidSort 
-  :: (MetaOrObject level, Given (MetadataTools level))
-  => CommonPurePattern level 
-  -> Maybe (Sort level)
-getRigidSort p = 
-  case forceSort flexibleSort p of 
-    Nothing -> Just $ getSort p 
-    Just _  -> Nothing
-
+-- | Rigid patterns are those which have a
+-- single uniquely determined sort,
+-- which we can't change. 
 isRigid
   :: MetaOrObject level 
   => CommonPurePattern level 
@@ -237,6 +248,12 @@ isRigid p = case unFix p of
   CharLiteralPattern   _ -> True
   _ -> False
 
+
+-- Flexible patterns are those which can be
+-- any sort, like predicates \equals, \ceil etc. 
+-- The 3rd option is a constructor whose sort
+-- must match the sort of of its subexpressions:
+-- \and, \or, \implies, etc. 
 isFlexible
   :: MetaOrObject level 
   => CommonPurePattern level 
@@ -278,6 +295,15 @@ makeSortsAgree ps =
     case asum $ getRigidSort <$> ps of 
       Nothing -> flexibleSort
       Just a  -> a
+
+getRigidSort 
+  :: (MetaOrObject level, Given (MetadataTools level))
+  => CommonPurePattern level 
+  -> Maybe (Sort level)
+getRigidSort p = 
+  case forceSort flexibleSort p of 
+    Nothing -> Just $ getSort p 
+    Just _  -> Nothing
 -- ensures that the subpatterns of a pattern match in their sorts
 -- and assigns the correct sort to the top level pattern
 -- i.e. converts the invalid (x : Int /\ ( x < 3 : Float)) : Bool
@@ -411,8 +437,8 @@ mkVar
   -> CommonPurePattern level 
 mkVar = Var_
 
-mkStringLiteral s = StringLiteral_
-mkCharLiteral   c = CharLiteral_
+mkStringLiteral s = StringLiteral_ s
+mkCharLiteral   c = CharLiteral_   c
 
 
 --should never appear in output of 'mk' funcs
