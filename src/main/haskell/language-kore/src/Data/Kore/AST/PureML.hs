@@ -32,6 +32,10 @@ asPurePattern
     :: Pattern level var (PureMLPattern level var) -> PureMLPattern level var
 asPurePattern = Fix
 
+fromPurePattern
+    :: PureMLPattern level var -> Pattern level var (PureMLPattern level var)
+fromPurePattern = unFix
+
 -- |'PureSentenceAxiom' is the pure (fixed-@level@) version of 'SentenceAxiom'
 type PureSentenceAxiom level =
     SentenceAxiom (SortVariable level) (Pattern level) Variable
@@ -102,6 +106,7 @@ constant patternHead = apply patternHead []
 type CommonPurePattern level = PureMLPattern level Variable
 type UnFixedPureMLPattern level variable =
     Pattern level variable (PureMLPattern level variable)
+type UnfixedCommonPurePattern level = UnFixedPureMLPattern level Variable
 
 type PurePatternStub level variable =
     PatternStub level variable (PureMLPattern level variable)

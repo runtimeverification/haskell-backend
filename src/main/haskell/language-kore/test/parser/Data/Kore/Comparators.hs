@@ -18,7 +18,9 @@ import           Test.Tasty.HUnit.Extensions
 
 import           Data.Kore.AST.Common
 import           Data.Kore.Step.BaseStep
+import           Data.Kore.Step.Condition.Condition
 import           Data.Kore.Step.Error
+import           Data.Kore.Step.Function.Data
 import           Data.Kore.Unification.Error
 import           Data.Kore.Unification.Unifier
 
@@ -272,11 +274,33 @@ instance (EqualWithExplanation child, Eq child, Show child)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
-instance (EqualWithExplanation child, Eq child, Show child)
+
+instance (Show child, EqualWithExplanation child)
+    => StructEqualWithExplanation (Ceil level child)
+  where
+    structFieldsWithNames
+        expected @ (Ceil _ _ _)
+        actual @ (Ceil _ _ _)
+      = [ EqWrap
+            "ceilOperandSort = "
+            (ceilOperandSort expected)
+            (ceilOperandSort actual)
+        , EqWrap
+            "ceilResultSort = "
+            (ceilResultSort expected)
+            (ceilResultSort actual)
+        , EqWrap
+            "ceilChild = "
+            (ceilChild expected)
+            (ceilChild actual)
+        ]
+    structConstructorName _ = "Ceil"
+instance (EqualWithExplanation child, Show child)
     => EqualWithExplanation (Ceil level child)
   where
-    compareWithExplanation = rawCompareWithExplanation
+    compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
+
 instance (EqualWithExplanation child, Eq child, Show child)
     => EqualWithExplanation (DomainValue level child)
   where
@@ -443,9 +467,24 @@ instance EqualWithExplanation (Sort level)
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
+instance StructEqualWithExplanation (SymbolOrAlias level)
+    where
+      structFieldsWithNames
+          expected @ (SymbolOrAlias _ _)
+          actual @ (SymbolOrAlias _ _)
+        = [ EqWrap
+              "symbolOrAliasConstructor = "
+              (symbolOrAliasConstructor expected)
+              (symbolOrAliasConstructor actual)
+          , EqWrap
+              "symbolOrAliasParams = "
+              (symbolOrAliasParams expected)
+              (symbolOrAliasParams actual)
+          ]
+      structConstructorName _ = "SymbolOrAlias"
 instance EqualWithExplanation (SymbolOrAlias level)
   where
-    compareWithExplanation = rawCompareWithExplanation
+    compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
 instance SumEqualWithExplanation (UnificationError level)
@@ -680,3 +719,100 @@ instance EqualWithExplanation (StepperVariable level)
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
+instance StructEqualWithExplanation (FunctionResult level)
+  where
+    structFieldsWithNames
+        expected @ (FunctionResult _ _)
+        actual @ (FunctionResult _ _)
+      = [ EqWrap
+            "functionResultPattern = "
+            (functionResultPattern expected)
+            (functionResultPattern actual)
+        , EqWrap
+            "functionResultCondition = "
+            (functionResultCondition expected)
+            (functionResultCondition actual)
+        ]
+    structConstructorName _ = "FunctionResult"
+
+instance EqualWithExplanation (FunctionResult level)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance SumEqualWithExplanation (EvaluatedCondition level)
+  where
+    sumConstructorPair ConditionTrue ConditionTrue =
+        SumConstructorSameNoArguments
+    sumConstructorPair a1@ConditionTrue a2 =
+        SumConstructorDifferent
+            (printWithExplanation a1) (printWithExplanation a2)
+
+    sumConstructorPair ConditionFalse ConditionFalse =
+        SumConstructorSameNoArguments
+    sumConstructorPair a1@ConditionFalse a2 =
+        SumConstructorDifferent
+            (printWithExplanation a1) (printWithExplanation a2)
+
+    sumConstructorPair
+        (ConditionUnevaluable a1) (ConditionUnevaluable a2)
+      =
+        SumConstructorSameWithArguments
+            (EqWrap "ConditionUnevaluable" a1 a2)
+    sumConstructorPair a1@(ConditionUnevaluable _) a2 =
+        SumConstructorDifferent
+            (printWithExplanation a1) (printWithExplanation a2)
+
+instance EqualWithExplanation (EvaluatedCondition level)
+  where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+
+instance SumEqualWithExplanation (ConditionSort level)
+  where
+    sumConstructorPair
+        (ConditionSort a1) (ConditionSort a2)
+      =
+        SumConstructorSameWithArguments
+            (EqWrap "ConditionSort" a1 a2)
+
+instance EqualWithExplanation (ConditionSort level)
+  where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+
+instance SumEqualWithExplanation (AttemptedFunctionResult level)
+  where
+    sumConstructorPair
+        AttemptedFunctionResultNotApplicable
+        AttemptedFunctionResultNotApplicable
+      =
+        SumConstructorSameNoArguments
+    sumConstructorPair a1@AttemptedFunctionResultNotApplicable a2 =
+        SumConstructorDifferent
+            (printWithExplanation a1) (printWithExplanation a2)
+
+    sumConstructorPair
+        (AttemptedFunctionResultSymbolic a1) (AttemptedFunctionResultSymbolic a2)
+      =
+        SumConstructorSameWithArguments
+            (EqWrap "Symbolic" a1 a2)
+    sumConstructorPair a1@(AttemptedFunctionResultSymbolic _) a2 =
+        SumConstructorDifferent
+            (printWithExplanation a1) (printWithExplanation a2)
+
+    sumConstructorPair
+        (AttemptedFunctionResultApplied a1) (AttemptedFunctionResultApplied a2)
+      =
+        SumConstructorSameWithArguments
+            (EqWrap "Applied" a1 a2)
+    sumConstructorPair a1@(AttemptedFunctionResultApplied _) a2 =
+        SumConstructorDifferent
+            (printWithExplanation a1) (printWithExplanation a2)
+
+instance EqualWithExplanation (AttemptedFunctionResult level)
+  where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show

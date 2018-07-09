@@ -27,6 +27,7 @@ import           Data.Kore.IndexedModule.Resolvers
 data MetadataTools level = MetadataTools
     { isConstructor    :: SymbolOrAlias level -> Bool
     , isFunctional     :: SymbolOrAlias level -> Bool
+    , isFunction       :: SymbolOrAlias level -> Bool
     , getArgumentSorts :: SymbolOrAlias level -> [Sort level]
     , getResultSort    :: SymbolOrAlias level -> Sort level
     }
@@ -48,6 +49,7 @@ extractMetadataTools m =
   MetadataTools
     { isConstructor    = hasAttribute constructorAttribute
     , isFunctional     = hasAttribute functionalAttribute
+    , isFunction       = error "Not implemented."
     , getArgumentSorts = applicationSortsOperands . getHeadApplicationSorts m
     , getResultSort    = applicationSortsResult   . getHeadApplicationSorts m
     }
