@@ -60,6 +60,101 @@ flexibleSort =
   SortVariableSort $ SortVariable 
     { getSortVariable = noLocationId "__FlexibleSort__" } --FIXME
 
+
+pattern And_ 
+  :: Sort level
+  -> CommonPurePattern level
+  -> CommonPurePattern level
+  -> CommonPurePattern level
+pattern App_
+  :: SymbolOrAlias level
+  -> [CommonPurePattern level] 
+  -> CommonPurePattern level
+pattern Bottom_ 
+  :: Sort level 
+  -> CommonPurePattern level 
+pattern Ceil_
+  :: Sort level
+  -> Sort level
+  -> CommonPurePattern level
+  -> CommonPurePattern level
+-- pattern DV_
+  -- :: Sort Object
+  -- -> CommonPurePattern Object 
+  -- -> CommonPurePattern Object
+pattern Equals_
+  :: Sort level
+  -> Sort level
+  -> CommonPurePattern level
+  -> CommonPurePattern level
+  -> CommonPurePattern level
+pattern Exists_
+  :: Sort level
+  -> Variable level
+  -> CommonPurePattern level
+  -> CommonPurePattern level
+pattern Floor_
+  :: Sort level
+  -> Sort level
+  -> CommonPurePattern level
+  -> CommonPurePattern level
+pattern Forall_
+  :: Sort level
+  -> Variable level
+  -> CommonPurePattern level
+  -> CommonPurePattern level
+pattern Iff_
+  :: Sort level
+  -> CommonPurePattern level
+  -> CommonPurePattern level
+  -> CommonPurePattern level
+pattern Implies_
+  :: Sort level
+  -> CommonPurePattern level
+  -> CommonPurePattern level
+  -> CommonPurePattern level
+pattern In_
+  :: Sort level
+  -> Sort level
+  -> CommonPurePattern level
+  -> CommonPurePattern level
+  -> CommonPurePattern level
+-- pattern Next_
+  -- :: Sort Object
+  -- -> CommonPurePattern Object 
+  -- -> CommonPurePattern Object
+pattern Not_
+  :: Sort level
+  -> CommonPurePattern level 
+  -> CommonPurePattern level
+pattern Or_
+  :: Sort level
+  -> CommonPurePattern level
+  -> CommonPurePattern level
+  -> CommonPurePattern level
+-- pattern Rewrites_
+--   :: Sort Object
+--   -> CommonPurePattern Object
+--   -> CommonPurePattern Object
+--   -> CommonPurePattern Object
+
+pattern Top_ 
+  :: Sort level 
+  -> CommonPurePattern level
+
+pattern Var_ 
+  :: Variable level 
+  -> CommonPurePattern level
+
+-- pattern StringLiteral_ 
+  -- :: StringLiteral 
+  -- -> Fix (Pattern Meta Variable) 
+
+-- pattern CharLiteral_ 
+--   :: CharLiteral 
+--   -> CommonPurePattern Meta
+
+
 pattern And_          s2   a b = Fix (AndPattern (And s2 a b))
 pattern App_ h c               = Fix (ApplicationPattern (Application h c))
 pattern Bottom_       s2       = Fix (BottomPattern (Bottom s2))
@@ -77,7 +172,10 @@ pattern Not_          s2   a   = Fix (NotPattern (Not s2 a))
 pattern Or_           s2   a b = Fix (OrPattern (Or s2 a b))
 pattern Rewrites_     s2   a b = Fix (RewritesPattern (Rewrites s2 a b))
 pattern Top_          s2       = Fix (TopPattern (Top s2))
-pattern Var_             v     = Fix (VariablePattern v)   
+pattern Var_             v     = Fix (VariablePattern v)
+
+pattern StringLiteral_ s = Fix (StringLiteralPattern s)
+pattern CharLiteral_   c = Fix (CharLiteralPattern   c) 
 
 patternLens
   :: (Applicative f, MetaOrObject level) 
@@ -93,7 +191,7 @@ patternLens
   c -- child
   = \case 
   And_       s2   a b -> And_      <$>          o s2           <*> c a <*> c b
-  Bottom_    s2       -> Bottom_   <$>          o s2
+  Bottom_    s2    -> Bottom_   <$>          o s2
   Ceil_   s1 s2   a   -> Ceil_     <$> i s1 <*> o s2           <*> c a
   DV_        s2   a   -> DV_       <$>          o s2           <*> c a
   Equals_ s1 s2   a b -> Equals_   <$> i s1 <*> o s2           <*> c a <*> c b
@@ -107,8 +205,10 @@ patternLens
   Not_       s2   a   -> Not_      <$>          o s2           <*> c a
   Or_        s2   a b -> Or_       <$>          o s2           <*> c a <*> c b
   Rewrites_  s2   a b -> Rewrites_ <$>          o s2           <*> c a <*> c b
-  Top_       s2       -> Top_      <$>          o s2
-  Var_          v     -> Var_      <$>                   var v
+  Top_       s2    -> Top_      <$>          o s2
+  Var_          v  -> Var_      <$>                   var v
+  StringLiteral_ s -> pure (StringLiteral_ s)
+  CharLiteral_   c -> pure (CharLiteral_   c)
   other -> error $ "Unknown constructor " ++ show other
 
 inputSort        f = patternLens f    pure pure pure 
@@ -130,9 +230,11 @@ isRigid
   => CommonPurePattern level 
   -> Bool
 isRigid p = case unFix p of 
-  ApplicationPattern _ -> True
-  DomainValuePattern _ -> True
-  VariablePattern    _ -> True
+  ApplicationPattern   _ -> True
+  DomainValuePattern   _ -> True
+  VariablePattern      _ -> True
+  StringLiteralPattern _ -> True 
+  CharLiteralPattern   _ -> True
   _ -> False
 
 isFlexible
@@ -153,19 +255,17 @@ forceSort
   => Sort level 
   -> CommonPurePattern level
   -> Maybe (CommonPurePattern level)
-forceSort s p = 
-  if isRigid p
-    then checkAlreadyCorrectSort s p
-  else if isFlexible p 
-    then Just $ p & resultSort .~ s
-    else traverseOf allChildren (forceSort s) p
+forceSort s p 
+ | isRigid    p = checkIfAlreadyCorrectSort s p 
+ | isFlexible p = Just $ p & resultSort .~ s 
+ | otherwise = traverseOf allChildren (forceSort s) p 
 
-checkAlreadyCorrectSort
+checkIfAlreadyCorrectSort
   :: (MetaOrObject level, Given (MetadataTools level))
   => Sort level 
   -> CommonPurePattern level 
   -> Maybe (CommonPurePattern level)
-checkAlreadyCorrectSort s p
+checkIfAlreadyCorrectSort s p
  | getSort p == s = Just p 
  | otherwise = Nothing
 
@@ -188,7 +288,7 @@ ensureSortAgreement
   -> CommonPurePattern level 
 ensureSortAgreement p = 
   case makeSortsAgree $ p ^. partsOf allChildren of 
-    Just []       -> p & resultSort .~ flexibleSort
+    Just []    -> p & resultSort .~ flexibleSort
     Just children -> 
       p & (partsOf allChildren) .~ children 
         & resultSort .~ (getSort $ head children)
@@ -310,6 +410,9 @@ mkVar
   => Variable level 
   -> CommonPurePattern level 
 mkVar = Var_
+
+mkStringLiteral s = StringLiteral_
+mkCharLiteral   c = CharLiteral_
 
 
 --should never appear in output of 'mk' funcs
