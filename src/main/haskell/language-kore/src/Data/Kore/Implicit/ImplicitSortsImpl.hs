@@ -12,11 +12,23 @@ module Data.Kore.Implicit.ImplicitSortsImpl where
 import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.Implicit.ImplicitKoreImpl     (equalsAxiom,
-                                                          parameterizedAxiom,
-                                                          parameterizedEqualsAxiom)
 import           Data.Kore.Implicit.ImplicitVarsInternal
 import           Data.Kore.MetaML.AST
+
+parameterizedEqualsAxiom
+    :: [SortVariable Meta]
+    -> MetaPatternStub
+    -> MetaPatternStub
+    -> MetaSentenceAxiom
+parameterizedEqualsAxiom parameters =
+    parameterizedEqualsAxiom_ parameters
+        (sortParameter Meta "#esp" AstLocationImplicit)
+
+equalsAxiom
+    :: MetaPatternStub
+    -> MetaPatternStub
+    -> MetaSentenceAxiom
+equalsAxiom = parameterizedEqualsAxiom []
 
 {-|'defineMetaSort' is a helper function for defining meta sorts together
 with their constructors, helper functions and axioms.
@@ -51,7 +63,7 @@ defineMetaSort sortType =
     , delete
     , deleteA
         -- inList
-    ,   [ parameterizedAxiom [pS] (not_ (inListA [spS] [vs, emptyListA]))
+    ,   [ parameterizedAxiom_ [pS] (not_ (inListA [spS] [vs, emptyListA]))
         , parameterizedEqualsAxiom [pS]
             (inListA [spS] [vs, listConstructorA [vs', vS]])
             (or_

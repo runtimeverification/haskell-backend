@@ -70,9 +70,9 @@ pureFreeVariables
        , Ord (var Object)
        , Ord (var Meta)
        , MetaOrObject level)
-    => level -> Fix (pat var) -> Set.Set (var level)
-pureFreeVariables level p =
-    case isMetaOrObject (toProxy level) of
+    => proxy level -> Fix (pat var) -> Set.Set (var level)
+pureFreeVariables proxy p =
+    case isMetaOrObject proxy of
         IsMeta   -> metaVars `ifSetEmpty` unifiedObjectVars
         IsObject -> objectVars `ifSetEmpty` unifiedMetaVars
   where

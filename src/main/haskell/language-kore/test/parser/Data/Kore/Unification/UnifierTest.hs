@@ -9,11 +9,11 @@ import           Test.Tasty.HUnit.Extensions
 
 import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.MLPatternsTest                        (extractPurePattern)
 import           Data.Kore.AST.PureML
+import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Comparators                               ()
@@ -128,6 +128,7 @@ tools :: MetadataTools Object
 tools = MetadataTools
     { isConstructor = mockIsConstructor
     , isFunctional = mockIsFunctional
+    , isFunction = const False
     , getArgumentSorts = mockGetArgumentSorts
     , getResultSort = mockGetResultSort
     }

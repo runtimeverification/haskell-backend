@@ -32,6 +32,8 @@ import           Data.Kore.AST.PureML                            (CommonPurePatt
                                                                   mapPatternVariables)
 import           Data.Kore.FixTraversals                         (fixBottomUpVisitor)
 import           Data.Kore.IndexedModule.MetadataTools           (MetadataTools)
+import           Data.Kore.Step.AxiomPatterns
+import           Data.Kore.Step.Condition.Condition              (ConditionSort (..))
 import           Data.Kore.Step.Error
 import           Data.Kore.Substitution.Class                    (Hashable (..), PatternSubstitutionClass (..))
 import qualified Data.Kore.Substitution.List                     as ListSubstitution
@@ -46,15 +48,6 @@ import           Data.Kore.Variables.Fresh.IntCounter            (IntCounter)
 import           Data.Kore.Variables.Int                         (IntVariable (..))
 import           Data.Maybe                                      (fromMaybe)
 
-{--| 'AxiomPattern' is a rewriting axiom in a normalized form. Right now
-it can only represent axioms that look like left-pattern => right-pattern.
---}
-data AxiomPattern level = AxiomPattern
-    { axiomPatternLeft  :: !(CommonPurePattern level)
-    , axiomPatternRight :: !(CommonPurePattern level)
-    }
-    deriving (Show, Eq)
-
 {--| 'StepperConfiguration' represents the configuration to which a rewriting
 axiom is applied.
 
@@ -66,10 +59,11 @@ data StepperConfiguration level = StepperConfiguration
     -- ^ The pattern being rewritten.
 
     -- TODO(virgil): Remove and extract from condition.
-    , stepperConfigurationConditionSort :: !(Sort level)
+    , stepperConfigurationConditionSort :: !(ConditionSort level)
     -- ^ The sort for the configuration condition.
     , stepperConfigurationCondition     :: !(CommonPurePattern level)
     -- ^ The condition predicate.
+    -- TODO(virgil): Make this an EvaluatedCondition.
     }
     deriving (Show, Eq)
 
@@ -175,7 +169,8 @@ stepWithAxiom
     StepperConfiguration
         { stepperConfigurationPattern = startPatternRaw
         , stepperConfigurationCondition = startConditionRaw
-        , stepperConfigurationConditionSort = conditionSort
+        , stepperConfigurationConditionSort =
+            conditionSort @ (ConditionSort unwrappedConditionSort)
         }
     AxiomPattern
         { axiomPatternLeft = axiomLeftRaw
@@ -224,7 +219,7 @@ stepWithAxiom
         (variableMapping1, condition) <-
             patternStepVariablesToCommon existingVars variableMapping
                 (Fix $ AndPattern And
-                    { andSort = conditionSort
+                    { andSort = unwrappedConditionSort
                     , andFirst = startCondition
                     , andSecond = substitutionToPattern
                             conditionSort
@@ -556,26 +551,29 @@ makeUnifiedSubstitution =
 
 substitutionToPattern
     :: SortedVariable variable
-    => Sort level
+    => ConditionSort level
     -> [(variable level, PureMLPattern level variable)]
     -> PureMLPattern level variable
-substitutionToPattern sort [] =
+substitutionToPattern (ConditionSort sort) [] =
     asPurePattern $ TopPattern Top { topSort = sort }
 substitutionToPattern sort [subst] =
     singleSubstitutionToPattern sort subst
-substitutionToPattern sort (subst : substs) =
+substitutionToPattern
+    conditionSort @ (ConditionSort sort)
+    (subst : substs)
+  =
     asPurePattern $ AndPattern And
         { andSort = sort
-        , andFirst = singleSubstitutionToPattern sort subst
-        , andSecond = substitutionToPattern sort substs
+        , andFirst = singleSubstitutionToPattern conditionSort subst
+        , andSecond = substitutionToPattern conditionSort substs
         }
 
 singleSubstitutionToPattern
     :: SortedVariable variable
-    => Sort level
+    => ConditionSort level
     -> (variable level, PureMLPattern level variable)
     -> PureMLPattern level variable
-singleSubstitutionToPattern sort (var, patt) =
+singleSubstitutionToPattern (ConditionSort sort) (var, patt) =
     asPurePattern $ EqualsPattern Equals
         { equalsOperandSort = sortedVariableSort var
         , equalsResultSort  = sort

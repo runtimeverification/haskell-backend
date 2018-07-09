@@ -478,6 +478,8 @@ sortVisibilityTests =
                     }
                 , sentenceAliasSorts = []
                 , sentenceAliasResultSort = sort
+                , sentenceAliasLeftPattern  = TopPattern $ Top { topSort = sort }
+                , sentenceAliasRightPattern = TopPattern $ Top { topSort = sort }
                 , sentenceAliasAttributes = Attributes []
                 }
             :: KoreSentenceAlias Object)
@@ -490,6 +492,8 @@ sortVisibilityTests =
                     }
                 , sentenceAliasSorts = [sort]
                 , sentenceAliasResultSort = anotherSort
+                , sentenceAliasLeftPattern  = TopPattern $ Top { topSort = sort }
+                , sentenceAliasRightPattern = TopPattern $ Top { topSort = sort }
                 , sentenceAliasAttributes = Attributes []
                 }
             :: KoreSentenceAlias Object)
@@ -843,6 +847,8 @@ aliasVisibilityTests =
             , sentenceAliasSorts = []
             , sentenceAliasResultSort =
                 SortVariableSort (SortVariable (testId "sv1"))
+            , sentenceAliasLeftPattern  = TopPattern $ Top { topSort = defaultSort }
+            , sentenceAliasRightPattern = TopPattern $ Top { topSort = defaultSort }
             , sentenceAliasAttributes = Attributes []
             }
         :: KoreSentenceAlias Object)
@@ -865,6 +871,8 @@ aliasVisibilityTests =
             , sentenceAliasSorts = []
             , sentenceAliasResultSort =
                 SortVariableSort (SortVariable (testId "#sv1"))
+            , sentenceAliasLeftPattern  = TopPattern $ Top { topSort = patternMetaSort }
+            , sentenceAliasRightPattern = TopPattern $ Top { topSort = patternMetaSort }
             , sentenceAliasAttributes = Attributes []
             }
         :: KoreSentenceAlias Meta)
@@ -955,6 +963,8 @@ aliasVisibilityTests =
                     [ SortVariableSort (SortVariable (testId "sv1")) ]
                 , sentenceAliasResultSort =
                     SortVariableSort (SortVariable (testId "sv1"))
+                , sentenceAliasLeftPattern  = TopPattern $ Top { topSort = defaultSort }
+                , sentenceAliasRightPattern = TopPattern $ Top { topSort = defaultSort }
                 , sentenceAliasAttributes = Attributes []
                 }
             :: KoreSentenceAlias Object)
@@ -1298,6 +1308,8 @@ nameDuplicationTests =
                         , sentenceAliasSorts = []
                         , sentenceAliasResultSort =
                             SortVariableSort (SortVariable (testId "sv1"))
+                        , sentenceAliasLeftPattern = TopPattern $ Top { topSort = simpleSort (SortName "s1") }
+                        , sentenceAliasRightPattern = TopPattern $ Top { topSort = simpleSort (SortName "s1") }
                         , sentenceAliasAttributes = Attributes []
                         }
                     :: KoreSentenceAlias Object)

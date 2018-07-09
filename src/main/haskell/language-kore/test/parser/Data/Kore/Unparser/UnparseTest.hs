@@ -12,6 +12,7 @@ import           Data.Kore.Parser.LexemeImpl
 import           Data.Kore.Parser.ParserImpl
 import           Data.Kore.Parser.ParserUtils
 import           Data.Kore.Unparser.Unparse
+import           Data.Kore.HaskellExtensions
 
 import           Test.Tasty                   (TestTree, testGroup)
 import           Test.Tasty.HUnit             (assertEqual, testCase)
@@ -31,6 +32,31 @@ unparseUnitTests =
                 :: KoreSentenceSort)
             )
             "sort x{}[]"
+        , unparseTest
+            (UnifiedSentence 
+                { getUnifiedSentence = UnifiedObject (Rotate41 
+                    { unRotate41 = SentenceAliasSentence (SentenceAlias 
+                        { sentenceAliasAlias = Alias 
+                            { aliasConstructor = Id {getId = "i", idLocation = AstLocationTest} :: Id Object
+                            , aliasParams = []
+                            }
+                        , sentenceAliasSorts = []
+                        , sentenceAliasResultSort = SortVariableSort (SortVariable 
+                            { getSortVariable = Id {getId = "z", idLocation = AstLocationTest} :: Id Object})
+                        , sentenceAliasLeftPattern = TopPattern (Top 
+                            { topSort = SortActualSort (SortActual 
+                                { sortActualName = Id {getId = "i", idLocation = AstLocationTest} :: Id Object
+                                , sortActualSorts = []
+                                })})
+                        , sentenceAliasRightPattern = TopPattern (Top 
+                            { topSort = SortVariableSort (SortVariable 
+                                { getSortVariable = Id {getId = "q", idLocation = AstLocationTest} :: Id Object})
+                            })
+                        , sentenceAliasAttributes = Attributes {getAttributes = []}
+                        })
+                    })
+                } :: KoreSentence)
+                "alias i{}() : z\nwhere \\top{i{}}() := \\top{q}()[]"
         , unparseTest
             Attributes
                 { getAttributes =
