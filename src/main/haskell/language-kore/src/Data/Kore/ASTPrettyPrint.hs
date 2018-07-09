@@ -553,15 +553,18 @@ instance PrettyPrint (Attributes)
 instance
     ( MetaOrObject level
     , PrettyPrint (Fix (pat variable))
+    , PrettyPrint (variable level)
     ) => PrettyPrint (SentenceAlias level pat variable)
   where
-    prettyPrint _ sa@(SentenceAlias _ _ _ _) =
+    prettyPrint _ sa@(SentenceAlias _ _ _ _ _ _) =
         writeStructure
             "SentenceAlias"
             [ writeFieldNewLine "sentenceAliasAlias" sentenceAliasAlias sa
             , writeListField "sentenceAliasSorts" sentenceAliasSorts sa
             , writeFieldNewLine
                 "sentenceAliasReturnSort" sentenceAliasResultSort sa
+            , writeFieldNewLine "sentenceAliasLeftPattern" sentenceAliasLeftPattern sa
+            , writeFieldNewLine "sentenceAliasRightPattern" sentenceAliasRightPattern sa
             , writeAttributesField
                 "sentenceAliasAttributes" (sentenceAliasAttributes sa)
             ]
@@ -640,6 +643,7 @@ instance
     ( MetaOrObject level
     , PrettyPrint sortParam
     , PrettyPrint (Fix (pat variable))
+    , PrettyPrint (variable level)    
     ) => PrettyPrint (Sentence level sortParam pat variable)
   where
     prettyPrint flags (SentenceAliasSentence s)    =
@@ -658,13 +662,14 @@ instance
 instance
     ( PrettyPrint sortParam
     , PrettyPrint (Fix (pat variable))
+    , PrettyPrint (variable Object)
+    , PrettyPrint (variable Meta)
     ) => PrettyPrint (UnifiedSentence sortParam pat variable)
   where
     prettyPrint flags (UnifiedSentence (UnifiedMeta rs)) =
         writeOneFieldStruct flags "MetaSentence" (unRotate41 rs)
     prettyPrint flags (UnifiedSentence (UnifiedObject rs)) =
         writeOneFieldStruct flags "ObjectSentence" (unRotate41 rs)
-
 
 instance
     (PrettyPrint (sentence sortParam pat variable)

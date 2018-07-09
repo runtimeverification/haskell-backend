@@ -29,7 +29,12 @@ import           Data.Kore.Parser.CStringTest
 import           Data.Kore.Parser.LexemeTest
 import           Data.Kore.Parser.ParserTest
 import           Data.Kore.Parser.RegressionTest
+import           Data.Kore.Step.AxiomPatternsTest
 import           Data.Kore.Step.BaseStepTest
+import           Data.Kore.Step.Condition.ConditionTest
+import           Data.Kore.Step.Condition.EvaluatorTest
+import           Data.Kore.Step.Function.IntegrationTest
+import           Data.Kore.Step.Function.UserDefinedTest
 import           Data.Kore.Step.StepTest
 import           Data.Kore.Substitution.ClassTest
 import           Data.Kore.Substitution.ListTest
@@ -97,4 +102,9 @@ unitTests =
         , topologicalSortTest
         , baseStepTests
         , stepTests
+        , axiomPatternsTests
+        , conditionTests
+        , conditionEvaluatorTests
+        , userDefinedFunctionTests
+        , functionIntegrationTests
         ]

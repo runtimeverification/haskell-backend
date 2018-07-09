@@ -38,6 +38,8 @@ dependencies:
 - deepseq
 - optparse-applicative
 - reflection
+- time
+- gitrev
 
 library:
   source-dirs: src

@@ -7,6 +7,10 @@
             symbol hook{}(
                 Hook{}
             ):Attribute{}[]
+            sort SmtLib{}[]
+            symbol smtlib{}(
+                SmtLib{}
+            ):Attribute{}[]
             symbol functional{}():Attribute{}[]
             symbol constructor{}():Attribute{}[]
             sort ArgumentPosition{}[]
