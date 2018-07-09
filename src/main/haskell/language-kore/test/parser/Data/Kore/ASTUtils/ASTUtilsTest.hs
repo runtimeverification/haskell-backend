@@ -27,10 +27,6 @@ module  Data.Kore.ASTUtils.ASTUtilsTest
 import           Test.Tasty                                          (TestTree,
                                                                       testGroup)
 
-import           Test.Tasty.Runners                                  (consoleTestReporter,
-                                                                      defaultMainWithIngredients,
-                                                                      listingTests)
-import           Test.Tasty.Runners.AntXML                           (antXMLRunner)
 import           Test.Tasty.HUnit                 (assertEqual, testCase)
 
 
@@ -77,64 +73,64 @@ sortAgreement = testGroup "Sort agreement"
         (Just $ testSort "Y")
   , testCase "flexibleSort.1" $ 
       assertEqual ""
-        (dummyEnvironment @Object mkBottom ^? resultSort)
+        (dummyEnvironment mkBottom ^? resultSort)
         (Just (flexibleSort :: Sort Object))
   , testCase "flexibleSort.2" $ 
       assertEqual ""
-        (dummyEnvironment @Object mkTop ^? resultSort)
+        (dummyEnvironment mkTop ^? resultSort)
         (Just (flexibleSort :: Sort Object))
   , testCase "flexibleSort.3" $ 
       assertEqual ""
-        (dummyEnvironment @Object (mkExists (var_ "a" "A") mkBottom) ^? resultSort)
+        (dummyEnvironment (mkExists (var_ "a" "A") mkBottom) ^? resultSort)
         (Just (flexibleSort :: Sort Object))
   ]
 
 
 subTrivial :: CommonPurePattern Object 
-subTrivial = dummyEnvironment @Object $ 
+subTrivial = dummyEnvironment $ 
   subst (Var_ $ var "a") (Var_ $ var "b") $ 
   mkExists (var "p") (Var_ $ var "a")
 
 subTrivialSolution :: CommonPurePattern Object 
-subTrivialSolution = dummyEnvironment @Object $ 
+subTrivialSolution = dummyEnvironment $ 
   mkExists (var "p") (Var_ $ var "b")
 
 subShadow :: CommonPurePattern Object 
-subShadow = dummyEnvironment @Object $ 
+subShadow = dummyEnvironment $ 
   subst (Var_ $ var "a") (Var_ $ var "b") $ 
   mkExists (var "a") (Var_ $ var "q")
 
 subShadowSolution :: CommonPurePattern Object 
-subShadowSolution = dummyEnvironment @Object $ 
+subShadowSolution = dummyEnvironment $ 
   mkExists (var "a") (Var_ $ var "q")
 
 subAlphaRename1 :: CommonPurePattern Object 
-subAlphaRename1 = dummyEnvironment @Object $ 
+subAlphaRename1 = dummyEnvironment $ 
   subst (Var_ $ var "a") (Var_ $ var "b") $ 
   mkExists (var "b") (Var_ $ var "q")
 
 subAlphaRename1Solution :: CommonPurePattern Object 
-subAlphaRename1Solution = dummyEnvironment @Object $ 
+subAlphaRename1Solution = dummyEnvironment $ 
   mkExists (var "b0") (Var_ $ var "q") 
 
 subAlphaRename2 :: CommonPurePattern Object 
-subAlphaRename2 = dummyEnvironment @Object $ 
+subAlphaRename2 = dummyEnvironment $ 
   subst (Var_ $ var "a") (Var_ $ var "b") $ 
   mkExists (var "b") (Var_ $ var "a")
 
-subAlphaRename2Solution :: CommonPurePattern Object 
-subAlphaRename2Solution = dummyEnvironment @Object $ 
-  subst (Var_ $ var "a") (Var_ $ var "b") $ 
-  mkExists (var "b0") (Var_ $ var "b")
+-- subAlphaRename2Solution :: CommonPurePattern Object 
+-- subAlphaRename2Solution = dummyEnvironment @Object $ 
+--   subst (Var_ $ var "a") (Var_ $ var "b") $ 
+--   mkExists (var "b0") (Var_ $ var "b")
 
 -- the a : X forces bottom : X
 sortAgreement1 :: CommonPurePattern Object
-sortAgreement1 = dummyEnvironment @Object $ 
+sortAgreement1 = dummyEnvironment $ 
   mkOr (Var_ $ var_ "a" "X") mkBottom
 
 -- the y : Y should force everything else to be Y
 sortAgreement2 :: CommonPurePattern Object
-sortAgreement2 = dummyEnvironment @Object $ 
+sortAgreement2 = dummyEnvironment $ 
   mkImplies mkBottom $
   mkIff
     (mkEquals (Var_ $ var_ "foo" "X") (Var_ $ var_ "bar" "X"))
@@ -150,10 +146,10 @@ var_ x s =
   Variable (noLocationId x) (testSort s) 
 
 dummyEnvironment
-  :: forall level r . MetaOrObject level 
-  => (Given (MetadataTools level) => r) 
+  :: forall r . MetaOrObject Object 
+  => (Given (MetadataTools Object) => r) 
   -> r
-dummyEnvironment = give (dummyMetadataTools @level)
+dummyEnvironment = give (dummyMetadataTools @Object)
 
 dummyMetadataTools 
   :: MetaOrObject level 
@@ -161,6 +157,7 @@ dummyMetadataTools
 dummyMetadataTools = MetadataTools
     { isConstructor    = const True 
     , isFunctional     = const True 
+    , isFunction       = const True
     , getArgumentSorts = const [] 
     , getResultSort    = const $ testSort "S"
     }
