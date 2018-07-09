@@ -2,7 +2,6 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PatternSynonyms       #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
 {-|
 Module      : Data.Kore.AST.PureML
@@ -35,7 +34,7 @@ asPurePattern = Fix
 
 fromPurePattern
     :: PureMLPattern level var -> Pattern level var (PureMLPattern level var)
-fromPurePattern (Fix p) = p
+fromPurePattern = unFix
 
 -- |'PureSentenceAxiom' is the pure (fixed-@level@) version of 'SentenceAxiom'
 type PureSentenceAxiom level =
