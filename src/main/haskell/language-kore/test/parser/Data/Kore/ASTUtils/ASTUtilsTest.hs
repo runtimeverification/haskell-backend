@@ -83,6 +83,8 @@ sortAgreement = testGroup "Sort agreement"
       assertEqual ""
         (dummyEnvironment (mkExists (var_ "a" "A") mkBottom) ^? resultSort)
         (Just (flexibleSort :: Sort Object))
+  , testGroup "testManySimplePatterns" $ 
+      dummyEnvironment testManySimplePatterns
   ]
 
 
@@ -135,6 +137,50 @@ sortAgreement2 = dummyEnvironment $
   mkIff
     (mkEquals (Var_ $ var_ "foo" "X") (Var_ $ var_ "bar" "X"))
     (Var_ $ var_ "y" "Y")
+
+varX :: (Given (MetadataTools Object)) => CommonPurePattern Object
+varX = mkVar $ var_ "x" "X"
+
+testManySimplePatterns 
+  :: (Given (MetadataTools Object))
+  => [TestTree]
+testManySimplePatterns = do 
+  flexibleZeroArg <- [mkBottom, mkTop]
+  (a,b) <- [(varX, flexibleZeroArg), (flexibleZeroArg, varX), (varX, varX)]
+  shouldHaveSortXOneArg <- 
+    [ mkForall (var "a") varX
+    , mkExists (var "a") varX
+    , mkNot varX
+    , mkNext varX 
+    ]
+  shouldHaveSortXTwoArgs <- 
+    [ mkAnd a b
+    , mkOr a b
+    , mkImplies a b
+    , mkIff a b
+    , mkRewrites a b
+    ]
+  shouldHaveFlexibleSortTwoArgs <- 
+    [ mkEquals a b
+    , mkIn a b
+    ]
+  shoudlHaveFlexibleSortOneArg <- 
+    [ mkCeil a
+    , mkFloor a
+    ]
+  let assert1 = return $ testCase "" $ assertEqual "" 
+       (getSort shouldHaveSortXOneArg) 
+       (testSort "X")
+  let assert2 = return $ testCase "" $ assertEqual ""
+       (getSort shouldHaveSortXTwoArgs)
+       (testSort "X")
+  let assert3 = return $ testCase "" $ assertEqual "" 
+       (getSort shoudlHaveFlexibleSortOneArg)
+       flexibleSort
+  let assert4 = return $ testCase "" $ assertEqual "" 
+       (getSort shouldHaveFlexibleSortTwoArgs)
+       flexibleSort
+  assert1 ++ assert2 ++ assert3 ++ assert4 
 
 var :: MetaOrObject level => String -> Variable level
 var x = 

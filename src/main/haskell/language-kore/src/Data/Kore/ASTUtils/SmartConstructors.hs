@@ -390,8 +390,13 @@ ensureSortAgreement p =
     Just []    -> p & resultSort .~ flexibleSort
     Just children -> 
       p & (partsOf allChildren) .~ children 
-        & resultSort .~ (getSort $ head children)
-        & inputSort  .~ (getSort $ head children)
+        & inputSort  .~ childSort
+        & resultSort .~ (
+          if isFlexible p 
+            then flexibleSort 
+            else childSort
+          )
+      where childSort = getSort $ head children
     Nothing -> error $ "Can't unify sorts of subpatterns: " ++ show p
 
 mkAnd
