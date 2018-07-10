@@ -736,6 +736,9 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 Note that the 'StringLiteralPattern' and 'CharLiteralPattern' should
 be members only of 'Pattern Meta'.
 -}
+-- NOTE: If you are adding a case to Pattern, you should add cases in:
+-- ASTUtils/SmartConstructors.hs
+-- as well as a ton of other places, probably. 
 data Pattern level variable child where
     AndPattern
         :: !(And level child) -> Pattern level variable child
