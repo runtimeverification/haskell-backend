@@ -346,8 +346,28 @@ symbolOrAliasLiftedDeclaration sa = symbolDeclaration
         }
 
 -- Section 9.2.7 Lift Object Alias Declarations
-liftAliasDeclaration :: KoreSentenceAlias Object -> MetaSentenceSymbol
-liftAliasDeclaration = symbolOrAliasLiftedDeclaration
+liftAliasDeclaration 
+    :: KoreSentenceAlias Object 
+    -> (MetaSentenceSymbol, MetaSentenceAxiom)
+liftAliasDeclaration as = (symbolOrAliasLiftedDeclaration as, axiom) 
+  where
+    axiom = SentenceAxiom
+        { sentenceAxiomAttributes = Attributes []
+        , sentenceAxiomParameters = [ sortParam ]
+        , sentenceAxiomPattern    = pat 
+        }
+    pat = Fix . EqualsPattern $ 
+        Equals 
+            { equalsOperandSort = patternMetaSort 
+            , equalsResultSort  = SortVariableSort sortParam
+            , equalsFirst       = left
+            , equalsSecond      = right
+            }
+    left  = liftToMeta (asKorePattern (sentenceAliasLeftPattern as))
+    right = liftToMeta (asKorePattern (sentenceAliasRightPattern as))
+    sortParam = SortVariable (Id "#s" liftedSymbolLocation)
+    sortName = (aliasConstructor . sentenceAliasAlias) as
+    liftedSymbolLocation = AstLocationLifted (idLocation sortName)
 
 {-|'liftSentence' transforms a 'Sentence' in one or more 'MetaSentences'
 encoding it.
@@ -361,6 +381,8 @@ liftMetaSentence
 liftMetaSentence (SentenceAliasSentence msa) =
     [ SentenceAliasSentence msa
         { sentenceAliasAttributes = sentenceAliasAttributes msa
+        , sentenceAliasLeftPattern  = fmap liftToMeta (sentenceAliasLeftPattern msa)
+        , sentenceAliasRightPattern = fmap liftToMeta (sentenceAliasRightPattern msa)
         }
     ]
 liftMetaSentence (SentenceSymbolSentence mss) =
@@ -414,7 +436,10 @@ liftObjectSentence
     :: Sentence Object UnifiedSortVariable UnifiedPattern Variable
     -> [MetaSentence]
 liftObjectSentence (SentenceAliasSentence osa) =
-    [ SentenceSymbolSentence (liftAliasDeclaration osa)]
+    let (mas, axiom) = liftAliasDeclaration osa in 
+        [ SentenceSymbolSentence mas
+        , SentenceAxiomSentence axiom
+        ]
 liftObjectSentence (SentenceSymbolSentence oss) =
     let (mss, axiom1, axiom2) = liftSymbolDeclaration oss in
         [ SentenceSymbolSentence mss

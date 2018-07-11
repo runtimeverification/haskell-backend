@@ -4,6 +4,9 @@ module TEST-ALIAS-7
 
   sort Nat{} []
 
-  alias f{S}(Nat{}) : S []
+  symbol g{S}(Nat{}) : S []
+
+  alias f{S}(Nat{}) : S
+  where f{S}(N:Nat{}) := g{S}(N:Nat{}) []
 
 endmodule []

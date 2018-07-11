@@ -8,6 +8,8 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE LambdaCase            #-}
 {-|
 Module      : Data.Kore.AST.Common
 Description : Data Structures for representing the Kore language AST that do not
@@ -36,6 +38,8 @@ import           Data.Proxy
 
 import           Data.Kore.AST.MetaOrObject
 
+import           GHC.Generics (Generic)
+import           Data.Hashable
 
 {-| 'FileLocation' represents a position in a source file.
 -}
@@ -44,7 +48,9 @@ data FileLocation = FileLocation
     , line     :: Int
     , column   :: Int
     }
-    deriving Show
+    deriving (Show, Generic)
+
+instance Hashable FileLocation
 
 {-| 'AstLocation' represents the origin of an AST node.
 
@@ -63,7 +69,9 @@ data AstLocation
     | AstLocationLifted AstLocation
     | AstLocationUnknown
     -- ^ This should not be used and should be eliminated in further releases
-    deriving Show
+    deriving (Show, Generic)
+
+instance Hashable AstLocation
 
 {-| 'prettyPrintAstLocation' displays an `AstLocation` in a way that's
 (sort of) user friendly.
@@ -101,13 +109,15 @@ data Id level = Id
     { getId      :: !String
     , idLocation :: !AstLocation
     }
-    deriving Show
+    deriving (Show, Generic)
 instance Ord (Id level) where
     compare first@(Id _ _) second@(Id _ _) =
         compare (getId first) (getId second)
 {-# ANN module "HLint: ignore Redundant compare" #-}
 instance Eq (Id level) where
     first == second = compare first second == EQ
+
+instance Hashable (Id level)
 
 {-| 'noLocationId' creates an Id without a source location. While there are some
 narrow cases where this makes sense, you should really consider other options
@@ -123,13 +133,17 @@ noLocationId value = Id
 Section 9.1.1 (Lexicon).
 -}
 newtype StringLiteral = StringLiteral { getStringLiteral :: String }
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Ord, Generic)
+
+instance Hashable StringLiteral
 
 {-|'CharLiteral' corresponds to the @char@ literal from the Semantics of K,
 Section 9.1.1 (Lexicon).
 -}
 newtype CharLiteral = CharLiteral { getCharLiteral :: Char }
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Ord, Generic)
+
+instance Hashable CharLiteral
 
 {-|'SymbolOrAlias' corresponds to the @head{sort-list}@ branch of the
 @object-head@ and @meta-head@ syntactic categories from the Semantics of K,
@@ -142,7 +156,9 @@ data SymbolOrAlias level = SymbolOrAlias
     { symbolOrAliasConstructor :: !(Id level)
     , symbolOrAliasParams      :: ![Sort level]
     }
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Ord, Generic)
+
+instance Hashable (SymbolOrAlias level)
 
 {-|'Symbol' corresponds to the
 @object-head-constructor{object-sort-variable-list}@ part of the
@@ -158,7 +174,9 @@ data Symbol level = Symbol
     { symbolConstructor :: !(Id level)
     , symbolParams      :: ![SortVariable level]
     }
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Ord, Generic)
+
+instance Hashable (Symbol level)
 
 {-|'Alias' corresponds to the
 @object-head-constructor{object-sort-variable-list}@ part of the
@@ -174,7 +192,9 @@ data Alias level = Alias
     { aliasConstructor :: !(Id level)
     , aliasParams      :: ![SortVariable level]
     }
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Ord, Generic)
+
+instance Hashable (Alias level)
 
 {-|'SortVariable' corresponds to the @object-sort-variable@ and
 @meta-sort-variable@ syntactic categories from the Semantics of K,
@@ -185,7 +205,9 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 -}
 newtype SortVariable level = SortVariable
     { getSortVariable  :: Id level }
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Ord, Generic)
+
+instance Hashable (SortVariable level)
 
 {-|'SortActual' corresponds to the @sort-constructor{sort-list}@ branch of the
 @object-sort@ and @meta-sort@ syntactic categories from the Semantics of K,
@@ -198,7 +220,9 @@ data SortActual level = SortActual
     { sortActualName  :: !(Id level)
     , sortActualSorts :: ![Sort level]
     }
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Ord, Generic)
+
+instance Hashable (SortActual level)
 
 {-|'Sort' corresponds to the @object-sort@ and
 @meta-sort@ syntactic categories from the Semantics of K,
@@ -210,7 +234,9 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 data Sort level
     = SortVariableSort !(SortVariable level)
     | SortActualSort !(SortActual level)
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Ord, Generic)
+
+instance Hashable (Sort level)
 
 {-|'MetaSortType' corresponds to the @meta-sort-constructor@ syntactic category
 from the Semantics of K, Section 9.1.2 (Sorts).
@@ -224,11 +250,17 @@ data MetaBasicSortType
     | SortSort
     | SymbolSort
     | VariableSort
+    deriving(Generic)
+
+instance Hashable MetaBasicSortType
 
 data MetaSortType
     = MetaBasicSortType MetaBasicSortType
     | MetaListSortType MetaBasicSortType
     | StringSort
+    deriving(Generic)
+
+instance Hashable MetaSortType
 
 metaBasicSortsList :: [MetaBasicSortType]
 metaBasicSortsList =
@@ -274,7 +306,9 @@ data Variable level = Variable
     { variableName :: !(Id level)
     , variableSort :: !(Sort level)
     }
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Ord, Generic)
+
+instance Hashable (Variable level)
 
 {--| 'SortedVariable' is a variable which has a sort.
 --}
@@ -303,7 +337,9 @@ data MLPatternType
     | OrPatternType
     | RewritesPatternType
     | TopPatternType
-    deriving Show
+    deriving (Show, Generic)
+
+instance Hashable MLPatternType
 
 allPatternTypes :: [MLPatternType]
 allPatternTypes =
@@ -360,7 +396,9 @@ data And level child = And
     , andFirst  :: !child
     , andSecond :: !child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+instance Hashable child => Hashable (And level child)
 
 {-|'Application' corresponds to the @head(pattern-list)@ branches of the
 @object-pattern@ and @meta-pattern@ syntactic categories from
@@ -375,7 +413,9 @@ data Application level child = Application
     { applicationSymbolOrAlias :: !(SymbolOrAlias level)
     , applicationChildren      :: ![child]
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+instance Hashable child => Hashable (Application level child)
 
 {-|'Bottom' corresponds to the @\bottom@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -389,7 +429,9 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 This represents the ⌈BottomPattern⌉ Matching Logic construct.
 -}
 newtype Bottom level child = Bottom { bottomSort :: Sort level}
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+instance Hashable (Bottom level child)
 
 {-|'Ceil' corresponds to the @\ceil@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -409,7 +451,9 @@ data Ceil level child = Ceil
     , ceilResultSort  :: !(Sort level)
     , ceilChild       :: !child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+instance Hashable child => Hashable (Ceil level child)
 
 {-|'DomainValue' corresponds to the @\dv@ branch of the @object-pattern@
 syntactic category, which are not yet in the Semantics of K document,
@@ -430,7 +474,10 @@ data DomainValue level child = DomainValue
     { domainValueSort  :: !(Sort level)
     , domainValueChild :: !child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+instance Hashable child => Hashable (DomainValue level child)
+
 
 {-|'Equals' corresponds to the @\equals@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -451,7 +498,9 @@ data Equals level child = Equals
     , equalsFirst       :: !child
     , equalsSecond      :: !child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+instance Hashable child => Hashable (Equals level child)
 
 {-|'Exists' corresponds to the @\exists@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -469,7 +518,9 @@ data Exists level v child = Exists
     , existsVariable :: !(v level)
     , existsChild    :: !child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+instance (Hashable child, Hashable (v level)) => Hashable (Exists level v child)
 
 {-|'Floor' corresponds to the @\floor@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -489,7 +540,9 @@ data Floor level child = Floor
     , floorResultSort  :: !(Sort level)
     , floorChild       :: !child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+instance Hashable child => Hashable (Floor level child)
 
 {-|'Forall' corresponds to the @\forall@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -507,7 +560,9 @@ data Forall level v child = Forall
     , forallVariable :: !(v level)
     , forallChild    :: !child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+instance (Hashable child, Hashable (v level)) => Hashable (Forall level v child)
 
 {-|'Iff' corresponds to the @\iff@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -525,7 +580,10 @@ data Iff level child = Iff
     , iffFirst  :: !child
     , iffSecond :: !child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+instance Hashable child => Hashable (Iff level child)
+
 
 {-|'Implies' corresponds to the @\implies@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -543,7 +601,9 @@ data Implies level child = Implies
     , impliesFirst  :: !child
     , impliesSecond :: !child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+instance Hashable child => Hashable (Implies level child)
 
 {-|'In' corresponds to the @\in@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -567,8 +627,9 @@ data In level child = In
     , inContainedChild  :: !child
     , inContainingChild :: !child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
 
+instance Hashable child => Hashable (In level child)
 
 {-|'Next' corresponds to the @\next@ branch of the @object-pattern@
 syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
@@ -585,7 +646,9 @@ data Next level child = Next
     { nextSort  :: !(Sort level)
     , nextChild :: !child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+instance Hashable child => Hashable (Next level child)
 
 {-|'Not' corresponds to the @\not@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -602,7 +665,9 @@ data Not level child = Not
     { notSort  :: !(Sort level)
     , notChild :: !child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+instance Hashable child => Hashable (Not level child)
 
 {-|'Or' corresponds to the @\or@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -620,7 +685,9 @@ data Or level child = Or
     , orFirst  :: !child
     , orSecond :: !child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+instance Hashable child => Hashable (Or level child)
 
 {-|'Rewrites' corresponds to the @\rewrites@ branch of the @object-pattern@
 syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
@@ -639,7 +706,9 @@ data Rewrites level child = Rewrites
     , rewritesFirst  :: !child
     , rewritesSecond :: !child
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+instance Hashable child => Hashable (Rewrites level child)
 
 {-|'Top' corresponds to the @\top@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -653,7 +722,9 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 This represents the ⌈TopPattern⌉ Matching Logic construct.
 -}
 newtype Top level child = Top { topSort :: Sort level}
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+instance Hashable (Top level child)
 
 {-|'Pattern' corresponds to the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -665,6 +736,9 @@ versions of symbol declarations. It should verify 'MetaOrObject level'.
 Note that the 'StringLiteralPattern' and 'CharLiteralPattern' should
 be members only of 'Pattern Meta'.
 -}
+-- NOTE: If you are adding a case to Pattern, you should add cases in:
+-- ASTUtils/SmartConstructors.hs
+-- as well as a ton of other places, probably. 
 data Pattern level variable child where
     AndPattern
         :: !(And level child) -> Pattern level variable child
@@ -707,6 +781,35 @@ data Pattern level variable child where
     VariablePattern
         :: !(variable level) -> Pattern level variable child
 
+-- instance Generic child => Generic (Pattern level variable child)
+
+-- instance (Hashable child, Generic child, Hashable (variable level))
+-- => Hashable (Pattern level variable child) 
+
+instance (Hashable (child), Hashable (variable level))
+ => Hashable (Pattern level variable child) where 
+  hashWithSalt s = \case 
+    AndPattern           p -> hashWithSalt s p
+    ApplicationPattern   p -> hashWithSalt s p
+    BottomPattern        p -> hashWithSalt s p
+    CeilPattern          p -> hashWithSalt s p
+    DomainValuePattern   p -> hashWithSalt s p
+    EqualsPattern        p -> hashWithSalt s p
+    ExistsPattern        p -> hashWithSalt s p
+    FloorPattern         p -> hashWithSalt s p
+    ForallPattern        p -> hashWithSalt s p
+    IffPattern           p -> hashWithSalt s p
+    ImpliesPattern       p -> hashWithSalt s p
+    InPattern            p -> hashWithSalt s p
+    NextPattern          p -> hashWithSalt s p
+    NotPattern           p -> hashWithSalt s p
+    OrPattern            p -> hashWithSalt s p
+    RewritesPattern      p -> hashWithSalt s p
+    StringLiteralPattern p -> hashWithSalt s p
+    CharLiteralPattern   p -> hashWithSalt s p
+    TopPattern           p -> hashWithSalt s p
+    VariablePattern      p -> hashWithSalt s p
+    -- FIXME: How to factor this out? with existentials?
 deriving instance
     ( Eq child
     , Eq (variable level)
@@ -727,7 +830,10 @@ data SortedPattern level variable child = SortedPattern
     { sortedPatternPattern :: !(Pattern level variable child)
     , sortedPatternSort    :: !(Sort level)
     }
-    deriving (Eq, Show)
+    deriving (Eq, Show, Generic)
+
+instance (Hashable child, Hashable (variable level))
+  => Hashable (SortedPattern level variable child)
 
 {-|'PatternStub' is either a pattern with a known sort, or a function that
 builds a pattern from a sort.
@@ -735,6 +841,9 @@ builds a pattern from a sort.
 data PatternStub level variable child
     = SortedPatternStub !(SortedPattern level variable child)
     | UnsortedPatternStub (Sort level -> Pattern level variable child)
+    deriving(Generic)
+
+-- cannot hash. 
 
 {-|'withSort' transforms an 'UnsortedPatternStub' in a 'SortedPatternStub'.
 -}

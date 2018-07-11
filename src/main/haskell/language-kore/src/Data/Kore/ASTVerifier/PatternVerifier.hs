@@ -1,4 +1,5 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-|
 Module      : Data.Kore.ASTVerifier.PatternVerifier
 Description : Tools for verifying the wellformedness of a Kore 'Pattern'.
@@ -8,7 +9,11 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Data.Kore.ASTVerifier.PatternVerifier (verifyPattern) where
+module Data.Kore.ASTVerifier.PatternVerifier
+    ( verifyPattern
+    , verifyAliasLeftPattern
+    , verifyStandalonePattern
+    ) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Error
@@ -95,6 +100,27 @@ addDeclaredVariable
         { objectDeclaredVariables =
             Map.insert (variableName variable) variable variablesDict
         }
+
+verifyAliasLeftPattern
+    :: CommonKorePattern
+    -> Maybe UnifiedSort
+    -- ^ If present, represents the expected sort of the pattern.
+    -> KoreIndexedModule
+    -- ^ The module containing all definitions which are visible in this
+    -- pattern.
+    -> Set.Set UnifiedSortVariable
+    -- ^ Sort variables which are visible in this pattern.
+    -> Either (Error VerifyError) VerifySuccess
+verifyAliasLeftPattern = verifyPattern
+    -- TODO: check that the left pattern is the alias symbol applied to
+    -- non-repeating variables
+
+verifyStandalonePattern
+    :: KoreIndexedModule
+    -> CommonKorePattern
+    -> Either (Error VerifyError) VerifySuccess
+verifyStandalonePattern indexedModule korePattern =
+    verifyPattern korePattern Nothing indexedModule Set.empty
 
 {-|'verifyPattern' verifies the welformedness of a Kore 'CommonKorePattern'. -}
 verifyPattern
@@ -238,7 +264,7 @@ verifyParameterizedPattern pat indexedModule helpers sortParams vars =
         pat
 
 verifyMLPattern
-    :: (MLPatternClass p, MetaOrObject level)
+    :: (MLPatternClass p level, MetaOrObject level)
     => p level CommonKorePattern
     -> KoreIndexedModule
     -> VerifyHelpers level

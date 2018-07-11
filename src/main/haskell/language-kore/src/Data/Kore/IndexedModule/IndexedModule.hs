@@ -35,9 +35,9 @@ module Data.Kore.IndexedModule.IndexedModule
     ) where
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.Sentence
 import           Data.Kore.Error
 import           Data.Kore.Implicit.ImplicitSorts
 
@@ -89,6 +89,8 @@ data IndexedModule sortParam pat variable = IndexedModule
 deriving instance
     ( Show (pat variable (Fix (pat variable)))
     , Show sortParam
+    , Show (variable Meta)
+    , Show (variable Object)
     ) => Show (IndexedModule sortParam pat variable)
 
 type KoreIndexedModule =
@@ -113,7 +115,7 @@ indexedModuleRawSentences im =
     ++
     map asSentence (indexedModuleAxioms im)
     ++
-    [ constructUnifiedSentence SentenceImportSentence 
+    [ constructUnifiedSentence SentenceImportSentence
       (SentenceImport (indexedModuleName m) attributes)
     | (attributes, m) <- indexedModuleImports im
     ]

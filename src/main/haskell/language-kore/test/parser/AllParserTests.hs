@@ -10,6 +10,7 @@ import           Data.Kore.Algorithm.TopologicalSortTest
 import           Data.Kore.AST.CommonTest
 import           Data.Kore.AST.MLPatternsTest
 import           Data.Kore.AST.PureToKoreTest
+import           Data.Kore.ASTUtils.ASTUtilsTest
 import           Data.Kore.ASTHelpersTest
 import           Data.Kore.ASTPrettyPrintTest
 import           Data.Kore.ASTTraversalsTest
@@ -28,7 +29,12 @@ import           Data.Kore.Parser.CStringTest
 import           Data.Kore.Parser.LexemeTest
 import           Data.Kore.Parser.ParserTest
 import           Data.Kore.Parser.RegressionTest
+import           Data.Kore.Step.AxiomPatternsTest
 import           Data.Kore.Step.BaseStepTest
+import           Data.Kore.Step.Condition.ConditionTest
+import           Data.Kore.Step.Condition.EvaluatorTest
+import           Data.Kore.Step.Function.IntegrationTest
+import           Data.Kore.Step.Function.UserDefinedTest
 import           Data.Kore.Step.StepTest
 import           Data.Kore.Substitution.ClassTest
 import           Data.Kore.Substitution.ListTest
@@ -69,6 +75,7 @@ unitTests =
         [ commonTests
         , astVerifierTests
         , astHelperTests
+        , astUtilsTests
         , charDictTests
         , charSetTests
         , cStringTests
@@ -95,4 +102,9 @@ unitTests =
         , topologicalSortTest
         , baseStepTests
         , stepTests
+        , axiomPatternsTests
+        , conditionTests
+        , conditionEvaluatorTests
+        , userDefinedFunctionTests
+        , functionIntegrationTests
         ]

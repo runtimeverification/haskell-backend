@@ -14,13 +14,22 @@ more specific files.
 -}
 module Data.Kore.ASTHelpers ( ApplicationSorts (..)
                             , symbolOrAliasSorts
+                            , quantifyFreeVariables
                             ) where
 
+import           Data.Fix                   (Fix (..))
+import           Data.Foldable              (foldl')
+import qualified Data.Map                   as Map
+import           Data.Proxy                 (Proxy (..))
+import qualified Data.Set                   as Set
+
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.PureML
 import           Data.Kore.AST.Sentence
 import           Data.Kore.Error
+import           Data.Kore.Variables.Free
 
-import qualified Data.Map             as Map
 
 data ApplicationSorts level = ApplicationSorts
     { applicationSortsOperands :: ![Sort level]
@@ -92,3 +101,55 @@ pairVariablesToSorts variables sorts
   where
     variablesLength = length variables
     sortsLength = length sorts
+
+{-|'quantifyFreeVariables' quantifies all free variables in the given pattern.
+It assumes that the pattern has the provided sort.
+-}
+quantifyFreeVariables
+    :: MetaOrObject level
+    => Sort level -> CommonPurePattern level -> CommonPurePattern level
+quantifyFreeVariables s p =
+    foldl'
+        (wrapAndQuantify s)
+        p
+        (checkUnique (pureFreeVariables (Proxy :: Proxy level) p))
+
+wrapAndQuantify
+    :: Sort level
+    -> CommonPurePattern level
+    -> Variable level
+    -> CommonPurePattern level
+wrapAndQuantify s p var =
+    Fix
+        (ForallPattern Forall
+            { forallSort = s
+            , forallVariable = var
+            , forallChild = p
+            }
+        )
+
+checkUnique
+    :: Set.Set (Variable level) -> Set.Set (Variable level)
+checkUnique variables =
+    case checkUniqueEither (Set.toList variables) Map.empty of
+        Right _  -> variables
+        Left err -> error err
+
+checkUniqueEither
+    :: [Variable level]
+    -> Map.Map String (Variable level)
+    -> Either String ()
+checkUniqueEither [] _ = Right ()
+checkUniqueEither (var:vars) indexed =
+    case Map.lookup name indexed of
+        Nothing -> checkUniqueEither vars (Map.insert name var indexed)
+        Just existingV ->
+            Left
+                (  "Conflicting variables: "
+                ++ show var
+                ++ " and "
+                ++ show existingV
+                ++ "."
+                )
+  where
+    name = getId (variableName var)
