@@ -152,90 +152,90 @@ sortAgreement2 = dummyEnvironment $
         (mkEquals (Var_ $ var_ "foo" "X") (Var_ $ var_ "bar" "X"))
         (Var_ $ var_ "y" "Y")
 
--- varX :: (Given (MetadataTools Object)) => CommonPurePattern Object
--- varX = mkVar $ var_ "x" "X"
+varX :: (Given (MetadataTools Object)) => CommonPurePattern Object
+varX = mkVar $ var_ "x" "X"
 
--- sortAgreementManySimplePatterns 
---   :: (Given (MetadataTools Object))
---   => [TestTree]
--- sortAgreementManySimplePatterns = do 
---     flexibleZeroArg <- [mkBottom, mkTop]
---     (a,b) <- [(varX, flexibleZeroArg), (flexibleZeroArg, varX), (varX, varX)]
---     shouldHaveSortXOneArg <- 
---         [ mkForall (var "a") varX
---         , mkExists (var "a") varX
---         , mkNot varX
---         , mkNext varX 
---         ]
---     shouldHaveSortXTwoArgs <- 
---         [ mkAnd a b
---         , mkOr a b
---         , mkImplies a b
---         , mkIff a b
---         , mkRewrites a b
---         ]
---     shouldHaveFlexibleSortTwoArgs <- 
---         [ mkEquals a b
---         , mkIn a b
---         ]
---     shoudlHaveFlexibleSortOneArg <- 
---         [ mkCeil a
---         , mkFloor a
---         ]
---     let assert1 = return $ testCase "" $ assertEqual "" 
---             (getSort shouldHaveSortXOneArg) 
---             (testSort "X")
---     let assert2 = return $ testCase "" $ assertEqual ""
---             (getSort shouldHaveSortXTwoArgs)
---             (testSort "X")
---     let assert3 = return $ testCase "" $ assertEqual "" 
---             (getSort shoudlHaveFlexibleSortOneArg)
---             flexibleSort
---     let assert4 = return $ testCase "" $ assertEqual "" 
---             (getSort shouldHaveFlexibleSortTwoArgs)
---             flexibleSort
---     assert1 ++ assert2 ++ assert3 ++ assert4 
+sortAgreementManySimplePatterns 
+  :: (Given (MetadataTools Object))
+  => [TestTree]
+sortAgreementManySimplePatterns = do 
+    flexibleZeroArg <- [mkBottom, mkTop]
+    (a,b) <- [(varX, flexibleZeroArg), (flexibleZeroArg, varX), (varX, varX)]
+    shouldHaveSortXOneArg <- 
+        [ mkForall (var "a") varX
+        , mkExists (var "a") varX
+        , mkNot varX
+        , mkNext varX 
+        ]
+    shouldHaveSortXTwoArgs <- 
+        [ mkAnd a b
+        , mkOr a b
+        , mkImplies a b
+        , mkIff a b
+        , mkRewrites a b
+        ]
+    shouldHaveFlexibleSortTwoArgs <- 
+        [ mkEquals a b
+        , mkIn a b
+        ]
+    shoudlHaveFlexibleSortOneArg <- 
+        [ mkCeil a
+        , mkFloor a
+        ]
+    let assert1 = return $ testCase "" $ assertEqual "" 
+            (getSort shouldHaveSortXOneArg) 
+            (testSort "X")
+    let assert2 = return $ testCase "" $ assertEqual ""
+            (getSort shouldHaveSortXTwoArgs)
+            (testSort "X")
+    let assert3 = return $ testCase "" $ assertEqual "" 
+            (getSort shoudlHaveFlexibleSortOneArg)
+            flexibleSort
+    let assert4 = return $ testCase "" $ assertEqual "" 
+            (getSort shouldHaveFlexibleSortTwoArgs)
+            flexibleSort
+    assert1 ++ assert2 ++ assert3 ++ assert4 
 
--- substitutionGetSetIdentity a b pat =
---   assertEqual "" 
---   (subst b a pat)
---   (subst b a $ subst a b pat)
+substitutionGetSetIdentity a b pat =
+  assertEqual "" 
+  (subst b a pat)
+  (subst b a $ subst a b pat)
 
--- generatePatterns 
---   :: Given (MetadataTools Object)
---   => Int 
---   -> [CommonPurePattern Object]
--- generatePatterns size = genBinaryPatterns size ++ genUnaryPatterns size
--- genBinaryPatterns
---   :: Given (MetadataTools Object)
---   => Int 
---   -> [CommonPurePattern Object]
--- genBinaryPatterns 0 = []
--- genBinaryPatterns size = do
---   sa <- [1..size-1]
---   let sb = size - sa 
---   a <- generatePatterns sa 
---   b <- generatePatterns sb 
---   [mkAnd a b, mkOr a b, mkImplies a b, mkIff a b, mkRewrites a b]
--- genUnaryPatterns
---   :: Given (MetadataTools Object)
---   => Int 
---   -> [CommonPurePattern Object]
--- genUnaryPatterns 0 = []
--- genUnaryPatterns 1 = [Var_ $ var_ "x" "X"]
--- genUnaryPatterns size = do 
---   a <- generatePatterns (size - 1)
---   [mkNot a, mkNext a, mkForall (var $ show size) a]
+generatePatterns 
+  :: Given (MetadataTools Object)
+  => Int 
+  -> [CommonPurePattern Object]
+generatePatterns size = genBinaryPatterns size ++ genUnaryPatterns size
+genBinaryPatterns
+  :: Given (MetadataTools Object)
+  => Int 
+  -> [CommonPurePattern Object]
+genBinaryPatterns 0 = []
+genBinaryPatterns size = do
+  sa <- [1..size-1]
+  let sb = size - sa 
+  a <- generatePatterns sa 
+  b <- generatePatterns sb 
+  [mkAnd a b, mkOr a b, mkImplies a b, mkIff a b, mkRewrites a b]
+genUnaryPatterns
+  :: Given (MetadataTools Object)
+  => Int 
+  -> [CommonPurePattern Object]
+genUnaryPatterns 0 = []
+genUnaryPatterns 1 = [Var_ $ var_ "x" "X"]
+genUnaryPatterns size = do 
+  a <- generatePatterns (size - 1)
+  [mkNot a, mkNext a, mkForall (var $ show size) a]
 
--- --FIXME: Make a proper Tasty generator instead 
--- testGetSetIdentity
---   :: Int 
---   -> TestTree
--- testGetSetIdentity size = dummyEnvironment $ testGroup "getSetIdent" $ do 
---   a <- generatePatterns (size `div` 3) 
---   b <- generatePatterns (size `div` 3)
---   pat <- generatePatterns size 
---   return $ testCase "" $ substitutionGetSetIdentity a b pat 
+--FIXME: Make a proper Tasty generator instead 
+testGetSetIdentity
+  :: Int 
+  -> TestTree
+testGetSetIdentity size = dummyEnvironment $ testGroup "getSetIdent" $ do 
+  a <- generatePatterns (size `div` 3) 
+  b <- generatePatterns (size `div` 3)
+  pat <- generatePatterns size 
+  return $ testCase "" $ substitutionGetSetIdentity a b pat 
 
 var :: MetaOrObject level => String -> Variable level
 var x = 
