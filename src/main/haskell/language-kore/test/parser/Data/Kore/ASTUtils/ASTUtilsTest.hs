@@ -87,9 +87,9 @@ sortAgreement = testGroup "Sort agreement"
           assertEqual ""
               (dummyEnvironment (mkExists (var_ "a" "A") mkBottom) ^? resultSort)
               (Just (flexibleSort :: Sort Object))
-    -- , testGroup "sortAgreementManySimplePatterns" $ 
-          -- dummyEnvironment sortAgreementManySimplePatterns
-    -- , testGetSetIdentity 5
+    , testGroup "sortAgreementManySimplePatterns" $ 
+          dummyEnvironment sortAgreementManySimplePatterns
+    , testGetSetIdentity 5
     ]
 
 
