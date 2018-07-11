@@ -87,8 +87,9 @@ sortAgreement = testGroup "Sort agreement"
           assertEqual ""
               (dummyEnvironment (mkExists (var_ "a" "A") mkBottom) ^? resultSort)
               (Just (flexibleSort :: Sort Object))
-    , testGroup "testManySimplePatterns" $ 
-          dummyEnvironment testManySimplePatterns
+    , testGroup "sortAgreementManySimplePatterns" $ 
+          dummyEnvironment sortAgreementManySimplePatterns
+    , testGetSetIdentity 5
     ]
 
 
@@ -154,10 +155,10 @@ sortAgreement2 = dummyEnvironment $
 varX :: (Given (MetadataTools Object)) => CommonPurePattern Object
 varX = mkVar $ var_ "x" "X"
 
-testManySimplePatterns 
+sortAgreementManySimplePatterns 
   :: (Given (MetadataTools Object))
   => [TestTree]
-testManySimplePatterns = do 
+sortAgreementManySimplePatterns = do 
     flexibleZeroArg <- [mkBottom, mkTop]
     (a,b) <- [(varX, flexibleZeroArg), (flexibleZeroArg, varX), (varX, varX)]
     shouldHaveSortXOneArg <- 
@@ -194,6 +195,47 @@ testManySimplePatterns = do
             (getSort shouldHaveFlexibleSortTwoArgs)
             flexibleSort
     assert1 ++ assert2 ++ assert3 ++ assert4 
+
+substitutionGetSetIdentity a b pat =
+  assertEqual "" 
+  (subst b a pat)
+  (subst b a $ subst a b pat)
+
+generatePatterns 
+  :: Given (MetadataTools Object)
+  => Int 
+  -> [CommonPurePattern Object]
+generatePatterns size = genBinaryPatterns size ++ genUnaryPatterns size
+genBinaryPatterns
+  :: Given (MetadataTools Object)
+  => Int 
+  -> [CommonPurePattern Object]
+genBinaryPatterns 0 = []
+genBinaryPatterns size = do
+  sa <- [1..size-1]
+  let sb = size - sa 
+  a <- generatePatterns sa 
+  b <- generatePatterns sb 
+  [mkAnd a b, mkOr a b, mkImplies a b, mkIff a b, mkRewrites a b]
+genUnaryPatterns
+  :: Given (MetadataTools Object)
+  => Int 
+  -> [CommonPurePattern Object]
+genUnaryPatterns 0 = []
+genUnaryPatterns 1 = [Var_ $ var_ "x" "X"]
+genUnaryPatterns size = do 
+  a <- generatePatterns (size - 1)
+  [mkNot a, mkNext a, mkForall (var $ show size) a]
+
+--FIXME: Make a proper Tasty generator instead 
+testGetSetIdentity
+  :: Int 
+  -> TestTree
+testGetSetIdentity size = dummyEnvironment $ testGroup "getSetIdent" $ do 
+  a <- generatePatterns (size `div` 3) 
+  b <- generatePatterns (size `div` 3)
+  pat <- generatePatterns size 
+  return $ testCase "" $ substitutionGetSetIdentity a b pat 
 
 var :: MetaOrObject level => String -> Variable level
 var x = 
