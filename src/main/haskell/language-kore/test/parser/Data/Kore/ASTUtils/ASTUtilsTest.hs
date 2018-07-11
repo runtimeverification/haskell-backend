@@ -152,8 +152,8 @@ sortAgreement2 = dummyEnvironment $
         (mkEquals (Var_ $ var_ "foo" "X") (Var_ $ var_ "bar" "X"))
         (Var_ $ var_ "y" "Y")
 
-varX :: (Given (MetadataTools Object)) => CommonPurePattern Object
-varX = mkVar $ var_ "x" "X"
+-- varX :: (Given (MetadataTools Object)) => CommonPurePattern Object
+-- varX = mkVar $ var_ "x" "X"
 
 -- sortAgreementManySimplePatterns 
 --   :: (Given (MetadataTools Object))
