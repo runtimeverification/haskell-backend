@@ -30,12 +30,15 @@ dependencies:
 - array
 - bytestring-trie
 - mtl
-- containers
 - hashable
 - data-fix
 - clock
-- time
+- lens
+- groom
+- deepseq
 - optparse-applicative
+- reflection
+- time
 - gitrev
 
 library:
