@@ -21,6 +21,10 @@ Portability : portable
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE PatternSynonyms        #-}
 {-# LANGUAGE ConstraintKinds        #-}
+{-# LANGUAGE
+  TypeApplications
+, LambdaCase       
+#-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
 
@@ -44,9 +48,8 @@ import           Data.Kore.IndexedModule.MetadataTools
 
 
 import           Data.Kore.ASTPrettyPrint
-import           Data.Kore.Proof.SmartConstructors
-import           Data.Kore.Proof.Substitution
-
+import           Data.Kore.ASTUtils.SmartConstructors
+import           Data.Kore.ASTUtils.Substitution
 
 type Term = CommonPurePattern Object
 type Var = Variable Object
@@ -57,7 +60,7 @@ data PropF formula rules subproof
   , justification :: rules subproof
   , assumptions   :: S.Set formula
   }
-  deriving(Functor, Foldable, Traversable)
+  deriving(Functor, Foldable, Traversable, Show)
 
 type Prop formula rules = Fix (PropF formula rules)
 
@@ -71,6 +74,14 @@ data LargeRule subproof
  = Assumption Term
  | Discharge Term subproof 
  | Abstract Var subproof
+ | AndIntro subproof subproof
+ | AndElimL subproof
+ | AndElimR subproof
+ | OrIntroL subproof Term 
+ | OrIntroR Term     subproof
+ | OrElim subproof subproof subproof
+ | ExistsIntro Var Term subproof
+ | ExistsElim subproof Var Term subproof
  | ModusPonens subproof subproof
  -- (\forall x. phi) /\ (\exists y. phi' = y) -> phi[phi'/x]
  -- FunctionalSubst x phi y phi'
@@ -103,21 +114,25 @@ data LargeRule subproof
  -- \exists y . (y \in \phi_i /\ x \in \sigma(phi_1,...,y,...,phi_n))
  -- MembershipCong x y i (\sigma(...))
  | MembershipCong Var Var Int Term
- deriving(Show,Functor,Foldable)
+ deriving(Show, Functor, Foldable)
 
 
 assume :: Term -> Proof 
 assume formula = By formula (Assumption formula) (S.singleton formula)
 
-implies :: Term -> Term -> Term
-implies a b = Fix $ ImpliesPattern $ Implies placeholderSort a b
+implies 
+    :: Given (MetadataTools Object) 
+    => Term -> Term -> Term
+implies a b = Fix $ ImpliesPattern $ Implies flexibleSort a b
 
-discharge :: Term -> Proof -> Proof
+discharge
+    :: Given (MetadataTools Object) 
+    => Term -> Proof -> Proof
 discharge hypothesis prop@(By conclusion justification assumptions)
    = By 
-  (implies hypothesis conclusion) 
-  (Discharge hypothesis prop) 
-  (S.delete hypothesis assumptions)
+    (implies hypothesis conclusion) 
+    (Discharge hypothesis prop) 
+    (S.delete hypothesis assumptions)
 
 useRule
   :: Given (MetadataTools Object) 
@@ -130,6 +145,25 @@ useRule (Discharge hypothesis conclusion)
 useRule (Abstract var conclusion)
  | elem var (getFreeVars conclusion) = abstract var conclusion
  | otherwise = error $ "Variable " ++ show var ++ " appears in assumptions."
+useRule (ExistsElim producer var property (Fix consumer)) = 
+    case getConclusion producer of 
+      Exists_ _ v p
+       | p == property -> Fix consumer 
+            { assumptions = S.delete property $ assumptions consumer
+            }
+       | otherwise -> error "The impossible happened."
+      _ -> error "The impossible happened."
+useRule rule@(OrElim disjunct left right)
+  | getConclusion left == getConclusion right -- FIXME: too picky ==?
+     = let Or_ _ leftAssumption rightAssumption = getConclusion disjunct
+       in By 
+          (getConclusion left)
+          rule
+          (S.union 
+           (S.delete leftAssumption  $ assumptions $ unFix left)
+           (S.delete rightAssumption $ assumptions $ unFix right)
+          ) 
+  | otherwise = error "The impossible happened"
 useRule rule = 
   By 
   (interpretRule rule)
@@ -141,8 +175,16 @@ interpretRule
   => LargeRule Proof 
   -> Term 
 interpretRule (ModusPonens a b) = 
-  let (Implies_ _ a' b') = conclusion $ unFix b 
-  in b'
+  let (Implies_ _ a' b') = getConclusion b 
+  in if a' == getConclusion a 
+    then b' 
+    else error 
+      $ "Can't match \n" 
+      ++ prettyPrintToString a' 
+      ++ "\n with \n" 
+      ++ prettyPrintToString (getConclusion a)
+      ++ "in ModusPonens"
+  -- Default equality too strong? Probably. 
 interpretRule (FunctionalSubst x phi y phi') = 
   ((mkForall x phi) `mkAnd` (mkExists y (phi' `mkEquals` Var_ y))) 
   `mkImplies` 
@@ -150,9 +192,12 @@ interpretRule (FunctionalSubst x phi y phi') =
 interpretRule (FunctionalVar x y) = mkExists y (Var_ x `mkEquals` Var_ y)
 interpretRule (EqualityIntro a) = mkEquals a a
 interpretRule (EqualityElim phi1 phi2 phi path) =
-  ((phi1 `mkEquals` phi2) `mkAnd` phi) 
-  `mkImplies` 
-  (localInPattern path (subst phi1 phi2) phi)
+  (phi1 `mkEquals` phi2) 
+  `mkImplies` (
+      phi
+      `mkImplies` 
+      (localInPattern path (subst phi1 phi2) phi)
+  )
 interpretRule (MembershipForall x phi) = 
   (mkForall x (Var_ x `mkIn` phi)) `mkEquals` phi
 interpretRule (MembershipEq x y) = 
@@ -175,47 +220,77 @@ interpretRule (MembershipCong x y i phi) =
   (Var_ x `mkIn` phi)
   `mkEquals`
   (mkExists y $ (Var_ y `mkIn` phi_i) `mkAnd` (Var_ x `mkIn` phi'))
-    where phi'  = phi & childIx i .~ (Var_ y)
-          phi_i = fromJust $ phi ^? childIx i
+    where phi'       = phi & inPath [i] .~ (Var_ y)
+          Just phi_i = phi ^? inPath [i]
+interpretRule (AndIntro a b) = mkAnd (getConclusion a) (getConclusion b)
+interpretRule (AndElimL a) = fromJust $ getConclusion a ^? inPath [0]
+interpretRule (AndElimR a) = fromJust $ getConclusion a ^? inPath [1]
+interpretRule (ExistsIntro var term property) = 
+  mkExists var $ subst (Var_ var) term $ getConclusion property
+interpretRule (OrIntroL a b) = mkOr (getConclusion a) b 
+interpretRule (OrIntroR a b) = mkOr a (getConclusion b)
 
+getConclusion = conclusion . unFix
 
-abstract :: Var -> Proof -> Proof
+abstract 
+    :: Given (MetadataTools Object) 
+    => Var -> Proof -> Proof
 abstract var prop@(By conclusion justification assumptions)
- = Fix $ (unFix prop) {
-    conclusion = Fix $ ForallPattern $ Forall placeholderSort var conclusion
-    }
+  | elem var $ getFreeVars prop
+    = error $ "Variable " 
+            ++ show var 
+            ++ "appears in assumptions" 
+            ++ show assumptions
+  | otherwise  
+    = Fix $ (unFix prop) {
+        conclusion = mkForall var conclusion
+      }
 
 getFreeVars :: Proof -> S.Set Var
-getFreeVars = undefined
+getFreeVars proof = 
+    S.unions 
+  $ map freeVars 
+  $ S.toList 
+  $ assumptions
+  $ unFix proof 
 
--- useRule 
---   :: rules (Prop formula rules) 
---   -> Prop formula rules 
--- useRule rule = By
---   (ruleToFormula rule)
---   rule 
---   (S.unions $ map (assumptions . unFix) $ toList rule)
+var :: MetaOrObject level => String -> Variable level
+var x = 
+  Variable (noLocationId x) (testSort "S")  
 
--- freeVars 
---   :: HasFreeVars formula variable
---   => Prop formula rules 
---   -> S.Set variable
--- freeVars = S.unions . map getFreeVars . toList . assumptions . unFix
+sym :: MetaOrObject level => String -> SymbolOrAlias level
+sym x = 
+  SymbolOrAlias (noLocationId x) []
 
--- byAbstraction 
---   :: variable 
---   -> Prop formula rules 
---   -> rules (Prop formula rules)
+var_ :: MetaOrObject level => String -> String -> Variable level
+var_ x s = 
+  Variable (noLocationId x) (testSort s) 
 
--- abstract 
---   :: (HasFreeVars formula variable, Show variable)
---   => variable 
---   -> Prop formula rules 
---   -> Prop formula rules 
--- abstract var prop@(By conclusion justification assumptions)
---   | not (elem var $ freeVars prop) = By 
---     (forall var conclusion)
---     (byAbstraction var prop)
---     (assumptions)
---   | otherwise = error $ "variable " ++ show var ++ " appears in assumptions"
-  
+varS :: MetaOrObject level => String -> Sort level -> Variable level
+varS x s = 
+  Variable (noLocationId x) s
+
+dummyEnvironment
+  :: forall r . MetaOrObject Object 
+  => (Given (MetadataTools Object) => r) 
+  -> r
+dummyEnvironment = give (dummyMetadataTools @Object)
+
+dummyMetadataTools 
+  :: MetaOrObject level 
+  => MetadataTools level
+dummyMetadataTools = MetadataTools
+    { isConstructor    = const True 
+    , isFunctional     = const True 
+    , isFunction       = const True
+    , getArgumentSorts = const [] 
+    , getResultSort    = const $ testSort "S"
+    }
+
+testSort 
+  :: MetaOrObject level 
+  => String
+  -> Sort level
+testSort name =
+    SortVariableSort $ SortVariable
+        { getSortVariable = noLocationId name }

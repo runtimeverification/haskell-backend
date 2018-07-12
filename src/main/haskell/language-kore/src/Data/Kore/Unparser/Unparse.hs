@@ -19,6 +19,7 @@ import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
+import           Data.Kore.AST.PureML
 import           Data.Kore.AST.Sentence
 import           Data.Kore.IndentingPrinter (PrinterOutput, StringPrinter,
                                              betweenLines, printToString,
