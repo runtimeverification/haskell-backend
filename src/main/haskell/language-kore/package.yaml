@@ -65,11 +65,13 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - language-kore
+    - call-stack
+    - directory >= 1.2.2
+    - filepath
+    - QuickCheck
     - tasty
+    - tasty-ant-xml
     - tasty-hunit
     - tasty-golden
     - tasty-quickcheck
-    - QuickCheck
-    - filepath
-    - tasty-ant-xml
-    - call-stack
+    - template-haskell

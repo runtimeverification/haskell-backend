@@ -16,6 +16,7 @@ description:         Please see the README on Github at <https://github.com/kfra
 extra-source-files:
   - README.md
   - ChangeLog.md
+  - test/resources/**
 
 dependencies:
   - base >=4.7 && <5
@@ -98,9 +99,12 @@ tests:
       - language-kore
       - matching-logic
       - bytestring
+      - directory >= 1.2.2
+      - filepath
       - QuickCheck
       - tasty
       - tasty-ant-xml
       - tasty-golden
       - tasty-hunit
       - tasty-quickcheck
+      - template-haskell

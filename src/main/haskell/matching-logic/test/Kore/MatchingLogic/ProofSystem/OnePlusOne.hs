@@ -61,6 +61,8 @@ import           Kore.MatchingLogic.ProofSystem.OnePlusOne.ProofSystem ( MLRule 
                                                         , SubstitutingVariable (..))
 import           Kore.MatchingLogic.Signature.Simple
 
+import qualified Paths
+
 -- START code extracted by Coq
 data Nat =
    O
@@ -319,7 +321,7 @@ useHyp _ proof = pure proof
 
 loadCoqOutput :: IO Simple_proof
 loadCoqOutput = do
-    text <- L.readFile "test/resources/proof_tree.txt"
+    text <- L.readFile (Paths.dataFileName "test/resources/proof_tree.txt")
     case parse (space1 *> pSimple_proof' <* eof) "proof_tree.txt" text of
         Left err -> error (parseErrorPretty err)
         Right proof -> return proof

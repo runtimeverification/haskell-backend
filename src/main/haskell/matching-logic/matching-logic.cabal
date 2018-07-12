@@ -2,12 +2,12 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5f9e6272e7740c2540dc839e7d737bcbf90c2363e6ed15af036f1d4714b3f319
+-- hash: 2337467df6c243aff9785162493c939a3f16f96db66a1ea3f0eff42af5707e9c
 
 name:           matching-logic
 version:        0.0.1.0
 description:    Please see the README on Github at <https://github.com/kframework/kore/blob/master/src/main/haskell/language-kore/README.md>
-category:       Logic, Math
+category:       Language
 homepage:       https://github.com/kframework/kore#readme
 bug-reports:    https://github.com/kframework/kore/issues
 author:         Brandon Moore
@@ -20,6 +20,7 @@ cabal-version:  >= 1.10
 extra-source-files:
     ChangeLog.md
     README.md
+    test/resources/proof_tree.txt
 
 source-repository head
   type: git
@@ -94,6 +95,7 @@ test-suite test
       Kore.MatchingLogic.ProofSystem.OnePlusOne.ForallAST
       Kore.MatchingLogic.ProofSystem.OnePlusOne.ProofSystem
       Kore.MatchingLogic.ProofSystem.ProofAssistantTest
+      Paths
       RuleParserTests
       TestUtils
       Paths_matching_logic
@@ -108,6 +110,8 @@ test-suite test
     , containers
     , data-fix
     , deriving-compat
+    , directory >=1.2.2
+    , filepath
     , free
     , haskeline
     , language-kore
@@ -123,5 +127,6 @@ test-suite test
     , tasty-golden
     , tasty-hunit
     , tasty-quickcheck
+    , template-haskell
     , text
   default-language: Haskell2010
