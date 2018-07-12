@@ -31,6 +31,7 @@ Portability : portable
 module Data.Kore.ASTUtils.Substitution
 ( subst 
 , localSubst
+, freeVars
 )
 where
 
