@@ -12,7 +12,6 @@ import           Control.Monad.State.Strict      (MonadState (get,put), execStat
 import           Control.Monad.Trans             (MonadTrans (lift))
 import           Data.Text                       (Text, pack)
 import           Data.Void
-import           Data.Map.Strict                 (Map)
 import qualified Data.Map.Strict                 as Map
 
 import           Data.Text.Prettyprint.Doc       (Pretty (pretty), colon, (<+>))
@@ -74,7 +73,7 @@ type Parser = Parsec Void Text
 
 parseAdd :: Parser ix -> Parser formula -> Parser (rule ix) -> Parser (Command ix rule formula)
 parseAdd pIx pFormula pDerivation = do
-  string "add"
+  _ <- string "add"
   space
   ix <- pIx
   space >> char ':' >> space
@@ -84,20 +83,20 @@ parseAdd pIx pFormula pDerivation = do
     (Add ix formula)
     (AddAndProve ix formula <$ string "by" <* space <*> pDerivation)
 
-parseDeriveRef :: Parser ix -> Parser formula -> Parser (rule ix) -> Parser (Command ix rule formula)
-parseDeriveRef pIx pFormula pDerivation = do
-  string "prove"
+parseProve :: Parser ix -> Parser formula -> Parser (rule ix) -> Parser (Command ix rule formula)
+parseProve pIx _ pDerivation = do
+  _ <- string "prove"
   space
   ix <- pIx
   space
-  string "by"
+  _ <- string "by"
   space
   rule <- pDerivation
   return (Prove ix rule)
 
 parseCommand :: Parser ix -> Parser formula -> Parser (rule ix) -> Parser (Command ix rule formula)
 parseCommand pIx pFormula pDerivation 
-  =  parseDeriveRef pIx pFormula pDerivation
+  =  parseProve pIx pFormula pDerivation
  <|> parseAdd pIx pFormula pDerivation
 
 instance (Pretty ix, Pretty formula, Pretty (rule ix)) => Pretty (Command ix rule formula) where
