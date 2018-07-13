@@ -11,6 +11,7 @@ Portability : portable
 {-# LANGUAGE 
   FlexibleContexts
 , LambdaCase
+, DeriveGeneric
 #-}
 module Data.Kore.Unification.Unification where
 
@@ -24,6 +25,7 @@ import           Data.Kore.ASTUtils.SmartConstructors
 import           Data.Kore.ASTUtils.Substitution 
 import           Data.Kore.Proof.Proof
 import           Data.Kore.Proof.Dummy
+import           Data.Kore.Proof.Util
 
 
 import           Control.Monad                         (foldM)
@@ -33,38 +35,65 @@ import           Data.Function                         (on)
 import           Data.List                             (groupBy, partition,
                                                         sortBy)
 import           Data.Kore.Unparser.Unparse
+import           Data.Hashable
+import           GHC.Generics (Generic)
 
 import Debug.Trace
 import Text.Groom 
 
 spy x = trace (groom x) x 
 
-go :: Given (MetadataTools Object) => [Proof] -> [Proof] -> Proof
-go finished [] = foldr1 (\a b -> useRule $ AndIntro a b) finished
+go :: Given (MetadataTools Object) 
+   => [Proof] 
+   -> [Proof] 
+   -> Either UnificationError Proof
+go finished [] = Right $ andIntroN finished
 go finished (eq : eqs) = case getConclusion eq of 
     And_ s a b -> go finished $ 
       useRule (AndElimL eq) : useRule (AndElimR eq) : eqs
-    Equals_ s1 s2 (Var_ x) b -> go (eq : finished) $ 
-      map (provableSubst eq []) eqs
+    Equals_ s1 s2 (Var_ x) b 
+      | occursCheck eq -> 
+          go (eq : finished) (map (provableSubst eq []) eqs)
+      | otherwise -> 
+          Left $ OccursCheck eq 
     Equals_ s1 s2 a (Var_ x) -> go finished $ 
       flipEqn eq : eqs
-    Equals_ s1 s2 a b -> go finished $ 
-      splitConstructor eq : eqs
+    Equals_ s1 s2 a b -> do 
+      eq' <- splitConstructor eq 
+      go finished (eq' : eqs)
+
+data UnificationError
+  = ConstructorClash Term Term 
+  | OccursCheck Proof 
+  deriving(Show, Generic)
+
+instance Hashable UnificationError
+
+
+-- substituting an equation x = t into itself 
+-- is a noop iff x \notin FV(t)
+occursCheck 
+    :: Given (MetadataTools Object)
+    => Proof 
+    -> Bool
+occursCheck eq =
+    (getConclusion $ provableSubst eq [1] eq) == getConclusion eq
+
 
 splitConstructor
     :: Given (MetadataTools Object)
     => Proof
-    -> Proof
+    -> Either UnificationError Proof
 splitConstructor eq = 
     case getConclusion eq of 
     Equals_ _ _ a b -> 
         case (a, b) of 
         (App_ ha ca, App_ hb cb)
-         | ha == hb  -> 
+         | ha == hb  -> Right $ 
              useRule $ ModusPonens eq $ 
              instantiateForalls (reverse cb ++ reverse ca) $ 
              (assume $ generateInjectivityAxiom ha (getSort a) (map getSort ca))
-         | otherwise -> impossible 
+         | otherwise -> Left $ ConstructorClash a b 
     otherwise -> impossible
     where instantiateForalls args pat = 
               foldr (\arg pat -> useRule $ ForallElim arg pat) pat args

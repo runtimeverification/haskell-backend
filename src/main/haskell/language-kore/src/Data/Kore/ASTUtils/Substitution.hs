@@ -63,6 +63,17 @@ subst old new = \case
      | pat == old -> new
      | otherwise  -> Fix $ fmap (subst old new) $ unFix pat 
 
+-- substLens target f pat = \case 
+--     Forall_ s1 v p -> handleBinderLens target Forall_ s1 v p f 
+--     Exists_ s1 v p -> handleBinderLens target Exists_ s1 v p f 
+--     pat
+--      | pat == old -> f pat 
+--      | otherwise -> Fix $ fmap (substLens target f) $ unFix pat 
+
+-- handleBinderLens target binder s1 v p f 
+--   | S.member v (freeVars target) = binder s1 v p 
+--   | S.member v (freeVars )
+
 handleBinder old new binder s1 v p 
   | S.member v (freeVars old) = binder s1 v p  
   | S.member v (freeVars new) = subst old new $ alphaRename binder s1 v p

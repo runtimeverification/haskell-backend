@@ -41,6 +41,7 @@ import           Data.Kore.AST.MetaOrObject
 import           GHC.Generics (Generic)
 import           Data.Hashable
 
+
 {-| 'FileLocation' represents a position in a source file.
 -}
 data FileLocation = FileLocation
@@ -810,6 +811,7 @@ instance (Hashable (child), Hashable (variable level))
     TopPattern           p -> hashWithSalt s p
     VariablePattern      p -> hashWithSalt s p
     -- FIXME: How to factor this out? with existentials?
+
 deriving instance
     ( Eq child
     , Eq (variable level)
