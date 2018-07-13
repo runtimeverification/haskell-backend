@@ -63,21 +63,23 @@ import           Data.Functor.Compose
 
 type HashConsProof = M.Map Int (PropF Term LargeRule Int) 
 
-data ProofWithHashF p = ProofWithHashF Int (PropF Term LargeRule p)
-    deriving(Show, Generic)
-type ProofWithHash = Fix ProofWithHashF
+-- DUMB! That's still quadratic!
 
-instance Hashable ProofWithHash where 
-    hashWithSalt s (Fix (ProofWithHashF n p)) = s `hashWithSalt` n `hashWithSalt` p
+-- data ProofWithHashF p = ProofWithHashF Int (PropF Term LargeRule p)
+--     deriving(Show, Generic)
+-- type ProofWithHash = Fix ProofWithHashF
 
-getHash (Fix (ProofWithHashF h _)) = h
+-- instance Hashable ProofWithHash where 
+--     hashWithSalt s (Fix (ProofWithHashF n p)) = s `hashWithSalt` n `hashWithSalt` p
 
--- p :: PropF Term LargeRule Proof 
--- fmap addHash p :: PropF Term LargeRule ProofWithHash
-addHash :: Proof -> ProofWithHash
-addHash (Fix p) = Fix $ ProofWithHashF h p'
-  where p' = fmap addHash p :: PropF Term LargeRule ProofWithHash
-        h = hash p' :: Int 
+-- getHash (Fix (ProofWithHashF h _)) = h
+
+-- -- p :: PropF Term LargeRule Proof 
+-- -- fmap addHash p :: PropF Term LargeRule ProofWithHash
+-- addHash :: Proof -> ProofWithHash
+-- addHash (Fix p) = Fix $ ProofWithHashF h p'
+--   where p' = fmap addHash p :: PropF Term LargeRule ProofWithHash
+--         h = hash p' :: Int 
 
 toHashConsProof
     :: Proof 
