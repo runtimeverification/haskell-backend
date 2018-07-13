@@ -23,6 +23,9 @@ Portability : portable
 {-# LANGUAGE ConstraintKinds        #-}
 {-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE TypeApplications       #-}
+{-# LANGUAGE DeriveGeneric          #-}
+{-# LANGUAGE TypeSynonymInstances   #-}
+{-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
 
@@ -50,6 +53,10 @@ import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.ASTUtils.SmartConstructors
 import           Data.Kore.ASTUtils.Substitution
 
+import           GHC.Generics (Generic)
+import           Data.Hashable
+
+
 type Term = CommonPurePattern Object
 type Var = Variable Object
 
@@ -59,7 +66,7 @@ data PropF formula rules subproof
   , justification :: rules subproof
   , assumptions   :: S.Set formula
   }
-  deriving(Functor, Foldable, Traversable, Show)
+  deriving(Functor, Foldable, Traversable, Show, Generic)
 
 type Prop formula rules = Fix (PropF formula rules)
 
@@ -68,6 +75,15 @@ pattern By conclusion justification assumptions =
 
 type Path = [Int]
 type Proof = Prop Term LargeRule
+
+instance (Hashable formula, Hashable (rules subproof))
+  => Hashable (PropF formula rules subproof) where 
+  hashWithSalt s (ByF a b c) = 
+    s `hashWithSalt` a `hashWithSalt` b `hashWithSalt` S.toList c 
+
+instance Hashable Proof where 
+    hashWithSalt s (By a b c) = 
+        s `hashWithSalt` a `hashWithSalt` b `hashWithSalt` S.toList c 
 
 data LargeRule subproof
  = Assumption Term
@@ -81,6 +97,7 @@ data LargeRule subproof
  | OrIntroR Term     subproof
  -- | OrElim (a \/ b) (C assuming a) (C assuming b)
  | OrElim subproof subproof subproof
+ | TopIntro 
  | ExistsIntro Var Term subproof
  -- | ExistsElim (E x. p[x]) (C assuming p[y])
  | ExistsElim subproof Var Term subproof
@@ -116,8 +133,10 @@ data LargeRule subproof
  -- \exists y . (y \in \phi_i /\ x \in \sigma(phi_1,...,y,...,phi_n))
  -- MembershipCong x y i (\sigma(...))
  | MembershipCong Var Var Int Term
- deriving(Show, Functor, Foldable)
+ deriving(Show, Functor, Foldable, Generic)
 
+
+instance Hashable subproof => Hashable (LargeRule subproof)
 
 assume :: Term -> Proof 
 assume formula = By formula (Assumption formula) (S.singleton formula)

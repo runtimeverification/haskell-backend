@@ -113,3 +113,10 @@ existsElimN terms existentialStmt pat =
     -- (\(var, term) (exP, c) -> useRule $ ExistsElim exP var term p) 
     -- (existentialStmt, pat) 
     -- terms
+
+andIntroN
+    :: Given (MetadataTools Object)
+    => [Proof]
+    -> Proof
+andIntroN [] = useRule TopIntro 
+andIntroN ps = foldr1 (\a b -> useRule $ AndIntro a b) ps
