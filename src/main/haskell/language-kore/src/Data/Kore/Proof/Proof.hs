@@ -1,5 +1,5 @@
 {-|
-Module      : Data.Kore.Unification.UnifierImpl
+Module      : Data.Kore.Proof.Proof
 Description : Tree-based proof system, which can be
               hash-consed into a list-based one.
 Copyright   : (c) Runtime Verification, 2018
@@ -21,11 +21,10 @@ Portability : portable
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE PatternSynonyms        #-}
 {-# LANGUAGE ConstraintKinds        #-}
-{-# LANGUAGE
-  TypeApplications
-, LambdaCase       
-#-}
+{-# LANGUAGE LambdaCase             #-}
+{-# LANGUAGE TypeApplications       #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
+
 
 
 module Data.Kore.Proof.Proof where
@@ -74,13 +73,16 @@ data LargeRule subproof
  = Assumption Term
  | Discharge Term subproof 
  | Abstract Var subproof
+ | ForallElim Term subproof
  | AndIntro subproof subproof
  | AndElimL subproof
  | AndElimR subproof
  | OrIntroL subproof Term 
  | OrIntroR Term     subproof
+ -- | OrElim (a \/ b) (C assuming a) (C assuming b)
  | OrElim subproof subproof subproof
  | ExistsIntro Var Term subproof
+ -- | ExistsElim (E x. p[x]) (C assuming p[y])
  | ExistsElim subproof Var Term subproof
  | ModusPonens subproof subproof
  -- (\forall x. phi) /\ (\exists y. phi' = y) -> phi[phi'/x]
@@ -226,9 +228,11 @@ interpretRule (AndIntro a b) = mkAnd (getConclusion a) (getConclusion b)
 interpretRule (AndElimL a) = fromJust $ getConclusion a ^? inPath [0]
 interpretRule (AndElimR a) = fromJust $ getConclusion a ^? inPath [1]
 interpretRule (ExistsIntro var term property) = 
-  mkExists var $ subst (Var_ var) term $ getConclusion property
+    mkExists var $ subst (Var_ var) term $ getConclusion property
 interpretRule (OrIntroL a b) = mkOr (getConclusion a) b 
 interpretRule (OrIntroR a b) = mkOr a (getConclusion b)
+interpretRule (ForallElim term proof) = case getConclusion proof of 
+    Forall_ s v p -> subst (Var_ v) term p 
 
 getConclusion = conclusion . unFix
 
@@ -253,44 +257,3 @@ getFreeVars proof =
   $ S.toList 
   $ assumptions
   $ unFix proof 
-
-var :: MetaOrObject level => String -> Variable level
-var x = 
-  Variable (noLocationId x) (testSort "S")  
-
-sym :: MetaOrObject level => String -> SymbolOrAlias level
-sym x = 
-  SymbolOrAlias (noLocationId x) []
-
-var_ :: MetaOrObject level => String -> String -> Variable level
-var_ x s = 
-  Variable (noLocationId x) (testSort s) 
-
-varS :: MetaOrObject level => String -> Sort level -> Variable level
-varS x s = 
-  Variable (noLocationId x) s
-
-dummyEnvironment
-  :: forall r . MetaOrObject Object 
-  => (Given (MetadataTools Object) => r) 
-  -> r
-dummyEnvironment = give (dummyMetadataTools @Object)
-
-dummyMetadataTools 
-  :: MetaOrObject level 
-  => MetadataTools level
-dummyMetadataTools = MetadataTools
-    { isConstructor    = const True 
-    , isFunctional     = const True 
-    , isFunction       = const True
-    , getArgumentSorts = const [] 
-    , getResultSort    = const $ testSort "S"
-    }
-
-testSort 
-  :: MetaOrObject level 
-  => String
-  -> Sort level
-testSort name =
-    SortVariableSort $ SortVariable
-        { getSortVariable = noLocationId name }
