@@ -1,158 +1,322 @@
+{-# LANGUAGE DeriveFunctor         #-}
+{-# LANGUAGE DeriveTraversable     #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NamedFieldPuns        #-}
+{-# LANGUAGE PatternSynonyms       #-}
 {-|
-Module      : Data.Kore.Step.Condition.Condition
-Description : Data structure holding a condition.
+Module      : Data.Kore.Predicate.Predicate
+Description : Data structure holding a predicate.
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Data.Kore.Step.Condition.Condition
-    ( ConditionProof (..)
-    , ConditionSort (..)
-    , EvaluatedCondition (..)
-    , UnevaluatedCondition (..)
-    , makeEvaluatedAnd
-    , makeEvaluatedIff
-    , makeEvaluatedImplies
-    , makeEvaluatedNot
-    , makeEvaluatedOr
+module Data.Kore.Predicate.Predicate
+    ( PredicateProof (..)
+    , CommonPredicate -- Constructor not exported on purpose
+    , Predicate -- Constructor not exported on purpose
+    , pattern PredicateFalse
+    , pattern PredicateTrue
+    , compactPredicatePredicate
+    , makeAndPredicate
+    , makeMultipleAndPredicate
+    , makeCeilPredicate
+    , makeEqualsPredicate
+    , makeFalsePredicate
+    , makeIffPredicate
+    , makeImpliesPredicate
+    , makeNotPredicate
+    , makeOrPredicate
+    , makeTruePredicate
+    , stringFromPredicate
+    , unwrapPredicate
+    , variableSetFromPredicate
+    , wrapPredicate
     ) where
 
-import           Data.Kore.AST.Common (And (..), Iff (..), Implies (..),
-                                       Not (..), Or (..), Pattern (..),
-                                       Sort (..))
-import           Data.Kore.AST.PureML (CommonPurePattern, asPurePattern)
+import           Data.Fix                              (cata)
+import           Data.List                             (foldl')
+import           Data.Reflection                       (Given)
+import qualified Data.Set                              as Set
 
-{--| 'ConditionProof' is a placeholder for a proof showing that a condition
+import           Data.Kore.AST.Common                  (And (..), Exists (..),
+                                                        Forall (..), Iff (..),
+                                                        Implies (..), Not (..),
+                                                        Or (..), Pattern (..),
+                                                        SortedVariable,
+                                                        Variable)
+import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.PureML                  (PureMLPattern)
+import           Data.Kore.ASTUtils.SmartConstructors  (pattern Bottom_,
+                                                        pattern Top_, mkAnd,
+                                                        mkBottom, mkCeil,
+                                                        mkEquals, mkIff,
+                                                        mkImplies, mkNot, mkOr,
+                                                        mkTop)
+import           Data.Kore.IndexedModule.MetadataTools (MetadataTools)
+
+{--| 'PredicateProof' is a placeholder for a proof showing that a Predicate
 evaluation was correct.
 --}
-data ConditionProof level = ConditionProof
+data PredicateProof level = PredicateProof
     deriving (Show, Eq)
 
-{--| 'ConditionSort' represents a sort that is meant to be used when building
-conditions. Usually it is assumed that the existing condition pieces already
-have this sort.
+{--| 'GenericPredicate' is a wrapper for predicates used for type safety.
+Should not be exported, and should be treated as an opaque entity which
+can be manipulateds only by functions in this module.
 --}
-newtype ConditionSort level = ConditionSort (Sort level)
-    deriving (Show, Eq)
+newtype GenericPredicate pat = GenericPredicate pat
+    deriving (Show, Eq, Functor, Traversable, Foldable)
 
-{--| 'EvaluatedCondition' holds the result of evaluating a condition.
+{--| 'Predicate' is a user-visible representation for predicates.
 --}
-data EvaluatedCondition level
-    = ConditionTrue
-    | ConditionFalse
-    -- This should be changed to Satisfiable or something when adding
-    -- the SMT solver. When doing that, also change the make{And,Or,...}
-    -- functions to return somenthing that forces reevaluation.
-    | ConditionUnevaluable !(CommonPurePattern level)
-  deriving (Show, Eq)
+type Predicate level var = GenericPredicate (PureMLPattern level var)
 
-{--| 'UnevaluatedCondition' holds a condition that was not yet evaluated.
+{--| 'CommonPredicate' follows the generic convention of particularizing types
+to Variable.
 --}
-newtype UnevaluatedCondition level =
-    UnevaluatedCondition (CommonPurePattern level)
-  deriving (Show, Eq)
+type CommonPredicate level = Predicate level Variable
 
-{--| 'makeEvaluatedAnd' combines two evaluated conditions with an 'and',
+{- 'compactPredicatePredicate' removes one level of 'GenericPredicate' which
+sometimes occurs when, say, using Predicates as Traversable.
+-}
+compactPredicatePredicate
+    :: GenericPredicate (GenericPredicate a) -> GenericPredicate a
+compactPredicatePredicate (GenericPredicate x) = x
+
+{- 'stringFromPredicate' extracts a string from a GenericPredicate,
+useful in tests. This could be replaced by a generic extractor, but, for now,
+treating it as an opaque entity seems useful.
+-}
+stringFromPredicate :: GenericPredicate String -> String
+stringFromPredicate (GenericPredicate x) = x
+
+{- 'variableSetFromPredicate' extracts a set of variables from a
+GenericPredicate, useful in tests. This could be replaced by a generic
+extractor, but, for now, treating it as an opaque entity seems useful.
+-}
+variableSetFromPredicate
+    :: GenericPredicate (Set.Set (variable level)) -> Set.Set (variable level)
+variableSetFromPredicate (GenericPredicate vars) = vars
+
+{- 'wrapPredicate' wraps a pattern in a GenericPredicate. This is intended for
+predicate evaluation and tests and should not be used outside of that.
+
+We should consider deleting this and implementing the functionality otherwise.
+-}
+wrapPredicate :: PureMLPattern level var -> Predicate level var
+wrapPredicate patt =
+    if isPredicate patt
+    then GenericPredicate patt
+    else error "Trying to wrap non-predicate as predicate!"
+
+{- 'unwrapPredicate' wraps a pattern in a GenericPredicate. This should be
+not be used outside of that.
+
+We should consider deleting this and implementing the functionality otherwise.
+-}
+unwrapPredicate :: Predicate level var -> PureMLPattern level var
+unwrapPredicate (GenericPredicate p) = p
+
+-- TODO(virgil): This is wrong, since, e.g., a symbol application
+-- can be a predicate, but should be good enough for now. Fix this.
+isPredicate :: PureMLPattern level var -> Bool
+isPredicate = cata isPredicateOneLevel
+
+isPredicateOneLevel :: Pattern level var Bool -> Bool
+isPredicateOneLevel (AndPattern And {andFirst, andSecond}) =
+    andFirst && andSecond
+isPredicateOneLevel (ApplicationPattern _)               = False
+isPredicateOneLevel (BottomPattern _)                    = True
+isPredicateOneLevel (CeilPattern _)                      = True
+isPredicateOneLevel (CharLiteralPattern _)               = False
+isPredicateOneLevel (DomainValuePattern _)               = False
+isPredicateOneLevel (EqualsPattern _)                    = True
+isPredicateOneLevel (ExistsPattern Exists {existsChild}) = existsChild
+isPredicateOneLevel (FloorPattern _)                     = True
+isPredicateOneLevel (ForallPattern Forall {forallChild}) = forallChild
+isPredicateOneLevel (IffPattern Iff {iffFirst, iffSecond}) =
+    iffFirst && iffSecond
+isPredicateOneLevel (ImpliesPattern Implies {impliesFirst, impliesSecond}) =
+    impliesFirst && impliesSecond
+isPredicateOneLevel (InPattern _)                        = True
+isPredicateOneLevel (NextPattern _)                      = False
+isPredicateOneLevel (NotPattern Not {notChild})          = notChild
+isPredicateOneLevel (OrPattern Or {orFirst, orSecond})   = orFirst && orSecond
+isPredicateOneLevel (RewritesPattern _)                  = False
+isPredicateOneLevel (StringLiteralPattern _)             = False
+isPredicateOneLevel (TopPattern _)                       = True
+isPredicateOneLevel (VariablePattern _)                  = False
+
+{-|'PredicateFalse' is a pattern for matching 'bottom' predicates.
+-}
+pattern PredicateFalse :: Predicate level var
+
+{-|'PredicateTrue' is a pattern for matching 'top' predicates.
+-}
+pattern PredicateTrue :: Predicate level var
+
+pattern PredicateFalse <- GenericPredicate(Bottom_ _)
+pattern PredicateTrue <- GenericPredicate(Top_ _)
+
+{--| 'makeMultipleAndPredicate' combines a list of Predicates with 'and',
 doing some simplification.
 --}
-makeEvaluatedAnd
-    :: ConditionSort level
-    -> EvaluatedCondition level
-    -> EvaluatedCondition level
-    -> (EvaluatedCondition level, ConditionProof level)
-makeEvaluatedAnd _ ConditionFalse _ = (ConditionFalse, ConditionProof)
-makeEvaluatedAnd _ _ ConditionFalse = (ConditionFalse, ConditionProof)
-makeEvaluatedAnd _ ConditionTrue second = (second, ConditionProof)
-makeEvaluatedAnd _ first ConditionTrue = (first, ConditionProof)
-makeEvaluatedAnd
-    (ConditionSort sort)
-    (ConditionUnevaluable first)
-    (ConditionUnevaluable second)
-  =
-    ( ConditionUnevaluable $ asPurePattern $ AndPattern $ And sort first second
-    , ConditionProof
-    )
+makeMultipleAndPredicate
+    ::  ( MetaOrObject level
+        , Given (MetadataTools level)
+        , SortedVariable var
+        , Show (var level))
+    => [Predicate level var]
+    -> (Predicate level var, PredicateProof level)
+makeMultipleAndPredicate =
+    foldl'
+        (\(cond1, _) cond2 -> makeAndPredicate cond1 cond2)
+        (makeTruePredicate, PredicateProof)
 
-{--| 'makeEvaluatedOr' combines two evaluated conditions with an 'or', doing
-some simplification.
---}
-makeEvaluatedOr
-    :: ConditionSort level
-    -> EvaluatedCondition level
-    -> EvaluatedCondition level
-    -> (EvaluatedCondition level, ConditionProof level)
-makeEvaluatedOr _ ConditionTrue _ = (ConditionTrue, ConditionProof)
-makeEvaluatedOr _ _ ConditionTrue = (ConditionTrue, ConditionProof)
-makeEvaluatedOr _ ConditionFalse second = (second, ConditionProof)
-makeEvaluatedOr _ first ConditionFalse = (first, ConditionProof)
-makeEvaluatedOr
-    (ConditionSort sort)
-    (ConditionUnevaluable first)
-    (ConditionUnevaluable second)
-  =
-    ( ConditionUnevaluable $ asPurePattern $ OrPattern $ Or sort first second
-    , ConditionProof
-    )
-
-{--| 'makeEvaluatedImplies' combines two evaluated conditions into an
-implication, doing some simplification.
---}
-makeEvaluatedImplies
-    :: ConditionSort level
-    -> EvaluatedCondition level
-    -> EvaluatedCondition level
-    -> (EvaluatedCondition level, ConditionProof level)
-makeEvaluatedImplies _ ConditionFalse _ = (ConditionTrue, ConditionProof)
-makeEvaluatedImplies _ _ ConditionTrue = (ConditionTrue, ConditionProof)
-makeEvaluatedImplies _ ConditionTrue second = (second, ConditionProof)
-makeEvaluatedImplies sort first ConditionFalse =
-    (fst $ makeEvaluatedNot sort first, ConditionProof)
-makeEvaluatedImplies
-    (ConditionSort sort)
-    (ConditionUnevaluable first)
-    (ConditionUnevaluable second)
-  =
-    ( ConditionUnevaluable $ asPurePattern $ ImpliesPattern $
-        Implies sort first second
-    , ConditionProof
-    )
-
-{--| 'makeEvaluatedIff' combines two evaluated conditions with an 'iff', doing
-some simplification.
---}
-makeEvaluatedIff
-    :: ConditionSort level
-    -> EvaluatedCondition level
-    -> EvaluatedCondition level
-    -> (EvaluatedCondition level, ConditionProof level)
-makeEvaluatedIff sort ConditionFalse second =
-    (fst $ makeEvaluatedNot sort second, ConditionProof)
-makeEvaluatedIff _ ConditionTrue second = (second, ConditionProof)
-makeEvaluatedIff sort first@(ConditionUnevaluable _) ConditionFalse =
-    (fst $ makeEvaluatedNot sort first, ConditionProof)
-makeEvaluatedIff _ first@(ConditionUnevaluable _) ConditionTrue =
-    (first, ConditionProof)
-makeEvaluatedIff
-    (ConditionSort sort)
-    (ConditionUnevaluable first)
-    (ConditionUnevaluable second)
-  =
-    ( ConditionUnevaluable $ asPurePattern $ IffPattern $ Iff sort first second
-    , ConditionProof
-    )
-
-{--| 'makeEvaluatedNot' negates an evaluated condition, doing some
+{--| 'makeAndPredicate' combines two Predicates with an 'and', doing some
 simplification.
 --}
-makeEvaluatedNot
-    :: ConditionSort level
-    -> EvaluatedCondition level
-    -> (EvaluatedCondition level, ConditionProof level)
-makeEvaluatedNot _ ConditionFalse = (ConditionTrue, ConditionProof)
-makeEvaluatedNot _ ConditionTrue  = (ConditionFalse, ConditionProof)
-makeEvaluatedNot (ConditionSort sort) (ConditionUnevaluable condition) =
-    ( ConditionUnevaluable $ asPurePattern $ NotPattern $ Not sort condition
-    , ConditionProof
+makeAndPredicate
+    -- TODO(virgil): Group these constraints in a class.
+    ::  ( MetaOrObject level
+        , Given (MetadataTools level)
+        , SortedVariable var
+        , Show (var level))
+    => Predicate level var
+    -> Predicate level var
+    -> (Predicate level var, PredicateProof level)
+makeAndPredicate b@PredicateFalse _ = (b, PredicateProof)
+makeAndPredicate _ b@PredicateFalse = (b, PredicateProof)
+makeAndPredicate PredicateTrue second = (second, PredicateProof)
+makeAndPredicate first PredicateTrue = (first, PredicateProof)
+makeAndPredicate (GenericPredicate first) (GenericPredicate second) =
+    ( GenericPredicate $ mkAnd first second
+    , PredicateProof
     )
+
+{--| 'makeOrPredicate' combines two Predicates with an 'or', doing
+some simplification.
+--}
+makeOrPredicate
+    ::  ( MetaOrObject level
+        , Given (MetadataTools level)
+        , SortedVariable var
+        , Show (var level))
+    => Predicate level var
+    -> Predicate level var
+    -> (Predicate level var, PredicateProof level)
+makeOrPredicate t@PredicateTrue _ = (t, PredicateProof)
+makeOrPredicate _ t@PredicateTrue = (t, PredicateProof)
+makeOrPredicate PredicateFalse second = (second, PredicateProof)
+makeOrPredicate first PredicateFalse = (first, PredicateProof)
+makeOrPredicate (GenericPredicate first) (GenericPredicate second) =
+    ( GenericPredicate $ mkOr first second
+    , PredicateProof
+    )
+
+{--| 'makeImpliesPredicate' combines two Predicates into an
+implication, doing some simplification.
+--}
+makeImpliesPredicate
+    ::  ( MetaOrObject level
+        , Given (MetadataTools level)
+        , SortedVariable var
+        , Show (var level))
+    => Predicate level var
+    -> Predicate level var
+    -> (Predicate level var, PredicateProof level)
+makeImpliesPredicate PredicateFalse _ = (GenericPredicate mkTop, PredicateProof)
+makeImpliesPredicate _ t@PredicateTrue = (t, PredicateProof)
+makeImpliesPredicate PredicateTrue second = (second, PredicateProof)
+makeImpliesPredicate first PredicateFalse =
+    (fst $ makeNotPredicate first, PredicateProof)
+makeImpliesPredicate (GenericPredicate first) (GenericPredicate second) =
+    ( GenericPredicate $ mkImplies first second
+    , PredicateProof
+    )
+
+{--| 'makeIffPredicate' combines two evaluated with an 'iff', doing
+some simplification.
+--}
+makeIffPredicate
+    ::  ( MetaOrObject level
+        , Given (MetadataTools level)
+        , SortedVariable var
+        , Show (var level))
+    => Predicate level var
+    -> Predicate level var
+    -> (Predicate level var, PredicateProof level)
+makeIffPredicate PredicateFalse second =
+    (fst $ makeNotPredicate second, PredicateProof)
+makeIffPredicate PredicateTrue second = (second, PredicateProof)
+makeIffPredicate first PredicateFalse =
+    (fst $ makeNotPredicate first, PredicateProof)
+makeIffPredicate first PredicateTrue = (first, PredicateProof)
+makeIffPredicate (GenericPredicate first) (GenericPredicate second) =
+    ( GenericPredicate $ mkIff first second
+    , PredicateProof
+    )
+
+{--| 'makeNotPredicate' negates an evaluated Predicate, doing some
+simplification.
+--}
+makeNotPredicate
+    ::  ( MetaOrObject level
+        , Given (MetadataTools level)
+        , SortedVariable var
+        , Show (var level))
+    => Predicate level var
+    -> (Predicate level var, PredicateProof level)
+makeNotPredicate PredicateFalse = (GenericPredicate mkTop, PredicateProof)
+makeNotPredicate PredicateTrue  = (GenericPredicate mkBottom, PredicateProof)
+makeNotPredicate (GenericPredicate predicate) =
+    ( GenericPredicate $ mkNot predicate
+    , PredicateProof
+    )
+
+{--| 'makeEqualsPredicate' combines two patterns with equals, producing a
+predicate.
+--}
+makeEqualsPredicate
+    ::  ( MetaOrObject level
+        , Given (MetadataTools level)
+        , SortedVariable var
+        , Show (var level))
+    => PureMLPattern level var
+    -> PureMLPattern level var
+    -> Predicate level var
+makeEqualsPredicate first second =
+    GenericPredicate $ mkEquals first second
+
+{--| 'makeCeilPredicate' takes the 'ceil' of a pattern, producing a
+predicate.
+--}
+makeCeilPredicate
+    ::  ( MetaOrObject level
+        , Given (MetadataTools level)
+        , SortedVariable var
+        , Show (var level))
+    => PureMLPattern level var
+    -> Predicate level var
+makeCeilPredicate patt =
+    GenericPredicate $ mkCeil patt
+
+{--| 'makeTruePredicate' produces a predicate wrapping a 'top'.
+--}
+makeTruePredicate
+    ::  (MetaOrObject level)
+    => Predicate level var
+makeTruePredicate =
+    GenericPredicate mkTop
+
+{--| 'makeFalsePredicate' produces a predicate wrapping a 'bottom'.
+--}
+makeFalsePredicate
+    ::  (MetaOrObject level)
+    => Predicate level var
+makeFalsePredicate =
+    GenericPredicate mkBottom

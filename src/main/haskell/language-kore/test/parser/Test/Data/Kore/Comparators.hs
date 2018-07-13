@@ -17,39 +17,16 @@ module Test.Data.Kore.Comparators where
 import           Test.Tasty.HUnit.Extensions
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.PureML
+import           Data.Kore.Predicate.Predicate
 import           Data.Kore.Step.BaseStep
-import           Data.Kore.Step.Condition.Condition
 import           Data.Kore.Step.Error
-import           Data.Kore.Step.Function.Data
+import           Data.Kore.Step.ExpandedPattern as ExpandedPattern (ExpandedPattern (..))
+import           Data.Kore.Step.Function.Data   as AttemptedFunction (AttemptedFunction (..))
 import           Data.Kore.Unification.Error
 import           Data.Kore.Unification.Unifier
 
 {-# ANN module "HLint: ignore Use record patterns" #-}
-
-instance StructEqualWithExplanation (StepperConfiguration level)
-  where
-    structFieldsWithNames
-        expected @ (StepperConfiguration _ _ _)
-        actual @ (StepperConfiguration _ _ _)
-      = [ EqWrap
-            "stepperConfigurationPattern = "
-            (stepperConfigurationPattern expected)
-            (stepperConfigurationPattern actual)
-        , EqWrap
-            "stepperConfigurationConditionSort = "
-            (stepperConfigurationConditionSort expected)
-            (stepperConfigurationConditionSort actual)
-        , EqWrap
-            "stepperConfigurationCondition = "
-            (stepperConfigurationCondition expected)
-            (stepperConfigurationCondition actual)
-        ]
-    structConstructorName _ = "StepperConfiguration"
-
-instance EqualWithExplanation (StepperConfiguration level)
-  where
-    compareWithExplanation = structCompareWithExplanation
-    printWithExplanation = show
 
 instance
     ( EqualWithExplanation child
@@ -719,100 +696,87 @@ instance EqualWithExplanation (StepperVariable level)
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
-instance StructEqualWithExplanation (FunctionResult level)
+instance
+    ( Show (variable level)
+    , Eq (variable level)
+    , EqualWithExplanation(variable level)
+    )
+    => StructEqualWithExplanation (ExpandedPattern level variable)
   where
     structFieldsWithNames
-        expected @ (FunctionResult _ _)
-        actual @ (FunctionResult _ _)
+        expected @ (ExpandedPattern _ _ _)
+        actual @ (ExpandedPattern _ _ _)
       = [ EqWrap
-            "functionResultPattern = "
-            (functionResultPattern expected)
-            (functionResultPattern actual)
+            "term = "
+            (ExpandedPattern.term expected)
+            (ExpandedPattern.term actual)
         , EqWrap
-            "functionResultCondition = "
-            (functionResultCondition expected)
-            (functionResultCondition actual)
+            "predicate = "
+            (ExpandedPattern.predicate expected)
+            (ExpandedPattern.predicate actual)
+        , EqWrap
+            "substitution = "
+            (ExpandedPattern.substitution expected)
+            (ExpandedPattern.substitution actual)
         ]
-    structConstructorName _ = "FunctionResult"
+    structConstructorName _ = "ExpandedPattern"
 
-instance EqualWithExplanation (FunctionResult level)
+instance
+    ( Show (variable level)
+    , Eq (variable level)
+    , EqualWithExplanation(variable level)
+    )
+    => EqualWithExplanation (ExpandedPattern level variable)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
-instance SumEqualWithExplanation (EvaluatedCondition level)
+instance
+    ( EqualWithExplanation (PureMLPattern level variable)
+    , Show (variable level)
+    )
+    => EqualWithExplanation (Predicate level variable)
   where
-    sumConstructorPair ConditionTrue ConditionTrue =
-        SumConstructorSameNoArguments
-    sumConstructorPair a1@ConditionTrue a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair ConditionFalse ConditionFalse =
-        SumConstructorSameNoArguments
-    sumConstructorPair a1@ConditionFalse a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair
-        (ConditionUnevaluable a1) (ConditionUnevaluable a2)
-      =
-        SumConstructorSameWithArguments
-            (EqWrap "ConditionUnevaluable" a1 a2)
-    sumConstructorPair a1@(ConditionUnevaluable _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-instance EqualWithExplanation (EvaluatedCondition level)
-  where
-    compareWithExplanation = sumCompareWithExplanation
+    compareWithExplanation p1 p2 = do
+        compared <- traverse (\x -> traverse (compareWithExplanation x) p2) p1
+        return $
+            "Predicate ("
+            ++ stringFromPredicate (compactPredicatePredicate compared)
+            ++ ")"
     printWithExplanation = show
 
 
-instance SumEqualWithExplanation (ConditionSort level)
+instance
+    ( Show (variable level)
+    , Eq (variable level)
+    , EqualWithExplanation(variable level)
+    )
+    => SumEqualWithExplanation (AttemptedFunction level variable)
   where
     sumConstructorPair
-        (ConditionSort a1) (ConditionSort a2)
-      =
-        SumConstructorSameWithArguments
-            (EqWrap "ConditionSort" a1 a2)
-
-instance EqualWithExplanation (ConditionSort level)
-  where
-    compareWithExplanation = sumCompareWithExplanation
-    printWithExplanation = show
-
-
-instance SumEqualWithExplanation (AttemptedFunctionResult level)
-  where
-    sumConstructorPair
-        AttemptedFunctionResultNotApplicable
-        AttemptedFunctionResultNotApplicable
+        AttemptedFunction.NotApplicable
+        AttemptedFunction.NotApplicable
       =
         SumConstructorSameNoArguments
-    sumConstructorPair a1@AttemptedFunctionResultNotApplicable a2 =
+    sumConstructorPair a1@AttemptedFunction.NotApplicable a2 =
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
 
     sumConstructorPair
-        (AttemptedFunctionResultSymbolic a1) (AttemptedFunctionResultSymbolic a2)
-      =
-        SumConstructorSameWithArguments
-            (EqWrap "Symbolic" a1 a2)
-    sumConstructorPair a1@(AttemptedFunctionResultSymbolic _) a2 =
-        SumConstructorDifferent
-            (printWithExplanation a1) (printWithExplanation a2)
-
-    sumConstructorPair
-        (AttemptedFunctionResultApplied a1) (AttemptedFunctionResultApplied a2)
+        (AttemptedFunction.Applied a1) (AttemptedFunction.Applied a2)
       =
         SumConstructorSameWithArguments
             (EqWrap "Applied" a1 a2)
-    sumConstructorPair a1@(AttemptedFunctionResultApplied _) a2 =
+    sumConstructorPair a1@(AttemptedFunction.Applied _) a2 =
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
 
-instance EqualWithExplanation (AttemptedFunctionResult level)
+instance
+    ( Show (variable level)
+    , Eq (variable level)
+    , EqualWithExplanation(variable level)
+    )
+    => EqualWithExplanation (AttemptedFunction level variable)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show

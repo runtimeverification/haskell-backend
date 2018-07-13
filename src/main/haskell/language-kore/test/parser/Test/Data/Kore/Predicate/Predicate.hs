@@ -1,104 +1,152 @@
-module Test.Data.Kore.Step.Condition.Condition (test_condition) where
+module Test.Data.Kore.Predicate.Predicate (test_predicate) where
 
-import           Test.Tasty                         (TestTree)
-import           Test.Tasty.HUnit                   (testCase)
+import           Test.Tasty                            (TestTree)
+import           Test.Tasty.HUnit                      (assertEqual, testCase)
 
-import           Test.Data.Kore.Comparators         ()
+import           Data.Reflection                       (give)
+
+import           Test.Data.Kore.Comparators            ()
 
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Building.AsAst
 import           Data.Kore.Building.Sorts
-import           Data.Kore.Step.Condition.Condition
+import           Data.Kore.IndexedModule.MetadataTools (MetadataTools (..))
+import           Data.Kore.Predicate.Predicate         (CommonPredicate, compactPredicatePredicate,
+                                                        makeAndPredicate,
+                                                        makeFalsePredicate,
+                                                        makeIffPredicate,
+                                                        makeImpliesPredicate,
+                                                        makeNotPredicate,
+                                                        makeOrPredicate,
+                                                        makeTruePredicate,
+                                                        stringFromPredicate)
 
 import           Test.Tasty.HUnit.Extensions
 
-test_condition :: [TestTree]
-test_condition =
+test_predicate :: [TestTree]
+test_predicate =
     [ let
-        makeAnd sort c1 c2 = fst (makeEvaluatedAnd sort c1 c2)
+        makeAnd
+            :: CommonPredicate Meta
+            -> CommonPredicate Meta
+            -> CommonPredicate Meta
+        makeAnd c1 c2 = fst (give mockMetadataTools (makeAndPredicate c1 c2))
       in
         testCase "And truth table"
             (do
                 assertEqualWithExplanation "false and false = false"
-                    ConditionFalse
-                    (makeAnd sortSort ConditionFalse ConditionFalse)
+                    makeFalsePredicate
+                    (makeAnd makeFalsePredicate makeFalsePredicate)
                 assertEqualWithExplanation "false and true = false"
-                    ConditionFalse
-                    (makeAnd sortSort ConditionFalse ConditionTrue)
+                    makeFalsePredicate
+                    (makeAnd makeFalsePredicate makeTruePredicate)
                 assertEqualWithExplanation "true and false = false"
-                    ConditionFalse
-                    (makeAnd sortSort ConditionTrue ConditionFalse)
+                    makeFalsePredicate
+                    (makeAnd makeTruePredicate makeFalsePredicate)
                 assertEqualWithExplanation "true and true = true"
-                    ConditionTrue
-                    (makeAnd sortSort ConditionTrue ConditionTrue)
+                    makeTruePredicate
+                    (makeAnd makeTruePredicate makeTruePredicate)
             )
     , let
-        makeOr sort c1 c2 = fst (makeEvaluatedOr sort c1 c2)
+        makeOr
+            :: CommonPredicate Meta
+            -> CommonPredicate Meta
+            -> CommonPredicate Meta
+        makeOr c1 c2 = fst (give mockMetadataTools (makeOrPredicate c1 c2))
       in
         testCase "Or truth table"
             (do
                 assertEqualWithExplanation "false or false = false"
-                    ConditionFalse
-                    (makeOr sortSort ConditionFalse ConditionFalse)
+                    makeFalsePredicate
+                    (makeOr makeFalsePredicate makeFalsePredicate)
                 assertEqualWithExplanation "false or true = true"
-                    ConditionTrue
-                    (makeOr sortSort ConditionFalse ConditionTrue)
+                    makeTruePredicate
+                    (makeOr makeFalsePredicate makeTruePredicate)
                 assertEqualWithExplanation "true or false = true"
-                    ConditionTrue
-                    (makeOr sortSort ConditionTrue ConditionFalse)
+                    makeTruePredicate
+                    (makeOr makeTruePredicate makeFalsePredicate)
                 assertEqualWithExplanation "true or true = true"
-                    ConditionTrue
-                    (makeOr sortSort ConditionTrue ConditionTrue)
+                    makeTruePredicate
+                    (makeOr makeTruePredicate makeTruePredicate)
             )
     , let
-        makeImplies sort c1 c2 = fst (makeEvaluatedImplies sort c1 c2)
+        makeImplies
+            :: CommonPredicate Meta
+            -> CommonPredicate Meta
+            -> CommonPredicate Meta
+        makeImplies c1 c2 =
+            fst (give mockMetadataTools (makeImpliesPredicate c1 c2))
       in
         testCase "Implies truth table"
             (do
                 assertEqualWithExplanation "false implies false = true"
-                    ConditionTrue
-                    (makeImplies sortSort ConditionFalse ConditionFalse)
+                    makeTruePredicate
+                    (makeImplies makeFalsePredicate makeFalsePredicate)
                 assertEqualWithExplanation "false implies true = true"
-                    ConditionTrue
-                    (makeImplies sortSort ConditionFalse ConditionTrue)
+                    makeTruePredicate
+                    (makeImplies makeFalsePredicate makeTruePredicate)
                 assertEqualWithExplanation "true implies false = false"
-                    ConditionFalse
-                    (makeImplies sortSort ConditionTrue ConditionFalse)
+                    makeFalsePredicate
+                    (makeImplies makeTruePredicate makeFalsePredicate)
                 assertEqualWithExplanation "true implies true = true"
-                    ConditionTrue
-                    (makeImplies sortSort ConditionTrue ConditionTrue)
+                    makeTruePredicate
+                    (makeImplies makeTruePredicate makeTruePredicate)
             )
     , let
-        makeIff sort c1 c2 = fst (makeEvaluatedIff sort c1 c2)
+        makeIff
+            :: CommonPredicate Meta
+            -> CommonPredicate Meta
+            -> CommonPredicate Meta
+        makeIff c1 c2 = fst (give mockMetadataTools (makeIffPredicate c1 c2))
       in
         testCase "Iff truth table"
             (do
                 assertEqualWithExplanation "false iff false = true"
-                    ConditionTrue
-                    (makeIff sortSort ConditionFalse ConditionFalse)
+                    makeTruePredicate
+                    (makeIff makeFalsePredicate makeFalsePredicate)
                 assertEqualWithExplanation "false iff true = false"
-                    ConditionFalse
-                    (makeIff sortSort ConditionFalse ConditionTrue)
+                    makeFalsePredicate
+                    (makeIff makeFalsePredicate makeTruePredicate)
                 assertEqualWithExplanation "true iff false = false"
-                    ConditionFalse
-                    (makeIff sortSort ConditionTrue ConditionFalse)
+                    makeFalsePredicate
+                    (makeIff makeTruePredicate makeFalsePredicate)
                 assertEqualWithExplanation "true iff true = true"
-                    ConditionTrue
-                    (makeIff sortSort ConditionTrue ConditionTrue)
+                    makeTruePredicate
+                    (makeIff makeTruePredicate makeTruePredicate)
             )
     , let
-        makeNot sort c2 = fst (makeEvaluatedNot sort c2)
+        makeNot :: CommonPredicate Meta -> CommonPredicate Meta
+        makeNot p = fst (give mockMetadataTools (makeNotPredicate p))
       in
         testCase "Not truth table"
             (do
                 assertEqualWithExplanation "not false = true"
-                    ConditionTrue
-                    (makeNot sortSort ConditionFalse)
+                    makeTruePredicate
+                    (makeNot makeFalsePredicate)
                 assertEqualWithExplanation "not true = false"
-                    ConditionFalse
-                    (makeNot sortSort ConditionTrue)
+                    makeFalsePredicate
+                    (makeNot makeTruePredicate)
             )
+    , testCase "String unwrapping which occurs in test comparisons"
+        (assertEqual ""
+            "a"
+            (stringFromPredicate $ compactPredicatePredicate $
+                fmap
+                    (\_ ->
+                        fmap
+                            (const "a")
+                            (makeTruePredicate :: CommonPredicate Meta)
+                    )
+                    (makeFalsePredicate :: CommonPredicate Meta)
+            )
+        )
     ]
 
-sortSort :: ConditionSort Meta
-sortSort = ConditionSort (asAst SortSort)
+mockMetadataTools :: MetadataTools Meta
+mockMetadataTools = MetadataTools
+    { isConstructor = const True
+    , isFunctional = const True
+    , isFunction = const False
+    , getArgumentSorts = const [asAst PatternSort, asAst PatternSort]
+    , getResultSort = const (asAst PatternSort)
+    }
