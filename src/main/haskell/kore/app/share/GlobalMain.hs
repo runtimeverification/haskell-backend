@@ -18,7 +18,7 @@ import           Development.GitRev                     ( gitBranch
 import           Data.Time.LocalTime                    (ZonedTime, getZonedTime)
 import           Data.Time.Format                       (formatTime, defaultTimeLocale)
 import           Data.Version                           (showVersion)
-import qualified Paths_language_kore                    as MetaData (version)
+import qualified Paths_kore                             as MetaData (version)
 import           System.Clock                           ( Clock (Monotonic)
                                                         , diffTimeSpec
                                                         , getTime )

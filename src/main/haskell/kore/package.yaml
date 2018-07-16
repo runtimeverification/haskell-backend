@@ -1,4 +1,4 @@
-name:                language-kore
+name:                kore
 version:             0.0.1.0
 github:              "kframework/kore"
 license:             OtherLicense
@@ -19,8 +19,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description: |
-  Please see the README on Github at <https://github.com/kframework/kore/blob/master/src/main/haskell/language-kore/README.md>
+description:         Please see the README on Github at <https://github.com/kframework/kore/blob/master/src/main/haskell/kore/README.md>
 
 dependencies:
   - base >= 4.7
@@ -31,26 +30,41 @@ dependencies:
   - clock
   - data-fix
   - deepseq
+  - deriving-compat
+  - free
   - gitrev
   - groom
   - hashable
+  - haskeline
   - lens
-  - megaparsec >=6.4.0
+  - megaparsec >= 6.4.0
   - mtl
   - optparse-applicative
   - parser-combinators
   - prettyprinter
+  - recursion-schemes
   - reflection
+  - text
   - time
-
-build-tools:
-  - tasty-discover
 
 library:
   source-dirs: src
   default-extensions:
+    - DataKinds
+    - DeriveFoldable
+    - DeriveFunctor
+    - DeriveTraversable
+    - FlexibleContexts
+    - FlexibleInstances
+    - FunctionalDependencies
     - LambdaCase
+    - MultiParamTypeClasses
     - OverloadedStrings
+    - RankNTypes
+    - ScopedTypeVariables
+    - StandaloneDeriving
+    - TypeSynonymInstances
+    - UndecidableInstances
 
 executables:
   kore-parser:
@@ -59,11 +73,11 @@ executables:
       - app/parser
       - app/share
     ghc-options:
-      - -threaded
-      - -rtsopts
-      - -with-rtsopts=-N
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
     dependencies:
-      - language-kore
+    - kore
 
   kore-format:
     main: Main.hs
@@ -77,20 +91,27 @@ executables:
     default-extensions:
       - RecordWildCards
     dependencies:
-      - language-kore
+      - kore
+  prover:
+    source-dirs: app/prover
+    main: Main.hs
+    default-extensions:
+      - FlexibleContexts
+    dependencies:
+      - kore
 
 tests:
   kore-parser-test:
     main: Driver.hs
     source-dirs:
-      - test
+      - test/share
       - test/parser
     ghc-options:
-      - -threaded
-      - -rtsopts
-      - -with-rtsopts=-N
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
     dependencies:
-      - language-kore
+      - kore
       - call-stack
       - directory >= 1.2.2
       - filepath
@@ -103,3 +124,39 @@ tests:
       - template-haskell
     default-extensions:
       - GADTs
+  prover-test:
+    source-dirs:
+      - test/share
+      - test/prover
+    main: Driver.hs
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    default-extensions:
+      - DataKinds
+      - DeriveFoldable
+      - DeriveFunctor
+      - DeriveTraversable
+      - FlexibleContexts
+      - FlexibleInstances
+      - FunctionalDependencies
+      - MultiParamTypeClasses
+      - OverloadedStrings
+      - RankNTypes
+      - ScopedTypeVariables
+      - StandaloneDeriving
+      - TypeSynonymInstances
+      - UndecidableInstances
+    dependencies:
+      - kore
+      - bytestring
+      - directory >= 1.2.2
+      - filepath
+      - QuickCheck
+      - tasty
+      - tasty-ant-xml
+      - tasty-golden
+      - tasty-hunit
+      - tasty-quickcheck
+      - template-haskell

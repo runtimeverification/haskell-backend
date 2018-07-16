@@ -13,13 +13,14 @@ whether a given proof rule instance actually supports
 a conclusion.
 -}
 module Kore.MatchingLogic.HilbertProof
-  (Proof(index,claims,derivations)
-  ,ProofSystem(..)
-  ,emptyProof
-  ,add
-  ,derive
-  ,renderProof
-  ) where
+    ( Proof(index, claims, derivations)
+    , ProofSystem(..)
+    , emptyProof
+    , add
+    , derive
+    , renderProof
+    ) where
+
 import           Data.Foldable
 import           Data.Map.Strict           (Map)
 import qualified Data.Map.Strict           as Map
@@ -49,7 +50,7 @@ add :: (Pretty ix, Ord ix)
 add verifier proof ix formula = do
   mlFailWhen
     (Map.member ix (index proof))
-    [pretty "A formula with ID '", pretty ix, pretty "' already exists"]
+    ["A formula with ID ", squotes (pretty ix), " already exists"]
   verifier formula
   return proof
     { index = Map.insert ix (Seq.length (claims proof), formula) (index proof)
@@ -63,7 +64,7 @@ renderProof proof = vcat
   [pretty ix<+>colon<+>pretty formula<>
    case Map.lookup ix (derivations proof) of
      Nothing   -> emptyDoc
-     Just rule -> emptyDoc<+>pretty "by"<+>pretty rule
+     Just rule -> emptyDoc <+> "by" <+> pretty rule
   | (ix,formula) <- toList (claims proof)]
 
 class (Traversable rule, Eq formula)
@@ -80,30 +81,30 @@ derive :: (Pretty ix, Ord ix, ProofSystem error rule formula)
        -> Either (Error error) (Proof ix rule formula)
 derive proof ix f rule = do
   mlFailWhen (Map.member ix (derivations proof))
-    [ pretty "Formula with ID '"
-    , pretty ix
-    , pretty "' already has a derivation."
+    [ "Formula with ID "
+    , squotes (pretty ix)
+    , " already has a derivation."
     ]
   (offset,conclusion) <-
     case Map.lookup ix (index proof) of
       Nothing ->
-        mlFail [pretty "Formula with ID '", pretty ix, pretty " not found."]
+        mlFail ["Formula with ID ", squotes (pretty ix), " not found."]
       Just a  -> return a
   mlFailWhen (conclusion /= f)
-    [pretty "Expected a different formula for id '", pretty ix, pretty "'."]
+    ["Expected a different formula for id ", squotes (pretty ix), "."]
   let resolveIx name = do
         (offset',formula') <-
           case Map.lookup name (index proof) of
             Nothing ->
               mlFail
-                [pretty "Formula with ID '", pretty name, pretty " not found."]
+                ["Formula with ID ", squotes (pretty name), " not found."]
             Just a -> return a
         mlFailWhen (offset' >= offset)
-          [ pretty "One of the hypotheses ("
-          , pretty name
-          , pretty ") was not defined before the conclusion ("
-          , pretty ix
-          , pretty ")."
+          [ "One of the hypotheses "
+          , parens (pretty name)
+          , " was not defined before the conclusion "
+          , parens (pretty ix)
+          , "."
           ]
         return formula'
   resolvedRule <- traverse resolveIx rule
