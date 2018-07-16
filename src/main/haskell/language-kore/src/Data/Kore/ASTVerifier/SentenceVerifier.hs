@@ -163,6 +163,11 @@ verifyMetaSentence
     (SentenceAxiomSentence axiomSentence)
   =
     verifyAxiomSentence axiomSentence indexedModule attributesVerification
+verifyMetaSentence
+    _indexedModule
+    _attributesVerification
+    (SentenceSortSentence _sortSentence)
+  = error "Meta sort declaration well-formedness not yet defined"
 verifyMetaSentence _ _ (SentenceImportSentence _) =
     -- Since we have an IndexedModule, we assume that imports were already
     -- resolved, so there is nothing left to verify here.

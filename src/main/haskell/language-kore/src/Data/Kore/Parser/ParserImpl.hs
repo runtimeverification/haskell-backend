@@ -52,7 +52,7 @@ import qualified Data.Kore.Parser.ParserUtils as ParserUtils
 import           Data.Kore.Unparser.Unparse
 
 import           Control.Arrow                ((&&&))
-import           Control.Monad                (unless, void, when)
+import           Control.Monad                (unless, void)
 import           Data.Fix
 
 import           Data.Maybe                   (isJust)

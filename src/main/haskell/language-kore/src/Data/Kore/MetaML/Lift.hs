@@ -391,6 +391,13 @@ liftMetaSentence (SentenceSymbolSentence mss) =
             sentenceSymbolAttributes mss
         }
     ]
+liftMetaSentence (SentenceSortSentence mss) =
+    [ SentenceSortSentence mss
+        { sentenceSortName = sentenceSortName mss
+        , sentenceSortParameters = sentenceSortParameters mss
+        , sentenceSortAttributes = sentenceSortAttributes mss
+        }
+    ]
 liftMetaSentence (SentenceAxiomSentence as) =
     [ SentenceAxiomSentence SentenceAxiom
         { sentenceAxiomParameters = metaParameters

@@ -414,9 +414,7 @@ indexModuleMetaSentence
         )
 
 indexModuleMetaSentence
-    implicitModule
-    importingModules
-    nameToModule
+    _ _ _
     ( indexedModules
     , indexedModule
     )
