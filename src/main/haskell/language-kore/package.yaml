@@ -39,6 +39,7 @@ dependencies:
   - mtl
   - optparse-applicative
   - parser-combinators
+  - prettyprinter
   - reflection
   - time
 
@@ -47,6 +48,9 @@ build-tools:
 
 library:
   source-dirs: src
+  default-extensions:
+    - LambdaCase
+    - OverloadedStrings
 
 executables:
   kore-parser:

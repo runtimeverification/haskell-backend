@@ -20,6 +20,8 @@ import           Data.Kore.AST.Error
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
+import           Data.Kore.AST.Pretty (Pretty(..), (<>), (<+>))
+import qualified Data.Kore.AST.Pretty as Pretty
 import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTHelpers
 import           Data.Kore.ASTVerifier.Error
@@ -28,12 +30,12 @@ import           Data.Kore.Error
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.IndexedModule.IndexedModule
 import           Data.Kore.IndexedModule.Resolvers
-import           Data.Kore.Unparser.Unparse
 import           Data.Kore.Variables.Free              (freeVariables)
 
 import           Control.Monad                         (foldM, zipWithM_)
 import qualified Data.Map                              as Map
 import qualified Data.Set                              as Set
+import           Data.Text.Prettyprint.Doc.Render.String (renderString)
 
 data DeclaredVariables = DeclaredVariables
     { objectDeclaredVariables :: !(Map.Map (Id Object) (Variable Object))
@@ -510,44 +512,48 @@ verifySameSort (UnifiedObject expectedSort) (UnifiedObject actualSort) = do
     koreFailWithLocationsWhen
         (expectedSort /= actualSort)
         [expectedSort, actualSort]
-        (   "Expecting sort '"
-            ++ unparseToString expectedSort
-            ++ "' but got '"
-            ++ unparseToString actualSort
-            ++ "'."
+        ((renderString . Pretty.layoutCompact)
+         ("Expecting sort"
+          <+> Pretty.squotes (pretty expectedSort)
+          <+> "but got"
+          <+> Pretty.squotes (pretty actualSort)
+          <> Pretty.dot)
         )
     verifySuccess
 verifySameSort (UnifiedMeta expectedSort) (UnifiedMeta actualSort) = do
     koreFailWithLocationsWhen
         (expectedSort /= actualSort)
         [expectedSort, actualSort]
-        (   "Expecting sort '"
-            ++ unparseToString expectedSort
-            ++ "' but got '"
-            ++ unparseToString actualSort
-            ++ "'."
+        ((renderString . Pretty.layoutCompact)
+         ("Expecting sort"
+          <+> Pretty.squotes (pretty expectedSort)
+          <+> "but got"
+          <+> Pretty.squotes (pretty actualSort)
+          <> Pretty.dot)
         )
     verifySuccess
 verifySameSort (UnifiedMeta expectedSort) (UnifiedObject actualSort) = do
     koreFailWithLocationsWhen
         (expectedSort /= patternMetaSort)
         [asUnified expectedSort, asUnified actualSort]
-        (   "Expecting meta sort '"
-            ++ unparseToString expectedSort
-            ++ "' but got object sort '"
-            ++ unparseToString actualSort
-            ++ "'."
+        ((renderString . Pretty.layoutCompact)
+         ("Expecting meta sort"
+          <+> Pretty.squotes (pretty expectedSort)
+          <+> "but got object sort"
+          <+> Pretty.squotes (pretty actualSort)
+          <> Pretty.dot)
         )
     verifySuccess
 verifySameSort (UnifiedObject expectedSort) (UnifiedMeta actualSort) = do
     koreFailWithLocationsWhen
         (actualSort /= patternMetaSort)
         [asUnified expectedSort, asUnified actualSort]
-        (   "Expecting object sort '"
-            ++ unparseToString expectedSort
-            ++ "' but got meta sort '"
-            ++ unparseToString actualSort
-            ++ "'."
+        ((renderString . Pretty.layoutCompact)
+         ("Expecting object sort"
+          <+> Pretty.squotes (pretty expectedSort)
+          <+> "but got meta sort"
+          <+> Pretty.squotes (pretty actualSort)
+          <> Pretty.dot)
         )
     verifySuccess
 
@@ -588,11 +594,9 @@ checkVariable var vars =
         Just v ->
             koreFailWithLocations
                 [v, var]
-                ("Inconsistent free variable usage: "
-                ++ unparseToString v
-                ++ " and "
-                ++ unparseToString var
-                ++ "."
+                ((renderString . Pretty.layoutCompact)
+                 ("Inconsistent free variable usage:"
+                  <+> pretty v <+> "and" <+> pretty var <> Pretty.dot)
                 )
 
 patternNameForContext :: Pattern level Variable p -> String
