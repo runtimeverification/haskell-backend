@@ -54,7 +54,6 @@ import           Data.Kore.Unparser.Unparse
 import           Control.Arrow                ((&&&))
 import           Control.Monad                (unless, void, when)
 import           Data.Fix
-
 import           Data.Maybe                   (isJust)
 import           Text.Megaparsec              (some)
 import qualified Text.Megaparsec.Char         as Parser (char)

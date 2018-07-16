@@ -43,6 +43,7 @@ module Data.Kore.AST.Kore
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.Pretty (Pretty(..))
 import           Data.Kore.HaskellExtensions (Rotate31 (..))
 
 import           Data.Fix
@@ -54,6 +55,10 @@ allow using toghether both 'Meta' and 'Object' patterns.
 -}
 newtype UnifiedPattern variable child = UnifiedPattern
     { getUnifiedPattern :: Unified (Rotate31 Pattern variable child) }
+
+instance (Pretty child, Pretty (variable Meta), Pretty (variable Object)) =>
+    Pretty (UnifiedPattern variable child) where
+    pretty = applyUnified (pretty . unRotate31) (pretty . unRotate31) . getUnifiedPattern
 
 -- |View a 'Meta' or an 'Object' 'Pattern' as an 'UnifiedPattern'
 asUnifiedPattern

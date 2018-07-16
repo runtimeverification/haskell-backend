@@ -27,7 +27,7 @@ couple1 gen = do
     xs <- couple gen
     return (x:xs)
 
-{-# ANN genericIdGen "HLint: ignore Use String" #-}
+{-# ANN genericIdGen ("HLint: ignore Use String" :: String) #-}
 genericIdGen :: [Char] -> [Char] -> Gen String
 genericIdGen firstChars nextChars = do
     firstChar <- elements firstChars

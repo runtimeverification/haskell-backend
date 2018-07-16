@@ -20,14 +20,14 @@ import           Data.Char                (chr, digitToInt, isHexDigit,
                                            isOctDigit, ord, toUpper)
 import           Numeric                  (showHex, showOct)
 
-{-# ANN oneCharEscapes "HLint: ignore Use String" #-}
+{-# ANN oneCharEscapes ("HLint: ignore Use String" :: String) #-}
 oneCharEscapes :: [Char]
 oneCharEscapes = "'\"?\\abfnrtv"
 
 oneCharEscapeDict :: CharSet
 oneCharEscapeDict = makeCharSet oneCharEscapes
 
-{-# ANN escapeCString "HLint: ignore Use ." #-}
+{-# ANN escapeCString ("HLint: ignore Use ." :: String) #-}
 escapeCString :: String -> String
 escapeCString s = foldr (.) id (map escapeAndAddChar s) ""
 

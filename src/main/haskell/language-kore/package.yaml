@@ -22,27 +22,31 @@ extra-source-files:
 description:         Please see the README on Github at <https://github.com/kframework/kore/blob/master/src/main/haskell/language-kore/README.md>
 
 dependencies:
-- base >= 4.7
-- megaparsec >=6.4.0
-- parser-combinators
-- bytestring >=0.10
-- containers
-- array
-- bytestring-trie
-- mtl
-- hashable
-- data-fix
-- clock
-- lens
-- groom
-- deepseq
-- optparse-applicative
-- reflection
-- time
-- gitrev
+  - base >= 4.7
+  - array
+  - bytestring >= 0.10
+  - bytestring-trie
+  - containers
+  - clock
+  - data-fix
+  - deepseq
+  - gitrev
+  - groom
+  - hashable
+  - lens
+  - megaparsec >= 6.4.0
+  - mtl
+  - optparse-applicative
+  - parser-combinators
+  - prettyprinter
+  - reflection
+  - time
 
 library:
   source-dirs: src
+  default-extensions:
+    - LambdaCase
+    - OverloadedStrings
 
 executables:
   kore-parser:

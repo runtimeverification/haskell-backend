@@ -1,4 +1,5 @@
-module Data.Kore.Implicit.ImplicitKoreTest (implicitKoreRegressionTests) where
+module Data.Kore.Implicit.ImplicitKoreTest (implicitKoreRegressionTests, toByteString) where
+
 
 import           Test.Tasty                      (TestTree, testGroup)
 import           Test.Tasty.Golden               (goldenVsString)
@@ -8,7 +9,7 @@ import           Data.Kore.Parser.RegressionTest (GoldenFileName (..),
                                                   InputFileName (..),
                                                   VerifyRequest (..),
                                                   regressionTest)
-import           Data.Kore.Unparser.Unparse      (unparseToString)
+import           Data.Kore.Unparser.Unparse
 
 import qualified Data.ByteString.Lazy            as LazyByteString
 import qualified Data.ByteString.Lazy.Char8      as LazyChar8
