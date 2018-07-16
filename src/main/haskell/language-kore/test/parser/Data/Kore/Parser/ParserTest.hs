@@ -1041,7 +1041,7 @@ sentenceSortParserTests =
                         Attributes
                             [asKorePattern $ StringLiteralPattern (StringLiteral "a")]
                     }
-                :: KoreSentenceSort)
+                :: KoreSentenceSort Object)
             )
         {- TODO(virgil): The Scala parser allows empty sort variable lists
            while the semantics-of-k document does not. -}
@@ -1054,7 +1054,7 @@ sentenceSortParserTests =
                         Attributes
                             [asKorePattern $ StringLiteralPattern (StringLiteral "a")]
                     }
-                :: KoreSentenceSort)
+                :: KoreSentenceSort Object)
             )
         , FailureWithoutMessage
             [ ""
@@ -1229,7 +1229,7 @@ moduleParserTests =
                             , sentenceSortParameters = []
                             , sentenceSortAttributes = Attributes []
                             }
-                        :: KoreSentenceSort)
+                        :: KoreSentenceSort Object)
                     ]
                 , moduleAttributes =
                     Attributes
@@ -1245,14 +1245,14 @@ moduleParserTests =
                             , sentenceSortParameters = []
                             , sentenceSortAttributes = Attributes []
                             }
-                        :: KoreSentenceSort)
+                        :: KoreSentenceSort Object)
                     , constructUnifiedSentence SentenceSortSentence $
                         (SentenceSort
                             { sentenceSortName = testId "c"
                             , sentenceSortParameters = []
                             , sentenceSortAttributes = Attributes []
                             }
-                        :: KoreSentenceSort)
+                        :: KoreSentenceSort Object)
                     ]
                 , moduleAttributes =
                     Attributes
@@ -1291,7 +1291,7 @@ definitionParserTests =
                                     , sentenceSortParameters = []
                                     , sentenceSortAttributes = Attributes []
                                     }
-                                :: KoreSentenceSort)
+                                :: KoreSentenceSort Object)
                             ]
                         , moduleAttributes =
                             Attributes
@@ -1319,7 +1319,7 @@ definitionParserTests =
                                     , sentenceSortParameters = []
                                     , sentenceSortAttributes = Attributes []
                                     }
-                                :: KoreSentenceSort)
+                                :: KoreSentenceSort Object)
                             ]
                         , moduleAttributes =
                             Attributes
@@ -1335,7 +1335,7 @@ definitionParserTests =
                                     , sentenceSortParameters = []
                                     , sentenceSortAttributes = Attributes []
                                     }
-                                :: KoreSentenceSort)
+                                :: KoreSentenceSort Object)
                             ]
                         , moduleAttributes =
                             Attributes

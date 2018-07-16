@@ -195,7 +195,7 @@ definitionVerifierSortUsageTests =
                             , sentenceSortAttributes =
                                 Attributes []
                             }
-                        :: KoreSentenceSort)
+                        :: KoreSentenceSort Object)
                     ]
                 , testConfigurationAdditionalSortVariables = []
                 , testConfigurationCaseBasedConfiguration =
@@ -227,7 +227,7 @@ definitionVerifierSortUsageTests =
                             , sentenceSortAttributes =
                                 Attributes []
                             }
-                        :: KoreSentenceSort)
+                        :: KoreSentenceSort Object)
                     ]
                 , testConfigurationAdditionalSortVariables = []
                 , testConfigurationCaseBasedConfiguration =

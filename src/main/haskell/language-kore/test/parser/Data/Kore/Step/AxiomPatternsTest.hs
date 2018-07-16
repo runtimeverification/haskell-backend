@@ -104,7 +104,7 @@ axiomPatternsUnitTests =
                                                 , sentenceSortAttributes =
                                                     Attributes []
                                                 }
-                                            ::KoreSentenceSort)
+                                            ::KoreSentenceSort Object)
                                         , asSentence
                                             (SentenceSort
                                                 { sentenceSortName =
@@ -113,7 +113,7 @@ axiomPatternsUnitTests =
                                                 , sentenceSortAttributes =
                                                     Attributes []
                                                 }
-                                            ::KoreSentenceSort)
+                                            ::KoreSentenceSort Object)
                                         , sentencePureToKore $
                                             asSentence symbolInj
                                         ]

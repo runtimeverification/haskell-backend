@@ -250,6 +250,7 @@ data MetaBasicSortType
     | SortSort
     | SymbolSort
     | VariableSort
+    | UserSort String -- arbitrary MetaSort
     deriving(Generic)
 
 instance Hashable MetaBasicSortType
@@ -280,11 +281,12 @@ metaSortsListWithString :: [MetaSortType]
 metaSortsListWithString = StringSort : metaSortsList
 
 metaBasicSortTypeString :: MetaBasicSortType -> String
-metaBasicSortTypeString CharSort     = "Char"
-metaBasicSortTypeString PatternSort  = "Pattern"
-metaBasicSortTypeString SortSort     = "Sort"
-metaBasicSortTypeString SymbolSort   = "Symbol"
-metaBasicSortTypeString VariableSort = "Variable"
+metaBasicSortTypeString CharSort        = "Char"
+metaBasicSortTypeString PatternSort     = "Pattern"
+metaBasicSortTypeString SortSort        = "Sort"
+metaBasicSortTypeString SymbolSort      = "Symbol"
+metaBasicSortTypeString VariableSort    = "Variable"
+metaBasicSortTypeString (UserSort name) =  name
 
 metaSortTypeString :: MetaSortType -> String
 metaSortTypeString (MetaBasicSortType s) = metaBasicSortTypeString s
@@ -310,7 +312,7 @@ data Variable level = Variable
 
 instance Hashable (Variable level)
 
-{--| 'SortedVariable' is a variable which has a sort.
+{-| 'SortedVariable' is a variable which has a sort.
 --}
 class SortedVariable variable where
     sortedVariableSort :: variable level -> Sort level

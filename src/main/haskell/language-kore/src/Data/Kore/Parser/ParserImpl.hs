@@ -111,7 +111,6 @@ sortParser x = do
   where
     actualSortParser identifier = do
         sorts <- inCurlyBracesListParser (sortParser x)
-        when (isMeta x) (validateMetaSort identifier sorts)
         return $ SortActualSort SortActual
             { sortActualName = stringNameNormalizer identifier
             , sortActualSorts = sorts
@@ -864,7 +863,7 @@ koreSentenceParser :: Parser KoreSentence
 koreSentenceParser = keywordBasedParsers
     [ ( "alias", sentenceConstructorRemainderParser AliasSentenceType )
     , ( "axiom", axiomSentenceRemainderParser )
-    , ( "sort", asSentence <$> sortSentenceRemainderParser )
+    , ( "sort", sentenceSortRemainderParser )
     , ( "symbol", sentenceConstructorRemainderParser SymbolSentenceType )
     , ( "import", importSentenceRemainderParser )
     , ( "hooked-sort", hookedSortSentenceRemainderParser )
@@ -898,6 +897,15 @@ sentenceConstructorRemainderParser sentenceType
                     Object
                     (symbolParser Object)
                     (Rotate31 <....> SentenceSymbol)
+
+sentenceSortRemainderParser :: Parser KoreSentence
+sentenceSortRemainderParser = do
+  c <- ParserUtils.peekChar'
+  case c of
+    '#' -> constructUnifiedSentence SentenceSortSentence
+           <$> sortSentenceRemainderParser Meta
+    _   -> constructUnifiedSentence SentenceSortSentence
+           <$> sortSentenceRemainderParser Object
 
 {-|'aliasSymbolSentenceRemainderParser' parses the part after the starting
 keyword of an alias or symbol declaration using the given head parser
@@ -1011,11 +1019,14 @@ BNF example:
 
 Always starts with @{@.
 -}
-sortSentenceRemainderParser :: Parser KoreSentenceSort
-sortSentenceRemainderParser =
+sortSentenceRemainderParser
+  :: MetaOrObject level
+  => level
+  -> Parser (KoreSentenceSort level)
+sortSentenceRemainderParser x =
     pure SentenceSort
-        <*> idParser Object
-        <*> inCurlyBracesListParser (sortVariableParser Object)
+        <*> idParser x
+        <*> inCurlyBracesListParser (sortVariableParser x)
         <*> attributesParser
 
 {-|'hookedSymbolSentenceRemainderParser' parses the part after the starting
@@ -1037,7 +1048,7 @@ the corresponding 'SentenceHook'.
 -}
 hookedSortSentenceRemainderParser :: Parser KoreSentence
 hookedSortSentenceRemainderParser =
-    asSentence . SentenceHookedSort <$> sortSentenceRemainderParser
+    asSentence . SentenceHookedSort <$> sortSentenceRemainderParser Object
 
 leveledPatternParser
     :: MetaOrObject level

@@ -413,6 +413,24 @@ indexModuleMetaSentence
             }
         )
 
+indexModuleMetaSentence
+    implicitModule
+    importingModules
+    nameToModule
+    ( indexedModules
+    , indexedModule
+    )
+    ( SentenceSortSentence sentence )
+  = return
+    ( indexedModules
+    , indexedModule
+      { indexedModuleMetaSortDescriptions =
+          Map.insert
+          (sentenceSortName sentence)
+          sentence
+          (indexedModuleMetaSortDescriptions indexedModule)
+      }
+    )
 
 indexModuleObjectSentence
     :: KoreImplicitIndexedModule

@@ -882,7 +882,7 @@ liftTests =
                             , sentenceSortAttributes =
                                 Attributes []
                             }
-                        :: KoreSentenceSort)
+                        :: KoreSentenceSort Object)
                     )
                 )
             )

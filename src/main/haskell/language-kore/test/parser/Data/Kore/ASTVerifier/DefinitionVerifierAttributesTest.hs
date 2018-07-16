@@ -100,7 +100,7 @@ definitionVerifierAttributesTests =
                                     { sentenceSortName = testId "mySort"
                                     , sentenceSortParameters = []
                                     , sentenceSortAttributes = Attributes []
-                                    }::KoreSentenceSort
+                                    }::KoreSentenceSort Object
                                 )
                             ]
                         , moduleAttributes = Attributes []
@@ -136,7 +136,7 @@ definitionVerifierAttributesTests =
                                     { sentenceSortName = testId "mySort"
                                     , sentenceSortParameters = []
                                     , sentenceSortAttributes = Attributes []
-                                    }::KoreSentenceSort
+                                    }::KoreSentenceSort Object
                                 )
                             ]
                         , moduleAttributes = Attributes []
