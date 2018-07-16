@@ -55,11 +55,27 @@ library:
 executables:
   kore-parser:
     main:                Main.hs
-    source-dirs:         app/parser
+    source-dirs:
+      - app/parser
+      - app/share
     ghc-options:
       - -threaded
       - -rtsopts
       - -with-rtsopts=-N
+    dependencies:
+      - language-kore
+
+  kore-format:
+    main: Main.hs
+    source-dirs:
+      - app/format
+      - app/share
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    default-extensions:
+      - RecordWildCards
     dependencies:
       - language-kore
 
