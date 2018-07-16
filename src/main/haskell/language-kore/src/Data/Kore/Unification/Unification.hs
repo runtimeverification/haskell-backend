@@ -15,6 +15,8 @@ Portability : portable
 #-}
 module Data.Kore.Unification.Unification where
 
+
+
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.PureML
@@ -26,6 +28,7 @@ import           Data.Kore.ASTUtils.Substitution
 import           Data.Kore.Proof.Proof
 import           Data.Kore.Proof.Dummy
 import           Data.Kore.Proof.Util
+import           Data.Kore.AST.Common
 
 
 import           Control.Monad                         (foldM)
@@ -34,6 +37,7 @@ import           Data.Reflection
 import           Data.Function                         (on)
 import           Data.List                             (groupBy, partition,
                                                         sortBy)
+import qualified Data.Set as S
 import           Data.Kore.Unparser.Unparse
 import           Data.Hashable
 import           GHC.Generics (Generic)
@@ -53,7 +57,7 @@ go finished (eq : eqs) = case getConclusion eq of
       useRule (AndElimL eq) : useRule (AndElimR eq) : eqs
     Equals_ s1 s2 (Var_ x) b 
       | occursCheck eq -> 
-          go (eq : finished) (map (provableSubst eq []) eqs)
+          go (eq : finished) (map (provablySubstitute eq []) eqs)
       | otherwise -> 
           Left $ OccursCheck eq 
     Equals_ s1 s2 a (Var_ x) -> go finished $ 
@@ -76,9 +80,9 @@ occursCheck
     :: Given (MetadataTools Object)
     => Proof 
     -> Bool
-occursCheck eq =
-    (getConclusion $ provableSubst eq [1] eq) == getConclusion eq
-
+occursCheck eq = case getConclusion eq of 
+    Equals_ _ _ (Var_ v) rhs -> not $ S.member v (freeVars rhs)
+    _ -> impossible
 
 splitConstructor
     :: Given (MetadataTools Object)
@@ -91,7 +95,7 @@ splitConstructor eq =
         (App_ ha ca, App_ hb cb)
          | ha == hb  -> Right $ 
              useRule $ ModusPonens eq $ 
-             instantiateForalls (reverse cb ++ reverse ca) $ 
+             forallElimN (ca ++ cb) $ 
              (assume $ generateInjectivityAxiom ha (getSort a) (map getSort ca))
          | otherwise -> Left $ ConstructorClash a b 
     otherwise -> impossible
@@ -114,14 +118,12 @@ generateInjectivityAxiom head resultSort childrenSorts =
         xVars' = map Var_ xVars
         yVars = vars "y"
         yVars' = map Var_ yVars
-        chainForall vars pat = foldl (\p v -> mkForall v p) pat (reverse vars) 
         fxEqfy = 
             mkApp head xVars'
             `mkEquals`
             mkApp head yVars'
-        eqs = zipWith mkEquals xVars' yVars'
-        conj = foldl1 mkAnd eqs
-    in chainForall xVars $ chainForall yVars $ (fxEqfy `mkImplies` conj)
+        xsEqys = andN $ zipWith mkEquals xVars' yVars'
+    in forallN xVars $ forallN yVars $ (fxEqfy `mkImplies` xsEqys)
 
 --testing:
 --  putStrLn $ groom $ dummyEnvironment $ generateInjectivityAxiom (sym "f") (testSort "R") [testSort "A", testSort "B", testSort "C"]
@@ -132,40 +134,38 @@ flipEqn
     -> Proof 
 flipEqn eq = case getConclusion eq of 
     Equals_ _ _ a b -> 
-      provableSubst eq [0] (useRule $ EqualityIntro a) 
+      provablySubstitute eq [0] (useRule $ EqualityIntro a) 
       -- i.e. substitute a=b in the first position of a=a to get b=a
-
-provableSubst 
-    :: Given (MetadataTools Object)
-    => Proof 
-    -> Path 
-    -> Proof 
-    -> Proof
-provableSubst eq path pat = case getConclusion eq of 
-    Equals_ _ _ a b -> 
-      useRule $ ModusPonens 
-        pat
-        (useRule $ ModusPonens 
-            eq 
-            (useRule $ EqualityElim 
-                a 
-                b 
-                (getConclusion pat) 
-                path
-            )
-        )
-    _ -> impossible 
+    _ -> impossible
 
 ex1 :: Given (MetadataTools Object) => [Proof]
-ex1 =  [assume $ mkEquals (mkApp (sym "f") [Var_ $ var "a", mkApp (sym "g") [Var_ $ var "b", Var_ $ var "c"]]) (mkApp (sym "f") [Var_ $ var "d", Var_ $ var "e"]) ]
+ex1 =  [
+  assume $ 
+  mkEquals 
+    (mkApp (sym "f") 
+        [Var_ $ var "a", mkApp (sym "g") 
+        [Var_ $ var "b", Var_ $ var "c"]]
+    )
+    (mkApp (sym "f") [Var_ $ var "d", Var_ $ var "e"]) 
+  ]
 
 ex2 :: Given (MetadataTools Object) => [Proof]
 ex2 =  [
   assume $ 
   mkEquals 
-    (mkApp (sym "f") [Var_ $ var "a", mkApp (sym "g") [Var_ $ var "b", Var_ $ var "c"]])
-    (mkApp (sym "f") [mkApp (sym "q") [Var_ $ var "d"], Var_ $ var "e"])
+    (mkApp (sym "f") [
+        Var_ $ var "a"
+      , mkApp (sym "g") [
+            Var_ $ var "b"
+          , Var_ $ var "c"
+        ]
+    ])
+    (mkApp (sym "f") [
+        mkApp (sym "q") [
+            Var_ $ var "d"
+        ]
+        , Var_ $ var "e"
+    ])
   ]
 
 
-impossible = error "The impossible happened."

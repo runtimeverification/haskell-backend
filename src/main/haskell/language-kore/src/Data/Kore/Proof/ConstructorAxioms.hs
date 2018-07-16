@@ -1,6 +1,6 @@
 {-|
-Module      : Data.Kore.Proof.Dummy
-Description : Dummy instances of stuff for testing.
+Module      : Data.Kore.Proof.ConstructorAxioms
+Description : No-junk, No-confusion etc. for non-AC constructors
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
 Maintainer  : phillip.harris@runtimeverification.com
@@ -12,8 +12,10 @@ Portability : portable
 {-# LANGUAGE ConstraintKinds           #-}
 {-# LANGUAGE DeriveFoldable            #-}
 {-# LANGUAGE DeriveFunctor             #-}
+{-# LANGUAGE DeriveGeneric             #-}
 {-# LANGUAGE DeriveTraversable         #-}
 {-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE FlexibleInstances         #-}
 {-# LANGUAGE FunctionalDependencies    #-}
 {-# LANGUAGE LambdaCase                #-}
 {-# LANGUAGE MultiParamTypeClasses     #-}
@@ -22,9 +24,11 @@ Portability : portable
 {-# LANGUAGE Rank2Types                #-}
 {-# LANGUAGE TypeApplications          #-}
 {-# LANGUAGE TypeFamilies              #-}
+{-# LANGUAGE TypeSynonymInstances      #-}
 
-module Data.Kore.Proof.Dummy where
 
+
+module Data.Kore.Proof.ConstructorAxioms where
 
 import           Control.Lens
 import           Control.Lens.Operators
@@ -47,45 +51,5 @@ import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.ASTUtils.SmartConstructors
 import           Data.Kore.ASTUtils.Substitution
 
-pattern V x = Var_ x
-
-var :: MetaOrObject level => String -> Variable level
-var x =
-  Variable (noLocationId x) (testSort "S")
-
-sym :: MetaOrObject level => String -> SymbolOrAlias level
-sym x =
-  SymbolOrAlias (noLocationId x) []
-
-var_ :: MetaOrObject level => String -> String -> Variable level
-var_ x s =
-  Variable (noLocationId x) (testSort s)
-
-varS :: MetaOrObject level => String -> Sort level -> Variable level
-varS x s =
-  Variable (noLocationId x) s
-
-dummyEnvironment
-  :: forall r . MetaOrObject Object
-  => (Given (MetadataTools Object) => r)
-  -> r
-dummyEnvironment = give (dummyMetadataTools @Object)
-
-dummyMetadataTools
-  :: MetaOrObject level
-  => MetadataTools level
-dummyMetadataTools = MetadataTools
-    { isConstructor    = const True
-    , isFunctional     = const True
-    , isFunction       = const True
-    , getArgumentSorts = const []
-    , getResultSort    = const $ testSort "S"
-    }
-
-testSort
-  :: MetaOrObject level
-  => String
-  -> Sort level
-testSort name =
-    SortVariableSort $ SortVariable
-        { getSortVariable = noLocationId name }
+import           Data.Hashable
+import           GHC.Generics                          (Generic)
