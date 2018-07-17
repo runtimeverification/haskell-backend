@@ -1,0 +1,19 @@
+Definition
+    { definitionAttributes = Attributes []
+    , definitionModules =
+        [ Module
+            { moduleName = ModuleName "TEST-EXCEPTION-22"
+            , moduleSentences =
+                [ MetaSentence (SentenceSortSentence SentenceSort
+                    { sentenceSortName = (Id "#C" AstLocationNone) :: Id Meta
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "d")))))
+                            ]
+                    })
+                ]
+            , moduleAttributes = Attributes []
+            }
+        ]
+    }

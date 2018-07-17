@@ -1,0 +1,26 @@
+Definition
+    { definitionAttributes = Attributes []
+    , definitionModules =
+        [ Module
+            { moduleName = ModuleName "TEST-EXCEPTION-10"
+            , moduleSentences =
+                [ MetaSentence (SentenceAxiomSentence SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        Fix (UnifiedPattern (UnifiedMeta (Rotate31 (VariablePattern Variable
+                            { variableName = (Id "#X" AstLocationNone) :: Id Meta
+                            , variableSort =
+                                SortActualSort SortActual
+                                    { sortActualName = (Id "#S" AstLocationNone) :: Id Meta
+                                    , sortActualSorts =
+                                        [ SortVariableSort (SortVariable ((Id "#R" AstLocationNone) :: Id Meta))
+                                        ]
+                                    }
+                            }))))
+                    , sentenceAxiomAttributes = Attributes []
+                    })
+                ]
+            , moduleAttributes = Attributes []
+            }
+        ]
+    }

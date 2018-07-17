@@ -6,6 +6,7 @@ import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.Sentence
+import           Data.Kore.AST.Builders           (sort_)
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.KoreHelpers
 import           Data.Kore.Parser.ParserImpl
@@ -118,18 +119,7 @@ metaSortConverterTests =
         , success "#SymbolList{}" symbolListMetaSort
         , success "#Variable{}" variableMetaSort
         , success "#VariableList{}" variableListMetaSort
-        , Failure FailureTest
-            { failureInput = "#Chart{}"
-            , failureExpected =
-                "<test-string>:1:9:\n"
-                ++ "metaSortConverter: Invalid constructor: '#Chart'.\n"
-            }
-        , Failure FailureTest
-            { failureInput = "#Char{#Char}"
-            , failureExpected =
-                "<test-string>:1:13:\n"
-                ++ "metaSortConverter: Non empty parameter sorts.\n"
-            }
+        , success "#User{}" (sort_ $ MetaBasicSortType $ UserSort "User")
         , FailureWithoutMessage
             [ "var1, var2", "var1{var1 var2}"
             , "sort1{sort2, sort3}", "sort1{sort2{sort3}}"
