@@ -24,12 +24,12 @@ import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.FixTraversals
 import           Data.Kore.IndexedModule.MetadataTools
 import           Data.Kore.ASTUtils.SmartConstructors 
-import           Data.Kore.ASTUtils.Substitution 
+import           Data.Kore.ASTUtils.Substitution
+
 import           Data.Kore.Proof.Proof
 import           Data.Kore.Proof.Dummy
 import           Data.Kore.Proof.Util
-import           Data.Kore.AST.Common
-
+import           Data.Kore.Proof.ConstructorAxioms
 
 import           Control.Monad                         (foldM)
 import           Data.Fix
@@ -74,8 +74,8 @@ data UnificationError
 instance Hashable UnificationError
 
 
--- substituting an equation x = t into itself 
--- is a noop iff x \notin FV(t)
+-- | Returns False if the eq x = t fails the occurs check,
+-- i.e. returns False iff x appears in t. 
 occursCheck 
     :: Given (MetadataTools Object)
     => Proof 
@@ -101,29 +101,6 @@ splitConstructor eq =
     otherwise -> impossible
     where instantiateForalls args pat = 
               foldr (\arg pat -> useRule $ ForallElim arg pat) pat args
-
-generateInjectivityAxiom
-    :: Given (MetadataTools Object)
-    => SymbolOrAlias Object 
-    -> Sort Object
-    -> [Sort Object]
-    -> Term
-generateInjectivityAxiom head resultSort childrenSorts =
-    let vars name = 
-            zipWith 
-                (\n sort -> varS (name ++ show n) sort)
-                [1..]
-                childrenSorts
-        xVars = vars "x"
-        xVars' = map Var_ xVars
-        yVars = vars "y"
-        yVars' = map Var_ yVars
-        fxEqfy = 
-            mkApp head xVars'
-            `mkEquals`
-            mkApp head yVars'
-        xsEqys = andN $ zipWith mkEquals xVars' yVars'
-    in forallN xVars $ forallN yVars $ (fxEqfy `mkImplies` xsEqys)
 
 --testing:
 --  putStrLn $ groom $ dummyEnvironment $ generateInjectivityAxiom (sym "f") (testSort "R") [testSort "A", testSort "B", testSort "C"]

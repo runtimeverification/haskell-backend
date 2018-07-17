@@ -1,6 +1,7 @@
 {-|
-Module      : Data.Kore.Proof.ConstructorAxioms
-Description : No-junk, No-confusion etc. for non-AC constructors
+Module      : Data.Kore.Proof.LinedBasedProof
+Description : Tree-based proof system, which can be
+              hash-consed into a list-based one.
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
 Maintainer  : phillip.harris@runtimeverification.com
@@ -9,6 +10,7 @@ Portability : portable
 -}
 
 {-# LANGUAGE AllowAmbiguousTypes       #-}
+{-# LANGUAGE BangPatterns              #-}
 {-# LANGUAGE ConstraintKinds           #-}
 {-# LANGUAGE DeriveFoldable            #-}
 {-# LANGUAGE DeriveFunctor             #-}
@@ -28,11 +30,13 @@ Portability : portable
 
 
 
-module Data.Kore.Proof.ConstructorAxioms where
+module Data.Kore.Proof.LinedBasedProof where
 
+import           Control.Arrow
 import           Control.Lens
 import           Control.Lens.Operators
-import           Control.Monad.State
+import           Control.Monad.State.Strict
+
 import           Data.Fix
 import           Data.Fix
 import           Data.Foldable
@@ -51,34 +55,37 @@ import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.ASTUtils.SmartConstructors
 import           Data.Kore.ASTUtils.Substitution
 
+import           Data.Kore.Proof.Dummy
+import           Data.Kore.Proof.Proof
+import           Data.Coerce
+
+import           Data.Functor.Compose
 import           Data.Hashable
 import           GHC.Generics                          (Generic)
 
--- | Given head symbol h, return sort of h, arguments sorts s_i,
--- generates axiom of the form:
--- forall x_1 ... x_n , forall y_1 ... y_n
--- h(x_1, ..., x_n) = h(y_1, ..., y_n) ->
--- x_1 = y_1 /\ x_2 = y_2 /\ ... /\ x_n = y_n
--- where x_i, y_i : s_i
-generateInjectivityAxiom
-    :: Given (MetadataTools Object)
-    => SymbolOrAlias Object 
-    -> Sort Object
-    -> [Sort Object]
-    -> Term
-generateInjectivityAxiom head resultSort childrenSorts =
-    let vars name = 
-            zipWith 
-                (\n sort -> varS (name ++ show n) sort)
-                [1..]
-                childrenSorts
-        xVars = vars "x"
-        xVars' = map Var_ xVars
-        yVars = vars "y"
-        yVars' = map Var_ yVars
-        fxEqfy = 
-            mkApp head xVars'
-            `mkEquals`
-            mkApp head yVars'
-        xsEqys = andN $ zipWith mkEquals xVars' yVars'
-    in forallN xVars $ forallN yVars $ (fxEqfy `mkImplies` xsEqys)
+type LineBasedProof = M.Map Int (PropF Term LargeRule Int)
+
+toLineProof :: Proof -> LineBasedProof
+toLineProof proof =
+    execState (go proof) (M.empty, M.empty, 0) ^. _2
+    where 
+        go (Fix proof) = do 
+            j' <- mapM go $ justification proof
+            let proof' = proof { justification = j' }
+            (hashTable, orderedTable, next) <- get 
+            let h = hash proof'
+            (!hashTable, !orderedTable, !next) <- get 
+            case M.lookup h hashTable of 
+              Just m -> do 
+                return m 
+              Nothing -> do 
+                put ( M.insert h next hashTable
+                    , M.insert next proof' orderedTable
+                    , next+1)
+                return next
+
+
+
+
+
+
