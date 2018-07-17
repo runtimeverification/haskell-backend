@@ -50,7 +50,14 @@ verifySort findSortDescription declaredSortVariables (SortActualSort sort)
                 declaredSortVariables
                 sort
                 sortDescription
+            case sortLevel of
+                IsObject -> verifySuccess
+                IsMeta   -> do
+                    koreFailWithLocationsWhen
+                        (sortActualSorts sort /= [])
+                        ("sort '" ++ getId (sortActualName sort) ++ "'")
         )
+  where sortLevel = isMetaOrObject sort
 
 verifySortMatchesDeclaration
     :: MetaOrObject level
