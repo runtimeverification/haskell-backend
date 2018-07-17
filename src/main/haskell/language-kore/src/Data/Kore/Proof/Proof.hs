@@ -55,6 +55,25 @@ import           Data.Kore.ASTUtils.Substitution
 import           Data.Hashable
 import           GHC.Generics                          (Generic)
 
+-- A note about partial pattern matches:
+-- The basic Kore datatype has quite a few constructors,
+-- and there are inevitably situations where we are only concerned
+-- with 1 or 2 of them. For example, when alpha renaming we're only
+-- interested in Forall_ and Exists_, when substituting we only deal
+-- with Equals_ etc. 
+-- Sometimes these subsets of constructors could be factored out,
+-- for example Forall_ and Exists_ could contain a Scope type
+-- a la kmett's `bound`, then functions involving binders could
+-- expect a Scope. Other times the situtation is just too particular. 
+-- In the end we decided that enforcing total pattern matches in
+-- helper functions like alphaRename, provablySubstitute etc. is just too
+-- much to ask. This is especially true since Kore theorems appear inside the
+-- By constructor, so any tricks we use to encode subsets of constructors have
+-- to be threaded through that type. 
+-- Hence most pattern matches end in `impossible`, which should be considered
+-- a programmer error if it throws. 
+
+impossible = error "The impossible happened."
 
 type Term = CommonPurePattern Object
 type Var = Variable Object
@@ -92,42 +111,46 @@ data LargeRule subproof
  | AndIntro subproof subproof
  | AndElimL subproof
  | AndElimR subproof
+ -- * a |- a \/ b
+ -- OrIntro a b
  | OrIntroL subproof Term
+ -- * b |- a \/ b
+ -- OrIntro a b
  | OrIntroR Term     subproof
- -- | OrElim (a \/ b) (C assuming a) (C assuming b)
+ -- * OrElim (a \/ b) (C assuming a) (C assuming b)
  | OrElim subproof subproof subproof
  | TopIntro
  | ExistsIntro Var Term subproof
- -- | ExistsElim (E x. p[x]) (C assuming p[y])
+ -- * ExistsElim (E x. p[x]) (C assuming p[y])
  | ExistsElim subproof Var Term subproof
  | ModusPonens subproof subproof
  -- (\forall x. phi) /\ (\exists y. phi' = y) -> phi[phi'/x]
  -- FunctionalSubst x phi y phi'
  | FunctionalSubst Var Term Var Term
- -- | \exists y . x = y
+ -- * \exists y . x = y
  -- FunctionalVar x y
  | FunctionalVar Var Var
  | EqualityIntro Term
- -- | Path points to the _subtree_ of phi in which the substitution
+ -- * Path points to the _subtree_ of phi in which the substitution
  -- is to be applied at every possible point.
  -- This is technically less flexible than specifying every position of "x"
  -- But it's good enough for all practical purposes.
  -- phi_1 = phi_2 /\ phi[phi_1/x] -> phi[phi_2/x]
  -- EqualityElim phi_1 phi_2 phi [path]
  | EqualityElim Term Term Term Path
- -- | NOTE: Should probably rewrite axiom 8 to \forall x. x \in phi = \phi
+ -- * NOTE: Should probably rewrite axiom 8 to \forall x. x \in phi = \phi
  -- This should be exactly equivalent, and it fits the other axioms better.
  -- (\forall x . x \in phi) = phi
  | MembershipForall Var Term
- -- | x \in y = (x = y)
+ -- * x \in y = (x = y)
  | MembershipEq Var Var
- -- | x \in \not phi = \not (x \in phi)
+ -- * x \in \not phi = \not (x \in phi)
  | MembershipNot Var Term
- -- | (x \in phi_1 /\ phi_2) = (x \in phi_1) /\ (x \in phi_2)
+ -- * (x \in phi_1 /\ phi_2) = (x \in phi_1) /\ (x \in phi_2)
  | MembershipAnd Var Term Term
- -- | (x \in exists y . phi) = exists y . (x \in phi)
+ -- * (x \in exists y . phi) = exists y . (x \in phi)
  | MembershipExists Var Var Term
- -- | x \in \sigma(phi_1,...,phi_i,...,phi_n)
+ -- * x \in \sigma(phi_1,...,phi_i,...,phi_n)
  -- =
  -- \exists y . (y \in \phi_i /\ x \in \sigma(phi_1,...,y,...,phi_n))
  -- MembershipCong x y i (\sigma(...))
@@ -154,6 +177,18 @@ discharge hypothesis prop@(By conclusion justification assumptions)
     (Discharge hypothesis prop)
     (S.delete hypothesis assumptions)
 
+-- Given a Rule like `AndIntro a b`, useRule creates a proof, like
+-- By (And a b) (AndIntro a b) (assumptions a `S.union` assumptions b)
+
+-- There are two types of rules: 
+-- 1) "special" rules like Assumption, Discharge etc
+-- These are natural deduction introduction/elimination rules which manipulate
+-- quantifiers/assumptions in a tricky way. 
+-- 2) "mundane" rules like EqualityElim which merely 
+-- generate an axiom  using a schema. 
+-- The "mundane" rules are passed off to "interpretRule" 
+-- which instantiates the schema.
+
 useRule
   :: Given (MetadataTools Object)
   => LargeRule Proof
@@ -172,7 +207,7 @@ useRule (ExistsElim producer var property (Fix consumer)) =
             { assumptions = S.delete property $ assumptions consumer
             }
        | otherwise -> error "The impossible happened."
-      _ -> error "The impossible happened."
+      _ -> impossible
 useRule rule@(OrElim disjunct left right)
   | getConclusion left == getConclusion right -- FIXME: too picky ==?
      = let Or_ _ leftAssumption rightAssumption = getConclusion disjunct
@@ -183,7 +218,7 @@ useRule rule@(OrElim disjunct left right)
            (S.delete leftAssumption  $ assumptions $ unFix left)
            (S.delete rightAssumption $ assumptions $ unFix right)
           )
-  | otherwise = error "The impossible happened"
+  | otherwise = impossible
 useRule rule =
   By
   (interpretRule rule)
@@ -206,7 +241,7 @@ interpretRule (ModusPonens a b) =
       ++ "in ModusPonens"
   -- Default equality too strong? Probably.
 interpretRule (FunctionalSubst x phi y phi') =
-  ((mkForall x phi) `mkAnd` (mkExists y (phi' `mkEquals` Var_ y)))
+  ((mkForall x phi) `mkImplies` (mkExists y (phi' `mkEquals` Var_ y)))
   `mkImplies`
   (subst (Var_ x) phi' phi)
 interpretRule (FunctionalVar x y) = mkExists y (Var_ x `mkEquals` Var_ y)
@@ -277,4 +312,4 @@ getFreeVars proof =
   $ assumptions
   $ unFix proof
 
-impossible = error "This should never happen."
+
