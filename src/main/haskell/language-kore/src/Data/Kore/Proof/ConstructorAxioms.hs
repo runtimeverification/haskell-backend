@@ -51,6 +51,11 @@ import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.ASTUtils.SmartConstructors
 import           Data.Kore.ASTUtils.Substitution
 
+import           Data.Kore.Proof.Proof
+import           Data.Kore.Proof.Util
+import           Data.Kore.Proof.Dummy
+
+
 import           Data.Hashable
 import           GHC.Generics                          (Generic)
 
