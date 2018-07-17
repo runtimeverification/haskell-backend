@@ -5,6 +5,7 @@ module Data.Kore.Unparser.UnparseTest ( unparseParseTests
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.Pretty (Pretty(..))
 import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTGen
 import           Data.Kore.KoreHelpers
@@ -31,7 +32,7 @@ unparseUnitTests =
                     }
                 :: KoreSentenceSort)
             )
-            "sort x{}[]"
+            "sort x{} []"
         , unparseTest
             (UnifiedSentence 
                 { getUnifiedSentence = UnifiedObject (Rotate41 
@@ -56,7 +57,7 @@ unparseUnitTests =
                         })
                     })
                 } :: KoreSentence)
-                "alias i{}() : z\nwhere \\top{i{}}() := \\top{q}()[]"
+                "alias i{}() : z where \\top{i{}}() := \\top{q}() []"
         , unparseTest
             Attributes
                 { getAttributes =
@@ -84,16 +85,7 @@ unparseUnitTests =
                         })
                     ]
                 }
-            "[\n\
-            \    \\top{#Fm}(),\n\
-            \    \\in{\n\
-            \        B{},\n\
-            \        G{}\n\
-            \    }(\n\
-            \        T:C,\n\
-            \        \"\"\n\
-            \    )\n\
-            \]"
+            "[\\top{#Fm}(), \\in{B{}, G{}}(T:C, \"\")]"
         , unparseTest
             (Module
                 { moduleName = ModuleName "t"
@@ -136,10 +128,7 @@ unparseUnitTests =
                     ]
                 }::KoreDefinition
             )
-            (  "[]\n\n"
-            ++ "    module i\n    endmodule\n    []\n"
-            ++ "    module k\n    endmodule\n    []\n"
-            )
+            "[]\nmodule i\nendmodule\n[]\nmodule k\nendmodule\n[]"
         , unparseTest
             ( constructUnifiedSentence SentenceImportSentence $ SentenceImport
                 { sentenceImportModuleName = ModuleName {getModuleName = "sl"}
@@ -147,7 +136,7 @@ unparseUnitTests =
                     Attributes { getAttributes = [] } :: Attributes
                 } :: KoreSentence
             )
-            "import sl[]"
+            "import sl []"
         , unparseTest
             (Attributes
                 { getAttributes =
@@ -162,7 +151,7 @@ unparseUnitTests =
                     ]
                 }::Attributes
             )
-        "[\n    \\top{#CharList{}}()\n]"
+            "[\\top{#CharList{}}()]"
         , unparseTest
             (Attributes
                 { getAttributes =
@@ -177,7 +166,7 @@ unparseUnitTests =
                     ]
                 }::Attributes
             )
-            "[\n    '\\'',\n    '\\''\n]"
+            "['\\'', '\\'']"
         ]
 
 unparseParseTests :: TestTree
@@ -249,11 +238,11 @@ parse :: Parser a -> String -> Either String a
 parse parser =
     parseOnly (parser <* endOfInput) "<test-string>"
 
-unparseParseProp :: (Unparse a, Eq a) => Parser a -> a -> Bool
+unparseParseProp :: (Pretty a, Eq a) => Parser a -> a -> Bool
 unparseParseProp p a = parse p (unparseToString a) == Right a
 
 unparseParseTest
-    :: (Unparse a, Eq a, Show a) => Parser a -> a -> TestTree
+    :: (Pretty a, Eq a, Show a) => Parser a -> a -> TestTree
 unparseParseTest parser astInput =
     testCase
         "Parsing + unparsing."
@@ -261,7 +250,7 @@ unparseParseTest parser astInput =
             (Right astInput)
             (parse parser (unparseToString astInput)))
 
-unparseTest :: (Unparse a, Show a) => a -> String -> TestTree
+unparseTest :: (Pretty a, Show a) => a -> String -> TestTree
 unparseTest astInput expected =
     testCase
         "Unparsing"

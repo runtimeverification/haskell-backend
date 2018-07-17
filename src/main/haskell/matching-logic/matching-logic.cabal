@@ -1,6 +1,12 @@
+-- This file has been generated from package.yaml by hpack version 0.28.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 2337467df6c243aff9785162493c939a3f16f96db66a1ea3f0eff42af5707e9c
+
 name:           matching-logic
 version:        0.0.1.0
-description:    Please see the README on Github at <https://github.com/kframework/src/haskell/matching-logic/README.md>
+description:    Please see the README on Github at <https://github.com/kframework/kore/blob/master/src/main/haskell/language-kore/README.md>
 category:       Language
 homepage:       https://github.com/kframework/kore#readme
 bug-reports:    https://github.com/kframework/kore/issues
@@ -11,116 +17,116 @@ license:        OtherLicense
 license-file:   LICENSE
 build-type:     Simple
 cabal-version:  >= 1.10
-
 extra-source-files:
     ChangeLog.md
     README.md
+    test/resources/proof_tree.txt
 
 source-repository head
   type: git
   location: https://github.com/kframework/kore
-executable prover
-  hs-source-dirs:
-      app
-  main-is: Main.hs
-  build-depends: base >=4.7 && <5
-               , containers
-               , mtl
-               , text
-               , megaparsec
-               , prettyprinter
-               , haskeline
-               , reflection
-               , lens
-               , matching-logic
-  default-language: Haskell2010
-  default-extensions: FlexibleContexts
+
 library
+  exposed-modules:
+      Kore.MatchingLogic.AST
+      Kore.MatchingLogic.AST.Syntax
+      Kore.MatchingLogic.Error
+      Kore.MatchingLogic.HilbertProof
+      Kore.MatchingLogic.ProofSystem.Dummy
+      Kore.MatchingLogic.ProofSystem.Minimal
+      Kore.MatchingLogic.ProofSystem.Minimal.Syntax
+      Kore.MatchingLogic.ProofSystem.MLProofSystem
+      Kore.MatchingLogic.ProverRepl
+      Kore.MatchingLogic.Signature
+      Kore.MatchingLogic.Signature.Simple
+      Kore.MatchingLogic.Signature.Poly
+  other-modules:
+      Paths_matching_logic
   hs-source-dirs:
       src
-  build-depends: base >=4.7 && <5
-               , containers
-               , language-kore
-               , mtl
-               , text
-               , megaparsec
-               , prettyprinter
-               , haskeline
-               , reflection
-               , data-fix
-               , free
-               , recursion-schemes
-               , deriving-compat
-               , lens
-               , language-kore
-  exposed-modules: Kore.MatchingLogic.AST
-                 , Kore.MatchingLogic.AST.Syntax
-                 , Kore.MatchingLogic.Error
-                 , Kore.MatchingLogic.HilbertProof
-                 , Kore.MatchingLogic.ProofSystem.Dummy
-                 , Kore.MatchingLogic.ProofSystem.Minimal
-                 , Kore.MatchingLogic.ProofSystem.Minimal.Syntax
-                 , Kore.MatchingLogic.ProofSystem.MLProofSystem
-                 , Kore.MatchingLogic.ProverRepl
-                 , Kore.MatchingLogic.Signature
-                 , Kore.MatchingLogic.Signature.Simple
-                 , Kore.MatchingLogic.Signature.Poly
+  default-extensions: DataKinds DeriveFoldable DeriveFunctor DeriveTraversable FlexibleContexts FlexibleInstances FunctionalDependencies MultiParamTypeClasses RankNTypes ScopedTypeVariables StandaloneDeriving TypeSynonymInstances UndecidableInstances
+  build-depends:
+      base >=4.7 && <5
+    , containers
+    , data-fix
+    , deriving-compat
+    , free
+    , haskeline
+    , language-kore
+    , lens
+    , megaparsec
+    , mtl
+    , prettyprinter
+    , recursion-schemes
+    , reflection
+    , text
   default-language: Haskell2010
-  default-extensions: DataKinds
-                    , DeriveFunctor
-                    , DeriveFoldable
-                    , DeriveTraversable
-                    , StandaloneDeriving
-                    , ScopedTypeVariables
-                    , RankNTypes
-                    , MultiParamTypeClasses
-                    , FunctionalDependencies
-                    , FlexibleInstances
-                    , FlexibleContexts
-                    , TypeSynonymInstances
-                    , UndecidableInstances
+
+executable prover
+  main-is: Main.hs
+  other-modules:
+      Paths_matching_logic
+  hs-source-dirs:
+      app
+  default-extensions: FlexibleContexts
+  build-depends:
+      base >=4.7 && <5
+    , containers
+    , data-fix
+    , deriving-compat
+    , free
+    , haskeline
+    , language-kore
+    , lens
+    , matching-logic
+    , megaparsec
+    , mtl
+    , prettyprinter
+    , recursion-schemes
+    , reflection
+    , text
+  default-language: Haskell2010
 
 test-suite test
   type: exitcode-stdio-1.0
   main-is: AllTests.hs
+  other-modules:
+      Kore.MatchingLogic.ProofSystem.OnePlusOne
+      Kore.MatchingLogic.ProofSystem.OnePlusOne.ForallAST
+      Kore.MatchingLogic.ProofSystem.OnePlusOne.ProofSystem
+      Kore.MatchingLogic.ProofSystem.ProofAssistantTest
+      Paths
+      RuleParserTests
+      TestUtils
+      Paths_matching_logic
   hs-source-dirs:
       test
+  default-extensions: DataKinds DeriveFoldable DeriveFunctor DeriveTraversable FlexibleContexts FlexibleInstances FunctionalDependencies MultiParamTypeClasses RankNTypes ScopedTypeVariables StandaloneDeriving TypeSynonymInstances UndecidableInstances
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
-  build-depends: base
-               , QuickCheck
-               , containers
-               , mtl
-               , text
-               , megaparsec
-               , prettyprinter
-               , lens
-               , bytestring
-               , language-kore
-               , matching-logic
-               , recursion-schemes
-               , deriving-compat
-               , tasty
-               , tasty-ant-xml
-               , tasty-golden
-               , tasty-hunit
-               , tasty-quickcheck
-  other-modules: Kore.MatchingLogic.ProofSystem.ProofAssistantTest
-               , Kore.MatchingLogic.ProofSystem.OnePlusOne
-               , Kore.MatchingLogic.ProofSystem.OnePlusOne.ProofSystem
-               , Kore.MatchingLogic.ProofSystem.OnePlusOne.ForallAST
-               , RuleParserTests
-               , TestUtils
+  build-depends:
+      QuickCheck
+    , base >=4.7 && <5
+    , bytestring
+    , containers
+    , data-fix
+    , deriving-compat
+    , directory >=1.2.2
+    , filepath
+    , free
+    , haskeline
+    , language-kore
+    , lens
+    , matching-logic
+    , megaparsec
+    , mtl
+    , prettyprinter
+    , recursion-schemes
+    , reflection
+    , tasty
+    , tasty-ant-xml
+    , tasty-golden
+    , tasty-hunit
+    , tasty-quickcheck
+    , template-haskell
+    , text
   default-language: Haskell2010
-  default-extensions: DataKinds
-                    , DeriveFunctor
-                    , DeriveFoldable
-                    , DeriveTraversable
-                    , StandaloneDeriving
-                    , ScopedTypeVariables
-                    , RankNTypes
-                    , MultiParamTypeClasses
-                    , FunctionalDependencies
-                    , FlexibleInstances
-                    , FlexibleContexts
-                    , TypeSynonymInstances
-                    , UndecidableInstances

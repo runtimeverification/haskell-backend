@@ -5,6 +5,7 @@
 {-# LANGUAGE KindSignatures         #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE RankNTypes             #-}
+{-# LANGUAGE RecordWildCards        #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE StandaloneDeriving     #-}
 {-# LANGUAGE TypeSynonymInstances   #-}
@@ -34,10 +35,13 @@ Please refer to Section 9 (The Kore Language) of the
 module Data.Kore.AST.Sentence where
 
 import           Data.Fix
+import           Data.Maybe (catMaybes)
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.Pretty (Pretty(..), (<>), (<+>))
+import qualified Data.Kore.AST.Pretty as Pretty
 import           Data.Kore.HaskellExtensions (Rotate41 (..))
 
 
@@ -55,6 +59,9 @@ deriving instance
 deriving instance
     (Show CommonKorePattern)
      => Show Attributes
+
+instance Pretty Attributes where
+    pretty = Pretty.attributes . getAttributes
 
 {-|'SentenceAlias' corresponds to the @object-alias-declaration@ and
 @meta-alias-declaration@ syntactic categories from the Semantics of K,
@@ -85,6 +92,21 @@ deriving instance
     )
     => Show (SentenceAlias level pat variable)
 
+instance (Pretty (variable level), Pretty (Fix (pat variable))) =>
+    Pretty (SentenceAlias level pat variable) where
+    pretty SentenceAlias {..} =
+        Pretty.fillSep
+        [ "alias"
+        , pretty sentenceAliasAlias <> Pretty.arguments sentenceAliasSorts
+        , ":"
+        , pretty sentenceAliasResultSort
+        , "where"
+        , pretty sentenceAliasLeftPattern
+        , ":="
+        , pretty sentenceAliasRightPattern
+        , pretty sentenceAliasAttributes
+        ]
+
 {-|'SentenceSymbol' corresponds to the @object-symbol-declaration@ and
 @meta-symbol-declaration@ syntactic categories from the Semantics of K,
 Section 9.1.6 (Declaration and Definitions).
@@ -108,11 +130,25 @@ deriving instance
     (Show (pat variable (Fix (pat variable))))
      => Show (SentenceSymbol level pat variable)
 
+instance Pretty (Fix (pat variable)) =>
+    Pretty (SentenceSymbol level pat variable) where
+    pretty SentenceSymbol {..} =
+        Pretty.fillSep
+        [ "symbol"
+        , pretty sentenceSymbolSymbol <> Pretty.arguments sentenceSymbolSorts
+        , ":"
+        , pretty sentenceSymbolResultSort
+        , pretty sentenceSymbolAttributes
+        ]
+
 {-|'ModuleName' corresponds to the @module-name@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
 newtype ModuleName = ModuleName { getModuleName :: String }
     deriving (Show, Eq, Ord)
+
+instance Pretty ModuleName where
+    pretty = Pretty.fromString . getModuleName
 
 {-|'SentenceImport' corresponds to the @import-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
@@ -131,6 +167,14 @@ deriving instance
     (Show (pat variable (Fix (pat variable))))
      => Show (SentenceImport pat variable)
 
+instance Pretty (Fix (pat variable)) =>
+    Pretty (SentenceImport pat variable) where
+    pretty SentenceImport {..} =
+        Pretty.fillSep
+        [ "import", pretty sentenceImportModuleName
+        , pretty sentenceImportAttributes
+        ]
+
 {-|'SentenceSort' corresponds to the @sort-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
@@ -148,6 +192,15 @@ deriving instance
 deriving instance
     (Show (pat variable (Fix (pat variable))))
      => Show (SentenceSort level pat variable)
+
+instance Pretty (Fix (pat variable)) =>
+    Pretty (SentenceSort level pat variable) where
+    pretty SentenceSort {..} =
+        Pretty.fillSep
+        [ "sort"
+        , pretty sentenceSortName <> Pretty.parameters sentenceSortParameters
+        , pretty sentenceSortAttributes
+        ]
 
 {-|'SentenceAxiom' corresponds to the @axiom-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
@@ -169,6 +222,19 @@ deriving instance
     , Show sortParam
     ) => Show (SentenceAxiom sortParam pat variable)
 
+instance
+    ( Pretty param
+    , Pretty (Fix (pat variable))
+    ) => Pretty (SentenceAxiom param pat variable)
+  where
+    pretty SentenceAxiom {..} =
+        Pretty.fillSep
+        [ "axiom"
+        , Pretty.parameters sentenceAxiomParameters
+        , pretty sentenceAxiomPattern
+        , pretty sentenceAxiomAttributes
+        ]
+
 {-|@SentenceHook@ corresponds to @hook-declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 Note that we are reusing the 'SentenceSort' and 'SentenceSymbol' structures to
@@ -185,6 +251,13 @@ deriving instance
 deriving instance
     (Show (pat variable (Fix (pat variable))))
      => Show (SentenceHook level pat variable)
+
+instance
+    Pretty (Fix (pat variable) )
+    => Pretty (SentenceHook level pat variable)
+  where
+    pretty (SentenceHookedSort a) = "hooked-" <> pretty a
+    pretty (SentenceHookedSymbol a) = "hooked-" <> pretty a
 
 {-|The 'Sentence' type corresponds to the @declaration@ syntactic category
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
@@ -228,6 +301,19 @@ deriving instance
     , Show (variable level)
     ) => Show (Sentence level sortParam pat variable)
 
+instance
+    ( Pretty sortParam
+    , Pretty (Fix (pat variable))
+    , Pretty (variable level)
+    ) => Pretty (Sentence level sortParam pat variable)
+  where
+    pretty (SentenceAliasSentence s)  = pretty s
+    pretty (SentenceSymbolSentence s) = pretty s
+    pretty (SentenceImportSentence s) = pretty s
+    pretty (SentenceAxiomSentence s)  = pretty s
+    pretty (SentenceSortSentence s)   = pretty s
+    pretty (SentenceHookSentence s)   = pretty s
+
 {-|A 'Module' consists of a 'ModuleName' a list of 'Sentence's and some
 'Attributes'.
 
@@ -251,6 +337,21 @@ deriving instance
     ( Show (pat variable (Fix (pat variable)))
     , Show (sentence sortParam pat variable)
     ) => Show (Module sentence sortParam pat variable)
+
+instance
+    ( Pretty (sentence sort pat variable)
+    , Pretty (Fix (pat variable))
+    ) => Pretty (Module sentence sort pat variable)
+  where
+    pretty Module {..} =
+        (Pretty.vsep . catMaybes)
+        [ Just ("module" <+> pretty moduleName)
+        , case moduleSentences of
+            [] -> Nothing
+            _ -> Just ((Pretty.indent 4 . Pretty.vsep) (pretty <$> moduleSentences))
+        , Just "endmodule"
+        , Just (pretty moduleAttributes)
+        ]
 
 {-|Currently, a 'Definition' consists of some 'Attributes' and a 'Module'
 
@@ -276,6 +377,14 @@ deriving instance
     ( Show (pat variable (Fix (pat variable)))
     , Show (sentence sortParam pat variable)
     ) => Show (Definition sentence sortParam pat variable)
+
+instance
+    ( Pretty (sentence sort pat variable)
+    , Pretty (Fix (pat variable))
+    ) => Pretty (Definition sentence sort pat variable)
+  where
+    pretty Definition {..} =
+        Pretty.vsep (pretty definitionAttributes : map pretty definitionModules)
 
 class SentenceSymbolOrAlias (sentence :: * -> ((* -> *) -> * -> *) -> (* -> *) -> *) where
     getSentenceSymbolOrAliasConstructor
@@ -356,6 +465,15 @@ deriving instance
     , Show (variable Meta)
     , Show (variable Object)
     ) => Show (UnifiedSentence sortParam pat variable)
+
+instance
+    ( Pretty sortParam
+    , Pretty (Fix (pat variable))
+    , Pretty (variable Meta)
+    , Pretty (variable Object)
+    ) => Pretty (UnifiedSentence sortParam pat variable)
+  where
+    pretty = applyUnifiedSentence pretty pretty
 
 
 -- |'KoreSentence' instantiates 'UnifiedSentence' to describe sentences fully
