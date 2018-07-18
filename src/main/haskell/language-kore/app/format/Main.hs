@@ -2,17 +2,18 @@
 
 module Main where
 
-import         Data.Semigroup ((<>))
-import         Data.Text.Prettyprint.Doc ( LayoutOptions(..), PageWidth(..)
-                                         , defaultLayoutOptions, layoutPretty
-                                         , pretty )
-import         Data.Text.Prettyprint.Doc.Render.Text (renderIO)
-import         Options.Applicative
-import         System.IO (stdout)
+import           Data.Semigroup ((<>))
+import           Data.Text.Prettyprint.Doc ( LayoutOptions(..), PageWidth(..)
+                                           , defaultLayoutOptions, layoutPretty
+                                           , pretty )
+import           Data.Text.Prettyprint.Doc.Render.Text (renderIO)
+import           Options.Applicative
+import           System.IO (stdout)
 
-import         Data.Kore.Parser.Parser (fromKore)
+import           Data.Kore.AST.Sentence                   (KoreDefinition)
+import           Data.Kore.Parser.Parser (fromKore)
 
-import         GlobalMain
+import           GlobalMain
 
 
 data KoreFormatOptions =
@@ -47,7 +48,7 @@ main =
         Nothing -> return () -- global options parsed, but local failed; exit gracefully
         Just KoreFormatOptions { fileName, width } ->
           do
-            defn <- readFile fileName >>= either error return . fromKore fileName
+            defn <- readKoreOrDie fileName
             let
               layoutOptions
                 | width > 0 =
@@ -56,3 +57,8 @@ main =
                 | otherwise =
                     defaultLayoutOptions { layoutPageWidth = Unbounded }
             renderIO stdout (layoutPretty layoutOptions $ pretty defn)
+
+-- | Read a 'KoreDefinition' from the given file name or signal an error.
+readKoreOrDie :: FilePath -> IO KoreDefinition
+readKoreOrDie fileName =
+    readFile fileName >>= either error return . fromKore fileName
