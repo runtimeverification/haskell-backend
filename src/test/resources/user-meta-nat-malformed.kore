@@ -1,0 +1,7 @@
+[]
+    module Nat
+            sort #Nat{#Char}[]
+            symbol #zero{#c}():#Nat{#c}[]
+            symbol #succ{#c}(#Nat{#c}):#Nat{#c}[]
+    endmodule
+    []

@@ -2,7 +2,7 @@ Definition
     { definitionAttributes = Attributes []
     , definitionModules =
         [ Module
-            { moduleName = ModuleName "TEST-EXCEPTION-9"
+            { moduleName = ModuleName "TEST-PATTERN-16"
             , moduleSentences =
                 [ MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters = []
