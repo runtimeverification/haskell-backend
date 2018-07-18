@@ -92,7 +92,9 @@ test_unparse =
                 , moduleAttributes = Attributes []
                 }::KoreModule
             )
-            "module t\nendmodule\n[]"
+            "module t\n\
+            \endmodule\n\
+            \[]"
         , unparseParseTest
             koreDefinitionParser
             Definition
@@ -127,7 +129,13 @@ test_unparse =
                     ]
                 }::KoreDefinition
             )
-            "[]\nmodule i\nendmodule\n[]\nmodule k\nendmodule\n[]"
+            "[]\n\
+            \module i\n\
+            \endmodule\n\
+            \[]\n\
+            \module k\n\
+            \endmodule\n\
+            \[]"
         , unparseTest
             ( constructUnifiedSentence SentenceImportSentence $ SentenceImport
                 { sentenceImportModuleName = ModuleName {getModuleName = "sl"}
