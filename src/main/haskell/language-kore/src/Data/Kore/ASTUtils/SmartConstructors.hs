@@ -127,7 +127,7 @@ flexibleSort
     => Sort level
 flexibleSort =
     SortVariableSort $ SortVariable 
-        { getSortVariable = noLocationId "_" } --FIXME
+        { getSortVariable = noLocationId "*" } --FIXME
 
 
 pattern And_ 

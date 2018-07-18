@@ -162,8 +162,53 @@ data LargeRule subproof
 
 instance Hashable subproof => Hashable (LargeRule subproof)
 
-instance Show a => Pretty (LargeRule a) where 
+instance Pretty a => Pretty (LargeRule a) where 
     pretty (Assumption _) = "Assumption" 
+    pretty (Discharge a b) = "Discharge " <> space <> pretty a <> space  <> pretty b
+    pretty (Abstract var a) = "Abstract" <> space <> pretty var <> space <> pretty a
+    pretty (ForallElim a b) = "ForallElim" <> space <> pretty a <> space <> pretty b 
+    pretty (AndIntro a b) = "AndIntro" <> space <> pretty a <> space <> pretty b 
+    pretty (AndElimR a) = "AndElimR" <> space <> pretty a 
+    pretty (AndElimL a) = "AndElimL" <> space <> pretty a 
+    pretty (OrIntroL a b) = "OrIntroL" <> space <> pretty a <> space <> pretty b 
+    pretty (OrIntroR a b) = "OrIntroR" <> space <> pretty a <> space <> pretty b 
+    pretty (OrElim a b c) = "OrElim" <> space <> pretty a <> space <> pretty b <> space <> pretty c 
+    pretty (TopIntro) = "TopIntro"
+    pretty (ExistsIntro var a b) = "ExistsIntro" <> space <> pretty var <> space <> pretty a <> space <> pretty b 
+    pretty (ExistsElim a var b c) = "ExistsElim" <> space <> pretty a <> space <> pretty var <> space <> pretty b <> space <> pretty c 
+    pretty (ModusPonens a b) = "ModusPonens" <> space <> pretty a <> space <> pretty b 
+    pretty (FunctionalSubst var1 a var2 b) = "FunctionalSubst" <> space <> pretty var1 <> space <> pretty a <> space <> pretty var2 <> space <> pretty b 
+    pretty (FunctionalVar var1 var2) = "FunctionalVar" <> space <> pretty var1 <> pretty var2
+    pretty (EqualityIntro a) = "EqualityIntro" <> space <> pretty a 
+    pretty (EqualityElim a b c p) = "EqualityElim" <> space <> pretty a <> space <> pretty b <> space <> pretty p 
+ -- -- * \exists y . x = y
+ -- -- FunctionalVar x y
+ -- | FunctionalVar Var Var
+ -- | EqualityIntro Term
+ -- -- * Path points to the _subtree_ of phi in which the substitution
+ -- -- is to be applied at every possible point.
+ -- -- This is technically less flexible than specifying every position of "x"
+ -- -- But it's good enough for all practical purposes.
+ -- -- phi_1 = phi_2 /\ phi[phi_1/x] -> phi[phi_2/x]
+ -- -- EqualityElim phi_1 phi_2 phi [path]
+ -- | EqualityElim Term Term Term Path
+ -- -- * NOTE: Should probably rewrite axiom 8 to \forall x. x \in phi = \phi
+ -- -- This should be exactly equivalent, and it fits the other axioms better.
+ -- -- (\forall x . x \in phi) = phi
+ -- | MembershipForall Var Term
+ -- -- * x \in y = (x = y)
+ -- | MembershipEq Var Var
+ -- -- * x \in \not phi = \not (x \in phi)
+ -- | MembershipNot Var Term
+ -- -- * (x \in phi_1 /\ phi_2) = (x \in phi_1) /\ (x \in phi_2)
+ -- | MembershipAnd Var Term Term
+ -- -- * (x \in exists y . phi) = exists y . (x \in phi)
+ -- | MembershipExists Var Var Term
+ -- -- * x \in \sigma(phi_1,...,phi_i,...,phi_n)
+ -- -- =
+ -- -- \exists y . (y \in \phi_i /\ x \in \sigma(phi_1,...,y,...,phi_n))
+ -- -- MembershipCong x y i (\sigma(...))
+ -- | MembershipCong Var Var Int Term
 
 instance 
   ( Pretty formula
