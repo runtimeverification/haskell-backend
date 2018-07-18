@@ -65,19 +65,24 @@ import           Data.Text.Prettyprint.Doc.Util
 import           Data.Functor.Compose
 import           Data.Hashable
 import           GHC.Generics                          (Generic)
+import           Unsafe.Coerce
 
 data LineBasedProof = LineBasedProof
-    { unLineBasedProof :: M.Map Int (PropF Term LargeRule Int Int)}
+    { unLineBasedProof :: M.Map Int (PropF Term (LargeRule Int) Int Int)}
+
+assumptionsLens f (Discharge a b) = Discharge <$> (f a) <*> pure b
+assumptionsLens f a = pure a 
 
 toLineProof :: Proof -> LineBasedProof
 toLineProof proof =
     LineBasedProof $ execState (go proof) (M.empty, M.empty, 1) ^. _2
     where 
-        go :: Proof -> State (M.Map Int Int, M.Map Int (PropF Term LargeRule Int Int), Int) Int 
+        go :: Proof -> State (M.Map Int Int, M.Map Int (PropF Term (LargeRule Int) Int Int), Int) Int 
         go (Fix proof) = do 
             j' <- mapM go $ justification proof
+            j'' <- traverseOf assumptionsLens (unsafeCoerce lookupAssumptions) $ unsafeCoerce j'
             a' <- S.fromList <$> (mapM lookupAssumptions $ S.toList $ assumptions proof)
-            let proof' = proof { justification = j' , assumptions = a' }
+            let proof' = proof { justification = unsafeCoerce j' , assumptions = a' }
             let h = hash proof'
             (!hashTable, !orderedTable, !next) <- get 
             case M.lookup h hashTable of 
@@ -88,9 +93,9 @@ toLineProof proof =
                     , M.insert next proof' orderedTable
                     , next+1)
                 return next
-        lookupAssumptions :: Term -> State (M.Map Int Int, M.Map Int (PropF Term LargeRule Int Int), Int) Int 
+        lookupAssumptions :: Term -> State (M.Map Int Int, M.Map Int (PropF Term (LargeRule Int) Int Int), Int) Int 
         lookupAssumptions assumption = do 
-            let line = ByF assumption (Assumption assumption) (S.singleton (0::Int)) :: PropF Term LargeRule Int Int 
+            let line = ByF assumption (Assumption assumption) (S.singleton (0::Int)) :: PropF Term (LargeRule Int) Int Int 
             let h = hash line 
             (!hashTable, !orderedTable, !next) <- get 
             case M.lookup h hashTable of 
