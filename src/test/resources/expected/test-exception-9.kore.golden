@@ -1,0 +1,1 @@
+Parse error: Error in module 'Nat' -> (../../../test/resources//test-exception-9.kore 3:18): Malformed meta sort '#Nat' with non-empty Parameter sorts.
