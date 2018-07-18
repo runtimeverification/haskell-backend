@@ -1,3 +1,5 @@
+{-# LANGUAGE NamedFieldPuns #-}
+
 module Main where
 
 import         Data.Semigroup ((<>))
@@ -43,7 +45,7 @@ main =
     options <- mainGlobal commandLine infoMod
     case localOptions options of
         Nothing -> return () -- global options parsed, but local failed; exit gracefully
-        Just KoreFormatOptions {..} ->
+        Just KoreFormatOptions { fileName, width } ->
           do
             defn <- readFile fileName >>= either error return . fromKore fileName
             let
