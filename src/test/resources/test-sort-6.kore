@@ -2,6 +2,6 @@
 
 module TEST-SORT-6
 
-  sort #C{} ["d"]
+  sort #C{} []
 
 endmodule []

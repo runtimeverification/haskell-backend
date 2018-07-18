@@ -7,10 +7,7 @@ Definition
                 [ MetaSentence (SentenceSortSentence SentenceSort
                     { sentenceSortName = (Id "#C" AstLocationNone) :: Id Meta
                     , sentenceSortParameters = []
-                    , sentenceSortAttributes =
-                        Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "d")))))
-                            ]
+                    , sentenceSortAttributes = Attributes []
                     })
                 ]
             , moduleAttributes = Attributes []

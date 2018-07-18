@@ -107,6 +107,9 @@ indexedModuleRawSentences im =
     map asSentence
         (Map.elems (indexedModuleMetaSymbolSentences im))
     ++
+    map asSentence
+        (Map.elems (indexedModuleMetaSortDescriptions im))
+    ++
     map hookSymbolIfNeeded
         (Map.toList (indexedModuleObjectSymbolSentences im))
     ++

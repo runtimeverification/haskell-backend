@@ -164,10 +164,20 @@ verifyMetaSentence
   =
     verifyAxiomSentence axiomSentence indexedModule attributesVerification
 verifyMetaSentence
-    _indexedModule
-    _attributesVerification
-    (SentenceSortSentence _sortSentence)
-  = error "Meta sort declaration well-formedness not yet defined"
+    indexedModule
+    attributesVerification
+    (SentenceSortSentence sortSentence)
+  = do
+    koreFailWithLocationsWhen
+        (sortParams /= [])
+        [sortId]
+        ("Malformed meta sort '" ++ getId sortId ++ "' with non-empty Parameter sorts.")
+    verifyAttributes
+        (sentenceSortAttributes sortSentence)
+        attributesVerification
+  where
+    sortId     = sentenceSortName sortSentence
+    sortParams = sentenceSortParameters sortSentence
 verifyMetaSentence _ _ (SentenceImportSentence _) =
     -- Since we have an IndexedModule, we assume that imports were already
     -- resolved, so there is nothing left to verify here.
