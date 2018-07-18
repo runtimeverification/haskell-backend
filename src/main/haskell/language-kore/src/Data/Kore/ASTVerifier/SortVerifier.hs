@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 {-|
 Module      : Data.Kore.ASTVerifier.SortVerifier
 Description : Tools for verifying the wellformedness of a Kore 'Sort'.
@@ -39,26 +40,27 @@ verifySort _ declaredSortVariables (SortVariableSort variable)
     variableId = getSortVariable variable
     unifiedVariable = asUnified variable
 verifySort findSortDescription declaredSortVariables (SortActualSort sort)
-  =
+  = do
     withLocationAndContext
-        (sortActualName sort)
+        sortName
         ("sort '" ++ getId (sortActualName sort) ++ "'")
         ( do
-            sortDescription <- findSortDescription (sortActualName sort)
+            sortDescription <- findSortDescription sortName
             verifySortMatchesDeclaration
                 findSortDescription
                 declaredSortVariables
                 sort
-                sortDescription
-            case sortLevel of
-                IsObject -> verifySuccess
-                IsMeta   -> do
-                    koreFailWithLocationsWhen
-                        (sortActualSorts sort /= [])
-                        ("sort '" ++ getId (sortActualName sort) ++ "'")
-        )
-  where sortLevel = isMetaOrObject sort
-
+                sortDescription )
+    koreFailWithLocationsWhen
+        (sortIsMeta && sortActualSorts sort /= [])
+        [sortName]
+        ("Malformed meta sort '" ++ sortId ++ "' with non-empty Parameter sorts.")
+    verifySuccess
+  where
+    sortIsMeta = case asUnified sort of UnifiedObject _ -> False ; UnifiedMeta _ -> True
+    sortName   = sortActualName sort
+    sortId     = getId sortName
+    
 verifySortMatchesDeclaration
     :: MetaOrObject level
     => (Id level -> Either (Error VerifyError) (SortDescription level))
