@@ -5,13 +5,13 @@ Kore.MatchingLogic.ProofSystem.Minimal, with added
 introduction and elimination rules for the "and" and "or"
 connectives, which were needed to complete the 1+1=2 proof.
  -}
-module Kore.MatchingLogic.ProofSystem.OnePlusOne.ProofSystem where
+module Test.Kore.MatchingLogic.ProofSystem.OnePlusOne.ProofSystem where
 
 import           Data.Functor.Foldable           (Fix (..))
 import           Control.Lens                    ((&),(%~))
 
-import qualified          Kore.MatchingLogic.ProofSystem.OnePlusOne.ForallAST          as AST
-import Kore.MatchingLogic.ProofSystem.OnePlusOne.ForallAST
+import qualified          Test.Kore.MatchingLogic.ProofSystem.OnePlusOne.ForallAST          as AST
+import Test.Kore.MatchingLogic.ProofSystem.OnePlusOne.ForallAST
   (Sort,Label,Pattern,WFPattern
   ,pattern ApplicationP,pattern OrP, pattern ImpliesP, pattern AndP, pattern NotP
   ,pattern VariableP,pattern ExistsP,pattern ForallP

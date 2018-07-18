@@ -11,12 +11,16 @@ category: Language
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on Github at <https://github.com/kframework/kore/blob/master/src/main/haskell/language-kore/README.md>
+description: |
+  Please see the README on Github at <https://github.com/kframework/kore/blob/master/src/main/haskell/language-kore/README.md>
 
 extra-source-files:
   - README.md
   - ChangeLog.md
   - test/resources/**
+
+build-tools:
+  - tasty-discover
 
 dependencies:
   - base >=4.7 && <5
@@ -76,7 +80,7 @@ executables:
 tests:
   test:
     source-dirs: test
-    main: AllTests.hs
+    main: Driver.hs
     ghc-options:
       - -threaded
       - -rtsopts
@@ -90,6 +94,7 @@ tests:
       - FlexibleInstances
       - FunctionalDependencies
       - MultiParamTypeClasses
+      - OverloadedStrings
       - RankNTypes
       - ScopedTypeVariables
       - StandaloneDeriving

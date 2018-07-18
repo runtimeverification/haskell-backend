@@ -18,7 +18,8 @@ This test uses its own version of the proof system because some
 additional assumptions had to be added as proof rules, and its own
 AST because the proof was done assuming the forall quantifier is primitive.
 -}
-module Kore.MatchingLogic.ProofSystem.OnePlusOne(testMinimalOnePlusOne) where
+module Test.Kore.MatchingLogic.ProofSystem.OnePlusOne where
+
 import           Prelude                                hiding (all, and, not,
                                                          succ, lines, pred)
 
@@ -49,12 +50,12 @@ import qualified Text.Megaparsec.Byte.Lexer as Lexer
 import           Test.Tasty
 import           Test.Tasty.HUnit
 
-import qualified Kore.MatchingLogic.ProofSystem.OnePlusOne.ForallAST as AST
+import qualified Test.Kore.MatchingLogic.ProofSystem.OnePlusOne.ForallAST as AST
 import           Kore.MatchingLogic.HilbertProof        as HilbertProof (Proof(..)
                                                                         ,add
                                                                         ,derive
                                                                         ,emptyProof)
-import           Kore.MatchingLogic.ProofSystem.OnePlusOne.ProofSystem ( MLRule (..)
+import           Test.Kore.MatchingLogic.ProofSystem.OnePlusOne.ProofSystem ( MLRule (..)
                                                         , MLRuleSig
                                                         , transformRule
                                                         , SubstitutedVariable (..)
@@ -468,9 +469,9 @@ example :: IO [(Int,TextPat,TextRule Int)]
 example = do
     entries <- loadConverted
     return $ reifySignature plusSignature (flip findBadThings entries)
-           
-testMinimalOnePlusOne :: TestTree
-testMinimalOnePlusOne = testCase "Check minimal 1+1=2 proof" $
-    withProof (\result -> case result of
-    Left message -> assertFailure message
-    Right _ -> return ())
+
+test_minimalOnePlusOne :: TestTree
+test_minimalOnePlusOne =
+    testCase "Minimal 1+1=2 Proof" $ withProof $ \case
+        Left message -> assertFailure message
+        Right _ -> return ()

@@ -10,7 +10,7 @@
 Description: A copy of Kore.MatchingLogic.AST, but with
 Exists defined in terms of Forall rather than the other way around
 -}
-module Kore.MatchingLogic.ProofSystem.OnePlusOne.ForallAST
+module Test.Kore.MatchingLogic.ProofSystem.OnePlusOne.ForallAST
   ( PatternF(..)
   , Pattern
   , visitPatternF

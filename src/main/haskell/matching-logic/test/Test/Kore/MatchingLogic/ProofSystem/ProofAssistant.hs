@@ -1,12 +1,7 @@
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MonoLocalBinds        #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
  -- to avoid warnings that constraints (AsAst CommonKorePattern p) can be simplified
-{-# OPTIONS_GHC -fno-warn-unused-top-binds #-}
+{-# OPTIONS_GHC -fno-warn-simplifiable-class-constraints #-}
 
-module Kore.MatchingLogic.ProofSystem.ProofAssistantTest
-    (proofAssistantTests) where
+module Test.Kore.MatchingLogic.ProofSystem.ProofAssistant where
 
 import           Test.Tasty                                   (TestTree,
                                                                testGroup)
@@ -47,23 +42,11 @@ import           Data.List                                    (foldl')
 import qualified Data.Map.Strict                              as Map
 import           Data.Text.Prettyprint.Doc
 
-proofAssistantTests :: TestTree
-proofAssistantTests =
-    testGroup "MLProof Assistant"
-        [ proposition1Tests
-        , proposition2Tests
-        , proposition3Tests
-        , modusPonensTests
-        , generalizationTests
-        , variableSubstitutionTests
-        , forallTests
-        , propagateOrTests
-        , propagateExistsTests
-        , framingTests
-        , existenceTests
-        , singletonVariableTests
-        , runTestScript
-            "Simple MLProof for phi implies phi."
+test_proofAssistant :: TestTree
+test_proofAssistant =
+    testGroup "Phi Implies Phi"
+        [ runTestScript
+            "Simple MLProof for phi implies phi"
             [ testAddGoal
                 (metaImplies phiSort phi (metaImplies phiSort phi phi))
                 (NewGoalId 2)
@@ -221,9 +204,9 @@ phiSort :: CharListSort
 phiSort = CharListSort
 
 -- phi -> (psi -> phi)
-proposition1Tests :: TestTree
-proposition1Tests =
-    testGroup "Proposition1 tests"
+test_prop1 :: TestTree
+test_prop1 =
+    testGroup "Propositional1"
         [ runTestScript "Fails if phi not matched on the first instance"
             [ testAddGoal
                 (metaImplies phiSort qphi' (metaImplies phiSort qpsi qphi))
@@ -281,9 +264,9 @@ proposition1Tests =
     psiSort = MetaSortVariable1 "#s2" AstLocationTest
 
 -- (phi1 -> (phi2 -> phi3)) -> (phi1 -> phi2) -> (phi1 -> phi3)
-proposition2Tests :: TestTree
-proposition2Tests =
-    testGroup "Proposition2 tests"
+test_prop2 :: TestTree
+test_prop2 =
+    testGroup "Propositional2"
         [ runTestScript "Fails if phi1 is not matched on the first instance."
             [ testAddGoal
                 (metaImplies phiSort
@@ -406,9 +389,9 @@ proposition2Tests =
         ]
 
 -- (not phi1 -> not phi2) -> (phi2 -> phi1)
-proposition3Tests :: TestTree
-proposition3Tests =
-    testGroup "Proposition3 tests"
+test_prop3 :: TestTree
+test_prop3 =
+    testGroup "Propositional3"
         [ runTestScript "Fails if phi1 not matched on the first instance"
             [ testAddGoal
                 (metaImplies phiSort
@@ -476,9 +459,9 @@ proposition3Tests =
         ]
 
 -- from phi1 and (phi1 -> phi2), get phi2
-modusPonensTests :: TestTree
-modusPonensTests =
-    testGroup "Modus Ponens tests"
+test_modusPonens :: TestTree
+test_modusPonens =
+    testGroup "ModusPonens"
         [ runTestScript "Fails if phi1 not matched"
             [ testAddGoal psi (NewGoalId 1)
             , testAddGoal (metaImplies phiSort phi1 phi2) (NewGoalId 2)
@@ -508,9 +491,9 @@ modusPonensTests =
             ]
         ]
 
-generalizationTests :: TestTree
-generalizationTests =
-    testGroup "Generalization tests"
+test_generalization :: TestTree
+test_generalization =
+    testGroup "Generalization"
         [ runTestScript "Fails if the patterns do not match"
             [ testAddGoal z (NewGoalId 1)
             , testAddGoal (metaForall xSort x y) (NewGoalId 2)
@@ -548,9 +531,9 @@ generalizationTests =
         ]
 
 -- (forall x . P) -> P[y/x]
-variableSubstitutionTests :: TestTree
-variableSubstitutionTests =
-    testGroup "Variable Substitution tests"
+test_variableSubstitution :: TestTree
+test_variableSubstitution =
+    testGroup "VariableSubstitution"
         [ runTestScript "Fails if the wrong variable is substituted"
             [ testAddGoal
                 (metaImplies xSort (metaForall xSort x x) y) (NewGoalId 1)
@@ -602,9 +585,9 @@ variableSubstitutionTests =
 
 -- (forall x . (phi1 -> phi2)) -> (phi1 -> forall x.phi2)
 -- if x does not occur free in phi1
-forallTests :: TestTree
-forallTests =
-    testGroup "Forall tests"
+test_forall :: TestTree
+test_forall =
+    testGroup "Forall"
         [ runTestScript "Fails when variable not matched 1"
             [ testAddGoal
                 (metaImplies xSort
@@ -878,9 +861,9 @@ sigmoidSymbol = SymbolOrAlias
 
 -- sigma(..., phi1 \/ phi2, ...)
 --   -> (sigma(..., phi1, ...) \/ sigma(..., phi2, ...))
-propagateOrTests :: TestTree
-propagateOrTests =
-    testGroup "Propagate Or tests"
+test_propagateOr :: TestTree
+test_propagateOr =
+    testGroup "PropagateOr"
         [ runTestScript "Fails if indexes do not match 1"
             [ testAddGoal
                 (metaImplies phiSort
@@ -1262,9 +1245,9 @@ propagateOrTests =
 
 -- sigma(..., exists x . phi, ...) -> (exists x . sigma(..., phi1, ...))
 -- where x does not occur free anywhere.
-propagateExistsTests :: TestTree
-propagateExistsTests =
-    testGroup "Propagate Exists tests"
+test_propagateExists :: TestTree
+test_propagateExists =
+    testGroup "PropagateExists"
         [ runTestScript "Fails if indexes do not match 1"
             [ testAddGoal
                 (metaImplies phiSort
@@ -1525,9 +1508,9 @@ propagateExistsTests =
         ]
 
 -- form phi->psi, deduce not sigma(..., phi, ...)->sigma(..., psi, ...))
-framingTests :: TestTree
-framingTests =
-    testGroup "Framing tests"
+test_framing :: TestTree
+test_framing =
+    testGroup "Framing"
         [ runTestScript "Fails if indexes do not match"
             [ testAddGoal (metaImplies phiSort phi psi) (NewGoalId 1)
             , testAddGoal
@@ -1620,9 +1603,9 @@ framingTests =
         ]
 
 -- (exists x . x)
-existenceTests :: TestTree
-existenceTests =
-    testGroup "Existence tests"
+test_existence :: TestTree
+test_existence =
+    testGroup "Existence"
         [ runTestScript "Fails if the variable differs 1"
             [ testAddGoal
                 (metaExists xSort y x)
@@ -1661,9 +1644,9 @@ existenceTests =
         ]
 
 -- (not ((C1 [x /\ phi]) /\ (C2 [x /\ (not phi)])))
-singletonVariableTests :: TestTree
-singletonVariableTests =
-    testGroup "Singleton Variable tests"
+test_singletonVariable :: TestTree
+test_singletonVariable =
+    testGroup "Singleton Variable"
         [ runTestScript "Fails if the variable differs 1"
             [ testAddGoal
                 (metaNot phiSort
@@ -2149,7 +2132,7 @@ newtype NewGoalId = NewGoalId Int
 newtype GoalId = GoalId Int
     deriving (Eq, Show, Ord)
 instance Pretty GoalId where
-    pretty (GoalId i) = pretty "goalId:" <> pretty i
+    pretty (GoalId i) = "goalId:" <> pretty i
 
 type MLProof =
     Proof
