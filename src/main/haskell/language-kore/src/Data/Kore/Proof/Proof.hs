@@ -37,7 +37,7 @@ import           Control.Monad.State
 import           Data.Fix
 import           Data.Fix
 import           Data.Foldable
-import           Data.Kore.AST.Common
+import           Data.Kore.AST.Common hiding (line)
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
@@ -46,6 +46,8 @@ import qualified Data.Map.Strict                       as M
 import           Data.Maybe
 import           Data.Reflection
 import qualified Data.Set                              as S
+
+import           Data.Text.Prettyprint.Doc
 
 
 import           Data.Kore.ASTPrettyPrint
@@ -78,15 +80,15 @@ impossible = error "The impossible happened."
 type Term = CommonPurePattern Object
 type Var = Variable Object
 
-data PropF formula rules subproof
+data PropF formula rules assumption subproof  
   = ByF
   { conclusion    :: formula
   , justification :: rules subproof
-  , assumptions   :: S.Set formula
+  , assumptions   :: S.Set assumption
   }
   deriving(Functor, Foldable, Traversable, Show, Generic)
 
-type Prop formula rules = Fix (PropF formula rules)
+type Prop formula rules = Fix (PropF formula rules formula)
 
 pattern By conclusion justification assumptions =
   Fix (ByF conclusion justification assumptions)
@@ -94,8 +96,8 @@ pattern By conclusion justification assumptions =
 type Path = [Int]
 type Proof = Prop Term LargeRule
 
-instance (Hashable formula, Hashable (rules subproof))
-  => Hashable (PropF formula rules subproof) where
+instance (Hashable formula, Hashable (rules subproof), Hashable assumption)
+  => Hashable (PropF formula rules assumption subproof) where
   hashWithSalt s (ByF a b c) =
     s `hashWithSalt` a `hashWithSalt` b `hashWithSalt` S.toList c
 
@@ -159,6 +161,17 @@ data LargeRule subproof
 
 
 instance Hashable subproof => Hashable (LargeRule subproof)
+
+instance Show a => Pretty (LargeRule a) where 
+    pretty (Assumption _) = "Assumption" 
+
+instance 
+  ( Pretty formula
+  , Pretty (rules subproof)
+  , Pretty subproof
+  , Pretty assumption
+  ) => Pretty (PropF formula rules assumption subproof) where 
+    pretty (ByF a b c) = "|- " <> pretty a <> line <> "By " <> pretty b
 
 assume :: Term -> Proof
 assume formula = By formula (Assumption formula) (S.singleton formula)
