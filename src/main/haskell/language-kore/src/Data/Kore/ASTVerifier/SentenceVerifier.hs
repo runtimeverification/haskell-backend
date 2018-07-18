@@ -164,7 +164,7 @@ verifyMetaSentence
   =
     verifyAxiomSentence axiomSentence indexedModule attributesVerification
 verifyMetaSentence
-    indexedModule
+    _indexedModule
     attributesVerification
     (SentenceSortSentence sortSentence)
   = do
