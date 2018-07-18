@@ -43,7 +43,7 @@ data MetadataTools level = MetadataTools
 -- TODO: fix the above issue (maybe using attributes for the moment?)
 extractMetadataTools
     :: MetaOrObject level
-    => KoreIndexedModule
+    => KoreIndexedModule atts
     -> MetadataTools level
 extractMetadataTools m =
   MetadataTools

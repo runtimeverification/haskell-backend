@@ -57,7 +57,8 @@ data VerifyHelpers level = VerifyHelpers
         :: !(Id level -> Maybe (Variable level))
     }
 
-metaVerifyHelpers :: KoreIndexedModule -> DeclaredVariables -> VerifyHelpers Meta
+metaVerifyHelpers
+    :: KoreIndexedModule atts -> DeclaredVariables -> VerifyHelpers Meta
 metaVerifyHelpers indexedModule declaredVariables =
     VerifyHelpers
         { verifyHelpersFindSort = resolveSort indexedModule
@@ -70,7 +71,7 @@ metaVerifyHelpers indexedModule declaredVariables =
         }
 
 objectVerifyHelpers
-    :: KoreIndexedModule -> DeclaredVariables -> VerifyHelpers Object
+    :: KoreIndexedModule atts -> DeclaredVariables -> VerifyHelpers Object
 objectVerifyHelpers indexedModule declaredVariables =
     VerifyHelpers
         { verifyHelpersFindSort = resolveSort indexedModule
@@ -105,7 +106,7 @@ verifyAliasLeftPattern
     :: CommonKorePattern
     -> Maybe UnifiedSort
     -- ^ If present, represents the expected sort of the pattern.
-    -> KoreIndexedModule
+    -> KoreIndexedModule atts
     -- ^ The module containing all definitions which are visible in this
     -- pattern.
     -> Set.Set UnifiedSortVariable
@@ -116,7 +117,7 @@ verifyAliasLeftPattern = verifyPattern
     -- non-repeating variables
 
 verifyStandalonePattern
-    :: KoreIndexedModule
+    :: KoreIndexedModule atts
     -> CommonKorePattern
     -> Either (Error VerifyError) VerifySuccess
 verifyStandalonePattern indexedModule korePattern =
@@ -127,7 +128,7 @@ verifyPattern
     :: CommonKorePattern
     -> Maybe UnifiedSort
     -- ^ If present, represents the expected sort of the pattern.
-    -> KoreIndexedModule
+    -> KoreIndexedModule atts
     -- ^ The module containing all definitions which are visible in this
     -- pattern.
     -> Set.Set UnifiedSortVariable
@@ -145,7 +146,7 @@ verifyPattern unifiedPattern maybeExpectedSort indexedModule sortVariables = do
 internalVerifyPattern
     :: CommonKorePattern
     -> Maybe UnifiedSort
-    -> KoreIndexedModule
+    -> KoreIndexedModule atts
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
     -> Either (Error VerifyError) VerifySuccess
@@ -173,7 +174,7 @@ internalVerifyPattern
 
 internalVerifyMetaPattern
     :: Maybe UnifiedSort
-    -> KoreIndexedModule
+    -> KoreIndexedModule atts
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
     -> Pattern Meta Variable CommonKorePattern
@@ -204,7 +205,7 @@ internalVerifyMetaPattern
 
 internalVerifyObjectPattern
     :: Maybe UnifiedSort
-    -> KoreIndexedModule
+    -> KoreIndexedModule atts
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
     -> Pattern Object Variable CommonKorePattern
@@ -240,7 +241,7 @@ newtype SortOrError level =
 verifyParameterizedPattern
     :: MetaOrObject level
     => Pattern level Variable CommonKorePattern
-    -> KoreIndexedModule
+    -> KoreIndexedModule atts
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
@@ -266,7 +267,7 @@ verifyParameterizedPattern pat indexedModule helpers sortParams vars =
 verifyMLPattern
     :: (MLPatternClass p level, MetaOrObject level)
     => p level CommonKorePattern
-    -> KoreIndexedModule
+    -> KoreIndexedModule atts
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
@@ -299,7 +300,7 @@ verifyMLPattern
 verifyPatternsWithSorts
     :: [UnifiedSort]
     -> [CommonKorePattern]
-    -> KoreIndexedModule
+    -> KoreIndexedModule atts
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
     -> Either (Error VerifyError) VerifySuccess
@@ -336,7 +337,7 @@ verifyPatternsWithSorts
 verifyApplication
     :: MetaOrObject level
     => Application level CommonKorePattern
-    -> KoreIndexedModule
+    -> KoreIndexedModule atts
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
@@ -364,7 +365,7 @@ verifyApplication
 verifyBinder
     :: (MLBinderPatternClass p, MetaOrObject level)
     => p level Variable CommonKorePattern
-    -> KoreIndexedModule
+    -> KoreIndexedModule atts
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
@@ -396,7 +397,7 @@ verifyBinder
 verifyVariableUsage
     :: (MetaOrObject level)
     => Variable level
-    -> KoreIndexedModule
+    -> KoreIndexedModule atts
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
@@ -420,7 +421,7 @@ verifyCharPattern = Right charMetaSort
 verifyVariableDeclaration
     :: MetaOrObject level
     => Variable level
-    -> KoreIndexedModule
+    -> KoreIndexedModule atts
     -> Set.Set UnifiedSortVariable
     -> Either (Error VerifyError) VerifySuccess
 verifyVariableDeclaration

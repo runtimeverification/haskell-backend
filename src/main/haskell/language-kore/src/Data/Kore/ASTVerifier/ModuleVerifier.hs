@@ -39,15 +39,15 @@ verifyUniqueNames existingNames koreModule =
 
 {-|'verifyModule' verifies the welformedness of a Kore 'Module'. -}
 verifyModule
-    :: AttributesVerification
-    -> KoreIndexedModule
+    :: AttributesVerification atts
+    -> KoreIndexedModule atts
     -> Either (Error VerifyError) VerifySuccess
 verifyModule attributesVerification indexedModule =
     withContext
         ("module '" ++ getModuleName (indexedModuleName indexedModule) ++ "'")
         (do
             verifyAttributes
-                (indexedModuleAttributes indexedModule)
+                (snd (indexedModuleAttributes indexedModule))
                 attributesVerification
             SentenceVerifier.verifySentences
                 indexedModule

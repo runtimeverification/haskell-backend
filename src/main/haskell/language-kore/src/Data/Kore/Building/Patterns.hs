@@ -190,7 +190,7 @@ instance
     => ProperPattern Object sort (ObjectDomainValue pattern1 sort)
   where
     asProperPattern (ObjectDomainValue sort child) =
-        DomainValuePattern (DomainValue (asAst sort) (asAst child))
+        DomainValuePattern (DomainValue (asAst sort) child)
 objectDomainValue
     :: (ObjectSort sort, MetaPattern CharListSort pattern1)
     => sort -> pattern1 -> ObjectDomainValue pattern1 sort

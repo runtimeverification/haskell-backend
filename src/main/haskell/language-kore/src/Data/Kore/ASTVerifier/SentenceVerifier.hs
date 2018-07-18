@@ -15,16 +15,16 @@ module Data.Kore.ASTVerifier.SentenceVerifier ( verifyUniqueNames
 
 import           Control.Monad                            (foldM)
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
-import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.Error
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.MLPatterns
+import           Data.Kore.AST.Sentence
+import           Data.Kore.ASTHelpers
 import           Data.Kore.ASTVerifier.AttributesVerifier
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.PatternVerifier
 import           Data.Kore.ASTVerifier.SortVerifier
-import           Data.Kore.ASTHelpers
 import           Data.Kore.Error
 import           Data.Kore.IndexedModule.IndexedModule
 import           Data.Kore.IndexedModule.Resolvers
@@ -109,10 +109,10 @@ definedNamesForObjectSentence
 {-|'verifySentences' verifies the welformedness of a list of Kore 'Sentence's.
 -}
 verifySentences
-    :: KoreIndexedModule
+    :: KoreIndexedModule atts
     -- ^ The module containing all definitions which are visible in this
     -- pattern.
-    -> AttributesVerification
+    -> AttributesVerification atts
     -> [KoreSentence]
     -> Either (Error VerifyError) VerifySuccess
 verifySentences
@@ -122,8 +122,8 @@ verifySentences
     verifySuccess
 
 verifySentence
-    :: KoreIndexedModule
-    -> AttributesVerification
+    :: KoreIndexedModule atts
+    -> AttributesVerification atts
     -> KoreSentence
     -> Either (Error VerifyError) VerifySuccess
 verifySentence indexedModule attributesVerification =
@@ -132,8 +132,8 @@ verifySentence indexedModule attributesVerification =
         (verifyObjectSentence indexedModule attributesVerification)
 
 verifyMetaSentence
-    :: KoreIndexedModule
-    -> AttributesVerification
+    :: KoreIndexedModule atts
+    -> AttributesVerification atts
     -> Sentence Meta UnifiedSortVariable UnifiedPattern Variable
     -> Either (Error VerifyError) VerifySuccess
 verifyMetaSentence
@@ -168,8 +168,8 @@ verifyMetaSentence _ _ (SentenceImportSentence _) =
     verifySuccess
 
 verifyObjectSentence
-    :: KoreIndexedModule
-    -> AttributesVerification
+    :: KoreIndexedModule atts
+    -> AttributesVerification atts
     -> Sentence Object UnifiedSortVariable UnifiedPattern Variable
     -> Either (Error VerifyError) VerifySuccess
 verifyObjectSentence
@@ -218,8 +218,8 @@ verifyObjectSentence
 verifySymbolSentence
     :: (MetaOrObject level)
     => (Id level -> Either (Error VerifyError) (SortDescription level))
-    -> KoreIndexedModule
-    -> AttributesVerification
+    -> KoreIndexedModule atts
+    -> AttributesVerification atts
     -> KoreSentenceSymbol level
     -> Either (Error VerifyError) VerifySuccess
 verifySymbolSentence
@@ -251,8 +251,8 @@ verifySymbolSentence
 verifyAliasSentence
     :: (MetaOrObject level)
     => (Id level -> Either (Error VerifyError) (SortDescription level))
-    -> KoreIndexedModule
-    -> AttributesVerification
+    -> KoreIndexedModule atts
+    -> AttributesVerification atts
     -> KoreSentenceAlias level
     -> Either (Error VerifyError) VerifySuccess
 verifyAliasSentence
@@ -274,10 +274,10 @@ verifyAliasSentence
                 findSortDeclaration
                 variables
                 (sentenceAliasResultSort sentence)
-            if leftPatternSort == rightPatternSort 
+            if leftPatternSort == rightPatternSort
                 then
                     verifySuccess
-                else 
+                else
                     koreFail "Left and Right sorts do not match"
             verifyAliasLeftPattern
                 (asKorePattern $ sentenceAliasLeftPattern sentence)
@@ -298,14 +298,14 @@ verifyAliasSentence
     leftPatternSort  = patternSort leftPattern
     rightPatternSort = patternSort rightPattern
     headSort         = applicationSortsResult . getHeadApplicationSorts indexedModule
-    patternSort      = getPatternResultSort headSort 
+    patternSort      = getPatternResultSort headSort
     leftPattern      = sentenceAliasLeftPattern sentence
     rightPattern     = sentenceAliasRightPattern sentence
 
 verifyAxiomSentence
     :: KoreSentenceAxiom
-    -> KoreIndexedModule
-    -> AttributesVerification
+    -> KoreIndexedModule atts
+    -> AttributesVerification atts
     -> Either (Error VerifyError) VerifySuccess
 verifyAxiomSentence axiom indexedModule attributesVerification =
     withContext
@@ -326,7 +326,7 @@ verifyAxiomSentence axiom indexedModule attributesVerification =
 
 verifySortSentence
     :: KoreSentenceSort
-    -> AttributesVerification
+    -> AttributesVerification atts
     -> Either (Error VerifyError) VerifySuccess
 verifySortSentence sentenceSort attributesVerification =
     withLocationAndContext

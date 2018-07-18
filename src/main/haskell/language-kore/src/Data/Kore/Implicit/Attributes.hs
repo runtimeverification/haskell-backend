@@ -16,13 +16,27 @@ module Data.Kore.Implicit.Attributes
     , functionAttribute
     , constructorAttribute
     , uncheckedAttributesModule
-    , supportedKoreAttributesModule
+    , ImplicitAttributes
     ) where
+
+import           Data.Default
+import           Data.Fix
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.Sentence
+import           Data.Kore.ASTUtils.SmartConstructors
+
+
+data ImplicitAttributes =
+    ImplicitAttributes
+    {
+    }
+
+instance Default ImplicitAttributes where
+    def = ImplicitAttributes {}
+
 
 noParameterObjectSortAndSentence
     :: String -> (AstLocation -> Sort Object, KoreSentence)
@@ -62,30 +76,97 @@ attributeValueObjectSortSentence :: KoreSentence
 (attributeValueObjectSort, attributeValueObjectSortSentence) =
     noParameterObjectSortAndSentence "AttributeValue"
 
+keyValueAttributeLabel :: String
+keyValueAttributeLabel = "keyValueAttribute"
+
+keyOnlyAttributeLabel :: String
+keyOnlyAttributeLabel = "keyOnlyAttribute"
+
 keyValueAttributeObjectSymbolSentence :: KoreSentence
 keyValueAttributeObjectSymbolSentence =
-    attributeObjectSymbolSentence "keyValueAttribute"
+    attributeObjectSymbolSentence keyValueAttributeLabel
         [attributeKeyObjectSort, attributeValueObjectSort]
 
 keyOnlyAttributeObjectSymbolSentence :: KoreSentence
 keyOnlyAttributeObjectSymbolSentence =
-    attributeObjectSymbolSentence "keyOnlyAttribute" [attributeKeyObjectSort]
+    attributeObjectSymbolSentence keyOnlyAttributeLabel [attributeKeyObjectSort]
 
--- | `sort SmtLib{} []`
-smtlibObjectSort :: AstLocation -> Sort Object
-smtlibObjectSortSentence :: KoreSentence
-(smtlibObjectSort, smtlibObjectSortSentence) =
-    noParameterObjectSortAndSentence "SmtLib"
+keyOnlyAttribute :: String -> CommonKorePattern
+keyOnlyAttribute key = asObjectKorePattern
+    ( ApplicationPattern Application
+        { applicationSymbolOrAlias = SymbolOrAlias
+            { symbolOrAliasConstructor =
+                Id keyOnlyAttributeLabel AstLocationImplicit
+            , symbolOrAliasParams      = []
+            }
+        , applicationChildren =
+            [ asObjectKorePattern
+                ( DomainValuePattern DomainValue
+                    { domainValueSort =
+                        attributeKeyObjectSort AstLocationImplicit
+                    , domainValueChild = Fix
+                        (StringLiteralPattern (StringLiteral key))
+                    }
+                )
+            ]
+        }
+    )
 
-smtlibObjectSymbolSentence :: KoreSentence
-smtlibObjectSymbolSentence =
-    attributeObjectSymbolSentence "smtlib" [smtlibObjectSort]
+implicitGroundHead :: String -> SymbolOrAlias level
+implicitGroundHead = groundHead AstLocationImplicit
 
+keyValueAttribute :: String -> String -> CommonKorePattern
+keyValueAttribute key value = asObjectKorePattern
+    ( ApplicationPattern Application
+        { applicationSymbolOrAlias =
+                implicitGroundHead keyValueAttributeLabel
+        , applicationChildren =
+            [ asObjectKorePattern
+                ( DomainValuePattern DomainValue
+                    { domainValueSort =
+                        attributeKeyObjectSort AstLocationImplicit
+                    , domainValueChild = Fix
+                        (StringLiteralPattern (StringLiteral key))
+                    }
+                )
+            , asObjectKorePattern
+                ( DomainValuePattern DomainValue
+                    { domainValueSort =
+                        attributeValueObjectSort AstLocationImplicit
+                    , domainValueChild = Fix
+                        (StringLiteralPattern (StringLiteral value))
+                    }
+                )
+            ]
+        }
+    )
 
--- | example: `smtlib{}(\dv{SmtLib{}}("and"))`
-smtlibAttribute :: String -> AstLocation -> CommonKorePattern
-smtlibAttribute smtlibSymbol location =
-    singleDomainValueAttribute "smtlib" smtlibSymbol $ smtlibObjectSort location
+data KeyValueAttribute =
+    KeyValueAttribute
+    { key   :: String
+    , value :: Maybe String
+    }
+
+attributeToKeyValueAttribute :: CommonKorePattern -> Maybe KeyValueAttribute
+attributeToKeyValueAttribute p =
+    case patternKoreToPure p of
+        Right (App_ h children) ->
+            if h == implicitGroundHead keyValueAttributeLabel then
+                case children of
+                    [DV _ k, DV _ v] -> Just KeyValueAttribute
+                        { key = k
+                        , value = Just v
+                        }
+                    _ -> Nothing
+            else if h == implicitGroundHead keyOnlyAttributeLabel then
+                case children of
+                    [DV _ k] -> Just KeyValueAttribute
+                        { key = k
+                        , value = Nothing
+                        }
+            else Nothing
+        _ -> Nothing
+
 
 attributeObjectSymbolSentence
   :: String                       -- ^ attribute symbol
@@ -105,53 +186,14 @@ attributeObjectSymbolSentence name sorts =
         :: KoreSentenceSymbol Object
         )
 
-{- | `singleDomainValueAttribute` creates an attribute pattern with a single domain value argument
-for example:
-        hook{}(\\dv{Hook{}}(".Set"))
-        smtlib{}(\\dv{SmtLib{}}("and"))
--}
-singleDomainValueAttribute
-  :: String      -- ^ Attribute name
-  -> String      -- ^ Domain value
-  -> Sort Object -- ^ Attribute sort
-  -> CommonKorePattern
-singleDomainValueAttribute name domainValue sort =
-    asObjectKorePattern
-        ( ApplicationPattern Application
-            { applicationSymbolOrAlias = SymbolOrAlias
-                { symbolOrAliasConstructor = Id name AstLocationImplicit
-                , symbolOrAliasParams      = []
-                }
-            , applicationChildren      =
-                [ asKorePattern
-                    ( DomainValuePattern DomainValue
-                        { domainValueSort  = sort
-                        , domainValueChild =
-                            asKorePattern
-                                (StringLiteralPattern (StringLiteral domainValue))
-                        }
-                    )
-                ]
-            }
-        )
-
 functionAttribute :: CommonKorePattern
 functionAttribute  = simpleAttribute "function"
-
-functionSymbolSentence :: KoreSentence
-functionSymbolSentence  = simpleAttributeSentence "function"
 
 functionalAttribute :: CommonKorePattern
 functionalAttribute  = simpleAttribute "functional"
 
-functionalSymbolSentence :: KoreSentence
-functionalSymbolSentence  = simpleAttributeSentence "functional"
-
 constructorAttribute :: CommonKorePattern
 constructorAttribute = simpleAttribute "constructor"
-
-constructorSymbolSentence :: KoreSentence
-constructorSymbolSentence  = simpleAttributeSentence "constructor"
 
 {-| Creates a Pattern for an attribute
 consisting of a single keyword with no arguments.
@@ -224,27 +266,6 @@ uncheckedAttributesModule =
             , attributeValueObjectSortSentence
             , keyValueAttributeObjectSymbolSentence
             , keyOnlyAttributeObjectSymbolSentence
-            ]
-        , moduleAttributes = Attributes []
-        }
-
-supportedKoreAttributesModule :: KoreModule
-supportedKoreAttributesModule =
-    Module
-        { moduleName       = ModuleName "BUILTIN-attributes"
-        , moduleSentences  =
-            [ attributeObjectSortSentence
-            , attributeKeyObjectSortSentence
-            , attributeValueObjectSortSentence
-            , keyValueAttributeObjectSymbolSentence
-            , keyOnlyAttributeObjectSymbolSentence
-            , smtlibObjectSortSentence
-            , smtlibObjectSymbolSentence
-            , functionalSymbolSentence
-            , functionSymbolSentence
-            , constructorSymbolSentence
-            , associativeObjectSymbolSentence
-            , commutativeObjectSymbolSentence
             ]
         , moduleAttributes = Attributes []
         }

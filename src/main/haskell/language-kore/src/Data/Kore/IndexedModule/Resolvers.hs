@@ -21,13 +21,13 @@ import qualified Data.Map                              as Map
 import           Data.Proxy                            (Proxy (..))
 import qualified Data.Set                              as Set
 
-import           Data.Kore.AST.Common                  
+import           Data.Kore.AST.Common
 import           Data.Kore.AST.Error                   (koreFailWithLocations)
-import           Data.Kore.AST.Kore                    
-import           Data.Kore.AST.Sentence
+import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject            (IsMetaOrObject (..),
                                                         MetaOrObject,
                                                         isMetaOrObject)
+import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTHelpers                  (ApplicationSorts,
                                                         symbolOrAliasSorts)
 import           Data.Kore.Error                       (Error, printError)
@@ -40,7 +40,7 @@ import           Data.Kore.IndexedModule.IndexedModule (IndexedModule (..),
 symbolSentencesMap
     :: MetaOrObject level
     => a level
-    -> KoreIndexedModule
+    -> KoreIndexedModule atts
     -> Map.Map
         (Id level)
         (SentenceSymbol level UnifiedPattern Variable)
@@ -52,7 +52,7 @@ symbolSentencesMap a m =
 aliasSentencesMap
     :: MetaOrObject level
     => a level
-    -> KoreIndexedModule
+    -> KoreIndexedModule atts
     -> Map.Map
         (Id level)
         (SentenceAlias level UnifiedPattern Variable)
@@ -64,7 +64,7 @@ aliasSentencesMap a m =
 sortSentencesMap
     :: MetaOrObject level
     => a level
-    -> KoreIndexedModule
+    -> KoreIndexedModule atts
     -> Map.Map
         (Id level)
         (SortDescription level)
@@ -78,8 +78,8 @@ sortSentencesMap a m =
 -- specified by the head to obtain the corresponding 'ApplicationSorts'.
 getHeadApplicationSorts
     :: MetaOrObject level
-    => KoreIndexedModule   -- ^module representing a verified definition
-    -> SymbolOrAlias level -- ^the head we want to find sorts for
+    => KoreIndexedModule atts  -- ^module representing a verified definition
+    -> SymbolOrAlias level     -- ^the head we want to find sorts for
     -> ApplicationSorts level
 getHeadApplicationSorts m patternHead =
     case resolveSymbol m headName of
@@ -107,10 +107,10 @@ getHeadApplicationSorts m patternHead =
 -- but rather just change the types
 getAttributeList
     :: MetaOrObject level
-    => KoreIndexedModule   -- ^module representing a verified definition
-    -> SymbolOrAlias level -- ^the head we want to find sorts for
-    -> [Fix (UnifiedPattern Variable)] 
-getAttributeList m patternHead = 
+    => KoreIndexedModule atts  -- ^module representing a verified definition
+    -> SymbolOrAlias level     -- ^the head we want to find sorts for
+    -> [Fix (UnifiedPattern Variable)]
+getAttributeList m patternHead =
     case resolveSymbol m headName of
         Right sentence -> getAttributes $ sentenceSymbolAttributes sentence
         Left _ ->
@@ -126,10 +126,10 @@ getAttributeList m patternHead =
 imported modules.
 -}
 resolveThing
-    :: (IndexedModule sortParam pat variable
+    :: (IndexedModule sortParam pat variable atts
         -> Map.Map (Id level) (thing level pat variable))
     -- ^ extracts the map into which to look up the id
-    -> IndexedModule sortParam pat variable
+    -> IndexedModule sortParam pat variable atts
     -> Id level
     -> Maybe (thing level pat variable)
 resolveThing
@@ -144,9 +144,9 @@ resolveThing
 
 resolveThingInternal
     :: (Maybe (thing level pat variable), Set.Set ModuleName)
-    -> (IndexedModule sortParam pat variable
+    -> (IndexedModule sortParam pat variable atts
         -> Map.Map (Id level) (thing level pat variable))
-    -> IndexedModule sortParam pat variable
+    -> IndexedModule sortParam pat variable atts
     -> Id level
     -> (Maybe (thing level pat variable), Set.Set ModuleName)
 resolveThingInternal x@(Just _, _) _ _ _ = x
@@ -162,7 +162,7 @@ resolveThingInternal
         Just thing -> (Just thing, undefined {- this should never evaluate -})
         Nothing ->
             foldr
-                (\(_, m) partialResult -> resolveThingInternal
+                (\(_, _, m) partialResult -> resolveThingInternal
                     partialResult
                     mapExtractor
                     m
@@ -180,7 +180,7 @@ also searching in the imported modules.
 -}
 resolveSymbol
     :: MetaOrObject level
-    => KoreIndexedModule
+    => KoreIndexedModule atts
     -> Id level
     -> Either (Error a) (KoreSentenceSymbol level)
 resolveSymbol m headId =
@@ -196,7 +196,7 @@ also searching in the imported modules.
 -}
 resolveAlias
     :: MetaOrObject level
-    => KoreIndexedModule
+    => KoreIndexedModule atts
     -> Id level
     -> Either (Error a) (KoreSentenceAlias level)
 resolveAlias m headId =
@@ -213,7 +213,7 @@ also searching in the imported modules.
 -}
 resolveSort
     :: MetaOrObject level
-    => KoreIndexedModule
+    => KoreIndexedModule atts
     -> Id level
     -> Either (Error a) (SortDescription level)
 resolveSort m sortId =

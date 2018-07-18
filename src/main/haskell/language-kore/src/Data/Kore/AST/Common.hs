@@ -1,15 +1,15 @@
 {-# LANGUAGE DeriveFoldable        #-}
 {-# LANGUAGE DeriveFunctor         #-}
+{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DeriveTraversable     #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE UndecidableInstances  #-}
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE LambdaCase            #-}
 {-|
 Module      : Data.Kore.AST.Common
 Description : Data Structures for representing the Kore language AST that do not
@@ -34,12 +34,13 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Data.Kore.AST.Common where
 
+import           Data.Fix                   (Fix (unFix))
+import           Data.Hashable
 import           Data.Proxy
+import           GHC.Generics               (Generic)
+
 
 import           Data.Kore.AST.MetaOrObject
-
-import           GHC.Generics (Generic)
-import           Data.Hashable
 
 {-| 'FileLocation' represents a position in a source file.
 -}
@@ -470,13 +471,15 @@ This represents the encoding of an object constant, e.g. we may use
 \dv{Int{}}{"123"} instead of a representation based on constructors,
 e.g. succesor(succesor(...succesor(0)...))
 -}
-data DomainValue level child = DomainValue
+data DomainValue level = DomainValue
     { domainValueSort  :: !(Sort level)
-    , domainValueChild :: !child
+    , domainValueChild :: !(Fix (Pattern Meta Variable))
     }
-    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+    deriving (Eq, Ord, Show, Generic)
 
-instance Hashable child => Hashable (DomainValue level child)
+instance Hashable (a (Fix a)) => Hashable (Fix a)
+
+instance Hashable (DomainValue level)
 
 
 {-|'Equals' corresponds to the @\equals@ branches of the @object-pattern@ and
@@ -738,7 +741,7 @@ be members only of 'Pattern Meta'.
 -}
 -- NOTE: If you are adding a case to Pattern, you should add cases in:
 -- ASTUtils/SmartConstructors.hs
--- as well as a ton of other places, probably. 
+-- as well as a ton of other places, probably.
 data Pattern level variable child where
     AndPattern
         :: !(And level child) -> Pattern level variable child
@@ -749,7 +752,7 @@ data Pattern level variable child where
     CeilPattern
         :: !(Ceil level child) -> Pattern level variable child
     DomainValuePattern
-        :: !(DomainValue Object child) -> Pattern Object variable child
+        :: !(DomainValue Object) -> Pattern Object variable child
     EqualsPattern
         :: !(Equals level child) -> Pattern level variable child
     ExistsPattern
@@ -784,11 +787,11 @@ data Pattern level variable child where
 -- instance Generic child => Generic (Pattern level variable child)
 
 -- instance (Hashable child, Generic child, Hashable (variable level))
--- => Hashable (Pattern level variable child) 
+-- => Hashable (Pattern level variable child)
 
-instance (Hashable (child), Hashable (variable level))
- => Hashable (Pattern level variable child) where 
-  hashWithSalt s = \case 
+instance (Hashable child, Hashable (variable level))
+ => Hashable (Pattern level variable child) where
+  hashWithSalt s = \case
     AndPattern           p -> hashWithSalt s p
     ApplicationPattern   p -> hashWithSalt s p
     BottomPattern        p -> hashWithSalt s p
@@ -843,7 +846,7 @@ data PatternStub level variable child
     | UnsortedPatternStub (Sort level -> Pattern level variable child)
     deriving(Generic)
 
--- cannot hash. 
+-- cannot hash.
 
 {-|'withSort' transforms an 'UnsortedPatternStub' in a 'SortedPatternStub'.
 -}

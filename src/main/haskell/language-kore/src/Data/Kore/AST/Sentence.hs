@@ -33,6 +33,7 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Data.Kore.AST.Sentence where
 
+import           Data.Default
 import           Data.Fix
 
 import           Data.Kore.AST.Common
@@ -55,6 +56,9 @@ deriving instance
 deriving instance
     (Show CommonKorePattern)
      => Show Attributes
+
+instance Default Attributes where
+    def = Attributes def
 
 {-|'SentenceAlias' corresponds to the @object-alias-declaration@ and
 @meta-alias-declaration@ syntactic categories from the Semantics of K,

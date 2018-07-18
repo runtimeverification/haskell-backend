@@ -23,14 +23,15 @@ import qualified Data.Set                              as Set
 
 {--| Whether we should verify attributes and, when verifying, the module with
 declarations visible in these atributes. --}
-data AttributesVerification
-    = VerifyAttributes KoreIndexedModule | DoNotVerifyAttributes
+data AttributesVerification atts
+    = VerifyAttributes (KoreIndexedModule atts)
+    | DoNotVerifyAttributes
 
 {-|'verifyAttributes' verifies the wellformedness of the given attributes.
 -}
 verifyAttributes
     :: Attributes
-    -> AttributesVerification
+    -> AttributesVerification atts
     -> Either (Error VerifyError) VerifySuccess
 verifyAttributes
     (Attributes patterns)

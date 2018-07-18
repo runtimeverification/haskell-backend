@@ -35,7 +35,7 @@ data AxiomPattern level = AxiomPattern
 koreIndexedModuleToAxiomPatterns
     :: MetaOrObject level
     => level -- ^expected level for the axiom pattern
-    -> KoreIndexedModule -- ^'IndexedModule' containing the definition
+    -> KoreIndexedModule atts -- ^'IndexedModule' containing the definition
     -> [AxiomPattern level]
 koreIndexedModuleToAxiomPatterns level idxMod =
     rights $ map
