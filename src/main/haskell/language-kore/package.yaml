@@ -28,6 +28,7 @@ dependencies:
   - bytestring >= 0.10
   - bytestring-trie
   - containers
+  - unordered-containers
   - clock
   - data-fix
   - deepseq
