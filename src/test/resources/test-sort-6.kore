@@ -1,6 +1,6 @@
 []
 
-module TEST-EXCEPTION-22
+module TEST-SORT-6
 
   sort #C{} ["d"]
 

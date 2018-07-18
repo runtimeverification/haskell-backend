@@ -1,6 +1,6 @@
 []
 
-module TEST-EXCEPTION-1
+module TEST-SORT-5
 
   sort #a{} []
 

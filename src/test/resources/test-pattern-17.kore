@@ -1,6 +1,6 @@
 []
 
-module TEST-EXCEPTION-10
+module TEST-PATTERN-17
 
   axiom{}
     #X:#S{#R} []
