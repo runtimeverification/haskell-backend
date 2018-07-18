@@ -51,7 +51,7 @@ pattern V x = Var_ x
 
 var :: MetaOrObject level => String -> Variable level
 var x =
-  Variable (noLocationId x) (testSort "S")
+  Variable (noLocationId x) (testSort "*")
 
 sym :: MetaOrObject level => String -> SymbolOrAlias level
 sym x =
@@ -79,7 +79,7 @@ dummyMetadataTools = MetadataTools
     , isFunctional     = const True
     , isFunction       = const True
     , getArgumentSorts = const []
-    , getResultSort    = const $ testSort "S"
+    , getResultSort    = const $ testSort "*"
     }
 
 testSort

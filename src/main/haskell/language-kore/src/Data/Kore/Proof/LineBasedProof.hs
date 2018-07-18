@@ -107,17 +107,17 @@ testProof = dummyEnvironment $ useRule $ AndIntro (useRule TopIntro) (useRule $ 
 instance Pretty LineBasedProof where 
     pretty proof = (vsep
       $ map (\(n, ByF claim justification assumptions) -> 
-        fillBreak 80 (
-         fillBreak 3 (pretty n)
-         <> " : " 
-         <> " |- " 
-         <> pretty claim)
-         <> pretty justification 
-         <> line 
-         <> indent 10 (
-            pretty $ S.toList assumptions
-            )
-         ) 
+          fill 90 (
+             fill 3 (pretty n)
+             <> " : " 
+             <> encloseSep mempty mempty "," (map pretty (S.toList assumptions))
+             <> " |- " 
+             <> align (pretty claim)
+             <> space 
+           ) 
+           <> hang 0 (pretty justification)
+           <> line 
+        ) 
       $ M.toList 
       $ unLineBasedProof proof) <> line 
 
