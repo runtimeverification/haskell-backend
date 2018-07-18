@@ -94,10 +94,10 @@ pattern By conclusion justification assumptions =
   Fix (ByF conclusion justification assumptions)
 
 type Path = [Int]
-type Proof = Prop Term (LargeRule Term)
+type Proof = Prop Term LargeRule
 
-instance (Hashable formula, Hashable (rules assumption subproof), Hashable assumption)
-  => Hashable (PropF formula (rules assumption) assumption subproof) where
+instance (Hashable formula, Hashable (rules subproof), Hashable assumption)
+  => Hashable (PropF formula rules assumption subproof) where
   hashWithSalt s (ByF a b c) =
     s `hashWithSalt` a `hashWithSalt` b `hashWithSalt` S.toList c
 
@@ -105,9 +105,9 @@ instance Hashable Proof where
     hashWithSalt s (By a b c) =
         s `hashWithSalt` a `hashWithSalt` b `hashWithSalt` S.toList c
 
-data LargeRule assumption subproof
+data LargeRule subproof
  = Assumption Term
- | Discharge assumption subproof
+ | Discharge Term subproof
  | Abstract Var subproof
  | ForallElim Term subproof
  | AndIntro subproof subproof
@@ -160,19 +160,17 @@ data LargeRule assumption subproof
  deriving(Show, Functor, Foldable, Generic, Traversable)
 
 
-instance (Hashable subproof, Hashable assumption) 
-  => Hashable (LargeRule assumption subproof)
+instance Hashable subproof => Hashable (LargeRule subproof)
 
-instance (Pretty a, Pretty b) => Pretty (LargeRule a b) where 
+instance Show a => Pretty (LargeRule a) where 
     pretty (Assumption _) = "Assumption" 
-    pretty _ = "..."
 
 instance 
   ( Pretty formula
-  , Pretty (rules assumption subproof)
+  , Pretty (rules subproof)
   , Pretty subproof
   , Pretty assumption
-  ) => Pretty (PropF formula (rules assumption) assumption subproof) where 
+  ) => Pretty (PropF formula rules assumption subproof) where 
     pretty (ByF a b c) = "|- " <> pretty a <> line <> "By " <> pretty b
 
 assume :: Term -> Proof
@@ -206,7 +204,7 @@ discharge hypothesis prop@(By conclusion justification assumptions)
 
 useRule
   :: Given (MetadataTools Object)
-  => LargeRule Term Proof
+  => LargeRule Proof
   -> Proof
 useRule (Assumption formula)
  = assume formula
@@ -242,7 +240,7 @@ useRule rule =
 
 interpretRule
   :: Given (MetadataTools Object)
-  => LargeRule Term Proof
+  => LargeRule Proof
   -> Term
 interpretRule (ModusPonens a b) =
   let (Implies_ _ a' b') = getConclusion b
