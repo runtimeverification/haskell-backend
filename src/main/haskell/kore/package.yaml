@@ -25,7 +25,6 @@ dependencies:
   - base >= 4.7
   - array
   - bytestring >= 0.10
-  - bytestring-trie
   - containers >= 0.5.8
   - clock
   - data-default
@@ -44,10 +43,10 @@ dependencies:
   - prettyprinter
   - recursion-schemes
   - reflection
+  - sbv
   - text
   - time
   - unordered-containers
-  - sbv
 
 build-tools:
   - tasty-discover
