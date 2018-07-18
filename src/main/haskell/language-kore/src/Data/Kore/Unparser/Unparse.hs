@@ -15,6 +15,7 @@ Portability : portable
 -}
 module Data.Kore.Unparser.Unparse (Unparse(..), unparseToString) where
 
+import           Data.Text.Prettyprint.Doc (defaultLayoutOptions, layoutPretty)
 import           Data.Text.Prettyprint.Doc.Render.String (renderString)
 
 import           Data.Kore.AST.Pretty
@@ -26,6 +27,6 @@ class Pretty a => Unparse a where
 
 instance Pretty a => Unparse a
 
--- |'unparseToString' uses a 'StringPrinter' to serialize an object to 'String'.
+-- | Serialize an object to 'String'.
 unparseToString :: Unparse a => a -> String
-unparseToString = renderString . layoutPrettyUnbounded . pretty
+unparseToString = renderString . layoutPretty defaultLayoutOptions . pretty
