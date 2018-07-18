@@ -6,10 +6,13 @@ import           Test.Tasty.Runners                                  (consoleTes
                                                                       listingTests)
 import           Test.Tasty.Runners.AntXML                           (antXMLRunner)
 
+import System.Directory (setCurrentDirectory)
+
 import           Data.Kore.Algorithm.TopologicalSortTest
 import           Data.Kore.AST.CommonTest
 import           Data.Kore.AST.MLPatternsTest
 import           Data.Kore.AST.PureToKoreTest
+import           Data.Kore.ASTUtils.ASTUtilsTest
 import           Data.Kore.ASTHelpersTest
 import           Data.Kore.ASTPrettyPrintTest
 import           Data.Kore.ASTTraversalsTest
@@ -44,8 +47,11 @@ import           Data.Kore.Variables.Fresh.IntCounterTest
 import           Data.Kore.Variables.IntTest
 import           Data.Kore.Variables.SortTest
 
+import qualified Paths
+
 main :: IO ()
 main = do
+    setCurrentDirectory (Paths.dataFileName ".")
     inputFiles <- regressionTestsInputFiles "../../../test/resources/"
     defaultMainWithIngredients
         [antXMLRunner, listingTests, consoleTestReporter]
@@ -74,6 +80,7 @@ unitTests =
         [ commonTests
         , astVerifierTests
         , astHelperTests
+        , astUtilsTests
         , charDictTests
         , charSetTests
         , cStringTests
