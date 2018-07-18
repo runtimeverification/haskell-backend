@@ -31,7 +31,7 @@ commandLine =
         (  metavar "WIDTH"
         <> long "width"
         <> value 80
-        <> help "Line width [default: 80]" )
+        <> help "Line width [default: 80; unlimited if WIDTH <= 0]" )
 
 infoMod :: InfoMod options
 infoMod =
