@@ -1,4 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
 module Test.Data.Kore.Unification.Unifier (test_unification) where
 
 import           Data.CallStack

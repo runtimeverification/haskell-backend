@@ -1,5 +1,3 @@
-{-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-|
 Module      : Data.Kore.Variables.Int
 Description : Defines the 'IntVariable' class providing functionality for

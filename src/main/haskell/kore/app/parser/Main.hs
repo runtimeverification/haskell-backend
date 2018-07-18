@@ -1,8 +1,4 @@
-{-# LANGUAGE NamedFieldPuns #-}
-
-module Main
-  ( main
-  ) where
+module Main (main) where
 
 import           Control.Monad                            (when)
 import qualified Data.Map                                 as Map

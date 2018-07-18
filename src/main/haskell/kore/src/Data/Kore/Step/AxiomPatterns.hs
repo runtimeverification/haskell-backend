@@ -1,4 +1,3 @@
-{-# LANGUAGE GADTs #-}
 module Data.Kore.Step.AxiomPatterns
     ( AxiomPattern(..)
     , AxiomPatternError(..)

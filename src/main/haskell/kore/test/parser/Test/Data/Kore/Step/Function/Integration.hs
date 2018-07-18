@@ -1,6 +1,3 @@
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE MonoLocalBinds        #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 module Test.Data.Kore.Step.Function.Integration (test_functionIntegration) where
 
 import           Data.Kore.IndexedModule.MetadataTools (MetadataTools (..))

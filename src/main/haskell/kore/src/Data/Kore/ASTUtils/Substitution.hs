@@ -10,20 +10,7 @@ Stability   : experimental
 Portability : portable
 -}
 
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE Rank2Types             #-}
 {-# LANGUAGE AllowAmbiguousTypes    #-}
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE BangPatterns           #-}
-{-# LANGUAGE LambdaCase             #-}
-{-# LANGUAGE DeriveFunctor          #-}
-{-# LANGUAGE DeriveFoldable         #-}
-{-# LANGUAGE DeriveTraversable      #-}
-{-# LANGUAGE TypeFamilies           #-}
-{-# LANGUAGE PatternSynonyms        #-}
-{-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE TypeApplications       #-}
 {-# OPTIONS_GHC -Wno-unused-matches #-}
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}

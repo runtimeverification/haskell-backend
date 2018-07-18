@@ -1,6 +1,3 @@
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-|
 Module      : Data.Kore.Variables.Fresh.Class
 Description : Specifies the 'FreshVariableClass' which provides an interface for

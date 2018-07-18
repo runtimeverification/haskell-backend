@@ -1,5 +1,3 @@
-{-# LANGUAGE GADTs                  #-}
-
 {-|
 Module      : Data.Kore.Parser.ParserImpl
 Description : Parser definition for Kore. Meant for internal use only.

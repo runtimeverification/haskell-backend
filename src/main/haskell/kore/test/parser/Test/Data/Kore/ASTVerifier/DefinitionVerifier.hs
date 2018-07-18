@@ -1,4 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
 module Test.Data.Kore.ASTVerifier.DefinitionVerifier where
 
 import           Test.Tasty                               (TestTree, testGroup)

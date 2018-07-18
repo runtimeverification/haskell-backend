@@ -1,4 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
 module Test.Data.Kore.ASTVerifier.DefinitionVerifier.SortUsage
     (test_sortUsage) where
 

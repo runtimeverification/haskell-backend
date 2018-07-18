@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies #-}
 {-|
 Description: A type class for matching logic signatures
 

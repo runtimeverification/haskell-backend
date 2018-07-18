@@ -8,8 +8,6 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 module Data.Kore.Building.Implicit where
 
 import           Data.Kore.AST.Common        (Application (..),

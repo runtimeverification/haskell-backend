@@ -1,6 +1,3 @@
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE MonoLocalBinds        #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 module Test.Data.Kore.Step.Condition.Evaluator (test_conditionEvaluator) where
 
 import           Test.Tasty                           (TestTree)

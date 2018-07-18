@@ -1,4 +1,3 @@
-{-# LANGUAGE GADTs #-}
 {-|
 Module      : Data.Kore.Step.Condition.Evaluator
 Description : Evaluates conditions.

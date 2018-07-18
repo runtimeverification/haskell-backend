@@ -47,24 +47,44 @@ dependencies:
   - text
   - time
 
+build-tools:
+  - tasty-discover
+
+default-extensions:
+  - BangPatterns
+  - ConstraintKinds
+  - DataKinds
+  - DeriveDataTypeable
+  - DeriveFoldable
+  - DeriveFunctor
+  - DeriveGeneric
+  - DeriveTraversable
+  - DuplicateRecordFields
+  - ExistentialQuantification
+  - FlexibleContexts
+  - FlexibleInstances
+  - FunctionalDependencies
+  - GADTs
+  - GeneralizedNewtypeDeriving
+  - LambdaCase
+  - MonoLocalBinds
+  - MultiParamTypeClasses
+  - NamedFieldPuns
+  - OverloadedStrings
+  - PatternSynonyms
+  - PolyKinds
+  - RankNTypes
+  - RecordWildCards
+  - ScopedTypeVariables
+  - StandaloneDeriving
+  - TypeApplications
+  - TypeFamilies
+  - TypeSynonymInstances
+  - UndecidableInstances
+  - ViewPatterns
+
 library:
   source-dirs: src
-  default-extensions:
-    - DataKinds
-    - DeriveFoldable
-    - DeriveFunctor
-    - DeriveTraversable
-    - FlexibleContexts
-    - FlexibleInstances
-    - FunctionalDependencies
-    - LambdaCase
-    - MultiParamTypeClasses
-    - OverloadedStrings
-    - RankNTypes
-    - ScopedTypeVariables
-    - StandaloneDeriving
-    - TypeSynonymInstances
-    - UndecidableInstances
 
 executables:
   kore-parser:
@@ -95,8 +115,6 @@ executables:
   prover:
     source-dirs: app/prover
     main: Main.hs
-    default-extensions:
-      - FlexibleContexts
     dependencies:
       - kore
 
@@ -122,8 +140,7 @@ tests:
       - tasty-golden
       - tasty-quickcheck
       - template-haskell
-    default-extensions:
-      - GADTs
+
   prover-test:
     source-dirs:
       - test/share
@@ -133,21 +150,6 @@ tests:
       - -threaded
       - -rtsopts
       - -with-rtsopts=-N
-    default-extensions:
-      - DataKinds
-      - DeriveFoldable
-      - DeriveFunctor
-      - DeriveTraversable
-      - FlexibleContexts
-      - FlexibleInstances
-      - FunctionalDependencies
-      - MultiParamTypeClasses
-      - OverloadedStrings
-      - RankNTypes
-      - ScopedTypeVariables
-      - StandaloneDeriving
-      - TypeSynonymInstances
-      - UndecidableInstances
     dependencies:
       - kore
       - bytestring

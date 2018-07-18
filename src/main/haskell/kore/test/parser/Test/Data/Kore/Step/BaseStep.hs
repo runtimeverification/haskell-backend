@@ -1,6 +1,3 @@
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE MonoLocalBinds        #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 module Test.Data.Kore.Step.BaseStep (test_baseStep) where
 
 import           Test.Tasty                            (TestTree)

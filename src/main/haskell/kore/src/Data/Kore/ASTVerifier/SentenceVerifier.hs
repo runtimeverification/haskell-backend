@@ -1,5 +1,3 @@
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE GADTs                 #-}
 {-|
 Module      : Data.Kore.ASTVerifier.SentenceVerifier
 Description : Tools for verifying the wellformedness of a Kore 'Sentence'.

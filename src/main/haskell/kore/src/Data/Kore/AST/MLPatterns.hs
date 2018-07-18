@@ -1,8 +1,3 @@
-{-# LANGUAGE ExplicitForAll        #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE Rank2Types            #-}
 {-|
 Module      : Data.Kore.MLPatterns
 Description : Data structures and functions for handling patterns uniformly.

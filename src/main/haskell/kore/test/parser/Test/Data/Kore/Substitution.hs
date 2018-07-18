@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 module Test.Data.Kore.Substitution where
 
 import           Test.Data.Kore

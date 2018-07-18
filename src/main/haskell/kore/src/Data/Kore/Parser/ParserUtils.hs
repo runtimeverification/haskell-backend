@@ -1,6 +1,4 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-|
 Module      : Data.Kore.Parser.ParserUtils
 Description : Helper tools for parsing Kore. Meant for internal use only.

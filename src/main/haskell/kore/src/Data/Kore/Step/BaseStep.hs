@@ -1,4 +1,3 @@
-{-# LANGUAGE GADTs #-}
 {-|
 Module      : Data.Kore.Step.BaseStep
 Description : Single step execution
@@ -170,7 +169,7 @@ stepWithAxiom
         { stepperConfigurationPattern = startPatternRaw
         , stepperConfigurationCondition = startConditionRaw
         , stepperConfigurationConditionSort =
-            conditionSort @ (ConditionSort unwrappedConditionSort)
+            conditionSort@(ConditionSort unwrappedConditionSort)
         }
     AxiomPattern
         { axiomPatternLeft = axiomLeftRaw
@@ -559,7 +558,7 @@ substitutionToPattern (ConditionSort sort) [] =
 substitutionToPattern sort [subst] =
     singleSubstitutionToPattern sort subst
 substitutionToPattern
-    conditionSort @ (ConditionSort sort)
+    conditionSort@(ConditionSort sort)
     (subst : substs)
   =
     asPurePattern $ AndPattern And

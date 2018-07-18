@@ -1,8 +1,3 @@
-{-# LANGUAGE FlexibleContexts     #-}
-{-# LANGUAGE GADTs                #-}
-{-# LANGUAGE StandaloneDeriving   #-}
-{-# LANGUAGE UndecidableInstances #-}
-
 {-|
 Module      : Data.Kore.IndexedModule.IndexedModule
 Description : Indexed representation for a module.
@@ -344,7 +339,7 @@ indexModuleMetaSentence
 indexModuleMetaSentence
     _ _ _
     ( indexedModules
-    , indexedModule @ IndexedModule
+    , indexedModule@IndexedModule
         { indexedModuleMetaAliasSentences = sentences }
     )
     (SentenceAliasSentence sentence)
@@ -362,7 +357,7 @@ indexModuleMetaSentence
 indexModuleMetaSentence
     _ _ _
     ( indexedModules
-    , indexedModule @ IndexedModule
+    , indexedModule@IndexedModule
         { indexedModuleMetaSymbolSentences = sentences }
     )
     (SentenceSymbolSentence sentence)
@@ -380,7 +375,7 @@ indexModuleMetaSentence
 indexModuleMetaSentence
     _ _ _
     ( indexedModules
-    , indexedModule @ IndexedModule { indexedModuleAxioms = sentences }
+    , indexedModule@IndexedModule { indexedModuleAxioms = sentences }
     )
     (SentenceAxiomSentence sentence)
   =
@@ -393,7 +388,7 @@ indexModuleMetaSentence
     importingModules
     nameToModule
     ( indexedModules
-    , indexedModule @ IndexedModule { indexedModuleImports = indexedImports }
+    , indexedModule@IndexedModule { indexedModuleImports = indexedImports }
     )
     (SentenceImportSentence SentenceImport
         { sentenceImportModuleName = importedModuleName
@@ -445,7 +440,7 @@ indexModuleObjectSentence
 indexModuleObjectSentence
     _ _ _
     ( indexedModules
-    , indexedModule @ IndexedModule
+    , indexedModule@IndexedModule
         { indexedModuleObjectAliasSentences = sentences }
     )
     (SentenceAliasSentence sentence)
@@ -463,7 +458,7 @@ indexModuleObjectSentence
 indexModuleObjectSentence
     _ _ _
     ( indexedModules
-    , indexedModule @ IndexedModule
+    , indexedModule@IndexedModule
         { indexedModuleObjectSymbolSentences = sentences }
     )
     (SentenceSymbolSentence sentence)
@@ -541,7 +536,7 @@ indexModuleObjectSentence
 indexModuleObjectSentence
     _ _ _
     ( indexedModules
-    , indexedModule @ IndexedModule
+    , indexedModule@IndexedModule
         { indexedModuleObjectSymbolSentences = sentences
         , indexedModuleHookedIdentifiers = hookedIds
         }

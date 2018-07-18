@@ -1,4 +1,3 @@
-{-# LANGUAGE GADTs #-}
 {-|
 Module      : Data.Kore.MetaML.Builders
 Description : Safe way to build larger 'level' patterns from components.

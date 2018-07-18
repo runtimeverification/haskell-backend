@@ -1,4 +1,3 @@
-{-# LANGUAGE GADTs             #-}
 {-|
 Module      : Data.Kore.Parser.LexemeImpl
 Description : Lexical unit definitions for Kore and simple ways of composing
@@ -23,8 +22,6 @@ Conventions used:
 
 4. The "Raw" parsers do not consume any whitespace.
 -}
-
-{-# LANGUAGE OverloadedStrings #-}
 
 module Data.Kore.Parser.LexemeImpl where
 

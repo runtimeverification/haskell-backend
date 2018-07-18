@@ -1,7 +1,3 @@
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-|
 Module      : Data.Kore.Variables.Sort
 Description : Specifies the 'TermWithSortVariablesClass' which is meant to

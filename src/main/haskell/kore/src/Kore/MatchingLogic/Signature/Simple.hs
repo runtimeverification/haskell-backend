@@ -1,6 +1,3 @@
-{-# LANGUAGE TypeApplications     #-}
-{-# LANGUAGE TypeFamilies         #-}
-{-# LANGUAGE ConstraintKinds      #-}
 {-|
 Description: A generic signature for finite sets of simply-sorted labels
 
@@ -65,7 +62,7 @@ validate sig = if isValid sig then Just (ValidatedSignature sig) else Nothing
 type ReifiesSignature s = Reifies s ValidatedSignature
 
 reifySignature :: ValidatedSignature
-               -> (forall s . (Reifies s ValidatedSignature)
+               -> (forall (s :: *). (Reifies s ValidatedSignature)
                            => Proxy (SimpleSignature s) -> a)
                -> a
 reifySignature sig f = reify sig (\(_proxy :: Proxy s) -> f @s Proxy)

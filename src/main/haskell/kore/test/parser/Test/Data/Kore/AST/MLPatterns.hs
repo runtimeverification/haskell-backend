@@ -1,6 +1,3 @@
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 module Test.Data.Kore.AST.MLPatterns
     ( test_mlPattern
     , extractPurePattern

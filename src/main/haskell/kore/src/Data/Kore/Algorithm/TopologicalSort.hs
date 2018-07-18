@@ -1,4 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-|
 Module      : Data.Kore.Algorithm.TopologicalSort
 Description : Topological sorting algorithm.

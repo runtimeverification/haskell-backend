@@ -1,6 +1,3 @@
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-|
 Module      : Data.Kore.Substitution.List
 Description : Defines an instance of 'SubstitutionClass' using a list of

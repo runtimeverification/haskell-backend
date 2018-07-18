@@ -1,10 +1,3 @@
-{-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE UndecidableInstances  #-}
 {-|
 Module      : Data.Kore.Building.Sorts
 Description : Builders for meta sorts and sort variables.

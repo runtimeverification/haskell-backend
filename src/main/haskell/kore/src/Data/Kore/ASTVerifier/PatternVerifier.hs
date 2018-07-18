@@ -1,5 +1,3 @@
-{-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-|
 Module      : Data.Kore.ASTVerifier.PatternVerifier
 Description : Tools for verifying the wellformedness of a Kore 'Pattern'.
@@ -570,14 +568,14 @@ addFreeVariable
     -> Unified Variable
     -> Either (Error VerifyError) DeclaredVariables
 addFreeVariable
-    vars @ DeclaredVariables { metaDeclaredVariables = metaVars }
+    vars@DeclaredVariables { metaDeclaredVariables = metaVars }
     (UnifiedMeta v)
   = do
     checkVariable v metaVars
     return vars
         { metaDeclaredVariables = Map.insert (variableName v) v metaVars }
 addFreeVariable
-    vars @ DeclaredVariables { objectDeclaredVariables = objectVars }
+    vars@DeclaredVariables { objectDeclaredVariables = objectVars }
     (UnifiedObject v)
   = do
     checkVariable v objectVars

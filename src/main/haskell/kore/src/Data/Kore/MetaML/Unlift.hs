@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GADTs             #-}
 {-|
 Module      : Data.Kore.MetaML.Unlift
 Description : Reverses the effects of 'Data.Kore.MetaML.Lift.liftToMeta'

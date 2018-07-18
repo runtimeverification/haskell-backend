@@ -1,14 +1,4 @@
-{-# LANGUAGE BangPatterns               #-}
-{-# LANGUAGE DeriveDataTypeable         #-}
-{-# LANGUAGE DeriveGeneric              #-}
-{-# LANGUAGE DisambiguateRecordFields   #-}
-{-# LANGUAGE DuplicateRecordFields      #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE LambdaCase                 #-}
-{-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE RecordWildCards            #-}
-{-# LANGUAGE PartialTypeSignatures      #-}
-
+{-# LANGUAGE PartialTypeSignatures #-}
 {-# OPTIONS_GHC -fno-warn-unused-top-binds #-}
 
 {- |
@@ -452,7 +442,7 @@ runEntry proof entry@(ix,pat,rule) = presentError $ do
         Left ("Error processing "++show entry++":\n"++show err)
     presentError (Right val) = Right val
 
-withProof :: (forall s. (ReifiesSignature s) =>
+withProof :: (forall (s :: *). (ReifiesSignature s) =>
               Either String (Proof Int
                       (MLRuleSig (SimpleSignature s) Int)
                       (AST.WFPattern (SimpleSignature s) Int))

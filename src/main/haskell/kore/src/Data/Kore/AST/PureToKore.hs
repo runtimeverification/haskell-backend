@@ -1,7 +1,3 @@
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeSynonymInstances  #-}
 {-|
 Module      : Data.Kore.AST.PureToKore
 Description : Functionality for viewing "Pure"-only as unified Kore constructs.

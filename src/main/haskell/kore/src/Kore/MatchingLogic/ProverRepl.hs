@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings     #-}
 {-|
 Description: A simple textual interface for building a proof
 

@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 import           Data.Char                                     (isAlphaNum)
 import qualified Data.Map.Strict                               as Map
 import qualified Data.Set                                      as Set

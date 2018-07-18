@@ -1,5 +1,3 @@
-{-# LANGUAGE GADTs      #-}
-{-# LANGUAGE LambdaCase #-}
 {-|
 Module      : Data.Kore.Step.Function.Evaluator
 Description : Evaluates functions in a pattern.
@@ -240,7 +238,7 @@ evaluateApplication
     symbolIdToEvaluator
     conditionSort
     childrenCondition
-    app @ Application
+    app@Application
         { applicationSymbolOrAlias = SymbolOrAlias
             -- TODO(virgil): Should we use the symbolOrAliasParams? Should
             -- not matter for correctness since each function can reject the

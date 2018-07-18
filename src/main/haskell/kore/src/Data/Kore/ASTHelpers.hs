@@ -1,4 +1,3 @@
-{-# LANGUAGE GADTs #-}
 {-|
 Module      : Data.Kore.ASTHelpers
 Description : Utilities for handling ASTs.

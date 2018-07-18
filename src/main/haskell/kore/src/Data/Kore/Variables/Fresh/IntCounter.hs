@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-|
 Module      : Data.Kore.Variables.Fresh.IntCounter
 Description : Defines an 'IntCounter' 'Monad' encapsulating an integer counter.

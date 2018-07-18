@@ -1,4 +1,3 @@
-{-# LANGUAGE GADTs #-}
 {-|
 Module      : Data.Kore.IndexedModule.Resolvers
 Description : Tools for resolving IDs.

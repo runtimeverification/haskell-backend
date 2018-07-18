@@ -7,8 +7,6 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-{-# LANGUAGE FlexibleContexts     #-}
-{-# LANGUAGE UndecidableInstances #-}
 module Data.Kore.AST.AstWithLocation
     ( AstWithLocation(..)
     , prettyPrintLocationFromAst

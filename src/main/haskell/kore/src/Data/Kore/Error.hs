@@ -53,7 +53,7 @@ withContext
     :: String -> Either (Error a) result -> Either (Error a) result
 withContext
     localContext
-    (Left err @ Error { errorContext = context })
+    (Left err@Error { errorContext = context })
   =
     Left err { errorContext = localContext : context }
 withContext _ result = result

@@ -1,6 +1,3 @@
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeFamilies     #-}
-{-# LANGUAGE ConstraintKinds      #-}
 {-|
 Description: A generic signature for parameterized sorts and labels
 
@@ -158,8 +155,11 @@ instance (Reifies s ValidatedSignature) => CheckableSignature (PolySignature s) 
     resolveSort (RawPolySort name args) = traverse resolveSort args >>= resolveSort1 name
     resolveLabel (RawPolyLabel name args) = traverse resolveSort args >>= resolveLabel1 name
 
-reifySignature :: ValidatedSignature
-               -> (forall s . (Reifies s ValidatedSignature)
+reifySignature :: forall a. ValidatedSignature
+               -> (forall (s :: *). (Reifies s ValidatedSignature)
                            => Proxy (PolySignature s) -> a)
                -> a
-reifySignature sig f = reify sig (\(_proxy :: Proxy s) -> f @s Proxy)
+reifySignature sig f = reify sig go
+  where
+    go :: forall (s :: *). Reifies s ValidatedSignature => Proxy s -> a
+    go _ = f @s Proxy

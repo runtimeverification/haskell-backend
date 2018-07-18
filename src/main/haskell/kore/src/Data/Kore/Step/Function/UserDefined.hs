@@ -1,4 +1,3 @@
-{-# LANGUAGE GADTs #-}
 {-|
 Module      : Data.Kore.Step.Function.UserDefined
 Description : Evaluates user-defined functions in a pattern.
@@ -163,7 +162,7 @@ firstSatisfiablePattern
         , functionResultCondition = ConditionTrue
         }
 firstSatisfiablePattern
-    ((patt, condition @ (ConditionUnevaluable _)) : _)
+    ((patt, condition@(ConditionUnevaluable _)) : _)
   = AttemptedFunctionResultApplied FunctionResult
         { functionResultPattern   = patt
         , functionResultCondition = condition

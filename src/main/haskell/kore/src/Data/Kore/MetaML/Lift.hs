@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GADTs             #-}
 {-|
 Module      : Data.Kore.MetaML.Lift
 Description : Lifts mixed 'Object' and 'Meta' constructs into pure 'Meta' ones.

@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE GADTs            #-}
 module Test.Data.Kore.ASTVerifier.DefinitionVerifier.PatternVerifier
     (test_patternVerifier) where
 

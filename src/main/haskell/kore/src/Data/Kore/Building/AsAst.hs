@@ -7,7 +7,6 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-{-# LANGUAGE MultiParamTypeClasses #-}
 module Data.Kore.Building.AsAst where
 
 class AsAst a b where

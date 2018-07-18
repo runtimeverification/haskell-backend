@@ -1,4 +1,3 @@
-{-# LANGUAGE PatternSynonyms            #-}
 {-|
 Description: The minimal matching logic proof system of
 Kore.MatchingLogic.ProofSystem.Minimal, with added
@@ -99,7 +98,8 @@ transformRule _sort label var term hypothesis rule = case rule of
     OrIntroR t1 t2 -> OrIntroR <$> term t1 <*> term t2
 
 -- | Lens focusing on the terms within a Rule.
-ruleTerms :: (Applicative f)
+ruleTerms :: forall (f :: * -> *) (sort :: *) termA termB hyp label var.
+             (Applicative f)
           => (termA -> f termB)
           -> (MLRule sort label var termA hyp
               -> f (MLRule sort label var termB hyp))

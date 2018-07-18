@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-|
 Description: The minimal matching logic proof system
 

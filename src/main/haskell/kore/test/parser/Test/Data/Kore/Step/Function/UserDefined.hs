@@ -1,6 +1,3 @@
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE MonoLocalBinds        #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 module Test.Data.Kore.Step.Function.UserDefined (test_userDefinedFunction) where
 
 import           Test.Tasty                            (TestTree)

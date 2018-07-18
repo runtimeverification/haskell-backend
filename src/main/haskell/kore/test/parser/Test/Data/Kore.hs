@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GADTs             #-}
 module Test.Data.Kore where
 
 import           Test.QuickCheck.Gen         (Gen, choose, chooseAny, elements,

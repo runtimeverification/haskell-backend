@@ -1,4 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
 module Test.Data.Kore.MetaML.Lift
     ( prettyAssertEqual, variablePattern
     , test_lift

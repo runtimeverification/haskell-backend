@@ -1,4 +1,3 @@
-{-# LANGUAGE PolyKinds #-}
 {-|
 Module      : Data.Kore.ASTTraversals
 Description : Generic functionality to circumvent some issues occuring due to

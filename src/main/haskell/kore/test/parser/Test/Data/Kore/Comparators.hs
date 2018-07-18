@@ -1,7 +1,4 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GADTs             #-}
 {-|
 Module      : Data.Kore.Comparators
 Description : Declares various data types involved in testing as instances of
@@ -24,13 +21,13 @@ import           Data.Kore.Step.Function.Data
 import           Data.Kore.Unification.Error
 import           Data.Kore.Unification.Unifier
 
-{-# ANN module "HLint: ignore Use record patterns" #-}
+{-# ANN module ("HLint: ignore Use record patterns" :: String) #-}
 
 instance StructEqualWithExplanation (StepperConfiguration level)
   where
     structFieldsWithNames
-        expected @ (StepperConfiguration _ _ _)
-        actual @ (StepperConfiguration _ _ _)
+        expected@(StepperConfiguration _ _ _)
+        actual@(StepperConfiguration _ _ _)
       = [ EqWrap
             "stepperConfigurationPattern = "
             (stepperConfigurationPattern expected)
@@ -223,8 +220,8 @@ instance (Show child, EqualWithExplanation child)
     => StructEqualWithExplanation (And level child)
   where
     structFieldsWithNames
-        expected @ (And _ _ _)
-        actual @ (And _ _ _)
+        expected@(And _ _ _)
+        actual@(And _ _ _)
       = [ EqWrap
             "andSort = "
             (andSort expected)
@@ -250,8 +247,8 @@ instance (Show child, EqualWithExplanation child)
     => StructEqualWithExplanation (Application level child)
   where
     structFieldsWithNames
-        expected @ (Application _ _)
-        actual @ (Application _ _)
+        expected@(Application _ _)
+        actual@(Application _ _)
       = [ EqWrap
             "applicationSymbolOrAlias = "
             (applicationSymbolOrAlias expected)
@@ -279,8 +276,8 @@ instance (Show child, EqualWithExplanation child)
     => StructEqualWithExplanation (Ceil level child)
   where
     structFieldsWithNames
-        expected @ (Ceil _ _ _)
-        actual @ (Ceil _ _ _)
+        expected@(Ceil _ _ _)
+        actual@(Ceil _ _ _)
       = [ EqWrap
             "ceilOperandSort = "
             (ceilOperandSort expected)
@@ -311,8 +308,8 @@ instance (Show child, EqualWithExplanation child)
     => StructEqualWithExplanation (Equals level child)
   where
     structFieldsWithNames
-        expected @ (Equals _ _ _ _)
-        actual @ (Equals _ _ _ _)
+        expected@(Equals _ _ _ _)
+        actual@(Equals _ _ _ _)
       = [ EqWrap
             "equalsResultSort = "
             (equalsResultSort expected)
@@ -424,8 +421,8 @@ instance
 instance StructEqualWithExplanation (Variable level)
   where
     structFieldsWithNames
-        expected @ (Variable _ _)
-        actual @ (Variable _ _)
+        expected@(Variable _ _)
+        actual@(Variable _ _)
       = [ EqWrap
             "variableName = "
             (variableName expected)
@@ -445,8 +442,8 @@ instance EqualWithExplanation (Variable level)
 instance StructEqualWithExplanation (Id level)
     where
       structFieldsWithNames
-          expected @ (Id _ _)
-          actual @ (Id _ _)
+          expected@(Id _ _)
+          actual@(Id _ _)
         = [ EqWrap
               "getId = "
               (EWEString $ getId expected)
@@ -470,8 +467,8 @@ instance EqualWithExplanation (Sort level)
 instance StructEqualWithExplanation (SymbolOrAlias level)
     where
       structFieldsWithNames
-          expected @ (SymbolOrAlias _ _)
-          actual @ (SymbolOrAlias _ _)
+          expected@(SymbolOrAlias _ _)
+          actual@(SymbolOrAlias _ _)
         = [ EqWrap
               "symbolOrAliasConstructor = "
               (symbolOrAliasConstructor expected)
@@ -657,8 +654,8 @@ instance
     => StructEqualWithExplanation (UnificationSolution level variable)
   where
     structFieldsWithNames
-        expected @ (UnificationSolution _ _)
-        actual @ (UnificationSolution _ _)
+        expected@(UnificationSolution _ _)
+        actual@(UnificationSolution _ _)
       = [ EqWrap
             "unificationSolutionTerm = "
             (unificationSolutionTerm expected)
@@ -683,8 +680,8 @@ instance
 instance StructEqualWithExplanation (VariableRenaming level)
   where
     structFieldsWithNames
-        expected @ (VariableRenaming _ _)
-        actual @ (VariableRenaming _ _)
+        expected@(VariableRenaming _ _)
+        actual@(VariableRenaming _ _)
       = [ EqWrap
             "variableRenamingOriginal = "
             (variableRenamingOriginal expected)
@@ -722,8 +719,8 @@ instance EqualWithExplanation (StepperVariable level)
 instance StructEqualWithExplanation (FunctionResult level)
   where
     structFieldsWithNames
-        expected @ (FunctionResult _ _)
-        actual @ (FunctionResult _ _)
+        expected@(FunctionResult _ _)
+        actual@(FunctionResult _ _)
       = [ EqWrap
             "functionResultPattern = "
             (functionResultPattern expected)

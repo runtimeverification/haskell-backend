@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 module Test.Data.Kore.Unification.SubstitutionNormalization
     (test_substitutionNormalization) where
 

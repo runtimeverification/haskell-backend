@@ -1,14 +1,11 @@
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeSynonymInstances  #-}
-module Data.Kore.IndentingPrinter ( betweenLines
-                                  , PrinterOutput
-                                  , printToString
-                                  , StringPrinter
-                                  , withIndent
-                                  , write
-                                  ) where
+module Data.Kore.IndentingPrinter
+    ( betweenLines
+    , PrinterOutput
+    , printToString
+    , StringPrinter
+    , withIndent
+    , write
+    ) where
 
 import           Control.Monad.Reader
 import           Control.Monad.Writer

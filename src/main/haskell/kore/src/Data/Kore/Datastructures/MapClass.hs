@@ -1,4 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-|
 Module      : Data.Kore.AST.MapClass
 Description : Class for representing a @key@ |-> @value@ map functionality.

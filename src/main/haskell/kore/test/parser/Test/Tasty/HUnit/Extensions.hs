@@ -1,11 +1,5 @@
-{-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE ExplicitForAll            #-}
-{-# LANGUAGE FlexibleContexts          #-}
-{-# LANGUAGE FlexibleInstances         #-}
-{-# LANGUAGE RankNTypes                #-}
-{-# LANGUAGE TypeSynonymInstances      #-}
-{-# LANGUAGE UndecidableInstances      #-}
 module Test.Tasty.HUnit.Extensions where
+
 import           Control.Exception (SomeException, catch, evaluate)
 import           Control.Monad
 import           Data.CallStack

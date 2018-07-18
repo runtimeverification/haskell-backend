@@ -1,10 +1,3 @@
-{-# LANGUAGE ConstraintKinds      #-}
-{-# LANGUAGE FlexibleContexts     #-}
-{-# LANGUAGE GADTs                #-}
-{-# LANGUAGE Rank2Types           #-}
-{-# LANGUAGE ScopedTypeVariables  #-}
-{-# LANGUAGE StandaloneDeriving   #-}
-{-# LANGUAGE UndecidableInstances #-}
 {-|
 Module      : Data.Kore.AST.MetaOrObject
 Description : Specifies the 'Meta', 'Object', and 'Unified' types, and common

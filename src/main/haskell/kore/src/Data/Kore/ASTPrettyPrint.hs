@@ -1,11 +1,7 @@
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE UndecidableInstances  #-}
-module Data.Kore.ASTPrettyPrint ( prettyPrintToString
-                                , PrettyPrint
-                                ) where
+module Data.Kore.ASTPrettyPrint
+    ( prettyPrintToString
+    , PrettyPrint
+    ) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Sentence
