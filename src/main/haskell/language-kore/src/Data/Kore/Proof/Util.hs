@@ -39,6 +39,7 @@ module Data.Kore.Proof.Util
 , provablySubstitute
 , eqSymmetry
 , eqTransitivity
+, generateVarList
 ) where
 
 import           Data.Kore.AST.Common

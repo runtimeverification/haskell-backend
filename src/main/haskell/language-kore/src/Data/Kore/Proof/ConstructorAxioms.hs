@@ -84,4 +84,4 @@ generateInjectivityAxiom head resultSort childrenSorts =
 --     -> Sort Object
 --     -> Term 
 -- generateNoConfusionAxiom h1 c1 h2 c2 = 
-	
+
