@@ -37,16 +37,16 @@ import           Control.Lens
 import           Control.Monad.State.Strict
 
 import           Data.Fix
-import qualified Data.Map.Strict                       as M
-import qualified Data.Set                              as S
+import qualified Data.Map.Strict                      as M
+import qualified Data.Set                             as S
 
 import           Data.Kore.ASTUtils.SmartConstructors
 
+import           Data.Hashable
 import           Data.Kore.Proof.Dummy
 import           Data.Kore.Proof.Proof
 import           Data.Text.Prettyprint.Doc
 import           Data.Text.Prettyprint.Doc.Util
-import           Data.Hashable
 
 -- DO NOT REVIEW
 
@@ -91,7 +91,7 @@ isAssumption = \case
     Assumption _ -> True
     _ -> False
 
-testProof :: Proof 
+testProof :: Proof
 testProof =
     dummyEnvironment
   $ useRule
