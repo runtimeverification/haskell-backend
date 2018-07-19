@@ -36,9 +36,6 @@ dependencies:
   - groom
   - hashable
   - lens
-<<<<<<< HEAD
-  - megaparsec >=6.4.0
-=======
   - megaparsec >= 6.4.0
   - mtl
   - optparse-applicative
@@ -46,7 +43,6 @@ dependencies:
   - prettyprinter
   - reflection
   - time
-<<<<<<< HEAD
 
 build-tools:
   - tasty-discover
@@ -75,30 +71,6 @@ executables:
     source-dirs:
       - app/format
       - app/share
-    ghc-options:
-      - -threaded
-      - -rtsopts
-      - -with-rtsopts=-N
-    default-extensions:
-      - RecordWildCards
-    dependencies:
-      - language-kore
-
-  kore-format:
-    main: Main.hs
-    source-dirs: app/format
-    ghc-options:
-      - -threaded
-      - -rtsopts
-      - -with-rtsopts=-N
-    default-extensions:
-      - RecordWildCards
-    dependencies:
-      - language-kore
-
-  kore-format:
-    main: Main.hs
-    source-dirs: app/format
     ghc-options:
       - -threaded
       - -rtsopts
