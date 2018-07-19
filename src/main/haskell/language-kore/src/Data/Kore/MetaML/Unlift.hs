@@ -257,7 +257,7 @@ unliftDomainValuePattern
 unliftDomainValuePattern [rSort, rChild] =
     DomainValuePattern <$> (pure DomainValue
         <*> unliftFromMeta (unliftResultOriginal rSort)
-        <*> pure (unliftResultFinal rChild))
+        <*> pure (unliftResultOriginal rChild))
 unliftDomainValuePattern _ = Nothing
 
 unliftTopBottomPattern

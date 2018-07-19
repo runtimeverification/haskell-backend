@@ -78,14 +78,6 @@ instance MLPatternClass Ceil level where
     getPatternChildren c = [ceilChild c]
     mlPatternToPattern = CeilPattern
 
-instance MLPatternClass DomainValue Object where
-    getPatternType _ = DomainValuePatternType
-    getMLPatternOperandSorts _ = [asUnified charListMetaSort]
-    getMLPatternResultSort = domainValueSort
-    getPatternSorts d = [domainValueSort d]
-    getPatternChildren d = [domainValueChild d]
-    mlPatternToPattern = DomainValuePattern
-
 instance MLPatternClass Equals level where
     getPatternType _ = EqualsPatternType
     getMLPatternOperandSorts x =
@@ -209,6 +201,7 @@ data PatternLeveledFunction level variable child result = PatternLeveledFunction
         -> result level)
     , stringLeveledFunction :: StringLiteral -> result Meta
     , charLeveledFunction :: CharLiteral -> result Meta
+    , domainValueLeveledFunction :: DomainValue Object -> result Object
     , applicationLeveledFunction :: !(Application level child -> result level)
     , variableLeveledFunction :: !(variable level -> result level)
     }
@@ -229,7 +222,7 @@ applyPatternLeveledFunction function (BottomPattern a) =
 applyPatternLeveledFunction function (CeilPattern a) =
     patternLeveledFunctionML function a
 applyPatternLeveledFunction function (DomainValuePattern a) =
-    patternLeveledFunctionML function a
+    domainValueLeveledFunction function a
 applyPatternLeveledFunction function (EqualsPattern a) =
     patternLeveledFunctionML function a
 applyPatternLeveledFunction function (ExistsPattern a) =
@@ -305,6 +298,7 @@ applyPatternFunction patternFunction =
                 ParameterizedProxy . applicationFunction patternFunction
             , variableLeveledFunction =
                 ParameterizedProxy . variableFunction patternFunction
+            , domainValueLeveledFunction =
             }
 
 -- |'getPatternResultSort' retrieves the result sort of a pattern.
