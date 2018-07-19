@@ -4,7 +4,9 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NamedFieldPuns        #-}
 {-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE UndecidableInstances  #-}
@@ -35,8 +37,12 @@ Please refer to Section 9 (The Kore Language) of the
 module Data.Kore.AST.Common where
 
 import           Data.Proxy
+import           Data.String (fromString)
 
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.Pretty (Pretty(..), (<>))
+import qualified Data.Kore.AST.Pretty as Pretty
+import           Data.Kore.Parser.CString (escapeCString)
 
 import           GHC.Generics (Generic)
 import           Data.Hashable
@@ -113,11 +119,15 @@ data Id level = Id
 instance Ord (Id level) where
     compare first@(Id _ _) second@(Id _ _) =
         compare (getId first) (getId second)
-{-# ANN module "HLint: ignore Redundant compare" #-}
+
+{-# ANN module ("HLint: ignore Redundant compare" :: String) #-}
 instance Eq (Id level) where
     first == second = compare first second == EQ
 
 instance Hashable (Id level)
+
+instance Pretty (Id level) where
+    pretty Id { getId } = fromString getId
 
 {-| 'noLocationId' creates an Id without a source location. While there are some
 narrow cases where this makes sense, you should really consider other options
@@ -137,6 +147,10 @@ newtype StringLiteral = StringLiteral { getStringLiteral :: String }
 
 instance Hashable StringLiteral
 
+instance Pretty StringLiteral where
+    pretty StringLiteral {..} =
+        (Pretty.dquotes . fromString . escapeCString) getStringLiteral
+
 {-|'CharLiteral' corresponds to the @char@ literal from the Semantics of K,
 Section 9.1.1 (Lexicon).
 -}
@@ -144,6 +158,10 @@ newtype CharLiteral = CharLiteral { getCharLiteral :: Char }
     deriving (Show, Eq, Ord, Generic)
 
 instance Hashable CharLiteral
+
+instance Pretty CharLiteral where
+    pretty CharLiteral {..} =
+        (Pretty.squotes . fromString . escapeCString . (: [])) getCharLiteral
 
 {-|'SymbolOrAlias' corresponds to the @head{sort-list}@ branch of the
 @object-head@ and @meta-head@ syntactic categories from the Semantics of K,
@@ -159,6 +177,10 @@ data SymbolOrAlias level = SymbolOrAlias
     deriving (Show, Eq, Ord, Generic)
 
 instance Hashable (SymbolOrAlias level)
+
+instance Pretty (SymbolOrAlias level) where
+    pretty SymbolOrAlias {..} =
+        pretty symbolOrAliasConstructor <> Pretty.parameters symbolOrAliasParams
 
 {-|'Symbol' corresponds to the
 @object-head-constructor{object-sort-variable-list}@ part of the
@@ -178,6 +200,10 @@ data Symbol level = Symbol
 
 instance Hashable (Symbol level)
 
+instance Pretty (Symbol level) where
+    pretty Symbol {..} =
+        pretty symbolConstructor <> Pretty.parameters symbolParams
+
 {-|'Alias' corresponds to the
 @object-head-constructor{object-sort-variable-list}@ part of the
 @object-alias-declaration@ and @meta-alias-declaration@ syntactic categories
@@ -196,6 +222,10 @@ data Alias level = Alias
 
 instance Hashable (Alias level)
 
+instance Pretty (Alias level) where
+    pretty Alias {..} =
+        pretty aliasConstructor <> Pretty.parameters aliasParams
+
 {-|'SortVariable' corresponds to the @object-sort-variable@ and
 @meta-sort-variable@ syntactic categories from the Semantics of K,
 Section 9.1.2 (Sorts).
@@ -208,6 +238,9 @@ newtype SortVariable level = SortVariable
     deriving (Show, Eq, Ord, Generic)
 
 instance Hashable (SortVariable level)
+
+instance Pretty (SortVariable level) where
+    pretty = pretty . getSortVariable
 
 {-|'SortActual' corresponds to the @sort-constructor{sort-list}@ branch of the
 @object-sort@ and @meta-sort@ syntactic categories from the Semantics of K,
@@ -224,6 +257,10 @@ data SortActual level = SortActual
 
 instance Hashable (SortActual level)
 
+instance Pretty (SortActual level) where
+    pretty SortActual {..} =
+        pretty sortActualName <> Pretty.parameters sortActualSorts
+
 {-|'Sort' corresponds to the @object-sort@ and
 @meta-sort@ syntactic categories from the Semantics of K,
 Section 9.1.2 (Sorts).
@@ -237,6 +274,10 @@ data Sort level
     deriving (Show, Eq, Ord, Generic)
 
 instance Hashable (Sort level)
+
+instance Pretty (Sort level) where
+    pretty (SortVariableSort sortVariable) = pretty sortVariable
+    pretty (SortActualSort sortActual) = pretty sortActual
 
 {-|'MetaSortType' corresponds to the @meta-sort-constructor@ syntactic category
 from the Semantics of K, Section 9.1.2 (Sorts).
@@ -310,6 +351,10 @@ data Variable level = Variable
 
 instance Hashable (Variable level)
 
+instance Pretty (Variable level) where
+    pretty Variable {..} =
+        pretty variableName <> Pretty.colon <> pretty variableSort
+
 {--| 'SortedVariable' is a variable which has a sort.
 --}
 class SortedVariable variable where
@@ -340,6 +385,9 @@ data MLPatternType
     deriving (Show, Generic)
 
 instance Hashable MLPatternType
+
+instance Pretty MLPatternType where
+  pretty = ("\\" <>) . fromString . patternString
 
 allPatternTypes :: [MLPatternType]
 allPatternTypes =
@@ -400,6 +448,12 @@ data And level child = And
 
 instance Hashable child => Hashable (And level child)
 
+instance Pretty child => Pretty (And level child) where
+    pretty And {..} =
+        "\\and"
+        <> Pretty.parameters [andSort]
+        <> Pretty.arguments [andFirst, andSecond]
+
 {-|'Application' corresponds to the @head(pattern-list)@ branches of the
 @object-pattern@ and @meta-pattern@ syntactic categories from
 the Semantics of K, Section 9.1.4 (Patterns).
@@ -417,6 +471,10 @@ data Application level child = Application
 
 instance Hashable child => Hashable (Application level child)
 
+instance Pretty child => Pretty (Application level child) where
+    pretty Application {..} =
+        pretty applicationSymbolOrAlias <> Pretty.arguments applicationChildren
+
 {-|'Bottom' corresponds to the @\bottom@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -432,6 +490,10 @@ newtype Bottom level child = Bottom { bottomSort :: Sort level}
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
 
 instance Hashable (Bottom level child)
+
+instance Pretty child => Pretty (Bottom level child) where
+    pretty Bottom {..} =
+        "\\bottom" <> Pretty.parameters [bottomSort] <> Pretty.noArguments
 
 {-|'Ceil' corresponds to the @\ceil@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -454,6 +516,12 @@ data Ceil level child = Ceil
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
 
 instance Hashable child => Hashable (Ceil level child)
+
+instance Pretty child => Pretty (Ceil level child) where
+    pretty Ceil {..} =
+        "\\ceil"
+        <> Pretty.parameters [ceilOperandSort, ceilResultSort]
+        <> Pretty.arguments [ceilChild]
 
 {-|'DomainValue' corresponds to the @\dv@ branch of the @object-pattern@
 syntactic category, which are not yet in the Semantics of K document,
@@ -479,6 +547,12 @@ data DomainValue level child = DomainValue
 instance Hashable child => Hashable (DomainValue level child)
 
 
+instance Pretty child => Pretty (DomainValue level child) where
+    pretty DomainValue {..} =
+        "\\dv"
+        <> Pretty.parameters [domainValueSort]
+        <> Pretty.arguments [domainValueChild]
+
 {-|'Equals' corresponds to the @\equals@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -502,6 +576,12 @@ data Equals level child = Equals
 
 instance Hashable child => Hashable (Equals level child)
 
+instance Pretty child => Pretty (Equals level child) where
+    pretty Equals {..} =
+        "\\equals"
+        <> Pretty.parameters [equalsOperandSort, equalsResultSort]
+        <> Pretty.arguments [equalsFirst, equalsSecond]
+
 {-|'Exists' corresponds to the @\exists@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -521,6 +601,13 @@ data Exists level v child = Exists
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
 
 instance (Hashable child, Hashable (v level)) => Hashable (Exists level v child)
+
+instance (Pretty child, Pretty (variable level)) =>
+    Pretty (Exists level variable child) where
+    pretty Exists {..} =
+        "\\exists"
+        <> Pretty.parameters [existsSort]
+        <> Pretty.arguments' [pretty existsVariable, pretty existsChild]
 
 {-|'Floor' corresponds to the @\floor@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -544,6 +631,12 @@ data Floor level child = Floor
 
 instance Hashable child => Hashable (Floor level child)
 
+instance Pretty child => Pretty (Floor level child) where
+    pretty Floor {..} =
+        "\\floor"
+        <> Pretty.parameters [floorOperandSort, floorResultSort]
+        <> Pretty.arguments [floorChild]
+
 {-|'Forall' corresponds to the @\forall@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -563,6 +656,13 @@ data Forall level v child = Forall
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
 
 instance (Hashable child, Hashable (v level)) => Hashable (Forall level v child)
+
+instance (Pretty child, Pretty (variable level)) =>
+    Pretty (Forall level variable child) where
+    pretty Forall {..} =
+        "\\forall"
+        <> Pretty.parameters [forallSort]
+        <> Pretty.arguments' [pretty forallVariable, pretty forallChild]
 
 {-|'Iff' corresponds to the @\iff@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -585,6 +685,12 @@ data Iff level child = Iff
 instance Hashable child => Hashable (Iff level child)
 
 
+instance Pretty child => Pretty (Iff level child) where
+    pretty Iff {..} =
+        "\\iff"
+        <> Pretty.parameters [iffSort]
+        <> Pretty.arguments [iffFirst, iffSecond]
+
 {-|'Implies' corresponds to the @\implies@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -604,6 +710,12 @@ data Implies level child = Implies
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
 
 instance Hashable child => Hashable (Implies level child)
+
+instance Pretty child => Pretty (Implies level child) where
+    pretty Implies {..} =
+        "\\implies"
+        <> Pretty.parameters [impliesSort]
+        <> Pretty.arguments [impliesFirst, impliesSecond]
 
 {-|'In' corresponds to the @\in@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -631,6 +743,13 @@ data In level child = In
 
 instance Hashable child => Hashable (In level child)
 
+instance Pretty child => Pretty (In level child) where
+    pretty In {..} =
+        "\\in"
+        <> Pretty.parameters [inOperandSort, inResultSort]
+        <> Pretty.arguments [inContainedChild, inContainingChild]
+
+
 {-|'Next' corresponds to the @\next@ branch of the @object-pattern@
 syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
 
@@ -649,6 +768,12 @@ data Next level child = Next
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
 
 instance Hashable child => Hashable (Next level child)
+
+instance Pretty child => Pretty (Next level child) where
+    pretty Next {..} =
+        "\\next"
+        <> Pretty.parameters [nextSort]
+        <> Pretty.arguments [nextChild]
 
 {-|'Not' corresponds to the @\not@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -669,6 +794,12 @@ data Not level child = Not
 
 instance Hashable child => Hashable (Not level child)
 
+instance Pretty child => Pretty (Not level child) where
+    pretty Not {..} =
+        "\\not"
+        <> Pretty.parameters [notSort]
+        <> Pretty.arguments [notChild]
+
 {-|'Or' corresponds to the @\or@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -688,6 +819,12 @@ data Or level child = Or
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
 
 instance Hashable child => Hashable (Or level child)
+
+instance Pretty child => Pretty (Or level child) where
+    pretty Or {..} =
+        "\\or"
+        <> Pretty.parameters [orSort]
+        <> Pretty.arguments [orFirst, orSecond]
 
 {-|'Rewrites' corresponds to the @\rewrites@ branch of the @object-pattern@
 syntactic category from the Semantics of K, Section 9.1.4 (Patterns).
@@ -710,6 +847,12 @@ data Rewrites level child = Rewrites
 
 instance Hashable child => Hashable (Rewrites level child)
 
+instance Pretty child => Pretty (Rewrites level child) where
+    pretty Rewrites {..} =
+        "\\rewrites"
+        <> Pretty.parameters [rewritesSort]
+        <> Pretty.arguments [rewritesFirst, rewritesSecond]
+
 {-|'Top' corresponds to the @\top@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
 Section 9.1.4 (Patterns).
@@ -725,6 +868,10 @@ newtype Top level child = Top { topSort :: Sort level}
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
 
 instance Hashable (Top level child)
+
+instance Pretty child => Pretty (Top level child) where
+    pretty Top {..} =
+        "\\top" <> Pretty.parameters [topSort] <> Pretty.noArguments
 
 {-|'Pattern' corresponds to the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -825,6 +972,29 @@ deriving instance
 deriving instance Functor (Pattern level variable)
 deriving instance Foldable (Pattern level variable)
 deriving instance Traversable (Pattern level variable)
+
+instance (Pretty child, Pretty (variable level)) =>
+    Pretty (Pattern level variable child) where
+    pretty (AndPattern p)           = pretty p
+    pretty (ApplicationPattern p)   = pretty p
+    pretty (BottomPattern p)        = pretty p
+    pretty (CeilPattern p)          = pretty p
+    pretty (DomainValuePattern p)   = pretty p
+    pretty (EqualsPattern p)        = pretty p
+    pretty (ExistsPattern p)        = pretty p
+    pretty (FloorPattern p)         = pretty p
+    pretty (ForallPattern p)        = pretty p
+    pretty (IffPattern p)           = pretty p
+    pretty (ImpliesPattern p)       = pretty p
+    pretty (InPattern p)            = pretty p
+    pretty (NextPattern p)          = pretty p
+    pretty (NotPattern p)           = pretty p
+    pretty (OrPattern p)            = pretty p
+    pretty (RewritesPattern p)      = pretty p
+    pretty (StringLiteralPattern p) = pretty p
+    pretty (CharLiteralPattern p)   = pretty p
+    pretty (TopPattern p)           = pretty p
+    pretty (VariablePattern p)      = pretty p
 
 data SortedPattern level variable child = SortedPattern
     { sortedPatternPattern :: !(Pattern level variable child)
