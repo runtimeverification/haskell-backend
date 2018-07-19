@@ -75,7 +75,9 @@ executables:
 tests:
   kore-parser-test:
     main:                AllParserTests.hs
-    source-dirs:         test/parser
+    source-dirs:
+      - test
+      - test/parser
     ghc-options:
     - -threaded
     - -rtsopts

@@ -45,7 +45,8 @@
     {\par {\bfseries \color{blue} #1 \par}} %comment showed
   
   % ams math packages.
-  \usepackage{amsmath, amssymb, amsthm}
+  \usepackage{amsmath, amssymb, amsthm, mathtools,mathbbol,prftree}
+  \usepackage{txfonts}
   
   % Declare a global counter for theorem environments:
   \newcounter{thmcounter}
@@ -242,6 +243,9 @@
   \newcommand{\itceil}{\textit{ceil}}
   
   \newcommand{\Pred}{\textit{Pred}}
+  
+  \newcommand{\wnext}{{\medcirc}}
+  \newcommand{\snext}{{\medbullet}}
 
   \newcommand{\Context}{\textit{Context}}
   \newcommand{\hole}{\boxempty}
@@ -595,6 +599,7 @@ Then we discuss schematic/parametric ways to finitely define infinite
 matching logic theories.
 Finally, we introduce theoretical foundations underlying the
 notion of ``builtins''.
+
 
 \subsection{Syntax}
 \label{sec:ML-syntax}
@@ -2130,17 +2135,17 @@ logic can serve as a standalone semantic foundation of~$\K$.
 
 Let us first note that, in matching logic, giving a binary relation
 $R_s \in M_s \times M_s$ on the carrier of sort $s$ of a model $M$
-is equivalent to interpreting a unary symbol $\circ \in \Sigma_{s,s}$ in $M$:
-indeed, for any $a,b\in M_s$, take $a\mathrel{R_s} b$ iff $a \in \circ_M(b)$.
+is equivalent to interpreting a unary symbol $\snext \in \Sigma_{s,s}$ in $M$:
+indeed, for any $a,b\in M_s$, take $a\mathrel{R_s} b$ iff $a \in \snext_M(b)$.
 If the intuition for $a \mathrel{R_s} b$ is ``state $a$ transitions to
-state $b$'', then the intuition for $\circ_M$ is that of ``transition to''
+state $b$'', then the intuition for $\snext_M$ is that of ``transition to''
 or ``next'':
-$\circ_M(b)$ is the set of states that transition to $b$, or which next go
+$\snext_M(b)$ is the set of states that transition to $b$, or which next go
 to $b$.
 Next consider two patterns $\varphi$ and $\varphi'$ of sort $s$, and the
-pattern $\varphi \ra \circ \varphi'$.
-We have $M \models \varphi \ra \circ \varphi'$ iff
-$\overline{\rho}(\varphi) \subseteq \circ_M(\overline{\rho}(\varphi'))$
+pattern $\varphi \ra \snext \varphi'$.
+We have $M \models \varphi \ra \snext \varphi'$ iff
+$\overline{\rho}(\varphi) \subseteq \snext_M(\overline{\rho}(\varphi'))$
 for any $M$-valuation $\rho$, iff for any $a\in\overline{\rho}(\varphi)$
 there is some $b \in \overline{\rho}(\varphi')$ such that $a\mathrel{R_s}b$,
 which is precisely the interpretation of a rewrite rule
@@ -2149,11 +2154,11 @@ Hence, we can add multi-sorted rewriting to a matching logic theory
 as follows:
 $$
 \begin{array}{r@{\hspace*{7ex}}l}
-\parametric{\circ}{s} \in \Sigma_{s,s}
+\parametric{\snext}{s} \in \Sigma_{s,s}
 & \textrm{\doubleslash a ``next'' symbol schema}
 \\
 \varphi\mathrel{\parametric{\Rightarrow}{s}}\varphi'
-\equiv \varphi \rightarrow \parametric{\circ}{s} \varphi'
+\equiv \varphi \rightarrow \parametric{\snext}{s} \varphi'
 & \textrm{\doubleslash a ``rewrite relation'' alias schema}
 \end{array}
 $$
@@ -2208,32 +2213,32 @@ Indeed, the rules above do not explain how an actual configuration
 that matches the lookup or the assignment pattern above transits to
 the next configuration.
 For that reason, we add axiom schemas to the matching logic theory
-that lift the $\circ$ symbol:
+that lift the $\snext$ symbol:
 %$$
 %\begin{array}{l@{\hspace*{7ex}}l}
 %\sigma(*\varphi_1,\dots,*\varphi_n) \rightarrow 
-%\circ\;\sigma(\varphi_1,\dots,\varphi_n)
+%\snext\;\sigma(\varphi_1,\dots,\varphi_n)
 %& \textrm{where $\sigma\in\Sigma_{s_1\times\cdots s_n,s}$,}
 %\\ & \textrm{$\varphi_1$ is a pattern of sort $s_1$,}
 %\\
 %& \dots,
 %\\ & \textrm{$\varphi_n$ is a pattern of sort $s_n$,}
-%\\ & \textrm{and at least one of $*$ is $\circ$}
+%\\ & \textrm{and at least one of $*$ is $\snext$}
 %\end{array}
 %$$
 $$
-C[* \varphi_1,\dots, * \varphi] \to \circ C[\varphi_1,\dots,\varphi_n]
+C[* \varphi_1,\dots, * \varphi] \to \snext C[\varphi_1,\dots,\varphi_n]
 \qquad
-\text{where at least one of $*$ is $\circ$}
+\text{where at least one of $*$ is $\snext$}
 $$
 Together with structural framing~\cite{rosu-2017-lmcs},
 these axioms allow not only to lift multiple local rewrites
 that are part of the same rule into one rewrite higher in the
 pattern, but also to combine multiple parallel rewrites into
 one rewrite, thus giving natural support for \emph{true concurrency}.
-Note that the axioms above allow to lift the $\circ$ symbol from
+Note that the axioms above allow to lift the $\snext$ symbol from
 any proper subset of orthogonal subpatterns, without enforcing
-the lifting of \emph{all} the $\circ$ symbols.
+the lifting of \emph{all} the $\snext$ symbols.
 In other words, an \emph{interleaving model of concurrency}
 is also supported.
 One can choose one or another methodologically, the underlying
@@ -2251,17 +2256,17 @@ here only showing how to define two of them which are useful to define
 and reason about reachability:
 $$
 \begin{array}{rcl@{\hspace*{7ex}}l}
-\Diamond_{\textit{Strong}} \varphi & \equiv & \mu f . (\varphi \vee \circ f)
+\Diamond_{\textit{Strong}} \varphi & \equiv & \mu f . (\varphi \vee \snext f)
 & \textrm{\doubleslash strong eventually on one path}
 \\
-\Diamond_{\textit{Weak}} \varphi & \equiv & \nu f . (\varphi \vee \circ f)
+\Diamond_{\textit{Weak}} \varphi & \equiv & \nu f . (\varphi \vee \snext f)
 & \textrm{\doubleslash weak eventually on one path}
 \end{array}
 $$
 The pattern $\Diamond_{\textit{Strong}}\varphi$ is matched by those
 states/configurations which eventually reach a state/configuration that
 matches $\varphi$, using the transition system associated to the unary
-symbol $\circ$ as described above.
+symbol $\snext$ as described above.
 The pattern $\Diamond_{\textit{weak}}\varphi$, one the other hand, is matched
 by those states/configurations which either never terminate or otherwise
 eventually reach a state/configuration that matches $\varphi$.
