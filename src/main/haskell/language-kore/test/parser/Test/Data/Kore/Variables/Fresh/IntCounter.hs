@@ -1,18 +1,19 @@
 module Test.Data.Kore.Variables.Fresh.IntCounter (test_intCounter) where
 
-import           Test.Tasty                           (TestTree)
-import           Test.Tasty.HUnit                     (assertEqual,
-                                                       assertFailure, testCase)
+import Test.Tasty
+       ( TestTree )
+import Test.Tasty.HUnit
+       ( assertEqual, assertFailure, testCase )
 
-import           Test.Data.Kore
+import Test.Data.Kore
 
-import           Control.Exception                    (ErrorCall (ErrorCall),
-                                                       catch, evaluate)
+import Control.Exception
+       ( ErrorCall (ErrorCall), catch, evaluate )
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.Variables.Fresh.Class
-import           Data.Kore.Variables.Fresh.IntCounter
+import Data.Kore.AST.Common
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.Variables.Fresh.Class
+import Data.Kore.Variables.Fresh.IntCounter
 
 objectVariable :: Variable Object
 objectVariable = Variable

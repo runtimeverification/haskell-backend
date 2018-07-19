@@ -3,24 +3,27 @@
 module Test.Data.Kore.ASTVerifier.DefinitionVerifier.PatternVerifier
     (test_patternVerifier) where
 
-import           Test.Tasty                                          (TestTree)
-import           Test.Tasty.HUnit                                    (HasCallStack)
+import Test.Tasty
+       ( TestTree )
+import Test.Tasty.HUnit
+       ( HasCallStack )
 
-import           Test.Data.Kore
-import           Test.Data.Kore.ASTVerifier.DefinitionVerifier as Helpers
+import Test.Data.Kore
+import Test.Data.Kore.ASTVerifier.DefinitionVerifier as Helpers
 
-import           Data.Kore.AST.AstWithLocation
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.Sentence
-import           Data.Kore.Building.Implicit
-import           Data.Kore.Building.Patterns                         as Patterns
-import           Data.Kore.Error
-import           Data.Kore.Implicit.Attributes                       (attributeObjectSort)
-import           Data.Kore.Implicit.ImplicitSorts
+import Data.Kore.AST.AstWithLocation
+import Data.Kore.AST.Common
+import Data.Kore.AST.Kore
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.Sentence
+import Data.Kore.Building.Implicit
+import Data.Kore.Building.Patterns as Patterns
+import Data.Kore.Error
+import Data.Kore.Implicit.Attributes
+       ( attributeObjectSort )
+import Data.Kore.Implicit.ImplicitSorts
 
-import qualified Data.List                                           as List
+import qualified Data.List as List
 
 data PatternRestrict
     = NeedsInternalDefinitions

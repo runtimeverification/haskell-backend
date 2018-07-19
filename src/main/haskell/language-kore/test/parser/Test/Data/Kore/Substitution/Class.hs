@@ -4,17 +4,19 @@
 {-# LANGUAGE TypeSynonymInstances  #-}
 module Test.Data.Kore.Substitution.Class (test_class) where
 
-import           Test.Tasty                           (TestTree)
-import           Test.Tasty.HUnit                     (assertEqual, testCase)
+import Test.Tasty
+       ( TestTree )
+import Test.Tasty.HUnit
+       ( assertEqual, testCase )
 
-import           Test.Data.Kore
-import           Test.Data.Kore.Substitution
+import Test.Data.Kore
+import Test.Data.Kore.Substitution
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Substitution.Class
-import qualified Data.Kore.Substitution.List          as S
+import qualified Data.Kore.Substitution.List as S
 import           Data.Kore.Variables.Fresh.IntCounter
 import           Data.Kore.Variables.Int
 

@@ -19,14 +19,15 @@ module Data.Kore.Substitution.List ( Substitution
                                    , toList
                                    ) where
 
-import           Data.Fix
-import           Data.List                         (nubBy)
+import Data.Fix
+import Data.List
+       ( nubBy )
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.Datastructures.MapClass
-import           Data.Kore.Substitution.Class
-import           Data.Kore.Variables.Free
+import Data.Kore.AST.Common
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.Datastructures.MapClass
+import Data.Kore.Substitution.Class
+import Data.Kore.Variables.Free
 
 -- |A very simple substitution represented as a list of pairs
 newtype Substitution var pat = Substitution { getSubstitution :: [(var, pat)] }

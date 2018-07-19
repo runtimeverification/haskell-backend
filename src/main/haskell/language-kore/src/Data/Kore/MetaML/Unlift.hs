@@ -16,19 +16,21 @@ for all MetaML constructs up to patterns.
 module Data.Kore.MetaML.Unlift ( UnliftableFromMetaML (..)
                                ) where
 
-import           Control.Applicative
-import           Data.Fix
-import           Data.Maybe
+import Control.Applicative
+import Data.Fix
+import Data.Maybe
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.Sentence           (SentenceSymbolOrAlias (..))
-import           Data.Kore.Implicit.ImplicitKore  (mlPatternP, variable)
-import           Data.Kore.Implicit.ImplicitSorts
-import           Data.Kore.MetaML.AST
-import           Data.Kore.Parser.LexemeImpl
-import           Data.Kore.Parser.ParserUtils     as Parser
+import Data.Kore.AST.Common
+import Data.Kore.AST.Kore
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.Sentence
+       ( SentenceSymbolOrAlias (..) )
+import Data.Kore.Implicit.ImplicitKore
+       ( mlPatternP, variable )
+import Data.Kore.Implicit.ImplicitSorts
+import Data.Kore.MetaML.AST
+import Data.Kore.Parser.LexemeImpl
+import Data.Kore.Parser.ParserUtils as Parser
 
 -- |'UnliftableFromMetaML' specifies common functionality for constructs
 -- which can be "unlifted" from 'Meta'-only to full 'Kore' representations.

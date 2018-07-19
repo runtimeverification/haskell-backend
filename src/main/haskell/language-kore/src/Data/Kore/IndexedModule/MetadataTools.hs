@@ -14,13 +14,13 @@ module Data.Kore.IndexedModule.MetadataTools
     )
   where
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.ASTHelpers
-import           Data.Kore.Implicit.Attributes
-import           Data.Kore.IndexedModule.IndexedModule
-import           Data.Kore.IndexedModule.Resolvers
+import Data.Kore.AST.Common
+import Data.Kore.AST.Kore
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.ASTHelpers
+import Data.Kore.Implicit.Attributes
+import Data.Kore.IndexedModule.IndexedModule
+import Data.Kore.IndexedModule.Resolvers
 
 -- |'MetadataTools' defines a dictionary of functions which can be used to
 -- access the metadata needed during the unification process.

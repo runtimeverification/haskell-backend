@@ -16,12 +16,14 @@ module Data.Kore.Step.Function.Data
     , AttemptedFunctionResult (..)
     ) where
 
-import           Data.Kore.AST.Common                 (Application)
-import           Data.Kore.AST.PureML                 (CommonPurePattern)
-import           Data.Kore.Step.Condition.Condition   (ConditionProof,
-                                                       EvaluatedCondition,
-                                                       UnevaluatedCondition)
-import           Data.Kore.Variables.Fresh.IntCounter (IntCounter)
+import Data.Kore.AST.Common
+       ( Application )
+import Data.Kore.AST.PureML
+       ( CommonPurePattern )
+import Data.Kore.Step.Condition.Condition
+       ( ConditionProof, EvaluatedCondition, UnevaluatedCondition )
+import Data.Kore.Variables.Fresh.IntCounter
+       ( IntCounter )
 
 {--| 'FunctionResultProof' is a placeholder for proofs showing that a Kore
 function evaluation was correct.

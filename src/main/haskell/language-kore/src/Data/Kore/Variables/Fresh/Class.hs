@@ -14,11 +14,11 @@ Portability : portable
 -}
 module Data.Kore.Variables.Fresh.Class where
 
-import qualified Control.Monad.State                  as State
+import qualified Control.Monad.State as State
 
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.Variables.Fresh.IntCounter
-import           Data.Kore.Variables.Int
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.Variables.Fresh.IntCounter
+import Data.Kore.Variables.Int
 
 {-|'FreshVariablesClass' links @var@ representing a type of variables
 with a 'Monad' @m@ containing state needed to generate fresh

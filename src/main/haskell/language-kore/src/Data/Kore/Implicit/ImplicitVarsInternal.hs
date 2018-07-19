@@ -10,11 +10,12 @@ Portability : POSIX
 -}
 module Data.Kore.Implicit.ImplicitVarsInternal where
 
-import           Data.Kore.AST.Builders
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.PureML       (CommonPurePatternStub)
-import           Data.Kore.MetaML.AST
+import Data.Kore.AST.Builders
+import Data.Kore.AST.Common
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.PureML
+       ( CommonPurePatternStub )
+import Data.Kore.MetaML.AST
 
 vf, vL, vphi, vphi1, vphi2, vphi3, vphii, vpsi, vR, vS, vS', vs, vs1, vs2, vs3
     , vs', vsigma, vu, v1, v2, vx, vx' :: MetaPatternStub

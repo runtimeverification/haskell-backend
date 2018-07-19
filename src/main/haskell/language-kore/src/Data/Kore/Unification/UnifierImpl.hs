@@ -10,18 +10,20 @@ Portability : portable
 -}
 module Data.Kore.Unification.UnifierImpl where
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.MLPatterns
-import           Data.Kore.AST.PureML
-import           Data.Kore.FixTraversals
-import           Data.Kore.IndexedModule.MetadataTools
-import           Data.Kore.Unification.Error
+import Data.Kore.AST.Common
+import Data.Kore.AST.MLPatterns
+import Data.Kore.AST.PureML
+import Data.Kore.FixTraversals
+import Data.Kore.IndexedModule.MetadataTools
+import Data.Kore.Unification.Error
 
-import           Control.Monad                         (foldM)
-import           Data.Fix
-import           Data.Function                         (on)
-import           Data.List                             (groupBy, partition,
-                                                        sortBy)
+import Control.Monad
+       ( foldM )
+import Data.Fix
+import Data.Function
+       ( on )
+import Data.List
+       ( groupBy, partition, sortBy )
 
 type UnificationSubstitution level variable
     = [(variable level, PureMLPattern level variable)]

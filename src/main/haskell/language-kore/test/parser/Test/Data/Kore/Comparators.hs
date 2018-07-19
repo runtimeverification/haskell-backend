@@ -14,15 +14,15 @@ Portability : portable
 -}
 module Test.Data.Kore.Comparators where
 
-import           Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Extensions
 
-import           Data.Kore.AST.Common
-import           Data.Kore.Step.BaseStep
-import           Data.Kore.Step.Condition.Condition
-import           Data.Kore.Step.Error
-import           Data.Kore.Step.Function.Data
-import           Data.Kore.Unification.Error
-import           Data.Kore.Unification.Unifier
+import Data.Kore.AST.Common
+import Data.Kore.Step.BaseStep
+import Data.Kore.Step.Condition.Condition
+import Data.Kore.Step.Error
+import Data.Kore.Step.Function.Data
+import Data.Kore.Unification.Error
+import Data.Kore.Unification.Unifier
 
 {-# ANN module "HLint: ignore Use record patterns" #-}
 

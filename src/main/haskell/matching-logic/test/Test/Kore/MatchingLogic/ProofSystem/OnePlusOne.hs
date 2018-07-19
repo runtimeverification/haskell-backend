@@ -6,8 +6,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE PartialTypeSignatures      #-}
+{-# LANGUAGE RecordWildCards            #-}
 
 {-# OPTIONS_GHC -fno-warn-unused-top-binds #-}
 
@@ -20,47 +20,45 @@ AST because the proof was done assuming the forall quantifier is primitive.
 -}
 module Test.Kore.MatchingLogic.ProofSystem.OnePlusOne where
 
-import           Prelude                                hiding (all, and, not,
-                                                         succ, lines, pred)
+import Prelude hiding
+       ( all, and, lines, not, pred, succ )
 
-import           Control.Applicative
-import           Control.Monad                          (foldM)
-import           Control.Monad.State.Strict
+import Control.Applicative
+import Control.Monad
+       ( foldM )
+import Control.Monad.State.Strict
 
-import qualified Data.ByteString.Lazy                   as L
-import qualified Data.Map.Strict                        as Map
-import qualified Data.Set                               as Set
-import           Data.Text                              (Text)
-import qualified Data.Tree                              as Tree
+import qualified Data.ByteString.Lazy as L
+import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
+import           Data.Text
+                 ( Text )
+import qualified Data.Tree as Tree
 import           Data.Word
 
-import           GHC.Generics
-import           Data.Data
+import Data.Data
+import GHC.Generics
 
-import           Data.Functor.Foldable                  (Fix (Fix))
-import           Data.Void                              (Void)
+import Data.Functor.Foldable
+       ( Fix (Fix) )
+import Data.Void
+       ( Void )
 
-import           Text.Megaparsec                        (Parsec
-                                                        ,parse
-                                                        ,eof
-                                                        ,parseErrorPretty)
+import           Text.Megaparsec
+                 ( Parsec, eof, parse, parseErrorPretty )
 import           Text.Megaparsec.Byte
 import qualified Text.Megaparsec.Byte.Lexer as Lexer
 
-import           Test.Tasty
-import           Test.Tasty.HUnit
+import Test.Tasty
+import Test.Tasty.HUnit
 
-import qualified Test.Kore.MatchingLogic.ProofSystem.OnePlusOne.ForallAST as AST
-import           Kore.MatchingLogic.HilbertProof        as HilbertProof (Proof(..)
-                                                                        ,add
-                                                                        ,derive
-                                                                        ,emptyProof)
-import           Test.Kore.MatchingLogic.ProofSystem.OnePlusOne.ProofSystem ( MLRule (..)
-                                                        , MLRuleSig
-                                                        , transformRule
-                                                        , SubstitutedVariable (..)
-                                                        , SubstitutingVariable (..))
+import           Kore.MatchingLogic.HilbertProof as HilbertProof
+                 ( Proof (..), add, derive, emptyProof )
 import           Kore.MatchingLogic.Signature.Simple
+import qualified Test.Kore.MatchingLogic.ProofSystem.OnePlusOne.ForallAST as AST
+import           Test.Kore.MatchingLogic.ProofSystem.OnePlusOne.ProofSystem
+                 ( MLRule (..), MLRuleSig, SubstitutedVariable (..),
+                 SubstitutingVariable (..), transformRule )
 
 import qualified Paths
 
@@ -315,7 +313,7 @@ convert :: Simple_proof -> ConvM Int
 convert (Conclusion formula rule) = convertRule convert rule >>= \case
     Right rule' -> emit (convertFormula formula) rule'
     Left ix -> return ix
-               
+
 useHyp :: (Applicative f) => (Nat -> f Nat) -> (Simple_proof -> f Simple_proof)
 useHyp f (Conclusion pat (Rule_use_hyp v)) = Conclusion pat . Rule_use_hyp <$> f v
 useHyp _ proof = pure proof
@@ -324,7 +322,7 @@ loadCoqOutput :: IO Simple_proof
 loadCoqOutput = do
     text <- L.readFile (Paths.dataFileName "test/resources/proof_tree.txt")
     case parse (space1 *> pSimple_proof' <* eof) "proof_tree.txt" text of
-        Left err -> error (parseErrorPretty err)
+        Left err    -> error (parseErrorPretty err)
         Right proof -> return proof
 
 {- ^ runConversion takes the number of indices to leave free at the beginning,
@@ -386,7 +384,7 @@ chomp str' = go 0 str'
     go 1     (')':_)   = ")"
     go depth (')':str) = ')':go (depth-1) str
     go depth (c  :str) = c:go depth str
-    go _     ""        = error "chomp on the empty string is undefined" 
+    go _     ""        = error "chomp on the empty string is undefined"
 
 findBadThings :: ReifiesSignature s
               => proxy (SimpleSignature s)

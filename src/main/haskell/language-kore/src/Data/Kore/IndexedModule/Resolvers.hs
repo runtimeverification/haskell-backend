@@ -17,23 +17,24 @@ module Data.Kore.IndexedModule.Resolvers
     ) where
 
 import           Data.Fix
-import qualified Data.Map                              as Map
-import           Data.Proxy                            (Proxy (..))
-import qualified Data.Set                              as Set
+import qualified Data.Map as Map
+import           Data.Proxy
+                 ( Proxy (..) )
+import qualified Data.Set as Set
 
-import           Data.Kore.AST.Common                  
-import           Data.Kore.AST.Error                   (koreFailWithLocations)
-import           Data.Kore.AST.Kore                    
-import           Data.Kore.AST.Sentence
-import           Data.Kore.AST.MetaOrObject            (IsMetaOrObject (..),
-                                                        MetaOrObject,
-                                                        isMetaOrObject)
-import           Data.Kore.ASTHelpers                  (ApplicationSorts,
-                                                        symbolOrAliasSorts)
-import           Data.Kore.Error                       (Error, printError)
-import           Data.Kore.IndexedModule.IndexedModule (IndexedModule (..),
-                                                        KoreIndexedModule,
-                                                        SortDescription)
+import Data.Kore.AST.Common
+import Data.Kore.AST.Error
+       ( koreFailWithLocations )
+import Data.Kore.AST.Kore
+import Data.Kore.AST.MetaOrObject
+       ( IsMetaOrObject (..), MetaOrObject, isMetaOrObject )
+import Data.Kore.AST.Sentence
+import Data.Kore.ASTHelpers
+       ( ApplicationSorts, symbolOrAliasSorts )
+import Data.Kore.Error
+       ( Error, printError )
+import Data.Kore.IndexedModule.IndexedModule
+       ( IndexedModule (..), KoreIndexedModule, SortDescription )
 
 
 
@@ -109,8 +110,8 @@ getAttributeList
     :: MetaOrObject level
     => KoreIndexedModule   -- ^module representing a verified definition
     -> SymbolOrAlias level -- ^the head we want to find sorts for
-    -> [Fix (UnifiedPattern Variable)] 
-getAttributeList m patternHead = 
+    -> [Fix (UnifiedPattern Variable)]
+getAttributeList m patternHead =
     case resolveSymbol m headName of
         Right sentence -> getAttributes $ sentenceSymbolAttributes sentence
         Left _ ->

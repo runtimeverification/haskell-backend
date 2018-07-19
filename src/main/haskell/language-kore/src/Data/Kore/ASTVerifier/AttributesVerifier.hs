@@ -12,14 +12,16 @@ module Data.Kore.ASTVerifier.AttributesVerifier (verifyAttributes,
   where
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.MetaOrObject            (asUnified)
+import           Data.Kore.AST.MetaOrObject
+                 ( asUnified )
 import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.PatternVerifier
 import           Data.Kore.Error
-import           Data.Kore.Implicit.Attributes         (attributeObjectSort)
+import           Data.Kore.Implicit.Attributes
+                 ( attributeObjectSort )
 import           Data.Kore.IndexedModule.IndexedModule
-import qualified Data.Set                              as Set
+import qualified Data.Set as Set
 
 {--| Whether we should verify attributes and, when verifying, the module with
 declarations visible in these atributes. --}

@@ -29,26 +29,31 @@ Conventions used:
 module Data.Kore.Parser.LexemeImpl where
 
 import           Data.Kore.AST.Common
+import           Data.Kore.AST.MetaOrObject
+                 ( IsMetaOrObject (..), MetaOrObject (..), toProxy )
 import           Data.Kore.AST.Sentence
-import           Data.Kore.AST.MetaOrObject   (IsMetaOrObject (..),
-                                               MetaOrObject (..), toProxy)
-import qualified Data.Kore.Parser.CharDict    as CharDict
-import           Data.Kore.Parser.CharSet     as CharSet
+import qualified Data.Kore.Parser.CharDict as CharDict
+import           Data.Kore.Parser.CharSet as CharSet
 import           Data.Kore.Parser.CString
 import           Data.Kore.Parser.ParserUtils as ParserUtils
 
-import           Control.Arrow                ((&&&))
-import           Control.Monad                (void, when)
-import           Control.Monad.Combinators    (manyTill, (<|>))
-import qualified Data.ByteString.Char8        as Char8
-import           Data.Char                    (isHexDigit, isOctDigit)
-import           Data.Maybe                   (isJust)
-import qualified Data.Trie                    as Trie
-import           Text.Megaparsec              (SourcePos (..), eof, getPosition,
-                                               unPos)
-import qualified Text.Megaparsec.Char         as Parser (anyChar, char, space1,
-                                                         string)
-import qualified Text.Megaparsec.Char.Lexer   as L
+import           Control.Arrow
+                 ( (&&&) )
+import           Control.Monad
+                 ( void, when )
+import           Control.Monad.Combinators
+                 ( manyTill, (<|>) )
+import qualified Data.ByteString.Char8 as Char8
+import           Data.Char
+                 ( isHexDigit, isOctDigit )
+import           Data.Maybe
+                 ( isJust )
+import qualified Data.Trie as Trie
+import           Text.Megaparsec
+                 ( SourcePos (..), eof, getPosition, unPos )
+import qualified Text.Megaparsec.Char as Parser
+                 ( anyChar, char, space1, string )
+import qualified Text.Megaparsec.Char.Lexer as L
 
 sourcePosToFileLocation :: SourcePos -> FileLocation
 sourcePosToFileLocation

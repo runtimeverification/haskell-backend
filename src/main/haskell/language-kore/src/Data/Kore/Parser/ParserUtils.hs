@@ -14,14 +14,17 @@ Helper tools for parsing Kore. Meant for internal use only.
 -}
 module Data.Kore.Parser.ParserUtils where
 
-import           Control.Applicative   ((<|>))
-import           Control.Monad         (void)
-import           Data.Functor          (($>))
-import           Text.Megaparsec       (Parsec, eof, lookAhead, parse,
-                                        takeWhileP)
-import qualified Text.Megaparsec.Char  as Parser
-import           Text.Megaparsec.Error (ShowErrorComponent (..),
-                                        parseErrorPretty)
+import           Control.Applicative
+                 ( (<|>) )
+import           Control.Monad
+                 ( void )
+import           Data.Functor
+                 ( ($>) )
+import           Text.Megaparsec
+                 ( Parsec, eof, lookAhead, parse, takeWhileP )
+import qualified Text.Megaparsec.Char as Parser
+import           Text.Megaparsec.Error
+                 ( ShowErrorComponent (..), parseErrorPretty )
 
 type Parser = Parsec String String
 

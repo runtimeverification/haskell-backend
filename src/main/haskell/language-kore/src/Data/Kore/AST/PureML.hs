@@ -18,9 +18,9 @@ Portability : portable
 -}
 module Data.Kore.AST.PureML where
 
-import           Data.Fix
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
+import Data.Fix
+import Data.Kore.AST.Common
+import Data.Kore.AST.Sentence
 
 {-|'PureMLPattern' corresponds to "fixed point" representations
 of the 'Pattern' class where the level is fixed to a given @level@.

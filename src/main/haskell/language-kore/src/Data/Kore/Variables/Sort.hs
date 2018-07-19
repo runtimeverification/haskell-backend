@@ -16,17 +16,20 @@ Portability : portable
 module Data.Kore.Variables.Sort ( TermWithSortVariablesClass(sortVariables)
                                 ) where
 
-import           Data.Fix                   (cata)
-import           Data.Foldable              (fold)
-import           Data.List                  (foldl')
-import qualified Data.Set                   as Set
+import           Data.Fix
+                 ( cata )
+import           Data.Foldable
+                 ( fold )
+import           Data.List
+                 ( foldl' )
+import qualified Data.Set as Set
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.MLPatterns
-import           Data.Kore.ASTTraversals
-import           Data.Kore.MetaML.AST
+import Data.Kore.AST.Common
+import Data.Kore.AST.Kore
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.MLPatterns
+import Data.Kore.ASTTraversals
+import Data.Kore.MetaML.AST
 
 
 {-| 'TermWithSortVariableClass' links a @term@ type with a @var@ type and

@@ -13,34 +13,33 @@ module Data.Kore.Step.Function.Evaluator
     ( evaluateFunctions
     ) where
 
-import           Data.List                             (nub)
-import qualified Data.Map                              as Map
+import           Data.List
+                 ( nub )
+import qualified Data.Map as Map
 
-import           Data.Kore.AST.Common                  (Application (..),
-                                                        Id (..), Pattern (..),
-                                                        SymbolOrAlias (..),
-                                                        Variable)
-import           Data.Kore.AST.MLPatterns              (MLBinderPatternClass (..),
-                                                        MLPatternClass (..),
-                                                        PatternLeveledFunction (..),
-                                                        applyPatternLeveledFunction)
-import           Data.Kore.AST.PureML                  (CommonPurePattern,
-                                                        UnFixedPureMLPattern,
-                                                        asPurePattern)
-import           Data.Kore.FixTraversals               (fixTopDownVisitor)
-import           Data.Kore.IndexedModule.MetadataTools (MetadataTools (..))
-import           Data.Kore.Step.Condition.Condition    (ConditionProof (..),
-                                                        ConditionSort (..),
-                                                        EvaluatedCondition (..),
-                                                        makeEvaluatedAnd)
-import           Data.Kore.Step.Condition.Evaluator    (evaluateFunctionCondition)
-import           Data.Kore.Step.Function.Data          (ApplicationFunctionEvaluator (..),
-                                                        AttemptedFunctionResult (..),
-                                                        CommonPurePatternFunctionEvaluator (..),
-                                                        ConditionEvaluator (..),
-                                                        FunctionResult (..),
-                                                        FunctionResultProof (..))
-import           Data.Kore.Variables.Fresh.IntCounter  (IntCounter)
+import Data.Kore.AST.Common
+       ( Application (..), Id (..), Pattern (..), SymbolOrAlias (..),
+       Variable )
+import Data.Kore.AST.MLPatterns
+       ( MLBinderPatternClass (..), MLPatternClass (..),
+       PatternLeveledFunction (..), applyPatternLeveledFunction )
+import Data.Kore.AST.PureML
+       ( CommonPurePattern, UnFixedPureMLPattern, asPurePattern )
+import Data.Kore.FixTraversals
+       ( fixTopDownVisitor )
+import Data.Kore.IndexedModule.MetadataTools
+       ( MetadataTools (..) )
+import Data.Kore.Step.Condition.Condition
+       ( ConditionProof (..), ConditionSort (..), EvaluatedCondition (..),
+       makeEvaluatedAnd )
+import Data.Kore.Step.Condition.Evaluator
+       ( evaluateFunctionCondition )
+import Data.Kore.Step.Function.Data
+       ( ApplicationFunctionEvaluator (..), AttemptedFunctionResult (..),
+       CommonPurePatternFunctionEvaluator (..), ConditionEvaluator (..),
+       FunctionResult (..), FunctionResultProof (..) )
+import Data.Kore.Variables.Fresh.IntCounter
+       ( IntCounter )
 
 {-|'evaluateFunctions' evaluates Kore functions (in a bottom-up manner).
 

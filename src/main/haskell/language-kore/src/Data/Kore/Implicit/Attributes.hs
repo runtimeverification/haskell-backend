@@ -18,10 +18,10 @@ module Data.Kore.Implicit.Attributes
     , uncheckedAttributesModule
     ) where
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.Common
+import Data.Kore.AST.Kore
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.Sentence
 
 noParameterObjectSortAndSentence
     :: String -> (AstLocation -> Sort Object, KoreSentence)
@@ -87,7 +87,7 @@ attributeObjectSymbolSentence
   :: String                       -- ^ attribute symbol
   -> (AstLocation -> Sort Object) -- ^ argument sort constructor
   -> KoreSentence
-attributeObjectSymbolSentence name sort = 
+attributeObjectSymbolSentence name sort =
     asSentence
         ( SentenceSymbol
             { sentenceSymbolSymbol  = Symbol
@@ -143,7 +143,7 @@ constructorAttribute = simpleAttribute "constructor"
 constructorSymbolSentence :: KoreSentence
 constructorSymbolSentence  = simpleAttributeSentence "constructor"
 
-{-| Creates a Pattern for an attribute 
+{-| Creates a Pattern for an attribute
 consisting of a single keyword with no arguments.
 -}
 simpleAttribute :: String -> CommonKorePattern

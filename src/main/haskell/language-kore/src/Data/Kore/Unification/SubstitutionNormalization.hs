@@ -21,17 +21,22 @@ import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
 import           Data.Kore.Substitution.Class
-import qualified Data.Kore.Substitution.List          as ListSubstitution
-import           Data.Kore.Unification.Error          (SubstitutionError (..))
-import           Data.Kore.Unification.UnifierImpl    (UnificationSubstitution)
+import qualified Data.Kore.Substitution.List as ListSubstitution
+import           Data.Kore.Unification.Error
+                 ( SubstitutionError (..) )
+import           Data.Kore.Unification.UnifierImpl
+                 ( UnificationSubstitution )
 import           Data.Kore.Variables.Free
-import           Data.Kore.Variables.Fresh.IntCounter (IntCounter)
-import           Data.Kore.Variables.Int              (IntVariable)
+import           Data.Kore.Variables.Fresh.IntCounter
+                 ( IntCounter )
+import           Data.Kore.Variables.Int
+                 ( IntVariable )
 
 
-import qualified Data.Map                             as Map
-import           Data.Maybe                           (mapMaybe)
-import qualified Data.Set                             as Set
+import qualified Data.Map as Map
+import           Data.Maybe
+                 ( mapMaybe )
+import qualified Data.Set as Set
 
 instance
     ( MetaOrObject level

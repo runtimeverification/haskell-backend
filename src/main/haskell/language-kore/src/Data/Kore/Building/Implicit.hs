@@ -12,12 +12,13 @@ Portability : POSIX
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Data.Kore.Building.Implicit where
 
-import           Data.Kore.AST.Common        (Application (..),
-                                              AstLocation (..), Id (..),
-                                              Pattern (..), SymbolOrAlias (..))
-import           Data.Kore.AST.MetaOrObject  (Meta)
-import           Data.Kore.Building.Patterns
-import           Data.Kore.Building.Sorts
+import Data.Kore.AST.Common
+       ( Application (..), AstLocation (..), Id (..), Pattern (..),
+       SymbolOrAlias (..) )
+import Data.Kore.AST.MetaOrObject
+       ( Meta )
+import Data.Kore.Building.Patterns
+import Data.Kore.Building.Sorts
 
 data MetaNilSortList = MetaNilSortList
 instance ProperPattern Meta SortListSort MetaNilSortList where

@@ -2,16 +2,16 @@
 {-# LANGUAGE GADTs             #-}
 module Test.Data.Kore where
 
-import           Test.QuickCheck.Gen         (Gen, choose, chooseAny, elements,
-                                              frequency, getSize, listOf, oneof,
-                                              scale, sized, suchThat, vectorOf)
+import Test.QuickCheck.Gen
+       ( Gen, choose, chooseAny, elements, frequency, getSize, listOf, oneof,
+       scale, sized, suchThat, vectorOf )
 
-import           Data.Fix
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.Sentence
-import           Data.Kore.Parser.LexemeImpl
+import Data.Fix
+import Data.Kore.AST.Common
+import Data.Kore.AST.Kore
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.Sentence
+import Data.Kore.Parser.LexemeImpl
 
 couple :: Gen a -> Gen [a]
 couple gen = do

@@ -14,9 +14,9 @@ module Data.Kore.AST.AstWithLocation
     , prettyPrintLocationFromAst
     ) where
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.MLPatterns
+import Data.Kore.AST.Common
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.MLPatterns
 
 {-| 'AstWithLocation' should be implemented by all AST terms that have
 an 'AstLocation'.

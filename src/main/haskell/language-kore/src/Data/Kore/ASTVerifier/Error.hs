@@ -9,7 +9,7 @@ Portability : POSIX
 -}
 module Data.Kore.ASTVerifier.Error where
 
-import           Data.Kore.Error
+import Data.Kore.Error
 
 {-| 'VerifyError' is a tag for verification errors. -}
 newtype VerifyError = VerifyError ()

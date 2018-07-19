@@ -1,31 +1,36 @@
 module Test.Data.Kore.Step.AxiomPatterns (test_axiomPatterns) where
 
-import           Test.Tasty                                          (TestTree,
-                                                                      testGroup)
-import           Test.Tasty.HUnit                                    (assertEqual,
-                                                                      testCase)
+import Test.Tasty
+       ( TestTree, testGroup )
+import Test.Tasty.HUnit
+       ( assertEqual, testCase )
 
-import           Test.Data.Kore                                      (testId)
-import           Test.Data.Kore.AST.MLPatterns                       (extractPurePattern)
-import           Test.Data.Kore.ASTVerifier.DefinitionVerifier
+import Test.Data.Kore
+       ( testId )
+import Test.Data.Kore.AST.MLPatterns
+       ( extractPurePattern )
+import Test.Data.Kore.ASTVerifier.DefinitionVerifier
 
-import qualified Data.Map                                            as Map
-import           Data.Maybe                                          (fromMaybe)
+import qualified Data.Map as Map
+import           Data.Maybe
+                 ( fromMaybe )
 
-import           Data.Kore.AST.Builders
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore                                  (asKorePattern)
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.PureML
-import           Data.Kore.AST.PureToKore
-import           Data.Kore.AST.Sentence
-import           Data.Kore.ASTVerifier.DefinitionVerifier            (AttributesVerification (..),
-                                                                      verifyAndIndexDefinition)
-import           Data.Kore.Error
-import           Data.Kore.IndexedModule.IndexedModule               (KoreIndexedModule)
-import           Data.Kore.Parser.ParserImpl
-import           Data.Kore.Parser.ParserUtils
-import           Data.Kore.Step.AxiomPatterns
+import Data.Kore.AST.Builders
+import Data.Kore.AST.Common
+import Data.Kore.AST.Kore
+       ( asKorePattern )
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.PureML
+import Data.Kore.AST.PureToKore
+import Data.Kore.AST.Sentence
+import Data.Kore.ASTVerifier.DefinitionVerifier
+       ( AttributesVerification (..), verifyAndIndexDefinition )
+import Data.Kore.Error
+import Data.Kore.IndexedModule.IndexedModule
+       ( KoreIndexedModule )
+import Data.Kore.Parser.ParserImpl
+import Data.Kore.Parser.ParserUtils
+import Data.Kore.Step.AxiomPatterns
 
 test_axiomPatterns :: [TestTree]
 test_axiomPatterns =

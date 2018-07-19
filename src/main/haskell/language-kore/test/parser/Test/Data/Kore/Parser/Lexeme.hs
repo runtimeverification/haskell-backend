@@ -1,14 +1,15 @@
 module Test.Data.Kore.Parser.Lexeme (test_koreLexeme) where
 
-import           Test.Tasty                       (TestTree, testGroup)
+import Test.Tasty
+       ( TestTree, testGroup )
 
-import           Test.Data.Kore
-import           Test.Data.Kore.Parser
+import Test.Data.Kore
+import Test.Data.Kore.Parser
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.Parser.Lexeme
+import Data.Kore.AST.Common
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.Sentence
+import Data.Kore.Parser.Lexeme
 
 test_koreLexeme :: [TestTree]
 test_koreLexeme =

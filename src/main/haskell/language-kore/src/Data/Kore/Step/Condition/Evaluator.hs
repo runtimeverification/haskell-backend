@@ -12,25 +12,19 @@ module Data.Kore.Step.Condition.Evaluator
     ( evaluateFunctionCondition
     ) where
 
-import           Data.Kore.AST.Common                 (And (..), Equals (..),
-                                                       Iff (..), Implies (..),
-                                                       Not (..), Or (..),
-                                                       Pattern (..), Variable)
-import           Data.Kore.AST.PureML                 (CommonPurePattern,
-                                                       asPurePattern,
-                                                       fromPurePattern)
-import           Data.Kore.Step.Condition.Condition   (ConditionProof (..),
-                                                       ConditionSort (..),
-                                                       EvaluatedCondition (..),
-                                                       UnevaluatedCondition (..),
-                                                       makeEvaluatedAnd,
-                                                       makeEvaluatedIff,
-                                                       makeEvaluatedImplies,
-                                                       makeEvaluatedNot,
-                                                       makeEvaluatedOr)
-import           Data.Kore.Step.Function.Data         (CommonPurePatternFunctionEvaluator (..),
-                                                       FunctionResult (..))
-import           Data.Kore.Variables.Fresh.IntCounter (IntCounter)
+import Data.Kore.AST.Common
+       ( And (..), Equals (..), Iff (..), Implies (..), Not (..), Or (..),
+       Pattern (..), Variable )
+import Data.Kore.AST.PureML
+       ( CommonPurePattern, asPurePattern, fromPurePattern )
+import Data.Kore.Step.Condition.Condition
+       ( ConditionProof (..), ConditionSort (..), EvaluatedCondition (..),
+       UnevaluatedCondition (..), makeEvaluatedAnd, makeEvaluatedIff,
+       makeEvaluatedImplies, makeEvaluatedNot, makeEvaluatedOr )
+import Data.Kore.Step.Function.Data
+       ( CommonPurePatternFunctionEvaluator (..), FunctionResult (..) )
+import Data.Kore.Variables.Fresh.IntCounter
+       ( IntCounter )
 
 {--| 'evaluateFunctionCondition' attempts to evaluate a Kore condition.
 

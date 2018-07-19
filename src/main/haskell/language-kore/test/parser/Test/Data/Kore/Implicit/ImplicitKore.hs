@@ -1,19 +1,21 @@
 module Test.Data.Kore.Implicit.ImplicitKore (test_implicitKore, test_implicitAttributes) where
 
-import           Test.Tasty                      (TestTree, testGroup)
-import           Test.Tasty.Golden               (goldenVsString)
+import Test.Tasty
+       ( TestTree, testGroup )
+import Test.Tasty.Golden
+       ( goldenVsString )
 
-import           Data.Kore.AST.Sentence
-import           Data.Kore.Implicit.Verified                         (implicitAttributesDefinition,
-                                                                      implicitKoreDefinition)
-import           Test.Data.Kore.Parser.Regression (GoldenFileName (..),
-                                                    InputFileName (..),
-                                                    VerifyRequest (..),
-                                                    regressionTest)
-import           Data.Kore.Unparser.Unparse      (unparseToString)
+import Data.Kore.AST.Sentence
+import Data.Kore.Implicit.Verified
+       ( implicitAttributesDefinition, implicitKoreDefinition )
+import Data.Kore.Unparser.Unparse
+       ( unparseToString )
+import Test.Data.Kore.Parser.Regression
+       ( GoldenFileName (..), InputFileName (..), VerifyRequest (..),
+       regressionTest )
 
-import qualified Data.ByteString.Lazy            as LazyByteString
-import qualified Data.ByteString.Lazy.Char8      as LazyChar8
+import qualified Data.ByteString.Lazy as LazyByteString
+import qualified Data.ByteString.Lazy.Char8 as LazyChar8
 
 import qualified Paths
 

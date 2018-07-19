@@ -1,10 +1,13 @@
 module Test.Data.Kore.IndentingPrinter (test_indentingPrinter) where
 
-import           Data.Kore.IndentingPrinter
-import           Data.List                  (intersperse)
+import Data.Kore.IndentingPrinter
+import Data.List
+       ( intersperse )
 
-import           Test.Tasty                 (TestTree)
-import           Test.Tasty.HUnit           (assertEqual, testCase)
+import Test.Tasty
+       ( TestTree )
+import Test.Tasty.HUnit
+       ( assertEqual, testCase )
 
 class TestPrinter a where
     testPrint :: PrinterOutput w m => a -> m ()

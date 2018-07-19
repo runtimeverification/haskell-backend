@@ -3,43 +3,49 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Test.Data.Kore.Step.Function.Integration (test_functionIntegration) where
 
-import           Data.Kore.IndexedModule.MetadataTools (MetadataTools (..))
-import qualified Data.Map                              as Map
+import           Data.Kore.IndexedModule.MetadataTools
+                 ( MetadataTools (..) )
+import qualified Data.Map as Map
 
 
-import           Test.Tasty                            (TestTree)
-import           Test.Tasty.HUnit                      (testCase)
+import Test.Tasty
+       ( TestTree )
+import Test.Tasty.HUnit
+       ( testCase )
 
-import           Test.Data.Kore.Comparators            ()
+import Test.Data.Kore.Comparators ()
 
-import           Data.Kore.AST.Common                  (Application (..),
-                                                        AstLocation (..),
-                                                        Id (..), Pattern (..),
-                                                        Sort,
-                                                        SymbolOrAlias (..))
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.PureML                  (CommonPurePattern)
-import           Data.Kore.AST.PureToKore              (patternKoreToPure)
-import           Data.Kore.Building.AsAst
-import           Data.Kore.Building.Patterns
-import           Data.Kore.Building.Sorts
-import           Data.Kore.Error                       (printError)
-import           Data.Kore.MetaML.AST                  (CommonMetaPattern)
-import           Data.Kore.Step.BaseStep               (AxiomPattern (..))
-import           Data.Kore.Step.Condition.Condition    (ConditionSort (..),
-                                                        EvaluatedCondition (..))
-import           Data.Kore.Step.Function.Data          (ApplicationFunctionEvaluator (..),
-                                                        AttemptedFunctionResult (..),
-                                                        CommonPurePatternFunctionEvaluator,
-                                                        ConditionEvaluator,
-                                                        FunctionResult (..),
-                                                        FunctionResultProof (..))
-import           Data.Kore.Step.Function.Evaluator     (evaluateFunctions)
-import           Data.Kore.Step.Function.UserDefined   (axiomFunctionEvaluator)
-import           Data.Kore.Variables.Fresh.IntCounter  (IntCounter,
-                                                        runIntCounter)
+import Data.Kore.AST.Common
+       ( Application (..), AstLocation (..), Id (..), Pattern (..), Sort,
+       SymbolOrAlias (..) )
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.PureML
+       ( CommonPurePattern )
+import Data.Kore.AST.PureToKore
+       ( patternKoreToPure )
+import Data.Kore.Building.AsAst
+import Data.Kore.Building.Patterns
+import Data.Kore.Building.Sorts
+import Data.Kore.Error
+       ( printError )
+import Data.Kore.MetaML.AST
+       ( CommonMetaPattern )
+import Data.Kore.Step.BaseStep
+       ( AxiomPattern (..) )
+import Data.Kore.Step.Condition.Condition
+       ( ConditionSort (..), EvaluatedCondition (..) )
+import Data.Kore.Step.Function.Data
+       ( ApplicationFunctionEvaluator (..), AttemptedFunctionResult (..),
+       CommonPurePatternFunctionEvaluator, ConditionEvaluator,
+       FunctionResult (..), FunctionResultProof (..) )
+import Data.Kore.Step.Function.Evaluator
+       ( evaluateFunctions )
+import Data.Kore.Step.Function.UserDefined
+       ( axiomFunctionEvaluator )
+import Data.Kore.Variables.Fresh.IntCounter
+       ( IntCounter, runIntCounter )
 
-import           Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Extensions
 
 test_functionIntegration :: [TestTree]
 test_functionIntegration =

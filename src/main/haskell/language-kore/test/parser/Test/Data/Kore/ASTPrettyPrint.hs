@@ -1,18 +1,22 @@
 module Test.Data.Kore.ASTPrettyPrint (test_astPrettyPrint) where
 
-import           Test.Tasty                       (TestTree)
-import           Test.Tasty.HUnit                 (assertEqual, testCase)
+import Test.Tasty
+       ( TestTree )
+import Test.Tasty.HUnit
+       ( assertEqual, testCase )
 
-import           Test.Data.Kore
+import Test.Data.Kore
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.ASTPrettyPrint
-import           Data.Kore.Implicit.ImplicitSorts (charMetaSort)
-import           Data.Kore.MetaML.AST
+import Data.Kore.AST.Common
+import Data.Kore.AST.Kore
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.ASTPrettyPrint
+import Data.Kore.Implicit.ImplicitSorts
+       ( charMetaSort )
+import Data.Kore.MetaML.AST
 
-import           Data.Fix                         (Fix (..))
+import Data.Fix
+       ( Fix (..) )
 
 test_astPrettyPrint :: [TestTree]
 test_astPrettyPrint =

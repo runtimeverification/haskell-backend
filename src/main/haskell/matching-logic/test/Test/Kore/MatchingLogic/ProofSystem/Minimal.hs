@@ -1,19 +1,22 @@
 module Test.Kore.MatchingLogic.ProofSystem.Minimal where
 
-import           Test.Tasty                                    (TestTree,
-                                                                testGroup)
-import           Test.Tasty.HUnit
+import Test.Tasty
+       ( TestTree, testGroup )
+import Test.Tasty.HUnit
 
-import           Control.Applicative                           (some)
-import           Data.Text                                     (Text)
-import qualified Data.Text                                     as T
+import           Control.Applicative
+                 ( some )
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as T
 import           Data.Text.Prettyprint.Doc
 import           Data.Void
-import           Text.Megaparsec                               hiding (some)
+import           Text.Megaparsec hiding
+                 ( some )
 import           Text.Megaparsec.Char
 
-import           Kore.MatchingLogic.ProofSystem.Minimal
-import           Kore.MatchingLogic.ProofSystem.Minimal.Syntax
+import Kore.MatchingLogic.ProofSystem.Minimal
+import Kore.MatchingLogic.ProofSystem.Minimal.Syntax
 
 test :: String -> DummyRule -> String -> TestTree
 test name ast str =
@@ -140,4 +143,4 @@ parseTestRule :: String -> DummyRule
 parseTestRule ruleStr =
     case parse mlRuleTestParser "" (T.pack ruleStr) of
         Right parsedRule -> parsedRule
-        Left err -> error (parseErrorPretty err)
+        Left err         -> error (parseErrorPretty err)

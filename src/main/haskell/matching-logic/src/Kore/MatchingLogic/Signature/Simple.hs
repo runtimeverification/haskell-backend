@@ -1,6 +1,6 @@
-{-# LANGUAGE TypeApplications     #-}
-{-# LANGUAGE TypeFamilies         #-}
-{-# LANGUAGE ConstraintKinds      #-}
+{-# LANGUAGE ConstraintKinds  #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies     #-}
 {-|
 Description: A generic signature for finite sets of simply-sorted labels
 
@@ -20,18 +20,21 @@ module Kore.MatchingLogic.Signature.Simple
   ,reifySignature) where
 import           Data.Char
 import           Data.Coerce
-import           Data.Map.Strict           (Map)
-import qualified Data.Map.Strict           as Map
+import           Data.Map.Strict
+                 ( Map )
+import qualified Data.Map.Strict as Map
 import           Data.Proxy
-import           Data.Set                  (Set)
-import qualified Data.Set                  as Set
-import           Data.Text                 (Text)
-import qualified Data.Text                 as Text
+import           Data.Set
+                 ( Set )
+import qualified Data.Set as Set
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
 
-import           Data.Text.Prettyprint.Doc
-import           Data.Reflection
+import Data.Reflection
+import Data.Text.Prettyprint.Doc
 
-import           Kore.MatchingLogic.Signature
+import Kore.MatchingLogic.Signature
 
 -- | A finite signatures of sorts and labels written as text
 data SignatureInfo = SignatureInfo
@@ -109,7 +112,7 @@ instance (Reifies s ValidatedSignature) => CheckableSignature (SimpleSignature s
            to avoid keeping multiple Text values with identical contents -}
         case Set.lookupGE sortName (sorts sig) of
             Just sort' | sort' == sortName -> Just (SimpleSort sort')
-            _          -> Nothing
+            _                              -> Nothing
       where sig = fromValidated (reflect @s Proxy)
 
     resolveLabel labelName =
@@ -117,5 +120,5 @@ instance (Reifies s ValidatedSignature) => CheckableSignature (SimpleSignature s
            to avoid keeping multiple Text values with identical contents -}
         case Map.lookupGE labelName (labels sig) of
             Just (label',_) | label' == labelName -> Just (SimpleLabel label')
-            _               -> Nothing
+            _                                     -> Nothing
       where sig = fromValidated (reflect @s Proxy)

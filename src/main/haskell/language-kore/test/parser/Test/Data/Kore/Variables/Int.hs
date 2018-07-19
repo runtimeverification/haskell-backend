@@ -1,13 +1,15 @@
 module Test.Data.Kore.Variables.Int (test_int) where
 
-import           Test.Tasty                 (TestTree)
-import           Test.Tasty.HUnit           (assertEqual, testCase)
+import Test.Tasty
+       ( TestTree )
+import Test.Tasty.HUnit
+       ( assertEqual, testCase )
 
-import           Test.Data.Kore
+import Test.Data.Kore
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.Variables.Int
+import Data.Kore.AST.Common
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.Variables.Int
 
 test_int :: [TestTree]
 test_int =

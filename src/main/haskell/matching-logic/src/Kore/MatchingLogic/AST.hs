@@ -55,14 +55,15 @@ module Kore.MatchingLogic.AST
   , andP' , notP', orP', impliesP', iffP', forallP', existsP'
   ) where
 
-import           Control.Monad
-import           Data.Coerce
+import Control.Monad
+import Data.Coerce
 
-import           Data.Deriving                (deriveEq1, deriveShow1)
-import           Data.Functor.Foldable
-import           Data.Text.Prettyprint.Doc
+import Data.Deriving
+       ( deriveEq1, deriveShow1 )
+import Data.Functor.Foldable
+import Data.Text.Prettyprint.Doc
 
-import           Kore.MatchingLogic.Signature
+import Kore.MatchingLogic.Signature
 
 -- | The base functor of patterns
 --

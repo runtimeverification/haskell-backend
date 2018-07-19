@@ -6,12 +6,15 @@
 {-# LANGUAGE TypeSynonymInstances      #-}
 {-# LANGUAGE UndecidableInstances      #-}
 module Test.Tasty.HUnit.Extensions where
-import           Control.Exception (SomeException, catch, evaluate)
-import           Control.Monad
-import           Data.CallStack
-import           Data.Fix
-import           Data.List         (intercalate, isInfixOf)
-import           Test.Tasty.HUnit  (assertBool, assertFailure)
+import Control.Exception
+       ( SomeException, catch, evaluate )
+import Control.Monad
+import Data.CallStack
+import Data.Fix
+import Data.List
+       ( intercalate, isInfixOf )
+import Test.Tasty.HUnit
+       ( assertBool, assertFailure )
 
 assertEqualWithPrinter
     :: (Eq a, HasCallStack)

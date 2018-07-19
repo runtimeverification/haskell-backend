@@ -13,24 +13,24 @@ module Data.Kore.Step.Function.UserDefined
     , axiomFunctionEvaluator
     ) where
 
-import           Data.Kore.AST.Common                  (Application (..),
-                                                        Pattern (..), Top (..))
-import           Data.Kore.AST.MetaOrObject            (MetaOrObject)
-import           Data.Kore.AST.PureML                  (CommonPurePattern,
-                                                        asPurePattern)
-import           Data.Kore.IndexedModule.MetadataTools (MetadataTools (..))
-import           Data.Kore.Step.BaseStep               (AxiomPattern, StepperConfiguration (..),
-                                                        stepWithAxiom)
-import           Data.Kore.Step.Condition.Condition    (ConditionSort (..),
-                                                        EvaluatedCondition (..),
-                                                        UnevaluatedCondition (..),
-                                                        makeEvaluatedAnd)
-import           Data.Kore.Step.Function.Data          (AttemptedFunctionResult (..),
-                                                        CommonPurePatternFunctionEvaluator (..),
-                                                        ConditionEvaluator (..),
-                                                        FunctionResult (..),
-                                                        FunctionResultProof (..))
-import           Data.Kore.Variables.Fresh.IntCounter  (IntCounter)
+import Data.Kore.AST.Common
+       ( Application (..), Pattern (..), Top (..) )
+import Data.Kore.AST.MetaOrObject
+       ( MetaOrObject )
+import Data.Kore.AST.PureML
+       ( CommonPurePattern, asPurePattern )
+import Data.Kore.IndexedModule.MetadataTools
+       ( MetadataTools (..) )
+import Data.Kore.Step.BaseStep
+       ( AxiomPattern, StepperConfiguration (..), stepWithAxiom )
+import Data.Kore.Step.Condition.Condition
+       ( ConditionSort (..), EvaluatedCondition (..),
+       UnevaluatedCondition (..), makeEvaluatedAnd )
+import Data.Kore.Step.Function.Data
+       ( AttemptedFunctionResult (..), CommonPurePatternFunctionEvaluator (..),
+       ConditionEvaluator (..), FunctionResult (..), FunctionResultProof (..) )
+import Data.Kore.Variables.Fresh.IntCounter
+       ( IntCounter )
 
 {--| 'axiomFunctionEvaluator' evaluates a user-defined function. After
 evaluating the function, it tries to re-evaluate all functions on the result.

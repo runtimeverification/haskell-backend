@@ -1,15 +1,16 @@
 module Test.Data.Kore.MetaML.AST where
 
-import           Test.QuickCheck.Gen        (Gen, frequency, oneof, sized)
+import Test.QuickCheck.Gen
+       ( Gen, frequency, oneof, sized )
 
-import           Test.Data.Kore
+import Test.Data.Kore
 
-import           Data.Fix
+import Data.Fix
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.Sentence
-import           Data.Kore.MetaML.AST
+import Data.Kore.AST.Common
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.Sentence
+import Data.Kore.MetaML.AST
 
 metaMLPatternGen :: Gen (MetaMLPattern Variable)
 metaMLPatternGen = Fix <$> sized (\n ->

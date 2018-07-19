@@ -14,11 +14,12 @@ module Data.Kore.Parser.CString
        , oneCharEscapeDict
        ) where
 
-import           Data.Kore.Parser.CharSet as CharSet
+import Data.Kore.Parser.CharSet as CharSet
 
-import           Data.Char                (chr, digitToInt, isHexDigit,
-                                           isOctDigit, ord, toUpper)
-import           Numeric                  (showHex, showOct)
+import Data.Char
+       ( chr, digitToInt, isHexDigit, isOctDigit, ord, toUpper )
+import Numeric
+       ( showHex, showOct )
 
 {-# ANN oneCharEscapes ("HLint: ignore Use String" :: String) #-}
 oneCharEscapes :: [Char]

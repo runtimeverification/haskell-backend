@@ -22,9 +22,11 @@ module Data.Kore.AST.Pretty
     , layoutPrettyUnbounded
     ) where
 
-import           Data.Fix
-import           Data.String (fromString)
-import           Data.Text.Prettyprint.Doc hiding (list)
+import Data.Fix
+import Data.String
+       ( fromString )
+import Data.Text.Prettyprint.Doc hiding
+       ( list )
 
 -- TODO: Refer to semantics document for syntactic rules.
 

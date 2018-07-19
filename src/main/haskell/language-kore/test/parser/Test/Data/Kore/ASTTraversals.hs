@@ -1,16 +1,18 @@
 module Test.Data.Kore.ASTTraversals (test_astTraversals) where
 
-import           Test.Tasty                 (TestTree)
-import           Test.Tasty.HUnit           (assertEqual, testCase)
+import Test.Tasty
+       ( TestTree )
+import Test.Tasty.HUnit
+       ( assertEqual, testCase )
 
-import           Test.Data.Kore
+import Test.Data.Kore
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.ASTTraversals
+import Data.Kore.AST.Common
+import Data.Kore.AST.Kore
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.ASTTraversals
 
-import           Control.Monad.Identity
+import Control.Monad.Identity
 
 
 lhs :: CommonKorePattern -> CommonKorePattern

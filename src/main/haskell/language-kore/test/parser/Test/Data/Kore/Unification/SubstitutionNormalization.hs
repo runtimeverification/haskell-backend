@@ -3,24 +3,31 @@
 module Test.Data.Kore.Unification.SubstitutionNormalization
     (test_substitutionNormalization) where
 
-import           Test.Tasty                                      (TestTree)
-import           Test.Tasty.HUnit                                (assertEqual,
-                                                                  testCase)
+import Test.Tasty
+       ( TestTree )
+import Test.Tasty.HUnit
+       ( assertEqual, testCase )
 
-import           Data.Kore.AST.Common                            (AstLocation (..),
-                                                                  Variable)
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.PureML                            (CommonPurePattern)
-import           Data.Kore.AST.PureToKore                        (patternKoreToPure)
-import           Data.Kore.Building.AsAst
-import           Data.Kore.Building.Patterns
-import           Data.Kore.Building.Sorts
-import           Data.Kore.Error
-import           Data.Kore.MetaML.AST                            (CommonMetaPattern)
-import           Data.Kore.Unification.Error                     (SubstitutionError (..))
-import           Data.Kore.Unification.SubstitutionNormalization
-import           Data.Kore.Unification.UnifierImpl               (UnificationSubstitution)
-import           Data.Kore.Variables.Fresh.IntCounter            (runIntCounter)
+import Data.Kore.AST.Common
+       ( AstLocation (..), Variable )
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.PureML
+       ( CommonPurePattern )
+import Data.Kore.AST.PureToKore
+       ( patternKoreToPure )
+import Data.Kore.Building.AsAst
+import Data.Kore.Building.Patterns
+import Data.Kore.Building.Sorts
+import Data.Kore.Error
+import Data.Kore.MetaML.AST
+       ( CommonMetaPattern )
+import Data.Kore.Unification.Error
+       ( SubstitutionError (..) )
+import Data.Kore.Unification.SubstitutionNormalization
+import Data.Kore.Unification.UnifierImpl
+       ( UnificationSubstitution )
+import Data.Kore.Variables.Fresh.IntCounter
+       ( runIntCounter )
 
 test_substitutionNormalization :: [TestTree]
 test_substitutionNormalization =

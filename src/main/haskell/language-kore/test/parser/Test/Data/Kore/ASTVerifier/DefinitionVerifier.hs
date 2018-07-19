@@ -1,25 +1,24 @@
 {-# LANGUAGE FlexibleContexts #-}
 module Test.Data.Kore.ASTVerifier.DefinitionVerifier where
 
-import           Test.Tasty                               (TestTree, testGroup)
-import           Test.Tasty.HUnit                         (HasCallStack,
-                                                           assertEqual,
-                                                           assertFailure,
-                                                           testCase)
+import Test.Tasty
+       ( TestTree, testGroup )
+import Test.Tasty.HUnit
+       ( HasCallStack, assertEqual, assertFailure, testCase )
 
-import           Test.Data.Kore
+import Test.Data.Kore
 
-import           Data.Fix
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.Sentence
-import           Data.Kore.ASTPrettyPrint
-import           Data.Kore.ASTVerifier.DefinitionVerifier
-import           Data.Kore.ASTVerifier.Error
-import           Data.Kore.Error
-import           Data.Kore.Implicit.ImplicitSorts
-import           Data.Kore.Unparser.Unparse
+import Data.Fix
+import Data.Kore.AST.Common
+import Data.Kore.AST.Kore
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.Sentence
+import Data.Kore.ASTPrettyPrint
+import Data.Kore.ASTVerifier.DefinitionVerifier
+import Data.Kore.ASTVerifier.Error
+import Data.Kore.Error
+import Data.Kore.Implicit.ImplicitSorts
+import Data.Kore.Unparser.Unparse
 
 newtype ExpectedErrorMessage = ExpectedErrorMessage String
 newtype ErrorStack = ErrorStack [String]
@@ -492,11 +491,11 @@ symbolSentenceWithArguments
 
 objectAliasSentenceWithArguments
     :: AliasName -> Sort Object -> [Sort Object] -> KoreSentence
-objectAliasSentenceWithArguments a b c = 
-    aliasSentenceWithArguments 
-        a 
-        b 
-        c 
+objectAliasSentenceWithArguments a b c =
+    aliasSentenceWithArguments
+        a
+        b
+        c
         (TopPattern $ Top { topSort = b })
         (TopPattern $ Top { topSort = b })
 

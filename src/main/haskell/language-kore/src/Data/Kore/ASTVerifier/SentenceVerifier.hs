@@ -13,24 +13,25 @@ module Data.Kore.ASTVerifier.SentenceVerifier ( verifyUniqueNames
                                               , verifySentences
                                               ) where
 
-import           Control.Monad                            (foldM)
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
-import           Data.Kore.AST.MLPatterns
-import           Data.Kore.AST.Error
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.ASTVerifier.AttributesVerifier
-import           Data.Kore.ASTVerifier.Error
-import           Data.Kore.ASTVerifier.PatternVerifier
-import           Data.Kore.ASTVerifier.SortVerifier
-import           Data.Kore.ASTHelpers
-import           Data.Kore.Error
-import           Data.Kore.IndexedModule.IndexedModule
-import           Data.Kore.IndexedModule.Resolvers
+import Control.Monad
+       ( foldM )
+import Data.Kore.AST.Common
+import Data.Kore.AST.Error
+import Data.Kore.AST.Kore
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.MLPatterns
+import Data.Kore.AST.Sentence
+import Data.Kore.ASTHelpers
+import Data.Kore.ASTVerifier.AttributesVerifier
+import Data.Kore.ASTVerifier.Error
+import Data.Kore.ASTVerifier.PatternVerifier
+import Data.Kore.ASTVerifier.SortVerifier
+import Data.Kore.Error
+import Data.Kore.IndexedModule.IndexedModule
+import Data.Kore.IndexedModule.Resolvers
 
-import qualified Data.Map                                 as Map
-import qualified Data.Set                                 as Set
+import qualified Data.Map as Map
+import qualified Data.Set as Set
 
 {-|'verifyUniqueNames' verifies that names defined in a list of sentences are
 unique both within the list and outside, using the provided name set.
@@ -274,10 +275,10 @@ verifyAliasSentence
                 findSortDeclaration
                 variables
                 (sentenceAliasResultSort sentence)
-            if leftPatternSort == rightPatternSort 
+            if leftPatternSort == rightPatternSort
                 then
                     verifySuccess
-                else 
+                else
                     koreFail "Left and Right sorts do not match"
             verifyAliasLeftPattern
                 (asKorePattern $ sentenceAliasLeftPattern sentence)
@@ -298,7 +299,7 @@ verifyAliasSentence
     leftPatternSort  = patternSort leftPattern
     rightPatternSort = patternSort rightPattern
     headSort         = applicationSortsResult . getHeadApplicationSorts indexedModule
-    patternSort      = getPatternResultSort headSort 
+    patternSort      = getPatternResultSort headSort
     leftPattern      = sentenceAliasLeftPattern sentence
     rightPattern     = sentenceAliasRightPattern sentence
 

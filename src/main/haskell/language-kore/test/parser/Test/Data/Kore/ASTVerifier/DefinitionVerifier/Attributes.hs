@@ -1,16 +1,18 @@
 module Test.Data.Kore.ASTVerifier.DefinitionVerifier.Attributes (test_attributes) where
 
-import           Test.Tasty                                          (TestTree)
+import Test.Tasty
+       ( TestTree )
 
-import           Test.Data.Kore
-import           Test.Data.Kore.ASTVerifier.DefinitionVerifier
+import Test.Data.Kore
+import Test.Data.Kore.ASTVerifier.DefinitionVerifier
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.Sentence
-import           Data.Kore.Error
-import           Data.Kore.Implicit.Attributes                       (attributeObjectSort)
+import Data.Kore.AST.Common
+import Data.Kore.AST.Kore
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.Sentence
+import Data.Kore.Error
+import Data.Kore.Implicit.Attributes
+       ( attributeObjectSort )
 
 test_attributes :: [TestTree]
 test_attributes =

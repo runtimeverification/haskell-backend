@@ -34,19 +34,22 @@ module Data.Kore.IndexedModule.IndexedModule
     , SortDescription
     ) where
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.Sentence
-import           Data.Kore.Error
-import           Data.Kore.Implicit.ImplicitSorts
+import Data.Kore.AST.Common
+import Data.Kore.AST.Kore
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.Sentence
+import Data.Kore.Error
+import Data.Kore.Implicit.ImplicitSorts
 
-import           Control.Arrow                    ((&&&))
-import           Control.Monad                    (foldM)
-import qualified Data.Map                         as Map
-import qualified Data.Set                         as Set
+import           Control.Arrow
+                 ( (&&&) )
+import           Control.Monad
+                 ( foldM )
+import qualified Data.Map as Map
+import qualified Data.Set as Set
 
-import           Data.Fix                         (Fix)
+import Data.Fix
+       ( Fix )
 
 type SortDescription level = SentenceSort level UnifiedPattern Variable
 

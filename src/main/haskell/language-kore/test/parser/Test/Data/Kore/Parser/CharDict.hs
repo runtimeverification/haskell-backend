@@ -1,9 +1,11 @@
 module Test.Data.Kore.Parser.CharDict (test_charDict) where
 
-import           Test.Tasty                (TestTree)
-import           Test.Tasty.HUnit          (assertEqual, testCase)
+import Test.Tasty
+       ( TestTree )
+import Test.Tasty.HUnit
+       ( assertEqual, testCase )
 
-import           Data.Kore.Parser.CharDict
+import Data.Kore.Parser.CharDict
 
 test_charDict :: [TestTree]
 test_charDict =

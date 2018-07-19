@@ -9,9 +9,9 @@ Portability : POSIX
 -}
 module Kore.MatchingLogic.Error where
 
-import           Data.Kore.Error
+import Data.Kore.Error
 
-import           Data.Text.Prettyprint.Doc
+import Data.Text.Prettyprint.Doc
 
 {-| 'MLError' is a tag for errors related to matching logic. -}
 newtype MLError = MLError ()

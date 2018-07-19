@@ -7,9 +7,9 @@ module Data.Kore.Step.Error
     )
   where
 
-import qualified Data.Set                    as Set
+import qualified Data.Set as Set
 
-import           Data.Kore.Unification.Error
+import Data.Kore.Unification.Error
 
 {--| 'StepError' represents the various error cases encountered while executing
 a single step.

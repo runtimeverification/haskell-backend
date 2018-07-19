@@ -15,8 +15,9 @@ module Data.Kore.Parser.CharSet
        , elem
        ) where
 
-import           Data.Kore.Parser.CharDict as CharDict
-import           Prelude                   hiding (elem)
+import Data.Kore.Parser.CharDict as CharDict
+import Prelude hiding
+       ( elem )
 
 newtype CharSet = CharSet { getCharSet :: CharDict.CharDict Bool }
 

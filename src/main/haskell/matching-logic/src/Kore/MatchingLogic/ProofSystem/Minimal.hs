@@ -8,14 +8,15 @@ which does not assume the existence of a definedness symbol.
  -}
 module Kore.MatchingLogic.ProofSystem.Minimal where
 
-import           Control.Lens
-import           Data.Functor.Foldable           (Fix (..))
+import Control.Lens
+import Data.Functor.Foldable
+       ( Fix (..) )
 
-import           Kore.MatchingLogic.AST          as AST
-import           Kore.MatchingLogic.Error
-import           Kore.MatchingLogic.HilbertProof
+import Kore.MatchingLogic.AST as AST
+import Kore.MatchingLogic.Error
+import Kore.MatchingLogic.HilbertProof
 
-import           Data.Kore.Error
+import Data.Kore.Error
 
 newtype SubstitutedVariable var = SubstitutedVariable var
     deriving (Eq, Show)

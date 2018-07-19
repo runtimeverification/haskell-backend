@@ -14,7 +14,8 @@ module Data.Kore.Variables.Fresh.IntCounter ( IntCounter
                                             , runIntCounter
                                             ) where
 
-import           Control.Monad.State (MonadState (get, put), State, runState)
+import Control.Monad.State
+       ( MonadState (get, put), State, runState )
 
 -- |'IntCounter' is a monad encapsulating an integer counter
 newtype IntCounter a = IntCounter { intCounterState :: State Int a }

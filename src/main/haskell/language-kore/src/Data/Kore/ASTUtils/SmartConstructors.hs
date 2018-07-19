@@ -85,19 +85,20 @@ module Data.Kore.ASTUtils.SmartConstructors
 where
 
 
-import           Control.Lens
-import           Control.Monad.State
+import Control.Lens
+import Control.Monad.State
 
-import           Data.Fix
-import           Data.Foldable
-import           Data.Reflection
+import Data.Fix
+import Data.Foldable
+import Data.Reflection
 
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.MLPatterns
-import           Data.Kore.AST.PureML                  (PureMLPattern)
-import           Data.Kore.IndexedModule.MetadataTools
+import Data.Kore.AST.Common
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.MLPatterns
+import Data.Kore.AST.PureML
+       ( PureMLPattern )
+import Data.Kore.IndexedModule.MetadataTools
 
 
 -- | Gets the sort of of a pattern, taking the Metadatatools implicitly

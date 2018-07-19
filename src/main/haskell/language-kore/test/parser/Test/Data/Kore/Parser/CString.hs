@@ -1,10 +1,13 @@
 module Test.Data.Kore.Parser.CString (test_cString) where
 
-import           Test.Tasty               (TestTree)
-import           Test.Tasty.HUnit         (assertEqual, testCase)
-import           Test.Tasty.QuickCheck    (testProperty)
+import Test.Tasty
+       ( TestTree )
+import Test.Tasty.HUnit
+       ( assertEqual, testCase )
+import Test.Tasty.QuickCheck
+       ( testProperty )
 
-import           Data.Kore.Parser.CString
+import Data.Kore.Parser.CString
 
 test_cString :: [TestTree]
 test_cString =

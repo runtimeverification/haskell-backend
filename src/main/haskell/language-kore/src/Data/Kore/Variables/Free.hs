@@ -20,13 +20,15 @@ module Data.Kore.Variables.Free ( freeVariables
                                 , pureAllVariables
                                 ) where
 
-import           Data.Fix                   (Fix)
-import           Data.Foldable              (fold)
-import qualified Data.Set                   as Set
+import           Data.Fix
+                 ( Fix )
+import           Data.Foldable
+                 ( fold )
+import qualified Data.Set as Set
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.ASTTraversals
+import Data.Kore.AST.Common
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.ASTTraversals
 
 {-| 'freeVariables' extracts the set of free variables of a pattern. -}
 freeVariables

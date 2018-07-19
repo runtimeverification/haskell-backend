@@ -7,17 +7,19 @@ module Data.Kore.Step.AxiomPatterns
     )
   where
 
-import           Data.Either                           (rights)
-import           Data.Fix
+import Data.Either
+       ( rights )
+import Data.Fix
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.PureML
-import           Data.Kore.AST.PureToKore              (patternKoreToPure)
-import           Data.Kore.AST.Sentence
-import           Data.Kore.Error
-import           Data.Kore.IndexedModule.IndexedModule
+import Data.Kore.AST.Common
+import Data.Kore.AST.Kore
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.PureML
+import Data.Kore.AST.PureToKore
+       ( patternKoreToPure )
+import Data.Kore.AST.Sentence
+import Data.Kore.Error
+import Data.Kore.IndexedModule.IndexedModule
 
 newtype AxiomPatternError = AxiomPatternError ()
 
