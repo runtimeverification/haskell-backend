@@ -72,7 +72,7 @@ import           GHC.Generics                          (Generic)
 -- Hence most pattern matches end in `impossible`, which should be considered
 -- a programmer error if it throws.
 
-impossible :: a 
+impossible :: a
 impossible = error "The impossible happened."
 
 type Term = CommonPurePattern Object
@@ -371,7 +371,7 @@ interpretRule = \case
           _             -> impossible
   TopIntro ->
       mkTop
-  _ -> impossible 
+  _ -> impossible
 
 
 

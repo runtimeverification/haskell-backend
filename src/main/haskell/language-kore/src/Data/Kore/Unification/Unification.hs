@@ -17,6 +17,8 @@ Portability : portable
 {-# OPTIONS_GHC -Wno-name-shadowing    #-}
 module Data.Kore.Unification.Unification 
 ( unificationProof
+, exampleTerm1
+, exampleTerm2 --only exported for now to make --pedantic shut up
 ) where
 
 
@@ -27,7 +29,7 @@ import           Data.Kore.ASTUtils.SmartConstructors
 import           Data.Kore.ASTUtils.Substitution
 
 import           Data.Kore.Proof.Proof
--- import           Data.Kore.Proof.Dummy
+import           Data.Kore.Proof.Dummy
 import           Data.Kore.Proof.Util
 import           Data.Kore.Proof.ConstructorAxioms
 
@@ -128,10 +130,6 @@ splitConstructor eq =
         _ -> impossible
     otherwise -> impossible
     
-
---testing:
---  putStrLn $ groom $ dummyEnvironment $ generateInjectivityAxiom (sym "f") (testSort "R") [testSort "A", testSort "B", testSort "C"]
-
 flipEqn
     :: Given (MetadataTools Object)
     => Proof 
@@ -142,45 +140,21 @@ flipEqn eq = case getConclusion eq of
       -- i.e. substitute a=b in the first position of a=a to get b=a
     _ -> impossible
 
--- exampleTerm1 :: Given (MetadataTools Object) => Term 
--- exampleTerm1 =     
---     (mkApp (sym "f") 
---         [Var_ $ var "a", mkApp (sym "g") 
---         [Var_ $ var "b", Var_ $ var "c"]]
---     )
 
--- exampleTerm2 :: Given (MetadataTools Object) => Term 
--- exampleTerm2 = 
---     (mkApp (sym "f") [Var_ $ var "d", Var_ $ var "e"]) 
+--testing:
+--  putStrLn $ groom $ dummyEnvironment $ generateInjectivityAxiom (sym "f") (testSort "R") [testSort "A", testSort "B", testSort "C"]
 
--- ex1 :: Given (MetadataTools Object) => [Proof]
--- ex1 =  [
---   assume $ 
---   mkEquals 
---     (mkApp (sym "f") 
---         [Var_ $ var "a", mkApp (sym "g") 
---         [Var_ $ var "b", Var_ $ var "c"]]
---     )
---     (mkApp (sym "f") [Var_ $ var "d", Var_ $ var "e"]) 
---   ]
+-- f(a,g(b,c)) = f(d,e)
+exampleTerm1 :: Given (MetadataTools Object) => Term 
+exampleTerm1 =     
+    (mkApp (sym "f") 
+        [Var_ $ var "a", mkApp (sym "g") 
+        [Var_ $ var "b", Var_ $ var "c"]]
+    )
 
--- ex2 :: Given (MetadataTools Object) => [Proof]
--- ex2 =  [
---   assume $ 
---   mkEquals 
---     (mkApp (sym "f") [
---         Var_ $ var "a"
---       , mkApp (sym "g") [
---             Var_ $ var "b"
---           , Var_ $ var "c"
---         ]
---     ])
---     (mkApp (sym "f") [
---         mkApp (sym "q") [
---             Var_ $ var "d"
---         ]
---         , Var_ $ var "e"
---     ])
---   ]
+exampleTerm2 :: Given (MetadataTools Object) => Term 
+exampleTerm2 = 
+    (mkApp (sym "f") [Var_ $ var "d", Var_ $ var "e"]) 
+
 
 

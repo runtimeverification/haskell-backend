@@ -74,6 +74,18 @@ subst old new = \case
 --   | S.member v (freeVars target) = binder s1 v p 
 --   | S.member v (freeVars )
 
+handleBinder 
+    :: MetaOrObject level 
+    => CommonPurePattern level
+    -> CommonPurePattern level
+    -> (t
+        -> Variable level
+        -> CommonPurePattern level
+        -> CommonPurePattern level)
+    -> t
+    -> Variable level
+    -> CommonPurePattern level
+    -> CommonPurePattern level
 handleBinder old new binder s1 v p 
   | S.member v (freeVars old) = binder s1 v p  
   | S.member v (freeVars new) = subst old new $ alphaRename binder s1 v p

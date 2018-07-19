@@ -30,7 +30,9 @@ Portability : portable
 {-# OPTIONS_GHC -Wno-name-shadowing    #-}
 
 
-module Data.Kore.Proof.ConstructorAxioms where
+module Data.Kore.Proof.ConstructorAxioms
+( generateInjectivityAxiom
+) where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
@@ -71,5 +73,5 @@ generateInjectivityAxiom head resultSort childrenSorts =
             mkApp head xVars'
             `mkEquals`
             mkApp head yVars'
-        xsEqys = andN $ zipWith mkEquals xVars' yVars'
-    in forallN xVars $ forallN yVars $ (fxEqfy `mkImplies` xsEqys)
+        xsEqys = mkAndN $ zipWith mkEquals xVars' yVars'
+    in mkForallN xVars $ mkForallN yVars $ (fxEqfy `mkImplies` xsEqys)

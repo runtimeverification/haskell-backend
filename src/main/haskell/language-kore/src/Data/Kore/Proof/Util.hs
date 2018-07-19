@@ -27,15 +27,37 @@ Portability : portable
 {-# OPTIONS_GHC -Wno-name-shadowing    #-}
 {-# OPTIONS_GHC -Wno-incomplete-patterns  #-}
 
-module Data.Kore.Proof.Util where
+module Data.Kore.Proof.Util
+( mkForallN
+, forallIntroN
+, forallElimN
+, mkExistsN
+, existsIntroN
+, mkAndN
+, andIntroN
+, andElimN
+, provablySubstitute
+, eqSymmetry
+, eqTransitivity
+) where
 
 
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.ASTUtils.SmartConstructors
 import           Data.Kore.IndexedModule.MetadataTools
 import           Data.Reflection
-import           Data.Kore.ASTUtils.SmartConstructors
 
 import           Data.Kore.Proof.Proof
+
+-- | Helper functions for common proof steps.
+-- Conventions:
+-- Functions ending in `N` take or give a list
+-- Functions beginning with `mk` construct a pattern, not a proof
+-- Functions with `intro` or `elim` are N-ary versions
+-- of the introduction and elimination rules.
+-- i.e. mkAndN [a,b,c] = a `mkAnd` (b `mkAnd` c)
+-- TODO: Some of these could be replaced with schemas
+-- i.e. poor man's HOL
 
 --------------------------------------------------------------------------------
 
@@ -46,13 +68,6 @@ mkForallN
     -> Term
 mkForallN vars pat =
     foldr mkForall pat vars
-
-forallN
-    :: Given (MetadataTools Object)
-    => [Var]
-    -> Term
-    -> Term
-forallN vars pat = foldr mkForall pat vars
 
 forallIntroN
     :: Given (MetadataTools Object)
@@ -110,12 +125,12 @@ existsIntroN terms pat =
 
 --------------------------------------------------------------------------------
 
-andN
+mkAndN
     :: Given (MetadataTools Object)
     => [Term]
     -> Term
-andN [] = mkTop
-andN es = foldr1 mkAnd es
+mkAndN [] = mkTop
+mkAndN es = foldr1 mkAnd es
 
 andIntroN
     :: Given (MetadataTools Object)
@@ -133,6 +148,8 @@ andElimN p = case getConclusion p of
            andElimN (useRule $ AndElimL p)
         ++ andElimN (useRule $ AndElimR p)
     _ -> [p]
+
+--------------------------------------------------------------------------------
 
 provablySubstitute
     :: Given (MetadataTools Object)
@@ -154,3 +171,18 @@ provablySubstitute eq path pat = case getConclusion eq of
             )
         )
     _ -> impossible
+
+eqSymmetry
+    :: Given (MetadataTools Object)
+    => Proof
+    -> Proof
+eqSymmetry = undefined
+
+eqTransitivity
+    :: Given (MetadataTools Object)
+    => Proof
+    -> Proof
+    -> Proof
+eqTransitivity = undefined
+
+
