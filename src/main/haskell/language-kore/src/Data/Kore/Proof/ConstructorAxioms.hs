@@ -75,3 +75,13 @@ generateInjectivityAxiom head resultSort childrenSorts =
             mkApp head yVars'
         xsEqys = mkAndN $ zipWith mkEquals xVars' yVars'
     in mkForallN xVars $ mkForallN yVars $ (fxEqfy `mkImplies` xsEqys)
+
+-- generateNoConfusionAxiom
+--     :: Given (MetadataTools Object)
+--     => SymbolOrAlias Object 
+--     -> Sort Object
+--     -> SymbolOrAlias Object
+--     -> Sort Object
+--     -> Term 
+-- generateNoConfusionAxiom h1 c1 h2 c2 = 
+	
