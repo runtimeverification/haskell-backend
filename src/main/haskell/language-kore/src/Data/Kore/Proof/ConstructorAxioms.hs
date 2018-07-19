@@ -76,11 +76,16 @@ generateInjectivityAxiom head resultSort childrenSorts =
         xsEqys = mkAndN $ zipWith mkEquals xVars' yVars'
     in mkForallN xVars $ mkForallN yVars $ (fxEqfy `mkImplies` xsEqys)
 
--- generateNoConfusionAxiom
---     :: Given (MetadataTools Object)
---     => SymbolOrAlias Object 
---     -> Sort Object
---     -> SymbolOrAlias Object
---     -> Sort Object
---     -> Term 
--- generateNoConfusionAxiom h1 c1 h2 c2 = 
+generateNoConfusionAxiom
+    :: Given (MetadataTools Object)
+    => SymbolOrAlias Object 
+    -> [Sort Object]
+    -> SymbolOrAlias Object
+    -> [Sort Object]
+    -> Term 
+generateNoConfusionAxiom h1 c1 h2 c2 = 
+    let (_, xVars') = generateVarList c1 "x"
+        (_, yVars') = generateVarList c2 "y"
+    in mkNot $ mkEquals
+         (mkApp h1 xVars')
+         (mkApp h2 yVars')
