@@ -2,16 +2,17 @@
 
 module Main where
 
-import           Data.Semigroup ((<>))
-import           Data.Text.Prettyprint.Doc ( LayoutOptions(..), PageWidth(..)
-                                           , defaultLayoutOptions, layoutPretty
-                                           , pretty )
+import           Data.Semigroup                        ((<>))
+import           Data.Text.Prettyprint.Doc             (LayoutOptions (..),
+                                                        PageWidth (..),
+                                                        defaultLayoutOptions,
+                                                        layoutPretty, pretty)
 import           Data.Text.Prettyprint.Doc.Render.Text (renderIO)
 import           Options.Applicative
-import           System.IO (stdout)
+import           System.IO                             (stdout)
 
-import           Data.Kore.AST.Sentence                   (KoreDefinition)
-import           Data.Kore.Parser.Parser (fromKore)
+import           Data.Kore.AST.Sentence                (KoreDefinition)
+import           Data.Kore.Parser.Parser               (fromKore)
 
 import           GlobalMain
 
@@ -19,7 +20,7 @@ import           GlobalMain
 data KoreFormatOptions =
     KoreFormatOptions
     { fileName :: FilePath  -- ^ file to unparse
-    , width :: Int  -- ^ line width
+    , width    :: Int  -- ^ line width
     }
 
 commandLine :: Parser KoreFormatOptions
@@ -42,21 +43,24 @@ infoMod =
 
 main :: IO ()
 main =
-  do
-    options <- mainGlobal commandLine infoMod
-    case localOptions options of
-        Nothing -> return () -- global options parsed, but local failed; exit gracefully
-        Just KoreFormatOptions { fileName, width } ->
-          do
-            defn <- readKoreOrDie fileName
-            let
-              layoutOptions
-                | width > 0 =
-                    defaultLayoutOptions
-                    { layoutPageWidth = AvailablePerLine width 1.0 }
-                | otherwise =
-                    defaultLayoutOptions { layoutPageWidth = Unbounded }
-            renderIO stdout (layoutPretty layoutOptions $ pretty defn)
+    do
+        options <- mainGlobal commandLine infoMod
+        case localOptions options of
+            Nothing ->
+                {-  Global options were parsed, but local options were not.
+                    Exit gracefully. -}
+                return ()
+            Just KoreFormatOptions { fileName, width } ->
+                do
+                    defn <- readKoreOrDie fileName
+                    let layoutOptions =
+                            defaultLayoutOptions
+                            { layoutPageWidth =
+                                if width > 0
+                                then AvailablePerLine width 1.0
+                                else Unbounded
+                            }
+                    renderIO stdout (layoutPretty layoutOptions $ pretty defn)
 
 -- | Read a 'KoreDefinition' from the given file name or signal an error.
 readKoreOrDie :: FilePath -> IO KoreDefinition
