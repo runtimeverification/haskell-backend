@@ -1,7 +1,7 @@
 ###### Reviewer checklist
 
-- [ ] Test coverage
-- [ ] Public API documentation
+- [ ] Test coverage: `stack test --coverage`
+- [ ] Public API documentation: `stack haddock`
 - [ ] Style conformance
 
 ---
