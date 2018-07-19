@@ -32,6 +32,7 @@ import           Data.Kore.AST.Kore         (CommonKorePattern, asKorePattern)
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.Building.AsAst
 import           Data.Kore.Building.Sorts
+import           Data.Kore.MetaML.Lift
 
 {-| When defining new patterns (e.g. for new symbols and aliases),
 users are expected to instantiate either
@@ -190,7 +191,7 @@ instance
     => ProperPattern Object sort (ObjectDomainValue pattern1 sort)
   where
     asProperPattern (ObjectDomainValue sort child) =
-        DomainValuePattern (DomainValue (asAst sort) child)
+        DomainValuePattern (DomainValue (asAst sort) (liftToMeta (asAst child)))
 objectDomainValue
     :: (ObjectSort sort, MetaPattern CharListSort pattern1)
     => sort -> pattern1 -> ObjectDomainValue pattern1 sort
