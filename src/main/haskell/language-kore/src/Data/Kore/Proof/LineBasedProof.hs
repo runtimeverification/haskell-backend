@@ -27,184 +27,97 @@ Portability : portable
 {-# LANGUAGE TypeApplications          #-}
 {-# LANGUAGE TypeFamilies              #-}
 {-# LANGUAGE TypeSynonymInstances      #-}
-
+{-# OPTIONS_GHC -Wno-unused-matches    #-}
+{-# OPTIONS_GHC -Wno-name-shadowing    #-}
 
 
 module Data.Kore.Proof.LineBasedProof where
 
-import           Control.Arrow
 import           Control.Lens
-import           Control.Lens.Operators
 import           Control.Monad.State.Strict
 
-import           Data.List
 import           Data.Fix
-import           Data.Foldable
-import           Data.Kore.AST.Common hiding (line)
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.PureML
-import           Data.Kore.IndexedModule.MetadataTools
 import qualified Data.Map.Strict                       as M
-import           Data.Maybe
-import           Data.Reflection
 import qualified Data.Set                              as S
 
-
-import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.ASTUtils.SmartConstructors
-import           Data.Kore.ASTUtils.Substitution
 
 import           Data.Kore.Proof.Dummy
 import           Data.Kore.Proof.Proof
-import           Data.Coerce
 import           Data.Text.Prettyprint.Doc
 import           Data.Text.Prettyprint.Doc.Util
-
-
-import           Data.Functor.Compose
 import           Data.Hashable
-import           GHC.Generics                          (Generic)
+
+-- DO NOT REVIEW
 
 data LineBasedProof = LineBasedProof
     { unLineBasedProof :: M.Map Int (PropF Term LargeRule Int Int)}
 
 toLineProof :: Proof -> LineBasedProof
 toLineProof proof =
-    LineBasedProof $ execState (go proof) (M.empty, M.empty, 1) ^. _2
-    where 
-        go :: Proof -> State (M.Map Int Int, M.Map Int (PropF Term LargeRule Int Int), Int) Int 
-        go (Fix proof) = do 
+    LineBasedProof $ execState (go proof) (M.empty, M.empty, M.empty, 1) ^. _3
+    where
+        go (Fix proof) = do
             j' <- mapM go $ justification proof
-            a' <- S.fromList <$> (mapM lookupAssumptions $ S.toList $ assumptions proof)
+            a' <- S.fromList <$>
+                (mapM lookupAssumptions $ S.toList $ assumptions proof)
             let proof' = proof { justification = j' , assumptions = a' }
             let h = hash proof'
-            (!hashTable, !orderedTable, !next) <- get 
-            case M.lookup h hashTable of 
-              Just m -> do 
-                return m 
-              Nothing -> do 
-                put ( M.insert h next hashTable
+            (!assumptionsTable, !hashTable, !orderedTable, !next) <- get
+            case M.lookup h hashTable of
+              Just m -> do
+                return m
+              Nothing -> do
+                put ( if isAssumption j'
+                          then
+                              M.insert
+                              (hash $ conclusion proof')
+                              next
+                              assumptionsTable
+                          else assumptionsTable
+                    , M.insert h next hashTable
                     , M.insert next proof' orderedTable
                     , next+1)
                 return next
-        lookupAssumptions :: Term -> State (M.Map Int Int, M.Map Int (PropF Term LargeRule Int Int), Int) Int 
-        lookupAssumptions assumption = do 
-            let line = ByF assumption (Assumption assumption) (S.singleton (0::Int)) :: PropF Term LargeRule Int Int 
-            let h = hash line 
-            (!hashTable, !orderedTable, !next) <- get 
-            case M.lookup h hashTable of 
-                Nothing -> return 0
-                Just m -> return m 
+        lookupAssumptions assumption = do
+            let h = hash assumption
+            (!assumptionsTable, !hashTable, !orderedTable, !next) <- get
+            case M.lookup h assumptionsTable of
+                Nothing -> return next
+                Just m  -> return m
 
--- instance Pretty LineBasedProof where 
---     pretty m = go $ M.toList $ unLineBasedProof m
---         where go ((n, s) : xs) = pretty n <> " : " <> pretty s <> line <> go xs
---               go [] = mempty
+isAssumption :: LargeRule subproof -> Bool
+isAssumption = \case
+    Assumption _ -> True
+    _ -> False
 
-testProof = dummyEnvironment $ useRule $ AndIntro (useRule TopIntro) (useRule $ Assumption mkBottom)
+testProof :: Proof 
+testProof =
+    dummyEnvironment
+  $ useRule
+  $ AndIntro (useRule TopIntro) (useRule $ Assumption mkBottom)
 
-instance Pretty LineBasedProof where 
+instance Pretty LineBasedProof where
     pretty proof = (vsep
-      $ map (\(n, ByF claim justification assumptions) -> 
-          fill 90 (
+      $ map (\(n, ByF claim justification assumptions) ->
+          fill 60 (
              fill 3 (pretty n)
-             <> " : " 
-             <> encloseSep mempty mempty "," (map pretty (S.toList assumptions))
-             <> " |- " 
+             <> " : "
+             <> encloseSep mempty mempty "," (map pretty $ S.toList assumptions)
+             <> " |- "
              <> align (pretty claim)
-             <> space 
-           ) 
-           <> hang 0 (pretty justification)
-           <> line 
-        ) 
-      $ M.toList 
-      $ unLineBasedProof proof) <> line 
+             <> space
+           )
+           <> line
+           <> indent 10 ("By " <> pretty justification)
+        )
+      $ M.toList
+      $ unLineBasedProof proof) <> line
 
-printLineProof = putDocW 100 . pretty . toLineProof
-
--- instance Pretty LineBasedProof where 
---     pretty m = vsep [lineNumbers, statements, justifications]
---         where lineNumbers = vsep $ map (pretty . fst) m'
---                   -- foldl1 (<>) $ 
---                   -- intercalate 
---                   --     (repeat line) 
---                   --     (map (\x -> [pretty x]) [1..(length m')]) 
---               statements = vsep $ map (pretty . conclusion . snd) m'
---               justifications = vsep $ map (pretty . justification . snd) m'
---               m' = M.toList $ unLineBasedProof m 
+printLineProof :: Proof -> IO ()
+printLineProof = putDocW 150 . pretty . toLineProof
 
 
-
--- getIdx 
---     :: (MonadState s m, Hashable a) 
---     => a 
---     -> Lens' s (M.Map Int Int)
---     -> Lens' s Int
---     -> m Int 
--- getIdx q storeLens nextLens = do 
---     let h = hash q 
---     store <- use storeLens
---     next <- use nextLens
---     case M.lookup h store of 
---         Nothing -> do 
---             storeLens %= M.insert h next
---             nextLens %= (1+)
---             return next
---         Just m -> return m
-
-
--- toLineProof :: Proof -> LineBasedProof
--- toLineProof proof =
---     execState (go proof) (M.empty, M.empty, M.empty, 0) ^. _2
---     where 
---         go :: Proof -> State (M.Map Int Int, LineBasedProof, M.Map Int Int, Int) Int 
---         go (Fix proof) = do 
---             a' <- S.fromList <$> (mapM goAssumption $ S.toList $ assumptions proof)
---             j' <- mapM go $ justification proof
---             let proof' = proof { justification = j', assumptions = a' }
---             let h = hash proof'
---             ( !hashTable, !orderedTable, !assumptionsTable, !next) <- get 
---             case M.lookup h hashTable of 
---               Just m -> do 
---                 return m 
---               Nothing -> do 
---                 put ( M.insert h next hashTable
---                     , M.insert next proof' orderedTable
---                     , assumptionsTable
---                     , next+1)
---                 return next
---         goAssumption (Fix assumption) = do 
---             (!hashTable, !orderedTable, !assumptionsTable, !next) <- get 
---             let h = hash assumption
---             case M.lookup h assumptionsTable of 
---                 Nothing -> do 
---                     put (hashTable, orderedTable, M.insert h next assumptionsTable, next + 1)
---                     return next 
---                 Just m -> do 
---                     return m 
-
--- toLineProof :: Proof -> LineBasedProof
--- toLineProof proof =
---     execState (go proof) (M.empty, M.empty, M.empty, 0) ^. _2
---     where 
---         go :: Proof -> State (M.Map Int Int, LineBasedProof, M.Map Int Int, Int) Int 
---         go (Fix proof) = do 
---             j' <- mapM go $ justification proof
---             a' <- S.fromList <$> (mapM goAssumption $ S.toList $ assumptions proof)
---             let proof' = proof { justification = j', assumptions = a' }
---             let h = hash proof'
---             ( !hashTable, !orderedTable, !assumptionsTable, !next) <- get 
---             case M.lookup h hashTable of 
---               Just m -> do 
---                 return m 
---               Nothing -> do 
---                 put ( M.insert h next hashTable
---                     , M.insert next proof' orderedTable
---                     , assumptionsTable
---                     , next+1)
---                 return next
---         goAssumption assumption = undefined
 
 
 

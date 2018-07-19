@@ -26,38 +26,24 @@ Portability : portable
 {-# LANGUAGE TypeFamilies              #-}
 {-# LANGUAGE TypeSynonymInstances      #-}
 
+{-# OPTIONS_GHC -Wno-unused-matches    #-}
+{-# OPTIONS_GHC -Wno-name-shadowing    #-}
 
 
 module Data.Kore.Proof.ConstructorAxioms where
 
-import           Control.Lens
-import           Control.Lens.Operators
-import           Control.Monad.State
-import           Data.Fix
-import           Data.Fix
-import           Data.Foldable
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.PureML
 import           Data.Kore.IndexedModule.MetadataTools
-import qualified Data.Map.Strict                       as M
-import           Data.Maybe
 import           Data.Reflection
-import qualified Data.Set                              as S
 
-
-import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.ASTUtils.SmartConstructors
-import           Data.Kore.ASTUtils.Substitution
 
+import           Data.Kore.Proof.Dummy
 import           Data.Kore.Proof.Proof
 import           Data.Kore.Proof.Util
-import           Data.Kore.Proof.Dummy
 
 
-import           Data.Hashable
-import           GHC.Generics                          (Generic)
 
 -- | Given head symbol h, return sort of h, arguments sorts s_i,
 -- generates axiom of the form:
@@ -67,21 +53,21 @@ import           GHC.Generics                          (Generic)
 -- where x_i, y_i : s_i
 generateInjectivityAxiom
     :: Given (MetadataTools Object)
-    => SymbolOrAlias Object 
+    => SymbolOrAlias Object
     -> Sort Object
     -> [Sort Object]
     -> Term
 generateInjectivityAxiom head resultSort childrenSorts =
-    let vars name = 
-            zipWith 
+    let vars name =
+            zipWith
                 (\n sort -> varS (name ++ show n) sort)
-                [1..]
+                [(1::Int)..]
                 childrenSorts
         xVars = vars "x"
         xVars' = map Var_ xVars
         yVars = vars "y"
         yVars' = map Var_ yVars
-        fxEqfy = 
+        fxEqfy =
             mkApp head xVars'
             `mkEquals`
             mkApp head yVars'

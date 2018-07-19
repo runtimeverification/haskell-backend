@@ -23,36 +23,19 @@ Portability : portable
 {-# LANGUAGE Rank2Types                #-}
 {-# LANGUAGE TypeApplications          #-}
 {-# LANGUAGE TypeFamilies              #-}
-
-
+{-# OPTIONS_GHC -Wno-unused-matches    #-}
+{-# OPTIONS_GHC -Wno-name-shadowing    #-}
+{-# OPTIONS_GHC -Wno-incomplete-patterns  #-}
 
 module Data.Kore.Proof.Util where
 
-import           Control.Lens
-import           Control.Lens.Operators
-import           Control.Monad.State
-import           Data.Fix
-import           Data.Fix
-import           Data.Foldable
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.PureML
-import           Data.Kore.IndexedModule.MetadataTools
-import qualified Data.Map.Strict                       as M
-import           Data.Maybe
-import           Data.Reflection
-import qualified Data.Set                              as S
 
+import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.IndexedModule.MetadataTools
+import           Data.Reflection
+import           Data.Kore.ASTUtils.SmartConstructors
 
 import           Data.Kore.Proof.Proof
-
-
-import           Data.Kore.ASTPrettyPrint
-import           Data.Kore.ASTUtils.SmartConstructors
-import           Data.Kore.ASTUtils.Substitution
-
-import           Debug.Trace
 
 --------------------------------------------------------------------------------
 
@@ -106,20 +89,20 @@ existsIntroN
 existsIntroN terms pat =
     foldr (\(var, term) p -> useRule $ ExistsIntro var term p) pat terms
 
-existsElimN
-    :: Given (MetadataTools Object)
-    => [(Var, Term)]
-    -> Proof
-    -> Proof
-    -> Proof
-existsElimN terms existentialStmt pat =
-    let n = length terms
-        peelOffExist (Exists_ _ _ p) = p
-        peelOffExists =
-            take n
-          $ iterate peelOffExist
-          $ getConclusion existentialStmt
-    in traceShow peelOffExists undefined
+-- existsElimN
+--     :: Given (MetadataTools Object)
+--     => [(Var, Term)]
+--     -> Proof
+--     -> Proof
+--     -> Proof
+-- existsElimN terms existentialStmt pat =
+--     let n = length terms
+--         peelOffExist (Exists_ _ _ p) = p
+--         peelOffExists =
+--             take n
+--           $ iterate peelOffExist
+--           $ getConclusion existentialStmt
+--     in peelOffExists undefined
     -- foldr
     -- (\(var, term) (exP, c) -> useRule $ ExistsElim exP var term p)
     -- (existentialStmt, pat)
@@ -140,6 +123,16 @@ andIntroN
     -> Proof
 andIntroN [] = useRule TopIntro
 andIntroN ps = foldr1 (\a b -> useRule $ AndIntro a b) ps
+
+andElimN
+    :: Given (MetadataTools Object)
+    => Proof
+    -> [Proof]
+andElimN p = case getConclusion p of
+    And_ _ _ _ ->
+           andElimN (useRule $ AndElimL p)
+        ++ andElimN (useRule $ AndElimR p)
+    _ -> [p]
 
 provablySubstitute
     :: Given (MetadataTools Object)
