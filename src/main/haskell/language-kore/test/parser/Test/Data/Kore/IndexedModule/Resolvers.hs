@@ -1,28 +1,30 @@
 module Test.Data.Kore.IndexedModule.Resolvers (test_resolvers) where
 
-import           Test.Tasty                                          (TestTree)
-import           Test.Tasty.HUnit                                    (assertEqual,
-                                                                      testCase)
+import Test.Tasty
+       ( TestTree )
+import Test.Tasty.HUnit
+       ( assertEqual, testCase )
 
-import           Test.Data.Kore
-import           Test.Data.Kore.ASTVerifier.DefinitionVerifier
+import Test.Data.Kore
+import Test.Data.Kore.ASTVerifier.DefinitionVerifier
 
-import qualified Data.Map                                            as Map
-import           Data.Maybe                                          (fromMaybe)
 import           Data.Fix
+import qualified Data.Map as Map
+import           Data.Maybe
+                 ( fromMaybe )
 
-import           Data.Kore.AST.Builders
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.PureML
-import           Data.Kore.AST.PureToKore
-import           Data.Kore.AST.Sentence
-import           Data.Kore.ASTHelpers
-import           Data.Kore.ASTVerifier.DefinitionVerifier
-import           Data.Kore.Error
-import           Data.Kore.Implicit.ImplicitSorts
-import           Data.Kore.IndexedModule.IndexedModule
-import           Data.Kore.IndexedModule.Resolvers
+import Data.Kore.AST.Builders
+import Data.Kore.AST.Common
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.PureML
+import Data.Kore.AST.PureToKore
+import Data.Kore.AST.Sentence
+import Data.Kore.ASTHelpers
+import Data.Kore.ASTVerifier.DefinitionVerifier
+import Data.Kore.Error
+import Data.Kore.Implicit.ImplicitSorts
+import Data.Kore.IndexedModule.IndexedModule
+import Data.Kore.IndexedModule.Resolvers
 
 objectS1 :: Sort Object
 objectS1 = simpleSort (SortName "s1")

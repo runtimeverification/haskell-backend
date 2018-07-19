@@ -1,5 +1,5 @@
-{-# LANGUAGE GADTs                #-}
-{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE GADTs             #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {- |
 Description: Parser and printer for matching logic patterns, using a subset of Kore syntax.
@@ -16,22 +16,27 @@ module Kore.MatchingLogic.AST.Syntax
   , simpleSigLabel
   , simpleSigSort
   ) where
-import           Control.Applicative
-import           Control.Monad                       (void)
-import           Data.Text                           (Text)
-import           Data.Void
+import Control.Applicative
+import Control.Monad
+       ( void )
+import Data.Text
+       ( Text )
+import Data.Void
 
-import           Data.Functor.Foldable               (Fix (Fix))
-import           Data.Reflection
+import Data.Functor.Foldable
+       ( Fix (Fix) )
+import Data.Reflection
 
-import           Data.Text.Prettyprint.Doc           (Doc, Pretty (..), (<>))
-import qualified Data.Text.Prettyprint.Doc           as Doc
+import           Data.Text.Prettyprint.Doc
+                 ( Doc, Pretty (..), (<>) )
+import qualified Data.Text.Prettyprint.Doc as Doc
 
-import           Text.Megaparsec                     hiding (some)
-import           Text.Megaparsec.Char
+import Text.Megaparsec hiding
+       ( some )
+import Text.Megaparsec.Char
 
-import           Kore.MatchingLogic.AST
-import           Kore.MatchingLogic.Signature.Simple
+import Kore.MatchingLogic.AST
+import Kore.MatchingLogic.Signature.Simple
 
 type Parser = Parsec Void Text
 

@@ -21,10 +21,10 @@ module Data.Kore.AST.MLPatterns (MLPatternClass(..),
                                  getPatternResultSort,
                                  undefinedHeadSort) where
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.Implicit.ImplicitSorts
+import Data.Kore.AST.Common
+import Data.Kore.AST.Kore
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.Implicit.ImplicitSorts
 
 {-|'MLPatternClass' offers a common interface to ML patterns
   (those starting with '\', except for 'Exists' and 'Forall')

@@ -1,20 +1,23 @@
 -- TODO(traiansf): add more negative tests
 module Test.Data.Kore.MetaML.Unlift (test_unlift) where
 
-import           Test.Tasty                       (TestTree)
-import           Test.Tasty.HUnit                 (testCase)
+import Test.Tasty
+       ( TestTree )
+import Test.Tasty.HUnit
+       ( testCase )
 
-import           Test.Data.Kore.MetaML.Lift       (prettyAssertEqual, variablePattern)
+import Test.Data.Kore.MetaML.Lift
+       ( prettyAssertEqual, variablePattern )
 
-import           Data.Fix
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.PureML
-import           Data.Kore.AST.PureToKore
-import           Data.Kore.Implicit.ImplicitSorts
-import           Data.Kore.MetaML.AST
-import           Data.Kore.MetaML.Unlift
+import Data.Fix
+import Data.Kore.AST.Common
+import Data.Kore.AST.Kore
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.PureML
+import Data.Kore.AST.PureToKore
+import Data.Kore.Implicit.ImplicitSorts
+import Data.Kore.MetaML.AST
+import Data.Kore.MetaML.Unlift
 
 test_unlift :: [TestTree]
 test_unlift =

@@ -21,15 +21,17 @@ module Kore.MatchingLogic.HilbertProof
   ,renderProof
   ) where
 import           Data.Foldable
-import           Data.Map.Strict           (Map)
-import qualified Data.Map.Strict           as Map
-import           Data.Sequence             (Seq, (|>))
-import qualified Data.Sequence             as Seq
+import           Data.Map.Strict
+                 ( Map )
+import qualified Data.Map.Strict as Map
+import           Data.Sequence
+                 ( Seq, (|>) )
+import qualified Data.Sequence as Seq
 
-import           Data.Text.Prettyprint.Doc
+import Data.Text.Prettyprint.Doc
 
-import           Data.Kore.Error
-import           Kore.MatchingLogic.Error
+import Data.Kore.Error
+import Kore.MatchingLogic.Error
 
 data Proof ix rule formula =
   Proof

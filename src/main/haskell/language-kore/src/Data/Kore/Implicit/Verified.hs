@@ -15,17 +15,19 @@ module Data.Kore.Implicit.Verified
     )
     where
 
-import           Data.Kore.AST.PureToKore
-import           Data.Kore.AST.Sentence
-import           Data.Kore.ASTVerifier.DefinitionVerifier (defaultAttributesVerification,
-                                                           verifyImplicitKoreDefinition,
-                                                           verifyNormalKoreDefinition)
-import           Data.Kore.ASTVerifier.Error              (VerifyError)
-import           Data.Kore.Error                          (Error, printError)
-import           Data.Kore.Implicit.Definitions           (uncheckedAttributesDefinition,
-                                                           uncheckedKoreDefinition,
-                                                           uncheckedMetaDefinition)
-import           Data.Kore.MetaML.AST
+import Data.Kore.AST.PureToKore
+import Data.Kore.AST.Sentence
+import Data.Kore.ASTVerifier.DefinitionVerifier
+       ( defaultAttributesVerification, verifyImplicitKoreDefinition,
+       verifyNormalKoreDefinition )
+import Data.Kore.ASTVerifier.Error
+       ( VerifyError )
+import Data.Kore.Error
+       ( Error, printError )
+import Data.Kore.Implicit.Definitions
+       ( uncheckedAttributesDefinition, uncheckedKoreDefinition,
+       uncheckedMetaDefinition )
+import Data.Kore.MetaML.AST
 
 checkedMetaDefinition :: Either (Error VerifyError) MetaDefinition
 checkedMetaDefinition = do

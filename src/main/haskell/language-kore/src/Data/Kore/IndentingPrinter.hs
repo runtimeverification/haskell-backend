@@ -10,8 +10,8 @@ module Data.Kore.IndentingPrinter ( betweenLines
                                   , write
                                   ) where
 
-import           Control.Monad.Reader
-import           Control.Monad.Writer
+import Control.Monad.Reader
+import Control.Monad.Writer
 
 class FromString a where
     fromString :: String -> a

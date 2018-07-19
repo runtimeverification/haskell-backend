@@ -5,23 +5,26 @@ module Test.Data.Kore.Parser.Regression
     , regressionTest, test_regression
     ) where
 
-import           Test.Tasty                               (TestTree)
-import           Test.Tasty.Golden                        (findByExtension,
-                                                           goldenVsString)
+import Test.Tasty
+       ( TestTree )
+import Test.Tasty.Golden
+       ( findByExtension, goldenVsString )
 
-import           Data.Kore.AST.Sentence
-import           Data.Kore.ASTPrettyPrint
-import           Data.Kore.ASTVerifier.DefinitionVerifier
-import           Data.Kore.Error
-import           Data.Kore.Parser.Parser
+import Data.Kore.AST.Sentence
+import Data.Kore.ASTPrettyPrint
+import Data.Kore.ASTVerifier.DefinitionVerifier
+import Data.Kore.Error
+import Data.Kore.Parser.Parser
 
 
-import Control.Exception (bracket)
-import qualified Data.ByteString.Lazy                     as LazyByteString
-import qualified Data.ByteString.Lazy.Char8               as LazyChar8
-import System.Directory (getCurrentDirectory, setCurrentDirectory)
-import           System.FilePath                          (addExtension,
-                                                           splitFileName, (</>))
+import           Control.Exception
+                 ( bracket )
+import qualified Data.ByteString.Lazy as LazyByteString
+import qualified Data.ByteString.Lazy.Char8 as LazyChar8
+import           System.Directory
+                 ( getCurrentDirectory, setCurrentDirectory )
+import           System.FilePath
+                 ( addExtension, splitFileName, (</>) )
 
 import qualified Paths
 

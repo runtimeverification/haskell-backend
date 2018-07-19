@@ -1,14 +1,15 @@
 module Test.Data.Kore.AST.Common (test_withSort, test_id, test_prettyPrintAstLocation) where
 
-import           Test.Tasty                       (TestTree, testGroup)
-import           Test.Tasty.HUnit                 (assertBool, assertEqual,
-                                                   assertFailure, testCase)
+import Test.Tasty
+       ( TestTree, testGroup )
+import Test.Tasty.HUnit
+       ( assertBool, assertEqual, assertFailure, testCase )
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.Implicit.ImplicitSorts
-import           Test.Tasty.HUnit.Extensions
+import Data.Kore.AST.Common
+import Data.Kore.AST.Kore
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.Implicit.ImplicitSorts
+import Test.Tasty.HUnit.Extensions
 
 test_withSort :: TestTree
 test_withSort =

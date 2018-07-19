@@ -20,33 +20,42 @@ module Data.Kore.Step.BaseStep
 
 import qualified Control.Arrow
 import           Data.Fix
-import qualified Data.Map                                        as Map
-import           Data.Monoid                                     ((<>))
-import qualified Data.Set                                        as Set
+import qualified Data.Map as Map
+import           Data.Monoid
+                 ( (<>) )
+import qualified Data.Set as Set
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.PureML                            (CommonPurePattern,
-                                                                  PureMLPattern,
-                                                                  asPurePattern,
-                                                                  mapPatternVariables)
-import           Data.Kore.FixTraversals                         (fixBottomUpVisitor)
-import           Data.Kore.IndexedModule.MetadataTools           (MetadataTools)
+import           Data.Kore.AST.PureML
+                 ( CommonPurePattern, PureMLPattern, asPurePattern,
+                 mapPatternVariables )
+import           Data.Kore.FixTraversals
+                 ( fixBottomUpVisitor )
+import           Data.Kore.IndexedModule.MetadataTools
+                 ( MetadataTools )
 import           Data.Kore.Step.AxiomPatterns
-import           Data.Kore.Step.Condition.Condition              (ConditionSort (..))
+import           Data.Kore.Step.Condition.Condition
+                 ( ConditionSort (..) )
 import           Data.Kore.Step.Error
-import           Data.Kore.Substitution.Class                    (Hashable (..), PatternSubstitutionClass (..))
-import qualified Data.Kore.Substitution.List                     as ListSubstitution
-import           Data.Kore.Unification.SubstitutionNormalization (normalizeSubstitution)
-import           Data.Kore.Unification.Unifier                   (FunctionalProof (..),
-                                                                  UnificationProof (..),
-                                                                  UnificationSubstitution,
-                                                                  unificationProcedure)
-import           Data.Kore.Variables.Free                        (pureAllVariables)
-import           Data.Kore.Variables.Fresh.Class                 (FreshVariablesClass (freshVariableSuchThat))
-import           Data.Kore.Variables.Fresh.IntCounter            (IntCounter)
-import           Data.Kore.Variables.Int                         (IntVariable (..))
-import           Data.Maybe                                      (fromMaybe)
+import           Data.Kore.Substitution.Class
+                 ( Hashable (..), PatternSubstitutionClass (..) )
+import qualified Data.Kore.Substitution.List as ListSubstitution
+import           Data.Kore.Unification.SubstitutionNormalization
+                 ( normalizeSubstitution )
+import           Data.Kore.Unification.Unifier
+                 ( FunctionalProof (..), UnificationProof (..),
+                 UnificationSubstitution, unificationProcedure )
+import           Data.Kore.Variables.Free
+                 ( pureAllVariables )
+import           Data.Kore.Variables.Fresh.Class
+                 ( FreshVariablesClass (freshVariableSuchThat) )
+import           Data.Kore.Variables.Fresh.IntCounter
+                 ( IntCounter )
+import           Data.Kore.Variables.Int
+                 ( IntVariable (..) )
+import           Data.Maybe
+                 ( fromMaybe )
 
 {--| 'StepperConfiguration' represents the configuration to which a rewriting
 axiom is applied.

@@ -1,14 +1,16 @@
 module Test.Data.Kore.ASTHelpers (test_symbolOrAliasSorts) where
 
-import           Test.Tasty             (TestTree)
-import           Test.Tasty.HUnit       (assertEqual, testCase)
+import Test.Tasty
+       ( TestTree )
+import Test.Tasty.HUnit
+       ( assertEqual, testCase )
 
-import           Test.Data.Kore
+import Test.Data.Kore
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
-import           Data.Kore.ASTHelpers
-import           Data.Kore.Error
+import Data.Kore.AST.Common
+import Data.Kore.AST.Sentence
+import Data.Kore.ASTHelpers
+import Data.Kore.Error
 
 test_symbolOrAliasSorts :: [TestTree]
 test_symbolOrAliasSorts =

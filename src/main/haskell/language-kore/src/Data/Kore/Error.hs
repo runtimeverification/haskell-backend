@@ -9,8 +9,10 @@ Portability : POSIX
 -}
 module Data.Kore.Error where
 
-import           Control.Monad (when)
-import           Data.List     (intercalate)
+import Control.Monad
+       ( when )
+import Data.List
+       ( intercalate )
 
 {-|'Error' represents a Kore error with a stacktrace-like context.
 

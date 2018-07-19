@@ -34,15 +34,18 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Data.Kore.AST.Sentence where
 
-import           Data.Fix
-import           Data.Maybe (catMaybes)
+import Data.Fix
+import Data.Maybe
+       ( catMaybes )
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.Pretty (Pretty(..), (<>), (<+>))
+import           Data.Kore.AST.Pretty
+                 ( Pretty (..), (<+>), (<>) )
 import qualified Data.Kore.AST.Pretty as Pretty
-import           Data.Kore.HaskellExtensions (Rotate41 (..))
+import           Data.Kore.HaskellExtensions
+                 ( Rotate41 (..) )
 
 
 {-|'Attributes' corresponds to the @attributes@ Kore syntactic declaration.
@@ -256,7 +259,7 @@ instance
     Pretty (Fix (pat variable) )
     => Pretty (SentenceHook level pat variable)
   where
-    pretty (SentenceHookedSort a) = "hooked-" <> pretty a
+    pretty (SentenceHookedSort a)   = "hooked-" <> pretty a
     pretty (SentenceHookedSymbol a) = "hooked-" <> pretty a
 
 {-|The 'Sentence' type corresponds to the @declaration@ syntactic category

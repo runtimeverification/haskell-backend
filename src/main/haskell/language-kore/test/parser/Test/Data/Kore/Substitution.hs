@@ -2,11 +2,11 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Test.Data.Kore.Substitution where
 
-import           Test.Data.Kore
+import Test.Data.Kore
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.Common
+import Data.Kore.AST.Kore
+import Data.Kore.AST.MetaOrObject
 
 objectSort :: Sort Object
 objectSort = SortVariableSort (SortVariable (testId "s"))

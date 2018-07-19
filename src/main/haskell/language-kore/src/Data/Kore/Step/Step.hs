@@ -13,15 +13,17 @@ module Data.Kore.Step.Step
     , MaxStepCount(..)
     ) where
 
-import           Data.Either                           (rights)
+import Data.Either
+       ( rights )
 
-import           Data.Kore.AST.MetaOrObject            (MetaOrObject)
-import           Data.Kore.IndexedModule.MetadataTools (MetadataTools)
-import           Data.Kore.Step.BaseStep               (AxiomPattern,
-                                                        StepProof (..),
-                                                        StepperConfiguration,
-                                                        stepWithAxiom)
-import           Data.Kore.Variables.Fresh.IntCounter  (IntCounter)
+import Data.Kore.AST.MetaOrObject
+       ( MetaOrObject )
+import Data.Kore.IndexedModule.MetadataTools
+       ( MetadataTools )
+import Data.Kore.Step.BaseStep
+       ( AxiomPattern, StepProof (..), StepperConfiguration, stepWithAxiom )
+import Data.Kore.Variables.Fresh.IntCounter
+       ( IntCounter )
 
 data MaxStepCount
     = MaxStepCount Integer

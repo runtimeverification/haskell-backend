@@ -19,10 +19,11 @@ module Data.Kore.Step.Condition.Condition
     , makeEvaluatedOr
     ) where
 
-import           Data.Kore.AST.Common (And (..), Iff (..), Implies (..),
-                                       Not (..), Or (..), Pattern (..),
-                                       Sort (..))
-import           Data.Kore.AST.PureML (CommonPurePattern, asPurePattern)
+import Data.Kore.AST.Common
+       ( And (..), Iff (..), Implies (..), Not (..), Or (..), Pattern (..),
+       Sort (..) )
+import Data.Kore.AST.PureML
+       ( CommonPurePattern, asPurePattern )
 
 {--| 'ConditionProof' is a placeholder for a proof showing that a condition
 evaluation was correct.

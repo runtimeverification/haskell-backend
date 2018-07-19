@@ -17,7 +17,8 @@ module Data.Kore.Parser.CharDict
   where
 
 import qualified Data.Array as Array
-import           Data.Maybe (fromMaybe)
+import           Data.Maybe
+                 ( fromMaybe )
 
 newtype CharDict a = CharDict { getCharDict :: Array.Array Char a }
 

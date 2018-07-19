@@ -1,30 +1,35 @@
 {-# LANGUAGE FlexibleContexts #-}
 module Test.Data.Kore.Unification.Unifier (test_unification) where
 
-import           Data.CallStack
-import           Test.Tasty                                          (TestTree)
-import           Test.Tasty.HUnit                                    (testCase)
-import           Test.Tasty.HUnit.Extensions
+import Data.CallStack
+import Test.Tasty
+       ( TestTree )
+import Test.Tasty.HUnit
+       ( testCase )
+import Test.Tasty.HUnit.Extensions
 
-import           Test.Data.Kore
-import           Test.Data.Kore.AST.MLPatterns                       (extractPurePattern)
-import           Test.Data.Kore.ASTVerifier.DefinitionVerifier
-import           Test.Data.Kore.Comparators                          ()
+import Test.Data.Kore
+import Test.Data.Kore.AST.MLPatterns
+       ( extractPurePattern )
+import Test.Data.Kore.ASTVerifier.DefinitionVerifier
+import Test.Data.Kore.Comparators ()
 
-import           Data.Kore.AST.Builders
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.MLPatterns
-import           Data.Kore.AST.PureML
-import           Data.Kore.AST.Sentence
-import           Data.Kore.ASTPrettyPrint
-import           Data.Kore.IndexedModule.MetadataTools
-import           Data.Kore.Unification.Error
-import           Data.Kore.Unification.UnifierImpl
+import Data.Kore.AST.Builders
+import Data.Kore.AST.Common
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.MLPatterns
+import Data.Kore.AST.PureML
+import Data.Kore.AST.Sentence
+import Data.Kore.ASTPrettyPrint
+import Data.Kore.IndexedModule.MetadataTools
+import Data.Kore.Unification.Error
+import Data.Kore.Unification.UnifierImpl
 
-import           Data.Fix
-import           Data.Function                                       (on)
-import           Data.List                                           (sortBy)
+import Data.Fix
+import Data.Function
+       ( on )
+import Data.List
+       ( sortBy )
 
 s1, s2, s3 :: Sort Object
 s1 = simpleSort (SortName "s1")

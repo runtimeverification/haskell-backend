@@ -1,17 +1,18 @@
 module Test.Data.Kore.ASTVerifier.DefinitionVerifier.MetaObject
     (test_metaObject) where
 
-import           Test.Tasty                                          (TestTree)
+import Test.Tasty
+       ( TestTree )
 
-import           Test.Data.Kore.ASTVerifier.DefinitionVerifier
+import Test.Data.Kore.ASTVerifier.DefinitionVerifier
 
-import           Data.Kore.AST.AstWithLocation
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.Sentence
-import           Data.Kore.Error
-import           Data.Kore.Implicit.ImplicitSorts
+import Data.Kore.AST.AstWithLocation
+import Data.Kore.AST.Common
+import Data.Kore.AST.Kore
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.Sentence
+import Data.Kore.Error
+import Data.Kore.Implicit.ImplicitSorts
 
 test_metaObject :: [TestTree]
 test_metaObject =

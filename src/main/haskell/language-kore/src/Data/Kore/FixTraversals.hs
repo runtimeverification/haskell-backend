@@ -28,8 +28,8 @@ module Data.Kore.FixTraversals ( fixBottomUpVisitor
                                ) where
 
 
-import           Control.Monad.Identity
-import           Data.Fix
+import Control.Monad.Identity
+import Data.Fix
 
 {-|'fixTopDownVisitorM' is a generalized monadic visitor.
 It takes as arguments a preprocess function and a postprocess function and

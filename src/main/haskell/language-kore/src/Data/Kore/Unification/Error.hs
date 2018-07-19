@@ -14,9 +14,9 @@ module Data.Kore.Unification.Error
     , substitutionErrorVariables
     ) where
 
-import qualified Data.Set             as Set
+import qualified Data.Set as Set
 
-import           Data.Kore.AST.Common
+import Data.Kore.AST.Common
 
 -- |'UnificationError' specifies various error cases encountered during
 -- unification

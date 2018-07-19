@@ -41,4 +41,4 @@ module Data.Kore.Parser.Lexeme
        , charLiteralParser
        ) where
 
-import           Data.Kore.Parser.LexemeImpl
+import Data.Kore.Parser.LexemeImpl

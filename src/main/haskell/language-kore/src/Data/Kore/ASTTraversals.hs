@@ -27,11 +27,12 @@ module Data.Kore.ASTTraversals ( patternBottomUpVisitor
                                ) where
 
 
-import           Control.Monad              ((>=>))
-import           Data.Fix
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.FixTraversals
+import Control.Monad
+       ( (>=>) )
+import Data.Fix
+import Data.Kore.AST.Common
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.FixTraversals
 
 {-|'patternTopDownVisitorM' is a generalized monadic visitor for Kore patterns.
 It takes as arguments a preprocess function and a postprocess function and

@@ -48,14 +48,15 @@ module Test.Kore.MatchingLogic.ProofSystem.OnePlusOne.ForallAST
   , andP' , notP', orP', impliesP', iffP', forallP', existsP'
   ) where
 
-import           Control.Monad
-import           Data.Coerce
+import Control.Monad
+import Data.Coerce
 
-import           Data.Deriving                (deriveEq1, deriveShow1)
-import           Data.Functor.Foldable
-import           Data.Text.Prettyprint.Doc
+import Data.Deriving
+       ( deriveEq1, deriveShow1 )
+import Data.Functor.Foldable
+import Data.Text.Prettyprint.Doc
 
-import           Kore.MatchingLogic.Signature
+import Kore.MatchingLogic.Signature
 
 -- | The base functor of patterns
 data PatternF sort -- ^ The type of sorts
@@ -80,11 +81,11 @@ visitPatternF :: (Applicative f)
               -> (PatternF sort label var pat
                    -> f (PatternF sort' label' var' pat'))
 visitPatternF sort label var pat term = case term of
-  Variable s v -> Variable <$> sort s <*> var v
+  Variable s v       -> Variable <$> sort s <*> var v
   Application l args -> Application <$> label l <*> traverse pat args
-  And s p1 p2 -> And <$> sort s <*> pat p1 <*> pat p2
-  Not s p -> Not <$> sort s <*> pat p
-  Forall s sVar v p -> Forall <$> sort s <*> sort sVar <*> var v <*> pat p
+  And s p1 p2        -> And <$> sort s <*> pat p1 <*> pat p2
+  Not s p            -> Not <$> sort s <*> pat p
+  Forall s sVar v p  -> Forall <$> sort s <*> sort sVar <*> var v <*> pat p
 
 -- | Specializing 'PatternF' to use the sort and label from a signature 'sig'.
 type SigPatternF sig = PatternF (Sort sig) (Label sig)

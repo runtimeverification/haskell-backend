@@ -18,18 +18,19 @@ module Data.Kore.MetaML.Lift ( liftDefinition
                              , LiftableToMetaML(liftToMeta)
                              ) where
 
-import           Data.Fix
+import Data.Fix
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.MLPatterns
-import           Data.Kore.AST.PureML
-import           Data.Kore.FixTraversals
-import           Data.Kore.HaskellExtensions      (Rotate31 (..))
-import           Data.Kore.Implicit.ImplicitSorts
-import           Data.Kore.MetaML.AST
+import Data.Kore.AST.Common
+import Data.Kore.AST.Kore
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.MLPatterns
+import Data.Kore.AST.PureML
+import Data.Kore.AST.Sentence
+import Data.Kore.FixTraversals
+import Data.Kore.HaskellExtensions
+       ( Rotate31 (..) )
+import Data.Kore.Implicit.ImplicitSorts
+import Data.Kore.MetaML.AST
 
 {-|'LiftableToMetaML' describes functionality to lift mixed Kore
 'Object' and 'Meta' constructs to pure 'Meta' constructs.
@@ -346,19 +347,19 @@ symbolOrAliasLiftedDeclaration sa = symbolDeclaration
         }
 
 -- Section 9.2.7 Lift Object Alias Declarations
-liftAliasDeclaration 
-    :: KoreSentenceAlias Object 
+liftAliasDeclaration
+    :: KoreSentenceAlias Object
     -> (MetaSentenceSymbol, MetaSentenceAxiom)
-liftAliasDeclaration as = (symbolOrAliasLiftedDeclaration as, axiom) 
+liftAliasDeclaration as = (symbolOrAliasLiftedDeclaration as, axiom)
   where
     axiom = SentenceAxiom
         { sentenceAxiomAttributes = Attributes []
         , sentenceAxiomParameters = [ sortParam ]
-        , sentenceAxiomPattern    = pat 
+        , sentenceAxiomPattern    = pat
         }
-    pat = Fix . EqualsPattern $ 
-        Equals 
-            { equalsOperandSort = patternMetaSort 
+    pat = Fix . EqualsPattern $
+        Equals
+            { equalsOperandSort = patternMetaSort
             , equalsResultSort  = SortVariableSort sortParam
             , equalsFirst       = left
             , equalsSecond      = right
@@ -436,7 +437,7 @@ liftObjectSentence
     :: Sentence Object UnifiedSortVariable UnifiedPattern Variable
     -> [MetaSentence]
 liftObjectSentence (SentenceAliasSentence osa) =
-    let (mas, axiom) = liftAliasDeclaration osa in 
+    let (mas, axiom) = liftAliasDeclaration osa in
         [ SentenceSymbolSentence mas
         , SentenceAxiomSentence axiom
         ]

@@ -15,10 +15,12 @@ Portability : portable
 -}
 module Data.Kore.Unparser.Unparse (Unparse(..), unparseToString) where
 
-import           Data.Text.Prettyprint.Doc (defaultLayoutOptions, layoutPretty)
-import           Data.Text.Prettyprint.Doc.Render.String (renderString)
+import Data.Text.Prettyprint.Doc
+       ( defaultLayoutOptions, layoutPretty )
+import Data.Text.Prettyprint.Doc.Render.String
+       ( renderString )
 
-import           Data.Kore.AST.Pretty
+import Data.Kore.AST.Pretty
 
 -- |'Unparse' class offers functionality to reverse the parsing process.
 class Pretty a => Unparse a where

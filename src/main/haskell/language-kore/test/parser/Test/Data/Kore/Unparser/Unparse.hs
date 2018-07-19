@@ -1,22 +1,26 @@
 module Test.Data.Kore.Unparser.Unparse
     ( test_parse, test_unparse ) where
 
-import           Test.Tasty                   (TestTree, testGroup)
-import           Test.Tasty.HUnit             (assertEqual, testCase)
-import           Test.Tasty.QuickCheck        (forAll, testProperty)
+import Test.Tasty
+       ( TestTree, testGroup )
+import Test.Tasty.HUnit
+       ( assertEqual, testCase )
+import Test.Tasty.QuickCheck
+       ( forAll, testProperty )
 
-import           Test.Data.Kore
+import Test.Data.Kore
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.Pretty (Pretty(..))
-import           Data.Kore.AST.Sentence
-import           Data.Kore.Parser.LexemeImpl
-import           Data.Kore.Parser.ParserImpl
-import           Data.Kore.Parser.ParserUtils
-import           Data.Kore.Unparser.Unparse
-import           Data.Kore.HaskellExtensions
+import Data.Kore.AST.Common
+import Data.Kore.AST.Kore
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.Pretty
+       ( Pretty (..) )
+import Data.Kore.AST.Sentence
+import Data.Kore.HaskellExtensions
+import Data.Kore.Parser.LexemeImpl
+import Data.Kore.Parser.ParserImpl
+import Data.Kore.Parser.ParserUtils
+import Data.Kore.Unparser.Unparse
 
 test_unparse :: TestTree
 test_unparse =
@@ -33,23 +37,23 @@ test_unparse =
             )
             "sort x{} []"
         , unparseTest
-            (UnifiedSentence 
-                { getUnifiedSentence = UnifiedObject (Rotate41 
-                    { unRotate41 = SentenceAliasSentence (SentenceAlias 
-                        { sentenceAliasAlias = Alias 
+            (UnifiedSentence
+                { getUnifiedSentence = UnifiedObject (Rotate41
+                    { unRotate41 = SentenceAliasSentence (SentenceAlias
+                        { sentenceAliasAlias = Alias
                             { aliasConstructor = Id {getId = "i", idLocation = AstLocationTest} :: Id Object
                             , aliasParams = []
                             }
                         , sentenceAliasSorts = []
-                        , sentenceAliasResultSort = SortVariableSort (SortVariable 
+                        , sentenceAliasResultSort = SortVariableSort (SortVariable
                             { getSortVariable = Id {getId = "z", idLocation = AstLocationTest} :: Id Object})
-                        , sentenceAliasLeftPattern = TopPattern (Top 
-                            { topSort = SortActualSort (SortActual 
+                        , sentenceAliasLeftPattern = TopPattern (Top
+                            { topSort = SortActualSort (SortActual
                                 { sortActualName = Id {getId = "i", idLocation = AstLocationTest} :: Id Object
                                 , sortActualSorts = []
                                 })})
-                        , sentenceAliasRightPattern = TopPattern (Top 
-                            { topSort = SortVariableSort (SortVariable 
+                        , sentenceAliasRightPattern = TopPattern (Top
+                            { topSort = SortVariableSort (SortVariable
                                 { getSortVariable = Id {getId = "q", idLocation = AstLocationTest} :: Id Object})
                             })
                         , sentenceAliasAttributes = Attributes {getAttributes = []}

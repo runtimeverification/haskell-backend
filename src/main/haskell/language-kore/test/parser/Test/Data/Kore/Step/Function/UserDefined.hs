@@ -3,42 +3,46 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Test.Data.Kore.Step.Function.UserDefined (test_userDefinedFunction) where
 
-import           Test.Tasty                            (TestTree)
-import           Test.Tasty.HUnit                      (testCase)
+import Test.Tasty
+       ( TestTree )
+import Test.Tasty.HUnit
+       ( testCase )
 
-import           Test.Data.Kore.Comparators            ()
-import           Test.Data.Kore.Step.Condition         (mockConditionEvaluator)
-import           Test.Data.Kore.Step.Function          (mockFunctionEvaluator)
+import Test.Data.Kore.Comparators ()
+import Test.Data.Kore.Step.Condition
+       ( mockConditionEvaluator )
+import Test.Data.Kore.Step.Function
+       ( mockFunctionEvaluator )
 
-import           Data.Kore.AST.Common                  (Application (..),
-                                                        AstLocation (..),
-                                                        Id (..), Pattern (..),
-                                                        Sort (..),
-                                                        SymbolOrAlias (..))
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.PureML                  (CommonPurePattern,
-                                                        fromPurePattern)
-import           Data.Kore.AST.PureToKore              (patternKoreToPure)
-import           Data.Kore.Building.AsAst
-import           Data.Kore.Building.Patterns
-import           Data.Kore.Building.Sorts
-import           Data.Kore.Error
-import           Data.Kore.IndexedModule.MetadataTools (MetadataTools (..))
-import           Data.Kore.MetaML.AST                  (CommonMetaPattern)
-import           Data.Kore.Step.BaseStep               (AxiomPattern (..))
-import           Data.Kore.Step.Condition.Condition    (ConditionProof (..),
-                                                        ConditionSort (..),
-                                                        EvaluatedCondition (..),
-                                                        UnevaluatedCondition (..))
-import           Data.Kore.Step.Function.Data          (AttemptedFunctionResult (..),
-                                                        CommonPurePatternFunctionEvaluator (..),
-                                                        ConditionEvaluator (..),
-                                                        FunctionResult (..),
-                                                        FunctionResultProof (..))
-import           Data.Kore.Step.Function.UserDefined   (axiomFunctionEvaluator)
-import           Data.Kore.Variables.Fresh.IntCounter
+import Data.Kore.AST.Common
+       ( Application (..), AstLocation (..), Id (..), Pattern (..), Sort (..),
+       SymbolOrAlias (..) )
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.PureML
+       ( CommonPurePattern, fromPurePattern )
+import Data.Kore.AST.PureToKore
+       ( patternKoreToPure )
+import Data.Kore.Building.AsAst
+import Data.Kore.Building.Patterns
+import Data.Kore.Building.Sorts
+import Data.Kore.Error
+import Data.Kore.IndexedModule.MetadataTools
+       ( MetadataTools (..) )
+import Data.Kore.MetaML.AST
+       ( CommonMetaPattern )
+import Data.Kore.Step.BaseStep
+       ( AxiomPattern (..) )
+import Data.Kore.Step.Condition.Condition
+       ( ConditionProof (..), ConditionSort (..), EvaluatedCondition (..),
+       UnevaluatedCondition (..) )
+import Data.Kore.Step.Function.Data
+       ( AttemptedFunctionResult (..), CommonPurePatternFunctionEvaluator (..),
+       ConditionEvaluator (..), FunctionResult (..), FunctionResultProof (..) )
+import Data.Kore.Step.Function.UserDefined
+       ( axiomFunctionEvaluator )
+import Data.Kore.Variables.Fresh.IntCounter
 
-import           Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Extensions
 
 test_userDefinedFunction :: [TestTree]
 test_userDefinedFunction =

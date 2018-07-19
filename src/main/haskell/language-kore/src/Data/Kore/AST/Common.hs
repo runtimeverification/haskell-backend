@@ -1,8 +1,10 @@
 {-# LANGUAGE DeriveFoldable        #-}
 {-# LANGUAGE DeriveFunctor         #-}
+{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DeriveTraversable     #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns        #-}
 {-# LANGUAGE RankNTypes            #-}
@@ -10,8 +12,6 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE UndecidableInstances  #-}
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE LambdaCase            #-}
 {-|
 Module      : Data.Kore.AST.Common
 Description : Data Structures for representing the Kore language AST that do not
@@ -36,16 +36,20 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Data.Kore.AST.Common where
 
-import           Data.Proxy
-import           Data.String (fromString)
+import Data.Proxy
+import Data.String
+       ( fromString )
 
 import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.Pretty (Pretty(..), (<>))
+import           Data.Kore.AST.Pretty
+                 ( Pretty (..), (<>) )
 import qualified Data.Kore.AST.Pretty as Pretty
-import           Data.Kore.Parser.CString (escapeCString)
+import           Data.Kore.Parser.CString
+                 ( escapeCString )
 
-import           GHC.Generics (Generic)
-import           Data.Hashable
+import Data.Hashable
+import GHC.Generics
+       ( Generic )
 
 {-| 'FileLocation' represents a position in a source file.
 -}
@@ -277,7 +281,7 @@ instance Hashable (Sort level)
 
 instance Pretty (Sort level) where
     pretty (SortVariableSort sortVariable) = pretty sortVariable
-    pretty (SortActualSort sortActual) = pretty sortActual
+    pretty (SortActualSort sortActual)     = pretty sortActual
 
 {-|'MetaSortType' corresponds to the @meta-sort-constructor@ syntactic category
 from the Semantics of K, Section 9.1.2 (Sorts).
@@ -885,7 +889,7 @@ be members only of 'Pattern Meta'.
 -}
 -- NOTE: If you are adding a case to Pattern, you should add cases in:
 -- ASTUtils/SmartConstructors.hs
--- as well as a ton of other places, probably. 
+-- as well as a ton of other places, probably.
 data Pattern level variable child where
     AndPattern
         :: !(And level child) -> Pattern level variable child
@@ -931,11 +935,11 @@ data Pattern level variable child where
 -- instance Generic child => Generic (Pattern level variable child)
 
 -- instance (Hashable child, Generic child, Hashable (variable level))
--- => Hashable (Pattern level variable child) 
+-- => Hashable (Pattern level variable child)
 
 instance (Hashable (child), Hashable (variable level))
- => Hashable (Pattern level variable child) where 
-  hashWithSalt s = \case 
+ => Hashable (Pattern level variable child) where
+  hashWithSalt s = \case
     AndPattern           p -> hashWithSalt s p
     ApplicationPattern   p -> hashWithSalt s p
     BottomPattern        p -> hashWithSalt s p
@@ -1013,7 +1017,7 @@ data PatternStub level variable child
     | UnsortedPatternStub (Sort level -> Pattern level variable child)
     deriving(Generic)
 
--- cannot hash. 
+-- cannot hash.
 
 {-|'withSort' transforms an 'UnsortedPatternStub' in a 'SortedPatternStub'.
 -}

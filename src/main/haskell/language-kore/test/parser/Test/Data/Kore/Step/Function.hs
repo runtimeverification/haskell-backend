@@ -1,13 +1,14 @@
 module Test.Data.Kore.Step.Function (mockFunctionEvaluator) where
 
-import           Test.Data.Kore.Comparators           ()
+import Test.Data.Kore.Comparators ()
 
-import           Data.Kore.AST.PureML                 (CommonPurePattern)
-import           Data.Kore.Step.Condition.Condition
-import           Data.Kore.Step.Function.Data         (CommonPurePatternFunctionEvaluator (..),
-                                                       FunctionResult (..),
-                                                       FunctionResultProof (..))
-import           Data.Kore.Variables.Fresh.IntCounter
+import Data.Kore.AST.PureML
+       ( CommonPurePattern )
+import Data.Kore.Step.Condition.Condition
+import Data.Kore.Step.Function.Data
+       ( CommonPurePatternFunctionEvaluator (..), FunctionResult (..),
+       FunctionResultProof (..) )
+import Data.Kore.Variables.Fresh.IntCounter
 
 mockFunctionEvaluator
     ::  [   ( CommonPurePattern level

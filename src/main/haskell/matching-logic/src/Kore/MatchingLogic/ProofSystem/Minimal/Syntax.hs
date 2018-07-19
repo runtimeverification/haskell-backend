@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-| Description: Parser and pretty-printer for the minimal proof system
 
@@ -9,19 +9,25 @@ module Kore.MatchingLogic.ProofSystem.Minimal.Syntax
   , parseMLRule
   , parseMLRuleSig)
   where
-import           Control.Applicative                    (some)
-import           Control.Monad                          (void)
-import           Data.Char                              (isAlphaNum)
-import           Data.Text                              (Text)
-import           Data.Void
+import Control.Applicative
+       ( some )
+import Control.Monad
+       ( void )
+import Data.Char
+       ( isAlphaNum )
+import Data.Text
+       ( Text )
+import Data.Void
 
-import           Data.Text.Prettyprint.Doc              (Doc, Pretty (pretty),
-                                                         sep, tupled, (<>))
-import           Text.Megaparsec                        hiding (some)
-import           Text.Megaparsec.Char
+import Data.Text.Prettyprint.Doc
+       ( Doc, Pretty (pretty), sep, tupled, (<>) )
+import Text.Megaparsec hiding
+       ( some )
+import Text.Megaparsec.Char
 
-import qualified Kore.MatchingLogic.AST                 as AST
-import           Kore.MatchingLogic.AST.Syntax          (mlPattern)
+import qualified Kore.MatchingLogic.AST as AST
+import           Kore.MatchingLogic.AST.Syntax
+                 ( mlPattern )
 import           Kore.MatchingLogic.ProofSystem.Minimal
 import           Kore.MatchingLogic.Signature
 

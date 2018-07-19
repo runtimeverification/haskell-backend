@@ -25,16 +25,17 @@ module Data.Kore.AST.PureToKore
     , patternKoreToPure
     ) where
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.PureML
-import           Data.Kore.AST.Sentence
-import           Data.Kore.ASTTraversals
-import           Data.Kore.Error
-import           Data.Kore.HaskellExtensions (Rotate31 (..))
+import Data.Kore.AST.Common
+import Data.Kore.AST.Kore
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.PureML
+import Data.Kore.AST.Sentence
+import Data.Kore.ASTTraversals
+import Data.Kore.Error
+import Data.Kore.HaskellExtensions
+       ( Rotate31 (..) )
 
-import           Data.Fix
+import Data.Fix
 
 patternPureToKore
     :: MetaOrObject level => CommonPurePattern level -> CommonKorePattern

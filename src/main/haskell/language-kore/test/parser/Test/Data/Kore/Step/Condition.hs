@@ -1,10 +1,11 @@
 module Test.Data.Kore.Step.Condition (mockConditionEvaluator) where
 
-import           Data.Kore.Step.Condition.Condition   (ConditionProof (..),
-                                                       EvaluatedCondition (..),
-                                                       UnevaluatedCondition (..))
-import           Data.Kore.Step.Function.Data         (ConditionEvaluator (..))
-import           Data.Kore.Variables.Fresh.IntCounter
+import Data.Kore.Step.Condition.Condition
+       ( ConditionProof (..), EvaluatedCondition (..),
+       UnevaluatedCondition (..) )
+import Data.Kore.Step.Function.Data
+       ( ConditionEvaluator (..) )
+import Data.Kore.Variables.Fresh.IntCounter
 
 mockConditionEvaluator
     ::  [   ( UnevaluatedCondition level

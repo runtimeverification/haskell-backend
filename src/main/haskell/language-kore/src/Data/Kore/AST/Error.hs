@@ -14,10 +14,11 @@ module Data.Kore.AST.Error
     , withLocationsContext
     ) where
 
-import           Data.Kore.AST.AstWithLocation
-import           Data.Kore.Error
+import Data.Kore.AST.AstWithLocation
+import Data.Kore.Error
 
-import           Data.List                     (intercalate)
+import Data.List
+       ( intercalate )
 
 {-|'koreFailWithLocations' produces an error result with a context containing
 the provided locations. -}

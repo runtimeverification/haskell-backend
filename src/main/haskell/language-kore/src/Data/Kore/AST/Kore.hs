@@ -41,12 +41,14 @@ module Data.Kore.AST.Kore
     , transformUnifiedPattern
     ) where
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.Pretty (Pretty(..))
-import           Data.Kore.HaskellExtensions (Rotate31 (..))
+import Data.Kore.AST.Common
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.Pretty
+       ( Pretty (..) )
+import Data.Kore.HaskellExtensions
+       ( Rotate31 (..) )
 
-import           Data.Fix
+import Data.Fix
 
 
 

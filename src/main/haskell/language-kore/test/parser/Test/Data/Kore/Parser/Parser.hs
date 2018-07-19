@@ -1,16 +1,17 @@
 module Test.Data.Kore.Parser.Parser (test_koreParser) where
 
-import           Test.Tasty                       (TestTree, testGroup)
+import Test.Tasty
+       ( TestTree, testGroup )
 
-import           Test.Data.Kore
-import           Test.Data.Kore.Parser
+import Test.Data.Kore
+import Test.Data.Kore.Parser
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.Sentence
-import           Data.Kore.Implicit.ImplicitSorts
-import           Data.Kore.Parser.ParserImpl
+import Data.Kore.AST.Common
+import Data.Kore.AST.Kore
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.Sentence
+import Data.Kore.Implicit.ImplicitSorts
+import Data.Kore.Parser.ParserImpl
 
 test_koreParser :: [TestTree]
 test_koreParser =
@@ -797,7 +798,7 @@ variablePatternParserTests =
 sentenceAliasParserTests :: [TestTree]
 sentenceAliasParserTests =
     parseTree koreSentenceParser
-        [ 
+        [
           success "alias a{s1}(s2) : s3 where a{s1}(X:s2) := g{}() [\"a\"]"
             ( constructUnifiedSentence SentenceAliasSentence $
                 (SentenceAlias
@@ -854,8 +855,8 @@ sentenceAliasParserTests =
                         { applicationSymbolOrAlias =
                             SymbolOrAlias
                                 { symbolOrAliasConstructor = testId "a" :: Id Object
-                                , symbolOrAliasParams = 
-                                    [ 
+                                , symbolOrAliasParams =
+                                    [
                                           sortVariableSort "s1"
                                         , sortVariableSort "s2"
                                     ]

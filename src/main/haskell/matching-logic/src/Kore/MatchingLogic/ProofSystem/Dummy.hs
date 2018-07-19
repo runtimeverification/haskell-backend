@@ -11,9 +11,9 @@ module Kore.MatchingLogic.ProofSystem.Dummy
   (DummyRule(DummyRule)
   ,DummyError(DummyError)
   ) where
-import           Data.Text
+import Data.Text
 
-import           Kore.MatchingLogic.HilbertProof
+import Kore.MatchingLogic.HilbertProof
 
 {-| A dummy rule contains an arbitrary string
   which is printed in the 'Show' instance but

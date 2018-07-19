@@ -1,21 +1,23 @@
 {-# LANGUAGE OverloadedStrings #-}
-import           Data.Char                                     (isAlphaNum)
-import qualified Data.Map.Strict                               as Map
-import qualified Data.Set                                      as Set
+import           Data.Char
+                 ( isAlphaNum )
+import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 import           Data.Text
 
-import           Text.Megaparsec
-import           Text.Megaparsec.Char
+import Text.Megaparsec
+import Text.Megaparsec.Char
 
-import           Data.Reflection
+import Data.Reflection
 
-import           Kore.MatchingLogic.AST
-import           Kore.MatchingLogic.AST.Syntax
-import           Kore.MatchingLogic.HilbertProof
-import           Kore.MatchingLogic.ProofSystem.Minimal
-import           Kore.MatchingLogic.ProofSystem.Minimal.Syntax (parseMLRuleSig)
-import           Kore.MatchingLogic.ProverRepl
-import           Kore.MatchingLogic.Signature.Simple
+import Kore.MatchingLogic.AST
+import Kore.MatchingLogic.AST.Syntax
+import Kore.MatchingLogic.HilbertProof
+import Kore.MatchingLogic.ProofSystem.Minimal
+import Kore.MatchingLogic.ProofSystem.Minimal.Syntax
+       ( parseMLRuleSig )
+import Kore.MatchingLogic.ProverRepl
+import Kore.MatchingLogic.Signature.Simple
 
 -- Todo: Parsing Formula as Text. Hook to Kore Parser
 parseName :: Parser Text

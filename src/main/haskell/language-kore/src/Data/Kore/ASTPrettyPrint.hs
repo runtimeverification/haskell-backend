@@ -7,20 +7,22 @@ module Data.Kore.ASTPrettyPrint ( prettyPrintToString
                                 , PrettyPrint
                                 ) where
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.PureML
-import           Data.Kore.HaskellExtensions
-import           Data.Kore.IndentingPrinter    (PrinterOutput, StringPrinter,
-                                                betweenLines, printToString,
-                                                withIndent, write)
-import           Data.Kore.Parser.CString      (escapeCString)
-import           Data.Kore.Unification.Unifier
+import Data.Kore.AST.Common
+import Data.Kore.AST.Kore
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.PureML
+import Data.Kore.AST.Sentence
+import Data.Kore.HaskellExtensions
+import Data.Kore.IndentingPrinter
+       ( PrinterOutput, StringPrinter, betweenLines, printToString, withIndent,
+       write )
+import Data.Kore.Parser.CString
+       ( escapeCString )
+import Data.Kore.Unification.Unifier
 
-import           Data.Fix
-import           Data.List                     (intersperse)
+import Data.Fix
+import Data.List
+       ( intersperse )
 
 {-# ANN module ("HLint: ignore Use record patterns" :: String) #-}
 {-
@@ -643,7 +645,7 @@ instance
     ( MetaOrObject level
     , PrettyPrint sortParam
     , PrettyPrint (Fix (pat variable))
-    , PrettyPrint (variable level)    
+    , PrettyPrint (variable level)
     ) => PrettyPrint (Sentence level sortParam pat variable)
   where
     prettyPrint flags (SentenceAliasSentence s)    =

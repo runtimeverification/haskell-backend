@@ -9,12 +9,12 @@ Portability : POSIX
 -}
 module Data.Kore.AST.BuildersImpl where
 
-import           Data.Fix
-import           Data.Proxy
+import Data.Fix
+import Data.Proxy
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.PureML
+import Data.Kore.AST.Common
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.PureML
 
 
 newtype ChildSort level = ChildSort (Sort level)

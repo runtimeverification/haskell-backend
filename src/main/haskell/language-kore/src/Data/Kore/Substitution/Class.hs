@@ -17,21 +17,25 @@ module Data.Kore.Substitution.Class ( SubstitutionClass (..)
                                     , Hashable (..)
                                     ) where
 
-import           Control.Monad.Reader              (ReaderT, ask, asks, local,
-                                                    runReaderT)
+import           Control.Monad.Reader
+                 ( ReaderT, ask, asks, local, runReaderT )
 import           Data.Fix
-import           Data.Hashable                     (hash)
-import           Data.Maybe                        (isJust)
-import qualified Data.Set                          as Set
-import           Prelude                           hiding (lookup)
+import           Data.Hashable
+                 ( hash )
+import           Data.Maybe
+                 ( isJust )
+import qualified Data.Set as Set
+import           Prelude hiding
+                 ( lookup )
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.MLPatterns
-import           Data.Kore.ASTTraversals           (patternTopDownVisitorM)
-import           Data.Kore.Datastructures.MapClass
-import           Data.Kore.Variables.Free
-import           Data.Kore.Variables.Fresh.Class
+import Data.Kore.AST.Common
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.MLPatterns
+import Data.Kore.ASTTraversals
+       ( patternTopDownVisitorM )
+import Data.Kore.Datastructures.MapClass
+import Data.Kore.Variables.Free
+import Data.Kore.Variables.Fresh.Class
 
 {-|'SubstitutionClass' represents a substitution type @s@ mapping variables
 of type @v@ to terms of type @t@.

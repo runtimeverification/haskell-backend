@@ -3,43 +3,42 @@
 
 module Test.Kore.MatchingLogic.ProofSystem.ProofAssistant where
 
-import           Test.Tasty                                   (TestTree,
-                                                               testGroup)
-import           Test.Tasty.HUnit                             (assertFailure,
-                                                               testCase)
+import Test.Tasty
+       ( TestTree, testGroup )
+import Test.Tasty.HUnit
+       ( assertFailure, testCase )
 
-import           Data.Kore.AST.Common                         (Application (..),
-                                                               AstLocation (..),
-                                                               Id (..),
-                                                               Pattern (..),
-                                                               Symbol (..),
-                                                               SymbolOrAlias (..),
-                                                               Variable)
-import           Data.Kore.AST.Kore                           (CommonKorePattern)
-import           Data.Kore.AST.MetaOrObject                   (Meta (..))
-import           Data.Kore.AST.PureToKore
-import           Data.Kore.AST.Sentence
-import           Data.Kore.ASTVerifier.DefinitionVerifier     (AttributesVerification (..),
-                                                               verifyAndIndexDefinition)
-import           Data.Kore.Building.AsAst
-import           Data.Kore.Building.Patterns
-import           Data.Kore.Building.Sorts
-import           Data.Kore.Error
-import           Data.Kore.IndexedModule.IndexedModule
-import           Data.Kore.MetaML.AST                         (MetaMLPattern)
+import Data.Kore.AST.Common
+       ( Application (..), AstLocation (..), Id (..), Pattern (..),
+       Symbol (..), SymbolOrAlias (..), Variable )
+import Data.Kore.AST.Kore
+       ( CommonKorePattern )
+import Data.Kore.AST.MetaOrObject
+       ( Meta (..) )
+import Data.Kore.AST.PureToKore
+import Data.Kore.AST.Sentence
+import Data.Kore.ASTVerifier.DefinitionVerifier
+       ( AttributesVerification (..), verifyAndIndexDefinition )
+import Data.Kore.Building.AsAst
+import Data.Kore.Building.Patterns
+import Data.Kore.Building.Sorts
+import Data.Kore.Error
+import Data.Kore.IndexedModule.IndexedModule
+import Data.Kore.MetaML.AST
+       ( MetaMLPattern )
 
-import           Kore.MatchingLogic.Error
-import           Kore.MatchingLogic.HilbertProof              as HilbertProof (Proof (..),
-                                                                               add,
-                                                                               derive,
-                                                                               emptyProof)
-import           Kore.MatchingLogic.ProofSystem.Minimal       (MLRule (..), SubstitutedVariable (..),
-                                                               SubstitutingVariable (..))
-import           Kore.MatchingLogic.ProofSystem.MLProofSystem as MLProofSystem
+import Kore.MatchingLogic.Error
+import Kore.MatchingLogic.HilbertProof as HilbertProof
+       ( Proof (..), add, derive, emptyProof )
+import Kore.MatchingLogic.ProofSystem.Minimal
+       ( MLRule (..), SubstitutedVariable (..), SubstitutingVariable (..) )
+import Kore.MatchingLogic.ProofSystem.MLProofSystem as MLProofSystem
 
-import           Control.Monad                                (foldM)
-import           Data.List                                    (foldl')
-import qualified Data.Map.Strict                              as Map
+import           Control.Monad
+                 ( foldM )
+import           Data.List
+                 ( foldl' )
+import qualified Data.Map.Strict as Map
 import           Data.Text.Prettyprint.Doc
 
 test_proofAssistant :: TestTree

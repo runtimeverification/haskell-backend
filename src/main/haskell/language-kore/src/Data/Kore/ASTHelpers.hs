@@ -17,18 +17,21 @@ module Data.Kore.ASTHelpers ( ApplicationSorts (..)
                             , quantifyFreeVariables
                             ) where
 
-import           Data.Fix                   (Fix (..))
-import           Data.Foldable              (foldl')
-import qualified Data.Map                   as Map
-import           Data.Proxy                 (Proxy (..))
-import qualified Data.Set                   as Set
+import           Data.Fix
+                 ( Fix (..) )
+import           Data.Foldable
+                 ( foldl' )
+import qualified Data.Map as Map
+import           Data.Proxy
+                 ( Proxy (..) )
+import qualified Data.Set as Set
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.PureML
-import           Data.Kore.AST.Sentence
-import           Data.Kore.Error
-import           Data.Kore.Variables.Free
+import Data.Kore.AST.Common
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.PureML
+import Data.Kore.AST.Sentence
+import Data.Kore.Error
+import Data.Kore.Variables.Free
 
 
 data ApplicationSorts level = ApplicationSorts

@@ -1,6 +1,6 @@
+{-# LANGUAGE ConstraintKinds  #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies     #-}
-{-# LANGUAGE ConstraintKinds      #-}
 {-|
 Description: A generic signature for parameterized sorts and labels
 
@@ -23,19 +23,22 @@ module Kore.MatchingLogic.Signature.Poly
   ,reifySignature
   ,prettyPolyTerm) where
   -- ,ValidatedSignature,fromValidated,findLabel) where
-import           Data.Char                 (isAlpha, isAlphaNum)
+import           Data.Char
+                 ( isAlpha, isAlphaNum )
 import           Data.Coerce
-import           Data.Map.Strict           (Map)
-import qualified Data.Map.Strict           as Map
+import           Data.Map.Strict
+                 ( Map )
+import qualified Data.Map.Strict as Map
 import           Data.Proxy
-import           Data.Text                 (Text)
-import qualified Data.Text                 as Text
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
 
-import           Data.Reflection
-import           Data.Text.Prettyprint.Doc
+import Data.Reflection
+import Data.Text.Prettyprint.Doc
 
-import           Kore.MatchingLogic.AST
-import           Kore.MatchingLogic.Signature
+import Kore.MatchingLogic.AST
+import Kore.MatchingLogic.Signature
 
 -- | A tree of applied sort constructors,
 -- which also allows for sort variables.

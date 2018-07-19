@@ -17,21 +17,20 @@ Stability   : experimental
 Portability : POSIX
 -}
 module Data.Kore.Building.Patterns where
-import           Data.Proxy                 (Proxy (Proxy))
+import Data.Proxy
+       ( Proxy (Proxy) )
 
-import           Data.Kore.AST.Common       (And (..), AstLocation, Bottom (..),
-                                             Ceil (..), CharLiteral (..),
-                                             DomainValue (..), Equals (..),
-                                             Exists (..), Floor (..),
-                                             Forall (..), Id (..), Iff (..),
-                                             Implies (..), In (..), Next (..),
-                                             Not (..), Or (..), Pattern (..),
-                                             Rewrites (..), StringLiteral (..),
-                                             Top (..), Variable (..))
-import           Data.Kore.AST.Kore         (CommonKorePattern, asKorePattern)
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.Building.AsAst
-import           Data.Kore.Building.Sorts
+import Data.Kore.AST.Common
+       ( And (..), AstLocation, Bottom (..), Ceil (..), CharLiteral (..),
+       DomainValue (..), Equals (..), Exists (..), Floor (..), Forall (..),
+       Id (..), Iff (..), Implies (..), In (..), Next (..), Not (..), Or (..),
+       Pattern (..), Rewrites (..), StringLiteral (..), Top (..),
+       Variable (..) )
+import Data.Kore.AST.Kore
+       ( CommonKorePattern, asKorePattern )
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.Building.AsAst
+import Data.Kore.Building.Sorts
 
 {-| When defining new patterns (e.g. for new symbols and aliases),
 users are expected to instantiate either

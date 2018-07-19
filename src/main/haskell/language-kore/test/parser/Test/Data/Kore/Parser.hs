@@ -1,12 +1,14 @@
 module Test.Data.Kore.Parser where
 
-import           Test.Tasty                   (TestTree, testGroup)
-import           Test.Tasty.HUnit             (Assertion, assertBool,
-                                               assertEqual, testCase)
+import Test.Tasty
+       ( TestTree, testGroup )
+import Test.Tasty.HUnit
+       ( Assertion, assertBool, assertEqual, testCase )
 
-import           Data.Kore.Parser.ParserUtils
+import Data.Kore.Parser.ParserUtils
 
-import           Data.Either                  (isLeft)
+import Data.Either
+       ( isLeft )
 
 data SuccessfulTest a = SuccessfulTest
     { successInput    :: String

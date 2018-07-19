@@ -10,14 +10,14 @@ Portability : POSIX
 module Data.Kore.ASTVerifier.SortVerifier (verifySort) where
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Error
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.Error
 import           Data.Kore.IndexedModule.IndexedModule
-import qualified Data.Set                              as Set
+import qualified Data.Set as Set
 
 {-|'verifySort' verifies the welformedness of a Kore 'Sort'. -}
 verifySort

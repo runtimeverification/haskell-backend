@@ -1,19 +1,22 @@
 module Test.Data.Kore.AST.PureToKore (test_pureToKore) where
 
-import           Test.Tasty                 (TestTree)
-import           Test.Tasty.HUnit           (assertEqual, testCase)
-import           Test.Tasty.QuickCheck      (forAll, testProperty)
+import Test.Tasty
+       ( TestTree )
+import Test.Tasty.HUnit
+       ( assertEqual, testCase )
+import Test.Tasty.QuickCheck
+       ( forAll, testProperty )
 
-import           Test.Data.Kore
-import           Test.Data.Kore.MetaML.AST
+import Test.Data.Kore
+import Test.Data.Kore.MetaML.AST
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.PureML
-import           Data.Kore.AST.PureToKore
-import           Data.Kore.AST.Sentence
-import           Data.Kore.MetaML.AST
+import Data.Kore.AST.Common
+import Data.Kore.AST.Kore
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.PureML
+import Data.Kore.AST.PureToKore
+import Data.Kore.AST.Sentence
+import Data.Kore.MetaML.AST
 
 
 pureToKoreToPureProp :: CommonMetaPattern -> Bool

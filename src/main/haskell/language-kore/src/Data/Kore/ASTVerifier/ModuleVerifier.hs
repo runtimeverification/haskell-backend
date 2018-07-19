@@ -15,11 +15,11 @@ import           Data.Kore.AST.Common
 import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTVerifier.AttributesVerifier
 import           Data.Kore.ASTVerifier.Error
-import qualified Data.Kore.ASTVerifier.SentenceVerifier   as SentenceVerifier
+import qualified Data.Kore.ASTVerifier.SentenceVerifier as SentenceVerifier
 import           Data.Kore.Error
 import           Data.Kore.IndexedModule.IndexedModule
 
-import qualified Data.Map                                 as Map
+import qualified Data.Map as Map
 
 {-|'verifyUniqueNames' verifies that names defined in a module are unique both
 within the module and outside, using the provided name set. -}

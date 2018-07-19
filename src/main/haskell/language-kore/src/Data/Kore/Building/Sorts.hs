@@ -31,10 +31,10 @@ module Data.Kore.Building.Sorts
   , ObjectSortVariable1 (ObjectSortVariable1)
   ) where
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.Building.AsAst
-import           Data.Kore.Implicit.ImplicitSorts
+import Data.Kore.AST.Common
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.Building.AsAst
+import Data.Kore.Implicit.ImplicitSorts
 
 type AsSort level = AsAst (Sort level)
 type MetaSort = AsSort Meta

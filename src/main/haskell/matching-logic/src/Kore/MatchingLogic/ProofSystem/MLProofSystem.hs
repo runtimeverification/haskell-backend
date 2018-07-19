@@ -1,41 +1,47 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE MonoLocalBinds #-}
+{-# LANGUAGE MonoLocalBinds        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Kore.MatchingLogic.ProofSystem.MLProofSystem where
 
-import           Data.Kore.AST.Common                   (And (..),
-                                                         Application (..),
-                                                         Exists (..),
-                                                         Implies (..), Not (..),
-                                                         Or (..), Pattern (..),
-                                                         SymbolOrAlias (..),
-                                                         Variable)
-import qualified Data.Kore.AST.Common                   as Common (Forall (..))
-import           Data.Kore.AST.Kore                     (CommonKorePattern)
-import           Data.Kore.AST.MetaOrObject             (Meta (..),
-                                                         Unified (..))
-import           Data.Kore.AST.PureToKore               (patternPureToKore)
-import           Data.Kore.ASTVerifier.PatternVerifier  (verifyPattern)
-import           Data.Kore.Error                        (Error, castError,
-                                                         koreFail, koreFailWhen,
-                                                         withContext)
-import           Data.Kore.IndexedModule.IndexedModule  (KoreIndexedModule)
-import           Data.Kore.MetaML.AST                   (CommonMetaPattern,
-                                                         metaFreeVariables)
-import           Data.Kore.Substitution.Class           (PatternSubstitutionClass (..))
-import qualified Data.Kore.Substitution.List            as Substitution
-import           Data.Kore.Unparser.Unparse             (Unparse,
-                                                         unparseToString)
-import           Data.Kore.Variables.Fresh.Class        (FreshVariablesClass (..))
-import           Data.Kore.Variables.Sort               (TermWithSortVariablesClass (sortVariables))
+import           Data.Kore.AST.Common
+                 ( And (..), Application (..), Exists (..), Implies (..),
+                 Not (..), Or (..), Pattern (..), SymbolOrAlias (..),
+                 Variable )
+import qualified Data.Kore.AST.Common as Common
+                 ( Forall (..) )
+import           Data.Kore.AST.Kore
+                 ( CommonKorePattern )
+import           Data.Kore.AST.MetaOrObject
+                 ( Meta (..), Unified (..) )
+import           Data.Kore.AST.PureToKore
+                 ( patternPureToKore )
+import           Data.Kore.ASTVerifier.PatternVerifier
+                 ( verifyPattern )
+import           Data.Kore.Error
+                 ( Error, castError, koreFail, koreFailWhen, withContext )
+import           Data.Kore.IndexedModule.IndexedModule
+                 ( KoreIndexedModule )
+import           Data.Kore.MetaML.AST
+                 ( CommonMetaPattern, metaFreeVariables )
+import           Data.Kore.Substitution.Class
+                 ( PatternSubstitutionClass (..) )
+import qualified Data.Kore.Substitution.List as Substitution
+import           Data.Kore.Unparser.Unparse
+                 ( Unparse, unparseToString )
+import           Data.Kore.Variables.Fresh.Class
+                 ( FreshVariablesClass (..) )
+import           Data.Kore.Variables.Sort
+                 ( TermWithSortVariablesClass (sortVariables) )
 
-import           Kore.MatchingLogic.Error               (MLError)
-import           Kore.MatchingLogic.HilbertProof        (ProofSystem (..))
-import           Kore.MatchingLogic.ProofSystem.Minimal (MLRule (..), SubstitutedVariable (..),
-                                                         SubstitutingVariable (..))
+import Kore.MatchingLogic.Error
+       ( MLError )
+import Kore.MatchingLogic.HilbertProof
+       ( ProofSystem (..) )
+import Kore.MatchingLogic.ProofSystem.Minimal
+       ( MLRule (..), SubstitutedVariable (..), SubstitutingVariable (..) )
 
 import           Data.Fix
-import qualified Data.Set                               as Set
+import qualified Data.Set as Set
 
 type Var = Variable Meta
 type Symbol = SymbolOrAlias Meta

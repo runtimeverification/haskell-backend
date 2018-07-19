@@ -26,14 +26,15 @@ module Data.Kore.Implicit.ImplicitKore ( uncheckedKoreModule
                                        , symbolDeclaredA
                                        ) where
 
-import           Data.Kore.AST.Builders
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.PureML                    (PureSentenceSymbol)
-import           Data.Kore.AST.Sentence
-import           Data.Kore.Implicit.ImplicitSorts
-import           Data.Kore.Implicit.ImplicitVarsInternal
-import           Data.Kore.MetaML.AST
+import Data.Kore.AST.Builders
+import Data.Kore.AST.Common
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.PureML
+       ( PureSentenceSymbol )
+import Data.Kore.AST.Sentence
+import Data.Kore.Implicit.ImplicitSorts
+import Data.Kore.Implicit.ImplicitVarsInternal
+import Data.Kore.MetaML.AST
 
 {-
 Conventions used:

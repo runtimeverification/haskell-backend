@@ -33,9 +33,11 @@ module Data.Kore.AST.MetaOrObject
     , IsMetaOrObject (..)
     ) where
 
-import           Data.Proxy (Proxy (Proxy))
+import Data.Proxy
+       ( Proxy (Proxy) )
 
-import           Data.Kore.AST.Pretty (Pretty(..))
+import Data.Kore.AST.Pretty
+       ( Pretty (..) )
 
 toProxy :: a -> Proxy a
 toProxy _ = Proxy

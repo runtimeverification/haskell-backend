@@ -1,15 +1,16 @@
 module Test.Data.Kore.ASTVerifier.DefinitionVerifier.UniqueSortVariables
     (test_uniqueSortVariables) where
 
-import           Test.Tasty                                          (TestTree)
+import Test.Tasty
+       ( TestTree )
 
-import           Test.Data.Kore.ASTVerifier.DefinitionVerifier
+import Test.Data.Kore.ASTVerifier.DefinitionVerifier
 
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.Sentence
-import           Data.Kore.Error
-import           Data.Kore.Implicit.ImplicitSorts
-import           Data.Kore.AST.Common
+import Data.Kore.AST.Common
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.Sentence
+import Data.Kore.Error
+import Data.Kore.Implicit.ImplicitSorts
 
 test_uniqueSortVariables :: [TestTree]
 test_uniqueSortVariables =
@@ -90,10 +91,10 @@ test_uniqueSortVariables =
         ( simpleDefinitionFromSentences (ModuleName "MODULE")
             [ asSentence
                 (aliasSentenceWithSortParameters
-                    (AliasName "a") 
-                    (SortName "s") 
-                    [] 
-                    (TopPattern $ Top { topSort = simpleSort (SortName "s") }) 
+                    (AliasName "a")
+                    (SortName "s")
+                    []
+                    (TopPattern $ Top { topSort = simpleSort (SortName "s") })
                     (TopPattern $ Top { topSort = simpleSort (SortName "s") })
                 :: KoreSentenceAlias Object
                 )
@@ -107,7 +108,7 @@ test_uniqueSortVariables =
                     (AliasName "a")
                     (SortName "s")
                     [ sortVariable Object (SortVariableName "sv") ]
-                    (TopPattern $ Top { topSort = simpleSort (SortName "s") }) 
+                    (TopPattern $ Top { topSort = simpleSort (SortName "s") })
                     (TopPattern $ Top { topSort = simpleSort (SortName "s") }))
             , simpleSortSentence (SortName "s")
             ]
@@ -119,7 +120,7 @@ test_uniqueSortVariables =
                     (AliasName "a")
                     (SortName "s")
                     [ sortVariable Object (SortVariableName "a") ]
-                    (TopPattern $ Top { topSort = simpleSort (SortName "s") }) 
+                    (TopPattern $ Top { topSort = simpleSort (SortName "s") })
                     (TopPattern $ Top { topSort = simpleSort (SortName "s") }))
             , simpleSortSentence (SortName "s")
             ]
@@ -132,7 +133,7 @@ test_uniqueSortVariables =
                     (AliasName "a")
                     (SortName "s")
                     [ sortVariable Object (SortVariableName "s") ]
-                    (TopPattern $ Top { topSort = simpleSort (SortName "s") }) 
+                    (TopPattern $ Top { topSort = simpleSort (SortName "s") })
                     (TopPattern $ Top { topSort = simpleSort (SortName "s") }))
             , simpleSortSentence (SortName "s")
             ]
@@ -146,7 +147,7 @@ test_uniqueSortVariables =
                     [ sortVariable Object (SortVariableName "sv1")
                     , sortVariable Object (SortVariableName "sv2")
                     ]
-                    (TopPattern $ Top { topSort = simpleSort (SortName "s") }) 
+                    (TopPattern $ Top { topSort = simpleSort (SortName "s") })
                     (TopPattern $ Top { topSort = simpleSort (SortName "s") }))
             , simpleSortSentence (SortName "s")
             ]
@@ -353,7 +354,7 @@ test_uniqueSortVariables =
                     [ sortVariable Object (SortVariableName "sv")
                     , sortVariable Object (SortVariableName "sv")
                     ]
-                    (TopPattern $ Top { topSort = simpleSort (SortName "s1") }) 
+                    (TopPattern $ Top { topSort = simpleSort (SortName "s1") })
                     (TopPattern $ Top { topSort = simpleSort (SortName "s1") }))
             , simpleSortSentence (SortName "s")
             ]

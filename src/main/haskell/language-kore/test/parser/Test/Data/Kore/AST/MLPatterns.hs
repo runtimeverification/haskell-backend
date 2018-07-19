@@ -6,24 +6,27 @@ module Test.Data.Kore.AST.MLPatterns
     , extractPurePattern
     ) where
 
-import           Test.Tasty                       (TestTree, testGroup)
-import           Test.Tasty.HUnit                 (assertEqual, testCase)
+import Test.Tasty
+       ( TestTree, testGroup )
+import Test.Tasty.HUnit
+       ( assertEqual, testCase )
 
-import           Test.Data.Kore
+import Test.Data.Kore
 
-import           Data.Kore.AST.Builders
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
-import           Data.Kore.AST.Kore               (CommonKorePattern)
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.MLPatterns
-import           Data.Kore.AST.PureML
-import           Data.Kore.Building.AsAst
-import           Data.Kore.Building.Patterns
-import           Data.Kore.Building.Sorts         as Sorts
-import           Data.Kore.Implicit.ImplicitSorts
+import Data.Kore.AST.Builders
+import Data.Kore.AST.Common
+import Data.Kore.AST.Kore
+       ( CommonKorePattern )
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.MLPatterns
+import Data.Kore.AST.PureML
+import Data.Kore.AST.Sentence
+import Data.Kore.Building.AsAst
+import Data.Kore.Building.Patterns
+import Data.Kore.Building.Sorts as Sorts
+import Data.Kore.Implicit.ImplicitSorts
 
-import           Data.Fix
+import Data.Fix
 
 extractPurePattern
     :: MetaOrObject level

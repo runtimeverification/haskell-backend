@@ -43,16 +43,18 @@ module Data.Kore.AST.Builders
     , unparameterizedVariable_
     ) where
 
-import           Data.Fix                   (Fix (..))
-import           Data.Proxy                 (Proxy (..))
+import Data.Fix
+       ( Fix (..) )
+import Data.Proxy
+       ( Proxy (..) )
 
-import           Data.Kore.AST.BuildersImpl
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.PureML
-import           Data.Kore.AST.Sentence
-import           Data.Kore.ASTHelpers
-import           Data.Kore.Error
+import Data.Kore.AST.BuildersImpl
+import Data.Kore.AST.Common
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.PureML
+import Data.Kore.AST.Sentence
+import Data.Kore.ASTHelpers
+import Data.Kore.Error
 
 {-|'sortParameter' defines a sort parameter that can be used in declarations.
 -}

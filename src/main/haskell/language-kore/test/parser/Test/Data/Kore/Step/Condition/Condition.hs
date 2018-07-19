@@ -1,16 +1,18 @@
 module Test.Data.Kore.Step.Condition.Condition (test_condition) where
 
-import           Test.Tasty                         (TestTree)
-import           Test.Tasty.HUnit                   (testCase)
+import Test.Tasty
+       ( TestTree )
+import Test.Tasty.HUnit
+       ( testCase )
 
-import           Test.Data.Kore.Comparators         ()
+import Test.Data.Kore.Comparators ()
 
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.Building.AsAst
-import           Data.Kore.Building.Sorts
-import           Data.Kore.Step.Condition.Condition
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.Building.AsAst
+import Data.Kore.Building.Sorts
+import Data.Kore.Step.Condition.Condition
 
-import           Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Extensions
 
 test_condition :: [TestTree]
 test_condition =

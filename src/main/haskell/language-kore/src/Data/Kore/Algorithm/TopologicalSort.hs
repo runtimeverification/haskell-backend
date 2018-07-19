@@ -12,8 +12,9 @@ module Data.Kore.Algorithm.TopologicalSort
     (topologicalSort, ToplogicalSortCycles(..))
   where
 
-import           Data.Graph (SCC (..), stronglyConnComp)
-import qualified Data.Map   as Map
+import           Data.Graph
+                 ( SCC (..), stronglyConnComp )
+import qualified Data.Map as Map
 
 newtype ToplogicalSortCycles node = ToplogicalSortCycles [node]
     deriving (Show, Eq)
