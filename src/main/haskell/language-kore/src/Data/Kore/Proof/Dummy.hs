@@ -25,28 +25,15 @@ Portability : portable
 
 module Data.Kore.Proof.Dummy where
 
-
-import           Control.Lens
-import           Control.Lens.Operators
-import           Control.Monad.State
-import           Data.Fix
-import           Data.Fix
-import           Data.Foldable
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
-import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
+import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.IndexedModule.MetadataTools
-import qualified Data.Map.Strict                       as M
-import           Data.Maybe
 import           Data.Reflection
-import qualified Data.Set                              as S
 
-
-import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.ASTUtils.SmartConstructors
-import           Data.Kore.ASTUtils.Substitution
 
+pattern V :: var level -> PureMLPattern level var
 pattern V x = Var_ x
 
 var :: MetaOrObject level => String -> Variable level

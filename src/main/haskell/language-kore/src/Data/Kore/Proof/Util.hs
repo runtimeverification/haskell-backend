@@ -41,13 +41,14 @@ module Data.Kore.Proof.Util
 , eqTransitivity
 ) where
 
-
+import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.ASTUtils.SmartConstructors
 import           Data.Kore.IndexedModule.MetadataTools
 import           Data.Reflection
 
 import           Data.Kore.Proof.Proof
+import           Data.Kore.Proof.Dummy
 
 -- | Helper functions for common proof steps.
 -- Conventions:
@@ -185,4 +186,18 @@ eqTransitivity
     -> Proof
 eqTransitivity = undefined
 
+--------------------------------------------------------------------------------
 
+generateVarList 
+    :: Given (MetadataTools Object)
+    => [Sort Object]
+    -> String 
+    -> ([Variable Object], [Term])
+generateVarList sorts name = 
+    let vars = 
+          zipWith
+            (\n sort -> varS (name ++ show n) sort)
+            [(1::Int)..]
+            sorts 
+        vars' = map Var_ vars 
+    in (vars, vars')
