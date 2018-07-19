@@ -32,6 +32,7 @@ Portability : portable
 
 module Data.Kore.Proof.ConstructorAxioms
 ( generateInjectivityAxiom
+, generateNoConfusionAxiom
 ) where
 
 import           Data.Kore.AST.Common
