@@ -1,21 +1,22 @@
 {-|
-Module      : Kore.MatchingLogic.Error
-Description : Helpers for errors related to matching logic.
+Module      : Logic.Matching.Error
+Description : Helpers for errors related to matching logic
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Kore.MatchingLogic.Error where
+module Logic.Matching.Error where
 
-import           Data.Kore.Error
+import Data.Text.Prettyprint.Doc
 
-import           Data.Text.Prettyprint.Doc
+import Data.Kore.Error
 
 {-| 'MLError' is a tag for errors related to matching logic. -}
 newtype MLError = MLError ()
     deriving (Eq, Show)
+
 {-| 'MLSuccess' is a tag for success related to matching logic. -}
 newtype MLSuccess = MLSuccess ()
     deriving (Eq, Show)

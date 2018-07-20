@@ -33,7 +33,7 @@ import Data.Kore.Error
 import Data.Kore.IndexedModule.IndexedModule
 import Data.Kore.MetaML.AST
        ( MetaMLPattern )
-import Kore.MatchingLogic.Error
+import Logic.Matching.Error
 import Logic.Matching.Rules.Kore as MLProofSystem
 import Logic.Matching.Rules.Minimal
        ( MLRule (..), SubstitutedVariable (..), SubstitutingVariable (..) )

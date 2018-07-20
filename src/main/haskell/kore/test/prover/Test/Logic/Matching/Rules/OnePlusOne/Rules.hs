@@ -12,7 +12,7 @@ import Data.Functor.Foldable
        ( Fix (..) )
 
 import Data.Kore.Error
-import Kore.MatchingLogic.Error
+import Logic.Matching.Error
        ( MLError )
 import Logic.Matching.Signature
 import Logic.Proof.Hilbert

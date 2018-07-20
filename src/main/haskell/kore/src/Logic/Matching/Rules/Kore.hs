@@ -36,7 +36,7 @@ import           Data.Kore.Variables.Fresh.Class
                  ( FreshVariablesClass (..) )
 import           Data.Kore.Variables.Sort
                  ( TermWithSortVariablesClass (sortVariables) )
-import           Kore.MatchingLogic.Error
+import           Logic.Matching.Error
                  ( MLError )
 import           Logic.Matching.Rules.Minimal
                  ( MLRule (..), SubstitutedVariable (..),

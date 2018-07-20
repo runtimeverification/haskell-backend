@@ -23,7 +23,7 @@ import           Text.Megaparsec
 import           Text.Megaparsec.Char
 
 import Data.Kore.Error
-import Kore.MatchingLogic.Error
+import Logic.Matching.Error
 import Logic.Proof.Hilbert
 
 newtype ProverState ix rule formula =
