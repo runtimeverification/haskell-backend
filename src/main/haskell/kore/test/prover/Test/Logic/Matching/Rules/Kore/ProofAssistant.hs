@@ -1,7 +1,7 @@
  -- to avoid warnings that constraints (AsAst CommonKorePattern p) can be simplified
 {-# OPTIONS_GHC -fno-warn-simplifiable-class-constraints #-}
 
-module Test.Kore.MatchingLogic.ProofSystem.ProofAssistant where
+module Test.Logic.Matching.Rules.Kore.ProofAssistant where
 
 import Test.Tasty
        ( TestTree, testGroup )
@@ -34,7 +34,7 @@ import Data.Kore.IndexedModule.IndexedModule
 import Data.Kore.MetaML.AST
        ( MetaMLPattern )
 import Kore.MatchingLogic.Error
-import Kore.MatchingLogic.ProofSystem.MLProofSystem as MLProofSystem
+import Logic.Matching.Rules.Kore as MLProofSystem
 import Logic.Matching.Rules.Minimal
        ( MLRule (..), SubstitutedVariable (..), SubstitutingVariable (..) )
 import Logic.Proof.Hilbert as HilbertProof
