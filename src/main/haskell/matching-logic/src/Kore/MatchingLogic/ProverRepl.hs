@@ -18,10 +18,16 @@ import           Data.Text.Prettyprint.Doc       (Pretty (pretty), colon, (<+>))
 import           System.Console.Haskeline
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
+import           Text.Megaparsec.Error (ShowErrorComponent (..),
+                                        parseErrorPretty)
 
 import           Kore.MatchingLogic.HilbertProof
 import           Data.Kore.Error
 import           Kore.MatchingLogic.Error
+
+-- TODO: this is already defined in ParserUtils. Import that instead. 
+instance ShowErrorComponent String where
+  showErrorComponent str = str
 
 newtype ProverState ix rule formula =
   ProverState (Proof ix rule formula)
@@ -69,7 +75,6 @@ applyCommand formulaVerifier command proof = case command of
   AddAndProve ix f rule -> applyAddAndProve formulaVerifier proof ix f rule
   Prove ix rule         -> applyProve proof ix rule
 
-  -- type Parser = Parsec Void Text
 type Parser = Parsec String String
 
 parseAdd :: Parser ix -> Parser formula -> Parser (rule ix) -> Parser (Command ix rule formula)
@@ -126,7 +131,7 @@ runProver formulaVerifier pCommand' initialState =
                       outputStrLn (show (renderProof state))
                       repl
         Just command -> case parse pCommand' "<stdin>" command of
-          Left err -> error "TODO" -- outputStrLn (parseErrorPretty err) >> repl
+          Left err -> outputStrLn (parseErrorPretty err) >> repl
           Right cmd -> do
             ProverState state <- lift get
             case applyCommand formulaVerifier cmd state of

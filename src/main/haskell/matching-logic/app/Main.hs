@@ -49,12 +49,6 @@ pCommand' = parseCommand parseName parseFormula parseRule
     y = metaVariableParser
     parseRule = parseMLRule x y parseFormula parseName  
 
-instance Pretty (SymbolOrAlias t) where
-    pretty _ = pretty "SymbolOrAlias"
-
-instance Pretty (Variable t) where
-    pretty _ = pretty "Variable"
-
 -- proveCommand
 --     :: (Reifies sig ValidatedSignature)
 --     => proxy (SimpleSignature sig)
