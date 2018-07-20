@@ -111,7 +111,7 @@ data UnificationProof level variable
     -- (x = (t1 /\ t2))
   deriving (Eq, Show)
 
-{-# ANN simplifyUnificationProof "HLint: ignore Use record patterns" #-}
+{-# ANN simplifyUnificationProof ("HLint: ignore Use record patterns" :: String) #-}
 simplifyUnificationProof
     :: UnificationProof level variable
     -> UnificationProof level variable

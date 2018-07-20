@@ -22,6 +22,7 @@ module Data.Kore.AST.MetaOrObject
     , MetaOrObject (..)
     , Unified (..)
     , asUnified
+    , applyUnified
     , transformUnified
     , mapUnified
     , sequenceUnified
@@ -33,6 +34,8 @@ module Data.Kore.AST.MetaOrObject
     ) where
 
 import           Data.Proxy (Proxy (Proxy))
+
+import           Data.Kore.AST.Pretty (Pretty(..))
 
 toProxy :: a -> Proxy a
 toProxy _ = Proxy
@@ -87,6 +90,13 @@ type OrdMetaOrObject thing = (Ord (thing Meta), Ord (thing Object))
 deriving instance (EqMetaOrObject thing) => Eq (Unified thing)
 deriving instance (OrdMetaOrObject thing) => Ord (Unified thing)
 deriving instance (ShowMetaOrObject thing) => Show (Unified thing)
+
+instance
+    ( Pretty (thing Object)
+    , Pretty (thing Meta)
+    ) => Pretty (Unified thing)
+  where
+    pretty = applyUnified pretty pretty
 
 {-|Given a function transforming objects of 'Meta' type and another transforming
 objects of 'Object' type, 'applyUnified' builds the corresponding direct sum

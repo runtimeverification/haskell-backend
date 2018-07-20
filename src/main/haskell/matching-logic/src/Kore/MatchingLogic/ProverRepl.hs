@@ -12,6 +12,7 @@ import           Control.Monad.State.Strict      (MonadState (get,put), execStat
 import           Control.Monad.Trans             (MonadTrans (lift))
 import           Data.Text                       (Text, pack)
 import           Data.Void
+import qualified Data.Map.Strict                 as Map
 
 import           Data.Text.Prettyprint.Doc       (Pretty (pretty), colon, (<+>))
 import           System.Console.Haskeline
@@ -20,14 +21,43 @@ import           Text.Megaparsec.Char
 
 import           Kore.MatchingLogic.HilbertProof
 import           Data.Kore.Error
+import           Kore.MatchingLogic.Error
 
 newtype ProverState ix rule formula =
   ProverState (Proof ix rule formula)
 
 data Command ix rule formula =
    Add ix formula
- | Derive ix formula (rule ix)
+ | Prove ix (rule ix)
+ | AddAndProve ix formula (rule ix)
  deriving Show
+
+applyAddAndProve :: (Ord ix, Pretty ix, ProofSystem error rule formula)
+                 => (formula -> Either (Error error) ())
+                 -> Proof ix rule formula
+                 -> ix -> formula -> (rule ix)
+                 -> Either (Error error) (Proof ix rule formula)
+applyAddAndProve formulaVerifier proof ix f rule = 
+  do 
+    proof' <- add formulaVerifier proof ix f
+    derive proof' ix f rule 
+
+applyProve :: (Ord ix, Pretty ix, ProofSystem error rule formula)
+           => Proof ix rule formula
+           -> ix -> (rule ix)
+           -> Either (Error error) (Proof ix rule formula)
+applyProve proof ix rule = do
+  f' <- case Map.lookup ix (index proof) of
+          Nothing    ->   mlFail ["Formula with ID ", pretty ix, "not found"]
+          Just (_,f) -> return f
+  derive proof ix f' rule 
+
+applyAdd :: (Ord ix, Pretty ix, ProofSystem error rule formula)
+         => (formula -> Either (Error error) ())
+         -> Proof ix rule formula
+         -> ix -> formula
+         -> Either (Error error) (Proof ix rule formula)
+applyAdd = add
 
 applyCommand :: (Ord ix, Pretty ix, ProofSystem error rule formula)
              => (formula -> Either (Error error) ())
@@ -35,25 +65,45 @@ applyCommand :: (Ord ix, Pretty ix, ProofSystem error rule formula)
              -> Proof ix rule formula
              -> Either (Error error) (Proof ix rule formula)
 applyCommand formulaVerifier command proof = case command of
-  Add ix f         -> add formulaVerifier proof ix f
-  Derive ix f rule -> derive proof ix f rule
+  Add ix f              -> applyAdd formulaVerifier proof ix f
+  AddAndProve ix f rule -> applyAddAndProve formulaVerifier proof ix f rule
+  Prove ix rule         -> applyProve proof ix rule
 
   -- type Parser = Parsec Void Text
 type Parser = Parsec String String
 
-parseCommand :: Parser ix -> Parser formula -> Parser (rule ix) -> Parser (Command ix rule formula)
-parseCommand pIx pFormula pDerivation = do
+parseAdd :: Parser ix -> Parser formula -> Parser (rule ix) -> Parser (Command ix rule formula)
+parseAdd pIx pFormula pDerivation = do
+  _ <- string "add"
+  space
   ix <- pIx
   space >> char ':' >> space
   formula <- pFormula
   space
   option
     (Add ix formula)
-    (Derive ix formula <$ string "by" <* space <*> pDerivation)
+    (AddAndProve ix formula <$ string "by" <* space <*> pDerivation)
+
+parseProve :: Parser ix -> Parser formula -> Parser (rule ix) -> Parser (Command ix rule formula)
+parseProve pIx _ pDerivation = do
+  _ <- string "prove"
+  space
+  ix <- pIx
+  space
+  _ <- string "by"
+  space
+  rule <- pDerivation
+  return (Prove ix rule)
+
+parseCommand :: Parser ix -> Parser formula -> Parser (rule ix) -> Parser (Command ix rule formula)
+parseCommand pIx pFormula pDerivation 
+  =  parseProve pIx pFormula pDerivation
+ <|> parseAdd pIx pFormula pDerivation
 
 instance (Pretty ix, Pretty formula, Pretty (rule ix)) => Pretty (Command ix rule formula) where
-  pretty (Add ix formula) = pretty ix<+>colon<+>pretty formula
-  pretty (Derive ix formula rule) = pretty ix<+>colon<+>pretty formula<+>pretty("by"::Text)<+>pretty rule
+  pretty (Add ix formula)              = pretty("add"::Text)<+>pretty ix<+>colon<+>pretty formula
+  pretty (Prove ix rule)               = pretty("prove"::Text)<+>pretty ix<+>colon<+>pretty("by"::Text)<+>pretty rule
+  pretty (AddAndProve ix formula rule) = pretty("add"::Text)<+>pretty ix<+>colon<+>pretty formula<+>pretty("by"::Text)<+>pretty rule
 
 runProver
   ::  ( Ord ix
