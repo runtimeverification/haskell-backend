@@ -9,7 +9,7 @@ import           Text.Megaparsec.Char
 import           Data.Reflection
 
 import           Logic.Matching.Pattern
-import           Kore.MatchingLogic.AST.Syntax
+import           Logic.Matching.Syntax
 import           Kore.MatchingLogic.HilbertProof
 import           Kore.MatchingLogic.ProofSystem.Minimal
 import           Kore.MatchingLogic.ProofSystem.Minimal.Syntax (parseMLRuleSig)

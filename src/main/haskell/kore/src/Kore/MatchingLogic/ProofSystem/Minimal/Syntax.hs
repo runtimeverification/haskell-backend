@@ -20,7 +20,7 @@ import           Text.Megaparsec                        hiding (some)
 import           Text.Megaparsec.Char
 
 import qualified Logic.Matching.Pattern as Pattern
-import           Kore.MatchingLogic.AST.Syntax          (mlPattern)
+import           Logic.Matching.Syntax          (mlPattern)
 import           Kore.MatchingLogic.ProofSystem.Minimal
 import           Kore.MatchingLogic.Signature
 

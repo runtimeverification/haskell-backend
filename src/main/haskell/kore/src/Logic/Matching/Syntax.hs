@@ -1,35 +1,38 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {- |
-Description: Parser and printer for matching logic patterns, using a subset of Kore syntax.
+Description: Concrete syntax of matching logic patterns
 
-Parser and pretty-printer for the matching logic pattern types in
-'Logic.Matching.Pattern'.
-This module uses a subset of the concrete syntax of Kore,
-such as `\and{Bool}(A:Bool,B:Bool)` for a simple disjunction of variables.
+This module implements a parser and pretty-printer for the matching logic
+pattern types in "Logic.Matching.Pattern" using a subset of the concrete syntax
+of Kore, such as `\and{Bool}(A:Bool,B:Bool)` for a simple disjunction of
+variables.
 -}
-module Kore.MatchingLogic.AST.Syntax
-  ( mlPattern
-  , prettyPat
-  , simpleSigPattern
-  , simpleSigLabel
-  , simpleSigSort
-  ) where
+module Logic.Matching.Syntax
+    ( mlPattern
+    , prettyPat
+    , simpleSigPattern
+    , simpleSigLabel
+    , simpleSigSort
+    ) where
+
 import           Control.Applicative
-import           Control.Monad                       (void)
-import           Data.Text                           (Text)
-import           Data.Void
-
-import           Data.Functor.Foldable               (Fix (Fix))
+import           Control.Monad
+                 ( void )
+import           Data.Functor.Foldable
+                 ( Fix (Fix) )
 import           Data.Reflection
-
-import           Data.Text.Prettyprint.Doc           (Doc, Pretty (..), (<>))
-import qualified Data.Text.Prettyprint.Doc           as Doc
-
-import           Text.Megaparsec                     hiding (some)
+import           Data.Text
+                 ( Text )
+import           Data.Text.Prettyprint.Doc
+                 ( Doc, Pretty (..), (<>) )
+import qualified Data.Text.Prettyprint.Doc as Doc
+import           Data.Void
+import           Text.Megaparsec hiding
+                 ( some )
 import           Text.Megaparsec.Char
 
-import           Logic.Matching.Pattern
-import           Kore.MatchingLogic.Signature.Simple
+import Kore.MatchingLogic.Signature.Simple
+import Logic.Matching.Pattern
 
 type Parser = Parsec Void Text
 
