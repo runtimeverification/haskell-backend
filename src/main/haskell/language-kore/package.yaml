@@ -28,6 +28,7 @@ dependencies:
   - bytestring >= 0.10
   - bytestring-trie
   - containers
+  - unordered-containers
   - clock
   - data-fix
   - deepseq
@@ -35,7 +36,7 @@ dependencies:
   - groom
   - hashable
   - lens
-  - megaparsec >=6.4.0
+  - megaparsec >= 6.4.0
   - mtl
   - optparse-applicative
   - parser-combinators

@@ -112,13 +112,14 @@ getSort x = getPatternResultSort (getResultSort given) $ unFix x
 
 -- | Placeholder sort for when we construct a new predicate
 -- But we don't know yet where it's going to be attached.
--- This will probably happen often during proof routines.
-flexibleSort
-    :: MetaOrObject level
+-- No particular way to avoid this, unfortunately. 
+-- This will probably happen often during proof routines. 
+flexibleSort 
+    :: MetaOrObject level 
     => Sort level
 flexibleSort =
-    SortVariableSort SortVariable
-        { getSortVariable = noLocationId "__FlexibleSort__" } --FIXME
+    SortVariableSort $ SortVariable 
+        { getSortVariable = noLocationId "*" } --FIXME
 
 
 pattern And_
