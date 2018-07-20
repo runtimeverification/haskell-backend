@@ -6,21 +6,25 @@ directly corresponding to the 'Kore.MatchingLogic.HilbertProof' API.
 Parsers must be provided for the formulas, rules, and labels of
 a particular instance of 'HilbertProof'.
 -}
-module Kore.MatchingLogic.ProverRepl where
-import           Control.Monad.State.Strict      (MonadState (get,put), execStateT)
-import           Control.Monad.Trans             (MonadTrans (lift))
-import           Data.Text                       (Text, pack)
-import           Data.Void
-import qualified Data.Map.Strict                 as Map
+module Logic.Matching.Prover.Repl where
 
-import           Data.Text.Prettyprint.Doc       (Pretty (pretty), colon, (<+>))
+import           Control.Monad.State.Strict
+                 ( MonadState (get, put), execStateT )
+import           Control.Monad.Trans
+                 ( MonadTrans (lift) )
+import qualified Data.Map.Strict as Map
+import           Data.Text
+                 ( Text, pack )
+import           Data.Text.Prettyprint.Doc
+                 ( Pretty (pretty), colon, (<+>) )
+import           Data.Void
 import           System.Console.Haskeline
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 
-import           Logic.Proof.Hilbert
-import           Data.Kore.Error
-import           Kore.MatchingLogic.Error
+import Data.Kore.Error
+import Kore.MatchingLogic.Error
+import Logic.Proof.Hilbert
 
 newtype ProverState ix rule formula =
   ProverState (Proof ix rule formula)
@@ -36,10 +40,10 @@ applyAddAndProve :: (Ord ix, Pretty ix, ProofSystem error rule formula)
                  -> Proof ix rule formula
                  -> ix -> formula -> (rule ix)
                  -> Either (Error error) (Proof ix rule formula)
-applyAddAndProve formulaVerifier proof ix f rule = 
-  do 
+applyAddAndProve formulaVerifier proof ix f rule =
+  do
     proof' <- add formulaVerifier proof ix f
-    derive proof' ix f rule 
+    derive proof' ix f rule
 
 applyProve :: (Ord ix, Pretty ix, ProofSystem error rule formula)
            => Proof ix rule formula
@@ -49,7 +53,7 @@ applyProve proof ix rule = do
   f' <- case Map.lookup ix (index proof) of
           Nothing    ->   mlFail ["Formula with ID ", pretty ix, "not found"]
           Just (_,f) -> return f
-  derive proof ix f' rule 
+  derive proof ix f' rule
 
 applyAdd :: (Ord ix, Pretty ix, ProofSystem error rule formula)
          => (formula -> Either (Error error) ())
@@ -94,7 +98,7 @@ parseProve pIx _ pDerivation = do
   return (Prove ix rule)
 
 parseCommand :: Parser ix -> Parser formula -> Parser (rule ix) -> Parser (Command ix rule formula)
-parseCommand pIx pFormula pDerivation 
+parseCommand pIx pFormula pDerivation
   =  parseProve pIx pFormula pDerivation
  <|> parseAdd pIx pFormula pDerivation
 

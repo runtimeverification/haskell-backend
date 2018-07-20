@@ -13,7 +13,7 @@ import           Logic.Matching.Syntax
 import           Logic.Proof.Hilbert
 import           Logic.Matching.Rules.Minimal
 import           Logic.Matching.Rules.Minimal.Syntax (parseMLRuleSig)
-import           Kore.MatchingLogic.ProverRepl
+import           Logic.Matching.Prover.Repl
 import           Logic.Matching.Signature.Simple
 
 -- Todo: Parsing Formula as Text. Hook to Kore Parser
