@@ -1,19 +1,19 @@
 {-|
-Description : A dummy proof system that accepts any derivation
+Description : A system of dummy proof rules that accepts any derivation
 
-A dummy proof system that accepts any derivation.
-Any text can be used as a proof rule, which will be
-accepted as justification for any conclusion.
-This is may be useful for examples or for testing
-the generic hilbert proof structure.
+A dummy proof system that accepts any derivation. Any text can be used as a
+proof rule, which will be accepted as justification for any conclusion. This is
+may be useful for examples or for testing the generic hilbert proof structure.
  -}
-module Kore.MatchingLogic.ProofSystem.Dummy
-  (DummyRule(DummyRule)
-  ,DummyError(DummyError)
-  ) where
-import           Data.Text
 
-import           Logic.Proof.Hilbert
+module Logic.Matching.Rules.Dummy
+    ( DummyRule (..)
+    , DummyError (..)
+    ) where
+
+import Data.Text
+
+import Logic.Proof.Hilbert
 
 {-| A dummy rule contains an arbitrary string
   which is printed in the 'Show' instance but
