@@ -27,7 +27,12 @@ class TextToKoreTest {
   @Test def test_sort_4(): Unit = {
     parseFromFile("test-sort-4.kore")
   }
-
+  @Test def test_sort_5(): Unit = {
+    parseFromFile("test-sort-5.kore")
+  }
+  @Test def test_sort_6(): Unit = {
+    parseFromFile("test-sort-6.kore")
+  }
 
   /**
     * Tests for parsing symbols.
@@ -99,6 +104,9 @@ class TextToKoreTest {
   @Test def test_alias_8(): Unit = {
     parseFromFile("test-alias-8.kore")
   }
+  @Test def test_alias_9(): Unit = {
+    parseFromFile("test-alias-9.kore")
+  }
 
   /**
     * Tests for parsing patterns.
@@ -142,6 +150,17 @@ class TextToKoreTest {
   @Test def test_pattern_13(): Unit = {
     parseFromFile("test-pattern-13.kore")
   }
+  @Test def test_pattern_14(): Unit = {
+    parseFromFile("test-pattern-14.kore")
+  }
+  @Test def test_pattern_15(): Unit = {
+    parseFromFile("test-pattern-15.kore")
+  }
+  @Test def test_pattern_dv(): Unit = {
+    parseFromFile("test-pattern-dv.kore")
+  }
+
+
   /**
     * Tests for parsing attributes.
     */
@@ -206,8 +225,9 @@ class TextToKoreTest {
   /**
     * Tests for exception and error handling.
     */
+
   @Test def test_exception_1(): Unit = {
-    parseFromFileExpectParseException("test-sort-5.kore")
+    parseFromFileExpectParseException("test-exception-1.kore")
   }
   @Test def test_exception_2(): Unit = {
     parseFromFileExpectParseException("test-exception-2.kore")
@@ -269,9 +289,6 @@ class TextToKoreTest {
   @Test def test_exception_21(): Unit = {
     parseFromFileExpectParseException("test-exception-21.kore")
   }
-  @Test def test_exception_22(): Unit = {
-    parseFromFileExpectParseException("test-sort-6.kore")
-  }
   @Test def test_exception_23(): Unit = {
     parseFromFileExpectParseException("test-exception-23.kore")
   }
@@ -296,15 +313,30 @@ class TextToKoreTest {
   }
 
   /**
+    * Tests for import
+    */
+  @Test def test_import_1(): Unit = {
+    parseFromFile("test-import-1.kore")
+  }
+
+  /**
+    * Tests for modules
+    */
+  @Test def test_modules_1(): Unit = {
+    parseFromFile("test-modules-1.kore")
+  }
+
+  /**
     * Comprehensive tests for parsing complete and meaningful modules.
     */
-
-
   @Test def test_bool(): Unit = {
     parseFromFile("bool.kore")
   }
   @Test def test_nat(): Unit = {
     parseFromFile("nat.kore")
+  }
+  @Test def test_user_meta_nat(): Unit = {
+    parseFromFile("user-meta-nat.kore")
   }
   @Test def test_list(): Unit = {
     parseFromFile("list.kore")
@@ -354,7 +386,7 @@ class TextToKoreTest {
   def parseFromFileExpectParseException(file: String): Unit = {
     try {
       parseFromFile(file) // expect ParseError being thrown
-      throw new Exception("Parse " + file + " succeeded while excepting ParseError.")
+      throw new Exception("Parse " + file + " succeeded while expecting ParseError.")
     }
     catch {
       case _ : ParseError => // Expected

@@ -143,7 +143,7 @@ class TextToKore(b: Builders) {
 
   // Declarations = <lookahead>(e) // <empty>
   //              | Declaration Declarations
-  // Declaration = sort { SortVariableList } Sort Attributes
+  // Declaration = sort Sort { SortVariableList } Attributes
   //             | symbol Symbol ( SortList ) : Sort Attributes
   //             | alias Alias ( SortList ) : Sort Attributes
   //             | axiom { SortVariableList } Axiom
@@ -165,9 +165,12 @@ class TextToKore(b: Builders) {
            parseDeclarations(decls :+ decl)
         case ('s', 'o') => // sort declaration
           consume("rt")
-          val ctr = parseId(parsingLevel = objt)
+          val ctr = parseId(parsingLevel = both)
           consumeWithLeadingWhitespaces("{")
-          val params = parseList(() => parseSortVariable(parsingLevel = objt), ',', '}')
+          var params = Seq.empty[SortVariable]
+          if (previousParsingLevel != meta) { // name is an object-level id
+            params = parseList(() => parseSortVariable(objt), ',', '}') // params should be object-level
+          }
           consumeWithLeadingWhitespaces("}")
           val att = parseAttributes()
           val decl = b.SortDeclaration(params, b.CompoundSort(ctr, params), att)
@@ -378,15 +381,15 @@ class TextToKore(b: Builders) {
             val p = parsePattern()
             consumeWithLeadingWhitespaces(")")
             b.Forall(s, v, p)
-          // case ('n', 'e') => // next
-          //   consume("xt")
-          //   consumeWithLeadingWhitespaces("{")
-          //   val s = parseSort()
-          //   consumeWithLeadingWhitespaces("}")
-          //   consumeWithLeadingWhitespaces("(")
-          //   val p = parsePattern()
-          //   consumeWithLeadingWhitespaces(")")
-          //   b.Next(s, p)
+          case ('n', 'e') => // next
+            consume("xt")
+            consumeWithLeadingWhitespaces("{")
+            val s = parseSort()
+            consumeWithLeadingWhitespaces("}")
+            consumeWithLeadingWhitespaces("(")
+            val p = parsePattern()
+            consumeWithLeadingWhitespaces(")")
+            b.Next(s, p)
           case ('r', 'e') => // rewrites
             consume("writes")
             consumeWithLeadingWhitespaces("{")
@@ -478,7 +481,7 @@ class TextToKore(b: Builders) {
             val known = Seq(
               "\\top", "\\bottom", "\\and", "\\or", "\\implies",
               "\\iff", "\\exists", "\\forall", "\\ceil", "\\floor",
-              "\\equals", "\\mem")
+              "\\equals", "\\mem", "\\next", "\\rewrites")
             throw error(known.mkString(","), "'\\" + err1 + err2 + "'")
         }
       case c => // variable or application
@@ -559,15 +562,8 @@ class TextToKore(b: Builders) {
     scanner.next() match {
       case '{' =>
         if (previousParsingLevel == meta) { // name is a meta-level id
-          val metalevelSorts = Seq("#Char", "#CharList", "#String", "#Sort", "#SortList",
-            "#Symbol", "#SymbolList", "#Variable", "#VariableList", "#Pattern", "#PatternList")
-          if (metalevelSorts.contains(name)) {
-            consumeWithLeadingWhitespaces("}") // no params
-            b.CompoundSort(name, Seq.empty[Sort])
-          }
-          else {
-            throw error("<Meta-Sort>", name) // not a valid meta-level sort
-          }
+          consumeWithLeadingWhitespaces("}") // no params
+          b.CompoundSort(name, Seq.empty[Sort])
         }
         else { // name is an object-level id
           val params = parseList(() => parseSort(objt), ',', '}') // params should be object-level

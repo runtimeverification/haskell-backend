@@ -35,7 +35,7 @@ object Import {
 }
 
 trait SortDeclaration extends Declaration {
-  def params: Seq[SortVariable]
+  def params: Seq[Sort]
 
   def sort: Sort
 
@@ -43,7 +43,7 @@ trait SortDeclaration extends Declaration {
 }
 
 object SortDeclaration {
-  def unapply(arg: SortDeclaration): Option[(Seq[SortVariable], Sort, Attributes)]
+  def unapply(arg: SortDeclaration): Option[(Seq[Sort], Sort, Attributes)]
   = Some(arg.params, arg.sort, arg.att)
 }
 
@@ -277,15 +277,15 @@ trait Floor extends Pattern {
 object Floor {
   def unapply(arg: Floor): Option[(Sort, Sort, Pattern)] = Some(arg.s, arg.rs, arg.p)
 }
-// trait Next extends Pattern {
-//   def s: Sort
-//
-//   def _1: Pattern
-// }
+trait Next extends Pattern {
+  def s: Sort
 
-// object Next {
-//   def unapply(arg: Next): Option[(Sort, Pattern)] = Some(arg.s, arg._1)
-// }
+  def _1: Pattern
+}
+
+object Next {
+  def unapply(arg: Next): Option[(Sort, Pattern)] = Some(arg.s, arg._1)
+}
 
 /**
   * \rewrites(P, Q) is defined as a predicate pattern floor(P implies Q)
@@ -513,7 +513,7 @@ trait Builders {
 
   def Floor(s: Sort, rs: Sort, p: Pattern): Pattern
 
-  // def Next(s: Sort, _1: Pattern): Pattern
+  def Next(s: Sort, _1: Pattern): Pattern
 
   def Rewrites(s: Sort, _1: Pattern, _2: Pattern): Pattern
 
