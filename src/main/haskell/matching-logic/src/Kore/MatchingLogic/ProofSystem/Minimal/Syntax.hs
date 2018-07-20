@@ -25,7 +25,8 @@ import           Kore.MatchingLogic.AST.Syntax          (mlPattern)
 import           Kore.MatchingLogic.ProofSystem.Minimal
 import           Kore.MatchingLogic.Signature
 
-type Parser = Parsec Void Text
+-- type Parser = Parsec Void Text
+type Parser = Parsec String String
 
 lexeme :: Parser a -> Parser a
 lexeme p = p <* space
@@ -43,7 +44,7 @@ parsePathPos :: Parser [Int]
 parsePathPos = sepBy number space1
 
 --Todo: Remove these declarations in favor of Kore Parsers
-parseId :: Parser Text
+parseId :: Parser String
 parseId = lexeme $ takeWhile1P Nothing isAlphaNum
 
 infixl 4 `arg`
@@ -68,7 +69,7 @@ parseMLRule pLabel pVar pTerm pIx =
     <|> existence
     <|> singvar
   where
-    rule :: Text -> Parser body -> Parser body
+    rule :: String -> Parser body -> Parser body
     rule name body = string name >> space >> parens body
 
     propositionalRules = try $ do
@@ -117,15 +118,16 @@ parseMLRuleSig :: forall sig var ix . (AST.IsSignature sig)
                   -> Parser var
                   -> Parser ix
                   -> Parser (MLRuleSig sig var ix)
-parseMLRuleSig pSort pLabel pVar pIx =
-    parseMLRule pLabel pVar parseFormula pIx
-  where
-    parseFormula :: Parser (AST.WFPattern sig var)
-    parseFormula = do
-      term <- mlPattern pSort pLabel pVar
-      case AST.checkSorts term of
-        Nothing     -> fail "Ill-sorted term"
-        Just wfTerm -> return wfTerm
+parseMLRuleSig pSort pLabel pVar pIx = error "fail"
+                  -- parseMLRuleSig pSort pLabel pVar pIx =
+--     parseMLRule pLabel pVar parseFormula pIx
+--   where
+--     parseFormula :: Parser (AST.WFPattern sig var)
+--     parseFormula = do
+--       term <- mlPattern pSort pLabel pVar
+--       case AST.checkSorts term of
+--         Nothing     -> fail "Ill-sorted term"
+--         Just wfTerm -> return wfTerm
 
 -- | Displays proof rules in the documented concrete syntax,
 -- assuming pretty-printing instances for all the type parameters

@@ -396,10 +396,12 @@ symbolOrAliasPatternRemainderParser childParser x identifier =
     ApplicationPattern <$>
         ( pure Application
             <*>
-                (   SymbolOrAlias identifier
-                <$> inCurlyBracesListParser (sortParser x))
-            <*> inParenthesesListParser childParser
+         (SymbolOrAlias identifier <$> inCurlyBracesListParser (sortParser x))
+            <*> 
+         inParenthesesListParser childParser
         )
+
+
 
 {-|'variableRemainderParser' parses the part after a variable's name and
 constructs it.
@@ -491,6 +493,39 @@ variableOrTermPatternParser childParser x = do
     if c == ':'
         then VariablePattern <$> variableRemainderParser x identifier
         else symbolOrAliasPatternRemainderParser childParser x identifier
+
+symbolOrAliasParser
+    :: MetaOrObject level
+    => Parser child
+    -> level  -- ^ Distinguishes between the meta and non-meta elements.
+    -> Parser (SymbolOrAlias level)
+symbolOrAliasParser childParser x = do
+    identifier <- idParser x
+    (SymbolOrAlias identifier <$> inCurlyBracesListParser (sortParser x))
+
+-- symbolOrAliasPatternRemainderParser'
+--     :: MetaOrObject level
+--     => Parser child
+--     -> level  -- ^ Distinguishes between the meta and non-meta elements.
+--     -> Id level  -- ^ The already parsed prefix.
+--     -> Parser (Pattern level Variable child)
+-- symbolOrAliasPatternRemainderParser' childParser x identifier =
+--     ApplicationPattern <$>
+--         ( pure Application
+--             <*>
+--             (SymbolOrAlias identifier <$> inCurlyBracesListParser (sortParser x))
+--             <*> 
+--             inParenthesesListParser childParser
+--         )
+
+
+
+
+
+
+
+
+
 
 {-|'koreVariableOrTermPatternParser' parses a variable pattern or an
 application one.

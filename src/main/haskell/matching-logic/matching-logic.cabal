@@ -33,6 +33,7 @@ executable prover
                , reflection
                , lens
                , matching-logic
+               , language-kore
   default-language: Haskell2010
   default-extensions: FlexibleContexts
 library

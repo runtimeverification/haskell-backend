@@ -32,17 +32,30 @@ module Data.Kore.Parser.Parser
     , fromKorePattern
     , koreParser
     , korePatternParser
+    , metaPatternParser
+    , metaVariableParser
+    , metaSymbolOrAliasParser
+    , CommonKorePattern
+    , CommonMetaPattern
     ) where
 
 import           Data.Kore.AST.Kore           (CommonKorePattern)
+import           Data.Kore.MetaML.AST         (CommonMetaPattern)
 import           Data.Kore.AST.Sentence
 import           Data.Kore.Parser.Lexeme      (skipWhitespace)
+import           Data.Kore.AST.MetaOrObject             (Meta (..),
+                                                         Unified (..))
+import           Data.Kore.AST.Common                   (SymbolOrAlias (..),
+                                                         Variable)
 import qualified Data.Kore.Parser.ParserImpl  as KoreParser (koreDefinitionParser,
-                                                             korePatternParser)
+                                                             korePatternParser, 
+                                                             metaPatternParser, 
+                                                             variableParser, 
+                                                             symbolOrAliasParser)
 import           Data.Kore.Parser.ParserUtils
 
 {-|'koreParser' is a parser for Kore.
-
+Data.Kore.AST.Kore
 The input must contain a full valid Kore defininition and nothing else.
 -}
 koreParser :: Parser KoreDefinition
@@ -54,6 +67,15 @@ The input must contain a full valid Kore pattern and nothing else.
 -}
 korePatternParser :: Parser CommonKorePattern
 korePatternParser = skipWhitespace *> KoreParser.korePatternParser <* endOfInput
+
+metaPatternParser :: Parser CommonMetaPattern
+metaPatternParser = skipWhitespace *> KoreParser.metaPatternParser <* endOfInput
+
+metaVariableParser :: Parser (Variable Meta)
+metaVariableParser = KoreParser.variableParser Meta
+
+metaSymbolOrAliasParser :: Parser (SymbolOrAlias Meta)
+metaSymbolOrAliasParser = KoreParser.symbolOrAliasParser metaPatternParser Meta
 
 {-|'fromKore' takes a string representation of a Kore Definition and returns
 a 'KoreDefinition' or a parse error.
