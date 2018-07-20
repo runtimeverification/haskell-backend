@@ -2,22 +2,14 @@
 import           Data.Char                                     (isAlphaNum)
 import qualified Data.Map.Strict                               as Map
 import qualified Data.Set                                      as Set
-import           Data.Text
 
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
-import           Data.Text.Prettyprint.Doc                     (Pretty (..))
-
-import           Data.Reflection
-
 import           Data.Kore.AST.Common                   (SymbolOrAlias (..),
                                                          Variable)
-import           Data.Kore.AST.MetaOrObject             (Meta (..),
-                                                         Unified (..))
+import           Data.Kore.AST.MetaOrObject             (Meta (..))
 import           Data.Kore.Parser.Parser
-import           Kore.MatchingLogic.AST
-import           Kore.MatchingLogic.AST.Syntax
-import           Kore.MatchingLogic.ProofSystem.MLProofSystem
+import           Kore.MatchingLogic.ProofSystem.MLProofSystem ()
 import           Kore.MatchingLogic.HilbertProof
 import           Kore.MatchingLogic.ProofSystem.Minimal
 import           Kore.MatchingLogic.ProofSystem.Minimal.Syntax (parseMLRule)
@@ -32,8 +24,6 @@ pCommand' :: Parser (Command String (MLRule (SymbolOrAlias Meta) (Variable Meta)
 pCommand' = parseCommand parseName parseFormula parseRule
   where
     parseFormula = metaPatternParser
-    parseLabel   = parseName
-    parseSort    = parseName
     parseRule    = parseMLRule metaSymbolOrAliasParser 
                                metaVariableParser 
                                parseFormula 
@@ -46,15 +36,15 @@ proveCommand
             CommonMetaPattern)
 proveCommand = runProver dummyFormulaVerifier pCommand' (ProverState emptyProof)
 
-
-testSignature :: SignatureInfo
-testSignature = SignatureInfo
-  { sorts = Set.fromList ["Nat","Bool"]
-  , labels = Map.fromList [("plus",("Nat",["Nat","Nat"]))
-                          ,("succ",("Nat",["Nat"]))
-                          ,("zero",("Nat",[]))
-                          ]
-  }
+-- TODO: remove if not needed
+-- testSignature :: SignatureInfo
+-- testSignature = SignatureInfo
+--   { sorts = Set.fromList ["Nat","Bool"]
+--   , labels = Map.fromList [("plus",("Nat",["Nat","Nat"]))
+--                           ,("succ",("Nat",["Nat"]))
+--                           ,("zero",("Nat",[]))
+--                           ]
+--   }
 
 main :: IO ()
 main = proveCommand >> return ()
