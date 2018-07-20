@@ -16,7 +16,7 @@ module Data.Kore.MetaML.Lift ( liftDefinition
                              , LiftableToMetaML(liftToMeta)
                              ) where
 
-import           Data.Fix
+import           Data.Functor.Foldable
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
@@ -24,7 +24,7 @@ import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.PureML
 import           Data.Kore.AST.Sentence
-import           Data.Kore.FixTraversals
+import           Data.Functor.Traversable
 import           Data.Kore.HaskellExtensions      (Rotate31 (..))
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.MetaML.AST
@@ -419,14 +419,14 @@ liftMetaSentence (SentenceAxiomSentence as) =
     metaParameters =
         [sv | UnifiedMeta sv <- sentenceAxiomParameters as]
     originalPattern = sentenceAxiomPattern as
-    axiomSort = case getUnifiedPattern (unFix originalPattern) of
+    axiomSort = case getUnifiedPattern (project originalPattern) of
         UnifiedObject _ -> patternMetaSort
         UnifiedMeta p   -> getPatternResultSort undefinedHeadSort (unRotate31 p)
     objectParameters =
         [sv | UnifiedObject sv <- sentenceAxiomParameters as]
     liftedPattern = liftToMeta originalPattern
     provableLiftedPattern =
-        case getUnifiedPattern (unFix originalPattern) of
+        case getUnifiedPattern (project originalPattern) of
             UnifiedMeta _   -> liftedPattern
             UnifiedObject _ ->
                 Fix (apply (provableHead axiomSort) [liftedPattern])

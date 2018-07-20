@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-|
 Module      : Data.Kore.AST.Common
 Description : Data Structures for representing the Kore language AST that do not
@@ -22,6 +24,9 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Data.Kore.AST.Common where
 
+import Data.Deriving
+       ( deriveEq1, deriveShow1 )
+import Data.Functor.Classes
 import           Data.Proxy
 import           Data.String (fromString)
 
@@ -435,6 +440,9 @@ data And level child = And
     }
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
 
+deriveEq1 ''And
+deriveShow1 ''And
+
 instance Hashable child => Hashable (And level child)
 
 instance Pretty child => Pretty (And level child) where
@@ -458,6 +466,9 @@ data Application level child = Application
     }
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
 
+deriveEq1 ''Application
+deriveShow1 ''Application
+
 instance Hashable child => Hashable (Application level child)
 
 instance Pretty child => Pretty (Application level child) where
@@ -477,6 +488,9 @@ This represents the ⌈BottomPattern⌉ Matching Logic construct.
 -}
 newtype Bottom level child = Bottom { bottomSort :: Sort level}
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+deriveEq1 ''Bottom
+deriveShow1 ''Bottom
 
 instance Hashable (Bottom level child)
 
@@ -503,6 +517,9 @@ data Ceil level child = Ceil
     , ceilChild       :: !child
     }
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+deriveEq1 ''Ceil
+deriveShow1 ''Ceil
 
 instance Hashable child => Hashable (Ceil level child)
 
@@ -533,8 +550,10 @@ data DomainValue level child = DomainValue
     }
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
 
-instance Hashable child => Hashable (DomainValue level child)
+deriveEq1 ''DomainValue
+deriveShow1 ''DomainValue
 
+instance Hashable child => Hashable (DomainValue level child)
 
 instance Pretty child => Pretty (DomainValue level child) where
     pretty DomainValue {..} =
@@ -563,6 +582,9 @@ data Equals level child = Equals
     }
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
 
+deriveEq1 ''Equals
+deriveShow1 ''Equals
+
 instance Hashable child => Hashable (Equals level child)
 
 instance Pretty child => Pretty (Equals level child) where
@@ -588,6 +610,20 @@ data Exists level v child = Exists
     , existsChild    :: !child
     }
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+instance (Eq (Sort level), Eq (v level)) => Eq1 (Exists level v) where
+    liftEq liftedEq a b =
+        (existsSort a == existsSort b)
+        && (existsVariable a == existsVariable b)
+        && liftedEq (existsChild a) (existsChild b)
+
+instance (Show (Sort level), Show (v level)) => Show1 (Exists level v) where
+    liftShowsPrec liftedShowsPrec _ _ e =
+        showString "Exists { "
+        . showString "existsSort = " . shows (existsSort e)
+        . showString ", existsVariable = " . shows (existsVariable e)
+        . showString ", existsChild = " . liftedShowsPrec 0 (existsChild e)
+        . showString " }"
 
 instance (Hashable child, Hashable (v level)) => Hashable (Exists level v child)
 
@@ -618,6 +654,9 @@ data Floor level child = Floor
     }
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
 
+deriveEq1 ''Floor
+deriveShow1 ''Floor
+
 instance Hashable child => Hashable (Floor level child)
 
 instance Pretty child => Pretty (Floor level child) where
@@ -643,6 +682,20 @@ data Forall level v child = Forall
     , forallChild    :: !child
     }
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+instance (Eq (Sort level), Eq (v level)) => Eq1 (Forall level v) where
+    liftEq liftedEq a b =
+        (forallSort a == forallSort b)
+        && (forallVariable a == forallVariable b)
+        && liftedEq (forallChild a) (forallChild b)
+
+instance (Show (Sort level), Show (v level)) => Show1 (Forall level v) where
+    liftShowsPrec liftedShowsPrec _ _ e =
+        showString "Forall { "
+        . showString "forallSort = " . shows (forallSort e)
+        . showString ", forallVariable = " . shows (forallVariable e)
+        . showString ", forallChild = " . liftedShowsPrec 0 (forallChild e)
+        . showString " }"
 
 instance (Hashable child, Hashable (v level)) => Hashable (Forall level v child)
 
@@ -671,8 +724,10 @@ data Iff level child = Iff
     }
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
 
-instance Hashable child => Hashable (Iff level child)
+deriveEq1 ''Iff
+deriveShow1 ''Iff
 
+instance Hashable child => Hashable (Iff level child)
 
 instance Pretty child => Pretty (Iff level child) where
     pretty Iff {..} =
@@ -697,6 +752,9 @@ data Implies level child = Implies
     , impliesSecond :: !child
     }
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+deriveEq1 ''Implies
+deriveShow1 ''Implies
 
 instance Hashable child => Hashable (Implies level child)
 
@@ -730,6 +788,9 @@ data In level child = In
     }
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
 
+deriveEq1 ''In
+deriveShow1 ''In
+
 instance Hashable child => Hashable (In level child)
 
 instance Pretty child => Pretty (In level child) where
@@ -756,6 +817,9 @@ data Next level child = Next
     }
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
 
+deriveEq1 ''Next
+deriveShow1 ''Next
+
 instance Hashable child => Hashable (Next level child)
 
 instance Pretty child => Pretty (Next level child) where
@@ -780,6 +844,9 @@ data Not level child = Not
     , notChild :: !child
     }
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+deriveEq1 ''Not
+deriveShow1 ''Not
 
 instance Hashable child => Hashable (Not level child)
 
@@ -806,6 +873,9 @@ data Or level child = Or
     , orSecond :: !child
     }
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+deriveEq1 ''Or
+deriveShow1 ''Or
 
 instance Hashable child => Hashable (Or level child)
 
@@ -834,6 +904,9 @@ data Rewrites level child = Rewrites
     }
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
 
+deriveEq1 ''Rewrites
+deriveShow1 ''Rewrites
+
 instance Hashable child => Hashable (Rewrites level child)
 
 instance Pretty child => Pretty (Rewrites level child) where
@@ -855,6 +928,9 @@ This represents the ⌈TopPattern⌉ Matching Logic construct.
 -}
 newtype Top level child = Top { topSort :: Sort level}
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+deriveEq1 ''Top
+deriveShow1 ''Top
 
 instance Hashable (Top level child)
 
@@ -917,12 +993,105 @@ data Pattern level variable child where
     VariablePattern
         :: !(variable level) -> Pattern level variable child
 
+instance Eq (variable level) => Eq1 (Pattern level variable) where
+    liftEq liftedEq a b =
+        case (a, b) of
+            (AndPattern a', AndPattern b') -> liftEq liftedEq a' b'
+            (ApplicationPattern a', ApplicationPattern b') ->
+                liftEq liftedEq a' b'
+            (BottomPattern a', BottomPattern b') -> liftEq liftedEq a' b'
+            (CeilPattern a', CeilPattern b') -> liftEq liftedEq a' b'
+            (DomainValuePattern a', DomainValuePattern b') ->
+                liftEq liftedEq a' b'
+            (EqualsPattern a', EqualsPattern b') -> liftEq liftedEq a' b'
+            (ExistsPattern a', ExistsPattern b') -> liftEq liftedEq a' b'
+            (FloorPattern a', FloorPattern b') -> liftEq liftedEq a' b'
+            (ForallPattern a', ForallPattern b') -> liftEq liftedEq a' b'
+            (IffPattern a', IffPattern b') -> liftEq liftedEq a' b'
+            (ImpliesPattern a', ImpliesPattern b') -> liftEq liftedEq a' b'
+            (InPattern a', InPattern b') -> liftEq liftedEq a' b'
+            (NextPattern a', NextPattern b') -> liftEq liftedEq a' b'
+            (NotPattern a', NotPattern b') -> liftEq liftedEq a' b'
+            (OrPattern a', OrPattern b') -> liftEq liftedEq a' b'
+            (RewritesPattern a', RewritesPattern b') -> liftEq liftedEq a' b'
+            (StringLiteralPattern a', StringLiteralPattern b') -> a' == b'
+            (CharLiteralPattern a', CharLiteralPattern b') -> a' == b'
+            (TopPattern a', TopPattern b') -> liftEq liftedEq a' b'
+            (VariablePattern a', VariablePattern b') -> a' == b'
+            _ -> False
+
+instance Show (variable level) => Show1 (Pattern level variable) where
+    liftShowsPrec showsPrec_ showList_ prec pat =
+        showParen (prec > 9)
+        (case pat of
+            AndPattern pat' ->
+                showString "AndPattern "
+                . liftShowsPrec showsPrec_ showList_ 10 pat'
+            ApplicationPattern pat' ->
+                showString "ApplicationPattern "
+                . liftShowsPrec showsPrec_ showList_ 10 pat'
+            BottomPattern pat' ->
+                showString "BottomPattern "
+                . liftShowsPrec showsPrec_ showList_ 10 pat'
+            CeilPattern pat' ->
+                showString "CeilPattern "
+                . liftShowsPrec showsPrec_ showList_ 10 pat'
+            DomainValuePattern pat' ->
+                showString "DomainValuePattern "
+                . liftShowsPrec showsPrec_ showList_ 10 pat'
+            EqualsPattern pat' ->
+                showString "EqualsPattern "
+                . liftShowsPrec showsPrec_ showList_ 10 pat'
+            ExistsPattern pat' ->
+                showString "ExistsPattern "
+                . liftShowsPrec showsPrec_ showList_ 10 pat'
+            FloorPattern pat' ->
+                showString "FloorPattern "
+                . liftShowsPrec showsPrec_ showList_ 10 pat'
+            ForallPattern pat' ->
+                showString "ForallPattern "
+                . liftShowsPrec showsPrec_ showList_ 10 pat'
+            IffPattern pat' ->
+                showString "IffPattern "
+                . liftShowsPrec showsPrec_ showList_ 10 pat'
+            ImpliesPattern pat' ->
+                showString "ImpliesPattern "
+                . liftShowsPrec showsPrec_ showList_ 10 pat'
+            InPattern pat' ->
+                showString "InPattern "
+                . liftShowsPrec showsPrec_ showList_ 10 pat'
+            NextPattern pat' ->
+                showString "NextPattern "
+                . liftShowsPrec showsPrec_ showList_ 10 pat'
+            NotPattern pat' ->
+                showString "NotPattern "
+                . liftShowsPrec showsPrec_ showList_ 10 pat'
+            OrPattern pat' ->
+                showString "OrPattern "
+                . liftShowsPrec showsPrec_ showList_ 10 pat'
+            RewritesPattern pat' ->
+                showString "RewritesPattern "
+                . liftShowsPrec showsPrec_ showList_ 10 pat'
+            StringLiteralPattern pat' ->
+                showString "StringLiteralPattern "
+                . showsPrec 10 pat'
+            CharLiteralPattern pat' ->
+                showString "CharLiteralPattern "
+                . showsPrec 10 pat'
+            TopPattern pat' ->
+                showString "TopPattern "
+                . liftShowsPrec showsPrec_ showList_ 10 pat'
+            VariablePattern pat' ->
+                showString "VariablePattern "
+                . showsPrec 10 pat'
+        )
+
 -- instance Generic child => Generic (Pattern level variable child)
 
 -- instance (Hashable child, Generic child, Hashable (variable level))
 -- => Hashable (Pattern level variable child) 
 
-instance (Hashable (child), Hashable (variable level))
+instance (Hashable child, Hashable (variable level))
  => Hashable (Pattern level variable child) where 
   hashWithSalt s = \case 
     AndPattern           p -> hashWithSalt s p

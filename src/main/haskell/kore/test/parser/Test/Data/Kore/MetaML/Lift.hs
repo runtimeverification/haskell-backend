@@ -10,7 +10,7 @@ import           Test.Data.Kore
 import           Test.Tasty.HUnit.Extensions
 
 import           Data.CallStack
-import           Data.Fix
+import           Data.Functor.Foldable
 
 import           Data.Kore.AST.Builders
 import           Data.Kore.AST.BuildersImpl

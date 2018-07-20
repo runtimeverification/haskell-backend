@@ -12,7 +12,7 @@ Portability : portable
 module Data.Kore.Variables.Sort ( TermWithSortVariablesClass(sortVariables)
                                 ) where
 
-import           Data.Fix                   (cata)
+import           Data.Functor.Foldable      (cata)
 import           Data.Foldable              (fold)
 import           Data.List                  (foldl')
 import qualified Data.Set                   as Set

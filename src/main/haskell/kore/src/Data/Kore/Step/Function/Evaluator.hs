@@ -25,7 +25,7 @@ import           Data.Kore.AST.MLPatterns              (MLBinderPatternClass (..
 import           Data.Kore.AST.PureML                  (CommonPurePattern,
                                                         UnFixedPureMLPattern,
                                                         asPurePattern)
-import           Data.Kore.FixTraversals               (fixTopDownVisitor)
+import           Data.Functor.Traversable              (fixTopDownVisitor)
 import           Data.Kore.IndexedModule.MetadataTools (MetadataTools (..))
 import           Data.Kore.Step.Condition.Condition    (ConditionProof (..),
                                                         ConditionSort (..),

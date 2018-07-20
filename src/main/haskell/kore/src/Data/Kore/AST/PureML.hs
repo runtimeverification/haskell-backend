@@ -13,7 +13,7 @@ Portability : portable
 -}
 module Data.Kore.AST.PureML where
 
-import           Data.Fix
+import           Data.Functor.Foldable
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Sentence
 
@@ -26,11 +26,11 @@ type PureMLPattern level var = Fix (Pattern level var)
 
 asPurePattern
     :: Pattern level var (PureMLPattern level var) -> PureMLPattern level var
-asPurePattern = Fix
+asPurePattern = embed
 
 fromPurePattern
     :: PureMLPattern level var -> Pattern level var (PureMLPattern level var)
-fromPurePattern = unFix
+fromPurePattern = project
 
 -- |'PureSentenceAxiom' is the pure (fixed-@level@) version of 'SentenceAxiom'
 type PureSentenceAxiom level =

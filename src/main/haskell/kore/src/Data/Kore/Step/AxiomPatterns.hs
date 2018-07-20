@@ -7,7 +7,7 @@ module Data.Kore.Step.AxiomPatterns
   where
 
 import           Data.Either                           (rights)
-import           Data.Fix
+import           Data.Functor.Foldable
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
@@ -70,7 +70,7 @@ patternToAxiomPattern
     => CommonPurePattern level
     -> Either (Error AxiomPatternError) (AxiomPattern level)
 patternToAxiomPattern pat =
-    case unFix pat of
+    case project pat of
         AndPattern And
             { andFirst = Fix (TopPattern _)
             , andSecond =

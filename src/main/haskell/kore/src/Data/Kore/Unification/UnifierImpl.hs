@@ -13,12 +13,12 @@ module Data.Kore.Unification.UnifierImpl where
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.PureML
-import           Data.Kore.FixTraversals
+import           Data.Functor.Traversable
 import           Data.Kore.IndexedModule.MetadataTools
 import           Data.Kore.Unification.Error
 
 import           Control.Monad                         (foldM)
-import           Data.Fix
+import           Data.Functor.Foldable
 import           Data.Function                         (on)
 import           Data.List                             (groupBy, partition,
                                                         sortBy)
@@ -49,7 +49,7 @@ unificationSolutionToPurePattern tools ucp =
         (constraint:constraints) ->
             andPat unifiedTerm (foldr andEquals (equals constraint) constraints)
   where
-    resultSort = getPatternResultSort (getResultSort tools) (unFix unifiedTerm)
+    resultSort = getPatternResultSort (getResultSort tools) (project unifiedTerm)
     unifiedTerm = unificationSolutionTerm ucp
     andEquals = andPat . equals
     andPat first second =
@@ -214,7 +214,7 @@ simplifyAnds tools (p:ps) =
         )
         ps
   where
-    resultSort = getPatternResultSort (getResultSort tools) (unFix p)
+    resultSort = getPatternResultSort (getResultSort tools) (project p)
     simplifyAnds' (solution,proof) pat = do
         let
             conjunct = Fix $ AndPattern And
@@ -264,7 +264,7 @@ preTransform tools (AndPattern ap) = if left == right
             }
         , ConjunctionIdempotency left
         )
-    else case (unFix left, unFix right) of
+    else case (project left, project right) of
         (VariablePattern vp, _) ->
             Left (mlProposition_5_24_3 tools vp right)
 
@@ -457,8 +457,8 @@ unificationProcedure tools p1 p2
             )
   where
     resultSort = getPatternResultSort (getResultSort tools)
-    p1Sort =  resultSort (unFix p1)
-    p2Sort =  resultSort (unFix p2)
+    p1Sort =  resultSort (project p1)
+    p2Sort =  resultSort (project p2)
     conjunct = Fix $ AndPattern And
         { andSort = p1Sort
         , andFirst = p1

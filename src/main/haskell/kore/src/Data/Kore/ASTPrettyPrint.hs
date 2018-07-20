@@ -3,7 +3,7 @@ module Data.Kore.ASTPrettyPrint
     , PrettyPrint
     ) where
 
-import           Data.Fix
+import           Data.Functor.Foldable
 import           Data.List                     (intersperse)
 
 import           Data.Kore.AST.Common
@@ -526,7 +526,7 @@ instance PrettyPrint CommonKorePattern where
     prettyPrint flags korePattern =
         writeOneFieldStructK flags "Fix"
         $ writeOneFieldStructK NeedsParentheses "UnifiedPattern"
-        $ case getUnifiedPattern (unFix korePattern) of
+        $ case getUnifiedPattern (project korePattern) of
             UnifiedMeta p ->
                 writeOneFieldStructK NeedsParentheses "UnifiedMeta"
                 $ writeOneFieldStruct NeedsParentheses "Rotate31" (unRotate31 p)
@@ -538,7 +538,7 @@ instance (MetaOrObject level, PrettyPrint (variable level))
     => PrettyPrint (PureMLPattern level variable)
   where
     prettyPrint flags purePattern =
-        writeOneFieldStruct flags "Fix" (unFix purePattern)
+        writeOneFieldStruct flags "Fix" (project purePattern)
 
 instance PrettyPrint Attributes
   where

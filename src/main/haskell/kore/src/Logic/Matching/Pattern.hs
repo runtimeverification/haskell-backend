@@ -52,6 +52,7 @@ import Data.Deriving
 import Data.Functor.Foldable
 import Data.Text.Prettyprint.Doc
 
+import Data.Text.Prettyprint.Doc.Orphans ()
 import Logic.Matching.Signature
 
 -- | The base functor of patterns
@@ -118,9 +119,6 @@ deriving instance (Pretty (SigPatternF sig var (SigPattern sig var)))
                   -- expanded according to Pretty (f (Fix f)) => Pretty (Fix f)
                   -- to avoid warning
                 => Pretty (WFPattern sig var)
-
-instance Pretty (f (Fix f)) => Pretty (Fix f) where
-  pretty (Fix ff) = pretty ff
 
 -- | Get sort of a well-formed pattern
 wfPatSort :: (IsSignature sig) => WFPattern sig var -> Sort sig

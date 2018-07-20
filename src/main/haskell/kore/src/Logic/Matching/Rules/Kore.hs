@@ -4,7 +4,7 @@ Description: Matching logic rules for Kore patterns
 -}
 module Logic.Matching.Rules.Kore where
 
-import           Data.Fix
+import           Data.Functor.Foldable
 import qualified Data.Set as Set
 
 import           Data.Kore.AST.Common

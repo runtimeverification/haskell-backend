@@ -16,7 +16,7 @@ module Data.Kore.Substitution.Class ( SubstitutionClass (..)
 
 import           Control.Monad.Reader              (ReaderT, ask, asks, local,
                                                     runReaderT)
-import           Data.Fix
+import           Data.Functor.Foldable
 import           Data.Hashable                     (hash)
 import           Data.Maybe                        (isJust)
 import qualified Data.Set                          as Set

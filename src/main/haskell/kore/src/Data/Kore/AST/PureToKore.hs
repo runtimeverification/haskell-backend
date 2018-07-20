@@ -30,7 +30,7 @@ import           Data.Kore.ASTTraversals
 import           Data.Kore.Error
 import           Data.Kore.HaskellExtensions (Rotate31 (..))
 
-import           Data.Fix
+import           Data.Functor.Foldable
 
 patternPureToKore
     :: MetaOrObject level => CommonPurePattern level -> CommonKorePattern

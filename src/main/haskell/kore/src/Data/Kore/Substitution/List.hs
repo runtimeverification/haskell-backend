@@ -16,7 +16,7 @@ module Data.Kore.Substitution.List ( Substitution
                                    , toList
                                    ) where
 
-import           Data.Fix
+import           Data.Functor.Foldable
 import           Data.List                         (nubBy)
 
 import           Data.Kore.AST.Common

@@ -21,7 +21,7 @@ import           Data.Kore.IndexedModule.MetadataTools
 import           Data.Kore.Unification.Error
 import           Data.Kore.Unification.UnifierImpl
 
-import           Data.Fix
+import           Data.Functor.Foldable
 import           Data.Function                                       (on)
 import           Data.List                                           (sortBy)
 
@@ -146,7 +146,7 @@ unificationSubstitution = map trans
         let pp = extractPurePattern p in
             ( Variable
                 { variableSort =
-                    getPatternResultSort mockGetResultSort (unFix pp)
+                    getPatternResultSort mockGetResultSort (project pp)
                 , variableName = testId v
                 }
             , pp
@@ -472,6 +472,6 @@ test_unification =
     ]
   where
     symbolHead symbol = getSentenceSymbolOrAliasHead symbol []
-    var ps = case unFix (extractPurePattern ps) of
+    var ps = case project (extractPurePattern ps) of
         VariablePattern v -> v
         _                 -> error "Expecting a variable"

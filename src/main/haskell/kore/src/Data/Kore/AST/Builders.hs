@@ -42,7 +42,7 @@ module Data.Kore.AST.Builders
     , unparameterizedVariable_
     ) where
 
-import           Data.Fix                   (Fix (..))
+import           Data.Functor.Foldable      (Fix (..))
 import           Data.Proxy                 (Proxy (..))
 
 import           Data.Kore.AST.BuildersImpl

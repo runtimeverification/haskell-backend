@@ -24,10 +24,11 @@ module Data.Kore.ASTTraversals ( patternBottomUpVisitor
 
 
 import           Control.Monad              ((>=>))
-import           Data.Fix
+import           Data.Functor.Foldable
+
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.FixTraversals
+import           Data.Functor.Traversable
 
 {-|'patternTopDownVisitorM' is a generalized monadic visitor for Kore patterns.
 It takes as arguments a preprocess function and a postprocess function and

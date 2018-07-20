@@ -22,7 +22,8 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Data.Kore.AST.Sentence where
 
-import           Data.Fix
+import           Data.Functor.Classes
+import           Data.Functor.Foldable
 import           Data.Maybe (catMaybes)
 
 import           Data.Kore.AST.Common
@@ -31,6 +32,7 @@ import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.Pretty (Pretty(..), (<>), (<+>))
 import qualified Data.Kore.AST.Pretty as Pretty
 import           Data.Kore.HaskellExtensions (Rotate41 (..))
+import Data.Text.Prettyprint.Doc.Orphans ()
 
 
 {-|'Attributes' corresponds to the @attributes@ Kore syntactic declaration.
@@ -69,13 +71,13 @@ data SentenceAlias level (pat :: (* -> *) -> * -> *) (variable :: * -> *)
     }
 
 deriving instance
-    ( Eq (pat variable (Fix (pat variable)))
+    ( Eq1 (pat variable)
     , Eq (variable level)
     )
     => Eq (SentenceAlias level pat variable)
 
 deriving instance
-    ( Show (pat variable (Fix (pat variable)))
+    ( Show1 (pat variable)
     , Show (variable level)
     )
     => Show (SentenceAlias level pat variable)
@@ -201,12 +203,12 @@ data SentenceAxiom sortParam (pat :: (* -> *) -> * -> *) (variable :: * -> *)
     }
 
 deriving instance
-    ( Eq (pat variable (Fix (pat variable)))
+    ( Eq1 (pat variable)
     , Eq sortParam
     )  => Eq (SentenceAxiom sortParam pat variable)
 
 deriving instance
-    ( Show (pat variable (Fix (pat variable)))
+    ( Show1 (pat variable)
     , Show sortParam
     ) => Show (SentenceAxiom sortParam pat variable)
 
@@ -278,13 +280,13 @@ data Sentence level sortParam (pat :: (* -> *) -> * -> *) (variable :: * -> *) w
         -> Sentence Object sortParam pat variable
 
 deriving instance
-    ( Eq (pat variable (Fix (pat variable)))
+    ( Eq1 (pat variable), Eq (pat variable (Fix (pat variable)))
     , Eq sortParam
     , Eq (variable level)
     ) => Eq (Sentence level sortParam pat variable)
 
 deriving instance
-    ( Show (pat variable (Fix (pat variable)))
+    ( Show1 (pat variable), Show (pat variable (Fix (pat variable)))
     , Show sortParam
     , Show (variable level)
     ) => Show (Sentence level sortParam pat variable)
@@ -357,12 +359,14 @@ data Definition sentence sortParam (pat :: (* -> *) -> * -> *) (variable :: * ->
     }
 
 deriving instance
-    ( Eq (pat variable (Fix (pat variable)))
+    ( Eq1 (pat variable)
+    , Eq (pat variable (Fix (pat variable)))
     , Eq (sentence sortParam pat variable)
     ) => Eq (Definition sentence sortParam pat variable)
 
 deriving instance
-    ( Show (pat variable (Fix (pat variable)))
+    ( Show1 (pat variable)
+    , Show (pat variable (Fix (pat variable)))
     , Show (sentence sortParam pat variable)
     ) => Show (Definition sentence sortParam pat variable)
 
@@ -441,17 +445,15 @@ newtype UnifiedSentence sortParam pat variable = UnifiedSentence
     { getUnifiedSentence :: Unified (Rotate41 Sentence sortParam pat variable) }
 
 deriving instance
-    ( Eq (pat variable (Fix (pat variable)))
+    ( Eq1 (pat variable), Eq (pat variable (Fix (pat variable)))
     , Eq sortParam
-    , Eq (variable Meta)
-    , Eq (variable Object)
+    , EqMetaOrObject variable
     ) => Eq (UnifiedSentence sortParam pat variable)
 
 deriving instance
-    ( Show (pat variable (Fix (pat variable)))
+    ( Show1 (pat variable), Show (pat variable (Fix (pat variable)))
     , Show sortParam
-    , Show (variable Meta)
-    , Show (variable Object)
+    , ShowMetaOrObject variable
     ) => Show (UnifiedSentence sortParam pat variable)
 
 instance

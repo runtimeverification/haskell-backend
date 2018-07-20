@@ -9,7 +9,7 @@ Portability : POSIX
 -}
 module Data.Kore.AST.BuildersImpl where
 
-import           Data.Fix
+import           Data.Functor.Foldable
 import           Data.Proxy
 
 import           Data.Kore.AST.Common

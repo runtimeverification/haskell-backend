@@ -3,7 +3,8 @@ module Test.Tasty.HUnit.Extensions where
 import           Control.Exception (SomeException, catch, evaluate)
 import           Control.Monad
 import           Data.CallStack
-import           Data.Fix
+import           Data.Functor.Classes
+import           Data.Functor.Foldable
 import           Data.List         (intercalate, isInfixOf)
 import           Test.Tasty.HUnit  (assertBool, assertFailure)
 
@@ -225,12 +226,13 @@ instance EqualWithExplanation a => EqualWithExplanation [a]
     printWithExplanation a =
         "[" ++ intercalate ", " (map printWithExplanation a) ++ "]"
 
-instance (Show (thing (Fix thing)), EqualWithExplanation (thing (Fix thing)))
+instance (Show (thing (Fix thing)), Show1 thing, EqualWithExplanation (thing (Fix thing)))
     => WrapperEqualWithExplanation (Fix thing)
   where
     wrapperField (Fix a) (Fix b) = EqWrap "" a b
     wrapperConstructorName _ = "Fix"
-instance (Show (thing (Fix thing)), EqualWithExplanation (thing (Fix thing)))
+
+instance (Show (thing (Fix thing)), Show1 thing, EqualWithExplanation (thing (Fix thing)))
     => EqualWithExplanation (Fix thing)
   where
     compareWithExplanation = wrapperCompareWithExplanation

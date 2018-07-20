@@ -79,7 +79,7 @@ where
 import           Control.Lens
 import           Control.Monad.State
 
-import           Data.Fix
+import           Data.Functor.Foldable
 import           Data.Foldable
 import           Data.Reflection
 
@@ -99,7 +99,7 @@ getSort
     :: (MetaOrObject level, Given (MetadataTools level), SortedVariable var)
     => PureMLPattern level var
     -> Sort level
-getSort x = getPatternResultSort (getResultSort given) $ unFix x
+getSort x = getPatternResultSort (getResultSort given) $ project x
 
 -- | Placeholder sort for when we construct a new predicate
 -- But we don't know yet where it's going to be attached.
@@ -316,7 +316,7 @@ isRigid
     :: MetaOrObject level
     => PureMLPattern level var
     -> Bool
-isRigid p = case unFix p of
+isRigid p = case project p of
     ApplicationPattern   _ -> True
     DomainValuePattern   _ -> True
     VariablePattern      _ -> True
@@ -335,7 +335,7 @@ isFlexible
     :: MetaOrObject level
     => PureMLPattern level var
     -> Bool
-isFlexible p = case unFix p of
+isFlexible p = case project p of
     BottomPattern _ -> True
     CeilPattern   _ -> True
     EqualsPattern _ -> True

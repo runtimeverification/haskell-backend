@@ -20,7 +20,7 @@ import           Data.Kore.Building.Patterns
 import           Data.Kore.Building.Sorts         as Sorts
 import           Data.Kore.Implicit.ImplicitSorts
 
-import           Data.Fix
+import           Data.Functor.Foldable
 
 extractPurePattern
     :: MetaOrObject level
@@ -41,7 +41,7 @@ test_mlPattern =
                 charListMetaSort
                 (getPatternResultSort
                     undefinedHeadSort
-                    (unFix
+                    (project
                       $ extractPurePattern
                         (withSort charListMetaSort top_)
                     )
@@ -52,7 +52,7 @@ test_mlPattern =
                 charListMetaSort
                 (getPatternResultSort
                     undefinedHeadSort
-                    (unFix
+                    (project
                       $ extractPurePattern
                         (withSort charListMetaSort
                             (forall_
@@ -105,7 +105,7 @@ test_mlPattern =
                     charListMetaSort
                     (getPatternResultSort
                         headSort
-                        (unFix $ extractPurePattern (applyS s []))
+                        (project $ extractPurePattern (applyS s []))
                     )
                 )
             ]

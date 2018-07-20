@@ -6,7 +6,7 @@ import           Test.Tasty.HUnit                 (testCase)
 
 import           Test.Data.Kore.MetaML.Lift       (prettyAssertEqual, variablePattern)
 
-import           Data.Fix
+import           Data.Functor.Foldable
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject

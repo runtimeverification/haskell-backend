@@ -15,7 +15,7 @@ module Data.Kore.IndexedModule.Resolvers
     , resolveSymbol
     ) where
 
-import           Data.Fix
+import           Data.Functor.Foldable
 import qualified Data.Map                              as Map
 import           Data.Proxy                            (Proxy (..))
 import qualified Data.Set                              as Set

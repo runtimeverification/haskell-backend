@@ -15,7 +15,7 @@ module Data.Kore.Variables.Free ( freeVariables
                                 , pureAllVariables
                                 ) where
 
-import           Data.Fix                   (Fix)
+import           Data.Functor.Foldable      (Fix)
 import           Data.Foldable              (fold)
 import qualified Data.Set                   as Set
 

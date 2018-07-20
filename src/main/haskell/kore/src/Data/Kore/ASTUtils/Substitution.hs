@@ -25,7 +25,7 @@ where
 import           Control.Lens
 
 import qualified Data.Set as S
-import           Data.Fix
+import           Data.Functor.Foldable
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
@@ -48,7 +48,7 @@ subst old new = \case
     Exists_ s1 v p -> handleBinder old new Exists_ s1 v p 
     pat 
      | pat == old -> new
-     | otherwise  -> Fix $ fmap (subst old new) $ unFix pat 
+     | otherwise  -> embed $ fmap (subst old new) $ project pat 
 
 -- subst2 a b = cata (\pat -> if Fix pat == a then b else Fix pat)
 

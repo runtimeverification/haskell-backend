@@ -9,7 +9,7 @@ import           Test.Data.Kore.ASTVerifier.DefinitionVerifier
 
 import qualified Data.Map                                            as Map
 import           Data.Maybe                                          (fromMaybe)
-import           Data.Fix
+import           Data.Functor.Foldable
 
 import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common

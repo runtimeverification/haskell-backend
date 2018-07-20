@@ -38,7 +38,8 @@ import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.Pretty (Pretty(..))
 import           Data.Kore.HaskellExtensions (Rotate31 (..))
 
-import           Data.Fix
+import Data.Functor.Classes
+import           Data.Functor.Foldable
 
 
 
@@ -47,6 +48,36 @@ allow using toghether both 'Meta' and 'Object' patterns.
 -}
 newtype UnifiedPattern variable child = UnifiedPattern
     { getUnifiedPattern :: Unified (Rotate31 Pattern variable child) }
+
+instance (EqMetaOrObject variable) => Eq1 (UnifiedPattern variable) where
+    liftEq liftedEq (UnifiedPattern a) (UnifiedPattern b) =
+       case (a, b) of
+          (UnifiedMeta a', UnifiedMeta b') ->
+              liftEq liftedEq (unRotate31 a') (unRotate31 b')
+          (UnifiedObject a', UnifiedObject b') ->
+              liftEq liftedEq (unRotate31 a') (unRotate31 b')
+          _ -> False
+
+instance (ShowMetaOrObject variable) => Show1 (UnifiedPattern variable) where
+    liftShowsPrec :: forall a.
+                     (Int -> a -> ShowS) -> ([a] -> ShowS)
+                  -> Int -> UnifiedPattern variable a
+                  -> ShowS
+    liftShowsPrec showsPrec_ showList_ _ up =
+        showString "UnifiedPattern { getUnifiedPattern = "
+        . applyUnified
+            (\t -> showString "UnifiedMeta " . liftShowsPrecRotate31 t)
+            (\t -> showString "UnifiedObject " . liftShowsPrecRotate31 t)
+            (getUnifiedPattern up)
+        . showString " }"
+      where
+        liftShowsPrecRotate31 :: Show (variable level)
+                              => Rotate31 Pattern variable a level
+                              -> ShowS
+        liftShowsPrecRotate31 r =
+            showString "Rotate31 { unRotate31 = "
+            . liftShowsPrec showsPrec_ showList_ 0 (unRotate31 r)
+            . showString " }"
 
 instance (Pretty child, Pretty (variable Meta), Pretty (variable Object)) =>
     Pretty (UnifiedPattern variable child) where
@@ -134,7 +165,7 @@ applyKorePattern
     -> (Pattern Object variable (KorePattern variable) -> b)
     -> (KorePattern variable -> b)
 applyKorePattern metaT objectT korePattern =
-    case getUnifiedPattern (unFix korePattern) of
+    case getUnifiedPattern (project korePattern) of
         UnifiedMeta rp   -> metaT (unRotate31 rp)
         UnifiedObject rp -> objectT (unRotate31 rp)
 

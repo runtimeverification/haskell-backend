@@ -16,7 +16,7 @@ module Data.Kore.ASTHelpers ( ApplicationSorts (..)
                             , quantifyFreeVariables
                             ) where
 
-import           Data.Fix                   (Fix (..))
+import           Data.Functor.Foldable      (Fix (..))
 import           Data.Foldable              (foldl')
 import qualified Data.Map                   as Map
 import           Data.Proxy                 (Proxy (..))

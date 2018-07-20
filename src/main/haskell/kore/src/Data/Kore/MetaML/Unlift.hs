@@ -15,7 +15,7 @@ module Data.Kore.MetaML.Unlift ( UnliftableFromMetaML (..)
                                ) where
 
 import           Control.Applicative
-import           Data.Fix
+import           Data.Functor.Foldable
 import           Data.Maybe
 
 import           Data.Kore.AST.Common

@@ -28,7 +28,6 @@ dependencies:
   - bytestring-trie
   - containers
   - clock
-  - data-fix
   - deepseq
   - deriving-compat
   - free
@@ -66,6 +65,7 @@ default-extensions:
   - FunctionalDependencies
   - GADTs
   - GeneralizedNewtypeDeriving
+  - InstanceSigs
   - LambdaCase
   - MonoLocalBinds
   - MultiParamTypeClasses

@@ -18,7 +18,7 @@ module Data.Kore.Step.BaseStep
     ) where
 
 import qualified Control.Arrow
-import           Data.Fix
+import           Data.Functor.Foldable
 import qualified Data.Map                                        as Map
 import           Data.Monoid                                     ((<>))
 import qualified Data.Set                                        as Set
@@ -29,7 +29,7 @@ import           Data.Kore.AST.PureML                            (CommonPurePatt
                                                                   PureMLPattern,
                                                                   asPurePattern,
                                                                   mapPatternVariables)
-import           Data.Kore.FixTraversals                         (fixBottomUpVisitor)
+import           Data.Functor.Traversable                        (fixBottomUpVisitor)
 import           Data.Kore.IndexedModule.MetadataTools           (MetadataTools)
 import           Data.Kore.Step.AxiomPatterns
 import           Data.Kore.Step.Condition.Condition              (ConditionSort (..))

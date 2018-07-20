@@ -10,9 +10,6 @@ Stability   : experimental
 
 {-# LANGUAGE UndecidableInstances #-}
 
--- Suppress warning about orphan instance for 'Fix'.
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-
 module Data.Kore.AST.Pretty
     ( module Data.Text.Prettyprint.Doc
     , arguments, arguments', noArguments
@@ -22,7 +19,6 @@ module Data.Kore.AST.Pretty
     , layoutPrettyUnbounded
     ) where
 
-import           Data.Fix
 import           Data.String (fromString)
 import           Data.Text.Prettyprint.Doc hiding (list)
 
@@ -75,7 +71,3 @@ list left right =
 -- | Render a 'Doc ann' with indentation and without extra line breaks.
 layoutPrettyUnbounded :: Doc ann -> SimpleDocStream ann
 layoutPrettyUnbounded = layoutPretty LayoutOptions { layoutPageWidth = Unbounded }
-
--- TODO: Use quantified constraint once we have GHC 8.6
-instance Pretty (f (Fix f)) => Pretty (Fix f) where
-    pretty (Fix p) = pretty p

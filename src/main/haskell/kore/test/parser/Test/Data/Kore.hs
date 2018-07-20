@@ -4,7 +4,8 @@ import           Test.QuickCheck.Gen         (Gen, choose, chooseAny, elements,
                                               frequency, getSize, listOf, oneof,
                                               scale, sized, suchThat, vectorOf)
 
-import           Data.Fix
+import           Data.Functor.Foldable
+
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject

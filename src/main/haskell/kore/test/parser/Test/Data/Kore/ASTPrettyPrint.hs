@@ -12,7 +12,7 @@ import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.Implicit.ImplicitSorts (charMetaSort)
 import           Data.Kore.MetaML.AST
 
-import           Data.Fix                         (Fix (..))
+import           Data.Functor.Foldable            (Fix (..))
 
 test_astPrettyPrint :: [TestTree]
 test_astPrettyPrint =

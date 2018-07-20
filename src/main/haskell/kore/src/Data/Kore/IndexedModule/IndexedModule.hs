@@ -40,8 +40,8 @@ import           Control.Arrow                    ((&&&))
 import           Control.Monad                    (foldM)
 import qualified Data.Map                         as Map
 import qualified Data.Set                         as Set
-
-import           Data.Fix                         (Fix)
+import Data.Functor.Classes
+import           Data.Functor.Foldable            (Fix)
 
 type SortDescription level = SentenceSort level UnifiedPattern Variable
 
@@ -82,7 +82,7 @@ data IndexedModule sortParam pat variable = IndexedModule
     }
 
 deriving instance
-    ( Show (pat variable (Fix (pat variable)))
+    ( Show1 (pat variable), Show (pat variable (Fix (pat variable)))
     , Show sortParam
     , Show (variable Meta)
     , Show (variable Object)
