@@ -613,6 +613,9 @@ module kore
     symbol #\in{}(#Sort{}, #Sort{}, #Pattern{}, #Pattern{}) : #Pattern{} []
     symbol #\top{}(#Sort{}) : #Pattern{} []
     symbol #\bottom{}(#Sort{}) : #Pattern{} []
+    symbol #\dv{}(#Sort{}, #CharList{}) : #Pattern{} []
+    symbol #\next{}(#Sort{}, #Pattern{}) : #Pattern{} []
+    symbol #\rewrites{}(#Sort{}, #Pattern{}, #Pattern{}) : #Pattern{} []
     axiom {#esp} \forall{#esp}(
         #s:#Sort{},
         \forall{#esp}(
