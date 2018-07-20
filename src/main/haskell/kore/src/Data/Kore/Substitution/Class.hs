@@ -26,7 +26,7 @@ import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
 import           Data.Kore.ASTTraversals           (patternTopDownVisitorM)
-import           Data.Kore.Datastructures.MapClass
+import           Data.Map.Class
 import           Data.Kore.Variables.Free
 import           Data.Kore.Variables.Fresh.Class
 

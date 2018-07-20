@@ -1,5 +1,5 @@
 {-|
-Module      : Data.Kore.AST.MapClass
+Module      : Data.Map.Class
 Description : Class for representing a @key@ |-> @value@ map functionality.
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
@@ -7,7 +7,7 @@ Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Data.Kore.Datastructures.MapClass where
+module Data.Map.Class where
 
 -- | 'MapClass' describes a @map@ from @key@s to @value@s
 class Eq key => MapClass map key value where
