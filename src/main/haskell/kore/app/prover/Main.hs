@@ -8,7 +8,7 @@ import           Text.Megaparsec.Char
 
 import           Data.Reflection
 
-import           Kore.MatchingLogic.AST
+import           Logic.Matching.Pattern
 import           Kore.MatchingLogic.AST.Syntax
 import           Kore.MatchingLogic.HilbertProof
 import           Kore.MatchingLogic.ProofSystem.Minimal

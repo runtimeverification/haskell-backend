@@ -31,7 +31,7 @@ import qualified Data.Text                 as Text
 import           Data.Reflection
 import           Data.Text.Prettyprint.Doc
 
-import           Kore.MatchingLogic.AST
+import           Logic.Matching.Pattern
 import           Kore.MatchingLogic.Signature
 
 -- | A tree of applied sort constructors,

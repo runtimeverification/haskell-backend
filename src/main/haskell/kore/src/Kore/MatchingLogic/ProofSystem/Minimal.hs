@@ -9,7 +9,7 @@ module Kore.MatchingLogic.ProofSystem.Minimal where
 import           Control.Lens
 import           Data.Functor.Foldable           (Fix (..))
 
-import           Kore.MatchingLogic.AST          as AST
+import           Logic.Matching.Pattern          as Pattern
 import           Kore.MatchingLogic.Error
 import           Kore.MatchingLogic.HilbertProof
 
@@ -93,7 +93,7 @@ type MLRuleSig sig var {- hyp -}
 dummyFormulaVerifier :: formula -> Either (Error MLError) ()
 dummyFormulaVerifier _ = return ()
 
--- AST.fromWFPattern
+-- Pattern.fromWFPattern
 substVar :: (Eq sort, Eq var)
          => sort
          -> var
@@ -102,7 +102,7 @@ substVar :: (Eq sort, Eq var)
          -> Maybe (Pattern sort label var)
 substVar sort varFrom varTo = go
   where
-    go pat@(Fix (AST.Exists _ sortBound varBound _))
+    go pat@(Fix (Pattern.Exists _ sortBound varBound _))
       | (sortBound,varBound) == (sort,varFrom) = Just pat
       | (sortBound,varBound) == (sort,varTo) = Nothing
     go (Fix (Variable sortVar varVar))

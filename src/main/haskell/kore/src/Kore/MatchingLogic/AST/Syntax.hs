@@ -3,7 +3,7 @@
 Description: Parser and printer for matching logic patterns, using a subset of Kore syntax.
 
 Parser and pretty-printer for the matching logic pattern types in
-'Kore.MatchingLogic.AST'.
+'Logic.Matching.Pattern'.
 This module uses a subset of the concrete syntax of Kore,
 such as `\and{Bool}(A:Bool,B:Bool)` for a simple disjunction of variables.
 -}
@@ -28,7 +28,7 @@ import qualified Data.Text.Prettyprint.Doc           as Doc
 import           Text.Megaparsec                     hiding (some)
 import           Text.Megaparsec.Char
 
-import           Kore.MatchingLogic.AST
+import           Logic.Matching.Pattern
 import           Kore.MatchingLogic.Signature.Simple
 
 type Parser = Parsec Void Text

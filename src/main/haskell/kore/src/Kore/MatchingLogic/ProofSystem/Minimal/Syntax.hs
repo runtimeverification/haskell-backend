@@ -19,7 +19,7 @@ import           Data.Text.Prettyprint.Doc              (Doc, Pretty (pretty),
 import           Text.Megaparsec                        hiding (some)
 import           Text.Megaparsec.Char
 
-import qualified Kore.MatchingLogic.AST                 as AST
+import qualified Logic.Matching.Pattern as Pattern
 import           Kore.MatchingLogic.AST.Syntax          (mlPattern)
 import           Kore.MatchingLogic.ProofSystem.Minimal
 import           Kore.MatchingLogic.Signature
@@ -107,22 +107,23 @@ parseMLRule pLabel pVar pTerm pIx =
       Singvar <$> pVar `arg` pTerm `arg` parsePathPos `arg` parsePathPos
 
 -- | Parse a rule of the minimal proof system
--- when the formula type is 'AST.SigPattern',
+-- when the formula type is 'Pattern.SigPattern',
 -- using the default pattern syntax over the provided
 -- parsers for the sorts and labels of the signatures.
-parseMLRuleSig :: forall sig var ix . (AST.IsSignature sig)
-                  => Parser (Sort sig)
-                  -> Parser (Label sig)
-                  -> Parser var
-                  -> Parser ix
-                  -> Parser (MLRuleSig sig var ix)
+parseMLRuleSig :: forall sig var ix .
+                  (Pattern.IsSignature sig)
+               => Parser (Sort sig)
+               -> Parser (Label sig)
+               -> Parser var
+               -> Parser ix
+               -> Parser (MLRuleSig sig var ix)
 parseMLRuleSig pSort pLabel pVar pIx =
     parseMLRule pLabel pVar parseFormula pIx
   where
-    parseFormula :: Parser (AST.WFPattern sig var)
+    parseFormula :: Parser (Pattern.WFPattern sig var)
     parseFormula = do
       term <- mlPattern pSort pLabel pVar
-      case AST.checkSorts term of
+      case Pattern.checkSorts term of
         Nothing     -> fail "Ill-sorted term"
         Just wfTerm -> return wfTerm
 

@@ -1,60 +1,58 @@
-{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -fno-warn-orphans       #-}
 {-|
-Description: A type of matching logic patterns
+Description: Abstract syntax of matching logic patterns
 
-A type of matching logic patterns, implementing exactly what
-is documented in section 1 of the PDF.
-This implements exactly the syntax of matching logic patterns,
-without the provisions in language-kore for handling the
-surface syntax of Kore such as mixed object-level and meta-level terms.
+An implementation of matching logic patterns as described in \"The Semantics of
+K\", without the provisions in language-kore for handling the surface syntax of
+Kore (such as mixed object-level and meta-level terms).
 -}
-module Kore.MatchingLogic.AST
-  ( PatternF(..)
-  , Pattern
-  , visitPatternF
-  , patternSort
-  , IsSignature(..)
-  , SigPatternF
-  , SigPattern
-  , WFPattern
-  , fromWFPattern -- note the constructor is *not* exported
-  , wfPatSort
-  , checkSorts1
-  , checkSorts
-  , resolvePattern
-  , ToPattern(..)
-  , FromPattern(..)
-  , notFree
-  , pattern VariableP
-  , pattern ApplicationP
-  , pattern AndP
-  , pattern NotP
-  , pattern ExistsP
-  , variableP
-  , applicationP
-  , andP
-  , notP
-  , existsP
-  , pattern OrP
-  , pattern ImpliesP
-  , pattern IffP
-  , pattern ForallP
-  , orP
-  , impliesP
-  , iffP
-  , forallP
-  , andP' , notP', orP', impliesP', iffP', forallP', existsP'
-  ) where
+module Logic.Matching.Pattern
+    ( PatternF(..)
+    , Pattern
+    , visitPatternF
+    , patternSort
+    , IsSignature(..)
+    , SigPatternF
+    , SigPattern
+    , WFPattern
+    , fromWFPattern -- note the constructor is *not* exported
+    , wfPatSort
+    , checkSorts1
+    , checkSorts
+    , resolvePattern
+    , ToPattern(..)
+    , FromPattern(..)
+    , notFree
+    , pattern VariableP
+    , pattern ApplicationP
+    , pattern AndP
+    , pattern NotP
+    , pattern ExistsP
+    , variableP
+    , applicationP
+    , andP
+    , notP
+    , existsP
+    , pattern OrP
+    , pattern ImpliesP
+    , pattern IffP
+    , pattern ForallP
+    , orP
+    , impliesP
+    , iffP
+    , forallP
+    , andP' , notP', orP', impliesP', iffP', forallP', existsP'
+    ) where
 
-import           Control.Monad
-import           Data.Coerce
+import Control.Monad
+import Data.Coerce
+import Data.Deriving
+       ( deriveEq1, deriveShow1 )
+import Data.Functor.Foldable
+import Data.Text.Prettyprint.Doc
 
-import           Data.Deriving                (deriveEq1, deriveShow1)
-import           Data.Functor.Foldable
-import           Data.Text.Prettyprint.Doc
-
-import           Kore.MatchingLogic.Signature
+import Kore.MatchingLogic.Signature
 
 -- | The base functor of patterns
 --
