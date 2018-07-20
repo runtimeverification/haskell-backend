@@ -10,28 +10,24 @@ a particular instance of 'HilbertProof'.
 module Kore.MatchingLogic.ProverRepl where
 import           Control.Monad.State.Strict      (MonadState (get,put), execStateT)
 import           Control.Monad.Trans             (MonadTrans (lift))
-import           Data.Text                       (Text, pack)
-import           Data.Void
+import           Data.Text                       (Text)
 import qualified Data.Map.Strict                 as Map
 
 import           Data.Text.Prettyprint.Doc       (Pretty (pretty), colon, (<+>))
 import           System.Console.Haskeline
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
-import           Text.Megaparsec.Error (ShowErrorComponent (..),
-                                        parseErrorPretty)
+import           Data.Kore.Parser.ParserUtils    () -- only import typeclass instances ()
 
 import           Kore.MatchingLogic.HilbertProof
 import           Data.Kore.Error
 import           Kore.MatchingLogic.Error
 
--- TODO: this is already defined in ParserUtils. Import that instead. 
-instance ShowErrorComponent String where
-  showErrorComponent str = str
+type Parser = Parsec String String
 
 newtype ProverState ix rule formula =
   ProverState (Proof ix rule formula)
-
+  
 data Command ix rule formula =
    Add ix formula
  | Prove ix (rule ix)
@@ -75,7 +71,6 @@ applyCommand formulaVerifier command proof = case command of
   AddAndProve ix f rule -> applyAddAndProve formulaVerifier proof ix f rule
   Prove ix rule         -> applyProve proof ix rule
 
-type Parser = Parsec String String
 
 parseAdd :: Parser ix -> Parser formula -> Parser (rule ix) -> Parser (Command ix rule formula)
 parseAdd pIx pFormula pDerivation = do
