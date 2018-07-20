@@ -1,7 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 import           Data.Char                                     (isAlphaNum)
-import qualified Data.Map.Strict                               as Map
-import qualified Data.Set                                      as Set
 
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
@@ -14,7 +12,6 @@ import           Kore.MatchingLogic.HilbertProof
 import           Kore.MatchingLogic.ProofSystem.Minimal
 import           Kore.MatchingLogic.ProofSystem.Minimal.Syntax (parseMLRule)
 import           Kore.MatchingLogic.ProverRepl
-import           Kore.MatchingLogic.Signature.Simple
 
 -- TODO: still needed?
 parseName :: Parser String
