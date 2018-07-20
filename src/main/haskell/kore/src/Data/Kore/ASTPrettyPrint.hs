@@ -3,20 +3,20 @@ module Data.Kore.ASTPrettyPrint
     , PrettyPrint
     ) where
 
+import           Data.Fix
+import           Data.List                     (intersperse)
+
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
 import           Data.Kore.HaskellExtensions
-import           Data.Kore.IndentingPrinter    (PrinterOutput, StringPrinter,
+import           Text.IndentingPrinter    (PrinterOutput, StringPrinter,
                                                 betweenLines, printToString,
                                                 withIndent, write)
 import           Data.Kore.Parser.CString      (escapeCString)
 import           Data.Kore.Unification.Unifier
-
-import           Data.Fix
-import           Data.List                     (intersperse)
 
 {-# ANN module ("HLint: ignore Use record patterns" :: String) #-}
 {-
