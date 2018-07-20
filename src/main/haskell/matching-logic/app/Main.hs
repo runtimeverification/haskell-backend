@@ -33,15 +33,5 @@ proveCommand
             CommonMetaPattern)
 proveCommand = runProver dummyFormulaVerifier pCommand' (ProverState emptyProof)
 
--- TODO: remove if not needed
--- testSignature :: SignatureInfo
--- testSignature = SignatureInfo
---   { sorts = Set.fromList ["Nat","Bool"]
---   , labels = Map.fromList [("plus",("Nat",["Nat","Nat"]))
---                           ,("succ",("Nat",["Nat"]))
---                           ,("zero",("Nat",[]))
---                           ]
---   }
-
 main :: IO ()
 main = proveCommand >> return ()
