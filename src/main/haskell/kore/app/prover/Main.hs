@@ -11,7 +11,7 @@ import           Data.Reflection
 import           Logic.Matching.Pattern
 import           Logic.Matching.Syntax
 import           Logic.Proof.Hilbert
-import           Kore.MatchingLogic.ProofSystem.Minimal
+import           Logic.Matching.Rules.Minimal
 import           Kore.MatchingLogic.ProofSystem.Minimal.Syntax (parseMLRuleSig)
 import           Kore.MatchingLogic.ProverRepl
 import           Logic.Matching.Signature.Simple

@@ -1,55 +1,55 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -fno-warn-orphans       #-}
 {-|
-Description: A copy of Kore.MatchingLogic.AST, but with
-Exists defined in terms of Forall rather than the other way around
+Description: A copy of "Logic.Matching.Pattern" but with
+'Exists' defined in terms of 'Forall' rather than the other way around
 -}
-module Test.Kore.MatchingLogic.ProofSystem.OnePlusOne.ForallAST
-  ( PatternF(..)
-  , Pattern
-  , visitPatternF
-  , patternSort
-  , IsSignature(..)
-  , SigPatternF
-  , SigPattern
-  , WFPattern
-  , fromWFPattern -- note the constructor is *not* exported
-  , wfPatSort
-  , checkSorts1
-  , checkSorts
-  , resolvePattern
-  , ToPattern(..)
-  , FromPattern(..)
-  , notFree
-  , pattern VariableP
-  , pattern ApplicationP
-  , pattern AndP
-  , pattern NotP
-  , pattern ForallP
-  , variableP
-  , applicationP
-  , andP
-  , notP
-  , forallP
-  , pattern OrP
-  , pattern ImpliesP
-  , pattern IffP
-  , pattern ExistsP
-  , orP
-  , impliesP
-  , iffP
-  , existsP
-  , andP' , notP', orP', impliesP', iffP', forallP', existsP'
-  ) where
+module Test.Logic.Matching.Rules.OnePlusOne.Pattern
+    ( PatternF(..)
+    , Pattern
+    , visitPatternF
+    , patternSort
+    , IsSignature(..)
+    , SigPatternF
+    , SigPattern
+    , WFPattern
+    , fromWFPattern -- note the constructor is *not* exported
+    , wfPatSort
+    , checkSorts1
+    , checkSorts
+    , resolvePattern
+    , ToPattern(..)
+    , FromPattern(..)
+    , notFree
+    , pattern VariableP
+    , pattern ApplicationP
+    , pattern AndP
+    , pattern NotP
+    , pattern ForallP
+    , variableP
+    , applicationP
+    , andP
+    , notP
+    , forallP
+    , pattern OrP
+    , pattern ImpliesP
+    , pattern IffP
+    , pattern ExistsP
+    , orP
+    , impliesP
+    , iffP
+    , existsP
+    , andP' , notP', orP', impliesP', iffP', forallP', existsP'
+    ) where
 
-import           Control.Monad
-import           Data.Coerce
+import Control.Monad
+import Data.Coerce
+import Data.Deriving
+       ( deriveEq1, deriveShow1 )
+import Data.Functor.Foldable
+import Data.Text.Prettyprint.Doc
 
-import           Data.Deriving                (deriveEq1, deriveShow1)
-import           Data.Functor.Foldable
-import           Data.Text.Prettyprint.Doc
-
-import           Logic.Matching.Signature
+import Logic.Matching.Signature
 
 -- | The base functor of patterns
 data PatternF sort -- ^ The type of sorts

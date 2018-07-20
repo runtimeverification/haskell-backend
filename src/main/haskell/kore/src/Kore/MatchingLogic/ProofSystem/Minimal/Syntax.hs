@@ -21,7 +21,7 @@ import           Text.Megaparsec.Char
 
 import qualified Logic.Matching.Pattern as Pattern
 import           Logic.Matching.Syntax          (mlPattern)
-import           Kore.MatchingLogic.ProofSystem.Minimal
+import           Logic.Matching.Rules.Minimal
 import           Logic.Matching.Signature
 
 type Parser = Parsec Void Text

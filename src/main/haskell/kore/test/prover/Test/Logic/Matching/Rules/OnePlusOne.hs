@@ -8,7 +8,7 @@ This test uses its own version of the proof system because some
 additional assumptions had to be added as proof rules, and its own
 AST because the proof was done assuming the forall quantifier is primitive.
 -}
-module Test.Kore.MatchingLogic.ProofSystem.OnePlusOne where
+module Test.Logic.Matching.Rules.OnePlusOne where
 
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -42,8 +42,8 @@ import Logic.Proof.Hilbert as HilbertProof
        ( Proof (..), add, derive, emptyProof )
 
 import qualified Paths
-import qualified Test.Kore.MatchingLogic.ProofSystem.OnePlusOne.ForallAST as AST
-import           Test.Kore.MatchingLogic.ProofSystem.OnePlusOne.ProofSystem
+import qualified Test.Logic.Matching.Rules.OnePlusOne.Pattern as AST
+import           Test.Logic.Matching.Rules.OnePlusOne.Rules
                  ( MLRule (..), MLRuleSig, SubstitutedVariable (..),
                  SubstitutingVariable (..), transformRule )
 

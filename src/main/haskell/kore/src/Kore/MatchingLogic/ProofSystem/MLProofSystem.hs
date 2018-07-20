@@ -29,7 +29,7 @@ import           Data.Kore.Variables.Sort               (TermWithSortVariablesCl
 
 import           Kore.MatchingLogic.Error               (MLError)
 import           Logic.Proof.Hilbert        (ProofSystem (..))
-import           Kore.MatchingLogic.ProofSystem.Minimal (MLRule (..), SubstitutedVariable (..),
+import           Logic.Matching.Rules.Minimal (MLRule (..), SubstitutedVariable (..),
                                                          SubstitutingVariable (..))
 
 import           Data.Fix

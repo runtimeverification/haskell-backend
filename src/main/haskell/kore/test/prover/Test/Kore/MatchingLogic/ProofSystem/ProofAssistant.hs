@@ -34,9 +34,9 @@ import Data.Kore.IndexedModule.IndexedModule
 import Data.Kore.MetaML.AST
        ( MetaMLPattern )
 import Kore.MatchingLogic.Error
-import Kore.MatchingLogic.ProofSystem.Minimal
-       ( MLRule (..), SubstitutedVariable (..), SubstitutingVariable (..) )
 import Kore.MatchingLogic.ProofSystem.MLProofSystem as MLProofSystem
+import Logic.Matching.Rules.Minimal
+       ( MLRule (..), SubstitutedVariable (..), SubstitutingVariable (..) )
 import Logic.Proof.Hilbert as HilbertProof
        ( Proof (..), add, derive, emptyProof )
 
