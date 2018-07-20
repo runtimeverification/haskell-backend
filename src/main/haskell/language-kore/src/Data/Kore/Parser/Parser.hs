@@ -43,8 +43,7 @@ import           Data.Kore.AST.Kore           (CommonKorePattern)
 import           Data.Kore.MetaML.AST         (CommonMetaPattern)
 import           Data.Kore.AST.Sentence
 import           Data.Kore.Parser.Lexeme      (skipWhitespace)
-import           Data.Kore.AST.MetaOrObject             (Meta (..),
-                                                         Unified (..))
+import           Data.Kore.AST.MetaOrObject             (Meta (..))
 import           Data.Kore.AST.Common                   (SymbolOrAlias (..),
                                                          Variable)
 import qualified Data.Kore.Parser.ParserImpl  as KoreParser (koreDefinitionParser,
