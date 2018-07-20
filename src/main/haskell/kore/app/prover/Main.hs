@@ -14,7 +14,7 @@ import           Kore.MatchingLogic.HilbertProof
 import           Kore.MatchingLogic.ProofSystem.Minimal
 import           Kore.MatchingLogic.ProofSystem.Minimal.Syntax (parseMLRuleSig)
 import           Kore.MatchingLogic.ProverRepl
-import           Kore.MatchingLogic.Signature.Simple
+import           Logic.Matching.Signature.Simple
 
 -- Todo: Parsing Formula as Text. Hook to Kore Parser
 parseName :: Parser Text

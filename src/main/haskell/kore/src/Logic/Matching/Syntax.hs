@@ -31,8 +31,8 @@ import           Text.Megaparsec hiding
                  ( some )
 import           Text.Megaparsec.Char
 
-import Kore.MatchingLogic.Signature.Simple
 import Logic.Matching.Pattern
+import Logic.Matching.Signature.Simple
 
 type Parser = Parsec Void Text
 

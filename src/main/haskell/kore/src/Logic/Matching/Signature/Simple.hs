@@ -9,26 +9,31 @@ form 'SimpleSignature s'.
 Functions are also provided to check and convert strings
 to the 'Label' or 'Sort' types associated with that signature.
 -}
-module Kore.MatchingLogic.Signature.Simple
-  (SignatureInfo(..),ValidatedSignature,fromValidated,validate
-  ,SimpleSignature
-  ,ReifiesSignature
-  ,resolveLabel,resolveSort
-  ,reifySignature) where
+module Logic.Matching.Signature.Simple
+    ( SignatureInfo(..)
+    , ValidatedSignature, fromValidated, validate
+    , SimpleSignature
+    , ReifiesSignature
+    , resolveLabel,resolveSort
+    , reifySignature
+    ) where
+
 import           Data.Char
 import           Data.Coerce
-import           Data.Map.Strict           (Map)
-import qualified Data.Map.Strict           as Map
+import           Data.Map.Strict
+                 ( Map )
+import qualified Data.Map.Strict as Map
 import           Data.Proxy
-import           Data.Set                  (Set)
-import qualified Data.Set                  as Set
-import           Data.Text                 (Text)
-import qualified Data.Text                 as Text
-
-import           Data.Text.Prettyprint.Doc
 import           Data.Reflection
+import           Data.Set
+                 ( Set )
+import qualified Data.Set as Set
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
+import           Data.Text.Prettyprint.Doc
 
-import           Logic.Matching.Signature
+import Logic.Matching.Signature
 
 -- | A finite signatures of sorts and labels written as text
 data SignatureInfo = SignatureInfo
