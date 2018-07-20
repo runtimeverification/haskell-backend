@@ -75,7 +75,7 @@ metaVariableParser :: Parser (Variable Meta)
 metaVariableParser = KoreParser.variableParser Meta
 
 metaSymbolOrAliasParser :: Parser (SymbolOrAlias Meta)
-metaSymbolOrAliasParser = KoreParser.symbolOrAliasParser metaPatternParser Meta
+metaSymbolOrAliasParser = KoreParser.symbolOrAliasParser Meta
 
 {-|'fromKore' takes a string representation of a Kore Definition and returns
 a 'KoreDefinition' or a parse error.

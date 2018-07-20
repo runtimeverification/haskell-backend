@@ -20,40 +20,25 @@ import           Kore.MatchingLogic.AST.Syntax
 import           Kore.MatchingLogic.ProofSystem.MLProofSystem
 import           Kore.MatchingLogic.HilbertProof
 import           Kore.MatchingLogic.ProofSystem.Minimal
-import           Kore.MatchingLogic.ProofSystem.Minimal.Syntax (parseMLRuleSig, parseMLRule)
+import           Kore.MatchingLogic.ProofSystem.Minimal.Syntax (parseMLRule)
 import           Kore.MatchingLogic.ProverRepl
 import           Kore.MatchingLogic.Signature.Simple
 
--- Todo: Parsing Formula as Text. Hook to Kore Parser
+-- TODO: still needed?
 parseName :: Parser String
 parseName = takeWhile1P Nothing isAlphaNum <* space
-
--- pCommand :: (Reifies s ValidatedSignature)
---          => Parser (Command String
---                     (MLRuleSig (SimpleSignature s) String)
---                     (WFPattern (SimpleSignature s) String))
--- pCommand = parseCommand parseName parseFormula parseRule
---   where
---     parseFormula = simpleSigPattern parseName parseName parseName
---     parseLabel = simpleSigLabel parseName
---     parseSort = simpleSigSort parseName
---     parseRule = parseMLRuleSig parseSort parseLabel parseName parseName
 
 pCommand' :: Parser (Command String (MLRule (SymbolOrAlias Meta) (Variable Meta) CommonMetaPattern) CommonMetaPattern)
 pCommand' = parseCommand parseName parseFormula parseRule
   where
     parseFormula = metaPatternParser
-    parseLabel = parseName
-    parseSort = parseName
-    x = metaSymbolOrAliasParser
-    y = metaVariableParser
-    parseRule = parseMLRule x y parseFormula parseName  
+    parseLabel   = parseName
+    parseSort    = parseName
+    parseRule    = parseMLRule metaSymbolOrAliasParser 
+                               metaVariableParser 
+                               parseFormula 
+                               parseName  
 
--- proveCommand
---     :: (Reifies sig ValidatedSignature)
---     => proxy (SimpleSignature sig)
---     -> IO (ProverState Text (MLRuleSig (SimpleSignature sig) Text)
---             (WFPattern (SimpleSignature sig) Text))
 proveCommand
     :: IO (ProverState 
             String 
@@ -70,11 +55,6 @@ testSignature = SignatureInfo
                           ,("zero",("Nat",[]))
                           ]
   }
-
--- main :: IO ()
--- main = case validate testSignature of
---   Nothing -> return ()
---   Just validSig -> reifySignature validSig (\proxy -> proveCommand proxy >> return ())
 
 main :: IO ()
 main = proveCommand >> return ()

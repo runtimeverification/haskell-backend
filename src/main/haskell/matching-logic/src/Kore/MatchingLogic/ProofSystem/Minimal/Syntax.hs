@@ -7,7 +7,7 @@ Parser and pretty-printer for the minimal proof system.
 module Kore.MatchingLogic.ProofSystem.Minimal.Syntax
   ( parseId
   , parseMLRule
-  , parseMLRuleSig)
+  )
   where
 import           Control.Applicative                    (some)
 import           Control.Monad                          (void)
@@ -107,27 +107,6 @@ parseMLRule pLabel pVar pTerm pIx =
       Existence <$> pVar
     singvar = rule "singvar" $
       Singvar <$> pVar `arg` pTerm `arg` parsePathPos `arg` parsePathPos
-
--- | Parse a rule of the minimal proof system
--- when the formula type is 'AST.SigPattern',
--- using the default pattern syntax over the provided
--- parsers for the sorts and labels of the signatures.
-parseMLRuleSig :: forall sig var ix . (AST.IsSignature sig)
-                  => Parser (Sort sig)
-                  -> Parser (Label sig)
-                  -> Parser var
-                  -> Parser ix
-                  -> Parser (MLRuleSig sig var ix)
-parseMLRuleSig pSort pLabel pVar pIx = error "fail"
-                  -- parseMLRuleSig pSort pLabel pVar pIx =
---     parseMLRule pLabel pVar parseFormula pIx
---   where
---     parseFormula :: Parser (AST.WFPattern sig var)
---     parseFormula = do
---       term <- mlPattern pSort pLabel pVar
---       case AST.checkSorts term of
---         Nothing     -> fail "Ill-sorted term"
---         Just wfTerm -> return wfTerm
 
 -- | Displays proof rules in the documented concrete syntax,
 -- assuming pretty-printing instances for all the type parameters
