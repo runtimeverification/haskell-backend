@@ -109,12 +109,20 @@ instance Hashable Proof where
         s `hashWithSalt` a `hashWithSalt` b `hashWithSalt` S.toList c
 
 data LargeRule subproof
+-- | a |- a 
  = Assumption Term
+ -- | From a |- b deduce |- a -> b
  | Discharge Term subproof
+ -- | From |- A[x] deduce |- Forall x. A[x]
  | Abstract Var subproof
+ -- | EVIL SHORTCUT! This bypasses the functionality check.
+ -- Should move to using FunctionalSubst when you can.
  | ForallElim Term subproof
+ -- | From |- a , |- b deduce |- a /\ b 
  | AndIntro subproof subproof
+ -- | From |- a /\ b deduce |- a 
  | AndElimL subproof
+ -- | From |- a /\ b deduce |- b
  | AndElimR subproof
  -- | a |- a \/ b
  -- OrIntro a b
@@ -124,10 +132,14 @@ data LargeRule subproof
  | OrIntroR Term     subproof
  -- | OrElim (a \/ b) (C assuming a) (C assuming b)
  | OrElim subproof subproof subproof
+ -- | |- T
  | TopIntro
+ -- | From |- A[x] deduce |- (E x. A[x])
  | ExistsIntro Var Term subproof
  -- | ExistsElim (E x. p[x]) (C assuming p[y])
  | ExistsElim subproof Var Term subproof
+ -- | From |- a, |- a -> b deduce |- b 
+ -- ModusPonens a b 
  | ModusPonens subproof subproof
  -- (\forall x. phi) /\ (\exists y. phi' = y) -> phi[phi'/x]
  -- FunctionalSubst x phi y phi'
@@ -203,6 +215,18 @@ instance Pretty a => Pretty (LargeRule a) where
           -> ["EqualityIntro", pretty a]
       EqualityElim a b c p
           -> ["EqualityElim", pretty a, pretty b, pretty c, pretty p]
+      MembershipForall var a 
+          -> ["MembershipForall", pretty var, pretty a] 
+      MembershipEq var1 var2 
+          -> ["MembershipEq", pretty var1, pretty var2] 
+      MembershipNot var a 
+          -> ["MembershipNot", pretty var, pretty a] 
+      MembershipAnd var a b 
+          -> ["MembershipAnd", pretty var, pretty a, pretty b] 
+      MembershipExists var1 var2 a 
+          -> ["MembershipExists", pretty var1, pretty var2, pretty a]
+      MembershipCong var1 var2 pos a 
+          -> ["MembershipCong", pretty var1, pretty var2, pretty pos, pretty a]
 
 instance
   ( Pretty formula
@@ -240,7 +264,7 @@ assume formula = By formula (Assumption formula) (S.singleton formula)
 -- These are natural deduction introduction/elimination rules which manipulate
 -- quantifiers/assumptions in a tricky way.
 -- 2) "mundane" rules like EqualityElim which merely
--- generate an axiom  using a schema.
+-- generate an axiom using a schema.
 -- The "mundane" rules are passed off to "interpretRule"
 -- which instantiates the schema.
 
