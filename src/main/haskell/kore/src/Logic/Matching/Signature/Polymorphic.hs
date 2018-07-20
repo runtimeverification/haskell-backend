@@ -11,28 +11,32 @@ Functions are also provided to check and convert trees
 over strings into the 'Label' or 'Sort' types associated
 with that signature.
 -}
-module Kore.MatchingLogic.Signature.Poly
-  (SortPat
-  ,SignatureInfo(..),ValidatedSignature,fromValidated,validate
-  ,PolySignature
-  ,ReifiesSignature
-  ,resolveLabel,resolveSort
-  ,reifySignature
-  ,prettyPolyTerm) where
-  -- ,ValidatedSignature,fromValidated,findLabel) where
-import           Data.Char                 (isAlpha, isAlphaNum)
-import           Data.Coerce
-import           Data.Map.Strict           (Map)
-import qualified Data.Map.Strict           as Map
-import           Data.Proxy
-import           Data.Text                 (Text)
-import qualified Data.Text                 as Text
+module Logic.Matching.Signature.Polymorphic
+    ( SortPat
+    , SignatureInfo(..)
+    , ValidatedSignature, fromValidated, validate
+    , PolySignature
+    , ReifiesSignature
+    , resolveLabel,resolveSort
+    , reifySignature
+    , prettyPolyTerm
+    ) where
 
+import           Data.Char
+                 ( isAlpha, isAlphaNum )
+import           Data.Coerce
+import           Data.Map.Strict
+                 ( Map )
+import qualified Data.Map.Strict as Map
+import           Data.Proxy
 import           Data.Reflection
+import           Data.Text
+                 ( Text )
+import qualified Data.Text as Text
 import           Data.Text.Prettyprint.Doc
 
-import           Logic.Matching.Pattern
-import           Logic.Matching.Signature
+import Logic.Matching.Pattern
+import Logic.Matching.Signature
 
 -- | A tree of applied sort constructors,
 -- which also allows for sort variables.
