@@ -13,19 +13,14 @@ import           Control.Applicative                    (some)
 import           Control.Monad                          (void)
 import           Data.Char                              (isAlphaNum)
 import           Data.Text                              (Text)
-import           Data.Void
 
 import           Data.Text.Prettyprint.Doc              (Doc, Pretty (pretty),
                                                          sep, tupled, (<>))
 import           Text.Megaparsec                        hiding (some)
 import           Text.Megaparsec.Char
 
-import qualified Kore.MatchingLogic.AST                 as AST
-import           Kore.MatchingLogic.AST.Syntax          (mlPattern)
 import           Kore.MatchingLogic.ProofSystem.Minimal
-import           Kore.MatchingLogic.Signature
 
--- type Parser = Parsec Void Text
 type Parser = Parsec String String
 
 lexeme :: Parser a -> Parser a
