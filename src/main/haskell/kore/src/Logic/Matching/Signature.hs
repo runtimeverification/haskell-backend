@@ -1,21 +1,26 @@
 {-|
-Description: A type class for matching logic signatures
-
-Defines a type class for matching logic signatures.
-Data families 'Label' and 'Sort' indexed by the signature type
-give the labels and sorts of a signature. The class methods
-allow looking up the argument and result sorts of a label.
+Description: Signatures of matching logic theories
 -}
-module Kore.MatchingLogic.Signature where
+module Logic.Matching.Signature where
 
+{-| A matching logic signature is a set of sorts and a set of labels where each
+  label is associated with a result sort and a list of argument sorts.
+-}
 class (Eq (Sort sig), Eq (Label sig)) => IsSignature sig where
+  -- | The type of labels in the matching logic signature @sig@.
   data Label sig :: *
-  -- ^ Returns a pair of the result and argument sorts of a label
+  -- | The type of sorts in the matching logic signature @sig@.
   data Sort sig :: *
+
+  {-| The result and argument sorts of a label.
+
+    prop> labelSignature l = (labelResult l, labelArguments l)
+  -}
   labelSignature :: Label sig -> (Sort sig,[Sort sig])
-  -- ^ Returns a pair of the result and argument sorts of a label
+
   labelResult :: Label sig -> Sort sig
   labelResult l = fst (labelSignature l)
+
   labelArguments :: Label sig -> [Sort sig]
   labelArguments l = snd (labelSignature l)
 

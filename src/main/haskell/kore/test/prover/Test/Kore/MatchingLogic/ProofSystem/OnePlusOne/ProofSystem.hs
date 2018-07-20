@@ -6,20 +6,23 @@ connectives, which were needed to complete the 1+1=2 proof.
  -}
 module Test.Kore.MatchingLogic.ProofSystem.OnePlusOne.ProofSystem where
 
-import           Data.Functor.Foldable           (Fix (..))
-import           Control.Lens                    ((&),(%~))
+import Control.Lens
+       ( (%~), (&) )
+import Data.Functor.Foldable
+       ( Fix (..) )
 
-import qualified          Test.Kore.MatchingLogic.ProofSystem.OnePlusOne.ForallAST          as AST
-import Test.Kore.MatchingLogic.ProofSystem.OnePlusOne.ForallAST
-  (Sort,Label,Pattern,WFPattern
-  ,pattern ApplicationP,pattern OrP, pattern ImpliesP, pattern AndP, pattern NotP
-  ,pattern VariableP,pattern ExistsP,pattern ForallP
-  ,notP',impliesP')
+import Data.Kore.Error
+import Kore.MatchingLogic.Error
+       ( MLError )
+import Kore.MatchingLogic.HilbertProof
+import Logic.Matching.Signature
 
-import           Kore.MatchingLogic.HilbertProof
-import           Kore.MatchingLogic.Error(MLError)
-import           Kore.MatchingLogic.Signature
-import           Data.Kore.Error
+import           Test.Kore.MatchingLogic.ProofSystem.OnePlusOne.ForallAST
+                 ( pattern AndP, pattern ApplicationP, pattern ExistsP,
+                 pattern ForallP, pattern ImpliesP, Label, pattern NotP,
+                 pattern OrP, Pattern, Sort, pattern VariableP, WFPattern,
+                 impliesP', notP' )
+import qualified Test.Kore.MatchingLogic.ProofSystem.OnePlusOne.ForallAST as AST
 
 newtype SubstitutedVariable var = SubstitutedVariable var
     deriving (Eq, Show)

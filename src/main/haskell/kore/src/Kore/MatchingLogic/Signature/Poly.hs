@@ -32,7 +32,7 @@ import           Data.Reflection
 import           Data.Text.Prettyprint.Doc
 
 import           Logic.Matching.Pattern
-import           Kore.MatchingLogic.Signature
+import           Logic.Matching.Signature
 
 -- | A tree of applied sort constructors,
 -- which also allows for sort variables.

@@ -52,7 +52,7 @@ import Data.Deriving
 import Data.Functor.Foldable
 import Data.Text.Prettyprint.Doc
 
-import Kore.MatchingLogic.Signature
+import Logic.Matching.Signature
 
 -- | The base functor of patterns
 --

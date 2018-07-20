@@ -49,7 +49,7 @@ import           Data.Deriving                (deriveEq1, deriveShow1)
 import           Data.Functor.Foldable
 import           Data.Text.Prettyprint.Doc
 
-import           Kore.MatchingLogic.Signature
+import           Logic.Matching.Signature
 
 -- | The base functor of patterns
 data PatternF sort -- ^ The type of sorts

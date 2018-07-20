@@ -28,7 +28,7 @@ import qualified Data.Text                 as Text
 import           Data.Text.Prettyprint.Doc
 import           Data.Reflection
 
-import           Kore.MatchingLogic.Signature
+import           Logic.Matching.Signature
 
 -- | A finite signatures of sorts and labels written as text
 data SignatureInfo = SignatureInfo
