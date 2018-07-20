@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}  -- instance IsString ShowS
 module Text.IndentingPrinter
     ( betweenLines
     , PrinterOutput
@@ -7,16 +8,16 @@ module Text.IndentingPrinter
     , write
     ) where
 
-import           Control.Monad.Reader
-import           Control.Monad.Writer
+import Control.Monad.Reader
+import Control.Monad.Writer
+import Data.String
+       ( IsString (..) )
 
-class FromString a where
-    fromString :: String -> a
-
-instance FromString ShowS where
+-- | Requires @TypeSynonymInstances@; not provided by @base@
+instance IsString ShowS where
     fromString = showString
 
-class (FromString w, MonadWriter w m, MonadReader Int m)
+class (IsString w, MonadWriter w m, MonadReader Int m)
     => PrinterOutput w m where
     write :: String -> m ()
     write s = tell (fromString s)
