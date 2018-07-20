@@ -13,7 +13,7 @@ module Kore.MatchingLogic.ProofSystem.Dummy
   ) where
 import           Data.Text
 
-import           Kore.MatchingLogic.HilbertProof
+import           Logic.Proof.Hilbert
 
 {-| A dummy rule contains an arbitrary string
   which is printed in the 'Show' instance but

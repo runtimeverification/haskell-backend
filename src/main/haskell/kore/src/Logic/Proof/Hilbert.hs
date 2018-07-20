@@ -1,18 +1,14 @@
 {-|
 Description: A generic representation of Hilbert proofs
 
-A generic representation Hilbert proofs.
-The proof type is parameterized over a choice of formulas,
-proof rules, and line labels, and provides a proof-building
-interface that maintains a well-formed proof structure.
-Checking uniqueness of labels and that proposed derivations
-refer to only allowed (i.e, earlier) labels is handled by
-code in this module.
-A type class is defined and relied upton for checking
-whether a given proof rule instance actually supports
-a conclusion.
+A generic representation Hilbert proofs. The proof type is parameterized over a
+choice of formulas, proof rules, and line labels, and provides a proof-building
+interface that maintains a well-formed proof structure. Checking uniqueness of
+labels and that proposed derivations refer to only allowed (i.e, earlier) labels
+is handled by code in this module. A type class is defined and relied upon for
+checking whether a given proof rule instance actually supports a conclusion.
 -}
-module Kore.MatchingLogic.HilbertProof
+module Logic.Proof.Hilbert
     ( Proof(index, claims, derivations)
     , ProofSystem(..)
     , emptyProof
@@ -22,15 +18,16 @@ module Kore.MatchingLogic.HilbertProof
     ) where
 
 import           Data.Foldable
-import           Data.Map.Strict           (Map)
-import qualified Data.Map.Strict           as Map
-import           Data.Sequence             (Seq, (|>))
-import qualified Data.Sequence             as Seq
-
+import           Data.Map.Strict
+                 ( Map )
+import qualified Data.Map.Strict as Map
+import           Data.Sequence
+                 ( Seq, (|>) )
+import qualified Data.Sequence as Seq
 import           Data.Text.Prettyprint.Doc
 
-import           Data.Kore.Error
-import           Kore.MatchingLogic.Error
+import Data.Kore.Error
+import Kore.MatchingLogic.Error
 
 data Proof ix rule formula =
   Proof

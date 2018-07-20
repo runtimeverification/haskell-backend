@@ -37,9 +37,9 @@ import           Text.Megaparsec
 import           Text.Megaparsec.Byte
 import qualified Text.Megaparsec.Byte.Lexer as Lexer
 
-import Kore.MatchingLogic.HilbertProof as HilbertProof
-       ( Proof (..), add, derive, emptyProof )
 import Logic.Matching.Signature.Simple
+import Logic.Proof.Hilbert as HilbertProof
+       ( Proof (..), add, derive, emptyProof )
 
 import qualified Paths
 import qualified Test.Kore.MatchingLogic.ProofSystem.OnePlusOne.ForallAST as AST

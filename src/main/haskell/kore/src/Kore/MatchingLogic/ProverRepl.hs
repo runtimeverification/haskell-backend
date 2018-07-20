@@ -18,7 +18,7 @@ import           System.Console.Haskeline
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 
-import           Kore.MatchingLogic.HilbertProof
+import           Logic.Proof.Hilbert
 import           Data.Kore.Error
 import           Kore.MatchingLogic.Error
 

@@ -28,7 +28,7 @@ import           Data.Kore.Variables.Fresh.Class        (FreshVariablesClass (..
 import           Data.Kore.Variables.Sort               (TermWithSortVariablesClass (sortVariables))
 
 import           Kore.MatchingLogic.Error               (MLError)
-import           Kore.MatchingLogic.HilbertProof        (ProofSystem (..))
+import           Logic.Proof.Hilbert        (ProofSystem (..))
 import           Kore.MatchingLogic.ProofSystem.Minimal (MLRule (..), SubstitutedVariable (..),
                                                          SubstitutingVariable (..))
 

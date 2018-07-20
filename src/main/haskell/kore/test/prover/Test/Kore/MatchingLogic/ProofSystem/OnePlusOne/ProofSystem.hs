@@ -14,8 +14,8 @@ import Data.Functor.Foldable
 import Data.Kore.Error
 import Kore.MatchingLogic.Error
        ( MLError )
-import Kore.MatchingLogic.HilbertProof
 import Logic.Matching.Signature
+import Logic.Proof.Hilbert
 
 import           Test.Kore.MatchingLogic.ProofSystem.OnePlusOne.ForallAST
                  ( pattern AndP, pattern ApplicationP, pattern ExistsP,

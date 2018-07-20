@@ -11,7 +11,7 @@ import           Data.Functor.Foldable           (Fix (..))
 
 import           Logic.Matching.Pattern          as Pattern
 import           Kore.MatchingLogic.Error
-import           Kore.MatchingLogic.HilbertProof
+import           Logic.Proof.Hilbert
 
 import           Data.Kore.Error
 
