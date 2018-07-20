@@ -15,8 +15,8 @@ import           Text.Megaparsec hiding
                  ( some )
 import           Text.Megaparsec.Char
 
-import Kore.MatchingLogic.ProofSystem.Minimal.Syntax
 import Logic.Matching.Rules.Minimal
+import Logic.Matching.Rules.Minimal.Syntax
 
 test :: String -> DummyRule -> String -> TestTree
 test name ast str =

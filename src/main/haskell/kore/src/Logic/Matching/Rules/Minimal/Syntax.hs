@@ -1,28 +1,34 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-| Description: Parser and pretty-printer for the minimal proof system
+{-| Description: Concrete syntax for the minimal matching logic proof rules
 
-Parser and pretty-printer for the minimal proof system.
+Parser and pretty-printer for the minimal proof rules.
 -}
-module Kore.MatchingLogic.ProofSystem.Minimal.Syntax
-  ( parseId
-  , parseMLRule
-  , parseMLRuleSig)
-  where
-import           Control.Applicative                    (some)
-import           Control.Monad                          (void)
-import           Data.Char                              (isAlphaNum)
-import           Data.Text                              (Text)
-import           Data.Void
+module Logic.Matching.Rules.Minimal.Syntax
+    ( parseId
+    , parseMLRule
+    , parseMLRuleSig
+    ) where
 
-import           Data.Text.Prettyprint.Doc              (Doc, Pretty (pretty),
-                                                         sep, tupled, (<>))
-import           Text.Megaparsec                        hiding (some)
-import           Text.Megaparsec.Char
+import Control.Applicative
+       ( some )
+import Control.Monad
+       ( void )
+import Data.Char
+       ( isAlphaNum )
+import Data.Text
+       ( Text )
+import Data.Text.Prettyprint.Doc
+       ( Doc, Pretty (pretty), sep, tupled, (<>) )
+import Data.Void
+import Text.Megaparsec hiding
+       ( some )
+import Text.Megaparsec.Char
 
 import qualified Logic.Matching.Pattern as Pattern
-import           Logic.Matching.Syntax          (mlPattern)
 import           Logic.Matching.Rules.Minimal
 import           Logic.Matching.Signature
+import           Logic.Matching.Syntax
+                 ( mlPattern )
 
 type Parser = Parsec Void Text
 
