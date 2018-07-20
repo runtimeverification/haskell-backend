@@ -1,13 +1,16 @@
-module Test.Data.Kore.Algorithm.TopologicalSort
+module Test.Data.Graph.TopologicalSort
     (test_topologicalSort) where
 
-import           Test.Tasty                          (TestTree)
-import           Test.Tasty.HUnit                    (assertEqual, testCase)
+import Test.Tasty
+       ( TestTree )
+import Test.Tasty.HUnit
+       ( assertEqual, testCase )
 
-import qualified Data.Map                            as Map
+import qualified Data.Map as Map
 
-import           Data.Kore.Algorithm.TopologicalSort
-import           Test.Tasty.HUnit.Extensions
+import Data.Graph.TopologicalSort
+
+import Test.Tasty.HUnit.Extensions
 
 test_topologicalSort :: [TestTree]
 test_topologicalSort =

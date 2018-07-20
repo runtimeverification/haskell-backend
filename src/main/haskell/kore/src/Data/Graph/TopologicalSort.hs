@@ -1,5 +1,5 @@
 {-|
-Module      : Data.Kore.Algorithm.TopologicalSort
+Module      : Data.Graph.TopologicalSort
 Description : Topological sorting algorithm.
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
@@ -7,12 +7,14 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Data.Kore.Algorithm.TopologicalSort
-    (topologicalSort, ToplogicalSortCycles(..))
-  where
+module Data.Graph.TopologicalSort
+    ( topologicalSort
+    , ToplogicalSortCycles(..)
+    ) where
 
-import           Data.Graph (SCC (..), stronglyConnComp)
-import qualified Data.Map   as Map
+import           Data.Graph
+                 ( SCC (..), stronglyConnComp )
+import qualified Data.Map as Map
 
 newtype ToplogicalSortCycles node = ToplogicalSortCycles [node]
     deriving (Show, Eq)

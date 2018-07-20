@@ -13,7 +13,7 @@ module Data.Kore.Unification.SubstitutionNormalization
     (normalizeSubstitution)
   where
 
-import           Data.Kore.Algorithm.TopologicalSort
+import           Data.Graph.TopologicalSort
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
