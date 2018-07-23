@@ -219,7 +219,7 @@ liftObjectReducer p = case p of
 
 -- Section 9.2.4 Lift Sort Declarations
 liftSortDeclaration
-    :: KoreSentenceSort
+    :: KoreSentenceSort Object
     -> (MetaSentenceSymbol, MetaSentenceAxiom, MetaSentenceAxiom)
 liftSortDeclaration ss =
     (symbolDeclaration, helperFunctionAxiom, declaredAxiom)
@@ -389,6 +389,13 @@ liftMetaSentence (SentenceSymbolSentence mss) =
     [ SentenceSymbolSentence mss
         { sentenceSymbolAttributes =
             sentenceSymbolAttributes mss
+        }
+    ]
+liftMetaSentence (SentenceSortSentence mss) =
+    [ SentenceSortSentence mss
+        { sentenceSortName = sentenceSortName mss
+        , sentenceSortParameters = sentenceSortParameters mss
+        , sentenceSortAttributes = sentenceSortAttributes mss
         }
     ]
 liftMetaSentence (SentenceAxiomSentence as) =

@@ -1,2 +1,1 @@
-Parse error: ../../../test/resources//test-exception-9.kore:6:13:
-metaSortConverter: Invalid constructor: '#S'.
+Parse error: Error in module 'Nat' -> (../../../test/resources//test-exception-9.kore 3:18): Malformed meta sort '#Nat' with non-empty Parameter sorts.

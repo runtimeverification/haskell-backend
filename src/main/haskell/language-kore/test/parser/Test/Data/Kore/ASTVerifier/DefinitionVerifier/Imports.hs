@@ -317,7 +317,7 @@ sortVisibilityTests =
             , sentenceSortParameters = []
             , sentenceSortAttributes = Attributes []
             }
-        ::KoreSentenceSort)
+        ::KoreSentenceSort Object)
     anotherSort = SortActualSort SortActual
         { sortActualName = testId "sort3"
         , sortActualSorts = []
@@ -328,7 +328,7 @@ sortVisibilityTests =
             , sentenceSortParameters = []
             , sentenceSortAttributes = Attributes []
             }
-        :: KoreSentenceSort)
+        :: KoreSentenceSort Object)
     topSortPattern = asKorePattern ( TopPattern Top { topSort = sort } )
     metaTopSortPattern =
         asKorePattern ( TopPattern Top { topSort = charMetaSort } )
@@ -353,7 +353,7 @@ sortVisibilityTests =
                 , sentenceSortParameters = [SortVariable (testId "x")]
                 , sentenceSortAttributes = Attributes []
                 }
-            :: KoreSentenceSort)
+            :: KoreSentenceSort Object)
         ]
     sortReferenceInTopPatternSentence =
         asSentence
@@ -982,7 +982,7 @@ defaultSortDeclaration = asSentence
         , sentenceSortParameters = []
         , sentenceSortAttributes = Attributes []
         }
-    :: KoreSentenceSort)
+    :: KoreSentenceSort Object)
 
 newtype DeclaringSentence = DeclaringSentence KoreSentence
 newtype UsingSentence = UsingSentence KoreSentence
@@ -1271,7 +1271,7 @@ nameDuplicationTests =
                         , sentenceSortParameters = []
                         , sentenceSortAttributes = Attributes []
                         }
-                    :: KoreSentenceSort)
+                    :: KoreSentenceSort Object)
                 ]
             , moduleAttributes = Attributes []
             }
