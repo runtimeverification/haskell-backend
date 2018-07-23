@@ -140,6 +140,7 @@ simpleDefinitionFromSentences name sentences =
             ]
         }
 
+-- TODO: simple meta sort sentence?
 simpleSortSentence :: SortName -> KoreSentence
 simpleSortSentence (SortName name) =
     asSentence
@@ -147,7 +148,7 @@ simpleSortSentence (SortName name) =
             { sentenceSortName = testId name
             , sentenceSortParameters = []
             , sentenceSortAttributes = Attributes []
-            }::KoreSentenceSort
+            }::KoreSentenceSort Object
         )
 
 simpleMetaAliasSentence :: AliasName -> SortName -> KoreSentence
@@ -239,7 +240,7 @@ sortSentenceWithSortParameters (SortName name) parameters =
             { sentenceSortName = testId name
             , sentenceSortParameters = parameters
             , sentenceSortAttributes = Attributes []
-            }::KoreSentenceSort
+            }::KoreSentenceSort Object
         )
 
 aliasSentenceWithSort

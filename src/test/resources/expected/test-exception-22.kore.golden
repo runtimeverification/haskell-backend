@@ -1,2 +1,1 @@
-Parse error: ../../../test/resources//test-exception-22.kore:5:8:
-genericIdRawParser: Invalid first character '#'.
+Parse error: Error in module 'TEST-EXCEPTION-22' -> axiom declaration -> \implies (../../../test/resources//test-exception-22.kore 6:8) -> sort '#Char' (../../../test/resources//test-exception-22.kore 6:8): Expected 0 sort arguments, but got 1.
