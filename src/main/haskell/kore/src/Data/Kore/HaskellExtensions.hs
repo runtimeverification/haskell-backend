@@ -10,8 +10,7 @@ Portability : portable
 -}
 module Data.Kore.HaskellExtensions
     (Rotate31(..), Rotate41(..)
-    , (<..>), (<...>), (<....>)
-    , ReversedList, reversedAdd, reversedToList, emptyReversedList)
+    , (<..>), (<...>), (<....>))
   where
 
 {-|'Rotate31' is a helper type useful to bring the first argument
@@ -66,15 +65,3 @@ second function has four arguments.  It satisfies that
     -> (a1 -> a2 -> a3 -> a4 -> b)
     -> (a1 -> a2 -> a3 -> a4 -> c)
 (<....>) = (<...>) . (.)
-
-newtype ReversedList a = ReversedList [a]
-    deriving (Show, Eq)
-
-reversedAdd :: a -> ReversedList a -> ReversedList a
-reversedAdd e (ReversedList l) = ReversedList (e:l)
-
-reversedToList :: ReversedList a -> [a]
-reversedToList (ReversedList l) = reverse l
-
-emptyReversedList :: ReversedList a
-emptyReversedList = ReversedList []
