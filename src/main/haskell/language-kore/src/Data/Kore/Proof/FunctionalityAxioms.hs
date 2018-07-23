@@ -31,7 +31,8 @@ Portability : portable
 
 
 module Data.Kore.Proof.FunctionalityAxioms
-(
+( generateFunctionalStatement
+, generateFunctionalHeadAxiom
 ) where
 
 import           Data.Kore.AST.Common
@@ -45,5 +46,23 @@ import           Data.Kore.Proof.Dummy
 import           Data.Kore.Proof.Proof
 import           Data.Kore.Proof.Util
 
+generateFunctionalStatement
+    :: Given (MetadataTools Object)
+    => Term 
+    -> Term 
+generateFunctionalStatement p = 
+    mkExists var (p `mkEquals` (mkVar var))
+        where var = varS "x" $ getSort p
 
+generateFunctionalHeadAxiom
+    :: Given (MetadataTools Object)
+    => SymbolOrAlias Object 
+    -> [Sort Object] 
+    -> Term 
+generateFunctionalHeadAxiom h c = 
+    let (vars, vars') = generateVarList c "x"
+    in mkForallN vars $ generateFunctionalStatement $ mkApp h vars'
+
+-- proveFunctional 
+   -- :: Given (MetadataTools Object)
 
