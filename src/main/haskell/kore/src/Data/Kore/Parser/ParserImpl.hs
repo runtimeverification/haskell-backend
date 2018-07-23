@@ -42,7 +42,8 @@ import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.Sentence
-import           Data.Kore.HaskellExtensions  (Rotate31 (..), (<....>))
+import           Data.Functor.Impredicative  (Rotate31 (..))
+import Data.Function.Compose ((<....>))
 import           Data.Kore.MetaML.AST
 import           Data.Kore.Parser.Lexeme
 import           Data.Kore.Parser.ParserUtils (Parser)

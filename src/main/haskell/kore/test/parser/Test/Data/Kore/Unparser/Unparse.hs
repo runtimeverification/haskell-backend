@@ -16,7 +16,7 @@ import           Data.Kore.Parser.LexemeImpl
 import           Data.Kore.Parser.ParserImpl
 import           Data.Kore.Parser.ParserUtils
 import           Data.Kore.Unparser.Unparse
-import           Data.Kore.HaskellExtensions
+import           Data.Functor.Impredicative
 
 test_unparse :: TestTree
 test_unparse =

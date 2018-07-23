@@ -11,7 +11,7 @@ import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
-import           Data.Kore.HaskellExtensions
+import           Data.Functor.Impredicative
 import           Text.IndentingPrinter    (PrinterOutput, StringPrinter,
                                                 betweenLines, printToString,
                                                 withIndent, write)

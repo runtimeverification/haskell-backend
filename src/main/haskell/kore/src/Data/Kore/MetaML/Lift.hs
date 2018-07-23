@@ -25,7 +25,7 @@ import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.PureML
 import           Data.Kore.AST.Sentence
 import           Data.Functor.Traversable
-import           Data.Kore.HaskellExtensions      (Rotate31 (..))
+import           Data.Functor.Impredicative      (Rotate31 (..))
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.MetaML.AST
 

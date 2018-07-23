@@ -36,7 +36,7 @@ module Data.Kore.AST.Kore
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.Pretty (Pretty(..))
-import           Data.Kore.HaskellExtensions (Rotate31 (..))
+import           Data.Functor.Impredicative (Rotate31 (..))
 
 import Data.Functor.Classes
 import           Data.Functor.Foldable

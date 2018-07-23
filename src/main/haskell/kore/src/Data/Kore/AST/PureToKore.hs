@@ -28,7 +28,7 @@ import           Data.Kore.AST.PureML
 import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTTraversals
 import           Data.Kore.Error
-import           Data.Kore.HaskellExtensions (Rotate31 (..))
+import           Data.Functor.Impredicative (Rotate31 (..))
 
 import           Data.Functor.Foldable
 

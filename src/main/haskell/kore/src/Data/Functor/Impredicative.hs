@@ -1,17 +1,13 @@
 {-|
-Module      : Data.Kore.ASTTraversals
-Description : Generic functionality to circumvent some issues occuring due to
-              the order of types in Haskell.
+Module      : Data.Functor.Impredicative
+Description : Wrappers to work around the absence of impredicative types
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Data.Kore.HaskellExtensions
-    (Rotate31(..), Rotate41(..)
-    , (<..>), (<...>), (<....>))
-  where
+module Data.Functor.Impredicative where
 
 {-|'Rotate31' is a helper type useful to bring the first argument
 of a type paramaterized by three arguments to the last position,
@@ -38,30 +34,3 @@ newtype
     Rotate41 t sortParam pat variable level
   = Rotate41 { unRotate41 :: t level sortParam pat variable}
   deriving (Eq, Show)
-
-{-|The '<..>' operator offers function composition functionality when the
-second function has two arguments.  It satisfies that
-
-* @(g <..> f) a1 a2 == g (f a1 a2)@
--}
-(<..>) :: (b -> c) -> (a1 -> a2 -> b) -> (a1 -> a2 -> c)
-(<..>) = (.) . (.)
-
-{-|The '<...>' operator offers function composition functionality when the
-second function has three arguments.  It satisfies that
-
-* @(g <...> f) a1 a2 a3 == g (f a1 a2 a3)@
--}
-(<...>) :: (b -> c) -> (a1 -> a2 -> a3 -> b) -> (a1 -> a2 -> a3 -> c)
-(<...>) = (<..>) . (.)
-
-{-|The '<....>' operator offers function composition functionality when the
-second function has four arguments.  It satisfies that
-
-* @(g <...> f) a1 a2 a3 a4 == g (f a1 a2 a3 a4)@
--}
-(<....>)
-    :: (b -> c)
-    -> (a1 -> a2 -> a3 -> a4 -> b)
-    -> (a1 -> a2 -> a3 -> a4 -> c)
-(<....>) = (<...>) . (.)

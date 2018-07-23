@@ -31,7 +31,7 @@ import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.Pretty (Pretty(..), (<>), (<+>))
 import qualified Data.Kore.AST.Pretty as Pretty
-import           Data.Kore.HaskellExtensions (Rotate41 (..))
+import           Data.Functor.Impredicative (Rotate41 (..))
 import Data.Text.Prettyprint.Doc.Orphans ()
 
 
