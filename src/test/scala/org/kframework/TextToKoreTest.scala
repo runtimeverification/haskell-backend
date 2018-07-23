@@ -231,13 +231,13 @@ class TextToKoreTest {
     parseFromFileExpectParseException("test-exception-8.kore")
   }
   @Test def test_exception_9(): Unit = {
-    parseFromFileExpectParseException("test-pattern-16.kore")
+    parseFromFileExpectParseException("test-exception-9.kore")
   }
   @Test def test_exception_10(): Unit = {
-    parseFromFileExpectParseException("test-pattern-17.kore")
+    parseFromFileExpectParseException("test-exception-10.kore")
   }
   @Test def test_exception_11(): Unit = {
-    parseFromFileExpectParseException("test-pattern-18.kore")
+    parseFromFileExpectParseException("test-exception-11.kore")
   }
   @Test def test_exception_12(): Unit = {
     parseFromFileExpectParseException("test-exception-12.kore")
