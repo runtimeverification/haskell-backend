@@ -194,7 +194,7 @@ test_sortUsage =
                         , sentenceSortAttributes =
                             Attributes []
                         }
-                    :: KoreSentenceSort)
+                    :: KoreSentenceSort Object)
                 ]
             , testConfigurationAdditionalSortVariables = []
             , testConfigurationCaseBasedConfiguration =
@@ -226,7 +226,7 @@ test_sortUsage =
                         , sentenceSortAttributes =
                             Attributes []
                         }
-                    :: KoreSentenceSort)
+                    :: KoreSentenceSort Object)
                 ]
             , testConfigurationAdditionalSortVariables = []
             , testConfigurationCaseBasedConfiguration =
@@ -245,7 +245,7 @@ test_sortUsage =
             )
         )
         (NamePrefix "internal")
-      ]
+    ]
   where
     additionalSortName = SortName "additionalSort1"
 

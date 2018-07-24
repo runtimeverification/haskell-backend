@@ -1,8 +1,5 @@
 []
-
-module TEST-EXCEPTION-9
-
-  axiom{}
-    #X:#S{} []
-
-endmodule []
+    module Nat
+            sort #Nat{#Char}[]
+    endmodule
+    []
