@@ -1,7 +1,7 @@
 name:                kore
 version:             0.0.1.0
 github:              "kframework/kore"
-license:             OtherLicense
+license:             NCSA
 license-file:        LICENSE
 author:              "Virgil Serbanuta"
 maintainer:          "virgil.serbanuta@runtimeverification.com"

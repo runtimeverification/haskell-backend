@@ -5,7 +5,7 @@ Description : Specifies the "pure" version of patterns, sentences, modules, and
               definition, which can be specialized to 'Object'-only and
               'Meta'-only objects.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable

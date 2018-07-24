@@ -2,7 +2,7 @@
 Module      : Kore.AST.PureToKore
 Description : Functionality for viewing "Pure"-only as unified Kore constructs.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable

@@ -3,7 +3,7 @@ Module      : Kore.Unparser.Unparse
 Description : Class for unparsing and instances for it for 'Meta' and
               unified Kore constructs.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable

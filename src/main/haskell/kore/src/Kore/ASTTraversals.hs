@@ -3,7 +3,7 @@ Module      : Kore.ASTTraversals
 Description : Defines traversals functions for patterns of
               `UnifiedPatternInterface` class.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
