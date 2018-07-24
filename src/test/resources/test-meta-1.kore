@@ -1,0 +1,7 @@
+[]
+
+module TEST-META-1
+
+  symbol #\f{}() : #Sort{} []
+
+endmodule []
