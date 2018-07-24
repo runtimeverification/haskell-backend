@@ -415,9 +415,11 @@ solveGroupedSubstitution tools ((x,p):subst) = do
           : unificationSolutionConstraints solution
         , proof)
 
+instance Semigroup (UnificationProof level variable) where
+    (<>) proof1 proof2 = CombinedUnificationProof [proof1, proof2]
+
 instance Monoid (UnificationProof level variable) where
     mempty = EmptyUnificationProof
-    mappend proof1 proof2 = CombinedUnificationProof [proof1, proof2]
     mconcat = CombinedUnificationProof
 
 -- |Takes a potentially non-normalized substitution,
