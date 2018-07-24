@@ -54,27 +54,8 @@ import           Data.Kore.Variables.Fresh.Class                 (FreshVariables
 import           Data.Kore.Variables.Fresh.IntCounter            (IntCounter)
 import           Data.Kore.Variables.Int                         (IntVariable (..))
 
-{--| 'StepperConfiguration' represents the configuration to which a rewriting
-axiom is applied.
-
-A configuration consists of a pattern and a condition predicate, and would be
-represented as pattern /\ condition-predicate in Kore.
-data StepperConfiguration level = StepperConfiguration
-    { stepperConfigurationPattern       :: !(CommonPurePattern level)
-    -- ^ The pattern being rewritten.
-
-    -- TODO(virgil): Remove and extract from condition.
-    , stepperConfigurationConditionSort :: !(ConditionSort level)
-    -- ^ The sort for the configuration condition.
-    , stepperConfigurationCondition     :: !(CommonPurePattern level)
-    -- ^ The condition predicate.
-    -- TODO(virgil): Make this an EvaluatedCondition.
-    }
-    deriving (Show, Eq)
---}
-
-{--| 'StepProof' is a proof for a single execution step.
---}
+{-| 'StepProof' is a proof for a single execution step.
+-}
 data StepProof level
     = StepProofCombined ![StepProof level]
     -- ^ combines multiple parts of a proof.
@@ -84,11 +65,11 @@ data StepProof level
     -- ^ Proof for the remanings that happened during ther proof.
     deriving (Show, Eq)
 
-{--| 'simplifyStepProof' simplifies the representation of a 'StepProof'.
+{-| 'simplifyStepProof' simplifies the representation of a 'StepProof'.
 
 As an example, it replaces a StepProofCombined wit a single element with its
 contents.
---}
+-}
 simplifyStepProof :: StepProof level -> StepProof level
 simplifyStepProof (StepProofCombined things) =
     StepProofCombined (simplifyCombinedItems things)
@@ -96,11 +77,11 @@ simplifyStepProof a@(StepProofUnification _) = a
 simplifyStepProof (StepProofVariableRenamings []) = StepProofCombined []
 simplifyStepProof a@(StepProofVariableRenamings _) = a
 
-{--| `simplifyCombinedItems` simplifies the representation of a list of
+{-| `simplifyCombinedItems` simplifies the representation of a list of
     'StepProof's recursively.
 
     As an example, it replaces a 'StepProofCombined' with its contents.
---}
+-}
 simplifyCombinedItems :: [StepProof level] -> [StepProof level]
 simplifyCombinedItems =
     foldr (simplifyAndAdd . simplifyStepProof) []
@@ -112,17 +93,17 @@ simplifyCombinedItems =
     simplifyAndAdd (StepProofCombined items) proofItems = items ++ proofItems
     simplifyAndAdd other proofItems                     = other : proofItems
 
-{--| 'VariableRenaming' represents a renaming of a variable.
---}
+{-| 'VariableRenaming' represents a renaming of a variable.
+-}
 data VariableRenaming level = VariableRenaming
     { variableRenamingOriginal :: StepperVariable level
     , variableRenamingRenamed  :: StepperVariable level
     }
     deriving (Show, Eq)
 
-{--| 'StepperVariable' wraps a variable in a variable-like type, distinguishing
+{-| 'StepperVariable' wraps a variable in a variable-like type, distinguishing
 variables by source.
---}
+-}
 data StepperVariable level
     = AxiomVariable (Variable level)
     | ConfigurationVariable (Variable level)
@@ -141,28 +122,27 @@ instance IntVariable StepperVariable where
     intVariable (ConfigurationVariable a) n =
         ConfigurationVariable (intVariable a n)
 
-{--| 'getStepperVariableVariable' extracts the initial variable from a stepper
+{-| 'getStepperVariableVariable' extracts the initial variable from a stepper
 one.
---}
+-}
 getStepperVariableVariable :: StepperVariable level -> Variable level
 getStepperVariableVariable (AxiomVariable a)         = a
 getStepperVariableVariable (ConfigurationVariable a) = a
 
-{--| 'stepProofSumName' extracts the constructor name for a 'StepProof' --}
+{-| 'stepProofSumName' extracts the constructor name for a 'StepProof' -}
 stepProofSumName :: StepProof level -> String
 stepProofSumName (StepProofUnification _)       = "StepProofUnification"
 stepProofSumName (StepProofCombined _)          = "StepProofCombined"
 stepProofSumName (StepProofVariableRenamings _) = "StepProofVariableRenamings"
 
-{--| 'stepWithAxiom' executes a single rewriting step using the provided axiom.
+{-| 'stepWithAxiom' executes a single rewriting step using the provided axiom.
 
 Does not handle properly various cases, among which:
 sigma(x, y) => y    vs    a
---}
+-}
 stepWithAxiom
     ::  ( MetaOrObject level
         , Given (MetadataTools level)
-        -- ^ Functions yielding metadata for pattern heads.
         )
     => ExpandedPattern.CommonExpandedPattern level
     -- ^ Configuration being rewritten.

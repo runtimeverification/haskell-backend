@@ -29,15 +29,14 @@ data MaxStepCount
     = MaxStepCount Integer
     | AnyStepCount
 
-{--| 'step' executes a single rewriting step using the provided axioms.
+{-| 'step' executes a single rewriting step using the provided axioms.
 
 Does not handle properly various cases, among which:
 sigma(x, y) => y    vs    a
---}
+-}
 step
     ::  ( MetaOrObject level
         , Given (MetadataTools level)
-        -- ^ Functions yielding metadata for pattern heads.
         )
     => ExpandedPattern.CommonExpandedPattern level
     -- ^ Configuration being rewritten.
@@ -49,18 +48,17 @@ step
 step configuration axioms =
     rights $ map (stepWithAxiom configuration) axioms
 
-{--| 'pickFirstStepper' rewrites a configuration using the provided axioms
+{-| 'pickFirstStepper' rewrites a configuration using the provided axioms
 until it cannot be rewritten anymore or until the step limit has been reached.
 Whenever multiple axioms can be applied, it picks the first one and continues
 with that.
 
 Does not handle properly various cases, among which:
 sigma(x, y) => y    vs    a
---}
+-}
 pickFirstStepper
     ::  ( MetaOrObject level
         , Given (MetadataTools level)
-        -- ^ Functions yielding metadata for pattern heads.
         )
     => MaxStepCount
     -- ^ The maximum number of steps to be made
@@ -85,7 +83,6 @@ pickFirstStepper AnyStepCount stepperConfiguration axioms =
 pickFirstStepperSkipMaxCheck
     ::  ( MetaOrObject level
         , Given (MetadataTools level)
-        -- ^ Functions yielding metadata for pattern heads.
         )
     => MaxStepCount
     -- ^ The maximum number of steps to be made

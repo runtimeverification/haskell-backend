@@ -44,11 +44,11 @@ import           Data.Kore.Step.Function.Data          (PureMLPatternFunctionEva
 import           Data.Kore.Step.Substitution           (substitutionToPredicate)
 import           Data.Kore.Variables.Fresh.IntCounter  (IntCounter)
 
-{--| 'evaluateFunctionCondition' attempts to evaluate a Kore condition.
+{-| 'evaluateFunctionCondition' attempts to evaluate a Kore condition.
 
 Right now the evaluation is rather rudimentary and gives up failry easy,
 returning 'ConditionUnevaluable'.
---}
+-}
 evaluateFunctionCondition
     ::  ( MetaOrObject level
         , Given (MetadataTools level)
@@ -70,11 +70,11 @@ evaluateFunctionCondition
         functionEvaluator
         (fromPurePattern (unwrapPredicate predicate'))
 
-{--| 'evaluateFunctionCondition' attempts to evaluate a Kore condition.
+{-| 'evaluateFunctionCondition' attempts to evaluate a Kore condition.
 
 Right now the evaluation is rather rudimentary and gives up failry easy,
 returning 'ConditionUnevaluable'.
---}
+-}
 evaluateFunctionConditionInternal
     ::  ( MetaOrObject level
         , Given (MetadataTools level)

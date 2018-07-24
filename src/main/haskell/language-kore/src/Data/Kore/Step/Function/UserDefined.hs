@@ -40,15 +40,14 @@ import           Data.Kore.Step.Function.Data          (CommonAttemptedFunction,
 import           Data.Kore.Step.Substitution           (mergePredicatesAndSubstitutions)
 import           Data.Kore.Variables.Fresh.IntCounter  (IntCounter)
 
-{--| 'axiomFunctionEvaluator' evaluates a user-defined function. After
+{-| 'axiomFunctionEvaluator' evaluates a user-defined function. After
 evaluating the function, it tries to re-evaluate all functions on the result.
 
 The function is assumed to be defined through an axiom.
---}
+-}
 axiomFunctionEvaluator
     ::  ( MetaOrObject level
         , Given (MetadataTools level)
-        -- ^ Functions yielding metadata for pattern heads.
         )
     => AxiomPattern level
     -- ^ Axiom defining the current function.
@@ -110,9 +109,9 @@ axiomFunctionEvaluator
             , substitution = []
             }
 
-{--| 'reevaluateFunctions' re-evaluates functions after a user-defined function
+{-| 'reevaluateFunctions' re-evaluates functions after a user-defined function
 was evaluated.
---}
+-}
 reevaluateFunctions
     ::  ( MetaOrObject level
         , Given (MetadataTools level)

@@ -58,7 +58,6 @@ various ways.
 evaluateFunctions
     ::  ( MetaOrObject level
         , Given (MetadataTools level)
-        -- ^ Defines what is a function and what is not.
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level)
