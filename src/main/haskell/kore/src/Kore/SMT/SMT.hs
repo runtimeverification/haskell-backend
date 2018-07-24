@@ -66,7 +66,7 @@ provePattern
     -> Maybe Bool
 provePattern p =
     case res of
-      Unsatisfiable _   -> Just True
+      Unsatisfiable _ _ -> Just True
       Satisfiable   _ _ -> Just False
       _ -> Nothing
       where ThmResult res = unsafePerformIO $ provePatternIO p

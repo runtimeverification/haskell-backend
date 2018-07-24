@@ -15,7 +15,7 @@ import Control.Exception
 import Control.Monad
        ( when )
 import Data.Semigroup
-       ( mempty, (<>) )
+       ( (<>) )
 import Data.Time.Format
        ( defaultTimeLocale, formatTime )
 import Data.Time.LocalTime
