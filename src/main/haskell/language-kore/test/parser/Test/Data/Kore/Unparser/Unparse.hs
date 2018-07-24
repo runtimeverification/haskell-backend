@@ -29,7 +29,7 @@ test_unparse =
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
                     }
-                :: KoreSentenceSort)
+                :: KoreSentenceSort Object)
             )
             "sort x{} []"
         , unparseTest

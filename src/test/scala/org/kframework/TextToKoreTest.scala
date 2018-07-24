@@ -207,7 +207,7 @@ class TextToKoreTest {
     * Tests for exception and error handling.
     */
   @Test def test_exception_1(): Unit = {
-    parseFromFileExpectParseException("test-exception-1.kore")
+    parseFromFileExpectParseException("test-sort-5.kore")
   }
   @Test def test_exception_2(): Unit = {
     parseFromFileExpectParseException("test-exception-2.kore")
@@ -270,7 +270,7 @@ class TextToKoreTest {
     parseFromFileExpectParseException("test-exception-21.kore")
   }
   @Test def test_exception_22(): Unit = {
-    parseFromFileExpectParseException("test-exception-22.kore")
+    parseFromFileExpectParseException("test-sort-6.kore")
   }
   @Test def test_exception_23(): Unit = {
     parseFromFileExpectParseException("test-exception-23.kore")
