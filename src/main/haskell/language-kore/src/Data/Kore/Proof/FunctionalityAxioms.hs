@@ -34,6 +34,8 @@ module Data.Kore.Proof.FunctionalityAxioms
 ( generateFunctionalStatement
 , generateFunctionalHeadAxiom
 , proveFunctional
+, forallElimFunctional
+, forallElimFunctionalN
 ) where
 
 import           Data.Kore.AST.Common
@@ -47,39 +49,81 @@ import           Data.Kore.Proof.Dummy
 import           Data.Kore.Proof.Proof
 import           Data.Kore.Proof.Util
 
-import Debug.Trace
-import Data.Text.Prettyprint.Doc
-
-pTrace x = trace (show $ pretty x) x 
-
 generateFunctionalStatement
     :: Given (MetadataTools Object)
-    => Term 
-    -> Term 
-generateFunctionalStatement p = 
+    => Term
+    -> Term
+generateFunctionalStatement p =
     mkExists var (p `mkEquals` (mkVar var))
         where var = varS "x" $ getSort p
 
 generateFunctionalHeadAxiom
     :: Given (MetadataTools Object)
-    => SymbolOrAlias Object 
-    -> Term 
-generateFunctionalHeadAxiom h = 
-    let c = symbolOrAliasParams h 
+    => SymbolOrAlias Object
+    -> Term
+generateFunctionalHeadAxiom h =
+    let c = symbolOrAliasParams h
         (vars, vars') = generateVarList c "x"
-    in mkForallN vars $ mkImpliesN 
-           (map generateFunctionalStatement vars') 
+    in mkForallN vars $ mkImpliesN
+           (map generateFunctionalStatement vars')
            (generateFunctionalStatement $ mkApp h vars')
 
-proveFunctional 
+proveFunctional
    :: Given (MetadataTools Object)
-   => Term 
-   -> Proof 
-proveFunctional p = case p of 
-    App_ h cs -> 
-        let hFunctional = forallElimN cs (assume $ generateFunctionalHeadAxiom h)
-            csFunctional = map proveFunctional cs 
+   => Term
+   -> Proof
+proveFunctional p = case p of
+    App_ h cs ->
+        let hFunctional = forallElimFunctionalN' csFunctional cs (assume $ generateFunctionalHeadAxiom h)
+            csFunctional = map proveFunctional cs
         in modusPonensN csFunctional hFunctional
     Var_ v -> useRule $ FunctionalVar v (varS "x" $ getSort $ Var_ v)
-    x -> assume $ generateFunctionalStatement x 
+    x -> assume $ generateFunctionalStatement x
 
+forallElimFunctional'
+    :: Given (MetadataTools Object)
+    => Proof
+    -> Term
+    -> Proof
+    -> Proof
+forallElimFunctional' argIsFunctional arg pat =
+    case getConclusion pat of
+        Forall_ _ v p ->
+            let ax = useRule $ FunctionalSubst v p argIsFunctionalVar arg
+                Exists_ _ argIsFunctionalVar _ = getConclusion argIsFunctional
+            in modusPonensN [pat, argIsFunctional] ax
+        _ -> impossible
+
+forallElimFunctionalN'
+    :: Given (MetadataTools Object)
+    => [Proof]
+    -> [Term]
+    -> Proof
+    -> Proof
+forallElimFunctionalN' argsAreFunctional args pat =
+    foldr
+      (\(arg, argIsFunctional) p -> forallElimFunctional' argIsFunctional arg p)
+      pat
+      (zip (reverse args) (reverse argsAreFunctional))
+
+forallElimFunctional
+    :: Given (MetadataTools Object)
+    => Term
+    -> Proof
+    -> Proof
+forallElimFunctional arg pat =
+    case getConclusion pat of
+        Forall_ _ v p ->
+            let ax = useRule $ FunctionalSubst v p (varS "x" $ getSort (V v)) arg
+            in modusPonensN [pat, assume $ generateFunctionalStatement arg] ax
+        _ -> impossible
+
+-- printLineProof $ dummyEnvironment $ proveFunctional $ mkApp (symS "f" [testSort "*", testSort "*"]) [mkVar $ var "a", mkVar $ var "b"]
+
+forallElimFunctionalN
+    :: Given (MetadataTools Object)
+    => [Term]
+    -> Proof
+    -> Proof
+forallElimFunctionalN args pat =
+    foldr (\arg p -> forallElimFunctional arg p) pat $ reverse args

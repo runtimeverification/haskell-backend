@@ -30,6 +30,8 @@ Portability : portable
 module Data.Kore.Proof.Util
 ( modusPonensN
 , mkImpliesN
+, tryDischarge
+, tryDischargeN
 , mkForallN
 , forallIntroN
 , forallElimN
@@ -50,12 +52,11 @@ import           Data.Kore.ASTUtils.SmartConstructors
 import           Data.Kore.IndexedModule.MetadataTools
 import           Data.Reflection
 
-import           Data.Kore.Proof.Proof
-import           Data.Kore.Proof.Dummy
+import qualified Data.Set                              as S
 
-import Debug.Trace
-import Data.Text.Prettyprint.Doc
-pTrace x = trace (show $ pretty x) x 
+import           Data.Kore.Proof.Dummy
+import           Data.Kore.Proof.Proof
+
 -- | Helper functions for common proof steps.
 -- Conventions:
 -- Functions ending in `N` take or give a list
@@ -66,21 +67,38 @@ pTrace x = trace (show $ pretty x) x
 -- TODO: Some of these could be replaced with schemas
 -- i.e. poor man's HOL
 
-modusPonensN 
-    :: Given (MetadataTools Object) 
-    => [Proof] 
+modusPonensN
+    :: Given (MetadataTools Object)
+    => [Proof]
     -> Proof
-    -> Proof 
+    -> Proof
 modusPonensN as b =
-    foldl (\b a -> useRule $ ModusPonens a b) b as 
+    foldl (\b a -> useRule $ ModusPonens a b) b as
 
 mkImpliesN
     :: Given (MetadataTools Object)
     => [Term]
-    -> Term 
-    -> Term 
-mkImpliesN as b = 
-    foldr (\a b -> a `mkImplies` b) b as 
+    -> Term
+    -> Term
+mkImpliesN as b =
+    foldr (\a b -> a `mkImplies` b) b as
+
+tryDischarge
+    :: Given (MetadataTools Object)
+    => Proof
+    -> Proof
+    -> Proof
+tryDischarge a b = let a' = getConclusion a in
+    if S.member a' (getAssumptions b)
+    then useRule $ ModusPonens a (discharge a' b)
+    else b
+
+tryDischargeN
+    :: Given (MetadataTools Object)
+    => [Proof]
+    -> Proof 
+    -> Proof 
+tryDischargeN as b = foldr tryDischarge b as 
 
 --------------------------------------------------------------------------------
 
@@ -210,16 +228,16 @@ eqTransitivity = undefined
 
 --------------------------------------------------------------------------------
 
-generateVarList 
+generateVarList
     :: Given (MetadataTools Object)
     => [Sort Object]
-    -> String 
+    -> String
     -> ([Variable Object], [Term])
-generateVarList sorts name = 
-    let vars = 
+generateVarList sorts name =
+    let vars =
           zipWith
             (\n sort -> varS (name ++ show n) sort)
             [(1::Int)..]
-            sorts 
-        vars' = map Var_ vars 
+            sorts
+        vars' = map Var_ vars
     in (vars, vars')

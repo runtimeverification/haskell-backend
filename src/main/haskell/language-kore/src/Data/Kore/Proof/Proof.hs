@@ -54,8 +54,6 @@ import           Data.Kore.ASTUtils.Substitution
 import           Data.Hashable
 import           GHC.Generics                          (Generic)
 
-import Debug.Trace
-import Data.Text.Prettyprint.Doc
 
 -- A note about partial pattern matches:
 -- The basic Kore datatype has quite a few constructors,
@@ -112,7 +110,7 @@ instance Hashable Proof where
         s `hashWithSalt` a `hashWithSalt` b `hashWithSalt` S.toList c
 
 data LargeRule subproof
--- | a |- a 
+-- | a |- a
  = Assumption Term
  -- | From a |- b deduce |- a -> b
  | Discharge Term subproof
@@ -121,9 +119,9 @@ data LargeRule subproof
  -- | EVIL SHORTCUT! This bypasses the functionality check.
  -- Should move to using FunctionalSubst when you can.
  | ForallElim Term subproof
- -- | From |- a , |- b deduce |- a /\ b 
+ -- | From |- a , |- b deduce |- a /\ b
  | AndIntro subproof subproof
- -- | From |- a /\ b deduce |- a 
+ -- | From |- a /\ b deduce |- a
  | AndElimL subproof
  -- | From |- a /\ b deduce |- b
  | AndElimR subproof
@@ -141,10 +139,10 @@ data LargeRule subproof
  | ExistsIntro Var Term subproof
  -- | ExistsElim (E x. p[x]) (C assuming p[y])
  | ExistsElim subproof Var Term subproof
- -- | From |- a, |- a -> b deduce |- b 
- -- ModusPonens a b 
+ -- | From |- a, |- a -> b deduce |- b
+ -- ModusPonens a b
  | ModusPonens subproof subproof
- -- (\forall x. phi) /\ (\exists y. phi' = y) -> phi[phi'/x]
+ -- (\forall x. phi) -> (\exists y. phi' = y) -> phi[phi'/x]
  -- FunctionalSubst x phi y phi'
  | FunctionalSubst Var Term Var Term
  -- | \exists y . x = y
@@ -218,17 +216,17 @@ instance Pretty a => Pretty (LargeRule a) where
           -> ["EqualityIntro", pretty a]
       EqualityElim a b c p
           -> ["EqualityElim", pretty a, pretty b, pretty c, pretty p]
-      MembershipForall var a 
-          -> ["MembershipForall", pretty var, pretty a] 
-      MembershipEq var1 var2 
-          -> ["MembershipEq", pretty var1, pretty var2] 
-      MembershipNot var a 
-          -> ["MembershipNot", pretty var, pretty a] 
-      MembershipAnd var a b 
-          -> ["MembershipAnd", pretty var, pretty a, pretty b] 
-      MembershipExists var1 var2 a 
+      MembershipForall var a
+          -> ["MembershipForall", pretty var, pretty a]
+      MembershipEq var1 var2
+          -> ["MembershipEq", pretty var1, pretty var2]
+      MembershipNot var a
+          -> ["MembershipNot", pretty var, pretty a]
+      MembershipAnd var a b
+          -> ["MembershipAnd", pretty var, pretty a, pretty b]
+      MembershipExists var1 var2 a
           -> ["MembershipExists", pretty var1, pretty var2, pretty a]
-      MembershipCong var1 var2 pos a 
+      MembershipCong var1 var2 pos a
           -> ["MembershipCong", pretty var1, pretty var2, pretty pos, pretty a]
 
 instance
@@ -237,7 +235,7 @@ instance
   , Pretty subproof
   , Pretty assumption
   ) => Pretty (PropF formula rules assumption subproof) where
-    pretty (ByF a b c) = "|- " <> pretty a <> line <> "By " <> pretty b <> line 
+    pretty (ByF a b c) = "|- " <> pretty a <> line <> "By " <> pretty b <> line
 
 getConclusion
     :: Proof
@@ -346,9 +344,9 @@ interpretRule = \case
           ++ prettyPrintToString (getConclusion a)
           ++ "in ModusPonens"
   FunctionalSubst x phi y phi' ->
-      ((mkForall x phi) `mkImplies` (mkExists y (phi' `mkEquals` Var_ y)))
+      (mkForall x phi) `mkImplies` ((mkExists y (phi' `mkEquals` Var_ y))
       `mkImplies`
-      (subst (Var_ x) phi' phi)
+      (subst (Var_ x) phi' phi))
   FunctionalVar x y ->
       mkExists y (Var_ x `mkEquals` Var_ y)
   EqualityIntro a ->

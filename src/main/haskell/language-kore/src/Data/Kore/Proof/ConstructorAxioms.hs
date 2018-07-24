@@ -79,12 +79,12 @@ generateInjectivityAxiom head resultSort childrenSorts =
 
 generateNoConfusionAxiom
     :: Given (MetadataTools Object)
-    => SymbolOrAlias Object 
+    => SymbolOrAlias Object
     -> [Sort Object]
     -> SymbolOrAlias Object
     -> [Sort Object]
-    -> Term 
-generateNoConfusionAxiom h1 c1 h2 c2 = 
+    -> Term
+generateNoConfusionAxiom h1 c1 h2 c2 =
     let (_, xVars') = generateVarList c1 "x"
         (_, yVars') = generateVarList c2 "y"
     in mkNot $ mkEquals
