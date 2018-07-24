@@ -249,6 +249,7 @@ language_extensions:
   - FunctionalDependencies
   - GADTs
   - GeneralizedNewtypeDeriving
+  - InstanceSigs
   - LambdaCase
   - MonoLocalBinds
   - MultiParamTypeClasses

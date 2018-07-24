@@ -10,7 +10,7 @@ import Control.Lens
 import Data.Functor.Foldable
        ( Fix (..) )
 
-import Data.Kore.Error
+import Kore.Error
 import Logic.Matching.Error
 import Logic.Matching.Pattern as Pattern
 import Logic.Proof.Hilbert

@@ -2,19 +2,23 @@
 
 module Main where
 
-import           Data.Semigroup                        ((<>))
-import           Data.Text.Prettyprint.Doc             (LayoutOptions (..),
-                                                        PageWidth (..),
-                                                        defaultLayoutOptions,
-                                                        layoutPretty, pretty)
-import           Data.Text.Prettyprint.Doc.Render.Text (renderIO)
-import           Options.Applicative
-import           System.IO                             (stdout)
+import Data.Semigroup
+       ( (<>) )
+import Data.Text.Prettyprint.Doc
+       ( LayoutOptions (..), PageWidth (..), defaultLayoutOptions,
+       layoutPretty, pretty )
+import Data.Text.Prettyprint.Doc.Render.Text
+       ( renderIO )
+import Options.Applicative
+import System.IO
+       ( stdout )
 
-import           Data.Kore.AST.Sentence                (KoreDefinition)
-import           Data.Kore.Parser.Parser               (fromKore)
+import Kore.AST.Sentence
+       ( KoreDefinition )
+import Kore.Parser.Parser
+       ( fromKore )
 
-import           GlobalMain
+import GlobalMain
 
 
 data KoreFormatOptions =

@@ -22,7 +22,7 @@ import           System.Console.Haskeline
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 
-import Data.Kore.Error
+import Kore.Error
 import Logic.Matching.Error
 import Logic.Proof.Hilbert
 

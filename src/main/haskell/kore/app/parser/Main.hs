@@ -1,33 +1,35 @@
 module Main (main) where
 
-import           Control.Monad                            (when)
-import qualified Data.Map                                 as Map
-import           Data.Semigroup                           ((<>))
-import           Options.Applicative                      (InfoMod, Parser,
-                                                           argument, fullDesc,
-                                                           header, help, long,
-                                                           metavar, progDesc,
-                                                           str, strOption,
-                                                           value)
+import           Control.Monad
+                 ( when )
+import qualified Data.Map as Map
+import           Data.Semigroup
+                 ( (<>) )
+import           Options.Applicative
+                 ( InfoMod, Parser, argument, fullDesc, header, help, long,
+                 metavar, progDesc, str, strOption, value )
 
-import           Data.Kore.AST.Kore                       (CommonKorePattern)
-import           Data.Kore.AST.Sentence                   (KoreDefinition,
-                                                           ModuleName (..))
-import           Data.Kore.ASTPrettyPrint                 (prettyPrintToString)
-import           Data.Kore.ASTVerifier.DefinitionVerifier (AttributesVerification (DoNotVerifyAttributes),
-                                                           defaultAttributesVerification,
-                                                           verifyAndIndexDefinition)
-import           Data.Kore.ASTVerifier.PatternVerifier    (verifyStandalonePattern)
-import           Data.Kore.Error                          (printError)
-import           Data.Kore.IndexedModule.IndexedModule    (KoreIndexedModule)
-import           Data.Kore.Parser.Parser                  (fromKore,
-                                                           fromKorePattern)
+import Kore.AST.Kore
+       ( CommonKorePattern )
+import Kore.AST.Sentence
+       ( KoreDefinition, ModuleName (..) )
+import Kore.ASTPrettyPrint
+       ( prettyPrintToString )
+import Kore.ASTVerifier.DefinitionVerifier
+       ( AttributesVerification (DoNotVerifyAttributes),
+       defaultAttributesVerification, verifyAndIndexDefinition )
+import Kore.ASTVerifier.PatternVerifier
+       ( verifyStandalonePattern )
+import Kore.Error
+       ( printError )
+import Kore.IndexedModule.IndexedModule
+       ( KoreIndexedModule )
+import Kore.Parser.Parser
+       ( fromKore, fromKorePattern )
 
-import           GlobalMain                               (MainOptions (..),
-                                                           clockSomething,
-                                                           clockSomethingIO,
-                                                           enableDisableFlag,
-                                                           mainGlobal)
+import GlobalMain
+       ( MainOptions (..), clockSomething, clockSomethingIO, enableDisableFlag,
+       mainGlobal )
 
 {-
 Main module to run kore-parser

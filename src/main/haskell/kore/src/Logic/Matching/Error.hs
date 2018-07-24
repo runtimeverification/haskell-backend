@@ -11,7 +11,7 @@ module Logic.Matching.Error where
 
 import Data.Text.Prettyprint.Doc
 
-import Data.Kore.Error
+import Kore.Error
 
 {-| 'MLError' is a tag for errors related to matching logic. -}
 newtype MLError = MLError ()

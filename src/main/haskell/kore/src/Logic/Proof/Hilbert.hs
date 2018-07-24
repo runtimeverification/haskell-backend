@@ -26,7 +26,7 @@ import           Data.Sequence
 import qualified Data.Sequence as Seq
 import           Data.Text.Prettyprint.Doc
 
-import Data.Kore.Error
+import Kore.Error
 import Logic.Matching.Error
 
 data Proof ix rule formula =

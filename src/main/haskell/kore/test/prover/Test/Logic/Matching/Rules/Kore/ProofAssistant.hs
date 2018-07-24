@@ -15,23 +15,23 @@ import           Data.List
 import qualified Data.Map.Strict as Map
 import           Data.Text.Prettyprint.Doc
 
-import Data.Kore.AST.Common
+import Kore.AST.Common
        ( Application (..), AstLocation (..), Id (..), Pattern (..),
        Symbol (..), SymbolOrAlias (..), Variable )
-import Data.Kore.AST.Kore
+import Kore.AST.Kore
        ( CommonKorePattern )
-import Data.Kore.AST.MetaOrObject
+import Kore.AST.MetaOrObject
        ( Meta (..) )
-import Data.Kore.AST.PureToKore
-import Data.Kore.AST.Sentence
-import Data.Kore.ASTVerifier.DefinitionVerifier
+import Kore.AST.PureToKore
+import Kore.AST.Sentence
+import Kore.ASTVerifier.DefinitionVerifier
        ( AttributesVerification (..), verifyAndIndexDefinition )
-import Data.Kore.Building.AsAst
-import Data.Kore.Building.Patterns
-import Data.Kore.Building.Sorts
-import Data.Kore.Error
-import Data.Kore.IndexedModule.IndexedModule
-import Data.Kore.MetaML.AST
+import Kore.Building.AsAst
+import Kore.Building.Patterns
+import Kore.Building.Sorts
+import Kore.Error
+import Kore.IndexedModule.IndexedModule
+import Kore.MetaML.AST
        ( MetaMLPattern )
 import Logic.Matching.Error
 import Logic.Matching.Rules.Kore as MLProofSystem
