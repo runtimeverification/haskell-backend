@@ -77,6 +77,8 @@ addPatternSortVariables pattern1 addSortVariables1 existing =
                 \a -> addBinderPatternSortVariables a addSortVariables1 existing
             , stringFunction = const existing
             , charFunction = const existing
+            -- TODO: can domain value patterns have sort variables?
+            , domainValueFunction = const existing
             , applicationFunction =
                 \a -> addApplicationPatternSortVariables
                     a addSortVariables1 existing

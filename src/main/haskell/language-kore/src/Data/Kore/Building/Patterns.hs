@@ -187,11 +187,15 @@ data ObjectDomainValue pattern1 sort = ObjectDomainValue
     }
 
 instance
-    (ObjectSort sort, MetaPattern CharListSort pattern1)
-    => ProperPattern Object sort (ObjectDomainValue pattern1 sort)
+    ( ObjectSort sort
+    , MetaPattern CharListSort pattern1
+    ) => ProperPattern Object sort (ObjectDomainValue pattern1 sort)
   where
     asProperPattern (ObjectDomainValue sort child) =
-        DomainValuePattern (DomainValue (asAst sort) (liftToMeta (asAst child)))
+        DomainValuePattern (DomainValue (asAst sort) (liftToMeta ast))
+      where
+        ast :: CommonKorePattern
+        ast = asAst child
 objectDomainValue
     :: (ObjectSort sort, MetaPattern CharListSort pattern1)
     => sort -> pattern1 -> ObjectDomainValue pattern1 sort

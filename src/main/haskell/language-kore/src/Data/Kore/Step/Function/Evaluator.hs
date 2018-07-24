@@ -40,6 +40,7 @@ import           Data.Kore.Step.Function.Data          (ApplicationFunctionEvalu
                                                         ConditionEvaluator (..),
                                                         FunctionResult (..),
                                                         FunctionResultProof (..))
+import           Data.Kore.Step.StepperAttributes
 import           Data.Kore.Variables.Fresh.IntCounter  (IntCounter)
 
 {-|'evaluateFunctions' evaluates Kore functions (in a bottom-up manner).
@@ -49,7 +50,7 @@ applications of functional constructors may prevent function evaluation in
 various ways.
 -}
 evaluateFunctions
-    :: MetadataTools level
+    :: MetadataTools level StepperAttributes
     -- ^ Defines what is a function and what is not.
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
     -- ^ Map from a symbol's ID to all the function definitions for that symbol.
@@ -89,7 +90,7 @@ newtype FilterWrapper level = FilterWrapper
 a constructor or a function.
 --}
 filterUnhandledPatterns
-    :: MetadataTools level
+    :: MetadataTools level StepperAttributes
     -> Pattern level Variable (CommonPurePattern level)
     -> Either
         (IntCounter (FunctionResult level, FunctionResultProof level))
@@ -103,10 +104,12 @@ filterUnhandledPatterns metadataTools patt =
                     wrapUnchanged . mlBinderPatternToPattern
                 , stringLeveledFunction = wrapUnchanged . StringLiteralPattern
                 , charLeveledFunction = wrapUnchanged . CharLiteralPattern
+                , domainValueLeveledFunction =
+                    wrapUnchanged . DomainValuePattern
                 , applicationLeveledFunction =
                     \ app@Application {applicationSymbolOrAlias = symbol} ->
-                        if  isConstructor metadataTools symbol
-                            || isFunction metadataTools symbol
+                        if  isConstructor (attributes metadataTools symbol)
+                            || isFunction (attributes metadataTools symbol)
                             then FilterWrapper $ Right $ ApplicationPattern app
                             else wrapUnchanged $ ApplicationPattern app
                 , variableLeveledFunction = wrapUnchanged . VariablePattern
@@ -177,6 +180,10 @@ evaluateLocalFunction
                     assertTrue childrenCondition
                     . returnUnchanged ConditionTrue
                     . CharLiteralPattern
+                , domainValueLeveledFunction =
+                    assertTrue childrenCondition
+                    . returnUnchanged ConditionTrue
+                    . DomainValuePattern
                 , applicationLeveledFunction =
                     evaluateApplication
                         conditionEvaluator

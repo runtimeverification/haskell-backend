@@ -41,7 +41,7 @@ type Symbol = SymbolOrAlias Meta
 
 -- To get an indexed module one can use `verifyAndIndexDefinition`
 formulaVerifier
-    :: KoreIndexedModule
+    :: KoreIndexedModule atts
     -> CommonMetaPattern
     -> Either (Error MLError) ()
 formulaVerifier indexedModule formula = do

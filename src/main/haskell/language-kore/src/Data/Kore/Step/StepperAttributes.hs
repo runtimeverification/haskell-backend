@@ -11,37 +11,48 @@ module Data.Kore.Step.StepperAttributes (StepperAttributes (..)) where
 
 import           Data.Default
 
-import           Data.Kore.AST.Kore                    (CommonKorePattern)
 import           Data.Kore.AST.Sentence                (Attributes (..))
-import           Data.Kore.Implicit.Attributes         (constructorAttribute,
-                                                        functionAttribute,
-                                                        functionalAttribute)
+import           Data.Kore.Implicit.Attributes         (KeyValueAttribute (..), attributeToKeyValueAttribute)
 import           Data.Kore.IndexedModule.IndexedModule (ParsedAttributes (..))
+
+keyOnlyAttribute :: String -> KeyValueAttribute
+keyOnlyAttribute label =
+    KeyValueAttribute
+    { key = label
+    , value = Nothing
+    }
+
+constructorAttribute, functionAttribute, functionalAttribute
+    :: KeyValueAttribute
+constructorAttribute = keyOnlyAttribute "constructor"
+functionAttribute    = keyOnlyAttribute "function"
+functionalAttribute  = keyOnlyAttribute "functional"
 
 data StepperAttributes =
     StepperAttributes
     { isFunction    :: Bool
     , isFunctional  :: Bool
     , isConstructor :: Bool
-    , isHooked      :: Maybe String
     }
 
 instance Default StepperAttributes where
     def = StepperAttributes
-        { isFunction = False
-        , isFunctional = False
+        { isFunction    = False
+        , isFunctional  = False
         , isConstructor = False
-        , isHooked = Nothing
         }
 
 instance ParsedAttributes StepperAttributes where
-    parseAttributes (Attributes atts) = foldr parseStepperAttribute def atts
+    parseAttributes (Attributes atts) =
+        foldr (parseStepperAttribute . attributeToKeyValueAttribute) def atts
 
 parseStepperAttribute
-    :: Data.Kore.AST.Kore.CommonKorePattern
+    :: Maybe KeyValueAttribute
     -> StepperAttributes
     -> StepperAttributes
-parseStepperAttribute attr parsedAttrs
+parseStepperAttribute (Just attr) parsedAttrs
     | attr == constructorAttribute = parsedAttrs { isConstructor = True }
-    | attr == functionAttribute = parsedAttrs { isFunction = True }
-    | attr == functionalAttribute = parsedAttrs { isFunctional = True }
+    | attr == functionAttribute    = parsedAttrs { isFunction    = True }
+    | attr == functionalAttribute  = parsedAttrs { isFunctional  = True }
+    | otherwise                    = parsedAttrs
+parseStepperAttribute Nothing parsedAttrs = parsedAttrs

@@ -7,6 +7,10 @@ import           Test.Tasty                                          (TestTree,
 import           Test.Tasty.HUnit                                    (testCase)
 import           Test.Tasty.HUnit.Extensions
 
+import           Data.Fix
+import           Data.Function                                       (on)
+import           Data.List                                           (sortBy)
+
 import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
@@ -19,12 +23,9 @@ import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Comparators                               ()
 import           Data.Kore.IndexedModule.MetadataTools
 import           Data.Kore.KoreHelpers
+import           Data.Kore.Step.StepperAttributes
 import           Data.Kore.Unification.Error
 import           Data.Kore.Unification.UnifierImpl
-
-import           Data.Fix
-import           Data.Function                                       (on)
-import           Data.List                                           (sortBy)
 
 s1, s2, s3 :: Sort Object
 s1 = simpleSort (SortName "s1")
@@ -102,13 +103,12 @@ symbols =
         , expBin
         ]
 
-mockIsConstructor, mockIsFunctional :: SymbolOrAlias Object -> Bool
-mockIsConstructor patternHead
-    | patternHead == getSentenceSymbolOrAliasHead a2 [] = False
-mockIsConstructor _ = True
-mockIsFunctional patternHead
-    | patternHead == getSentenceSymbolOrAliasHead a3 [] = False
-mockIsFunctional _ = True
+mockStepperAttributes :: SymbolOrAlias Object -> StepperAttributes
+mockStepperAttributes patternHead = StepperAttributes
+    { isConstructor = patternHead /= getSentenceSymbolOrAliasHead a2 []
+    , isFunctional = patternHead /= getSentenceSymbolOrAliasHead a3 []
+    , isFunction = False
+    }
 
 mockGetArgumentSorts :: SymbolOrAlias Object -> [Sort Object]
 mockGetArgumentSorts patternHead =
@@ -124,13 +124,16 @@ mockGetResultSort patternHead =
         getSentenceSymbolOrAliasResultSort
         (lookup patternHead symbols)
 
-tools :: MetadataTools Object
-tools = MetadataTools
-    { isConstructor = mockIsConstructor
-    , isFunctional = mockIsFunctional
-    , isFunction = const False
-    , getArgumentSorts = mockGetArgumentSorts
+mockSortTools :: SortTools Object
+mockSortTools = SortTools
+    { getArgumentSorts = mockGetArgumentSorts
     , getResultSort = mockGetResultSort
+    }
+
+tools :: MetadataTools Object StepperAttributes
+tools = MetadataTools
+    { attributes = mockStepperAttributes
+    , sortTools = mockSortTools
     }
 
 unificationProblem

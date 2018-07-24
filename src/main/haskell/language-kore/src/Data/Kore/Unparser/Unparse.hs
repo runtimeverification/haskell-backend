@@ -172,8 +172,11 @@ instance Unparse (Bottom level p) where
 instance Unparse p => Unparse (Ceil level p) where
     unparse = unparseMLPattern
 
-instance Unparse p => Unparse (DomainValue Object p) where
-    unparse = unparseMLPattern
+instance Unparse (DomainValue Object) where
+    unparse p = do
+        unparse DomainValuePatternType
+        inCurlyBraces (unparse (domainValueSort p))
+        inParens (unparse (domainValueChild p))
 
 instance Unparse p => Unparse (Equals level p) where
     unparse = unparseMLPattern

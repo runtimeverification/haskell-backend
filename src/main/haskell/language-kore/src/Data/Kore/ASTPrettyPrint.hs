@@ -8,10 +8,10 @@ module Data.Kore.ASTPrettyPrint ( prettyPrintToString
                                 ) where
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
+import           Data.Kore.AST.Sentence
 import           Data.Kore.HaskellExtensions
 import           Data.Kore.IndentingPrinter    (PrinterOutput, StringPrinter,
                                                 betweenLines, printToString,
@@ -319,11 +319,7 @@ instance
             , writeFieldNewLine "ceilChild" ceilChild p
             ]
 
-instance
-    ( PrettyPrint child
-    , MetaOrObject level
-    ) => PrettyPrint (DomainValue level child)
-  where
+instance MetaOrObject level => PrettyPrint (DomainValue level) where
     prettyPrint _ p@(DomainValue _ _) =
         writeStructure
             "DomainValue"
@@ -643,7 +639,7 @@ instance
     ( MetaOrObject level
     , PrettyPrint sortParam
     , PrettyPrint (Fix (pat variable))
-    , PrettyPrint (variable level)    
+    , PrettyPrint (variable level)
     ) => PrettyPrint (Sentence level sortParam pat variable)
   where
     prettyPrint flags (SentenceAliasSentence s)    =

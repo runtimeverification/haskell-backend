@@ -270,6 +270,7 @@ data PatternFunction level variable child result = PatternFunction
     , charFunction :: CharLiteral -> result
     , applicationFunction :: !(Application level child -> result)
     , variableFunction :: !(variable level -> result)
+    , domainValueFunction :: DomainValue Object -> result
     }
 
 newtype ParameterizedProxy result level = ParameterizedProxy
@@ -299,6 +300,7 @@ applyPatternFunction patternFunction =
             , variableLeveledFunction =
                 ParameterizedProxy . variableFunction patternFunction
             , domainValueLeveledFunction =
+                ParameterizedProxy . domainValueFunction patternFunction
             }
 
 -- |'getPatternResultSort' retrieves the result sort of a pattern.
@@ -319,6 +321,7 @@ getPatternResultSort headSort =
         , patternLeveledFunctionMLBinder = getBinderPatternSort
         , stringLeveledFunction = const stringMetaSort
         , charLeveledFunction = const charMetaSort
+        , domainValueLeveledFunction = domainValueSort
         , applicationLeveledFunction = headSort . applicationSymbolOrAlias
         , variableLeveledFunction = sortedVariableSort
         }

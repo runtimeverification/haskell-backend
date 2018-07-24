@@ -30,6 +30,7 @@ import           Data.Kore.Step.Function.Data          (AttemptedFunctionResult 
                                                         ConditionEvaluator (..),
                                                         FunctionResult (..),
                                                         FunctionResultProof (..))
+import           Data.Kore.Step.StepperAttributes
 import           Data.Kore.Variables.Fresh.IntCounter  (IntCounter)
 
 {--| 'axiomFunctionEvaluator' evaluates a user-defined function. After
@@ -39,7 +40,7 @@ The function is assumed to be defined through an axiom.
 --}
 axiomFunctionEvaluator
     :: MetaOrObject level
-    => MetadataTools level
+    => MetadataTools level StepperAttributes
     -> ConditionSort level
     -- ^ Sort used for conditions. This function assumes that all conditions
     -- have this sort and will use it to create new conditions.

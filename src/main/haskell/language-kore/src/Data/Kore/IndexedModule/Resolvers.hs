@@ -10,13 +10,12 @@ Portability : POSIX
 -}
 module Data.Kore.IndexedModule.Resolvers
     ( getHeadApplicationSorts
-    , getAttributeList
+    , getHeadAttributes
     , resolveSort
     , resolveAlias
     , resolveSymbol
     ) where
 
-import           Data.Fix
 import qualified Data.Map                              as Map
 import           Data.Proxy                            (Proxy (..))
 import qualified Data.Set                              as Set
@@ -43,7 +42,7 @@ symbolSentencesMap
     -> KoreIndexedModule atts
     -> Map.Map
         (Id level)
-        (SentenceSymbol level UnifiedPattern Variable)
+        (atts, SentenceSymbol level UnifiedPattern Variable)
 symbolSentencesMap a m =
     case isMetaOrObject a of
         IsMeta   -> indexedModuleMetaSymbolSentences m
@@ -55,7 +54,7 @@ aliasSentencesMap
     -> KoreIndexedModule atts
     -> Map.Map
         (Id level)
-        (SentenceAlias level UnifiedPattern Variable)
+        (atts, SentenceAlias level UnifiedPattern Variable)
 aliasSentencesMap a m =
     case isMetaOrObject a of
         IsMeta   -> indexedModuleMetaAliasSentences m
@@ -67,7 +66,7 @@ sortSentencesMap
     -> KoreIndexedModule atts
     -> Map.Map
         (Id level)
-        (SortDescription level)
+        (atts, SortDescription level)
 sortSentencesMap a m =
     case isMetaOrObject a of
         IsMeta   -> indexedModuleMetaSortDescriptions m
@@ -83,13 +82,13 @@ getHeadApplicationSorts
     -> ApplicationSorts level
 getHeadApplicationSorts m patternHead =
     case resolveSymbol m headName of
-        Right sentence ->
+        Right (_, sentence) ->
             case symbolOrAliasSorts headParams sentence of
                 Left err     -> error (printError err)
                 Right result -> result
         Left _ ->
             case resolveAlias m headName of
-                Right sentence ->
+                Right (_, sentence) ->
                     case symbolOrAliasSorts headParams sentence of
                         Left err     -> error (printError err)
                         Right result -> result
@@ -99,23 +98,24 @@ getHeadApplicationSorts m patternHead =
     headName = symbolOrAliasConstructor patternHead
     headParams = symbolOrAliasParams patternHead
 
+
 -- |Given a KoreIndexedModule and a head, it looks up the 'SentenceSymbol' or
--- 'SentenceAlias', and returns its list of attributes.
+-- 'SentenceAlias', and returns its attributes.
 -- FIXME: duplicated code as in getHeadApplicationSorts, i.e. use (<|>)
 -- The problem is resolveSymbol and resolveAlias return different types
 -- you could work around this with some rearrangement
 -- but rather just change the types
-getAttributeList
+getHeadAttributes
     :: MetaOrObject level
     => KoreIndexedModule atts  -- ^module representing a verified definition
     -> SymbolOrAlias level     -- ^the head we want to find sorts for
-    -> [Fix (UnifiedPattern Variable)]
-getAttributeList m patternHead =
+    -> atts
+getHeadAttributes m patternHead =
     case resolveSymbol m headName of
-        Right sentence -> getAttributes $ sentenceSymbolAttributes sentence
+        Right (atts, _) -> atts
         Left _ ->
             case resolveAlias m headName of
-                Right sentence -> getAttributes $ sentenceAliasAttributes sentence
+                Right (atts, _) -> atts
                 Left _ ->
                     error ("Head " ++ show patternHead ++ " not defined.")
   where
@@ -127,11 +127,11 @@ imported modules.
 -}
 resolveThing
     :: (IndexedModule sortParam pat variable atts
-        -> Map.Map (Id level) (thing level pat variable))
+        -> Map.Map (Id level) (atts, thing level pat variable))
     -- ^ extracts the map into which to look up the id
     -> IndexedModule sortParam pat variable atts
     -> Id level
-    -> Maybe (thing level pat variable)
+    -> Maybe (atts, thing level pat variable)
 resolveThing
     mapExtractor
     indexedModule
@@ -143,12 +143,12 @@ resolveThing
         )
 
 resolveThingInternal
-    :: (Maybe (thing level pat variable), Set.Set ModuleName)
+    :: (Maybe (atts, thing level pat variable), Set.Set ModuleName)
     -> (IndexedModule sortParam pat variable atts
-        -> Map.Map (Id level) (thing level pat variable))
+        -> Map.Map (Id level) (atts, thing level pat variable))
     -> IndexedModule sortParam pat variable atts
     -> Id level
-    -> (Maybe (thing level pat variable), Set.Set ModuleName)
+    -> (Maybe (atts, thing level pat variable), Set.Set ModuleName)
 resolveThingInternal x@(Just _, _) _ _ _ = x
 resolveThingInternal x@(Nothing, searchedModules) _ indexedModule _
     | indexedModuleName indexedModule `Set.member` searchedModules = x
@@ -182,7 +182,7 @@ resolveSymbol
     :: MetaOrObject level
     => KoreIndexedModule atts
     -> Id level
-    -> Either (Error a) (KoreSentenceSymbol level)
+    -> Either (Error a) (atts, KoreSentenceSymbol level)
 resolveSymbol m headId =
     case resolveThing (symbolSentencesMap (Proxy :: Proxy level)) m headId of
         Nothing ->
@@ -198,7 +198,7 @@ resolveAlias
     :: MetaOrObject level
     => KoreIndexedModule atts
     -> Id level
-    -> Either (Error a) (KoreSentenceAlias level)
+    -> Either (Error a) (atts, KoreSentenceAlias level)
 resolveAlias m headId =
     case resolveThing (aliasSentencesMap (Proxy :: Proxy level)) m headId of
         Nothing ->
@@ -215,7 +215,7 @@ resolveSort
     :: MetaOrObject level
     => KoreIndexedModule atts
     -> Id level
-    -> Either (Error a) (SortDescription level)
+    -> Either (Error a) (atts, SortDescription level)
 resolveSort m sortId =
     case resolveThing (sortSentencesMap (Proxy :: Proxy level)) m sortId of
         Nothing ->

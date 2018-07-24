@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE DeriveFoldable        #-}
 {-# LANGUAGE DeriveFunctor         #-}
 {-# LANGUAGE DeriveGeneric         #-}
@@ -34,7 +35,7 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Data.Kore.AST.Common where
 
-import           Data.Fix                   (Fix (unFix))
+import           Data.Fix                   (Fix)
 import           Data.Hashable
 import           Data.Proxy
 import           GHC.Generics               (Generic)

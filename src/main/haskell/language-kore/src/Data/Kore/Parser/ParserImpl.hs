@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs                  #-}
+{-# LANGUAGE GADTs #-}
 
 {-|
 Module      : Data.Kore.Parser.ParserImpl
@@ -39,10 +39,10 @@ Conventions used:
 -}
 module Data.Kore.Parser.ParserImpl where
 
-import           Data.Kore.AST.PureML                            (CommonPurePattern)
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.PureML         (CommonPurePattern)
 import           Data.Kore.AST.Sentence
 import           Data.Kore.HaskellExtensions  (Rotate31 (..), (<....>))
 import           Data.Kore.MetaML.AST
@@ -583,10 +583,10 @@ koreMLConstructorParser = do
     objectMlConstructorRemainderParser patternType =
         case patternType of
             DomainValuePatternType -> DomainValuePattern <$>
-                unaryOperatorRemainderParser
-                    korePatternParser
-                    Object
-                    DomainValue
+                (   DomainValue
+                <$> inCurlyBracesRemainderParser (sortParser Object)
+                <*> inParenthesesParser (purePatternParser Meta)
+                )
             NextPatternType -> NextPattern <$>
                 unaryOperatorRemainderParser korePatternParser Object Next
             RewritesPatternType -> RewritesPattern <$>
@@ -935,7 +935,7 @@ symbolSentenceRemainderParser  x aliasSymbolParser constructor
 
 
 {-|'aliasSentenceRemainderParser' parses the part after the starting
-keyword of an alias declaration. 
+keyword of an alias declaration.
 
 BNF fragment example:
 
@@ -958,11 +958,11 @@ aliasSentenceRemainderParser x
     resultSort <- sortParser x
     mlLexemeParser "where"
     -- Note: constraints for left pattern checked in verifySentence
-    leftPattern <- leveledPatternParser korePatternParser x 
-    mlLexemeParser ":="    
-    rightPattern <- leveledPatternParser korePatternParser x 
+    leftPattern <- leveledPatternParser korePatternParser x
+    mlLexemeParser ":="
+    rightPattern <- leveledPatternParser korePatternParser x
     attributes <- attributesParser
-    return (Rotate31 (SentenceAlias aliasSymbol sorts resultSort leftPattern rightPattern attributes)) 
+    return (Rotate31 (SentenceAlias aliasSymbol sorts resultSort leftPattern rightPattern attributes))
 
 {-|'importSentenceRemainderParser' parses the part after the starting
 'import' keyword of an import-declaration and constructs it.

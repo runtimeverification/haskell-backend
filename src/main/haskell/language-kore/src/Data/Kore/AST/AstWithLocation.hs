@@ -14,6 +14,8 @@ module Data.Kore.AST.AstWithLocation
     , prettyPrintLocationFromAst
     ) where
 
+import           Data.Fix                   (unFix)
+
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
@@ -101,6 +103,7 @@ instance
         , patternFunctionMLBinder = locationFromAst . getBinderPatternSort
         , applicationFunction = locationFromAst . applicationSymbolOrAlias
         , variableFunction = locationFromAst
+        , domainValueFunction = locationFromAst . unFix . domainValueChild
         , stringFunction = const AstLocationUnknown
         , charFunction = const AstLocationUnknown
         }

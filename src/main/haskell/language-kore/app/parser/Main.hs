@@ -6,6 +6,7 @@ module Main
 
 import           Control.Monad                            (when)
 import qualified Data.Map                                 as Map
+import           Data.Proxy                               (Proxy (..))
 import           Data.Semigroup                           ((<>))
 import           Options.Applicative                      (InfoMod, Parser,
                                                            argument, fullDesc,
@@ -26,12 +27,14 @@ import           Data.Kore.Error                          (printError)
 import           Data.Kore.IndexedModule.IndexedModule    (KoreIndexedModule)
 import           Data.Kore.Parser.Parser                  (fromKore,
                                                            fromKorePattern)
+import           Data.Kore.Step.StepperAttributes
 
 import           GlobalMain                               (MainOptions (..),
                                                            clockSomething,
                                                            clockSomethingIO,
                                                            enableDisableFlag,
                                                            mainGlobal)
+
 
 {-
 Main module to run kore-parser
@@ -127,8 +130,8 @@ main = do
 
 mainModule
     :: ModuleName
-    -> Map.Map ModuleName KoreIndexedModule
-    -> IO KoreIndexedModule
+    -> Map.Map ModuleName (KoreIndexedModule StepperAttributes)
+    -> IO (KoreIndexedModule StepperAttributes)
 mainModule name modules =
     case Map.lookup name modules of
         Nothing ->
@@ -169,11 +172,11 @@ mainParse parser fileName = do
 mainVerify
     :: Bool -- ^ whether to check (True) or ignore attributes during verification
     -> KoreDefinition -- ^ Parsed definition to check well-formedness
-    -> IO (Map.Map ModuleName KoreIndexedModule)
+    -> IO (Map.Map ModuleName (KoreIndexedModule StepperAttributes))
 mainVerify willChkAttr definition =
     let attributesVerification =
             if willChkAttr
-            then case defaultAttributesVerification of
+            then case defaultAttributesVerification Proxy of
                    Left err           -> error (printError err)
                    Right verification -> verification
             else DoNotVerifyAttributes
@@ -189,7 +192,7 @@ mainVerify willChkAttr definition =
 -- | IO action verifies well-formedness of Kore patterns and prints
 -- timing information.
 mainPatternVerify
-    :: KoreIndexedModule
+    :: KoreIndexedModule StepperAttributes
     -- ^ Module containing definitions visible in the pattern
     -> CommonKorePattern -- ^ Parsed pattern to check well-formedness
     -> IO ()

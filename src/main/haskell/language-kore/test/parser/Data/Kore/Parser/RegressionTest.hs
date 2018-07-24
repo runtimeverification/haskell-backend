@@ -9,10 +9,13 @@ import           Test.Tasty                               (TestTree, testGroup)
 import           Test.Tasty.Golden                        (findByExtension,
                                                            goldenVsString)
 
+import           Data.Proxy                               (Proxy (..))
+
 import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.ASTVerifier.DefinitionVerifier
 import           Data.Kore.Error
+import           Data.Kore.Implicit.Attributes
 import           Data.Kore.Parser.Parser
 
 import qualified Data.ByteString.Lazy                     as LazyByteString
@@ -72,8 +75,8 @@ verify (Right definition) =
         Left e  -> Left (printError e)
         Right _ -> Right definition
   where
-    attributesVerification :: AttributesVerification
-    attributesVerification = case defaultAttributesVerification of
+    attributesVerification :: AttributesVerification ImplicitAttributes
+    attributesVerification = case defaultAttributesVerification Proxy of
         Right verification -> verification
         Left err           -> error (printError err)
 

@@ -13,6 +13,11 @@ import           Test.Tasty                                   (TestTree,
 import           Test.Tasty.HUnit                             (assertFailure,
                                                                testCase)
 
+import           Control.Monad                                (foldM)
+import           Data.List                                    (foldl')
+import qualified Data.Map.Strict                              as Map
+import           Data.Text.Prettyprint.Doc
+
 import           Data.Kore.AST.Common                         (Application (..),
                                                                AstLocation (..),
                                                                Id (..),
@@ -30,6 +35,7 @@ import           Data.Kore.Building.AsAst
 import           Data.Kore.Building.Patterns
 import           Data.Kore.Building.Sorts
 import           Data.Kore.Error
+import           Data.Kore.Implicit.Attributes                (ImplicitAttributes)
 import           Data.Kore.IndexedModule.IndexedModule
 import           Data.Kore.MetaML.AST                         (MetaMLPattern)
 
@@ -41,11 +47,6 @@ import           Kore.MatchingLogic.HilbertProof              as HilbertProof (P
 import           Kore.MatchingLogic.ProofSystem.Minimal       (MLRule (..), SubstitutedVariable (..),
                                                                SubstitutingVariable (..))
 import           Kore.MatchingLogic.ProofSystem.MLProofSystem as MLProofSystem
-
-import           Control.Monad                                (foldM)
-import           Data.List                                    (foldl')
-import qualified Data.Map.Strict                              as Map
-import           Data.Text.Prettyprint.Doc
 
 proofAssistantTests :: TestTree
 proofAssistantTests =
@@ -2806,13 +2807,14 @@ runAction proof (description, action) =
         Left err -> Left (description ++ " : " ++ err)
         result   -> result
 
-defaultIndexedModule :: KoreIndexedModule
+defaultIndexedModule :: KoreIndexedModule ImplicitAttributes
 defaultIndexedModule =
     case defaultIndexedModuleWithError of
         Left err -> error (printError err)
         Right m  -> m
 
-defaultIndexedModuleWithError :: Either (Error MLError) KoreIndexedModule
+defaultIndexedModuleWithError
+    :: Either (Error MLError) (KoreIndexedModule ImplicitAttributes)
 defaultIndexedModuleWithError = do
     modules <-
         castError (verifyAndIndexDefinition DoNotVerifyAttributes definition)

@@ -12,10 +12,10 @@ import           Data.Fix
 import           Data.Kore.AST.Builders
 import           Data.Kore.AST.BuildersImpl
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Sentence
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
+import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.KoreHelpers
@@ -443,11 +443,10 @@ liftTests =
                 (DomainValuePattern DomainValue
                     { domainValueSort =
                         SortVariableSort (SortVariable (testId "Int"))
-                    , domainValueChild =
-                        unifiedStringPattern
+                    , domainValueChild = metaStringPattern
                     }
                 )
-            )
+            :: CommonKorePattern)
         , testLiftUnlift "Application"
             (Fix
                 (apply (groundHead "#`test" AstLocationTest)
@@ -523,9 +522,9 @@ liftTests =
                 [ SentenceSymbolSentence
                     (symbol_ "#`alias" AstLocationTest [] patternMetaSort)
                 , SentenceAxiomSentence SentenceAxiom
-                    { sentenceAxiomParameters = 
+                    { sentenceAxiomParameters =
                         [ sortParameter Meta "#s" AstLocationTest ]
-                    , sentenceAxiomPattern = Fix 
+                    , sentenceAxiomPattern = Fix
                         (EqualsPattern Equals
                             { equalsOperandSort =
                                 SortActualSort SortActual
@@ -533,9 +532,9 @@ liftTests =
                                     , sortActualSorts = []
                                     }
                             , equalsResultSort =
-                                SortVariableSort 
+                                SortVariableSort
                                     (sortParameter Meta "#s" AstLocationTest)
-                            , equalsFirst = Fix 
+                            , equalsFirst = Fix
                                 (apply (groundHead "#\\top" AstLocationImplicit)
                                     [ Fix (apply (groundHead "#`s3" AstLocationImplicit) []) ]
                                 )

@@ -20,7 +20,7 @@ import           Data.Kore.Building.Patterns
 import           Data.Kore.Building.Sorts
 import           Data.Kore.Comparators                 ()
 import           Data.Kore.Error
-import           Data.Kore.IndexedModule.MetadataTools (MetadataTools (..))
+import           Data.Kore.IndexedModule.MetadataTools
 import           Data.Kore.MetaML.AST                  (CommonMetaPattern)
 import           Data.Kore.Step.BaseStep               (AxiomPattern (..))
 import           Data.Kore.Step.Condition.Condition    (ConditionProof (..),
@@ -35,6 +35,7 @@ import           Data.Kore.Step.Function.Data          (AttemptedFunctionResult 
                                                         FunctionResultProof (..))
 import           Data.Kore.Step.Function.Mocks         (mockFunctionEvaluator)
 import           Data.Kore.Step.Function.UserDefined   (axiomFunctionEvaluator)
+import           Data.Kore.Step.StepperAttributes
 import           Data.Kore.Variables.Fresh.IntCounter
 
 import           Test.Tasty.HUnit.Extensions
@@ -207,13 +208,24 @@ userDefinedFunctionTests =
             )
         ]
 
-mockMetadataTools :: MetadataTools Meta
-mockMetadataTools = MetadataTools
-    { isConstructor = const True
-    , isFunctional = const True
-    , isFunction = const False
-    , getArgumentSorts = const [asAst PatternSort, asAst PatternSort]
+
+mockStepperAttributes :: StepperAttributes
+mockStepperAttributes = StepperAttributes
+    { isConstructor = True
+    , isFunctional  = True
+    , isFunction    = False
+    }
+
+mockSortTools :: SortTools Meta
+mockSortTools = SortTools
+    { getArgumentSorts = const [asAst PatternSort, asAst PatternSort]
     , getResultSort = const (asAst PatternSort)
+    }
+
+mockMetadataTools :: MetadataTools Meta StepperAttributes
+mockMetadataTools = MetadataTools
+    { attributes = const mockStepperAttributes
+    , sortTools  = mockSortTools
     }
 
 x :: MetaSort sort => sort -> MetaVariable sort
@@ -307,7 +319,7 @@ asApplication patt =
 
 evaluateWithAxiom
     :: MetaOrObject level
-    => MetadataTools level
+    => MetadataTools level StepperAttributes
     -> ConditionSort level
     -> AxiomPattern level
     -> ConditionEvaluator level

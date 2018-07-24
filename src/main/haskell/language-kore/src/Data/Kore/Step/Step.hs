@@ -21,6 +21,7 @@ import           Data.Kore.Step.BaseStep               (AxiomPattern,
                                                         StepProof (..),
                                                         StepperConfiguration,
                                                         stepWithAxiom)
+import           Data.Kore.Step.StepperAttributes
 import           Data.Kore.Variables.Fresh.IntCounter  (IntCounter)
 
 data MaxStepCount
@@ -34,7 +35,7 @@ sigma(x, y) => y    vs    a
 --}
 step
     :: MetaOrObject level
-    => MetadataTools level
+    => MetadataTools level StepperAttributes
     -- ^ Functions yielding metadata for pattern heads.
     -> StepperConfiguration level
     -- ^ Configuration being rewritten.
@@ -54,7 +55,7 @@ sigma(x, y) => y    vs    a
 --}
 pickFirstStepper
     :: MetaOrObject level
-    => MetadataTools level
+    => MetadataTools level StepperAttributes
     -- ^ Functions yielding metadata for pattern heads.
     -> MaxStepCount
     -- ^ The maximum number of steps to be made
@@ -78,7 +79,7 @@ pickFirstStepper metadataTools AnyStepCount stepperConfiguration axioms =
 
 pickFirstStepperSkipMaxCheck
     :: MetaOrObject level
-    => MetadataTools level
+    => MetadataTools level StepperAttributes
     -- ^ Functions yielding metadata for pattern heads.
     -> MaxStepCount
     -- ^ The maximum number of steps to be made

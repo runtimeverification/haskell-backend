@@ -142,7 +142,7 @@ verifyMetaSentence
     (SentenceAliasSentence aliasSentence)
   =
     verifyAliasSentence
-        (resolveSort indexedModule)
+        (fmap snd . resolveSort indexedModule)
         indexedModule
         attributesVerification
         aliasSentence
@@ -152,7 +152,7 @@ verifyMetaSentence
     (SentenceSymbolSentence symbolSentence)
   =
     verifySymbolSentence
-        (resolveSort indexedModule)
+        (fmap snd . resolveSort indexedModule)
         indexedModule
         attributesVerification
         symbolSentence
@@ -178,7 +178,7 @@ verifyObjectSentence
     (SentenceAliasSentence aliasSentence)
   =
     verifyAliasSentence
-        (resolveSort indexedModule)
+        (fmap snd . resolveSort indexedModule)
         indexedModule
         attributesVerification
         aliasSentence
@@ -188,7 +188,7 @@ verifyObjectSentence
     (SentenceSymbolSentence symbolSentence)
   =
     verifySymbolSentence
-        (resolveSort indexedModule)
+        (fmap snd . resolveSort indexedModule)
         indexedModule
         attributesVerification
         symbolSentence
@@ -210,7 +210,7 @@ verifyObjectSentence
     (SentenceHookSentence (SentenceHookedSymbol symbolSentence))
   =
     verifySymbolSentence
-        (resolveSort indexedModule)
+        (fmap snd . resolveSort indexedModule)
         indexedModule
         attributesVerification
         symbolSentence

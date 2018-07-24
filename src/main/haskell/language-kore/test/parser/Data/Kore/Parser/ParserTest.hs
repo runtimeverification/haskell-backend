@@ -5,7 +5,9 @@ import           Test.Tasty                       (TestTree, testGroup)
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.PureToKore
 import           Data.Kore.AST.Sentence
+import           Data.Kore.ASTUtils.SmartPatterns
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.KoreHelpers
 import           Data.Kore.Parser.ParserImpl
@@ -466,11 +468,8 @@ domainValuePatternParserTests :: [TestTree]
 domainValuePatternParserTests =
     parseTree korePatternParser
         [ success "\\dv{s1}(\"a\")"
-            (asKorePattern $ DomainValuePattern DomainValue
-                    { domainValueSort = sortVariableSort "s1"
-                    , domainValueChild =
-                        asKorePattern $ StringLiteralPattern (StringLiteral "a")
-                    }
+            ( patternPureToKore
+            $ DV_ (sortVariableSort "s1") (StringLiteral_ "a")
             )
         , FailureWithoutMessage
             [ ""
@@ -798,7 +797,7 @@ variablePatternParserTests =
 sentenceAliasParserTests :: [TestTree]
 sentenceAliasParserTests =
     parseTree koreSentenceParser
-        [ 
+        [
           success "alias a{s1}(s2) : s3 where a{s1}(X:s2) := g{}() [\"a\"]"
             ( constructUnifiedSentence SentenceAliasSentence $
                 (SentenceAlias
@@ -855,8 +854,8 @@ sentenceAliasParserTests =
                         { applicationSymbolOrAlias =
                             SymbolOrAlias
                                 { symbolOrAliasConstructor = testId "a" :: Id Object
-                                , symbolOrAliasParams = 
-                                    [ 
+                                , symbolOrAliasParams =
+                                    [
                                           sortVariableSort "s1"
                                         , sortVariableSort "s2"
                                     ]

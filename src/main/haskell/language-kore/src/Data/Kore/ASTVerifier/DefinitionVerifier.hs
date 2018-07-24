@@ -16,6 +16,9 @@ module Data.Kore.ASTVerifier.DefinitionVerifier
     , AttributesVerification (..)
     ) where
 
+import qualified Data.Map                                 as Map
+import           Data.Proxy                               (Proxy)
+
 import           Control.Monad                            (foldM, foldM_)
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Sentence
@@ -23,12 +26,9 @@ import           Data.Kore.ASTVerifier.AttributesVerifier
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.ModuleVerifier
 import           Data.Kore.Error
-import           Data.Kore.Implicit.Attributes            (ImplicitAttributes)
 import           Data.Kore.Implicit.Definitions           (uncheckedAttributesDefinition,
                                                            uncheckedKoreModules)
 import           Data.Kore.IndexedModule.IndexedModule
-
-import qualified Data.Map                                 as Map
 
 {-|'verifyDefinition' verifies the welformedness of a Kore 'Definition'.
 
@@ -91,8 +91,10 @@ verifyAndIndexDefinition attributesVerification definition = do
             (map (\m -> (moduleName m, m)) (definitionModules definition))
 
 defaultAttributesVerification
-    :: Either (Error VerifyError) (AttributesVerification ImplicitAttributes)
-defaultAttributesVerification =
+    :: ParsedAttributes atts
+    => Proxy atts
+    -> Either (Error VerifyError) (AttributesVerification atts)
+defaultAttributesVerification _ =
     VerifyAttributes
         <$> verifyNormalKoreDefinition
             DoNotVerifyAttributes uncheckedAttributesDefinition

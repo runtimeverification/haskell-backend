@@ -61,11 +61,11 @@ metaVerifyHelpers
     :: KoreIndexedModule atts -> DeclaredVariables -> VerifyHelpers Meta
 metaVerifyHelpers indexedModule declaredVariables =
     VerifyHelpers
-        { verifyHelpersFindSort = resolveSort indexedModule
+        { verifyHelpersFindSort = fmap snd . resolveSort indexedModule
         , verifyHelpersLookupAliasDeclaration =
-            resolveAlias indexedModule
+            fmap snd . resolveAlias indexedModule
         , verifyHelpersLookupSymbolDeclaration =
-            resolveSymbol indexedModule
+            fmap snd . resolveSymbol indexedModule
         , verifyHelpersFindDeclaredVariables =
             flip Map.lookup (metaDeclaredVariables declaredVariables)
         }
@@ -74,11 +74,11 @@ objectVerifyHelpers
     :: KoreIndexedModule atts -> DeclaredVariables -> VerifyHelpers Object
 objectVerifyHelpers indexedModule declaredVariables =
     VerifyHelpers
-        { verifyHelpersFindSort = resolveSort indexedModule
+        { verifyHelpersFindSort = fmap snd . resolveSort indexedModule
         , verifyHelpersLookupAliasDeclaration =
-            resolveAlias indexedModule
+            fmap snd . resolveAlias indexedModule
         , verifyHelpersLookupSymbolDeclaration =
-            resolveSymbol indexedModule
+            fmap snd . resolveSymbol indexedModule
         , verifyHelpersFindDeclaredVariables =
             flip Map.lookup (objectDeclaredVariables declaredVariables)
         }
@@ -260,6 +260,8 @@ verifyParameterizedPattern pat indexedModule helpers sortParams vars =
                 verifyApplication p indexedModule helpers sortParams vars
             , variableLeveledFunction = \p -> SortOrError $
                 verifyVariableUsage p indexedModule helpers sortParams vars
+            , domainValueLeveledFunction = \dv -> SortOrError $
+                verifyDomainValue dv indexedModule helpers sortParams vars
 
             }
         pat
@@ -412,6 +414,17 @@ verifyVariableUsage variable _ verifyHelpers _ _ = do
         "The declared sort is different."
     return (variableSort variable)
 
+-- TODO: properly verify child pattern if it's not a stringLiteral
+verifyDomainValue
+    :: (MetaOrObject level)
+    => DomainValue Object
+    -> KoreIndexedModule atts
+    -> VerifyHelpers level
+    -> Set.Set UnifiedSortVariable
+    -> DeclaredVariables
+    -> Either (Error VerifyError) (Sort Object)
+verifyDomainValue dv _ _ _ _ = return (domainValueSort dv)
+
 verifyStringPattern :: Either (Error VerifyError) (Sort Meta)
 verifyStringPattern = Right charListMetaSort
 
@@ -427,7 +440,7 @@ verifyVariableDeclaration
 verifyVariableDeclaration
     variable indexedModule declaredSortVariables
   = verifyVariableDeclarationUsing
-        declaredSortVariables (resolveSort indexedModule) variable
+        declaredSortVariables (fmap snd . resolveSort indexedModule) variable
 
 verifyVariableDeclarationUsing
     :: MetaOrObject level

@@ -35,6 +35,7 @@ import           Data.Kore.IndexedModule.MetadataTools           (MetadataTools)
 import           Data.Kore.Step.AxiomPatterns
 import           Data.Kore.Step.Condition.Condition              (ConditionSort (..))
 import           Data.Kore.Step.Error
+import           Data.Kore.Step.StepperAttributes
 import           Data.Kore.Substitution.Class                    (Hashable (..), PatternSubstitutionClass (..))
 import qualified Data.Kore.Substitution.List                     as ListSubstitution
 import           Data.Kore.Unification.SubstitutionNormalization (normalizeSubstitution)
@@ -155,7 +156,7 @@ sigma(x, y) => y    vs    a
 --}
 stepWithAxiom
     :: MetaOrObject level
-    => MetadataTools level
+    => MetadataTools level StepperAttributes
     -- ^ Functions yielding metadata for pattern heads.
     -> StepperConfiguration level
     -- ^ Configuration being rewritten.

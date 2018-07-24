@@ -12,6 +12,7 @@ Portability : portable
 {-# LANGUAGE AllowAmbiguousTypes   #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PatternSynonyms       #-}
@@ -40,27 +41,6 @@ module Data.Kore.ASTUtils.SmartConstructors
 , allChildren -- | will have 0+ inhabitants
 , inPath
 , localInPattern
--- * Pattern synonyms
-, pattern And_
-, pattern App_
-, pattern Bottom_
-, pattern Ceil_
-, pattern DV_
-, pattern Equals_
-, pattern Exists_
-, pattern Floor_
-, pattern Forall_
-, pattern Iff_
-, pattern Implies_
-, pattern In_
-, pattern Next_
-, pattern Not_
-, pattern Or_
-, pattern Rewrites_
-, pattern Top_
-, pattern Var_
-, pattern StringLiteral_
-, pattern CharLiteral_
 , mkAnd
 , mkApp
 , mkBottom
@@ -97,6 +77,7 @@ import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.PureML                  (PureMLPattern)
+import           Data.Kore.ASTUtils.SmartPatterns
 import           Data.Kore.IndexedModule.MetadataTools
 
 
@@ -105,7 +86,7 @@ import           Data.Kore.IndexedModule.MetadataTools
 -- The smart constructors `mkAnd`, etc also require this context.
 -- Usage: give metadatatools (... computation with Given Metadatatools ..)
 getSort
-    :: (MetaOrObject level, Given (MetadataTools level), SortedVariable var)
+    :: (MetaOrObject level, Given (SortTools level), SortedVariable var)
     => PureMLPattern level var
     -> Sort level
 getSort x = getPatternResultSort (getResultSort given) $ unFix x
@@ -120,127 +101,6 @@ flexibleSort =
     SortVariableSort SortVariable
         { getSortVariable = noLocationId "__FlexibleSort__" } --FIXME
 
-
-pattern And_
-    :: Sort level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
-    -> PureMLPattern level var
-pattern App_
-    :: SymbolOrAlias level
-    -> [PureMLPattern level var]
-    -> PureMLPattern level var
-pattern Bottom_
-    :: Sort level
-    -> PureMLPattern level var
-pattern Ceil_
-    :: Sort level
-    -> Sort level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
--- Due to the interaction of pattern synonyms and GADTS
--- I don't think I can write this type signature.
--- pattern DV_
-  -- :: Sort Object
-  -- -> CommonPurePattern Object
-  -- -> CommonPurePattern Object
-pattern Equals_
-    :: Sort level
-    -> Sort level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
-    -> PureMLPattern level var
-pattern Exists_
-    :: Sort level
-    -> var level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
-pattern Floor_
-    :: Sort level
-    -> Sort level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
-pattern Forall_
-    :: Sort level
-    -> var level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
-pattern Iff_
-    :: Sort level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
-    -> PureMLPattern level var
-pattern Implies_
-    :: Sort level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
-    -> PureMLPattern level var
-pattern In_
-    :: Sort level
-    -> Sort level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
-    -> PureMLPattern level var
--- pattern Next_
-  -- :: Sort Object
-  -- -> CommonPurePattern Object
-  -- -> CommonPurePattern Object
-pattern Not_
-    :: Sort level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
-pattern Or_
-    :: Sort level
-    -> PureMLPattern level var
-    -> PureMLPattern level var
-    -> PureMLPattern level var
--- pattern Rewrites_
---   :: Sort Object
---   -> CommonPurePattern Object
---   -> CommonPurePattern Object
---   -> CommonPurePattern Object
-
-pattern Top_
-    :: Sort level
-    -> PureMLPattern level var
-
-pattern Var_
-    :: var level
-    -> PureMLPattern level var
-
--- pattern StringLiteral_
---   :: StringLiteral
---   -> Fix (Pattern level var)
-
--- pattern CharLiteral_
---   :: CharLiteral
---   -> CommonPurePattern Meta
-
--- No way to make multiline pragma?
--- NOTE: If you add a case to the AST type, add another synonym here.
-{-# COMPLETE And_, App_, Bottom_, Ceil_, DV_, Equals_, Exists_, Floor_, Forall_, Iff_, Implies_, In_, Next_, Not_, Or_, Rewrites_, Top_, Var_, StringLiteral_, CharLiteral_ #-}
-
-pattern And_          s2   a b = Fix (AndPattern (And s2 a b))
-pattern App_ h c               = Fix (ApplicationPattern (Application h c))
-pattern Bottom_       s2       = Fix (BottomPattern (Bottom s2))
-pattern Ceil_      s1 s2   a   = Fix (CeilPattern (Ceil s1 s2 a))
-pattern DV_           s2   a   = Fix (DomainValuePattern (DomainValue s2 a))
-pattern Equals_    s1 s2   a b = Fix (EqualsPattern (Equals s1 s2 a b))
-pattern Exists_       s2 v a   = Fix (ExistsPattern (Exists s2 v a))
-pattern Floor_     s1 s2   a   = Fix (FloorPattern (Floor s1 s2 a))
-pattern Forall_       s2 v a   = Fix (ForallPattern (Forall s2 v a))
-pattern Iff_          s2   a b = Fix (IffPattern (Iff s2 a b))
-pattern Implies_      s2   a b = Fix (ImpliesPattern (Implies s2 a b))
-pattern In_        s1 s2   a b = Fix (InPattern (In s1 s2 a b))
-pattern Next_         s2   a   = Fix (NextPattern (Next s2 a))
-pattern Not_          s2   a   = Fix (NotPattern (Not s2 a))
-pattern Or_           s2   a b = Fix (OrPattern (Or s2 a b))
-pattern Rewrites_     s2   a b = Fix (RewritesPattern (Rewrites s2 a b))
-pattern Top_          s2       = Fix (TopPattern (Top s2))
-pattern Var_             v     = Fix (VariablePattern v)
-
-pattern StringLiteral_ s = Fix (StringLiteralPattern s)
-pattern CharLiteral_   c = Fix (CharLiteralPattern   c)
 
 patternLens
     :: (Applicative f, MetaOrObject level)
@@ -258,7 +118,7 @@ patternLens
   And_       s2   a b -> And_      <$>          o s2           <*> c a <*> c b
   Bottom_    s2       -> Bottom_   <$>          o s2
   Ceil_   s1 s2   a   -> Ceil_     <$> i s1 <*> o s2           <*> c a
-  DV_        s2   a   -> DV_       <$>          o s2           <*> c a
+  DV_        s2   a   -> DV_       <$>          o s2           <*> pure a
   Equals_ s1 s2   a b -> Equals_   <$> i s1 <*> o s2           <*> c a <*> c b
   Exists_    s2 v a   -> Exists_   <$>          o s2 <*> var v <*> c a
   Floor_  s1 s2   a   -> Floor_    <$> i s1 <*> o s2           <*> c a
@@ -355,7 +215,7 @@ isFlexible p = case unFix p of
 
 -- | Tries to modify p to have sort s.
 forceSort
-    :: (MetaOrObject level, Given (MetadataTools level), SortedVariable var)
+    :: (MetaOrObject level, Given (SortTools level), SortedVariable var)
     => Sort level
     -> PureMLPattern level var
     -> Maybe (PureMLPattern level var)
@@ -365,7 +225,7 @@ forceSort s p
    | otherwise = traverseOf allChildren (forceSort s) p
 
 checkIfAlreadyCorrectSort
-    :: (MetaOrObject level, Given (MetadataTools level), SortedVariable var)
+    :: (MetaOrObject level, Given (SortTools level), SortedVariable var)
     => Sort level
     -> PureMLPattern level var
     -> Maybe (PureMLPattern level var)
@@ -375,7 +235,7 @@ checkIfAlreadyCorrectSort s p
 
 -- | Modify all patterns in a list to have the same sort.
 makeSortsAgree
-    :: (MetaOrObject level, Given (MetadataTools level), SortedVariable var)
+    :: (MetaOrObject level, Given (SortTools level), SortedVariable var)
     => [PureMLPattern level var]
     -> Maybe [PureMLPattern level var]
 makeSortsAgree ps =
@@ -385,7 +245,7 @@ makeSortsAgree ps =
           Just a  -> a
 
 getRigidSort
-    :: (MetaOrObject level, Given (MetadataTools level), SortedVariable var)
+    :: (MetaOrObject level, Given (SortTools level), SortedVariable var)
     => PureMLPattern level var
     -> Maybe (Sort level)
 getRigidSort p =
@@ -399,7 +259,7 @@ getRigidSort p =
 -- to the valid (x : Int /\ (x < 3 : Int)) : Int
 ensureSortAgreement
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
+        , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
     => PureMLPattern level var
@@ -422,7 +282,7 @@ ensureSortAgreement p =
 -- To use, put `give metadatatools` at the top of the computation.
 mkAnd
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
+        , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
     => PureMLPattern level var
@@ -431,7 +291,7 @@ mkAnd
 mkAnd a b = ensureSortAgreement $ And_ fixmeSort a b
 
 mkApp
-    :: (MetaOrObject level, Given (MetadataTools level))
+    :: (MetaOrObject level, Given (SortTools level))
     => SymbolOrAlias level
     -> [PureMLPattern level var]
     -> PureMLPattern level var
@@ -443,20 +303,21 @@ mkBottom
 mkBottom = Bottom_ flexibleSort
 
 mkCeil
-    :: (MetaOrObject level, Given (MetadataTools level), SortedVariable var)
+    :: (MetaOrObject level, Given (SortTools level), SortedVariable var)
     => PureMLPattern level var
     -> PureMLPattern level var
 mkCeil a = Ceil_ (getSort a) flexibleSort a
 
 mkDomainValue
-    :: (MetaOrObject Object, Given (MetadataTools Object), SortedVariable var)
-    => PureMLPattern Object var
+    :: (MetaOrObject Object, Given (SortTools Object))
+    => Sort Object
+    -> PureMLPattern Meta Variable
     -> PureMLPattern Object var
-mkDomainValue a = DV_ (getSort a) a
+mkDomainValue = DV_
 
 mkEquals
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
+        , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
     => PureMLPattern level var
@@ -466,7 +327,7 @@ mkEquals a b = ensureSortAgreement $ Equals_ fixmeSort fixmeSort a b
 
 mkExists
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
+        , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
     => var level
@@ -476,7 +337,7 @@ mkExists v a = ensureSortAgreement $ Exists_ fixmeSort v a
 
 mkFloor
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
+        , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
     => PureMLPattern level var
@@ -485,7 +346,7 @@ mkFloor a = ensureSortAgreement $ Floor_ fixmeSort fixmeSort a
 
 mkForall
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
+        , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
     => var level
@@ -495,7 +356,7 @@ mkForall v a = ensureSortAgreement $ Forall_ fixmeSort v a
 
 mkIff
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
+        , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
     => PureMLPattern level var
@@ -505,7 +366,7 @@ mkIff a b = ensureSortAgreement $ Iff_ fixmeSort a b
 
 mkImplies
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
+        , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
     => PureMLPattern level var
@@ -515,7 +376,7 @@ mkImplies a b = ensureSortAgreement $ Implies_ fixmeSort a b
 
 mkIn
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
+        , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
     => PureMLPattern level var
@@ -525,7 +386,7 @@ mkIn a b = ensureSortAgreement $ In_ fixmeSort fixmeSort a b
 
 mkNext
     ::  ( MetaOrObject Object
-        , Given (MetadataTools Object)
+        , Given (SortTools Object)
         , SortedVariable var
         , Show (var Object))
     => PureMLPattern Object var
@@ -534,7 +395,7 @@ mkNext a = ensureSortAgreement $ Next_ fixmeSort a
 
 mkNot
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
+        , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
     => PureMLPattern level var
@@ -543,7 +404,7 @@ mkNot a = ensureSortAgreement $ Not_ fixmeSort a
 
 mkOr
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
+        , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
     => PureMLPattern level var
@@ -553,7 +414,7 @@ mkOr a b = ensureSortAgreement $ Or_ fixmeSort a b
 
 mkRewrites
     ::  ( MetaOrObject Object
-        , Given (MetadataTools Object)
+        , Given (SortTools Object)
         , SortedVariable var
         , Show (var Object))
     => PureMLPattern Object var
@@ -562,12 +423,12 @@ mkRewrites
 mkRewrites a b = ensureSortAgreement $ Rewrites_ fixmeSort a b
 
 mkTop
-    :: (MetaOrObject level, Given (MetadataTools level))
+    :: (MetaOrObject level, Given (SortTools level))
     => PureMLPattern level var
 mkTop = Top_ flexibleSort
 
 mkVar
-    :: (MetaOrObject level, Given (MetadataTools level))
+    :: (MetaOrObject level, Given (SortTools level))
     => var level
     -> PureMLPattern level var
 mkVar = Var_

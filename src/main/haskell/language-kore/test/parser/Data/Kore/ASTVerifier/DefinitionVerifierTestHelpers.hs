@@ -8,6 +8,8 @@ import           Test.Tasty.HUnit                         (HasCallStack,
                                                            testCase)
 
 import           Data.Fix
+import           Data.Proxy                               (Proxy (..))
+
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
@@ -16,6 +18,7 @@ import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.ASTVerifier.DefinitionVerifier
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.Error
+import           Data.Kore.Implicit.Attributes            (ImplicitAttributes)
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.KoreHelpers
 import           Data.Kore.Unparser.Unparse
@@ -99,8 +102,8 @@ expectFailureWithError description expectedError definition =
                     expectedError actualError
         )
 
-attributesVerificationForTests :: AttributesVerification
-attributesVerificationForTests = case defaultAttributesVerification of
+attributesVerificationForTests :: AttributesVerification ImplicitAttributes
+attributesVerificationForTests = case defaultAttributesVerification Proxy of
     Right verification -> verification
     Left err           -> error (printError err)
 
@@ -491,11 +494,11 @@ symbolSentenceWithArguments
 
 objectAliasSentenceWithArguments
     :: AliasName -> Sort Object -> [Sort Object] -> KoreSentence
-objectAliasSentenceWithArguments a b c = 
-    aliasSentenceWithArguments 
-        a 
-        b 
-        c 
+objectAliasSentenceWithArguments a b c =
+    aliasSentenceWithArguments
+        a
+        b
+        c
         (TopPattern $ Top { topSort = b })
         (TopPattern $ Top { topSort = b })
 

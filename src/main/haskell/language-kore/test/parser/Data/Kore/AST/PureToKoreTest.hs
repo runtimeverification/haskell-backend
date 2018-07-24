@@ -10,9 +10,9 @@ import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
 import           Data.Kore.AST.PureToKore
 import           Data.Kore.AST.Sentence
+import           Data.Kore.ASTGen
 import           Data.Kore.KoreHelpers
 import           Data.Kore.MetaML.AST
-import           Data.Kore.MetaML.ASTGen
 
 
 pureToKoreToPureProp :: CommonMetaPattern -> Bool

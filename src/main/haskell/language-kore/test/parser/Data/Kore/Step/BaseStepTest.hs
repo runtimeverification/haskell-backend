@@ -20,11 +20,12 @@ import           Data.Kore.Building.Patterns
 import           Data.Kore.Building.Sorts
 import           Data.Kore.Comparators                 ()
 import           Data.Kore.Error
-import           Data.Kore.IndexedModule.MetadataTools (MetadataTools (..))
+import           Data.Kore.IndexedModule.MetadataTools
 import           Data.Kore.MetaML.AST                  (CommonMetaPattern)
 import           Data.Kore.Step.BaseStep
 import           Data.Kore.Step.Condition.Condition    (ConditionSort (..))
 import           Data.Kore.Step.Error
+import           Data.Kore.Step.StepperAttributes
 import           Data.Kore.Unification.Error
 import           Data.Kore.Unification.Unifier         (FunctionalProof (..),
                                                         UnificationProof (..))
@@ -723,13 +724,23 @@ baseStepTests =
 conditionSort :: AsAst (Sort level) s => s -> ConditionSort level
 conditionSort sort = ConditionSort (asAst sort)
 
-mockMetadataTools :: MetadataTools Meta
-mockMetadataTools = MetadataTools
-    { isConstructor = const True
-    , isFunctional = const True
-    , isFunction = const False
-    , getArgumentSorts = const [asAst PatternSort, asAst PatternSort]
+mockStepperAttributes :: StepperAttributes
+mockStepperAttributes = StepperAttributes
+    { isConstructor = True
+    , isFunctional  = True
+    , isFunction    = True
+    }
+
+mockSortTools :: SortTools Meta
+mockSortTools = SortTools
+    { getArgumentSorts = const [asAst PatternSort, asAst PatternSort]
     , getResultSort = const (asAst PatternSort)
+    }
+
+mockMetadataTools :: MetadataTools Meta StepperAttributes
+mockMetadataTools = MetadataTools
+    { attributes = const mockStepperAttributes
+    , sortTools = mockSortTools
     }
 
 sigmaSymbol :: SymbolOrAlias Meta
@@ -797,7 +808,7 @@ metaG = MetaG
 
 runStep
     :: MetaOrObject level
-    => MetadataTools level
+    => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
     -> StepperConfiguration level
     -- ^left-hand-side of unification

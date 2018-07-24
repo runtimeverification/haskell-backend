@@ -7,7 +7,9 @@ import           Test.Tasty                                          (TestTree,
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.PureToKore                            (patternPureToKore)
 import           Data.Kore.AST.Sentence
+import           Data.Kore.ASTUtils.SmartPatterns
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
 import           Data.Kore.Implicit.Attributes                       (attributeObjectSort)
@@ -150,14 +152,8 @@ definitionVerifierAttributesTests =
     strictDomainValuePattern :: CommonKorePattern
     strictDomainValuePattern = domainValuePattern (SortName "Strict")
     domainValuePattern :: SortName -> CommonKorePattern
-    domainValuePattern sortName =
-        asKorePattern
-            (DomainValuePattern DomainValue
-                { domainValueSort = simpleSort sortName
-                , domainValueChild =
-                    asKorePattern (StringLiteralPattern (StringLiteral "asgn"))
-                }
-            )
+    domainValuePattern sortName = patternPureToKore
+        (DV_ (simpleSort sortName) (StringLiteral_ "asgn"))
     sortSwitchingEquals
         :: OperandSort Object
         -> ResultSort Object

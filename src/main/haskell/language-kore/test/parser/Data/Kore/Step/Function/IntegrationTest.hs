@@ -9,6 +9,7 @@ import qualified Data.Map                              as Map
 
 import           Test.Tasty                            (TestTree, testGroup)
 import           Test.Tasty.HUnit                      (testCase)
+import           Test.Tasty.HUnit.Extensions
 
 import           Data.Kore.AST.Common                  (Application (..),
                                                         AstLocation (..),
@@ -23,6 +24,7 @@ import           Data.Kore.Building.Patterns
 import           Data.Kore.Building.Sorts
 import           Data.Kore.Comparators                 ()
 import           Data.Kore.Error                       (printError)
+import           Data.Kore.IndexedModule.MetadataTools
 import           Data.Kore.MetaML.AST                  (CommonMetaPattern)
 import           Data.Kore.Step.BaseStep               (AxiomPattern (..))
 import           Data.Kore.Step.Condition.Condition    (ConditionSort (..),
@@ -35,10 +37,9 @@ import           Data.Kore.Step.Function.Data          (ApplicationFunctionEvalu
                                                         FunctionResultProof (..))
 import           Data.Kore.Step.Function.Evaluator     (evaluateFunctions)
 import           Data.Kore.Step.Function.UserDefined   (axiomFunctionEvaluator)
+import           Data.Kore.Step.StepperAttributes
 import           Data.Kore.Variables.Fresh.IntCounter  (IntCounter,
                                                         runIntCounter)
-
-import           Test.Tasty.HUnit.Extensions
 
 functionIntegrationTests :: TestTree
 functionIntegrationTests =
@@ -273,7 +274,7 @@ mockEvaluator evaluation _ _ _ =
     return (evaluation, FunctionResultProof)
 
 evaluate
-    :: MetadataTools level
+    :: MetadataTools level StepperAttributes
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
     -> ConditionSort level
     -> CommonPurePattern level
@@ -302,13 +303,23 @@ asPureMetaPattern patt =
         Left err -> error (printError err)
         Right p  -> p
 
-mockMetadataTools :: MetadataTools Meta
-mockMetadataTools = MetadataTools
-    { isConstructor = const True
-    , isFunctional = const True
-    , isFunction = const True
-    , getArgumentSorts = const [asAst PatternSort, asAst PatternSort]
+mockSortTools :: SortTools Meta
+mockSortTools = SortTools
+    { getArgumentSorts = const [asAst PatternSort, asAst PatternSort]
     , getResultSort = const (asAst PatternSort)
+    }
+
+mockStepperAttributes :: StepperAttributes
+mockStepperAttributes = StepperAttributes
+    { isConstructor = True
+    , isFunctional = True
+    , isFunction = True
+    }
+
+mockMetadataTools :: MetadataTools Meta StepperAttributes
+mockMetadataTools = MetadataTools
+    { attributes = const mockStepperAttributes
+    , sortTools = mockSortTools
     }
 
 fId :: Id Meta

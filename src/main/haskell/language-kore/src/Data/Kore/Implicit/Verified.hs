@@ -15,6 +15,8 @@ module Data.Kore.Implicit.Verified
     )
     where
 
+import           Data.Proxy                               (Proxy (..))
+
 import           Data.Kore.AST.PureToKore
 import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTVerifier.DefinitionVerifier (defaultAttributesVerification,
@@ -22,6 +24,7 @@ import           Data.Kore.ASTVerifier.DefinitionVerifier (defaultAttributesVeri
                                                            verifyNormalKoreDefinition)
 import           Data.Kore.ASTVerifier.Error              (VerifyError)
 import           Data.Kore.Error                          (Error, printError)
+import           Data.Kore.Implicit.Attributes            (ImplicitAttributes)
 import           Data.Kore.Implicit.Definitions           (uncheckedAttributesDefinition,
                                                            uncheckedKoreDefinition,
                                                            uncheckedMetaDefinition)
@@ -29,7 +32,8 @@ import           Data.Kore.MetaML.AST
 
 checkedMetaDefinition :: Either (Error VerifyError) MetaDefinition
 checkedMetaDefinition = do
-    attributesVerification <- defaultAttributesVerification
+    attributesVerification <-
+        defaultAttributesVerification (Proxy :: Proxy ImplicitAttributes)
     _ <- verifyImplicitKoreDefinition
         attributesVerification
         (definitionPureToKore uncheckedMetaDefinition)
@@ -47,7 +51,8 @@ implicitMetaDefinition =
 
 checkedKoreDefinition :: Either (Error VerifyError) KoreDefinition
 checkedKoreDefinition = do
-    attributesVerification <- defaultAttributesVerification
+    attributesVerification <-
+        defaultAttributesVerification (Proxy :: Proxy ImplicitAttributes)
     _ <- verifyImplicitKoreDefinition
         attributesVerification
         uncheckedKoreDefinition
@@ -65,7 +70,8 @@ implicitKoreDefinition =
 
 checkedAttributesDefinition :: Either (Error VerifyError) KoreDefinition
 checkedAttributesDefinition = do
-    attributesVerification <- defaultAttributesVerification
+    attributesVerification <-
+        defaultAttributesVerification (Proxy :: Proxy ImplicitAttributes)
     _ <- verifyNormalKoreDefinition
         attributesVerification
         uncheckedAttributesDefinition

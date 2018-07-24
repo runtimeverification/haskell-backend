@@ -301,8 +301,7 @@ instance (EqualWithExplanation child, Show child)
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
-instance (EqualWithExplanation child, Eq child, Show child)
-    => EqualWithExplanation (DomainValue level child)
+instance EqualWithExplanation (DomainValue level)
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
