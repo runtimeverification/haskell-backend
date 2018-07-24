@@ -28,7 +28,9 @@ Portability : portable
 {-# OPTIONS_GHC -Wno-incomplete-patterns  #-}
 
 module Data.Kore.Proof.Util
-( mkForallN
+( modusPonensN
+, mkImpliesN
+, mkForallN
 , forallIntroN
 , forallElimN
 , mkExistsN
@@ -51,6 +53,9 @@ import           Data.Reflection
 import           Data.Kore.Proof.Proof
 import           Data.Kore.Proof.Dummy
 
+import Debug.Trace
+import Data.Text.Prettyprint.Doc
+pTrace x = trace (show $ pretty x) x 
 -- | Helper functions for common proof steps.
 -- Conventions:
 -- Functions ending in `N` take or give a list
@@ -60,6 +65,22 @@ import           Data.Kore.Proof.Dummy
 -- i.e. mkAndN [a,b,c] = a `mkAnd` (b `mkAnd` c)
 -- TODO: Some of these could be replaced with schemas
 -- i.e. poor man's HOL
+
+modusPonensN 
+    :: Given (MetadataTools Object) 
+    => [Proof] 
+    -> Proof
+    -> Proof 
+modusPonensN as b =
+    foldl (\b a -> useRule $ ModusPonens a b) b as 
+
+mkImpliesN
+    :: Given (MetadataTools Object)
+    => [Term]
+    -> Term 
+    -> Term 
+mkImpliesN as b = 
+    foldr (\a b -> a `mkImplies` b) b as 
 
 --------------------------------------------------------------------------------
 

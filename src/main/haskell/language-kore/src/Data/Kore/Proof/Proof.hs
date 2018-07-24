@@ -54,6 +54,9 @@ import           Data.Kore.ASTUtils.Substitution
 import           Data.Hashable
 import           GHC.Generics                          (Generic)
 
+import Debug.Trace
+import Data.Text.Prettyprint.Doc
+
 -- A note about partial pattern matches:
 -- The basic Kore datatype has quite a few constructors,
 -- and there are inevitably situations where we are only concerned
@@ -234,7 +237,7 @@ instance
   , Pretty subproof
   , Pretty assumption
   ) => Pretty (PropF formula rules assumption subproof) where
-    pretty (ByF a b c) = "|- " <> pretty a <> line <> "By " <> pretty b
+    pretty (ByF a b c) = "|- " <> pretty a <> line <> "By " <> pretty b <> line 
 
 getConclusion
     :: Proof

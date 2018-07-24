@@ -33,6 +33,7 @@ Portability : portable
 module Data.Kore.Proof.FunctionalityAxioms
 ( generateFunctionalStatement
 , generateFunctionalHeadAxiom
+, proveFunctional
 ) where
 
 import           Data.Kore.AST.Common
@@ -46,6 +47,11 @@ import           Data.Kore.Proof.Dummy
 import           Data.Kore.Proof.Proof
 import           Data.Kore.Proof.Util
 
+import Debug.Trace
+import Data.Text.Prettyprint.Doc
+
+pTrace x = trace (show $ pretty x) x 
+
 generateFunctionalStatement
     :: Given (MetadataTools Object)
     => Term 
@@ -57,12 +63,23 @@ generateFunctionalStatement p =
 generateFunctionalHeadAxiom
     :: Given (MetadataTools Object)
     => SymbolOrAlias Object 
-    -> [Sort Object] 
     -> Term 
-generateFunctionalHeadAxiom h c = 
-    let (vars, vars') = generateVarList c "x"
-    in mkForallN vars $ generateFunctionalStatement $ mkApp h vars'
+generateFunctionalHeadAxiom h = 
+    let c = symbolOrAliasParams h 
+        (vars, vars') = generateVarList c "x"
+    in mkForallN vars $ mkImpliesN 
+           (map generateFunctionalStatement vars') 
+           (generateFunctionalStatement $ mkApp h vars')
 
--- proveFunctional 
-   -- :: Given (MetadataTools Object)
+proveFunctional 
+   :: Given (MetadataTools Object)
+   => Term 
+   -> Proof 
+proveFunctional p = case p of 
+    App_ h cs -> 
+        let hFunctional = forallElimN cs (assume $ generateFunctionalHeadAxiom h)
+            csFunctional = map proveFunctional cs 
+        in modusPonensN csFunctional hFunctional
+    Var_ v -> useRule $ FunctionalVar v (varS "x" $ getSort $ Var_ v)
+    x -> assume $ generateFunctionalStatement x 
 

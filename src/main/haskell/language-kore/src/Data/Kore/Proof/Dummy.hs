@@ -33,6 +33,8 @@ import           Data.Reflection
 
 import           Data.Kore.ASTUtils.SmartConstructors
 
+import Debug.Trace
+
 pattern V :: var level -> PureMLPattern level var
 pattern V x = Var_ x
 
@@ -43,6 +45,10 @@ var x =
 sym :: MetaOrObject level => String -> SymbolOrAlias level
 sym x =
   SymbolOrAlias (noLocationId x) []
+
+symS :: MetaOrObject level => String -> [Sort level] -> SymbolOrAlias level
+symS x s =
+  SymbolOrAlias (noLocationId x) s 
 
 var_ :: MetaOrObject level => String -> String -> Variable level
 var_ x s =
@@ -65,7 +71,7 @@ dummyMetadataTools = MetadataTools
     { isConstructor    = const True
     , isFunctional     = const True
     , isFunction       = const True
-    , getArgumentSorts = const []
+    , getArgumentSorts = const [] 
     , getResultSort    = const $ testSort "*"
     }
 
