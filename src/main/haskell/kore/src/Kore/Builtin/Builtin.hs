@@ -2,7 +2,7 @@
 Module      : Kore.Builtin.Builtin
 Description : Built-in sort, symbol, and pattern verifiers
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
 Stability   : experimental
 Portability : portable

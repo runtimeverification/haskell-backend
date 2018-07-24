@@ -2,7 +2,7 @@
 Module      : Data.Kore.SMT.SMT
 Description : Basic SMT interface.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : phillip.harris@runtimeverification.com
 Stability   : experimental
 Portability : portable

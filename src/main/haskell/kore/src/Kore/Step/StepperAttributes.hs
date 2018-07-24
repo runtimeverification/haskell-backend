@@ -2,7 +2,7 @@
 Module      : Kore.Step.StepperAttributes
 Description : Attributes used for step execution
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable

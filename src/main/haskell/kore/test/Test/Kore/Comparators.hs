@@ -4,7 +4,7 @@ Module      : Test.Kore.Comparators
 Description : Declares various data types involved in testing as instances of
               the 'EqualWithExplanation' class.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable

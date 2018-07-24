@@ -2,7 +2,7 @@
 Module      : Kore.Builtin.Map
 Description : Built-in arbitrary-precision integer sort
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
 Stability   : experimental
 Portability : portable

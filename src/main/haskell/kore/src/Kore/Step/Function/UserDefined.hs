@@ -2,7 +2,7 @@
 Module      : Kore.Step.Function.UserDefined
 Description : Evaluates user-defined functions in a pattern.
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
