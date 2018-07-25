@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-|
 Module      : Data.Kore.Step.Step
 Description : Single and multiple step execution
@@ -19,8 +20,8 @@ import           Data.Kore.AST.MetaOrObject            (MetaOrObject)
 import           Data.Kore.IndexedModule.MetadataTools (MetadataTools)
 import           Data.Kore.Step.BaseStep               (AxiomPattern,
                                                         StepProof (..),
-                                                        StepperConfiguration,
                                                         stepWithAxiom)
+import qualified Data.Kore.Step.ExpandedPattern        as ExpandedPattern
 import           Data.Kore.Step.StepperAttributes
 import           Data.Kore.Variables.Fresh.IntCounter  (IntCounter)
 
@@ -28,75 +29,74 @@ data MaxStepCount
     = MaxStepCount Integer
     | AnyStepCount
 
-{--| 'step' executes a single rewriting step using the provided axioms.
+{-| 'step' executes a single rewriting step using the provided axioms.
 
 Does not handle properly various cases, among which:
 sigma(x, y) => y    vs    a
---}
+-}
 step
-    :: MetaOrObject level
+    ::  ( MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -- ^ Functions yielding metadata for pattern heads.
-    -> StepperConfiguration level
+    -> ExpandedPattern.CommonExpandedPattern level
     -- ^ Configuration being rewritten.
     -> [AxiomPattern level]
     -- ^ Rewriting axioms
-    -> [IntCounter (StepperConfiguration level, StepProof level)]
-step metadataTools configuration axioms =
-    rights $ map (stepWithAxiom metadataTools configuration) axioms
+    ->  [ IntCounter
+            (ExpandedPattern.CommonExpandedPattern level, StepProof level)
+        ]
+step tools configuration axioms =
+    rights $ map (stepWithAxiom tools configuration) axioms
 
-{--| 'pickFirstStepper' rewrites a configuration using the provided axioms
+{-| 'pickFirstStepper' rewrites a configuration using the provided axioms
 until it cannot be rewritten anymore or until the step limit has been reached.
 Whenever multiple axioms can be applied, it picks the first one and continues
 with that.
 
 Does not handle properly various cases, among which:
 sigma(x, y) => y    vs    a
---}
+-}
 pickFirstStepper
-    :: MetaOrObject level
+    ::  ( MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -- ^ Functions yielding metadata for pattern heads.
     -> MaxStepCount
     -- ^ The maximum number of steps to be made
-    -> StepperConfiguration level
+    -> ExpandedPattern.CommonExpandedPattern level
     -- ^ Configuration being rewritten.
     -> [AxiomPattern level]
     -- ^ Rewriting axioms
-    -> IntCounter (StepperConfiguration level, StepProof level)
+    -> IntCounter (ExpandedPattern.CommonExpandedPattern level, StepProof level)
 pickFirstStepper _ (MaxStepCount 0) stepperConfiguration _ =
     return (stepperConfiguration, StepProofCombined [])
 pickFirstStepper _ (MaxStepCount n) _ _ | n < 0 =
     error ("Negative MaxStepCount: " ++ show n)
 pickFirstStepper
-    metadataTools (MaxStepCount maxStep) stepperConfiguration axioms
+    tools (MaxStepCount maxStep) stepperConfiguration axioms
   =
     pickFirstStepperSkipMaxCheck
-        metadataTools (MaxStepCount (maxStep - 1)) stepperConfiguration axioms
-pickFirstStepper metadataTools AnyStepCount stepperConfiguration axioms =
+        tools (MaxStepCount (maxStep - 1)) stepperConfiguration axioms
+pickFirstStepper tools AnyStepCount stepperConfiguration axioms =
     pickFirstStepperSkipMaxCheck
-        metadataTools AnyStepCount stepperConfiguration axioms
+        tools AnyStepCount stepperConfiguration axioms
 
 pickFirstStepperSkipMaxCheck
-    :: MetaOrObject level
+    ::  ( MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -- ^ Functions yielding metadata for pattern heads.
     -> MaxStepCount
     -- ^ The maximum number of steps to be made
-    -> StepperConfiguration level
+    -> ExpandedPattern.CommonExpandedPattern level
     -- ^ Configuration being rewritten.
     -> [AxiomPattern level]
     -- ^ Rewriting axioms
-    -> IntCounter (StepperConfiguration level, StepProof level)
+    -> IntCounter (ExpandedPattern.CommonExpandedPattern level, StepProof level)
 pickFirstStepperSkipMaxCheck
-    metadataTools maxStepCount stepperConfiguration axioms
+    tools maxStepCount stepperConfiguration axioms
   =
-    case step metadataTools stepperConfiguration axioms of
+    case step tools stepperConfiguration axioms of
         [] -> return (stepperConfiguration, StepProofCombined [])
         first : _ -> do
             (nextConfiguration, nextProof) <- first
             (finalConfiguration, finalProof) <-
                 pickFirstStepper
-                    metadataTools maxStepCount nextConfiguration axioms
+                    tools maxStepCount nextConfiguration axioms
             return
                 (finalConfiguration, StepProofCombined [nextProof, finalProof])

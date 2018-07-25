@@ -6,13 +6,14 @@ module Test.Data.Kore.Step.BaseStep (test_baseStep) where
 import           Test.Tasty                            (TestTree)
 import           Test.Tasty.HUnit                      (testCase)
 
+import           Data.Reflection                       (give)
+
 import           Test.Data.Kore.Comparators            ()
 
 import           Data.Kore.AST.Common                  (Application (..),
                                                         AstLocation (..),
                                                         Id (..),
                                                         Pattern (ApplicationPattern),
-                                                        Sort,
                                                         SymbolOrAlias (..),
                                                         Variable)
 import           Data.Kore.AST.MetaOrObject
@@ -24,9 +25,13 @@ import           Data.Kore.Error
 import           Data.Kore.IndexedModule.MetadataTools (MetadataTools (..),
                                                         SortTools (..))
 import           Data.Kore.MetaML.AST                  (CommonMetaPattern)
+import           Data.Kore.Predicate.Predicate         (CommonPredicate,
+                                                        makeEqualsPredicate,
+                                                        makeTruePredicate)
 import           Data.Kore.Step.BaseStep
-import           Data.Kore.Step.Condition.Condition    (ConditionSort (..))
 import           Data.Kore.Step.Error
+import           Data.Kore.Step.ExpandedPattern        as ExpandedPattern (ExpandedPattern (..))
+import           Data.Kore.Step.ExpandedPattern        (CommonExpandedPattern)
 import           Data.Kore.Step.StepperAttributes      (StepperAttributes (..))
 import           Data.Kore.Unification.Error
 import           Data.Kore.Unification.Unifier         (FunctionalProof (..),
@@ -40,18 +45,10 @@ test_baseStep =
     [ testCase "Substituting a variable."
         (assertEqualWithExplanation ""
             (Right
-                ( StepperConfiguration
-                    { stepperConfigurationPattern =
-                        asPureMetaPattern (v1 PatternSort)
-                    , stepperConfigurationConditionSort =
-                        conditionSort SortSort
-                    , stepperConfigurationCondition =
-                        asPureMetaPattern
-                            (metaAnd
-                                SortSort
-                                (metaTop SortSort)
-                                (metaTop SortSort)
-                            )
+                ( ExpandedPattern
+                    { term = asPureMetaPattern (v1 PatternSort)
+                    , predicate = makeTruePredicate
+                    , substitution = []
                     }
                 , StepProofCombined
                     [ StepProofVariableRenamings
@@ -69,12 +66,10 @@ test_baseStep =
             )
             (runStep
                 mockMetadataTools
-                StepperConfiguration
-                    { stepperConfigurationPattern =
-                        asPureMetaPattern (v1 PatternSort)
-                    , stepperConfigurationConditionSort =
-                        conditionSort SortSort
-                    , stepperConfigurationCondition = top SortSort
+                ExpandedPattern
+                    { term = asPureMetaPattern (v1 PatternSort)
+                    , predicate = makeTruePredicate
+                    , substitution = []
                     }
                 AxiomPattern
                     { axiomPatternLeft = asPureMetaPattern (x1 PatternSort)
@@ -85,18 +80,10 @@ test_baseStep =
     , testCase "Substituting a variable with a larger one."
         (assertEqualWithExplanation ""
             (Right
-                ( StepperConfiguration
-                    { stepperConfigurationPattern =
-                        asPureMetaPattern (y1 PatternSort)
-                    , stepperConfigurationConditionSort =
-                        conditionSort SortSort
-                    , stepperConfigurationCondition =
-                        asPureMetaPattern
-                            (metaAnd
-                                SortSort
-                                (metaTop SortSort)
-                                (metaTop SortSort)
-                            )
+                ( ExpandedPattern
+                    { term = asPureMetaPattern (y1 PatternSort)
+                    , predicate = makeTruePredicate
+                    , substitution = []
                     }
                 , StepProofCombined
                     [ StepProofVariableRenamings
@@ -114,12 +101,10 @@ test_baseStep =
             )
             (runStep
                 mockMetadataTools
-                StepperConfiguration
-                    { stepperConfigurationPattern =
-                        asPureMetaPattern (y1 PatternSort)
-                    , stepperConfigurationConditionSort =
-                        conditionSort SortSort
-                    , stepperConfigurationCondition = top SortSort
+                ExpandedPattern
+                    { term = asPureMetaPattern (y1 PatternSort)
+                    , predicate = makeTruePredicate
+                    , substitution = []
                     }
                 AxiomPattern
                     { axiomPatternLeft = asPureMetaPattern (x1 PatternSort)
@@ -130,18 +115,10 @@ test_baseStep =
     , testCase "Substituting a variable with itself."
         (assertEqualWithExplanation ""
             (Right
-                ( StepperConfiguration
-                    { stepperConfigurationPattern =
-                        asPureMetaPattern (v1 PatternSort)
-                    , stepperConfigurationConditionSort =
-                        conditionSort SortSort
-                    , stepperConfigurationCondition =
-                        asPureMetaPattern
-                            (metaAnd
-                                SortSort
-                                (metaTop SortSort)
-                                (metaTop SortSort)
-                            )
+                ( ExpandedPattern
+                    { term = asPureMetaPattern (v1 PatternSort)
+                    , predicate = makeTruePredicate
+                    , substitution = []
                     }
                 , StepProofCombined
                     [ StepProofVariableRenamings
@@ -170,13 +147,12 @@ test_baseStep =
             )
             (runStep
                 mockMetadataTools
-                StepperConfiguration
-                    { stepperConfigurationPattern =
+                ExpandedPattern
+                    { term =
                         asPureMetaPattern
                             (metaSigma (v1 PatternSort) (v1 PatternSort))
-                    , stepperConfigurationConditionSort =
-                        conditionSort SortSort
-                    , stepperConfigurationCondition = top SortSort
+                    , predicate = makeTruePredicate
+                    , substitution = []
                     }
                 AxiomPattern
                     { axiomPatternLeft =
@@ -191,24 +167,16 @@ test_baseStep =
     , testCase "Merging configuration patterns."
         (assertEqualWithExplanation ""
             (Right
-                ( StepperConfiguration
-                    { stepperConfigurationPattern =
+                ( ExpandedPattern
+                    { term =
                         asPureMetaPattern
                             (metaF (b1 PatternSort))
-                    , stepperConfigurationConditionSort =
-                        conditionSort SortSort
-                    , stepperConfigurationCondition =
-                        asPureMetaPattern
-                            (metaAnd
-                                SortSort
-                                (metaTop SortSort)
-                                (metaEquals
-                                    (ResultSort SortSort)
-                                    PatternSort
-                                    (a1 PatternSort)
-                                    (metaF (b1 PatternSort))
-                                )
+                    , predicate = makeTruePredicate
+                    , substitution =
+                        [   ( asVariable (a1 PatternSort)
+                            , asPureMetaPattern (metaF (b1 PatternSort))
                             )
+                        ]
                     }
                 , StepProofCombined
                     [ StepProofVariableRenamings
@@ -243,16 +211,15 @@ test_baseStep =
             )
             (runStep
                 mockMetadataTools
-                StepperConfiguration
-                    { stepperConfigurationPattern =
+                ExpandedPattern
+                    { term =
                         asPureMetaPattern
                             (metaSigma
                                 (a1 PatternSort)
                                 (metaF (b1 PatternSort))
                             )
-                    , stepperConfigurationConditionSort =
-                        conditionSort SortSort
-                    , stepperConfigurationCondition = top SortSort
+                    , predicate = makeTruePredicate
+                    , substitution = []
                     }
                 AxiomPattern
                     { axiomPatternLeft =
@@ -267,24 +234,14 @@ test_baseStep =
     , testCase "Substitution with symbol matching."
         (assertEqualWithExplanation ""
             (Right
-                ( StepperConfiguration
-                    { stepperConfigurationPattern =
-                        asPureMetaPattern
-                            (metaF (b1 PatternSort))
-                    , stepperConfigurationConditionSort =
-                        conditionSort SortSort
-                    , stepperConfigurationCondition =
-                        asPureMetaPattern
-                            (metaAnd
-                                SortSort
-                                (metaTop SortSort)
-                                (metaEquals
-                                    (ResultSort SortSort)
-                                    PatternSort
-                                    (a1 PatternSort)
-                                    (b1 PatternSort)
-                                )
+                ( ExpandedPattern
+                    { term = asPureMetaPattern (metaF (b1 PatternSort))
+                    , predicate = makeTruePredicate
+                    , substitution =
+                        [   ( asVariable (a1 PatternSort)
+                            , asPureMetaPattern (b1 PatternSort)
                             )
+                        ]
                     }
                 , StepProofCombined
                     [ StepProofVariableRenamings
@@ -323,16 +280,15 @@ test_baseStep =
             )
             (runStep
                 mockMetadataTools
-                StepperConfiguration
-                    { stepperConfigurationPattern =
+                ExpandedPattern
+                    { term =
                         asPureMetaPattern
                             (metaSigma
                                 (metaF (a1 PatternSort))
                                 (metaF (b1 PatternSort))
                             )
-                    , stepperConfigurationConditionSort =
-                        conditionSort SortSort
-                    , stepperConfigurationCondition = top SortSort
+                    , predicate = makeTruePredicate
+                    , substitution = []
                     }
                 AxiomPattern
                     { axiomPatternLeft =
@@ -358,24 +314,16 @@ test_baseStep =
     , testCase "Merge multiple variables."
         (assertEqualWithExplanation ""
             (Right
-                ( StepperConfiguration
-                    { stepperConfigurationPattern =
+                ( ExpandedPattern
+                    { term =
                         asPureMetaPattern
                             (metaSigma (b1 PatternSort) (b1 PatternSort))
-                    , stepperConfigurationConditionSort =
-                        conditionSort SortSort
-                    , stepperConfigurationCondition =
-                        asPureMetaPattern
-                            (metaAnd
-                                SortSort
-                                (metaTop SortSort)
-                                (metaEquals
-                                    (ResultSort SortSort)
-                                    PatternSort
-                                    (a1 PatternSort)
-                                    (b1 PatternSort)
-                                )
+                    , predicate = makeTruePredicate
+                    , substitution =
+                        [   ( asVariable (a1 PatternSort)
+                            , asPureMetaPattern (b1 PatternSort)
                             )
+                        ]
                     }
                 , StepProofCombined
                     [ StepProofVariableRenamings
@@ -434,8 +382,8 @@ test_baseStep =
             )
             (runStep
                 mockMetadataTools
-                StepperConfiguration
-                    { stepperConfigurationPattern =
+                ExpandedPattern
+                    { term =
                         asPureMetaPattern
                             (metaSigma
                                 (metaSigma
@@ -447,9 +395,8 @@ test_baseStep =
                                     (a1 PatternSort)
                                 )
                             )
-                    , stepperConfigurationConditionSort =
-                        conditionSort SortSort
-                    , stepperConfigurationCondition = top SortSort
+                    , predicate = makeTruePredicate
+                    , substitution = []
                     }
                 AxiomPattern
                     { axiomPatternLeft =
@@ -473,23 +420,16 @@ test_baseStep =
     , testCase "Rename quantified rhs variables."
         (assertEqualWithExplanation ""
             (Right
-                ( StepperConfiguration
-                    { stepperConfigurationPattern =
+                ( ExpandedPattern
+                    { term =
                         asPureMetaPattern
                             (metaExists
                                 PatternSort
                                 (var_0 PatternSort)
                                 (a1 PatternSort)
                             )
-                    , stepperConfigurationConditionSort =
-                        conditionSort SortSort
-                    , stepperConfigurationCondition =
-                        asPureMetaPattern
-                            (metaAnd
-                                SortSort
-                                (metaTop SortSort)
-                                (metaTop SortSort)
-                            )
+                    , predicate = makeTruePredicate
+                    , substitution = []
                     }
                 , StepProofCombined
                     [ StepProofVariableRenamings
@@ -510,12 +450,10 @@ test_baseStep =
             )
             (runStep
                 mockMetadataTools
-                StepperConfiguration
-                    { stepperConfigurationPattern =
-                        asPureMetaPattern (a1 PatternSort)
-                    , stepperConfigurationConditionSort =
-                        conditionSort SortSort
-                    , stepperConfigurationCondition = top SortSort
+                ExpandedPattern
+                    { term = asPureMetaPattern (a1 PatternSort)
+                    , predicate = makeTruePredicate
+                    , substitution = []
                     }
                 AxiomPattern
                     { axiomPatternLeft =
@@ -537,16 +475,15 @@ test_baseStep =
             (Left $ StepErrorUnification $ ConstructorClash gSymbol fSymbol)
             (runStep
                 mockMetadataTools
-                StepperConfiguration
-                    { stepperConfigurationPattern =
+                ExpandedPattern
+                    { term =
                         asPureMetaPattern
                             ( metaSigma
                                 (metaG (a1 PatternSort))
                                 (metaF (b1 PatternSort))
                             )
-                    , stepperConfigurationConditionSort =
-                        conditionSort SortSort
-                    , stepperConfigurationCondition = top SortSort
+                    , predicate = makeTruePredicate
+                    , substitution = []
                     }
                 AxiomPattern
                     { axiomPatternLeft =
@@ -570,8 +507,8 @@ test_baseStep =
             )
             (runStep
                 mockMetadataTools
-                StepperConfiguration
-                    { stepperConfigurationPattern =
+                ExpandedPattern
+                    { term =
                         asPureMetaPattern
                             ( metaSigma
                                 (metaSigma
@@ -582,9 +519,8 @@ test_baseStep =
                                     (a1 PatternSort) (b1 PatternSort)
                                 )
                             )
-                    , stepperConfigurationConditionSort =
-                        conditionSort SortSort
-                    , stepperConfigurationCondition = top SortSort
+                    , predicate = makeTruePredicate
+                    , substitution = []
                     }
                 AxiomPattern
                     { axiomPatternLeft =
@@ -605,10 +541,346 @@ test_baseStep =
                     }
             )
         )
+    -- sigma(sigma(x, x), y) => sigma(x, y)
+    -- vs
+    -- sigma(sigma(a, f(b)), a)
+    -- Expected: sigma(f(b), f(b)) and a=f(b)
+    , let
+        fOfB = metaF (b1 PatternSort)
+      in
+        testCase "Substitution normalization."
+            (assertEqualWithExplanation ""
+                (Right
+                    ( ExpandedPattern
+                        { term = asPureMetaPattern (metaSigma fOfB fOfB)
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            [   ( asVariable (a1 PatternSort)
+                                , asPureMetaPattern fOfB
+                                )
+                            ]
+                        }
+                    , StepProofCombined
+                        [ StepProofVariableRenamings
+                            [ variableRenaming
+                                (x1 PatternSort) (var_0 PatternSort)
+                            , variableRenaming
+                                (y1 PatternSort) (var_1 PatternSort)
+                            ]
+                        , StepProofUnification
+                            ( CombinedUnificationProof
+                                [ AndDistributionAndConstraintLifting
+                                    sigmaSymbol
+                                    [ AndDistributionAndConstraintLifting
+                                        sigmaSymbol
+                                        [ proposition_5_24_3
+                                            [ functionalVariable (a1 PatternSort)
+                                            ]
+                                            (var_0 PatternSort)
+                                            (a1 PatternSort)
+                                        , proposition_5_24_3
+                                            [ FunctionalHead fSymbol
+                                            , functionalVariable (b1 PatternSort)
+                                            ]
+                                            (var_0 PatternSort)
+                                            fOfB
+                                        ]
+                                    , proposition_5_24_3
+                                        [ functionalVariable (a1 PatternSort)
+                                        ]
+                                        (var_1 PatternSort)
+                                        (a1 PatternSort)
+                                    ]
+                                , proposition_5_24_3
+                                    [ FunctionalHead fSymbol
+                                    , functionalVariable (b1 PatternSort)
+                                    ]
+                                    (a1 PatternSort)
+                                    fOfB
+                                ]
+                            )
+                        ]
+                    )
+                )
+                (runStep
+                    mockMetadataTools
+                    ExpandedPattern
+                        { term =
+                            asPureMetaPattern
+                                (metaSigma
+                                    (metaSigma
+                                        (a1 PatternSort)
+                                        fOfB
+                                    )
+                                    (a1 PatternSort)
+                                )
+                        , predicate = makeTruePredicate
+                        , substitution = []
+                        }
+                    AxiomPattern
+                        { axiomPatternLeft =
+                            asPureMetaPattern
+                                (metaSigma
+                                    (metaSigma
+                                        (x1 PatternSort) (x1 PatternSort)
+                                    )
+                                    (y1 PatternSort)
+                                )
+                        , axiomPatternRight =
+                            asPureMetaPattern
+                                (metaSigma (x1 PatternSort) (y1 PatternSort))
+                        }
+                )
+            )
+    -- sigma(sigma(x, x), y) => sigma(x, y)
+    -- vs
+    -- sigma(sigma(a, f(b)), a) and a=f(c)
+    -- Expected: sigma(f(b), f(b)) and a=f(b), b=c
+    , let
+        fOfB = metaF (b1 PatternSort)
+        fOfC= metaF (c1 PatternSort)
+      in
+        testCase "Merging substitution with existing one."
+            (assertEqualWithExplanation ""
+                (Right
+                    ( ExpandedPattern
+                        { term = asPureMetaPattern (metaSigma fOfC fOfC)
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            [   ( asVariable (a1 PatternSort)
+                                , asPureMetaPattern fOfC
+                                )
+                            ,   ( asVariable (b1 PatternSort)
+                                , asPureMetaPattern (c1 PatternSort)
+                                )
+                            ]
+                        }
+                    , StepProofCombined
+                        [ StepProofVariableRenamings
+                            [ variableRenaming
+                                (x1 PatternSort) (var_0 PatternSort)
+                            , variableRenaming
+                                (y1 PatternSort) (var_1 PatternSort)
+                            ]
+                        , StepProofUnification
+                            ( CombinedUnificationProof
+                                [ AndDistributionAndConstraintLifting
+                                    sigmaSymbol
+                                    [ AndDistributionAndConstraintLifting
+                                        sigmaSymbol
+                                        [ proposition_5_24_3
+                                            [ functionalVariable (a1 PatternSort)
+                                            ]
+                                            (var_0 PatternSort)
+                                            (a1 PatternSort)
+                                        , proposition_5_24_3
+                                            [ FunctionalHead fSymbol
+                                            , functionalVariable (b1 PatternSort)
+                                            ]
+                                            (var_0 PatternSort)
+                                            fOfB
+                                        ]
+                                    , proposition_5_24_3
+                                        [ functionalVariable (a1 PatternSort)
+                                        ]
+                                        (var_1 PatternSort)
+                                        (a1 PatternSort)
+                                    ]
+                                , proposition_5_24_3
+                                    [ FunctionalHead fSymbol
+                                    , functionalVariable (b1 PatternSort)
+                                    ]
+                                    (a1 PatternSort)
+                                    fOfB
+                                ]
+                            )
+                        ]
+                    )
+                )
+                (runStep
+                    mockMetadataTools
+                    ExpandedPattern
+                        { term =
+                            asPureMetaPattern
+                                (metaSigma
+                                    (metaSigma
+                                        (a1 PatternSort)
+                                        fOfB
+                                    )
+                                    (a1 PatternSort)
+                                )
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            [   ( asVariable (a1 PatternSort)
+                                , asPureMetaPattern fOfC
+                                )
+                            ]
+                        }
+                    AxiomPattern
+                        { axiomPatternLeft =
+                            asPureMetaPattern
+                                (metaSigma
+                                    (metaSigma
+                                        (x1 PatternSort) (x1 PatternSort)
+                                    )
+                                    (y1 PatternSort)
+                                )
+                        , axiomPatternRight =
+                            asPureMetaPattern
+                                (metaSigma (x1 PatternSort) (y1 PatternSort))
+                        }
+                )
+            )
+    -- x => x
+    -- vs
+    -- a and g(a)=f(a)
+    -- Expected: y1 and g(a)=f(a)
+    , testCase "Preserving initial condition."
+        (assertEqualWithExplanation ""
+            (Right
+                ( ExpandedPattern
+                    { term = asPureMetaPattern (a1 PatternSort)
+                    , predicate =
+                        makeEquals
+                            (metaG (a1 PatternSort))
+                            (metaF (a1 PatternSort))
+                    , substitution = []
+                    }
+                , StepProofCombined
+                    [ StepProofVariableRenamings
+                        [ variableRenaming
+                            (x1 PatternSort) (var_0 PatternSort)
+                        ]
+                    , StepProofUnification
+                        ( proposition_5_24_3
+                            [ functionalVariable (a1 PatternSort) ]
+                            (var_0 PatternSort)
+                            (a1 PatternSort)
+                        )
+                    ]
+                )
+            )
+            (runStep
+                mockMetadataTools
+                ExpandedPattern
+                    { term = asPureMetaPattern (a1 PatternSort)
+                    , predicate =
+                        makeEquals
+                            (metaG (a1 PatternSort))
+                            (metaF (a1 PatternSort))
+                    , substitution = []
+                    }
+                AxiomPattern
+                    { axiomPatternLeft = asPureMetaPattern (x1 PatternSort)
+                    , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
+                    }
+            )
+        )
+    -- sigma(sigma(x, x), y) => sigma(x, y)
+    -- vs
+    -- sigma(sigma(a, f(b)), a) and g(a)=f(a)
+    -- Expected: sigma(f(b), f(b)) and a=f(b) and and g(f(b))=f(f(b))
+    , let
+        fOfB = metaF (b1 PatternSort)
+      in
+        testCase "Substitution normalization."
+            (assertEqualWithExplanation ""
+                (Right
+                    ( ExpandedPattern
+                        { term = asPureMetaPattern (metaSigma fOfB fOfB)
+                        , predicate =
+                            makeEquals
+                                (metaG fOfB)
+                                (metaF fOfB)
+                        , substitution =
+                            [   ( asVariable (a1 PatternSort)
+                                , asPureMetaPattern fOfB
+                                )
+                            ]
+                        }
+                    , StepProofCombined
+                        [ StepProofVariableRenamings
+                            [ variableRenaming
+                                (x1 PatternSort) (var_0 PatternSort)
+                            , variableRenaming
+                                (y1 PatternSort) (var_1 PatternSort)
+                            ]
+                        , StepProofUnification
+                            ( CombinedUnificationProof
+                                [ AndDistributionAndConstraintLifting
+                                    sigmaSymbol
+                                    [ AndDistributionAndConstraintLifting
+                                        sigmaSymbol
+                                        [ proposition_5_24_3
+                                            [ functionalVariable (a1 PatternSort)
+                                            ]
+                                            (var_0 PatternSort)
+                                            (a1 PatternSort)
+                                        , proposition_5_24_3
+                                            [ FunctionalHead fSymbol
+                                            , functionalVariable (b1 PatternSort)
+                                            ]
+                                            (var_0 PatternSort)
+                                            fOfB
+                                        ]
+                                    , proposition_5_24_3
+                                        [ functionalVariable (a1 PatternSort)
+                                        ]
+                                        (var_1 PatternSort)
+                                        (a1 PatternSort)
+                                    ]
+                                , proposition_5_24_3
+                                    [ FunctionalHead fSymbol
+                                    , functionalVariable (b1 PatternSort)
+                                    ]
+                                    (a1 PatternSort)
+                                    fOfB
+                                ]
+                            )
+                        ]
+                    )
+                )
+                (runStep
+                    mockMetadataTools
+                    ExpandedPattern
+                        { term =
+                            asPureMetaPattern
+                                (metaSigma
+                                    (metaSigma
+                                        (a1 PatternSort)
+                                        fOfB
+                                    )
+                                    (a1 PatternSort)
+                                )
+                        , predicate =
+                            makeEquals
+                                (metaG (a1 PatternSort))
+                                (metaF (a1 PatternSort))
+                        , substitution = []
+                        }
+                    AxiomPattern
+                        { axiomPatternLeft =
+                            asPureMetaPattern
+                                (metaSigma
+                                    (metaSigma
+                                        (x1 PatternSort) (x1 PatternSort)
+                                    )
+                                    (y1 PatternSort)
+                                )
+                        , axiomPatternRight =
+                            asPureMetaPattern
+                                (metaSigma (x1 PatternSort) (y1 PatternSort))
+                        }
+                )
+            )
 
     -- TODO(virgil): add tests for these after we implement
     -- a => sigma(x, y) substitutions where a is a configuration variable
     -- and x, y are axiom variables.
+
+    -- TODO(virgil): Add tests for conditions generated by:
+    --           - unification
+    --           - merging predicates
 
     -- sigma(x, y) => y    vs    a
     -- sigma(x, sigma(y, z)) => sigma(x, sigma(y, z))    vs    sigma(y, a)
@@ -620,6 +892,8 @@ test_baseStep =
     a1 = metaVariable "#a1" AstLocationTest
     b1 :: MetaSort sort => sort -> MetaVariable sort
     b1 = metaVariable "#b1" AstLocationTest
+    c1 :: MetaSort sort => sort -> MetaVariable sort
+    c1 = metaVariable "#c1" AstLocationTest
     x1 :: MetaSort sort => sort -> MetaVariable sort
     x1 = metaVariable "#x1" AstLocationTest
     y1 :: MetaSort sort => sort -> MetaVariable sort
@@ -628,8 +902,6 @@ test_baseStep =
     var_0 = metaVariable "#var_0" AstLocationTest
     var_1 :: MetaSort sort => sort -> MetaVariable sort
     var_1 = metaVariable "#var_1" AstLocationTest
-    top :: MetaSort sort => sort -> CommonMetaPattern
-    top sort = asPureMetaPattern $ metaTop sort
     variableRenaming
         :: MetaSort sort
         => MetaVariable sort -> MetaVariable sort -> VariableRenaming Meta
@@ -639,12 +911,6 @@ test_baseStep =
             , variableRenamingRenamed =
                 ConfigurationVariable (asMetaVariable to)
             }
-    asPureMetaPattern
-        :: ProperPattern Meta sort patt => patt -> CommonMetaPattern
-    asPureMetaPattern patt =
-        case patternKoreToPure Meta (asAst patt) of
-            Left err  -> error (printError err)
-            Right pat -> pat
     functionalVariable
         :: MetaSort sort => MetaVariable sort -> FunctionalProof Meta Variable
     functionalVariable = FunctionalVariable . asMetaVariable
@@ -662,17 +928,11 @@ test_baseStep =
     identicalVariablesAssertion var =
         assertEqualWithExplanation ""
             (Right
-                ( StepperConfiguration
-                    { stepperConfigurationPattern =
+                ( ExpandedPattern
+                    { term =
                         asPureMetaPattern (var PatternSort)
-                    , stepperConfigurationConditionSort = conditionSort SortSort
-                    , stepperConfigurationCondition =
-                        asPureMetaPattern
-                            (metaAnd
-                                SortSort
-                                (metaTop SortSort)
-                                (metaTop SortSort)
-                            )
+                    , predicate = makeTruePredicate
+                    , substitution = []
                     }
                 , StepProofCombined
                     [ StepProofVariableRenamings
@@ -703,15 +963,15 @@ test_baseStep =
             )
             (runStep
                 mockMetadataTools
-                StepperConfiguration
-                    { stepperConfigurationPattern =
+                ExpandedPattern
+                    { term =
                         asPureMetaPattern
                             (metaSigma
                                 (var PatternSort)
                                 (var PatternSort)
                             )
-                    , stepperConfigurationConditionSort = conditionSort SortSort
-                    , stepperConfigurationCondition = top SortSort
+                    , predicate = makeTruePredicate
+                    , substitution = []
                     }
                 AxiomPattern
                     { axiomPatternLeft =
@@ -720,9 +980,6 @@ test_baseStep =
                     , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
                     }
             )
-
-conditionSort :: AsAst (Sort level) s => s -> ConditionSort level
-conditionSort sort = ConditionSort (asAst sort)
 
 mockStepperAttributes :: StepperAttributes
 mockStepperAttributes = StepperAttributes
@@ -742,6 +999,23 @@ mockMetadataTools = MetadataTools
     { attributes = const mockStepperAttributes
     , sortTools = mockSortTools
     }
+
+asPureMetaPattern
+    :: ProperPattern Meta sort patt => patt -> CommonMetaPattern
+asPureMetaPattern patt =
+    case patternKoreToPure Meta (asAst patt) of
+        Left err -> error (printError err)
+        Right p  -> p
+
+makeEquals
+    :: (ProperPattern Meta sort patt1, ProperPattern Meta sort patt2)
+    => patt1 -> patt2 -> CommonPredicate Meta
+makeEquals patt1 patt2 =
+    give (sortTools mockMetadataTools)
+        (makeEqualsPredicate
+            (asPureMetaPattern patt1)
+            (asPureMetaPattern patt2)
+        )
 
 sigmaSymbol :: SymbolOrAlias Meta
 sigmaSymbol = SymbolOrAlias
@@ -805,18 +1079,17 @@ metaG
     => p1 -> MetaG p1
 metaG = MetaG
 
-
 runStep
     :: MetaOrObject level
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
-    -> StepperConfiguration level
+    -> CommonExpandedPattern level
     -- ^left-hand-side of unification
     -> AxiomPattern level
     -> Either
         (StepError level Variable)
-        (StepperConfiguration level, StepProof level)
+        (CommonExpandedPattern level, StepProof level)
 runStep metadataTools configuration axiom =
-    case stepWithAxiom metadataTools configuration axiom of
+    case give metadataTools (stepWithAxiom metadataTools configuration axiom) of
         Left err            -> Left (fst (runIntCounter err 0))
         Right counterResult -> Right (fst (runIntCounter counterResult 0))

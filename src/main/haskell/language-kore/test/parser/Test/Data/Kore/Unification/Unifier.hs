@@ -18,7 +18,9 @@ import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.PureML
 import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTPrettyPrint
+import           Data.Kore.ASTUtils.SmartConstructors          (mkVar)
 import           Data.Kore.IndexedModule.MetadataTools
+import           Data.Kore.Predicate.Predicate                 (Predicate, makeTruePredicate)
 import           Data.Kore.Step.StepperAttributes              (StepperAttributes (..))
 import           Data.Kore.Unification.Error
 import           Data.Kore.Unification.UnifierImpl
@@ -26,6 +28,7 @@ import           Data.Kore.Unification.UnifierImpl
 import           Data.Fix
 import           Data.Function                                 (on)
 import           Data.List                                     (sortBy)
+import           Data.Reflection                               (give)
 
 s1, s2, s3 :: Sort Object
 s1 = simpleSort (SortName "s1")
@@ -218,6 +221,7 @@ unificationProcedureSuccess
     -> UnificationTerm Object
     -> UnificationTerm Object
     -> Substitution Object
+    -> Predicate Object Variable
     -> UnificationProof Object Variable
     -> TestTree
 unificationProcedureSuccess
@@ -225,20 +229,23 @@ unificationProcedureSuccess
     (UnificationTerm term1)
     (UnificationTerm term2)
     subst
+    predicate'
     proof
   = testCase
         message
         (assertEqualWithExplanation
             ""
-            (unificationSubstitution subst, proof)
-            (sortBy (compare `on` fst) subst', proof')
+            (unificationSubstitution subst, predicate', proof)
+            (sortBy (compare `on` fst) subst', pred', proof')
         )
   where
-    Right (subst', proof') =
-        unificationProcedure
-            tools
-            (extractPurePattern term1)
-            (extractPurePattern term2)
+    Right (subst', pred', proof') =
+        give tools
+            ( unificationProcedure
+                tools
+                (extractPurePattern term1)
+                (extractPurePattern term2)
+            )
 
 test_unification :: [TestTree]
 test_unification =
@@ -380,6 +387,7 @@ test_unification =
         [ ("a", applyS eg [expX])
         , ("x", applyS eg [expX])
         ]
+        makeTruePredicate
         (CombinedUnificationProof
             [ AndDistributionAndConstraintLifting
                 (symbolHead expBin)
@@ -410,6 +418,7 @@ test_unification =
         [ ("a", expY)
         , ("x", applyS expBin [expY, expA])
         ]
+        makeTruePredicate
         (CombinedUnificationProof
             [ AndDistributionAndConstraintLifting
                 (symbolHead expBin)
@@ -473,9 +482,50 @@ test_unification =
         (UnificationTerm bA)
         UnificationError
         -}
+    , testCase "Maps substitution variables"
+        (assertEqualWithExplanation ""
+            [(W "1", war' "2")]
+            (mapSubstitutionVariables showVar
+                [(V 1, var' 2)]
+            )
+        )
     ]
   where
     symbolHead symbol = getSentenceSymbolOrAliasHead symbol []
     var ps = case unFix (extractPurePattern ps) of
         VariablePattern v -> v
         _                 -> error "Expecting a variable"
+
+newtype V level = V Integer
+    deriving (Show, Eq, Ord)
+newtype W level = W String
+    deriving (Show, Eq, Ord)
+
+instance EqualWithExplanation (V level)
+  where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
+instance EqualWithExplanation (W level)
+  where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
+
+showVar :: V level -> W level
+showVar (V i) = W (show i)
+
+var' :: Integer -> PureMLPattern Meta V
+var' i = give mockSortTools' (mkVar (V i))
+
+war' :: String -> PureMLPattern Meta W
+war' s = give mockSortTools' (mkVar (W s))
+
+mockSortTools' :: SortTools Meta
+mockSortTools' = SortTools
+    { getArgumentSorts = const [sortVar, sortVar]
+    , getResultSort = const sortVar
+    }
+
+sortVar :: Sort level
+sortVar = SortVariableSort (SortVariable (Id "#a" AstLocationTest))

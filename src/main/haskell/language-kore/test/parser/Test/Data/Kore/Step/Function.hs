@@ -2,35 +2,41 @@ module Test.Data.Kore.Step.Function (mockFunctionEvaluator) where
 
 import           Test.Data.Kore.Comparators           ()
 
+import           Data.Kore.AST.MetaOrObject           (MetaOrObject)
 import           Data.Kore.AST.PureML                 (CommonPurePattern)
-import           Data.Kore.Step.Condition.Condition
-import           Data.Kore.Step.Function.Data         (CommonPurePatternFunctionEvaluator (..),
-                                                       FunctionResult (..),
-                                                       FunctionResultProof (..))
+import           Data.Kore.Predicate.Predicate        (makeTruePredicate)
+import           Data.Kore.Step.ExpandedPattern       as ExpandedPattern (ExpandedPattern (..))
+import           Data.Kore.Step.ExpandedPattern       (CommonExpandedPattern)
+import           Data.Kore.Step.Function.Data         (CommonPurePatternFunctionEvaluator,
+                                                       FunctionResultProof (..),
+                                                       PureMLPatternFunctionEvaluator (..))
 import           Data.Kore.Variables.Fresh.IntCounter
 
 mockFunctionEvaluator
-    ::  [   ( CommonPurePattern level
-            , (FunctionResult level, FunctionResultProof level)
+    :: MetaOrObject level
+    =>  [   ( CommonPurePattern level
+            , (CommonExpandedPattern level, FunctionResultProof level)
             )
         ]
     -> CommonPurePatternFunctionEvaluator level
 mockFunctionEvaluator values =
-    CommonPurePatternFunctionEvaluator
+    PureMLPatternFunctionEvaluator
         (mockFunctionEvaluatorHelper values)
 
 mockFunctionEvaluatorHelper
-    ::  [   ( CommonPurePattern level
-            , (FunctionResult level, FunctionResultProof level)
+    :: MetaOrObject level
+    =>  [   ( CommonPurePattern level
+            , (CommonExpandedPattern level, FunctionResultProof level)
             )
         ]
     -> CommonPurePattern level
-    -> IntCounter (FunctionResult level, FunctionResultProof level)
+    -> IntCounter (CommonExpandedPattern level, FunctionResultProof level)
 mockFunctionEvaluatorHelper [] patt =
     return
-        ( FunctionResult
-            { functionResultPattern   = patt
-            , functionResultCondition = ConditionTrue
+        ( ExpandedPattern
+            { term   = patt
+            , predicate = makeTruePredicate
+            , substitution = []
             }
         , FunctionResultProof
         )

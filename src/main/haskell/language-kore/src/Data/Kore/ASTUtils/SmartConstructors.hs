@@ -423,7 +423,7 @@ mkRewrites
 mkRewrites a b = ensureSortAgreement $ Rewrites_ fixmeSort a b
 
 mkTop
-    :: (MetaOrObject level, Given (SortTools level))
+    :: MetaOrObject level
     => PureMLPattern level var
 mkTop = Top_ flexibleSort
 

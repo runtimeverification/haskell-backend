@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-|
 Module      : Data.Kore.Unification.UnifierImpl
 Description : Datastructures and functionality for performing unification on
@@ -10,19 +11,22 @@ Portability : portable
 -}
 module Data.Kore.Unification.UnifierImpl where
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.MLPatterns
-import           Data.Kore.AST.PureML
-import           Data.Kore.FixTraversals
-import           Data.Kore.IndexedModule.MetadataTools
-import           Data.Kore.Step.StepperAttributes
-import           Data.Kore.Unification.Error
-
 import           Control.Monad                         (foldM)
 import           Data.Fix
 import           Data.Function                         (on)
 import           Data.List                             (groupBy, partition,
                                                         sortBy)
+
+import           Data.Kore.AST.Common
+import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.MLPatterns
+import           Data.Kore.AST.PureML
+import           Data.Kore.FixTraversals
+import           Data.Kore.IndexedModule.MetadataTools
+import           Data.Kore.Predicate.Predicate         (Predicate,
+                                                        makeTruePredicate)
+import           Data.Kore.Step.StepperAttributes
+import           Data.Kore.Unification.Error
 
 type UnificationSubstitution level variable
     = [(variable level, PureMLPattern level variable)]
@@ -35,6 +39,26 @@ data UnificationSolution level variable = UnificationSolution
     , unificationSolutionConstraints :: !(UnificationSubstitution level variable)
     }
   deriving (Eq, Show)
+
+-- |'mapSubstitutionVariables' changes all the variables in the substitution
+-- with the given function.
+mapSubstitutionVariables
+    :: (variableFrom level -> variableTo level)
+    -> UnificationSubstitution level variableFrom
+    -> UnificationSubstitution level variableTo
+mapSubstitutionVariables variableMapper =
+    map (mapVariable variableMapper)
+  where
+    mapVariable
+        :: (variableFrom level -> variableTo level)
+        -> (variableFrom level, PureMLPattern level variableFrom)
+        -> (variableTo level, PureMLPattern level variableTo)
+    mapVariable
+        mapper
+        (variable, patt)
+      =
+        (mapper variable, mapPatternVariables mapper patt)
+
 
 -- |'unificationSolutionToPurePattern' packages an unification solution into
 -- a 'CommonPurePattern' by transforming the constraints into a conjunction of
@@ -395,12 +419,13 @@ instance Monoid (UnificationProof level variable) where
     mappend proof1 proof2 = CombinedUnificationProof [proof1, proof2]
     mconcat = CombinedUnificationProof
 
--- Takes a potentially non-normalized substitution,
+-- |Takes a potentially non-normalized substitution,
 -- and if it contains multiple assignments to the same variable,
 -- it solves all such assignments.
 -- As new assignments may be produced during the solving process,
--- `normalizeSubstitution` recursively calls itself until it stabilizes.
-normalizeSubstitution
+-- `normalizeSubstitutionDuplication` recursively calls itself until it
+-- stabilizes.
+normalizeSubstitutionDuplication
     :: (SortedVariable variable, Ord (variable level))
     => MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
@@ -409,14 +434,14 @@ normalizeSubstitution
         ( UnificationSubstitution level variable
         , UnificationProof level variable
         )
-normalizeSubstitution tools subst =
+normalizeSubstitutionDuplication tools subst =
     if null nonSingletonSubstitutions
         then return (subst, EmptyUnificationProof)
         else do
             (subst', proof') <- mconcat <$>
                 mapM (solveGroupedSubstitution tools) nonSingletonSubstitutions
             (finalSubst, proof) <-
-                normalizeSubstitution tools
+                normalizeSubstitutionDuplication tools
                     (concat singletonSubstitutions
                      ++ subst'
                     )
@@ -439,25 +464,33 @@ normalizeSubstitution tools subst =
 -- If successful, it also produces a proof of how the substitution was obtained.
 -- If failing, it gives a 'UnificationError' reason for the failure.
 unificationProcedure
-    :: (SortedVariable variable, Ord (variable level))
+    ::  ( SortedVariable variable
+        , Ord (variable level)
+        , MetaOrObject level)
     => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
     -> PureMLPattern level variable
     -- ^left-hand-side of unification
     -> PureMLPattern level variable
     -> Either
+        -- TODO: Consider using a false predicate instead of a Left error
         (UnificationError level)
-        (UnificationSubstitution level variable, UnificationProof level variable)
+        ( UnificationSubstitution level variable
+        , Predicate level variable
+        , UnificationProof level variable
+        )
 unificationProcedure tools p1 p2
     | p1Sort /= p2Sort =
         Left (SortClash p1Sort p2Sort)
     | otherwise = do
         (solution, proof) <- simplifyAnd tools conjunct
         (normSubst, normProof) <-
-            normalizeSubstitution
+            normalizeSubstitutionDuplication
                 tools (unificationSolutionConstraints solution)
         return
             ( normSubst
+            -- TODO: Put something sensible here.
+            , makeTruePredicate
             , simplifyUnificationProof
                 (CombinedUnificationProof [proof, normProof])
             )
