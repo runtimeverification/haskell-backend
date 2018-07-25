@@ -11,13 +11,14 @@ import           Data.Kore.AST.Common                  (AstLocation (..))
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML                  (CommonPurePattern)
 import           Data.Kore.AST.PureToKore              (patternKoreToPure)
+import           Data.Kore.ASTHelpers                  (ApplicationSorts (..))
 import           Data.Kore.ASTUtils.SmartConstructors  (mkAnd, mkEquals, mkIff,
                                                         mkImplies, mkNot, mkOr)
 import           Data.Kore.Building.AsAst
 import           Data.Kore.Building.Patterns
 import           Data.Kore.Building.Sorts
 import           Data.Kore.Error
-import           Data.Kore.IndexedModule.MetadataTools (SortTools (..))
+import           Data.Kore.IndexedModule.MetadataTools (SortTools)
 import           Data.Kore.Predicate.Predicate         (CommonPredicate, compactPredicatePredicate,
                                                         makeAndPredicate,
                                                         makeEqualsPredicate,
@@ -331,7 +332,7 @@ d = metaVariable "#d" AstLocationTest
 
 
 mockSortTools :: SortTools Meta
-mockSortTools = SortTools
-    { getArgumentSorts = const [asAst PatternSort, asAst PatternSort]
-    , getResultSort = const (asAst PatternSort)
+mockSortTools = const ApplicationSorts
+    { applicationSortsOperands = [asAst PatternSort, asAst PatternSort]
+    , applicationSortsResult = asAst PatternSort
     }

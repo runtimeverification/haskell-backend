@@ -15,6 +15,7 @@ import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
 import           Data.Kore.AST.PureToKore
 import           Data.Kore.AST.Sentence
+import           Data.Kore.ASTHelpers                          (ApplicationSorts (..))
 import           Data.Kore.ASTVerifier.DefinitionVerifier
 import           Data.Kore.Error
 import           Data.Kore.Implicit.Attributes                 (keyOnlyAttribute)
@@ -135,23 +136,26 @@ test_metadataTools =
     , testCase "getArgumentSorts object"
         (assertEqual ""
             []
-            (getArgumentSorts
-                (sortTools metadataTools) (symbolHead objectA))
+            (applicationSortsOperands
+                (sortTools metadataTools (symbolHead objectA)))
         )
     , testCase "getArgumentSorts meta"
         (assertEqual ""
             []
-            (getArgumentSorts (sortTools metadataTools) (symbolHead metaA))
+            (applicationSortsOperands
+                (sortTools metadataTools (symbolHead metaA)))
         )
     , testCase "getResultSort object"
         (assertEqual ""
             objectS1
-            (getResultSort (sortTools metadataTools) (symbolHead objectA))
+            (applicationSortsResult
+                (sortTools metadataTools (symbolHead objectA)))
         )
     , testCase "getResultSort meta"
         (assertEqual ""
             charListMetaSort
-            (getResultSort (sortTools metadataTools) (symbolHead metaA))
+            (applicationSortsResult
+                (sortTools metadataTools (symbolHead metaA)))
         )
     ]
   where

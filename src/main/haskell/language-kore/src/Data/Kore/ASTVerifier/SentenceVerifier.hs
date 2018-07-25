@@ -20,7 +20,6 @@ import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.Sentence
-import           Data.Kore.ASTHelpers
 import           Data.Kore.ASTVerifier.AttributesVerifier
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.PatternVerifier
@@ -313,8 +312,8 @@ verifyAliasSentence
     sortParams       = (aliasParams . sentenceAliasAlias) sentence
     leftPatternSort  = patternSort leftPattern
     rightPatternSort = patternSort rightPattern
-    headSort         = applicationSortsResult . getHeadApplicationSorts indexedModule
-    patternSort      = getPatternResultSort headSort
+    applicationSorts  = getHeadApplicationSorts indexedModule
+    patternSort      = getPatternResultSort applicationSorts
     leftPattern      = sentenceAliasLeftPattern sentence
     rightPattern     = sentenceAliasRightPattern sentence
 

@@ -16,6 +16,7 @@ import           Data.Kore.AST.Common                  (Application (..),
                                                         Variable)
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureToKore              (patternKoreToPure)
+import           Data.Kore.ASTHelpers                  (ApplicationSorts (..))
 import           Data.Kore.Building.AsAst
 import           Data.Kore.Building.Patterns
 import           Data.Kore.Building.Sorts
@@ -410,9 +411,9 @@ mockStepperAttributes = StepperAttributes
     }
 
 mockSortTools :: SortTools Meta
-mockSortTools = SortTools
-    { getArgumentSorts = const [asAst PatternSort, asAst PatternSort]
-    , getResultSort = const (asAst PatternSort)
+mockSortTools = const ApplicationSorts
+    { applicationSortsOperands = [asAst PatternSort, asAst PatternSort]
+    , applicationSortsResult = asAst PatternSort
     }
 
 mockMetadataTools :: MetadataTools Meta StepperAttributes

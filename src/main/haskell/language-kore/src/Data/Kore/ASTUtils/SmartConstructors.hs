@@ -89,7 +89,7 @@ getSort
     :: (MetaOrObject level, Given (SortTools level), SortedVariable var)
     => PureMLPattern level var
     -> Sort level
-getSort x = getPatternResultSort (getResultSort given) $ unFix x
+getSort x = getPatternResultSort given $ unFix x
 
 -- | Placeholder sort for when we construct a new predicate
 -- But we don't know yet where it's going to be attached.

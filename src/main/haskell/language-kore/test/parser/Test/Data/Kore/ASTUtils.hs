@@ -25,6 +25,7 @@ import           Data.Reflection
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML
+import           Data.Kore.ASTHelpers                  (ApplicationSorts (..))
 import           Data.Kore.ASTUtils.SmartConstructors
 import           Data.Kore.ASTUtils.SmartPatterns
 import           Data.Kore.ASTUtils.Substitution
@@ -240,9 +241,9 @@ dummyEnvironment
 dummyEnvironment = give (dummySortTools @Object)
 
 dummySortTools :: MetaOrObject level => SortTools level
-dummySortTools = SortTools
-    { getArgumentSorts = const []
-    , getResultSort    = const $ testSort "S"
+dummySortTools = const ApplicationSorts
+    { applicationSortsOperands = []
+    , applicationSortsResult   = testSort "S"
     }
 
 testSort

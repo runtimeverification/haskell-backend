@@ -21,6 +21,7 @@ import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.PureML
+import           Data.Kore.ASTHelpers                  (ApplicationSorts (..))
 import           Data.Kore.FixTraversals
 import           Data.Kore.IndexedModule.MetadataTools
 import           Data.Kore.Predicate.Predicate         (Predicate,
@@ -75,8 +76,7 @@ unificationSolutionToPurePattern tools ucp =
             andPat unifiedTerm (foldr andEquals (equals constraint) constraints)
   where
     resultSort =
-        getPatternResultSort
-            (getResultSort (sortTools tools)) (unFix unifiedTerm)
+        getPatternResultSort (sortTools tools) (unFix unifiedTerm)
     unifiedTerm = unificationSolutionTerm ucp
     andEquals = andPat . equals
     andPat first second =
@@ -241,8 +241,7 @@ simplifyAnds tools (p:ps) =
         )
         ps
   where
-    resultSort =
-        getPatternResultSort (getResultSort (sortTools tools)) (unFix p)
+    resultSort = getPatternResultSort (sortTools tools) (unFix p)
     simplifyAnds' (solution,proof) pat = do
         let
             conjunct = Fix $ AndPattern And
@@ -311,8 +310,8 @@ preTransform tools (AndPattern ap) = if left == right
                                 , applicationChildren =
                                     Fix . AndPattern
                                         <$> zipWith3 And
-                                            (getArgumentSorts
-                                                (sortTools tools) head1
+                                            (applicationSortsOperands
+                                                (sortTools tools head1)
                                             )
                                             (applicationChildren ap1)
                                             (applicationChildren ap2)
@@ -495,7 +494,7 @@ unificationProcedure tools p1 p2
                 (CombinedUnificationProof [proof, normProof])
             )
   where
-    resultSort = getPatternResultSort (getResultSort (sortTools tools))
+    resultSort = getPatternResultSort (sortTools tools)
     p1Sort =  resultSort (unFix p1)
     p2Sort =  resultSort (unFix p2)
     conjunct = Fix $ AndPattern And

@@ -10,7 +10,7 @@ Portability : portable
 -}
 module Data.Kore.IndexedModule.MetadataTools
     ( MetadataTools (..)
-    , SortTools (..)
+    , SortTools
     , extractMetadataTools
     )
   where
@@ -28,11 +28,7 @@ data MetadataTools level attributes = MetadataTools
     , sortTools  :: SortTools level
     }
 
-data SortTools level =
-    SortTools
-    { getArgumentSorts :: SymbolOrAlias level -> [Sort level]
-    , getResultSort    :: SymbolOrAlias level -> Sort level
-    }
+type SortTools level = SymbolOrAlias level -> ApplicationSorts level
 
 -- |'extractMetadataTools' extracts a set of 'MetadataTools' from a
 -- 'KoreIndexedModule'.  The metadata tools are functions yielding information
@@ -45,10 +41,6 @@ extractMetadataTools
     -> MetadataTools level atts
 extractMetadataTools m =
   MetadataTools
-    { attributes    = getHeadAttributes m
-    , sortTools =
-      SortTools
-      { getArgumentSorts = applicationSortsOperands . getHeadApplicationSorts m
-      , getResultSort    = applicationSortsResult   . getHeadApplicationSorts m
-      }
+    { attributes = getHeadAttributes m
+    , sortTools  = getHeadApplicationSorts m
     }

@@ -24,6 +24,7 @@ module Data.Kore.AST.MLPatterns (MLPatternClass(..),
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.ASTHelpers             (ApplicationSorts (..))
 import           Data.Kore.Implicit.ImplicitSorts
 
 {-|'MLPatternClass' offers a common interface to ML patterns
@@ -311,22 +312,23 @@ applyPatternFunction patternFunction =
 -- TODO(traiansf): add tests.
 getPatternResultSort
     :: SortedVariable variable
-    => (SymbolOrAlias level -> Sort level)
+    => (SymbolOrAlias level -> ApplicationSorts level)
     -- ^Function to retrieve the sort of a given pattern Head
     -> Pattern level variable child
     -> Sort level
-getPatternResultSort headSort =
+getPatternResultSort applicationSorts =
     applyPatternLeveledFunction PatternLeveledFunction
         { patternLeveledFunctionML = getMLPatternResultSort
         , patternLeveledFunctionMLBinder = getBinderPatternSort
         , stringLeveledFunction = const stringMetaSort
         , charLeveledFunction = const charMetaSort
         , domainValueLeveledFunction = domainValueSort
-        , applicationLeveledFunction = headSort . applicationSymbolOrAlias
+        , applicationLeveledFunction =
+            applicationSortsResult . applicationSorts . applicationSymbolOrAlias
         , variableLeveledFunction = sortedVariableSort
         }
 
 -- |Sample argument function for 'getPatternResultSort', failing for all input.
-undefinedHeadSort :: SymbolOrAlias level -> Sort level
+undefinedHeadSort :: SymbolOrAlias level -> ApplicationSorts level
 undefinedHeadSort _ =
     error "Application pattern sort currently undefined"

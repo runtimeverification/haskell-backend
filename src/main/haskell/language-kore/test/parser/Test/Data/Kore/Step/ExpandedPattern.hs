@@ -14,8 +14,9 @@ import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML                  (PureMLPattern)
 import           Data.Kore.ASTUtils.SmartConstructors  (mkAnd, mkBottom,
                                                         mkEquals, mkTop, mkVar)
-import           Data.Kore.IndexedModule.MetadataTools (SortTools (..))
+import           Data.Kore.IndexedModule.MetadataTools (SortTools)
 
+import           Data.Kore.ASTHelpers                  (ApplicationSorts (..))
 import           Data.Kore.Predicate.Predicate         (Predicate,
                                                         makeEqualsPredicate,
                                                         makeFalsePredicate,
@@ -190,9 +191,9 @@ makeEquals p1 p2 =
     give mockSortTools (makeEqualsPredicate p1 p2)
 
 mockSortTools :: SortTools Meta
-mockSortTools = SortTools
-    { getArgumentSorts = const [sortVariable, sortVariable]
-    , getResultSort = const sortVariable
+mockSortTools = const ApplicationSorts
+    { applicationSortsOperands = [sortVariable, sortVariable]
+    , applicationSortsResult = sortVariable
     }
 
 sortVariable :: Sort level

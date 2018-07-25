@@ -18,6 +18,7 @@ import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.PureML
 import           Data.Kore.AST.Sentence
+import           Data.Kore.ASTHelpers             (ApplicationSorts (..))
 import           Data.Kore.Building.AsAst
 import           Data.Kore.Building.Patterns
 import           Data.Kore.Building.Sorts         as Sorts
@@ -100,8 +101,10 @@ test_mlPattern =
         , let
             s = symbol_ "test" AstLocationTest [] charListMetaSort
             headSort x
-                | x == getSentenceSymbolOrAliasHead s [] = charListMetaSort
-                | otherwise = charMetaSort
+                | x == getSentenceSymbolOrAliasHead s [] =
+                    ApplicationSorts [] charListMetaSort
+                | otherwise =
+                    ApplicationSorts [] charMetaSort
             in
             testCase "Application"
                 (assertEqual ""

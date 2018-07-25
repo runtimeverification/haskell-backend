@@ -17,6 +17,7 @@ import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.PureML
 import           Data.Kore.AST.Sentence
+import           Data.Kore.ASTHelpers                          (ApplicationSorts (..))
 import           Data.Kore.ASTPrettyPrint
 import           Data.Kore.ASTUtils.SmartConstructors          (mkVar)
 import           Data.Kore.IndexedModule.MetadataTools
@@ -123,9 +124,9 @@ mockGetResultSort patternHead =
         (lookup patternHead symbols)
 
 mockSortTools :: SortTools Object
-mockSortTools = SortTools
-    { getArgumentSorts = mockGetArgumentSorts
-    , getResultSort = mockGetResultSort
+mockSortTools pHead = ApplicationSorts
+    { applicationSortsOperands = mockGetArgumentSorts pHead
+    , applicationSortsResult = mockGetResultSort pHead
     }
 
 tools :: MetadataTools Object StepperAttributes
@@ -153,7 +154,7 @@ unificationSubstitution = map trans
         let pp = extractPurePattern p in
             ( Variable
                 { variableSort =
-                    getPatternResultSort mockGetResultSort (unFix pp)
+                    getPatternResultSort mockSortTools (unFix pp)
                 , variableName = testId v
                 }
             , pp
@@ -522,9 +523,9 @@ war' :: String -> PureMLPattern Meta W
 war' s = give mockSortTools' (mkVar (W s))
 
 mockSortTools' :: SortTools Meta
-mockSortTools' = SortTools
-    { getArgumentSorts = const [sortVar, sortVar]
-    , getResultSort = const sortVar
+mockSortTools' = const ApplicationSorts
+    { applicationSortsOperands = [sortVar, sortVar]
+    , applicationSortsResult = sortVar
     }
 
 sortVar :: Sort level
