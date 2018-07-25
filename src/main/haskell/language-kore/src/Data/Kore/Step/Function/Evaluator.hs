@@ -1,6 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs            #-}
-{-# LANGUAGE KindSignatures   #-}
 {-# LANGUAGE LambdaCase       #-}
 {-# LANGUAGE PatternSynonyms  #-}
 {-|
@@ -40,7 +39,8 @@ import           Data.Kore.Predicate.Predicate         (Predicate,
                                                         pattern PredicateTrue,
                                                         makeTruePredicate)
 import           Data.Kore.Step.Condition.Evaluator    (evaluateFunctionCondition)
-import           Data.Kore.Step.ExpandedPattern        as ExpandedPattern (ExpandedPattern (..))
+import           Data.Kore.Step.ExpandedPattern        as ExpandedPattern (ExpandedPattern (..),
+                                                                           bottom)
 import           Data.Kore.Step.Function.Data          (ApplicationFunctionEvaluator (..),
                                                         ConditionEvaluator (..),
                                                         FunctionResultProof (..),
@@ -82,9 +82,9 @@ evaluateFunctions functionIdToEvaluator =
     functionEvaluator =
         evaluateFunctions functionIdToEvaluator
 
-{--| 'FilterWrapper' adapts the natural result of filtering patterns to
+{-| 'FilterWrapper' adapts the natural result of filtering patterns to
 the interface expected by 'applyPatternLeveledFunction'
---}
+-}
 newtype FilterWrapper variable level = FilterWrapper
     { filterUnwrap
         :: Either
@@ -94,9 +94,9 @@ newtype FilterWrapper variable level = FilterWrapper
             (UnFixedPureMLPattern level variable)
     }
 
-{--|'filterUnhandledPatterns' rejects everything that is not an application of
+{-|'filterUnhandledPatterns' rejects everything that is not an application of
 a constructor or a function.
---}
+-}
 filterUnhandledPatterns
     :: MetaOrObject level
     => MetadataTools level
@@ -138,17 +138,17 @@ filterUnhandledPatterns metadataTools patt =
             , FunctionResultProof
             )
 
-{--| 'EvaluationWrapper' adapts the natural result of evaluating functions
+{-| 'EvaluationWrapper' adapts the natural result of evaluating functions
 the interface expected by 'applyPatternLeveledFunction'
---}
+-}
 newtype EvaluationWrapper variable level = EvaluationWrapper
     { evaluationUnwrap
         :: IntCounter (ExpandedPattern level variable, FunctionResultProof level)
     }
 
-{--| 'evaluateLocalFunction' assumes that a pattern's children have been
+{-| 'evaluateLocalFunction' assumes that a pattern's children have been
 evaluated and evaluates the pattern.
---}
+-}
 evaluateLocalFunction
     ::  ( MetaOrObject level
         , Given (MetadataTools level)
@@ -236,8 +236,8 @@ evaluateLocalFunction
     assertEmpty [] x = x
     assertEmpty _ _  = error "Expecting an empty list."
 
-{--| 'evaluateApplication' - evaluates functions on an application pattern.
---}
+{-| 'evaluateApplication' - evaluates functions on an application pattern.
+-}
 evaluateApplication
     ::  ( MetaOrObject level
         , Given (MetadataTools level)
@@ -287,10 +287,10 @@ evaluateApplication
                 -- After removing N/A results and duplicates we expect at most
                 -- one result, i.e. we don't handle ambiguity
                 -- TODO(virgil): nub is O(n^2), should do better than that.
-                case nub (filter notNotApplicable mergedResults) of
-                    [] -> return unchanged
+                case nub (filter notBottom mergedResults) of
+                    [] -> return bottom'
                     [(AttemptedFunction.NotApplicable, _)] ->
-                        error "Should not reach this line."
+                        return unchanged
                     [(AttemptedFunction.Applied functionResult, proof)] ->
                         return (functionResult, proof)
                     (_ : _ : _) -> error "Not implemented yet."
@@ -303,19 +303,23 @@ evaluateApplication
             }
         , FunctionResultProof
         )
+    bottom' = (ExpandedPattern.bottom, FunctionResultProof)
     applyEvaluator app' (ApplicationFunctionEvaluator evaluator) =
         evaluator
             conditionEvaluator
             functionEvaluator
             app'
-    notNotApplicable =
+    notBottom =
         \case
-            (AttemptedFunction.NotApplicable, _) -> False
+            (AttemptedFunction.Applied
+                ExpandedPattern {predicate = PredicateFalse}
+             , _
+             ) -> False
             _ -> True
 
-{--| 'mergeWithCondition' ands the given condition to the given function
+{-| 'mergeWithCondition' ands the given condition to the given function
 evaluation.
---}
+-}
 mergeWithConditionAndSubstitution
     ::  ( MetaOrObject level
         , Given (MetadataTools level)
@@ -349,8 +353,10 @@ mergeWithConditionAndSubstitution
     in do
         evaluatedCondition <- conditionEvaluator mergedCondition
         case evaluatedCondition of
-            (PredicateFalse, _) ->
-                return (AttemptedFunction.NotApplicable, FunctionResultProof)
+            (PredicateFalse, _) -> return
+                ( AttemptedFunction.Applied ExpandedPattern.bottom
+                , FunctionResultProof
+                )
             _ -> return
                 ( AttemptedFunction.Applied functionResult
                     { predicate = mergedCondition

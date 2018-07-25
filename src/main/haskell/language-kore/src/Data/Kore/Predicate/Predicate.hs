@@ -37,16 +37,11 @@ module Data.Kore.Predicate.Predicate
     , wrapPredicate
     ) where
 
-import           Data.Fix                              (cata)
 import           Data.List                             (foldl')
 import           Data.Reflection                       (Given)
 import qualified Data.Set                              as Set
 
-import           Data.Kore.AST.Common                  (And (..), Exists (..),
-                                                        Forall (..), Iff (..),
-                                                        Implies (..), Not (..),
-                                                        Or (..), Pattern (..),
-                                                        SortedVariable,
+import           Data.Kore.AST.Common                  (SortedVariable,
                                                         Variable)
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.PureML                  (PureMLPattern)
@@ -66,7 +61,7 @@ data PredicateProof level = PredicateProof
 
 {--| 'GenericPredicate' is a wrapper for predicates used for type safety.
 Should not be exported, and should be treated as an opaque entity which
-can be manipulateds only by functions in this module.
+can be manipulated only by functions in this module.
 --}
 newtype GenericPredicate pat = GenericPredicate pat
     deriving (Show, Eq, Functor, Traversable, Foldable)
@@ -108,10 +103,7 @@ predicate evaluation and tests and should not be used outside of that.
 We should consider deleting this and implementing the functionality otherwise.
 -}
 wrapPredicate :: PureMLPattern level var -> Predicate level var
-wrapPredicate patt =
-    if isPredicate patt
-    then GenericPredicate patt
-    else error "Trying to wrap non-predicate as predicate!"
+wrapPredicate = GenericPredicate
 
 {- 'unwrapPredicate' wraps a pattern in a GenericPredicate. This should be
 not be used outside of that.
@@ -120,36 +112,6 @@ We should consider deleting this and implementing the functionality otherwise.
 -}
 unwrapPredicate :: Predicate level var -> PureMLPattern level var
 unwrapPredicate (GenericPredicate p) = p
-
--- TODO(virgil): This is wrong, since, e.g., a symbol application
--- can be a predicate, but should be good enough for now. Fix this.
-isPredicate :: PureMLPattern level var -> Bool
-isPredicate = cata isPredicateOneLevel
-
-isPredicateOneLevel :: Pattern level var Bool -> Bool
-isPredicateOneLevel (AndPattern And {andFirst, andSecond}) =
-    andFirst && andSecond
-isPredicateOneLevel (ApplicationPattern _)               = False
-isPredicateOneLevel (BottomPattern _)                    = True
-isPredicateOneLevel (CeilPattern _)                      = True
-isPredicateOneLevel (CharLiteralPattern _)               = False
-isPredicateOneLevel (DomainValuePattern _)               = False
-isPredicateOneLevel (EqualsPattern _)                    = True
-isPredicateOneLevel (ExistsPattern Exists {existsChild}) = existsChild
-isPredicateOneLevel (FloorPattern _)                     = True
-isPredicateOneLevel (ForallPattern Forall {forallChild}) = forallChild
-isPredicateOneLevel (IffPattern Iff {iffFirst, iffSecond}) =
-    iffFirst && iffSecond
-isPredicateOneLevel (ImpliesPattern Implies {impliesFirst, impliesSecond}) =
-    impliesFirst && impliesSecond
-isPredicateOneLevel (InPattern _)                        = True
-isPredicateOneLevel (NextPattern _)                      = False
-isPredicateOneLevel (NotPattern Not {notChild})          = notChild
-isPredicateOneLevel (OrPattern Or {orFirst, orSecond})   = orFirst && orSecond
-isPredicateOneLevel (RewritesPattern _)                  = False
-isPredicateOneLevel (StringLiteralPattern _)             = False
-isPredicateOneLevel (TopPattern _)                       = True
-isPredicateOneLevel (VariablePattern _)                  = False
 
 {-|'PredicateFalse' is a pattern for matching 'bottom' predicates.
 -}
@@ -181,7 +143,8 @@ makeMultipleAndPredicate =
 simplification.
 --}
 makeAndPredicate
-    -- TODO(virgil): Group these constraints in a class.
+    -- TODO(virgil): Group these constraints in a class
+    -- or, even better, a type (like ShowMetaOrObject in MetaOrObject).
     ::  ( MetaOrObject level
         , Given (MetadataTools level)
         , SortedVariable var

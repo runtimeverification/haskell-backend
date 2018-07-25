@@ -2,11 +2,23 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE NamedFieldPuns        #-}
 {-# LANGUAGE PatternSynonyms       #-}
+{-|
+Module      : Data.Kore.Predicate.Predicate
+Description : Data structures and functions for manipulating
+              ExpandedPatterns, i.e. a representation of paterns
+              optimized for the stepper.
+Copyright   : (c) Runtime Verification, 2018
+License     : UIUC/NCSA
+Maintainer  : virgil.serbanuta@runtimeverification.com
+Stability   : experimental
+Portability : portable
+-}
 module Data.Kore.Step.ExpandedPattern
     ( CommonExpandedPattern
     , ExpandedPattern (..)
     , PredicateSubstitution (..)
     , allVariables
+    , bottom
     , mapVariables
     , toMLPattern
     ) where
@@ -27,6 +39,7 @@ import           Data.Kore.IndexedModule.MetadataTools (MetadataTools)
 import           Data.Kore.Predicate.Predicate         (Predicate,
                                                         pattern PredicateFalse,
                                                         pattern PredicateTrue,
+                                                        makeFalsePredicate,
                                                         unwrapPredicate,
                                                         variableSetFromPredicate)
 import           Data.Kore.Step.Substitution           (substitutionToPredicate)
@@ -128,3 +141,14 @@ toMLPattern
     simpleAnd _             PredicateFalse = mkBottom
     simpleAnd pattern1      predicate'     =
         mkAnd pattern1 (unwrapPredicate predicate')
+
+{-|'bottom' is an expanded pattern that has a bottom condition and that
+should become bottom when transformed to a ML pattern.
+-}
+bottom :: MetaOrObject level => ExpandedPattern level variable
+bottom =
+    ExpandedPattern
+        { term      = mkBottom
+        , predicate = makeFalsePredicate
+        , substitution = []
+        }

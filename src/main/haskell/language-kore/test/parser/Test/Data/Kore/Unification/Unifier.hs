@@ -18,6 +18,7 @@ import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.PureML
 import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTPrettyPrint
+import           Data.Kore.ASTUtils.SmartConstructors          (mkVar)
 import           Data.Kore.IndexedModule.MetadataTools
 import           Data.Kore.Predicate.Predicate                 (Predicate, makeTruePredicate)
 import           Data.Kore.Unification.Error
@@ -478,9 +479,53 @@ test_unification =
         (UnificationTerm bA)
         UnificationError
         -}
+    , testCase "Maps substitution variables"
+        (assertEqualWithExplanation ""
+            [(W "1", war' "2")]
+            (mapSubstitutionVariables showVar
+                [(V 1, var' 2)]
+            )
+        )
     ]
   where
     symbolHead symbol = getSentenceSymbolOrAliasHead symbol []
     var ps = case unFix (extractPurePattern ps) of
         VariablePattern v -> v
         _                 -> error "Expecting a variable"
+
+newtype V level = V Integer
+    deriving (Show, Eq, Ord)
+newtype W level = W String
+    deriving (Show, Eq, Ord)
+
+instance EqualWithExplanation (V level)
+  where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
+instance EqualWithExplanation (W level)
+  where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
+
+showVar :: V level -> W level
+showVar (V i) = W (show i)
+
+var' :: Integer -> PureMLPattern Meta V
+var' i = give mockMetadataTools (mkVar (V i))
+
+war' :: String -> PureMLPattern Meta W
+war' s = give mockMetadataTools (mkVar (W s))
+
+mockMetadataTools :: MetadataTools Meta
+mockMetadataTools = MetadataTools
+    { isConstructor = const True
+    , isFunctional = const True
+    , isFunction = const False
+    , getArgumentSorts = const [sortVar, sortVar]
+    , getResultSort = const sortVar
+    }
+
+sortVar :: Sort level
+sortVar = SortVariableSort (SortVariable (Id "#a" AstLocationTest))

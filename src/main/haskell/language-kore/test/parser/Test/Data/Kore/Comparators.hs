@@ -780,3 +780,9 @@ instance
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
+
+
+instance EqualWithExplanation (PredicateProof level)
+  where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show

@@ -29,7 +29,8 @@ import           Data.Kore.Predicate.Predicate         (pattern PredicateFalse,
                                                         makeTruePredicate)
 import           Data.Kore.Step.BaseStep               (AxiomPattern,
                                                         stepWithAxiom)
-import           Data.Kore.Step.ExpandedPattern        as ExpandedPattern (ExpandedPattern (..))
+import           Data.Kore.Step.ExpandedPattern        as ExpandedPattern (ExpandedPattern (..),
+                                                                           bottom)
 import           Data.Kore.Step.Function.Data          as AttemptedFunction (AttemptedFunction (..))
 import           Data.Kore.Step.Function.Data          (CommonAttemptedFunction,
                                                         CommonConditionEvaluator,
@@ -65,6 +66,7 @@ axiomFunctionEvaluator
     app
   =
     case stepResult of
+        -- TODO: Make sure that Left excludes bottom results
         Left _ ->
             return (AttemptedFunction.NotApplicable, FunctionResultProof)
         Right configurationWithProof ->
@@ -81,7 +83,7 @@ axiomFunctionEvaluator
                 case evaluatedRewritingCondition of
                     PredicateFalse ->
                         return
-                            ( AttemptedFunction.NotApplicable
+                            ( AttemptedFunction.Applied ExpandedPattern.bottom
                             , FunctionResultProof
                             )
                     _ ->
@@ -153,7 +155,7 @@ reevaluateFunctions
     (evaluatedMergedCondition, _) <- conditionEvaluator mergedCondition
     case evaluatedMergedCondition of
         PredicateFalse -> return
-            ( AttemptedFunction.NotApplicable
+            ( AttemptedFunction.Applied ExpandedPattern.bottom
             , FunctionResultProof
             )
         _ -> return

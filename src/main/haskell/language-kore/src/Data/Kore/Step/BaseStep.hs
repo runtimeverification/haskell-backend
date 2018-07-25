@@ -139,6 +139,8 @@ stepProofSumName (StepProofVariableRenamings _) = "StepProofVariableRenamings"
 
 Does not handle properly various cases, among which:
 sigma(x, y) => y    vs    a
+
+TODO: Decide if Left here also includes bottom results or only impossibilities.
 -}
 stepWithAxiom
     ::  ( MetaOrObject level
