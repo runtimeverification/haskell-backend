@@ -6,8 +6,8 @@ import           Test.Data.AstGen
 import           Test.Data.Kore.ASTVerifier.DefinitionVerifier
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.PureML                          (groundHead)
 import           Data.Kore.AST.PureToKore                      (patternPureToKore)
 import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTUtils.SmartPatterns
@@ -19,7 +19,13 @@ test_attributes =
     [ expectSuccess "Attribute sorts and symbols visible in attributes"
         Definition
             { definitionAttributes = Attributes
-                [ keyValueAttribute "strict" "2" ]
+                [ patternPureToKore
+                    (App_ (groundHead "strict" AstLocationTest)
+                        [DV_ (simpleSort (SortName "Int"))
+                            (StringLiteral_ (StringLiteral "1"))
+                        ]
+                    )
+                ]
             , definitionModules = []
             }
     , expectFailureWithError "Attribute symbol not visible outside attributes"
@@ -50,6 +56,7 @@ test_attributes =
                     }
                 ]
             }
+{-
     , expectFailureWithError "Non-attribute sort not visible in attributes"
         (Error
             [ "module 'M1'"
@@ -93,6 +100,7 @@ test_attributes =
                     }
                 ]
             }
+-}
     , expectFailureWithError
         "Attribute sort not visible outside attributes"
         (Error
@@ -129,29 +137,8 @@ test_attributes =
             }
     ]
   where
-    mySortName :: SortName
-    mySortName = SortName "mySort"
     myVar :: Variable Meta
     myVar = Variable
         { variableSort = attributeSort AstLocationTest
         , variableName = testId "Attr"
         }
-    domainValuePattern :: SortName -> CommonKorePattern
-    domainValuePattern sortName = patternPureToKore
-        (DV_ (simpleSort sortName) (StringLiteral_ (StringLiteral "asgn")))
-    sortSwitchingEquals
-        :: OperandSort Meta
-        -> ResultSort Meta
-        -> CommonKorePattern
-        -> CommonKorePattern
-    sortSwitchingEquals
-        (OperandSort operandSort) (ResultSort resultSort) child
-      =
-        asKorePattern
-            (EqualsPattern Equals
-                { equalsOperandSort = operandSort
-                , equalsResultSort = resultSort
-                , equalsFirst = child
-                , equalsSecond = child
-                }
-            )

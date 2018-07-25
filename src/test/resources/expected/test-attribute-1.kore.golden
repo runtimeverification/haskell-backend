@@ -9,15 +9,14 @@ Definition
                     , sentenceSortParameters = []
                     , sentenceSortAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "#keyVal" AstLocationNone) :: Id Meta
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "hook")))))
-                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "Nat")))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "Nat")))))
                                     ]
                                 }))))
                             ]

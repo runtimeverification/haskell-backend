@@ -3112,15 +3112,13 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "#key" AstLocationNone) :: Id Meta
+                                        { symbolOrAliasConstructor = (Id "strict" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
-                                , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "strict")))))
-                                    ]
+                                , applicationChildren = []
                                 }))))
                             ]
                     })
@@ -3337,15 +3335,14 @@ Definition
                             }))))
                     , sentenceAxiomAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "#keyVal" AstLocationNone) :: Id Meta
+                                        { symbolOrAliasConstructor = (Id "strictAxiom" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "strictAxiom")))))
-                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "divAExp,1")))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "divAExp,1")))))
                                     ]
                                 }))))
                             ]
@@ -3470,15 +3467,14 @@ Definition
                             }))))
                     , sentenceAxiomAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "#keyVal" AstLocationNone) :: Id Meta
+                                        { symbolOrAliasConstructor = (Id "strictAxiom" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "strictAxiom")))))
-                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "divAExp,2")))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "divAExp,2")))))
                                     ]
                                 }))))
                             ]
@@ -3506,15 +3502,13 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "#key" AstLocationNone) :: Id Meta
+                                        { symbolOrAliasConstructor = (Id "strict" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
-                                , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "strict")))))
-                                    ]
+                                , applicationChildren = []
                                 }))))
                             ]
                     })
@@ -3731,15 +3725,14 @@ Definition
                             }))))
                     , sentenceAxiomAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "#keyVal" AstLocationNone) :: Id Meta
+                                        { symbolOrAliasConstructor = (Id "strictAxiom" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "strictAxiom")))))
-                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "plusAExp,1")))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "plusAExp,1")))))
                                     ]
                                 }))))
                             ]
@@ -3864,15 +3857,14 @@ Definition
                             }))))
                     , sentenceAxiomAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "#keyVal" AstLocationNone) :: Id Meta
+                                        { symbolOrAliasConstructor = (Id "strictAxiom" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "strictAxiom")))))
-                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "plusAExp,2")))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "plusAExp,2")))))
                                     ]
                                 }))))
                             ]
@@ -4086,15 +4078,13 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "#key" AstLocationNone) :: Id Meta
+                                        { symbolOrAliasConstructor = (Id "seqstrict" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
-                                , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "seqstrict")))))
-                                    ]
+                                , applicationChildren = []
                                 }))))
                             ]
                     })
@@ -4311,15 +4301,14 @@ Definition
                             }))))
                     , sentenceAxiomAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "#keyVal" AstLocationNone) :: Id Meta
+                                        { symbolOrAliasConstructor = (Id "seqstrictAxiom" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "seqstrictAxiom")))))
-                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "leqBExp,1")))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "leqBExp,1")))))
                                     ]
                                 }))))
                             ]
@@ -4462,15 +4451,14 @@ Definition
                             }))))
                     , sentenceAxiomAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "#keyVal" AstLocationNone) :: Id Meta
+                                        { symbolOrAliasConstructor = (Id "seqstrictAxiom" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "seqstrictAxiom")))))
-                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "leqBExp,2")))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "leqBExp,2")))))
                                     ]
                                 }))))
                             ]
@@ -4494,15 +4482,13 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "#key" AstLocationNone) :: Id Meta
+                                        { symbolOrAliasConstructor = (Id "strict" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
-                                , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "strict")))))
-                                    ]
+                                , applicationChildren = []
                                 }))))
                             ]
                     })
@@ -4610,15 +4596,14 @@ Definition
                             }))))
                     , sentenceAxiomAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "#keyVal" AstLocationNone) :: Id Meta
+                                        { symbolOrAliasConstructor = (Id "strictAxiom" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "strictAxiom")))))
-                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "notBExp,1")))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "notBExp,1")))))
                                     ]
                                 }))))
                             ]
@@ -4646,15 +4631,14 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "#keyVal" AstLocationNone) :: Id Meta
+                                        { symbolOrAliasConstructor = (Id "strict" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "strict")))))
-                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "1")))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "1")))))
                                     ]
                                 }))))
                             ]
@@ -4779,15 +4763,14 @@ Definition
                             }))))
                     , sentenceAxiomAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "#keyVal" AstLocationNone) :: Id Meta
+                                        { symbolOrAliasConstructor = (Id "strictAxiom" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "strictAxiom")))))
-                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "andBExp,1")))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "andBExp,1")))))
                                     ]
                                 }))))
                             ]
@@ -4877,15 +4860,14 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "#keyVal" AstLocationNone) :: Id Meta
+                                        { symbolOrAliasConstructor = (Id "strict" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "strict")))))
-                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "2")))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "2")))))
                                     ]
                                 }))))
                             ]
@@ -5010,15 +4992,14 @@ Definition
                             }))))
                     , sentenceAxiomAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "#keyVal" AstLocationNone) :: Id Meta
+                                        { symbolOrAliasConstructor = (Id "strictAxiom" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "strictAxiom")))))
-                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "asgn,2")))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "asgn,2")))))
                                     ]
                                 }))))
                             ]
@@ -5050,15 +5031,14 @@ Definition
                             }
                     , sentenceSymbolAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "#keyVal" AstLocationNone) :: Id Meta
+                                        { symbolOrAliasConstructor = (Id "strict" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "strict")))))
-                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "1")))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "1")))))
                                     ]
                                 }))))
                             ]
@@ -5199,15 +5179,14 @@ Definition
                             }))))
                     , sentenceAxiomAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "#keyVal" AstLocationNone) :: Id Meta
+                                        { symbolOrAliasConstructor = (Id "strictAxiom" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "strictAxiom")))))
-                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "ite,1")))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "ite,1")))))
                                     ]
                                 }))))
                             ]

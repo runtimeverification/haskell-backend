@@ -526,7 +526,7 @@ module IMP-SYNTAX
   /* syntax AExp ::= AExp "/" AExp [strict] */
 
   symbol divAExp{}(AExp{}, AExp{}) : AExp{}
-  [ #key{}("strict") ]
+  [ strict{}() ]
 
   /* divAExp is functional */
 
@@ -546,7 +546,7 @@ module IMP-SYNTAX
           HOLE:AExp{},
           divAExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
-  [ #keyVal{}("strictAxiom", "divAExp,1") ]
+  [ strictAxiom{}("divAExp,1") ]
 
   /* (X / Y) = gamma HOLE . (X / HOLE) [Y] */
 
@@ -558,12 +558,12 @@ module IMP-SYNTAX
           HOLE:AExp{},
           divAExp{}(X:AExp{}, HOLE:AExp{})),
         Y:AExp{}))
-  [ #keyVal{}("strictAxiom", "divAExp,2") ]
+  [ strictAxiom{}("divAExp,2") ]
 
   /* syntax AExp ::= AExp "+" AExp [strict] */
 
   symbol plusAExp{}(AExp{}, AExp{}) : AExp{}
-  [ #key{}("strict") ]
+  [ strict{}() ]
 
   /* plusAExp is functional */
 
@@ -583,7 +583,7 @@ module IMP-SYNTAX
           HOLE:AExp{},
           plusAExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
-  [ #keyVal{}("strictAxiom", "plusAExp,1") ]
+  [ strictAxiom{}("plusAExp,1") ]
 
   /* (X + Y) = gamma HOLE . (X + HOLE) [Y] */
 
@@ -595,7 +595,7 @@ module IMP-SYNTAX
           HOLE:AExp{},
           plusAExp{}(X:AExp{}, HOLE:AExp{})),
         Y:AExp{}))
-  [ #keyVal{}("strictAxiom", "plusAExp,2") ]
+  [ strictAxiom{}("plusAExp,2") ]
 
   /* syntax BExp ::= ... */
 
@@ -628,7 +628,7 @@ module IMP-SYNTAX
   /* syntax BExp ::= AExp "<=" AExp [seqstrict] */
 
   symbol leqBExp{}(AExp{}, AExp{}) : BExp{}
-  [ #key{}("seqstrict") ]
+  [ seqstrict{}() ]
 
   /* leqBExp is functional */
 
@@ -646,7 +646,7 @@ module IMP-SYNTAX
           HOLE:AExp{},
           leqBExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
-  [ #keyVal{}("seqstrictAxiom", "leqBExp,1") ]
+  [ seqstrictAxiom{}("leqBExp,1") ]
 
   /* X <= intAsAExp(Y) = (gamma HOLE . X <= intAsAExp(HOLE)) [Y]
      where Y has sort Int.
@@ -663,12 +663,12 @@ module IMP-SYNTAX
           HOLE:Int{},
           leqBExp{}(X:AExp{}, intAsAExp{}(HOLE:Int{}))),
         Y:Int{}))
-  [ #keyVal{}("seqstrictAxiom", "leqBExp,2") ]
+  [ seqstrictAxiom{}("leqBExp,2") ]
 
   /* syntax BExp ::= "!" BExp [strict] */
 
   symbol notBExp{}(BExp{}) : BExp{}
-  [ #key{}("strict") ]
+  [ strict{}() ]
 
   axiom{R}
     \equals{BExp{},R}(
@@ -678,12 +678,12 @@ module IMP-SYNTAX
           HOLE:BExp{},
           notBExp{}(HOLE:BExp{})),
         B:BExp{}))
-  [ #keyVal{}("strictAxiom", "notBExp,1") ]
+  [ strictAxiom{}("notBExp,1") ]
 
   /* syntax BExp ::= BExp "&&" BExp [strict(1)] */
 
   symbol andBExp{}(BExp{}, BExp{}) : BExp{}
-  [ #keyVal{}("strict", "1") ]
+  [ strict{}("1") ]
 
   axiom{R}
     \equals{BExp{},R}(
@@ -693,7 +693,7 @@ module IMP-SYNTAX
           HOLE:BExp{},
           andBExp{}(HOLE:BExp{}, Y:BExp{})),
         X:BExp{}))
-  [ #keyVal{}("strictAxiom", "andBExp,1") ]
+  [ strictAxiom{}("andBExp,1") ]
 
 
   /* syntax Block ::= ... */
@@ -719,7 +719,7 @@ module IMP-SYNTAX
   /* syntax Stmt ::= Id "=" AExp ";" [strict(2)] */
 
   symbol asgn{}(Id{}, AExp{}) : Stmt{}
-  [ #keyVal{}("strict", "2") ]
+  [ strict{}("2") ]
 
   axiom{R}
     \equals{Stmt{},R}(
@@ -729,13 +729,13 @@ module IMP-SYNTAX
           HOLE:AExp{},
           asgn{}(X:Id{}, HOLE:AExp{})),
         E:AExp{}))
-  [ #keyVal{}("strictAxiom", "asgn,2") ]
+  [ strictAxiom{}("asgn,2") ]
 
   /* syntax Stmt ::= "ite" "(" BExp ")" Block "else" Block [strict(1)] */
 
 
   symbol ite{}(BExp{}, Block{}, Block{}) : Stmt{}
-  [ #keyVal{}("strict", "1") ]
+  [ strict{}("1") ]
 
   axiom{R}
     \equals{Stmt{},R}(
@@ -745,7 +745,7 @@ module IMP-SYNTAX
           HOLE:BExp{},
           ite{}(HOLE:BExp{}, S1:Block{}, S2:Block{})),
         B:BExp{}))
-  [ #keyVal{}("strictAxiom", "ite,1") ]
+  [ strictAxiom{}("ite,1") ]
 
   /* syntax Stmt ::= "while" "(" BExp ")" Block */
 

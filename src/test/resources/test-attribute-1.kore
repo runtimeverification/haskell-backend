@@ -2,6 +2,6 @@
 
 module TEST-ATTRIBUTE-1
 
-  sort Nat{} [#keyVal{}("hook", "Nat")]
+  sort Nat{} [hook{}("Nat")]
 
 endmodule []

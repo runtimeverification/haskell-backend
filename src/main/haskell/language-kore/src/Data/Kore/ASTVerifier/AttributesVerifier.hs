@@ -12,14 +12,12 @@ module Data.Kore.ASTVerifier.AttributesVerifier (verifyAttributes,
   where
 
 import           Data.Kore.AST.Common
-import           Data.Kore.AST.MetaOrObject            (asUnified)
+import           Data.Kore.AST.Kore
+import           Data.Kore.AST.MetaOrObject            (Object)
 import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTVerifier.Error
-import           Data.Kore.ASTVerifier.PatternVerifier
 import           Data.Kore.Error
-import           Data.Kore.Implicit.Attributes         (attributeSort)
-import           Data.Kore.IndexedModule.IndexedModule
-import qualified Data.Set                              as Set
+import           Data.Kore.IndexedModule.IndexedModule (KoreIndexedModule)
 
 {--| Whether we should verify attributes and, when verifying, the module with
 declarations visible in these atributes. --}
@@ -35,20 +33,24 @@ verifyAttributes
     -> Either (Error VerifyError) VerifySuccess
 verifyAttributes
     (Attributes patterns)
-    (VerifyAttributes indexedModule)
+    (VerifyAttributes _)
   = do
     withContext
         "attributes"
         (mapM_
-            (\p ->
-                verifyPattern
-                    p
-                    (Just (asUnified (attributeSort AstLocationNone)))
-                    indexedModule
-                    Set.empty
+            (applyKorePattern
+                (const (koreFail "Meta attributes are not supported"))
+                verifyAttributePattern
             )
             patterns
         )
     verifySuccess
 verifyAttributes _ DoNotVerifyAttributes =
     verifySuccess
+
+verifyAttributePattern
+    :: Pattern Object variable (KorePattern variable)
+    -> Either (Error VerifyError) VerifySuccess
+verifyAttributePattern (ApplicationPattern _) = verifySuccess
+verifyAttributePattern _
+     = koreFail "Non-application attributes are not supported"
