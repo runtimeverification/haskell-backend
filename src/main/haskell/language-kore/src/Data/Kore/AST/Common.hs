@@ -1,8 +1,10 @@
 {-# LANGUAGE DeriveFoldable        #-}
 {-# LANGUAGE DeriveFunctor         #-}
+{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DeriveTraversable     #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns        #-}
 {-# LANGUAGE RankNTypes            #-}
@@ -10,8 +12,6 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE UndecidableInstances  #-}
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE LambdaCase            #-}
 {-|
 Module      : Data.Kore.AST.Common
 Description : Data Structures for representing the Kore language AST that do not
@@ -44,8 +44,8 @@ import           Data.Kore.AST.Pretty (Pretty(..), (<>))
 import qualified Data.Kore.AST.Pretty as Pretty
 import           Data.Kore.Parser.CString (escapeCString)
 
-import           GHC.Generics (Generic)
 import           Data.Hashable
+import           GHC.Generics               (Generic)
 
 {-| 'FileLocation' represents a position in a source file.
 -}
@@ -291,6 +291,7 @@ data MetaBasicSortType
     | SortSort
     | SymbolSort
     | VariableSort
+    | UserSort String -- arbitrary MetaSort
     deriving(Generic)
 
 instance Hashable MetaBasicSortType
@@ -321,11 +322,12 @@ metaSortsListWithString :: [MetaSortType]
 metaSortsListWithString = StringSort : metaSortsList
 
 metaBasicSortTypeString :: MetaBasicSortType -> String
-metaBasicSortTypeString CharSort     = "Char"
-metaBasicSortTypeString PatternSort  = "Pattern"
-metaBasicSortTypeString SortSort     = "Sort"
-metaBasicSortTypeString SymbolSort   = "Symbol"
-metaBasicSortTypeString VariableSort = "Variable"
+metaBasicSortTypeString CharSort        = "Char"
+metaBasicSortTypeString PatternSort     = "Pattern"
+metaBasicSortTypeString SortSort        = "Sort"
+metaBasicSortTypeString SymbolSort      = "Symbol"
+metaBasicSortTypeString VariableSort    = "Variable"
+metaBasicSortTypeString (UserSort name) =  name
 
 metaSortTypeString :: MetaSortType -> String
 metaSortTypeString (MetaBasicSortType s) = metaBasicSortTypeString s
@@ -355,8 +357,8 @@ instance Pretty (Variable level) where
     pretty Variable {..} =
         pretty variableName <> Pretty.colon <> pretty variableSort
 
-{--| 'SortedVariable' is a variable which has a sort.
---}
+{-| 'SortedVariable' is a variable which has a sort.
+-}
 class SortedVariable variable where
     sortedVariableSort :: variable level -> Sort level
 
@@ -885,7 +887,7 @@ be members only of 'Pattern Meta'.
 -}
 -- NOTE: If you are adding a case to Pattern, you should add cases in:
 -- ASTUtils/SmartConstructors.hs
--- as well as a ton of other places, probably. 
+-- as well as a ton of other places, probably.
 data Pattern level variable child where
     AndPattern
         :: !(And level child) -> Pattern level variable child
@@ -931,11 +933,11 @@ data Pattern level variable child where
 -- instance Generic child => Generic (Pattern level variable child)
 
 -- instance (Hashable child, Generic child, Hashable (variable level))
--- => Hashable (Pattern level variable child) 
+-- => Hashable (Pattern level variable child)
 
-instance (Hashable (child), Hashable (variable level))
- => Hashable (Pattern level variable child) where 
-  hashWithSalt s = \case 
+instance (Hashable child, Hashable (variable level))
+ => Hashable (Pattern level variable child) where
+  hashWithSalt s = \case
     AndPattern           p -> hashWithSalt s p
     ApplicationPattern   p -> hashWithSalt s p
     BottomPattern        p -> hashWithSalt s p
@@ -1013,7 +1015,7 @@ data PatternStub level variable child
     | UnsortedPatternStub (Sort level -> Pattern level variable child)
     deriving(Generic)
 
--- cannot hash. 
+-- cannot hash.
 
 {-|'withSort' transforms an 'UnsortedPatternStub' in a 'SortedPatternStub'.
 -}

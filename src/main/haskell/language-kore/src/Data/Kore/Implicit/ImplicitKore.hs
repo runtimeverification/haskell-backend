@@ -189,11 +189,12 @@ mlPatternP RewritesPatternType =
 mlPatternP TopPatternType =
     implicitSymbol "#\\top" [sortMetaSort] patternMetaSort
 
-[ andA, bottomA, ceilA, _, equalsA, existsA, floorA, forallA, iffA, impliesA,
-  inA, _, notA, orA, _, topA] = map mlPatternA allPatternTypes
+[ andA, bottomA, ceilA, _ {-dvA-}, equalsA, existsA, floorA, forallA, iffA,
+  impliesA, inA, _ {-nextA-}, notA, orA, _ {-rewritesA-}, topA] =
+    map mlPatternA allPatternTypes
 
-[ andP, bottomP, ceilP, _, equalsP, existsP, floorP, forallP, iffP, impliesP,
-  inP, _, notP, orP, _, topP] = map mlPatternP allPatternTypes
+[ andP, bottomP, ceilP, dvP, equalsP, existsP, floorP, forallP, iffP, impliesP,
+  inP, nextP, notP, orP, rewritesP, topP] = map mlPatternP allPatternTypes
 
 variableAsPattern =
     implicitSymbol "#variableAsPattern" [variableMetaSort] patternMetaSort
@@ -949,6 +950,9 @@ uncheckedKoreModule =
             , asSentence inP
             , asSentence topP
             , asSentence bottomP
+            , asSentence dvP
+            , asSentence nextP
+            , asSentence rewritesP
             ]
             ++ map asSentence patternAxioms
 
