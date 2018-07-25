@@ -1,4 +1,8 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE NamedFieldPuns        #-}
+{-# LANGUAGE PatternSynonyms       #-}
 {-|
 Module      : Data.Kore.Step.BaseStep
 Description : Single step execution
@@ -10,7 +14,6 @@ Portability : portable
 -}
 module Data.Kore.Step.BaseStep
     ( AxiomPattern (..)
-    , StepperConfiguration(..)
     , StepperVariable (..)
     , StepProof (..)
     , VariableRenaming (..)
@@ -18,57 +21,41 @@ module Data.Kore.Step.BaseStep
     , stepWithAxiom
     ) where
 
-import qualified Control.Arrow
-import           Data.Fix
+import qualified Control.Arrow                                   as Arrow
 import qualified Data.Map                                        as Map
+import           Data.Maybe                                      (fromMaybe)
 import           Data.Monoid                                     ((<>))
+import           Data.Reflection                                 (Given, given)
 import qualified Data.Set                                        as Set
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.PureML                            (CommonPurePattern,
-                                                                  PureMLPattern,
-                                                                  asPurePattern,
-                                                                  mapPatternVariables)
-import           Data.Kore.FixTraversals                         (fixBottomUpVisitor)
+import           Data.Kore.AST.PureML                            (PureMLPattern, mapPatternVariables)
 import           Data.Kore.IndexedModule.MetadataTools           (MetadataTools)
+import           Data.Kore.Predicate.Predicate                   (Predicate, PredicateProof (..),
+                                                                  makeMultipleAndPredicate,
+                                                                  variableSetFromPredicate)
 import           Data.Kore.Step.AxiomPatterns
-import           Data.Kore.Step.Condition.Condition              (ConditionSort (..))
 import           Data.Kore.Step.Error
+import           Data.Kore.Step.ExpandedPattern                  (ExpandedPattern (ExpandedPattern))
+import qualified Data.Kore.Step.ExpandedPattern                  as ExpandedPattern
+import           Data.Kore.Step.Substitution                     (mergeSubstitutions)
 import           Data.Kore.Substitution.Class                    (Hashable (..), PatternSubstitutionClass (..))
 import qualified Data.Kore.Substitution.List                     as ListSubstitution
+import           Data.Kore.Unification.Error                     (UnificationError)
 import           Data.Kore.Unification.SubstitutionNormalization (normalizeSubstitution)
 import           Data.Kore.Unification.Unifier                   (FunctionalProof (..),
                                                                   UnificationProof (..),
                                                                   UnificationSubstitution,
+                                                                  mapSubstitutionVariables,
                                                                   unificationProcedure)
 import           Data.Kore.Variables.Free                        (pureAllVariables)
 import           Data.Kore.Variables.Fresh.Class                 (FreshVariablesClass (freshVariableSuchThat))
 import           Data.Kore.Variables.Fresh.IntCounter            (IntCounter)
 import           Data.Kore.Variables.Int                         (IntVariable (..))
-import           Data.Maybe                                      (fromMaybe)
 
-{--| 'StepperConfiguration' represents the configuration to which a rewriting
-axiom is applied.
-
-A configuration consists of a pattern and a condition predicate, and would be
-represented as pattern /\ condition-predicate in Kore.
---}
-data StepperConfiguration level = StepperConfiguration
-    { stepperConfigurationPattern       :: !(CommonPurePattern level)
-    -- ^ The pattern being rewritten.
-
-    -- TODO(virgil): Remove and extract from condition.
-    , stepperConfigurationConditionSort :: !(ConditionSort level)
-    -- ^ The sort for the configuration condition.
-    , stepperConfigurationCondition     :: !(CommonPurePattern level)
-    -- ^ The condition predicate.
-    -- TODO(virgil): Make this an EvaluatedCondition.
-    }
-    deriving (Show, Eq)
-
-{--| 'StepProof' is a proof for a single execution step.
---}
+{-| 'StepProof' is a proof for a single execution step.
+-}
 data StepProof level
     = StepProofCombined ![StepProof level]
     -- ^ combines multiple parts of a proof.
@@ -78,11 +65,11 @@ data StepProof level
     -- ^ Proof for the remanings that happened during ther proof.
     deriving (Show, Eq)
 
-{--| 'simplifyStepProof' simplifies the representation of a 'StepProof'.
+{-| 'simplifyStepProof' simplifies the representation of a 'StepProof'.
 
 As an example, it replaces a StepProofCombined wit a single element with its
 contents.
---}
+-}
 simplifyStepProof :: StepProof level -> StepProof level
 simplifyStepProof (StepProofCombined things) =
     StepProofCombined (simplifyCombinedItems things)
@@ -90,11 +77,11 @@ simplifyStepProof a@(StepProofUnification _) = a
 simplifyStepProof (StepProofVariableRenamings []) = StepProofCombined []
 simplifyStepProof a@(StepProofVariableRenamings _) = a
 
-{--| `simplifyCombinedItems` simplifies the representation of a list of
+{-| `simplifyCombinedItems` simplifies the representation of a list of
     'StepProof's recursively.
 
     As an example, it replaces a 'StepProofCombined' with its contents.
---}
+-}
 simplifyCombinedItems :: [StepProof level] -> [StepProof level]
 simplifyCombinedItems =
     foldr (simplifyAndAdd . simplifyStepProof) []
@@ -106,17 +93,17 @@ simplifyCombinedItems =
     simplifyAndAdd (StepProofCombined items) proofItems = items ++ proofItems
     simplifyAndAdd other proofItems                     = other : proofItems
 
-{--| 'VariableRenaming' represents a renaming of a variable.
---}
+{-| 'VariableRenaming' represents a renaming of a variable.
+-}
 data VariableRenaming level = VariableRenaming
     { variableRenamingOriginal :: StepperVariable level
     , variableRenamingRenamed  :: StepperVariable level
     }
     deriving (Show, Eq)
 
-{--| 'StepperVariable' wraps a variable in a variable-like type, distinguishing
+{-| 'StepperVariable' wraps a variable in a variable-like type, distinguishing
 variables by source.
---}
+-}
 data StepperVariable level
     = AxiomVariable (Variable level)
     | ConfigurationVariable (Variable level)
@@ -135,106 +122,139 @@ instance IntVariable StepperVariable where
     intVariable (ConfigurationVariable a) n =
         ConfigurationVariable (intVariable a n)
 
-{--| 'getStepperVariableVariable' extracts the initial variable from a stepper
+{-| 'getStepperVariableVariable' extracts the initial variable from a stepper
 one.
---}
+-}
 getStepperVariableVariable :: StepperVariable level -> Variable level
 getStepperVariableVariable (AxiomVariable a)         = a
 getStepperVariableVariable (ConfigurationVariable a) = a
 
-{--| 'stepProofSumName' extracts the constructor name for a 'StepProof' --}
+{-| 'stepProofSumName' extracts the constructor name for a 'StepProof' -}
 stepProofSumName :: StepProof level -> String
 stepProofSumName (StepProofUnification _)       = "StepProofUnification"
 stepProofSumName (StepProofCombined _)          = "StepProofCombined"
 stepProofSumName (StepProofVariableRenamings _) = "StepProofVariableRenamings"
 
-{--| 'stepWithAxiom' executes a single rewriting step using the provided axiom.
+{-| 'stepWithAxiom' executes a single rewriting step using the provided axiom.
 
 Does not handle properly various cases, among which:
 sigma(x, y) => y    vs    a
---}
+
+TODO: Decide if Left here also includes bottom results or only impossibilities.
+-}
 stepWithAxiom
-    :: MetaOrObject level
-    => MetadataTools level
-    -- ^ Functions yielding metadata for pattern heads.
-    -> StepperConfiguration level
+    ::  ( MetaOrObject level
+        , Given (MetadataTools level)
+        )
+    => ExpandedPattern.CommonExpandedPattern level
     -- ^ Configuration being rewritten.
     -> AxiomPattern level
     -- ^ Rewriting axiom
     -> Either
         (IntCounter (StepError level Variable))
-        (IntCounter (StepperConfiguration level, StepProof level))
+        (IntCounter
+            (ExpandedPattern.CommonExpandedPattern level, StepProof level)
+        )
 stepWithAxiom
-    metadataTools
-    StepperConfiguration
-        { stepperConfigurationPattern = startPatternRaw
-        , stepperConfigurationCondition = startConditionRaw
-        , stepperConfigurationConditionSort =
-            conditionSort @ (ConditionSort unwrappedConditionSort)
-        }
+    expandedPattern
     AxiomPattern
         { axiomPatternLeft = axiomLeftRaw
         , axiomPatternRight = axiomRightRaw
         }
   = do
     let
-        wrapConfigurationVariables = mapPatternVariables ConfigurationVariable
-        startPattern = wrapConfigurationVariables startPatternRaw
-        startCondition = wrapConfigurationVariables startConditionRaw
+        wrappedExpandedPattern =
+            ExpandedPattern.mapVariables ConfigurationVariable expandedPattern
+        (startPattern, startCondition, startSubstitution) =
+            case wrappedExpandedPattern of
+                ExpandedPattern { term, predicate, substitution } ->
+                    (term, predicate, substitution)
         wrapAxiomVariables = mapPatternVariables AxiomVariable
         axiomLeft = wrapAxiomVariables axiomLeftRaw
         axiomRight = wrapAxiomVariables axiomRightRaw
 
     let
         existingVars =
-            pureAllVariables (undefined::level) startPatternRaw
-            <> pureAllVariables (undefined::level) startConditionRaw
-            <> pureAllVariables (undefined::level) axiomLeftRaw
-            <> pureAllVariables (undefined::level) axiomRightRaw
-        normalizeUnificationError action =
+            ExpandedPattern.allVariables expandedPattern
+            <> pureAllVariables axiomLeftRaw
+            <> pureAllVariables axiomRightRaw
+        normalizeUnificationError
+            :: MetaOrObject level
+            => Set.Set (Variable level)
+            -> Either (UnificationError level) a
+            -> Either (IntCounter (StepError level Variable)) a
+        normalizeUnificationError existingVariables action =
             stepperVariableToVariableForError
-                existingVars (unificationToStepError action)
+                existingVariables (unificationToStepError action)
         normalizeSubstitutionError action =
             stepperVariableToVariableForError
                 existingVars (substitutionToStepError action)
 
-    (substitution, rawSubstitutionProof) <-
-        normalizeUnificationError
-            (unificationProcedure metadataTools axiomLeft startPattern)
+    (     unificationSubstitution
+        , unificationCondition
+        , rawSubstitutionProof
+        ) <-
+            normalizeUnificationError existingVars
+                (unificationProcedure
+                    given
+                    axiomLeft
+                    startPattern
+                )
+
+    (     substitutionMergeCondition
+        , substitution
+        , _  -- TODO: Use this proof
+        ) <-
+            normalizeUnificationError existingVars
+                (mergeSubstitutions unificationSubstitution startSubstitution)
 
     normalizedSubstitutionWithCounter <-
         normalizeSubstitutionError
             (normalizeSubstitution substitution)
 
+    let
+        (mergedConditionWithCounter, _) = -- TODO: Use this proof
+            mergeConditionsWithAnd
+                [ startCondition
+                , unificationCondition
+                , substitutionMergeCondition
+                ]
+
     return $ do
         normalizedSubstitution <- normalizedSubstitutionWithCounter
-        rawResult <-
-            substitute
-                axiomRight
-                (ListSubstitution.fromList
-                    (makeUnifiedSubstitution normalizedSubstitution))
+
+        let
+            unifiedSubstitution =
+                ListSubstitution.fromList
+                    (makeUnifiedSubstitution normalizedSubstitution)
+
+        rawResult <- substitute axiomRight unifiedSubstitution
+
+        normalizedMergedCondition <- mergedConditionWithCounter
+        rawCondition <-
+            traverse
+                (`substitute` unifiedSubstitution)
+                normalizedMergedCondition
 
         (variableMapping, result) <-
             patternStepVariablesToCommon existingVars Map.empty rawResult
         (variableMapping1, condition) <-
-            patternStepVariablesToCommon existingVars variableMapping
-                (Fix $ AndPattern And
-                    { andSort = unwrappedConditionSort
-                    , andFirst = startCondition
-                    , andSecond = substitutionToPattern
-                            conditionSort
-                            (removeAxiomVariables normalizedSubstitution)
-                    }
-                )
+            predicateStepVariablesToCommon
+                existingVars variableMapping rawCondition
         (variableMapping2, substitutionProof) <-
             unificationProofStepVariablesToCommon
                 existingVars variableMapping1 rawSubstitutionProof
 
         return
-            ( StepperConfiguration
-                { stepperConfigurationPattern = result
-                , stepperConfigurationCondition = condition
-                , stepperConfigurationConditionSort = conditionSort
+            ( ExpandedPattern
+                { term = result
+                , predicate = condition
+                -- TODO(virgil): Can there be unused variables? Should we
+                -- remove them?
+                , substitution =
+                    mapSubstitutionVariables
+                        configurationVariableToCommon
+                        (removeAxiomVariables normalizedSubstitution)
                 }
             , simplifyStepProof
                 (StepProofCombined
@@ -273,6 +293,19 @@ stepWithAxiom
         { variableRenamingOriginal = original
         , variableRenamingRenamed  = renamed
         }
+
+mergeConditionsWithAnd
+    ::  ( MetaOrObject level
+        , Given (MetadataTools level)
+        , SortedVariable var
+        , Show (var level))
+    => [Predicate level var]
+    -> (IntCounter (Predicate level var), PredicateProof level)
+mergeConditionsWithAnd conditions =
+    let
+        (predicate, proof) = makeMultipleAndPredicate conditions
+    in
+        (return predicate, proof)
 
 unificationProofStepVariablesToCommon
     :: MetaOrObject level
@@ -369,7 +402,6 @@ unificationProofStepVariablesToCommon
 listStepVariablesToCommon
     :: MetaOrObject level
     =>  (Set.Set (Variable level)
-            -- TODO: Map to Variable.
             -> Map.Map (StepperVariable level) (StepperVariable level)
             -> listElement StepperVariable
             -> IntCounter
@@ -378,7 +410,6 @@ listStepVariablesToCommon
                 )
         )
     -> Set.Set (Variable level)
-    -- TODO: Map to Variable.
     -> Map.Map (StepperVariable level) (StepperVariable level)
     -> [listElement StepperVariable]
     -> IntCounter
@@ -397,7 +428,6 @@ listStepVariablesToCommon elementMapper existingVars mapping (proof : proofs)
 functionalProofStepVariablesToCommon
     :: MetaOrObject level
     => Set.Set (Variable level)
-    -- TODO: Map to Variable.
     -> Map.Map (StepperVariable level) (StepperVariable level)
     -> FunctionalProof level StepperVariable
     -> IntCounter
@@ -416,7 +446,6 @@ functionalProofStepVariablesToCommon _ mapping (FunctionalHead f) =
 variableStepVariablesToCommon
     :: MetaOrObject level
     => Set.Set (Variable level)
-    -- TODO: Map to Variable.
     -> Map.Map (StepperVariable level) (StepperVariable level)
     -> StepperVariable level
     -> IntCounter
@@ -444,6 +473,29 @@ variableStepVariablesToCommon existingVars mapping variable =
                         , newVar
                         )
 
+predicateStepVariablesToCommon
+    :: MetaOrObject level
+    => Set.Set (Variable level)
+    -> Map.Map (StepperVariable level) (StepperVariable level)
+    -> Predicate level StepperVariable
+    -> IntCounter
+        ( Map.Map (StepperVariable level) (StepperVariable level)
+        , Predicate level Variable
+        )
+predicateStepVariablesToCommon existingVars mapped predicate' = do
+    let axiomVars = variableSetFromPredicate (fmap pureAllVariables predicate')
+    mapping <-
+        addAxiomVariablesAsConfig existingVars mapped (Set.toList axiomVars)
+    return
+        ( mapping
+        , fmap
+            (configurationVariablesToCommon . replacePatternVariables mapping)
+            predicate'
+        )
+  where
+    configurationVariablesToCommon =
+        mapPatternVariables configurationVariableToCommon
+
 patternStepVariablesToCommon
     :: MetaOrObject level
     => Set.Set (Variable level)
@@ -454,12 +506,12 @@ patternStepVariablesToCommon
         , PureMLPattern level Variable
         )
 patternStepVariablesToCommon existingVars mapped patt = do
-    let axiomVars = pureAllVariables (undefined::level) patt
+    let axiomVars = pureAllVariables patt
     mapping <-
         addAxiomVariablesAsConfig existingVars mapped (Set.toList axiomVars)
     return
         ( mapping
-        , configurationVariablesToCommon (replaceVariables mapping patt)
+        , configurationVariablesToCommon (replacePatternVariables mapping patt)
         )
   where
     configurationVariablesToCommon =
@@ -470,40 +522,14 @@ configurationVariableToCommon (AxiomVariable a) =
     error ("Unexpected AxiomVariable: '" ++ show a ++ "'.")
 configurationVariableToCommon (ConfigurationVariable v) = v
 
-replaceVariables
+replacePatternVariables
     :: MetaOrObject level
     => Map.Map (StepperVariable level) (StepperVariable level)
     -> PureMLPattern level StepperVariable
     -> PureMLPattern level StepperVariable
-replaceVariables mapping =
-    fixBottomUpVisitor (replacePatternVariable mapping)
-
-replacePatternVariable
-    :: MetaOrObject level
-    => Map.Map (StepperVariable level) (StepperVariable level)
-    -> Pattern level StepperVariable (PureMLPattern level StepperVariable)
-    -> PureMLPattern level StepperVariable
-replacePatternVariable mapping v@(VariablePattern var) =
-    case Map.lookup var mapping of
-        Nothing          -> Fix v
-        Just replacement -> Fix (VariablePattern replacement)
-replacePatternVariable
-    mapping
-    e@(ExistsPattern exists@Exists{existsVariable = var})
-  =
-    case Map.lookup var mapping of
-        Nothing -> Fix e
-        Just replacement ->
-            Fix (ExistsPattern exists {existsVariable = replacement})
-replacePatternVariable
-    mapping
-    f@(ForallPattern forall@Forall{forallVariable = var})
-  =
-    case Map.lookup var mapping of
-        Nothing -> Fix f
-        Just replacement ->
-            Fix (ForallPattern forall {forallVariable = replacement})
-replacePatternVariable _ p = Fix p
+replacePatternVariables mapping =
+    mapPatternVariables
+        (\var -> fromMaybe var (Map.lookup var mapping))
 
 addAxiomVariablesAsConfig
     :: MetaOrObject level
@@ -547,36 +573,4 @@ makeUnifiedSubstitution
     => [(StepperVariable level, PureMLPattern level StepperVariable)]
     -> [(Unified StepperVariable, PureMLPattern level StepperVariable)]
 makeUnifiedSubstitution =
-    map (Control.Arrow.first asUnified)
-
-substitutionToPattern
-    :: SortedVariable variable
-    => ConditionSort level
-    -> [(variable level, PureMLPattern level variable)]
-    -> PureMLPattern level variable
-substitutionToPattern (ConditionSort sort) [] =
-    asPurePattern $ TopPattern Top { topSort = sort }
-substitutionToPattern sort [subst] =
-    singleSubstitutionToPattern sort subst
-substitutionToPattern
-    conditionSort @ (ConditionSort sort)
-    (subst : substs)
-  =
-    asPurePattern $ AndPattern And
-        { andSort = sort
-        , andFirst = singleSubstitutionToPattern conditionSort subst
-        , andSecond = substitutionToPattern conditionSort substs
-        }
-
-singleSubstitutionToPattern
-    :: SortedVariable variable
-    => ConditionSort level
-    -> (variable level, PureMLPattern level variable)
-    -> PureMLPattern level variable
-singleSubstitutionToPattern (ConditionSort sort) (var, patt) =
-    asPurePattern $ EqualsPattern Equals
-        { equalsOperandSort = sortedVariableSort var
-        , equalsResultSort  = sort
-        , equalsFirst       = asPurePattern $ VariablePattern var
-        , equalsSecond      = patt
-        }
+    map (Arrow.first asUnified)
