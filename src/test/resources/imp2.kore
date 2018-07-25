@@ -364,7 +364,7 @@ module ARROW
     \implies{#R}(
       \not{#R}(
         \equals{#Sort{},#R}(
-          #S1:#Sort{}, 
+          #S1:#Sort{},
           #S2:#Sort{})),
       #provable{#R}(
         \not{K{}}(
@@ -404,7 +404,7 @@ module ARROW
       arrow{}(K:K{}, nothing{}()), K:K{})
   []
 
-  /* Contexts about arrows 
+  /* Contexts about arrows
    * K1 ~> K2 = (gamma HOLE . HOLE ~> K2)[K1]
    * asK(T) = (gamma HOLE . asK(HOLE))[T]
    */
@@ -531,9 +531,7 @@ module IMP
   /* syntax AExp ::= AExp "/" AExp [strict] */
 
   symbol divAExp{}(AExp{}, AExp{}) : AExp{}
-  [ strict{}(\dv{Strict{}}("divAExp"), firstArgument{}())
-  , strict{}(\dv{Strict{}}("divAExp"), secondArgument{}())
-  ]
+  [ keyOnlyAttribute{}(\dv{AttributeKey{}}("strict")) ]
 
   /* divAExp is functional */
 
@@ -554,11 +552,11 @@ module IMP
           HOLE:AExp{},
           divAExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
-  [strict{}(\dv{Strict{}}("divAExp"), firstArgument{}())]
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("strictAxiom"), \dv{AttributeValue{}}("divAExp,1")) ]
   */
 
   /* heating rule
-   *   X / Y = X ~> gamma HOLE . (HOLE / Y) 
+   *   X / Y = X ~> gamma HOLE . (HOLE / Y)
    */
 
   axiom{R}
@@ -571,9 +569,9 @@ module IMP
           gamma{AExp{}, AExp{}}(
             HOLE:AExp{},
             divAExp{}(HOLE:AExp{}, Y:AExp{})))))
-  [strict{}(\dv{Strict{}}("divAExp"), firstArgument{}())]
-      
-    
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("heating"), \dv{AttributeValue{}}("divAExp,1")) ]
+
+
   /* cooling rule
    * I ~> gamma HOLE . (HOLE / Y) = I / Y if I has sort Int
    */
@@ -588,7 +586,7 @@ module IMP
             divAExp{}(HOLE:AExp{}, Y:AExp{})))),
       asK{AExp{}}(
         divAExp{}(intAsAExp{}(I:Int{}), Y:AExp{})))
-  []
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("cooling"), \dv{AttributeValue{}}("divAExp,1")) ]
 
   /* (X / Y) = gamma HOLE . (X / HOLE) [Y] */
 
@@ -601,11 +599,11 @@ module IMP
           HOLE:AExp{},
           divAExp{}(X:AExp{}, HOLE:AExp{})),
         Y:AExp{}))
-  [#strict{}("divAExp", two{}())]
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("strictAxiom"), \dv{AttributeValue{}}("divAExp,2")) ]
   */
 
   /* heating rule
-   *   X / Y = Y ~> gamma HOLE . (X / HOLE) 
+   *   X / Y = Y ~> gamma HOLE . (X / HOLE)
    */
 
   axiom{R}
@@ -618,9 +616,9 @@ module IMP
           gamma{AExp{}, AExp{}}(
             HOLE:AExp{},
             divAExp{}(X:AExp{}, HOLE:AExp{})))))
-  []
-      
-    
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("heating"), \dv{AttributeValue{}}("divAExp,2")) ]
+
+
   /* cooling rule
    * I ~> gamma HOLE . (X / HOLE) = X / I if I has sort Int
    */
@@ -635,13 +633,12 @@ module IMP
             divAExp{}(X:AExp{}, HOLE:AExp{})))),
       asK{AExp{}}(
         divAExp{}(X:AExp{}, intAsAExp{}(I:Int{}))))
-  []
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("cooling"), \dv{AttributeValue{}}("divAExp,2")) ]
 
   /* syntax AExp ::= AExp "+" AExp [strict] */
 
   symbol plusAExp{}(AExp{}, AExp{}) : AExp{}
-  [strict{}(\dv{Strict{}}("plusAExp"), firstArgument{}()) ,
-   strict{}(\dv{Strict{}}("plusAExp"), secondArgument{}())]
+  [ keyOnlyAttribute{}(\dv{AttributeKey{}}("strict")) ]
 
   /* plusAExp is functional */
 
@@ -662,11 +659,11 @@ module IMP
           HOLE:AExp{},
           plusAExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
-  [#strict{}("plusAExp", one{}())]
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("strictAxiom"), \dv{AttributeValue{}}("plusAExp,1")) ]
   */
 
   /* heating rule
-   *   X + Y = X ~> gamma HOLE . (HOLE + Y) 
+   *   X + Y = X ~> gamma HOLE . (HOLE + Y)
    */
 
   axiom{R}
@@ -679,9 +676,9 @@ module IMP
           gamma{AExp{}, AExp{}}(
             HOLE:AExp{},
             plusAExp{}(HOLE:AExp{}, Y:AExp{})))))
-  []
-      
-    
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("heating"), \dv{AttributeValue{}}("plusAExp,1")) ]
+
+
   /* cooling rule
    * I ~> gamma HOLE . (HOLE + Y) = I + Y if I has sort Int
    */
@@ -696,7 +693,7 @@ module IMP
             plusAExp{}(HOLE:AExp{}, Y:AExp{})))),
       asK{AExp{}}(
         plusAExp{}(intAsAExp{}(I:Int{}), Y:AExp{})))
-  []
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("cooling"), \dv{AttributeValue{}}("plusAExp,1")) ]
 
 
   /* (X + Y) = gamma HOLE . (X + HOLE) [Y] */
@@ -714,7 +711,7 @@ module IMP
   */
 
   /* heating rule
-   *   X + Y = Y ~> gamma HOLE . (X + HOLE) 
+   *   X + Y = Y ~> gamma HOLE . (X + HOLE)
    */
 
   axiom{R}
@@ -727,9 +724,9 @@ module IMP
           gamma{AExp{}, AExp{}}(
             HOLE:AExp{},
             plusAExp{}(X:AExp{}, HOLE:AExp{})))))
-  []
-      
-    
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("heating"), \dv{AttributeValue{}}("plusAExp,2")) ]
+
+
   /* cooling rule
    * I ~> gamma HOLE . (X + HOLE) = X + I if I has sort Int
    */
@@ -744,7 +741,7 @@ module IMP
             plusAExp{}(X:AExp{}, HOLE:AExp{})))),
       asK{AExp{}}(
         plusAExp{}(X:AExp{}, intAsAExp{}(I:Int{}))))
-  []
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("cooling"), \dv{AttributeValue{}}("plusAExp,2")) ]
 
 
   /* syntax BExp ::= ... */
@@ -773,12 +770,12 @@ module IMP
         \equals{BExp{},R}(
           boolAsBExp{}(B:Bool{}),
           E:BExp{})))
-  []  
-  
+  []
+
   /* syntax BExp ::= AExp "<=" AExp [seqstrict] */
 
   symbol leqBExp{}(AExp{}, AExp{}) : BExp{}
-  [seqstrict{}(\dv{Strict{}}("leqBExp"))]
+  [ keyOnlyAttribute{}(\dv{AttributeKey{}}("seqstrict")) ]
 
   /* leqBExp is functional */
 
@@ -797,11 +794,11 @@ module IMP
           HOLE:AExp{},
           leqBExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
-  [seqstrict{}(\dv{Strict{}}("leqBExp"))]
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("strictAxiom"), \dv{AttributeValue{}}("leqBExp,1")) ]
   */
 
   /* heating rule
-   *   X <= Y = X ~> gamma HOLE . (HOLE <= Y) 
+   *   X <= Y = X ~> gamma HOLE . (HOLE <= Y)
    */
 
   axiom{R}
@@ -814,9 +811,9 @@ module IMP
           gamma{AExp{}, BExp{}}(
             HOLE:AExp{},
             leqBExp{}(HOLE:AExp{}, Y:AExp{})))))
-  [seqstrict{}(\dv{Strict{}}("leqBExp"))]
-      
-    
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("heating"), \dv{AttributeValue{}}("leqBExp,1")) ]
+
+
   /* cooling rule
    * I ~> gamma HOLE . (HOLE <= Y) = I <= Y if I has sort Int
    */
@@ -831,7 +828,7 @@ module IMP
             leqBExp{}(HOLE:AExp{}, Y:AExp{})))),
       asK{BExp{}}(
         leqBExp{}(intAsAExp{}(I:Int{}), Y:AExp{})))
-  [seqstrict{}(\dv{Strict{}}("leqBExp"))]
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("cooling"), \dv{AttributeValue{}}("leqBExp,1")) ]
 
   /* X <= intAsAExp(Y) = (gamma HOLE . X <= intAsAExp(HOLE)) [Y]
      where Y has sort Int.
@@ -849,7 +846,7 @@ module IMP
           HOLE:Int{},
           leqBExp{}(X:AExp{}, intAsAExp{}(HOLE:Int{}))),
         Y:Int{}))
-  [#seqstrict{}("leqBExp")]
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("strictAxiom"), \dv{AttributeValue{}}("leqBExp,2")) ]
   */
 
   /* heating rule
@@ -866,9 +863,9 @@ module IMP
           gamma{AExp{}, BExp{}}(
             HOLE:AExp{},
             leqBExp{}(intAsAExp{}(I:Int{}), HOLE:AExp{})))))
-  [seqstrict{}(\dv{Strict{}}("leqBExp"))]
-      
-    
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("heating"), \dv{AttributeValue{}}("leqBExp,2")) ]
+
+
   /* cooling rule
    * J ~> gamma HOLE . (I <= HOLE) = I <= J if I and J are Int
    */
@@ -883,13 +880,13 @@ module IMP
             leqBExp{}(intAsAExp{}(J:Int{}), HOLE:AExp{})))),
       asK{BExp{}}(
         leqBExp{}(intAsAExp{}(J:Int{}), intAsAExp{}(I:Int{}))))
-  [seqstrict{}(\dv{Strict{}}("leqBExp"))]
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("cooling"), \dv{AttributeValue{}}("leqBExp,2")) ]
 
 
   /* syntax BExp ::= "!" BExp [strict] */
 
   symbol notBExp{}(BExp{}) : BExp{}
-  [strict{}(\dv{Strict{}}("notBExp"), firstArgument{}())]
+  [ keyOnlyAttribute{}(\dv{AttributeKey{}}("strict")) ]
 
   /*
   axiom{R}
@@ -900,7 +897,7 @@ module IMP
           HOLE:BExp{},
           notBExp{}(HOLE:BExp{})),
         B:BExp{}))
-  [strict{}(\dv{Strict{}}("notBExp"), firstArgument{}())]
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("strictAxiom"), \dv{AttributeValue{}}("notBExp,1")) ]
   */
 
 
@@ -918,9 +915,9 @@ module IMP
           gamma{BExp{}, BExp{}}(
             HOLE:BExp{},
             notBExp{}(HOLE:BExp{})))))
-  [strict{}(\dv{Strict{}}("notBExp"), firstArgument{}())]
-      
-    
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("heating"), \dv{AttributeValue{}}("notBExp,1")) ]
+
+
   /* cooling rule
    * B ~> gamma HOLE . ! HOLE = ! B if B is Bool
    */
@@ -935,13 +932,13 @@ module IMP
             notBExp{}(HOLE:BExp{})))),
       asK{BExp{}}(
         notBExp{}(boolAsBExp{}(B:Bool{}))))
-  [strict{}(\dv{Strict{}}("notBExp"), firstArgument{}())]
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("cooling"), \dv{AttributeValue{}}("notBExp,1")) ]
 
 
   /* syntax BExp ::= BExp "&&" BExp [strict(1)] */
 
   symbol andBExp{}(BExp{}, BExp{}) : BExp{}
-  [strict{}(\dv{Strict{}}("andBExp"), firstArgument{}())]
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("strict"), \dv{AttributeValue{}}("1")) ]
 
   /*
   axiom{R}
@@ -952,11 +949,11 @@ module IMP
           HOLE:BExp{},
           andBExp{}(HOLE:BExp{}, Y:BExp{})),
         X:BExp{}))
-  [strict{}(\dv{Strict{}}("andBExp"), firstArgument{}())]
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("strictAxiom"), \dv{AttributeValue{}}("andBExp,1")) ]
   */
 
   /* heating rule
-   *   X && Y = X ~> gamma HOLE . (HOLE && Y) 
+   *   X && Y = X ~> gamma HOLE . (HOLE && Y)
    */
 
   axiom{R}
@@ -969,9 +966,9 @@ module IMP
           gamma{BExp{}, BExp{}}(
             HOLE:BExp{},
             andBExp{}(HOLE:BExp{}, Y:BExp{})))))
-  [strict{}(\dv{Strict{}}("andBExp"), firstArgument{}())]
-      
-    
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("heating"), \dv{AttributeValue{}}("andBExp,1")) ]
+
+
   /* cooling rule
    * B ~> gamma HOLE . (HOLE && Y) = B && Y if B has sort Bool
    */
@@ -986,7 +983,7 @@ module IMP
             andBExp{}(HOLE:BExp{}, Y:BExp{})))),
       asK{BExp{}}(
         andBExp{}(boolAsBExp{}(B:Bool{}), Y:BExp{})))
-  [strict{}(\dv{Strict{}}("andBExp"), firstArgument{}())]
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("cooling"), \dv{AttributeValue{}}("andBExp,1")) ]
 
   /* syntax Block ::= ... */
 
@@ -1010,8 +1007,8 @@ module IMP
 
   /* syntax Stmt ::= Id "=" AExp ";" [strict(2)] */
 
-  symbol asgn{}(Id{}, AExp{}) : Stmt{} 
-  [strict{}(\dv{Strict{}}("asgn"), secondArgument{}())]
+  symbol asgn{}(Id{}, AExp{}) : Stmt{}
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("strict"), \dv{AttributeValue{}}("2")) ]
 
   /*
   axiom{R}
@@ -1022,11 +1019,11 @@ module IMP
           HOLE:AExp{},
           asgn{}(X:Id{}, HOLE:AExp{})),
         E:AExp{}))
-  [strict{}(\dv{Strict{}}("asgn"), secondArgument{}())]
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("strictAxiom"), \dv{AttributeValue{}}("asgn,2")) ]
   */
 
   /* heating rule
-   *   X = E; = E ~> gamma HOLE . (X = HOLE;) 
+   *   X = E; = E ~> gamma HOLE . (X = HOLE;)
    */
 
   axiom{R}
@@ -1039,9 +1036,9 @@ module IMP
           gamma{AExp{}, Stmt{}}(
             HOLE:AExp{},
             asgn{}(X:Id{}, HOLE:AExp{})))))
-  []
-      
-    
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("heating"), \dv{AttributeValue{}}("asgn,2")) ]
+
+
   /* cooling rule
    * I ~> gamma HOLE . (X = HOLE;) = X = I; where I is Int
    */
@@ -1056,13 +1053,13 @@ module IMP
             asgn{}(X:Id{}, HOLE:AExp{})))),
       asK{Stmt{}}(
         asgn{}(X:Id{}, intAsAExp{}(I:Int{}))))
-  []
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("cooling"), \dv{AttributeValue{}}("asgn,2")) ]
 
 
   /* syntax Stmt ::= "ite" "(" BExp ")" Block "else" Block [strict(1)] */
 
   symbol ite{}(BExp{}, Block{}, Block{}) : Stmt{}
-  [strict{}(\dv{Strict{}}("ite"), firstArgument{}())]
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("strict"), \dv{AttributeValue{}}("1")) ]
 
   /*
   axiom{R}
@@ -1073,11 +1070,11 @@ module IMP
           HOLE:BExp{},
           ite{}(HOLE:BExp{}, S1:Block{}, S2:Block{})),
         B:BExp{}))
-  [strict{}(\dv{Strict{}}("ite"), firstArgument{}())]
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("strictAxiom"), \dv{AttributeValue{}}("ite,1")) ]
   */
 
   /* heating rule
-   * ite B S1 S2 = B ~> gamma HOLE . ite HOLE S1 S2 
+   * ite B S1 S2 = B ~> gamma HOLE . ite HOLE S1 S2
    */
 
   axiom{R}
@@ -1090,9 +1087,9 @@ module IMP
           gamma{BExp{}, Stmt{}}(
             HOLE:BExp{},
             ite{}(HOLE:BExp{}, S1:Block{}, S2:Block{})))))
-  []
-      
-    
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("heating"), \dv{AttributeValue{}}("ite,1")) ]
+
+
   /* cooling rule
    * B ~> gamma HOLE . ite HOLE S1 S2 = ite B S1 S2 if B is a Bool
    */
@@ -1107,7 +1104,7 @@ module IMP
             ite{}(HOLE:BExp{}, S1:Block{}, S2:Block{})))),
       asK{Stmt{}}(
         ite{}(boolAsBExp{}(B:Bool{}), S1:Block{}, S2:Block{})))
-  []
+  [ keyValueAttribute{}(\dv{AttributeKey{}}("cooling"), \dv{AttributeValue{}}("ite,1")) ]
   /* syntax Stmt ::= "while" "(" BExp ")" Block */
 
   symbol while{}(BExp{}, Block{}) : Stmt{} []
@@ -1249,7 +1246,7 @@ module IMP
        statecell{}(M:Map{Id{},Int{}}))))
   []
 
-          
+
 
   /* rule I1 + I2 => I1 +Int I2 */
 
@@ -1517,7 +1514,7 @@ module IMP
    *   C[kcell((X = I => .) ~> DOT1)]
    *    [statecell(DOT2 merge X |-> (UNDERSCORE => I) merge DOT3)]
    */
- 
+
   /*
   axiom{S}
     app{StateCell{},S}(
@@ -1564,7 +1561,7 @@ module IMP
             X:Id{},
             I:Int{})))))
   []
-          
+
 
 
   /* In K:
@@ -1582,7 +1579,7 @@ module IMP
       arrow{}(asK{Stmt{}}(S1:Stmt{}), asK{Stmt{}}(S2:Stmt{}))))
   []
   */
-  
+
   axiom{}
     \rewrites{Cfg{}}(
       cfg{}(topcell{}(
@@ -1722,7 +1719,7 @@ module IMP
            REST:K{})),
        statecell{}(M:Map{Id{},Int{}}))))
   []
-    
+
   /* rule <k> int (X,Xs => Xs);_ </k>
           <state> Rho:Map (.Map => X |-> 0) </state>
      requires notBool (X in keys(Rho))
@@ -1751,7 +1748,7 @@ module IMP
             \rewrites{Map{Id{},Int{}}}(
               emp{Id{},Int{}}(),
               bind{Id{},Int{}}(X:Id{}, zero{}()))))))
-  []  
+  []
 
   */
 
@@ -1760,7 +1757,7 @@ module IMP
    * =>
    * <T> <k> int Xs; S </k> <state> insert(Rho, X, 0) </statem> </T>
    */
-         
+
   axiom{}
     \rewrites{Cfg{}}(
       cfg{}(topcell{}(
@@ -1798,7 +1795,7 @@ module IMP
         asK{Stmt{}}(S:Stmt{})))
   []
   */
-    
+
   axiom{}
     \rewrites{Cfg{}}(
       cfg{}(topcell{}(

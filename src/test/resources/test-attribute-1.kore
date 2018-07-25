@@ -2,6 +2,6 @@
 
 module TEST-ATTRIBUTE-1
 
-  sort Nat{} [hook{}(\dv{Hook{}}("Nat"))]
+  sort Nat{} [keyValueAttribute{}(\dv{AttributeKey{}}("hook"), \dv{AttributeValue{}}("Nat"))]
 
 endmodule []

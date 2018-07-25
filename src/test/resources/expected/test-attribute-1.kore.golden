@@ -12,18 +12,27 @@ Definition
                             [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        { symbolOrAliasConstructor = (Id "keyValueAttribute" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
                                     [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
                                         { domainValueSort =
                                             SortActualSort SortActual
-                                                { sortActualName = (Id "Hook" AstLocationNone) :: Id Object
+                                                { sortActualName = (Id "AttributeKey" AstLocationNone) :: Id Object
                                                 , sortActualSorts = []
                                                 }
                                         , domainValueChild =
-                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "Nat")))))
+                                            Fix (StringLiteralPattern (StringLiteral "hook"))
+                                        }))))
+                                    , Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
+                                        { domainValueSort =
+                                            SortActualSort SortActual
+                                                { sortActualName = (Id "AttributeValue" AstLocationNone) :: Id Object
+                                                , sortActualSorts = []
+                                                }
+                                        , domainValueChild =
+                                            Fix (StringLiteralPattern (StringLiteral "Nat"))
                                         }))))
                                     ]
                                 }))))

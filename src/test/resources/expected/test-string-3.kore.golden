@@ -4,18 +4,18 @@ Definition
             [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                 { applicationSymbolOrAlias =
                     SymbolOrAlias
-                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                        { symbolOrAliasConstructor = (Id "keyOnlyAttribute" AstLocationNone) :: Id Object
                         , symbolOrAliasParams = []
                         }
                 , applicationChildren =
                     [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
                         { domainValueSort =
                             SortActualSort SortActual
-                                { sortActualName = (Id "Hook" AstLocationNone) :: Id Object
+                                { sortActualName = (Id "AttributeKey" AstLocationNone) :: Id Object
                                 , sortActualSorts = []
                                 }
                         , domainValueChild =
-                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "\v")))))
+                            Fix (StringLiteralPattern (StringLiteral "\v"))
                         }))))
                     ]
                 }))))

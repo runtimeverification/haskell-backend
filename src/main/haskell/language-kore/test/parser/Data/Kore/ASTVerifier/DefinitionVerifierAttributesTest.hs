@@ -12,7 +12,9 @@ import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTUtils.SmartPatterns
 import           Data.Kore.ASTVerifier.DefinitionVerifierTestHelpers
 import           Data.Kore.Error
-import           Data.Kore.Implicit.Attributes                       (attributeObjectSort)
+import           Data.Kore.Implicit.Attributes                       (attributeKeyObjectSort,
+                                                                      attributeObjectSort,
+                                                                      keyValueAttribute)
 import           Data.Kore.KoreHelpers
 
 definitionVerifierAttributesTests :: TestTree
@@ -22,29 +24,17 @@ definitionVerifierAttributesTests =
         [ expectSuccess "Attribute sorts and symbols visible in attributes"
             Definition
                 { definitionAttributes = Attributes
-                    [ asObjectKorePattern (ApplicationPattern Application
-                        { applicationSymbolOrAlias =
-                            SymbolOrAlias
-                                { symbolOrAliasConstructor = testId "strict"
-                                , symbolOrAliasParams = []
-                                }
-                        , applicationChildren =
-                            [ strictDomainValuePattern
-                            , argumentPositionPattern
-                            ]
-                        })
-                    ]
+                    [ keyValueAttribute "strict" "2" ]
                 , definitionModules = []
                 }
-        , expectFailureWithError "Attribute sort not visible outside attributes"
+        , expectFailureWithError "Attribute symbol not visible outside attributes"
             (Error
                 [ "module 'M1'"
                 , "axiom declaration"
-                , "\\dv (<test data>)"
-                , "sort 'Strict' (<test data>)"
-                , "(<test data>)"
+                , "symbol or alias 'keyValueAttribute' (<implicitly defined entity>)"
+                , "(<implicitly defined entity>)"
                 ]
-                "Sort 'Strict' not declared."
+                "Symbol 'keyValueAttribute' not defined."
             )
             Definition
                 { definitionAttributes = Attributes []
@@ -56,7 +46,7 @@ definitionVerifierAttributesTests =
                                 (SentenceAxiom
                                     { sentenceAxiomParameters = []
                                     , sentenceAxiomPattern =
-                                        strictDomainValuePattern
+                                        keyValueAttribute "strict" "2"
                                     , sentenceAxiomAttributes = Attributes []
                                     }::KoreSentenceAxiom
                                 )
@@ -110,14 +100,15 @@ definitionVerifierAttributesTests =
                     ]
                 }
         , expectFailureWithError
-            "Attribute symbol not visible outside attributes"
+            "Attribute sort not visible outside attributes"
             (Error
                 [ "module 'M1'"
                 , "axiom declaration"
-                , "symbol or alias 'secondArgument' (<test data>)"
+                , "\\dv (<unknown location>)"
+                , "sort 'AttributeKey' (<test data>)"
                 , "(<test data>)"
                 ]
-                "Symbol 'secondArgument' not defined."
+                "Sort 'AttributeKey' not declared."
             )
             Definition
                 { definitionAttributes = Attributes []
@@ -128,8 +119,9 @@ definitionVerifierAttributesTests =
                             [ asSentence
                                 (SentenceAxiom
                                     { sentenceAxiomParameters = []
-                                    , sentenceAxiomPattern =
-                                        argumentPositionPattern
+                                    , sentenceAxiomPattern = patternPureToKore
+                                        (DV_ (attributeKeyObjectSort AstLocationTest)
+                                            (StringLiteral_ "strict"))
                                     , sentenceAxiomAttributes = Attributes []
                                     }::KoreSentenceAxiom
                                 )
@@ -149,8 +141,6 @@ definitionVerifierAttributesTests =
   where
     mySortName :: SortName
     mySortName = SortName "mySort"
-    strictDomainValuePattern :: CommonKorePattern
-    strictDomainValuePattern = domainValuePattern (SortName "Strict")
     domainValuePattern :: SortName -> CommonKorePattern
     domainValuePattern sortName = patternPureToKore
         (DV_ (simpleSort sortName) (StringLiteral_ "asgn"))
@@ -168,17 +158,5 @@ definitionVerifierAttributesTests =
                 , equalsResultSort = resultSort
                 , equalsFirst = child
                 , equalsSecond = child
-                }
-            )
-    argumentPositionPattern :: CommonKorePattern
-    argumentPositionPattern =
-        asObjectKorePattern
-            (ApplicationPattern Application
-                { applicationSymbolOrAlias =
-                    SymbolOrAlias
-                        { symbolOrAliasConstructor = testId "secondArgument"
-                        , symbolOrAliasParams = []
-                        }
-                , applicationChildren = []
                 }
             )

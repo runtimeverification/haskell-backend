@@ -1,4 +1,4 @@
-[hook{}(\dv{Hook{}}("\u00A9"))]
+[keyOnlyAttribute{}(\dv{AttributeKey{}}("\u00A9"))]
 
 module TEST-STRING-6
 

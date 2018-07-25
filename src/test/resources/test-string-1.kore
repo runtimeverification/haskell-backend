@@ -1,4 +1,4 @@
-[hook{}(\dv{Hook{}}("\?"))]
+[keyOnlyAttribute{}(\dv{AttributeKey{}}("\?"))]
 
 module TEST-STRING-1
 

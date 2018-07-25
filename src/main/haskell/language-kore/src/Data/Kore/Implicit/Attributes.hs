@@ -13,6 +13,8 @@ Portability : POSIX
 
 module Data.Kore.Implicit.Attributes
     ( attributeObjectSort
+    , attributeKeyObjectSort
+    , attributeValueObjectSort
     , uncheckedAttributesModule
     , KeyValueAttribute (..)
     , attributeToKeyValueAttribute

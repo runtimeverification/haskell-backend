@@ -1,4 +1,4 @@
-[hook{}(\dv{Hook{}}("\a"))]
+[keyOnlyAttribute{}(\dv{AttributeKey{}}("\a"))]
 
 module TEST-STRING-2
 

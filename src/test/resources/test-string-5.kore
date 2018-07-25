@@ -1,4 +1,4 @@
-[hook{}(\dv{Hook{}}("\x7777"))]
+[keyOnlyAttribute{}(\dv{AttributeKey{}}("\x7777"))]
 
 module TEST-STRING-5
 

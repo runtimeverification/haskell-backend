@@ -261,7 +261,7 @@ verifyParameterizedPattern pat indexedModule helpers sortParams vars =
             , variableLeveledFunction = \p -> SortOrError $
                 verifyVariableUsage p indexedModule helpers sortParams vars
             , domainValueLeveledFunction = \dv -> SortOrError $
-                verifyDomainValue dv indexedModule helpers sortParams vars
+                verifyDomainValue dv helpers sortParams
 
             }
         pat
@@ -418,12 +418,18 @@ verifyVariableUsage variable _ verifyHelpers _ _ = do
 verifyDomainValue
     :: (MetaOrObject level)
     => DomainValue Object
-    -> KoreIndexedModule atts
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
-    -> DeclaredVariables
     -> Either (Error VerifyError) (Sort Object)
-verifyDomainValue dv _ _ _ _ = return (domainValueSort dv)
+verifyDomainValue dv verifyHelpers declaredSortVariables =
+    case isMetaOrObject verifyHelpers of
+        IsMeta -> error "Domain Values are object-only. Should not happen."
+        IsObject -> do
+            verifySort
+                (verifyHelpersFindSort verifyHelpers)
+                declaredSortVariables
+                (domainValueSort dv)
+            return (domainValueSort dv)
 
 verifyStringPattern :: Either (Error VerifyError) (Sort Meta)
 verifyStringPattern = Right charListMetaSort
