@@ -18,4 +18,6 @@ import           Data.Kore.Unification.UnifierImpl as UnifierImpl (FunctionalPro
                                                                    UnificationProof (..),
                                                                    UnificationSolution (..),
                                                                    UnificationSubstitution,
+                                                                   mapSubstitutionVariables,
+                                                                   normalizeSubstitutionDuplication,
                                                                    unificationProcedure)
