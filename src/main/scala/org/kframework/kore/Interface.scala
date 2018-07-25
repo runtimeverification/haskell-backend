@@ -35,7 +35,7 @@ object Import {
 }
 
 trait SortDeclaration extends Declaration {
-  def params: Seq[Sort]
+  def params: Seq[SortVariable]
 
   def sort: Sort
 
@@ -43,7 +43,7 @@ trait SortDeclaration extends Declaration {
 }
 
 object SortDeclaration {
-  def unapply(arg: SortDeclaration): Option[(Seq[Sort], Sort, Attributes)]
+  def unapply(arg: SortDeclaration): Option[(Seq[SortVariable], Sort, Attributes)]
   = Some(arg.params, arg.sort, arg.att)
 }
 
