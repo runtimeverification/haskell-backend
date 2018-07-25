@@ -19,62 +19,88 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on Github at <https://github.com/kframework/kore/blob/master/src/main/haskell/language-kore/README.md>
+description: |
+  Please see the README on Github at <https://github.com/kframework/kore/blob/master/src/main/haskell/language-kore/README.md>
 
 dependencies:
-- base >= 4.7
-- megaparsec >=6.4.0
-- parser-combinators
-- bytestring >=0.10
-- containers
-- array
-- bytestring-trie
-- mtl
-- hashable
-- data-fix
-- clock
-- lens
-- groom
-- deepseq
-- optparse-applicative
-- reflection
-- time
-- gitrev
-- data-default
+  - base >= 4.7
+  - array
+  - bytestring >= 0.10
+  - bytestring-trie
+  - containers
+  - clock
+  - data-default
+  - data-fix
+  - deepseq
+  - gitrev
+  - groom
+  - hashable
+  - lens
+  - megaparsec >=6.4.0
+  - mtl
+  - optparse-applicative
+  - parser-combinators
+  - prettyprinter
+  - reflection
+  - time
+
+build-tools:
+  - tasty-discover
 
 library:
   source-dirs: src
+  default-extensions:
+    - LambdaCase
+    - OverloadedStrings
 
 executables:
   kore-parser:
     main:                Main.hs
-    source-dirs:         app/parser
+    source-dirs:
+      - app/parser
+      - app/share
     ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
     dependencies:
-    - language-kore
+      - language-kore
+
+  kore-format:
+    main: Main.hs
+    source-dirs:
+      - app/format
+      - app/share
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    default-extensions:
+      - RecordWildCards
+    dependencies:
+      - language-kore
 
 tests:
   kore-parser-test:
-    main:                AllParserTests.hs
+    main: Driver.hs
     source-dirs:
       - test
       - test/parser
     ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
     dependencies:
-    - language-kore
-    - call-stack
-    - directory >= 1.2.2
-    - filepath
-    - QuickCheck
-    - tasty
-    - tasty-ant-xml
-    - tasty-hunit
-    - tasty-golden
-    - tasty-quickcheck
-    - template-haskell
+      - language-kore
+      - call-stack
+      - directory >= 1.2.2
+      - filepath
+      - QuickCheck
+      - tasty
+      - tasty-ant-xml
+      - tasty-hunit
+      - tasty-golden
+      - tasty-quickcheck
+      - template-haskell
+    default-extensions:
+      - GADTs

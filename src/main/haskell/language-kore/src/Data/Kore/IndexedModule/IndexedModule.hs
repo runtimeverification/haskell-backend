@@ -127,6 +127,9 @@ indexedModuleRawSentences im =
     map (asSentence . snd)
         (Map.elems (indexedModuleMetaSymbolSentences im))
     ++
+    map (asSentence . snd)
+        (Map.elems (indexedModuleMetaSortDescriptions im))
+    ++
     map hookSymbolIfNeeded
         (Map.toList (indexedModuleObjectSymbolSentences im))
     ++
@@ -459,6 +462,24 @@ indexModuleMetaSentence
             }
         )
 
+indexModuleMetaSentence
+    _ _ _
+    ( indexedModules
+    , indexedModule
+    )
+    ( SentenceSortSentence sentence )
+  = return
+    ( indexedModules
+    , indexedModule
+      { indexedModuleMetaSortDescriptions =
+          Map.insert
+          (sentenceSortName sentence)
+          ( parseAttributes (sentenceSortAttributes sentence)
+          , sentence
+          )
+          (indexedModuleMetaSortDescriptions indexedModule)
+      }
+    )
 
 indexModuleObjectSentence
     :: ParsedAttributes atts

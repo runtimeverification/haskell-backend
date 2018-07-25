@@ -82,6 +82,7 @@ definedNamesForMetaSentence (SentenceSymbolSentence sentenceSymbol) =
     [ toUnparameterizedId (getSentenceSymbolOrAliasConstructor sentenceSymbol) ]
 definedNamesForMetaSentence (SentenceImportSentence _) = []
 definedNamesForMetaSentence (SentenceAxiomSentence _)  = []
+definedNamesForMetaSentence (SentenceSortSentence _)   = []
 
 definedNamesForObjectSentence
     :: Sentence Object sortParam pat variable -> [UnparameterizedId]
@@ -162,6 +163,21 @@ verifyMetaSentence
     (SentenceAxiomSentence axiomSentence)
   =
     verifyAxiomSentence axiomSentence indexedModule attributesVerification
+verifyMetaSentence
+    _indexedModule
+    attributesVerification
+    (SentenceSortSentence sortSentence)
+  = do
+    koreFailWithLocationsWhen
+        (sortParams /= [])
+        [sortId]
+        ("Malformed meta sort '" ++ getId sortId ++ "' with non-empty Parameter sorts.")
+    verifyAttributes
+        (sentenceSortAttributes sortSentence)
+        attributesVerification
+  where
+    sortId     = sentenceSortName sortSentence
+    sortParams = sentenceSortParameters sortSentence
 verifyMetaSentence _ _ (SentenceImportSentence _) =
     -- Since we have an IndexedModule, we assume that imports were already
     -- resolved, so there is nothing left to verify here.
@@ -325,7 +341,7 @@ verifyAxiomSentence axiom indexedModule attributesVerification =
         )
 
 verifySortSentence
-    :: KoreSentenceSort
+    :: KoreSentenceSort Object
     -> AttributesVerification atts
     -> Either (Error VerifyError) VerifySuccess
 verifySortSentence sentenceSort attributesVerification =

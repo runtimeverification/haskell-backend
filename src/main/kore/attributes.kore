@@ -1,17 +1,10 @@
 []
-
-    module BUILTIN-attributes
-        
-            sort Attribute{}[]
-            sort AttributeKey{}[]
-            sort AttributeValue{}[]
-            symbol keyValueAttribute{}(
-                AttributeKey{},
-                AttributeValue{}
-            ):Attribute{}[]
-            symbol keyOnlyAttribute{}(
-                AttributeKey{}
-            ):Attribute{}[]
-        
-    endmodule
+module BUILTIN-attributes
+    sort Attribute{} []
+    sort AttributeKey{} []
+    sort AttributeValue{} []
+    symbol keyValueAttribute{}(AttributeKey{}, AttributeValue{}) : Attribute{}
     []
+    symbol keyOnlyAttribute{}(AttributeKey{}) : Attribute{} []
+endmodule
+[]

@@ -22,7 +22,7 @@ import           Data.Kore.Unification.Unifier
 import           Data.Fix
 import           Data.List                     (intersperse)
 
-{-# ANN module "HLint: ignore Use record patterns" #-}
+{-# ANN module ("HLint: ignore Use record patterns" :: String) #-}
 {-
 This module uses the following pattern repeatedly:
 instance PrettyPrint Something where
@@ -540,7 +540,7 @@ instance (MetaOrObject level, PrettyPrint (variable level))
     prettyPrint flags purePattern =
         writeOneFieldStruct flags "Fix" (unFix purePattern)
 
-instance PrettyPrint (Attributes)
+instance PrettyPrint Attributes
   where
     prettyPrint flags (Attributes a)
         | null a    = write "Attributes []"
