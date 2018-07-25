@@ -119,15 +119,14 @@ executables:
       - kore
 
 tests:
-  kore-parser-test:
+  kore-test:
     main: Driver.hs
     source-dirs:
-      - test/share
-      - test/parser
+      - test
     ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
     dependencies:
       - kore
       - call-stack
@@ -138,27 +137,5 @@ tests:
       - tasty-ant-xml
       - tasty-hunit
       - tasty-golden
-      - tasty-quickcheck
-      - template-haskell
-
-  prover-test:
-    source-dirs:
-      - test/share
-      - test/prover
-    main: Driver.hs
-    ghc-options:
-      - -threaded
-      - -rtsopts
-      - -with-rtsopts=-N
-    dependencies:
-      - kore
-      - bytestring
-      - directory >= 1.2.2
-      - filepath
-      - QuickCheck
-      - tasty
-      - tasty-ant-xml
-      - tasty-golden
-      - tasty-hunit
       - tasty-quickcheck
       - template-haskell
