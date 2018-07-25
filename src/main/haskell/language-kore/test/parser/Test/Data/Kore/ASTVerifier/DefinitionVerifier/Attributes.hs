@@ -118,7 +118,7 @@ test_attributes =
                                 { sentenceAxiomParameters = []
                                 , sentenceAxiomPattern = patternPureToKore
                                     (DV_ (attributeKeyObjectSort AstLocationTest)
-                                        (StringLiteral_ "strict"))
+                                        (StringLiteral_ (StringLiteral "strict")))
                                 , sentenceAxiomAttributes = Attributes []
                                 }::KoreSentenceAxiom
                             )
@@ -140,7 +140,7 @@ test_attributes =
     mySortName = SortName "mySort"
     domainValuePattern :: SortName -> CommonKorePattern
     domainValuePattern sortName = patternPureToKore
-        (DV_ (simpleSort sortName) (StringLiteral_ "asgn"))
+        (DV_ (simpleSort sortName) (StringLiteral_ (StringLiteral "asgn")))
     sortSwitchingEquals
         :: OperandSort Object
         -> ResultSort Object

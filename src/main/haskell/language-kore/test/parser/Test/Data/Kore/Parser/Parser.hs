@@ -458,7 +458,7 @@ domainValuePatternParserTests =
     parseTree korePatternParser
         [ success "\\dv{s1}(\"a\")"
             ( patternPureToKore
-            $ DV_ (sortVariableSort "s1") (StringLiteral_ "a")
+            $ DV_ (sortVariableSort "s1") (StringLiteral_ (StringLiteral "a"))
             )
         , FailureWithoutMessage
             [ ""

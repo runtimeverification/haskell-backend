@@ -42,8 +42,8 @@ module Data.Kore.ASTUtils.SmartPatterns
 import           Data.Fix
 
 import           Data.Kore.AST.Common
---import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.PureML (PureMLPattern)
+import           Data.Kore.AST.MetaOrObject
+import           Data.Kore.AST.PureML       (PureMLPattern)
 --import           Data.Kore.MetaML.AST       (CommonMetaPattern)
 
 
@@ -52,40 +52,46 @@ pattern And_
     -> PureMLPattern level var
     -> PureMLPattern level var
     -> PureMLPattern level var
+
 pattern App_
     :: SymbolOrAlias level
     -> [PureMLPattern level var]
     -> PureMLPattern level var
+
 pattern Bottom_
     :: Sort level
     -> PureMLPattern level var
+
 pattern Ceil_
     :: Sort level
     -> Sort level
     -> PureMLPattern level var
     -> PureMLPattern level var
--- Due to the interaction of pattern synonyms and GADTS
--- I don't think I can write this type signature.
--- pattern DV_
---     :: Sort Object
---     -> CommonMetaPattern
---     -> PureMLPattern Object var
+
+pattern DV_
+  :: Sort Object
+  -> PureMLPattern Meta Variable
+  -> PureMLPattern Object var
+
 pattern Equals_
     :: Sort level
     -> Sort level
     -> PureMLPattern level var
     -> PureMLPattern level var
     -> PureMLPattern level var
+
 pattern Exists_
     :: Sort level
     -> var level
     -> PureMLPattern level var
     -> PureMLPattern level var
+
 pattern Floor_
     :: Sort level
     -> Sort level
     -> PureMLPattern level var
     -> PureMLPattern level var
+
 pattern Forall_
     :: Sort level
     -> var level
@@ -96,35 +102,41 @@ pattern Iff_
     -> PureMLPattern level var
     -> PureMLPattern level var
     -> PureMLPattern level var
+
 pattern Implies_
     :: Sort level
     -> PureMLPattern level var
     -> PureMLPattern level var
     -> PureMLPattern level var
+
 pattern In_
     :: Sort level
     -> Sort level
     -> PureMLPattern level var
     -> PureMLPattern level var
     -> PureMLPattern level var
--- pattern Next_
---     :: Sort Object
---     -> PureMLPattern Object var
---     -> PureMLPattern Object var
+
+pattern Next_
+  :: Sort Object
+  -> PureMLPattern Object var
+  -> PureMLPattern Object var
+
 pattern Not_
     :: Sort level
     -> PureMLPattern level var
     -> PureMLPattern level var
+
 pattern Or_
     :: Sort level
     -> PureMLPattern level var
     -> PureMLPattern level var
     -> PureMLPattern level var
--- pattern Rewrites_
---     :: Sort Object
---     -> PureMLPattern Object var
---     -> PureMLPattern Object var
---     -> PureMLPattern Object var
+
+pattern Rewrites_
+  :: Sort Object
+  -> PureMLPattern Object var
+  -> PureMLPattern Object var
+  -> PureMLPattern Object var
 
 pattern Top_
     :: Sort level
@@ -134,13 +146,13 @@ pattern Var_
     :: var level
     -> PureMLPattern level var
 
--- pattern StringLiteral_
---     :: String
---     -> PureMLPattern Meta var
+pattern StringLiteral_
+  :: StringLiteral
+  -> PureMLPattern Meta var
 
--- pattern CharLiteral_
---     :: Char
---     -> PureMLPattern Meta var
+pattern CharLiteral_
+  :: CharLiteral
+  -> PureMLPattern Meta var
 
 -- No way to make multiline pragma?
 -- NOTE: If you add a case to the AST type, add another synonym here.
@@ -165,5 +177,5 @@ pattern Rewrites_     s2   a b = Fix (RewritesPattern (Rewrites s2 a b))
 pattern Top_          s2       = Fix (TopPattern (Top s2))
 pattern Var_             v     = Fix (VariablePattern v)
 
-pattern StringLiteral_ s = Fix (StringLiteralPattern (StringLiteral s))
-pattern CharLiteral_   c = Fix (CharLiteralPattern   (CharLiteral c))
+pattern StringLiteral_ s = Fix (StringLiteralPattern s)
+pattern CharLiteral_   c = Fix (CharLiteralPattern   c)

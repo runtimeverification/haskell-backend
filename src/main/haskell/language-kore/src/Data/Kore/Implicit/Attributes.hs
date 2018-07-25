@@ -113,7 +113,8 @@ attributeToKeyValueAttribute p =
         Right (App_ h children)
           | h == implicitGroundHead keyValueAttributeLabel ->
                 case children of
-                    [~ (DV_ _ (StringLiteral_ k)), ~ (DV_ _ (StringLiteral_ v))]
+                    [ ~ (DV_ _ (StringLiteral_ (StringLiteral k))),
+                        ~ (DV_ _ (StringLiteral_ (StringLiteral v)))]
                         -> Just KeyValueAttribute
                             { key = k
                             , value = Just v
@@ -121,7 +122,7 @@ attributeToKeyValueAttribute p =
                     _ -> Nothing
           |  h == implicitGroundHead keyOnlyAttributeLabel ->
                 case children of
-                    [~ (DV_ _ (StringLiteral_ k))] ->
+                    [~ (DV_ _ (StringLiteral_ (StringLiteral k)))] ->
                         Just KeyValueAttribute
                         { key = k
                         , value = Nothing
@@ -133,14 +134,17 @@ attributeToKeyValueAttribute p =
 keyOnlyAttribute :: String -> CommonKorePattern
 keyOnlyAttribute k = patternPureToKore
     (App_ (implicitGroundHead keyOnlyAttributeLabel)
-        [DV_ (attributeKeyObjectSort AstLocationImplicit) (StringLiteral_ k)]
+        [DV_ (attributeKeyObjectSort AstLocationImplicit)
+            (StringLiteral_ (StringLiteral k))]
     )
 
 keyValueAttribute :: String -> String -> CommonKorePattern
 keyValueAttribute k v = patternPureToKore
     (App_ (implicitGroundHead keyValueAttributeLabel)
-        [ DV_ (attributeKeyObjectSort AstLocationImplicit) (StringLiteral_ k)
-        , DV_ (attributeValueObjectSort AstLocationImplicit) (StringLiteral_ v)
+        [ DV_ (attributeKeyObjectSort AstLocationImplicit)
+            (StringLiteral_ (StringLiteral k))
+        , DV_ (attributeValueObjectSort AstLocationImplicit)
+            (StringLiteral_ (StringLiteral v))
         ]
     )
 

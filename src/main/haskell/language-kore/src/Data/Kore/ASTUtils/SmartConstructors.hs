@@ -93,14 +93,14 @@ getSort x = getPatternResultSort (getResultSort given) $ unFix x
 
 -- | Placeholder sort for when we construct a new predicate
 -- But we don't know yet where it's going to be attached.
+-- No particular way to avoid this, unfortunately.
 -- This will probably happen often during proof routines.
 flexibleSort
     :: MetaOrObject level
     => Sort level
 flexibleSort =
-    SortVariableSort SortVariable
-        { getSortVariable = noLocationId "__FlexibleSort__" } --FIXME
-
+    SortVariableSort $ SortVariable
+        { getSortVariable = noLocationId "*" } --FIXME
 
 patternLens
     :: (Applicative f, MetaOrObject level)
@@ -118,7 +118,8 @@ patternLens
   And_       s2   a b -> And_      <$>          o s2           <*> c a <*> c b
   Bottom_    s2       -> Bottom_   <$>          o s2
   Ceil_   s1 s2   a   -> Ceil_     <$> i s1 <*> o s2           <*> c a
-  DV_        s2   a   -> DV_       <$>          o s2           <*> pure a
+  -- DV_        s2   a   -> DV_       <$>          o s2           <*> c a
+  Fix (DomainValuePattern (DomainValue s2 a )) -> DV_ <$> o s2 <*> pure a
   Equals_ s1 s2   a b -> Equals_   <$> i s1 <*> o s2           <*> c a <*> c b
   Exists_    s2 v a   -> Exists_   <$>          o s2 <*> var v <*> c a
   Floor_  s1 s2   a   -> Floor_    <$> i s1 <*> o s2           <*> c a
@@ -126,15 +127,18 @@ patternLens
   Iff_       s2   a b -> Iff_      <$>          o s2           <*> c a <*> c b
   Implies_   s2   a b -> Implies_  <$>          o s2           <*> c a <*> c b
   In_     s1 s2   a b -> In_       <$> i s1 <*> o s2           <*> c a <*> c b
-  Next_      s2   a   -> Next_     <$>          o s2           <*> c a
+  -- Next_      s2   a   -> Next_     <$>          o s2           <*> c a
+  Fix (NextPattern (Next s2 a)) -> Next_ <$> o s2 <*> c a
   Not_       s2   a   -> Not_      <$>          o s2           <*> c a
   Or_        s2   a b -> Or_       <$>          o s2           <*> c a <*> c b
-  Rewrites_  s2   a b -> Rewrites_ <$>          o s2           <*> c a <*> c b
+  -- Rewrites_  s2   a b -> Rewrites_ <$>          o s2           <*> c a <*> c b
+  Fix (RewritesPattern (Rewrites s2 a b)) -> Rewrites_ <$> o s2 <*> c a <*> c b
   Top_       s2       -> Top_      <$>          o s2
   Var_          v     -> Var_      <$>                   var v
-  StringLiteral_ s -> pure (StringLiteral_ s)
-  CharLiteral_   c -> pure (CharLiteral_   c)
   App_ h children -> App_ h <$> traverse c children
+  -- StringLiteral_ s -> pure (StringLiteral_ s)
+  -- CharLiteral_   c -> pure (CharLiteral_   c)
+  p -> pure p
 
 -- | The sort of a,b in \equals(a,b), \ceil(a) etc.
 inputSort        f = patternLens f    pure pure pure
