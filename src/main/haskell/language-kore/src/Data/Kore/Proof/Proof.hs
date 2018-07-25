@@ -109,9 +109,9 @@ instance Hashable Proof where
     hashWithSalt s (By a b c) =
         s `hashWithSalt` a `hashWithSalt` b `hashWithSalt` S.toList c
 
-data LargeRule subproof
--- | a |- a
- = Assumption Term
+data LargeRule subproof =
+ -- | a |- a
+   Assumption Term
  -- | From a |- b deduce |- a -> b
  | Discharge Term subproof
  -- | From |- A[x] deduce |- Forall x. A[x]
@@ -235,7 +235,7 @@ instance
   , Pretty subproof
   , Pretty assumption
   ) => Pretty (PropF formula rules assumption subproof) where
-    pretty (ByF a b c) = "|- " <> pretty a <> line <> "By " <> pretty b <> line
+    pretty (ByF a b c) = "|- " <> pretty a <> line <> "By " <> pretty b
 
 getConclusion
     :: Proof
@@ -398,7 +398,24 @@ interpretRule = \case
       mkTop
   _ -> impossible
 
+mkSort
+  :: MetaOrObject level
+  => String
+  -> Sort level
+mkSort name =
+    SortVariableSort $ SortVariable
+        { getSortVariable = noLocationId name }
 
+varS :: MetaOrObject level => String -> Sort level -> Variable level
+varS x s =
+    Variable (noLocationId x) s
+
+symS :: MetaOrObject level => String -> [Sort level] -> SymbolOrAlias level
+symS x s =
+    SymbolOrAlias (noLocationId x) s
+
+pattern V :: var level -> PureMLPattern level var
+pattern V x = Var_ x
 
 
 

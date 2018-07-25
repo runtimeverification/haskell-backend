@@ -115,7 +115,7 @@ instance Pretty LineBasedProof where
       $ unLineBasedProof proof) <> line
 
 printLineProof :: Proof -> IO ()
-printLineProof = putDocW 150 . pretty . toLineProof
+printLineProof = putDocW 100 . pretty . toLineProof
 
 
 

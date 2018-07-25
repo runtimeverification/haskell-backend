@@ -42,7 +42,6 @@ import           Data.Reflection
 
 import           Data.Kore.ASTUtils.SmartConstructors
 
-import           Data.Kore.Proof.Dummy
 import           Data.Kore.Proof.Proof
 import           Data.Kore.Proof.Util
 

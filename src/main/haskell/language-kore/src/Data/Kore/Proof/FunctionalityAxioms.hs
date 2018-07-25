@@ -45,7 +45,6 @@ import           Data.Reflection
 
 import           Data.Kore.ASTUtils.SmartConstructors
 
-import           Data.Kore.Proof.Dummy
 import           Data.Kore.Proof.Proof
 import           Data.Kore.Proof.Util
 
@@ -55,7 +54,7 @@ generateFunctionalStatement
     -> Term
 generateFunctionalStatement p =
     mkExists var (p `mkEquals` (mkVar var))
-        where var = varS "x" $ getSort p
+        where var = "x" `varS` getSort p
 
 generateFunctionalHeadAxiom
     :: Given (MetadataTools Object)
@@ -73,11 +72,16 @@ proveFunctional
    => Term
    -> Proof
 proveFunctional p = case p of
+    V v -> useRule $ FunctionalVar v ("x" `varS` getSort p)
     App_ h cs ->
-        let hFunctional = forallElimFunctionalN' csFunctional cs (assume $ generateFunctionalHeadAxiom h)
-            csFunctional = map proveFunctional cs
+        let hFunctional =
+                forallElimFunctionalN'
+                    csFunctional
+                    cs
+                    (assume $ generateFunctionalHeadAxiom h)
+            csFunctional =
+                map proveFunctional cs
         in modusPonensN csFunctional hFunctional
-    Var_ v -> useRule $ FunctionalVar v (varS "x" $ getSort $ Var_ v)
     x -> assume $ generateFunctionalStatement x
 
 forallElimFunctional'
@@ -102,9 +106,11 @@ forallElimFunctionalN'
     -> Proof
 forallElimFunctionalN' argsAreFunctional args pat =
     foldr
-      (\(arg, argIsFunctional) p -> forallElimFunctional' argIsFunctional arg p)
+      (\(arg, argIsFunctional) p ->
+          forallElimFunctional' argIsFunctional arg p
+      )
       pat
-      (zip (reverse args) (reverse argsAreFunctional))
+      (reverse (args `zip` argsAreFunctional))
 
 forallElimFunctional
     :: Given (MetadataTools Object)
@@ -114,7 +120,12 @@ forallElimFunctional
 forallElimFunctional arg pat =
     case getConclusion pat of
         Forall_ _ v p ->
-            let ax = useRule $ FunctionalSubst v p (varS "x" $ getSort (V v)) arg
+            let ax =
+                    useRule $ FunctionalSubst
+                        v
+                        p
+                        ("x" `varS` getSort (V v))
+                        arg
             in modusPonensN [pat, assume $ generateFunctionalStatement arg] ax
         _ -> impossible
 

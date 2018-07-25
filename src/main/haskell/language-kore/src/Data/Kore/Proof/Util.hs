@@ -54,7 +54,6 @@ import           Data.Reflection
 
 import qualified Data.Set                              as S
 
-import           Data.Kore.Proof.Dummy
 import           Data.Kore.Proof.Proof
 
 -- | Helper functions for common proof steps.
@@ -96,9 +95,9 @@ tryDischarge a b = let a' = getConclusion a in
 tryDischargeN
     :: Given (MetadataTools Object)
     => [Proof]
-    -> Proof 
-    -> Proof 
-tryDischargeN as b = foldr tryDischarge b as 
+    -> Proof
+    -> Proof
+tryDischargeN as b = foldr tryDischarge b as
 
 --------------------------------------------------------------------------------
 

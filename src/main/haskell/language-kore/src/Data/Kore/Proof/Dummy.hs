@@ -27,34 +27,26 @@ module Data.Kore.Proof.Dummy where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.PureML
 import           Data.Kore.IndexedModule.MetadataTools
 import           Data.Reflection
 
-import           Data.Kore.ASTUtils.SmartConstructors
+import           Data.Kore.Proof.Proof
 
-pattern V :: var level -> PureMLPattern level var
-pattern V x = Var_ x
 
 var :: MetaOrObject level => String -> Variable level
-var x =
-  Variable (noLocationId x) (testSort "*")
+var x = x `varS` defaultSort
 
 sym :: MetaOrObject level => String -> SymbolOrAlias level
-sym x =
-  SymbolOrAlias (noLocationId x) []
-
-symS :: MetaOrObject level => String -> [Sort level] -> SymbolOrAlias level
-symS x s =
-  SymbolOrAlias (noLocationId x) s
+sym x = x `symS` []
 
 var_ :: MetaOrObject level => String -> String -> Variable level
 var_ x s =
   Variable (noLocationId x) (testSort s)
 
-varS :: MetaOrObject level => String -> Sort level -> Variable level
-varS x s =
-  Variable (noLocationId x) s
+
+
+defaultSort :: MetaOrObject level => Sort level
+defaultSort = testSort "*"
 
 dummyEnvironment
   :: forall r . MetaOrObject Object
@@ -70,13 +62,11 @@ dummyMetadataTools = MetadataTools
     , isFunctional     = const True
     , isFunction       = const True
     , getArgumentSorts = const []
-    , getResultSort    = const $ testSort "*"
+    , getResultSort    = const $ defaultSort
     }
 
 testSort
   :: MetaOrObject level
   => String
   -> Sort level
-testSort name =
-    SortVariableSort $ SortVariable
-        { getSortVariable = noLocationId name }
+testSort = mkSort
