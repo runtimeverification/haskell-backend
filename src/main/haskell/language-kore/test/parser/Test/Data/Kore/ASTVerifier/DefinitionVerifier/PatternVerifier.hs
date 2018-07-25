@@ -17,7 +17,7 @@ import           Data.Kore.AST.Sentence
 import           Data.Kore.Building.Implicit
 import           Data.Kore.Building.Patterns                   as Patterns
 import           Data.Kore.Error
-import           Data.Kore.Implicit.Attributes                 (attributeObjectSort)
+import           Data.Kore.Implicit.Attributes                 (attributeSort)
 import           Data.Kore.Implicit.ImplicitSorts
 
 import qualified Data.List                                     as List
@@ -1469,15 +1469,14 @@ testsForUnifiedPatternInTopLevelObjectContext
                 }
             ]
 
-asAttribute :: MetaOrObject level => TestPattern level -> TestPattern Object
+asAttribute :: MetaOrObject level => TestPattern level -> TestPattern Meta
 asAttribute testPattern =
     case isMetaOrObject testPattern of
         IsMeta ->
             let
                 patternPattern = EqualsPattern Equals
                     { equalsOperandSort = testPatternSort testPattern
-                    , equalsResultSort  =
-                        updateAstLocation patternMetaSort AstLocationTest
+                    , equalsResultSort  = attributeSort AstLocationTest
                     , equalsFirst       = testPatternUnifiedPattern testPattern
                     , equalsSecond      = testPatternUnifiedPattern testPattern
                     }
@@ -1485,15 +1484,15 @@ asAttribute testPattern =
                 TestPattern
                     { testPatternPattern = EqualsPattern Equals
                         { equalsOperandSort =
-                            attributeObjectSort AstLocationTest
+                            attributeSort AstLocationTest
                         , equalsResultSort  =
-                            attributeObjectSort AstLocationTest
+                            attributeSort AstLocationTest
                         , equalsFirst       =
                             asKorePattern patternPattern
                         , equalsSecond      =
                             asKorePattern patternPattern
                         }
-                    , testPatternSort = attributeObjectSort AstLocationTest
+                    , testPatternSort = attributeSort AstLocationTest
                     , testPatternErrorStack =
                         testPatternErrorStack testPattern
                     }
@@ -1504,7 +1503,7 @@ asAttribute testPattern =
             let
                 patternPattern = EqualsPattern Equals
                     { equalsOperandSort = testPatternSort testPattern
-                    , equalsResultSort  = attributeObjectSort AstLocationTest
+                    , equalsResultSort  = testPatternSort testPattern
                     , equalsFirst       = testPatternUnifiedPattern testPattern
                     , equalsSecond      = testPatternUnifiedPattern testPattern
                     }
@@ -1512,15 +1511,15 @@ asAttribute testPattern =
                 TestPattern
                     { testPatternPattern = EqualsPattern Equals
                         { equalsOperandSort =
-                            attributeObjectSort AstLocationTest
+                            attributeSort AstLocationTest
                         , equalsResultSort  =
-                            attributeObjectSort AstLocationTest
+                            attributeSort AstLocationTest
                         , equalsFirst       =
                             asKorePattern patternPattern
                         , equalsSecond      =
                             asKorePattern patternPattern
                         }
-                    , testPatternSort = attributeObjectSort AstLocationTest
+                    , testPatternSort = attributeSort AstLocationTest
                     , testPatternErrorStack =
                         testPatternErrorStack testPattern
                     }

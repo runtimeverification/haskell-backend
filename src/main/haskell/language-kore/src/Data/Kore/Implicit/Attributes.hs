@@ -12,9 +12,7 @@ Portability : POSIX
 -}
 
 module Data.Kore.Implicit.Attributes
-    ( attributeObjectSort
-    , attributeKeyObjectSort
-    , attributeValueObjectSort
+    ( attributeSort
     , uncheckedAttributesModule
     , KeyValueAttribute (..)
     , attributeToKeyValueAttribute
@@ -32,6 +30,7 @@ import           Data.Kore.AST.PureML
 import           Data.Kore.AST.PureToKore
 import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTUtils.SmartPatterns
+import           Data.Kore.Implicit.ImplicitSorts (stringMetaSort)
 
 
 data KeyValueAttribute =
@@ -51,9 +50,9 @@ instance Default ImplicitAttributes where
     def = ImplicitAttributes {}
 
 
-noParameterObjectSortAndSentence
-    :: String -> (AstLocation -> Sort Object, KoreSentence)
-noParameterObjectSortAndSentence name =
+noParameterSortAndSentence
+    :: String -> (AstLocation -> Sort Meta, KoreSentence)
+noParameterSortAndSentence name =
     ( \location -> SortActualSort SortActual
         { sortActualName = Id name location
         , sortActualSorts = []
@@ -64,57 +63,43 @@ noParameterObjectSortAndSentence name =
             , sentenceSortParameters = []
             , sentenceSortAttributes = Attributes []
             }
-        :: KoreSentenceSort Object
+        :: KoreSentenceSort Meta
         )
     )
 
-{-| 'attributeObjectSort' is the sort for all top-level attribute patterns
+{-| 'attributeSort' is the sort for all top-level attribute patterns
 -}
-attributeObjectSort :: AstLocation -> Sort Object
-attributeObjectSortSentence :: KoreSentence
-(attributeObjectSort, attributeObjectSortSentence) =
-    noParameterObjectSortAndSentence "Attribute"
-
-{-| 'attributeKeyObjectSort' is the sort for attribute values
--}
-attributeKeyObjectSort :: AstLocation -> Sort Object
-attributeKeyObjectSortSentence :: KoreSentence
-(attributeKeyObjectSort, attributeKeyObjectSortSentence) =
-    noParameterObjectSortAndSentence "AttributeKey"
-
-{-| 'attributeValueObjectSort' is the sort for attribute values
--}
-attributeValueObjectSort :: AstLocation -> Sort Object
-attributeValueObjectSortSentence :: KoreSentence
-(attributeValueObjectSort, attributeValueObjectSortSentence) =
-    noParameterObjectSortAndSentence "AttributeValue"
+attributeSort :: AstLocation -> Sort Meta
+attributeSortSentence :: KoreSentence
+(attributeSort, attributeSortSentence) =
+    noParameterSortAndSentence "#Attribute"
 
 keyValueAttributeLabel :: String
-keyValueAttributeLabel = "keyValueAttribute"
+keyValueAttributeLabel = "#keyVal"
 
 keyOnlyAttributeLabel :: String
-keyOnlyAttributeLabel = "keyOnlyAttribute"
+keyOnlyAttributeLabel = "#key"
 
-keyValueAttributeObjectSymbolSentence :: KoreSentence
-keyValueAttributeObjectSymbolSentence =
-    attributeObjectSymbolSentence keyValueAttributeLabel
-        [attributeKeyObjectSort, attributeValueObjectSort]
+keyValueAttributeSymbolSentence :: KoreSentence
+keyValueAttributeSymbolSentence =
+    attributeSymbolSentence keyValueAttributeLabel
+        [stringMetaSort, stringMetaSort]
 
-keyOnlyAttributeObjectSymbolSentence :: KoreSentence
-keyOnlyAttributeObjectSymbolSentence =
-    attributeObjectSymbolSentence keyOnlyAttributeLabel [attributeKeyObjectSort]
+keyOnlyAttributeSymbolSentence :: KoreSentence
+keyOnlyAttributeSymbolSentence =
+    attributeSymbolSentence keyOnlyAttributeLabel [stringMetaSort]
 
 implicitGroundHead :: String -> SymbolOrAlias level
 implicitGroundHead = (`groundHead` AstLocationImplicit)
 
 attributeToKeyValueAttribute :: CommonKorePattern -> Maybe KeyValueAttribute
 attributeToKeyValueAttribute p =
-    case patternKoreToPure Object p of
+    case patternKoreToPure Meta p of
         Right (App_ h children)
           | h == implicitGroundHead keyValueAttributeLabel ->
                 case children of
-                    [ ~ (DV_ _ (StringLiteral_ (StringLiteral k))),
-                        ~ (DV_ _ (StringLiteral_ (StringLiteral v)))]
+                    [ ~ (StringLiteral_ (StringLiteral k)),
+                        ~ (StringLiteral_ (StringLiteral v))]
                         -> Just KeyValueAttribute
                             { key = k
                             , value = Just v
@@ -122,7 +107,7 @@ attributeToKeyValueAttribute p =
                     _ -> Nothing
           |  h == implicitGroundHead keyOnlyAttributeLabel ->
                 case children of
-                    [~ (DV_ _ (StringLiteral_ (StringLiteral k)))] ->
+                    [~ (StringLiteral_ (StringLiteral k))] ->
                         Just KeyValueAttribute
                         { key = k
                         , value = Nothing
@@ -134,36 +119,33 @@ attributeToKeyValueAttribute p =
 keyOnlyAttribute :: String -> CommonKorePattern
 keyOnlyAttribute k = patternPureToKore
     (App_ (implicitGroundHead keyOnlyAttributeLabel)
-        [DV_ (attributeKeyObjectSort AstLocationImplicit)
-            (StringLiteral_ (StringLiteral k))]
+        [(StringLiteral_ (StringLiteral k))]
     )
 
 keyValueAttribute :: String -> String -> CommonKorePattern
 keyValueAttribute k v = patternPureToKore
     (App_ (implicitGroundHead keyValueAttributeLabel)
-        [ DV_ (attributeKeyObjectSort AstLocationImplicit)
-            (StringLiteral_ (StringLiteral k))
-        , DV_ (attributeValueObjectSort AstLocationImplicit)
-            (StringLiteral_ (StringLiteral v))
+        [ (StringLiteral_ (StringLiteral k))
+        , (StringLiteral_ (StringLiteral v))
         ]
     )
 
-attributeObjectSymbolSentence
+attributeSymbolSentence
   :: String                       -- ^ attribute symbol
-  -> [AstLocation -> Sort Object] -- ^ argument sort constructor
+  -> [Sort Meta]                  -- ^ argument sorts
   -> KoreSentence
-attributeObjectSymbolSentence name sorts =
+attributeSymbolSentence name sorts =
     asSentence
         ( SentenceSymbol
             { sentenceSymbolSymbol  = Symbol
                 { symbolConstructor = Id name AstLocationImplicit
                 , symbolParams      = []
                 }
-            , sentenceSymbolSorts      = sorts <*> pure AstLocationImplicit
-            , sentenceSymbolResultSort = attributeObjectSort AstLocationImplicit
+            , sentenceSymbolSorts      = sorts
+            , sentenceSymbolResultSort = attributeSort AstLocationImplicit
             , sentenceSymbolAttributes = Attributes []
             }
-        :: KoreSentenceSymbol Object
+        :: KoreSentenceSymbol Meta
         )
 
 {-| 'uncheckedAttributesModule' contains declarations for all symbols visible
@@ -174,11 +156,9 @@ uncheckedAttributesModule =
     Module
         { moduleName       = ModuleName "BUILTIN-attributes"
         , moduleSentences  =
-            [ attributeObjectSortSentence
-            , attributeKeyObjectSortSentence
-            , attributeValueObjectSortSentence
-            , keyValueAttributeObjectSymbolSentence
-            , keyOnlyAttributeObjectSymbolSentence
+            [ attributeSortSentence
+            , keyValueAttributeSymbolSentence
+            , keyOnlyAttributeSymbolSentence
             ]
         , moduleAttributes = Attributes []
         }

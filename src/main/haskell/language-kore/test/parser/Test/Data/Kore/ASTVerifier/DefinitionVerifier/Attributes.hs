@@ -12,9 +12,7 @@ import           Data.Kore.AST.PureToKore                      (patternPureToKor
 import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTUtils.SmartPatterns
 import           Data.Kore.Error
-import           Data.Kore.Implicit.Attributes                 (attributeKeyObjectSort,
-                                                                attributeObjectSort,
-                                                                keyValueAttribute)
+import           Data.Kore.Implicit.Attributes                 (attributeSort, keyValueAttribute)
 
 test_attributes :: [TestTree]
 test_attributes =
@@ -28,10 +26,10 @@ test_attributes =
         (Error
             [ "module 'M1'"
             , "axiom declaration"
-            , "symbol or alias 'keyValueAttribute' (<implicitly defined entity>)"
+            , "symbol or alias '#keyVal' (<implicitly defined entity>)"
             , "(<implicitly defined entity>)"
             ]
-            "Symbol 'keyValueAttribute' not defined."
+            "Symbol '#keyVal' not defined."
         )
         Definition
             { definitionAttributes = Attributes []
@@ -77,8 +75,7 @@ test_attributes =
                                 , sentenceAxiomAttributes = Attributes
                                     [ sortSwitchingEquals
                                         (OperandSort
-                                            (attributeObjectSort
-                                                AstLocationTest))
+                                            (attributeSort AstLocationTest))
                                         (ResultSort (simpleSort mySortName))
                                         (domainValuePattern mySortName)
                                     ]
@@ -101,11 +98,11 @@ test_attributes =
         (Error
             [ "module 'M1'"
             , "axiom declaration"
-            , "\\dv (<unknown location>)"
-            , "sort 'AttributeKey' (<test data>)"
+            , "\\forall 'Attr' (<test data>)"
+            , "sort '#Attribute' (<test data>)"
             , "(<test data>)"
             ]
-            "Sort 'AttributeKey' not declared."
+            "Sort '#Attribute' not declared."
         )
         Definition
             { definitionAttributes = Attributes []
@@ -117,17 +114,13 @@ test_attributes =
                             (SentenceAxiom
                                 { sentenceAxiomParameters = []
                                 , sentenceAxiomPattern = patternPureToKore
-                                    (DV_ (attributeKeyObjectSort AstLocationTest)
-                                        (StringLiteral_ (StringLiteral "strict")))
+                                    (Forall_
+                                        (attributeSort AstLocationTest)
+                                        myVar
+                                        (Var_ myVar)
+                                    )
                                 , sentenceAxiomAttributes = Attributes []
                                 }::KoreSentenceAxiom
-                            )
-                        , asSentence
-                            (SentenceSort
-                                { sentenceSortName = testId "mySort"
-                                , sentenceSortParameters = []
-                                , sentenceSortAttributes = Attributes []
-                                }::KoreSentenceSort Object
                             )
                         ]
                     , moduleAttributes = Attributes []
@@ -138,12 +131,17 @@ test_attributes =
   where
     mySortName :: SortName
     mySortName = SortName "mySort"
+    myVar :: Variable Meta
+    myVar = Variable
+        { variableSort = attributeSort AstLocationTest
+        , variableName = testId "Attr"
+        }
     domainValuePattern :: SortName -> CommonKorePattern
     domainValuePattern sortName = patternPureToKore
         (DV_ (simpleSort sortName) (StringLiteral_ (StringLiteral "asgn")))
     sortSwitchingEquals
-        :: OperandSort Object
-        -> ResultSort Object
+        :: OperandSort Meta
+        -> ResultSort Meta
         -> CommonKorePattern
         -> CommonKorePattern
     sortSwitchingEquals

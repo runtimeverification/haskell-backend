@@ -20,8 +20,9 @@ import           Data.Kore.AST.Error
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
-import           Data.Kore.AST.Pretty (Pretty(..), (<>), (<+>))
-import qualified Data.Kore.AST.Pretty as Pretty
+import           Data.Kore.AST.Pretty                    (Pretty (..), (<+>),
+                                                          (<>))
+import qualified Data.Kore.AST.Pretty                    as Pretty
 import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTHelpers
 import           Data.Kore.ASTVerifier.Error
@@ -30,11 +31,11 @@ import           Data.Kore.Error
 import           Data.Kore.Implicit.ImplicitSorts
 import           Data.Kore.IndexedModule.IndexedModule
 import           Data.Kore.IndexedModule.Resolvers
-import           Data.Kore.Variables.Free              (freeVariables)
+import           Data.Kore.Variables.Free                (freeVariables)
 
-import           Control.Monad                         (foldM, zipWithM_)
-import qualified Data.Map                              as Map
-import qualified Data.Set                              as Set
+import           Control.Monad                           (foldM, zipWithM_)
+import qualified Data.Map                                as Map
+import qualified Data.Set                                as Set
 import           Data.Text.Prettyprint.Doc.Render.String (renderString)
 
 data DeclaredVariables = DeclaredVariables

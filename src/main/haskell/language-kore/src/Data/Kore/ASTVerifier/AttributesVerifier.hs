@@ -17,7 +17,7 @@ import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.PatternVerifier
 import           Data.Kore.Error
-import           Data.Kore.Implicit.Attributes         (attributeObjectSort)
+import           Data.Kore.Implicit.Attributes         (attributeSort)
 import           Data.Kore.IndexedModule.IndexedModule
 import qualified Data.Set                              as Set
 
@@ -43,7 +43,7 @@ verifyAttributes
             (\p ->
                 verifyPattern
                     p
-                    (Just (asUnified (attributeObjectSort AstLocationNone)))
+                    (Just (asUnified (attributeSort AstLocationNone)))
                     indexedModule
                     Set.empty
             )
