@@ -4,59 +4,49 @@ Definition
         [ Module
             { moduleName = ModuleName "BUILTIN-attributes"
             , moduleSentences =
-                [ ObjectSentence (SentenceSortSentence SentenceSort
-                    { sentenceSortName = (Id "Attribute" AstLocationNone) :: Id Object
+                [ MetaSentence (SentenceSortSentence SentenceSort
+                    { sentenceSortName = (Id "#Attribute" AstLocationNone) :: Id Meta
                     , sentenceSortParameters = []
                     , sentenceSortAttributes = Attributes []
                     })
-                , ObjectSentence (SentenceSortSentence SentenceSort
-                    { sentenceSortName = (Id "AttributeKey" AstLocationNone) :: Id Object
-                    , sentenceSortParameters = []
-                    , sentenceSortAttributes = Attributes []
-                    })
-                , ObjectSentence (SentenceSortSentence SentenceSort
-                    { sentenceSortName = (Id "AttributeValue" AstLocationNone) :: Id Object
-                    , sentenceSortParameters = []
-                    , sentenceSortAttributes = Attributes []
-                    })
-                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
-                            { symbolConstructor = (Id "keyValueAttribute" AstLocationNone) :: Id Object
+                            { symbolConstructor = (Id "#keyVal" AstLocationNone) :: Id Meta
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
                         [ SortActualSort SortActual
-                            { sortActualName = (Id "AttributeKey" AstLocationNone) :: Id Object
+                            { sortActualName = (Id "#CharList" AstLocationNone) :: Id Meta
                             , sortActualSorts = []
                             }
                         , SortActualSort SortActual
-                            { sortActualName = (Id "AttributeValue" AstLocationNone) :: Id Object
+                            { sortActualName = (Id "#CharList" AstLocationNone) :: Id Meta
                             , sortActualSorts = []
                             }
                         ]
                     , sentenceSymbolReturnSort =
                         SortActualSort SortActual
-                            { sortActualName = (Id "Attribute" AstLocationNone) :: Id Object
+                            { sortActualName = (Id "#Attribute" AstLocationNone) :: Id Meta
                             , sortActualSorts = []
                             }
                     , sentenceSymbolAttributes = Attributes []
                     })
-                , ObjectSentence (SentenceSymbolSentence SentenceSymbol
+                , MetaSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
                         Symbol
-                            { symbolConstructor = (Id "keyOnlyAttribute" AstLocationNone) :: Id Object
+                            { symbolConstructor = (Id "#key" AstLocationNone) :: Id Meta
                             , symbolParams = []
                             }
                     , sentenceSymbolSorts =
                         [ SortActualSort SortActual
-                            { sortActualName = (Id "AttributeKey" AstLocationNone) :: Id Object
+                            { sortActualName = (Id "#CharList" AstLocationNone) :: Id Meta
                             , sortActualSorts = []
                             }
                         ]
                     , sentenceSymbolReturnSort =
                         SortActualSort SortActual
-                            { sortActualName = (Id "Attribute" AstLocationNone) :: Id Object
+                            { sortActualName = (Id "#Attribute" AstLocationNone) :: Id Meta
                             , sortActualSorts = []
                             }
                     , sentenceSymbolAttributes = Attributes []

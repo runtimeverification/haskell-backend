@@ -1,4 +1,4 @@
-[keyOnlyAttribute{}(\dv{AttributeKey{}}("\07777"))]
+[#key{}("\07777")]
 
 module TEST-STRING-4
 

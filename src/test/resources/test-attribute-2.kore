@@ -2,12 +2,12 @@
 
 module TEST-ATTRIBUTE-2
 
-  sort Nat{} [keyValueAttribute{}(\dv{AttributeKey{}}("hook"), \dv{AttributeValue{}}("Nat"))]
+  sort Nat{} [#keyVal{}("hook", "Nat")]
 
   symbol plus{}(Nat{},Nat{}) : Nat{}
-    [ keyValueAttribute{}(\dv{AttributeKey{}}("hook"), \dv{AttributeValue{}}("Nat"))
-    , keyOnlyAttribute{}(\dv{AttributeKey{}}("associative"))
-    , keyOnlyAttribute{}(\dv{AttributeKey{}}("commutative"))
+    [ #keyVal{}("hook", "Nat")
+    , #key{}("associative")
+    , #key{}("commutative")
     ]
 
 endmodule []

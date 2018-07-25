@@ -9,31 +9,15 @@ Definition
                     , sentenceSortParameters = []
                     , sentenceSortAttributes =
                         Attributes 
-                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                            [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "keyValueAttribute" AstLocationNone) :: Id Object
+                                        { symbolOrAliasConstructor = (Id "#keyVal" AstLocationNone) :: Id Meta
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
-                                        { domainValueSort =
-                                            SortActualSort SortActual
-                                                { sortActualName = (Id "AttributeKey" AstLocationNone) :: Id Object
-                                                , sortActualSorts = []
-                                                }
-                                        , domainValueChild =
-                                            Fix (StringLiteralPattern (StringLiteral "hook"))
-                                        }))))
-                                    , Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
-                                        { domainValueSort =
-                                            SortActualSort SortActual
-                                                { sortActualName = (Id "AttributeValue" AstLocationNone) :: Id Object
-                                                , sortActualSorts = []
-                                                }
-                                        , domainValueChild =
-                                            Fix (StringLiteralPattern (StringLiteral "Nat"))
-                                        }))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "hook")))))
+                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "Nat")))))
                                     ]
                                 }))))
                             ]

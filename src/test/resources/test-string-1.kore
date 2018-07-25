@@ -1,4 +1,4 @@
-[keyOnlyAttribute{}(\dv{AttributeKey{}}("\?"))]
+[#key{}("\?")]
 
 module TEST-STRING-1
 

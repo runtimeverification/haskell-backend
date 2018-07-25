@@ -1,4 +1,4 @@
-[keyOnlyAttribute{}(\dv{AttributeKey{}}("\v"))]
+[#key{}("\v")]
 
 module TEST-STRING-3
 
