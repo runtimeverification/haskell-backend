@@ -11,135 +11,161 @@ module Kore.Step.Condition.Evaluator
     ( evaluateFunctionCondition
     ) where
 
+import Data.List
+       ( foldl' )
+import Data.Reflection
+       ( Given )
+
 import Kore.AST.Common
        ( And (..), Equals (..), Iff (..), Implies (..), Not (..), Or (..),
-       Pattern (..), Variable )
+       Pattern (..), SortedVariable )
+import Kore.AST.MetaOrObject
 import Kore.AST.PureML
-       ( CommonPurePattern, asPurePattern, fromPurePattern )
-import Kore.Step.Condition.Condition
-       ( ConditionProof (..), ConditionSort (..), EvaluatedCondition (..),
-       UnevaluatedCondition (..), makeEvaluatedAnd, makeEvaluatedIff,
-       makeEvaluatedImplies, makeEvaluatedNot, makeEvaluatedOr )
+       ( PureMLPattern, asPurePattern, fromPurePattern )
+import Kore.IndexedModule.MetadataTools
+       ( MetadataTools )
+import Kore.Predicate.Predicate
+       ( Predicate, PredicateProof (..), makeAndPredicate, makeEqualsPredicate,
+       makeFalsePredicate, makeIffPredicate, makeImpliesPredicate,
+       makeNotPredicate, makeOrPredicate, makeTruePredicate, unwrapPredicate,
+       wrapPredicate )
+import Kore.Step.ExpandedPattern
+       ( ExpandedPattern (..) )
 import Kore.Step.Function.Data
-       ( CommonPurePatternFunctionEvaluator (..), FunctionResult (..) )
+       ( PureMLPatternFunctionEvaluator (..) )
+import Kore.Step.Substitution
+       ( substitutionToPredicate )
 import Kore.Variables.Fresh.IntCounter
        ( IntCounter )
 
-{--| 'evaluateFunctionCondition' attempts to evaluate a Kore condition.
+{-| 'evaluateFunctionCondition' attempts to evaluate a Kore condition.
 
 Right now the evaluation is rather rudimentary and gives up failry easy,
 returning 'ConditionUnevaluable'.
---}
+-}
 evaluateFunctionCondition
-    :: CommonPurePatternFunctionEvaluator level
+    ::  ( MetaOrObject level
+        , Given (MetadataTools level)
+        , SortedVariable variable
+        , Show (variable level)
+        , Eq (variable level))
+    => PureMLPatternFunctionEvaluator level variable
     -- ^ Evaluates functions in a pattern.
-    -> ConditionSort level
-    -- ^ Sort used for conditions. This function assumes that all conditions
-    -- have this sort and will use it to create new conditions.
-    -> UnevaluatedCondition level
+    -> Predicate level variable
     -- ^ The condition to be evaluated.
-    -> IntCounter (EvaluatedCondition level, ConditionProof level)
+    -- TODO: Can't it happen that I also get a substitution when evaluating
+    -- functions? See the Equals case.
+    -> IntCounter (Predicate level variable, PredicateProof level)
 evaluateFunctionCondition
     functionEvaluator
-    conditionSort
-    (UnevaluatedCondition condition)
+    predicate'
   =
     evaluateFunctionConditionInternal
         functionEvaluator
-        conditionSort
-        (fromPurePattern condition)
+        (fromPurePattern (unwrapPredicate predicate'))
 
-{--| 'evaluateFunctionCondition' attempts to evaluate a Kore condition.
+{-| 'evaluateFunctionCondition' attempts to evaluate a Kore condition.
 
 Right now the evaluation is rather rudimentary and gives up failry easy,
 returning 'ConditionUnevaluable'.
---}
+-}
 evaluateFunctionConditionInternal
-    :: CommonPurePatternFunctionEvaluator level
-    -> ConditionSort level
-    -> Pattern level Variable (CommonPurePattern level)
-    -> IntCounter (EvaluatedCondition level, ConditionProof level)
+    ::  ( MetaOrObject level
+        , Given (MetadataTools level)
+        , SortedVariable variable
+        , Show (variable level)
+        , Eq (variable level))
+    => PureMLPatternFunctionEvaluator level variable
+    -> Pattern level variable (PureMLPattern level variable)
+    -> IntCounter (Predicate level variable, PredicateProof level)
 evaluateFunctionConditionInternal
     functionEvaluator
-    conditionSort
     (AndPattern And {andFirst = first, andSecond = second})
   = do
     (a, _) <- evaluateFunctionConditionInternal
-        functionEvaluator conditionSort (fromPurePattern first)
+        functionEvaluator (fromPurePattern first)
     (b, _) <- evaluateFunctionConditionInternal
-        functionEvaluator conditionSort (fromPurePattern second)
-    return $ makeEvaluatedAnd conditionSort a b
+        functionEvaluator (fromPurePattern second)
+    return $ makeAndPredicate a b
 evaluateFunctionConditionInternal
     functionEvaluator
-    conditionSort
     (OrPattern Or {orFirst = first, orSecond = second})
   = do
     (a, _) <- evaluateFunctionConditionInternal
-        functionEvaluator conditionSort (fromPurePattern first)
+        functionEvaluator (fromPurePattern first)
     (b, _) <- evaluateFunctionConditionInternal
-        functionEvaluator conditionSort (fromPurePattern second)
-    return $ makeEvaluatedOr conditionSort a b
+        functionEvaluator (fromPurePattern second)
+    return $ makeOrPredicate a b
 evaluateFunctionConditionInternal
     functionEvaluator
-    conditionSort
     (NotPattern Not {notChild = patt})
   = do
     (a, _) <- evaluateFunctionConditionInternal
-        functionEvaluator conditionSort (fromPurePattern patt)
-    return (makeEvaluatedNot conditionSort a)
+        functionEvaluator (fromPurePattern patt)
+    return (makeNotPredicate a)
 evaluateFunctionConditionInternal
     functionEvaluator
-    conditionSort
     (ImpliesPattern Implies {impliesFirst = first, impliesSecond = second})
   = do
     (a, _) <- evaluateFunctionConditionInternal
-        functionEvaluator conditionSort (fromPurePattern first)
+        functionEvaluator (fromPurePattern first)
     (b, _) <- evaluateFunctionConditionInternal
-        functionEvaluator conditionSort (fromPurePattern second)
-    return $ makeEvaluatedImplies conditionSort a b
+        functionEvaluator (fromPurePattern second)
+    return $ makeImpliesPredicate a b
 evaluateFunctionConditionInternal
     functionEvaluator
-    conditionSort
     (IffPattern Iff {iffFirst = first, iffSecond = second})
   = do
     (a, _) <- evaluateFunctionConditionInternal
-        functionEvaluator conditionSort (fromPurePattern first)
+        functionEvaluator (fromPurePattern first)
     (b, _) <- evaluateFunctionConditionInternal
-        functionEvaluator conditionSort (fromPurePattern second)
-    return $ makeEvaluatedIff conditionSort a b
+        functionEvaluator (fromPurePattern second)
+    return $ makeIffPredicate a b
 evaluateFunctionConditionInternal
-    (CommonPurePatternFunctionEvaluator functionEvaluator)
-    conditionSort
+    (PureMLPatternFunctionEvaluator functionEvaluator)
     (EqualsPattern Equals {equalsFirst = first, equalsSecond = second})
   = do
     firstValue <- functionEvaluator first
     secondValue <- functionEvaluator second
     let
-        (   FunctionResult
-                { functionResultPattern   = firstPattern
-                , functionResultCondition = firstCondition
+        (   ExpandedPattern
+                { term = firstTerm
+                , predicate = firstPredicate
+                , substitution = firstSubstitution
                 }
             , _
             ) = firstValue
-        (   FunctionResult
-                { functionResultPattern   = secondPattern
-                , functionResultCondition = secondCondition
+        (   ExpandedPattern
+                { term   = secondTerm
+                , predicate = secondPredicate
+                , substitution = secondSubstitution
                 }
             , _
             ) = secondValue
-    -- TODO(virgil): This is wrong, because `variable=pattern` is not
-    -- necessarily false. Fix this.
-    if firstPattern == secondPattern
+        (mergedNewConditions, _) =
+            foldl'
+                (\(p1, _) p2 -> makeAndPredicate p1 p2)
+                (makeTruePredicate, PredicateProof)
+                [ firstPredicate
+                , secondPredicate
+                -- TODO(virgil): I should return the substitution.
+                , substitutionToPredicate firstSubstitution
+                , substitutionToPredicate secondSubstitution
+                ]
+    -- TODO(virgil): I should not try to evaluate `variable=pattern`.
+    if firstTerm == secondTerm
         -- TODO(virgil): this should probably call evaluateFunctionCondition
-        then return $
-            makeEvaluatedAnd conditionSort firstCondition secondCondition
-        else return (ConditionFalse, ConditionProof)
+        then return (mergedNewConditions, PredicateProof)
+        else return $
+            makeAndPredicate
+                (makeEqualsPredicate firstTerm secondTerm)
+                mergedNewConditions
 evaluateFunctionConditionInternal
-    _ _ (TopPattern _)
-  = return (ConditionTrue, ConditionProof)
+    _ (TopPattern _)
+  = return (makeTruePredicate, PredicateProof)
 evaluateFunctionConditionInternal
-    _ _ (BottomPattern _)
-  = return (ConditionFalse, ConditionProof)
+    _ (BottomPattern _)
+  = return (makeFalsePredicate, PredicateProof)
 evaluateFunctionConditionInternal
-    _ _ patt
-  = return (ConditionUnevaluable (asPurePattern patt), ConditionProof)
+    _ patt
+  = return (wrapPredicate (asPurePattern patt), PredicateProof)

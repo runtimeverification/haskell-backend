@@ -9,19 +9,31 @@ Portability : portable
 -}
 module Kore.Step.Function.Data
     ( ApplicationFunctionEvaluator (..)
-    , CommonPurePatternFunctionEvaluator (..)
+    , CommonApplicationFunctionEvaluator
+    , PureMLPatternFunctionEvaluator (..)
+    , CommonPurePatternFunctionEvaluator
     , ConditionEvaluator (..)
-    , FunctionResult (..)
+    , CommonConditionEvaluator
     , FunctionResultProof (..)
-    , AttemptedFunctionResult (..)
+    , AttemptedFunction (..)
+    , CommonAttemptedFunction
     ) where
 
+import Data.Reflection
+       ( Given )
+
 import Kore.AST.Common
-       ( Application )
+       ( Application, Variable )
+import Kore.AST.MetaOrObject
+       ( MetaOrObject )
 import Kore.AST.PureML
-       ( CommonPurePattern )
-import Kore.Step.Condition.Condition
-       ( ConditionProof, EvaluatedCondition, UnevaluatedCondition )
+       ( PureMLPattern )
+import Kore.IndexedModule.MetadataTools
+       ( MetadataTools )
+import Kore.Predicate.Predicate
+       ( Predicate, PredicateProof )
+import Kore.Step.ExpandedPattern
+       ( ExpandedPattern )
 import Kore.Variables.Fresh.IntCounter
        ( IntCounter )
 
@@ -31,48 +43,59 @@ function evaluation was correct.
 data FunctionResultProof level = FunctionResultProof
     deriving (Show, Eq)
 
-{--| 'CommonPurePatternFunctionEvaluator' wraps a function that evaluates
-Kore functions on patterns.
+{--| 'PureMLPatternFunctionEvaluator' wraps a function that evaluates
+Kore functions on PureMLPatterns.
 --}
-newtype CommonPurePatternFunctionEvaluator level =
-    CommonPurePatternFunctionEvaluator
-        ( CommonPurePattern level
-        -> IntCounter (FunctionResult level, FunctionResultProof level)
+newtype PureMLPatternFunctionEvaluator level variable =
+    PureMLPatternFunctionEvaluator
+        ( PureMLPattern level variable
+        -> IntCounter
+            ( ExpandedPattern level variable
+            , FunctionResultProof level
+            )
         )
+{--| 'CommonPurePatternFunctionEvaluator' wraps a function that evaluates
+Kore functions on CommonPurePatterns.
+--}
+type CommonPurePatternFunctionEvaluator level =
+    PureMLPatternFunctionEvaluator level Variable
 
 {--| 'ApplicationFunctionEvaluator' evaluates functions on an 'Application'
 pattern. This can be either a built-in evaluator or a user-defined one.
 --}
-newtype ApplicationFunctionEvaluator level =
+newtype ApplicationFunctionEvaluator level variable =
     ApplicationFunctionEvaluator
-        ( ConditionEvaluator level
-        -> CommonPurePatternFunctionEvaluator level
-        -> Application level (CommonPurePattern level)
-        -> IntCounter (AttemptedFunctionResult level, FunctionResultProof level)
+        (forall . ( MetaOrObject level , Given (MetadataTools level))
+        => ConditionEvaluator level variable
+        -> PureMLPatternFunctionEvaluator level variable
+        -> Application level (PureMLPattern level variable)
+        -> IntCounter
+            ( AttemptedFunction level variable
+            , FunctionResultProof level
+            )
         )
 
-{--| 'FunctionResult' represents the result of evaluating a Kore function on
-a pattern.
---}
--- TODO(virgil): Consider replacing this by a StepperConfiguration
-data FunctionResult level = FunctionResult
-    { functionResultPattern   :: !(CommonPurePattern level)
-    , functionResultCondition :: !(EvaluatedCondition level)
-    }
-  deriving (Show, Eq)
+type CommonApplicationFunctionEvaluator level =
+    ApplicationFunctionEvaluator level Variable
 
-{--| 'AttemptedFunctionResult' is a generalized 'FunctionResult' that handles
+{--| 'AttemptedFunction' is a generalized 'FunctionResult' that handles
 cases where the function can't be fully evaluated.
 --}
-data AttemptedFunctionResult level
-    = AttemptedFunctionResultNotApplicable
-    | AttemptedFunctionResultSymbolic !(EvaluatedCondition level)
-    | AttemptedFunctionResultApplied !(FunctionResult level)
+data AttemptedFunction level variable
+    = NotApplicable
+    | Applied !(ExpandedPattern level variable)
   deriving (Show, Eq)
+
+{--| 'CommonAttemptedFunction' particularizes 'AttemptedFunction' to 'Variable',
+following the same pattern as the other `Common*` types.
+--}
+type CommonAttemptedFunction level = AttemptedFunction level Variable
 
 {--| 'ConditionEvaluator' is a wrapper for a function that evaluates conditions.
 --}
-newtype ConditionEvaluator level = ConditionEvaluator
-    (  UnevaluatedCondition level
-    -> IntCounter (EvaluatedCondition level, ConditionProof level)
+newtype ConditionEvaluator level variable = ConditionEvaluator
+    (  Predicate level variable
+    -> IntCounter (Predicate level variable, PredicateProof level)
     )
+
+type CommonConditionEvaluator level = ConditionEvaluator level Variable

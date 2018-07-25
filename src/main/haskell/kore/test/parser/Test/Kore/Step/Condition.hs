@@ -1,32 +1,33 @@
 module Test.Kore.Step.Condition (mockConditionEvaluator) where
 
-import Kore.Step.Condition.Condition
-       ( ConditionProof (..), EvaluatedCondition (..),
-       UnevaluatedCondition (..) )
+import Kore.Predicate.Predicate
+       ( Predicate, PredicateProof (..) )
 import Kore.Step.Function.Data
        ( ConditionEvaluator (..) )
 import Kore.Variables.Fresh.IntCounter
 
 mockConditionEvaluator
-    ::  [   ( UnevaluatedCondition level
-            , (EvaluatedCondition level, ConditionProof level)
+    :: (Eq (variable level))
+    =>  [   ( Predicate level variable
+            , (Predicate level variable, PredicateProof level)
             )
         ]
-    -> ConditionEvaluator level
+    -> ConditionEvaluator level variable
 mockConditionEvaluator values =
     ConditionEvaluator (mockConditionEvaluatorHelper values)
 
 mockConditionEvaluatorHelper
-    ::  [   ( UnevaluatedCondition level
-            , (EvaluatedCondition level, ConditionProof level)
+    :: (Eq (variable level))
+    =>  [   ( Predicate level variable
+            , (Predicate level variable, PredicateProof level)
             )
         ]
-    -> UnevaluatedCondition level
-    -> IntCounter (EvaluatedCondition level, ConditionProof level)
-mockConditionEvaluatorHelper [] (UnevaluatedCondition condition) =
+    -> Predicate level variable
+    -> IntCounter (Predicate level variable, PredicateProof level)
+mockConditionEvaluatorHelper [] condition =
     return
-        ( ConditionUnevaluable condition
-        , ConditionProof
+        ( condition
+        , PredicateProof
         )
 mockConditionEvaluatorHelper
     ((condition, result) : reminder)

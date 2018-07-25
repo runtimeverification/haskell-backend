@@ -48,7 +48,7 @@ instance
         IntCounter
   where
 
-{--| 'normalizeSubstitution' transforms a substitution into an equivalent one
+{-| 'normalizeSubstitution' transforms a substitution into an equivalent one
 in which no variable that occurs on the left hand side also occurs on the
 right side.
 
@@ -57,7 +57,7 @@ x = f(x) or something equivalent).
 
 Also returns an error when the substitution contains x = x, although that
 should be solvable.
---}
+-}
 normalizeSubstitution
     ::  ( MetaOrObject level
         , Ord (variable level)

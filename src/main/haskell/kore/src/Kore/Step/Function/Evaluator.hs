@@ -11,31 +11,42 @@ module Kore.Step.Function.Evaluator
     ( evaluateFunctions
     ) where
 
+import qualified Data.Foldable as Foldable
 import           Data.List
                  ( nub )
 import qualified Data.Map as Map
+import           Data.Reflection
+                 ( Given, given )
 
 import Data.Functor.Traversable
        ( fixTopDownVisitor )
 import Kore.AST.Common
-       ( Application (..), Id (..), Pattern (..), SymbolOrAlias (..),
-       Variable )
+       ( Application (..), Id (..), Pattern (..), SortedVariable,
+       SymbolOrAlias (..) )
+import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
        ( MLBinderPatternClass (..), MLPatternClass (..),
        PatternLeveledFunction (..), applyPatternLeveledFunction )
 import Kore.AST.PureML
-       ( CommonPurePattern, UnFixedPureMLPattern, asPurePattern )
+       ( PureMLPattern, UnFixedPureMLPattern, asPurePattern )
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools (..) )
-import Kore.Step.Condition.Condition
-       ( ConditionProof (..), ConditionSort (..), EvaluatedCondition (..),
-       makeEvaluatedAnd )
+import Kore.Predicate.Predicate
+       ( Predicate, pattern PredicateFalse, pattern PredicateTrue,
+       makeTruePredicate )
 import Kore.Step.Condition.Evaluator
        ( evaluateFunctionCondition )
+import Kore.Step.ExpandedPattern as ExpandedPattern
+       ( ExpandedPattern (..), bottom )
 import Kore.Step.Function.Data
-       ( ApplicationFunctionEvaluator (..), AttemptedFunctionResult (..),
-       CommonPurePatternFunctionEvaluator (..), ConditionEvaluator (..),
-       FunctionResult (..), FunctionResultProof (..) )
+       ( ApplicationFunctionEvaluator (..), ConditionEvaluator (..),
+       FunctionResultProof (..), PureMLPatternFunctionEvaluator (..) )
+import Kore.Step.Function.Data as AttemptedFunction
+       ( AttemptedFunction (..) )
+import Kore.Step.Substitution
+       ( mergePredicatesAndSubstitutions )
+import Kore.Unification.Unifier
+       ( UnificationSubstitution )
 import Kore.Variables.Fresh.IntCounter
        ( IntCounter )
 
@@ -46,51 +57,54 @@ applications of functional constructors may prevent function evaluation in
 various ways.
 -}
 evaluateFunctions
-    :: MetadataTools level
-    -- ^ Defines what is a function and what is not.
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
+    ::  ( MetaOrObject level
+        , Given (MetadataTools level)
+        , SortedVariable variable
+        , Show (variable level)
+        , Ord (variable level)
+        )
+    => Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
     -- ^ Map from a symbol's ID to all the function definitions for that symbol.
-    -> ConditionSort level
-    -- ^ Sort used for conditions. This function assumes that all conditions
-    -- have this sort and will use it to create new conditions.
-    -> CommonPurePattern level
+    -> PureMLPattern level variable
     -- ^ Pattern on which to evaluate functions
-    -> IntCounter (FunctionResult level, FunctionResultProof level)
-evaluateFunctions metadataTools functionIdToEvaluator conditionSort =
+    -> IntCounter (ExpandedPattern level variable, FunctionResultProof level)
+evaluateFunctions functionIdToEvaluator =
     fixTopDownVisitor
-        (filterUnhandledPatterns metadataTools)
+        (filterUnhandledPatterns given)
         (evaluateLocalFunction
             (ConditionEvaluator conditionEvaluator)
-            (CommonPurePatternFunctionEvaluator functionEvaluator)
+            (PureMLPatternFunctionEvaluator functionEvaluator)
             functionIdToEvaluator
-            conditionSort)
+        )
   where
     conditionEvaluator =
         evaluateFunctionCondition
-            (CommonPurePatternFunctionEvaluator functionEvaluator)
-            conditionSort
+            (PureMLPatternFunctionEvaluator functionEvaluator)
     functionEvaluator =
-        evaluateFunctions metadataTools functionIdToEvaluator conditionSort
+        evaluateFunctions functionIdToEvaluator
 
-{--| 'FilterWrapper' adapts the natural result of filtering patterns to
+{-| 'FilterWrapper' adapts the natural result of filtering patterns to
 the interface expected by 'applyPatternLeveledFunction'
---}
-newtype FilterWrapper level = FilterWrapper
+-}
+newtype FilterWrapper variable level = FilterWrapper
     { filterUnwrap
         :: Either
-            (IntCounter (FunctionResult level, FunctionResultProof level))
-            (UnFixedPureMLPattern level Variable)
+            (IntCounter
+                (ExpandedPattern level variable, FunctionResultProof level)
+            )
+            (UnFixedPureMLPattern level variable)
     }
 
-{--|'filterUnhandledPatterns' rejects everything that is not an application of
+{-|'filterUnhandledPatterns' rejects everything that is not an application of
 a constructor or a function.
---}
+-}
 filterUnhandledPatterns
-    :: MetadataTools level
-    -> Pattern level Variable (CommonPurePattern level)
+    :: MetaOrObject level
+    => MetadataTools level
+    -> Pattern level variable (PureMLPattern level variable)
     -> Either
-        (IntCounter (FunctionResult level, FunctionResultProof level))
-        (UnFixedPureMLPattern level Variable)
+        (IntCounter (ExpandedPattern level variable, FunctionResultProof level))
+        (UnFixedPureMLPattern level variable)
 filterUnhandledPatterns metadataTools patt =
     filterUnwrap
         (applyPatternLeveledFunction
@@ -112,131 +126,145 @@ filterUnhandledPatterns metadataTools patt =
         )
   where
     wrapUnchanged
-        :: Pattern level Variable (CommonPurePattern level)
-        -> FilterWrapper level
+        :: MetaOrObject level
+        => Pattern level variable (PureMLPattern level variable)
+        -> FilterWrapper variable level
     wrapUnchanged patt' =
         FilterWrapper $ Left $ return
-            ( FunctionResult
-                { functionResultPattern   = asPurePattern patt'
-                , functionResultCondition = ConditionTrue
+            ( ExpandedPattern
+                { term      = asPurePattern patt'
+                , predicate = makeTruePredicate
+                , substitution = []
                 }
             , FunctionResultProof
             )
 
-{--| 'EvaluationWrapper' adapts the natural result of evaluating functions
+{-| 'EvaluationWrapper' adapts the natural result of evaluating functions
 the interface expected by 'applyPatternLeveledFunction'
---}
-newtype EvaluationWrapper level = EvaluationWrapper
+-}
+newtype EvaluationWrapper variable level = EvaluationWrapper
     { evaluationUnwrap
-        :: IntCounter (FunctionResult level, FunctionResultProof level)
+        :: IntCounter (ExpandedPattern level variable, FunctionResultProof level)
     }
 
-{--| 'evaluateLocalFunction' assumes that a pattern's children have been
+{-| 'evaluateLocalFunction' assumes that a pattern's children have been
 evaluated and evaluates the pattern.
---}
+-}
 evaluateLocalFunction
-    :: ConditionEvaluator level
-    -> CommonPurePatternFunctionEvaluator level
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
-    -> ConditionSort level
+    ::  ( MetaOrObject level
+        , Given (MetadataTools level)
+        , SortedVariable variable
+        , Show (variable level)
+        , Ord (variable level)
+        )
+    => ConditionEvaluator level variable
+    -> PureMLPatternFunctionEvaluator level variable
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
     -> Pattern
         level
-        Variable
-        (IntCounter (FunctionResult level, FunctionResultProof level))
-    -> IntCounter (FunctionResult level, FunctionResultProof level)
+        variable
+        (IntCounter (ExpandedPattern level variable, FunctionResultProof level))
+    -> IntCounter (ExpandedPattern level variable, FunctionResultProof level)
 evaluateLocalFunction
     conditionEvaluator
     functionEvaluator
     symbolIdToEvaluators
-    conditionSort
     pattIF
   = do
     pattF <- sequenceA pattIF
     let
-        (childrenCondition, _) =
-            foldr
-                (andChildrenConditions conditionSort)
-                (ConditionTrue, FunctionResultProof)
-                (fmap (functionResultCondition . fst) pattF)
-        normalPattern = fmap (functionResultPattern . fst) pattF
-        unchanged = returnUnchanged childrenCondition
+
+        (mergedCondition, childrenSubstitution, _) =
+            -- TODO (virgil): Maybe make mergePredicatesAndSubstitutions take
+            -- Foldable arguments.
+            mergePredicatesAndSubstitutions
+                (Foldable.toList (fmap (ExpandedPattern.predicate . fst) pattF))
+                (Foldable.toList
+                    (fmap (ExpandedPattern.substitution . fst) pattF)
+                )
+        normalPattern = fmap (ExpandedPattern.term . fst) pattF
+        unchanged =
+                returnUnchanged mergedCondition childrenSubstitution
+
+        patternLeveledFunction = PatternLeveledFunction
+            { patternLeveledFunctionML = unchanged . mlPatternToPattern
+            , patternLeveledFunctionMLBinder =
+                unchanged . mlBinderPatternToPattern
+            , stringLeveledFunction =
+                assertTrue mergedCondition
+                . assertEmpty childrenSubstitution
+                . returnUnchanged makeTruePredicate []
+                . StringLiteralPattern
+            , charLeveledFunction =
+                assertTrue mergedCondition
+                . assertEmpty childrenSubstitution
+                . returnUnchanged makeTruePredicate []
+                . CharLiteralPattern
+            , applicationLeveledFunction =
+                evaluateApplication
+                    conditionEvaluator
+                    functionEvaluator
+                    symbolIdToEvaluators
+                    mergedCondition
+                    childrenSubstitution
+            , variableLeveledFunction = unchanged . VariablePattern
+            }
+
     evaluationUnwrap
         ( applyPatternLeveledFunction
-            PatternLeveledFunction
-                { patternLeveledFunctionML = unchanged . mlPatternToPattern
-                , patternLeveledFunctionMLBinder =
-                    unchanged . mlBinderPatternToPattern
-                , stringLeveledFunction =
-                    assertTrue childrenCondition
-                    . returnUnchanged ConditionTrue
-                    . StringLiteralPattern
-                , charLeveledFunction =
-                    assertTrue childrenCondition
-                    . returnUnchanged ConditionTrue
-                    . CharLiteralPattern
-                , applicationLeveledFunction =
-                    evaluateApplication
-                        conditionEvaluator
-                        functionEvaluator
-                        symbolIdToEvaluators
-                        conditionSort
-                        childrenCondition
-                , variableLeveledFunction = unchanged . VariablePattern
-                }
+            patternLeveledFunction
             normalPattern
         )
   where
     returnUnchanged
-        :: EvaluatedCondition level
-        -> Pattern level Variable (CommonPurePattern level)
-        -> EvaluationWrapper level
-    returnUnchanged condition patt =
+        :: Predicate level variable
+        -> UnificationSubstitution level variable
+        -> Pattern level variable (PureMLPattern level variable)
+        -> EvaluationWrapper variable level
+    returnUnchanged condition substitution' patt =
         EvaluationWrapper $ return
-            ( FunctionResult
-                { functionResultPattern   = asPurePattern patt
-                , functionResultCondition = condition
+            ( ExpandedPattern
+                { term      = asPurePattern patt
+                , predicate = condition
+                , substitution = substitution'
                 }
             , FunctionResultProof
             )
-    assertTrue :: EvaluatedCondition level -> a -> a
-    assertTrue ConditionTrue x = x
+    assertTrue :: Predicate level variable -> a -> a
+    assertTrue PredicateTrue x = x
     assertTrue _ _             = error "Expecting the condition to be true."
+    assertEmpty :: [elem] -> a -> a
+    assertEmpty [] x = x
+    assertEmpty _ _  = error "Expecting an empty list."
 
-{--| 'andChildrenConditions' combines two children's conditions.
---}
-andChildrenConditions
-    :: ConditionSort level
-    -- ^ Sort used for conditions. This function assumes that all conditions
-    -- have this sort and will use it to create new conditions.
-    -> EvaluatedCondition level
-    -> (EvaluatedCondition level, FunctionResultProof level)
-    -> (EvaluatedCondition level, FunctionResultProof level)
-andChildrenConditions conditionSort first (second, _) =
-    (fst (makeEvaluatedAnd conditionSort first second), FunctionResultProof)
-
-{--| 'evaluateApplication' - evaluates functions on an application pattern.
---}
+{-| 'evaluateApplication' - evaluates functions on an application pattern.
+-}
 evaluateApplication
-    :: ConditionEvaluator level
+    ::  ( MetaOrObject level
+        , Given (MetadataTools level)
+        , SortedVariable variable
+        , Show (variable level)
+        , Ord (variable level)
+        )
+    => ConditionEvaluator level variable
     -- ^ Evaluates conditions
-    -> CommonPurePatternFunctionEvaluator level
+    -> PureMLPatternFunctionEvaluator level variable
     -- ^ Evaluates functions.
-    -> Map.Map (Id level) [ApplicationFunctionEvaluator level]
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
     -- ^ Map from symbol IDs to defined functions
-    -> ConditionSort level
-    -- ^ Sort used for conditions. This function assumes that all conditions
-    -- have this sort and will use it to create new conditions.
-    -> EvaluatedCondition level
+    -> Predicate level variable
     -- ^ Aggregated children condition.
-    -> Application level (CommonPurePattern level)
+    -> UnificationSubstitution level variable
+    -- ^ Aggregated children substitution.
+    -> Application level (PureMLPattern level variable)
     -- ^ The pattern to be evaluated
-    -> EvaluationWrapper level
+    -> EvaluationWrapper variable level
 evaluateApplication
     conditionEvaluator
     functionEvaluator
     symbolIdToEvaluator
-    conditionSort
     childrenCondition
+    childrenSubstitution
     app@Application
         { applicationSymbolOrAlias = SymbolOrAlias
             -- TODO(virgil): Should we use the symbolOrAliasParams? Should
@@ -251,113 +279,89 @@ evaluateApplication
                 results <- mapM (applyEvaluator app) evaluators
                 mergedResults <-
                     mapM
-                        (mergeWithCondition
-                            conditionEvaluator conditionSort childrenCondition
+                        (mergeWithConditionAndSubstitution
+                            conditionEvaluator
+                            childrenCondition
+                            childrenSubstitution
                         )
                         results
                 -- After removing N/A results and duplicates we expect at most
                 -- one result, i.e. we don't handle ambiguity
                 -- TODO(virgil): nub is O(n^2), should do better than that.
-                case nub (filter notNotApplicable mergedResults) of
-                    [] -> return unchanged
-                    [(AttemptedFunctionResultNotApplicable, _)] ->
-                        error "Should not reach this line."
-                    [(AttemptedFunctionResultSymbolic condition, proof)] ->
-                        return
-                            ( FunctionResult
-                                { functionResultPattern =
-                                    asPurePattern $ ApplicationPattern app
-                                , functionResultCondition = condition
-                                }
-                            , proof
-                            )
-                    [(AttemptedFunctionResultApplied functionResult, proof)] ->
+                case nub (filter notBottom mergedResults) of
+                    [] -> return bottom'
+                    [(AttemptedFunction.NotApplicable, _)] ->
+                        return unchanged
+                    [(AttemptedFunction.Applied functionResult, proof)] ->
                         return (functionResult, proof)
                     (_ : _ : _) -> error "Not implemented yet."
   where
     unchanged =
-        ( FunctionResult
-            { functionResultPattern   = asPurePattern $ ApplicationPattern app
-            , functionResultCondition = childrenCondition
+        ( ExpandedPattern
+            { term      = asPurePattern $ ApplicationPattern app
+            , predicate = childrenCondition
+            , substitution = childrenSubstitution
             }
         , FunctionResultProof
         )
+    bottom' = (ExpandedPattern.bottom, FunctionResultProof)
     applyEvaluator app' (ApplicationFunctionEvaluator evaluator) =
         evaluator
             conditionEvaluator
             functionEvaluator
             app'
-    notNotApplicable =
+    notBottom =
         \case
-            (AttemptedFunctionResultNotApplicable, _) -> False
+            (AttemptedFunction.Applied
+                ExpandedPattern {predicate = PredicateFalse}
+             , _
+             ) -> False
             _ -> True
 
-{--| 'mergeWithCondition' ands the given condition to the given function
+{-| 'mergeWithCondition' ands the given condition to the given function
 evaluation.
---}
-mergeWithCondition
-    :: ConditionEvaluator level
+-}
+mergeWithConditionAndSubstitution
+    ::  ( MetaOrObject level
+        , Given (MetadataTools level)
+        , SortedVariable variable
+        , Show (variable level)
+        , Ord (variable level))
+    => ConditionEvaluator level variable
     -- ^ Can evaluate conditions.
-    -> ConditionSort level
-    -- ^ Sort used for conditions. This function assumes that all conditions
-    -- have this sort and will use it to create new conditions.
-    -> EvaluatedCondition level
+    -> Predicate level variable
     -- ^ Condition to add.
-    -> (AttemptedFunctionResult level, FunctionResultProof level)
-    -- ^ AttemptedFunctionResult to which the condition should be added.
-    -> IntCounter (AttemptedFunctionResult level, FunctionResultProof level)
-mergeWithCondition _ _ _ (AttemptedFunctionResultNotApplicable, _) =
-    return (AttemptedFunctionResultNotApplicable, FunctionResultProof)
-mergeWithCondition
-    conditionEvaluator
-    conditionSort
-    toMerge
-    (AttemptedFunctionResultSymbolic condition, _)
-  = do
-    (mergedCondition, _) <-
-        mergeConditions conditionEvaluator conditionSort condition toMerge
-    case mergedCondition of
-        ConditionFalse ->
-            return (AttemptedFunctionResultNotApplicable, FunctionResultProof)
-        _              ->
-            return
-                ( AttemptedFunctionResultSymbolic mergedCondition
+    -> UnificationSubstitution level variable
+    -- ^ Substitution to add.
+    -> (AttemptedFunction level variable, FunctionResultProof level)
+    -- ^ AttemptedFunction level variable to which the condition should be added.
+    -> IntCounter
+        (AttemptedFunction level variable, FunctionResultProof level)
+mergeWithConditionAndSubstitution _ _ _ (AttemptedFunction.NotApplicable, _) =
+    return (AttemptedFunction.NotApplicable, FunctionResultProof)
+mergeWithConditionAndSubstitution
+    (ConditionEvaluator conditionEvaluator)
+    conditionToMerge
+    substitutionToMerge
+    (AttemptedFunction.Applied functionResult, _)
+  = let
+        (mergedCondition, mergedSubstitution, _) =
+            mergePredicatesAndSubstitutions
+                [ExpandedPattern.predicate functionResult, conditionToMerge]
+                [ ExpandedPattern.substitution functionResult
+                , substitutionToMerge
+                ]
+    in do
+        evaluatedCondition <- conditionEvaluator mergedCondition
+        case evaluatedCondition of
+            (PredicateFalse, _) -> return
+                ( AttemptedFunction.Applied ExpandedPattern.bottom
                 , FunctionResultProof
                 )
-mergeWithCondition
-    conditionEvaluator
-    conditionSort
-    toMerge
-    (AttemptedFunctionResultApplied functionResult, _)
-  = do
-    mergedCondition <-
-        mergeConditions
-            conditionEvaluator
-            conditionSort
-            (functionResultCondition functionResult)
-            toMerge
-    case mergedCondition of
-        (ConditionFalse, _) ->
-            return (AttemptedFunctionResultNotApplicable, FunctionResultProof)
-        _ -> return
-            ( AttemptedFunctionResultApplied functionResult
-                {functionResultCondition = fst mergedCondition}
-            , FunctionResultProof
-            )
-
-{--| 'mergeConditions' merges two conditions with an 'and'.
---}
-mergeConditions
-    :: ConditionEvaluator level
-    -- ^ Can evaluate conditions.
-    -> ConditionSort level
-    -- ^ Sort used for conditions. This function assumes that all conditions
-    -- have this sort and will use it to create new conditions.
-    -> EvaluatedCondition level
-    -> EvaluatedCondition level
-    -> IntCounter (EvaluatedCondition level, ConditionProof level)
-mergeConditions _ conditionSort first second =
-    return $ makeEvaluatedAnd conditionSort first second
-    -- TODO(virgil): Should be something like:
-    -- conditionEvaluator (makeEvaluatedAnd conditionSort first second)
-    -- but, right now, we don't have conditions which are partly satisfiable.
+            _ -> return
+                ( AttemptedFunction.Applied functionResult
+                    { predicate = mergedCondition
+                    , substitution = mergedSubstitution
+                    }
+                , FunctionResultProof
+                )

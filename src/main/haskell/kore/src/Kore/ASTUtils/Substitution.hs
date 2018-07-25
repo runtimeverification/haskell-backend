@@ -16,10 +16,10 @@ Portability : portable
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 module Kore.ASTUtils.Substitution
-    ( subst
-    , localSubst
-    ) where
-
+( subst
+, localSubst
+)
+where
 
 import           Control.Lens
 import           Data.Functor.Foldable
@@ -46,30 +46,6 @@ subst old new = \case
     pat
      | pat == old -> new
      | otherwise  -> embed $ fmap (subst old new) $ project pat
-
--- subst2 a b = cata (\pat -> if Fix pat == a then b else Fix pat)
-
--- handleBinder
---     :: MetaOrObject level
---     => CommonPurePattern level
---     -> CommonPurePattern level
---     -> ( Sort level
---       -> Variable level
---       -> CommonPurePattern level
---       -> CommonPurePattern level
---       )
---     -> Sort level
---     -> Variable level
---     -> CommonPurePattern level
---     -> CommonPurePattern level
--- handleBinder old new binder s1 v p =
---     let fa = freeVars old
---         fb = freeVars new
---     in if S.member v fa
---         then binder s1 v p
---     else if S.member v fb
---         then subst old new $ alphaRename $ binder s1 v p
---         else binder s1 v $ subst old new p
 
 handleBinder old new binder s1 v p
   | S.member v (freeVars old) = binder s1 v p

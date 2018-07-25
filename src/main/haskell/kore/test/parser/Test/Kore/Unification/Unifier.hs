@@ -12,6 +12,8 @@ import Data.Function
 import Data.Functor.Foldable
 import Data.List
        ( sortBy )
+import Data.Reflection
+       ( give )
 
 import Kore.AST.Builders
 import Kore.AST.Common
@@ -20,7 +22,11 @@ import Kore.AST.MLPatterns
 import Kore.AST.PureML
 import Kore.AST.Sentence
 import Kore.ASTPrettyPrint
+import Kore.ASTUtils.SmartConstructors
+       ( mkVar )
 import Kore.IndexedModule.MetadataTools
+import Kore.Predicate.Predicate
+       ( Predicate, makeTruePredicate )
 import Kore.Unification.Error
 import Kore.Unification.UnifierImpl
 
@@ -219,6 +225,7 @@ unificationProcedureSuccess
     -> UnificationTerm Object
     -> UnificationTerm Object
     -> Substitution Object
+    -> Predicate Object Variable
     -> UnificationProof Object Variable
     -> TestTree
 unificationProcedureSuccess
@@ -226,20 +233,23 @@ unificationProcedureSuccess
     (UnificationTerm term1)
     (UnificationTerm term2)
     subst
+    predicate'
     proof
   = testCase
         message
         (assertEqualWithExplanation
             ""
-            (unificationSubstitution subst, proof)
-            (sortBy (compare `on` fst) subst', proof')
+            (unificationSubstitution subst, predicate', proof)
+            (sortBy (compare `on` fst) subst', pred', proof')
         )
   where
-    Right (subst', proof') =
-        unificationProcedure
-            tools
-            (extractPurePattern term1)
-            (extractPurePattern term2)
+    Right (subst', pred', proof') =
+        give tools
+            ( unificationProcedure
+                tools
+                (extractPurePattern term1)
+                (extractPurePattern term2)
+            )
 
 test_unification :: [TestTree]
 test_unification =
@@ -381,6 +391,7 @@ test_unification =
         [ ("a", applyS eg [expX])
         , ("x", applyS eg [expX])
         ]
+        makeTruePredicate
         (CombinedUnificationProof
             [ AndDistributionAndConstraintLifting
                 (symbolHead expBin)
@@ -411,6 +422,7 @@ test_unification =
         [ ("a", expY)
         , ("x", applyS expBin [expY, expA])
         ]
+        makeTruePredicate
         (CombinedUnificationProof
             [ AndDistributionAndConstraintLifting
                 (symbolHead expBin)
@@ -474,9 +486,53 @@ test_unification =
         (UnificationTerm bA)
         UnificationError
         -}
+    , testCase "Maps substitution variables"
+        (assertEqualWithExplanation ""
+            [(W "1", war' "2")]
+            (mapSubstitutionVariables showVar
+                [(V 1, var' 2)]
+            )
+        )
     ]
   where
     symbolHead symbol = getSentenceSymbolOrAliasHead symbol []
     var ps = case project (extractPurePattern ps) of
         VariablePattern v -> v
         _                 -> error "Expecting a variable"
+
+newtype V level = V Integer
+    deriving (Show, Eq, Ord)
+newtype W level = W String
+    deriving (Show, Eq, Ord)
+
+instance EqualWithExplanation (V level)
+  where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
+instance EqualWithExplanation (W level)
+  where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
+
+showVar :: V level -> W level
+showVar (V i) = W (show i)
+
+var' :: Integer -> PureMLPattern Meta V
+var' i = give mockMetadataTools (mkVar (V i))
+
+war' :: String -> PureMLPattern Meta W
+war' s = give mockMetadataTools (mkVar (W s))
+
+mockMetadataTools :: MetadataTools Meta
+mockMetadataTools = MetadataTools
+    { isConstructor = const True
+    , isFunctional = const True
+    , isFunction = const False
+    , getArgumentSorts = const [sortVar, sortVar]
+    , getResultSort = const sortVar
+    }
+
+sortVar :: Sort level
+sortVar = SortVariableSort (SortVariable (Id "#a" AstLocationTest))

@@ -5,10 +5,11 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import Test.Tasty.HUnit.Extensions
+import Data.Reflection
+       ( give )
 
 import Kore.AST.Common
-       ( Application (..), AstLocation (..), Id (..), Pattern (..), Sort (..),
+       ( Application (..), AstLocation (..), Id (..), Pattern (..),
        SymbolOrAlias (..) )
 import Kore.AST.MetaOrObject
 import Kore.AST.PureML
@@ -23,14 +24,17 @@ import Kore.IndexedModule.MetadataTools
        ( MetadataTools (..) )
 import Kore.MetaML.AST
        ( CommonMetaPattern )
+import Kore.Predicate.Predicate
+       ( PredicateProof (..), makeFalsePredicate, makeTruePredicate )
 import Kore.Step.BaseStep
        ( AxiomPattern (..) )
-import Kore.Step.Condition.Condition
-       ( ConditionProof (..), ConditionSort (..), EvaluatedCondition (..),
-       UnevaluatedCondition (..) )
+import Kore.Step.ExpandedPattern as ExpandedPattern
+       ( ExpandedPattern (..), bottom )
+import Kore.Step.Function.Data as AttemptedFunction
+       ( AttemptedFunction (..) )
 import Kore.Step.Function.Data
-       ( AttemptedFunctionResult (..), CommonPurePatternFunctionEvaluator (..),
-       ConditionEvaluator (..), FunctionResult (..), FunctionResultProof (..) )
+       ( CommonAttemptedFunction, CommonConditionEvaluator,
+       CommonPurePatternFunctionEvaluator, FunctionResultProof (..) )
 import Kore.Step.Function.UserDefined
        ( axiomFunctionEvaluator )
 import Kore.Variables.Fresh.IntCounter
@@ -40,15 +44,15 @@ import Test.Kore.Step.Condition
        ( mockConditionEvaluator )
 import Test.Kore.Step.Function
        ( mockFunctionEvaluator )
+import Test.Tasty.HUnit.Extensions
 
 test_userDefinedFunction :: [TestTree]
 test_userDefinedFunction =
     [ testCase "Cannot apply function if step fails"
         (assertEqualWithExplanation ""
-            AttemptedFunctionResultNotApplicable
+            AttemptedFunction.NotApplicable
             (evaluateWithAxiom
                 mockMetadataTools
-                (ConditionSort sortSort)
                 AxiomPattern
                     { axiomPatternLeft  =
                         asPureMetaPattern (metaF (x PatternSort))
@@ -62,15 +66,14 @@ test_userDefinedFunction =
         )
     , testCase "Applies one step"
         (assertEqualWithExplanation "f(x) => g(x)"
-            (AttemptedFunctionResultApplied FunctionResult
-                { functionResultPattern   =
-                    asPureMetaPattern (metaG (x PatternSort))
-                , functionResultCondition = ConditionTrue
+            (AttemptedFunction.Applied ExpandedPattern
+                { term = asPureMetaPattern (metaG (x PatternSort))
+                , predicate = makeTruePredicate
+                , substitution = []
                 }
             )
             (evaluateWithAxiom
                 mockMetadataTools
-                (ConditionSort sortSort)
                 AxiomPattern
                     { axiomPatternLeft  =
                         asPureMetaPattern (metaF (x PatternSort))
@@ -78,12 +81,8 @@ test_userDefinedFunction =
                         asPureMetaPattern (metaG (x PatternSort))
                     }
                 (mockConditionEvaluator
-                    [   ( unevaluatedCondition
-                            (metaAnd SortSort
-                                (metaTop SortSort)
-                                (metaTop SortSort)
-                            )
-                        , (ConditionTrue, ConditionProof)
+                    [   ( makeTruePredicate
+                        , (makeTruePredicate, PredicateProof)
                         )
                     ]
                 )
@@ -93,10 +92,9 @@ test_userDefinedFunction =
         )
     , testCase "Cannot apply step with unsat condition"
         (assertEqualWithExplanation ""
-            AttemptedFunctionResultNotApplicable
+            (AttemptedFunction.Applied ExpandedPattern.bottom)
             (evaluateWithAxiom
                 mockMetadataTools
-                (ConditionSort sortSort)
                 AxiomPattern
                     { axiomPatternLeft  =
                         asPureMetaPattern (metaF (x PatternSort))
@@ -104,12 +102,8 @@ test_userDefinedFunction =
                         asPureMetaPattern (metaG (x PatternSort))
                     }
                 (mockConditionEvaluator
-                    [   ( unevaluatedCondition
-                            (metaAnd SortSort
-                                (metaTop SortSort)
-                                (metaTop SortSort)
-                            )
-                        , (ConditionFalse, ConditionProof)
+                    [   ( makeTruePredicate
+                        , (makeFalsePredicate, PredicateProof)
                         )
                     ]
                 )
@@ -119,15 +113,14 @@ test_userDefinedFunction =
         )
     , testCase "Reevaluates the step application"
         (assertEqualWithExplanation "f(x) => g(x) and g(x) => h(x)"
-            (AttemptedFunctionResultApplied FunctionResult
-                { functionResultPattern   =
-                    asPureMetaPattern (metaH (x PatternSort))
-                , functionResultCondition = ConditionTrue
+            (AttemptedFunction.Applied ExpandedPattern
+                { term = asPureMetaPattern (metaH (x PatternSort))
+                , predicate = makeTruePredicate
+                , substitution = []
                 }
             )
             (evaluateWithAxiom
                 mockMetadataTools
-                (ConditionSort sortSort)
                 AxiomPattern
                     { axiomPatternLeft  =
                         asPureMetaPattern (metaF (x PatternSort))
@@ -135,23 +128,19 @@ test_userDefinedFunction =
                         asPureMetaPattern (metaG (x PatternSort))
                     }
                 (mockConditionEvaluator
-                    [   ( unevaluatedCondition
-                            (metaAnd SortSort
-                                (metaTop SortSort)
-                                (metaTop SortSort)
-                            )
-                        , (ConditionTrue, ConditionProof)
+                     -- TODO: Remove these true->true mappings.
+                    [   ( makeTruePredicate
+                        , (makeTruePredicate, PredicateProof)
                         )
                     ]
                 )
                 (mockFunctionEvaluator
                     [   ( asPureMetaPattern (metaG (x PatternSort))
-                        ,   ( FunctionResult
-                                { functionResultPattern =
-                                    asPureMetaPattern
-                                        (metaH (x PatternSort))
-                                , functionResultCondition =
-                                    ConditionTrue
+                        ,   ( ExpandedPattern
+                                { term =
+                                    asPureMetaPattern (metaH (x PatternSort))
+                                , predicate = makeTruePredicate
+                                , substitution = []
                                 }
                             , FunctionResultProof
                             )
@@ -163,15 +152,9 @@ test_userDefinedFunction =
         )
     , testCase "Does not reevaluate the step application with incompatible condition"
         (assertEqualWithExplanation "f(x) => g(x) and g(x) => h(x) + false"
-            (AttemptedFunctionResultApplied FunctionResult
-                { functionResultPattern   =
-                    asPureMetaPattern (metaG (x PatternSort))
-                , functionResultCondition = ConditionTrue
-                }
-            )
+            (AttemptedFunction.Applied ExpandedPattern.bottom)
             (evaluateWithAxiom
                 mockMetadataTools
-                (ConditionSort sortSort)
                 AxiomPattern
                     { axiomPatternLeft  =
                         asPureMetaPattern (metaF (x PatternSort))
@@ -179,23 +162,18 @@ test_userDefinedFunction =
                         asPureMetaPattern (metaG (x PatternSort))
                     }
                 (mockConditionEvaluator
-                    [   ( unevaluatedCondition
-                            (metaAnd SortSort
-                                (metaTop SortSort)
-                                (metaTop SortSort)
-                            )
-                        , (ConditionTrue, ConditionProof)
+                    [   ( makeTruePredicate
+                        , (makeTruePredicate, PredicateProof)
                         )
                     ]
                 )
                 (mockFunctionEvaluator
                     [   ( asPureMetaPattern (metaG (x PatternSort))
-                        ,   ( FunctionResult
-                                { functionResultPattern =
-                                    asPureMetaPattern
-                                        (metaH (x PatternSort))
-                                , functionResultCondition =
-                                    ConditionFalse
+                        ,   ( ExpandedPattern
+                                { term =
+                                    asPureMetaPattern (metaH (x PatternSort))
+                                , predicate = makeFalsePredicate
+                                , substitution = []
                                 }
                             , FunctionResultProof
                             )
@@ -205,6 +183,92 @@ test_userDefinedFunction =
                 (asApplication (metaF (x PatternSort)))
             )
         )
+    , testCase "Preserves step substitution"
+        (assertEqualWithExplanation "sigma(x,x) => g(x) vs sigma(a, b)"
+            (AttemptedFunction.Applied ExpandedPattern
+                { term = asPureMetaPattern (metaG (b PatternSort))
+                , predicate = makeTruePredicate
+                , substitution =
+                    [   ( asVariable (a PatternSort)
+                        , asPureMetaPattern (b PatternSort)
+                        )
+                    ]
+                }
+            )
+            (evaluateWithAxiom
+                mockMetadataTools
+                AxiomPattern
+                    { axiomPatternLeft  =
+                        asPureMetaPattern
+                            (metaSigma (x PatternSort) (x PatternSort))
+                    , axiomPatternRight =
+                        asPureMetaPattern (metaG (x PatternSort))
+                    }
+                (mockConditionEvaluator
+                    [   ( makeTruePredicate
+                        , (makeTruePredicate, PredicateProof)
+                        )
+                    ]
+                )
+                (mockFunctionEvaluator [])
+                (asApplication (metaSigma (a PatternSort) (b PatternSort)))
+            )
+        )
+    , testCase "Merges the step substitution with the reevaluation one"
+        (assertEqualWithExplanation
+            "sigma(x,x) => g(x) vs sigma(a, b) and g(b) => h(c) + b=c"
+            (AttemptedFunction.Applied ExpandedPattern
+                { term = asPureMetaPattern (metaH (c PatternSort))
+                , predicate = makeTruePredicate
+                , substitution =
+                    [   ( asVariable (a PatternSort)
+                        -- TODO(virgil): Do we want normalization here?
+                        , asPureMetaPattern (b PatternSort)
+                        )
+                    ,   ( asVariable (b PatternSort)
+                        , asPureMetaPattern (c PatternSort)
+                        )
+                    ]
+                }
+            )
+            (evaluateWithAxiom
+                mockMetadataTools
+                AxiomPattern
+                    { axiomPatternLeft  =
+                        asPureMetaPattern
+                            (metaSigma (x PatternSort) (x PatternSort))
+                    , axiomPatternRight =
+                        asPureMetaPattern (metaG (x PatternSort))
+                    }
+                (mockConditionEvaluator
+                     -- TODO: Remove these true->true mappings.
+                    [   ( makeTruePredicate
+                        , (makeTruePredicate, PredicateProof)
+                        )
+                    ]
+                )
+                (mockFunctionEvaluator
+                    [   ( asPureMetaPattern (metaG (b PatternSort))
+                        ,   ( ExpandedPattern
+                                { term =
+                                    asPureMetaPattern (metaH (c PatternSort))
+                                , predicate = makeTruePredicate
+                                , substitution =
+                                    [   ( asVariable (b PatternSort)
+                                        , asPureMetaPattern (c PatternSort)
+                                        )
+                                    ]
+                                }
+                            , FunctionResultProof
+                            )
+                        )
+                    ]
+                )
+                (asApplication (metaSigma (a PatternSort) (b PatternSort)))
+            )
+        )
+    -- TODO: Add a test for StepWithAxiom returning a condition.
+    -- TODO: Add a test for the stepper giving up
     ]
 
 mockMetadataTools :: MetadataTools Meta
@@ -219,9 +283,14 @@ mockMetadataTools = MetadataTools
 x :: MetaSort sort => sort -> MetaVariable sort
 x = metaVariable "#x" AstLocationTest
 
-sortSort :: Sort Meta
-sortSort = asAst SortSort
+a :: MetaSort sort => sort -> MetaVariable sort
+a = metaVariable "#a" AstLocationTest
 
+b :: MetaSort sort => sort -> MetaVariable sort
+b = metaVariable "#b" AstLocationTest
+
+c :: MetaSort sort => sort -> MetaVariable sort
+c = metaVariable "#c" AstLocationTest
 
 fSymbol :: SymbolOrAlias Meta
 fSymbol = SymbolOrAlias
@@ -285,10 +354,26 @@ metaH
     => p1 -> MetaH p1
 metaH = MetaH
 
-unevaluatedCondition
-    :: ProperPattern Meta sort patt => patt -> UnevaluatedCondition Meta
-unevaluatedCondition patt =
-    UnevaluatedCondition (asPureMetaPattern patt)
+
+sigmaSymbol :: SymbolOrAlias Meta
+sigmaSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = Id "#sigma" AstLocationTest
+    , symbolOrAliasParams = []
+    }
+
+data MetaSigma p1 p2 = MetaSigma p1 p2
+instance (MetaPattern PatternSort p1, MetaPattern PatternSort p2)
+    => ProperPattern Meta PatternSort (MetaSigma p1 p2)
+  where
+    asProperPattern (MetaSigma p1 p2) =
+        ApplicationPattern Application
+            { applicationSymbolOrAlias = sigmaSymbol
+            , applicationChildren = [asAst p1, asAst p2]
+            }
+metaSigma
+    :: (MetaPattern PatternSort p1, MetaPattern PatternSort p2)
+    => p1 -> p2 -> MetaSigma p1 p2
+metaSigma = MetaSigma
 
 asPureMetaPattern
     :: ProperPattern Meta sort patt => patt -> CommonMetaPattern
@@ -302,33 +387,31 @@ asApplication
     -> Application Meta (CommonPurePattern Meta)
 asApplication patt =
     case fromPurePattern (asPureMetaPattern patt) of
-        ApplicationPattern a -> a
-        _                    -> error "Expected an Application pattern."
+        ApplicationPattern app -> app
+        _                      -> error "Expected an Application pattern."
 
 evaluateWithAxiom
     :: MetaOrObject level
     => MetadataTools level
-    -> ConditionSort level
     -> AxiomPattern level
-    -> ConditionEvaluator level
+    -> CommonConditionEvaluator level
     -> CommonPurePatternFunctionEvaluator level
     -> Application level (CommonPurePattern level)
-    -> AttemptedFunctionResult level
+    -> CommonAttemptedFunction level
 evaluateWithAxiom
     metadataTools
-    conditionSort
     axiom
     conditionEvaluator
     functionEvaluator
     app
   =
     fst $ fst $ runIntCounter
-        (axiomFunctionEvaluator
-            metadataTools
-            conditionSort
-            axiom
-            conditionEvaluator
-            functionEvaluator
-            app
+        (give metadataTools
+            (axiomFunctionEvaluator
+                axiom
+                conditionEvaluator
+                functionEvaluator
+                app
+            )
         )
         0

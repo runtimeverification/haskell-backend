@@ -25,3 +25,14 @@ To test parsing performance:
    to generate input files.
 1. `stack build`
 1. `time stack exec kore-parser ../../test/performance/parsing-512.kore -- --noverify --noprint`
+
+## Debugging
+
+If building the test suite fails with some undecipherable error, add
+
+> -optF --debug
+
+to the `OPTION_GHC` pragma in `test/parser/Driver.hs`. The option will cause
+`tasty-debug` to print the generated source code to the terminal; hopefully,
+this reveals the error.
+

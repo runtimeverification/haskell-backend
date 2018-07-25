@@ -19,11 +19,13 @@ module Kore.Variables.Free
 import           Data.Foldable
                  ( fold )
 import           Data.Functor.Foldable
-                 ( Fix )
+                 ( Fix, cata )
 import qualified Data.Set as Set
 
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
+import Kore.AST.PureML
+       ( PureMLPattern )
 import Kore.ASTTraversals
 
 {-| 'freeVariables' extracts the set of free variables of a pattern. -}
@@ -60,6 +62,16 @@ allVariables = patternBottomUpVisitor allVarsVisitor
         Set.insert (asUnified (forallVariable f)) (forallChild f)
     allVarsVisitor p = fold p  -- default rule
 
+pureMergeVariables
+    :: Ord (var level)
+    => Pattern level var (Set.Set (var level)) -> Set.Set (var level)
+pureMergeVariables (VariablePattern v) = Set.singleton v
+pureMergeVariables (ExistsPattern e) =
+    Set.insert (existsVariable e) (existsChild e)
+pureMergeVariables (ForallPattern f) =
+    Set.insert (forallVariable f) (forallChild f)
+pureMergeVariables p = fold p  -- default rule
+
 pureFreeVariables
     :: ( UnifiedPatternInterface pat
        , Functor (pat var)
@@ -85,25 +97,9 @@ pureFreeVariables proxy p =
 set, regardless of whether they are quantified or not.
 -}
 pureAllVariables
-    :: ( UnifiedPatternInterface pat
-       , Functor (pat var)
-       , Show (var Object)
-       , Show (var Meta)
-       , Ord (var Object)
-       , Ord (var Meta)
-       , MetaOrObject level)
-    => level -> Fix (pat var) -> Set.Set (var level)
-pureAllVariables level p =
-    case isMetaOrObject (toProxy level) of
-        IsMeta   -> metaVars `ifSetEmpty` unifiedObjectVars
-        IsObject -> objectVars `ifSetEmpty` unifiedMetaVars
-  where
-    allVars = allVariables p
-    isUnifiedMeta (UnifiedMeta _) = True
-    isUnifiedMeta _               = False
-    (unifiedMetaVars, unifiedObjectVars) = Set.partition isUnifiedMeta allVars
-    metaVars = Set.map (\ (UnifiedMeta v) -> v) unifiedMetaVars
-    objectVars = Set.map (\ (UnifiedObject v) -> v) unifiedObjectVars
+    :: Ord (var level)
+    => PureMLPattern level var -> Set.Set (var level)
+pureAllVariables = cata pureMergeVariables
 
 ifSetEmpty :: Show b => a -> Set.Set b -> a
 ifSetEmpty a bs =

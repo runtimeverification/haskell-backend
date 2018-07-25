@@ -5,11 +5,12 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import Test.Tasty.HUnit.Extensions
+import Data.Reflection
+       ( give )
 
 import Kore.AST.Common
        ( Application (..), AstLocation (..), Id (..),
-       Pattern (ApplicationPattern), Sort, SymbolOrAlias (..), Variable )
+       Pattern (ApplicationPattern), SymbolOrAlias (..), Variable )
 import Kore.AST.MetaOrObject
 import Kore.AST.PureToKore
        ( patternKoreToPure )
@@ -21,15 +22,18 @@ import Kore.IndexedModule.MetadataTools
        ( MetadataTools (..) )
 import Kore.MetaML.AST
        ( CommonMetaPattern )
+import Kore.Predicate.Predicate
+       ( makeTruePredicate )
 import Kore.Step.BaseStep
-import Kore.Step.Condition.Condition
-       ( ConditionSort (..) )
+import Kore.Step.ExpandedPattern as ExpandedPattern
+       ( CommonExpandedPattern, ExpandedPattern (..) )
 import Kore.Step.Step
 import Kore.Unification.Unifier
        ( FunctionalProof (..), UnificationProof (..) )
 import Kore.Variables.Fresh.IntCounter
 
 import Test.Kore.Comparators ()
+import Test.Tasty.HUnit.Extensions
 
 v1 :: MetaSort sort => sort -> MetaVariable sort
 v1 = metaVariable "#v1" AstLocationTest
@@ -43,8 +47,6 @@ var_0 :: MetaSort sort => sort -> MetaVariable sort
 var_0 = metaVariable "#var_0" AstLocationTest
 var_1 :: MetaSort sort => sort -> MetaVariable sort
 var_1 = metaVariable "#var_1" AstLocationTest
-top :: MetaSort sort => sort -> CommonMetaPattern
-top sort = asPureMetaPattern $ metaTop sort
 
 test_single :: TestTree
 test_single =
@@ -55,18 +57,10 @@ test_single =
             -- Start pattern: V1
             -- Expected: V1
             (assertEqualWithExplanation ""
-                [   ( StepperConfiguration
-                        { stepperConfigurationPattern =
-                            asPureMetaPattern (v1 PatternSort)
-                        , stepperConfigurationConditionSort =
-                            conditionSort SortSort
-                        , stepperConfigurationCondition =
-                            asPureMetaPattern
-                                (metaAnd
-                                    SortSort
-                                    (metaTop SortSort)
-                                    (metaTop SortSort)
-                                )
+                [   ( ExpandedPattern
+                        { term = asPureMetaPattern (v1 PatternSort)
+                        , predicate = makeTruePredicate
+                        , substitution = []
                         }
                     , StepProofCombined
                         [ StepProofVariableRenamings
@@ -84,12 +78,10 @@ test_single =
                 ]
                 (runStep
                     mockMetadataTools
-                    StepperConfiguration
-                        { stepperConfigurationPattern =
-                            asPureMetaPattern (v1 PatternSort)
-                        , stepperConfigurationConditionSort =
-                            conditionSort SortSort
-                        , stepperConfigurationCondition = top SortSort
+                    ExpandedPattern
+                        { term = asPureMetaPattern (v1 PatternSort)
+                        , predicate = makeTruePredicate
+                        , substitution = []
                         }
                     [ AxiomPattern
                         { axiomPatternLeft = asPureMetaPattern (x1 PatternSort)
@@ -105,18 +97,10 @@ test_single =
             -- Expected: V1
             -- Expected: and(V1, V1)
             (assertEqualWithExplanation ""
-                [   ( StepperConfiguration
-                        { stepperConfigurationPattern =
-                            asPureMetaPattern (v1 PatternSort)
-                        , stepperConfigurationConditionSort =
-                            conditionSort SortSort
-                        , stepperConfigurationCondition =
-                            asPureMetaPattern
-                                (metaAnd
-                                    SortSort
-                                    (metaTop SortSort)
-                                    (metaTop SortSort)
-                                )
+                [   ( ExpandedPattern
+                        { term = asPureMetaPattern (v1 PatternSort)
+                        , predicate = makeTruePredicate
+                        , substitution = []
                         }
                     , StepProofCombined
                         [ StepProofVariableRenamings
@@ -131,22 +115,15 @@ test_single =
                             )
                         ]
                     )
-                ,   ( StepperConfiguration
-                        { stepperConfigurationPattern =
+                ,   ( ExpandedPattern
+                        { term =
                             asPureMetaPattern
                                 (metaAnd PatternSort
                                     (v1 PatternSort)
                                     (v1 PatternSort)
                                 )
-                        , stepperConfigurationConditionSort =
-                            conditionSort SortSort
-                        , stepperConfigurationCondition =
-                            asPureMetaPattern
-                                (metaAnd
-                                    SortSort
-                                    (metaTop SortSort)
-                                    (metaTop SortSort)
-                                )
+                        , predicate = makeTruePredicate
+                        , substitution = []
                         }
                     , StepProofCombined
                         [ StepProofVariableRenamings
@@ -164,12 +141,10 @@ test_single =
                 ]
                 (runStep
                     mockMetadataTools
-                    StepperConfiguration
-                        { stepperConfigurationPattern =
-                            asPureMetaPattern (v1 PatternSort)
-                        , stepperConfigurationConditionSort =
-                            conditionSort SortSort
-                        , stepperConfigurationCondition = top SortSort
+                    ExpandedPattern
+                        { term = asPureMetaPattern (v1 PatternSort)
+                        , predicate = makeTruePredicate
+                        , substitution = []
                         }
                     [ AxiomPattern
                         { axiomPatternLeft = asPureMetaPattern (x1 PatternSort)
@@ -195,16 +170,15 @@ test_single =
                 []
                 (runStep
                     mockMetadataTools
-                    StepperConfiguration
-                        { stepperConfigurationPattern =
+                    ExpandedPattern
+                        { term =
                             asPureMetaPattern
                                 ( metaSigma
                                     (metaG (a1 PatternSort))
                                     (metaF (b1 PatternSort))
                                 )
-                        , stepperConfigurationConditionSort =
-                            conditionSort SortSort
-                        , stepperConfigurationCondition = top SortSort
+                        , predicate = makeTruePredicate
+                        , substitution = []
                         }
                     [ AxiomPattern
                         { axiomPatternLeft =
@@ -227,17 +201,10 @@ test_multiple =
             -- Start pattern: f(V1)
             -- Expected: g(V1)
             (assertEqualWithExplanation ""
-                ( StepperConfiguration
-                    { stepperConfigurationPattern =
-                        asPureMetaPattern (metaG (v1 PatternSort))
-                    , stepperConfigurationConditionSort = conditionSort SortSort
-                    , stepperConfigurationCondition =
-                        asPureMetaPattern
-                            (metaAnd
-                                SortSort
-                                (metaTop SortSort)
-                                (metaTop SortSort)
-                            )
+                ( ExpandedPattern
+                    { term = asPureMetaPattern (metaG (v1 PatternSort))
+                    , predicate = makeTruePredicate
+                    , substitution = []
                     }
                 , StepProofCombined
                     [ StepProofCombined
@@ -261,12 +228,10 @@ test_multiple =
                 (runStepsPickFirst
                     mockMetadataTools
                     AnyStepCount
-                    StepperConfiguration
-                        { stepperConfigurationPattern =
-                            asPureMetaPattern (metaF (v1 PatternSort))
-                        , stepperConfigurationConditionSort =
-                            conditionSort SortSort
-                        , stepperConfigurationCondition = top SortSort
+                    ExpandedPattern
+                        { term = asPureMetaPattern (metaF (v1 PatternSort))
+                        , predicate = makeTruePredicate
+                        , substitution = []
                         }
                     [ AxiomPattern
                         { axiomPatternLeft =
@@ -283,21 +248,10 @@ test_multiple =
             -- Start pattern: f(V1)
             -- Expected: h(V1)
             (assertEqualWithExplanation ""
-                ( StepperConfiguration
-                    { stepperConfigurationPattern =
-                        asPureMetaPattern (metaH (v1 PatternSort))
-                    , stepperConfigurationConditionSort = conditionSort SortSort
-                    , stepperConfigurationCondition =
-                        asPureMetaPattern
-                            (metaAnd
-                                SortSort
-                                (metaAnd
-                                    SortSort
-                                    (metaTop SortSort)
-                                    (metaTop SortSort)
-                                )
-                                (metaTop SortSort)
-                            )
+                ( ExpandedPattern
+                    { term = asPureMetaPattern (metaH (v1 PatternSort))
+                    , predicate = makeTruePredicate
+                    , substitution = []
                     }
                 , StepProofCombined
                     [ StepProofCombined
@@ -338,12 +292,10 @@ test_multiple =
                 (runStepsPickFirst
                     mockMetadataTools
                     AnyStepCount
-                    StepperConfiguration
-                        { stepperConfigurationPattern =
-                            asPureMetaPattern (metaF (v1 PatternSort))
-                        , stepperConfigurationConditionSort =
-                            conditionSort SortSort
-                        , stepperConfigurationCondition = top SortSort
+                    ExpandedPattern
+                        { term = asPureMetaPattern (metaF (v1 PatternSort))
+                        , predicate = makeTruePredicate
+                        , substitution = []
                         }
                     [ AxiomPattern
                         { axiomPatternLeft =
@@ -366,17 +318,10 @@ test_multiple =
             -- Start pattern: f(V1)
             -- Expected: g(V1)
             (assertEqualWithExplanation ""
-                ( StepperConfiguration
-                    { stepperConfigurationPattern =
-                        asPureMetaPattern (metaG (v1 PatternSort))
-                    , stepperConfigurationConditionSort = conditionSort SortSort
-                    , stepperConfigurationCondition =
-                        asPureMetaPattern
-                            (metaAnd
-                                SortSort
-                                (metaTop SortSort)
-                                (metaTop SortSort)
-                            )
+                ( ExpandedPattern
+                    { term = asPureMetaPattern (metaG (v1 PatternSort))
+                    , predicate = makeTruePredicate
+                    , substitution = []
                     }
                 , StepProofCombined
                     [ StepProofCombined
@@ -400,12 +345,10 @@ test_multiple =
                 (runStepsPickFirst
                     mockMetadataTools
                     (MaxStepCount 1)
-                    StepperConfiguration
-                        { stepperConfigurationPattern =
-                            asPureMetaPattern (metaF (v1 PatternSort))
-                        , stepperConfigurationConditionSort =
-                            conditionSort SortSort
-                        , stepperConfigurationCondition = top SortSort
+                    ExpandedPattern
+                        { term = asPureMetaPattern (metaF (v1 PatternSort))
+                        , predicate = makeTruePredicate
+                        , substitution = []
                         }
                     [ AxiomPattern
                         { axiomPatternLeft =
@@ -428,25 +371,20 @@ test_multiple =
             -- Start pattern: f(V1)
             -- Expected: f(V1)
             (assertEqualWithExplanation ""
-                ( StepperConfiguration
-                    { stepperConfigurationPattern =
-                        asPureMetaPattern (metaF (v1 PatternSort))
-                    , stepperConfigurationConditionSort =
-                        conditionSort SortSort
-                    , stepperConfigurationCondition =
-                        asPureMetaPattern (metaTop SortSort)
+                ( ExpandedPattern
+                    { term = asPureMetaPattern (metaF (v1 PatternSort))
+                    , predicate = makeTruePredicate
+                    , substitution = []
                     }
                 , StepProofCombined []
                 )
                 (runStepsPickFirst
                     mockMetadataTools
                     (MaxStepCount 0)
-                    StepperConfiguration
-                        { stepperConfigurationPattern =
-                            asPureMetaPattern (metaF (v1 PatternSort))
-                        , stepperConfigurationConditionSort =
-                            conditionSort SortSort
-                        , stepperConfigurationCondition = top SortSort
+                    ExpandedPattern
+                        { term = asPureMetaPattern (metaF (v1 PatternSort))
+                        , predicate = makeTruePredicate
+                        , substitution = []
                         }
                     [ AxiomPattern
                         { axiomPatternLeft =
@@ -464,9 +402,6 @@ test_multiple =
                 )
             )
         ]
-
-conditionSort :: AsAst (Sort level) s => s -> ConditionSort level
-conditionSort sort = ConditionSort (asAst sort)
 
 mockMetadataTools :: MetadataTools Meta
 mockMetadataTools = MetadataTools
@@ -598,12 +533,14 @@ runStep
     :: MetaOrObject level
     => MetadataTools level
     -- ^functions yielding metadata for pattern heads
-    -> StepperConfiguration level
+    -> CommonExpandedPattern level
     -- ^left-hand-side of unification
     -> [AxiomPattern level]
-    -> [(StepperConfiguration level, StepProof level)]
+    -> [(CommonExpandedPattern level, StepProof level)]
 runStep metadataTools configuration axioms =
-    fst $ runIntCounter (sequence (step metadataTools configuration axioms)) 0
+    fst $ runIntCounter
+        (sequence (give metadataTools (step configuration axioms)))
+        0
 
 
 runStepsPickFirst
@@ -611,12 +548,14 @@ runStepsPickFirst
     => MetadataTools level
     -- ^functions yielding metadata for pattern heads
     -> MaxStepCount
-    -> StepperConfiguration level
+    -> CommonExpandedPattern level
     -- ^left-hand-side of unification
     -> [AxiomPattern level]
-    -> (StepperConfiguration level, StepProof level)
+    -> (CommonExpandedPattern level, StepProof level)
 runStepsPickFirst metadataTools maxStepCount configuration axioms =
     fst $
         runIntCounter
-            (pickFirstStepper metadataTools maxStepCount configuration axioms)
+            (give metadataTools
+                (pickFirstStepper maxStepCount configuration axioms)
+            )
             0

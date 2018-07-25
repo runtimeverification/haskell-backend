@@ -191,6 +191,11 @@ instance EqualWithExplanation EWEString
         rawCompareWithExplanation s1 s2
     printWithExplanation (EWEString s) = show s
 
+instance EqualWithExplanation Integer
+  where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
 instance EqualWithExplanation a => EqualWithExplanation [a]
   where
     compareWithExplanation expected actual =

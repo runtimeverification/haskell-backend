@@ -17,4 +17,5 @@ import Kore.Unification.Error as Error
        ( UnificationError (..) )
 import Kore.Unification.UnifierImpl as UnifierImpl
        ( FunctionalProof (..), UnificationProof (..), UnificationSolution (..),
-       UnificationSubstitution, unificationProcedure )
+       UnificationSubstitution, mapSubstitutionVariables,
+       normalizeSubstitutionDuplication, unificationProcedure )

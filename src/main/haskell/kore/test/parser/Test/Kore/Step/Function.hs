@@ -1,37 +1,47 @@
 module Test.Kore.Step.Function (mockFunctionEvaluator) where
 
+import Kore.AST.MetaOrObject
+       ( MetaOrObject )
 import Kore.AST.PureML
        ( CommonPurePattern )
-import Kore.Step.Condition.Condition
+import Kore.Predicate.Predicate
+       ( makeTruePredicate )
+import Kore.Step.ExpandedPattern as ExpandedPattern
+       ( ExpandedPattern (..) )
+import Kore.Step.ExpandedPattern
+       ( CommonExpandedPattern )
 import Kore.Step.Function.Data
-       ( CommonPurePatternFunctionEvaluator (..), FunctionResult (..),
-       FunctionResultProof (..) )
+       ( CommonPurePatternFunctionEvaluator, FunctionResultProof (..),
+       PureMLPatternFunctionEvaluator (..) )
 import Kore.Variables.Fresh.IntCounter
 
 import Test.Kore.Comparators ()
 
 mockFunctionEvaluator
-    ::  [   ( CommonPurePattern level
-            , (FunctionResult level, FunctionResultProof level)
+    :: MetaOrObject level
+    =>  [   ( CommonPurePattern level
+            , (CommonExpandedPattern level, FunctionResultProof level)
             )
         ]
     -> CommonPurePatternFunctionEvaluator level
 mockFunctionEvaluator values =
-    CommonPurePatternFunctionEvaluator
+    PureMLPatternFunctionEvaluator
         (mockFunctionEvaluatorHelper values)
 
 mockFunctionEvaluatorHelper
-    ::  [   ( CommonPurePattern level
-            , (FunctionResult level, FunctionResultProof level)
+    :: MetaOrObject level
+    =>  [   ( CommonPurePattern level
+            , (CommonExpandedPattern level, FunctionResultProof level)
             )
         ]
     -> CommonPurePattern level
-    -> IntCounter (FunctionResult level, FunctionResultProof level)
+    -> IntCounter (CommonExpandedPattern level, FunctionResultProof level)
 mockFunctionEvaluatorHelper [] patt =
     return
-        ( FunctionResult
-            { functionResultPattern   = patt
-            , functionResultCondition = ConditionTrue
+        ( ExpandedPattern
+            { term   = patt
+            , predicate = makeTruePredicate
+            , substitution = []
             }
         , FunctionResultProof
         )
