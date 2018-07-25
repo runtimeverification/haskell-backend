@@ -1,8 +1,8 @@
 []
 
-module TEST-EXCEPTION-11
+module TEST-Exception-11
 
   axiom{}
-    #X:#Char{#Char} []
+    #X:#S{} []
 
 endmodule []
