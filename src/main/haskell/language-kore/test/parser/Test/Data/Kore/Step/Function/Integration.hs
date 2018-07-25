@@ -3,7 +3,8 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Test.Data.Kore.Step.Function.Integration (test_functionIntegration) where
 
-import           Data.Kore.IndexedModule.MetadataTools (MetadataTools (..))
+import           Data.Kore.IndexedModule.MetadataTools (MetadataTools (..),
+                                                        SortTools (..))
 import qualified Data.Map                              as Map
 
 
@@ -24,7 +25,6 @@ import           Data.Kore.Building.AsAst
 import           Data.Kore.Building.Patterns
 import           Data.Kore.Building.Sorts
 import           Data.Kore.Error                       (printError)
-import           Data.Kore.IndexedModule.MetadataTools
 import           Data.Kore.MetaML.AST                  (CommonMetaPattern)
 import           Data.Kore.Step.BaseStep               (AxiomPattern (..))
 import           Data.Kore.Step.Condition.Condition    (ConditionSort (..),
