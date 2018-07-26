@@ -72,6 +72,7 @@ attributes:
 constructor{}()
 strict{}("1", "2")
 unit{}(epsilon{}())
+unit{}(epsilon{}(), zero{}())
 operation{}(plus{}())
 ```
 We will *not* check that this attributes are well-formed in the usual sense,
