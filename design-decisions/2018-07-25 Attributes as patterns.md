@@ -80,7 +80,7 @@ This has some drawbacks:
   E.g. we wouldn't just be able to write `ac_axiom_for{}(plus{}())`, we would
   need to write either `ac_axiom_for{}(\dv(symbol{}("plus"))` which means that
   we partly give up on having structured data or
-  `ac_axiom_for{}(\forall{Int{}}(x : Int{}, \forall{Int{}}(y : Int{}, plus{}(x:Int{},y:Int{}))))`
+  `ac_axiom_for{}(plus{}(x:Int{},y:Int{}))`
   which would make it harder to manipulate these attributes.
 * The syntax may be hard to read.
   This is not that important since K is meant to be readable, Kore is meant
