@@ -61,9 +61,6 @@ deriving instance
     (Show CommonKorePattern)
      => Show Attributes
 
-instance Default Attributes where
-    def = Attributes def
-
 instance Pretty Attributes where
     pretty = Pretty.attributes . getAttributes
 

@@ -64,11 +64,12 @@ metaVerifyHelpers
     :: KoreIndexedModule atts -> DeclaredVariables -> VerifyHelpers Meta
 metaVerifyHelpers indexedModule declaredVariables =
     VerifyHelpers
-        { verifyHelpersFindSort = fmap snd . resolveSort indexedModule
+        { verifyHelpersFindSort =
+            fmap getIndexedSentence . resolveSort indexedModule
         , verifyHelpersLookupAliasDeclaration =
-            fmap snd . resolveAlias indexedModule
+            fmap getIndexedSentence . resolveAlias indexedModule
         , verifyHelpersLookupSymbolDeclaration =
-            fmap snd . resolveSymbol indexedModule
+            fmap getIndexedSentence . resolveSymbol indexedModule
         , verifyHelpersFindDeclaredVariables =
             flip Map.lookup (metaDeclaredVariables declaredVariables)
         }
@@ -77,11 +78,12 @@ objectVerifyHelpers
     :: KoreIndexedModule atts -> DeclaredVariables -> VerifyHelpers Object
 objectVerifyHelpers indexedModule declaredVariables =
     VerifyHelpers
-        { verifyHelpersFindSort = fmap snd . resolveSort indexedModule
+        { verifyHelpersFindSort =
+            fmap getIndexedSentence . resolveSort indexedModule
         , verifyHelpersLookupAliasDeclaration =
-            fmap snd . resolveAlias indexedModule
+            fmap getIndexedSentence . resolveAlias indexedModule
         , verifyHelpersLookupSymbolDeclaration =
-            fmap snd . resolveSymbol indexedModule
+            fmap getIndexedSentence . resolveSymbol indexedModule
         , verifyHelpersFindDeclaredVariables =
             flip Map.lookup (objectDeclaredVariables declaredVariables)
         }
@@ -449,7 +451,9 @@ verifyVariableDeclaration
 verifyVariableDeclaration
     variable indexedModule declaredSortVariables
   = verifyVariableDeclarationUsing
-        declaredSortVariables (fmap snd . resolveSort indexedModule) variable
+        declaredSortVariables
+        (fmap getIndexedSentence . resolveSort indexedModule)
+        variable
 
 verifyVariableDeclarationUsing
     :: MetaOrObject level

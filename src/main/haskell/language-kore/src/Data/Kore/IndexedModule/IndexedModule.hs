@@ -33,6 +33,7 @@ module Data.Kore.IndexedModule.IndexedModule
     , metaNameForObjectSort
     , SortDescription
     , ParsedAttributes (..)
+    , getIndexedSentence
     ) where
 
 import           Data.Kore.AST.Common
@@ -95,6 +96,10 @@ data IndexedModule sortParam pat variable atts =
         :: !(Set.Set (Id Object))
     }
 
+-- |Convenient notation for retrieving a sentence from a
+-- @(attributes,sentence)@ pair format.
+getIndexedSentence :: (atts, sentence) -> sentence
+getIndexedSentence = snd
 
 class
     ( Default atts
@@ -103,7 +108,7 @@ class
     parseAttributes :: Attributes -> atts
 
 instance ParsedAttributes ImplicitAttributes where
-    parseAttributes = const def
+    parseAttributes = const (def :: ImplicitAttributes)
 
 deriving instance
     ( Show (pat variable (Fix (pat variable)))
@@ -118,16 +123,16 @@ type KoreIndexedModule =
 
 indexedModuleRawSentences  :: KoreIndexedModule atts -> [KoreSentence]
 indexedModuleRawSentences im =
-    map (asSentence . snd)
+    map (asSentence . getIndexedSentence)
         (Map.elems (indexedModuleMetaAliasSentences im))
     ++
-    map (asSentence . snd)
+    map (asSentence . getIndexedSentence)
         (Map.elems (indexedModuleObjectAliasSentences im))
     ++
-    map (asSentence . snd)
+    map (asSentence . getIndexedSentence)
         (Map.elems (indexedModuleMetaSymbolSentences im))
     ++
-    map (asSentence . snd)
+    map (asSentence . getIndexedSentence)
         (Map.elems (indexedModuleMetaSortDescriptions im))
     ++
     map hookSymbolIfNeeded
@@ -136,7 +141,7 @@ indexedModuleRawSentences im =
     map hookSortIfNeeded
         (Map.toList (indexedModuleObjectSortDescriptions im))
     ++
-    map (asSentence . snd) (indexedModuleAxioms im)
+    map (asSentence . getIndexedSentence) (indexedModuleAxioms im)
     ++
     [ constructUnifiedSentence SentenceImportSentence
       (SentenceImport (indexedModuleName m) attributes)
@@ -173,18 +178,18 @@ emptyIndexedModule
     => ModuleName -> IndexedModule sortParam pat variable parsedAttributes
 emptyIndexedModule name =
     IndexedModule
-        { indexedModuleName = name
-        , indexedModuleMetaAliasSentences = def
-        , indexedModuleObjectAliasSentences = def
-        , indexedModuleMetaSymbolSentences = def
-        , indexedModuleObjectSymbolSentences = def
-        , indexedModuleObjectSortDescriptions = def
-        , indexedModuleMetaSortDescriptions = def
-        , indexedModuleAxioms = def
-        , indexedModuleAttributes = def
-        , indexedModuleImports = def
-        , indexedModuleHookedIdentifiers = def
-        }
+    { indexedModuleName = name
+    , indexedModuleMetaAliasSentences = Map.empty
+    , indexedModuleObjectAliasSentences = Map.empty
+    , indexedModuleMetaSymbolSentences = Map.empty
+    , indexedModuleObjectSymbolSentences = Map.empty
+    , indexedModuleObjectSortDescriptions = Map.empty
+    , indexedModuleMetaSortDescriptions = Map.empty
+    , indexedModuleAxioms = []
+    , indexedModuleAttributes = (def, Attributes [])
+    , indexedModuleImports = []
+    , indexedModuleHookedIdentifiers = Set.empty
+    }
 
 {-|'indexedModuleWithDefaultImports' provides an 'IndexedModule' with the given
 name and containing the implicit definitions module.
@@ -196,7 +201,7 @@ indexedModuleWithDefaultImports
     -> IndexedModule sortParam pat variable atts
 indexedModuleWithDefaultImports name (ImplicitIndexedModule implicitModule) =
     (emptyIndexedModule name)
-        { indexedModuleImports = [(def, def, implicitModule)] }
+        { indexedModuleImports = [(def, Attributes [], implicitModule)] }
 
 {-|'indexedModuleWithMetaSorts' provides an 'IndexedModule' with the implicit
 Kore definitions.

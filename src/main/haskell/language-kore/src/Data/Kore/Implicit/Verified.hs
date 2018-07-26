@@ -29,12 +29,13 @@ import           Data.Kore.MetaML.AST
 
 checkedMetaDefinition :: Either (Error VerifyError) MetaDefinition
 checkedMetaDefinition = do
-    attributesVerification <-
-        defaultAttributesVerification (Proxy :: Proxy ImplicitAttributes)
     _ <- verifyImplicitKoreDefinition
         attributesVerification
         (definitionPureToKore uncheckedMetaDefinition)
     return uncheckedMetaDefinition
+  where
+    attributesVerification =
+        defaultAttributesVerification (Proxy :: Proxy ImplicitAttributes)
 
 {-| 'implicitMetaDefinition' is a definition with everything Meta
 that is implicitly defined and visible everywhere. This definition passes
@@ -48,12 +49,13 @@ implicitMetaDefinition =
 
 checkedKoreDefinition :: Either (Error VerifyError) KoreDefinition
 checkedKoreDefinition = do
-    attributesVerification <-
-        defaultAttributesVerification (Proxy :: Proxy ImplicitAttributes)
     _ <- verifyImplicitKoreDefinition
         attributesVerification
         uncheckedKoreDefinition
     return uncheckedKoreDefinition
+  where
+    attributesVerification =
+        defaultAttributesVerification (Proxy :: Proxy ImplicitAttributes)
 
 {-| 'implicitKoreDefinition' is a definition with everything
 that is implicitly defined and visible everywhere. This definition passes

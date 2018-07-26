@@ -89,9 +89,7 @@ verify definition =
         Right _ -> Right definition
   where
     attributesVerification :: AttributesVerification ImplicitAttributes
-    attributesVerification = case defaultAttributesVerification Proxy of
-        Right verification -> verification
-        Left err           -> error (printError err)
+    attributesVerification = defaultAttributesVerification Proxy
 
 runParser :: String -> VerifyRequest -> IO LazyByteString.ByteString
 runParser inputFileName verifyRequest = do

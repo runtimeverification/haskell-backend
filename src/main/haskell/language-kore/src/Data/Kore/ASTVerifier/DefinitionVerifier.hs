@@ -92,8 +92,8 @@ verifyAndIndexDefinition attributesVerification definition = do
 defaultAttributesVerification
     :: ParsedAttributes atts
     => Proxy atts
-    -> Either (Error VerifyError) (AttributesVerification atts)
-defaultAttributesVerification = pure . VerifyAttributes
+    -> AttributesVerification atts
+defaultAttributesVerification = VerifyAttributes
 
 indexImplicitModules
     :: ParsedAttributes atts

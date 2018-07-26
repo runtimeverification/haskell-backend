@@ -104,9 +104,7 @@ expectFailureWithError description expectedError definition =
         )
 
 attributesVerificationForTests :: AttributesVerification ImplicitAttributes
-attributesVerificationForTests = case defaultAttributesVerification Proxy of
-    Right verification -> verification
-    Left err           -> error (printError err)
+attributesVerificationForTests = defaultAttributesVerification Proxy
 
 printDefinition :: KoreDefinition -> String
 printDefinition definition =

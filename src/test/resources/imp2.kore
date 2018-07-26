@@ -552,7 +552,7 @@ module IMP
           HOLE:AExp{},
           divAExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
-  [ strictAxiom{}("divAExp,1") ]
+  [ strictAxiom{}("divAExp","1") ]
   */
 
   /* heating rule
@@ -569,7 +569,7 @@ module IMP
           gamma{AExp{}, AExp{}}(
             HOLE:AExp{},
             divAExp{}(HOLE:AExp{}, Y:AExp{})))))
-  [ heating{}("divAExp,1") ]
+  [ heating{}("divAExp","1") ]
 
 
   /* cooling rule
@@ -586,7 +586,7 @@ module IMP
             divAExp{}(HOLE:AExp{}, Y:AExp{})))),
       asK{AExp{}}(
         divAExp{}(intAsAExp{}(I:Int{}), Y:AExp{})))
-  [ cooling{}("divAExp,1") ]
+  [ cooling{}("divAExp","1") ]
 
   /* (X / Y) = gamma HOLE . (X / HOLE) [Y] */
 
@@ -599,7 +599,7 @@ module IMP
           HOLE:AExp{},
           divAExp{}(X:AExp{}, HOLE:AExp{})),
         Y:AExp{}))
-  [ strictAxiom{}("divAExp,2") ]
+  [ strictAxiom{}("divAExp","2") ]
   */
 
   /* heating rule
@@ -616,7 +616,7 @@ module IMP
           gamma{AExp{}, AExp{}}(
             HOLE:AExp{},
             divAExp{}(X:AExp{}, HOLE:AExp{})))))
-  [ heating{}("divAExp,2") ]
+  [ heating{}("divAExp","2") ]
 
 
   /* cooling rule
@@ -633,7 +633,7 @@ module IMP
             divAExp{}(X:AExp{}, HOLE:AExp{})))),
       asK{AExp{}}(
         divAExp{}(X:AExp{}, intAsAExp{}(I:Int{}))))
-  [ cooling{}("divAExp,2") ]
+  [ cooling{}("divAExp","2") ]
 
   /* syntax AExp ::= AExp "+" AExp [strict] */
 
@@ -659,7 +659,7 @@ module IMP
           HOLE:AExp{},
           plusAExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
-  [ strictAxiom{}("plusAExp,1") ]
+  [ strictAxiom{}("plusAExp","1") ]
   */
 
   /* heating rule
@@ -676,7 +676,7 @@ module IMP
           gamma{AExp{}, AExp{}}(
             HOLE:AExp{},
             plusAExp{}(HOLE:AExp{}, Y:AExp{})))))
-  [ heating{}("plusAExp,1") ]
+  [ heating{}("plusAExp","1") ]
 
 
   /* cooling rule
@@ -693,7 +693,7 @@ module IMP
             plusAExp{}(HOLE:AExp{}, Y:AExp{})))),
       asK{AExp{}}(
         plusAExp{}(intAsAExp{}(I:Int{}), Y:AExp{})))
-  [ cooling{}("plusAExp,1") ]
+  [ cooling{}("plusAExp","1") ]
 
 
   /* (X + Y) = gamma HOLE . (X + HOLE) [Y] */
@@ -724,7 +724,7 @@ module IMP
           gamma{AExp{}, AExp{}}(
             HOLE:AExp{},
             plusAExp{}(X:AExp{}, HOLE:AExp{})))))
-  [ heating{}("plusAExp,2") ]
+  [ heating{}("plusAExp","2") ]
 
 
   /* cooling rule
@@ -741,7 +741,7 @@ module IMP
             plusAExp{}(X:AExp{}, HOLE:AExp{})))),
       asK{AExp{}}(
         plusAExp{}(X:AExp{}, intAsAExp{}(I:Int{}))))
-  [ cooling{}("plusAExp,2") ]
+  [ cooling{}("plusAExp","2") ]
 
 
   /* syntax BExp ::= ... */
@@ -794,7 +794,7 @@ module IMP
           HOLE:AExp{},
           leqBExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
-  [ strictAxiom{}("leqBExp,1") ]
+  [ strictAxiom{}("leqBExp","1") ]
   */
 
   /* heating rule
@@ -811,7 +811,7 @@ module IMP
           gamma{AExp{}, BExp{}}(
             HOLE:AExp{},
             leqBExp{}(HOLE:AExp{}, Y:AExp{})))))
-  [ heating{}("leqBExp,1") ]
+  [ heating{}("leqBExp","1") ]
 
 
   /* cooling rule
@@ -828,7 +828,7 @@ module IMP
             leqBExp{}(HOLE:AExp{}, Y:AExp{})))),
       asK{BExp{}}(
         leqBExp{}(intAsAExp{}(I:Int{}), Y:AExp{})))
-  [ cooling{}("leqBExp,1") ]
+  [ cooling{}("leqBExp","1") ]
 
   /* X <= intAsAExp(Y) = (gamma HOLE . X <= intAsAExp(HOLE)) [Y]
      where Y has sort Int.
@@ -846,7 +846,7 @@ module IMP
           HOLE:Int{},
           leqBExp{}(X:AExp{}, intAsAExp{}(HOLE:Int{}))),
         Y:Int{}))
-  [ strictAxiom{}("leqBExp,2") ]
+  [ strictAxiom{}("leqBExp","2") ]
   */
 
   /* heating rule
@@ -863,7 +863,7 @@ module IMP
           gamma{AExp{}, BExp{}}(
             HOLE:AExp{},
             leqBExp{}(intAsAExp{}(I:Int{}), HOLE:AExp{})))))
-  [ heating{}("leqBExp,2") ]
+  [ heating{}("leqBExp","2") ]
 
 
   /* cooling rule
@@ -880,7 +880,7 @@ module IMP
             leqBExp{}(intAsAExp{}(J:Int{}), HOLE:AExp{})))),
       asK{BExp{}}(
         leqBExp{}(intAsAExp{}(J:Int{}), intAsAExp{}(I:Int{}))))
-  [ cooling{}("leqBExp,2") ]
+  [ cooling{}("leqBExp","2") ]
 
 
   /* syntax BExp ::= "!" BExp [strict] */
@@ -897,7 +897,7 @@ module IMP
           HOLE:BExp{},
           notBExp{}(HOLE:BExp{})),
         B:BExp{}))
-  [ strictAxiom{}("notBExp,1") ]
+  [ strictAxiom{}("notBExp","1") ]
   */
 
 
@@ -915,7 +915,7 @@ module IMP
           gamma{BExp{}, BExp{}}(
             HOLE:BExp{},
             notBExp{}(HOLE:BExp{})))))
-  [ heating{}("notBExp,1") ]
+  [ heating{}("notBExp","1") ]
 
 
   /* cooling rule
@@ -932,7 +932,7 @@ module IMP
             notBExp{}(HOLE:BExp{})))),
       asK{BExp{}}(
         notBExp{}(boolAsBExp{}(B:Bool{}))))
-  [ cooling{}("notBExp,1") ]
+  [ cooling{}("notBExp","1") ]
 
 
   /* syntax BExp ::= BExp "&&" BExp [strict(1)] */
@@ -949,7 +949,7 @@ module IMP
           HOLE:BExp{},
           andBExp{}(HOLE:BExp{}, Y:BExp{})),
         X:BExp{}))
-  [ strictAxiom{}("andBExp,1") ]
+  [ strictAxiom{}("andBExp","1") ]
   */
 
   /* heating rule
@@ -966,7 +966,7 @@ module IMP
           gamma{BExp{}, BExp{}}(
             HOLE:BExp{},
             andBExp{}(HOLE:BExp{}, Y:BExp{})))))
-  [ heating{}("andBExp,1") ]
+  [ heating{}("andBExp","1") ]
 
 
   /* cooling rule
@@ -983,7 +983,7 @@ module IMP
             andBExp{}(HOLE:BExp{}, Y:BExp{})))),
       asK{BExp{}}(
         andBExp{}(boolAsBExp{}(B:Bool{}), Y:BExp{})))
-  [ cooling{}("andBExp,1") ]
+  [ cooling{}("andBExp","1") ]
 
   /* syntax Block ::= ... */
 
@@ -1019,7 +1019,7 @@ module IMP
           HOLE:AExp{},
           asgn{}(X:Id{}, HOLE:AExp{})),
         E:AExp{}))
-  [ strictAxiom{}("asgn,2") ]
+  [ strictAxiom{}("asgn","2") ]
   */
 
   /* heating rule
@@ -1036,7 +1036,7 @@ module IMP
           gamma{AExp{}, Stmt{}}(
             HOLE:AExp{},
             asgn{}(X:Id{}, HOLE:AExp{})))))
-  [ heating{}("asgn,2") ]
+  [ heating{}("asgn","2") ]
 
 
   /* cooling rule
@@ -1053,7 +1053,7 @@ module IMP
             asgn{}(X:Id{}, HOLE:AExp{})))),
       asK{Stmt{}}(
         asgn{}(X:Id{}, intAsAExp{}(I:Int{}))))
-  [ cooling{}("asgn,2") ]
+  [ cooling{}("asgn","2") ]
 
 
   /* syntax Stmt ::= "ite" "(" BExp ")" Block "else" Block [strict(1)] */
@@ -1070,7 +1070,7 @@ module IMP
           HOLE:BExp{},
           ite{}(HOLE:BExp{}, S1:Block{}, S2:Block{})),
         B:BExp{}))
-  [ strictAxiom{}("ite,1") ]
+  [ strictAxiom{}("ite","1") ]
   */
 
   /* heating rule
@@ -1087,7 +1087,7 @@ module IMP
           gamma{BExp{}, Stmt{}}(
             HOLE:BExp{},
             ite{}(HOLE:BExp{}, S1:Block{}, S2:Block{})))))
-  [ heating{}("ite,1") ]
+  [ heating{}("ite","1") ]
 
 
   /* cooling rule
@@ -1104,7 +1104,7 @@ module IMP
             ite{}(HOLE:BExp{}, S1:Block{}, S2:Block{})))),
       asK{Stmt{}}(
         ite{}(boolAsBExp{}(B:Bool{}), S1:Block{}, S2:Block{})))
-  [ cooling{}("ite,1") ]
+  [ cooling{}("ite","1") ]
   /* syntax Stmt ::= "while" "(" BExp ")" Block */
 
   symbol while{}(BExp{}, Block{}) : Stmt{} []
