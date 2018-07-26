@@ -43,13 +43,13 @@ can have a list of argument indexes in which it is strict.
 
 Sometimes we may
 want to refer to user-defined symbols, e.g. we may use the `unit` attribute
-to specify the neutral element for an operation, and we may want to use this
-attribute both for the operation symbol declaration and for the axioms that
+to specify the neutral element for an symbol, and we may want to use this
+attribute both for the symbol declaration and for the axioms that
 make it a neutral element.
 
-Similarly, we may want to use an `operation`
-attribute with an operation symbol as argument to, say,
-link an associativity axiom with an operation.
+Similarly, we may want to use an `refersTo`
+attribute with a symbol as argument to, say,
+link an associativity axiom with the symbol.
 
 However, we can't tell what's the general structure of an attribute.
 
@@ -87,20 +87,21 @@ This has some drawbacks:
   to be machine-readable.
 
 *Decision*: We will encode each attribute as a Kore pattern that uses only
-application and string literals, this pattern being an application
-of an object symbol to a list of parameters, the symbol identifying the
-attribute and the list of parameters being the value of the attribute.
-Numbers will be encoded as string literals. Therefore the following may be valid
-attributes:
+application and string literals. This pattern will be an application
+of an object symbol to a list of parameters,
+the (name of the) symbol identifying the
+attribute and the list of parameters being the arguments of the attribute.
+Numbers will be encoded as string literals.
+Therefore the following may be valid attributes:
 ```
 constructor{}()
 strict{}("1", "2")
 unit{}(epsilon{}())
 unit{}(epsilon{}(), zero{}())
-operation{}(plus{}())
+refersTo{}(plus{}())
 ```
 We will *not* check that this attributes are well-formed in the usual sense,
-e.g. we will not check whether the `plus` operation in the example above has
+e.g. we will not check whether the `plus` symbol in the example above has
 two arguments or that the `strict` symbol arguments are object patterns or have
 the `#Pattern` sort.
 We *will* check that the top-level element is an application pattern since we
