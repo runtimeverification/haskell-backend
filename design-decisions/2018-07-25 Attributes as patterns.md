@@ -13,7 +13,7 @@ Each Kore backend can have its own set of attributes, and backends must be able
 to ignore unknown attributes.
 
 Examples include the `constructor` attribute which
-specifies that a certain symbol has is a constructor, so, say, it
+specifies that a certain symbol is a constructor, so, say, it
 cannot be unified with different constructors.
 
 Questions asked
@@ -24,15 +24,21 @@ Questions asked
 1. How can we make sure that attributes have some documentation?
 
 The answer to the first two questions comes from a Slack discussion on
-`runtimeverification/#haskell` on 2018-17-25. The answer to the third
-comes from a face-to-face discussion between traiansf and virgil-serbanuta.
+`runtimeverification/#haskell`(https://runtimeverification.slack.com/messages/C9B9QBF46/) on 2018-17-25
+
+* between @grosu, @bmmoore, @dwightguth, @u--, @njohnwalker, @traiansf, @hreada.
+* Starting at: https://runtimeverification.slack.com/archives/C9B9QBF46/p1532543176000083
+* Ending at: https://runtimeverification.slack.com/archives/C9B9QBF46/p1532562323000104
+
+The answer to the third
+comes from a face-to-face discussion between @traiansf and @virgil-serbanuta.
 
 Attribute structure
 -------------------
 
-Attributes are a name-value pair, where the value may be missing.
+Attributes are identified by a name and might have (or not) parameters.
 
-When present, the value is usually very simple, e.g. the `strict` attribute
+When present, attribute parameters are usually very simple, e.g. the `strict` attribute
 can have a list of argument indexes in which it is strict.
 
 Sometimes we may
@@ -45,7 +51,7 @@ Similarly, we may want to use an `operation`
 attribute with an operation symbol as argument to, say,
 link an associativity axiom with an operation.
 
-However, we can't tell what's the general structure of an attribute
+However, we can't tell what's the general structure of an attribute.
 
 Attribute syntax
 ----------------
@@ -56,10 +62,11 @@ However, that does not seem a natural way of encoding
 the structure that they have, and each backend would need its own
 string-parsing library.
 
-*Decision*: We will encode each attribute as a Kore term that uses only
-application and `#String` patterns, with the top symbol giving the name
-of the attribute.
-Numbers will be encoded as strings. Therefore the following may be valid
+*Decision*: We will encode each attribute as a Kore pattern that uses only
+application and string literals, with the top symbol being an application 
+of an object identifier giving the name of the attribute to the list of its
+parameters.
+Numbers will be encoded as string literals. Therefore the following may be valid
 attributes:
 ```
 constructor{}()
@@ -73,7 +80,7 @@ two arguments or that the `strict` symbol arguments are object patterns or have
 the `#Pattern` sort.
 We *will* check that the top-level element is an application pattern since we
 must be able to find its name.
-We *may* check that the pattern uses only application and `#String` patterns.
+We *may* check that the pattern uses only application and string literals.
 We *will* require a backend to provide a validation function for each attribute
 it can understand.
 
@@ -93,7 +100,7 @@ contains:
 * A plain text description of the attribute.
 * A plain text description of the attribute syntax.
 * A validation function. We may provide a way of representing a
-hierarchical structure wit documentation for each field, in which case the
+hierarchical structure with documentation for each field, in which case the
 plain-text syntax and part of the attribute documentation may be generated
 automatically.
 
