@@ -34,7 +34,6 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Data.Kore.AST.Sentence where
 
-import           Data.Default
 import           Data.Fix
 import           Data.Maybe                  (catMaybes)
 
