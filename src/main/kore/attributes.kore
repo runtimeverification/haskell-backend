@@ -1,7 +1,0 @@
-[]
-module BUILTIN-attributes
-    sort #Attribute{} []
-    symbol #keyVal{}(#CharList{}, #CharList{}) : #Attribute{} []
-    symbol #key{}(#CharList{}) : #Attribute{} []
-endmodule
-[]

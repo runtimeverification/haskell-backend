@@ -9,8 +9,7 @@ Portability : POSIX
 -}
 
 module Data.Kore.Implicit.Verified
-    ( implicitAttributesDefinition
-    , implicitKoreDefinition
+    ( implicitKoreDefinition
     , implicitMetaDefinition
     )
     where
@@ -20,13 +19,11 @@ import           Data.Proxy                               (Proxy (..))
 import           Data.Kore.AST.PureToKore
 import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTVerifier.DefinitionVerifier (defaultAttributesVerification,
-                                                           verifyImplicitKoreDefinition,
-                                                           verifyNormalKoreDefinition)
+                                                           verifyImplicitKoreDefinition)
 import           Data.Kore.ASTVerifier.Error              (VerifyError)
 import           Data.Kore.Error                          (Error, printError)
 import           Data.Kore.Implicit.Attributes            (ImplicitAttributes)
-import           Data.Kore.Implicit.Definitions           (uncheckedAttributesDefinition,
-                                                           uncheckedKoreDefinition,
+import           Data.Kore.Implicit.Definitions           (uncheckedKoreDefinition,
                                                            uncheckedMetaDefinition)
 import           Data.Kore.MetaML.AST
 
@@ -65,24 +62,5 @@ validation checks.
 implicitKoreDefinition :: KoreDefinition
 implicitKoreDefinition =
     case checkedKoreDefinition of
-        Left err -> error (printError err)
-        Right d  -> d
-
-checkedAttributesDefinition :: Either (Error VerifyError) KoreDefinition
-checkedAttributesDefinition = do
-    attributesVerification <-
-        defaultAttributesVerification (Proxy :: Proxy ImplicitAttributes)
-    _ <- verifyNormalKoreDefinition
-        attributesVerification
-        uncheckedAttributesDefinition
-    return uncheckedAttributesDefinition
-
-{-| 'implicitAttributesDefinition' is a definition with everything
-that is implicitly defined and visible in attributes. This definition passes
-validation checks.
--}
-implicitAttributesDefinition :: KoreDefinition
-implicitAttributesDefinition =
-    case checkedAttributesDefinition of
         Left err -> error (printError err)
         Right d  -> d

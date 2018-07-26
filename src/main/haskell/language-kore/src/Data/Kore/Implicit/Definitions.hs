@@ -9,15 +9,13 @@ Portability : POSIX
 -}
 
 module Data.Kore.Implicit.Definitions
-    ( uncheckedAttributesDefinition
-    , uncheckedKoreDefinition
+    ( uncheckedKoreDefinition
     , uncheckedKoreModules
     , uncheckedMetaDefinition
     ) where
 
 import           Data.Kore.AST.PureToKore        (modulePureToKore)
 import           Data.Kore.AST.Sentence
-import           Data.Kore.Implicit.Attributes   (uncheckedAttributesModule)
 import           Data.Kore.Implicit.ImplicitKore (uncheckedKoreModule)
 import           Data.Kore.MetaML.AST
 
@@ -49,15 +47,4 @@ uncheckedKoreDefinition =
     Definition
         { definitionAttributes = Attributes []
         , definitionModules    = uncheckedKoreModules
-        }
-
-{-| 'uncheckedAttributesDefinition' contains the module with
-definitions for everything that is visible in attributes.
-Does not do any validation for this module.
--}
-uncheckedAttributesDefinition :: KoreDefinition
-uncheckedAttributesDefinition =
-    Definition
-        { definitionAttributes = Attributes []
-        , definitionModules    = [uncheckedAttributesModule]
         }

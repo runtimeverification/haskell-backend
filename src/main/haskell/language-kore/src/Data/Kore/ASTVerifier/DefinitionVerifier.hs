@@ -26,8 +26,7 @@ import           Data.Kore.ASTVerifier.AttributesVerifier
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.ASTVerifier.ModuleVerifier
 import           Data.Kore.Error
-import           Data.Kore.Implicit.Definitions           (uncheckedAttributesDefinition,
-                                                           uncheckedKoreModules)
+import           Data.Kore.Implicit.Definitions           (uncheckedKoreModules)
 import           Data.Kore.IndexedModule.IndexedModule
 
 {-|'verifyDefinition' verifies the welformedness of a Kore 'Definition'.
@@ -94,10 +93,7 @@ defaultAttributesVerification
     :: ParsedAttributes atts
     => Proxy atts
     -> Either (Error VerifyError) (AttributesVerification atts)
-defaultAttributesVerification _ =
-    VerifyAttributes
-        <$> verifyNormalKoreDefinition
-            DoNotVerifyAttributes uncheckedAttributesDefinition
+defaultAttributesVerification = pure . VerifyAttributes
 
 indexImplicitModules
     :: ParsedAttributes atts

@@ -11,18 +11,19 @@ module Data.Kore.ASTVerifier.AttributesVerifier (verifyAttributes,
                                                  AttributesVerification (..))
   where
 
+import           Data.Proxy                            (Proxy)
+
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore
 import           Data.Kore.AST.MetaOrObject            (Object)
 import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTVerifier.Error
 import           Data.Kore.Error
-import           Data.Kore.IndexedModule.IndexedModule (KoreIndexedModule)
 
 {--| Whether we should verify attributes and, when verifying, the module with
 declarations visible in these atributes. --}
 data AttributesVerification atts
-    = VerifyAttributes (KoreIndexedModule atts)
+    = VerifyAttributes (Proxy atts)
     | DoNotVerifyAttributes
 
 {-|'verifyAttributes' verifies the wellformedness of the given attributes.
