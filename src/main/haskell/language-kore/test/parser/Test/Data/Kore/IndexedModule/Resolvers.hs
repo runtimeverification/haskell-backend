@@ -19,6 +19,7 @@ import           Data.Kore.AST.PureML
 import           Data.Kore.AST.PureToKore
 import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTHelpers
+import           Data.Kore.ASTUtils.SmartPatterns
 import           Data.Kore.ASTVerifier.DefinitionVerifier
 import           Data.Kore.Error
 import           Data.Kore.Implicit.Attributes                 (ImplicitAttributes)
@@ -68,12 +69,24 @@ testObjectModule =
                 SentenceSort
                     { sentenceSortName = testId "s1"
                     , sentenceSortParameters = []
-                    , sentenceSortAttributes = Attributes []
+                    , sentenceSortAttributes =
+                        Attributes
+                            [patternPureToKore
+                                (App_ (groundHead "strict" AstLocationTest)
+                                    []
+                                ::CommonPurePattern Object)
+                            ]
                     }
             , asSentence objectA
             , asSentence objectB
             ]
-        , moduleAttributes = Attributes []
+        , moduleAttributes =
+            Attributes
+                [patternPureToKore
+                    (App_ (groundHead "strict" AstLocationTest)
+                        []
+                    ::CommonPurePattern Object)
+                ]
         }
 
 testMetaModule :: PureModule Meta
@@ -95,7 +108,13 @@ subMainModule =
             [ importSentence testMetaModuleName
             , importSentence testObjectModuleName
             ]
-        , moduleAttributes = Attributes []
+        , moduleAttributes =
+            Attributes
+                [patternPureToKore
+                    (App_ (groundHead "strict" AstLocationTest)
+                        []
+                    ::CommonPurePattern Object)
+                ]
         }
 
 mainModule :: KoreModule
@@ -113,7 +132,13 @@ mainModule =
 testDefinition :: KoreDefinition
 testDefinition =
     Definition
-        { definitionAttributes = Attributes []
+        { definitionAttributes =
+            Attributes
+            [patternPureToKore
+                (App_ (groundHead "strict" AstLocationTest)
+                    []
+                ::CommonPurePattern Object)
+            ]
         , definitionModules =
             [ modulePureToKore testObjectModule
             , modulePureToKore testMetaModule
@@ -138,7 +163,13 @@ test_resolvers =
             (Right (def :: ImplicitAttributes, SentenceSort
                 { sentenceSortName = testId "s1"
                 , sentenceSortParameters = []
-                , sentenceSortAttributes = Attributes []
+                , sentenceSortAttributes =
+                    Attributes
+                        [patternPureToKore
+                            (App_ (groundHead "strict" AstLocationTest)
+                                []
+                            ::CommonPurePattern Object)
+                        ]
                 })
             )
             (resolveSort testIndexedModule (testId "s1" :: Id Object))

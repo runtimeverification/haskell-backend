@@ -32,6 +32,11 @@ test_stepperAttributes =
             def {isFunction = True}
             (parseStepperAttributes [functionAttribute])
         )
+    , testCase "Testing isFunction"
+        (assertEqual ""
+            True
+            (isFunction (parseStepperAttributes [functionAttribute]))
+        )
     , testCase "Parsing a functional attribute"
         (assertEqual ""
             def {isFunctional = True}

@@ -56,7 +56,7 @@ data FileLocation = FileLocation
     , line     :: Int
     , column   :: Int
     }
-    deriving (Show, Generic)
+    deriving (Eq, Show, Generic)
 
 instance Hashable FileLocation
 
@@ -77,7 +77,7 @@ data AstLocation
     | AstLocationLifted AstLocation
     | AstLocationUnknown
     -- ^ This should not be used and should be eliminated in further releases
-    deriving (Show, Generic)
+    deriving (Eq, Show, Generic)
 
 instance Hashable AstLocation
 

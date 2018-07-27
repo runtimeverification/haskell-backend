@@ -11,14 +11,17 @@ import           Test.Tasty.HUnit                 (assertEqual, testCase)
 
 import           Test.Data.AstGen
 
+import           Data.Kore.AST.AstWithLocation
 import           Data.Kore.AST.Builders
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.Kore               (CommonKorePattern)
 import           Data.Kore.AST.MetaOrObject
 import           Data.Kore.AST.MLPatterns
 import           Data.Kore.AST.PureML
+import           Data.Kore.AST.PureToKore         (patternPureToKore)
 import           Data.Kore.AST.Sentence
 import           Data.Kore.ASTHelpers             (ApplicationSorts (..))
+import           Data.Kore.ASTUtils.SmartPatterns
 import           Data.Kore.Building.AsAst
 import           Data.Kore.Building.Patterns
 import           Data.Kore.Building.Sorts         as Sorts
@@ -70,6 +73,16 @@ test_mlPattern =
                     )
                 )
             )
+        , testCase "DomainValue"
+        (assertEqual ""
+            (asAst SomeObjectSort :: Sort Object)
+            (getPatternResultSort
+                undefinedHeadSort
+                (asObjectPattern
+                    (objectDomainValue SomeObjectSort (metaString "Something"))
+                )
+            )
+        )
         , testCase "StringLiteral"
             (assertEqual ""
                 charListMetaSort
@@ -166,6 +179,16 @@ applyPatternFunctionTests =
                 "Expecting DomainValue's sort"
                 (asAst objectSort :: Sort Object)
                 (metaLeveledFunctionApplier
+                    (asObjectPattern
+                        (objectDomainValue objectSort (metaString "Something"))
+                    )
+                )
+            )
+        , testCase "Applies locationFromAst on `DomainValue`"
+            (assertEqual
+                "Expecting DomainValue's location"
+                AstLocationTest
+                (locationFromAst
                     (asObjectPattern
                         (objectDomainValue objectSort (metaString "Something"))
                     )
