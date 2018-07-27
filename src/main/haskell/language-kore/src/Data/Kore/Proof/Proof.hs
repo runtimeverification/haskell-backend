@@ -137,6 +137,9 @@ data LargeRule subproof =
  | Abstract Var subproof
  -- | EVIL SHORTCUT! This bypasses the functionality check.
  -- Should move to using FunctionalSubst when you can.
+ -- From |- forall x : s . A
+ -- and any term (WHICH YOU SHOULD MAKE SURE IS FUNCTIONAL) phi : s
+ -- deduce |- A[phi/x]
  | ForallElim Term subproof
  -- | From |- a , |- b deduce |- a /\ b
  | AndIntro subproof subproof
@@ -167,6 +170,8 @@ data LargeRule subproof =
  -- | \exists y . x = y
  -- FunctionalVar x y
  | FunctionalVar Var Var
+ -- | x = x
+ -- EqualityIntro x 
  | EqualityIntro Term
  -- | Path points to the _subtree_ of phi in which the substitution
  -- is to be applied at every possible point.
@@ -306,9 +311,9 @@ useRule (Discharge hypothesis conclusion)
     where
       discharge hypothesis prop@(By conclusion justification assumptions)
          = By
-          (hypothesis `mkImplies` conclusion)
-          (Discharge hypothesis prop)
-          (S.delete hypothesis assumptions)
+            (hypothesis `mkImplies` conclusion)
+            (Discharge hypothesis prop)
+            (S.delete hypothesis assumptions)
 useRule (Abstract var conclusion)
  | elem var (getFreeVars conclusion) = abstract var conclusion
  | otherwise = error $ "Variable " ++ show var ++ " appears in assumptions."

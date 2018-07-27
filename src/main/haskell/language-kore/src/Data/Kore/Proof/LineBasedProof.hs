@@ -36,7 +36,7 @@ Portability : portable
 {-# OPTIONS_GHC -Wno-name-shadowing    #-}
 
 
-module Data.Kore.Proof.LineBasedProof
+module Data.Kore.Proof.LineBasedProof 
 ( toLineProof
 , printLineProof
 )
@@ -62,9 +62,9 @@ toLineProof proof =
     LineBasedProof $ execState (go proof) (M.empty, M.empty, M.empty, 1) ^. _3
     where
         go (Fix proof) = do
-            j' <- mapM go $ justification proof
+            j' <- mapM go $ PropF.justification proof
             a' <- S.fromList <$>
-                (mapM lookupAssumptions $ S.toList $ assumptions proof)
+                (mapM lookupAssumptions $ S.toList $ PropF.assumptions proof)
             let proof' = proof { justification = j' , assumptions = a' }
             let h = hash proof'
             (!assumptionsTable, !hashTable, !orderedTable, !next) <- get
