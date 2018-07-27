@@ -81,15 +81,15 @@ type Var = Variable Object
 
 -- | Fix-able functor representing a single deduction step
 -- `formula` is a matching logic formula, for now CommonPurePattern Object.
--- `rules` is a datatype encoding the valid deductions. 
+-- `rules` is a datatype encoding the valid deductions.
 -- The rule type contains other subproofs as its children,
--- and should be `Functor`/`Traversable` over them. 
+-- and should be `Functor`/`Traversable` over them.
 -- Here we use a rule type `LargeRules` supporting natural deduction style
--- and the newer set of ML axioms. 
+-- and the newer set of ML axioms.
 -- `assumption` is the type of assumptions. This will normally be the same
--- as `formula`, except when converting to a line-based format, in which case 
+-- as `formula`, except when converting to a line-based format, in which case
 -- `assumption` and `subproof` can be a different type like `Int` representing a
--- pointer to a previous line. 
+-- pointer to a previous line.
 data PropF formula rules assumption subproof
   = ByF
   { conclusion    :: formula
@@ -111,12 +111,12 @@ pattern By conclusion justification assumptions =
 -- | Points to a location in a term at which a substitution
 -- should be applied. For example, [1,0] points to the "b"
 -- in "forall a. (b \/ a)". [] points to the top level, i.e.
--- the entire term. 
+-- the entire term.
 -- Supplying an incorrect path should throw an error.
 type Path = [Int]
 
 -- | Proofs of object-level matching logic propositions, using the newer axioms.
--- In particular using types `Object`, `Variable`, `LargeRule`. 
+-- In particular using types `Object`, `Variable`, `LargeRule`.
 type Proof = Prop Term LargeRule
 
 instance (Hashable formula, Hashable (rules subproof), Hashable assumption)
@@ -271,6 +271,7 @@ getAssumptions
     -> S.Set  Term
 getAssumptions = assumptions . unFix
 
+-- | The set of all variables that appear free in the assumptions.
 getFreeVars :: Proof -> S.Set Var
 getFreeVars proof =
     S.unions
@@ -302,7 +303,7 @@ useRule (Assumption formula)
  = assume formula
 useRule (Discharge hypothesis conclusion)
  = discharge hypothesis conclusion
-    where 
+    where
       discharge hypothesis prop@(By conclusion justification assumptions)
          = By
           (hypothesis `mkImplies` conclusion)
@@ -348,7 +349,7 @@ useRule rule =
   (S.unions $ map getAssumptions $ toList rule)
 
 -- | Given a rule such as `AndIntro a b`, converts it to the proposition
--- that it proves, such as "a /\ b". 
+-- that it proves, such as "a /\ b".
 interpretRule
   :: Given (MetadataTools Object)
   => LargeRule Proof
@@ -428,7 +429,7 @@ varS x s =
 -- | Construct a symbol with a given name and input sorts
 -- "mult" `symS` [s, s]
 -- Since the return sort is only found in MetadataTools, this is
--- mostly useful for testing. 
+-- mostly useful for testing.
 symS :: MetaOrObject level => String -> [Sort level] -> SymbolOrAlias level
 symS x s =
     SymbolOrAlias (noLocationId x) s

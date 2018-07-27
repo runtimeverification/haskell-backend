@@ -92,5 +92,5 @@ generateNoConfusionAxiom h1 c1 h2 c2 =
          (mkApp h1 xVars')
          (mkApp h2 yVars')
 
--- generateCoveringAxiom cons = 
---     mkOrN $ map 
+-- generateCoveringAxiom cons =
+--     mkOrN $ map

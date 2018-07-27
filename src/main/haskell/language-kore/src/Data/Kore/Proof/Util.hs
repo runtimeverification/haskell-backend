@@ -36,13 +36,13 @@ i.e. poor man's HOL
 {-# OPTIONS_GHC -Wno-incomplete-patterns  #-}
 
 module Data.Kore.Proof.Util
-( 
+(
 -- * General deduction tools
   modusPonensN
 , mkImpliesN
 , tryDischarge
 , tryDischargeN
--- * Forall 
+-- * Forall
 , mkForallN
 , forallIntroN
 , forallElimN
@@ -90,12 +90,12 @@ tryDischarge
     => Proof
     -> Proof
     -> Proof
-tryDischarge a b = 
-    if a' == b' 
-    then a 
+tryDischarge a b =
+    if a' == b'
+    then a
     else useRule $ fmap (tryDischarge a) $ getJustification b
-      where a' = getConclusion a 
-            b' = getConclusion b 
+      where a' = getConclusion a
+            b' = getConclusion b
 
 tryDischargeN
     :: Given (MetadataTools Object)

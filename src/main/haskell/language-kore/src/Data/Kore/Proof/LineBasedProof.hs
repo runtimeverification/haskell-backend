@@ -9,6 +9,11 @@ Stability   : experimental
 Portability : portable
 -}
 
+-- DO NOT REVIEW THIS FILE
+-- It works for now, but is extremely ugly and brittle.
+-- I mostly wrote it to get good pretty print output.
+-- A more sophisticated hash consing system will come when needed.
+
 {-# LANGUAGE AllowAmbiguousTypes       #-}
 {-# LANGUAGE BangPatterns              #-}
 {-# LANGUAGE ConstraintKinds           #-}
@@ -31,7 +36,11 @@ Portability : portable
 {-# OPTIONS_GHC -Wno-name-shadowing    #-}
 
 
-module Data.Kore.Proof.LineBasedProof where
+module Data.Kore.Proof.LineBasedProof
+( toLineProof
+, printLineProof
+)
+where
 
 import           Control.Lens
 import           Control.Monad.State.Strict
@@ -44,11 +53,6 @@ import           Data.Hashable
 import           Data.Kore.Proof.Proof
 import           Data.Text.Prettyprint.Doc
 import           Data.Text.Prettyprint.Doc.Util
-
--- DO NOT REVIEW THIS FILE
--- It works for now, but is extremely ugly and brittle.
--- I mostly wrote it to get good pretty print output.
--- A more sophisticated hash consing system will come when needed.
 
 data LineBasedProof = LineBasedProof
     { unLineBasedProof :: M.Map Int (PropF Term LargeRule Int Int)}
@@ -90,12 +94,6 @@ isAssumption :: LargeRule subproof -> Bool
 isAssumption = \case
     Assumption _ -> True
     _ -> False
-
--- testProof :: Proof
--- testProof =
---     dummyEnvironment
---   $ useRule
---   $ AndIntro (useRule TopIntro) (useRule $ Assumption mkBottom)
 
 instance Pretty LineBasedProof where
     pretty proof = (vsep

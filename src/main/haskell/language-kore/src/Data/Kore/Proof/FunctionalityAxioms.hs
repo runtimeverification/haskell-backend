@@ -58,7 +58,7 @@ generateFunctionalStatement p =
         where var = "x" `varS` getSort p
 
 -- | "f" is a functional head if
--- "forall x_1 .. x_n . 
+-- "forall x_1 .. x_n .
 -- (exists x. x_1 = x) -> ... -> (exists x. x_n = x)
 -- -> (exists x. f(x_1,...,x_n) = x)""
 generateFunctionalHeadAxiom
@@ -75,7 +75,7 @@ generateFunctionalHeadAxiom h =
 -- | Attempts to prove a given symbol a is functional
 -- I.e. attempts to prove "exists x. a = x"
 -- It uses the functionalVariable axiom,
--- and assumes everything else it needs. 
+-- and assumes everything else it needs.
 proveFunctional
    :: Given (MetadataTools Object)
    => Term

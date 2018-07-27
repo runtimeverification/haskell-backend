@@ -82,6 +82,7 @@ module Data.Kore.ASTUtils.SmartConstructors
 , mkVar
 , mkStringLiteral
 , mkCharLiteral
+, mkSort
 )
 where
 
