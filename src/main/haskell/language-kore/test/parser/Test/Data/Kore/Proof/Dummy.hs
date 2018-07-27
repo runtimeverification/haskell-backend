@@ -25,14 +25,14 @@ Portability : portable
 
 module Test.Data.Kore.Proof.Dummy where
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.IndexedModule.MetadataTools
-import           Data.Reflection
+import Data.Kore.AST.Common
+import Data.Kore.AST.MetaOrObject
+import Data.Kore.IndexedModule.MetadataTools
+import Data.Reflection
 
-import           Data.Kore.ASTUtils.SmartConstructors
+import Data.Kore.ASTUtils.SmartConstructors
 
-import           Data.Kore.Proof.Proof
+import Data.Kore.Proof.Proof
 
 var :: MetaOrObject level => String -> Variable level
 var x = x `varS` defaultSort

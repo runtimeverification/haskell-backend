@@ -1,5 +1,5 @@
 {-|
-Module      : Data.Kore.Proof.Proof
+Module      : Kore.Proof.Proof
 Description : Tree-based proof system, which can be
               hash-consed into a list-based one.
 Copyright   : (c) Runtime Verification, 2018
@@ -36,10 +36,10 @@ module Data.Kore.Proof.Proof where
 import           Control.Lens
 import           Data.Fix
 import           Data.Foldable
-import           Data.Kore.AST.Common                  hiding (line)
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.AST.PureML
-import           Data.Kore.IndexedModule.MetadataTools
+import           Kore.AST.Common                  hiding (line)
+import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+import           Kore.IndexedModule.MetadataTools
 import           Data.Maybe
 import           Data.Reflection
 import qualified Data.Set                              as S
@@ -47,9 +47,9 @@ import qualified Data.Set                              as S
 import           Data.Text.Prettyprint.Doc
 
 
-import           Data.Kore.ASTPrettyPrint
-import           Data.Kore.ASTUtils.SmartConstructors
-import           Data.Kore.ASTUtils.Substitution
+import           Kore.ASTPrettyPrint
+import           Kore.ASTUtils.SmartConstructors
+import           Kore.ASTUtils.Substitution
 
 import           Data.Hashable
 import           GHC.Generics                          (Generic)

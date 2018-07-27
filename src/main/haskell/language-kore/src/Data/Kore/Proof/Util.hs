@@ -1,5 +1,5 @@
 {-|
-Module      : Data.Kore.Proof.Util
+Module      : Kore.Proof.Util
 Description : Helper functions for common proof steps.
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
@@ -61,13 +61,13 @@ module Data.Kore.Proof.Util
 , generateVarList
 ) where
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.ASTUtils.SmartConstructors
-import           Data.Kore.IndexedModule.MetadataTools
+import           Kore.AST.Common
+import           Kore.AST.MetaOrObject
+import           Kore.ASTUtils.SmartConstructors
+import           Kore.IndexedModule.MetadataTools
 import           Data.Reflection
 
-import           Data.Kore.Proof.Proof
+import           Kore.Proof.Proof
 
 modusPonensN
     :: Given (MetadataTools Object)

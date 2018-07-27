@@ -1,5 +1,5 @@
 {-|
-Module      : Data.Kore.Proof.ConstructorAxioms
+Module      : Kore.Proof.ConstructorAxioms
 Description : No-junk, No-confusion etc. for non-AC constructors
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
@@ -30,20 +30,20 @@ Portability : portable
 {-# OPTIONS_GHC -Wno-name-shadowing    #-}
 
 
-module Data.Kore.Proof.ConstructorAxioms
+module Kore.Proof.ConstructorAxioms
 ( generateInjectivityAxiom
 , generateNoConfusionAxiom
 ) where
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.MetaOrObject
-import           Data.Kore.IndexedModule.MetadataTools
+import           Kore.AST.Common
+import           Kore.AST.MetaOrObject
+import           Kore.IndexedModule.MetadataTools
 import           Data.Reflection
 
-import           Data.Kore.ASTUtils.SmartConstructors
+import           Kore.ASTUtils.SmartConstructors
 
-import           Data.Kore.Proof.Proof
-import           Data.Kore.Proof.Util
+import           Kore.Proof.Proof
+import           Kore.Proof.Util
 
 
 

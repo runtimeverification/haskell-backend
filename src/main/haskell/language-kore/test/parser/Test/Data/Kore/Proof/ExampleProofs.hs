@@ -1,23 +1,24 @@
 module Test.Data.Kore.Proof.ExampleProofs (test_exampleProofs) where
 
-import           Test.Tasty                           (TestTree, testGroup)
-import           Test.Tasty.HUnit                     (Assertion, assertEqual,
-                                                       testCase)
+import Test.Tasty
+       ( TestTree, testGroup )
+import Test.Tasty.HUnit
+       ( Assertion, assertEqual, testCase )
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.MetaOrObject
+import Data.Kore.AST.Common
+import Data.Kore.AST.MetaOrObject
 
-import           Data.Kore.ASTUtils.SmartConstructors
+import Data.Kore.ASTUtils.SmartConstructors
 
-import           Data.Kore.Proof.FunctionalityAxioms
-import           Data.Kore.Proof.Proof
-import           Test.Data.Kore.Proof.Dummy
+import Data.Kore.Proof.FunctionalityAxioms
+import Data.Kore.Proof.Proof
+import Test.Data.Kore.Proof.Dummy
 
 
-import           Data.Kore.Unification.Unification
+import Data.Kore.Unification.Unification
 
-import           Data.Kore.Proof.LineBasedProof
-import           Data.Text.Prettyprint.Doc
+import Data.Kore.Proof.LineBasedProof
+import Data.Text.Prettyprint.Doc
 
 test_exampleProofs :: TestTree
 test_exampleProofs = testGroup "exampleProofs" $
@@ -28,7 +29,7 @@ test_exampleProofs = testGroup "exampleProofs" $
 -- | Since Tasty doesn't seem to include an actual predicate that says
 -- "This evaluates to normal form without throwing an error"
 -- I just did this instead. And why not convert it to a line-based-proof
--- to test that functionality too. 
+-- to test that functionality too.
 assertNF :: Proof -> Assertion
 assertNF x = let y = show $ pretty $ toLineProof x in assertEqual "" y y
 

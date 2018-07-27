@@ -1,5 +1,5 @@
 {-|
-Module      : Data.Kore.Proof.LineBasedProof
+Module      : Kore.Proof.LineBasedProof
 Description : Tree-based proof system, which can be
               hash-consed into a list-based one.
 Copyright   : (c) Runtime Verification, 2018
@@ -50,7 +50,7 @@ import qualified Data.Map.Strict                as M
 import qualified Data.Set                       as S
 
 import           Data.Hashable
-import           Data.Kore.Proof.Proof
+import           Kore.Proof.Proof
 import           Data.Text.Prettyprint.Doc
 import           Data.Text.Prettyprint.Doc.Util
 
