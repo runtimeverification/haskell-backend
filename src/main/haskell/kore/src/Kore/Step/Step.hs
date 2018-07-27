@@ -13,23 +13,48 @@ module Kore.Step.Step
     , MaxStepCount(..)
     ) where
 
-import Data.Either
-       ( rights )
+import           Data.Either
+                 ( rights )
+import qualified Data.Map as Map
 
+import           Kore.AST.Common
+                 ( Id, SortedVariable )
 import           Kore.AST.MetaOrObject
-                 ( MetaOrObject )
+                 ( Meta, MetaOrObject, Object )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
-import qualified Kore.Predicate.Predicate as Predicate
-                 ( isFalse )
 import           Kore.Step.BaseStep
-                 ( AxiomPattern, StepProof (..), stepWithAxiom )
+                 ( AxiomPattern, StepProof (..), simplifyStepProof,
+                 stepWithAxiom )
+import           Kore.Step.ExpandedPattern
+                 ( CommonExpandedPattern, ExpandedPattern (ExpandedPattern),
+                 PredicateSubstitution (PredicateSubstitution) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
-                 ( CommonExpandedPattern, ExpandedPattern (..) )
+                 ( ExpandedPattern (..) )
+import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
+                 ( PredicateSubstitution (..) )
+import           Kore.Step.Function.Data
+                 ( ApplicationFunctionEvaluator,
+                 CommonApplicationFunctionEvaluator )
+import qualified Kore.Step.Merging.ExpandedPattern as ExpandedPattern
+                 ( mergeWithPredicateSubstitution )
+import           Kore.Step.OrOfExpandedPattern
+                 ( CommonOrOfExpandedPattern, OrOfExpandedPattern )
+import qualified Kore.Step.OrOfExpandedPattern as OrOfExpandedPattern
+                 ( extractPatterns, make, traverseFlattenWithPairs,
+                 traverseWithPairs )
+import           Kore.Step.Simplification.Data
+                 ( PureMLPatternSimplifier (..), SimplificationProof (..) )
+import qualified Kore.Step.Simplification.Pattern as Pattern
+                 ( simplifyToOr )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
+import           Kore.Substitution.Class
+                 ( Hashable )
 import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter, findState )
+                 ( IntCounter )
+import           Kore.Variables.Int
+                 ( IntVariable (..) )
 
 data MaxStepCount
     = MaxStepCount Integer
@@ -43,14 +68,103 @@ sigma(x, y) => y    vs    a
 step
     ::  ( MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> ExpandedPattern.CommonExpandedPattern level
+    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level]
+    -- ^ Map from symbol IDs to defined functions
+    -> [AxiomPattern level]
+    -- ^ Rewriting axioms
+    -> CommonOrOfExpandedPattern level
+    -- ^ Configuration being rewritten.
+    ->  IntCounter
+        (CommonOrOfExpandedPattern level, StepProof level)
+step tools symbolIdToEvaluator axioms configuration = do
+    (stepPattern, stepProofs) <-
+        OrOfExpandedPattern.traverseFlattenWithPairs
+            (stepWithPattern tools axioms)
+            configuration
+    -- TODO: Shouldn't simplification be in stepWithPattern? Or shouldn't that
+    -- be "baseStepWithPattern"?
+    (simplificationPattern, simplificationProofs) <-
+        OrOfExpandedPattern.traverseFlattenWithPairs
+            (simplifyToOr tools symbolIdToEvaluator)
+            stepPattern
+    return
+        ( simplificationPattern
+        , simplifyStepProof $ StepProofCombined
+            (map StepProofSimplification simplificationProofs ++ stepProofs)
+        )
+
+-- TODO: Move to ExpandedPattern
+simplifyToOr
+    ::  ( MetaOrObject level
+        , SortedVariable variable
+        , Show (variable level)
+        , Ord (variable level)
+        , Ord (variable Meta)
+        , Ord (variable Object)
+        , IntVariable variable
+        , Hashable variable
+        )
+    => MetadataTools level StepperAttributes
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
+    -- ^ Map from symbol IDs to defined functions
+    -> ExpandedPattern level variable
+    -> IntCounter
+        ( OrOfExpandedPattern level variable
+        , SimplificationProof level
+        )
+simplifyToOr
+    tools
+    symbolIdToEvaluator
+    ExpandedPattern {term, predicate, substitution}
+  = do
+    (simplifiedTerm, _)
+        <- Pattern.simplifyToOr tools symbolIdToEvaluator term
+    (simplifiedPatt, _) <-
+        OrOfExpandedPattern.traverseWithPairs
+            (ExpandedPattern.mergeWithPredicateSubstitution
+                tools
+                -- TODO: refactor.
+                (PureMLPatternSimplifier
+                    (Pattern.simplifyToOr tools symbolIdToEvaluator))
+                PredicateSubstitution
+                    { predicate = predicate
+                    , substitution = substitution
+                    }
+            )
+            simplifiedTerm
+    return (simplifiedPatt, SimplificationProof)
+
+stepWithPattern
+    ::  ( MetaOrObject level)
+    => MetadataTools level StepperAttributes
+    -> [AxiomPattern level]
+    -- ^ Rewriting axioms
+    -> CommonExpandedPattern level
+    -- ^ Configuration being rewritten.
+    -> IntCounter (CommonOrOfExpandedPattern level, StepProof level)
+stepWithPattern tools axioms configuration = do
+    stepResultsWithProofs <- sequence (stepToList tools configuration axioms)
+    return
+        ( OrOfExpandedPattern.make
+            -- TODO: Remove fst.
+            (map fst stepResultsWithProofs)
+            -- TODO: Remove snd.
+        , simplifyStepProof $ StepProofCombined (map snd stepResultsWithProofs)
+        )
+
+stepToList
+    ::  ( MetaOrObject level)
+    => MetadataTools level StepperAttributes
+    -> CommonExpandedPattern level
     -- ^ Configuration being rewritten.
     -> [AxiomPattern level]
     -- ^ Rewriting axioms
     ->  [ IntCounter
-            (ExpandedPattern.CommonExpandedPattern level, StepProof level)
+            (CommonExpandedPattern level, StepProof level)
         ]
-step tools configuration axioms =
+stepToList tools configuration axioms =
+    -- TODO: Stop ignoring Left results. Also, how would a result
+    -- to which I can't apply an axiom look like?
     rights $ map (stepWithAxiom tools configuration) axioms
 
 {-| 'pickFirstStepper' rewrites a configuration using the provided axioms
@@ -64,51 +178,73 @@ sigma(x, y) => y    vs    a
 pickFirstStepper
     ::  ( MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> MaxStepCount
-    -- ^ The maximum number of steps to be made
-    -> ExpandedPattern.CommonExpandedPattern level
-    -- ^ Configuration being rewritten.
+    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level]
+    -- ^ Map from symbol IDs to defined functions
     -> [AxiomPattern level]
     -- ^ Rewriting axioms
-    -> IntCounter (ExpandedPattern.CommonExpandedPattern level, StepProof level)
-pickFirstStepper _ (MaxStepCount 0) stepperConfiguration _ =
+    -> MaxStepCount
+    -- ^ The maximum number of steps to be made
+    -> CommonExpandedPattern level
+    -- ^ Configuration being rewritten.
+    -> IntCounter (CommonExpandedPattern level, StepProof level)
+pickFirstStepper _ _ _ (MaxStepCount 0) stepperConfiguration =
     return (stepperConfiguration, StepProofCombined [])
-pickFirstStepper _ (MaxStepCount n) _ _ | n < 0 =
+pickFirstStepper _ _ _ (MaxStepCount n) _ | n < 0 =
     error ("Negative MaxStepCount: " ++ show n)
 pickFirstStepper
-    tools (MaxStepCount maxStep) stepperConfiguration axioms
+    tools symbolIdToEvaluator axioms (MaxStepCount maxStep) stepperConfiguration
   =
     pickFirstStepperSkipMaxCheck
-        tools (MaxStepCount (maxStep - 1)) stepperConfiguration axioms
-pickFirstStepper tools AnyStepCount stepperConfiguration axioms =
+        tools
+        symbolIdToEvaluator
+        axioms
+        (MaxStepCount (maxStep - 1))
+        stepperConfiguration
+pickFirstStepper
+    tools symbolIdToEvaluator axioms AnyStepCount stepperConfiguration
+  =
     pickFirstStepperSkipMaxCheck
-        tools AnyStepCount stepperConfiguration axioms
+        tools
+        symbolIdToEvaluator
+        axioms
+        AnyStepCount
+        stepperConfiguration
 
 pickFirstStepperSkipMaxCheck
     ::  ( MetaOrObject level)
     => MetadataTools level StepperAttributes
-    -> MaxStepCount
-    -- ^ The maximum number of steps to be made
-    -> ExpandedPattern.CommonExpandedPattern level
-    -- ^ Configuration being rewritten.
+    -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level]
+    -- ^ Map from symbol IDs to defined functions
     -> [AxiomPattern level]
     -- ^ Rewriting axioms
-    -> IntCounter (ExpandedPattern.CommonExpandedPattern level, StepProof level)
+    -> MaxStepCount
+    -- ^ The maximum number of steps to be made
+    -> CommonExpandedPattern level
+    -- ^ Configuration being rewritten.
+    -> IntCounter (CommonExpandedPattern level, StepProof level)
 pickFirstStepperSkipMaxCheck
-    tools maxStepCount stepperConfiguration axioms
+    tools symbolIdToEvaluator axioms maxStepCount stepperConfiguration
   = do
-    fnf <-
-        findState
-            (not . Predicate.isFalse . ExpandedPattern.predicate . fst)
-            (step tools stepperConfiguration axioms)
-    case fnf of
-        Nothing -> return (stepperConfiguration, StepProofCombined [])
-        Just (nextConfiguration, nextProof) ->
-            do
+    (patterns, nextProof) <-
+        -- TODO: Perhaps use IntCounter.findState to reduce the need for
+        -- intCounter values and to make this more testable.
+        step
+            tools
+            symbolIdToEvaluator
+            axioms
+            (OrOfExpandedPattern.make [stepperConfiguration])
+    case OrOfExpandedPattern.extractPatterns patterns of
+        [] -> return (stepperConfiguration, StepProofCombined [])
+        (nextConfiguration : _) -> do
             (finalConfiguration, finalProof) <-
                 pickFirstStepper
-                    tools maxStepCount nextConfiguration axioms
+                    tools
+                    symbolIdToEvaluator
+                    axioms
+                    maxStepCount
+                    nextConfiguration
             return
                 ( finalConfiguration
-                , StepProofCombined [nextProof, finalProof]
+                , simplifyStepProof
+                    $ StepProofCombined [nextProof, finalProof]
                 )

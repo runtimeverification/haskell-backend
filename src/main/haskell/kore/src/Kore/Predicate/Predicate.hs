@@ -20,10 +20,13 @@ module Kore.Predicate.Predicate
     , makeCeilPredicate
     , makeEqualsPredicate
     , makeFalsePredicate
+    , makeFloorPredicate
     , makeIffPredicate
     , makeImpliesPredicate
+    , makeInPredicate
     , makeNotPredicate
     , makeOrPredicate
+    , makeMultipleOrPredicate
     , makeTruePredicate
     , allVariables
     , mapVariables
@@ -45,8 +48,8 @@ import Kore.AST.MetaOrObject
 import Kore.AST.PureML
        ( PureMLPattern, mapPatternVariables )
 import Kore.ASTUtils.SmartConstructors
-       ( mkAnd, mkBottom, mkCeil, mkEquals, mkIff, mkImplies, mkNot, mkOr,
-       mkTop )
+       ( mkAnd, mkBottom, mkCeil, mkEquals, mkFloor, mkIff, mkImplies, mkIn,
+       mkNot, mkOr, mkTop )
 import Kore.ASTUtils.SmartPatterns
        ( pattern Bottom_, pattern Top_ )
 import Kore.IndexedModule.MetadataTools
@@ -137,6 +140,21 @@ makeMultipleAndPredicate =
     foldl'
         (\(cond1, _) cond2 -> makeAndPredicate cond1 cond2)
         (makeTruePredicate, PredicateProof)
+
+{--| 'makeMultipleOrPredicate' combines a list of Predicates with 'or',
+doing some simplification.
+--}
+makeMultipleOrPredicate
+    ::  ( MetaOrObject level
+        , Given (SortTools level)
+        , SortedVariable var
+        , Show (var level))
+    => [Predicate level var]
+    -> (Predicate level var, PredicateProof level)
+makeMultipleOrPredicate =
+    foldl'
+        (\(cond1, _) cond2 -> makeOrPredicate cond1 cond2)
+        (makeFalsePredicate, PredicateProof)
 
 {--| 'makeAndPredicate' combines two Predicates with an 'and', doing some
 simplification.
@@ -254,6 +272,20 @@ makeEqualsPredicate
 makeEqualsPredicate first second =
     GenericPredicate $ mkEquals first second
 
+{--| 'makeInPredicate' combines two patterns with 'in', producing a
+predicate.
+--}
+makeInPredicate
+    ::  ( MetaOrObject level
+        , Given (SortTools level)
+        , SortedVariable var
+        , Show (var level))
+    => PureMLPattern level var
+    -> PureMLPattern level var
+    -> Predicate level var
+makeInPredicate first second =
+    GenericPredicate $ mkIn first second
+
 {--| 'makeCeilPredicate' takes the 'ceil' of a pattern, producing a
 predicate.
 --}
@@ -266,6 +298,19 @@ makeCeilPredicate
     -> Predicate level var
 makeCeilPredicate patt =
     GenericPredicate $ mkCeil patt
+
+{--| 'makeFloorPredicate' takes the 'floor' of a pattern, producing a
+predicate.
+--}
+makeFloorPredicate
+    ::  ( MetaOrObject level
+        , Given (SortTools level)
+        , SortedVariable var
+        , Show (var level))
+    => PureMLPattern level var
+    -> Predicate level var
+makeFloorPredicate patt =
+    GenericPredicate $ mkFloor patt
 
 {--| 'makeTruePredicate' produces a predicate wrapping a 'top'.
 --}

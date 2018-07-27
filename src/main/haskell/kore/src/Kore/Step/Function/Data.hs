@@ -10,11 +10,6 @@ Portability : portable
 module Kore.Step.Function.Data
     ( ApplicationFunctionEvaluator (..)
     , CommonApplicationFunctionEvaluator
-    , PureMLPatternFunctionEvaluator (..)
-    , CommonPurePatternFunctionEvaluator
-    , ConditionEvaluator (..)
-    , CommonConditionEvaluator
-    , FunctionResultProof (..)
     , AttemptedFunction (..)
     , CommonAttemptedFunction
     ) where
@@ -27,37 +22,14 @@ import Kore.AST.PureML
        ( PureMLPattern )
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools )
-import Kore.Predicate.Predicate
-       ( Predicate, PredicateProof )
-import Kore.Step.ExpandedPattern
-       ( ExpandedPattern )
+import Kore.Step.OrOfExpandedPattern
+       ( OrOfExpandedPattern )
+import Kore.Step.Simplification.Data
+       ( PureMLPatternSimplifier, SimplificationProof (..) )
 import Kore.Step.StepperAttributes
        ( StepperAttributes )
 import Kore.Variables.Fresh.IntCounter
        ( IntCounter )
-
-{--| 'FunctionResultProof' is a placeholder for proofs showing that a Kore
-function evaluation was correct.
---}
-data FunctionResultProof level = FunctionResultProof
-    deriving (Show, Eq)
-
-{--| 'PureMLPatternFunctionEvaluator' wraps a function that evaluates
-Kore functions on PureMLPatterns.
---}
-newtype PureMLPatternFunctionEvaluator level variable =
-    PureMLPatternFunctionEvaluator
-        ( PureMLPattern level variable
-        -> IntCounter
-            ( ExpandedPattern level variable
-            , FunctionResultProof level
-            )
-        )
-{--| 'CommonPurePatternFunctionEvaluator' wraps a function that evaluates
-Kore functions on CommonPurePatterns.
---}
-type CommonPurePatternFunctionEvaluator level =
-    PureMLPatternFunctionEvaluator level Variable
 
 {--| 'ApplicationFunctionEvaluator' evaluates functions on an 'Application'
 pattern. This can be either a built-in evaluator or a user-defined one.
@@ -66,15 +38,25 @@ newtype ApplicationFunctionEvaluator level variable =
     ApplicationFunctionEvaluator
         (forall . ( MetaOrObject level)
         => MetadataTools level StepperAttributes
-        -> ConditionEvaluator level variable
-        -> PureMLPatternFunctionEvaluator level variable
+        -- ^ Tools for finding additional information about patterns
+        -- such as their sorts, whether they are constructors or hooked.
+        -> PureMLPatternSimplifier level variable
+        -- ^ Function for simplifying patterns.
         -> Application level (PureMLPattern level variable)
+        -- ^ Pattern to be evaluated, in case it is a function application
         -> IntCounter
             ( AttemptedFunction level variable
-            , FunctionResultProof level
+            -- ^ The result of applying the function
+            , SimplificationProof level
+            -- ^ Proof certifying that the function was applied correctly
+            -- (placeholder for now).
             )
         )
 
+{--| 'CommonApplicationFunctionEvaluator' particularizes
+'ApplicationFunctionEvaluator' to 'Variable', following the same pattern as
+the other `Common*` types.
+--}
 type CommonApplicationFunctionEvaluator level =
     ApplicationFunctionEvaluator level Variable
 
@@ -83,19 +65,10 @@ cases where the function can't be fully evaluated.
 --}
 data AttemptedFunction level variable
     = NotApplicable
-    | Applied !(ExpandedPattern level variable)
+    | Applied !(OrOfExpandedPattern level variable)
   deriving (Show, Eq)
 
 {--| 'CommonAttemptedFunction' particularizes 'AttemptedFunction' to 'Variable',
 following the same pattern as the other `Common*` types.
 --}
 type CommonAttemptedFunction level = AttemptedFunction level Variable
-
-{--| 'ConditionEvaluator' is a wrapper for a function that evaluates conditions.
---}
-newtype ConditionEvaluator level variable = ConditionEvaluator
-    (  Predicate level variable
-    -> IntCounter (Predicate level variable, PredicateProof level)
-    )
-
-type CommonConditionEvaluator level = ConditionEvaluator level Variable

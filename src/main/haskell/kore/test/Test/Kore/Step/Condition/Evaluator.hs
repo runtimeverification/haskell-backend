@@ -8,105 +8,76 @@ import Test.Tasty.HUnit
 import Data.Reflection
        ( give )
 
-import Kore.AST.Common
-       ( Application (..), AstLocation (..), Id (..), Pattern (..),
-       SymbolOrAlias (..) )
-import Kore.AST.MetaOrObject
-import Kore.AST.PureToKore
-       ( patternKoreToPure )
-import Kore.ASTHelpers
-       ( ApplicationSorts(..) )
-import Kore.Building.AsAst
-import Kore.Building.Patterns
-import Kore.Building.Sorts
-import Kore.Error
-import Kore.IndexedModule.MetadataTools
-       ( SortTools )
-import Kore.MetaML.AST
-       ( CommonMetaPattern )
-import Kore.Predicate.Predicate
-       ( CommonPredicate, makeEqualsPredicate, makeFalsePredicate,
-       makeTruePredicate, wrapPredicate )
-import Kore.Step.Condition.Evaluator
-       ( evaluateFunctionCondition )
-import Kore.Step.ExpandedPattern as ExpandedPattern
-       ( ExpandedPattern (..) )
-import Kore.Step.Function.Data
-       ( CommonPurePatternFunctionEvaluator, FunctionResultProof (..) )
-import Kore.Variables.Fresh.IntCounter
+import           Kore.AST.Common
+                 ( Application (..), AstLocation (..), Id (..), Pattern (..),
+                 SymbolOrAlias (..) )
+import           Kore.AST.MetaOrObject
+import           Kore.AST.PureToKore
+                 ( patternKoreToPure )
+import           Kore.ASTHelpers
+                 ( ApplicationSorts (..) )
+import           Kore.Building.AsAst
+import           Kore.Building.Patterns
+import           Kore.Building.Sorts
+import           Kore.Error
+import           Kore.IndexedModule.MetadataTools
+                 ( SortTools )
+import           Kore.MetaML.AST
+                 ( CommonMetaPattern )
+import           Kore.Predicate.Predicate
+                 ( CommonPredicate, Predicate, makeEqualsPredicate,
+                 makeFalsePredicate, makeTruePredicate, wrapPredicate )
+import qualified Kore.Step.Condition.Evaluator as Predicate
+                 ( evaluate )
+import           Kore.Step.ExpandedPattern
+                 ( CommonPredicateSubstitution,
+                 ExpandedPattern (ExpandedPattern),
+                 PredicateSubstitution (PredicateSubstitution) )
+import           Kore.Step.ExpandedPattern as PredicateSubstitution
+                 ( PredicateSubstitution (..) )
+import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+                 ( ExpandedPattern (..) )
+import           Kore.Step.Simplification.Data
+                 ( CommonPureMLPatternSimplifier, SimplificationProof (..) )
+import           Kore.Variables.Fresh.IntCounter
 
 import Test.Kore.Comparators ()
-import Test.Kore.Step.Function
-       ( mockFunctionEvaluator )
+import Test.Kore.Step.Simplifier
+       ( mockSimplifier )
 import Test.Tasty.HUnit.Extensions
 
 test_conditionEvaluator :: [TestTree]
 test_conditionEvaluator =
-    [ testCase "And truth table"
-        (do
-            assertEqualWithExplanation "false and false = false"
-                makeFalsePredicate
-                (evaluateCondition
-                    (mockFunctionEvaluator [])
-                    (asPredicate
-                        (metaAnd SortSort sortSortFalse sortSortFalse)
-                    )
-                )
-            assertEqualWithExplanation "false and true = false"
-                makeFalsePredicate
-                (evaluateCondition
-                    (mockFunctionEvaluator [])
-                    (asPredicate
-                        (metaAnd SortSort sortSortFalse sortSortTrue)
-                    )
-                )
-            assertEqualWithExplanation "true and false = false"
-                makeFalsePredicate
-                (evaluateCondition
-                    (mockFunctionEvaluator [])
-                    (asPredicate
-                        (metaAnd SortSort sortSortTrue sortSortFalse)
-                    )
-                )
-            assertEqualWithExplanation "true and true = true"
-                makeTruePredicate
-                (evaluateCondition
-                    (mockFunctionEvaluator [])
-                    (asPredicate
-                        (metaAnd SortSort sortSortTrue sortSortTrue)
-                    )
-                )
-        )
-    , testCase "Or truth table"
+    [ testCase "Or truth table"
         (do
             assertEqualWithExplanation "false or false = false"
-                makeFalsePredicate
+                (predicateSubstitution makeTruePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaOr SortSort sortSortFalse sortSortFalse)
                     )
                 )
             assertEqualWithExplanation "false or true = true"
-                makeTruePredicate
+                (predicateSubstitution makeTruePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaOr SortSort sortSortFalse sortSortTrue)
                     )
                 )
             assertEqualWithExplanation "true or false = true"
-                makeTruePredicate
+                (predicateSubstitution makeTruePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaOr SortSort sortSortTrue sortSortFalse)
                     )
                 )
             assertEqualWithExplanation "true or true = true"
-                makeTruePredicate
+                (predicateSubstitution makeTruePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaOr SortSort sortSortTrue sortSortTrue)
                     )
@@ -115,33 +86,33 @@ test_conditionEvaluator =
     , testCase "Implies truth table"
         (do
             assertEqualWithExplanation "false implies false = true"
-                makeTruePredicate
+                (predicateSubstitution makeTruePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaImplies SortSort sortSortFalse sortSortFalse)
                     )
                 )
             assertEqualWithExplanation "false implies true = true"
-                makeTruePredicate
+                (predicateSubstitution makeTruePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaImplies SortSort sortSortFalse sortSortTrue)
                     )
                 )
             assertEqualWithExplanation "true implies false = false"
-                makeFalsePredicate
+                (predicateSubstitution makeFalsePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaImplies SortSort sortSortTrue sortSortFalse)
                     )
                 )
             assertEqualWithExplanation "true implies true = true"
-                makeTruePredicate
+                (predicateSubstitution makeTruePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaImplies SortSort sortSortTrue sortSortTrue)
                     )
@@ -150,33 +121,33 @@ test_conditionEvaluator =
     , testCase "Iff truth table"
         (do
             assertEqualWithExplanation "false iff false = true"
-                makeTruePredicate
+                (predicateSubstitution makeTruePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaIff SortSort sortSortFalse sortSortFalse)
                     )
                 )
             assertEqualWithExplanation "false iff true = false"
-                makeFalsePredicate
+                (predicateSubstitution makeFalsePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaIff SortSort sortSortFalse sortSortTrue)
                     )
                 )
             assertEqualWithExplanation "true iff false = false"
-                makeFalsePredicate
+                (predicateSubstitution makeFalsePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaIff SortSort sortSortTrue sortSortFalse)
                     )
                 )
             assertEqualWithExplanation "true iff true = true"
-                makeTruePredicate
+                (predicateSubstitution makeTruePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaIff SortSort sortSortTrue sortSortTrue)
                     )
@@ -185,17 +156,17 @@ test_conditionEvaluator =
     , testCase "Not truth table"
         (do
             assertEqualWithExplanation "not false = true"
-                makeTruePredicate
+                (predicateSubstitution makeTruePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaNot SortSort sortSortFalse)
                     )
                 )
             assertEqualWithExplanation "not true = false"
-                makeFalsePredicate
+                (predicateSubstitution makeFalsePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaNot SortSort sortSortTrue)
                     )
@@ -208,113 +179,113 @@ test_conditionEvaluator =
         testCase "Evaluates children"
         (do
             assertEqualWithExplanation "true and <true-child> = true"
-                makeTruePredicate
+                (predicateSubstitution makeTruePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaAnd SortSort sortSortTrue trueChild)
                     )
                 )
             assertEqualWithExplanation "<true-child> and true = true"
-                makeTruePredicate
+                (predicateSubstitution makeTruePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaAnd SortSort trueChild sortSortTrue)
                     )
                 )
             assertEqualWithExplanation "true and <false-child> = false"
-                makeFalsePredicate
+                (predicateSubstitution makeFalsePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaAnd SortSort sortSortTrue falseChild)
                     )
                 )
             assertEqualWithExplanation "false or <true-child> = true"
-                makeTruePredicate
+                (predicateSubstitution makeTruePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaOr SortSort sortSortFalse trueChild)
                     )
                 )
             assertEqualWithExplanation "<true-child> or false = true"
-                makeTruePredicate
+                (predicateSubstitution makeTruePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaOr SortSort trueChild sortSortFalse)
                     )
                 )
             assertEqualWithExplanation "false or <false-child> = false"
-                makeFalsePredicate
+                (predicateSubstitution makeFalsePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaOr SortSort sortSortFalse falseChild)
                     )
                 )
             assertEqualWithExplanation "true implies <true-child> = true"
-                makeTruePredicate
+                (predicateSubstitution makeTruePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaImplies SortSort sortSortTrue trueChild)
                     )
                 )
             assertEqualWithExplanation "<true-child> implies true = true"
-                makeTruePredicate
+                (predicateSubstitution makeTruePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaImplies SortSort trueChild sortSortTrue)
                     )
                 )
             assertEqualWithExplanation "true implies <false-child> = false"
-                makeFalsePredicate
+                (predicateSubstitution makeFalsePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaImplies SortSort sortSortTrue falseChild)
                     )
                 )
             assertEqualWithExplanation "true iff <true-child> = true"
-                makeTruePredicate
+                (predicateSubstitution makeTruePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaIff SortSort sortSortTrue trueChild)
                     )
                 )
             assertEqualWithExplanation "<true-child> iff true = true"
-                makeTruePredicate
+                (predicateSubstitution makeTruePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaIff SortSort trueChild sortSortTrue)
                     )
                 )
             assertEqualWithExplanation "true iff <false-child> = false"
-                makeFalsePredicate
+                (predicateSubstitution makeFalsePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaIff SortSort sortSortTrue falseChild)
                     )
                 )
             assertEqualWithExplanation "not <true-child> = false"
-                makeFalsePredicate
+                (predicateSubstitution makeFalsePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaNot SortSort trueChild)
                     )
                 )
             assertEqualWithExplanation "not <false-child> = true"
-                makeTruePredicate
+                (predicateSubstitution makeTruePredicate)
                 (evaluateCondition
-                    (mockFunctionEvaluator [])
+                    (mockSimplifier [])
                     (asPredicate
                         (metaNot SortSort falseChild)
                     )
@@ -333,7 +304,7 @@ test_conditionEvaluator =
                 assertEqualWithExplanation "f(x) /= g(x)"
                     makeFalsePredicate
                     (evaluateCondition
-                        (mockFunctionEvaluator [])
+                        (mockSimplifier [])
                         (asPredicate
                             (metaEquals (ResultSort SortSort) PatternSort
                                 fOfX
@@ -344,25 +315,29 @@ test_conditionEvaluator =
                 -}
                 assertEqualWithExplanation
                     "f(x) = g(x) if f(x) => h(x) and g(x) => h(x)"
-                    makeTruePredicate
+                    (predicateSubstitution
+                        makeTruePredicate
+                    )
                     (evaluateCondition
-                        (mockFunctionEvaluator
+                        (mockSimplifier
                             [   ( asPureMetaPattern fOfX
-                                ,   ( ExpandedPattern
-                                        { term = asPureMetaPattern hOfX
-                                        , predicate = makeTruePredicate
-                                        , substitution = []
-                                        }
-                                    , FunctionResultProof
+                                ,   (   [ ExpandedPattern
+                                            { term = asPureMetaPattern hOfX
+                                            , predicate = makeTruePredicate
+                                            , substitution = []
+                                            }
+                                        ]
+                                    , SimplificationProof
                                     )
                                 )
                             ,   ( asPureMetaPattern gOfX
-                                ,   ( ExpandedPattern
-                                        { term = asPureMetaPattern hOfX
-                                        , predicate = makeTruePredicate
-                                        , substitution = []
-                                        }
-                                    , FunctionResultProof
+                                ,   (   [ ExpandedPattern
+                                            { term = asPureMetaPattern hOfX
+                                            , predicate = makeTruePredicate
+                                            , substitution = []
+                                            }
+                                        ]
+                                    , SimplificationProof
                                     )
                                 )
                             ]
@@ -377,25 +352,29 @@ test_conditionEvaluator =
                 assertEqualWithExplanation
                     ("f(x) /= g(x) if f(x) => h(x) and g(x) => h(x) "
                         ++ "but incompatible f condition")
-                    makeFalsePredicate
+                    (predicateSubstitution
+                        makeFalsePredicate
+                    )
                     (evaluateCondition
-                        (mockFunctionEvaluator
+                        (mockSimplifier
                             [   ( asPureMetaPattern fOfX
-                                ,   ( ExpandedPattern
-                                        { term = asPureMetaPattern hOfX
-                                        , predicate = makeFalsePredicate
-                                        , substitution = []
-                                        }
-                                    , FunctionResultProof
+                                ,   (   [ ExpandedPattern
+                                            { term = asPureMetaPattern hOfX
+                                            , predicate = makeFalsePredicate
+                                            , substitution = []
+                                            }
+                                        ]
+                                    , SimplificationProof
                                     )
                                 )
                             ,   ( asPureMetaPattern gOfX
-                                ,   ( ExpandedPattern
-                                        { term = asPureMetaPattern hOfX
-                                        , predicate = makeTruePredicate
-                                        , substitution = []
-                                        }
-                                    , FunctionResultProof
+                                ,   (   [ ExpandedPattern
+                                            { term = asPureMetaPattern hOfX
+                                            , predicate = makeTruePredicate
+                                            , substitution = []
+                                            }
+                                        ]
+                                    , SimplificationProof
                                     )
                                 )
                             ]
@@ -410,25 +389,29 @@ test_conditionEvaluator =
                 assertEqualWithExplanation
                     ("f(x) /= g(x) if f(x) => h(x) and g(x) => h(x) "
                         ++ "but incompatible g condition")
-                    makeFalsePredicate
+                    (predicateSubstitution
+                        makeFalsePredicate
+                    )
                     (evaluateCondition
-                        (mockFunctionEvaluator
+                        (mockSimplifier
                             [   ( asPureMetaPattern fOfX
-                                ,   ( ExpandedPattern
-                                        { term = asPureMetaPattern hOfX
-                                        , predicate = makeTruePredicate
-                                        , substitution = []
-                                        }
-                                    , FunctionResultProof
+                                ,   (   [ ExpandedPattern
+                                            { term = asPureMetaPattern hOfX
+                                            , predicate = makeTruePredicate
+                                            , substitution = []
+                                            }
+                                        ]
+                                    , SimplificationProof
                                     )
                                 )
                             ,   ( asPureMetaPattern gOfX
-                                ,   ( ExpandedPattern
-                                        { term = asPureMetaPattern hOfX
-                                        , predicate = makeFalsePredicate
-                                        , substitution = []
-                                        }
-                                    , FunctionResultProof
+                                ,   (   [ ExpandedPattern
+                                            { term = asPureMetaPattern hOfX
+                                            , predicate = makeFalsePredicate
+                                            , substitution = []
+                                            }
+                                        ]
+                                    , SimplificationProof
                                     )
                                 )
                             ]
@@ -442,28 +425,32 @@ test_conditionEvaluator =
                     (  "f(x) = g(x) => x=h1(x) "
                     ++ "if f(x) => h(x) /\\ x=h1(x) and g(x) => h(x) "
                     )
-                    (makeEquals (x PatternSort) (metaH1 (x PatternSort)))
+                    (predicateSubstitution
+                        (makeEquals (x PatternSort) (metaH1 (x PatternSort)))
+                    )
                     (evaluateCondition
-                        (mockFunctionEvaluator
+                        (mockSimplifier
                             [   ( asPureMetaPattern fOfX
-                                ,   ( ExpandedPattern
-                                        { term = asPureMetaPattern hOfX
-                                        , predicate =
-                                            makeEquals
-                                                (x PatternSort)
-                                                (metaH1 (x PatternSort))
-                                        , substitution = []
-                                        }
-                                    , FunctionResultProof
+                                ,   (   [ ExpandedPattern
+                                            { term = asPureMetaPattern hOfX
+                                            , predicate =
+                                                makeEquals
+                                                    (x PatternSort)
+                                                    (metaH1 (x PatternSort))
+                                            , substitution = []
+                                            }
+                                        ]
+                                    , SimplificationProof
                                     )
                                 )
                             ,   ( asPureMetaPattern gOfX
-                                ,   ( ExpandedPattern
-                                        { term = asPureMetaPattern hOfX
-                                        , predicate = makeTruePredicate
-                                        , substitution = []
-                                        }
-                                    , FunctionResultProof
+                                ,   (   [ ExpandedPattern
+                                            { term = asPureMetaPattern hOfX
+                                            , predicate = makeTruePredicate
+                                            , substitution = []
+                                            }
+                                        ]
+                                    , SimplificationProof
                                     )
                                 )
                             ]
@@ -479,28 +466,32 @@ test_conditionEvaluator =
                     (  "f(x) = g(x) => x=h1(x) "
                     ++ "if f(x) => h(x) and g(x) => h(x) /\\ x=h1(x)"
                     )
-                    (makeEquals (x PatternSort) (metaH1 (x PatternSort)))
+                    (predicateSubstitution
+                        (makeEquals (x PatternSort) (metaH1 (x PatternSort)))
+                    )
                     (evaluateCondition
-                        (mockFunctionEvaluator
+                        (mockSimplifier
                             [   ( asPureMetaPattern fOfX
-                                ,   ( ExpandedPattern
-                                        { term = asPureMetaPattern hOfX
-                                        , predicate = makeTruePredicate
-                                        , substitution = []
-                                        }
-                                    , FunctionResultProof
+                                ,   (   [ ExpandedPattern
+                                            { term = asPureMetaPattern hOfX
+                                            , predicate = makeTruePredicate
+                                            , substitution = []
+                                            }
+                                        ]
+                                    , SimplificationProof
                                     )
                                 )
                             ,   ( asPureMetaPattern gOfX
-                                ,   ( ExpandedPattern
-                                        { term = asPureMetaPattern hOfX
-                                        , predicate =
-                                            makeEquals
-                                                (x PatternSort)
-                                                (metaH1 (x PatternSort))
-                                        , substitution = []
-                                        }
-                                    , FunctionResultProof
+                                ,   (   [ ExpandedPattern
+                                            { term = asPureMetaPattern hOfX
+                                            , predicate =
+                                                makeEquals
+                                                    (x PatternSort)
+                                                    (metaH1 (x PatternSort))
+                                            , substitution = []
+                                            }
+                                        ]
+                                    , SimplificationProof
                                     )
                                 )
                             ]
@@ -633,15 +624,24 @@ asPureMetaPattern patt =
         Right pat -> pat
 
 evaluateCondition
-    :: CommonPurePatternFunctionEvaluator Meta
+    :: CommonPureMLPatternSimplifier Meta
     -> CommonPredicate Meta
-    -> CommonPredicate Meta
+    -> CommonPredicateSubstitution Meta
 evaluateCondition
     functionEvaluator
     condition
   =
     fst $ fst $ runIntCounter
         (give mockSortTools
-            (evaluateFunctionCondition functionEvaluator condition)
+            (Predicate.evaluate functionEvaluator condition)
         )
         0
+
+predicateSubstitution
+    :: Predicate level variable
+    -> PredicateSubstitution level variable
+predicateSubstitution predicate =
+    PredicateSubstitution
+        { predicate = predicate
+        , substitution = []
+        }

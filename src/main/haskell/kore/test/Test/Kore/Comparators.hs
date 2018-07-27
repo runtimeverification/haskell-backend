@@ -22,8 +22,13 @@ import Kore.Step.BaseStep
 import Kore.Step.Error
 import Kore.Step.ExpandedPattern as ExpandedPattern
        ( ExpandedPattern (..) )
+import Kore.Step.ExpandedPattern as PredicateSubstitution
+       ( PredicateSubstitution (..) )
 import Kore.Step.Function.Data as AttemptedFunction
        ( AttemptedFunction (..) )
+import Kore.Step.OrOfExpandedPattern
+import Kore.Step.Simplification.Data
+       ( SimplificationProof )
 import Kore.Unification.Error
 import Kore.Unification.Unifier
 
@@ -195,6 +200,15 @@ instance
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
 
+    sumConstructorPair
+        (StepProofSimplification a1)
+        (StepProofSimplification a2)
+      =
+        SumConstructorSameWithArguments (EqWrap "StepProofSimplification" a1 a2)
+    sumConstructorPair a1@(StepProofSimplification _) a2 =
+        SumConstructorDifferent
+            (printWithExplanation a1) (printWithExplanation a2)
+
 instance (Eq level, Show level) => EqualWithExplanation (StepProof level) where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
@@ -327,12 +341,33 @@ instance
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
-instance
-    ( EqualWithExplanation child, Eq child, Show child)
+
+instance (Show child, EqualWithExplanation child)
+    => StructEqualWithExplanation (Floor level child)
+  where
+    structFieldsWithNames
+        expected@(Floor _ _ _)
+        actual@(Floor _ _ _)
+      = [ EqWrap
+            "floorOperandSort = "
+            (floorOperandSort expected)
+            (floorOperandSort actual)
+        , EqWrap
+            "floorResultSort = "
+            (floorResultSort expected)
+            (floorResultSort actual)
+        , EqWrap
+            "floorChild = "
+            (floorChild expected)
+            (floorChild actual)
+        ]
+    structConstructorName _ = "Floor"
+instance (Show child, EqualWithExplanation child)
     => EqualWithExplanation (Floor level child)
   where
-    compareWithExplanation = rawCompareWithExplanation
+    compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
+
 instance
     ( EqualWithExplanation child
     , Eq child
@@ -751,6 +786,37 @@ instance
     printWithExplanation = show
 
 instance
+    ( Show level, Show (variable level)
+    , Eq level, Eq (variable level)
+    , EqualWithExplanation(variable level)
+    )
+    => StructEqualWithExplanation (PredicateSubstitution level variable)
+  where
+    structFieldsWithNames
+        expected@(PredicateSubstitution _ _)
+        actual@(PredicateSubstitution _ _)
+      = [ EqWrap
+            "predicate = "
+            (PredicateSubstitution.predicate expected)
+            (PredicateSubstitution.predicate actual)
+        , EqWrap
+            "substitution = "
+            (PredicateSubstitution.substitution expected)
+            (PredicateSubstitution.substitution actual)
+        ]
+    structConstructorName _ = "PredicateSubstitution"
+
+instance
+    ( Show level, Show (variable level)
+    , Eq level, Eq (variable level)
+    , EqualWithExplanation(variable level)
+    )
+    => EqualWithExplanation (PredicateSubstitution level variable)
+  where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
     ( EqualWithExplanation (PureMLPattern level variable)
     , Show level, Show (variable level)
     )
@@ -800,8 +866,28 @@ instance
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
-
 instance EqualWithExplanation (PredicateProof level)
   where
     compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
+instance EqualWithExplanation (SimplificationProof level)
+  where
+    compareWithExplanation = rawCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    (Show a, EqualWithExplanation a)
+    => SumEqualWithExplanation (MultiOr a)
+  where
+    sumConstructorPair (MultiOr a1) (MultiOr a2)
+      =
+        SumConstructorSameWithArguments
+            (EqWrap "MultiOr" a1 a2)
+
+instance
+    (Show a, EqualWithExplanation a)
+    => EqualWithExplanation (MultiOr a)
+  where
+    compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
