@@ -1,0 +1,142 @@
+name:                kore
+version:             0.0.1.0
+github:              "kframework/kore"
+license:             OtherLicense
+license-file:        LICENSE
+author:              "Virgil Serbanuta"
+maintainer:          "virgil.serbanuta@runtimeverification.com"
+copyright:           "2018 Runtime Verification Inc"
+category:            Language
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on Github at <https://github.com/kframework/kore/blob/master/src/main/haskell/kore/README.md>
+
+dependencies:
+  - base >= 4.7
+  - array
+  - bytestring >= 0.10
+  - bytestring-trie
+  - containers
+  - clock
+  - data-default
+  - deepseq
+  - deriving-compat
+  - free
+  - gitrev
+  - groom
+  - hashable
+  - haskeline
+  - lens
+  - megaparsec >= 6.4.0
+  - mtl
+  - optparse-applicative
+  - parser-combinators
+  - prettyprinter
+  - recursion-schemes
+  - reflection
+  - text
+  - time
+
+build-tools:
+  - tasty-discover
+
+default-extensions:
+  - BangPatterns
+  - ConstraintKinds
+  - DataKinds
+  - DeriveDataTypeable
+  - DeriveFoldable
+  - DeriveFunctor
+  - DeriveGeneric
+  - DeriveTraversable
+  - DuplicateRecordFields
+  - ExistentialQuantification
+  - FlexibleContexts
+  - FlexibleInstances
+  - FunctionalDependencies
+  - GADTs
+  - GeneralizedNewtypeDeriving
+  - InstanceSigs
+  - LambdaCase
+  - MonoLocalBinds
+  - MultiParamTypeClasses
+  - NamedFieldPuns
+  - OverloadedStrings
+  - PatternSynonyms
+  - PolyKinds
+  - RankNTypes
+  - RecordWildCards
+  - ScopedTypeVariables
+  - StandaloneDeriving
+  - TypeApplications
+  - TypeFamilies
+  - TypeSynonymInstances
+  - UndecidableInstances
+  - ViewPatterns
+
+library:
+  source-dirs: src
+
+executables:
+  kore-parser:
+    main:                Main.hs
+    source-dirs:
+      - app/parser
+      - app/share
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - kore
+
+  kore-format:
+    main: Main.hs
+    source-dirs:
+      - app/format
+      - app/share
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    default-extensions:
+      - RecordWildCards
+    dependencies:
+      - kore
+  prover:
+    source-dirs: app/prover
+    main: Main.hs
+    dependencies:
+      - kore
+
+tests:
+  kore-test:
+    main: Driver.hs
+    source-dirs:
+      - test
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - kore
+      - call-stack
+      - directory >= 1.2.2
+      - filepath
+      - QuickCheck
+      - tasty
+      - tasty-ant-xml
+      - tasty-hunit
+      - tasty-golden
+      - tasty-quickcheck
+      - template-haskell
