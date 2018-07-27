@@ -546,7 +546,7 @@ module IMP-SYNTAX
           HOLE:AExp{},
           divAExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
-  [ strictAxiom{}("divAExp,1") ]
+  [ strictAxiom{}("divAExp","1") ]
 
   /* (X / Y) = gamma HOLE . (X / HOLE) [Y] */
 
@@ -558,7 +558,7 @@ module IMP-SYNTAX
           HOLE:AExp{},
           divAExp{}(X:AExp{}, HOLE:AExp{})),
         Y:AExp{}))
-  [ strictAxiom{}("divAExp,2") ]
+  [ strictAxiom{}("divAExp","2") ]
 
   /* syntax AExp ::= AExp "+" AExp [strict] */
 
@@ -583,7 +583,7 @@ module IMP-SYNTAX
           HOLE:AExp{},
           plusAExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
-  [ strictAxiom{}("plusAExp,1") ]
+  [ strictAxiom{}("plusAExp","1") ]
 
   /* (X + Y) = gamma HOLE . (X + HOLE) [Y] */
 
@@ -595,7 +595,7 @@ module IMP-SYNTAX
           HOLE:AExp{},
           plusAExp{}(X:AExp{}, HOLE:AExp{})),
         Y:AExp{}))
-  [ strictAxiom{}("plusAExp,2") ]
+  [ strictAxiom{}("plusAExp","2") ]
 
   /* syntax BExp ::= ... */
 
@@ -646,7 +646,7 @@ module IMP-SYNTAX
           HOLE:AExp{},
           leqBExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
-  [ seqstrictAxiom{}("leqBExp,1") ]
+  [ seqstrictAxiom{}("leqBExp","1") ]
 
   /* X <= intAsAExp(Y) = (gamma HOLE . X <= intAsAExp(HOLE)) [Y]
      where Y has sort Int.
@@ -663,7 +663,7 @@ module IMP-SYNTAX
           HOLE:Int{},
           leqBExp{}(X:AExp{}, intAsAExp{}(HOLE:Int{}))),
         Y:Int{}))
-  [ seqstrictAxiom{}("leqBExp,2") ]
+  [ seqstrictAxiom{}("leqBExp","2") ]
 
   /* syntax BExp ::= "!" BExp [strict] */
 
@@ -678,7 +678,7 @@ module IMP-SYNTAX
           HOLE:BExp{},
           notBExp{}(HOLE:BExp{})),
         B:BExp{}))
-  [ strictAxiom{}("notBExp,1") ]
+  [ strictAxiom{}("notBExp","1") ]
 
   /* syntax BExp ::= BExp "&&" BExp [strict(1)] */
 
@@ -693,7 +693,7 @@ module IMP-SYNTAX
           HOLE:BExp{},
           andBExp{}(HOLE:BExp{}, Y:BExp{})),
         X:BExp{}))
-  [ strictAxiom{}("andBExp,1") ]
+  [ strictAxiom{}("andBExp","1") ]
 
 
   /* syntax Block ::= ... */
@@ -729,7 +729,7 @@ module IMP-SYNTAX
           HOLE:AExp{},
           asgn{}(X:Id{}, HOLE:AExp{})),
         E:AExp{}))
-  [ strictAxiom{}("asgn,2") ]
+  [ strictAxiom{}("asgn","2") ]
 
   /* syntax Stmt ::= "ite" "(" BExp ")" Block "else" Block [strict(1)] */
 
@@ -745,7 +745,7 @@ module IMP-SYNTAX
           HOLE:BExp{},
           ite{}(HOLE:BExp{}, S1:Block{}, S2:Block{})),
         B:BExp{}))
-  [ strictAxiom{}("ite,1") ]
+  [ strictAxiom{}("ite","1") ]
 
   /* syntax Stmt ::= "while" "(" BExp ")" Block */
 

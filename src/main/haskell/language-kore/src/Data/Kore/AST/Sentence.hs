@@ -34,7 +34,6 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Data.Kore.AST.Sentence where
 
-import           Data.Default
 import           Data.Fix
 import           Data.Maybe                  (catMaybes)
 
@@ -60,9 +59,6 @@ deriving instance
 deriving instance
     (Show CommonKorePattern)
      => Show Attributes
-
-instance Default Attributes where
-    def = Attributes def
 
 instance Pretty Attributes where
     pretty = Pretty.attributes . getAttributes

@@ -176,9 +176,7 @@ mainVerify
 mainVerify willChkAttr definition =
     let attributesVerification =
             if willChkAttr
-            then case defaultAttributesVerification Proxy of
-                   Left err           -> error (printError err)
-                   Right verification -> verification
+            then defaultAttributesVerification Proxy
             else DoNotVerifyAttributes
     in do
       verifyResult <-

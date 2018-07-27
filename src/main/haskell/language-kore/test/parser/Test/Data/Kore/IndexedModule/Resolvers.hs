@@ -135,7 +135,7 @@ test_resolvers :: [TestTree]
 test_resolvers =
     [ testCase "object sort"
         (assertEqual ""
-            (Right (def, SentenceSort
+            (Right (def :: ImplicitAttributes, SentenceSort
                 { sentenceSortName = testId "s1"
                 , sentenceSortParameters = []
                 , sentenceSortAttributes = Attributes []
@@ -145,7 +145,7 @@ test_resolvers =
         )
     , testCase "meta sort"
         (assertEqual ""
-            (Right (def, SentenceSort
+            (Right (def :: ImplicitAttributes, SentenceSort
                 { sentenceSortName = charMetaId
                 , sentenceSortParameters = []
                 , sentenceSortAttributes = Attributes []
@@ -155,7 +155,7 @@ test_resolvers =
         )
     , testCase "object symbol"
         (assertEqual ""
-            (Right (def, SentenceSymbol
+            (Right (def :: ImplicitAttributes, SentenceSymbol
                 { sentenceSymbolAttributes = Attributes []
                 , sentenceSymbolSymbol = sentenceSymbolSymbol objectA
                 , sentenceSymbolSorts = []
@@ -166,7 +166,7 @@ test_resolvers =
         )
     , testCase "meta symbol"
         (assertEqual ""
-            (Right (def, SentenceSymbol
+            (Right (def :: ImplicitAttributes, SentenceSymbol
                 { sentenceSymbolAttributes = Attributes []
                 , sentenceSymbolSymbol = sentenceSymbolSymbol metaA
                 , sentenceSymbolSorts = []
@@ -177,7 +177,7 @@ test_resolvers =
         )
     , testCase "object alias"
         (assertEqual ""
-            (Right (def, SentenceAlias
+            (Right (def :: ImplicitAttributes, SentenceAlias
                 { sentenceAliasAttributes = Attributes []
                 , sentenceAliasAlias = sentenceAliasAlias objectB
                 , sentenceAliasSorts = []
@@ -190,7 +190,7 @@ test_resolvers =
         )
     , testCase "meta alias"
         (assertEqual ""
-            (Right (def, SentenceAlias
+            (Right (def :: ImplicitAttributes, SentenceAlias
                 { sentenceAliasAttributes = Attributes []
                 , sentenceAliasAlias = sentenceAliasAlias metaB
                 , sentenceAliasSorts = []
