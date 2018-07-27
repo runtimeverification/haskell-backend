@@ -59,6 +59,7 @@ module Data.Kore.ASTUtils.SmartConstructors
 , pattern Rewrites_
 , pattern Top_
 , pattern Var_
+, pattern V
 , pattern StringLiteral_
 , pattern CharLiteral_
 , mkAnd
@@ -81,6 +82,7 @@ module Data.Kore.ASTUtils.SmartConstructors
 , mkVar
 , mkStringLiteral
 , mkCharLiteral
+, mkSort
 )
 where
 
@@ -112,54 +114,60 @@ getSort x = getPatternResultSort (getResultSort given) $ unFix x
 
 -- | Placeholder sort for when we construct a new predicate
 -- But we don't know yet where it's going to be attached.
+-- No particular way to avoid this, unfortunately.
 -- This will probably happen often during proof routines.
 flexibleSort
     :: MetaOrObject level
     => Sort level
 flexibleSort =
-    SortVariableSort SortVariable
-        { getSortVariable = noLocationId "__FlexibleSort__" } --FIXME
-
+    SortVariableSort $ SortVariable
+        { getSortVariable = noLocationId "*" } --FIXME
 
 pattern And_
     :: Sort level
     -> PureMLPattern level var
     -> PureMLPattern level var
     -> PureMLPattern level var
+
 pattern App_
     :: SymbolOrAlias level
     -> [PureMLPattern level var]
     -> PureMLPattern level var
+
 pattern Bottom_
     :: Sort level
     -> PureMLPattern level var
+
 pattern Ceil_
     :: Sort level
     -> Sort level
     -> PureMLPattern level var
     -> PureMLPattern level var
--- Due to the interaction of pattern synonyms and GADTS
--- I don't think I can write this type signature.
--- pattern DV_
-  -- :: Sort Object
-  -- -> CommonPurePattern Object
-  -- -> CommonPurePattern Object
+
+pattern DV_
+  :: Sort Object
+  -> PureMLPattern Object var
+  -> PureMLPattern Object var
+
 pattern Equals_
     :: Sort level
     -> Sort level
     -> PureMLPattern level var
     -> PureMLPattern level var
     -> PureMLPattern level var
+
 pattern Exists_
     :: Sort level
     -> var level
     -> PureMLPattern level var
     -> PureMLPattern level var
+
 pattern Floor_
     :: Sort level
     -> Sort level
     -> PureMLPattern level var
     -> PureMLPattern level var
+
 pattern Forall_
     :: Sort level
     -> var level
@@ -170,35 +178,41 @@ pattern Iff_
     -> PureMLPattern level var
     -> PureMLPattern level var
     -> PureMLPattern level var
+
 pattern Implies_
     :: Sort level
     -> PureMLPattern level var
     -> PureMLPattern level var
     -> PureMLPattern level var
+
 pattern In_
     :: Sort level
     -> Sort level
     -> PureMLPattern level var
     -> PureMLPattern level var
     -> PureMLPattern level var
--- pattern Next_
-  -- :: Sort Object
-  -- -> CommonPurePattern Object
-  -- -> CommonPurePattern Object
+
+pattern Next_
+  :: Sort Object
+  -> PureMLPattern Object var
+  -> PureMLPattern Object var
+
 pattern Not_
     :: Sort level
     -> PureMLPattern level var
     -> PureMLPattern level var
+
 pattern Or_
     :: Sort level
     -> PureMLPattern level var
     -> PureMLPattern level var
     -> PureMLPattern level var
--- pattern Rewrites_
---   :: Sort Object
---   -> CommonPurePattern Object
---   -> CommonPurePattern Object
---   -> CommonPurePattern Object
+
+pattern Rewrites_
+  :: Sort Object
+  -> PureMLPattern Object var
+  -> PureMLPattern Object var
+  -> PureMLPattern Object var
 
 pattern Top_
     :: Sort level
@@ -208,13 +222,13 @@ pattern Var_
     :: var level
     -> PureMLPattern level var
 
--- pattern StringLiteral_
---   :: StringLiteral
---   -> Fix (Pattern level var)
+pattern StringLiteral_
+  :: StringLiteral
+  -> PureMLPattern Meta var
 
--- pattern CharLiteral_
---   :: CharLiteral
---   -> CommonPurePattern Meta
+pattern CharLiteral_
+  :: CharLiteral
+  -> PureMLPattern Meta var
 
 -- No way to make multiline pragma?
 -- NOTE: If you add a case to the AST type, add another synonym here.
@@ -239,6 +253,9 @@ pattern Rewrites_     s2   a b = Fix (RewritesPattern (Rewrites s2 a b))
 pattern Top_          s2       = Fix (TopPattern (Top s2))
 pattern Var_             v     = Fix (VariablePattern v)
 
+pattern V :: var level -> PureMLPattern level var
+pattern V x = Var_ x
+
 pattern StringLiteral_ s = Fix (StringLiteralPattern s)
 pattern CharLiteral_   c = Fix (CharLiteralPattern   c)
 
@@ -258,7 +275,8 @@ patternLens
   And_       s2   a b -> And_      <$>          o s2           <*> c a <*> c b
   Bottom_    s2       -> Bottom_   <$>          o s2
   Ceil_   s1 s2   a   -> Ceil_     <$> i s1 <*> o s2           <*> c a
-  DV_        s2   a   -> DV_       <$>          o s2           <*> c a
+  -- DV_        s2   a   -> DV_       <$>          o s2           <*> c a
+  Fix (DomainValuePattern (DomainValue s2 a )) -> DV_ <$> o s2 <*> c a
   Equals_ s1 s2   a b -> Equals_   <$> i s1 <*> o s2           <*> c a <*> c b
   Exists_    s2 v a   -> Exists_   <$>          o s2 <*> var v <*> c a
   Floor_  s1 s2   a   -> Floor_    <$> i s1 <*> o s2           <*> c a
@@ -266,15 +284,18 @@ patternLens
   Iff_       s2   a b -> Iff_      <$>          o s2           <*> c a <*> c b
   Implies_   s2   a b -> Implies_  <$>          o s2           <*> c a <*> c b
   In_     s1 s2   a b -> In_       <$> i s1 <*> o s2           <*> c a <*> c b
-  Next_      s2   a   -> Next_     <$>          o s2           <*> c a
+  -- Next_      s2   a   -> Next_     <$>          o s2           <*> c a
+  Fix (NextPattern (Next s2 a)) -> Next_ <$> o s2 <*> c a
   Not_       s2   a   -> Not_      <$>          o s2           <*> c a
   Or_        s2   a b -> Or_       <$>          o s2           <*> c a <*> c b
-  Rewrites_  s2   a b -> Rewrites_ <$>          o s2           <*> c a <*> c b
+  -- Rewrites_  s2   a b -> Rewrites_ <$>          o s2           <*> c a <*> c b
+  Fix (RewritesPattern (Rewrites s2 a b)) -> Rewrites_ <$> o s2 <*> c a <*> c b
   Top_       s2       -> Top_      <$>          o s2
   Var_          v     -> Var_      <$>                   var v
-  StringLiteral_ s -> pure (StringLiteral_ s)
-  CharLiteral_   c -> pure (CharLiteral_   c)
   App_ h children -> App_ h <$> traverse c children
+  -- StringLiteral_ s -> pure (StringLiteral_ s)
+  -- CharLiteral_   c -> pure (CharLiteral_   c)
+  p -> pure p
 
 -- | The sort of a,b in \equals(a,b), \ceil(a) etc.
 inputSort        f = patternLens f    pure pure pure
@@ -562,7 +583,7 @@ mkRewrites
 mkRewrites a b = ensureSortAgreement $ Rewrites_ fixmeSort a b
 
 mkTop
-    :: (MetaOrObject level, Given (MetadataTools level))
+    :: MetaOrObject level
     => PureMLPattern level var
 mkTop = Top_ flexibleSort
 
@@ -575,11 +596,16 @@ mkVar = Var_
 mkStringLiteral = StringLiteral_
 mkCharLiteral   = CharLiteral_
 
+mkSort
+  :: MetaOrObject level
+  => String
+  -> Sort level
+mkSort name =
+    SortVariableSort $ SortVariable
+        { getSortVariable = noLocationId name }
 
--- | Should never appear in output of 'mk' funcs
+-- | Placeholder. Should never appear in output of 'mk' funcs
 fixmeSort
     :: MetaOrObject level
     => Sort level
-fixmeSort =
-    SortVariableSort SortVariable
-        { getSortVariable = noLocationId "FIXME" } --FIXME
+fixmeSort = mkSort "FIXME"

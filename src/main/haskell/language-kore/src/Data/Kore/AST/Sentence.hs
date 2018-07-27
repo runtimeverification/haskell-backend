@@ -283,8 +283,8 @@ data Sentence level sortParam (pat :: (* -> *) -> * -> *) (variable :: * -> *) w
         :: !(SentenceAxiom sortParam pat variable)
         -> Sentence Meta sortParam pat variable
     SentenceSortSentence
-        :: !(SentenceSort Object pat variable)
-        -> Sentence Object sortParam pat variable
+        :: !(SentenceSort level pat variable)
+        -> Sentence level sortParam pat variable
     SentenceHookSentence
         :: !(SentenceHook Object pat variable)
         -> Sentence Object sortParam pat variable
@@ -441,7 +441,7 @@ type KoreSentenceImport = SentenceImport UnifiedPattern Variable
 type KoreSentenceAxiom = SentenceAxiom UnifiedSortVariable UnifiedPattern Variable
 -- |'KoreSentenceSort' is the Kore ('Meta' and 'Object') version of
 -- 'SentenceSort'
-type KoreSentenceSort = SentenceSort Object UnifiedPattern Variable
+type KoreSentenceSort level = SentenceSort level UnifiedPattern Variable
 -- |'KoreSentenceHook' Kore ('Meta' and 'Object') version of
 -- 'SentenceHook'
 type KoreSentenceHook = SentenceHook Object UnifiedPattern Variable
@@ -526,7 +526,9 @@ instance AsSentence KoreSentence KoreSentenceImport where
 instance AsSentence KoreSentence KoreSentenceAxiom where
     asSentence = constructUnifiedSentence SentenceAxiomSentence
 
-instance AsSentence KoreSentence KoreSentenceSort where
+instance
+  ( MetaOrObject level
+  ) => AsSentence KoreSentence (KoreSentenceSort level) where
     asSentence = constructUnifiedSentence SentenceSortSentence
 
 instance AsSentence KoreSentence KoreSentenceHook where

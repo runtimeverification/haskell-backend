@@ -107,6 +107,9 @@ indexedModuleRawSentences im =
     map asSentence
         (Map.elems (indexedModuleMetaSymbolSentences im))
     ++
+    map asSentence
+        (Map.elems (indexedModuleMetaSortDescriptions im))
+    ++
     map hookSymbolIfNeeded
         (Map.toList (indexedModuleObjectSymbolSentences im))
     ++
@@ -413,6 +416,22 @@ indexModuleMetaSentence
             }
         )
 
+indexModuleMetaSentence
+    _ _ _
+    ( indexedModules
+    , indexedModule
+    )
+    ( SentenceSortSentence sentence )
+  = return
+    ( indexedModules
+    , indexedModule
+      { indexedModuleMetaSortDescriptions =
+          Map.insert
+          (sentenceSortName sentence)
+          sentence
+          (indexedModuleMetaSortDescriptions indexedModule)
+      }
+    )
 
 indexModuleObjectSentence
     :: KoreImplicitIndexedModule

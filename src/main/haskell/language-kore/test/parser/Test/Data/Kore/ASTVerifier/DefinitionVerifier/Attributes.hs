@@ -97,7 +97,7 @@ test_attributes =
                                 { sentenceSortName = testId "mySort"
                                 , sentenceSortParameters = []
                                 , sentenceSortAttributes = Attributes []
-                                }::KoreSentenceSort
+                                }::KoreSentenceSort Object
                             )
                         ]
                     , moduleAttributes = Attributes []
@@ -133,7 +133,7 @@ test_attributes =
                                 { sentenceSortName = testId "mySort"
                                 , sentenceSortParameters = []
                                 , sentenceSortAttributes = Attributes []
-                                }::KoreSentenceSort
+                                }::KoreSentenceSort Object
                             )
                         ]
                     , moduleAttributes = Attributes []
