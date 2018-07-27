@@ -68,7 +68,7 @@ import           GHC.Generics                          (Generic)
 -- In the end we decided that enforcing total pattern matches in
 -- helper functions like alphaRename, provablySubstitute etc. is just too
 -- much to ask. This is especially true since Kore theorems appear inside the
--- By constructor, so any tricks we use to encode subsets of constructors have
+-- ByF constructor, so any tricks we use to encode subsets of constructors have
 -- to be threaded through that type.
 -- Hence most pattern matches end in `impossible`, which should be considered
 -- a programmer error if it throws.
@@ -79,6 +79,17 @@ impossible = error "The impossible happened."
 type Term = CommonPurePattern Object
 type Var = Variable Object
 
+-- | Fix-able functor representing a single deduction step
+-- `formula` is a matching logic formula, for now CommonPurePattern Object.
+-- `rules` is a datatype encoding the valid deductions. 
+-- The rule type contains other subproofs as its children,
+-- and should be `Functor`/`Traversable` over them. 
+-- Here we use a rule type `LargeRules` supporting natural deduction style
+-- and the newer set of ML axioms. 
+-- `assumption` is the type of assumptions. This will normally be the same
+-- as `formula`, except when converting to a line-based format, in which case 
+-- `assumption` and `subproof` can be a different type like `Int` representing a
+-- pointer to a previous line. 
 data PropF formula rules assumption subproof
   = ByF
   { conclusion    :: formula
@@ -97,7 +108,15 @@ pattern By
 pattern By conclusion justification assumptions =
   Fix (ByF conclusion justification assumptions)
 
+-- | Points to a location in a term at which a substitution
+-- should be applied. For example, [1,0] points to the "b"
+-- in "forall a. (b \/ a)". [] points to the top level, i.e.
+-- the entire term. 
+-- Supplying an incorrect path should throw an error.
 type Path = [Int]
+
+-- | Proofs of object-level matching logic propositions, using the newer axioms.
+-- In particular using types `Object`, `Variable`, `LargeRule`. 
 type Proof = Prop Term LargeRule
 
 instance (Hashable formula, Hashable (rules subproof), Hashable assumption)
@@ -242,6 +261,11 @@ getConclusion
     -> Term
 getConclusion = conclusion . unFix
 
+getJustification
+    :: Proof
+    -> LargeRule Proof
+getJustification = justification . unFix
+
 getAssumptions
     :: Proof
     -> S.Set  Term
@@ -254,6 +278,7 @@ getFreeVars proof =
   $ S.toList
   $ getAssumptions proof
 
+-- | Shorthnad for `useRule . Assumption`
 assume :: Term -> Proof
 assume formula = By formula (Assumption formula) (S.singleton formula)
 
@@ -277,9 +302,26 @@ useRule (Assumption formula)
  = assume formula
 useRule (Discharge hypothesis conclusion)
  = discharge hypothesis conclusion
+    where 
+      discharge hypothesis prop@(By conclusion justification assumptions)
+         = By
+          (hypothesis `mkImplies` conclusion)
+          (Discharge hypothesis prop)
+          (S.delete hypothesis assumptions)
 useRule (Abstract var conclusion)
  | elem var (getFreeVars conclusion) = abstract var conclusion
  | otherwise = error $ "Variable " ++ show var ++ " appears in assumptions."
+    where
+      abstract var prop@(By conclusion justification assumptions)
+        | elem var $ getFreeVars prop
+          = error $ "Variable "
+                  ++ show var
+                  ++ "appears in assumptions"
+                  ++ show assumptions
+        | otherwise
+          = Fix $ (unFix prop) {
+              conclusion = mkForall var conclusion
+            }
 useRule (ExistsElim producer var property (Fix consumer)) =
     case getConclusion producer of
       Exists_ _ v p
@@ -305,29 +347,8 @@ useRule rule =
   rule
   (S.unions $ map getAssumptions $ toList rule)
 
-abstract
-    :: Given (MetadataTools Object)
-    => Var -> Proof -> Proof
-abstract var prop@(By conclusion justification assumptions)
-  | elem var $ getFreeVars prop
-    = error $ "Variable "
-            ++ show var
-            ++ "appears in assumptions"
-            ++ show assumptions
-  | otherwise
-    = Fix $ (unFix prop) {
-        conclusion = mkForall var conclusion
-      }
-
-discharge
-    :: Given (MetadataTools Object)
-    => Term -> Proof -> Proof
-discharge hypothesis prop@(By conclusion justification assumptions)
-   = By
-    (hypothesis `mkImplies` conclusion)
-    (Discharge hypothesis prop)
-    (S.delete hypothesis assumptions)
-
+-- | Given a rule such as `AndIntro a b`, converts it to the proposition
+-- that it proves, such as "a /\ b". 
 interpretRule
   :: Given (MetadataTools Object)
   => LargeRule Proof
@@ -398,24 +419,18 @@ interpretRule = \case
       mkTop
   _ -> impossible
 
-mkSort
-  :: MetaOrObject level
-  => String
-  -> Sort level
-mkSort name =
-    SortVariableSort $ SortVariable
-        { getSortVariable = noLocationId name }
-
+-- | Construct a variable with a given name and sort
+-- "x" `varS` s
 varS :: MetaOrObject level => String -> Sort level -> Variable level
 varS x s =
     Variable (noLocationId x) s
 
+-- | Construct a symbol with a given name and input sorts
+-- "mult" `symS` [s, s]
+-- Since the return sort is only found in MetadataTools, this is
+-- mostly useful for testing. 
 symS :: MetaOrObject level => String -> [Sort level] -> SymbolOrAlias level
 symS x s =
     SymbolOrAlias (noLocationId x) s
-
-pattern V :: var level -> PureMLPattern level var
-pattern V x = Var_ x
-
 
 

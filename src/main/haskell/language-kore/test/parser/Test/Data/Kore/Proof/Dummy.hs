@@ -1,5 +1,5 @@
 {-|
-Module      : Data.Kore.Proof.Dummy
+Module      : Test.Data.Kore.Proof.Dummy
 Description : Dummy instances of stuff for testing.
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
@@ -23,7 +23,7 @@ Portability : portable
 {-# LANGUAGE TypeApplications          #-}
 {-# LANGUAGE TypeFamilies              #-}
 
-module Data.Kore.Proof.Dummy where
+module Test.Data.Kore.Proof.Dummy where
 
 import           Data.Kore.AST.Common
 import           Data.Kore.AST.MetaOrObject
@@ -31,7 +31,6 @@ import           Data.Kore.IndexedModule.MetadataTools
 import           Data.Reflection
 
 import           Data.Kore.Proof.Proof
-
 
 var :: MetaOrObject level => String -> Variable level
 var x = x `varS` defaultSort
@@ -41,12 +40,12 @@ sym x = x `symS` []
 
 var_ :: MetaOrObject level => String -> String -> Variable level
 var_ x s =
-  Variable (noLocationId x) (testSort s)
-
-
+  Variable (noLocationId x) (mkSort s)
 
 defaultSort :: MetaOrObject level => Sort level
-defaultSort = testSort "*"
+defaultSort = mkSort "*"
+
+
 
 dummyEnvironment
   :: forall r . MetaOrObject Object
@@ -64,9 +63,3 @@ dummyMetadataTools = MetadataTools
     , getArgumentSorts = const []
     , getResultSort    = const $ defaultSort
     }
-
-testSort
-  :: MetaOrObject level
-  => String
-  -> Sort level
-testSort = mkSort

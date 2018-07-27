@@ -48,6 +48,7 @@ import           Data.Kore.ASTUtils.SmartConstructors
 import           Data.Kore.Proof.Proof
 import           Data.Kore.Proof.Util
 
+-- | "a is functional" is encoded as "exists x. a = x"
 generateFunctionalStatement
     :: Given (MetadataTools Object)
     => Term
@@ -56,6 +57,10 @@ generateFunctionalStatement p =
     mkExists var (p `mkEquals` (mkVar var))
         where var = "x" `varS` getSort p
 
+-- | "f" is a functional head if
+-- "forall x_1 .. x_n . 
+-- (exists x. x_1 = x) -> ... -> (exists x. x_n = x)
+-- -> (exists x. f(x_1,...,x_n) = x)""
 generateFunctionalHeadAxiom
     :: Given (MetadataTools Object)
     => SymbolOrAlias Object
@@ -67,6 +72,10 @@ generateFunctionalHeadAxiom h =
            (map generateFunctionalStatement vars')
            (generateFunctionalStatement $ mkApp h vars')
 
+-- | Attempts to prove a given symbol a is functional
+-- I.e. attempts to prove "exists x. a = x"
+-- It uses the functionalVariable axiom,
+-- and assumes everything else it needs. 
 proveFunctional
    :: Given (MetadataTools Object)
    => Term
@@ -84,6 +93,7 @@ proveFunctional p = case p of
         in modusPonensN csFunctional hFunctional
     x -> assume $ generateFunctionalStatement x
 
+-- | Length-1 version of forallElimFunctionalN'
 forallElimFunctional'
     :: Given (MetadataTools Object)
     => Proof
@@ -98,6 +108,10 @@ forallElimFunctional' argIsFunctional arg pat =
             in modusPonensN [pat, argIsFunctional] ax
         _ -> impossible
 
+-- | Instantiates a term with a list of foralls,
+-- i.e. a term of the form
+-- "forall x_1 . ... forall x_n. p"
+-- with a list of patterns, also requiring their functionality proofs.
 forallElimFunctionalN'
     :: Given (MetadataTools Object)
     => [Proof]
@@ -112,6 +126,7 @@ forallElimFunctionalN' argsAreFunctional args pat =
       pat
       (reverse (args `zip` argsAreFunctional))
 
+-- | Length-1 version of forallElimFunctionalN
 forallElimFunctional
     :: Given (MetadataTools Object)
     => Term
@@ -129,8 +144,11 @@ forallElimFunctional arg pat =
             in modusPonensN [pat, assume $ generateFunctionalStatement arg] ax
         _ -> impossible
 
--- printLineProof $ dummyEnvironment $ proveFunctional $ mkApp (symS "f" [testSort "*", testSort "*"]) [mkVar $ var "a", mkVar $ var "b"]
 
+-- | Instantiates a term with many foralls,
+-- i.e. a term of the form
+-- "forall x_1 . ... forall x_n. p"
+-- with a list of N patterns, assuming they are functional.
 forallElimFunctionalN
     :: Given (MetadataTools Object)
     => [Term]

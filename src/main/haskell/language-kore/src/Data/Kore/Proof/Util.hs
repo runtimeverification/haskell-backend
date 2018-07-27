@@ -1,12 +1,20 @@
 {-|
-Module      : Data.Kore.Proof.Proof
-Description : Tree-based proof system, which can be
-              hash-consed into a list-based one.
+Module      : Data.Kore.Proof.Util
+Description : Helper functions for common proof steps.
 Copyright   : (c) Runtime Verification, 2018
 License     : UIUC/NCSA
 Maintainer  : phillip.harris@runtimeverification.com
 Stability   : experimental
 Portability : portable
+
+Conventions:
+Functions ending in `N` take or give a list
+Functions beginning with `mk` construct a pattern, not a proof
+Functions with `intro` or `elim` are N-ary versions
+of the introduction and elimination rules.
+i.e. mkAndN [a,b,c] = a `mkAnd` (b `mkAnd` c)
+TODO: Some of these could be replaced with schemas
+i.e. poor man's HOL
 -}
 
 {-# LANGUAGE AllowAmbiguousTypes       #-}
@@ -28,18 +36,25 @@ Portability : portable
 {-# OPTIONS_GHC -Wno-incomplete-patterns  #-}
 
 module Data.Kore.Proof.Util
-( modusPonensN
+( 
+-- * General deduction tools
+  modusPonensN
 , mkImpliesN
 , tryDischarge
 , tryDischargeN
+-- * Forall 
 , mkForallN
 , forallIntroN
 , forallElimN
+-- * Exists
 , mkExistsN
 , existsIntroN
+-- * Connectives
 , mkAndN
+, mkOrN
 , andIntroN
 , andElimN
+-- * Equality
 , provablySubstitute
 , eqSymmetry
 , eqTransitivity
@@ -52,19 +67,7 @@ import           Data.Kore.ASTUtils.SmartConstructors
 import           Data.Kore.IndexedModule.MetadataTools
 import           Data.Reflection
 
-import qualified Data.Set                              as S
-
 import           Data.Kore.Proof.Proof
-
--- | Helper functions for common proof steps.
--- Conventions:
--- Functions ending in `N` take or give a list
--- Functions beginning with `mk` construct a pattern, not a proof
--- Functions with `intro` or `elim` are N-ary versions
--- of the introduction and elimination rules.
--- i.e. mkAndN [a,b,c] = a `mkAnd` (b `mkAnd` c)
--- TODO: Some of these could be replaced with schemas
--- i.e. poor man's HOL
 
 modusPonensN
     :: Given (MetadataTools Object)
@@ -87,10 +90,12 @@ tryDischarge
     => Proof
     -> Proof
     -> Proof
-tryDischarge a b = let a' = getConclusion a in
-    if S.member a' (getAssumptions b)
-    then useRule $ ModusPonens a (discharge a' b)
-    else b
+tryDischarge a b = 
+    if a' == b' 
+    then a 
+    else useRule $ fmap (tryDischarge a) $ getJustification b
+      where a' = getConclusion a 
+            b' = getConclusion b 
 
 tryDischargeN
     :: Given (MetadataTools Object)
@@ -144,25 +149,6 @@ existsIntroN
 existsIntroN terms pat =
     foldr (\(var, term) p -> useRule $ ExistsIntro var term p) pat terms
 
--- existsElimN
---     :: Given (MetadataTools Object)
---     => [(Var, Term)]
---     -> Proof
---     -> Proof
---     -> Proof
--- existsElimN terms existentialStmt pat =
---     let n = length terms
---         peelOffExist (Exists_ _ _ p) = p
---         peelOffExists =
---             take n
---           $ iterate peelOffExist
---           $ getConclusion existentialStmt
---     in peelOffExists undefined
-    -- foldr
-    -- (\(var, term) (exP, c) -> useRule $ ExistsElim exP var term p)
-    -- (existentialStmt, pat)
-    -- terms
-
 --------------------------------------------------------------------------------
 
 mkAndN
@@ -188,6 +174,15 @@ andElimN p = case getConclusion p of
            andElimN (useRule $ AndElimL p)
         ++ andElimN (useRule $ AndElimR p)
     _ -> [p]
+
+--------------------------------------------------------------------------------
+
+mkOrN
+    :: Given (MetadataTools Object)
+    => [Term]
+    -> Term
+mkOrN [] = mkBottom
+mkOrN es = foldr1 mkOr es
 
 --------------------------------------------------------------------------------
 
