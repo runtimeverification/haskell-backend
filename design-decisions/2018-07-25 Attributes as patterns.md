@@ -88,7 +88,7 @@ This has some drawbacks:
 
 *Decision*: We will encode each attribute as a Kore pattern that uses only
 application and string literals. This pattern will be an application
-of an object symbol to a list of parameters,
+of a symbol to a list of parameters,
 the (name of the) symbol identifying the
 attribute and the list of parameters being the arguments of the attribute.
 Numbers will be encoded as string literals.
