@@ -62,9 +62,9 @@ toLineProof proof =
     LineBasedProof $ execState (go proof) (M.empty, M.empty, M.empty, 1) ^. _3
     where
         go (Fix proof) = do
-            j' <- mapM go $ PropF.justification proof
+            j' <- mapM go $ justification proof
             a' <- S.fromList <$>
-                (mapM lookupAssumptions $ S.toList $ PropF.assumptions proof)
+                (mapM lookupAssumptions $ S.toList $ assumptions proof)
             let proof' = proof { justification = j' , assumptions = a' }
             let h = hash proof'
             (!assumptionsTable, !hashTable, !orderedTable, !next) <- get
