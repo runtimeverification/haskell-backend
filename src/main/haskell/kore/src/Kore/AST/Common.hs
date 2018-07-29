@@ -561,6 +561,7 @@ deriveEq1 ''DomainValue
 deriveShow1 ''DomainValue
 deriveOrd1 ''DomainValue
 
+
 instance Hashable child => Hashable (DomainValue level child)
 
 instance Pretty child => Pretty (DomainValue level child) where
@@ -593,7 +594,6 @@ data Equals level child = Equals
 deriveEq1 ''Equals
 deriveShow1 ''Equals
 deriveOrd1 ''Equals
-
 
 instance Hashable child => Hashable (Equals level child)
 
@@ -936,6 +936,7 @@ data Rewrites level child = Rewrites
 deriveEq1 ''Rewrites
 deriveShow1 ''Rewrites
 deriveOrd1 ''Rewrites
+
 
 instance Hashable child => Hashable (Rewrites level child)
 
