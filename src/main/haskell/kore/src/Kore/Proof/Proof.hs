@@ -31,7 +31,27 @@ Portability : portable
 {-# OPTIONS_GHC -Wno-incomplete-patterns  #-}
 
 
-module Kore.Proof.Proof where
+module Kore.Proof.Proof 
+  ( PropF(..)
+  , Prop
+  , Term
+  , Var 
+  , Path
+  , Proof
+  , pattern By
+  , useRule
+  , interpretRule
+  , impossible
+  , LargeRule(..)
+  , getConclusion
+  , getJustification
+  , getAssumptions
+  , getFreeVars
+  , assume
+  , varS
+  , symS
+  )
+where
 
 import           Control.Lens
 import           Data.Foldable
@@ -425,19 +445,5 @@ interpretRule = \case
   TopIntro ->
       mkTop
   _ -> impossible
-
--- | Construct a variable with a given name and sort
--- "x" `varS` s
-varS :: MetaOrObject level => String -> Sort level -> Variable level
-varS x s =
-    Variable (noLocationId x) s
-
--- | Construct a symbol with a given name and input sorts
--- "mult" `symS` [s, s]
--- Since the return sort is only found in MetadataTools, this is
--- mostly useful for testing.
-symS :: MetaOrObject level => String -> [Sort level] -> SymbolOrAlias level
-symS x s =
-    SymbolOrAlias (noLocationId x) s
 
 

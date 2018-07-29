@@ -32,8 +32,6 @@ import Kore.IndexedModule.MetadataTools
 
 import Kore.ASTUtils.SmartConstructors
 
-import Kore.Proof.Proof
-
 var :: MetaOrObject level => String -> Variable level
 var x = x `varS` defaultSort
 

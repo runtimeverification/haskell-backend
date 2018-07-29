@@ -53,6 +53,7 @@ module Kore.ASTUtils.SmartConstructors
     , pattern V
     , pattern StringLiteral_
     , pattern CharLiteral_
+    -- * Smart constructors
     , mkAnd
     , mkApp
     , mkBottom
@@ -74,6 +75,8 @@ module Kore.ASTUtils.SmartConstructors
     , mkStringLiteral
     , mkCharLiteral
     , mkSort
+    , varS
+    , symS
     ) where
 
 
@@ -592,6 +595,20 @@ mkSort
 mkSort name =
     SortVariableSort $ SortVariable
         { getSortVariable = noLocationId name }
+
+-- | Construct a variable with a given name and sort
+-- "x" `varS` s
+varS :: MetaOrObject level => String -> Sort level -> Variable level
+varS x s =
+    Variable (noLocationId x) s
+
+-- | Construct a symbol with a given name and input sorts
+-- "mult" `symS` [s, s]
+-- Since the return sort is only found in MetadataTools, this is
+-- mostly useful for testing.
+symS :: MetaOrObject level => String -> [Sort level] -> SymbolOrAlias level
+symS x s =
+    SymbolOrAlias (noLocationId x) s
 
 -- | Placeholder. Should never appear in output of 'mk' funcs
 fixmeSort
