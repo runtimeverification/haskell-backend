@@ -1,7 +1,7 @@
 name:                kore
 version:             0.0.1.0
 github:              "kframework/kore"
-license:             OtherLicense
+license:             NCSA
 license-file:        LICENSE
 author:              "Virgil Serbanuta"
 maintainer:          "virgil.serbanuta@runtimeverification.com"
@@ -25,7 +25,6 @@ dependencies:
   - base >= 4.7
   - array
   - bytestring >= 0.10
-  - bytestring-trie
   - containers
   - clock
   - data-default
@@ -46,6 +45,7 @@ dependencies:
   - reflection
   - text
   - time
+  - unordered-containers
 
 build-tools:
   - tasty-discover

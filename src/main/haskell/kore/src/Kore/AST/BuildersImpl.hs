@@ -2,7 +2,7 @@
 Module      : Kore.MetaML.BuildersImpl
 Description : Helper functions for "Data.Kore.MetaML.Builder"
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX

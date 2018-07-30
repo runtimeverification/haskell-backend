@@ -3,7 +3,7 @@ Module      : Kore.AST.MetaOrObject
 Description : Specifies the 'Meta', 'Object', and 'Unified' types, and common
               functionality for them
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable

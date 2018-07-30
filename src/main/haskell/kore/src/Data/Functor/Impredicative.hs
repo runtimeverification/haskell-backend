@@ -2,7 +2,7 @@
 Module      : Data.Functor.Impredicative
 Description : Wrappers to work around the absence of impredicative types
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
