@@ -33,6 +33,7 @@ Portability : portable
 module Kore.Proof.ConstructorAxioms
 ( generateInjectivityAxiom
 , generateNoConfusionAxiom
+, generateCoveringAxiom
 ) where
 
 import Data.Reflection
@@ -60,15 +61,8 @@ generateInjectivityAxiom
     -> [Sort Object]
     -> Term
 generateInjectivityAxiom head resultSort childrenSorts =
-    let vars name =
-            zipWith
-                (\n sort -> varS (name ++ show n) sort)
-                [(1::Int)..]
-                childrenSorts
-        xVars = vars "x"
-        xVars' = map Var_ xVars
-        yVars = vars "y"
-        yVars' = map Var_ yVars
+    let (xVars, xVars') = generateVarList childrenSorts "x"
+        (yVars, yVars') = generateVarList childrenSorts "y"
         fxEqfy =
             mkApp head xVars'
             `mkEquals`
@@ -92,5 +86,18 @@ generateNoConfusionAxiom h1 c1 h2 c2 =
          (mkApp h1 xVars')
          (mkApp h2 yVars')
 
--- generateCoveringAxiom cons =
---     mkOrN $ map
+
+generateCoveringAxiom
+    :: Given (MetadataTools Object)
+    => Sort Object
+    -> [(SymbolOrAlias Object, [Sort Object])]
+    -> Term
+generateCoveringAxiom sort cons =
+    mkForall v $ mkOrN $ map itIsThisConstructor cons
+      where
+        v = varS "v" sort
+        itIsThisConstructor (h, cs) = 
+            mkExistsN vars
+          $ V v `mkEquals` mkApp h vars'
+          where
+            (vars, vars') = generateVarList cs "x"

@@ -332,7 +332,7 @@ useRule (Discharge hypothesis conclusion)
     where
       discharge hypothesis prop@(By conclusion justification assumptions)
          = By
-            (hypothesis `mkImplies` conclusion)
+            (floorIfNotPredicate hypothesis `mkImplies` conclusion)
             (Discharge hypothesis prop)
             (S.delete hypothesis assumptions)
 useRule (Abstract var conclusion)
@@ -446,4 +446,26 @@ interpretRule = \case
       mkTop
   _ -> impossible
 
+isObviouslyPredicate
+    :: Term 
+    -> Bool
+isObviouslyPredicate = \case
+  And_ _       a b -> isObviouslyPredicate a && isObviouslyPredicate b
+  Or_  _       a b -> isObviouslyPredicate a && isObviouslyPredicate b
+  Implies_ _   a b -> isObviouslyPredicate a && isObviouslyPredicate b
+  Iff_ _       a b -> isObviouslyPredicate a && isObviouslyPredicate b
+  Not_ _       a   -> isObviouslyPredicate a
+  Forall_ _ _  a   -> isObviouslyPredicate a
+  Exists_ _ _  a   -> isObviouslyPredicate a
+  Equals_ _ _ _ _  -> True
+  Ceil_ _ _ _      -> True
+  Floor_ _ _ _     -> True
+  _ -> False
 
+floorIfNotPredicate
+     :: Given (MetadataTools Object)
+     => Term 
+     -> Term
+floorIfNotPredicate p
+ | isObviouslyPredicate p = p
+ | otherwise = mkFloor p
