@@ -2145,15 +2145,19 @@ type MLProof =
             (MetaMLPattern Variable)
         )
         (MetaMLPattern Variable)
+
 data GoalMLProofState
     = GoalUnproven
     | GoalProven
     | GoalPartlyProven GoalNeeds
     deriving Show
+
 newtype GoalNeeds = GoalNeeds [GoalId]
     deriving (Eq, Show)
+
 emptyMLProof :: MLProof
 emptyMLProof = emptyProof
+
 goalCount :: MLProof -> Int
 goalCount proof = length (claims proof)
 
@@ -2180,12 +2184,10 @@ modusPonens
 modusPonens phiId phiImpliesPsiId conclusionId proof =
     stringError modusPonens'
   where
-    modusPonens' = do
-        conclusionFormula <- lookupFormula conclusionId proof
+    modusPonens' =
         derive
             proof
             conclusionId
-            conclusionFormula
             (ModusPonens phiId phiImpliesPsiId)
 
 proposition1
@@ -2197,12 +2199,10 @@ proposition1
 proposition1 phip psip conclusionId proof =
     stringError proposition1'
   where
-    proposition1' = do
-        conclusionFormula <- lookupFormula conclusionId proof
+    proposition1' =
         derive
             proof
             conclusionId
-            conclusionFormula
             =<< (   Propositional1
                 <$> patternKoreToPure Meta phip
                 <*> patternKoreToPure Meta psip
@@ -2218,12 +2218,10 @@ proposition2
 proposition2 phi1p phi2p phi3p conclusionId proof =
     stringError proposition2'
   where
-    proposition2' = do
-        conclusionFormula <- lookupFormula conclusionId proof
+    proposition2' =
         derive
             proof
             conclusionId
-            conclusionFormula
             =<< (   Propositional2
                 <$> patternKoreToPure Meta phi1p
                 <*> patternKoreToPure Meta phi2p
@@ -2239,12 +2237,10 @@ proposition3
 proposition3 phi1p phi2p conclusionId proof =
     stringError proposition3'
   where
-    proposition3' = do
-        conclusionFormula <- lookupFormula conclusionId proof
+    proposition3' =
         derive
             proof
             conclusionId
-            conclusionFormula
             =<< (   Propositional3
                 <$> patternKoreToPure Meta phi1p
                 <*> patternKoreToPure Meta phi2p
@@ -2262,12 +2258,10 @@ variableSubstitution
   =
     stringError variableSubstitution'
   where
-    variableSubstitution' = do
-        conclusionFormula <- lookupFormula conclusionId proof
+    variableSubstitution' =
         derive
             proof
             conclusionId
-            conclusionFormula
             =<< (   VariableSubstitution substituted
                 <$> patternKoreToPure Meta unsubstitutedPattern
                 <*> pure substituting
@@ -2285,12 +2279,10 @@ forallRule
   =
     stringError forallFormula'
   where
-    forallFormula' = do
-        conclusionFormula <- lookupFormula conclusionId proof
+    forallFormula' =
         derive
             proof
             conclusionId
-            conclusionFormula
             =<< (   ForallRule variable
                 <$> patternKoreToPure Meta phi1p
                 <*> patternKoreToPure Meta phi2p
@@ -2301,12 +2293,10 @@ generalization
 generalization variable phiId conclusionId proof =
     stringError generalization'
   where
-    generalization' = do
-        conclusionFormula <- lookupFormula conclusionId proof
+    generalization' =
         derive
             proof
             conclusionId
-            conclusionFormula
             (Generalization variable phiId)
 
 propagateOr
@@ -2319,12 +2309,10 @@ propagateOr
 propagateOr symbol idx phi1p phi2p conclusionId proof =
     stringError propagateOr'
   where
-    propagateOr' = do
-        conclusionFormula <- lookupFormula conclusionId proof
+    propagateOr' =
         derive
             proof
             conclusionId
-            conclusionFormula
             =<< (   PropagateOr symbol idx
                 <$> patternKoreToPure Meta phi1p
                 <*> patternKoreToPure Meta phi2p
@@ -2340,12 +2328,10 @@ propagateExists
 propagateExists symbol idx variable phip conclusionId proof =
     stringError propagateOr'
   where
-    propagateOr' = do
-        conclusionFormula <- lookupFormula conclusionId proof
+    propagateOr' =
         derive
             proof
             conclusionId
-            conclusionFormula
             =<< (   PropagateExists symbol idx variable
                 <$> patternKoreToPure Meta phip
                 )
@@ -2359,12 +2345,10 @@ framing
 framing symbol idx hypothesisId conclusionId proof =
     stringError propagateFraming'
   where
-    propagateFraming' = do
-        conclusionFormula <- lookupFormula conclusionId proof
+    propagateFraming' =
         derive
             proof
             conclusionId
-            conclusionFormula
             (Framing symbol idx hypothesisId)
 
 existence
@@ -2374,12 +2358,10 @@ existence
 existence variable conclusionId proof =
     stringError existence'
   where
-    existence' = do
-        conclusionFormula <- lookupFormula conclusionId proof
+    existence' =
         derive
             proof
             conclusionId
-            conclusionFormula
             (Existence variable)
 
 singvar
@@ -2392,12 +2374,10 @@ singvar
 singvar variable phip path1 path2 conclusionId proof =
     stringError singvar'
   where
-    singvar' = do
-        conclusionFormula <- lookupFormula conclusionId proof
+    singvar' =
         derive
             proof
             conclusionId
-            conclusionFormula
             =<< (   Singvar variable
                 <$> patternKoreToPure Meta phip
                 <*> pure path1

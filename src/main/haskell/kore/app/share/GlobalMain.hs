@@ -4,6 +4,7 @@ module GlobalMain
     ( MainOptions(..)
     , GlobalOptions(..)
     , mainGlobal
+    , defaultMainGlobal
     , enableDisableFlag
     , clockSomething
     , clockSomethingIO
@@ -11,7 +12,8 @@ module GlobalMain
 
 import           Control.Monad                          ( when )
 import           Control.Exception                      ( evaluate )
-import           Data.Semigroup                         ( (<>) )
+import           Data.Semigroup                         ( (<>)
+                                                        , mempty)
 import           Development.GitRev                     ( gitBranch
                                                         , gitHash
                                                         , gitCommitDate )
@@ -34,7 +36,9 @@ import           Options.Applicative                    ( Parser
                                                         , help
                                                         , helper
                                                         , info
-                                                        , execParser )
+                                                        , execParser
+                                                        , argument
+                                                        , disabled)
 
 
 {- | Record Type containing common command-line arguments for each executable in 
@@ -63,6 +67,10 @@ mainGlobal localOptionsParser modifiers = do
   options <- commandLineParse localOptionsParser modifiers
   when (willVersion $ globalOptions options) (getZonedTime >>= mainVersion)
   return options
+
+
+defaultMainGlobal :: IO (MainOptions options)
+defaultMainGlobal = mainGlobal (argument disabled mempty) mempty
 
 
 -- | main function to print version information
