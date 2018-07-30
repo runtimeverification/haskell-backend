@@ -1,6 +1,5 @@
 module Test.Kore.Implicit.ImplicitKore
     ( test_implicitKore
-    , test_implicitAttributes
     ) where
 
 import Test.Tasty
@@ -13,7 +12,7 @@ import qualified Data.ByteString.Lazy.Char8 as LazyChar8
 
 import Kore.AST.Sentence
 import Kore.Implicit.Verified
-       ( implicitAttributesDefinition, implicitKoreDefinition )
+       ( implicitKoreDefinition )
 import Kore.Unparser.Unparse
        ( unparseToString )
 
@@ -47,10 +46,3 @@ test_implicitKore =
         implicitKoreDefinition
         (InputFileName "../../kore/kore.kore")
         (GoldenFileName "../../../test/expected/kore.kore.golden")
-
-test_implicitAttributes :: TestTree
-test_implicitAttributes =
-    implicitKoreRegressionTests
-        implicitAttributesDefinition
-        (InputFileName "../../kore/attributes.kore")
-        (GoldenFileName "../../../test/expected/attributes.kore.golden")

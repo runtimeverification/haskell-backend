@@ -357,7 +357,7 @@ module ARROW
     \implies{#R}(
       \not{#R}(
         \equals{#Sort{},#R}(
-          #S1:#Sort{}, 
+          #S1:#Sort{},
           #S2:#Sort{})),
       #provable{#R}(
         \not{K{}}(
@@ -401,7 +401,7 @@ module ARROW
       arrow{}(K:K{}, nothing{}()), K:K{})
   []
 
-  /* Contexts about arrows 
+  /* Contexts about arrows
    * K1 ~> K2 = (gamma HOLE . HOLE ~> K2)[K1]
    * asK(T) = (gamma HOLE . asK(HOLE))[T]
    */
@@ -526,9 +526,7 @@ module IMP-SYNTAX
   /* syntax AExp ::= AExp "/" AExp [strict] */
 
   symbol divAExp{}(AExp{}, AExp{}) : AExp{}
-  [ strict{}(\dv{Strict{}}("divAExp"), firstArgument{}())
-  , strict{}(\dv{Strict{}}("divAExp"), secondArgument{}())
-  ]
+  [ strict{}() ]
 
   /* divAExp is functional */
 
@@ -548,7 +546,7 @@ module IMP-SYNTAX
           HOLE:AExp{},
           divAExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
-  [strict{}(\dv{Strict{}}("divAExp"), firstArgument{}())]
+  [ strictAxiom{}("divAExp","1") ]
 
   /* (X / Y) = gamma HOLE . (X / HOLE) [Y] */
 
@@ -560,13 +558,12 @@ module IMP-SYNTAX
           HOLE:AExp{},
           divAExp{}(X:AExp{}, HOLE:AExp{})),
         Y:AExp{}))
-  [strict{}(\dv{Strict{}}("divAExp"), secondArgument{}())]
+  [ strictAxiom{}("divAExp","2") ]
 
   /* syntax AExp ::= AExp "+" AExp [strict] */
 
   symbol plusAExp{}(AExp{}, AExp{}) : AExp{}
-  [strict{}(\dv{Strict{}}("plusAExp"), firstArgument{}()) ,
-   strict{}(\dv{Strict{}}("plusAExp"), secondArgument{}())]
+  [ strict{}() ]
 
   /* plusAExp is functional */
 
@@ -586,7 +583,7 @@ module IMP-SYNTAX
           HOLE:AExp{},
           plusAExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
-  [strict{}(\dv{Strict{}}("plusAExp"), firstArgument{}())]
+  [ strictAxiom{}("plusAExp","1") ]
 
   /* (X + Y) = gamma HOLE . (X + HOLE) [Y] */
 
@@ -598,7 +595,7 @@ module IMP-SYNTAX
           HOLE:AExp{},
           plusAExp{}(X:AExp{}, HOLE:AExp{})),
         Y:AExp{}))
-  [strict{}(\dv{Strict{}}("plusAExp"), secondArgument{}())]
+  [ strictAxiom{}("plusAExp","2") ]
 
   /* syntax BExp ::= ... */
 
@@ -626,12 +623,12 @@ module IMP-SYNTAX
         \equals{BExp{},R}(
           boolAsBExp{}(B:Bool{}),
           E:BExp{})))
-  []  
-  
+  []
+
   /* syntax BExp ::= AExp "<=" AExp [seqstrict] */
 
   symbol leqBExp{}(AExp{}, AExp{}) : BExp{}
-  [seqstrict{}(\dv{Strict{}}("leqBExp"))]
+  [ seqstrict{}() ]
 
   /* leqBExp is functional */
 
@@ -649,7 +646,7 @@ module IMP-SYNTAX
           HOLE:AExp{},
           leqBExp{}(HOLE:AExp{}, Y:AExp{})),
         X:AExp{}))
-  [seqstrict{}(\dv{Strict{}}("leqBExp"))]
+  [ seqstrictAxiom{}("leqBExp","1") ]
 
   /* X <= intAsAExp(Y) = (gamma HOLE . X <= intAsAExp(HOLE)) [Y]
      where Y has sort Int.
@@ -666,12 +663,12 @@ module IMP-SYNTAX
           HOLE:Int{},
           leqBExp{}(X:AExp{}, intAsAExp{}(HOLE:Int{}))),
         Y:Int{}))
-  [seqstrict{}(\dv{Strict{}}("leqBExp"))]
+  [ seqstrictAxiom{}("leqBExp","2") ]
 
   /* syntax BExp ::= "!" BExp [strict] */
 
   symbol notBExp{}(BExp{}) : BExp{}
-  [strict{}(\dv{Strict{}}("notBExp"), firstArgument{}())]
+  [ strict{}() ]
 
   axiom{R}
     \equals{BExp{},R}(
@@ -681,12 +678,12 @@ module IMP-SYNTAX
           HOLE:BExp{},
           notBExp{}(HOLE:BExp{})),
         B:BExp{}))
-  [strict{}(\dv{Strict{}}("notBExp"), firstArgument{}())]
+  [ strictAxiom{}("notBExp","1") ]
 
   /* syntax BExp ::= BExp "&&" BExp [strict(1)] */
 
   symbol andBExp{}(BExp{}, BExp{}) : BExp{}
-  [strict{}(\dv{Strict{}}("andBExp"), firstArgument{}())]
+  [ strict{}("1") ]
 
   axiom{R}
     \equals{BExp{},R}(
@@ -696,7 +693,7 @@ module IMP-SYNTAX
           HOLE:BExp{},
           andBExp{}(HOLE:BExp{}, Y:BExp{})),
         X:BExp{}))
-  [strict{}(\dv{Strict{}}("andBExp"), firstArgument{}())]
+  [ strictAxiom{}("andBExp","1") ]
 
 
   /* syntax Block ::= ... */
@@ -722,7 +719,7 @@ module IMP-SYNTAX
   /* syntax Stmt ::= Id "=" AExp ";" [strict(2)] */
 
   symbol asgn{}(Id{}, AExp{}) : Stmt{}
-  [strict{}(\dv{Strict{}}("asgn"), secondArgument{}())]
+  [ strict{}("2") ]
 
   axiom{R}
     \equals{Stmt{},R}(
@@ -732,13 +729,13 @@ module IMP-SYNTAX
           HOLE:AExp{},
           asgn{}(X:Id{}, HOLE:AExp{})),
         E:AExp{}))
-  [strict{}(\dv{Strict{}}("asgn"), secondArgument{}())]
+  [ strictAxiom{}("asgn","2") ]
 
   /* syntax Stmt ::= "ite" "(" BExp ")" Block "else" Block [strict(1)] */
 
 
   symbol ite{}(BExp{}, Block{}, Block{}) : Stmt{}
-  [strict{}(\dv{Strict{}}("ite"), firstArgument{}())]
+  [ strict{}("1") ]
 
   axiom{R}
     \equals{Stmt{},R}(
@@ -748,7 +745,7 @@ module IMP-SYNTAX
           HOLE:BExp{},
           ite{}(HOLE:BExp{}, S1:Block{}, S2:Block{})),
         B:BExp{}))
-  [strict{}(\dv{Strict{}}("ite"), firstArgument{}())]
+  [ strictAxiom{}("ite","1") ]
 
   /* syntax Stmt ::= "while" "(" BExp ")" Block */
 
@@ -932,7 +929,7 @@ module IMP
    *   C[kcell((X = I => .) ~> DOT1)]
    *    [statecell(DOT2 merge X |-> (UNDERSCORE => I) merge DOT3)]
    */
- 
+
   axiom{S}
     app{StateCell{},S}(
     app{KCell{},Ctxt{StateCell{},S}}(
@@ -950,7 +947,7 @@ module IMP
           bind{Id{},Int{}}(X:Id{}, \rewrites{Int{}}(UNDERSCORE:Int{}, I:Int{}))),
           DOT3:Map{Id{},Int{}})))
   []
-          
+
 
 
   /* In K:
@@ -1008,8 +1005,8 @@ module IMP
                   while{}(B:BExp{}, S:Block{}))),
           emptyBlock{}())))
   []
-                  
-    
+
+
 
   /* rule <k> int (X,Xs => Xs);_ </k>
           <state> Rho:Map (.Map => X |-> 0) </state>
@@ -1037,8 +1034,8 @@ module IMP
             \rewrites{Map{Id{},Int{}}}(
               emp{Id{},Int{}}(),
               bind{Id{},Int{}}(X:Id{}, zero{}()))))))
-  []  
-         
+  []
+
 
   /* rule int .Ids; S => S */
 
@@ -1052,7 +1049,7 @@ module IMP
         asK{Pgm{}}(pgm{}(nil{Id{}}(), S:Stmt{})),
         asK{Stmt{}}(S:Stmt{})))
   []
-    
+
 
 
 endmodule []

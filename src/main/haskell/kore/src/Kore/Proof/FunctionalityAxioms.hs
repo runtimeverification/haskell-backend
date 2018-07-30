@@ -44,13 +44,14 @@ import Kore.AST.MetaOrObject
 import Kore.IndexedModule.MetadataTools
 
 import Kore.ASTUtils.SmartConstructors
+import Kore.ASTUtils.SmartPatterns
 
 import Kore.Proof.Proof
 import Kore.Proof.Util
 
 -- | "a is functional" is encoded as "exists x. a = x"
 generateFunctionalStatement
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => Term
     -> Term
 generateFunctionalStatement p =
@@ -62,7 +63,7 @@ generateFunctionalStatement p =
 -- (exists x. x_1 = x) -> ... -> (exists x. x_n = x)
 -- -> (exists x. f(x_1,...,x_n) = x)""
 generateFunctionalHeadAxiom
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => SymbolOrAlias Object
     -> Term
 generateFunctionalHeadAxiom h =
@@ -77,7 +78,7 @@ generateFunctionalHeadAxiom h =
 -- It uses the functionalVariable axiom,
 -- and assumes everything else it needs.
 proveFunctional
-   :: Given (MetadataTools Object)
+   :: Given (SortTools Object)
    => Term
    -> Proof
 proveFunctional p = case p of
@@ -95,7 +96,7 @@ proveFunctional p = case p of
 
 -- | Length-1 version of forallElimFunctionalN'
 forallElimFunctional'
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => Proof
     -> Term
     -> Proof
@@ -113,7 +114,7 @@ forallElimFunctional' argIsFunctional arg pat =
 -- "forall x_1 . ... forall x_n. p"
 -- with a list of patterns, also requiring their functionality proofs.
 forallElimFunctionalN'
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => [Proof]
     -> [Term]
     -> Proof
@@ -128,7 +129,7 @@ forallElimFunctionalN' argsAreFunctional args pat =
 
 -- | Length-1 version of forallElimFunctionalN
 forallElimFunctional
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => Term
     -> Proof
     -> Proof
@@ -150,7 +151,7 @@ forallElimFunctional arg pat =
 -- "forall x_1 . ... forall x_n. p"
 -- with a list of N patterns, assuming they are functional.
 forallElimFunctionalN
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => [Term]
     -> Proof
     -> Proof

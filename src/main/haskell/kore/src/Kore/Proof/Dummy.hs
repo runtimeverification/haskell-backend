@@ -28,7 +28,10 @@ module Kore.Proof.Dummy where
 import Data.Reflection
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
+import Kore.ASTHelpers
+       ( ApplicationSorts (..) )
 import Kore.IndexedModule.MetadataTools
+       ( SortTools )
 
 import Kore.ASTUtils.SmartConstructors
 
@@ -49,17 +52,13 @@ defaultSort = mkSort "*"
 
 dummyEnvironment
   :: forall r . MetaOrObject Object
-  => (Given (MetadataTools Object) => r)
+  => (Given (SortTools Object) => r)
   -> r
-dummyEnvironment = give (dummyMetadataTools @Object)
+dummyEnvironment = give (dummySortTools @Object)
 
-dummyMetadataTools
-  :: MetaOrObject level
-  => MetadataTools level
-dummyMetadataTools = MetadataTools
-    { isConstructor    = const True
-    , isFunctional     = const True
-    , isFunction       = const True
-    , getArgumentSorts = const []
-    , getResultSort    = const $ defaultSort
+dummySortTools
+    :: MetaOrObject level => SortTools level
+dummySortTools = const ApplicationSorts
+    { applicationSortsOperands = []
+    , applicationSortsResult = defaultSort
     }

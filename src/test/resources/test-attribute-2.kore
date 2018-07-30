@@ -2,9 +2,12 @@
 
 module TEST-ATTRIBUTE-2
 
-  sort Nat{} [hook{}(\dv{Hook{}}("plus"))]
+  sort Nat{} [hook{}("Nat")]
 
   symbol plus{}(Nat{},Nat{}) : Nat{}
-    [ hook{}(\dv{Hook{}}("plus")), associative{}(), commutative{}() ]
+    [ hook{}("Nat")
+    , associative{}()
+    , commutative{}()
+    ]
 
 endmodule []

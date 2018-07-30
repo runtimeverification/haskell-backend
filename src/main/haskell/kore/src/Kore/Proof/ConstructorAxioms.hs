@@ -42,6 +42,7 @@ import Kore.AST.MetaOrObject
 import Kore.IndexedModule.MetadataTools
 
 import Kore.ASTUtils.SmartConstructors
+import Kore.ASTUtils.SmartPatterns
 
 import Kore.Proof.Proof
 import Kore.Proof.Util
@@ -55,7 +56,7 @@ import Kore.Proof.Util
 -- x_1 = y_1 /\ x_2 = y_2 /\ ... /\ x_n = y_n
 -- where x_i, y_i : s_i
 generateInjectivityAxiom
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => SymbolOrAlias Object
     -> Sort Object
     -> [Sort Object]
@@ -73,7 +74,7 @@ generateInjectivityAxiom head resultSort childrenSorts =
 -- | No confusion: two different constructors cannot generate the same term.
 -- `not (f(x_1,...,x_n) = g(y_1,...,y_m))`
 generateNoConfusionAxiom
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => SymbolOrAlias Object
     -> [Sort Object]
     -> SymbolOrAlias Object
@@ -88,7 +89,7 @@ generateNoConfusionAxiom h1 c1 h2 c2 =
 
 
 generateCoveringAxiom
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => Sort Object
     -> [(SymbolOrAlias Object, [Sort Object])]
     -> Term
@@ -96,7 +97,7 @@ generateCoveringAxiom sort cons =
     mkForall v $ mkOrN $ map itIsThisConstructor cons
       where
         v = varS "v" sort
-        itIsThisConstructor (h, cs) = 
+        itIsThisConstructor (h, cs) =
             mkExistsN vars
           $ V v `mkEquals` mkApp h vars'
           where

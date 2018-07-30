@@ -31,11 +31,11 @@ Portability : portable
 {-# OPTIONS_GHC -Wno-incomplete-patterns  #-}
 
 
-module Kore.Proof.Proof 
+module Kore.Proof.Proof
   ( PropF(..)
   , Prop
   , Term
-  , Var 
+  , Var
   , Path
   , Proof
   , pattern By
@@ -69,6 +69,7 @@ import Data.Text.Prettyprint.Doc as P
 
 import Kore.ASTPrettyPrint
 import Kore.ASTUtils.SmartConstructors
+import Kore.ASTUtils.SmartPatterns
 import Kore.ASTUtils.Substitution
 
 import Data.Hashable
@@ -322,7 +323,7 @@ assume formula = By formula (Assumption formula) (S.singleton formula)
 -- which instantiates the schema.
 
 useRule
-  :: Given (MetadataTools Object)
+  :: Given (SortTools Object)
   => LargeRule Proof
   -> Proof
 useRule (Assumption formula)
@@ -377,7 +378,7 @@ useRule rule =
 -- | Given a rule such as `AndIntro a b`, converts it to the proposition
 -- that it proves, such as "a /\ b".
 interpretRule
-  :: Given (MetadataTools Object)
+  :: Given (SortTools Object)
   => LargeRule Proof
   -> Term
 interpretRule = \case
@@ -447,7 +448,7 @@ interpretRule = \case
   _ -> impossible
 
 isObviouslyPredicate
-    :: Term 
+    :: Term
     -> Bool
 isObviouslyPredicate = \case
   And_ _       a b -> isObviouslyPredicate a && isObviouslyPredicate b
@@ -463,8 +464,8 @@ isObviouslyPredicate = \case
   _ -> False
 
 floorIfNotPredicate
-     :: Given (MetadataTools Object)
-     => Term 
+     :: Given (SortTools Object)
+     => Term
      -> Term
 floorIfNotPredicate p
  | isObviouslyPredicate p = p

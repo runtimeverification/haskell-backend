@@ -41,11 +41,13 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.PureML
        ( PureMLPattern )
+import Kore.ASTUtils.SmartPatterns
+       ( pattern Bottom_, pattern Top_)
 import Kore.ASTUtils.SmartConstructors
-       ( pattern Bottom_, pattern Top_, mkAnd, mkBottom, mkCeil, mkEquals,
+       ( mkAnd, mkBottom, mkCeil, mkEquals,
        mkIff, mkImplies, mkNot, mkOr, mkTop )
 import Kore.IndexedModule.MetadataTools
-       ( MetadataTools )
+       ( SortTools )
 
 {--| 'PredicateProof' is a placeholder for a proof showing that a Predicate
 evaluation was correct.
@@ -123,7 +125,7 @@ doing some simplification.
 --}
 makeMultipleAndPredicate
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
+        , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
     => [Predicate level var]
@@ -140,7 +142,7 @@ makeAndPredicate
     -- TODO(virgil): Group these constraints in a class
     -- or, even better, a type (like ShowMetaOrObject in MetaOrObject).
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
+        , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
     => Predicate level var
@@ -160,7 +162,7 @@ some simplification.
 --}
 makeOrPredicate
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
+        , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
     => Predicate level var
@@ -180,7 +182,7 @@ implication, doing some simplification.
 --}
 makeImpliesPredicate
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
+        , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
     => Predicate level var
@@ -201,7 +203,7 @@ some simplification.
 --}
 makeIffPredicate
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
+        , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
     => Predicate level var
@@ -223,7 +225,7 @@ simplification.
 --}
 makeNotPredicate
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
+        , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
     => Predicate level var
@@ -240,7 +242,7 @@ predicate.
 --}
 makeEqualsPredicate
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
+        , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
     => PureMLPattern level var
@@ -254,7 +256,7 @@ predicate.
 --}
 makeCeilPredicate
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
+        , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
     => PureMLPattern level var

@@ -8,6 +8,7 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 
 import           Kore.ASTUtils.SmartConstructors
+import           Kore.ASTUtils.SmartPatterns
 
 import           Kore.Proof.FunctionalityAxioms
 import           Kore.Proof.Proof
@@ -27,7 +28,7 @@ test_exampleProofs = testGroup "exampleProofs" $
 -- | Since Tasty doesn't seem to include an actual predicate that says
 -- "This evaluates to normal form without throwing an error"
 -- I just did this instead. And why not convert it to a line-based-proof
--- to test that functionality too. 
+-- to test that functionality too.
 assertNF :: Proof -> Assertion
 assertNF x = let y = show $ pretty $ toLineProof x in assertEqual "" y y
 

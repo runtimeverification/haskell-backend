@@ -3201,51 +3201,7 @@ Definition
                                         { symbolOrAliasConstructor = (Id "strict" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
-                                , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
-                                        { domainValueSort =
-                                            SortActualSort SortActual
-                                                { sortActualName = (Id "Strict" AstLocationNone) :: Id Object
-                                                , sortActualSorts = []
-                                                }
-                                        , domainValueChild =
-                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "divAExp")))))
-                                        }))))
-                                    , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
-                                        { applicationSymbolOrAlias =
-                                            SymbolOrAlias
-                                                { symbolOrAliasConstructor = (Id "firstArgument" AstLocationNone) :: Id Object
-                                                , symbolOrAliasParams = []
-                                                }
-                                        , applicationChildren = []
-                                        }))))
-                                    ]
-                                }))))
-                            , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
-                                { applicationSymbolOrAlias =
-                                    SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "strict" AstLocationNone) :: Id Object
-                                        , symbolOrAliasParams = []
-                                        }
-                                , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
-                                        { domainValueSort =
-                                            SortActualSort SortActual
-                                                { sortActualName = (Id "Strict" AstLocationNone) :: Id Object
-                                                , sortActualSorts = []
-                                                }
-                                        , domainValueChild =
-                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "divAExp")))))
-                                        }))))
-                                    , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
-                                        { applicationSymbolOrAlias =
-                                            SymbolOrAlias
-                                                { symbolOrAliasConstructor = (Id "secondArgument" AstLocationNone) :: Id Object
-                                                , symbolOrAliasParams = []
-                                                }
-                                        , applicationChildren = []
-                                        }))))
-                                    ]
+                                , applicationChildren = []
                                 }))))
                             ]
                     })
@@ -3507,27 +3463,12 @@ Definition
                             [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "strict" AstLocationNone) :: Id Object
+                                        { symbolOrAliasConstructor = (Id "heating" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
-                                        { domainValueSort =
-                                            SortActualSort SortActual
-                                                { sortActualName = (Id "Strict" AstLocationNone) :: Id Object
-                                                , sortActualSorts = []
-                                                }
-                                        , domainValueChild =
-                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "divAExp")))))
-                                        }))))
-                                    , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
-                                        { applicationSymbolOrAlias =
-                                            SymbolOrAlias
-                                                { symbolOrAliasConstructor = (Id "firstArgument" AstLocationNone) :: Id Object
-                                                , symbolOrAliasParams = []
-                                                }
-                                        , applicationChildren = []
-                                        }))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "divAExp")))))
+                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "1")))))
                                     ]
                                 }))))
                             ]
@@ -3710,7 +3651,20 @@ Definition
                                         ]
                                     }))))
                             }))))
-                    , sentenceAxiomAttributes = Attributes []
+                    , sentenceAxiomAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "cooling" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "divAExp")))))
+                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "1")))))
+                                    ]
+                                }))))
+                            ]
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
@@ -3872,7 +3826,20 @@ Definition
                                         ]
                                     }))))
                             }))))
-                    , sentenceAxiomAttributes = Attributes []
+                    , sentenceAxiomAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "heating" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "divAExp")))))
+                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "2")))))
+                                    ]
+                                }))))
+                            ]
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
@@ -4052,7 +4019,20 @@ Definition
                                         ]
                                     }))))
                             }))))
-                    , sentenceAxiomAttributes = Attributes []
+                    , sentenceAxiomAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "cooling" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "divAExp")))))
+                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "2")))))
+                                    ]
+                                }))))
+                            ]
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
@@ -4083,51 +4063,7 @@ Definition
                                         { symbolOrAliasConstructor = (Id "strict" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
-                                , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
-                                        { domainValueSort =
-                                            SortActualSort SortActual
-                                                { sortActualName = (Id "Strict" AstLocationNone) :: Id Object
-                                                , sortActualSorts = []
-                                                }
-                                        , domainValueChild =
-                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "plusAExp")))))
-                                        }))))
-                                    , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
-                                        { applicationSymbolOrAlias =
-                                            SymbolOrAlias
-                                                { symbolOrAliasConstructor = (Id "firstArgument" AstLocationNone) :: Id Object
-                                                , symbolOrAliasParams = []
-                                                }
-                                        , applicationChildren = []
-                                        }))))
-                                    ]
-                                }))))
-                            , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
-                                { applicationSymbolOrAlias =
-                                    SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "strict" AstLocationNone) :: Id Object
-                                        , symbolOrAliasParams = []
-                                        }
-                                , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
-                                        { domainValueSort =
-                                            SortActualSort SortActual
-                                                { sortActualName = (Id "Strict" AstLocationNone) :: Id Object
-                                                , sortActualSorts = []
-                                                }
-                                        , domainValueChild =
-                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "plusAExp")))))
-                                        }))))
-                                    , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
-                                        { applicationSymbolOrAlias =
-                                            SymbolOrAlias
-                                                { symbolOrAliasConstructor = (Id "secondArgument" AstLocationNone) :: Id Object
-                                                , symbolOrAliasParams = []
-                                                }
-                                        , applicationChildren = []
-                                        }))))
-                                    ]
+                                , applicationChildren = []
                                 }))))
                             ]
                     })
@@ -4384,7 +4320,20 @@ Definition
                                         ]
                                     }))))
                             }))))
-                    , sentenceAxiomAttributes = Attributes []
+                    , sentenceAxiomAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "heating" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "plusAExp")))))
+                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "1")))))
+                                    ]
+                                }))))
+                            ]
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
@@ -4564,7 +4513,20 @@ Definition
                                         ]
                                     }))))
                             }))))
-                    , sentenceAxiomAttributes = Attributes []
+                    , sentenceAxiomAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "cooling" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "plusAExp")))))
+                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "1")))))
+                                    ]
+                                }))))
+                            ]
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
@@ -4726,7 +4688,20 @@ Definition
                                         ]
                                     }))))
                             }))))
-                    , sentenceAxiomAttributes = Attributes []
+                    , sentenceAxiomAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "heating" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "plusAExp")))))
+                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "2")))))
+                                    ]
+                                }))))
+                            ]
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
@@ -4906,7 +4881,20 @@ Definition
                                         ]
                                     }))))
                             }))))
-                    , sentenceAxiomAttributes = Attributes []
+                    , sentenceAxiomAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "cooling" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "plusAExp")))))
+                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "2")))))
+                                    ]
+                                }))))
+                            ]
                     })
                 , ObjectSentence (SentenceSortSentence SentenceSort
                     { sentenceSortName = (Id "BExp" AstLocationNone) :: Id Object
@@ -5123,17 +5111,7 @@ Definition
                                         { symbolOrAliasConstructor = (Id "seqstrict" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
-                                , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
-                                        { domainValueSort =
-                                            SortActualSort SortActual
-                                                { sortActualName = (Id "Strict" AstLocationNone) :: Id Object
-                                                , sortActualSorts = []
-                                                }
-                                        , domainValueChild =
-                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "leqBExp")))))
-                                        }))))
-                                    ]
+                                , applicationChildren = []
                                 }))))
                             ]
                     })
@@ -5395,19 +5373,12 @@ Definition
                             [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "seqstrict" AstLocationNone) :: Id Object
+                                        { symbolOrAliasConstructor = (Id "heating" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
-                                        { domainValueSort =
-                                            SortActualSort SortActual
-                                                { sortActualName = (Id "Strict" AstLocationNone) :: Id Object
-                                                , sortActualSorts = []
-                                                }
-                                        , domainValueChild =
-                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "leqBExp")))))
-                                        }))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "leqBExp")))))
+                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "1")))))
                                     ]
                                 }))))
                             ]
@@ -5595,19 +5566,12 @@ Definition
                             [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "seqstrict" AstLocationNone) :: Id Object
+                                        { symbolOrAliasConstructor = (Id "cooling" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
-                                        { domainValueSort =
-                                            SortActualSort SortActual
-                                                { sortActualName = (Id "Strict" AstLocationNone) :: Id Object
-                                                , sortActualSorts = []
-                                                }
-                                        , domainValueChild =
-                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "leqBExp")))))
-                                        }))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "leqBExp")))))
+                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "1")))))
                                     ]
                                 }))))
                             ]
@@ -5795,19 +5759,12 @@ Definition
                             [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "seqstrict" AstLocationNone) :: Id Object
+                                        { symbolOrAliasConstructor = (Id "heating" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
-                                        { domainValueSort =
-                                            SortActualSort SortActual
-                                                { sortActualName = (Id "Strict" AstLocationNone) :: Id Object
-                                                , sortActualSorts = []
-                                                }
-                                        , domainValueChild =
-                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "leqBExp")))))
-                                        }))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "leqBExp")))))
+                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "2")))))
                                     ]
                                 }))))
                             ]
@@ -6013,19 +5970,12 @@ Definition
                             [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "seqstrict" AstLocationNone) :: Id Object
+                                        { symbolOrAliasConstructor = (Id "cooling" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
-                                        { domainValueSort =
-                                            SortActualSort SortActual
-                                                { sortActualName = (Id "Strict" AstLocationNone) :: Id Object
-                                                , sortActualSorts = []
-                                                }
-                                        , domainValueChild =
-                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "leqBExp")))))
-                                        }))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "leqBExp")))))
+                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "2")))))
                                     ]
                                 }))))
                             ]
@@ -6055,25 +6005,7 @@ Definition
                                         { symbolOrAliasConstructor = (Id "strict" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
-                                , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
-                                        { domainValueSort =
-                                            SortActualSort SortActual
-                                                { sortActualName = (Id "Strict" AstLocationNone) :: Id Object
-                                                , sortActualSorts = []
-                                                }
-                                        , domainValueChild =
-                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "notBExp")))))
-                                        }))))
-                                    , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
-                                        { applicationSymbolOrAlias =
-                                            SymbolOrAlias
-                                                { symbolOrAliasConstructor = (Id "firstArgument" AstLocationNone) :: Id Object
-                                                , symbolOrAliasParams = []
-                                                }
-                                        , applicationChildren = []
-                                        }))))
-                                    ]
+                                , applicationChildren = []
                                 }))))
                             ]
                     })
@@ -6226,27 +6158,12 @@ Definition
                             [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "strict" AstLocationNone) :: Id Object
+                                        { symbolOrAliasConstructor = (Id "heating" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
-                                        { domainValueSort =
-                                            SortActualSort SortActual
-                                                { sortActualName = (Id "Strict" AstLocationNone) :: Id Object
-                                                , sortActualSorts = []
-                                                }
-                                        , domainValueChild =
-                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "notBExp")))))
-                                        }))))
-                                    , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
-                                        { applicationSymbolOrAlias =
-                                            SymbolOrAlias
-                                                { symbolOrAliasConstructor = (Id "firstArgument" AstLocationNone) :: Id Object
-                                                , symbolOrAliasParams = []
-                                                }
-                                        , applicationChildren = []
-                                        }))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "notBExp")))))
+                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "1")))))
                                     ]
                                 }))))
                             ]
@@ -6418,27 +6335,12 @@ Definition
                             [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "strict" AstLocationNone) :: Id Object
+                                        { symbolOrAliasConstructor = (Id "cooling" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
-                                        { domainValueSort =
-                                            SortActualSort SortActual
-                                                { sortActualName = (Id "Strict" AstLocationNone) :: Id Object
-                                                , sortActualSorts = []
-                                                }
-                                        , domainValueChild =
-                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "notBExp")))))
-                                        }))))
-                                    , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
-                                        { applicationSymbolOrAlias =
-                                            SymbolOrAlias
-                                                { symbolOrAliasConstructor = (Id "firstArgument" AstLocationNone) :: Id Object
-                                                , symbolOrAliasParams = []
-                                                }
-                                        , applicationChildren = []
-                                        }))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "notBExp")))))
+                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "1")))))
                                     ]
                                 }))))
                             ]
@@ -6473,23 +6375,7 @@ Definition
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
-                                        { domainValueSort =
-                                            SortActualSort SortActual
-                                                { sortActualName = (Id "Strict" AstLocationNone) :: Id Object
-                                                , sortActualSorts = []
-                                                }
-                                        , domainValueChild =
-                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "andBExp")))))
-                                        }))))
-                                    , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
-                                        { applicationSymbolOrAlias =
-                                            SymbolOrAlias
-                                                { symbolOrAliasConstructor = (Id "firstArgument" AstLocationNone) :: Id Object
-                                                , symbolOrAliasParams = []
-                                                }
-                                        , applicationChildren = []
-                                        }))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "1")))))
                                     ]
                                 }))))
                             ]
@@ -6659,27 +6545,12 @@ Definition
                             [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "strict" AstLocationNone) :: Id Object
+                                        { symbolOrAliasConstructor = (Id "heating" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
-                                        { domainValueSort =
-                                            SortActualSort SortActual
-                                                { sortActualName = (Id "Strict" AstLocationNone) :: Id Object
-                                                , sortActualSorts = []
-                                                }
-                                        , domainValueChild =
-                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "andBExp")))))
-                                        }))))
-                                    , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
-                                        { applicationSymbolOrAlias =
-                                            SymbolOrAlias
-                                                { symbolOrAliasConstructor = (Id "firstArgument" AstLocationNone) :: Id Object
-                                                , symbolOrAliasParams = []
-                                                }
-                                        , applicationChildren = []
-                                        }))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "andBExp")))))
+                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "1")))))
                                     ]
                                 }))))
                             ]
@@ -6867,27 +6738,12 @@ Definition
                             [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
                                 { applicationSymbolOrAlias =
                                     SymbolOrAlias
-                                        { symbolOrAliasConstructor = (Id "strict" AstLocationNone) :: Id Object
+                                        { symbolOrAliasConstructor = (Id "cooling" AstLocationNone) :: Id Object
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
-                                        { domainValueSort =
-                                            SortActualSort SortActual
-                                                { sortActualName = (Id "Strict" AstLocationNone) :: Id Object
-                                                , sortActualSorts = []
-                                                }
-                                        , domainValueChild =
-                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "andBExp")))))
-                                        }))))
-                                    , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
-                                        { applicationSymbolOrAlias =
-                                            SymbolOrAlias
-                                                { symbolOrAliasConstructor = (Id "firstArgument" AstLocationNone) :: Id Object
-                                                , symbolOrAliasParams = []
-                                                }
-                                        , applicationChildren = []
-                                        }))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "andBExp")))))
+                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "1")))))
                                     ]
                                 }))))
                             ]
@@ -6984,23 +6840,7 @@ Definition
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
-                                        { domainValueSort =
-                                            SortActualSort SortActual
-                                                { sortActualName = (Id "Strict" AstLocationNone) :: Id Object
-                                                , sortActualSorts = []
-                                                }
-                                        , domainValueChild =
-                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "asgn")))))
-                                        }))))
-                                    , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
-                                        { applicationSymbolOrAlias =
-                                            SymbolOrAlias
-                                                { symbolOrAliasConstructor = (Id "secondArgument" AstLocationNone) :: Id Object
-                                                , symbolOrAliasParams = []
-                                                }
-                                        , applicationChildren = []
-                                        }))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "2")))))
                                     ]
                                 }))))
                             ]
@@ -7165,7 +7005,20 @@ Definition
                                         ]
                                     }))))
                             }))))
-                    , sentenceAxiomAttributes = Attributes []
+                    , sentenceAxiomAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "heating" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "asgn")))))
+                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "2")))))
+                                    ]
+                                }))))
+                            ]
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
@@ -7345,7 +7198,20 @@ Definition
                                         ]
                                     }))))
                             }))))
-                    , sentenceAxiomAttributes = Attributes []
+                    , sentenceAxiomAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "cooling" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "asgn")))))
+                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "2")))))
+                                    ]
+                                }))))
+                            ]
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =
@@ -7381,23 +7247,7 @@ Definition
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
-                                        { domainValueSort =
-                                            SortActualSort SortActual
-                                                { sortActualName = (Id "Strict" AstLocationNone) :: Id Object
-                                                , sortActualSorts = []
-                                                }
-                                        , domainValueChild =
-                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "ite")))))
-                                        }))))
-                                    , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
-                                        { applicationSymbolOrAlias =
-                                            SymbolOrAlias
-                                                { symbolOrAliasConstructor = (Id "firstArgument" AstLocationNone) :: Id Object
-                                                , symbolOrAliasParams = []
-                                                }
-                                        , applicationChildren = []
-                                        }))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "1")))))
                                     ]
                                 }))))
                             ]
@@ -7578,7 +7428,20 @@ Definition
                                         ]
                                     }))))
                             }))))
-                    , sentenceAxiomAttributes = Attributes []
+                    , sentenceAxiomAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "heating" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "ite")))))
+                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "1")))))
+                                    ]
+                                }))))
+                            ]
                     })
                 , MetaSentence (SentenceAxiomSentence SentenceAxiom
                     { sentenceAxiomParameters =
@@ -7774,7 +7637,20 @@ Definition
                                         ]
                                     }))))
                             }))))
-                    , sentenceAxiomAttributes = Attributes []
+                    , sentenceAxiomAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "cooling" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "ite")))))
+                                    , Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "1")))))
+                                    ]
+                                }))))
+                            ]
                     })
                 , ObjectSentence (SentenceSymbolSentence SentenceSymbol
                     { sentenceSymbolSymbol =

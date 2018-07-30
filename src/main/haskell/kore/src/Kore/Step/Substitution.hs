@@ -16,7 +16,7 @@ module Kore.Step.Substitution
 import Data.List
        ( foldl' )
 import Data.Reflection
-       ( Given, given )
+       ( Given, give )
 
 import Kore.AST.Common
        ( SortedVariable )
@@ -26,10 +26,11 @@ import Kore.AST.PureML
 import Kore.ASTUtils.SmartConstructors
        ( mkVar )
 import Kore.IndexedModule.MetadataTools
-       ( MetadataTools )
+       ( MetadataTools (..), SortTools )
 import Kore.Predicate.Predicate
        ( Predicate, PredicateProof (..), makeAndPredicate, makeEqualsPredicate,
        makeFalsePredicate, makeMultipleAndPredicate, makeTruePredicate )
+import Kore.Step.StepperAttributes
 import Kore.Unification.Error
        ( UnificationError (..) )
 import Kore.Unification.Unifier
@@ -40,7 +41,7 @@ import Kore.Unification.Unifier
 -}
 substitutionToPredicate
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
+        , Given (SortTools level)
         , SortedVariable variable
         , Show (variable level))
     => [(variable level, PureMLPattern level variable)]
@@ -56,7 +57,7 @@ substitutionToPredicate =
 
 singleSubstitutionToPredicate
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
+        , Given (SortTools level)
         , SortedVariable variable
         , Show (variable level))
     => (variable level, PureMLPattern level variable)
@@ -73,11 +74,11 @@ the correct condition.
 -}
 mergeSubstitutions
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
         , SortedVariable variable
         , Ord (variable level)
         )
-    => UnificationSubstitution level variable
+    => MetadataTools level StepperAttributes
+    -> UnificationSubstitution level variable
     -> UnificationSubstitution level variable
     -> Either
         (UnificationError level)
@@ -85,9 +86,9 @@ mergeSubstitutions
         , UnificationSubstitution level variable
         , UnificationProof level variable
         )
-mergeSubstitutions first second = do
+mergeSubstitutions tools first second = do
     (substitution, proof) <-
-        normalizeSubstitutionDuplication given (first ++ second)
+        normalizeSubstitutionDuplication tools (first ++ second)
     -- TODO(virgil): Return the actual condition here.
     return (makeTruePredicate, substitution, proof)
 
@@ -97,44 +98,46 @@ into a condition.
 -}
 mergePredicatesAndSubstitutions
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
         , SortedVariable variable
         , Ord (variable level)
         , Show (variable level))
-    => [Predicate level variable]
+    => MetadataTools level StepperAttributes
+    -> [Predicate level variable]
     -> [UnificationSubstitution level variable]
     -> ( Predicate level variable
        , UnificationSubstitution level variable
        , PredicateProof level
        )
-mergePredicatesAndSubstitutions predicates substitutions =
+mergePredicatesAndSubstitutions tools predicates substitutions =
     let
         (substitutionMergePredicate, mergedSubstitution) =
             foldl'
-                mergeSubstitutionWithPredicate
+                (mergeSubstitutionWithPredicate tools)
                 (predicates, [])
                 substitutions
     in
-        ( fst $ makeMultipleAndPredicate substitutionMergePredicate
+        ( fst $ give (sortTools tools)
+            (makeMultipleAndPredicate substitutionMergePredicate)
         , mergedSubstitution
         , PredicateProof
         )
 
 mergeSubstitutionWithPredicate
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
         , SortedVariable variable
         , Ord (variable level)
         --, Show (variable level)
         )
-    => ([Predicate level variable], UnificationSubstitution level variable)
+    => MetadataTools level StepperAttributes
+    -> ([Predicate level variable], UnificationSubstitution level variable)
     -> UnificationSubstitution level variable
     -> ([Predicate level variable], UnificationSubstitution level variable)
 mergeSubstitutionWithPredicate
+    tools
     (predicates, subst1)
     subst2
   =
-    case mergeSubstitutions subst1 subst2 of
+    case mergeSubstitutions tools subst1 subst2 of
         Left _ -> (makeFalsePredicate : predicates, [])
         Right (predicate, subst, _) ->
             (predicate : predicates, subst)

@@ -17,8 +17,6 @@ import Kore.AST.Sentence
 import Kore.Building.Implicit
 import Kore.Building.Patterns as Patterns
 import Kore.Error
-import Kore.Implicit.Attributes
-       ( attributeObjectSort )
 import Kore.Implicit.ImplicitSorts
 
 import Test.Kore
@@ -27,7 +25,6 @@ import Test.Kore.ASTVerifier.DefinitionVerifier as Helpers
 data PatternRestrict
     = NeedsInternalDefinitions
     | NeedsSortedParent
-    | NeedsAttributes
 
 data TestPattern level = TestPattern
     { testPatternPattern    :: !(Pattern level Variable CommonKorePattern)
@@ -1231,23 +1228,13 @@ testsForUnifiedPatternInTopLevelContext
     namePrefix
     additionalSort
     sortVariables
-    objectSortVariables
-    additionalSentences
-    patternRestrict
+    _
   =
     testsForUnifiedPatternInTopLevelGenericContext
         x
         namePrefix
         additionalSort
         sortVariables
-        additionalSentences
-        patternRestrict
-    ++ testsForUnifiedPatternInTopLevelObjectContext
-        (SortName sortName)
-        objectSortVariables
-        additionalSentences
-        patternRestrict
-  where sortName = "sort_tfupitlc"
 
 testsForUnifiedPatternInTopLevelGenericContext
     :: MetaOrObject level
@@ -1259,9 +1246,9 @@ testsForUnifiedPatternInTopLevelGenericContext
     -> PatternRestrict
     -> [TestPattern level -> TestData]
 testsForUnifiedPatternInTopLevelGenericContext
-    x
-    (NamePrefix namePrefix)
-    (DeclaredSort additionalSort)
+    _
+    (NamePrefix _)
+    (DeclaredSort _)
     (SortVariablesThatMustBeDeclared sortVariables)
     additionalSentences
     patternRestrict
@@ -1286,246 +1273,10 @@ testsForUnifiedPatternInTopLevelGenericContext
             }
     in case patternRestrict of
         NeedsInternalDefinitions -> [axiomPattern]
-        NeedsSortedParent -> [axiomPattern]
-        NeedsAttributes ->
-            [ \testPattern -> TestData
-                { testDataDescription = "Pattern in alias definition attributes"
-                , testDataError =
-                    Error
-                        ( "module 'MODULE'"
-                        : ("alias '" ++ rawAliasName ++ "' declaration")
-                        : "attributes"
-                        : "\\equals (<test data>)"
-                        : "\\equals (<test data>)"
-                        : testPatternErrorStackStrings testPattern
-                        )
-                        defaultErrorMessage
-                , testDataDefinition =
-                    simpleDefinitionFromSentences
-                        (ModuleName "MODULE")
-                        ( asSentence
-                            (sentenceAliasWithAttributes
-                                aliasName
-                                sortVariables
-                                additionalSort
-                                [ testPatternUnifiedPattern (asAttribute testPattern) ]
-                                (TopPattern $ Top additionalSort)
-                                (TopPattern $ Top additionalSort)
-                            )
-                        : additionalSentences
-                        )
-                }
-            , \testPattern -> TestData
-                { testDataDescription = "Pattern in symbol definition attributes"
-                , testDataError =
-                    Error
-                        ( "module 'MODULE'"
-                        : ("symbol '" ++ rawSymbolName ++ "' declaration")
-                        : "attributes"
-                        : "\\equals (<test data>)"
-                        : "\\equals (<test data>)"
-                        : testPatternErrorStackStrings testPattern
-                        )
-                        defaultErrorMessage
-                , testDataDefinition =
-                    simpleDefinitionFromSentences
-                        (ModuleName "MODULE")
-                        ( asSentence
-                            (sentenceSymbolWithAttributes
-                                symbolName
-                                sortVariables
-                                additionalSort
-                                [ testPatternUnifiedPattern (asAttribute testPattern) ]
-                            )
-                        : additionalSentences
-                        )
-                }
-            , \testPattern -> TestData
-                { testDataDescription = "Axiom with attributes"
-                , testDataError =
-                    Error
-                        ( "module 'MODULE'"
-                        : "axiom declaration"
-                        : "attributes"
-                        : "\\equals (<test data>)"
-                        : "\\equals (<test data>)"
-                        : testPatternErrorStackStrings testPattern
-                        )
-                        defaultErrorMessage
-                , testDataDefinition =
-                    simpleDefinitionFromSentences
-                        (ModuleName "MODULE")
-                        ( axiomSentenceWithAttributes
-                            unifiedSortVariables
-                            (simpleExistsUnifiedPatternWithType
-                                x  variableName1 additionalSort)
-                            [ testPatternUnifiedPattern (asAttribute testPattern) ]
-                        : additionalSentences
-                        )
-                }
-            , \testPattern -> TestData
-                { testDataDescription = "Module with attributes"
-                , testDataError =
-                    Error
-                        ( "module 'MODULE'"
-                        : "attributes"
-                        : "\\equals (<test data>)"
-                        : "\\equals (<test data>)"
-                        : testPatternErrorStackStrings testPattern
-                        )
-                        defaultErrorMessage
-                , testDataDefinition =
-                    Definition
-                        { definitionAttributes = Attributes []
-                        , definitionModules =
-                            [ Module
-                                { moduleName = ModuleName "MODULE"
-                                , moduleSentences = additionalSentences
-                                , moduleAttributes =
-                                    Attributes
-                                        [ testPatternUnifiedPattern
-                                            (asAttribute testPattern)
-                                        ]
-                                }
-                            ]
-                        }
-                }
-            , \testPattern -> TestData
-                { testDataDescription = "Definition with attributes"
-                , testDataError =
-                    Error
-                        ( "attributes"
-                        : testPatternErrorStackStrings testPattern
-                        )
-                        defaultErrorMessage
-                , testDataDefinition =
-                    Definition
-                        { definitionAttributes =
-                            Attributes
-                                [ testPatternUnifiedPattern testPattern ]
-                        , definitionModules =
-                            [ Module
-                                { moduleName = ModuleName "MODULE"
-                                , moduleSentences = additionalSentences
-                                , moduleAttributes = Attributes []
-                                }
-                            ]
-                        }
-                }
-            ]
+        NeedsSortedParent        -> [axiomPattern]
+
   where
     unifiedSortVariables = map asUnified sortVariables
-    rawAliasName = namePrefix ++ "_alias"
-    aliasName = AliasName rawAliasName
-    rawSymbolName = namePrefix ++ "_symbol"
-    symbolName = SymbolName rawSymbolName
-    rawVariableName1 = namePrefix ++ "_var"
-    variableName1 = VariableName rawVariableName1
-
-testsForUnifiedPatternInTopLevelObjectContext
-    :: MetaOrObject level
-    => SortName
-    -> SortVariablesThatMustBeDeclared Object
-    -> [KoreSentence]
-    -> PatternRestrict
-    -> [TestPattern level -> TestData]
-testsForUnifiedPatternInTopLevelObjectContext
-    (SortName rawSortName)
-    (SortVariablesThatMustBeDeclared sortVariables)
-    additionalSentences
-    patternRestrict
-  =
-    case patternRestrict of
-        NeedsInternalDefinitions -> []
-        _ ->
-            [ \testPattern -> TestData
-                { testDataDescription = "Pattern in Sort declaration"
-                , testDataError =
-                    Error
-                        ( "module 'MODULE'"
-                        :   (  "sort '"
-                            ++ rawSortName
-                            ++ "' declaration (<test data>)"
-                            )
-                        : "attributes"
-                        : "\\equals (<test data>)"
-                        : "\\equals (<test data>)"
-                        : testPatternErrorStackStrings testPattern
-                        )
-                        defaultErrorMessage
-                , testDataDefinition =
-                    simpleDefinitionFromSentences (ModuleName "MODULE")
-                        ( constructUnifiedSentence
-                            SentenceSortSentence
-                            SentenceSort
-                                { sentenceSortName = testId rawSortName
-                                , sentenceSortParameters = sortVariables
-                                , sentenceSortAttributes =
-                                    Attributes
-                                        [ testPatternUnifiedPattern
-                                            (asAttribute testPattern)
-                                        ]
-                                }
-                        : additionalSentences
-                        )
-                }
-            ]
-
-asAttribute :: MetaOrObject level => TestPattern level -> TestPattern Object
-asAttribute testPattern =
-    case isMetaOrObject testPattern of
-        IsMeta ->
-            let
-                patternPattern = EqualsPattern Equals
-                    { equalsOperandSort = testPatternSort testPattern
-                    , equalsResultSort  =
-                        updateAstLocation patternMetaSort AstLocationTest
-                    , equalsFirst       = testPatternUnifiedPattern testPattern
-                    , equalsSecond      = testPatternUnifiedPattern testPattern
-                    }
-              in
-                TestPattern
-                    { testPatternPattern = EqualsPattern Equals
-                        { equalsOperandSort =
-                            attributeObjectSort AstLocationTest
-                        , equalsResultSort  =
-                            attributeObjectSort AstLocationTest
-                        , equalsFirst       =
-                            asKorePattern patternPattern
-                        , equalsSecond      =
-                            asKorePattern patternPattern
-                        }
-                    , testPatternSort = attributeObjectSort AstLocationTest
-                    , testPatternErrorStack =
-                        testPatternErrorStack testPattern
-                    }
-        IsObject ->
-            -- More complex than if should be, but tests are much easier to
-            -- write if I have the same stack trace on both the object and
-            -- meta versions.
-            let
-                patternPattern = EqualsPattern Equals
-                    { equalsOperandSort = testPatternSort testPattern
-                    , equalsResultSort  = attributeObjectSort AstLocationTest
-                    , equalsFirst       = testPatternUnifiedPattern testPattern
-                    , equalsSecond      = testPatternUnifiedPattern testPattern
-                    }
-                in
-                TestPattern
-                    { testPatternPattern = EqualsPattern Equals
-                        { equalsOperandSort =
-                            attributeObjectSort AstLocationTest
-                        , equalsResultSort  =
-                            attributeObjectSort AstLocationTest
-                        , equalsFirst       =
-                            asKorePattern patternPattern
-                        , equalsSecond      =
-                            asKorePattern patternPattern
-                        }
-                    , testPatternSort = attributeObjectSort AstLocationTest
-                    , testPatternErrorStack =
-                        testPatternErrorStack testPattern
-                    }
 
 defaultErrorMessage :: String
 defaultErrorMessage = "Replace this with a real error message."

@@ -99,6 +99,7 @@ instance
         , patternFunctionMLBinder = locationFromAst . getBinderPatternSort
         , applicationFunction = locationFromAst . applicationSymbolOrAlias
         , variableFunction = locationFromAst
+        , domainValueFunction = locationFromAst . domainValueSort
         , stringFunction = const AstLocationUnknown
         , charFunction = const AstLocationUnknown
         }

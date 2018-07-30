@@ -445,11 +445,10 @@ test_lift =
             (DomainValuePattern DomainValue
                 { domainValueSort =
                     SortVariableSort (SortVariable (testId "Int"))
-                , domainValueChild =
-                    unifiedStringPattern
+                , domainValueChild = metaStringPattern
                 }
             )
-        )
+        :: CommonKorePattern)
     , testLiftUnlift "Application"
         (Fix
             (apply (groundHead "#`test" AstLocationTest)

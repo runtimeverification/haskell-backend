@@ -17,13 +17,15 @@ import Kore.AST.PureML
        ( CommonPurePattern )
 import Kore.AST.PureToKore
        ( patternKoreToPure )
+import Kore.ASTHelpers
+       ( ApplicationSorts(..) )
 import Kore.Building.AsAst
 import Kore.Building.Patterns
 import Kore.Building.Sorts
 import Kore.Error
        ( printError )
 import Kore.IndexedModule.MetadataTools
-       ( MetadataTools (..) )
+       ( MetadataTools (..), SortTools )
 import Kore.MetaML.AST
        ( CommonMetaPattern )
 import Kore.Predicate.Predicate
@@ -43,6 +45,7 @@ import Kore.Step.Function.Evaluator
        ( evaluateFunctions )
 import Kore.Step.Function.UserDefined
        ( axiomFunctionEvaluator )
+import Kore.Step.StepperAttributes
 import Kore.Variables.Fresh.IntCounter
        ( IntCounter, runIntCounter )
 
@@ -225,12 +228,11 @@ axiomEvaluator
     -> CommonApplicationFunctionEvaluator Meta
 axiomEvaluator left right =
     ApplicationFunctionEvaluator
-        (give mockMetadataTools
-            . axiomFunctionEvaluator
-                AxiomPattern
-                    { axiomPatternLeft  = left
-                    , axiomPatternRight = right
-                    }
+        (axiomFunctionEvaluator
+            AxiomPattern
+                { axiomPatternLeft  = left
+                , axiomPatternRight = right
+                }
         )
 
 appliedMockEvaluator
@@ -241,25 +243,24 @@ appliedMockEvaluator result =
 
 mockEvaluator
     :: CommonAttemptedFunction level
+    -> MetadataTools level StepperAttributes
     -> CommonConditionEvaluator level
     -> CommonPurePatternFunctionEvaluator level
     -> Application level (CommonPurePattern level)
     -> IntCounter (CommonAttemptedFunction level, FunctionResultProof level)
-mockEvaluator evaluation _ _ _ =
+mockEvaluator evaluation _ _ _ _ =
     return (evaluation, FunctionResultProof)
 
 evaluate
     :: MetaOrObject level
-    => MetadataTools level
+    => MetadataTools level StepperAttributes
     -> Map.Map (Id level) [CommonApplicationFunctionEvaluator level]
     -> CommonPurePattern level
     -> CommonExpandedPattern level
 evaluate metadataTools functionIdToEvaluator patt =
     fst $ fst
         (runIntCounter
-            (give metadataTools
-                (evaluateFunctions functionIdToEvaluator patt)
-            )
+            (evaluateFunctions metadataTools functionIdToEvaluator patt)
             0
         )
 
@@ -277,7 +278,7 @@ makeEquals
     :: (ProperPattern Meta sort patt1, ProperPattern Meta sort patt2)
     => patt1 -> patt2 -> CommonPredicate Meta
 makeEquals patt1 patt2 =
-    give mockMetadataTools
+    give (sortTools mockMetadataTools)
         (makeEqualsPredicate
             (asPureMetaPattern patt1)
             (asPureMetaPattern patt2)
@@ -287,18 +288,32 @@ makeCeil
     :: ProperPattern Meta sort patt
     => patt -> CommonPredicate Meta
 makeCeil patt =
-    give mockMetadataTools (makeCeilPredicate (asPureMetaPattern patt))
+    give (sortTools mockMetadataTools)
+        (makeCeilPredicate (asPureMetaPattern patt))
 
 makeAnd :: CommonPredicate Meta -> CommonPredicate Meta -> CommonPredicate Meta
-makeAnd p1 p2 = give mockMetadataTools (fst $ makeAndPredicate p1 p2)
+makeAnd p1 p2 =
+    give (sortTools mockMetadataTools) (fst $ makeAndPredicate p1 p2)
 
-mockMetadataTools :: MetadataTools Meta
+mockSortTools :: SortTools Meta
+mockSortTools = const
+    ApplicationSorts
+    { applicationSortsOperands = [asAst PatternSort, asAst PatternSort]
+    , applicationSortsResult = (asAst PatternSort)
+    }
+
+
+mockStepperAttributes :: StepperAttributes
+mockStepperAttributes = StepperAttributes
+    { isConstructor = True
+    , isFunctional = True
+    , isFunction = True
+    }
+
+mockMetadataTools :: MetadataTools Meta StepperAttributes
 mockMetadataTools = MetadataTools
-    { isConstructor = const True
-    , isFunctional = const True
-    , isFunction = const True
-    , getArgumentSorts = const [asAst PatternSort, asAst PatternSort]
-    , getResultSort = const (asAst PatternSort)
+    { attributes = const mockStepperAttributes
+    , sortTools = mockSortTools
     }
 
 fId :: Id Meta

@@ -8,7 +8,10 @@ import Kore.AST.Builders
 import Kore.AST.Common
 import Kore.AST.Kore
 import Kore.AST.MetaOrObject
+import Kore.AST.PureToKore
+       (patternPureToKore)
 import Kore.AST.Sentence
+import Kore.ASTUtils.SmartPatterns
 import Kore.Implicit.ImplicitSorts
 import Kore.Parser.ParserImpl
 
@@ -457,11 +460,8 @@ domainValuePatternParserTests :: [TestTree]
 domainValuePatternParserTests =
     parseTree korePatternParser
         [ success "\\dv{s1}(\"a\")"
-            (asKorePattern $ DomainValuePattern DomainValue
-                    { domainValueSort = sortVariableSort "s1"
-                    , domainValueChild =
-                        asKorePattern $ StringLiteralPattern (StringLiteral "a")
-                    }
+            ( patternPureToKore
+            $ DV_ (sortVariableSort "s1") (StringLiteral_ (StringLiteral "a"))
             )
         , FailureWithoutMessage
             [ ""

@@ -5,21 +5,20 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import Data.Reflection
-       ( give )
-
 import Kore.AST.Common
        ( Application (..), AstLocation (..), Id (..),
        Pattern (ApplicationPattern), SymbolOrAlias (..), Variable )
 import Kore.AST.MetaOrObject
 import Kore.AST.PureToKore
        ( patternKoreToPure )
+import Kore.ASTHelpers
+       ( ApplicationSorts(..) )
 import Kore.Building.AsAst
 import Kore.Building.Patterns
 import Kore.Building.Sorts
 import Kore.Error
 import Kore.IndexedModule.MetadataTools
-       ( MetadataTools (..) )
+       ( MetadataTools (..), SortTools )
 import Kore.MetaML.AST
        ( CommonMetaPattern )
 import Kore.Predicate.Predicate
@@ -28,6 +27,7 @@ import Kore.Step.BaseStep
 import Kore.Step.ExpandedPattern as ExpandedPattern
        ( CommonExpandedPattern, ExpandedPattern (..) )
 import Kore.Step.Step
+import Kore.Step.StepperAttributes
 import Kore.Unification.Unifier
        ( FunctionalProof (..), UnificationProof (..) )
 import Kore.Variables.Fresh.IntCounter
@@ -403,13 +403,23 @@ test_multiple =
             )
         ]
 
-mockMetadataTools :: MetadataTools Meta
+mockStepperAttributes :: StepperAttributes
+mockStepperAttributes = StepperAttributes
+    { isConstructor = True
+    , isFunctional = True
+    , isFunction = False
+    }
+
+mockSortTools :: SortTools Meta
+mockSortTools = const ApplicationSorts
+    { applicationSortsOperands = [asAst PatternSort, asAst PatternSort]
+    , applicationSortsResult = asAst PatternSort
+    }
+
+mockMetadataTools :: MetadataTools Meta StepperAttributes
 mockMetadataTools = MetadataTools
-    { isConstructor = const True
-    , isFunctional = const True
-    , isFunction = const False
-    , getArgumentSorts = const [asAst PatternSort, asAst PatternSort]
-    , getResultSort = const (asAst PatternSort)
+    { attributes = const mockStepperAttributes
+    , sortTools = mockSortTools
     }
 
 
@@ -531,7 +541,7 @@ functionalVariable = FunctionalVariable . asMetaVariable
 
 runStep
     :: MetaOrObject level
-    => MetadataTools level
+    => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
@@ -539,13 +549,13 @@ runStep
     -> [(CommonExpandedPattern level, StepProof level)]
 runStep metadataTools configuration axioms =
     fst $ runIntCounter
-        (sequence (give metadataTools (step configuration axioms)))
+        (sequence (step metadataTools configuration axioms))
         0
 
 
 runStepsPickFirst
     :: MetaOrObject level
-    => MetadataTools level
+    => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
     -> MaxStepCount
     -> CommonExpandedPattern level
@@ -555,7 +565,5 @@ runStepsPickFirst
 runStepsPickFirst metadataTools maxStepCount configuration axioms =
     fst $
         runIntCounter
-            (give metadataTools
-                (pickFirstStepper maxStepCount configuration axioms)
-            )
+            (pickFirstStepper metadataTools maxStepCount configuration axioms)
             0

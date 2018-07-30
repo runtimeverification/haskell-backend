@@ -15,8 +15,6 @@ module Kore.Step.Step
 
 import Data.Either
        ( rights )
-import Data.Reflection
-       ( Given )
 
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject )
@@ -25,6 +23,8 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.BaseStep
                  ( AxiomPattern, StepProof (..), stepWithAxiom )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import           Kore.Step.StepperAttributes
+                 ( StepperAttributes )
 import           Kore.Variables.Fresh.IntCounter
                  ( IntCounter )
 
@@ -38,18 +38,17 @@ Does not handle properly various cases, among which:
 sigma(x, y) => y    vs    a
 -}
 step
-    ::  ( MetaOrObject level
-        , Given (MetadataTools level)
-        )
-    => ExpandedPattern.CommonExpandedPattern level
+    ::  ( MetaOrObject level)
+    => MetadataTools level StepperAttributes
+    -> ExpandedPattern.CommonExpandedPattern level
     -- ^ Configuration being rewritten.
     -> [AxiomPattern level]
     -- ^ Rewriting axioms
     ->  [ IntCounter
             (ExpandedPattern.CommonExpandedPattern level, StepProof level)
         ]
-step configuration axioms =
-    rights $ map (stepWithAxiom configuration) axioms
+step tools configuration axioms =
+    rights $ map (stepWithAxiom tools configuration) axioms
 
 {-| 'pickFirstStepper' rewrites a configuration using the provided axioms
 until it cannot be rewritten anymore or until the step limit has been reached.
@@ -60,34 +59,32 @@ Does not handle properly various cases, among which:
 sigma(x, y) => y    vs    a
 -}
 pickFirstStepper
-    ::  ( MetaOrObject level
-        , Given (MetadataTools level)
-        )
-    => MaxStepCount
+    ::  ( MetaOrObject level)
+    => MetadataTools level StepperAttributes
+    -> MaxStepCount
     -- ^ The maximum number of steps to be made
     -> ExpandedPattern.CommonExpandedPattern level
     -- ^ Configuration being rewritten.
     -> [AxiomPattern level]
     -- ^ Rewriting axioms
     -> IntCounter (ExpandedPattern.CommonExpandedPattern level, StepProof level)
-pickFirstStepper (MaxStepCount 0) stepperConfiguration _ =
+pickFirstStepper _ (MaxStepCount 0) stepperConfiguration _ =
     return (stepperConfiguration, StepProofCombined [])
-pickFirstStepper (MaxStepCount n) _ _ | n < 0 =
+pickFirstStepper _ (MaxStepCount n) _ _ | n < 0 =
     error ("Negative MaxStepCount: " ++ show n)
 pickFirstStepper
-    (MaxStepCount maxStep) stepperConfiguration axioms
+    tools (MaxStepCount maxStep) stepperConfiguration axioms
   =
     pickFirstStepperSkipMaxCheck
-        (MaxStepCount (maxStep - 1)) stepperConfiguration axioms
-pickFirstStepper AnyStepCount stepperConfiguration axioms =
+        tools (MaxStepCount (maxStep - 1)) stepperConfiguration axioms
+pickFirstStepper tools AnyStepCount stepperConfiguration axioms =
     pickFirstStepperSkipMaxCheck
-        AnyStepCount stepperConfiguration axioms
+        tools AnyStepCount stepperConfiguration axioms
 
 pickFirstStepperSkipMaxCheck
-    ::  ( MetaOrObject level
-        , Given (MetadataTools level)
-        )
-    => MaxStepCount
+    ::  ( MetaOrObject level)
+    => MetadataTools level StepperAttributes
+    -> MaxStepCount
     -- ^ The maximum number of steps to be made
     -> ExpandedPattern.CommonExpandedPattern level
     -- ^ Configuration being rewritten.
@@ -95,14 +92,14 @@ pickFirstStepperSkipMaxCheck
     -- ^ Rewriting axioms
     -> IntCounter (ExpandedPattern.CommonExpandedPattern level, StepProof level)
 pickFirstStepperSkipMaxCheck
-    maxStepCount stepperConfiguration axioms
+    tools maxStepCount stepperConfiguration axioms
   =
-    case step stepperConfiguration axioms of
+    case step tools stepperConfiguration axioms of
         [] -> return (stepperConfiguration, StepProofCombined [])
         first : _ -> do
             (nextConfiguration, nextProof) <- first
             (finalConfiguration, finalProof) <-
                 pickFirstStepper
-                    maxStepCount nextConfiguration axioms
+                    tools maxStepCount nextConfiguration axioms
             return
                 (finalConfiguration, StepProofCombined [nextProof, finalProof])

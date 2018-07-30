@@ -12,9 +12,6 @@ module Kore.Step.Function.UserDefined
     , axiomFunctionEvaluator
     ) where
 
-import Data.Reflection
-       ( Given )
-
 import Kore.AST.Common
        ( Application (..), Pattern (..), SortedVariable )
 import Kore.AST.MetaOrObject
@@ -35,6 +32,8 @@ import Kore.Step.Function.Data
        ( CommonAttemptedFunction, CommonConditionEvaluator,
        CommonPurePatternFunctionEvaluator, ConditionEvaluator (..),
        FunctionResultProof (..), PureMLPatternFunctionEvaluator (..) )
+import Kore.Step.StepperAttributes
+       ( StepperAttributes )
 import Kore.Step.Substitution
        ( mergePredicatesAndSubstitutions )
 import Kore.Variables.Fresh.IntCounter
@@ -46,11 +45,10 @@ evaluating the function, it tries to re-evaluate all functions on the result.
 The function is assumed to be defined through an axiom.
 -}
 axiomFunctionEvaluator
-    ::  ( MetaOrObject level
-        , Given (MetadataTools level)
-        )
+    ::  ( MetaOrObject level)
     => AxiomPattern level
     -- ^ Axiom defining the current function.
+    -> MetadataTools level StepperAttributes
     -> CommonConditionEvaluator level
     -- ^ Evaluates conditions
     -> CommonPurePatternFunctionEvaluator level
@@ -60,6 +58,7 @@ axiomFunctionEvaluator
     -> IntCounter (CommonAttemptedFunction level, FunctionResultProof level)
 axiomFunctionEvaluator
     axiom
+    tools
     (ConditionEvaluator conditionEvaluator)
     functionEvaluator
     app
@@ -87,6 +86,7 @@ axiomFunctionEvaluator
                             )
                     _ ->
                         reevaluateFunctions
+                            tools
                             (ConditionEvaluator conditionEvaluator)
                             functionEvaluator
                             ExpandedPattern
@@ -97,6 +97,7 @@ axiomFunctionEvaluator
   where
     stepResult =
         stepWithAxiom
+            tools
             (stepperConfiguration app)
             axiom
     stepperConfiguration
@@ -115,11 +116,11 @@ was evaluated.
 -}
 reevaluateFunctions
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
         , SortedVariable variable
         , Ord (variable level)
         , Show (variable level))
-    => ConditionEvaluator level variable
+    => MetadataTools level StepperAttributes
+    -> ConditionEvaluator level variable
     -- ^ Evaluates conditions
     -> PureMLPatternFunctionEvaluator level variable
     -- ^ Evaluates functions in patterns.
@@ -127,6 +128,7 @@ reevaluateFunctions
     -- ^ Function evaluation result.
     -> IntCounter (AttemptedFunction level variable, FunctionResultProof level)
 reevaluateFunctions
+    tools
     (ConditionEvaluator conditionEvaluator)
     (PureMLPatternFunctionEvaluator functionEvaluator)
     ExpandedPattern
@@ -149,6 +151,7 @@ reevaluateFunctions
     let
         (mergedCondition, mergedSubstitution, _) =
             mergePredicatesAndSubstitutions
+                tools
                 [rewritingCondition, simplificationCondition]
                 [rewrittenSubstitution, simplificationSubstitution]
     (evaluatedMergedCondition, _) <- conditionEvaluator mergedCondition

@@ -65,12 +65,13 @@ import Data.Reflection
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.ASTUtils.SmartConstructors
+import Kore.ASTUtils.SmartPatterns
 import Kore.IndexedModule.MetadataTools
 
 import Kore.Proof.Proof
 
 modusPonensN
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => [Proof]
     -> Proof
     -> Proof
@@ -78,7 +79,7 @@ modusPonensN as b =
     foldl (\b a -> useRule $ ModusPonens a b) b as
 
 mkImpliesN
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => [Term]
     -> Term
     -> Term
@@ -86,7 +87,7 @@ mkImpliesN as b =
     foldr (\a b -> a `mkImplies` b) b as
 
 tryDischarge
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => Proof
     -> Proof
     -> Proof
@@ -98,7 +99,7 @@ tryDischarge a b =
             b' = getConclusion b
 
 tryDischargeN
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => [Proof]
     -> Proof
     -> Proof
@@ -107,7 +108,7 @@ tryDischargeN as b = foldr tryDischarge b as
 --------------------------------------------------------------------------------
 
 mkForallN
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => [Var]
     -> Term
     -> Term
@@ -115,7 +116,7 @@ mkForallN vars pat =
     foldr mkForall pat vars
 
 forallIntroN
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => [Var]
     -> Proof
     -> Proof
@@ -124,7 +125,7 @@ forallIntroN vars pat =
 
 
 forallElimN
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => [Term]
     -> Proof
     -> Proof
@@ -134,7 +135,7 @@ forallElimN args pat =
 --------------------------------------------------------------------------------
 
 mkExistsN
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => [Var]
     -> Term
     -> Term
@@ -142,7 +143,7 @@ mkExistsN vars pat =
     foldr mkExists pat vars
 
 existsIntroN
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => [(Var, Term)]
     -> Proof
     -> Proof
@@ -152,21 +153,21 @@ existsIntroN terms pat =
 --------------------------------------------------------------------------------
 
 mkAndN
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => [Term]
     -> Term
 mkAndN [] = mkTop
 mkAndN es = foldr1 mkAnd es
 
 andIntroN
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => [Proof]
     -> Proof
 andIntroN [] = useRule TopIntro
 andIntroN ps = foldr1 (\a b -> useRule $ AndIntro a b) ps
 
 andElimN
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => Proof
     -> [Proof]
 andElimN p = case getConclusion p of
@@ -178,7 +179,7 @@ andElimN p = case getConclusion p of
 --------------------------------------------------------------------------------
 
 mkOrN
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => [Term]
     -> Term
 mkOrN [] = mkBottom
@@ -187,7 +188,7 @@ mkOrN es = foldr1 mkOr es
 --------------------------------------------------------------------------------
 
 provablySubstitute
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => Proof
     -> Path
     -> Proof
@@ -208,13 +209,13 @@ provablySubstitute eq path pat = case getConclusion eq of
     _ -> impossible
 
 eqSymmetry
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => Proof
     -> Proof
 eqSymmetry = undefined
 
 eqTransitivity
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => Proof
     -> Proof
     -> Proof
@@ -223,7 +224,7 @@ eqTransitivity = undefined
 --------------------------------------------------------------------------------
 
 generateVarList
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => [Sort Object]
     -> String
     -> ([Variable Object], [Term])

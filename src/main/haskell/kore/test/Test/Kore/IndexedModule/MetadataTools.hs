@@ -10,6 +10,7 @@ import           Data.Maybe
                  ( fromMaybe )
 
 import Kore.AST.Builders
+import Kore.ASTHelpers
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.PureML
@@ -21,6 +22,7 @@ import Kore.Implicit.Attributes
 import Kore.Implicit.ImplicitSorts
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.MetadataTools
+import Kore.Step.StepperAttributes
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -37,7 +39,7 @@ objectA = SentenceSymbol
           }
     , sentenceSymbolSorts = []
     , sentenceSymbolResultSort = objectS1
-    , sentenceSymbolAttributes = Attributes [ constructorAttribute ]
+    , sentenceSymbolAttributes = Attributes [ keyOnlyAttribute "constructor" ]
     }
 
 metaA :: PureSentenceSymbol Meta
@@ -100,7 +102,7 @@ testDefinition =
             ]
         }
 
-testIndexedModule :: KoreIndexedModule
+testIndexedModule :: KoreIndexedModule StepperAttributes
 testIndexedModule =
     case verifyAndIndexDefinition DoNotVerifyAttributes testDefinition of
         Right modulesMap ->
@@ -109,7 +111,7 @@ testIndexedModule =
                 (Map.lookup testMainModuleName modulesMap)
         Left err -> error (printError err)
 
-metadataTools :: MetaOrObject level => MetadataTools level
+metadataTools :: MetaOrObject level => MetadataTools level StepperAttributes
 metadataTools = extractMetadataTools testIndexedModule
 
 test_metadataTools :: [TestTree]
@@ -117,42 +119,46 @@ test_metadataTools =
     [ testCase "constructor object"
         (assertEqual ""
             True
-            (isConstructor metadataTools (symbolHead objectA))
+            (isConstructor (attributes metadataTools (symbolHead objectA)))
         )
     , testCase "constructor meta"
         (assertEqual ""
             False
-            (isConstructor metadataTools (symbolHead metaA))
+            (isConstructor (attributes metadataTools (symbolHead metaA)))
         )
     , testCase "functional object"
         (assertEqual ""
             False
-            (isFunctional metadataTools (symbolHead metaA))
+            (isFunctional (attributes metadataTools (symbolHead metaA)))
         )
     , testCase "functional meta"
         (assertEqual ""
             False
-            (isFunctional metadataTools (symbolHead metaA))
+            (isFunctional (attributes metadataTools (symbolHead metaA)))
         )
     , testCase "getArgumentSorts object"
         (assertEqual ""
             []
-            (getArgumentSorts metadataTools (symbolHead objectA))
+            (applicationSortsOperands
+                (sortTools metadataTools (symbolHead objectA)))
         )
     , testCase "getArgumentSorts meta"
         (assertEqual ""
             []
-            (getArgumentSorts metadataTools (symbolHead metaA))
+            (applicationSortsOperands
+                (sortTools metadataTools (symbolHead metaA)))
         )
     , testCase "getResultSort object"
         (assertEqual ""
             objectS1
-            (getResultSort metadataTools (symbolHead objectA))
+            (applicationSortsResult
+                (sortTools metadataTools (symbolHead objectA)))
         )
     , testCase "getResultSort meta"
         (assertEqual ""
             charListMetaSort
-            (getResultSort metadataTools (symbolHead metaA))
+            (applicationSortsResult
+                (sortTools metadataTools (symbolHead metaA)))
         )
     ]
   where

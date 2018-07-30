@@ -19,10 +19,16 @@ module Kore.Proof.Unification
 ( unificationProof
 ) where
 
+import           Data.Hashable
+import           Data.Reflection
+import qualified Data.Set as S
+import           GHC.Generics
+                 ( Generic )
 
 
 import Kore.AST.MetaOrObject
 import Kore.ASTUtils.SmartConstructors
+import Kore.ASTUtils.SmartPatterns
 import Kore.ASTUtils.Substitution
 import Kore.IndexedModule.MetadataTools
 
@@ -30,17 +36,11 @@ import Kore.Proof.ConstructorAxioms
 import Kore.Proof.Proof
 import Kore.Proof.Util
 
-import           Data.Hashable
-import           Data.Reflection
-import qualified Data.Set as S
-import           GHC.Generics
-                 ( Generic )
-
 -- | Given terms `t1` and `t2`, outputs a proof that
 -- `t1 /\ t2 <-> t1 /\ <MGU EQNS>`, where `<MGU EQNS>` is
 -- a conjunction of the most general unifier equations.
 unificationProof
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => Term
     -> Term
     -> Either UnificationError Proof
@@ -54,7 +54,7 @@ unificationProof a b = do
     return $ useRule $ AndIntro forwards backwards
 
 unificationBackwardsProof
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => Term -- conjunction of eqs
     -> Term -- LHS
     -> Term -- RHS
@@ -70,7 +70,7 @@ unificationBackwardsProof eqns a b = useRule $ Discharge eqns aEqb
           aEqb = provablySubstitute substBEqB [1] aEqSubstA
 
 unificationForwardsProof
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => Term
     -> Term
     -> Either UnificationError Proof
@@ -104,7 +104,7 @@ instance Hashable UnificationError
 -- | Returns False if the eq x = t fails the occurs check,
 -- i.e. returns False iff x appears in t.
 occursCheck
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => Proof
     -> Bool
 occursCheck eq = case getConclusion eq of
@@ -112,7 +112,7 @@ occursCheck eq = case getConclusion eq of
     _                        -> impossible
 
 splitConstructor
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => Proof
     -> Either UnificationError Proof
 splitConstructor eq =
@@ -129,7 +129,7 @@ splitConstructor eq =
     otherwise -> impossible
 
 flipEqn
-    :: Given (MetadataTools Object)
+    :: Given (SortTools Object)
     => Proof
     -> Proof
 flipEqn eq = case getConclusion eq of

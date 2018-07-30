@@ -10,6 +10,7 @@ import Kore.AST.Common
 import Kore.AST.Kore
 import Kore.AST.MetaOrObject
 import Kore.AST.Sentence
+import Kore.MetaML.AST
 import Kore.Parser.LexemeImpl
 
 couple :: Gen a -> Gen [a]
@@ -209,10 +210,11 @@ equalsGen
 equalsGen childGen x = equalsInGen childGen x Equals
 
 domainValueGen
-    :: MetaOrObject level => level -> Gen (DomainValue level CommonKorePattern)
+    :: MetaOrObject level
+    => level -> Gen (DomainValue level (Fix (Pattern Meta Variable)))
 domainValueGen x = pure DomainValue
     <*> scale (`div` 2) (sortGen x)
-    <*> (asKorePattern . StringLiteralPattern <$> stringLiteralGen)
+    <*> (Fix . StringLiteralPattern <$> stringLiteralGen)
 
 existsGen
     :: MetaOrObject level
@@ -391,6 +393,33 @@ definitionGen
 definitionGen senGen = pure Definition
     <*> scale (`div` 2) attributesGen
     <*> scale (`div` 2) (modulesGen senGen)
+
+metaMLPatternGen :: Gen (MetaMLPattern Variable)
+metaMLPatternGen = Fix <$> sized (\n ->
+    if n<=0
+        then oneof
+            [ StringLiteralPattern <$> stringLiteralGen
+            , CharLiteralPattern <$> charLiteralGen
+            ]
+        else frequency
+            [ (15, patternGen metaMLPatternGen Meta)
+            , (1, StringLiteralPattern <$> stringLiteralGen)
+            , (1, CharLiteralPattern <$> charLiteralGen)
+            ]
+    )
+
+metaSentenceGen :: Gen MetaSentence
+metaSentenceGen = oneof
+    [ (SentenceSymbolSentence <$> sentenceSymbolGen Meta)
+    , (SentenceAliasSentence <$> sentenceAliasGen Meta metaMLPatternGen)
+    , (SentenceImportSentence
+            <$> sentenceImportGen)
+    , (SentenceAxiomSentence
+            <$> sentenceAxiomGen (sortVariableGen Meta) metaMLPatternGen)
+    ]
+
+metaModuleGen :: Gen MetaModule
+metaModuleGen = moduleGen metaSentenceGen
 
 testId :: String -> Id level
 testId name =

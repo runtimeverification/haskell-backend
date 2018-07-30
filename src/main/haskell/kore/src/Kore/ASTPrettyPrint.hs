@@ -318,10 +318,8 @@ instance
             ]
 
 instance
-    ( PrettyPrint child
-    , MetaOrObject level
-    ) => PrettyPrint (DomainValue level child)
-  where
+    ( MetaOrObject level
+    ) => PrettyPrint (DomainValue level (Fix (Pattern Meta Variable))) where
     prettyPrint _ p@(DomainValue _ _) =
         writeStructure
             "DomainValue"

@@ -18,10 +18,15 @@ module Kore.AST.MLPatterns
     , undefinedHeadSort
     ) where
 
-import           Kore.AST.Common
-import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
-import           Kore.Implicit.ImplicitSorts
+import Data.Functor.Foldable
+       (Fix)
+
+import Kore.AST.Common
+import Kore.AST.Kore
+import Kore.AST.MetaOrObject
+import Kore.ASTHelpers
+       (ApplicationSorts (..))
+import Kore.Implicit.ImplicitSorts
 
 {-|'MLPatternClass' offers a common interface to ML patterns
   (those starting with '\', except for 'Exists' and 'Forall')
@@ -74,14 +79,6 @@ instance MLPatternClass Ceil level where
     getPatternSorts c = [ceilOperandSort c, ceilResultSort c]
     getPatternChildren c = [ceilChild c]
     mlPatternToPattern = CeilPattern
-
-instance MLPatternClass DomainValue Object where
-    getPatternType _ = DomainValuePatternType
-    getMLPatternOperandSorts _ = [asUnified charListMetaSort]
-    getMLPatternResultSort = domainValueSort
-    getPatternSorts d = [domainValueSort d]
-    getPatternChildren d = [domainValueChild d]
-    mlPatternToPattern = DomainValuePattern
 
 instance MLPatternClass Equals level where
     getPatternType _ = EqualsPatternType
@@ -206,6 +203,8 @@ data PatternLeveledFunction level variable child result = PatternLeveledFunction
         -> result level)
     , stringLeveledFunction :: StringLiteral -> result Meta
     , charLeveledFunction :: CharLiteral -> result Meta
+    , domainValueLeveledFunction
+        :: DomainValue Object (Fix (Pattern Meta Variable)) -> result Object
     , applicationLeveledFunction :: !(Application level child -> result level)
     , variableLeveledFunction :: !(variable level -> result level)
     }
@@ -226,7 +225,7 @@ applyPatternLeveledFunction function (BottomPattern a) =
 applyPatternLeveledFunction function (CeilPattern a) =
     patternLeveledFunctionML function a
 applyPatternLeveledFunction function (DomainValuePattern a) =
-    patternLeveledFunctionML function a
+    domainValueLeveledFunction function a
 applyPatternLeveledFunction function (EqualsPattern a) =
     patternLeveledFunctionML function a
 applyPatternLeveledFunction function (ExistsPattern a) =
@@ -274,6 +273,8 @@ data PatternFunction level variable child result = PatternFunction
     , charFunction :: CharLiteral -> result
     , applicationFunction :: !(Application level child -> result)
     , variableFunction :: !(variable level -> result)
+    , domainValueFunction
+        :: DomainValue Object (Fix (Pattern Meta Variable)) -> result
     }
 
 newtype ParameterizedProxy result level = ParameterizedProxy
@@ -302,6 +303,8 @@ applyPatternFunction patternFunction =
                 ParameterizedProxy . applicationFunction patternFunction
             , variableLeveledFunction =
                 ParameterizedProxy . variableFunction patternFunction
+            , domainValueLeveledFunction =
+                ParameterizedProxy . domainValueFunction patternFunction
             }
 
 -- |'getPatternResultSort' retrieves the result sort of a pattern.
@@ -312,21 +315,23 @@ applyPatternFunction patternFunction =
 -- TODO(traiansf): add tests.
 getPatternResultSort
     :: SortedVariable variable
-    => (SymbolOrAlias level -> Sort level)
+    => (SymbolOrAlias level -> ApplicationSorts level)
     -- ^Function to retrieve the sort of a given pattern Head
     -> Pattern level variable child
     -> Sort level
-getPatternResultSort headSort =
+getPatternResultSort applicationSorts =
     applyPatternLeveledFunction PatternLeveledFunction
         { patternLeveledFunctionML = getMLPatternResultSort
         , patternLeveledFunctionMLBinder = getBinderPatternSort
         , stringLeveledFunction = const stringMetaSort
         , charLeveledFunction = const charMetaSort
-        , applicationLeveledFunction = headSort . applicationSymbolOrAlias
+        , domainValueLeveledFunction = domainValueSort
+        , applicationLeveledFunction =
+            applicationSortsResult . applicationSorts . applicationSymbolOrAlias
         , variableLeveledFunction = sortedVariableSort
         }
 
 -- |Sample argument function for 'getPatternResultSort', failing for all input.
-undefinedHeadSort :: SymbolOrAlias level -> Sort level
+undefinedHeadSort :: SymbolOrAlias level -> ApplicationSorts level
 undefinedHeadSort _ =
     error "Application pattern sort currently undefined"

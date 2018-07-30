@@ -14,12 +14,14 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.PureToKore
        ( patternKoreToPure )
+import Kore.ASTHelpers
+       ( ApplicationSorts(..) )
 import Kore.Building.AsAst
 import Kore.Building.Patterns
 import Kore.Building.Sorts
 import Kore.Error
 import Kore.IndexedModule.MetadataTools
-       ( MetadataTools (..) )
+       ( MetadataTools (..), SortTools )
 import Kore.MetaML.AST
        ( CommonMetaPattern )
 import Kore.Predicate.Predicate
@@ -30,6 +32,7 @@ import Kore.Step.ExpandedPattern as ExpandedPattern
        ( ExpandedPattern (..) )
 import Kore.Step.ExpandedPattern
        ( CommonExpandedPattern )
+import Kore.Step.StepperAttributes
 import Kore.Unification.Error
 import Kore.Unification.Unifier
        ( FunctionalProof (..), UnificationProof (..) )
@@ -979,13 +982,23 @@ test_baseStep =
                     }
             )
 
-mockMetadataTools :: MetadataTools Meta
+mockStepperAttributes :: StepperAttributes
+mockStepperAttributes = StepperAttributes
+    { isConstructor = True
+    , isFunctional  = True
+    , isFunction    = True
+    }
+
+mockSortTools :: SortTools Meta
+mockSortTools = const ApplicationSorts
+    { applicationSortsOperands = [asAst PatternSort, asAst PatternSort]
+    , applicationSortsResult = asAst PatternSort
+    }
+
+mockMetadataTools :: MetadataTools Meta StepperAttributes
 mockMetadataTools = MetadataTools
-    { isConstructor = const True
-    , isFunctional = const True
-    , isFunction = const False
-    , getArgumentSorts = const [asAst PatternSort, asAst PatternSort]
-    , getResultSort = const (asAst PatternSort)
+    { attributes = const mockStepperAttributes
+    , sortTools = mockSortTools
     }
 
 asPureMetaPattern
@@ -999,7 +1012,7 @@ makeEquals
     :: (ProperPattern Meta sort patt1, ProperPattern Meta sort patt2)
     => patt1 -> patt2 -> CommonPredicate Meta
 makeEquals patt1 patt2 =
-    give mockMetadataTools
+    give (sortTools mockMetadataTools)
         (makeEqualsPredicate
             (asPureMetaPattern patt1)
             (asPureMetaPattern patt2)
@@ -1069,7 +1082,7 @@ metaG = MetaG
 
 runStep
     :: MetaOrObject level
-    => MetadataTools level
+    => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
     -> CommonExpandedPattern level
     -- ^left-hand-side of unification
@@ -1078,6 +1091,6 @@ runStep
         (StepError level Variable)
         (CommonExpandedPattern level, StepProof level)
 runStep metadataTools configuration axiom =
-    case give metadataTools (stepWithAxiom configuration axiom) of
+    case give metadataTools (stepWithAxiom metadataTools configuration axiom) of
         Left err            -> Left (fst (runIntCounter err 0))
         Right counterResult -> Right (fst (runIntCounter counterResult 0))

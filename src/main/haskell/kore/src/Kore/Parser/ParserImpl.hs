@@ -589,10 +589,10 @@ koreMLConstructorParser = do
     objectMlConstructorRemainderParser patternType =
         case patternType of
             DomainValuePatternType -> DomainValuePattern <$>
-                unaryOperatorRemainderParser
-                    korePatternParser
-                    Object
-                    DomainValue
+                (   DomainValue
+                <$> inCurlyBracesRemainderParser (sortParser Object)
+                <*> inParenthesesParser (purePatternParser Meta)
+                )
             NextPatternType -> NextPattern <$>
                 unaryOperatorRemainderParser korePatternParser Object Next
             RewritesPatternType -> RewritesPattern <$>

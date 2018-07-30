@@ -28,6 +28,7 @@ dependencies:
   - bytestring-trie
   - containers
   - clock
+  - data-default
   - deepseq
   - deriving-compat
   - free

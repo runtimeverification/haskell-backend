@@ -16,7 +16,6 @@ import Kore.AST.Sentence
 import Kore.MetaML.AST
 
 import Test.Kore
-import Test.Kore.MetaML.AST
 
 
 pureToKoreToPureProp :: CommonMetaPattern -> Bool

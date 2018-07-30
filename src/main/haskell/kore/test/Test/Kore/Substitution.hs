@@ -1,10 +1,10 @@
 module Test.Kore.Substitution where
 
-import           Kore.AST.Common
-import           Kore.AST.Kore
-import           Kore.AST.MetaOrObject
+import Kore.AST.Common
+import Kore.AST.Kore
+import Kore.AST.MetaOrObject
 
-import           Test.Kore
+import Test.Kore
 
 objectSort :: Sort Object
 objectSort = SortVariableSort (SortVariable (testId "s"))

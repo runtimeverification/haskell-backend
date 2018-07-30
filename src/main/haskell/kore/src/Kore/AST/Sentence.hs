@@ -249,7 +249,7 @@ instance
     Pretty (Fix (pat variable) )
     => Pretty (SentenceHook level pat variable)
   where
-    pretty (SentenceHookedSort a) = "hooked-" <> pretty a
+    pretty (SentenceHookedSort a)   = "hooked-" <> pretty a
     pretty (SentenceHookedSymbol a) = "hooked-" <> pretty a
 
 {-|The 'Sentence' type corresponds to the @declaration@ syntactic category
