@@ -15,7 +15,6 @@ module Kore.IndexedModule.Resolvers
     , resolveSymbol
     ) where
 
-import           Data.Functor.Foldable
 import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy (..) )
@@ -106,17 +105,10 @@ getHeadApplicationSorts m patternHead =
 -- but rather just change the types
 getHeadAttributes
     :: MetaOrObject level
-<<<<<<< HEAD:src/main/haskell/language-kore/src/Data/Kore/IndexedModule/Resolvers.hs
     => KoreIndexedModule atts  -- ^module representing a verified definition
     -> SymbolOrAlias level     -- ^the head we want to find sorts for
     -> atts
 getHeadAttributes m patternHead =
-=======
-    => KoreIndexedModule   -- ^module representing a verified definition
-    -> SymbolOrAlias level -- ^the head we want to find sorts for
-    -> [Fix (UnifiedPattern Variable)]
-getAttributeList m patternHead =
->>>>>>> master:src/main/haskell/kore/src/Kore/IndexedModule/Resolvers.hs
     case resolveSymbol m headName of
         Right (atts, _) -> atts
         Left _ ->

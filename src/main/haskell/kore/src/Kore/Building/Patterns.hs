@@ -24,6 +24,8 @@ import Kore.AST.Kore
 import Kore.AST.MetaOrObject
 import Kore.Building.AsAst
 import Kore.Building.Sorts
+import Kore.MetaML.Lift
+       (liftToMeta)
 
 {-| When defining new patterns (e.g. for new symbols and aliases),
 users are expected to instantiate either

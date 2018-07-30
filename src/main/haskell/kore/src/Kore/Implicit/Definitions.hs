@@ -17,8 +17,6 @@ module Kore.Implicit.Definitions
 import Kore.AST.PureToKore
        ( modulePureToKore )
 import Kore.AST.Sentence
-import Kore.Implicit.Attributes
-       ( uncheckedAttributesModule )
 import Kore.Implicit.ImplicitKore
        ( uncheckedKoreModule )
 import Kore.MetaML.AST

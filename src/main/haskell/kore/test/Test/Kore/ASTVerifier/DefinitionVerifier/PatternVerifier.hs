@@ -17,8 +17,6 @@ import Kore.AST.Sentence
 import Kore.Building.Implicit
 import Kore.Building.Patterns as Patterns
 import Kore.Error
-import Kore.Implicit.Attributes
-       ( attributeObjectSort )
 import Kore.Implicit.ImplicitSorts
 
 import Test.Kore

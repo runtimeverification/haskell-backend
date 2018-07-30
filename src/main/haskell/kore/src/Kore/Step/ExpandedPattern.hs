@@ -31,9 +31,11 @@ import Kore.AST.MetaOrObject
 import Kore.AST.PureML
        ( PureMLPattern, mapPatternVariables )
 import Kore.ASTUtils.SmartConstructors
-       ( pattern Bottom_, pattern Top_, mkAnd, mkBottom )
+       ( mkAnd, mkBottom )
+import Kore.ASTUtils.SmartPatterns
+       ( pattern Bottom_, pattern Top_)
 import Kore.IndexedModule.MetadataTools
-       ( MetadataTools )
+       ( SortTools )
 import Kore.Predicate.Predicate
        ( Predicate, pattern PredicateFalse, pattern PredicateTrue,
        makeFalsePredicate, unwrapPredicate, variableSetFromPredicate )

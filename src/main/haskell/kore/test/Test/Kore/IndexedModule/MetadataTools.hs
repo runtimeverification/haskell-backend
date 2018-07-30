@@ -10,6 +10,7 @@ import           Data.Maybe
                  ( fromMaybe )
 
 import Kore.AST.Builders
+import Kore.ASTHelpers
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.PureML
@@ -21,6 +22,7 @@ import Kore.Implicit.Attributes
 import Kore.Implicit.ImplicitSorts
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.MetadataTools
+import Kore.Step.StepperAttributes
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier

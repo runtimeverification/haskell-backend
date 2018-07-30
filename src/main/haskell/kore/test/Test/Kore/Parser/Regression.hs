@@ -30,6 +30,8 @@ import Kore.AST.Sentence
 import Kore.ASTPrettyPrint
 import Kore.ASTVerifier.DefinitionVerifier
 import Kore.Error
+import Kore.Implicit.Attributes
+       ( ImplicitAttributes )
 import Kore.MetaML.Lift
        ( liftDefinition )
 import Kore.Parser.Parser

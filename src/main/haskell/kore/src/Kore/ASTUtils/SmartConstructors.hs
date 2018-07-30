@@ -31,27 +31,6 @@ module Kore.ASTUtils.SmartConstructors
     , allChildren -- | will have 0+ inhabitants
     , inPath
     , localInPattern
-    -- * Pattern synonyms
-    , pattern And_
-    , pattern App_
-    , pattern Bottom_
-    , pattern Ceil_
-    , pattern DV_
-    , pattern Equals_
-    , pattern Exists_
-    , pattern Floor_
-    , pattern Forall_
-    , pattern Iff_
-    , pattern Implies_
-    , pattern In_
-    , pattern Next_
-    , pattern Not_
-    , pattern Or_
-    , pattern Rewrites_
-    , pattern Top_
-    , pattern Var_
-    , pattern StringLiteral_
-    , pattern CharLiteral_
     , mkAnd
     , mkApp
     , mkBottom
@@ -86,6 +65,7 @@ import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
 import Kore.AST.PureML
        ( PureMLPattern )
+import Kore.ASTUtils.SmartPatterns
 import Kore.IndexedModule.MetadataTools
 
 

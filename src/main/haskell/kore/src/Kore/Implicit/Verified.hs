@@ -14,18 +14,21 @@ module Kore.Implicit.Verified
     )
     where
 
+import Data.Proxy
+       ( Proxy (..) )
+
 import Kore.AST.PureToKore
 import Kore.AST.Sentence
 import Kore.ASTVerifier.DefinitionVerifier
-       ( defaultAttributesVerification, verifyImplicitKoreDefinition,
-       verifyNormalKoreDefinition )
+       ( defaultAttributesVerification, verifyImplicitKoreDefinition )
 import Kore.ASTVerifier.Error
        ( VerifyError )
 import Kore.Error
        ( Error, printError )
+import Kore.Implicit.Attributes
+       ( ImplicitAttributes )
 import Kore.Implicit.Definitions
-       ( uncheckedAttributesDefinition, uncheckedKoreDefinition,
-       uncheckedMetaDefinition )
+       ( uncheckedKoreDefinition, uncheckedMetaDefinition )
 import Kore.MetaML.AST
 
 checkedMetaDefinition :: Either (Error VerifyError) MetaDefinition

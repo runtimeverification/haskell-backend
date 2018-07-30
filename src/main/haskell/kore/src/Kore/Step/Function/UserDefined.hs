@@ -12,9 +12,6 @@ module Kore.Step.Function.UserDefined
     , axiomFunctionEvaluator
     ) where
 
-import Data.Reflection
-       ( Given )
-
 import Kore.AST.Common
        ( Application (..), Pattern (..), SortedVariable )
 import Kore.AST.MetaOrObject
@@ -35,6 +32,8 @@ import Kore.Step.Function.Data
        ( CommonAttemptedFunction, CommonConditionEvaluator,
        CommonPurePatternFunctionEvaluator, ConditionEvaluator (..),
        FunctionResultProof (..), PureMLPatternFunctionEvaluator (..) )
+import Kore.Step.StepperAttributes
+       ( StepperAttributes )
 import Kore.Step.Substitution
        ( mergePredicatesAndSubstitutions )
 import Kore.Variables.Fresh.IntCounter

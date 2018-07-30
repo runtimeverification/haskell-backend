@@ -15,10 +15,8 @@ module Kore.IndexedModule.MetadataTools
     ) where
 
 import Kore.AST.Common
-import Kore.AST.Kore
 import Kore.AST.MetaOrObject
 import Kore.ASTHelpers
-import Kore.Implicit.Attributes
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers
 

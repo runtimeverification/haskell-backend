@@ -16,7 +16,7 @@ import           Data.List
                  ( nub )
 import qualified Data.Map as Map
 import           Data.Reflection
-                 ( Given, given )
+                 ( give )
 
 import Data.Functor.Traversable
        ( fixTopDownVisitor )
@@ -43,6 +43,8 @@ import Kore.Step.Function.Data
        FunctionResultProof (..), PureMLPatternFunctionEvaluator (..) )
 import Kore.Step.Function.Data as AttemptedFunction
        ( AttemptedFunction (..) )
+import Kore.Step.StepperAttributes
+       ( StepperAttributes (..) )
 import Kore.Step.Substitution
        ( mergePredicatesAndSubstitutions )
 import Kore.Unification.Unifier

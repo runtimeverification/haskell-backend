@@ -10,6 +10,7 @@ import Test.Tasty.HUnit
 
 import Data.Functor.Foldable
 
+import Kore.AST.AstWithLocation
 import Kore.AST.Builders
 import Kore.AST.Common
 import Kore.AST.Kore
@@ -18,6 +19,8 @@ import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
 import Kore.AST.PureML
 import Kore.AST.Sentence
+import Kore.ASTHelpers
+       ( ApplicationSorts (..) )
 import Kore.Building.AsAst
 import Kore.Building.Patterns
 import Kore.Building.Sorts as Sorts

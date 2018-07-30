@@ -18,9 +18,14 @@ module Kore.AST.MLPatterns
     , undefinedHeadSort
     ) where
 
+import Data.Functor.Foldable
+       (Fix)
+
 import Kore.AST.Common
 import Kore.AST.Kore
 import Kore.AST.MetaOrObject
+import Kore.ASTHelpers
+       (ApplicationSorts (..))
 import Kore.Implicit.ImplicitSorts
 
 {-|'MLPatternClass' offers a common interface to ML patterns
@@ -198,7 +203,8 @@ data PatternLeveledFunction level variable child result = PatternLeveledFunction
         -> result level)
     , stringLeveledFunction :: StringLiteral -> result Meta
     , charLeveledFunction :: CharLiteral -> result Meta
-    , domainValueLeveledFunction :: DomainValue Object -> result Object
+    , domainValueLeveledFunction
+        :: DomainValue Object (Fix (Pattern Meta Variable)) -> result Object
     , applicationLeveledFunction :: !(Application level child -> result level)
     , variableLeveledFunction :: !(variable level -> result level)
     }
@@ -267,7 +273,8 @@ data PatternFunction level variable child result = PatternFunction
     , charFunction :: CharLiteral -> result
     , applicationFunction :: !(Application level child -> result)
     , variableFunction :: !(variable level -> result)
-    , domainValueFunction :: DomainValue Object -> result
+    , domainValueFunction
+        :: DomainValue Object (Fix (Pattern Meta Variable)) -> result
     }
 
 newtype ParameterizedProxy result level = ParameterizedProxy

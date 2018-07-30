@@ -317,7 +317,9 @@ instance
             , writeFieldNewLine "ceilChild" ceilChild p
             ]
 
-instance MetaOrObject level => PrettyPrint (DomainValue level) where
+instance
+    ( MetaOrObject level
+    ) => PrettyPrint (DomainValue level (Fix (Pattern Meta Variable))) where
     prettyPrint _ p@(DomainValue _ _) =
         writeStructure
             "DomainValue"

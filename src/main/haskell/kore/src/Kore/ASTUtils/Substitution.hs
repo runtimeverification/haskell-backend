@@ -29,6 +29,7 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.PureML
 import Kore.ASTUtils.SmartConstructors
+import Kore.ASTUtils.SmartPatterns
 
 -- | subst phi_1 phi_2 phi = phi[phi_2/phi_1]
 -- Note that different papers use different conventions.

@@ -41,11 +41,13 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.PureML
        ( PureMLPattern )
+import Kore.ASTUtils.SmartPatterns
+       ( pattern Bottom_, pattern Top_)
 import Kore.ASTUtils.SmartConstructors
-       ( pattern Bottom_, pattern Top_, mkAnd, mkBottom, mkCeil, mkEquals,
+       ( mkAnd, mkBottom, mkCeil, mkEquals,
        mkIff, mkImplies, mkNot, mkOr, mkTop )
 import Kore.IndexedModule.MetadataTools
-       ( MetadataTools )
+       ( SortTools )
 
 {--| 'PredicateProof' is a placeholder for a proof showing that a Predicate
 evaluation was correct.

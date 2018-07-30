@@ -28,6 +28,8 @@ import Kore.IndexedModule.IndexedModule
        ( KoreIndexedModule )
 import Kore.Parser.Parser
        ( fromKore, fromKorePattern )
+import Kore.Step.StepperAttributes
+       ( StepperAttributes )
 
 import GlobalMain
        ( MainOptions (..), clockSomething, clockSomethingIO, enableDisableFlag,

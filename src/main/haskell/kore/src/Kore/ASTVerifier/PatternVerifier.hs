@@ -15,6 +15,8 @@ module Kore.ASTVerifier.PatternVerifier
 
 import           Control.Monad
                  ( foldM, zipWithM_ )
+import           Data.Functor.Foldable
+                 (Fix)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import           Data.Text.Prettyprint.Doc.Render.String
@@ -423,7 +425,7 @@ verifyVariableUsage variable _ verifyHelpers _ _ = do
 -- TODO: properly verify child pattern if it's not a stringLiteral
 verifyDomainValue
     :: (MetaOrObject level)
-    => DomainValue Object
+    => DomainValue Object (Fix (Pattern Meta Variable))
     -> VerifyHelpers level
     -> Set.Set UnifiedSortVariable
     -> Either (Error VerifyError) (Sort Object)

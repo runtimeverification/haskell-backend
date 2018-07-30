@@ -17,16 +17,18 @@ import Data.Function
 import Data.Functor.Foldable
 import Data.List
        ( groupBy, partition, sortBy )
-import Data.Reflection
 
 import Data.Functor.Traversable
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
 import Kore.AST.PureML
+import Kore.ASTHelpers
+       (ApplicationSorts (..))
 import Kore.IndexedModule.MetadataTools
 import Kore.Predicate.Predicate
        ( Predicate, makeTruePredicate )
+import Kore.Step.StepperAttributes
 import Kore.Unification.Error
 
 type UnificationSubstitution level variable
@@ -75,12 +77,8 @@ unificationSolutionToPurePattern tools ucp =
         (constraint:constraints) ->
             andPat unifiedTerm (foldr andEquals (equals constraint) constraints)
   where
-<<<<<<< HEAD:src/main/haskell/language-kore/src/Data/Kore/Unification/UnifierImpl.hs
     resultSort =
-        getPatternResultSort (sortTools tools) (unFix unifiedTerm)
-=======
-    resultSort = getPatternResultSort (getResultSort tools) (project unifiedTerm)
->>>>>>> master:src/main/haskell/kore/src/Kore/Unification/UnifierImpl.hs
+        getPatternResultSort (sortTools tools) (project unifiedTerm)
     unifiedTerm = unificationSolutionTerm ucp
     andEquals = andPat . equals
     andPat first second =
@@ -245,11 +243,7 @@ simplifyAnds tools (p:ps) =
         )
         ps
   where
-<<<<<<< HEAD:src/main/haskell/language-kore/src/Data/Kore/Unification/UnifierImpl.hs
-    resultSort = getPatternResultSort (sortTools tools) (unFix p)
-=======
-    resultSort = getPatternResultSort (getResultSort tools) (project p)
->>>>>>> master:src/main/haskell/kore/src/Kore/Unification/UnifierImpl.hs
+    resultSort = getPatternResultSort (sortTools tools) (project p)
     simplifyAnds' (solution,proof) pat = do
         let
             conjunct = Fix $ AndPattern And
@@ -502,15 +496,9 @@ unificationProcedure tools p1 p2
                 (CombinedUnificationProof [proof, normProof])
             )
   where
-<<<<<<< HEAD:src/main/haskell/language-kore/src/Data/Kore/Unification/UnifierImpl.hs
     resultSort = getPatternResultSort (sortTools tools)
-    p1Sort =  resultSort (unFix p1)
-    p2Sort =  resultSort (unFix p2)
-=======
-    resultSort = getPatternResultSort (getResultSort tools)
     p1Sort =  resultSort (project p1)
     p2Sort =  resultSort (project p2)
->>>>>>> master:src/main/haskell/kore/src/Kore/Unification/UnifierImpl.hs
     conjunct = Fix $ AndPattern And
         { andSort = p1Sort
         , andFirst = p1

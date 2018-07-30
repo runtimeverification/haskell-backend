@@ -10,6 +10,7 @@ import Kore.AST.Common
 import Kore.AST.Kore
 import Kore.AST.MetaOrObject
 import Kore.AST.Sentence
+import Kore.MetaML.AST
 import Kore.Parser.LexemeImpl
 
 couple :: Gen a -> Gen [a]
@@ -209,7 +210,8 @@ equalsGen
 equalsGen childGen x = equalsInGen childGen x Equals
 
 domainValueGen
-    :: MetaOrObject level => level -> Gen (DomainValue level)
+    :: MetaOrObject level
+    => level -> Gen (DomainValue level (Fix (Pattern Meta Variable)))
 domainValueGen x = pure DomainValue
     <*> scale (`div` 2) (sortGen x)
     <*> (Fix . StringLiteralPattern <$> stringLiteralGen)

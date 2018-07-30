@@ -1,4 +1,4 @@
-module Test.Data.Kore.Step.StepperAttributes (test_stepperAttributes) where
+module Test.Kore.Step.StepperAttributes (test_stepperAttributes) where
 
 import           Test.Tasty                            (TestTree)
 import           Test.Tasty.HUnit                      (assertEqual, testCase)

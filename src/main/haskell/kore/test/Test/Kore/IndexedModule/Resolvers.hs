@@ -5,6 +5,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
+import           Data.Default
 import           Data.Functor.Foldable
 import qualified Data.Map as Map
 import           Data.Maybe
@@ -17,8 +18,10 @@ import Kore.AST.PureML
 import Kore.AST.PureToKore
 import Kore.AST.Sentence
 import Kore.ASTHelpers
+import Kore.ASTUtils.SmartPatterns
 import Kore.ASTVerifier.DefinitionVerifier
 import Kore.Error
+import Kore.Implicit.Attributes
 import Kore.Implicit.ImplicitSorts
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers

@@ -24,7 +24,7 @@ import           Data.Maybe
 import           Data.Monoid
                  ( (<>) )
 import           Data.Reflection
-                 ( Given, given )
+                 ( Given, give )
 import qualified Data.Set as Set
 
 import           Kore.AST.Common
@@ -32,7 +32,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( CommonPurePattern, PureMLPattern, mapPatternVariables )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( MetadataTools (..), SortTools )
 import           Kore.Predicate.Predicate
                  ( Predicate, PredicateProof (..), makeMultipleAndPredicate,
                  variableSetFromPredicate )
@@ -43,6 +43,8 @@ import           Kore.Step.Error
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern (ExpandedPattern) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import           Kore.Step.StepperAttributes
+                 ( StepperAttributes )
 import           Kore.Step.Substitution
                  ( mergeSubstitutions )
 import           Kore.Substitution.Class

@@ -35,6 +35,7 @@ import           Control.Arrow
                  ( (&&&) )
 import           Control.Monad
                  ( foldM )
+import           Data.Default
 import           Data.Functor.Classes
 import           Data.Functor.Foldable
                  ( Fix )
@@ -46,6 +47,7 @@ import Kore.AST.Kore
 import Kore.AST.MetaOrObject
 import Kore.AST.Sentence
 import Kore.Error
+import Kore.Implicit.Attributes
 import Kore.Implicit.ImplicitSorts
 
 type SortDescription level = SentenceSort level UnifiedPattern Variable

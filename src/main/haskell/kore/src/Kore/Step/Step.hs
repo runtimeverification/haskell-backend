@@ -15,8 +15,6 @@ module Kore.Step.Step
 
 import Data.Either
        ( rights )
-import Data.Reflection
-       ( Given )
 
 import           Kore.AST.MetaOrObject
                  ( MetaOrObject )
@@ -25,6 +23,8 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Step.BaseStep
                  ( AxiomPattern, StepProof (..), stepWithAxiom )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import           Kore.Step.StepperAttributes
+                 ( StepperAttributes )
 import           Kore.Variables.Fresh.IntCounter
                  ( IntCounter )
 

@@ -12,18 +12,17 @@ module Kore.ASTVerifier.AttributesVerifier
     , AttributesVerification (..)
     ) where
 
-import qualified Data.Set as Set
+import Data.Proxy
+       (Proxy)
 
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
-       ( asUnified )
+       ( Object )
 import Kore.AST.Sentence
+import Kore.AST.Kore
+       ( KorePattern, applyKorePattern )
 import Kore.ASTVerifier.Error
-import Kore.ASTVerifier.PatternVerifier
 import Kore.Error
-import Kore.Implicit.Attributes
-       ( attributeObjectSort )
-import Kore.IndexedModule.IndexedModule
 
 {--| Whether we should verify attributes and, when verifying, the module with
 declarations visible in these atributes. --}

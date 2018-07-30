@@ -23,7 +23,6 @@ import Kore.AST.Kore
 import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
 import Kore.AST.Sentence
-import Kore.ASTHelpers
 import Kore.ASTVerifier.AttributesVerifier
 import Kore.ASTVerifier.Error
 import Kore.ASTVerifier.PatternVerifier

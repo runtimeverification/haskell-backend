@@ -19,9 +19,6 @@ module Kore.Step.Function.Data
     , CommonAttemptedFunction
     ) where
 
-import Data.Reflection
-       ( Given )
-
 import Kore.AST.Common
        ( Application, Variable )
 import Kore.AST.MetaOrObject
@@ -34,6 +31,8 @@ import Kore.Predicate.Predicate
        ( Predicate, PredicateProof )
 import Kore.Step.ExpandedPattern
        ( ExpandedPattern )
+import Kore.Step.StepperAttributes
+       ( StepperAttributes )
 import Kore.Variables.Fresh.IntCounter
        ( IntCounter )
 

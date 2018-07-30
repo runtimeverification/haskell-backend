@@ -23,7 +23,7 @@ import Kore.AST.MetaOrObject
 import Kore.AST.PureML
        ( PureMLPattern, asPurePattern, fromPurePattern )
 import Kore.IndexedModule.MetadataTools
-       ( MetadataTools )
+       ( SortTools )
 import Kore.Predicate.Predicate
        ( Predicate, PredicateProof (..), makeAndPredicate, makeEqualsPredicate,
        makeFalsePredicate, makeIffPredicate, makeImpliesPredicate,

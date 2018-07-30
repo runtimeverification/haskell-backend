@@ -16,7 +16,7 @@ module Kore.Step.Substitution
 import Data.List
        ( foldl' )
 import Data.Reflection
-       ( Given, given )
+       ( Given, give )
 
 import Kore.AST.Common
        ( SortedVariable )
@@ -26,10 +26,11 @@ import Kore.AST.PureML
 import Kore.ASTUtils.SmartConstructors
        ( mkVar )
 import Kore.IndexedModule.MetadataTools
-       ( MetadataTools )
+       ( MetadataTools (..), SortTools )
 import Kore.Predicate.Predicate
        ( Predicate, PredicateProof (..), makeAndPredicate, makeEqualsPredicate,
        makeFalsePredicate, makeMultipleAndPredicate, makeTruePredicate )
+import Kore.Step.StepperAttributes
 import Kore.Unification.Error
        ( UnificationError (..) )
 import Kore.Unification.Unifier
