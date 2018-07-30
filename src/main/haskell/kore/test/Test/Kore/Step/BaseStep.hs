@@ -14,12 +14,14 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.PureToKore
        ( patternKoreToPure )
+import Kore.ASTHelpers
+       ( ApplicationSorts(..) )
 import Kore.Building.AsAst
 import Kore.Building.Patterns
 import Kore.Building.Sorts
 import Kore.Error
 import Kore.IndexedModule.MetadataTools
-       ( MetadataTools (..) )
+       ( MetadataTools (..), SortTools )
 import Kore.MetaML.AST
        ( CommonMetaPattern )
 import Kore.Predicate.Predicate
@@ -30,6 +32,7 @@ import Kore.Step.ExpandedPattern as ExpandedPattern
        ( ExpandedPattern (..) )
 import Kore.Step.ExpandedPattern
        ( CommonExpandedPattern )
+import Kore.Step.StepperAttributes
 import Kore.Unification.Error
 import Kore.Unification.Unifier
        ( FunctionalProof (..), UnificationProof (..) )

@@ -22,6 +22,7 @@ import Kore.ASTVerifier.DefinitionVerifier
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
        ( KoreIndexedModule )
+import Kore.Implicit.Attributes
 import Kore.Parser.ParserImpl
 import Kore.Parser.ParserUtils
 import Kore.Step.AxiomPatterns

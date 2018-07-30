@@ -1,20 +1,28 @@
 module Test.Kore.Step.StepperAttributes (test_stepperAttributes) where
 
-import           Test.Tasty                            (TestTree)
-import           Test.Tasty.HUnit                      (assertEqual, testCase)
+import Test.Tasty
+       (TestTree)
+import Test.Tasty.HUnit
+       (assertEqual, testCase)
 
-import           Data.Default                          (def)
+import Data.Default
+       (def)
 
 
-import           Test.Data.Kore.Comparators            ()
+import Test.Kore.Comparators
+       ()
 
-import           Data.Kore.AST.Common
-import           Data.Kore.AST.Kore                    (CommonKorePattern)
-import           Data.Kore.AST.PureToKore              (patternPureToKore)
-import           Data.Kore.AST.Sentence                (Attributes (..))
-import           Data.Kore.ASTUtils.SmartPatterns
-import           Data.Kore.IndexedModule.IndexedModule (ParsedAttributes (..))
-import           Data.Kore.Step.StepperAttributes
+import Kore.AST.Common
+import Kore.AST.Kore
+       ( CommonKorePattern)
+import Kore.AST.PureToKore
+       ( patternPureToKore)
+import Kore.AST.Sentence
+       ( Attributes (..) )
+import Kore.ASTUtils.SmartPatterns
+import Kore.IndexedModule.IndexedModule
+       (ParsedAttributes (..))
+import Kore.Step.StepperAttributes
 
 
 parseStepperAttributes :: [CommonKorePattern] -> StepperAttributes

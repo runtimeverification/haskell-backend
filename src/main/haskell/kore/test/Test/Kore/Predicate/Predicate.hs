@@ -15,6 +15,8 @@ import Kore.AST.PureML
        ( CommonPurePattern )
 import Kore.AST.PureToKore
        ( patternKoreToPure )
+import Kore.ASTHelpers
+       ( ApplicationSorts(..) )
 import Kore.ASTUtils.SmartConstructors
        ( mkAnd, mkEquals, mkIff, mkImplies, mkNot, mkOr )
 import Kore.Building.AsAst
@@ -22,7 +24,7 @@ import Kore.Building.Patterns
 import Kore.Building.Sorts
 import Kore.Error
 import Kore.IndexedModule.MetadataTools
-       ( MetadataTools (..) )
+       ( SortTools )
 import Kore.Predicate.Predicate
        ( CommonPredicate, compactPredicatePredicate, makeAndPredicate,
        makeEqualsPredicate, makeFalsePredicate, makeIffPredicate,

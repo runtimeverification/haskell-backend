@@ -33,6 +33,8 @@ import Kore.Building.Patterns
 import Kore.Building.Sorts
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
+import Kore.Implicit.Attributes
+       ( ImplicitAttributes )
 import Kore.MetaML.AST
        ( MetaMLPattern )
 import Logic.Matching.Error

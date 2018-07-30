@@ -11,17 +11,21 @@ Portability : portable
 -}
 module Test.Kore.Comparators where
 
-import           Kore.AST.Common
-import           Kore.AST.PureML
-import           Kore.Predicate.Predicate
-import           Kore.Step.BaseStep
-import           Kore.Step.Error
-import           Kore.Step.ExpandedPattern as ExpandedPattern (ExpandedPattern (..))
-import           Kore.Step.Function.Data   as AttemptedFunction (AttemptedFunction (..))
-import           Kore.Unification.Error
-import           Kore.Unification.Unifier
+import Data.Functor.Foldable
+       ( Fix )
 
-import           Test.Tasty.HUnit.Extensions
+import Kore.AST.Common
+import Kore.AST.MetaOrObject
+import Kore.AST.PureML
+import Kore.Predicate.Predicate
+import Kore.Step.BaseStep
+import Kore.Step.Error
+import Kore.Step.ExpandedPattern as ExpandedPattern (ExpandedPattern (..))
+import Kore.Step.Function.Data   as AttemptedFunction (AttemptedFunction (..))
+import Kore.Unification.Error
+import Kore.Unification.Unifier
+
+import Test.Tasty.HUnit.Extensions
 
 {-# ANN module ("HLint: ignore Use record patterns" :: String) #-}
 
@@ -275,7 +279,7 @@ instance (EqualWithExplanation child, Show child)
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
-instance EqualWithExplanation (DomainValue level)
+instance EqualWithExplanation (DomainValue level (Fix (Pattern Meta Variable)))
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show

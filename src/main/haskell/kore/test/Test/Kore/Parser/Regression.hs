@@ -19,6 +19,8 @@ import           Control.Monad
                  ( void )
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.ByteString.Lazy.Char8 as LazyChar8
+import           Data.Proxy
+                 ( Proxy (..) )
 import           System.Directory
                  ( getCurrentDirectory, setCurrentDirectory )
 import           System.FilePath

@@ -17,13 +17,15 @@ import Kore.AST.PureML
        ( CommonPurePattern )
 import Kore.AST.PureToKore
        ( patternKoreToPure )
+import Kore.ASTHelpers
+       ( ApplicationSorts(..) )
 import Kore.Building.AsAst
 import Kore.Building.Patterns
 import Kore.Building.Sorts
 import Kore.Error
        ( printError )
 import Kore.IndexedModule.MetadataTools
-       ( MetadataTools (..) )
+       ( MetadataTools (..), SortTools )
 import Kore.MetaML.AST
        ( CommonMetaPattern )
 import Kore.Predicate.Predicate
@@ -43,6 +45,7 @@ import Kore.Step.Function.Evaluator
        ( evaluateFunctions )
 import Kore.Step.Function.UserDefined
        ( axiomFunctionEvaluator )
+import Kore.Step.StepperAttributes
 import Kore.Variables.Fresh.IntCounter
        ( IntCounter, runIntCounter )
 

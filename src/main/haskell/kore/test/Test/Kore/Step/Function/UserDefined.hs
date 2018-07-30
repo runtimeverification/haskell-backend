@@ -5,9 +5,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import Data.Reflection
-       ( give )
-
 import Kore.AST.Common
        ( Application (..), AstLocation (..), Id (..), Pattern (..),
        SymbolOrAlias (..) )
@@ -16,12 +13,14 @@ import Kore.AST.PureML
        ( CommonPurePattern, fromPurePattern )
 import Kore.AST.PureToKore
        ( patternKoreToPure )
+import Kore.ASTHelpers
+       ( ApplicationSorts(..) )
 import Kore.Building.AsAst
 import Kore.Building.Patterns
 import Kore.Building.Sorts
 import Kore.Error
 import Kore.IndexedModule.MetadataTools
-       ( MetadataTools (..) )
+       ( MetadataTools (..), SortTools )
 import Kore.MetaML.AST
        ( CommonMetaPattern )
 import Kore.Predicate.Predicate
@@ -37,6 +36,7 @@ import Kore.Step.Function.Data
        CommonPurePatternFunctionEvaluator, FunctionResultProof (..) )
 import Kore.Step.Function.UserDefined
        ( axiomFunctionEvaluator )
+import Kore.Step.StepperAttributes
 import Kore.Variables.Fresh.IntCounter
 
 import Test.Kore.Comparators ()

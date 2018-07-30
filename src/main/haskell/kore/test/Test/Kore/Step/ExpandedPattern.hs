@@ -15,10 +15,12 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.PureML
        ( PureMLPattern )
+import Kore.ASTHelpers
+       ( ApplicationSorts(..) )
 import Kore.ASTUtils.SmartConstructors
        ( mkAnd, mkBottom, mkEquals, mkTop, mkVar )
 import Kore.IndexedModule.MetadataTools
-       ( MetadataTools (..) )
+       ( SortTools )
 
 import Kore.Predicate.Predicate
        ( Predicate, makeEqualsPredicate, makeFalsePredicate,

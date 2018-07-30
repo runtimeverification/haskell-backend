@@ -21,12 +21,15 @@ import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
 import Kore.AST.PureML
 import Kore.AST.Sentence
+import Kore.ASTHelpers
+       ( ApplicationSorts(..) )
 import Kore.ASTPrettyPrint
 import Kore.ASTUtils.SmartConstructors
        ( mkVar )
 import Kore.IndexedModule.MetadataTools
 import Kore.Predicate.Predicate
        ( Predicate, makeTruePredicate )
+import Kore.Step.StepperAttributes
 import Kore.Unification.Error
 import Kore.Unification.UnifierImpl
 
