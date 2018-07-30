@@ -18,6 +18,9 @@ import Data.Functor.Foldable
 import Kore.AST.Common
 import Kore.AST.Sentence
 
+import           Kore.AST.MetaOrObject
+import           Data.Hashable
+
 {-|'PureMLPattern' corresponds to "fixed point" representations
 of the 'Pattern' class where the level is fixed to a given @level@.
 
@@ -110,6 +113,9 @@ type PurePatternStub level variable =
 
 type CommonPurePatternStub level =
     PurePatternStub level Variable
+
+instance MetaOrObject level => Hashable (CommonPurePattern level) where 
+    hashWithSalt s (Fix p) = hashWithSalt s p 
 
 {--| 'mapPatternVariables' replaces all variables in a 'PureMLPattern'
 using the provided mapping.

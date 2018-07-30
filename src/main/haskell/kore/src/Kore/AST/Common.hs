@@ -25,7 +25,7 @@ Please refer to Section 9 (The Kore Language) of the
 module Kore.AST.Common where
 
 import Data.Deriving
-       ( deriveEq1, deriveShow1 )
+       ( deriveEq1, deriveShow1, deriveOrd1 )
 import Data.Functor.Classes
 import Data.Hashable
 import Data.Proxy
@@ -445,6 +445,7 @@ data And level child = And
 
 deriveEq1 ''And
 deriveShow1 ''And
+deriveOrd1 ''And
 
 instance Hashable child => Hashable (And level child)
 
@@ -471,6 +472,7 @@ data Application level child = Application
 
 deriveEq1 ''Application
 deriveShow1 ''Application
+deriveOrd1 ''Application
 
 instance Hashable child => Hashable (Application level child)
 
@@ -494,6 +496,7 @@ newtype Bottom level child = Bottom { bottomSort :: Sort level}
 
 deriveEq1 ''Bottom
 deriveShow1 ''Bottom
+deriveOrd1 ''Bottom
 
 instance Hashable (Bottom level child)
 
@@ -523,6 +526,7 @@ data Ceil level child = Ceil
 
 deriveEq1 ''Ceil
 deriveShow1 ''Ceil
+deriveOrd1 ''Ceil
 
 instance Hashable child => Hashable (Ceil level child)
 
@@ -555,6 +559,8 @@ data DomainValue level child = DomainValue
 
 deriveEq1 ''DomainValue
 deriveShow1 ''DomainValue
+deriveOrd1 ''DomainValue
+
 
 instance Hashable child => Hashable (DomainValue level child)
 
@@ -587,6 +593,7 @@ data Equals level child = Equals
 
 deriveEq1 ''Equals
 deriveShow1 ''Equals
+deriveOrd1 ''Equals
 
 instance Hashable child => Hashable (Equals level child)
 
@@ -613,6 +620,12 @@ data Exists level v child = Exists
     , existsChild    :: !child
     }
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+instance (Ord (Sort level), Ord (v level)) => Ord1 (Exists level v) where
+    liftCompare liftedCompare a b =
+        (existsSort a `compare` existsSort b)
+        <> (existsVariable a `compare` existsVariable b)
+        <> (existsChild a) `liftedCompare` (existsChild b)
 
 instance (Eq (Sort level), Eq (v level)) => Eq1 (Exists level v) where
     liftEq liftedEq a b =
@@ -659,6 +672,7 @@ data Floor level child = Floor
 
 deriveEq1 ''Floor
 deriveShow1 ''Floor
+deriveOrd1 ''Floor
 
 instance Hashable child => Hashable (Floor level child)
 
@@ -685,6 +699,12 @@ data Forall level v child = Forall
     , forallChild    :: !child
     }
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+instance (Ord (Sort level), Ord (v level)) => Ord1 (Forall level v) where
+    liftCompare liftedCompare a b =
+        (forallSort a `compare` forallSort b)
+        <> (forallVariable a `compare` forallVariable b)
+        <> (forallChild a) `liftedCompare` (forallChild b)
 
 instance (Eq (Sort level), Eq (v level)) => Eq1 (Forall level v) where
     liftEq liftedEq a b =
@@ -729,6 +749,7 @@ data Iff level child = Iff
 
 deriveEq1 ''Iff
 deriveShow1 ''Iff
+deriveOrd1 ''Iff
 
 instance Hashable child => Hashable (Iff level child)
 
@@ -758,6 +779,7 @@ data Implies level child = Implies
 
 deriveEq1 ''Implies
 deriveShow1 ''Implies
+deriveOrd1 ''Implies
 
 instance Hashable child => Hashable (Implies level child)
 
@@ -793,6 +815,7 @@ data In level child = In
 
 deriveEq1 ''In
 deriveShow1 ''In
+deriveOrd1 ''In
 
 instance Hashable child => Hashable (In level child)
 
@@ -822,6 +845,7 @@ data Next level child = Next
 
 deriveEq1 ''Next
 deriveShow1 ''Next
+deriveOrd1 ''Next
 
 instance Hashable child => Hashable (Next level child)
 
@@ -850,6 +874,7 @@ data Not level child = Not
 
 deriveEq1 ''Not
 deriveShow1 ''Not
+deriveOrd1 ''Not
 
 instance Hashable child => Hashable (Not level child)
 
@@ -879,6 +904,7 @@ data Or level child = Or
 
 deriveEq1 ''Or
 deriveShow1 ''Or
+deriveOrd1 ''Or
 
 instance Hashable child => Hashable (Or level child)
 
@@ -909,6 +935,8 @@ data Rewrites level child = Rewrites
 
 deriveEq1 ''Rewrites
 deriveShow1 ''Rewrites
+deriveOrd1 ''Rewrites
+
 
 instance Hashable child => Hashable (Rewrites level child)
 
@@ -934,6 +962,7 @@ newtype Top level child = Top { topSort :: Sort level}
 
 deriveEq1 ''Top
 deriveShow1 ''Top
+deriveOrd1 ''Top
 
 instance Hashable (Top level child)
 
@@ -995,6 +1024,33 @@ data Pattern level variable child where
         :: !(Top level child) -> Pattern level variable child
     VariablePattern
         :: !(variable level) -> Pattern level variable child
+
+instance Ord (variable level) => Ord1 (Pattern level variable) where
+    liftCompare liftedCompare a b =
+        case (a, b) of
+            (AndPattern a', AndPattern b') -> liftCompare liftedCompare a' b'
+            (ApplicationPattern a', ApplicationPattern b') ->
+                liftCompare liftedCompare a' b'
+            (BottomPattern a', BottomPattern b') -> liftCompare liftedCompare a' b'
+            (CeilPattern a', CeilPattern b') -> liftCompare liftedCompare a' b'
+            (DomainValuePattern a', DomainValuePattern b') ->
+                liftCompare liftedCompare a' b'
+            (EqualsPattern a', EqualsPattern b') -> liftCompare liftedCompare a' b'
+            (ExistsPattern a', ExistsPattern b') -> liftCompare liftedCompare a' b'
+            (FloorPattern a', FloorPattern b') -> liftCompare liftedCompare a' b'
+            (ForallPattern a', ForallPattern b') -> liftCompare liftedCompare a' b'
+            (IffPattern a', IffPattern b') -> liftCompare liftedCompare a' b'
+            (ImpliesPattern a', ImpliesPattern b') -> liftCompare liftedCompare a' b'
+            (InPattern a', InPattern b') -> liftCompare liftedCompare a' b'
+            (NextPattern a', NextPattern b') -> liftCompare liftedCompare a' b'
+            (NotPattern a', NotPattern b') -> liftCompare liftedCompare a' b'
+            (OrPattern a', OrPattern b') -> liftCompare liftedCompare a' b'
+            (RewritesPattern a', RewritesPattern b') -> liftCompare liftedCompare a' b'
+            (StringLiteralPattern a', StringLiteralPattern b') -> a' `compare` b'
+            (CharLiteralPattern a', CharLiteralPattern b') -> a' `compare` b'
+            (TopPattern a', TopPattern b') -> liftCompare liftedCompare a' b'
+            (VariablePattern a', VariablePattern b') -> a' `compare` b'
+            _ -> EQ
 
 instance Eq (variable level) => Eq1 (Pattern level variable) where
     liftEq liftedEq a b =

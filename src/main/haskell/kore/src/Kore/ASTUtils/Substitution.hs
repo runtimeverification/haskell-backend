@@ -18,6 +18,7 @@ Portability : portable
 module Kore.ASTUtils.Substitution
 ( subst
 , localSubst
+, freeVars
 )
 where
 

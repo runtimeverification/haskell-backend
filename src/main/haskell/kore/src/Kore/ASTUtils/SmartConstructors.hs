@@ -50,8 +50,10 @@ module Kore.ASTUtils.SmartConstructors
     , pattern Rewrites_
     , pattern Top_
     , pattern Var_
+    , pattern V
     , pattern StringLiteral_
     , pattern CharLiteral_
+    -- * Smart constructors
     , mkAnd
     , mkApp
     , mkBottom
@@ -72,6 +74,9 @@ module Kore.ASTUtils.SmartConstructors
     , mkVar
     , mkStringLiteral
     , mkCharLiteral
+    , mkSort
+    , varS
+    , symS
     ) where
 
 
@@ -239,6 +244,9 @@ pattern Or_           s2   a b = Fix (OrPattern (Or s2 a b))
 pattern Rewrites_     s2   a b = Fix (RewritesPattern (Rewrites s2 a b))
 pattern Top_          s2       = Fix (TopPattern (Top s2))
 pattern Var_             v     = Fix (VariablePattern v)
+
+pattern V :: var level -> PureMLPattern level var
+pattern V x = Var_ x
 
 pattern StringLiteral_ s = Fix (StringLiteralPattern s)
 pattern CharLiteral_   c = Fix (CharLiteralPattern   c)
@@ -580,11 +588,30 @@ mkVar = Var_
 mkStringLiteral = StringLiteral_
 mkCharLiteral   = CharLiteral_
 
+mkSort
+  :: MetaOrObject level
+  => String
+  -> Sort level
+mkSort name =
+    SortVariableSort $ SortVariable
+        { getSortVariable = noLocationId name }
 
--- | Should never appear in output of 'mk' funcs
+-- | Construct a variable with a given name and sort
+-- "x" `varS` s
+varS :: MetaOrObject level => String -> Sort level -> Variable level
+varS x s =
+    Variable (noLocationId x) s
+
+-- | Construct a symbol with a given name and input sorts
+-- "mult" `symS` [s, s]
+-- Since the return sort is only found in MetadataTools, this is
+-- mostly useful for testing.
+symS :: MetaOrObject level => String -> [Sort level] -> SymbolOrAlias level
+symS x s =
+    SymbolOrAlias (noLocationId x) s
+
+-- | Placeholder. Should never appear in output of 'mk' funcs
 fixmeSort
     :: MetaOrObject level
     => Sort level
-fixmeSort =
-    SortVariableSort SortVariable
-        { getSortVariable = noLocationId "FIXME" } --FIXME
+fixmeSort = mkSort "FIXME"
