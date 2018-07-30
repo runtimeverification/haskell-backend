@@ -624,19 +624,17 @@ data Exists level v child = Exists
     }
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
 
+instance (Ord (Sort level), Ord (v level)) => Ord1 (Exists level v) where
+    liftCompare liftedCompare a b =
+        (existsSort a `compare` existsSort b)
+        <> (existsVariable a `compare` existsVariable b)
+        <> (existsChild a) `liftedCompare` (existsChild b)
+
 instance (Eq (Sort level), Eq (v level)) => Eq1 (Exists level v) where
     liftEq liftedEq a b =
         (existsSort a == existsSort b)
         && (existsVariable a == existsVariable b)
         && liftedEq (existsChild a) (existsChild b)
-
-instance (Ord (Sort level), Ord (v level)) => Ord1 (Exists level v) where
-    liftCompare liftedCompare a b =
-        case compare (existsSort a) (existsSort b) of
-            EQ -> case compare (existsVariable a) (existsVariable b) of
-                EQ -> liftedCompare (existsChild a) (existsChild b)
-                x -> x
-            x -> x
 
 instance (Show (Sort level), Show (v level)) => Show1 (Exists level v) where
     liftShowsPrec liftedShowsPrec _ _ e =
@@ -705,19 +703,17 @@ data Forall level v child = Forall
     }
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
 
+instance (Ord (Sort level), Ord (v level)) => Ord1 (Forall level v) where
+    liftCompare liftedCompare a b =
+        (forallSort a `compare` forallSort b)
+        <> (forallVariable a `compare` forallVariable b)
+        <> (forallChild a) `liftedCompare` (forallChild b)
+
 instance (Eq (Sort level), Eq (v level)) => Eq1 (Forall level v) where
     liftEq liftedEq a b =
         (forallSort a == forallSort b)
         && (forallVariable a == forallVariable b)
         && liftedEq (forallChild a) (forallChild b)
-
-instance (Ord (Sort level), Ord (v level)) => Ord1 (Forall level v) where
-    liftCompare liftedCompare a b =
-        case compare (forallSort a) (forallSort b) of
-            EQ -> case compare (forallVariable a) (forallVariable b) of
-                EQ -> liftedCompare (forallChild a) (forallChild b)
-                x -> x
-            x -> x
 
 instance (Show (Sort level), Show (v level)) => Show1 (Forall level v) where
     liftShowsPrec liftedShowsPrec _ _ e =
@@ -943,6 +939,7 @@ data Rewrites level child = Rewrites
 deriveEq1 ''Rewrites
 deriveOrd1 ''Rewrites
 deriveShow1 ''Rewrites
+
 
 instance Hashable child => Hashable (Rewrites level child)
 

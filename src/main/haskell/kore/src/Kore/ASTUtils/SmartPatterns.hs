@@ -1,9 +1,8 @@
 {-|
-Module      : Data.Kore.ASTUtils.SmartConstructors
-Description : Tree-based proof system, which can be
-              hash-consed into a list-based one.
+Module      : Data.Kore.ASTUtils.SmartPatterns
+Description : Smart patterns for the `PurePattern` AST
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
+License     : NCSA
 Maintainer  : phillip.harris@runtimeverification.com
 Stability   : experimental
 Portability : portable
@@ -34,6 +33,7 @@ module Kore.ASTUtils.SmartPatterns
     , pattern Rewrites_
     , pattern Top_
     , pattern Var_
+    , pattern V
     , pattern StringLiteral_
     , pattern CharLiteral_
     )
@@ -177,6 +177,9 @@ pattern Or_           s2   a b = Fix (OrPattern (Or s2 a b))
 pattern Rewrites_     s2   a b = Fix (RewritesPattern (Rewrites s2 a b))
 pattern Top_          s2       = Fix (TopPattern (Top s2))
 pattern Var_             v     = Fix (VariablePattern v)
+
+pattern V :: var level -> PureMLPattern level var
+pattern V x = Var_ x
 
 pattern StringLiteral_ s = Fix (StringLiteralPattern s)
 pattern CharLiteral_   c = Fix (CharLiteralPattern   c)
