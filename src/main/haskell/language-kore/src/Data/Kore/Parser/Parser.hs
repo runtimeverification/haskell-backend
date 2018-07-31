@@ -65,10 +65,10 @@ koreParser = skipWhitespace *> KoreParser.koreDefinitionParser <* endOfInput
 The input must contain a full valid Kore pattern and nothing else.
 -}
 korePatternParser :: Parser CommonKorePattern
-korePatternParser = skipWhitespace *> KoreParser.korePatternParser <* endOfInput
+korePatternParser = KoreParser.korePatternParser
 
 metaPatternParser :: Parser CommonMetaPattern
-metaPatternParser = skipWhitespace *> KoreParser.metaPatternParser <* endOfInput
+metaPatternParser = KoreParser.metaPatternParser
 
 metaVariableParser :: Parser (Variable Meta)
 metaVariableParser = KoreParser.variableParser Meta
