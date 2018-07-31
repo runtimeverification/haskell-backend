@@ -225,7 +225,7 @@ isFunctionalPattern tools = fixBottomUpVisitorM reduceM
     reduceM _ = Left NonFunctionalPattern
 
 simplifyAnds
-    :: (SortedVariable variable, Ord (variable level))
+    :: (Eq level, Ord (variable level), SortedVariable variable)
     => MetadataTools level StepperAttributes
     -> [PureMLPattern level variable]
     -> Either
@@ -262,7 +262,7 @@ simplifyAnds tools (p:ps) =
             )
 
 simplifyAnd
-    :: Ord (variable level)
+    :: (Eq level, Ord (variable level))
     => MetadataTools level StepperAttributes
     -> PureMLPattern level variable
     -> Either
@@ -274,7 +274,7 @@ simplifyAnd tools =
 -- Performs variable and equality checks and distributes the conjunction
 -- to the children, creating sub-unification problems
 preTransform
-    :: Ord (variable level)
+    :: (Eq level, Ord (variable level))
     => MetadataTools level StepperAttributes
     -> UnFixedPureMLPattern level variable
     -> Either
@@ -401,7 +401,7 @@ groupSubstitutionByVariable =
 -- x = ((t1 /\ t2) /\ (..)) /\ tn
 -- then recursively reducing that to finally get x = t /\ subst
 solveGroupedSubstitution
-    :: (SortedVariable variable, Ord (variable level))
+    :: (Eq level, Ord (variable level), SortedVariable variable)
     => MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
     -> Either
@@ -427,7 +427,7 @@ instance Monoid (UnificationProof level variable) where
 -- `normalizeSubstitutionDuplication` recursively calls itself until it
 -- stabilizes.
 normalizeSubstitutionDuplication
-    :: (SortedVariable variable, Ord (variable level))
+    :: (Eq level, Ord (variable level), SortedVariable variable)
     => MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
     -> Either

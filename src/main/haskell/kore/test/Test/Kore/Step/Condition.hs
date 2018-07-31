@@ -7,7 +7,7 @@ import Kore.Step.Function.Data
 import Kore.Variables.Fresh.IntCounter
 
 mockConditionEvaluator
-    :: (Eq (variable level))
+    :: (Eq level, Eq (variable level))
     =>  [   ( Predicate level variable
             , (Predicate level variable, PredicateProof level)
             )
@@ -17,7 +17,7 @@ mockConditionEvaluator values =
     ConditionEvaluator (mockConditionEvaluatorHelper values)
 
 mockConditionEvaluatorHelper
-    :: (Eq (variable level))
+    :: (Eq level, Eq (variable level))
     =>  [   ( Predicate level variable
             , (Predicate level variable, PredicateProof level)
             )
