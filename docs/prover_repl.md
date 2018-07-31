@@ -19,11 +19,7 @@ add <id> : <formula>
 #### Examples
 
 ```
->>> add 1: \not{#Nat}(\and{#Nat}(\not{#Nat}(\not{#Nat}(#A:#Nat)),\not{#Nat}(\not{#Nat}(\and{#Nat}(\not{#Nat}(\not{#Nat}(#B:#Nat)),\not{#Nat}(#A:#Nat))))))
-```
-
-```
->>> add phi : \implies{#Nat}(#A:#Nat, #A:#Nat)
+add phi : \implies{#Nat}(#A:#Nat, \implies{#Nat}(#B:#Nat, #A:#Nat))
 ```
 
 Adds a new formula to the context. `<id>` must be new. 
@@ -40,10 +36,8 @@ Adds a new formula to the context, together with its proof.
 #### Example
 
 ```
->>> add 2: \not{#Nat}(\and{#Nat}(\not{#Nat}(\not{#Nat}(#A:#Nat)),\not{#Nat}(\not{#Nat}(\and{#Nat}(\not{#Nat}(\not{#Nat}(#B:#Nat)),\not{#Nat}(#A:#Nat)))))) by propositional1(#A:#Nat,#B:#Nat)
+add phi1 : \implies{#Nat}(#A:#Nat, \implies{#Nat}(#B:#Nat, #A:#Nat)) by propositional1(#A:#Nat,#B:#Nat)
 ```
-
-(currently not working!!!)
 
 ### Prove a formula 
 
@@ -59,24 +53,15 @@ Notice that `id` must already exist in the proof object.
 First add a formula (as in the example above)
 
 ```
->>> add 1: \not{#Nat}(\and{#Nat}(\not{#Nat}(\not{#Nat}(#A:#Nat)),\not{#Nat}(\not{#Nat}(\and{#Nat}(\not{#Nat}(\not{#Nat}(#B:#Nat)),\not{#Nat}(#A:#Nat))))))
+add phi : \implies{#Nat}(#A:#Nat, \implies{#Nat}(#B:#Nat, #A:#Nat))
 ```
 
 then:
 
 ```
-prove 1 by propositional1(#A:#Nat,#B:#Nat)
-```
-
-(currently not working!!!)
-
-## Extended examples
-
-```
-TODO
+prove phi by propositional1(#A:#Nat,#B:#Nat)
 ```
 
 ## TODO 
 
 See Trello board!
-
