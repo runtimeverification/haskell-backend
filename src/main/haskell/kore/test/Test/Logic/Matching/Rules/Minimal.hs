@@ -8,11 +8,7 @@ import           Kore.Parser.ParserUtils
 
 import           Control.Applicative
                  ( some )
-import           Data.Text
-                 ( Text )
-import qualified Data.Text as T
 import           Data.Text.Prettyprint.Doc
-import           Data.Void
 import           Text.Megaparsec hiding
                  ( some )
 import           Text.Megaparsec.Char
