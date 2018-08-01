@@ -39,8 +39,7 @@ nix:
 # non-dependency (i.e. a user package), and its test suites and benchmarks
 # will not be run. This is useful for tweaking upstream packages.
 packages:
-- src/main/haskell/language-kore
-- src/main/haskell/matching-logic
+- src/main/haskell/kore
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
 # extra-deps: []

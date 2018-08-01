@@ -1,0 +1,16 @@
+Definition
+    { definitionAttributes = Attributes []
+    , definitionModules =
+        [ Module
+            { moduleName = ModuleName "TEST-SORT-6"
+            , moduleSentences =
+                [ MetaSentence (SentenceSortSentence SentenceSort
+                    { sentenceSortName = (Id "#C" AstLocationNone) :: Id Meta
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    })
+                ]
+            , moduleAttributes = Attributes []
+            }
+        ]
+    }
