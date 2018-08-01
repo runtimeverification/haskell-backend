@@ -48,7 +48,7 @@ data Flags = NeedsParentheses | MaySkipParentheses
 -}
 
 class PrettyPrint a where
-    prettyPrint :: PrinterOutput w m => Flags -> a -> m ()
+    prettyPrint :: PrinterOutput m => Flags -> a -> m ()
 
 stringPrettyPrint :: PrettyPrint a => Flags -> a -> StringPrinter ()
 stringPrettyPrint = prettyPrint
@@ -58,7 +58,7 @@ prettyPrintToString a = printToString (stringPrettyPrint MaySkipParentheses a)
 
 {- utility functions -}
 
-betweenParentheses :: PrinterOutput w m => Flags -> m() -> m()
+betweenParentheses :: PrinterOutput m => Flags -> m() -> m()
 betweenParentheses NeedsParentheses thing = do
     write "("
     thing
@@ -66,13 +66,13 @@ betweenParentheses NeedsParentheses thing = do
 betweenParentheses MaySkipParentheses thing = thing
 
 writeOneFieldStruct
-    :: (PrinterOutput w m, PrettyPrint a)
+    :: (PrinterOutput m, PrettyPrint a)
     => Flags -> String -> a -> m ()
 writeOneFieldStruct flags name content =
     writeOneFieldStructK flags name (prettyPrint NeedsParentheses content)
 
 writeTwoFieldStruct
-    :: (PrinterOutput w m, PrettyPrint a, PrettyPrint b)
+    :: (PrinterOutput m, PrettyPrint a, PrettyPrint b)
     => Flags -> String -> a -> b -> m ()
 writeTwoFieldStruct flags name contenta contentb =
     writeOneFieldStructK
@@ -84,7 +84,7 @@ writeTwoFieldStruct flags name contenta contentb =
         )
 
 writeThreeFieldStruct
-    :: (PrinterOutput w m, PrettyPrint a, PrettyPrint b, PrettyPrint c)
+    :: (PrinterOutput m, PrettyPrint a, PrettyPrint b, PrettyPrint c)
     => Flags -> String -> a -> b -> c -> m ()
 writeThreeFieldStruct flags name contenta contentb contentc =
     writeOneFieldStructK
@@ -98,7 +98,7 @@ writeThreeFieldStruct flags name contenta contentb contentc =
         )
 
 writeOneFieldStructK
-    :: (PrinterOutput w m)
+    :: (PrinterOutput m)
     => Flags -> String -> m () -> m ()
 writeOneFieldStructK flags name fieldWriterAction =
     betweenParentheses
@@ -110,21 +110,21 @@ writeOneFieldStructK flags name fieldWriterAction =
         )
 
 writeFieldOneLine
-    :: (PrinterOutput w m, PrettyPrint a) => String -> (b -> a) -> b -> m ()
+    :: (PrinterOutput m, PrettyPrint a) => String -> (b -> a) -> b -> m ()
 writeFieldOneLine fieldName field object = do
     write fieldName
     write " = "
     prettyPrint MaySkipParentheses (field object)
 
 writeListField
-    :: (PrinterOutput w m, PrettyPrint a) => String -> (b -> a) -> b -> m ()
+    :: (PrinterOutput m, PrettyPrint a) => String -> (b -> a) -> b -> m ()
 writeListField fieldName field object = do
     write fieldName
     write " ="
     prettyPrint MaySkipParentheses (field object)
 
 writeFieldNewLine
-    :: (PrinterOutput w m, PrettyPrint a) => String -> (b -> a) -> b -> m ()
+    :: (PrinterOutput m, PrettyPrint a) => String -> (b -> a) -> b -> m ()
 writeFieldNewLine fieldName field object = do
     write fieldName
     write " ="
@@ -132,7 +132,7 @@ writeFieldNewLine fieldName field object = do
         (betweenLines >> prettyPrint MaySkipParentheses (field object))
 
 writeAttributesField
-    :: (PrinterOutput w m)
+    :: (PrinterOutput m)
     => String
     -> Attributes
     -> m ()
@@ -145,11 +145,11 @@ writeAttributesField fieldName attributes@(Attributes as) = do
             withIndent 4
                 (betweenLines >> prettyPrint MaySkipParentheses attributes)
 
-writeStructure :: PrinterOutput w m => String -> [m ()] -> m ()
+writeStructure :: PrinterOutput m => String -> [m ()] -> m ()
 writeStructure name fields =
     write name >> inCurlyBracesIndent (printableList fields)
 
-printableList :: PrinterOutput w m => [m ()] -> [m ()]
+printableList :: PrinterOutput m => [m ()] -> [m ()]
 printableList = intersperse (betweenLines >> write ", ")
 
 instance MetaOrObject level => PrettyPrint (Id level) where
@@ -181,7 +181,7 @@ instance PrettyPrint a => PrettyPrint [a] where
             (printableList (map (prettyPrint MaySkipParentheses) list))
 
 listWithDelimiters
-    :: PrinterOutput w m => String -> String -> [m ()] -> m ()
+    :: PrinterOutput m => String -> String -> [m ()] -> m ()
 listWithDelimiters start end [] =
     write " " >> write start >> write end
 listWithDelimiters start end list =
@@ -192,16 +192,16 @@ listWithDelimiters start end list =
         sequence_ list
         betweenLines >> write end)
 
-inCurlyBracesIndent :: PrinterOutput w m => [m ()] -> m ()
+inCurlyBracesIndent :: PrinterOutput m => [m ()] -> m ()
 inCurlyBracesIndent = listWithDelimiters "{" "}"
 
-inSquareBracketsIndent :: PrinterOutput w m => [m ()] -> m ()
+inSquareBracketsIndent :: PrinterOutput m => [m ()] -> m ()
 inSquareBracketsIndent = listWithDelimiters "[" "]"
 
-inDoubleQuotes :: PrinterOutput w m => m () -> m ()
+inDoubleQuotes :: PrinterOutput m => m () -> m ()
 inDoubleQuotes thing = write "\"" >> thing >> write "\""
 
-inSingleQuotes :: PrinterOutput w m => m () -> m ()
+inSingleQuotes :: PrinterOutput m => m () -> m ()
 inSingleQuotes thing = write "\'" >> thing >> write "\'"
 
 instance MetaOrObject level => PrettyPrint (SortVariable level) where
