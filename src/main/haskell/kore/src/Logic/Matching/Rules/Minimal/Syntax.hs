@@ -18,16 +18,10 @@ import Data.Text
        ( Text )
 import Data.Text.Prettyprint.Doc
        ( Doc, Pretty (pretty), sep, tupled, (<>) )
-import Data.Void
 import Text.Megaparsec hiding
        ( some )
 import Text.Megaparsec.Char
-
-import qualified Logic.Matching.Pattern as Pattern
-import           Logic.Matching.Rules.Minimal
-import           Logic.Matching.Signature
-import           Logic.Matching.Syntax
-                 ( mlPattern )
+import Logic.Matching.Rules.Minimal
 
 type Parser = Parsec String String
 
