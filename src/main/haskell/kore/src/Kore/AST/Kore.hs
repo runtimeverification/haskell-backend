@@ -73,7 +73,7 @@ instance (ShowMetaOrObject variable) => Show1 (UnifiedPattern variable) where
             (getUnifiedPattern up)
         . showString " }"
       where
-        liftShowsPrecRotate31 :: Show (variable level)
+        liftShowsPrecRotate31 :: (Show level, Show (variable level))
                               => Rotate31 Pattern variable a level
                               -> ShowS
         liftShowsPrecRotate31 r =

@@ -71,7 +71,7 @@ It can also be used to transform a symbol or alias sentence to something that
 can be applied to patterns.
 -}
 applyPS
-    :: SentenceSymbolOrAlias s
+    :: (SentenceSymbolOrAlias s, Show level)
     => s level (Pattern level) Variable
     -> [Sort level]
     -> [CommonPurePatternStub level]
@@ -101,7 +101,7 @@ It can also be used to transform a symbol or alias sentence to something that
 can be applied to patterns.
 -}
 applyS
-    :: SentenceSymbolOrAlias s
+    :: (SentenceSymbolOrAlias s, Show level)
     => s level (Pattern level) Variable
     -> [CommonPurePatternStub level]
     -> CommonPurePatternStub level

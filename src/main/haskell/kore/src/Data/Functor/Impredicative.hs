@@ -1,3 +1,5 @@
+{-# LANGUAGE PolyKinds #-}
+
 {-|
 Module      : Data.Functor.Impredicative
 Description : Wrappers to work around the absence of impredicative types

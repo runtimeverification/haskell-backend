@@ -25,7 +25,7 @@ checking that the sorts are identical where possible, creating a pattern with
 the provided sort otherwise.
 -}
 fillCheckSorts
-    :: (Show (variable level))
+    :: (Show level, Show (variable level))
     => [Sort level]
     -> [PurePatternStub level variable]
     -> [PureMLPattern level variable]
@@ -39,7 +39,7 @@ that the pattern's sorts is identical if possible, creating a pattern with the
 provided sort otherwise.
 -}
 fillCheckSort
-    :: (Show (variable level))
+    :: (Show level, Show (variable level))
     => Sort level
     -> PurePatternStub level variable
     -> PureMLPattern level variable
