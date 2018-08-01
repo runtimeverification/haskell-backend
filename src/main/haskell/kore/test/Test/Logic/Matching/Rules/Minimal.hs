@@ -3,7 +3,7 @@ module Test.Logic.Matching.Rules.Minimal where
 import Test.Tasty
        ( TestTree, testGroup )
 import Test.Tasty.HUnit
-import           Data.Kore.Parser.ParserUtils                  
+import           Kore.Parser.ParserUtils                  
                  ()
 
 import           Control.Applicative
