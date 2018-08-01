@@ -13,11 +13,10 @@ import           Control.Monad.State.Strict
 import           Control.Monad.Trans
                  ( MonadTrans (lift) )
 import qualified Data.Map.Strict as Map
-import           Data.Text
-                 ( Text, pack )
+import           Data.Text          
+                 ( Text )
 import           Data.Text.Prettyprint.Doc
                  ( Pretty (pretty), colon, (<+>) )
-import           Data.Void
 import           System.Console.Haskeline
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
