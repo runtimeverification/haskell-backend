@@ -1028,7 +1028,7 @@ data Pattern level variable child where
     VariablePattern
         :: !(variable level) -> Pattern level variable child
 
-instance Ord (variable level) => Ord1 (Pattern level variable) where
+instance (Ord level, Ord (variable level)) => Ord1 (Pattern level variable) where
     liftCompare liftedCompare a b =
         case (a, b) of
             (AndPattern a', AndPattern b') -> liftCompare liftedCompare a' b'
@@ -1091,7 +1091,7 @@ instance Ord (variable level) => Ord1 (Pattern level variable) where
             (_, TopPattern _) -> GT
             (VariablePattern a', VariablePattern b') -> compare a' b'
 
-instance Eq (variable level) => Eq1 (Pattern level variable) where
+instance (Eq level, Eq (variable level)) => Eq1 (Pattern level variable) where
     liftEq liftedEq a b =
         case (a, b) of
             (AndPattern a', AndPattern b') -> liftEq liftedEq a' b'
@@ -1118,7 +1118,7 @@ instance Eq (variable level) => Eq1 (Pattern level variable) where
             (VariablePattern a', VariablePattern b') -> a' == b'
             _ -> False
 
-instance Show (variable level) => Show1 (Pattern level variable) where
+instance (Show level, Show (variable level)) => Show1 (Pattern level variable) where
     liftShowsPrec showsPrec_ showList_ prec pat =
         showParen (prec > 9)
         (case pat of
