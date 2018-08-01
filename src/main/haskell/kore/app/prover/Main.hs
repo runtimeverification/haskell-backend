@@ -6,15 +6,11 @@ import           Text.Megaparsec.Char
 import           Kore.AST.Common                   (SymbolOrAlias (..), Variable)
 import           Kore.AST.MetaOrObject             (Meta (..))
 import           Kore.MetaML.AST                   (CommonMetaPattern)
-import           Data.Reflection
-import           Logic.Matching.Pattern
-import           Logic.Matching.Syntax
 import           Logic.Proof.Hilbert
 import           Logic.Matching.Rules.Minimal
 import           Logic.Matching.Rules.Minimal.Syntax (parseMLRule)
 import           Logic.Matching.Rules.Kore         () -- instances only
 import           Logic.Matching.Prover.Repl
-import           Logic.Matching.Signature.Simple
 import           Kore.Parser.Parser
 
 -- TODO: still needed?
