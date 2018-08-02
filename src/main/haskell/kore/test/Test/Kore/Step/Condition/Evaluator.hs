@@ -14,12 +14,14 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.PureToKore
        ( patternKoreToPure )
+import Kore.ASTHelpers
+       ( ApplicationSorts(..) )
 import Kore.Building.AsAst
 import Kore.Building.Patterns
 import Kore.Building.Sorts
 import Kore.Error
 import Kore.IndexedModule.MetadataTools
-       ( MetadataTools (..) )
+       ( SortTools )
 import Kore.MetaML.AST
        ( CommonMetaPattern )
 import Kore.Predicate.Predicate
@@ -608,19 +610,16 @@ makeEquals
     :: (ProperPattern Meta sort patt1, ProperPattern Meta sort patt2)
     => patt1 -> patt2 -> CommonPredicate Meta
 makeEquals patt1 patt2 =
-    give mockMetadataTools
+    give mockSortTools
         (makeEqualsPredicate
             (asPureMetaPattern patt1)
             (asPureMetaPattern patt2)
         )
 
-mockMetadataTools :: MetadataTools Meta
-mockMetadataTools = MetadataTools
-    { isConstructor = const True
-    , isFunctional = const True
-    , isFunction = const False
-    , getArgumentSorts = const [asAst PatternSort, asAst PatternSort]
-    , getResultSort = const (asAst PatternSort)
+mockSortTools :: SortTools Meta
+mockSortTools = const ApplicationSorts
+    { applicationSortsOperands = [asAst PatternSort, asAst PatternSort]
+    , applicationSortsResult = asAst PatternSort
     }
 
 asPredicate :: ProperPattern Meta sort patt => patt -> CommonPredicate Meta
@@ -642,7 +641,7 @@ evaluateCondition
     condition
   =
     fst $ fst $ runIntCounter
-        (give mockMetadataTools
+        (give mockSortTools
             (evaluateFunctionCondition functionEvaluator condition)
         )
         0

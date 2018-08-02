@@ -5,9 +5,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import Data.Reflection
-       ( give )
-
 import Kore.AST.Common
        ( Application (..), AstLocation (..), Id (..), Pattern (..),
        SymbolOrAlias (..) )
@@ -16,12 +13,14 @@ import Kore.AST.PureML
        ( CommonPurePattern, fromPurePattern )
 import Kore.AST.PureToKore
        ( patternKoreToPure )
+import Kore.ASTHelpers
+       ( ApplicationSorts(..) )
 import Kore.Building.AsAst
 import Kore.Building.Patterns
 import Kore.Building.Sorts
 import Kore.Error
 import Kore.IndexedModule.MetadataTools
-       ( MetadataTools (..) )
+       ( MetadataTools (..), SortTools )
 import Kore.MetaML.AST
        ( CommonMetaPattern )
 import Kore.Predicate.Predicate
@@ -37,6 +36,7 @@ import Kore.Step.Function.Data
        CommonPurePatternFunctionEvaluator, FunctionResultProof (..) )
 import Kore.Step.Function.UserDefined
        ( axiomFunctionEvaluator )
+import Kore.Step.StepperAttributes
 import Kore.Variables.Fresh.IntCounter
 
 import Test.Kore.Comparators ()
@@ -271,13 +271,23 @@ test_userDefinedFunction =
     -- TODO: Add a test for the stepper giving up
     ]
 
-mockMetadataTools :: MetadataTools Meta
+mockStepperAttributes :: StepperAttributes
+mockStepperAttributes = StepperAttributes
+    { isConstructor = True
+    , isFunctional  = True
+    , isFunction    = False
+    }
+
+mockSortTools :: SortTools Meta
+mockSortTools = const ApplicationSorts
+    { applicationSortsOperands = [asAst PatternSort, asAst PatternSort]
+    , applicationSortsResult = asAst PatternSort
+    }
+
+mockMetadataTools :: MetadataTools Meta StepperAttributes
 mockMetadataTools = MetadataTools
-    { isConstructor = const True
-    , isFunctional = const True
-    , isFunction = const False
-    , getArgumentSorts = const [asAst PatternSort, asAst PatternSort]
-    , getResultSort = const (asAst PatternSort)
+    { attributes = const mockStepperAttributes
+    , sortTools  = mockSortTools
     }
 
 x :: MetaSort sort => sort -> MetaVariable sort
@@ -392,7 +402,7 @@ asApplication patt =
 
 evaluateWithAxiom
     :: MetaOrObject level
-    => MetadataTools level
+    => MetadataTools level StepperAttributes
     -> AxiomPattern level
     -> CommonConditionEvaluator level
     -> CommonPurePatternFunctionEvaluator level
@@ -406,12 +416,11 @@ evaluateWithAxiom
     app
   =
     fst $ fst $ runIntCounter
-        (give metadataTools
-            (axiomFunctionEvaluator
-                axiom
-                conditionEvaluator
-                functionEvaluator
-                app
-            )
+        (axiomFunctionEvaluator
+            axiom
+            metadataTools
+            conditionEvaluator
+            functionEvaluator
+            app
         )
         0

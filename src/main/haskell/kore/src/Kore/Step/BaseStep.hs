@@ -24,7 +24,7 @@ import           Data.Maybe
 import           Data.Monoid
                  ( (<>) )
 import           Data.Reflection
-                 ( Given, given )
+                 ( Given, give )
 import qualified Data.Set as Set
 
 import           Kore.AST.Common
@@ -32,7 +32,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( CommonPurePattern, PureMLPattern, mapPatternVariables )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools )
+                 ( MetadataTools (..), SortTools )
 import           Kore.Predicate.Predicate
                  ( Predicate, PredicateProof (..), makeMultipleAndPredicate,
                  variableSetFromPredicate )
@@ -43,6 +43,8 @@ import           Kore.Step.Error
 import           Kore.Step.ExpandedPattern
                  ( ExpandedPattern (ExpandedPattern) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+import           Kore.Step.StepperAttributes
+                 ( StepperAttributes )
 import           Kore.Step.Substitution
                  ( mergeSubstitutions )
 import           Kore.Substitution.Class
@@ -173,10 +175,9 @@ sigma(x, y) => y    vs    a
 TODO: Decide if Left here also includes bottom results or only impossibilities.
 -}
 stepWithAxiom
-    ::  ( MetaOrObject level
-        , Given (MetadataTools level)
-        )
-    => ExpandedPattern.CommonExpandedPattern level
+    ::  ( MetaOrObject level)
+    => MetadataTools level StepperAttributes
+    -> ExpandedPattern.CommonExpandedPattern level
     -- ^ Configuration being rewritten.
     -> AxiomPattern level
     -- ^ Rewriting axiom
@@ -186,6 +187,7 @@ stepWithAxiom
             (ExpandedPattern.CommonExpandedPattern level, StepProof level)
         )
 stepWithAxiom
+    tools
     expandedPattern
     AxiomPattern
         { axiomPatternLeft = axiomLeftRaw
@@ -226,7 +228,7 @@ stepWithAxiom
         ) <-
             normalizeUnificationError existingVars
                 (unificationProcedure
-                    given
+                    tools
                     axiomLeft
                     startPattern
                 )
@@ -236,7 +238,7 @@ stepWithAxiom
         , _  -- TODO: Use this proof
         ) <-
             normalizeUnificationError existingVars
-                (mergeSubstitutions unificationSubstitution startSubstitution)
+                (mergeSubstitutions tools unificationSubstitution startSubstitution)
 
     normalizedSubstitutionWithCounter <-
         normalizeSubstitutionError
@@ -244,7 +246,8 @@ stepWithAxiom
 
     let
         (mergedConditionWithCounter, _) = -- TODO: Use this proof
-            mergeConditionsWithAnd
+            give (sortTools tools)
+            $ mergeConditionsWithAnd
                 [ startCondition
                 , unificationCondition
                 , substitutionMergeCondition
@@ -326,7 +329,7 @@ stepWithAxiom
 
 mergeConditionsWithAnd
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
+        , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
     => [Predicate level var]

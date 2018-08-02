@@ -15,6 +15,8 @@ import Kore.AST.PureML
        ( CommonPurePattern )
 import Kore.AST.PureToKore
        ( patternKoreToPure )
+import Kore.ASTHelpers
+       ( ApplicationSorts(..) )
 import Kore.ASTUtils.SmartConstructors
        ( mkAnd, mkEquals, mkIff, mkImplies, mkNot, mkOr )
 import Kore.Building.AsAst
@@ -22,7 +24,7 @@ import Kore.Building.Patterns
 import Kore.Building.Sorts
 import Kore.Error
 import Kore.IndexedModule.MetadataTools
-       ( MetadataTools (..) )
+       ( SortTools )
 import Kore.Predicate.Predicate
        ( CommonPredicate, compactPredicatePredicate, makeAndPredicate,
        makeEqualsPredicate, makeFalsePredicate, makeIffPredicate,
@@ -54,7 +56,7 @@ test_predicate =
             :: CommonPredicate Meta
             -> CommonPredicate Meta
             -> CommonPredicate Meta
-        makeOr c1 c2 = fst (give mockMetadataTools (makeOrPredicate c1 c2))
+        makeOr c1 c2 = fst (give mockSortTools (makeOrPredicate c1 c2))
       in
         testCase "Or truth table"
             (do
@@ -77,7 +79,7 @@ test_predicate =
             -> CommonPredicate Meta
             -> CommonPredicate Meta
         makeImplies c1 c2 =
-            fst (give mockMetadataTools (makeImpliesPredicate c1 c2))
+            fst (give mockSortTools (makeImpliesPredicate c1 c2))
       in
         testCase "Implies truth table"
             (do
@@ -99,7 +101,7 @@ test_predicate =
             :: CommonPredicate Meta
             -> CommonPredicate Meta
             -> CommonPredicate Meta
-        makeIff c1 c2 = fst (give mockMetadataTools (makeIffPredicate c1 c2))
+        makeIff c1 c2 = fst (give mockSortTools (makeIffPredicate c1 c2))
       in
         testCase "Iff truth table"
             (do
@@ -118,7 +120,7 @@ test_predicate =
             )
     , let
         makeNot :: CommonPredicate Meta -> CommonPredicate Meta
-        makeNot p = fst (give mockMetadataTools (makeNotPredicate p))
+        makeNot p = fst (give mockSortTools (makeNotPredicate p))
       in
         testCase "Not truth table"
             (do
@@ -145,135 +147,135 @@ test_predicate =
     ,  testCase "Wrapping and predicates without full simplification"
         (do
             assertEqualWithExplanation ""
-                (wrapPredicate $ give mockMetadataTools $
+                (wrapPredicate $ give mockSortTools $
                     mkAnd pa1 pa2
                 )
-                (fst $ give mockMetadataTools $
+                (fst $ give mockSortTools $
                     makeAndPredicate pr1 pr2
                 )
             assertEqualWithExplanation ""
                 (wrapPredicate pa1)
-                (fst $ give mockMetadataTools $
+                (fst $ give mockSortTools $
                     makeAndPredicate pr1 makeTruePredicate
                 )
             assertEqualWithExplanation ""
                 (wrapPredicate pa2)
-                (fst $ give mockMetadataTools $
+                (fst $ give mockSortTools $
                     makeAndPredicate makeTruePredicate pr2
                 )
             assertEqualWithExplanation ""
                 makeFalsePredicate
-                (fst $ give mockMetadataTools $
+                (fst $ give mockSortTools $
                     makeAndPredicate pr1 makeFalsePredicate
                 )
             assertEqualWithExplanation ""
                 makeFalsePredicate
-                (fst $ give mockMetadataTools $
+                (fst $ give mockSortTools $
                     makeAndPredicate makeFalsePredicate pr2
                 )
         )
     ,  testCase "Wrapping or predicates without full simplification"
         (do
             assertEqualWithExplanation ""
-                (wrapPredicate $ give mockMetadataTools $
+                (wrapPredicate $ give mockSortTools $
                     mkOr pa1 pa2
                 )
-                (fst $ give mockMetadataTools $
+                (fst $ give mockSortTools $
                     makeOrPredicate pr1 pr2
                 )
             assertEqualWithExplanation ""
                 makeTruePredicate
-                (fst $ give mockMetadataTools $
+                (fst $ give mockSortTools $
                     makeOrPredicate pr1 makeTruePredicate
                 )
             assertEqualWithExplanation ""
                 makeTruePredicate
-                (fst $ give mockMetadataTools $
+                (fst $ give mockSortTools $
                     makeOrPredicate makeTruePredicate pr2
                 )
             assertEqualWithExplanation ""
                 (wrapPredicate pa1)
-                (fst $ give mockMetadataTools $
+                (fst $ give mockSortTools $
                     makeOrPredicate pr1 makeFalsePredicate
                 )
             assertEqualWithExplanation ""
                 (wrapPredicate pa2)
-                (fst $ give mockMetadataTools $
+                (fst $ give mockSortTools $
                     makeOrPredicate makeFalsePredicate pr2
                 )
         )
     ,  testCase "Wrapping and predicates without full simplification"
         (do
             assertEqualWithExplanation ""
-                (wrapPredicate $ give mockMetadataTools $
+                (wrapPredicate $ give mockSortTools $
                     mkImplies pa1 pa2
                 )
-                (fst $ give mockMetadataTools $
+                (fst $ give mockSortTools $
                     makeImpliesPredicate pr1 pr2
                 )
             assertEqualWithExplanation ""
                 makeTruePredicate
-                (fst $ give mockMetadataTools $
+                (fst $ give mockSortTools $
                     makeImpliesPredicate pr1 makeTruePredicate
                 )
             assertEqualWithExplanation ""
                 (wrapPredicate pa2)
-                (fst $ give mockMetadataTools $
+                (fst $ give mockSortTools $
                     makeImpliesPredicate makeTruePredicate pr2
                 )
             assertEqualWithExplanation ""
-                (wrapPredicate $ give mockMetadataTools $
+                (wrapPredicate $ give mockSortTools $
                     mkNot pa1
                 )
-                (fst $ give mockMetadataTools $
+                (fst $ give mockSortTools $
                     makeImpliesPredicate pr1 makeFalsePredicate
                 )
             assertEqualWithExplanation ""
                 makeTruePredicate
-                (fst $ give mockMetadataTools $
+                (fst $ give mockSortTools $
                     makeImpliesPredicate makeFalsePredicate pr2
                 )
         )
     , testCase "Wrapping iff predicates without full simplification"
         (do
             assertEqualWithExplanation ""
-                (wrapPredicate $ give mockMetadataTools $
+                (wrapPredicate $ give mockSortTools $
                     mkIff pa1 pa2
                 )
-                (fst $ give mockMetadataTools $
+                (fst $ give mockSortTools $
                     makeIffPredicate pr1 pr2
                 )
             assertEqualWithExplanation ""
                 (wrapPredicate pa1)
-                (fst $ give mockMetadataTools $
+                (fst $ give mockSortTools $
                     makeIffPredicate pr1 makeTruePredicate
                 )
             assertEqualWithExplanation ""
                 (wrapPredicate pa2)
-                (fst $ give mockMetadataTools $
+                (fst $ give mockSortTools $
                     makeIffPredicate makeTruePredicate pr2
                 )
             assertEqualWithExplanation ""
-                (wrapPredicate $ give mockMetadataTools $
+                (wrapPredicate $ give mockSortTools $
                     mkNot pa1
                 )
-                (fst $ give mockMetadataTools $
+                (fst $ give mockSortTools $
                     makeIffPredicate pr1 makeFalsePredicate
                 )
             assertEqualWithExplanation ""
-                (wrapPredicate $ give mockMetadataTools $
+                (wrapPredicate $ give mockSortTools $
                     mkNot pa2
                 )
-                (fst $ give mockMetadataTools $
+                (fst $ give mockSortTools $
                     makeIffPredicate makeFalsePredicate pr2
                 )
         )
     , testCase "Wrapping not predicates without full simplification"
         (assertEqualWithExplanation ""
-            (wrapPredicate $ give mockMetadataTools $
+            (wrapPredicate $ give mockSortTools $
                 mkNot pa1
             )
-            (fst $ give mockMetadataTools $
+            (fst $ give mockSortTools $
                 makeNotPredicate pr1
             )
         )
@@ -284,11 +286,11 @@ pr1 = makeEquals (a PatternSort) (b PatternSort)
 pr2 :: CommonPredicate Meta
 pr2 = makeEquals (c PatternSort) (d PatternSort)
 pa1 :: CommonPurePattern Meta
-pa1 = give mockMetadataTools $ mkEquals
+pa1 = give mockSortTools $ mkEquals
     (asPureMetaPattern $ a PatternSort)
     (asPureMetaPattern $ b PatternSort)
 pa2 :: CommonPurePattern Meta
-pa2 = give mockMetadataTools $ mkEquals
+pa2 = give mockSortTools $ mkEquals
     (asPureMetaPattern $ c PatternSort)
     (asPureMetaPattern $ d PatternSort)
 
@@ -303,7 +305,7 @@ makeEquals
     :: (ProperPattern Meta sort patt1, ProperPattern Meta sort patt2)
     => patt1 -> patt2 -> CommonPredicate Meta
 makeEquals patt1 patt2 =
-    give mockMetadataTools
+    give mockSortTools
         (makeEqualsPredicate
             (asPureMetaPattern patt1)
             (asPureMetaPattern patt2)
@@ -314,7 +316,7 @@ makeAnd
     -> CommonPredicate Meta
     -> CommonPredicate Meta
 makeAnd p1 p2 =
-    fst $ give mockMetadataTools (makeAndPredicate p1 p2)
+    fst $ give mockSortTools (makeAndPredicate p1 p2)
 
 a :: MetaSort sort => sort -> MetaVariable sort
 a = metaVariable "#a" AstLocationTest
@@ -329,11 +331,8 @@ d :: MetaSort sort => sort -> MetaVariable sort
 d = metaVariable "#d" AstLocationTest
 
 
-mockMetadataTools :: MetadataTools Meta
-mockMetadataTools = MetadataTools
-    { isConstructor = const True
-    , isFunctional = const True
-    , isFunction = const False
-    , getArgumentSorts = const [asAst PatternSort, asAst PatternSort]
-    , getResultSort = const (asAst PatternSort)
+mockSortTools :: SortTools Meta
+mockSortTools = const ApplicationSorts
+    { applicationSortsOperands = [asAst PatternSort, asAst PatternSort]
+    , applicationSortsResult = asAst PatternSort
     }

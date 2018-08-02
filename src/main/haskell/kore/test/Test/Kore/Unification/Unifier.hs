@@ -21,12 +21,15 @@ import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
 import Kore.AST.PureML
 import Kore.AST.Sentence
+import Kore.ASTHelpers
+       ( ApplicationSorts(..) )
 import Kore.ASTPrettyPrint
 import Kore.ASTUtils.SmartConstructors
        ( mkVar )
 import Kore.IndexedModule.MetadataTools
 import Kore.Predicate.Predicate
        ( Predicate, makeTruePredicate )
+import Kore.Step.StepperAttributes
 import Kore.Unification.Error
 import Kore.Unification.UnifierImpl
 
@@ -107,13 +110,12 @@ symbols =
         , expBin
         ]
 
-mockIsConstructor, mockIsFunctional :: SymbolOrAlias Object -> Bool
-mockIsConstructor patternHead
-    | patternHead == getSentenceSymbolOrAliasHead a2 [] = False
-mockIsConstructor _ = True
-mockIsFunctional patternHead
-    | patternHead == getSentenceSymbolOrAliasHead a3 [] = False
-mockIsFunctional _ = True
+mockStepperAttributes :: SymbolOrAlias Object -> StepperAttributes
+mockStepperAttributes patternHead = StepperAttributes
+    { isConstructor = patternHead /= getSentenceSymbolOrAliasHead a2 []
+    , isFunctional = patternHead /= getSentenceSymbolOrAliasHead a3 []
+    , isFunction = False
+    }
 
 mockGetArgumentSorts :: SymbolOrAlias Object -> [Sort Object]
 mockGetArgumentSorts patternHead =
@@ -129,13 +131,16 @@ mockGetResultSort patternHead =
         getSentenceSymbolOrAliasResultSort
         (lookup patternHead symbols)
 
-tools :: MetadataTools Object
+mockSortTools :: SortTools Object
+mockSortTools pHead = ApplicationSorts
+    { applicationSortsOperands = mockGetArgumentSorts pHead
+    , applicationSortsResult = mockGetResultSort pHead
+    }
+
+tools :: MetadataTools Object StepperAttributes
 tools = MetadataTools
-    { isConstructor = mockIsConstructor
-    , isFunctional = mockIsFunctional
-    , isFunction = const False
-    , getArgumentSorts = mockGetArgumentSorts
-    , getResultSort = mockGetResultSort
+    { attributes = mockStepperAttributes
+    , sortTools = mockSortTools
     }
 
 unificationProblem
@@ -157,7 +162,7 @@ unificationSubstitution = map trans
         let pp = extractPurePattern p in
             ( Variable
                 { variableSort =
-                    getPatternResultSort mockGetResultSort (project pp)
+                    getPatternResultSort mockSortTools (project pp)
                 , variableName = testId v
                 }
             , pp
@@ -520,18 +525,15 @@ showVar :: V level -> W level
 showVar (V i) = W (show i)
 
 var' :: Integer -> PureMLPattern Meta V
-var' i = give mockMetadataTools (mkVar (V i))
+var' i = give mockSortTools' (mkVar (V i))
 
 war' :: String -> PureMLPattern Meta W
-war' s = give mockMetadataTools (mkVar (W s))
+war' s = give mockSortTools' (mkVar (W s))
 
-mockMetadataTools :: MetadataTools Meta
-mockMetadataTools = MetadataTools
-    { isConstructor = const True
-    , isFunctional = const True
-    , isFunction = const False
-    , getArgumentSorts = const [sortVar, sortVar]
-    , getResultSort = const sortVar
+mockSortTools' :: SortTools Meta
+mockSortTools' = const ApplicationSorts
+    { applicationSortsOperands = [sortVar, sortVar]
+    , applicationSortsResult = sortVar
     }
 
 sortVar :: Sort level

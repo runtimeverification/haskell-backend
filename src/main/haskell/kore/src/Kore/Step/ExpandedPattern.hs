@@ -31,9 +31,11 @@ import Kore.AST.MetaOrObject
 import Kore.AST.PureML
        ( PureMLPattern, mapPatternVariables )
 import Kore.ASTUtils.SmartConstructors
-       ( pattern Bottom_, pattern Top_, mkAnd, mkBottom )
+       ( mkAnd, mkBottom )
+import Kore.ASTUtils.SmartPatterns
+       ( pattern Bottom_, pattern Top_)
 import Kore.IndexedModule.MetadataTools
-       ( MetadataTools )
+       ( SortTools )
 import Kore.Predicate.Predicate
        ( Predicate, pattern PredicateFalse, pattern PredicateTrue,
        makeFalsePredicate, unwrapPredicate, variableSetFromPredicate )
@@ -112,7 +114,7 @@ allVariables
 -}
 toMLPattern
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
+        , Given (SortTools level)
         , SortedVariable var
         , Show (var level))
     => ExpandedPattern level var -> PureMLPattern level var
@@ -126,7 +128,7 @@ toMLPattern
     -- TODO: Most likely I defined this somewhere.
     simpleAnd
         ::  ( MetaOrObject level
-            , Given (MetadataTools level)
+            , Given (SortTools level)
             , SortedVariable var
             , Show (var level))
         => PureMLPattern level var

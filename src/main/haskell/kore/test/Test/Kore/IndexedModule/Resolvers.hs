@@ -5,6 +5,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
+import           Data.Default
 import           Data.Functor.Foldable
 import qualified Data.Map as Map
 import           Data.Maybe
@@ -17,8 +18,10 @@ import Kore.AST.PureML
 import Kore.AST.PureToKore
 import Kore.AST.Sentence
 import Kore.ASTHelpers
+import Kore.ASTUtils.SmartPatterns
 import Kore.ASTVerifier.DefinitionVerifier
 import Kore.Error
+import Kore.Implicit.Attributes
 import Kore.Implicit.ImplicitSorts
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers
@@ -68,12 +71,24 @@ testObjectModule =
                 SentenceSort
                     { sentenceSortName = testId "s1"
                     , sentenceSortParameters = []
-                    , sentenceSortAttributes = Attributes []
+                    , sentenceSortAttributes =
+                        Attributes
+                            [patternPureToKore
+                                (App_ (groundHead "strict" AstLocationTest)
+                                    []
+                                ::CommonPurePattern Object)
+                            ]
                     }
             , asSentence objectA
             , asSentence objectB
             ]
-        , moduleAttributes = Attributes []
+        , moduleAttributes =
+            Attributes
+                [patternPureToKore
+                    (App_ (groundHead "strict" AstLocationTest)
+                        []
+                    ::CommonPurePattern Object)
+                ]
         }
 
 testMetaModule :: PureModule Meta
@@ -95,7 +110,13 @@ subMainModule =
             [ importSentence testMetaModuleName
             , importSentence testObjectModuleName
             ]
-        , moduleAttributes = Attributes []
+        , moduleAttributes =
+            Attributes
+                [patternPureToKore
+                    (App_ (groundHead "strict" AstLocationTest)
+                        []
+                    ::CommonPurePattern Object)
+                ]
         }
 
 mainModule :: KoreModule
@@ -113,7 +134,13 @@ mainModule =
 testDefinition :: KoreDefinition
 testDefinition =
     Definition
-        { definitionAttributes = Attributes []
+        { definitionAttributes =
+            Attributes
+            [patternPureToKore
+                (App_ (groundHead "strict" AstLocationTest)
+                    []
+                ::CommonPurePattern Object)
+            ]
         , definitionModules =
             [ modulePureToKore testObjectModule
             , modulePureToKore testMetaModule
@@ -122,7 +149,7 @@ testDefinition =
             ]
         }
 
-testIndexedModule :: KoreIndexedModule
+testIndexedModule :: KoreIndexedModule ImplicitAttributes
 testIndexedModule =
     case verifyAndIndexDefinition DoNotVerifyAttributes testDefinition of
         Right modulesMap ->
@@ -135,49 +162,55 @@ test_resolvers :: [TestTree]
 test_resolvers =
     [ testCase "object sort"
         (assertEqual ""
-            (Right SentenceSort
+            (Right (def :: ImplicitAttributes, SentenceSort
                 { sentenceSortName = testId "s1"
                 , sentenceSortParameters = []
-                , sentenceSortAttributes = Attributes []
-                }
+                , sentenceSortAttributes =
+                    Attributes
+                        [patternPureToKore
+                            (App_ (groundHead "strict" AstLocationTest)
+                                []
+                            ::CommonPurePattern Object)
+                        ]
+                })
             )
             (resolveSort testIndexedModule (testId "s1" :: Id Object))
         )
     , testCase "meta sort"
         (assertEqual ""
-            (Right SentenceSort
+            (Right (def :: ImplicitAttributes, SentenceSort
                 { sentenceSortName = charMetaId
                 , sentenceSortParameters = []
                 , sentenceSortAttributes = Attributes []
                 }
-            )
+            ))
             (resolveSort testIndexedModule charMetaId)
         )
     , testCase "object symbol"
         (assertEqual ""
-            (Right SentenceSymbol
+            (Right (def :: ImplicitAttributes, SentenceSymbol
                 { sentenceSymbolAttributes = Attributes []
                 , sentenceSymbolSymbol = sentenceSymbolSymbol objectA
                 , sentenceSymbolSorts = []
                 , sentenceSymbolResultSort = objectS1
                 }
-            )
+            ))
             (resolveSymbol testIndexedModule (testId "a" :: Id Object))
         )
     , testCase "meta symbol"
         (assertEqual ""
-            (Right SentenceSymbol
+            (Right (def :: ImplicitAttributes, SentenceSymbol
                 { sentenceSymbolAttributes = Attributes []
                 , sentenceSymbolSymbol = sentenceSymbolSymbol metaA
                 , sentenceSymbolSorts = []
                 , sentenceSymbolResultSort = charListMetaSort
                 }
-            )
+            ))
             (resolveSymbol testIndexedModule (testId "#a" :: Id Meta))
         )
     , testCase "object alias"
         (assertEqual ""
-            (Right SentenceAlias
+            (Right (def :: ImplicitAttributes, SentenceAlias
                 { sentenceAliasAttributes = Attributes []
                 , sentenceAliasAlias = sentenceAliasAlias objectB
                 , sentenceAliasSorts = []
@@ -185,12 +218,12 @@ test_resolvers =
                 , sentenceAliasRightPattern = topPatObj
                 , sentenceAliasResultSort = objectS1
                 }
-            )
+            ))
             (resolveAlias testIndexedModule (testId "b" :: Id Object))
         )
     , testCase "meta alias"
         (assertEqual ""
-            (Right SentenceAlias
+            (Right (def :: ImplicitAttributes, SentenceAlias
                 { sentenceAliasAttributes = Attributes []
                 , sentenceAliasAlias = sentenceAliasAlias metaB
                 , sentenceAliasSorts = []
@@ -198,7 +231,7 @@ test_resolvers =
                 , sentenceAliasRightPattern = topPatMeta
                 , sentenceAliasResultSort = charListMetaSort
                 }
-            )
+            ))
             (resolveAlias testIndexedModule (testId "#b" :: Id Meta))
         )
     , testCase "symbol error"

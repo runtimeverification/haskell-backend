@@ -11,26 +11,29 @@ Portability : portable
 -}
 module Test.Kore.Comparators where
 
-import           Kore.AST.Common
-import           Kore.AST.PureML
-import           Kore.Predicate.Predicate
-import           Kore.Step.BaseStep
-import           Kore.Step.Error
-import           Kore.Step.ExpandedPattern as ExpandedPattern (ExpandedPattern (..))
-import           Kore.Step.Function.Data   as AttemptedFunction (AttemptedFunction (..))
-import           Kore.Unification.Error
-import           Kore.Unification.Unifier
+import Data.Functor.Foldable
+       ( Fix )
 
-import           Test.Tasty.HUnit.Extensions
+import Kore.AST.Common
+import Kore.AST.MetaOrObject
+import Kore.AST.PureML
+import Kore.Predicate.Predicate
+import Kore.Step.BaseStep
+import Kore.Step.Error
+import Kore.Step.ExpandedPattern as ExpandedPattern (ExpandedPattern (..))
+import Kore.Step.Function.Data   as AttemptedFunction (AttemptedFunction (..))
+import Kore.Unification.Error
+import Kore.Unification.Unifier
+
+import Test.Tasty.HUnit.Extensions
 
 {-# ANN module ("HLint: ignore Use record patterns" :: String) #-}
 
 instance
     ( EqualWithExplanation child
-    , Eq child
+    , Eq child, Eq level, Eq (variable level)
     , Show child
     , EqualWithExplanation (variable level)
-    , Eq (variable level)
     , Show (variable level))
     => SumEqualWithExplanation (Pattern level variable child)
   where
@@ -156,17 +159,19 @@ instance
 
 instance
     ( EqualWithExplanation child
-    , Eq child
+    , Eq child, Eq level, Eq (variable level)
     , Show child
     , EqualWithExplanation (variable level)
-    , Eq (variable level)
     , Show (variable level)
     ) => EqualWithExplanation (Pattern level variable child)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
-instance SumEqualWithExplanation (StepProof level) where
+instance
+    (Eq level, Show level) =>
+    SumEqualWithExplanation (StepProof level)
+  where
     sumConstructorPair (StepProofUnification a1) (StepProofUnification a2) =
         SumConstructorSameWithArguments (EqWrap "StepProofUnification" a1 a2)
     sumConstructorPair a1@(StepProofUnification _) a2 =
@@ -188,8 +193,7 @@ instance SumEqualWithExplanation (StepProof level) where
         SumConstructorDifferent
             (printWithExplanation a1) (printWithExplanation a2)
 
-instance EqualWithExplanation (StepProof level)
-  where
+instance (Eq level, Show level) => EqualWithExplanation (StepProof level) where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
@@ -275,8 +279,7 @@ instance (EqualWithExplanation child, Show child)
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
-instance (EqualWithExplanation child, Eq child, Show child)
-    => EqualWithExplanation (DomainValue level child)
+instance EqualWithExplanation (DomainValue level (Fix (Pattern Meta Variable)))
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
@@ -559,8 +562,8 @@ instance
     printWithExplanation = show
 
 instance
-    ( Eq (variable level)
-    , Show (variable level)
+    ( Eq level, Eq (variable level)
+    , Show level, Show (variable level)
     , EqualWithExplanation (variable level)
     )
     => SumEqualWithExplanation (UnificationProof level variable)
@@ -614,8 +617,8 @@ instance
             (printWithExplanation a1) (printWithExplanation a2)
 
 instance
-    ( Eq (variable level)
-    , Show (variable level)
+    ( Eq level, Eq (variable level)
+    , Show level, Show (variable level)
     , EqualWithExplanation (variable level)
     )
     => EqualWithExplanation (UnificationProof level variable)
@@ -624,8 +627,8 @@ instance
     printWithExplanation = show
 
 instance
-    ( Eq (variable level)
-    , Show (variable level)
+    ( Eq level, Eq (variable level)
+    , Show level, Show (variable level)
     , EqualWithExplanation (variable level)
     )
     => StructEqualWithExplanation (UnificationSolution level variable)
@@ -645,8 +648,8 @@ instance
     structConstructorName _ = "UnificationSolution"
 
 instance
-    ( Eq (variable level)
-    , Show (variable level)
+    ( Eq level, Eq (variable level)
+    , Show level, Show (variable level)
     , EqualWithExplanation (variable level)
     )
     => EqualWithExplanation (UnificationSolution level variable)
@@ -694,8 +697,8 @@ instance EqualWithExplanation (StepperVariable level)
     printWithExplanation = show
 
 instance
-    ( Show (variable level)
-    , Eq (variable level)
+    ( Show level, Show (variable level)
+    , Eq level, Eq (variable level)
     , EqualWithExplanation(variable level)
     )
     => StructEqualWithExplanation (ExpandedPattern level variable)
@@ -719,8 +722,8 @@ instance
     structConstructorName _ = "ExpandedPattern"
 
 instance
-    ( Show (variable level)
-    , Eq (variable level)
+    ( Show level, Show (variable level)
+    , Eq level, Eq (variable level)
     , EqualWithExplanation(variable level)
     )
     => EqualWithExplanation (ExpandedPattern level variable)
@@ -730,7 +733,7 @@ instance
 
 instance
     ( EqualWithExplanation (PureMLPattern level variable)
-    , Show (variable level)
+    , Show level, Show (variable level)
     )
     => EqualWithExplanation (Predicate level variable)
   where
@@ -744,8 +747,8 @@ instance
 
 
 instance
-    ( Show (variable level)
-    , Eq (variable level)
+    ( Show level, Show (variable level)
+    , Eq level, Eq (variable level)
     , EqualWithExplanation(variable level)
     )
     => SumEqualWithExplanation (AttemptedFunction level variable)
@@ -769,8 +772,8 @@ instance
             (printWithExplanation a1) (printWithExplanation a2)
 
 instance
-    ( Show (variable level)
-    , Eq (variable level)
+    ( Show level, Show (variable level)
+    , Eq level, Eq (variable level)
     , EqualWithExplanation(variable level)
     )
     => EqualWithExplanation (AttemptedFunction level variable)

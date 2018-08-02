@@ -19,9 +19,6 @@ module Kore.Step.Function.Data
     , CommonAttemptedFunction
     ) where
 
-import Data.Reflection
-       ( Given )
-
 import Kore.AST.Common
        ( Application, Variable )
 import Kore.AST.MetaOrObject
@@ -34,6 +31,8 @@ import Kore.Predicate.Predicate
        ( Predicate, PredicateProof )
 import Kore.Step.ExpandedPattern
        ( ExpandedPattern )
+import Kore.Step.StepperAttributes
+       ( StepperAttributes )
 import Kore.Variables.Fresh.IntCounter
        ( IntCounter )
 
@@ -65,8 +64,9 @@ pattern. This can be either a built-in evaluator or a user-defined one.
 --}
 newtype ApplicationFunctionEvaluator level variable =
     ApplicationFunctionEvaluator
-        (forall . ( MetaOrObject level , Given (MetadataTools level))
-        => ConditionEvaluator level variable
+        (forall . ( MetaOrObject level)
+        => MetadataTools level StepperAttributes
+        -> ConditionEvaluator level variable
         -> PureMLPatternFunctionEvaluator level variable
         -> Application level (PureMLPattern level variable)
         -> IntCounter

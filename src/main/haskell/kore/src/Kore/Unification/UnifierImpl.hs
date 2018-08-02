@@ -17,16 +17,18 @@ import Data.Function
 import Data.Functor.Foldable
 import Data.List
        ( groupBy, partition, sortBy )
-import Data.Reflection
 
 import Data.Functor.Traversable
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
 import Kore.AST.PureML
+import Kore.ASTHelpers
+       (ApplicationSorts (..))
 import Kore.IndexedModule.MetadataTools
 import Kore.Predicate.Predicate
        ( Predicate, makeTruePredicate )
+import Kore.Step.StepperAttributes
 import Kore.Unification.Error
 
 type UnificationSubstitution level variable
@@ -66,7 +68,7 @@ mapSubstitutionVariables variableMapper =
 -- equalities and conjoining them with the unified term.
 unificationSolutionToPurePattern
     :: SortedVariable variable
-    => MetadataTools level
+    => MetadataTools level StepperAttributes
     -> UnificationSolution level variable
     -> PureMLPattern level variable
 unificationSolutionToPurePattern tools ucp =
@@ -75,7 +77,8 @@ unificationSolutionToPurePattern tools ucp =
         (constraint:constraints) ->
             andPat unifiedTerm (foldr andEquals (equals constraint) constraints)
   where
-    resultSort = getPatternResultSort (getResultSort tools) (project unifiedTerm)
+    resultSort =
+        getPatternResultSort (sortTools tools) (project unifiedTerm)
     unifiedTerm = unificationSolutionTerm ucp
     andEquals = andPat . equals
     andPat first second =
@@ -205,7 +208,7 @@ mapFunctionalProofVariables _ (FunctionalHead functionalHead) =
 
 -- checks whether a pattern is functional or not
 isFunctionalPattern
-    :: MetadataTools level
+    :: MetadataTools level StepperAttributes
     -> PureMLPattern level variable
     -> Either (UnificationError level) [FunctionalProof level variable]
 isFunctionalPattern tools = fixBottomUpVisitorM reduceM
@@ -213,7 +216,7 @@ isFunctionalPattern tools = fixBottomUpVisitorM reduceM
     reduceM (VariablePattern v) =
         Right [FunctionalVariable v]
     reduceM (ApplicationPattern ap) =
-        if isFunctional tools patternHead
+        if isFunctional (attributes tools patternHead)
             then return (FunctionalHead patternHead : concat proofs)
             else Left (NonFunctionalHead patternHead)
       where
@@ -222,8 +225,8 @@ isFunctionalPattern tools = fixBottomUpVisitorM reduceM
     reduceM _ = Left NonFunctionalPattern
 
 simplifyAnds
-    :: (SortedVariable variable, Ord (variable level))
-    => MetadataTools level
+    :: (Eq level, Ord (variable level), SortedVariable variable)
+    => MetadataTools level StepperAttributes
     -> [PureMLPattern level variable]
     -> Either
         (UnificationError level)
@@ -240,7 +243,7 @@ simplifyAnds tools (p:ps) =
         )
         ps
   where
-    resultSort = getPatternResultSort (getResultSort tools) (project p)
+    resultSort = getPatternResultSort (sortTools tools) (project p)
     simplifyAnds' (solution,proof) pat = do
         let
             conjunct = Fix $ AndPattern And
@@ -259,8 +262,8 @@ simplifyAnds tools (p:ps) =
             )
 
 simplifyAnd
-    :: Ord (variable level)
-    => MetadataTools level
+    :: (Eq level, Ord (variable level))
+    => MetadataTools level StepperAttributes
     -> PureMLPattern level variable
     -> Either
         (UnificationError level)
@@ -271,8 +274,8 @@ simplifyAnd tools =
 -- Performs variable and equality checks and distributes the conjunction
 -- to the children, creating sub-unification problems
 preTransform
-    :: Ord (variable level)
-    => MetadataTools level
+    :: (Eq level, Ord (variable level))
+    => MetadataTools level StepperAttributes
     -> UnFixedPureMLPattern level variable
     -> Either
         ( Either
@@ -301,7 +304,7 @@ preTransform tools (AndPattern ap) = if left == right
                 head1 = applicationSymbolOrAlias ap1
                 head2 = applicationSymbolOrAlias ap2
             in
-                if isConstructor tools head1
+                if isConstructor (attributes tools head1)
                     then if head1 == head2
                         then Right
                             $ ApplicationPattern Application
@@ -309,11 +312,13 @@ preTransform tools (AndPattern ap) = if left == right
                                 , applicationChildren =
                                     Fix . AndPattern
                                         <$> zipWith3 And
-                                            (getArgumentSorts tools head1)
+                                            (applicationSortsOperands
+                                                (sortTools tools head1)
+                                            )
                                             (applicationChildren ap1)
                                             (applicationChildren ap2)
                                 }
-                        else if isConstructor tools head2
+                        else if isConstructor (attributes tools head2)
                             then Left $ Left (ConstructorClash head1 head2)
                             else Left $ Left (NonConstructorHead head2)
                     else Left $ Left (NonConstructorHead head1)
@@ -326,7 +331,7 @@ preTransform _ _ = Left $ Left UnsupportedPatterns
 -- applies Proposition 5.24 (3) which replaces x /\ phi with phi /\ x = phi
 -- if phi is a functional pattern.
 mlProposition_5_24_3
-    :: MetadataTools level
+    :: MetadataTools level StepperAttributes
     -> variable level
     -- ^variable pattern
     -> PureMLPattern level variable
@@ -396,8 +401,8 @@ groupSubstitutionByVariable =
 -- x = ((t1 /\ t2) /\ (..)) /\ tn
 -- then recursively reducing that to finally get x = t /\ subst
 solveGroupedSubstitution
-    :: (SortedVariable variable, Ord (variable level))
-    => MetadataTools level
+    :: (Eq level, Ord (variable level), SortedVariable variable)
+    => MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
     -> Either
         (UnificationError level)
@@ -422,8 +427,8 @@ instance Monoid (UnificationProof level variable) where
 -- `normalizeSubstitutionDuplication` recursively calls itself until it
 -- stabilizes.
 normalizeSubstitutionDuplication
-    :: (SortedVariable variable, Ord (variable level))
-    => MetadataTools level
+    :: (Eq level, Ord (variable level), SortedVariable variable)
+    => MetadataTools level StepperAttributes
     -> UnificationSubstitution level variable
     -> Either
         (UnificationError level)
@@ -462,9 +467,8 @@ normalizeSubstitutionDuplication tools subst =
 unificationProcedure
     ::  ( SortedVariable variable
         , Ord (variable level)
-        , MetaOrObject level
-        , Given (MetadataTools level))
-    => MetadataTools level
+        , MetaOrObject level)
+    => MetadataTools level StepperAttributes
     -- ^functions yielding metadata for pattern heads
     -> PureMLPattern level variable
     -- ^left-hand-side of unification
@@ -492,7 +496,7 @@ unificationProcedure tools p1 p2
                 (CombinedUnificationProof [proof, normProof])
             )
   where
-    resultSort = getPatternResultSort (getResultSort tools)
+    resultSort = getPatternResultSort (sortTools tools)
     p1Sort =  resultSort (project p1)
     p2Sort =  resultSort (project p2)
     conjunct = Fix $ AndPattern And

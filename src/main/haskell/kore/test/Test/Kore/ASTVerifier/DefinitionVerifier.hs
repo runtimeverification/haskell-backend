@@ -6,6 +6,8 @@ import Test.Tasty.HUnit
        ( HasCallStack, assertEqual, assertFailure, testCase )
 
 import Data.Functor.Foldable
+import Data.Proxy
+       ( Proxy (..) )
 
 import Kore.AST.Common
 import Kore.AST.Kore
@@ -15,6 +17,7 @@ import Kore.ASTPrettyPrint
 import Kore.ASTVerifier.DefinitionVerifier
 import Kore.ASTVerifier.Error
 import Kore.Error
+import Kore.Implicit.Attributes
 import Kore.Implicit.ImplicitSorts
 import Kore.Unparser.Unparse
 
@@ -99,10 +102,8 @@ expectFailureWithError description expectedError definition =
                     expectedError actualError
         )
 
-attributesVerificationForTests :: AttributesVerification
-attributesVerificationForTests = case defaultAttributesVerification of
-    Right verification -> verification
-    Left err           -> error (printError err)
+attributesVerificationForTests :: AttributesVerification ImplicitAttributes
+attributesVerificationForTests = defaultAttributesVerification Proxy
 
 printDefinition :: KoreDefinition -> String
 printDefinition definition =

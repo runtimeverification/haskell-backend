@@ -16,15 +16,7 @@ Definition
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
-                                        { domainValueSort =
-                                            SortActualSort SortActual
-                                                { sortActualName = (Id "Hook" AstLocationNone) :: Id Object
-                                                , sortActualSorts = []
-                                                }
-                                        , domainValueChild =
-                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "plus")))))
-                                        }))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "Nat")))))
                                     ]
                                 }))))
                             ]
@@ -59,15 +51,7 @@ Definition
                                         , symbolOrAliasParams = []
                                         }
                                 , applicationChildren =
-                                    [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (DomainValuePattern DomainValue
-                                        { domainValueSort =
-                                            SortActualSort SortActual
-                                                { sortActualName = (Id "Hook" AstLocationNone) :: Id Object
-                                                , sortActualSorts = []
-                                                }
-                                        , domainValueChild =
-                                            Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "plus")))))
-                                        }))))
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "Nat")))))
                                     ]
                                 }))))
                             , Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application

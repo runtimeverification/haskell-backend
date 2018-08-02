@@ -16,7 +16,7 @@ import           Data.List
                  ( nub )
 import qualified Data.Map as Map
 import           Data.Reflection
-                 ( Given, given )
+                 ( give )
 
 import Data.Functor.Traversable
        ( fixTopDownVisitor )
@@ -43,6 +43,8 @@ import Kore.Step.Function.Data
        FunctionResultProof (..), PureMLPatternFunctionEvaluator (..) )
 import Kore.Step.Function.Data as AttemptedFunction
        ( AttemptedFunction (..) )
+import Kore.Step.StepperAttributes
+       ( StepperAttributes (..) )
 import Kore.Step.Substitution
        ( mergePredicatesAndSubstitutions )
 import Kore.Unification.Unifier
@@ -58,30 +60,32 @@ various ways.
 -}
 evaluateFunctions
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level)
         )
-    => Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
+    => MetadataTools level StepperAttributes
+    -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
     -- ^ Map from a symbol's ID to all the function definitions for that symbol.
     -> PureMLPattern level variable
     -- ^ Pattern on which to evaluate functions
     -> IntCounter (ExpandedPattern level variable, FunctionResultProof level)
-evaluateFunctions functionIdToEvaluator =
+evaluateFunctions tools functionIdToEvaluator =
     fixTopDownVisitor
-        (filterUnhandledPatterns given)
+        (filterUnhandledPatterns tools)
         (evaluateLocalFunction
+            tools
             (ConditionEvaluator conditionEvaluator)
             (PureMLPatternFunctionEvaluator functionEvaluator)
             functionIdToEvaluator
         )
   where
     conditionEvaluator =
-        evaluateFunctionCondition
+        give (sortTools tools)
+        $ evaluateFunctionCondition
             (PureMLPatternFunctionEvaluator functionEvaluator)
     functionEvaluator =
-        evaluateFunctions functionIdToEvaluator
+        evaluateFunctions tools functionIdToEvaluator
 
 {-| 'FilterWrapper' adapts the natural result of filtering patterns to
 the interface expected by 'applyPatternLeveledFunction'
@@ -100,7 +104,7 @@ a constructor or a function.
 -}
 filterUnhandledPatterns
     :: MetaOrObject level
-    => MetadataTools level
+    => MetadataTools level StepperAttributes
     -> Pattern level variable (PureMLPattern level variable)
     -> Either
         (IntCounter (ExpandedPattern level variable, FunctionResultProof level))
@@ -114,10 +118,12 @@ filterUnhandledPatterns metadataTools patt =
                     wrapUnchanged . mlBinderPatternToPattern
                 , stringLeveledFunction = wrapUnchanged . StringLiteralPattern
                 , charLeveledFunction = wrapUnchanged . CharLiteralPattern
+                , domainValueLeveledFunction =
+                    wrapUnchanged . DomainValuePattern
                 , applicationLeveledFunction =
                     \ app@Application {applicationSymbolOrAlias = symbol} ->
-                        if  isConstructor metadataTools symbol
-                            || isFunction metadataTools symbol
+                        if  isConstructor (attributes metadataTools symbol)
+                            || isFunction (attributes metadataTools symbol)
                             then FilterWrapper $ Right $ ApplicationPattern app
                             else wrapUnchanged $ ApplicationPattern app
                 , variableLeveledFunction = wrapUnchanged . VariablePattern
@@ -152,12 +158,12 @@ evaluated and evaluates the pattern.
 -}
 evaluateLocalFunction
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level)
         )
-    => ConditionEvaluator level variable
+    => MetadataTools level StepperAttributes
+    -> ConditionEvaluator level variable
     -> PureMLPatternFunctionEvaluator level variable
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
     -> Pattern
@@ -166,6 +172,7 @@ evaluateLocalFunction
         (IntCounter (ExpandedPattern level variable, FunctionResultProof level))
     -> IntCounter (ExpandedPattern level variable, FunctionResultProof level)
 evaluateLocalFunction
+    tools
     conditionEvaluator
     functionEvaluator
     symbolIdToEvaluators
@@ -178,6 +185,7 @@ evaluateLocalFunction
             -- TODO (virgil): Maybe make mergePredicatesAndSubstitutions take
             -- Foldable arguments.
             mergePredicatesAndSubstitutions
+                tools
                 (Foldable.toList (fmap (ExpandedPattern.predicate . fst) pattF))
                 (Foldable.toList
                     (fmap (ExpandedPattern.substitution . fst) pattF)
@@ -200,8 +208,14 @@ evaluateLocalFunction
                 . assertEmpty childrenSubstitution
                 . returnUnchanged makeTruePredicate []
                 . CharLiteralPattern
+            , domainValueLeveledFunction =
+                assertTrue mergedCondition
+                . assertEmpty childrenSubstitution
+                . returnUnchanged makeTruePredicate []
+                . DomainValuePattern
             , applicationLeveledFunction =
                 evaluateApplication
+                    tools
                     conditionEvaluator
                     functionEvaluator
                     symbolIdToEvaluators
@@ -241,12 +255,12 @@ evaluateLocalFunction
 -}
 evaluateApplication
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level)
         )
-    => ConditionEvaluator level variable
+    => MetadataTools level StepperAttributes
+    -> ConditionEvaluator level variable
     -- ^ Evaluates conditions
     -> PureMLPatternFunctionEvaluator level variable
     -- ^ Evaluates functions.
@@ -260,6 +274,7 @@ evaluateApplication
     -- ^ The pattern to be evaluated
     -> EvaluationWrapper variable level
 evaluateApplication
+    tools
     conditionEvaluator
     functionEvaluator
     symbolIdToEvaluator
@@ -280,6 +295,7 @@ evaluateApplication
                 mergedResults <-
                     mapM
                         (mergeWithConditionAndSubstitution
+                            tools
                             conditionEvaluator
                             childrenCondition
                             childrenSubstitution
@@ -307,6 +323,7 @@ evaluateApplication
     bottom' = (ExpandedPattern.bottom, FunctionResultProof)
     applyEvaluator app' (ApplicationFunctionEvaluator evaluator) =
         evaluator
+            tools
             conditionEvaluator
             functionEvaluator
             app'
@@ -323,11 +340,11 @@ evaluation.
 -}
 mergeWithConditionAndSubstitution
     ::  ( MetaOrObject level
-        , Given (MetadataTools level)
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level))
-    => ConditionEvaluator level variable
+    => MetadataTools level StepperAttributes
+    -> ConditionEvaluator level variable
     -- ^ Can evaluate conditions.
     -> Predicate level variable
     -- ^ Condition to add.
@@ -337,9 +354,10 @@ mergeWithConditionAndSubstitution
     -- ^ AttemptedFunction level variable to which the condition should be added.
     -> IntCounter
         (AttemptedFunction level variable, FunctionResultProof level)
-mergeWithConditionAndSubstitution _ _ _ (AttemptedFunction.NotApplicable, _) =
+mergeWithConditionAndSubstitution _ _ _ _ (AttemptedFunction.NotApplicable, _) =
     return (AttemptedFunction.NotApplicable, FunctionResultProof)
 mergeWithConditionAndSubstitution
+    tools
     (ConditionEvaluator conditionEvaluator)
     conditionToMerge
     substitutionToMerge
@@ -347,6 +365,7 @@ mergeWithConditionAndSubstitution
   = let
         (mergedCondition, mergedSubstitution, _) =
             mergePredicatesAndSubstitutions
+                tools
                 [ExpandedPattern.predicate functionResult, conditionToMerge]
                 [ ExpandedPattern.substitution functionResult
                 , substitutionToMerge

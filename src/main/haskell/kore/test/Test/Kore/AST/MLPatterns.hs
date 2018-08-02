@@ -10,6 +10,7 @@ import Test.Tasty.HUnit
 
 import Data.Functor.Foldable
 
+import Kore.AST.AstWithLocation
 import Kore.AST.Builders
 import Kore.AST.Common
 import Kore.AST.Kore
@@ -18,6 +19,8 @@ import Kore.AST.MetaOrObject
 import Kore.AST.MLPatterns
 import Kore.AST.PureML
 import Kore.AST.Sentence
+import Kore.ASTHelpers
+       ( ApplicationSorts (..) )
 import Kore.Building.AsAst
 import Kore.Building.Patterns
 import Kore.Building.Sorts as Sorts
@@ -69,6 +72,16 @@ test_mlPattern =
                     )
                 )
             )
+        , testCase "DomainValue"
+        (assertEqual ""
+            (asAst SomeObjectSort :: Sort Object)
+            (getPatternResultSort
+                undefinedHeadSort
+                (asObjectPattern
+                    (objectDomainValue SomeObjectSort (metaString "Something"))
+                )
+            )
+        )
         , testCase "StringLiteral"
             (assertEqual ""
                 charListMetaSort
@@ -100,8 +113,10 @@ test_mlPattern =
         , let
             s = symbol_ "test" AstLocationTest [] charListMetaSort
             headSort x
-                | x == getSentenceSymbolOrAliasHead s [] = charListMetaSort
-                | otherwise = charMetaSort
+                | x == getSentenceSymbolOrAliasHead s [] =
+                    ApplicationSorts [] charListMetaSort
+                | otherwise =
+                    ApplicationSorts [] charMetaSort
             in
             testCase "Application"
                 (assertEqual ""
@@ -121,7 +136,7 @@ applyPatternFunctionTests =
             (assertEqual
                 "Expecting And's sort"
                 (asAst sort :: Sort Meta)
-                (metaFunctionApplier
+                (metaLeveledFunctionApplier
                     (asMetaPattern (metaAnd sort mVariable mVariable))
                 )
             )
@@ -129,7 +144,7 @@ applyPatternFunctionTests =
             (assertEqual
                 "Expecting Application's parameter sort"
                 (asAst SortListSort :: Sort Meta)
-                (metaFunctionApplier
+                (metaLeveledFunctionApplier
                     (ApplicationPattern Application
                         { applicationSymbolOrAlias = SymbolOrAlias
                             { symbolOrAliasConstructor = testId "#sigma"
@@ -144,7 +159,7 @@ applyPatternFunctionTests =
             (assertEqual
                 "Expecting Bottom's sort"
                 (asAst sort :: Sort Meta)
-                (metaFunctionApplier
+                (metaLeveledFunctionApplier
                     (asMetaPattern (metaBottom sort))
                 )
             )
@@ -152,7 +167,7 @@ applyPatternFunctionTests =
             (assertEqual
                 "Expecting Ceil's sort"
                 (asAst otherSort :: Sort Meta)
-                (metaFunctionApplier
+                (metaLeveledFunctionApplier
                     (asMetaPattern
                         (metaCeil (ResultSort otherSort) sort mVariable)
                     )
@@ -162,7 +177,17 @@ applyPatternFunctionTests =
             (assertEqual
                 "Expecting DomainValue's sort"
                 (asAst objectSort :: Sort Object)
-                (objectFunctionApplier
+                (metaLeveledFunctionApplier
+                    (asObjectPattern
+                        (objectDomainValue objectSort (metaString "Something"))
+                    )
+                )
+            )
+        , testCase "Applies locationFromAst on `DomainValue`"
+            (assertEqual
+                "Expecting DomainValue's location"
+                AstLocationTest
+                (locationFromAst
                     (asObjectPattern
                         (objectDomainValue objectSort (metaString "Something"))
                     )
@@ -172,7 +197,7 @@ applyPatternFunctionTests =
             (assertEqual
                 "Expecting Equals's sort"
                 (asAst otherSort :: Sort Meta)
-                (metaFunctionApplier
+                (metaLeveledFunctionApplier
                     (asMetaPattern
                         (metaEquals
                             (ResultSort otherSort) sort mVariable mVariable
@@ -184,7 +209,7 @@ applyPatternFunctionTests =
             (assertEqual
                 "Expecting Exists's sort"
                 (asAst sort :: Sort Meta)
-                (metaFunctionApplier
+                (metaLeveledFunctionApplier
                     (asMetaPattern (metaExists sort mVariable mVariable))
                 )
             )
@@ -192,7 +217,7 @@ applyPatternFunctionTests =
             (assertEqual
                 "Expecting Floor's sort"
                 (asAst otherSort :: Sort Meta)
-                (metaFunctionApplier
+                (metaLeveledFunctionApplier
                     (asMetaPattern
                         (metaFloor (ResultSort otherSort) sort mVariable)
                     )
@@ -202,7 +227,7 @@ applyPatternFunctionTests =
             (assertEqual
                 "Expecting Forall's sort"
                 (asAst sort :: Sort Meta)
-                (metaFunctionApplier
+                (metaLeveledFunctionApplier
                     (asMetaPattern (metaForall sort mVariable mVariable))
                 )
             )
@@ -210,7 +235,7 @@ applyPatternFunctionTests =
             (assertEqual
                 "Expecting Iff's sort"
                 (asAst sort :: Sort Meta)
-                (metaFunctionApplier
+                (metaLeveledFunctionApplier
                     (asMetaPattern (metaIff sort mVariable mVariable))
                 )
             )
@@ -218,7 +243,7 @@ applyPatternFunctionTests =
             (assertEqual
                 "Expecting Implies' sort"
                 (asAst sort :: Sort Meta)
-                (metaFunctionApplier
+                (metaLeveledFunctionApplier
                     (asMetaPattern (metaImplies sort mVariable mVariable))
                 )
             )
@@ -226,7 +251,7 @@ applyPatternFunctionTests =
             (assertEqual
                 "Expecting In's sort"
                 (asAst otherSort :: Sort Meta)
-                (metaFunctionApplier
+                (metaLeveledFunctionApplier
                     (asMetaPattern
                         (metaIn
                             (ResultSort otherSort)
@@ -240,7 +265,7 @@ applyPatternFunctionTests =
             (assertEqual
                 "Expecting Next's sort"
                 (asAst objectSort :: Sort Object)
-                (objectFunctionApplier
+                (metaLeveledFunctionApplier
                     (asObjectPattern (objectNext objectSort oVariable))
                 )
             )
@@ -248,7 +273,7 @@ applyPatternFunctionTests =
             (assertEqual
                 "Expecting Not's sort"
                 (asAst sort :: Sort Meta)
-                (metaFunctionApplier
+                (metaLeveledFunctionApplier
                     (asMetaPattern (metaNot sort mVariable))
                 )
             )
@@ -256,7 +281,7 @@ applyPatternFunctionTests =
             (assertEqual
                 "Expecting Or's sort"
                 (asAst sort :: Sort Meta)
-                (metaFunctionApplier
+                (metaLeveledFunctionApplier
                     (asMetaPattern (metaOr sort mVariable mVariable))
                 )
             )
@@ -264,7 +289,7 @@ applyPatternFunctionTests =
             (assertEqual
                 "Expecting Rewrites' sort"
                 (asAst objectSort :: Sort Object)
-                (objectFunctionApplier
+                (metaLeveledFunctionApplier
                     (asObjectPattern
                         (objectRewrites objectSort oVariable oVariable)
                     )
@@ -274,7 +299,7 @@ applyPatternFunctionTests =
             (assertEqual
                 "Expecting Top's sort"
                 (asAst sort :: Sort Meta)
-                (metaFunctionApplier
+                (metaLeveledFunctionApplier
                     (asMetaPattern (metaTop sort))
                 )
             )
@@ -286,30 +311,18 @@ applyPatternFunctionTests =
     mVariable = metaVariable "#x" AstLocationTest sort
     oVariable = objectVariable "x" AstLocationTest objectSort
 
-metaFunctionApplier :: Pattern Meta Variable CommonKorePattern -> Sort Meta
-metaFunctionApplier =
-    applyPatternFunction
-        PatternFunction
-            { patternFunctionML = getMLPatternResultSort
-            , patternFunctionMLBinder = getBinderPatternSort
-            , stringFunction = const (asAst CharListSort)
-            , charFunction = const (asAst Sorts.CharSort)
-            , applicationFunction =
+metaLeveledFunctionApplier :: Pattern level Variable CommonKorePattern -> Sort level
+metaLeveledFunctionApplier =
+    applyPatternLeveledFunction
+        PatternLeveledFunction
+            { patternLeveledFunctionML = getMLPatternResultSort
+            , patternLeveledFunctionMLBinder = getBinderPatternSort
+            , stringLeveledFunction = const (asAst CharListSort)
+            , charLeveledFunction = const (asAst Sorts.CharSort)
+            , applicationLeveledFunction =
                 head . symbolOrAliasParams . applicationSymbolOrAlias
-            , variableFunction = variableSort
-            }
-
-objectFunctionApplier :: Pattern Object Variable CommonKorePattern -> Sort Object
-objectFunctionApplier =
-    applyPatternFunction
-        PatternFunction
-            { patternFunctionML = getMLPatternResultSort
-            , patternFunctionMLBinder = getBinderPatternSort
-            , stringFunction = undefined
-            , charFunction = undefined
-            , applicationFunction =
-                head . symbolOrAliasParams . applicationSymbolOrAlias
-            , variableFunction = variableSort
+            , variableLeveledFunction = variableSort
+            , domainValueLeveledFunction = domainValueSort
             }
 
 data SomeObjectSort = SomeObjectSort

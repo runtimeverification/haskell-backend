@@ -1,5 +1,7 @@
  -- to avoid warnings that constraints (AsAst CommonKorePattern p) can be simplified
 {-# OPTIONS_GHC -fno-warn-simplifiable-class-constraints #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Test.Logic.Matching.Rules.Kore.ProofAssistant where
 
@@ -31,6 +33,8 @@ import Kore.Building.Patterns
 import Kore.Building.Sorts
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
+import Kore.Implicit.Attributes
+       ( ImplicitAttributes )
 import Kore.MetaML.AST
        ( MetaMLPattern )
 import Logic.Matching.Error
@@ -2787,13 +2791,14 @@ runAction proof (description, action) =
         Left err -> Left (description ++ " : " ++ err)
         result   -> result
 
-defaultIndexedModule :: KoreIndexedModule
+defaultIndexedModule :: KoreIndexedModule ImplicitAttributes
 defaultIndexedModule =
     case defaultIndexedModuleWithError of
         Left err -> error (printError err)
         Right m  -> m
 
-defaultIndexedModuleWithError :: Either (Error MLError) KoreIndexedModule
+defaultIndexedModuleWithError
+    :: Either (Error MLError) (KoreIndexedModule ImplicitAttributes)
 defaultIndexedModuleWithError = do
     modules <-
         castError (verifyAndIndexDefinition DoNotVerifyAttributes definition)

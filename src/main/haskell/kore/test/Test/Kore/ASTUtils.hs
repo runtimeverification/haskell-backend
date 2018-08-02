@@ -16,7 +16,10 @@ import Data.Reflection
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.PureML
+import Kore.ASTHelpers
+       (ApplicationSorts (..) )
 import Kore.ASTUtils.SmartConstructors
+import Kore.ASTUtils.SmartPatterns
 import Kore.ASTUtils.Substitution
 import Kore.IndexedModule.MetadataTools
 
@@ -129,11 +132,11 @@ sortAgreement2 = dummyEnvironment $
         (mkEquals (Var_ $ var_ "foo" "X") (Var_ $ var_ "bar" "X"))
         (Var_ $ var_ "y" "Y")
 
-varX :: (Given (MetadataTools Object)) => CommonPurePattern Object
+varX :: (Given (SortTools Object)) => CommonPurePattern Object
 varX = mkVar $ var_ "x" "X"
 
 sortAgreementManySimplePatterns
-  :: (Given (MetadataTools Object))
+  :: (Given (SortTools Object))
   => [TestTree]
 sortAgreementManySimplePatterns = do
     flexibleZeroArg <- [mkBottom, mkTop]
@@ -179,12 +182,12 @@ substitutionGetSetIdentity a b pat =
   (subst b a $ subst a b pat)
 
 generatePatterns
-  :: Given (MetadataTools Object)
+  :: Given (SortTools Object)
   => Int
   -> [CommonPurePattern Object]
 generatePatterns size = genBinaryPatterns size ++ genUnaryPatterns size
 genBinaryPatterns
-  :: Given (MetadataTools Object)
+  :: Given (SortTools Object)
   => Int
   -> [CommonPurePattern Object]
 genBinaryPatterns 0 = []
@@ -195,7 +198,7 @@ genBinaryPatterns size = do
   b <- generatePatterns sb
   [mkAnd a b, mkOr a b, mkImplies a b, mkIff a b, mkRewrites a b]
 genUnaryPatterns
-  :: Given (MetadataTools Object)
+  :: Given (SortTools Object)
   => Int
   -> [CommonPurePattern Object]
 genUnaryPatterns 0 = []
@@ -225,19 +228,14 @@ var_ x s =
 
 dummyEnvironment
   :: forall r . MetaOrObject Object
-  => (Given (MetadataTools Object) => r)
+  => (Given (SortTools Object) => r)
   -> r
-dummyEnvironment = give (dummyMetadataTools @Object)
+dummyEnvironment = give (dummySortTools @Object)
 
-dummyMetadataTools
-  :: MetaOrObject level
-  => MetadataTools level
-dummyMetadataTools = MetadataTools
-    { isConstructor    = const True
-    , isFunctional     = const True
-    , isFunction       = const True
-    , getArgumentSorts = const []
-    , getResultSort    = const $ testSort "S"
+dummySortTools :: MetaOrObject level => SortTools level
+dummySortTools = const ApplicationSorts
+    { applicationSortsOperands = []
+    , applicationSortsResult   = testSort "S"
     }
 
 testSort
