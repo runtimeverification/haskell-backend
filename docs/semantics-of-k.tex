@@ -4654,21 +4654,22 @@ and map it to \KPatternList, defined in Section~\ref{sec:ML-patterns}.
 \subsection{Built-ins in the Meta-Theory}
 
 Recall that in Section~\ref{sec:builtins},
-we define matching logic theories with built-ins as a tuple
+we define matching logic theories \emph{with built-ins} as a tuple
 $(S_\builtin, \Sigma_\builtin, S, \Sigma, A)$,
 where $S_\builtin$ contains built-in sorts
 and $\Sigma_\builtin$ contains built-in symbols.
 Unlike $S$ and $\Sigma$ whose semantics is axiomatized by
-a set of axioms $A$, the semantics of built-ins are given
-by an implementation/oracle,
-and whether a pattern $\varphi_\builtin$ over the syntax of built-in sorts 
+a set $A$ of axioms, the semantics of built-ins are given
+by an implementation/oracle.
+Recall that as we discussed in Section~\ref{sec:builtins},
+different tools use the built-ins differently and have different oracles.
+An interpreter may use a external library for fast implementation
+as oracle, while a symbolic execution engine may use an SMT solver like Z3.
+Whether a pattern $\varphi_\builtin$ over the syntax of built-in sorts 
 and symbols belongs to the theory $(S_\builtin, \Sigma_\builtin, S, \Sigma, A)$
-is told by the oracle.
-For example, let $S_\builtin = \{ \Nat \}$
-and $\Sigma_\builtin = \{ 0, 1, +, \times \}$,
-and let the oracle be the natural numbers with addition and multiplication.
-Notice the set of patterns $\varphi$ of sort $\Nat$ in the theory
-is not recursively enumerable.
+is told by the oracle; 
+notice the set of patterns $\varphi_\builtin$ that are in the theory
+may not even be recursively enumerable.
 
 We claim that there is nothing special needed for built-ins in the meta-theory.
 In the same way how object-level axioms 
@@ -4676,11 +4677,18 @@ turn into meta-level axioms about \Kdeduce,
 we can regard all the properties that the built-in oracle recognizes 
 at the object-level into meta-level axioms about \Kdeduce.
 Specifically, 
-whenever we need a property $\varphi$ about built-ins, say, natural numbers,
-we can assume that
-$\KprovableP{\shs}(\denote{\varphi})$
-is provable in the meta-theory, where
-$\denote{\varphi}$ is the meta-representation of $\varphi$.
+whenever we need a property $\varphi_\builtin$ 
+about built-ins, say, natural numbers,
+the corresponding claim
+$\KprovableP{\shs}(\denote{\varphi_\builtin})$
+is added to the meta-theory as an axiom, where
+$\denote{\varphi_\builtin}$ is the meta-representation of $\varphi_\builtin$.
+Any reasoning conducted in the meta-theory with all axioms about built-ins added
+remains sound, because 
+Section~\ref{sec:ML-proof-system}
+gives a faithful axiomatization of the proof system of matching 
+logic~(see Theorem~\ref{thm:faithfulness-finite}),
+and that proof system is a sound proof system.
 
 
 
