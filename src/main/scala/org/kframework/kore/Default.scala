@@ -48,7 +48,7 @@ object implementation {
 
     case class Forall(s: i.Sort, v: i.Variable, p: i.Pattern) extends i.Forall
 
-    // case class Next(s: i.Sort, _1: i.Pattern) extends i.Next
+    case class Next(s: i.Sort, _1: i.Pattern) extends i.Next
 
     case class Rewrites(s: Sort, _1: i.Pattern, _2: i.Pattern) extends i.Rewrites
 
@@ -123,7 +123,7 @@ object implementation {
 
     def Forall(s: i.Sort, v: Variable, p: Pattern): i.Pattern = d.Forall(s, v, p)
 
-    // def Next(s: i.Sort, _1: i.Pattern): i.Pattern = d.Next(s, _1)
+    def Next(s: i.Sort, _1: i.Pattern): i.Pattern = d.Next(s, _1)
 
     def Rewrites(s: i.Sort, _1: i.Pattern, _2: i.Pattern): i.Pattern = d.Rewrites(s, _1, _2)
 

@@ -1,6 +1,6 @@
 []
 
-module TEST-Exception-11
+module TEST-EXCEPTION-11
 
   axiom{}
     #X:#S{} []

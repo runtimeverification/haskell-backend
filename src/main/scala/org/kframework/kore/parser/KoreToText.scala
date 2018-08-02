@@ -148,9 +148,9 @@ object KoreToText {
     case Forall(s, v, p) =>
       "\\forall" + "{" + apply(s) + "}" +
         "(" + apply(v) + "," + apply(p) + ")"
-    // case Next(s, p) =>
-    //   "\\next" + "{" + apply(s) + "}" +
-    //     "(" + apply(p) + ")"
+    case Next(s, p) =>
+      "\\next" + "{" + apply(s) + "}" +
+        "(" + apply(p) + ")"
     case Rewrites(s, p, q) =>
       "\\rewrites" + "{" + apply(s) + "}" +
         "(" + apply(p) + "," + apply(q) + ")"
