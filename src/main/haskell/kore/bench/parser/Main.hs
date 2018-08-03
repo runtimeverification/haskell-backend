@@ -10,7 +10,14 @@ import qualified Paths
 main :: IO ()
 main =
     defaultMain
-    [ parse "Parse implicit Kore definition" (Paths.dataFileName "../../kore/kore.kore")
+    [ parse "kore.kore" (Paths.dataFileName "../../kore/kore.kore")
+    , parse "bool.kore" (Paths.dataFileName "../../../test/resources/bool.kore")
+    , parse "imp.kore" (Paths.dataFileName "../../../test/resources/imp.kore")
+    , parse "imp2.kore" (Paths.dataFileName "../../../test/resources/imp2.kore")
+    , parse "lambda.kore" (Paths.dataFileName "../../../test/resources/lambda.kore")
+    , parse "list.kore" (Paths.dataFileName "../../../test/resources/list.kore")
+    , parse "nat.kore" (Paths.dataFileName "../../../test/resources/nat.kore")
+    , parse "user-meta-nat.kore" (Paths.dataFileName "../../../test/resources/user-meta-nat.kore")
     ]
 
 {- | Declare a parser benchmark
