@@ -17,11 +17,11 @@ import           Data.Text
                  ( Text )
 import           Data.Text.Prettyprint.Doc
                  ( Pretty (pretty), colon, (<+>) )
-import           Kore.Parser.ParserUtils ()
 import           System.Console.Haskeline
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 
+import Kore.Parser.ParserUtils ()
 import Kore.Error
 import Logic.Matching.Error
 import Logic.Proof.Hilbert
