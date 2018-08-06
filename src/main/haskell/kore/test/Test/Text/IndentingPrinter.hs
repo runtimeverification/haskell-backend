@@ -11,7 +11,7 @@ import Data.List
 import Text.IndentingPrinter
 
 class TestPrinter a where
-    testPrint :: PrinterOutput w m => a -> m ()
+    testPrint :: PrinterOutput m => a -> m ()
 
 stringTest :: TestPrinter a => a -> StringPrinter ()
 stringTest = testPrint

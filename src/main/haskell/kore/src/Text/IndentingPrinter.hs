@@ -1,43 +1,38 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}  -- instance IsString ShowS
 module Text.IndentingPrinter
-    ( betweenLines
-    , PrinterOutput
+    ( PrinterOutput (write, betweenLines, withIndent)
     , printToString
     , StringPrinter
-    , withIndent
-    , write
+    , docToString
     ) where
 
-import Control.Monad.Reader
 import Control.Monad.Writer
 import Data.String
        ( IsString (..) )
 
--- | Requires @TypeSynonymInstances@; not provided by @base@
-instance IsString ShowS where
-    fromString = showString
+import Data.Text.Prettyprint.Doc
+import Data.Text.Prettyprint.Doc.Render.String
 
-class (IsString w, MonadWriter w m, MonadReader Int m)
-    => PrinterOutput w m where
+class Monad m => PrinterOutput m where
     write :: String -> m ()
-    write s = tell (fromString s)
-
     betweenLines :: m ()
-    betweenLines = do
-        indent <- reader (`replicate` ' ')
-        write "\n"
-        write indent
-
     withIndent :: Int -> m () -> m ()
-    withIndent n = local (+n)
 
-type StringPrinter = WriterT ShowS (Reader Int)
+type StringPrinter = Writer (Doc ())
 
-instance PrinterOutput ShowS StringPrinter where
+instance PrinterOutput (Writer (Doc ())) where
+    write s = tell (fromString s)
+    betweenLines = tell line
+    withIndent n m = censor (nest n) m
 
 printToString :: StringPrinter () -> String
-printToString printer = showChain ""
+printToString printer = renderString simpleStream
     where
-    writerAction = printer
-    readerAction = execWriterT writerAction
-    showChain = runReader readerAction 0
+      doc = execWriter printer
+      simpleStream = layoutPretty (defaultLayoutOptions {layoutPageWidth = Unbounded}) doc
+
+{- | Renders a 'Doc' as a 'String', with 'Unbounded' page width
+     (no automatic wrapping). -}
+docToString :: Doc ann -> String
+docToString doc = renderString simpleStream
+  where
+    simpleStream = layoutPretty (defaultLayoutOptions {layoutPageWidth = Unbounded}) doc
