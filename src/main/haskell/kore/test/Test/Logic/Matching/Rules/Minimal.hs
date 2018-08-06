@@ -3,16 +3,15 @@ module Test.Logic.Matching.Rules.Minimal where
 import Test.Tasty
        ( TestTree, testGroup )
 import Test.Tasty.HUnit
-import           Kore.Parser.ParserUtils                  
-                 ()
 
-import           Control.Applicative
-                 ( some )
-import           Data.Text.Prettyprint.Doc
-import           Text.Megaparsec hiding
-                 ( some )
-import           Text.Megaparsec.Char
+import Control.Applicative
+       ( some )
+import Data.Text.Prettyprint.Doc
+import Text.Megaparsec hiding
+       ( some )
+import Text.Megaparsec.Char
 
+import Kore.Parser.ParserUtils ()
 import Logic.Matching.Rules.Minimal
 import Logic.Matching.Rules.Minimal.Syntax
 

@@ -399,15 +399,13 @@ symbolOrAliasPatternRemainderParser
     -> Id level  -- ^ The already parsed prefix.
     -> Parser (Pattern level Variable child)
 symbolOrAliasPatternRemainderParser childParser x identifier =
-    ApplicationPattern <$>
-        ( pure Application
-            <*>
-         (SymbolOrAlias identifier <$> inCurlyBracesListParser (sortParser x))
-            <*> 
-         inParenthesesListParser childParser
+    ApplicationPattern
+    <$> ( Application
+        <$> (   SymbolOrAlias identifier
+            <$> inCurlyBracesListParser (sortParser x)
+            )
+        <*> inParenthesesListParser childParser
         )
-
-
 
 {-|'variableRemainderParser' parses the part after a variable's name and
 constructs it.
@@ -764,7 +762,6 @@ korePatternParser = do
         '"'  -> asKorePattern . StringLiteralPattern <$> stringLiteralParser
         '\'' -> asKorePattern . CharLiteralPattern <$> charLiteralParser
         _    -> koreVariableOrTermPatternParser
-
 
 {-|'inSquareBracketsListParser' parses a @list@ of items delimited by
 square brackets and separated by commas.

@@ -13,14 +13,14 @@ import           Control.Monad.State.Strict
 import           Control.Monad.Trans
                  ( MonadTrans (lift) )
 import qualified Data.Map.Strict as Map
-import           Data.Text          
+import           Data.Text
                  ( Text )
 import           Data.Text.Prettyprint.Doc
                  ( Pretty (pretty), colon, (<+>) )
+import           Kore.Parser.ParserUtils ()
 import           System.Console.Haskeline
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
-import           Kore.Parser.ParserUtils    () -- only import typeclass instances ()
 
 import Kore.Error
 import Logic.Matching.Error
@@ -30,7 +30,7 @@ type Parser = Parsec String String
 
 newtype ProverState ix rule formula =
   ProverState (Proof ix rule formula)
-  
+
 data Command ix rule formula =
    Add ix formula
  | Prove ix (rule ix)

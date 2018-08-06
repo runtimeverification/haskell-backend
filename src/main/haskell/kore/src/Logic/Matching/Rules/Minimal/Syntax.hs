@@ -21,6 +21,7 @@ import Data.Text.Prettyprint.Doc
 import Text.Megaparsec hiding
        ( some )
 import Text.Megaparsec.Char
+
 import Logic.Matching.Rules.Minimal
 
 type Parser = Parsec String String

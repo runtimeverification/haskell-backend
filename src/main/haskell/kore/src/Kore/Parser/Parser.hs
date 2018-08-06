@@ -39,18 +39,20 @@ module Kore.Parser.Parser
     , CommonMetaPattern
     ) where
 
-import           Kore.AST.Kore           (CommonKorePattern)
-import           Kore.MetaML.AST         (CommonMetaPattern)
+import           Kore.AST.Common
+                 ( SymbolOrAlias (..), Variable )
+import           Kore.AST.Kore
+                 ( CommonKorePattern )
+import           Kore.AST.MetaOrObject
+                 ( Meta (..) )
 import           Kore.AST.Sentence
-import           Kore.Parser.Lexeme      (skipWhitespace)
-import           Kore.AST.MetaOrObject   (Meta (..))
-import           Kore.AST.Common         (SymbolOrAlias (..),
-                                          Variable)
-import qualified Kore.Parser.ParserImpl  as KoreParser (koreDefinitionParser,
-                                                        korePatternParser, 
-                                                        metaPatternParser, 
-                                                        variableParser, 
-                                                        symbolOrAliasParser)
+import           Kore.MetaML.AST
+                 ( CommonMetaPattern )
+import           Kore.Parser.Lexeme
+                 ( skipWhitespace )
+import qualified Kore.Parser.ParserImpl as KoreParser
+                 ( koreDefinitionParser, korePatternParser, metaPatternParser,
+                 symbolOrAliasParser, variableParser )
 import           Kore.Parser.ParserUtils
 
 {-|'koreParser' is a parser for Kore.
