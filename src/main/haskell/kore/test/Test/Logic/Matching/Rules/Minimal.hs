@@ -4,17 +4,14 @@ import Test.Tasty
        ( TestTree, testGroup )
 import Test.Tasty.HUnit
 
-import           Control.Applicative
-                 ( some )
-import           Data.Text
-                 ( Text )
-import qualified Data.Text as T
-import           Data.Text.Prettyprint.Doc
-import           Data.Void
-import           Text.Megaparsec hiding
-                 ( some )
-import           Text.Megaparsec.Char
+import Control.Applicative
+       ( some )
+import Data.Text.Prettyprint.Doc
+import Text.Megaparsec hiding
+       ( some )
+import Text.Megaparsec.Char
 
+import Kore.Parser.ParserUtils ()
 import Logic.Matching.Rules.Minimal
 import Logic.Matching.Rules.Minimal.Syntax
 
@@ -99,13 +96,13 @@ test_singularVariable = test "Singular Variable" ast str
     str = "singvar(x, P, 1, 1)"
 
 
-type DummyParser = Parsec Void Text
+type DummyParser = Parsec String String
 
-type DummySort  = Text
-type DummyLabel = Text
+type DummySort  = String
+type DummyLabel = String
 type DummyIx    = Int
-type DummyVar   = Text
-type DummyTerm  = Text
+type DummyVar   = String
+type DummyTerm  = String
 
 sortParser       :: DummyParser DummySort
 labelParser      :: DummyParser DummyLabel
@@ -114,14 +111,12 @@ varParser        :: DummyParser DummyVar
 termParser       :: DummyParser DummyTerm
 mlRuleTestParser :: DummyParser (MLRule DummyLabel DummyVar DummyTerm DummyIx)
 
--- Implementations for Dummy Parsers, shared by tests
-sortParser       = T.pack <$> some alphaNumChar
-labelParser      = T.pack <$> some alphaNumChar
+sortParser       = some alphaNumChar
+labelParser      = some alphaNumChar
 ixParser         = read   <$> some digitChar
-varParser        = T.pack <$> some alphaNumChar
-termParser       = T.pack <$> some alphaNumChar
+varParser        = some alphaNumChar
+termParser       = some alphaNumChar
 mlRuleTestParser = parseMLRule labelParser varParser mlPatternParser ixParser
-
 
 testPatterns :: [String]
 testPatterns = [  "P"
@@ -129,7 +124,7 @@ testPatterns = [  "P"
                 , "R" ]
 
 mlTestPatterns :: [DummyParser DummyTerm]
-mlTestPatterns = string . T.pack <$> testPatterns
+mlTestPatterns = string <$> testPatterns
 
 mlPatternParser :: DummyParser DummyTerm
 mlPatternParser = choice mlTestPatterns
@@ -141,6 +136,6 @@ type DummyRule = MLRule DummyLabel DummyVar DummyTerm DummyIx
 parseTestRule :: String -> DummyRule
 
 parseTestRule ruleStr =
-    case parse mlRuleTestParser "" (T.pack ruleStr) of
+    case parse mlRuleTestParser "" ruleStr of
         Right parsedRule -> parsedRule
         Left err -> error (parseErrorPretty err)

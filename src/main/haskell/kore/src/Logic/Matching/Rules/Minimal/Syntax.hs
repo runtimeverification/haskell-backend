@@ -6,7 +6,6 @@ Parser and pretty-printer for the minimal proof rules.
 module Logic.Matching.Rules.Minimal.Syntax
     ( parseId
     , parseMLRule
-    , parseMLRuleSig
     ) where
 
 import Control.Applicative
@@ -19,18 +18,13 @@ import Data.Text
        ( Text )
 import Data.Text.Prettyprint.Doc
        ( Doc, Pretty (pretty), sep, tupled, (<>) )
-import Data.Void
 import Text.Megaparsec hiding
        ( some )
 import Text.Megaparsec.Char
 
-import qualified Logic.Matching.Pattern as Pattern
-import           Logic.Matching.Rules.Minimal
-import           Logic.Matching.Signature
-import           Logic.Matching.Syntax
-                 ( mlPattern )
+import Logic.Matching.Rules.Minimal
 
-type Parser = Parsec Void Text
+type Parser = Parsec String String
 
 lexeme :: Parser a -> Parser a
 lexeme p = p <* space
@@ -48,7 +42,7 @@ parsePathPos :: Parser [Int]
 parsePathPos = sepBy number space1
 
 --Todo: Remove these declarations in favor of Kore Parsers
-parseId :: Parser Text
+parseId :: Parser String
 parseId = lexeme $ takeWhile1P Nothing isAlphaNum
 
 infixl 4 `arg`
@@ -73,7 +67,7 @@ parseMLRule pLabel pVar pTerm pIx =
     <|> existence
     <|> singvar
   where
-    rule :: Text -> Parser body -> Parser body
+    rule :: String -> Parser body -> Parser body
     rule name body = string name >> space >> parens body
 
     propositionalRules = try $ do
@@ -111,27 +105,6 @@ parseMLRule pLabel pVar pTerm pIx =
       Existence <$> pVar
     singvar = rule "singvar" $
       Singvar <$> pVar `arg` pTerm `arg` parsePathPos `arg` parsePathPos
-
--- | Parse a rule of the minimal proof system
--- when the formula type is 'Pattern.SigPattern',
--- using the default pattern syntax over the provided
--- parsers for the sorts and labels of the signatures.
-parseMLRuleSig :: forall sig var ix .
-                  (Pattern.IsSignature sig)
-               => Parser (Sort sig)
-               -> Parser (Label sig)
-               -> Parser var
-               -> Parser ix
-               -> Parser (MLRuleSig sig var ix)
-parseMLRuleSig pSort pLabel pVar pIx =
-    parseMLRule pLabel pVar parseFormula pIx
-  where
-    parseFormula :: Parser (Pattern.WFPattern sig var)
-    parseFormula = do
-      term <- mlPattern pSort pLabel pVar
-      case Pattern.checkSorts term of
-        Nothing     -> fail "Ill-sorted term"
-        Just wfTerm -> return wfTerm
 
 -- | Displays proof rules in the documented concrete syntax,
 -- assuming pretty-printing instances for all the type parameters

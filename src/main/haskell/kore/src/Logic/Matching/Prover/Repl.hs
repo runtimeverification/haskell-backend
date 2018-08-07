@@ -14,17 +14,19 @@ import           Control.Monad.Trans
                  ( MonadTrans (lift) )
 import qualified Data.Map.Strict as Map
 import           Data.Text
-                 ( Text, pack )
+                 ( Text )
 import           Data.Text.Prettyprint.Doc
                  ( Pretty (pretty), colon, (<+>) )
-import           Data.Void
 import           System.Console.Haskeline
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 
+import Kore.Parser.ParserUtils ()
 import Kore.Error
 import Logic.Matching.Error
 import Logic.Proof.Hilbert
+
+type Parser = Parsec String String
 
 newtype ProverState ix rule formula =
   ProverState (Proof ix rule formula)
@@ -72,7 +74,6 @@ applyCommand formulaVerifier command proof = case command of
   AddAndProve ix f rule -> applyAddAndProve formulaVerifier proof ix f rule
   Prove ix rule         -> applyProve proof ix rule
 
-type Parser = Parsec Void Text
 
 parseAdd :: Parser ix -> Parser formula -> Parser (rule ix) -> Parser (Command ix rule formula)
 parseAdd pIx pFormula pDerivation = do
@@ -117,7 +118,7 @@ runProver
   -> Parser (Command ix rule formula)
   -> ProverState ix rule formula
   -> IO (ProverState ix rule formula)
-runProver formulaVerifier pCommand initialState =
+runProver formulaVerifier pCommand' initialState =
     execStateT (runInputT defaultSettings startRepl) initialState
   where
     startRepl = outputStrLn "Matching Logic prover started" >> repl
@@ -127,7 +128,7 @@ runProver formulaVerifier pCommand initialState =
         Just "" -> do ProverState state <- lift get
                       outputStrLn (show (renderProof state))
                       repl
-        Just command -> case parse pCommand "<stdin>" (pack command) of
+        Just command -> case parse pCommand' "<stdin>" command of
           Left err -> outputStrLn (parseErrorPretty err) >> repl
           Right cmd -> do
             ProverState state <- lift get
