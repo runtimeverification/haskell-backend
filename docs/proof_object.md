@@ -275,3 +275,143 @@ proof checker extremely simple.
 * Check that `P11` is syntactically equal to `Q1`
 * Check that `P12` is syntactically equal to `P21`
 * Check that `P22` is syntactically equal to `Q2`
+
+# Mixed-level Proof Object Syntax
+
+Language definitions are expected to use mostly
+object-level or mixed-level patterns, which is why
+we have defined the Kore syntax to allow such patterns,
+rather than simply requiring everything to be encoded
+as meta-level patterns.
+For the same reason, we wish to define a syntax of proofs
+that allows writing mixed-level patterns, and that allows
+object-level reasoning steps to be written in the
+form `by <ProofRule>` rather than by explicitly
+constructing meta-level proofs of patterns involving `#provable`
+using the hypotheses described in section 7.7 of
+The Semantics of K.
+
+To support this we allow as patterns any Kore pattern,
+which follows the syntax of `<pattern>` in 9.1.4.
+```
+  <ProofObject>  ::= <AssumedClaim>* <DerivedClaim>*
+
+  <AssumedClaim> ::= <Id> : <Pattern>
+
+  <DerivedClaim> ::= <Id> : <Pattern> by <ProofRule>
+
+  <Id> ::= /* Quite flexible syntax. */
+```
+
+Proofs will be defined so that a valid mixed-level proof can
+be transformed into a valid simple proof that assumes or
+proves (resp.) the lifting of each assumed or derived claim
+of the mixed-level proof.
+
+The patterns in claims will be use a special "claim lifting" that
+transforms a pattern `phi` whose topmost element is an meta-level
+construct into the pure meta pattern `[[phi]]`, and lifts
+a pattern which has an object-level construct as the topmost element
+and has no metavariables into the pure meta pattern `#provable([[phi]])`.
+
+The claim lifting of a pattern that has metavariables needs to be defined
+in detail, but it will generally add implications before `#provable([[phi]])`
+asserting that the metavariables are instantiated with well-formed
+sorts or object patterns.
+
+Following the conventions of lifting we the meta-level proof rules
+will have a '#' prefix added to the name of the object-level proof rules.
+All the same proof rules that we have above for the meta-level should
+have object-level versions as well, but expanding the object-level
+proof to a pure matching logic proof will involve instantiating and
+using hypotheses about `#provable` rather than using matching logic
+proof rules directly.
+Compared to the previous section, the meta-level proof rules are
+generalized slightly by allowing mixed patterns in the arguments,
+which are uniformly interpreted as their lifting
+(`#provable` is not automatically added).
+So that object-level proof rules have the same arity as
+meta-level proof rules, any hypotheses about `#wellFormed`
+or `#occursFree` are automatically discharged.
+
+* TODO: Need to explain how variables or quantifiers resulting
+from lifting of metavariables are handled by object-level proof rules.
+I think the object-level proof rules should be defined to handle
+at least simple cases automatically.
+
+To give the user access to this same automation,
+additional meta-level proof rules are provided.
+The new proof rule `#check-well-formed(P)` proves
+that `#wellFormed` holds of the lifting of P whenever
+P is well-formed.
+Similarly, `#check-free(x,P)` and `#check-not-free(x,P)`
+respectively deduce patterns  `#occursFree{s}(x,P)`
+or `\not{s}(#occursFree{s}(x,P))` when they are true.
+
+```
+  <MixedProofObject>  ::= <AssumedClaim>* <DerivedClaim>*
+
+  <AssumedClaim> ::= <Id> : <Pattern>
+
+  <DerivedClaim> ::= <Id> : <Pattern> by <MixedProofRule>
+
+  <Id> ::= /* Quite flexible syntax. */
+  <Position> ::= <PositiveInteger> /* 1, 2, 3, ... */
+  <PathPosition> ::= /* A nonempty sequence of <Position> */
+
+  <MixedProofRule>    ::=
+  | <ObjectProofRule>
+  | <MetaProofRule>
+
+  <ObjectProofRule>    ::=
+  | propositional1(<Pattern>, <Pattern>)
+  | propositional2(<Pattern>, <Pattern>, <Pattern>)
+  | propositional3(<Pattern>, <Pattern>)
+  | mp(<Id>, <Id>)
+  | ug(<Variable>, <Id>)
+  | varsubst(<Variable>, <Pattern>, <Variable>)
+  | forall(<Variable>, <Pattern>, <Pattern>)
+  | frame(<Id>, <Symbol>, <Position>)
+  | propagate-bot(<Symbol>, <Position>)
+  | propagate-or(<Symbol>, <Position>, <Pattern>, <Pattern>)
+  | propagate-exists(<Symbol>, <Position>, <Variable>, <Pattern>)
+  | existence(<Variable>)
+  | singvar(<Variable>, <Pattern>, <PathPosition>, <PathPosition>)
+  | <DerivedObjectProofRule>
+
+  <DerivedObjectProofRule> ::=
+  |  eqsubst-rule(<Id>, <Pattern>, <PathPosition>)          /* Equality Substituion Rule */
+  |  funsubst(<Variable>, <Pattern>, <Variable>, <Pattern>) /* Functional Substituion */
+  |  funsubst-rule(<Id>, <Id>)                              /* Functional Substituion Rule */
+  |  eq-comm(<Id>)                                          /* Equality Commutativity */
+  |  eq-trans(<Id>, <Id>)                                   /* Equality Transitivity*/
+
+  <MetaProofRule>    ::=
+  | #propositional1(<Pattern>, <Pattern>)
+  | #propositional2(<Pattern>, <Pattern>, <Pattern>)
+  | #propositional3(<Pattern>, <Pattern>)
+  | #mp(<Id>, <Id>)
+  | #ug(<Variable>, <Id>)
+  | #varsubst(<Variable>, <Pattern>, <Variable>)
+  | #forall(<Variable>, <Pattern>, <Pattern>)
+  | #frame(<Id>, <Symbol>, <Position>)
+  | #propagate-bot(<Symbol>, <Position>)
+  | #propagate-or(<Symbol>, <Position>, <Pattern>, <Pattern>)
+  | #propagate-exists(<Symbol>, <Position>, <Variable>, <Pattern>)
+  | #existence(<Variable>)
+  | #singvar(<Variable>, <Pattern>, <PathPosition>, <PathPosition>)
+  | <DerivedMetaProofRule>
+  | <AutomaticMetaProofRule>
+
+  <DerivedMetaProofRule> ::=
+  |  #eqsubst-rule(<Id>, <Pattern>, <PathPosition>)          /* Equality Substituion Rule */
+  |  #funsubst(<Variable>, <Pattern>, <Variable>, <Pattern>) /* Functional Substituion */
+  |  #funsubst-rule(<Id>, <Id>)                              /* Functional Substituion Rule */
+  |  #eq-comm(<Id>)                                          /* Equality Commutativity */
+  |  #eq-trans(<Id>, <Id>)                                   /* Equality Transitivity*/
+
+  <AutomaticMetaProofRule> ::=
+  |  #check-well-formed(<Pattern>)
+  |  #check-free(<Variable>,<Pattern>)
+  |  #check-not-free(<Variable>,<Pattern>)
+```
