@@ -34,7 +34,7 @@ module Kore.Parser.Parser
     , korePatternParser
     , metaPatternParser
     , metaVariableParser
-    , metaSymbolOrAliasParser
+    , metaHeadParser
     , CommonKorePattern
     , CommonMetaPattern
     ) where
@@ -52,7 +52,7 @@ import           Kore.Parser.Lexeme
                  ( skipWhitespace )
 import qualified Kore.Parser.ParserImpl as KoreParser
                  ( koreDefinitionParser, korePatternParser, metaPatternParser,
-                 symbolOrAliasParser, variableParser )
+                 headParser, variableParser )
 import           Kore.Parser.ParserUtils
 
 {-|'koreParser' is a parser for Kore.
@@ -69,15 +69,6 @@ The input must contain a full valid Kore pattern and nothing else.
 korePatternParser :: Parser CommonKorePattern
 korePatternParser = KoreParser.korePatternParser
 
-metaPatternParser :: Parser CommonMetaPattern
-metaPatternParser = KoreParser.metaPatternParser
-
-metaVariableParser :: Parser (Variable Meta)
-metaVariableParser = KoreParser.variableParser Meta
-
-metaSymbolOrAliasParser :: Parser (SymbolOrAlias Meta)
-metaSymbolOrAliasParser = KoreParser.symbolOrAliasParser Meta
-
 {-|'fromKore' takes a string representation of a Kore Definition and returns
 a 'KoreDefinition' or a parse error.
 
@@ -93,3 +84,18 @@ The input must contain a full valid Kore pattern and nothing else.
 -}
 fromKorePattern :: FilePath -> String -> Either String CommonKorePattern
 fromKorePattern = parseOnly korePatternParser
+
+
+---------------------------------
+-- Matching Logic Kore Parsers --
+-- | parses formulae for ML proofs
+metaPatternParser :: Parser CommonMetaPattern
+metaPatternParser = KoreParser.metaPatternParser
+
+-- | parses meta variables in ML proofs
+metaVariableParser :: Parser (Variable Meta)
+metaVariableParser = KoreParser.variableParser Meta
+
+-- | parses meta heads for ML proofs
+metaHeadParser :: Parser (SymbolOrAlias Meta)
+metaHeadParser = KoreParser.headParser Meta

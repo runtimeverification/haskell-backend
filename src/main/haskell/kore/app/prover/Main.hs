@@ -26,7 +26,7 @@ pCommand' :: Parser (Command String (MLRule (SymbolOrAlias Meta) (Variable Meta)
 pCommand' = parseCommand parseName parseFormula parseRule
   where
     parseFormula = metaPatternParser
-    parseRule    = parseMLRule metaSymbolOrAliasParser
+    parseRule    = parseMLRule metaHeadParser
                                metaVariableParser
                                parseFormula
                                parseName
