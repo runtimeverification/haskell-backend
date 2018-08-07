@@ -242,9 +242,9 @@ unaryOperatorRemainderParser
     -- ^ Element constructor.
     -> Parser (m level child)
 unaryOperatorRemainderParser childParser x constructor =
-    pure constructor
-        <*> inCurlyBracesRemainderParser (sortParser x)
-        <*> inParenthesesParser childParser
+    constructor
+    <$> inCurlyBracesRemainderParser (sortParser x)
+    <*> inParenthesesParser childParser
 
 {-|'binaryOperatorRemainderParser' parses the part after a binary operator's
 name and the first open curly brace and constructs it using the provided
@@ -399,12 +399,12 @@ symbolOrAliasPatternRemainderParser
     -> Id level  -- ^ The already parsed prefix.
     -> Parser (Pattern level Variable child)
 symbolOrAliasPatternRemainderParser childParser x identifier =
-    ApplicationPattern <$>
-        ( pure Application
-            <*>
-                (   SymbolOrAlias identifier
-                <$> inCurlyBracesListParser (sortParser x))
-            <*> inParenthesesListParser childParser
+    ApplicationPattern
+    <$> (   Application
+        <$> (   SymbolOrAlias identifier
+            <$> inCurlyBracesListParser (sortParser x)
+            )
+        <*> inParenthesesListParser childParser
         )
 
 {-|'variableRemainderParser' parses the part after a variable's name and
@@ -497,6 +497,26 @@ variableOrTermPatternParser childParser x = do
     if c == ':'
         then VariablePattern <$> variableRemainderParser x identifier
         else symbolOrAliasPatternRemainderParser childParser x identifier
+
+
+{-| parses a symbol or alias constructor and sort list
+@
+⟨head⟩ ::= ⟨object-head⟩ | ⟨meta-head⟩
+
+⟨object-head⟩ ::= ⟨object-head-constructor⟩ ‘{’ ⟨object-sort-list⟩ ‘}’
+⟨object-head-constructor⟩ ::= ⟨object-identifier⟩
+
+⟨meta-head⟩ ::= ⟨meta-head-constructor⟩ ‘{’ ⟨meta-sort-list⟩ ‘}’
+⟨meta-head-constructor⟩ ::= ⟨meta-identifier⟩
+@
+-}
+headParser
+    :: MetaOrObject level
+    => level  -- ^ Distinguishes between the meta and non-meta elements.
+    -> Parser (SymbolOrAlias level)
+headParser x = do
+    identifier <- idParser x
+    (SymbolOrAlias identifier <$> inCurlyBracesListParser (sortParser x))
 
 {-|'koreVariableOrTermPatternParser' parses a variable pattern or an
 application one.
@@ -755,7 +775,6 @@ korePatternParser = do
         '\'' -> asKorePattern . CharLiteralPattern <$> charLiteralParser
         _    -> koreVariableOrTermPatternParser
 
-
 {-|'inSquareBracketsListParser' parses a @list@ of items delimited by
 square brackets and separated by commas.
 
@@ -810,9 +829,9 @@ definitionParser
     :: Parser (sentence sortParam pat variable)
     -> Parser (Definition sentence sortParam pat variable)
 definitionParser sentenceParser =
-    pure Definition
-        <*> attributesParser
-        <*> some (moduleParser sentenceParser)
+  Definition
+  <$> attributesParser
+  <*> some (moduleParser sentenceParser)
 
 {-|'moduleParser' parses the module part of a Kore @definition@
 
@@ -914,7 +933,7 @@ sentenceSortRemainderParser = do
     _   -> constructUnifiedSentence SentenceSortSentence
            <$> sortSentenceRemainderParser Object
 
-{-|'aliasSymbolSentenceRemainderParser' parses the part after the starting
+{-|'symbolSentenceRemainderParser' parses the part after the starting
 keyword of an alias or symbol declaration using the given head parser
 to parse the head and constructs it using the given constructor.
 
@@ -990,12 +1009,12 @@ BNF example:
 -}
 importSentenceRemainderParser :: Parser KoreSentence
 importSentenceRemainderParser =
-    constructUnifiedSentence SentenceImportSentence <$>
-    ( pure SentenceImport
-        <*> moduleNameParser
-        <*> attributesParser
-    )
-
+    constructUnifiedSentence
+    SentenceImportSentence
+    <$> ( SentenceImport
+          <$> moduleNameParser
+          <*> attributesParser
+        )
 {-|'axiomSentenceRemainderParser' parses the part after the starting
 'axiom' keyword of an axiom-declaration and constructs it.
 
@@ -1008,12 +1027,13 @@ BNF example:
 Always starts with @{@.
 -}
 axiomSentenceRemainderParser :: Parser KoreSentence
-axiomSentenceRemainderParser = asSentence <$>
-    ( pure SentenceAxiom
-        <*> inCurlyBracesListParser unifiedSortVariableParser
+axiomSentenceRemainderParser =
+  asSentence
+  <$> ( SentenceAxiom
+        <$> inCurlyBracesListParser unifiedSortVariableParser
         <*> korePatternParser
         <*> attributesParser
-    )
+      )
 
 {-|'sortSentenceRemainderParser' parses the part after the starting
 @sort@ keyword of a sort-declaration and constructs it.
@@ -1031,10 +1051,10 @@ sortSentenceRemainderParser
   => level
   -> Parser (KoreSentenceSort level)
 sortSentenceRemainderParser x =
-    pure SentenceSort
-        <*> idParser x
-        <*> inCurlyBracesListParser (sortVariableParser x)
-        <*> attributesParser
+    SentenceSort
+    <$> idParser x
+    <*> inCurlyBracesListParser (sortVariableParser x)
+    <*> attributesParser
 
 {-|'hookedSymbolSentenceRemainderParser' parses the part after the starting
 @hooked-symbol@ keyword of an hook-declaration as a 'SentenceSymbol' and
@@ -1043,11 +1063,10 @@ constructs the corresponding 'SentenceHook'.
 hookedSymbolSentenceRemainderParser :: Parser KoreSentence
 hookedSymbolSentenceRemainderParser =
     constructUnifiedSentence SentenceHookSentence . SentenceHookedSymbol . unRotate31
-    <$>
-    symbolSentenceRemainderParser
-        Object
-        (symbolParser Object)
-        (Rotate31 <....> SentenceSymbol)
+    <$> symbolSentenceRemainderParser
+    Object
+    (symbolParser Object)
+    (Rotate31 <....> SentenceSymbol)
 
 {-|'hookedSortSentenceRemainderParser' parses the part after the starting
 'hooked-sort@ keyword of a sort-declaration as a 'SentenceSort' and constructs
