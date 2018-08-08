@@ -46,6 +46,9 @@ import           Logic.Proof.Hilbert
 
 type Var = Variable Meta
 type Symbol = SymbolOrAlias Meta
+type Formula = CommonMetaPattern
+type Rule = MLRule Symbol Var Formula
+
 
 -- To get an indexed module one can use `verifyAndIndexDefinition`
 formulaVerifier
