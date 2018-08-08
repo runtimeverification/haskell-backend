@@ -429,7 +429,7 @@ runEntry :: (ReifiesSignature s)
               (AST.WFPattern (SimpleSignature s) Int))
 runEntry proof entry@(ix,pat,rule) = presentError $ do
     proof1 <- add (const (Right ())) proof ix pat
-    derive proof1 pat rule
+    derive proof1 ix rule
   where
     presentError (Left err) =
         Left ("Error processing "++show entry++":\n"++show err)

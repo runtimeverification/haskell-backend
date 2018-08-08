@@ -1,22 +1,19 @@
 import           Data.Char                                     (isAlphaNum)
 import qualified Data.Map.Strict                               as Map
 import qualified Data.Set                                      as Set
-import           Data.Text
+import           Data.Reflection
 
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 
-import           Data.Reflection
 
-import           Logic.Matching.Pattern
-import           Logic.Matching.Syntax
 import           Logic.Proof.Hilbert (emptyProof)
 import           Logic.Matching.Rules.Kore ()
 import           Logic.Matching.Rules.Minimal
 import           Logic.Matching.Rules.Minimal.Syntax (parseMLRule)
 
 import           Logic.Matching.Prover.Repl (ProverState(..), ProverEnv(..), runProver, execReplT, defaultSettings)
-import           Logic.Matching.Prover.Command (Command, Parser(..), parseCommand)
+import           Logic.Matching.Prover.Command (Command, Parser, parseCommand)
 
 import           Logic.Matching.Signature.Simple
 
@@ -68,7 +65,7 @@ testSignature = SignatureInfo
 
 main :: IO ()
 main =
-  defaultMainGlobal 
+  defaultMainGlobal
   >> ( case testSigValid of
          Nothing -> putStrLn $ show testSigValid
          Just validSig ->

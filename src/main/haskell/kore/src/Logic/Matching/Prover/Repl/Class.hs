@@ -1,4 +1,9 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{- | Description: module for the type-class style monad transformer for a REPL-like monad.
+TODO:  In order to continue using the dated 'haskeline' library instances of the MonadFoo
+are provided for the underlying monad transformer in haskeline, InputT.
+Perhaps there is a better alternative...
+-}
 module Logic.Matching.Prover.Repl.Class
   ( C.runInputT
   , C.defaultSettings
@@ -17,6 +22,7 @@ import qualified Control.Monad.State.Strict as S
 import qualified Control.Monad.IO.Class as IO
   (MonadIO)
 
+-- | type-class version of 'InputT'
 class C.MonadException m => MonadHaskeline m where
   getInputLine :: String -> m (Maybe String)
   getInputChar :: String -> m (Maybe Char)
