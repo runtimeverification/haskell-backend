@@ -58,6 +58,7 @@ test_userDefinedFunction =
                         asPureMetaPattern (metaF (x PatternSort))
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
+                    , axiomPatternRequires = makeTruePredicate
                     }
                 (mockConditionEvaluator [])
                 (mockFunctionEvaluator [])
@@ -79,6 +80,7 @@ test_userDefinedFunction =
                         asPureMetaPattern (metaF (x PatternSort))
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
+                    , axiomPatternRequires = makeTruePredicate
                     }
                 (mockConditionEvaluator
                     [   ( makeTruePredicate
@@ -100,6 +102,7 @@ test_userDefinedFunction =
                         asPureMetaPattern (metaF (x PatternSort))
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
+                    , axiomPatternRequires = makeTruePredicate
                     }
                 (mockConditionEvaluator
                     [   ( makeTruePredicate
@@ -126,6 +129,7 @@ test_userDefinedFunction =
                         asPureMetaPattern (metaF (x PatternSort))
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
+                    , axiomPatternRequires = makeTruePredicate
                     }
                 (mockConditionEvaluator
                      -- TODO: Remove these true->true mappings.
@@ -160,6 +164,7 @@ test_userDefinedFunction =
                         asPureMetaPattern (metaF (x PatternSort))
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
+                    , axiomPatternRequires = makeTruePredicate
                     }
                 (mockConditionEvaluator
                     [   ( makeTruePredicate
@@ -203,6 +208,7 @@ test_userDefinedFunction =
                             (metaSigma (x PatternSort) (x PatternSort))
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
+                    , axiomPatternRequires = makeTruePredicate
                     }
                 (mockConditionEvaluator
                     [   ( makeTruePredicate
@@ -239,6 +245,7 @@ test_userDefinedFunction =
                             (metaSigma (x PatternSort) (x PatternSort))
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
+                    , axiomPatternRequires = makeTruePredicate
                     }
                 (mockConditionEvaluator
                      -- TODO: Remove these true->true mappings.

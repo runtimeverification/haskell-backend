@@ -75,6 +75,7 @@ test_baseStep =
                 AxiomPattern
                     { axiomPatternLeft = asPureMetaPattern (x1 PatternSort)
                     , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
+                    , axiomPatternRequires = makeTruePredicate
                     }
             )
         )
@@ -110,6 +111,7 @@ test_baseStep =
                 AxiomPattern
                     { axiomPatternLeft = asPureMetaPattern (x1 PatternSort)
                     , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
+                    , axiomPatternRequires = makeTruePredicate
                     }
             )
         )
@@ -160,6 +162,7 @@ test_baseStep =
                         asPureMetaPattern
                             (metaSigma (x1 PatternSort) (x1 PatternSort))
                     , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
+                    , axiomPatternRequires = makeTruePredicate
                     }
             )
         )
@@ -227,6 +230,7 @@ test_baseStep =
                         asPureMetaPattern
                             (metaSigma (x1 PatternSort) (x1 PatternSort))
                     , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
+                    , axiomPatternRequires = makeTruePredicate
                     }
             )
         )
@@ -296,6 +300,7 @@ test_baseStep =
                         asPureMetaPattern
                             (metaSigma (x1 PatternSort) (x1 PatternSort))
                     , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
+                    , axiomPatternRequires = makeTruePredicate
                     }
             )
         )
@@ -413,6 +418,7 @@ test_baseStep =
                     , axiomPatternRight =
                         asPureMetaPattern
                             (metaSigma (x1 PatternSort) (y1 PatternSort))
+                    , axiomPatternRequires = makeTruePredicate
                     }
             )
         )
@@ -466,6 +472,7 @@ test_baseStep =
                                 (a1 PatternSort)
                                 (x1 PatternSort)
                             )
+                    , axiomPatternRequires = makeTruePredicate
                     }
             )
         )
@@ -492,6 +499,7 @@ test_baseStep =
                             (metaSigma (x1 PatternSort) (x1 PatternSort))
                     , axiomPatternRight =
                         asPureMetaPattern (x1 PatternSort)
+                    , axiomPatternRequires = makeTruePredicate
                     }
             )
         )
@@ -539,6 +547,7 @@ test_baseStep =
                                 (metaSigma
                                     (x1 PatternSort) (y1 PatternSort)
                                 )
+                    , axiomPatternRequires = makeTruePredicate
                     }
             )
         )
@@ -630,6 +639,7 @@ test_baseStep =
                         , axiomPatternRight =
                             asPureMetaPattern
                                 (metaSigma (x1 PatternSort) (y1 PatternSort))
+                        , axiomPatternRequires = makeTruePredicate
                         }
                 )
             )
@@ -729,6 +739,7 @@ test_baseStep =
                         , axiomPatternRight =
                             asPureMetaPattern
                                 (metaSigma (x1 PatternSort) (y1 PatternSort))
+                        , axiomPatternRequires = makeTruePredicate
                         }
                 )
             )
@@ -774,6 +785,7 @@ test_baseStep =
                 AxiomPattern
                     { axiomPatternLeft = asPureMetaPattern (x1 PatternSort)
                     , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
+                    , axiomPatternRequires = makeTruePredicate
                     }
             )
         )
@@ -871,6 +883,7 @@ test_baseStep =
                         , axiomPatternRight =
                             asPureMetaPattern
                                 (metaSigma (x1 PatternSort) (y1 PatternSort))
+                        , axiomPatternRequires = makeTruePredicate
                         }
                 )
             )
@@ -979,6 +992,7 @@ test_baseStep =
                         asPureMetaPattern
                             (metaSigma (x1 PatternSort) (x1 PatternSort))
                     , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
+                    , axiomPatternRequires = makeTruePredicate
                     }
             )
 

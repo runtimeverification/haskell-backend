@@ -7,7 +7,6 @@ module Kore.Step.AxiomPatterns
 
 import Data.Either
        ( rights )
-import Data.Functor.Foldable
 
 import Kore.AST.Common
 import Kore.AST.Kore
@@ -16,8 +15,10 @@ import Kore.AST.PureML
 import Kore.AST.PureToKore
        ( patternKoreToPure )
 import Kore.AST.Sentence
+import Kore.ASTUtils.SmartPatterns
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
+import Kore.Predicate.Predicate ( CommonPredicate, wrapPredicate )
 
 newtype AxiomPatternError = AxiomPatternError ()
 
@@ -27,6 +28,7 @@ it can only represent axioms that look like left-pattern => right-pattern.
 data AxiomPattern level = AxiomPattern
     { axiomPatternLeft  :: !(CommonPurePattern level)
     , axiomPatternRight :: !(CommonPurePattern level)
+    , axiomPatternRequires :: !(CommonPredicate level)
     }
     deriving (Show, Eq)
 
@@ -71,19 +73,20 @@ patternToAxiomPattern
     => CommonPurePattern level
     -> Either (Error AxiomPatternError) (AxiomPattern level)
 patternToAxiomPattern pat =
-    case project pat of
-        AndPattern And
-            { andFirst = Fix (TopPattern _)
-            , andSecond =
-                Fix
-                    (AndPattern And
-                        { andFirst = Fix (TopPattern _)
-                        , andSecond = Fix (RewritesPattern p)
-                        }
-                    )
-            } -> return AxiomPattern
-                { axiomPatternLeft = rewritesFirst p
-                , axiomPatternRight = rewritesSecond p
+    case pat of
+        -- normal rewrite axioms
+        And_ _ requires (And_ _ _ensures (Rewrites_ _ lhs rhs)) ->
+            pure AxiomPattern
+                { axiomPatternLeft = lhs
+                , axiomPatternRight = rhs
+                , axiomPatternRequires = wrapPredicate requires
                 }
-        ForallPattern fap -> patternToAxiomPattern (forallChild fap)
+        -- function axioms
+        Implies_ _ requires (And_ _ (Equals_ _ _ lhs rhs) _ensures) ->
+            pure AxiomPattern
+                { axiomPatternLeft = lhs
+                , axiomPatternRight = rhs
+                , axiomPatternRequires = wrapPredicate requires
+                }
+        Forall_ _ _ child -> patternToAxiomPattern child
         _ -> koreFail "Unsupported pattern type in axiom"
