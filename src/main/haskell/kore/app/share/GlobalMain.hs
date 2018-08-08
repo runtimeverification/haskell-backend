@@ -14,7 +14,6 @@ import Control.Exception
        ( evaluate )
 import Control.Monad
        ( when )
-
 import Data.Semigroup
        ( mempty, (<>) )
 import Data.Time.Format
@@ -23,13 +22,10 @@ import Data.Time.LocalTime
        ( ZonedTime, getZonedTime )
 import Data.Version
        ( showVersion )
-
 import System.Clock
        ( Clock (Monotonic), diffTimeSpec, getTime )
-
 import Development.GitRev
        ( gitBranch, gitCommitDate, gitHash )
-
 import Options.Applicative
        ( InfoMod, Parser, argument, disabled, execParser, flag, flag', help,
        helper, hidden, info, internal, long, (<**>), (<|>) )
