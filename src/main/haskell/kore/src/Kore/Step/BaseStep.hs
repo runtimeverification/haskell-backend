@@ -194,6 +194,8 @@ stepWithAxiom
         , axiomPatternRight = axiomRightRaw
         }
   = do
+    -- Distinguish configuration (pattern) and axiom variables by lifting them
+    -- into 'StepperVariable'.
     let
         wrappedExpandedPattern =
             ExpandedPattern.mapVariables ConfigurationVariable expandedPattern
@@ -206,10 +208,13 @@ stepWithAxiom
         axiomRight = wrapAxiomVariables axiomRightRaw
 
     let
+        -- Keep a set of all variables for remapping errors (below).
         existingVars =
             ExpandedPattern.allVariables expandedPattern
             <> pureAllVariables axiomLeftRaw
             <> pureAllVariables axiomRightRaw
+
+        -- Remap unification and substitution errors into 'StepError'.
         normalizeUnificationError
             :: MetaOrObject level
             => Set.Set (Variable level)
@@ -218,10 +223,14 @@ stepWithAxiom
         normalizeUnificationError existingVariables action =
             stepperVariableToVariableForError
                 existingVariables (unificationToStepError action)
+
         normalizeSubstitutionError action =
             stepperVariableToVariableForError
                 existingVars (substitutionToStepError action)
 
+    -- Unify the left-hand side of the rewriting axiom with the initial
+    -- configuration, producing a substitution (instantiating the axiom to the
+    -- configuration) subject to a predicate.
     (     unificationSubstitution
         , unificationCondition
         , rawSubstitutionProof
@@ -233,6 +242,9 @@ stepWithAxiom
                     startPattern
                 )
 
+    -- Combine the substitution produced by unification with the initial
+    -- substitution carried by the configuration. Merging substitutions may
+    -- produce another predicate during symbolic execution.
     (     substitutionMergeCondition
         , substitution
         , _  -- TODO: Use this proof
@@ -244,13 +256,14 @@ stepWithAxiom
         normalizeSubstitutionError
             (normalizeSubstitution substitution)
 
+    -- Merge all conditions collected so far
     let
         (mergedConditionWithCounter, _) = -- TODO: Use this proof
             give (sortTools tools)
             $ mergeConditionsWithAnd
-                [ startCondition
-                , unificationCondition
-                , substitutionMergeCondition
+                [ startCondition  -- from initial configuration
+                , unificationCondition  -- produced during unification
+                , substitutionMergeCondition -- by merging substitutions
                 ]
 
     return $ do
@@ -261,6 +274,7 @@ stepWithAxiom
                 ListSubstitution.fromList
                     (makeUnifiedSubstitution normalizedSubstitution)
 
+        -- Apply substitution to resulting configuration and conditions.
         rawResult <- substitute axiomRight unifiedSubstitution
 
         normalizedMergedCondition <- mergedConditionWithCounter
@@ -269,6 +283,8 @@ stepWithAxiom
                 (`substitute` unifiedSubstitution)
                 normalizedMergedCondition
 
+        -- Unwrap internal 'StepperVariable's and collect the variable mappings
+        -- for the proof.
         (variableMapping, result) <-
             patternStepVariablesToCommon existingVars Map.empty rawResult
         (variableMapping1, condition) <-
@@ -300,6 +316,8 @@ stepWithAxiom
                 )
             )
   where
+    -- | Unwrap 'StepperVariable's so that errors are not expressed in terms of
+    -- internally-defined variables.
     stepperVariableToVariableForError
         :: MetaOrObject level
         => Set.Set (Variable level)
@@ -319,6 +337,7 @@ stepWithAxiom
                 return $ mapStepErrorVariables
                     configurationVariableToCommon errorWithoutAxiomVars
             Right result -> Right result
+
     variablePairToRenaming
         :: (StepperVariable level, StepperVariable level)
         -> VariableRenaming level
