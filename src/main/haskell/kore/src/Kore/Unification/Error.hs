@@ -33,8 +33,9 @@ data UnificationError level
 {--| 'SubstitutionError' specifies the various error cases related to
 substitutions.
 --}
-newtype SubstitutionError level variable =
-    CircularVariableDependency [variable level]
+data SubstitutionError level variable
+    = CtorCircularVariableDependency [variable level]
+    | NonCtorCircularVariableDependency [variable level]
     deriving (Eq, Show)
 
 {--| 'substitutionErrorVariables' extracts all variables in a
@@ -44,7 +45,9 @@ substitutionErrorVariables
     :: Ord (variable level)
     => SubstitutionError level variable
     -> Set.Set (variable level)
-substitutionErrorVariables (CircularVariableDependency variables) =
+substitutionErrorVariables (CtorCircularVariableDependency variables) =
+    Set.fromList variables
+substitutionErrorVariables (NonCtorCircularVariableDependency variables) =
     Set.fromList variables
 
 {--| 'mapSubstitutionErrorVariables' replaces all variables in a
@@ -54,6 +57,10 @@ mapSubstitutionErrorVariables
     :: (variableFrom level -> variableTo level)
     -> SubstitutionError level variableFrom
     -> SubstitutionError level variableTo
-mapSubstitutionErrorVariables mapper (CircularVariableDependency variables) =
-    CircularVariableDependency (map mapper variables)
+mapSubstitutionErrorVariables mapper
+    (CtorCircularVariableDependency variables) =
+        CtorCircularVariableDependency (map mapper variables)
+mapSubstitutionErrorVariables mapper
+    (NonCtorCircularVariableDependency variables) =
+        NonCtorCircularVariableDependency (map mapper variables)
 

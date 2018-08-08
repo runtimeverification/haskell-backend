@@ -242,7 +242,7 @@ stepWithAxiom
 
     normalizedSubstitutionWithCounter <-
         normalizeSubstitutionError
-            (normalizeSubstitution substitution)
+            (normalizeSubstitution tools substitution)
 
     let
         (mergedConditionWithCounter, _) = -- TODO: Use this proof

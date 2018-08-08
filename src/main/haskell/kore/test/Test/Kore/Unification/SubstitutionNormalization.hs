@@ -7,18 +7,24 @@ import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
 import Kore.AST.Common
-       ( AstLocation (..), Variable )
+       ( AstLocation (..), Sort (..), SortVariable (..), Variable,
+       noLocationId )
 import Kore.AST.MetaOrObject
 import Kore.AST.PureML
        ( CommonPurePattern )
 import Kore.AST.PureToKore
        ( patternKoreToPure )
+import Kore.ASTHelpers
+       ( ApplicationSorts (..) )
 import Kore.Building.AsAst
 import Kore.Building.Patterns
 import Kore.Building.Sorts
 import Kore.Error
+import Kore.IndexedModule.MetadataTools
+       ( MetadataTools (..), SortTools )
 import Kore.MetaML.AST
        ( CommonMetaPattern )
+import Kore.Step.StepperAttributes
 import Kore.Unification.Error
        ( SubstitutionError (..) )
 import Kore.Unification.SubstitutionNormalization
@@ -108,7 +114,7 @@ test_substitutionNormalization =
       in
         testCase "Simplest cycle"
             (assertEqual ""
-                (Left (CircularVariableDependency [var1]))
+                (Left (CtorCircularVariableDependency [var1]))
                 (runNormalizeSubstitution
                     [   ( var1
                         , asPureMetaPattern (v1 PatternSort)
@@ -122,7 +128,7 @@ test_substitutionNormalization =
       in
         testCase "Length 2 cycle"
             (assertEqual ""
-                (Left (CircularVariableDependency [var1, varx1]))
+                (Left (CtorCircularVariableDependency [var1, varx1]))
                 (runNormalizeSubstitution
                     [   ( var1
                         , asPureMetaPattern (x1 PatternSort)
@@ -139,7 +145,7 @@ test_substitutionNormalization =
       in
         testCase "Cycle with 'and'"
             (assertEqual ""
-                (Left (CircularVariableDependency [var1, varx1]))
+                (Left (CtorCircularVariableDependency [var1, varx1]))
                 (runNormalizeSubstitution
                     [   ( var1
                         , asPureMetaPattern
@@ -180,6 +186,28 @@ runNormalizeSubstitution
         (SubstitutionError level Variable)
         (UnificationSubstitution level Variable)
 runNormalizeSubstitution substitution =
-    case normalizeSubstitution substitution of
+    case normalizeSubstitution mockMetadataTools substitution of
         Left err     -> Left err
         Right action -> Right $ fst $ runIntCounter action 0
+
+mockStepperAttributes :: StepperAttributes
+mockStepperAttributes = StepperAttributes
+    { isConstructor = True
+    , isFunctional = True
+    , isFunction = False
+    }
+
+mockSortTools :: MetaOrObject level => SortTools level
+mockSortTools = const ApplicationSorts
+    { applicationSortsOperands = []
+    , applicationSortsResult   =
+        SortVariableSort $ SortVariable
+            { getSortVariable = noLocationId "S" }
+    }
+
+mockMetadataTools :: MetaOrObject level => MetadataTools level StepperAttributes
+mockMetadataTools = MetadataTools
+    { attributes = const mockStepperAttributes
+    , sortTools = mockSortTools
+    }
+

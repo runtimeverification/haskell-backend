@@ -15,7 +15,7 @@ import Kore.AST.MetaOrObject
 import Kore.AST.PureToKore
        ( patternKoreToPure )
 import Kore.ASTHelpers
-       ( ApplicationSorts(..) )
+       ( ApplicationSorts (..) )
 import Kore.Building.AsAst
 import Kore.Building.Patterns
 import Kore.Building.Sorts
@@ -502,7 +502,7 @@ test_baseStep =
     , testCase "Impossible substitution."
         (assertEqualWithExplanation ""
             (Left $ StepErrorSubstitution
-                (CircularVariableDependency
+                (CtorCircularVariableDependency
                     [ asMetaVariable (b1 PatternSort) ]
                 )
             )

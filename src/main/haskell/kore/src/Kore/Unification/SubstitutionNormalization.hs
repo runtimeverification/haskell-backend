@@ -13,6 +13,12 @@ module Kore.Unification.SubstitutionNormalization
     ( normalizeSubstitution
     ) where
 
+import           Control.Monad
+                 ( (>=>) )
+import           Data.Foldable
+                 ( traverse_ )
+import           Data.Functor.Foldable
+                 ( cata )
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( mapMaybe )
@@ -22,6 +28,10 @@ import           Data.Graph.TopologicalSort
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools (..) )
+import           Kore.Step.StepperAttributes
+                 ( StepperAttributes (..) )
 import           Kore.Substitution.Class
 import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Error
@@ -67,11 +77,12 @@ normalizeSubstitution
         , IntVariable variable
         , Show (variable level)
         )
-    => UnificationSubstitution level variable
+    => MetadataTools level StepperAttributes
+    -> UnificationSubstitution level variable
     -> Either
         (SubstitutionError level variable)
         (IntCounter (UnificationSubstitution level variable))
-normalizeSubstitution substitution = do
+normalizeSubstitution tools substitution = do
     sorted <- topologicalSortConverted
     let
         sortedSubstitution =
@@ -83,9 +94,28 @@ normalizeSubstitution substitution = do
     dependencies = buildDependencies substitution interestingVariables
     topologicalSortConverted =
         case topologicalSort dependencies of
-            Left (ToplogicalSortCycles vars) ->
-                Left (CircularVariableDependency vars)
+            Left (ToplogicalSortCycles vars) -> do
+                checkCircularVariableDependency tools substitution vars
+                return (error "This should be unreachable")
             Right result -> Right result
+
+checkCircularVariableDependency
+    :: (MetaOrObject level, Eq (variable level))
+    =>  MetadataTools level StepperAttributes
+    -> UnificationSubstitution level variable
+    -> [variable level]
+    -> Either (SubstitutionError level variable) ()
+checkCircularVariableDependency tools substitution vars = do
+    traverse_ (checkFreeTerm . (`lookup` substitution)) vars
+    Left (CtorCircularVariableDependency vars)
+  where
+    checkFreeTerm (Just t) = cataM checkApplicationConstructor t
+    checkFreeTerm Nothing = error "This should not be reachable"
+    cataM = cata . (sequence >=>)
+    checkApplicationConstructor (ApplicationPattern (Application h _))
+        | isConstructor (attributes tools h) = return ()
+        | otherwise = Left (NonCtorCircularVariableDependency vars)
+    checkApplicationConstructor _ = return ()
 
 variableToSubstitution
     :: (Ord (variable level), Show (variable level))
