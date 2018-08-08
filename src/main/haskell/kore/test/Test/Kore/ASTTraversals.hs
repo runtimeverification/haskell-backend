@@ -16,28 +16,17 @@ import Test.Kore
 
 
 lhs :: CommonKorePattern -> CommonKorePattern
-lhs = patternTopDownVisitor leftImplies asKorePattern
+lhs = patternBottomUpVisitor leftImplies
   where
-    leftImplies (ImpliesPattern ip) = Left (impliesFirst ip)
-    leftImplies p                   = Right p
-
-lhs2 :: CommonKorePattern -> CommonKorePattern
-lhs2 = runIdentity . patternBottomUpVisitorM leftImplies
-  where
-    leftImplies (ImpliesPattern ip) = return (impliesFirst ip)
-    leftImplies p                   = return (asKorePattern p)
+    leftImplies (ImpliesPattern ip) = impliesFirst ip
+    leftImplies p                   = asKorePattern p
 
 test_astTraversals :: [TestTree]
 test_astTraversals =
-    [ testCase "Testing topDownVisitor"
+    [ testCase "Testing patternBottomUpVisitor"
         (assertEqual ""
             samplePatternExpected
             (lhs samplePattern)
-        )
-    , testCase "Testing bottomUpVisitorM"
-        (assertEqual ""
-            samplePatternExpected
-            (lhs2 samplePattern)
         )
     ]
   where
