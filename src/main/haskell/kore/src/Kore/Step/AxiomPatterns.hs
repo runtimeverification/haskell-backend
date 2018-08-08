@@ -22,8 +22,12 @@ import Kore.Predicate.Predicate ( CommonPredicate, wrapPredicate )
 
 newtype AxiomPatternError = AxiomPatternError ()
 
-{--| 'AxiomPattern' is a rewriting axiom in a normalized form. Right now
-it can only represent axioms that look like left-pattern => right-pattern.
+{- | Normal rewriting and function axioms
+
+Currently @AxiomPattern@ can only represent axioms of the form
+@
+  axiomPatternLeft => axiomPatternRight requires axiomPatternRequires
+@
 --}
 data AxiomPattern level = AxiomPattern
     { axiomPatternLeft  :: !(CommonPurePattern level)
@@ -68,6 +72,11 @@ sentenceToAxiomPattern level (SentenceAxiomSentence sa) =
 sentenceToAxiomPattern _ _ =
     koreFail "Only axiom sentences can be translated to AxiomPatterns"
 
+{- | Match a pure pattern encoding an 'AxiomPattern'.
+
+@patternToAxiomPattern@ returns an error if the given 'CommonPurePattern' does
+not encode a normal rewrite or function axiom.
+-}
 patternToAxiomPattern
     :: MetaOrObject level
     => CommonPurePattern level
