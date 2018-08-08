@@ -1,27 +1,37 @@
-import           Data.Char                                     (isAlphaNum)
-import qualified Data.Map.Strict                               as Map
-import qualified Data.Set                                      as Set
+import           Data.Char
+                 ( isAlphaNum )
+import qualified Data.Map.Strict as Map
 import           Data.Reflection
+import qualified Data.Set as Set
 
-import           Text.Megaparsec
-import           Text.Megaparsec.Char
+import Text.Megaparsec
+import Text.Megaparsec.Char
 
+import Kore.AST.Common
+       ( SymbolOrAlias, Variable )
+import Kore.AST.MetaOrObject
+       ( Meta )
+import Kore.MetaML.AST
+       ( CommonMetaPattern )
+import Kore.Parser.Parser
+       ( metaHeadParser, metaPatternParser, metaVariableParser )
 
-import           Logic.Proof.Hilbert (emptyProof)
-import           Logic.Matching.Rules.Kore ()
-import           Logic.Matching.Rules.Minimal
-import           Logic.Matching.Rules.Minimal.Syntax (parseMLRule)
+import Logic.Matching.Rules.Kore ()
+import Logic.Matching.Rules.Minimal
+import Logic.Matching.Rules.Minimal.Syntax
+       ( parseMLRule )
+import Logic.Matching.Signature.Simple
+import Logic.Proof.Hilbert
+       ( emptyProof )
 
-import           Logic.Matching.Prover.Repl (ProverState(..), ProverEnv(..), runProver, execReplT, defaultSettings)
-import           Logic.Matching.Prover.Command (Command, Parser, parseCommand)
+import Logic.Matching.Prover.Command
+       ( Command, Parser, parseCommand )
+import Logic.Matching.Prover.Repl
+       ( ProverEnv (..), ProverState (..), defaultSettings, execReplT,
+       runProver )
 
-import           Logic.Matching.Signature.Simple
-
-import           Kore.AST.MetaOrObject (Meta)
-import           Kore.AST.Common (SymbolOrAlias, Variable)
-import           Kore.MetaML.AST (CommonMetaPattern)
-import           Kore.Parser.Parser (metaPatternParser, metaHeadParser, metaVariableParser)
-import           GlobalMain (defaultMainGlobal)
+import GlobalMain
+       ( defaultMainGlobal )
 
 -- TODO: still needed?
 parseName :: Parser String

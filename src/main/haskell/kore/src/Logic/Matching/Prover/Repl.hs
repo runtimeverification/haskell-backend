@@ -14,29 +14,32 @@ module Logic.Matching.Prover.Repl
   , defaultSettings )
 where
 
+import Control.Monad
+       ( when )
+import Control.Monad.Reader
+       ( reader )
 import Control.Monad.State.Strict
-       (get, gets, put, modify)
-import Control.Monad.Reader (reader)
-import Control.Monad (when)
+       ( get, gets, modify, put )
 
 import qualified Data.Map.Strict as Map
-import Data.Sequence (Seq((:|>)))
+import           Data.Sequence
+                 ( Seq ((:|>)) )
 
 import Data.Text.Prettyprint.Doc
-       ( Pretty (pretty))
+       ( Pretty (pretty) )
 import Text.Megaparsec
-       (parse, parseErrorPretty)
+       ( parse, parseErrorPretty )
 
-import Kore.Parser.ParserUtils ()
 import Kore.Error
+import Kore.Parser.ParserUtils ()
 
-import           Logic.Proof.Hilbert
-                 (ProofSystem(..), Proof(..))
-import qualified Logic.Proof.Hilbert as Hilbert
-import           Logic.Matching.Prover.Repl.Class
-                 (MonadRepl, MonadHaskeline(..), execReplT, defaultSettings)
 import           Logic.Matching.Prover.Command
-                 (Command(..), Parser)
+                 ( Command (..), Parser )
+import           Logic.Matching.Prover.Repl.Class
+                 ( MonadHaskeline (..), MonadRepl, defaultSettings, execReplT )
+import           Logic.Proof.Hilbert
+                 ( Proof (..), ProofSystem (..) )
+import qualified Logic.Proof.Hilbert as Hilbert
 
 -- | Stack of commands executed by the prover
 type CommandStack ix rule formula = [Command ix rule formula]

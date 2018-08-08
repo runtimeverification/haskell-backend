@@ -13,14 +13,17 @@ module Logic.Matching.Prover.Repl.Class
   )
 where
 
-import qualified System.Console.Haskeline as C
-  (MonadException, InputT, Settings, getInputLine, getInputChar, outputStr, outputStrLn, mapInputT, runInputT, defaultSettings)
-import qualified Control.Monad.Reader as R
-  (MonadReader(..), ReaderT, runReaderT, ask, reader, local, lift)
-import qualified Control.Monad.State.Strict as S
-  (MonadState(..), StateT, execStateT, state, lift)
 import qualified Control.Monad.IO.Class as IO
-  (MonadIO)
+                 ( MonadIO )
+import qualified Control.Monad.Reader as R
+                 ( MonadReader (..), ReaderT, ask, lift, local, reader,
+                 runReaderT )
+import qualified Control.Monad.State.Strict as S
+                 ( MonadState (..), StateT, execStateT, lift, state )
+import qualified System.Console.Haskeline as C
+                 ( InputT, MonadException, Settings, defaultSettings,
+                 getInputChar, getInputLine, mapInputT, outputStr, outputStrLn,
+                 runInputT )
 
 -- | type-class version of 'InputT'
 class C.MonadException m => MonadHaskeline m where

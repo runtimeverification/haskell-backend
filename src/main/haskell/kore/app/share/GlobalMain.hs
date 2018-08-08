@@ -10,38 +10,34 @@ module GlobalMain
     , clockSomethingIO
     ) where
 
-import           Control.Monad                          ( when )
-import           Control.Exception                      ( evaluate )
-import           Data.Semigroup                         ( (<>)
-                                                        , mempty)
-import           Development.GitRev                     ( gitBranch
-                                                        , gitHash
-                                                        , gitCommitDate )
-import           Data.Time.LocalTime                    (ZonedTime, getZonedTime)
-import           Data.Time.Format                       (formatTime, defaultTimeLocale)
-import           Data.Version                           (showVersion)
-import qualified Paths_kore                             as MetaData (version)
-import           System.Clock                           ( Clock (Monotonic)
-                                                        , diffTimeSpec
-                                                        , getTime )
-import           Options.Applicative                    ( Parser
-                                                        , InfoMod
-                                                        , (<|>)
-                                                        , (<**>)
-                                                        , flag
-                                                        , flag'
-                                                        , long
-                                                        , hidden
-                                                        , internal
-                                                        , help
-                                                        , helper
-                                                        , info
-                                                        , execParser
-                                                        , argument
-                                                        , disabled)
+import Control.Exception
+       ( evaluate )
+import Control.Monad
+       ( when )
 
+import Data.Semigroup
+       ( mempty, (<>) )
+import Data.Time.Format
+       ( defaultTimeLocale, formatTime )
+import Data.Time.LocalTime
+       ( ZonedTime, getZonedTime )
+import Data.Version
+       ( showVersion )
 
-{- | Record Type containing common command-line arguments for each executable in 
+import System.Clock
+       ( Clock (Monotonic), diffTimeSpec, getTime )
+
+import Development.GitRev
+       ( gitBranch, gitCommitDate, gitHash )
+
+import Options.Applicative
+       ( InfoMod, Parser, argument, disabled, execParser, flag, flag', help,
+       helper, hidden, info, internal, long, (<**>), (<|>) )
+
+import qualified Paths_kore as MetaData
+                 ( version )
+
+{- | Record Type containing common command-line arguments for each executable in
 the project -}
 data GlobalOptions = GlobalOptions
     { willVersion    :: !Bool -- ^ Version flag [default=false]

@@ -1,13 +1,15 @@
 {-| Description: Module for constructing, parsing, printing prover commands -}
-module Logic.Matching.Prover.Command where
+module Logic.Matching.Prover.Command
+  (Command(..), Parser, parseCommand,)
+where
 
-import           Data.Text
-                 ( Text )
-import           Data.Text.Prettyprint.Doc
-                 ( Pretty (pretty), colon, (<+>) )
+import Data.Text
+       ( Text )
+import Data.Text.Prettyprint.Doc
+       ( Pretty (pretty), colon, (<+>) )
 
-import           Text.Megaparsec
-import           Text.Megaparsec.Char
+import Text.Megaparsec
+import Text.Megaparsec.Char
 
 -- | Prover command data type
 --   TODO: better way of expressing the inherent
