@@ -24,6 +24,8 @@ module Kore.Predicate.Predicate
     , makeNotPredicate
     , makeOrPredicate
     , makeTruePredicate
+    , allVariables
+    , mapVariables
     , stringFromPredicate
     , unwrapPredicate
     , variableSetFromPredicate
@@ -34,13 +36,14 @@ import           Data.List
                  ( foldl' )
 import           Data.Reflection
                  ( Given )
+import           Data.Set ( Set )
 import qualified Data.Set as Set
 
 import Kore.AST.Common
        ( SortedVariable, Variable )
 import Kore.AST.MetaOrObject
 import Kore.AST.PureML
-       ( PureMLPattern )
+       ( PureMLPattern, mapPatternVariables )
 import Kore.ASTUtils.SmartPatterns
        ( pattern Bottom_, pattern Top_)
 import Kore.ASTUtils.SmartConstructors
@@ -48,6 +51,7 @@ import Kore.ASTUtils.SmartConstructors
        mkIff, mkImplies, mkNot, mkOr, mkTop )
 import Kore.IndexedModule.MetadataTools
        ( SortTools )
+import Kore.Variables.Free ( pureAllVariables )
 
 {--| 'PredicateProof' is a placeholder for a proof showing that a Predicate
 evaluation was correct.
@@ -279,3 +283,13 @@ makeFalsePredicate
     => Predicate level var
 makeFalsePredicate =
     GenericPredicate mkBottom
+
+{- | Replace all variables in a @Predicate@ using the provided mapping.
+-}
+mapVariables :: (from level -> to level) -> Predicate level from -> Predicate level to
+mapVariables f = wrapPredicate . mapPatternVariables f . unwrapPredicate
+
+{- | Extract the set of all (free and bound) variables from a @Predicate@.
+-}
+allVariables :: Ord (var level) => Predicate level var -> Set (var level)
+allVariables = pureAllVariables . unwrapPredicate

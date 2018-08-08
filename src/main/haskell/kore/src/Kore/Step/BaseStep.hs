@@ -33,6 +33,7 @@ import           Kore.AST.PureML
                  ( CommonPurePattern, PureMLPattern, mapPatternVariables )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SortTools )
+import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Predicate.Predicate
                  ( Predicate, PredicateProof (..), makeMultipleAndPredicate,
                  variableSetFromPredicate )
@@ -192,6 +193,7 @@ stepWithAxiom
     AxiomPattern
         { axiomPatternLeft = axiomLeftRaw
         , axiomPatternRight = axiomRightRaw
+        , axiomPatternRequires = axiomRequiresRaw
         }
   = do
     -- Distinguish configuration (pattern) and axiom variables by lifting them
@@ -206,6 +208,7 @@ stepWithAxiom
         wrapAxiomVariables = mapPatternVariables AxiomVariable
         axiomLeft = wrapAxiomVariables axiomLeftRaw
         axiomRight = wrapAxiomVariables axiomRightRaw
+        axiomRequires = Predicate.mapVariables AxiomVariable axiomRequiresRaw
 
     let
         -- Keep a set of all variables for remapping errors (below).
@@ -213,6 +216,7 @@ stepWithAxiom
             ExpandedPattern.allVariables expandedPattern
             <> pureAllVariables axiomLeftRaw
             <> pureAllVariables axiomRightRaw
+            <> Predicate.allVariables axiomRequiresRaw
 
         -- Remap unification and substitution errors into 'StepError'.
         normalizeUnificationError
@@ -262,6 +266,7 @@ stepWithAxiom
             give (sortTools tools)
             $ mergeConditionsWithAnd
                 [ startCondition  -- from initial configuration
+                , axiomRequires  -- from axiom
                 , unificationCondition  -- produced during unification
                 , substitutionMergeCondition -- by merging substitutions
                 ]
