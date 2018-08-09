@@ -7,6 +7,8 @@ import Test.Tasty.HUnit
 
 import Control.Exception
        ( ErrorCall (ErrorCall), catch, evaluate )
+import Control.Monad.State
+       ( modify )
 
 import Kore.AST.Common
 import Kore.AST.MetaOrObject
@@ -75,4 +77,31 @@ test_intCounter =
                     (const True)
                 ) 2)
         )
+    , testCase "Testing succesful firstNotFalse"
+        (assertEqual ""
+            (Just 1, 7)
+            (runIntCounter
+                (firstNotFalse (>0)
+                    [action (-1), action 0, action 1, action (-2), action 1]
+                )
+                6
+            )
+        )
+    , testCase "Testing unsuccesful firstNotFalse"
+        (assertEqual ""
+            (Nothing, 6)
+            (runIntCounter
+                (firstNotFalse (>1)
+                    [action (-1), action 0, action 1, action (-2), action 1]
+                )
+                6
+            )
+        )
     ]
+  where
+    action :: Int -> IntCounter Int
+    action n = do
+        modify (+1)
+        return n
+
+

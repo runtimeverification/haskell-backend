@@ -36,6 +36,8 @@ import Kore.Step.ExpandedPattern as ExpandedPattern
 import Kore.Step.ExpandedPattern
        ( CommonExpandedPattern )
 import Kore.Step.StepperAttributes
+import Kore.Unification.Error
+       ( SubstitutionError (..) )
 import Kore.Unification.Unifier
        ( FunctionalProof (..), UnificationProof (..) )
 import Kore.Variables.Fresh.IntCounter
@@ -550,6 +552,53 @@ test_baseStep =
                     }
             )
         )
+    -- sigma(sigma(x, x), sigma(y, y)) -> sigma(x, y)
+    -- vs
+    -- sigma(sigma(a, h(b)), sigma(b, a))
+    -- Expected: Error because a=h(b) and b=a.
+    , testCase "Impossible substitution (non-ctor)."
+        (assertEqualWithExplanation ""
+            (Left $ StepErrorSubstitution
+                (NonCtorCircularVariableDependency
+                    [ asMetaVariable (b1 PatternSort) ]
+                )
+            )
+            (fst <$> runStep
+                mockMetadataTools
+                ExpandedPattern
+                    { term =
+                        asPureMetaPattern
+                            ( metaSigma
+                                (metaSigma
+                                    (a1 PatternSort)
+                                    (metaH (b1 PatternSort))
+                                )
+                                (metaSigma
+                                    (a1 PatternSort) (b1 PatternSort)
+                                )
+                            )
+                    , predicate = makeTruePredicate
+                    , substitution = []
+                    }
+                AxiomPattern
+                    { axiomPatternLeft =
+                        asPureMetaPattern
+                            (metaSigma
+                                (metaSigma
+                                    (x1 PatternSort) (x1 PatternSort)
+                                )
+                                (metaSigma
+                                    (y1 PatternSort) (y1 PatternSort)
+                                )
+                            )
+                        , axiomPatternRight =
+                            asPureMetaPattern
+                                (metaSigma
+                                    (x1 PatternSort) (y1 PatternSort)
+                                )
+                    }
+            )
+        )
     -- sigma(sigma(x, x), y) => sigma(x, y)
     -- vs
     -- sigma(sigma(a, f(b)), a)
@@ -990,9 +1039,10 @@ test_baseStep =
                     }
             )
 
-mockStepperAttributes :: StepperAttributes
-mockStepperAttributes = StepperAttributes
-    { isConstructor = True
+mockStepperAttributes :: SymbolOrAlias Meta -> StepperAttributes
+mockStepperAttributes patternHead =
+    StepperAttributes
+    { isConstructor = patternHead /= hSymbol
     , isFunctional  = True
     , isFunction    = True
     }
@@ -1005,7 +1055,7 @@ mockSortTools = const ApplicationSorts
 
 mockMetadataTools :: MetadataTools Meta StepperAttributes
 mockMetadataTools = MetadataTools
-    { attributes = const mockStepperAttributes
+    { attributes = mockStepperAttributes
     , sortTools = mockSortTools
     }
 
@@ -1087,6 +1137,26 @@ metaG
     :: (MetaPattern PatternSort p1)
     => p1 -> MetaG p1
 metaG = MetaG
+
+hSymbol :: SymbolOrAlias Meta
+hSymbol = SymbolOrAlias
+    { symbolOrAliasConstructor = Id "#h" AstLocationTest
+    , symbolOrAliasParams = []
+    }
+
+newtype MetaH p1 = MetaH p1
+instance (MetaPattern PatternSort p1)
+    => ProperPattern Meta PatternSort (MetaH p1)
+  where
+    asProperPattern (MetaH p1) =
+        ApplicationPattern Application
+            { applicationSymbolOrAlias = hSymbol
+            , applicationChildren = [asAst p1]
+            }
+metaH
+    :: (MetaPattern PatternSort p1)
+    => p1 -> MetaH p1
+metaH = MetaH
 
 runStep
     :: MetaOrObject level

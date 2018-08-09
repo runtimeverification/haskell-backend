@@ -11,11 +11,12 @@ import           Kore.AST.Common
                  noLocationId )
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
-                 ( CommonPurePattern )
+                 ( CommonPurePattern, groundHead )
 import           Kore.AST.PureToKore
                  ( patternKoreToPure )
 import           Kore.ASTHelpers
                  ( ApplicationSorts (..) )
+import           Kore.ASTUtils.SmartPatterns
 import           Kore.Building.AsAst
 import           Kore.Building.Patterns
 import           Kore.Building.Sorts
@@ -168,12 +169,30 @@ test_substitutionNormalization =
                     ]
                 )
             )
+    , let
+        var1 = asVariable (v1 PatternSort)
+        varx1 = asVariable (x1 PatternSort)
+      in
+        testCase "Length 2 non-ctor cycle"
+            (assertEqual ""
+                (Left (NonCtorCircularVariableDependency [var1, varx1]))
+                (runNormalizeSubstitution
+                    [   ( var1
+                        , App_ f [Var_ varx1]
+                        )
+                    ,   ( varx1
+                        , Var_ var1
+                        )
+                    ]
+                )
+            )
     ]
   where
     v1 :: MetaSort sort => sort -> MetaVariable sort
     v1 = metaVariable "v1" AstLocationTest
     x1 :: MetaSort sort => sort -> MetaVariable sort
     x1 = metaVariable "x1" AstLocationTest
+    f = groundHead "f" AstLocationTest
     asPureMetaPattern
         :: ProperPattern level sort patt => patt -> CommonMetaPattern
     asPureMetaPattern patt =
@@ -195,7 +214,7 @@ runNormalizeSubstitution substitution =
 
 mockStepperAttributes :: StepperAttributes
 mockStepperAttributes = StepperAttributes
-    { isConstructor = True
+    { isConstructor = False
     , isFunctional = True
     , isFunction = False
     }
@@ -204,7 +223,7 @@ mockSortTools :: MetaOrObject level => SortTools level
 mockSortTools = const ApplicationSorts
     { applicationSortsOperands = []
     , applicationSortsResult   =
-        SortVariableSort $ SortVariable
+        SortVariableSort SortVariable
             { getSortVariable = noLocationId "S" }
     }
 

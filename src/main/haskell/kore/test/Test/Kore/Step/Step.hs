@@ -190,6 +190,37 @@ test_single =
                     ]
                 )
             )
+        , testCase "Fails to apply a simple axiom due to cycle."
+            -- Axiom: sigma(f(X1), X1) => X1
+            -- Start pattern: sigma(A1, A1)
+            -- Expected: empty result list
+            (assertEqualWithExplanation ""
+                []
+                (runStep
+                    mockMetadataTools
+                    ExpandedPattern
+                        { term =
+                            asPureMetaPattern
+                                ( metaSigma
+                                    (a1 PatternSort)
+                                    (a1 PatternSort)
+                                )
+                        , predicate = makeTruePredicate
+                        , substitution = []
+                        }
+                    [ AxiomPattern
+                        { axiomPatternLeft =
+                            asPureMetaPattern
+                                (metaSigma
+                                    (metaF (x1 PatternSort))
+                                    (x1 PatternSort)
+                                )
+                        , axiomPatternRight =
+                            asPureMetaPattern (x1 PatternSort)
+                        }
+                    ]
+                )
+            )
         ]
 
 test_multiple :: TestTree
