@@ -29,7 +29,7 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter )
+                 ( IntCounter, firstNotFalse )
 
 data MaxStepCount
     = MaxStepCount Integer
@@ -96,20 +96,19 @@ pickFirstStepperSkipMaxCheck
     -> IntCounter (ExpandedPattern.CommonExpandedPattern level, StepProof level)
 pickFirstStepperSkipMaxCheck
     tools maxStepCount stepperConfiguration axioms
-  =
-    firstNotFalse (step tools stepperConfiguration axioms)
-  where
-    firstNotFalse [] = return (stepperConfiguration, StepProofCombined [])
-    firstNotFalse (first:rest)
-      = do
-        (nextConfiguration, nextProof) <- first
-        if isFalsePredicate (ExpandedPattern.predicate nextConfiguration)
-            then firstNotFalse rest
-            else do
-                (finalConfiguration, finalProof) <-
-                    pickFirstStepper
-                        tools maxStepCount nextConfiguration axioms
-                return
-                    ( finalConfiguration
-                    , StepProofCombined [nextProof, finalProof]
-                    )
+  = do
+    fnf <-
+        firstNotFalse
+            (not . isFalsePredicate . ExpandedPattern.predicate . fst)
+            (step tools stepperConfiguration axioms)
+    case fnf of
+        Nothing -> return (stepperConfiguration, StepProofCombined [])
+        Just (nextConfiguration, nextProof) ->
+            do
+            (finalConfiguration, finalProof) <-
+                pickFirstStepper
+                    tools maxStepCount nextConfiguration axioms
+            return
+                ( finalConfiguration
+                , StepProofCombined [nextProof, finalProof]
+                )

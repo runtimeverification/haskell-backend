@@ -10,6 +10,7 @@ Portability : portable
 -}
 module Kore.Variables.Fresh.IntCounter
     ( IntCounter
+    , firstNotFalse
     , runIntCounter
     ) where
 
@@ -38,3 +39,20 @@ instance Monad IntCounter where
 instance MonadState Int IntCounter where
     get = IntCounter get
     put = IntCounter . put
+
+{-|@fisrtNotFalse@ takes a predicate and a list of 'MonadState' actions, and
+locates the first action whose result satisfies the predicate, resetting the
+state before executing each action.
+-}
+firstNotFalse
+    :: MonadState state m
+    => (a -> Bool) -> [m a] -> m (Maybe a)
+firstNotFalse _ [] = return Nothing
+firstNotFalse predicate (h:t)
+  = do
+    oldState <- get
+    condVal <- h
+    if predicate condVal then return (Just condVal)
+    else do
+        put oldState
+        firstNotFalse predicate t
