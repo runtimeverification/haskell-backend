@@ -86,7 +86,10 @@ This has some drawbacks:
   This is not that important since K is meant to be readable, Kore is meant
   to be machine-readable.
 
-*Decision*: We will encode each attribute as a Kore pattern that uses only
+Decision
+--------
+
+We will encode each attribute as a Kore pattern that uses only
 application and string literals. This pattern will be an application
 of a symbol to a list of parameters,
 the (name of the) symbol identifying the
