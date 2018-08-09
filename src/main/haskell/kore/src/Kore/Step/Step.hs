@@ -20,8 +20,8 @@ import           Kore.AST.MetaOrObject
                  ( MetaOrObject )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
-import           Kore.Predicate.Predicate
-                 ( isFalsePredicate )
+import qualified Kore.Predicate.Predicate as Predicate
+                 ( isFalse )
 import           Kore.Step.BaseStep
                  ( AxiomPattern, StepProof (..), stepWithAxiom )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
@@ -29,7 +29,7 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter, firstNotFalse )
+                 ( IntCounter, findState )
 
 data MaxStepCount
     = MaxStepCount Integer
@@ -98,8 +98,8 @@ pickFirstStepperSkipMaxCheck
     tools maxStepCount stepperConfiguration axioms
   = do
     fnf <-
-        firstNotFalse
-            (not . isFalsePredicate . ExpandedPattern.predicate . fst)
+        findState
+            (not . Predicate.isFalse . ExpandedPattern.predicate . fst)
             (step tools stepperConfiguration axioms)
     case fnf of
         Nothing -> return (stepperConfiguration, StepProofCombined [])

@@ -77,21 +77,21 @@ test_intCounter =
                     (const True)
                 ) 2)
         )
-    , testCase "Testing succesful firstNotFalse"
+    , testCase "Testing succesful findState"
         (assertEqual ""
             (Just 1, 7)
             (runIntCounter
-                (firstNotFalse (>0)
+                (findState (>0)
                     [action (-1), action 0, action 1, action (-2), action 1]
                 )
                 6
             )
         )
-    , testCase "Testing unsuccesful firstNotFalse"
+    , testCase "Testing unsuccesful findState"
         (assertEqual ""
             (Nothing, 6)
             (runIntCounter
-                (firstNotFalse (>1)
+                (findState (>1)
                     [action (-1), action 0, action 1, action (-2), action 1]
                 )
                 6

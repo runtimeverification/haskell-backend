@@ -14,7 +14,7 @@ module Kore.Predicate.Predicate
     , pattern PredicateFalse
     , pattern PredicateTrue
     , compactPredicatePredicate
-    , isFalsePredicate
+    , isFalse
     , makeAndPredicate
     , makeMultipleAndPredicate
     , makeCeilPredicate
@@ -121,11 +121,11 @@ pattern PredicateTrue :: Predicate level var
 pattern PredicateFalse <- GenericPredicate(Bottom_ _)
 pattern PredicateTrue <- GenericPredicate(Top_ _)
 
-{-|'isFalsePredicate' checks whether a predicate matches 'PredicateFalse'
+{-|'isFalse' checks whether a predicate matches 'PredicateFalse'.
 -}
-isFalsePredicate :: Predicate level var -> Bool
-isFalsePredicate PredicateFalse = True
-isFalsePredicate _ = False
+isFalse :: Predicate level var -> Bool
+isFalse PredicateFalse = True
+isFalse _ = False
 
 {--| 'makeMultipleAndPredicate' combines a list of Predicates with 'and',
 doing some simplification.

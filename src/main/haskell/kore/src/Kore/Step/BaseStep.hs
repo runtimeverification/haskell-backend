@@ -36,9 +36,10 @@ import           Kore.ASTUtils.SmartConstructors
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SortTools )
 import           Kore.Predicate.Predicate
-                 ( Predicate, pattern PredicateFalse, PredicateProof (..),
-                 makeFalsePredicate, makeMultipleAndPredicate,
-                 variableSetFromPredicate )
+                 ( Predicate, PredicateProof (..), makeFalsePredicate,
+                 makeMultipleAndPredicate, variableSetFromPredicate )
+import qualified Kore.Predicate.Predicate as Predicate
+                 ( isFalse )
 import           Kore.Step.AxiomPatterns
 import           Kore.Step.Condition.Condition
                  ( ConditionSort (..) )
@@ -217,6 +218,7 @@ stepWithAxiom
         normalizeUnificationError
             :: MetaOrObject level
             => a
+            -- ^element of the target symbolizing a 'Bottom'-like result
             -> Set.Set (Variable level)
             -> Either (UnificationError level) a
             -> Either (IntCounter (StepError level Variable)) a
@@ -251,7 +253,11 @@ stepWithAxiom
 
     normalizedSubstitutionWithCounter <-
         normalizeSubstitutionError
-            (return (PredicateSubstitution makeFalsePredicate []))
+            (return PredicateSubstitution
+                { predicate = makeFalsePredicate
+                , substitution = []
+                }
+            )
             (normalizeSubstitution tools substitution)
 
     return $ do
@@ -292,19 +298,20 @@ stepWithAxiom
         (variableMapping2, substitutionProof) <-
             unificationProofStepVariablesToCommon
                 existingVars variableMapping1 rawSubstitutionProof
-
+        let
+            orElse :: a -> a -> a
+            p1 `orElse` p2 = if Predicate.isFalse condition then p2 else p1
         return
             ( ExpandedPattern
-                { term = (result `orElseIfBottom` mkBottom) condition
+                { term = result `orElse` mkBottom
                 , predicate = condition
                 -- TODO(virgil): Can there be unused variables? Should we
                 -- remove them?
                 , substitution =
-                    (mapSubstitutionVariables
+                    mapSubstitutionVariables
                         configurationVariableToCommon
                         (removeAxiomVariables normalizedSubstitution)
-                    `orElseIfBottom` []
-                    ) condition
+                    `orElse` []
                 }
             , simplifyStepProof
                 (StepProofCombined
@@ -343,9 +350,6 @@ stepWithAxiom
         { variableRenamingOriginal = original
         , variableRenamingRenamed  = renamed
         }
-    orElseIfBottom :: MetaOrObject level => a -> a -> Predicate level var -> a
-    orElseIfBottom _ b PredicateFalse = b
-    orElseIfBottom a _ _ = a
 
 mergeConditionsWithAnd
     ::  ( MetaOrObject level

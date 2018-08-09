@@ -552,9 +552,50 @@ test_baseStep =
                     }
             )
         )
-    -- sigma(sigma(x, x), sigma(y, y)) -> sigma(x, y)
+    -- sigma(x, x) -> x
     -- vs
-    -- sigma(sigma(a, h(b)), sigma(b, a))
+    -- sigma(a, f(b)) with substitution b=a
+    -- Expected: Error because a=f(b) and b=a.
+    , testCase "Impossible substitution (ctor)."
+        (assertEqualWithExplanation ""
+            (Right ExpandedPattern
+                { term = mkBottom
+                , predicate = makeFalsePredicate
+                , substitution = []
+                }
+            )
+            (fst <$> runStep
+                mockMetadataTools
+                ExpandedPattern
+                    { term =
+                        asPureMetaPattern
+                            (metaSigma
+                                (a1 PatternSort)
+                                (metaF (b1 PatternSort))
+                            )
+                    , predicate = makeTruePredicate
+                    , substitution =
+                        [
+                            ( asMetaVariable (b1 PatternSort)
+                            , asPureMetaPattern (a1 PatternSort)
+                            )
+                        ]
+                    }
+                AxiomPattern
+                    { axiomPatternLeft =
+                        asPureMetaPattern
+                            (metaSigma
+                                (x1 PatternSort) (x1 PatternSort)
+                            )
+                        , axiomPatternRight =
+                            asPureMetaPattern
+                                (x1 PatternSort)
+                    }
+            )
+        )
+    -- sigma(x, x) -> x
+    -- vs
+    -- sigma(a, h(b)) with substitution b=a
     -- Expected: Error because a=h(b) and b=a.
     , testCase "Impossible substitution (non-ctor)."
         (assertEqualWithExplanation ""
@@ -568,34 +609,27 @@ test_baseStep =
                 ExpandedPattern
                     { term =
                         asPureMetaPattern
-                            ( metaSigma
-                                (metaSigma
-                                    (a1 PatternSort)
-                                    (metaH (b1 PatternSort))
-                                )
-                                (metaSigma
-                                    (a1 PatternSort) (b1 PatternSort)
-                                )
+                            (metaSigma
+                                (a1 PatternSort)
+                                (metaH (b1 PatternSort))
                             )
                     , predicate = makeTruePredicate
-                    , substitution = []
+                    , substitution =
+                        [
+                            ( asMetaVariable (b1 PatternSort)
+                            , asPureMetaPattern (a1 PatternSort)
+                            )
+                        ]
                     }
                 AxiomPattern
                     { axiomPatternLeft =
                         asPureMetaPattern
                             (metaSigma
-                                (metaSigma
-                                    (x1 PatternSort) (x1 PatternSort)
-                                )
-                                (metaSigma
-                                    (y1 PatternSort) (y1 PatternSort)
-                                )
+                                (x1 PatternSort) (x1 PatternSort)
                             )
                         , axiomPatternRight =
                             asPureMetaPattern
-                                (metaSigma
-                                    (x1 PatternSort) (y1 PatternSort)
-                                )
+                                (x1 PatternSort)
                     }
             )
         )

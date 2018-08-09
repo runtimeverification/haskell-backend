@@ -18,7 +18,7 @@ import           Control.Monad
 import           Data.Foldable
                  ( traverse_ )
 import           Data.Functor.Foldable
-                 ( cata )
+                 ( Fix, cata )
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( mapMaybe )
@@ -110,16 +110,38 @@ checkCircularVariableDependency
     -> [variable level]
     -> Either (SubstitutionError level variable) ()
 checkCircularVariableDependency tools substitution vars = do
-    traverse_ (checkFreeTerm . (`lookup` substitution)) vars
+    traverse_
+        ( checkThatApplicationUsesConstructors
+            tools (NonCtorCircularVariableDependency vars)
+        . (`lookup` substitution)
+        )
+        vars
     Left (CtorCircularVariableDependency vars)
+
+checkThatApplicationUsesConstructors
+    :: (MetaOrObject level)
+    => MetadataTools level StepperAttributes
+    -> checkError
+    -> Maybe (PureMLPattern level variable)
+    -> Either checkError ()
+checkThatApplicationUsesConstructors tools err (Just t) =
+    cataM (checkApplicationConstructor tools err) t
   where
-    checkFreeTerm (Just t) = cataM checkApplicationConstructor t
-    checkFreeTerm Nothing = error "This should not be reachable"
+    cataM :: (Traversable f, Monad m) => (f x -> m x) -> Fix f -> m x
     cataM = cata . (sequence >=>)
-    checkApplicationConstructor (ApplicationPattern (Application h _))
-        | isConstructor (attributes tools h) = return ()
-        | otherwise = Left (NonCtorCircularVariableDependency vars)
-    checkApplicationConstructor _ = return ()
+checkThatApplicationUsesConstructors _ _ Nothing =
+    error "This should not be reachable"
+
+checkApplicationConstructor
+    :: (MetaOrObject level)
+    => MetadataTools level StepperAttributes
+    -> checkError
+    -> Pattern level variable ()
+    -> Either checkError ()
+checkApplicationConstructor tools err (ApplicationPattern (Application h _))
+    | isConstructor (attributes tools h) = return ()
+    | otherwise = Left err
+checkApplicationConstructor _ _ _ = return ()
 
 variableToSubstitution
     :: (Ord (variable level), Show (variable level))

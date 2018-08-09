@@ -8,28 +8,31 @@ import Test.Tasty.HUnit
 import Data.Reflection
        ( give )
 
-import Kore.AST.Common
-       ( AstLocation (..) )
-import Kore.AST.MetaOrObject
-import Kore.AST.PureML
-       ( CommonPurePattern )
-import Kore.AST.PureToKore
-       ( patternKoreToPure )
-import Kore.ASTHelpers
-       ( ApplicationSorts(..) )
-import Kore.ASTUtils.SmartConstructors
-       ( mkAnd, mkEquals, mkIff, mkImplies, mkNot, mkOr )
-import Kore.Building.AsAst
-import Kore.Building.Patterns
-import Kore.Building.Sorts
-import Kore.Error
-import Kore.IndexedModule.MetadataTools
-       ( SortTools )
-import Kore.Predicate.Predicate
-       ( CommonPredicate, compactPredicatePredicate, makeAndPredicate,
-       makeEqualsPredicate, makeFalsePredicate, makeIffPredicate,
-       makeImpliesPredicate, makeNotPredicate, makeOrPredicate,
-       makeTruePredicate, stringFromPredicate, wrapPredicate )
+import           Kore.AST.Common
+                 ( AstLocation (..) )
+import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+                 ( CommonPurePattern )
+import           Kore.AST.PureToKore
+                 ( patternKoreToPure )
+import           Kore.ASTHelpers
+                 ( ApplicationSorts (..) )
+import           Kore.ASTUtils.SmartConstructors
+                 ( mkAnd, mkEquals, mkIff, mkImplies, mkNot, mkOr )
+import           Kore.Building.AsAst
+import           Kore.Building.Patterns
+import           Kore.Building.Sorts
+import           Kore.Error
+import           Kore.IndexedModule.MetadataTools
+                 ( SortTools )
+import           Kore.Predicate.Predicate
+                 ( CommonPredicate, compactPredicatePredicate,
+                 makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
+                 makeIffPredicate, makeImpliesPredicate, makeNotPredicate,
+                 makeOrPredicate, makeTruePredicate, stringFromPredicate,
+                 wrapPredicate )
+import qualified Kore.Predicate.Predicate as Predicate
+                 ( isFalse )
 
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions
@@ -278,6 +281,21 @@ test_predicate =
             (fst $ give mockSortTools $
                 makeNotPredicate pr1
             )
+        )
+    , testCase "isFalsePredicate True"
+        (assertEqual ""
+            True
+            (Predicate.isFalse (makeFalsePredicate::CommonPredicate Object))
+        )
+    , testCase "isFalsePredicate False"
+        (assertEqual ""
+            False
+            (Predicate.isFalse (makeTruePredicate::CommonPredicate Meta))
+        )
+    , testCase "isFalsePredicate False for generic predicate"
+        (assertEqual ""
+            False
+            (Predicate.isFalse pr1)
         )
     ]
 
