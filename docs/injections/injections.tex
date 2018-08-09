@@ -12,9 +12,13 @@
 
 \newcommand\comment[2]{\par\noindent\color{red}#1: #2\color{black}\par\noindent}
 \newcommand\dl{\comment{Dorel}}
+\newcommand\gr{\comment{Grigore}}
 
 \theoremstyle{definition}
 \newtheorem{example}{Example}[section]
+
+\theoremstyle{definition}
+\newtheorem{assumption}{Assumption}[section]
 
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}[section]
@@ -30,6 +34,12 @@
 
 \theoremstyle{theorem}
 \newtheorem{lemma}{Lemma}[section]
+
+\theoremstyle{theorem}
+\newtheorem{proposition}{Proposition}[section]
+
+\theoremstyle{theorem}
+\newtheorem{corollary}{Corollary}[section]
 
 \newcommand{\poly}[2]{\texttt{#1}\{#2\}}
 \newcommand{\newpoly}[1]{\expandafter\newcommand\expandafter{\csname#1\endcsname}{\poly{#1}}}
@@ -49,7 +59,19 @@
 \newcommand{\axiom}{\texttt{axiom}}
 \newkeyword{String}
 \newkeyword{Int}
+\newkeyword{Id}
+\newkeyword{Bool}
+\newkeyword{true}
+\newkeyword{false}
 \newkeyword{Exp}
+\newkeyword{+}
+\newkeyword{plus}
+\newkeyword{funapp}
+\newkeyword{cast}
+\newcommand{\KWempty}[1]{\texttt{empty}\{#1\}}
+\newcommand{\KWinsert}[1]{\texttt{insert}\{#1\}}
+
+\newcommand{\ST}{\mathbb{ST}}
 
 \title{On Injections}
 \author{Grigore Ro\cb{s}u}
@@ -84,12 +106,52 @@ As a concrete example, assume the following parametric definitions:
 &\syntax\{V\}\ \MapInt{V} ::= \Map{\Int,V}
 \end{align*}
 \dl{A minor observation. Even if we use curly brackets for the list of parameters, their order in the list is important for instantiation, Otherwise, we should write something like \(\Map{K\Rightarrow \Int, V\Rightarrow V}\). If the parameters order matters, then their names in the ``sort'' definition/production does not matter.}
-\dl{The second syntax production can be simply written as
+\gr{Agreed.  The name of parameters in sort declarations is irrelevant, but the order is.  So we can just as well write\\
+\(\sort\ \Map{\_,\_}\)\\
+Let me know if you think the names should matter.  I regard them same as function arguments, where the order matters.}
+\dl{I was thinking that the second syntax production can be simply written as
 \[\syntax\{V\}\ \texttt{MapInt} ::= \Map{\Int, V}\]
-There is no reason to specify the list of parameters twice; always the lhs will depend on all the parameters of the production. I.e.,
+i.e., a production
 \[\syntax\{P_1,\ldots,P_k\}\ N ::= \ldots\]
 is equivalent to
-\[\syntax\{P_1,\ldots,P_k\}\ N\{P_1,\ldots,P_k\} ::= \ldots\]}
+\[\syntax\{P_1,\ldots,P_k\}\ N\{P_1,\ldots,P_k\} ::= \ldots\]
+}
+\gr{agreed and fixed.}
+\dl{Ihm, I guess I have to take it back and I claim now that the two productions have different semantics.
+For instance, if we want to define a sort of all Maps, then we may write a production like
+\[
+\syntax\{K,V\}\ \texttt{MapUniv} ::= \Map{K,V}
+\]
+which is clearly different from
+\[
+\syntax\{K,V\}\ \texttt{MapUniv}\{K,V\} ::= \Map{K,V}
+\]
+and from 
+\[
+\syntax\{K,V\}\ \texttt{MapUniv}\{K\} ::= \Map{K,V}
+\]
+and from
+\[
+\syntax\{K,V\}\ \texttt{MapUniv}\{V\} ::= \Map{K,V}
+\]
+In the first case we have 
+\[
+\theta(\Map{K,V})=\Map{\theta(K),\theta(V)}\le \theta(\texttt{MapUniv})=\texttt{MapUniv}
+\]
+in the second case,
+\[
+\theta(\Map{K,V})=\Map{\theta(K),\theta(V)}\le \theta(\texttt{MapUniv\{K,V\}})=\texttt{MapUniv}\{\theta(K),\theta(V)\}
+\]
+ in the third case,
+ \[
+\theta(\Map{K,V})=\Map{\theta(K),\theta(V)}\le \theta(\texttt{MapUniv\{K\}})=\texttt{MapUniv}\{\theta(K)\}
+\]
+and in the fourth case,
+\[
+\theta(\Map{K,V})=\Map{\theta(K),\theta(V)}\le \theta(\texttt{MapUniv\{V\}})=\texttt{MapUniv}\{\theta(V)\}
+\]
+for each instance $\theta$ of the two parameters $K$ and $V$.
+}
 By abuse of notation, let
 \[\inj_{N_1,N}\{P_1,\ldots,P_k\}(N_1):N\]
 be the parametric symbol corresponding to the generic injection
@@ -100,6 +162,11 @@ For our example,
 \[\inj_{\Map{\Int,V},\MapInt{V}}\{V\}(\Map{\Int,V}): \MapInt{V}\]
 \comment{Brandon}{if each way of subscripting \(\inj\) is a distinct non-parametric
 symbol, how do we have parameter \(V\) }
+\dl{I think that the (ordinary) injections should be defined only for the ground instances. I guess that Grigore wants to say that the name of injection is unique to each subsort production. Since the production is parametric in $V$, the name of the injection is parametric in $V$ as well. 
+If $\theta$ and $\theta'$ are two parameter instantiations, then we have two (ordinary/concrete) injections: $\inj_{\Map{\Int,V},\MapInt{V}}\{\theta(V)\}$ and $\inj_{\Map{\Int,V},\MapInt{V}}\{\theta'(V)\}$ (note that the name of the operation is unchanged).
+However, the name of the parameter is not important in the name of the operation.
+}
+
 Injection symbols are different from ordinary symbols, in that they
 inherit an expected semantics of ``injections''.
 For example, take an instance \(\theta\) of the parameters
@@ -107,6 +174,7 @@ For example, take an instance \(\theta\) of the parameters
 Then any element of sort \(\theta(N_1)\) is expected to also be found
 among the elements of sort \(\theta(N)\), possibly renamed.
 \dl{It is not clear for me how the renaming can be involved here. I think that \(P_1,\ldots,P_k\) are the only parameters allowed in the production definition.}
+\gr{I was talking about elements in models.  I do not want to enforce subsets for subsorts, like in OSA.}
 Moreover, such injections are expected to be consistent.
 
 \begin{example}\label{consistency-parallel}
@@ -117,7 +185,10 @@ with corresponding injection
 such that there is some instance \(\rho\) of the parameters
 \(Q_1,\ldots,Q_\ell\) with \(\rho(M_1) = \theta(N_1)\) and
 \(\rho(M) = \theta(N)\).
-\dl{We should formally define what exactly means an equality $\rho(M)=\theta(N)$. Here is an example showing how I understand it:
+\dl{We should formally define what exactly means an equality $\rho(M)=\theta(N)$. }
+\gr{I thought it is obvious.  M and N are terms of sort Sort, so it is the usual extension of substitutions from variables to terms.}
+\dl{Meanwhile I included the formal definitions at the end of the Section~\ref{sec:proposal}.}
+\dl{Here is an example showing how I understand it:
 \\
 We suppose that the above example is written as follows:
 \begin{align*}
@@ -136,17 +207,19 @@ This could makes sense since \(\MapInt{V'}\) is the smallest set including \(\Ma
 I think this simply means applying the substitution gives identical instantiations
 of the same parameterized sort.
 }
+\dl{You are right. I mentioned the "semantic" equality \(\theta({\tt Map}\{K,V\})=\rho(\MapInt{V'})\) just as a possible extension. I remember that we had in the past a question regarding how to define a synonym of a sort.}
+\gr{yes, this is true, but it is true even if you have more productions.  Recall that the semantics of parameters is "all instances".  So $\theta$ and $\rho$ are two such instances that make the two symbols equal.  Which is what the equality below enforces semantically.}
 Then we certainly want the following to hold:
 \[\inj_{N_1,N}\{\theta(\bar{P})\}(\varphi:\theta(N_1))
  = \inj_{M_1,M}\{\rho(\bar{Q})\}(\varphi:\rho(M_1))\]
 \end{example}
-
+\gr{What I meant was that identical instances of two different parametric injection symbols should be identical semantically, too.  That is, it is the same injection, not two different ones.  I regard it more like "injections are consistent wrt parameter instances".}
 \begin{example}\label{consistency-compose}
 As another example, assume productions
 \begin{align*}
 \syntax\{A_1,\ldots,A_a\}\ X & ::=X_1\\
 \syntax\{B_1,\ldots,B_b\}\ Y_1 & ::=Y_2\\
-\syntax\{C_1,\ldots,C_c\}\ Z_1 & ::=Z_2\\
+\syntax\{C_1,\ldots,C_c\}\ Z & ::=Z_2\\
 \end{align*}
 such that there are some parameter instances
 \(\alpha\), \(\beta\), and \(\gamma\) with
@@ -156,7 +229,8 @@ Then we certainly want
 \[\inj_{X_1,X}\{\alpha(\bar{A})\}(
   \inj_{Y_2,Y_1}\{\beta(\bar{B})\}(\varphi:\beta(Y_2)))
  = \inj_{Z_2,Z}\{\gamma(\bar{C})\}(\varphi:\gamma(Z_2))\]
-\dl{The rule we can learn from this example is: ``the transitivity of injections does make sense (only?) on the (legal) sort instances''.}
+\dl{This should hold even if $\alpha$, $\beta$, and $\gamma$ are non-ground substitutions ($=$ parameter instances), case in which the above is an axiom schema.}
+\gr{Your intuition is probably right.  But the way I looked at it was more like "injections compose consistently".}
 \end{example}
 
 \begin{example}\label{consistency-lifting}
@@ -171,10 +245,8 @@ then we also want to have parametric symbols
     (\Sort{N_1,\ldots}) : \Sort{N,\ldots}\]
 for any other parametric sort \(\Sort{\_\!\_,\ldots}\).
 \dl{Here is an instance of the above rule. Suppose that \(\Sort{\_\!\_,\ldots}\) is
-\[\syntax\{S\}\ \List{S}\]
-then we have
-\[\inj_{\List{\Map{\Int,V}},\List{\MapInt{V}}}(\List{\MapInt{V}}):\List{\Map{\Int,V}}\]
-The rule we can learn from this example is: ``the injections propagate among the parameterized sorts''. Shouldn't we consider here only the cases of instances, similar to the transitivity?
+$\List{S}$, then we have
+\[\inj_{\List{\Map{\Int\{\},V}},\List{\MapInt{V}}}\{V\}(\List{\MapInt{V}}):\List{\Map{\Int\{\},V}}\] 
 }
 \end{example}
 
@@ -186,7 +258,7 @@ being overloaded due to parametricity.
 Consider, for example:
 \begin{align*}
 &\syntax\ \Exp::=\Int\\
-\syntax\{S\}\ \List{S}::=\texttt{cons}(S,\List{S})
+&\syntax\{S\}\ \List{S}::=\texttt{cons}(S,\List{S})
 \end{align*}
 or in KORE:
 \begin{align*}
@@ -199,9 +271,6 @@ Then we need to add the following axiom
 \inj_{\List{\Int},\List{\Exp}}(\cons{\Int}(\varphi:\Int,\psi:\List{\Int})) \\
  = \cons{\Exp}(\inj_{\Int,\Exp}(\varphi),\inj_{\List{\Int},\List{\Exp}}(\psi))
 \end{multline*}
-\dl{The rule we can learn from this example is: ``if the injections and a parametric symbol are \emph{well-defined (legal)} on both the arguments and the result, then they may
-interchange (or, in other words, the injection propagates through parametric symbols).
-}
 \end{example}
 
 \begin{example}\label{consistency-parametric-arg-only}
@@ -214,6 +283,7 @@ Then we need to add an axiom as follows
 \dl{This example is a particular case of the previous one if we consider
 \[\inj_{S,S}(\varphi)=\varphi\]
 }
+\gr{Yes.  And we can use this to justify adding such an equation.  In fact, that's the role of all these examples here, to raise awareness of things that we need to axiomatize.}
 \end{example}
 
 \begin{example}\label{consistency-parametric-result-free}
@@ -221,9 +291,9 @@ On the other hand, if the result of a symbol depends on
 a parameter that is not constrained by its arguments,
 then we cannot add any injection axioms.
 For example, consider
-\[\KWsymbol\ \poly{cast}{P_1,P_2}(P_l1):P_2\]
+\[\KWsymbol\ \poly{cast}{P_1,P_2}(P_1):P_2\]
 While it makes sense to add axioms like
-\[\inj_{\Int,\Exp}(\poly{cast}{\Int,\Int}(\varphi:\Int)
+\[\inj_{\Int,\Exp}(\poly{cast}{\Int,\Int}(\varphi:\Int))
 = \poly{cast}{\Int,\Exp}(\varphi)\]
 you cannot instantiate \(P_2\) with everything, e.g., you cannot add
 \[\inj_{\Int,\String}(\poly{cast}{\Int,\Int}(\varphi:\Int)
@@ -231,9 +301,12 @@ you cannot instantiate \(P_2\) with everything, e.g., you cannot add
 because \(\Int\) is not a subset of \(\String\).
 \dl{The rule we can learn from this example is: ``we have to consider only those injections defined on sort instances that are in a \emph{subsort partial-order relation}''.
 }
+\gr{well, I am not sure we can achieve that staying at the core level, because you have infinitely many subsortings ...
+as I said in Section 4(1) below.}
 \end{example}
 
 \section{Injections: The Proposal}
+\label{sec:proposal}
 So things are really tricky.
 What I propose is to add the following axioms for now,
 and \emph{in parallel} to have somebody really interested in this
@@ -248,18 +321,200 @@ This is what we do now, too.
 Note that this is \emph{different} from having one \(\inj\)
 symbol for each subsorting.
 In particular, for the subsorting discussed in the previous section,
-\[\syntax\{V\}\ \MapInt{V}::=\Map{\Int,V}\]
+\[\syntax\{V\}\ \MapInt{V}::=\Map{\Int\{\},V}\]
 instead of the injection label we had there, namely
-\[\KWsymbol\ \inj_{\Map{\Int,V},\MapInt{V}}\{V\}(\Map{\Int,V}):\MapInt{V}\]
+\[\KWsymbol\ \inj_{\Map{\Int\{\},V},\MapInt{V}}\{V\}(\Map{\Int\{\},V}):\MapInt{V}\]
 we refer to this subsorting using the generic injection
-\[\inj\{\Map{\Int,V},\MapInt{V}\}.\]
+\[\inj\{\Map{\Int\{\},V},\MapInt{V}\}.\]
 I do not know how to state that a subsorting has been declared,
 or if it is needed, so I postpone this aspect for now.
+\dl{
+Here is a proposal, based on my remarks included at the end of the paper.
+\\
+Each subsort parametric production $\pi$
+\[\syntax\{P_1,\ldots,P_k\}\ N::=N_1,\]
+defines a unique injection parametric symbol
+\[\inj_\pi\{P_1,\ldots,P_k\}(N_1):N\]
+We assume that the name $\pi$ uniquely identifies the susbsort production. 
+The instances of the above parametric symbol are of the form
+\[\inj_\pi\{\theta(P_1),\ldots,\theta(P_k)\}(\theta(N_1)):\theta(N)\]
+where $\theta$ is a parameter instantiation, i.e. $\theta(P_i)$ is a concrete sort
+and $\theta(N_1)$, $\theta(N)$ are the extensions of $\theta$ to sort-terms. 
+The relationship between this parametric symbol associated to each production and 
+the generic one
+\[\KWsymbol\ \inj\{P'_1,P'_2\}(P'_1):P'_2\]
+can be expressed by the existence of an instantiation $\gamma_{\pi,\theta}$ of $\{P'_1,P'_2\}$, 
+for each $\theta$  over $\bar{P}$, such that
+\[\gamma_{\pi,\theta}(P'_1)=\theta(N_1),\ \gamma_{\pi,\theta}(P'_2)=\theta(N)\]
+i.e.
+\[\inj_\pi\{\theta(P_1),\ldots,\theta(P_k)\}(\theta(N_1)):\theta(N) = \inj\{\gamma_{\pi,\theta}(P'_1),\gamma_{\pi,\theta}(P'_2)\}(\gamma_{\pi,\theta}(P'_1)):\gamma_{\pi,\theta}(P'_2)\]
+
+Note that $\gamma_{\pi,\theta}$ is uniquely determined by the production $\pi$ (which supplies $N_1$ and $N$) and the parameter instantiation $\theta$. Moreover, we have
+\[\gamma_{\pi,\theta}(P'_1)\le \gamma_{\pi,\theta}(P'_2)\]
+in the terms of ordered sorts.
+
+We discuss the above examples in this new setting.
+
+ \noindent
+ \textbf{Example~\ref{consistency-parallel}.~~} 
+Let $\pi'$ the production
+\[\syntax\{Q_1,\ldots,Q_\ell\}\ M::=M_1\]
+Then the equalities \\[1ex]
+\centerline{\(\rho(M_1) = \theta(N_1)\) and \(\rho(M) = \theta(N)\)}\\[1ex]
+become\\[1ex]
+\centerline{$\gamma_{\pi',\rho}(P_1)=\gamma_{\pi,\theta}(P_1)$ and 
+$\gamma_{\pi',\rho}(P_2)=\gamma_{\pi,\theta}(P_2)$,}\\[1ex]
+i.e., $\gamma_{\pi',\rho}=\gamma_{\pi,\theta}$ as parameter instantiations over $\{P'_1,P'_2\}$.
+Then the equality
+\[\inj_{\pi}\{\theta(\bar{P})\}(\varphi:\theta(N_1))
+ = \inj_{\pi'}\{\rho(\bar{Q})\}(\varphi:\rho(M_1))\]
+ becomes a trivial (syntactic) one
+ \[\inj\{\gamma_{\pi,\theta}(P'_1),\gamma_{\pi,\theta}(P'_2)\}(\varphi:\gamma_{\pi,\theta}(P'_1))
+ =
+ \inj\{\gamma_{\pi',\rho}(P'_1),\gamma_{\pi',\rho}(P'_2)\}(\varphi:\gamma_{\pi',\rho}(P'_1))\]
+ 
+ \noindent
+ \textbf{Example~\ref{consistency-compose}.~~}
+Let $\pi_x$, $\pi_Y$, and $\pi_Z$, respectively, the following productions:
+ \begin{align*}
+\syntax\{A_1,\ldots,A_a\}\ X & ::=X_1\\
+\syntax\{B_1,\ldots,B_b\}\ Y_1 & ::=Y_2\\
+\syntax\{C_1,\ldots,C_c\}\ Z & ::=Z_2\\
+\end{align*}
+In order to avoid confusions, we denote with $\gamma'$ the instantiation over $\bar{C}$.
+Then the equalities
+\\[1ex]
+\centerline{\(\alpha(X_1) = \beta(Y_1)\), \(\alpha(X) = \gamma'(Z)\),
+and \(\beta(Y_2) = \gamma'(Z_2)\)}
+\\[1ex]
+become
+\begin{align*}
+& \gamma_{\pi_X,\alpha}(P'_1)=\gamma_{\pi_Y,\beta}(P'_2)\\
+& \gamma_{\pi_X,\alpha}(P'_2)=\gamma_{\pi_Z,\gamma'}(P'_2)\\
+& \gamma_{\pi_Y,\beta}(P'_1)=\gamma_{\pi_Z,\gamma'}(P'_1)
+\end{align*}
+which together with
+\begin{align*}
+&\gamma_{\pi_X,\alpha}(P'_1)\le\gamma_{\pi_X,\alpha}(P'_2)
+&&\gamma_{\pi_Y,\beta}(P'_1)\le\gamma_{\pi_Y,\beta}(P'_2)
+&&\gamma_{\pi_Z,\gamma'}(P'_1)\le\gamma_{\pi_Z,\gamma'}(P'_2)
+\end{align*}
+implies 
+\begin{align*}
+&\gamma_{\pi_Y,\beta}(P'_1)\le\gamma_{\pi_Y,\beta}(P'_2)=\gamma_{\pi_X,\alpha}(P'_1)\le \gamma_{\pi_X,\alpha}(P'_2)=\gamma_{\pi_Z,\gamma'}(P'_2)\\
+&\gamma_{\pi_Y,\beta}(P'_1)=\gamma_{\pi_Z,\gamma'}(P'_1)
+\phantom{{}=\gamma_{\pi_X,\alpha}(P'_1)}
+\le \gamma_{\pi_Z,\gamma'}(P'_2) = \gamma_{\pi_X,\alpha}(P'_2)
+\end{align*}
+
+Let us consider three new (fresh) variables $P_1,P_2,P_3$ and a substitution $\theta$ such that
+\begin{align*}
+&\theta(P_2) = \gamma_{\pi_X,\alpha}(P'_1)=\gamma_{\pi_Y,\beta}(P'_2)\\
+&\theta(P_3)= \gamma_{\pi_X,\alpha}(P'_2)=\gamma_{\pi_Z,\gamma'}(P'_2)\\
+&\theta(P_1)= \gamma_{\pi_Y,\beta}(P'_1)=\gamma_{\pi_Z,\gamma'}(P'_1)
+\end{align*}
+then the equality
+\[\inj_{X_1,X}\{\alpha(\bar{A})\}(
+  \inj_{Y_2,Y_1}\{\beta(\bar{B})\}(\varphi:\beta(Y_2)))
+ = \inj_{Z_2,Z}\{\gamma'(\bar{C})\}(\varphi:\gamma'(Z_2))\]
+becomes
+\[
+\begin{split}
+\inj\{\gamma_{\pi_X,\alpha}(P'_1), \gamma_{\pi_X,\alpha}(P'_2)\}(\inj\{\gamma_{\pi_Y,\beta}(P'_1),\gamma_{\pi_Y,\beta}(P'_2)\}(\varphi:\gamma_{\pi_Y,\beta}(P'_1)))=\\
+\inj\{\gamma_{\pi_Z,\gamma'}(P'_1),\gamma_{\pi_Z,\gamma'}(P'_2)\}(\varphi:\gamma_{\pi_Z,\gamma'}(P'_1))
+\end{split}
+\]
+which is equivalent to
+\[
+\inj\{\theta(P_2),\theta(P_3)\}(\inj\{\theta(P_1),\theta(P_2)\}(\varphi:\theta(P_1)))=
+\inj\{\theta(P_1),\theta(P_3)\}(\varphi:\theta(P_1))
+\]
+and which is an instance of the parametric axiom
+\[
+\inj\{P_2,P_3\}(\inj\{P_1,P_2\}(\varphi:P_1))=\inj\{P_1,P_3\}(\varphi:P_1)
+\]
+
+\textbf{Example~\ref{consistency-lifting}.~~}
+It is equivalent to say that for each production in the input front-end grammar $G$
+\[\syntax\{P_1,\ldots,P_k\}\ N::=N_1,\]
+and each parametric sort \(\Sort{\_\!\_,\ldots}\) defined by $G$, there is a production
+\[\syntax\{P_1,\ldots,P_k,\ldots\}\ \Sort{N\!\_,\ldots}::=\Sort{N_1\!\_,\ldots},\]
+in $G$ as well. 
+If the former production has the name $\pi$, then let $\Sort{\pi\!\_,\ldots}$ denote the later one.
+Then we apply the usual mechanism for (parametric) productions.
+
+
+\textbf{Example~\ref{consistency-parametric}.~~}
+This refers to well-definedness of the overloaded operations.
+
+Let $\pi$ the production
+\begin{align*}
+&\syntax\{S\}\ \List{S}::=\texttt{cons}(S,\List{S})
+\end{align*}
+This defines an overloaded operation 
+\[\sigma_\pi\in\Sigma_{\theta(S)\,\List{\theta(S)},\List{\theta(S)}}\]
+for each sort instance $\theta(S)$. 
+Note that 
+%$\theta(S)\le \theta'(S)$ implies $\List{\theta(S)}\le \List{\theta'(S)}$ by the definition of $\le$, which is equivalent to saying that 
+the existence of an injection 
+\[\inj_{\eta}(\theta(S)):\theta'(S)\] 
+implies the existence of an injection
+\[\inj_{\List{\eta}}(\List{\theta(S)}):\List{\theta'(S)}\] 
+by the rule given by the previous example.  The well-definedness of $\sigma_\pi$ says that the restriction of 
+\[\sigma_\pi\in\Sigma_{\theta'(S)\,\List{\theta'(S)},\List{\theta'(S)}}\] 
+to $(\theta(S),\List{\theta(S)})$ must be equal to (or agree with)  
+\[\sigma_\pi\in\Sigma_{\theta(S)\,\List{\theta(S)},\List{\theta(S)}}.\]
+But the restriction of $\sigma_\pi(\_,\_)\in\Sigma_{\theta'(S)\,\List{\theta'(S)},\List{\theta'(S)}}$ to $(\theta(S),\List{\theta(S)}$ is
+\[
+\sigma_\pi(\inj_{\eta}(\_:\theta(S)):\theta'(S), \inj_{\List{\eta}}(\_:\List{\theta(S)})):\List{\theta'(S)}
+\]
+The result of $\sigma_\pi(\_,\_)\in\Sigma_{\theta(S)\,\List{\theta(S)},\List{\theta(S)}}$ seen as an element of $\List{\theta'(S)}$ is 
+\[
+\inj_{\List{\eta}}(\sigma_\pi(\_:\theta(S),\_:\List{\theta(S)}):\List{\theta(S)}):\List{\theta'(S)}
+\]
+Now the well-definedness of $\sigma_\pi$ can be expressed by the axiom
+\[
+\begin{split}
+\sigma_\pi(\inj_{\eta}(\varphi_1:\theta(S)):\theta'(S), \inj_{\List{\eta}}(\varphi_2:\List{\theta(S)}):\List{\theta'(S)}):\List{\theta'(S)}=\\
+\inj_{\List{\eta}}(\sigma_\pi(\varphi_1:\theta(S),\varphi_2:\List{\theta(S)}):\List{\theta(S)}):\List{\theta'(S)}
+\end{split}
+\]
+which is equivalent to 
+\[
+\begin{split}
+\begin{aligned}
+\sigma_\pi(&\inj\{\gamma_{\eta,\theta}(P'_1),\gamma_{\eta,\theta}(P'_2)\}(\varphi_1:\gamma_{\eta,\theta}(P'_1)), \\
+&\inj\{\gamma_{\List{\eta},\theta}(\List{P'_1}),\gamma_{\List{\eta},\theta}(\List{P'_2})\}(\varphi_2:\gamma_{\List{\eta},\theta}(\List{P'_1}))):\List{\theta'(S)}
+\end{aligned}=\\[1ex]
+\inj\{\gamma_{\List{\eta},\theta}(\List{P'_1}),\gamma_{\List{\eta},\theta}(\List{P'_2})\}(\sigma_\pi(\varphi_1:\theta(S),\varphi_2:\List{\theta(S)}):\List{\theta(S)})
+\end{split}
+\]
+Note that $\gamma_{\List{\eta},\theta}(P'_1) = \List{\theta(S)}$ by the definition of $\gamma_{\_,\_}$.
+If we consider the parametric symbol $\sigma_\pi\{S\}$ such that $\sigma_\pi\in\Sigma_{\theta(S)\,\List{\theta(S)}}$ can be represented by the symbol instance $\sigma_\pi\{\theta(S)\}$, then the well-definedness of $\sigma_\pi$ becomes equivalent to
+\[
+\begin{split}
+\begin{aligned}
+\sigma_\pi\{\gamma_{\eta,\theta'}(P'_2)\}(&\inj\{\gamma_{\eta,\theta}(P'_1),\gamma_{\eta,\theta}(P'_2)\}(\varphi_1:\gamma_{\eta,\theta}(P'_1)), \\
+&\inj\{\gamma_{\List{\eta},\theta}(\List{P'_1}),\gamma_{\List{\eta},\theta}(\List{P'_2})\}(\varphi_2:\gamma_{\List{\eta},\theta}(\List{P'_1})))
+\end{aligned}=\\
+\inj\{\gamma_{\List{\eta},\theta}(\List{P'_1}),\gamma_{\List{\eta},\theta}(\List{P'_2})\}(\sigma_\pi\{\gamma_{\eta,\theta}(P'_1)\}(\varphi_1,\varphi_2))
+\end{split}
+\]
+which is an instance of 
+\[
+\begin{split}
+\begin{aligned}
+\sigma_\pi\{P'_2\}(&\inj\{P'_1,P'_2\}(\varphi_1:P'_1), \\
+&\inj\{\List{P'_1},\List{P'_2}\}(\varphi_2:\List{P'_1}))
+\end{aligned}=\\[1ex]
+\inj\{\List{P'_1},\List{P'_2}\}(\sigma_\pi\{P'_1\}(\varphi_1:P'_1,\varphi_2:\List{P'_1}))
+\end{split}
+\]
+}
 
 \item\label{axiom-functional}
 Axiomatize that \(\inj\) is functional, because otherwise we will not
-be able to prove that \(1+x\), etc., are ``terms'':
-\dl{{\(1 + \inj\{\texttt{Id}, \Int\}(x)\)}?}
+be able to prove that \(1+x\) (i.e., \(1 + \inj\{\texttt{Id}, \Int\}(x)\)), etc., are ``terms'':
 \[\axiom\{P_1,P_2\}\ \forall x:P_1.\exists y:P_2.\inj\{P_1,P_2\}(x)=y\]
 \dl{What if we want that an identifier not to be a \texttt{Bool} and an \Int{} in the same time?\\
 \[(\forall X)\neg (\inj\{\texttt{Id},\texttt{Bool}\}(X)
@@ -269,6 +524,8 @@ I do not think that we want to axiomatize that \(\inj\) is an
 cardinalities (e.g.identifiers) into sets of smaller cardinalities
 (e.g., \texttt{Bool}: \((x\ \text{or}\ y)\) and \(x=x\), etc.).
 \dl{I do not understand the above example. If $x$ and $y$ are two different identifiers, then their injections denote different \texttt{Bool} names.}
+\gr{Think of models.  Sort Id has infinitely many elements.  Sort Bool has 2 elements.  Then inj{Id,Bool} cannot be an injective function.}
+\dl{Ihm, I do not think that the injections can be used to interpret expressions \ldots }
 
 \item\label{axiom-reflexive}
 Axiomatize that \(\inj\) is reflexive:
@@ -288,7 +545,7 @@ where \(P_1,\ldots,P_k\) are parameters and
 \(P_1,\ldots,P_k\), add axiom
 \begin{multline*}
 \axiom\{P_1,\ldots,P_k,P'_1,\ldots,P'_k\}\\
-\inj\{S,S'\}(\sigma\{P_1,\ldots,P_k\}(\varphi_1:S_1,\ldots,\varphi_n:S_n)\\
+\inj\{S,S'\}(\sigma\{P_1,\ldots,P_k\}(\varphi_1:S_1,\ldots,\varphi_n:S_n))\\
 = \sigma\{P'_1,\ldots,P'_k\}(\inj\{S_1,S'_1\}(\varphi_1),\ldots,\inj\{S_n,S'_n\}(\varphi_n))
 \end{multline*}
 \end{enumerate}
@@ -341,6 +598,7 @@ closed under the following.
 \item \(\syntax\ S'::=S\) implies \(S \le S'\)
 \dl{$S$ and $S'$ basic sorts?}
 \comment{Brandon}{Good point, what happens if these are instances of parametric sorts?}
+\gr{Good question ... I think they can be parametric, too.  Do you have a counterexample?  We'd need to prove it anyway.}
 \item reflexive and transitive
 \item If \(s_1\le s'_1,\ldots,s_k\le s'_k\) and
 \(\Sort{P_1,\ldots,P_k}\) is a parametric sort,
@@ -356,7 +614,10 @@ An \emph{order-sorted signature} is a triple $(S,\le,\Sigma)$ such that $(S,\Sig
 \sigma\in\Sigma_{w,s}\cap\Sigma_{w',s'}\textrm{~and~}w\le w'\textrm{~imply~}s\le s'.
 \]
 \end{definition}
-
+}
+\gr{Do my conditions above imply this monotonicity condition?}
+\dl{Unfortunately no. I included counterexamples at the end of Section~\ref{sec:proposal}.}
+\dl{
 \begin{remark}
 If $w=s_1\ldots s_m$ and $w'=s'_1\ldots s'_n$ then $w\le w'$ iff $m = n$ and $s_i\le s'_i$ for $i=1,\ldots,n$.
 \end{remark}
@@ -373,6 +634,8 @@ An order-sorted signature $(S,\le,\Sigma)$ is \emph{pre-regular} iff
 
 \end{definition}
 
+Regularity implies pre-regularity (Fact 2.4 in~\cite{osa}). I guess that Maude checks only the pre-regularity, which ensures the existence of the least sort for any term. 
+
 \begin{fact}\cite{osa}\label{fact:reg}
 Let  $(S,\le,\Sigma)$ be an order-sorted signature such that $(S,\le)$ is \emph{coNoetherian}, i.e., there is no strictly decreasing infinite chain $s_1>s_2>s_3>\cdots$.
 Then $(S,\le,\Sigma)$ is regular iff whenever $\sigma\in \Sigma_{w',s'}\cap\Sigma_{w'',s''}$ and $w_0\le w',w''$ then there is some $w\le w',w''$ such that $\sigma\in\Sigma_{w,s}$ and $w_0\le w$.
@@ -386,88 +649,318 @@ Let  $(S,\le,\Sigma)$ be an order-sorted signature. An \emph{ $(S,\le,\Sigma)$-a
 \end{enumerate}
 where if $w=s_1\ldots s_n$ then $M_w=M_{s_1}\times\cdots\times M_{s_n}$.
 \end{definition}
-I think that the "aggressive equation"~\ref{ax:aggressive} formalizes in fact the second condition in the above definition.
+I think that the "aggressive equation" on page~\pageref{axiom-parametric-symbol} formalizes in fact the second condition in the above definition.
 }
 
 \dl{
-Now we sketch out how a front-end grammar $G$ defines an order-sorted signature $(S^\textrm{osa},\le, \Sigma^\textrm{osa})$:
+Now we sketch out how a front-end grammar $G$ inductively defines an order-sorted signature $(S^\textrm{osa},\le, \Sigma^\textrm{osa})$. Consider first an example.
+
+
+\begin{example}\label{ex:front-end-grammar}
+Let $G_0$ denote the following front-end grammar:
+\begin{align*}
+&\sort\ \Int\\
+&\syntax\ \Bool ::= \true\\
+&\syntax\ \Bool ::= \false\\
+&\syntax\ \Exp ::= \Int\\
+&\syntax\ \Exp ::= \Bool\\
+&\syntax\ \Exp ::= \Exp\ "\+"\ \Exp\ [\KWsymbol("\plus")]\\
+&\syntax\ \Int ::= \Int\ "\+"\ \Int\ [\KWsymbol("\plus")]\\
+&\syntax\ \Exp ::= \Id\ "("\ \Exp\ ")" [\KWsymbol("\funapp")]\\
+&\syntax\{V\}\ \List{V} ::= \texttt{empty}\\
+&\syntax\{V\}\ \List{V} ::= V\\
+&\syntax\{V\}\ \List{V} ::= \texttt{cons(}V,\List{V}\texttt{)}\\
+&\syntax\{K,V\}\ \Map{K,V} ::= "\texttt{empty}"\\
+&\syntax\{K,V\}\ \Map{K, V} ::= \texttt{insert(}K, V, \Map{K, V}\texttt{)}
+\end{align*}
+\end{example}
+\begin{example}
+The OSA signature $(S^\textrm{osa},\le, \Sigma^\textrm{osa})$ defined by the grammar given in Example~\ref{ex:front-end-grammar} is:
 \begin{enumerate}
+\item the set of sorts $S^\textrm{osa}$:
+\begin{align*}
+&\Int, \Bool,\Exp\\
+&\List{\Int}, \List{\Bool},\List{\Exp},\\
+&\Map{\Int,\Int}, \Map{\Int,\Bool}, \Map{\Int,\Exp},\\ 
+&\Map{\Bool,\Bool},\Map{\Bool,\Int},  \Map{\Bool,\Exp}, \\
+&\ldots\\
+&\List{\List{\Int}}, \List{\List{\Bool}},\List{\List{\Exp}},\\
+&\List{\Map{\Int,\Int}}, \List{\Map{\Int,\Bool}}, \List{\Map{\Int,\Exp}},\\ 
+&\ldots\\
+&\Map{\List{\Int},\List{\Int}}, \Map{\List{\Int},\List{\Bool}}, \Map{\List{\Int},\List{\Exp}},\\
+&\ldots\\
+&\Map{\Map{\Int,\Int}, \Map{\Int,\Int}}, \Map{\Map{\Int,\Int},\Map{\Int,\Bool}},\\ 
+&\ldots
+\end{align*}
+\item the subsort relation $\le$:
+\begin{align*}
+&\Int\le \Exp, \Bool\le \Exp,\\
+&\Int\le \List{\Int}, \List{\Int}\le \List{\Exp}, \Bool\le\List{\Bool}, \List{\Bool}\le \List{\Exp},\\ &\Exp\le\List{\Exp},\\
+&\Int\le \List{\Exp},  \Bool\le\List{\Exp},\\
+&\Map{\Int,\Int}\le \Map{\Exp,\Int}, \Map{\Int,\Int}\le \Map{\Int,\Exp}, \Map{\Int,\Int}\le \Map{\Exp,\Exp},\\
+&\ldots\\
+&\List{\List{\Int}}\le\List{\List{\Exp}}, \List{\List{\Bool}}\le \List{\List{\Exp}},\\
+&\ldots\\
+&\Map{\List{\Int},\List{\Int}}\le \Map{\List{\Exp},\List{\Int}}, \\
+&\Map{\List{\Int},\List{\Int}}\le \Map{\List{\Int},\List{\Exp}},\\
+&\ldots
+\end{align*}
+\item the set of function symbols $\Sigma^\textrm{osa}$:
+\begin{enumerate}
+\item
+\begin{align*}
+&\Sigma^\textrm{osa}_{w,\Int}=\emptyset &&w\not=\Int\,\Int,\\
+&\Sigma^\textrm{osa}_{\Int\,\Int,\Int}=\{\plus\},\\
+&\Sigma^\textrm{osa}_{\varepsilon,\Bool}=\{\false,\true\},\\
+&\Sigma^\textrm{osa}_{\Exp\,\Exp,\Exp} = \{\plus\},\\
+&\Sigma^\textrm{osa}_{\Id\,\Exp,\Exp} = \{\funapp\}
+\end{align*}
+The symbol \plus\ is overloaded, but its definition satisfy both the monotonicity and the regularity conditions. 
+\item
+The case of the production
+\[
+\syntax\{V\}\ \List{V} ::= "\texttt{empty}"
+\]
+is problematic. If we consider a single overloaded \texttt{empty} symbol,
+\[
+\Sigma^\textrm{osa}_{\varepsilon,\List{\Int}}=\Sigma^\textrm{osa}_{\varepsilon,\List{\Bool}}=\Sigma^\textrm{osa}_{\varepsilon,\List{\Exp}}=\cdots=\{\texttt{empty}\}
+\]
+then we loose the monotonicity. If we consider a distinguished symbol $\KWempty{\theta(V)}$ for each instance $\theta(V)$,
+\begin{align*}
+&\Sigma^\textrm{osa}_{\varepsilon,\List{\Int}}=\{\KWempty{\Int}\}\\
+&\Sigma^\textrm{osa}_{\varepsilon,\List{\Bool}}=\{\KWempty{\Bool}\}\\
+&\Sigma^\textrm{osa}_{\varepsilon,\List{\Exp}}=\{\KWempty{\Exp}\}\\
+&\ldots
+\end{align*}
+we have, e.g., three unrelated terms of sort \List{\Exp}:  \KWempty{\Int}, \KWempty{\Bool}, \KWempty{\Exp}. In ML these term patterns are related with the corresponding instances of the  "aggressive" axiom on page~\pageref{axiom-parametric-symbol} (adapted for constants):
+\begin{align*}
+&\inj\{\List{\Int},\List{\Exp}\}(\KWempty{\Int})=\KWempty{\Exp}()\\
+&\inj\{\List{\Bool},\List{\Exp}\}(\KWempty{\Bool})=\KWempty{\Exp}()
+\end{align*}
+Another solution to get a (monotonic) order-sorted signature is to forbid productions as above and use a new sort for the unique terminal:
+\begin{align*}
+&\syntax\ \texttt{EmptyList} ::= \texttt{empty}\\
+&\syntax\{V\}\ \List{V} ::= \texttt{EmptyList}
+\end{align*}
+We get $\texttt{EmptyList}\le \List{\Int}$, $\texttt{EmptyList}\le \List{\Bool}$, $\texttt{EmptyList}\le \List{\Exp}$, $\texttt{EmptyList}\le \List{\List{\Int}}$, \ldots .
+
+\item
+The symbol \texttt{cons} may be overloaded:
+\[
+\Sigma^\textrm{osa}_{\Int\,\List{\Int},\List{\Int}}=\Sigma^\textrm{osa}_{\Bool\,\List{\Bool},\List{\Bool}}=\Sigma^\textrm{osa}_{\Exp\,\List{\Exp},\List{\Exp}}=\cdots=\{\texttt{cons}\}
+\] 
+and it satisfies the monotonicity and regularity conditions.
+\item
+The case of operations on $\Map{K,V}$ is similar to those of lists.
+\end{enumerate}
+\end{enumerate}
+
+\end{example}
+
+Here is a proposal for a formal definition for the front-end grammar.
+
+\begin{definition}
+\begin{enumerate}
+\item A \emph{simple sort name} is   just an identifier.
+\item A \emph{simple parameter name}  is   just an identifier.
+\item A  \emph{parametric sort name} is an expression of the form $N\{P_1,\ldots,P_k\}$, where $N$ is a simple sort name and $P_i$ is a simple parameter name, $i=1,\ldots,k$.
+\end{enumerate}
+
+\end{definition}
+
+\begin{definition}
+Let $P$ denote the set of parameter names $\bar{P}=\{P_1,\ldots,P_k\}$. A \emph{$P$-sort-term} is inductively defined as follows:
+\begin{itemize}
+\item a simple sort name is a $\bar{P}$-sort-term;
+\item a parameter $P_i$ is a $\bar{P}$-sort-term;
+\item if $N\{Q_1,\ldots,Q_\ell\}$ is a parametric sort name and $N_1,\ldots,N_\ell$ are $\bar{P}$-sort-terms, then $N\{N_1,\ldots,N_\ell\}$ is a $\bar{P}$-sort-term.
+\end{itemize}
+Let $\ST[\bar{P}]$ denote the set of $\bar{P}$-sort-terms. A \emph{ground sort-term} is a  $\emptyset$-sort-name.
+\end{definition}
+
+
+\begin{definition}
+A \emph{(parametric) production} is a production of the form
+\[\syntax\{P_1,\ldots,P_k\}\ N ::= T_1 N_1 \ldots T_n N_n T_{n+1}\ [\KWsymbol(\sigma)]\]
+where:
+\begin{enumerate}
+\item $N$ is a simple sort name (identifier) or a parametric name $N'\{P_{i_1},\ldots,P_{i_j}\}$, where $N'$ is a simple sort name and $\{P_{i_1},\ldots,P_{i_j}\}\subseteq\{P_1,\ldots,P_k\}$;
+\item $N_i$ is ""  or a $\{P_1,\ldots,P_k\}$-sort-name, $i=1,\ldots,n$;
+\item $T_i$ is "" or a terminal, $i=1,\ldots,n$;
+\item $\sigma$ is the name of the associated symbol. The argument $[\KWsymbol(\sigma)]$ is optional, when it is missing the name of the associated symbol is predefined (we define later what exactly means that).
+\end{enumerate}
+If $k=0$, then we have a \emph{non-parametric production} and it is written as
+\[\syntax\ N ::= T_1 N_1 \ldots T_n N_n T_{n+1}\ [\KWsymbol(\sigma)]\]
+where $N$ is a simple sort name and $N_i$ is a ground sort-term, $i=1,\ldots,n$.
+\\
+If $n=0$ then we have only a \emph{sort declaration} and it is written as
+\[\sort\ N \]
+\end{definition}
+
+\begin{definition}
+Let $\bar{P}$ and $\bar{Q}$ two sets of parameters. A \emph{sort substitution} is a function $\theta:\bar{P}\to \ST[\bar{Q}]$. The function $\Sigma$ is extended to $\ST[\bar{P}]$ as usual:
+\begin{itemize}
+\item if $N$ is a simple sort name, then $\theta(N)=N$;
+\item $\theta(N\{N_1,\ldots,N_\ell\})=N\{\theta(N_1),\ldots,\theta(N_\ell)\}$.
+\end{itemize}
+A \emph{ground sort substitution (parameter valuation)} is a substitution $\rho:\bar{P}\to \ST[\emptyset]$.
+\end{definition}
+
+Whenever there is no confusion, we use substitution instead of sort substitution.
+
+
+\begin{definition}
+Let $G$ be a front-end grammar. The order-sorted signature $(S^\textrm{osa},\le, \Sigma^\textrm{osa})$ associated to $G$ is inductively defined as follows:
+\begin{enumerate}
+\item each non-parametric sort declaration
+\[\sort\ N\] 
+define a sort $N$ in $S^\textrm{osa}$. Recal that $N$ is a simple sort name in this case.
 \item each parametric sort declaration
 \[\sort\ N\{P_1,\ldots,P_k\}\]
-together with each parameter valuation $\theta : \{P_1,\ldots,P_k\}\to S^\textrm{osa}$ i
-define a sort $\theta(N)=N\{\theta(P_1),\ldots,\theta(P_k)\}$ in $S^\textrm{osa}$.
-\\
-If $k=0$ then there is a unique function  $\theta : \emptyset\to S^\textrm{osa}$ and we identify $\theta(N)$ with $N$ (or $N\{\}$?);
+together with each parameter valuation $\theta : \{P_1,\ldots,P_k\}\to S^\textrm{osa}$ 
+define a sort $\theta(N)=N\{\theta(P_1),\ldots,\theta(P_k)\}$ in $S^\textrm{osa}$;
+\item each non-parametric production $\pi$
+\[\syntax\ N ::= T_1 N_1 \ldots T_n N_n T_{n+1}\ [\KWsymbol(\sigma)]\]
+where $N$ is a simple sort name, $N_i$ is a ground sort-term for $i=1,\ldots,n$, and $n>1$  or at least a $T_i$ is diferent from "", defines
+\begin{enumerate}
+\item a sort $N$ in $S^\textrm{osa}$, provided that it is not already defined by another production, and
+\item a symbol $\sigma$ in $\Sigma^\textrm{osa}_{N_1\ldots N_n,N}$.
+\end{enumerate}
 \item each parametric production $\pi$
-\[\syntax\{P_1,\ldots,P_k\}\ N ::= T_1 N_1 \ldots T_n N_n T_{n+1}\]
-where $n>1$ or at least $T_i$ is diferent from "", and each parameter valuation
+\[\syntax\{P_1,\ldots,P_k\}\ N ::= T_1\ [\KWsymbol(\sigma)] \]
+where $T_1$ is diferent from "", and each parameter valuation
 $\theta : \{P_1,\ldots,P_k\}\to S^\textrm{osa}$ define
 \begin{enumerate}
-\item a sort $\theta(N)=N\{\theta(P_1),\ldots,\theta(P_k)\}$ in $S^\textrm{osa}$ and
-\item a symbol $\sigma_\pi$ in $\Sigma^\textrm{osa}_{\theta(N_1)\ldots\theta(N_n),\theta(N)}$.
+\item a sort $\theta(N)=N\{\theta(P_1),\ldots,\theta(P_k)\}$ in $S^\textrm{osa}$, provided that it is not already defined by another production, and
+\item a symbol $\sigma\{\theta(\bar{P})\}$ in $\Sigma^\textrm{osa}_{\varepsilon,\theta(N)}$ (a distinguished symbol name for each $\theta$);
 \end{enumerate}
-Similar to above, if $k=0$ we identify $\theta(N)$ with $N$;
+\begin{remark}
+1.  I guess that we may have a distinguished name $\sigma\{\theta(\pi)\}$ only for those $\theta$ with $\theta(N)$ $\le$-minimal.\\
+2. The productions 
+\[\syntax\{P_1,\ldots,P_k\}\ N ::= T_1\ldots T_{n+1} \]
+(only terminals in the rhs) are processed in a similar way.
+\end{remark}
+\item each parametric production $\pi$
+\[\syntax\{P_1,\ldots,P_k\}\ N ::= T_1 N_1 \ldots T_n N_n T_{n+1}\ [\KWsymbol(\sigma)]\]
+where at least a $N_i$ is different from "" and ($n>1$ or at least a $T_i$ is diferent from ""), and each parameter valuation
+$\theta : \{P_1,\ldots,P_k\}\to S^\textrm{osa}$ define
+\begin{enumerate}
+\item a sort $\theta(N)=N\{\theta(P_1),\ldots,\theta(P_k)\}$ in $S^\textrm{osa}$, provided that it is not already defined by another production, and
+\item a symbol $\sigma$ in $\Sigma^\textrm{osa}_{\theta(N_1)\ldots\theta(N_n),\theta(N)}$;
+\end{enumerate}
+\item each non-parametric production
+\[\syntax\ N ::= N_1\]
+where $N$ is a simple sort name and $N_1$ a ground sort-term, defines
+\begin{enumerate}
+\item a sort $N$ in $S^\textrm{osa}$, provided that it is not already defined by another production, and
+\item a relation $N_1\le N$;
+\end{enumerate}
 \item each parametric production
 \[\syntax\{P_1,\ldots,P_k\}\ N ::= N_1\]
 and each parameter valuation $\theta : \{P_1,\ldots,P_k\}\to S^\textrm{osa}$ define
 \begin{enumerate}
-\item a sort $\theta(N)=N\{\theta(P_1),\ldots,\theta(P_k)\}$ in $S^\textrm{osa}$ and
-\item a relation $\theta(N_1)\le \theta(N)$.
+\item a sort $\theta(N)=N\{\theta(P_1),\ldots,\theta(P_k)\}$ in $S^\textrm{osa}$, provided that it is not already defined by another production, and
+\item a relation $\theta(N_1)\le \theta(N)$;
 \end{enumerate}
-Again, if $k=0$ we identify $\theta(N)$ with $N$.
  \item each parametric production
 \[\syntax\{P_1,\ldots,P_k\}\ N ::= \ldots\]
 and each pair of parameter valuations $\theta,\theta' : \{P_1,\ldots,P_k\}\to S^\textrm{osa}$ such thar $\theta(P_i)\le \theta'(P_i)$, for $i=1,\ldots,n$, define
 \begin{enumerate}
 \item a relation $\theta(N)\le \theta'(N)$.
 \end{enumerate}
-\item $\le$ is extended such that it is reflexive and transitive.
+\item $\le$ is reflexive and transitive.
 \end{enumerate}
-
-In order to show that $(S^\textrm{osa},\le, \Sigma^\textrm{osa})$ is regular, we need a formal definition for the nonterminals occurring in a parametric production.
-\begin{definition}
-Let $P$ denote the set of parameters $P=\{P_1,\ldots,P_k\}$. A \emph{$P$-sort-term} is inductively defined as follows:
-\begin{itemize}
-\item a simple sort name (identifier) is a $P$-sort-name;
-\item a parameter $P_i$ is a $P$-sort-name;
-\item if $N\{Q_1,\ldots,Q_\ell\}$ is a parametric sort name and $N_1,\ldots,N_\ell$ are $P$-sort-names, then $N\{N_1,\ldots,N_\ell\}$ is a $P$-sort-name.
-\end{itemize}
 \end{definition}
 
-In a parametric production
-\[\syntax\{P_1,\ldots,P_k\}\ N ::= T_1 N_1 \ldots T_n N_n T_{n+1}\]
-we have:
-\begin{enumerate}
-\item $N$ is a simple sort name (identifier);
-\item $N_i$ is is a $\{P_1,\ldots,P_k\}$-sort-name, $i=1,\ldots,k$.
-\end{enumerate}
-\begin{lemma}
-Let $N$ be a $P$-sorted-term, where $P=\{P_1,\ldots,P_k\}$ denotes the set of parameters occuring in $N$. If $\theta,\theta':P\to S^{\rm osa}$ such that $\theta(N)\le\theta'(N)$, then $\theta(P_i)\le \theta(P'_i)$ for $i=1,\ldots,n$.
+\begin{assumption}
+Assume that $(S^\textrm{osa},\le)$ is a poset. This means that the input front-end grammar $G$ does not include cyclic subsort declarations.
+\end{assumption}
+
+\begin{lemma}\label{lem:leqinst}
+Let $N$ be a $\bar{P}$-sort-term, where $\bar{P}=\{P_1,\ldots,P_k\}$ denotes the set of parameters occuring in $N$. If $\theta,\theta':\bar{P}\to S^{\rm osa}$ such that $\theta(N)\le\theta'(N)$, then $\theta(P_i)\le \theta(P'_i)$ for $i=1,\ldots,n$.
 \end{lemma}
 \begin{proof}
 By structural induction on $N$.
 \end{proof}
+\begin{corollary}
+Let $N$ be a $\bar{P}$-sorted-term, where $\bar{P}=\{P_1,\ldots,P_k\}$ denotes the set of parameters occurring in $N$. If $\theta,\theta':\bar{P}\to S^{\rm osa}$ such that $\theta(N) = \theta'(N)$, then $\theta(P_i) = \theta(P'_i)$ for $i=1,\ldots,n$. 
+\end{corollary}
 
-I do not know yet whether the following theorem holds and, if yes, how to prove it.
-\begin{theorem}
-Let $G$ be a input front-end grammar and $(S^\textrm{osa},\le, \Sigma^\textrm{osa})$ the order-sorted signature associated to $G$ as above.
-Then $(S^\textrm{osa},\le, \Sigma^\textrm{osa})$ is regular.
-\end{theorem}
-%\begin{proof}
-%The relation $\le$ is obviously coNoetherian, so it is enough to show that the hypotheses of Fact~\ref{fact:reg} hold. Let $\sigma\in \Sigma^\textrm{osa}_{w',s'}\cap\Sigma^\textrm{osa}_{w'',s''}$ and $w_0\le w',w''$. Since the only overloaded symbols are those corresponding to instances of a syntax production, it follows that there are a production $\pi$
-%\begin{alltt}
-%    syntax \(\{P\sb{1},\ldots,P\sb{k}\} N ::= T\sb{1}N\sb{1}\ldots T\sb{n}N\sb{n}T\sb{n+1} \)
-%\end{alltt}
-%and parameter valuations $\theta',\theta'':\{P\sb{1},\ldots,P\sb{k}\}\to S^\textrm{osa}$  such that $\sigma=\sigma_\pi$, $w'=\theta'(N_1)\ldots\theta'(N_n)$, $s'=\theta'(N)$, $w''=\theta''(N_1)\ldots\theta''(N_n)$, and $s''=\theta''(N)$.
-%\end{proof}
 
-Having the order-sorted signature $(S^\textrm{osa},\le, \Sigma^\textrm{osa})$ associated to an input grrama $G$, it is quite easy to define a ML theory $(S,\Sigma, F)$ encoding the order-sorted one:
+\begin{lemma}\label{lem:renaming}
+Let $N$ be $\bar{P}$-sorted-term and let $N'$ be $\bar{Q}$-sorted-term, where $\bar{P}$ denotes the set of parameters occurring in $N$ and $\bar{Q}$ denotes the set of parameters occurring in $N'$. 
+If $\theta:\bar{P}\to S^{\rm osa}$ and $\theta':\bar{Q}\to S^{\rm osa}$  such that $\theta(N) = \theta'(N')$, then there is a parameter rename $\rho:\bar{Q}\to \bar{P}$, possible non-injective, such that $\theta'=\theta\circ \rho$.
+\end{lemma}
+\begin{proof}
+By structural induction on $N$. TBC (To Be Checked).
+\end{proof}
+
+
+\begin{proposition}\label{prop:non-monoton}
+There are grammars $G$ such that the order-sorted signature $(S^\textrm{osa},\le, \Sigma^\textrm{osa})$ associated to $G$ does not satisfy the monotonicity condition.
+\end{proposition}
+\begin{proof}
+Such an example is given by the \cast\ operator. Let $G$ be the following grammar:
+\begin{align*}
+&\sort\ \Int\\
+&\sort\ \Bool\\
+&\syntax\ \Exp ::= \Int\\
+&\syntax\ \Exp ::= \Bool\\
+&\syntax\{P_1,P_2\}\ P_2 ::= \cast(P_1) 
+\end{align*}
+We have $\cast\in\Sigma^\textrm{osa}_{\Int,\Bool}\cap \Sigma^\textrm{osa}_{\Exp,\Int}$, $\Int\le \Exp$ and $\Bool\not\le \Int$.
+\end{proof}
+
+\begin{proposition}\label{prop:non-regular}
+There are grammars $G$ such that the order-sorted signature $(S^\textrm{osa},\le, \Sigma^\textrm{osa})$ associated to $G$ is not regular.
+\end{proposition}
+\begin{proof}
+Obviously, the definition of \cast\ is such an example. We have $\cast\in\Sigma^\textrm{osa}_{\Exp,\Exp}$, $\Int\le\Exp$,  and the set $\{\langle s,s'\rangle\mid\Int\le s, \cast\in\Sigma^\textrm{osa}_{s,s'}\}$ has no a least rank; $\langle \Int,\Int\rangle$ and $\langle \Int,\Bool\rangle$ are two distinct minimal elements. 
+
+Another example is the following one:
+\begin{align*}
+&\sort\ N_1\\
+&\sort\ N_2\\
+&\syntax\ N_3 ::= N_1\\
+&\syntax\ N_4 ::= N_2\\
+&\syntax\ N_5 ::= f(N_1,N_4)\ [\KWsymbol(f)]\\ 
+&\syntax\ N_5 ::= f(N_3,N_2)\ [\KWsymbol(f)]
+\end{align*}
+We have $N_1\,N_2\le N_1\,N_4$, $N_1\,N_2\le N_3\,N_2$, and the set $\{\langle s_1s_2,s\rangle\mid N_1\,N_2\le s_1s_2, f\in\Sigma^\textrm{osa}_{s_1s_2,s}\}$ has no a least rank, because $N_1\,N_4$ and $N_3\,N_2$ are non-comparable
+\end{proof}
+
+\begin{definition}
+Let $\mathit{par}(N)$ denote the set of parameters occurring in the sort-term $N$ (the set of parameters the sort $N$ depends on). 
+A parametric production
+\[\syntax\{P_1,\ldots,P_k\}\ N ::= T_1 N_1 \ldots T_n N_n T_{n+1}\ [\KWsymbol(\sigma)]\]
+is \emph{well-typed} if $\bigcup_{i=1}^n\mathit{par}(N_i)=\{P_1,\ldots,P_k\}$.
+\end{definition}
+
+\begin{lemma}\label{lem:monotonicity}
+Let $G$ be a front-end grammar such that all the overloaded symbols are given by well-typed parametric productions. The order-sorted signature $(S^\textrm{osa},\le, \Sigma^\textrm{osa})$ associated to $G$ satisfies the monotonicity condition.
+\end{lemma}
+\begin{proof}
+Let $\sigma\in \Sigma^\textrm{osa}_{w',s'}\cap \Sigma^\textrm{osa}_{w'',s''}$ with $w'\le w''$.
+Since the only overloaded symbols are those corresponding to instances of a syntax production, it follows that there are a parametric production $\pi$
+\[
+    \syntax\{P\sb{1},\ldots,P\sb{k}\} N ::= T\sb{1}N\sb{1}\ldots T\sb{n}N\sb{n}T\sb{n+1} 
+\]
+and parameter valuations $\theta',\theta'':\{P\sb{1},\ldots,P\sb{k}\}\to S^\textrm{osa}$  such that $\sigma=\sigma_\pi$, $w'=\theta'(N_1)\ldots\theta'(N_n)$, $s'=\theta'(N)$, $w''=\theta''(N_1)\ldots\theta''(N_n)$, and $s''=\theta''(N)$. Note that $w'\not=\varepsilon\not= w''$ by the definition of $\Sigma^\textrm{osa}$. 
+From $\theta'(N_i)\le\theta''(N_i)$, $i=1,\ldots,n$, it follows $\theta'(P_i)\le \theta''(P_i)$, $i=1,\ldots,k$ by Lemma~\ref{lem:leqinst}. Hence $s'=\theta'(N)\le \theta''(N)=s''$, which finishes the proof.
+\end{proof}
+
+\section{Next Steps}
+
+\begin{description}
+\item[1] Define an ML-theory $(S^\textrm{ml},\Sigma^\textrm{ml},F^\textrm{ml})$. As Grigire sugested, this can done in two ways:
 \begin{enumerate}
-\item $S=S^\textrm{osa}$ (without partial order relation);
-\item each overloaded symbol $\sigma\in \theta(N_1)\ldots\theta(N_n), \theta'(N)$ becomes a parametric one: $\sigma\{\theta(N_1)\ldots\theta(N_n), \theta'(N)\}\in \theta(N_1)\ldots\theta(N_n), \theta'(N)$
-\item injections describe the partial order relation: $\inj\{\theta(N),\theta(N')\}\in\Sigma_{\theta(N),\theta(N')}$ iff $\theta(N)\le \theta(N')$;
-\item the axioms $F$ are the above ones (perhaps with a small different notation).
+\item[a)] using non-parametric symbols
+\item[b)] using parametric symbols
 \end{enumerate}
+\item[2] Find the relationships between $(S^\textrm{osa},\le, \Sigma^\textrm{osa})$ and  $(S^\textrm{ml},\Sigma^\textrm{ml},F^\textrm{ml})$ (both versions).
+\item[3] Identify the properties that define a "good front-end grammar".
+\item[4] Develop algorithms for checking these properties.
+\end{description}
 }
 
 \begin{thebibliography}{ABC99a}
