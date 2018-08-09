@@ -35,7 +35,9 @@ substitutions.
 --}
 data SubstitutionError level variable
     = CtorCircularVariableDependency [variable level]
+    -- ^the circularity path passes only through constructors: unsolvable
     | NonCtorCircularVariableDependency [variable level]
+    -- ^the circularity path may pass through non-constructors: maybe solvable
     deriving (Eq, Show)
 
 {--| 'substitutionErrorVariables' extracts all variables in a
