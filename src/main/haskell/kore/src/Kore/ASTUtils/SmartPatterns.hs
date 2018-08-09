@@ -70,9 +70,10 @@ pattern Ceil_
     -> PureMLPattern level var
 
 pattern DV_
-  :: Sort Object
+  :: () => (level ~ Object) =>
+     Sort level
   -> PureMLPattern Meta Variable
-  -> PureMLPattern Object var
+  -> PureMLPattern level var
 
 pattern Equals_
     :: Sort level
@@ -118,9 +119,10 @@ pattern In_
     -> PureMLPattern level var
 
 pattern Next_
-  :: Sort Object
-  -> PureMLPattern Object var
-  -> PureMLPattern Object var
+    :: () => (level ~ Object) =>
+       Sort level
+    -> PureMLPattern level var
+    -> PureMLPattern level var
 
 pattern Not_
     :: Sort level
@@ -134,10 +136,11 @@ pattern Or_
     -> PureMLPattern level var
 
 pattern Rewrites_
-  :: Sort Object
-  -> PureMLPattern Object var
-  -> PureMLPattern Object var
-  -> PureMLPattern Object var
+  :: () => (level ~ Object) =>
+     Sort level
+  -> PureMLPattern level var
+  -> PureMLPattern level var
+  -> PureMLPattern level var
 
 pattern Top_
     :: Sort level

@@ -232,6 +232,7 @@ axiomEvaluator left right =
             AxiomPattern
                 { axiomPatternLeft  = left
                 , axiomPatternRight = right
+                , axiomPatternRequires = makeTruePredicate
                 }
         )
 
