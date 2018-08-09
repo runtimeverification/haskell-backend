@@ -12,7 +12,7 @@ import Kore.AST.MetaOrObject
 import Kore.AST.PureToKore
        ( patternKoreToPure )
 import Kore.ASTHelpers
-       ( ApplicationSorts(..) )
+       ( ApplicationSorts (..) )
 import Kore.Building.AsAst
 import Kore.Building.Patterns
 import Kore.Building.Sorts
@@ -22,7 +22,7 @@ import Kore.IndexedModule.MetadataTools
 import Kore.MetaML.AST
        ( CommonMetaPattern )
 import Kore.Predicate.Predicate
-       ( makeTruePredicate )
+       ( pattern PredicateFalse, makeTruePredicate )
 import Kore.Step.BaseStep
 import Kore.Step.ExpandedPattern as ExpandedPattern
        ( CommonExpandedPattern, ExpandedPattern (..) )
@@ -548,9 +548,13 @@ runStep
     -> [AxiomPattern level]
     -> [(CommonExpandedPattern level, StepProof level)]
 runStep metadataTools configuration axioms =
-    fst $ runIntCounter
+    filter (not . isPredicateFalse . ExpandedPattern.predicate . fst)
+    $ fst $ runIntCounter
         (sequence (step metadataTools configuration axioms))
         0
+  where
+    isPredicateFalse PredicateFalse = True
+    isPredicateFalse _ = False
 
 
 runStepsPickFirst

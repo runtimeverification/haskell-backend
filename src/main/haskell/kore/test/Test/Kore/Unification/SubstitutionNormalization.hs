@@ -6,32 +6,34 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
-import Kore.AST.Common
-       ( AstLocation (..), Sort (..), SortVariable (..), Variable,
-       noLocationId )
-import Kore.AST.MetaOrObject
-import Kore.AST.PureML
-       ( CommonPurePattern )
-import Kore.AST.PureToKore
-       ( patternKoreToPure )
-import Kore.ASTHelpers
-       ( ApplicationSorts (..) )
-import Kore.Building.AsAst
-import Kore.Building.Patterns
-import Kore.Building.Sorts
-import Kore.Error
-import Kore.IndexedModule.MetadataTools
-       ( MetadataTools (..), SortTools )
-import Kore.MetaML.AST
-       ( CommonMetaPattern )
-import Kore.Step.StepperAttributes
-import Kore.Unification.Error
-       ( SubstitutionError (..) )
-import Kore.Unification.SubstitutionNormalization
-import Kore.Unification.UnifierImpl
-       ( UnificationSubstitution )
-import Kore.Variables.Fresh.IntCounter
-       ( runIntCounter )
+import           Kore.AST.Common
+                 ( AstLocation (..), Sort (..), SortVariable (..), Variable,
+                 noLocationId )
+import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+                 ( CommonPurePattern )
+import           Kore.AST.PureToKore
+                 ( patternKoreToPure )
+import           Kore.ASTHelpers
+                 ( ApplicationSorts (..) )
+import           Kore.Building.AsAst
+import           Kore.Building.Patterns
+import           Kore.Building.Sorts
+import           Kore.Error
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools (..), SortTools )
+import           Kore.MetaML.AST
+                 ( CommonMetaPattern )
+import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
+                 ( PredicateSubstitution (..) )
+import           Kore.Step.StepperAttributes
+import           Kore.Unification.Error
+                 ( SubstitutionError (..) )
+import           Kore.Unification.SubstitutionNormalization
+import           Kore.Unification.UnifierImpl
+                 ( UnificationSubstitution )
+import           Kore.Variables.Fresh.IntCounter
+                 ( runIntCounter )
 
 test_substitutionNormalization :: [TestTree]
 test_substitutionNormalization =
@@ -188,7 +190,8 @@ runNormalizeSubstitution
 runNormalizeSubstitution substitution =
     case normalizeSubstitution mockMetadataTools substitution of
         Left err     -> Left err
-        Right action -> Right $ fst $ runIntCounter action 0
+        Right action -> Right $ PredicateSubstitution.substitution
+                        $ fst $ runIntCounter action 0
 
 mockStepperAttributes :: StepperAttributes
 mockStepperAttributes = StepperAttributes

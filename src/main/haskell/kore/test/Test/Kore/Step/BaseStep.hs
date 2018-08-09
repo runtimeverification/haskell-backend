@@ -16,6 +16,8 @@ import Kore.AST.PureToKore
        ( patternKoreToPure )
 import Kore.ASTHelpers
        ( ApplicationSorts (..) )
+import Kore.ASTUtils.SmartConstructors
+       ( mkBottom )
 import Kore.Building.AsAst
 import Kore.Building.Patterns
 import Kore.Building.Sorts
@@ -25,7 +27,8 @@ import Kore.IndexedModule.MetadataTools
 import Kore.MetaML.AST
        ( CommonMetaPattern )
 import Kore.Predicate.Predicate
-       ( CommonPredicate, makeEqualsPredicate, makeTruePredicate )
+       ( CommonPredicate, makeEqualsPredicate, makeFalsePredicate,
+       makeTruePredicate )
 import Kore.Step.BaseStep
 import Kore.Step.Error
 import Kore.Step.ExpandedPattern as ExpandedPattern
@@ -33,7 +36,6 @@ import Kore.Step.ExpandedPattern as ExpandedPattern
 import Kore.Step.ExpandedPattern
        ( CommonExpandedPattern )
 import Kore.Step.StepperAttributes
-import Kore.Unification.Error
 import Kore.Unification.Unifier
        ( FunctionalProof (..), UnificationProof (..) )
 import Kore.Variables.Fresh.IntCounter
@@ -473,8 +475,13 @@ test_baseStep =
     -- Expected: error because g(a) != f(b)
     , testCase "Symbol clashes."
         (assertEqualWithExplanation ""
-            (Left $ StepErrorUnification $ ConstructorClash gSymbol fSymbol)
-            (runStep
+            (Right ExpandedPattern
+                { term = mkBottom
+                , predicate = makeFalsePredicate
+                , substitution = []
+                }
+            )
+            (fst <$> runStep
                 mockMetadataTools
                 ExpandedPattern
                     { term =
@@ -501,12 +508,13 @@ test_baseStep =
     -- Expected: Error because a=f(b) and b=a.
     , testCase "Impossible substitution."
         (assertEqualWithExplanation ""
-            (Left $ StepErrorSubstitution
-                (CtorCircularVariableDependency
-                    [ asMetaVariable (b1 PatternSort) ]
-                )
+            (Right ExpandedPattern
+                { term = mkBottom
+                , predicate = makeFalsePredicate
+                , substitution = []
+                }
             )
-            (runStep
+            (fst <$> runStep
                 mockMetadataTools
                 ExpandedPattern
                     { term =

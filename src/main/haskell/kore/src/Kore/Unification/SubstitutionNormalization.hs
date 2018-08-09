@@ -30,6 +30,10 @@ import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
+import           Kore.Predicate.Predicate
+                 ( makeTruePredicate )
+import           Kore.Step.ExpandedPattern
+                 ( PredicateSubstitution (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes (..) )
 import           Kore.Substitution.Class
@@ -81,7 +85,7 @@ normalizeSubstitution
     -> UnificationSubstitution level variable
     -> Either
         (SubstitutionError level variable)
-        (IntCounter (UnificationSubstitution level variable))
+        (IntCounter (PredicateSubstitution level variable))
 normalizeSubstitution tools substitution = do
     sorted <- topologicalSortConverted
     let
@@ -137,8 +141,12 @@ normalizeSortedSubstitution
     => UnificationSubstitution level variable
     -> UnificationSubstitution level variable
     -> [(Unified variable, PureMLPattern level variable)]
-    -> IntCounter (UnificationSubstitution level variable)
-normalizeSortedSubstitution [] result _ = return result
+    -> IntCounter (PredicateSubstitution level variable)
+normalizeSortedSubstitution [] result _ =
+    return PredicateSubstitution
+        { predicate = makeTruePredicate
+        , substitution = result
+        }
 normalizeSortedSubstitution
     ((var, varPattern) : unprocessed)
     result

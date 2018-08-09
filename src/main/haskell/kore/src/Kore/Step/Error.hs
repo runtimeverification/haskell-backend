@@ -40,17 +40,27 @@ mapStepErrorVariables mapper (StepErrorSubstitution a) =
 
 {--| 'unificationToStepError' converts an action with a 'UnificationError' into
 an action with a 'StepError'.
+It takes a @bottom@ default value to convert unification errors into
+'Bottom' if necessary.
 --}
 unificationToStepError
-    :: Either (UnificationError level) a -> Either (StepError level variable) a
-unificationToStepError (Left err)     = Left (StepErrorUnification err)
-unificationToStepError (Right result) = Right result
+    :: a
+    -> Either (UnificationError level) a
+    -> Either (StepError level variable) a
+unificationToStepError bottom (Left (ConstructorClash _ _)) = Right bottom
+unificationToStepError _ (Left err)     = Left (StepErrorUnification err)
+unificationToStepError _ (Right result) = Right result
 
 {--| 'substitutionToStepError' converts an action with a 'SubstitutionError'
 into an action with a 'StepError'.
+It takes a @bottom@ default value to convert constructor-only cycling errors
+into 'Bottom'.
 --}
 substitutionToStepError
-    :: Either (SubstitutionError level variable) a
+    :: a
+    -> Either (SubstitutionError level variable) a
     -> Either (StepError level variable) a
-substitutionToStepError (Left err)     = Left (StepErrorSubstitution err)
-substitutionToStepError (Right result) = Right result
+substitutionToStepError bottom (Left (CtorCircularVariableDependency _)) =
+    Right bottom
+substitutionToStepError _ (Left err)     = Left (StepErrorSubstitution err)
+substitutionToStepError _ (Right result) = Right result

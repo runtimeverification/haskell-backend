@@ -14,6 +14,7 @@ module Kore.Predicate.Predicate
     , pattern PredicateFalse
     , pattern PredicateTrue
     , compactPredicatePredicate
+    , isFalsePredicate
     , makeAndPredicate
     , makeMultipleAndPredicate
     , makeCeilPredicate
@@ -41,11 +42,11 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.AST.PureML
        ( PureMLPattern )
-import Kore.ASTUtils.SmartPatterns
-       ( pattern Bottom_, pattern Top_)
 import Kore.ASTUtils.SmartConstructors
-       ( mkAnd, mkBottom, mkCeil, mkEquals,
-       mkIff, mkImplies, mkNot, mkOr, mkTop )
+       ( mkAnd, mkBottom, mkCeil, mkEquals, mkIff, mkImplies, mkNot, mkOr,
+       mkTop )
+import Kore.ASTUtils.SmartPatterns
+       ( pattern Bottom_, pattern Top_ )
 import Kore.IndexedModule.MetadataTools
        ( SortTools )
 
@@ -119,6 +120,12 @@ pattern PredicateTrue :: Predicate level var
 
 pattern PredicateFalse <- GenericPredicate(Bottom_ _)
 pattern PredicateTrue <- GenericPredicate(Top_ _)
+
+{-|'isFalsePredicate' checks whether a predicate matches 'PredicateFalse'
+-}
+isFalsePredicate :: Predicate level var -> Bool
+isFalsePredicate PredicateFalse = True
+isFalsePredicate _ = False
 
 {--| 'makeMultipleAndPredicate' combines a list of Predicates with 'and',
 doing some simplification.

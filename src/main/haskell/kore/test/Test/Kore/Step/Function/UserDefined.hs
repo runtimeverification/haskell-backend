@@ -14,7 +14,9 @@ import Kore.AST.PureML
 import Kore.AST.PureToKore
        ( patternKoreToPure )
 import Kore.ASTHelpers
-       ( ApplicationSorts(..) )
+       ( ApplicationSorts (..) )
+import Kore.ASTUtils.SmartConstructors
+       ( mkBottom )
 import Kore.Building.AsAst
 import Kore.Building.Patterns
 import Kore.Building.Sorts
@@ -50,7 +52,12 @@ test_userDefinedFunction :: [TestTree]
 test_userDefinedFunction =
     [ testCase "Cannot apply function if step fails"
         (assertEqualWithExplanation ""
-            AttemptedFunction.NotApplicable
+            (AttemptedFunction.Applied ExpandedPattern
+                { term = mkBottom
+                , predicate = makeFalsePredicate
+                , substitution = []
+                }
+            )
             (evaluateWithAxiom
                 mockMetadataTools
                 AxiomPattern
