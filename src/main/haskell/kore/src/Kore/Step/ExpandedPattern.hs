@@ -82,7 +82,7 @@ mapVariables
   =
     ExpandedPattern
         { term = mapPatternVariables variableMapper term
-        , predicate = fmap (mapPatternVariables variableMapper) predicate
+        , predicate = Predicate.mapVariables variableMapper predicate
         , substitution = mapSubstitutionVariables variableMapper substitution
         }
 
