@@ -35,8 +35,7 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SortTools )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Predicate.Predicate
-                 ( Predicate, PredicateProof (..), makeMultipleAndPredicate,
-                 variableSetFromPredicate )
+                 ( Predicate, PredicateProof (..), makeMultipleAndPredicate )
 import           Kore.Step.AxiomPatterns
 import           Kore.Step.Condition.Condition
                  ( ConditionSort (..) )
@@ -540,7 +539,7 @@ predicateStepVariablesToCommon
         , Predicate level Variable
         )
 predicateStepVariablesToCommon existingVars mapped predicate' = do
-    let axiomVars = variableSetFromPredicate (fmap pureAllVariables predicate')
+    let axiomVars = Predicate.allVariables predicate'
     mapping <-
         addAxiomVariablesAsConfig existingVars mapped (Set.toList axiomVars)
     return
