@@ -887,6 +887,52 @@ test_baseStep =
                         }
                 )
             )
+    -- x => x requires g(x)=f(x)
+    -- vs
+    -- a
+    -- Expected: y1 and g(a)=f(a)
+    , let
+          preCondition var =
+              makeEquals
+                  (metaG (var PatternSort))
+                  (metaF (var PatternSort))
+      in
+        testCase "Conjoins axiom pre-condition"
+          (assertEqualWithExplanation ""
+              (Right
+                  ( ExpandedPattern
+                      { term = asPureMetaPattern (a1 PatternSort)
+                      , predicate = preCondition a1
+                      , substitution = []
+                      }
+                  , StepProofCombined
+                      [ StepProofVariableRenamings
+                          [ variableRenaming
+                              (x1 PatternSort) (var_0 PatternSort)
+                          ]
+                      , StepProofUnification
+                          ( proposition_5_24_3
+                              [ functionalVariable (a1 PatternSort) ]
+                              (var_0 PatternSort)
+                              (a1 PatternSort)
+                          )
+                      ]
+                  )
+              )
+              (runStep
+                  mockMetadataTools
+                  ExpandedPattern
+                      { term = asPureMetaPattern (a1 PatternSort)
+                      , predicate = makeTruePredicate
+                      , substitution = []
+                      }
+                  AxiomPattern
+                      { axiomPatternLeft = asPureMetaPattern (x1 PatternSort)
+                      , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
+                      , axiomPatternRequires = preCondition x1
+                      }
+              )
+          )
 
     -- TODO(virgil): add tests for these after we implement
     -- a => sigma(x, y) substitutions where a is a configuration variable
