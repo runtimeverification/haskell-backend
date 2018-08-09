@@ -31,17 +31,21 @@ import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( CommonPurePattern, PureMLPattern, mapPatternVariables )
+import           Kore.ASTUtils.SmartConstructors
+                 ( mkBottom )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SortTools )
-import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Predicate.Predicate
-                 ( Predicate, PredicateProof (..), makeMultipleAndPredicate )
+                 ( Predicate, PredicateProof (..), makeFalsePredicate,
+                 makeMultipleAndPredicate )
+import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.AxiomPatterns
 import           Kore.Step.Condition.Condition
                  ( ConditionSort (..) )
 import           Kore.Step.Error
 import           Kore.Step.ExpandedPattern
-                 ( ExpandedPattern (ExpandedPattern) )
+                 ( ExpandedPattern (ExpandedPattern),
+                 PredicateSubstitution (..) )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
@@ -220,16 +224,18 @@ stepWithAxiom
         -- Remap unification and substitution errors into 'StepError'.
         normalizeUnificationError
             :: MetaOrObject level
-            => Set.Set (Variable level)
+            => a
+            -- ^element of the target symbolizing a 'Bottom'-like result
+            -> Set.Set (Variable level)
             -> Either (UnificationError level) a
             -> Either (IntCounter (StepError level Variable)) a
-        normalizeUnificationError existingVariables action =
+        normalizeUnificationError bottom existingVariables action =
             stepperVariableToVariableForError
-                existingVariables (unificationToStepError action)
+                existingVariables (unificationToStepError bottom action)
 
-        normalizeSubstitutionError action =
+        normalizeSubstitutionError bottom action =
             stepperVariableToVariableForError
-                existingVars (substitutionToStepError action)
+                existingVars (substitutionToStepError bottom action)
 
     -- Unify the left-hand side of the rewriting axiom with the initial
     -- configuration, producing a substitution (instantiating the axiom to the
@@ -238,7 +244,9 @@ stepWithAxiom
         , unificationCondition
         , rawSubstitutionProof
         ) <-
-            normalizeUnificationError existingVars
+            normalizeUnificationError
+                ([], makeFalsePredicate, EmptyUnificationProof)
+                existingVars
                 (unificationProcedure
                     tools
                     axiomLeft
@@ -252,31 +260,43 @@ stepWithAxiom
         , substitution
         , _  -- TODO: Use this proof
         ) <-
-            normalizeUnificationError existingVars
+            normalizeUnificationError
+                (makeFalsePredicate, [], EmptyUnificationProof)
+                existingVars
                 (mergeSubstitutions tools unificationSubstitution startSubstitution)
 
     normalizedSubstitutionWithCounter <-
         normalizeSubstitutionError
-            (normalizeSubstitution substitution)
-
-    -- Merge all conditions collected so far
-    let
-        (mergedConditionWithCounter, _) = -- TODO: Use this proof
-            give (sortTools tools)
-            $ mergeConditionsWithAnd
-                [ startCondition  -- from initial configuration
-                , axiomRequires  -- from axiom
-                , unificationCondition  -- produced during unification
-                , substitutionMergeCondition -- by merging substitutions
-                ]
+            (return PredicateSubstitution
+                { predicate = makeFalsePredicate
+                , substitution = []
+                }
+            )
+            (normalizeSubstitution tools substitution)
 
     return $ do
-        normalizedSubstitution <- normalizedSubstitutionWithCounter
+        PredicateSubstitution
+            { predicate = normalizedCondition
+            , substitution = normalizedSubstitution
+            }
+            <- normalizedSubstitutionWithCounter
 
         let
             unifiedSubstitution =
                 ListSubstitution.fromList
                     (makeUnifiedSubstitution normalizedSubstitution)
+
+        -- Merge all conditions collected so far
+        let
+            (mergedConditionWithCounter, _) = -- TODO: Use this proof
+                give (sortTools tools)
+                $ mergeConditionsWithAnd
+                    [ startCondition  -- from initial configuration
+                    , axiomRequires  -- from axiom
+                    , unificationCondition  -- produced during unification
+                    , substitutionMergeCondition -- by merging substitutions
+                    , normalizedCondition -- from normalizing the substitution
+                    ]
 
         -- Apply substitution to resulting configuration and conditions.
         rawResult <- substitute axiomRight unifiedSubstitution
@@ -297,10 +317,12 @@ stepWithAxiom
         (variableMapping2, substitutionProof) <-
             unificationProofStepVariablesToCommon
                 existingVars variableMapping1 rawSubstitutionProof
-
+        let
+            orElse :: a -> a -> a
+            p1 `orElse` p2 = if Predicate.isFalse condition then p2 else p1
         return
             ( ExpandedPattern
-                { term = result
+                { term = result `orElse` mkBottom
                 , predicate = condition
                 -- TODO(virgil): Can there be unused variables? Should we
                 -- remove them?
@@ -308,6 +330,7 @@ stepWithAxiom
                     mapSubstitutionVariables
                         configurationVariableToCommon
                         (removeAxiomVariables normalizedSubstitution)
+                    `orElse` []
                 }
             , simplifyStepProof
                 (StepProofCombined

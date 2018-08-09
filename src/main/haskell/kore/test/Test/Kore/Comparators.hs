@@ -20,8 +20,10 @@ import Kore.AST.PureML
 import Kore.Predicate.Predicate
 import Kore.Step.BaseStep
 import Kore.Step.Error
-import Kore.Step.ExpandedPattern as ExpandedPattern (ExpandedPattern (..))
-import Kore.Step.Function.Data   as AttemptedFunction (AttemptedFunction (..))
+import Kore.Step.ExpandedPattern as ExpandedPattern
+       ( ExpandedPattern (..) )
+import Kore.Step.Function.Data as AttemptedFunction
+       ( AttemptedFunction (..) )
 import Kore.Unification.Error
 import Kore.Unification.Unifier
 
@@ -520,10 +522,27 @@ instance (Show (variable level), EqualWithExplanation (variable level))
     => SumEqualWithExplanation (SubstitutionError level variable)
   where
     sumConstructorPair
-        (CircularVariableDependency a1) (CircularVariableDependency a2)
+        (CtorCircularVariableDependency a1) (CtorCircularVariableDependency a2)
       =
         SumConstructorSameWithArguments
-            (EqWrap "CircularVariableDependency" a1 a2)
+            (EqWrap "CtorCircularVariableDependency" a1 a2)
+    sumConstructorPair
+        a1@(CtorCircularVariableDependency _) a2
+      =
+        SumConstructorDifferent
+            (printWithExplanation a1) (printWithExplanation a2)
+    sumConstructorPair
+        (NonCtorCircularVariableDependency a1)
+        (NonCtorCircularVariableDependency a2)
+      =
+        SumConstructorSameWithArguments
+            (EqWrap "NonCtorCircularVariableDependency" a1 a2)
+    sumConstructorPair
+        a1@(NonCtorCircularVariableDependency _) a2
+      =
+        SumConstructorDifferent
+            (printWithExplanation a1) (printWithExplanation a2)
+
 
 instance (Show (variable level), EqualWithExplanation (variable level))
     => EqualWithExplanation (SubstitutionError level variable)

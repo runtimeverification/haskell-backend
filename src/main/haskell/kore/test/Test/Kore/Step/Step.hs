@@ -5,32 +5,34 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import Kore.AST.Common
-       ( Application (..), AstLocation (..), Id (..),
-       Pattern (ApplicationPattern), SymbolOrAlias (..), Variable )
-import Kore.AST.MetaOrObject
-import Kore.AST.PureToKore
-       ( patternKoreToPure )
-import Kore.ASTHelpers
-       ( ApplicationSorts(..) )
-import Kore.Building.AsAst
-import Kore.Building.Patterns
-import Kore.Building.Sorts
-import Kore.Error
-import Kore.IndexedModule.MetadataTools
-       ( MetadataTools (..), SortTools )
-import Kore.MetaML.AST
-       ( CommonMetaPattern )
-import Kore.Predicate.Predicate
-       ( makeTruePredicate )
-import Kore.Step.BaseStep
-import Kore.Step.ExpandedPattern as ExpandedPattern
-       ( CommonExpandedPattern, ExpandedPattern (..) )
-import Kore.Step.Step
-import Kore.Step.StepperAttributes
-import Kore.Unification.Unifier
-       ( FunctionalProof (..), UnificationProof (..) )
-import Kore.Variables.Fresh.IntCounter
+import           Kore.AST.Common
+                 ( Application (..), AstLocation (..), Id (..),
+                 Pattern (ApplicationPattern), SymbolOrAlias (..), Variable )
+import           Kore.AST.MetaOrObject
+import           Kore.AST.PureToKore
+                 ( patternKoreToPure )
+import           Kore.ASTHelpers
+                 ( ApplicationSorts (..) )
+import           Kore.Building.AsAst
+import           Kore.Building.Patterns
+import           Kore.Building.Sorts
+import           Kore.Error
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools (..), SortTools )
+import           Kore.MetaML.AST
+                 ( CommonMetaPattern )
+import           Kore.Predicate.Predicate
+                 ( makeTruePredicate )
+import qualified Kore.Predicate.Predicate as Predicate
+                 ( isFalse )
+import           Kore.Step.BaseStep
+import           Kore.Step.ExpandedPattern as ExpandedPattern
+                 ( CommonExpandedPattern, ExpandedPattern (..) )
+import           Kore.Step.Step
+import           Kore.Step.StepperAttributes
+import           Kore.Unification.Unifier
+                 ( FunctionalProof (..), UnificationProof (..) )
+import           Kore.Variables.Fresh.IntCounter
 
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions
@@ -187,6 +189,38 @@ test_single =
                         { axiomPatternLeft =
                             asPureMetaPattern
                                 (metaSigma (x1 PatternSort) (x1 PatternSort))
+                        , axiomPatternRight =
+                            asPureMetaPattern (x1 PatternSort)
+                        , axiomPatternRequires = makeTruePredicate
+                        }
+                    ]
+                )
+            )
+        , testCase "Fails to apply a simple axiom due to cycle."
+            -- Axiom: sigma(f(X1), X1) => X1
+            -- Start pattern: sigma(A1, A1)
+            -- Expected: empty result list
+            (assertEqualWithExplanation ""
+                []
+                (runStep
+                    mockMetadataTools
+                    ExpandedPattern
+                        { term =
+                            asPureMetaPattern
+                                ( metaSigma
+                                    (a1 PatternSort)
+                                    (a1 PatternSort)
+                                )
+                        , predicate = makeTruePredicate
+                        , substitution = []
+                        }
+                    [ AxiomPattern
+                        { axiomPatternLeft =
+                            asPureMetaPattern
+                                (metaSigma
+                                    (metaF (x1 PatternSort))
+                                    (x1 PatternSort)
+                                )
                         , axiomPatternRight =
                             asPureMetaPattern (x1 PatternSort)
                         , axiomPatternRequires = makeTruePredicate
@@ -559,10 +593,10 @@ runStep
     -> [AxiomPattern level]
     -> [(CommonExpandedPattern level, StepProof level)]
 runStep metadataTools configuration axioms =
-    fst $ runIntCounter
+    filter (not . Predicate.isFalse . ExpandedPattern.predicate . fst)
+    $ fst $ runIntCounter
         (sequence (step metadataTools configuration axioms))
         0
-
 
 runStepsPickFirst
     :: MetaOrObject level

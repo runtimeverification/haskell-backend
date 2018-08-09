@@ -14,6 +14,7 @@ module Kore.Predicate.Predicate
     , pattern PredicateFalse
     , pattern PredicateTrue
     , compactPredicatePredicate
+    , isFalse
     , makeAndPredicate
     , makeMultipleAndPredicate
     , makeCeilPredicate
@@ -31,12 +32,12 @@ module Kore.Predicate.Predicate
     , wrapPredicate
     ) where
 
-import           Data.List
-                 ( foldl' )
-import           Data.Reflection
-                 ( Given )
-import           Data.Set
-                 ( Set )
+import Data.List
+       ( foldl' )
+import Data.Reflection
+       ( Given )
+import Data.Set
+       ( Set )
 
 import Kore.AST.Common
        ( SortedVariable, Variable )
@@ -115,6 +116,12 @@ pattern PredicateTrue :: Predicate level var
 
 pattern PredicateFalse <- GenericPredicate(Bottom_ _)
 pattern PredicateTrue <- GenericPredicate(Top_ _)
+
+{-|'isFalse' checks whether a predicate matches 'PredicateFalse'.
+-}
+isFalse :: Predicate level var -> Bool
+isFalse PredicateFalse = True
+isFalse _ = False
 
 {--| 'makeMultipleAndPredicate' combines a list of Predicates with 'and',
 doing some simplification.
