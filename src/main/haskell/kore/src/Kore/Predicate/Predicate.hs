@@ -25,23 +25,25 @@ module Kore.Predicate.Predicate
     , makeNotPredicate
     , makeOrPredicate
     , makeTruePredicate
+    , allVariables
+    , mapVariables
     , stringFromPredicate
     , unwrapPredicate
-    , variableSetFromPredicate
     , wrapPredicate
     ) where
 
-import           Data.List
-                 ( foldl' )
-import           Data.Reflection
-                 ( Given )
-import qualified Data.Set as Set
+import Data.List
+       ( foldl' )
+import Data.Reflection
+       ( Given )
+import Data.Set
+       ( Set )
 
 import Kore.AST.Common
        ( SortedVariable, Variable )
 import Kore.AST.MetaOrObject
 import Kore.AST.PureML
-       ( PureMLPattern )
+       ( PureMLPattern, mapPatternVariables )
 import Kore.ASTUtils.SmartConstructors
        ( mkAnd, mkBottom, mkCeil, mkEquals, mkIff, mkImplies, mkNot, mkOr,
        mkTop )
@@ -49,6 +51,8 @@ import Kore.ASTUtils.SmartPatterns
        ( pattern Bottom_, pattern Top_ )
 import Kore.IndexedModule.MetadataTools
        ( SortTools )
+import Kore.Variables.Free
+       ( pureAllVariables )
 
 {--| 'PredicateProof' is a placeholder for a proof showing that a Predicate
 evaluation was correct.
@@ -85,14 +89,6 @@ treating it as an opaque entity seems useful.
 -}
 stringFromPredicate :: GenericPredicate String -> String
 stringFromPredicate (GenericPredicate x) = x
-
-{- 'variableSetFromPredicate' extracts a set of variables from a
-GenericPredicate, useful in tests. This could be replaced by a generic
-extractor, but, for now, treating it as an opaque entity seems useful.
--}
-variableSetFromPredicate
-    :: GenericPredicate (Set.Set (variable level)) -> Set.Set (variable level)
-variableSetFromPredicate (GenericPredicate vars) = vars
 
 {- 'wrapPredicate' wraps a pattern in a GenericPredicate. This is intended for
 predicate evaluation and tests and should not be used outside of that.
@@ -286,3 +282,13 @@ makeFalsePredicate
     => Predicate level var
 makeFalsePredicate =
     GenericPredicate mkBottom
+
+{- | Replace all variables in a @Predicate@ using the provided mapping.
+-}
+mapVariables :: (from level -> to level) -> Predicate level from -> Predicate level to
+mapVariables f = fmap (mapPatternVariables f)
+
+{- | Extract the set of all (free and bound) variables from a @Predicate@.
+-}
+allVariables :: Ord (var level) => Predicate level var -> Set (var level)
+allVariables = pureAllVariables . unwrapPredicate

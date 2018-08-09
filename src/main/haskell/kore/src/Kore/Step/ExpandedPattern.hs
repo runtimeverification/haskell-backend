@@ -25,26 +25,27 @@ import           Data.Reflection
                  ( Given )
 import qualified Data.Set as Set
 
-import Kore.AST.Common
-       ( SortedVariable, Variable )
-import Kore.AST.MetaOrObject
-import Kore.AST.PureML
-       ( PureMLPattern, mapPatternVariables )
-import Kore.ASTUtils.SmartConstructors
-       ( mkAnd, mkBottom )
-import Kore.ASTUtils.SmartPatterns
-       ( pattern Bottom_, pattern Top_)
-import Kore.IndexedModule.MetadataTools
-       ( SortTools )
-import Kore.Predicate.Predicate
-       ( Predicate, pattern PredicateFalse, pattern PredicateTrue,
-       makeFalsePredicate, unwrapPredicate, variableSetFromPredicate )
-import Kore.Step.Substitution
-       ( substitutionToPredicate )
-import Kore.Unification.Unifier
-       ( UnificationSubstitution, mapSubstitutionVariables )
-import Kore.Variables.Free
-       ( pureAllVariables )
+import           Kore.AST.Common
+                 ( SortedVariable, Variable )
+import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+                 ( PureMLPattern, mapPatternVariables )
+import           Kore.ASTUtils.SmartConstructors
+                 ( mkAnd, mkBottom )
+import           Kore.ASTUtils.SmartPatterns
+                 ( pattern Bottom_, pattern Top_ )
+import           Kore.IndexedModule.MetadataTools
+                 ( SortTools )
+import           Kore.Predicate.Predicate
+                 ( Predicate, pattern PredicateFalse, pattern PredicateTrue,
+                 makeFalsePredicate, unwrapPredicate )
+import qualified Kore.Predicate.Predicate as Predicate
+import           Kore.Step.Substitution
+                 ( substitutionToPredicate )
+import           Kore.Unification.Unifier
+                 ( UnificationSubstitution, mapSubstitutionVariables )
+import           Kore.Variables.Free
+                 ( pureAllVariables )
 
 {-|'ExpandedPattern' is a representation of a PureMLPattern that is easier
 to use when executing Kore.
@@ -82,7 +83,7 @@ mapVariables
   =
     ExpandedPattern
         { term = mapPatternVariables variableMapper term
-        , predicate = fmap (mapPatternVariables variableMapper) predicate
+        , predicate = Predicate.mapVariables variableMapper predicate
         , substitution = mapSubstitutionVariables variableMapper substitution
         }
 
@@ -97,7 +98,7 @@ allVariables
     ExpandedPattern { term, predicate, substitution }
   =
     pureAllVariables term
-    <> variableSetFromPredicate (fmap pureAllVariables predicate)
+    <> Predicate.allVariables predicate
     <> allSubstitutionVars substitution
   where
     allSubstitutionVars sub =

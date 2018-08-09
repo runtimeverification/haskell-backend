@@ -88,6 +88,7 @@ test_single =
                     [ AxiomPattern
                         { axiomPatternLeft = asPureMetaPattern (x1 PatternSort)
                         , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
+                        , axiomPatternRequires = makeTruePredicate
                         }
                     ]
                 )
@@ -151,6 +152,7 @@ test_single =
                     [ AxiomPattern
                         { axiomPatternLeft = asPureMetaPattern (x1 PatternSort)
                         , axiomPatternRight = asPureMetaPattern (x1 PatternSort)
+                        , axiomPatternRequires = makeTruePredicate
                         }
                     , AxiomPattern
                         { axiomPatternLeft = asPureMetaPattern (x1 PatternSort)
@@ -160,6 +162,7 @@ test_single =
                                     (x1 PatternSort)
                                     (x1 PatternSort)
                                 )
+                        , axiomPatternRequires = makeTruePredicate
                         }
                     ]
                 )
@@ -188,6 +191,7 @@ test_single =
                                 (metaSigma (x1 PatternSort) (x1 PatternSort))
                         , axiomPatternRight =
                             asPureMetaPattern (x1 PatternSort)
+                        , axiomPatternRequires = makeTruePredicate
                         }
                     ]
                 )
@@ -219,6 +223,7 @@ test_single =
                                 )
                         , axiomPatternRight =
                             asPureMetaPattern (x1 PatternSort)
+                        , axiomPatternRequires = makeTruePredicate
                         }
                     ]
                 )
@@ -271,6 +276,7 @@ test_multiple =
                             asPureMetaPattern (metaF (x1 PatternSort))
                         , axiomPatternRight =
                             asPureMetaPattern (metaG (x1 PatternSort))
+                        , axiomPatternRequires = makeTruePredicate
                         }
                     ]
                 )
@@ -335,12 +341,14 @@ test_multiple =
                             asPureMetaPattern (metaF (x1 PatternSort))
                         , axiomPatternRight =
                             asPureMetaPattern (metaG (x1 PatternSort))
+                        , axiomPatternRequires = makeTruePredicate
                         }
                     , AxiomPattern
                         { axiomPatternLeft =
                             asPureMetaPattern (metaG (x1 PatternSort))
                         , axiomPatternRight =
                             asPureMetaPattern (metaH (x1 PatternSort))
+                        , axiomPatternRequires = makeTruePredicate
                         }
                     ]
                 )
@@ -388,12 +396,14 @@ test_multiple =
                             asPureMetaPattern (metaF (x1 PatternSort))
                         , axiomPatternRight =
                             asPureMetaPattern (metaG (x1 PatternSort))
+                        , axiomPatternRequires = makeTruePredicate
                         }
                     , AxiomPattern
                         { axiomPatternLeft =
                             asPureMetaPattern (metaG (x1 PatternSort))
                         , axiomPatternRight =
                             asPureMetaPattern (metaH (x1 PatternSort))
+                        , axiomPatternRequires = makeTruePredicate
                         }
                     ]
                 )
@@ -424,12 +434,14 @@ test_multiple =
                             asPureMetaPattern (metaF (x1 PatternSort))
                         , axiomPatternRight =
                             asPureMetaPattern (metaG (x1 PatternSort))
+                        , axiomPatternRequires = makeTruePredicate
                         }
                     , AxiomPattern
                         { axiomPatternLeft =
                             asPureMetaPattern (metaG (x1 PatternSort))
                         , axiomPatternRight =
                             asPureMetaPattern (metaH (x1 PatternSort))
+                        , axiomPatternRequires = makeTruePredicate
                         }
                     ]
                 )

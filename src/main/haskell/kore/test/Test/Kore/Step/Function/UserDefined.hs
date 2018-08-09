@@ -65,6 +65,7 @@ test_userDefinedFunction =
                         asPureMetaPattern (metaF (x PatternSort))
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
+                    , axiomPatternRequires = makeTruePredicate
                     }
                 (mockConditionEvaluator [])
                 (mockFunctionEvaluator [])
@@ -86,6 +87,29 @@ test_userDefinedFunction =
                         asPureMetaPattern (metaF (x PatternSort))
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
+                    , axiomPatternRequires = makeTruePredicate
+                    }
+                (mockConditionEvaluator
+                    [   ( makeTruePredicate
+                        , (makeTruePredicate, PredicateProof)
+                        )
+                    ]
+                )
+                (mockFunctionEvaluator [])
+                (asApplication (metaF (x PatternSort)))
+            )
+        )
+    , testCase "Cannot apply step with unsat axiom pre-condition"
+        (assertEqualWithExplanation "f(x) => g(x) requires false"
+            (AttemptedFunction.Applied ExpandedPattern.bottom)
+            (evaluateWithAxiom
+                mockMetadataTools
+                AxiomPattern
+                    { axiomPatternLeft  =
+                        asPureMetaPattern (metaF (x PatternSort))
+                    , axiomPatternRight =
+                        asPureMetaPattern (metaG (x PatternSort))
+                    , axiomPatternRequires = makeFalsePredicate
                     }
                 (mockConditionEvaluator
                     [   ( makeTruePredicate
@@ -107,6 +131,7 @@ test_userDefinedFunction =
                         asPureMetaPattern (metaF (x PatternSort))
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
+                    , axiomPatternRequires = makeTruePredicate
                     }
                 (mockConditionEvaluator
                     [   ( makeTruePredicate
@@ -133,6 +158,7 @@ test_userDefinedFunction =
                         asPureMetaPattern (metaF (x PatternSort))
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
+                    , axiomPatternRequires = makeTruePredicate
                     }
                 (mockConditionEvaluator
                      -- TODO: Remove these true->true mappings.
@@ -167,6 +193,7 @@ test_userDefinedFunction =
                         asPureMetaPattern (metaF (x PatternSort))
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
+                    , axiomPatternRequires = makeTruePredicate
                     }
                 (mockConditionEvaluator
                     [   ( makeTruePredicate
@@ -210,6 +237,7 @@ test_userDefinedFunction =
                             (metaSigma (x PatternSort) (x PatternSort))
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
+                    , axiomPatternRequires = makeTruePredicate
                     }
                 (mockConditionEvaluator
                     [   ( makeTruePredicate
@@ -246,6 +274,7 @@ test_userDefinedFunction =
                             (metaSigma (x PatternSort) (x PatternSort))
                     , axiomPatternRight =
                         asPureMetaPattern (metaG (x PatternSort))
+                    , axiomPatternRequires = makeTruePredicate
                     }
                 (mockConditionEvaluator
                      -- TODO: Remove these true->true mappings.

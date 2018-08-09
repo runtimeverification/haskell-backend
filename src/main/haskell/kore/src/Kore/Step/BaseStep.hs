@@ -37,9 +37,8 @@ import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SortTools )
 import           Kore.Predicate.Predicate
                  ( Predicate, PredicateProof (..), makeFalsePredicate,
-                 makeMultipleAndPredicate, variableSetFromPredicate )
+                 makeMultipleAndPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
-                 ( isFalse )
 import           Kore.Step.AxiomPatterns
 import           Kore.Step.Condition.Condition
                  ( ConditionSort (..) )
@@ -197,8 +196,11 @@ stepWithAxiom
     AxiomPattern
         { axiomPatternLeft = axiomLeftRaw
         , axiomPatternRight = axiomRightRaw
+        , axiomPatternRequires = axiomRequiresRaw
         }
   = do
+    -- Distinguish configuration (pattern) and axiom variables by lifting them
+    -- into 'StepperVariable'.
     let
         wrappedExpandedPattern =
             ExpandedPattern.mapVariables ConfigurationVariable expandedPattern
@@ -209,12 +211,17 @@ stepWithAxiom
         wrapAxiomVariables = mapPatternVariables AxiomVariable
         axiomLeft = wrapAxiomVariables axiomLeftRaw
         axiomRight = wrapAxiomVariables axiomRightRaw
+        axiomRequires = Predicate.mapVariables AxiomVariable axiomRequiresRaw
 
     let
+        -- Keep a set of all variables for remapping errors (below).
         existingVars =
             ExpandedPattern.allVariables expandedPattern
             <> pureAllVariables axiomLeftRaw
             <> pureAllVariables axiomRightRaw
+            <> Predicate.allVariables axiomRequiresRaw
+
+        -- Remap unification and substitution errors into 'StepError'.
         normalizeUnificationError
             :: MetaOrObject level
             => a
@@ -225,10 +232,14 @@ stepWithAxiom
         normalizeUnificationError bottom existingVariables action =
             stepperVariableToVariableForError
                 existingVariables (unificationToStepError bottom action)
+
         normalizeSubstitutionError bottom action =
             stepperVariableToVariableForError
                 existingVars (substitutionToStepError bottom action)
 
+    -- Unify the left-hand side of the rewriting axiom with the initial
+    -- configuration, producing a substitution (instantiating the axiom to the
+    -- configuration) subject to a predicate.
     (     unificationSubstitution
         , unificationCondition
         , rawSubstitutionProof
@@ -242,6 +253,9 @@ stepWithAxiom
                     startPattern
                 )
 
+    -- Combine the substitution produced by unification with the initial
+    -- substitution carried by the configuration. Merging substitutions may
+    -- produce another predicate during symbolic execution.
     (     substitutionMergeCondition
         , substitution
         , _  -- TODO: Use this proof
@@ -272,16 +286,19 @@ stepWithAxiom
                 ListSubstitution.fromList
                     (makeUnifiedSubstitution normalizedSubstitution)
 
+        -- Merge all conditions collected so far
         let
             (mergedConditionWithCounter, _) = -- TODO: Use this proof
                 give (sortTools tools)
                 $ mergeConditionsWithAnd
-                    [ startCondition
-                    , unificationCondition
-                    , substitutionMergeCondition
-                    , normalizedCondition
+                    [ startCondition  -- from initial configuration
+                    , axiomRequires  -- from axiom
+                    , unificationCondition  -- produced during unification
+                    , substitutionMergeCondition -- by merging substitutions
+                    , normalizedCondition -- from normalizing the substitution
                     ]
 
+        -- Apply substitution to resulting configuration and conditions.
         rawResult <- substitute axiomRight unifiedSubstitution
 
         normalizedMergedCondition <- mergedConditionWithCounter
@@ -290,6 +307,8 @@ stepWithAxiom
                 (`substitute` unifiedSubstitution)
                 normalizedMergedCondition
 
+        -- Unwrap internal 'StepperVariable's and collect the variable mappings
+        -- for the proof.
         (variableMapping, result) <-
             patternStepVariablesToCommon existingVars Map.empty rawResult
         (variableMapping1, condition) <-
@@ -324,6 +343,8 @@ stepWithAxiom
                 )
             )
   where
+    -- | Unwrap 'StepperVariable's so that errors are not expressed in terms of
+    -- internally-defined variables.
     stepperVariableToVariableForError
         :: MetaOrObject level
         => Set.Set (Variable level)
@@ -343,6 +364,7 @@ stepWithAxiom
                 return $ mapStepErrorVariables
                     configurationVariableToCommon errorWithoutAxiomVars
             Right result -> Right result
+
     variablePairToRenaming
         :: (StepperVariable level, StepperVariable level)
         -> VariableRenaming level
@@ -540,7 +562,7 @@ predicateStepVariablesToCommon
         , Predicate level Variable
         )
 predicateStepVariablesToCommon existingVars mapped predicate' = do
-    let axiomVars = variableSetFromPredicate (fmap pureAllVariables predicate')
+    let axiomVars = Predicate.allVariables predicate'
     mapping <-
         addAxiomVariablesAsConfig existingVars mapped (Set.toList axiomVars)
     return
