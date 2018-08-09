@@ -14,16 +14,17 @@ module Kore.Step.StepperAttributes
   , constructorAttribute
   ) where
 
+import Control.Monad ( foldM )
 import Data.Default
 
 import Kore.AST.Kore
-       (CommonKorePattern)
+       ( CommonKorePattern )
 import Kore.AST.Sentence
-       (Attributes (..))
+       ( Attributes (..) )
+import Kore.Attribute.Parser ( ParseAttributes (..) )
+import qualified Kore.Attribute.Parser as Attribute
 import Kore.Implicit.Attributes
-       (keyOnlyAttribute)
-import Kore.IndexedModule.IndexedModule
-       (ParsedAttributes (..))
+       ( keyOnlyAttribute )
 
 -- | Kore pattern representing a constructor attribute
 -- Would look something like @constructor{}()@ in ASCII Kore
@@ -59,16 +60,16 @@ instance Default StepperAttributes where
         , isConstructor = False
         }
 
-instance ParsedAttributes StepperAttributes where
+instance ParseAttributes StepperAttributes where
     parseAttributes (Attributes atts) =
-        foldr parseStepperAttribute def atts
+        foldM parseStepperAttribute def atts
 
 parseStepperAttribute
-    :: CommonKorePattern
-    -> StepperAttributes
-    -> StepperAttributes
-parseStepperAttribute attr parsedAttrs
-    | attr == constructorAttribute = parsedAttrs { isConstructor = True }
-    | attr == functionAttribute    = parsedAttrs { isFunction    = True }
-    | attr == functionalAttribute  = parsedAttrs { isFunctional  = True }
-    | otherwise                    = parsedAttrs
+    :: StepperAttributes
+    -> CommonKorePattern
+    -> Attribute.Parser StepperAttributes
+parseStepperAttribute parsedAttrs attr
+    | attr == constructorAttribute = pure (parsedAttrs { isConstructor = True })
+    | attr == functionAttribute    = pure (parsedAttrs { isFunction    = True })
+    | attr == functionalAttribute  = pure (parsedAttrs { isFunctional  = True })
+    | otherwise                    = pure parsedAttrs

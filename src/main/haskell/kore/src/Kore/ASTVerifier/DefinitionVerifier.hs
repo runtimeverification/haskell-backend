@@ -27,6 +27,8 @@ import Kore.AST.Sentence
 import Kore.ASTVerifier.AttributesVerifier
 import Kore.ASTVerifier.Error
 import Kore.ASTVerifier.ModuleVerifier
+import Kore.Attribute.Parser
+       ( ParseAttributes (..) )
 import Kore.Error
 import Kore.Implicit.Definitions
        ( uncheckedKoreModules )
@@ -52,7 +54,7 @@ e.g.:
 
 -}
 verifyDefinition
-    :: ParsedAttributes atts
+    :: ParseAttributes atts
     => AttributesVerification atts
     -> KoreDefinition
     -> Either (Error VerifyError) VerifySuccess
@@ -64,7 +66,7 @@ verifyDefinition attributesVerification definition = do
 collection of the definition's modules.
 -}
 verifyAndIndexDefinition
-    :: ParsedAttributes atts
+    :: ParseAttributes atts
     => AttributesVerification atts
     -> KoreDefinition
     -> Either (Error VerifyError) (Map.Map ModuleName (KoreIndexedModule atts))
@@ -75,7 +77,7 @@ verifyAndIndexDefinition attributesVerification definition = do
     foldM_ verifyUniqueNames defaultNames (definitionModules definition)
 
     indexedModules <-
-        foldM
+        castError $ foldM
             (indexModuleIfNeeded
                 implicitIndexedModule
                 nameToModule
@@ -93,13 +95,13 @@ verifyAndIndexDefinition attributesVerification definition = do
             (map (\m -> (moduleName m, m)) (definitionModules definition))
 
 defaultAttributesVerification
-    :: ParsedAttributes atts
+    :: ParseAttributes atts
     => Proxy atts
     -> AttributesVerification atts
 defaultAttributesVerification = VerifyAttributes
 
 indexImplicitModules
-    :: ParsedAttributes atts
+    :: ParseAttributes atts
     => Either
         (Error VerifyError)
         ( Map.Map ModuleName (KoreIndexedModule atts)
@@ -108,12 +110,13 @@ indexImplicitModules
         )
 indexImplicitModules = do
     defaultNames <- foldM verifyUniqueNames sortNames uncheckedKoreModules
-    (indexedModules, defaultModule) <- foldM
-        indexImplicitModule
-        ( Map.singleton defaultModuleName defaultModuleWithMetaSorts
-        , moduleWithMetaSorts
-        )
-        uncheckedKoreModules
+    (indexedModules, defaultModule) <-
+        castError $ foldM
+            indexImplicitModule
+            ( Map.singleton defaultModuleName defaultModuleWithMetaSorts
+            , moduleWithMetaSorts
+            )
+            uncheckedKoreModules
     return (indexedModules, defaultModule, defaultNames)
   where
     defaultModuleName = ModuleName "Default module"
@@ -127,7 +130,7 @@ indexImplicitModules = do
 containing only the 'kore' default module.
 -}
 verifyNormalKoreDefinition
-    :: ParsedAttributes atts
+    :: ParseAttributes atts
     => AttributesVerification atts
     -> KoreDefinition
     -> Either (Error VerifyError) (KoreIndexedModule atts)
@@ -145,7 +148,7 @@ verifyNormalKoreDefinition attributesVerification definition = do
 containing only the 'kore' default module.
 -}
 verifyImplicitKoreDefinition
-    :: ParsedAttributes atts
+    :: ParseAttributes atts
     => AttributesVerification atts
     -> KoreDefinition
     -> Either (Error VerifyError) (KoreIndexedModule atts)
