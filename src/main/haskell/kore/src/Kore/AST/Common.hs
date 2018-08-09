@@ -27,10 +27,11 @@ module Kore.AST.Common where
 import Control.DeepSeq
        ( NFData (..) )
 import Data.Deriving
-       ( deriveEq1, deriveOrd1, deriveShow1 )
+       ( deriveEq1, deriveOrd1, deriveShow1, makeLiftCompare, makeLiftEq,
+       makeLiftShowsPrec )
 import Data.Functor.Classes
 import Data.Functor.Foldable
-       ( Fix (..), cata )
+       ( Fix (..) )
 import Data.Hashable
 import Data.Proxy
 import Data.String
@@ -38,8 +39,7 @@ import Data.String
 import GHC.Generics
        ( Generic )
 
-import           Control.DeepSeq.Orphans ()
-import           Data.Text.Prettyprint.Doc.Orphans ()
+import           Data.Functor.Foldable.Orphans ()
 import           Kore.AST.MetaOrObject
 import           Kore.AST.Pretty
                  ( Pretty (..), (<>) )
@@ -1085,161 +1085,17 @@ data Pattern level variable child where
     VariablePattern
         :: !(variable level) -> Pattern level variable child
 
+$(return [])
+{- dummy top-level splice to make ''Pattern available for lifting -}
+
 instance (Ord level, Ord (variable level)) => Ord1 (Pattern level variable) where
-    liftCompare liftedCompare a b =
-        case (a, b) of
-            (AndPattern a', AndPattern b') -> liftCompare liftedCompare a' b'
-            (AndPattern _, _) -> LT
-            (_, AndPattern _) -> GT
-            (ApplicationPattern a', ApplicationPattern b') ->
-                liftCompare liftedCompare a' b'
-            (ApplicationPattern _, _) -> LT
-            (_, ApplicationPattern _) -> GT
-            (BottomPattern a', BottomPattern b') -> liftCompare liftedCompare a' b'
-            (BottomPattern _, _) -> LT
-            (_, BottomPattern _) -> GT
-            (CeilPattern a', CeilPattern b') -> liftCompare liftedCompare a' b'
-            (CeilPattern _, _) -> LT
-            (_, CeilPattern _) -> GT
-            (DomainValuePattern a', DomainValuePattern b') -> compare a' b'
-            (DomainValuePattern _, _) -> LT
-            (_, DomainValuePattern _) -> GT
-            (EqualsPattern a', EqualsPattern b') -> liftCompare liftedCompare a' b'
-            (EqualsPattern _, _) -> LT
-            (_, EqualsPattern _) -> GT
-            (ExistsPattern a', ExistsPattern b') -> liftCompare liftedCompare a' b'
-            (ExistsPattern _, _) -> LT
-            (_, ExistsPattern _) -> GT
-            (FloorPattern a', FloorPattern b') -> liftCompare liftedCompare a' b'
-            (FloorPattern _, _) -> LT
-            (_, FloorPattern _) -> GT
-            (ForallPattern a', ForallPattern b') -> liftCompare liftedCompare a' b'
-            (ForallPattern _, _) -> LT
-            (_, ForallPattern _) -> GT
-            (IffPattern a', IffPattern b') -> liftCompare liftedCompare a' b'
-            (IffPattern _, _) -> LT
-            (_, IffPattern _) -> GT
-            (ImpliesPattern a', ImpliesPattern b') -> liftCompare liftedCompare a' b'
-            (ImpliesPattern _, _) -> LT
-            (_, ImpliesPattern _) -> GT
-            (InPattern a', InPattern b') -> liftCompare liftedCompare a' b'
-            (InPattern _, _) -> LT
-            (_, InPattern _) -> GT
-            (NextPattern a', NextPattern b') -> liftCompare liftedCompare a' b'
-            (NextPattern _, _) -> LT
-            (_, NextPattern _) -> GT
-            (NotPattern a', NotPattern b') -> liftCompare liftedCompare a' b'
-            (NotPattern _, _) -> LT
-            (_, NotPattern _) -> GT
-            (OrPattern a', OrPattern b') -> liftCompare liftedCompare a' b'
-            (OrPattern _, _) -> LT
-            (_, OrPattern _) -> GT
-            (RewritesPattern a', RewritesPattern b') -> liftCompare liftedCompare a' b'
-            (RewritesPattern _, _) -> LT
-            (_, RewritesPattern _) -> GT
-            (StringLiteralPattern a', StringLiteralPattern b') -> compare a' b'
-            (StringLiteralPattern _, _) -> LT
-            (_, StringLiteralPattern _) -> GT
-            (CharLiteralPattern a', CharLiteralPattern b') -> compare a' b'
-            (CharLiteralPattern _, _) -> LT
-            (_, CharLiteralPattern _) -> GT
-            (TopPattern a', TopPattern b') -> liftCompare liftedCompare a' b'
-            (TopPattern _, _) -> LT
-            (_, TopPattern _) -> GT
-            (VariablePattern a', VariablePattern b') -> compare a' b'
+    liftCompare liftedCompare a b = $(makeLiftCompare ''Pattern) liftedCompare a b
 
 instance (Eq level, Eq (variable level)) => Eq1 (Pattern level variable) where
-    liftEq liftedEq a b =
-        case (a, b) of
-            (AndPattern a', AndPattern b') -> liftEq liftedEq a' b'
-            (ApplicationPattern a', ApplicationPattern b') ->
-                liftEq liftedEq a' b'
-            (BottomPattern a', BottomPattern b') -> liftEq liftedEq a' b'
-            (CeilPattern a', CeilPattern b') -> liftEq liftedEq a' b'
-            (DomainValuePattern a', DomainValuePattern b') ->
-                a' == b'
-            (EqualsPattern a', EqualsPattern b') -> liftEq liftedEq a' b'
-            (ExistsPattern a', ExistsPattern b') -> liftEq liftedEq a' b'
-            (FloorPattern a', FloorPattern b') -> liftEq liftedEq a' b'
-            (ForallPattern a', ForallPattern b') -> liftEq liftedEq a' b'
-            (IffPattern a', IffPattern b') -> liftEq liftedEq a' b'
-            (ImpliesPattern a', ImpliesPattern b') -> liftEq liftedEq a' b'
-            (InPattern a', InPattern b') -> liftEq liftedEq a' b'
-            (NextPattern a', NextPattern b') -> liftEq liftedEq a' b'
-            (NotPattern a', NotPattern b') -> liftEq liftedEq a' b'
-            (OrPattern a', OrPattern b') -> liftEq liftedEq a' b'
-            (RewritesPattern a', RewritesPattern b') -> liftEq liftedEq a' b'
-            (StringLiteralPattern a', StringLiteralPattern b') -> a' == b'
-            (CharLiteralPattern a', CharLiteralPattern b') -> a' == b'
-            (TopPattern a', TopPattern b') -> liftEq liftedEq a' b'
-            (VariablePattern a', VariablePattern b') -> a' == b'
-            _ -> False
+    liftEq liftedEq a b = $(makeLiftEq ''Pattern) liftedEq a b
 
 instance (Show level, Show (variable level)) => Show1 (Pattern level variable) where
-    liftShowsPrec showsPrec_ showList_ prec pat =
-        showParen (prec > 9)
-        (case pat of
-            AndPattern pat' ->
-                showString "AndPattern "
-                . liftShowsPrec showsPrec_ showList_ 10 pat'
-            ApplicationPattern pat' ->
-                showString "ApplicationPattern "
-                . liftShowsPrec showsPrec_ showList_ 10 pat'
-            BottomPattern pat' ->
-                showString "BottomPattern "
-                . liftShowsPrec showsPrec_ showList_ 10 pat'
-            CeilPattern pat' ->
-                showString "CeilPattern "
-                . liftShowsPrec showsPrec_ showList_ 10 pat'
-            DomainValuePattern pat' ->
-                showString "DomainValuePattern "
-                . showsPrec 10 pat'
-            EqualsPattern pat' ->
-                showString "EqualsPattern "
-                . liftShowsPrec showsPrec_ showList_ 10 pat'
-            ExistsPattern pat' ->
-                showString "ExistsPattern "
-                . liftShowsPrec showsPrec_ showList_ 10 pat'
-            FloorPattern pat' ->
-                showString "FloorPattern "
-                . liftShowsPrec showsPrec_ showList_ 10 pat'
-            ForallPattern pat' ->
-                showString "ForallPattern "
-                . liftShowsPrec showsPrec_ showList_ 10 pat'
-            IffPattern pat' ->
-                showString "IffPattern "
-                . liftShowsPrec showsPrec_ showList_ 10 pat'
-            ImpliesPattern pat' ->
-                showString "ImpliesPattern "
-                . liftShowsPrec showsPrec_ showList_ 10 pat'
-            InPattern pat' ->
-                showString "InPattern "
-                . liftShowsPrec showsPrec_ showList_ 10 pat'
-            NextPattern pat' ->
-                showString "NextPattern "
-                . liftShowsPrec showsPrec_ showList_ 10 pat'
-            NotPattern pat' ->
-                showString "NotPattern "
-                . liftShowsPrec showsPrec_ showList_ 10 pat'
-            OrPattern pat' ->
-                showString "OrPattern "
-                . liftShowsPrec showsPrec_ showList_ 10 pat'
-            RewritesPattern pat' ->
-                showString "RewritesPattern "
-                . liftShowsPrec showsPrec_ showList_ 10 pat'
-            StringLiteralPattern pat' ->
-                showString "StringLiteralPattern "
-                . showsPrec 10 pat'
-            CharLiteralPattern pat' ->
-                showString "CharLiteralPattern "
-                . showsPrec 10 pat'
-            TopPattern pat' ->
-                showString "TopPattern "
-                . liftShowsPrec showsPrec_ showList_ 10 pat'
-            VariablePattern pat' ->
-                showString "VariablePattern "
-                . showsPrec 10 pat'
-        )
+    liftShowsPrec = $(makeLiftShowsPrec ''Pattern)
 
 -- instance Generic child => Generic (Pattern level variable child)
 
@@ -1249,28 +1105,26 @@ instance (Show level, Show (variable level)) => Show1 (Pattern level variable) w
 instance (Hashable child, Hashable (variable level))
  => Hashable (Pattern level variable child) where
   hashWithSalt s = \case
-    AndPattern           p -> hashWithSalt s p
-    ApplicationPattern   p -> hashWithSalt s p
-    BottomPattern        p -> hashWithSalt s p
-    CeilPattern          p -> hashWithSalt s p
-    DomainValuePattern   p -> hashWithSalt s
-        (domainValueSort p, cata (hashWithSalt s) (domainValueChild p))
-    EqualsPattern        p -> hashWithSalt s p
-    ExistsPattern        p -> hashWithSalt s p
-    FloorPattern         p -> hashWithSalt s p
-    ForallPattern        p -> hashWithSalt s p
-    IffPattern           p -> hashWithSalt s p
-    ImpliesPattern       p -> hashWithSalt s p
-    InPattern            p -> hashWithSalt s p
-    NextPattern          p -> hashWithSalt s p
-    NotPattern           p -> hashWithSalt s p
-    OrPattern            p -> hashWithSalt s p
-    RewritesPattern      p -> hashWithSalt s p
-    StringLiteralPattern p -> hashWithSalt s p
-    CharLiteralPattern   p -> hashWithSalt s p
-    TopPattern           p -> hashWithSalt s p
-    VariablePattern      p -> hashWithSalt s p
-    -- FIXME: How to factor this out? with existentials?
+    AndPattern           p -> s `hashWithSalt` (0::Int) `hashWithSalt` p
+    ApplicationPattern   p -> s `hashWithSalt` (1::Int) `hashWithSalt` p
+    BottomPattern        p -> s `hashWithSalt` (2::Int) `hashWithSalt` p
+    CeilPattern          p -> s `hashWithSalt` (3::Int) `hashWithSalt` p
+    DomainValuePattern   p -> s `hashWithSalt` (4::Int) `hashWithSalt` p
+    EqualsPattern        p -> s `hashWithSalt` (5::Int) `hashWithSalt` p
+    ExistsPattern        p -> s `hashWithSalt` (6::Int) `hashWithSalt` p
+    FloorPattern         p -> s `hashWithSalt` (7::Int) `hashWithSalt` p
+    ForallPattern        p -> s `hashWithSalt` (8::Int) `hashWithSalt` p
+    IffPattern           p -> s `hashWithSalt` (9::Int) `hashWithSalt` p
+    ImpliesPattern       p -> s `hashWithSalt` (10::Int) `hashWithSalt` p
+    InPattern            p -> s `hashWithSalt` (11::Int) `hashWithSalt` p
+    NextPattern          p -> s `hashWithSalt` (12::Int) `hashWithSalt` p
+    NotPattern           p -> s `hashWithSalt` (13::Int) `hashWithSalt` p
+    OrPattern            p -> s `hashWithSalt` (14::Int) `hashWithSalt` p
+    RewritesPattern      p -> s `hashWithSalt` (15::Int) `hashWithSalt` p
+    StringLiteralPattern p -> s `hashWithSalt` (16::Int) `hashWithSalt` p
+    CharLiteralPattern   p -> s `hashWithSalt` (17::Int) `hashWithSalt` p
+    TopPattern           p -> s `hashWithSalt` (18::Int) `hashWithSalt` p
+    VariablePattern      p -> s `hashWithSalt` (19::Int) `hashWithSalt` p
 
 instance (NFData child, NFData (var level)) => NFData (Pattern level var child) where
     rnf =

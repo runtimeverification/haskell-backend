@@ -52,7 +52,7 @@ import Data.Deriving
 import Data.Functor.Foldable
 import Data.Text.Prettyprint.Doc
 
-import Data.Text.Prettyprint.Doc.Orphans ()
+import Data.Functor.Foldable.Orphans ()
 import Logic.Matching.Signature
 
 -- | The base functor of patterns
