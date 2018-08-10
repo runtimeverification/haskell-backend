@@ -115,6 +115,7 @@ mockStepperAttributes patternHead = StepperAttributes
     { isConstructor = patternHead /= getSentenceSymbolOrAliasHead a2 []
     , isFunctional = patternHead /= getSentenceSymbolOrAliasHead a3 []
     , isFunction = False
+    , hook = Nothing
     }
 
 mockGetArgumentSorts :: SymbolOrAlias Object -> [Sort Object]

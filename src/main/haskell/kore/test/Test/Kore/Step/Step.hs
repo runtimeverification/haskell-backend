@@ -453,6 +453,7 @@ mockStepperAttributes = StepperAttributes
     { isConstructor = True
     , isFunctional = True
     , isFunction = False
+    , hook = Nothing
     }
 
 mockSortTools :: SortTools Meta

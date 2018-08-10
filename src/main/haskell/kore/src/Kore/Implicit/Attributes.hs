@@ -13,6 +13,7 @@ Portability : POSIX
 
 module Kore.Implicit.Attributes
     ( ImplicitAttributes
+    , attributeHead
     , keyOnlyAttribute
     ) where
 

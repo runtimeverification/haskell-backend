@@ -3,7 +3,7 @@ module Test.Kore.Step.StepperAttributes (test_stepperAttributes) where
 import Test.Tasty
        ( TestTree )
 import Test.Tasty.HUnit
-       ( assertEqual, testCase )
+       ( Assertion, assertEqual, assertFailure, testCase )
 
 import Data.Default
        ( def )
@@ -30,51 +30,76 @@ parseStepperAttributes atts = parseAttributes (Attributes atts)
 testAttribute :: CommonKorePattern
 testAttribute = keyOnlyAttribute "test"
 
+badHookAttribute :: CommonKorePattern
+badHookAttribute = keyOnlyAttribute "hook"
+
+expectError :: Show a => String -> Either (Error Attribute.ParseError) a -> Assertion
+expectError _ (Left _) = pure ()
+expectError what (Right got) =
+    assertFailure
+    ("expected error parsing '" ++ what
+     ++ "', but got: '" ++ show got ++ "'")
+
 test_stepperAttributes :: [TestTree]
 test_stepperAttributes =
     [ testCase "Parsing a constructor attribute"
-        (assertEqual ""
-            (Right def {isConstructor = True})
-            (parseStepperAttributes [constructorAttribute])
+        (assertEqual "[constructor{}()]"
+            (Right True)
+            (isConstructor <$> parseStepperAttributes [constructorAttribute])
         )
     , testCase "Parsing a function attribute"
-        (assertEqual ""
-            (Right def {isFunction = True})
-            (parseStepperAttributes [functionAttribute])
-        )
-    , testCase "Testing isFunction"
-        (assertEqual ""
+        (assertEqual "[function{}()]"
             (Right True)
             (isFunction <$> parseStepperAttributes [functionAttribute])
         )
     , testCase "Parsing a functional attribute"
-        (assertEqual ""
-            (Right def {isFunctional = True})
-            (parseStepperAttributes [functionalAttribute])
+        (assertEqual "[functional{}()]"
+            (Right True)
+            (isFunctional <$> parseStepperAttributes [functionalAttribute])
         )
-    , testCase "Parsing a functional attribute"
-        (assertEqual ""
-            (Right def {isFunctional = True})
-            (parseStepperAttributes [functionalAttribute])
+    , testCase "Parsing a hook attribute"
+        (assertEqual "[function{}(),hook{}(\"builtin\")]"
+            (Right (Just "builtin"))
+            (hook <$>
+                parseStepperAttributes
+                [ functionAttribute
+                , hookAttribute "builtin"
+                ]
+            )
+        )
+    , testCase "Parsing an illegal hook attribute"
+        (expectError "[hook{}()]"
+            (parseStepperAttributes [ badHookAttribute ])
+        )
+    , testCase "Parsing repeated hook attribute"
+        (expectError
+            "[function{}(),hook{}(\"BUILTIN.1\"),hook{}(\"BUILTIN.2\")]"
+            (parseStepperAttributes [ badHookAttribute ])
+        )
+    , testCase "Parsing hook attribute without function attribute"
+        (expectError "[hook{}(\"builtin\")]"
+            (parseStepperAttributes [ hookAttribute "builtin" ])
         )
     , testCase "Ignoring unknown attribute"
-        (assertEqual ""
+        (assertEqual "[test{}()]"
             (Right def)
             (parseStepperAttributes
                 [testAttribute]
             )
         )
     , testCase "Testing parseAttributes"
-        (assertEqual ""
+        (assertEqual "[functional{}(),function{}(),hook{}(\"builtin\")]"
             (Right StepperAttributes
                 { isFunction = True
                 , isFunctional = True
                 , isConstructor = False
+                , hook = Just "builtin"
                 })
             (parseStepperAttributes
                 [ functionAttribute
                 , functionalAttribute
                 , testAttribute
+                , hookAttribute "builtin"
                 ]
             )
         )

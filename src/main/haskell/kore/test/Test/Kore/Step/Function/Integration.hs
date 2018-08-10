@@ -309,6 +309,7 @@ mockStepperAttributes = StepperAttributes
     { isConstructor = True
     , isFunctional = True
     , isFunction = True
+    , hook = Nothing
     }
 
 mockMetadataTools :: MetadataTools Meta StepperAttributes

@@ -1141,6 +1141,7 @@ mockStepperAttributes patternHead =
     { isConstructor = patternHead /= hSymbol
     , isFunctional  = True
     , isFunction    = True
+    , hook          = Nothing
     }
 
 mockSortTools :: SortTools Meta

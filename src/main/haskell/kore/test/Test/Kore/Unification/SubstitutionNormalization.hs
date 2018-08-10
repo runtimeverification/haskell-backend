@@ -217,6 +217,7 @@ mockStepperAttributes = StepperAttributes
     { isConstructor = False
     , isFunctional = True
     , isFunction = False
+    , hook = Nothing
     }
 
 mockSortTools :: MetaOrObject level => SortTools level
