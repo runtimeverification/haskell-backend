@@ -6653,10 +6653,21 @@ Back-ends that care more about proving and want to have \emph{certificates} for
 whatever they do need to use axioms instead of attributes to generate proof 
 objects and prove them in matching logic provers.
 
-Attributes are written as comma-separated patterns wrapped with brackets 
-``\texttt{[}'' and ``\texttt{]}''.
+Attributes are written as comma-separated object-level application patterns
+wrapped with brackets ``\texttt{[}'' and ``\texttt{]}''.
+The order of attributes in the list is never significant.
+Back-ends may place restrictions on recognized attributes, such as restricting
+the number or sort of arguments or the number of times an attribute may appear
+in the list.
 \begin{grammar}
-<attribute> ::= `[' <pattern-list> `]'
+<attributes> ::= `[' <attribute-list> `]'
+
+<attribute-list> ::= \quad
+\alt $\epsilon$ 
+\alt <attribute>
+\alt <attribute> `,' <attribute-list>
+
+<attribute> ::= <object-head> `(' <pattern-list> `)'
 \end{grammar}
 
 
@@ -6671,7 +6682,7 @@ axiom.
 
 <module> ::= \quad
 \alt `module' <module-name> <declaration>$^*$ 
-`endmodule' <attribute>
+`endmodule' <attributes>
 
 <declaration> ::= \quad
 \alt <import-declaration>
@@ -6681,11 +6692,11 @@ axiom.
 \alt <axiom-declaration>
 \alt <hook-declaration>
 
-<import-declaration> ::= `import' <module-name> <attribute>
+<import-declaration> ::= `import' <module-name> <attributes>
 
 <sort-declaration> ::= `sort'
 <object-sort-constructor>  `{' <object-sort-variable-list> `}' 
-<attribute>
+<attributes>
 
 <symbol-declaration> ::= <object-symbol-declaration> | 
 <meta-symbol-declaration>
@@ -6693,12 +6704,12 @@ axiom.
 <object-symbol-declaration> ::= \quad
 \alt `symbol' <object-head-constructor> 
 `{' <object-sort-variable-list> `}' 
-`(' <object-sort-list> `)' `:' <object-sort> <attribute>
+`(' <object-sort-list> `)' `:' <object-sort> <attributes>
 
 <meta-symbol-declaration> ::= \quad
 \alt `symbol' <meta-head-constructor>
 `{'	<meta-sort-variable-list> `}'
- `(' <meta-sort-list> `)' `:' <meta-sort> <attribute>
+ `(' <meta-sort-list> `)' `:' <meta-sort> <attributes>
 
 <alias-declaration> ::= <object-alias-declaration> | <meta-alias-declaration> 
 
@@ -6712,7 +6723,7 @@ axiom.
 `(' <object-variable-list> `)' 
 `:='
 <object-pattern>
-<attribute>
+<attributes>
 
 <meta-alias-declaration> ::= \quad
 \alt `alias' <meta-head-constructor> 
@@ -6724,17 +6735,17 @@ axiom.
 `(' <meta-variable-list> `)' 
 `:='
 <meta-pattern>
-<attribute>
+<attributes>
 
 <axiom-declaration> ::= `axiom' `{' <sort-variable-list> `}' <pattern> 
-<attribute>
+<attributes>
 
 <hook-declaration> ::= \quad
 \alt `hooked-sort' <object-sort-constructor>  `{' <object-sort-variable-list> 
-`}' <attribute>
+`}' <attributes>
 \alt `hooked-symbol' <object-head-constructor> 
 `{' <object-sort-variable-list> `}' 
-`(' <object-sort-list> `)' `:' <object-sort> <attribute>
+`(' <object-sort-list> `)' `:' <object-sort> <attributes>
 
 <sort-variable-list> ::= \quad
 \alt $\epsilon$
@@ -6816,7 +6827,7 @@ A Kore definition contains an attribute and a sequence of modules.
 A Kore definition contains at least a module.
 
 \begin{grammar}\small
-<definition> ::= <attribute> <module>$^+$
+<definition> ::= <attributes> <module>$^+$
 \end{grammar}
 
 %Here are some examples of sort declarations in Kore.
