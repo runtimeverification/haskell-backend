@@ -46,7 +46,7 @@ import Kore.AST.Kore
 import Kore.AST.MetaOrObject
 import Kore.AST.Sentence
 import Kore.Attribute.Parser
-       ( ParseAttributes (..) )
+       ( ParseAttributes, parseAttributes )
 import Kore.Error
 import Kore.Implicit.ImplicitSorts
 

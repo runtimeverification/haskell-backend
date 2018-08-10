@@ -46,6 +46,7 @@ dependencies:
   - reflection
   - text
   - time
+  - unordered-containers
 
 build-tools:
   - tasty-discover

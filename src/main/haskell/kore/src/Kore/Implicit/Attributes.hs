@@ -38,7 +38,7 @@ instance Default ImplicitAttributes where
     def = ImplicitAttributes {}
 
 instance ParseAttributes ImplicitAttributes where
-    parseAttributes = const (pure def :: Attribute.Parser ImplicitAttributes)
+    attributesParser = pure def :: Attribute.Parser ImplicitAttributes
 
 attributeHead :: String -> SymbolOrAlias Object
 attributeHead = (`groundHead` AstLocationImplicit)

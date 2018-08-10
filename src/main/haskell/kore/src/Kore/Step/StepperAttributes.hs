@@ -14,13 +14,10 @@ module Kore.Step.StepperAttributes
   , constructorAttribute
   ) where
 
-import Control.Monad ( foldM )
 import Data.Default
 
 import Kore.AST.Kore
        ( CommonKorePattern )
-import Kore.AST.Sentence
-       ( Attributes (..) )
 import Kore.Attribute.Parser ( ParseAttributes (..) )
 import qualified Kore.Attribute.Parser as Attribute
 import Kore.Implicit.Attributes
@@ -60,16 +57,19 @@ instance Default StepperAttributes where
         , isConstructor = False
         }
 
-instance ParseAttributes StepperAttributes where
-    parseAttributes (Attributes atts) =
-        foldM parseStepperAttribute def atts
+hasFunctionalAttribute :: Attribute.Parser Bool
+hasFunctionalAttribute = Attribute.hasKeyAttribute "functional"
 
-parseStepperAttribute
-    :: StepperAttributes
-    -> CommonKorePattern
-    -> Attribute.Parser StepperAttributes
-parseStepperAttribute parsedAttrs attr
-    | attr == constructorAttribute = pure (parsedAttrs { isConstructor = True })
-    | attr == functionAttribute    = pure (parsedAttrs { isFunction    = True })
-    | attr == functionalAttribute  = pure (parsedAttrs { isFunctional  = True })
-    | otherwise                    = pure parsedAttrs
+hasFunctionAttribute :: Attribute.Parser Bool
+hasFunctionAttribute = Attribute.hasKeyAttribute "function"
+
+hasConstructorAttribute :: Attribute.Parser Bool
+hasConstructorAttribute = Attribute.hasKeyAttribute "constructor"
+
+instance ParseAttributes StepperAttributes where
+    attributesParser =
+        do
+            isFunctional <- hasFunctionalAttribute
+            isFunction <- hasFunctionAttribute
+            isConstructor <- hasConstructorAttribute
+            pure StepperAttributes {..}
