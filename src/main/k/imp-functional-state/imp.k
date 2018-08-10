@@ -1,4 +1,6 @@
-module IMP2-SYNTAX
+require "../lib/state.k"
+
+module IMP-SYNTAX
   imports DOMAINS-SYNTAX
   syntax AExp  ::= Int | Id
                  | "-" Int
@@ -22,36 +24,8 @@ module IMP2-SYNTAX
   syntax Ids ::= List{Id,","}  
 endmodule
 
-module STATE
-  imports K-EQUAL
-
-  syntax StateKey
-  syntax StateValue
-  syntax State ::= ".State"
-                 | Set(State, StateKey, StateValue)
-                 | set(State, StateKey, StateValue) [function]
-
-  rule set(.State, K:StateKey, V:StateValue) => Set(.State, K, V)
-  rule set(Set(S:State, K:StateKey, _:StateValue), K:StateKey, V:StateValue)
-       => Set(S, K, V)
-  rule set(Set(S:State, K:StateKey, V:StateValue), K':StateKey, V':StateValue)
-       => Set(set(S, K', V'), K, V)
-       requires K =/=K K'
-  
-  syntax Bool ::= inState(State, StateKey) [function]
-  rule inState(.State, _) => false
-  rule inState(Set(S:State, K:StateKey, _), K:StateKey) => true
-  rule inState(Set(S:State, K:StateKey, _), K':StateKey) => inState(S, K')
-       requires K =/=K K'
- 
-  syntax StateValue ::= get(State, StateKey) [function, partial]
-  rule get(Set(S:State, K:StateKey, V:StateValue), K:StateKey) => V
-  rule get(Set(S:State, K:StateKey, _), K':StateKey) => get(S, K')
-       requires K =/=K K'
- endmodule
-
-module IMP2
-  imports IMP2-SYNTAX
+module IMP
+  imports IMP-SYNTAX
   imports DOMAINS
   imports STATE
 
