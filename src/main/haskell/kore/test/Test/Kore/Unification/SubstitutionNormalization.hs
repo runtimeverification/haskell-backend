@@ -6,26 +6,35 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( assertEqual, testCase )
 
-import Kore.AST.Common
-       ( AstLocation (..), Variable )
-import Kore.AST.MetaOrObject
-import Kore.AST.PureML
-       ( CommonPurePattern )
-import Kore.AST.PureToKore
-       ( patternKoreToPure )
-import Kore.Building.AsAst
-import Kore.Building.Patterns
-import Kore.Building.Sorts
-import Kore.Error
-import Kore.MetaML.AST
-       ( CommonMetaPattern )
-import Kore.Unification.Error
-       ( SubstitutionError (..) )
-import Kore.Unification.SubstitutionNormalization
-import Kore.Unification.UnifierImpl
-       ( UnificationSubstitution )
-import Kore.Variables.Fresh.IntCounter
-       ( runIntCounter )
+import           Kore.AST.Common
+                 ( AstLocation (..), Sort (..), SortVariable (..), Variable,
+                 noLocationId )
+import           Kore.AST.MetaOrObject
+import           Kore.AST.PureML
+                 ( CommonPurePattern, groundHead )
+import           Kore.AST.PureToKore
+                 ( patternKoreToPure )
+import           Kore.ASTHelpers
+                 ( ApplicationSorts (..) )
+import           Kore.ASTUtils.SmartPatterns
+import           Kore.Building.AsAst
+import           Kore.Building.Patterns
+import           Kore.Building.Sorts
+import           Kore.Error
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools (..), SortTools )
+import           Kore.MetaML.AST
+                 ( CommonMetaPattern )
+import qualified Kore.Step.ExpandedPattern as PredicateSubstitution
+                 ( PredicateSubstitution (..) )
+import           Kore.Step.StepperAttributes
+import           Kore.Unification.Error
+                 ( SubstitutionError (..) )
+import           Kore.Unification.SubstitutionNormalization
+import           Kore.Unification.UnifierImpl
+                 ( UnificationSubstitution )
+import           Kore.Variables.Fresh.IntCounter
+                 ( runIntCounter )
 
 test_substitutionNormalization :: [TestTree]
 test_substitutionNormalization =
@@ -108,7 +117,7 @@ test_substitutionNormalization =
       in
         testCase "Simplest cycle"
             (assertEqual ""
-                (Left (CircularVariableDependency [var1]))
+                (Left (CtorCircularVariableDependency [var1]))
                 (runNormalizeSubstitution
                     [   ( var1
                         , asPureMetaPattern (v1 PatternSort)
@@ -122,7 +131,7 @@ test_substitutionNormalization =
       in
         testCase "Length 2 cycle"
             (assertEqual ""
-                (Left (CircularVariableDependency [var1, varx1]))
+                (Left (CtorCircularVariableDependency [var1, varx1]))
                 (runNormalizeSubstitution
                     [   ( var1
                         , asPureMetaPattern (x1 PatternSort)
@@ -139,7 +148,7 @@ test_substitutionNormalization =
       in
         testCase "Cycle with 'and'"
             (assertEqual ""
-                (Left (CircularVariableDependency [var1, varx1]))
+                (Left (CtorCircularVariableDependency [var1, varx1]))
                 (runNormalizeSubstitution
                     [   ( var1
                         , asPureMetaPattern
@@ -160,12 +169,30 @@ test_substitutionNormalization =
                     ]
                 )
             )
+    , let
+        var1 = asVariable (v1 PatternSort)
+        varx1 = asVariable (x1 PatternSort)
+      in
+        testCase "Length 2 non-ctor cycle"
+            (assertEqual ""
+                (Left (NonCtorCircularVariableDependency [var1, varx1]))
+                (runNormalizeSubstitution
+                    [   ( var1
+                        , App_ f [Var_ varx1]
+                        )
+                    ,   ( varx1
+                        , Var_ var1
+                        )
+                    ]
+                )
+            )
     ]
   where
     v1 :: MetaSort sort => sort -> MetaVariable sort
     v1 = metaVariable "v1" AstLocationTest
     x1 :: MetaSort sort => sort -> MetaVariable sort
     x1 = metaVariable "x1" AstLocationTest
+    f = groundHead "f" AstLocationTest
     asPureMetaPattern
         :: ProperPattern level sort patt => patt -> CommonMetaPattern
     asPureMetaPattern patt =
@@ -180,6 +207,29 @@ runNormalizeSubstitution
         (SubstitutionError level Variable)
         (UnificationSubstitution level Variable)
 runNormalizeSubstitution substitution =
-    case normalizeSubstitution substitution of
+    case normalizeSubstitution mockMetadataTools substitution of
         Left err     -> Left err
-        Right action -> Right $ fst $ runIntCounter action 0
+        Right action -> Right $ PredicateSubstitution.substitution
+                        $ fst $ runIntCounter action 0
+
+mockStepperAttributes :: StepperAttributes
+mockStepperAttributes = StepperAttributes
+    { isConstructor = False
+    , isFunctional = True
+    , isFunction = False
+    }
+
+mockSortTools :: MetaOrObject level => SortTools level
+mockSortTools = const ApplicationSorts
+    { applicationSortsOperands = []
+    , applicationSortsResult   =
+        SortVariableSort SortVariable
+            { getSortVariable = noLocationId "S" }
+    }
+
+mockMetadataTools :: MetaOrObject level => MetadataTools level StepperAttributes
+mockMetadataTools = MetadataTools
+    { attributes = const mockStepperAttributes
+    , sortTools = mockSortTools
+    }
+

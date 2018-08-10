@@ -26,7 +26,7 @@ dependencies:
   - array
   - bytestring >= 0.10
   - bytestring-trie
-  - containers
+  - containers >= 0.5.8
   - clock
   - data-default
   - deepseq
@@ -113,9 +113,12 @@ executables:
       - RecordWildCards
     dependencies:
       - kore
+
   prover:
-    source-dirs: app/prover
     main: Main.hs
+    source-dirs:
+      - app/prover
+      - app/share
     dependencies:
       - kore
 
@@ -139,4 +142,23 @@ tests:
       - tasty-hunit
       - tasty-golden
       - tasty-quickcheck
+      - template-haskell
+
+benchmarks:
+  kore-parser-benchmark:
+    main: Main.hs
+    other-modules:
+      - Paths
+    source-dirs:
+      - bench/parser
+      - test
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - kore
+      - criterion
+      - directory >= 1.2.2
+      - filepath
       - template-haskell

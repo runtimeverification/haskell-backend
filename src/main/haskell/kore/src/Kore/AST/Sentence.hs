@@ -22,14 +22,18 @@ Please refer to Section 9 (The Kore Language) of the
 -}
 module Kore.AST.Sentence where
 
+import Control.DeepSeq
+       ( NFData (..) )
 import Data.Functor.Classes
 import Data.Functor.Foldable
 import Data.Maybe
        ( catMaybes )
+import GHC.Generics
+       ( Generic )
 
+import           Data.Functor.Foldable.Orphans ()
 import           Data.Functor.Impredicative
                  ( Rotate41 (..) )
-import           Data.Text.Prettyprint.Doc.Orphans ()
 import           Kore.AST.Common
 import           Kore.AST.Kore
 import           Kore.AST.MetaOrObject
@@ -44,14 +48,9 @@ It is parameterized by the types of Patterns, @pat@.
 
 newtype Attributes =
     Attributes { getAttributes :: [CommonKorePattern] }
+  deriving (Eq, Generic, Show)
 
-deriving instance
-    (Eq CommonKorePattern)
-     => Eq Attributes
-
-deriving instance
-    (Show CommonKorePattern)
-     => Show Attributes
+instance NFData Attributes
 
 instance Pretty Attributes where
     pretty = Pretty.attributes . getAttributes
@@ -72,18 +71,12 @@ data SentenceAlias level (pat :: (* -> *) -> * -> *) (variable :: * -> *)
     , sentenceAliasRightPattern :: !(Pattern level variable (Fix (pat variable)))
     , sentenceAliasAttributes   :: !Attributes
     }
+  deriving (Eq, Generic, Show)
 
-deriving instance
-    ( Eq1 (pat variable)
-    , Eq (variable level)
-    )
-    => Eq (SentenceAlias level pat variable)
-
-deriving instance
-    ( Show1 (pat variable)
-    , Show (variable level)
-    )
-    => Show (SentenceAlias level pat variable)
+instance
+    ( NFData (Fix (pat variable))
+    , NFData (variable level)
+    ) => NFData (SentenceAlias level pat variable)
 
 instance (Pretty (variable level), Pretty (Fix (pat variable))) =>
     Pretty (SentenceAlias level pat variable) where
@@ -114,14 +107,9 @@ data SentenceSymbol level (pat :: (* -> *) -> * -> *) (variable :: * -> *)
     , sentenceSymbolResultSort :: !(Sort level)
     , sentenceSymbolAttributes :: !Attributes
     }
+  deriving (Eq, Generic, Show)
 
-deriving instance
-    (Eq (pat variable (Fix (pat variable))))
-     => Eq (SentenceSymbol level pat variable)
-
-deriving instance
-    (Show (pat variable (Fix (pat variable))))
-     => Show (SentenceSymbol level pat variable)
+instance NFData (SentenceSymbol level pat variable)
 
 instance Pretty (Fix (pat variable)) =>
     Pretty (SentenceSymbol level pat variable) where
@@ -138,7 +126,9 @@ instance Pretty (Fix (pat variable)) =>
 from the Semantics of K, Section 9.1.6 (Declaration and Definitions).
 -}
 newtype ModuleName = ModuleName { getModuleName :: String }
-    deriving (Show, Eq, Ord)
+    deriving (Eq, Generic, Ord, Show)
+
+instance NFData ModuleName
 
 instance Pretty ModuleName where
     pretty = Pretty.fromString . getModuleName
@@ -151,14 +141,9 @@ data SentenceImport (pat :: (* -> *) -> * -> *) (variable :: * -> *)
     { sentenceImportModuleName :: !ModuleName
     , sentenceImportAttributes :: !Attributes
     }
+  deriving (Eq, Generic, Show)
 
-deriving instance
-    (Eq (pat variable (Fix (pat variable))))
-     => Eq (SentenceImport pat variable)
-
-deriving instance
-    (Show (pat variable (Fix (pat variable))))
-     => Show (SentenceImport pat variable)
+instance NFData (SentenceImport pat variable)
 
 instance Pretty (Fix (pat variable)) =>
     Pretty (SentenceImport pat variable) where
@@ -177,14 +162,9 @@ data SentenceSort level (pat :: (* -> *) -> * -> *) (variable :: * -> *)
     , sentenceSortParameters :: ![SortVariable level]
     , sentenceSortAttributes :: !Attributes
     }
+  deriving (Eq, Generic, Show)
 
-deriving instance
-    (Eq (pat variable (Fix (pat variable))))
-     => Eq (SentenceSort level pat variable)
-
-deriving instance
-    (Show (pat variable (Fix (pat variable))))
-     => Show (SentenceSort level pat variable)
+instance NFData (SentenceSort level pat variable)
 
 instance Pretty (Fix (pat variable)) =>
     Pretty (SentenceSort level pat variable) where
@@ -204,16 +184,13 @@ data SentenceAxiom sortParam (pat :: (* -> *) -> * -> *) (variable :: * -> *)
     , sentenceAxiomPattern    :: !(Fix (pat variable))
     , sentenceAxiomAttributes :: !Attributes
     }
+  deriving (Eq, Generic, Show)
 
-deriving instance
-    ( Eq1 (pat variable)
-    , Eq sortParam
-    )  => Eq (SentenceAxiom sortParam pat variable)
-
-deriving instance
-    ( Show1 (pat variable)
-    , Show sortParam
-    ) => Show (SentenceAxiom sortParam pat variable)
+instance
+    ( NFData sortParam
+    , NFData (Fix (pat variable))
+    ) =>
+    NFData (SentenceAxiom sortParam pat variable)
 
 instance
     ( Pretty param
@@ -236,14 +213,9 @@ represent hooked sorts and hooked symbols.
 data SentenceHook level (pat :: (* -> *) -> * -> *) (variable :: * -> *)
     = SentenceHookedSort !(SentenceSort level pat variable)
     | SentenceHookedSymbol !(SentenceSymbol level pat variable)
+  deriving (Eq, Generic, Show)
 
-deriving instance
-    (Eq (pat variable (Fix (pat variable))))
-     => Eq (SentenceHook level pat variable)
-
-deriving instance
-    (Show (pat variable (Fix (pat variable))))
-     => Show (SentenceHook level pat variable)
+instance NFData (SentenceHook level pat variable)
 
 instance
     Pretty (Fix (pat variable) )
@@ -288,6 +260,22 @@ deriving instance
     , Eq (variable level)
     ) => Eq (Sentence level sortParam pat variable)
 
+instance
+    ( NFData sortParam
+    , NFData (variable level)
+    , NFData (Fix (pat variable))
+    ) =>
+    NFData (Sentence level sortParam pat variable)
+  where
+    rnf =
+        \case
+            SentenceAliasSentence p -> rnf p
+            SentenceSymbolSentence p -> rnf p
+            SentenceImportSentence p -> rnf p
+            SentenceAxiomSentence p -> rnf p
+            SentenceSortSentence p -> rnf p
+            SentenceHookSentence p -> rnf p
+
 deriving instance
     ( Show1 (pat variable), Show (pat variable (Fix (pat variable)))
     , Show sortParam
@@ -320,16 +308,11 @@ data Module sentence sortParam (pat :: (* -> *) -> * -> *) (variable :: * -> *)
     , moduleSentences  :: ![sentence sortParam pat variable]
     , moduleAttributes :: !Attributes
     }
+  deriving (Eq, Generic, Show)
 
-deriving instance
-    ( Eq (pat variable (Fix (pat variable)))
-    , Eq (sentence sortParam pat variable)
-    ) => Eq (Module sentence sortParam pat variable)
-
-deriving instance
-    ( Show (pat variable (Fix (pat variable)))
-    , Show (sentence sortParam pat variable)
-    ) => Show (Module sentence sortParam pat variable)
+instance
+    NFData (sentence sortParam pat variable) =>
+    NFData (Module sentence sortParam pat variable)
 
 instance
     ( Pretty (sentence sort pat variable)
@@ -360,18 +343,11 @@ data Definition sentence sortParam (pat :: (* -> *) -> * -> *) (variable :: * ->
     { definitionAttributes :: !Attributes
     , definitionModules    :: ![Module sentence sortParam pat variable]
     }
+  deriving (Eq, Generic, Show)
 
-deriving instance
-    ( Eq1 (pat variable)
-    , Eq (pat variable (Fix (pat variable)))
-    , Eq (sentence sortParam pat variable)
-    ) => Eq (Definition sentence sortParam pat variable)
-
-deriving instance
-    ( Show1 (pat variable)
-    , Show (pat variable (Fix (pat variable)))
-    , Show (sentence sortParam pat variable)
-    ) => Show (Definition sentence sortParam pat variable)
+instance
+    NFData (sentence sortParam pat variable) =>
+    NFData (Definition sentence sortParam pat variable)
 
 instance
     ( Pretty (sentence sort pat variable)
@@ -446,12 +422,20 @@ to allow using toghether both 'Meta' and 'Object' sentences.
 -}
 newtype UnifiedSentence sortParam pat variable = UnifiedSentence
     { getUnifiedSentence :: Unified (Rotate41 Sentence sortParam pat variable) }
+  deriving (Generic)
 
 deriving instance
     ( Eq1 (pat variable), Eq (pat variable (Fix (pat variable)))
     , Eq sortParam
     , EqMetaOrObject variable
     ) => Eq (UnifiedSentence sortParam pat variable)
+
+instance
+    ( NFData sortParam
+    , NFData (variable Meta), NFData (variable Object)
+    , NFData (Fix (pat variable))
+    ) =>
+    NFData (UnifiedSentence sortParam pat variable)
 
 deriving instance
     ( Show1 (pat variable), Show (pat variable (Fix (pat variable)))

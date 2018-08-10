@@ -13,6 +13,12 @@ module Kore.Unification.SubstitutionNormalization
     ( normalizeSubstitution
     ) where
 
+import           Control.Monad
+                 ( (>=>) )
+import           Data.Foldable
+                 ( traverse_ )
+import           Data.Functor.Foldable
+                 ( Fix, cata )
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( mapMaybe )
@@ -22,6 +28,14 @@ import           Data.Graph.TopologicalSort
 import           Kore.AST.Common
 import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
+import           Kore.IndexedModule.MetadataTools
+                 ( MetadataTools (..) )
+import           Kore.Predicate.Predicate
+                 ( makeTruePredicate )
+import           Kore.Step.ExpandedPattern
+                 ( PredicateSubstitution (..) )
+import           Kore.Step.StepperAttributes
+                 ( StepperAttributes (..) )
 import           Kore.Substitution.Class
 import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Error
@@ -67,11 +81,12 @@ normalizeSubstitution
         , IntVariable variable
         , Show (variable level)
         )
-    => UnificationSubstitution level variable
+    => MetadataTools level StepperAttributes
+    -> UnificationSubstitution level variable
     -> Either
         (SubstitutionError level variable)
-        (IntCounter (UnificationSubstitution level variable))
-normalizeSubstitution substitution = do
+        (IntCounter (PredicateSubstitution level variable))
+normalizeSubstitution tools substitution = do
     sorted <- topologicalSortConverted
     let
         sortedSubstitution =
@@ -83,9 +98,50 @@ normalizeSubstitution substitution = do
     dependencies = buildDependencies substitution interestingVariables
     topologicalSortConverted =
         case topologicalSort dependencies of
-            Left (ToplogicalSortCycles vars) ->
-                Left (CircularVariableDependency vars)
+            Left (ToplogicalSortCycles vars) -> do
+                checkCircularVariableDependency tools substitution vars
+                return (error "This should be unreachable")
             Right result -> Right result
+
+checkCircularVariableDependency
+    :: (MetaOrObject level, Eq (variable level))
+    =>  MetadataTools level StepperAttributes
+    -> UnificationSubstitution level variable
+    -> [variable level]
+    -> Either (SubstitutionError level variable) ()
+checkCircularVariableDependency tools substitution vars = do
+    traverse_
+        ( checkThatApplicationUsesConstructors
+            tools (NonCtorCircularVariableDependency vars)
+        . (`lookup` substitution)
+        )
+        vars
+    Left (CtorCircularVariableDependency vars)
+
+checkThatApplicationUsesConstructors
+    :: (MetaOrObject level)
+    => MetadataTools level StepperAttributes
+    -> checkError
+    -> Maybe (PureMLPattern level variable)
+    -> Either checkError ()
+checkThatApplicationUsesConstructors tools err (Just t) =
+    cataM (checkApplicationConstructor tools err) t
+  where
+    cataM :: (Traversable f, Monad m) => (f x -> m x) -> Fix f -> m x
+    cataM = cata . (sequence >=>)
+checkThatApplicationUsesConstructors _ _ Nothing =
+    error "This should not be reachable"
+
+checkApplicationConstructor
+    :: (MetaOrObject level)
+    => MetadataTools level StepperAttributes
+    -> checkError
+    -> Pattern level variable ()
+    -> Either checkError ()
+checkApplicationConstructor tools err (ApplicationPattern (Application h _))
+    | isConstructor (attributes tools h) = return ()
+    | otherwise = Left err
+checkApplicationConstructor _ _ _ = return ()
 
 variableToSubstitution
     :: (Ord (variable level), Show (variable level))
@@ -107,8 +163,12 @@ normalizeSortedSubstitution
     => UnificationSubstitution level variable
     -> UnificationSubstitution level variable
     -> [(Unified variable, PureMLPattern level variable)]
-    -> IntCounter (UnificationSubstitution level variable)
-normalizeSortedSubstitution [] result _ = return result
+    -> IntCounter (PredicateSubstitution level variable)
+normalizeSortedSubstitution [] result _ =
+    return PredicateSubstitution
+        { predicate = makeTruePredicate
+        , substitution = result
+        }
 normalizeSortedSubstitution
     ((var, varPattern) : unprocessed)
     result

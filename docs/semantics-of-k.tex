@@ -6098,6 +6098,10 @@ They are used to signify the begin and end of a declaration.
 			alias & \textrm{Initiate an alias declaration}
 			\\
 			axiom & \textrm{Initiate an axiom declaration}
+      \\
+      hooked-sort & \textrm{Initiate a hooked sort declaration}
+      \\
+      hooked-symbol & \textrm{Initiate a hooked symbol declaration}
 	\end{tabular}}
 \end{center}
 
@@ -6747,7 +6751,7 @@ axiom.
 \alt <meta-sort-variable>
 \alt <meta-sort-variable> `,' <meta-sort-variable-list>
 
-<module-name> ::= <object-identifier>
+<module-name> ::= <object-nonslash-identifier>
 \end{grammar}
 
 Every declaration has a list of sort variables wrapped in curly brackets, also 

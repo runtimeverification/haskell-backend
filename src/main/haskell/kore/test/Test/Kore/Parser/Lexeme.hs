@@ -67,6 +67,7 @@ idParserTests =
         , success "a'2" (testId "a'2")
         , success "a " (testId "a")
         , success "a/**/ " (testId "a")
+        , success "\\something" (testId "\\something")
         , Failure FailureTest
             { failureInput = "["
             , failureExpected =
@@ -109,11 +110,12 @@ metaIdParserTests =
         , success "#\\in" (testId "#\\in")
         , success "#\\top" (testId "#\\top")
         , success "#\\bottom" (testId "#\\bottom")
+        , success "#\\something" (testId "#\\something")
         , FailureWithoutMessage
             [   "",   "'",   "'a",   "2",   "2a", "`", "`a"
             ,  "#",  "#'",  "#'a",  "#2",  "#2a"
             , "#`", "#`'", "#`'a", "#`2", "#`2a"
-            , "a#", "#\\something"
+            , "a#", "#`\\something"
             , ",", " a", "a"]
         ]
 
