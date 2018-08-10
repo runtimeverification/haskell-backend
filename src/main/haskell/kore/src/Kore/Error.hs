@@ -10,6 +10,7 @@ Portability : POSIX
 module Kore.Error where
 
 import           Control.Monad (when)
+import Control.Monad.Except ( MonadError (..) )
 import           Data.List     (intercalate)
 
 {-|'Error' represents a Kore error with a stacktrace-like context.
@@ -35,28 +36,26 @@ koreError err = Error
     }
 
 {-|'koreFail' produces an error result with an empty context. -}
-koreFail :: String -> Either (Error a) b
+koreFail :: MonadError (Error a) m => String -> m b
 koreFail errorMessage =
-    Left (koreError errorMessage)
+    throwError (koreError errorMessage)
 
 {-|'koreFailWhen' produces an error result with an empty context whenever the
 provided flag is true.
 -}
-koreFailWhen :: Bool -> String -> Either (Error a) ()
+koreFailWhen :: MonadError (Error a) m => Bool -> String -> m ()
 koreFailWhen condition errorMessage =
     when condition (koreFail errorMessage)
 
 {-|'withContext' prepends the given string to the context whenever the given
 action fails.
 -}
-withContext
-    :: String -> Either (Error a) result -> Either (Error a) result
-withContext
-    localContext
-    (Left err@Error { errorContext = context })
-  =
-    Left err { errorContext = localContext : context }
-withContext _ result = result
+withContext :: MonadError (Error a) m => String -> m result -> m result
+withContext localContext action =
+    catchError action inContext
+  where
+    inContext err@Error { errorContext } =
+        throwError err { errorContext = localContext : errorContext }
 
 {-|'castError' changes an error's tag.
 -}
