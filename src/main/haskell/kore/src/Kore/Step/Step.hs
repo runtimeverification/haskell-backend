@@ -20,13 +20,16 @@ import           Kore.AST.MetaOrObject
                  ( MetaOrObject )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools )
+import qualified Kore.Predicate.Predicate as Predicate
+                 ( isFalse )
 import           Kore.Step.BaseStep
                  ( AxiomPattern, StepProof (..), stepWithAxiom )
 import qualified Kore.Step.ExpandedPattern as ExpandedPattern
+                 ( CommonExpandedPattern, ExpandedPattern (..) )
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Variables.Fresh.IntCounter
-                 ( IntCounter )
+                 ( IntCounter, findState )
 
 data MaxStepCount
     = MaxStepCount Integer
@@ -52,8 +55,8 @@ step tools configuration axioms =
 
 {-| 'pickFirstStepper' rewrites a configuration using the provided axioms
 until it cannot be rewritten anymore or until the step limit has been reached.
-Whenever multiple axioms can be applied, it picks the first one and continues
-with that.
+Whenever multiple axioms can be applied, it picks the first one whose
+'Predicate' is not false and continues with that.
 
 Does not handle properly various cases, among which:
 sigma(x, y) => y    vs    a
@@ -93,13 +96,19 @@ pickFirstStepperSkipMaxCheck
     -> IntCounter (ExpandedPattern.CommonExpandedPattern level, StepProof level)
 pickFirstStepperSkipMaxCheck
     tools maxStepCount stepperConfiguration axioms
-  =
-    case step tools stepperConfiguration axioms of
-        [] -> return (stepperConfiguration, StepProofCombined [])
-        first : _ -> do
-            (nextConfiguration, nextProof) <- first
+  = do
+    fnf <-
+        findState
+            (not . Predicate.isFalse . ExpandedPattern.predicate . fst)
+            (step tools stepperConfiguration axioms)
+    case fnf of
+        Nothing -> return (stepperConfiguration, StepProofCombined [])
+        Just (nextConfiguration, nextProof) ->
+            do
             (finalConfiguration, finalProof) <-
                 pickFirstStepper
                     tools maxStepCount nextConfiguration axioms
             return
-                (finalConfiguration, StepProofCombined [nextProof, finalProof])
+                ( finalConfiguration
+                , StepProofCombined [nextProof, finalProof]
+                )
