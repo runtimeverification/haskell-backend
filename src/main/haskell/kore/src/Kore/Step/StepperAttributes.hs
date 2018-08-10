@@ -38,22 +38,49 @@ import           Kore.Error
 import           Kore.Implicit.Attributes
                  ( attributeHead, keyOnlyAttribute )
 
--- | Kore pattern representing a constructor attribute
--- Would look something like @constructor{}()@ in ASCII Kore
+{- | Kore pattern representing a @constructor@ attribute
+
+  Kore syntax:
+  @
+    constructor{}()
+  @
+
+ -}
 constructorAttribute :: CommonKorePattern
 constructorAttribute = keyOnlyAttribute "constructor"
 
--- | Kore pattern representing a function attribute
--- Would look something like @function{}()@ in ASCII Kore
+{- | Kore pattern representing a @function@ attribute
+
+  Kore syntax:
+  @
+    function{}()
+  @
+
+ -}
 functionAttribute :: CommonKorePattern
 functionAttribute    = keyOnlyAttribute "function"
 
--- | Kore pattern representing a functional attribute
--- Would look something like @functional{}()@ in ASCII Kore
+{- | Kore pattern representing a @functional@ attribute
+
+  Kore syntax:
+  @
+    functional{}()
+  @
+
+ -}
 functionalAttribute :: CommonKorePattern
 functionalAttribute  = keyOnlyAttribute "functional"
 
-hookAttribute :: String -> CommonKorePattern
+{- | Kore pattern representing a @hook@ attribute
+
+  Kore syntax:
+  @
+    hook{}("HOOKED.function")
+  @
+
+ -}
+hookAttribute :: String  -- ^ hooked function name
+              -> CommonKorePattern
 hookAttribute builtin =
     (KoreObjectPattern . ApplicationPattern)
     Application
@@ -85,15 +112,44 @@ instance Default StepperAttributes where
         , hook          = Nothing
         }
 
+{- | Is the @functional@ Kore attribute present?
+
+  It is a parse error if the @functional@ attribute is given any arguments.
+
+  See also: 'functionalAttribute'
+
+ -}
 hasFunctionalAttribute :: Attribute.Parser Bool
 hasFunctionalAttribute = Attribute.hasKeyAttribute "functional"
 
+{- | Is the @function@ Kore attribute present?
+
+  It is a parse error if the @function@ attribute is given any arguments.
+
+  See also: 'functionAttribute'
+
+ -}
 hasFunctionAttribute :: Attribute.Parser Bool
 hasFunctionAttribute = Attribute.hasKeyAttribute "function"
 
+{- | Is the @constructor@ Kore attribute present?
+
+  It is a parse error if the @constructor@ attribute is given any arguments.
+
+  See also: 'constructorAttribute'
+
+ -}
 hasConstructorAttribute :: Attribute.Parser Bool
 hasConstructorAttribute = Attribute.hasKeyAttribute "constructor"
 
+{- | Parse the @hook@ Kore attribute, if present.
+
+  It is a parse error if the @hook@ attribute is not given exactly one literal
+  string argument.
+
+  See also: 'hookAttribute'
+
+ -}
 getHookAttribute :: Attribute.Parser (Maybe String)
 getHookAttribute =
     correctAttribute <|> noAttribute
