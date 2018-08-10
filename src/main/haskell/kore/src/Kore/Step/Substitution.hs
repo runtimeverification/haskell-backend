@@ -36,6 +36,7 @@ import Kore.Unification.Error
 import Kore.Unification.Unifier
        ( UnificationProof, UnificationSubstitution,
        normalizeSubstitutionDuplication )
+import Kore.Unification.SubstitutionNormalization (substitutionNormalization)
 
 {-|'substitutionToPredicate' transforms a substitution in a predicate.
 -}
@@ -89,8 +90,9 @@ mergeSubstitutions
 mergeSubstitutions tools first second = do
     (substitution, proof) <-
         normalizeSubstitutionDuplication tools (first ++ second)
+    (substitution') <- substitutionNormalization substitution
     -- TODO(virgil): Return the actual condition here.
-    return (makeTruePredicate, substitution, proof)
+    return (makeTruePredicate, substitution', proof)
 
 {-|'mergePredicatesAndSubstitutions' merges a list of substitutions into
 a single one, then merges the merge side condition and the given condition list
