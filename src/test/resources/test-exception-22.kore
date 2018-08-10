@@ -2,6 +2,7 @@
 
 module TEST-EXCEPTION-22
 
-  sort #C ["d"]
+  axiom{}
+    #X:#Char{#Char} []
 
 endmodule []
