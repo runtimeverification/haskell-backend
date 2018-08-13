@@ -47,10 +47,14 @@ import Kore.Step.StepperAttributes
        ( StepperAttributes (..) )
 import Kore.Step.Substitution
        ( mergePredicatesAndSubstitutions )
+import Kore.Substitution.Class
+       ( Hashable )
 import Kore.Unification.Unifier
        ( UnificationSubstitution )
 import Kore.Variables.Fresh.IntCounter
        ( IntCounter )
+import Kore.Variables.Int
+       ( IntVariable (..) )
 
 {-|'evaluateFunctions' evaluates Kore functions (in a bottom-up manner).
 
@@ -63,6 +67,9 @@ evaluateFunctions
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level)
+        , OrdMetaOrObject variable
+        , Hashable variable
+        , IntVariable variable
         )
     => MetadataTools level StepperAttributes
     -> Map.Map (Id level) [ApplicationFunctionEvaluator level variable]
@@ -161,6 +168,9 @@ evaluateLocalFunction
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level)
+        , OrdMetaOrObject variable
+        , Hashable variable
+        , IntVariable variable
         )
     => MetadataTools level StepperAttributes
     -> ConditionEvaluator level variable
@@ -258,6 +268,9 @@ evaluateApplication
         , SortedVariable variable
         , Show (variable level)
         , Ord (variable level)
+        , OrdMetaOrObject variable
+        , IntVariable variable
+        , Hashable variable
         )
     => MetadataTools level StepperAttributes
     -> ConditionEvaluator level variable
@@ -342,7 +355,11 @@ mergeWithConditionAndSubstitution
     ::  ( MetaOrObject level
         , SortedVariable variable
         , Show (variable level)
-        , Ord (variable level))
+        , Ord (variable level)
+        , OrdMetaOrObject variable
+        , IntVariable variable
+        , Hashable variable
+        )
     => MetadataTools level StepperAttributes
     -> ConditionEvaluator level variable
     -- ^ Can evaluate conditions.

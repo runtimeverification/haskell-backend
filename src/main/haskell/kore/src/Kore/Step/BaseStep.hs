@@ -24,7 +24,7 @@ import           Data.Maybe
 import           Data.Monoid
                  ( (<>) )
 import           Data.Reflection
-                 ( Given, give )
+                 ( give )
 import qualified Data.Set as Set
 
 import           Kore.AST.Common
@@ -34,10 +34,10 @@ import           Kore.AST.PureML
 import           Kore.ASTUtils.SmartConstructors
                  ( mkBottom )
 import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SortTools )
+                 ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
-                 ( Predicate, PredicateProof (..), makeFalsePredicate,
-                 makeMultipleAndPredicate )
+                 ( Predicate, makeFalsePredicate
+                 , mergeConditionsWithAnd )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.AxiomPatterns
 import           Kore.Step.Condition.Condition
@@ -50,14 +50,12 @@ import qualified Kore.Step.ExpandedPattern as ExpandedPattern
 import           Kore.Step.StepperAttributes
                  ( StepperAttributes )
 import           Kore.Step.Substitution
-                 ( mergeSubstitutions )
+                 ( mergeAndNormalizeSubstitutions )
 import           Kore.Substitution.Class
                  ( Hashable (..), PatternSubstitutionClass (..) )
 import qualified Kore.Substitution.List as ListSubstitution
 import           Kore.Unification.Error
                  ( UnificationError )
-import           Kore.Unification.SubstitutionNormalization
-                 ( normalizeSubstitution )
 import           Kore.Unification.Unifier
                  ( FunctionalProof (..), UnificationProof (..),
                  UnificationSubstitution, mapSubstitutionVariables,
@@ -179,7 +177,7 @@ sigma(x, y) => y    vs    a
 TODO: Decide if Left here also includes bottom results or only impossibilities.
 -}
 stepWithAxiom
-    ::  ( MetaOrObject level)
+    ::  ( MetaOrObject level )
     => MetadataTools level StepperAttributes
     -> ExpandedPattern.CommonExpandedPattern level
     -- ^ Configuration being rewritten.
@@ -233,10 +231,6 @@ stepWithAxiom
             stepperVariableToVariableForError
                 existingVariables (unificationToStepError bottom action)
 
-        normalizeSubstitutionError bottom action =
-            stepperVariableToVariableForError
-                existingVars (substitutionToStepError bottom action)
-
     -- Unify the left-hand side of the rewriting axiom with the initial
     -- configuration, producing a substitution (instantiating the axiom to the
     -- configuration) subject to a predicate.
@@ -256,92 +250,79 @@ stepWithAxiom
     -- Combine the substitution produced by unification with the initial
     -- substitution carried by the configuration. Merging substitutions may
     -- produce another predicate during symbolic execution.
-    (     substitutionMergeCondition
-        , substitution
+    substitutionWithIntCounter <-
+      stepperVariableToVariableForError existingVars
+      $ unificationOrSubstitutionToStepError
+      $ mergeAndNormalizeSubstitutions tools unificationSubstitution startSubstitution
+
+    return
+      $ do
+      { ( PredicateSubstitution
+          { predicate = normalizedCondition
+          , substitution = normalizedSubstitution
+          }
         , _  -- TODO: Use this proof
-        ) <-
-            normalizeUnificationError
-                (makeFalsePredicate, [], EmptyUnificationProof)
-                existingVars
-                (mergeSubstitutions tools unificationSubstitution startSubstitution)
-
-    normalizedSubstitutionWithCounter <-
-        normalizeSubstitutionError
-            (return PredicateSubstitution
-                { predicate = makeFalsePredicate
-                , substitution = []
-                }
-            )
-            (normalizeSubstitution tools substitution)
-
-    return $ do
-        PredicateSubstitution
-            { predicate = normalizedCondition
-            , substitution = normalizedSubstitution
-            }
-            <- normalizedSubstitutionWithCounter
-
-        let
-            unifiedSubstitution =
-                ListSubstitution.fromList
-                    (makeUnifiedSubstitution normalizedSubstitution)
-
+        ) <- substitutionWithIntCounter
+      
+      ; let
+          unifiedSubstitution =
+            ListSubstitution.fromList
+            (makeUnifiedSubstitution normalizedSubstitution)
         -- Merge all conditions collected so far
-        let
-            (mergedConditionWithCounter, _) = -- TODO: Use this proof
-                give (sortTools tools)
-                $ mergeConditionsWithAnd
-                    [ startCondition  -- from initial configuration
-                    , axiomRequires  -- from axiom
-                    , unificationCondition  -- produced during unification
-                    , substitutionMergeCondition -- by merging substitutions
-                    , normalizedCondition -- from normalizing the substitution
-                    ]
+          (mergedConditionWithCounter, _) = -- TODO: Use this proof
+            give (sortTools tools)
+            $ mergeConditionsWithAnd
+            [ startCondition  -- from initial configuration
+            , axiomRequires  -- from axiom
+            , unificationCondition  -- produced during unification
+            , normalizedCondition -- from normalizing the substitution
+            ]
 
         -- Apply substitution to resulting configuration and conditions.
-        rawResult <- substitute axiomRight unifiedSubstitution
+      ; rawResult <- substitute axiomRight unifiedSubstitution
 
-        normalizedMergedCondition <- mergedConditionWithCounter
-        rawCondition <-
+      ; normalizedMergedCondition <- mergedConditionWithCounter
+      ; rawCondition <-
             traverse
                 (`substitute` unifiedSubstitution)
                 normalizedMergedCondition
 
         -- Unwrap internal 'StepperVariable's and collect the variable mappings
         -- for the proof.
-        (variableMapping, result) <-
+      ; (variableMapping, result) <-
             patternStepVariablesToCommon existingVars Map.empty rawResult
-        (variableMapping1, condition) <-
+      ; (variableMapping1, condition) <-
             predicateStepVariablesToCommon
                 existingVars variableMapping rawCondition
-        (variableMapping2, substitutionProof) <-
+      ; (variableMapping2, substitutionProof) <-
             unificationProofStepVariablesToCommon
                 existingVars variableMapping1 rawSubstitutionProof
-        let
+      ; let
             orElse :: a -> a -> a
             p1 `orElse` p2 = if Predicate.isFalse condition then p2 else p1
-        return
-            ( ExpandedPattern
-                { term = result `orElse` mkBottom
-                , predicate = condition
-                -- TODO(virgil): Can there be unused variables? Should we
-                -- remove them?
-                , substitution =
-                    mapSubstitutionVariables
-                        configurationVariableToCommon
-                        (removeAxiomVariables normalizedSubstitution)
-                    `orElse` []
-                }
-            , simplifyStepProof
-                (StepProofCombined
-                    [ StepProofVariableRenamings
-                        (map variablePairToRenaming
-                            (Map.toList variableMapping2)
-                        )
-                    , StepProofUnification substitutionProof
-                    ]
-                )
-            )
+      ; return
+        ( ExpandedPattern
+          { term = result `orElse` mkBottom
+          , predicate = condition
+                        -- TODO(virgil): Can there be unused variables? Should we
+                        -- remove them?
+          , substitution =
+              mapSubstitutionVariables
+              configurationVariableToCommon
+              (removeAxiomVariables normalizedSubstitution)
+              `orElse` []
+          }
+        , simplifyStepProof
+          (StepProofCombined
+            [ StepProofVariableRenamings
+              (map variablePairToRenaming
+                (Map.toList variableMapping2)
+              )
+            , StepProofUnification substitutionProof
+            ]
+          )
+        )
+      }
   where
     -- | Unwrap 'StepperVariable's so that errors are not expressed in terms of
     -- internally-defined variables.
@@ -372,19 +353,6 @@ stepWithAxiom
         { variableRenamingOriginal = original
         , variableRenamingRenamed  = renamed
         }
-
-mergeConditionsWithAnd
-    ::  ( MetaOrObject level
-        , Given (SortTools level)
-        , SortedVariable var
-        , Show (var level))
-    => [Predicate level var]
-    -> (IntCounter (Predicate level var), PredicateProof level)
-mergeConditionsWithAnd conditions =
-    let
-        (predicate, proof) = makeMultipleAndPredicate conditions
-    in
-        (return predicate, proof)
 
 unificationProofStepVariablesToCommon
     :: MetaOrObject level
