@@ -36,8 +36,7 @@ import           Kore.ASTUtils.SmartConstructors
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..) )
 import           Kore.Predicate.Predicate
-                 ( Predicate, makeFalsePredicate
-                 , mergeConditionsWithAnd )
+                 ( Predicate, makeFalsePredicate, mergeConditionsWithAnd )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.AxiomPatterns
 import           Kore.Step.Condition.Condition
@@ -263,7 +262,7 @@ stepWithAxiom
           }
         , _  -- TODO: Use this proof
         ) <- substitutionWithIntCounter
-      
+
       ; let
           unifiedSubstitution =
             ListSubstitution.fromList
