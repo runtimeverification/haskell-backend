@@ -20,13 +20,13 @@ module Kore.Step.ExpandedPattern
     , toMLPattern
     ) where
 
+import           Data.List
+                 ( foldl' )
 import           Data.Monoid
                  ( (<>) )
 import           Data.Reflection
                  ( Given )
 import qualified Data.Set as Set
-import           Data.List
-                 (foldl')
 
 import           Kore.AST.Common
                  ( SortedVariable, Variable )
@@ -34,17 +34,15 @@ import           Kore.AST.MetaOrObject
 import           Kore.AST.PureML
                  ( PureMLPattern, mapPatternVariables )
 import           Kore.ASTUtils.SmartConstructors
-                 ( mkAnd, mkBottom, mkVar)
+                 ( mkAnd, mkBottom, mkVar )
 import           Kore.ASTUtils.SmartPatterns
                  ( pattern Bottom_, pattern Top_ )
 import           Kore.IndexedModule.MetadataTools
                  ( SortTools )
 import           Kore.Predicate.Predicate
-                 ( Predicate, pattern PredicateFalse
-                 , pattern PredicateTrue, makeFalsePredicate, unwrapPredicate 
-                 , makeAndPredicate, makeEqualsPredicate
-                 , makeFalsePredicate
-                 , makeTruePredicate )
+                 ( Predicate, pattern PredicateFalse, pattern PredicateTrue,
+                 makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
+                 makeFalsePredicate, makeTruePredicate, unwrapPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Unification.Unifier
                  ( UnificationSubstitution, mapSubstitutionVariables )

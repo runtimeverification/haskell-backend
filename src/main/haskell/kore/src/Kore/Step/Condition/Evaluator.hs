@@ -30,7 +30,7 @@ import Kore.Predicate.Predicate
        makeNotPredicate, makeOrPredicate, makeTruePredicate, unwrapPredicate,
        wrapPredicate )
 import Kore.Step.ExpandedPattern
-       ( ExpandedPattern (..), substitutionToPredicate)
+       ( ExpandedPattern (..), substitutionToPredicate )
 import Kore.Step.Function.Data
        ( PureMLPatternFunctionEvaluator (..) )
 import Kore.Variables.Fresh.IntCounter

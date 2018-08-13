@@ -23,29 +23,26 @@ import Kore.AST.Common
 import Kore.AST.MetaOrObject
 import Kore.IndexedModule.MetadataTools
        ( MetadataTools (..) )
-import Kore.Step.StepperAttributes
-import Kore.Step.ExpandedPattern
-       (PredicateSubstitution(..))
-import Kore.Unification.Error
-       ( UnificationOrSubstitutionError(..)
-       , UnificationError (..)
-       , substitutionToUnifyOrSubError
-       , unificationToUnifyOrSubError
-       )
 import Kore.Predicate.Predicate
-       ( Predicate, PredicateProof(..), makeTruePredicate
-       , makeFalsePredicate, makeMultipleAndPredicate )
+       ( Predicate, PredicateProof (..), makeFalsePredicate,
+       makeMultipleAndPredicate, makeTruePredicate )
+import Kore.Step.ExpandedPattern
+       ( PredicateSubstitution (..) )
+import Kore.Step.StepperAttributes
 import Kore.Substitution.Class
-       (Hashable)
+       ( Hashable )
+import Kore.Unification.Error
+       ( UnificationError (..), UnificationOrSubstitutionError (..),
+       substitutionToUnifyOrSubError, unificationToUnifyOrSubError )
+import Kore.Unification.SubstitutionNormalization
+       ( normalizeSubstitution )
 import Kore.Unification.Unifier
        ( UnificationProof, UnificationSubstitution,
        normalizeSubstitutionDuplication )
-import Kore.Unification.SubstitutionNormalization
-       ( normalizeSubstitution )
-import Kore.Variables.Int
-       ( IntVariable() )
 import Kore.Variables.Fresh.IntCounter
        ( IntCounter )
+import Kore.Variables.Int
+       ( IntVariable )
 
 {-|'mergeSubstitutions' merges a list of substitutions into
 a single one, then returns it together with the side condition of that merge.

@@ -67,7 +67,7 @@ substitutionToStepError _ (Left err)     = Left (StepErrorSubstitution err)
 substitutionToStepError _ (Right result) = Right result
 
 
-{--| Converts a Unification or Substitution error to a step error 
+{--| Converts a Unification or Substitution error to a step error
 --}
 unificationOrSubstitutionToStepError
   :: Either (UnificationOrSubstitutionError level variable) a
