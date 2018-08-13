@@ -4,6 +4,7 @@ module Kore.Step.Error
     , stepErrorVariables
     , substitutionToStepError
     , unificationToStepError
+    , unificationOrSubstitutionToStepError
     ) where
 
 import qualified Data.Set as Set
@@ -64,3 +65,15 @@ substitutionToStepError bottom (Left (CtorCircularVariableDependency _)) =
     Right bottom
 substitutionToStepError _ (Left err)     = Left (StepErrorSubstitution err)
 substitutionToStepError _ (Right result) = Right result
+
+
+{--| Converts a Unification or Substitution error to a step error 
+--}
+unificationOrSubstitutionToStepError
+  :: Either (UnificationOrSubstitutionError level variable) a
+  -> Either (StepError level variable) a
+unificationOrSubstitutionToStepError (Left (UnificationError err))
+  = Left $ StepErrorUnification err
+unificationOrSubstitutionToStepError (Left (SubstitutionError err))
+  = Left $ StepErrorSubstitution err
+unificationOrSubstitutionToStepError (Right res) = Right res

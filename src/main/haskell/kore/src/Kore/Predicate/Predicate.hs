@@ -25,6 +25,7 @@ module Kore.Predicate.Predicate
     , makeNotPredicate
     , makeOrPredicate
     , makeTruePredicate
+    , mergeConditionsWithAnd
     , allVariables
     , mapVariables
     , stringFromPredicate
@@ -53,6 +54,8 @@ import Kore.IndexedModule.MetadataTools
        ( SortTools )
 import Kore.Variables.Free
        ( pureAllVariables )
+import Kore.Variables.Fresh.IntCounter
+       ( IntCounter )
 
 {--| 'PredicateProof' is a placeholder for a proof showing that a Predicate
 evaluation was correct.
@@ -292,3 +295,17 @@ mapVariables f = fmap (mapPatternVariables f)
 -}
 allVariables :: Ord (var level) => Predicate level var -> Set (var level)
 allVariables = pureAllVariables . unwrapPredicate
+
+
+mergeConditionsWithAnd
+    ::  ( MetaOrObject level
+        , Given (SortTools level)
+        , SortedVariable var
+        , Show (var level))
+    => [Predicate level var]
+    -> (IntCounter (Predicate level var), PredicateProof level)
+mergeConditionsWithAnd conditions =
+    let
+        (predicate, proof) = makeMultipleAndPredicate conditions
+    in
+        (return predicate, proof)
