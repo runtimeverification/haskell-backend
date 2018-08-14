@@ -249,10 +249,13 @@ stepWithAxiom
     -- Combine the substitution produced by unification with the initial
     -- substitution carried by the configuration. Merging substitutions may
     -- produce another predicate during symbolic execution.
+    let bottom = (PredicateSubstitution{ predicate = makeFalsePredicate, substitution = [] }, EmptyUnificationProof )
     substitutionWithIntCounter <-
-      stepperVariableToVariableForError existingVars
-      $ unificationOrSubstitutionToStepError
-      $ mergeAndNormalizeSubstitutions tools unificationSubstitution startSubstitution
+      stepperVariableToVariableForError
+      existingVars
+        $ unificationOrSubstitutionToStepError
+        $ ctorSubstitutionCycleToBottom ( return bottom )
+        $ mergeAndNormalizeSubstitutions tools unificationSubstitution startSubstitution 
 
     return
       $ do
