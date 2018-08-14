@@ -20,13 +20,23 @@ module Kore.Builtin.Int
     , sortDeclVerifiers
     , symbolVerifiers
     , patternVerifier
+    , builtinFunctions
+    , asPattern
     ) where
 
 import           Control.Monad
                  ( void )
+import           Data.HashMap.Strict
+                 ( HashMap )
 import qualified Data.HashMap.Strict as HashMap
 import qualified Text.Megaparsec.Char.Lexer as Parsec
 
+import qualified Kore.AST.Common as Kore
+import           Kore.AST.MetaOrObject
+                 ( Object )
+import           Kore.AST.PureML
+                 ( CommonPurePattern )
+import qualified Kore.ASTUtils.SmartPatterns as Kore
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 
@@ -121,3 +131,81 @@ parse :: Builtin.Parser Integer
 parse = Parsec.signed noSpace Parsec.decimal
   where
     noSpace = pure ()
+
+{- | Render an 'Integer' as a domain value pattern of the given sort.
+
+  The result sort should be hooked to the builtin @Int@ sort, but this is not
+  checked.
+
+  See also: 'sort'
+
+ -}
+asPattern
+    :: Kore.Sort Object  -- ^ resulting sort
+    -> Integer  -- ^ builtin value to render
+    -> CommonPurePattern Object
+asPattern resultSort result =
+    Kore.DV_ resultSort
+        (Kore.StringLiteral_ Kore.StringLiteral
+            { getStringLiteral = show result })
+
+{- | Implement builtin function evaluation.
+ -}
+builtinFunctions :: HashMap String Builtin.Function
+builtinFunctions =
+    HashMap.fromList
+    [
+      -- TODO (thomas.tuegel): Implement bit ranges.
+      ("INT.bitRange", Builtin.notImplemented)
+    , ("INT.signExtendBitRange", Builtin.notImplemented)
+
+      -- TODO (thomas.tuegel): Add MonadRandom to evaluation context to
+      -- implement rand and srand.
+    , ("INT.rand", Builtin.notImplemented)
+    , ("INT.srand", Builtin.notImplemented)
+
+    , comparator "INT.gt" (>)
+    , comparator "INT.ge" (>=)
+    , comparator "INT.eq" (==)
+    , comparator "INT.le" (<=)
+    , comparator "INT.lt" (<)
+    , comparator "INT.neq" (/=)
+
+      -- Ordering operations
+    , binaryOperator "INT.min" min
+    , binaryOperator "INT.max" max
+
+      -- Arithmetic operations
+    , binaryOperator "INT.add" (+)
+    , binaryOperator "INT.sub" (-)
+    , binaryOperator "INT.mul" (*)
+    , unaryOperator "INT.abs" abs
+
+      -- TODO (thomas.tuegel): Implement division.
+    , ("INT.ediv", Builtin.notImplemented)
+    , ("INT.emod", Builtin.notImplemented)
+    , ("INT.tdiv", Builtin.notImplemented)
+    , ("INT.tmod", Builtin.notImplemented)
+
+      -- Bitwise operations
+      -- TODO (thomas.tuegel): Implement bitwise operations.
+    , ("INT.and", Builtin.notImplemented)
+    , ("INT.or", Builtin.notImplemented)
+    , ("INT.xor", Builtin.notImplemented)
+    , ("INT.not", Builtin.notImplemented)
+    , ("INT.shl", Builtin.notImplemented)
+    , ("INT.shr", Builtin.notImplemented)
+
+      -- Exponential and logarithmic operations
+      -- TODO (thomas.tuegel): Implement exponential and logarithmic operations
+    , ("INT.pow", Builtin.notImplemented)
+    , ("INT.powmod", Builtin.notImplemented)
+    , ("INT.log2", Builtin.notImplemented)
+    ]
+  where
+    unaryOperator name op =
+        (name, Builtin.unaryOperator parse asPattern name op)
+    binaryOperator name op =
+        (name, Builtin.binaryOperator parse asPattern name op)
+    comparator name op =
+        (name, Builtin.binaryOperator parse Bool.asPattern name op)
