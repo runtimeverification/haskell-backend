@@ -5,6 +5,7 @@ module Kore.Step.Error
     , substitutionToStepError
     , unificationToStepError
     , unificationOrSubstitutionToStepError
+    , ctorSubstitutionCycleToBottom
     ) where
 
 import qualified Data.Set as Set
@@ -77,3 +78,11 @@ unificationOrSubstitutionToStepError (Left (UnificationError err))
 unificationOrSubstitutionToStepError (Left (SubstitutionError err))
   = Left $ StepErrorSubstitution err
 unificationOrSubstitutionToStepError (Right res) = Right res
+
+ctorSubstitutionCycleToBottom
+  :: result
+  -> Either (UnificationOrSubstitutionError level variable) result
+  -> Either (UnificationOrSubstitutionError level variable) result
+ctorSubstitutionCycleToBottom bottom
+  (Left (SubstitutionError (CtorCircularVariableDependency _))) = Right bottom
+ctorSubstitutionCycleToBottom _ owise = owise
