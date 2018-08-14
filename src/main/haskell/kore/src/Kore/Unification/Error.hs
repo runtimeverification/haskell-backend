@@ -15,6 +15,7 @@ module Kore.Unification.Error
     , substitutionErrorVariables
     , substitutionToUnifyOrSubError
     , unificationToUnifyOrSubError
+    , ctorSubstitutionCycleToBottom
     ) where
 
 import qualified Data.Set as Set
@@ -76,15 +77,23 @@ mapSubstitutionErrorVariables mapper
 
 -- Trivially promote substitution errors to sum-type errors
 substitutionToUnifyOrSubError
-  :: Either (SubstitutionError level variable) a
-  -> Either (UnificationOrSubstitutionError level variable) a
+    :: Either (SubstitutionError level variable) a
+    -> Either (UnificationOrSubstitutionError level variable) a
 substitutionToUnifyOrSubError (Left err) = Left $ SubstitutionError err
 substitutionToUnifyOrSubError (Right a)  = Right a
 
 -- Trivially promote unification errors to sum-type errors
 unificationToUnifyOrSubError
-  :: Either (UnificationError level) a
-  -> Either (UnificationOrSubstitutionError level variable) a
+    :: Either (UnificationError level) a
+    -> Either (UnificationOrSubstitutionError level variable) a
 unificationToUnifyOrSubError (Left err) = Left $ UnificationError err
 unificationToUnifyOrSubError (Right a)  = Right a
 
+-- Catches a Constructor cycle in substitution error as a 'bottom' value
+ctorSubstitutionCycleToBottom
+    :: result -- ^ bottom value to catch cycle error
+    -> Either (UnificationOrSubstitutionError level variable) result
+    -> Either (UnificationOrSubstitutionError level variable) result
+ctorSubstitutionCycleToBottom bottom
+  (Left (SubstitutionError (CtorCircularVariableDependency _))) = Right bottom
+ctorSubstitutionCycleToBottom _ owise = owise

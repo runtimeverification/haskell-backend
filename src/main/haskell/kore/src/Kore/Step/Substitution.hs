@@ -84,32 +84,30 @@ mergeAndNormalizeSubstitutions
     -> UnificationSubstitution level variable
     -> UnificationSubstitution level variable
     -> Either
-         ( UnificationOrSubstitutionError     level variable )
-         ( IntCounter ( PredicateSubstitution level variable
-                      , UnificationProof      level variable ))
+        ( UnificationOrSubstitutionError     level variable )
+        ( IntCounter
+          ( PredicateSubstitution level variable
+          , UnificationProof level variable
+          )
+        )
 mergeAndNormalizeSubstitutions tools first second = do
     (predSubstitution, proof) <- do -- IntCounter Monad
-      { (substitutionList, proof) <-
+      (substitutionList, proof) <-
           normalizeSubstitutionDuplication' (first ++ second)
-      ; predSubstitution <- normalizeSubstitution' substitutionList
-      ; return (predSubstitution, proof)
+      predSubstitution <- normalizeSubstitution' substitutionList
+      return (predSubstitution, proof)
           -- TODO(virgil): Return the actual condition here. and proofs
-      }
     return $ do --IntCounter Monad
-      { PredicateSubstitution
+      PredicateSubstitution
         { predicate = condition
         , substitution = substitutionList'
         } <- predSubstitution
-      -- ; condition' <- fst $ mergeConditionsWithAnd --TODO: merge conditions
-      --                 [ makeTruePredicate
-      --                 , condition ]
-      ; return ( PredicateSubstitution
-                 { predicate = condition
-                 , substitution = substitutionList'
-                 }
-               , proof
-               )
-      }
+      return ( PredicateSubstitution
+               { predicate = condition
+               , substitution = substitutionList'
+               }
+             , proof
+             )
   where
     normalizeSubstitutionDuplication' =
       unificationToUnifyOrSubError . normalizeSubstitutionDuplication tools
@@ -121,17 +119,17 @@ a single one, then merges the merge side condition and the given condition list
 into a condition.
 -}
 mergePredicatesAndSubstitutions
-  :: ( Show (variable level)
-     , SortedVariable variable
-     , MetaOrObject level
-     , Ord (variable level)
-     )
-  => MetadataTools level StepperAttributes
-  -> [Predicate level variable]
-  -> [UnificationSubstitution level variable]
-  -> ( Predicate level variable
-     , UnificationSubstitution level variable
-     , PredicateProof level )
+    :: ( Show (variable level)
+       , SortedVariable variable
+       , MetaOrObject level
+       , Ord (variable level)
+       )
+    => MetadataTools level StepperAttributes
+    -> [Predicate level variable]
+    -> [UnificationSubstitution level variable]
+    -> ( Predicate level variable
+       , UnificationSubstitution level variable
+       , PredicateProof level )
 mergePredicatesAndSubstitutions tools predicates substitutions =
     let
         (substitutionMergePredicate, mergedSubstitution) =
@@ -147,14 +145,14 @@ mergePredicatesAndSubstitutions tools predicates substitutions =
         )
 
 mergeSubstitutionWithPredicate
-  :: ( Ord (variable level)
-     , SortedVariable variable
-     , MetaOrObject level
-     )
-  => MetadataTools level StepperAttributes
-  -> ([Predicate level variable], UnificationSubstitution level variable)
-  -> UnificationSubstitution level variable
-  -> ([Predicate level variable], UnificationSubstitution level variable)
+    :: ( Ord (variable level)
+       , SortedVariable variable
+       , MetaOrObject level
+       )
+    => MetadataTools level StepperAttributes
+    -> ([Predicate level variable], UnificationSubstitution level variable)
+    -> UnificationSubstitution level variable
+    -> ([Predicate level variable], UnificationSubstitution level variable)
 mergeSubstitutionWithPredicate
     tools
     (predicates, subst1)
