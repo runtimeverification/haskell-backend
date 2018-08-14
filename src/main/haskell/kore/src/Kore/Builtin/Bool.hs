@@ -21,6 +21,7 @@ module Kore.Builtin.Bool
     , symbolVerifiers
     , patternVerifier
     , builtinFunctions
+    , asPattern
     ) where
 
 import           Control.Monad
