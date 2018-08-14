@@ -29,6 +29,7 @@ import Kore.ASTVerifier.Error
 import Kore.ASTVerifier.ModuleVerifier
 import Kore.Attribute.Parser
        ( ParseAttributes (..) )
+import qualified Kore.Builtin as Builtin
 import Kore.Error
 import Kore.Implicit.Definitions
        ( uncheckedKoreModules )
@@ -56,10 +57,11 @@ e.g.:
 verifyDefinition
     :: ParseAttributes atts
     => AttributesVerification atts
+    -> Builtin.Verifiers
     -> KoreDefinition
     -> Either (Error VerifyError) VerifySuccess
-verifyDefinition attributesVerification definition = do
-    _ <- verifyAndIndexDefinition attributesVerification definition
+verifyDefinition attributesVerification builtinVerifiers definition = do
+    _ <- verifyAndIndexDefinition attributesVerification builtinVerifiers definition
     verifySuccess
 
 {-|'verifyAndIndexDefinition' verifies a definition and returns an indexed
@@ -68,9 +70,10 @@ collection of the definition's modules.
 verifyAndIndexDefinition
     :: ParseAttributes atts
     => AttributesVerification atts
+    -> Builtin.Verifiers
     -> KoreDefinition
     -> Either (Error VerifyError) (Map.Map ModuleName (KoreIndexedModule atts))
-verifyAndIndexDefinition attributesVerification definition = do
+verifyAndIndexDefinition attributesVerification builtinVerifiers definition = do
     (implicitIndexedModules, implicitIndexedModule, defaultNames) <-
         indexImplicitModules
 
@@ -84,7 +87,7 @@ verifyAndIndexDefinition attributesVerification definition = do
             )
             implicitIndexedModules
             (definitionModules definition)
-    mapM_ (verifyModule attributesVerification) (Map.elems indexedModules)
+    mapM_ (verifyModule attributesVerification builtinVerifiers) (Map.elems indexedModules)
     verifyAttributes
         (definitionAttributes definition)
         attributesVerification
@@ -132,13 +135,19 @@ containing only the 'kore' default module.
 verifyNormalKoreDefinition
     :: ParseAttributes atts
     => AttributesVerification atts
+    -> Builtin.Verifiers
     -> KoreDefinition
     -> Either (Error VerifyError) (KoreIndexedModule atts)
-verifyNormalKoreDefinition attributesVerification definition = do
+verifyNormalKoreDefinition
+    attributesVerification
+    builtinVerifiers
+    definition
+  = do
     -- VerifyDefinition already checks the Kore module, so we skip it.
     modules <-
         verifyAndIndexDefinition
             attributesVerification
+            builtinVerifiers
             definition
     name <- extractSingleModuleNameFromDefinition definition
     findModule name modules
@@ -150,12 +159,18 @@ containing only the 'kore' default module.
 verifyImplicitKoreDefinition
     :: ParseAttributes atts
     => AttributesVerification atts
+    -> Builtin.Verifiers
     -> KoreDefinition
     -> Either (Error VerifyError) (KoreIndexedModule atts)
-verifyImplicitKoreDefinition attributesVerification definition = do
+verifyImplicitKoreDefinition
+    attributesVerification
+    builtinVerifiers
+    definition
+  = do
     modules <-
         verifyAndIndexDefinition
             attributesVerification
+            builtinVerifiers
             definition { definitionModules = [] }
     name <- extractSingleModuleNameFromDefinition definition
     findModule name modules

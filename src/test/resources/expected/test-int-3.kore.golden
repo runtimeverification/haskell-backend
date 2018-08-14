@@ -1,0 +1,1 @@
+Parse error: Error in module 'INT' -> symbol 'geInt' declaration (../../../test/resources//test-int-3.kore 16:19) -> argument sorts: expected 2 arguments, found 1

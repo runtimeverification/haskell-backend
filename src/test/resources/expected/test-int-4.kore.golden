@@ -1,0 +1,1 @@
+Parse error: Error in module 'INT' -> symbol 'geInt' declaration (../../../test/resources//test-int-4.kore 16:19) -> result sort: sort 'Bool' is not hooked to builtin sort 'BOOL.Bool'
