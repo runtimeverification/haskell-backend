@@ -17,6 +17,7 @@ import           Kore.AST.Sentence
 import           Kore.Attribute.Parser
                  ( parseAttributes )
 import qualified Kore.Attribute.Parser as Attribute
+import           Kore.Builtin.Hook
 import           Kore.Error
                  ( Error )
 import           Kore.Implicit.Attributes
@@ -59,12 +60,10 @@ test_stepperAttributes =
         )
     , testCase "Parsing a hook attribute"
         (assertEqual "[function{}(),hook{}(\"builtin\")]"
-            (Right (Just "builtin"))
+            (Right ((Hook . Just) "builtin"))
             (hook <$>
                 parseStepperAttributes
-                [ functionAttribute
-                , hookAttribute "builtin"
-                ]
+                [ hookAttribute "builtin" ]
             )
         )
     , testCase "Parsing an illegal hook attribute"
@@ -75,10 +74,6 @@ test_stepperAttributes =
         (expectError
             "[function{}(),hook{}(\"BUILTIN.1\"),hook{}(\"BUILTIN.2\")]"
             (parseStepperAttributes [ badHookAttribute ])
-        )
-    , testCase "Parsing hook attribute without function attribute"
-        (expectError "[hook{}(\"builtin\")]"
-            (parseStepperAttributes [ hookAttribute "builtin" ])
         )
     , testCase "Ignoring unknown attribute"
         (assertEqual "[test{}()]"
@@ -93,7 +88,7 @@ test_stepperAttributes =
                 { isFunction = True
                 , isFunctional = True
                 , isConstructor = False
-                , hook = Just "builtin"
+                , hook = (Hook . Just) "builtin"
                 })
             (parseStepperAttributes
                 [ functionAttribute

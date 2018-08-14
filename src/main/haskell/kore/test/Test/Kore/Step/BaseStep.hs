@@ -5,6 +5,8 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
+import Data.Default
+       ( def )
 import Data.Reflection
        ( give )
 
@@ -1141,7 +1143,7 @@ mockStepperAttributes patternHead =
     { isConstructor = patternHead /= hSymbol
     , isFunctional  = True
     , isFunction    = True
-    , hook          = Nothing
+    , hook          = def
     }
 
 mockSortTools :: SortTools Meta

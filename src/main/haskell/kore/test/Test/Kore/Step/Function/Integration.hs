@@ -1,13 +1,15 @@
 module Test.Kore.Step.Function.Integration (test_functionIntegration) where
 
-import qualified Data.Map as Map
-import           Data.Reflection
-                 ( give )
-
 import Test.Tasty
        ( TestTree )
 import Test.Tasty.HUnit
        ( testCase )
+
+import           Data.Default
+                 ( def )
+import qualified Data.Map as Map
+import           Data.Reflection
+                 ( give )
 
 import Kore.AST.Common
        ( Application (..), AstLocation (..), Id (..), Pattern (..),
@@ -18,7 +20,7 @@ import Kore.AST.PureML
 import Kore.AST.PureToKore
        ( patternKoreToPure )
 import Kore.ASTHelpers
-       ( ApplicationSorts(..) )
+       ( ApplicationSorts (..) )
 import Kore.Building.AsAst
 import Kore.Building.Patterns
 import Kore.Building.Sorts
@@ -309,7 +311,7 @@ mockStepperAttributes = StepperAttributes
     { isConstructor = True
     , isFunctional = True
     , isFunction = True
-    , hook = Nothing
+    , hook = def
     }
 
 mockMetadataTools :: MetadataTools Meta StepperAttributes

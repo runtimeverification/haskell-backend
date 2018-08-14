@@ -15,28 +15,16 @@ module Kore.Step.StepperAttributes
   , hookAttribute
   ) where
 
-import Control.Applicative
-       ( (<|>) )
-import Control.Monad
-       ( unless )
 import Data.Default
-import Data.Functor
-       ( ($>) )
-import Data.Maybe
-       ( isJust )
 
-import           Kore.AST.Common
-                 ( Application (..), Pattern (..), StringLiteral (..) )
 import           Kore.AST.Kore
-                 ( CommonKorePattern, pattern KoreMetaPattern,
-                 pattern KoreObjectPattern )
+                 ( CommonKorePattern )
 import           Kore.Attribute.Parser
                  ( ParseAttributes (..) )
 import qualified Kore.Attribute.Parser as Attribute
-import           Kore.Error
-                 ( koreFail )
+import Kore.Builtin.Hook
 import           Kore.Implicit.Attributes
-                 ( attributeHead, keyOnlyAttribute )
+                 ( keyOnlyAttribute )
 
 {- | Kore pattern representing a @constructor@ attribute
 
@@ -71,25 +59,6 @@ functionAttribute    = keyOnlyAttribute "function"
 functionalAttribute :: CommonKorePattern
 functionalAttribute  = keyOnlyAttribute "functional"
 
-{- | Kore pattern representing a @hook@ attribute
-
-  Kore syntax:
-  @
-    hook{}("HOOKED.function")
-  @
-
- -}
-hookAttribute :: String  -- ^ hooked function name
-              -> CommonKorePattern
-hookAttribute builtin =
-    (KoreObjectPattern . ApplicationPattern)
-    Application
-    { applicationSymbolOrAlias = attributeHead "hook"
-    , applicationChildren = [lit]
-    }
-  where
-    lit = (KoreMetaPattern . StringLiteralPattern) (StringLiteral builtin)
-
 -- |Data-structure containing attributes relevant to the Kore Stepper
 data StepperAttributes =
     StepperAttributes
@@ -99,18 +68,23 @@ data StepperAttributes =
       -- ^ Whether a symbol is functional
     , isConstructor :: Bool
       -- ^ Whether a symbol represents a constructor
-    , hook          :: Maybe String
-      -- ^ The builtin function hooked to a symbol
+    , hook          :: Hook
+      -- ^ The builtin sort or symbol hooked to a sort or symbol
     }
   deriving (Eq, Show)
 
+defaultStepperAttributes :: StepperAttributes
+defaultStepperAttributes =
+    StepperAttributes
+    { isFunction    = False
+    , isFunctional  = False
+    , isConstructor = False
+    , hook          = def
+    }
+
+-- | See also: 'defaultStepperAttributes'
 instance Default StepperAttributes where
-    def = StepperAttributes
-        { isFunction    = False
-        , isFunctional  = False
-        , isConstructor = False
-        , hook          = Nothing
-        }
+    def = defaultStepperAttributes
 
 {- | Is the @functional@ Kore attribute present?
 
@@ -142,30 +116,11 @@ hasFunctionAttribute = Attribute.hasKeyAttribute "function"
 hasConstructorAttribute :: Attribute.Parser Bool
 hasConstructorAttribute = Attribute.hasKeyAttribute "constructor"
 
-{- | Parse the @hook@ Kore attribute, if present.
-
-  It is a parse error if the @hook@ attribute is not given exactly one literal
-  string argument.
-
-  See also: 'hookAttribute'
-
- -}
-getHookAttribute :: Attribute.Parser (Maybe String)
-getHookAttribute =
-    correctAttribute <|> noAttribute
-  where
-    correctAttribute = Just <$> Attribute.parseStringAttribute "hook"
-    noAttribute = Attribute.assertNoAttribute "hook" $> Nothing
-
 instance ParseAttributes StepperAttributes where
     attributesParser =
         do
             isFunctional <- hasFunctionalAttribute
             isFunction <- hasFunctionAttribute
             isConstructor <- hasConstructorAttribute
-            hook <- getHookAttribute
-            unless (isJust hook `implies` isFunction)
-                (koreFail "hooked symbol must have 'function' attribute")
+            hook <- attributesParser
             pure StepperAttributes {..}
-      where
-        implies a b = not a || b
