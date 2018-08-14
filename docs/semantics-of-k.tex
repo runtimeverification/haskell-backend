@@ -279,6 +279,13 @@
   
   \newcommand{\builtin}{\textit{builtin}}
   
+  \newcommand{\KbuiltinSort}{\texttt{\sharpsymbol builtinSort}}
+  \newcommand{\pKbuiltinSort}[1]
+  {\parametric{\texttt{\sharpsymbol builtinSort}}{#1}}
+  \newcommand{\KbuiltinSymbol}{\texttt{\sharpsymbol builtinSymbol}}
+  \newcommand{\pKbuiltinSymbol}[1]
+  {\parametric{\texttt{\sharpsymbol builtinSymbol}}{#1}}
+  
   % Define PATTERNS with ATTERNS are small capitals:
   \newcommand{\PATTERNS}{\text{P\textsc{atterns}}}
   \newcommand{\VARIABLES}{\text{V\textsc{ariables}}}
@@ -2811,7 +2818,7 @@ or Agda.
 Recall from Section~\ref{sec:semantics} that the semantics of a matching
 logic theory $(\Sigma,A)$ was loosely defined as the collection of all
 $\Sigma$-models satisfying its axioms: $\denote{(\Sigma,A)} =
-\{M \ \mid \ M \in \Mod_{\Sigma},\ M \models_{\Sigma} A \}$.
+\{M \mid M \in \Mod_{\Sigma},\ M \models_{\Sigma} A \}$.
 To allow all the builtin scenarios above and stay as abstract as possible
 w.r.t.~builtins, we generalize matching logic theories and their semantics
 as follows.
@@ -4643,6 +4650,51 @@ they construct different things:
 where $L_1$ and $L_2$ are variables of sort $\KVariableList$.
 Recall that \KVariableListAsKPatternList takes a list of \KVariableList
 and map it to \KPatternList, defined in Section~\ref{sec:ML-patterns}.
+
+\subsection{Built-ins in the Meta-Theory}
+
+Recall that in Section~\ref{sec:builtins},
+we define matching logic theories \emph{with built-ins} as a tuple
+$(S_\builtin, \Sigma_\builtin, S, \Sigma, A)$,
+where $S_\builtin$ contains built-in sorts
+and $\Sigma_\builtin$ contains built-in symbols.
+Unlike $S$ and $\Sigma$ whose semantics is axiomatized by
+a set $A$ of axioms, the the axiomatization of the
+semantics of built-ins are given
+by an implementation/oracle.
+Recall that as we discussed in Section~\ref{sec:builtins},
+different tools use the built-ins differently and have different oracles.
+An interpreter may use an external library for fast implementation
+as an oracle, while a symbolic execution engine may use an SMT solver like Z3.
+Whether a pattern $\varphi_\builtin$ over the syntax of built-in sorts 
+and symbols belongs to the theory $(S_\builtin, \Sigma_\builtin, S, \Sigma, A)$
+is told by the oracle; 
+notice the set of patterns $\varphi_\builtin$ that are in the theory
+may not even be recursively enumerable.
+
+We claim that there is nothing special needed for built-ins in the meta-theory.
+In the same way how object-level axioms 
+turn into meta-level axioms about \Kdeduce, 
+we can regard all the properties that the built-in oracle recognizes 
+at the object-level as meta-level axioms about \Kdeduce.
+Specifically, 
+whenever we need a property $\varphi_\builtin$ 
+about built-ins, say, natural numbers,
+the corresponding claim
+$\KprovableP{\shs}(\denote{\varphi_\builtin})$
+is added to the meta-theory as an axiom, where
+$\denote{\varphi_\builtin}$ is the meta-representation of $\varphi_\builtin$.
+In other words,
+Any reasoning conducted in the meta-theory with all axioms about built-ins added
+remains sound, because 
+Section~\ref{sec:ML-proof-system}
+gives a faithful axiomatization of the proof system of matching 
+logic~(see Theorem~\ref{thm:faithfulness-finite}),
+and that proof system is a sound proof system.
+
+
+
+
 
 \subsection{A Summary of the Meta-Theory}
 \label{sec:K-summary}
@@ -7211,6 +7263,14 @@ axiom\{$\shs$\} \\
 \end{center}
 where $\shs$ is a fresh meta-level sort variable.
 
+The declaration of a hooked sort
+\begin{center}
+	\ttfamily
+	hooked-sort $C$\{$s_1,\dots,s_n$\} [$\att$]
+\end{center}
+is lifted in the same way as
+a normal sort declaration.
+
 \subsubsection{Lift Object Head Constructors to Meta Symbols}
 Object symbol constructors are lifted to non-parametric meta-symbols as
 \begin{align*}
@@ -7329,6 +7389,9 @@ $v_1,\dots,v_m$ are declared.
 	\end{tabular}
 \end{center}
 where $\shs$ is a fresh meta-level sort variable.
+
+The declaration of a hooked symbol is lifted in the same way
+as a normal symbol declaration.
 
 \subsubsection{Lift Object Alias Declarations}
 An object alias declaration is lifted to a symbol declaration
