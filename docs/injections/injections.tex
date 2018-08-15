@@ -26,6 +26,10 @@
 \theoremstyle{definition}
 \newtheorem{remark}{Remark}[section]
 
+
+\theoremstyle{definition}
+\newtheorem{question}{Question}[section]
+
 \theoremstyle{theorem}
 \newtheorem{theorem}{Theorem}[section]
 
@@ -558,6 +562,21 @@ And I would agree, but I do believe that we
 should either disallow symbols like in Example~\ref{consistency-parametric-result-free}
 above, or otherwise give a serious warning.
 Note that \(\inj\) itself is such a symbol ;-).
+\dl{
+Here is a counter-example, when the above axioms cannot be applied:
+\begin{align*}
+&\syntax\ \Exp ::= \Int\\
+&\syntax\ \Int ::= \Int\ "\texttt{:Int}"\ [\KWsymbol("\texttt{ucast}")]\\
+&\syntax\ \Exp ::= \Exp\ "\texttt{:Exp}"\ [\KWsymbol("\texttt{ucast}")]
+\end{align*}
+Assume that \texttt{ucast} is parametric, i.e. it is represented by the instances \texttt{ucast}\{\Int\} and \texttt{ucast}\{\Exp\}.
+Then the above axiom becomes 
+\[
+\inj\{\Int,\Exp\}(\texttt{ucast}\{\Int\}(\varphi:Int))=
+\texttt{ucast}\{\Exp\}(\inj\{\Int,\Exp\}(\varphi:Int))
+\]
+But for \texttt{3:Exp} only the pattern \texttt{ucast}\{\Exp\}(\inj\{\Int,\Exp\}(3)) correctly describes the user's intention to parse \texttt{3} as an \Exp.
+}
 
 What makes me believe that axiom \ref{axiom-parametric-symbol}
 above is OK is that it corresponds to the main requirement of
@@ -910,6 +929,10 @@ Such an example is given by the \cast\ operator. Let $G$ be the following gramma
 \end{align*}
 We have $\cast\in\Sigma^\textrm{osa}_{\Int,\Bool}\cap \Sigma^\textrm{osa}_{\Exp,\Int}$, $\Int\le \Exp$ and $\Bool\not\le \Int$.
 \end{proof}
+\begin{question}
+Is the \emph{monotonicity} a property really needed for a ML theory with subsorting? We use parameters and injections to "encode" an order-sorted signature as a many-sorted signature.
+The \cast\ operator is a parametric one and its instances clearly disambiguate ambiguous order-sorted terms. For instance, $\cast\{\Int,\Bool\}(\varphi:\Int)$ and $\cast\{\Exp,\Bool\}(\inj\{\Int,\Exp\}(\varphi:\Int))$ are two disambiguations of the ambiguous order-sorted term $\cast(\varphi:Int)$.
+\end{question}
 
 \begin{proposition}\label{prop:non-regular}
 There are grammars $G$ such that the order-sorted signature $(S^\textrm{osa},\le, \Sigma^\textrm{osa})$ associated to $G$ is not regular.
@@ -923,11 +946,15 @@ Another example is the following one:
 &\sort\ N_2\\
 &\syntax\ N_3 ::= N_1\\
 &\syntax\ N_4 ::= N_2\\
-&\syntax\ N_5 ::= f(N_1,N_4)\ [\KWsymbol(f)]\\ 
-&\syntax\ N_5 ::= f(N_3,N_2)\ [\KWsymbol(f)]
+&\syntax\ N_5 ::= \texttt{f}(N_1,N_4)\ [\KWsymbol("\texttt{f}")]\\ 
+&\syntax\ N_5 ::= \texttt{f}(N_3,N_2)\ [\KWsymbol('\texttt{f}")]
 \end{align*}
-We have $N_1\,N_2\le N_1\,N_4$, $N_1\,N_2\le N_3\,N_2$, and the set $\{\langle s_1s_2,s\rangle\mid N_1\,N_2\le s_1s_2, f\in\Sigma^\textrm{osa}_{s_1s_2,s}\}$ has no a least rank, because $N_1\,N_4$ and $N_3\,N_2$ are non-comparable
+We have $N_1\,N_2\le N_1\,N_4$, $N_1\,N_2\le N_3\,N_2$, and the set $\{\langle s_1s_2,s\rangle\mid N_1\,N_2\le s_1s_2, \texttt{f}\in\Sigma^\textrm{osa}_{s_1s_2,s}\}$ has no a least rank, because $N_1\,N_4$ and $N_3\,N_2$ are non-comparable
 \end{proof}
+\begin{question}
+The same as that of monotonicity:
+Is the \emph{regularity} a property needed? In ML we may express the ambiguity of the order-sorted term $\texttt{f}(\varphi_1:N_1,\varphi_2:N_2)$ by $\texttt{f}(\varphi_1:N_1,\inj\{N_2,N_4\}(\varphi_2:N_2))\lor\texttt{f}(\varphi_1:\inj\{N_1,N_3\}(N_1),\varphi_2:N_2)$.
+\end{question}
 
 \begin{definition}
 Let $\mathit{par}(N)$ denote the set of parameters occurring in the sort-term $N$ (the set of parameters the sort $N$ depends on). 
