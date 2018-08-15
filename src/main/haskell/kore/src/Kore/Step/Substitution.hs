@@ -117,7 +117,8 @@ mergePredicatesAndSubstitutions
     -> [UnificationSubstitution level variable]
     -> ( Predicate level variable
        , UnificationSubstitution level variable
-       , PredicateProof level )
+       , PredicateProof level
+       )
 mergePredicatesAndSubstitutions tools predicates substitutions =
     let
         (substitutionMergePredicate, mergedSubstitution) =

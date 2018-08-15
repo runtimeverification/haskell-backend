@@ -95,5 +95,5 @@ ctorSubstitutionCycleToBottom
     -> Either (UnificationOrSubstitutionError level variable) result
     -> Either (UnificationOrSubstitutionError level variable) result
 ctorSubstitutionCycleToBottom bottom
-  (Left (SubstitutionError (CtorCircularVariableDependency _))) = Right bottom
+    (Left (SubstitutionError (CtorCircularVariableDependency _))) = Right bottom
 ctorSubstitutionCycleToBottom _ owise = owise
