@@ -74,9 +74,9 @@ class (Traversable rule, Eq formula)
 
 derive :: (Pretty ix, Ord ix, ProofSystem error rule formula)
        => Proof ix rule formula
-       -> ix -> formula -> rule ix
+       -> ix -> rule ix
        -> Either (Error error) (Proof ix rule formula)
-derive proof ix f rule = do
+derive proof ix rule = do
   mlFailWhen (Map.member ix (derivations proof))
     [ "Formula with ID "
     , squotes (pretty ix)
@@ -87,8 +87,6 @@ derive proof ix f rule = do
       Nothing ->
         mlFail ["Formula with ID ", squotes (pretty ix), " not found."]
       Just a  -> return a
-  mlFailWhen (conclusion /= f)
-    ["Expected a different formula for id ", squotes (pretty ix), "."]
   let resolveIx name = do
         (offset',formula') <-
           case Map.lookup name (index proof) of

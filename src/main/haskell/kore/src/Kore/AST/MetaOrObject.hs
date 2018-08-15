@@ -26,8 +26,12 @@ module Kore.AST.MetaOrObject
     , IsMetaOrObject (..)
     ) where
 
+import Control.DeepSeq
+       ( NFData )
 import Data.Proxy
        ( Proxy (Proxy) )
+import GHC.Generics
+       ( Generic )
 
 import Kore.AST.Pretty
        ( Pretty (..) )
@@ -36,10 +40,10 @@ toProxy :: a -> Proxy a
 toProxy _ = Proxy
 
 data Meta = Meta
-    deriving (Show, Eq, Ord)
+    deriving (Eq, Ord, Show)
 
 data Object = Object
-    deriving (Show, Eq, Ord)
+    deriving (Eq, Ord, Show)
 
 data IsMetaOrObject s where
     IsMeta :: IsMetaOrObject Meta
@@ -77,6 +81,7 @@ instance MetaOrObject Object where
 data Unified thing
     = UnifiedObject !(thing Object)
     | UnifiedMeta !(thing Meta)
+  deriving (Generic)
 
 type ShowMetaOrObject thing = (Show (thing Meta), Show (thing Object))
 type EqMetaOrObject thing = (Eq (thing Meta), Eq (thing Object))
@@ -85,6 +90,8 @@ type OrdMetaOrObject thing = (Ord (thing Meta), Ord (thing Object))
 deriving instance (EqMetaOrObject thing) => Eq (Unified thing)
 deriving instance (OrdMetaOrObject thing) => Ord (Unified thing)
 deriving instance (ShowMetaOrObject thing) => Show (Unified thing)
+
+instance (NFData (thing Meta), NFData (thing Object)) => NFData (Unified thing)
 
 instance
     ( Pretty (thing Object)

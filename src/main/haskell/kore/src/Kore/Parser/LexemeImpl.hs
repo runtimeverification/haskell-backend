@@ -25,8 +25,6 @@ Conventions used:
 
 module Kore.Parser.LexemeImpl where
 
-import           Control.Arrow
-                 ( (&&&) )
 import           Control.Monad
                  ( void, when )
 import           Control.Monad.Combinators
@@ -188,7 +186,14 @@ idCharSet =
 Does not consume whitespace.
 -}
 objectIdRawParser :: IdKeywordParsing -> Parser String
-objectIdRawParser = genericIdRawParser idFirstCharSet idCharSet
+objectIdRawParser keywordParsing = do
+    backslash <- Parser.string "\\" <|> pure ""
+    name <- objectNonslashIdRawParser keywordParsing
+    pure (backslash ++ name)
+
+objectNonslashIdRawParser :: IdKeywordParsing -> Parser String
+objectNonslashIdRawParser =
+    genericIdRawParser idFirstCharSet idCharSet
 
 {-|'metaIdRawParser' extracts the string representing a @meta-identifier@.
 Does not consume whitespace.
@@ -202,18 +207,11 @@ metaIdRawParser = do
     case c' of
         '`' -> do
             void (Parser.char c')
-            idToken <- objectIdRawParser KeywordsPermitted
+            idToken <- objectNonslashIdRawParser KeywordsPermitted
             return (c:c':idToken)
-        '\\' -> do
-            void (Parser.char c')
-            mlPatternCtor <- mlPatternCtorParser
-            return (c:c':mlPatternCtor)
         _ -> do
             idToken <- objectIdRawParser KeywordsPermitted
             return (c:idToken)
-  where
-    mlPatternCtorParser = keywordBasedParsers
-        (map (patternString &&& return . patternString) allPatternTypes)
 
 data StringScannerState
   = STRING

@@ -1,53 +1,53 @@
-import           Data.Char                                     (isAlphaNum)
-import qualified Data.Map.Strict                               as Map
-import qualified Data.Set                                      as Set
-import           Data.Text
+import Data.Char
+       ( isAlphaNum )
+import Text.Megaparsec
+import Text.Megaparsec.Char
 
-import           Text.Megaparsec
-import           Text.Megaparsec.Char
+import Kore.MetaML.AST
+       ( CommonMetaPattern )
+import Kore.Parser.Parser
+       ( metaHeadParser, metaPatternParser, metaVariableParser )
 
-import           Data.Reflection
-
-import           Logic.Matching.Pattern
-import           Logic.Matching.Syntax
-import           Logic.Proof.Hilbert
+import qualified Logic.Matching.Rules.Kore as ML
+                 ( Rule )
 import           Logic.Matching.Rules.Minimal
-import           Logic.Matching.Rules.Minimal.Syntax (parseMLRuleSig)
-import           Logic.Matching.Prover.Repl
-import           Logic.Matching.Signature.Simple
+import           Logic.Matching.Rules.Minimal.Syntax
+                 ( parseMLRule )
+import           Logic.Proof.Hilbert
+                 ( emptyProof )
 
--- Todo: Parsing Formula as Text. Hook to Kore Parser
-parseName :: Parser Text
+import Logic.Matching.Prover.Command
+       ( Command, Parser, parseCommand )
+import Logic.Matching.Prover.Repl
+       ( ProverEnv (..), ProverState (..), defaultSettings, execReplT,
+       runProver )
+
+import GlobalMain
+       ( defaultMainGlobal )
+
+-- TODO: still needed?
+parseName :: Parser String
 parseName = takeWhile1P Nothing isAlphaNum <* space
 
-pCommand :: (Reifies s ValidatedSignature)
-         => Parser (Command Text
-                    (MLRuleSig (SimpleSignature s) Text)
-                    (WFPattern (SimpleSignature s) Text))
+pCommand :: Parser (Command String ML.Rule CommonMetaPattern)
 pCommand = parseCommand parseName parseFormula parseRule
   where
-    parseFormula = simpleSigPattern parseName parseName parseName
-    parseLabel = simpleSigLabel parseName
-    parseSort = simpleSigSort parseName
-    parseRule = parseMLRuleSig parseSort parseLabel parseName parseName
-
-proveCommand
-    :: (Reifies sig ValidatedSignature)
-    => proxy (SimpleSignature sig)
-    -> IO (ProverState Text (MLRuleSig (SimpleSignature sig) Text)
-            (WFPattern (SimpleSignature sig) Text))
-proveCommand _ = runProver dummyFormulaVerifier pCommand (ProverState emptyProof)
-
-testSignature :: SignatureInfo
-testSignature = SignatureInfo
-  { sorts = Set.fromList ["Nat","Bool"]
-  , labels = Map.fromList [("plus",("Nat",["Nat","Nat"]))
-                          ,("succ",("Nat",["Nat"]))
-                          ,("zero",("Nat",[]))
-                          ]
-  }
+    parseFormula = metaPatternParser
+    parseRule    = parseMLRule metaHeadParser
+                               metaVariableParser
+                               parseFormula
+                               parseName
 
 main :: IO ()
-main = case validate testSignature of
-  Nothing -> return ()
-  Just validSig -> reifySignature validSig (\proxy -> proveCommand proxy >> return ())
+main = defaultMainGlobal
+       >> execReplT runProver defaultSettings proverEnv initialState
+       >> return ()
+  where
+    initialState = ProverState
+                   { proofState = emptyProof
+                   , commandStackState = []
+                   }
+    proverEnv    = ProverEnv
+                   { commandParser = pCommand
+                   , formulaVerifier = dummyFormulaVerifier
+                   }

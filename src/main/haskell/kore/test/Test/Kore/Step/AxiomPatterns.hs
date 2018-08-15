@@ -17,6 +17,7 @@ import Kore.AST.MetaOrObject
 import Kore.AST.PureML
 import Kore.AST.PureToKore
 import Kore.AST.Sentence
+import Kore.ASTUtils.SmartPatterns
 import Kore.ASTVerifier.DefinitionVerifier
        ( AttributesVerification (..), verifyAndIndexDefinition )
 import Kore.Error
@@ -25,6 +26,7 @@ import Kore.IndexedModule.IndexedModule
 import Kore.Implicit.Attributes
 import Kore.Parser.ParserImpl
 import Kore.Parser.ParserUtils
+import Kore.Predicate.Predicate ( wrapPredicate )
 import Kore.Step.AxiomPatterns
 
 import Test.Kore
@@ -48,6 +50,7 @@ axiomPatternsUnitTests =
                 (Right AxiomPattern
                     { axiomPatternLeft = extractPurePattern varI1
                     , axiomPatternRight = extractPurePattern varI2
+                    , axiomPatternRequires = wrapPredicate topAInt
                     }
                 )
                 ( koreSentenceToAxiomPattern Object
@@ -66,6 +69,7 @@ axiomPatternsUnitTests =
                 [AxiomPattern
                     { axiomPatternLeft = extractPurePattern varI1
                     , axiomPatternRight = extractPurePattern varI2
+                    , axiomPatternRequires = wrapPredicate topAInt
                     }
                 ]
                 ( koreIndexedModuleToAxiomPatterns Object
@@ -206,6 +210,7 @@ axiomPatternsIntegrationTests =
                               ]
                           , varStateCell
                           ]
+                    , axiomPatternRequires = wrapPredicate topTCell
                     }
                 )
                 (koreSentenceToAxiomPattern Object =<< parseAxiom
@@ -322,3 +327,9 @@ extractIndexedModule name eModules =
         Right modules -> fromMaybe
             (error ("Module " ++ name ++ " not found."))
             (Map.lookup (ModuleName name) modules)
+
+topAInt :: CommonPurePattern Object
+topAInt = Top_ sortAInt
+
+topTCell :: CommonPurePattern Object
+topTCell = Top_ sortTCell

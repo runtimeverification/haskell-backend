@@ -146,10 +146,6 @@ instance (Hashable formula, Hashable (rules subproof), Hashable assumption)
   hashWithSalt s (ByF a b c) =
     s `hashWithSalt` a `hashWithSalt` b `hashWithSalt` S.toList c
 
-instance Hashable Proof where
-    hashWithSalt s (By a b c) =
-        s `hashWithSalt` a `hashWithSalt` b `hashWithSalt` S.toList c
-
 data LargeRule subproof =
  -- | a |- a
    Assumption Term

@@ -10,6 +10,7 @@ Portability : portable
 -}
 module Kore.Variables.Fresh.IntCounter
     ( IntCounter
+    , findState
     , runIntCounter
     ) where
 
@@ -38,3 +39,21 @@ instance Monad IntCounter where
 instance MonadState Int IntCounter where
     get = IntCounter get
     put = IntCounter . put
+
+{-|@findState@ takes a predicate and a list of 'MonadState' actions, and
+locates the first action whose result satisfies the predicate, resetting the
+state before executing each action.
+The effect of this is that only the selected action is evaluated.
+-}
+findState
+    :: MonadState state m
+    => (a -> Bool) -> [m a] -> m (Maybe a)
+findState _ [] = return Nothing
+findState predicate (h:t)
+  = do
+    oldState <- get
+    condVal <- h
+    if predicate condVal then return (Just condVal)
+    else do
+        put oldState
+        findState predicate t
