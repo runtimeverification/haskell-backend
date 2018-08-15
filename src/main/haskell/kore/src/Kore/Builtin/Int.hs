@@ -18,7 +18,7 @@ module Kore.Builtin.Int
     ( sort
     , sortVerifiers
     , symbolVerifiers
-    , patternVerifiers
+    , patternVerifier
     ) where
 
 import qualified Data.HashMap.Strict as HashMap
@@ -92,7 +92,6 @@ symbolVerifiers =
 
 {- | Verify that domain value patterns are well-formed.
  -}
-patternVerifiers :: Builtin.PatternVerifiers
-patternVerifiers =
-    -- TODO (thomas.tuegel): Not implemented
-    HashMap.empty
+patternVerifier :: Builtin.PatternVerifier
+patternVerifier =
+    mempty

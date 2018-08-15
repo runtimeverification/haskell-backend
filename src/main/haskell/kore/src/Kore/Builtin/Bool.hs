@@ -18,12 +18,14 @@ module Kore.Builtin.Bool
     ( sort
     , sortVerifiers
     , symbolVerifiers
-    , patternVerifiers
+    , patternVerifier
     ) where
 
 import qualified Data.HashMap.Strict as HashMap
 
 import qualified Kore.Builtin.Builtin as Builtin
+import Kore.AST.Common ( StringLiteral (..) )
+import qualified Kore.Error
 
 {- | Builtin name of the @Bool@ sort.
  -}
@@ -59,7 +61,13 @@ symbolVerifiers =
 
 {- | Verify that domain value patterns are well-formed.
  -}
-patternVerifiers :: Builtin.PatternVerifiers
-patternVerifiers =
-    -- TODO (thomas.tuegel): Not implemented
-    HashMap.empty
+patternVerifier :: Builtin.PatternVerifier
+patternVerifier =
+    Builtin.verifyDomainValue sort
+    (Builtin.verifyStringLiteral verifyBool)
+  where
+    verifyBool StringLiteral { getStringLiteral = lit }
+        | lit == "true" || lit == "false" = return ()
+        | otherwise =
+            Kore.Error.koreFail
+            ("expected \"true\" or \"false\", but found \"" ++ lit ++ "\"")

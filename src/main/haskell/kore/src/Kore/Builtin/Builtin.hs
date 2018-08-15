@@ -20,7 +20,7 @@ module Kore.Builtin.Builtin
       Verifiers (..)
     , SymbolVerifier, SymbolVerifiers
     , SortVerifier, SortVerifiers
-    , PatternVerifier, PatternVerifiers
+    , PatternVerifier (..)
     , Function
     , symbolVerifier
     , sortVerifier
@@ -29,29 +29,39 @@ module Kore.Builtin.Builtin
     , verifySort
     , verifySymbol
     , verifySymbolArguments
+    , verifyDomainValue
+    , verifyStringLiteral
     , notImplemented
     ) where
 
 import           Control.Monad
                  ( zipWithM_ )
+import qualified Control.Monad.Except as Except
+import qualified Data.Functor.Foldable as Functor.Foldable
 import           Data.HashMap.Strict
                  ( HashMap )
 import qualified Data.HashMap.Strict as HashMap
+import           Data.Semigroup
+                 ( Semigroup (..) )
 
 import Kore.AST.Common
-       ( Id (..), Sort (..), SortActual (..), SortVariable (..), Symbol (..),
+       ( DomainValue (..), Id (..),
+       Pattern (DomainValuePattern, StringLiteralPattern), Sort (..),
+       SortActual (..), SortVariable (..), StringLiteral (..), Symbol (..),
        Variable )
 import Kore.AST.Error
        ( withLocationAndContext )
 import Kore.AST.Kore
        ( CommonKorePattern )
 import Kore.AST.MetaOrObject
-       ( Object )
+       ( Meta, Object )
+import Kore.AST.PureML
+       ( CommonPurePattern )
 import Kore.AST.Sentence
        ( KoreSentenceSort, KoreSentenceSymbol, SentenceSort (..),
        SentenceSymbol (..) )
 import Kore.ASTVerifier.Error
-       ( VerifyError, VerifySuccess )
+       ( VerifyError )
 import Kore.Attribute.Parser
        ( parseAttributes )
 import Kore.Builtin.Hook
@@ -88,10 +98,37 @@ type SymbolVerifier =
  -}
 type SymbolVerifiers = HashMap String SymbolVerifier
 
-type PatternVerifier =
-    CommonKorePattern -> Either (Error VerifyError) VerifySuccess
+newtype PatternVerifier =
+    PatternVerifier
+    { runPatternVerifier
+        :: (Id Object -> Either (Error VerifyError) (SortDescription Object))
+        -- ^ Find a sort declaration
+        -> Pattern Object Variable CommonKorePattern
+        -- ^ (Projected) Kore pattern to verify
+        -> Either (Error VerifyError) ()
+    }
 
-type PatternVerifiers = HashMap String PatternVerifier
+instance Semigroup PatternVerifier where
+    {- | Conjunction of 'PatternVerifier's.
+
+      The resulting @PatternVerifier@ succeeds when both constituents succeed.
+
+     -}
+    (<>) a b =
+        PatternVerifier
+        { runPatternVerifier = \findSort pat -> do
+            runPatternVerifier a findSort pat
+            runPatternVerifier b findSort pat
+        }
+
+instance Monoid PatternVerifier where
+    {- | Trivial 'PatternVerifier' (always succeeds).
+     -}
+    mempty = PatternVerifier { runPatternVerifier = \_ _ -> return () }
+    mappend = (<>)
+
+type DomainValueVerifier =
+    DomainValue Object (CommonPurePattern Meta) -> Either (Error VerifyError) ()
 
 {- | Verify builtin sorts, symbols, and patterns.
  -}
@@ -99,7 +136,7 @@ data Verifiers =
     Verifiers
     { sortVerifiers :: SortVerifiers
     , symbolVerifiers :: SymbolVerifiers
-    , patternVerifiers :: PatternVerifiers
+    , patternVerifier :: PatternVerifier
     }
 
 {- | Look up and apply a builtin sort verifier.
@@ -262,3 +299,36 @@ verifySymbolArguments
   where
     builtinArity = length builtinSorts
     arity = length sorts
+
+verifyDomainValue
+    :: String  -- ^ Builtin sort name
+    -> DomainValueVerifier
+    -- ^ Validation function
+    -> PatternVerifier
+verifyDomainValue builtinSort validate =
+    PatternVerifier { runPatternVerifier }
+  where
+    runPatternVerifier findSort =
+        \case
+            DomainValuePattern dv@DomainValue { domainValueSort } ->
+                withContext
+                ("verifying builtin sort '" ++ builtinSort ++ "'")
+                (skipOtherSorts domainValueSort (validate dv))
+            _ -> return ()  -- no domain value to verify
+      where
+        -- | Run @next@ if @sort@ is hooked to @builtinSort@; do nothing otherwise.
+        skipOtherSorts sort next = do
+            decl <- Except.catchError
+                    (Just <$> verifySort findSort builtinSort sort)
+                    (\_ -> return Nothing)
+            case decl of
+              Nothing -> return ()
+              Just () -> next
+
+verifyStringLiteral
+    :: (StringLiteral -> Either (Error VerifyError) ())
+    -> (DomainValue Object (CommonPurePattern Meta) -> Either (Error VerifyError) ())
+verifyStringLiteral validate DomainValue { domainValueChild } =
+    case Functor.Foldable.project domainValueChild of
+        StringLiteralPattern lit@StringLiteral {} -> validate lit
+        _ -> return ()
