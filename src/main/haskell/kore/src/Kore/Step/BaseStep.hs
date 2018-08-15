@@ -256,9 +256,9 @@ stepWithAxiom
             $ unificationOrSubstitutionToStepError
             $ ctorSubstitutionCycleToBottom
             ( return ( PredicateSubstitution
-                       { predicate = makeFalsePredicate
-                       , substitution = []
-                       }
+                           { predicate = makeFalsePredicate
+                           , substitution = []
+                           }
                      , EmptyUnificationProof
                      )
             )
@@ -266,9 +266,9 @@ stepWithAxiom
 
     return $ do
         ( PredicateSubstitution
-          { predicate = normalizedCondition
-          , substitution = normalizedSubstitution
-          }
+              { predicate = normalizedCondition
+              , substitution = normalizedSubstitution
+              }
           , _  -- TODO: Use this proof
           ) <- normalizedSubstitutionWithCounter
 
