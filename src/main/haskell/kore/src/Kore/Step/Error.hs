@@ -71,8 +71,8 @@ substitutionToStepError _ (Right result) = Right result
 unificationOrSubstitutionToStepError
     :: Either (UnificationOrSubstitutionError level variable) a
     -> Either (StepError level variable) a
-unificationOrSubstitutionToStepError (Left (UnificationError err))
-  = Left $ StepErrorUnification err
-unificationOrSubstitutionToStepError (Left (SubstitutionError err))
-  = Left $ StepErrorSubstitution err
+unificationOrSubstitutionToStepError (Left (UnificationError err)) =
+    Left $ StepErrorUnification err
+unificationOrSubstitutionToStepError (Left (SubstitutionError err)) =
+    Left $ StepErrorSubstitution err
 unificationOrSubstitutionToStepError (Right res) = Right res

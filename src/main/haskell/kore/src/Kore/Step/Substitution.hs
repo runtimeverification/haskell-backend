@@ -59,11 +59,11 @@ mergeSubstitutions
     -> UnificationSubstitution level variable
     -> UnificationSubstitution level variable
     -> Either
-        (UnificationError level)
-        ( Predicate level variable
-        , UnificationSubstitution level variable
-        , UnificationProof level variable
-        )
+          (UnificationError level)
+          ( Predicate level variable
+          , UnificationSubstitution level variable
+          , UnificationProof level variable
+          )
 mergeSubstitutions tools first second = do
     (substitution, proof) <-
         normalizeSubstitutionDuplication tools (first ++ second)
@@ -84,35 +84,23 @@ mergeAndNormalizeSubstitutions
     -> UnificationSubstitution level variable
     -> UnificationSubstitution level variable
     -> Either
-        ( UnificationOrSubstitutionError     level variable )
-        ( IntCounter
-          ( PredicateSubstitution level variable
-          , UnificationProof level variable
+          ( UnificationOrSubstitutionError level variable )
+          ( IntCounter
+              ( PredicateSubstitution level variable
+              , UnificationProof level variable
+              )
           )
-        )
 mergeAndNormalizeSubstitutions tools first second = do
-    (predSubstitution, proof) <- do -- IntCounter Monad
-      (substitutionList, proof) <-
+    (substitutionList, proof) <-
           normalizeSubstitutionDuplication' (first ++ second)
-      predSubstitution <- normalizeSubstitution' substitutionList
-      return (predSubstitution, proof)
-          -- TODO(virgil): Return the actual condition here. and proofs
-    return $ do --IntCounter Monad
-      PredicateSubstitution
-        { predicate = condition
-        , substitution = substitutionList'
-        } <- predSubstitution
-      return ( PredicateSubstitution
-               { predicate = condition
-               , substitution = substitutionList'
-               }
-             , proof
-             )
+    predSubstitution <- normalizeSubstitution' substitutionList
+    -- TODO(virgil): Return the actual condition here. and proofs
+    return $ (,) <$> predSubstitution <*> pure proof
   where
     normalizeSubstitutionDuplication' =
-      unificationToUnifyOrSubError . normalizeSubstitutionDuplication tools
+        unificationToUnifyOrSubError . normalizeSubstitutionDuplication tools
     normalizeSubstitution' =
-      substitutionToUnifyOrSubError . normalizeSubstitution tools
+        substitutionToUnifyOrSubError . normalizeSubstitution tools
 
 {-|'mergePredicatesAndSubstitutions' merges a list of substitutions into
 a single one, then merges the merge side condition and the given condition list
