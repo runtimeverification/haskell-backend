@@ -111,14 +111,14 @@ addDeclaredVariable
         }
 
 verifyAliasLeftPattern
-    :: CommonKorePattern
-    -> Maybe UnifiedSort
-    -- ^ If present, represents the expected sort of the pattern.
-    -> KoreIndexedModule atts
+    :: KoreIndexedModule atts
     -- ^ The module containing all definitions which are visible in this
     -- pattern.
     -> Set.Set UnifiedSortVariable
     -- ^ Sort variables which are visible in this pattern.
+    -> Maybe UnifiedSort
+    -- ^ If present, represents the expected sort of the pattern.
+    -> CommonKorePattern
     -> Either (Error VerifyError) VerifySuccess
 verifyAliasLeftPattern = verifyPattern
     -- TODO: check that the left pattern is the alias symbol applied to
@@ -128,70 +128,68 @@ verifyStandalonePattern
     :: KoreIndexedModule atts
     -> CommonKorePattern
     -> Either (Error VerifyError) VerifySuccess
-verifyStandalonePattern indexedModule korePattern =
-    verifyPattern korePattern Nothing indexedModule Set.empty
+verifyStandalonePattern indexedModule =
+    verifyPattern indexedModule Set.empty Nothing
 
 {-|'verifyPattern' verifies the welformedness of a Kore 'CommonKorePattern'. -}
 verifyPattern
-    :: CommonKorePattern
-    -> Maybe UnifiedSort
-    -- ^ If present, represents the expected sort of the pattern.
-    -> KoreIndexedModule atts
+    :: KoreIndexedModule atts
     -- ^ The module containing all definitions which are visible in this
     -- pattern.
     -> Set.Set UnifiedSortVariable
     -- ^ Sort variables which are visible in this pattern.
+    -> Maybe UnifiedSort
+    -- ^ If present, represents the expected sort of the pattern.
+    -> CommonKorePattern
     -> Either (Error VerifyError) VerifySuccess
-verifyPattern unifiedPattern maybeExpectedSort indexedModule sortVariables = do
+verifyPattern indexedModule sortVariables maybeExpectedSort unifiedPattern = do
     freeVariables1 <- verifyFreeVariables unifiedPattern
     internalVerifyPattern
-        unifiedPattern
-        maybeExpectedSort
         indexedModule
         sortVariables
         freeVariables1
+        maybeExpectedSort
+        unifiedPattern
 
 internalVerifyPattern
-    :: CommonKorePattern
-    -> Maybe UnifiedSort
-    -> KoreIndexedModule atts
+    :: KoreIndexedModule atts
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
+    -> Maybe UnifiedSort
+    -> CommonKorePattern
     -> Either (Error VerifyError) VerifySuccess
 internalVerifyPattern
-    korePattern
-    mUnifiedSort
     indexedModule
     sortParamsSet
     declaredVariables
+    mUnifiedSort
   =
     applyKorePattern
         (internalVerifyMetaPattern
-            mUnifiedSort
             indexedModule
             sortParamsSet
             declaredVariables
+            mUnifiedSort
         )
         (internalVerifyObjectPattern
-            mUnifiedSort
             indexedModule
             sortParamsSet
             declaredVariables
+            mUnifiedSort
         )
-        korePattern
 
 internalVerifyMetaPattern
-    :: Maybe UnifiedSort
-    -> KoreIndexedModule atts
+    :: KoreIndexedModule atts
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
+    -> Maybe UnifiedSort
     -> Pattern Meta Variable CommonKorePattern
     -> Either (Error VerifyError) VerifySuccess
 internalVerifyMetaPattern
-    maybeExpectedSort
     indexedModule
     sortVariables
     declaredVariables
+    maybeExpectedSort
     p
   =
     withLocationAndContext p (patternNameForContext p) (do
@@ -212,17 +210,17 @@ internalVerifyMetaPattern
     )
 
 internalVerifyObjectPattern
-    :: Maybe UnifiedSort
-    -> KoreIndexedModule atts
+    :: KoreIndexedModule atts
     -> Set.Set UnifiedSortVariable
     -> DeclaredVariables
+    -> Maybe UnifiedSort
     -> Pattern Object Variable CommonKorePattern
     -> Either (Error VerifyError) VerifySuccess
 internalVerifyObjectPattern
-    maybeExpectedSort
     indexedModule
     sortVariables
     declaredVariables
+    maybeExpectedSort
     p
   =
     withLocationAndContext p (patternNameForContext p) (do
@@ -329,13 +327,12 @@ verifyPatternsWithSorts
         ++ "."
         )
     zipWithM_
-        (\sort operand ->
+        (\sort ->
             internalVerifyPattern
-                operand
-                (Just sort)
                 indexedModule
                 declaredSortVariables
                 declaredVariables
+                (Just sort)
         )
         sorts
         operands
@@ -394,11 +391,11 @@ verifyBinder
         declaredSortVariables
         binderSort
     internalVerifyPattern
-        (getBinderPatternChild binder)
-        (Just (asUnified binderSort))
         indexedModule
         declaredSortVariables
         (addDeclaredVariable (asUnified quantifiedVariable) declaredVariables)
+        (Just (asUnified binderSort))
+        (getBinderPatternChild binder)
     return binderSort
   where
     quantifiedVariable = getBinderPatternVariable binder

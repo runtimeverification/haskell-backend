@@ -58,10 +58,10 @@ formulaVerifier
 formulaVerifier indexedModule formula = do
     castError
         (verifyPattern
-            unifiedFormula
-            Nothing
             indexedModule
             (sortVariables unifiedFormula)
+            Nothing
+            unifiedFormula
         )
     return ()
   where

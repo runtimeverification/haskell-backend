@@ -328,15 +328,15 @@ verifyAliasSentence
                 else
                     koreFail "Left and Right sorts do not match"
             verifyAliasLeftPattern
+                indexedModule
+                variables
+                (Just $ asUnified leftPatternSort)
                 (asKorePattern $ sentenceAliasLeftPattern sentence)
-                (Just $ (asUnified leftPatternSort))
-                indexedModule
-                variables
             verifyPattern
-                (asKorePattern $ sentenceAliasRightPattern sentence)
-                (Just $ (asUnified rightPatternSort))
                 indexedModule
                 variables
+                (Just $ asUnified rightPatternSort)
+                (asKorePattern $ sentenceAliasRightPattern sentence)
             verifyAttributes
                 (sentenceAliasAttributes sentence)
                 attributesVerification
@@ -363,10 +363,10 @@ verifyAxiomSentence axiom indexedModule attributesVerification =
                 buildDeclaredUnifiedSortVariables
                     (sentenceAxiomParameters axiom)
             verifyPattern
-                (sentenceAxiomPattern axiom)
-                Nothing
                 indexedModule
                 variables
+                Nothing
+                (sentenceAxiomPattern axiom)
             verifyAttributes
                 (sentenceAxiomAttributes axiom)
                 attributesVerification
