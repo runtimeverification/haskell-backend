@@ -41,5 +41,7 @@ koreBuiltins =
     , symbolVerifiers =
            Bool.symbolVerifiers
         <> Int.symbolVerifiers
-    , patternVerifiers = Int.patternVerifiers
+    , patternVerifiers =
+           Bool.patternVerifiers
+        <> Int.patternVerifiers
     }
