@@ -180,7 +180,7 @@ verifySortDecl
                         ++ show (length sentenceSortParameters))
     )
 
-{- | Verify a builtin sort application.
+{- | Verify the occurrence of a builtin sort.
 
   Check that the sort is hooked to the named builtin. The sort parameters are
   already checked by the verifier.
@@ -220,10 +220,10 @@ verifySymbol
     builtinSorts
     findSort
     decl@SentenceSymbol
-    { sentenceSymbolSymbol =
-        Symbol { symbolConstructor = symbolId@Id { getId = symbolName } }
-    , sentenceSymbolResultSort = result
-    }
+        { sentenceSymbolSymbol =
+            Symbol { symbolConstructor = symbolId@Id { getId = symbolName } }
+        , sentenceSymbolResultSort = result
+        }
   =
     withLocationAndContext
         symbolId
@@ -249,8 +249,7 @@ verifySymbolArguments
 verifySymbolArguments
     builtinSorts
     findSort
-    SentenceSymbol
-    { sentenceSymbolSorts = sorts }
+    SentenceSymbol { sentenceSymbolSorts = sorts }
   =
     withContext "argument sorts"
     (do
