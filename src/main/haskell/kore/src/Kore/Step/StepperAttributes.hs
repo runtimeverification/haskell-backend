@@ -94,7 +94,7 @@ instance Default StepperAttributes where
 
  -}
 hasFunctionalAttribute :: Attribute.Parser Bool
-hasFunctionalAttribute = Attribute.hasKeyAttribute "functional"
+hasFunctionalAttribute = Attribute.hasKeyOnlyAttribute "functional"
 
 {- | Is the @function@ Kore attribute present?
 
@@ -104,7 +104,7 @@ hasFunctionalAttribute = Attribute.hasKeyAttribute "functional"
 
  -}
 hasFunctionAttribute :: Attribute.Parser Bool
-hasFunctionAttribute = Attribute.hasKeyAttribute "function"
+hasFunctionAttribute = Attribute.hasKeyOnlyAttribute "function"
 
 {- | Is the @constructor@ Kore attribute present?
 
@@ -114,7 +114,7 @@ hasFunctionAttribute = Attribute.hasKeyAttribute "function"
 
  -}
 hasConstructorAttribute :: Attribute.Parser Bool
-hasConstructorAttribute = Attribute.hasKeyAttribute "constructor"
+hasConstructorAttribute = Attribute.hasKeyOnlyAttribute "constructor"
 
 instance ParseAttributes StepperAttributes where
     attributesParser =

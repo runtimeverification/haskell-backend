@@ -32,8 +32,8 @@ module Kore.Attribute.Parser
     , choose
       -- ** Parsing idioms
     , parseAttribute
-    , parseKeyAttribute
-    , hasKeyAttribute
+    , assertKeyOnlyAttribute
+    , hasKeyOnlyAttribute
     , parseStringAttribute
     , assertNoAttribute
     ) where
@@ -213,10 +213,10 @@ parseAttribute key =
   See also: 'hasKeyAttribute'
 
  -}
-parseKeyAttribute
+assertKeyOnlyAttribute
     :: String  -- ^ attribute name
     -> Parser ()
-parseKeyAttribute key = do
+assertKeyOnlyAttribute key = do
     occurrences <- parseAttribute key
     withContext key
         (do
@@ -226,17 +226,18 @@ parseKeyAttribute key = do
 
 {- | Is the key-only attribute present?
 
-  A key-only attribute has no arguments. @hasKeyAttribute@ signals failure if
-  the attribute is present with the wrong number of arguments.
+  A key-only attribute appears once with no arguments. @hasKeyAttribute@ signals
+  failure if the attribute is present multiple times or with the wrong number of
+  arguments.
 
   See also: 'parseKeyAttribute'
 
  -}
-hasKeyAttribute :: String -> Parser Bool
-hasKeyAttribute key =
+hasKeyOnlyAttribute :: String -> Parser Bool
+hasKeyOnlyAttribute key =
     choose (present $> True) (missing $> False)
   where
-    present = parseKeyAttribute key
+    present = assertKeyOnlyAttribute key
     missing = assertNoAttribute key
 
 {- | Parse an attribute that takes one string argument.
