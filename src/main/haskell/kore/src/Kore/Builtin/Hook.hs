@@ -9,8 +9,6 @@ Portability : portable
 -}
 module Kore.Builtin.Hook where
 
-import Control.Applicative
-       ( (<|>) )
 import Data.Default
        ( Default (..) )
 import Data.Functor
@@ -70,7 +68,7 @@ hookAttribute builtin =
  -}
 instance ParseAttributes Hook where
     attributesParser =
-        Hook <$> (correctAttribute <|> noAttribute)
+        Hook <$> Attribute.choose correctAttribute noAttribute
       where
         correctAttribute = Just <$> Attribute.parseStringAttribute "hook"
         noAttribute = Attribute.assertNoAttribute "hook" $> Nothing

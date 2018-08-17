@@ -29,6 +29,7 @@ module Kore.Attribute.Parser
     , AttributeMap
     , runParser
     , withContext
+    , choose
       -- ** Parsing idioms
     , parseAttribute
     , parseKeyAttribute
@@ -37,8 +38,6 @@ module Kore.Attribute.Parser
     , assertNoAttribute
     ) where
 
-import           Control.Applicative
-                 ( Alternative (..) )
 import           Control.Monad
                  ( foldM, when )
 import           Control.Monad.Except
@@ -108,10 +107,19 @@ deriving instance MonadError (Error ParseError) Parser
 
 deriving instance MonadReader AttributeMap Parser
 
-instance Alternative Parser where
-    empty = koreFail "parse error"
-    -- If both actions fail, prefer the first failure.
-    (<|>) a b = catchError a (\e -> catchError b (\_ -> throwError e))
+{- | Combine two parsers into a parser which accepts either of them.
+
+  The combined parser returns the result of the *first* successful parser.
+  If both parsers fail, the *first* error is thrown.
+
+ -}
+choose :: Parser a -> Parser a -> Parser a
+choose first second =
+    catchError first
+      (\firstError ->
+          catchError second
+              (\_ -> throwError firstError)
+      )
 
 {- | Run an attribute 'Parser' with the given list of attributes.
  -}
@@ -225,7 +233,7 @@ parseKeyAttribute key = do
  -}
 hasKeyAttribute :: String -> Parser Bool
 hasKeyAttribute key =
-    (present $> True) <|> (missing $> False)
+    choose (present $> True) (missing $> False)
   where
     present = parseKeyAttribute key
     missing = assertNoAttribute key
@@ -281,7 +289,7 @@ parseStringAttribute key = do
 assertNoAttribute :: String -> Parser ()
 assertNoAttribute key =
     do
-        exists <- (parseAttribute key $> True) <|> pure False
+        exists <- choose (parseAttribute key $> True) (pure False)
         when exists (koreFail ("expected no attribute '" ++ key ++ "'"))
 
 {- | Fail if the attribute does not occur exactly once.
