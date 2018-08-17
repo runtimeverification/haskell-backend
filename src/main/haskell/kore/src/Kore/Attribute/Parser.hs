@@ -141,7 +141,7 @@ runParser Parser { getParser } (Attributes attrs) = do
         case attr of
             KoreObjectPattern (ApplicationPattern app) ->
                 recordApplication attrMap app
-            _ -> koreFail "expected object-level application pattern"
+            _ -> koreFail "Expected object-level application pattern"
 
     -- | Insert the application arguments into the attribute map,
     -- on top of any argument lists already present.
@@ -200,7 +200,7 @@ parseAttribute key =
     do
         attrMap <- Reader.ask
         case HashMap.lookup key attrMap of
-            Nothing -> koreFail ("no attribute found matching: " ++ key)
+            Nothing -> koreFail ("No attribute found matching: " ++ key)
             Just occurs -> pure occurs
 
 {- | Parse a key-only attribute.
@@ -268,14 +268,14 @@ parseStringAttribute key = do
     expectMetaPattern =
         \case
             KoreMetaPattern pat -> pure pat
-            _ -> koreFail "expected meta pattern"
+            _ -> koreFail "Expected meta pattern"
 
     expectLiteralString
         :: Pattern Meta Variable CommonKorePattern -> Parser String
     expectLiteralString =
         \case
             StringLiteralPattern (StringLiteral arg) -> pure arg
-            _ -> koreFail "expected literal string argument"
+            _ -> koreFail "Expected literal string argument"
 
 {- | Signal parse failure if the attribute is present.
 
@@ -290,7 +290,7 @@ assertNoAttribute :: String -> Parser ()
 assertNoAttribute key =
     do
         exists <- choose (parseAttribute key $> True) (pure False)
-        when exists (koreFail ("expected no attribute '" ++ key ++ "'"))
+        when exists (koreFail ("Expected no attribute '" ++ key ++ "'"))
 
 {- | Fail if the attribute does not occur exactly once.
 
@@ -301,7 +301,7 @@ oneOccurrence :: NonEmpty a -> Parser a
 oneOccurrence =
     \case
         args :| [] -> pure args
-        _ -> koreFail "unexpected multiple occurrences"
+        _ -> koreFail "Unexpected multiple occurrences"
 
 {- | Fail if the attribute is given any arguments.
  -}
@@ -309,7 +309,7 @@ noArguments :: Occurrence -> Parser ()
 noArguments (Occurrence args) =
     case args of
         [] -> pure ()
-        _ -> koreFail "unexpected arguments"
+        _ -> koreFail "Unexpected arguments"
 
 {- | Fail if the attribute is not given exactly one argument.
 
@@ -320,4 +320,4 @@ oneArgument :: Occurrence -> Parser CommonKorePattern
 oneArgument (Occurrence args) =
     case args of
         [a] -> pure a
-        _ -> koreFail "expected 1 argument"
+        _ -> koreFail "Expected 1 argument"
