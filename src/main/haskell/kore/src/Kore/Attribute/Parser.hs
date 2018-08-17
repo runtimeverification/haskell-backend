@@ -65,7 +65,7 @@ import           Kore.AST.Kore
                  ( CommonKorePattern, pattern KoreMetaPattern,
                  pattern KoreObjectPattern )
 import           Kore.AST.MetaOrObject
-                 ( Meta )
+                 ( Meta, Object )
 import           Kore.AST.Sentence
                  ( Attributes (Attributes) )
 import           Kore.Error
@@ -116,30 +116,58 @@ instance Alternative Parser where
 {- | Run an attribute 'Parser' with the given list of attributes.
  -}
 runParser :: Parser a -> Attributes -> Either (Error ParseError) a
-runParser Parser { getParser } (Attributes attrs) =
-    runReaderT getParser =<< foldM insertAttr HashMap.empty attrs
+runParser Parser { getParser } (Attributes attrs) = do
+    -- attributeMap associates the arguments of an attribute (each time it
+    -- occurs) with the name of the attribute
+    attributeMap <- foldM recordOccurrence HashMap.empty attrs
+    runReaderT getParser attributeMap
   where
-    insertAttr attrMap attr =
+    -- | Record one occurrence of an attribute.
+    recordOccurrence
+        :: AttributeMap
+        -- ^ the attributes already recorded
+        -> CommonKorePattern
+        -- ^ one attribute, which must be an object-level application pattern
+        -> Either (Error ParseError) AttributeMap
+    recordOccurrence attrMap attr =
         case attr of
             KoreObjectPattern (ApplicationPattern app) ->
-                insertApplication attrMap app
+                recordApplication attrMap app
             _ -> koreFail "expected object-level application pattern"
 
-    -- Insert the application arguments into the attribute map,
+    -- | Insert the application arguments into the attribute map,
     -- on top of any argument lists already present.
-    insertApplication
+    recordApplication
+        :: AttributeMap
+        -> Application Object CommonKorePattern
+        -> Either (Error ParseError) AttributeMap
+    recordApplication
         attrMap
         Application
-        { applicationSymbolOrAlias
-        , applicationChildren = args
-        }
+            { applicationSymbolOrAlias
+            , applicationChildren = args
+            }
       =
         let
             SymbolOrAlias { symbolOrAliasConstructor } = applicationSymbolOrAlias
             Id { getId = attrId } = symbolOrAliasConstructor
-            insertArgs = Just . (:|) (Occurrence args) . maybe [] NonEmpty.toList
+            insertOrUpdateOccurrences =
+                Just . \case
+                    Just alreadyOccurred ->
+                        -- The attribute has already occurred, so the newest
+                        -- occurrence is added to the list.
+                        -- The latest occurrence is added at the head of the
+                        -- list to avoid traversing the list many times; this
+                        -- is allowed because the order of attributes is not
+                        -- significant (see _The Semantics of K_).
+                        occurrence NonEmpty.:| NonEmpty.toList alreadyOccurred
+                    Nothing ->
+                        -- The attribute has not occurred before.
+                        occurrence NonEmpty.:| []
+              where
+                occurrence = Occurrence args
         in
-            pure (HashMap.alter insertArgs attrId attrMap)
+            pure (HashMap.alter insertOrUpdateOccurrences attrId attrMap)
 
 {- | Wrap the parser in a context for the named attribute.
 
