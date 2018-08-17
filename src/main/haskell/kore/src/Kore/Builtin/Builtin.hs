@@ -173,10 +173,10 @@ verifySortDecl
   =
     withLocationAndContext
     sortId
-    ("sort '" ++ sortName ++ "' declaration")
+    ("In sort '" ++ sortName ++ "' declaration")
     (case sentenceSortParameters of
         [] -> pure ()
-        _ -> koreFail ("expected 0 sort parameters, found "
+        _ -> koreFail ("Expected 0 sort parameters, found "
                         ++ show (length sentenceSortParameters))
     )
 
@@ -198,7 +198,7 @@ verifySort findSort builtinName (SortActualSort SortActual { sortActualName }) =
             expectHook = Hook (Just builtinName)
         declHook <- castError (parseAttributes sentenceSortAttributes)
         koreFailWhen (expectHook /= declHook)
-            ("sort '" ++ getId sortActualName
+            ("Sort '" ++ getId sortActualName
              ++ "' is not hooked to builtin sort '"
              ++ builtinName ++ "'")
 verifySort _ _ (SortVariableSort SortVariable { getSortVariable }) =
@@ -227,9 +227,9 @@ verifySymbol
   =
     withLocationAndContext
         symbolId
-        ("symbol '" ++ symbolName ++ "' declaration")
+        ("In symbol '" ++ symbolName ++ "' declaration")
         (do
-            withContext "result sort"
+            withContext "In result sort"
                 (verifySort findSort builtinResult result)
             verifySymbolArguments builtinSorts findSort decl
         )
@@ -251,10 +251,10 @@ verifySymbolArguments
     findSort
     SentenceSymbol { sentenceSymbolSorts = sorts }
   =
-    withContext "argument sorts"
+    withContext "In argument sorts"
     (do
         koreFailWhen (arity /= builtinArity)
-            ("expected " ++ show builtinArity
+            ("Expected " ++ show builtinArity
              ++ " arguments, found " ++ show arity)
         zipWithM_ (verifySort findSort) builtinSorts sorts
     )
