@@ -207,8 +207,8 @@ parseAttribute key =
 {- | Parse a key-only attribute.
 
   A key-only attribute has no arguments. @parseKeyAttribute@ signals failure if
-  the attribute is not present or if it is present with the wrong number of
-  arguments.
+  the attribute is not present exactly once or if it is present with the wrong
+  number of arguments.
 
   See also: 'hasKeyAttribute'
 
@@ -221,7 +221,7 @@ parseKeyAttribute key = do
     withContext key
         (do
             arguments <- oneOccurrence occurrences
-            noArguments arguments
+            assertNoArguments arguments
         )
 
 {- | Is the key-only attribute present?
@@ -306,8 +306,8 @@ oneOccurrence =
 
 {- | Fail if the attribute is given any arguments.
  -}
-noArguments :: Occurrence -> Parser ()
-noArguments (Occurrence args) =
+assertNoArguments :: Occurrence -> Parser ()
+assertNoArguments (Occurrence args) =
     case args of
         [] -> pure ()
         _ -> Kore.Error.koreFail "Unexpected arguments"
