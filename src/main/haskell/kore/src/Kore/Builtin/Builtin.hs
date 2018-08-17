@@ -70,8 +70,11 @@ import Kore.Step.Function.Data
 type Function = ApplicationFunctionEvaluator Object Variable
 
 type SortVerifier =
-    KoreSentenceSort Object -> Either (Error VerifyError) ()
+       KoreSentenceSort Object
+    -- ^ Sort declaration to verify
+    -> Either (Error VerifyError) ()
 
+-- | @SortVerifiers@ associates a @SortVerifier@ with its builtin sort name.
 type SortVerifiers = HashMap String SortVerifier
 
 type SymbolVerifier =
@@ -81,6 +84,9 @@ type SymbolVerifier =
     -- ^ Symbol declaration to verify
     -> Either (Error VerifyError) ()
 
+{- | @SymbolVerifiers@ associates a @SymbolVerifier@ with each builtin
+  symbol name.
+ -}
 type SymbolVerifiers = HashMap String SymbolVerifier
 
 type PatternVerifier =
