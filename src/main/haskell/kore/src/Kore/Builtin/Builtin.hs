@@ -236,9 +236,9 @@ verifySymbol
 
 {- | Verify the arguments of a builtin sort declaration.
 
-  The declared argument sorts must match the builtin argument sorts. The result
-  sort is not checked. (Some builtins can be hooked to symbols that return
-  non-builtin sorts.)
+  The declared argument sorts must match the builtin argument
+  sorts. @verifySymbolArguments@ only checks the symbol's argument sorts; use
+  'verifySymbol' if it is also necessary to check the symbol's result sort.
 
   See also: 'verifySymbol'
 
