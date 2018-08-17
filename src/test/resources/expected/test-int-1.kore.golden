@@ -1,0 +1,1074 @@
+Definition
+    { definitionAttributes = Attributes []
+    , definitionModules =
+        [ Module
+            { moduleName = ModuleName "K"
+            , moduleSentences =
+                [ ObjectSentence (SentenceSortSentence SentenceSort
+                    { sentenceSortName = (Id "K" AstLocationNone) :: Id Object
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    })
+                ]
+            , moduleAttributes = Attributes []
+            }
+        , Module
+            { moduleName = ModuleName "BOOL"
+            , moduleSentences =
+                [ ObjectSentence (SentenceHookSentence (SentenceHookedSort SentenceSort
+                    { sentenceSortName = (Id "Bool" AstLocationNone) :: Id Object
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "BOOL.Bool")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                ]
+            , moduleAttributes = Attributes []
+            }
+        , Module
+            { moduleName = ModuleName "INT"
+            , moduleSentences =
+                [ MetaSentence (SentenceImportSentence SentenceImport
+                    { sentenceImportModuleName =
+                        ModuleName "K"
+                    , sentenceAxiomAttributes = Attributes []
+                    })
+                , MetaSentence (SentenceImportSentence SentenceImport
+                    { sentenceImportModuleName =
+                        ModuleName "BOOL"
+                    , sentenceAxiomAttributes = Attributes []
+                    })
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSort SentenceSort
+                    { sentenceSortName = (Id "Int" AstLocationNone) :: Id Object
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.Int")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "bitRangeInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.bitRange")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "geInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.ge")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "xorInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.xor")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "addInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.add")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "neInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.ne")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "randInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts = []
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.rand")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "leInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.le")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "log2Int" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.log2")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "andInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.and")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "srandInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "K" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.srand")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "edivInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.ediv")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "powmodInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.powmod")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "eqInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.eq")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "tmodInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.tmod")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "absInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.abs")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "notInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.not")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "shlInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.shl")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "signExtendBitRangeInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.signExtendBitRange")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "emodInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.emod")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "orInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.or")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "shrInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.shr")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "mulInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.mul")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "gtInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.gt")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "tdivInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.tdiv")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "minInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.min")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "ltInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Bool" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.lt")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "subInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.sub")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "maxInt" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.max")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                , ObjectSentence (SentenceHookSentence (SentenceHookedSymbol SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = (Id "pow" AstLocationNone) :: Id Object
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts =
+                        [ SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        , SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                        ]
+                    , sentenceSymbolReturnSort =
+                        SortActualSort SortActual
+                            { sortActualName = (Id "Int" AstLocationNone) :: Id Object
+                            , sortActualSorts = []
+                            }
+                    , sentenceSymbolAttributes =
+                        Attributes 
+                            [ Fix (UnifiedPattern (UnifiedObject (Rotate31 (ApplicationPattern Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = (Id "hook" AstLocationNone) :: Id Object
+                                        , symbolOrAliasParams = []
+                                        }
+                                , applicationChildren =
+                                    [ Fix (UnifiedPattern (UnifiedMeta (Rotate31 (StringLiteralPattern (StringLiteral "INT.pow")))))
+                                    ]
+                                }))))
+                            ]
+                    }))
+                ]
+            , moduleAttributes = Attributes []
+            }
+        ]
+    }

@@ -20,6 +20,7 @@ import Kore.AST.Sentence
 import Kore.ASTUtils.SmartPatterns
 import Kore.ASTVerifier.DefinitionVerifier
        ( AttributesVerification (..), verifyAndIndexDefinition )
+import qualified Kore.Builtin as Builtin
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
        ( KoreIndexedModule )
@@ -74,7 +75,9 @@ axiomPatternsUnitTests =
                 ]
                 ( koreIndexedModuleToAxiomPatterns Object
                 $ extractIndexedModule "TEST"
-                    (verifyAndIndexDefinition DoNotVerifyAttributes
+                    (verifyAndIndexDefinition
+                        DoNotVerifyAttributes
+                        Builtin.koreBuiltins
                         (Definition
                             { definitionAttributes = Attributes []
                             , definitionModules =

@@ -16,6 +16,7 @@ import Kore.AST.Sentence
 import Kore.ASTPrettyPrint
 import Kore.ASTVerifier.DefinitionVerifier
 import Kore.ASTVerifier.Error
+import qualified Kore.Builtin as Builtin
 import Kore.Error
 import Kore.Implicit.Attributes
 import Kore.Implicit.ImplicitSorts
@@ -80,7 +81,11 @@ expectSuccess description definition =
             ++ printDefinition definition
             )
             verifySuccess
-            (verifyDefinition attributesVerificationForTests definition)
+            (verifyDefinition
+                attributesVerificationForTests
+                Builtin.koreBuiltins
+                definition
+            )
         )
 
 expectFailureWithError
@@ -88,7 +93,12 @@ expectFailureWithError
 expectFailureWithError description expectedError definition =
     testCase
         description
-        ( case verifyDefinition attributesVerificationForTests definition of
+        (case
+            verifyDefinition
+                attributesVerificationForTests
+                Builtin.koreBuiltins
+                definition
+          of
             Right _ ->
                 assertFailure
                     (  "Expecting verification failure! Definition:\n"

@@ -31,6 +31,7 @@ import Kore.ASTVerifier.DefinitionVerifier
 import Kore.Building.AsAst
 import Kore.Building.Patterns
 import Kore.Building.Sorts
+import qualified Kore.Builtin as Builtin
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
 import Kore.Implicit.Attributes
@@ -2781,7 +2782,12 @@ defaultIndexedModuleWithError
     :: Either (Error MLError) (KoreIndexedModule ImplicitAttributes)
 defaultIndexedModuleWithError = do
     modules <-
-        castError (verifyAndIndexDefinition DoNotVerifyAttributes definition)
+        castError
+        (verifyAndIndexDefinition
+            DoNotVerifyAttributes
+            Builtin.koreBuiltins
+            definition
+        )
     case Map.lookup moduleName1 modules of
         Just a -> return a
         Nothing ->

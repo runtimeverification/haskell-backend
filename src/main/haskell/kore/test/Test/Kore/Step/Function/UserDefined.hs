@@ -5,6 +5,9 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
+import Data.Default
+       ( def )
+
 import Kore.AST.Common
        ( Application (..), AstLocation (..), Id (..), Pattern (..),
        SymbolOrAlias (..) )
@@ -312,6 +315,7 @@ mockStepperAttributes = StepperAttributes
     { isConstructor = True
     , isFunctional  = True
     , isFunction    = False
+    , hook          = def
     }
 
 mockSortTools :: SortTools Meta

@@ -27,6 +27,8 @@ import Kore.ASTVerifier.AttributesVerifier
 import Kore.ASTVerifier.Error
 import Kore.ASTVerifier.PatternVerifier
 import Kore.ASTVerifier.SortVerifier
+import Kore.Attribute.Parser ( parseAttributes )
+import qualified Kore.Builtin as Builtin
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers
@@ -113,23 +115,35 @@ verifySentences
     -- ^ The module containing all definitions which are visible in this
     -- pattern.
     -> AttributesVerification atts
+    -> Builtin.Verifiers
     -> [KoreSentence]
     -> Either (Error VerifyError) VerifySuccess
 verifySentences
-    indexedModule attributesVerification sentences
+    indexedModule attributesVerification builtinVerifiers sentences
   = do
-    mapM_ (verifySentence indexedModule attributesVerification) sentences
+    mapM_
+        (verifySentence
+            indexedModule
+            attributesVerification
+            builtinVerifiers
+        )
+        sentences
     verifySuccess
 
 verifySentence
     :: KoreIndexedModule atts
     -> AttributesVerification atts
+    -> Builtin.Verifiers
     -> KoreSentence
     -> Either (Error VerifyError) VerifySuccess
-verifySentence indexedModule attributesVerification =
+verifySentence indexedModule attributesVerification builtinVerifiers =
     applyUnifiedSentence
         (verifyMetaSentence indexedModule attributesVerification)
-        (verifyObjectSentence indexedModule attributesVerification)
+        (verifyObjectSentence
+            indexedModule
+            attributesVerification
+            builtinVerifiers
+        )
 
 verifyMetaSentence
     :: KoreIndexedModule atts
@@ -185,11 +199,13 @@ verifyMetaSentence _ _ (SentenceImportSentence _) =
 verifyObjectSentence
     :: KoreIndexedModule atts
     -> AttributesVerification atts
+    -> Builtin.Verifiers
     -> Sentence Object UnifiedSortVariable UnifiedPattern Variable
     -> Either (Error VerifyError) VerifySuccess
 verifyObjectSentence
     indexedModule
     attributesVerification
+    _
     (SentenceAliasSentence aliasSentence)
   =
     verifyAliasSentence
@@ -200,6 +216,7 @@ verifyObjectSentence
 verifyObjectSentence
     indexedModule
     attributesVerification
+    _
     (SentenceSymbolSentence symbolSentence)
   =
     verifySymbolSentence
@@ -210,25 +227,41 @@ verifyObjectSentence
 verifyObjectSentence
     _
     attributesVerification
+    _
     (SentenceSortSentence sortSentence)
   =
     verifySortSentence sortSentence attributesVerification
 verifyObjectSentence
     _
     attributesVerification
+    builtinVerifiers
     (SentenceHookSentence (SentenceHookedSort sortSentence))
   =
-    verifySortSentence sortSentence attributesVerification
+    do
+        verifySortSentence sortSentence attributesVerification
+        let SentenceSort { sentenceSortAttributes } = sortSentence
+        hook <- castError (parseAttributes sentenceSortAttributes)
+        Builtin.sortVerifier builtinVerifiers hook sortSentence
+        pure (VerifySuccess ())
+
 verifyObjectSentence
     indexedModule
     attributesVerification
+    builtinVerifiers
     (SentenceHookSentence (SentenceHookedSymbol symbolSentence))
   =
-    verifySymbolSentence
-        (fmap getIndexedSentence . resolveSort indexedModule)
-        indexedModule
-        attributesVerification
-        symbolSentence
+    do
+        verifySymbolSentence
+            findSort
+            indexedModule
+            attributesVerification
+            symbolSentence
+        let SentenceSymbol { sentenceSymbolAttributes } = symbolSentence
+        hook <- castError (parseAttributes sentenceSymbolAttributes)
+        Builtin.symbolVerifier builtinVerifiers hook findSort symbolSentence
+        pure (VerifySuccess ())
+  where
+    findSort = fmap getIndexedSentence . resolveSort indexedModule
 
 verifySymbolSentence
     :: (MetaOrObject level)

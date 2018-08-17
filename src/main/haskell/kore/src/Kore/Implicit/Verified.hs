@@ -23,6 +23,7 @@ import Kore.ASTVerifier.DefinitionVerifier
        ( defaultAttributesVerification, verifyImplicitKoreDefinition )
 import Kore.ASTVerifier.Error
        ( VerifyError )
+import qualified Kore.Builtin as Builtin
 import Kore.Error
        ( Error, printError )
 import Kore.Implicit.Attributes
@@ -35,6 +36,7 @@ checkedMetaDefinition :: Either (Error VerifyError) MetaDefinition
 checkedMetaDefinition = do
     _ <- verifyImplicitKoreDefinition
         attributesVerification
+        Builtin.koreBuiltins
         (definitionPureToKore uncheckedMetaDefinition)
     return uncheckedMetaDefinition
   where
@@ -55,6 +57,7 @@ checkedKoreDefinition :: Either (Error VerifyError) KoreDefinition
 checkedKoreDefinition = do
     _ <- verifyImplicitKoreDefinition
         attributesVerification
+        Builtin.koreBuiltins
         uncheckedKoreDefinition
     return uncheckedKoreDefinition
   where

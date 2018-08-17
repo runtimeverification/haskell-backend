@@ -7,6 +7,8 @@ import Test.Tasty.HUnit
 import Test.Tasty.HUnit.Extensions
 
 import Data.CallStack
+import Data.Default
+       ( def )
 import Data.Function
        ( on )
 import Data.Functor.Foldable
@@ -22,7 +24,7 @@ import Kore.AST.MLPatterns
 import Kore.AST.PureML
 import Kore.AST.Sentence
 import Kore.ASTHelpers
-       ( ApplicationSorts(..) )
+       ( ApplicationSorts (..) )
 import Kore.ASTPrettyPrint
 import Kore.ASTUtils.SmartConstructors
        ( mkVar )
@@ -115,6 +117,7 @@ mockStepperAttributes patternHead = StepperAttributes
     { isConstructor = patternHead /= getSentenceSymbolOrAliasHead a2 []
     , isFunctional = patternHead /= getSentenceSymbolOrAliasHead a3 []
     , isFunction = False
+    , hook = def
     }
 
 mockGetArgumentSorts :: SymbolOrAlias Object -> [Sort Object]

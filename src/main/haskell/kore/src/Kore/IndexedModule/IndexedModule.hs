@@ -27,7 +27,6 @@ module Kore.IndexedModule.IndexedModule
     , indexModuleIfNeeded
     , metaNameForObjectSort
     , SortDescription
-    , ParsedAttributes (..)
     , getIndexedSentence
     ) where
 
@@ -46,11 +45,14 @@ import Kore.AST.Common
 import Kore.AST.Kore
 import Kore.AST.MetaOrObject
 import Kore.AST.Sentence
+import Kore.Attribute.Parser
+       ( ParseAttributes, parseAttributes )
 import Kore.Error
-import Kore.Implicit.Attributes
 import Kore.Implicit.ImplicitSorts
 
 type SortDescription level = SentenceSort level UnifiedPattern Variable
+
+data IndexModuleError
 
 {-|'IndexedModule' represents an AST 'Module' somewhat optimized for resolving
 IDs.
@@ -98,15 +100,6 @@ data IndexedModule sortParam pat variable atts =
 -- @(attributes,sentence)@ pair format.
 getIndexedSentence :: (atts, sentence) -> sentence
 getIndexedSentence = snd
-
-class
-    ( Default atts
-    ) => ParsedAttributes atts
-  where
-    parseAttributes :: Attributes -> atts
-
-instance ParsedAttributes ImplicitAttributes where
-    parseAttributes = const (def :: ImplicitAttributes)
 
 deriving instance
     ( Show1 (pat variable), Show (pat variable (Fix (pat variable)))
@@ -259,12 +252,12 @@ creating a chain of implicit modules, each including its predecessor, with
 the top one containing the symbols defined in all of them.
 -}
 indexImplicitModule
-    :: ParsedAttributes atts
+    :: ParseAttributes atts
     => ( Map.Map ModuleName (KoreIndexedModule atts)
        , KoreImplicitIndexedModule atts)
     -> KoreModule
     -> Either
-        (Error a)
+        (Error IndexModuleError)
         ( Map.Map ModuleName (KoreIndexedModule atts)
         , KoreImplicitIndexedModule atts)
 indexImplicitModule (indexedModules, lastIndexedModule) rawModule = do
@@ -288,7 +281,7 @@ indexImplicitModule (indexedModules, lastIndexedModule) rawModule = do
 the module is already in the 'IndexedModule' map.
 -}
 indexModuleIfNeeded
-    :: ParsedAttributes atts
+    :: ParseAttributes atts
     => KoreImplicitIndexedModule atts
     -- ^ Module containing the implicit Kore definitions
     -> Map.Map ModuleName KoreModule
@@ -298,7 +291,7 @@ indexModuleIfNeeded
     -> KoreModule
     -- ^ Module to be indexed
     -> Either
-        (Error a)
+        (Error IndexModuleError)
         (Map.Map ModuleName (KoreIndexedModule atts))
     -- ^ If the module was indexed succesfully, the map returned on 'Right'
     -- contains everything that the provided 'IndexedModule' map contained,
@@ -312,14 +305,14 @@ indexModuleIfNeeded
             implicitModule Set.empty nameToModule indexedModules koreModule
 
 internalIndexModuleIfNeeded
-    :: ParsedAttributes atts
+    :: ParseAttributes atts
     => KoreImplicitIndexedModule atts
     -> Set.Set ModuleName
     -> Map.Map ModuleName KoreModule
     -> Map.Map ModuleName (KoreIndexedModule atts)
     -> KoreModule
     -> Either
-        (Error a)
+        (Error IndexModuleError)
         (Map.Map ModuleName (KoreIndexedModule atts), KoreIndexedModule atts)
 internalIndexModuleIfNeeded
     implicitModule importingModules nameToModule indexedModules koreModule
@@ -333,6 +326,16 @@ internalIndexModuleIfNeeded
             case Map.lookup koreModuleName indexedModules of
                 Just indexedModule -> return (indexedModules, indexedModule)
                 Nothing -> do
+                    parsedModuleAtts <- parseAttributesInModule moduleAtts
+                    let
+                        indexedModulesAndStartingIndexedModule =
+                            ( indexedModules
+                            , (indexedModuleWithDefaultImports
+                                    (moduleName koreModule) implicitModule)
+                                { indexedModuleAttributes =
+                                    (parsedModuleAtts, moduleAtts)
+                                }
+                            )
                     (newIndex, newModule) <- foldM
                         (indexModuleKoreSentence
                             implicitModule
@@ -347,26 +350,18 @@ internalIndexModuleIfNeeded
         )
   where
     moduleAtts = moduleAttributes koreModule
-    indexedModulesAndStartingIndexedModule =
-        ( indexedModules
-        , (indexedModuleWithDefaultImports
-                (moduleName koreModule) implicitModule)
-            { indexedModuleAttributes =
-                (parseAttributes moduleAtts, moduleAtts)
-            }
-        )
     koreModuleName = moduleName koreModule
     importingModulesWithCurrentOne = Set.insert koreModuleName importingModules
 
 indexModuleKoreSentence
-    :: ParsedAttributes atts
+    :: ParseAttributes atts
     => KoreImplicitIndexedModule atts
     -> Set.Set ModuleName
     -> Map.Map ModuleName KoreModule
     -> (Map.Map ModuleName (KoreIndexedModule atts), KoreIndexedModule atts)
     -> KoreSentence
     -> Either
-        (Error a)
+        (Error IndexModuleError)
         (Map.Map ModuleName (KoreIndexedModule atts), KoreIndexedModule atts)
 indexModuleKoreSentence a b c d =
     applyUnifiedSentence
@@ -374,14 +369,14 @@ indexModuleKoreSentence a b c d =
         (indexModuleObjectSentence a b c d)
 
 indexModuleMetaSentence
-    :: ParsedAttributes atts
+    :: ParseAttributes atts
     => KoreImplicitIndexedModule atts
     -> Set.Set ModuleName
     -> Map.Map ModuleName KoreModule
     -> (Map.Map ModuleName (KoreIndexedModule atts), KoreIndexedModule atts)
     -> Sentence Meta UnifiedSortVariable UnifiedPattern Variable
     -> Either
-        (Error a)
+        (Error IndexModuleError)
         (Map.Map ModuleName (KoreIndexedModule atts), KoreIndexedModule atts)
 indexModuleMetaSentence
     _ _ _
@@ -389,53 +384,59 @@ indexModuleMetaSentence
     , indexedModule@IndexedModule
         { indexedModuleMetaAliasSentences = sentences }
     )
-    (SentenceAliasSentence sentence)
+    (SentenceAliasSentence sentence@SentenceAlias
+        { sentenceAliasAlias, sentenceAliasAttributes })
   =
-    return
-        ( indexedModules
-        , indexedModule
-            { indexedModuleMetaAliasSentences =
-                Map.insert
-                    (aliasConstructor (sentenceAliasAlias sentence))
-                    ( parseAttributes (sentenceAliasAttributes sentence)
-                    , sentence
-                    )
-                    sentences
-            }
-        )
+    do
+        atts <- parseAttributesInModule sentenceAliasAttributes
+        return
+            ( indexedModules
+            , indexedModule
+                { indexedModuleMetaAliasSentences =
+                    Map.insert
+                        (aliasConstructor sentenceAliasAlias)
+                        (atts, sentence)
+                        sentences
+                }
+            )
 indexModuleMetaSentence
     _ _ _
     ( indexedModules
     , indexedModule@IndexedModule
         { indexedModuleMetaSymbolSentences = sentences }
     )
-    (SentenceSymbolSentence sentence)
+    (SentenceSymbolSentence sentence@SentenceSymbol
+        { sentenceSymbolSymbol, sentenceSymbolAttributes })
   =
-    return
-        ( indexedModules
-        , indexedModule
-            { indexedModuleMetaSymbolSentences =
-                Map.insert
-                    (symbolConstructor (sentenceSymbolSymbol sentence))
-                    ( parseAttributes (sentenceSymbolAttributes sentence)
-                    , sentence
-                    )
-                    sentences
-            }
-        )
+    do
+        atts <- parseAttributesInModule sentenceSymbolAttributes
+        return
+            ( indexedModules
+            , indexedModule
+                { indexedModuleMetaSymbolSentences =
+                    Map.insert
+                        (symbolConstructor sentenceSymbolSymbol)
+                        (atts, sentence)
+                        sentences
+                }
+            )
+
 indexModuleMetaSentence
     _ _ _
     ( indexedModules
     , indexedModule@IndexedModule { indexedModuleAxioms = sentences }
     )
-    (SentenceAxiomSentence sentence)
+    (SentenceAxiomSentence sentence@SentenceAxiom
+        { sentenceAxiomAttributes })
   =
-    return
-        ( indexedModules
-        , indexedModule { indexedModuleAxioms = (atts, sentence) : sentences }
-        )
-  where
-    atts = parseAttributes (sentenceAxiomAttributes sentence)
+    do
+        atts <- parseAttributesInModule sentenceAxiomAttributes
+        return
+            ( indexedModules
+            , indexedModule
+                { indexedModuleAxioms = (atts, sentence) : sentences }
+            )
+
 indexModuleMetaSentence
     implicitModule
     importingModules
@@ -456,12 +457,12 @@ indexModuleMetaSentence
             nameToModule
             indexedModules
             importedModuleName
+    atts <- parseAttributesInModule attributes
     return
         ( newIndexedModules
         , indexedModule
             { indexedModuleImports =
-                (parseAttributes attributes, attributes, importedModule)
-                : indexedImports
+                (atts, attributes, importedModule) : indexedImports
             }
         )
 
@@ -471,28 +472,29 @@ indexModuleMetaSentence
     , indexedModule
     )
     ( SentenceSortSentence sentence )
-  = return
-    ( indexedModules
-    , indexedModule
-      { indexedModuleMetaSortDescriptions =
-          Map.insert
-          (sentenceSortName sentence)
-          ( parseAttributes (sentenceSortAttributes sentence)
-          , sentence
-          )
-          (indexedModuleMetaSortDescriptions indexedModule)
-      }
-    )
+  =
+    do
+        atts <- parseAttributesInModule (sentenceSortAttributes sentence)
+        return
+            ( indexedModules
+            , indexedModule
+              { indexedModuleMetaSortDescriptions =
+                  Map.insert
+                  (sentenceSortName sentence)
+                  (atts, sentence)
+                  (indexedModuleMetaSortDescriptions indexedModule)
+              }
+            )
 
 indexModuleObjectSentence
-    :: ParsedAttributes atts
+    :: ParseAttributes atts
     => KoreImplicitIndexedModule atts
     -> Set.Set ModuleName
     -> Map.Map ModuleName KoreModule
     -> (Map.Map ModuleName (KoreIndexedModule atts), KoreIndexedModule atts)
     -> Sentence Object UnifiedSortVariable UnifiedPattern Variable
     -> Either
-        (Error a)
+        (Error IndexModuleError)
         (Map.Map ModuleName (KoreIndexedModule atts), KoreIndexedModule atts)
 indexModuleObjectSentence
     _ _ _
@@ -500,48 +502,53 @@ indexModuleObjectSentence
     , indexedModule@IndexedModule
         { indexedModuleObjectAliasSentences = sentences }
     )
-    (SentenceAliasSentence sentence)
+    (SentenceAliasSentence sentence@SentenceAlias
+        { sentenceAliasAlias, sentenceAliasAttributes })
   =
-    return
-        ( indexedModules
-        , indexedModule
-            { indexedModuleObjectAliasSentences =
-                Map.insert
-                    (aliasConstructor (sentenceAliasAlias sentence))
-                    ( parseAttributes (sentenceAliasAttributes sentence)
-                    , sentence
-                    )
-                    sentences
-            }
-        )
+    do
+        atts <- parseAttributesInModule sentenceAliasAttributes
+        return
+            ( indexedModules
+            , indexedModule
+                { indexedModuleObjectAliasSentences =
+                    Map.insert
+                        (aliasConstructor sentenceAliasAlias)
+                        (atts, sentence)
+                        sentences
+                }
+            )
 indexModuleObjectSentence
     _ _ _
     ( indexedModules
     , indexedModule@IndexedModule
         { indexedModuleObjectSymbolSentences = sentences }
     )
-    (SentenceSymbolSentence sentence)
+    (SentenceSymbolSentence sentence@SentenceSymbol
+        { sentenceSymbolSymbol, sentenceSymbolAttributes })
   =
-    return
-        ( indexedModules
-        , indexedModule
-            { indexedModuleObjectSymbolSentences =
-                Map.insert
-                    (symbolConstructor (sentenceSymbolSymbol sentence))
-                    ( parseAttributes (sentenceSymbolAttributes sentence)
-                    , sentence
-                    )
-                    sentences
-            }
-        )
+    do
+        atts <- parseAttributesInModule sentenceSymbolAttributes
+        return
+            ( indexedModules
+            , indexedModule
+                { indexedModuleObjectSymbolSentences =
+                    Map.insert
+                        (symbolConstructor sentenceSymbolSymbol)
+                        (atts, sentence)
+                        sentences
+                }
+            )
 indexModuleObjectSentence
     implicitModule
     importingModules
     nameToModule
     indexedStuff
-    (SentenceSortSentence sentence)
+    (SentenceSortSentence sentence@SentenceSort
+        { sentenceSortName
+        , sentenceSortParameters
+        , sentenceSortAttributes
+        })
   = do
-    let sortId = sentenceSortName sentence
     (indexedModules, indexedModule) <-
         indexModuleMetaSentence
             implicitModule
@@ -552,28 +559,26 @@ indexModuleObjectSentence
                 SentenceSymbol
                     { sentenceSymbolSymbol = Symbol
                         { symbolConstructor = Id
-                            { getId = metaNameForObjectSort (getId sortId)
-                            , idLocation = AstLocationLifted (idLocation sortId)
+                            { getId = metaNameForObjectSort (getId sentenceSortName)
+                            , idLocation = AstLocationLifted (idLocation sentenceSortName)
                             }
                         , symbolParams = []
                         }
                     , sentenceSymbolSorts =
-                        map (const sortMetaSort)
-                            (sentenceSortParameters sentence)
+                        map (const sortMetaSort) sentenceSortParameters
                     , sentenceSymbolResultSort = sortMetaSort
                     , sentenceSymbolAttributes = Attributes []
                     }
             )
 
+    atts <- parseAttributesInModule sentenceSortAttributes
     return
         ( indexedModules
         , indexedModule
             { indexedModuleObjectSortDescriptions =
                 Map.insert
-                    (sentenceSortName sentence)
-                    ( parseAttributes (sentenceSortAttributes sentence)
-                    , sentence
-                    )
+                    sentenceSortName
+                    (atts, sentence)
                     (indexedModuleObjectSortDescriptions indexedModule)
             }
         )
@@ -604,33 +609,32 @@ indexModuleObjectSentence
         , indexedModuleHookedIdentifiers = hookedIds
         }
     )
-    (SentenceHookSentence (SentenceHookedSymbol sentence))
+    (SentenceHookSentence (SentenceHookedSymbol sentence@SentenceSymbol
+        { sentenceSymbolAttributes }))
     =
-    return
-        ( indexedModules
-        , indexedModule
-            { indexedModuleObjectSymbolSentences =
-                Map.insert
-                    symbolId
-                    ( parseAttributes (sentenceSymbolAttributes sentence)
-                    , sentence
-                    )
-                    sentences
-            , indexedModuleHookedIdentifiers = Set.insert symbolId hookedIds
-            }
-        )
+      do
+          atts <- parseAttributesInModule sentenceSymbolAttributes
+          return
+              ( indexedModules
+              , indexedModule
+                  { indexedModuleObjectSymbolSentences =
+                      Map.insert symbolId (atts, sentence) sentences
+                  , indexedModuleHookedIdentifiers =
+                      Set.insert symbolId hookedIds
+                  }
+              )
   where
     symbolId = symbolConstructor (sentenceSymbolSymbol sentence)
 
 indexImportedModule
-    :: ParsedAttributes atts
+    :: ParseAttributes atts
     => KoreImplicitIndexedModule atts
     -> Set.Set ModuleName
     -> Map.Map ModuleName KoreModule
     -> Map.Map ModuleName (KoreIndexedModule atts)
     -> ModuleName
     -> Either
-        (Error a)
+        (Error IndexModuleError)
         (Map.Map ModuleName (KoreIndexedModule atts), KoreIndexedModule atts)
 indexImportedModule
     implicitModule
@@ -657,3 +661,15 @@ indexImportedModule
 
 metaNameForObjectSort :: String -> String
 metaNameForObjectSort name = "#`" ++ name
+
+{- | Parse attributes in the context of indexing a module.
+
+'AttributeParserError's are cast to 'IndexModuleError'.
+
+See also: 'parseAttributes'
+-}
+parseAttributesInModule
+    :: ParseAttributes a
+    => Attributes
+    -> Either (Error IndexModuleError) a
+parseAttributesInModule = castError . parseAttributes
