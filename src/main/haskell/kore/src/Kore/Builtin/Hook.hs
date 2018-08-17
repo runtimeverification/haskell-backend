@@ -45,6 +45,8 @@ instance Hashable Hook
   @
     hook{}("HOOKED.function")
   @
+  where @"HOOKED.function"@ is a literal string referring to a known builtin
+  function.
 
  -}
 hookAttribute :: String  -- ^ hooked function name
