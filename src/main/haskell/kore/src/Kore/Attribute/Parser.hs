@@ -40,7 +40,7 @@ module Kore.Attribute.Parser
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Monad
-                 ( foldM, when, (>=>) )
+                 ( foldM, when )
 import           Control.Monad.Except
                  ( MonadError (catchError, throwError) )
 import           Control.Monad.Reader
@@ -207,8 +207,13 @@ parseAttribute key =
 parseKeyAttribute
     :: String  -- ^ attribute name
     -> Parser ()
-parseKeyAttribute key =
-    parseAttribute key >>= withContext key . (oneOccurrence >=> noArguments)
+parseKeyAttribute key = do
+    occurrences <- parseAttribute key
+    withContext key
+        (do
+            arguments <- oneOccurrence occurrences
+            noArguments arguments
+        )
 
 {- | Is the key-only attribute present?
 
@@ -240,15 +245,17 @@ hasKeyAttribute key =
 
  -}
 parseStringAttribute :: String -> Parser String
-parseStringAttribute key =
-    parseAttribute key >>= withContext key . expectStringArgument
+parseStringAttribute key = do
+    occurrences <- parseAttribute key
+    withContext key (expectStringArgument occurrences)
   where
     expectStringArgument :: NonEmpty Occurrence -> Parser String
-    expectStringArgument =
-        oneOccurrence
-        >=> oneArgument
-        >=> expectMetaPattern
-        >=> expectLiteralString
+    expectStringArgument occurrences =
+        do
+            arguments <- oneOccurrence occurrences
+            onlyArgument <- oneArgument arguments
+            metaPattern <- expectMetaPattern onlyArgument
+            expectLiteralString metaPattern
 
     expectMetaPattern =
         \case
