@@ -36,9 +36,7 @@ sort = "BOOL.Bool"
 
  -}
 sortVerifiers :: Builtin.SortVerifiers
-sortVerifiers =
-    HashMap.fromList
-    [ ("BOOL.Bool", Builtin.verifySortDecl) ]
+sortVerifiers = HashMap.fromList [ (sort, Builtin.verifySortDecl) ]
 
 {- | Verify that hooked symbol declarations are well-formed.
 
