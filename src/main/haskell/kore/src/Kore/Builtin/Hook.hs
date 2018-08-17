@@ -53,10 +53,10 @@ hookAttribute :: String  -- ^ hooked function name
               -> CommonKorePattern
 hookAttribute builtin =
     (KoreObjectPattern . ApplicationPattern)
-    Application
-    { applicationSymbolOrAlias = attributeHead "hook"
-    , applicationChildren = [lit]
-    }
+        Application
+            { applicationSymbolOrAlias = attributeHead "hook"
+            , applicationChildren = [lit]
+            }
   where
     lit = (KoreMetaPattern . StringLiteralPattern) (StringLiteral builtin)
 
