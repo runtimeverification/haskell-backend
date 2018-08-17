@@ -37,8 +37,6 @@ import           Control.Monad
 import           Data.HashMap.Strict
                  ( HashMap )
 import qualified Data.HashMap.Strict as HashMap
-import           Data.Maybe
-                 ( fromMaybe )
 
 import Kore.AST.Common
        ( Id (..), Sort (..), SortActual (..), SortVariable (..), Symbol (..),
@@ -111,8 +109,23 @@ data Verifiers =
  -}
 sortVerifier :: Verifiers -> Hook -> SortVerifier
 sortVerifier Verifiers { sortVerifiers } hook =
-    fromMaybe (\_ -> pure ())
-    (getHook hook >>= flip HashMap.lookup sortVerifiers)
+    let
+        hookedSortVerifier :: Maybe SortVerifier
+        hookedSortVerifier = do
+            -- Get the builtin sort name.
+            sortName <- getHook hook
+            HashMap.lookup sortName sortVerifiers
+    in
+        case hookedSortVerifier of
+            Nothing ->
+                -- There is nothing to verify because either
+                -- 1. the sort is not hooked, or
+                -- 2. there is no SortVerifier registered to the hooked name.
+                -- In either case, there is nothing more to do.
+                \_ -> pure ()
+            Just verifier ->
+                -- Invoke the verifier that is registered to this builtin sort.
+                verifier
 
 {- | Look up and apply a builtin symbol verifier.
 
@@ -122,8 +135,23 @@ sortVerifier Verifiers { sortVerifiers } hook =
  -}
 symbolVerifier :: Verifiers -> Hook -> SymbolVerifier
 symbolVerifier Verifiers { symbolVerifiers } hook =
-    fromMaybe (\_ _ -> pure ())
-    (getHook hook >>= flip HashMap.lookup symbolVerifiers)
+    let
+        hookedSymbolVerifier :: Maybe SymbolVerifier
+        hookedSymbolVerifier = do
+            -- Get the builtin sort name.
+            symbolName <- getHook hook
+            HashMap.lookup symbolName symbolVerifiers
+    in
+        case hookedSymbolVerifier of
+            Nothing ->
+                -- There is nothing to verify because either
+                -- 1. the symbol is not hooked, or
+                -- 2. there is no SymbolVerifier registered to the hooked name.
+                -- In either case, there is nothing more to do.
+                \_ _ -> pure ()
+            Just verifier ->
+                -- Invoke the verifier that is registered to this builtin symbol.
+                verifier
 
 notImplemented :: Function
 notImplemented =
