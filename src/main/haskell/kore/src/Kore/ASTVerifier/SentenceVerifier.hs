@@ -123,44 +123,48 @@ verifySentences
   = do
     mapM_
         (verifySentence
+            builtinVerifiers
             indexedModule
             attributesVerification
-            builtinVerifiers
         )
         sentences
     verifySuccess
 
 verifySentence
-    :: KoreIndexedModule atts
+    :: Builtin.Verifiers
+    -> KoreIndexedModule atts
     -> AttributesVerification atts
-    -> Builtin.Verifiers
     -> KoreSentence
     -> Either (Error VerifyError) VerifySuccess
-verifySentence indexedModule attributesVerification builtinVerifiers =
+verifySentence builtinVerifiers indexedModule attributesVerification =
     applyUnifiedSentence
-        (verifyMetaSentence indexedModule attributesVerification)
+        (verifyMetaSentence builtinVerifiers indexedModule attributesVerification)
         (verifyObjectSentence
+            builtinVerifiers
             indexedModule
             attributesVerification
-            builtinVerifiers
         )
 
 verifyMetaSentence
-    :: KoreIndexedModule atts
+    :: Builtin.Verifiers
+    -> KoreIndexedModule atts
     -> AttributesVerification atts
     -> Sentence Meta UnifiedSortVariable UnifiedPattern Variable
     -> Either (Error VerifyError) VerifySuccess
 verifyMetaSentence
+    builtinVerifiers
     indexedModule
     attributesVerification
     (SentenceAliasSentence aliasSentence)
   =
     verifyAliasSentence
         (fmap getIndexedSentence . resolveSort indexedModule)
+        builtinVerifiers
         indexedModule
         attributesVerification
         aliasSentence
 verifyMetaSentence
+    _
     indexedModule
     attributesVerification
     (SentenceSymbolSentence symbolSentence)
@@ -171,12 +175,14 @@ verifyMetaSentence
         attributesVerification
         symbolSentence
 verifyMetaSentence
+    builtinVerifiers
     indexedModule
     attributesVerification
     (SentenceAxiomSentence axiomSentence)
   =
-    verifyAxiomSentence axiomSentence indexedModule attributesVerification
+    verifyAxiomSentence axiomSentence builtinVerifiers indexedModule attributesVerification
 verifyMetaSentence
+    _
     _indexedModule
     attributesVerification
     (SentenceSortSentence sortSentence)
@@ -191,32 +197,33 @@ verifyMetaSentence
   where
     sortId     = sentenceSortName sortSentence
     sortParams = sentenceSortParameters sortSentence
-verifyMetaSentence _ _ (SentenceImportSentence _) =
+verifyMetaSentence _ _ _ (SentenceImportSentence _) =
     -- Since we have an IndexedModule, we assume that imports were already
     -- resolved, so there is nothing left to verify here.
     verifySuccess
 
 verifyObjectSentence
-    :: KoreIndexedModule atts
+    :: Builtin.Verifiers
+    -> KoreIndexedModule atts
     -> AttributesVerification atts
-    -> Builtin.Verifiers
     -> Sentence Object UnifiedSortVariable UnifiedPattern Variable
     -> Either (Error VerifyError) VerifySuccess
 verifyObjectSentence
+    builtinVerifiers
     indexedModule
     attributesVerification
-    _
     (SentenceAliasSentence aliasSentence)
   =
     verifyAliasSentence
         (fmap getIndexedSentence . resolveSort indexedModule)
+        builtinVerifiers
         indexedModule
         attributesVerification
         aliasSentence
 verifyObjectSentence
+    _
     indexedModule
     attributesVerification
-    _
     (SentenceSymbolSentence symbolSentence)
   =
     verifySymbolSentence
@@ -226,15 +233,15 @@ verifyObjectSentence
         symbolSentence
 verifyObjectSentence
     _
-    attributesVerification
     _
+    attributesVerification
     (SentenceSortSentence sortSentence)
   =
     verifySortSentence sortSentence attributesVerification
 verifyObjectSentence
+    builtinVerifiers
     _
     attributesVerification
-    builtinVerifiers
     (SentenceHookSentence (SentenceHookedSort sortSentence))
   =
     do
@@ -245,9 +252,9 @@ verifyObjectSentence
         pure (VerifySuccess ())
 
 verifyObjectSentence
+    builtinVerifiers
     indexedModule
     attributesVerification
-    builtinVerifiers
     (SentenceHookSentence (SentenceHookedSymbol symbolSentence))
   =
     do
@@ -299,12 +306,13 @@ verifySymbolSentence
 verifyAliasSentence
     :: (MetaOrObject level)
     => (Id level -> Either (Error VerifyError) (SortDescription level))
+    -> Builtin.Verifiers
     -> KoreIndexedModule atts
     -> AttributesVerification atts
     -> KoreSentenceAlias level
     -> Either (Error VerifyError) VerifySuccess
 verifyAliasSentence
-    findSortDeclaration indexedModule attributesVerification sentence
+    findSortDeclaration builtinVerifiers indexedModule attributesVerification sentence
   =
     withLocationAndContext
         (aliasConstructor $ sentenceAliasAlias sentence)
@@ -328,11 +336,13 @@ verifyAliasSentence
                 else
                     koreFail "Left and Right sorts do not match"
             verifyAliasLeftPattern
+                (Builtin.patternVerifier builtinVerifiers)
                 indexedModule
                 variables
                 (Just $ asUnified leftPatternSort)
                 (asKorePattern $ sentenceAliasLeftPattern sentence)
             verifyPattern
+                (Builtin.patternVerifier builtinVerifiers)
                 indexedModule
                 variables
                 (Just $ asUnified rightPatternSort)
@@ -352,10 +362,11 @@ verifyAliasSentence
 
 verifyAxiomSentence
     :: KoreSentenceAxiom
+    -> Builtin.Verifiers
     -> KoreIndexedModule atts
     -> AttributesVerification atts
     -> Either (Error VerifyError) VerifySuccess
-verifyAxiomSentence axiom indexedModule attributesVerification =
+verifyAxiomSentence axiom builtinVerifiers indexedModule attributesVerification =
     withContext
         "axiom declaration"
         (do
@@ -363,6 +374,7 @@ verifyAxiomSentence axiom indexedModule attributesVerification =
                 buildDeclaredUnifiedSortVariables
                     (sentenceAxiomParameters axiom)
             verifyPattern
+                (Builtin.patternVerifier builtinVerifiers)
                 indexedModule
                 variables
                 Nothing
