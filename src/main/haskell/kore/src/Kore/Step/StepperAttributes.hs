@@ -26,7 +26,7 @@ import Kore.Builtin.Hook
 import           Kore.Implicit.Attributes
                  ( keyOnlyAttribute )
 
-{- | Kore pattern representing a @constructor@ attribute
+{- | @constructorAttribute@ represents a @constructor@ attribute Kore pattern.
 
   Kore syntax:
   @
@@ -37,7 +37,7 @@ import           Kore.Implicit.Attributes
 constructorAttribute :: CommonKorePattern
 constructorAttribute = keyOnlyAttribute "constructor"
 
-{- | Kore pattern representing a @function@ attribute
+{- | @functionAttribute@ represents a @function@ attribute Kore pattern.
 
   Kore syntax:
   @
@@ -48,7 +48,7 @@ constructorAttribute = keyOnlyAttribute "constructor"
 functionAttribute :: CommonKorePattern
 functionAttribute    = keyOnlyAttribute "function"
 
-{- | Kore pattern representing a @functional@ attribute
+{- | @functionalAttribute@ represents a @functional@ attribute Kore pattern.
 
   Kore syntax:
   @
