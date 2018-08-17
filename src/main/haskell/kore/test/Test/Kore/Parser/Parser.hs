@@ -3,6 +3,8 @@ module Test.Kore.Parser.Parser (test_koreParser) where
 import Test.Tasty
        ( TestTree, testGroup )
 
+import qualified Data.Functor.Foldable as Functor.Foldable
+
 import Kore.AST.Builders
        ( sort_ )
 import Kore.AST.Common
@@ -918,6 +920,109 @@ sentenceAliasParserTests =
                     , sentenceAliasAttributes = Attributes []
                     }
                 :: KoreSentenceAlias Meta)
+            )
+        , success "alias f{s}() : s where f{s}() := \\dv{s}(\"f\") []"
+            (asSentence
+                (let
+                    aliasId :: Id Object
+                    aliasId = testId "f"
+                    sortVar = sortVariable "s"
+                    resultSort = sortVariableSort "s"
+                    aliasHead =
+                        SymbolOrAlias
+                            { symbolOrAliasConstructor = aliasId
+                            , symbolOrAliasParams = [resultSort]
+                            }
+                 in SentenceAlias
+                    { sentenceAliasAlias = Alias
+                        { aliasConstructor = aliasId
+                        , aliasParams = [sortVar]
+                        }
+                    , sentenceAliasSorts = []
+                    , sentenceAliasResultSort = sortVariableSort "s"
+                    , sentenceAliasLeftPattern =
+                        (fmap patternPureToKore . Functor.Foldable.project)
+                        (App_ aliasHead [])
+                    , sentenceAliasRightPattern =
+                        (fmap patternPureToKore . Functor.Foldable.project)
+                        (DV_ resultSort (StringLiteral_ (StringLiteral "f")))
+                    , sentenceAliasAttributes = Attributes []
+                    }
+                )
+            )
+        , success
+            "alias rewrites{s}(s, s) : s \
+            \where rewrites{s}(a : s, b : s) := \\rewrites{s}(a : s, b : s) []"
+            (asSentence
+                (let
+                    aliasId :: Id Object
+                    aliasId = testId "rewrites"
+                    sortVar = sortVariable "s"
+                    resultSort = sortVariableSort "s"
+                    aliasHead =
+                        SymbolOrAlias
+                            { symbolOrAliasConstructor = aliasId
+                            , symbolOrAliasParams = [resultSort]
+                            }
+                    argument name =
+                        Var_ Variable
+                            { variableName = testId name
+                            , variableSort = resultSort
+                            }
+                    argA = argument "a"
+                    argB = argument "b"
+                 in SentenceAlias
+                    { sentenceAliasAlias = Alias
+                        { aliasConstructor = aliasId
+                        , aliasParams = [sortVar]
+                        }
+                    , sentenceAliasSorts = [resultSort, resultSort]
+                    , sentenceAliasResultSort = resultSort
+                    , sentenceAliasLeftPattern =
+                        (fmap patternPureToKore . Functor.Foldable.project)
+                        (App_ aliasHead [argA, argB])
+                    , sentenceAliasRightPattern =
+                        (fmap patternPureToKore . Functor.Foldable.project)
+                        (Rewrites_ resultSort argA argB)
+                    , sentenceAliasAttributes = Attributes []
+                    }
+                )
+            )
+        , success
+            "alias next{s}(s) : s \
+            \where next{s}(a : s) := \\next{s}(a : s) []"
+            (asSentence
+                (let
+                    aliasId :: Id Object
+                    aliasId = testId "next"
+                    sortVar = sortVariable "s"
+                    resultSort = sortVariableSort "s"
+                    aliasHead =
+                        SymbolOrAlias
+                            { symbolOrAliasConstructor = aliasId
+                            , symbolOrAliasParams = [resultSort]
+                            }
+                    arg =
+                        Var_ Variable
+                            { variableName = testId "a"
+                            , variableSort = resultSort
+                            }
+                 in SentenceAlias
+                    { sentenceAliasAlias = Alias
+                        { aliasConstructor = aliasId
+                        , aliasParams = [sortVar]
+                        }
+                    , sentenceAliasSorts = [resultSort]
+                    , sentenceAliasResultSort = resultSort
+                    , sentenceAliasLeftPattern =
+                        (fmap patternPureToKore . Functor.Foldable.project)
+                        (App_ aliasHead [arg])
+                    , sentenceAliasRightPattern =
+                        (fmap patternPureToKore . Functor.Foldable.project)
+                        (Next_ resultSort arg)
+                    , sentenceAliasAttributes = Attributes []
+                    }
+                )
             )
         , FailureWithoutMessage
             [ ""
