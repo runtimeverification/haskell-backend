@@ -22,7 +22,7 @@ import           Kore.AST.Kore
 import           Kore.Attribute.Parser
                  ( ParseAttributes (..) )
 import qualified Kore.Attribute.Parser as Attribute
-import Kore.Builtin.Hook
+import           Kore.Builtin.Hook
 import           Kore.Implicit.Attributes
                  ( keyOnlyAttribute )
 
@@ -62,13 +62,13 @@ functionalAttribute  = keyOnlyAttribute "functional"
 -- |Data-structure containing attributes relevant to the Kore Stepper
 data StepperAttributes =
     StepperAttributes
-    { isFunction    :: Bool
+    { isFunction    :: !Bool
       -- ^ Whether a symbol represents a function
-    , isFunctional  :: Bool
+    , isFunctional  :: !Bool
       -- ^ Whether a symbol is functional
-    , isConstructor :: Bool
+    , isConstructor :: !Bool
       -- ^ Whether a symbol represents a constructor
-    , hook          :: Hook
+    , hook          :: !Hook
       -- ^ The builtin sort or symbol hooked to a sort or symbol
     }
   deriving (Eq, Show)
