@@ -38,22 +38,22 @@ module Kore.Attribute.Parser
     , assertNoAttribute
     ) where
 
-import           Control.Monad
-                 ( foldM, when )
 import           Control.Monad.Except
-                 ( MonadError (catchError, throwError) )
+                 ( MonadError )
+import qualified Control.Monad.Except as Except
 import           Control.Monad.Reader
                  ( MonadReader, ReaderT (runReaderT) )
 import qualified Control.Monad.Reader as Reader
 import           Data.Default
                  ( Default )
+import qualified Data.Foldable as Foldable
 import           Data.Functor
                  ( ($>) )
 import           Data.HashMap.Strict
                  ( HashMap )
 import qualified Data.HashMap.Strict as HashMap
 import           Data.List.NonEmpty
-                 ( NonEmpty ((:|)) )
+                 ( NonEmpty )
 import qualified Data.List.NonEmpty as NonEmpty
 
 import           Kore.AST.Common
@@ -68,7 +68,7 @@ import           Kore.AST.MetaOrObject
 import           Kore.AST.Sentence
                  ( Attributes (Attributes) )
 import           Kore.Error
-                 ( Error, koreFail )
+                 ( Error )
 import qualified Kore.Error
 
 parseAttributes :: ParseAttributes atts => Attributes -> Either (Error ParseError) atts
@@ -115,10 +115,10 @@ deriving instance MonadReader AttributeMap Parser
  -}
 choose :: Parser a -> Parser a -> Parser a
 choose first second =
-    catchError first
+    Except.catchError first
       (\firstError ->
-          catchError second
-              (\_ -> throwError firstError)
+          Except.catchError second
+              (\_ -> Except.throwError firstError)
       )
 
 {- | Run an attribute 'Parser' with the given list of attributes.
@@ -127,7 +127,7 @@ runParser :: Parser a -> Attributes -> Either (Error ParseError) a
 runParser Parser { getParser } (Attributes attrs) = do
     -- attributeMap associates the arguments of an attribute (each time it
     -- occurs) with the name of the attribute
-    attributeMap <- foldM recordOccurrence HashMap.empty attrs
+    attributeMap <- Foldable.foldlM recordOccurrence HashMap.empty attrs
     runReaderT getParser attributeMap
   where
     -- | Record one occurrence of an attribute.
@@ -141,7 +141,7 @@ runParser Parser { getParser } (Attributes attrs) = do
         case attr of
             KoreObjectPattern (ApplicationPattern app) ->
                 recordApplication attrMap app
-            _ -> koreFail "Expected object-level application pattern"
+            _ -> Kore.Error.koreFail "Expected object-level application pattern"
 
     -- | Insert the application arguments into the attribute map,
     -- on top of any argument lists already present.
@@ -200,7 +200,8 @@ parseAttribute key =
     do
         attrMap <- Reader.ask
         case HashMap.lookup key attrMap of
-            Nothing -> koreFail ("No attribute found matching: " ++ key)
+            Nothing ->
+                Kore.Error.koreFail ("No attribute found matching: " ++ key)
             Just occurs -> pure occurs
 
 {- | Parse a key-only attribute.
@@ -268,14 +269,14 @@ parseStringAttribute key = do
     expectMetaPattern =
         \case
             KoreMetaPattern pat -> pure pat
-            _ -> koreFail "Expected meta pattern"
+            _ -> Kore.Error.koreFail "Expected meta pattern"
 
     expectLiteralString
         :: Pattern Meta Variable CommonKorePattern -> Parser String
     expectLiteralString =
         \case
             StringLiteralPattern (StringLiteral arg) -> pure arg
-            _ -> koreFail "Expected literal string argument"
+            _ -> Kore.Error.koreFail "Expected literal string argument"
 
 {- | Signal parse failure if the attribute is present.
 
@@ -290,7 +291,7 @@ assertNoAttribute :: String -> Parser ()
 assertNoAttribute key =
     do
         exists <- choose (parseAttribute key $> True) (pure False)
-        when exists (koreFail ("Expected no attribute '" ++ key ++ "'"))
+        Kore.Error.koreFailWhen exists ("Expected no attribute '" ++ key ++ "'")
 
 {- | Fail if the attribute does not occur exactly once.
 
@@ -300,8 +301,8 @@ assertNoAttribute key =
 oneOccurrence :: NonEmpty a -> Parser a
 oneOccurrence =
     \case
-        args :| [] -> pure args
-        _ -> koreFail "Unexpected multiple occurrences"
+        args NonEmpty.:| [] -> pure args
+        _ -> Kore.Error.koreFail "Unexpected multiple occurrences"
 
 {- | Fail if the attribute is given any arguments.
  -}
@@ -309,7 +310,7 @@ noArguments :: Occurrence -> Parser ()
 noArguments (Occurrence args) =
     case args of
         [] -> pure ()
-        _ -> koreFail "Unexpected arguments"
+        _ -> Kore.Error.koreFail "Unexpected arguments"
 
 {- | Fail if the attribute is not given exactly one argument.
 
@@ -320,4 +321,4 @@ oneArgument :: Occurrence -> Parser CommonKorePattern
 oneArgument (Occurrence args) =
     case args of
         [a] -> pure a
-        _ -> koreFail "Expected 1 argument"
+        _ -> Kore.Error.koreFail "Expected 1 argument"
