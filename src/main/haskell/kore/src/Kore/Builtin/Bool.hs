@@ -21,11 +21,15 @@ module Kore.Builtin.Bool
     , patternVerifier
     ) where
 
+import           Control.Monad
+                 ( void )
+import           Data.Functor
+                 ( ($>) )
 import qualified Data.HashMap.Strict as HashMap
+import qualified Text.Megaparsec as Parsec
+import qualified Text.Megaparsec.Char as Parsec
 
 import qualified Kore.Builtin.Builtin as Builtin
-import Kore.AST.Common ( StringLiteral (..) )
-import qualified Kore.Error
 
 {- | Builtin name of the @Bool@ sort.
  -}
@@ -64,10 +68,12 @@ symbolVerifiers =
 patternVerifier :: Builtin.PatternVerifier
 patternVerifier =
     Builtin.verifyDomainValue sort
-    (Builtin.verifyStringLiteral verifyBool)
+    (void . Builtin.parseDomainValue parse)
+
+{- | Parse an integer string literal.
+ -}
+parse :: Builtin.Parser Bool
+parse = (Parsec.<|>) true false
   where
-    verifyBool StringLiteral { getStringLiteral = lit }
-        | lit == "true" || lit == "false" = return ()
-        | otherwise =
-            Kore.Error.koreFail
-            ("Expected \"true\" or \"false\", but found \"" ++ lit ++ "\"")
+    true = Parsec.string "true" $> True
+    false = Parsec.string "false" $> False
