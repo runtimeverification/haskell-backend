@@ -22,6 +22,7 @@ module Kore.Builtin.Builtin
     , SortVerifier, SortVerifiers
     , PatternVerifier (..)
     , Function
+    , Parser
     , symbolVerifier
     , sortVerifier
       -- * Declaring builtin verifiers
@@ -31,6 +32,7 @@ module Kore.Builtin.Builtin
     , verifySymbolArguments
     , verifyDomainValue
     , verifyStringLiteral
+    , parseDomainValue
     , notImplemented
     ) where
 
@@ -43,6 +45,9 @@ import           Data.HashMap.Strict
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Semigroup
                  ( Semigroup (..) )
+import Data.Void ( Void )
+import Text.Megaparsec ( Parsec )
+import qualified Text.Megaparsec as Parsec
 
 import Kore.AST.Common
        ( DomainValue (..), Id (..),
@@ -60,6 +65,7 @@ import Kore.AST.PureML
 import Kore.AST.Sentence
        ( KoreSentenceSort, KoreSentenceSymbol, SentenceSort (..),
        SentenceSymbol (..) )
+import Kore.ASTUtils.SmartPatterns ( pattern StringLiteral_ )
 import Kore.ASTVerifier.Error
        ( VerifyError )
 import Kore.Attribute.Parser
@@ -75,6 +81,8 @@ import Kore.Step.Function.Data
        AttemptedFunction (NotApplicable) )
 import Kore.Step.Simplification.Data
        ( SimplificationProof (SimplificationProof) )
+
+type Parser = Parsec Void String
 
 type Function = ApplicationFunctionEvaluator Object Variable
 
@@ -312,7 +320,7 @@ verifyDomainValue builtinSort validate =
         \case
             DomainValuePattern dv@DomainValue { domainValueSort } ->
                 withContext
-                ("verifying builtin sort '" ++ builtinSort ++ "'")
+                ("Verifying builtin sort '" ++ builtinSort ++ "'")
                 (skipOtherSorts domainValueSort (validate dv))
             _ -> return ()  -- no domain value to verify
       where
@@ -334,3 +342,26 @@ verifyStringLiteral validate DomainValue { domainValueChild } =
     case Functor.Foldable.project domainValueChild of
         StringLiteralPattern lit@StringLiteral {} -> validate lit
         _ -> return ()
+
+parseDomainValue
+    :: Parser a
+    -> DomainValue Object (CommonPurePattern Meta)
+    -> Either (Error VerifyError) a
+parseDomainValue
+    parser
+    DomainValue { domainValueChild }
+  =
+    withContext "Parsing domain value"
+        (case domainValueChild of
+            StringLiteral_ StringLiteral { getStringLiteral = lit } ->
+                let parsed =
+                        Parsec.parse
+                            (parser <* Parsec.eof)
+                            "<string literal>"
+                            lit
+                in castParseError parsed
+            _ -> Kore.Error.koreFail "Expected literal string"
+        )
+  where
+    castParseError =
+        either (Kore.Error.koreFail . Parsec.parseErrorPretty) pure
