@@ -22,9 +22,18 @@ module Kore.Builtin.Int
     ) where
 
 import qualified Data.HashMap.Strict as HashMap
+import           Data.Void
+                 ( Void )
+import           Text.Megaparsec
+                 ( Parsec )
+import qualified Text.Megaparsec as Parsec
+import qualified Text.Megaparsec.Char.Lexer as Parsec
 
+import           Kore.AST.Common
+                 ( StringLiteral (..) )
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
+import qualified Kore.Error
 
 {- | Builtin name of the @Int@ sort.
  -}
@@ -94,4 +103,19 @@ symbolVerifiers =
  -}
 patternVerifier :: Builtin.PatternVerifier
 patternVerifier =
-    mempty
+    Builtin.verifyDomainValue sort
+    (Builtin.verifyStringLiteral verifyInt)
+  where
+    verifyInt StringLiteral { getStringLiteral = lit } =
+        let parsed = Parsec.parse parse "<string literal>" lit in
+        case parsed of
+            Left err ->
+                Kore.Error.koreFail (Parsec.parseErrorPretty err)
+            Right _ -> pure ()
+
+{- | Parse an integer string literal.
+ -}
+parse :: Parsec Void String Integer
+parse = Parsec.signed noSpace Parsec.decimal <* Parsec.eof
+  where
+    noSpace = pure ()
