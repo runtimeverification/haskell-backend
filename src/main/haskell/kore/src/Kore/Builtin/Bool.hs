@@ -70,4 +70,4 @@ patternVerifier =
         | lit == "true" || lit == "false" = return ()
         | otherwise =
             Kore.Error.koreFail
-            ("expected \"true\" or \"false\", but found \"" ++ lit ++ "\"")
+            ("Expected \"true\" or \"false\", but found \"" ++ lit ++ "\"")

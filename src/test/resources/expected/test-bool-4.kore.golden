@@ -1,1 +1,1 @@
-Parse error: Error in module 'BOOL' -> alias 'falseBool' declaration (../../../test/resources//test-bool-4.kore 4:11) -> \dv (../../../test/resources//test-bool-4.kore 4:61) -> verifying builtin sort 'BOOL.Bool': expected "true" or "false", but found "untrue"
+Parse error: Error in module 'BOOL' -> alias 'falseBool' declaration (../../../test/resources//test-bool-4.kore 4:11) -> \dv (../../../test/resources//test-bool-4.kore 4:61) -> Verifying builtin sort 'BOOL.Bool': Expected "true" or "false", but found "untrue"
